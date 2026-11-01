@@ -9,11 +9,12 @@
 
 import { Add, Constant, Expr, ExprLike, Float, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
-import { freeSymbols, xreplace } from '../core/traverse';
+import { freeSymbols, rebuild, xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { integrate } from '../integrals/integrate';
 import { str } from '../printing/str';
 import { expandMul as expand } from '../simplify/expand';
+import { cancel } from '../simplify/rational';
 import { divExact, mfactorList, mgcd, mlcm, prem as mprem } from './mpoly';
 import { UPoly, roots as rootsOf } from './poly';
 
@@ -852,7 +853,7 @@ function factorListRaw(e: Expr, vars: readonly Sym[]): [Rational, [Expr, number]
       const prim = primitiveIntPoly(f.toExpr(x), x);
       // f = s * prim  => c *= s^k
       const s = mul(f.toExpr(x), pow(prim.asExpr(), -1));
-      const sc = expand(s);
+      const sc = cancel(s);
       if (sc instanceof Rational) c = mulR(c, powR(sc, k));
       out.push([prim.asExpr(), k]);
     }
@@ -1042,7 +1043,31 @@ export function factor(ex: ExprLike): Expr {
     poly = expand(e);
     Poly.from(poly, vars);
   } catch {
-    return e;
+    // treat non-polynomial subexpressions (sin(y), exp(x), sqrt(x), ...) as generators
+    const reps: [Expr, Expr][] = [];
+    const back: [Expr, Expr][] = [];
+    const gen = (x: Expr): Expr => {
+      if (x instanceof Sym || x instanceof Rational || x.freeSymbols().size === 0) return x;
+      const polyLike = x instanceof Add || x instanceof Mul || (x instanceof Pow && x.exp instanceof Rational && x.exp.isInteger);
+      if (polyLike) {
+        const args = x.args.map(gen);
+        return args.every((a, i) => a === x.args[i]) ? x : rebuild(x, args);
+      }
+      const found = reps.find(([k]) => k.key === x.key);
+      if (found) return found[1];
+      const d = new Sym(`_fg${reps.length}`);
+      reps.push([x, d]);
+      back.push([d, x]);
+      return d;
+    };
+    const g = gen(e);
+    if (!reps.length || g.key === e.key) return e;
+    try {
+      Poly.from(expand(g), sortGens([...freeSymbols(g)]) as Sym[]);
+    } catch {
+      return e;
+    }
+    return xreplace(factor(g), back);
   }
   const [c, fs] = factorListExpr(poly, vars);
   const parts = fs.map(([f, k]) => pow(f, k));

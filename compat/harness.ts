@@ -722,6 +722,24 @@ export const ADAPTERS: Record<string, Adapter> = {
     const wrap = (e: Expr) => (isPoly ? sj.Poly.from(e, self.gens, { domain: 'ZZ' }) : e);
     return new PyTuple([new PyList(qs.map(wrap)), wrap(r)]);
   },
+  symmetrize: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'formal') throw new Unsupported(`kwargs ${k}`);
+    const gens = args.slice(1).map(asSym);
+    if (kw['formal']) {
+      const [s, r, m] = sj.symmetrize(asExpr(args[0]), gens);
+      return new PyTuple([s, r, new PyList(m.map(([a, b]) => new PyTuple([a, b])))]);
+    }
+    return new PyTuple(sj.symmetrizeExpr(asExpr(args[0]), gens));
+  },
+  separatevars: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['symbols', 'dict', 'force'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const symsArg = kw['symbols'] ?? args[1];
+    const symbols = symsArg instanceof PyTuple || symsArg instanceof PyList ? symsArg.items.map(asSym) : [];
+    const r = sj.separatevars(asExpr(args[0]), { symbols, dict: Boolean(kw['dict']), force: Boolean(kw['force']) });
+    if (r === undefined) return null;
+    if (r instanceof Map) return new PyDict([...r].map(([k, v]) => [k, v] as const));
+    return r;
+  },
   apart: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'full' || kw[k]) throw new Unsupported(`kwargs ${k}`);
     return sj.apart(asExpr(args[0]), args[1] === undefined ? undefined : asSym(args[1]));

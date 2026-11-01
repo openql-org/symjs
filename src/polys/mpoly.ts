@@ -247,7 +247,10 @@ export function mfactorList(f0: Expr, vars: readonly Sym[], uniFactor: (e: Expr,
       rec(g2, k);
       return;
     }
-    push(normalizeSign(p, lv), k);
+    const q = normalizeSign(p, lv);
+    // keep the sign removed by the normalization in the content
+    if (q.key !== p.key && k % 2 === 1) content = numMul(content, S.NegOne) as Rational;
+    push(q, k);
   };
   rec(f, 1);
   return [content, out];

@@ -19,3 +19,12 @@ describe('apart (expected values from SymPy 1.14)', () => {
   ];
   for (const [e, want] of cases) it(e, () => expect(str(apart(P(e), x!))).toBe(want));
 });
+
+describe('factor keeps signs and content (regression)', () => {
+  it('univariate and multivariate', async () => {
+    const { factor } = await import('../src');
+    expect(str(factor(P('-3*x**2 + x')))).toBe('-x*(3*x - 1)');
+    expect(str(factor(P('-3*x**2 + x*y + x')))).toBe('-x*(3*x - y - 1)');
+    expect(str(factor(P('-3*x + y + 1')))).toBe('-(3*x - y - 1)');
+  });
+});
