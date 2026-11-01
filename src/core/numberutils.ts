@@ -7,7 +7,7 @@
  * range syntax of symbols().
  */
 
-import { Rational } from './nodes';
+import { Rational, impl } from './nodes';
 
 /** Exact rational value of a double (SymPy Rational(0.2) = 3602879701896397/18014398509481984). */
 export function rationalFromFloat(v: number): Rational {
@@ -154,3 +154,4 @@ function rangeValues(r: string): string[] {
   const b = Number(hi);
   return Array.from({ length: Math.max(0, b - a) }, (_, k) => String(a + k));
 }
+impl.rationalFromFloat = (f) => rationalFromFloat(f.value);

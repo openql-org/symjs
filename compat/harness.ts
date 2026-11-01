@@ -388,6 +388,18 @@ function intArg(v: unknown): number {
   throw new Unsupported('integer argument');
 }
 
+const autoKw = (kw: Record<string, unknown>): boolean => {
+  for (const k of Object.keys(kw)) if (k !== 'auto') throw new Unsupported(`kwargs ${k}`);
+  return kw['auto'] === undefined ? true : Boolean(kw['auto']);
+};
+const polyArg = (v: unknown): sj.Poly | Expr => (v instanceof sj.Poly ? v : asExpr(v));
+const polyM =
+  (f: (p: sj.Poly, args: unknown[]) => unknown): Adapter =>
+  (args, kw, self) => {
+    noKw(kw);
+    return f(asPoly(self), args);
+  };
+
 function evalfAdapter(self: unknown, args: unknown[], kw: Record<string, unknown>): unknown {
   for (const k of Object.keys(kw)) if (!['subs', 'n', 'chop'].includes(k)) throw new Unsupported(`evalf kwarg ${k}`);
   const n = args.length ? intArg(args[0]) : kw['n'] !== undefined ? intArg(kw['n']) : 15;
@@ -661,11 +673,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   roots: (args, kw) => {
     noKw(kw);
-    const e = asExpr(args[0]);
+    const e = asExprOrPoly(args[0]);
     const syms = [...sj.freeSymbols(e)];
-    const x = args[1] ? asSym(args[1]) : syms.length === 1 ? syms[0]! : undefined;
+    const x = args[1] ? asSym(args[1]) : args[0] instanceof sj.Poly ? (args[0].gens[0] as Sym) : syms.length === 1 ? syms[0]! : undefined;
     if (!x) throw new Unsupported('roots generator');
-    return rootsDict(sj.roots(e, x));
+    return rootsDict(sj.roots(e, x, { skipQuintic: true }));
   },
   solve: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'check') throw new Unsupported(`kwargs ${k}`);
@@ -1107,9 +1119,13 @@ export const ADAPTERS: Record<string, Adapter> = {
     const x = args[1] ? asSym(args[1]) : (sj.sortGens([...sj.freeSymbols(f)])[0] as Sym);
     return sj.discriminant(f, x);
   },
-  '.as_expr': (_args, kw, self) => {
+  '.as_expr': (args, kw, self) => {
     noKw(kw);
-    if (self instanceof sj.Poly) return self.asExpr();
+    if (self instanceof sj.Poly) {
+      if (!args.length) return self.asExpr();
+      if (args[0] instanceof PyDict) return self.asExprAt(args[0].entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const));
+      return self.asExprAt(args.map(asExpr));
+    }
     if (self instanceof Expr) return self;
     throw new Unsupported('as_expr');
   },
@@ -1130,15 +1146,100 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.eval': (args, kw, self) => {
     noKw(kw);
     const p = asPoly(self);
+    if (args[0] instanceof PyDict) return p.evalMany(args[0].entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const));
+    if (args[0] instanceof PyTuple) return p.evalMany(args[0].items.map((v, i) => [p.gens[i]!, asExpr(v)] as const));
     if (args.length === 1) return p.eval(asExpr(args[0]));
     return p.eval(asExpr(args[1]), asExpr(args[0]));
   },
   '.monic': (_a, kw, self) => (noKw(kw), asPoly(self).monic()),
   '.gcd': (args, kw, self) => (noKw(kw), asPoly(self).gcd(args[0] as sj.Poly)),
   '.lcm': (args, kw, self) => (noKw(kw), asPoly(self).lcm(args[0] as sj.Poly)),
-  '.div': (args, kw, self) => (noKw(kw), new PyTuple(asPoly(self).div(args[0] as sj.Poly))),
-  '.rem': (args, kw, self) => (noKw(kw), asPoly(self).rem(args[0] as sj.Poly)),
-  '.quo': (args, kw, self) => (noKw(kw), asPoly(self).quo(args[0] as sj.Poly)),
+  '.div': (args, kw, self) => new PyTuple(asPoly(self).divAuto(args[0] as sj.Poly, autoKw(kw))),
+  '.rem': (args, kw, self) => asPoly(self).rem(args[0] as sj.Poly, autoKw(kw)),
+  '.quo': (args, kw, self) => asPoly(self).quo(args[0] as sj.Poly, autoKw(kw)),
+  '.abs': polyM((p) => p.abs()),
+  '.neg': polyM((p) => p.neg()),
+  '.sqr': polyM((p) => p.sqr()),
+  '.add': polyM((p, a) => p.add(polyArg(a[0]))),
+  '.sub': polyM((p, a) => p.sub(polyArg(a[0]))),
+  '.mul': polyM((p, a) => p.mul(polyArg(a[0]))),
+  '.pow': polyM((p, a) => p.pow(intArg(a[0]))),
+  '.add_ground': polyM((p, a) => p.addGround(asExpr(a[0]))),
+  '.sub_ground': polyM((p, a) => p.subGround(asExpr(a[0]))),
+  '.mul_ground': polyM((p, a) => p.mulGround(asExpr(a[0]))),
+  '.quo_ground': polyM((p, a) => p.quoGround(asExpr(a[0]))),
+  '.exquo_ground': polyM((p, a) => p.exquoGround(asExpr(a[0]))),
+  '.all_monoms': polyM((p) => new PyList(p.allMonoms().map((m) => new PyTuple(m)))),
+  '.all_terms': polyM((p) => new PyList(p.allTerms().map(([m, c]) => new PyTuple([new PyTuple(m), c])))),
+  '.as_dict': polyM((p) => new PyDict(p.asDict().map(([m, c]) => [new PyTuple(m), c] as const))),
+  '.cofactors': polyM((p, a) => new PyTuple(p.cofactors(a[0] as sj.Poly))),
+  '.compose': polyM((p, a) => p.compose(a[0] as sj.Poly)),
+  '.degree_list': polyM((p) => new PyTuple(p.degreeList())),
+  '.discriminant': polyM((p) => p.discriminant()),
+  '.resultant': polyM((p, a) => p.resultant(a[0] as sj.Poly)),
+  '.EC': polyM((p) => p.EC()),
+  '.TC': polyM((p) => p.TC()),
+  '.nth': polyM((p, a) => p.nth(...a.map(intArg))),
+  '.length': polyM((p) => p.length()),
+  '.l1_norm': polyM((p) => p.l1Norm()),
+  '.max_norm': polyM((p) => p.maxNorm()),
+  '.exclude': polyM((p) => p.exclude()),
+  '.has_only_gens': polyM((p, a) => p.hasOnlyGens(...a.map(asExpr))),
+  '.homogeneous_order': polyM((p) => p.homogeneousOrder() ?? null),
+  '.homogenize': polyM((p, a) => p.homogenize(asExpr(a[0]))),
+  '.ltrim': polyM((p, a) => p.ltrim(a[0] instanceof sj.Rational ? Number(a[0].p) : asExpr(a[0]))),
+  '.reorder': polyM((p, a) => p.reorder(...a.map(asExpr))),
+  '.pdiv': polyM((p, a) => new PyTuple(p.pdiv(a[0] as sj.Poly))),
+  '.pexquo': polyM((p, a) => p.pexquo(a[0] as sj.Poly)),
+  '.shift': polyM((p, a) => p.shift(asExpr(a[0]))),
+  '.sqf_part': polyM((p) => p.sqfPart()),
+  '.terms_gcd': polyM((p) => {
+    const [m, q] = p.termsGcd();
+    return new PyTuple([new PyTuple(m), q]);
+  }),
+  '.deflate': polyM((p) => {
+    const [m, q] = p.deflate();
+    return new PyTuple([new PyTuple(m), q]);
+  }),
+  '.to_field': polyM((p) => p.toField()),
+  '.to_ring': polyM((p) => p.toRing()),
+  '.to_exact': polyM((p) => p.toExact()),
+  '.transform': polyM((p, a) => p.transform(a[0] as sj.Poly, a[1] as sj.Poly)),
+  '.trunc': polyM((p, a) => p.trunc(asExpr(a[0]))),
+  '.clear_denoms': (_args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'convert') throw new Unsupported(`kwargs ${k}`);
+    return new PyTuple(asPoly(self).clearDenoms(Boolean(kw['convert'])));
+  },
+  '.gcdex': polyM((p, a) => new PyTuple(p.gcdex(a[0] as sj.Poly))),
+  '.half_gcdex': polyM((p, a) => new PyTuple(p.halfGcdex(a[0] as sj.Poly))),
+  '.invert': polyM((p, a) => p.invert(a[0] as sj.Poly)),
+  '.sturm': polyM((p) => new PyList(p.sturm())),
+  '.count_roots': polyM((p, a) => {
+    if (a.some((v) => v instanceof Expr && v.has(sj.I))) throw new Unsupported('complex count_roots');
+    return p.countRoots(a[0] === undefined ? undefined : asExpr(a[0]), a[1] === undefined ? undefined : asExpr(a[1]));
+  }),
+  '.ground_roots': polyM((p) => new PyDict(p.groundRoots())),
+  '.revert': polyM((p, a) => p.revert(intArg(a[0]))),
+  '.nth_power_roots_poly': polyM((p, a) => p.nthPowerRootsPoly(intArg(a[0]))),
+  '.real_roots': polyM((p) => new PyList(p.realRoots())),
+  '.all_roots': polyM((p) => new PyList(p.allRoots())),
+  '.root': polyM((p, a) => p.root(intArg(a[0]))),
+  '.which_real_roots': polyM((p, a) => new PyList(p.whichRealRoots((a[0] as PyList).items.map(asExpr)))),
+  '.which_all_roots': polyM((p, a) => new PyList(p.whichAllRoots((a[0] as PyList).items.map(asExpr)))),
+  '.factor_list_include': polyM((p) => new PyList(p.factorListInclude().map(([f, k]) => new PyTuple([f, k])))),
+  '.sqf_list_include': (_args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'all') throw new Unsupported(`kwargs ${k}`);
+    return new PyList(asPoly(self).sqfListInclude(Boolean(kw['all'])).map(([f, k]) => new PyTuple([f, k])));
+  },
+  ground_roots: (args, kw) => (noKw(kw), new PyDict(polyOf(args).groundRoots())),
+  real_roots: (args, kw) => (noKw(kw), new PyList(polyOf(args).realRoots())),
+  all_roots: (args, kw) => (noKw(kw), new PyList(polyOf(args).allRoots())),
+  count_roots: (args, kw) => {
+    noKw(kw);
+    const p = args[0] instanceof sj.Poly ? args[0] : sj.Poly.from(asExpr(args[0]));
+    if (args.slice(1).some((v) => v instanceof Expr && v.has(sj.I))) throw new Unsupported('complex count_roots');
+    return p.countRoots(args[1] === undefined ? undefined : asExpr(args[1]), args[2] === undefined ? undefined : asExpr(args[2]));
+  },
   '.pquo': (args, kw, self) => (noKw(kw), asPoly(self).pquo(args[0] as sj.Poly)),
   '.prem': (args, kw, self) => (noKw(kw), asPoly(self).prem(args[0] as sj.Poly)),
   '.exquo': (args, kw, self) => (noKw(kw), asPoly(self).exquo(args[0] as sj.Poly)),
@@ -1148,8 +1249,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new PyTuple([c, new PyList(fs.map(([f, k]) => new PyTuple([f, k])))]);
   },
   '.sqf_list': (_a, kw, self) => {
-    noKw(kw);
-    const [c, fs] = asPoly(self).sqfList();
+    for (const k of Object.keys(kw)) if (k !== 'all') throw new Unsupported(`kwargs ${k}`);
+    const [c, fs] = asPoly(self).sqfListAll(Boolean(kw['all']));
     return new PyTuple([c, new PyList(fs.map(([f, k]) => new PyTuple([f, k])))]);
   },
   '.content': (_a, kw, self) => (noKw(kw), asPoly(self).content()),

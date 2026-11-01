@@ -168,6 +168,7 @@ export interface Impl {
   ordered?(xs: readonly Expr[]): Expr[];
   expandFunc?(e: Expr): Expr;
   sign?(e: Expr): Expr;
+  rationalFromFloat?(f: Float): Rational;
   couldExtractMinusSign?(e: Expr): boolean;
   /** SymPy collect (registered by simplify/radsimp). */
   collect?(e: Expr, syms: readonly Expr[]): Expr;

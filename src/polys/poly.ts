@@ -254,7 +254,7 @@ function quadraticRoots(a: Expr, b: Expr, c: Expr): Expr[] {
  * Supports: any degree with rational coefficients (via rational roots and
  * quadratic factors), degree <= 2 with symbolic coefficients.
  */
-export function roots(ex: ExprLike, x: Sym): Expr[] {
+export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}): Expr[] {
   const coeffs = polyCoefficients(ex, x);
   if (!coeffs) throw new Error('roots: expression is not a polynomial in the given symbol');
   const deg = Math.max(-1, ...coeffs.keys());
@@ -266,6 +266,7 @@ export function roots(ex: ExprLike, x: Sym): Expr[] {
       let rs: Expr[];
       if (f.degree === 1) rs = [numMul(numNeg(f.coeffs[0]!), numInv(f.coeffs[1]!))];
       else if (f.degree === 2) rs = quadraticRoots(f.coeffs[2]!, f.coeffs[1]!, f.coeffs[0]!);
+      else if (opts.skipQuintic && f.degree >= 5) continue; // SymPy roots() omits roots it cannot express in radicals
       else throw new Error(`roots: cannot solve irreducible factor of degree ${f.degree}`);
       for (const r of rs) for (let i = 0; i < m; i++) out.push(r);
     }
