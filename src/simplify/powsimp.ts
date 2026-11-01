@@ -2,39 +2,591 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file powsimp(): combine powers with a common base (x**a*x**b -> x**(a + b)).
+ * @file powsimp, powdenest, logcombine and posify (ports of SymPy's
+ * simplify.powsimp and the corresponding parts of simplify.simplify).
  */
 
-import { Expr, ExprLike, Mul } from '../core/nodes';
-import { add, asBaseExp, mul, pow, sympify } from '../core/ops';
-import { mapBottomUp } from '../core/traverse';
+import { isIntegerQ, isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
+import { Add, Constant, Dummy, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
+import { add, couldExtractMinusSign, exp, mul, pow, splitCoeff, sympify } from '../core/ops';
+import { countOps, ordered } from '../core/match';
+import { rebuild, subs, xreplace } from '../core/traverse';
+import { log } from '../functions/elementary';
+import { compareKeys, sortKey } from '../printing/sortkey';
+import { expand_log, expandMul } from './expand';
+import { factorTerms } from './exprtools';
+import { fraction } from './rational';
 
-/** Combine factors with equal bases by adding their exponents. */
-export function powsimp(ex: ExprLike): Expr {
-  return mapBottomUp(sympify(ex), (e) => {
-    if (!(e instanceof Mul)) return e;
-    const groups = new Map<string, { base: Expr; exps: Expr[] }>();
-    const order: string[] = [];
-    for (const f of e.args) {
-      if (f.isNumber) {
-        groups.set(`#${order.length}`, { base: f, exps: [] });
-        order.push(`#${order.length}`);
+type Combine = 'all' | 'exp' | 'base';
+export interface PowsimpOptions {
+  deep?: boolean;
+  combine?: Combine;
+  force?: boolean;
+}
+
+const isExpPow = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
+const isRat = (e: Expr): e is Rational => e instanceof Rational;
+const isInt = (e: Expr): e is Rational => e instanceof Rational && e.isInteger;
+const isOneE = (e: Expr) => e instanceof Rational && e.isOne;
+const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
+const asBaseExp = (e: Expr): [Expr, Expr] => (e instanceof Pow ? [e.base, e.exp] : [e, S.One]);
+const mulArgs = (e: Expr): readonly Expr[] => (e instanceof Mul ? e.args : [e]);
+const addArgs = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
+
+/** Map keyed by expression with insertion order. */
+class EMap<V> {
+  readonly m = new Map<string, [Expr, V]>();
+  get(k: Expr): V | undefined {
+    return this.m.get(k.key)?.[1];
+  }
+  has(k: Expr): boolean {
+    return this.m.has(k.key);
+  }
+  set(k: Expr, v: V): void {
+    const cur = this.m.get(k.key);
+    this.m.set(k.key, [cur ? cur[0] : k, v]);
+  }
+  delete(k: Expr): void {
+    this.m.delete(k.key);
+  }
+  entries(): [Expr, V][] {
+    return [...this.m.values()];
+  }
+  get size(): number {
+    return this.m.size;
+  }
+}
+
+function ilcm(a: bigint, b: bigint): bigint {
+  const g = (x: bigint, y: bigint): bigint => (y === 0n ? x : g(y, x % y));
+  return (a / g(a, b)) * b;
+}
+
+/** Number of times p divides n (both positive integers). */
+function multiplicityInt(p: bigint, n: bigint): number {
+  if (n === 0n || p <= 1n) return 0;
+  let m = 0;
+  while (n % p === 0n) {
+    n /= p;
+    m++;
+  }
+  return m;
+}
+
+/** SymPy multiplicity(p, n) for positive rationals. */
+function multiplicity(p: Rational, n: Rational): number {
+  if (p.q === 1n) {
+    if (n.p === 1n) return -multiplicityInt(p.p, n.q);
+    return multiplicityInt(p.p, n.p);
+  }
+  if (p.p === 1n) return multiplicityInt(p.q, n.q);
+  const like = Math.min(multiplicityInt(p.p, n.p), multiplicityInt(p.q, n.q));
+  const cross = Math.min(multiplicityInt(p.q, n.p), multiplicityInt(p.p, n.q));
+  return like - cross;
+}
+
+const absR = (r: Rational): Rational => (r.isNegative ? Rational.of(-r.p, r.q) : r);
+
+/** Reduce x**y by combining bases and exponents (SymPy powsimp). */
+export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
+  const deep = opts.deep ?? false;
+  const combine = opts.combine ?? 'all';
+  const force = opts.force ?? false;
+  const recurse = (arg: Expr, o: PowsimpOptions = {}): Expr =>
+    powsimp(arg, { deep: o.deep ?? deep, combine: o.combine ?? combine, force: o.force ?? force });
+
+  let expr = sympify(exIn);
+  if (expr.args.length === 0) return expr;
+
+  if (deep || expr instanceof Add || (expr instanceof Mul && !expr.args.some((a) => a.key === Y.key))) {
+    const args = isExpPow(expr) ? [recurse((expr as Pow).exp)] : expr.args.map((w) => recurse(w));
+    expr = isExpPow(expr) ? exp(args[0]!) : rebuild(expr, args);
+  }
+  if (expr instanceof Pow) {
+    return mul(recurse(mul(expr, Y), { deep: false }), pow(Y, -1));
+  }
+  if (!(expr instanceof Mul)) return expr;
+
+  if (combine === 'exp' || combine === 'all') {
+    const cPowers = new EMap<Expr[]>();
+    let coeff: Expr = S.One;
+    for (let term of expr.args) {
+      if (isRat(term)) {
+        coeff = mul(coeff, term);
         continue;
       }
-      const [b, x] = asBaseExp(f);
-      const g = groups.get(b.key);
-      if (g) g.exps.push(x);
-      else {
-        groups.set(b.key, { base: b, exps: [x] });
-        order.push(b.key);
+      if (term instanceof Pow && !isExpPow(term)) term = denestPow(term);
+      let [b, e] = asBaseExp(term);
+      if (deep) {
+        b = recurse(b);
+        e = recurse(e);
+      }
+      if (b instanceof Pow) {
+        b = pow(b, e);
+        e = S.One;
+      }
+      const cur = cPowers.get(b);
+      if (cur) cur.push(e);
+      else cPowers.set(b, [e]);
+    }
+    // add up exponents of common bases
+    const summed = new EMap<Expr>();
+    for (const [b, es] of orderedEntries(cPowers.entries())) {
+      if (
+        isRat(b) &&
+        !es.every((ei) => isRat(ei) || ei instanceof Float) &&
+        !isOneE(coeff) &&
+        !(b.isOne || (b.p === -1n && b.q === 1n)) &&
+        isRat(coeff)
+      ) {
+        const m = multiplicity(absR(b), absR(coeff));
+        if (m) {
+          es.push(Rational.of(BigInt(m)));
+          coeff = mul(coeff, pow(b, -m));
+        }
+      }
+      summed.set(b, add(...es));
+    }
+    if (!isOneE(coeff)) {
+      const cur = summed.get(coeff);
+      summed.set(coeff, cur ? add(cur, 1) : S.One);
+    }
+    // base and inverted base pairs
+    const skip = new Set<string>();
+    for (const [b, e0] of summed.entries()) {
+      if (skip.has(b.key) || !summed.has(b)) continue;
+      if (isPositive(b)) {
+        const binv = pow(b, -1);
+        if (b instanceof Float && b.value === 1) {
+          summed.set(b, S.One);
+          continue;
+        }
+        if (b.key !== binv.key && summed.has(binv)) {
+          if (isOneE(fraction(b)[0])) {
+            const e = summed.get(b)!;
+            summed.delete(b);
+            summed.set(binv, add(summed.get(binv)!, mul(-1, e)));
+          } else {
+            skip.add(binv.key);
+            const e = summed.get(binv)!;
+            summed.delete(binv);
+            summed.set(b, add(summed.get(b)!, mul(-1, e)));
+          }
+        }
+        void e0;
       }
     }
-    if (groups.size === e.args.length) return e;
-    return mul(
-      ...order.map((k) => {
-        const g = groups.get(k)!;
-        return g.exps.length === 0 ? g.base : pow(g.base, add(...g.exps));
-      }),
-    );
+    // base and negated base pairs
+    for (const [b] of summed.entries()) {
+      const nb = mul(-1, b);
+      if ((b instanceof Sym || b instanceof Add) && summed.has(nb) && summed.has(b)) {
+        let e = summed.get(b)!;
+        if (isPositive(b) !== undefined || isIntegerQ(e) === true) {
+          if (isIntegerQ(e) === true || isNegative(b) === true) {
+            summed.set(nb, add(summed.get(nb)!, e));
+            summed.delete(b);
+          } else {
+            e = summed.get(nb)!;
+            summed.delete(nb);
+            summed.set(b, add(summed.get(b)!, e));
+          }
+          const cur = summed.get(S.NegOne);
+          summed.set(S.NegOne, cur ? add(cur, e) : e);
+        }
+      }
+    }
+    let cList: [Expr, Expr][] = summed.entries().filter(([, e]) => !isZeroE(e));
+
+    // ---- combine Mul bases of rational powers with separated bases
+    type BKey = { b: Expr; q: bigint; key: string };
+    const mk = (b: Expr, q: bigint): BKey => ({ b, q, key: `${b.key}|${q}` });
+    const bkey = (b: Expr, e?: Expr): [BKey, Expr] => {
+      if (e === undefined) {
+        const [bb, ee] = asBaseExp(b);
+        return bkey(bb, ee);
+      }
+      if (isInt(e)) return [mk(b, 1n), e];
+      if (isRat(e)) return [mk(b, e.q), Rational.of(e.p)];
+      const [c, m] = splitCoeff(e);
+      if (isRat(c) && !c.isOne) {
+        if (isIntegerQ(m) === true) return [mk(b, c.q), mul(m, Rational.of(c.p))];
+        return [mk(pow(b, m), c.q), Rational.of(c.p)];
+      }
+      return [mk(pow(b, e), 1n), S.One];
+    };
+    const ratq = (x: Expr): bigint => bkey(x)[0].q;
+    const commonB = new Map<string, [BKey, Expr]>();
+    const bases: BKey[] = [];
+    const done: [Expr, Expr][] = [];
+    const cbGet = (k: BKey) => commonB.get(k.key)?.[1];
+    const cbSet = (k: BKey, v: Expr) => commonB.set(k.key, [commonB.get(k.key)?.[0] ?? k, v]);
+    const update = (k: BKey) => {
+      const v = cbGet(k)!;
+      if (!isInt(v)) return;
+      const q = BigInt(k.q);
+      const newe = v.p >= 0n ? v.p / q : -((-v.p + q - 1n) / q);
+      const r = v.p - newe * q;
+      if (r === 0n) {
+        commonB.delete(k.key);
+        if (newe !== 0n) {
+          for (const m of mulArgs(pow(k.b, Rational.of(newe)))) {
+            const [bk, e] = bkey(m);
+            cbSet(bk, add(cbGet(bk) ?? S.Zero, e));
+            if (bk.q !== 1n) bases.push(bk);
+          }
+        }
+      }
+    };
+    for (const [b0, e0] of cList) {
+      const [b, e] = bkey(b0, e0);
+      cbSet(b, cbGet(b) ? add(cbGet(b)!, e) : e);
+      if (b.q !== 1n && b.b instanceof Mul) bases.push(b);
+    }
+    bases.sort((x, y) => compareKeys(sortKey(x.b), sortKey(y.b)) || Number(x.q - y.q));
+    bases.sort((x, y) => countOps(y.b) - countOps(x.b));
+    for (const base of bases) {
+      if (!commonB.has(base.key)) continue;
+      let b = base.b;
+      const exponent = Rational.of(base.q);
+      let last = false;
+      let qlcm = 1n;
+      for (;;) {
+        const bstart = b;
+        const qstart = qlcm;
+        let bb: BKey[] = [];
+        let ee: [Expr, Expr][] = [];
+        for (const bi of mulArgs(b)) {
+          const [bib, bie] = bkey(bi);
+          const cur = cbGet(bib);
+          if (cur === undefined || !isInt(cur) || !isInt(bie) || cur.p * 1n < bie.p) {
+            ee = [];
+            bb = [];
+            break;
+          }
+          ee.push([bie, cur]);
+          bb.push(bib);
+        }
+        if (ee.length) {
+          const fl = (a: Rational, d: Rational) => {
+            const q = a.p / d.p;
+            return a.p < 0n !== d.p < 0n && q * d.p !== a.p ? q - 1n : q;
+          };
+          let min1 = fl(ee[0]![1] as Rational, ee[0]![0] as Rational);
+          let ok = true;
+          for (let i = 1; i < ee.length; i++) {
+            const rat = fl(ee[i]![1] as Rational, ee[i]![0] as Rational);
+            if (rat < 1n) {
+              ok = false;
+              break;
+            }
+            if (rat < min1) min1 = rat;
+          }
+          if (ok) {
+            for (let i = 0; i < bb.length; i++) {
+              cbSet(bb[i]!, add(cbGet(bb[i]!)!, mul(-1, Rational.of(min1), ee[i]![0])));
+              if (commonB.has(bb[i]!.key)) update(bb[i]!);
+            }
+            cbSet(base, add(cbGet(base) ?? S.Zero, mul(Rational.of(min1), Rational.of(qstart), exponent)));
+          }
+        }
+        if (last || commonB.size === 1 || [...commonB.values()].every(([k]) => k.q === 1n)) break;
+        qlcm = mulArgs(bstart).reduce((acc, bi) => ilcm(acc, ratq(bi)), 1n);
+        if (qlcm === 1n) break;
+        b = pow(bstart, Rational.of(qlcm));
+        qlcm *= qstart;
+        if (mulArgs(b).every((bi) => ratq(bi) === 1n)) last = true;
+      }
+      const v = cbGet(base);
+      commonB.delete(base.key);
+      if (v !== undefined) done.push([base.b, mul(v, Rational.of(1n, base.q))]);
+    }
+    cList = done;
+    for (const [k, e] of commonB.values()) {
+      let b: Expr;
+      if (k.b instanceof Pow && k.q !== 1n && !isRat(k.b.exp)) {
+        b = pow(k.b.base, mul(k.b.exp, Rational.of(1n, k.q)));
+      } else b = pow(k.b, Rational.of(1n, k.q));
+      cList.push([b, e]);
+    }
+    const newexpr = mul(...cList.map(([b, e]) => pow(b, e)));
+    if (combine === 'exp') return newexpr;
+    return recurse(newexpr, { combine: 'base' });
+  }
+
+  // combine === 'base'
+  let cPowers: [Expr, Expr][] = expr.args.map((t) => asBaseExp(t));
+  cPowers = cPowers.map(([b, e]) => {
+    const [n, d] = fraction(b);
+    if (!((isNonNegative(n) === true && isNonNegative(d) === true) || isIntegerQ(e) === true || force)) return [b, e];
+    const [c, t] = splitCoeff(e);
+    if (isRat(c) && !c.isOne && !isOneE(t)) return [pow(b, c), t];
+    return [b, e];
   });
+  const cExp = new EMap<Expr[]>();
+  for (let [b, e] of cPowers) {
+    if (deep) e = recurse(e);
+    if (e instanceof Add && (isPositive(b) === true || isIntegerQ(e) === true)) {
+      e = factorTerms(e);
+      if (couldExtractMinusSign(e) && splitCoeff(e)[0].isNegative) {
+        e = mul(-1, e);
+        b = pow(b, -1);
+      }
+    }
+    const cur = cExp.get(e);
+    if (cur) cur.push(b);
+    else cExp.set(e, [b]);
+  }
+  const out = new EMap<Expr[]>();
+  const push = (b: Expr, e: Expr) => {
+    const cur = out.get(b);
+    if (cur) cur.push(e);
+    else out.set(b, [e]);
+  };
+  for (const [e, bases] of cExp.entries()) {
+    let newBase: Expr;
+    if (bases.length === 1) newBase = bases[0]!;
+    else if (isIntegerQ(e) === true || force) newBase = mul(...bases);
+    else {
+      let unk: Expr[] = [];
+      const nonneg: Expr[] = [];
+      let neg: Expr[] = [];
+      for (const bi of bases) {
+        if (isNegative(bi) === true) neg.push(bi);
+        else if (isNonNegative(bi) === true) nonneg.push(bi);
+        else unk.push(bi);
+      }
+      if ((unk.length === 1 && !neg.length) || (neg.length === 1 && !unk.length)) {
+        nonneg.push(...unk, ...neg);
+        unk = [];
+        neg = [];
+      } else if (neg.length) {
+        let israt = isRat(e);
+        if (!israt) {
+          const [p, d] = fraction(e);
+          israt = isIntegerQ(p) === true && isIntegerQ(d) === true;
+        }
+        if (israt) {
+          neg = neg.map((w) => mul(-1, w));
+          unk.push(...neg.map(() => S.NegOne));
+        } else {
+          unk.push(...neg);
+          neg = [];
+        }
+      }
+      for (const b of unk) push(b, e);
+      newBase = mul(...nonneg, ...neg);
+      const terms = (x: Expr): number =>
+        x instanceof Add ? x.args.reduce((s, a) => s + terms(a), 0) : x instanceof Mul ? x.args.reduce((p, a) => p * terms(a), 1) : 1;
+      const xnew = expandMul(newBase);
+      if (addArgs(xnew).length < terms(newBase)) newBase = factorTerms(xnew);
+    }
+    push(newBase, e);
+  }
+  return mul(...out.entries().flatMap(([b, es]) => es.map((ei) => pow(b, ei))));
 }
+
+const Y = new Dummy('y');
+
+function orderedEntries<V>(xs: [Expr, V][]): [Expr, V][] {
+  const keys = ordered(xs.map(([k]) => k));
+  return keys.map((k) => xs.find(([b]) => b.key === k.key)!);
+}
+
+/** SymPy _denest_pow: denest one power. */
+function denestPow(eq: Pow): Expr {
+  const [b, e] = isExpPow(eq) ? [S.E, eq.exp] : [eq.base, eq.exp];
+  // exp with log terms in the exponent
+  if (b instanceof Constant && b.name === 'E' && e instanceof Mul) {
+    const logs: Expr[] = [];
+    const other: Expr[] = [];
+    for (const ei of e.args) {
+      if (addArgs(ei).some((ai) => ai instanceof Fn && ai.name === 'log')) logs.push(ei);
+      else other.push(ei);
+    }
+    return pow(exp(logcombine(mul(...logs))), mul(...other));
+  }
+  const [, be] = asBaseExp(b);
+  if (isOneE(be) && !(b instanceof Mul || (isRat(b) && b.q !== 1n) || isPositive(b) === true)) return eq;
+  if (isInt(b)) {
+    const logb = expand_log(log(b));
+    if (logb instanceof Mul) {
+      const [c, l] = splitCoeff(logb);
+      if (l instanceof Fn && l.name === 'log') return pow(l.args[0]!, mul(e, c));
+    }
+  }
+  if (!(b instanceof Mul) || b.args.some((s) => s.args.length === 0)) return eq;
+  let glogb = expand_log(log(b));
+  if (glogb instanceof Add) {
+    const args = glogb.args;
+    const ncGcd = (aa: Expr, bb: Expr): Expr => {
+      const [ca, ma] = splitCoeff(aa);
+      const [cb, mb] = splitCoeff(bb);
+      const g = isRat(ca) && isRat(cb) ? Rational.of(gcdI(ca.p, cb.p)) : S.One;
+      const sa = new Set(mulArgs(ma).map((x) => x.key));
+      const common = mulArgs(mb).filter((x) => sa.has(x.key));
+      return mul(g, ...common);
+    };
+    const g = args.slice(1).reduce(ncGcd, args[0]!);
+    if (!isOneE(g)) glogb = mul(g, add(...args.map((a) => mul(a, pow(g, -1)))));
+  }
+  if ((glogb instanceof Fn && glogb.name === 'log') || !(glogb instanceof Mul)) {
+    const a0 = glogb.args[0];
+    if (a0 instanceof Pow) {
+      const d = denestPow(a0);
+      if (d instanceof Pow) {
+        const ev = d.exp.isNumber ? Math.abs(d.exp.toNumber()) : NaN;
+        if (ev < 1) return pow(d.base, mul(d.exp, e));
+      }
+    }
+    return eq;
+  }
+  const adds: Expr[] = [];
+  const other: Expr[] = [];
+  for (const a of glogb.args) (a instanceof Add ? adds : other).push(a);
+  return pow(exp(logcombine(mul(...adds))), mul(e, ...other));
+}
+
+function gcdI(a: bigint, b: bigint): bigint {
+  a = a < 0n ? -a : a;
+  b = b < 0n ? -b : b;
+  while (b) [a, b] = [b, a % b];
+  return a;
+}
+
+/** Collect exponents on powers as assumptions allow (SymPy powdenest). */
+export function powdenest(eqIn: ExprLike, opts: { force?: boolean } = {}): Expr {
+  let eq = sympify(eqIn);
+  if (opts.force) {
+    const denestRec = (b: Expr, e: Expr): [boolean | undefined, Expr] => {
+      if (!(b instanceof Pow)) return [isPositive(b), new Pow(b, e)];
+      return denestRec(isExpPow(b) ? S.E : b.base, mul(b.exp, e));
+    };
+    const reps: [Expr, Expr][] = [];
+    const visit = (p: Expr) => {
+      p.args.forEach(visit);
+      if (p instanceof Pow && p.base instanceof Pow) {
+        const [ok, dp] = denestRec(p.base, p.exp);
+        if (ok !== false) reps.push([p, dp]);
+      }
+    };
+    visit(eq);
+    if (reps.length) eq = subs(eq, new Map(reps));
+    const [peq, back] = posify(eq);
+    return xreplace(powdenest(peq), [...back]);
+  }
+  const ne = powsimp(eq);
+  return transformPows(ne);
+}
+
+/** Apply denestPow top-down to powers (SymPy xreplace(Transform(...))). */
+function transformPows(e: Expr): Expr {
+  if (e instanceof Pow) return denestPow(e);
+  if (e.args.length === 0) return e;
+  const args = e.args.map(transformPows);
+  return args.every((a, i) => a === e.args[i]) ? e : rebuild(e, args);
+}
+
+/**
+ * Replace symbols that are not known to be positive with positive dummies
+ * (SymPy posify). Returns the new expression and the map back.
+ */
+export function posify(eIn: ExprLike): [Expr, Map<Expr, Expr>] {
+  const e = sympify(eIn);
+  const reps: [Expr, Expr][] = [];
+  const back = new Map<Expr, Expr>();
+  for (const s of e.freeSymbols()) {
+    if (isPositive(s) === undefined) {
+      const d = new Dummy(s.name, { ...s.assumptions, positive: true });
+      reps.push([s, d]);
+      back.set(d, s);
+    }
+  }
+  return [xreplace(e, reps), back];
+}
+
+/** Combine logarithms using log(x) + log(y) = log(x*y) and a*log(x) = log(x**a) (SymPy logcombine). */
+export function logcombine(exprIn: ExprLike, opts: { force?: boolean } = {}): Expr {
+  const force = opts.force ?? false;
+  const isLog = (e: Expr): e is Fn => e instanceof Fn && e.name === 'log' && e.args.length === 1;
+  const gooda = (a: Expr) =>
+    !(a instanceof Rational && a.p === -1n && a.q === 1n) && (isReal(a) === true || (force && isReal(a) !== false));
+  const goodlog = (l: Fn) => {
+    const a = l.args[0]!;
+    return isPositive(a) === true || (force && !(isNegative(a) === true || (a instanceof Rational && a.isZero)));
+  };
+  const f = (rv: Expr): Expr => {
+    if (!(rv instanceof Add || rv instanceof Mul)) return rv;
+    const other: Expr[] = [];
+    const logs: [Expr[], Expr[], Fn[]][] = [];
+    const log1 = new Map<string, { k: Expr[]; items: [Expr[], Fn][] }>();
+    const put = (k: Expr[], item: [Expr[], Fn]) => {
+      const key = k.map((x) => x.key).join(',');
+      const cur = log1.get(key);
+      if (cur) cur.items.push(item);
+      else log1.set(key, { k, items: [item] });
+    };
+    for (const a of addArgs(rv)) {
+      if (isLog(a) && goodlog(a)) put([], [[], a]);
+      else if (!(a instanceof Mul)) other.push(a);
+      else {
+        const ot: Expr[] = [];
+        const co: Expr[] = [];
+        const lo: Fn[] = [];
+        for (const ai of a.args) {
+          if (ai instanceof Rational && ai.isNegative) {
+            ot.push(S.NegOne);
+            co.push(mul(-1, ai));
+          } else if (isLog(ai) && goodlog(ai)) lo.push(ai);
+          else if (gooda(ai)) co.push(ai);
+          else ot.push(ai);
+        }
+        if (lo.length > 1) logs.push([ot, co, lo]);
+        else if (lo.length) put(ot, [co, lo[0]!]);
+        else other.push(a);
+      }
+    }
+    if (other.length === 1 && isLog(other[0]!)) put([], [[], other.pop() as Fn]);
+    if (!logs.length && [...log1.values()].every((v) => v.items.length === 1 && v.items[0]![0].length === 0)) return rv;
+    for (const [o, e0, l0] of logs) {
+      const l = ordered(l0) as Fn[];
+      let e: Expr = log(pow(l.shift()!.args[0]!, mul(...e0)));
+      while (l.length) e = log(pow(l.shift()!.args[0]!, e));
+      const c = mul(...o);
+      if (isLog(e)) put([c], [[], e]);
+      else other.push(mul(c, e));
+    }
+    const combined = new Map<string, [Expr, Expr]>();
+    for (const { k, items } of log1.values()) {
+      const kk = mul(...k);
+      const inner = logcombine(mul(...items.map(([c, l]) => pow(l.args[0]!, mul(...c)))), opts);
+      combined.set(kk.key, [kk, new Fn('log', [inner])]);
+    }
+    for (const k of ordered([...combined.values()].map(([kk]) => kk))) {
+      if (!combined.has(k.key)) continue;
+      const nk = mul(-1, k);
+      if (combined.has(nk.key)) {
+        let num = k;
+        let den = nk;
+        if (countOps(num) > countOps(den)) [num, den] = [den, num];
+        const a = combined.get(num.key)![1].args[0]!;
+        const b = combined.get(den.key)![1].args[0]!;
+        combined.delete(num.key);
+        combined.delete(den.key);
+        other.push(mul(num, new Fn('log', [mul(a, pow(b, -1))])));
+      } else {
+        other.push(mul(k, combined.get(k.key)![1]));
+        combined.delete(k.key);
+      }
+    }
+    return add(...other);
+  };
+  const bottomUp = (e: Expr): Expr => {
+    if (e.args.length === 0) return e;
+    const args = isExpPow(e) ? [bottomUp((e as Pow).exp)] : e.args.map(bottomUp);
+    const ne = isExpPow(e) ? exp(args[0]!) : args.every((a, i) => a === e.args[i]) ? e : rebuild(e, args);
+    return f(ne);
+  };
+  return bottomUp(sympify(exprIn));
+}
+
+

@@ -573,7 +573,27 @@ export const ADAPTERS: Record<string, Adapter> = {
   together: exprFn(sj.together),
   cancel: exprFn(sj.cancel),
   trigsimp: exprFn(sj.trigsimp),
-  powsimp: exprFn(sj.powsimp),
+  powsimp: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['deep', 'combine', 'force'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    return sj.powsimp(asExpr(args[0]), {
+      deep: (kw['deep'] ?? args[1]) as boolean | undefined,
+      combine: kw['combine'] as 'all' | 'exp' | 'base' | undefined,
+      force: kw['force'] as boolean | undefined,
+    });
+  },
+  powdenest: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'force') throw new Unsupported(`kwargs ${k}`);
+    return sj.powdenest(asExpr(args[0]), { force: Boolean(kw['force'] ?? args[1]) });
+  },
+  logcombine: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'force') throw new Unsupported(`kwargs ${k}`);
+    return sj.logcombine(asExpr(args[0]), { force: Boolean(kw['force'] ?? args[1]) });
+  },
+  posify: (args, kw) => {
+    noKw(kw);
+    const [e, m] = sj.posify(asExpr(args[0]));
+    return new PyTuple([e, new PyDict([...m])]);
+  },
   radsimp: exprFn(sj.radsimp),
   collect: (args, kw) => {
     const exact = kw['exact'];

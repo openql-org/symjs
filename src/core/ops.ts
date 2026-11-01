@@ -527,7 +527,8 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
     }
   }
 
-  if (b instanceof Mul) {
+  // SymPy Mul._eval_power: distribute integer powers; split off positive factors only for numeric exponents
+  if (b instanceof Mul && (e instanceof Rational || e instanceof Float)) {
     if (e instanceof Rational && e.isInteger) return mul(...b.args.map((f) => pow(f, e)));
     const pos: Expr[] = [];
     const rest: Expr[] = [];
@@ -567,6 +568,44 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
       const k = ((m % 4n) + 4n) % 4n;
       const f = [S.One, S.I, S.NegOne, mul(-1, S.I)][Number(k)]!;
       return mul(f, pow(b, add(...remaining)));
+    }
+    // exp(c*log(x)) -> x**c when the other factors are numbers (SymPy exp.eval)
+    if (e instanceof Mul) {
+      let logTerm: Expr | undefined;
+      const coeffs: Expr[] = [];
+      let ok = true;
+      for (const t of e.args) {
+        if (t instanceof Fn && t.name === 'log' && t.args.length === 1) {
+          if (logTerm !== undefined) {
+            ok = false;
+            break;
+          }
+          logTerm = t.args[0]!;
+        } else if (impl.freeSymbols(t).size === 0 && isReal(t) === true) coeffs.push(t);
+        else {
+          ok = false;
+          break;
+        }
+      }
+      if (ok && logTerm !== undefined) return pow(logTerm, mul(...coeffs));
+    }
+    // exp(a + b) with exp(a) evaluating to a non-exp: split it off (SymPy exp.eval for Add)
+    if (e instanceof Add) {
+      const out: Expr[] = [];
+      const rest: Expr[] = [];
+      let changed = false;
+      for (const a of e.args) {
+        if (a instanceof Rational && a.isOne) {
+          rest.push(a);
+          continue;
+        }
+        const na = pow(b, a);
+        if (na instanceof Pow && isE(na.base)) {
+          if (na.exp.key !== a.key) changed = true;
+          rest.push(na.exp);
+        } else out.push(na);
+      }
+      if (out.length || changed) return mul(...out, rest.length ? pow(b, add(...rest)) : S.One);
     }
   }
 

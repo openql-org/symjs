@@ -184,7 +184,8 @@ export {
 } from './simplify/expand';
 export type { ExpandHints } from './simplify/expand';
 export { simplify } from './simplify/simplify';
-export { powsimp } from './simplify/powsimp';
+export { powsimp, powdenest, logcombine, posify } from './simplify/powsimp';
+export type { PowsimpOptions } from './simplify/powsimp';
 export { radsimp, collect } from './simplify/radsimp';
 export { rewrite, registerRewrite, rewriteRules } from './simplify/rewrite';
 export { gcdTerms, factorTerms, collectConst, signsimp, keepCoeff as keepCoeffSympy, unevaluatedAdd } from './simplify/exprtools';

@@ -6,7 +6,46 @@
  * compat/report.json. Run with `pnpm compat`.
  */
 
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+
+type FileCoverage = {
+  path: string;
+  category: string;
+  statements: number;
+  pct: Record<'statements' | 'branches' | 'functions' | 'lines', number>;
+  full: boolean;
+};
+
+/** Map a source file to a compatibility category. */
+function categoryOf(path: string): string {
+  if (path.startsWith('src/functions/special')) return 'special';
+  if (path.startsWith('src/functions/')) return 'functions';
+  if (path.startsWith('src/simplify/')) return 'simplify';
+  if (path.startsWith('src/polys/')) return 'polys';
+  if (path === 'src/solvers/ode.ts') return 'ode';
+  if (path.startsWith('src/solvers/')) return 'solvers';
+  if (/^src\/(calculus|series|integrals)\//.test(path)) return 'calculus';
+  if (path.startsWith('src/matrices/')) return 'matrices';
+  if (path.startsWith('src/quantum/')) return 'quantum';
+  return 'core';
+}
+
+/** Per-file coverage from coverage/coverage-summary.json (written by `pnpm coverage`). */
+function readCoverage(): { files: FileCoverage[] } | undefined {
+  const url = new URL('../coverage/coverage-summary.json', import.meta.url);
+  if (!existsSync(url)) return undefined;
+  const data = JSON.parse(readFileSync(url, 'utf8')) as Record<string, Record<string, { total: number; pct: number }>>;
+  const root = new URL('..', import.meta.url).pathname;
+  const files: FileCoverage[] = [];
+  for (const [abs, v] of Object.entries(data)) {
+    if (abs === 'total') continue;
+    const path = abs.startsWith(root) ? abs.slice(root.length) : abs;
+    if (path === 'src/index.ts') continue;
+    const p = { statements: v['statements']!.pct, branches: v['branches']!.pct, functions: v['functions']!.pct, lines: v['lines']!.pct };
+    files.push({ path, category: categoryOf(path), statements: v['statements']!.total, pct: p, full: Object.values(p).every((x) => x === 100) });
+  }
+  return { files };
+}
 import { expect, it } from 'vitest';
 import { ADAPTERS, Case, Outcome, runCase } from './harness';
 
@@ -78,13 +117,36 @@ it('computes SymPy compatibility metrics', () => {
     `**Overall: behavior ${pct(total.pass, total.cases)} (${total.pass}/${total.cases}), API ${pct(total.apiDone, total.api)} (${total.apiDone}/${total.api})**`,
     '',
   );
-  lines.push('| Category | Behavior | Pass | Fail | Unsupported | Error | Cases | API coverage |');
-  lines.push('|---|---:|---:|---:|---:|---:|---:|---:|');
+  const cov = readCoverage();
+  if (cov) {
+    const full = cov.files.filter((f) => f.full);
+    const fullStmts = full.reduce((n, f) => n + f.statements, 0);
+    const allStmts = cov.files.reduce((n, f) => n + f.statements, 0);
+    lines.push(
+      `**Fully compatible (100% test coverage): ${pct(full.length, cov.files.length)} of source files (${full.length}/${cov.files.length}), ${pct(fullStmts, allStmts)} of statements (${fullStmts}/${allStmts})**`,
+      '',
+    );
+  }
+  lines.push('| Category | Behavior | Pass | Fail | Unsupported | Error | Cases | API coverage | Fully compatible files |');
+  lines.push('|---|---:|---:|---:|---:|---:|---:|---:|---:|');
   for (const cat of cats) {
     const r = rows.get(cat)!;
+    const cf = cov?.files.filter((f) => f.category === cat) ?? [];
+    const fc = cf.length ? `${pct(cf.filter((f) => f.full).length, cf.length)} (${cf.filter((f) => f.full).length}/${cf.length})` : '-';
     lines.push(
-      `| ${cat} | ${pct(r.pass, r.cases)} | ${r.pass} | ${r.fail} | ${r.unsupported} | ${r.error} | ${r.cases} | ${pct(r.apiDone, r.api)} (${r.apiDone}/${r.api}) |`,
+      `| ${cat} | ${pct(r.pass, r.cases)} | ${r.pass} | ${r.fail} | ${r.unsupported} | ${r.error} | ${r.cases} | ${pct(r.apiDone, r.api)} (${r.apiDone}/${r.api}) | ${fc} |`,
     );
+  }
+  if (cov) {
+    lines.push('', '## Test coverage by source file', '');
+    lines.push(
+      'A source file counts as **fully compatible** when the unit tests (`pnpm coverage`, `tests/`) cover 100% of its statements, branches, functions and lines.',
+      '',
+    );
+    lines.push('| File | Category | Statements | Branches | Functions | Lines | Fully compatible |', '|---|---|---:|---:|---:|---:|:---:|');
+    for (const f of [...cov.files].sort((a, b) => a.category.localeCompare(b.category) || a.path.localeCompare(b.path))) {
+      lines.push(`| \`${f.path}\` | ${f.category} | ${f.pct.statements}% | ${f.pct.branches}% | ${f.pct.functions}% | ${f.pct.lines}% | ${f.full ? 'yes' : ''} |`);
+    }
   }
   lines.push('', '## Highest-impact gaps', '', 'API names with the most non-passing cases.', '');
   lines.push('| API | Category | Non-passing cases |', '|---|---|---:|');
