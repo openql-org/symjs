@@ -309,3 +309,49 @@ export function symbols<S extends string>(names: S, assumptions: Assumptions = {
 }
 
 export { rationalFromFloat, rationalFromString, integerLog, expandSymbolNames } from './core/numberutils';
+
+export {
+  SetExpr,
+  Interval,
+  FiniteSet,
+  SetOp,
+  EmptySet,
+  Reals,
+  Integers,
+  Naturals,
+  Naturals0,
+  Complexes,
+  interval,
+  openInterval,
+  Lopen,
+  Ropen,
+  finiteSet,
+  union,
+  intersection,
+  complement,
+  contains,
+  containsQ,
+  isSubset,
+  asRelational,
+  inf,
+  sup,
+} from './sets/sets';
+export { BoolOp, and, or, not } from './core/boolalg';
+export {
+  solveset,
+  solveUnivariateInequality,
+  solvePolyInequality,
+  solveRationalInequalities,
+  reduceInequalities,
+  periodicity,
+  singularities,
+  stationaryPoints,
+  isIncreasing,
+  isStrictlyIncreasing,
+  isDecreasing,
+  isStrictlyDecreasing,
+  isMonotonic,
+  isConvex,
+  maximum,
+  minimum,
+} from './solvers/inequalities';

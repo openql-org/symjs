@@ -34,7 +34,9 @@ export type Kind =
   | 'Order'
   | 'Undef'
   | 'Derivative'
-  | 'Concrete';
+  | 'Concrete'
+  | 'BoolOp'
+  | 'Set';
 
 /** Anything that can be turned into an expression. */
 export type ExprLike = Expr | number | bigint;
@@ -168,6 +170,7 @@ export interface Impl {
   ordered?(xs: readonly Expr[]): Expr[];
   expandFunc?(e: Expr): Expr;
   sign?(e: Expr): Expr;
+  isReal?(e: Expr): boolean | undefined;
   rationalFromFloat?(f: Float): Rational;
   couldExtractMinusSign?(e: Expr): boolean;
   /** SymPy collect (registered by simplify/radsimp). */

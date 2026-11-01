@@ -4799,7 +4799,7 @@
    "category": "core",
    "module": "sympy.core.expr",
    "src": "(-2*x*y).args_cnc(cset=True)",
-   "expected": "[{y, x, 2, -1}, []]"
+   "expected": "[{2, y, -1, x}, []]"
   },
   {
    "fn": ".args_cnc",
@@ -14153,7 +14153,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms()",
-   "expected": "{1, 2, x, I, y, pi}"
+   "expected": "{1, 2, pi, I, y, x}"
   },
   {
    "fn": ".atoms",
@@ -14221,7 +14221,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Symbol)",
-   "expected": "{y, x}"
+   "expected": "{x, y}"
   },
   {
    "fn": ".atoms",
@@ -14506,7 +14506,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(x) # x is a Symbol",
-   "expected": "{y, x}"
+   "expected": "{x, y}"
   },
   {
    "fn": ".atoms",
@@ -15023,7 +15023,7 @@
        {
         "t": "Dummy",
         "name": "u",
-        "index": 1571068,
+        "index": 2026409,
         "assume": {}
        },
        {
@@ -15084,7 +15084,7 @@
        {
         "t": "Dummy",
         "name": "u",
-        "index": 1571068,
+        "index": 2026409,
         "assume": {}
        },
        {
@@ -15150,7 +15150,7 @@
        {
         "t": "Dummy",
         "name": "u",
-        "index": 1571068,
+        "index": 2026409,
         "assume": {}
        },
        {
@@ -15389,7 +15389,29 @@
   },
   {
    "fn": ".has",
-   "unsupportedArg": "Interval",
+   "self": {
+    "t": "Interval",
+    "a": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "b": {
+     "t": "Rational",
+     "p": "5",
+     "q": "1"
+    },
+    "lo": true,
+    "ro": false
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "i.has(4)  # there is no \"4\" in the arguments",
@@ -15397,7 +15419,29 @@
   },
   {
    "fn": ".has",
-   "unsupportedArg": "Interval",
+   "self": {
+    "t": "Interval",
+    "a": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "b": {
+     "t": "Rational",
+     "p": "5",
+     "q": "1"
+    },
+    "lo": true,
+    "ro": false
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "i.has(0)  # there *is* a \"0\" in the arguments",
@@ -15405,7 +15449,29 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "Interval",
+   "self": {
+    "t": "Interval",
+    "a": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "b": {
+     "t": "Rational",
+     "p": "5",
+     "q": "1"
+    },
+    "lo": true,
+    "ro": false
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "i.contains(4)",
@@ -15413,7 +15479,29 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "Interval",
+   "self": {
+    "t": "Interval",
+    "a": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "b": {
+     "t": "Rational",
+     "p": "5",
+     "q": "1"
+    },
+    "lo": true,
+    "ro": false
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "i.contains(0)",
@@ -15624,7 +15712,18 @@
      }
     ]
    },
-   "unsupportedArg": "set",
+   "args": [
+    {
+     "t": "PySet",
+     "items": [
+      {
+       "t": "UFnClass",
+       "name": "f"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "f(x).has_xfree({f})",
@@ -15643,7 +15742,25 @@
      }
     ]
    },
-   "unsupportedArg": "set",
+   "args": [
+    {
+     "t": "PySet",
+     "items": [
+      {
+       "t": "UFn",
+       "name": "f",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "f(x).has_xfree({f(x)})",
@@ -15672,7 +15789,19 @@
      }
     ]
    },
-   "unsupportedArg": "set",
+   "args": [
+    {
+     "t": "PySet",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "f(x + 1).has_xfree({x})",
@@ -15701,7 +15830,29 @@
      }
     ]
    },
-   "unsupportedArg": "set",
+   "args": [
+    {
+     "t": "PySet",
+     "items": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "f(x + 1).has_xfree({x + 1})",
@@ -15735,7 +15886,29 @@
      }
     ]
    },
-   "unsupportedArg": "set",
+   "args": [
+    {
+     "t": "PySet",
+     "items": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "f(x + y + 1).has_xfree({x + 1})",
@@ -25622,7 +25795,7 @@
         {
          "t": "Dummy",
          "name": "x",
-         "index": 1571193,
+         "index": 2026534,
          "assume": {}
         },
         {
@@ -25638,7 +25811,7 @@
      {
       "t": "Dummy",
       "name": "x",
-      "index": 1571193,
+      "index": 2026534,
       "assume": {}
      }
     ],
@@ -25708,7 +25881,7 @@
         {
          "t": "Dummy",
          "name": "x",
-         "index": 1571198,
+         "index": 2026539,
          "assume": {}
         },
         {
@@ -25724,7 +25897,7 @@
      {
       "t": "Dummy",
       "name": "x",
-      "index": 1571198,
+      "index": 2026539,
       "assume": {}
      }
     ],
@@ -26017,7 +26190,7 @@
           {
            "t": "Dummy",
            "name": "x",
-           "index": 1571217,
+           "index": 2026558,
            "assume": {}
           },
           {
@@ -26040,7 +26213,7 @@
         {
          "t": "Dummy",
          "name": "x",
-         "index": 1571217,
+         "index": 2026558,
          "assume": {}
         }
        ]
@@ -26051,7 +26224,7 @@
      {
       "t": "Dummy",
       "name": "x",
-      "index": 1571217,
+      "index": 2026558,
       "assume": {}
      }
     ],
@@ -26089,7 +26262,7 @@
         {
          "t": "Dummy",
          "name": "x",
-         "index": 1571214,
+         "index": 2026555,
          "assume": {}
         },
         {
@@ -26113,7 +26286,7 @@
           {
            "t": "Dummy",
            "name": "x",
-           "index": 1571214,
+           "index": 2026555,
            "assume": {}
           },
           {
@@ -26131,7 +26304,7 @@
      {
       "t": "Dummy",
       "name": "x",
-      "index": 1571214,
+      "index": 2026555,
       "assume": {}
      }
     ],
@@ -26169,7 +26342,7 @@
         {
          "t": "Dummy",
          "name": "x",
-         "index": 1571218,
+         "index": 2026559,
          "assume": {}
         },
         {
@@ -26185,7 +26358,7 @@
      {
       "t": "Dummy",
       "name": "x",
-      "index": 1571218,
+      "index": 2026559,
       "assume": {}
      }
     ],
@@ -27375,7 +27548,7 @@
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "Dummy() #doctest: +SKIP",
-   "expected": "_Dummy_1048"
+   "expected": "_Dummy_1049"
   },
   {
    "fn": ".match",
@@ -28075,7 +28248,7 @@
        {
         "t": "Dummy",
         "name": "x",
-        "index": 1571271,
+        "index": 2026612,
         "assume": {}
        }
       ]
@@ -28088,13 +28261,14 @@
      "items": [
       [
        {
-        "t": "Symbol",
-        "name": "y",
+        "t": "Dummy",
+        "name": "x",
+        "index": 2026612,
         "assume": {}
        },
        {
         "t": "Symbol",
-        "name": "y",
+        "name": "x",
         "assume": {}
        }
       ],
@@ -28112,14 +28286,13 @@
       ],
       [
        {
-        "t": "Dummy",
-        "name": "x",
-        "index": 1571271,
+        "t": "Symbol",
+        "name": "y",
         "assume": {}
        },
        {
         "t": "Symbol",
-        "name": "x",
+        "name": "y",
         "assume": {}
        }
       ]
@@ -28230,11 +28403,30 @@
   },
   {
    "fn": "symbols",
-   "unsupportedArg": "set",
+   "args": [
+    {
+     "t": "PySet",
+     "items": [
+      {
+       "t": "Str",
+       "v": "b"
+      },
+      {
+       "t": "Str",
+       "v": "a"
+      },
+      {
+       "t": "Str",
+       "v": "c"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "symbols({'a', 'b', 'c'})",
-   "expected": "{b, a, c}"
+   "expected": "{a, c, b}"
   },
   {
    "fn": "symbols",
@@ -32564,8 +32756,8 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_1090",
-         "index": 1571290,
+         "name": "Dummy_1094",
+         "index": 2026634,
          "assume": {
           "real": true
          }
@@ -33250,7 +33442,7 @@
    "category": "functions",
    "module": "sympy.functions.elementary.complexes",
    "src": "polarify(expr)",
-   "expected": "((_x*exp_polar(I*pi))**_y, {_y: y, _x: x})"
+   "expected": "((_x*exp_polar(I*pi))**_y, {_x: x, _y: y})"
   },
   {
    "fn": ".expand",
@@ -33263,7 +33455,7 @@
        {
         "t": "Dummy",
         "name": "x",
-        "index": 1571296,
+        "index": 2026639,
         "assume": {}
        },
        {
@@ -33290,7 +33482,7 @@
      {
       "t": "Dummy",
       "name": "y",
-      "index": 1571295,
+      "index": 2026640,
       "assume": {}
      }
     ]
@@ -38461,8 +38653,8 @@
         "q": "1"
        },
        {
-        "t": "Fn",
-        "name": "And",
+        "t": "BoolOp",
+        "op": "And",
         "args": [
          {
           "t": "Rel",
@@ -38564,8 +38756,8 @@
         "q": "1"
        },
        {
-        "t": "Fn",
-        "name": "And",
+        "t": "BoolOp",
+        "op": "And",
         "args": [
          {
           "t": "Rel",
@@ -38619,7 +38811,24 @@
      }
     ]
    },
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     "lo": false,
+     "ro": false
+    }
+   ],
+   "kwargs": {},
    "category": "functions",
    "module": "sympy.functions.elementary.piecewise",
    "src": "p.as_expr_set_pairs(Interval(0, 3))",
@@ -39897,7 +40106,7 @@
        {
         "t": "Dummy",
         "name": "x",
-        "index": 1571407,
+        "index": 2026751,
         "assume": {
          "positive": true,
          "commutative": true
@@ -39936,7 +40145,7 @@
        {
         "t": "Dummy",
         "name": "x",
-        "index": 1571408,
+        "index": 2026752,
         "assume": {
          "positive": true,
          "commutative": true
@@ -39954,7 +40163,7 @@
        {
         "t": "Dummy",
         "name": "x",
-        "index": 1571408,
+        "index": 2026752,
         "assume": {
          "positive": true,
          "commutative": true
@@ -48363,7 +48572,7 @@
              {
               "t": "Dummy",
               "name": "w",
-              "index": 1572342,
+              "index": 2027686,
               "assume": {}
              }
             ]
@@ -48372,7 +48581,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 1572342,
+             "index": 2027686,
              "assume": {}
             }
            ],
@@ -48389,7 +48598,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572341,
+               "index": 2027685,
                "assume": {}
               }
              ]
@@ -48411,7 +48620,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572341,
+               "index": 2027685,
                "assume": {}
               }
              ]
@@ -48435,7 +48644,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 1572341,
+                 "index": 2027685,
                  "assume": {}
                 }
                ]
@@ -48509,7 +48718,7 @@
              {
               "t": "Dummy",
               "name": "w",
-              "index": 1572344,
+              "index": 2027688,
               "assume": {}
              }
             ]
@@ -48518,7 +48727,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 1572344,
+             "index": 2027688,
              "assume": {}
             }
            ],
@@ -48535,7 +48744,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572343,
+               "index": 2027687,
                "assume": {}
               }
              ]
@@ -48557,7 +48766,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572343,
+               "index": 2027687,
                "assume": {}
               }
              ]
@@ -48581,7 +48790,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 1572343,
+                 "index": 2027687,
                  "assume": {}
                 }
                ]
@@ -48658,7 +48867,7 @@
                {
                 "t": "Dummy",
                 "name": "w",
-                "index": 1572346,
+                "index": 2027690,
                 "assume": {}
                },
                {
@@ -48671,7 +48880,7 @@
              {
               "t": "Dummy",
               "name": "w",
-              "index": 1572346,
+              "index": 2027690,
               "assume": {}
              }
             ]
@@ -48680,7 +48889,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 1572346,
+             "index": 2027690,
              "assume": {}
             }
            ],
@@ -48697,7 +48906,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572345,
+               "index": 2027689,
                "assume": {}
               }
              ]
@@ -48806,7 +49015,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 1572345,
+                 "index": 2027689,
                  "assume": {}
                 }
                ]
@@ -48825,7 +49034,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572345,
+               "index": 2027689,
                "assume": {}
               }
              ]
@@ -48849,7 +49058,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 1572345,
+                 "index": 2027689,
                  "assume": {}
                 }
                ]
@@ -48923,7 +49132,7 @@
              {
               "t": "Dummy",
               "name": "w",
-              "index": 1572348,
+              "index": 2027692,
               "assume": {}
              }
             ]
@@ -48932,7 +49141,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 1572348,
+             "index": 2027692,
              "assume": {}
             }
            ],
@@ -48949,7 +49158,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572347,
+               "index": 2027691,
                "assume": {}
               }
              ]
@@ -48971,7 +49180,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572347,
+               "index": 2027691,
                "assume": {}
               }
              ]
@@ -48995,7 +49204,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 1572347,
+                 "index": 2027691,
                  "assume": {}
                 }
                ]
@@ -49030,7 +49239,7 @@
                {
                 "t": "Dummy",
                 "name": "w",
-                "index": 1572348,
+                "index": 2027692,
                 "assume": {}
                },
                {
@@ -49046,7 +49255,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 1572348,
+             "index": 2027692,
              "assume": {}
             }
            ],
@@ -49063,7 +49272,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572347,
+               "index": 2027691,
                "assume": {}
               }
              ]
@@ -49087,7 +49296,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 1572347,
+                 "index": 2027691,
                  "assume": {}
                 }
                ]
@@ -49106,7 +49315,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572347,
+               "index": 2027691,
                "assume": {}
               }
              ]
@@ -49130,7 +49339,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 1572347,
+                 "index": 2027691,
                  "assume": {}
                 }
                ]
@@ -49162,7 +49371,7 @@
              {
               "t": "Dummy",
               "name": "w",
-              "index": 1572348,
+              "index": 2027692,
               "assume": {}
              }
             ]
@@ -49171,7 +49380,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 1572348,
+             "index": 2027692,
              "assume": {}
             }
            ],
@@ -49188,7 +49397,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572347,
+               "index": 2027691,
                "assume": {}
               }
              ]
@@ -49210,7 +49419,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572347,
+               "index": 2027691,
                "assume": {}
               }
              ]
@@ -49234,7 +49443,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 1572347,
+                 "index": 2027691,
                  "assume": {}
                 }
                ]
@@ -49308,7 +49517,7 @@
              {
               "t": "Dummy",
               "name": "w",
-              "index": 1572350,
+              "index": 2027694,
               "assume": {}
              }
             ]
@@ -49317,7 +49526,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 1572350,
+             "index": 2027694,
              "assume": {}
             }
            ],
@@ -49334,7 +49543,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572349,
+               "index": 2027693,
                "assume": {}
               }
              ]
@@ -49356,7 +49565,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572349,
+               "index": 2027693,
                "assume": {}
               }
              ]
@@ -49380,7 +49589,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 1572349,
+                 "index": 2027693,
                  "assume": {}
                 }
                ]
@@ -49415,7 +49624,7 @@
                {
                 "t": "Dummy",
                 "name": "w",
-                "index": 1572350,
+                "index": 2027694,
                 "assume": {}
                },
                {
@@ -49431,7 +49640,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 1572350,
+             "index": 2027694,
              "assume": {}
             }
            ],
@@ -49448,7 +49657,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572349,
+               "index": 2027693,
                "assume": {}
               }
              ]
@@ -49472,7 +49681,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 1572349,
+                 "index": 2027693,
                  "assume": {}
                 }
                ]
@@ -49491,7 +49700,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572349,
+               "index": 2027693,
                "assume": {}
               }
              ]
@@ -49515,7 +49724,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 1572349,
+                 "index": 2027693,
                  "assume": {}
                 }
                ]
@@ -49547,7 +49756,7 @@
              {
               "t": "Dummy",
               "name": "w",
-              "index": 1572350,
+              "index": 2027694,
               "assume": {}
              }
             ]
@@ -49556,7 +49765,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 1572350,
+             "index": 2027694,
              "assume": {}
             }
            ],
@@ -49573,7 +49782,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572349,
+               "index": 2027693,
                "assume": {}
               }
              ]
@@ -49595,7 +49804,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572349,
+               "index": 2027693,
                "assume": {}
               }
              ]
@@ -49619,7 +49828,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 1572349,
+                 "index": 2027693,
                  "assume": {}
                 }
                ]
@@ -49743,7 +49952,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572354,
+               "index": 2027698,
                "assume": {}
               }
              ]
@@ -49759,7 +49968,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572354,
+               "index": 2027698,
                "assume": {}
               }
              ]
@@ -49776,7 +49985,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 1572354,
+               "index": 2027698,
                "assume": {}
               }
              ]
@@ -49800,7 +50009,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 1572354,
+                 "index": 2027698,
                  "assume": {}
                 }
                ]
@@ -50681,7 +50890,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10882df00>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x1089c24a0>, 3)"
   },
   {
    "fn": ".LC",
@@ -50888,7 +51097,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10882e2c0>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x1089c2dd0>, 4)"
   },
   {
    "fn": ".TC",
@@ -80423,7 +80632,48 @@
   },
   {
    "fn": "solveset",
-   "unsupportedArg": "Reals",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      },
+      {
+       "t": "Fn",
+       "name": "exp",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "solvers",
    "module": "sympy.solvers.solveset",
    "src": "solveset(exp(x) - 1, x, R)",
@@ -80490,7 +80740,21 @@
      "assume": {}
     }
    ],
-   "unsupportedArg": "Reals",
+   "kwargs": {
+    "domain": {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": true,
+     "ro": true
+    }
+   },
    "category": "solvers",
    "module": "sympy.solvers.solveset",
    "src": "solveset(Eq(i**2 + i*sin(i), 1), i, domain=S.Reals)",
@@ -80498,7 +80762,49 @@
   },
   {
    "fn": "solveset",
-   "unsupportedArg": "Reals",
+   "args": [
+    {
+     "t": "Rel",
+     "op": "StrictGreaterThan",
+     "args": [
+      {
+       "t": "Fn",
+       "name": "exp",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "solvers",
    "module": "sympy.solvers.solveset",
    "src": "solveset(exp(x) > 1, x, R)",
@@ -80506,7 +80812,104 @@
   },
   {
    "fn": "substitution",
-   "unsupportedArg": "set",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {
+          "real": true
+         }
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {
+          "real": true
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {
+        "real": true
+       }
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Dict",
+       "items": [
+        [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {
+           "real": true
+          }
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         }
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {
+        "real": true
+       }
+      }
+     ]
+    },
+    {
+     "t": "PySet",
+     "items": []
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {
+        "real": true
+       }
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {
+        "real": true
+       }
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "solvers",
    "module": "sympy.solvers.solveset",
    "src": "substitution([x + y], [x], [{y: 1}], [y], set([]), [x, y])",
@@ -80514,7 +80917,122 @@
   },
   {
    "fn": "substitution",
-   "unsupportedArg": "set",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {
+          "real": true
+         }
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {
+          "real": true
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {
+        "real": true
+       }
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Dict",
+       "items": [
+        [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {
+           "real": true
+          }
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         }
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {
+        "real": true
+       }
+      }
+     ]
+    },
+    {
+     "t": "PySet",
+     "items": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {
+          "real": true
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {
+        "real": true
+       }
+      },
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {
+        "real": true
+       }
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "solvers",
    "module": "sympy.solvers.solveset",
    "src": "substitution([x + y], [x], [{y: 1}], [y], set([x + 1]), [y, x])",
@@ -80522,7 +81040,122 @@
   },
   {
    "fn": "substitution",
-   "unsupportedArg": "set",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {
+          "real": true
+         }
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {
+          "real": true
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {
+        "real": true
+       }
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Dict",
+       "items": [
+        [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {
+           "real": true
+          }
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         }
+        ]
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {
+        "real": true
+       }
+      }
+     ]
+    },
+    {
+     "t": "PySet",
+     "items": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {
+          "real": true
+         }
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {
+        "real": true
+       }
+      },
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {
+        "real": true
+       }
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "solvers",
    "module": "sympy.solvers.solveset",
    "src": "substitution([x + y], [x], [{y: 1}], [y], set([x - 1]), [y, x])",
@@ -81618,7 +82251,7 @@
    "category": "ode",
    "module": "sympy.solvers.ode.ode",
    "src": "dsolve(eq)",
-   "expected": "{Eq(y(t), -1/(C1 - cos(t))), Eq(x(t), -exp(C1)/(C2*exp(C1) - cos(t)))}"
+   "expected": "{Eq(x(t), -exp(C1)/(C2*exp(C1) - cos(t))), Eq(y(t), -1/(C1 - cos(t)))}"
   },
   {
    "fn": "homogeneous_order",
@@ -84418,7 +85051,58 @@
   },
   {
    "fn": "solve_univariate_inequality",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Rel",
+     "op": "GreaterThan",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    },
+    {
+     "t": "Py",
+     "v": false
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": false,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "solvers",
    "module": "sympy.solvers.inequalities",
    "src": "solve_univariate_inequality(x**2 >= 4, x, False, domain)",
@@ -85466,7 +86150,7 @@
        {
         "t": "Dummy",
         "name": "n",
-        "index": 1577609,
+        "index": 2032950,
         "assume": {
          "positive": true,
          "integer": true
@@ -85488,7 +86172,7 @@
          {
           "t": "Dummy",
           "name": "n",
-          "index": 1577609,
+          "index": 2032950,
           "assume": {
            "positive": true,
            "integer": true
@@ -85515,7 +86199,7 @@
            {
             "t": "Dummy",
             "name": "n",
-            "index": 1577609,
+            "index": 2032950,
             "assume": {
              "positive": true,
              "integer": true
@@ -85545,7 +86229,7 @@
                {
                 "t": "Dummy",
                 "name": "n",
-                "index": 1577609,
+                "index": 2032950,
                 "assume": {
                  "positive": true,
                  "integer": true
@@ -85571,7 +86255,7 @@
              {
               "t": "Dummy",
               "name": "n",
-              "index": 1577609,
+              "index": 2032950,
               "assume": {
                "positive": true,
                "integer": true
@@ -85597,7 +86281,7 @@
            {
             "t": "Dummy",
             "name": "n",
-            "index": 1577609,
+            "index": 2032950,
             "assume": {
              "positive": true,
              "integer": true
@@ -85627,7 +86311,7 @@
                {
                 "t": "Dummy",
                 "name": "n",
-                "index": 1577609,
+                "index": 2032950,
                 "assume": {
                  "positive": true,
                  "integer": true
@@ -85656,7 +86340,7 @@
                {
                 "t": "Dummy",
                 "name": "n",
-                "index": 1577609,
+                "index": 2032950,
                 "assume": {
                  "positive": true,
                  "integer": true
@@ -85682,7 +86366,7 @@
              {
               "t": "Dummy",
               "name": "n",
-              "index": 1577609,
+              "index": 2032950,
               "assume": {
                "positive": true,
                "integer": true
@@ -92015,7 +92699,22 @@
      "assume": {}
     }
    ],
-   "unsupportedArg": "Interval",
+   "kwargs": {
+    "domain": {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "-1",
+      "q": "1"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": false,
+     "ro": true
+    }
+   },
    "category": "calculus",
    "module": "sympy.calculus.util",
    "src": "is_convex(x**3, x, domain = Interval(-1, oo))",
@@ -92045,7 +92744,22 @@
      "assume": {}
     }
    ],
-   "unsupportedArg": "Interval",
+   "kwargs": {
+    "domain": {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": true,
+     "ro": true
+    }
+   },
    "category": "calculus",
    "module": "sympy.calculus.util",
    "src": "is_convex(1/x**2, x, domain=Interval.open(0, oo))",
@@ -92053,7 +92767,77 @@
   },
   {
    "fn": "maximum",
-   "unsupportedArg": "Reals",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.util",
    "src": "maximum(f, x, S.Reals)",
@@ -92061,7 +92845,58 @@
   },
   {
    "fn": "maximum",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "sin",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       },
+       {
+        "t": "Const",
+        "name": "pi"
+       }
+      ]
+     },
+     "b": {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "4"
+       },
+       {
+        "t": "Const",
+        "name": "pi"
+       }
+      ]
+     },
+     "lo": false,
+     "ro": false
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.util",
    "src": "maximum(sin(x), x, Interval(-pi, pi/4))",
@@ -92111,7 +92946,67 @@
   },
   {
    "fn": "minimum",
-   "unsupportedArg": "Reals",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.util",
    "src": "minimum(f, x, S.Reals)",
@@ -92119,7 +93014,40 @@
   },
   {
    "fn": "minimum",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "sin",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     "lo": false,
+     "ro": false
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.util",
    "src": "minimum(sin(x), x, Interval(2, 3))",
@@ -92169,7 +93097,55 @@
   },
   {
    "fn": "not_empty_in",
-   "unsupportedArg": "Intersection",
+   "args": [
+    {
+     "t": "SetOp",
+     "op": "Intersection",
+     "args": [
+      {
+       "t": "Interval",
+       "a": {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       "b": {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       "lo": false,
+       "ro": false
+      },
+      {
+       "t": "FiniteSet",
+       "items": [
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "2"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.util",
    "src": "not_empty_in(FiniteSet(x/2).intersect(Interval(0, 1)), x)",
@@ -92177,7 +93153,60 @@
   },
   {
    "fn": "not_empty_in",
-   "unsupportedArg": "Intersection",
+   "args": [
+    {
+     "t": "SetOp",
+     "op": "Intersection",
+     "args": [
+      {
+       "t": "Interval",
+       "a": {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       "b": {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       "lo": false,
+       "ro": false
+      },
+      {
+       "t": "FiniteSet",
+       "items": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.util",
    "src": "not_empty_in(FiniteSet(x, x**2).intersect(Interval(1, 2)), x)",
@@ -92185,7 +93214,84 @@
   },
   {
    "fn": "not_empty_in",
-   "unsupportedArg": "Intersection",
+   "args": [
+    {
+     "t": "SetOp",
+     "op": "Intersection",
+     "args": [
+      {
+       "t": "Interval",
+       "a": {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       "b": {
+        "t": "Const",
+        "name": "oo"
+       },
+       "lo": false,
+       "ro": true
+      },
+      {
+       "t": "FiniteSet",
+       "items": [
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              },
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.util",
    "src": "not_empty_in(FiniteSet(x**2/(x + 2)).intersect(Interval(1, oo)), x)",
@@ -92448,7 +93554,42 @@
   },
   {
    "fn": "stationary_points",
-   "unsupportedArg": "Reals",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.util",
    "src": "stationary_points(1/x, x, S.Reals)",
@@ -92456,7 +93597,49 @@
   },
   {
    "fn": "stationary_points",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "sin",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "b": {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "4",
+        "q": "1"
+       },
+       {
+        "t": "Const",
+        "name": "pi"
+       }
+      ]
+     },
+     "lo": false,
+     "ro": false
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.util",
    "src": "stationary_points(sin(x),x, Interval(0, 4*pi))",
@@ -92464,7 +93647,69 @@
   },
   {
    "fn": "is_decreasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-3",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "3",
+      "q": "2"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_decreasing(1/(x**2 - 3*x), Interval.open(S(3)/2, 3))",
@@ -92472,7 +93717,71 @@
   },
   {
    "fn": "is_decreasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-3",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Float",
+      "v": 1.5,
+      "man": "3",
+      "exp": -1,
+      "prec": 53
+     },
+     "b": {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_decreasing(1/(x**2 - 3*x), Interval.open(1.5, 3))",
@@ -92480,7 +93789,68 @@
   },
   {
    "fn": "is_decreasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-3",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_decreasing(1/(x**2 - 3*x), Interval.Lopen(3, oo))",
@@ -92488,7 +93858,68 @@
   },
   {
    "fn": "is_decreasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-3",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "3",
+      "q": "2"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_decreasing(1/(x**2 - 3*x), Interval.Ropen(-oo, S(3)/2))",
@@ -92496,7 +93927,70 @@
   },
   {
    "fn": "is_decreasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-3",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Float",
+      "v": 1.5,
+      "man": "3",
+      "exp": -1,
+      "prec": 53
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_decreasing(1/(x**2 - 3*x), Interval.Ropen(-oo, 1.5))",
@@ -92504,7 +93998,48 @@
   },
   {
    "fn": "is_decreasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "lo": true,
+     "ro": false
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_decreasing(-x**2, Interval(-oo, 0))",
@@ -92512,7 +94047,63 @@
   },
   {
    "fn": "is_decreasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "lo": true,
+     "ro": false
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_decreasing(-x**2 + y, Interval(-oo, 0), x)",
@@ -92520,7 +94111,82 @@
   },
   {
    "fn": "is_increasing",
-   "unsupportedArg": "Reals",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-3",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_increasing(x**3 - 3*x**2 + 4*x, S.Reals)",
@@ -92528,7 +94194,48 @@
   },
   {
    "fn": "is_increasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "lo": true,
+     "ro": false
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_increasing(-x**2, Interval(-oo, 0))",
@@ -92536,7 +94243,48 @@
   },
   {
    "fn": "is_increasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": false,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_increasing(-x**2, Interval(0, oo))",
@@ -92544,7 +94292,99 @@
   },
   {
    "fn": "is_increasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "30",
+       "q": "1"
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-72",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-6",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "-2",
+      "q": "1"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     "lo": false,
+     "ro": false
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_increasing(4*x**3 - 6*x**2 - 72*x + 30, Interval(-2, 3))",
@@ -92552,7 +94392,54 @@
   },
   {
    "fn": "is_increasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     "lo": false,
+     "ro": false
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_increasing(x**2 + y, Interval(1, 2), x)",
@@ -92560,7 +94447,69 @@
   },
   {
    "fn": "is_monotonic",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-3",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "3",
+      "q": "2"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_monotonic(1/(x**2 - 3*x), Interval.open(S(3)/2, 3))",
@@ -92568,7 +94517,71 @@
   },
   {
    "fn": "is_monotonic",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-3",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Float",
+      "v": 1.5,
+      "man": "3",
+      "exp": -1,
+      "prec": 53
+     },
+     "b": {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_monotonic(1/(x**2 - 3*x), Interval.open(1.5, 3))",
@@ -92576,7 +94589,68 @@
   },
   {
    "fn": "is_monotonic",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-3",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_monotonic(1/(x**2 - 3*x), Interval.Lopen(3, oo))",
@@ -92584,7 +94658,82 @@
   },
   {
    "fn": "is_monotonic",
-   "unsupportedArg": "Reals",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-3",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_monotonic(x**3 - 3*x**2 + 4*x, S.Reals)",
@@ -92592,7 +94741,47 @@
   },
   {
    "fn": "is_monotonic",
-   "unsupportedArg": "Reals",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_monotonic(-x**2, S.Reals)",
@@ -92600,7 +94789,59 @@
   },
   {
    "fn": "is_monotonic",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     "lo": false,
+     "ro": false
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_monotonic(x**2 + y + 1, Interval(1, 2), x)",
@@ -92608,7 +94849,68 @@
   },
   {
    "fn": "is_strictly_decreasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-3",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_strictly_decreasing(1/(x**2 - 3*x), Interval.Lopen(3, oo))",
@@ -92616,7 +94918,68 @@
   },
   {
    "fn": "is_strictly_decreasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-3",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "3",
+      "q": "2"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_strictly_decreasing(1/(x**2 - 3*x), Interval.Ropen(-oo, S(3)/2))",
@@ -92624,7 +94987,70 @@
   },
   {
    "fn": "is_strictly_decreasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-3",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Float",
+      "v": 1.5,
+      "man": "3",
+      "exp": -1,
+      "prec": 53
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_strictly_decreasing(1/(x**2 - 3*x), Interval.Ropen(-oo, 1.5))",
@@ -92632,7 +95058,48 @@
   },
   {
    "fn": "is_strictly_decreasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "lo": true,
+     "ro": false
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_strictly_decreasing(-x**2, Interval(-oo, 0))",
@@ -92640,7 +95107,63 @@
   },
   {
    "fn": "is_strictly_decreasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "lo": true,
+     "ro": false
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_strictly_decreasing(-x**2 + y, Interval(-oo, 0), x)",
@@ -92648,7 +95171,98 @@
   },
   {
    "fn": "is_strictly_increasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "30",
+       "q": "1"
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-72",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-6",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "-2",
+      "q": "1"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_strictly_increasing(4*x**3 - 6*x**2 - 72*x + 30, Interval.Ropen(-oo, -2))",
@@ -92656,7 +95270,98 @@
   },
   {
    "fn": "is_strictly_increasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "30",
+       "q": "1"
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-72",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-6",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_strictly_increasing(4*x**3 - 6*x**2 - 72*x + 30, Interval.Lopen(3, oo))",
@@ -92664,7 +95369,99 @@
   },
   {
    "fn": "is_strictly_increasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "30",
+       "q": "1"
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-72",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-6",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "-2",
+      "q": "1"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     "lo": true,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_strictly_increasing(4*x**3 - 6*x**2 - 72*x + 30, Interval.open(-2, 3))",
@@ -92672,7 +95469,48 @@
   },
   {
    "fn": "is_strictly_increasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "b": {
+      "t": "Const",
+      "name": "oo"
+     },
+     "lo": false,
+     "ro": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_strictly_increasing(-x**2, Interval(0, oo))",
@@ -92680,7 +95518,63 @@
   },
   {
    "fn": "is_strictly_increasing",
-   "unsupportedArg": "Interval",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Interval",
+     "a": {
+      "t": "Const",
+      "name": "-oo"
+     },
+     "b": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "lo": true,
+     "ro": false
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.singularities",
    "src": "is_strictly_increasing(-x**2 + y, Interval(-oo, 0), x)",
@@ -103729,7 +106623,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3) # doctest:+SKIP",
-   "expected": "Matrix([[18, 2, 36], [23, 96, 73], [13, 58, 55]])"
+   "expected": "Matrix([[27, 38, 95], [78, 63, 29], [61, 2, 96]])"
   },
   {
    "fn": "randMatrix",
@@ -103749,7 +106643,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, 2) # doctest:+SKIP",
-   "expected": "Matrix([[34, 54], [10, 92], [11, 45]])"
+   "expected": "Matrix([[6, 93], [44, 88], [67, 83]])"
   },
   {
    "fn": "randMatrix",
@@ -103779,7 +106673,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, 3, 0, 2) # doctest:+SKIP",
-   "expected": "Matrix([[1, 1, 2], [0, 0, 1], [0, 0, 2]])"
+   "expected": "Matrix([[1, 2, 0], [2, 1, 0], [1, 0, 0]])"
   },
   {
    "fn": "randMatrix",
@@ -103799,7 +106693,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, symmetric=True) # doctest:+SKIP",
-   "expected": "Matrix([[28, 14, 25], [14, 54, 19], [25, 19, 71]])"
+   "expected": "Matrix([[98, 47, 78], [47, 67, 38], [78, 38, 25]])"
   },
   {
    "fn": "randMatrix",
@@ -103824,7 +106718,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, symmetric=True, percent=50) # doctest:+SKIP",
-   "expected": "Matrix([[69, 88, 0], [88, 0, 44], [0, 44, 0]])"
+   "expected": "Matrix([[0, 0, 23], [0, 0, 96], [23, 96, 0]])"
   },
   {
    "fn": "rot_axis1",
@@ -108066,7 +110960,7 @@
                {
                 "t": "Dummy",
                 "name": "k",
-                "index": 1584101,
+                "index": 2039456,
                 "assume": {}
                }
               ]
@@ -108096,7 +110990,7 @@
                  {
                   "t": "Dummy",
                   "name": "k",
-                  "index": 1584101,
+                  "index": 2039456,
                   "assume": {}
                  }
                 ]
@@ -108113,7 +111007,7 @@
            {
             "t": "Dummy",
             "name": "k",
-            "index": 1584101,
+            "index": 2039456,
             "assume": {}
            },
            {
@@ -108166,7 +111060,7 @@
                {
                 "t": "Dummy",
                 "name": "k",
-                "index": 1584101,
+                "index": 2039456,
                 "assume": {}
                }
               ]
@@ -108186,7 +111080,7 @@
            {
             "t": "Dummy",
             "name": "k",
-            "index": 1584101,
+            "index": 2039456,
             "assume": {}
            },
            {
@@ -110033,7 +112927,7 @@
              {
               "t": "Dummy",
               "name": "k",
-              "index": 1584321,
+              "index": 2039669,
               "assume": {}
              }
             ]
@@ -110048,7 +112942,7 @@
          {
           "t": "Dummy",
           "name": "k",
-          "index": 1584321,
+          "index": 2039669,
           "assume": {}
          },
          {
@@ -110138,7 +113032,7 @@
              {
               "t": "Dummy",
               "name": "k",
-              "index": 1584327,
+              "index": 2039677,
               "assume": {}
              }
             ]
@@ -110153,7 +113047,7 @@
          {
           "t": "Dummy",
           "name": "k",
-          "index": 1584327,
+          "index": 2039677,
           "assume": {}
          },
          {
@@ -110243,7 +113137,7 @@
              {
               "t": "Dummy",
               "name": "k",
-              "index": 1584330,
+              "index": 2039680,
               "assume": {}
              }
             ]
@@ -110258,7 +113152,7 @@
          {
           "t": "Dummy",
           "name": "k",
-          "index": 1584330,
+          "index": 2039680,
           "assume": {}
          },
          {

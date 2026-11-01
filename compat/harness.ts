@@ -231,6 +231,24 @@ export function deserialize(tree: Tree): unknown {
       return new UFnClass(tree['name'] as string);
     case 'FnClass':
       return new FnClass(tree['name'] as string);
+    case 'Interval':
+      return sj.interval(deserialize(tree['a'] as Tree) as Expr, deserialize(tree['b'] as Tree) as Expr, tree['lo'] as boolean, tree['ro'] as boolean);
+    case 'FiniteSet':
+      return sj.finiteSet(...(tree['items'] as Tree[]).map((x) => deserialize(x) as Expr));
+    case 'NamedSet':
+      return ({ Reals: sj.Reals, Integers: sj.Integers, Naturals: sj.Naturals, Naturals0: sj.Naturals0, Complexes: sj.Complexes, EmptySet: sj.EmptySet } as Record<string, sj.SetExpr>)[tree['name'] as string];
+    case 'SetOp': {
+      const xs = (tree['args'] as Tree[]).map((x) => deserialize(x) as sj.SetExpr);
+      if (tree['op'] === 'Union') return sj.union(...xs);
+      if (tree['op'] === 'Intersection') return sj.intersection(...xs);
+      return sj.complement(xs[0]!, xs[1]!);
+    }
+    case 'PySet':
+      return new PySet((tree['items'] as Tree[]).map(deserialize));
+    case 'BoolOp': {
+      const xs = (tree['args'] as Tree[]).map((x) => deserialize(x) as Expr);
+      return tree['op'] === 'And' ? sj.and(...xs) : sj.or(...xs);
+    }
     case 'Type':
       return new TypeRef(tree['name'] as string);
     case 'Wild': {
@@ -388,6 +406,21 @@ function intArg(v: unknown): number {
   throw new Unsupported('integer argument');
 }
 
+const asSet = (v: unknown): sj.SetExpr => {
+  if (v instanceof sj.SetExpr) return v;
+  throw new Unsupported('expected a set');
+};
+const typeMethod = (self: unknown, type: string, f: () => unknown, kw: Record<string, unknown>): unknown => {
+  noKw(kw);
+  if (!(self instanceof TypeRef && self.name === type)) throw new Unsupported(`classmethod of ${type}`);
+  return f();
+};
+const monoAdapter =
+  (f: (e: Expr, iv?: sj.SetExpr, x?: Sym) => boolean | undefined): Adapter =>
+  (args, kw) => {
+    noKw(kw);
+    return f(asExpr(args[0]), (args[1] as sj.SetExpr | undefined) ?? sj.Reals, args[2] === undefined ? undefined : asSym(args[2])) ?? null;
+  };
 const autoKw = (kw: Record<string, unknown>): boolean => {
   for (const k of Object.keys(kw)) if (k !== 'auto') throw new Unsupported(`kwargs ${k}`);
   return kw['auto'] === undefined ? true : Boolean(kw['auto']);
@@ -561,6 +594,65 @@ export const ADAPTERS: Record<string, Adapter> = {
       return new sj.Mul(args.map(asExpr));
     }
     return sj.mul(...args.map(asExpr));
+  },
+  Interval: (args, kw) => (noKw(kw), sj.interval(asExpr(args[0]), asExpr(args[1]), Boolean(args[2]), Boolean(args[3]))),
+  FiniteSet: (args, kw) => (noKw(kw), sj.finiteSet(...args.map(asExpr))),
+  Union: (args, kw) => (noKw(kw), sj.union(...args.map(asSet))),
+  Intersection: (args, kw) => (noKw(kw), sj.intersection(...args.map(asSet))),
+  Complement: (args, kw) => (noKw(kw), sj.complement(asSet(args[0]), asSet(args[1]))),
+  '.open': (args, kw, self) => typeMethod(self, 'Interval', () => sj.interval(asExpr(args[0]), asExpr(args[1]), true, true), kw),
+  '.Lopen': (args, kw, self) => typeMethod(self, 'Interval', () => sj.interval(asExpr(args[0]), asExpr(args[1]), true, false), kw),
+  '.Ropen': (args, kw, self) => typeMethod(self, 'Interval', () => sj.interval(asExpr(args[0]), asExpr(args[1]), false, true), kw),
+  '.contains': (args, kw, self) => (noKw(kw), sj.contains(asSet(self), asExpr(args[0]))),
+  '.intersect': (args, kw, self) => (noKw(kw), sj.intersection(asSet(self), asSet(args[0]))),
+  '.union': (args, kw, self) => (noKw(kw), sj.union(asSet(self), asSet(args[0]))),
+  '.is_subset': (args, kw, self) => (noKw(kw), sj.isSubset(asSet(self), asSet(args[0])) ?? null),
+  '.as_relational': (args, kw, self) => (noKw(kw), sj.asRelational(asSet(self), asExpr(args[0]))),
+  solveset: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
+    const dom = (kw['domain'] ?? args[2]) as sj.SetExpr | undefined;
+    const f = asExpr(args[0]);
+    const x = args[1] ? asSym(args[1]) : (sj.freeSymbols(f).values().next().value as Sym);
+    return sj.solveset(f, x, dom ?? sj.Complexes);
+  },
+  solve_univariate_inequality: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['relational', 'domain'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const rel = kw['relational'] ?? args[2];
+    const dom = (kw['domain'] ?? args[3]) as sj.SetExpr | undefined;
+    return sj.solveUnivariateInequality(asExpr(args[0]), asSym(args[1]), { relational: rel === undefined ? true : Boolean(rel), domain: dom });
+  },
+  solve_poly_inequality: (args, kw) => (noKw(kw), new PyList(sj.solvePolyInequality(asPoly(args[0]), args[1] as string))),
+  solve_rational_inequalities: (args, kw) => {
+    noKw(kw);
+    const groups = (args[0] as PyList).items.map((g) =>
+      (g as PyList).items.map((it) => {
+        const [nd, rel] = (it as PyTuple).items as [PyTuple, string];
+        return [[asPoly(nd.items[0]), asPoly(nd.items[1])], rel] as [[sj.Poly, sj.Poly], string];
+      }),
+    );
+    return sj.solveRationalInequalities(groups);
+  },
+  reduce_inequalities: (args, kw) => {
+    noKw(kw);
+    const a = args[0];
+    const ineqs = a instanceof PyList || a instanceof PyTuple ? a.items.map(asExpr) : [asExpr(a)];
+    const syms = args[1] instanceof PyList || args[1] instanceof PyTuple ? args[1].items.map(asSym) : [];
+    return sj.reduceInequalities(ineqs, syms);
+  },
+  periodicity: (args, kw) => (noKw(kw), sj.periodicity(asExpr(args[0]), asSym(args[1])) ?? null),
+  singularities: (args, kw) => (noKw(kw), sj.singularities(asExpr(args[0]), asSym(args[1]), args[2] as sj.SetExpr | undefined)),
+  stationary_points: (args, kw) => (noKw(kw), sj.stationaryPoints(asExpr(args[0]), asSym(args[1]), (args[2] as sj.SetExpr | undefined) ?? sj.Reals)),
+  maximum: (args, kw) => (noKw(kw), sj.maximum(asExpr(args[0]), asSym(args[1]), (args[2] as sj.SetExpr | undefined) ?? sj.Reals)),
+  minimum: (args, kw) => (noKw(kw), sj.minimum(asExpr(args[0]), asSym(args[1]), (args[2] as sj.SetExpr | undefined) ?? sj.Reals)),
+  is_increasing: monoAdapter(sj.isIncreasing),
+  is_strictly_increasing: monoAdapter(sj.isStrictlyIncreasing),
+  is_decreasing: monoAdapter(sj.isDecreasing),
+  is_strictly_decreasing: monoAdapter(sj.isStrictlyDecreasing),
+  is_monotonic: monoAdapter(sj.isMonotonic),
+  is_convex: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
+    if (args.length > 2) throw new Unsupported('multivariate convexity');
+    return sj.isConvex(asExpr(args[0]), asSym(args[1]), (kw['domain'] as sj.SetExpr | undefined) ?? sj.Reals);
   },
   root: (args, kw) => (noKw(kw), sj.root(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? 0 : asExpr(args[2]))),
   cbrt: exprFn(sj.cbrt),

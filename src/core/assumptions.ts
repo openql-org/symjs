@@ -5,7 +5,7 @@
  * @file Three-valued assumption queries (true / false / undefined = unknown).
  */
 
-import { Add, Constant, Expr, Fn, Float, Mul, Pow, Rational, Special, Sym } from './nodes';
+import { Add, Constant, Expr, Fn, Float, Mul, Pow, Rational, Special, Sym, impl } from './nodes';
 
 export type Tri = boolean | undefined;
 
@@ -166,3 +166,4 @@ export function isIntegerQ(e: Expr): Tri {
   }
   return undefined;
 }
+impl.isReal = isReal;

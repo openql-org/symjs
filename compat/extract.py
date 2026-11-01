@@ -116,6 +116,8 @@ def ser(o):
         return {"t": "Float", "v": o, "py": True}
     if isinstance(o, str):
         return {"t": "Str", "v": o}
+    if isinstance(o, (set, frozenset)):
+        return {"t": "PySet", "items": [ser(i) for i in o]}
     if isinstance(o, (list, tuple, Tuple)):
         return {"t": "Tuple", "items": [ser(i) for i in o]}
     if isinstance(o, dict):
@@ -136,6 +138,19 @@ def ser(o):
         return {"t": "FnClass", "name": o.__name__}
     if not isinstance(o, Basic):
         raise Unsupported(type(o).__name__)
+    if isinstance(o, sympy.Interval):
+        return {"t": "Interval", "a": ser(o.start), "b": ser(o.end), "lo": bool(o.left_open), "ro": bool(o.right_open)}
+    if isinstance(o, sympy.FiniteSet):
+        return {"t": "FiniteSet", "items": [ser(i) for i in o.args]}
+    if isinstance(o, (sympy.Union, sympy.Intersection, sympy.Complement)):
+        return {"t": "SetOp", "op": type(o).__name__, "args": [ser(i) for i in o.args]}
+    named_sets = {sympy.S.Reals: "Reals", sympy.S.Integers: "Integers", sympy.S.Naturals: "Naturals",
+                  sympy.S.Naturals0: "Naturals0", sympy.S.Complexes: "Complexes", sympy.S.EmptySet: "EmptySet"}
+    for k, v in named_sets.items():
+        if o is k:
+            return {"t": "NamedSet", "name": v}
+    if isinstance(o, (sympy.And, sympy.Or)):
+        return {"t": "BoolOp", "op": type(o).__name__, "args": [ser(i) for i in o.args]}
     if isinstance(o, sympy.Wild):
         if o.properties:
             raise Unsupported("Wild properties")

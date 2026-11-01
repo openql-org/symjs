@@ -175,6 +175,8 @@ function strInner(e: Expr): string {
     if (!v || !p || (p instanceof Rational && p.isZero)) return `O(${str(x!)})`;
     return `O(${str(x!)}, (${str(v)}, ${str(p)}))`;
   }
+  const custom = e as unknown as { printStr?: (p: (x: Expr) => string) => string };
+  if (typeof custom.printStr === 'function') return custom.printStr(str);
   if (e instanceof Integral) {
     const lim = e.limits;
     const v = str(e.variable);
