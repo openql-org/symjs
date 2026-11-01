@@ -254,7 +254,8 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
     if (h.power_base) e = applyBottomUp(e, (x) => powerBase(x, h.force), h.deep);
     if (h.power_exp) e = applyBottomUp(e, (x) => powerExp(x, h.force), h.deep);
     if (h.trig) e = applyBottomUp(e, expandTrigNode, h.deep);
-    if (h.mul || h.multinomial) e = h.deep ? expandMul(e) : expandMulShallow(e, h.mul, h.multinomial);
+    if (h.mul) e = h.deep ? expandMul(e) : expandMulShallow(e, h.mul, h.multinomial);
+    else if (h.multinomial) e = applyBottomUp(e, (x) => expandMulShallow(x, false, true), h.deep);
     if (e.key === was.key) break;
   }
   return e;
@@ -281,7 +282,7 @@ export const expand_power_base = (e: ExprLike, opts: { force?: boolean; deep?: b
 export const expand_log = (e: ExprLike, force = false): Expr =>
   expand(e, { power_exp: false, power_base: false, mul: false, multinomial: false, force });
 export const expand_trig = (e: ExprLike): Expr =>
-  expand(e, { power_exp: false, power_base: false, log: false, mul: true, multinomial: false, trig: true });
+  expand(e, { power_exp: false, power_base: false, log: false, mul: false, multinomial: false, trig: true });
 export const expand_complex = (e: ExprLike): Expr => expand(e, { complex: true });
 
 impl.expand = (e) => expand(e);

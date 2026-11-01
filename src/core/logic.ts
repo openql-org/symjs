@@ -26,6 +26,15 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
     return v ? S.true : S.false;
   }
   if ((op === 'Eq' || op === 'Ne') && lhs.key === rhs.key) return op === 'Eq' ? S.true : S.false;
+  // numeric expressions that are clearly different
+  if ((op === 'Eq' || op === 'Ne') && d.freeSymbols().size === 0 && !(d instanceof Special)) {
+    try {
+      const v = d.toComplex();
+      if (Math.hypot(v.re, v.im) > 1e-9) return op === 'Eq' ? S.false : S.true;
+    } catch {
+      // not numerically evaluable
+    }
+  }
   return new Rel(op, lhs, rhs);
 }
 

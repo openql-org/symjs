@@ -197,6 +197,7 @@ export interface Impl {
   expandComplex?(e: Expr): Expr;
   exp?(e: Expr): Expr;
   polyReduce?(f: Expr, g: Expr, gens: readonly Expr[]): [Expr, Expr];
+  gcdTermsOf?(terms: readonly Expr[]): Expr;
   cos?(e: Expr): Expr;
   sin?(e: Expr): Expr;
   sign?(e: Expr): Expr;

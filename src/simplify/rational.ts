@@ -5,11 +5,9 @@
  * @file Rational-function manipulation: fraction, together, cancel.
  */
 
-import { Add, Expr, impl, ExprLike, Mul, Pow, Rational, S, Sym, isNum } from '../core/nodes';
-import { numAdd, numCmp, numNeg } from '../core/num';
-import { lcm } from '../core/numbers';
-import { add, asBaseExp, mul, pow, splitCoeff, sympify } from '../core/ops';
-import { freeSymbols, mapBottomUp } from '../core/traverse';
+import { Add, Constant, Expr, Fn, impl, ExprLike, Mul, Pow, Rational, Sym, isNum } from '../core/nodes';
+import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
+import { freeSymbols, rebuild } from '../core/traverse';
 import { divExact, mgcd } from '../polys/mpoly';
 import { UPoly } from '../polys/poly';
 import { expandMul as expand } from './expand';
@@ -43,51 +41,19 @@ export function fraction(ex: ExprLike): [Expr, Expr] {
 }
 
 /** Combine a sum of fractions over a common denominator (recursively). */
-export function together(ex: ExprLike): Expr {
-  return mapBottomUp(sympify(ex), (e) => {
-    if (!(e instanceof Add)) return e;
-    const parts = e.args.map(fraction);
-    if (parts.every(([, d]) => d instanceof Rational && d.isOne)) return e;
-
-    // common denominator: numeric lcm and the maximal power of each base
-    let numericDen = 1n;
-    const bases = new Map<string, { base: Expr; exp: Rational }>();
-    const factorize = (d: Expr): { n: bigint; pows: Map<string, { base: Expr; exp: Expr }> } => {
-      const pows = new Map<string, { base: Expr; exp: Expr }>();
-      let n = 1n;
-      for (const f of d instanceof Mul ? d.args : [d]) {
-        if (f instanceof Rational) n *= f.p;
-        else {
-          const [b, x] = asBaseExp(f);
-          // only rational exponents can be compared; otherwise treat the whole factor as a base
-          if (x instanceof Rational) pows.set(b.key, { base: b, exp: x });
-          else pows.set(f.key, { base: f, exp: S.One });
-        }
-      }
-      return { n, pows };
-    };
-    const decomposed = parts.map(([, d]) => factorize(d));
-    for (const { n, pows } of decomposed) {
-      numericDen = lcm(numericDen, n);
-      for (const [k, { base, exp }] of pows) {
-        const r = exp instanceof Rational ? exp : S.One;
-        const cur = bases.get(k);
-        if (!cur || numCmp(r, cur.exp) > 0) bases.set(k, { base, exp: r });
-      }
-    }
-    const numerators = parts.map(([n], i) => {
-      const { n: dn, pows } = decomposed[i]!;
-      const factors: Expr[] = [Rational.of(numericDen / dn)];
-      for (const [k, { base, exp }] of bases) {
-        const own = pows.get(k)?.exp;
-        const ownR = own instanceof Rational ? own : own ? S.One : S.Zero;
-        factors.push(pow(base, numAdd(exp, numNeg(ownR))));
-      }
-      return mul(n, ...factors);
-    });
-    const D = mul(Rational.of(numericDen), ...[...bases.values()].map(({ base, exp }) => pow(base, exp)));
-    return mul(expand(add(...numerators)), pow(D, -1));
-  });
+export function together(ex: ExprLike, opts: { deep?: boolean } = {}): Expr {
+  const deep = opts.deep ?? false;
+  // SymPy _together: gcd_terms over the recursively combined terms of every sum
+  const go = (e: Expr): Expr => {
+    if (e.args.length === 0) return e;
+    const isExp = e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
+    if ((e instanceof Fn || isExp) && !deep) return e;
+    if (e instanceof Add) return impl.gcdTermsOf!(e.args.map(go));
+    if (e instanceof Pow) return pow(go(e.base), deep ? go(e.exp) : e.exp);
+    const args = e.args.map(go);
+    return args.every((a, i) => a === e.args[i]) ? e : rebuild(e, args);
+  };
+  return go(sympify(ex));
 }
 
 /**

@@ -118,7 +118,9 @@ def ser(o):
         return {"t": "Str", "v": o}
     if isinstance(o, (set, frozenset)):
         return {"t": "PySet", "items": [ser(i) for i in o]}
-    if isinstance(o, (list, tuple, Tuple)):
+    if isinstance(o, list):
+        return {"t": "Tuple", "items": [ser(i) for i in o], "list": True}
+    if isinstance(o, (tuple, Tuple)):
         return {"t": "Tuple", "items": [ser(i) for i in o]}
     if isinstance(o, dict):
         return {"t": "Dict", "items": [[ser(k), ser(v)] for k, v in o.items()]}

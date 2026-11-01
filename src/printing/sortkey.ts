@@ -196,8 +196,13 @@ function lexOrder(terms: readonly Expr[]): Expr[] {
     const [c, rest] = splitCoeff(term);
     let coeff: ComplexValue = { re: numValue(c), im: 0 };
     const cpart = new Map<string, number>();
+    const ncpart: Expr[] = [];
     if (!(rest instanceof Rational && rest.isOne)) {
       for (const factor of rest instanceof Mul ? rest.args : [rest]) {
+        if (!factor.isCommutative) {
+          ncpart.push(factor);
+          continue;
+        }
         if (!hasFreeSymbols(factor)) {
           try {
             const v = impl.toComplex(factor);
@@ -216,16 +221,16 @@ function lexOrder(terms: readonly Expr[]): Expr[] {
         gens.set(base.key, base);
       }
     }
-    return { term, coeff, cpart };
+    return { term, coeff, cpart, ncpart };
   });
   const genList = [...gens.values()].map((g) => ({ g, k: sortKey(g) })).sort((a, b) => compareKeys(a.k, b.k));
-  const keyed = parsed.map(({ term, coeff, cpart }) => {
+  const keyed = parsed.map(({ term, coeff, cpart, ncpart }) => {
     const monom: Key[] = genList.map(({ g }) => -(cpart.get(g.key) ?? 0));
     const ck: Key = [
       [coeff.im !== 0 ? 1 : 0, coeff.im],
       [coeff.re, coeff.im],
     ];
-    return { term, k: [monom, [], ck] as Key };
+    return { term, k: [monom, ncpart.map(sortKey), ck] as Key };
   });
   return keyed.sort((a, b) => compareKeys(a.k, b.k)).map((x) => x.term);
 }

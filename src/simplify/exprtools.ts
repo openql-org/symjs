@@ -246,11 +246,24 @@ function gcdTermsCore(terms0: Expr[], isprimitive: boolean, fraction: boolean): 
 /** SymPy gcd_terms: factor out common terms of a sum, recursing into other nodes. */
 export function gcdTerms(termsIn: ExprLike, opts: { isprimitive?: boolean; clear?: boolean; fraction?: boolean } = {}): Expr {
   const terms = sympify(termsIn);
+  const clear = opts.clear ?? true;
+  if (terms instanceof Add) return gcdTermsOf([...terms.args], opts);
+  if (terms.args.length === 0) return terms;
+  if (terms instanceof Mul) {
+    const [c, rest] = splitCoeff(terms);
+    const args = rest instanceof Mul ? rest.args : [rest];
+    return keepCoeff(c, mul(...args.map((i) => gcdTerms(i, opts))), clear);
+  }
+  return rebuild(terms, terms.args.map((a) => gcdTerms(a, opts)));
+}
+
+/** gcd_terms applied to a list of terms (an Add that has not been combined). */
+export function gcdTermsOf(termsList: readonly Expr[], opts: { isprimitive?: boolean; clear?: boolean; fraction?: boolean } = {}): Expr {
   const isprimitive = opts.isprimitive ?? false;
   const clear = opts.clear ?? true;
   const fraction = opts.fraction ?? true;
-  if (terms instanceof Add) {
-    const [cont, numer0, denom] = gcdTermsCore([...terms.args], isprimitive, fraction);
+  {
+    const [cont, numer0, denom] = gcdTermsCore([...termsList], isprimitive, fraction);
     let numer = numer0;
     let [coeff, factors] = splitCoeff(cont) as [Expr, Expr];
     if (!clear) {
@@ -267,13 +280,6 @@ export function gcdTerms(termsIn: ExprLike, opts: { isprimitive?: boolean; clear
     }
     return keepCoeff(coeff, mul(factors, numer, pow(denom, -1)), clear);
   }
-  if (terms.args.length === 0) return terms;
-  if (terms instanceof Mul) {
-    const [c, rest] = splitCoeff(terms);
-    const args = rest instanceof Mul ? rest.args : [rest];
-    return keepCoeff(c, mul(...args.map((i) => gcdTerms(i, opts))), clear);
-  }
-  return rebuild(terms, terms.args.map((a) => gcdTerms(a, opts)));
 }
 
 /** SymPy factor_terms: pull out common factors and content from terms, recursively. */
@@ -519,3 +525,4 @@ function reevaluate(e: Expr): Expr {
   if (e instanceof Mul) return mul(...args);
   return rebuild(e, args);
 }
+impl.gcdTermsOf = (terms) => gcdTermsOf(terms);

@@ -280,8 +280,11 @@ function reIm(x: Expr): [Expr, Expr] {
 
 /** (-1)**r for rational r: [cos(pi r), sin(pi r)] when both evaluate. */
 function unitRoot(x: Expr): [Expr, Expr] | undefined {
-  if (!(x instanceof Pow && x.base instanceof Rational && x.base.p === -1n && x.base.q === 1n && x.exp instanceof Rational)) return undefined;
-  const ang = mul(x.exp, S.Pi);
+  if (!(x instanceof Pow && x.exp instanceof Rational)) return undefined;
+  const negOne = x.base instanceof Rational && x.base.p === -1n && x.base.q === 1n;
+  if (!negOne && !isI(x.base)) return undefined;
+  // I**r = (-1)**(r/2)
+  const ang = mul(negOne ? x.exp : mul(x.exp, S.Half), S.Pi);
   const c = cos(ang);
   const s = sin(ang);
   if (c instanceof Fn || s instanceof Fn) return undefined;

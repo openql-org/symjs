@@ -21,7 +21,11 @@ export class PyList {
   constructor(readonly items: readonly unknown[]) {}
 }
 export class PyTuple {
-  constructor(readonly items: readonly unknown[]) {}
+  constructor(
+    readonly items: readonly unknown[],
+    /** the Python value was a list */
+    readonly isList = false,
+  ) {}
 }
 export class PyDict {
   constructor(readonly entries: readonly (readonly [unknown, unknown])[]) {}
@@ -228,7 +232,7 @@ export function deserialize(tree: Tree): unknown {
       return f((tree['args'] as Tree[]).map((a) => deserialize(a)) as Expr[]);
     }
     case 'Tuple':
-      return new PyTuple((tree['items'] as Tree[]).map(deserialize));
+      return new PyTuple((tree['items'] as Tree[]).map(deserialize), Boolean(tree['list']));
     case 'Poly':
       return sj.Poly.from(
         deserialize(tree['expr'] as Tree) as Expr,
@@ -536,7 +540,11 @@ export const ADAPTERS: Record<string, Adapter> = {
         seq = Boolean(v);
         continue;
       }
-      if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive', 'commutative'].includes(k) || v !== true) throw new Unsupported(`symbols ${k}`);
+      if (k === 'commutative' && v === false) {
+        a[k] = false;
+        continue;
+      }
+      if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive'].includes(k) || v !== true) throw new Unsupported(`symbols ${k}`);
       a[k] = true;
     }
     const one = (spec: string): unknown => {
@@ -546,6 +554,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       return syms.length === 1 && !isSeq ? syms[0] : new PyTuple(syms);
     };
     const first = args[0];
+    if (first instanceof PyList || (first instanceof PyTuple && first.isList)) return new PyList((first as PyTuple).items.map((s) => one(String(s))));
     if (first instanceof PyTuple) return new PyTuple(first.items.map((s) => one(String(s))));
     return one(String(first));
   },
@@ -963,7 +972,10 @@ export const ADAPTERS: Record<string, Adapter> = {
   expand_complex: exprFn(sj.expand_complex),
   simplify: exprFn(sj.simplify),
   factor: exprFn(sj.factor),
-  together: exprFn(sj.together),
+  together: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
+    return sj.together(asExpr(args[0]), { deep: Boolean(kw['deep']) });
+  },
   cancel: exprFn(sj.cancel),
   trigsimp: exprFn(sj.trigsimp),
   powsimp: (args, kw) => {
