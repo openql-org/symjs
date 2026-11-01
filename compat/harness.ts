@@ -654,6 +654,46 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (args.length > 2) throw new Unsupported('multivariate convexity');
     return sj.isConvex(asExpr(args[0]), asSym(args[1]), (kw['domain'] as sj.SetExpr | undefined) ?? sj.Reals);
   },
+  igcd: (args, kw) => (noKw(kw), sj.Rational.of(sj.igcd(...args.map((a) => (a as sj.Rational).p)))),
+  ilcm: (args, kw) => (noKw(kw), sj.Rational.of(sj.ilcm(...args.map((a) => (a as sj.Rational).p)))),
+  integer_nthroot: (args, kw) => {
+    noKw(kw);
+    const [r, ok] = sj.integerNthroot((args[0] as sj.Rational).p, intArg(args[1]));
+    return new PyTuple([sj.Rational.of(r), ok]);
+  },
+  trailing: (args, kw) => (noKw(kw), sj.trailing((args[0] as sj.Rational).p)),
+  num_digits: (args, kw) => (noKw(kw), sj.numDigits((args[0] as sj.Rational).p, args[1] === undefined ? 10 : intArg(args[1]))),
+  mod_inverse: (args, kw) => (noKw(kw), sj.modInverse(args[0] as sj.Rational, args[1] as sj.Rational)),
+  prod: (args, kw) => {
+    noKw(kw);
+    const xs = args[0] instanceof PyList || args[0] instanceof PyTuple ? args[0].items.map(asExpr) : [];
+    return sj.mul(args[1] === undefined ? 1 : asExpr(args[1]), ...xs);
+  },
+  nfloat: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['n', 'exponent'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    return sj.nfloat(asExpr(args[0]), kw['n'] === undefined ? 15 : intArg(kw['n']), Boolean(kw['exponent']));
+  },
+  comp: (args, kw) => {
+    noKw(kw);
+    const tol = args[2] === undefined ? undefined : args[2] === '' ? ('' as const) : asExpr(args[2]).toNumber();
+    return sj.comp(asExpr(args[0]), asExpr(args[1]), tol);
+  },
+  var: (args, kw) => ADAPTERS['symbols']!(args, kw),
+  '.limit_denominator': (args, kw, self) => (noKw(kw), sj.limitDenominator(self as sj.Rational, (args[0] as sj.Rational).p)),
+  '.as_two_terms': exprMethod((e) => new PyTuple(sj.asTwoTerms(e))),
+  '.has_xfree': (args, kw, self) => (noKw(kw), sj.hasXfree(asExpr(self), (args[0] as PySet).items.filter((i) => !(i instanceof UFnClass)).map(asExpr))),
+  '.is_algebraic_expr': (args, kw, self) => (noKw(kw), sj.isAlgebraicExpr(asExpr(self), args.map(asExpr))),
+  '.dummy_eq': (args, kw, self) => (noKw(kw), sj.dummyEq(asExpr(self), asExpr(args[0]), args[1] === undefined ? undefined : asExpr(args[1]))),
+  '.compare': (args, kw, self) => (noKw(kw), Math.sign(sj.compareKeys(sj.sortKey(asExpr(self)), sj.sortKey(asExpr(args[0]))))),
+  '.could_extract_minus_sign': exprMethod((e) => sj.couldExtractMinusSign(e)),
+  '.as_ordered_factors': exprMethod((e) => new PyList(sj.orderedFactors ? sj.orderedFactors(e) : [e])),
+  '.leadterm': (args, kw, self) => (noKw(kw), new PyTuple(sj.leadterm(asExpr(self), asSym(args[0])))),
+  '.as_leading_term': (args, kw, self) => (noKw(kw), sj.asLeadingTerm(asExpr(self), asSym(args[0]))),
+  '.getn': exprMethod((e) => sj.getn(e) ?? null),
+  '.nseries': (args, kw, self) => {
+    noKw(kw);
+    return sj.series(asExpr(self), asSym(args[0]), args[1] === undefined ? 0 : asExpr(args[1]), args[2] === undefined ? 6 : intArg(args[2]));
+  },
   root: (args, kw) => (noKw(kw), sj.root(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? 0 : asExpr(args[2]))),
   cbrt: exprFn(sj.cbrt),
   real_root: (args, kw) => (noKw(kw), sj.realRoot(asExpr(args[0]), asExpr(args[1]))),

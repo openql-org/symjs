@@ -155,3 +155,104 @@ function rangeValues(r: string): string[] {
   return Array.from({ length: Math.max(0, b - a) }, (_, k) => String(a + k));
 }
 impl.rationalFromFloat = (f) => rationalFromFloat(f.value);
+
+const babs = (n: bigint): bigint => (n < 0n ? -n : n);
+
+/** Greatest common divisor of integers (SymPy igcd). */
+export function igcd(...xs: bigint[]): bigint {
+  let g = 0n;
+  for (let x of xs) {
+    x = babs(x);
+    let a = g;
+    while (x) [a, x] = [x, a % x];
+    g = a;
+  }
+  return g;
+}
+
+/** Least common multiple of integers (SymPy ilcm). */
+export function ilcm(...xs: bigint[]): bigint {
+  let l = 1n;
+  for (const x of xs) {
+    if (x === 0n) return 0n;
+    l = babs((l / igcd(l, x)) * x);
+  }
+  return l;
+}
+
+/** (floor(y**(1/n)), exact) for nonnegative integers (SymPy integer_nthroot). */
+export function integerNthroot(y: bigint, n: number): [bigint, boolean] {
+  if (y < 0n) throw new RangeError('integer_nthroot: y must be nonnegative');
+  if (y < 2n) return [y, true];
+  const N = BigInt(n);
+  let x = 1n << BigInt(Math.ceil(y.toString(2).length / n) + 1);
+  for (;;) {
+    const z = ((N - 1n) * x + y / x ** (N - 1n)) / N;
+    if (z >= x) break;
+    x = z;
+  }
+  while (x ** N > y) x--;
+  while ((x + 1n) ** N <= y) x++;
+  return [x, x ** N === y];
+}
+
+/** Number of trailing zero bits (SymPy trailing). */
+export function trailing(n: bigint): number {
+  n = babs(n);
+  if (n === 0n) return 0;
+  let k = 0;
+  while ((n & 1n) === 0n) {
+    n >>= 1n;
+    k++;
+  }
+  return k;
+}
+
+/** Number of digits of |n| in the given base (SymPy num_digits). */
+export function numDigits(n: bigint, base = 10): number {
+  return babs(n).toString(base).length;
+}
+
+/** Inverse of a modulo m (SymPy mod_inverse); for non-integers 1/a when m > 1. */
+export function modInverse(a: Rational, m: Rational): Rational {
+  if (a.isInteger && m.isInteger) {
+    let [r0, r1] = [a.p, m.p];
+    let [s0, s1] = [1n, 0n];
+    while (r1) {
+      const q = r0 / r1;
+      [r0, r1] = [r1, r0 - q * r1];
+      [s0, s1] = [s1, s0 - q * s1];
+    }
+    if (babs(r0) !== 1n) throw new RangeError('mod_inverse: inverse does not exist');
+    const mm = babs(m.p);
+    let c = (s0 * r0) % mm;
+    if (c < 0n) c += mm;
+    return Rational.of(c);
+  }
+  if (m.p > m.q) return Rational.of(a.q, a.p);
+  throw new RangeError('mod_inverse: inverse does not exist');
+}
+
+/** Closest rational with denominator at most maxDen (Python Fraction.limit_denominator). */
+export function limitDenominator(r: Rational, maxDen: bigint): Rational {
+  if (r.q <= maxDen) return r;
+  let [p0, q0, p1, q1] = [0n, 1n, 1n, 0n];
+  let [n, d] = [r.p, r.q];
+  for (;;) {
+    const a = n >= 0n ? n / d : -((-n + d - 1n) / d);
+    const q2 = q0 + a * q1;
+    if (q2 > maxDen) break;
+    [p0, q0, p1, q1] = [p1, q1, p0 + a * p1, q2];
+    [n, d] = [d, n - a * d];
+  }
+  const k = (maxDen - q0) / q1;
+  const b1 = Rational.of(p0 + k * p1, q0 + k * q1);
+  const b2 = Rational.of(p1, q1);
+  const dist = (x: Rational) => {
+    const num = x.p * r.q - r.p * x.q;
+    return Rational.of(num < 0n ? -num : num, x.q * r.q);
+  };
+  const d1 = dist(b1);
+  const d2 = dist(b2);
+  return d2.p * d1.q <= d1.p * d2.q ? b2 : b1;
+}

@@ -5,7 +5,7 @@
  * @file series(): power series expansion with an Order term, SymPy style.
  */
 
-import { Expr, ExprLike, Order, Rational, Special, Sym, impl } from '../core/nodes';
+import { Add, Expr, ExprLike, Order, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace as subs } from '../core/traverse';
 import { log } from '../functions/elementary';
@@ -61,4 +61,32 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6): Expr {
 }
 
 impl.series = series;
+
+/** Leading term c*x**e of e as x -> 0 (SymPy leadterm): [c, e]. */
+export function leadterm(ex: ExprLike, x: Sym): [Expr, Expr] {
+  const e = sympify(ex);
+  if (!e.has(x)) return [e, S.Zero];
+  const t = new Sym('_s');
+  const exp0 = new Expander(t);
+  const l = exp0.leading(subs(e, [[x, t]]));
+  const c = subs(l.c, [[exp0.L, log(x)]]);
+  return [c, l.e];
+}
+
+/** SymPy as_leading_term(x). */
+export function asLeadingTerm(ex: ExprLike, x: Sym): Expr {
+  const [c, e] = leadterm(ex, x);
+  return mul(c, pow(x, e));
+}
+
+/** Order of the O term in a sum, or undefined (SymPy getn). */
+export function getn(ex: ExprLike): Expr | undefined {
+  const e = sympify(ex);
+  const o = (e instanceof Add ? e.args : [e]).find((a) => a instanceof Order) as Order | undefined;
+  if (!o) return undefined;
+  const b = o.args[0]!;
+  if (b instanceof Pow) return b.exp;
+  if (b instanceof Sym) return S.One;
+  return undefined;
+}
 

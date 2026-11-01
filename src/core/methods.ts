@@ -10,7 +10,7 @@ import { isZero as isZeroQ } from './assumptions';
 import { Add, Constant, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Special, Sym, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
-import { freeSymbols } from './traverse';
+import { freeSymbols, xreplace as xreplaceM } from './traverse';
 import { diff } from '../calculus/diff';
 import { abs, arg, im, log, re } from '../functions/elementary';
 import { asRealImagExpand, expandMul } from '../simplify/expand';
@@ -578,4 +578,51 @@ export function asCoefficientsDict(eIn: ExprLike, syms: readonly Expr[] = []): [
   const res: [Expr, Expr][] = [...out.values()].map(([k, v]) => [k, add(...v)]);
   if (!isZeroE(ind)) res.push([S.One, ind]);
   return res;
+}
+
+/** SymPy as_two_terms: (head, tail) of an Add or Mul. */
+export function asTwoTerms(eIn: ExprLike): [Expr, Expr] {
+  const e = sympify(eIn);
+  if (e instanceof Add) return [e.args[0]!, add(...e.args.slice(1))];
+  if (e instanceof Mul) return [e.args[0]!, mul(...e.args.slice(1))];
+  return [S.One, e];
+}
+
+/** SymPy has_xfree(set): does any given expression occur as a node? */
+export function hasXfree(eIn: ExprLike, items: readonly Expr[]): boolean {
+  const e = sympify(eIn);
+  const keys = new Set(items.map((i) => i.key));
+  const go = (x: Expr): boolean => keys.has(x.key) || x.args.some(go);
+  return go(e);
+}
+
+/** SymPy is_algebraic_expr(*syms): built from the symbols with +, *, and rational powers. */
+export function isAlgebraicExpr(eIn: ExprLike, syms: readonly Expr[] = []): boolean {
+  const e = sympify(eIn);
+  const s = syms.length ? [...syms] : [...freeSymbols(e)];
+  const go = (x: Expr): boolean => {
+    if (!s.some((y) => x.has(y))) return true;
+    if (s.some((y) => y.key === x.key)) return true;
+    if (x instanceof Add || x instanceof Mul) return x.args.every(go);
+    if (x instanceof Pow) return x.exp instanceof Rational && go(x.base);
+    return false;
+  };
+  return go(e);
+}
+
+/** SymPy dummy_eq: equality up to renaming the single dummy symbol. */
+export function dummyEq(aIn: ExprLike, bIn: ExprLike, symbol?: Expr): boolean {
+  const a = sympify(aIn);
+  const b = sympify(bIn);
+  const dummies = [...freeSymbols(a)].filter((s) => s.constructor.name === 'Dummy');
+  if (dummies.length === 0) return a.key === b.key;
+  if (dummies.length > 1) return false;
+  const d = dummies[0]!;
+  let target = symbol;
+  if (!target) {
+    const cand = [...freeSymbols(b)].filter((s) => ![...freeSymbols(a)].some((t) => t.key === s.key));
+    if (cand.length !== 1) return false;
+    target = cand[0]!;
+  }
+  return xreplaceM(a, [[d, target]]).key === b.key;
 }

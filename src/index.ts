@@ -87,6 +87,10 @@ export {
   atoms,
   hasFree,
   asCoefficientsDict,
+  asTwoTerms,
+  hasXfree,
+  isAlgebraicExpr,
+  dummyEq,
 } from './core/methods';
 export { root, cbrt, realRoot } from './core/ops';
 export { subs, xreplace, freeSymbols, mapBottomUp, rebuild } from './core/traverse';
@@ -236,7 +240,8 @@ export { precToDps, dpsToPrec } from './numeric/mpf';
 
 // printing / parsing
 export { str } from './printing/str';
-export { asOrderedTerms as orderedTerms, asOrderedFactors as orderedFactors, sortKey } from './printing/sortkey';
+export { asOrderedTerms as orderedTerms, asOrderedFactors as orderedFactors, sortKey, compareKeys } from './printing/sortkey';
+export { couldExtractMinusSign } from './core/ops';
 export { latex } from './printing/latex';
 export { parse, ex } from './parsing/parser';
 export type { ParseOptions } from './parsing/parser';
@@ -308,7 +313,21 @@ export function symbols<S extends string>(names: S, assumptions: Assumptions = {
   return expandSymbolNames(names).map((n) => new Sym(n, assumptions)) as SymbolTuple<S>;
 }
 
-export { rationalFromFloat, rationalFromString, integerLog, expandSymbolNames } from './core/numberutils';
+export {
+  rationalFromFloat,
+  rationalFromString,
+  integerLog,
+  expandSymbolNames,
+  igcd,
+  ilcm,
+  integerNthroot,
+  trailing,
+  numDigits,
+  modInverse,
+  limitDenominator,
+} from './core/numberutils';
+export { nfloat, comp } from './numeric/nfloat';
+export { leadterm, asLeadingTerm, getn } from './series/series';
 
 export {
   SetExpr,
