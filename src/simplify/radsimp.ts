@@ -6,7 +6,7 @@
  */
 
 import { keepCoeff } from '../core/methods';
-import { Add, Expr, impl, ExprLike, Mul, Pow, Rational, S } from '../core/nodes';
+import { Add, Derivative, Expr, impl, ExprLike, Mul, Pow, Rational, S, UndefFn } from '../core/nodes';
 import { add, asBaseExp, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { expandMul } from './expand';
 import { fraction } from './rational';
@@ -58,7 +58,15 @@ function powerOf(f: Expr, p: Expr, exact: boolean): Rational | undefined {
 }
 
 /** Split term = (pattern**k) * rest; returns [k, rest] or undefined. */
-function extractPattern(term: Expr, p: Expr, exact: boolean): [Rational, Expr] | undefined {
+/** Does factor f stand for the pattern p as a derivative of the same function? */
+function derivativeOf(f: Expr, p: Expr): boolean {
+  if (!(f instanceof Derivative)) return false;
+  const base = p instanceof Derivative ? p.expr : p;
+  return f.expr.key === base.key && (base instanceof UndefFn || base.kind === 'Undef');
+}
+
+/** [matched part (a power of p or a derivative of it), remaining coefficient]. */
+function extractPattern(term: Expr, p: Expr, exact: boolean): [Expr, Expr] | undefined {
   const factors = term instanceof Mul ? [...term.args] : [term];
   if (p instanceof Mul) {
     // every factor of the pattern must occur in the term
@@ -69,13 +77,14 @@ function extractPattern(term: Expr, p: Expr, exact: boolean): [Rational, Expr] |
       if (i < 0) return undefined;
       remaining.splice(i, 1);
     }
-    return [S.One, mul(...remaining)];
+    return [p, mul(...remaining)];
   }
   for (let i = 0; i < factors.length; i++) {
-    const k = powerOf(factors[i]!, p, exact);
-    if (k !== undefined) {
-      return [k, mul(...factors.filter((_, j) => j !== i))];
-    }
+    const f = factors[i]!;
+    const k = powerOf(f, p, exact);
+    if (k !== undefined) return [pow(p, k), mul(...factors.filter((_, j) => j !== i))];
+    const b = f instanceof Pow ? f.base : f;
+    if (exact ? b.key === p.key : derivativeOf(b, p)) return [f, mul(...factors.filter((_, j) => j !== i))];
   }
   return undefined;
 }
@@ -91,7 +100,7 @@ export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: { exac
   if (list.length === 0) return e;
   const [p, ...rest] = list as [Expr, ...Expr[]];
   const terms = e instanceof Add ? e.args : [e];
-  const groups = new Map<string, { k: Rational; coeffs: Expr[] }>();
+  const groups = new Map<string, { k: Expr; coeffs: Expr[] }>();
   const free: Expr[] = [];
   for (const t of terms) {
     const m = extractPattern(t, p, opts.exact === true);
@@ -105,15 +114,10 @@ export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: { exac
     else groups.set(k.key, { k, coeffs: [c] });
   }
   const parts: Expr[] = [];
-  for (const { k, coeffs } of groups.values()) {
-    const c = add(...coeffs);
-    const pk = pow(p, k);
-    parts.push(c instanceof Add ? new Mul([c, pk].sort(byKey)) : mul(c, pk));
-  }
+  for (const { k, coeffs } of groups.values()) parts.push(mul(add(...coeffs), k));
   const freePart = rest.length ? collect(add(...free), rest, opts) : add(...free);
   return add(freePart, ...parts);
 }
 
-const byKey = (a: Expr, b: Expr) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
 
 impl.collect = (e, syms) => collect(e, syms);
