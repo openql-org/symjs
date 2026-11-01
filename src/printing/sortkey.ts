@@ -137,6 +137,17 @@ function decomposePower(f: Expr): [Expr, number] {
 /** SymPy `Expr.as_ordered_terms()` with the default (lex) ordering. */
 export function asOrderedTerms(e: Expr): Expr[] {
   const terms = e instanceof Add ? e.args : [e];
+  // Special case: Add(positive Number, Mul(negative Number, expr)) keeps the number first (1 - x**2)
+  if (terms.length === 2) {
+    const isNumberLike = (t: Expr) => isNum(t) || (t instanceof Constant && t.name !== 'I');
+    const sorted = [...terms].sort((a, b) => (isNumberLike(a) ? 0 : 1) - (isNumberLike(b) ? 0 : 1));
+    const [n, m] = sorted as [Expr, Expr];
+    if (isNumberLike(n) && m instanceof Mul && m.args.length === 2) {
+      const c = m.args[0]!;
+      const positive = isNum(n) ? n.isPositive : true;
+      if (positive && isNum(c) && c.isNegative) return sorted;
+    }
+  }
   const gens = new Map<string, Expr>();
   const parsed = terms.map((term) => {
     const [c, rest] = splitCoeff(term);

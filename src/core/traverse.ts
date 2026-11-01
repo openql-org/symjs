@@ -6,7 +6,8 @@
  */
 
 import { fn } from '../functions/elementary';
-import { Add, Expr, ExprLike, Fn, Mul, Pow, Substitution, Sym, impl } from './nodes';
+import { piecewise, rel } from './logic';
+import { Add, Expr, ExprLike, Fn, Integral, Mul, Piecewise, Pow, Rel, Substitution, Sym, impl } from './nodes';
 import { add, mul, pow, sympify } from './ops';
 
 /** Rebuild a node of the same type with new arguments (re-canonicalizing). */
@@ -15,6 +16,13 @@ export function rebuild(e: Expr, args: readonly Expr[]): Expr {
   if (e instanceof Mul) return mul(...args);
   if (e instanceof Pow) return pow(args[0]!, args[1]!);
   if (e instanceof Fn) return fn(e.name, args);
+  if (e instanceof Rel) return rel(e.op, args[0]!, args[1]!);
+  if (e instanceof Piecewise) {
+    const pairs: [Expr, Expr][] = [];
+    for (let i = 0; i < args.length; i += 2) pairs.push([args[i]!, args[i + 1]!]);
+    return piecewise(...pairs);
+  }
+  if (e instanceof Integral) return new Integral(args);
   return e;
 }
 

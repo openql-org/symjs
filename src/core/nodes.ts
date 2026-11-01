@@ -15,7 +15,19 @@
 
 import { gcd } from './numbers';
 
-export type Kind = 'Rational' | 'Float' | 'Symbol' | 'Constant' | 'Add' | 'Mul' | 'Pow' | 'Fn';
+export type Kind =
+  | 'Rational'
+  | 'Float'
+  | 'Symbol'
+  | 'Constant'
+  | 'Add'
+  | 'Mul'
+  | 'Pow'
+  | 'Fn'
+  | 'Bool'
+  | 'Rel'
+  | 'Piecewise'
+  | 'Integral';
 
 /** Anything that can be turned into an expression. */
 export type ExprLike = Expr | number | bigint;
@@ -82,6 +94,7 @@ export interface Impl {
   conjugate(e: Expr): Expr;
   abs(e: Expr): Expr;
   freeSymbols(e: Expr): Set<Sym>;
+  integrate(e: Expr, x: Sym, limits?: [ExprLike, ExprLike]): Expr;
 }
 
 export const impl: Impl = {} as Impl;
@@ -140,6 +153,10 @@ export abstract class Expr {
   }
   diff(x: Expr, n = 1): Expr {
     return impl.diff(this, x, n);
+  }
+  /** Indefinite integral w.r.t. x, or definite over [a, b] when limits are given. */
+  integrate(x: Sym, limits?: [ExprLike, ExprLike]): Expr {
+    return impl.integrate(this, x, limits);
   }
   expand(): Expr {
     return impl.expand(this);
@@ -376,6 +393,75 @@ export class Fn extends Expr {
   }
 }
 
+/** Boolean constant (SymPy `true` / `false`). */
+export class BoolAtom extends Expr {
+  readonly kind = 'Bool' as const;
+  readonly args: readonly Expr[] = [];
+  constructor(readonly value: boolean) {
+    super();
+  }
+  protected computeKey(): string {
+    return this.value ? '!true' : '!false';
+  }
+}
+
+export type RelOp = 'Eq' | 'Ne' | 'Lt' | 'Le' | 'Gt' | 'Ge';
+
+/** Relation such as Ne(a, 0). Construct with `rel()` in `logic.ts`. @internal ctor */
+export class Rel extends Expr {
+  readonly kind = 'Rel' as const;
+  readonly args: readonly [Expr, Expr];
+  constructor(readonly op: RelOp, lhs: Expr, rhs: Expr) {
+    super();
+    this.args = [lhs, rhs];
+  }
+  get lhs(): Expr {
+    return this.args[0];
+  }
+  get rhs(): Expr {
+    return this.args[1];
+  }
+  protected computeKey(): string {
+    return `${this.op}(${this.args[0].key},${this.args[1].key})`;
+  }
+}
+
+/** Piecewise((expr, cond), ...). Args are stored flat: [e1, c1, e2, c2, ...]. @internal ctor */
+export class Piecewise extends Expr {
+  readonly kind = 'Piecewise' as const;
+  constructor(readonly args: readonly Expr[]) {
+    super();
+  }
+  get pairs(): [Expr, Expr][] {
+    const out: [Expr, Expr][] = [];
+    for (let i = 0; i < this.args.length; i += 2) out.push([this.args[i]!, this.args[i + 1]!]);
+    return out;
+  }
+  protected computeKey(): string {
+    return `Piecewise(${this.args.map((a) => a.key).join(',')})`;
+  }
+}
+
+/** Unevaluated integral: [f, x] (indefinite) or [f, x, a, b] (definite). @internal ctor */
+export class Integral extends Expr {
+  readonly kind = 'Integral' as const;
+  constructor(readonly args: readonly Expr[]) {
+    super();
+  }
+  get integrand(): Expr {
+    return this.args[0]!;
+  }
+  get variable(): Expr {
+    return this.args[1]!;
+  }
+  get limits(): [Expr, Expr] | undefined {
+    return this.args.length === 4 ? [this.args[2]!, this.args[3]!] : undefined;
+  }
+  protected computeKey(): string {
+    return `Integral(${this.args.map((a) => a.key).join(',')})`;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Singletons
 // ---------------------------------------------------------------------------
@@ -390,6 +476,8 @@ export const S = {
   Pi: new Constant('pi'),
   E: new Constant('E'),
   I: new Constant('I'),
+  true: new BoolAtom(true),
+  false: new BoolAtom(false),
 } as const;
 
 export const pi = S.Pi;

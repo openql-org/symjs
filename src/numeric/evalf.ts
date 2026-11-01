@@ -7,6 +7,7 @@
 
 import {
   Add,
+  BoolAtom,
   ComplexValue as C,
   Constant,
   Expr,
@@ -15,8 +16,10 @@ import {
   Fn,
   Mul,
   NumericValues,
+  Piecewise,
   Pow,
   Rational,
+  Rel,
   S,
   Sym,
   impl,
@@ -113,7 +116,43 @@ function compile(e: Expr, resolve: (s: Sym) => Compiled): Compiled {
     const op = FN_NUMERIC[e.name];
     return (env) => op(fa(env));
   }
+  if (e instanceof Piecewise) {
+    const branches = e.pairs.map(([x, cond]) => [compile(x, resolve), compileCond(cond, resolve)] as const);
+    return (env) => {
+      for (const [f, c] of branches) if (c(env)) return f(env);
+      throw new RangeError('Piecewise: no condition is satisfied');
+    };
+  }
   throw new Error(`Cannot evaluate ${e.toString()}`);
+}
+
+function compileCond(e: Expr, resolve: (s: Sym) => Compiled): (env: readonly C[]) => boolean {
+  if (e instanceof BoolAtom) return () => e.value;
+  if (e instanceof Rel) {
+    const a = compile(e.lhs, resolve);
+    const b = compile(e.rhs, resolve);
+    const tol = 1e-12;
+    return (env) => {
+      const x = a(env);
+      const y = b(env);
+      const eq = Math.abs(x.re - y.re) <= tol && Math.abs(x.im - y.im) <= tol;
+      switch (e.op) {
+        case 'Eq':
+          return eq;
+        case 'Ne':
+          return !eq;
+        case 'Lt':
+          return x.re < y.re;
+        case 'Le':
+          return x.re <= y.re;
+        case 'Gt':
+          return x.re > y.re;
+        case 'Ge':
+          return x.re >= y.re;
+      }
+    };
+  }
+  throw new Error(`Cannot evaluate condition ${e.toString()}`);
 }
 
 /** Evaluate to a complex number. All free symbols must be given values. */

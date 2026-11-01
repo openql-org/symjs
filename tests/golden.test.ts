@@ -9,6 +9,8 @@ import {
   diff,
   expand,
   factor,
+  integrate,
+  Integral,
   latex,
   parse,
   roots,
@@ -52,12 +54,27 @@ const OPS: Record<string, (e: Expr) => string | string[]> = {
   roots_x: (e) => roots(e, x).map(str).sort(),
 };
 
+function runOp(op: string, e: Expr): string | string[] {
+  if (op.startsWith('integrate:')) {
+    const [v, lo, hi] = op.slice('integrate:'.length).split(',');
+    const sym = symbols[v!] ?? new Sym(v!);
+    if (lo !== undefined && hi !== undefined) {
+      return str(integrate(e, sym, [parse(lo, { symbols }), parse(hi, { symbols })]));
+    }
+    return str(integrate(e, sym));
+  }
+  if (op === 'latex_integral') {
+    return `${latex(new Integral([e, x]))} | ${latex(new Integral([e, x, parse('0'), parse('1')]))}`;
+  }
+  return OPS[op]!(e);
+}
+
 describe(`SymPy ${expected.sympy} compatibility`, () => {
   for (const { expr, out } of expected.results) {
     for (const [op, want] of Object.entries(out)) {
       it(`${op}(${expr})`, () => {
         const e = parse(expr, { symbols });
-        expect(OPS[op]!(e)).toEqual(want);
+        expect(runOp(op, e)).toEqual(want);
       });
     }
   }

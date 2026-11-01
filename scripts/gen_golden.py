@@ -10,7 +10,7 @@ import json
 import sys
 
 import sympy
-from sympy import Symbol, cancel, conjugate, expand, factor, latex, roots, simplify, together, trigsimp
+from sympy import Integral, Symbol, cancel, integrate, conjugate, expand, factor, latex, roots, simplify, together, trigsimp
 from sympy.parsing.sympy_parser import parse_expr
 
 
@@ -41,6 +41,16 @@ def main(src: str, dst: str) -> None:
             return str(conjugate(e))
         if op == "diff_x":
             return str(e.diff(x))
+        if op.startswith("integrate:"):
+            spec_ = op.split(":", 1)[1].split(",")
+            var = syms[spec_[0]] if spec_[0] in syms else Symbol(spec_[0])
+            if len(spec_) == 3:
+                lo = parse_expr(spec_[1], local_dict=dict(syms))
+                hi = parse_expr(spec_[2], local_dict=dict(syms))
+                return str(integrate(e, (var, lo, hi)))
+            return str(integrate(e, var))
+        if op == "latex_integral":
+            return latex(Integral(e, x)) + " | " + latex(Integral(e, (x, 0, 1)))
         if op == "roots_x":
             # sorted list with multiplicity, like symjs `roots`
             rs = roots(e, x)

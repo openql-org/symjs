@@ -6,7 +6,8 @@
  */
 
 import { isReal } from '../core/assumptions';
-import { Add, Constant, Expr, ExprLike, Fn, Mul, Pow, S, Sym, impl, isNum } from '../core/nodes';
+import { piecewise } from '../core/logic';
+import { Add, Constant, Expr, ExprLike, Fn, Integral, Mul, Piecewise, Pow, S, Sym, impl, isNum } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { abs, conjugate, cos, cosh, im as fnIm, log, re as fnRe, sin, sinh, tan, tanh } from '../functions/elementary';
 
@@ -66,6 +67,8 @@ function d(e: Expr, x: Expr): Expr {
     if (!f) throw new Error(`diff: unknown derivative for ${e.name}`);
     return mul(f(u), du);
   }
+  if (e instanceof Piecewise) return piecewise(...e.pairs.map(([v, c]) => [d(v, x), c] as const));
+  if (e instanceof Integral && !e.limits && e.variable.key === x.key) return e.integrand;
   throw new Error(`diff: unsupported expression ${e.toString()}`);
 }
 

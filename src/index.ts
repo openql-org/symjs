@@ -21,6 +21,10 @@ export {
   Mul,
   Pow,
   Fn,
+  BoolAtom,
+  Rel,
+  Piecewise,
+  Integral,
   S,
   pi,
   E,
@@ -46,6 +50,7 @@ export type {
   FnName,
   Num,
   ConstantName,
+  RelOp,
 } from './core/nodes';
 export { sympify, add, mul, pow, sub, div, neg, sqrt, exp, rational, splitCoeff, asBaseExp } from './core/ops';
 export { isReal, isPositive, isNegative, isNonNegative, isNonZero, isZero, isIntegerQ } from './core/assumptions';
@@ -74,6 +79,10 @@ export {
 
 // calculus
 export { diff } from './calculus/diff';
+export { integrate } from './integrals/integrate';
+
+// logic
+export { rel, Eq, Ne, Lt, Le, Gt, Ge, piecewise } from './core/logic';
 
 // simplification
 export { expand } from './simplify/expand';

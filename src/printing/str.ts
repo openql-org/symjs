@@ -6,12 +6,14 @@
  * (e.g. `x**2 + 2*x*y - sqrt(2)/2`).
  */
 
-import { Add, Constant, Expr, Float, Fn, Mul, Pow, Rational, Sym, impl, isNum } from '../core/nodes';
+import { Add, BoolAtom, Constant, Expr, Float, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, Sym, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
 import { asOrderedFactors, asOrderedTerms, sympyFunctionName } from './sortkey';
 
 /** SymPy precedence values. */
-export const PREC = { ADD: 40, MUL: 50, POW: 60, FUNC: 70, ATOM: 1000 } as const;
+export const PREC = { REL: 35, ADD: 40, MUL: 50, POW: 60, FUNC: 70, ATOM: 1000 } as const;
+
+export const REL_SYMBOL = { Lt: '<', Le: '<=', Gt: '>', Ge: '>=' } as const;
 
 const isExp = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
 
@@ -36,7 +38,8 @@ export function precedence(e: Expr): number {
   if (e instanceof Mul) return startsNegative(e) ? PREC.ADD : PREC.MUL;
   if (isExp(e)) return PREC.FUNC;
   if (e instanceof Pow) return PREC.POW;
-  if (e instanceof Fn) return PREC.FUNC;
+  if (e instanceof Fn || e instanceof Piecewise) return PREC.FUNC;
+  if (e instanceof Rel) return PREC.REL;
   return PREC.ATOM;
 }
 
@@ -131,6 +134,17 @@ export function str(e: Expr): string {
   if (e instanceof Add) return printAdd(e);
   if (e instanceof Mul) return printMul(e);
   if (e instanceof Pow) return printPow(e);
+  if (e instanceof BoolAtom) return e.value ? 'True' : 'False';
+  if (e instanceof Rel) {
+    if (e.op === 'Eq' || e.op === 'Ne') return `${e.op}(${str(e.lhs)}, ${str(e.rhs)})`;
+    return `${parenthesize(e.lhs, PREC.REL)} ${REL_SYMBOL[e.op]} ${parenthesize(e.rhs, PREC.REL)}`;
+  }
+  if (e instanceof Piecewise) return `Piecewise(${e.pairs.map(([x, c]) => `(${str(x)}, ${str(c)})`).join(', ')})`;
+  if (e instanceof Integral) {
+    const lim = e.limits;
+    const v = str(e.variable);
+    return `Integral(${str(e.integrand)}, ${lim ? `(${v}, ${str(lim[0])}, ${str(lim[1])})` : v})`;
+  }
   return e.key;
 }
 

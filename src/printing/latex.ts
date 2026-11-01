@@ -6,7 +6,7 @@
  */
 
 import { isNegative } from '../core/assumptions';
-import { Add, Constant, Expr, Float, Fn, Mul, Pow, Rational, Sym, impl, isNum } from '../core/nodes';
+import { Add, BoolAtom, Constant, Expr, Float, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, Sym, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
 import { asOrderedFactors, asOrderedTerms } from './sortkey';
 import { PREC, floatString, precedence, startsNegative, str } from './str';
@@ -293,6 +293,27 @@ export function latex(e: Expr): string {
   if (e instanceof Add) return printAdd(e);
   if (e instanceof Mul) return printMulLike(e);
   if (e instanceof Pow) return printPow(e);
+  if (e instanceof BoolAtom) return e.value ? '\\text{True}' : '\\text{False}';
+  if (e instanceof Rel) {
+    const op = { Eq: '=', Ne: '\\neq', Lt: '<', Le: '\\leq', Gt: '>', Ge: '\\geq' }[e.op];
+    return `${latex(e.lhs)} ${op} ${latex(e.rhs)}`;
+  }
+  if (e instanceof Piecewise) {
+    const pairs = e.pairs;
+    const parts = pairs.map(([x, c], i) =>
+      i === pairs.length - 1 && c instanceof BoolAtom && c.value
+        ? `${latex(x)} & \\text{otherwise}`
+        : `${latex(x)} & \\text{for}\\: ${latex(c)}`,
+    );
+    return `\\begin{cases} ${parts.join(' \\\\')} \\end{cases}`;
+  }
+  if (e instanceof Integral) {
+    const lim = e.limits;
+    const head = lim ? `\\int\\limits_{${latex(lim[0])}}^{${latex(lim[1])}}` : '\\int';
+    const f = e.integrand;
+    const body = precedence(f) < PREC.MUL ? addParens(latex(f)) : latex(f);
+    return `${head} ${body}\\, d${latex(e.variable)}`;
+  }
   return e.key;
 }
 
