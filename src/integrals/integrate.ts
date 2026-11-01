@@ -15,7 +15,7 @@
  * Unsupported integrands are returned as an unevaluated `Integral`.
  */
 
-import { isNonZero } from '../core/assumptions';
+import { isNegative as isNegativeQ, isNonZero, isPositive as isPositiveQ } from '../core/assumptions';
 import { Ne, piecewise } from '../core/logic';
 import {
   Add,
@@ -43,6 +43,7 @@ import { xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { asin, atan, cos, cosh, log, sin, sinh } from '../functions/elementary';
 import { UPoly, polyCoefficients } from '../polys/poly';
+import { fn as fnErf } from '../functions/elementary';
 import { expandMul as expand } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { expsimp, hasTrigFunctions } from '../simplify/trigsimp';
@@ -124,6 +125,7 @@ class Integrator {
 
     return (
       this.table(f) ??
+      this.gaussian(f) ??
       this.derivativeDivides(f) ??
       this.trigPowers(f) ??
       this.byParts(f) ??
@@ -131,6 +133,34 @@ class Integrator {
       this.rational(f) ??
       this.expanded(f)
     );
+  }
+
+  // ---- Gaussian: exp(A*x**2 + B*x + C) -> erf / erfi ------------------------
+
+  private gaussian(f: Expr): R {
+    const x = this.x;
+    if (!(f instanceof Pow && f.base instanceof Constant && f.base.name === 'E')) return undefined;
+    const pc = polyCoefficients(f.exp, x);
+    if (!pc || Math.max(...pc.keys()) !== 2) return undefined;
+    const A = pc.get(2)!;
+    const B = pc.get(1) ?? S.Zero;
+    const C = pc.get(0) ?? S.Zero;
+    const shift = mul(B, pow(mul(2, A), -1));
+    const k0 = add(C, mul(-1, pow(B, 2), pow(mul(4, A), -1)));
+    const pref = (k: Expr) => mul(sqrt(S.Pi), pow(mul(2, k), -1), impl.exp!(k0));
+    const neg = isNegativeQ(A);
+    if (neg === true || (neg === undefined && !isPositiveQ(A))) {
+      const k = sqrt(mul(-1, A));
+      const F = mul(pref(k), fnErf('erf', [expand(mul(k, add(x, shift)))]));
+      if (neg === true) return F;
+      if (B instanceof Rational && B.isZero && C instanceof Rational && C.isZero) {
+        const factors = (mul(-1, A) instanceof Mul ? (mul(-1, A) as Mul).args : [mul(-1, A)]).filter((t) => !isNum(t));
+        return piecewise([F, Ne(mul(...factors), 0)], [x, true]);
+      }
+      return undefined;
+    }
+    const k = sqrt(A);
+    return mul(pref(k), fnErf('erfi', [expand(mul(k, add(x, shift)))]));
   }
 
   // ---- table of elementary antiderivatives ---------------------------------
@@ -221,6 +251,19 @@ class Integrator {
     const x = this.x;
     const factors = f instanceof Mul ? f.args : [f];
     for (const g of factors) {
+      // exp(u) * u' -> exp(u)
+      if (g instanceof Pow && g.base instanceof Constant && g.base.name === 'E' && !this.free(g.exp)) {
+        const du = diff(g.exp, x);
+        if (!isZeroR(du)) {
+          let q: Expr | undefined;
+          try {
+            q = cancel(mul(...factors.filter((t) => t !== g), pow(du, -1)));
+          } catch {
+            q = undefined;
+          }
+          if (q !== undefined && this.free(q)) return mul(q, g);
+        }
+      }
       if (!(g instanceof Pow) || this.free(g.base) || !(g.exp instanceof Rational)) continue;
       const [base, n] = [g.base, g.exp];
       const rest = mul(...factors.filter((t) => t !== g));

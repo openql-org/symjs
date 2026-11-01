@@ -190,6 +190,7 @@ export interface Impl {
   ordered?(xs: readonly Expr[]): Expr[];
   expandFunc?(e: Expr): Expr;
   expandComplex?(e: Expr): Expr;
+  exp?(e: Expr): Expr;
   cos?(e: Expr): Expr;
   sin?(e: Expr): Expr;
   sign?(e: Expr): Expr;

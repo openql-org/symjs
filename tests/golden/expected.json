@@ -2664,6 +2664,37 @@
       "out": {
         "factor": "-x - 1"
       }
+    },
+    {
+      "expr": "exp(-x**2)",
+      "out": {
+        "integrate:x": "sqrt(pi)*erf(x)/2",
+        "integrate:x,-oo,oo": "sqrt(pi)"
+      }
+    },
+    {
+      "expr": "exp(x**2)",
+      "out": {
+        "integrate:x": "sqrt(pi)*erfi(x)/2"
+      }
+    },
+    {
+      "expr": "exp(-2*x**2 + 3*x)",
+      "out": {
+        "integrate:x": "sqrt(2)*sqrt(pi)*exp(9/8)*erf(sqrt(2)*x - 3*sqrt(2)/4)/4"
+      }
+    },
+    {
+      "expr": "x*exp(-x**2)",
+      "out": {
+        "integrate:x": "-exp(-x**2)/2"
+      }
+    },
+    {
+      "expr": "x**2*exp(x**3)",
+      "out": {
+        "integrate:x": "exp(x**3)/3"
+      }
     }
   ]
 }

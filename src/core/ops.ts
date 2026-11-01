@@ -789,3 +789,4 @@ export function realRoot(xIn: ExprLike, nIn: ExprLike): Expr {
   }
   return root(x, n);
 }
+impl.exp = (e) => exp(e);

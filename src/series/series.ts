@@ -42,21 +42,23 @@ export function O(ex: ExprLike, x?: Sym, x0: ExprLike = 0): Expr {
  * Series expansion of e about x = x0 up to O((x - x0)**n). Like SymPy, an
  * exact (finite) expansion is returned without an Order term.
  */
-export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6): Expr {
+export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' | '-' = '+'): Expr {
   const e = sympify(ex);
   const x0 = sympify(x0x);
   if (x0 instanceof Special) throw new Error('series: expansion at infinity is not supported yet');
   if (!e.has(x)) return e;
   const t = new Sym('_s');
   const ex0 = new Expander(t);
-  const shifted = subs(e, [[x, add(x0, t)]]);
+  // from the left: x = x0 - t with t -> 0+, written in powers of (x0 - x)
+  const shifted = subs(e, [[x, dir === '-' ? add(x0, mul(-1, t)) : add(x0, t)]]);
   const ps = ex0.ser(shifted, Rational.of(n));
-  const base = x0 instanceof Rational && x0.isZero ? x : add(x, mul(-1, x0));
+  const base = dir === '-' ? add(x0, mul(-1, x)) : x0 instanceof Rational && x0.isZero ? x : add(x, mul(-1, x0));
   const back = (c: Expr) => subs(c, [[ex0.L, log(base)]]);
   const terms = ps.terms.map((term) => mul(back(term.c), pow(base, term.e)));
   const body = add(...terms);
   if (ps.order.value >= 1e5) return body;
-  const ord = x0 instanceof Rational && x0.isZero ? new Order([pow(x, ps.order)]) : new Order([pow(base, ps.order), x, x0]);
+  const lin = x0 instanceof Rational && x0.isZero ? x : add(x, mul(-1, x0));
+  const ord = x0 instanceof Rational && x0.isZero ? new Order([pow(x, ps.order)]) : new Order([pow(lin, ps.order), x, x0]);
   return add(body, ord);
 }
 

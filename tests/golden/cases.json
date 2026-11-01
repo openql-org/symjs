@@ -2612,6 +2612,37 @@
       "ops": [
         "factor"
       ]
+    },
+    {
+      "expr": "exp(-x**2)",
+      "ops": [
+        "integrate:x",
+        "integrate:x,-oo,oo"
+      ]
+    },
+    {
+      "expr": "exp(x**2)",
+      "ops": [
+        "integrate:x"
+      ]
+    },
+    {
+      "expr": "exp(-2*x**2 + 3*x)",
+      "ops": [
+        "integrate:x"
+      ]
+    },
+    {
+      "expr": "x*exp(-x**2)",
+      "ops": [
+        "integrate:x"
+      ]
+    },
+    {
+      "expr": "x**2*exp(x**3)",
+      "ops": [
+        "integrate:x"
+      ]
     }
   ]
 }

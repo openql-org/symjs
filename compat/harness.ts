@@ -353,6 +353,11 @@ function rootsDict(rs: Expr[]): PyDict {
 }
 
 function diffArgs(e: Expr, rest: unknown[]): Expr {
+  if (!rest.length) {
+    const fs = [...sj.freeSymbols(e)];
+    if (fs.length !== 1) throw new Unsupported('diff variable');
+    return sj.diff(e, fs[0]!);
+  }
   let out = e;
   for (let i = 0; i < rest.length; i++) {
     const v = asExpr(rest[i]);
@@ -1130,12 +1135,13 @@ export const ADAPTERS: Record<string, Adapter> = {
   series: (args, kw) => {
     const x0 = kw['x0'] ?? args[2] ?? 0;
     const n = kw['n'] ?? args[3] ?? 6;
-    for (const k of Object.keys(kw)) if (k !== 'x0' && k !== 'n') throw new Unsupported(`kwargs ${k}`);
+    const dir = (kw['dir'] ?? args[4] ?? '+') as '+' | '-';
+    for (const k of Object.keys(kw)) if (!['x0', 'n', 'dir'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const e = asExpr(args[0]);
     const syms = [...sj.freeSymbols(e)];
     const x = args[1] ? asSym(args[1]) : syms.length === 1 ? syms[0]! : undefined;
     if (!x) throw new Unsupported('series variable');
-    return sj.series(e, x, asExpr(x0), Number((asExpr(n) as sj.Rational).p));
+    return sj.series(e, x, asExpr(x0), Number((asExpr(n) as sj.Rational).p), dir);
   },
   O: (args, kw) => (noKw(kw), orderNode(asExpr(args[0]), args.slice(1))),
   Sum: (args, kw) => (noKw(kw), concreteNode('Sum', [asExpr(args[0]), ...args.slice(1)])),
