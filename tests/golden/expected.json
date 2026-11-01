@@ -1,0 +1,747 @@
+{
+  "sympy": "1.14.0",
+  "results": [
+    {
+      "expr": "x + x + 1 + 2",
+      "out": {
+        "str": "2*x + 3",
+        "latex": "2 x + 3"
+      }
+    },
+    {
+      "expr": "x**2*y",
+      "out": {
+        "str": "x**2*y",
+        "latex": "x^{2} y"
+      }
+    },
+    {
+      "expr": "y*x**2*3",
+      "out": {
+        "str": "3*x**2*y",
+        "latex": "3 x^{2} y"
+      }
+    },
+    {
+      "expr": "x/2",
+      "out": {
+        "str": "x/2",
+        "latex": "\\frac{x}{2}"
+      }
+    },
+    {
+      "expr": "-x/2",
+      "out": {
+        "str": "-x/2",
+        "latex": "- \\frac{x}{2}"
+      }
+    },
+    {
+      "expr": "3*x/(4*y)",
+      "out": {
+        "str": "3*x/(4*y)",
+        "latex": "\\frac{3 x}{4 y}"
+      }
+    },
+    {
+      "expr": "x*y/(2*z)",
+      "out": {
+        "str": "x*y/(2*z)",
+        "latex": "\\frac{x y}{2 z}"
+      }
+    },
+    {
+      "expr": "1/x",
+      "out": {
+        "str": "1/x",
+        "latex": "\\frac{1}{x}"
+      }
+    },
+    {
+      "expr": "1/(x + 1)",
+      "out": {
+        "str": "1/(x + 1)",
+        "latex": "\\frac{1}{x + 1}"
+      }
+    },
+    {
+      "expr": "x**(-2)",
+      "out": {
+        "str": "x**(-2)",
+        "latex": "\\frac{1}{x^{2}}"
+      }
+    },
+    {
+      "expr": "x**(1/3)",
+      "out": {
+        "str": "x**(1/3)",
+        "latex": "\\sqrt[3]{x}"
+      }
+    },
+    {
+      "expr": "x**y",
+      "out": {
+        "str": "x**y",
+        "latex": "x^{y}"
+      }
+    },
+    {
+      "expr": "(x + 1)**2",
+      "out": {
+        "str": "(x + 1)**2",
+        "latex": "\\left(x + 1\\right)^{2}",
+        "expand": "x**2 + 2*x + 1"
+      }
+    },
+    {
+      "expr": "(x + y)**3",
+      "out": {
+        "expand": "x**3 + 3*x**2*y + 3*x*y**2 + y**3"
+      }
+    },
+    {
+      "expr": "(x + 1)*(x - 1)",
+      "out": {
+        "str": "(x - 1)*(x + 1)",
+        "expand": "x**2 - 1"
+      }
+    },
+    {
+      "expr": "(x - y)*(x + y)*(x**2 + y**2)",
+      "out": {
+        "expand": "x**4 - y**4"
+      }
+    },
+    {
+      "expr": "2*(x + 1)",
+      "out": {
+        "str": "2*x + 2"
+      }
+    },
+    {
+      "expr": "x*(y + 1)",
+      "out": {
+        "str": "x*(y + 1)",
+        "expand": "x*y + x"
+      }
+    },
+    {
+      "expr": "x**2 + 2*x + 1",
+      "out": {
+        "str": "x**2 + 2*x + 1",
+        "factor": "(x + 1)**2"
+      }
+    },
+    {
+      "expr": "x**3 - x",
+      "out": {
+        "factor": "x*(x - 1)*(x + 1)"
+      }
+    },
+    {
+      "expr": "2*x + 2",
+      "out": {
+        "factor": "2*(x + 1)"
+      }
+    },
+    {
+      "expr": "x**2 - 2",
+      "out": {
+        "factor": "x**2 - 2"
+      }
+    },
+    {
+      "expr": "x**3 - 6*x**2 + 11*x - 6",
+      "out": {
+        "factor": "(x - 3)*(x - 2)*(x - 1)"
+      }
+    },
+    {
+      "expr": "sqrt(8)",
+      "out": {
+        "str": "2*sqrt(2)",
+        "latex": "2 \\sqrt{2}"
+      }
+    },
+    {
+      "expr": "1/sqrt(2)",
+      "out": {
+        "str": "sqrt(2)/2",
+        "latex": "\\frac{\\sqrt{2}}{2}"
+      }
+    },
+    {
+      "expr": "sqrt(2)*sqrt(3)",
+      "out": {
+        "str": "sqrt(6)"
+      }
+    },
+    {
+      "expr": "sqrt(12)/6",
+      "out": {
+        "str": "sqrt(3)/3"
+      }
+    },
+    {
+      "expr": "sqrt(-4)",
+      "out": {
+        "str": "2*I"
+      }
+    },
+    {
+      "expr": "(1/4)**(1/2)",
+      "out": {
+        "str": "1/2"
+      }
+    },
+    {
+      "expr": "2**(1/3)*2**(2/3)",
+      "out": {
+        "str": "2"
+      }
+    },
+    {
+      "expr": "sqrt(x**2)",
+      "out": {
+        "str": "sqrt(x**2)"
+      }
+    },
+    {
+      "expr": "sqrt(a**2)",
+      "out": {
+        "str": "Abs(a)"
+      }
+    },
+    {
+      "expr": "sqrt(p**2)",
+      "out": {
+        "str": "p"
+      }
+    },
+    {
+      "expr": "sqrt(4*x)",
+      "out": {
+        "str": "2*sqrt(x)"
+      }
+    },
+    {
+      "expr": "I*I",
+      "out": {
+        "str": "-1"
+      }
+    },
+    {
+      "expr": "I**3",
+      "out": {
+        "str": "-I"
+      }
+    },
+    {
+      "expr": "1 - 2*I",
+      "out": {
+        "str": "1 - 2*I",
+        "latex": "1 - 2 i",
+        "conjugate": "1 + 2*I"
+      }
+    },
+    {
+      "expr": "(1 + I)**2",
+      "out": {
+        "expand": "2*I"
+      }
+    },
+    {
+      "expr": "(1 + I)/(1 - I)",
+      "out": {
+        "str": "(1 + I)**2/2",
+        "simplify": "I"
+      }
+    },
+    {
+      "expr": "x + 1 + I",
+      "out": {
+        "str": "x + 1 + I"
+      }
+    },
+    {
+      "expr": "pi + 1",
+      "out": {
+        "str": "1 + pi",
+        "latex": "1 + \\pi"
+      }
+    },
+    {
+      "expr": "x + pi",
+      "out": {
+        "str": "x + pi"
+      }
+    },
+    {
+      "expr": "2*I*x",
+      "out": {
+        "str": "2*I*x",
+        "latex": "2 i x"
+      }
+    },
+    {
+      "expr": "-I*x",
+      "out": {
+        "str": "-I*x"
+      }
+    },
+    {
+      "expr": "I*pi/2",
+      "out": {
+        "str": "I*pi/2",
+        "latex": "\\frac{i \\pi}{2}"
+      }
+    },
+    {
+      "expr": "exp(x)*exp(y)",
+      "out": {
+        "str": "exp(x)*exp(y)",
+        "latex": "e^{x} e^{y}"
+      }
+    },
+    {
+      "expr": "exp(I*theta)",
+      "out": {
+        "str": "exp(I*theta)",
+        "latex": "e^{i \\theta}",
+        "conjugate": "exp(-I*theta)",
+        "trigsimp": "exp(I*theta)",
+        "simplify": "exp(I*theta)"
+      }
+    },
+    {
+      "expr": "exp(I*pi)",
+      "out": {
+        "str": "-1"
+      }
+    },
+    {
+      "expr": "exp(I*pi/2)",
+      "out": {
+        "str": "I"
+      }
+    },
+    {
+      "expr": "exp(x + I*pi)",
+      "out": {
+        "str": "-exp(x)"
+      }
+    },
+    {
+      "expr": "exp(log(x))",
+      "out": {
+        "str": "x"
+      }
+    },
+    {
+      "expr": "log(exp(a))",
+      "out": {
+        "str": "a"
+      }
+    },
+    {
+      "expr": "log(1)",
+      "out": {
+        "str": "0"
+      }
+    },
+    {
+      "expr": "log(E)",
+      "out": {
+        "str": "1"
+      }
+    },
+    {
+      "expr": "log(-1)",
+      "out": {
+        "str": "I*pi"
+      }
+    },
+    {
+      "expr": "exp(-x)",
+      "out": {
+        "str": "exp(-x)",
+        "latex": "e^{- x}"
+      }
+    },
+    {
+      "expr": "x*exp(x)",
+      "out": {
+        "str": "x*exp(x)",
+        "latex": "x e^{x}"
+      }
+    },
+    {
+      "expr": "2**x",
+      "out": {
+        "str": "2**x",
+        "latex": "2^{x}"
+      }
+    },
+    {
+      "expr": "E",
+      "out": {
+        "str": "E",
+        "latex": "e"
+      }
+    },
+    {
+      "expr": "sin(pi)",
+      "out": {
+        "str": "0"
+      }
+    },
+    {
+      "expr": "cos(pi)",
+      "out": {
+        "str": "-1"
+      }
+    },
+    {
+      "expr": "sin(pi/4)",
+      "out": {
+        "str": "sqrt(2)/2"
+      }
+    },
+    {
+      "expr": "cos(pi/3)",
+      "out": {
+        "str": "1/2"
+      }
+    },
+    {
+      "expr": "sin(5*pi/6)",
+      "out": {
+        "str": "1/2"
+      }
+    },
+    {
+      "expr": "cos(7*pi/6)",
+      "out": {
+        "str": "-sqrt(3)/2"
+      }
+    },
+    {
+      "expr": "sin(pi/12)",
+      "out": {
+        "str": "-sqrt(2)/4 + sqrt(6)/4"
+      }
+    },
+    {
+      "expr": "tan(pi/3)",
+      "out": {
+        "str": "sqrt(3)"
+      }
+    },
+    {
+      "expr": "sin(-x)",
+      "out": {
+        "str": "-sin(x)"
+      }
+    },
+    {
+      "expr": "cos(-x)",
+      "out": {
+        "str": "cos(x)"
+      }
+    },
+    {
+      "expr": "sin(x + pi)",
+      "out": {
+        "str": "-sin(x)"
+      }
+    },
+    {
+      "expr": "cos(x + pi/2)",
+      "out": {
+        "str": "-sin(x)"
+      }
+    },
+    {
+      "expr": "sin(x + 2*pi)",
+      "out": {
+        "str": "sin(x)"
+      }
+    },
+    {
+      "expr": "asin(1/2)",
+      "out": {
+        "str": "pi/6"
+      }
+    },
+    {
+      "expr": "atan(1)",
+      "out": {
+        "str": "pi/4"
+      }
+    },
+    {
+      "expr": "sin(x)**2",
+      "out": {
+        "str": "sin(x)**2",
+        "latex": "\\sin^{2}{\\left(x \\right)}",
+        "diff_x": "2*sin(x)*cos(x)"
+      }
+    },
+    {
+      "expr": "sin(x)**2 + cos(x)**2",
+      "out": {
+        "simplify": "1",
+        "trigsimp": "1"
+      }
+    },
+    {
+      "expr": "cos(a)*cos(b) - sin(a)*sin(b)",
+      "out": {
+        "simplify": "cos(a + b)"
+      }
+    },
+    {
+      "expr": "sin(a)*cos(b) + cos(a)*sin(b)",
+      "out": {
+        "simplify": "sin(a + b)"
+      }
+    },
+    {
+      "expr": "cos(theta) + I*sin(theta)",
+      "out": {
+        "simplify": "exp(I*theta)"
+      }
+    },
+    {
+      "expr": "cos(theta/2)**2 - sin(theta/2)**2",
+      "out": {
+        "simplify": "cos(theta)"
+      }
+    },
+    {
+      "expr": "2*sin(theta/2)*cos(theta/2)",
+      "out": {
+        "simplify": "sin(theta)"
+      }
+    },
+    {
+      "expr": "cos(x)**2",
+      "out": {
+        "simplify": "cos(x)**2"
+      }
+    },
+    {
+      "expr": "(x**2 - 1)/(x - 1)",
+      "out": {
+        "simplify": "x + 1",
+        "cancel": "x + 1"
+      }
+    },
+    {
+      "expr": "1/x + 1/y",
+      "out": {
+        "together": "(x + y)/(x*y)"
+      }
+    },
+    {
+      "expr": "x/(x + 1) + 1/(x + 1)",
+      "out": {
+        "simplify": "1",
+        "together": "1",
+        "cancel": "1"
+      }
+    },
+    {
+      "expr": "Abs(x)",
+      "out": {
+        "str": "Abs(x)",
+        "latex": "\\left|{x}\\right|"
+      }
+    },
+    {
+      "expr": "Abs(-3)",
+      "out": {
+        "str": "3"
+      }
+    },
+    {
+      "expr": "Abs(p)",
+      "out": {
+        "str": "p"
+      }
+    },
+    {
+      "expr": "Abs(a*b)",
+      "out": {
+        "str": "Abs(a*b)"
+      }
+    },
+    {
+      "expr": "Abs(3 + 4*I)",
+      "out": {
+        "str": "5"
+      }
+    },
+    {
+      "expr": "Abs(exp(I*theta))",
+      "out": {
+        "str": "1"
+      }
+    },
+    {
+      "expr": "conjugate(x)",
+      "out": {
+        "str": "conjugate(x)",
+        "latex": "\\overline{x}"
+      }
+    },
+    {
+      "expr": "re(x + I*y)",
+      "out": {
+        "str": "re(x) - im(y)"
+      }
+    },
+    {
+      "expr": "im(a + I*b)",
+      "out": {
+        "str": "b"
+      }
+    },
+    {
+      "expr": "re(a + I*b)",
+      "out": {
+        "str": "a"
+      }
+    },
+    {
+      "expr": "x**3",
+      "out": {
+        "diff_x": "3*x**2"
+      }
+    },
+    {
+      "expr": "sin(2*x)",
+      "out": {
+        "diff_x": "2*cos(2*x)"
+      }
+    },
+    {
+      "expr": "exp(I*x)",
+      "out": {
+        "diff_x": "I*exp(I*x)"
+      }
+    },
+    {
+      "expr": "x*log(x)",
+      "out": {
+        "diff_x": "log(x) + 1"
+      }
+    },
+    {
+      "expr": "2**x",
+      "out": {
+        "diff_x": "2**x*log(2)"
+      }
+    },
+    {
+      "expr": "x**x",
+      "out": {
+        "diff_x": "x**x*(log(x) + 1)"
+      }
+    },
+    {
+      "expr": "tan(x)",
+      "out": {
+        "diff_x": "tan(x)**2 + 1"
+      }
+    },
+    {
+      "expr": "atan(x)",
+      "out": {
+        "diff_x": "1/(x**2 + 1)"
+      }
+    },
+    {
+      "expr": "1/(x**2 + 1)",
+      "out": {
+        "diff_x": "-2*x/(x**2 + 1)**2"
+      }
+    },
+    {
+      "expr": "sqrt(x)",
+      "out": {
+        "str": "sqrt(x)",
+        "latex": "\\sqrt{x}",
+        "diff_x": "1/(2*sqrt(x))"
+      }
+    },
+    {
+      "expr": "theta_1 + phi_2",
+      "out": {
+        "latex": "\\phi_{2} + \\theta_{1}"
+      }
+    },
+    {
+      "expr": "alpha*beta",
+      "out": {
+        "latex": "\\alpha \\beta"
+      }
+    },
+    {
+      "expr": "x**2 - 1",
+      "out": {
+        "roots_x": [
+          "-1",
+          "1"
+        ]
+      }
+    },
+    {
+      "expr": "x**2 + 1",
+      "out": {
+        "roots_x": [
+          "-I",
+          "I"
+        ]
+      }
+    },
+    {
+      "expr": "x**2 - 2",
+      "out": {
+        "roots_x": [
+          "-sqrt(2)",
+          "sqrt(2)"
+        ]
+      }
+    },
+    {
+      "expr": "x**3 - 6*x**2 + 11*x - 6",
+      "out": {
+        "roots_x": [
+          "1",
+          "2",
+          "3"
+        ]
+      }
+    },
+    {
+      "expr": "(x - 1)**2*(x + 2)",
+      "out": {
+        "roots_x": [
+          "-2",
+          "1",
+          "1"
+        ]
+      }
+    },
+    {
+      "expr": "x**2 + x + 1",
+      "out": {
+        "roots_x": [
+          "-1/2 + sqrt(3)*I/2",
+          "-1/2 - sqrt(3)*I/2"
+        ]
+      }
+    }
+  ]
+}

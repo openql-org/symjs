@@ -219,7 +219,18 @@ const evalAbs: Evaluator = (x) => {
   if (isI(x)) return S.One;
   if (isNonNegative(x)) return x;
   if (isNegative(x)) return neg(x);
-  if (x instanceof Mul) return mul(...x.args.map(abs));
+  if (x instanceof Mul) {
+    // SymPy: factors whose Abs evaluates come out, the rest stay inside a single Abs
+    const known: Expr[] = [];
+    const unknown: Expr[] = [];
+    for (const t of x.args) {
+      const v = evalAbs(t);
+      if (v === undefined) unknown.push(t);
+      else known.push(v);
+    }
+    if (known.length === 0) return undefined;
+    return mul(...known, ...(unknown.length ? [new Fn('abs', [mul(...unknown)])] : []));
+  }
   if (x instanceof Pow) {
     const [b, e] = x.args;
     if (b instanceof Constant && b.name === 'E') return pow(b, re(e));

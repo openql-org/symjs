@@ -12,7 +12,7 @@
  * - distribution of a numeric coefficient over a sum (2*(x+1) -> 2*x+2)
  */
 
-import { isNegative, isPositive, isReal } from './assumptions';
+import { isIntegerQ, isNegative, isPositive, isReal } from './assumptions';
 import {
   Add,
   Constant,
@@ -180,9 +180,27 @@ const numCmp1 = (r: Rational): number => {
 };
 
 export function mul(...xs: ExprLike[]): Expr {
+  const args = xs.map(sympify);
+
+  // SymPy's two-argument rule: Rational * Add distributes (2*(x + 1) -> 2*x + 2).
+  if (args.length === 2) {
+    let [a, b] = args as [Expr, Expr];
+    if (b instanceof Rational) [a, b] = [b, a];
+    if (a instanceof Rational && !a.isZero && !a.isOne) {
+      const [r, rest] = splitCoeff(b);
+      if (rest instanceof Add) {
+        if (r instanceof Rational && r.isOne) return add(...rest.args.map((t) => mul(a, t)));
+        return new Mul([numMul(a, r), rest]);
+      }
+    }
+  }
+
   let coeff: Num = S.One;
   let iPow = 0n;
-  const general = new Map<string, { base: Expr; exps: Expr[] }>();
+  // base -> (exponent term -> coefficients); SymPy `_gather`
+  const general = new Map<string, { base: Expr; terms: Map<string, { term: Expr; coeffs: Num[]; orig: Expr }> }>();
+  // numeric bases raised to non-rational exponents, grouped by exponent (2**x*3**x -> 6**x)
+  const numExp = new Map<string, { exp: Expr; bases: Num[] }>();
   const radicals = new Radicals();
 
   const visit = (e: Expr): void => {
@@ -203,11 +221,23 @@ export function mul(...xs: ExprLike[]): Expr {
       radicals.addPower(b, x);
       return;
     }
-    const g = general.get(b.key);
-    if (g) g.exps.push(x);
-    else general.set(b.key, { base: b, exps: [x] });
+    if (isNum(b) && (b.isPositive || isIntegerQ(x))) {
+      const g = numExp.get(x.key);
+      if (g) g.bases.push(b);
+      else numExp.set(x.key, { exp: x, bases: [b] });
+      return;
+    }
+    const [c, t] = splitCoeff(x);
+    let g = general.get(b.key);
+    if (!g) {
+      g = { base: b, terms: new Map() };
+      general.set(b.key, g);
+    }
+    const tg = g.terms.get(t.key);
+    if (tg) tg.coeffs.push(c);
+    else g.terms.set(t.key, { term: t, coeffs: [c], orig: e });
   };
-  for (const x of xs) visit(sympify(x));
+  for (const x of args) visit(x);
 
   if (coeff instanceof Rational && coeff.isZero) return S.Zero;
 
@@ -215,15 +245,27 @@ export function mul(...xs: ExprLike[]): Expr {
   const absorb = (r: Expr): void => {
     if (isNum(r)) coeff = numMul(coeff, r);
     else if (isI(r)) iPow += 1n;
-    else if (r instanceof Rational && r.isOne) return;
     else factors.push(r);
   };
 
-  for (const { base, exps } of general.values()) {
-    const x = exps.length === 1 ? exps[0]! : add(...exps);
-    if (x instanceof Rational && x.isZero) continue;
-    // A single occurrence is already canonical; only combined exponents need re-evaluation.
-    const r = exps.length > 1 ? pow(base, x) : x instanceof Rational && x.isOne ? base : new Pow(base, x);
+  for (const { base, terms } of general.values()) {
+    for (const { term, coeffs, orig } of terms.values()) {
+      if (coeffs.length === 1) {
+        // a single occurrence is already canonical
+        factors.push(orig);
+        continue;
+      }
+      const c = coeffs.reduce((acc, k) => numAdd(acc, k));
+      if (c instanceof Rational && c.isZero) continue;
+      const r = pow(base, mul(c, term));
+      if (r instanceof Mul) r.args.forEach(absorb);
+      else absorb(r);
+    }
+  }
+
+  for (const { exp, bases } of numExp.values()) {
+    const b = bases.reduce((acc, k) => numMul(acc, k));
+    const r = bases.length === 1 ? new Pow(b, exp) : pow(b, exp);
     if (r instanceof Mul) r.args.forEach(absorb);
     else absorb(r);
   }
@@ -243,12 +285,7 @@ export function mul(...xs: ExprLike[]): Expr {
   if (factors.length === 0) return coeff;
   factors.sort(compareExpr);
   const isOne = coeff instanceof Rational && coeff.isOne;
-  if (factors.length === 1) {
-    const f = factors[0]!;
-    if (isOne) return f;
-    if (f instanceof Add) return add(...f.args.map((t) => mul(coeff, t)));
-    return new Mul([coeff, f]);
-  }
+  if (factors.length === 1 && isOne) return factors[0]!;
   return new Mul(isOne ? factors : [coeff, ...factors]);
 }
 
@@ -295,6 +332,18 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
     return [S.One, S.I, S.NegOne, mul(-1, S.I)][Number(m)]!;
   }
 
+  if (b instanceof Add && e instanceof Rational && e.p === -1n && e.q === 1n) {
+    const pc = pureComplex(b);
+    if (pc) {
+      const [r, i] = pc;
+      const den = numAdd(numMul(r, r), numMul(i, i));
+      const num = add(r, mul(numNeg(i), S.I));
+      const k = den instanceof Rational ? Rational.of(den.q, den.p) : new Float(1 / den.value);
+      if (k instanceof Rational && k.isOne) return num;
+      return new Mul([k, ...(num instanceof Mul ? num.args : [num])]);
+    }
+  }
+
   if (b instanceof Pow) {
     const [x, a] = b.args;
     if (e instanceof Rational && e.isInteger) return pow(x, mul(a, e));
@@ -325,8 +374,6 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
 
   if (isE(b)) {
     if (e instanceof Fn && e.name === 'log') return e.args[0]!;
-    // canonical exponent: distribute products over sums, exp(I*(a+b)) -> exp(I*a + I*b)
-    if (e instanceof Mul && e.args.some((f) => f instanceof Add)) return pow(b, impl.expand(e));
     const terms = e instanceof Add ? e.args : [e];
     let m = 0n;
     let extracted = false;
@@ -351,6 +398,16 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   }
 
   return new Pow(b, e);
+}
+
+/** SymPy `pure_complex`: a + b*I with numeric a, b. */
+function pureComplex(e: Add): [Num, Num] | undefined {
+  if (e.args.length !== 2) return undefined;
+  const [h, t] = e.args as [Expr, Expr];
+  if (!isNum(h)) return undefined;
+  if (isI(t)) return [h, S.One];
+  if (t instanceof Mul && t.args.length === 2 && isNum(t.args[0]!) && isI(t.args[1]!)) return [h, t.args[0] as Num];
+  return undefined;
 }
 
 export function neg(x: ExprLike): Expr {

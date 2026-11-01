@@ -78,11 +78,11 @@ export { diff } from './calculus/diff';
 // simplification
 export { expand } from './simplify/expand';
 export { simplify } from './simplify/simplify';
-export { trigsimp, rewriteExp, rewriteTrig, expsimp } from './simplify/trigsimp';
+export { trigsimp, rewriteExp, rewriteTrig, expsimp, exptotrig, combineExp } from './simplify/trigsimp';
 export { together, cancel, fraction } from './simplify/rational';
 
 // polynomials
-export { Poly, polyCoefficients, roots, solve, factorPoly } from './polys/poly';
+export { Poly, polyCoefficients, roots, solve, factor, factorPoly } from './polys/poly';
 
 // numerics
 export { evalf, toComplex, lambdify } from './numeric/evalf';

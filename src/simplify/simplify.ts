@@ -11,7 +11,7 @@ import { countOps, mapBottomUp, some } from '../core/traverse';
 import { fn } from '../functions/elementary';
 import { expand } from './expand';
 import { cancel } from './rational';
-import { expsimp, hasTrig, trigsimp } from './trigsimp';
+import { exptotrig, expsimp, hasTrig } from './trigsimp';
 
 const hasDenominator = (e: Expr): boolean =>
   some(e, (x) => x instanceof Pow && splitCoeff(x.exp)[0].isNegative && !x.base.isNumber);
@@ -28,12 +28,12 @@ function simplifyCore(e: Expr): Expr {
   };
   tryPush(() => expand(e));
   if (hasTrig(e)) {
-    tryPush(() => trigsimp(e));
+    tryPush(() => exptotrig(e));
     tryPush(() => expsimp(e));
   }
   if (hasDenominator(e)) {
     tryPush(() => cancel(e));
-    if (hasTrig(e)) tryPush(() => cancel(trigsimp(e)));
+    if (hasTrig(e)) tryPush(() => cancel(exptotrig(e)));
   }
   let best = candidates[0]!;
   let bestCost = countOps(best);

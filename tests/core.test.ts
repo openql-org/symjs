@@ -26,7 +26,7 @@ describe('canonicalization', () => {
   it('collects like terms and folds constants', () => {
     expect(add(x, x, 1, 2).toString()).toBe('2*x + 3');
     expect(x.add(y).sub(x).toString()).toBe('y');
-    expect(mul(x, x, y).toString()).toBe('x^2*y');
+    expect(mul(x, x, y).toString()).toBe('x**2*y');
     expect(mul(x, pow(x, -1)).toString()).toBe('1');
   });
 
@@ -38,7 +38,7 @@ describe('canonicalization', () => {
   it('handles exact rationals', () => {
     expect(rational(1, 2).add(rational(1, 3)).toString()).toBe('5/6');
     expect(mul(x, rational(1, 2)).toString()).toBe('x/2');
-    expect(add(x, 0.5).toString()).toBe('x + 0.5');
+    expect(add(x, 0.5).toString()).toBe('x + 0.500000000000000');
   });
 
   it('simplifies radicals', () => {
@@ -58,7 +58,8 @@ describe('canonicalization', () => {
   });
 
   it('combines exponentials', () => {
-    expect(mul(exp(x), exp(y)).toString()).toBe('exp(x + y)');
+    expect(mul(exp(x), exp(y)).toString()).toBe('exp(x)*exp(y)');
+    expect(mul(exp(x), exp(mul(2, x))).toString()).toBe('exp(3*x)');
     expect(mul(exp(mul(I, theta)), exp(mul(-1, I, theta))).toString()).toBe('1');
     expect(exp(mul(I, pi)).toString()).toBe('-1');
     expect(exp(mul(rational(1, 2), I, pi)).toString()).toBe('I');
@@ -99,20 +100,20 @@ describe('functions', () => {
 
 describe('expand', () => {
   it('expands products and powers', () => {
-    expect(expand(pow(add(x, 1), 2)).toString()).toBe('x^2 + 2*x + 1');
-    expect(expand(mul(add(x, y), add(x, mul(-1, y)))).toString()).toBe('x^2 - y^2');
+    expect(expand(pow(add(x, 1), 2)).toString()).toBe('x**2 + 2*x + 1');
+    expect(expand(mul(add(x, y), add(x, mul(-1, y)))).toString()).toBe('x**2 - y**2');
     expect(expand(pow(add(1, I), 2)).toString()).toBe('2*I');
   });
 });
 
 describe('diff', () => {
   it('differentiates', () => {
-    expect(diff(pow(x, 3), x).toString()).toBe('3*x^2');
+    expect(diff(pow(x, 3), x).toString()).toBe('3*x**2');
     expect(diff(sin(mul(2, x)), x).toString()).toBe('2*cos(2*x)');
     expect(diff(exp(mul(I, x)), x).toString()).toBe('I*exp(I*x)');
     expect(diff(mul(x, log(x)), x).toString()).toBe('log(x) + 1');
-    expect(diff(pow(x, 4), x, 2).toString()).toBe('12*x^2');
-    expect(diff(pow(2, x), x).toString()).toBe('2^x*log(2)');
+    expect(diff(pow(x, 4), x, 2).toString()).toBe('12*x**2');
+    expect(diff(pow(2, x), x).toString()).toBe('2**x*log(2)');
   });
 });
 
@@ -122,7 +123,7 @@ describe('numeric', () => {
     const v = exp(mul(I, theta)).toComplex({ theta: Math.PI / 3 });
     expect(v.re).toBeCloseTo(0.5);
     expect(v.im).toBeCloseTo(Math.sqrt(3) / 2);
-    expect(add(x, sqrt(2)).evalf().toString()).toBe('x + 1.4142135623730951');
+    expect(add(x, sqrt(2)).evalf().toString()).toBe('x + 1.41421356237310');
   });
 
   it('rational objects', () => {

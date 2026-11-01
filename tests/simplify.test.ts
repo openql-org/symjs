@@ -22,6 +22,7 @@ import {
   symbols,
   together,
   trigsimp,
+  exptotrig,
 } from '../src';
 
 const [x, y] = symbols('x y');
@@ -42,11 +43,12 @@ describe('simplify', () => {
 
   it('rewrites Euler form', () => {
     expect(simplify(add(cos(theta), mul(I, sin(theta)))).toString()).toBe('exp(I*theta)');
-    expect(trigsimp(exp(mul(I, theta))).toString()).toBe('I*sin(theta) + cos(theta)');
+    expect(trigsimp(exp(mul(I, theta))).toString()).toBe('exp(I*theta)');
+    expect(exptotrig(exp(mul(I, theta))).toString()).toBe('I*sin(theta) + cos(theta)');
   });
 
   it('keeps already simple expressions', () => {
-    expect(simplify(pow(cos(x), 2)).toString()).toBe('cos(x)^2');
+    expect(simplify(pow(cos(x), 2)).toString()).toBe('cos(x)**2');
     expect(simplify(add(x, 1)).toString()).toBe('x + 1');
   });
 
@@ -80,8 +82,8 @@ describe('polynomials', () => {
 
 describe('parser', () => {
   it('parses expressions', () => {
-    expect(parse('x^2 + 2*x + 1').toString()).toBe('x^2 + 2*x + 1');
-    expect(parse('-x^2').toString()).toBe('-x^2');
+    expect(parse('x^2 + 2*x + 1').toString()).toBe('x**2 + 2*x + 1');
+    expect(parse('-x^2').toString()).toBe('-x**2');
     expect(parse('2^3^2').toString()).toBe('512');
     expect(parse('sqrt(8)/2').toString()).toBe('sqrt(2)');
     expect(parse('exp(I*pi)').toString()).toBe('-1');
@@ -101,7 +103,7 @@ describe('latex', () => {
   it('prints LaTeX', () => {
     expect(latex(mul(rational(1, 2), sqrt(2)))).toBe('\\frac{\\sqrt{2}}{2}');
     expect(latex(exp(mul(I, theta)))).toBe('e^{i \\theta}');
-    expect(latex(pow(sin(x), 2))).toBe('\\sin^{2}\\left(x\\right)');
+    expect(latex(pow(sin(x), 2))).toBe('\\sin^{2}{\\left(x \\right)}');
     expect(latex(symbol('phi_1'))).toBe('\\phi_{1}');
   });
 });

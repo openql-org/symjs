@@ -5,10 +5,11 @@
  * @file Univariate polynomials over the rationals, coefficient extraction and root finding.
  */
 
-import { Add, Expr, ExprLike, Mul, Pow, Rational, S, Sym } from '../core/nodes';
-import { numAdd, numCmp, numInv, numMul, numNeg } from '../core/num';
-import { factorInt, lcm } from '../core/numbers';
+import { Add, Expr, ExprLike, Mul, Pow, Rational, S, Sym, compareExpr } from '../core/nodes';
+import { numAdd, numCmp, numInv, numMul, numNeg, numPowInt } from '../core/num';
+import { factorInt, gcd as gcdBig, lcm } from '../core/numbers';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
+import { freeSymbols } from '../core/traverse';
 import { expand } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
 
@@ -282,10 +283,39 @@ export function solve(ex: ExprLike, x: Sym): Expr[] {
   return out;
 }
 
-/** Factor a univariate polynomial with rational coefficients. */
+/**
+ * Factor a univariate polynomial with rational coefficients, SymPy style:
+ * content times primitive integer factors, kept as an unevaluated product
+ * (e.g. `2*(x + 1)`, `(x - 1)*(2*x + 1)`).
+ */
 export function factorPoly(ex: ExprLike, x: Sym): Expr {
-  const p = Poly.fromExpr(ex, x);
-  if (!p) return sympify(ex);
-  const { content, factors } = p.factor();
-  return mul(content, ...factors.map(([f, m]) => pow(f.toExpr(x), m)));
+  const e = sympify(ex);
+  const p = Poly.fromExpr(e, x);
+  if (!p || p.degree <= 0) return e;
+  const { content: lc, factors } = p.factor();
+  let content: Rational = lc;
+  const parts: Expr[] = [];
+  for (const [f, m] of factors) {
+    // scale the monic factor to a primitive integer polynomial
+    let d = 1n;
+    for (const c of f.coeffs) d = lcm(d, c.q);
+    const ints = f.coeffs.map((c) => (c.p * d) / c.q);
+    let g = 0n;
+    for (const v of ints) g = gcdBig(g, v);
+    const scale = Rational.of(d, g); // f * scale is primitive
+    const prim = f.scale(scale);
+    content = numMul(content, numPowInt(numInv(scale) as Rational, BigInt(m))) as Rational;
+    parts.push(pow(prim.toExpr(x), m));
+  }
+  parts.sort(compareExpr);
+  if (parts.length === 1 && content.isOne) return parts[0]!;
+  return new Mul(content.isOne ? parts : [content, ...parts]);
+}
+
+/** Factor an expression (currently: univariate polynomials with rational coefficients). */
+export function factor(ex: ExprLike): Expr {
+  const e = sympify(ex);
+  const syms = [...freeSymbols(e)];
+  if (syms.length !== 1) return e;
+  return factorPoly(e, syms[0]!);
 }

@@ -2,120 +2,300 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file LaTeX printer.
+ * @file LaTeX printer compatible with SymPy's `LatexPrinter` (default settings).
  */
 
+import { isNegative } from '../core/assumptions';
 import { Add, Constant, Expr, Float, Fn, Mul, Pow, Rational, Sym, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
-import { floatString, isNegativeTerm, printOrder, splitFraction } from './order';
-import { PREC, precedence } from './str';
+import { asOrderedFactors, asOrderedTerms } from './sortkey';
+import { PREC, floatString, precedence, startsNegative, str } from './str';
+
+// ---------------------------------------------------------------------------
+// Symbols
+// ---------------------------------------------------------------------------
 
 const GREEK = new Set([
   'alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta', 'iota', 'kappa', 'lambda',
-  'mu', 'nu', 'xi', 'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega',
-  'Gamma', 'Delta', 'Theta', 'Lambda', 'Xi', 'Pi', 'Sigma', 'Upsilon', 'Phi', 'Psi', 'Omega',
+  'mu', 'nu', 'xi', 'omicron', 'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega',
 ]);
 
-function symbolLatex(name: string): string {
-  const m = /^([A-Za-z]+)(?:_?(\d+)|_(\w+))?$/.exec(name);
-  if (!m) return name.replace(/_/g, '\\_');
-  const head = GREEK.has(m[1]!) ? `\\${m[1]}` : m[1]!.length > 1 ? `\\mathrm{${m[1]}}` : m[1]!;
-  const sub = m[2] ?? m[3];
-  return sub !== undefined ? `${head}_{${sub}}` : head;
-}
-
-const FN_LATEX: Record<string, string> = {
-  sin: '\\sin',
-  cos: '\\cos',
-  tan: '\\tan',
-  asin: '\\arcsin',
-  acos: '\\arccos',
-  atan: '\\arctan',
-  sinh: '\\sinh',
-  cosh: '\\cosh',
-  tanh: '\\tanh',
-  log: '\\log',
-  re: '\\operatorname{re}',
-  im: '\\operatorname{im}',
-  arg: '\\arg',
+const TEX_GREEK: Record<string, string> = {
+  Alpha: '\\mathrm{A}', Beta: '\\mathrm{B}', Gamma: '\\Gamma', Delta: '\\Delta', Epsilon: '\\mathrm{E}',
+  Zeta: '\\mathrm{Z}', Eta: '\\mathrm{H}', Theta: '\\Theta', Iota: '\\mathrm{I}', Kappa: '\\mathrm{K}',
+  Lambda: '\\Lambda', Mu: '\\mathrm{M}', Nu: '\\mathrm{N}', Xi: '\\Xi', omicron: 'o', Omicron: '\\mathrm{O}',
+  Pi: '\\Pi', Rho: '\\mathrm{P}', Sigma: '\\Sigma', Tau: '\\mathrm{T}', Upsilon: '\\Upsilon', Phi: '\\Phi',
+  Chi: '\\mathrm{X}', Psi: '\\Psi', Omega: '\\Omega', lamda: '\\lambda', Lamda: '\\Lambda', khi: '\\chi',
+  Khi: '\\mathrm{X}', varepsilon: '\\varepsilon', varkappa: '\\varkappa', varphi: '\\varphi', varpi: '\\varpi',
+  varrho: '\\varrho', varsigma: '\\varsigma', vartheta: '\\vartheta',
 };
 
-const wrap = (s: string) => `\\left(${s}\\right)`;
+const OTHER_SYMBOLS = new Set([
+  'aleph', 'beth', 'daleth', 'gimel', 'ell', 'eth', 'hbar', 'hslash', 'mho', 'wp', 'partial', 'nabla', 'infty',
+]);
 
-function paren(e: Expr, minPrec: number): string {
-  const s = latex(e);
-  return precedence(e) < minPrec ? wrap(s) : s;
+const MODIFIERS: [string, (s: string) => string][] = (
+  [
+    ['mathring', (s) => `\\mathring{${s}}`],
+    ['ddddot', (s) => `\\ddddot{${s}}`],
+    ['dddot', (s) => `\\dddot{${s}}`],
+    ['ddot', (s) => `\\ddot{${s}}`],
+    ['dot', (s) => `\\dot{${s}}`],
+    ['check', (s) => `\\check{${s}}`],
+    ['breve', (s) => `\\breve{${s}}`],
+    ['acute', (s) => `\\acute{${s}}`],
+    ['grave', (s) => `\\grave{${s}}`],
+    ['tilde', (s) => `\\tilde{${s}}`],
+    ['hat', (s) => `\\hat{${s}}`],
+    ['bar', (s) => `\\bar{${s}}`],
+    ['vec', (s) => `\\vec{${s}}`],
+    ['prime', (s) => `{${s}}'`],
+    ['prm', (s) => `{${s}}'`],
+    ['bold', (s) => `\\boldsymbol{${s}}`],
+    ['bm', (s) => `\\boldsymbol{${s}}`],
+    ['cal', (s) => `\\mathcal{${s}}`],
+    ['scr', (s) => `\\mathscr{${s}}`],
+    ['frak', (s) => `\\mathfrak{${s}}`],
+    ['norm', (s) => `\\left\\|{${s}}\\right\\|`],
+    ['avg', (s) => `\\left\\langle{${s}}\\right\\rangle`],
+    ['abs', (s) => `\\left|{${s}}\\right|`],
+    ['mag', (s) => `\\left|{${s}}\\right|`],
+  ] as [string, (s: string) => string][]
+).sort((a, b) => b[0].length - a[0].length);
+
+function translate(s: string): string {
+  const g = TEX_GREEK[s];
+  if (g) return g;
+  if (GREEK.has(s.toLowerCase())) return `\\${s.toLowerCase()}`;
+  if (OTHER_SYMBOLS.has(s)) return `\\${s}`;
+  for (const [key, f] of MODIFIERS) {
+    if (s.toLowerCase().endsWith(key) && s.length > key.length) return f(translate(s.slice(0, -key.length)));
+  }
+  return s;
 }
 
-function isNegExp(x: Expr): boolean {
-  const [c] = splitCoeff(x);
-  return c.isNegative;
+/** SymPy `split_super_sub`. */
+export function splitSuperSub(text: string): [string, string[], string[]] {
+  let pos = 0;
+  let name: string | undefined;
+  const supers: string[] = [];
+  const subs: string[] = [];
+  while (pos < text.length) {
+    let start = pos + 1;
+    if (text.slice(pos, pos + 2) === '__') start += 1;
+    let posHat = text.indexOf('^', start);
+    if (posHat < 0) posHat = text.length;
+    let posUsc = text.indexOf('_', start);
+    if (posUsc < 0) posUsc = text.length;
+    const next = Math.min(posHat, posUsc);
+    const part = text.slice(pos, next);
+    pos = next;
+    if (name === undefined) name = part;
+    else if (part.startsWith('^')) supers.push(part.slice(1));
+    else if (part.startsWith('__')) supers.push(part.slice(2));
+    else if (part.startsWith('_')) subs.push(part.slice(1));
+  }
+  name ??= '';
+  const m = /^([^\W\d_]+)(\d+)$/u.exec(name);
+  if (m) {
+    name = m[1]!;
+    subs.unshift(m[2]!);
+  }
+  return [name, supers, subs];
 }
 
-function joinFactors(parts: { s: string; numeric: boolean }[]): string {
-  let out = '';
-  parts.forEach((p, i) => {
-    if (i > 0) out += parts[i - 1]!.numeric && p.numeric ? ' \\cdot ' : ' ';
-    out += p.s;
-  });
+function symbolLatex(text: string): string {
+  if (text.includes('{')) return text;
+  const [name, supers, subs] = splitSuperSub(text);
+  let out = translate(name);
+  if (supers.length) out += `^{${supers.map(translate).join(' ')}}`;
+  if (subs.length) out += `_{${subs.map(translate).join(' ')}}`;
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const isExp = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
+const addParens = (s: string) => `\\left(${s}\\right)`;
+
+function parenthesize(e: Expr, level: number): string {
+  const s = latex(e);
+  return precedence(e) <= level ? addParens(s) : s;
+}
+
+function needsMulBrackets(e: Expr, first: boolean): boolean {
+  if (e instanceof Mul) return !first && startsNegative(e);
+  return precedence(e) < PREC.MUL;
+}
+
+const ACCEPTED_FUNCTIONS = new Set([
+  'arcsin', 'arccos', 'arctan', 'sin', 'cos', 'tan', 'sinh', 'cosh', 'tanh', 'sqrt', 'ln', 'log',
+  'sec', 'csc', 'cot', 'coth', 're', 'im', 'frac', 'root', 'arg',
+]);
+
+function hprintFunction(name: string): string {
+  if (ACCEPTED_FUNCTIONS.has(name)) return `\\${name}`;
+  if (name.length === 1 || name.startsWith('\\')) return name;
+  return `\\operatorname{${name}}`;
+}
+
+const parenthesizeSuper = (s: string) => (s.includes('^') ? `{${s}}` : s);
+
+/** Print a function, optionally raised to a power (SymPy prints sin(x)**2 as \sin^{2}...). */
+function printFunction(e: Fn, exp?: string): string {
+  const a = latex(e.args[0]!);
+  switch (e.name) {
+    case 'abs': {
+      const tex = `\\left|{${a}}\\right|`;
+      return exp !== undefined ? `${tex}^{${exp}}` : tex;
+    }
+    case 'conjugate': {
+      const tex = `\\overline{${a}}`;
+      return exp !== undefined ? `${tex}^{${exp}}` : tex;
+    }
+    case 're':
+    case 'im': {
+      const tex = `\\operatorname{${e.name}}{\\left(${parenthesize(e.args[0]!, PREC.ATOM)}\\right)}`;
+      return exp !== undefined ? `${tex}^{${exp}}` : tex;
+    }
+    default: {
+      const name = exp !== undefined ? `${parenthesizeSuper(hprintFunction(e.name))}^{${exp}}` : hprintFunction(e.name);
+      return `${name}{\\left(${a} \\right)}`;
+    }
+  }
+}
+
+/** SymPy `fraction(expr, exact=True)`. */
+function fraction(e: Expr): [Expr[], Expr[]] {
+  const numer: Expr[] = [];
+  const denom: Expr[] = [];
+  for (const term of e instanceof Mul ? e.args : [e]) {
+    if (term instanceof Pow) {
+      const [b, x] = term.args;
+      if (isNegative(x)) {
+        if (x instanceof Rational && x.p === -1n && x.q === 1n) denom.push(b);
+        else if (impl.freeSymbols(x).size === 0) denom.push(pow(b, mul(-1, x)));
+        else numer.push(term);
+      } else numer.push(term);
+    } else if (term instanceof Rational && !term.isInteger) {
+      if (term.p !== 1n) numer.push(Rational.of(term.p));
+      denom.push(Rational.of(term.q));
+    } else numer.push(term);
+  }
+  return [numer, denom];
+}
+
+const BETWEEN_NUMBERS: [RegExp, RegExp] = [/[0-9][} ]*$/, /^(\d|\\frac{\d+}{\d+})/];
+
+function convertArgs(args: readonly Expr[]): string {
+  let tex = '';
+  let last = '';
+  args.forEach((term, i) => {
+    let t = latex(term);
+    if (needsMulBrackets(term, i === 0)) t = addParens(t);
+    if (BETWEEN_NUMBERS[0].test(last) && BETWEEN_NUMBERS[1].test(str(term))) tex += ' \\cdot ';
+    else if (tex) tex += ' ';
+    tex += t;
+    last = t;
+  });
+  return tex;
+}
+
+function convertFactors(fs: Expr[]): string {
+  if (fs.length === 0) return '1';
+  if (fs.length === 1) return latex(fs[0]!);
+  return convertArgs(asOrderedFactors(new Mul(fs)));
+}
+
+function printMulLike(e: Expr): string {
+  let expr = e;
+  let tex = '';
+  let includeParens = false;
+  if (startsNegative(expr)) {
+    const [c, rest] = splitCoeff(expr);
+    const pc = c instanceof Rational ? Rational.of(-c.p, c.q) : new Float(-c.value);
+    expr = pc instanceof Rational && pc.isOne ? rest : new Mul([pc, ...(rest instanceof Mul ? rest.args : [rest])]);
+    tex = '- ';
+    if (expr instanceof Add) {
+      tex += '(';
+      includeParens = true;
+    }
+  }
+  const [numer, denom] = fraction(expr);
+  if (denom.length === 0) {
+    tex += expr instanceof Mul ? convertArgs(asOrderedFactors(expr)) : latex(expr);
+  } else {
+    tex += `\\frac{${convertFactors(numer)}}{${convertFactors(denom)}}`;
+  }
+  if (includeParens) tex += ')';
+  return tex;
+}
+
+function printPow(e: Pow): string {
+  const [b, x] = e.args;
+  if (isExp(e)) return `e^{${latex(x)}}`;
+  if (x instanceof Rational) {
+    const p = x.p < 0n ? -x.p : x.p;
+    if (p === 1n && x.q !== 1n) {
+      const base = latex(b);
+      const tex = x.q === 2n ? `\\sqrt{${base}}` : `\\sqrt[${x.q}]{${base}}`;
+      return x.p < 0n ? `\\frac{1}{${tex}}` : tex;
+    }
+    if (x.p < 0n) return printMulLike(e);
+  }
+  if (b instanceof Fn) return printFunction(b, latex(x));
+  let base = parenthesize(b, PREC.POW);
+  if (b instanceof Sym) base = parenthesizeSuper(base);
+  else if (b instanceof Float) base = `{${base}}`;
+  return `${base}^{${latex(x)}}`;
+}
+
+function printAdd(e: Add): string {
+  let tex = '';
+  asOrderedTerms(e).forEach((term0, i) => {
+    let term = term0;
+    if (i > 0) {
+      if (startsNegative(term)) {
+        tex += ' - ';
+        term = mul(-1, term);
+      } else tex += ' + ';
+    }
+    const t = latex(term);
+    tex += term instanceof Add ? addParens(t) : t;
+  });
+  return tex;
+}
+
+function floatLatex(v: number): string {
+  let s = floatString(v);
+  let exp = '';
+  const k = s.indexOf('e');
+  if (k >= 0) {
+    exp = s.slice(k + 1);
+    s = s.slice(0, k);
+  }
+  if (s.includes('.')) s = s.replace(/0+$/, '').replace(/\.$/, '.0');
+  if (exp) return `${s} \\cdot 10^{${exp.startsWith('+') ? exp.slice(1) : exp}}`;
+  return s;
 }
 
 export function latex(e: Expr): string {
   if (e instanceof Rational) {
     if (e.q === 1n) return `${e.p}`;
-    const s = `\\frac{${e.p < 0n ? -e.p : e.p}}{${e.q}}`;
-    return e.p < 0n ? `-${s}` : s;
+    return e.p < 0n ? `- \\frac{${-e.p}}{${e.q}}` : `\\frac{${e.p}}{${e.q}}`;
   }
-  if (e instanceof Float) return floatString(e);
+  if (e instanceof Float) return floatLatex(e.value);
   if (e instanceof Sym) return symbolLatex(e.name);
   if (e instanceof Constant) return e.name === 'pi' ? '\\pi' : e.name === 'E' ? 'e' : 'i';
-  if (e instanceof Fn) {
-    const a = latex(e.args[0]!);
-    if (e.name === 'abs') return `\\left|${a}\\right|`;
-    if (e.name === 'conjugate') return `\\overline{${a}}`;
-    return `${FN_LATEX[e.name] ?? `\\operatorname{${e.name}}`}${wrap(a)}`;
-  }
-  if (e instanceof Add) {
-    const terms = printOrder(e.args);
-    let out = latex(terms[0]!);
-    for (const t of terms.slice(1)) {
-      if (isNegativeTerm(t)) out += ` - ${paren(mul(-1, t), PREC.MUL)}`;
-      else out += ` + ${latex(t)}`;
-    }
-    return out;
-  }
-  if (e instanceof Mul) {
-    const f = splitFraction(e);
-    const num: { s: string; numeric: boolean }[] = [];
-    const den: { s: string; numeric: boolean }[] = [];
-    if (f.coeff instanceof Rational) {
-      if (f.coeff.p !== 1n) num.push({ s: `${f.coeff.p}`, numeric: true });
-      if (f.coeff.q !== 1n) den.push({ s: `${f.coeff.q}`, numeric: true });
-    } else if (f.coeff.value !== 1) {
-      num.push({ s: floatString(f.coeff), numeric: true });
-    }
-    for (const x of f.num) num.push({ s: paren(x, PREC.MUL), numeric: isNum(x) || isNumericPow(x) });
-    for (const x of f.den) den.push({ s: paren(x, PREC.MUL), numeric: isNum(x) || isNumericPow(x) });
-    const ns = num.length > 0 ? joinFactors(num) : '1';
-    const s = den.length > 0 ? `\\frac{${ns}}{${joinFactors(den)}}` : ns;
-    return (f.sign ? '- ' : '') + s;
-  }
-  if (e instanceof Pow) {
-    const [b, x] = e.args;
-    if (b instanceof Constant && b.name === 'E') return `e^{${latex(x)}}`;
-    if (x instanceof Rational && x.p === 1n && x.q === 2n) return `\\sqrt{${latex(b)}}`;
-    if (x instanceof Rational && x.p === 1n) return `\\sqrt[${x.q}]{${latex(b)}}`;
-    if (isNegExp(x)) return `\\frac{1}{${latex(pow(b, mul(-1, x)))}}`;
-    if (b instanceof Fn && FN_LATEX[b.name] && x instanceof Rational && x.isInteger) {
-      return `${FN_LATEX[b.name]}^{${x.p}}${wrap(latex(b.args[0]!))}`;
-    }
-    const bs = precedence(b) < PREC.ATOM || isNum(b) ? paren(b, PREC.ATOM) : latex(b);
-    return `${bs}^{${latex(x)}}`;
-  }
+  if (e instanceof Fn) return printFunction(e);
+  if (e instanceof Add) return printAdd(e);
+  if (e instanceof Mul) return printMulLike(e);
+  if (e instanceof Pow) return printPow(e);
   return e.key;
 }
 
-const isNumericPow = (e: Expr) => e instanceof Pow && isNum(e.base);
-
 impl.latex = latex;
+
+export { isNum };

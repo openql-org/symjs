@@ -11,17 +11,33 @@
  * which are ubiquitous in products of rotation gates.
  */
 
-import { Constant, Expr, ExprLike, Fn, Pow, S } from '../core/nodes';
+import { Constant, Expr, ExprLike, Fn, Mul, Pow, S } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, neg, sympify } from '../core/ops';
-import { mapBottomUp, some } from '../core/traverse';
+import { countOps, mapBottomUp, some } from '../core/traverse';
 import { cos, sin } from '../functions/elementary';
 import { expand } from './expand';
 
 const isE = (e: Expr) => e instanceof Constant && e.name === 'E';
 const isI = (e: Expr) => e instanceof Constant && e.name === 'I';
 
-export const hasTrig = (e: Expr): boolean =>
-  some(e, (x) => (x instanceof Fn && (x.name === 'sin' || x.name === 'cos' || x.name === 'tan')) || (x instanceof Pow && isE(x.base)));
+const isTrigFn = (x: Expr) => x instanceof Fn && (x.name === 'sin' || x.name === 'cos' || x.name === 'tan');
+
+/** Contains sin/cos/tan. */
+export const hasTrigFunctions = (e: Expr): boolean => some(e, isTrigFn);
+
+/** Contains sin/cos/tan or exp. */
+export const hasTrig = (e: Expr): boolean => some(e, (x) => isTrigFn(x) || (x instanceof Pow && isE(x.base)));
+
+/** Combine all exp() factors of each product into a single exp (SymPy `powsimp` for exp). */
+export function combineExp(ex: ExprLike): Expr {
+  return mapBottomUp(sympify(ex), (e) => {
+    if (!(e instanceof Mul)) return e;
+    const exps = e.args.filter((f) => f instanceof Pow && isE(f.base)) as Pow[];
+    if (exps.length < 2) return e;
+    const others = e.args.filter((f) => !(f instanceof Pow && isE(f.base)));
+    return mul(...others, exp(expand(add(...exps.map((f) => f.exp)))));
+  });
+}
 
 /** Rewrite sin, cos (and tan) in terms of exp. */
 export function rewriteExp(ex: ExprLike): Expr {
@@ -58,15 +74,25 @@ export function rewriteTrig(ex: ExprLike): Expr {
   });
 }
 
-/** Simplify trigonometric and complex-exponential expressions. */
-export function trigsimp(ex: ExprLike): Expr {
-  const e = sympify(ex);
-  if (!hasTrig(e)) return e;
-  return expand(rewriteTrig(expand(rewriteExp(e))));
+/** Rewrite to trigonometric form via exponentials (exp(I*y) -> cos(y) + I*sin(y)). */
+export function exptotrig(ex: ExprLike): Expr {
+  return expand(rewriteTrig(expsimp(ex)));
 }
 
-/** Exponential form: sin/cos rewritten as exponentials and expanded. */
+/**
+ * Simplify expressions containing trigonometric functions. Like SymPy, an
+ * expression without trigonometric functions is returned unchanged, and the
+ * result is never more complex than the input.
+ */
+export function trigsimp(ex: ExprLike): Expr {
+  const e = sympify(ex);
+  if (!hasTrigFunctions(e)) return e;
+  const t = exptotrig(e);
+  return countOps(t) <= countOps(e) ? t : e;
+}
+
+/** Exponential form: sin/cos rewritten as exponentials, expanded and combined. */
 export function expsimp(ex: ExprLike): Expr {
-  return expand(rewriteExp(sympify(ex)));
+  return combineExp(expand(rewriteExp(sympify(ex))));
 }
 

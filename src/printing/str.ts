@@ -2,94 +2,135 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Plain-text printer, e.g. `x^2 + 2*x*y - sqrt(2)/2`.
+ * @file Plain-text printer compatible with SymPy's `StrPrinter`
+ * (e.g. `x**2 + 2*x*y - sqrt(2)/2`).
  */
 
 import { Add, Constant, Expr, Float, Fn, Mul, Pow, Rational, Sym, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
-import { floatString, isNegativeTerm, printOrder, splitFraction } from './order';
+import { asOrderedFactors, asOrderedTerms, sympyFunctionName } from './sortkey';
 
-export const PREC = { ADD: 10, MUL: 20, POW: 30, ATOM: 100 } as const;
+/** SymPy precedence values. */
+export const PREC = { ADD: 40, MUL: 50, POW: 60, FUNC: 70, ATOM: 1000 } as const;
 
+const isExp = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
+
+/** SymPy `could_extract_minus_sign` for printing purposes. */
+export function startsNegative(e: Expr): boolean {
+  if (isNum(e)) return e.isNegative;
+  if (e instanceof Mul) {
+    const c = e.args[0]!;
+    return isNum(c) && c.isNegative;
+  }
+  return false;
+}
+
+/** SymPy `precedence()`. */
 export function precedence(e: Expr): number {
   if (e instanceof Rational) {
-    if (e.isNegative) return PREC.ADD;
-    return e.isInteger ? PREC.ATOM : PREC.MUL;
+    if (e.isInteger) return e.p < 0n ? PREC.ADD : PREC.ATOM;
+    return e.p < 0n ? PREC.ADD : PREC.MUL;
   }
-  if (e instanceof Float) return e.isNegative ? PREC.ADD : PREC.ATOM;
+  if (e instanceof Float) return e.value < 0 ? PREC.ADD : PREC.ATOM;
   if (e instanceof Add) return PREC.ADD;
-  if (e instanceof Mul) return isNegativeTerm(e) ? PREC.ADD : PREC.MUL;
-  if (e instanceof Pow) {
-    if (e.base instanceof Constant && e.base.name === 'E') return PREC.ATOM;
-    if (e.exp instanceof Rational && e.exp.p === 1n && e.exp.q === 2n) return PREC.ATOM;
-    if (isNegExp(e.exp)) return PREC.MUL;
-    return PREC.POW;
-  }
+  if (e instanceof Mul) return startsNegative(e) ? PREC.ADD : PREC.MUL;
+  if (isExp(e)) return PREC.FUNC;
+  if (e instanceof Pow) return PREC.POW;
+  if (e instanceof Fn) return PREC.FUNC;
   return PREC.ATOM;
 }
 
-function isNegExp(x: Expr): boolean {
-  const [c] = splitCoeff(x);
-  return c.isNegative;
+/** Format a float like SymPy's default 15-digit Float. */
+export function floatString(v: number): string {
+  if (v === 0) return '0.0';
+  const exp = Math.floor(Math.log10(Math.abs(v)));
+  if (exp >= -4 && exp < 15) {
+    return v.toPrecision(15);
+  }
+  const [m, e] = v.toExponential(14).split('e') as [string, string];
+  return `${m}e${e.startsWith('+') ? e.slice(1) : e}`;
 }
 
-function paren(e: Expr, minPrec: number): string {
+/** SymPy `_keep_coeff`: c*rest without re-evaluation (no distribution over sums). */
+export function keepCoeff(c: Rational | Float, rest: Expr): Expr {
+  if (c instanceof Rational && c.isOne) return rest;
+  if (rest instanceof Rational && rest.isOne) return c;
+  return new Mul([c, ...(rest instanceof Mul ? rest.args : [rest])]);
+}
+
+function parenthesize(e: Expr, level: number): string {
   const s = str(e);
-  return precedence(e) < minPrec ? `(${s})` : s;
+  return precedence(e) <= level ? `(${s})` : s;
+}
+
+function printMul(e: Mul): string {
+  const prec = precedence(e);
+  const [c, rest] = splitCoeff(e);
+  let sign = '';
+  let expr: Expr = e;
+  if (c.isNegative) {
+    sign = '-';
+    expr = keepCoeff(c instanceof Rational ? Rational.of(-c.p, c.q) : new Float(-c.value), rest);
+    if (!(expr instanceof Mul)) {
+      // e.g. -x: after removing the sign only a single factor remains
+      return sign + parenthesize(expr, prec);
+    }
+  }
+  const a: Expr[] = [];
+  const b: Expr[] = [];
+  for (const item of asOrderedFactors(expr)) {
+    if (item instanceof Pow && !isExp(item) && splitCoeff(item.exp)[0].isNegative) {
+      const x = item.exp;
+      b.push(x instanceof Rational && x.p === -1n && x.q === 1n ? item.base : pow(item.base, mul(-1, x)));
+    } else if (item instanceof Rational) {
+      if (item.p !== 1n) a.push(Rational.of(item.p));
+      if (item.q !== 1n) b.push(Rational.of(item.q));
+    } else {
+      a.push(item);
+    }
+  }
+  const aStr = (a.length > 0 ? a : [Rational.of(1n)]).map((x) => parenthesize(x, prec));
+  const bStr = b.map((x) => parenthesize(x, prec));
+  if (bStr.length === 0) return sign + aStr.join('*');
+  if (bStr.length === 1) return `${sign}${aStr.join('*')}/${bStr[0]}`;
+  return `${sign}${aStr.join('*')}/(${bStr.join('*')})`;
+}
+
+function printPow(e: Pow): string {
+  const [b, x] = e.args;
+  if (isExp(e)) return `exp(${str(x)})`;
+  if (x instanceof Rational) {
+    if (x.p === 1n && x.q === 2n) return `sqrt(${str(b)})`;
+    if (x.p === -1n && x.q === 2n) return `1/sqrt(${str(b)})`;
+    if (x.p === -1n && x.q === 1n) return `1/${parenthesize(b, PREC.POW)}`;
+  }
+  return `${parenthesize(b, PREC.POW)}**${parenthesize(x, PREC.POW)}`;
+}
+
+function printAdd(e: Add): string {
+  const parts: string[] = [];
+  for (const term of asOrderedTerms(e)) {
+    let t = str(term);
+    let sign = '+';
+    if (t.startsWith('-')) {
+      sign = '-';
+      t = t.slice(1);
+    }
+    parts.push(sign, precedence(term) < PREC.ADD ? `(${t})` : t);
+  }
+  const first = parts.shift();
+  return (first === '-' ? '-' : '') + parts.join(' ');
 }
 
 export function str(e: Expr): string {
   if (e instanceof Rational) return e.q === 1n ? `${e.p}` : `${e.p}/${e.q}`;
-  if (e instanceof Float) return floatString(e);
+  if (e instanceof Float) return floatString(e.value);
   if (e instanceof Sym) return e.name;
   if (e instanceof Constant) return e.name;
-  if (e instanceof Fn) return `${e.name}(${e.args.map(str).join(', ')})`;
-
-  if (e instanceof Add) {
-    const terms = printOrder(e.args);
-    let out = str(terms[0]!);
-    for (const t of terms.slice(1)) {
-      if (isNegativeTerm(t)) out += ` - ${paren(mul(-1, t), PREC.MUL)}`;
-      else out += ` + ${str(t)}`;
-    }
-    return out;
-  }
-
-  if (e instanceof Mul) {
-    const f = splitFraction(e);
-    const numParts: string[] = [];
-    const denParts: string[] = [];
-    if (f.coeff instanceof Rational) {
-      if (f.coeff.p !== 1n) numParts.push(`${f.coeff.p}`);
-      if (f.coeff.q !== 1n) denParts.push(`${f.coeff.q}`);
-    } else if (f.coeff.value !== 1) {
-      numParts.push(floatString(f.coeff));
-    }
-    for (const x of f.num) numParts.push(paren(x, PREC.MUL));
-    for (const x of f.den) denParts.push(paren(x, PREC.MUL));
-    let s = numParts.length > 0 ? numParts.join('*') : '1';
-    if (denParts.length === 1) {
-      const single = f.den.length === 1 ? f.den[0]! : undefined;
-      const needs = single !== undefined && precedence(single) < PREC.POW;
-      s += needs ? `/(${denParts[0]})` : `/${denParts[0]}`;
-    } else if (denParts.length > 1) {
-      s += `/(${denParts.join('*')})`;
-    }
-    return (f.sign ? '-' : '') + s;
-  }
-
-  if (e instanceof Pow) {
-    const [b, x] = e.args;
-    if (b instanceof Constant && b.name === 'E') return `exp(${str(x)})`;
-    if (x instanceof Rational && x.p === 1n && x.q === 2n) return `sqrt(${str(b)})`;
-    if (isNegExp(x)) {
-      const inv = pow(b, mul(-1, x));
-      return `1/${precedence(inv) < PREC.POW ? `(${str(inv)})` : str(inv)}`;
-    }
-    const bs = precedence(b) < PREC.ATOM || isNum(b) ? paren(b, PREC.ATOM) : str(b);
-    const xs = paren(x, PREC.ATOM);
-    return `${bs}^${xs}`;
-  }
+  if (e instanceof Fn) return `${sympyFunctionName(e.name)}(${e.args.map(str).join(', ')})`;
+  if (e instanceof Add) return printAdd(e);
+  if (e instanceof Mul) return printMul(e);
+  if (e instanceof Pow) return printPow(e);
   return e.key;
 }
 

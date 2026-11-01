@@ -52,7 +52,7 @@ describe('quantum gates', () => {
 
   it('rotations compose', () => {
     const { Rx, Ry, Rz } = gates;
-    expect(Rz(theta).mul(Rz(phi)).equals(Rz(add(theta, phi)))).toBe(true);
+    expect(Rz(theta).mul(Rz(phi)).equalsSimplified(Rz(add(theta, phi)))).toBe(true);
     expect(Ry(theta).mul(Ry(phi)).simplify().equals(Ry(add(theta, phi)))).toBe(true);
     expect(Rx(theta).mul(Rx(phi)).simplify().equals(Rx(add(theta, phi)))).toBe(true);
     expect(Rx(theta).isUnitary()).toBe(true);
