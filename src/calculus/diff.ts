@@ -7,9 +7,10 @@
 
 import { isReal } from '../core/assumptions';
 import { piecewise } from '../core/logic';
-import { Add, Constant, Derivative, Expr, ExprLike, Fn, Integral, Mul, Piecewise, Pow, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import { Add, Constant, Derivative, Dummy, Expr, ExprLike, Fn, Integral, Mul, Piecewise, Pow, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { derivative } from '../core/undef';
 import { add, mul, pow, sympify } from '../core/ops';
+import { xreplace } from '../core/traverse';
 import { abs, conjugate, cos, cosh, im as fnIm, log, re as fnRe, sin, sinh, tan, tanh } from '../functions/elementary';
 
 /**
@@ -106,6 +107,12 @@ function d(e: Expr, x: Expr): Expr {
 export function diff(ex: ExprLike, x: Expr, n = 1): Expr {
   if (!Number.isInteger(n) || n < 0) throw new RangeError('diff: order must be a non-negative integer');
   let e = sympify(ex);
+  if (!(x instanceof Sym)) {
+    // differentiate with respect to an expression such as f(x): treat it as a symbol
+    const t = new Dummy('xi');
+    const r = diff(xreplace(e, [[x, t]]), t, n);
+    return xreplace(r, [[t, x]]);
+  }
   for (let i = 0; i < n; i++) e = d(e, x);
   return e;
 }

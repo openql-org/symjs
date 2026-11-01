@@ -520,3 +520,62 @@ export function atoms(eIn: ExprLike, pred: (a: Expr) => boolean = () => true): E
   return [...out.values()];
 }
 
+
+/**
+ * SymPy `has_free(*patterns)`: does the expression contain any of the
+ * patterns as a free subexpression (a free symbol, an applied function of
+ * the given name, or a subexpression)?
+ */
+export function hasFree(eIn: ExprLike, ...patterns: (ExprLike | { fn: string })[]): boolean {
+  const e = sympify(eIn);
+  const free = freeSymbols(e);
+  return patterns.some((p) => {
+    if (typeof p === 'object' && !(p instanceof Expr)) {
+      const name = p.fn;
+      const go = (x: Expr): boolean => (x.kind === 'Undef' && (x as { name?: string }).name === name) || x.args.some(go);
+      return go(e);
+    }
+    const q = sympify(p);
+    if (q.kind === 'Symbol') return [...free].some((s) => s.key === q.key);
+    if (e.has(q)) return true;
+    // a sub-sum or sub-product of an Add/Mul also counts (x + y + 1 has y + 1)
+    const qs = q instanceof Add ? q.args : q instanceof Mul ? q.args : undefined;
+    if (!qs) return false;
+    const go = (x: Expr): boolean => {
+      if (x.kind === q.kind && qs.every((a) => x.args.some((b) => b.key === a.key))) return true;
+      return x.args.some(go);
+    };
+    return go(e);
+  });
+}
+
+/** SymPy `as_coefficients_dict(*syms)`: term -> coefficient. */
+export function asCoefficientsDict(eIn: ExprLike, syms: readonly Expr[] = []): [Expr, Expr][] {
+  const e = sympify(eIn);
+  const out = new Map<string, [Expr, Expr[]]>();
+  const put = (k: Expr, v: Expr) => {
+    const cur = out.get(k.key);
+    if (cur) cur[1].push(v);
+    else out.set(k.key, [k, [v]]);
+  };
+  if (!syms.length) {
+    for (const a of e instanceof Add ? e.args : [e]) {
+      const [c, m] = splitCoeff(a);
+      put(m, c);
+    }
+    return [...out.values()].map(([k, v]) => [k, v.length === 1 ? v[0]! : add(...v)]);
+  }
+  const [ind, dep] = asIndependent(e, syms, { asAdd: true });
+  for (const i of dep instanceof Add ? dep.args : [dep]) {
+    if (isZeroE(i)) continue;
+    if (i instanceof Mul) {
+      const c = mul(...i.args.filter((a) => !syms.some((s) => a.has(s))));
+      const x = i.args.filter((a) => syms.some((s) => a.has(s)));
+      if (c instanceof Rational && c.isOne) put(i, c);
+      else put(x.length === 1 ? x[0]! : new Mul(x), c);
+    } else put(i, S.One);
+  }
+  const res: [Expr, Expr][] = [...out.values()].map(([k, v]) => [k, add(...v)]);
+  if (!isZeroE(ind)) res.push([S.One, ind]);
+  return res;
+}

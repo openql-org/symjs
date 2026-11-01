@@ -166,6 +166,8 @@ export interface Impl {
   toComplex(e: Expr, values?: NumericValues): ComplexValue;
   rewrite?(e: Expr, target: string, opts?: { pattern?: readonly string[]; deep?: boolean }): Expr;
   ordered?(xs: readonly Expr[]): Expr[];
+  expandFunc?(e: Expr): Expr;
+  sign?(e: Expr): Expr;
   couldExtractMinusSign?(e: Expr): boolean;
   /** SymPy collect (registered by simplify/radsimp). */
   collect?(e: Expr, syms: readonly Expr[]): Expr;

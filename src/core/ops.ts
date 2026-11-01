@@ -291,8 +291,12 @@ class Radicals {
       if (twice.isInteger) {
         iPow += twice.p; // (-1)^(m/2) = I^m
       } else {
-        // represent with exponent in (-1, 1]
-        const r = numCmp1(n) > 0 ? (numAdd(n, Rational.of(-2n)) as Rational) : n;
+        // SymPy: (-1)**(p/q) = (-1)**i * (-1)**(r/q) with r/q in [0, 1)
+        let r = n;
+        if (numCmp1(n) > 0) {
+          r = numAdd(n, Rational.of(-1n)) as Rational;
+          iPow += 2n;
+        }
         factors.push(new Pow(S.NegOne, r));
       }
     }
@@ -722,3 +726,28 @@ impl.add = add;
 impl.mul = mul;
 impl.pow = pow;
 impl.couldExtractMinusSign = couldExtractMinusSign;
+
+/** SymPy root(x, n, k): the k-th n-th root, x**(1/n)*(-1)**(2*k/n). */
+export function root(x: ExprLike, n: ExprLike, k: ExprLike = 0): Expr {
+  const nn = sympify(n);
+  const kk = sympify(k);
+  const r = pow(x, pow(nn, -1));
+  if (kk instanceof Rational && kk.isZero) return r;
+  return mul(r, pow(S.NegOne, mul(2, kk, pow(nn, -1))));
+}
+
+/** SymPy cbrt(x) = x**(1/3). */
+export function cbrt(x: ExprLike): Expr {
+  return pow(x, Rational.of(1n, 3n));
+}
+
+/** SymPy real_root(x, n): the real n-th root for real x and odd n. */
+export function realRoot(xIn: ExprLike, nIn: ExprLike): Expr {
+  const x = sympify(xIn);
+  const n = sympify(nIn);
+  if (n instanceof Rational && n.isInteger) {
+    if (n.p === 1n || n.p === -1n) return root(x, n);
+    if (n.p % 2n !== 0n && isReal(x) === true) return mul(impl.sign!(x), root(impl.abs(x), n));
+  }
+  return root(x, n);
+}

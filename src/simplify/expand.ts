@@ -84,6 +84,8 @@ export interface ExpandHints {
   complex?: boolean;
   trig?: boolean;
   force?: boolean;
+  /** Expand special functions into simpler ones (SymPy func=True). */
+  func?: boolean;
 }
 
 const isE = (e: Expr) => e instanceof Constant && e.name === 'E';
@@ -244,6 +246,7 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
     ...hints,
   };
   let e = sympify(ex);
+  if (h.func && impl.expandFunc) e = impl.expandFunc(e);
   for (let round = 0; round < 6; round++) {
     const was = e;
     if (h.complex) e = applyBottomUp(e, expandComplexNode, false);

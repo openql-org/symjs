@@ -5,6 +5,7 @@
  * @file Relations, boolean constants and Piecewise.
  */
 
+import { Special } from './nodes';
 import { BoolAtom, Expr, ExprLike, Float, Piecewise, Rational, Rel, RelOp, S, isNum } from './nodes';
 import { numCmp } from './num';
 import { add, mul, sympify } from './ops';
@@ -13,6 +14,11 @@ import { add, mul, sympify } from './ops';
 export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   const lhs = sympify(a);
   const rhs = sympify(b);
+  // nan is not equal to anything (SymPy Eq(nan, nan) is False)
+  if ([lhs, rhs].some((x) => x instanceof Special && x.name === 'nan')) {
+    if (op === 'Eq') return S.false;
+    if (op === 'Ne') return S.true;
+  }
   const d = add(lhs, mul(-1, rhs));
   if (isNum(d)) {
     const c = d instanceof Rational ? numCmp(d, S.Zero) : Math.sign((d as Float).value);

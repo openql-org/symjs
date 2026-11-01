@@ -85,7 +85,10 @@ export {
   asRealImag,
   asNumerDenom,
   atoms,
+  hasFree,
+  asCoefficientsDict,
 } from './core/methods';
+export { root, cbrt, realRoot } from './core/ops';
 export { subs, xreplace, freeSymbols, mapBottomUp, rebuild } from './core/traverse';
 export { match, replace, find, ordered, countOps, countOpsVisual, isInstance } from './core/match';
 export type { Query, Replacement } from './core/match';

@@ -26,6 +26,9 @@ export class PyTuple {
 export class PyDict {
   constructor(readonly entries: readonly (readonly [unknown, unknown])[]) {}
 }
+export class PyDefaultDict {
+  constructor(readonly entries: readonly (readonly [unknown, unknown])[]) {}
+}
 export class PySet {
   constructor(readonly items: readonly unknown[]) {}
 }
@@ -59,6 +62,7 @@ export function fmt(v: unknown): string {
   if (typeof v === 'string') return `'${v}'`;
   if (v instanceof PyList) return `[${v.items.map(fmt).join(', ')}]`;
   if (v instanceof PyTuple) return v.items.length === 1 ? `(${fmt(v.items[0])},)` : `(${v.items.map(fmt).join(', ')})`;
+  if (v instanceof PyDefaultDict) return `defaultdict(<class 'int'>, ${fmt(new PyDict(v.entries))})`;
   if (v instanceof PyDict) return `{${v.entries.map(([k, x]) => `${fmt(k)}: ${fmt(x)}`).join(', ')}}`;
   if (v instanceof PySet) return v.items.length === 0 ? 'set()' : `{${v.items.map(fmt).join(', ')}}`;
   if (v instanceof UFnClass || v instanceof FnClass) return v.name;
@@ -88,6 +92,8 @@ function topLevelItems(s: string): string[] {
 export function matches(v: unknown, expected: string): boolean {
   const got = fmt(v);
   if (got === expected) return true;
+  const ddPrefix = "defaultdict(<class 'int'>, ";
+  if (v instanceof PyDefaultDict && expected.startsWith(ddPrefix)) return matches(new PyDict(v.entries), expected.slice(ddPrefix.length, -1));
   if ((v instanceof PyDict || v instanceof PySet) && expected.startsWith('{')) {
     const a = topLevelItems(got).sort();
     const b = topLevelItems(expected).sort();
@@ -316,7 +322,7 @@ function rootsDict(rs: Expr[]): PyDict {
 function diffArgs(e: Expr, rest: unknown[]): Expr {
   let out = e;
   for (let i = 0; i < rest.length; i++) {
-    const v = asSym(rest[i]);
+    const v = asExpr(rest[i]);
     const n = rest[i + 1];
     if (n instanceof sj.Rational && n.isInteger) {
       out = sj.diff(out, v, Number(n.p));
@@ -342,7 +348,7 @@ function subsArgs(e: Expr, args: unknown[]): Expr {
   throw new Unsupported('subs arguments');
 }
 
-const HINTS = ['deep', 'mul', 'multinomial', 'power_exp', 'power_base', 'log', 'complex', 'trig', 'force'];
+const HINTS = ['deep', 'mul', 'multinomial', 'power_exp', 'power_base', 'log', 'complex', 'trig', 'force', 'func'];
 function expandHints(kw: Record<string, unknown>): sj.ExpandHints {
   for (const k of Object.keys(kw)) if (!HINTS.includes(k)) throw new Unsupported(`expand hint ${k}`);
   return Object.fromEntries(Object.entries(kw).map(([k, v]) => [k, Boolean(v)])) as sj.ExpandHints;
@@ -440,7 +446,15 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new UFnClass(String(args[0]));
   },
   Derivative: (args, kw) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
+    if (kw['evaluate'] === true) {
+      let e = asExpr(args[0]);
+      for (const a of args.slice(1)) {
+        if (a instanceof PyTuple) e = sj.diff(e, asExpr(a.items[0]), Number((a.items[1] as sj.Rational).p));
+        else e = sj.diff(e, asExpr(a));
+      }
+      return e;
+    }
     const e = asExpr(args[0]);
     const vc: [Expr, number][] = [];
     for (const a of args.slice(1)) {
@@ -523,8 +537,30 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (!(e instanceof sj.Rational && e.isInteger)) throw new Unsupported('Integer');
     return e;
   },
-  Add: (args, kw) => (noKw(kw), sj.add(...args.map(asExpr))),
-  Mul: (args, kw) => (noKw(kw), sj.mul(...args.map(asExpr))),
+  Add: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
+    if (kw['evaluate'] === false) return new sj.Add(args.map(asExpr));
+    return sj.add(...args.map(asExpr));
+  },
+  Mul: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
+    if (kw['evaluate'] === false) {
+      if (args.every((a) => a instanceof sj.Rational)) throw new Unsupported('unevaluated numeric product');
+      return new sj.Mul(args.map(asExpr));
+    }
+    return sj.mul(...args.map(asExpr));
+  },
+  root: (args, kw) => (noKw(kw), sj.root(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? 0 : asExpr(args[2]))),
+  cbrt: exprFn(sj.cbrt),
+  real_root: (args, kw) => (noKw(kw), sj.realRoot(asExpr(args[0]), asExpr(args[1]))),
+  '.has_free': (args, kw, self) => {
+    noKw(kw);
+    return sj.hasFree(asExpr(self), ...args.map((a) => (a instanceof UFnClass ? { fn: a.name } : asExpr(a))));
+  },
+  '.as_coefficients_dict': (args, kw, self) => {
+    noKw(kw);
+    return new PyDefaultDict(sj.asCoefficientsDict(asExpr(self), args.map(asExpr)));
+  },
   Pow: (args, kw) => (noKw(kw), sj.pow(asExpr(args[0]), asExpr(args[1]))),
   sqrt: exprFn(sj.sqrt),
   ...Object.fromEntries(
@@ -546,7 +582,15 @@ export const ADAPTERS: Record<string, Adapter> = {
   exp: exprFn(sj.exp),
   Abs: exprFn(sj.abs),
   ...Object.fromEntries(FN_NAMES.map((n) => [n, exprFn((e) => sj.fn(n, [e]))])),
-  Eq: (args, kw) => (noKw(kw), sj.Eq(asExpr(args[0]), asExpr(args[1] ?? 0))),
+  Eq: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
+    if (kw['evaluate'] === false) return new sj.Rel('Eq', asExpr(args[0]), asExpr(args[1] ?? 0));
+    return sj.Eq(asExpr(args[0]), asExpr(args[1] ?? 0));
+  },
+  StrictGreaterThan: (args, kw) => (noKw(kw), sj.Gt(asExpr(args[0]), asExpr(args[1]))),
+  GreaterThan: (args, kw) => (noKw(kw), sj.Ge(asExpr(args[0]), asExpr(args[1]))),
+  StrictLessThan: (args, kw) => (noKw(kw), sj.Lt(asExpr(args[0]), asExpr(args[1]))),
+  LessThan: (args, kw) => (noKw(kw), sj.Le(asExpr(args[0]), asExpr(args[1]))),
   Ne: (args, kw) => (noKw(kw), sj.Ne(asExpr(args[0]), asExpr(args[1]))),
   Lt: (args, kw) => (noKw(kw), sj.Lt(asExpr(args[0]), asExpr(args[1]))),
   Le: (args, kw) => (noKw(kw), sj.Le(asExpr(args[0]), asExpr(args[1]))),

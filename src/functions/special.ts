@@ -24,6 +24,8 @@ import {
 import { numAdd, numMul } from '../core/num';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt } from '../core/ops';
 import { fnPartials } from '../calculus/diff';
+import { rebuild } from '../core/traverse';
+import { impl } from '../core/nodes';
 import { c as cx, cadd, cdiv, cexp, clog, cmul, cpow, csin } from '../numeric/complex';
 import { numericFns } from '../numeric/evalf';
 import { conjugateCommutes, cos, cosh, evaluators, fn, log, sin, sinh } from './elementary';
@@ -1081,8 +1083,33 @@ export const Max = (...xs: ExprLike[]): Expr => fn('Max', xs);
 /** SymPy expand_func: rewrite special functions into elementary terms where possible. */
 export function expandFunc(e: Expr): Expr {
   const go = (x: Expr): Expr => {
+    if (x instanceof Constant && x.name === 'GoldenRatio') return add(S.Half, mul(S.Half, sqrt(5)));
+    if (x instanceof Constant && x.name === 'TribonacciConstant') {
+      const s33 = mul(3, sqrt(33));
+      return mul(R(1n, 3n), add(1, pow(add(19, neg(s33)), R(1n, 3n)), pow(add(19, s33), R(1n, 3n))));
+    }
     const args = x.args.map(go);
-    const y = args.some((a, i) => a !== x.args[i]) && x instanceof Fn ? fn(x.name, args) : x;
+    const changed = args.some((a, i) => a !== x.args[i]);
+    const y = !changed ? x : x instanceof Fn ? fn(x.name, args) : rebuild(x, args);
+    if (y instanceof Fn && y.name === 'gamma') {
+      const a = y.args[0]!;
+      if (a instanceof Rational && (a.p < 0n ? -a.p : a.p) > a.q) {
+        const n = a.p >= 0n ? a.p / a.q : -((-a.p + a.q - 1n) / a.q);
+        const frac = R(a.p - n * a.q, a.q);
+        return mul(fn('gamma', [frac]), fn('rf', [frac, R(n)]));
+      }
+      if (a instanceof Add && isNum(a.args[0]!)) {
+        let coeff = a.args[0] as Rational;
+        let tail: Expr[] = a.args.slice(1) as Expr[];
+        if (coeff.q !== 1n) {
+          const ip = R(coeff.p >= 0n ? coeff.p / coeff.q : -((-coeff.p + coeff.q - 1n) / coeff.q));
+          tail = [add(coeff, neg(ip)), ...tail];
+          coeff = ip;
+        }
+        const t = add(...tail);
+        return mul(fn('gamma', [t]), fn('rf', [t, coeff]));
+      }
+    }
     if (y instanceof Fn) {
       if (y.name === 'binomial') {
         const [n, k] = y.args;
@@ -1122,3 +1149,6 @@ function splitAddInt(e: Expr): [bigint, Expr] {
   if (e instanceof Add && isInt(e.args[0]!)) return [(e.args[0] as Rational).p, add(...e.args.slice(1))];
   return [0n, e];
 }
+
+impl.expandFunc = expandFunc;
+impl.sign = sign;
