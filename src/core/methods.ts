@@ -637,3 +637,56 @@ export function dummyEq(aIn: ExprLike, bIn: ExprLike, symbol?: Expr): boolean {
   }
   return xreplaceM(a, [[d, target]]).key === b.key;
 }
+
+/** Singular points of one-argument functions (SymPy Function._singularities). */
+const SINGULARITIES: Record<string, string[]> = {
+  log: ['0', 'zoo'],
+  sin: ['zoo'],
+  cos: ['zoo'],
+  sinh: ['zoo'],
+  cosh: ['zoo'],
+  erf: ['zoo'],
+};
+
+/** SymPy is_meromorphic(x, a): true/false/undefined. */
+export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | undefined {
+  const e = sympify(eIn);
+  const at = sympify(a);
+  const subsAt = (t: Expr) => xreplaceM(t, [[x, at]]);
+  const isZoo = (t: Expr) => t instanceof Special && (t.name === 'zoo' || t.name === 'oo' || t.name === '-oo');
+  const go = (t: Expr): boolean | undefined => {
+    if (!t.has(x)) return true;
+    if (t.key === x.key) return true;
+    if (t instanceof Add || t instanceof Mul) {
+      const rs = t.args.map(go);
+      if (rs.some((r) => r === false)) return false;
+      return rs.every((r) => r === true) ? true : undefined;
+    }
+    if (t instanceof Pow) {
+      const baseM = go(t.base);
+      const expInt = t.exp instanceof Rational && t.exp.isInteger;
+      if (expInt) return baseM;
+      const expM = go(t.exp);
+      if (baseM === false) return expM ? false : undefined;
+      if (baseM === undefined) return undefined;
+      const b = subsAt(t.base);
+      if ((b instanceof Rational && b.isZero) || isZoo(b)) return false;
+      if (b.freeSymbols().size) return undefined;
+      if (!expM) return expM;
+      return !isZoo(subsAt(t.exp));
+    }
+    if (t instanceof Fn) {
+      if (t.args.slice(1).some((u) => u.has(x))) return undefined;
+      const arg0 = t.args[0]!;
+      if (!go(arg0)) return undefined;
+      const sing = SINGULARITIES[t.name];
+      if (!sing) return undefined;
+      const v = subsAt(arg0);
+      const k = v instanceof Special ? v.name === 'zoo' || v.name === 'oo' || v.name === '-oo' ? 'zoo' : v.name : v instanceof Rational ? v.toString() : undefined;
+      if (k === undefined) return undefined;
+      return !sing.includes(k);
+    }
+    return undefined;
+  };
+  return go(e);
+}

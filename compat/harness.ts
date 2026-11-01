@@ -760,6 +760,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new PyTuple(sj.extractBranchFactor(asExpr(self), Boolean(kw['allow_half'])));
   },
   frac: exprFn(sj.frac),
+  '.is_meromorphic': (args, kw, self) => (noKw(kw), sj.isMeromorphic(asExpr(self), asExpr(args[0]), asExpr(args[1])) ?? null),
   ratsimp: exprFn(sj.ratsimp),
   primitive: (args, kw) => {
     noKw(kw);

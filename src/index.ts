@@ -92,6 +92,7 @@ export {
   hasXfree,
   isAlgebraicExpr,
   dummyEq,
+  isMeromorphic,
 } from './core/methods';
 export { root, cbrt, realRoot } from './core/ops';
 export { subs, xreplace, freeSymbols, mapBottomUp, rebuild } from './core/traverse';
