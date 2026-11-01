@@ -147,7 +147,23 @@ export type SpecialFnName =
   | 'ceiling'
   | 'atan2'
   | 'Min'
-  | 'Max';
+  | 'Max'
+  | 'bernoulli'
+  | 'euler'
+  | 'genocchi'
+  | 'bell'
+  | 'fibonacci'
+  | 'lucas'
+  | 'tribonacci'
+  | 'partition'
+  | 'totient'
+  | 'reduced_totient'
+  | 'mobius'
+  | 'divisor_sigma'
+  | 'primenu'
+  | 'primeomega'
+  | 'primepi'
+  | 'multigamma';
 
 /**
  * Late-bound implementations. Filled in by the modules that implement them.
