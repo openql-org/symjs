@@ -32,6 +32,11 @@ export class PySet {
 
 export class Unsupported extends Error {}
 
+/** An undefined function class (SymPy `Function('f')` itself, not applied). */
+export class UFnClass {
+  constructor(readonly name: string) {}
+}
+
 export function fmt(v: unknown): string {
   if (v instanceof Expr) return sj.str(v);
   if (v instanceof Matrix) return v.toString();
@@ -43,6 +48,7 @@ export function fmt(v: unknown): string {
   if (v instanceof PyTuple) return v.items.length === 1 ? `(${fmt(v.items[0])},)` : `(${v.items.map(fmt).join(', ')})`;
   if (v instanceof PyDict) return `{${v.entries.map(([k, x]) => `${fmt(k)}: ${fmt(x)}`).join(', ')}}`;
   if (v instanceof PySet) return v.items.length === 0 ? 'set()' : `{${v.items.map(fmt).join(', ')}}`;
+  if (v instanceof UFnClass) return v.name;
   throw new Unsupported(`cannot format ${String(v)}`);
 }
 
@@ -170,6 +176,15 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'Tuple':
       return new PyTuple((tree['items'] as Tree[]).map(deserialize));
+    case 'UFnClass':
+      return new UFnClass(tree['name'] as string);
+    case 'UFn':
+      return sj.Function(tree['name'] as string)(...(tree['args'] as Tree[]).map((a) => deserialize(a) as Expr));
+    case 'Derivative':
+      return sj.derivative(
+        deserialize(tree['expr'] as Tree) as Expr,
+        (tree['vc'] as [Tree, number][]).map(([v, n]) => [deserialize(v) as Expr, n] as [Expr, number]),
+      );
     case 'Dict':
       return new PyDict((tree['items'] as [Tree, Tree][]).map(([k, v]) => [deserialize(k), deserialize(v)] as const));
     case 'Matrix':
@@ -275,6 +290,20 @@ const FN_NAMES = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', '
 
 export const ADAPTERS: Record<string, Adapter> = {
   // ---- core constructors
+  Function: (args, kw) => {
+    noKw(kw);
+    return new UFnClass(String(args[0]));
+  },
+  Derivative: (args, kw) => {
+    noKw(kw);
+    const e = asExpr(args[0]);
+    const vc: [Expr, number][] = [];
+    for (const a of args.slice(1)) {
+      if (a instanceof PyTuple) vc.push([asExpr(a.items[0]), Number((a.items[1] as sj.Rational).p)]);
+      else vc.push([asExpr(a), 1]);
+    }
+    return sj.derivative(e, vc);
+  },
   symbols: (args, kw) => {
     const names = String(args[0]);
     if (/[:]/.test(names)) throw new Unsupported('symbol ranges');

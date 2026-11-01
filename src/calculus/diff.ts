@@ -7,7 +7,8 @@
 
 import { isReal } from '../core/assumptions';
 import { piecewise } from '../core/logic';
-import { Add, Constant, Expr, ExprLike, Fn, Integral, Mul, Piecewise, Pow, S, Sym, impl, isNum } from '../core/nodes';
+import { Add, Constant, Derivative, Expr, ExprLike, Fn, Integral, Mul, Piecewise, Pow, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import { derivative } from '../core/undef';
 import { add, mul, pow, sympify } from '../core/ops';
 import { abs, conjugate, cos, cosh, im as fnIm, log, re as fnRe, sin, sinh, tan, tanh } from '../functions/elementary';
 
@@ -66,6 +67,20 @@ function d(e: Expr, x: Expr): Expr {
     const f = fnDerivative[e.name];
     if (!f) throw new Error(`diff: unknown derivative for ${e.name}`);
     return mul(f(u), du);
+  }
+  if (e instanceof UndefFn) {
+    // chain rule over the arguments; only direct dependence is represented
+    const terms: Expr[] = [];
+    for (const a of e.args) {
+      if (!a.has(x)) continue;
+      if (a.key === x.key) terms.push(derivative(e, [[x, 1]]));
+      else throw new Error('diff: derivative of an undefined function of a composite argument is not supported');
+    }
+    return add(...terms);
+  }
+  if (e instanceof Derivative) {
+    if (e.expr instanceof UndefFn && e.expr.args.some((a) => a.key === x.key)) return derivative(e, [[x, 1]]);
+    return S.Zero;
   }
   if (e instanceof Piecewise) return piecewise(...e.pairs.map(([v, c]) => [d(v, x), c] as const));
   if (e instanceof Integral && !e.limits && e.variable.key === x.key) return e.integrand;

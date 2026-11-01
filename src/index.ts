@@ -28,6 +28,8 @@ export {
   Limit,
   Order,
   Special,
+  UndefFn,
+  Derivative,
   S,
   pi,
   E,
@@ -104,6 +106,8 @@ export {
 
 // calculus
 export { diff } from './calculus/diff';
+export { Function, functions, derivative } from './core/undef';
+export type { UndefinedFunction } from './core/undef';
 export { integrate } from './integrals/integrate';
 export { limit } from './series/limits';
 export { series, O } from './series/series';

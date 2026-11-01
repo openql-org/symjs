@@ -6,7 +6,7 @@
  * (e.g. `x**2 + 2*x*y - sqrt(2)/2`).
  */
 
-import { Add, BoolAtom, Constant, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, impl, isNum } from '../core/nodes';
+import { Add, BoolAtom, Constant, Derivative, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
 import { asOrderedFactors, asOrderedTerms, sympyFunctionName } from './sortkey';
 
@@ -40,7 +40,7 @@ export function precedence(e: Expr): number {
   if (e instanceof Mul) return startsNegative(e) ? PREC.ADD : PREC.MUL;
   if (isExp(e)) return PREC.FUNC;
   if (e instanceof Pow) return PREC.POW;
-  if (e instanceof Fn || e instanceof Piecewise) return PREC.FUNC;
+  if (e instanceof Fn || e instanceof Piecewise || e instanceof UndefFn) return PREC.FUNC;
   if (e instanceof Rel) return PREC.REL;
   return PREC.ATOM;
 }
@@ -143,6 +143,11 @@ export function str(e: Expr): string {
     return `${parenthesize(e.lhs, PREC.REL)} ${REL_SYMBOL[e.op]} ${parenthesize(e.rhs, PREC.REL)}`;
   }
   if (e instanceof Piecewise) return `Piecewise(${e.pairs.map(([x, c]) => `(${str(x)}, ${str(c)})`).join(', ')})`;
+  if (e instanceof UndefFn) return `${e.name}(${e.args.map(str).join(', ')})`;
+  if (e instanceof Derivative) {
+    const vs = e.variableCount.map(([v, n]) => (n === 1 ? str(v) : `(${str(v)}, ${n})`));
+    return `Derivative(${str(e.expr)}, ${vs.join(', ')})`;
+  }
   if (e instanceof Limit) {
     const [f, z, z0] = e.args;
     return `Limit(${str(f!)}, ${str(z!)}, ${str(z0!)}, dir='${e.dir}')`;

@@ -8,7 +8,7 @@
  * (e.g. `x**2*y`, `1 - 2*I`, `-sqrt(2)/4 + sqrt(6)/4`, `I*sin(x) + cos(x)`).
  */
 
-import { Add, ComplexValue, Constant, Expr, Float, Fn, Mul, Order, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
+import { Add, ComplexValue, Constant, Derivative, Expr, Float, Fn, Mul, Order, Pow, Rational, S, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { pow, splitCoeff } from '../core/ops';
 
 /** A SymPy-style sort key: nested tuples of numbers and strings. */
@@ -70,6 +70,8 @@ function classKey(e: Expr): Key {
     const name = sympyFunctionName(e.name);
     return [4, FUNCTION_PRIORITY[name] ?? 10000, name];
   }
+  if (e instanceof UndefFn) return [4, 0, e.name];
+  if (e instanceof Derivative) return [5, 0, 'Derivative'];
   return [5, 0, e.kind];
 }
 

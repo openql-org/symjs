@@ -8,7 +8,7 @@
 import { fn } from '../functions/elementary';
 import { piecewise, rel } from './logic';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { Add, Expr, ExprLike, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Substitution, Sym, impl } from './nodes';
+import { Add, Derivative, Expr, ExprLike, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Substitution, Sym, UndefFn, impl } from './nodes';
 import { add, mul, pow, sympify } from './ops';
 
 /** Rebuild a node of the same type with new arguments (re-canonicalizing). */
@@ -26,6 +26,17 @@ export function rebuild(e: Expr, args: readonly Expr[]): Expr {
   if (e instanceof Integral) return new Integral(args);
   if (e instanceof Limit) return new Limit(args, e.dir);
   if (e instanceof Order) return new Order(args);
+  if (e instanceof UndefFn) return new UndefFn(e.name, args);
+  if (e instanceof Derivative) {
+    const expr = args[0]!;
+    // evaluate when the expression no longer contains undefined functions
+    const vc: [Expr, number][] = [];
+    for (let i = 1; i < args.length; i += 2) vc.push([args[i]!, Number((args[i + 1] as Rational).p)]);
+    if (vc.every(([v]) => v instanceof Sym) && !hasUndef(expr)) {
+      return vc.reduce((acc, [v, n]) => impl.diff(acc, v, n), expr);
+    }
+    return new Derivative(args);
+  }
   return e;
 }
 
@@ -197,6 +208,8 @@ export function subs(e: Expr, s: Substitution, opts: { simultaneous?: boolean } 
   for (const [o, n] of pairs) r = subsOne(r, o, n);
   return r;
 }
+
+const hasUndef = (e: Expr): boolean => e instanceof UndefFn || e instanceof Derivative || e.args.some(hasUndef);
 
 export function freeSymbols(e: Expr): Set<Sym> {
   const out = new Map<string, Sym>();

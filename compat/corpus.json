@@ -4793,7 +4793,7 @@
    "category": "core",
    "module": "sympy.core.expr",
    "src": "(-2*x*y).args_cnc(cset=True)",
-   "expected": "[{x, 2, -1, y}, []]"
+   "expected": "[{y, 2, x, -1}, []]"
   },
   {
    "fn": ".args_cnc",
@@ -11907,7 +11907,7 @@
       "q": "1"
      },
      {
-      "t": "Fn",
+      "t": "UFn",
       "name": "f",
       "args": [
        {
@@ -11943,7 +11943,7 @@
       "q": "1"
      },
      {
-      "t": "Fn",
+      "t": "UFn",
       "name": "f",
       "args": [
        {
@@ -11957,7 +11957,7 @@
    },
    "args": [
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -11988,7 +11988,7 @@
       "t": "Pow",
       "args": [
        {
-        "t": "Fn",
+        "t": "UFn",
         "name": "f",
         "args": [
          {
@@ -12009,7 +12009,7 @@
    },
    "args": [
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -13972,7 +13972,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms()",
-   "expected": "{1, 2, I, pi, y, x}"
+   "expected": "{1, 2, x, y, pi, I}"
   },
   {
    "fn": ".atoms",
@@ -14034,7 +14034,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Symbol)",
-   "expected": "{x, y}"
+   "expected": "{y, x}"
   },
   {
    "fn": ".atoms",
@@ -14158,7 +14158,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Number, NumberSymbol)",
-   "expected": "{pi, 1, 2}"
+   "expected": "{1, 2, pi}"
   },
   {
    "fn": ".atoms",
@@ -14220,7 +14220,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Number, NumberSymbol, I)",
-   "expected": "{pi, 1, 2, I}"
+   "expected": "{I, 1, 2, pi}"
   },
   {
    "fn": ".atoms",
@@ -14289,7 +14289,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(x) # x is a Symbol",
-   "expected": "{x, y}"
+   "expected": "{y, x}"
   },
   {
    "fn": ".atoms",
@@ -14479,7 +14479,7 @@
       ]
      },
      {
-      "t": "Fn",
+      "t": "UFn",
       "name": "f",
       "args": [
        {
@@ -14495,7 +14495,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + f(x) + 2*sin(y + I*pi)).atoms(Function)",
-   "expected": "{sin(y + I*pi), f(x)}"
+   "expected": "{f(x), sin(y + I*pi)}"
   },
   {
    "fn": ".atoms",
@@ -14547,7 +14547,7 @@
       ]
      },
      {
-      "t": "Fn",
+      "t": "UFn",
       "name": "f",
       "args": [
        {
@@ -14625,7 +14625,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Mul)",
-   "expected": "{2*sin(y + I*pi), I*pi}"
+   "expected": "{I*pi, 2*sin(y + I*pi)}"
   },
   {
    "fn": ".compare",
@@ -14799,29 +14799,21 @@
   {
    "fn": ".has_free",
    "self": {
-    "t": "Fn",
-    "name": "Derivative",
-    "args": [
-     {
-      "t": "Symbol",
-      "name": "x",
-      "assume": {}
-     },
-     {
-      "t": "Tuple",
-      "items": [
-       {
-        "t": "Symbol",
-        "name": "y",
-        "assume": {}
-       },
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Derivative",
+    "expr": {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    },
+    "vc": [
+     [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      1
+     ]
     ]
    },
    "args": [
@@ -15040,7 +15032,7 @@
     "name": "Integral",
     "args": [
      {
-      "t": "Fn",
+      "t": "UFn",
       "name": "f",
       "args": [
        {
@@ -15054,7 +15046,7 @@
       "t": "Tuple",
       "items": [
        {
-        "t": "Fn",
+        "t": "UFn",
         "name": "f",
         "args": [
          {
@@ -15070,7 +15062,7 @@
         "q": "1"
        },
        {
-        "t": "Fn",
+        "t": "UFn",
         "name": "g",
         "args": [
          {
@@ -15086,7 +15078,7 @@
    },
    "args": [
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "g",
      "args": [
       {
@@ -15110,7 +15102,7 @@
     "name": "Integral",
     "args": [
      {
-      "t": "Fn",
+      "t": "UFn",
       "name": "f",
       "args": [
        {
@@ -15124,7 +15116,7 @@
       "t": "Tuple",
       "items": [
        {
-        "t": "Fn",
+        "t": "UFn",
         "name": "f",
         "args": [
          {
@@ -15140,7 +15132,7 @@
         "q": "1"
        },
        {
-        "t": "Fn",
+        "t": "UFn",
         "name": "g",
         "args": [
          {
@@ -15154,7 +15146,13 @@
      }
     ]
    },
-   "unsupportedArg": "UndefinedFunction",
+   "args": [
+    {
+     "t": "UFnClass",
+     "name": "g"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "expr.has_free(g)",
@@ -15208,7 +15206,7 @@
   {
    "fn": ".has_xfree",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
@@ -15227,7 +15225,7 @@
   {
    "fn": ".has_xfree",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
@@ -15246,7 +15244,7 @@
   {
    "fn": ".has_xfree",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
@@ -15275,7 +15273,7 @@
   {
    "fn": ".has_xfree",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
@@ -15304,7 +15302,7 @@
   {
    "fn": ".has_xfree",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
@@ -18371,7 +18369,7 @@
   {
    "fn": ".diff",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
@@ -18433,40 +18431,32 @@
    "fn": "Derivative",
    "args": [
     {
-     "t": "Fn",
-     "name": "Derivative",
-     "args": [
-      {
-       "t": "Fn",
-       "name": "f",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        },
-        {
-         "t": "Symbol",
-         "name": "y",
-         "assume": {}
-        }
-       ]
-      },
-      {
-       "t": "Tuple",
-       "items": [
-        {
-         "t": "Symbol",
-         "name": "y",
-         "assume": {}
-        },
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "1"
-        }
-       ]
-      }
+     "t": "Derivative",
+     "expr": {
+      "t": "UFn",
+      "name": "f",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ]
+     },
+     "vc": [
+      [
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       },
+       1
+      ]
      ]
     },
     {
@@ -18485,7 +18475,7 @@
    "fn": "Derivative",
    "args": [
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -18526,7 +18516,7 @@
    "fn": "Derivative",
    "args": [
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -18570,7 +18560,7 @@
      "t": "Pow",
      "args": [
       {
-       "t": "Fn",
+       "t": "UFn",
        "name": "f",
        "args": [
         {
@@ -18588,7 +18578,7 @@
      ]
     },
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -18613,11 +18603,11 @@
   {
    "fn": ".diff",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
-      "t": "Fn",
+      "t": "UFn",
       "name": "g",
       "args": [
        {
@@ -19829,7 +19819,7 @@
    },
    "args": [
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -19849,7 +19839,7 @@
   {
    "fn": ".diff",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "g",
     "args": [
      {
@@ -19861,7 +19851,7 @@
    },
    "args": [
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -19881,40 +19871,32 @@
   {
    "fn": ".diff",
    "self": {
-    "t": "Fn",
-    "name": "Derivative",
-    "args": [
-     {
-      "t": "Fn",
-      "name": "f",
-      "args": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       }
-      ]
-     },
-     {
-      "t": "Tuple",
-      "items": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Derivative",
+    "expr": {
+     "t": "UFn",
+     "name": "f",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    "vc": [
+     [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      1
+     ]
     ]
    },
    "args": [
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -19934,11 +19916,34 @@
   {
    "fn": ".diff",
    "self": {
-    "t": "Fn",
-    "name": "Derivative",
-    "args": [
-     {
-      "t": "Fn",
+    "t": "Derivative",
+    "expr": {
+     "t": "UFn",
+     "name": "f",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    "vc": [
+     [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      2
+     ]
+    ]
+   },
+   "args": [
+    {
+     "t": "Derivative",
+     "expr": {
+      "t": "UFn",
       "name": "f",
       "args": [
        {
@@ -19948,54 +19953,15 @@
        }
       ]
      },
-     {
-      "t": "Tuple",
-      "items": [
+     "vc": [
+      [
        {
         "t": "Symbol",
         "name": "x",
         "assume": {}
        },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
+       1
       ]
-     }
-    ]
-   },
-   "args": [
-    {
-     "t": "Fn",
-     "name": "Derivative",
-     "args": [
-      {
-       "t": "Fn",
-       "name": "f",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ]
-      },
-      {
-       "t": "Tuple",
-       "items": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        },
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "1"
-        }
-       ]
-      }
      ]
     }
    ],
@@ -20008,11 +19974,34 @@
   {
    "fn": ".subs",
    "self": {
-    "t": "Fn",
-    "name": "Derivative",
-    "args": [
-     {
-      "t": "Fn",
+    "t": "Derivative",
+    "expr": {
+     "t": "UFn",
+     "name": "f",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    "vc": [
+     [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      2
+     ]
+    ]
+   },
+   "args": [
+    {
+     "t": "Derivative",
+     "expr": {
+      "t": "UFn",
       "name": "f",
       "args": [
        {
@@ -20022,54 +20011,15 @@
        }
       ]
      },
-     {
-      "t": "Tuple",
-      "items": [
+     "vc": [
+      [
        {
         "t": "Symbol",
         "name": "x",
         "assume": {}
        },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
+       1
       ]
-     }
-    ]
-   },
-   "args": [
-    {
-     "t": "Fn",
-     "name": "Derivative",
-     "args": [
-      {
-       "t": "Fn",
-       "name": "f",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ]
-      },
-      {
-       "t": "Tuple",
-       "items": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        },
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "1"
-        }
-       ]
-      }
      ]
     },
     {
@@ -20098,41 +20048,33 @@
         "assume": {}
        },
        {
-        "t": "Fn",
-        "name": "Derivative",
-        "args": [
-         {
-          "t": "Fn",
-          "name": "g",
-          "args": [
-           {
-            "t": "Symbol",
-            "name": "y",
-            "assume": {}
-           }
-          ]
-         },
-         {
-          "t": "Tuple",
-          "items": [
-           {
-            "t": "Symbol",
-            "name": "y",
-            "assume": {}
-           },
-           {
-            "t": "Rational",
-            "p": "1",
-            "q": "1"
-           }
-          ]
-         }
+        "t": "Derivative",
+        "expr": {
+         "t": "UFn",
+         "name": "g",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ]
+        },
+        "vc": [
+         [
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          },
+          1
+         ]
         ]
        }
       ]
      },
      {
-      "t": "Fn",
+      "t": "UFn",
       "name": "g",
       "args": [
        {
@@ -20157,71 +20099,55 @@
     "t": "Mul",
     "args": [
      {
-      "t": "Fn",
-      "name": "Derivative",
-      "args": [
-       {
-        "t": "Mul",
-        "args": [
-         {
-          "t": "Symbol",
-          "name": "x",
-          "assume": {}
-         },
-         {
-          "t": "Symbol",
-          "name": "y",
-          "assume": {}
-         }
-        ]
-       },
-       {
-        "t": "Tuple",
-        "items": [
-         {
-          "t": "Symbol",
-          "name": "x",
-          "assume": {}
-         },
-         {
-          "t": "Rational",
-          "p": "1",
-          "q": "1"
-         }
-        ]
-       }
+      "t": "Derivative",
+      "expr": {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ]
+      },
+      "vc": [
+       [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        1
+       ]
       ]
      },
      {
-      "t": "Fn",
-      "name": "Derivative",
-      "args": [
-       {
-        "t": "Fn",
-        "name": "g",
-        "args": [
-         {
-          "t": "Symbol",
-          "name": "y",
-          "assume": {}
-         }
-        ]
-       },
-       {
-        "t": "Tuple",
-        "items": [
-         {
-          "t": "Symbol",
-          "name": "y",
-          "assume": {}
-         },
-         {
-          "t": "Rational",
-          "p": "1",
-          "q": "1"
-         }
-        ]
-       }
+      "t": "Derivative",
+      "expr": {
+       "t": "UFn",
+       "name": "g",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ]
+      },
+      "vc": [
+       [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        },
+        1
+       ]
       ]
      }
     ]
@@ -20236,41 +20162,33 @@
   {
    "fn": ".doit",
    "self": {
-    "t": "Fn",
-    "name": "Derivative",
-    "args": [
-     {
-      "t": "Fn",
-      "name": "f",
-      "args": [
-       {
-        "t": "Fn",
-        "name": "f",
-        "args": [
-         {
-          "t": "Symbol",
-          "name": "x",
-          "assume": {}
-         }
-        ]
-       }
-      ]
-     },
-     {
-      "t": "Tuple",
-      "items": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Derivative",
+    "expr": {
+     "t": "UFn",
+     "name": "f",
+     "args": [
+      {
+       "t": "UFn",
+       "name": "f",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    "vc": [
+     [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      1
+     ]
     ]
    },
    "args": [],
@@ -20283,35 +20201,27 @@
   {
    "fn": ".as_finite_difference",
    "self": {
-    "t": "Fn",
-    "name": "Derivative",
-    "args": [
-     {
-      "t": "Fn",
-      "name": "f",
-      "args": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       }
-      ]
-     },
-     {
-      "t": "Tuple",
-      "items": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Derivative",
+    "expr": {
+     "t": "UFn",
+     "name": "f",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    "vc": [
+     [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      1
+     ]
     ]
    },
    "args": [],
@@ -20324,35 +20234,27 @@
   {
    "fn": ".as_finite_difference",
    "self": {
-    "t": "Fn",
-    "name": "Derivative",
-    "args": [
-     {
-      "t": "Fn",
-      "name": "f",
-      "args": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       }
-      ]
-     },
-     {
-      "t": "Tuple",
-      "items": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Derivative",
+    "expr": {
+     "t": "UFn",
+     "name": "f",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    "vc": [
+     [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      1
+     ]
     ]
    },
    "args": [
@@ -20371,35 +20273,27 @@
   {
    "fn": ".as_finite_difference",
    "self": {
-    "t": "Fn",
-    "name": "Derivative",
-    "args": [
-     {
-      "t": "Fn",
-      "name": "f",
-      "args": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       }
-      ]
-     },
-     {
-      "t": "Tuple",
-      "items": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Derivative",
+    "expr": {
+     "t": "UFn",
+     "name": "f",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    "vc": [
+     [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      1
+     ]
     ]
    },
    "args": [
@@ -20463,35 +20357,27 @@
   {
    "fn": ".as_finite_difference",
    "self": {
-    "t": "Fn",
-    "name": "Derivative",
-    "args": [
-     {
-      "t": "Fn",
-      "name": "f",
-      "args": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       }
-      ]
-     },
-     {
-      "t": "Tuple",
-      "items": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Derivative",
+    "expr": {
+     "t": "UFn",
+     "name": "f",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    "vc": [
+     [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      1
+     ]
     ]
    },
    "args": [
@@ -20609,41 +20495,33 @@
   {
    "fn": ".as_finite_difference",
    "self": {
-    "t": "Fn",
-    "name": "Derivative",
-    "args": [
-     {
-      "t": "Fn",
-      "name": "f",
-      "args": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       }
-      ]
-     },
-     {
-      "t": "Tuple",
-      "items": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Derivative",
+    "expr": {
+     "t": "UFn",
+     "name": "f",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    "vc": [
+     [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      1
+     ]
     ]
    },
    "args": [],
    "kwargs": {
     "points": {
-     "t": "Fn",
+     "t": "UFn",
      "name": "dx",
      "args": [
       {
@@ -20687,55 +20565,40 @@
   {
    "fn": ".as_finite_difference",
    "self": {
-    "t": "Fn",
-    "name": "Derivative",
-    "args": [
-     {
-      "t": "Fn",
-      "name": "f",
-      "args": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Symbol",
-        "name": "y",
-        "assume": {}
-       }
-      ]
-     },
-     {
-      "t": "Tuple",
-      "items": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "Tuple",
-      "items": [
-       {
-        "t": "Symbol",
-        "name": "y",
-        "assume": {}
-       },
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Derivative",
+    "expr": {
+     "t": "UFn",
+     "name": "f",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ]
+    },
+    "vc": [
+     [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      1
+     ],
+     [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      1
+     ]
     ]
    },
    "args": [],
@@ -20770,35 +20633,27 @@
         "q": "1"
        },
        {
-        "t": "Fn",
-        "name": "Derivative",
-        "args": [
-         {
-          "t": "Fn",
-          "name": "f",
-          "args": [
-           {
-            "t": "Symbol",
-            "name": "x",
-            "assume": {}
-           }
-          ]
-         },
-         {
-          "t": "Tuple",
-          "items": [
-           {
-            "t": "Symbol",
-            "name": "x",
-            "assume": {}
-           },
-           {
-            "t": "Rational",
-            "p": "1",
-            "q": "1"
-           }
-          ]
-         }
+        "t": "Derivative",
+        "expr": {
+         "t": "UFn",
+         "name": "f",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        },
+        "vc": [
+         [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          1
+         ]
         ]
        }
       ]
@@ -20814,7 +20669,7 @@
   {
    "fn": ".diff",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
@@ -20840,7 +20695,7 @@
   {
    "fn": ".diff",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "g",
     "args": [
      {
@@ -20940,35 +20795,27 @@
   {
    "fn": ".subs",
    "self": {
-    "t": "Fn",
-    "name": "Derivative",
-    "args": [
-     {
-      "t": "Fn",
-      "name": "f",
-      "args": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       }
-      ]
-     },
-     {
-      "t": "Tuple",
-      "items": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Derivative",
+    "expr": {
+     "t": "UFn",
+     "name": "f",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    "vc": [
+     [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      1
+     ]
     ]
    },
    "args": [
@@ -21004,7 +20851,7 @@
        "t": "Mul",
        "args": [
         {
-         "t": "Fn",
+         "t": "UFn",
          "name": "f",
          "args": [
           {
@@ -21127,7 +20974,7 @@
   {
    "fn": ".match",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
@@ -21191,7 +21038,7 @@
   {
    "fn": ".match",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
@@ -21228,7 +21075,7 @@
   {
    "fn": ".match",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
@@ -21260,7 +21107,7 @@
   {
    "fn": ".match",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
@@ -21297,7 +21144,7 @@
   {
    "fn": ".match",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
@@ -21329,7 +21176,7 @@
   {
    "fn": ".match",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
@@ -21366,7 +21213,7 @@
   {
    "fn": ".match",
    "self": {
-    "t": "Fn",
+    "t": "UFn",
     "name": "f",
     "args": [
      {
@@ -21820,7 +21667,7 @@
    "fn": "diff",
    "args": [
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -21856,7 +21703,7 @@
    "fn": "diff",
    "args": [
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -25997,7 +25844,7 @@
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "Dummy() #doctest: +SKIP",
-   "expected": "_Dummy_1057"
+   "expected": "_Dummy_1045"
   },
   {
    "fn": ".match",
@@ -26484,7 +26331,7 @@
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "symbols({'a', 'b', 'c'})",
-   "expected": "{b, c, a}"
+   "expected": "{c, a, b}"
   },
   {
    "fn": "symbols",
@@ -31450,7 +31297,7 @@
    "category": "functions",
    "module": "sympy.functions.elementary.complexes",
    "src": "polarify(expr)",
-   "expected": "((_x*exp_polar(I*pi))**_y, {_x: x, _y: y})"
+   "expected": "((_x*exp_polar(I*pi))**_y, {_y: y, _x: x})"
   },
   {
    "fn": ".expand",
@@ -40066,35 +39913,27 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "f",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "1",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "f",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           1
+          ]
          ]
         }
        ]
@@ -40108,35 +39947,27 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "f",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "1",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "f",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           1
+          ]
          ]
         }
        ]
@@ -40144,35 +39975,27 @@
      ]
     },
     {
-     "t": "Fn",
-     "name": "Derivative",
-     "args": [
-      {
-       "t": "Fn",
-       "name": "f",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ]
-      },
-      {
-       "t": "Tuple",
-       "items": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        },
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "1"
-        }
-       ]
-      }
+     "t": "Derivative",
+     "expr": {
+      "t": "UFn",
+      "name": "f",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     },
+     "vc": [
+      [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       1
+      ]
      ]
     }
    ],
@@ -40197,35 +40020,27 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "f",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "2",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "f",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           2
+          ]
          ]
         }
        ]
@@ -40239,35 +40054,27 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "f",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "2",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "f",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           2
+          ]
          ]
         }
        ]
@@ -40275,7 +40082,7 @@
      ]
     },
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -40307,35 +40114,27 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "f",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "2",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "f",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           2
+          ]
          ]
         }
        ]
@@ -40349,35 +40148,27 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "f",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "2",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "f",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           2
+          ]
          ]
         }
        ]
@@ -40385,35 +40176,27 @@
      ]
     },
     {
-     "t": "Fn",
-     "name": "Derivative",
-     "args": [
-      {
-       "t": "Fn",
-       "name": "f",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ]
-      },
-      {
-       "t": "Tuple",
-       "items": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        },
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "1"
-        }
-       ]
-      }
+     "t": "Derivative",
+     "expr": {
+      "t": "UFn",
+      "name": "f",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     },
+     "vc": [
+      [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       1
+      ]
      ]
     }
    ],
@@ -40443,35 +40226,27 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "f",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "1",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "f",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           1
+          ]
          ]
         }
        ]
@@ -40485,7 +40260,7 @@
          "assume": {}
         },
         {
-         "t": "Fn",
+         "t": "UFn",
          "name": "f",
          "args": [
           {
@@ -40506,35 +40281,27 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "f",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "1",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "f",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           1
+          ]
          ]
         }
        ]
@@ -40548,7 +40315,7 @@
          "assume": {}
         },
         {
-         "t": "Fn",
+         "t": "UFn",
          "name": "f",
          "args": [
           {
@@ -40563,7 +40330,7 @@
      ]
     },
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -40598,35 +40365,27 @@
          "t": "Pow",
          "args": [
           {
-           "t": "Fn",
-           "name": "Derivative",
-           "args": [
-            {
-             "t": "Fn",
-             "name": "f",
-             "args": [
-              {
-               "t": "Symbol",
-               "name": "x",
-               "assume": {}
-              }
-             ]
-            },
-            {
-             "t": "Tuple",
-             "items": [
-              {
-               "t": "Symbol",
-               "name": "x",
-               "assume": {}
-              },
-              {
-               "t": "Rational",
-               "p": "2",
-               "q": "1"
-              }
-             ]
-            }
+           "t": "Derivative",
+           "expr": {
+            "t": "UFn",
+            "name": "f",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ]
+           },
+           "vc": [
+            [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             2
+            ]
            ]
           },
           {
@@ -40650,35 +40409,27 @@
          "t": "Pow",
          "args": [
           {
-           "t": "Fn",
-           "name": "Derivative",
-           "args": [
-            {
-             "t": "Fn",
-             "name": "f",
-             "args": [
-              {
-               "t": "Symbol",
-               "name": "x",
-               "assume": {}
-              }
-             ]
-            },
-            {
-             "t": "Tuple",
-             "items": [
-              {
-               "t": "Symbol",
-               "name": "x",
-               "assume": {}
-              },
-              {
-               "t": "Rational",
-               "p": "2",
-               "q": "1"
-              }
-             ]
-            }
+           "t": "Derivative",
+           "expr": {
+            "t": "UFn",
+            "name": "f",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ]
+           },
+           "vc": [
+            [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             2
+            ]
            ]
           },
           {
@@ -40693,35 +40444,27 @@
      ]
     },
     {
-     "t": "Fn",
-     "name": "Derivative",
-     "args": [
-      {
-       "t": "Fn",
-       "name": "f",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ]
-      },
-      {
-       "t": "Tuple",
-       "items": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        },
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "1"
-        }
-       ]
-      }
+     "t": "Derivative",
+     "expr": {
+      "t": "UFn",
+      "name": "f",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     },
+     "vc": [
+      [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       1
+      ]
      ]
     }
    ],
@@ -46973,7 +46716,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10820f760>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a16f2e0>, 3)"
   },
   {
    "fn": ".LC",
@@ -46989,7 +46732,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x1080f15d0>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a16d900>, 4)"
   },
   {
    "fn": ".TC",
@@ -59029,7 +58772,7 @@
        ]
       },
       {
-       "t": "Fn",
+       "t": "UFn",
        "name": "f",
        "args": [
         {
@@ -59042,7 +58785,7 @@
      ]
     },
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -59089,7 +58832,7 @@
          "q": "1"
         },
         {
-         "t": "Fn",
+         "t": "UFn",
          "name": "f",
          "args": [
           {
@@ -59102,69 +58845,53 @@
        ]
       },
       {
-       "t": "Fn",
-       "name": "Derivative",
-       "args": [
-        {
-         "t": "Fn",
-         "name": "f",
-         "args": [
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          }
-         ]
-        },
-        {
-         "t": "Tuple",
-         "items": [
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          },
-          {
-           "t": "Rational",
-           "p": "1",
-           "q": "1"
-          }
-         ]
-        }
+       "t": "Derivative",
+       "expr": {
+        "t": "UFn",
+        "name": "f",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       },
+       "vc": [
+        [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         1
+        ]
        ]
       }
      ]
     },
     {
-     "t": "Fn",
-     "name": "Derivative",
-     "args": [
-      {
-       "t": "Fn",
-       "name": "f",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ]
-      },
-      {
-       "t": "Tuple",
-       "items": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        },
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "1"
-        }
-       ]
-      }
+     "t": "Derivative",
+     "expr": {
+      "t": "UFn",
+      "name": "f",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     },
+     "vc": [
+      [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       1
+      ]
      ]
     }
    ],
@@ -59204,7 +58931,7 @@
          "q": "1"
         },
         {
-         "t": "Fn",
+         "t": "UFn",
          "name": "f",
          "args": [
           {
@@ -59217,41 +58944,33 @@
        ]
       },
       {
-       "t": "Fn",
-       "name": "Derivative",
-       "args": [
-        {
-         "t": "Fn",
-         "name": "f",
-         "args": [
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          }
-         ]
-        },
-        {
-         "t": "Tuple",
-         "items": [
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          },
-          {
-           "t": "Rational",
-           "p": "1",
-           "q": "1"
-          }
-         ]
-        }
+       "t": "Derivative",
+       "expr": {
+        "t": "UFn",
+        "name": "f",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       },
+       "vc": [
+        [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         1
+        ]
        ]
       }
      ]
     },
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -59323,7 +59042,7 @@
    "category": "solvers",
    "module": "sympy.solvers.solvers",
    "src": "solve(x + exp(x)**2, exp(x), set=True)",
-   "expected": "([exp(x)], {(sqrt(-x),), (-sqrt(-x),)})"
+   "expected": "([exp(x)], {(-sqrt(-x),), (sqrt(-x),)})"
   },
   {
    "fn": "solve",
@@ -65287,35 +65006,27 @@
      "op": "Equality",
      "args": [
       {
-       "t": "Fn",
-       "name": "Derivative",
-       "args": [
-        {
-         "t": "Fn",
-         "name": "f",
-         "args": [
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          }
-         ]
-        },
-        {
-         "t": "Tuple",
-         "items": [
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          },
-          {
-           "t": "Rational",
-           "p": "1",
-           "q": "1"
-          }
-         ]
-        }
+       "t": "Derivative",
+       "expr": {
+        "t": "UFn",
+        "name": "f",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       },
+       "vc": [
+        [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         1
+        ]
        ]
       },
       {
@@ -65326,7 +65037,7 @@
      ]
     },
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -65363,7 +65074,7 @@
          "q": "1"
         },
         {
-         "t": "Fn",
+         "t": "UFn",
          "name": "f",
          "args": [
           {
@@ -65384,69 +65095,53 @@
          "q": "1"
         },
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "f",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "1",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "f",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           1
+          ]
          ]
         }
        ]
       },
       {
-       "t": "Fn",
-       "name": "Derivative",
-       "args": [
-        {
-         "t": "Fn",
-         "name": "f",
-         "args": [
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          }
-         ]
-        },
-        {
-         "t": "Tuple",
-         "items": [
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          },
-          {
-           "t": "Rational",
-           "p": "2",
-           "q": "1"
-          }
-         ]
-        }
+       "t": "Derivative",
+       "expr": {
+        "t": "UFn",
+        "name": "f",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       },
+       "vc": [
+        [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         2
+        ]
        ]
       }
      ]
@@ -65473,7 +65168,7 @@
          "q": "1"
         },
         {
-         "t": "Fn",
+         "t": "UFn",
          "name": "f",
          "args": [
           {
@@ -65486,41 +65181,33 @@
        ]
       },
       {
-       "t": "Fn",
-       "name": "Derivative",
-       "args": [
-        {
-         "t": "Fn",
-         "name": "f",
-         "args": [
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          }
-         ]
-        },
-        {
-         "t": "Tuple",
-         "items": [
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          },
-          {
-           "t": "Rational",
-           "p": "2",
-           "q": "1"
-          }
-         ]
-        }
+       "t": "Derivative",
+       "expr": {
+        "t": "UFn",
+        "name": "f",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       },
+       "vc": [
+        [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         2
+        ]
        ]
       }
      ]
     },
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -65551,7 +65238,7 @@
          "name": "cos",
          "args": [
           {
-           "t": "Fn",
+           "t": "UFn",
            "name": "f",
            "args": [
             {
@@ -65580,35 +65267,27 @@
        "t": "Mul",
        "args": [
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "f",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "1",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "f",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           1
+          ]
          ]
         },
         {
@@ -65627,7 +65306,7 @@
          "name": "sin",
          "args": [
           {
-           "t": "Fn",
+           "t": "UFn",
            "name": "f",
            "args": [
             {
@@ -65669,7 +65348,7 @@
          "name": "cos",
          "args": [
           {
-           "t": "Fn",
+           "t": "UFn",
            "name": "f",
            "args": [
             {
@@ -65698,35 +65377,27 @@
        "t": "Mul",
        "args": [
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "f",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "1",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "f",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           1
+          ]
          ]
         },
         {
@@ -65745,7 +65416,7 @@
          "name": "sin",
          "args": [
           {
-           "t": "Fn",
+           "t": "UFn",
            "name": "f",
            "args": [
             {
@@ -65784,35 +65455,27 @@
        "op": "Equality",
        "args": [
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "x",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "t",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "t",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "1",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "x",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "t",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "t",
+            "assume": {}
+           },
+           1
+          ]
          ]
         },
         {
@@ -65827,7 +65490,7 @@
              "q": "1"
             },
             {
-             "t": "Fn",
+             "t": "UFn",
              "name": "y",
              "args": [
               {
@@ -65853,7 +65516,7 @@
              "assume": {}
             },
             {
-             "t": "Fn",
+             "t": "UFn",
              "name": "x",
              "args": [
               {
@@ -65874,35 +65537,27 @@
        "op": "Equality",
        "args": [
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "y",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "t",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "t",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "1",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "y",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "t",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "t",
+            "assume": {}
+           },
+           1
+          ]
          ]
         },
         {
@@ -65917,7 +65572,7 @@
              "q": "1"
             },
             {
-             "t": "Fn",
+             "t": "UFn",
              "name": "x",
              "args": [
               {
@@ -65943,7 +65598,7 @@
              "assume": {}
             },
             {
-             "t": "Fn",
+             "t": "UFn",
              "name": "y",
              "args": [
               {
@@ -65979,35 +65634,27 @@
        "op": "Equality",
        "args": [
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "x",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "t",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "t",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "1",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "x",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "t",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "t",
+            "assume": {}
+           },
+           1
+          ]
          ]
         },
         {
@@ -66025,7 +65672,7 @@
            ]
           },
           {
-           "t": "Fn",
+           "t": "UFn",
            "name": "x",
            "args": [
             {
@@ -66036,7 +65683,7 @@
            ]
           },
           {
-           "t": "Fn",
+           "t": "UFn",
            "name": "y",
            "args": [
             {
@@ -66055,35 +65702,27 @@
        "op": "Equality",
        "args": [
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "y",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "t",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "t",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "1",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "y",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "t",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "t",
+            "assume": {}
+           },
+           1
+          ]
          ]
         },
         {
@@ -66093,7 +65732,7 @@
            "t": "Pow",
            "args": [
             {
-             "t": "Fn",
+             "t": "UFn",
              "name": "y",
              "args": [
               {
@@ -66138,7 +65777,7 @@
    "fn": "homogeneous_order",
    "args": [
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -66149,7 +65788,7 @@
      ]
     },
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -66217,7 +65856,7 @@
            "t": "Pow",
            "args": [
             {
-             "t": "Fn",
+             "t": "UFn",
              "name": "f",
              "args": [
               {
@@ -66244,7 +65883,7 @@
        ]
       },
       {
-       "t": "Fn",
+       "t": "UFn",
        "name": "f",
        "args": [
         {
@@ -66262,7 +65901,7 @@
      "assume": {}
     },
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "f",
      "args": [
       {
@@ -66286,7 +65925,7 @@
     "op": "Equality",
     "args": [
      {
-      "t": "Fn",
+      "t": "UFn",
       "name": "f",
       "args": [
        {
@@ -66450,7 +66089,7 @@
          ]
         },
         {
-         "t": "Fn",
+         "t": "UFn",
          "name": "y",
          "args": [
           {
@@ -66521,7 +66160,7 @@
          ]
         },
         {
-         "t": "Fn",
+         "t": "UFn",
          "name": "y",
          "args": [
           {
@@ -66572,7 +66211,7 @@
          ]
         },
         {
-         "t": "Fn",
+         "t": "UFn",
          "name": "y",
          "args": [
           {
@@ -66587,7 +66226,7 @@
      ]
     },
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "y",
      "args": [
       {
@@ -66629,7 +66268,7 @@
          ]
         },
         {
-         "t": "Fn",
+         "t": "UFn",
          "name": "y",
          "args": [
           {
@@ -66700,7 +66339,7 @@
          ]
         },
         {
-         "t": "Fn",
+         "t": "UFn",
          "name": "y",
          "args": [
           {
@@ -66751,7 +66390,7 @@
          ]
         },
         {
-         "t": "Fn",
+         "t": "UFn",
          "name": "y",
          "args": [
           {
@@ -66766,7 +66405,7 @@
      ]
     },
     {
-     "t": "Fn",
+     "t": "UFn",
      "name": "y",
      "args": [
       {
@@ -66781,7 +66420,7 @@
      "items": [
       [
        {
-        "t": "Fn",
+        "t": "UFn",
         "name": "y",
         "args": [
          {
@@ -66799,7 +66438,7 @@
       ],
       [
        {
-        "t": "Fn",
+        "t": "UFn",
         "name": "y",
         "args": [
          {
@@ -71677,7 +71316,7 @@
     "name": "Sum",
     "args": [
      {
-      "t": "Fn",
+      "t": "UFn",
       "name": "f",
       "args": [
        {
@@ -71723,7 +71362,7 @@
     "name": "Sum",
     "args": [
      {
-      "t": "Fn",
+      "t": "UFn",
       "name": "f",
       "args": [
        {
@@ -86282,35 +85921,27 @@
          "q": "1"
         },
         {
-         "t": "Fn",
-         "name": "Derivative",
-         "args": [
-          {
-           "t": "Fn",
-           "name": "theta",
-           "args": [
-            {
-             "t": "Symbol",
-             "name": "t",
-             "assume": {}
-            }
-           ]
-          },
-          {
-           "t": "Tuple",
-           "items": [
-            {
-             "t": "Symbol",
-             "name": "t",
-             "assume": {}
-            },
-            {
-             "t": "Rational",
-             "p": "1",
-             "q": "1"
-            }
-           ]
-          }
+         "t": "Derivative",
+         "expr": {
+          "t": "UFn",
+          "name": "theta",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "t",
+            "assume": {}
+           }
+          ]
+         },
+         "vc": [
+          [
+           {
+            "t": "Symbol",
+            "name": "t",
+            "assume": {}
+           },
+           1
+          ]
          ]
         }
        ]
@@ -86323,35 +85954,27 @@
      ],
      [
       {
-       "t": "Fn",
-       "name": "Derivative",
-       "args": [
-        {
-         "t": "Fn",
-         "name": "theta",
-         "args": [
-          {
-           "t": "Symbol",
-           "name": "t",
-           "assume": {}
-          }
-         ]
-        },
-        {
-         "t": "Tuple",
-         "items": [
-          {
-           "t": "Symbol",
-           "name": "t",
-           "assume": {}
-          },
-          {
-           "t": "Rational",
-           "p": "1",
-           "q": "1"
-          }
-         ]
-        }
+       "t": "Derivative",
+       "expr": {
+        "t": "UFn",
+        "name": "theta",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "t",
+          "assume": {}
+         }
+        ]
+       },
+       "vc": [
+        [
+         {
+          "t": "Symbol",
+          "name": "t",
+          "assume": {}
+         },
+         1
+        ]
        ]
       },
       {
@@ -86736,7 +86359,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3) # doctest:+SKIP",
-   "expected": "Matrix([[33, 70, 58], [50, 76, 88], [15, 80, 13]])"
+   "expected": "Matrix([[2, 25, 1], [15, 25, 32], [44, 73, 21]])"
   },
   {
    "fn": "randMatrix",
@@ -86756,7 +86379,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, 2) # doctest:+SKIP",
-   "expected": "Matrix([[70, 74], [9, 15], [56, 11]])"
+   "expected": "Matrix([[53, 37], [88, 61], [42, 33]])"
   },
   {
    "fn": "randMatrix",
@@ -86786,7 +86409,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, 3, 0, 2) # doctest:+SKIP",
-   "expected": "Matrix([[2, 0, 0], [2, 0, 0], [1, 2, 0]])"
+   "expected": "Matrix([[2, 2, 2], [2, 2, 1], [2, 2, 0]])"
   },
   {
    "fn": "randMatrix",
@@ -86806,7 +86429,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, symmetric=True) # doctest:+SKIP",
-   "expected": "Matrix([[87, 71, 77], [71, 3, 92], [77, 92, 13]])"
+   "expected": "Matrix([[43, 48, 34], [48, 91, 49], [34, 49, 30]])"
   },
   {
    "fn": "randMatrix",
@@ -86831,7 +86454,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, symmetric=True, percent=50) # doctest:+SKIP",
-   "expected": "Matrix([[49, 0, 0], [0, 0, 7], [0, 7, 0]])"
+   "expected": "Matrix([[0, 0, 0], [0, 0, 24], [0, 24, 93]])"
   },
   {
    "fn": "rot_axis1",

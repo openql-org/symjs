@@ -30,7 +30,9 @@ export type Kind =
   | 'Piecewise'
   | 'Integral'
   | 'Limit'
-  | 'Order';
+  | 'Order'
+  | 'Undef'
+  | 'Derivative';
 
 /** Anything that can be turned into an expression. */
 export type ExprLike = Expr | number | bigint;
@@ -492,6 +494,41 @@ export class Integral extends Expr {
   }
   protected computeKey(): string {
     return `Integral(${this.args.map((a) => a.key).join(',')})`;
+  }
+}
+
+/** Application of an undefined function, e.g. f(x). Create with `Function('f')`. */
+export class UndefFn extends Expr {
+  readonly kind = 'Undef' as const;
+  constructor(readonly name: string, readonly args: readonly Expr[]) {
+    super();
+  }
+  protected computeKey(): string {
+    return `@${this.name}(${this.args.map((a) => a.key).join(',')})`;
+  }
+}
+
+/**
+ * Unevaluated derivative. args: [expr, v1, n1, v2, n2, ...] where ni are
+ * positive integer counts (SymPy `variable_count`). @internal ctor
+ */
+export class Derivative extends Expr {
+  readonly kind = 'Derivative' as const;
+  constructor(readonly args: readonly Expr[]) {
+    super();
+  }
+  get expr(): Expr {
+    return this.args[0]!;
+  }
+  get variableCount(): [Expr, number][] {
+    const out: [Expr, number][] = [];
+    for (let i = 1; i < this.args.length; i += 2) {
+      out.push([this.args[i]!, Number((this.args[i + 1] as Rational).p)]);
+    }
+    return out;
+  }
+  protected computeKey(): string {
+    return `D(${this.args.map((a) => a.key).join(',')})`;
   }
 }
 

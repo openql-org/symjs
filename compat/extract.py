@@ -11,8 +11,13 @@ expected output is ``str()`` of the result computed by the installed SymPy.
 Usage: python3 compat/extract.py compat/corpus.json
 """
 
+import os
+
+os.environ.setdefault("MPLBACKEND", "Agg")  # doctests that plot must not open windows
+
 import ast
 import doctest
+import signal
 import importlib
 import json
 import sys
@@ -117,6 +122,9 @@ def ser(o):
         return {"t": "Dict", "items": [[ser(k), ser(v)] for k, v in o.items()]}
     if isinstance(o, MatrixBase):
         return {"t": "Matrix", "rows": [[ser(o[i, j]) for j in range(o.cols)] for i in range(o.rows)]}
+    from sympy.core.function import UndefinedFunction as _UF
+    if isinstance(o, _UF):
+        return {"t": "UFnClass", "name": o.__name__}
     if not isinstance(o, Basic):
         raise Unsupported(type(o).__name__)
     if o.is_Symbol and type(o) is Symbol:
@@ -133,6 +141,13 @@ def ser(o):
     for k, v in named.items():
         if o == k and type(o) is type(k):
             return {"t": "Const", "name": v}
+    from sympy.core.function import AppliedUndef, UndefinedFunction
+    if isinstance(o, UndefinedFunction):
+        return {"t": "UFnClass", "name": o.__name__}
+    if isinstance(o, AppliedUndef):
+        return {"t": "UFn", "name": type(o).__name__, "args": [ser(a) for a in o.args]}
+    if isinstance(o, sympy.Derivative):
+        return {"t": "Derivative", "expr": ser(o.expr), "vc": [[ser(v), int(n)] for v, n in o.variable_count]}
     if o is sympy.true or o is sympy.false:
         return {"t": "Py", "v": bool(o)}
     if isinstance(o, Relational):
@@ -174,8 +189,17 @@ def api_inventory():
     return out
 
 
+class Timeout(Exception):
+    pass
+
+
+def _alarm(signum, frame):
+    raise Timeout()
+
+
 def main(dst):
     warnings.filterwarnings("ignore")
+    signal.signal(signal.SIGALRM, _alarm)
     finder = doctest.DocTestFinder(exclude_empty=True)
     cases = []
     skipped = {}
@@ -194,9 +218,12 @@ def main(dst):
                 except SyntaxError:
                     # statements (assignments, imports): just execute
                     try:
+                        signal.alarm(10)
                         exec(compile(src, "<doctest>", "exec"), globs)
-                    except Exception:
+                    except (Exception, Timeout):
                         pass
+                    finally:
+                        signal.alarm(0)
                     continue
                 call = tree.body
                 record = None
@@ -206,9 +233,12 @@ def main(dst):
                     elif isinstance(call.func, ast.Attribute):
                         record = {"fn": "." + call.func.attr, "selfSrc": ast.unparse(call.func.value)}
                 try:
+                    signal.alarm(10)
                     result = eval(compile(tree, "<doctest>", "eval"), globs)
-                except Exception:
+                except (Exception, Timeout):
                     continue
+                finally:
+                    signal.alarm(0)
                 if record is None or "print" in record["fn"] or record["fn"] in ("str", "srepr", "latex", "repr"):
                     continue
                 fn = record["fn"]

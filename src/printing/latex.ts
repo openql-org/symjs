@@ -6,7 +6,7 @@
  */
 
 import { isNegative } from '../core/assumptions';
-import { Add, BoolAtom, Constant, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, impl, isNum } from '../core/nodes';
+import { Add, BoolAtom, Constant, Derivative, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
 import { asOrderedFactors, asOrderedTerms } from './sortkey';
 import { PREC, floatString, precedence, startsNegative, str } from './str';
@@ -246,6 +246,7 @@ function printPow(e: Pow): string {
     if (x.p < 0n) return printMulLike(e);
   }
   if (b instanceof Fn) return printFunction(b, latex(x));
+  if (b instanceof UndefFn) return `${parenthesizeSuper(hprintFunction(b.name))}^{${latex(x)}}{\\left(${b.args.map(latex).join(',')} \\right)}`;
   let base = parenthesize(b, PREC.POW);
   if (b instanceof Sym) base = parenthesizeSuper(base);
   else if (b instanceof Float) base = `{${base}}`;
@@ -309,6 +310,20 @@ export function latex(e: Expr): string {
         : `${latex(x)} & \\text{for}\\: ${latex(c)}`,
     );
     return `\\begin{cases} ${parts.join(' \\\\')} \\end{cases}`;
+  }
+  if (e instanceof UndefFn) return `${hprintFunction(e.name)}{\\left(${e.args.map(latex).join(',')} \\right)}`;
+  if (e instanceof Derivative) {
+    const partial = impl.freeSymbols(e.expr).size > 1;
+    const d = partial ? '\\partial' : 'd';
+    let tex = '';
+    let dim = 0;
+    for (const [v, n] of [...e.variableCount].reverse()) {
+      dim += n;
+      tex += n === 1 ? `${d} ${latex(v)}` : `${d} ${parenthesizeSuper(latex(v))}^{${n}}`;
+    }
+    const head = dim === 1 ? `\\frac{${d}}{${tex}}` : `\\frac{${d}^{${dim}}}{${tex}}`;
+    const body = precedence(e.expr) < PREC.MUL ? addParens(latex(e.expr)) : latex(e.expr);
+    return `${head} ${body}`;
   }
   if (e instanceof Limit) {
     const [f, z, z0] = e.args;

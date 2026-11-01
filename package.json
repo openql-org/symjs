@@ -27,7 +27,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "compat": "vitest run --config compat/vitest.config.ts",
-    "compat:extract": "python3 compat/extract.py compat/corpus.json"
+    "compat:extract": "MPLBACKEND=Agg python3 compat/extract.py compat/corpus.json < /dev/null"
   },
   "engines": {
     "node": ">=18"
