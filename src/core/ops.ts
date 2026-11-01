@@ -444,7 +444,17 @@ export function mul(...xs: ExprLike[]): Expr {
   factors.sort(compareExpr);
   const isOne = coeff instanceof Rational && coeff.isOne;
   if (factors.length === 1 && isOne) return factors[0]!;
+  // end of SymPy Mul.flatten: Number * Add distributes (2*(1 + a) -> 2 + 2*a)
+  if (factors.length === 1 && factors[0] instanceof Add) {
+    const c = coeff as Num;
+    return add(...factors[0].args.map((t) => keepCoeffMul(c, t)));
+  }
   return new Mul(isOne ? factors : [coeff, ...factors]);
+}
+
+/** SymPy _keep_coeff(c, t) for a product term. */
+function keepCoeffMul(c: Num, t: Expr): Expr {
+  return mul(c, t);
 }
 
 // ---------------------------------------------------------------------------

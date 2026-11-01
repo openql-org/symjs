@@ -837,6 +837,19 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (Array.isArray(r)) return new PyTuple([r[0], new PyDict([...r[1]])]);
     return r;
   },
+  '.rewrite': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
+    const name = (v: unknown): string => {
+      if (v instanceof FnClass || v instanceof UFnClass || v instanceof TypeRef) return v.name;
+      if (typeof v === 'string') return v;
+      throw new Unsupported('rewrite target');
+    };
+    if (!args.length) return asExpr(self);
+    const target = name(args[args.length - 1]);
+    let pattern = args.slice(0, -1);
+    if (pattern.length === 1 && (pattern[0] instanceof PyList || pattern[0] instanceof PyTuple)) pattern = [...(pattern[0] as PyList).items];
+    return sj.rewrite(asExpr(self), target, { pattern: pattern.map(name), deep: kw['deep'] === undefined ? true : Boolean(kw['deep']) });
+  },
   '.find': (args, kw, self) => {
     noKw(kw);
     return new PySet(sj.find(asExpr(self), toQuery(args[0])));

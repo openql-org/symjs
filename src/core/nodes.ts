@@ -148,6 +148,7 @@ export interface Impl {
   simplify(e: Expr): Expr;
   evalf(e: Expr, n?: number | NumericValues, opts?: EvalfOptions): Expr;
   toComplex(e: Expr, values?: NumericValues): ComplexValue;
+  rewrite?(e: Expr, target: string, opts?: { pattern?: readonly string[]; deep?: boolean }): Expr;
   /** SymPy collect (registered by simplify/radsimp). */
   collect?(e: Expr, syms: readonly Expr[]): Expr;
   /** SymPy fraction (registered by simplify/rational). */
@@ -245,6 +246,11 @@ export abstract class Expr {
    */
   evalf(n?: number | NumericValues, opts?: EvalfOptions): Expr {
     return impl.evalf(this, n, opts);
+  }
+  /** Rewrite in terms of another function (SymPy `rewrite`), e.g. `sin(x).rewrite('exp')`. */
+  rewrite(target: string, opts?: { pattern?: readonly string[]; deep?: boolean }): Expr {
+    if (!impl.rewrite) throw new Error('rewrite is not available');
+    return impl.rewrite(this, target, opts);
   }
   /** Alias of evalf (SymPy `.n()`). */
   n(n?: number | NumericValues, opts?: EvalfOptions): Expr {

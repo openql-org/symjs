@@ -44,3 +44,13 @@ describe('replace / find / count_ops', () => {
     expect(countOps(add(x, mul(2, y), sin(z)))).toBe(4);
   });
 });
+
+describe('rewrite', () => {
+  it('rewrites trigonometric functions like SymPy', async () => {
+    const { rewrite, sin, cos, tan, mul, add, I, str, symbols: syms } = await import('../src');
+    const [t] = syms('t');
+    expect(str(rewrite(add(cos(t!), mul(I, sin(t!))), 'exp'))).toBe('exp(I*t)');
+    expect(str(rewrite(tan(t!), 'sin'))).toBe('2*sin(t)**2/sin(2*t)');
+    expect(str(rewrite(sin(t!), 'cos'))).toBe('cos(t - pi/2)');
+  });
+});
