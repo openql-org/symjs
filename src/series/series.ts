@@ -7,7 +7,7 @@
 
 import { Expr, ExprLike, Order, Rational, Special, Sym, impl } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
-import { subs } from '../core/traverse';
+import { xreplace as subs } from '../core/traverse';
 import { log } from '../functions/elementary';
 import { Expander } from './puiseux';
 

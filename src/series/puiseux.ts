@@ -13,9 +13,9 @@
 import { Add, Constant, Expr, Fn, Mul, Pow, Rational, S, Special, Sym } from '../core/nodes';
 import { numAdd, numCmp, numMul, numNeg } from '../core/num';
 import { add, exp, mul, pow } from '../core/ops';
-import { subs } from '../core/traverse';
+import { xreplace as subs } from '../core/traverse';
 import { fn, log } from '../functions/elementary';
-import { expand } from '../simplify/expand';
+import { expandMul as expand } from '../simplify/expand';
 
 export class SeriesError extends Error {}
 

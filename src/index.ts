@@ -60,7 +60,26 @@ export type {
 } from './core/nodes';
 export { sympify, add, mul, pow, sub, div, neg, sqrt, exp, rational, splitCoeff, asBaseExp } from './core/ops';
 export { isReal, isPositive, isNegative, isNonNegative, isNonZero, isZero, isIntegerQ } from './core/assumptions';
-export { subs, freeSymbols, countOps, mapBottomUp, rebuild } from './core/traverse';
+export {
+  keepCoeff,
+  argsCnc,
+  coeff,
+  asIndependent,
+  asCoeffAdd,
+  asCoeffMul,
+  primitive,
+  asContentPrimitive,
+  extractMultiplicatively,
+  extractAdditively,
+  asCoefficient,
+  isPolynomial,
+  isRationalFunction,
+  isConstant,
+  asRealImag,
+  asNumerDenom,
+  atoms,
+} from './core/methods';
+export { subs, xreplace, freeSymbols, countOps, mapBottomUp, rebuild } from './core/traverse';
 
 // functions
 export {
@@ -93,7 +112,18 @@ export { series, O } from './series/series';
 export { rel, Eq, Ne, Lt, Le, Gt, Ge, piecewise } from './core/logic';
 
 // simplification
-export { expand } from './simplify/expand';
+export {
+  expand,
+  expandMul,
+  expand_mul,
+  expand_multinomial,
+  expand_power_exp,
+  expand_power_base,
+  expand_log,
+  expand_trig,
+  expand_complex,
+} from './simplify/expand';
+export type { ExpandHints } from './simplify/expand';
 export { simplify } from './simplify/simplify';
 export { powsimp } from './simplify/powsimp';
 export { trigsimp, rewriteExp, rewriteTrig, expsimp, exptotrig, combineExp } from './simplify/trigsimp';
@@ -107,6 +137,7 @@ export { evalf, toComplex, lambdify } from './numeric/evalf';
 
 // printing / parsing
 export { str } from './printing/str';
+export { asOrderedTerms as orderedTerms, asOrderedFactors as orderedFactors, sortKey } from './printing/sortkey';
 export { latex } from './printing/latex';
 export { parse, ex } from './parsing/parser';
 export type { ParseOptions } from './parsing/parser';

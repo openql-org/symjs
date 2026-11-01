@@ -13,7 +13,7 @@ import { evalf, lambdify, toComplex } from '../numeric/evalf';
 import { roots } from '../polys/poly';
 import { latex } from '../printing/latex';
 import { str } from '../printing/str';
-import { expand } from '../simplify/expand';
+import { expandMul as expand } from '../simplify/expand';
 import { simplify } from '../simplify/simplify';
 
 export class Matrix {

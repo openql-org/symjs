@@ -11,7 +11,7 @@ import { lcm } from '../core/numbers';
 import { add, asBaseExp, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { freeSymbols, mapBottomUp } from '../core/traverse';
 import { Poly } from '../polys/poly';
-import { expand } from './expand';
+import { expandMul as expand } from './expand';
 
 const negExponent = (x: Expr): boolean => {
   const [c] = splitCoeff(x);

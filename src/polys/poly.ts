@@ -10,7 +10,7 @@ import { numAdd, numCmp, numInv, numMul, numNeg, numPowInt } from '../core/num';
 import { factorInt, gcd as gcdBig, lcm } from '../core/numbers';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
-import { expand } from '../simplify/expand';
+import { expandMul as expand } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
 
 /**

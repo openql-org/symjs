@@ -36,11 +36,11 @@ import {
 import { numAdd, numInv, numMul, numNeg } from '../core/num';
 import { gcd, lcm } from '../core/numbers';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
-import { subs } from '../core/traverse';
+import { xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { asin, atan, cos, cosh, log, sin, sinh } from '../functions/elementary';
 import { Poly, polyCoefficients } from '../polys/poly';
-import { expand } from '../simplify/expand';
+import { expandMul as expand } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { expsimp, hasTrigFunctions } from '../simplify/trigsimp';
 

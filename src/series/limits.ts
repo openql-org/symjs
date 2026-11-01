@@ -16,11 +16,11 @@
 import { isNegative, isPositive } from '../core/assumptions';
 import { Add, Expr, ExprLike, Fn, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { add, exp, mul, pow, sympify } from '../core/ops';
-import { subs } from '../core/traverse';
+import { xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { fn, log } from '../functions/elementary';
 import { polyCoefficients } from '../polys/poly';
-import { expand } from '../simplify/expand';
+import { expandMul as expand } from '../simplify/expand';
 import { fraction, together } from '../simplify/rational';
 import { Expander } from './puiseux';
 

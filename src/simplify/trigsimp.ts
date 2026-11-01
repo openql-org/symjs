@@ -15,7 +15,7 @@ import { Constant, Expr, ExprLike, Fn, Mul, Pow, S } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, neg, sympify } from '../core/ops';
 import { countOps, mapBottomUp, some } from '../core/traverse';
 import { cos, sin } from '../functions/elementary';
-import { expand } from './expand';
+import { expandMul as expand } from './expand';
 
 const isE = (e: Expr) => e instanceof Constant && e.name === 'E';
 const isI = (e: Expr) => e instanceof Constant && e.name === 'I';

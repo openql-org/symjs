@@ -9,7 +9,7 @@ import { Expr, ExprLike, Fn, Pow, impl } from '../core/nodes';
 import { splitCoeff, sympify } from '../core/ops';
 import { countOps, mapBottomUp, some } from '../core/traverse';
 import { fn } from '../functions/elementary';
-import { expand } from './expand';
+import { expandMul as expand } from './expand';
 import { powsimp } from './powsimp';
 import { cancel } from './rational';
 import { exptotrig, expsimp, hasTrig } from './trigsimp';

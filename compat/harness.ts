@@ -248,7 +248,7 @@ function diffArgs(e: Expr, rest: unknown[]): Expr {
 function subsArgs(e: Expr, args: unknown[]): Expr {
   if (args.length === 2) return e.subs(asExpr(args[0]), asExpr(args[1]));
   const a = args[0];
-  if (a instanceof PyDict) return e.subs(a.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const));
+  if (a instanceof PyDict) return sj.subs(e, new Map(a.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const)));
   if (a instanceof PyTuple) {
     // sequential substitution like SymPy
     let out = e;
@@ -259,6 +259,16 @@ function subsArgs(e: Expr, args: unknown[]): Expr {
     return out;
   }
   throw new Unsupported('subs arguments');
+}
+
+const HINTS = ['deep', 'mul', 'multinomial', 'power_exp', 'power_base', 'log', 'complex', 'trig', 'force'];
+function expandHints(kw: Record<string, unknown>): sj.ExpandHints {
+  for (const k of Object.keys(kw)) if (!HINTS.includes(k)) throw new Unsupported(`expand hint ${k}`);
+  return Object.fromEntries(Object.entries(kw).map(([k, v]) => [k, Boolean(v)])) as sj.ExpandHints;
+}
+
+function asOrdered(e: Expr): Expr[] {
+  return sj.orderedTerms(e);
 }
 
 const FN_NAMES = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate'] as const;
@@ -320,7 +330,20 @@ export const ADAPTERS: Record<string, Adapter> = {
   Ge: (args, kw) => (noKw(kw), sj.Ge(asExpr(args[0]), asExpr(args[1]))),
 
   // ---- manipulation
-  expand: exprFn(sj.expand),
+  expand: (args, kw) => {
+    if (args.length !== 1) throw new Unsupported('arity');
+    return sj.expand(asExpr(args[0]), expandHints(kw));
+  },
+  expand_mul: exprFn(sj.expand_mul),
+  expand_multinomial: exprFn(sj.expand_multinomial),
+  expand_log: (args, kw) => sj.expand_log(asExpr(args[0]), Boolean(kw['force'])),
+  expand_power_exp: exprFn((e) => sj.expand_power_exp(e)),
+  expand_power_base: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'force' && k !== 'deep') throw new Unsupported(`kwargs ${k}`);
+    return sj.expand_power_base(asExpr(args[0]), kw as { force?: boolean; deep?: boolean });
+  },
+  expand_trig: exprFn(sj.expand_trig),
+  expand_complex: exprFn(sj.expand_complex),
   simplify: exprFn(sj.simplify),
   factor: exprFn(sj.factor),
   together: exprFn(sj.together),
@@ -402,7 +425,10 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
 
   // ---- Expr methods
-  '.expand': exprMethod(sj.expand),
+  '.expand': (args, kw, self) => {
+    if (args.length) throw new Unsupported('expand args');
+    return sj.expand(asExpr(self), expandHints(kw));
+  },
   '.simplify': exprMethod(sj.simplify),
   '.factor': exprMethod(sj.factor),
   '.together': exprMethod(sj.together),
@@ -410,7 +436,14 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.trigsimp': exprMethod(sj.trigsimp),
   '.conjugate': exprMethod(sj.conjugate),
   '.subs': (args, kw, self) => {
-    noKw(kw);
+    const simultaneous = Boolean(kw['simultaneous']);
+    for (const k of Object.keys(kw)) if (k !== 'simultaneous') throw new Unsupported(`kwargs ${k}`);
+    if (simultaneous) {
+      const a = args[0];
+      const pairs = a instanceof PyDict ? a.entries : a instanceof PyTuple ? a.items.map((p) => (p as PyTuple).items) : undefined;
+      if (!pairs) throw new Unsupported('subs simultaneous');
+      return sj.subs(asExpr(self), pairs.map(([k, v]) => [asExpr(k), asExpr(v)] as const), { simultaneous: true });
+    }
     if (self instanceof Matrix) {
       if (args.length !== 2) throw new Unsupported('Matrix.subs');
       return self.subs(asExpr(args[0]), asExpr(args[1]));
@@ -454,6 +487,74 @@ export const ADAPTERS: Record<string, Adapter> = {
     const e = self instanceof Matrix ? self.data : [asExpr(self)];
     return args.some((a) => e.some((x) => x.has(asExpr(a))));
   },
+
+  '.coeff': (args, kw, self) => {
+    noKw(kw);
+    const n = args[1] instanceof sj.Rational ? Number(args[1].p) : 1;
+    return sj.coeff(asExpr(self), asExpr(args[0]), n);
+  },
+  '.as_independent': (args, kw, self) => {
+    const asAdd = kw['as_Add'];
+    for (const k of Object.keys(kw)) if (k !== 'as_Add') throw new Unsupported(`kwargs ${k}`);
+    const opts = asAdd === undefined ? {} : { asAdd: Boolean(asAdd) };
+    return new PyTuple(sj.asIndependent(asExpr(self), args.map(asExpr), opts));
+  },
+  '.as_coeff_add': (args, kw, self) => {
+    noKw(kw);
+    const [c, t] = sj.asCoeffAdd(asExpr(self), args.map(asExpr));
+    return new PyTuple([c, new PyTuple(t)]);
+  },
+  '.as_coeff_mul': (args, kw, self) => {
+    noKw(kw);
+    const [c, t] = sj.asCoeffMul(asExpr(self), args.map(asExpr));
+    return new PyTuple([c, new PyTuple(t)]);
+  },
+  '.as_coeff_Mul': exprMethod((e) => new PyTuple(sj.splitCoeff(e))),
+  '.primitive': exprMethod((e) => new PyTuple(sj.primitive(e))),
+  '.as_content_primitive': (args, kw, self) => {
+    const clear = kw['clear'];
+    for (const k of Object.keys(kw)) if (k !== 'clear') throw new Unsupported(`kwargs ${k}`);
+    if (args.length) throw new Unsupported('arity');
+    return new PyTuple(sj.asContentPrimitive(asExpr(self), clear === undefined ? {} : { clear: Boolean(clear) }));
+  },
+  '.extract_multiplicatively': (args, kw, self) => (noKw(kw), sj.extractMultiplicatively(asExpr(self), asExpr(args[0])) ?? null),
+  '.extract_additively': (args, kw, self) => (noKw(kw), sj.extractAdditively(asExpr(self), asExpr(args[0])) ?? null),
+  '.as_coefficient': (args, kw, self) => (noKw(kw), sj.asCoefficient(asExpr(self), asExpr(args[0])) ?? null),
+  '.is_polynomial': (args, kw, self) => (noKw(kw), sj.isPolynomial(asExpr(self), args.map(asExpr))),
+  '.is_rational_function': (args, kw, self) => (noKw(kw), sj.isRationalFunction(asExpr(self), args.map(asExpr))),
+  '.is_constant': (args, kw, self) => {
+    noKw(kw);
+    return sj.isConstant(asExpr(self), args.map(asSym));
+  },
+  '.as_real_imag': exprMethod((e) => new PyTuple(sj.asRealImag(e))),
+  '.as_numer_denom': exprMethod((e) => new PyTuple(sj.asNumerDenom(e))),
+  '.as_base_exp': exprMethod((e) => new PyTuple(sj.asBaseExp(e))),
+  '.args_cnc': (args, kw, self) => {
+    const split1 = kw['split_1'];
+    for (const k of Object.keys(kw)) if (k !== 'split_1') throw new Unsupported(`kwargs ${k}`);
+    if (args.length) throw new Unsupported('arity');
+    return new PyList([new PyList(sj.argsCnc(asExpr(self), split1 === undefined ? true : Boolean(split1))), new PyList([])]);
+  },
+  '.xreplace': (args, kw, self) => {
+    noKw(kw);
+    const d = args[0];
+    if (!(d instanceof PyDict)) throw new Unsupported('xreplace mapping');
+    return sj.xreplace(asExpr(self), d.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const));
+  },
+  '.atoms': (args, kw, self) => {
+    noKw(kw);
+    const preds = args.map((a) => {
+      const t = asExpr(a);
+      if (t instanceof Sym) return (x: Expr) => x instanceof Sym;
+      if (t instanceof sj.Rational && t.isOne) return (x: Expr) => x instanceof sj.Rational && x.isOne;
+      if (t instanceof sj.Rational && t.isInteger) return (x: Expr) => x instanceof sj.Rational && x.isInteger;
+      if (t instanceof sj.Rational) return (x: Expr) => x instanceof sj.Rational;
+      return (x: Expr) => x.key === t.key;
+    });
+    const pred = preds.length ? (x: Expr) => preds.some((p) => p(x)) : () => true;
+    return new PySet(sj.atoms(asExpr(self), pred));
+  },
+  '.as_ordered_terms': exprMethod((e) => new PyList(e instanceof sj.Add ? asOrdered(e) : [e])),
 
   // ---- Matrix methods
   '.det': matrixMethod((m) => m.det()),
