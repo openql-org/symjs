@@ -5,7 +5,7 @@
  * @file Three-valued assumption queries (true / false / undefined = unknown).
  */
 
-import { Add, Constant, Expr, Fn, Float, Mul, Pow, Rational, Sym } from './nodes';
+import { Add, Constant, Expr, Fn, Float, Mul, Pow, Rational, Special, Sym } from './nodes';
 
 export type Tri = boolean | undefined;
 
@@ -21,6 +21,7 @@ const all = (xs: readonly Expr[], f: (e: Expr) => Tri): Tri => {
 
 export function isZero(e: Expr): Tri {
   if (e instanceof Rational || e instanceof Float) return e.isZero;
+  if (e instanceof Special) return e.name === 'nan' ? undefined : false;
   if (e instanceof Constant) return false;
   if (e instanceof Sym) return e.assumptions.positive ? false : undefined;
   if (e instanceof Pow && e.base instanceof Constant && e.base.name === 'E') return false;
@@ -29,6 +30,8 @@ export function isZero(e: Expr): Tri {
 
 export function isReal(e: Expr): Tri {
   if (e instanceof Rational || e instanceof Float) return true;
+  // extended reals: oo and -oo behave as real for simplification purposes
+  if (e instanceof Special) return e.name === 'oo' || e.name === '-oo' ? true : undefined;
   if (e instanceof Constant) return e.name !== 'I';
   if (e instanceof Sym) return e.assumptions.real ? true : undefined;
   if (e instanceof Add) return all(e.args, isReal) ? true : undefined;
@@ -90,6 +93,7 @@ export function isNonZero(e: Expr): Tri {
 
 export function isPositive(e: Expr): Tri {
   if (e instanceof Rational || e instanceof Float) return e.isPositive;
+  if (e instanceof Special) return e.name === 'oo' ? true : e.name === '-oo' ? false : undefined;
   if (e instanceof Constant) return e.name === 'I' ? false : true;
   if (e instanceof Sym) return e.assumptions.positive ? true : undefined;
   if (e instanceof Add) return all(e.args, isPositive) ? true : undefined;
@@ -116,6 +120,7 @@ export function isPositive(e: Expr): Tri {
 
 export function isNegative(e: Expr): Tri {
   if (e instanceof Rational || e instanceof Float) return e.isNegative;
+  if (e instanceof Special) return e.name === '-oo' ? true : e.name === 'oo' ? false : undefined;
   if (e instanceof Constant) return false;
   if (e instanceof Sym) return e.assumptions.nonnegative ? false : undefined;
   if (e instanceof Add) return all(e.args, isNegative) ? true : undefined;
@@ -147,6 +152,7 @@ export function isNonNegative(e: Expr): Tri {
 
 export function isIntegerQ(e: Expr): Tri {
   if (e instanceof Rational) return e.isInteger;
+  if (e instanceof Special) return false;
   if (e instanceof Float) return false;
   if (e instanceof Constant) return false;
   if (e instanceof Sym) return e.assumptions.integer ? true : undefined;

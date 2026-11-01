@@ -8,7 +8,7 @@
  * (e.g. `x**2*y`, `1 - 2*I`, `-sqrt(2)/4 + sqrt(6)/4`, `I*sin(x) + cos(x)`).
  */
 
-import { Add, ComplexValue, Constant, Expr, Float, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
+import { Add, ComplexValue, Constant, Expr, Float, Fn, Mul, Order, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { pow, splitCoeff } from '../core/ops';
 
 /** A SymPy-style sort key: nested tuples of numbers and strings. */
@@ -59,7 +59,7 @@ export function sympyFunctionName(name: string): string {
 const isExp = (e: Expr): e is Pow => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
 
 function classKey(e: Expr): Key {
-  if (isNum(e)) return [1, 0, 'Number'];
+  if (isNum(e) || e instanceof Special) return [1, 0, 'Number'];
   if (e instanceof Sym) return [2, 0, 'Symbol'];
   if (e instanceof Constant) return [2, 0, CONSTANT_CLASS[e.name]!];
   if (e instanceof Mul) return [3, 0, 'Mul'];
@@ -78,8 +78,11 @@ const numValue = (e: Expr): number => (e instanceof Rational || e instanceof Flo
 const ONE_KEY: Key = [[1, 0, 'Number'], [0, []], [], 1];
 
 /** SymPy `Basic.sort_key()` / `default_sort_key`. */
+const SPECIAL_VALUE: Record<string, number> = { oo: Infinity, '-oo': -Infinity, zoo: Infinity, nan: NaN };
+
 export function sortKey(e: Expr): Key {
   if (isNum(e)) return [[1, 0, 'Number'], [0, []], [], numValue(e)];
+  if (e instanceof Special) return [[1, 0, 'Number'], [0, []], [], SPECIAL_VALUE[e.name]!];
   if (e instanceof Sym) return [[2, 0, 'Symbol'], [1, [e.name]], ONE_KEY, 1];
   if (e instanceof Constant) return [classKey(e), [1, [impl.str(e)]], ONE_KEY, 1];
 
@@ -136,7 +139,14 @@ function decomposePower(f: Expr): [Expr, number] {
 
 /** SymPy `Expr.as_ordered_terms()` with the default (lex) ordering. */
 export function asOrderedTerms(e: Expr): Expr[] {
-  const terms = e instanceof Add ? e.args : [e];
+  const all = e instanceof Add ? e.args : [e];
+  const orders = all.filter((t) => t instanceof Order);
+  if (orders.length > 0) {
+    // SymPy: with Order terms, the other terms are sorted in reverse (ascending degree) and O comes last
+    const rest = all.filter((t) => !(t instanceof Order));
+    return [...lexOrder(rest).reverse(), ...orders];
+  }
+  const terms = all;
   // Special case: Add(positive Number, Mul(negative Number, expr)) keeps the number first (1 - x**2)
   if (terms.length === 2) {
     const isNumberLike = (t: Expr) => isNum(t) || (t instanceof Constant && t.name !== 'I');
@@ -148,6 +158,11 @@ export function asOrderedTerms(e: Expr): Expr[] {
       if (positive && isNum(c) && c.isNegative) return sorted;
     }
   }
+  return lexOrder(terms);
+}
+
+/** Sort terms by SymPy's lex key on the monomials of the generators. */
+function lexOrder(terms: readonly Expr[]): Expr[] {
   const gens = new Map<string, Expr>();
   const parsed = terms.map((term) => {
     const [c, rest] = splitCoeff(term);

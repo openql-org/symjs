@@ -6,7 +6,7 @@
  */
 
 import { isNegative } from '../core/assumptions';
-import { Add, BoolAtom, Constant, Expr, Float, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, Sym, impl, isNum } from '../core/nodes';
+import { Add, BoolAtom, Constant, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
 import { asOrderedFactors, asOrderedTerms } from './sortkey';
 import { PREC, floatString, precedence, startsNegative, str } from './str';
@@ -289,6 +289,9 @@ export function latex(e: Expr): string {
   if (e instanceof Float) return floatLatex(e.value);
   if (e instanceof Sym) return symbolLatex(e.name);
   if (e instanceof Constant) return e.name === 'pi' ? '\\pi' : e.name === 'E' ? 'e' : 'i';
+  if (e instanceof Special) {
+    return { oo: '\\infty', '-oo': '-\\infty', zoo: '\\tilde{\\infty}', nan: '\\text{NaN}' }[e.name];
+  }
   if (e instanceof Fn) return printFunction(e);
   if (e instanceof Add) return printAdd(e);
   if (e instanceof Mul) return printMulLike(e);
@@ -306,6 +309,17 @@ export function latex(e: Expr): string {
         : `${latex(x)} & \\text{for}\\: ${latex(c)}`,
     );
     return `\\begin{cases} ${parts.join(' \\\\')} \\end{cases}`;
+  }
+  if (e instanceof Limit) {
+    const [f, z, z0] = e.args;
+    const d = e.dir === '+-' ? '' : `^${e.dir}`;
+    const body = precedence(f!) < PREC.ADD ? addParens(latex(f!)) : latex(f!);
+    return `\\lim_{${latex(z!)} \\to ${latex(z0!)}${d}} ${body}`;
+  }
+  if (e instanceof Order) {
+    const [x, v, p] = e.args;
+    if (!v || !p || (p instanceof Rational && p.isZero)) return `O\\left(${latex(x!)}\\right)`;
+    return `O\\left(${latex(x!)}; ${latex(v)}\\rightarrow ${latex(p)}\\right)`;
   }
   if (e instanceof Integral) {
     const lim = e.limits;

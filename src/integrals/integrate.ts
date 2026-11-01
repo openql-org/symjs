@@ -28,6 +28,7 @@ import {
   Pow,
   Rational,
   S,
+  Special,
   Sym,
   impl,
   isNum,
@@ -543,7 +544,13 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
   const a = sympify(limits[0]);
   const b = sympify(limits[1]);
   if (F === undefined) return new Integral([f, x, a, b]);
-  return add(subs(F, [[x, b]]), mul(-1, subs(F, [[x, a]])));
+  // endpoint values: substitute, or take a one-sided limit at infinities / indeterminate points
+  const at = (p: Expr, dir: '+' | '-'): Expr => {
+    const v = subs(F, [[x, p]]);
+    const bad = (e: Expr): boolean => e instanceof Special || e.args.some(bad);
+    return bad(v) ? impl.limit(F, x, p, dir) : v;
+  };
+  return add(at(b, '-'), mul(-1, at(a, '+')));
 }
 
 impl.integrate = (e, x, limits) => integrate(e, x, limits);

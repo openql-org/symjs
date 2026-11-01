@@ -10,7 +10,7 @@ import json
 import sys
 
 import sympy
-from sympy import Integral, Symbol, cancel, integrate, conjugate, expand, factor, latex, roots, simplify, together, trigsimp
+from sympy import Integral, Symbol, cancel, integrate, limit, series, conjugate, expand, factor, latex, roots, simplify, together, trigsimp
 from sympy.parsing.sympy_parser import parse_expr
 
 
@@ -49,6 +49,18 @@ def main(src: str, dst: str) -> None:
                 hi = parse_expr(spec_[2], local_dict=dict(syms))
                 return str(integrate(e, (var, lo, hi)))
             return str(integrate(e, var))
+        if op.startswith("series:"):
+            spec_ = op.split(":", 1)[1].split(",")
+            var = syms[spec_[0]]
+            pt = parse_expr(spec_[1], local_dict=dict(syms)) if len(spec_) > 1 else 0
+            n = int(spec_[2]) if len(spec_) > 2 else 6
+            return str(series(e, var, pt, n))
+        if op.startswith("limit:"):
+            spec_ = op.split(":", 1)[1].split(",")
+            var = syms[spec_[0]] if spec_[0] in syms else Symbol(spec_[0])
+            pt = parse_expr(spec_[1], local_dict=dict(syms))
+            direction = spec_[2] if len(spec_) > 2 else "+"
+            return str(limit(e, var, pt, direction))
         if op == "latex_integral":
             return latex(Integral(e, x)) + " | " + latex(Integral(e, (x, 0, 1)))
         if op == "roots_x":

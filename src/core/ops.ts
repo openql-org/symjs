@@ -25,6 +25,8 @@ import {
   Pow,
   Rational,
   S,
+  Order,
+  Special,
   compareExpr,
   impl,
   isNum,
@@ -73,7 +75,115 @@ function mulCoeffRaw(c: Num, rest: Expr): Expr {
 // Add
 // ---------------------------------------------------------------------------
 
+/** Finite constant without free symbols (absorbed by an infinity). */
+function isFiniteConstant(e: Expr, real: boolean): boolean {
+  if (isNum(e)) return true;
+  if (e instanceof Special) return false;
+  if (impl.freeSymbols(e).size > 0) return false;
+  try {
+    const v = impl.toComplex(e);
+    return Number.isFinite(v.re) && Number.isFinite(v.im) && (!real || Math.abs(v.im) < 1e-300);
+  } catch {
+    return false;
+  }
+}
+
+function addSpecial(args: Expr[]): Expr | undefined {
+  const flat: Expr[] = [];
+  const visit = (e: Expr) => (e instanceof Add ? e.args.forEach(visit) : flat.push(e));
+  args.forEach(visit);
+  const specials = flat.filter((e): e is Special => e instanceof Special);
+  if (specials.length === 0) return undefined;
+  const names = new Set(specials.map((e) => e.name));
+  if (names.has('nan')) return S.NaN;
+  let inf: Special;
+  if (names.has('zoo')) {
+    if (names.has('oo') || names.has('-oo')) return S.NaN;
+    inf = S.ComplexInfinity;
+  } else if (names.has('oo') && names.has('-oo')) return S.NaN;
+  else inf = names.has('oo') ? S.Infinity : S.NegativeInfinity;
+  const others = flat.filter((e) => !(e instanceof Special) && !isFiniteConstant(e, inf !== S.ComplexInfinity));
+  if (others.length === 0) return inf;
+  const rest = add(...others);
+  return new Add([...(rest instanceof Add ? rest.args : [rest]), inf].sort(compareExpr));
+}
+
+/** Lowest power of t in a term (for Order absorption); undefined if not a simple power product. */
+function lowestPower(term: Expr, t: Expr): number | undefined {
+  if (!term.has(t)) return 0;
+  if (term.key === t.key) return 1;
+  if (term instanceof Pow && term.base.key === t.key && term.exp instanceof Rational) return term.exp.value;
+  if (term instanceof Mul) {
+    let k = 0;
+    for (const f of term.args) {
+      const p = lowestPower(f, t);
+      if (p === undefined) return undefined;
+      k += p;
+    }
+    return k;
+  }
+  if (term instanceof Add) {
+    const ps = term.args.map((a) => lowestPower(a, t));
+    if (ps.some((p) => p === undefined)) return undefined;
+    return Math.min(...(ps as number[]));
+  }
+  return undefined;
+}
+
+/** Sum containing Order terms: keep the weakest Order and drop the terms it absorbs. */
+function addOrder(args: Expr[]): Expr | undefined {
+  const flat: Expr[] = [];
+  const visit = (e: Expr) => (e instanceof Add ? e.args.forEach(visit) : flat.push(e));
+  args.forEach(visit);
+  const orders = flat.filter((e): e is Order => e instanceof Order);
+  if (orders.length === 0) return undefined;
+  // O((x - x0)**n) : base t = x - x0 (or x), exponent n
+  const info = orders.map((o) => {
+    const [b, k] = o.expr instanceof Pow ? o.expr.args : [o.expr, S.One];
+    return { o, base: b, k: k instanceof Rational ? k.value : NaN };
+  });
+  const sameBase = info.every((i) => i.base.key === info[0]!.base.key);
+  if (!sameBase) return undefined;
+  const weakest = info.reduce((a, b) => (b.k < a.k ? b : a));
+  const base = weakest.base;
+  // terms are measured in powers of the base, or of x when the base is x - x0
+  const rest = flat.filter((e) => !(e instanceof Order));
+  const kept = rest.filter((term) => {
+    const p = base instanceof Add ? lowestPowerShifted(term, base) : lowestPower(term, base);
+    return p === undefined || p < weakest.k;
+  });
+  const body = add(...kept);
+  const parts = body instanceof Rational && body.isZero ? [] : body instanceof Add ? [...body.args] : [body];
+  if (parts.length === 0) return weakest.o;
+  return new Add([...parts, weakest.o].sort(compareExpr));
+}
+
+/** lowestPower for a shifted base (x - x0): only exact powers of the base are recognized. */
+function lowestPowerShifted(term: Expr, base: Expr): number | undefined {
+  if (term.key === base.key) return 1;
+  if (term instanceof Pow && term.base.key === base.key && term.exp instanceof Rational) return term.exp.value;
+  if (term instanceof Mul) {
+    let k = 0;
+    for (const f of term.args) {
+      if (f.key === base.key) k += 1;
+      else if (f instanceof Pow && f.base.key === base.key && f.exp instanceof Rational) k += f.exp.value;
+      else if (impl.freeSymbols(f).size > 0) return undefined;
+    }
+    return k;
+  }
+  return impl.freeSymbols(term).size === 0 ? 0 : undefined;
+}
+
 export function add(...xs: ExprLike[]): Expr {
+  const sx = xs.map(sympify);
+  if (sx.some((e) => e instanceof Order || (e instanceof Add && e.args.some((a) => a instanceof Order)))) {
+    const r = addOrder(sx);
+    if (r) return r;
+  }
+  if (sx.some((e) => e instanceof Special || (e instanceof Add && e.args.some((a) => a instanceof Special)))) {
+    const r = addSpecial(sx);
+    if (r) return r;
+  }
   let c: Num = S.Zero;
   const terms = new Map<string, { term: Expr; coeff: Num }>();
   const visit = (e: Expr): void => {
@@ -90,7 +200,7 @@ export function add(...xs: ExprLike[]): Expr {
     if (entry) entry.coeff = numAdd(entry.coeff, k);
     else terms.set(t.key, { term: t, coeff: k });
   };
-  for (const x of xs) visit(sympify(x));
+  for (const x of sx) visit(x);
 
   const out: Expr[] = [];
   for (const { term, coeff } of terms.values()) {
@@ -179,8 +289,40 @@ const numCmp1 = (r: Rational): number => {
   return d > 0n ? 1 : d < 0n ? -1 : 0;
 };
 
+function mulSpecial(args: Expr[]): Expr | undefined {
+  const flat: Expr[] = [];
+  const visit = (e: Expr) => (e instanceof Mul ? e.args.forEach(visit) : flat.push(e));
+  args.forEach(visit);
+  const specials = flat.filter((e): e is Special => e instanceof Special);
+  if (specials.length === 0) return undefined;
+  if (specials.some((e) => e.name === 'nan')) return S.NaN;
+  const c = mul(...flat.filter((e) => !(e instanceof Special)));
+  if (c instanceof Rational && c.isZero) return S.NaN;
+  if (specials.some((e) => e.name === 'zoo')) {
+    return impl.freeSymbols(c).size === 0 ? S.ComplexInfinity : new Mul([c, S.ComplexInfinity]);
+  }
+  let sign = specials.filter((e) => e.name === '-oo').length % 2 === 0 ? 1 : -1;
+  const [k, r] = splitCoeff(c);
+  if (k.isNegative) sign = -sign;
+  let rest = r;
+  if (!(rest instanceof Rational && rest.isOne)) {
+    if (isPositive(rest)) rest = S.One;
+    else if (isNegative(rest)) {
+      sign = -sign;
+      rest = S.One;
+    }
+  }
+  if (rest instanceof Rational && rest.isOne) return sign > 0 ? S.Infinity : S.NegativeInfinity;
+  const factors = [...(rest instanceof Mul ? rest.args : [rest]), S.Infinity].sort(compareExpr);
+  return new Mul(sign > 0 ? factors : [S.NegOne, ...factors]);
+}
+
 export function mul(...xs: ExprLike[]): Expr {
   const args = xs.map(sympify);
+  if (args.some((e) => e instanceof Special || (e instanceof Mul && e.args.some((a) => a instanceof Special)))) {
+    const r = mulSpecial(args);
+    if (r) return r;
+  }
 
   // SymPy's two-argument rule: Rational * Add distributes (2*(x + 1) -> 2*x + 2).
   if (args.length === 2) {
@@ -304,10 +446,18 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
     if (e.isZero) return S.One;
     if (e.isOne) return b;
   }
-  if (b instanceof Rational && b.isOne) return S.One;
+  if (b instanceof Rational && b.isOne && !(e instanceof Special)) return S.One;
+
+  if (b instanceof Special || e instanceof Special) {
+    const r = powSpecial(b, e);
+    if (r) return r;
+  }
 
   if (isNum(b) && isNum(e)) {
-    if (e instanceof Rational && e.isInteger) return numPowInt(b, e.p);
+    if (e instanceof Rational && e.isInteger) {
+      if (b.isZero && e.isNegative) return S.ComplexInfinity;
+      return numPowInt(b, e.p);
+    }
     if (b instanceof Float || e instanceof Float) {
       const bv = b instanceof Rational ? b.value : b.value;
       const ev = e instanceof Rational ? e.value : e.value;
@@ -315,16 +465,13 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
       const r = Math.pow(-bv, ev);
       return add(new Float(r * Math.cos(Math.PI * ev)), mul(new Float(r * Math.sin(Math.PI * ev)), S.I));
     }
-    if (b.isZero) {
-      if (e.isPositive) return S.Zero;
-      throw new RangeError('Division by zero: 0 raised to a negative power');
-    }
+    if (b.isZero) return e.isPositive ? S.Zero : S.ComplexInfinity;
     return mul(new Pow(b, e));
   }
 
   if (b instanceof Rational && b.isZero) {
     if (isPositive(e)) return S.Zero;
-    if (isNegative(e)) throw new RangeError('Division by zero: 0 raised to a negative power');
+    if (isNegative(e)) return S.ComplexInfinity;
   }
 
   if (isI(b) && e instanceof Rational && e.isInteger) {
@@ -398,6 +545,51 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   }
 
   return new Pow(b, e);
+}
+
+function realValue(e: Expr): number | undefined {
+  if (isNum(e)) return e instanceof Rational ? e.value : e.value;
+  if (impl.freeSymbols(e).size > 0) return undefined;
+  try {
+    const v = impl.toComplex(e);
+    return v.im === 0 ? v.re : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Powers involving oo, -oo, zoo, nan (exponent 0 and 1 are handled by the caller). */
+function powSpecial(b: Expr, e: Expr): Expr | undefined {
+  if ((b instanceof Special && b.name === 'nan') || (e instanceof Special && e.name === 'nan')) return S.NaN;
+  if (b instanceof Special) {
+    const pos = isPositive(e);
+    const neg = isNegative(e);
+    if (b.name === 'oo' || b.name === 'zoo') {
+      if (pos) return b;
+      if (neg) return S.Zero;
+      return undefined;
+    }
+    // -oo
+    if (e instanceof Rational && e.isInteger) {
+      if (e.isNegative) return S.Zero;
+      return e.p % 2n === 0n ? S.Infinity : S.NegativeInfinity;
+    }
+    if (neg) return S.Zero;
+    return undefined;
+  }
+  // exponent is oo, -oo or zoo
+  const ex = e as Special;
+  if (ex.name === 'zoo') return S.NaN;
+  const v = realValue(b);
+  if (v === undefined) return undefined;
+  const up = ex.name === 'oo';
+  if (v === 1 || v === -1) return S.NaN;
+  if (v > 1) return up ? S.Infinity : S.Zero;
+  if (v > -1) {
+    if (v === 0) return up ? S.Zero : S.ComplexInfinity;
+    return up ? S.Zero : v > 0 ? S.Infinity : S.ComplexInfinity;
+  }
+  return up ? S.ComplexInfinity : S.Zero;
 }
 
 /** SymPy `pure_complex`: a + b*I with numeric a, b. */

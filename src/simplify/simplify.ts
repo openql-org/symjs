@@ -10,6 +10,7 @@ import { splitCoeff, sympify } from '../core/ops';
 import { countOps, mapBottomUp, some } from '../core/traverse';
 import { fn } from '../functions/elementary';
 import { expand } from './expand';
+import { powsimp } from './powsimp';
 import { cancel } from './rational';
 import { exptotrig, expsimp, hasTrig } from './trigsimp';
 
@@ -27,6 +28,7 @@ function simplifyCore(e: Expr): Expr {
     }
   };
   tryPush(() => expand(e));
+  tryPush(() => powsimp(e));
   if (hasTrig(e)) {
     tryPush(() => exptotrig(e));
     tryPush(() => expsimp(e));

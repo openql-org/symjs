@@ -25,10 +25,16 @@ export {
   Rel,
   Piecewise,
   Integral,
+  Limit,
+  Order,
+  Special,
   S,
   pi,
   E,
   I,
+  oo,
+  zoo,
+  nan,
   compareExpr,
   isRational,
   isFloat,
@@ -80,6 +86,8 @@ export {
 // calculus
 export { diff } from './calculus/diff';
 export { integrate } from './integrals/integrate';
+export { limit } from './series/limits';
+export { series, O } from './series/series';
 
 // logic
 export { rel, Eq, Ne, Lt, Le, Gt, Ge, piecewise } from './core/logic';
@@ -87,6 +95,7 @@ export { rel, Eq, Ne, Lt, Le, Gt, Ge, piecewise } from './core/logic';
 // simplification
 export { expand } from './simplify/expand';
 export { simplify } from './simplify/simplify';
+export { powsimp } from './simplify/powsimp';
 export { trigsimp, rewriteExp, rewriteTrig, expsimp, exptotrig, combineExp } from './simplify/trigsimp';
 export { together, cancel, fraction } from './simplify/rational';
 

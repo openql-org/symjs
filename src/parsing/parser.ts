@@ -58,7 +58,7 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   Abs: ([x]) => fn('abs', [x!]),
 };
 
-const CONSTANTS: Record<string, Expr> = { pi: S.Pi, E: S.E, I: S.I };
+const CONSTANTS: Record<string, Expr> = { pi: S.Pi, E: S.E, I: S.I, oo: S.Infinity, zoo: S.ComplexInfinity, nan: S.NaN };
 
 function parseNumber(s: string): Expr {
   if (/^\d+$/.test(s)) return Rational.of(BigInt(s));

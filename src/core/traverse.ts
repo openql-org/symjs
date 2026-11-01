@@ -7,7 +7,7 @@
 
 import { fn } from '../functions/elementary';
 import { piecewise, rel } from './logic';
-import { Add, Expr, ExprLike, Fn, Integral, Mul, Piecewise, Pow, Rel, Substitution, Sym, impl } from './nodes';
+import { Add, Expr, ExprLike, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rel, Substitution, Sym, impl } from './nodes';
 import { add, mul, pow, sympify } from './ops';
 
 /** Rebuild a node of the same type with new arguments (re-canonicalizing). */
@@ -23,6 +23,8 @@ export function rebuild(e: Expr, args: readonly Expr[]): Expr {
     return piecewise(...pairs);
   }
   if (e instanceof Integral) return new Integral(args);
+  if (e instanceof Limit) return new Limit(args, e.dir);
+  if (e instanceof Order) return new Order(args);
   return e;
 }
 

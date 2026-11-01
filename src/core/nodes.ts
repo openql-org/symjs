@@ -24,10 +24,13 @@ export type Kind =
   | 'Mul'
   | 'Pow'
   | 'Fn'
+  | 'Special'
   | 'Bool'
   | 'Rel'
   | 'Piecewise'
-  | 'Integral';
+  | 'Integral'
+  | 'Limit'
+  | 'Order';
 
 /** Anything that can be turned into an expression. */
 export type ExprLike = Expr | number | bigint;
@@ -95,6 +98,8 @@ export interface Impl {
   abs(e: Expr): Expr;
   freeSymbols(e: Expr): Set<Sym>;
   integrate(e: Expr, x: Sym, limits?: [ExprLike, ExprLike]): Expr;
+  limit(e: Expr, z: Sym, z0: ExprLike, dir?: '+' | '-' | '+-'): Expr;
+  series(e: Expr, x: Sym, x0?: ExprLike, n?: number): Expr;
 }
 
 export const impl: Impl = {} as Impl;
@@ -153,6 +158,14 @@ export abstract class Expr {
   }
   diff(x: Expr, n = 1): Expr {
     return impl.diff(this, x, n);
+  }
+  /** Limit as z -> z0 (dir '+' by default, like SymPy). */
+  limit(z: Sym, z0: ExprLike, dir: '+' | '-' | '+-' = '+'): Expr {
+    return impl.limit(this, z, z0, dir);
+  }
+  /** Series expansion about x0 up to O((x - x0)**n). */
+  series(x: Sym, x0: ExprLike = 0, n = 6): Expr {
+    return impl.series(this, x, x0, n);
   }
   /** Indefinite integral w.r.t. x, or definite over [a, b] when limits are given. */
   integrate(x: Sym, limits?: [ExprLike, ExprLike]): Expr {
@@ -393,6 +406,26 @@ export class Fn extends Expr {
   }
 }
 
+export type SpecialName = 'oo' | '-oo' | 'zoo' | 'nan';
+
+/** Extended values: oo, -oo, zoo (complex infinity) and nan. */
+export class Special extends Expr {
+  readonly kind = 'Special' as const;
+  readonly args: readonly Expr[] = [];
+  constructor(readonly name: SpecialName) {
+    super();
+  }
+  get isInfinite(): boolean {
+    return this.name !== 'nan';
+  }
+  protected computeKey(): string {
+    return `%${this.name}`;
+  }
+}
+
+export const isSpecial = (e: Expr, name?: SpecialName): e is Special =>
+  e instanceof Special && (name === undefined || e.name === name);
+
 /** Boolean constant (SymPy `true` / `false`). */
 export class BoolAtom extends Expr {
   readonly kind = 'Bool' as const;
@@ -462,6 +495,40 @@ export class Integral extends Expr {
   }
 }
 
+/** Unevaluated limit: args [e, z, z0]; dir is '+', '-' or '+-'. @internal ctor */
+export class Limit extends Expr {
+  readonly kind = 'Limit' as const;
+  constructor(readonly args: readonly Expr[], readonly dir: '+' | '-' | '+-' = '+') {
+    super();
+  }
+  protected computeKey(): string {
+    return `Limit(${this.args.map((a) => a.key).join(',')},${this.dir})`;
+  }
+}
+
+/**
+ * Order term O(expr) as variable -> point. args: [expr, variable, point];
+ * expr is a power of the variable (or of variable - point). @internal ctor
+ */
+export class Order extends Expr {
+  readonly kind = 'Order' as const;
+  constructor(readonly args: readonly Expr[]) {
+    super();
+  }
+  get expr(): Expr {
+    return this.args[0]!;
+  }
+  get variable(): Expr | undefined {
+    return this.args[1];
+  }
+  get point(): Expr | undefined {
+    return this.args[2];
+  }
+  protected computeKey(): string {
+    return `O(${this.args.map((a) => a.key).join(',')})`;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Singletons
 // ---------------------------------------------------------------------------
@@ -476,6 +543,10 @@ export const S = {
   Pi: new Constant('pi'),
   E: new Constant('E'),
   I: new Constant('I'),
+  Infinity: new Special('oo'),
+  NegativeInfinity: new Special('-oo'),
+  ComplexInfinity: new Special('zoo'),
+  NaN: new Special('nan'),
   true: new BoolAtom(true),
   false: new BoolAtom(false),
 } as const;
@@ -483,6 +554,9 @@ export const S = {
 export const pi = S.Pi;
 export const E = S.E;
 export const I = S.I;
+export const oo = S.Infinity;
+export const zoo = S.ComplexInfinity;
+export const nan = S.NaN;
 
 /** Canonical ordering of arguments: numbers first, then by structural key. */
 export function compareExpr(a: Expr, b: Expr): number {

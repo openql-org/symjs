@@ -1108,6 +1108,450 @@
       "out": {
         "latex_integral": "\\int x^{2}\\, dx | \\int\\limits_{0}^{1} x^{2}\\, dx"
       }
+    },
+    {
+      "expr": "sin(x)/x",
+      "out": {
+        "limit:x,0": "1"
+      }
+    },
+    {
+      "expr": "(1-cos(x))/x**2",
+      "out": {
+        "limit:x,0": "1/2"
+      }
+    },
+    {
+      "expr": "(1+1/x)**x",
+      "out": {
+        "limit:x,oo": "E"
+      }
+    },
+    {
+      "expr": "1/x",
+      "out": {
+        "limit:x,0": "oo"
+      }
+    },
+    {
+      "expr": "1/x",
+      "out": {
+        "limit:x,oo": "0"
+      }
+    },
+    {
+      "expr": "x*exp(-x)",
+      "out": {
+        "limit:x,oo": "0"
+      }
+    },
+    {
+      "expr": "exp(-x)",
+      "out": {
+        "limit:x,oo": "0"
+      }
+    },
+    {
+      "expr": "x**2",
+      "out": {
+        "limit:x,oo": "oo"
+      }
+    },
+    {
+      "expr": "-x**3",
+      "out": {
+        "limit:x,oo": "-oo"
+      }
+    },
+    {
+      "expr": "log(x)",
+      "out": {
+        "limit:x,0": "-oo"
+      }
+    },
+    {
+      "expr": "x*log(x)",
+      "out": {
+        "limit:x,0": "0"
+      }
+    },
+    {
+      "expr": "(exp(x)-1)/x",
+      "out": {
+        "limit:x,0": "1"
+      }
+    },
+    {
+      "expr": "(x**2-1)/(x-1)",
+      "out": {
+        "limit:x,1": "2"
+      }
+    },
+    {
+      "expr": "sqrt(x**2+x)-x",
+      "out": {
+        "limit:x,oo": "1/2"
+      }
+    },
+    {
+      "expr": "(2*x+1)/(3*x-2)",
+      "out": {
+        "limit:x,oo": "2/3"
+      }
+    },
+    {
+      "expr": "x**x",
+      "out": {
+        "limit:x,0": "1"
+      }
+    },
+    {
+      "expr": "tan(x)/x",
+      "out": {
+        "limit:x,0": "1"
+      }
+    },
+    {
+      "expr": "atan(x)",
+      "out": {
+        "limit:x,oo": "pi/2"
+      }
+    },
+    {
+      "expr": "exp(1/x)",
+      "out": {
+        "limit:x,0": "oo"
+      }
+    },
+    {
+      "expr": "1/x**2",
+      "out": {
+        "limit:x,0": "oo"
+      }
+    },
+    {
+      "expr": "(1+q/x)**x",
+      "out": {
+        "limit:x,oo": "exp(q)"
+      }
+    },
+    {
+      "expr": "sin(1/x)*x",
+      "out": {
+        "limit:x,0": "0"
+      }
+    },
+    {
+      "expr": "log(1+x)/x",
+      "out": {
+        "limit:x,0": "1"
+      }
+    },
+    {
+      "expr": "x/exp(x)",
+      "out": {
+        "limit:x,-oo": "-oo"
+      }
+    },
+    {
+      "expr": "(3*x**2+2)/(x**2+1)",
+      "out": {
+        "limit:x,-oo": "3"
+      }
+    },
+    {
+      "expr": "x - sqrt(x)",
+      "out": {
+        "limit:x,oo": "oo"
+      }
+    },
+    {
+      "expr": "exp(x)/x**10",
+      "out": {
+        "limit:x,oo": "oo"
+      }
+    },
+    {
+      "expr": "y*x",
+      "out": {
+        "limit:x,2": "2*y"
+      }
+    },
+    {
+      "expr": "sin(x)",
+      "out": {
+        "limit:x,pi/2": "1"
+      }
+    },
+    {
+      "expr": "1/x",
+      "out": {
+        "limit:x,0,-": "-oo"
+      }
+    },
+    {
+      "expr": "(x**3 - 3*x)",
+      "out": {
+        "limit:x,oo": "oo"
+      }
+    },
+    {
+      "expr": "sin(x)**2/x**2",
+      "out": {
+        "limit:x,0": "1"
+      }
+    },
+    {
+      "expr": "(1 - cos(x))/x",
+      "out": {
+        "limit:x,0": "0"
+      }
+    },
+    {
+      "expr": "x**2*exp(-x**2)",
+      "out": {
+        "limit:x,oo": "0"
+      }
+    },
+    {
+      "expr": "log(x)/x",
+      "out": {
+        "limit:x,oo": "0"
+      }
+    },
+    {
+      "expr": "(x + 1)**(1/x)",
+      "out": {
+        "limit:x,0": "E"
+      }
+    },
+    {
+      "expr": "(sin(x) - x)/x**3",
+      "out": {
+        "limit:x,0": "-1/6"
+      }
+    },
+    {
+      "expr": "(tan(x) - sin(x))/x**3",
+      "out": {
+        "limit:x,0": "1/2"
+      }
+    },
+    {
+      "expr": "atan(1/x)",
+      "out": {
+        "limit:x,0": "pi/2"
+      }
+    },
+    {
+      "expr": "exp(-1/x)",
+      "out": {
+        "limit:x,0": "0"
+      }
+    },
+    {
+      "expr": "x**(1/x)",
+      "out": {
+        "limit:x,oo": "1"
+      }
+    },
+    {
+      "expr": "(2**x - 1)/x",
+      "out": {
+        "limit:x,0": "log(2)"
+      }
+    },
+    {
+      "expr": "exp(-x)",
+      "out": {
+        "integrate:x,0,oo": "1"
+      }
+    },
+    {
+      "expr": "1/x**2",
+      "out": {
+        "integrate:x,1,oo": "1"
+      }
+    },
+    {
+      "expr": "x*exp(-x)",
+      "out": {
+        "integrate:x,0,oo": "1"
+      }
+    },
+    {
+      "expr": "1/(x**2+1)",
+      "out": {
+        "integrate:x,-oo,oo": "pi"
+      }
+    },
+    {
+      "expr": "sin(x)",
+      "out": {
+        "series:x": "x - x**3/6 + x**5/120 + O(x**6)"
+      }
+    },
+    {
+      "expr": "cos(x)",
+      "out": {
+        "series:x": "1 - x**2/2 + x**4/24 + O(x**6)"
+      }
+    },
+    {
+      "expr": "exp(x)",
+      "out": {
+        "series:x": "1 + x + x**2/2 + x**3/6 + x**4/24 + x**5/120 + O(x**6)"
+      }
+    },
+    {
+      "expr": "log(1+x)",
+      "out": {
+        "series:x": "x - x**2/2 + x**3/3 - x**4/4 + x**5/5 + O(x**6)"
+      }
+    },
+    {
+      "expr": "1/(1-x)",
+      "out": {
+        "series:x": "1 + x + x**2 + x**3 + x**4 + x**5 + O(x**6)"
+      }
+    },
+    {
+      "expr": "tan(x)",
+      "out": {
+        "series:x": "x + x**3/3 + 2*x**5/15 + O(x**6)"
+      }
+    },
+    {
+      "expr": "sqrt(1+x)",
+      "out": {
+        "series:x": "1 + x/2 - x**2/8 + x**3/16 - 5*x**4/128 + 7*x**5/256 + O(x**6)"
+      }
+    },
+    {
+      "expr": "sin(x)/x",
+      "out": {
+        "series:x": "1 - x**2/6 + x**4/120 + O(x**6)"
+      }
+    },
+    {
+      "expr": "1/sin(x)",
+      "out": {
+        "series:x": "1/x + x/6 + 7*x**3/360 + 31*x**5/15120 + O(x**6)"
+      }
+    },
+    {
+      "expr": "exp(x)",
+      "out": {
+        "series:x,1,3": "E + E*(x - 1) + E*(x - 1)**2/2 + O((x - 1)**3, (x, 1))"
+      }
+    },
+    {
+      "expr": "log(x)",
+      "out": {
+        "series:x,1,4": "-1 - (x - 1)**2/2 + (x - 1)**3/3 + x + O((x - 1)**4, (x, 1))"
+      }
+    },
+    {
+      "expr": "x*log(x)",
+      "out": {
+        "series:x": "x*log(x)"
+      }
+    },
+    {
+      "expr": "atan(x)",
+      "out": {
+        "series:x": "x - x**3/3 + x**5/5 + O(x**6)"
+      }
+    },
+    {
+      "expr": "exp(sin(x))",
+      "out": {
+        "series:x": "1 + x + x**2/2 - x**4/8 - x**5/15 + O(x**6)"
+      }
+    },
+    {
+      "expr": "cos(x)",
+      "out": {
+        "series:x,0,4": "1 - x**2/2 + O(x**4)"
+      }
+    },
+    {
+      "expr": "1/x",
+      "out": {
+        "series:x": "1/x"
+      }
+    },
+    {
+      "expr": "sin(x)",
+      "out": {
+        "series:x,0,10": "x - x**3/6 + x**5/120 - x**7/5040 + x**9/362880 + O(x**10)"
+      }
+    },
+    {
+      "expr": "exp(x)*sin(x)",
+      "out": {
+        "series:x": "x + x**2 + x**3/3 - x**5/30 + O(x**6)"
+      }
+    },
+    {
+      "expr": "(1+x)**y",
+      "out": {
+        "series:x,0,3": "1 + x*y + x**2*y*(y - 1)/2 + O(x**3)"
+      }
+    },
+    {
+      "expr": "sqrt(x)",
+      "out": {
+        "series:x": "sqrt(x)"
+      }
+    },
+    {
+      "expr": "x**2+x+1",
+      "out": {
+        "series:x": "x**2 + x + 1"
+      }
+    },
+    {
+      "expr": "1/(x**2+x)",
+      "out": {
+        "series:x": "1/x - 1 + x - x**2 + x**3 - x**4 + x**5 + O(x**6)"
+      }
+    },
+    {
+      "expr": "sin(x)",
+      "out": {
+        "series:x,pi/2,4": "1 - (x - pi/2)**2/2 + O((x - pi/2)**4, (x, pi/2))"
+      }
+    },
+    {
+      "expr": "cosh(x)",
+      "out": {
+        "series:x": "1 + x**2/2 + x**4/24 + O(x**6)"
+      }
+    },
+    {
+      "expr": "1/cos(x)",
+      "out": {
+        "series:x": "1 + x**2/2 + 5*x**4/24 + O(x**6)"
+      }
+    },
+    {
+      "expr": "log(cos(x))",
+      "out": {
+        "series:x": "-x**2/2 - x**4/12 + O(x**6)"
+      }
+    },
+    {
+      "expr": "exp(x)/(1-x)",
+      "out": {
+        "series:x,0,4": "1 + 2*x + 5*x**2/2 + 8*x**3/3 + O(x**4)"
+      }
+    },
+    {
+      "expr": "asin(x)",
+      "out": {
+        "series:x": "x + x**3/6 + 3*x**5/40 + O(x**6)"
+      }
     }
   ]
 }

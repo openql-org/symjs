@@ -99,11 +99,26 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
       (n) => [n, (args: Expr[]) => sj.fn(n, args)],
     ),
   ),
-  Integral: ([f, lim]) => {
-    if (lim instanceof Sym) return new Integral([f!, lim]);
-    throw new Unsupported('Integral limits');
-  },
+  Integral: (args) => integralNode(args),
+  Limit: (args) => new sj.Limit(args as Expr[]),
+  Order: ([e, ...rest]) => orderNode(e!, rest),
 };
+
+function integralNode(args: unknown[]): Expr {
+  const [f, lim] = args;
+  if (lim instanceof Sym) return new Integral([f as Expr, lim]);
+  if (lim instanceof PyTuple && lim.items.length === 3) return new Integral([f as Expr, ...(lim.items as Expr[])]);
+  if (lim instanceof PyTuple && lim.items.length === 1) return new Integral([f as Expr, lim.items[0] as Expr]);
+  throw new Unsupported('Integral limits');
+}
+
+function orderNode(e: unknown, rest: unknown[]): Expr {
+  const r = rest[0];
+  if (r === undefined) return sj.O(e as Expr);
+  if (r instanceof PyTuple && r.items.length === 2) return sj.O(e as Expr, r.items[0] as Sym, r.items[1] as Expr);
+  if (r instanceof Sym) return sj.O(e as Expr, r);
+  throw new Unsupported('Order arguments');
+}
 
 export function deserialize(tree: Tree): unknown {
   switch (tree.t) {
@@ -151,7 +166,7 @@ export function deserialize(tree: Tree): unknown {
     case 'Fn': {
       const f = FUNCTIONS[tree['name'] as string];
       if (!f) throw new Unsupported(`function ${tree['name']}`);
-      return f((tree['args'] as Tree[]).map((a) => deserialize(a) as Expr));
+      return f((tree['args'] as Tree[]).map((a) => deserialize(a)) as Expr[]);
     }
     case 'Tuple':
       return new PyTuple((tree['items'] as Tree[]).map(deserialize));
@@ -311,6 +326,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   together: exprFn(sj.together),
   cancel: exprFn(sj.cancel),
   trigsimp: exprFn(sj.trigsimp),
+  powsimp: exprFn(sj.powsimp),
   fraction: exprFn((e) => new PyTuple(sj.fraction(e))),
   diff: (args, kw) => (noKw(kw), diffArgs(asExpr(args[0]), args.slice(1))),
   integrate: (args, kw) => {
@@ -357,6 +373,28 @@ export const ADAPTERS: Record<string, Adapter> = {
     return Matrix.zeros(r!, c ?? r!);
   },
   diag: (args, kw) => (noKw(kw), Matrix.diag(...args.map(asExpr))),
+  limit: (args, kw) => {
+    const dir = (kw['dir'] as string | undefined) ?? (typeof args[3] === 'string' ? (args[3] as string) : '+');
+    for (const k of Object.keys(kw)) if (k !== 'dir') throw new Unsupported(`kwargs ${k}`);
+    return sj.limit(asExpr(args[0]), asSym(args[1]), asExpr(args[2]), dir as '+' | '-' | '+-');
+  },
+  Limit: (args, kw) => {
+    const dir = (kw['dir'] as string | undefined) ?? '+';
+    return new sj.Limit([asExpr(args[0]), asSym(args[1]), asExpr(args[2])], dir as '+' | '-' | '+-');
+  },
+  series: (args, kw) => {
+    const x0 = kw['x0'] ?? args[2] ?? 0;
+    const n = kw['n'] ?? args[3] ?? 6;
+    for (const k of Object.keys(kw)) if (k !== 'x0' && k !== 'n') throw new Unsupported(`kwargs ${k}`);
+    const e = asExpr(args[0]);
+    const syms = [...sj.freeSymbols(e)];
+    const x = args[1] ? asSym(args[1]) : syms.length === 1 ? syms[0]! : undefined;
+    if (!x) throw new Unsupported('series variable');
+    return sj.series(e, x, asExpr(x0), Number((asExpr(n) as sj.Rational).p));
+  },
+  O: (args, kw) => (noKw(kw), orderNode(asExpr(args[0]), args.slice(1))),
+  Order: (args, kw) => (noKw(kw), orderNode(asExpr(args[0]), args.slice(1))),
+  Integral: (args, kw) => (noKw(kw), integralNode([asExpr(args[0]), ...args.slice(1)])),
   det: (args, kw) => {
     noKw(kw);
     if (!(args[0] instanceof Matrix)) throw new Unsupported('det');
@@ -387,6 +425,24 @@ export const ADAPTERS: Record<string, Adapter> = {
     return diffArgs(asExpr(self), args);
   },
   '.integrate': (args, kw, self) => ADAPTERS['integrate']!([self, ...args], kw),
+  '.series': (args, kw, self) => ADAPTERS['series']!([self, ...args], kw),
+  '.limit': (args, kw, self) => ADAPTERS['limit']!([self, ...args], kw),
+  '.removeO': exprMethod((e) => (e instanceof sj.Add ? sj.add(...e.args.filter((a) => !(a instanceof sj.Order))) : e instanceof sj.Order ? S.Zero : e)),
+  '.doit': (args, kw, self) => {
+    noKw(kw);
+    if (args.length) throw new Unsupported('doit args');
+    const e = asExpr(self);
+    const doit = (x: Expr): Expr => {
+      const y = x.args.length ? sj.rebuild(x, x.args.map(doit)) : x;
+      if (y instanceof Integral) {
+        const [f, v, a, b] = y.args;
+        return a && b ? sj.integrate(f!, v as Sym, [a, b]) : sj.integrate(f!, v as Sym);
+      }
+      if (y instanceof sj.Limit) return sj.limit(y.args[0]!, y.args[1] as Sym, y.args[2]!, y.dir);
+      return y;
+    };
+    return doit(e);
+  },
   '.evalf': (args, kw, self) => {
     noKw(kw);
     if (args.length) throw new Unsupported('evalf precision');

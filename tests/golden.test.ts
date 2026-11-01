@@ -11,6 +11,8 @@ import {
   factor,
   integrate,
   Integral,
+  limit,
+  series,
   latex,
   parse,
   roots,
@@ -62,6 +64,14 @@ function runOp(op: string, e: Expr): string | string[] {
       return str(integrate(e, sym, [parse(lo, { symbols }), parse(hi, { symbols })]));
     }
     return str(integrate(e, sym));
+  }
+  if (op.startsWith('series:')) {
+    const [v, pt, n] = op.slice('series:'.length).split(',');
+    return str(series(e, symbols[v!]!, pt ? parse(pt, { symbols }) : 0, n ? Number(n) : 6));
+  }
+  if (op.startsWith('limit:')) {
+    const [v, pt, dir] = op.slice('limit:'.length).split(',');
+    return str(limit(e, symbols[v!] ?? new Sym(v!), parse(pt!, { symbols }), (dir as '+' | '-' | undefined) ?? '+'));
   }
   if (op === 'latex_integral') {
     return `${latex(new Integral([e, x]))} | ${latex(new Integral([e, x, parse('0'), parse('1')]))}`;

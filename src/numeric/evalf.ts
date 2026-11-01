@@ -21,6 +21,7 @@ import {
   Rational,
   Rel,
   S,
+  Special,
   Sym,
   impl,
 } from '../core/nodes';
@@ -96,6 +97,10 @@ function compile(e: Expr, resolve: (s: Sym) => Compiled): Compiled {
     const v = e.name === 'pi' ? c(Math.PI) : e.name === 'E' ? c(Math.E) : c(0, 1);
     return () => v;
   }
+  if (e instanceof Special) {
+    const v = { oo: c(Infinity), '-oo': c(-Infinity), zoo: c(Infinity, Infinity), nan: c(NaN) }[e.name];
+    return () => v;
+  }
   if (e instanceof Sym) return resolve(e);
   if (e instanceof Add) {
     const fs = e.args.map((a) => compile(a, resolve));
@@ -168,6 +173,12 @@ export function toComplex(ex: ExprLike, values?: NumericValues): C {
 }
 
 function fromComplex(v: C): Expr {
+  if (Number.isNaN(v.re) || Number.isNaN(v.im)) return S.NaN;
+  if (!Number.isFinite(v.im)) return S.ComplexInfinity;
+  if (!Number.isFinite(v.re)) {
+    if (v.im !== 0) return S.ComplexInfinity;
+    return v.re > 0 ? S.Infinity : S.NegativeInfinity;
+  }
   if (v.im === 0) return new Float(v.re);
   if (v.re === 0) return mul(new Float(v.im), S.I);
   return add(new Float(v.re), mul(new Float(v.im), S.I));

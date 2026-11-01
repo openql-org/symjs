@@ -17,6 +17,7 @@ import {
   Pow,
   Rational,
   S,
+  Special,
   impl,
   isNum,
 } from '../core/nodes';
@@ -144,7 +145,7 @@ const evalTan: Evaluator = (x) => {
     const s = sinOfPiMultiple(c);
     const co = cosOfPiMultiple(c);
     if (s && co) {
-      if (co instanceof Rational && co.isZero) throw new RangeError('tan: pole at odd multiple of pi/2');
+      if (co instanceof Rational && co.isZero) return S.ComplexInfinity;
       return mul(s, pow(co, -1));
     }
   }
@@ -178,6 +179,8 @@ const evalAcos: Evaluator = (x) => {
 };
 
 const evalAtan: Evaluator = (x) => {
+  if (x instanceof Special && x.name === 'oo') return mul(S.Half, S.Pi);
+  if (x instanceof Special && x.name === '-oo') return mul(S.NegHalf, S.Pi);
   if (x instanceof Rational && x.isZero) return S.Zero;
   if (x instanceof Rational && x.isOne) return mul(r(1, 4), S.Pi);
   if (x.equals(sqrt(3))) return mul(r(1, 3), S.Pi);
@@ -187,25 +190,30 @@ const evalAtan: Evaluator = (x) => {
 };
 
 const evalSinh: Evaluator = (x) => {
+  if (x instanceof Special && (x.name === 'oo' || x.name === '-oo')) return x;
   if (x instanceof Rational && x.isZero) return S.Zero;
   if (couldExtractMinusSign(x)) return neg(sinh(neg(x)));
   return undefined;
 };
 const evalCosh: Evaluator = (x) => {
+  if (x instanceof Special && (x.name === 'oo' || x.name === '-oo')) return S.Infinity;
   if (x instanceof Rational && x.isZero) return S.One;
   if (couldExtractMinusSign(x)) return cosh(neg(x));
   return undefined;
 };
 const evalTanh: Evaluator = (x) => {
+  if (x instanceof Special && x.name === 'oo') return S.One;
+  if (x instanceof Special && x.name === '-oo') return S.NegOne;
   if (x instanceof Rational && x.isZero) return S.Zero;
   if (couldExtractMinusSign(x)) return neg(tanh(neg(x)));
   return undefined;
 };
 
 const evalLog: Evaluator = (x) => {
+  if (x instanceof Special) return x.name === 'nan' ? S.NaN : S.Infinity;
   if (x instanceof Rational) {
     if (x.isOne) return S.Zero;
-    if (x.isZero) throw new RangeError('log(0) is undefined');
+    if (x.isZero) return S.ComplexInfinity;
     if (x.isNegative) return add(log(numNeg(x)), mul(S.I, S.Pi));
   }
   if (x instanceof Constant && x.name === 'E') return S.One;
@@ -216,6 +224,7 @@ const evalLog: Evaluator = (x) => {
 
 const evalAbs: Evaluator = (x) => {
   if (isNum(x)) return numAbs(x);
+  if (x instanceof Special) return x.name === 'nan' ? S.NaN : S.Infinity;
   if (isI(x)) return S.One;
   if (isNonNegative(x)) return x;
   if (isNegative(x)) return neg(x);

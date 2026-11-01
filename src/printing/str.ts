@@ -6,7 +6,7 @@
  * (e.g. `x**2 + 2*x*y - sqrt(2)/2`).
  */
 
-import { Add, BoolAtom, Constant, Expr, Float, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, Sym, impl, isNum } from '../core/nodes';
+import { Add, BoolAtom, Constant, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
 import { asOrderedFactors, asOrderedTerms, sympyFunctionName } from './sortkey';
 
@@ -20,6 +20,7 @@ const isExp = (e: Expr): boolean => e instanceof Pow && e.base instanceof Consta
 /** SymPy `could_extract_minus_sign` for printing purposes. */
 export function startsNegative(e: Expr): boolean {
   if (isNum(e)) return e.isNegative;
+  if (e instanceof Special) return e.name === '-oo';
   if (e instanceof Mul) {
     const c = e.args[0]!;
     return isNum(c) && c.isNegative;
@@ -34,6 +35,7 @@ export function precedence(e: Expr): number {
     return e.p < 0n ? PREC.ADD : PREC.MUL;
   }
   if (e instanceof Float) return e.value < 0 ? PREC.ADD : PREC.ATOM;
+  if (e instanceof Special) return e.name === '-oo' ? PREC.ADD : PREC.ATOM;
   if (e instanceof Add) return PREC.ADD;
   if (e instanceof Mul) return startsNegative(e) ? PREC.ADD : PREC.MUL;
   if (isExp(e)) return PREC.FUNC;
@@ -130,6 +132,7 @@ export function str(e: Expr): string {
   if (e instanceof Float) return floatString(e.value);
   if (e instanceof Sym) return e.name;
   if (e instanceof Constant) return e.name;
+  if (e instanceof Special) return e.name;
   if (e instanceof Fn) return `${sympyFunctionName(e.name)}(${e.args.map(str).join(', ')})`;
   if (e instanceof Add) return printAdd(e);
   if (e instanceof Mul) return printMul(e);
@@ -140,6 +143,15 @@ export function str(e: Expr): string {
     return `${parenthesize(e.lhs, PREC.REL)} ${REL_SYMBOL[e.op]} ${parenthesize(e.rhs, PREC.REL)}`;
   }
   if (e instanceof Piecewise) return `Piecewise(${e.pairs.map(([x, c]) => `(${str(x)}, ${str(c)})`).join(', ')})`;
+  if (e instanceof Limit) {
+    const [f, z, z0] = e.args;
+    return `Limit(${str(f!)}, ${str(z!)}, ${str(z0!)}, dir='${e.dir}')`;
+  }
+  if (e instanceof Order) {
+    const [x, v, p] = e.args;
+    if (!v || !p || (p instanceof Rational && p.isZero)) return `O(${str(x!)})`;
+    return `O(${str(x!)}, (${str(v)}, ${str(p)}))`;
+  }
   if (e instanceof Integral) {
     const lim = e.limits;
     const v = str(e.variable);
