@@ -1049,8 +1049,8 @@ export const ADAPTERS: Record<string, Adapter> = {
       if (sj.linearEqToMatrix(eqs, vars)) {
         const s = sj.linsolve(eqs, vars);
         if (!s) return new PyList([]);
-        if (s.some((v, i) => v.key === vars[i]!.key)) throw new Unsupported('underdetermined system');
-        return new PyDict(vars.map((v, i) => [v, s[i]!] as const));
+        // underdetermined: SymPy lists only the solved (pivot) symbols
+        return new PyDict(vars.map((v, i) => [v, s[i]!] as const).filter(([v, e]) => v.key !== e.key));
       }
       const sols = sj.nonlinsolve(eqs, vars);
       return new PyList(sols.map((t) => new PyDict(vars.map((v, i) => [v, t[i]!] as const))));
@@ -1064,7 +1064,15 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (e instanceof sj.Rel && e.op !== 'Eq' && e.op !== 'Ne') {
       return sj.reduceInequalities([e], args[1] instanceof Sym ? [args[1]] : []);
     }
-    if (args[1] instanceof PyTuple) throw new Unsupported('solve for several symbols');
+    if (args[1] instanceof PyTuple) {
+      // a single equation in several unknowns with other free symbols: undetermined coefficients
+      const coeffs = args[1].items.map(asSym);
+      const others = [...sj.freeSymbols(e)].filter((s) => !coeffs.some((c) => c.key === s.key));
+      if (!others.length) throw new Unsupported('solve for several symbols');
+      const sols = sj.solveUndeterminedCoeffs(e, coeffs, others as Sym[]);
+      if (sols.length !== 1) throw new Unsupported('solve for several symbols');
+      return new PyDict(coeffs.map((c, i) => [c, sols[0]![i]!] as const));
+    }
     const syms = [...sj.freeSymbols(e)];
     const x =
       args[1] instanceof Sym
