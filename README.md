@@ -3,12 +3,14 @@
 A computer algebra system (CAS) for TypeScript that aims for result compatibility with [SymPy](https://www.sympy.org/).
 It is intended as a general-purpose symbolic engine (in the spirit of Mathematica) for polynomial and symbolic computation, e.g. from [q5m.js](https://www.npmjs.com/package/@q5m/q5m).
 
-- Results and string/LaTeX output are checked against SymPy-generated expectations (`tests/golden/`)
-- Immutable expression trees with SymPy's automatic evaluation (collecting like terms, exact rationals, radical simplification, `I**2 = -1`, `exp(x)*exp(2*x) = exp(3*x)`, ...)
-- Elementary functions (sin/cos/tan/exp/log/Abs/re/im/conjugate, ...) with special-value evaluation
-- `expand` / `factor` / `simplify` / `trigsimp` / `together` / `cancel` / `diff`
-- Univariate polynomials (GCD, factorization, roots)
-- Symbolic matrices (product, Kronecker product, transpose/adjoint, determinant, inverse, eigenvalues)
+- Results and string/LaTeX output are checked against SymPy (golden tests and SymPy's own doctests, see below)
+- **Expressions**: immutable trees with SymPy's automatic evaluation, `oo`/`zoo`/`nan`, assumptions (real, positive, nonnegative, integer), undefined functions `Function('f')` and `Derivative`
+- **Manipulation**: `expand` (with SymPy's hints), `factor` (multivariate), `simplify`, `trigsimp`, `powsimp`, `radsimp`, `collect`, `together`, `cancel` (multivariate), algebraic `subs`, `xreplace`, and `Expr` methods such as `coeff`, `as_independent`, `as_content_primitive`, `primitive`, `is_polynomial`
+- **Functions**: elementary functions plus special/combinatorial functions (`gamma`, `polygamma`, `erf`, `Ei`, `Si`, `zeta`, `factorial`, `binomial`, `harmonic`, ...)
+- **Calculus**: `diff`, `integrate` (indefinite and definite, including infinite limits), `limit`, `series`/`O`, `Sum`/`Product`/`summation`
+- **Equations**: `solve`, `linsolve`, `nonlinsolve`, `solve_linear`, `solve_undetermined_coeffs`, `nsolve`, `dsolve` (first-order linear/separable, constant-coefficient linear ODEs of any order, undetermined coefficients, initial conditions)
+- **Polynomials**: `Poly` with SymPy's generators/domains/printing, multivariate `gcd`/`lcm`/division, `roots`, `resultant`, `discriminant`, `interpolate`, `horner`
+- **Linear algebra**: symbolic `Matrix` with determinant, inverse, `rref`, rank, null/column/row spaces, eigenvalues/eigenvectors, diagonalization, LU/QR/Cholesky/LDL, norms, singular values, pseudo-inverse, Kronecker product
 - Numeric evaluation (`toComplex` / `evalf` / `lambdify`), a parser and the `ex` tagged template
 
 ## Usage
@@ -64,6 +66,9 @@ python3 scripts/gen_golden.py tests/golden/cases.json tests/golden/expected.json
 
 ## Current limitations
 
-- Polynomial GCD in `cancel` supports univariate rational functions only
-- `roots` handles any degree with rational coefficients (rational roots + quadratic factors) and degree <= 2 with symbolic coefficients
-- Integration, limits, series expansion and systems of equations are not implemented yet
+See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable gaps:
+
+- Arbitrary-precision numerics (`evalf(n)`, `Float(..., dps)`): numeric evaluation is double precision
+- Pattern matching (`Wild`, `match`, `replace`) and most `rewrite` targets
+- Sets, inequalities (`solveset`, `reduce_inequalities`), `RootOf` and cubic/quartic formulas
+- Non-commutative symbols and the quantum module (`sympy.physics.quantum`) are not ported yet
