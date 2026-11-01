@@ -127,6 +127,8 @@ def ser(o):
     from sympy.core.function import UndefinedFunction as _UF
     if isinstance(o, _UF):
         return {"t": "UFnClass", "name": o.__name__}
+    if isinstance(o, sympy.polys.polytools.GroebnerBasis):
+        return {"t": "Groebner", "exprs": [ser(e) for e in o.exprs], "gens": [ser(g) for g in o.gens], "order": str(o.order)}
     if isinstance(o, sympy.Poly):
         return {"t": "Poly", "expr": ser(o.as_expr()), "gens": [ser(g) for g in o.gens], "domain": str(o.get_domain()), "pure": isinstance(o, sympy.PurePoly)}
     if isinstance(o, type) and issubclass(o, Basic) and not isinstance(o, sympy.FunctionClass):

@@ -4799,7 +4799,7 @@
    "category": "core",
    "module": "sympy.core.expr",
    "src": "(-2*x*y).args_cnc(cset=True)",
-   "expected": "[{2, y, -1, x}, []]"
+   "expected": "[{y, 2, x, -1}, []]"
   },
   {
    "fn": ".args_cnc",
@@ -14153,7 +14153,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms()",
-   "expected": "{1, 2, pi, I, y, x}"
+   "expected": "{1, 2, pi, x, I, y}"
   },
   {
    "fn": ".atoms",
@@ -14221,7 +14221,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Symbol)",
-   "expected": "{x, y}"
+   "expected": "{y, x}"
   },
   {
    "fn": ".atoms",
@@ -14506,7 +14506,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(x) # x is a Symbol",
-   "expected": "{x, y}"
+   "expected": "{y, x}"
   },
   {
    "fn": ".atoms",
@@ -14860,7 +14860,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Mul)",
-   "expected": "{2*sin(y + I*pi), I*pi}"
+   "expected": "{I*pi, 2*sin(y + I*pi)}"
   },
   {
    "fn": ".compare",
@@ -15023,7 +15023,7 @@
        {
         "t": "Dummy",
         "name": "u",
-        "index": 2026409,
+        "index": 5828323,
         "assume": {}
        },
        {
@@ -15084,7 +15084,7 @@
        {
         "t": "Dummy",
         "name": "u",
-        "index": 2026409,
+        "index": 5828323,
         "assume": {}
        },
        {
@@ -15150,7 +15150,7 @@
        {
         "t": "Dummy",
         "name": "u",
-        "index": 2026409,
+        "index": 5828323,
         "assume": {}
        },
        {
@@ -25795,7 +25795,7 @@
         {
          "t": "Dummy",
          "name": "x",
-         "index": 2026534,
+         "index": 5828447,
          "assume": {}
         },
         {
@@ -25811,7 +25811,7 @@
      {
       "t": "Dummy",
       "name": "x",
-      "index": 2026534,
+      "index": 5828447,
       "assume": {}
      }
     ],
@@ -25881,7 +25881,7 @@
         {
          "t": "Dummy",
          "name": "x",
-         "index": 2026539,
+         "index": 5828452,
          "assume": {}
         },
         {
@@ -25897,7 +25897,7 @@
      {
       "t": "Dummy",
       "name": "x",
-      "index": 2026539,
+      "index": 5828452,
       "assume": {}
      }
     ],
@@ -26190,7 +26190,7 @@
           {
            "t": "Dummy",
            "name": "x",
-           "index": 2026558,
+           "index": 5828471,
            "assume": {}
           },
           {
@@ -26213,7 +26213,7 @@
         {
          "t": "Dummy",
          "name": "x",
-         "index": 2026558,
+         "index": 5828471,
          "assume": {}
         }
        ]
@@ -26224,7 +26224,7 @@
      {
       "t": "Dummy",
       "name": "x",
-      "index": 2026558,
+      "index": 5828471,
       "assume": {}
      }
     ],
@@ -26262,7 +26262,7 @@
         {
          "t": "Dummy",
          "name": "x",
-         "index": 2026555,
+         "index": 5828468,
          "assume": {}
         },
         {
@@ -26286,7 +26286,7 @@
           {
            "t": "Dummy",
            "name": "x",
-           "index": 2026555,
+           "index": 5828468,
            "assume": {}
           },
           {
@@ -26304,7 +26304,7 @@
      {
       "t": "Dummy",
       "name": "x",
-      "index": 2026555,
+      "index": 5828468,
       "assume": {}
      }
     ],
@@ -26342,7 +26342,7 @@
         {
          "t": "Dummy",
          "name": "x",
-         "index": 2026559,
+         "index": 5828472,
          "assume": {}
         },
         {
@@ -26358,7 +26358,7 @@
      {
       "t": "Dummy",
       "name": "x",
-      "index": 2026559,
+      "index": 5828472,
       "assume": {}
      }
     ],
@@ -27548,7 +27548,7 @@
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "Dummy() #doctest: +SKIP",
-   "expected": "_Dummy_1049"
+   "expected": "_Dummy_1053"
   },
   {
    "fn": ".match",
@@ -28248,7 +28248,7 @@
        {
         "t": "Dummy",
         "name": "x",
-        "index": 2026612,
+        "index": 5828525,
         "assume": {}
        }
       ]
@@ -28261,14 +28261,13 @@
      "items": [
       [
        {
-        "t": "Dummy",
-        "name": "x",
-        "index": 2026612,
+        "t": "Symbol",
+        "name": "y",
         "assume": {}
        },
        {
         "t": "Symbol",
-        "name": "x",
+        "name": "y",
         "assume": {}
        }
       ],
@@ -28286,13 +28285,14 @@
       ],
       [
        {
-        "t": "Symbol",
-        "name": "y",
+        "t": "Dummy",
+        "name": "x",
+        "index": 5828525,
         "assume": {}
        },
        {
         "t": "Symbol",
-        "name": "y",
+        "name": "x",
         "assume": {}
        }
       ]
@@ -28413,11 +28413,11 @@
       },
       {
        "t": "Str",
-       "v": "a"
+       "v": "c"
       },
       {
        "t": "Str",
-       "v": "c"
+       "v": "a"
       }
      ]
     }
@@ -28426,7 +28426,7 @@
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "symbols({'a', 'b', 'c'})",
-   "expected": "{a, c, b}"
+   "expected": "{c, b, a}"
   },
   {
    "fn": "symbols",
@@ -32756,8 +32756,8 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_1094",
-         "index": 2026634,
+         "name": "Dummy_1095",
+         "index": 5828544,
          "assume": {
           "real": true
          }
@@ -33442,7 +33442,7 @@
    "category": "functions",
    "module": "sympy.functions.elementary.complexes",
    "src": "polarify(expr)",
-   "expected": "((_x*exp_polar(I*pi))**_y, {_x: x, _y: y})"
+   "expected": "((_x*exp_polar(I*pi))**_y, {_y: y, _x: x})"
   },
   {
    "fn": ".expand",
@@ -33455,7 +33455,7 @@
        {
         "t": "Dummy",
         "name": "x",
-        "index": 2026639,
+        "index": 5828550,
         "assume": {}
        },
        {
@@ -33482,7 +33482,7 @@
      {
       "t": "Dummy",
       "name": "y",
-      "index": 2026640,
+      "index": 5828549,
       "assume": {}
      }
     ]
@@ -40106,7 +40106,7 @@
        {
         "t": "Dummy",
         "name": "x",
-        "index": 2026751,
+        "index": 5828660,
         "assume": {
          "positive": true,
          "commutative": true
@@ -40145,7 +40145,7 @@
        {
         "t": "Dummy",
         "name": "x",
-        "index": 2026752,
+        "index": 5828661,
         "assume": {
          "positive": true,
          "commutative": true
@@ -40163,7 +40163,7 @@
        {
         "t": "Dummy",
         "name": "x",
-        "index": 2026752,
+        "index": 5828661,
         "assume": {
          "positive": true,
          "commutative": true
@@ -48572,7 +48572,7 @@
              {
               "t": "Dummy",
               "name": "w",
-              "index": 2027686,
+              "index": 5829596,
               "assume": {}
              }
             ]
@@ -48581,7 +48581,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 2027686,
+             "index": 5829596,
              "assume": {}
             }
            ],
@@ -48598,7 +48598,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027685,
+               "index": 5829595,
                "assume": {}
               }
              ]
@@ -48620,7 +48620,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027685,
+               "index": 5829595,
                "assume": {}
               }
              ]
@@ -48644,7 +48644,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 2027685,
+                 "index": 5829595,
                  "assume": {}
                 }
                ]
@@ -48718,7 +48718,7 @@
              {
               "t": "Dummy",
               "name": "w",
-              "index": 2027688,
+              "index": 5829598,
               "assume": {}
              }
             ]
@@ -48727,7 +48727,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 2027688,
+             "index": 5829598,
              "assume": {}
             }
            ],
@@ -48744,7 +48744,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027687,
+               "index": 5829597,
                "assume": {}
               }
              ]
@@ -48766,7 +48766,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027687,
+               "index": 5829597,
                "assume": {}
               }
              ]
@@ -48790,7 +48790,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 2027687,
+                 "index": 5829597,
                  "assume": {}
                 }
                ]
@@ -48867,7 +48867,7 @@
                {
                 "t": "Dummy",
                 "name": "w",
-                "index": 2027690,
+                "index": 5829600,
                 "assume": {}
                },
                {
@@ -48880,7 +48880,7 @@
              {
               "t": "Dummy",
               "name": "w",
-              "index": 2027690,
+              "index": 5829600,
               "assume": {}
              }
             ]
@@ -48889,7 +48889,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 2027690,
+             "index": 5829600,
              "assume": {}
             }
            ],
@@ -48906,7 +48906,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027689,
+               "index": 5829599,
                "assume": {}
               }
              ]
@@ -49015,7 +49015,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 2027689,
+                 "index": 5829599,
                  "assume": {}
                 }
                ]
@@ -49034,7 +49034,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027689,
+               "index": 5829599,
                "assume": {}
               }
              ]
@@ -49058,7 +49058,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 2027689,
+                 "index": 5829599,
                  "assume": {}
                 }
                ]
@@ -49132,7 +49132,7 @@
              {
               "t": "Dummy",
               "name": "w",
-              "index": 2027692,
+              "index": 5829602,
               "assume": {}
              }
             ]
@@ -49141,7 +49141,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 2027692,
+             "index": 5829602,
              "assume": {}
             }
            ],
@@ -49158,7 +49158,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027691,
+               "index": 5829601,
                "assume": {}
               }
              ]
@@ -49180,7 +49180,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027691,
+               "index": 5829601,
                "assume": {}
               }
              ]
@@ -49204,7 +49204,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 2027691,
+                 "index": 5829601,
                  "assume": {}
                 }
                ]
@@ -49239,7 +49239,7 @@
                {
                 "t": "Dummy",
                 "name": "w",
-                "index": 2027692,
+                "index": 5829602,
                 "assume": {}
                },
                {
@@ -49255,7 +49255,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 2027692,
+             "index": 5829602,
              "assume": {}
             }
            ],
@@ -49272,7 +49272,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027691,
+               "index": 5829601,
                "assume": {}
               }
              ]
@@ -49296,7 +49296,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 2027691,
+                 "index": 5829601,
                  "assume": {}
                 }
                ]
@@ -49315,7 +49315,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027691,
+               "index": 5829601,
                "assume": {}
               }
              ]
@@ -49339,7 +49339,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 2027691,
+                 "index": 5829601,
                  "assume": {}
                 }
                ]
@@ -49371,7 +49371,7 @@
              {
               "t": "Dummy",
               "name": "w",
-              "index": 2027692,
+              "index": 5829602,
               "assume": {}
              }
             ]
@@ -49380,7 +49380,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 2027692,
+             "index": 5829602,
              "assume": {}
             }
            ],
@@ -49397,7 +49397,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027691,
+               "index": 5829601,
                "assume": {}
               }
              ]
@@ -49419,7 +49419,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027691,
+               "index": 5829601,
                "assume": {}
               }
              ]
@@ -49443,7 +49443,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 2027691,
+                 "index": 5829601,
                  "assume": {}
                 }
                ]
@@ -49517,7 +49517,7 @@
              {
               "t": "Dummy",
               "name": "w",
-              "index": 2027694,
+              "index": 5829604,
               "assume": {}
              }
             ]
@@ -49526,7 +49526,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 2027694,
+             "index": 5829604,
              "assume": {}
             }
            ],
@@ -49543,7 +49543,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027693,
+               "index": 5829603,
                "assume": {}
               }
              ]
@@ -49565,7 +49565,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027693,
+               "index": 5829603,
                "assume": {}
               }
              ]
@@ -49589,7 +49589,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 2027693,
+                 "index": 5829603,
                  "assume": {}
                 }
                ]
@@ -49624,7 +49624,7 @@
                {
                 "t": "Dummy",
                 "name": "w",
-                "index": 2027694,
+                "index": 5829604,
                 "assume": {}
                },
                {
@@ -49640,7 +49640,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 2027694,
+             "index": 5829604,
              "assume": {}
             }
            ],
@@ -49657,7 +49657,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027693,
+               "index": 5829603,
                "assume": {}
               }
              ]
@@ -49681,7 +49681,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 2027693,
+                 "index": 5829603,
                  "assume": {}
                 }
                ]
@@ -49700,7 +49700,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027693,
+               "index": 5829603,
                "assume": {}
               }
              ]
@@ -49724,7 +49724,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 2027693,
+                 "index": 5829603,
                  "assume": {}
                 }
                ]
@@ -49756,7 +49756,7 @@
              {
               "t": "Dummy",
               "name": "w",
-              "index": 2027694,
+              "index": 5829604,
               "assume": {}
              }
             ]
@@ -49765,7 +49765,7 @@
             {
              "t": "Dummy",
              "name": "w",
-             "index": 2027694,
+             "index": 5829604,
              "assume": {}
             }
            ],
@@ -49782,7 +49782,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027693,
+               "index": 5829603,
                "assume": {}
               }
              ]
@@ -49804,7 +49804,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027693,
+               "index": 5829603,
                "assume": {}
               }
              ]
@@ -49828,7 +49828,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 2027693,
+                 "index": 5829603,
                  "assume": {}
                 }
                ]
@@ -49952,7 +49952,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027698,
+               "index": 5829608,
                "assume": {}
               }
              ]
@@ -49968,7 +49968,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027698,
+               "index": 5829608,
                "assume": {}
               }
              ]
@@ -49985,7 +49985,7 @@
               {
                "t": "Dummy",
                "name": "a",
-               "index": 2027698,
+               "index": 5829608,
                "assume": {}
               }
              ]
@@ -50009,7 +50009,7 @@
                 {
                  "t": "Dummy",
                  "name": "a",
-                 "index": 2027698,
+                 "index": 5829608,
                  "assume": {}
                 }
                ]
@@ -50038,7 +50038,187 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "GroebnerBasis",
+   "self": {
+    "t": "Groebner",
+    "exprs": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "4",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "y",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "gens": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     }
+    ],
+    "order": "lex"
+   },
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "G.contains(f)",
@@ -50046,7 +50226,192 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "GroebnerBasis",
+   "self": {
+    "t": "Groebner",
+    "exprs": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "4",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "y",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "gens": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     }
+    ],
+    "order": "lex"
+   },
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "G.contains(f + 1)",
@@ -50054,7 +50419,182 @@
   },
   {
    "fn": ".reduce",
-   "unsupportedArg": "GroebnerBasis",
+   "self": {
+    "t": "Groebner",
+    "exprs": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "gens": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     }
+    ],
+    "order": "lex"
+   },
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "4",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "G.reduce(f)",
@@ -50062,7 +50602,199 @@
   },
   {
    "fn": ".reduce",
-   "unsupportedArg": "GroebnerBasis",
+   "self": {
+    "t": "Groebner",
+    "exprs": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "gens": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     }
+    ],
+    "order": "lex"
+   },
+   "args": [
+    {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "domain": "ZZ",
+     "pure": false
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "G.reduce(f_poly)",
@@ -50890,7 +51622,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x1089c24a0>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a0e8640>, 3)"
   },
   {
    "fn": ".LC",
@@ -51097,7 +51829,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x1089c2dd0>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a1ee080>, 4)"
   },
   {
    "fn": ".TC",
@@ -86150,7 +86882,7 @@
        {
         "t": "Dummy",
         "name": "n",
-        "index": 2032950,
+        "index": 5834872,
         "assume": {
          "positive": true,
          "integer": true
@@ -86172,7 +86904,7 @@
          {
           "t": "Dummy",
           "name": "n",
-          "index": 2032950,
+          "index": 5834872,
           "assume": {
            "positive": true,
            "integer": true
@@ -86199,7 +86931,7 @@
            {
             "t": "Dummy",
             "name": "n",
-            "index": 2032950,
+            "index": 5834872,
             "assume": {
              "positive": true,
              "integer": true
@@ -86229,7 +86961,7 @@
                {
                 "t": "Dummy",
                 "name": "n",
-                "index": 2032950,
+                "index": 5834872,
                 "assume": {
                  "positive": true,
                  "integer": true
@@ -86255,7 +86987,7 @@
              {
               "t": "Dummy",
               "name": "n",
-              "index": 2032950,
+              "index": 5834872,
               "assume": {
                "positive": true,
                "integer": true
@@ -86281,7 +87013,7 @@
            {
             "t": "Dummy",
             "name": "n",
-            "index": 2032950,
+            "index": 5834872,
             "assume": {
              "positive": true,
              "integer": true
@@ -86311,7 +87043,7 @@
                {
                 "t": "Dummy",
                 "name": "n",
-                "index": 2032950,
+                "index": 5834872,
                 "assume": {
                  "positive": true,
                  "integer": true
@@ -86340,7 +87072,7 @@
                {
                 "t": "Dummy",
                 "name": "n",
-                "index": 2032950,
+                "index": 5834872,
                 "assume": {
                  "positive": true,
                  "integer": true
@@ -86366,7 +87098,7 @@
              {
               "t": "Dummy",
               "name": "n",
-              "index": 2032950,
+              "index": 5834872,
               "assume": {
                "positive": true,
                "integer": true
@@ -106623,7 +107355,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3) # doctest:+SKIP",
-   "expected": "Matrix([[27, 38, 95], [78, 63, 29], [61, 2, 96]])"
+   "expected": "Matrix([[16, 30, 92], [14, 45, 76], [23, 69, 91]])"
   },
   {
    "fn": "randMatrix",
@@ -106643,7 +107375,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, 2) # doctest:+SKIP",
-   "expected": "Matrix([[6, 93], [44, 88], [67, 83]])"
+   "expected": "Matrix([[27, 90], [24, 81], [2, 2]])"
   },
   {
    "fn": "randMatrix",
@@ -106673,7 +107405,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, 3, 0, 2) # doctest:+SKIP",
-   "expected": "Matrix([[1, 2, 0], [2, 1, 0], [1, 0, 0]])"
+   "expected": "Matrix([[1, 0, 2], [2, 2, 2], [1, 1, 0]])"
   },
   {
    "fn": "randMatrix",
@@ -106693,7 +107425,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, symmetric=True) # doctest:+SKIP",
-   "expected": "Matrix([[98, 47, 78], [47, 67, 38], [78, 38, 25]])"
+   "expected": "Matrix([[62, 79, 95], [79, 13, 46], [95, 46, 81]])"
   },
   {
    "fn": "randMatrix",
@@ -106718,7 +107450,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, symmetric=True, percent=50) # doctest:+SKIP",
-   "expected": "Matrix([[0, 0, 23], [0, 0, 96], [23, 96, 0]])"
+   "expected": "Matrix([[34, 69, 0], [69, 94, 0], [0, 0, 0]])"
   },
   {
    "fn": "rot_axis1",
@@ -110960,7 +111692,7 @@
                {
                 "t": "Dummy",
                 "name": "k",
-                "index": 2039456,
+                "index": 5841446,
                 "assume": {}
                }
               ]
@@ -110990,7 +111722,7 @@
                  {
                   "t": "Dummy",
                   "name": "k",
-                  "index": 2039456,
+                  "index": 5841446,
                   "assume": {}
                  }
                 ]
@@ -111007,7 +111739,7 @@
            {
             "t": "Dummy",
             "name": "k",
-            "index": 2039456,
+            "index": 5841446,
             "assume": {}
            },
            {
@@ -111060,7 +111792,7 @@
                {
                 "t": "Dummy",
                 "name": "k",
-                "index": 2039456,
+                "index": 5841446,
                 "assume": {}
                }
               ]
@@ -111080,7 +111812,7 @@
            {
             "t": "Dummy",
             "name": "k",
-            "index": 2039456,
+            "index": 5841446,
             "assume": {}
            },
            {
@@ -112927,7 +113659,7 @@
              {
               "t": "Dummy",
               "name": "k",
-              "index": 2039669,
+              "index": 5841665,
               "assume": {}
              }
             ]
@@ -112942,7 +113674,7 @@
          {
           "t": "Dummy",
           "name": "k",
-          "index": 2039669,
+          "index": 5841665,
           "assume": {}
          },
          {
@@ -113032,7 +113764,7 @@
              {
               "t": "Dummy",
               "name": "k",
-              "index": 2039677,
+              "index": 5841673,
               "assume": {}
              }
             ]
@@ -113047,7 +113779,7 @@
          {
           "t": "Dummy",
           "name": "k",
-          "index": 2039677,
+          "index": 5841673,
           "assume": {}
          },
          {
@@ -113137,7 +113869,7 @@
              {
               "t": "Dummy",
               "name": "k",
-              "index": 2039680,
+              "index": 5841677,
               "assume": {}
              }
             ]
@@ -113152,7 +113884,7 @@
          {
           "t": "Dummy",
           "name": "k",
-          "index": 2039680,
+          "index": 5841677,
           "assume": {}
          },
          {

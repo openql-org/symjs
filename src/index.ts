@@ -237,6 +237,8 @@ export { dsolve, odeOrder } from './solvers/ode';
 // numerics
 export { piecewiseIntegrate } from './integrals/integrate';
 export { apart } from './polys/partfrac';
+export { groebner, GroebnerBasis } from './polys/groebner';
+export type { MonomialOrder } from './polys/groebner';
 export { evalf, evalfPrec, toComplex, lambdify } from './numeric/evalf';
 export { float } from './numeric/floatctor';
 export { round } from './numeric/round';

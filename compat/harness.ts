@@ -54,6 +54,7 @@ export function fmt(v: unknown): string {
   if (v instanceof Expr) return sj.str(v);
   if (v instanceof Matrix) return v.toString();
   if (v instanceof sj.Poly) return v.toString();
+  if (v instanceof sj.GroebnerBasis) return v.toString();
   if (v === -Infinity) return '-oo';
   if (typeof v === 'boolean') return v ? 'True' : 'False';
   if (v === null || v === undefined) return 'None';
@@ -250,6 +251,13 @@ export function deserialize(tree: Tree): unknown {
       if (tree['op'] === 'Intersection') return sj.intersection(...xs);
       return sj.complement(xs[0]!, xs[1]!);
     }
+    case 'Groebner':
+      return new sj.GroebnerBasis(
+        (tree['exprs'] as Tree[]).map((e) => deserialize(e) as Expr),
+        (tree['gens'] as Tree[]).map((g) => deserialize(g) as Sym),
+        'ZZ',
+        tree['order'] as sj.MonomialOrder,
+      );
     case 'PySet':
       return new PySet((tree['items'] as Tree[]).map(deserialize));
     case 'BoolOp': {
@@ -610,7 +618,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.open': (args, kw, self) => typeMethod(self, 'Interval', () => sj.interval(asExpr(args[0]), asExpr(args[1]), true, true), kw),
   '.Lopen': (args, kw, self) => typeMethod(self, 'Interval', () => sj.interval(asExpr(args[0]), asExpr(args[1]), true, false), kw),
   '.Ropen': (args, kw, self) => typeMethod(self, 'Interval', () => sj.interval(asExpr(args[0]), asExpr(args[1]), false, true), kw),
-  '.contains': (args, kw, self) => (noKw(kw), sj.contains(asSet(self), asExpr(args[0]))),
+  '.contains': (args, kw, self) => (noKw(kw), self instanceof sj.GroebnerBasis ? self.contains(asExpr(args[0])) : sj.contains(asSet(self), asExpr(args[0]))),
   '.intersect': (args, kw, self) => (noKw(kw), sj.intersection(asSet(self), asSet(args[0]))),
   '.union': (args, kw, self) => (noKw(kw), sj.union(asSet(self), asSet(args[0]))),
   '.is_subset': (args, kw, self) => (noKw(kw), sj.isSubset(asSet(self), asSet(args[0])) ?? null),
@@ -699,6 +707,20 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (self instanceof sj.Rational && args[0] instanceof sj.Rational) return sj.modInverse(self, args[0]);
     if (self instanceof sj.Poly) return self.invert(args[0] as sj.Poly);
     throw new Unsupported('invert');
+  },
+  groebner: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['order', 'method'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const F = (args[0] as PyList).items.map(asExpr);
+    const gens = args.slice(1).map(asSym);
+    return sj.groebner(F, gens.length ? gens : (sj.sortGens([...sj.freeSymbols(sj.add(...F))]) as Sym[]), (kw['order'] as sj.MonomialOrder | undefined) ?? 'lex');
+  },
+  '.reduce': (args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof sj.GroebnerBasis)) throw new Unsupported('reduce');
+    const isPoly = args[0] instanceof sj.Poly;
+    const [qs, r] = self.reduce(isPoly ? (args[0] as sj.Poly).asExpr() : asExpr(args[0]));
+    const wrap = (e: Expr) => (isPoly ? sj.Poly.from(e, self.gens, { domain: 'ZZ' }) : e);
+    return new PyTuple([new PyList(qs.map(wrap)), wrap(r)]);
   },
   apart: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'full' || kw[k]) throw new Unsupported(`kwargs ${k}`);
