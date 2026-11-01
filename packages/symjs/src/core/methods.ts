@@ -6,10 +6,10 @@
  * as_coeff_add/mul, primitive, as_content_primitive, extract_*, is_polynomial, ...).
  */
 
-import { isZero as isZeroQ } from './assumptions';
+import { isIntegerQ, isNegative as isNegativeQ, isPositive, isReal, isZero as isZeroQ } from './assumptions';
 import { Add, Constant, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Special, Sym, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
-import { add, mul, pow, splitCoeff, sympify } from './ops';
+import { add, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
 import { freeSymbols, xreplace as xreplaceM } from './traverse';
 import { diff } from '../calculus/diff';
 import { abs, arg, im, log, re } from '../functions/elementary';
@@ -501,19 +501,74 @@ export function asRealImag(eIn: ExprLike): [Expr, Expr] {
   return [re(e), im(e)];
 }
 
-/** SymPy `as_numer_denom()`. */
+/** SymPy `as_numer_denom()` (port of the Add, Mul and Pow methods). */
 export function asNumerDenom(eIn: ExprLike): [Expr, Expr] {
   const e = sympify(eIn);
-  const n: Expr[] = [];
-  const d: Expr[] = [];
-  for (const f of mulArgs(e)) {
-    if (f instanceof Rational) {
-      n.push(Rational.of(f.p));
-      d.push(Rational.of(f.q));
-    } else if (f instanceof Pow && splitCoeff(f.exp)[0].isNegative) d.push(pow(f.base, mul(-1, f.exp)));
-    else n.push(f);
+  if (!e.isCommutative) return [e, S.One];
+  if (e instanceof Rational) return [Rational.of(e.p), Rational.of(e.q)];
+  if (e instanceof Mul) {
+    const ns: Expr[] = [];
+    const ds: Expr[] = [];
+    for (const f of e.args) {
+      const [ni, di] = asNumerDenom(f);
+      ns.push(ni);
+      ds.push(di);
+    }
+    return [mul(...ns), mul(...ds)];
   }
-  return [mul(...n), mul(...d)];
+  if (e instanceof Pow) {
+    let ex = e.exp;
+    const base = e.base;
+    if (base instanceof Constant && base.name === 'E') {
+      // exp(x).as_numer_denom(): a negative exponent goes to the denominator
+      const neg = isNegativeQ(ex) === true || (ex instanceof Mul && isNegativeQ(ex) === undefined && isPositive(ex) === undefined && couldExtractMinusSign(ex));
+      return neg ? [S.One, pow(base, mul(-1, ex))] : [e, S.One];
+    }
+    let [n, d] = asNumerDenom(base);
+    let negExp = isNegativeQ(ex) === true;
+    if (ex instanceof Mul && !negExp && isPositive(ex) !== true) negExp = couldExtractMinusSign(ex);
+    const intExp = isIntegerQ(ex) === true;
+    if (!(isReal(d) === true || intExp)) {
+      n = base;
+      d = S.One;
+    }
+    const dnonpos = isNegativeQ(d) === true || isZeroQ(d) === true ? true : isPositive(d) === true ? false : undefined;
+    if (dnonpos === true) {
+      n = mul(-1, n);
+      d = mul(-1, d);
+    } else if (dnonpos === undefined && !intExp) {
+      n = base;
+      d = S.One;
+    }
+    if (negExp) {
+      [n, d] = [d, n];
+      ex = mul(-1, ex);
+    }
+    return [pow(n, ex), pow(d, ex)];
+  }
+  if (e instanceof Add) {
+    const [content, expr] = primitive(e);
+    if (!(expr instanceof Add)) return asNumerDenom(mul(content, expr));
+    const ncon = Rational.of(content.p);
+    const dcon = Rational.of(content.q);
+    const nd = new Map<string, [Expr, Expr[]]>();
+    for (const f of expr.args) {
+      const [ni, di] = asNumerDenom(f);
+      const cur = nd.get(di.key);
+      if (cur) cur[1].push(ni);
+      else nd.set(di.key, [di, [ni]]);
+    }
+    const groups = [...nd.values()];
+    if (groups.length === 1) {
+      const [d, ns] = groups[0]!;
+      return [add(...ns.map((ni) => keepCoeff(ncon, ni))), keepCoeff(dcon, d)];
+    }
+    const denoms = groups.map(([d]) => d);
+    const numers = groups.map(([, ns]) => (ns.length === 1 ? ns[0]! : add(...ns)));
+    const n = add(...numers.map((ni, i) => mul(...denoms.slice(0, i), ni, ...denoms.slice(i + 1))));
+    return [keepCoeff(ncon, n), keepCoeff(dcon, mul(...denoms))];
+  }
+  return [e, S.One];
 }
 
 /** Atoms of the expression, optionally filtered by a predicate. */
