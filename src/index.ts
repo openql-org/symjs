@@ -337,7 +337,7 @@ export {
   modInverse,
   limitDenominator,
 } from './core/numberutils';
-export { nfloat, comp } from './numeric/nfloat';
+export { nfloat, comp, nsimplify } from './numeric/nfloat';
 export { leadterm, asLeadingTerm, getn, extractLeadingOrder } from './series/series';
 export { finiteDiffWeights, asFiniteDifference } from './calculus/finitediff';
 export { sqrtdenest } from './simplify/sqrtdenest';

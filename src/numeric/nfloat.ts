@@ -11,6 +11,7 @@ import { rebuild, xreplace } from '../core/traverse';
 import { evalf } from './evalf';
 import { float } from './floatctor';
 import * as F from './mpf';
+import { limitDenominator } from '../core/numberutils';
 
 /** Make all rationals Floats, keeping exponents exact unless exponent=true. */
 export function nfloat(exIn: ExprLike, n = 15, exponent = false): Expr {
@@ -81,4 +82,64 @@ function floats(e: Expr): Float[] {
   return out;
 }
 
+
+
+/** Simplest rational within a relative tolerance of v (continued fractions). */
+function simpleRational(v: number, rtol: number): Rational | undefined {
+  if (!Number.isFinite(v)) return undefined;
+  const sign = v < 0 ? -1n : 1n;
+  let x = Math.abs(v);
+  let [h0, h1, k0, k1] = [0n, 1n, 1n, 0n];
+  for (let i = 0; i < 40; i++) {
+    const a = Math.floor(x);
+    const A = BigInt(a);
+    [h0, h1] = [h1, A * h1 + h0];
+    [k0, k1] = [k1, A * k1 + k0];
+    const approx = Number(h1) / Number(k1);
+    if (Math.abs(approx - Math.abs(v)) <= rtol * Math.max(1, Math.abs(v))) return Rational.of(sign * h1, k1);
+    const frac = x - a;
+    if (frac < 1e-300) break;
+    x = 1 / frac;
+  }
+  return undefined;
+}
+
+/**
+ * Replace Floats by simple rationals (the rational part of SymPy nsimplify):
+ * `tolerance` bounds the error, `rational: true` with `rationalConversion:
+ * 'exact'` uses the exact binary value.
+ */
+export function nsimplify(exIn: ExprLike, opts: { tolerance?: number; rational?: boolean; rationalConversion?: 'base10' | 'exact' } = {}): Expr {
+  const e = sympify(exIn);
+  const conv = (f: Float): Expr => {
+    if (opts.rationalConversion === 'exact') {
+      const [p, q] = F.toRational(f.mpf);
+      return Rational.of(p, q);
+    }
+    if (opts.tolerance !== undefined && opts.tolerance < 1) {
+      const lim = BigInt(Math.ceil(1 / opts.tolerance));
+      return limitDenominatorR(f, lim);
+    }
+    const r = simpleRational(f.value, 1e-14);
+    return r ?? f;
+  };
+  if (e instanceof Float) return conv(e);
+  if (!opts.rational && e.freeSymbols().size === 0 && !(e instanceof Rational) && opts.tolerance !== undefined) {
+    // rational approximation of a constant, e.g. nsimplify(pi, tolerance=0.01) = 22/7
+    // the simplest fraction within the tolerance (continued-fraction convergents)
+    return simpleRational(e.toNumber(), opts.tolerance) ?? e;
+  }
+  const go = (x: Expr): Expr => {
+    if (x instanceof Float) return conv(x);
+    if (x.args.length === 0) return x;
+    const args = x.args.map(go);
+    return args.every((a, i) => a === x.args[i]) ? x : rebuild(x, args);
+  };
+  return go(e);
+}
+
+function limitDenominatorR(f: Float, lim: bigint): Rational {
+  const [p, q] = F.toRational(f.mpf);
+  return limitDenominator(Rational.of(p, q), lim);
+}
 

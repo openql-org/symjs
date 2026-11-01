@@ -769,6 +769,15 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new PyTuple(sj.extractBranchFactor(asExpr(self), Boolean(kw['allow_half'])));
   },
   frac: exprFn(sj.frac),
+  nsimplify: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['tolerance', 'rational', 'rational_conversion'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    if (args.length > 1) throw new Unsupported('nsimplify constants');
+    return sj.nsimplify(asExpr(args[0]), {
+      tolerance: kw['tolerance'] === undefined ? undefined : asExpr(kw['tolerance']).toNumber(),
+      rational: kw['rational'] as boolean | undefined,
+      rationalConversion: kw['rational_conversion'] as 'base10' | 'exact' | undefined,
+    });
+  },
   sqrtdenest: exprFn(sj.sqrtdenest),
   '.extract_leading_order': (args, kw, self) =>
     (noKw(kw), new PyTuple(sj.extractLeadingOrder(asExpr(self), asSym(args[0])).map(([a, b]) => new PyTuple([a, b])))),
