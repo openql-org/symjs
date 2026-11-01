@@ -127,7 +127,7 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   exp: ([a]) => sj.exp(a!),
   Abs: ([a]) => sj.abs(a!),
   ...Object.fromEntries(
-    (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc'] as const).map(
+    (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc', 'exp_polar', 'polar_lift', 'periodic_argument', 'principal_branch'] as const).map(
       (n) => [n, (args: Expr[]) => sj.fn(n, args)],
     ),
   ),
@@ -748,6 +748,16 @@ export const ADAPTERS: Record<string, Adapter> = {
   apart: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'full' || kw[k]) throw new Unsupported(`kwargs ${k}`);
     return sj.apart(asExpr(args[0]), args[1] === undefined ? undefined : asSym(args[1]));
+  },
+  exp_polar: (args, kw) => (noKw(kw), sj.expPolar(asExpr(args[0]))),
+  polar_lift: (args, kw) => (noKw(kw), sj.polarLift(asExpr(args[0]))),
+  periodic_argument: (args, kw) => (noKw(kw), sj.periodicArgument(asExpr(args[0]), asExpr(args[1]))),
+  principal_branch: (args, kw) => (noKw(kw), sj.principalBranch(asExpr(args[0]), asExpr(args[1]))),
+  unbranched_argument: (args, kw) => (noKw(kw), sj.unbranchedArgument(asExpr(args[0]))),
+  unpolarify: (args, kw) => (noKw(kw), sj.unpolarify(asExpr(args[0]))),
+  '.extract_branch_factor': (_args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'allow_half') throw new Unsupported(`kwargs ${k}`);
+    return new PyTuple(sj.extractBranchFactor(asExpr(self), Boolean(kw['allow_half'])));
   },
   igcd: (args, kw) => (noKw(kw), sj.Rational.of(sj.igcd(...args.map((a) => (a as sj.Rational).p)))),
   ilcm: (args, kw) => (noKw(kw), sj.Rational.of(sj.ilcm(...args.map((a) => (a as sj.Rational).p)))),

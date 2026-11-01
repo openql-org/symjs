@@ -110,6 +110,10 @@ export type FnName =
   | 'asech'
   | 'acsch'
   | 'sinc'
+  | 'exp_polar'
+  | 'polar_lift'
+  | 'periodic_argument'
+  | 'principal_branch'
   | SpecialFnName;
 
 /** Special and combinatorial functions (see functions/special.ts). */

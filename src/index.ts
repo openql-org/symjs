@@ -404,3 +404,4 @@ export {
   jacobiSymbol,
   kroneckerSymbol,
 } from './functions/combinatorial';
+export { expPolar, polarLift, periodicArgument, principalBranch, unbranchedArgument, unpolarify, extractBranchFactor } from './functions/polar';

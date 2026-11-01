@@ -464,6 +464,13 @@ export function mul(...xs: ExprLike[]): Expr {
   if (m % 2n === 1n) factors.push(S.I);
 
   if (coeff instanceof Rational && coeff.isZero) return S.Zero;
+  // exp_polar(a)*exp_polar(b) = exp_polar(a + b)
+  const eps = factors.filter((f) => f instanceof Fn && f.name === 'exp_polar');
+  if (eps.length > 1) {
+    const merged = new Fn('exp_polar', [add(...eps.map((f) => f.args[0]!))]);
+    for (const f of eps) factors.splice(factors.indexOf(f), 1);
+    factors.push(merged);
+  }
   if (ncPart.length) {
     factors.sort(compareExpr);
     const isOne1 = coeff instanceof Rational && coeff.isOne;
@@ -504,6 +511,7 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   }
   if (b instanceof Rational && b.isOne && !(e instanceof Special)) return S.One;
   if (isE(b) && e instanceof Float) return impl.evalf(new Pow(b, e), precToDps(e.prec));
+  if (b instanceof Fn && b.name === 'exp_polar') return new Fn('exp_polar', [mul(b.args[0]!, e)]);
 
   if (b instanceof Special || e instanceof Special) {
     const r = powSpecial(b, e);

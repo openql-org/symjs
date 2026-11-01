@@ -12,7 +12,7 @@ import { isIntegerQ, isNegative, isPositive, isReal } from '../core/assumptions'
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { isFunctionOf } from '../core/match';
 import { rebuild } from '../core/traverse';
-import { abs, acos, asin, atan, conjugate, cos, cosh, log, re, sin, sinh, tan, tanh } from '../functions/elementary';
+import { abs, acos, asin, atan, conjugate, cos, cosh, fn, log, re, sin, sinh, tan, tanh } from '../functions/elementary';
 import { Chi, Ci, Ei, Li, Shi, Si, binomial, factorial, ff, gamma, harmonic, li, polygamma, sign, uppergamma, zeta } from '../functions/special';
 import { Sum } from '../concrete/summations';
 
@@ -283,3 +283,14 @@ for (const t of ['Shi', 'Chi', 'Si', 'Ci']) registerRewrite('Ei', t, eiShi);
 registerRewrite('Ei', 'li', ([z]) => (z instanceof Fn && z.name === 'log' && z.args.length === 1 ? li(z.args[0]!) : li(exp(z!))));
 
 registerRewrite('expint', 'uppergamma', ([nu, z]) => mul(pow(z!, add(nu!, -1)), uppergamma(add(1, neg(nu!)), z!)));
+
+// exponential integrals in terms of expint (SymPy E1 = expint(1, .))
+const E1 = (z: Expr) => fn('expint', [1, z]);
+const plI = () => fn('polar_lift', [I]);
+const plNegI = () => fn('polar_lift', [neg(I)]);
+const ePi = () => fn('exp_polar', [mul(I, pi)]);
+registerRewrite('Ei', 'expint', ([z]) => add(neg(E1(mul(fn('polar_lift', [-1]), z!))), neg(mul(I, pi))));
+registerRewrite('Ci', 'expint', ([z]) => neg(div(add(E1(mul(plI(), z!)), E1(mul(plNegI(), z!))), 2)));
+registerRewrite('Si', 'expint', ([z]) => add(div(pi, 2), div(div(add(E1(mul(plI(), z!)), neg(E1(mul(plNegI(), z!)))), 2), I)));
+registerRewrite('Shi', 'expint', ([z]) => add(div(add(E1(z!), neg(E1(mul(ePi(), z!)))), 2), neg(div(mul(I, pi), 2))));
+registerRewrite('Chi', 'expint', ([z]) => add(neg(div(mul(I, pi), 2)), neg(div(add(E1(z!), E1(mul(ePi(), z!))), 2))));

@@ -354,6 +354,10 @@ const evalArg: Evaluator = (x) => {
     }
     if (!(a instanceof Fn) && !(b instanceof Fn) && a.freeSymbols().size === 0) {
       const sa = isPositive(a) ? 1 : isNegative(a) ? -1 : 0;
+      if (a instanceof Rational && a.isZero) {
+        if (isPositive(b)) return mul(S.Half, S.Pi);
+        if (isNegative(b)) return mul(S.NegHalf, S.Pi);
+      }
       const t = atan(mul(b, pow(a, -1)));
       if (sa === 1) return t;
       if (sa === -1) return isNegative(b) ? add(t, neg(S.Pi)) : add(t, S.Pi);
