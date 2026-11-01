@@ -285,3 +285,4 @@ export const expand_trig = (e: ExprLike): Expr =>
 export const expand_complex = (e: ExprLike): Expr => expand(e, { complex: true });
 
 impl.expand = (e) => expand(e);
+impl.expandComplex = (e) => expand(e, { complex: true });

@@ -189,6 +189,9 @@ export interface Impl {
   rewrite?(e: Expr, target: string, opts?: { pattern?: readonly string[]; deep?: boolean }): Expr;
   ordered?(xs: readonly Expr[]): Expr[];
   expandFunc?(e: Expr): Expr;
+  expandComplex?(e: Expr): Expr;
+  cos?(e: Expr): Expr;
+  sin?(e: Expr): Expr;
   sign?(e: Expr): Expr;
   isReal?(e: Expr): boolean | undefined;
   rationalFromFloat?(f: Float): Rational;

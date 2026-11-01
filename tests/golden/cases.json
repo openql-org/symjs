@@ -2474,6 +2474,84 @@
       "ops": [
         "str"
       ]
+    },
+    {
+      "expr": "x**3 - x + 1",
+      "ops": [
+        "roots_x"
+      ]
+    },
+    {
+      "expr": "x**3 + x + 1",
+      "ops": [
+        "roots_x"
+      ]
+    },
+    {
+      "expr": "x**3 - 2",
+      "ops": [
+        "roots_x"
+      ]
+    },
+    {
+      "expr": "x**3 + 3*x**2 - 1",
+      "ops": [
+        "roots_x"
+      ]
+    },
+    {
+      "expr": "2*x**3 - 3*x + 5",
+      "ops": [
+        "roots_x"
+      ]
+    },
+    {
+      "expr": "x**3 - 3*x + 1",
+      "ops": [
+        "roots_x"
+      ]
+    },
+    {
+      "expr": "x**3 + 6*x**2 + 3*x - 1",
+      "ops": [
+        "roots_x"
+      ]
+    },
+    {
+      "expr": "x**3 + 2",
+      "ops": [
+        "roots_x"
+      ]
+    },
+    {
+      "expr": "x**4 - 16",
+      "ops": [
+        "roots_x"
+      ]
+    },
+    {
+      "expr": "x**4 + 1",
+      "ops": [
+        "roots_x"
+      ]
+    },
+    {
+      "expr": "x**6 - 1",
+      "ops": [
+        "roots_x"
+      ]
+    },
+    {
+      "expr": "2*x**5 - 3",
+      "ops": [
+        "roots_x"
+      ]
+    },
+    {
+      "expr": "x**2 + 4",
+      "ops": [
+        "roots_x"
+      ]
     }
   ]
 }

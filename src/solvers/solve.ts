@@ -152,7 +152,9 @@ export function solve(e: ExprLike, x?: Sym | Expr, opts: { check?: boolean } = {
     if (syms.length === 0) return [];
     throw new Error('solve: specify the symbol to solve for');
   }
-  const raw = solveRaw(f, v).map((r) => simplifySolution(r));
+  const raw0 = solveRaw(f, v);
+  // SymPy: high-order root lists (more than two roots) are not simplified
+  const raw = raw0.length > 2 ? raw0 : raw0.map((r) => simplifySolution(r));
   const checked = opts.check === false ? raw : raw.filter((r) => checkSolution(f, v, r));
   return sortExprs(checked);
 }

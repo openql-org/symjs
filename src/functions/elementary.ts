@@ -74,6 +74,12 @@ function sinOfPiMultiple(c: Rational): Expr | undefined {
     '1/3': () => mul(S.Half, sqrt(3)),
     '1/12': () => mul(r(1, 4), add(sqrt(6), neg(sqrt(2)))),
     '5/12': () => mul(r(1, 4), add(sqrt(6), sqrt(2))),
+    '1/10': () => add(r(-1, 4), mul(r(1, 4), sqrt(5))),
+    '3/10': () => add(r(1, 4), mul(r(1, 4), sqrt(5))),
+    '1/5': () => sqrt(add(r(5, 8), mul(r(-1, 8), sqrt(5)))),
+    '2/5': () => sqrt(add(r(5, 8), mul(r(1, 8), sqrt(5)))),
+    '1/8': () => sqrt(add(r(1, 2), mul(r(-1, 4), sqrt(2)))),
+    '3/8': () => sqrt(add(r(1, 2), mul(r(1, 4), sqrt(2)))),
   };
   return table[t.key]?.();
 }
@@ -272,9 +278,21 @@ function reIm(x: Expr): [Expr, Expr] {
   return [re(x), im(x)];
 }
 
+/** (-1)**r for rational r: [cos(pi r), sin(pi r)] when both evaluate. */
+function unitRoot(x: Expr): [Expr, Expr] | undefined {
+  if (!(x instanceof Pow && x.base instanceof Rational && x.base.p === -1n && x.base.q === 1n && x.exp instanceof Rational)) return undefined;
+  const ang = mul(x.exp, S.Pi);
+  const c = cos(ang);
+  const s = sin(ang);
+  if (c instanceof Fn || s instanceof Fn) return undefined;
+  return [c, s];
+}
+
 const evalRe: Evaluator = (x) => {
   if (isReal(x)) return x;
   if (isI(x)) return S.Zero;
+  const ur = unitRoot(x);
+  if (ur) return ur[0];
   if (x instanceof Add) return add(...x.args.map(re));
   if (x instanceof Mul) {
     const real = x.args.filter((a) => isReal(a) === true);
@@ -299,6 +317,8 @@ const evalRe: Evaluator = (x) => {
 };
 
 const evalIm: Evaluator = (x) => {
+  const ur = unitRoot(x);
+  if (ur) return ur[1];
   if (isReal(x)) return S.Zero;
   if (isI(x)) return S.One;
   if (x instanceof Add) return add(...x.args.map(im));
@@ -460,3 +480,5 @@ export const dagger = conjugate;
 
 impl.conjugate = conjugate;
 impl.abs = abs;
+impl.cos = (e) => cos(e);
+impl.sin = (e) => sin(e);

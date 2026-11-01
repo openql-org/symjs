@@ -5,7 +5,7 @@
  * @file Univariate polynomials over the rationals, coefficient extraction and root finding.
  */
 
-import { Add, Expr, ExprLike, Mul, Pow, Rational, S, Sym, compareExpr } from '../core/nodes';
+import { Add, Expr, ExprLike, Mul, Pow, Rational, S, Sym, compareExpr, impl } from '../core/nodes';
 import { numAdd, numCmp, numInv, numMul, numNeg, numPowInt } from '../core/num';
 import { factorInt, gcd as gcdBig, lcm } from '../core/numbers';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
@@ -242,6 +242,83 @@ function sqrtRemoveSquares(d: Expr): Expr {
 }
 
 /** Roots of a quadratic a x^2 + b x + c (symbolic coefficients allowed). */
+/** SymPy roots_cubic (Cardano) for x**3 + a*x**2 + b*x + c with rational coefficients. */
+function cubicRoots(lc: Rational, c2: Rational, c1: Rational, c0: Rational): Expr[] {
+  const a = numMul(c2, numInv(lc)) as Rational;
+  const b = numMul(c1, numInv(lc)) as Rational;
+  const c = numMul(c0, numInv(lc)) as Rational;
+  const third = Rational.of(1n, 3n);
+  const cbrt = (x: Expr) => pow(x, third);
+  if (c.isZero) {
+    const [x1, x2] = quadraticRoots(S.One, a, b);
+    return [x1!, S.Zero, x2!];
+  }
+  const p = add(b, mul(-1, pow(a, 2), third));
+  const q = add(c, mul(-1, a, b, third), mul(2, pow(a, 3), Rational.of(1n, 27n)));
+  const pon3 = mul(p, third);
+  const aon3 = mul(a, third);
+  let u1: Expr | undefined;
+  const pz = p instanceof Rational && p.isZero;
+  const qz = q instanceof Rational && q.isZero;
+  if (pz) {
+    if (qz) return [neg(aon3), neg(aon3), neg(aon3)];
+    u1 = (q as Rational).isPositive ? neg(cbrt(q)) : cbrt(neg(q));
+  } else if (qz) {
+    const [y1, y2] = quadraticRoots(S.One, S.Zero, p);
+    return [y1!, S.Zero, y2!].map((t) => add(t, neg(aon3)));
+  } else if ((q as Rational).isNegative) {
+    u1 = neg(cbrt(add(mul(-1, q, Rational.of(1n, 2n)), sqrt(add(mul(pow(q, 2), Rational.of(1n, 4n)), pow(pon3, 3))))));
+  }
+  const coeff = mul(S.I, sqrt(3), Rational.of(1n, 2n));
+  if (u1 === undefined) {
+    const uks = [S.One, add(Rational.of(-1n, 2n), coeff), add(Rational.of(-1n, 2n), neg(coeff))];
+    const D0 = add(pow(a, 2), mul(-3, b));
+    const D1 = add(mul(2, pow(a, 3)), mul(-9, a, b), mul(27, c));
+    const C = cbrt(mul(add(D1, sqrt(add(pow(D1, 2), mul(-4, pow(D0, 3))))), Rational.of(1n, 2n)));
+    return uks.map((uk) => mul(-1, third, add(a, mul(uk, C), mul(D0, pow(C, -1), pow(uk, -1)))));
+  }
+  const u2 = mul(u1, add(Rational.of(-1n, 2n), coeff));
+  const u3 = mul(u1, add(Rational.of(-1n, 2n), neg(coeff)));
+  if (pz) return [u1, u2, u3].map((u) => add(u, neg(aon3)));
+  return [u1, u2, u3].map((u) => add(neg(u), mul(pon3, pow(u, -1)), neg(aon3)));
+}
+
+const neg = (e: Expr): Expr => mul(-1, e);
+
+/** SymPy roots_binomial: roots of a*x**n + b in SymPy's order. */
+function binomialRoots(a: Rational, b: Rational, n: number): Expr[] {
+  const base = numMul(numNeg(b), numInv(a)) as Rational;
+  let alpha: Expr = pow(base, Rational.of(1n, BigInt(n)));
+  alpha = impl.expandComplex ? impl.expandComplex(alpha) : alpha;
+  const negB = base.isNegative;
+  const even = n % 2 === 0;
+  const big = negB && even && (numAdd(base, S.One) as Rational).isPositive;
+  let ks: number[] = [];
+  let imax = Math.floor(n / 2);
+  if (even) {
+    ks.push(imax);
+    imax -= 1;
+  }
+  if (!negB) ks.push(0);
+  for (let i = imax; i > 0; i--) {
+    if (negB) ks.push(i, -i);
+    else ks.push(-i, i);
+  }
+  if (negB) {
+    ks.push(0);
+    if (big) {
+      const out: number[] = [];
+      for (let i = 0; i < ks.length; i += 2) out.push(...ks.slice(i, i + 2).reverse());
+      ks = out;
+    }
+  }
+  return ks.map((k) => {
+    const ang = mul(Rational.of(BigInt(2 * k), BigInt(n)), S.Pi);
+    const zeta = add(impl.cos!(ang), mul(S.I, impl.sin!(ang)));
+    return expand(mul(alpha, zeta));
+  });
+}
+
 function quadraticRoots(a: Expr, b: Expr, c: Expr): Expr[] {
   const disc = expand(add(pow(b, 2), mul(-4, a, c)));
   const s = sqrtRemoveSquares(disc);
@@ -260,12 +337,16 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
   const deg = Math.max(-1, ...coeffs.keys());
   if (deg <= 0) return [];
   const p = UPoly.fromExpr(ex, x);
+  if (p && deg >= 2 && p.coeffs.filter((c) => !c.isZero).length === 2 && !p.coeffs[0]!.isZero) {
+    return binomialRoots(p.coeffs[deg]!, p.coeffs[0]!, deg);
+  }
   if (p) {
     const out: Expr[] = [];
     for (const [f, m] of p.factor().factors) {
       let rs: Expr[];
       if (f.degree === 1) rs = [numMul(numNeg(f.coeffs[0]!), numInv(f.coeffs[1]!))];
       else if (f.degree === 2) rs = quadraticRoots(f.coeffs[2]!, f.coeffs[1]!, f.coeffs[0]!);
+      else if (f.degree === 3) rs = cubicRoots(f.coeffs[3]!, f.coeffs[2]!, f.coeffs[1]!, f.coeffs[0]!);
       else if (opts.skipQuintic && f.degree >= 5) continue; // SymPy roots() omits roots it cannot express in radicals
       else throw new Error(`roots: cannot solve irreducible factor of degree ${f.degree}`);
       for (const r of rs) for (let i = 0; i < m; i++) out.push(r);
