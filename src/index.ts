@@ -176,11 +176,24 @@ export {
 export type { ExpandHints } from './simplify/expand';
 export { simplify } from './simplify/simplify';
 export { powsimp } from './simplify/powsimp';
+export { radsimp, collect } from './simplify/radsimp';
 export { trigsimp, rewriteExp, rewriteTrig, expsimp, exptotrig, combineExp } from './simplify/trigsimp';
 export { together, cancel, fraction } from './simplify/rational';
 
 // polynomials
-export { Poly, polyCoefficients, roots, solve, factor, factorPoly } from './polys/poly';
+export { Poly, polyCoefficients, roots, factor, factorPoly } from './polys/poly';
+
+// solvers
+export {
+  solve,
+  asEquation,
+  linsolve,
+  linearEqToMatrix,
+  nonlinsolve,
+  solveLinear,
+  solveUndeterminedCoeffs,
+  nsolve,
+} from './solvers/solve';
 
 // numerics
 export { evalf, toComplex, lambdify } from './numeric/evalf';

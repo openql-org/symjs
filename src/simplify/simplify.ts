@@ -11,6 +11,7 @@ import { countOps, mapBottomUp, some } from '../core/traverse';
 import { fn } from '../functions/elementary';
 import { expandMul as expand } from './expand';
 import { powsimp } from './powsimp';
+import { radsimp } from './radsimp';
 import { cancel } from './rational';
 import { exptotrig, expsimp, hasTrig } from './trigsimp';
 
@@ -33,6 +34,7 @@ function simplifyCore(e: Expr): Expr {
     tryPush(() => exptotrig(e));
     tryPush(() => expsimp(e));
   }
+  tryPush(() => expand(radsimp(e)));
   if (hasDenominator(e)) {
     tryPush(() => cancel(e));
     if (hasTrig(e)) tryPush(() => cancel(exptotrig(e)));

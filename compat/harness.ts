@@ -43,6 +43,7 @@ export function fmt(v: unknown): string {
   if (typeof v === 'boolean') return v ? 'True' : 'False';
   if (v === null || v === undefined) return 'None';
   if (typeof v === 'number' || typeof v === 'bigint') return String(v);
+  if (v === 'EmptySet') return 'EmptySet';
   if (typeof v === 'string') return `'${v}'`;
   if (v instanceof PyList) return `[${v.items.map(fmt).join(', ')}]`;
   if (v instanceof PyTuple) return v.items.length === 1 ? `(${fmt(v.items[0])},)` : `(${v.items.map(fmt).join(', ')})`;
@@ -291,6 +292,25 @@ function asOrdered(e: Expr): Expr[] {
   return sj.orderedTerms(e);
 }
 
+function allSymbols(eqs: Expr[]): Sym[] {
+  const m = new Map<string, Sym>();
+  for (const e of eqs) for (const s of sj.freeSymbols(e)) m.set(s.key, s);
+  return [...m.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+}
+
+function solveAug(aug: Matrix, syms: Sym[]): Expr[] | undefined {
+  const n = syms.length;
+  const [R, pivots] = sj.rref(aug);
+  if (pivots.includes(n)) return undefined;
+  const sol: Expr[] = syms.map((s) => s);
+  pivots.forEach((pc, i) => {
+    let v: Expr = R.get(i, n);
+    for (let j = 0; j < n; j++) if (j !== pc && !pivots.includes(j)) v = sj.add(v, sj.mul(-1, R.get(i, j), syms[j]!));
+    sol[pc] = sj.cancel(v);
+  });
+  return sol;
+}
+
 function idxList(v: unknown): (number | boolean)[] {
   if (!(v instanceof PyTuple)) throw new Unsupported('index list');
   return v.items.map((x) => (typeof x === 'boolean' ? x : Number((x as sj.Rational).p)));
@@ -405,6 +425,14 @@ export const ADAPTERS: Record<string, Adapter> = {
   cancel: exprFn(sj.cancel),
   trigsimp: exprFn(sj.trigsimp),
   powsimp: exprFn(sj.powsimp),
+  radsimp: exprFn(sj.radsimp),
+  collect: (args, kw) => {
+    const exact = kw['exact'];
+    for (const k of Object.keys(kw)) if (k !== 'exact') throw new Unsupported(`kwargs ${k}`);
+    if (args.length !== 2) throw new Unsupported('collect arity');
+    const syms = args[1] instanceof PyTuple ? args[1].items.map(asExpr) : [asExpr(args[1])];
+    return sj.collect(asExpr(args[0]), syms, exact === undefined ? {} : { exact: Boolean(exact) });
+  },
   fraction: exprFn((e) => new PyTuple(sj.fraction(e))),
   diff: (args, kw) => (noKw(kw), diffArgs(asExpr(args[0]), args.slice(1))),
   integrate: (args, kw) => {
@@ -427,12 +455,85 @@ export const ADAPTERS: Record<string, Adapter> = {
     return rootsDict(sj.roots(e, x));
   },
   solve: (args, kw) => {
-    noKw(kw);
-    const e = asExpr(args[0]);
+    for (const k of Object.keys(kw)) if (k !== 'check') throw new Unsupported(`kwargs ${k}`);
+    const check = kw['check'] === undefined ? undefined : Boolean(kw['check']);
+    const first = args[0];
+    // systems of equations
+    if (first instanceof PyTuple) {
+      const eqs = first.items.map(asExpr);
+      const syms = args[1] instanceof PyTuple ? args[1].items.map(asSym) : args.slice(1).map(asSym);
+      const vars = syms.length ? syms : allSymbols(eqs);
+      if (sj.linearEqToMatrix(eqs, vars)) {
+        const s = sj.linsolve(eqs, vars);
+        if (!s) return new PyList([]);
+        if (s.some((v, i) => v.key === vars[i]!.key)) throw new Unsupported('underdetermined system');
+        return new PyDict(vars.map((v, i) => [v, s[i]!] as const));
+      }
+      const sols = sj.nonlinsolve(eqs, vars);
+      return new PyList(sols.map((t) => new PyDict(vars.map((v, i) => [v, t[i]!] as const))));
+    }
+    const e = asExpr(first);
+    if (args[1] instanceof PyTuple) throw new Unsupported('solve for several symbols');
     const syms = [...sj.freeSymbols(e)];
     const x = args[1] instanceof Sym ? args[1] : args.length === 1 && syms.length === 1 ? syms[0]! : undefined;
+    if (args.length === 1 && syms.length === 0) return new PyList([]);
     if (!x || args.length > 2) throw new Unsupported('solve form');
-    return new PyList(sj.solve(e, x));
+    return new PyList(sj.solve(e, x, check === undefined ? {} : { check }));
+  },
+  linsolve: (args, kw) => {
+    noKw(kw);
+    const first = args[0];
+    const syms = args[1] instanceof PyTuple ? args[1].items.map(asSym) : args.slice(1).map(asSym);
+    let sol: Expr[] | undefined;
+    if (first instanceof PyTuple && first.items.length === 2 && first.items[0] instanceof Matrix) {
+      const [A, b] = first.items as [Matrix, Matrix];
+      if (!syms.length) throw new Unsupported('linsolve without symbols');
+      sol = solveAug(A.hstack(b), syms);
+    } else if (first instanceof Matrix) {
+      sol = solveAug(first, syms);
+    } else if (first instanceof PyTuple) {
+      if (first.items.length === 0) return 'EmptySet';
+      sol = sj.linsolve(first.items.map(asExpr), syms);
+    } else throw new Unsupported('linsolve form');
+    return sol ? new PySet([new PyTuple(sol)]) : 'EmptySet';
+  },
+  nonlinsolve: (args, kw) => {
+    noKw(kw);
+    const eqs = (args[0] as PyTuple).items.map(asExpr);
+    const syms = (args[1] as PyTuple).items.map(asSym);
+    const sols = sj.nonlinsolve(eqs, syms);
+    return sols.length ? new PySet(sols.map((t) => new PyTuple(t))) : 'EmptySet';
+  },
+  solve_linear: (args, kw) => {
+    const opts: { symbols?: Sym[]; exclude?: Sym[] } = {};
+    if (kw['symbols']) opts.symbols = (kw['symbols'] as PyTuple).items.map(asSym);
+    if (kw['exclude']) opts.exclude = (kw['exclude'] as PyTuple).items.map(asSym);
+    if (args.length > 1) opts.symbols = args.slice(1).map(asSym);
+    return new PyTuple(sj.solveLinear(asExpr(args[0]), opts));
+  },
+  solve_linear_system: (args, kw) => {
+    noKw(kw);
+    const syms = args.slice(1).map(asSym);
+    const s = solveAug(args[0] as Matrix, syms);
+    return s ? new PyDict(syms.map((v, i) => [v, s[i]!] as const)) : null;
+  },
+  solve_undetermined_coeffs: (args, kw) => {
+    const dict = Boolean(kw['dict']);
+    for (const k of Object.keys(kw)) if (k !== 'dict') throw new Unsupported(`kwargs ${k}`);
+    const coeffs = (args[1] as PyTuple).items.map(asSym);
+    const syms = args[2] === undefined ? [] : args[2] instanceof PyTuple ? args[2].items.map(asSym) : [asSym(args[2])];
+    const sols = sj.solveUndeterminedCoeffs(asExpr(args[0]), coeffs, syms);
+    const dicts = sols.map((t) => new PyDict(coeffs.map((v, i) => [v, t[i]!] as const)));
+    if (dict) return new PyList(dicts);
+    return dicts.length === 1 ? dicts[0] : new PyList(dicts);
+  },
+  nsolve: (args, kw) => {
+    noKw(kw);
+    const e = asExpr(args[0]);
+    if (args.length === 3) return sj.nsolve(e, asSym(args[1]), asExpr(args[2]));
+    const syms = [...sj.freeSymbols(e)];
+    if (syms.length !== 1) throw new Unsupported('nsolve form');
+    return sj.nsolve(e, syms[0]!, asExpr(args[1]));
   },
   Matrix: (args, kw) => {
     noKw(kw);
