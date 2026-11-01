@@ -9,6 +9,7 @@
  */
 
 import { Assumptions, Sym } from './core/nodes';
+import { expandSymbolNames } from './core/numberutils';
 
 // core
 export {
@@ -288,8 +289,7 @@ export type SymbolTuple<S extends string> = string extends S ? Sym[] : ToSyms<Sp
  * const [theta, phi] = symbols('theta phi', { real: true });
  */
 export function symbols<S extends string>(names: S, assumptions: Assumptions = {}): SymbolTuple<S> {
-  return names
-    .split(/[\s,]+/)
-    .filter((n) => n.length > 0)
-    .map((n) => new Sym(n, assumptions)) as SymbolTuple<S>;
+  return expandSymbolNames(names).map((n) => new Sym(n, assumptions)) as SymbolTuple<S>;
 }
+
+export { rationalFromFloat, rationalFromString, integerLog, expandSymbolNames } from './core/numberutils';

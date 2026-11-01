@@ -363,18 +363,40 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.derivative(e, vc);
   },
   symbols: (args, kw) => {
-    const names = String(args[0]);
-    if (/[:]/.test(names)) throw new Unsupported('symbol ranges');
     const a: Record<string, boolean> = {};
+    let seq = false;
     for (const [k, v] of Object.entries(kw)) {
+      if (k === 'seq') {
+        seq = Boolean(v);
+        continue;
+      }
       if (!['real', 'positive', 'nonnegative', 'integer'].includes(k) || v !== true) throw new Unsupported(`symbols ${k}`);
       a[k] = true;
     }
-    const syms = names
-      .split(/[\s,]+/)
-      .filter(Boolean)
-      .map((n) => new Sym(n, a));
-    return syms.length === 1 && !names.includes(',') ? syms[0] : new PyTuple(syms);
+    const one = (spec: string): unknown => {
+      const names = sj.expandSymbolNames(spec);
+      const syms = names.map((n) => new Sym(n, a));
+      const isSeq = seq || spec.includes(',') || spec.trim().includes(' ') || spec.includes(':');
+      return syms.length === 1 && !isSeq ? syms[0] : new PyTuple(syms);
+    };
+    const first = args[0];
+    if (first instanceof PyTuple) return new PyTuple(first.items.map((s) => one(String(s))));
+    return one(String(first));
+  },
+  Rel: (args, kw) => {
+    noKw(kw);
+    const op = args[2] === undefined || args[2] === null ? '==' : String(args[2]);
+    const map: Record<string, sj.RelOp> = {
+      '==': 'Eq', eq: 'Eq', '!=': 'Ne', ne: 'Ne', '<>': 'Ne', '<': 'Lt', lt: 'Lt', '<=': 'Le', le: 'Le', '>': 'Gt', gt: 'Gt', '>=': 'Ge', ge: 'Ge',
+    };
+    const o = map[op];
+    if (!o) throw new Unsupported(`Rel op ${op}`);
+    return sj.rel(o, asExpr(args[0]), asExpr(args[1]));
+  },
+  integer_log: (args, kw) => {
+    noKw(kw);
+    const [e, t] = sj.integerLog((asExpr(args[0]) as sj.Rational).p, (asExpr(args[1]) as sj.Rational).p);
+    return new PyTuple([sj.Rational.of(e), t]);
   },
   Symbol: (args, kw) => {
     const a: Record<string, boolean> = {};
@@ -385,22 +407,34 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new Sym(String(args[0]), a);
   },
   sympify: (args, kw) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (k !== 'rational' && !(k === 'evaluate' && kw[k] === true)) throw new Unsupported(`kwargs ${k}`);
     const v = args[0];
-    if (typeof v === 'string') return sj.parse(v);
+    if (typeof v === 'string') {
+      if (kw['rational'] === true) {
+        // decimal literals become exact rationals
+        return sj.parse(v.replace(/\d*\.\d+(?:[eE][+-]?\d+)?/g, (m) => `(${sj.str(sj.rationalFromString(m))})`));
+      }
+      return sj.parse(v);
+    }
+    if (v instanceof PyTuple) return new PyList(v.items.map((i) => (typeof i === 'string' ? sj.parse(i) : asExpr(i))));
     return asExpr(v);
   },
   S: (args, kw) => ADAPTERS['sympify']!(args, kw),
   Rational: (args, kw) => {
     noKw(kw);
-    const [p, q] = args.map(asExpr);
+    const conv = (v: unknown): Expr =>
+      typeof v === 'string' ? sj.rationalFromString(v) : v instanceof sj.Float ? sj.rationalFromFloat(v.value) : asExpr(v);
+    const [p, q] = args.map(conv);
     return q ? sj.div(p!, q) : p;
   },
   Integer: (args, kw) => {
     noKw(kw);
-    const v = asExpr(args[0]);
-    if (!(v instanceof sj.Rational && v.isInteger)) throw new Unsupported('Integer');
-    return v;
+    const v = args[0];
+    if (typeof v === 'string') return sj.Rational.of(BigInt(v));
+    const e = asExpr(v);
+    if (e instanceof sj.Float) return sj.Rational.of(BigInt(Math.trunc(e.value)));
+    if (!(e instanceof sj.Rational && e.isInteger)) throw new Unsupported('Integer');
+    return e;
   },
   Add: (args, kw) => (noKw(kw), sj.add(...args.map(asExpr))),
   Mul: (args, kw) => (noKw(kw), sj.mul(...args.map(asExpr))),
