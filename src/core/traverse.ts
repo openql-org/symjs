@@ -7,6 +7,7 @@
 
 import { fn } from '../functions/elementary';
 import { piecewise, rel } from './logic';
+import { Concrete } from '../concrete/node';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { Add, Derivative, Expr, ExprLike, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Substitution, Sym, UndefFn, impl } from './nodes';
 import { add, mul, pow, sympify } from './ops';
@@ -27,6 +28,7 @@ export function rebuild(e: Expr, args: readonly Expr[]): Expr {
   if (e instanceof Limit) return new Limit(args, e.dir);
   if (e instanceof Order) return new Order(args);
   if (e instanceof UndefFn) return new UndefFn(e.name, args);
+  if (e instanceof Concrete) return new Concrete(e.kind2, args);
   if (e instanceof Derivative) {
     const expr = args[0]!;
     // evaluate when the expression no longer contains undefined functions
@@ -215,7 +217,15 @@ export function freeSymbols(e: Expr): Set<Sym> {
   const out = new Map<string, Sym>();
   const go = (x: Expr) => {
     if (x instanceof Sym) out.set(x.key, x);
-    else x.args.forEach(go);
+    else if (x instanceof Concrete) {
+      // bound summation variables are not free
+      const bound = new Set(x.limits.map(([k]) => k.key));
+      for (const s of freeSymbols(x.function)) if (!bound.has(s.key)) out.set(s.key, s);
+      for (const [, a, b] of x.limits) {
+        go(a);
+        go(b);
+      }
+    } else x.args.forEach(go);
   };
   go(e);
   return new Set(out.values());

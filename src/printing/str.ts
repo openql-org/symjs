@@ -9,6 +9,7 @@
 import { Add, BoolAtom, Constant, Derivative, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
 import { asOrderedFactors, asOrderedTerms, sympyFunctionName } from './sortkey';
+import { Concrete } from '../concrete/node';
 
 /** SymPy precedence values. */
 export const PREC = { REL: 35, ADD: 40, MUL: 50, POW: 60, FUNC: 70, ATOM: 1000 } as const;
@@ -144,6 +145,9 @@ export function str(e: Expr): string {
   }
   if (e instanceof Piecewise) return `Piecewise(${e.pairs.map(([x, c]) => `(${str(x)}, ${str(c)})`).join(', ')})`;
   if (e instanceof UndefFn) return `${e.name}(${e.args.map(str).join(', ')})`;
+  if (e instanceof Concrete) {
+    return `${e.kind2}(${str(e.function)}, ${e.limits.map(([k, a, b]) => `(${str(k)}, ${str(a)}, ${str(b)})`).join(', ')})`;
+  }
   if (e instanceof Derivative) {
     const vs = e.variableCount.map(([v, n]) => (n === 1 ? str(v) : `(${str(v)}, ${n})`));
     return `Derivative(${str(e.expr)}, ${vs.join(', ')})`;

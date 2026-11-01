@@ -32,7 +32,8 @@ export type Kind =
   | 'Limit'
   | 'Order'
   | 'Undef'
-  | 'Derivative';
+  | 'Derivative'
+  | 'Concrete';
 
 /** Anything that can be turned into an expression. */
 export type ExprLike = Expr | number | bigint;

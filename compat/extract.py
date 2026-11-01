@@ -159,6 +159,8 @@ def ser(o):
         return {"t": name, "args": [ser(a) for a in o.args]}
     if isinstance(o, sympy.exp):
         return {"t": "Fn", "name": "exp", "args": [ser(a) for a in o.args]}
+    if isinstance(o, (sympy.Sum, sympy.Product)):
+        return {"t": "Fn", "name": name, "args": [ser(o.function)] + [ser(tuple(l)) for l in o.limits]}
     if o.is_Function or name in ("Piecewise", "Integral", "Derivative", "Limit", "Order", "Sum", "Product"):
         return {"t": "Fn", "name": name, "args": [ser(a) for a in o.args]}
     raise Unsupported(name)

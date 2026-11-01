@@ -114,6 +114,8 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
     ),
   ),
   Integral: (args) => integralNode(args),
+  Sum: (args) => concreteNode('Sum', args),
+  Product: (args) => concreteNode('Product', args),
   Limit: (args) => new sj.Limit(args as Expr[]),
   Order: ([e, ...rest]) => orderNode(e!, rest),
 };
@@ -124,6 +126,17 @@ function integralNode(args: unknown[]): Expr {
   if (lim instanceof PyTuple && lim.items.length === 3) return new Integral([f as Expr, ...(lim.items as Expr[])]);
   if (lim instanceof PyTuple && lim.items.length === 1) return new Integral([f as Expr, lim.items[0] as Expr]);
   throw new Unsupported('Integral limits');
+}
+
+const concreteDoit = (e: Expr): Expr => (e instanceof sj.Concrete ? sj.doitConcrete(e) : e);
+
+function concreteNode(kind: 'Sum' | 'Product', args: unknown[]): Expr {
+  const [f, ...lims] = args;
+  const ls = lims.map((l) => {
+    if (!(l instanceof PyTuple) || l.items.length !== 3) throw new Unsupported('limits');
+    return l.items as [Sym, Expr, Expr];
+  });
+  return kind === 'Sum' ? sj.Sum(f as Expr, ...ls) : sj.Product(f as Expr, ...ls);
 }
 
 function orderNode(e: unknown, rest: unknown[]): Expr {
@@ -599,6 +612,15 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.series(e, x, asExpr(x0), Number((asExpr(n) as sj.Rational).p));
   },
   O: (args, kw) => (noKw(kw), orderNode(asExpr(args[0]), args.slice(1))),
+  Sum: (args, kw) => (noKw(kw), concreteNode('Sum', [asExpr(args[0]), ...args.slice(1)])),
+  Product: (args, kw) => (noKw(kw), concreteNode('Product', [asExpr(args[0]), ...args.slice(1)])),
+  summation: (args, kw) => (noKw(kw), concreteDoit(concreteNode('Sum', [asExpr(args[0]), ...args.slice(1)]))),
+  product: (args, kw) => (noKw(kw), concreteDoit(concreteNode('Product', [asExpr(args[0]), ...args.slice(1)]))),
+  '.reverse_order': (args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof sj.Concrete)) throw new Unsupported('reverse_order');
+    return sj.reverseOrder(self, ...args.map((a) => (a instanceof Sym ? a : Number((a as sj.Rational).p))));
+  },
   Order: (args, kw) => (noKw(kw), orderNode(asExpr(args[0]), args.slice(1))),
   Integral: (args, kw) => (noKw(kw), integralNode([asExpr(args[0]), ...args.slice(1)])),
   det: (args, kw) => {
@@ -657,6 +679,7 @@ export const ADAPTERS: Record<string, Adapter> = {
         return a && b ? sj.integrate(f!, v as Sym, [a, b]) : sj.integrate(f!, v as Sym);
       }
       if (y instanceof sj.Limit) return sj.limit(y.args[0]!, y.args[1] as Sym, y.args[2]!, y.dir);
+      if (y instanceof sj.Concrete) return sj.doitConcrete(y);
       return y;
     };
     return doit(e);

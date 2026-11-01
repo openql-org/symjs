@@ -156,6 +156,7 @@ export { Function, functions, derivative } from './core/undef';
 export type { UndefinedFunction } from './core/undef';
 export { integrate } from './integrals/integrate';
 export { limit } from './series/limits';
+export { Sum, Product, summation, product, doitConcrete, reverseOrder, Concrete } from './concrete/summations';
 export { series, O } from './series/series';
 
 // logic

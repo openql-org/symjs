@@ -4793,7 +4793,7 @@
    "category": "core",
    "module": "sympy.core.expr",
    "src": "(-2*x*y).args_cnc(cset=True)",
-   "expected": "[{2, y, x, -1}, []]"
+   "expected": "[{x, y, 2, -1}, []]"
   },
   {
    "fn": ".args_cnc",
@@ -14141,7 +14141,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms()",
-   "expected": "{1, 2, I, y, x, pi}"
+   "expected": "{1, 2, y, pi, x, I}"
   },
   {
    "fn": ".atoms",
@@ -14203,7 +14203,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Symbol)",
-   "expected": "{y, x}"
+   "expected": "{x, y}"
   },
   {
    "fn": ".atoms",
@@ -14327,7 +14327,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Number, NumberSymbol)",
-   "expected": "{1, 2, pi}"
+   "expected": "{pi, 1, 2}"
   },
   {
    "fn": ".atoms",
@@ -14389,7 +14389,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Number, NumberSymbol, I)",
-   "expected": "{I, 1, 2, pi}"
+   "expected": "{pi, 1, 2, I}"
   },
   {
    "fn": ".atoms",
@@ -14458,7 +14458,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(x) # x is a Symbol",
-   "expected": "{y, x}"
+   "expected": "{x, y}"
   },
   {
    "fn": ".atoms",
@@ -26177,7 +26177,7 @@
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "Dummy() #doctest: +SKIP",
-   "expected": "_Dummy_1056"
+   "expected": "_Dummy_1053"
   },
   {
    "fn": ".match",
@@ -26664,7 +26664,7 @@
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "symbols({'a', 'b', 'c'})",
-   "expected": "{b, c, a}"
+   "expected": "{a, c, b}"
   },
   {
    "fn": "symbols",
@@ -31630,7 +31630,7 @@
    "category": "functions",
    "module": "sympy.functions.elementary.complexes",
    "src": "polarify(expr)",
-   "expected": "((_x*exp_polar(I*pi))**_y, {_y: y, _x: x})"
+   "expected": "((_x*exp_polar(I*pi))**_y, {_x: x, _y: y})"
   },
   {
    "fn": ".expand",
@@ -47299,7 +47299,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a87ee30>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a77b520>, 3)"
   },
   {
    "fn": ".LC",
@@ -47506,7 +47506,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a87ee00>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a6b71f0>, 4)"
   },
   {
    "fn": ".TC",
@@ -99306,7 +99306,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3) # doctest:+SKIP",
-   "expected": "Matrix([[13, 68, 50], [44, 92, 28], [0, 51, 4]])"
+   "expected": "Matrix([[22, 66, 61], [20, 66, 20], [4, 35, 30]])"
   },
   {
    "fn": "randMatrix",
@@ -99326,7 +99326,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, 2) # doctest:+SKIP",
-   "expected": "Matrix([[13, 29], [8, 38], [73, 10]])"
+   "expected": "Matrix([[52, 50], [55, 17], [62, 40]])"
   },
   {
    "fn": "randMatrix",
@@ -99356,7 +99356,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, 3, 0, 2) # doctest:+SKIP",
-   "expected": "Matrix([[2, 0, 1], [1, 2, 0], [0, 1, 2]])"
+   "expected": "Matrix([[1, 0, 0], [1, 0, 2], [1, 2, 2]])"
   },
   {
    "fn": "randMatrix",
@@ -99376,7 +99376,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, symmetric=True) # doctest:+SKIP",
-   "expected": "Matrix([[96, 84, 26], [84, 98, 0], [26, 0, 53]])"
+   "expected": "Matrix([[84, 9, 96], [9, 24, 87], [96, 87, 4]])"
   },
   {
    "fn": "randMatrix",
@@ -99401,7 +99401,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, symmetric=True, percent=50) # doctest:+SKIP",
-   "expected": "Matrix([[85, 0, 0], [0, 87, 43], [0, 43, 0]])"
+   "expected": "Matrix([[0, 0, 0], [0, 21, 44], [0, 44, 0]])"
   },
   {
    "fn": "rot_axis1",
