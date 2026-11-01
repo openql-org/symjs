@@ -127,8 +127,27 @@ def ser(o):
         return {"t": "UFnClass", "name": o.__name__}
     if isinstance(o, sympy.Poly):
         return {"t": "Poly", "expr": ser(o.as_expr()), "gens": [ser(g) for g in o.gens], "domain": str(o.get_domain()), "pure": isinstance(o, sympy.PurePoly)}
+    if isinstance(o, type) and issubclass(o, Basic) and not isinstance(o, sympy.FunctionClass):
+        return {"t": "Type", "name": o.__name__}
+    if isinstance(o, type) and o.__name__ in ("Matrix", "MutableDenseMatrix", "ImmutableMatrix", "ImmutableDenseMatrix"):
+        return {"t": "Type", "name": "Matrix"}
+    from sympy.core.function import WildFunction as _WF
+    if isinstance(o, sympy.FunctionClass) and not isinstance(o, _UF):
+        return {"t": "FnClass", "name": o.__name__}
     if not isinstance(o, Basic):
         raise Unsupported(type(o).__name__)
+    if isinstance(o, sympy.Wild):
+        if o.properties:
+            raise Unsupported("Wild properties")
+        a = {k: True for k in ASSUMPTION_KEYS if o._assumptions_orig.get(k) is True}
+        return {"t": "Wild", "name": o.name, "exclude": [ser(e) for e in o.exclude], "assume": a}
+    if isinstance(o, _WF):
+        nargs = o.nargs
+        lst = None if nargs == sympy.S.Naturals0 else sorted(int(n) for n in nargs)
+        return {"t": "WildFunction", "name": o.name, "nargs": lst}
+    if isinstance(o, sympy.Dummy):
+        a = {k: True for k in ASSUMPTION_KEYS if o._assumptions_orig.get(k) is True}
+        return {"t": "Dummy", "name": o.name, "index": o.dummy_index, "assume": a}
     if o.is_Symbol and type(o) is Symbol:
         a = {k: True for k in ASSUMPTION_KEYS if o._assumptions_orig.get(k) is True}
         if o._assumptions_orig.get("commutative") is False:
@@ -140,7 +159,9 @@ def ser(o):
     if isinstance(o, Float):
         sgn, man, exp, _bc = o._mpf_
         return {"t": "Float", "v": float(o), "man": str(-man if sgn else man), "exp": int(exp), "prec": int(o._prec)}
-    named = {sympy.pi: "pi", sympy.E: "E", sympy.I: "I", sympy.oo: "oo", -sympy.oo: "-oo", sympy.zoo: "zoo", sympy.nan: "nan"}
+    named = {sympy.pi: "pi", sympy.E: "E", sympy.I: "I", sympy.oo: "oo", -sympy.oo: "-oo", sympy.zoo: "zoo", sympy.nan: "nan",
+             sympy.EulerGamma: "EulerGamma", sympy.Catalan: "Catalan", sympy.GoldenRatio: "GoldenRatio",
+             sympy.TribonacciConstant: "TribonacciConstant"}
     for k, v in named.items():
         if o == k and type(o) is type(k):
             return {"t": "Const", "name": v}

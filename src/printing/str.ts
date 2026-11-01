@@ -149,7 +149,7 @@ export function strNested(e: Expr): string {
 function strInner(e: Expr): string {
   if (e instanceof Rational) return e.q === 1n ? `${e.p}` : `${e.p}/${e.q}`;
   if (e instanceof Float) return floatString(e, printLevel > 1);
-  if (e instanceof Sym) return e.name;
+  if (e instanceof Sym) return e.printName;
   if (e instanceof Constant) return e.name;
   if (e instanceof Special) return e.name;
   if (e instanceof Fn) return `${sympyFunctionName(e.name)}(${e.args.map(str).join(', ')})`;

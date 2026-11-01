@@ -6,7 +6,7 @@
  */
 
 import { keepCoeff } from '../core/methods';
-import { Add, Expr, ExprLike, Mul, Pow, Rational, S } from '../core/nodes';
+import { Add, Expr, impl, ExprLike, Mul, Pow, Rational, S } from '../core/nodes';
 import { add, asBaseExp, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { expandMul } from './expand';
 import { fraction } from './rational';
@@ -115,3 +115,5 @@ export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: { exac
 }
 
 const byKey = (a: Expr, b: Expr) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
+
+impl.collect = (e, syms) => collect(e, syms);

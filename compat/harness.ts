@@ -37,6 +37,16 @@ export class UFnClass {
   constructor(readonly name: string) {}
 }
 
+/** A built-in SymPy function class such as `sin`. */
+export class FnClass {
+  constructor(readonly name: string) {}
+}
+
+/** A SymPy class object such as `Mul` or `Symbol`. */
+export class TypeRef {
+  constructor(readonly name: string) {}
+}
+
 export function fmt(v: unknown): string {
   if (v instanceof Expr) return sj.str(v);
   if (v instanceof Matrix) return v.toString();
@@ -51,7 +61,8 @@ export function fmt(v: unknown): string {
   if (v instanceof PyTuple) return v.items.length === 1 ? `(${fmt(v.items[0])},)` : `(${v.items.map(fmt).join(', ')})`;
   if (v instanceof PyDict) return `{${v.entries.map(([k, x]) => `${fmt(k)}: ${fmt(x)}`).join(', ')}}`;
   if (v instanceof PySet) return v.items.length === 0 ? 'set()' : `{${v.items.map(fmt).join(', ')}}`;
-  if (v instanceof UFnClass) return v.name;
+  if (v instanceof UFnClass || v instanceof FnClass) return v.name;
+  if (v instanceof TypeRef) return `<class 'sympy.${v.name}'>`;
   throw new Unsupported(`cannot format ${String(v)}`);
 }
 
@@ -176,6 +187,10 @@ export function deserialize(tree: Tree): unknown {
         '-oo': S.NegativeInfinity,
         zoo: S.ComplexInfinity,
         nan: S.NaN,
+        EulerGamma: S.EulerGamma,
+        Catalan: S.Catalan,
+        GoldenRatio: S.GoldenRatio,
+        TribonacciConstant: S.TribonacciConstant,
       };
       return m[tree['name'] as string];
     }
@@ -208,6 +223,20 @@ export function deserialize(tree: Tree): unknown {
       );
     case 'UFnClass':
       return new UFnClass(tree['name'] as string);
+    case 'FnClass':
+      return new FnClass(tree['name'] as string);
+    case 'Type':
+      return new TypeRef(tree['name'] as string);
+    case 'Wild': {
+      const a = tree['assume'] as Record<string, boolean>;
+      return new sj.Wild(tree['name'] as string, { exclude: (tree['exclude'] as Tree[]).map((x) => deserialize(x) as Expr), ...a });
+    }
+    case 'WildFunction':
+      return new sj.WildFunction(tree['name'] as string, (tree['nargs'] as number[] | null) ?? undefined);
+    case 'Dummy': {
+      const a = tree['assume'] as Record<string, boolean>;
+      return new sj.Dummy(tree['name'] as string, a, 1_000_000 + (tree['index'] as number));
+    }
     case 'UFn':
       return sj.Function(tree['name'] as string)(...(tree['args'] as Tree[]).map((a) => deserialize(a) as Expr));
     case 'Derivative':
@@ -367,6 +396,24 @@ function evalfAdapter(self: unknown, args: unknown[], kw: Record<string, unknown
   if (chop !== undefined) opts.chop = typeof chop === "boolean" ? chop : asExpr(chop).toNumber();
   if (self instanceof Matrix) return self.evalf(n, opts);
   return asExpr(self).evalf(n, opts);
+}
+
+function toQuery(v: unknown): sj.Query {
+  if (v instanceof FnClass && ['Function', 'AppliedUndef'].includes(v.name)) return { type: v.name };
+  if (v instanceof FnClass || v instanceof UFnClass) return { fn: v.name };
+  if (v instanceof TypeRef) return { type: v.name };
+  if (v instanceof Expr) return v;
+  throw new Unsupported('query');
+}
+
+function applyFn(name: string, args: Expr[]): Expr {
+  const f = FUNCTIONS[name];
+  if (f) return f(args);
+  return sj.Function(name)(...args);
+}
+
+function matchDict(m: Map<Sym, Expr> | undefined): unknown {
+  return m ? new PyDict([...m]) : null;
 }
 
 const FN_NAMES = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate'] as const;
@@ -767,8 +814,43 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.has': (args, kw, self) => {
     noKw(kw);
     const e = self instanceof Matrix ? self.data : [asExpr(self)];
-    return args.some((a) => e.some((x) => x.has(asExpr(a))));
+    return args.some((a) =>
+      a instanceof FnClass || a instanceof TypeRef || a instanceof UFnClass
+        ? e.some((x) => sj.find(x, toQuery(a)).length > 0)
+        : e.some((x) => x.has(asExpr(a))),
+    );
   },
+  '.match': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'old') throw new Unsupported(`kwargs ${k}`);
+    return matchDict(sj.match(asExpr(self), asExpr(args[0]), { old: Boolean(kw['old']) }));
+  },
+  '.replace': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (!['exact', 'map'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const q = toQuery(args[0]);
+    const v = args[1];
+    const value: sj.Replacement = v instanceof FnClass || v instanceof UFnClass ? { fn: v.name } : v instanceof TypeRef ? { type: v.name } : asExpr(v);
+    const r = sj.replace(asExpr(self), q, value, {
+      exact: kw['exact'] === undefined ? undefined : Boolean(kw['exact']),
+      map: Boolean(kw['map']),
+      apply: applyFn,
+    });
+    if (Array.isArray(r)) return new PyTuple([r[0], new PyDict([...r[1]])]);
+    return r;
+  },
+  '.find': (args, kw, self) => {
+    noKw(kw);
+    return new PySet(sj.find(asExpr(self), toQuery(args[0])));
+  },
+  count_ops: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'visual') throw new Unsupported(`kwargs ${k}`);
+    const visual = Boolean(kw['visual'] ?? args[1]);
+    if (args[0] instanceof PyList || args[0] instanceof PyTuple) {
+      const items = (args[0] as PyList).items.map(asExpr);
+      return visual ? sj.add(...items.map(sj.countOpsVisual)) : items.reduce((n, e) => n + sj.countOps(e), 0);
+    }
+    return visual ? sj.countOpsVisual(asExpr(args[0])) : sj.countOps(asExpr(args[0]));
+  },
+  '.count_ops': (args, kw, self) => ADAPTERS['count_ops']!([self, ...args], kw),
 
   '.coeff': (args, kw, self) => {
     noKw(kw);
@@ -834,6 +916,10 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.atoms': (args, kw, self) => {
     noKw(kw);
     const preds = args.map((a) => {
+      if (a instanceof FnClass || a instanceof TypeRef || a instanceof UFnClass) {
+        const q = toQuery(a);
+        return (x: Expr) => ('fn' in (q as object) ? sj.find(x, q).some((y) => y.key === x.key) : sj.isInstance(x, (q as { type: string }).type));
+      }
       const t = asExpr(a);
       if (t instanceof Sym) return (x: Expr) => x instanceof Sym;
       if (t instanceof sj.Rational && t.isOne) return (x: Expr) => x instanceof sj.Rational && x.isOne;
@@ -842,6 +928,9 @@ export const ADAPTERS: Record<string, Adapter> = {
       return (x: Expr) => x.key === t.key;
     });
     const pred = preds.length ? (x: Expr) => preds.some((p) => p(x)) : () => true;
+    if (args.some((a) => a instanceof FnClass || a instanceof TypeRef || a instanceof UFnClass)) {
+      return new PySet(sj.find(asExpr(self), pred));
+    }
     return new PySet(sj.atoms(asExpr(self), pred));
   },
   '.as_ordered_terms': exprMethod((e) => new PyList(e instanceof sj.Add ? asOrdered(e) : [e])),

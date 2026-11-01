@@ -4799,7 +4799,7 @@
    "category": "core",
    "module": "sympy.core.expr",
    "src": "(-2*x*y).args_cnc(cset=True)",
-   "expected": "[{2, y, x, -1}, []]"
+   "expected": "[{y, x, 2, -1}, []]"
   },
   {
    "fn": ".args_cnc",
@@ -14153,7 +14153,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms()",
-   "expected": "{1, 2, y, I, pi, x}"
+   "expected": "{1, 2, x, I, y, pi}"
   },
   {
    "fn": ".atoms",
@@ -14211,7 +14211,13 @@
      }
     ]
    },
-   "unsupportedArg": "type",
+   "args": [
+    {
+     "t": "Type",
+     "name": "Symbol"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Symbol)",
@@ -14273,7 +14279,13 @@
      }
     ]
    },
-   "unsupportedArg": "type",
+   "args": [
+    {
+     "t": "Type",
+     "name": "Number"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Number)",
@@ -14335,7 +14347,17 @@
      }
     ]
    },
-   "unsupportedArg": "type",
+   "args": [
+    {
+     "t": "Type",
+     "name": "Number"
+    },
+    {
+     "t": "Type",
+     "name": "NumberSymbol"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Number, NumberSymbol)",
@@ -14397,7 +14419,21 @@
      }
     ]
    },
-   "unsupportedArg": "type",
+   "args": [
+    {
+     "t": "Type",
+     "name": "Number"
+    },
+    {
+     "t": "Type",
+     "name": "NumberSymbol"
+    },
+    {
+     "t": "Const",
+     "name": "I"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Number, NumberSymbol, I)",
@@ -14672,11 +14708,17 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "Function"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + f(x) + 2*sin(y + I*pi)).atoms(Function)",
-   "expected": "{sin(y + I*pi), f(x)}"
+   "expected": "{f(x), sin(y + I*pi)}"
   },
   {
    "fn": ".atoms",
@@ -14740,7 +14782,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "AppliedUndef"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + f(x) + 2*sin(y + I*pi)).atoms(AppliedUndef)",
@@ -14802,7 +14850,13 @@
      }
     ]
    },
-   "unsupportedArg": "type",
+   "args": [
+    {
+     "t": "Type",
+     "name": "Mul"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Mul)",
@@ -14955,7 +15009,60 @@
   },
   {
    "fn": ".dummy_eq",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Dummy",
+        "name": "u",
+        "index": 1571068,
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(u**2 + 1).dummy_eq(x**2 + 1)",
@@ -14963,7 +15070,65 @@
   },
   {
    "fn": ".dummy_eq",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Dummy",
+        "name": "u",
+        "index": 1571068,
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(u**2 + y).dummy_eq(x**2 + y, x)",
@@ -14971,7 +15136,65 @@
   },
   {
    "fn": ".dummy_eq",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Dummy",
+        "name": "u",
+        "index": 1571068,
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "y",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(u**2 + y).dummy_eq(x**2 + y, y)",
@@ -15012,7 +15235,11 @@
   },
   {
    "fn": ".fromiter",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Tuple"
+   },
+   "unsupportedArg": "generator",
    "category": "core",
    "module": "sympy.core.basic",
    "src": "Tuple.fromiter(i for i in range(5))",
@@ -15574,7 +15801,37 @@
   },
   {
    "fn": ".is_same",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Basic"
+   },
+   "args": [
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     ]
+    },
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "Basic.is_same(eye(1), S(eye(1)))",
@@ -15617,7 +15874,26 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "p",
+       "exclude": [],
+       "assume": {}
+      },
+      {
+       "t": "Wild",
+       "name": "p",
+       "exclude": [],
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "e.match(p**p)",
@@ -15660,7 +15936,26 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "p",
+       "exclude": [],
+       "assume": {}
+      },
+      {
+       "t": "Wild",
+       "name": "q",
+       "exclude": [],
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "e.match(p**q)",
@@ -15693,7 +15988,37 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "p",
+       "exclude": [],
+       "assume": {}
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Wild",
+         "name": "q",
+         "exclude": [],
+         "assume": {}
+        },
+        {
+         "t": "Wild",
+         "name": "r",
+         "exclude": [],
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "e.match(p*q**r)",
@@ -15701,7 +16026,81 @@
   },
   {
    "fn": ".xreplace",
-   "unsupportedArg": "Wild",
+   "self": {
+    "t": "Mul",
+    "args": [
+     {
+      "t": "Wild",
+      "name": "p",
+      "exclude": [],
+      "assume": {}
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Wild",
+        "name": "q",
+        "exclude": [],
+        "assume": {}
+       },
+       {
+        "t": "Wild",
+        "name": "r",
+        "exclude": [],
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Wild",
+        "name": "q",
+        "exclude": [],
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      [
+       {
+        "t": "Wild",
+        "name": "r",
+        "exclude": [],
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Wild",
+        "name": "p",
+        "exclude": [],
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "4",
+        "q": "1"
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(p*q**r).xreplace(e.match(p*q**r))",
@@ -15740,7 +16139,43 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "Sum",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "q",
+       "exclude": [],
+       "assume": {}
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Wild",
+         "name": "q",
+         "exclude": [],
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Wild",
+         "name": "p",
+         "exclude": [],
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "Sum(x, (x, 1, 2)).match(Sum(q, (q, 1, p)))",
@@ -15763,7 +16198,40 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "p",
+       "exclude": [],
+       "assume": {}
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {
+    "old": {
+     "t": "Py",
+     "v": true
+    }
+   },
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(x - 2).match(p - x, old=True)",
@@ -15796,7 +16264,30 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Wild",
+       "name": "p",
+       "exclude": [],
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {
+    "old": {
+     "t": "Py",
+     "v": true
+    }
+   },
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(2/x).match(p*x, old=True)",
@@ -15917,7 +16408,17 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "sin"
+    },
+    {
+     "t": "FnClass",
+     "name": "cos"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "f.replace(sin, cos)",
@@ -15936,7 +16437,22 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "sin"
+    },
+    {
+     "t": "FnClass",
+     "name": "cos"
+    }
+   ],
+   "kwargs": {
+    "map": {
+     "t": "Py",
+     "v": true
+    }
+   },
    "category": "core",
    "module": "sympy.core.basic",
    "src": "sin(x).replace(sin, cos, map=True)",
@@ -15959,7 +16475,17 @@
      }
     ]
    },
-   "unsupportedArg": "type",
+   "args": [
+    {
+     "t": "Type",
+     "name": "Mul"
+    },
+    {
+     "t": "Type",
+     "name": "Add"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(x*y).replace(Mul, Add)",
@@ -16016,7 +16542,7 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "unsupportedArg": "function",
    "category": "core",
    "module": "sympy.core.basic",
    "src": "f.replace(sin, lambda arg: sin(2*arg))",
@@ -16039,7 +16565,7 @@
      }
     ]
    },
-   "unsupportedArg": "type",
+   "unsupportedArg": "function",
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(x*y).replace(Mul, lambda *args: sin(2*Mul(*args)))",
@@ -16096,7 +16622,33 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "sin",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "a",
+       "exclude": [],
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "Fn",
+     "name": "tan",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "a",
+       "exclude": [],
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "f.replace(sin(a), tan(a))",
@@ -16153,7 +16705,43 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "sin",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "a",
+       "exclude": [],
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "Fn",
+     "name": "tan",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        },
+        {
+         "t": "Wild",
+         "name": "a",
+         "exclude": [],
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "f.replace(sin(a), tan(a/2))",
@@ -16210,7 +16798,27 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "sin",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "a",
+       "exclude": [],
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "Wild",
+     "name": "a",
+     "exclude": [],
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "f.replace(sin(a), a)",
@@ -16233,7 +16841,31 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Wild",
+       "name": "a",
+       "exclude": [],
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "Wild",
+     "name": "a",
+     "exclude": [],
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(x*y).replace(a*x, a)",
@@ -16266,7 +16898,63 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "b",
+       "exclude": [],
+       "assume": {}
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Wild",
+         "name": "a",
+         "exclude": [],
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "b",
+       "exclude": [],
+       "assume": {}
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Wild",
+         "name": "a",
+         "exclude": [],
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(2*x + y).replace(a*x + b, b - a)",
@@ -16289,7 +16977,63 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "b",
+       "exclude": [],
+       "assume": {}
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Wild",
+         "name": "a",
+         "exclude": [],
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "b",
+       "exclude": [],
+       "assume": {}
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Wild",
+         "name": "a",
+         "exclude": [],
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(2*x).replace(a*x + b, b - a)",
@@ -16312,7 +17056,68 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "b",
+       "exclude": [],
+       "assume": {}
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Wild",
+         "name": "a",
+         "exclude": [],
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "b",
+       "exclude": [],
+       "assume": {}
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Wild",
+         "name": "a",
+         "exclude": [],
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {
+    "exact": {
+     "t": "Py",
+     "v": false
+    }
+   },
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(2*x).replace(a*x + b, b - a, exact=False)",
@@ -16369,7 +17174,7 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "unsupportedArg": "function",
    "category": "core",
    "module": "sympy.core.basic",
    "src": "f.replace(sin(a), lambda a: sin(2*a))",
@@ -16484,7 +17289,7 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "unsupportedArg": "function",
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(x**(1 + y)).replace(x**(1 + a), lambda a: x**-a, exact=False)",
@@ -16517,7 +17322,7 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "unsupportedArg": "function",
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(x**(1 + y)).replace(x**(1 + a), lambda a: x**-a, exact=True)",
@@ -16540,7 +17345,7 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "unsupportedArg": "function",
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(x**y).replace(x**(1 + a), lambda a: x**-a, exact=False)",
@@ -16563,7 +17368,7 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "unsupportedArg": "function",
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(x**y).replace(x**(1 + a), lambda a: x**-a, exact=True)",
@@ -16650,7 +17455,13 @@
      }
     ]
    },
-   "unsupportedArg": "ExpMeta",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "exp"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "expr.rewrite(exp)",
@@ -16694,7 +17505,17 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "sin"
+    },
+    {
+     "t": "FnClass",
+     "name": "exp"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "expr.rewrite(sin, exp)",
@@ -16738,7 +17559,22 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "FnClass",
+       "name": "cos"
+      }
+     ]
+    },
+    {
+     "t": "FnClass",
+     "name": "exp"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "expr.rewrite([cos,], exp)",
@@ -16782,7 +17618,26 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "FnClass",
+       "name": "cos"
+      },
+      {
+       "t": "FnClass",
+       "name": "sin"
+      }
+     ]
+    },
+    {
+     "t": "FnClass",
+     "name": "exp"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "expr.rewrite([cos, sin], exp)",
@@ -21116,15 +21971,9 @@
    },
    "args": [
     {
-     "t": "Fn",
-     "name": "WildFunction",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "F",
-       "assume": {}
-      }
-     ]
+     "t": "WildFunction",
+     "name": "F",
+     "nargs": null
     }
    ],
    "kwargs": {},
@@ -21136,27 +21985,15 @@
   {
    "fn": ".match",
    "self": {
-    "t": "Fn",
-    "name": "WildFunction",
-    "args": [
-     {
-      "t": "Symbol",
-      "name": "F",
-      "assume": {}
-     }
-    ]
+    "t": "WildFunction",
+    "name": "F",
+    "nargs": null
    },
    "args": [
     {
-     "t": "Fn",
-     "name": "WildFunction",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "F",
-       "assume": {}
-      }
-     ]
+     "t": "WildFunction",
+     "name": "F",
+     "nargs": null
     }
    ],
    "kwargs": {},
@@ -21180,15 +22017,9 @@
    },
    "args": [
     {
-     "t": "Fn",
-     "name": "WildFunction",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "F",
-       "assume": {}
-      }
-     ]
+     "t": "WildFunction",
+     "name": "F",
+     "nargs": null
     }
    ],
    "kwargs": {},
@@ -21212,15 +22043,9 @@
    },
    "args": [
     {
-     "t": "Fn",
-     "name": "WildFunction",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "F",
-       "assume": {}
-      }
-     ]
+     "t": "WildFunction",
+     "name": "F",
+     "nargs": null
     }
    ],
    "kwargs": {},
@@ -21249,15 +22074,9 @@
    },
    "args": [
     {
-     "t": "Fn",
-     "name": "WildFunction",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "F",
-       "assume": {}
-      }
-     ]
+     "t": "WildFunction",
+     "name": "F",
+     "nargs": null
     }
    ],
    "kwargs": {},
@@ -21281,14 +22100,10 @@
    },
    "args": [
     {
-     "t": "Fn",
-     "name": "WildFunction",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "F",
-       "assume": {}
-      }
+     "t": "WildFunction",
+     "name": "F",
+     "nargs": [
+      2
      ]
     }
    ],
@@ -21318,14 +22133,10 @@
    },
    "args": [
     {
-     "t": "Fn",
-     "name": "WildFunction",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "F",
-       "assume": {}
-      }
+     "t": "WildFunction",
+     "name": "F",
+     "nargs": [
+      2
      ]
     }
    ],
@@ -21350,14 +22161,11 @@
    },
    "args": [
     {
-     "t": "Fn",
-     "name": "WildFunction",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "F",
-       "assume": {}
-      }
+     "t": "WildFunction",
+     "name": "F",
+     "nargs": [
+      1,
+      2
      ]
     }
    ],
@@ -21387,14 +22195,11 @@
    },
    "args": [
     {
-     "t": "Fn",
-     "name": "WildFunction",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "F",
-       "assume": {}
-      }
+     "t": "WildFunction",
+     "name": "F",
+     "nargs": [
+      1,
+      2
      ]
     }
    ],
@@ -21429,14 +22234,11 @@
    },
    "args": [
     {
-     "t": "Fn",
-     "name": "WildFunction",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "F",
-       "assume": {}
-      }
+     "t": "WildFunction",
+     "name": "F",
+     "nargs": [
+      1,
+      2
      ]
     }
    ],
@@ -21456,7 +22258,13 @@
   },
   {
    "fn": "arity",
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "log"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.function",
    "src": "arity(log)",
@@ -24798,7 +25606,53 @@
   },
   {
    "fn": ".as_expr",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Poly",
+    "expr": {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "-2",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 1571193,
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    "gens": [
+     {
+      "t": "Dummy",
+      "name": "x",
+      "index": 1571193,
+      "assume": {}
+     }
+    ],
+    "domain": "QQ",
+    "pure": true
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a1.minpoly_of_element().as_expr(x)",
@@ -24838,7 +25692,53 @@
   },
   {
    "fn": ".as_expr",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Poly",
+    "expr": {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "-2",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 1571198,
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    "gens": [
+     {
+      "t": "Dummy",
+      "name": "x",
+      "index": 1571198,
+      "assume": {}
+     }
+    ],
+    "domain": "QQ",
+    "pure": true
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a4.minpoly_of_element().as_expr(x)",
@@ -25098,7 +25998,74 @@
   },
   {
    "fn": ".as_expr",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Poly",
+    "expr": {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 1571217,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-9",
+         "q": "2"
+        },
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 1571217,
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    "gens": [
+     {
+      "t": "Dummy",
+      "name": "x",
+      "index": 1571217,
+      "assume": {}
+     }
+    ],
+    "domain": "QQ",
+    "pure": true
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a.as_poly().as_expr(x)",
@@ -25106,7 +26073,79 @@
   },
   {
    "fn": ".as_expr",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Poly",
+    "expr": {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 1571214,
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-10",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 1571214,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "gens": [
+     {
+      "t": "Dummy",
+      "name": "x",
+      "index": 1571214,
+      "assume": {}
+     }
+    ],
+    "domain": "QQ",
+    "pure": false
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a.minpoly.as_poly().as_expr(x)",
@@ -25114,7 +26153,53 @@
   },
   {
    "fn": ".as_expr",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Poly",
+    "expr": {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "-2",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 1571218,
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    "gens": [
+     {
+      "t": "Dummy",
+      "name": "x",
+      "index": 1571218,
+      "assume": {}
+     }
+    ],
+    "domain": "QQ",
+    "pure": false
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a_prim.minpoly.as_poly().as_expr(x)",
@@ -25551,7 +26636,17 @@
   },
   {
    "fn": ".expand",
-   "unsupportedArg": "GoldenRatio",
+   "self": {
+    "t": "Const",
+    "name": "GoldenRatio"
+   },
+   "args": [],
+   "kwargs": {
+    "func": {
+     "t": "Py",
+     "v": true
+    }
+   },
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "S.GoldenRatio.expand(func=True)",
@@ -26011,7 +27106,17 @@
   },
   {
    "fn": ".expand",
-   "unsupportedArg": "TribonacciConstant",
+   "self": {
+    "t": "Const",
+    "name": "TribonacciConstant"
+   },
+   "args": [],
+   "kwargs": {
+    "func": {
+     "t": "Py",
+     "v": true
+    }
+   },
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "S.TribonacciConstant.expand(func=True)",
@@ -26019,7 +27124,18 @@
   },
   {
    "fn": ".n",
-   "unsupportedArg": "TribonacciConstant",
+   "self": {
+    "t": "Const",
+    "name": "TribonacciConstant"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "20",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "S.TribonacciConstant.n(20)",
@@ -26259,7 +27375,7 @@
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "Dummy() #doctest: +SKIP",
-   "expected": "_Dummy_1052"
+   "expected": "_Dummy_1048"
   },
   {
    "fn": ".match",
@@ -26268,7 +27384,15 @@
     "name": "x",
     "assume": {}
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Wild",
+     "name": "a",
+     "exclude": [],
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "x.match(a)",
@@ -26280,7 +27404,15 @@
     "t": "Const",
     "name": "pi"
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Wild",
+     "name": "a",
+     "exclude": [],
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "pi.match(a)",
@@ -26313,7 +27445,25 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Wild",
+       "name": "a",
+       "exclude": [],
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "(3*x**2).match(a*x)",
@@ -26332,7 +27482,15 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Wild",
+     "name": "a",
+     "exclude": [],
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "cos(x).match(a)",
@@ -26365,7 +27523,31 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Wild",
+       "name": "b",
+       "exclude": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "(3*x**2).match(b*x)",
@@ -26373,7 +27555,27 @@
   },
   {
    "fn": ".match",
-   "unsupportedArg": "Wild",
+   "self": {
+    "t": "Wild",
+    "name": "b",
+    "exclude": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ],
+    "assume": {}
+   },
+   "args": [
+    {
+     "t": "Wild",
+     "name": "a",
+     "exclude": [],
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "b.match(a)",
@@ -26382,17 +27584,19 @@
   {
    "fn": ".match",
    "self": {
-    "t": "Fn",
-    "name": "WildFunction",
-    "args": [
-     {
-      "t": "Symbol",
-      "name": "A",
-      "assume": {}
-     }
-    ]
+    "t": "WildFunction",
+    "name": "A",
+    "nargs": null
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Wild",
+     "name": "a",
+     "exclude": [],
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "A.match(a)",
@@ -26425,7 +27629,46 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Wild",
+         "name": "a",
+         "exclude": [],
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        },
+        {
+         "t": "Wild",
+         "name": "b",
+         "exclude": [],
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "(2 + 3*y).match(a*x + b*y)",
@@ -26458,7 +27701,68 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Wild",
+         "name": "a",
+         "exclude": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ],
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        },
+        {
+         "t": "Wild",
+         "name": "b",
+         "exclude": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ],
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "(2 + 3*y).match(a*x + b*y)",
@@ -26501,7 +27805,26 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "a",
+       "exclude": [],
+       "assume": {}
+      },
+      {
+       "t": "Wild",
+       "name": "b",
+       "exclude": [],
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "E.match(a*b)",
@@ -26544,7 +27867,37 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "a",
+       "exclude": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ],
+       "assume": {}
+      },
+      {
+       "t": "Wild",
+       "name": "b",
+       "exclude": [],
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "E.match(a*b)",
@@ -26587,7 +27940,42 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "a",
+       "exclude": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "z",
+         "assume": {}
+        }
+       ],
+       "assume": {}
+      },
+      {
+       "t": "Wild",
+       "name": "b",
+       "exclude": [],
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "E.match(a*b)",
@@ -26630,7 +28018,7 @@
      }
     ]
    },
-   "unsupportedArg": "Wild",
+   "unsupportedArg": "Wild properties",
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "E.match(a*b)",
@@ -26638,7 +28026,107 @@
   },
   {
    "fn": ".xreplace",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Tuple",
+    "items": [
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 1571271,
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ],
+      [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "x_1",
+        "assume": {}
+       }
+      ],
+      [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 1571271,
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "eqs.xreplace(mapping)",
@@ -26746,7 +28234,7 @@
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "symbols({'a', 'b', 'c'})",
-   "expected": "{c, a, b}"
+   "expected": "{b, a, c}"
   },
   {
    "fn": "symbols",
@@ -27003,7 +28491,12 @@
      "v": "f,g,h"
     }
    ],
-   "unsupportedArg": "FunctionClass",
+   "kwargs": {
+    "cls": {
+     "t": "FnClass",
+     "name": "Function"
+    }
+   },
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "symbols('f,g,h', cls=Function)",
@@ -27237,7 +28730,13 @@
      }
     ]
    },
-   "unsupportedArg": "type",
+   "args": [
+    {
+     "t": "Type",
+     "name": "Add"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.relational",
    "src": "eq.rewrite(Add)  #doctest: +SKIP",
@@ -31054,7 +32553,29 @@
   },
   {
    "fn": "arg",
-   "unsupportedArg": "Dummy",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "arg",
+     "args": [
+      {
+       "t": "Fn",
+       "name": "arg",
+       "args": [
+        {
+         "t": "Dummy",
+         "name": "Dummy_1090",
+         "index": 1571290,
+         "assume": {
+          "real": true
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "functions",
    "module": "sympy.functions.elementary.complexes",
    "src": "arg(arg(arg(real)))",
@@ -31733,7 +33254,49 @@
   },
   {
    "fn": ".expand",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Pow",
+    "args": [
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 1571296,
+        "assume": {}
+       },
+       {
+        "t": "Fn",
+        "name": "exp_polar",
+        "args": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Const",
+            "name": "pi"
+           },
+           {
+            "t": "Const",
+            "name": "I"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Dummy",
+      "name": "y",
+      "index": 1571295,
+      "assume": {}
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "functions",
    "module": "sympy.functions.elementary.complexes",
    "src": "polarify(expr)[0].expand()",
@@ -33528,7 +35091,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "log"
+    }
+   ],
+   "kwargs": {},
    "category": "functions",
    "module": "sympy.functions.elementary.trigonometric",
    "src": "atan2(y, x).rewrite(log)",
@@ -33552,7 +35121,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "atan"
+    }
+   ],
+   "kwargs": {},
    "category": "functions",
    "module": "sympy.functions.elementary.trigonometric",
    "src": "atan2(y, x).rewrite(atan)",
@@ -34161,7 +35736,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "jn"
+    }
+   ],
+   "kwargs": {},
    "category": "functions",
    "module": "sympy.functions.elementary.trigonometric",
    "src": "sinc(x).rewrite(jn)",
@@ -36311,7 +37892,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "floor"
+    }
+   ],
+   "kwargs": {},
    "category": "functions",
    "module": "sympy.functions.elementary.integers",
    "src": "frac(x).rewrite(floor)",
@@ -38022,7 +39609,63 @@
   },
   {
    "fn": "nsimplify",
-   "unsupportedArg": "GoldenRatio",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "5",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "2"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Const",
+       "name": "GoldenRatio"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "simplify",
    "module": "sympy.simplify.simplify",
    "src": "nsimplify(4/(1+sqrt(5)), [GoldenRatio])",
@@ -38244,7 +39887,33 @@
   },
   {
    "fn": ".expand",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Fn",
+    "name": "log",
+    "args": [
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 1571407,
+        "assume": {
+         "positive": true,
+         "commutative": true
+        }
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "simplify",
    "module": "sympy.simplify.simplify",
    "src": "log(posify(eq)[0]).expand()",
@@ -38252,7 +39921,55 @@
   },
   {
    "fn": ".subs",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Mul",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "-1",
+      "q": "1"
+     },
+     {
+      "t": "Fn",
+      "name": "log",
+      "args": [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 1571408,
+        "assume": {
+         "positive": true,
+         "commutative": true
+        }
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 1571408,
+        "assume": {
+         "positive": true,
+         "commutative": true
+        }
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "simplify",
    "module": "sympy.simplify.simplify",
    "src": "log(p).expand().subs(rep)",
@@ -39656,7 +41373,85 @@
   },
   {
    "fn": "collect",
-   "unsupportedArg": "Wild",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "a",
+         "assume": {}
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "b",
+         "assume": {}
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Wild",
+       "name": "w1",
+       "exclude": [],
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "simplify",
    "module": "sympy.simplify.radsimp",
    "src": "collect(a*x**y - b*x**y, w**y)",
@@ -46503,7 +48298,165 @@
   },
   {
    "fn": "assemble_partfrac_list",
-   "unsupportedArg": "Dummy",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": false
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Tuple",
+         "items": [
+          {
+           "t": "Poly",
+           "expr": {
+            "t": "Add",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             },
+             {
+              "t": "Dummy",
+              "name": "w",
+              "index": 1572342,
+              "assume": {}
+             }
+            ]
+           },
+           "gens": [
+            {
+             "t": "Dummy",
+             "name": "w",
+             "index": 1572342,
+             "assume": {}
+            }
+           ],
+           "domain": "ZZ",
+           "pure": false
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572341,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572341,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Dummy",
+                 "name": "a",
+                 "index": 1572341,
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "simplify",
    "module": "sympy.polys.partfrac",
    "src": "assemble_partfrac_list(pfd)",
@@ -46511,7 +48464,145 @@
   },
   {
    "fn": "assemble_partfrac_list",
-   "unsupportedArg": "Dummy",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      },
+      {
+       "t": "Poly",
+       "expr": {
+        "t": "Rational",
+        "p": "2",
+        "q": "3"
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "QQ",
+       "pure": false
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Tuple",
+         "items": [
+          {
+           "t": "Poly",
+           "expr": {
+            "t": "Add",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-2",
+              "q": "1"
+             },
+             {
+              "t": "Dummy",
+              "name": "w",
+              "index": 1572344,
+              "assume": {}
+             }
+            ]
+           },
+           "gens": [
+            {
+             "t": "Dummy",
+             "name": "w",
+             "index": 1572344,
+             "assume": {}
+            }
+           ],
+           "domain": "ZZ",
+           "pure": false
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572343,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572343,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Dummy",
+                 "name": "a",
+                 "index": 1572343,
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "simplify",
    "module": "sympy.polys.partfrac",
    "src": "assemble_partfrac_list(pfd)",
@@ -46519,7 +48610,267 @@
   },
   {
    "fn": "assemble_partfrac_list",
-   "unsupportedArg": "Dummy",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Poly",
+       "expr": {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ[t]",
+       "pure": false
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Tuple",
+         "items": [
+          {
+           "t": "Poly",
+           "expr": {
+            "t": "Add",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "t",
+              "assume": {}
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Dummy",
+                "name": "w",
+                "index": 1572346,
+                "assume": {}
+               },
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               }
+              ]
+             },
+             {
+              "t": "Dummy",
+              "name": "w",
+              "index": 1572346,
+              "assume": {}
+             }
+            ]
+           },
+           "gens": [
+            {
+             "t": "Dummy",
+             "name": "w",
+             "index": 1572346,
+             "assume": {}
+            }
+           ],
+           "domain": "ZZ[t]",
+           "pure": false
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572345,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "t",
+                 "assume": {}
+                },
+                {
+                 "t": "Pow",
+                 "args": [
+                  {
+                   "t": "Add",
+                   "args": [
+                    {
+                     "t": "Rational",
+                     "p": "-1",
+                     "q": "1"
+                    },
+                    {
+                     "t": "Mul",
+                     "args": [
+                      {
+                       "t": "Rational",
+                       "p": "4",
+                       "q": "1"
+                      },
+                      {
+                       "t": "Symbol",
+                       "name": "t",
+                       "assume": {}
+                      }
+                     ]
+                    }
+                   ]
+                  },
+                  {
+                   "t": "Rational",
+                   "p": "-1",
+                   "q": "1"
+                  }
+                 ]
+                }
+               ]
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-2",
+                 "q": "1"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "t",
+                 "assume": {}
+                },
+                {
+                 "t": "Pow",
+                 "args": [
+                  {
+                   "t": "Add",
+                   "args": [
+                    {
+                     "t": "Rational",
+                     "p": "-1",
+                     "q": "1"
+                    },
+                    {
+                     "t": "Mul",
+                     "args": [
+                      {
+                       "t": "Rational",
+                       "p": "4",
+                       "q": "1"
+                      },
+                      {
+                       "t": "Symbol",
+                       "name": "t",
+                       "assume": {}
+                      }
+                     ]
+                    }
+                   ]
+                  },
+                  {
+                   "t": "Rational",
+                   "p": "-1",
+                   "q": "1"
+                  }
+                 ]
+                },
+                {
+                 "t": "Dummy",
+                 "name": "a",
+                 "index": 1572345,
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572345,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Dummy",
+                 "name": "a",
+                 "index": 1572345,
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "simplify",
    "module": "sympy.polys.partfrac",
    "src": "assemble_partfrac_list(pfd)",
@@ -46527,7 +48878,384 @@
   },
   {
    "fn": "assemble_partfrac_list",
-   "unsupportedArg": "Dummy",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Poly",
+       "expr": {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": false
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Tuple",
+         "items": [
+          {
+           "t": "Poly",
+           "expr": {
+            "t": "Add",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-2",
+              "q": "1"
+             },
+             {
+              "t": "Dummy",
+              "name": "w",
+              "index": 1572348,
+              "assume": {}
+             }
+            ]
+           },
+           "gens": [
+            {
+             "t": "Dummy",
+             "name": "w",
+             "index": 1572348,
+             "assume": {}
+            }
+           ],
+           "domain": "ZZ",
+           "pure": false
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572347,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572347,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Dummy",
+                 "name": "a",
+                 "index": 1572347,
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Tuple",
+         "items": [
+          {
+           "t": "Poly",
+           "expr": {
+            "t": "Add",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Dummy",
+                "name": "w",
+                "index": 1572348,
+                "assume": {}
+               },
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               }
+              ]
+             }
+            ]
+           },
+           "gens": [
+            {
+             "t": "Dummy",
+             "name": "w",
+             "index": 1572348,
+             "assume": {}
+            }
+           ],
+           "domain": "ZZ",
+           "pure": false
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572347,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-6",
+               "q": "1"
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-3",
+                 "q": "1"
+                },
+                {
+                 "t": "Dummy",
+                 "name": "a",
+                 "index": 1572347,
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572347,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Dummy",
+                 "name": "a",
+                 "index": 1572347,
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Tuple",
+         "items": [
+          {
+           "t": "Poly",
+           "expr": {
+            "t": "Add",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "1"
+             },
+             {
+              "t": "Dummy",
+              "name": "w",
+              "index": 1572348,
+              "assume": {}
+             }
+            ]
+           },
+           "gens": [
+            {
+             "t": "Dummy",
+             "name": "w",
+             "index": 1572348,
+             "assume": {}
+            }
+           ],
+           "domain": "ZZ",
+           "pure": false
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572347,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "-4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572347,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Dummy",
+                 "name": "a",
+                 "index": 1572347,
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "simplify",
    "module": "sympy.polys.partfrac",
    "src": "assemble_partfrac_list(pfd)",
@@ -46535,7 +49263,384 @@
   },
   {
    "fn": "assemble_partfrac_list",
-   "unsupportedArg": "Dummy",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Poly",
+       "expr": {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": false
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Tuple",
+         "items": [
+          {
+           "t": "Poly",
+           "expr": {
+            "t": "Add",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-2",
+              "q": "1"
+             },
+             {
+              "t": "Dummy",
+              "name": "w",
+              "index": 1572350,
+              "assume": {}
+             }
+            ]
+           },
+           "gens": [
+            {
+             "t": "Dummy",
+             "name": "w",
+             "index": 1572350,
+             "assume": {}
+            }
+           ],
+           "domain": "ZZ",
+           "pure": false
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572349,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572349,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Dummy",
+                 "name": "a",
+                 "index": 1572349,
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Tuple",
+         "items": [
+          {
+           "t": "Poly",
+           "expr": {
+            "t": "Add",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Dummy",
+                "name": "w",
+                "index": 1572350,
+                "assume": {}
+               },
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               }
+              ]
+             }
+            ]
+           },
+           "gens": [
+            {
+             "t": "Dummy",
+             "name": "w",
+             "index": 1572350,
+             "assume": {}
+            }
+           ],
+           "domain": "ZZ",
+           "pure": false
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572349,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-6",
+               "q": "1"
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-3",
+                 "q": "1"
+                },
+                {
+                 "t": "Dummy",
+                 "name": "a",
+                 "index": 1572349,
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572349,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Dummy",
+                 "name": "a",
+                 "index": 1572349,
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Tuple",
+         "items": [
+          {
+           "t": "Poly",
+           "expr": {
+            "t": "Add",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "1"
+             },
+             {
+              "t": "Dummy",
+              "name": "w",
+              "index": 1572350,
+              "assume": {}
+             }
+            ]
+           },
+           "gens": [
+            {
+             "t": "Dummy",
+             "name": "w",
+             "index": 1572350,
+             "assume": {}
+            }
+           ],
+           "domain": "ZZ",
+           "pure": false
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572349,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "-4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572349,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Dummy",
+                 "name": "a",
+                 "index": 1572349,
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "simplify",
    "module": "sympy.polys.partfrac",
    "src": "assemble_partfrac_list(pfd)",
@@ -46551,7 +49656,172 @@
   },
   {
    "fn": "assemble_partfrac_list",
-   "unsupportedArg": "Dummy",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Poly",
+       "expr": {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": false
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Tuple",
+         "items": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              },
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "2"
+              }
+             ]
+            },
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-1",
+               "q": "1"
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "2",
+                 "q": "1"
+                },
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572354,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "2"
+              },
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572354,
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "Lambda",
+           "args": [
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1572354,
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Dummy",
+                 "name": "a",
+                 "index": 1572354,
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "simplify",
    "module": "sympy.polys.partfrac",
    "src": "assemble_partfrac_list(pfd)",
@@ -47411,7 +50681,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a49c280>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10882df00>, 3)"
   },
   {
    "fn": ".LC",
@@ -47618,7 +50888,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a4c2d70>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10882e2c0>, 4)"
   },
   {
    "fn": ".TC",
@@ -82182,7 +85452,254 @@
   },
   {
    "fn": ".expand",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Mul",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Dummy",
+        "name": "n",
+        "index": 1577609,
+        "assume": {
+         "positive": true,
+         "integer": true
+        }
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "n",
+          "index": 1577609,
+          "assume": {
+           "positive": true,
+           "integer": true
+          }
+         },
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-4",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "n",
+            "index": 1577609,
+            "assume": {
+             "positive": true,
+             "integer": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "-2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "2"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Dummy",
+                "name": "n",
+                "index": 1577609,
+                "assume": {
+                 "positive": true,
+                 "integer": true
+                }
+               },
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               }
+              ]
+             }
+            ]
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "2"
+             },
+             {
+              "t": "Dummy",
+              "name": "n",
+              "index": 1577609,
+              "assume": {
+               "positive": true,
+               "integer": true
+              }
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "n",
+            "index": 1577609,
+            "assume": {
+             "positive": true,
+             "integer": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "-2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "2"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Dummy",
+                "name": "n",
+                "index": 1577609,
+                "assume": {
+                 "positive": true,
+                 "integer": true
+                }
+               },
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               }
+              ]
+             }
+            ]
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "3"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Dummy",
+                "name": "n",
+                "index": 1577609,
+                "assume": {
+                 "positive": true,
+                 "integer": true
+                }
+               },
+               {
+                "t": "Rational",
+                "p": "3",
+                "q": "1"
+               }
+              ]
+             }
+            ]
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "6"
+             },
+             {
+              "t": "Dummy",
+              "name": "n",
+              "index": 1577609,
+              "assume": {
+               "positive": true,
+               "integer": true
+              }
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.integrals.integrals",
    "src": "e.as_sum(method='midpoint').expand()",
@@ -87035,7 +90552,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "gamma"
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.concrete.products",
    "src": "Pe.rewrite(gamma)",
@@ -90476,7 +93999,140 @@
   },
   {
    "fn": ".companion",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Matrix"
+   },
+   "args": [
+    {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "c0",
+        "assume": {}
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "5",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "c1",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "c2",
+          "assume": {}
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "c3",
+          "assume": {}
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "c4",
+          "assume": {}
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "domain": "ZZ[c0,c1,c2,c3,c4]",
+     "pure": false
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "Matrix.companion(p)",
@@ -91172,7 +94828,28 @@
   },
   {
    "fn": ".diag",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Matrix"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "1",
+     "q": "1"
+    },
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    },
+    {
+     "t": "Rational",
+     "p": "3",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "Matrix.diag(1, 2, 3)",
@@ -91180,7 +94857,53 @@
   },
   {
    "fn": ".diag",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Matrix"
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "5",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "Matrix.diag(col, row)",
@@ -91188,7 +94911,68 @@
   },
   {
    "fn": ".diag",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Matrix"
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "5",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "6",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {
+    "unpack": {
+     "t": "Py",
+     "v": false
+    }
+   },
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "Matrix.diag([[1, 2, 3], [4, 5], [6]], unpack=False)",
@@ -91196,7 +94980,27 @@
   },
   {
    "fn": ".diag",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Matrix"
+   },
+   "args": [
+    {
+     "t": "Matrix",
+     "rows": []
+    },
+    {
+     "t": "Rational",
+     "p": "1",
+     "q": "1"
+    },
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "Matrix.diag(r2, 1, 2)",
@@ -92494,7 +96298,94 @@
   },
   {
    "fn": ".from_dok",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Matrix"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "3",
+     "q": "1"
+    },
+    {
+     "t": "Rational",
+     "p": "3",
+     "q": "1"
+    },
+    {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "4",
+        "q": "1"
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "Matrix.from_dok(3, 3, d)",
@@ -92625,7 +96516,13 @@
      ]
     ]
    },
-   "unsupportedArg": "type",
+   "args": [
+    {
+     "t": "Type",
+     "name": "Float"
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "A.has(Float)",
@@ -92756,7 +96653,13 @@
      ]
     ]
    },
-   "unsupportedArg": "type",
+   "args": [
+    {
+     "t": "Type",
+     "name": "Float"
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "B.has(Float)",
@@ -92861,7 +96764,71 @@
   },
   {
    "fn": ".hstack",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Matrix"
+   },
+   "args": [
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     ]
+    },
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "Matrix.hstack(eye(2), 2*eye(2))",
@@ -93187,7 +97154,197 @@
   },
   {
    "fn": ".irregular",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Matrix"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "3",
+     "q": "1"
+    },
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     ]
+    },
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     ]
+    },
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      ]
+     ]
+    },
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "4",
+        "q": "1"
+       }
+      ]
+     ]
+    },
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "5",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "5",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "5",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "5",
+        "q": "1"
+       }
+      ]
+     ]
+    },
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "6",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "6",
+        "q": "1"
+       }
+      ]
+     ]
+    },
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "7",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "7",
+        "q": "1"
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "Matrix.irregular(3, ones(2,1), ones(3,3)*2, ones(2,2)*3,\n  ones(1,1)*4, ones(2,2)*5, ones(1,2)*6, ones(1,2)*7)",
@@ -94700,7 +98857,23 @@
   },
   {
    "fn": ".jordan_block",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Matrix"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "1"
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "Matrix.jordan_block(4, x)",
@@ -94708,7 +98881,28 @@
   },
   {
    "fn": ".jordan_block",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Matrix"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "1"
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {
+    "band": {
+     "t": "Str",
+     "v": "lower"
+    }
+   },
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "Matrix.jordan_block(4, x, band='lower')",
@@ -94716,7 +98910,23 @@
   },
   {
    "fn": ".jordan_block",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Matrix"
+   },
+   "args": [],
+   "kwargs": {
+    "size": {
+     "t": "Rational",
+     "p": "4",
+     "q": "1"
+    },
+    "eigenvalue": {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   },
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "Matrix.jordan_block(size=4, eigenvalue=x)",
@@ -99112,7 +103322,71 @@
   },
   {
    "fn": ".vstack",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Matrix"
+   },
+   "args": [
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     ]
+    },
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "Matrix.vstack(eye(2), 2*eye(2))",
@@ -99455,7 +103729,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3) # doctest:+SKIP",
-   "expected": "Matrix([[3, 24, 87], [26, 93, 40], [90, 86, 5]])"
+   "expected": "Matrix([[18, 2, 36], [23, 96, 73], [13, 58, 55]])"
   },
   {
    "fn": "randMatrix",
@@ -99475,7 +103749,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, 2) # doctest:+SKIP",
-   "expected": "Matrix([[97, 54], [88, 7], [98, 72]])"
+   "expected": "Matrix([[34, 54], [10, 92], [11, 45]])"
   },
   {
    "fn": "randMatrix",
@@ -99505,7 +103779,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, 3, 0, 2) # doctest:+SKIP",
-   "expected": "Matrix([[2, 1, 0], [2, 2, 1], [0, 1, 0]])"
+   "expected": "Matrix([[1, 1, 2], [0, 0, 1], [0, 0, 2]])"
   },
   {
    "fn": "randMatrix",
@@ -99525,7 +103799,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, symmetric=True) # doctest:+SKIP",
-   "expected": "Matrix([[68, 0, 92], [0, 98, 76], [92, 76, 99]])"
+   "expected": "Matrix([[28, 14, 25], [14, 54, 19], [25, 19, 71]])"
   },
   {
    "fn": "randMatrix",
@@ -99550,7 +103824,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, symmetric=True, percent=50) # doctest:+SKIP",
-   "expected": "Matrix([[0, 10, 0], [10, 0, 32], [0, 32, 69]])"
+   "expected": "Matrix([[69, 88, 0], [88, 0, 44], [0, 44, 0]])"
   },
   {
    "fn": "rot_axis1",
@@ -103006,7 +107280,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "binomial"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "catalan(n).rewrite(binomial)",
@@ -103027,7 +107307,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "gamma"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "catalan(n).rewrite(gamma)",
@@ -103048,7 +107334,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "hyper"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "catalan(n).rewrite(hyper)",
@@ -103067,7 +107359,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "gamma"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "catalan(Rational(1, 2)).rewrite(gamma)",
@@ -103264,7 +107562,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "gamma"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "catalan(I).rewrite(gamma)",
@@ -103660,7 +107964,13 @@
      }
     ]
    },
-   "unsupportedArg": "type",
+   "args": [
+    {
+     "t": "Type",
+     "name": "Sum"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "harmonic(n).rewrite(Sum)",
@@ -103698,7 +108008,236 @@
   },
   {
    "fn": ".doit",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       },
+       {
+        "t": "Fn",
+        "name": "log",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "6",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Fn",
+        "name": "Sum",
+        "args": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Fn",
+            "name": "cos",
+            "args": [
+             {
+              "t": "Mul",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "3"
+               },
+               {
+                "t": "Const",
+                "name": "pi"
+               },
+               {
+                "t": "Dummy",
+                "name": "k",
+                "index": 1584101,
+                "assume": {}
+               }
+              ]
+             }
+            ]
+           },
+           {
+            "t": "Fn",
+            "name": "log",
+            "args": [
+             {
+              "t": "Fn",
+              "name": "sin",
+              "args": [
+               {
+                "t": "Mul",
+                "args": [
+                 {
+                  "t": "Rational",
+                  "p": "1",
+                  "q": "3"
+                 },
+                 {
+                  "t": "Const",
+                  "name": "pi"
+                 },
+                 {
+                  "t": "Dummy",
+                  "name": "k",
+                  "index": 1584101,
+                  "assume": {}
+                 }
+                ]
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Tuple",
+          "items": [
+           {
+            "t": "Dummy",
+            "name": "k",
+            "index": 1584101,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       },
+       {
+        "t": "Fn",
+        "name": "Sum",
+        "args": [
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Add",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "1"
+             },
+             {
+              "t": "Mul",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "3",
+                "q": "1"
+               },
+               {
+                "t": "Dummy",
+                "name": "k",
+                "index": 1584101,
+                "assume": {}
+               }
+              ]
+             }
+            ]
+           },
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Tuple",
+          "items": [
+           {
+            "t": "Dummy",
+            "name": "k",
+            "index": 1584101,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           },
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "6"
+       },
+       {
+        "t": "Const",
+        "name": "pi"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "2"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "He.doit()",
@@ -103983,7 +108522,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "digamma"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "harmonic(n).rewrite(digamma)",
@@ -104002,7 +108547,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "polygamma"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "harmonic(n).rewrite(polygamma)",
@@ -104026,7 +108577,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "polygamma"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "harmonic(n,3).rewrite(polygamma)",
@@ -104034,7 +108591,245 @@
   },
   {
    "fn": "simplify",
-   "unsupportedArg": "EulerGamma",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "Piecewise",
+     "args": [
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Const",
+           "name": "EulerGamma"
+          },
+          {
+           "t": "Fn",
+           "name": "polygamma",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            },
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "1"
+              },
+              {
+               "t": "Symbol",
+               "name": "n",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Rel",
+         "op": "Equality",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "m",
+           "assume": {
+            "positive": true,
+            "integer": true
+           }
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "1"
+            },
+            {
+             "t": "Symbol",
+             "name": "m",
+             "assume": {
+              "positive": true,
+              "integer": true
+             }
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Fn",
+             "name": "gamma",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "m",
+               "assume": {
+                "positive": true,
+                "integer": true
+               }
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-1",
+               "q": "1"
+              },
+              {
+               "t": "Fn",
+               "name": "polygamma",
+               "args": [
+                {
+                 "t": "Add",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "-1",
+                   "q": "1"
+                  },
+                  {
+                   "t": "Symbol",
+                   "name": "m",
+                   "assume": {
+                    "positive": true,
+                    "integer": true
+                   }
+                  }
+                 ]
+                },
+                {
+                 "t": "Add",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "1"
+                  },
+                  {
+                   "t": "Symbol",
+                   "name": "n",
+                   "assume": {}
+                  }
+                 ]
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "m",
+                 "assume": {
+                  "positive": true,
+                  "integer": true
+                 }
+                }
+               ]
+              },
+              {
+               "t": "Fn",
+               "name": "factorial",
+               "args": [
+                {
+                 "t": "Add",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "-1",
+                   "q": "1"
+                  },
+                  {
+                   "t": "Symbol",
+                   "name": "m",
+                   "assume": {
+                    "positive": true,
+                    "integer": true
+                   }
+                  }
+                 ]
+                }
+               ]
+              },
+              {
+               "t": "Fn",
+               "name": "zeta",
+               "args": [
+                {
+                 "t": "Symbol",
+                 "name": "m",
+                 "assume": {
+                  "positive": true,
+                  "integer": true
+                 }
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Py",
+         "v": true
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "simplify(harmonic(n,m).rewrite(polygamma))",
@@ -104461,7 +109256,18 @@
   },
   {
    "fn": ".is_motzkin",
-   "unsupportedArg": "FunctionClass",
+   "self": {
+    "t": "FnClass",
+    "name": "motzkin"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "5",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "motzkin.is_motzkin(5)",
@@ -104469,7 +109275,23 @@
   },
   {
    "fn": ".find_motzkin_numbers_in_range",
-   "unsupportedArg": "FunctionClass",
+   "self": {
+    "t": "FnClass",
+    "name": "motzkin"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    },
+    {
+     "t": "Rational",
+     "p": "300",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "motzkin.find_motzkin_numbers_in_range(2,300)",
@@ -104477,7 +109299,23 @@
   },
   {
    "fn": ".find_motzkin_numbers_in_range",
-   "unsupportedArg": "FunctionClass",
+   "self": {
+    "t": "FnClass",
+    "name": "motzkin"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    },
+    {
+     "t": "Rational",
+     "p": "900",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "motzkin.find_motzkin_numbers_in_range(2,900)",
@@ -104485,7 +109323,18 @@
   },
   {
    "fn": ".find_first_n_motzkins",
-   "unsupportedArg": "FunctionClass",
+   "self": {
+    "t": "FnClass",
+    "name": "motzkin"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "10",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.combinatorial.numbers",
    "src": "motzkin.find_first_n_motzkins(10)",
@@ -105133,7 +109982,104 @@
   },
   {
    "fn": ".doit",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-5",
+        "q": "1"
+       },
+       {
+        "t": "Fn",
+        "name": "log",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "Sum",
+      "args": [
+       {
+        "t": "Fn",
+        "name": "log",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-2",
+            "q": "1"
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             },
+             {
+              "t": "Dummy",
+              "name": "k",
+              "index": 1584321,
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Dummy",
+          "name": "k",
+          "index": 1584321,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "5",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "loggamma",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "3"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.gamma_functions",
    "src": "expand_func(L).doit()",
@@ -105141,7 +110087,104 @@
   },
   {
    "fn": ".doit",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-4",
+        "q": "1"
+       },
+       {
+        "t": "Fn",
+        "name": "log",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "Sum",
+      "args": [
+       {
+        "t": "Fn",
+        "name": "log",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "4",
+              "q": "1"
+             },
+             {
+              "t": "Dummy",
+              "name": "k",
+              "index": 1584327,
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Dummy",
+          "name": "k",
+          "index": 1584327,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "loggamma",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "4"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.gamma_functions",
    "src": "expand_func(L).doit()",
@@ -105149,7 +110192,104 @@
   },
   {
    "fn": ".doit",
-   "unsupportedArg": "Dummy",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-3",
+        "q": "1"
+       },
+       {
+        "t": "Fn",
+        "name": "log",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "7",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "Sum",
+      "args": [
+       {
+        "t": "Fn",
+        "name": "log",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-5",
+            "q": "1"
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "7",
+              "q": "1"
+             },
+             {
+              "t": "Dummy",
+              "name": "k",
+              "index": 1584330,
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Dummy",
+          "name": "k",
+          "index": 1584330,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "loggamma",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "7"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.gamma_functions",
    "src": "expand_func(L).doit()",
@@ -105232,7 +110372,164 @@
   },
   {
    "fn": ".cancel",
-   "unsupportedArg": "EulerGamma",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       },
+       {
+        "t": "Fn",
+        "name": "log",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Const",
+        "name": "EulerGamma"
+       }
+      ]
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "3"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Fn",
+        "name": "zeta",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "12"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Const",
+          "name": "pi"
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "Order",
+      "args": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.gamma_functions",
    "src": "series(loggamma(x), x, 0, 4).cancel()",
@@ -106028,7 +111325,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "harmonic"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.gamma_functions",
    "src": "polygamma(0, x).rewrite(harmonic)",
@@ -106052,7 +111355,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "harmonic"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.gamma_functions",
    "src": "polygamma(2, x).rewrite(harmonic)",
@@ -106078,7 +111387,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "harmonic"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.gamma_functions",
    "src": "polygamma(ni, x).rewrite(harmonic)",
@@ -106400,7 +111715,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "expint"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.error_functions",
    "src": "Chi(z).rewrite(expint)",
@@ -106572,7 +111893,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "expint"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.error_functions",
    "src": "Ci(z).rewrite(expint)",
@@ -106770,7 +112097,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "expint"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.error_functions",
    "src": "Ei(x).rewrite(expint)",
@@ -106789,7 +112122,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "Shi"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.error_functions",
    "src": "Ei(x).rewrite(Shi)",
@@ -106849,7 +112188,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "li"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.error_functions",
    "src": "Li(z).rewrite(li)",
@@ -107033,7 +112378,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "expint"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.error_functions",
    "src": "Shi(z).rewrite(expint)",
@@ -107171,7 +112522,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "expint"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.error_functions",
    "src": "Si(z).rewrite(expint)",
@@ -107190,7 +112547,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "sinc"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.error_functions",
    "src": "Si(z).rewrite(sinc)",
@@ -108587,7 +113950,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "uppergamma"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.error_functions",
    "src": "expint(nu, z).rewrite(uppergamma)",
@@ -109544,7 +114913,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "Ei"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.error_functions",
    "src": "li(z).rewrite(Ei)",
@@ -109656,7 +115031,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "Si"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.error_functions",
    "src": "li(z).rewrite(Si)",
@@ -109675,7 +115056,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "Ci"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.error_functions",
    "src": "li(z).rewrite(Ci)",
@@ -109694,7 +115081,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "Shi"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.error_functions",
    "src": "li(z).rewrite(Shi)",
@@ -109713,7 +115106,13 @@
      }
     ]
    },
-   "unsupportedArg": "FunctionClass",
+   "args": [
+    {
+     "t": "FnClass",
+     "name": "Chi"
+    }
+   ],
+   "kwargs": {},
    "category": "special",
    "module": "sympy.functions.special.error_functions",
    "src": "li(z).rewrite(Chi)",

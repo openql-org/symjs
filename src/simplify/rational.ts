@@ -5,7 +5,7 @@
  * @file Rational-function manipulation: fraction, together, cancel.
  */
 
-import { Add, Expr, ExprLike, Mul, Pow, Rational, S, Sym, isNum } from '../core/nodes';
+import { Add, Expr, impl, ExprLike, Mul, Pow, Rational, S, Sym, isNum } from '../core/nodes';
 import { numAdd, numCmp, numNeg } from '../core/num';
 import { lcm } from '../core/numbers';
 import { add, asBaseExp, mul, pow, splitCoeff, sympify } from '../core/ops';
@@ -134,3 +134,5 @@ export function cancel(ex: ExprLike): Expr {
   }
   return mul(n, pow(d, -1));
 }
+
+impl.fraction = (e) => fraction(e);

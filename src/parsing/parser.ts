@@ -120,6 +120,7 @@ const CONSTANTS: Record<string, Expr> = {
   EulerGamma: S.EulerGamma,
   Catalan: S.Catalan,
   GoldenRatio: S.GoldenRatio,
+  TribonacciConstant: S.TribonacciConstant,
 };
 
 function parseNumber(s: string): Expr {

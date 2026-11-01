@@ -8,7 +8,7 @@
  * (e.g. `x**2*y`, `1 - 2*I`, `-sqrt(2)/4 + sqrt(6)/4`, `I*sin(x) + cos(x)`).
  */
 
-import { Add, ComplexValue, Constant, Derivative, Expr, Float, Fn, Mul, Order, Pow, Rational, S, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import { Add, ComplexValue, Constant, Derivative, Dummy, Expr, Float, Fn, Mul, Order, Pow, Rational, S, Special, Sym, UndefFn, Wild, WildFunction, impl, isNum } from '../core/nodes';
 import { pow, splitCoeff } from '../core/ops';
 
 /** A SymPy-style sort key: nested tuples of numbers and strings. */
@@ -38,6 +38,7 @@ const CONSTANT_CLASS: Record<string, string> = {
   EulerGamma: 'EulerGamma',
   Catalan: 'Catalan',
   GoldenRatio: 'GoldenRatio',
+  TribonacciConstant: 'TribonacciConstant',
 };
 
 /** SymPy FunctionClass.class_key priorities. */
@@ -67,9 +68,12 @@ export function sympyFunctionName(name: string): string {
 
 const isExp = (e: Expr): e is Pow => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
 
+const symClass = (e: Sym): string =>
+  e instanceof WildFunction ? 'WildFunction' : e instanceof Wild ? 'Wild' : e instanceof Dummy ? 'Dummy' : 'Symbol';
+
 function classKey(e: Expr): Key {
   if (isNum(e) || e instanceof Special) return [1, 0, 'Number'];
-  if (e instanceof Sym) return [2, 0, 'Symbol'];
+  if (e instanceof Sym) return [2, 0, symClass(e)];
   if (e instanceof Constant) return [2, 0, CONSTANT_CLASS[e.name]!];
   if (e instanceof Mul) return [3, 0, 'Mul'];
   if (e instanceof Add) return [3, 1, 'Add'];
@@ -94,7 +98,8 @@ const SPECIAL_VALUE: Record<string, number> = { oo: Infinity, '-oo': -Infinity, 
 export function sortKey(e: Expr): Key {
   if (isNum(e)) return [[1, 0, 'Number'], [0, []], [], numValue(e)];
   if (e instanceof Special) return [[1, 0, 'Number'], [0, []], [], SPECIAL_VALUE[e.name]!];
-  if (e instanceof Sym) return [[2, 0, 'Symbol'], [1, [e.name]], ONE_KEY, 1];
+  if (e instanceof Dummy) return [[2, 0, 'Dummy'], [2, [e.name, e.dummyIndex]], ONE_KEY, 1];
+  if (e instanceof Sym) return [[2, 0, symClass(e)], [1, [e.printName]], ONE_KEY, 1];
   if (e instanceof Constant) return [classKey(e), [1, [impl.str(e)]], ONE_KEY, 1];
 
   // Expr.sort_key

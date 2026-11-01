@@ -148,6 +148,10 @@ export interface Impl {
   simplify(e: Expr): Expr;
   evalf(e: Expr, n?: number | NumericValues, opts?: EvalfOptions): Expr;
   toComplex(e: Expr, values?: NumericValues): ComplexValue;
+  /** SymPy collect (registered by simplify/radsimp). */
+  collect?(e: Expr, syms: readonly Expr[]): Expr;
+  /** SymPy fraction (registered by simplify/rational). */
+  fraction?(e: Expr): [Expr, Expr];
   conjugate(e: Expr): Expr;
   abs(e: Expr): Expr;
   freeSymbols(e: Expr): Set<Sym>;
@@ -411,6 +415,11 @@ export class Sym extends Expr {
     this.assumptions = Object.freeze(a);
   }
 
+  /** The name as printed (Wild adds a trailing underscore, Dummy a leading one). */
+  get printName(): string {
+    return this.name;
+  }
+
   protected computeKey(): string {
     const a = this.assumptions;
     const flags = `${a.real ? 'r' : ''}${a.nonnegative ? 'n' : ''}${a.positive ? 'p' : ''}${a.integer ? 'i' : ''}`;
@@ -418,7 +427,54 @@ export class Sym extends Expr {
   }
 }
 
-export type ConstantName = 'pi' | 'E' | 'I' | 'EulerGamma' | 'Catalan' | 'GoldenRatio';
+/** SymPy Dummy: a symbol that is distinct from every other symbol, printed with a leading underscore. */
+export class Dummy extends Sym {
+  private static counter = 0;
+  readonly dummyIndex: number;
+  constructor(name = 'Dummy', assumptions: Assumptions = {}, index?: number) {
+    super(name, assumptions);
+    this.dummyIndex = index ?? ++Dummy.counter;
+  }
+  get printName(): string {
+    return `_${this.name}`;
+  }
+  protected computeKey(): string {
+    return `${super.computeKey()}#${this.dummyIndex}`;
+  }
+}
+
+/** Pattern symbol for match/replace; matches any expression not containing an excluded one. */
+export class Wild extends Sym {
+  readonly exclude: readonly Expr[];
+  readonly properties: readonly ((e: Expr) => boolean)[];
+  constructor(
+    name: string,
+    opts: { exclude?: readonly ExprLike[]; properties?: readonly ((e: Expr) => boolean)[] } & Assumptions = {},
+  ) {
+    const { exclude = [], properties = [], ...assumptions } = opts;
+    super(name, assumptions);
+    this.exclude = exclude.map((e) => impl.sympify(e));
+    this.properties = properties;
+  }
+  get printName(): string {
+    return `${this.name}_`;
+  }
+  protected computeKey(): string {
+    return `?${super.computeKey()}[${this.exclude.map((e) => e.key).join(',')}]${this.properties.length ? `{${this.properties.length}}` : ''}`;
+  }
+}
+
+/** Pattern matching an applied function (optionally with a given number of arguments). */
+export class WildFunction extends Wild {
+  constructor(name: string, readonly nargs?: readonly number[]) {
+    super(name);
+  }
+  protected computeKey(): string {
+    return `?F${this.name}[${this.nargs?.join(',') ?? ''}]`;
+  }
+}
+
+export type ConstantName = 'pi' | 'E' | 'I' | 'EulerGamma' | 'Catalan' | 'GoldenRatio' | 'TribonacciConstant';
 
 /** Mathematical constants: pi, E (Euler's number) and I (imaginary unit). */
 export class Constant extends Expr {
@@ -663,6 +719,7 @@ export const S = {
   EulerGamma: new Constant('EulerGamma'),
   Catalan: new Constant('Catalan'),
   GoldenRatio: new Constant('GoldenRatio'),
+  TribonacciConstant: new Constant('TribonacciConstant'),
   Infinity: new Special('oo'),
   NegativeInfinity: new Special('-oo'),
   ComplexInfinity: new Special('zoo'),

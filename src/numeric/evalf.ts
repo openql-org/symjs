@@ -110,6 +110,7 @@ const CONSTANT_VALUES: Record<string, C> = {
   EulerGamma: c(0.5772156649015329),
   Catalan: c(0.915965594177219),
   GoldenRatio: c((1 + Math.sqrt(5)) / 2),
+  TribonacciConstant: c(1.8392867552141612),
 };
 
 function compile(e: Expr, resolve: (s: Sym) => Compiled): Compiled {

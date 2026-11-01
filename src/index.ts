@@ -17,6 +17,9 @@ export {
   Rational,
   Float,
   Sym,
+  Wild,
+  WildFunction,
+  Dummy,
   Constant,
   Add,
   Mul,
@@ -83,7 +86,9 @@ export {
   asNumerDenom,
   atoms,
 } from './core/methods';
-export { subs, xreplace, freeSymbols, countOps, mapBottomUp, rebuild } from './core/traverse';
+export { subs, xreplace, freeSymbols, mapBottomUp, rebuild } from './core/traverse';
+export { match, replace, find, ordered, countOps, countOpsVisual, isInstance } from './core/match';
+export type { Query, Replacement } from './core/match';
 
 // functions
 export {
