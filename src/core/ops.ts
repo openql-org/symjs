@@ -682,3 +682,4 @@ impl.sympify = sympify;
 impl.add = add;
 impl.mul = mul;
 impl.pow = pow;
+impl.couldExtractMinusSign = couldExtractMinusSign;

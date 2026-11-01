@@ -837,6 +837,23 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (Array.isArray(r)) return new PyTuple([r[0], new PyDict([...r[1]])]);
     return r;
   },
+  gcd_terms: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['clear', 'fraction', 'isprimitive'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    return sj.gcdTerms(asExpr(args[0]), { clear: kw['clear'] as boolean | undefined, fraction: kw['fraction'] as boolean | undefined, isprimitive: kw['isprimitive'] as boolean | undefined });
+  },
+  factor_terms: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['clear', 'fraction', 'sign', 'radical'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    if (kw['radical']) throw new Unsupported('radical');
+    return sj.factorTerms(asExpr(args[0]), { clear: kw['clear'] as boolean | undefined, fraction: kw['fraction'] as boolean | undefined, sign: kw['sign'] as boolean | undefined });
+  },
+  collect_const: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'Numbers') throw new Unsupported(`kwargs ${k}`);
+    return sj.collectConst(asExpr(args[0]), args.slice(1).map(asExpr), { numbers: kw['Numbers'] === undefined ? true : Boolean(kw['Numbers']) });
+  },
+  signsimp: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
+    return sj.signsimp(asExpr(args[0]), kw['evaluate'] === undefined ? true : Boolean(kw['evaluate']));
+  },
   '.rewrite': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
     const name = (v: unknown): string => {

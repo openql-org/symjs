@@ -551,3 +551,4 @@ export function countOpsVisual(exprIn: ExprLike): Expr {
   const terms = [...countOpsMap(exprIn)].map(([k, v]) => mul(v, new Sym(k)));
   return add(...terms);
 }
+impl.ordered = ordered;

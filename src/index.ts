@@ -187,6 +187,7 @@ export { simplify } from './simplify/simplify';
 export { powsimp } from './simplify/powsimp';
 export { radsimp, collect } from './simplify/radsimp';
 export { rewrite, registerRewrite, rewriteRules } from './simplify/rewrite';
+export { gcdTerms, factorTerms, collectConst, signsimp, keepCoeff as keepCoeffSympy, unevaluatedAdd } from './simplify/exprtools';
 export { trigsimp, rewriteExp, rewriteTrig, expsimp, exptotrig, combineExp } from './simplify/trigsimp';
 export { together, cancel, fraction } from './simplify/rational';
 
