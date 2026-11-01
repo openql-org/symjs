@@ -1,0 +1,80 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
+
+/**
+ * @file Symbolic differentiation.
+ */
+
+import { isReal } from '../core/assumptions';
+import { Add, Constant, Expr, ExprLike, Fn, Mul, Pow, S, Sym, impl, isNum } from '../core/nodes';
+import { add, mul, pow, sympify } from '../core/ops';
+import { abs, conjugate, cos, cosh, im as fnIm, log, re as fnRe, sin, sinh, tan, tanh } from '../functions/elementary';
+
+/** Derivative of f(u) with respect to u, for each known function. */
+const fnDerivative: Partial<Record<Fn['name'], (u: Expr) => Expr>> = {
+  sin: (u) => cos(u),
+  cos: (u) => mul(-1, sin(u)),
+  tan: (u) => add(1, pow(tan(u), 2)),
+  asin: (u) => pow(add(1, mul(-1, pow(u, 2))), S.NegHalf),
+  acos: (u) => mul(-1, pow(add(1, mul(-1, pow(u, 2))), S.NegHalf)),
+  atan: (u) => pow(add(1, pow(u, 2)), -1),
+  sinh: (u) => cosh(u),
+  cosh: (u) => sinh(u),
+  tanh: (u) => add(1, mul(-1, pow(tanh(u), 2))),
+  log: (u) => pow(u, -1),
+};
+
+function d(e: Expr, x: Expr): Expr {
+  if (e.key === x.key) return S.One;
+  if (isNum(e) || e instanceof Constant || e instanceof Sym) return S.Zero;
+  if (!e.has(x)) return S.Zero;
+
+  if (e instanceof Add) return add(...e.args.map((a) => d(a, x)));
+
+  if (e instanceof Mul) {
+    const terms: Expr[] = [];
+    for (let i = 0; i < e.args.length; i++) {
+      const di = d(e.args[i]!, x);
+      if (di.key === S.Zero.key) continue;
+      terms.push(mul(...e.args.map((a, j) => (j === i ? di : a))));
+    }
+    return add(...terms);
+  }
+
+  if (e instanceof Pow) {
+    const [b, n] = e.args;
+    const db = d(b, x);
+    const dn = d(n, x);
+    // d(b^n) = b^n * (n' log b + n b'/b)
+    if (dn.key === S.Zero.key) return mul(n, pow(b, add(n, -1)), db);
+    if (b instanceof Constant && b.name === 'E') return mul(e, dn);
+    return mul(e, add(mul(dn, log(b)), mul(n, db, pow(b, -1))));
+  }
+
+  if (e instanceof Fn) {
+    const u = e.args[0]!;
+    const du = d(u, x);
+    if (e.name === 'conjugate') return conjugate(du);
+    // re/im are linear; valid for differentiation w.r.t. a real variable
+    if (e.name === 're') return fnRe(du);
+    if (e.name === 'im') return fnIm(du);
+    if (e.name === 'abs') {
+      if (isReal(u)) return mul(u, pow(abs(u), -1), du);
+      throw new Error('diff: derivative of abs() of a non-real argument is not supported');
+    }
+    const f = fnDerivative[e.name];
+    if (!f) throw new Error(`diff: unknown derivative for ${e.name}`);
+    return mul(f(u), du);
+  }
+  throw new Error(`diff: unsupported expression ${e.toString()}`);
+}
+
+/** n-th derivative of e with respect to x. */
+export function diff(ex: ExprLike, x: Expr, n = 1): Expr {
+  if (!Number.isInteger(n) || n < 0) throw new RangeError('diff: order must be a non-negative integer');
+  let e = sympify(ex);
+  for (let i = 0; i < n; i++) e = d(e, x);
+  return e;
+}
+
+impl.diff = diff;
