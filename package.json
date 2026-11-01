@@ -25,7 +25,9 @@
     "build": "tsup && tsc -p tsconfig.build.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "compat": "vitest run --config compat/vitest.config.ts",
+    "compat:extract": "python3 compat/extract.py compat/corpus.json"
   },
   "engines": {
     "node": ">=18"

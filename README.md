@@ -30,6 +30,20 @@ roots(parse('x**2 + x + 1'), x).map(String); // ['-1/2 - sqrt(3)*I/2', '-1/2 + s
 
 Quantum computing features will be ported from `sympy.physics.quantum`. The current `gates` module is provisional and will be replaced.
 
+## SymPy compatibility
+
+Compatibility is measured against SymPy's own doctests (`compat/`):
+
+- **Behavior compatibility**: share of doctest examples of the in-scope public API (core, elementary functions, simplification, polynomials, solvers, ODEs, calculus, matrices, combinatorial/special functions) that symjs reproduces with identical `str()` output.
+- **API coverage**: share of in-scope public SymPy names (including `Expr` and `Matrix` methods) with a symjs counterpart.
+
+```sh
+pnpm compat           # run the corpus and write compat/REPORT.md
+pnpm compat:extract   # regenerate compat/corpus.json from the installed SymPy
+```
+
+See [compat/REPORT.md](compat/REPORT.md) for the current numbers and the highest-impact gaps.
+
 ## API design
 
 - Operations are available both as fluent methods (`x.add(1).pow(2)`) and as functions (`add(x, 1)`, `pow(x, 2)`).
