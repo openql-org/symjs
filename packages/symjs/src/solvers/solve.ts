@@ -20,6 +20,7 @@ import { expandMul } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { radsimp } from '../simplify/radsimp';
 import { simplify } from '../simplify/simplify';
+import { asNumerDenom } from '../core/methods';
 
 const isZeroE = (e: Expr): boolean => {
   if (e instanceof Rational) return e.isZero;
@@ -321,24 +322,42 @@ const simplifyBack = (e: Expr): Expr => {
 
 /** SymPy solve_linear: (symbol, value) for an equation linear in one symbol, else (numer, denom). */
 export function solveLinear(e: ExprLike, opts: { symbols?: Sym[]; exclude?: Sym[] } = {}): [Expr, Expr] {
-  const f = asEquation(e);
-  const [n, d] = fraction(together(f));
-  const num = expandMul(n);
-  if (num instanceof Rational && num.isZero) return [S.Zero, S.One];
-  const cands = [...freeSymbols(num)]
-    .filter((s) => !opts.symbols || opts.symbols.some((t) => t.key === s.key))
-    .filter((s) => !opts.exclude || !opts.exclude.some((t) => t.key === s.key))
-    .sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
-  for (const s of cands) {
-    const pc = polyCoefficients(num, s);
-    if (!pc || Math.max(...pc.keys()) !== 1) continue;
-    const c1 = pc.get(1)!;
-    if (c1.has(s)) continue;
-    const val = cancel(mul(-1, pc.get(0) ?? S.Zero, pow(c1, -1)));
-    if (denominators(f).some((dd) => isZeroE(xreplace(dd, [[s, val]])))) continue;
-    return [s, val];
+  // port of SymPy solve_linear
+  const eq = asEquation(e);
+  const [n, d] = asNumerDenom(eq);
+  if (isZeroE(n)) return [S.Zero, S.One];
+  let symbols = [...freeSymbols(n)];
+  if (opts.symbols) symbols = symbols.filter((s) => opts.symbols!.some((t) => t.key === s.key));
+  if (opts.exclude) symbols = symbols.filter((s) => !opts.exclude!.some((t) => t.key === s.key));
+  if (!symbols.length) return [S.Zero, S.One];
+  symbols.sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
+  // denominators of eq that depend on the symbols (SymPy _simple_dens)
+  const dens: Expr[] = [];
+  const visit = (t: Expr) => {
+    t.args.forEach(visit);
+    if (t instanceof Pow && t.exp instanceof Rational && t.exp.isNegative && symbols.some((s) => t.base.has(s))) dens.push(t.base);
+  };
+  visit(eq);
+  const symKeys = new Set(symbols.map((s) => s.key));
+  let allZero = true;
+  for (const xi of symbols) {
+    const dn = diff(n, xi);
+    if (isZeroE(dn)) continue;
+    const free = [...freeSymbols(dn)];
+    const ok = !free.length || free.some((s) => !isZeroE(diff(dn, s))) || (free.length === symKeys.size && free.every((s) => symKeys.has(s.key)));
+    if (!ok) continue;
+    allZero = false;
+    if (dn.has(xi)) continue;
+    const vi = mul(-1, pow(dn, -1), xreplace(n, [[xi, S.Zero]]));
+    const bad = dens.some((di) => {
+      const v = xreplace(di, [[xi, vi]]);
+      return isZeroE(v) || isZeroE(cancel(v));
+    });
+    if (!bad) return [xi, expandMul(vi)];
   }
-  return [num, expandMul(d)];
+  if (allZero) return [S.Zero, S.One];
+  if (n instanceof Sym) return [S.Zero, S.Zero];
+  return [n, d];
 }
 
 /** Solve for the undetermined coefficients so that eq vanishes identically in the given symbols. */
