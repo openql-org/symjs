@@ -72,6 +72,10 @@ export function isReal(e: Expr): Tri {
       case 'cosh':
       case 'tanh':
       case 'conjugate':
+      case 'asinh':
+      case 'acot':
+      case 'sech':
+      case 'sinc':
         return isReal(a) ? true : undefined;
       case 'log':
         return isPositive(a) ? true : undefined;

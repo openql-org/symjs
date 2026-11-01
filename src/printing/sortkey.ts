@@ -88,7 +88,8 @@ function classKey(e: Expr): Key {
   return [5, 0, e.kind];
 }
 
-const numValue = (e: Expr): number => (e instanceof Rational || e instanceof Float ? e.value : NaN);
+const numValue = (e: Expr): number =>
+  e instanceof Rational || e instanceof Float ? e.value : e instanceof Special ? ({ oo: Infinity, '-oo': -Infinity } as Record<string, number>)[e.name] ?? NaN : NaN;
 
 const ONE_KEY: Key = [[1, 0, 'Number'], [0, []], [], 1];
 
@@ -189,7 +190,11 @@ function lexOrder(terms: readonly Expr[]): Expr[] {
         if (!hasFreeSymbols(factor)) {
           try {
             const v = impl.toComplex(factor);
-            coeff = { re: coeff.re * v.re - coeff.im * v.im, im: coeff.re * v.im + coeff.im * v.re };
+            // avoid 0*oo = nan for real infinite factors
+            coeff =
+              v.im === 0
+                ? { re: coeff.re * v.re, im: coeff.im === 0 ? 0 : coeff.im * v.re }
+                : { re: coeff.re * v.re - coeff.im * v.im, im: coeff.re * v.im + coeff.im * v.re };
             continue;
           } catch {
             // fall through: treat as a generator

@@ -120,7 +120,7 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   exp: ([a]) => sj.exp(a!),
   Abs: ([a]) => sj.abs(a!),
   ...Object.fromEntries(
-    (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate'] as const).map(
+    (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc'] as const).map(
       (n) => [n, (args: Expr[]) => sj.fn(n, args)],
     ),
   ),
@@ -416,7 +416,7 @@ function matchDict(m: Map<Sym, Expr> | undefined): unknown {
   return m ? new PyDict([...m]) : null;
 }
 
-const FN_NAMES = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate'] as const;
+const FN_NAMES = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc'] as const;
 
 export const ADAPTERS: Record<string, Adapter> = {
   N: (args, kw) => evalfAdapter(args[0], args.slice(1), kw),

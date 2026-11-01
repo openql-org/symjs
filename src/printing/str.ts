@@ -74,14 +74,10 @@ function printMul(e: Mul): string {
   if (c.isNegative) {
     sign = '-';
     expr = keepCoeff(numNeg(c) as Rational | Float, rest);
-    if (!(expr instanceof Mul)) {
-      // e.g. -x: after removing the sign only a single factor remains
-      return sign + parenthesize(expr, prec);
-    }
   }
   const a: Expr[] = [];
   const b: Expr[] = [];
-  for (const item of asOrderedFactors(expr)) {
+  for (const item of expr instanceof Mul ? asOrderedFactors(expr) : [expr]) {
     if (item instanceof Pow && !isExp(item) && splitCoeff(item.exp)[0].isNegative) {
       const x = item.exp;
       b.push(x instanceof Rational && x.p === -1n && x.q === 1n ? item.base : pow(item.base, mul(-1, x)));

@@ -41,7 +41,7 @@ function piCoeff(x: Expr): Rational | undefined {
 }
 
 /** Split x = a + c*pi where c is rational (c may be zero). */
-function splitPiTerm(x: Expr): [Expr, Rational] {
+export function splitPiTerm(x: Expr): [Expr, Rational] {
   const c = piCoeff(x);
   if (c) return [S.Zero, c];
   if (x instanceof Add) {

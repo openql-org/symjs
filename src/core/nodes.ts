@@ -88,6 +88,22 @@ export type FnName =
   | 'im'
   | 'arg'
   | 'conjugate'
+  | 'cot'
+  | 'sec'
+  | 'csc'
+  | 'acot'
+  | 'asec'
+  | 'acsc'
+  | 'coth'
+  | 'sech'
+  | 'csch'
+  | 'asinh'
+  | 'acosh'
+  | 'atanh'
+  | 'acoth'
+  | 'asech'
+  | 'acsch'
+  | 'sinc'
   | SpecialFnName;
 
 /** Special and combinatorial functions (see functions/special.ts). */

@@ -110,6 +110,7 @@ export {
   conjugate,
   dagger,
 } from './functions/elementary';
+export { cot, sec, csc, acot, asec, acsc, coth, sech, csch, asinh, acosh, atanh, acoth, asech, acsch, sinc } from './functions/trigext';
 
 // special functions
 export {

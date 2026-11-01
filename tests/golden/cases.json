@@ -2064,6 +2064,416 @@
         "evalf:15",
         "evalf:40"
       ]
+    },
+    {
+      "expr": "cot(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "cot(-x) + cot(I*x) + cot(0) + cot(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "cot(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "sec(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "sec(-x) + sec(I*x) + sec(0) + sec(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "sec(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "csc(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "csc(-x) + csc(I*x) + csc(0) + csc(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "csc(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "acot(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "acot(-x) + acot(I*x) + acot(0) + acot(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "acot(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "asec(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "asec(-x) + asec(I*x) + asec(0) + asec(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "asec(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "acsc(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "acsc(-x) + acsc(I*x) + acsc(0) + acsc(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "acsc(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "coth(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "coth(-x) + coth(I*x) + coth(0) + coth(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "coth(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "sech(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "sech(-x) + sech(I*x) + sech(0) + sech(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "sech(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "csch(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "csch(-x) + csch(I*x) + csch(0) + csch(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "csch(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "asinh(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "asinh(-x) + asinh(I*x) + asinh(0) + asinh(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "asinh(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "acosh(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "acosh(-x) + acosh(I*x) + acosh(0) + acosh(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "acosh(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "atanh(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "atanh(-x) + atanh(I*x) + atanh(0) + atanh(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "atanh(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "acoth(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "acoth(-x) + acoth(I*x) + acoth(0) + acoth(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "acoth(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "asech(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "asech(-x) + asech(I*x) + asech(0) + asech(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "asech(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "acsch(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "acsch(-x) + acsch(I*x) + acsch(0) + acsch(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "acsch(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "sinc(x)",
+      "ops": [
+        "str",
+        "latex",
+        "diff_x"
+      ]
+    },
+    {
+      "expr": "sinc(-x) + sinc(I*x) + sinc(0) + sinc(1)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "sinc(2)",
+      "ops": [
+        "evalf:30"
+      ]
+    },
+    {
+      "expr": "tan(pi/12)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "cot(pi/12)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "cot(5*pi/12)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "sec(2*pi/3)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "csc(7*pi/6)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "sinh(x + I*pi)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "cosh(x + I*pi/2)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "tanh(x + I*pi/2)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "sin(acos(x))",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "cos(atan(x))",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "tan(asin(x))",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "sinh(acosh(x))",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "acosh(1/2)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "asech(2)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "acsch(I)",
+      "ops": [
+        "str"
+      ]
     }
   ]
 }

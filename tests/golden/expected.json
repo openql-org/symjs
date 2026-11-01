@@ -2058,6 +2058,416 @@
         "evalf:15": "-1.42889927219073",
         "evalf:40": "-1.428899272190732696418470074537198359091"
       }
+    },
+    {
+      "expr": "cot(x)",
+      "out": {
+        "str": "cot(x)",
+        "latex": "\\cot{\\left(x \\right)}",
+        "diff_x": "-cot(x)**2 - 1"
+      }
+    },
+    {
+      "expr": "cot(-x) + cot(I*x) + cot(0) + cot(1)",
+      "out": {
+        "str": "-cot(x) - I*coth(x) + zoo"
+      }
+    },
+    {
+      "expr": "cot(2)",
+      "out": {
+        "evalf:30": "-0.457657554360285763750277410432"
+      }
+    },
+    {
+      "expr": "sec(x)",
+      "out": {
+        "str": "sec(x)",
+        "latex": "\\sec{\\left(x \\right)}",
+        "diff_x": "tan(x)*sec(x)"
+      }
+    },
+    {
+      "expr": "sec(-x) + sec(I*x) + sec(0) + sec(1)",
+      "out": {
+        "str": "sec(x) + 1 + sec(1) + 1/cosh(x)"
+      }
+    },
+    {
+      "expr": "sec(2)",
+      "out": {
+        "evalf:30": "-2.40299796172238098975460040142"
+      }
+    },
+    {
+      "expr": "csc(x)",
+      "out": {
+        "str": "csc(x)",
+        "latex": "\\csc{\\left(x \\right)}",
+        "diff_x": "-cot(x)*csc(x)"
+      }
+    },
+    {
+      "expr": "csc(-x) + csc(I*x) + csc(0) + csc(1)",
+      "out": {
+        "str": "-csc(x) + zoo - I/sinh(x)"
+      }
+    },
+    {
+      "expr": "csc(2)",
+      "out": {
+        "evalf:30": "1.09975017029461646675669739703"
+      }
+    },
+    {
+      "expr": "acot(x)",
+      "out": {
+        "str": "acot(x)",
+        "latex": "\\operatorname{acot}{\\left(x \\right)}",
+        "diff_x": "-1/(x**2 + 1)"
+      }
+    },
+    {
+      "expr": "acot(-x) + acot(I*x) + acot(0) + acot(1)",
+      "out": {
+        "str": "-acot(x) - I*acoth(x) + 3*pi/4"
+      }
+    },
+    {
+      "expr": "acot(2)",
+      "out": {
+        "evalf:30": "0.463647609000806116214256231461"
+      }
+    },
+    {
+      "expr": "asec(x)",
+      "out": {
+        "str": "asec(x)",
+        "latex": "\\operatorname{asec}{\\left(x \\right)}",
+        "diff_x": "1/(x**2*sqrt(1 - 1/x**2))"
+      }
+    },
+    {
+      "expr": "asec(-x) + asec(I*x) + asec(0) + asec(1)",
+      "out": {
+        "str": "asec(-x) + asec(I*x) + zoo"
+      }
+    },
+    {
+      "expr": "asec(2)",
+      "out": {
+        "evalf:30": "1.04719755119659774615421446109"
+      }
+    },
+    {
+      "expr": "acsc(x)",
+      "out": {
+        "str": "acsc(x)",
+        "latex": "\\operatorname{acsc}{\\left(x \\right)}",
+        "diff_x": "-1/(x**2*sqrt(1 - 1/x**2))"
+      }
+    },
+    {
+      "expr": "acsc(-x) + acsc(I*x) + acsc(0) + acsc(1)",
+      "out": {
+        "str": "-acsc(x) + acsc(I*x) + zoo"
+      }
+    },
+    {
+      "expr": "acsc(2)",
+      "out": {
+        "evalf:30": "0.523598775598298873077107230547"
+      }
+    },
+    {
+      "expr": "coth(x)",
+      "out": {
+        "str": "coth(x)",
+        "latex": "\\coth{\\left(x \\right)}",
+        "diff_x": "-1/sinh(x)**2"
+      }
+    },
+    {
+      "expr": "coth(-x) + coth(I*x) + coth(0) + coth(1)",
+      "out": {
+        "str": "-I*cot(x) - coth(x) + zoo"
+      }
+    },
+    {
+      "expr": "coth(2)",
+      "out": {
+        "evalf:30": "1.03731472072754809587780976477"
+      }
+    },
+    {
+      "expr": "sech(x)",
+      "out": {
+        "str": "sech(x)",
+        "latex": "\\operatorname{sech}{\\left(x \\right)}",
+        "diff_x": "-tanh(x)*sech(x)"
+      }
+    },
+    {
+      "expr": "sech(-x) + sech(I*x) + sech(0) + sech(1)",
+      "out": {
+        "str": "sech(x) + sech(1) + 1 + 1/cos(x)"
+      }
+    },
+    {
+      "expr": "sech(2)",
+      "out": {
+        "evalf:30": "0.265802228834079692120862739820"
+      }
+    },
+    {
+      "expr": "csch(x)",
+      "out": {
+        "str": "csch(x)",
+        "latex": "\\operatorname{csch}{\\left(x \\right)}",
+        "diff_x": "-coth(x)*csch(x)"
+      }
+    },
+    {
+      "expr": "csch(-x) + csch(I*x) + csch(0) + csch(1)",
+      "out": {
+        "str": "-csch(x) + zoo - I/sin(x)"
+      }
+    },
+    {
+      "expr": "csch(2)",
+      "out": {
+        "evalf:30": "0.275720564771783207758351482163"
+      }
+    },
+    {
+      "expr": "asinh(x)",
+      "out": {
+        "str": "asinh(x)",
+        "latex": "\\operatorname{asinh}{\\left(x \\right)}",
+        "diff_x": "1/sqrt(x**2 + 1)"
+      }
+    },
+    {
+      "expr": "asinh(-x) + asinh(I*x) + asinh(0) + asinh(1)",
+      "out": {
+        "str": "I*asin(x) - asinh(x) + log(1 + sqrt(2))"
+      }
+    },
+    {
+      "expr": "asinh(2)",
+      "out": {
+        "evalf:30": "1.44363547517881034249327674027"
+      }
+    },
+    {
+      "expr": "acosh(x)",
+      "out": {
+        "str": "acosh(x)",
+        "latex": "\\operatorname{acosh}{\\left(x \\right)}",
+        "diff_x": "1/(sqrt(x - 1)*sqrt(x + 1))"
+      }
+    },
+    {
+      "expr": "acosh(-x) + acosh(I*x) + acosh(0) + acosh(1)",
+      "out": {
+        "str": "acosh(-x) + acosh(I*x) + I*pi/2"
+      }
+    },
+    {
+      "expr": "acosh(2)",
+      "out": {
+        "evalf:30": "1.31695789692481670862504634731"
+      }
+    },
+    {
+      "expr": "atanh(x)",
+      "out": {
+        "str": "atanh(x)",
+        "latex": "\\operatorname{atanh}{\\left(x \\right)}",
+        "diff_x": "1/(1 - x**2)"
+      }
+    },
+    {
+      "expr": "atanh(-x) + atanh(I*x) + atanh(0) + atanh(1)",
+      "out": {
+        "str": "I*atan(x) - atanh(x) + oo"
+      }
+    },
+    {
+      "expr": "atanh(2)",
+      "out": {
+        "evalf:30": "0.549306144334054845697622618461 - 1.57079632679489661923132169164*I"
+      }
+    },
+    {
+      "expr": "acoth(x)",
+      "out": {
+        "str": "acoth(x)",
+        "latex": "\\operatorname{acoth}{\\left(x \\right)}",
+        "diff_x": "1/(1 - x**2)"
+      }
+    },
+    {
+      "expr": "acoth(-x) + acoth(I*x) + acoth(0) + acoth(1)",
+      "out": {
+        "str": "-I*acot(x) - acoth(x) + oo + I*pi/2"
+      }
+    },
+    {
+      "expr": "acoth(2)",
+      "out": {
+        "evalf:30": "0.549306144334054845697622618461"
+      }
+    },
+    {
+      "expr": "asech(x)",
+      "out": {
+        "str": "asech(x)",
+        "latex": "\\operatorname{asech}{\\left(x \\right)}",
+        "diff_x": "-1/(x*sqrt(1 - x**2))"
+      }
+    },
+    {
+      "expr": "asech(-x) + asech(I*x) + asech(0) + asech(1)",
+      "out": {
+        "str": "asech(-x) + asech(I*x) + oo"
+      }
+    },
+    {
+      "expr": "asech(2)",
+      "out": {
+        "evalf:30": "1.04719755119659774615421446109*I"
+      }
+    },
+    {
+      "expr": "acsch(x)",
+      "out": {
+        "str": "acsch(x)",
+        "latex": "\\operatorname{acsch}{\\left(x \\right)}",
+        "diff_x": "-1/(x**2*sqrt(1 + x**(-2)))"
+      }
+    },
+    {
+      "expr": "acsch(-x) + acsch(I*x) + acsch(0) + acsch(1)",
+      "out": {
+        "str": "-acsch(x) + acsch(I*x) + zoo"
+      }
+    },
+    {
+      "expr": "acsch(2)",
+      "out": {
+        "evalf:30": "0.481211825059603447497758913424"
+      }
+    },
+    {
+      "expr": "sinc(x)",
+      "out": {
+        "str": "sinc(x)",
+        "latex": "\\operatorname{sinc}{\\left(x \\right)}",
+        "diff_x": "cos(x)/x - sin(x)/x**2"
+      }
+    },
+    {
+      "expr": "sinc(-x) + sinc(I*x) + sinc(0) + sinc(1)",
+      "out": {
+        "str": "sinc(x) + sinc(I*x) + sinc(1) + 1"
+      }
+    },
+    {
+      "expr": "sinc(2)",
+      "out": {
+        "evalf:30": "0.454648713412840847698009932956"
+      }
+    },
+    {
+      "expr": "tan(pi/12)",
+      "out": {
+        "str": "2 - sqrt(3)"
+      }
+    },
+    {
+      "expr": "cot(pi/12)",
+      "out": {
+        "str": "sqrt(3) + 2"
+      }
+    },
+    {
+      "expr": "cot(5*pi/12)",
+      "out": {
+        "str": "2 - sqrt(3)"
+      }
+    },
+    {
+      "expr": "sec(2*pi/3)",
+      "out": {
+        "str": "-2"
+      }
+    },
+    {
+      "expr": "csc(7*pi/6)",
+      "out": {
+        "str": "-2"
+      }
+    },
+    {
+      "expr": "sinh(x + I*pi)",
+      "out": {
+        "str": "-sinh(x)"
+      }
+    },
+    {
+      "expr": "cosh(x + I*pi/2)",
+      "out": {
+        "str": "I*sinh(x)"
+      }
+    },
+    {
+      "expr": "tanh(x + I*pi/2)",
+      "out": {
+        "str": "coth(x)"
+      }
+    },
+    {
+      "expr": "sin(acos(x))",
+      "out": {
+        "str": "sqrt(1 - x**2)"
+      }
+    },
+    {
+      "expr": "cos(atan(x))",
+      "out": {
+        "str": "1/sqrt(x**2 + 1)"
+      }
+    },
+    {
+      "expr": "tan(asin(x))",
+      "out": {
+        "str": "x/sqrt(1 - x**2)"
+      }
+    },
+    {
+      "expr": "sinh(acosh(x))",
+      "out": {
+        "str": "sqrt(x - 1)*sqrt(x + 1)"
+      }
+    },
+    {
+      "expr": "acosh(1/2)",
+      "out": {
+        "str": "I*pi/3"
+      }
+    },
+    {
+      "expr": "asech(2)",
+      "out": {
+        "str": "I*pi/3"
+      }
+    },
+    {
+      "expr": "acsch(I)",
+      "out": {
+        "str": "-I*pi/2"
+      }
     }
   ]
 }

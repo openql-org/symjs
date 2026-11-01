@@ -93,7 +93,7 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   sqrt: ([x]) => sqrt(x!),
   exp: ([x]) => exp(x!),
   ...Object.fromEntries(
-    (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 'abs', 're', 'im', 'arg', 'conjugate'] as FnName[]).map(
+    (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 'abs', 're', 'im', 'arg', 'conjugate', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc'] as FnName[]).map(
       (n) => [n, (args: Expr[]) => fn(n, args)],
     ),
   ),
