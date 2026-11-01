@@ -491,6 +491,11 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
     }
   }
 
+  // Abs(u)**(2k) = u**(2k) for real u
+  if (b instanceof Fn && b.name === 'abs' && e instanceof Rational && e.isInteger && e.p % 2n === 0n && isReal(b.args[0]!)) {
+    return pow(b.args[0]!, e);
+  }
+
   if (b instanceof Pow) {
     const [x, a] = b.args;
     if (e instanceof Rational && e.isInteger) return pow(x, mul(a, e));

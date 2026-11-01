@@ -11,7 +11,7 @@
  */
 
 import * as sj from '../src';
-import { Expr, Integral, Matrix, S, Sym } from '../src';
+import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../src';
 
 // ---------------------------------------------------------------------------
 // Python-like containers for formatting results
@@ -291,6 +291,11 @@ function asOrdered(e: Expr): Expr[] {
   return sj.orderedTerms(e);
 }
 
+function idxList(v: unknown): (number | boolean)[] {
+  if (!(v instanceof PyTuple)) throw new Unsupported('index list');
+  return v.items.map((x) => (typeof x === 'boolean' ? x : Number((x as sj.Rational).p)));
+}
+
 const FN_NAMES = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate'] as const;
 
 export const ADAPTERS: Record<string, Adapter> = {
@@ -445,7 +450,19 @@ export const ADAPTERS: Record<string, Adapter> = {
     const [r, c] = args.map((a) => Number((a as sj.Rational).p));
     return Matrix.zeros(r!, c ?? r!);
   },
-  diag: (args, kw) => (noKw(kw), Matrix.diag(...args.map(asExpr))),
+  diag: (args, kw) => {
+    const unpack = Boolean(kw['unpack']);
+    const blocks: (Matrix | Expr)[] = [];
+    for (const a of args) {
+      if (a instanceof Matrix) blocks.push(a);
+      else if (a instanceof PyTuple) {
+        if (unpack && args.length === 1) a.items.forEach((x) => blocks.push(asExpr(x)));
+        else if (a.items.every((r) => r instanceof PyTuple)) blocks.push(Matrix.of(a.items.map((r) => (r as PyTuple).items.map(asExpr))));
+        else blocks.push(Matrix.col(...a.items.map(asExpr)));
+      } else blocks.push(asExpr(a));
+    }
+    return sj.blockDiag(...blocks);
+  },
   limit: (args, kw) => {
     const dir = (kw['dir'] as string | undefined) ?? (typeof args[3] === 'string' ? (args[3] as string) : '+');
     for (const k of Object.keys(kw)) if (k !== 'dir') throw new Unsupported(`kwargs ${k}`);
@@ -479,7 +496,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (args.length) throw new Unsupported('expand args');
     return sj.expand(asExpr(self), expandHints(kw));
   },
-  '.simplify': exprMethod(sj.simplify),
+  // Matrix.simplify() works in place in SymPy and returns None
+  '.simplify': (_args, _kw, self) => (self instanceof Matrix ? null : sj.simplify(asExpr(self))),
   '.factor': exprMethod(sj.factor),
   '.together': exprMethod(sj.together),
   '.cancel': exprMethod(sj.cancel),
@@ -606,14 +624,100 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.as_ordered_terms': exprMethod((e) => new PyList(e instanceof sj.Add ? asOrdered(e) : [e])),
 
+  // ---- Matrix methods (linear algebra)
+  '.rref': matrixMethod((m) => {
+    const [r, p] = sj.rref(m);
+    return new PyTuple([r, new PyTuple(p)]);
+  }),
+  '.echelon_form': matrixMethod((m) => sj.echelonForm(m)),
+  '.rank': matrixMethod((m) => sj.rank(m)),
+  '.nullspace': matrixMethod((m) => new PyList(sj.nullspace(m))),
+  '.columnspace': matrixMethod((m) => new PyList(sj.columnspace(m))),
+  '.rowspace': matrixMethod((m) => new PyList(sj.rowspace(m))),
+  '.eigenvects': matrixMethod((m) => new PyList(sj.eigenvects(m).map(([v, k, vs]) => new PyTuple([v, k, new PyList(vs)])))),
+  '.diagonalize': matrixMethod((m) => new PyTuple(sj.diagonalize(m))),
+  '.is_diagonalizable': (_args, kw, self) => {
+    if (!(self instanceof Matrix)) throw new Unsupported('Matrix');
+    return sj.isDiagonalizable(self, Boolean(kw['reals_only']));
+  },
+  '.cholesky': (_args, kw, self) => {
+    if (!(self instanceof Matrix)) throw new Unsupported('Matrix');
+    return sj.cholesky(self, kw['hermitian'] === undefined ? true : Boolean(kw['hermitian']));
+  },
+  '.LDLdecomposition': matrixMethod((m) => new PyTuple(sj.ldl(m))),
+  '.LUdecomposition': matrixMethod((m) => {
+    const [L, U, p] = sj.luDecomposition(m);
+    return new PyTuple([L, U, new PyList(p.map((x) => new PyList(x)))]);
+  }),
+  '.QRdecomposition': matrixMethod((m) => new PyTuple(sj.qrDecomposition(m))),
+  '.dot': (args, kw, self) => {
+    if (!(self instanceof Matrix)) throw new Unsupported('Matrix');
+    const b = args[0] instanceof Matrix ? args[0] : args[0] instanceof PyTuple ? Matrix.col(...args[0].items.map(asExpr)) : undefined;
+    if (!b) throw new Unsupported('dot argument');
+    const conv = (kw['conjugate_convention'] as string | undefined) ?? 'maths';
+    return sj.dot(self, b, Boolean(kw['hermitian']), conv === 'physics' || conv === 'right' ? 'physics' : 'maths');
+  },
+  '.cross': matrixMethod((m, [b]) => sj.cross(m, b as Matrix)),
+  '.norm': matrixMethod((m, [o]) => sj.norm(m, o as ExprLike | undefined)),
+  '.singular_values': matrixMethod((m) => new PyList(sj.singularValues(m))),
+  '.pinv': matrixMethod((m) => sj.pinv(m)),
+  '.jacobian': matrixMethod((m, [y]) => sj.jacobian(m, y instanceof Matrix ? y : (y as PyTuple).items.map(asExpr))),
+  '.exp': matrixMethod((m) => sj.matrixExp(m)),
+  '.upper_triangular': matrixMethod((m, [k]) => sj.linalg.upperTriangular(m, k ? Number((k as sj.Rational).p) : 0)),
+  '.lower_triangular': matrixMethod((m, [k]) => sj.linalg.lowerTriangular(m, k ? Number((k as sj.Rational).p) : 0)),
+  '.diagonal': matrixMethod((m, [k]) => sj.linalg.diagonal(m, k ? Number((k as sj.Rational).p) : 0)),
+  '.extract': matrixMethod((m, [r, c]) =>
+    sj.linalg.extract(m, idxList(r), idxList(c)),
+  ),
+  '.reshape': matrixMethod((m, [r, c]) => sj.linalg.reshape(m, Number((r as sj.Rational).p), Number((c as sj.Rational).p))),
+  '.rot90': matrixMethod((m, [k]) => sj.linalg.rot90(m, k ? Number((k as sj.Rational).p) : 1)),
+  '.vech': (_args, kw, self) => sj.linalg.vech(self as Matrix, kw['diagonal'] === undefined ? true : Boolean(kw['diagonal'])),
+  '.vec': matrixMethod((m) => sj.linalg.vec(m)),
+  '.minor': matrixMethod((m, [i, j]) => sj.linalg.minorDet(m, Number((i as sj.Rational).p), Number((j as sj.Rational).p))),
+  '.minor_submatrix': matrixMethod((m, [i, j]) => m.minor(Number((i as sj.Rational).p), Number((j as sj.Rational).p))),
+  '.cofactor': matrixMethod((m, [i, j]) => sj.linalg.cofactor(m, Number((i as sj.Rational).p), Number((j as sj.Rational).p))),
+  '.cofactor_matrix': matrixMethod((m) => m.cofactorMatrix()),
+  '.is_anti_symmetric': (_args, _kw, self) => sj.linalg.isAntiSymmetric(self as Matrix),
+  '.is_diagonal': matrixMethod((m) => sj.linalg.isDiagonal(m)),
+  '.is_upper': matrixMethod((m) => sj.linalg.isUpper(m)),
+  '.is_lower': matrixMethod((m) => sj.linalg.isLower(m)),
+  '.is_nilpotent': matrixMethod((m) => sj.linalg.isNilpotent(m)),
+  '.multiply_elementwise': matrixMethod((m, [b]) => sj.linalg.multiplyElementwise(m, b as Matrix)),
+  '.project': matrixMethod((m, [b]) => sj.linalg.project(m, b as Matrix)),
+  '.col_join': matrixMethod((m, [b]) => m.vstack(b as Matrix)),
+  '.row_join': matrixMethod((m, [b]) => m.hstack(b as Matrix)),
+  '.col_insert': matrixMethod((m, [p, b]) => sj.linalg.colInsert(m, Number((p as sj.Rational).p), b as Matrix)),
+  '.row_insert': matrixMethod((m, [p, b]) => sj.linalg.rowInsert(m, Number((p as sj.Rational).p), b as Matrix)),
+  '.col': matrixMethod((m, [j]) => m.col(Number((j as sj.Rational).p))),
+  '.row': matrixMethod((m, [i]) => m.row(Number((i as sj.Rational).p))),
+  '.applyfunc': matrixMethod(() => {
+    throw new Unsupported('applyfunc');
+  }),
+  rot_axis1: exprFn(sj.rotAxis1),
+  rot_axis2: exprFn(sj.rotAxis2),
+  rot_axis3: exprFn(sj.rotAxis3),
+  rot_ccw_axis1: exprFn(sj.rotCcwAxis1),
+  rot_ccw_axis2: exprFn(sj.rotCcwAxis2),
+  rot_ccw_axis3: exprFn(sj.rotCcwAxis3),
+  rot_givens: (args, kw) => {
+    const dim = kw['dim'] ? Number((kw['dim'] as sj.Rational).p) : 3;
+    return sj.rotGivens(Number((args[0] as sj.Rational).p), Number((args[1] as sj.Rational).p), asExpr(args[2]), dim);
+  },
+
   // ---- Matrix methods
-  '.det': matrixMethod((m) => m.det()),
-  '.inv': matrixMethod((m) => m.inv()),
+  '.det': (_args, _kw, self) => {
+    if (!(self instanceof Matrix)) throw new Unsupported('Matrix');
+    return self.det();
+  },
+  '.inv': (_args, _kw, self) => {
+    if (!(self instanceof Matrix)) throw new Unsupported('Matrix');
+    return self.inv();
+  },
   '.transpose': matrixMethod((m) => m.transpose()),
   '.adjugate': matrixMethod((m) => m.adjugate()),
   '.trace': matrixMethod((m) => m.trace()),
   '.eigenvals': matrixMethod((m) => rootsDict(m.eigenvals())),
-  '.is_symmetric': matrixMethod((m) => m.isSquare && m.equals(m.transpose())),
+  '.is_symmetric': (_args, _kw, self) => sj.linalg.isSymmetric(self as Matrix),
   '.tolist': matrixMethod((m) => new PyList(m.toArray().map((r) => new PyList(r)))),
 };
 

@@ -223,10 +223,28 @@ export class Poly {
   }
 }
 
+/**
+ * sqrt(d) with square factors moved outside, ignoring the sign of the
+ * extracted factor (valid inside a +/- pair), like SymPy's roots_quadratic:
+ * sqrt(-t**2) -> I*t.
+ */
+function sqrtRemoveSquares(d: Expr): Expr {
+  if (!(d instanceof Mul || d instanceof Pow)) return sqrt(d);
+  const outside: Expr[] = [];
+  const inside: Expr[] = [];
+  for (const f of d instanceof Mul ? d.args : [d]) {
+    if (f instanceof Pow && f.exp instanceof Rational && f.exp.isInteger && f.exp.p % 2n === 0n) {
+      outside.push(pow(f.base, Rational.of(f.exp.p / 2n)));
+    } else inside.push(f);
+  }
+  if (outside.length === 0) return sqrt(d);
+  return mul(...outside, sqrt(mul(...inside)));
+}
+
 /** Roots of a quadratic a x^2 + b x + c (symbolic coefficients allowed). */
 function quadraticRoots(a: Expr, b: Expr, c: Expr): Expr[] {
   const disc = expand(add(pow(b, 2), mul(-4, a, c)));
-  const s = sqrt(disc);
+  const s = sqrtRemoveSquares(disc);
   const inv2a = pow(mul(2, a), -1);
   return [expand(mul(add(mul(-1, b), mul(-1, s)), inv2a)), expand(mul(add(mul(-1, b), s), inv2a))];
 }

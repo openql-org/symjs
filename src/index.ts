@@ -194,6 +194,37 @@ export type { ParseOptions } from './parsing/parser';
 
 // matrices
 export { Matrix } from './matrices/matrix';
+export * as linalg from './matrices/linalg';
+export {
+  rref,
+  echelonForm,
+  rank,
+  nullspace,
+  columnspace,
+  rowspace,
+  eigenvects,
+  isDiagonalizable,
+  diagonalize,
+  matrixExp,
+  cholesky,
+  ldl,
+  luDecomposition,
+  qrDecomposition,
+  dot,
+  cross,
+  singularValues,
+  norm,
+  pinv,
+  jacobian,
+  blockDiag,
+  rotAxis1,
+  rotAxis2,
+  rotAxis3,
+  rotCcwAxis1,
+  rotCcwAxis2,
+  rotCcwAxis3,
+  rotGivens,
+} from './matrices/linalg';
 
 // quantum
 export * as gates from './quantum/gates';
