@@ -97,7 +97,12 @@ const REL_OPS: Record<string, sj.RelOp> = {
   GreaterThan: 'Ge',
 };
 
+const SPECIAL_NAMES = ['factorial', 'factorial2', 'binomial', 'ff', 'rf', 'subfactorial', 'harmonic', 'catalan', 'gamma', 'loggamma', 'polygamma', 'lowergamma', 'uppergamma', 'beta', 'zeta', 'erf', 'erfc', 'erfi', 'erf2', 'erfinv', 'erfcinv', 'erf2inv', 'Ei', 'li', 'Li', 'Si', 'Ci', 'Shi', 'Chi', 'expint', 'fresnels', 'fresnelc', 'sign', 'floor', 'ceiling', 'atan2', 'Min', 'Max'] as const;
+
 const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
+  ...Object.fromEntries(SPECIAL_NAMES.map((n) => [n, (args: Expr[]) => sj.fn(n, args)])),
+  RisingFactorial: (args) => sj.fn('rf', args),
+  FallingFactorial: (args) => sj.fn('ff', args),
   exp: ([a]) => sj.exp(a!),
   Abs: ([a]) => sj.abs(a!),
   ...Object.fromEntries(
@@ -348,6 +353,22 @@ export const ADAPTERS: Record<string, Adapter> = {
   Mul: (args, kw) => (noKw(kw), sj.mul(...args.map(asExpr))),
   Pow: (args, kw) => (noKw(kw), sj.pow(asExpr(args[0]), asExpr(args[1]))),
   sqrt: exprFn(sj.sqrt),
+  ...Object.fromEntries(
+    SPECIAL_NAMES.map((n) => [
+      n,
+      ((args, kw) => {
+        noKw(kw);
+        return sj.fn(n, args.map(asExpr));
+      }) as Adapter,
+    ]),
+  ),
+  digamma: exprFn(sj.digamma),
+  trigamma: exprFn(sj.trigamma),
+  E1: exprFn(sj.E1),
+  RisingFactorial: (args, kw) => (noKw(kw), sj.rf(asExpr(args[0]), asExpr(args[1]))),
+  FallingFactorial: (args, kw) => (noKw(kw), sj.ff(asExpr(args[0]), asExpr(args[1]))),
+  expand_func: exprFn(sj.expandFunc),
+  conjugate: exprFn(sj.conjugate),
   exp: exprFn(sj.exp),
   Abs: exprFn(sj.abs),
   ...Object.fromEntries(FN_NAMES.map((n) => [n, exprFn((e) => sj.fn(n, [e]))])),

@@ -66,7 +66,7 @@ function makeLookup(values: NumericValues | undefined): (s: Sym) => C | undefine
   return (s) => (Object.prototype.hasOwnProperty.call(rec, s.name) ? toC(rec[s.name]!) : undefined);
 }
 
-const FN_NUMERIC: Record<Fn['name'], (a: C) => C> = {
+const FN_NUMERIC1: Partial<Record<Fn['name'], (a: C) => C>> = {
   sin: csin,
   cos: ccos,
   tan: ctan,
@@ -84,6 +84,20 @@ const FN_NUMERIC: Record<Fn['name'], (a: C) => C> = {
   conjugate: cconj,
 };
 
+/** Numeric implementations of functions (multi-argument); special.ts registers more. */
+export const numericFns: Partial<Record<Fn['name'], (args: C[]) => C>> = Object.fromEntries(
+  Object.entries(FN_NUMERIC1).map(([k, f]) => [k, (args: C[]) => f!(args[0]!)]),
+);
+
+const CONSTANT_VALUES: Record<string, C> = {
+  pi: c(Math.PI),
+  E: c(Math.E),
+  I: c(0, 1),
+  EulerGamma: c(0.5772156649015329),
+  Catalan: c(0.915965594177219),
+  GoldenRatio: c((1 + Math.sqrt(5)) / 2),
+};
+
 function compile(e: Expr, resolve: (s: Sym) => Compiled): Compiled {
   if (e instanceof Rational) {
     const v = c(e.value);
@@ -94,7 +108,7 @@ function compile(e: Expr, resolve: (s: Sym) => Compiled): Compiled {
     return () => v;
   }
   if (e instanceof Constant) {
-    const v = e.name === 'pi' ? c(Math.PI) : e.name === 'E' ? c(Math.E) : c(0, 1);
+    const v = CONSTANT_VALUES[e.name]!;
     return () => v;
   }
   if (e instanceof Special) {
@@ -117,9 +131,10 @@ function compile(e: Expr, resolve: (s: Sym) => Compiled): Compiled {
     return (env) => cpow(fb(env), fx(env));
   }
   if (e instanceof Fn) {
-    const fa = compile(e.args[0]!, resolve);
-    const op = FN_NUMERIC[e.name];
-    return (env) => op(fa(env));
+    const fas = e.args.map((a) => compile(a, resolve));
+    const op = numericFns[e.name];
+    if (!op) throw new Error(`Cannot evaluate ${e.name} numerically`);
+    return (env) => op(fas.map((f) => f(env)));
   }
   if (e instanceof Piecewise) {
     const branches = e.pairs.map(([x, cond]) => [compile(x, resolve), compileCond(cond, resolve)] as const);

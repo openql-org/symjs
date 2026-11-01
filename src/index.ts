@@ -104,6 +104,52 @@ export {
   dagger,
 } from './functions/elementary';
 
+// special functions
+export {
+  factorial,
+  factorial2,
+  binomial,
+  ff,
+  rf,
+  subfactorial,
+  harmonic,
+  catalan,
+  gamma,
+  loggamma,
+  polygamma,
+  digamma,
+  trigamma,
+  lowergamma,
+  uppergamma,
+  beta,
+  zeta,
+  erf,
+  erfc,
+  erfi,
+  erf2,
+  erfinv,
+  erfcinv,
+  erf2inv,
+  Ei,
+  li,
+  Li,
+  Si,
+  Ci,
+  Shi,
+  Chi,
+  expint,
+  E1,
+  fresnels,
+  fresnelc,
+  sign,
+  floor,
+  ceiling,
+  atan2,
+  Min,
+  Max,
+  expandFunc,
+} from './functions/special';
+
 // calculus
 export { diff } from './calculus/diff';
 export { Function, functions, derivative } from './core/undef';

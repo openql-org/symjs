@@ -289,7 +289,9 @@ export function latex(e: Expr): string {
   }
   if (e instanceof Float) return floatLatex(e.value);
   if (e instanceof Sym) return symbolLatex(e.name);
-  if (e instanceof Constant) return e.name === 'pi' ? '\\pi' : e.name === 'E' ? 'e' : 'i';
+  if (e instanceof Constant) {
+    return { pi: '\\pi', E: 'e', I: 'i', EulerGamma: '\\gamma', Catalan: 'G', GoldenRatio: '\\phi' }[e.name];
+  }
   if (e instanceof Special) {
     return { oo: '\\infty', '-oo': '-\\infty', zoo: '\\tilde{\\infty}', nan: '\\text{NaN}' }[e.name];
   }

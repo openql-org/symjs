@@ -12,6 +12,12 @@ import { derivative } from '../core/undef';
 import { add, mul, pow, sympify } from '../core/ops';
 import { abs, conjugate, cos, cosh, im as fnIm, log, re as fnRe, sin, sinh, tan, tanh } from '../functions/elementary';
 
+/**
+ * Partial derivatives of multi-argument functions: fnPartials[name](args, i)
+ * is d f(args) / d args[i]. special.ts registers entries.
+ */
+export const fnPartials: Partial<Record<Fn['name'], (args: readonly Expr[], i: number) => Expr>> = {};
+
 /** Derivative of f(u) with respect to u, for each known function. */
 const fnDerivative: Partial<Record<Fn['name'], (u: Expr) => Expr>> = {
   sin: (u) => cos(u),
@@ -53,6 +59,15 @@ function d(e: Expr, x: Expr): Expr {
     return mul(e, add(mul(dn, log(b)), mul(n, db, pow(b, -1))));
   }
 
+  if (e instanceof Fn && fnPartials[e.name]) {
+    const partial = fnPartials[e.name]!;
+    const terms: Expr[] = [];
+    e.args.forEach((a, i) => {
+      const da = d(a, x);
+      if (!(da instanceof Expr && da.key === S.Zero.key)) terms.push(mul(partial(e.args, i), da));
+    });
+    return add(...terms);
+  }
   if (e instanceof Fn) {
     const u = e.args[0]!;
     const du = d(u, x);

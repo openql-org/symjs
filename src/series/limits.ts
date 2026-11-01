@@ -141,6 +141,14 @@ class Limiter {
       return isNaN_(r) ? expLog() : r;
     }
 
+    if (f instanceof Fn && f.args.length > 1) {
+      const ls = f.args.map((a) => this.lim(a));
+      if (ls.some((v) => v === undefined || v === BOUNDED)) return undefined;
+      const r = fn(f.name, ls as Expr[]);
+      if (hasSpecialInside(r) || isNaN_(r)) return undefined;
+      return r;
+    }
+
     if (f instanceof Fn) {
       const arg = f.args[0]!;
       const la = this.lim(arg);

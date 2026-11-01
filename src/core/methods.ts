@@ -7,13 +7,13 @@
  */
 
 import { isZero as isZeroQ } from './assumptions';
-import { Add, Constant, Expr, ExprLike, Float, Mul, Pow, Rational, S, Special, Sym, isNum } from './nodes';
+import { Add, Constant, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Special, Sym, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { freeSymbols } from './traverse';
 import { diff } from '../calculus/diff';
-import { im, re } from '../functions/elementary';
-import { expandMul } from '../simplify/expand';
+import { abs, arg, im, log, re } from '../functions/elementary';
+import { asRealImagExpand, expandMul } from '../simplify/expand';
 import { simplify } from '../simplify/simplify';
 
 const isOne = (e: Expr) => e instanceof Rational && e.isOne;
@@ -478,7 +478,15 @@ export function isConstant(eIn: ExprLike, wrt: readonly Sym[] = []): boolean {
 
 /** SymPy `as_real_imag()`. */
 export function asRealImag(eIn: ExprLike): [Expr, Expr] {
-  const e = expandMul(sympify(eIn));
+  const e0 = sympify(eIn);
+  if (e0 instanceof Fn && e0.name === 'log') {
+    const a = e0.args[0]!;
+    return [log(abs(a)), arg(a)];
+  }
+  if ((e0 instanceof Pow && e0.base instanceof Constant && e0.base.name === 'E') || e0 instanceof Fn) {
+    return asRealImagExpand(e0);
+  }
+  const e = expandMul(e0);
   return [re(e), im(e)];
 }
 

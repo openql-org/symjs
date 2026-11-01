@@ -77,7 +77,49 @@ export type FnName =
   | 're'
   | 'im'
   | 'arg'
-  | 'conjugate';
+  | 'conjugate'
+  | SpecialFnName;
+
+/** Special and combinatorial functions (see functions/special.ts). */
+export type SpecialFnName =
+  | 'factorial'
+  | 'factorial2'
+  | 'binomial'
+  | 'ff'
+  | 'rf'
+  | 'subfactorial'
+  | 'harmonic'
+  | 'catalan'
+  | 'gamma'
+  | 'loggamma'
+  | 'polygamma'
+  | 'lowergamma'
+  | 'uppergamma'
+  | 'beta'
+  | 'zeta'
+  | 'erf'
+  | 'erfc'
+  | 'erfi'
+  | 'erf2'
+  | 'erfinv'
+  | 'erfcinv'
+  | 'erf2inv'
+  | 'Ei'
+  | 'li'
+  | 'Li'
+  | 'Si'
+  | 'Ci'
+  | 'Shi'
+  | 'Chi'
+  | 'expint'
+  | 'fresnels'
+  | 'fresnelc'
+  | 'sign'
+  | 'floor'
+  | 'ceiling'
+  | 'atan2'
+  | 'Min'
+  | 'Max';
 
 /**
  * Late-bound implementations. Filled in by the modules that implement them.
@@ -338,7 +380,7 @@ export class Sym extends Expr {
   }
 }
 
-export type ConstantName = 'pi' | 'E' | 'I';
+export type ConstantName = 'pi' | 'E' | 'I' | 'EulerGamma' | 'Catalan' | 'GoldenRatio';
 
 /** Mathematical constants: pi, E (Euler's number) and I (imaginary unit). */
 export class Constant extends Expr {
@@ -580,6 +622,9 @@ export const S = {
   Pi: new Constant('pi'),
   E: new Constant('E'),
   I: new Constant('I'),
+  EulerGamma: new Constant('EulerGamma'),
+  Catalan: new Constant('Catalan'),
+  GoldenRatio: new Constant('GoldenRatio'),
   Infinity: new Special('oo'),
   NegativeInfinity: new Special('-oo'),
   ComplexInfinity: new Special('zoo'),

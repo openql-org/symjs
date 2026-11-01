@@ -12,7 +12,7 @@
  *   atom    := number | name | name '(' args ')' | '(' sum ')' | interpolated value
  */
 
-import { Assumptions, Expr, ExprLike, FnName, Rational, S, Sym } from '../core/nodes';
+import { Assumptions, Expr, ExprLike, FnName, Rational, S, SpecialFnName, Sym } from '../core/nodes';
 import { add, div, exp, mul, neg, pow, sqrt, sub, sympify } from '../core/ops';
 import { fn } from '../functions/elementary';
 
@@ -46,6 +46,47 @@ function tokenize(src: string, offset: number, out: Token[]): void {
   }
 }
 
+const SPECIAL_NAMES: SpecialFnName[] = [
+  'factorial',
+  'factorial2',
+  'binomial',
+  'ff',
+  'rf',
+  'subfactorial',
+  'harmonic',
+  'catalan',
+  'gamma',
+  'loggamma',
+  'polygamma',
+  'lowergamma',
+  'uppergamma',
+  'beta',
+  'zeta',
+  'erf',
+  'erfc',
+  'erfi',
+  'erf2',
+  'erfinv',
+  'erfcinv',
+  'erf2inv',
+  'Ei',
+  'li',
+  'Li',
+  'Si',
+  'Ci',
+  'Shi',
+  'Chi',
+  'expint',
+  'fresnels',
+  'fresnelc',
+  'sign',
+  'floor',
+  'ceiling',
+  'atan2',
+  'Min',
+  'Max',
+];
+
 const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   sqrt: ([x]) => sqrt(x!),
   exp: ([x]) => exp(x!),
@@ -56,9 +97,25 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   ),
   ln: ([x]) => fn('log', [x!]),
   Abs: ([x]) => fn('abs', [x!]),
+  ...Object.fromEntries(SPECIAL_NAMES.map((n) => [n, (args: Expr[]) => fn(n, args)])),
+  digamma: ([x]) => fn('polygamma', [0, x!]),
+  trigamma: ([x]) => fn('polygamma', [1, x!]),
+  E1: ([x]) => fn('expint', [1, x!]),
+  RisingFactorial: (args) => fn('rf', args),
+  FallingFactorial: (args) => fn('ff', args),
 };
 
-const CONSTANTS: Record<string, Expr> = { pi: S.Pi, E: S.E, I: S.I, oo: S.Infinity, zoo: S.ComplexInfinity, nan: S.NaN };
+const CONSTANTS: Record<string, Expr> = {
+  pi: S.Pi,
+  E: S.E,
+  I: S.I,
+  oo: S.Infinity,
+  zoo: S.ComplexInfinity,
+  nan: S.NaN,
+  EulerGamma: S.EulerGamma,
+  Catalan: S.Catalan,
+  GoldenRatio: S.GoldenRatio,
+};
 
 function parseNumber(s: string): Expr {
   if (/^\d+$/.test(s)) return Rational.of(BigInt(s));

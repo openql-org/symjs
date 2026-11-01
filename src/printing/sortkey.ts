@@ -31,7 +31,14 @@ export function compareKeys(a: Key, b: Key): number {
 }
 
 /** SymPy class names used in class keys. */
-const CONSTANT_CLASS: Record<string, string> = { I: 'ImaginaryUnit', pi: 'Pi', E: 'Exp1' };
+const CONSTANT_CLASS: Record<string, string> = {
+  I: 'ImaginaryUnit',
+  pi: 'Pi',
+  E: 'Exp1',
+  EulerGamma: 'EulerGamma',
+  Catalan: 'Catalan',
+  GoldenRatio: 'GoldenRatio',
+};
 
 /** SymPy FunctionClass.class_key priorities. */
 const FUNCTION_PRIORITY: Record<string, number> = {
@@ -52,8 +59,10 @@ const FUNCTION_PRIORITY: Record<string, number> = {
 };
 
 /** SymPy class name of a function node (e.g. abs -> Abs). */
+const SYMPY_FN_NAMES: Record<string, string> = { abs: 'Abs', ff: 'FallingFactorial', rf: 'RisingFactorial' };
+
 export function sympyFunctionName(name: string): string {
-  return name === 'abs' ? 'Abs' : name;
+  return SYMPY_FN_NAMES[name] ?? name;
 }
 
 const isExp = (e: Expr): e is Pow => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';

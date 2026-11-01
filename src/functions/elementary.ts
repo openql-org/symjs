@@ -15,6 +15,7 @@ import {
   FnName,
   Mul,
   Pow,
+  Float,
   Rational,
   S,
   Special,
@@ -24,7 +25,7 @@ import {
 import { numAbs, numNeg, ratMod } from '../core/num';
 import { add, couldExtractMinusSign, mul, neg, pow, splitCoeff, sqrt, sympify } from '../core/ops';
 
-type Evaluator = (x: Expr) => Expr | undefined;
+export type Evaluator = (x: Expr, ...rest: Expr[]) => Expr | undefined;
 
 const isI = (e: Expr) => e instanceof Constant && e.name === 'I';
 const isPi = (e: Expr) => e instanceof Constant && e.name === 'pi';
@@ -160,6 +161,8 @@ const evalTan: Evaluator = (x) => {
 };
 
 const evalAsin: Evaluator = (x) => {
+  if (x instanceof Special && x.name === 'oo') return mul(-1, S.I, S.Infinity);
+  if (x instanceof Special && x.name === '-oo') return mul(S.I, S.Infinity);
   const table: Record<string, Expr> = {
     '0': S.Zero,
     '1': mul(S.Half, S.Pi),
@@ -173,6 +176,8 @@ const evalAsin: Evaluator = (x) => {
 };
 
 const evalAcos: Evaluator = (x) => {
+  if (x instanceof Special && x.name === 'oo') return mul(S.I, S.Infinity);
+  if (x instanceof Special && x.name === '-oo') return mul(-1, S.I, S.Infinity);
   const v = evalAsin(x);
   if (v === undefined || v instanceof Fn) return undefined;
   return add(mul(S.Half, S.Pi), neg(v));
@@ -219,6 +224,10 @@ const evalLog: Evaluator = (x) => {
   if (x instanceof Constant && x.name === 'E') return S.One;
   if (isI(x)) return mul(S.Half, S.I, S.Pi);
   if (x instanceof Pow && x.base instanceof Constant && x.base.name === 'E' && isReal(x.exp)) return x.exp;
+  if (x instanceof Add && x.freeSymbols().size === 0 && !isReal(x) && !x.args.some((a) => a instanceof Float)) {
+    const t = arg(x);
+    if (!(t instanceof Fn)) return add(log(abs(x)), mul(S.I, t));
+  }
   return undefined;
 };
 
@@ -315,6 +324,20 @@ const evalIm: Evaluator = (x) => {
 
 const evalArg: Evaluator = (x) => {
   if (isPositive(x)) return S.Zero;
+  // a + b*I with real numeric a, b
+  if (x.freeSymbols().size === 0 && !isReal(x)) {
+    const a = re(x);
+    const b = im(x);
+    if (isNum(a) && isNum(b) && (a instanceof Float || b instanceof Float)) {
+      return new Float(Math.atan2(b instanceof Rational ? b.value : (b as Float).value, a instanceof Rational ? a.value : (a as Float).value));
+    }
+    if (!(a instanceof Fn) && !(b instanceof Fn) && a.freeSymbols().size === 0) {
+      const sa = isPositive(a) ? 1 : isNegative(a) ? -1 : 0;
+      const t = atan(mul(b, pow(a, -1)));
+      if (sa === 1) return t;
+      if (sa === -1) return isNegative(b) ? add(t, neg(S.Pi)) : add(t, S.Pi);
+    }
+  }
   if (isNegative(x)) return S.Pi;
   if (isI(x)) return mul(S.Half, S.Pi);
   if (x instanceof Pow && x.base instanceof Constant && x.base.name === 'E') {
@@ -324,6 +347,9 @@ const evalArg: Evaluator = (x) => {
   }
   return undefined;
 };
+
+/** Functions with f(conjugate(z)) = conjugate(f(z)) (real on the real axis); filled by special.ts. */
+export const conjugateCommutes = new Set<string>();
 
 /** Complex conjugate, pushed through the expression tree. */
 export function conjugate(xx: ExprLike): Expr {
@@ -354,13 +380,14 @@ export function conjugate(xx: ExprLike): Expr {
       case 'arg':
         return x;
       default:
+        if (conjugateCommutes.has(x.name)) return fn(x.name, x.args.map(conjugate));
         break;
     }
   }
   return new Fn('conjugate', [x]);
 }
 
-const evaluators: Record<FnName, Evaluator> = {
+export const evaluators: Partial<Record<FnName, Evaluator>> = {
   sin: evalSin,
   cos: evalCos,
   tan: evalTan,
@@ -385,7 +412,7 @@ const evaluators: Record<FnName, Evaluator> = {
 export function fn(name: FnName, args: readonly ExprLike[]): Expr {
   const xs = args.map(sympify);
   const ev = evaluators[name];
-  const v = ev(xs[0]!);
+  const v = ev ? ev(xs[0]!, ...xs.slice(1)) : undefined;
   if (v !== undefined) return v;
   return new Fn(name, xs);
 }
