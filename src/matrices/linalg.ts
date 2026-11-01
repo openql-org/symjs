@@ -480,3 +480,90 @@ export function rotGivens(i: number, j: number, theta: ExprLike, dim = 3): Matri
     return a === b ? 1 : 0;
   });
 }
+
+/** SymPy Matrix.jordan_block(size, eigenvalue, band='upper'). */
+export function jordanBlock(size: number, eigenvalue: ExprLike, band: 'upper' | 'lower' = 'upper'): Matrix {
+  return Matrix.fromFunction(size, size, (i, j) => (i === j ? eigenvalue : band === 'upper' ? (j === i + 1 ? 1 : 0) : i === j + 1 ? 1 : 0));
+}
+
+/** Companion matrix of a monic polynomial given by its coefficients (highest first). */
+export function companion(coeffs: readonly Expr[]): Matrix {
+  const n = coeffs.length - 1;
+  return Matrix.fromFunction(n, n, (i, j) => (j === n - 1 ? mul(-1, coeffs[n - i]!) : i === j + 1 ? 1 : 0));
+}
+
+/** Permanent of a square matrix (Laplace expansion). */
+export function permanent(m: Matrix): Expr {
+  let [r, c] = m.shape;
+  if (r > c) {
+    m = m.transpose();
+    [r, c] = [c, r];
+  }
+  if (r === 0) return S.One;
+  if (r === 1) return add(...m.row(0).data);
+  const terms: Expr[] = [];
+  for (let j = 0; j < c; j++) terms.push(mul(m.get(0, j), permanent(m.minor(0, j))));
+  return add(...terms);
+}
+
+/** Connected components of the graph of nonzero entries (undirected). */
+export function connectedComponents(m: Matrix): number[][] {
+  const n = m.shape[0];
+  const seen = new Set<number>();
+  const out: number[][] = [];
+  const nz = (i: number, j: number) => !(m.get(i, j) instanceof Rational && (m.get(i, j) as Rational).isZero);
+  for (let s = 0; s < n; s++) {
+    if (seen.has(s)) continue;
+    const comp: number[] = [];
+    const stack = [s];
+    seen.add(s);
+    while (stack.length) {
+      const v = stack.pop()!;
+      comp.push(v);
+      for (let w = 0; w < n; w++) if (!seen.has(w) && (nz(v, w) || nz(w, v))) {
+        seen.add(w);
+        stack.push(w);
+      }
+    }
+    out.push(comp.sort((a, b) => a - b));
+  }
+  return out;
+}
+
+/** Strongly connected components in SymPy's (Tarjan, reverse topological) order. */
+export function stronglyConnectedComponents(m: Matrix): number[][] {
+  const n = m.shape[0];
+  const nz = (i: number, j: number) => !(m.get(i, j) instanceof Rational && (m.get(i, j) as Rational).isZero);
+  let index = 0;
+  const idx = new Map<number, number>();
+  const low = new Map<number, number>();
+  const onStack = new Set<number>();
+  const stack: number[] = [];
+  const out: number[][] = [];
+  const strong = (v: number) => {
+    idx.set(v, index);
+    low.set(v, index);
+    index++;
+    stack.push(v);
+    onStack.add(v);
+    for (let w = 0; w < n; w++) {
+      if (!nz(v, w)) continue;
+      if (!idx.has(w)) {
+        strong(w);
+        low.set(v, Math.min(low.get(v)!, low.get(w)!));
+      } else if (onStack.has(w)) low.set(v, Math.min(low.get(v)!, idx.get(w)!));
+    }
+    if (low.get(v) === idx.get(v)) {
+      const comp: number[] = [];
+      for (;;) {
+        const w = stack.pop()!;
+        onStack.delete(w);
+        comp.push(w);
+        if (w === v) break;
+      }
+      out.push(comp.sort((a, b) => a - b));
+    }
+  };
+  for (let v = 0; v < n; v++) if (!idx.has(v)) strong(v);
+  return out;
+}

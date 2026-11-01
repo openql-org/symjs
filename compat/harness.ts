@@ -860,8 +860,86 @@ export const ADAPTERS: Record<string, Adapter> = {
       return Matrix.of(a.items.map((r) => (r as PyTuple).items.map(asExpr)));
     }
     if (a instanceof PyTuple) return Matrix.col(...a.items.map(asExpr));
+    if (a === undefined) return Matrix.zeros(0, 0);
+    if (a instanceof sj.Rational && args[1] instanceof sj.Rational && args[2] instanceof PyTuple) {
+      const r = Number(a.p);
+      const c = Number(args[1].p);
+      const items = (args[2] as PyTuple).items.map(asExpr);
+      return Matrix.fromFunction(r, c, (i, j) => items[i * c + j]!);
+    }
     throw new Unsupported('Matrix constructor');
   },
+  SparseMatrix: (args, kw) => ADAPTERS['Matrix']!(args, kw),
+  jordan_cell: (args, kw) => (noKw(kw), sj.jordanBlock(intArg(args[1]), asExpr(args[0]))),
+  matrix_multiply_elementwise: (args, kw) => (noKw(kw), sj.multiplyElementwise(args[0] as Matrix, args[1] as Matrix)),
+  '.diag': (args, kw, self) => {
+    if (!(self instanceof TypeRef)) throw new Unsupported('diag on instance');
+    return ADAPTERS['diag']!(args, kw);
+  },
+  '.hstack': (args, kw, self) => typeMethod(self, 'Matrix', () => (args[0] as Matrix).hstack(...(args.slice(1) as Matrix[])), kw),
+  '.vstack': (args, kw, self) => typeMethod(self, 'Matrix', () => (args[0] as Matrix).vstack(...(args.slice(1) as Matrix[])), kw),
+  '.jordan_block': (args, kw, self) => {
+    if (!(self instanceof TypeRef)) throw new Unsupported('jordan_block');
+    for (const k of Object.keys(kw)) if (!['size', 'eigenvalue', 'band'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const size = intArg(kw['size'] ?? args[0]);
+    const ev = asExpr(kw['eigenvalue'] ?? args[1]);
+    return sj.jordanBlock(size, ev, (kw['band'] as 'upper' | 'lower' | undefined) ?? 'upper');
+  },
+  '.companion': (args, kw, self) => typeMethod(self, 'Matrix', () => {
+    const p = asPoly(args[0]);
+    const m = p.monic();
+    return sj.companion(m.allCoeffs());
+  }, kw),
+  '.from_dok': (args, kw, self) => typeMethod(self, 'Matrix', () => {
+    const r = intArg(args[0]);
+    const c = intArg(args[1]);
+    const d = args[2] as PyDict;
+    const m = new Map(d.entries.map(([k, v]) => [(k as PyTuple).items.map(intArg).join(','), asExpr(v)] as const));
+    return Matrix.fromFunction(r, c, (i, j) => m.get(`${i},${j}`) ?? 0);
+  }, kw),
+  '.copy': matrixMethod((m) => m),
+  '.flat': matrixMethod((m) => new PyList(m.data)),
+  '.values': matrixMethod((m) => new PyList(m.data.filter((x) => !(x instanceof sj.Rational && x.isZero)))),
+  '.is_symbolic': matrixMethod((m) => m.data.some((x) => sj.freeSymbols(x).size > 0)),
+  '.hat': matrixMethod((m) => {
+    const [a, b, c] = m.data as Expr[];
+    return Matrix.of([[0, sj.mul(-1, c!), b!], [c!, 0, sj.mul(-1, a!)], [sj.mul(-1, b!), a!, 0]]);
+  }),
+  '.vee': matrixMethod((m) => Matrix.col(m.get(2, 1), m.get(0, 2), m.get(1, 0))),
+  '.per': matrixMethod((m) => sj.permanent(m)),
+  '.charpoly': matrixMethod((m, a) => {
+    const lam = a[0] instanceof Sym ? a[0] : new Sym('lambda');
+    return sj.Poly.from(m.charpoly(lam), [lam], { pure: true });
+  }),
+  '.todok': matrixMethod((m) => {
+    const out: (readonly [unknown, unknown])[] = [];
+    const [r, c] = m.shape;
+    for (let i = 0; i < r; i++) for (let j = 0; j < c; j++) {
+      const v = m.get(i, j);
+      if (!(v instanceof sj.Rational && v.isZero)) out.push([new PyTuple([i, j]), v]);
+    }
+    return new PyDict(out);
+  }),
+  '.todod': matrixMethod((m) => {
+    const out: (readonly [unknown, unknown])[] = [];
+    const [r, c] = m.shape;
+    for (let i = 0; i < r; i++) {
+      const row: (readonly [unknown, unknown])[] = [];
+      for (let j = 0; j < c; j++) {
+        const v = m.get(i, j);
+        if (!(v instanceof sj.Rational && v.isZero)) row.push([j, v]);
+      }
+      if (row.length) out.push([i, new PyDict(row)]);
+    }
+    return new PyDict(out);
+  }),
+  '.connected_components': matrixMethod((m) => new PyList(sj.connectedComponents(m).map((c) => new PyList(c)))),
+  '.strongly_connected_components': matrixMethod((m) => new PyList(sj.stronglyConnectedComponents(m).map((c) => new PyList(c)))),
+  '.condition_number': matrixMethod((m) => {
+    const sv = sj.singularValues(m);
+    return sj.mul(sj.Max(...sv), sj.pow(sj.Min(...sv), -1));
+  }),
+  '.left_eigenvects': matrixMethod((m) => new PyList(sj.eigenvects(m.transpose()).map(([v, k, vs]) => new PyTuple([v, k, new PyList(vs.map((x) => x.transpose()))])))),
   eye: (args, kw) => (noKw(kw), Matrix.eye(Number((args[0] as sj.Rational).p))),
   zeros: (args, kw) => {
     noKw(kw);

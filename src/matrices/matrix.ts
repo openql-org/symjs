@@ -347,6 +347,7 @@ export class Matrix {
   // ---- printing ------------------------------------------------------------------
 
   toString(): string {
+    if (this.shape[0] === 0 || this.shape[1] === 0) return `Matrix(${this.shape[0]}, ${this.shape[1]}, [])`;
     return `Matrix([${this.toArray()
       .map((r) => `[${r.map(str).join(', ')}]`)
       .join(', ')}])`;

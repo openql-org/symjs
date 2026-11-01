@@ -273,7 +273,7 @@ export {
   rotCcwAxis2,
   rotCcwAxis3,
   rotGivens,
-} from './matrices/linalg';
+  jordanBlock, multiplyElementwise, companion, permanent, connectedComponents, stronglyConnectedComponents } from './matrices/linalg';
 
 // quantum
 export * as gates from './quantum/gates';
