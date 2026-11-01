@@ -832,13 +832,42 @@ export const ADAPTERS: Record<string, Adapter> = {
       const sols = sj.nonlinsolve(eqs, vars);
       return new PyList(sols.map((t) => new PyDict(vars.map((v, i) => [v, t[i]!] as const))));
     }
-    const e = asExpr(first);
+    if (first instanceof PyList && first.items.some((i) => i instanceof sj.Rel && i.op !== 'Eq')) {
+      const syms = args.slice(1).filter((a) => a instanceof Sym) as Sym[];
+      if (first.items.some((i) => !(i instanceof sj.Rel) || i.op === 'Eq')) throw new Unsupported('mixed system');
+      return sj.reduceInequalities(first.items.map(asExpr), syms);
+    }
+    const e = first instanceof sj.Poly ? first.asExpr() : asExpr(first);
+    if (e instanceof sj.Rel && e.op !== 'Eq' && e.op !== 'Ne') {
+      return sj.reduceInequalities([e], args[1] instanceof Sym ? [args[1]] : []);
+    }
     if (args[1] instanceof PyTuple) throw new Unsupported('solve for several symbols');
     const syms = [...sj.freeSymbols(e)];
-    const x = args[1] instanceof Sym ? args[1] : args.length === 1 && syms.length === 1 ? syms[0]! : undefined;
+    const x =
+      args[1] instanceof Sym
+        ? args[1]
+        : args[1] instanceof Expr && !(args[1] instanceof sj.Rational)
+          ? (args[1] as Sym)
+          : args.length === 1 && syms.length === 1
+            ? syms[0]!
+            : undefined;
     if (args.length === 1 && syms.length === 0) return new PyList([]);
     if (!x || args.length > 2) throw new Unsupported('solve form');
     return new PyList(sj.solve(e, x, check === undefined ? {} : { check }));
+  },
+  checksol: (args, kw) => {
+    noKw(kw);
+    const e = asExpr(args[0]);
+    let reps: [Expr, Expr][];
+    if (args[1] instanceof PyDict) reps = args[1].entries.map(([k, v]) => [asExpr(k), asExpr(v)]);
+    else reps = [[asExpr(args[1]), asExpr(args[2])]];
+    const v = sj.simplify(sj.subs(e, new Map(reps)));
+    if (v instanceof sj.Rational) return v.isZero;
+    if (v.freeSymbols().size === 0) {
+      const c = v.toComplex();
+      return Math.abs(c.re) < 1e-12 && Math.abs(c.im) < 1e-12;
+    }
+    return null;
   },
   linsolve: (args, kw) => {
     noKw(kw);

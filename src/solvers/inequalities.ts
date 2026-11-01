@@ -10,7 +10,7 @@
 
 import { Add, Constant, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, RelOp, S, Special, Sym, impl } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
-import { and } from '../core/boolalg';
+import { and, or as orB } from '../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne } from '../core/logic';
 import { xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
@@ -360,12 +360,24 @@ export function reduceInequalities(ineqsIn: readonly ExprLike[] | ExprLike, symb
     }
     let set: SetExpr = Reals;
     for (const r of rs as Rel[]) set = intersection(set, solveSign(add(r.lhs, mul(-1, r.rhs)), r.op, g, Reals_()));
-    parts.push(asRelational(set, g));
+    parts.push(g.assumptions.real ? dropInfiniteBounds(asRelational(set, g)) : asRelational(set, g));
   }
   return and(...parts);
 }
 
 const Reals_ = (): SetExpr => Reals;
+
+/** For a real symbol, -oo < x and x < oo are always true (SymPy omits them). */
+function dropInfiniteBounds(e: Expr): Expr {
+  const isInfBound = (r: Expr) => r instanceof Rel && (r.lhs instanceof Special || r.rhs instanceof Special) && (r.op === 'Lt' || r.op === 'Gt');
+  if (isInfBound(e)) return S.true;
+  if (e.kind === 'BoolOp') {
+    const op = (e as unknown as { op: string }).op;
+    const args = e.args.map(dropInfiniteBounds);
+    return op === 'And' ? and(...args) : op === 'Or' ? orB(...args) : e;
+  }
+  return e;
+}
 
 /** a*x + b op 0 with symbolic b: x op' -b/a, plus the infinite bound. */
 function linearInequality(r: Rel, x: Sym): Expr {

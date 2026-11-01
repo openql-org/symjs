@@ -7,9 +7,9 @@
  */
 
 import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
-import { Add, Constant, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
+import { Add, Constant, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
 import { add, exp, mul, pow, sympify } from '../core/ops';
-import { freeSymbols, xreplace } from '../core/traverse';
+import { freeSymbols, xreplace, xreplace as xreplaceS } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { acos, asin, atan, log } from '../functions/elementary';
 import { Matrix } from '../matrices/matrix';
@@ -136,7 +136,15 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
  * SymPy. Solutions violating the assumptions on x or making a denominator
  * vanish are removed unless check is false.
  */
-export function solve(e: ExprLike, x?: Sym, opts: { check?: boolean } = {}): Expr[] {
+export function solve(e: ExprLike, x?: Sym | Expr, opts: { check?: boolean } = {}): Expr[] {
+  if (x !== undefined && !(x instanceof Sym)) {
+    // solve for an expression such as f(x), Derivative(f(x), x) or x + 2: treat it as a symbol
+    const t = new Dummy('t');
+    const target = x;
+    const g = replaceTarget(asEquation(e), target, t);
+    if (!g.has(t)) return [];
+    return solve(g, t, opts).map((r) => xreplaceS(r, [[t, target]]));
+  }
   const f = asEquation(e);
   const syms = [...freeSymbols(f)];
   const v = x ?? (syms.length === 1 ? syms[0] : undefined);
@@ -147,6 +155,22 @@ export function solve(e: ExprLike, x?: Sym, opts: { check?: boolean } = {}): Exp
   const raw = solveRaw(f, v).map((r) => simplifySolution(r));
   const checked = opts.check === false ? raw : raw.filter((r) => checkSolution(f, v, r));
   return sortExprs(checked);
+}
+
+/** Replace free occurrences of target (not inside derivatives); a sum target may match part of a sum. */
+function replaceTarget(e: Expr, target: Expr, t: Expr): Expr {
+  const go = (x: Expr): Expr => {
+    if (x.key === target.key) return t;
+    if (x.kind === 'Derivative') return x;
+    if (target instanceof Add && x instanceof Add && target.args.every((a) => x.args.some((b) => b.key === a.key))) {
+      const rest = x.args.filter((b) => !target.args.some((a) => a.key === b.key));
+      return add(t, ...rest.map(go));
+    }
+    if (x.args.length === 0) return x;
+    const args = x.args.map(go);
+    return args.every((a, i) => a === x.args[i]) ? x : xreplaceS(x, x.args.map((a, i) => [a, args[i]!] as [Expr, Expr]).filter(([a, b]) => a !== b));
+  };
+  return go(e);
 }
 
 function simplifySolution(r: Expr): Expr {
