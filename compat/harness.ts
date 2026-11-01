@@ -749,6 +749,13 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.as_ordered_terms': exprMethod((e) => new PyList(e instanceof sj.Add ? asOrdered(e) : [e])),
 
+  // ---- ODEs
+  dsolve: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'ics') throw new Unsupported(`kwargs ${k}`);
+    const ics = kw['ics'] instanceof PyDict ? (kw['ics'] as PyDict).entries.map(([k, v]) => [asExpr(k), asExpr(v)] as [Expr, Expr]) : undefined;
+    return sj.dsolve(asExpr(args[0]), asExpr(args[1]), ics ? { ics } : {});
+  },
+
   // ---- polynomials
   Poly: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);

@@ -1558,6 +1558,204 @@
       "ops": [
         "series:x"
       ]
+    },
+    {
+      "expr": "Derivative(f(x), x) - f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x) + 2*f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x) - k*f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x) - x",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x) - x*f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x) + f(x) - x",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x) - f(x)**2",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) + f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) + 2*Derivative(f(x), x) + f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - 3*Derivative(f(x), x) + 2*f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) + 4*f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) + f(x) - x",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - f(x) - exp(2*x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x) - f(x)*cos(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 3) - f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "x*Derivative(f(x), x) - f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) + Derivative(f(x), x) + f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x) - 2*x*f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x) - sin(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) + 9*f(x) - sin(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) + 3*Derivative(f(x), x) + 2*f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - 5*Derivative(f(x), x) + 6*f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - Derivative(f(x), x) - 2*f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - 2*Derivative(f(x), x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 3) - 6*Derivative(f(x), x, 2) + 11*Derivative(f(x), x) - 6*f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - 2*Derivative(f(x), x) + 5*f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 3) - Derivative(f(x), x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - x**2",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x) - f(x) - 1",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x) - exp(x)*f(x)",
+      "ops": [
+        "dsolve"
+      ]
+    },
+    {
+      "expr": "Derivative(f(x), x) + f(x)*tan(x)",
+      "ops": [
+        "dsolve"
+      ]
     }
   ]
 }

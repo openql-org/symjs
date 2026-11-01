@@ -49,6 +49,9 @@ def main(src: str, dst: str) -> None:
                 hi = parse_expr(spec_[2], local_dict=dict(syms))
                 return str(integrate(e, (var, lo, hi)))
             return str(integrate(e, var))
+        if op == "dsolve":
+            from sympy import Function, dsolve
+            return str(dsolve(e, Function("f")(x)))
         if op.startswith("series:"):
             spec_ = op.split(":", 1)[1].split(",")
             var = syms[spec_[0]]
@@ -74,7 +77,8 @@ def main(src: str, dst: str) -> None:
 
     results = []
     for case in spec["cases"]:
-        e = parse_expr(case["expr"], local_dict=dict(syms))
+        from sympy import Function
+        e = parse_expr(case["expr"], local_dict={**syms, "f": Function("f")})
         results.append({"expr": case["expr"], "out": {op: run(op, e) for op in case["ops"]}})
     with open(dst, "w", encoding="utf-8") as f:
         json.dump({"sympy": sympy.__version__, "results": results}, f, indent=2, ensure_ascii=False)

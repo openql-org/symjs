@@ -211,6 +211,7 @@ export {
   solveUndeterminedCoeffs,
   nsolve,
 } from './solvers/solve';
+export { dsolve, odeOrder } from './solvers/ode';
 
 // numerics
 export { evalf, toComplex, lambdify } from './numeric/evalf';

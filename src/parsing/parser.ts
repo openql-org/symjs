@@ -12,9 +12,11 @@
  *   atom    := number | name | name '(' args ')' | '(' sum ')' | interpolated value
  */
 
-import { Assumptions, Expr, ExprLike, FnName, Rational, S, SpecialFnName, Sym } from '../core/nodes';
+import { Assumptions, Expr, ExprLike, FnName, Rational, S, SpecialFnName, Sym, impl } from '../core/nodes';
 import { add, div, exp, mul, neg, pow, sqrt, sub, sympify } from '../core/ops';
 import { fn } from '../functions/elementary';
+import { Eq } from '../core/logic';
+import { Function, derivative } from '../core/undef';
 
 export interface ParseOptions {
   /** Predefined symbols (by name). */
@@ -102,6 +104,9 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   trigamma: ([x]) => fn('polygamma', [1, x!]),
   E1: ([x]) => fn('expint', [1, x!]),
   RisingFactorial: (args) => fn('rf', args),
+  Derivative: ([e, v, n]) => derivative(e!, [[v!, n instanceof Rational ? Number(n.p) : 1]]),
+  diff: ([e, v, n]) => impl.diff(e!, v!, n instanceof Rational ? Number(n.p) : 1),
+  Eq: ([a, b]) => Eq(a!, b ?? 0),
   FallingFactorial: (args) => fn('ff', args),
 };
 
@@ -213,8 +218,8 @@ class Parser {
         return t.v;
       case 'name': {
         if (this.isOp('(')) {
-          const f = FUNCTIONS[t.v];
-          if (!f) throw new SyntaxError(`Unknown function '${t.v}' at ${t.pos}`);
+          // unknown names applied to arguments are undefined functions (like SymPy's parse_expr)
+          const f = FUNCTIONS[t.v] ?? ((args: Expr[]) => Function(t.v)(...args));
           this.next();
           const args: Expr[] = [this.sum()];
           while (this.isOp(',')) {

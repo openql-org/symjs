@@ -1552,6 +1552,204 @@
       "out": {
         "series:x": "x + x**3/6 + 3*x**5/40 + O(x**6)"
       }
+    },
+    {
+      "expr": "Derivative(f(x), x) - f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*exp(x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x) + 2*f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*exp(-2*x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x) - k*f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*exp(k*x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x) - x",
+      "out": {
+        "dsolve": "Eq(f(x), C1 + x**2/2)"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x) - x*f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*exp(x**2/2))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x) + f(x) - x",
+      "out": {
+        "dsolve": "Eq(f(x), C1*exp(-x) + x - 1)"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x) - f(x)**2",
+      "out": {
+        "dsolve": "Eq(f(x), -1/(C1 + x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) + f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*sin(x) + C2*cos(x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*exp(-x) + C2*exp(x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) + 2*Derivative(f(x), x) + f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), (C1 + C2*x)*exp(-x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - 3*Derivative(f(x), x) + 2*f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), (C1 + C2*exp(x))*exp(x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) + 4*f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*sin(2*x) + C2*cos(2*x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) + f(x) - x",
+      "out": {
+        "dsolve": "Eq(f(x), C1*sin(x) + C2*cos(x) + x)"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - f(x) - exp(2*x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*exp(-x) + C2*exp(x) + exp(2*x)/3)"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x) - f(x)*cos(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*exp(sin(x)))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2)",
+      "out": {
+        "dsolve": "Eq(f(x), C1 + C2*x)"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 3) - f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C3*exp(x) + (C1*sin(sqrt(3)*x/2) + C2*cos(sqrt(3)*x/2))*exp(-x/2))"
+      }
+    },
+    {
+      "expr": "x*Derivative(f(x), x) - f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*x)"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) + Derivative(f(x), x) + f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), (C1*sin(sqrt(3)*x/2) + C2*cos(sqrt(3)*x/2))*exp(-x/2))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x) - 2*x*f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*exp(x**2))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x) - sin(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1 - cos(x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) + 9*f(x) - sin(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*sin(3*x) + C2*cos(3*x) + sin(x)/8)"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) + 3*Derivative(f(x), x) + 2*f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), (C1 + C2*exp(-x))*exp(-x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - 5*Derivative(f(x), x) + 6*f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), (C1 + C2*exp(x))*exp(2*x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - Derivative(f(x), x) - 2*f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*exp(-x) + C2*exp(2*x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - 2*Derivative(f(x), x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1 + C2*exp(2*x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 3) - 6*Derivative(f(x), x, 2) + 11*Derivative(f(x), x) - 6*f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), (C1 + C2*exp(x) + C3*exp(2*x))*exp(x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - 2*Derivative(f(x), x) + 5*f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), (C1*sin(2*x) + C2*cos(2*x))*exp(x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 3) - Derivative(f(x), x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1 + C2*exp(-x) + C3*exp(x))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x, 2) - x**2",
+      "out": {
+        "dsolve": "Eq(f(x), C1 + C2*x + x**4/12)"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x) - f(x) - 1",
+      "out": {
+        "dsolve": "Eq(f(x), C1*exp(x) - 1)"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x) - exp(x)*f(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*exp(exp(x)))"
+      }
+    },
+    {
+      "expr": "Derivative(f(x), x) + f(x)*tan(x)",
+      "out": {
+        "dsolve": "Eq(f(x), C1*cos(x))"
+      }
     }
   ]
 }
