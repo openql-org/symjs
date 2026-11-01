@@ -5,6 +5,7 @@
  * @file Elementary functions with automatic evaluation of special values.
  */
 
+import { precToDps } from '../numeric/mpf';
 import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
 import {
   Add,
@@ -414,7 +415,29 @@ export function fn(name: FnName, args: readonly ExprLike[]): Expr {
   const ev = evaluators[name];
   const v = ev ? ev(xs[0]!, ...xs.slice(1)) : undefined;
   if (v !== undefined) return v;
-  return new Fn(name, xs);
+  const f = new Fn(name, xs);
+  // SymPy Function.__new__: evaluate numerically when every argument is a Float
+  if (xs.length > 0) {
+    const precs = xs.map(shouldEvalf);
+    if (Math.min(...precs) > 0) {
+      try {
+        return impl.evalf(f, precToDps(Math.max(...precs)));
+      } catch {
+        return f;
+      }
+    }
+  }
+  return f;
+}
+
+/** SymPy Function._should_evalf: the precision of a Float (or pure complex Float) argument, else -1. */
+function shouldEvalf(a: Expr): number {
+  if (a instanceof Float) return a.prec;
+  if (!(a instanceof Add) || a.args.length !== 2) return -1;
+  const [r, t] = a.args;
+  const im = t instanceof Mul && t.args.length === 2 && t.args[1] === S.I ? t.args[0] : undefined;
+  if (!isNum(r!) || im === undefined || !isNum(im)) return -1;
+  return Math.max(r instanceof Float ? r.prec : -1, im instanceof Float ? im.prec : -1);
 }
 
 export const sin = (x: ExprLike): Expr => fn('sin', [x]);

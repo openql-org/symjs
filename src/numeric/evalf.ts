@@ -11,6 +11,7 @@ import {
   ComplexValue as C,
   Constant,
   Expr,
+  EvalfOptions,
   ExprLike,
   Float,
   Fn,
@@ -20,12 +21,11 @@ import {
   Pow,
   Rational,
   Rel,
-  S,
   Special,
   Sym,
   impl,
 } from '../core/nodes';
-import { add, mul, sympify } from '../core/ops';
+import { mul, sympify } from '../core/ops';
 import { rebuild } from '../core/traverse';
 import {
   c,
@@ -47,23 +47,37 @@ import {
   ctan,
   ctanh,
 } from './complex';
+import * as F from './mpf';
+import { dpsToPrec } from './mpf';
+import { type Mpc, evalAdaptive, fromMpc, setDoubleFallback } from './mpeval';
 
 type Compiled = (env: readonly C[]) => C;
 
-const toC = (v: number | C): C => (typeof v === 'number' ? c(v) : v);
+type Value = number | C | Expr;
 
-/** Look up a numeric value for a symbol. Matches by name. */
-function makeLookup(values: NumericValues | undefined): (s: Sym) => C | undefined {
+const toC = (v: Value): C => (typeof v === 'number' ? c(v) : v instanceof Expr ? toComplex(v) : v);
+
+/** Look up the raw value given for a symbol. Matches by name. */
+function makeRawLookup(values: NumericValues | undefined): (s: Sym) => Value | undefined {
   if (!values) return () => undefined;
   if (values instanceof Map) {
-    const byName = new Map<string, C>();
-    for (const [k, v] of values as ReadonlyMap<Expr | string, number | C>) {
-      byName.set(typeof k === 'string' ? k : k instanceof Sym ? k.name : k.key, toC(v));
+    const byName = new Map<string, Value>();
+    for (const [k, v] of values as ReadonlyMap<Expr | string, Value>) {
+      byName.set(typeof k === 'string' ? k : k instanceof Sym ? k.name : k.key, v);
     }
     return (s) => byName.get(s.name);
   }
-  const rec = values as Readonly<Record<string, number | C>>;
-  return (s) => (Object.prototype.hasOwnProperty.call(rec, s.name) ? toC(rec[s.name]!) : undefined);
+  const rec = values as Readonly<Record<string, Value>>;
+  return (s) => (Object.prototype.hasOwnProperty.call(rec, s.name) ? rec[s.name]! : undefined);
+}
+
+/** Look up a numeric value for a symbol. Matches by name. */
+function makeLookup(values: NumericValues | undefined): (s: Sym) => C | undefined {
+  const raw = makeRawLookup(values);
+  return (s) => {
+    const v = raw(s);
+    return v === undefined ? undefined : toC(v);
+  };
 }
 
 const FN_NUMERIC1: Partial<Record<Fn['name'], (a: C) => C>> = {
@@ -187,40 +201,46 @@ export function toComplex(ex: ExprLike, values?: NumericValues): C {
   return f([]);
 }
 
-function fromComplex(v: C): Expr {
-  if (Number.isNaN(v.re) || Number.isNaN(v.im)) return S.NaN;
-  if (!Number.isFinite(v.im)) return S.ComplexInfinity;
-  if (!Number.isFinite(v.re)) {
-    if (v.im !== 0) return S.ComplexInfinity;
-    return v.re > 0 ? S.Infinity : S.NegativeInfinity;
-  }
-  if (v.im === 0) return new Float(v.re);
-  if (v.re === 0) return mul(new Float(v.im), S.I);
-  return add(new Float(v.re), mul(new Float(v.im), S.I));
+/** Numerically evaluate. Sub-expressions containing symbols without values stay symbolic. */
+export function evalf(ex: ExprLike, n?: number | NumericValues, opts: EvalfOptions = {}): Expr {
+  const e = sympify(ex);
+  let dps = 15;
+  let values = opts.subs;
+  if (typeof n === 'number') dps = n;
+  else if (n !== undefined) values = n;
+  return evalfPrec(e, dpsToPrec(dps), values, opts.chop);
 }
 
-/** Numerically evaluate. Sub-expressions containing symbols without values stay symbolic. */
-export function evalf(ex: ExprLike, values?: NumericValues): Expr {
-  const e = sympify(ex);
-  const lookup = makeLookup(values);
+/** evalf at a binary precision. */
+export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: boolean | number): Expr {
+  const raw = makeRawLookup(values);
+  const lookup = (s: Sym): Mpc | undefined => {
+    const v = raw(s);
+    if (v === undefined) return undefined;
+    if (typeof v === 'number') return [F.fromNumber(v), F.ZERO];
+    if (v instanceof Expr) return evalAdaptive(v, prec, () => undefined);
+    return [F.fromNumber(v.re), F.fromNumber(v.im)];
+  };
   const go = (x: Expr): Expr => {
-    if (x instanceof Sym) {
-      const v = lookup(x);
-      return v === undefined ? x : fromComplex(v);
-    }
     let numeric = true;
     const visit = (y: Expr) => {
       if (y instanceof Sym && lookup(y) === undefined) numeric = false;
+      else if (y instanceof Special || y instanceof Rel || y instanceof BoolAtom) numeric = false;
       else y.args.forEach(visit);
     };
     visit(x);
     if (numeric) {
-      return fromComplex(
-        compile(x, (s) => {
-          const v = lookup(s)!;
-          return () => v;
-        })([]),
-      );
+      try {
+        return fromMpc(evalAdaptive(x, prec, lookup), prec, chop);
+      } catch {
+        // not numerically evaluable: fall through to the arguments
+      }
+    }
+    if (x.args.length === 0) return x;
+    // keep integer exponents exact (SymPy: (x**2).evalf() == x**2)
+    if (x instanceof Pow && x.exp instanceof Rational && x.exp.isInteger) return rebuild(x, [go(x.base), x.exp]);
+    if (x instanceof Mul && x.args[0] instanceof Rational && x.args[0].p === -1n && x.args[0].q === 1n) {
+      return mul(-1, go(mul(...x.args.slice(1))));
     }
     return rebuild(x, x.args.map(go));
   };
@@ -251,4 +271,13 @@ export function lambdify(ex: ExprLike, params: readonly Sym[]): (...args: (numbe
 }
 
 impl.evalf = evalf;
+
+setDoubleFallback((name, args) => {
+  const f = numericFns[name as Fn['name']];
+  if (!f) return undefined;
+  const r = f(args.map((a) => c(F.toNumber(a[0]), F.toNumber(a[1]))));
+  if (!Number.isFinite(r.re) || !Number.isFinite(r.im)) throw new RangeError('non-finite');
+  return [F.fromNumber(r.re), F.fromNumber(r.im)];
+});
+
 impl.toComplex = toComplex;

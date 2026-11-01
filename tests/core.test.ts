@@ -38,7 +38,7 @@ describe('canonicalization', () => {
   it('handles exact rationals', () => {
     expect(rational(1, 2).add(rational(1, 3)).toString()).toBe('5/6');
     expect(mul(x, rational(1, 2)).toString()).toBe('x/2');
-    expect(add(x, 0.5).toString()).toBe('x + 0.500000000000000');
+    expect(add(x, 0.5).toString()).toBe('x + 0.5');
   });
 
   it('simplifies radicals', () => {
@@ -123,7 +123,7 @@ describe('numeric', () => {
     const v = exp(mul(I, theta)).toComplex({ theta: Math.PI / 3 });
     expect(v.re).toBeCloseTo(0.5);
     expect(v.im).toBeCloseTo(Math.sqrt(3) / 2);
-    expect(add(x, sqrt(2)).evalf().toString()).toBe('x + 1.41421356237310');
+    expect(add(x, sqrt(2)).evalf().toString()).toBe('x + 1.4142135623731');
   });
 
   it('rational objects', () => {

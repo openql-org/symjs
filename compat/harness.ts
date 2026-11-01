@@ -156,6 +156,9 @@ export function deserialize(tree: Tree): unknown {
     case 'Rational':
       return sj.Rational.of(BigInt(tree['p'] as string), BigInt(tree['q'] as string));
     case 'Float':
+      if (tree['man'] !== undefined) {
+        return new sj.Float({ man: BigInt(tree['man'] as string), exp: tree['exp'] as number }, tree['prec'] as number);
+      }
       return new sj.Float(tree['v'] as number);
     case 'Symbol': {
       const a = tree['assume'] as Record<string, boolean>;
@@ -344,9 +347,46 @@ function idxList(v: unknown): (number | boolean)[] {
   return v.items.map((x) => (typeof x === 'boolean' ? x : Number((x as sj.Rational).p)));
 }
 
+function intArg(v: unknown): number {
+  if (v instanceof sj.Rational && v.isInteger) return Number(v.p);
+  if (typeof v === 'number' && Number.isInteger(v)) return v;
+  throw new Unsupported('integer argument');
+}
+
+function evalfAdapter(self: unknown, args: unknown[], kw: Record<string, unknown>): unknown {
+  for (const k of Object.keys(kw)) if (!['subs', 'n', 'chop'].includes(k)) throw new Unsupported(`evalf kwarg ${k}`);
+  const n = args.length ? intArg(args[0]) : kw['n'] !== undefined ? intArg(kw['n']) : 15;
+  if (args.length > 1) throw new Unsupported('evalf args');
+  const opts: sj.EvalfOptions = {};
+  const subs = kw['subs'];
+  if (subs !== undefined) {
+    if (!(subs instanceof PyDict)) throw new Unsupported('evalf subs');
+    opts.subs = new Map(subs.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const));
+  }
+  const chop = kw['chop'];
+  if (chop !== undefined) opts.chop = typeof chop === "boolean" ? chop : asExpr(chop).toNumber();
+  if (self instanceof Matrix) return self.evalf(n, opts);
+  return asExpr(self).evalf(n, opts);
+}
+
 const FN_NAMES = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate'] as const;
 
 export const ADAPTERS: Record<string, Adapter> = {
+  N: (args, kw) => evalfAdapter(args[0], args.slice(1), kw),
+  Float: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['dps', 'precision'].includes(k)) throw new Unsupported(`Float kwarg ${k}`);
+    let num = args[0];
+    if (num instanceof PyTuple) {
+      const [sg, man, ex] = num.items.map((x) => (x as sj.Rational).p);
+      if (num.items.length !== 3) throw new Unsupported('Float tuple');
+      return new sj.Float({ man: sg ? -man! : man!, exp: Number(ex) }, 53);
+    }
+    const d = args[1] ?? kw['dps'];
+    const dps = d === undefined ? undefined : typeof d === 'string' ? (d as '') : intArg(d);
+    const precision = kw['precision'] !== undefined ? intArg(kw['precision']) : undefined;
+    if (typeof num === 'string' || num instanceof Expr) return sj.float(num, dps, precision);
+    throw new Unsupported('Float argument');
+  },
   // ---- core constructors
   Function: (args, kw) => {
     noKw(kw);
@@ -718,12 +758,12 @@ export const ADAPTERS: Record<string, Adapter> = {
     };
     return doit(e);
   },
-  '.evalf': (args, kw, self) => {
+  '.evalf': (args, kw, self) => evalfAdapter(self, args, kw),
+  '.n': (args, kw, self) => evalfAdapter(self, args, kw),
+  '.round': (args, kw, self) => {
     noKw(kw);
-    if (args.length) throw new Unsupported('evalf precision');
-    return asExpr(self).evalf();
+    return sj.round(asExpr(self), args.length ? intArg(args[0]) : undefined);
   },
-  '.n': (args, kw, self) => ADAPTERS['.evalf']!(args, kw, self),
   '.has': (args, kw, self) => {
     noKw(kw);
     const e = self instanceof Matrix ? self.data : [asExpr(self)];

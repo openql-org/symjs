@@ -76,6 +76,7 @@ function runOp(op: string, e: Expr): string | string[] {
     const [v, pt, dir] = op.slice('limit:'.length).split(',');
     return str(limit(e, symbols[v!] ?? new Sym(v!), parse(pt!, { symbols }), (dir as '+' | '-' | undefined) ?? '+'));
   }
+  if (op.startsWith('evalf:')) return str(e.evalf(Number(op.slice('evalf:'.length))));
   if (op === 'latex_integral') {
     return `${latex(new Integral([e, x]))} | ${latex(new Integral([e, x, parse('0'), parse('1')]))}`;
   }

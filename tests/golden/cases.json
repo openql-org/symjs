@@ -1756,6 +1756,314 @@
       "ops": [
         "dsolve"
       ]
+    },
+    {
+      "expr": "pi",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "E",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "sqrt(2)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "pi + E*I",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "exp(pi) - pi",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "sin(10**30)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "log(3)/log(2)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "atan(1/3)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "acos(1/3)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "asin(2)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "sinh(1/2)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "tanh(3)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "EulerGamma",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "Catalan",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "GoldenRatio",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "cos(1)**2 + sin(1)**2",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "gamma(1/3)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "gamma(-5/2)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "loggamma(7/2)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "erf(1)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "erfc(3)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "erfi(1/2)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "Ei(2)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "li(10)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "Si(3)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "Ci(3)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "Shi(1)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "Chi(1)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "zeta(3)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "zeta(1/2)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "polygamma(1, 3/2)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "harmonic(1/3)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "fresnels(1)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "fresnelc(1)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "exp(1/1000) - 1",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "(1 + I)**(1/3)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "I**I",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "log(-2)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "sqrt(-3 + 4*I)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "x*pi + sqrt(2)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "3**(1/7)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "1/7",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "2**100",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
+    },
+    {
+      "expr": "atan(-7)",
+      "ops": [
+        "evalf:15",
+        "evalf:40"
+      ]
     }
   ]
 }

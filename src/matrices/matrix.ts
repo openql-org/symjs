@@ -5,7 +5,7 @@
  * @file Immutable matrices with symbolic entries.
  */
 
-import { ComplexValue, Expr, ExprLike, NumericValues, Rational, S, Substitution, Sym } from '../core/nodes';
+import { ComplexValue, EvalfOptions, Expr, ExprLike, NumericValues, Rational, S, Substitution, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { subs } from '../core/traverse';
 import { conjugate } from '../functions/elementary';
@@ -311,8 +311,8 @@ export class Matrix {
   simplify(): Matrix {
     return this.map(simplify);
   }
-  evalf(values?: NumericValues): Matrix {
-    return this.map((e) => evalf(e, values));
+  evalf(n?: number | NumericValues, opts?: EvalfOptions): Matrix {
+    return this.map((e) => evalf(e, n, opts));
   }
   /** Numeric evaluation to nested arrays of complex values. */
   toComplex(values?: NumericValues): ComplexValue[][] {

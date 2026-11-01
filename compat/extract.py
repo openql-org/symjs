@@ -113,7 +113,7 @@ def ser(o):
     if isinstance(o, int):
         return {"t": "Rational", "p": str(o), "q": "1"}
     if isinstance(o, float):
-        return {"t": "Float", "v": o}
+        return {"t": "Float", "v": o, "py": True}
     if isinstance(o, str):
         return {"t": "Str", "v": o}
     if isinstance(o, (list, tuple, Tuple)):
@@ -138,7 +138,8 @@ def ser(o):
     if isinstance(o, (Integer, Rational)) and o.is_Rational:
         return {"t": "Rational", "p": str(o.p), "q": str(o.q)}
     if isinstance(o, Float):
-        return {"t": "Float", "v": float(o)}
+        sgn, man, exp, _bc = o._mpf_
+        return {"t": "Float", "v": float(o), "man": str(-man if sgn else man), "exp": int(exp), "prec": int(o._prec)}
     named = {sympy.pi: "pi", sympy.E: "E", sympy.I: "I", sympy.oo: "oo", -sympy.oo: "-oo", sympy.zoo: "zoo", sympy.nan: "nan"}
     for k, v in named.items():
         if o == k and type(o) is type(k):

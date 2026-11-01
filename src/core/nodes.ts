@@ -14,6 +14,7 @@
  */
 
 import { gcd } from './numbers';
+import { type Mpf, fromNumber as mpfFromNumber, normalize as mpfNormalize, toNumber as mpfToNumber } from '../numeric/mpf';
 
 export type Kind =
   | 'Rational'
@@ -46,8 +47,16 @@ export interface ComplexValue {
 
 /** Numeric values for symbols, keyed by symbol name or symbol. */
 export type NumericValues =
-  | Readonly<Record<string, number | ComplexValue>>
-  | ReadonlyMap<Expr | string, number | ComplexValue>;
+  | Readonly<Record<string, number | ComplexValue | Expr>>
+  | ReadonlyMap<Expr | string, number | ComplexValue | Expr>;
+
+/** Options of evalf (SymPy keyword arguments). */
+export interface EvalfOptions {
+  /** Values substituted during evaluation (SymPy `subs=`). */
+  subs?: NumericValues;
+  /** Replace parts smaller than this (or than the precision when true) by zero. */
+  chop?: boolean | number;
+}
 
 /** Substitution specification. */
 export type Substitution =
@@ -137,7 +146,7 @@ export interface Impl {
   diff(e: Expr, x: Expr, n: number): Expr;
   expand(e: Expr): Expr;
   simplify(e: Expr): Expr;
-  evalf(e: Expr, values?: NumericValues): Expr;
+  evalf(e: Expr, n?: number | NumericValues, opts?: EvalfOptions): Expr;
   toComplex(e: Expr, values?: NumericValues): ComplexValue;
   conjugate(e: Expr): Expr;
   abs(e: Expr): Expr;
@@ -225,9 +234,17 @@ export abstract class Expr {
   conjugate(): Expr {
     return impl.conjugate(this);
   }
-  /** Numerically evaluate; symbols without values stay symbolic. */
-  evalf(values?: NumericValues): Expr {
-    return impl.evalf(this, values);
+  /**
+   * Numerically evaluate to `n` significant digits (default 15); symbols
+   * without values stay symbolic. Passing values as the first argument is
+   * shorthand for `evalf(15, { subs: values })`.
+   */
+  evalf(n?: number | NumericValues, opts?: EvalfOptions): Expr {
+    return impl.evalf(this, n, opts);
+  }
+  /** Alias of evalf (SymPy `.n()`). */
+  n(n?: number | NumericValues, opts?: EvalfOptions): Expr {
+    return impl.evalf(this, n, opts);
   }
   /** Numerically evaluate to a complex value. All symbols must have values. */
   toComplex(values?: NumericValues): ComplexValue {
@@ -323,25 +340,45 @@ export class Rational extends Expr {
 export class Float extends Expr {
   readonly kind = 'Float' as const;
   readonly args: readonly Expr[] = [];
-  constructor(readonly value: number) {
+  /** Exact binary value man * 2**exp. */
+  readonly mpf: Mpf;
+  /** Binary precision in bits (53 for the default 15 digits). */
+  readonly prec: number;
+  /**
+   * A float from a JS number (rounded to `prec` bits) or a raw mpf value.
+   * @param prec binary precision; defaults to 53 (15 decimal digits).
+   */
+  constructor(value: number | Mpf, prec = 53) {
     super();
-    if (!Number.isFinite(value)) throw new RangeError(`Float: non-finite value ${value}`);
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value)) throw new RangeError(`Float: non-finite value ${value}`);
+      value = mpfFromNumber(value);
+    }
+    this.mpf = mpfNormalize(value.man, value.exp, prec);
+    this.prec = prec;
+  }
+  /** Nearest JS double. */
+  get value(): number {
+    return mpfToNumber(this.mpf);
   }
   get isNumber(): boolean {
     return true;
   }
   get isZero(): boolean {
-    return this.value === 0;
+    return this.mpf.man === 0n;
   }
   get isNegative(): boolean {
-    return this.value < 0;
+    return this.mpf.man < 0n;
   }
   get isPositive(): boolean {
-    return this.value > 0;
+    return this.mpf.man > 0n;
   }
   protected computeKey(): string {
-    const s = `${this.value}`;
-    return s.includes('.') || s.includes('e') ? `f${s}` : `f${s}.0`;
+    if (this.prec === 53) {
+      const s = `${this.value}`;
+      return s.includes('.') || s.includes('e') ? `f${s}` : `f${s}.0`;
+    }
+    return `f${this.mpf.man}p${this.mpf.exp}_${this.prec}`;
   }
 }
 

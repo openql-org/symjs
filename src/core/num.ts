@@ -5,17 +5,36 @@
  * @file Arithmetic on numeric nodes (Rational and Float).
  */
 
+import * as F from '../numeric/mpf';
 import { Float, Num, Rational } from './nodes';
 import { ipow } from './numbers';
 
 const toNumber = (a: Num): number => (a instanceof Rational ? a.value : a.value);
+
+/** Working precision of a Float operation (SymPy: the larger Float precision). */
+function opPrec(a: Num, b: Num): number {
+  if (a instanceof Float && b instanceof Float) return Math.max(a.prec, b.prec);
+  return a instanceof Float ? a.prec : (b as Float).prec;
+}
+
+/** Value as mpf; rationals are rounded to prec (SymPy Rational._as_mpf_op). */
+export function toMpf(a: Num, prec: number): F.Mpf {
+  if (a instanceof Float) return a.mpf;
+  return a.q === 1n ? F.normalize(a.p, 0, prec) : F.fromRational(a.p, a.q, prec);
+}
+
+/** Float result; an exact zero becomes the integer 0 (SymPy Float._new). */
+export function mkFloat(v: F.Mpf, prec: number): Num {
+  return F.isZero(v) ? Rational.of(0n) : new Float(v, prec);
+}
 
 export function numAdd(a: Num, b: Num): Num {
   if (a instanceof Rational && b instanceof Rational) {
     if (a.q === b.q) return Rational.of(a.p + b.p, a.q);
     return Rational.of(a.p * b.q + b.p * a.q, a.q * b.q);
   }
-  return new Float(toNumber(a) + toNumber(b));
+  const prec = opPrec(a, b);
+  return mkFloat(F.add(toMpf(a, prec), toMpf(b, prec), prec), prec);
 }
 
 export function numMul(a: Num, b: Num): Num {
@@ -24,16 +43,17 @@ export function numMul(a: Num, b: Num): Num {
     if (b.isOne) return a;
     return Rational.of(a.p * b.p, a.q * b.q);
   }
-  return new Float(toNumber(a) * toNumber(b));
+  const prec = opPrec(a, b);
+  return mkFloat(F.mul(toMpf(a, prec), toMpf(b, prec), prec), prec);
 }
 
 export function numNeg(a: Num): Num {
-  return a instanceof Rational ? Rational.of(-a.p, a.q) : new Float(-a.value);
+  return a instanceof Rational ? Rational.of(-a.p, a.q) : new Float(F.neg(a.mpf), a.prec);
 }
 
 export function numInv(a: Num): Num {
   if (a.isZero) throw new RangeError('Division by zero');
-  return a instanceof Rational ? Rational.of(a.q, a.p) : new Float(1 / a.value);
+  return a instanceof Rational ? Rational.of(a.q, a.p) : new Float(F.div(F.ONE, a.mpf, a.prec), a.prec);
 }
 
 /** a^n for integer n. */
@@ -43,7 +63,7 @@ export function numPowInt(a: Num, n: bigint): Num {
     if (a.isZero) throw new RangeError('Division by zero: 0 raised to a negative power');
     return Rational.of(ipow(a.q, -n), ipow(a.p, -n));
   }
-  return new Float(Math.pow(a.value, Number(n)));
+  return mkFloat(F.powInt(a.mpf, n, a.prec), a.prec);
 }
 
 export function numCmp(a: Num, b: Num): number {
@@ -51,12 +71,14 @@ export function numCmp(a: Num, b: Num): number {
     const d = a.p * b.q - b.p * a.q;
     return d < 0n ? -1 : d > 0n ? 1 : 0;
   }
-  const d = toNumber(a) - toNumber(b);
-  return d < 0 ? -1 : d > 0 ? 1 : 0;
+  const [ap, aq] = a instanceof Float ? F.toRational(a.mpf) : [a.p, a.q];
+  const [bp, bq] = b instanceof Float ? F.toRational(b.mpf) : [b.p, b.q];
+  const d = ap * bq - bp * aq;
+  return d < 0n ? -1 : d > 0n ? 1 : 0;
 }
 
 export function numIsOne(a: Num): boolean {
-  return a instanceof Rational ? a.isOne : a.value === 1;
+  return a instanceof Rational ? a.isOne : a.mpf.man === 1n && a.mpf.exp === 0;
 }
 
 export function numAbs(a: Num): Num {

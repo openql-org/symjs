@@ -54,6 +54,7 @@ export type {
   ExprLike,
   ComplexValue,
   NumericValues,
+  EvalfOptions,
   Substitution,
   Assumptions,
   FnName,
@@ -216,7 +217,10 @@ export {
 export { dsolve, odeOrder } from './solvers/ode';
 
 // numerics
-export { evalf, toComplex, lambdify } from './numeric/evalf';
+export { evalf, evalfPrec, toComplex, lambdify } from './numeric/evalf';
+export { float } from './numeric/floatctor';
+export { round } from './numeric/round';
+export { precToDps, dpsToPrec } from './numeric/mpf';
 
 // printing / parsing
 export { str } from './printing/str';

@@ -3628,7 +3628,10 @@
       "args": [
        {
         "t": "Float",
-        "v": 4.2
+        "v": 4.2,
+        "man": "4728779608739021",
+        "exp": -50,
+        "prec": 53
        },
        {
         "t": "Symbol",
@@ -4654,7 +4657,10 @@
     "args": [
      {
       "t": "Float",
-      "v": -2.5
+      "v": -2.5,
+      "man": "-5",
+      "exp": -1,
+      "prec": 53
      },
      {
       "t": "Symbol",
@@ -4793,7 +4799,7 @@
    "category": "core",
    "module": "sympy.core.expr",
    "src": "(-2*x*y).args_cnc(cset=True)",
-   "expected": "[{x, y, 2, -1}, []]"
+   "expected": "[{2, y, x, -1}, []]"
   },
   {
    "fn": ".args_cnc",
@@ -6053,7 +6059,10 @@
       "args": [
        {
         "t": "Float",
-        "v": 2.0
+        "v": 2.0,
+        "man": "1",
+        "exp": 1,
+        "prec": 53
        },
        {
         "t": "Symbol",
@@ -6228,7 +6237,10 @@
         "args": [
          {
           "t": "Float",
-          "v": 0.4
+          "v": 0.4,
+          "man": "3602879701896397",
+          "exp": -53,
+          "prec": 53
          },
          {
           "t": "Symbol",
@@ -14141,7 +14153,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms()",
-   "expected": "{1, 2, y, pi, x, I}"
+   "expected": "{1, 2, y, I, pi, x}"
   },
   {
    "fn": ".atoms",
@@ -14203,7 +14215,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Symbol)",
-   "expected": "{x, y}"
+   "expected": "{y, x}"
   },
   {
    "fn": ".atoms",
@@ -14327,7 +14339,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Number, NumberSymbol)",
-   "expected": "{pi, 1, 2}"
+   "expected": "{1, 2, pi}"
   },
   {
    "fn": ".atoms",
@@ -14389,7 +14401,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Number, NumberSymbol, I)",
-   "expected": "{pi, 1, 2, I}"
+   "expected": "{1, 2, pi, I}"
   },
   {
    "fn": ".atoms",
@@ -14458,7 +14470,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(x) # x is a Symbol",
-   "expected": "{x, y}"
+   "expected": "{y, x}"
   },
   {
    "fn": ".atoms",
@@ -14794,7 +14806,7 @@
    "category": "core",
    "module": "sympy.core.basic",
    "src": "(1 + x + 2*sin(y + I*pi)).atoms(Mul)",
-   "expected": "{I*pi, 2*sin(y + I*pi)}"
+   "expected": "{2*sin(y + I*pi), I*pi}"
   },
   {
    "fn": ".compare",
@@ -15519,7 +15531,10 @@
    "fn": ".is_same",
    "self": {
     "t": "Float",
-    "v": 1.0
+    "v": 1.0,
+    "man": "1",
+    "exp": 0,
+    "prec": 10
    },
    "unsupportedArg": "function",
    "category": "core",
@@ -15531,7 +15546,10 @@
    "fn": ".is_same",
    "self": {
     "t": "Float",
-    "v": 0.10000000000582077
+    "v": 0.10000000000582077,
+    "man": "3435973837",
+    "exp": -35,
+    "prec": 33
    },
    "unsupportedArg": "function",
    "category": "core",
@@ -15543,7 +15561,10 @@
    "fn": ".is_same",
    "self": {
     "t": "Float",
-    "v": 0.10000000000582077
+    "v": 0.10000000000582077,
+    "man": "3435973837",
+    "exp": -35,
+    "prec": 33
    },
    "unsupportedArg": "builtin_function_or_method",
    "category": "core",
@@ -17943,7 +17964,8 @@
        },
        {
         "t": "Float",
-        "v": 3.0
+        "v": 3.0,
+        "py": true
        }
       ]
      ]
@@ -17963,7 +17985,10 @@
    "fn": ".evalf",
    "self": {
     "t": "Float",
-    "v": 0.3333333333333333
+    "v": 0.3333333333333333,
+    "man": "6004799503160661",
+    "exp": -54,
+    "prec": 53
    },
    "args": [
     {
@@ -25114,7 +25139,8 @@
    "args": [
     {
      "t": "Float",
-     "v": 3.5
+     "v": 3.5,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -25187,7 +25213,8 @@
    "args": [
     {
      "t": "Float",
-     "v": 1e+20
+     "v": 1e+20,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -25201,7 +25228,8 @@
    "args": [
     {
      "t": "Float",
-     "v": 1.234567891234568
+     "v": 1.234567891234568,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -25376,7 +25404,10 @@
    "fn": ".evalf",
    "self": {
     "t": "Float",
-    "v": 0.099609375
+    "v": 0.099609375,
+    "man": "51",
+    "exp": -9,
+    "prec": 7
    },
    "args": [
     {
@@ -25396,7 +25427,10 @@
    "args": [
     {
      "t": "Float",
-     "v": 0.125
+     "v": 0.125,
+     "man": "1",
+     "exp": -3,
+     "prec": 7
     },
     {
      "t": "Rational",
@@ -25414,7 +25448,10 @@
    "fn": ".evalf",
    "self": {
     "t": "Float",
-    "v": 0.125
+    "v": 0.125,
+    "man": "1",
+    "exp": -3,
+    "prec": 7
    },
    "args": [
     {
@@ -25434,7 +25471,8 @@
    "args": [
     {
      "t": "Float",
-     "v": 0.3
+     "v": 0.3,
+     "py": true
     },
     {
      "t": "Rational",
@@ -25584,7 +25622,8 @@
    "args": [
     {
      "t": "Float",
-     "v": 3.8
+     "v": 3.8,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -25598,7 +25637,8 @@
    "args": [
     {
      "t": "Float",
-     "v": -3.8
+     "v": -3.8,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -25757,7 +25797,8 @@
    "args": [
     {
      "t": "Float",
-     "v": 0.5
+     "v": 0.5,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -25771,7 +25812,8 @@
    "args": [
     {
      "t": "Float",
-     "v": 0.2
+     "v": 0.2,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -25903,7 +25945,8 @@
    "args": [
     {
      "t": "Float",
-     "v": 0.3
+     "v": 0.3,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -25987,11 +26030,15 @@
    "args": [
     {
      "t": "Float",
-     "v": 3.1416015625
+     "v": 3.1416015625,
+     "man": "3217",
+     "exp": -10,
+     "prec": 17
     },
     {
      "t": "Float",
-     "v": 3.141
+     "v": 3.141,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -26005,11 +26052,15 @@
    "args": [
     {
      "t": "Float",
-     "v": 3.1416015625
+     "v": 3.1416015625,
+     "man": "3217",
+     "exp": -10,
+     "prec": 17
     },
     {
      "t": "Float",
-     "v": 3.143
+     "v": 3.143,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -26023,11 +26074,15 @@
    "args": [
     {
      "t": "Float",
-     "v": 3.1416015625
+     "v": 3.1416015625,
+     "man": "3217",
+     "exp": -10,
+     "prec": 17
     },
     {
      "t": "Float",
-     "v": 3.1415
+     "v": 3.1415,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -26041,11 +26096,15 @@
    "args": [
     {
      "t": "Float",
-     "v": 3.1416015625
+     "v": 3.1416015625,
+     "man": "3217",
+     "exp": -10,
+     "prec": 17
     },
     {
      "t": "Float",
-     "v": 3.1415
+     "v": 3.1415,
+     "py": true
     },
     {
      "t": "Str",
@@ -26063,15 +26122,20 @@
    "args": [
     {
      "t": "Float",
-     "v": 3.1416015625
+     "v": 3.1416015625,
+     "man": "3217",
+     "exp": -10,
+     "prec": 17
     },
     {
      "t": "Float",
-     "v": 3.14
+     "v": 3.14,
+     "py": true
     },
     {
      "t": "Float",
-     "v": 0.001
+     "v": 0.001,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -26085,15 +26149,20 @@
    "args": [
     {
      "t": "Float",
-     "v": 3.1416015625
+     "v": 3.1416015625,
+     "man": "3217",
+     "exp": -10,
+     "prec": 17
     },
     {
      "t": "Float",
-     "v": 3.14
+     "v": 3.14,
+     "py": true
     },
     {
      "t": "Float",
-     "v": 0.0005
+     "v": 0.0005,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -26107,15 +26176,20 @@
    "args": [
     {
      "t": "Float",
-     "v": 0.3183097839355469
+     "v": 0.3183097839355469,
+     "man": "83443",
+     "exp": -18,
+     "prec": 17
     },
     {
      "t": "Float",
-     "v": 0.3183
+     "v": 0.3183,
+     "py": true
     },
     {
      "t": "Float",
-     "v": 1e-05
+     "v": 1e-05,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -26129,7 +26203,10 @@
    "args": [
     {
      "t": "Float",
-     "v": 0.0016015624999998757
+     "v": 0.0016015624999998757,
+     "man": "3606398139105",
+     "exp": -51,
+     "prec": 53
     },
     {
      "t": "Rational",
@@ -26138,7 +26215,8 @@
     },
     {
      "t": "Float",
-     "v": 0.002
+     "v": 0.002,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -26152,7 +26230,10 @@
    "args": [
     {
      "t": "Float",
-     "v": 0.0016015624999998757
+     "v": 0.0016015624999998757,
+     "man": "3606398139105",
+     "exp": -51,
+     "prec": 53
     },
     {
      "t": "Rational",
@@ -26161,7 +26242,8 @@
     },
     {
      "t": "Float",
-     "v": 0.001
+     "v": 0.001,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -26177,7 +26259,7 @@
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "Dummy() #doctest: +SKIP",
-   "expected": "_Dummy_1053"
+   "expected": "_Dummy_1052"
   },
   {
    "fn": ".match",
@@ -26664,7 +26746,7 @@
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "symbols({'a', 'b', 'c'})",
-   "expected": "{a, c, b}"
+   "expected": "{c, a, b}"
   },
   {
    "fn": "symbols",
@@ -28019,7 +28101,8 @@
    "args": [
     {
      "t": "Float",
-     "v": 0.0001
+     "v": 0.0001,
+     "py": true
     }
    ],
    "kwargs": {
@@ -28038,13 +28121,15 @@
    "args": [
     {
      "t": "Float",
-     "v": 0.0001
+     "v": 0.0001,
+     "py": true
     }
    ],
    "kwargs": {
     "chop": {
      "t": "Float",
-     "v": 1e-05
+     "v": 1e-05,
+     "py": true
     }
    },
    "category": "core",
@@ -28057,13 +28142,15 @@
    "args": [
     {
      "t": "Float",
-     "v": 0.0001
+     "v": 0.0001,
+     "py": true
     }
    ],
    "kwargs": {
     "chop": {
      "t": "Float",
-     "v": 0.0001
+     "v": 0.0001,
+     "py": true
     }
    },
    "category": "core",
@@ -28115,7 +28202,8 @@
        },
        {
         "t": "Float",
-        "v": 1e+16
+        "v": 1e+16,
+        "py": true
        }
       ],
       [
@@ -28138,7 +28226,8 @@
        },
        {
         "t": "Float",
-        "v": 1e+16
+        "v": 1e+16,
+        "py": true
        }
       ]
      ]
@@ -28195,7 +28284,8 @@
        },
        {
         "t": "Float",
-        "v": 1e+16
+        "v": 1e+16,
+        "py": true
        }
       ],
       [
@@ -28218,7 +28308,8 @@
        },
        {
         "t": "Float",
-        "v": 1e+16
+        "v": 1e+16,
+        "py": true
        }
       ]
      ]
@@ -29996,7 +30087,8 @@
    "args": [
     {
      "t": "Float",
-     "v": 9.0
+     "v": 9.0,
+     "py": true
     }
    ],
    "kwargs": {
@@ -30723,7 +30815,8 @@
    "args": [
     {
      "t": "Float",
-     "v": 2.0
+     "v": 2.0,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -30896,14 +30989,20 @@
      "args": [
       {
        "t": "Float",
-       "v": 0.8
+       "v": 0.8,
+       "man": "3602879701896397",
+       "exp": -52,
+       "prec": 53
       },
       {
        "t": "Mul",
        "args": [
         {
          "t": "Float",
-         "v": 0.6
+         "v": 0.6,
+         "man": "5404319552844595",
+         "exp": -53,
+         "prec": 53
         },
         {
          "t": "Const",
@@ -31630,7 +31729,7 @@
    "category": "functions",
    "module": "sympy.functions.elementary.complexes",
    "src": "polarify(expr)",
-   "expected": "((_x*exp_polar(I*pi))**_y, {_x: x, _y: y})"
+   "expected": "((_x*exp_polar(I*pi))**_y, {_y: y, _x: x})"
   },
   {
    "fn": ".expand",
@@ -32374,7 +32473,8 @@
    "args": [
     {
      "t": "Float",
-     "v": 1.2
+     "v": 1.2,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -32391,7 +32491,10 @@
     "args": [
      {
       "t": "Float",
-      "v": 1.2
+      "v": 1.2,
+      "man": "5404319552844595",
+      "exp": -52,
+      "prec": 53
      },
      {
       "t": "Rational",
@@ -35949,7 +36052,10 @@
    "args": [
     {
      "t": "Float",
-     "v": -0.567
+     "v": -0.567,
+     "man": "-2553540988719071",
+     "exp": -52,
+     "prec": 53
     }
    ],
    "kwargs": {},
@@ -36075,7 +36181,10 @@
    "args": [
     {
      "t": "Float",
-     "v": -0.567
+     "v": -0.567,
+     "man": "-2553540988719071",
+     "exp": -52,
+     "prec": 53
     }
    ],
    "kwargs": {},
@@ -38016,7 +38125,8 @@
    "kwargs": {
     "tolerance": {
      "t": "Float",
-     "v": 0.01
+     "v": 0.01,
+     "py": true
     }
    },
    "category": "simplify",
@@ -38029,7 +38139,8 @@
    "args": [
     {
      "t": "Float",
-     "v": 0.333333333333333
+     "v": 0.333333333333333,
+     "py": true
     }
    ],
    "kwargs": {
@@ -38052,7 +38163,8 @@
    "args": [
     {
      "t": "Float",
-     "v": 0.333333333333333
+     "v": 0.333333333333333,
+     "py": true
     }
    ],
    "kwargs": {
@@ -47299,7 +47411,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a77b520>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a49c280>, 3)"
   },
   {
    "fn": ".LC",
@@ -47506,7 +47618,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a6b71f0>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a4c2d70>, 4)"
   },
   {
    "fn": ".TC",
@@ -53386,7 +53498,8 @@
    "kwargs": {
     "eps": {
      "t": "Float",
-     "v": 0.01
+     "v": 0.01,
+     "py": true
     }
    },
    "category": "polys",
@@ -56239,7 +56352,8 @@
    "kwargs": {
     "eps": {
      "t": "Float",
-     "v": 0.01
+     "v": 0.01,
+     "py": true
     }
    },
    "category": "polys",
@@ -58603,14 +58717,20 @@
      "args": [
       {
        "t": "Float",
-       "v": 1.0
+       "v": 1.0,
+       "man": "1",
+       "exp": 0,
+       "prec": 53
       },
       {
        "t": "Mul",
        "args": [
         {
          "t": "Float",
-         "v": 1.0
+         "v": 1.0,
+         "man": "1",
+         "exp": 0,
+         "prec": 53
         },
         {
          "t": "Pow",
@@ -64404,7 +64524,8 @@
    "kwargs": {
     "eps": {
      "t": "Float",
-     "v": 0.01
+     "v": 0.01,
+     "py": true
     }
    },
    "category": "polys",
@@ -66415,7 +66536,8 @@
    "kwargs": {
     "eps": {
      "t": "Float",
-     "v": 0.01
+     "v": 0.01,
+     "py": true
     }
    },
    "category": "polys",
@@ -70386,7 +70508,10 @@
    "fn": ".n",
    "self": {
     "t": "Float",
-    "v": 2.094023536907255e+121
+    "v": 2.094023536907255e+121,
+    "man": "2282564639790827",
+    "exp": 352,
+    "prec": 53
    },
    "args": [
     {
@@ -70405,7 +70530,10 @@
    "fn": ".n",
    "self": {
     "t": "Float",
-    "v": 7.354689581886535e-15
+    "v": 7.354689581886535e-15,
+    "man": "2330794165742693",
+    "exp": -98,
+    "prec": 53
    },
    "args": [
     {
@@ -70465,11 +70593,13 @@
      "items": [
       {
        "t": "Float",
-       "v": 314.0
+       "v": 314.0,
+       "py": true
       },
       {
        "t": "Float",
-       "v": 317.14
+       "v": 317.14,
+       "py": true
       }
      ]
     }
@@ -70584,7 +70714,8 @@
     },
     {
      "t": "Float",
-     "v": 0.46
+     "v": 0.46,
+     "py": true
     }
    ],
    "kwargs": {},
@@ -78217,7 +78348,7 @@
    "category": "ode",
    "module": "sympy.solvers.ode.ode",
    "src": "dsolve(eq)",
-   "expected": "{Eq(x(t), -exp(C1)/(C2*exp(C1) - cos(t))), Eq(y(t), -1/(C1 - cos(t)))}"
+   "expected": "{Eq(y(t), -1/(C1 - cos(t))), Eq(x(t), -exp(C1)/(C2*exp(C1) - cos(t)))}"
   },
   {
    "fn": "homogeneous_order",
@@ -92389,7 +92520,10 @@
      [
       {
        "t": "Float",
-       "v": 0.2
+       "v": 0.2,
+       "man": "3602879701896397",
+       "exp": -54,
+       "prec": 53
       },
       {
        "t": "Rational",
@@ -92432,7 +92566,10 @@
      [
       {
        "t": "Float",
-       "v": 0.2
+       "v": 0.2,
+       "man": "3602879701896397",
+       "exp": -54,
+       "prec": 53
       },
       {
        "t": "Rational",
@@ -92475,7 +92612,10 @@
      [
       {
        "t": "Float",
-       "v": 0.2
+       "v": 0.2,
+       "man": "3602879701896397",
+       "exp": -54,
+       "prec": 53
       },
       {
        "t": "Rational",
@@ -92511,7 +92651,10 @@
      [
       {
        "t": "Float",
-       "v": 0.2
+       "v": 0.2,
+       "man": "3602879701896397",
+       "exp": -54,
+       "prec": 53
       },
       {
        "t": "Rational",
@@ -92554,7 +92697,10 @@
      [
       {
        "t": "Float",
-       "v": 0.2
+       "v": 0.2,
+       "man": "3602879701896397",
+       "exp": -54,
+       "prec": 53
       },
       {
        "t": "Rational",
@@ -92597,7 +92743,10 @@
      [
       {
        "t": "Float",
-       "v": 0.2
+       "v": 0.2,
+       "man": "3602879701896397",
+       "exp": -54,
+       "prec": 53
       },
       {
        "t": "Rational",
@@ -99306,7 +99455,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3) # doctest:+SKIP",
-   "expected": "Matrix([[22, 66, 61], [20, 66, 20], [4, 35, 30]])"
+   "expected": "Matrix([[3, 24, 87], [26, 93, 40], [90, 86, 5]])"
   },
   {
    "fn": "randMatrix",
@@ -99326,7 +99475,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, 2) # doctest:+SKIP",
-   "expected": "Matrix([[52, 50], [55, 17], [62, 40]])"
+   "expected": "Matrix([[97, 54], [88, 7], [98, 72]])"
   },
   {
    "fn": "randMatrix",
@@ -99356,7 +99505,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, 3, 0, 2) # doctest:+SKIP",
-   "expected": "Matrix([[1, 0, 0], [1, 0, 2], [1, 2, 2]])"
+   "expected": "Matrix([[2, 1, 0], [2, 2, 1], [0, 1, 0]])"
   },
   {
    "fn": "randMatrix",
@@ -99376,7 +99525,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, symmetric=True) # doctest:+SKIP",
-   "expected": "Matrix([[84, 9, 96], [9, 24, 87], [96, 87, 4]])"
+   "expected": "Matrix([[68, 0, 92], [0, 98, 76], [92, 76, 99]])"
   },
   {
    "fn": "randMatrix",
@@ -99401,7 +99550,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, symmetric=True, percent=50) # doctest:+SKIP",
-   "expected": "Matrix([[0, 0, 0], [0, 21, 44], [0, 44, 0]])"
+   "expected": "Matrix([[0, 10, 0], [10, 0, 32], [0, 32, 69]])"
   },
   {
    "fn": "rot_axis1",
@@ -108254,7 +108403,10 @@
    "fn": ".evalf",
    "self": {
     "t": "Float",
-    "v": 0.1791434546212917
+    "v": 0.1791434546212917,
+    "man": "6454323163826501",
+    "exp": -55,
+    "prec": 53
    },
    "args": [
     {

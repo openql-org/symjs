@@ -8,6 +8,8 @@
 
 import { Add, BoolAtom, Constant, Derivative, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
+import { numNeg } from '../core/num';
+import { floatToString } from '../numeric/mpf';
 import { asOrderedFactors, asOrderedTerms, sympyFunctionName } from './sortkey';
 import { Concrete } from '../concrete/node';
 
@@ -46,15 +48,10 @@ export function precedence(e: Expr): number {
   return PREC.ATOM;
 }
 
-/** Format a float like SymPy's default 15-digit Float. */
-export function floatString(v: number): string {
-  if (v === 0) return '0.0';
-  const exp = Math.floor(Math.log10(Math.abs(v)));
-  if (exp >= -4 && exp < 15) {
-    return v.toPrecision(15);
-  }
-  const [m, e] = v.toExponential(14).split('e') as [string, string];
-  return `${m}e${e.startsWith('+') ? e.slice(1) : e}`;
+/** Format a float like SymPy's StrPrinter (full precision at top level, trailing zeros stripped inside). */
+export function floatString(v: number | Float, stripZeros = false): string {
+  const f = typeof v === 'number' ? new Float(v) : v;
+  return floatToString(f.mpf, f.prec, stripZeros);
 }
 
 /** SymPy `_keep_coeff`: c*rest without re-evaluation (no distribution over sums). */
@@ -76,7 +73,7 @@ function printMul(e: Mul): string {
   let expr: Expr = e;
   if (c.isNegative) {
     sign = '-';
-    expr = keepCoeff(c instanceof Rational ? Rational.of(-c.p, c.q) : new Float(-c.value), rest);
+    expr = keepCoeff(numNeg(c) as Rational | Float, rest);
     if (!(expr instanceof Mul)) {
       // e.g. -x: after removing the sign only a single factor remains
       return sign + parenthesize(expr, prec);
@@ -128,9 +125,30 @@ function printAdd(e: Add): string {
   return (first === '-' ? '-' : '') + parts.join(' ');
 }
 
+let printLevel = 0;
+
 export function str(e: Expr): string {
+  printLevel++;
+  try {
+    return strInner(e);
+  } finally {
+    printLevel--;
+  }
+}
+
+/** Print as a sub-expression (e.g. a matrix entry): floats drop trailing zeros. */
+export function strNested(e: Expr): string {
+  printLevel++;
+  try {
+    return str(e);
+  } finally {
+    printLevel--;
+  }
+}
+
+function strInner(e: Expr): string {
   if (e instanceof Rational) return e.q === 1n ? `${e.p}` : `${e.p}/${e.q}`;
-  if (e instanceof Float) return floatString(e.value);
+  if (e instanceof Float) return floatString(e, printLevel > 1);
   if (e instanceof Sym) return e.name;
   if (e instanceof Constant) return e.name;
   if (e instanceof Special) return e.name;

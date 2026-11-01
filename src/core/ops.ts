@@ -31,7 +31,9 @@ import {
   impl,
   isNum,
 } from './nodes';
-import { numAdd, numMul, numNeg, numPowInt, ratFloor } from './num';
+import { mkFloat, numAdd, numInv, numMul, numNeg, numPowInt, ratFloor, toMpf } from './num';
+import { ZERO as MPF_ZERO, precToDps } from '../numeric/mpf';
+import { cpow as mpCpow, powReal as mpPowReal } from '../numeric/mpfun';
 import { factorInt } from './numbers';
 
 export function sympify(x: ExprLike): Expr {
@@ -42,6 +44,20 @@ export function sympify(x: ExprLike): Expr {
     return new Float(x);
   }
   throw new TypeError(`Cannot convert ${String(x)} to an expression`);
+}
+
+/** Float ** number (SymPy Float._eval_power / Rational._eval_power with a Float exponent). */
+function floatPow(b: Num, e: Num): Expr {
+  const fb = b instanceof Float ? b : new Float(toMpf(b, (e as Float).prec), (e as Float).prec);
+  if (fb.isZero) return e.isPositive ? fb : S.ComplexInfinity;
+  if (e instanceof Rational && e.p === 1n && e.q % 2n === 1n && fb.isNegative) {
+    return mul(new Pow(S.NegOne, e), pow(numNeg(fb), e));
+  }
+  const prec = e instanceof Float ? Math.max(fb.prec, e.prec) : fb.prec;
+  const y = toMpf(e, prec);
+  if (fb.isPositive) return mkFloat(mpPowReal(fb.mpf, y, prec), prec);
+  const [re, im] = mpCpow([fb.mpf, MPF_ZERO], [y, MPF_ZERO], prec);
+  return add(mkFloat(re, prec), mul(mkFloat(im, prec), S.I));
 }
 
 const isI = (e: Expr): boolean => e instanceof Constant && e.name === 'I';
@@ -447,6 +463,7 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
     if (e.isOne) return b;
   }
   if (b instanceof Rational && b.isOne && !(e instanceof Special)) return S.One;
+  if (isE(b) && e instanceof Float) return impl.evalf(new Pow(b, e), precToDps(e.prec));
 
   if (b instanceof Special || e instanceof Special) {
     const r = powSpecial(b, e);
@@ -458,13 +475,7 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
       if (b.isZero && e.isNegative) return S.ComplexInfinity;
       return numPowInt(b, e.p);
     }
-    if (b instanceof Float || e instanceof Float) {
-      const bv = b instanceof Rational ? b.value : b.value;
-      const ev = e instanceof Rational ? e.value : e.value;
-      if (bv >= 0) return new Float(Math.pow(bv, ev));
-      const r = Math.pow(-bv, ev);
-      return add(new Float(r * Math.cos(Math.PI * ev)), mul(new Float(r * Math.sin(Math.PI * ev)), S.I));
-    }
+    if (b instanceof Float || e instanceof Float) return floatPow(b, e);
     if (b.isZero) return e.isPositive ? S.Zero : S.ComplexInfinity;
     return mul(new Pow(b, e));
   }
@@ -485,7 +496,7 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
       const [r, i] = pc;
       const den = numAdd(numMul(r, r), numMul(i, i));
       const num = add(r, mul(numNeg(i), S.I));
-      const k = den instanceof Rational ? Rational.of(den.q, den.p) : new Float(1 / den.value);
+      const k = den instanceof Rational ? Rational.of(den.q, den.p) : numInv(den);
       if (k instanceof Rational && k.isOne) return num;
       return new Mul([k, ...(num instanceof Mul ? num.args : [num])]);
     }

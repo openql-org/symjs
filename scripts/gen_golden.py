@@ -64,6 +64,8 @@ def main(src: str, dst: str) -> None:
             pt = parse_expr(spec_[1], local_dict=dict(syms))
             direction = spec_[2] if len(spec_) > 2 else "+"
             return str(limit(e, var, pt, direction))
+        if op.startswith("evalf:"):
+            return str(e.evalf(int(op.split(":", 1)[1])))
         if op == "latex_integral":
             return latex(Integral(e, x)) + " | " + latex(Integral(e, (x, 0, 1)))
         if op == "roots_x":

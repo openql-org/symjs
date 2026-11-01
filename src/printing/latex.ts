@@ -8,6 +8,7 @@
 import { isNegative } from '../core/assumptions';
 import { Add, BoolAtom, Constant, Derivative, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
+import { numNeg } from '../core/num';
 import { asOrderedFactors, asOrderedTerms } from './sortkey';
 import { PREC, floatString, precedence, startsNegative, str } from './str';
 
@@ -215,7 +216,7 @@ function printMulLike(e: Expr): string {
   let includeParens = false;
   if (startsNegative(expr)) {
     const [c, rest] = splitCoeff(expr);
-    const pc = c instanceof Rational ? Rational.of(-c.p, c.q) : new Float(-c.value);
+    const pc = numNeg(c);
     expr = pc instanceof Rational && pc.isOne ? rest : new Mul([pc, ...(rest instanceof Mul ? rest.args : [rest])]);
     tex = '- ';
     if (expr instanceof Add) {
@@ -269,17 +270,12 @@ function printAdd(e: Add): string {
   return tex;
 }
 
-function floatLatex(v: number): string {
-  let s = floatString(v);
-  let exp = '';
+function floatLatex(f: Float): string {
+  const s = floatString(f, true);
   const k = s.indexOf('e');
-  if (k >= 0) {
-    exp = s.slice(k + 1);
-    s = s.slice(0, k);
-  }
-  if (s.includes('.')) s = s.replace(/0+$/, '').replace(/\.$/, '.0');
-  if (exp) return `${s} \\cdot 10^{${exp.startsWith('+') ? exp.slice(1) : exp}}`;
-  return s;
+  if (k < 0) return s;
+  const exp = s.slice(k + 1);
+  return `${s.slice(0, k)} \\cdot 10^{${exp.startsWith('+') ? exp.slice(1) : exp}}`;
 }
 
 export function latex(e: Expr): string {
@@ -287,7 +283,7 @@ export function latex(e: Expr): string {
     if (e.q === 1n) return `${e.p}`;
     return e.p < 0n ? `- \\frac{${-e.p}}{${e.q}}` : `\\frac{${e.p}}{${e.q}}`;
   }
-  if (e instanceof Float) return floatLatex(e.value);
+  if (e instanceof Float) return floatLatex(e);
   if (e instanceof Sym) return symbolLatex(e.name);
   if (e instanceof Constant) {
     return { pi: '\\pi', E: 'e', I: 'i', EulerGamma: '\\gamma', Catalan: 'G', GoldenRatio: '\\phi' }[e.name];
