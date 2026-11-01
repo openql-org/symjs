@@ -2552,6 +2552,66 @@
       "ops": [
         "roots_x"
       ]
+    },
+    {
+      "expr": "-3*x**2 + x",
+      "ops": [
+        "factor"
+      ]
+    },
+    {
+      "expr": "-2*x*y - 2*x",
+      "ops": [
+        "factor"
+      ]
+    },
+    {
+      "expr": "6 - 3*x**2",
+      "ops": [
+        "factor"
+      ]
+    },
+    {
+      "expr": "-x**3 + x",
+      "ops": [
+        "factor"
+      ]
+    },
+    {
+      "expr": "-4*x**2 + 4*x - 1",
+      "ops": [
+        "factor"
+      ]
+    },
+    {
+      "expr": "-(x - y)*(x + y)*2",
+      "ops": [
+        "factor"
+      ]
+    },
+    {
+      "expr": "x*y - x**2*y**2/2",
+      "ops": [
+        "factor"
+      ]
+    },
+    {
+      "expr": "-6*x**2*y + 3*x*y**2",
+      "ops": [
+        "factor"
+      ]
+    },
+    {
+      "expr": "x**2/2 - y**2/8",
+      "ops": [
+        "factor"
+      ]
+    },
+    {
+      "expr": "-x - 1",
+      "ops": [
+        "factor"
+      ]
     }
   ]
 }

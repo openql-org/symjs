@@ -25,6 +25,6 @@ describe('factor keeps signs and content (regression)', () => {
     const { factor } = await import('../src');
     expect(str(factor(P('-3*x**2 + x')))).toBe('-x*(3*x - 1)');
     expect(str(factor(P('-3*x**2 + x*y + x')))).toBe('-x*(3*x - y - 1)');
-    expect(str(factor(P('-3*x + y + 1')))).toBe('-(3*x - y - 1)');
+    expect(str(factor(P('-3*x + y + 1')))).toBe('-3*x + y + 1');
   });
 });

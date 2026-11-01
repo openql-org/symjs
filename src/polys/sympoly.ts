@@ -1073,6 +1073,8 @@ export function factor(ex: ExprLike): Expr {
   const parts = fs.map(([f, k]) => pow(f, k));
   if (parts.length === 0) return c;
   if (parts.length === 1 && c.isOne) return parts[0]!;
+  // SymPy _keep_coeff: -1 times a single factor is evaluated (-(x + 1) -> -x - 1)
+  if (parts.length === 1 && c.p === -1n && c.q === 1n) return mul(-1, parts[0]!);
   const sorted = [...parts].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
   return c.isOne ? new Mul(sorted) : new Mul([c, ...sorted]);
 }
