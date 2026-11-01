@@ -181,7 +181,24 @@ export { trigsimp, rewriteExp, rewriteTrig, expsimp, exptotrig, combineExp } fro
 export { together, cancel, fraction } from './simplify/rational';
 
 // polynomials
-export { Poly, polyCoefficients, roots, factor, factorPoly } from './polys/poly';
+export { UPoly, polyCoefficients, roots, factorPoly } from './polys/poly';
+export {
+  Poly,
+  PolificationFailed,
+  factor,
+  factorListExpr as factorList,
+  polyGcd as gcd,
+  polyLcm as lcm,
+  polyDiv,
+  degree,
+  termsGcd,
+  horner,
+  interpolate,
+  resultant,
+  discriminant,
+  sortGens,
+} from './polys/sympoly';
+export { mgcd, mlcm, divExact } from './polys/mpoly';
 
 // solvers
 export {

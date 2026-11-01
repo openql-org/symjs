@@ -41,7 +41,7 @@ export function polyCoefficients(ex: ExprLike, x: Sym): Map<number, Expr> | unde
 const R = (n: bigint | number, d: bigint | number = 1n) => Rational.of(n, d);
 
 /** Dense univariate polynomial with rational coefficients (index = degree). */
-export class Poly {
+export class UPoly {
   readonly coeffs: readonly Rational[];
 
   constructor(coeffs: readonly Rational[]) {
@@ -50,7 +50,7 @@ export class Poly {
     this.coeffs = c;
   }
 
-  static fromExpr(e: ExprLike, x: Sym): Poly | undefined {
+  static fromExpr(e: ExprLike, x: Sym): UPoly | undefined {
     const m = polyCoefficients(e, x);
     if (!m) return undefined;
     const deg = Math.max(-1, ...m.keys());
@@ -60,7 +60,7 @@ export class Poly {
       if (!(v instanceof Rational)) return undefined;
       cs.push(v);
     }
-    return new Poly(cs);
+    return new UPoly(cs);
   }
 
   get degree(): number {
@@ -77,57 +77,57 @@ export class Poly {
     return add(...this.coeffs.map((c, i) => mul(c, pow(x, i))));
   }
 
-  add(o: Poly): Poly {
+  add(o: UPoly): UPoly {
     const n = Math.max(this.coeffs.length, o.coeffs.length);
     const out: Rational[] = [];
     for (let i = 0; i < n; i++) out.push(numAdd(this.coeffs[i] ?? S.Zero, o.coeffs[i] ?? S.Zero) as Rational);
-    return new Poly(out);
+    return new UPoly(out);
   }
-  scale(k: Rational): Poly {
-    return new Poly(this.coeffs.map((c) => numMul(c, k) as Rational));
+  scale(k: Rational): UPoly {
+    return new UPoly(this.coeffs.map((c) => numMul(c, k) as Rational));
   }
-  sub(o: Poly): Poly {
+  sub(o: UPoly): UPoly {
     return this.add(o.scale(S.NegOne));
   }
-  mul(o: Poly): Poly {
-    if (this.isZero || o.isZero) return new Poly([]);
+  mul(o: UPoly): UPoly {
+    if (this.isZero || o.isZero) return new UPoly([]);
     const out: Rational[] = Array.from({ length: this.coeffs.length + o.coeffs.length - 1 }, () => S.Zero);
     this.coeffs.forEach((a, i) =>
       o.coeffs.forEach((b, j) => {
         out[i + j] = numAdd(out[i + j]!, numMul(a, b)) as Rational;
       }),
     );
-    return new Poly(out);
+    return new UPoly(out);
   }
 
-  divmod(d: Poly): [Poly, Poly] {
+  divmod(d: UPoly): [UPoly, UPoly] {
     if (d.isZero) throw new RangeError('Polynomial division by zero');
-    let r: Poly = this;
+    let r: UPoly = this;
     const q: Rational[] = Array.from({ length: Math.max(0, this.degree - d.degree + 1) }, () => S.Zero);
     const inv = numInv(d.lc) as Rational;
     while (!r.isZero && r.degree >= d.degree) {
       const k = r.degree - d.degree;
       const c = numMul(r.lc, inv) as Rational;
       q[k] = c;
-      const shifted = new Poly([...Array.from({ length: k }, () => S.Zero), ...d.coeffs.map((x) => numMul(x, c) as Rational)]);
+      const shifted = new UPoly([...Array.from({ length: k }, () => S.Zero), ...d.coeffs.map((x) => numMul(x, c) as Rational)]);
       r = r.sub(shifted);
     }
-    return [new Poly(q), r];
+    return [new UPoly(q), r];
   }
 
-  monic(): Poly {
+  monic(): UPoly {
     return this.isZero ? this : this.scale(numInv(this.lc) as Rational);
   }
 
-  gcd(o: Poly): Poly {
-    let a: Poly = this;
-    let b: Poly = o;
+  gcd(o: UPoly): UPoly {
+    let a: UPoly = this;
+    let b: UPoly = o;
     while (!b.isZero) [a, b] = [b, a.divmod(b)[1]];
     return a.monic();
   }
 
-  derivative(): Poly {
-    return new Poly(this.coeffs.slice(1).map((c, i) => numMul(c, R(i + 1)) as Rational));
+  derivative(): UPoly {
+    return new UPoly(this.coeffs.slice(1).map((c, i) => numMul(c, R(i + 1)) as Rational));
   }
 
   evalAt(x: Rational): Rational {
@@ -137,8 +137,8 @@ export class Poly {
   }
 
   /** Square-free decomposition (Yun): returns [factor, multiplicity][] of monic factors. */
-  squareFree(): [Poly, number][] {
-    const out: [Poly, number][] = [];
+  squareFree(): [UPoly, number][] {
+    const out: [UPoly, number][] = [];
     if (this.degree <= 0) return out;
     const f = this.monic();
     let a = f.gcd(f.derivative());
@@ -206,14 +206,14 @@ export class Poly {
    * rational roots are split off; remaining factors are returned as they are
    * (they may still be reducible over Q).
    */
-  factor(): { content: Rational; factors: [Poly, number][] } {
+  factor(): { content: Rational; factors: [UPoly, number][] } {
     if (this.isZero) return { content: S.Zero, factors: [] };
     const content = this.lc;
-    const factors: [Poly, number][] = [];
+    const factors: [UPoly, number][] = [];
     for (const [p, m] of this.squareFree()) {
       let rest = p;
       for (const r of p.rationalRoots()) {
-        const lin = new Poly([numNeg(r) as Rational, S.One]);
+        const lin = new UPoly([numNeg(r) as Rational, S.One]);
         factors.push([lin, m]);
         rest = rest.divmod(lin)[0];
       }
@@ -259,7 +259,7 @@ export function roots(ex: ExprLike, x: Sym): Expr[] {
   if (!coeffs) throw new Error('roots: expression is not a polynomial in the given symbol');
   const deg = Math.max(-1, ...coeffs.keys());
   if (deg <= 0) return [];
-  const p = Poly.fromExpr(ex, x);
+  const p = UPoly.fromExpr(ex, x);
   if (p) {
     const out: Expr[] = [];
     for (const [f, m] of p.factor().factors) {
@@ -308,7 +308,7 @@ export function solve(ex: ExprLike, x: Sym): Expr[] {
  */
 export function factorPoly(ex: ExprLike, x: Sym): Expr {
   const e = sympify(ex);
-  const p = Poly.fromExpr(e, x);
+  const p = UPoly.fromExpr(e, x);
   if (!p || p.degree <= 0) return e;
   const { content: lc, factors } = p.factor();
   let content: Rational = lc;

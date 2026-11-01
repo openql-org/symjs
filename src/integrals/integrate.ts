@@ -39,7 +39,7 @@ import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { asin, atan, cos, cosh, log, sin, sinh } from '../functions/elementary';
-import { Poly, polyCoefficients } from '../polys/poly';
+import { UPoly, polyCoefficients } from '../polys/poly';
 import { expandMul as expand } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { expsimp, hasTrigFunctions } from '../simplify/trigsimp';
@@ -415,8 +415,8 @@ class Integrator {
     } catch {
       return undefined;
     }
-    const pn = Poly.fromExpr(N, x);
-    const pd = Poly.fromExpr(D, x);
+    const pn = UPoly.fromExpr(N, x);
+    const pd = UPoly.fromExpr(D, x);
     if (!pn || !pd || pd.degree < 1) return undefined;
     const [q, r] = pn.divmod(pd);
     const terms: Expr[] = [];
@@ -429,15 +429,15 @@ class Integrator {
 
     const { factors } = pd.factor();
     // basis: for each factor f_i^m_i, j = 1..m_i and k < deg f_i: x^k * D / f_i^j
-    const unknowns: { f: Poly; j: number; k: number }[] = [];
-    const columns: Poly[] = [];
+    const unknowns: { f: UPoly; j: number; k: number }[] = [];
+    const columns: UPoly[] = [];
     for (const [fi, mi] of factors) {
       for (let j = 1; j <= mi; j++) {
-        let fj = new Poly([S.One]);
+        let fj = new UPoly([S.One]);
         for (let t = 0; t < j; t++) fj = fj.mul(fi);
         const cof = pd.divmod(fj)[0];
         for (let k = 0; k < fi.degree; k++) {
-          const xk = new Poly([...Array.from({ length: k }, () => S.Zero), S.One]);
+          const xk = new UPoly([...Array.from({ length: k }, () => S.Zero), S.One]);
           unknowns.push({ f: fi, j, k });
           columns.push(cof.mul(xk));
         }
@@ -452,7 +452,7 @@ class Integrator {
     if (!sol) return undefined;
 
     // group numerators A_ij(x) = sum_k c_ijk x^k
-    const groups = new Map<string, { f: Poly; j: number; A: Rational[] }>();
+    const groups = new Map<string, { f: UPoly; j: number; A: Rational[] }>();
     unknowns.forEach(({ f: fi, j, k }, idx) => {
       const key = `${fi.coeffs.map((c) => c.key).join(',')}|${j}`;
       let g = groups.get(key);

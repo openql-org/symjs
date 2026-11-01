@@ -40,6 +40,8 @@ export class UFnClass {
 export function fmt(v: unknown): string {
   if (v instanceof Expr) return sj.str(v);
   if (v instanceof Matrix) return v.toString();
+  if (v instanceof sj.Poly) return v.toString();
+  if (v === -Infinity) return '-oo';
   if (typeof v === 'boolean') return v ? 'True' : 'False';
   if (v === null || v === undefined) return 'None';
   if (typeof v === 'number' || typeof v === 'bigint') return String(v);
@@ -182,6 +184,12 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'Tuple':
       return new PyTuple((tree['items'] as Tree[]).map(deserialize));
+    case 'Poly':
+      return sj.Poly.from(
+        deserialize(tree['expr'] as Tree) as Expr,
+        (tree['gens'] as Tree[]).map((g) => deserialize(g) as Expr),
+        { domain: tree['domain'] as string, pure: Boolean(tree['pure']) },
+      );
     case 'UFnClass':
       return new UFnClass(tree['name'] as string);
     case 'UFn':
@@ -212,6 +220,13 @@ const asExpr = (v: unknown): Expr => {
   if (typeof v === 'boolean') return v ? S.true : S.false;
   throw new Unsupported(`expected an expression, got ${fmt(v)}`);
 };
+const asExprOrPoly = (v: unknown): Expr => (v instanceof sj.Poly ? v.asExpr() : asExpr(v));
+const asPoly = (v: unknown): sj.Poly => {
+  if (v instanceof sj.Poly) return v;
+  throw new Unsupported('expected a Poly');
+};
+const polyOf = (args: unknown[]): sj.Poly =>
+  args[0] instanceof sj.Poly ? args[0] : sj.Poly.from(asExpr(args[0]), args.slice(1).map(asExpr));
 const asSym = (v: unknown): Sym => {
   if (v instanceof Sym) return v;
   throw new Unsupported('expected a symbol');
@@ -621,6 +636,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.diff': (args, kw, self) => {
     noKw(kw);
+    if (self instanceof sj.Poly) return self.diff(args[0] === undefined ? undefined : asExpr(args[0]));
     if (self instanceof Matrix) {
       return self.map((e) => diffArgs(e, args));
     }
@@ -679,7 +695,15 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new PyTuple([c, new PyTuple(t)]);
   },
   '.as_coeff_Mul': exprMethod((e) => new PyTuple(sj.splitCoeff(e))),
-  '.primitive': exprMethod((e) => new PyTuple(sj.primitive(e))),
+  '.primitive': (_a, kw, self) => {
+    noKw(kw);
+    if (self instanceof sj.Poly) return new PyTuple(self.primitive());
+    return new PyTuple(sj.primitive(asExpr(self)));
+  },
+  '.degree': (args, kw, self) => {
+    noKw(kw);
+    return asPoly(self).degree(args[0] === undefined ? undefined : asExpr(args[0]));
+  },
   '.as_content_primitive': (args, kw, self) => {
     const clear = kw['clear'];
     for (const k of Object.keys(kw)) if (k !== 'clear') throw new Unsupported(`kwargs ${k}`);
@@ -724,6 +748,124 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new PySet(sj.atoms(asExpr(self), pred));
   },
   '.as_ordered_terms': exprMethod((e) => new PyList(e instanceof sj.Add ? asOrdered(e) : [e])),
+
+  // ---- polynomials
+  Poly: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
+    const [e, ...gens] = args;
+    const p = sj.Poly.from(asExprOrPoly(e), gens.map(asExpr));
+    if (kw['domain'] !== undefined) throw new Unsupported('explicit domain');
+    return p;
+  },
+  degree: (args, kw) => {
+    noKw(kw);
+    const f = args[0] instanceof sj.Poly ? args[0] : asExpr(args[0]);
+    return sj.degree(f, args[1] === undefined ? undefined : asExpr(args[1]));
+  },
+  total_degree: (args, kw) => {
+    noKw(kw);
+    const e = asExprOrPoly(args[0]);
+    const gens = args.slice(1).map(asExpr);
+    return sj.Poly.from(e, gens).totalDegree();
+  },
+  LC: (args, kw) => (noKw(kw), polyOf(args).LC()),
+  LM: (args, kw) => (noKw(kw), polyOf(args).LM()),
+  LT: (args, kw) => {
+    noKw(kw);
+    const p = polyOf(args);
+    return sj.mul(p.LC(), p.LM());
+  },
+  gcd: (args, kw) => {
+    noKw(kw);
+    if (args.length !== 2) throw new Unsupported('gcd arity');
+    const r = sj.gcd(asExprOrPoly(args[0]), asExprOrPoly(args[1]));
+    return args[0] instanceof sj.Poly ? sj.Poly.from(r, (args[0] as sj.Poly).gens) : r;
+  },
+  lcm: (args, kw) => {
+    noKw(kw);
+    if (args.length !== 2) throw new Unsupported('lcm arity');
+    const r = sj.lcm(asExprOrPoly(args[0]), asExprOrPoly(args[1]));
+    return args[0] instanceof sj.Poly ? sj.Poly.from(r, (args[0] as sj.Poly).gens) : r;
+  },
+  div: (args, kw) => {
+    noKw(kw);
+    if (args[0] instanceof sj.Poly) return new PyTuple(args[0].div(args[1] as sj.Poly));
+    return new PyTuple(sj.polyDiv(asExpr(args[0]), asExpr(args[1])));
+  },
+  rem: (args, kw) => (noKw(kw), args[0] instanceof sj.Poly ? args[0].rem(args[1] as sj.Poly) : sj.polyDiv(asExpr(args[0]), asExpr(args[1]))[1]),
+  quo: (args, kw) => (noKw(kw), args[0] instanceof sj.Poly ? args[0].quo(args[1] as sj.Poly) : sj.polyDiv(asExpr(args[0]), asExpr(args[1]))[0]),
+  factor_list: (args, kw) => {
+    noKw(kw);
+    const [c, fs] = sj.factorList(asExprOrPoly(args[0]));
+    return new PyTuple([c, new PyList(fs.map(([f, k]) => new PyTuple([f, k])))]);
+  },
+  terms_gcd: exprFn(sj.termsGcd),
+  horner: (args, kw) => (noKw(kw), sj.horner(asExpr(args[0]), args[1] ? asSym(args[1]) : undefined)),
+  interpolate: (args, kw) => {
+    noKw(kw);
+    const data = args[0] as PyTuple;
+    const pts = data.items.map((d) => (d instanceof PyTuple ? ([asExpr(d.items[0]), asExpr(d.items[1])] as const) : asExpr(d)));
+    return sj.interpolate(pts as never, asSym(args[1]));
+  },
+  resultant: (args, kw) => {
+    noKw(kw);
+    const f = asExprOrPoly(args[0]);
+    const g = asExprOrPoly(args[1]);
+    const x = args[2] ? asSym(args[2]) : (sj.sortGens([...sj.freeSymbols(f), ...sj.freeSymbols(g)])[0] as Sym);
+    return sj.resultant(f, g, x);
+  },
+  discriminant: (args, kw) => {
+    noKw(kw);
+    const f = asExprOrPoly(args[0]);
+    const x = args[1] ? asSym(args[1]) : (sj.sortGens([...sj.freeSymbols(f)])[0] as Sym);
+    return sj.discriminant(f, x);
+  },
+  '.as_expr': (_args, kw, self) => {
+    noKw(kw);
+    if (self instanceof sj.Poly) return self.asExpr();
+    if (self instanceof Expr) return self;
+    throw new Unsupported('as_expr');
+  },
+  '.total_degree': (_a, kw, self) => (noKw(kw), asPoly(self).totalDegree()),
+  '.LC': (_a, kw, self) => (noKw(kw), asPoly(self).LC()),
+  '.coeffs': (_a, kw, self) => (noKw(kw), new PyList(asPoly(self).coeffs())),
+  '.all_coeffs': (_a, kw, self) => (noKw(kw), new PyList(asPoly(self).allCoeffs())),
+  '.monoms': (_a, kw, self) => (noKw(kw), new PyList(asPoly(self).monoms().map((m) => new PyTuple(m)))),
+  '.terms': (_a, kw, self) => (noKw(kw), new PyList(asPoly(self).terms().map(([m, c]) => new PyTuple([new PyTuple(m), c])))),
+  '.coeff_monomial': (args, kw, self) => {
+    noKw(kw);
+    const p = asPoly(self);
+    const m = args[0];
+    if (m instanceof PyTuple) return p.coeffMonomial(m.items.map((x) => Number((x as sj.Rational).p)));
+    const mono = sj.Poly.from(asExpr(m), p.gens);
+    return p.coeffMonomial(mono.monoms()[0]!);
+  },
+  '.eval': (args, kw, self) => {
+    noKw(kw);
+    const p = asPoly(self);
+    if (args.length === 1) return p.eval(asExpr(args[0]));
+    return p.eval(asExpr(args[1]), asExpr(args[0]));
+  },
+  '.monic': (_a, kw, self) => (noKw(kw), asPoly(self).monic()),
+  '.gcd': (args, kw, self) => (noKw(kw), asPoly(self).gcd(args[0] as sj.Poly)),
+  '.lcm': (args, kw, self) => (noKw(kw), asPoly(self).lcm(args[0] as sj.Poly)),
+  '.div': (args, kw, self) => (noKw(kw), new PyTuple(asPoly(self).div(args[0] as sj.Poly))),
+  '.rem': (args, kw, self) => (noKw(kw), asPoly(self).rem(args[0] as sj.Poly)),
+  '.quo': (args, kw, self) => (noKw(kw), asPoly(self).quo(args[0] as sj.Poly)),
+  '.pquo': (args, kw, self) => (noKw(kw), asPoly(self).pquo(args[0] as sj.Poly)),
+  '.prem': (args, kw, self) => (noKw(kw), asPoly(self).prem(args[0] as sj.Poly)),
+  '.exquo': (args, kw, self) => (noKw(kw), asPoly(self).exquo(args[0] as sj.Poly)),
+  '.factor_list': (_a, kw, self) => {
+    noKw(kw);
+    const [c, fs] = asPoly(self).factorList();
+    return new PyTuple([c, new PyList(fs.map(([f, k]) => new PyTuple([f, k])))]);
+  },
+  '.sqf_list': (_a, kw, self) => {
+    noKw(kw);
+    const [c, fs] = asPoly(self).sqfList();
+    return new PyTuple([c, new PyList(fs.map(([f, k]) => new PyTuple([f, k])))]);
+  },
+  '.content': (_a, kw, self) => (noKw(kw), asPoly(self).content()),
 
   // ---- Matrix methods (linear algebra)
   '.rref': matrixMethod((m) => {

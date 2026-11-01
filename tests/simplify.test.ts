@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   I,
-  Poly,
+  UPoly,
   add,
   cancel,
   cos,
@@ -73,8 +73,8 @@ describe('polynomials', () => {
   });
 
   it('computes gcd and factors', () => {
-    const p = Poly.fromExpr(add(pow(x, 2), -1), x)!;
-    const q = Poly.fromExpr(add(pow(x, 2), mul(2, x), 1), x)!;
+    const p = UPoly.fromExpr(add(pow(x, 2), -1), x)!;
+    const q = UPoly.fromExpr(add(pow(x, 2), mul(2, x), 1), x)!;
     expect(p.gcd(q).toExpr(x).toString()).toBe('x + 1');
     expect(factorPoly(add(pow(x, 3), mul(-1, x)), x).toString()).toBe('x*(x - 1)*(x + 1)');
   });

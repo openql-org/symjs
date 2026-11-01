@@ -10,7 +10,8 @@ import { numAdd, numCmp, numNeg } from '../core/num';
 import { lcm } from '../core/numbers';
 import { add, asBaseExp, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { freeSymbols, mapBottomUp } from '../core/traverse';
-import { Poly } from '../polys/poly';
+import { divExact, mgcd } from '../polys/mpoly';
+import { UPoly } from '../polys/poly';
 import { expandMul as expand } from './expand';
 
 const negExponent = (x: Expr): boolean => {
@@ -99,8 +100,8 @@ export function cancel(ex: ExprLike): Expr {
   for (const s of [...freeSymbols(n), ...freeSymbols(d)]) syms.set(s.key, s);
   if (syms.size === 1) {
     const x = [...syms.values()][0]!;
-    const pn = Poly.fromExpr(n, x);
-    const pd = Poly.fromExpr(d, x);
+    const pn = UPoly.fromExpr(n, x);
+    const pd = UPoly.fromExpr(d, x);
     if (pn && pd) {
       const g = pn.gcd(pd);
       let qn = g.degree > 0 ? pn.divmod(g)[0] : pn;
@@ -114,5 +115,22 @@ export function cancel(ex: ExprLike): Expr {
     }
   }
   if (isNum(d)) return expand(mul(n, pow(d, -1)));
+  if (syms.size > 1) {
+    const vars = [...syms.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+    try {
+      const g = mgcd(n, d, vars);
+      if (!(g instanceof Rational)) {
+        const nn = divExact(n, g, vars);
+        const dd = divExact(d, g, vars);
+        if (nn !== undefined && dd !== undefined) {
+          n = nn;
+          d = dd;
+        }
+      }
+    } catch {
+      // not polynomial: keep as is
+    }
+    if (d instanceof Rational) return expand(mul(n, pow(d, -1)));
+  }
   return mul(n, pow(d, -1));
 }
