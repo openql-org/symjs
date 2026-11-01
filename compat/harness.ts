@@ -760,6 +760,21 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new PyTuple(sj.extractBranchFactor(asExpr(self), Boolean(kw['allow_half'])));
   },
   frac: exprFn(sj.frac),
+  sqrtdenest: exprFn(sj.sqrtdenest),
+  '.extract_leading_order': (args, kw, self) =>
+    (noKw(kw), new PyTuple(sj.extractLeadingOrder(asExpr(self), asSym(args[0])).map(([a, b]) => new PyTuple([a, b])))),
+  '.as_finite_difference': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (!['points', 'x0', 'wrt'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    if (!(self instanceof sj.Derivative)) throw new Unsupported('as_finite_difference');
+    const pts = kw['points'] ?? args[0];
+    const points = pts === undefined ? 1 : pts instanceof PyList || pts instanceof PyTuple ? pts.items.map(asExpr) : asExpr(pts);
+    const x0 = kw['x0'] ?? args[1];
+    return sj.asFiniteDifference(self, points, x0 === undefined ? undefined : asExpr(x0), kw['wrt'] === undefined ? undefined : asSym(kw['wrt']));
+  },
+  '.pinv_solve': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'arbitrary_matrix') throw new Unsupported(`kwargs ${k}`);
+    return sj.pinvSolve(self as Matrix, args[0] as Matrix, kw['arbitrary_matrix'] as Matrix | undefined);
+  },
   '.is_meromorphic': (args, kw, self) => (noKw(kw), sj.isMeromorphic(asExpr(self), asExpr(args[0]), asExpr(args[1])) ?? null),
   ratsimp: exprFn(sj.ratsimp),
   primitive: (args, kw) => {

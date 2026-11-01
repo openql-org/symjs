@@ -289,7 +289,7 @@ export {
   rotCcwAxis2,
   rotCcwAxis3,
   rotGivens,
-  jordanBlock, multiplyElementwise, companion, permanent, connectedComponents, stronglyConnectedComponents } from './matrices/linalg';
+  jordanBlock, pinvSolve, multiplyElementwise, companion, permanent, connectedComponents, stronglyConnectedComponents } from './matrices/linalg';
 
 // quantum
 export * as gates from './quantum/gates';
@@ -338,7 +338,9 @@ export {
   limitDenominator,
 } from './core/numberutils';
 export { nfloat, comp } from './numeric/nfloat';
-export { leadterm, asLeadingTerm, getn } from './series/series';
+export { leadterm, asLeadingTerm, getn, extractLeadingOrder } from './series/series';
+export { finiteDiffWeights, asFiniteDifference } from './calculus/finitediff';
+export { sqrtdenest } from './simplify/sqrtdenest';
 
 export {
   SetExpr,

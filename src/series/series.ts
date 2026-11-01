@@ -92,3 +92,12 @@ export function getn(ex: ExprLike): Expr | undefined {
   return undefined;
 }
 
+
+/** Leading terms of a sum as x -> 0 with their order terms (SymPy extract_leading_order). */
+export function extractLeadingOrder(ex: ExprLike, x: Sym): [Expr, Expr][] {
+  const e = sympify(ex);
+  const terms = e instanceof Add ? e.args : [e];
+  const orders = terms.map((t) => leadterm(t, x)[1]);
+  const minO = orders.reduce((m, o) => ((o as Rational).value < (m as Rational).value ? o : m));
+  return terms.filter((_, i) => orders[i]!.key === minO.key).map((t) => [t, new Order([t.has(x) ? t : S.One])]);
+}

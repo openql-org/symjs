@@ -8,7 +8,7 @@
  * values, pseudo-inverse, matrix exponential and structural helpers.
  */
 
-import { Expr, ExprLike, Rational, S, Special, Sym } from '../core/nodes';
+import { Dummy, Expr, ExprLike, Rational, S, Special, Sym } from '../core/nodes';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { diff } from '../calculus/diff';
 import { abs, conjugate, cos, sin } from '../functions/elementary';
@@ -566,4 +566,13 @@ export function stronglyConnectedComponents(m: Matrix): number[][] {
   };
   for (let v = 0; v < n; v++) if (!idx.has(v)) strong(v);
   return out;
+}
+
+/** Least-squares solution A^+ B plus the null-space part (I - A^+ A) W (SymPy pinv_solve). */
+export function pinvSolve(A: Matrix, B: Matrix, arbitrary?: Matrix): Matrix {
+  const Ap = pinv(A);
+  const n = A.shape[1];
+  const W = arbitrary ?? Matrix.fromFunction(n, B.shape[1], (i, j) => new Dummy(`w${i}_${j}`));
+  const proj = Matrix.eye(n).sub(Ap.mul(A));
+  return Ap.mul(B).add(proj.mul(W)).map((e) => expandMul(e));
 }
