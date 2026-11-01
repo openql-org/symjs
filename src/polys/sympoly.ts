@@ -305,7 +305,7 @@ export class Poly {
     return [Poly.from(qp.asExpr(), [x], { domain: dom }), Poly.from(rp.asExpr(), [x], { domain: dom })];
   }
   /** SymPy div with auto=True: computed over the field, converted back to the ring when exact. */
-  private retract(p: Poly, ring: boolean): Poly {
+  private toRingIfExact(p: Poly, ring: boolean): Poly {
     if (ring && p.domain === 'QQ' && p.termList.every((t) => t.coeff instanceof Rational && t.coeff.isInteger)) {
       return Poly.from(p.asExpr(), this.gens, { domain: 'ZZ' });
     }
@@ -316,21 +316,21 @@ export class Poly {
     if (!auto && ring) {
       const [q, r] = this.div(o);
       const ok = q.termList.every((t) => t.coeff instanceof Rational && t.coeff.isInteger);
-      return ok ? [this.retract(q, true), this.retract(r, true)] : [Poly.from(0, this.gens, { domain: 'ZZ' }), this];
+      return ok ? [this.toRingIfExact(q, true), this.toRingIfExact(r, true)] : [Poly.from(0, this.gens, { domain: 'ZZ' }), this];
     }
     const [q, r] = this.div(o);
-    const Q = this.retract(q, ring);
-    const R = this.retract(r, ring);
+    const Q = this.toRingIfExact(q, ring);
+    const R = this.toRingIfExact(r, ring);
     if (ring && (Q.domain !== 'ZZ' || R.domain !== 'ZZ')) return [q, r];
     return [Q, R];
   }
   rem(o: Poly, auto = true): Poly {
     if (!auto && this.domain === 'ZZ') return this.divAuto(o, false)[1];
-    return this.retract(this.div(o)[1], this.domain === 'ZZ' && o.domain === 'ZZ');
+    return this.toRingIfExact(this.div(o)[1], this.domain === 'ZZ' && o.domain === 'ZZ');
   }
   quo(o: Poly, auto = true): Poly {
     if (!auto && this.domain === 'ZZ') return this.divAuto(o, false)[0];
-    return this.retract(this.div(o)[0], this.domain === 'ZZ' && o.domain === 'ZZ');
+    return this.toRingIfExact(this.div(o)[0], this.domain === 'ZZ' && o.domain === 'ZZ');
   }
   /** Pseudo-remainder. */
   prem(o: Poly): Poly {
@@ -789,9 +789,66 @@ export class Poly {
     return [c, full];
   }
 
+  /** Smallest domain containing the coefficients (SymPy retract). */
+  retract(field = false): Poly {
+    const p = Poly.from(this.asExpr(), this.gens);
+    if (field && p.domain === 'ZZ') return Poly.from(this.asExpr(), this.gens, { domain: 'QQ' });
+    return p;
+  }
+  /** Functional decomposition f = g1(g2(...)) of a univariate polynomial (SymPy decompose). */
+  decompose(): Poly[] {
+    const x = this.univariate();
+    const out: Poly[] = [];
+    let f: Poly = this;
+    for (;;) {
+      const r = decomposeOnce(f, x);
+      if (!r) break;
+      out.unshift(r[1]);
+      f = r[0];
+    }
+    return [f, ...out];
+  }
+
   toString(): string {
     return polyStr(this);
   }
+}
+
+/** One step of the right decomposition f = g(h) with h(0) = 0, deg h > 1 (smallest such degree). */
+function decomposeOnce(f: Poly, x: Sym): [Poly, Poly] | undefined {
+  const n = f.degree();
+  const lc = f.LC();
+  for (let sDeg = 2; sDeg < n; sDeg++) {
+    if (n % sDeg !== 0) continue;
+    const r = n / sDeg;
+    // h = x^s + h_{s-1} x^{s-1} + ... + h_1 x from the top coefficients of f/lc
+    let h: Expr = pow(x, sDeg);
+    for (let k = 1; k < sDeg; k++) {
+      const hr = Poly.from(expand(pow(h, r)), [x]);
+      const fk = mul(f.coeffMonomial([n - k]), pow(lc, -1));
+      const ck = mul(add(fk, mul(-1, hr.coeffMonomial([n - k]))), Rational.of(1n, BigInt(r)));
+      h = add(h, mul(ck, pow(x, sDeg - k)));
+    }
+    // express f in powers of h
+    const hp = Poly.from(h, [x]);
+    const gCoeffs: Expr[] = [];
+    let cur: Poly = f;
+    let ok = true;
+    while (!cur.isZero) {
+      const [q, rem] = cur.div(hp);
+      if (rem.degree() > 0) {
+        ok = false;
+        break;
+      }
+      gCoeffs.push(rem.isZero ? S.Zero : rem.TC());
+      cur = q;
+    }
+    if (!ok) continue;
+    const g = add(...gCoeffs.map((c, i) => mul(c, pow(x, i))));
+    const dom = f.domain === 'ZZ' && [g, h].every((e) => Poly.from(e, [x]).domain === 'ZZ') ? 'ZZ' : undefined;
+    return [Poly.from(g, [x], dom ? { domain: dom } : {}), Poly.from(h, [x], dom ? { domain: dom } : {})];
+  }
+  return undefined;
 }
 
 function isRealConst(e: Expr): boolean {

@@ -5,11 +5,11 @@
  * @file Sums and products (SymPy Sum/Product/summation/product).
  */
 
-import { Expr, ExprLike, Mul, Pow, Rational, Special, Sym } from '../core/nodes';
+import { Expr, ExprLike, Mul, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { Lt, piecewise } from '../core/logic';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
-import { abs } from '../functions/elementary';
+import { abs, log } from '../functions/elementary';
 import { bernoulliNumber, factorial } from '../functions/special';
 import { polyCoefficients } from '../polys/poly';
 import { expandMul as expand } from '../simplify/expand';
@@ -175,3 +175,80 @@ export function reverseOrder(c: Concrete, ...which: (number | Sym)[]): Expr {
   return new Concrete(c.kind2, [f, ...lims.flat()]);
 }
 
+
+const isNegOo = (e: Expr) => e instanceof Special && e.name === '-oo';
+const isFiniteBound = (e: Expr) => !(e instanceof Special);
+
+/** Limit of f(k) as k -> oo, or undefined. */
+function limOo(f: Expr, k: Sym): Expr | undefined {
+  try {
+    return impl.limit(f, k, S.Infinity);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Decay order p of a rational function f(k) ~ C*k**(-p) (or k**(-p) with rational p). */
+function pSeriesOrder(f: Expr, k: Sym): number | undefined {
+  if (f instanceof Pow && f.base.key === k.key && f.exp instanceof Rational) return -f.exp.value;
+  const [n, d] = fractionOf(f);
+  const pn = polyCoefficients(expand(n), k);
+  const pd = polyCoefficients(expand(d), k);
+  if (!pn || !pd) return undefined;
+  return Math.max(...pd.keys()) - Math.max(...pn.keys());
+}
+
+function fractionOf(f: Expr): [Expr, Expr] {
+  const fs = f instanceof Mul ? f.args : [f];
+  const num: Expr[] = [];
+  const den: Expr[] = [];
+  for (const t of fs) {
+    if (t instanceof Pow && t.exp instanceof Rational && t.exp.isNegative) den.push(pow(t.base, mul(-1, t.exp)));
+    else if (t instanceof Rational && !t.isInteger) {
+      num.push(Rational.of(t.p));
+      den.push(Rational.of(t.q));
+    } else num.push(t);
+  }
+  return [mul(...num), mul(...den)];
+}
+
+/** SymPy Sum.is_convergent for common series tests (divergence, p-series, ratio, alternating). */
+export function sumIsConvergent(c: Concrete): boolean | undefined {
+  const [kE, a, b] = c.limits[0]!;
+  const k = kE as Sym;
+  const f = c.function;
+  if (isFiniteBound(a) && isFiniteBound(b)) return true;
+  if (isNegOo(a) || isNegOo(b)) return undefined;
+  if (c.kind2 === 'Product') {
+    const l = limOo(f, k);
+    if (!(l instanceof Rational && l.isOne)) return false;
+    return sumIsConvergent(new Concrete('Sum', [log(f), ...c.args.slice(1)]));
+  }
+  const l = limOo(f, k);
+  if (l !== undefined && !(l instanceof Rational && l.isZero)) return false;
+  // p-series: f ~ C*k**(-p) for rational functions
+  const r = pSeriesOrder(f, k);
+  if (r !== undefined) return r > 1;
+  // ratio test
+  const ratio = limOo(impl.abs(mul(xreplace(f, [[k, add(k, 1)]]), pow(f, -1))), k);
+  if (ratio !== undefined && ratio.freeSymbols().size === 0 && !(ratio instanceof Special)) {
+    const v = ratio.toNumber();
+    if (v < 1) return true;
+    if (v > 1) return false;
+  }
+  if (ratio instanceof Special && ratio.name === 'oo') return false;
+  // alternating series (-1)**k * g(k) with g -> 0 monotonically
+  const fs = f instanceof Mul ? f.args : [f];
+  const alt = fs.find((t) => t instanceof Pow && t.base instanceof Rational && t.base.p === -1n && t.base.q === 1n && t.exp.key === k.key);
+  if (alt) {
+    const g = mul(...fs.filter((t) => t !== alt));
+    const lg = limOo(g, k);
+    if (lg instanceof Rational && lg.isZero) return true;
+  }
+  return undefined;
+}
+
+/** Sum(|f|) converges. */
+export function sumIsAbsolutelyConvergent(c: Concrete): boolean | undefined {
+  return sumIsConvergent(new Concrete(c.kind2, [abs(c.function), ...c.args.slice(1)]));
+}

@@ -9,13 +9,13 @@
  * and Kronecker symbols, and the multivariate gamma function.
  */
 
-import { isIntegerQ } from '../core/assumptions';
-import { Expr, ExprLike, FnName, Rational, S } from '../core/nodes';
+import { isIntegerQ, isReal as isRealQ } from '../core/assumptions';
+import { Expr, ExprLike, Fn, FnName, Rational, S } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { factorInt } from '../core/numbers';
 import { expandMul } from '../simplify/expand';
 import { evaluators, fn } from './elementary';
-import { bernoulliNumber, gamma } from './special';
+import { bernoulliNumber, floor as floorFn, gamma } from './special';
 
 const R = (p: bigint | number, q: bigint | number = 1n) => Rational.of(BigInt(p), BigInt(q));
 const asInt = (e: Expr): bigint | undefined => (e instanceof Rational && e.isInteger ? e.p : undefined);
@@ -388,6 +388,32 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
   },
 };
 
+/** SymPy frac: fractional part, split into real and imaginary parts. */
+function evalFrac(x: Expr): Expr | undefined {
+  const one = (a: Expr): Expr => {
+    if (a instanceof Rational && a.isZero) return S.Zero;
+    if (isIntegerQ(a) === true) return S.Zero;
+    if (a instanceof Rational) return add(a, mul(-1, floorFn(a)));
+    if (a.freeSymbols().size === 0 && !(a.kind === 'Special')) return add(a, mul(-1, floorFn(a)));
+    return new Fn('frac', [a]);
+  };
+  let real: Expr = S.Zero;
+  let imag: Expr = S.Zero;
+  for (const t of x.kind === 'Add' ? x.args : [x]) {
+    if (isRealQ(mul(S.I, t)) === true && !(t instanceof Rational && t.isZero)) {
+      const i = mul(-1, S.I, t);
+      if (!i.has(S.I)) imag = add(imag, i);
+      else real = add(real, t);
+    } else real = add(real, t);
+  }
+  const r = one(real);
+  const i = one(imag);
+  const out = add(r, mul(S.I, i));
+  if (out instanceof Fn && out.name === 'frac' && out.args[0]!.key === x.key) return undefined;
+  return out;
+}
+EVAL.frac = evalFrac;
+
 for (const [name, f] of Object.entries(EVAL) as [FnName, (...a: Expr[]) => Expr | undefined][]) {
   evaluators[name] = (...a: Expr[]) => f(...a);
 }
@@ -409,3 +435,5 @@ export const primeomega = (n: ExprLike): Expr => fn('primeomega', [n]);
 export const primepiFn = (n: ExprLike): Expr => fn('primepi', [n]);
 export const multigamma = (x: ExprLike, p: ExprLike): Expr => fn('multigamma', [x, p]);
 
+
+export const frac = (x: ExprLike): Expr => fn('frac', [x]);

@@ -140,3 +140,20 @@ export function cancel(ex: ExprLike): Expr {
 }
 
 impl.fraction = (e) => fraction(e);
+
+/** SymPy ratsimp: polynomial part plus a cancelled remainder over a single denominator. */
+export function ratsimp(ex: ExprLike): Expr {
+  const c = cancel(sympify(ex));
+  const [f, g] = fraction(c);
+  if (!g.freeSymbols().size) return c;
+  const gens = [...new Map([...f.freeSymbols(), ...g.freeSymbols()].map((s) => [s.key, s])).values()];
+  const pf = polyDivide(f, g, gens);
+  if (!pf) return c;
+  const [q, r] = pf;
+  return add(q, cancel(mul(r, pow(g, -1))));
+}
+
+/** Multivariate division of f by g in lex order: [quotient, remainder]. */
+function polyDivide(f: Expr, g: Expr, gens: readonly Expr[]): [Expr, Expr] | undefined {
+  return impl.polyReduce ? impl.polyReduce(f, g, gens) : undefined;
+}

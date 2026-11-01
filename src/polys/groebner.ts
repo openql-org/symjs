@@ -7,7 +7,7 @@
  * ideal membership (SymPy groebner / GroebnerBasis).
  */
 
-import { Expr, ExprLike, Rational, S, Sym } from '../core/nodes';
+import { Expr, ExprLike, Rational, S, Sym, impl } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { Poly } from './sympoly';
 
@@ -184,3 +184,9 @@ export function groebner(F: readonly ExprLike[], gens: readonly Sym[], order: Mo
   });
   return new GroebnerBasis(exprs, gens, domainQQ ? 'QQ' : 'ZZ', order);
 }
+
+impl.polyReduce = (f, g, gens) => {
+  const syms = gens as Sym[];
+  const [qs, r] = divide(fromExpr(f, syms), [fromExpr(g, syms)], 'lex');
+  return [toExpr(qs[0]!, syms), toExpr(r, syms)];
+};

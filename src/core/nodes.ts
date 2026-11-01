@@ -171,7 +171,8 @@ export type SpecialFnName =
   | 'primenu'
   | 'primeomega'
   | 'primepi'
-  | 'multigamma';
+  | 'multigamma'
+  | 'frac';
 
 /**
  * Late-bound implementations. Filled in by the modules that implement them.
@@ -195,6 +196,7 @@ export interface Impl {
   expandFunc?(e: Expr): Expr;
   expandComplex?(e: Expr): Expr;
   exp?(e: Expr): Expr;
+  polyReduce?(f: Expr, g: Expr, gens: readonly Expr[]): [Expr, Expr];
   cos?(e: Expr): Expr;
   sin?(e: Expr): Expr;
   sign?(e: Expr): Expr;

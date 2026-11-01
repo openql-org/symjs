@@ -759,6 +759,90 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'allow_half') throw new Unsupported(`kwargs ${k}`);
     return new PyTuple(sj.extractBranchFactor(asExpr(self), Boolean(kw['allow_half'])));
   },
+  frac: exprFn(sj.frac),
+  ratsimp: exprFn(sj.ratsimp),
+  primitive: (args, kw) => {
+    noKw(kw);
+    const p = polyOf(args);
+    const [c, q] = p.primitive();
+    return new PyTuple([c, q.asExpr()]);
+  },
+  content: (args, kw) => (noKw(kw), polyOf(args).content()),
+  pquo: (args, kw) => {
+    noKw(kw);
+    const f = asExpr(args[0]);
+    const g = asExpr(args[1]);
+    const gens = sj.sortGens([...sj.freeSymbols(sj.add(f, g))]);
+    return sj.Poly.from(f, gens).pquo(sj.Poly.from(g, gens)).asExpr();
+  },
+  exquo: (args, kw) => {
+    noKw(kw);
+    const f = asExpr(args[0]);
+    const g = asExpr(args[1]);
+    const gens = sj.sortGens([...sj.freeSymbols(sj.add(f, g))]);
+    return sj.Poly.from(f, gens).exquo(sj.Poly.from(g, gens)).asExpr();
+  },
+  cofactors: (args, kw) => {
+    noKw(kw);
+    const f = asExpr(args[0]);
+    const g = asExpr(args[1]);
+    const gens = sj.sortGens([...sj.freeSymbols(sj.add(f, g))]);
+    return new PyTuple(sj.Poly.from(f, gens).cofactors(sj.Poly.from(g, gens)).map((p) => p.asExpr()));
+  },
+  compose: (args, kw) => {
+    noKw(kw);
+    const f = asExpr(args[0]);
+    const g = asExpr(args[1]);
+    const gens = sj.sortGens([...sj.freeSymbols(sj.add(f, g))]);
+    return sj.Poly.from(f, gens).compose(sj.Poly.from(g, gens)).asExpr();
+  },
+  decompose: (args, kw) => (noKw(kw), new PyList(polyOf(args).decompose().map((p) => p.asExpr()))),
+  '.decompose': polyM((p) => new PyList(p.decompose())),
+  degree_list: (args, kw) => (noKw(kw), new PyTuple(polyOf(args).degreeList())),
+  '.retract': (_args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'field') throw new Unsupported(`kwargs ${k}`);
+    return asPoly(self).retract(Boolean(kw['field']));
+  },
+  nroots: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'n') throw new Unsupported(`kwargs ${k}`);
+    const n = kw['n'] ?? args[1];
+    return new PyList(sj.nroots(args[0] instanceof sj.Poly ? args[0] : asExpr(args[0]), n === undefined ? 15 : intArg(n)));
+  },
+  '.nroots': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'n') throw new Unsupported(`kwargs ${k}`);
+    const n = kw['n'] ?? args[0];
+    return new PyList(sj.nroots(asPoly(self), n === undefined ? 15 : intArg(n)));
+  },
+  '.is_convergent': (_args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof sj.Concrete)) throw new Unsupported('is_convergent');
+    return sj.sumIsConvergent(self) ?? null;
+  },
+  '.is_absolutely_convergent': (_args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof sj.Concrete)) throw new Unsupported('is_absolutely_convergent');
+    return sj.sumIsAbsolutelyConvergent(self) ?? null;
+  },
+  '.as_sum': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'method') throw new Unsupported(`kwargs ${k}`);
+    if (!(self instanceof Integral) || !self.limits) throw new Unsupported('as_sum');
+    const n = args[0];
+    if (!(n instanceof sj.Rational)) throw new Unsupported('symbolic as_sum');
+    const method = (kw['method'] ?? args[1] ?? 'midpoint') as string;
+    const [a, b] = self.limits as [Expr, Expr];
+    const dx = sj.mul(sj.add(b, sj.mul(-1, a)), sj.pow(n, -1));
+    const terms: Expr[] = [];
+    const N = Number(n.p);
+    for (let i = 0; i < N; i++) {
+      let pt: Expr;
+      if (method === 'left') pt = sj.add(a, sj.mul(i, dx));
+      else if (method === 'right') pt = sj.add(a, sj.mul(i + 1, dx));
+      else if (method === 'midpoint') pt = sj.add(a, sj.mul(sj.Rational.of(2 * i + 1, 2), dx));
+      else throw new Unsupported(`as_sum method ${method}`);
+      terms.push(sj.xreplace(self.integrand, [[self.variable, pt]]));
+    }
+    return sj.mul(dx, sj.add(...terms));
+  },
   igcd: (args, kw) => (noKw(kw), sj.Rational.of(sj.igcd(...args.map((a) => (a as sj.Rational).p)))),
   ilcm: (args, kw) => (noKw(kw), sj.Rational.of(sj.ilcm(...args.map((a) => (a as sj.Rational).p)))),
   integer_nthroot: (args, kw) => {

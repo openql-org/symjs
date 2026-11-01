@@ -198,7 +198,7 @@ export { radsimp, collect } from './simplify/radsimp';
 export { rewrite, registerRewrite, rewriteRules } from './simplify/rewrite';
 export { gcdTerms, factorTerms, collectConst, signsimp, keepCoeff as keepCoeffSympy, unevaluatedAdd } from './simplify/exprtools';
 export { trigsimp, rewriteExp, rewriteTrig, expsimp, exptotrig, combineExp } from './simplify/trigsimp';
-export { together, cancel, fraction } from './simplify/rational';
+export { together, cancel, fraction , ratsimp } from './simplify/rational';
 
 // polynomials
 export { UPoly, polyCoefficients, roots, factorPoly } from './polys/poly';
@@ -237,6 +237,8 @@ export { dsolve, odeOrder } from './solvers/ode';
 // numerics
 export { piecewiseIntegrate } from './integrals/integrate';
 export { apart } from './polys/partfrac';
+export { nroots } from './polys/nroots';
+export { sumIsConvergent, sumIsAbsolutelyConvergent } from './concrete/summations';
 export { symmetrize, symmetrizeExpr } from './polys/polyfuncs';
 export { separatevars } from './simplify/separatevars';
 export { groebner, GroebnerBasis } from './polys/groebner';
@@ -400,6 +402,7 @@ export {
   primeomega,
   primepiFn as primepi,
   multigamma,
+  frac,
   isprime,
   jacobiSymbol,
   kroneckerSymbol,
