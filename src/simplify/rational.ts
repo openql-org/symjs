@@ -13,8 +13,12 @@ import { freeSymbols, mapBottomUp } from '../core/traverse';
 import { divExact, mgcd } from '../polys/mpoly';
 import { UPoly } from '../polys/poly';
 import { expandMul as expand } from './expand';
+import { isNegative, isPositive } from '../core/assumptions';
 
 const negExponent = (x: Expr): boolean => {
+  // SymPy fraction: exponents known to be negative go to the denominator
+  if (isNegative(x) === true) return true;
+  if (isPositive(x) === true) return false;
   const [c] = splitCoeff(x);
   return c.isNegative;
 };

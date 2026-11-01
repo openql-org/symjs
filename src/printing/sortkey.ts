@@ -135,10 +135,16 @@ export function sortKey(e: Expr): Key {
 /** SymPy `Mul.as_ordered_factors()` (all factors are commutative here). */
 export function asOrderedFactors(e: Expr): Expr[] {
   const fs = e instanceof Mul ? [...e.args] : [e];
-  return fs
-    .map((f) => ({ f, k: sortKey(f) }))
-    .sort((a, b) => compareKeys(a.k, b.k))
-    .map((x) => x.f);
+  // commutative factors are sorted; non-commutative ones keep their order
+  const c = fs.filter((f) => f.isCommutative);
+  const nc = fs.filter((f) => !f.isCommutative);
+  return [
+    ...c
+      .map((f) => ({ f, k: sortKey(f) }))
+      .sort((a, b) => compareKeys(a.k, b.k))
+      .map((x) => x.f),
+    ...nc,
+  ];
 }
 
 const hasFreeSymbols = (e: Expr): boolean => e instanceof Sym || e.args.some(hasFreeSymbols);

@@ -70,6 +70,7 @@ export { isReal, isPositive, isNegative, isNonNegative, isNonZero, isZero, isInt
 export {
   keepCoeff,
   argsCnc,
+  argsCncSplit,
   coeff,
   asIndependent,
   asCoeffAdd,

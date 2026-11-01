@@ -99,7 +99,7 @@ export function isPositive(e: Expr): Tri {
   if (e instanceof Rational || e instanceof Float) return e.isPositive;
   if (e instanceof Special) return e.name === 'oo' ? true : e.name === '-oo' ? false : undefined;
   if (e instanceof Constant) return e.name === 'I' ? false : true;
-  if (e instanceof Sym) return e.assumptions.positive ? true : undefined;
+  if (e instanceof Sym) return e.assumptions.positive ? true : e.assumptions.nonpositive ? false : undefined;
   if (e instanceof Add) return all(e.args, isPositive) ? true : undefined;
   if (e instanceof Mul) {
     let neg = 0;
@@ -126,7 +126,7 @@ export function isNegative(e: Expr): Tri {
   if (e instanceof Rational || e instanceof Float) return e.isNegative;
   if (e instanceof Special) return e.name === '-oo' ? true : e.name === 'oo' ? false : undefined;
   if (e instanceof Constant) return false;
-  if (e instanceof Sym) return e.assumptions.nonnegative ? false : undefined;
+  if (e instanceof Sym) return e.assumptions.negative ? true : e.assumptions.nonnegative ? false : undefined;
   if (e instanceof Add) return all(e.args, isNegative) ? true : undefined;
   if (e instanceof Mul) {
     let neg = 0;
@@ -143,6 +143,7 @@ export function isNegative(e: Expr): Tri {
 export function isNonNegative(e: Expr): Tri {
   if (isPositive(e) || isZero(e)) return true;
   if (e instanceof Sym && e.assumptions.nonnegative) return true;
+  if (e instanceof Sym && e.assumptions.negative) return false;
   if (e instanceof Fn && e.name === 'abs') return true;
   if (e instanceof Add) return all(e.args, isNonNegative) ? true : undefined;
   if (e instanceof Mul) return all(e.args, isNonNegative) ? true : undefined;

@@ -180,7 +180,7 @@ export function deserialize(tree: Tree): unknown {
     case 'Symbol': {
       const a = tree['assume'] as Record<string, boolean>;
       for (const k of Object.keys(a)) {
-        if (!['real', 'positive', 'nonnegative', 'integer'].includes(k)) throw new Unsupported(`assumption ${k}`);
+        if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive', 'commutative'].includes(k)) throw new Unsupported(`assumption ${k}`);
       }
       return new Sym(tree['name'] as string, a);
     }
@@ -516,7 +516,7 @@ export const ADAPTERS: Record<string, Adapter> = {
         seq = Boolean(v);
         continue;
       }
-      if (!['real', 'positive', 'nonnegative', 'integer'].includes(k) || v !== true) throw new Unsupported(`symbols ${k}`);
+      if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive', 'commutative'].includes(k) || v !== true) throw new Unsupported(`symbols ${k}`);
       a[k] = true;
     }
     const one = (spec: string): unknown => {
@@ -547,7 +547,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   Symbol: (args, kw) => {
     const a: Record<string, boolean> = {};
     for (const [k, v] of Object.entries(kw)) {
-      if (!['real', 'positive', 'nonnegative', 'integer'].includes(k) || v !== true) throw new Unsupported(`Symbol ${k}`);
+      if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive', 'commutative'].includes(k) || v !== true) throw new Unsupported(`Symbol ${k}`);
       a[k] = true;
     }
     return new Sym(String(args[0]), a);
@@ -1224,7 +1224,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     const split1 = kw['split_1'];
     for (const k of Object.keys(kw)) if (k !== 'split_1') throw new Unsupported(`kwargs ${k}`);
     if (args.length) throw new Unsupported('arity');
-    return new PyList([new PyList(sj.argsCnc(asExpr(self), split1 === undefined ? true : Boolean(split1))), new PyList([])]);
+    const [c, nc] = sj.argsCncSplit(asExpr(self), split1 === undefined ? true : Boolean(split1));
+    return new PyList([new PyList(c), new PyList(nc)]);
   },
   '.xreplace': (args, kw, self) => {
     noKw(kw);

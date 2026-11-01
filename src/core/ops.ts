@@ -365,6 +365,22 @@ export function mul(...xs: ExprLike[]): Expr {
   const numExp = new Map<string, { exp: Expr; bases: Num[] }>();
   const radicals = new Radicals();
 
+  // non-commutative factors keep their order; equal neighbouring bases combine
+  const ncPart: Expr[] = [];
+  const pushNc = (e: Expr): void => {
+    const last = ncPart[ncPart.length - 1];
+    if (last) {
+      const [b1, e1] = asBaseExp(last);
+      const [b2, e2] = asBaseExp(e);
+      if (b1.key === b2.key) {
+        ncPart.pop();
+        const r = pow(b1, add(e1, e2));
+        if (!(r instanceof Rational && r.isOne)) pushNc(r);
+        return;
+      }
+    }
+    ncPart.push(e);
+  };
   const visit = (e: Expr): void => {
     if (isNum(e)) {
       coeff = numMul(coeff, e);
@@ -372,6 +388,10 @@ export function mul(...xs: ExprLike[]): Expr {
     }
     if (e instanceof Mul) {
       for (const a of e.args) visit(a);
+      return;
+    }
+    if (!e.isCommutative) {
+      pushNc(e);
       return;
     }
     if (isI(e)) {
@@ -444,6 +464,12 @@ export function mul(...xs: ExprLike[]): Expr {
   if (m % 2n === 1n) factors.push(S.I);
 
   if (coeff instanceof Rational && coeff.isZero) return S.Zero;
+  if (ncPart.length) {
+    factors.sort(compareExpr);
+    const isOne1 = coeff instanceof Rational && coeff.isOne;
+    const all = [...(isOne1 ? [] : [coeff]), ...factors, ...ncPart];
+    return all.length === 1 ? all[0]! : new Mul(all);
+  }
   if (factors.length === 0) return coeff;
   factors.sort(compareExpr);
   const isOne = coeff instanceof Rational && coeff.isOne;
@@ -524,7 +550,18 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   if (b instanceof Pow) {
     const [x, a] = b.args;
     if (e instanceof Rational && e.isInteger) return pow(x, mul(a, e));
-    if (isPositive(x) && isReal(a) && isReal(e)) return pow(x, mul(a, e));
+    // SymPy Pow._eval_power: (b**a)**e = b**(a*e) for b > 0 and real a, or exp(a) with |im(a)| < pi
+    if (isPositive(x) && isReal(a)) return pow(x, mul(a, e));
+    if (isE(x) && !(e instanceof Rational && e.isInteger)) {
+      const ia = impl.freeSymbols(a).size === 0 ? (() => {
+        try {
+          return impl.toComplex(a).im;
+        } catch {
+          return undefined;
+        }
+      })() : undefined;
+      if (ia !== undefined && Math.abs(ia) < Math.PI) return pow(x, mul(a, e));
+    }
     // (x^(2k))^e = |x|^(2k e) for real x
     if (a instanceof Rational && a.isInteger && a.p % 2n === 0n && isReal(x) && isReal(e)) {
       return pow(impl.abs(x), mul(a, e));
@@ -532,6 +569,7 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   }
 
   // SymPy Mul._eval_power: distribute integer powers; split off positive factors only for numeric exponents
+  if (b instanceof Mul && !b.isCommutative) return new Pow(b, e);
   if (b instanceof Mul && (e instanceof Rational || e instanceof Float)) {
     if (e instanceof Rational && e.isInteger) return mul(...b.args.map((f) => pow(f, e)));
     const pos: Expr[] = [];

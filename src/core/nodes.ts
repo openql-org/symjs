@@ -71,6 +71,10 @@ export interface Assumptions {
   readonly positive?: boolean;
   readonly nonnegative?: boolean;
   readonly integer?: boolean;
+  readonly negative?: boolean;
+  readonly nonpositive?: boolean;
+  /** false for non-commutative symbols (operators). */
+  readonly commutative?: boolean;
 }
 
 /** Function names known to the library. */
@@ -226,6 +230,16 @@ export abstract class Expr {
 
   get isAtom(): boolean {
     return this.args.length === 0;
+  }
+
+  private _commutative?: boolean;
+  /** False when the expression contains a non-commutative symbol in a product-like position. */
+  get isCommutative(): boolean {
+    if (this._commutative === undefined) this._commutative = this.computeCommutative();
+    return this._commutative;
+  }
+  protected computeCommutative(): boolean {
+    return this.args.every((a) => a.isCommutative);
   }
 
   // ---- fluent arithmetic -------------------------------------------------
@@ -450,15 +464,24 @@ export class Sym extends Expr {
       throw new SyntaxError(`Invalid symbol name: ${JSON.stringify(name)}`);
     }
     const positive = assumptions.positive === true;
+    const negative = assumptions.negative === true;
     const integer = assumptions.integer === true;
     const nonnegative = positive || assumptions.nonnegative === true;
-    const real = positive || nonnegative || integer || assumptions.real === true;
+    const nonpositive = negative || assumptions.nonpositive === true;
+    const real = positive || negative || nonnegative || nonpositive || integer || assumptions.real === true;
     const a: { -readonly [K in keyof Assumptions]: Assumptions[K] } = {};
     if (real) a.real = true;
     if (positive) a.positive = true;
     if (nonnegative) a.nonnegative = true;
+    if (negative) a.negative = true;
+    if (nonpositive) a.nonpositive = true;
     if (integer) a.integer = true;
+    if (assumptions.commutative === false) a.commutative = false;
     this.assumptions = Object.freeze(a);
+  }
+
+  protected computeCommutative(): boolean {
+    return this.assumptions.commutative !== false;
   }
 
   /** The name as printed (Wild adds a trailing underscore, Dummy a leading one). */
@@ -468,7 +491,7 @@ export class Sym extends Expr {
 
   protected computeKey(): string {
     const a = this.assumptions;
-    const flags = `${a.real ? 'r' : ''}${a.nonnegative ? 'n' : ''}${a.positive ? 'p' : ''}${a.integer ? 'i' : ''}`;
+    const flags = `${a.real ? 'r' : ''}${a.nonnegative ? 'n' : ''}${a.positive ? 'p' : ''}${a.integer ? 'i' : ''}${a.negative ? 'N' : ''}${a.nonpositive ? 'P' : ''}${a.commutative === false ? 'c' : ''}`;
     return flags ? `$${this.name}[${flags}]` : `$${this.name}`;
   }
 }

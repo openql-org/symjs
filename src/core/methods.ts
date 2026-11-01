@@ -46,7 +46,18 @@ export function keepCoeff(coeff: Expr, factors: Expr): Expr {
 
 /** SymPy `args_cnc`: commutative factors (a negative coefficient is split into -1 and its absolute value). */
 export function argsCnc(e: Expr, split1 = true): Expr[] {
-  const c = [...mulArgs(e)];
+  return argsCncSplit(e, split1)[0];
+}
+
+/** SymPy `args_cnc`: [commutative factors, non-commutative factors in order]. */
+export function argsCncSplit(e: Expr, split1 = true): [Expr[], Expr[]] {
+  const all = [...mulArgs(e)];
+  const nc = all.filter((a) => !a.isCommutative);
+  const c = all.filter((a) => a.isCommutative);
+  return [argsCncCommutative(c, split1), nc];
+}
+
+function argsCncCommutative(c: Expr[], split1: boolean): Expr[] {
   const first = c[0];
   if (split1 && first !== undefined) {
     if (isNum(first) && first.isNegative && !(first instanceof Rational && first.p === -1n && first.q === 1n)) {
