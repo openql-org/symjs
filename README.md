@@ -30,7 +30,41 @@ diff(parse('x**x'), x).toString();           // 'x**x*(log(x) + 1)'
 roots(parse('x**2 + x + 1'), x).map(String); // ['-1/2 - sqrt(3)*I/2', '-1/2 + sqrt(3)*I/2']
 ```
 
-Quantum computing features will be ported from `sympy.physics.quantum`. The current `gates` module is provisional and will be replaced.
+## Packages: base and extend modules
+
+symjs is a pnpm monorepo. The general-purpose CAS is the **base module**; functionality for a specific application domain is published as separate **extend module** packages, so applications install only what they use:
+
+| Package | Directory | Contents |
+|---|---|---|
+| [`@symjs/symjs`](packages/symjs) | `packages/symjs/` | Base module: expressions, numbers, printing and parsing, functions, simplification, polynomials, calculus, equation solving, matrices, sets |
+| [`@symjs/physics-quantum`](packages/physics-quantum) | `packages/physics-quantum/` | Extend module for quantum physics (SymPy `sympy.physics.quantum`) |
+
+Extend modules depend only on the public API of the base module, which they declare as a peer dependency (`@symjs/symjs`), so every extend module installed in an application shares one copy of the base module. Which sub-packages belong to the base module and which become extend modules is to be decided by the community; `physics-quantum` is the first example.
+
+```ts
+import { Matrix } from '@symjs/symjs';
+import { gates } from '@symjs/physics-quantum';
+
+gates.H().mul(gates.H()).equals(Matrix.eye(2)); // true
+```
+
+The quantum package will be ported from `sympy.physics.quantum`; the current `gates` are provisional.
+
+### Repository layout
+
+```
+packages/
+  symjs/                @symjs/symjs (base module)
+    src/                core/ numeric/ printing/ parsing/ functions/ simplify/ polys/
+                        calculus/ series/ integrals/ solvers/ matrices/ concrete/ sets/
+    tests/              unit tests and SymPy golden tests
+  physics-quantum/      @symjs/physics-quantum (extend module)
+    src/  tests/
+compat/                 SymPy doctest compatibility measurement of the base module
+scripts/                golden test generation (SymPy)
+```
+
+To add an extend module, create `packages/<name>/` with its own `package.json` (`@symjs/symjs` as a peer dependency with `workspace:^`), `tsup.config.ts` (with `@symjs/symjs` as external) and `tsconfig.build.json`, and import the base module only through `@symjs/symjs`.
 
 ## SymPy compatibility
 
@@ -58,10 +92,10 @@ See [compat/REPORT.md](compat/REPORT.md) for the current numbers and the highest
 
 ```sh
 pnpm install
-pnpm test        # vitest
+pnpm test        # vitest (all packages; extend modules use the base module from source)
 pnpm typecheck   # tsc --noEmit
-pnpm build       # tsup (ESM/CJS) + tsc (declarations)
-python3 scripts/gen_golden.py tests/golden/cases.json tests/golden/expected.json  # regenerate SymPy expectations
+pnpm build       # every package: tsup (ESM/CJS) + tsc (declarations)
+pnpm golden      # regenerate the SymPy expectations of the golden tests
 ```
 
 ## Current limitations

@@ -17,7 +17,10 @@ type FileCoverage = {
 };
 
 /** Map a source file to a compatibility category. */
-function categoryOf(path: string): string {
+function categoryOf(fullPath: string): string {
+  // the SymPy categories apply to the base module; other packages are extend modules
+  if (!fullPath.startsWith('packages/symjs/src/')) return 'extend';
+  const path = fullPath.replace(/^packages\/symjs\/src\//, 'src/');
   if (path.startsWith('src/functions/special')) return 'special';
   if (path.startsWith('src/functions/')) return 'functions';
   if (path.startsWith('src/simplify/')) return 'simplify';
@@ -40,7 +43,7 @@ function readCoverage(): { files: FileCoverage[] } | undefined {
   for (const [abs, v] of Object.entries(data)) {
     if (abs === 'total') continue;
     const path = abs.startsWith(root) ? abs.slice(root.length) : abs;
-    if (path === 'src/index.ts') continue;
+    if (path.endsWith('/src/index.ts')) continue;
     const p = { statements: v['statements']!.pct, branches: v['branches']!.pct, functions: v['functions']!.pct, lines: v['lines']!.pct };
     files.push({ path, category: categoryOf(path), statements: v['statements']!.total, pct: p, full: Object.values(p).every((x) => x === 100) });
   }

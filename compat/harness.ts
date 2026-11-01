@@ -10,8 +10,8 @@
  * compared with the expected string.
  */
 
-import * as sj from '../src';
-import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../src';
+import * as sj from '../packages/symjs/src';
+import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../packages/symjs/src';
 
 // ---------------------------------------------------------------------------
 // Python-like containers for formatting results

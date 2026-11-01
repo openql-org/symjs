@@ -9,11 +9,8 @@
  * rightmost factor of a Kronecker product.
  */
 
-import { Expr, ExprLike, Rational, S } from '../core/nodes';
-import { add, exp, mul, neg, sqrt } from '../core/ops';
-import { cos, sin } from '../functions/elementary';
-import { Matrix } from '../matrices/matrix';
-import { expandMul as expand } from '../simplify/expand';
+// extend modules depend on the public API of the base module only
+import { Expr, ExprLike, Matrix, Rational, S, add, cos, exp, expandMul as expand, mul, neg, sin, sqrt } from '@symjs/symjs';
 
 const half = (t: ExprLike) => mul(S.Half, t);
 const iExp = (t: ExprLike) => exp(mul(S.I, t));

@@ -2,9 +2,13 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "ESNext",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "moduleResolution": "bundler",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
@@ -14,7 +18,16 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "declaration": true,
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@symjs/symjs": [
+        "./packages/symjs/src/index.ts"
+      ]
+    }
   },
-  "include": ["src", "tests", "compat"]
+  "include": [
+    "packages/*/src",
+    "packages/*/tests",
+    "compat"
+  ]
 }

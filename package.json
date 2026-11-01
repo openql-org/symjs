@@ -1,34 +1,18 @@
 {
-  "name": "@symjs/symjs",
-  "publishConfig": {
-    "access": "public"
-  },
-  "version": "0.0.1",
-  "description": "A symbolic mathematics library for TypeScript, inspired by SymPy and designed for quantum computing (q5m.js)",
+  "name": "symjs-workspace",
+  "private": true,
   "type": "module",
   "license": "MIT",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
-  },
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "description": "Monorepo of symjs: the base module @symjs/symjs and extend modules",
   "scripts": {
-    "build": "tsup && tsc -p tsconfig.build.json",
+    "build": "pnpm -r build",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "coverage": "vitest run --coverage",
     "compat": "vitest run --coverage --reporter=dot && vitest run --config compat/vitest.config.ts",
-    "compat:extract": "MPLBACKEND=Agg python3 compat/extract.py compat/corpus.json < /dev/null"
+    "compat:extract": "MPLBACKEND=Agg python3 compat/extract.py compat/corpus.json < /dev/null",
+    "golden": "python3 scripts/gen_golden.py packages/symjs/tests/golden/cases.json packages/symjs/tests/golden/expected.json"
   },
   "engines": {
     "node": ">=18"

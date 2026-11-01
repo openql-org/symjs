@@ -2,7 +2,9 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file Public entry point of symjs.
+ * @file Entry point of the base module `@symjs/symjs`: the core computer
+ * algebra system. Domain-specific extend modules are separate packages
+ * (packages/* in the repository) that depend on this one.
  *
  * NOTE: several modules register implementations into the core `impl`
  * registry on load; they are all imported here so the fluent API works.
@@ -291,8 +293,6 @@ export {
   rotGivens,
   jordanBlock, pinvSolve, multiplyElementwise, companion, permanent, connectedComponents, stronglyConnectedComponents } from './matrices/linalg';
 
-// quantum
-export * as gates from './quantum/gates';
 
 /** Create a symbol. */
 export function symbol(name: string, assumptions: Assumptions = {}): Sym {
