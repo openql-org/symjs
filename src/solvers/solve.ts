@@ -380,3 +380,53 @@ export function nsolve(e: ExprLike, x: Sym, x0: ExprLike): Expr {
 const cplx = (z: { re: number; im: number }): Expr =>
   z.im === 0 ? sympify(z.re) : add(sympify(z.re), mul(sympify(z.im), S.I));
 
+
+/**
+ * SymPy solvers._invert: reduce eq = 0 to lhs = rhs with lhs containing the
+ * symbols in its simplest form. Returns [rhs, lhs].
+ */
+export function invertEquation(eqIn: ExprLike, symbols: readonly Sym[] = [], opts: { integerPower?: boolean } = {}): [Expr, Expr] {
+  const eq = sympify(eqIn);
+  const syms = symbols.length ? [...symbols] : [...freeSymbols(eq)];
+  if (!syms.some((s) => eq.has(s))) return [eq, S.Zero];
+  const dep = (e: Expr) => syms.some((s) => e.has(s));
+  let lhs = eq;
+  let rhs: Expr = S.Zero;
+  for (let guard = 0; guard < 50; guard++) {
+    const was = lhs;
+    for (let g2 = 0; g2 < 50; g2++) {
+      if (lhs instanceof Add) {
+        const indep = add(...lhs.args.filter((a) => !dep(a)));
+        if (indep instanceof Rational && indep.isZero) break;
+        lhs = add(...lhs.args.filter(dep));
+        rhs = add(rhs, mul(-1, indep));
+      } else if (lhs instanceof Mul) {
+        const indep = mul(...lhs.args.filter((a) => !dep(a)));
+        if (indep instanceof Rational && indep.isOne) break;
+        lhs = mul(...lhs.args.filter(dep));
+        rhs = mul(rhs, pow(indep, -1));
+      } else break;
+    }
+    if (lhs instanceof Fn && lhs.name === 'log' && lhs.args.length === 1) {
+      rhs = exp(rhs);
+      lhs = lhs.args[0]!;
+    } else if (lhs instanceof Pow && lhs.base instanceof Constant && lhs.base.name === 'E') {
+      rhs = log(rhs);
+      lhs = lhs.exp;
+    }
+    if (!(rhs instanceof Rational && rhs.isZero) && lhs instanceof Pow && lhs.exp instanceof Rational && lhs.exp.isInteger && lhs.exp.isNegative) {
+      lhs = pow(lhs, -1);
+      rhs = pow(rhs, -1);
+    }
+    if (lhs instanceof Pow && !(lhs.base instanceof Constant)) {
+      const intExp = lhs.exp instanceof Rational && lhs.exp.isInteger;
+      const multi = syms.length > 1 && syms.filter((s) => (lhs as Pow).base.has(s)).length > 1;
+      if ((intExp && opts.integerPower) || (!intExp && multi)) {
+        rhs = pow(rhs, pow(lhs.exp, -1));
+        lhs = lhs.base;
+      }
+    }
+    if (lhs.key === was.key) break;
+  }
+  return [rhs, lhs];
+}

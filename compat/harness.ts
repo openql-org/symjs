@@ -683,6 +683,27 @@ export const ADAPTERS: Record<string, Adapter> = {
     };
     return fold(e);
   },
+  invert: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'integer_power') throw new Unsupported(`kwargs ${k}`);
+    const syms = args.slice(1).filter((a) => a instanceof Sym) as Sym[];
+    if (args.length === 2 && !(args[1] instanceof Sym)) {
+      const f = asExpr(args[0]);
+      const g = asExpr(args[1]);
+      const gens = sj.sortGens([...sj.freeSymbols(sj.add(f, g))]);
+      return sj.Poly.from(f, gens).invert(sj.Poly.from(g, gens)).asExpr();
+    }
+    return new PyTuple(sj.invertEquation(asExpr(args[0]), syms, { integerPower: Boolean(kw['integer_power']) }));
+  },
+  '.invert': (args, kw, self) => {
+    noKw(kw);
+    if (self instanceof sj.Rational && args[0] instanceof sj.Rational) return sj.modInverse(self, args[0]);
+    if (self instanceof sj.Poly) return self.invert(args[0] as sj.Poly);
+    throw new Unsupported('invert');
+  },
+  apart: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'full' || kw[k]) throw new Unsupported(`kwargs ${k}`);
+    return sj.apart(asExpr(args[0]), args[1] === undefined ? undefined : asSym(args[1]));
+  },
   igcd: (args, kw) => (noKw(kw), sj.Rational.of(sj.igcd(...args.map((a) => (a as sj.Rational).p)))),
   ilcm: (args, kw) => (noKw(kw), sj.Rational.of(sj.ilcm(...args.map((a) => (a as sj.Rational).p)))),
   integer_nthroot: (args, kw) => {
@@ -1481,7 +1502,6 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.gcdex': polyM((p, a) => new PyTuple(p.gcdex(a[0] as sj.Poly))),
   '.half_gcdex': polyM((p, a) => new PyTuple(p.halfGcdex(a[0] as sj.Poly))),
-  '.invert': polyM((p, a) => p.invert(a[0] as sj.Poly)),
   '.sturm': polyM((p) => new PyList(p.sturm())),
   '.count_roots': polyM((p, a) => {
     if (a.some((v) => v instanceof Expr && v.has(sj.I))) throw new Unsupported('complex count_roots');
