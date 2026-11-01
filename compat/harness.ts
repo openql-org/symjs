@@ -130,6 +130,13 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
       (n) => [n, (args: Expr[]) => sj.fn(n, args)],
     ),
   ),
+  Piecewise: (args) =>
+    sj.piecewise(
+      ...(args as unknown as PyTuple[]).map((t) => {
+        const [e, c] = t.items;
+        return [asExpr(e), typeof c === 'boolean' ? c : asExpr(c)] as const;
+      }),
+    ),
   Integral: (args) => integralNode(args),
   Sum: (args) => concreteNode('Sum', args),
   Product: (args) => concreteNode('Product', args),
@@ -657,6 +664,25 @@ export const ADAPTERS: Record<string, Adapter> = {
   isprime: (args, kw) => (noKw(kw), sj.isprime(asExpr(args[0]))),
   jacobi_symbol: (args, kw) => (noKw(kw), sj.jacobiSymbol((args[0] as sj.Rational).p, (args[1] as sj.Rational).p)),
   kronecker_symbol: (args, kw) => (noKw(kw), sj.kroneckerSymbol((args[0] as sj.Rational).p, (args[1] as sj.Rational).p)),
+  '.piecewise_integrate': (args, kw, self) => (noKw(kw), sj.piecewiseIntegrate(self as sj.Piecewise, asSym(args[0]))),
+  '.as_expr_set_pairs': (args, kw, self) =>
+    (noKw(kw), new PyList(sj.asExprSetPairs(asExpr(self), (args[0] as sj.SetExpr | undefined) ?? sj.Reals).map(([e, st]) => new PyTuple([e, st])))),
+  piecewise_fold: (args, kw) => {
+    noKw(kw);
+    const e = asExpr(args[0]);
+    const fold = (x: Expr): Expr => {
+      const a = x.args.map(fold);
+      const y = a.every((v, i) => v === x.args[i]) ? x : sj.rebuild(x, a);
+      if ((y instanceof sj.Add || y instanceof sj.Mul) && y.args.filter((t) => t instanceof sj.Piecewise).length === 1) {
+        const pw = y.args.find((t) => t instanceof sj.Piecewise) as sj.Piecewise;
+        const others = y.args.filter((t) => t !== pw);
+        const op = y instanceof sj.Add ? sj.add : sj.mul;
+        return sj.piecewise(...pw.pairs.map(([v, c]) => [op(...others, v), c] as const));
+      }
+      return y;
+    };
+    return fold(e);
+  },
   igcd: (args, kw) => (noKw(kw), sj.Rational.of(sj.igcd(...args.map((a) => (a as sj.Rational).p)))),
   ilcm: (args, kw) => (noKw(kw), sj.Rational.of(sj.ilcm(...args.map((a) => (a as sj.Rational).p)))),
   integer_nthroot: (args, kw) => {

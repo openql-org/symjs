@@ -19,14 +19,17 @@ import { isNonZero } from '../core/assumptions';
 import { Ne, piecewise } from '../core/logic';
 import {
   Add,
+  BoolAtom,
   Constant,
   Expr,
   ExprLike,
   Fn,
   Integral,
   Mul,
+  Piecewise,
   Pow,
   Rational,
+  Rel,
   S,
   Special,
   Sym,
@@ -537,9 +540,54 @@ function solveLinear(A: Rational[][], b: Rational[]): Rational[] | undefined {
  * F(b) - F(a) is returned. If no antiderivative is found, an unevaluated
  * `Integral` is returned (like SymPy).
  */
+/** Breakpoints of a Piecewise whose conditions are x < c / x <= c (increasing c), last True. */
+function piecewiseBreaks(f: Piecewise, x: Sym): [Expr, Expr | undefined][] | undefined {
+  const out: [Expr, Expr | undefined][] = [];
+  for (const [e, c] of f.pairs) {
+    if (c instanceof BoolAtom && c.value) {
+      out.push([e, undefined]);
+      continue;
+    }
+    if (!(c instanceof Rel) || !(c.op === 'Lt' || c.op === 'Le') || c.lhs.key !== x.key || c.rhs.has(x)) return undefined;
+    out.push([e, c.rhs]);
+  }
+  return out;
+}
+
+/** Integrate each piece separately (SymPy piecewise_integrate). */
+export function piecewiseIntegrate(f: Piecewise, x: Sym): Expr {
+  return piecewise(...f.pairs.map(([e, c]) => [integrate(e, x), c] as const));
+}
+
+/** Continuous antiderivative of a Piecewise in x. */
+function integratePiecewise(f: Piecewise, x: Sym): Expr | undefined {
+  const br = piecewiseBreaks(f, x);
+  if (!br) return undefined;
+  const pieces: [Expr, Expr][] = [];
+  let prevF: Expr | undefined;
+  let prevBreak: Expr | undefined;
+  for (const [e, c] of br) {
+    let F = new Integrator(x).integrate(e);
+    if (F === undefined) return undefined;
+    if (prevF !== undefined && prevBreak !== undefined) {
+      // continuity at the previous breakpoint
+      const k = add(subs(prevF, [[x, prevBreak]]), mul(-1, subs(F, [[x, prevBreak]])));
+      F = add(F, k);
+    }
+    pieces.push([F, c === undefined ? S.true : f.pairs[pieces.length]![1]]);
+    prevF = F;
+    prevBreak = c;
+  }
+  return piecewise(...pieces);
+}
+
 export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, ExprLike]): Expr {
   const f = sympify(ex);
-  const F = new Integrator(x).integrate(f);
+  if (f instanceof Piecewise && !limits) {
+    const r = integratePiecewise(f, x);
+    if (r) return r;
+  }
+  const F = f instanceof Piecewise ? integratePiecewise(f, x) : new Integrator(x).integrate(f);
   if (!limits) return F ?? new Integral([f, x]);
   const a = sympify(limits[0]);
   const b = sympify(limits[1]);

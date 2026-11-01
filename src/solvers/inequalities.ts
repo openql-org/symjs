@@ -513,3 +513,21 @@ export function minimum(fIn: ExprLike, x: Sym, domain: SetExpr = Reals): Expr {
 }
 
 
+
+/** SymPy Piecewise.as_expr_set_pairs: disjoint real sets for each piece. */
+export function asExprSetPairs(p: Expr, domain: SetExpr = Reals): [Expr, SetExpr][] {
+  const pairs = (p as unknown as { pairs: [Expr, Expr][] }).pairs;
+  const syms = new Map<string, Sym>();
+  for (const [, c] of pairs) for (const s of c.freeSymbols()) syms.set(s.key, s);
+  if (syms.size !== 1) throw new Error('as_expr_set_pairs: univariate conditions expected');
+  const x = [...syms.values()][0]!;
+  let remaining: SetExpr = domain;
+  const out: [Expr, SetExpr][] = [];
+  for (const [e, c] of pairs) {
+    const s: SetExpr = c.kind === 'Bool' ? ((c as unknown as { value: boolean }).value ? Reals : EmptySet) : solveSign(add((c as Rel).lhs, mul(-1, (c as Rel).rhs)), (c as Rel).op, x, Reals);
+    const piece = intersection(remaining, s);
+    if (piece !== EmptySet) out.push([e, piece]);
+    remaining = complement(remaining, s);
+  }
+  return out;
+}

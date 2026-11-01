@@ -234,6 +234,7 @@ export {
 export { dsolve, odeOrder } from './solvers/ode';
 
 // numerics
+export { piecewiseIntegrate } from './integrals/integrate';
 export { evalf, evalfPrec, toComplex, lambdify } from './numeric/evalf';
 export { float } from './numeric/floatctor';
 export { round } from './numeric/round';
@@ -374,6 +375,7 @@ export {
   isConvex,
   maximum,
   minimum,
+  asExprSetPairs,
 } from './solvers/inequalities';
 export {
   bernoulli,
