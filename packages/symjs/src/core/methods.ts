@@ -70,7 +70,7 @@ function argsCncCommutative(c: Expr[], split1: boolean): Expr[] {
 }
 
 /** SymPy `Expr.coeff(x, n)` (commutative case). */
-export function coeff(eIn: ExprLike, xIn: ExprLike, n = 1): Expr {
+export function coeff(eIn: ExprLike, xIn: ExprLike, n = 1, right = false, first = true): Expr {
   const e = sympify(eIn);
   let x = sympify(xIn);
   if (isZeroE(x)) return S.Zero;
@@ -81,23 +81,105 @@ export function coeff(eIn: ExprLike, xIn: ExprLike, n = 1): Expr {
   }
   if (n === 0) {
     if (x instanceof Add && e instanceof Add) {
-      const c = coeff(e, x);
+      const c = coeff(e, x, 1, right);
       if (isZeroE(c)) return S.Zero;
-      return add(e, mul(-1, add(...addArgs(c).map((a) => mul(a, x)))));
+      return add(e, mul(-1, add(...addArgs(c).map((a) => (right ? mul(x, a) : mul(a, x))))));
     }
     return asIndependent(e, [x], { asAdd: true })[0];
   }
   x = pow(x, n);
-  const xargs = new Map(argsCnc(x).map((a) => [a.key, a]));
-  const co: Expr[] = [];
-  for (const a of addArgs(e)) {
-    const margs = argsCnc(a);
-    const mset = new Map(margs.map((m) => [m.key, m]));
-    if (xargs.size > mset.size) continue;
-    const resid = [...mset.values()].filter((m) => !xargs.has(m.key));
-    if (resid.length + xargs.size === mset.size) co.push(mul(...resid));
+  const selfC = e.isCommutative;
+  const xC = x.isCommutative;
+  if (selfC && !xC) return S.Zero;
+  const same = (a: readonly Expr[], b: readonly Expr[]) => a.length === b.length && a.every((t, i) => t.key === b[i]!.key);
+  if (first && e instanceof Add && !selfC && !xC) {
+    // the part that depends on x exactly
+    const xargs = [...mulArgs(x)];
+    const d = add(...addArgs(e).filter((i) => xargs.every((xi) => [...mulArgs(i)].some((m) => m.key === xi.key))));
+    const rv = coeff(d, x, 1, right, false);
+    if (!(rv instanceof Add) || !right) return rv;
+    const parts = rv.args.map((i) => argsCncSplit(i));
+    const c0 = parts[0]![0];
+    if (parts.some(([c]) => !same(c, c0))) return rv;
+    return add(...parts.map(([, nc]) => mul(...nc)));
   }
-  return co.length ? add(...co) : S.Zero;
+  const oneC = selfC || xC;
+  const [xcList, nx] = argsCncSplit(x);
+  const xargs = new Map(xcList.map((a) => [a.key, a]));
+  const co2: Expr[] = [];
+  const co: [Expr[], Expr[]][] = [];
+  for (const a of addArgs(e)) {
+    const [mc, nc] = argsCncSplit(a);
+    const margs = new Map(mc.map((m) => [m.key, m]));
+    if (xargs.size > margs.size) continue;
+    const resid = [...margs.values()].filter((m) => !xargs.has(m.key));
+    if (resid.length + xargs.size === margs.size) {
+      if (oneC) co2.push(mul(...resid, ...nc));
+      else co.push([resid, nc]);
+    }
+  }
+  if (oneC) return co2.length ? add(...co2) : S.Zero;
+  // both non-commutative: compare the non-commutative parts
+  if (!co.length) return S.Zero;
+  const find = (l: readonly Expr[], sub: readonly Expr[], fromLeft: boolean): number | undefined => {
+    if (!sub.length || !l.length || sub.length > l.length) return undefined;
+    const k = sub.length;
+    const L = fromLeft ? l : [...l].reverse();
+    const T = fromLeft ? sub : [...sub].reverse();
+    for (let i = 0; i <= L.length - k; i++) {
+      if (T.every((t, j) => L[i + j]!.key === t.key)) return fromLeft ? i : L.length - (i + k);
+    }
+    return undefined;
+  };
+  const incommon = (l1: readonly Expr[], l2: readonly Expr[]): Expr[] => {
+    if (!l1.length || !l2.length) return [];
+    const m = Math.min(l1.length, l2.length);
+    for (let i = 0; i < m; i++) if (l1[i]!.key !== l2[i]!.key) return l1.slice(0, i);
+    return [...l1];
+  };
+  const fromLeft = !right;
+  if (co.every(([, nc]) => same(nc, co[0]![1]))) {
+    const ii = find(co[0]![1], nx, fromLeft);
+    if (ii !== undefined) {
+      if (!right) return mul(add(...co.map(([r]) => mul(...r))), mul(...co[0]![1].slice(0, ii)));
+      return mul(...co[0]![1].slice(ii + nx.length));
+    }
+  }
+  const beg = co.map(([, nc]) => nc).reduce((a, b) => incommon(a, b));
+  if (beg.length) {
+    const ii = find(beg, nx, fromLeft);
+    if (ii !== undefined) {
+      if (!right) {
+        let gcdc = co[0]![0];
+        for (let i = 1; i < co.length && gcdc.length; i++) gcdc = gcdc.filter((g) => co[i]![0].some((h) => h.key === g.key));
+        return mul(...gcdc, ...beg.slice(0, ii));
+      }
+      const m = ii + nx.length;
+      return add(...co.map(([r, nc]) => mul(...r, ...nc.slice(m))));
+    }
+  }
+  const end = co.map(([, nc]) => [...nc].reverse()).reduce((a, b) => incommon(a, b)).reverse();
+  if (end.length) {
+    const ii = find(end, nx, fromLeft);
+    if (ii !== undefined) {
+      if (!right) return add(...co.map(([r, nc]) => mul(...r, ...nc.slice(0, -end.length + ii))));
+      return mul(...end.slice(ii + nx.length));
+    }
+  }
+  // a single match
+  let hit: [number, Expr[], Expr[]] | undefined;
+  for (const [r, nc] of co) {
+    const ii = find(nc, nx, fromLeft);
+    if (ii !== undefined) {
+      if (hit) return S.Zero;
+      hit = [ii, r, nc];
+    }
+  }
+  if (hit) {
+    const [ii, r, nc] = hit;
+    return right ? mul(...nc.slice(ii + nx.length)) : mul(...r, ...nc.slice(0, ii));
+  }
+  return S.Zero;
 }
 
 /** SymPy `as_independent(*deps, as_Add=...)`: [independent, dependent]. */
@@ -119,6 +201,16 @@ export function asIndependent(eIn: ExprLike, deps: readonly Expr[], opts: { asAd
     return has(e) ? [identity, e] : [e, identity];
   }
   const args = e.args;
+  if (e instanceof Mul && !e.isCommutative) {
+    // non-commutative factors: everything from the first dependent one on is dependent
+    const [c, nc] = argsCncSplit(e, false);
+    const depend = c.filter(has);
+    const indep = c.filter((a) => !has(a));
+    const i = nc.findIndex(has);
+    if (i >= 0) depend.push(...nc.slice(i));
+    indep.push(...nc.slice(0, i >= 0 ? i : nc.length));
+    return [mul(...indep), mul(...depend)];
+  }
   const depend = args.filter(has);
   const indep = args.filter((a) => !has(a));
   if (e instanceof Add) return [add(...indep), depend.length === 0 ? S.Zero : depend.length === 1 ? depend[0]! : new Add(depend)];

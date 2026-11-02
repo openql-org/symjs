@@ -35,3 +35,20 @@ describe('non-commutative printing matches SymPy', () => {
     expect(mul(pow(A, 2), pow(A, 3)).toString()).toBe('A**5');
   });
 });
+
+import { asIndependent, coeff, symbols } from '../src';
+
+describe('coeff and as_independent with non-commutative symbols (SymPy)', () => {
+  const [n, m, n1, n2, n3] = symbols('n m n1 n2 n3', { commutative: false });
+  it('coeff', () => {
+    expect(String(coeff(add(mul(n, m), mul(m, n, m)), n))).toBe('1 + m');
+    expect(String(coeff(add(mul(n, m), mul(m, n, m)), n, 1, true))).toBe('m');
+    expect(String(coeff(add(mul(n, m), mul(m, n)), n))).toBe('0');
+    expect(String(coeff(add(mul(n, m), mul(x, m, n)), mul(m, n)))).toBe('x');
+    expect(String(coeff(add(mul(n, m), mul(x, m, n)), mul(m, n), 1, true))).toBe('1');
+  });
+  it('as_independent', () => {
+    expect(asIndependent(mul(n1, n2, n3), [n1]).map(String)).toEqual(['1', 'n1*n2*n3']);
+    expect(asIndependent(mul(n1, n2, n3), [n2]).map(String)).toEqual(['n1', 'n2*n3']);
+  });
+});

@@ -1639,9 +1639,10 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.count_ops': (args, kw, self) => ADAPTERS['count_ops']!([self, ...args], kw),
 
   '.coeff': (args, kw, self) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (k !== 'right') throw new Unsupported(`kwargs ${k}`);
     const n = args[1] instanceof sj.Rational ? Number(args[1].p) : 1;
-    return sj.coeff(asExpr(self), asExpr(args[0]), n);
+    const r = kw['right'];
+    return sj.coeff(asExpr(self), asExpr(args[0]), n, r === true || (r instanceof sj.Rational && !r.isZero));
   },
   '.as_independent': (args, kw, self) => {
     const asAdd = kw['as_Add'];
