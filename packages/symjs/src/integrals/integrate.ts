@@ -30,6 +30,7 @@ import {
   Pow,
   Rational,
   Rel,
+  RelOp,
   S,
   Special,
   Sym,
@@ -39,7 +40,7 @@ import {
 import { numAdd, numInv, numMul, numNeg } from '../core/num';
 import { gcd, lcm } from '../core/numbers';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
-import { xreplace as subs } from '../core/traverse';
+import { mapBottomUp as mapBottomUpI, xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { asin, atan, cos, cosh, log, sin, sinh } from '../functions/elementary';
 import { UPoly, polyCoefficients } from '../polys/poly';
@@ -697,8 +698,44 @@ function integratePiecewise(f: Piecewise, x: Sym): Expr | undefined {
   return piecewise(...pieces);
 }
 
+/**
+ * Piecewise conditions under the sign of x on [a, b]: with x > 0 there,
+ * u/x < 0 is u < 0 (x is dropped from the relation).
+ */
+function simplifyConditionsOnInterval(f: Expr, x: Sym, a: Expr, b: Expr): Expr {
+  const has = (e: Expr): boolean => e instanceof Piecewise || e.args.some(has);
+  if (!has(f)) return f;
+  const sa = a.freeSymbols().size === 0 ? Math.sign(a.toNumber()) : 0;
+  const sb = b.freeSymbols().size === 0 ? Math.sign(b.toNumber()) : 0;
+  if (!sa || sa !== sb) return f;
+  const flip: Record<string, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
+  const cond = (c: Expr): Expr => {
+    if (!(c instanceof Rel) || !(c.rhs instanceof Rational && c.rhs.isZero) || !(c.lhs instanceof Mul)) return c;
+    const xs = c.lhs.args.filter((g) => g.key === x.key || (g instanceof Pow && g.base.key === x.key && g.exp instanceof Rational && g.exp.isInteger));
+    if (!xs.length || c.lhs.args.filter((g) => g.has(x)).length !== xs.length) return c;
+    const k = xs.reduce((s2, g) => s2 + (g instanceof Pow ? Number((g.exp as Rational).p) : 1), 0);
+    const rest = mul(...c.lhs.args.filter((g) => !g.has(x)));
+    // the sign of x**k on the interval
+    const negative = sa < 0 && k % 2 !== 0;
+    return new Rel(negative ? flip[c.op]! : c.op, rest, S.Zero);
+  };
+  return mapBottomUpI(f, (e: Expr) => (e instanceof Piecewise ? piecewise(...e.pairs.map(([v, c]) => [v, cond(c)] as const)) : e));
+}
+
 export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, ExprLike], opts: { conds?: 'piecewise' | 'none' } = {}): Expr {
-  const f = sympify(ex);
+  let f = sympify(ex);
+  if (limits) f = simplifyConditionsOnInterval(f, x, sympify(limits[0]), sympify(limits[1]));
+  // sums and constant multiples containing a Piecewise: term by term
+  const hasPw = (e: Expr): boolean => e instanceof Piecewise || e.args.some(hasPw);
+  if (f instanceof Add && f.args.some(hasPw)) {
+    const parts = f.args.map((t) => integrate(t, x, limits, opts));
+    if (!parts.some((r) => r instanceof Integral)) return add(...parts);
+  }
+  if (f instanceof Mul && f.args.filter((t) => t instanceof Piecewise).length === 1 && f.args.every((t) => t instanceof Piecewise || !t.has(x))) {
+    const pw = f.args.find((t) => t instanceof Piecewise)!;
+    const r = integrate(pw, x, limits, opts);
+    if (!(r instanceof Integral)) return mul(...f.args.filter((t) => t !== pw), r);
+  }
   if (f instanceof Piecewise && !limits) {
     const r = integratePiecewise(f, x);
     if (r) return r;

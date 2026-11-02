@@ -5,7 +5,7 @@
  * @file radsimp (rationalize denominators) and collect (group terms by powers).
  */
 
-import { Add, Constant, Derivative, Expr, impl, ExprLike, Mul, Pow, Rational, S, UndefFn } from '../core/nodes';
+import { Add, Constant, Derivative, Expr, impl, ExprLike, Mul, Pow, Rational, S, UndefFn, Wild } from '../core/nodes';
 import { add, asBaseExp, mul, pow, sympify } from '../core/ops';
 import { rebuild } from '../core/traverse';
 
@@ -35,8 +35,16 @@ function derivativeOf(f: Expr, p: Expr): boolean {
 }
 
 /** [matched part (a power of p or a derivative of it), remaining coefficient]. */
+const hasWild = (e: Expr): boolean => e instanceof Wild || e.args.some(hasWild);
+
 function extractPattern(term: Expr, p: Expr, exact: boolean): [Expr, Expr] | undefined {
   const factors = term instanceof Mul ? [...term.args] : [term];
+  if (hasWild(p) && impl.match) {
+    // a pattern with Wild symbols: the factor matching it is the key (SymPy collect(..., w**y))
+    const i = factors.findIndex((f) => impl.match!(f, p) !== undefined);
+    if (i < 0) return undefined;
+    return [factors[i]!, mul(...factors.filter((_, j) => j !== i))];
+  }
   if (p instanceof Mul) {
     // every factor of the pattern must occur in the term, possibly as a higher integer power
     const pf = p.args;

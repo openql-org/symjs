@@ -12,11 +12,11 @@
  *   atom    := number | name | name '(' args ')' | '(' sum ')' | interpolated value
  */
 
-import { Add, Assumptions, Expr, ExprLike, FnName, Mul, Pow, Rational, S, SpecialFnName, Sym, impl } from '../core/nodes';
+import { Add, Assumptions, Expr, ExprLike, FnName, Mul, Pow, Rational, RelOp, S, SpecialFnName, Sym, impl } from '../core/nodes';
 import { and, not, or, xor } from '../core/boolalg';
 import { add, div, exp, mul, neg, pow, sqrt, sub, sympify } from '../core/ops';
 import { fn } from '../functions/elementary';
-import { Eq } from '../core/logic';
+import { Eq, rel } from '../core/logic';
 import { Function, derivative } from '../core/undef';
 
 export interface ParseOptions {
@@ -54,7 +54,7 @@ function repeatingDecimal(s: string): Rational {
 }
 
 function tokenize(src: string, offset: number, out: Token[]): void {
-  const re = /\s*(?:(\d*\.\d*\[\d+\])|(\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)|([A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*)|(\*\*|[-+*/^(),&|~]))/y;
+  const re = /\s*(?:(\d*\.\d*\[\d+\])|(\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)|([A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*)|(\*\*|<=|>=|[-+*/^(),&|~<>]))/y;
   let i = 0;
   while (i < src.length) {
     if (/^\s*$/.test(src.slice(i))) return;
@@ -251,7 +251,19 @@ class Parser {
       this.next();
       return not(this.boolNot());
     }
-    return this.sum();
+    return this.relation();
+  }
+
+  /** a < b, a <= b, a > b, a >= b */
+  private relation(): Expr {
+    const lhs = this.sum();
+    const ops: Record<string, RelOp> = { '<': 'Lt', '<=': 'Le', '>': 'Gt', '>=': 'Ge' };
+    const t = this.peek();
+    if (t.t === 'op' && ops[t.v]) {
+      this.next();
+      return rel(ops[t.v]!, lhs, this.sum());
+    }
+    return lhs;
   }
 
   private sum(): Expr {

@@ -414,3 +414,17 @@ describe('minimal polynomials, line integrals and ITE conditions', () => {
     expect(sstr(Piecewise([1, cond as never]))).toBe('Piecewise((1, ITE(x < 0, y > 2, y > 3)))');
   });
 });
+
+describe('relations in the parser, Wild collect and piecewise definite integrals', () => {
+  it('match SymPy', async () => {
+    const { collect, Wild, integrate, Piecewise, Rational, add, pow } = await import('../src');
+    const [x, t, y] = symbols('x t y');
+    expect(sstr(parse('x/t < 0'))).toBe('x/t < 0');
+    expect(sstr(collect(parse('a*x**y - b*x**y'), [pow(new Wild('w1'), parse('y'))]))).toBe('x**y*(a - b)');
+    const p = add(pow(x, 2), Piecewise([0, parse('x/t < 0', { symbols: { x, t } } as never)], [1, true]));
+    const r1 = integrate(p, t, [Rational.of(4, 5), 1]);
+    expect(sstr(r1)).toBe('x**2/5 + Piecewise((0, x < 0), (1, True))/5');
+    expect(sstr(integrate(r1, x, [-1, 1]))).toBe('1/3');
+    void y;
+  });
+});

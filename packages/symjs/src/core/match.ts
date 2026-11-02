@@ -572,3 +572,4 @@ export function countOpsVisual(exprIn: ExprLike): Expr {
   return add(...terms);
 }
 impl.ordered = ordered;
+impl.match = (e, pattern) => match(e, pattern);
