@@ -38,3 +38,15 @@ describe('CRootOf', () => {
     expect(solve(parse('x**3 - x + 1'), x, { cubics: false }).map(String)).toEqual([0, 1, 2].map((i) => `CRootOf(x**3 - x + 1, ${i})`));
   });
 });
+
+import { Rational } from '../src';
+
+describe('real root isolation (SymPy intervals / refine_root)', () => {
+  const show = (iv: [[Rational, Rational], number][]) => iv.map(([[s, t], k]) => `((${s}, ${t}), ${k})`).join(', ');
+  it('isolates and refines', () => {
+    expect(show(P('x**2 - 3').intervals())).toBe('((-2, -1), 1), ((1, 2), 1)');
+    expect(show(P('x**2 - 3').intervals(Rational.of(1, 100)))).toBe('((-26/15, -19/11), 1), ((19/11, 26/15), 1)');
+    expect(P('x**2 - 3').refineRoot(Rational.of(1), Rational.of(2), Rational.of(1, 100)).map(String)).toEqual(['19/11', '26/15']);
+    expect(show(P('(x - 1)**2*(x + 2)*x').intervals())).toBe('((-2, -2), 1), ((0, 0), 1), ((1, 1), 2)');
+  });
+});

@@ -18,6 +18,7 @@ import { cancel } from '../simplify/rational';
 import { decomposePower, keepCoeff } from '../simplify/exprtools';
 import { divExact, mfactorList, mgcd, mlcm, prem as mprem } from './mpoly';
 import { CRootOf } from './rootof';
+import { isolateRealRoots, refineRealRoot } from './rootisolation';
 import { nroots } from './nroots';
 import { UPoly, roots as rootsOf } from './poly';
 
@@ -431,6 +432,27 @@ export class Poly {
     const content = up.lc;
     const out: [Poly, number][] = up.squareFree().map(([f, k]) => [primitiveIntPoly(f.toExpr(x), x), k]);
     return [content, out];
+  }
+
+  /** Dense integer coefficients (highest degree first) of a primitive integer polynomial. */
+  private denseInts(): bigint[] {
+    const x = this.univariate();
+    const n = this.degree();
+    const cs = Array.from({ length: n + 1 }, (_, i) => this.coeffMonomial([n - i]) as Rational);
+    void x;
+    const den = cs.reduce((l, c) => (l * c.q) / bigGcd(l, c.q), 1n);
+    return cs.map((c) => (c.p * den) / c.q);
+  }
+  /** Isolating intervals of the real roots with multiplicities (SymPy Poly.intervals). */
+  intervals(eps?: Rational): [[Rational, Rational], number][] {
+    const [, fs] = this.sqfList();
+    return isolateRealRoots(fs.map(([f, k]) => [f.denseInts(), k] as [bigint[], number]), eps);
+  }
+  /** Refine the isolating interval (s, t) of a real root (SymPy Poly.refine_root). */
+  refineRoot(s: Rational, t: Rational, eps?: Rational, steps?: number): [Rational, Rational] {
+    const [, fs] = this.sqfList();
+    const sqf = fs.reduce((acc, [f]) => acc.mul(f), Poly.from(S.One, this.gens));
+    return refineRealRoot(sqf.denseInts(), s, t, eps, steps);
   }
 
   roots(): Expr[] {
@@ -932,6 +954,12 @@ function primitiveIntPoly(e: Expr, x: Sym): Poly {
   const p = Poly.from(e, [x]);
   const [, prim] = p.primitive();
   return prim.LC() instanceof Rational && (prim.LC() as Rational).isNegative ? prim.neg() : prim;
+}
+
+function bigGcd(a: bigint, b: bigint): bigint {
+  let [x, y] = [a < 0n ? -a : a, b < 0n ? -b : b];
+  while (y) [x, y] = [y, x % y];
+  return x;
 }
 
 /** factor_list on expressions: (content, [(factor, multiplicity)]). */

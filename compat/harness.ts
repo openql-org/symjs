@@ -451,6 +451,22 @@ function divOverZZ(f: Expr, g: Expr): [Expr, Expr] {
   }
   return [q, r.asExpr()];
 }
+/** eps as an exact rational (SymPy QQ.convert of a float such as 1e-2). */
+function epsArg(v: unknown): sj.Rational | undefined {
+  if (v === undefined) return undefined;
+  if (v instanceof sj.Rational) return v;
+  const e = asExpr(v);
+  return sj.nsimplify(e) as sj.Rational;
+}
+function intervalsAdapter(p: sj.Poly, kw: Record<string, unknown>): unknown {
+  for (const k of Object.keys(kw)) if (k !== 'eps') throw new Unsupported(`kwargs ${k}`);
+  return new PyList(p.intervals(epsArg(kw['eps'])).map(([[s, t], k]) => new PyTuple([new PyTuple([s, t]), sj.Rational.of(k)])));
+}
+function refineAdapter(p: sj.Poly, args: unknown[], kw: Record<string, unknown>): unknown {
+  for (const k of Object.keys(kw)) if (k !== 'eps' && k !== 'steps') throw new Unsupported(`kwargs ${k}`);
+  const [s, t] = p.refineRoot(asExpr(args[0]) as sj.Rational, asExpr(args[1]) as sj.Rational, epsArg(kw['eps']), kw['steps'] === undefined ? undefined : intArg(kw['steps']));
+  return new PyTuple([s, t]);
+}
 const asSym = (v: unknown): Sym => {
   if (v instanceof Sym) return v;
   throw new Unsupported('expected a symbol');
@@ -1265,6 +1281,10 @@ export const ADAPTERS: Record<string, Adapter> = {
   trigsimp: exprFn(sj.trigsimp),
   exptrigsimp: exprFn(sj.exptrigsimp),
   Id: exprFn((e) => e),
+  intervals: (args, kw) => intervalsAdapter(polyOf(args), kw),
+  '.intervals': (_a, kw, self) => intervalsAdapter(asPoly(self), kw),
+  refine_root: (args, kw) => refineAdapter(polyOf([args[0]]), args.slice(1), kw),
+  '.refine_root': (args, kw, self) => refineAdapter(asPoly(self), args, kw),
   Mod: (args, kw) => {
     noKw(kw);
     const [a, m] = args.map(asExpr);
