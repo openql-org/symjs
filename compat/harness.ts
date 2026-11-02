@@ -368,6 +368,16 @@ function polySystemSolutions(args: unknown[], kw: Record<string, unknown>, ratio
   const syms = args.slice(1).map(asSym);
   return new PyList(sj.solvePolySystem(eqs, syms, { rationalOnly }).map((t) => new PyTuple(t)));
 }
+/** ff/rf of a Poly: product of the polynomial shifted by -i (ff) or +i (rf). */
+function polyFactorial(args: unknown[], kw: Record<string, unknown>, dir: 1 | -1): unknown {
+  noKw(kw);
+  const [p, k] = args;
+  if (!(p instanceof sj.Poly)) return sj.fn(dir === 1 ? 'rf' : 'ff', args.map(asExpr));
+  const g = p.gens[0]!;
+  let acc: Expr = S.One;
+  for (let i = 0; i < Number((k as sj.Rational).p); i++) acc = sj.mul(acc, sj.xreplace(p.asExpr(), [[g, sj.add(g, dir * i)]]));
+  return sj.Poly.from(sj.expand(acc), p.gens);
+}
 const asSym = (v: unknown): Sym => {
   if (v instanceof Sym) return v;
   throw new Unsupported('expected a symbol');
@@ -1084,6 +1094,8 @@ export const ADAPTERS: Record<string, Adapter> = {
       }) as Adapter,
     ]),
   ),
+  ff: (args, kw) => polyFactorial(args, kw, -1),
+  rf: (args, kw) => polyFactorial(args, kw, 1),
   digamma: exprFn(sj.digamma),
   trigamma: exprFn(sj.trigamma),
   E1: exprFn(sj.E1),
@@ -1512,7 +1524,23 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.simplify': (_args, _kw, self) => (self instanceof Matrix ? null : sj.simplify(asExpr(self))),
   '.factor': exprMethod(sj.factor),
   '.together': exprMethod(sj.together),
-  '.cancel': exprMethod(sj.cancel),
+  '.cancel': (args, kw, self) => {
+    if (!(self instanceof sj.Poly)) return exprMethod(sj.cancel)(args, kw, self);
+    for (const k of Object.keys(kw)) if (k !== 'include') throw new Unsupported(`kwargs ${k}`);
+    // SymPy Poly.cancel over ZZ: f/g = cp/cq * p/q
+    const g = asPoly(args[0]);
+    if (self.domain !== 'ZZ' || g.domain !== 'ZZ') throw new Unsupported('Poly.cancel over a field');
+    const h = self.gcd(g);
+    let P = self.exquo(h);
+    let Q = g.exquo(h);
+    let cp: Expr = S.One;
+    const neg = (q: sj.Poly) => (q.LC() as sj.Rational).isNegative;
+    if (neg(P) && neg(Q)) [P, Q] = [P.neg(), Q.neg()];
+    else if (neg(P)) [cp, P] = [S.NegOne, P.neg()];
+    else if (neg(Q)) [cp, Q] = [S.NegOne, Q.neg()];
+    if (kw['include']) return new PyTuple([P.mul(sj.Poly.from(cp, P.gens)), Q]);
+    return new PyTuple([cp, P, Q]);
+  },
   '.trigsimp': exprMethod(sj.trigsimp),
   '.conjugate': exprMethod(sj.conjugate),
   '.subs': (args, kw, self) => {
@@ -1532,7 +1560,18 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.diff': (args, kw, self) => {
     noKw(kw);
-    if (self instanceof sj.Poly) return self.diff(args[0] === undefined ? undefined : asExpr(args[0]));
+    if (self instanceof sj.Poly) {
+      if (args.length && args.every((a) => a instanceof PyTuple)) {
+        // Poly.diff((gen_index, order), ...)
+        let p: sj.Poly = self;
+        for (const a of args as PyTuple[]) {
+          const gen = p.gens[Number((a.items[0] as sj.Rational).p)]!;
+          for (let i = 0; i < Number((a.items[1] as sj.Rational).p); i++) p = p.diff(gen);
+        }
+        return p;
+      }
+      return self.diff(args[0] === undefined ? undefined : asExpr(args[0]));
+    }
     if (self instanceof Matrix) {
       return self.map((e) => diffArgs(e, args));
     }
@@ -1581,6 +1620,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     return matchDict(sj.match(asExpr(self), asExpr(args[0]), { old: Boolean(kw['old']) }));
   },
   '.replace': (args, kw, self) => {
+    if (self instanceof sj.Poly) return (noKw(kw), self.replace(asExpr(args[0]), asExpr(args[1])));
     for (const k of Object.keys(kw)) if (!['exact', 'map'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const q = toQuery(args[0]);
     const v = args[1];
