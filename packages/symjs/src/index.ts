@@ -177,6 +177,7 @@ export { diff } from './calculus/diff';
 export { Function, functions, derivative } from './core/undef';
 export type { UndefinedFunction } from './core/undef';
 export { integrate } from './integrals/integrate';
+export { transformIntegral, principalValue } from './integrals/transform';
 export { limit } from './series/limits';
 export { Sum, Product, summation, product, doitConcrete, reverseOrder, Concrete } from './concrete/summations';
 export { series, O } from './series/series';

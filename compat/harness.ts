@@ -1893,7 +1893,20 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.to_field': polyM((p) => p.toField()),
   '.to_ring': polyM((p) => p.toRing()),
   '.to_exact': polyM((p) => p.toExact()),
-  '.transform': polyM((p, a) => p.transform(a[0] as sj.Poly, a[1] as sj.Poly)),
+  '.principal_value': (args, kw, self) => {
+    noKw(kw);
+    if (args.length || !(self instanceof sj.Integral)) throw new Unsupported('principal_value');
+    return sj.principalValue(self);
+  },
+  '.transform': (args, kw, self) => {
+    if (self instanceof sj.Integral) {
+      noKw(kw);
+      const spec = args[1];
+      if (spec instanceof PyTuple) return sj.transformIntegral(self, asSym(args[0]), asExpr(spec.items[0]), asSym(spec.items[1]));
+      return sj.transformIntegral(self, asSym(args[0]), asExpr(spec));
+    }
+    return polyM((p, a) => p.transform(a[0] as sj.Poly, a[1] as sj.Poly))(args, kw, self);
+  },
   '.trunc': polyM((p, a) => p.trunc(asExpr(a[0]))),
   '.clear_denoms': (_args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'convert') throw new Unsupported(`kwargs ${k}`);
