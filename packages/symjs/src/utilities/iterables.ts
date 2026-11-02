@@ -114,15 +114,49 @@ function sliceIndices(len: number, start: number, stop: number | undefined): [nu
   return [norm(start), stop === undefined ? len : norm(stop)];
 }
 
+/** An integer argument: a bigint, an integral number or an integer expression. */
+type IntArg = bigint | number | Expr;
+
+function intArg(n: IntArg): bigint {
+  if (typeof n === 'bigint') return n;
+  if (typeof n === 'number') {
+    if (!Number.isInteger(n)) throw new TypeError(`expected an integer, got ${n}`);
+    return BigInt(n);
+  }
+  if (n instanceof Rational && n.q === 1n) return n.p;
+  throw new TypeError(`${n.toString()} is not an integer`);
+}
+
 /**
- * SymPy `is_palindromic(s, i=0, j=None)`: whether `s` (or the Python slice
- * `s[i:j]`) reads the same in both directions.
+ * SymPy `is_palindromic`: an integer `n` whose digits in base `b` (default
+ * 10) read the same in both directions (sympy.ntheory.digits), or a
+ * sequence `s` (or the Python slice `s[i:j]`) that does
+ * (sympy.utilities.iterables).
  */
-export function isPalindromic<T>(s: Sequence<T>, i = 0, j?: number): boolean {
-  const [a, b] = sliceIndices(s.length, i, j);
+export function isPalindromic(n: IntArg, b?: IntArg): boolean;
+export function isPalindromic<T>(s: Sequence<T>, i?: number, j?: number): boolean;
+export function isPalindromic<T>(s: IntArg | Sequence<T>, i?: IntArg, j?: number): boolean {
+  if (!isPalindromeSequence(s)) {
+    const base = intArg(i ?? 10);
+    if (base < 2n) throw new RangeError('b must be greater than 1');
+    let x = intArg(s);
+    if (x < 0n) x = -x;
+    const ds: bigint[] = [];
+    do {
+      ds.push(x % base);
+      x /= base;
+    } while (x > 0n);
+    for (let a = 0, z = ds.length - 1; a < z; a++, z--) if (ds[a] !== ds[z]) return false;
+    return true;
+  }
+  const [a, b] = sliceIndices(s.length, Number(i ?? 0), j);
   const m = Math.floor((b - a) / 2);
   for (let k = 0; k < m; k++) if (!valueEquals(s[a + k], s[b - 1 - k])) return false;
   return true;
+}
+
+function isPalindromeSequence<T>(s: IntArg | Sequence<T>): s is Sequence<T> {
+  return typeof s === 'string' || Array.isArray(s);
 }
 
 /**
@@ -575,12 +609,28 @@ function stronglyConnected<T>(V: readonly T[], gmap: ValueMap<T, T[]>): T[][] {
   return components;
 }
 
+/** A square matrix read as the adjacency matrix of a graph: entry (i, j) nonzero is an edge i -> j. */
+export interface AdjacencyMatrix {
+  readonly shape: readonly [number, number];
+  get(i: number, j: number): Expr;
+}
+
+const isGraph = <T>(g: Graph<T> | AdjacencyMatrix): g is Graph<T> => Array.isArray(g);
+
+/** An exact zero entry (no edge). */
+const isExactZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
+
 /**
  * SymPy `strongly_connected_components(G)`: the strongly connected
  * components of the directed graph `[V, E]` in reverse topological order
- * (Tarjan's algorithm).
+ * (Tarjan's algorithm); for an adjacency matrix (SymPy
+ * `Matrix.strongly_connected_components`), the components of its vertex
+ * indices.
  */
-export function stronglyConnectedComponents<T>(G: Graph<T>): T[][] {
+export function stronglyConnectedComponents(m: AdjacencyMatrix): number[][];
+export function stronglyConnectedComponents<T>(G: Graph<T>): T[][];
+export function stronglyConnectedComponents<T>(G: Graph<T> | AdjacencyMatrix): T[][] | number[][] {
+  if (!isGraph(G)) return matrixStronglyConnectedComponents(G);
   const [V, E] = G;
   const gmap = new ValueMap<T, T[]>();
   for (const v of V) gmap.set(v, []);
@@ -595,14 +645,79 @@ export function stronglyConnectedComponents<T>(G: Graph<T>): T[][] {
 /**
  * SymPy `connected_components(G)`: the connected components of an
  * undirected graph (each edge given in one or both directions), or the
- * weakly connected components of a directed graph.
+ * weakly connected components of a directed graph; for an adjacency matrix
+ * (SymPy `Matrix.connected_components`), the components of its vertex
+ * indices.
  */
-export function connectedComponents<T>(G: Graph<T>): T[][] {
+export function connectedComponents(m: AdjacencyMatrix): number[][];
+export function connectedComponents<T>(G: Graph<T>): T[][];
+export function connectedComponents<T>(G: Graph<T> | AdjacencyMatrix): T[][] | number[][] {
+  if (!isGraph(G)) return matrixConnectedComponents(G);
   const [V, E] = G;
   const undirected: [T, T][] = [];
   for (const [v1, v2] of E) undirected.push([v1, v2], [v2, v1]);
   return stronglyConnectedComponents([V, undirected]);
 }
+
+function matrixConnectedComponents(m: AdjacencyMatrix): number[][] {
+  const n = m.shape[0];
+  const seen = new Set<number>();
+  const out: number[][] = [];
+  const nz = (i: number, j: number) => !isExactZero(m.get(i, j));
+  for (let s = 0; s < n; s++) {
+    if (seen.has(s)) continue;
+    const comp: number[] = [];
+    const stack = [s];
+    seen.add(s);
+    for (let v = stack.pop(); v !== undefined; v = stack.pop()) {
+      comp.push(v);
+      for (let w = 0; w < n; w++) if (!seen.has(w) && (nz(v, w) || nz(w, v))) {
+        seen.add(w);
+        stack.push(w);
+      }
+    }
+    out.push(comp.sort((a, b) => a - b));
+  }
+  return out;
+}
+
+function matrixStronglyConnectedComponents(m: AdjacencyMatrix): number[][] {
+  const n = m.shape[0];
+  const nz = (i: number, j: number) => !isExactZero(m.get(i, j));
+  let index = 0;
+  const idx = new Map<number, number>();
+  const low = new Map<number, number>();
+  const onStack = new Set<number>();
+  const stack: number[] = [];
+  const out: number[][] = [];
+  const strong = (v: number) => {
+    idx.set(v, index);
+    low.set(v, index);
+    index++;
+    stack.push(v);
+    onStack.add(v);
+    for (let w = 0; w < n; w++) {
+      if (!nz(v, w)) continue;
+      if (!idx.has(w)) {
+        strong(w);
+        low.set(v, Math.min(getOrThrow(low, v), getOrThrow(low, w)));
+      } else if (onStack.has(w)) low.set(v, Math.min(getOrThrow(low, v), getOrThrow(idx, w)));
+    }
+    if (low.get(v) === idx.get(v)) {
+      const comp: number[] = [];
+      for (;;) {
+        const w = defined(stack.pop(), 'Tarjan stack entry');
+        onStack.delete(w);
+        comp.push(w);
+        if (w === v) break;
+      }
+      out.push(comp.sort((a, b) => a - b));
+    }
+  };
+  for (let v = 0; v < n; v++) if (!idx.has(v)) strong(v);
+  return out;
+}
+
 
 // ---------------------------------------------------------------------------
 // rotations

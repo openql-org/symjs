@@ -101,7 +101,7 @@ export {
 } from './core/errors';
 export { Basic, BasicNode } from './core/basic';
 export { Kind, NumberKind, BooleanKind, UndefinedKind } from './core/kind';
-export { SymNumber as Number, RealNumber, Atom, AtomicExpr, FunctionClass, UnevaluatedExpr, DeferredVector, genericExpr } from './core/classes';
+export { SymNumber as Number, SymNumber, RealNumber, Atom, AtomicExpr, FunctionClass, UnevaluatedExpr, DeferredVector, genericExpr } from './core/classes';
 export { defineFunction, implementedFunction, DefinedFunctionCall } from './core/defun';
 export type { DefinedFunction, FunctionDefinition } from './core/defun';
 export type {
@@ -320,9 +320,6 @@ export {
   nsimplify,
 } from './numeric/nfloat';
 export {
-  factorInt as factorint,
-} from './core/numbers';
-export {
   and as And,
   or as Or,
   not as Not,
@@ -530,7 +527,7 @@ export const rationalFromString = _rationalFromString_;
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const expandSymbolNames = _expandSymbolNames_;
 
-/** @deprecated Use `factorint`. */
+/** @deprecated Use `factorint` from `@symjs/symjs/ntheory` (or the root entry); removed in 1.0. */
 export const factorInt = _factorInt_;
 
 /** @deprecated Internal; removed from the public API in 1.0. */

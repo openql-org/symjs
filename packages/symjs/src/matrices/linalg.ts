@@ -8,7 +8,7 @@
  * values, pseudo-inverse, matrix exponential and structural helpers.
  */
 
-import { at, defined, first, getOrThrow, last } from '../core/guard';
+import { at, first, last } from '../core/guard';
 import { MatrixError, NonInvertibleMatrixError, NonSquareMatrixError, NotImplementedError } from '../core/errors';
 import type { ExprLike } from '../core/nodes';
 import { Dummy, Expr, Rational, S, Special, Sym, impl } from '../core/nodes';
@@ -22,8 +22,6 @@ import { cancel } from '../simplify/rational';
 import { simplify } from '../simplify/simplify';
 import { exp } from '../core/ops';
 import { Matrix } from './matrix';
-import type { Graph } from '../utilities/iterables';
-import { connectedComponents as graphConnectedComponents, stronglyConnectedComponents as graphStronglyConnectedComponents } from '../utilities/iterables';
 
 const isZeroE = (e: Expr): boolean => {
   if (e instanceof Rational) return e.isZero;
@@ -603,80 +601,8 @@ export function permanent(mIn: Matrix): Expr {
   return add(...terms);
 }
 
-/** Connected components of the graph of nonzero entries (undirected). */
-export function connectedComponents(m: Matrix): number[][];
-/** Connected components of a graph [vertices, edges] (SymPy utilities.iterables.connected_components). */
-export function connectedComponents<T>(graph: Graph<T>): T[][];
-export function connectedComponents<T>(m: Matrix | Graph<T>): number[][] | T[][] {
-  return m instanceof Matrix ? matrixConnectedComponents(m) : graphConnectedComponents(m);
-}
-
-function matrixConnectedComponents(m: Matrix): number[][] {
-  const n = m.shape[0];
-  const seen = new Set<number>();
-  const out: number[][] = [];
-  const nz = (i: number, j: number) => !isExactZero(m.get(i, j));
-  for (let s = 0; s < n; s++) {
-    if (seen.has(s)) continue;
-    const comp: number[] = [];
-    const stack = [s];
-    seen.add(s);
-    for (let v = stack.pop(); v !== undefined; v = stack.pop()) {
-      comp.push(v);
-      for (let w = 0; w < n; w++) if (!seen.has(w) && (nz(v, w) || nz(w, v))) {
-        seen.add(w);
-        stack.push(w);
-      }
-    }
-    out.push(comp.sort((a, b) => a - b));
-  }
-  return out;
-}
-
-/** Strongly connected components in SymPy's (Tarjan, reverse topological) order. */
-export function stronglyConnectedComponents(m: Matrix): number[][];
-/** Strongly connected components of a graph [vertices, edges] (SymPy utilities.iterables.strongly_connected_components). */
-export function stronglyConnectedComponents<T>(graph: Graph<T>): T[][];
-export function stronglyConnectedComponents<T>(m: Matrix | Graph<T>): number[][] | T[][] {
-  return m instanceof Matrix ? matrixStronglyConnectedComponents(m) : graphStronglyConnectedComponents(m);
-}
-
-function matrixStronglyConnectedComponents(m: Matrix): number[][] {
-  const n = m.shape[0];
-  const nz = (i: number, j: number) => !isExactZero(m.get(i, j));
-  let index = 0;
-  const idx = new Map<number, number>();
-  const low = new Map<number, number>();
-  const onStack = new Set<number>();
-  const stack: number[] = [];
-  const out: number[][] = [];
-  const strong = (v: number) => {
-    idx.set(v, index);
-    low.set(v, index);
-    index++;
-    stack.push(v);
-    onStack.add(v);
-    for (let w = 0; w < n; w++) {
-      if (!nz(v, w)) continue;
-      if (!idx.has(w)) {
-        strong(w);
-        low.set(v, Math.min(getOrThrow(low, v), getOrThrow(low, w)));
-      } else if (onStack.has(w)) low.set(v, Math.min(getOrThrow(low, v), getOrThrow(idx, w)));
-    }
-    if (low.get(v) === idx.get(v)) {
-      const comp: number[] = [];
-      for (;;) {
-        const w = defined(stack.pop(), 'Tarjan stack entry');
-        onStack.delete(w);
-        comp.push(w);
-        if (w === v) break;
-      }
-      out.push(comp.sort((a, b) => a - b));
-    }
-  };
-  for (let v = 0; v < n; v++) if (!idx.has(v)) strong(v);
-  return out;
-}
+/** SymPy connected_components / strongly_connected_components of a graph or of a matrix's nonzero pattern (one definition, in utilities). */
+export { connectedComponents, stronglyConnectedComponents } from '../utilities/iterables';
 
 /** Least-squares solution A^+ B plus the null-space part (I - A^+ A) W (SymPy pinv_solve). */
 export function pinvSolve(A: Matrix, B: Matrix, arbitrary?: Matrix): Matrix {

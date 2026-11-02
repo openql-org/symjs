@@ -8,7 +8,6 @@
 
 import type { IntLike } from './intutil';
 import { asInt, babs } from './intutil';
-import { isPalindromic as sequenceIsPalindromic } from '../utilities/iterables';
 
 /**
  * The digits of n in base b, preceded by b (or -b for negative n) (SymPy
@@ -44,17 +43,5 @@ export function countDigits(n: IntLike, bIn: IntLike = 10): Map<bigint, bigint> 
   return rv;
 }
 
-function isSequenceArg<T>(n: IntLike | readonly T[] | string): n is readonly T[] | string {
-  return typeof n === 'string' || Array.isArray(n);
-}
-
-/** n reads the same forwards and backwards in base b (SymPy is_palindromic). */
-export function isPalindromic(n: IntLike, b?: IntLike): boolean;
-/** A sequence (array or string) reads the same backwards, optionally s[i:j] (SymPy utilities.iterables.is_palindromic). */
-export function isPalindromic<T>(s: readonly T[] | string, i?: number, j?: number): boolean;
-export function isPalindromic<T>(n: IntLike | readonly T[] | string, b?: IntLike, j?: number): boolean {
-  if (isSequenceArg(n)) return sequenceIsPalindromic(n, b === undefined ? 0 : Number(b), j);
-  const ds = digits(n, b ?? 10).slice(1);
-  for (let i = 0, k = ds.length - 1; i < k; i++, k--) if (ds[i] !== ds[k]) return false;
-  return true;
-}
+/** SymPy is_palindromic of an integer in base b, or of a sequence (one definition, in utilities). */
+export { isPalindromic } from '../utilities/iterables';

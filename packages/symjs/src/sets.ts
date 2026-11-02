@@ -11,6 +11,7 @@ import './core';
 
 export {
   SetExpr,
+  SetExpr as Set,
   Interval,
   FiniteSet,
   ImageSet,

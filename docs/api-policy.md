@@ -5,7 +5,7 @@ Status: adopted (2026-11-02) and implemented; it may change by decision of the c
 ## Conventions
 
 1. **Names are camelCase.** SymPy functions keep their SymPy name converted mechanically from snake_case (`factor_list` -> `factorList`, `expand_log` -> `expandLog`).
-2. **Classes use SymPy's names** (`Symbol`, `Integer`, `Rational`, `Float`, `Add`, `Mul`, `Pow`, `Derivative`, `Integral`, `Piecewise`, `Interval`, `FiniteSet`, `And`, ...). `Set` is exported as `SetExpr` because JavaScript already has `Set`.
+2. **Classes use SymPy's names** (`Symbol`, `Integer`, `Rational`, `Float`, `Add`, `Mul`, `Pow`, `Derivative`, `Integral`, `Piecewise`, `Interval`, `FiniteSet`, `And`, ...). Names that are also JavaScript globals (`Symbol`, `Number`, `Function`, `Array`, `Set`) are exported under the SymPy name as well, and each also has a name that does not shadow the global: `Sym`, `SymNumber`, `ImmutableDenseNDimArray`, `SetExpr` (for `Function`, import it renamed: `import { Function as SymFunction }`). A module that also uses the JavaScript global imports the namespace (`import * as sj`) or the non-shadowing name.
 3. **Functions are primary; methods are thin aliases.** `subs(e, ...)`, `expand(e)`, ... are the API. `e.subs(...)`, `e.expand()` call the same functions, so unused features stay out of bundles.
 4. **Keyword arguments are a trailing options object** with camelCase keys (`factor(e, { deep: true })`, `solve(e, x, { cubics: false })`). Positional arguments follow SymPy's order.
 5. **Inputs accept `ExprLike`** (expressions, numbers, bigints, strings parsed like `sympify`).
@@ -13,6 +13,7 @@ Status: adopted (2026-11-02) and implemented; it may change by decision of the c
 7. **Failures behave like SymPy:** an error where SymPy raises, an unevaluated object where SymPy returns one (`Integral`, `ConditionSet`, ...).
 8. **Mathematical correctness wins** where SymPy's output is wrong; such cases are documented.
 9. **Results are never `undefined` or `null`** (see below).
+10. **One definition per name.** A name means the same function or class in every entry point that exports it. Where SymPy has one name in two modules (`is_palindromic` of an integer in `ntheory` and of a sequence in `utilities.iterables`, `connected_components` of a graph and the `Matrix` method), the one function accepts both forms. `factorint` is exported by `ntheory` and the root entry only (the core entry keeps the deprecated `factorInt`).
 
 ## Results of the public computation API
 
