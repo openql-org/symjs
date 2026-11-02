@@ -8,6 +8,7 @@
 import { Add, Expr, ExprLike, Fn, Mul, Pow, Rational, impl } from '../core/nodes';
 import { splitCoeff, sympify } from '../core/ops';
 import { countOps, mapBottomUp, some } from '../core/traverse';
+import { combsimp } from './gammasimp';
 import { fn } from '../functions/elementary';
 import { expandMul as expand } from './expand';
 import { powsimp } from './powsimp';
@@ -43,6 +44,8 @@ function simplifyCore(e: Expr): Expr {
     tryPush(() => expsimp(e));
   }
   tryPush(() => expand(radsimp(e)));
+  // combinatorial functions: Gamma ratios combined (SymPy combsimp in simplify)
+  if (some(e, (x) => x instanceof Fn && ['factorial', 'binomial', 'gamma', 'rf', 'ff'].includes(x.name))) tryPush(() => combsimp(expand(e)));
   if (hasDenominator(e)) {
     tryPush(() => cancel(e));
     if (hasTrig(e)) tryPush(() => cancel(exptotrig(e)));

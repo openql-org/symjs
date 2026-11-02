@@ -13,7 +13,8 @@ import { polyCoefficients } from '../polys/poly';
 import { powsimp } from './powsimp';
 import { cancel, fraction } from './rational';
 import { add, mul, pow, sympify } from '../core/ops';
-import { mapBottomUp } from '../core/traverse';
+import { countOps, mapBottomUp } from '../core/traverse';
+import { isIntegerQ } from '../core/assumptions';
 import { fn } from '../functions/elementary';
 import { expand } from './expand';
 import { factor } from '../polys/sympoly';
@@ -115,7 +116,11 @@ export function combsimp(exIn: ExprLike): Expr {
   const ex = sympify(exIn);
   const g = toGamma(ex);
   const c = mapBottomUp(g, combineProduct);
-  if (hasGamma(c)) return c.key === g.key ? ex : c;
+  if (hasGamma(c)) {
+    if (c.key === g.key && countOps(g) >= countOps(ex)) return ex;
+    // as_comb: Gamma of an integer is written as a factorial again
+    return mapBottomUp(c, (x) => (x instanceof Fn && x.name === 'gamma' && isIntegerQ(x.args[0]!) === true ? fn('factorial', [add(x.args[0]!, -1)]) : x));
+  }
   try {
     return factor(c);
   } catch {
