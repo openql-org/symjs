@@ -10,6 +10,7 @@ import { Add, Derivative, Expr, impl, ExprLike, Mul, Pow, Rational, S, UndefFn }
 import { add, asBaseExp, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { expandMul } from './expand';
 import { fraction } from './rational';
+import { gcdTerms } from './exprtools';
 
 /** Is t a rational multiple of a square root of a positive rational? */
 function sqrtTerm(t: Expr): [Expr, Expr] | undefined {
@@ -41,7 +42,11 @@ export function radsimp(ex: ExprLike): Expr {
   if (den instanceof Rational) {
     const inv = Rational.of(den.q, den.p);
     // keep (num)/den unevaluated like SymPy, e.g. (2 - sqrt(2))/2
-    return num instanceof Add ? keepCoeff(inv, num) : mul(inv, num);
+    const r = num instanceof Add ? keepCoeff(inv, num) : mul(inv, num);
+    // SymPy: n, d = fraction(gcd_terms(n/d)) when that does not grow the denominator
+    const [n2, d2] = fraction(gcdTerms(r));
+    if (d2 instanceof Rational && d2.isOne && !(n2 instanceof Add)) return n2;
+    return r;
   }
   return mul(num, pow(den, -1));
 }
