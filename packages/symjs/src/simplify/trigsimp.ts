@@ -11,7 +11,7 @@
  * which are ubiquitous in products of rotation gates.
  */
 
-import { Add, Constant, Dummy, Expr, ExprLike, Fn, FnName, Mul, Pow, S } from '../core/nodes';
+import { Add, Constant, Dummy, Expr, ExprLike, Fn, FnName, Mul, Pow, Rational, S } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, sympify } from '../core/ops';
 import { countOps, mapBottomUp, some, xreplace } from '../core/traverse';
 import { cos, cosh, fn, sin, sinh } from '../functions/elementary';
@@ -112,6 +112,10 @@ export function trigsimp(ex: ExprLike, opts: { old?: boolean; deep?: boolean; me
   });
   if (recip.key !== e.key && countOps(recip) < countOps(e)) e = recip;
   if (!hasTrigFunctions(e)) return e;
+  // SymPy futrig only rewrites trigonometric parts: c*sin(u)**2 + c*cos(u)**2 -> c without
+  // touching the rest ((x + x**2)/(x*sin(y)**2 + x*cos(y)**2) -> (x**2 + x)/x)
+  const pyth = mapBottomUp(e, pythagorean);
+  if (pyth.key !== e.key && trigCount(pyth) === 0) return pyth;
   let t = exptotrig(e);
   // a sum of fractions: simplify the combined numerator, then cancel (SymPy trigsimp_groebner-like)
   // (SymPy's old algorithm without method="groebner" does not do this)
@@ -130,6 +134,36 @@ export function trigsimp(ex: ExprLike, opts: { old?: boolean; deep?: boolean; me
   const le = trigCount(e);
   if (lt !== le) return lt < le && countOps(t) <= countOps(e) + 1 ? t : countOps(t) <= countOps(e) ? t : e;
   return countOps(t) <= countOps(e) ? t : e;
+}
+
+/** c*sin(u)**2 + c*cos(u)**2 -> c (and cosh**2 - sinh**2 -> 1) inside a sum. */
+function pythagorean(e: Expr): Expr {
+  if (!(e instanceof Add)) return e;
+  const terms = [...e.args];
+  const split = (t: Expr): [Expr, string, Expr] | undefined => {
+    const fs = t instanceof Mul ? t.args : [t];
+    const i = fs.findIndex((f) => f instanceof Pow && f.exp instanceof Rational && f.exp.p === 2n && f.exp.q === 1n && f.base instanceof Fn && ['sin', 'cos', 'sinh', 'cosh'].includes(f.base.name));
+    if (i < 0) return undefined;
+    const b = (fs[i] as Pow).base as Fn;
+    return [mul(...fs.filter((_, j) => j !== i)), b.name, b.args[0]!];
+  };
+  for (let i = 0; i < terms.length; i++) {
+    const a = split(terms[i]!);
+    if (!a) continue;
+    const partner = { sin: 'cos', cos: 'sin', sinh: 'cosh', cosh: 'sinh' }[a[1]]!;
+    // sin**2 + cos**2 = 1; cosh**2 - sinh**2 = 1
+    const sign = a[1] === 'sinh' ? -1 : a[1] === 'cosh' ? -1 : 1;
+    const j = terms.findIndex((t, k) => {
+      if (k === i) return false;
+      const b = split(t);
+      return b !== undefined && b[1] === partner && b[2].key === a[2].key && b[0].key === mul(sign, a[0]).key;
+    });
+    if (j < 0) continue;
+    const c = a[1] === 'sinh' ? split(terms[j]!)![0] : a[0];
+    const rest = terms.filter((_, k) => k !== i && k !== j);
+    return pythagorean(add(...rest, c));
+  }
+  return e;
 }
 
 const RECIPROCAL: Record<string, string> = { cot: 'tan', coth: 'tanh', sec: 'cos', csc: 'sin', sech: 'cosh', csch: 'sinh' };
