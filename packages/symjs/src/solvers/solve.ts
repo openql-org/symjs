@@ -190,6 +190,8 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   }
   const rad = singleRadical(num, x, depth);
   if (rad) return rad;
+  const multi = radicalsOfX(num, x);
+  if (multi) return multi;
   const lw = lambertSolve(num, x);
   if (lw) return lw;
   // a*sin(u) + b*cos(u) = 0  ->  tan(u) = -b/a
@@ -231,6 +233,57 @@ function singleRadical(num: Expr, x: Sym, depth: number): Expr[] | undefined {
   if (p < 0n || q > 6n) return undefined;
   const eq = add(mul(pow(a, Rational.of(q)), pow(R.base, Rational.of(p))), mul(-1, pow(mul(-1, b), Rational.of(q))));
   return solveRaw(expandMul(eq), x, depth + 1);
+}
+
+/**
+ * Several radicals of x itself (x**(1/5), x**(1/3)): x = t**L with L the lcm
+ * of the denominators gives a polynomial in t; the solutions are root**L for
+ * the roots that satisfy the original equation (principal branches).
+ */
+function radicalsOfX(num: Expr, x: Sym): Expr[] | undefined {
+  const dens = new Set<bigint>();
+  let ok = true;
+  const walk = (e: Expr) => {
+    if (e instanceof Pow && e.base.key === x.key && e.exp instanceof Rational) {
+      if (e.exp.q > 1n) dens.add(e.exp.q);
+      return;
+    }
+    if (e.key === x.key) return;
+    if (e.has(x) && !(e instanceof Add || e instanceof Mul)) ok = false;
+    e.args.forEach(walk);
+  };
+  walk(num);
+  if (!ok || dens.size < 1) return undefined;
+  const g = (a: bigint, b: bigint): bigint => (b === 0n ? a : g(b, a % b));
+  const L = [...dens].reduce((l, q) => (l * q) / g(l, q), 1n);
+  if (L > 60n) return undefined;
+  const t = new Dummy('t');
+  // whole powers of x are replaced first (top-down), then x itself
+  const powers = new Map<string, Pow>();
+  const collectPowers = (e: Expr) => {
+    if (e instanceof Pow && e.base.key === x.key) powers.set(e.key, e);
+    e.args.forEach(collectPowers);
+  };
+  collectPowers(num);
+  const reps: [Expr, Expr][] = [...powers.values()].map((e) => [e, pow(t, mul(e.exp, Rational.of(L)))]);
+  const sub = expandMul(xreplace(xreplace(num, reps), [[x, pow(t, Rational.of(L))]]));
+  const pc = polyCoefficients(sub, t);
+  if (!pc) return undefined;
+  // a polynomial with rational coefficients in the original variable name (SymPy prints CRootOf in x)
+  const [n] = fraction(together(sub));
+  const P = Poly.from(expandMul(xreplace(n, [[t, x]])), [x]);
+  const out: Expr[] = [];
+  for (const r of uniqueKeys(P.allRoots())) {
+    const cand = pow(r, Rational.of(L));
+    const v = xreplace(num, [[x, cand]]);
+    try {
+      const c = evalf(v, 30).toComplex();
+      if (Math.hypot(c.re, c.im) < 1e-12) out.push(cand);
+    } catch {
+      // not evaluable
+    }
+  }
+  return out;
 }
 
 function sinCosLinear(e: Expr, x: Sym): Expr[] | undefined {

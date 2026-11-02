@@ -305,6 +305,10 @@ export function deserialize(tree: Tree): unknown {
     case 'Mul':
     case 'MatMul':
       return sj.mul(...(tree['args'] as Tree[]).map((a) => lambdaAsNode(deserialize(a)) as Expr));
+    case 'Indexed':
+      return new sj.Indexed([deserialize(tree['base'] as Tree) as Expr, ...(tree['indices'] as Tree[]).map((t) => deserialize(t) as Expr)]);
+    case 'IndexedBase':
+      return new sj.IndexedBase(deserialize(tree['label'] as Tree) as Sym);
     case 'CRootOf':
       return new sj.CRootOf(deserialize(tree['poly'] as Tree) as Expr, tree['index'] as number);
     case 'Pow': {
@@ -1731,7 +1735,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     // systems of equations
     if (first instanceof JsTuple) {
       // unknowns that are not symbols (x + 2, x*y) are solved for as dummies, like SymPy
-      const targets = (args[1] instanceof JsTuple ? args[1].items : args.slice(1)).map(asExpr);
+      const targets = (args[1] instanceof JsTuple || args[1] instanceof JsSet ? args[1].items : args.slice(1)).map(asExpr);
       const syms = targets.map((t, i) => (t instanceof Sym ? t : new sj.Dummy(`_t${i}`)));
       const reps = targets.map((t, i) => [t, syms[i]!] as [Expr, Expr]).filter(([t]) => !(t instanceof Sym));
       const back = (v: Expr) => targets[syms.indexOf(v as Sym)] ?? v;

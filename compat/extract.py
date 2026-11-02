@@ -130,6 +130,10 @@ def ser(o):
         if mod.startswith("sympy") or mod == "math":
             return {"t": "JsFunc", "name": ("math." if mod == "math" else "") + o.__name__}
         raise Unsupported("function")
+    if isinstance(o, sympy.Indexed):
+        return {"t": "Indexed", "base": ser(o.base.label), "indices": [ser(i) for i in o.indices]}
+    if isinstance(o, sympy.IndexedBase):
+        return {"t": "IndexedBase", "label": ser(o.label)}
     if isinstance(o, sympy.CRootOf):
         return {"t": "CRootOf", "poly": ser(o.expr), "index": int(o.index)}
     if isinstance(o, sympy.RootSum):

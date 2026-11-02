@@ -34095,7 +34095,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_877",
+         "name": "Dummy_876",
          "index": 0,
          "assume": {
           "real": true
@@ -53530,7 +53530,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x108316650>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a5d4340>, 3)"
   },
   {
    "fn": ".LC",
@@ -53737,7 +53737,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10858ae60>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a4e3070>, 4)"
   },
   {
    "fn": ".TC",
@@ -78117,7 +78117,139 @@
   },
   {
    "fn": "solve",
-   "unsupportedArg": "Indexed",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-3",
+         "q": "1"
+        },
+        {
+         "t": "Indexed",
+         "base": {
+          "t": "Symbol",
+          "name": "A",
+          "assume": {}
+         },
+         "indices": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Indexed",
+         "base": {
+          "t": "Symbol",
+          "name": "A",
+          "assume": {}
+         },
+         "indices": [
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Indexed",
+           "base": {
+            "t": "Symbol",
+            "name": "A",
+            "assume": {}
+           },
+           "indices": [
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Indexed",
+         "base": {
+          "t": "Symbol",
+          "name": "A",
+          "assume": {}
+         },
+         "indices": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "JsSet",
+     "items": [
+      {
+       "t": "Indexed",
+       "base": {
+        "t": "Symbol",
+        "name": "A",
+        "assume": {}
+       },
+       "indices": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Indexed",
+       "base": {
+        "t": "Symbol",
+        "name": "A",
+        "assume": {}
+       },
+       "indices": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "solvers",
    "module": "sympy.solvers.solvers",
    "src": "solve(eqs, eqs.atoms(Indexed))",
@@ -91701,7 +91833,59 @@
   },
   {
    "fn": ".doit",
-   "unsupportedArg": "Indexed",
+   "self": {
+    "t": "Fn",
+    "name": "Sum",
+    "args": [
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Indexed",
+        "base": {
+         "t": "Symbol",
+         "name": "f",
+         "assume": {}
+        },
+        "indices": [
+         {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Symbol",
+        "name": "n",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.concrete.summations",
    "src": "Sum(f[n]**2, (n, 0, 3)).doit()",

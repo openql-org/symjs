@@ -59,6 +59,7 @@ export {
   ExtensionExpr,
 } from './core/nodes';
 export { ExprMap } from './core/exprmap';
+export { Indexed, IndexedBase } from './core/indexed';
 export type {
   Kind,
   ExprLike,

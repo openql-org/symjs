@@ -386,3 +386,17 @@ describe('collect exact=None/func, deep factor with exponentials, radical conten
     expect(sstr(cancel(parse('(sqrt(3) + sqrt(15)*A)/(sqrt(2) + sqrt(10)*A)', { symbols: { A } } as never)))).toBe('sqrt(6)/2');
   });
 });
+
+describe('Indexed and equations with several radicals', () => {
+  it('match SymPy', async () => {
+    const { IndexedBase, Sum, solve, summation } = await import('../src');
+    const f = new IndexedBase('f');
+    const n = symbols('n')[0];
+    expect(sstr(f.at(n))).toBe('f[n]');
+    expect(sstr(summation(f.at(n).pow(2), [n, 0, 3]))).toBe('f[0]**2 + f[1]**2 + f[2]**2 + f[3]**2');
+    void Sum;
+    const x = symbols('x')[0];
+    expect(solve(parse('-x**(1/5) + x**(1/3) + 1/7'), x).map((e) => sstr(e))).toEqual(['CRootOf(7*x**5 - 7*x**3 + 1, 1)**15', 'CRootOf(7*x**5 - 7*x**3 + 1, 2)**15']);
+    expect(solve(parse('x**(1/2) - x**(1/4) - 2'), x).map((e) => sstr(e))).toEqual(['16']);
+  });
+});
