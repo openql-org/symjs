@@ -159,6 +159,9 @@ function evalHarmonic(n: Expr, m: Expr = S.One): Expr | undefined {
   if (isOo(n)) {
     if (m instanceof Rational && m.isOne) return S.Infinity;
     if (isInt(m) && m.p > 1n) return fnN('zeta', m);
+    if (isNegative(m) === true) return S.NaN;
+    if (isPositive(add(m, -1)) === true) return fnN('zeta', m);
+    if (isNegative(add(m, -1)) === true || (isPositive(m) === false && isNegative(m) === false)) return S.Infinity;
     return undefined;
   }
   if (isInt(n) && !n.isNegative && isInt(m)) {

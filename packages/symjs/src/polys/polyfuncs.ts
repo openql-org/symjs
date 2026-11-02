@@ -11,6 +11,8 @@ import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { expandMul } from '../simplify/expand';
 import { Poly, sortGens } from './sympoly';
+import { Matrix } from '../matrices/matrix';
+import { nullspace } from '../matrices/linalg';
 
 /** Elementary symmetric polynomial e_k of the generators. */
 function elementary(gens: readonly Expr[], k: number): Expr {
@@ -65,4 +67,23 @@ export function symmetrize(fIn: ExprLike, gensIn: readonly Sym[] = []): [Expr, E
 export function symmetrizeExpr(fIn: ExprLike, gens: readonly Sym[] = []): [Expr, Expr] {
   const [s, r, m] = symmetrize(fIn, gens);
   return [xreplace(s, m), r];
+}
+
+/**
+ * Rational interpolation of (x, y) data with a numerator of degree
+ * `degnum` (SymPy rational_interpolate).
+ */
+export function rationalInterpolate(data: readonly (readonly [ExprLike, ExprLike])[], degnum: number, X: Sym = new Sym('x')): Expr {
+  const xs = data.map(([a]) => sympify(a));
+  const ys = data.map(([, b]) => sympify(b));
+  const k = xs.length - degnum - 1;
+  if (k < 0) throw new Error('rational_interpolate: too few values for the required degree');
+  const rows = degnum + k + 1;
+  const c: Expr[][] = Array.from({ length: rows }, () => Array.from({ length: degnum + k + 2 }, () => sympify(1)));
+  for (let j = 0; j < Math.max(degnum, k); j++) for (let i = 0; i < rows; i++) c[i]![j + 1] = mul(c[i]![j]!, xs[i]!);
+  for (let j = 0; j <= k; j++) for (let i = 0; i < rows; i++) c[i]![degnum + k + 1 - j] = mul(-1, c[i]![k - j]!, ys[i]!);
+  const r = nullspace(Matrix.of(c))[0]!;
+  const num = add(...Array.from({ length: degnum + 1 }, (_, i) => mul(r.get(i, 0), pow(X, i))));
+  const den = add(...Array.from({ length: k + 1 }, (_, i) => mul(r.get(i + degnum + 1, 0), pow(X, i))));
+  return mul(num, pow(den, -1));
 }

@@ -23,3 +23,26 @@ describe('rewrites and series of special functions', () => {
     expect(String(series(parse('sinc(x)'), x))).toBe('1 - x**2/6 + x**4/120 + O(x**6)');
   });
 });
+
+import { add, factor, harmonic, neg, oo, rationalInterpolate, Rational, Sym } from '../src';
+
+describe('factor of powers and deep factoring', () => {
+  it('factors bases of large powers without expanding', () => {
+    expect(String(factor(parse('(x**2 + 4*x + 4)**10000000*(x**2 + 1)')))).toBe('(x + 2)**20000000*(x**2 + 1)');
+  });
+  it('factors inside exponents with deep', () => {
+    expect(String(factor(parse('2**(x**2 + 2*x + 1)'), { deep: true }))).toBe('2**((x + 1)**2)');
+  });
+});
+
+describe('rational_interpolate and harmonic at infinity', () => {
+  it('interpolates rational functions', () => {
+    const data = [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6]].map(([a, b]) => [Rational.of(a!), Rational.of(b!)] as const);
+    expect(String(rationalInterpolate(data, 1))).toBe('x + 1');
+  });
+  it('harmonic(oo, m) for symbolic m', () => {
+    const m = new Sym('m', { positive: true });
+    expect(String(harmonic(oo, add(m, 1)))).toBe('zeta(m + 1)');
+    expect(String(harmonic(oo, neg(m)))).toBe('nan');
+  });
+});

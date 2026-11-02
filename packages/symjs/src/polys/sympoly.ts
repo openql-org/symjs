@@ -7,9 +7,9 @@
  * functions (degree, LC/LM/LT, gcd, lcm, div, factor_list, ...).
  */
 
-import { Add, Constant, Expr, ExprLike, Float, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
+import { Add, Constant, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
-import { freeSymbols, rebuild, xreplace } from '../core/traverse';
+import { freeSymbols, mapBottomUp, rebuild, xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { integrate } from '../integrals/integrate';
 import { str } from '../printing/str';
@@ -1190,7 +1190,12 @@ export function discriminant(f: ExprLike, x: Sym): Expr {
  * Factor an expression over the rationals (multivariate), SymPy style:
  * an unevaluated product of the content and primitive factors.
  */
-export function factor(ex: ExprLike): Expr {
+export function factor(ex: ExprLike, opts: { deep?: boolean } = {}): Expr {
+  if (opts.deep) {
+    // factor the arguments of functions and powers first (SymPy deep=True)
+    const inner = mapBottomUp(sympify(ex), (t) => (t instanceof Fn || (t instanceof Pow && !(t.exp instanceof Rational)) ? rebuild(t, t.args.map((a) => factor(a))) : t));
+    return factor(inner);
+  }
   const e = sympify(ex);
   const vars = sortGens([...freeSymbols(e)]) as Sym[];
   if (vars.length === 0) return e;
@@ -1202,6 +1207,12 @@ export function factor(ex: ExprLike): Expr {
     const fd = factor(mul(...d.map((f) => pow((f as Pow).base, mul(-1, (f as Pow).exp)))));
     return mul(fn_, pow(fd, -1));
   }
+  // powers of sums are factored base-wise (SymPy _symbolic_factor_list), which
+  // also avoids expanding large powers
+  const isSumPow = (f: Expr) => f instanceof Pow && f.base instanceof Add && f.exp instanceof Rational && f.exp.isInteger && f.exp.p > 1n;
+  if (isSumPow(e)) return pow(factor((e as Pow).base), (e as Pow).exp);
+  if (e instanceof Pow && e.base instanceof Add && e.exp instanceof Rational && !e.exp.isInteger) return pow(factor(e.base), e.exp);
+  if (e instanceof Mul && e.args.some(isSumPow)) return mul(...e.args.map((f) => factor(f)));
   let poly: Expr;
   try {
     poly = expand(e);

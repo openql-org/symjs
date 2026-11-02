@@ -246,7 +246,7 @@ export { piecewiseIntegrate } from './integrals/integrate';
 export { apart } from './polys/partfrac';
 export { nroots } from './polys/nroots';
 export { sumIsConvergent, sumIsAbsolutelyConvergent } from './concrete/summations';
-export { symmetrize, symmetrizeExpr } from './polys/polyfuncs';
+export { symmetrize, symmetrizeExpr, rationalInterpolate } from './polys/polyfuncs';
 export { separatevars } from './simplify/separatevars';
 export { groebner, GroebnerBasis, reduced } from './polys/groebner';
 export type { MonomialOrder } from './polys/groebner';

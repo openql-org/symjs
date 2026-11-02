@@ -1130,7 +1130,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   expand_trig: exprFn(sj.expand_trig),
   expand_complex: exprFn(sj.expand_complex),
   simplify: exprFn(sj.simplify),
-  factor: exprFn(sj.factor),
+  factor: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
+    if (args.length !== 1) throw new Unsupported('arity');
+    return sj.factor(asExpr(args[0]), { deep: Boolean(kw['deep']) });
+  },
   together: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
     return sj.together(asExpr(args[0]), { deep: Boolean(kw['deep']) });
@@ -1139,6 +1143,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   trigsimp: exprFn(sj.trigsimp),
   exptrigsimp: exprFn(sj.exptrigsimp),
   Id: exprFn((e) => e),
+  rational_interpolate: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'X') throw new Unsupported(`kwargs ${k}`);
+    const data = (args[0] as PyTuple | PyList).items.map((t) => (t as PyTuple).items.map(asExpr) as [Expr, Expr]);
+    return sj.rationalInterpolate(data, Number((args[1] as sj.Rational).p), kw['X'] ? asSym(kw['X']) : undefined);
+  },
   '.is_motzkin': (args, kw) => {
     noKw(kw);
     return sj.isMotzkin((args[0] as sj.Rational).p);
@@ -1963,7 +1972,19 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new PyList(asPoly(self).sqfListInclude(Boolean(kw['all'])).map(([f, k]) => new PyTuple([f, k])));
   },
   ground_roots: (args, kw) => (noKw(kw), new PyDict(polyOf(args).groundRoots())),
-  real_roots: (args, kw) => (noKw(kw), new PyList(polyOf(args).realRoots())),
+  real_roots: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'multiple') throw new Unsupported(`kwargs ${k}`);
+    const rs = polyOf(args).realRoots();
+    if (kw['multiple'] !== false) return new PyList(rs);
+    // multiple=False: [(root, multiplicity)] in order
+    const out: [Expr, number][] = [];
+    for (const r of rs) {
+      const last = out[out.length - 1];
+      if (last && last[0].key === r.key) last[1]++;
+      else out.push([r, 1]);
+    }
+    return new PyList(out.map(([r, k]) => new PyTuple([r, sj.Rational.of(k)])));
+  },
   all_roots: (args, kw) => (noKw(kw), new PyList(polyOf(args).allRoots())),
   count_roots: (args, kw) => {
     noKw(kw);
