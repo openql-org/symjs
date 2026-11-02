@@ -8,6 +8,7 @@
  * grouping) and particular solutions by undetermined coefficients.
  */
 
+import { SubsNode } from '../core/subsnode';
 import { Add, Derivative, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
@@ -323,6 +324,10 @@ function applyIcs(sol: Expr, fx: UndefFn, x: Sym, ics: [Expr, ExprLike][]): Expr
     // cond is f(a) or Derivative(f(x), x) evaluated at a (Subs) -- we accept f(a) and (Derivative, a) pairs
     if (cond instanceof UndefFn && cond.name === fx.name) {
       eqs.push(add(xreplace(sol, [[x, cond.args[0]!]]), mul(-1, sympify(val))));
+    } else if (cond instanceof SubsNode && cond.expr instanceof Derivative && cond.expr.expr instanceof UndefFn && cond.variables.length === 1) {
+      // f(x).diff(x, k).subs(x, a): Subs(Derivative(f(x), (x, k)), x, a)
+      const k = cond.expr.variableCount.reduce((s, [, m]) => s + m, 0);
+      eqs.push(add(xreplace(diff(sol, x, k), [[x, cond.point[0]!]]), mul(-1, sympify(val))));
     } else if (cond instanceof Derivative && cond.expr instanceof UndefFn) {
       const k = cond.variableCount.reduce((s, [, m]) => s + m, 0);
       const at = (cond.expr.args[0] as Expr) ?? x;

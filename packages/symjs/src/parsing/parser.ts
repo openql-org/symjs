@@ -32,8 +32,18 @@ type Token =
   | { t: 'value'; v: Expr; pos: number }
   | { t: 'end'; pos: number };
 
+/** SymPy repeating decimals: '1.2[3]' = 1.2333... = 37/30. */
+function repeatingDecimal(s: string): Rational {
+  const [, int, frac, rep] = /^(\d*)\.(\d*)\[(\d+)\]$/.exec(s)!;
+  const fixed = BigInt((int || '0') + frac);
+  const scale = 10n ** BigInt(frac!.length);
+  const nines = 10n ** BigInt(rep!.length) - 1n;
+  // fixed/scale + rep/(nines*scale)
+  return Rational.of(fixed * nines + BigInt(rep!), nines * scale);
+}
+
 function tokenize(src: string, offset: number, out: Token[]): void {
-  const re = /\s*(?:(\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)|([A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*)|(\*\*|[-+*/^(),]))/y;
+  const re = /\s*(?:(\d*\.\d*\[\d+\])|(\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)|([A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*)|(\*\*|[-+*/^(),]))/y;
   let i = 0;
   while (i < src.length) {
     if (/^\s*$/.test(src.slice(i))) return;
@@ -41,9 +51,10 @@ function tokenize(src: string, offset: number, out: Token[]): void {
     const m = re.exec(src);
     if (!m) throw new SyntaxError(`Unexpected character '${src[i]?.trim() || src.slice(i).trim()[0]}' at ${offset + i}`);
     const pos = offset + i + (m[0].length - m[0].trimStart().length);
-    if (m[1] !== undefined) out.push({ t: 'num', v: m[1], pos });
-    else if (m[2] !== undefined) out.push({ t: 'name', v: m[2], pos });
-    else out.push({ t: 'op', v: m[3]!, pos });
+    if (m[1] !== undefined) out.push({ t: 'value', v: repeatingDecimal(m[1]), pos });
+    else if (m[2] !== undefined) out.push({ t: 'num', v: m[2], pos });
+    else if (m[3] !== undefined) out.push({ t: 'name', v: m[3], pos });
+    else out.push({ t: 'op', v: m[4]!, pos });
     i = re.lastIndex;
   }
 }

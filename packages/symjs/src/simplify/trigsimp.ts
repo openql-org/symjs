@@ -11,9 +11,9 @@
  * which are ubiquitous in products of rotation gates.
  */
 
-import { Add, Constant, Expr, ExprLike, Fn, FnName, Mul, Pow, S } from '../core/nodes';
+import { Add, Constant, Dummy, Expr, ExprLike, Fn, FnName, Mul, Pow, S } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, sympify } from '../core/ops';
-import { countOps, mapBottomUp, some } from '../core/traverse';
+import { countOps, mapBottomUp, some, xreplace } from '../core/traverse';
 import { cos, cosh, fn, sin, sinh } from '../functions/elementary';
 import { expandMul as expand } from './expand';
 import { rewrite } from './rewrite';
@@ -85,7 +85,20 @@ export function exptotrig(ex: ExprLike): Expr {
  * expression without trigonometric functions is returned unchanged, and the
  * result is never more complex than the input.
  */
-export function trigsimp(ex: ExprLike): Expr {
+export function trigsimp(ex: ExprLike, opts: { old?: boolean; deep?: boolean; method?: string } = {}): Expr {
+  if (opts.old && !opts.deep) {
+    // SymPy trigsimp_old without deep does not look inside other functions
+    const frozen: [Expr, Expr][] = [];
+    const outer = mapBottomUp(sympify(ex), (x) => {
+      if (x instanceof Fn && !TRIG_NAMES.has(x.name) && hasTrigFunctions(x)) {
+        const d = new Dummy(`_trigsimp${frozen.length}`);
+        frozen.push([d, x]);
+        return d;
+      }
+      return x;
+    });
+    return frozen.length ? xreplace(trigsimp(outer), frozen) : trigsimp(outer);
+  }
   let e = sympify(ex);
   // reciprocal functions (cot, coth, sec, ...) in terms of the basic ones when that is shorter
   const recip = mapBottomUp(e, (x) => {

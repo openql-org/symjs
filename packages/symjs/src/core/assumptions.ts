@@ -23,7 +23,7 @@ export function isZero(e: Expr): Tri {
   if (e instanceof Rational || e instanceof Float) return e.isZero;
   if (e instanceof Special) return e.name === 'nan' ? undefined : false;
   if (e instanceof Constant) return false;
-  if (e instanceof Sym) return e.assumptions.positive ? false : undefined;
+  if (e instanceof Sym) return e.assumptions.zero === false ? false : undefined;
   if (e instanceof Pow && e.base instanceof Constant && e.base.name === 'E') return false;
   return undefined;
 }

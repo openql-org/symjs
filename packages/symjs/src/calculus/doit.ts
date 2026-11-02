@@ -6,7 +6,7 @@
  * sums/products and derivatives, innermost first.
  */
 
-import { Derivative, Expr, ExprLike, Integral, Limit, Sym } from '../core/nodes';
+import { Derivative, Expr, ExprLike, ExtensionExpr, Integral, Limit, Sym } from '../core/nodes';
 import { sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
 import { Concrete, doitConcrete } from '../concrete/summations';
@@ -26,6 +26,7 @@ export function doit(ex: ExprLike): Expr {
     }
     if (y instanceof Limit) return limit(y.args[0]!, y.args[1] as Sym, y.args[2]!, y.dir);
     if (y instanceof Concrete) return doitConcrete(y);
+    if (y instanceof ExtensionExpr) return y.doitSelf() ?? y;
     if (y instanceof Derivative) {
       let r = y.expr;
       for (const [v, n] of y.variableCount) r = diff(r, v, n);

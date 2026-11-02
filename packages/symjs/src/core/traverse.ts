@@ -11,6 +11,7 @@ import { Concrete } from '../concrete/node';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { Add, Constant, Derivative, ExtensionExpr, Expr, ExprLike, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Substitution, Sym, UndefFn, impl } from './nodes';
 import { add, mul, pow, sympify } from './ops';
+import { SubsNode } from './subsnode';
 
 /**
  * Rebuild a node of the same type with new arguments (re-canonicalizing).
@@ -208,6 +209,7 @@ function splitAddCoeff(e: Expr): [Expr, Expr] {
 /** Variables bound by a definite Integral or a Sum/Product (SymPy bound_symbols). */
 export function boundSymbols(e: Expr): Expr[] {
   if (e instanceof Integral && e.args.length >= 3) return [e.args[1]!];
+  if (e instanceof ExtensionExpr) return (e.bindings()?.variables ?? []).map((i) => e.args[i]!);
   if (e instanceof Concrete) return e.limits.map(([k]) => k);
   return [];
 }
@@ -215,9 +217,19 @@ export function boundSymbols(e: Expr): Expr[] {
 function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
   if (e.key === old.key) return nw;
   if (e.args.length === 0) return e;
+  // a differentiation variable replaced by a non-symbol: the derivative at a point (SymPy Subs)
+  if (e instanceof Derivative && old instanceof Sym && !(nw instanceof Sym) && e.variableCount.some(([v]) => v.key === old.key)) {
+    return new SubsNode([e, old, nw]);
+  }
   // a bound variable is not free: only the limits are substituted
   const bound = boundSymbols(e);
   if (bound.length && bound.some((b) => old.key === b.key)) {
+    if (e instanceof ExtensionExpr) {
+      const b = e.bindings()!;
+      const fixed = new Set([...b.variables, ...b.scope]);
+      const args = e.args.map((a, i) => (fixed.has(i) ? a : subsOne(a, old, nw)));
+      return args.some((a, i) => a !== e.args[i]) ? e.withArgs(args) : e;
+    }
     if (e instanceof Integral) {
       // only the limits are substituted ((x, b) or (x, a, b))
       const lims = e.args.slice(2);
@@ -264,7 +276,16 @@ export function freeSymbols(e: Expr): Set<Sym> {
   const out = new Map<string, Sym>();
   const go = (x: Expr) => {
     if (x instanceof Sym) out.set(x.key, x);
-    else if (x instanceof Integral && x.args.length >= 3) {
+    else if (x instanceof ExtensionExpr && x.bindings()) {
+      const b = x.bindings()!;
+      const bound = new Set(b.variables.map((i) => x.args[i]!.key));
+      x.args.forEach((a, i) => {
+        if (b.variables.includes(i)) return;
+        if (b.scope.includes(i)) {
+          for (const s of freeSymbols(a)) if (!bound.has(s.key)) out.set(s.key, s);
+        } else go(a);
+      });
+    } else if (x instanceof Integral && x.args.length >= 3) {
       // the integration variable of a definite integral (or one with an upper limit) is bound
       const v = x.args[1]!;
       for (const s of freeSymbols(x.args[0]!)) if (s.key !== v.key) out.set(s.key, s);

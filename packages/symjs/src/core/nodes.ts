@@ -78,6 +78,8 @@ export interface Assumptions {
   readonly commutative?: boolean;
   /** a point on the Riemann surface of the logarithm (SymPy polar=True). */
   readonly polar?: boolean;
+  /** false for a symbol known to be nonzero (SymPy zero=False); implied by positive and negative. */
+  readonly zero?: boolean;
 }
 
 /** Function names known to the library. */
@@ -518,6 +520,7 @@ export class Sym extends Expr {
     if (integer) a.integer = true;
     if (assumptions.commutative === false) a.commutative = false;
     if (assumptions.polar === true) a.polar = true;
+    if (positive || negative || assumptions.zero === false) a.zero = false;
     this.assumptions = Object.freeze(a);
   }
 
@@ -532,7 +535,7 @@ export class Sym extends Expr {
 
   protected computeKey(): string {
     const a = this.assumptions;
-    const flags = `${a.real ? 'r' : ''}${a.nonnegative ? 'n' : ''}${a.positive ? 'p' : ''}${a.integer ? 'i' : ''}${a.negative ? 'N' : ''}${a.nonpositive ? 'P' : ''}${a.commutative === false ? 'c' : ''}${a.polar ? 'o' : ''}`;
+    const flags = `${a.real ? 'r' : ''}${a.nonnegative ? 'n' : ''}${a.positive ? 'p' : ''}${a.integer ? 'i' : ''}${a.negative ? 'N' : ''}${a.nonpositive ? 'P' : ''}${a.commutative === false ? 'c' : ''}${a.polar ? 'o' : ''}${a.zero === false && !a.positive && !a.negative ? 'z' : ''}`;
     return flags ? `$${this.name}[${flags}]` : `$${this.name}`;
   }
 }
@@ -915,6 +918,19 @@ export abstract class ExtensionExpr extends Expr {
     return undefined;
   }
   transposeSelf(): Expr | undefined {
+    return undefined;
+  }
+  /**
+   * Bound variables (SymPy bound_symbols): the argument positions holding
+   * the variables and the positions of the arguments in which they are
+   * bound. Bound variables are not free, and substituting one only changes
+   * the other arguments. Undefined when the node binds nothing.
+   */
+  bindings(): { variables: readonly number[]; scope: readonly number[] } | undefined {
+    return undefined;
+  }
+  /** SymPy doit for this node, given its arguments already evaluated; undefined keeps it. */
+  doitSelf(): Expr | undefined {
     return undefined;
   }
   protected computeKey(): string {

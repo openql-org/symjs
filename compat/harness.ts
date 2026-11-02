@@ -266,7 +266,7 @@ export function deserialize(tree: Tree): unknown {
     case 'Symbol': {
       const a = tree['assume'] as Record<string, boolean>;
       for (const k of Object.keys(a)) {
-        if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive', 'commutative', 'polar'].includes(k)) throw new Unsupported(`assumption ${k}`);
+        if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive', 'commutative', 'polar', 'zero'].includes(k)) throw new Unsupported(`assumption ${k}`);
       }
       return new Sym(tree['name'] as string, a);
     }
@@ -700,6 +700,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   Function: (args, kw) => {
     noKw(kw);
     return new UFnClass(String(args[0]));
+  },
+  Subs: (args, kw) => {
+    noKw(kw);
+    const many = (a: unknown) => (a instanceof PyTuple ? a.items.map(asExpr) : asExpr(a));
+    return sj.Subs(asExpr(args[0]), many(args[1]), many(args[2]));
   },
   Derivative: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
@@ -1311,9 +1316,14 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.together(asExpr(args[0]), { deep: Boolean(kw['deep']) });
   },
   cancel: exprFn(sj.cancel),
-  trigsimp: exprFn(sj.trigsimp),
+  trigsimp: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!["old", "deep", "method"].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    return sj.trigsimp(asExpr(args[0]), { old: Boolean(kw["old"]), deep: Boolean(kw["deep"]), method: kw["method"] as string | undefined });
+  },
   exptrigsimp: exprFn(sj.exptrigsimp),
   besselsimp: exprFn(sj.besselsimp),
+  gammasimp: exprFn(sj.gammasimp),
+  combsimp: exprFn(sj.combsimp),
   polarify: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'lift' && k !== 'subs') throw new Unsupported(`kwargs ${k}`);
     const r = sj.polarify(asExpr(args[0]), { lift: kw['lift'] === undefined ? undefined : Boolean(kw['lift']), subs: kw['subs'] === undefined ? undefined : Boolean(kw['subs']) });

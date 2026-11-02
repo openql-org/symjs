@@ -182,6 +182,8 @@ def ser(o):
         return {"t": "Dummy", "name": o.name, "index": idx, "assume": a}
     if o.is_Symbol and type(o) is Symbol:
         a = {k: True for k in ASSUMPTION_KEYS if o._assumptions_orig.get(k) is True}
+        if o._assumptions_orig.get("zero") is False:
+            a["zero"] = False
         if o._assumptions_orig.get("commutative") is False:
             a["commutative"] = False
         a.pop("commutative", None) if a.get("commutative") is True else None

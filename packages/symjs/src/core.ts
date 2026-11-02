@@ -18,6 +18,7 @@ import { derivative as derivativeFn } from './core/undef';
 import { piecewise as piecewiseFn } from './core/logic';
 import { sympify as sympifyFn } from './core/ops';
 import { callableClass } from './core/callable';
+import { Subs as subsFn, SubsNode } from './core/subsnode';
 
 export {
   Expr,
@@ -308,6 +309,13 @@ export type Derivative = DerivativeNode;
  */
 export const Piecewise = /* @__PURE__ */ callableClass(PiecewiseNode, piecewiseFn);
 export type Piecewise = PiecewiseNode;
+
+/**
+ * SymPy `Subs(expr, variables, point)`: an unevaluated substitution (one
+ * variable and point, or arrays of them). Also the node class.
+ */
+export const Subs = /* @__PURE__ */ callableClass(SubsNode, subsFn);
+export type Subs = SubsNode;
 
 // ---- deprecated names (kept during 0.x, removed in 1.0; see docs/api-policy.md) ----
 
