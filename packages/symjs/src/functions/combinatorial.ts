@@ -438,3 +438,35 @@ export const multigamma = (x: ExprLike, p: ExprLike): Expr => fn('multigamma', [
 
 
 export const frac = (x: ExprLike): Expr => fn('frac', [x]);
+
+/** Motzkin numbers M(0), ..., M(n-1) (SymPy motzkin.find_first_n_motzkins). */
+export function firstMotzkins(n: number): bigint[] {
+  const m: bigint[] = [];
+  for (let k = 0; k < n; k++) {
+    if (k < 2) m.push(1n);
+    else m.push(((2n * BigInt(k) + 1n) * m[k - 1]! + (3n * BigInt(k) - 3n) * m[k - 2]!) / (BigInt(k) + 2n));
+  }
+  return m;
+}
+
+/** Motzkin numbers in [x, y] (SymPy motzkin.find_motzkin_numbers_in_range). */
+export function motzkinNumbersInRange(x: bigint, y: bigint): bigint[] {
+  const out: bigint[] = [];
+  let a = 1n;
+  let b = 1n;
+  if (x <= 1n && 1n <= y) out.push(1n);
+  for (let k = 2n; ; k++) {
+    const c = ((2n * k + 1n) * b + (3n * k - 3n) * a) / (k + 2n);
+    if (c > y) break;
+    if (c >= x) out.push(c);
+    a = b;
+    b = c;
+  }
+  return out;
+}
+
+/** Is n a Motzkin number (SymPy motzkin.is_motzkin)? */
+export function isMotzkin(n: bigint): boolean {
+  if (n < 1n) return false;
+  return motzkinNumbersInRange(n, n).length > 0;
+}

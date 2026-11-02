@@ -5,10 +5,10 @@
  * @file series(): power series expansion with an Order term, SymPy style.
  */
 
-import { Add, Expr, ExprLike, Order, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
+import { Add, Expr, ExprLike, Fn, Order, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { add, mul, neg, pow, sympify } from '../core/ops';
-import { xreplace as subs } from '../core/traverse';
-import { log } from '../functions/elementary';
+import { mapBottomUp, xreplace as subs } from '../core/traverse';
+import { log, sin } from '../functions/elementary';
 import { Expander } from './puiseux';
 
 /**
@@ -53,7 +53,8 @@ export function O(ex: ExprLike, x?: Sym, x0: ExprLike = 0): Expr {
  * exact (finite) expansion is returned without an Order term.
  */
 export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' | '-' = '+'): Expr {
-  const e = sympify(ex);
+  // sinc(u) = sin(u)/u has a removable singularity at u = 0
+  const e = mapBottomUp(sympify(ex), (t) => (t instanceof Fn && t.name === 'sinc' ? mul(sin(t.args[0]!), pow(t.args[0]!, -1)) : t));
   const x0 = sympify(x0x);
   if (x0 instanceof Special) throw new Error('series: expansion at infinity is not supported yet');
   if (!e.has(x)) return e;

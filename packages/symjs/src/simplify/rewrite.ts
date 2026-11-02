@@ -294,3 +294,11 @@ registerRewrite('Ci', 'expint', ([z]) => neg(div(add(E1(mul(plI(), z!)), E1(mul(
 registerRewrite('Si', 'expint', ([z]) => add(div(pi, 2), div(div(add(E1(mul(plI(), z!)), neg(E1(mul(plNegI(), z!)))), 2), I)));
 registerRewrite('Shi', 'expint', ([z]) => add(div(add(E1(z!), neg(E1(mul(ePi(), z!)))), 2), neg(div(mul(I, pi), 2))));
 registerRewrite('Chi', 'expint', ([z]) => add(neg(div(mul(I, pi), 2)), neg(div(add(E1(z!), E1(mul(ePi(), z!))), 2))));
+
+// floor / ceiling / frac (SymPy _eval_rewrite_as_*)
+registerRewrite('frac', 'floor', ([x]) => add(x!, neg(raw('floor', x!))));
+registerRewrite('frac', 'ceiling', ([x]) => add(x!, raw('ceiling', neg(x!))));
+registerRewrite('floor', 'ceiling', ([x]) => neg(raw('ceiling', neg(x!))));
+registerRewrite('ceiling', 'floor', ([x]) => neg(raw('floor', neg(x!))));
+registerRewrite('floor', 'frac', ([x]) => add(x!, neg(raw('frac', x!))));
+registerRewrite('ceiling', 'frac', ([x]) => add(x!, raw('frac', neg(x!))));

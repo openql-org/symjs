@@ -344,6 +344,7 @@ export {
   limitDenominator,
 } from './core/numberutils';
 export { nfloat, comp, nsimplify } from './numeric/nfloat';
+export { factorInt } from './core/numbers';
 export { leadterm, asLeadingTerm, getn, extractLeadingOrder } from './series/series';
 export { finiteDiffWeights, asFiniteDifference } from './calculus/finitediff';
 export { sqrtdenest } from './simplify/sqrtdenest';
@@ -416,6 +417,9 @@ export {
   isprime,
   jacobiSymbol,
   kroneckerSymbol,
+  firstMotzkins,
+  motzkinNumbersInRange,
+  isMotzkin,
 } from './functions/combinatorial';
 export { expPolar, polarLift, periodicArgument, principalBranch, unbranchedArgument, unpolarify, extractBranchFactor } from './functions/polar';
 export { factorSystem, factorSystemCond, solvePolySystem } from './solvers/polysys';

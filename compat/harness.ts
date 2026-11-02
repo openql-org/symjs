@@ -1138,6 +1138,25 @@ export const ADAPTERS: Record<string, Adapter> = {
   cancel: exprFn(sj.cancel),
   trigsimp: exprFn(sj.trigsimp),
   exptrigsimp: exprFn(sj.exptrigsimp),
+  Id: exprFn((e) => e),
+  '.is_motzkin': (args, kw) => {
+    noKw(kw);
+    return sj.isMotzkin((args[0] as sj.Rational).p);
+  },
+  '.find_motzkin_numbers_in_range': (args, kw) => {
+    noKw(kw);
+    return new PyList(sj.motzkinNumbersInRange((args[0] as sj.Rational).p, (args[1] as sj.Rational).p).map((v) => sj.Rational.of(v)));
+  },
+  '.find_first_n_motzkins': (args, kw) => {
+    noKw(kw);
+    return new PyList(sj.firstMotzkins(Number((args[0] as sj.Rational).p)).map((v) => sj.Rational.of(v)));
+  },
+  '.factors': (args, kw, self) => {
+    noKw(kw);
+    if (args.length || !(self instanceof sj.Rational) || !self.isInteger) throw new Unsupported('factors');
+    const n = self.p < 0n ? -self.p : self.p;
+    return new PyDict([...sj.factorInt(n)].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([p, k]) => [sj.Rational.of(p), sj.Rational.of(k)] as const));
+  },
   not_empty_in: (args, kw) => {
     noKw(kw);
     if (args.length !== 2) throw new Unsupported('arity');
