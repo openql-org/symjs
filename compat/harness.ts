@@ -652,6 +652,23 @@ export const ADAPTERS: Record<string, Adapter> = {
         // decimal literals become exact rationals
         return sj.parse(v.replace(/\d*\.\d+(?:[eE][+-]?\d+)?/g, (m) => `(${sj.str(sj.rationalFromString(m))})`));
       }
+      const t = v.trim();
+      if (t.startsWith('[') && t.endsWith(']')) {
+        // a Python list literal: split on top-level commas
+        const items: string[] = [];
+        let depth = 0;
+        let cur = '';
+        for (const ch of t.slice(1, -1)) {
+          if ('([{'.includes(ch)) depth++;
+          if (')]}'.includes(ch)) depth--;
+          if (ch === ',' && depth === 0) {
+            items.push(cur);
+            cur = '';
+          } else cur += ch;
+        }
+        if (cur.trim()) items.push(cur);
+        return new PyList(items.map((i) => sj.parse(i.trim())));
+      }
       return sj.parse(v);
     }
     if (v instanceof PyTuple) return new PyList(v.items.map((i) => (typeof i === 'string' ? sj.parse(i) : asExpr(i))));

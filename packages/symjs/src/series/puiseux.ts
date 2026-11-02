@@ -280,6 +280,11 @@ export class Expander {
     );
     if (e.name === 'abs' || e.name === 're' || e.name === 'im' || e.name === 'arg' || e.name === 'conjugate') {
       if (h.terms.length === 0) return PS.constant(fn(e.name, [g0]));
+      // abs(g) with g -> 0 along t -> 0+: the sign of the leading coefficient decides
+      if (e.name === 'abs' && isZeroCoeff(g0)) {
+        const lc = sg.lead()?.c;
+        if (lc instanceof Rational) return lc.isNegative ? sg.scale(S.NegOne) : sg;
+      }
       throw new SeriesError(`cannot expand ${e.name}`);
     }
     return this.analytic((w) => fn(e.name, [w]), g0, h, n);

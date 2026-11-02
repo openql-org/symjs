@@ -155,3 +155,17 @@ describe('first-order exact ODEs and acos of negated arguments', () => {
     expect(Array.isArray(r) ? r.map(String) : String(r)).toEqual(['Eq(f(x), -acos(C1/cos(x)) + 2*pi)', 'Eq(f(x), acos(C1/cos(x)))']);
   });
 });
+
+import { abs, subs as subsE } from '../src';
+
+describe('abs series and derivative substitution', () => {
+  it('one-sided series of abs at 0', () => {
+    expect(String(series(abs(x), x, 0, 6, '+'))).toBe('x');
+    expect(String(series(abs(x), x, 0, 6, '-'))).toBe('-x');
+  });
+  it('substituting a lower derivative inside a higher one', () => {
+    const f = Fn('f');
+    const [yy] = symbols('y');
+    expect(String(subsE(derivative(f(x), [[x, 2]]), [[derivative(f(x), [[x, 1]]), yy]]))).toBe('Derivative(y, x)');
+  });
+});

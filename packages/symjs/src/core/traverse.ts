@@ -118,6 +118,19 @@ function powersOf(e: Expr): { coeff: Expr; pows: Map<string, { base: Expr; exp: 
 
 /** SymPy `_eval_subs` for Add, Mul and Pow (algebraic substitution). */
 function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
+  // Derivative(f, (x, 2)).subs(Derivative(f, x), y) -> Derivative(y, x) (SymPy Derivative._eval_subs)
+  if (e instanceof Derivative && old instanceof Derivative && e.expr.key === old.expr.key) {
+    const have = new Map(e.variableCount.map(([v, n]) => [v.key, [v, n] as [Expr, number]]));
+    const remaining = new Map(have);
+    for (const [v, n] of old.variableCount) {
+      const h = remaining.get(v.key);
+      if (!h || h[1] < n) return undefined;
+      remaining.set(v.key, [v, h[1] - n]);
+    }
+    const vc = [...remaining.values()].filter(([, n]) => n > 0);
+    if (!vc.length) return nw;
+    return new Derivative([nw, ...vc.flatMap(([v, n]) => [v, Rational.of(n)])]);
+  }
   if (e instanceof Add && old instanceof Add) {
     const [cs, ts] = splitAddCoeff(e);
     const [co, to] = splitAddCoeff(old);
