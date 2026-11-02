@@ -9,7 +9,7 @@ import { fn } from '../functions/elementary';
 import { piecewise, rel } from './logic';
 import { Concrete } from '../concrete/node';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { Add, Derivative, ExtensionExpr, Expr, ExprLike, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Substitution, Sym, UndefFn, impl } from './nodes';
+import { Add, Constant, Derivative, ExtensionExpr, Expr, ExprLike, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Substitution, Sym, UndefFn, impl } from './nodes';
 import { add, mul, pow, sympify } from './ops';
 
 /** Rebuild a node of the same type with new arguments (re-canonicalizing). */
@@ -118,6 +118,16 @@ function powersOf(e: Expr): { coeff: Expr; pows: Map<string, { base: Expr; exp: 
 
 /** SymPy `_eval_subs` for Add, Mul and Pow (algebraic substitution). */
 function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
+  // exp(a + b).subs(exp(a), c) -> c*exp(b) (SymPy exp._eval_subs via Pow)
+  const isExpP = (t: Expr): t is Pow => t instanceof Pow && t.base instanceof Constant && t.base.name === 'E';
+  if (isExpP(e) && isExpP(old) && e.exp instanceof Add) {
+    const oldTerms = old.exp instanceof Add ? old.exp.args : [old.exp];
+    const keys = e.exp.args.map((a) => a.key);
+    if (oldTerms.every((t) => keys.includes(t.key))) {
+      const rest = e.exp.args.filter((a) => !oldTerms.some((t) => t.key === a.key));
+      return mul(nw, pow(e.base, add(...rest)));
+    }
+  }
   // Derivative(f, (x, 2)).subs(Derivative(f, x), y) -> Derivative(y, x) (SymPy Derivative._eval_subs)
   if (e instanceof Derivative && old instanceof Derivative && e.expr.key === old.expr.key) {
     const have = new Map(e.variableCount.map(([v, n]) => [v.key, [v, n] as [Expr, number]]));

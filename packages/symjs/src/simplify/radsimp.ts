@@ -6,7 +6,7 @@
  */
 
 import { keepCoeff } from '../core/methods';
-import { Add, Derivative, Expr, impl, ExprLike, Mul, Pow, Rational, S, UndefFn } from '../core/nodes';
+import { Add, Constant, Derivative, Expr, impl, ExprLike, Mul, Pow, Rational, S, UndefFn } from '../core/nodes';
 import { add, asBaseExp, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { expandMul } from './expand';
 import { fraction } from './rational';
@@ -59,7 +59,10 @@ function powerOf(f: Expr, p: Expr, exact: boolean): Rational | undefined {
   const [pb, pe] = asBaseExp(p);
   if (fb.key !== pb.key) return undefined;
   const r = mul(fe, pow(pe, -1));
-  return r instanceof Rational ? r : undefined;
+  if (!(r instanceof Rational)) return undefined;
+  // exp(x) is not a power of exp(2*x) (SymPy collect parses exp(c*u) as exp(u)**c)
+  if (fb instanceof Constant && fb.name === 'E' && !r.isInteger) return undefined;
+  return r;
 }
 
 /** Split term = (pattern**k) * rest; returns [k, rest] or undefined. */
@@ -74,13 +77,23 @@ function derivativeOf(f: Expr, p: Expr): boolean {
 function extractPattern(term: Expr, p: Expr, exact: boolean): [Expr, Expr] | undefined {
   const factors = term instanceof Mul ? [...term.args] : [term];
   if (p instanceof Mul) {
-    // every factor of the pattern must occur in the term
+    // every factor of the pattern must occur in the term, possibly as a higher integer power
     const pf = p.args;
     const remaining = [...factors];
     for (const q of pf) {
       const i = remaining.findIndex((f) => f.key === q.key);
-      if (i < 0) return undefined;
-      remaining.splice(i, 1);
+      if (i >= 0) {
+        remaining.splice(i, 1);
+        continue;
+      }
+      if (exact) return undefined;
+      const j = remaining.findIndex((f) => {
+        const k = powerOf(f, q, false);
+        return k !== undefined && k.isInteger && k.p > 1n;
+      });
+      if (j < 0) return undefined;
+      const k = powerOf(remaining[j]!, q, false)!;
+      remaining[j] = pow(q, Number(k.p) - 1);
     }
     return [p, mul(...remaining)];
   }

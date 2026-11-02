@@ -8,7 +8,7 @@
  * grouping) and particular solutions by undetermined coefficients.
  */
 
-import { Add, Derivative, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, S, Sym, UndefFn } from '../core/nodes';
+import { Add, Derivative, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
@@ -21,6 +21,7 @@ import { expandMul as expand } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
 import { simplify } from '../simplify/simplify';
 import { asEquation, linsolve, solve } from './solve';
+import { dsolveRaw } from './dsolve';
 
 const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
 
@@ -213,7 +214,7 @@ function particular(coeffs: Expr[], rhs: Expr, x: Sym): Expr | undefined {
  * Solve an ordinary differential equation for f(x). Like SymPy, a list of
  * equations is returned when the general solution has several branches.
  */
-export function dsolve(eqIn: ExprLike, fx: Expr, opts: { ics?: [Expr, ExprLike][] } = {}): Expr | Expr[] {
+export function dsolve(eqIn: ExprLike, fx: Expr, opts: { ics?: [Expr, ExprLike][]; hint?: string } = {}): Expr | Expr[] {
   if (!(fx instanceof UndefFn) || fx.args.length !== 1 || !(fx.args[0] instanceof Sym)) {
     throw new Error('dsolve: f(x) with a single symbol argument expected');
   }
@@ -221,6 +222,12 @@ export function dsolve(eqIn: ExprLike, fx: Expr, opts: { ics?: [Expr, ExprLike][
   const eq = asEquation(eqIn);
   const n = odeOrder(eq, fx);
   if (n === 0) throw new Error('dsolve: not a differential equation');
+  // SymPy's hints in order (solvers/dsolve.ts); the older direct solvers below are a fallback
+  const viaHints = dsolveRaw(eq, fx, opts.hint);
+  if (viaHints && viaHints.length) {
+    const out = opts.ics && opts.ics.length ? viaHints.map((s) => Eq(fx, applyIcs((s as Rel).rhs, fx, x, opts.ics!))) : viaHints;
+    return out.length === 1 ? out[0]! : out;
+  }
   const [E, ys] = toSymbols(eq, fx, n);
   const e = expand(E);
   let sol: Expr | undefined;
