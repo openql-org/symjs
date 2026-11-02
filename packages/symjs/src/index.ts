@@ -6,7 +6,7 @@
  * algebra system. Each feature area is also available as its own entry point
  * (`@symjs/symjs/core`, `/special`, `/simplify`, `/polys`, `/calculus`,
  * `/solvers`, `/sets`, `/matrices`, `/logic`, `/ntheory`, `/combinatorics`, `/utilities`,
- * `/tensor`) for smaller bundles. Domain-specific
+ * `/tensor`, `/printing`) for smaller bundles. Domain-specific
  * extend modules are separate packages (packages/* in the repository).
  */
 
@@ -23,6 +23,7 @@ export * from './ntheory';
 export * from './combinatorics';
 export * from './utilities';
 export * from './tensor';
+export * from './printing';
 // a Matrix or a graph [vertices, edges]
 export { connectedComponents, stronglyConnectedComponents } from './matrices';
 // SymPy's factorint (with its options) and is_palindromic of a number or a sequence

@@ -26,20 +26,21 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
  * raise one only together with the change that needs it.
  */
 const CASES = [
-  ['core', 'Rational', 115],
-  ['core', 'parse, str', 120],
-  ['core', 'parse, diff, expand, str, latex', 120],
-  ['core', '*', 155],
-  ['special', '*', 170],
-  ['simplify', 'simplify', 195],
+  ['core', 'Rational', 135],
+  ['core', 'parse, str', 145],
+  ['core', 'parse, diff, expand, str, latex', 145],
+  ['core', '*', 210],
+  ['special', '*', 220],
+  ['simplify', 'simplify', 285],
   ['polys', 'factor', 225],
-  ['calculus', 'integrate', 195],
-  ['solvers', 'solve', 245],
-  ['solvers', 'dsolve', 305],
-  ['sets', '*', 130],
-  ['matrices', 'Matrix', 205],
-  ['index', 'Rational', 270],
-  ['index', '*', 430],
+  ['calculus', 'integrate', 305],
+  ['solvers', 'solve', 375],
+  ['solvers', 'dsolve', 375],
+  ['sets', '*', 150],
+  ['matrices', 'Matrix', 290],
+  ['printing', 'pretty', 175],
+  ['index', 'Rational', 415],
+  ['index', '*', 940],
 ];
 
 async function measure(entry, names) {

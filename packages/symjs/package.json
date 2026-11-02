@@ -56,6 +56,11 @@
       "import": "./dist/ntheory.js",
       "require": "./dist/ntheory.cjs"
     },
+    "./printing": {
+      "types": "./dist/printing.d.ts",
+      "import": "./dist/printing.js",
+      "require": "./dist/printing.cjs"
+    },
     "./logic": {
       "types": "./dist/logic.d.ts",
       "import": "./dist/logic.js",
@@ -192,6 +197,9 @@
     "./src/polys/sympoly.ts",
     "./dist/polys/sympoly.js",
     "./dist/polys/sympoly.cjs",
+    "./src/printing.ts",
+    "./dist/printing.js",
+    "./dist/printing.cjs",
     "./src/printing/latex.ts",
     "./dist/printing/latex.js",
     "./dist/printing/latex.cjs",

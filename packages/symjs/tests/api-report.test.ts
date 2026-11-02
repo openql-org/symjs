@@ -15,7 +15,7 @@ import { expect, it } from 'vitest';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const src = join(root, 'src');
-const ENTRIES = ['core', 'special', 'simplify', 'polys', 'calculus', 'solvers', 'sets', 'matrices', 'logic', 'ntheory', 'combinatorics', 'utilities', 'tensor'];
+const ENTRIES = ['core', 'special', 'simplify', 'polys', 'calculus', 'solvers', 'sets', 'matrices', 'logic', 'ntheory', 'combinatorics', 'utilities', 'tensor', 'printing'];
 
 type Row = { name: string; kind: string; level: string };
 

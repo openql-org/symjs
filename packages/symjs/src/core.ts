@@ -271,9 +271,6 @@ export {
 export {
   latex,
 } from './printing/latex';
-// 2D pretty printing (SymPy sympy.printing.pretty)
-export { pretty, pprint, prettyPrint, pagerPrint, PrettyPrinter, PrettyTuple, prettyHooks, StringPict, PrettyForm } from './printing/pretty/index';
-export type { PrettyOptions, Printable, MatrixLike } from './printing/pretty/index';
 export {
   parse,
   parse as parseExpr,
