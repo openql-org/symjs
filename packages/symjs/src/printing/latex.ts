@@ -165,6 +165,24 @@ function printFunction(e: Fn, exp?: string): string {
       const tex = `\\operatorname{${e.name}}{\\left(${parenthesize(e.args[0]!, PREC.ATOM)}\\right)}`;
       return exp !== undefined ? `${tex}^{${exp}}` : tex;
     }
+    case 'besselj':
+    case 'bessely':
+    case 'besseli':
+    case 'besselk': {
+      // SymPy: J_{\nu}\left(z\right)
+      const sym = { besselj: 'J', bessely: 'Y', besseli: 'I', besselk: 'K' }[e.name];
+      const tex = `${sym}_{${latex(e.args[0]!)}}\\left(${latex(e.args[1]!)}\\right)`;
+      return exp !== undefined ? `${sym}_{${latex(e.args[0]!)}}^{${exp}}\\left(${latex(e.args[1]!)}\\right)` : tex;
+    }
+    case 'airyai':
+    case 'airybi':
+    case 'airyaiprime':
+    case 'airybiprime': {
+      const base = e.name.startsWith('airyai') ? 'Ai' : 'Bi';
+      const prime = e.name.endsWith('prime') ? '^\\prime' : '';
+      const tex = `${base}${prime}\\left(${a}\\right)`;
+      return exp !== undefined ? `${base}${prime}^{${exp}}\\left(${a}\\right)` : tex;
+    }
     default: {
       const name = exp !== undefined ? `${parenthesizeSuper(hprintFunction(e.name))}^{${exp}}` : hprintFunction(e.name);
       return `${name}{\\left(${a} \\right)}`;

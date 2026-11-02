@@ -14,7 +14,8 @@ import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols, subs, xreplace } from '../core/traverse';
 import { derivative } from '../core/undef';
 import { diff } from '../calculus/diff';
-import { abs, cos, im, log, re, sin, tan } from '../functions/elementary';
+import { abs, cos, fn, im, log, re, sin, tan } from '../functions/elementary';
+import '../functions/bessel';
 import { integrate } from '../integrals/integrate';
 import { Matrix } from '../matrices/matrix';
 import { polyCoefficients, roots } from '../polys/poly';
@@ -682,6 +683,64 @@ const factorable: Solver = (p) => {
 };
 
 // ---------------------------------------------------------------------------
+// Airy and Bessel equations
+// ---------------------------------------------------------------------------
+
+const airy: Solver = (p) => {
+  if (p.order !== 2) return undefined;
+  const r = linearCoefficients(p.eq, p);
+  if (!r || !isZero(r.get(-1)!) || !isZero(r.get(1)!) || isZero(r.get(2)!)) return undefined;
+  const q = cancel(mul(r.get(0)!, pow(r.get(2)!, -1)));
+  const pc = polyCoefficients(q, p.x);
+  if (!pc || Math.max(...pc.keys()) !== 1) return undefined;
+  const b = pc.get(0) ?? S.Zero;
+  const m = pc.get(1)!;
+  if (m.has(p.x)) return undefined;
+  const cbrt = (e: Expr) => pow(e, Rational.of(1, 3));
+  const arg =
+    m instanceof Rational && m.isPositive
+      ? add(mul(-1, b, pow(cbrt(m), -2)), mul(-1, cbrt(m), p.x))
+      : add(mul(-1, b, pow(cbrt(mul(-1, m)), -2)), mul(cbrt(mul(-1, m)), p.x));
+  return [Eq(p.fx, add(mul(C(1), fn('airyai', [arg])), mul(C(2), fn('airybi', [arg]))))];
+};
+
+const bessel: Solver = (p) => {
+  if (p.order !== 2) return undefined;
+  const r = linearCoefficients(p.eq, p);
+  if (!r || !isZero(r.get(-1)!)) return undefined;
+  const x = p.x;
+  const a3 = r.get(2)!;
+  // a3 = A*x**k
+  const pa = polyCoefficients(expand(a3), x);
+  if (!pa || pa.size !== 1) return undefined;
+  const [k, A] = [...pa.entries()][0]!;
+  if (k === 0 || A.has(x)) return undefined;
+  const norm = (e: Expr) => cancel(mul(e, pow(mul(A, pow(x, k - 2)), -1)));
+  const b3 = norm(r.get(1)!);
+  const c3 = expand(norm(r.get(0)!));
+  // b3 = c4*x
+  const c4 = cancel(mul(b3, pow(x, -1)));
+  if (c4.has(x)) return undefined;
+  // c3 = alpha**2*x**(2*d) - n**2
+  const terms = c3 instanceof Add ? c3.args : [c3];
+  const dep = terms.filter((t) => t.has(x));
+  const ind = add(...terms.filter((t) => !t.has(x)));
+  if (dep.length !== 1) return undefined;
+  const pd = polyCoefficients(dep[0]!, x);
+  if (!pd || pd.size !== 1) return undefined;
+  const [e2, alpha2] = [...pd.entries()][0]!;
+  if (e2 % 2 !== 0) return undefined;
+  const d = e2 / 2;
+  const alpha = sqrt(alpha2);
+  const nsq = mul(-1, ind);
+  const n = sqrt(add(nsq, mul(Rational.of(1, 4), pow(add(c4, -1), 2))));
+  const argB = mul(alpha, pow(x, d), Rational.of(1, d));
+  const nu = mul(n, Rational.of(1, d));
+  const pre = pow(x, mul(Rational.of(1, 2), add(1, mul(-1, c4))));
+  return [Eq(p.fx, mul(pre, add(mul(C(1), fn('besselj', [nu, argB])), mul(C(2), fn('bessely', [nu, argB])))))];
+};
+
+// ---------------------------------------------------------------------------
 // driver
 // ---------------------------------------------------------------------------
 
@@ -701,6 +760,8 @@ const HINTS: [string, Solver][] = [
   // SymPy reaches f'' + f'**2 = 0 through factorable/nth_order_reducible before Liouville
   ['nth_order_reducible', nthOrderReducible],
   ['Liouville', liouville],
+  ['2nd_linear_airy', airy],
+  ['2nd_linear_bessel', bessel],
   ['nth_algebraic', nthAlgebraic],
 ];
 

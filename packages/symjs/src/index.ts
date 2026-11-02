@@ -172,6 +172,7 @@ export {
   Max,
   expandFunc,
 } from './functions/special';
+export { besselj, bessely, besseli, besselk, airyai, airybi, airyaiprime, airybiprime } from './functions/bessel';
 
 // calculus
 export { diff } from './calculus/diff';
@@ -201,6 +202,7 @@ export {
 } from './simplify/expand';
 export type { ExpandHints } from './simplify/expand';
 export { simplify } from './simplify/simplify';
+export { besselsimp } from './simplify/besselsimp';
 export { powsimp, powdenest, logcombine, posify } from './simplify/powsimp';
 export type { PowsimpOptions } from './simplify/powsimp';
 export { radsimp, collect } from './simplify/radsimp';

@@ -178,6 +178,7 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   Abs: ([a]) => sj.abs(a!),
   log: (args) => sj.log(args[0]!, args[1]),
   LambertW: (args) => sj.LambertW(args[0]!, args[1]),
+  ...Object.fromEntries((['besselj', 'bessely', 'besseli', 'besselk', 'airyai', 'airybi', 'airyaiprime', 'airybiprime'] as const).map((n) => [n, (args: Expr[]) => sj.fn(n, args)])),
   frac: ([a]) => sj.frac(a!),
   ...Object.fromEntries(
     (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 're', 'im', 'arg', 'conjugate', 'adjoint', 'transpose', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc', 'exp_polar', 'polar_lift', 'periodic_argument', 'principal_branch'] as const).map(
@@ -1310,6 +1311,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   cancel: exprFn(sj.cancel),
   trigsimp: exprFn(sj.trigsimp),
   exptrigsimp: exprFn(sj.exptrigsimp),
+  besselsimp: exprFn(sj.besselsimp),
   Id: exprFn((e) => e),
   intervals: (args, kw) => intervalsAdapter(polyOf(args), kw),
   '.intervals': (_a, kw, self) => intervalsAdapter(asPoly(self), kw),
