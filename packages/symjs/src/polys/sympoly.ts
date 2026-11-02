@@ -810,6 +810,26 @@ export class Poly {
    * product of the conjugates) that are roots of this polynomial.
    */
   private liftedRoots(realOnly: boolean): Expr[] | undefined {
+    const N = this.normPoly();
+    if (!N) return undefined;
+    const f = this.asExpr();
+    const x = this.univariate();
+    const scale = this.allCoeffs().reduce((m, c) => Math.max(m, Math.hypot(c.toComplex().re, c.toComplex().im)), 1);
+    return N.rootsWhere(realOnly).filter((r) => {
+      try {
+        const v = evalfExpr(xreplace(f, [[x, evalfExpr(r, 30)]]), 30).toComplex();
+        return Math.hypot(v.re, v.im) < 1e-12 * scale;
+      } catch {
+        return false;
+      }
+    });
+  }
+  /**
+   * The norm of a univariate polynomial with algebraic coefficients (I and
+   * square roots of integers): the product of its conjugates, a polynomial
+   * over QQ. Undefined when the coefficients are rational.
+   */
+  private normPoly(): Poly | undefined {
     const cs = this.allCoeffs();
     if (cs.every((c) => c instanceof Rational)) return undefined;
     const gens = new Map<string, Expr>();
@@ -827,17 +847,33 @@ export class Poly {
       norm = mul(norm, xreplace(f, gl.map((g, i) => [g, mask & (1 << i) ? mul(-1, g) : g] as [Expr, Expr])));
     }
     const N = Poly.from(expand(norm), [this.univariate()]);
-    if (!N.allCoeffs().every((c) => c instanceof Rational)) return undefined;
-    const x = this.univariate();
-    const scale = cs.reduce((m, c) => Math.max(m, Math.hypot(c.toComplex().re, c.toComplex().im)), 1);
-    return N.rootsWhere(realOnly).filter((r) => {
-      try {
-        const v = evalfExpr(xreplace(f, [[x, evalfExpr(r, 30)]]), 30).toComplex();
-        return Math.hypot(v.re, v.im) < 1e-12 * scale;
-      } catch {
-        return false;
-      }
-    });
+    return N.allCoeffs().every((c) => c instanceof Rational) ? N : undefined;
+  }
+  /** SymPy Poly.eject(*gens): move generators into the ground domain (ZZ -> ZZ[x]). */
+  eject(...gens: Expr[]): Poly {
+    const keys = new Set(gens.map((g) => g.key));
+    const rest = this.gens.filter((g) => !keys.has(g.key));
+    if (rest.length === this.gens.length) return this;
+    const ground = this.domain.replace(/\[.*$/, '');
+    const inner = this.domain.match(/\[(.*)\]$/)?.[1];
+    const names = [...(inner ? [inner] : []), ...this.gens.filter((g) => keys.has(g.key)).map((g) => str(g))].join(',');
+    return Poly.from(this.asExpr(), rest, { domain: `${ground}[${names}]` });
+  }
+  /** SymPy Poly.inject(front=False): move the generators of a polynomial ground domain (ZZ[y]) into the generators. */
+  inject(opts: { front?: boolean } = {}): Poly {
+    const m = this.domain.match(/^(ZZ|QQ)\[(.*)\]$/);
+    if (!m) return this;
+    const names = m[2]!.split(',');
+    const syms = new Map([...freeSymbols(this.asExpr())].map((s) => [str(s), s] as [string, Expr]));
+    const dg = names.map((n) => syms.get(n)).filter((s): s is Expr => s !== undefined);
+    const gens = opts.front ? [...dg, ...this.gens] : [...this.gens, ...dg];
+    return Poly.from(this.asExpr(), gens, { domain: m[1]! });
+  }
+  /** SymPy Poly.lift: the norm over the ground field of an algebraic extension (ZZ_I -> ZZ, QQ<a> -> QQ). */
+  lift(): Poly {
+    const N = this.normPoly();
+    if (!N) return this;
+    return Poly.from(N.asExpr(), this.gens, { domain: this.domain.startsWith('ZZ') ? 'ZZ' : 'QQ' });
   }
   /** Real roots (rational and quadratic surds), sorted, with multiplicity. */
   realRoots(): Expr[] {

@@ -96,3 +96,16 @@ describe('roots of polynomials with algebraic coefficients', () => {
     expect(Poly.from(parse('sqrt(2)*x**3 + x**2 - 1'), [x]).realRoots().map((e) => sstr(e))).toEqual(['sqrt(2)/2']);
   });
 });
+
+describe('Poly lift, eject and inject', () => {
+  it('match SymPy', async () => {
+    const { Poly, expand } = await import('../src');
+    const [x, y] = symbols('x y');
+    const show = (p: { asExpr(): unknown; gens: readonly unknown[]; domain: string }) => `${sstr(expand(p.asExpr() as never))} | ${p.gens.map((g) => sstr(g as never)).join(',')} | ${p.domain}`;
+    expect(show(Poly.from(parse('x**2 + I*x - 1'), [x]).lift())).toBe('x**4 - x**2 + 1 | x | ZZ');
+    const f = Poly.from(parse('x**2*y + x*y**3 + x*y + 1'), [x, y]);
+    expect(show(f.eject(x))).toBe('x**2*y + x*y**3 + x*y + 1 | y | ZZ[x]');
+    expect(show(f.eject(x).inject())).toBe('x**2*y + x*y**3 + x*y + 1 | y,x | ZZ');
+    expect(show(f.eject(x).inject({ front: true }))).toBe('x**2*y + x*y**3 + x*y + 1 | x,y | ZZ');
+  });
+});
