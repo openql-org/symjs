@@ -131,3 +131,13 @@ describe('symbolic gamma-family evaluation (SymPy)', () => {
     expect(String(rewrite(parse('Si(z)'), 'sinc'))).toBe('Integral(sinc(_t), (_t, 0, z))');
   });
 });
+
+import { I, sqrt } from '../src';
+
+describe('factor over an algebraic extension', () => {
+  it('gaussian and sqrt(2)', () => {
+    expect(String(factor(parse('x**2 + 1'), { gaussian: true }))).toBe('(x - I)*(x + I)');
+    expect(String(factor(parse('x**2 - 2'), { extension: [sqrt(2)] }))).toBe('(x - sqrt(2))*(x + sqrt(2))');
+    expect(String(factor(parse('x**3 + x'), { extension: [I] }))).toBe('x*(x - I)*(x + I)');
+  });
+});

@@ -1143,9 +1143,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   expand_complex: exprFn(sj.expand_complex),
   simplify: exprFn(sj.simplify),
   factor: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['deep', 'gaussian', 'extension'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 1) throw new Unsupported('arity');
-    return sj.factor(asExpr(args[0]), { deep: Boolean(kw['deep']) });
+    const ext = kw['extension'];
+    const extension = ext === undefined ? undefined : ext instanceof PyTuple || ext instanceof PyList ? ext.items.map(asExpr) : [asExpr(ext)];
+    return sj.factor(asExpr(args[0]), { deep: Boolean(kw['deep']), gaussian: Boolean(kw['gaussian']), extension });
   },
   together: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
@@ -1155,6 +1157,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   trigsimp: exprFn(sj.trigsimp),
   exptrigsimp: exprFn(sj.exptrigsimp),
   Id: exprFn((e) => e),
+  '.as_dummy': (_args, kw, self) => {
+    noKw(kw);
+    if (self instanceof Sym && !(self instanceof sj.Dummy)) return new sj.Dummy(self.name, self.assumptions);
+    if (self instanceof sj.Integral && !self.limits) return self;
+    throw new Unsupported('as_dummy');
+  },
   LambertW: (args, kw) => (noKw(kw), sj.LambertW(asExpr(args[0]), args[1] === undefined ? undefined : asExpr(args[1]))),
   rational_interpolate: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'X') throw new Unsupported(`kwargs ${k}`);

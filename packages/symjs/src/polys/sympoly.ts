@@ -1190,7 +1190,11 @@ export function discriminant(f: ExprLike, x: Sym): Expr {
  * Factor an expression over the rationals (multivariate), SymPy style:
  * an unevaluated product of the content and primitive factors.
  */
-export function factor(ex: ExprLike, opts: { deep?: boolean } = {}): Expr {
+export function factor(ex: ExprLike, opts: { deep?: boolean; extension?: readonly Expr[]; gaussian?: boolean } = {}): Expr {
+  if (opts.gaussian || opts.extension?.length) {
+    const r = factorOverExtension(sympify(ex), opts.gaussian ? [S.I] : opts.extension!);
+    if (r) return r;
+  }
   if (opts.deep) {
     // factor the arguments of functions and powers first (SymPy deep=True)
     const inner = mapBottomUp(sympify(ex), (t) => (t instanceof Fn || (t instanceof Pow && !(t.exp instanceof Rational)) ? rebuild(t, t.args.map((a) => factor(a))) : t));
@@ -1252,4 +1256,65 @@ export function factor(ex: ExprLike, opts: { deep?: boolean } = {}): Expr {
   if (parts.length === 1 && c.p === -1n && c.q === 1n) return mul(-1, parts[0]!);
   const sorted = [...parts].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
   return c.isOne ? new Mul(sorted) : new Mul([c, ...sorted]);
+}
+
+
+/**
+ * Factor a univariate polynomial with rational coefficients over Q(ext):
+ * linear factors x - r for the roots r that lie in the extension (their
+ * irrational parts are built from the generators only), the rest stays
+ * as a factor over QQ.
+ */
+function factorOverExtension(e: Expr, ext: readonly Expr[]): Expr | undefined {
+  const vars = [...freeSymbols(e)] as Sym[];
+  if (vars.length !== 1) return undefined;
+  const x = vars[0]!;
+  let p: Poly;
+  try {
+    p = Poly.from(expand(e), [x]);
+  } catch {
+    return undefined;
+  }
+  if (p.domain !== 'ZZ' && p.domain !== 'QQ') return undefined;
+  const gens = new Set(ext.map((g) => g.key));
+  const inField = (r: Expr): boolean => {
+    let ok = true;
+    const visit = (t: Expr) => {
+      if (!ok) return;
+      if (t instanceof Rational) return;
+      if (gens.has(t.key)) return;
+      if (t instanceof Constant && t.name === 'I') {
+        ok = false;
+        return;
+      }
+      if (t instanceof Pow && t.exp instanceof Rational && !t.exp.isInteger) {
+        // sqrt(8) = 2*sqrt(2) is canonical already; anything else must be a generator
+        ok = false;
+        return;
+      }
+      t.args.forEach(visit);
+    };
+    visit(r);
+    return ok;
+  };
+  const rs = rootsOf(p.asExpr(), x);
+  const lin: Expr[] = [];
+  let rest = p;
+  for (const r of rs) {
+    if (!inField(r)) continue;
+    lin.push(add(x, mul(-1, r)));
+  }
+  if (!lin.length) return undefined;
+  // the product of the linear factors is rational when the extension is closed under conjugation
+  let prod: Poly;
+  try {
+    prod = Poly.from(expand(mul(...lin)), [x]);
+  } catch {
+    return undefined;
+  }
+  if (prod.domain !== 'ZZ' && prod.domain !== 'QQ') return undefined;
+  rest = p.exquo(prod);
+  const lc = rest.LC();
+  const remaining = rest.degree() > 0 ? factor(mul(rest.asExpr(), pow(lc, -1))) : S.One;
+  return mul(lc, remaining, ...lin);
 }
