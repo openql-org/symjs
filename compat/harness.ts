@@ -783,6 +783,41 @@ export const ADAPTERS: Record<string, Adapter> = {
     }
     return new Sym(String(args[0]), a);
   },
+  Dummy: (args, kw) => {
+    const a: Record<string, boolean> = {};
+    for (const [k, v] of Object.entries(kw)) {
+      if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive', 'commutative'].includes(k) || v !== true) throw new Unsupported(`Dummy ${k}`);
+      a[k] = true;
+    }
+    return new sj.Dummy(args.length ? String(args[0]) : 'Dummy', a);
+  },
+  Wild: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'exclude') throw new Unsupported(`kwargs ${k}`);
+    const ex = kw['exclude'] instanceof PyList || kw['exclude'] instanceof PyTuple ? (kw['exclude'] as PyList).items.map(asExpr) : [];
+    return new sj.Wild(String(args[0]), { exclude: ex });
+  },
+  WildFunction: (args, kw) => (noKw(kw), new sj.WildFunction(String(args[0]))),
+  Equality: (args, kw) => (noKw(kw), sj.Eq(asExpr(args[0]), asExpr(args[1]))),
+  Unequality: (args, kw) => (noKw(kw), sj.Ne(asExpr(args[0]), asExpr(args[1]))),
+  Lambda: (args, kw) => {
+    noKw(kw);
+    const vs = args[0] instanceof PyTuple ? args[0].items.map(asExpr) : [asExpr(args[0])];
+    return sj.Lambda(vs, asExpr(args[1]));
+  },
+  ...Object.fromEntries(
+    (['pi', 'E', 'I', 'oo', 'nan', 'zoo', 'Catalan', 'EulerGamma', 'GoldenRatio', 'TribonacciConstant'] as const).map((n) => [n, () => sj.parse(n)] as [string, Adapter]),
+  ),
+  hypersimp: (args, kw) => (noKw(kw), sj.hypersimp(asExpr(args[0]), asExpr(args[1])) ?? null),
+  '.is_hypergeometric': (args, kw, self) => (noKw(kw), sj.isHypergeometric(asExpr(self), asExpr(args[0]))),
+  '.taylor_term': (args, kw, self) => (noKw(kw), sj.taylorTerm(asExpr(self), Number((args[0] as sj.Rational).p), asSym(args[1]))),
+  '.as_immutable': (_a, kw, self) => (noKw(kw), self),
+  '.as_mutable': (_a, kw, self) => (noKw(kw), self),
+  '.orthogonalize': (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'normalize') throw new Unsupported(`kwargs ${k}`);
+    return new PyList(sj.GramSchmidt(args as Matrix[], Boolean(kw['normalize'])));
+  },
+  MutableDenseMatrix: (args, kw) => ADAPTERS['Matrix']!(args, kw),
+  MutableMatrix: (args, kw) => ADAPTERS['Matrix']!(args, kw),
   sympify: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'rational' && !(k === 'evaluate' && kw[k] === true) && !(k === 'convert_xor' && kw[k] === true)) throw new Unsupported(`kwargs ${k}`);
     const v = args[0];

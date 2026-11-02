@@ -41,6 +41,7 @@ export {
 } from './concrete/summations';
 export {
   leadterm,
+  taylorTerm,
   asLeadingTerm,
   getn,
 } from './series/series';

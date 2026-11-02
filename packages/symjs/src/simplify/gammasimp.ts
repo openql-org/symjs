@@ -8,7 +8,10 @@
  * into polynomial factors, e.g. gamma(x + 3)/gamma(x + 1) = (x + 1)*(x + 2).
  */
 
-import { Expr, ExprLike, Fn, Mul, Pow, Rational } from '../core/nodes';
+import { Expr, ExprLike, Fn, Mul, Pow, Rational, Sym } from '../core/nodes';
+import { polyCoefficients } from '../polys/poly';
+import { powsimp } from './powsimp';
+import { cancel, fraction } from './rational';
 import { add, mul, pow, sympify } from '../core/ops';
 import { mapBottomUp } from '../core/traverse';
 import { fn } from '../functions/elementary';
@@ -117,4 +120,27 @@ export function combsimp(exIn: ExprLike): Expr {
   } catch {
     return c;
   }
+}
+
+/**
+ * SymPy hypersimp(f, k): the term ratio f(k + 1)/f(k) simplified, when it is
+ * a rational function of k (f is hypergeometric); undefined otherwise.
+ */
+export function hypersimp(fIn: ExprLike, k: Expr): Expr | undefined {
+  const f = sympify(fIn);
+  const ratio = mul(f.subs(k, add(k, 1)), pow(f, -1));
+  let r = combsimp(ratio);
+  try {
+    r = factor(cancel(powsimp(r)));
+  } catch {
+    // keep the combined ratio
+  }
+  const [n, d] = fraction(r);
+  const isPoly = (e: Expr) => !e.has(k) || polyCoefficients(expand(e), k as Sym) !== undefined;
+  return isPoly(n) && isPoly(d) ? r : undefined;
+}
+
+/** SymPy Expr.is_hypergeometric(k). */
+export function isHypergeometric(f: ExprLike, k: Expr): boolean {
+  return hypersimp(f, k) !== undefined;
 }

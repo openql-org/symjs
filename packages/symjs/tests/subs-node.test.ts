@@ -195,3 +195,25 @@ describe('small core functions', () => {
     expect(sstr(Rem(parse('x**3'), y).subs([[x, -5], [y, 3]] as never))).toBe('-2');
   });
 });
+
+describe('Lambda, hypersimp and taylor terms', () => {
+  it('match SymPy', async () => {
+    const { Lambda, hypersimp, isHypergeometric, taylorTerm, freeSymbols: fs } = await import('../src');
+    const [x, n] = symbols('x n');
+    const L = Lambda(x, parse('x**2'));
+    expect(sstr(L)).toBe('Lambda(x, x**2)');
+    expect(sstr(L.call(3))).toBe('9');
+    expect(latex(L)).toBe('\\left( x \\mapsto x^{2} \\right)');
+    expect(fs(Lambda(x, parse('x + n'))).size).toBe(1);
+    expect(sstr(Lambda([x, n], parse('x + n')))).toBe('Lambda((x, n), n + x)');
+    const k = symbols('k', { integer: true })[0];
+    const P = (s: string) => parse(s, { symbols: { k } } as never);
+    expect(sstr(hypersimp(P('factorial(k)'), k)!)).toBe('k + 1');
+    expect(sstr(hypersimp(P('2**k'), k)!)).toBe('2');
+    expect(hypersimp(P('log(k)'), k)).toBeUndefined();
+    expect(sstr(hypersimp(P('factorial(2*k)/factorial(k)**2'), k)!)).toBe('2*(2*k + 1)/(k + 1)');
+    expect(isHypergeometric(P('binomial(n, k)'), k)).toBe(true);
+    expect(sstr(taylorTerm(parse('exp(x)'), 3, x))).toBe('x**3/6');
+    expect(sstr(taylorTerm(parse('sin(x)'), 3, x))).toBe('-x**3/6');
+  });
+});

@@ -161,3 +161,11 @@ export function extractLeadingOrder(ex: ExprLike, x: Sym): [Expr, Expr][] {
   const minO = orders.reduce((m, o) => ((o as Rational).value < (m as Rational).value ? o : m));
   return terms.filter((_, i) => orders[i]!.key === minO.key).map((t) => [t, new Order([t.has(x) ? t : S.One])]);
 }
+
+/** SymPy Expr.taylor_term(n, x): the n-th term of the Maclaurin series, f^(n)(0)*x**n/n!. */
+export function taylorTerm(eIn: ExprLike, n: number, x: Sym): Expr {
+  const e = sympify(eIn);
+  let fact = 1n;
+  for (let i = 2n; i <= BigInt(n); i++) fact *= i;
+  return mul(subs(impl.diff(e, x, n), [[x, S.Zero]]), pow(x, n), Rational.of(1n, fact));
+}

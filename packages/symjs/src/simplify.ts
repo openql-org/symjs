@@ -11,7 +11,7 @@ import './core';
 export {
   simplify,
 } from './simplify/simplify';
-export { gammasimp, combsimp } from './simplify/gammasimp';
+export { gammasimp, combsimp, hypersimp, isHypergeometric } from './simplify/gammasimp';
 export {
   besselsimp,
 } from './simplify/besselsimp';

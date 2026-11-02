@@ -19,6 +19,7 @@ import { piecewise as piecewiseFn } from './core/logic';
 import { sympify as sympifyFn } from './core/ops';
 import { callableClass } from './core/callable';
 import { Subs as subsFn, SubsNode } from './core/subsnode';
+import { Lambda as lambdaFn, LambdaNode } from './core/lambda';
 
 export {
   Expr,
@@ -319,6 +320,10 @@ export type Piecewise = PiecewiseNode;
  */
 export const Subs = /* @__PURE__ */ callableClass(SubsNode, subsFn);
 export type Subs = SubsNode;
+
+/** SymPy `Lambda(variables, expr)`: an anonymous function (`.call(...)` applies it). Also the node class. */
+export const Lambda = /* @__PURE__ */ callableClass(LambdaNode, lambdaFn);
+export type Lambda = LambdaNode;
 
 // ---- deprecated names (kept during 0.x, removed in 1.0; see docs/api-policy.md) ----
 
