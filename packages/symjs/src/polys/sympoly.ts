@@ -759,8 +759,17 @@ export class Poly {
     return this.sqfPart();
   }
   /** Rational roots with multiplicities (SymPy ground_roots). */
-  groundRoots(): [Expr, number][] {
+  groundRoots(opts: { extension?: boolean } = {}): [Expr, number][] {
     const x = this.gens[0]!;
+    if (opts.extension) {
+      const out = new Map<string, [Expr, number]>();
+      for (const r of this.radicalRoots(false)) {
+        const cur = out.get(r.key);
+        if (cur) cur[1]++;
+        else out.set(r.key, [r, 1]);
+      }
+      return [...out.values()];
+    }
     const full = Poly.from(this.asExpr());
     if (this.gens.length === 1 && full.gens.length > 1 && full.gens.every((g) => g instanceof Sym)) {
       // symbolic coefficients: factor over all generators, keep factors linear in x
@@ -849,6 +858,24 @@ export class Poly {
     const N = Poly.from(expand(norm), [this.univariate()]);
     return N.allCoeffs().every((c) => c instanceof Rational) ? N : undefined;
   }
+  /** SymPy Poly.get_modulus: p of a polynomial over GF(p). */
+  getModulus(): bigint {
+    const m = /^GF\((\d+)\)$/.exec(this.domain);
+    if (!m) throw new Error('get_modulus: not a polynomial over a finite field');
+    return BigInt(m[1]!);
+  }
+  /** SymPy Poly.set_modulus: the polynomial over GF(p), coefficients in the symmetric range. */
+  setModulus(p: number | bigint): Poly {
+    const P = BigInt(p);
+    const red = (c: Expr): Expr => {
+      if (!(c instanceof Rational && c.q === 1n)) throw new Error('set_modulus: integer coefficients expected');
+      let r = ((c.p % P) + P) % P;
+      if (r > P / 2n) r -= P;
+      return Rational.of(r);
+    };
+    const e = add(...this.termList.map((t) => mul(red(t.coeff), ...t.monom.map((k, i) => pow(this.gens[i]!, k)))));
+    return Poly.from(e, this.gens, { domain: `GF(${P})` });
+  }
   /** SymPy Poly.eject(*gens): move generators into the ground domain (ZZ -> ZZ[x]). */
   eject(...gens: Expr[]): Poly {
     const keys = new Set(gens.map((g) => g.key));
@@ -876,11 +903,20 @@ export class Poly {
     return Poly.from(N.asExpr(), this.gens, { domain: this.domain.startsWith('ZZ') ? 'ZZ' : 'QQ' });
   }
   /** Real roots (rational and quadratic surds), sorted, with multiplicity. */
-  realRoots(): Expr[] {
-    return this.rootsWhere(true);
+  realRoots(opts: { extension?: boolean } = {}): Expr[] {
+    return opts.extension ? this.radicalRoots(true) : this.rootsWhere(true);
   }
-  allRoots(): Expr[] {
-    return this.rootsWhere(false);
+  allRoots(opts: { extension?: boolean } = {}): Expr[] {
+    return opts.extension ? this.radicalRoots(false) : this.rootsWhere(false);
+  }
+  /** Roots in radicals (SymPy extension=True for algebraic coefficients), real ones first, sorted. */
+  private radicalRoots(realOnly: boolean): Expr[] {
+    if (this.allCoeffs().every((c) => c instanceof Rational)) return this.rootsWhere(realOnly);
+    const rs = rootsOf(this.asExpr(), this.univariate()).map((r) => [r, impl.toComplex(r)] as const);
+    const isReal = (v: { im: number; re: number }) => Math.abs(v.im) <= 1e-12 * Math.max(1, Math.abs(v.re));
+    const real = rs.filter(([, v]) => isReal(v)).sort((a, b) => a[1].re - b[1].re);
+    const cplx = rs.filter(([, v]) => !isReal(v)).sort((a, b) => a[1].re - b[1].re || a[1].im - b[1].im);
+    return (realOnly ? real : [...real, ...cplx]).map(([r]) => r);
   }
   private rootsWhere(realOnly: boolean): Expr[] {
     const lifted = this.liftedRoots(realOnly);
@@ -1139,7 +1175,9 @@ export function polyStr(p: Poly): string {
   const mod = terms.shift();
   if (mod === '-') terms[0] = `-${terms[0]}`;
   const gensOut = gens.map((g) => (g.length > 2 && g.startsWith('(') && g.endsWith(')') ? g.slice(1, -1) : g));
-  return `${p.pure ? 'PurePoly' : 'Poly'}(${terms.join(' ')}, ${gensOut.join(', ')}, domain='${p.domain}')`;
+  const gf = /^GF\((\d+)\)$/.exec(p.domain);
+  const dom = gf ? `modulus=${gf[1]}` : `domain='${p.domain}'`;
+  return `${p.pure ? 'PurePoly' : 'Poly'}(${terms.join(' ')}, ${gensOut.join(', ')}, ${dom})`;
 }
 
 // ---------------------------------------------------------------------------

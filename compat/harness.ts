@@ -2370,6 +2370,8 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.real_roots': polyM((p) => new PyList(p.realRoots())),
   '.all_roots': polyM((p) => new PyList(p.allRoots())),
   '.lift': polyM((p) => p.lift()),
+  '.get_modulus': polyM((p) => sj.Rational.of(p.getModulus())),
+  '.set_modulus': polyM((p, [m]) => p.setModulus((m as sj.Rational).p)),
   '.eject': (args, kw, self) => (noKw(kw), (self as sj.Poly).eject(...args.map(asExpr))),
   '.inject': (_args, kw, self) => (self as sj.Poly).inject({ front: Boolean(kw['front']) }),
   '.root': polyM((p, a) => p.root(intArg(a[0]))),
@@ -2380,10 +2382,13 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'all') throw new Unsupported(`kwargs ${k}`);
     return new PyList(asPoly(self).sqfListInclude(Boolean(kw['all'])).map(([f, k]) => new PyTuple([f, k])));
   },
-  ground_roots: (args, kw) => (noKw(kw), new PyDict(polyOf(args).groundRoots())),
+  ground_roots: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'extension') throw new Unsupported(`kwargs ${k}`);
+    return new PyDict(polyOf(args).groundRoots({ extension: Boolean(kw['extension']) }));
+  },
   real_roots: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'multiple') throw new Unsupported(`kwargs ${k}`);
-    const rs = polyOf(args).realRoots();
+    for (const k of Object.keys(kw)) if (k !== 'multiple' && k !== 'extension') throw new Unsupported(`kwargs ${k}`);
+    const rs = polyOf(args).realRoots({ extension: Boolean(kw['extension']) });
     if (kw['multiple'] !== false) return new PyList(rs);
     // multiple=False: [(root, multiplicity)] in order
     const out: [Expr, number][] = [];
@@ -2394,7 +2399,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     }
     return new PyList(out.map(([r, k]) => new PyTuple([r, sj.Rational.of(k)])));
   },
-  all_roots: (args, kw) => (noKw(kw), new PyList(polyOf(args).allRoots())),
+  all_roots: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'extension') throw new Unsupported(`kwargs ${k}`);
+    return new PyList(polyOf(args).allRoots({ extension: Boolean(kw['extension']) }));
+  },
   count_roots: (args, kw) => {
     noKw(kw);
     const p = args[0] instanceof sj.Poly ? args[0] : sj.Poly.from(asExpr(args[0]));
