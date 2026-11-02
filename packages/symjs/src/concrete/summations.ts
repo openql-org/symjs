@@ -9,9 +9,9 @@ import { Expr, ExprLike, Mul, Pow, Rational, S, Special, Sym, impl } from '../co
 import { Lt, piecewise } from '../core/logic';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
-import { abs, log } from '../functions/elementary';
+import { abs, log, sin, tan } from '../functions/elementary';
 import { bernoulliNumber, factorial } from '../functions/special';
-import { polyCoefficients } from '../polys/poly';
+import { polyCoefficients, roots } from '../polys/poly';
 import { expandMul as expand } from '../simplify/expand';
 import { Concrete } from './node';
 
@@ -64,6 +64,10 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
     for (let i = 0n; i <= diff_.p; i++) terms.push(xreplace(f, [[k, add(a, Rational.of(i))]]));
     return add(...terms);
   }
+  if (isOo(b) || isNegOo(a)) {
+    const r = evalSumResidue(f, k, a, b);
+    if (r) return r;
+  }
   const ef = expand(f);
   const pc = polyCoefficients(ef, k);
   if (pc && !isOo(b)) {
@@ -99,6 +103,106 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
     if (num && den && factors.length === 2) return exp((num as Pow).base);
   }
   return undefined;
+}
+
+/**
+ * Port of SymPy eval_sum_residue: sums of rational functions (optionally
+ * times (-1)**k) over infinite ranges via residues of f*cot(pi*z) (or
+ * f*csc(pi*z)). Only simple poles are handled.
+ */
+function evalSumResidue(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
+  if ([...freeSymbols(f)].some((s) => s.key !== k.key)) return undefined;
+  if (!(isInt(a) || isOo(a) || isNegOo(a)) || !(isInt(b) || isOo(b) || isNegOo(b))) return undefined;
+  const ratCoeffs = (e: Expr): [Map<number, Expr>, Map<number, Expr>] | undefined => {
+    const [n, d] = fractionOf(e);
+    const pn = polyCoefficients(expand(n), k);
+    const pd = polyCoefficients(expand(d), k);
+    return pn && pd ? [pn, pd] : undefined;
+  };
+  let alternating = false;
+  let m = ratCoeffs(f);
+  if (!m) {
+    m = ratCoeffs(mul(f, pow(-1, mul(-1, k))));
+    if (!m) return undefined;
+    alternating = true;
+  }
+  let [pn, pd] = m;
+  const deg = (p: Map<number, Expr>) => Math.max(-Infinity, ...[...p].filter(([, c]) => !(c instanceof Rational && c.isZero)).map(([i]) => i));
+  const toExpr = (p: Map<number, Expr>) => add(...[...p].map(([i, c]) => mul(c, pow(k, i))));
+  if (deg(pd) - deg(pn) < 2) return undefined;
+  const isEven = () => {
+    const ms = (p: Map<number, Expr>) => [...p].filter(([, c]) => !(c instanceof Rational && c.isZero)).map(([i]) => i);
+    const all = (p: Map<number, Expr>, r: number) => ms(p).every((i) => i % 2 === r);
+    return (all(pn, 0) && all(pd, 0)) || (all(pn, 1) && all(pd, 1));
+  };
+  // poles: all roots of the denominator, which must be simple
+  const poles = (): [Rational[], Expr[]] | undefined => {
+    const D = toExpr(pd);
+    let rs: Expr[] | undefined;
+    try {
+      rs = roots(D, k);
+    } catch {
+      return undefined;
+    }
+    if (!rs || rs.length !== deg(pd) || new Set(rs.map((r) => r.key)).size !== rs.length) return undefined;
+    return [rs.filter(isInt), rs.filter((r) => !isInt(r))];
+  };
+  const residues = (rs: Expr[]): Expr => {
+    const N = toExpr(pn);
+    const dD = add(...[...pd].map(([i, c]) => mul(i, c, pow(k, i - 1))));
+    return add(
+      ...rs.map((r) => {
+        const res = mul(xreplace(N, [[k, r]]), pow(xreplace(dD, [[k, r]]), -1));
+        const piR = mul(S.Pi, r);
+        if (isInt(r)) return alternating ? mul(res, pow(-1, r)) : res;
+        return mul(res, pow(alternating ? sin(piR) : tan(piR), -1));
+      }),
+    );
+  };
+  if (isNegOo(a) && isOo(b)) {
+    const ps = poles();
+    if (!ps || ps[0].length) return undefined;
+    return mul(-1, S.Pi, residues(ps[1]));
+  }
+  if (!(isInt(a) && isOo(b))) return undefined;
+  if (!isEven()) {
+    const n = deg(pd);
+    const lead = pd.get(n)!;
+    const sub = pd.get(n - 1) ?? S.Zero;
+    const shift = mul(-1, sub, pow(lead, -1), Rational.of(1, n));
+    if (!isInt(shift) || shift.isZero) return undefined;
+    const sh = (p: Map<number, Expr>) => expand(xreplace(toExpr(p), [[k, add(k, shift)]]));
+    const nn = sh(pn);
+    const dd = sh(pd);
+    pn = polyCoefficients(nn, k)!;
+    pd = polyCoefficients(dd, k)!;
+    if (!isEven()) return undefined;
+    const g = alternating ? mul(pow(-1, k), pow(-1, shift), nn, pow(dd, -1)) : mul(nn, pow(dd, -1));
+    return evalSumResidue(g, k, add(a, mul(-1, shift)), b);
+  }
+  const ps = poles();
+  if (!ps) return undefined;
+  const [intRoots, nonInt] = ps;
+  const ints = intRoots.map((r) => Number(r.p));
+  if (ints.length) {
+    const mx = Math.max(...ints);
+    if (ints.length !== mx - Math.min(...ints) + 1) return undefined;
+    if (Number(a.p) <= mx) return undefined;
+  }
+  const full = mul(-1, S.Pi, residues([...intRoots, ...nonInt]));
+  const at = (i: number) => xreplace(f, [[k, Rational.of(i)]]);
+  const ai = Number(a.p);
+  if (!ints.length) {
+    const half = mul(add(full, at(0)), Rational.of(1, 2));
+    const neg: Expr[] = [];
+    const pos: Expr[] = [];
+    for (let i = ai; i < 0; i++) neg.push(at(i));
+    for (let i = 0; i < ai; i++) pos.push(at(i));
+    return add(half, ...neg, mul(-1, add(...pos)));
+  }
+  const extra: Expr[] = [];
+  for (let i = Math.max(...ints) + 1; i < ai; i++) extra.push(at(i));
+  return add(mul(full, Rational.of(1, 2)), mul(-1, add(...extra)));
 }
 
 function numeric(e: Expr): number | undefined {
