@@ -109,3 +109,18 @@ describe('Poly lift, eject and inject', () => {
     expect(show(f.eject(x).inject({ front: true }))).toBe('x**2*y + x*y**3 + x*y + 1 | x,y | ZZ');
   });
 });
+
+describe('multiple integrals', () => {
+  it('print, differentiate and evaluate like SymPy', async () => {
+    const { Integral, Rational, add, mul, pow, subs } = await import('../src');
+    const [x, y] = symbols('x y');
+    const i = new Integral([new Integral([add(x, y), y]), y, Rational.of(1), x]);
+    expect(sstr(i)).toBe('Integral(x + y, y, (y, 1, x))');
+    expect(latex(i)).toBe('\\int\\limits_{1}^{x}\\int \\left(x + y\\right)\\, dy\\, dy');
+    expect(sstr(diff(i, x))).toBe('Integral(x + y, (y, x)) + Integral(1, y, (y, 1, x))');
+    expect(sstr(diff(i, y))).toBe('0');
+    expect(sstr(doit(i))).toBe('2*x**3/3 - x/2 - 1/6');
+    expect(sstr(new Integral([new Integral([mul(x, y), x]), y]))).toBe('Integral(x*y, x, y)');
+    expect(sstr(subs(new Integral([pow(x, 2), x]), [[x, Rational.of(1)]]))).toBe('Integral(x**2, (x, 1))');
+  });
+});

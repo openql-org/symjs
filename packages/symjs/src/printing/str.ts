@@ -186,10 +186,15 @@ function strInner(e: Expr): string {
   const custom = e as unknown as { printStr?: (p: (x: Expr) => string) => string };
   if (typeof custom.printStr === 'function') return custom.printStr(str);
   if (e instanceof Integral) {
-    const lim = e.limits;
-    const v = str(e.variable);
-    if (e.args.length === 3) return `Integral(${str(e.integrand)}, (${v}, ${str(e.args[2]!)}))`;
-    return `Integral(${str(e.integrand)}, ${lim ? `(${v}, ${str(lim[0])}, ${str(lim[1])})` : v})`;
+    // nested integrals print as one multiple integral, innermost limits first (SymPy)
+    const lims: string[] = [];
+    let cur: Expr = e;
+    while (cur instanceof Integral) {
+      const [, v, a, b] = cur.args;
+      lims.unshift(a === undefined ? str(v!) : b === undefined ? `(${str(v!)}, ${str(a)})` : `(${str(v!)}, ${str(a)}, ${str(b)})`);
+      cur = cur.integrand;
+    }
+    return `Integral(${str(cur)}, ${lims.join(', ')})`;
   }
   return e.key;
 }

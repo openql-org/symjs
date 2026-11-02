@@ -208,6 +208,8 @@ function reduceAbs(e: Expr, op: string, x: Sym): Expr {
 }
 
 function integralNode(args: unknown[]): Expr {
+  // several limits: nested integrals, innermost first
+  if (args.length > 2) return args.slice(2).reduce<Expr>((acc, l) => integralNode([acc, l]), integralNode(args.slice(0, 2)));
   const [f, lim] = args;
   if (lim === undefined) {
     const fs = [...sj.freeSymbols(f as Expr)];

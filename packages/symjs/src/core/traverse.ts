@@ -221,6 +221,8 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
   if (e instanceof Derivative && old instanceof Sym && !(nw instanceof Sym) && e.variableCount.some(([v]) => v.key === old.key)) {
     return new SubsNode([e, old, nw]);
   }
+  // the variable of an indefinite integral replaced: the antiderivative at that point (SymPy (x, b) limit)
+  if (e instanceof Integral && e.args.length === 2 && e.args[1]!.key === old.key && !(nw instanceof Sym)) return new Integral([e.args[0]!, old, nw]);
   // a bound variable is not free: only the limits are substituted
   const bound = boundSymbols(e);
   if (bound.length && bound.some((b) => old.key === b.key)) {

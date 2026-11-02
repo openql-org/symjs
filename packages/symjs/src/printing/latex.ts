@@ -358,11 +358,18 @@ export function latex(e: Expr): string {
     return `O\\left(${latex(x!)}; ${latex(v)}\\rightarrow ${latex(p)}\\right)`;
   }
   if (e instanceof Integral) {
-    const lim = e.limits;
-    const head = lim ? `\\int\\limits_{${latex(lim[0])}}^{${latex(lim[1])}}` : '\\int';
-    const f = e.integrand;
-    const body = precedence(f) < PREC.MUL ? addParens(latex(f)) : latex(f);
-    return `${head} ${body}\\, d${latex(e.variable)}`;
+    // nested integrals: outer signs first, differentials innermost first
+    const heads: string[] = [];
+    const ds: string[] = [];
+    let cur: Expr = e;
+    while (cur instanceof Integral) {
+      const lim = cur.limits;
+      heads.push(lim ? `\\int\\limits_{${latex(lim[0])}}^{${latex(lim[1])}}` : '\\int');
+      ds.unshift(`\\, d${latex(cur.variable)}`);
+      cur = cur.integrand;
+    }
+    const body = precedence(cur) < PREC.MUL ? addParens(latex(cur)) : latex(cur);
+    return `${heads.join('')} ${body}${ds.join('')}`;
   }
   return e.key;
 }

@@ -106,8 +106,38 @@ function d(e: Expr, x: Expr): Expr {
     return S.Zero;
   }
   if (e instanceof Piecewise) return piecewise(...e.pairs.map(([v, c]) => [d(v, x), c] as const));
-  if (e instanceof Integral && !e.limits && e.variable.key === x.key) return e.integrand;
+  if (e instanceof Integral) return diffIntegral(e, x);
   throw new Error(`diff: unsupported expression ${e.toString()}`);
+}
+
+/**
+ * Derivative of an integral (SymPy Integral._eval_derivative): the integrand
+ * for its own variable, and the Leibniz rule f(b)*b' - f(a)*a' +
+ * Integral(df/dx) otherwise. A bound variable is not free.
+ */
+function diffIntegral(e: Integral, x: Expr): Expr {
+  const [f, v, a, b] = e.args as [Expr, Expr, Expr | undefined, Expr | undefined];
+  if (![...impl.freeSymbols(e)].some((s) => s.key === x.key)) return S.Zero;
+  if (a === undefined && v.key === x.key) return f;
+  const terms: Expr[] = [];
+  // an inner indefinite integral in v at p is the antiderivative there: Integral(g, (v, p))
+  const at = (p: Expr) => (f instanceof Integral && f.args.length === 2 && f.args[1]!.key === v.key ? new Integral([f.args[0]!, v, p]) : impl.subs(f, [[v, p]]));
+  // (v, b): the antiderivative at b; (v, a, b): limits a and b
+  const upper = b ?? a;
+  const lower = b === undefined ? undefined : a;
+  if (upper !== undefined) {
+    const du = d(upper, x);
+    if (du.key !== S.Zero.key) terms.push(mul(at(upper), du));
+  }
+  if (lower !== undefined) {
+    const dl = d(lower, x);
+    if (dl.key !== S.Zero.key) terms.push(mul(-1, at(lower), dl));
+  }
+  if (v.key !== x.key) {
+    const df = d(f, x);
+    if (df.key !== S.Zero.key) terms.push(new Integral([df, ...e.args.slice(1)]));
+  }
+  return add(...terms);
 }
 
 /** n-th derivative of e with respect to x. */
