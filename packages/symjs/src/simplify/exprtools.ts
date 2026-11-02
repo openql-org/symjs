@@ -9,7 +9,7 @@
 
 import { Add, Constant, Expr, ExprLike, Float, Mul, Pow, Rational, S, Special, impl } from '../core/nodes';
 import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
-import { asContentPrimitive, asIndependent, primitive } from '../core/methods';
+import { argsCncSplit, asContentPrimitive, asIndependent, primitive } from '../core/methods';
 import { rebuild, xreplace } from '../core/traverse';
 import { Concrete } from '../concrete/node';
 import { Dummy } from '../core/nodes';
@@ -263,8 +263,18 @@ export function gcdTermsOf(termsList: readonly Expr[], opts: { isprimitive?: boo
   const clear = opts.clear ?? true;
   const fraction = opts.fraction ?? true;
   {
-    const [cont, numer0, denom] = gcdTermsCore([...termsList], isprimitive, fraction);
-    let numer = numer0;
+    // SymPy mask: the noncommutative part of each term becomes its own Dummy, so it is never factored out
+    const reps: [Expr, Expr][] = [];
+    const masked = termsList.map((t) => {
+      if (t.isCommutative) return t;
+      const [c, nc] = argsCncSplit(t);
+      if (!nc.length) return t;
+      const d = new Dummy();
+      reps.push([d, mul(...nc)]);
+      return mul(...c, d);
+    });
+    const [cont, numer1, denom] = gcdTermsCore(masked, isprimitive, fraction);
+    let numer = reps.length ? xreplace(numer1, reps) : numer1;
     let [coeff, factors] = splitCoeff(cont) as [Expr, Expr];
     if (!clear) {
       const [c, _coeff] = splitCoeff(coeff);
