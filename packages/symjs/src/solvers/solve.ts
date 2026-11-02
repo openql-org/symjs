@@ -9,7 +9,8 @@
 import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
 import { Add, Constant, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
-import { freeSymbols, xreplace, xreplace as xreplaceS } from '../core/traverse';
+import { freeSymbols, some, xreplace, xreplace as xreplaceS } from '../core/traverse';
+import { evalf } from '../numeric/evalf';
 import { diff } from '../calculus/diff';
 import { acos, asin, atan, log } from '../functions/elementary';
 import { Matrix } from '../matrices/matrix';
@@ -65,8 +66,19 @@ function checkSolution(f: Expr, x: Sym, v: Expr): boolean {
   // the original expression must not be undefined there
   const fv = xreplace(f, [[x, v]]);
   if (fv instanceof Special) return false;
+  // a numeric residual must vanish (SymPy checksol), e.g. sqrt(x) + 1 at x = 1
+  if (freeSymbols(fv).size === 0 && !hasExtension(fv)) {
+    try {
+      const c = evalf(fv, 30).toComplex();
+      if (Number.isFinite(c.re) && Number.isFinite(c.im) && Math.hypot(c.re, c.im) > 1e-12) return false;
+    } catch {
+      // not evaluable: keep the candidate
+    }
+  }
   return true;
 }
+
+const hasExtension = (e: Expr): boolean => e.kind === 'Extension' || e.args.some(hasExtension);
 
 /** Inverse images of y under a function application f(u) (principal branches like SymPy). */
 function invertFn(f: Fn | Pow, y: Expr): [Expr, Expr[]] | undefined {
@@ -175,12 +187,49 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
       }
     }
   }
+  const rad = singleRadical(num, x, depth);
+  if (rad) return rad;
   const lw = lambertSolve(num, x);
   if (lw) return lw;
   // a*sin(u) + b*cos(u) = 0  ->  tan(u) = -b/a
   const sc = sinCosLinear(num, x);
   if (sc) return sc;
   throw new Error(`solve: cannot solve ${f.toString()} for ${x.name}`);
+}
+
+/**
+ * One radical R = g**(p/q) in a*R + b = 0 (a, b free of radicals in x):
+ * a**q*g**p = (-b)**q, a polynomial-type equation (SymPy unrad). Spurious
+ * candidates are removed by the final check.
+ */
+function singleRadical(num: Expr, x: Sym, depth: number): Expr[] | undefined {
+  const rads = new Map<string, Pow>();
+  const find = (e: Expr) => {
+    if (e instanceof Pow && e.exp instanceof Rational && !e.exp.isInteger && e.base.has(x)) rads.set(e.key, e);
+    e.args.forEach(find);
+  };
+  find(num);
+  if (rads.size !== 1) return undefined;
+  const R = [...rads.values()][0]!;
+  const terms = num instanceof Add ? num.args : [num];
+  const as: Expr[] = [];
+  const bs: Expr[] = [];
+  for (const t of terms) {
+    if (!t.has(R)) {
+      bs.push(t);
+      continue;
+    }
+    const c = mul(t, pow(R, -1));
+    if (c.has(R) || some(c, (u) => u instanceof Pow && u.exp instanceof Rational && !u.exp.isInteger && u.base.has(x))) return undefined;
+    as.push(c);
+  }
+  const a = add(...as);
+  const b = add(...bs);
+  const p = (R.exp as Rational).p;
+  const q = (R.exp as Rational).q;
+  if (p < 0n || q > 6n) return undefined;
+  const eq = add(mul(pow(a, Rational.of(q)), pow(R.base, Rational.of(p))), mul(-1, pow(mul(-1, b), Rational.of(q))));
+  return solveRaw(expandMul(eq), x, depth + 1);
 }
 
 function sinCosLinear(e: Expr, x: Sym): Expr[] | undefined {

@@ -131,7 +131,7 @@ def ser(o):
     if isinstance(o, dict):
         return {"t": "Dict", "items": [[ser(k), ser(v)] for k, v in o.items()]}
     if isinstance(o, MatrixBase):
-        return {"t": "Matrix", "rows": [[ser(o[i, j]) for j in range(o.cols)] for i in range(o.rows)]}
+        return {"t": "Matrix", "rows": [[ser(o[i, j]) for j in range(o.cols)] for i in range(o.rows)], "shape": [o.rows, o.cols]}
     from sympy.core.function import UndefinedFunction as _UF
     if isinstance(o, _UF):
         return {"t": "UFnClass", "name": o.__name__}

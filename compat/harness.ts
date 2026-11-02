@@ -372,6 +372,8 @@ export function deserialize(tree: Tree): unknown {
     case 'Dict':
       return new PyDict((tree['items'] as [Tree, Tree][]).map(([k, v]) => [deserialize(k), deserialize(v)] as const));
     case 'Matrix':
+      // empty matrices keep their shape (e.g. 0x2)
+      if (!(tree['rows'] as Tree[][]).length && tree['shape']) return Matrix.zeros(...(tree['shape'] as [number, number]));
       return Matrix.of((tree['rows'] as Tree[][]).map((r) => r.map((x) => deserialize(x) as Expr)));
     default:
       throw new Unsupported(`type ${tree.t}`);
@@ -1506,7 +1508,16 @@ export const ADAPTERS: Record<string, Adapter> = {
     return rootsDict(sj.roots(e, x, { multiple: true, skipQuintic: true }));
   },
   solve: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'check' && k !== 'cubics') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (k !== 'check' && k !== 'cubics' && k !== 'set') throw new Unsupported(`kwargs ${k}`);
+    if (kw['set'] === true) {
+      // set=True: ([symbols], {(solution,), ...}) for one equation in one unknown
+      if (args.length !== 2 || args[0] instanceof PyTuple || args[0] instanceof PyList) throw new Unsupported('solve set form');
+      const t = asExpr(args[1]);
+      const d = t instanceof Sym ? t : new sj.Dummy('_t');
+      const e = t instanceof Sym ? asExpr(args[0]) : sj.subs(asExpr(args[0]), [[t, d]]);
+      const sols = sj.solve(e, d);
+      return new PyTuple([new PyList([t]), new PySet(sols.map((v) => new PyTuple([v])))]);
+    }
     const check = kw['check'] === undefined ? undefined : Boolean(kw['check']);
     const cubics = kw['cubics'] === false ? false : undefined;
     const first = args[0];
@@ -1517,22 +1528,35 @@ export const ADAPTERS: Record<string, Adapter> = {
     }
     // systems of equations
     if (first instanceof PyTuple) {
-      const syms = args[1] instanceof PyTuple ? args[1].items.map(asSym) : args.slice(1).map(asSym);
+      // unknowns that are not symbols (x + 2, x*y) are solved for as dummies, like SymPy
+      const targets = (args[1] instanceof PyTuple ? args[1].items : args.slice(1)).map(asExpr);
+      const syms = targets.map((t, i) => (t instanceof Sym ? t : new sj.Dummy(`_t${i}`)));
+      const reps = targets.map((t, i) => [t, syms[i]!] as [Expr, Expr]).filter(([t]) => !(t instanceof Sym));
+      const back = (v: Expr) => targets[syms.indexOf(v as Sym)] ?? v;
       // like SymPy, equations free of the requested symbols are dropped
-      const eqs = first.items.map(asExpr).filter((e) => !syms.length || syms.some((s) => e.has(s)));
+      const eqs = first.items.map((e) => (reps.length ? sj.subs(asExpr(e), reps) : asExpr(e))).filter((e) => !syms.length || syms.some((s) => e.has(s)));
       const vars = syms.length ? syms : allSymbols(eqs);
       if (sj.linearEqToMatrix(eqs, vars)) {
         const s = sj.linsolve(eqs, vars);
         if (!s) return new PyList([]);
         // underdetermined: SymPy lists only the solved (pivot) symbols
-        return new PyDict(vars.map((v, i) => [v, s[i]!] as const).filter(([v, e]) => v.key !== e.key));
+        return new PyDict(vars.map((v, i) => [back(v), s[i]!] as const).filter(([v, e]) => v.key !== e.key));
       }
       const sols = sj.nonlinsolve(eqs, vars);
-      return new PyList(sols.map((t) => new PyDict(vars.map((v, i) => [v, t[i]!] as const))));
+      return new PyList(sols.map((t) => new PyDict(vars.map((v, i) => [back(v), t[i]!] as const))));
     }
     if (first instanceof PyList && first.items.some((i) => i instanceof sj.Rel && i.op !== 'Eq')) {
       const syms = args.slice(1).filter((a) => a instanceof Sym) as Sym[];
-      if (first.items.some((i) => !(i instanceof sj.Rel) || i.op === 'Eq')) throw new Unsupported('mixed system');
+      const isEq = (i: unknown) => !(i instanceof sj.Rel) || i.op === 'Eq';
+      if (first.items.some(isEq)) {
+        // equations and inequalities in one symbol (SymPy _solve_system with inequalities)
+        const eqs = first.items.filter(isEq).map(asExpr);
+        if (syms.length !== 1 || eqs.length !== 1) throw new Unsupported('mixed system');
+        const sols = sj.solve(eqs[0]!, syms[0]!);
+        if (sols.length !== 1) throw new Unsupported('mixed system');
+        const ineq = sj.reduceInequalities(first.items.filter((i) => !isEq(i)).map(asExpr), syms);
+        return sj.And(ineq, sj.Eq(syms[0]!, sols[0]!));
+      }
       return sj.reduceInequalities(first.items.map(asExpr), syms);
     }
     const e = first instanceof sj.Poly ? first.asExpr() : asExpr(first);
@@ -1635,7 +1659,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     const syms = args.slice(1).map(asSym);
     const s = solveAug(args[0] as Matrix, syms);
-    return s ? new PyDict(syms.map((v, i) => [v, s[i]!] as const)) : null;
+    // free variables (solved as themselves) are not listed, like SymPy
+    return s ? new PyDict(syms.map((v, i) => [v, s[i]!] as const).filter(([v, e]) => v.key !== e.key)) : null;
   },
   solve_undetermined_coeffs: (args, kw) => {
     const dict = Boolean(kw['dict']);

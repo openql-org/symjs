@@ -74,3 +74,16 @@ describe('factor over GF(p)', () => {
     for (const [f, p, want] of cases) expect(sstr(factor(parse(f), { modulus: p }))).toBe(want);
   });
 });
+
+describe('solve with radicals', () => {
+  it('isolates one radical and checks the candidates', async () => {
+    const { solve } = await import('../src');
+    const x = symbols('x')[0];
+    const show = (s: string, opts = {}) => solve(parse(s), x, opts).map((e) => sstr(e));
+    expect(show('sqrt(x + 1) - x + 1')).toEqual(['3']);
+    expect(show('x**(2/3) - 4')).toEqual(['8']);
+    expect(show('sqrt(x) + 1')).toEqual([]);
+    expect(show('-x + (x**3 - 3*x**2)**(1/3) + 1')).toEqual([]);
+    expect(show('-x + (x**3 - 3*x**2)**(1/3) + 1', { check: false })).toEqual(['1/3']);
+  });
+});
