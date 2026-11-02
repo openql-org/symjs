@@ -436,7 +436,7 @@ function subsArgs(e: Expr, args: unknown[]): Expr {
   throw new Unsupported('subs arguments');
 }
 
-const HINTS = ['deep', 'mul', 'multinomial', 'power_exp', 'power_base', 'log', 'complex', 'trig', 'force', 'func'];
+const HINTS = ['deep', 'mul', 'multinomial', 'power_exp', 'power_base', 'log', 'complex', 'trig', 'force', 'func', 'frac', 'numer', 'denom'];
 function expandHints(kw: Record<string, unknown>): sj.ExpandHints {
   for (const k of Object.keys(kw)) if (!HINTS.includes(k)) throw new Unsupported(`expand hint ${k}`);
   return Object.fromEntries(Object.entries(kw).map(([k, v]) => [k, Boolean(v)])) as sj.ExpandHints;
@@ -773,6 +773,12 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (self instanceof sj.Rational && args[0] instanceof sj.Rational) return sj.modInverse(self, args[0]);
     if (self instanceof sj.Poly) return self.invert(args[0] as sj.Poly);
     throw new Unsupported('invert');
+  },
+  factor_system: (args, kw) => {
+    noKw(kw);
+    const eqs = (args[0] as PyList).items.map(asExpr);
+    const gens = args[1] === undefined ? [] : (args[1] as PyList).items.map(asExpr);
+    return new PyList(sj.factorSystem(eqs, gens).map((s) => new PyList(s)));
   },
   groebner: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['order', 'method'].includes(k)) throw new Unsupported(`kwargs ${k}`);

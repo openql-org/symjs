@@ -86,6 +86,12 @@ export interface ExpandHints {
   force?: boolean;
   /** Expand special functions into simpler ones (SymPy func=True). */
   func?: boolean;
+  /** Expand numerator and denominator separately (SymPy frac=True). */
+  frac?: boolean;
+  /** Expand only the numerator (SymPy numer=True). */
+  numer?: boolean;
+  /** Expand only the denominator (SymPy denom=True). */
+  denom?: boolean;
 }
 
 const isE = (e: Expr) => e instanceof Constant && e.name === 'E';
@@ -233,6 +239,13 @@ function applyBottomUp(e: Expr, f: (e: Expr) => Expr, deep: boolean): Expr {
  * power_base, log (and deep). Optional: complex, trig, force.
  */
 export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
+  const { frac, numer, denom, ...rest } = hints;
+  if (frac || numer || denom) {
+    const [n, d] = impl.fraction!(sympify(ex));
+    const en = frac || numer ? expand(n, rest) : n;
+    const ed = frac || denom ? expand(d, rest) : d;
+    return mul(en, pow(ed, -1));
+  }
   const h = {
     deep: true,
     mul: true,
