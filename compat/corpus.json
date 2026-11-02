@@ -33423,7 +33423,23 @@
   },
   {
    "fn": "adjoint",
-   "unsupportedArg": "MatrixSymbol",
+   "args": [
+    {
+     "t": "MatrixSymbol",
+     "name": "A",
+     "rows": {
+      "t": "Rational",
+      "p": "10",
+      "q": "1"
+     },
+     "cols": {
+      "t": "Rational",
+      "p": "5",
+      "q": "1"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "functions",
    "module": "sympy.functions.elementary.complexes",
    "src": "adjoint(A)",
@@ -33684,7 +33700,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_874",
+         "name": "Dummy_867",
          "index": 0,
          "assume": {
           "real": true
@@ -34900,7 +34916,23 @@
   },
   {
    "fn": "transpose",
-   "unsupportedArg": "MatrixSymbol",
+   "args": [
+    {
+     "t": "MatrixSymbol",
+     "name": "A",
+     "rows": {
+      "t": "Rational",
+      "p": "25",
+      "q": "1"
+     },
+     "cols": {
+      "t": "Rational",
+      "p": "9",
+      "q": "1"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "functions",
    "module": "sympy.functions.elementary.complexes",
    "src": "transpose(A)",
@@ -34908,7 +34940,23 @@
   },
   {
    "fn": "transpose",
-   "unsupportedArg": "MatrixSymbol",
+   "args": [
+    {
+     "t": "MatrixSymbol",
+     "name": "B",
+     "rows": {
+      "t": "Rational",
+      "p": "9",
+      "q": "1"
+     },
+     "cols": {
+      "t": "Rational",
+      "p": "22",
+      "q": "1"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "functions",
    "module": "sympy.functions.elementary.complexes",
    "src": "transpose(B)",
@@ -34916,7 +34964,42 @@
   },
   {
    "fn": "transpose",
-   "unsupportedArg": "MatrixSymbol",
+   "args": [
+    {
+     "t": "MatMul",
+     "args": [
+      {
+       "t": "MatrixSymbol",
+       "name": "A",
+       "rows": {
+        "t": "Rational",
+        "p": "25",
+        "q": "1"
+       },
+       "cols": {
+        "t": "Rational",
+        "p": "9",
+        "q": "1"
+       }
+      },
+      {
+       "t": "MatrixSymbol",
+       "name": "B",
+       "rows": {
+        "t": "Rational",
+        "p": "9",
+        "q": "1"
+       },
+       "cols": {
+        "t": "Rational",
+        "p": "22",
+        "q": "1"
+       }
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "functions",
    "module": "sympy.functions.elementary.complexes",
    "src": "transpose(A*B)",
@@ -52583,7 +52666,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a0a1030>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a6ed8d0>, 3)"
   },
   {
    "fn": ".LC",
@@ -52790,7 +52873,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a17c760>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a70d3c0>, 4)"
   },
   {
    "fn": ".TC",

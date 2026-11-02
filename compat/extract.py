@@ -120,6 +120,8 @@ def ser(o):
         return {"t": "Float", "v": o, "py": True}
     if isinstance(o, str):
         return {"t": "Str", "v": o}
+    if isinstance(o, sympy.MatrixSymbol):
+        return {"t": "MatrixSymbol", "name": o.name, "rows": ser(o.shape[0]), "cols": ser(o.shape[1])}
     if isinstance(o, (set, frozenset)):
         return {"t": "PySet", "items": [ser(i) for i in o]}
     if isinstance(o, list):

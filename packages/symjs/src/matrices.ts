@@ -11,6 +11,7 @@ import './core';
 export {
   Matrix,
 } from './matrices/matrix';
+export { MatrixSymbol, MatrixTranspose, MatrixAdjoint } from './matrices/matexpr';
 export * as linalg from './matrices/linalg';
 export {
   rref,

@@ -150,3 +150,18 @@ describe('nonlinsolve and undetermined coefficients', () => {
     expect(show(solveUndeterminedCoeffs(eq, [a, b, c], [u, v]))).toBe('(1, 2, 3)');
   });
 });
+
+describe('matrix symbols', () => {
+  it('transpose and adjoint like SymPy', async () => {
+    const { MatrixSymbol, transpose, adjoint, mul, add } = await import('../src');
+    const A = new MatrixSymbol('A', 3, 3);
+    const B = new MatrixSymbol('B', 3, 3);
+    expect(sstr(transpose(A))).toBe('A.T');
+    expect(sstr(adjoint(A))).toBe('Adjoint(A)');
+    expect(sstr(transpose(mul(A, B)))).toBe('B.T*A.T');
+    expect(sstr(adjoint(mul(A, B)))).toBe('Adjoint(B)*Adjoint(A)');
+    expect(sstr(transpose(transpose(A)))).toBe('A');
+    expect(sstr(transpose(add(A, B)))).toBe('A.T + B.T');
+    expect(latex(transpose(A))).toBe('A^{T}');
+  });
+});

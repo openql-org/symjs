@@ -373,6 +373,8 @@ export function deserialize(tree: Tree): unknown {
       );
     case 'Dict':
       return new PyDict((tree['items'] as [Tree, Tree][]).map(([k, v]) => [deserialize(k), deserialize(v)] as const));
+    case 'MatrixSymbol':
+      return new sj.MatrixSymbol(tree['name'] as string, deserialize(tree['rows'] as Tree) as Expr, deserialize(tree['cols'] as Tree) as Expr);
     case 'Matrix':
       // empty matrices keep their shape (e.g. 0x2)
       if (!(tree['rows'] as Tree[][]).length && tree['shape']) return Matrix.zeros(...(tree['shape'] as [number, number]));
