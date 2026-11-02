@@ -130,6 +130,8 @@ def ser(o):
         if mod.startswith("sympy") or mod == "math":
             return {"t": "JsFunc", "name": ("math." if mod == "math" else "") + o.__name__}
         raise Unsupported("function")
+    if isinstance(o, sympy.CRootOf):
+        return {"t": "CRootOf", "poly": ser(o.expr), "index": int(o.index)}
     if isinstance(o, sympy.RootSum):
         return {"t": "RootSum", "poly": ser(o.expr), "fun": ser(o.fun), "var": ser(o.poly.gen)}
     if isinstance(o, sympy.MatrixSymbol):

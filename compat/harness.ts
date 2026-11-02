@@ -86,6 +86,9 @@ export class JsLambda {
   }
 }
 
+/** A Lambda inside an expression is a Lambda node (a JsLambda is the form passed as an argument). */
+const lambdaAsNode = (v: unknown): unknown => (v instanceof JsLambda ? sj.Lambda(v.vars, v.body) : v);
+
 /** A library function passed as an argument (equal_valued, factor, math.isclose, ...). */
 export class JsFunc {
   constructor(readonly name: string) {}
@@ -295,10 +298,12 @@ export function deserialize(tree: Tree): unknown {
       return m[tree['name'] as string];
     }
     case 'Add':
-      return sj.add(...(tree['args'] as Tree[]).map((a) => deserialize(a) as Expr));
+      return sj.add(...(tree['args'] as Tree[]).map((a) => lambdaAsNode(deserialize(a)) as Expr));
     case 'Mul':
     case 'MatMul':
-      return sj.mul(...(tree['args'] as Tree[]).map((a) => deserialize(a) as Expr));
+      return sj.mul(...(tree['args'] as Tree[]).map((a) => lambdaAsNode(deserialize(a)) as Expr));
+    case 'CRootOf':
+      return new sj.CRootOf(deserialize(tree['poly'] as Tree) as Expr, tree['index'] as number);
     case 'Pow': {
       const [b, e] = (tree['args'] as Tree[]).map((a) => deserialize(a) as Expr);
       // a power of rationals that SymPy kept as a Pow was built with evaluate=False
@@ -884,7 +889,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     const v = args[0];
     const localsArg = args[1] instanceof JsDict ? args[1] : kw['locals'] instanceof JsDict ? kw['locals'] : undefined;
     if (typeof v === 'string' && (kw['evaluate'] === false || kw['convert_xor'] === false || localsArg)) {
-      const symbols = localsArg ? Object.fromEntries(localsArg.entries.map(([k, x]) => [String(k), asExpr(x)])) : undefined;
+      // a locals value that is not an expression (sympy.abc._clash entries) makes the name a plain symbol
+      const symbols = localsArg ? Object.fromEntries(localsArg.entries.map(([k, x]) => [String(k), typeof x === 'string' || x === null ? new Sym(String(k)) : asExpr(x)])) : undefined;
       return sj.parse(v, { ...(kw['evaluate'] === false ? { evaluate: false } : {}), ...(kw['convert_xor'] === false ? { convertXor: false } : {}), ...(symbols ? { symbols } : {}) });
     }
     if (typeof v === 'string') {
@@ -1290,24 +1296,16 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.sumIsAbsolutelyConvergent(self) ?? null;
   },
   '.as_sum': (args, kw, self) => {
-    for (const k of Object.keys(kw)) if (k !== 'method') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (k !== 'method' && k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
     if (!(self instanceof Integral) || !self.limits) throw new Unsupported('as_sum');
-    const n = args[0];
-    if (!(n instanceof sj.Rational)) throw new Unsupported('symbolic as_sum');
-    const method = (kw['method'] ?? args[1] ?? 'midpoint') as string;
-    const [a, b] = self.limits as [Expr, Expr];
-    const dx = sj.mul(sj.add(b, sj.mul(-1, a)), sj.pow(n, -1));
-    const terms: Expr[] = [];
-    const N = Number(n.p);
-    for (let i = 0; i < N; i++) {
-      let pt: Expr;
-      if (method === 'left') pt = sj.add(a, sj.mul(i, dx));
-      else if (method === 'right') pt = sj.add(a, sj.mul(i + 1, dx));
-      else if (method === 'midpoint') pt = sj.add(a, sj.mul(sj.Rational.of(2 * i + 1, 2), dx));
-      else throw new Unsupported(`as_sum method ${method}`);
-      terms.push(sj.xreplace(self.integrand, [[self.variable, pt]]));
-    }
-    return sj.mul(dx, sj.add(...terms));
+    const method = (kw['method'] ?? args[1] ?? 'midpoint') as 'midpoint';
+    return sj.asSum(self, asExpr(args[0]), method, { evaluate: kw['evaluate'] !== false });
+  },
+  '.euler_maclaurin': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'm' && k !== 'n') throw new Unsupported(`kwargs ${k}`);
+    const m = Number(((kw['m'] ?? args[0] ?? sj.Rational.of(0)) as sj.Rational).p);
+    const n = Number(((kw['n'] ?? args[1] ?? sj.Rational.of(0)) as sj.Rational).p);
+    return new JsTuple(sj.eulerMaclaurin(self as sj.Concrete, m, n));
   },
   igcd: (args, kw) => (noKw(kw), sj.Rational.of(sj.igcd(...args.map((a) => (a as sj.Rational).p)))),
   ilcm: (args, kw) => (noKw(kw), sj.Rational.of(sj.ilcm(...args.map((a) => (a as sj.Rational).p)))),
@@ -1565,6 +1563,13 @@ export const ADAPTERS: Record<string, Adapter> = {
         : x.kind === y.kind && x.args.length === y.args.length && (x.args.length ? x.args.every((u, i) => same(u, y.args[i]!)) : x.key === y.key);
     return same(a, b);
   },
+  '.rcall': (args, kw, self) => {
+    noKw(kw);
+    // apply every Lambda in the expression to the arguments (SymPy rcall)
+    const xs = args.map(asExpr);
+    const go = (e: Expr): Expr => (e instanceof sj.Lambda ? e.call(...xs) : e.args.length ? sj.rebuild(e, e.args.map(go)) : e);
+    return go(asExpr(self));
+  },
   '.fromiter': (args, kw) => (noKw(kw), new JsTuple((args[0] as JsTuple).items)),
   rational_interpolate: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'X') throw new Unsupported(`kwargs ${k}`);
@@ -1684,7 +1689,21 @@ export const ADAPTERS: Record<string, Adapter> = {
     return rootsDict(sj.roots(e, x, { multiple: true, skipQuintic: true }));
   },
   solve: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'check' && k !== 'cubics' && k !== 'set') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['check', 'cubics', 'set', 'implicit'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    if (kw['implicit'] === true && args.length === 2 && args[1] instanceof Sym) {
+      // implicit=True: occurrences of x inside other functions are treated as constants
+      const x = args[1];
+      const reps: [Expr, Expr][] = [];
+      const e0 = sj.mapBottomUp(asExpr(args[0]), (u) => {
+        if (u.has(x) && (u instanceof sj.AppliedFunction || (u instanceof sj.Pow && u.exp.has(x)))) {
+          const d = new sj.Dummy(`f${reps.length}`);
+          reps.push([d, u]);
+          return d;
+        }
+        return u;
+      });
+      return new JsList(sj.solve(e0, x).map((v) => sj.xreplace(v, reps)));
+    }
     if (kw['set'] === true) {
       // set=True: ([symbols], {(solution,), ...}) for one equation in one unknown
       if (args.length !== 2 || args[0] instanceof JsTuple || args[0] instanceof JsList) throw new Unsupported('solve set form');
@@ -1760,6 +1779,26 @@ export const ADAPTERS: Record<string, Adapter> = {
       return new JsDict(coeffs.map((c, i) => [c, sols[0]![i]!] as const));
     }
     const syms = [...sj.freeSymbols(e)];
+    if (args[1] instanceof sj.Rational) {
+      // solving for a number: its occurrences (and those of its negative) become the unknown
+      const n = args[1];
+      const t = new sj.Dummy('t');
+      const neg = sj.Rational.of(-n.p, n.q);
+      const g = sj.mapBottomUp(e, (u) => (u.key === n.key ? t : u.key === neg.key && !n.isZero ? sj.mul(-1, t) : u));
+      return new JsList(sj.solve(g, t));
+    }
+    if (args.length === 1 && syms.length > 1) {
+      // several unknowns and none given: each factor solved for its first symbol (SymPy order)
+      const sorted = sj.ordered(syms) as Sym[];
+      const factors = e instanceof sj.Mul ? e.args.filter((f) => f.freeSymbols().size) : [e];
+      const out: JsDict[] = [];
+      for (const f of factors) {
+        const u = sorted.find((s) => f.has(s) && sj.solve(f, s).length);
+        if (!u) throw new Unsupported('solve form');
+        for (const v of sj.solve(f, u)) out.push(new JsDict([[u, v]]));
+      }
+      return new JsList(out);
+    }
     const x =
       args[1] instanceof Sym
         ? args[1]
@@ -1793,7 +1832,14 @@ export const ADAPTERS: Record<string, Adapter> = {
     let sol: Expr[] | undefined;
     if (first instanceof JsTuple && first.items.length === 2 && first.items[0] instanceof Matrix) {
       const [A, b] = first.items as [Matrix, Matrix];
-      if (!syms.length) throw new Unsupported('linsolve without symbols');
+      if (!syms.length) {
+        // no symbols: free parameters are tau0, tau1, ... (SymPy gauss_jordan_solve)
+        try {
+          return new JsSet([new JsTuple(sj.gaussJordanSolve(A, b)[0].data)]);
+        } catch {
+          return 'EmptySet';
+        }
+      }
       sol = solveAug(A.hstack(b), syms);
     } else if (first instanceof Matrix) {
       sol = solveAug(first, syms);
@@ -1842,7 +1888,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (args.length > 1) opts.symbols = args.slice(1).map(asSym);
     return new JsTuple(sj.solveLinear(asExpr(args[0]), opts));
   },
-  solve_linear_system_LU: (args, kw) => ADAPTERS['solve_linear_system']!(args, kw),
+  solve_linear_system_LU: (args, kw) => ADAPTERS['solve_linear_system']!([args[0], ...(args[1] instanceof JsList || args[1] instanceof JsTuple ? args[1].items : args.slice(1))], kw),
   solve_linear_system: (args, kw) => {
     noKw(kw);
     const syms = args.slice(1).map(asSym);
@@ -1861,9 +1907,15 @@ export const ADAPTERS: Record<string, Adapter> = {
     return dicts.length === 1 ? dicts[0] : new JsList(dicts);
   },
   nsolve: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'prec') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['prec', 'solver', 'verify'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const opts = kw['prec'] === undefined ? {} : { prec: Number((kw['prec'] as sj.Rational).p) };
     const e = asExpr(args[0]);
+    const last = args[args.length - 1];
+    if (last instanceof JsTuple && last.items.length === 2) {
+      // an interval: bisection (solver='bisect')
+      const xs = args.length === 3 ? asSym(args[1]) : ([...sj.freeSymbols(e)][0] as Sym);
+      return sj.nsolve(e, xs, [asExpr(last.items[0]), asExpr(last.items[1])], { solver: 'bisect' });
+    }
     if (args.length === 3) return sj.nsolve(e, asSym(args[1]), asExpr(args[2]), opts);
     const syms = [...sj.freeSymbols(e)];
     if (syms.length !== 1) throw new Unsupported('nsolve form');

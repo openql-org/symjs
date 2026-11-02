@@ -328,3 +328,15 @@ describe('sqrtdenest and radsimp (SymPy ports)', () => {
     expect(rs('1/(a + b*sqrt(c))', { symbolic: false })).toBe('1/(a + b*sqrt(c))');
   });
 });
+
+describe('as_sum, euler_maclaurin and nsolve bisection', () => {
+  it('match SymPy', async () => {
+    const { asSum, eulerMaclaurin, Integral, Sum, nsolve, Rational } = await import('../src');
+    const [x, n, k, b] = symbols('x n k b');
+    const I2 = new Integral([parse('x**2'), x, Rational.of(0), Rational.of(2)]);
+    expect(sstr(asSum(I2, n, 'midpoint', { evaluate: false }))).toBe('2*Sum((2*_k/n - 1/n)**2, (_k, 1, n))/n');
+    expect(sstr(asSum(I2, 4, 'midpoint'))).toBe('21/8');
+    expect(eulerMaclaurin(Sum(k, [k, 2, b]) as never).map((e) => sstr(e))).toEqual(['b**2/2 + b/2 - 1', '0']);
+    expect(sstr(nsolve(parse('cos(x)*cosh(x) - 1'), x, [313, 317]))).toBe('315.730061685774');
+  });
+});

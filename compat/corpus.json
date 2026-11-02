@@ -27156,7 +27156,101 @@
   },
   {
    "fn": ".evalf",
-   "unsupportedArg": "ComplexRootOf",
+   "self": {
+    "t": "AlgebraicNumber",
+    "root": {
+     "t": "CRootOf",
+     "poly": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 0,
+        "assume": {}
+       }
+      ]
+     },
+     "index": 3
+    },
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "-1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "-1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a5.evalf()",
@@ -27335,7 +27429,91 @@
   },
   {
    "fn": ".evalf",
-   "unsupportedArg": "ComplexRootOf",
+   "self": {
+    "t": "AlgebraicNumber",
+    "root": {
+     "t": "CRootOf",
+     "poly": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 0,
+        "assume": {}
+       }
+      ]
+     },
+     "index": 3
+    },
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a6_wrong.primitive_element().evalf()",
@@ -29477,6 +29655,18 @@
       ],
       [
        {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "x_1",
+        "assume": {}
+       }
+      ],
+      [
+       {
         "t": "Dummy",
         "name": "x",
         "index": 0,
@@ -29485,18 +29675,6 @@
        {
         "t": "Symbol",
         "name": "x",
-        "assume": {}
-       }
-      ],
-      [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Symbol",
-        "name": "x_1",
         "assume": {}
        }
       ]
@@ -33917,7 +34095,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_874",
+         "name": "Dummy_877",
          "index": 0,
          "assume": {
           "real": true
@@ -53352,7 +53530,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x1099b5bd0>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x108316650>, 3)"
   },
   {
    "fn": ".LC",
@@ -53559,7 +53737,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x109292290>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10858ae60>, 4)"
   },
   {
    "fn": ".TC",
@@ -65495,7 +65673,231 @@
     "domain": "ZZ_I",
     "pure": false
    },
-   "unsupportedArg": "ComplexRootOf",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "CRootOf",
+       "poly": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "index": 0
+      },
+      {
+       "t": "CRootOf",
+       "poly": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "index": 1
+      },
+      {
+       "t": "CRootOf",
+       "poly": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "index": 2
+      },
+      {
+       "t": "CRootOf",
+       "poly": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       "index": 3
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "f.which_all_roots(f.lift().all_roots())",

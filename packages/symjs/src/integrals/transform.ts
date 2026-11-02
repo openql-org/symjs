@@ -5,13 +5,14 @@
  * @file Change of variables in integrals (SymPy Integral.transform).
  */
 
-import { Dummy, Expr, ExprLike, Integral, S, Sym } from '../core/nodes';
+import { Dummy, Expr, ExprLike, Integral, Rational, S, Sym } from '../core/nodes';
+import { Sum, doitConcrete } from '../concrete/summations';
 import { isNonNegative } from '../core/assumptions';
 import { FiniteSet as FiniteSetClass } from '../sets/sets';
 import { singularities } from '../solvers/inequalities';
 import { limit } from '../series/limits';
 import { integrate } from './integrate';
-import { add, mul, sympify } from '../core/ops';
+import { add, mul, pow, sympify } from '../core/ops';
 import { some, subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { solve } from '../solvers/solve';
@@ -66,4 +67,42 @@ export function principalValue(integral: Integral): Expr {
     I = add(I, limit(add(subs(F, [[x, add(s, mul(-1, r))]]), mul(-1, subs(F, [[x, add(s, r)]]))), r, 0, '+'));
   }
   return I;
+}
+
+/**
+ * SymPy Integral.as_sum(n, method): the Riemann sum approximating a definite
+ * integral with n intervals ('left', 'right', 'midpoint' or 'trapezoid').
+ * With a symbolic n, or with `evaluate: false`, the result keeps a Sum.
+ */
+export function asSum(integral: Integral, n: ExprLike, method: 'left' | 'right' | 'midpoint' | 'trapezoid' = 'midpoint', opts: { evaluate?: boolean } = {}): Expr {
+  const lim = integral.limits;
+  if (!lim) throw new Error('as_sum: a definite integral is required');
+  const N = sympify(n);
+  const [a, b] = lim;
+  const x = integral.variable;
+  const f = integral.integrand;
+  const dx = mul(add(b, mul(-1, a)), pow(N, -1));
+  const k = new Dummy('k', { integer: true, positive: true });
+  const at = (p: Expr) => subs(f, [[x, p]]);
+  let body: Expr;
+  let extra: Expr = S.Zero;
+  let upper: Expr = N;
+  // points written like SymPy: a + k*dx - dx/2 for the midpoint rule
+  if (method === 'left') body = at(add(a, mul(k, dx), mul(-1, dx)));
+  else if (method === 'right') body = at(add(a, mul(k, dx)));
+  else if (method === 'midpoint') body = at(add(a, mul(k, dx), mul(S.NegHalf, dx)));
+  else {
+    // trapezoid: (f(a) + f(b))/2 + the inner points
+    extra = mul(add(at(a), at(b)), S.Half);
+    body = at(add(a, mul(k, dx)));
+    upper = add(N, -1);
+  }
+  const evaluate = opts.evaluate !== false;
+  if (evaluate && N instanceof Rational) {
+    const M = Number(N.p) - (method === 'trapezoid' ? 1 : 0);
+    const terms = Array.from({ length: M }, (_, j) => subs(body, [[k, Rational.of(j + 1)]]));
+    return mul(dx, add(extra, ...terms));
+  }
+  const s = Sum(body, [k, 1, upper]);
+  return mul(dx, add(extra, evaluate ? doitConcrete(s as never) : s));
 }

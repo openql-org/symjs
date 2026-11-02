@@ -8,7 +8,7 @@
 
 import { solvePolySystem } from './polysys';
 import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
-import { Add, Constant, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
+import { Add, Constant, Dummy, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, some, xreplace, xreplace as xreplaceS } from '../core/traverse';
 import { evalf } from '../numeric/evalf';
@@ -639,8 +639,9 @@ export function solveUndeterminedCoeffs(e: ExprLike, coeffs: readonly Sym[], sym
 }
 
 /** Numeric root of f near x0 by Newton's method (complex arithmetic). */
-export function nsolve(e: ExprLike, x: Sym, x0: ExprLike, opts: { prec?: number } = {}): Expr {
-  const r = nsolveDouble(e, x, x0);
+export function nsolve(e: ExprLike, x: Sym, x0: ExprLike | readonly [ExprLike, ExprLike], opts: { prec?: number; solver?: 'newton' | 'bisect' } = {}): Expr {
+  if (Array.isArray(x0)) return nsolveBisect(e, x, x0 as readonly [ExprLike, ExprLike]);
+  const r = nsolveDouble(e, x, x0 as ExprLike);
   const dps = opts.prec;
   if (dps === undefined || dps <= 15) return r;
   // refine with Newton steps in arbitrary precision (SymPy nsolve(..., prec=n))
@@ -658,6 +659,25 @@ export function nsolve(e: ExprLike, x: Sym, x0: ExprLike, opts: { prec?: number 
     last = cur;
   }
   return impl.evalf(z, dps);
+}
+
+/** A real root in [a, b] by bisection (SymPy nsolve(f, (a, b), solver='bisect')). */
+function nsolveBisect(e: ExprLike, x: Sym, [a0, b0]: readonly [ExprLike, ExprLike]): Expr {
+  const f = asEquation(e);
+  const val = (t: number) => xreplace(f, [[x, new Float(t)]]).toComplex().re;
+  let a = sympify(a0).toNumber();
+  let b = sympify(b0).toNumber();
+  let fa = val(a);
+  if (Math.sign(fa) === Math.sign(val(b))) throw new Error('nsolve: no sign change in the interval');
+  for (let i = 0; i < 200 && b - a > 0; i++) {
+    const m = (a + b) / 2;
+    if (m === a || m === b) break;
+    const fm = val(m);
+    if (fm === 0) return new Float(m);
+    if (Math.sign(fm) === Math.sign(fa)) [a, fa] = [m, fm];
+    else b = m;
+  }
+  return new Float((a + b) / 2);
 }
 
 function nsolveDouble(e: ExprLike, x: Sym, x0: ExprLike): Expr {

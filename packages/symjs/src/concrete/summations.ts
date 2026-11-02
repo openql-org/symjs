@@ -406,3 +406,44 @@ export function sumIsConvergent(c: Concrete): boolean | undefined {
 export function sumIsAbsolutelyConvergent(c: Concrete): boolean | undefined {
   return sumIsConvergent(new Concrete(c.kind2, [abs(c.function), ...c.args.slice(1)]));
 }
+
+/**
+ * SymPy Sum.euler_maclaurin(m, n): [approximation, error estimate] by the
+ * Euler-Maclaurin formula with m explicit leading terms and n correction terms.
+ */
+export function eulerMaclaurin(sum: Concrete, m = 0, n = 0): [Expr, Expr] {
+  if (sum.kind !== 'Concrete' || sum.limits.length !== 1) throw new Error('euler_maclaurin: a Sum with one limit expected');
+  let f = sum.function;
+  const [i0, a0, b0] = sum.limits[0]!;
+  const i = i0 as Sym;
+  let a = a0;
+  let b = b0;
+  const bmaNum = add(b, mul(-1, a));
+  if (bmaNum instanceof Rational && bmaNum.isNegative) {
+    if (add(a, mul(-1, b)).key === S.One.key) return [S.Zero, S.Zero];
+    [a, b] = [add(b, 1), add(a, -1)];
+    f = mul(-1, f);
+  }
+  const at = (e: Expr, p: Expr) => xreplace(e, [[i, p]]);
+  let s: Expr = S.Zero;
+  if (m) {
+    if (a instanceof Rational && b instanceof Rational) m = Math.min(m, Number((b as Rational).p - (a as Rational).p) + 1);
+    s = add(...Array.from({ length: m }, (_, k) => at(f, add(a, k))));
+    if (add(b, mul(-1, a), 1).key === Rational.of(m).key) return [s, S.Zero];
+    a = add(a, m);
+  }
+  s = add(s, impl.integrate(f, i, [a, b]));
+  const fpoint = (e: Expr): [Expr, Expr] => (b instanceof Special && b.name === 'oo' ? [at(e, a), S.Zero] : [at(e, a), at(e, b)]);
+  const [fa, fb] = fpoint(f);
+  const iterm = mul(add(fa, fb), S.Half);
+  let g = impl.diff(f, i, 1);
+  let term: Expr = S.Zero;
+  for (let k = 1; k <= n + 1; k++) {
+    const [ga, gb] = fpoint(g);
+    term = mul(bernoulliNumber(2 * k), pow(factorial(2 * k), -1), add(gb, mul(-1, ga)));
+    if (k > n) break;
+    s = add(s, term);
+    g = impl.diff(g, i, 2);
+  }
+  return [add(s, iterm), abs(term)];
+}

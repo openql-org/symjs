@@ -19,6 +19,7 @@ export {
 export {
   transformIntegral,
   principalValue,
+  asSum,
 } from './integrals/transform';
 export {
   limit,
@@ -29,6 +30,7 @@ export {
   summation,
   product,
   reverseOrder,
+  eulerMaclaurin,
 } from './concrete/summations';
 export {
   series,
