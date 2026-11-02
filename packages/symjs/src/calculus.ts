@@ -23,6 +23,8 @@ export {
   Curve,
   lineIntegrate,
 } from './integrals/transform';
+// integral transforms (SymPy sympy.integrals.transforms and laplace)
+export * from './integrals/transforms/index';
 export {
   limit,
 } from './series/limits';
