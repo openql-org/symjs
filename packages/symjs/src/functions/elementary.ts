@@ -415,7 +415,50 @@ export function conjugate(xx: ExprLike): Expr {
   return new Fn('conjugate', [x]);
 }
 
+/**
+ * Hermitian adjoint (SymPy adjoint): conjugate of commutative factors,
+ * reversed product order for non-commutative ones.
+ */
+export function adjoint(xx: ExprLike): Expr {
+  const x = sympify(xx);
+  if (x.isCommutative) return conjugate(x);
+  if (x instanceof Add) return add(...x.args.map(adjoint));
+  if (x instanceof Mul) return mul(...[...x.args].reverse().map(adjoint));
+  if (x instanceof Pow && x.exp.isCommutative && isReal(x.exp)) return pow(adjoint(x.base), x.exp);
+  if (x instanceof Fn) {
+    if (x.name === 'adjoint') return x.args[0]!;
+    if (x.name === 'conjugate') return transpose(x.args[0]!);
+    if (x.name === 'transpose') return conjugate(x.args[0]!);
+  }
+  if (x instanceof Pow && x.base instanceof Constant && x.base.name === 'E') return pow(x.base, adjoint(x.exp));
+  return new Fn('adjoint', [x]);
+}
+
+/** Transpose (SymPy transpose): commutative scalars are unchanged, products reverse. */
+export function transpose(xx: ExprLike): Expr {
+  const x = sympify(xx);
+  if (x.isCommutative) return x;
+  if (x instanceof Add) return add(...x.args.map(transpose));
+  if (x instanceof Mul) return mul(...[...x.args].reverse().map(transpose));
+  if (x instanceof Pow && x.exp.isCommutative && isReal(x.exp)) return pow(transpose(x.base), x.exp);
+  if (x instanceof Fn) {
+    if (x.name === 'transpose') return x.args[0]!;
+    if (x.name === 'conjugate') return adjoint(x.args[0]!);
+    if (x.name === 'adjoint') return conjugate(x.args[0]!);
+  }
+  if (x instanceof Pow && x.base instanceof Constant && x.base.name === 'E') return pow(x.base, transpose(x.exp));
+  return new Fn('transpose', [x]);
+}
+
 export const evaluators: Partial<Record<FnName, Evaluator>> = {
+  adjoint: (x) => {
+    const c = adjoint(x);
+    return c instanceof Fn && c.name === 'adjoint' && c.args[0] === x ? undefined : c;
+  },
+  transpose: (x) => {
+    const c = transpose(x);
+    return c instanceof Fn && c.name === 'transpose' && c.args[0] === x ? undefined : c;
+  },
   sin: evalSin,
   cos: evalCos,
   tan: evalTan,

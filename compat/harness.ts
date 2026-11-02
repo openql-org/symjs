@@ -143,7 +143,7 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   exp: ([a]) => sj.exp(a!),
   Abs: ([a]) => sj.abs(a!),
   ...Object.fromEntries(
-    (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc', 'exp_polar', 'polar_lift', 'periodic_argument', 'principal_branch'] as const).map(
+    (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate', 'adjoint', 'transpose', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc', 'exp_polar', 'polar_lift', 'periodic_argument', 'principal_branch'] as const).map(
       (n) => [n, (args: Expr[]) => sj.fn(n, args)],
     ),
   ),
@@ -1674,6 +1674,8 @@ export const ADAPTERS: Record<string, Adapter> = {
           : undefined;
     return sj.rsolve(asExpr(args[0]), asExpr(args[1]), pairs) ?? null;
   },
+  adjoint: (args, kw) => (noKw(kw), args[0] instanceof Matrix ? args[0].dagger() : sj.adjoint(asExpr(args[0]))),
+  transpose: (args, kw) => (noKw(kw), args[0] instanceof Matrix ? args[0].transpose() : sj.transpose(asExpr(args[0]))),
   homogeneous_order: (args, kw) => (noKw(kw), sj.homogeneousOrder(asExpr(args[0]), ...args.slice(1).map(asExpr)) ?? null),
   dsolve: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'ics') throw new Unsupported(`kwargs ${k}`);

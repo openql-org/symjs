@@ -79,6 +79,8 @@ export interface Assumptions {
 
 /** Function names known to the library. */
 export type FnName =
+  | 'adjoint'
+  | 'transpose'
   | 'sin'
   | 'cos'
   | 'tan'

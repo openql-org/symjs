@@ -152,6 +152,10 @@ function printFunction(e: Fn, exp?: string): string {
       const tex = `\\left|{${a}}\\right|`;
       return exp !== undefined ? `${tex}^{${exp}}` : tex;
     }
+    case 'adjoint': {
+      const base = `${parenthesize(e.args[0]!, PREC.POW)}^{\\dagger}`;
+      return exp !== undefined ? `\\left(${base}\\right)^{${exp}}` : base;
+    }
     case 'conjugate': {
       const tex = `\\overline{${a}}`;
       return exp !== undefined ? `${tex}^{${exp}}` : tex;
