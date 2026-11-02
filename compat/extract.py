@@ -120,6 +120,16 @@ def ser(o):
         return {"t": "Float", "v": o, "py": True}
     if isinstance(o, str):
         return {"t": "Str", "v": o}
+    import types as _types
+    if isinstance(o, (_types.GeneratorType, zip, map, filter)) or type(o).__name__.endswith("iterator"):
+        # iterators are materialized (their values are what the call sees)
+        return {"t": "Tuple", "items": [ser(i) for i in list(o)], "list": True}
+    if isinstance(o, (_types.FunctionType, _types.BuiltinFunctionType)):
+        # a library function passed as an argument (equal_valued, factor, math.isclose, ...)
+        mod = getattr(o, "__module__", "") or ""
+        if mod.startswith("sympy") or mod == "math":
+            return {"t": "PyFunc", "name": ("math." if mod == "math" else "") + o.__name__}
+        raise Unsupported("function")
     if isinstance(o, sympy.MatrixSymbol):
         return {"t": "MatrixSymbol", "name": o.name, "rows": ser(o.shape[0]), "cols": ser(o.shape[1])}
     if isinstance(o, (set, frozenset)):
@@ -169,10 +179,15 @@ def ser(o):
     if isinstance(o, (sympy.And, sympy.Or)):
         return {"t": "BoolOp", "op": type(o).__name__, "args": [ser(i) for i in o.args]}
     if isinstance(o, sympy.Wild):
-        if o.properties:
-            raise Unsupported("Wild properties")
+        props = []
+        for f in o.properties:
+            # only predicates of the form lambda k: k.is_X
+            names = getattr(getattr(f, "__code__", None), "co_names", ())
+            if len(names) != 1 or not names[0].startswith("is_"):
+                raise Unsupported("Wild properties")
+            props.append(names[0])
         a = {k: True for k in ASSUMPTION_KEYS if o._assumptions_orig.get(k) is True}
-        return {"t": "Wild", "name": o.name, "exclude": [ser(e) for e in o.exclude], "assume": a}
+        return {"t": "Wild", "name": o.name, "exclude": [ser(e) for e in o.exclude], "assume": a, "props": props}
     if isinstance(o, _WF):
         nargs = o.nargs
         lst = None if nargs == sympy.S.Naturals0 else sorted(int(n) for n in nargs)

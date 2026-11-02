@@ -86,6 +86,11 @@ export class PyLambda {
   }
 }
 
+/** A library function passed as an argument (equal_valued, factor, math.isclose, ...). */
+export class PyFunc {
+  constructor(readonly name: string) {}
+}
+
 export class UFnClass {
   constructor(readonly name: string) {}
 }
@@ -315,6 +320,8 @@ export function deserialize(tree: Tree): unknown {
       return new PyDomain(tree['name'] as string);
     case 'PyPred':
       return new PyPred(tree['attr'] as string);
+    case 'PyFunc':
+      return new PyFunc(tree['name'] as string);
     case 'PyLambda':
       return new PyLambda((tree['params'] as Tree[]).map((t) => deserialize(t) as Expr), deserialize(tree['body'] as Tree) as Expr);
     case 'Tuple':
@@ -358,7 +365,8 @@ export function deserialize(tree: Tree): unknown {
       return new TypeRef(tree['name'] as string);
     case 'Wild': {
       const a = tree['assume'] as Record<string, boolean>;
-      return new sj.Wild(tree['name'] as string, { exclude: (tree['exclude'] as Tree[]).map((x) => deserialize(x) as Expr), ...a });
+      const props = ((tree['props'] as string[] | undefined) ?? []).map((attr) => (e: Expr) => new PyPred(attr).test(e));
+      return new sj.Wild(tree['name'] as string, { exclude: (tree['exclude'] as Tree[]).map((x) => deserialize(x) as Expr), ...a, ...(props.length ? { properties: props } : {}) });
     }
     case 'WildFunction':
       return new sj.WildFunction(tree['name'] as string, (tree['nargs'] as number[] | null) ?? undefined);
@@ -756,6 +764,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       return syms.length === 1 && !isSeq ? syms[0] : new PyTuple(syms);
     };
     const first = args[0];
+    if (first instanceof PySet) return new PySet(first.items.map((s) => one(String(s))));
     if (first instanceof PyList || (first instanceof PyTuple && first.isList)) return new PyList((first as PyTuple).items.map((s) => one(String(s))));
     if (first instanceof PyTuple) return new PyTuple(first.items.map((s) => one(String(s))));
     return one(String(first));
@@ -1470,6 +1479,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   arity: (args, kw) => {
     noKw(kw);
     if (args[0] instanceof PyLambda) return sj.Rational.of(args[0].vars.length);
+    if (args[0] instanceof FnClass) {
+      // functions with optional arguments report (min, max) like SymPy
+      const ranges: Record<string, [number, number]> = { log: [1, 2], atan2: [2, 2], polygamma: [2, 2], besselj: [2, 2], zeta: [1, 2], harmonic: [1, 2] };
+      const r = ranges[args[0].name] ?? [1, 1];
+      return r[0] === r[1] ? sj.Rational.of(r[0]) : new PyTuple(r.map((k) => sj.Rational.of(k)));
+    }
     throw new Unsupported('arity');
   },
   '.applyfunc': (args, kw, self) => {
@@ -1491,6 +1506,32 @@ export const ADAPTERS: Record<string, Adapter> = {
     throw new Unsupported('as_dummy');
   },
   LambertW: (args, kw) => (noKw(kw), sj.LambertW(asExpr(args[0]), args[1] === undefined ? undefined : asExpr(args[1]))),
+  '.is_same': (args, kw, self) => {
+    noKw(kw);
+    const a = asExpr(self);
+    const b = asExpr(args[0]);
+    const fn = args[1] instanceof PyFunc ? args[1].name : undefined;
+    // numbers are compared with the given function, everything else structurally
+    const num = (x: Expr, y: Expr): boolean => {
+      if (fn === 'equal_valued') {
+        const rx = x instanceof sj.Float ? sj.nsimplify(x, { rational: true } as never) : x;
+        const ry = y instanceof sj.Float ? sj.nsimplify(y, { rational: true } as never) : y;
+        return rx.key === ry.key;
+      }
+      if (fn === 'math.isclose') {
+        const u = x.toComplex().re;
+        const v = y.toComplex().re;
+        return Math.abs(u - v) <= 1e-9 * Math.max(Math.abs(u), Math.abs(v));
+      }
+      return x.key === y.key;
+    };
+    const same = (x: Expr, y: Expr): boolean =>
+      x.isNumber && y.isNumber && x.args.length === 0 && y.args.length === 0
+        ? num(x, y)
+        : x.kind === y.kind && x.args.length === y.args.length && (x.args.length ? x.args.every((u, i) => same(u, y.args[i]!)) : x.key === y.key);
+    return same(a, b);
+  },
+  '.fromiter': (args, kw) => (noKw(kw), new PyTuple((args[0] as PyTuple).items)),
   rational_interpolate: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'X') throw new Unsupported(`kwargs ${k}`);
     const data = (args[0] as PyTuple | PyList).items.map((t) => (t as PyTuple).items.map(asExpr) as [Expr, Expr]);
@@ -1544,6 +1585,20 @@ export const ADAPTERS: Record<string, Adapter> = {
   collect: (args, kw) => {
     const exact = kw['exact'];
     for (const k of Object.keys(kw)) if (k !== 'exact') throw new Unsupported(`kwargs ${k}`);
+    if (args.length === 3 && args[2] instanceof PyFunc) {
+      // collect(expr, syms, func): func applied to each collected coefficient
+      const f = ADAPTERS[args[2].name];
+      if (!f) throw new Unsupported('collect func');
+      const syms = args[1] instanceof PyTuple ? args[1].items.map(asExpr) : [asExpr(args[1])];
+      const c = sj.collect(asExpr(args[0]), syms);
+      const terms = c instanceof sj.Add ? c.args : [c];
+      return sj.add(
+        ...terms.map((t) => {
+          const [ind, dep] = sj.asIndependent(t, syms);
+          return sj.mul(f([ind], {}) as Expr, dep);
+        }),
+      );
+    }
     if (args.length !== 2) throw new Unsupported('collect arity');
     const syms = args[1] instanceof PyTuple ? args[1].items.map(asExpr) : [asExpr(args[1])];
     return sj.collect(asExpr(args[0]), syms, exact === undefined || exact === null ? {} : { exact: Boolean(exact) });
@@ -2115,7 +2170,9 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     const e = self instanceof Matrix ? self.data : [asExpr(self)];
     return args.some((a) =>
-      a instanceof FnClass || a instanceof TypeRef || a instanceof UFnClass
+      a instanceof PyFunc
+        ? false
+        : a instanceof FnClass || a instanceof TypeRef || a instanceof UFnClass
         ? e.some((x) => sj.find(x, toQuery(a)).length > 0)
         : e.some((x) => x.has(asExpr(a))),
     );
@@ -2188,6 +2245,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   count_ops: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'visual') throw new Unsupported(`kwargs ${k}`);
     const visual = Boolean(kw['visual'] ?? args[1]);
+    if (args[0] instanceof PyDict) return ADAPTERS['count_ops']!([new PyList(args[0].entries.flat())], kw);
     if (args[0] instanceof PyList || args[0] instanceof PyTuple) {
       // None and booleans count as nothing
       const items = (args[0] as PyList).items.filter((i) => i !== null && typeof i !== 'boolean').map(asExpr);
@@ -2258,7 +2316,9 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     const d = args[0];
     if (!(d instanceof PyDict)) throw new Unsupported('xreplace mapping');
-    return sj.xreplace(asExpr(self), d.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const));
+    const reps = d.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const);
+    if (self instanceof PyTuple) return new PyTuple(self.items.map((e) => sj.xreplace(asExpr(e), reps)));
+    return sj.xreplace(asExpr(self), reps);
   },
   '.atoms': (args, kw, self) => {
     noKw(kw);
