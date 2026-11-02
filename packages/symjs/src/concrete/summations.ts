@@ -20,15 +20,8 @@ export { Concrete };
 const isInt = (e: Expr): e is Rational => e instanceof Rational && e.isInteger;
 const isOo = (e: Expr) => e instanceof Special && e.name === 'oo';
 
-/** Unevaluated Sum(f, (k, a, b), ...). */
-export function Sum(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Expr {
-  return new Concrete('Sum', [sympify(f), ...limits.flatMap(([k, a, b]) => [k, sympify(a), sympify(b)])]);
-}
-
-/** Unevaluated Product(f, (k, a, b), ...). */
-export function Product(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Expr {
-  return new Concrete('Product', [sympify(f), ...limits.flatMap(([k, a, b]) => [k, sympify(a), sympify(b)])]);
-}
+export { Sum, Product } from '../core/concrete';
+import { Sum, Product } from '../core/concrete';
 
 /** S_p(n) = sum_{k=1}^{n} k^p (Faulhaber, with B_1 = +1/2). */
 function powerSum(p: number, n: Expr): Expr {

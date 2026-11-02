@@ -236,6 +236,12 @@ export interface Impl {
   match?(e: Expr, pattern: Expr): Map<Sym, Expr> | undefined;
   /** SymPy radsimp (registered by simplify/sqrtdenest). */
   radsimp?(e: Expr): Expr;
+  /** A named function applied with automatic evaluation (registered by functions/elementary). */
+  fn?(name: FnName, args: readonly Expr[]): Expr;
+  /** expand with only the mul hint (registered by simplify/expand). */
+  expandMul?(e: Expr): Expr;
+  /** as_real_imag of exp and functions (registered by simplify/expand). */
+  asRealImagExpand?(e: Expr): [Expr, Expr];
   /** SymPy factor (set by the polys module). */
   factor?(e: Expr): Expr;
   /** SymPy fraction (registered by simplify/rational). */

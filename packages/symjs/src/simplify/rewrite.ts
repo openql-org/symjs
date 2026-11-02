@@ -14,7 +14,7 @@ import { isFunctionOf } from '../core/match';
 import { rebuild } from '../core/traverse';
 import { abs, acos, asin, atan, conjugate, cos, cosh, fn, log, re, sin, sinh, tan, tanh } from '../functions/elementary';
 import { Chi, Ci, Ei, Li, Shi, Si, binomial, factorial, ff, gamma, harmonic, li, polygamma, sign, uppergamma, zeta } from '../functions/special';
-import { Sum } from '../concrete/summations';
+import { Sum } from '../core/concrete';
 
 /** A rewrite rule: the (already rewritten) arguments and the original node. */
 export type RewriteRule = (args: Expr[], self: Expr) => Expr | undefined;

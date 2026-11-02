@@ -11,7 +11,7 @@ import { mul, pow, splitCoeff } from '../core/ops';
 import { numNeg } from '../core/num';
 import { floatToString } from '../numeric/mpf';
 import { asOrderedFactors, asOrderedTerms, sympyFunctionName } from './sortkey';
-import { Concrete } from '../concrete/node';
+import { Concrete } from '../core/concrete';
 
 /** SymPy precedence values. */
 export const PREC = { REL: 35, ADD: 40, MUL: 50, POW: 60, FUNC: 70, ATOM: 1000 } as const;

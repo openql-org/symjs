@@ -11,7 +11,7 @@
 
 import { isIntegerQ, isNegative, isPositive, isReal as isRealQ } from '../core/assumptions';
 import { Dummy, Expr, ExprLike, Fn, FnName, Rational, S } from '../core/nodes';
-import { Product } from '../concrete/summations';
+import { Product } from '../core/concrete';
 import { add, mul, pow, sympify } from '../core/ops';
 import { factorInt } from '../core/numbers';
 import { expandMul } from '../simplify/expand';

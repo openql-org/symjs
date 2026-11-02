@@ -45,6 +45,461 @@
       "rules": {
         "typescript/restrict-template-expressions": "off"
       }
+    },
+    {
+      "files": [
+        "packages/symjs/src/core/**",
+        "packages/symjs/src/printing/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../functions/*",
+                  "../parsing/*",
+                  "../calculus/*",
+                  "../simplify/*",
+                  "../concrete/*",
+                  "../numeric/*",
+                  "!../numeric/mpf",
+                  "!../numeric/mpfun",
+                  "!../numeric/complex",
+                  "../polys/*",
+                  "../matrices/*",
+                  "../sets/*",
+                  "../series/*",
+                  "../simplify/*",
+                  "!../simplify/expand",
+                  "!../simplify/rewrite",
+                  "../calculus/*",
+                  "!../calculus/diff",
+                  "!../calculus/finitediff",
+                  "../concrete/*",
+                  "!../concrete/node",
+                  "../solvers/*",
+                  "../integrals/*",
+                  "../calculus/doit",
+                  "../series/more"
+                ],
+                "allowTypeImports": true,
+                "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/symjs/src/numeric/mpf.ts",
+        "packages/symjs/src/numeric/mpfun.ts",
+        "packages/symjs/src/numeric/complex.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../functions/*",
+                  "../parsing/*",
+                  "../calculus/*",
+                  "../simplify/*",
+                  "../concrete/*",
+                  "../numeric/*",
+                  "!../numeric/mpf",
+                  "!../numeric/mpfun",
+                  "!../numeric/complex",
+                  "../polys/*",
+                  "../matrices/*",
+                  "../sets/*",
+                  "../series/*",
+                  "../simplify/*",
+                  "!../simplify/expand",
+                  "!../simplify/rewrite",
+                  "../calculus/*",
+                  "!../calculus/diff",
+                  "!../calculus/finitediff",
+                  "../concrete/*",
+                  "!../concrete/node",
+                  "../solvers/*",
+                  "../integrals/*",
+                  "../calculus/doit",
+                  "../series/more",
+                  "./*",
+                  "!./mpf",
+                  "!./mpfun",
+                  "!./complex"
+                ],
+                "allowTypeImports": true,
+                "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/symjs/src/functions/**",
+        "packages/symjs/src/parsing/**",
+        "packages/symjs/src/concrete/node.ts",
+        "packages/symjs/src/calculus/diff.ts",
+        "packages/symjs/src/calculus/finitediff.ts",
+        "packages/symjs/src/simplify/expand.ts",
+        "packages/symjs/src/simplify/rewrite.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../polys/*",
+                  "../matrices/*",
+                  "../sets/*",
+                  "../series/*",
+                  "../simplify/*",
+                  "!../simplify/expand",
+                  "!../simplify/rewrite",
+                  "../calculus/*",
+                  "!../calculus/diff",
+                  "!../calculus/finitediff",
+                  "../concrete/*",
+                  "!../concrete/node",
+                  "../solvers/*",
+                  "../integrals/*",
+                  "../calculus/doit",
+                  "../series/more",
+                  "./doit",
+                  "./summations"
+                ],
+                "allowTypeImports": true,
+                "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/symjs/src/numeric/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../polys/*",
+                  "../matrices/*",
+                  "../sets/*",
+                  "../series/*",
+                  "../simplify/*",
+                  "!../simplify/expand",
+                  "!../simplify/rewrite",
+                  "../calculus/*",
+                  "!../calculus/diff",
+                  "!../calculus/finitediff",
+                  "../concrete/*",
+                  "!../concrete/node",
+                  "../solvers/*",
+                  "../integrals/*",
+                  "../calculus/doit",
+                  "../series/more"
+                ],
+                "allowTypeImports": true,
+                "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/symjs/src/numeric/mpf.ts",
+        "packages/symjs/src/numeric/mpfun.ts",
+        "packages/symjs/src/numeric/complex.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../functions/*",
+                  "../parsing/*",
+                  "../calculus/*",
+                  "../simplify/*",
+                  "../concrete/*",
+                  "../numeric/*",
+                  "!../numeric/mpf",
+                  "!../numeric/mpfun",
+                  "!../numeric/complex",
+                  "../polys/*",
+                  "../matrices/*",
+                  "../sets/*",
+                  "../series/*",
+                  "../simplify/*",
+                  "!../simplify/expand",
+                  "!../simplify/rewrite",
+                  "../calculus/*",
+                  "!../calculus/diff",
+                  "!../calculus/finitediff",
+                  "../concrete/*",
+                  "!../concrete/node",
+                  "../solvers/*",
+                  "../integrals/*",
+                  "../calculus/doit",
+                  "../series/more",
+                  "./*",
+                  "!./mpf",
+                  "!./mpfun",
+                  "!./complex"
+                ],
+                "allowTypeImports": true,
+                "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/symjs/src/simplify/expand.ts",
+        "packages/symjs/src/simplify/rewrite.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../polys/*",
+                  "../matrices/*",
+                  "../sets/*",
+                  "../series/*",
+                  "../simplify/*",
+                  "!../simplify/expand",
+                  "!../simplify/rewrite",
+                  "../calculus/*",
+                  "!../calculus/diff",
+                  "!../calculus/finitediff",
+                  "../concrete/*",
+                  "!../concrete/node",
+                  "../solvers/*",
+                  "../integrals/*",
+                  "../calculus/doit",
+                  "../series/more",
+                  "./*",
+                  "!./expand",
+                  "!./rewrite"
+                ],
+                "allowTypeImports": true,
+                "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/symjs/src/calculus/diff.ts",
+        "packages/symjs/src/calculus/finitediff.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../polys/*",
+                  "../matrices/*",
+                  "../sets/*",
+                  "../series/*",
+                  "../simplify/*",
+                  "!../simplify/expand",
+                  "!../simplify/rewrite",
+                  "../calculus/*",
+                  "!../calculus/diff",
+                  "!../calculus/finitediff",
+                  "../concrete/*",
+                  "!../concrete/node",
+                  "../solvers/*",
+                  "../integrals/*",
+                  "../calculus/doit",
+                  "../series/more",
+                  "./*",
+                  "!./diff",
+                  "!./finitediff"
+                ],
+                "allowTypeImports": true,
+                "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/symjs/src/polys/**",
+        "packages/symjs/src/simplify/**",
+        "packages/symjs/src/matrices/**",
+        "packages/symjs/src/series/**",
+        "packages/symjs/src/sets/**",
+        "packages/symjs/src/calculus/**",
+        "packages/symjs/src/concrete/summations.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../solvers/*",
+                  "../integrals/*",
+                  "../calculus/doit",
+                  "../series/more",
+                  "./doit",
+                  "./more"
+                ],
+                "allowTypeImports": true,
+                "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/symjs/src/simplify/expand.ts",
+        "packages/symjs/src/simplify/rewrite.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../polys/*",
+                  "../matrices/*",
+                  "../sets/*",
+                  "../series/*",
+                  "../simplify/*",
+                  "!../simplify/expand",
+                  "!../simplify/rewrite",
+                  "../calculus/*",
+                  "!../calculus/diff",
+                  "!../calculus/finitediff",
+                  "../concrete/*",
+                  "!../concrete/node",
+                  "../solvers/*",
+                  "../integrals/*",
+                  "../calculus/doit",
+                  "../series/more",
+                  "./*",
+                  "!./expand",
+                  "!./rewrite"
+                ],
+                "allowTypeImports": true,
+                "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/symjs/src/calculus/diff.ts",
+        "packages/symjs/src/calculus/finitediff.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../polys/*",
+                  "../matrices/*",
+                  "../sets/*",
+                  "../series/*",
+                  "../simplify/*",
+                  "!../simplify/expand",
+                  "!../simplify/rewrite",
+                  "../calculus/*",
+                  "!../calculus/diff",
+                  "!../calculus/finitediff",
+                  "../concrete/*",
+                  "!../concrete/node",
+                  "../solvers/*",
+                  "../integrals/*",
+                  "../calculus/doit",
+                  "../series/more",
+                  "./*",
+                  "!./diff",
+                  "!./finitediff"
+                ],
+                "allowTypeImports": true,
+                "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/symjs/src/calculus/doit.ts",
+        "packages/symjs/src/series/more.ts",
+        "packages/symjs/src/solvers/**",
+        "packages/symjs/src/integrals/**"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": [
+        "packages/physics-quantum/src/**",
+        "packages/mathjs/src/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../../symjs/*",
+                  "../../symjs/**",
+                  "@symjs/symjs/src/*",
+                  "@symjs/symjs/src/**"
+                ],
+                "message": "extend modules use the public entry points of @symjs/symjs only"
+              }
+            ]
+          }
+        ]
+      }
     }
   ]
 }

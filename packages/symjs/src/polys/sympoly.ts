@@ -16,7 +16,6 @@ import { evalf as evalfExpr } from '../numeric/evalf';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, mapBottomUp, rebuild, xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
-import { integrate } from '../integrals/integrate';
 import { str } from '../printing/str';
 import { expand as expandFull, expandMul as expand } from '../simplify/expand';
 import { sqrtdenest } from '../simplify/sqrtdenest';
@@ -462,9 +461,21 @@ export class Poly {
   diff(x?: Expr): Poly {
     return Poly.from(diff(this.asExpr(), (x ?? this.gens[0]) as Sym), this.gens);
   }
+  /** The antiderivative in a generator (SymPy Poly.integrate), term by term. */
   integrate(x?: Expr): Poly {
-    const v = (x ?? this.gens[0]) as Sym;
-    return Poly.from(integrate(this.asExpr(), v), this.gens, { domain: this.domain === 'ZZ' ? 'QQ' : this.domain });
+    const v = x ?? this.gens[0]!;
+    const i = this.gens.findIndex((g) => g.key === v.key);
+    const domain = this.domain === 'ZZ' ? 'QQ' : this.domain;
+    if (i < 0) {
+      // not a generator: the coefficients are constants in v unless they contain it
+      if (this.termList.some((t) => t.coeff.has(v))) throw new NotImplementedError('Poly.integrate: the variable occurs in the coefficients');
+      return Poly.from(mul(this.asExpr(), v), this.gens, { domain });
+    }
+    const terms = this.termList.map((t) => {
+      const k = t.monom[i]! + 1;
+      return mul(t.coeff, Rational.of(1n, BigInt(k)), ...t.monom.map((e, j) => pow(this.gens[j]!, j === i ? k : e)));
+    });
+    return Poly.from(add(...terms), this.gens, { domain });
   }
   /** Evaluate at gen = a (first generator by default). */
   eval(a: ExprLike, gen?: Expr): Expr | Poly {

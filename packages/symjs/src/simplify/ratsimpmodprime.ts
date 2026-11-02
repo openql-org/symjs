@@ -15,7 +15,7 @@ import { ordered } from '../core/match';
 import { xreplace } from '../core/traverse';
 import { leadingMonomial, reduced, type MonomialOrder } from '../polys/groebner';
 import { Poly } from '../polys/sympoly';
-import { linsolve } from '../solvers/solve';
+import { linsolve } from '../matrices/linsys';
 import { cancel, fraction } from './rational';
 import { compareKeys, sortKey } from '../printing/sortkey';
 

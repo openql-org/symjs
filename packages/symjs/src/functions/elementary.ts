@@ -610,6 +610,7 @@ export const arg = (x: ExprLike): Expr => fn('arg', [x]);
 export const dagger = conjugate;
 
 impl.conjugate = conjugate;
+impl.fn = (name, args) => fn(name, args);
 impl.abs = abs;
 impl.cos = (e) => cos(e);
 impl.sin = (e) => sin(e);

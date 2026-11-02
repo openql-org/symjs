@@ -9,7 +9,7 @@
 import { apartFull } from './rootsum';
 import { Expr, ExprLike, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
-import { linsolve } from '../solvers/solve';
+import { linsolve } from '../matrices/linsys';
 import { rebuild as impl_rebuild } from '../core/traverse';
 import { expandMul } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';

@@ -313,4 +313,6 @@ export const expand_trig = (e: ExprLike): Expr =>
 export const expand_complex = (e: ExprLike): Expr => expand(e, { complex: true });
 
 impl.expand = (e) => expand(e);
+impl.expandMul = (e) => expandMul(e);
+impl.asRealImagExpand = (e) => asRealImagExpand(e);
 impl.expandComplex = (e) => expand(e, { complex: true });

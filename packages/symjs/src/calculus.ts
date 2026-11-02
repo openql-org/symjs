@@ -9,7 +9,7 @@
 // every entry point brings the core with its registrations
 import './core';
 
-export { Concrete } from './concrete/node';
+export { Concrete } from './core/concrete';
 export {
   doit,
 } from './calculus/doit';

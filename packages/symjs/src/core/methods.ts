@@ -7,14 +7,18 @@
  */
 
 import { isIntegerQ, isNegative as isNegativeQ, isPositive, isReal, isZero as isZeroQ } from './assumptions';
-import { Add, Constant, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from './nodes';
+import { Add, Constant, Expr, ExprLike, Float, Fn, FnName, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
 import { add, asBaseExp, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
 import { ExprMap } from './exprmap';
 import { freeSymbols, xreplace as xreplaceM } from './traverse';
-import { diff } from '../calculus/diff';
-import { abs, arg, im, log, re } from '../functions/elementary';
-import { asRealImagExpand, expandMul } from '../simplify/expand';
+
+// Higher layers are reached through impl (docs/architecture.md: the core imports no other layer)
+const diff = (e: Expr, x: Expr): Expr => impl.diff(e, x, 1);
+const applyFn = (name: FnName) => (a: Expr): Expr => impl.fn!(name, [a]);
+const [abs, arg, im, log, re] = (['abs', 'arg', 'im', 'log', 're'] as const).map(applyFn) as [(a: Expr) => Expr, (a: Expr) => Expr, (a: Expr) => Expr, (a: Expr) => Expr, (a: Expr) => Expr];
+const expandMul = (e: Expr): Expr => impl.expandMul!(e);
+const asRealImagExpand = (e: Expr): [Expr, Expr] => impl.asRealImagExpand!(e);
 
 const isOne = (e: Expr) => e instanceof Rational && e.isOne;
 const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
