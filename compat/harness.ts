@@ -467,6 +467,36 @@ function refineAdapter(p: sj.Poly, args: unknown[], kw: Record<string, unknown>)
   const [s, t] = p.refineRoot(asExpr(args[0]) as sj.Rational, asExpr(args[1]) as sj.Rational, epsArg(kw['eps']), kw['steps'] === undefined ? undefined : intArg(kw['steps']));
   return new PyTuple([s, t]);
 }
+/**
+ * SymPy's substitution method for small systems: solve an equation in a
+ * single unknown, substitute, and solve the rest over the complex numbers
+ * (an exponential equation then gives an ImageSet component).
+ */
+function substitutionSolve(eqs: Expr[], syms: Sym[]): Expr[][] {
+  try {
+    const one = eqs.findIndex((e) => syms.filter((v) => e.has(v)).length === 1);
+    if (one >= 0 && syms.length === 2 && eqs.length === 2) {
+      const v = syms.find((s) => eqs[one]!.has(s))!;
+      const w = syms.find((s) => s !== v)!;
+      const vs = sj.solveset(eqs[one]!, v);
+      if (vs instanceof sj.FiniteSet) {
+        const other = eqs[1 - one]!;
+        const out: Expr[][] = [];
+        for (const val of vs.args) {
+          const rest = sj.subs(other, [[v, val]]);
+          const ws = sj.solveset(rest, w);
+          const comps = ws instanceof sj.FiniteSet ? ws.args : ws instanceof sj.ImageSet ? [ws as Expr] : undefined;
+          if (!comps) throw new Error('substitution');
+          for (const c of comps) out.push(syms.map((s) => (s === v ? val : c)));
+        }
+        if (out.some((t) => t.some((c) => c instanceof sj.ImageSet))) return out;
+      }
+    }
+  } catch {
+    // fall back to nonlinsolve
+  }
+  return sj.nonlinsolve(eqs, syms);
+}
 const asSym = (v: unknown): Sym => {
   if (v instanceof Sym) return v;
   throw new Unsupported('expected a symbol');
@@ -1540,7 +1570,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const known of results) {
       const sub = eqs.map((e) => sj.expand(sj.subs(e, known))).filter((e) => !(e instanceof sj.Rational && e.isZero));
       const free = syms.filter((v) => !known.some(([k]) => k.key === v.key));
-      const sols = free.length ? sj.nonlinsolve(sub, free) : sub.length ? [] : [[]];
+      const sols = free.length ? substitutionSolve(sub, free) : sub.length ? [] : [[]];
       for (const sol of sols) {
         const vals = new Map<string, Expr>(known.map(([k, v]) => [k.key, v]));
         free.forEach((v, i) => vals.set(v.key, sol[i]!));
@@ -1555,7 +1585,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     const eqs = (args[0] as PyTuple).items.map(asExpr);
     const syms = (args[1] as PyTuple).items.map(asSym);
-    const sols = sj.nonlinsolve(eqs, syms);
+    const sols = substitutionSolve(eqs, syms);
     return sols.length ? new PySet(sols.map((t) => new PyTuple(t))) : 'EmptySet';
   },
   solve_linear: (args, kw) => {

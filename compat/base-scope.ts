@@ -71,6 +71,15 @@ export const BASE_CHECKS: BaseCheck[] = [
   { area: 'unevaluated', name: 'integrate(exp(-x**2)*sin(x), x)', expected: 'Integral(exp(-x**2)*sin(x), x)', run: () => sj.integrate(sj.mul(sj.exp(sj.mul(-1, sj.pow(x, 2))), sj.sin(x)), x) },
   { area: 'unevaluated', name: 'Limit(sin(x)/x, x, 0) is kept', expected: "Limit(sin(x)/x, x, 0, dir='+')", run: () => new sj.Limit([sj.mul(sj.sin(x), sj.pow(x, -1)), x, sj.S.Zero]) },
   { area: 'unevaluated', name: 'solveset(x**2 + 1, x, Reals)', expected: 'EmptySet', run: () => sj.solveset(sj.add(sj.pow(x, 2), 1), x, sj.Reals) },
+  { area: 'unevaluated', name: 'solveset(x**2 + x*sin(x) - 1, x, Reals)', expected: 'ConditionSet(x, Eq(x**2 + x*sin(x) - 1, 0), Reals)', run: () => sj.solveset(P('x**2 + x*sin(x) - 1'), x, sj.Reals) },
+  // periodic and complex solution sets
+  { area: 'solution sets', name: 'solveset(sin(x), x, Reals)', expected: 'Union(ImageSet(Lambda(_n, 2*_n*pi), Integers), ImageSet(Lambda(_n, 2*_n*pi + pi), Integers))', run: () => sj.solveset(sj.sin(x), x, sj.Reals) },
+  { area: 'solution sets', name: 'solveset(tan(x) - 1, x, Reals)', expected: 'ImageSet(Lambda(_n, _n*pi + pi/4), Integers)', run: () => sj.solveset(P('tan(x) - 1'), x, sj.Reals) },
+  { area: 'solution sets', name: 'solveset(exp(x) - 2, x)', expected: 'ImageSet(Lambda(_n, 2*_n*I*pi + log(2)), Integers)', run: () => sj.solveset(P('exp(x) - 2'), x) },
+  { area: 'solution sets', name: 'solveset(exp(x) - 2, x, Reals)', expected: '{log(2)}', run: () => sj.solveset(P('exp(x) - 2'), x, sj.Reals) },
+  // indexed roots and factorization over ZZ
+  { area: 'polynomials', name: 'factor(x**5 + x + 1)', expected: '(x**2 + x + 1)*(x**3 - x**2 + 1)', run: () => sj.factor(P('x**5 + x + 1')) },
+  { area: 'polynomials', name: 'Poly(x**3 + x + 1).real_roots()', expected: 'CRootOf(x**3 + x + 1, 0)', run: () => sj.Poly.from(P('x**3 + x + 1'), [x]).realRoots().map(String).join(', ') },
   // extension nodes defined outside the base module
   { area: 'extension nodes', name: 'print a custom node in a product', expected: '2*|psi>', run: () => sj.mul(2, new Ket(new Sym('psi'))) },
   { area: 'extension nodes', name: 'subs inside a custom node', expected: 'x*|x>', run: () => sj.subs(sj.mul(x, new Ket(new Sym('psi'))), [[new Sym('psi'), x]]) },

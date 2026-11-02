@@ -8,18 +8,24 @@
  * convexity, periodicity).
  */
 
-import { Add, Constant, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, RelOp, S, Special, Sym, impl } from '../core/nodes';
+import { Add, Constant, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, RelOp, S, Special, Sym, impl } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { and, or as orB } from '../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne } from '../core/logic';
-import { xreplace } from '../core/traverse';
+import { some, xreplace } from '../core/traverse';
+import { fn, log } from '../functions/elementary';
 import { diff } from '../calculus/diff';
 import { limit } from '../series/limits';
 import { Poly } from '../polys/sympoly';
 import { cancel, fraction } from '../simplify/rational';
 import { simplify } from '../simplify/simplify';
 import { solve } from './solve';
+import { compareKeys, sortKey } from '../printing/sortkey';
 import {
+  SetOp,
+  ConditionSet,
+  imageSet,
+  Integers,
   Complexes,
   EmptySet,
   FiniteSet,
@@ -423,11 +429,26 @@ export function solveset(fIn: ExprLike, x: Sym, domain: SetExpr = Complexes): Se
   }
   const g = f instanceof Rel ? add(f.lhs, mul(-1, f.rhs)) : f;
   if (!g.has(x)) return g instanceof Rational && g.isZero ? domain : EmptySet;
+  try {
+    // periodic equations: the solutions in one period plus multiples of the period (SymPy ImageSet)
+    const periodic = periodicSolutions(g, x, domain);
+    if (periodic) return periodic;
+    if (domain === Complexes) {
+      const ex = complexExpSolutions(g, x);
+      if (ex) return ex;
+    }
+    return solvesetAlgebraic(g, x, domain);
+  } catch {
+    // SymPy: an equation that cannot be solved gives a ConditionSet
+    return new ConditionSet(x, Eq(g, 0), domain);
+  }
+}
+
+function solvesetAlgebraic(g: Expr, x: Sym, domain: SetExpr): SetExpr {
   if (domain === Reals || domain instanceof Interval) {
     const [lo, hi] = bounds(domain);
     const [num, den] = fraction(cancel(g));
     const zs = realZeros(num, x, lo, hi).filter((z) => !realZeros(den, x, lo, hi).some((p) => p.key === z.key));
-    if (domain === Reals && periodicity(g, x) && !(periodicity(g, x) instanceof Rational)) throw new Error('solveset: periodic solutions (ImageSet) are not supported');
     return intersection(finiteSet(...zs), domain);
   }
   const [num, den] = fraction(cancel(g));
@@ -440,6 +461,66 @@ export function solveset(fIn: ExprLike, x: Sym, domain: SetExpr = Complexes): Se
   const poles = den.has(x) ? solve(den, x) : [];
   const keep = sols.filter((s) => !poles.some((p) => p.key === s.key));
   return complement(intersection(finiteSet(...keep), domain === Complexes ? finiteSet(...keep) : domain), EmptySet);
+}
+
+/** Union of ImageSet(Lambda(n, P*n + s), Integers) over the solutions s in [0, P), or undefined if g is not periodic. */
+function periodicSolutions(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefined {
+  if (domain !== Reals && domain !== Complexes) return undefined;
+  if (!some(g, (t) => t instanceof Fn && ['sin', 'cos', 'tan', 'cot', 'sec', 'csc'].includes(t.name))) return undefined;
+  const P = periodicity(g, x);
+  if (!P || P instanceof Rational) return undefined;
+  const pv = realValue(P);
+  if (pv === undefined || pv <= 0) return undefined;
+  const base = new Map<string, [Expr, number]>();
+  const principal = solve(g, x);
+  // shifts by fractions of the period may also solve the equation (e.g. tan-type solutions)
+  const cands: Expr[] = [];
+  for (const s0 of principal) for (const q of [0, 1, 2, 3]) cands.push(q === 0 ? s0 : add(s0, mul(q, P, Rational.of(1, 4))));
+  const vanishes = (s0: Expr) => {
+    try {
+      const v = xreplace(g, [[x, s0]]).toComplex();
+      return Math.hypot(v.re, v.im) < 1e-9;
+    } catch {
+      return false;
+    }
+  };
+  for (const s0 of cands) {
+    if (!principal.includes(s0) && !vanishes(s0)) continue;
+    const v = realValue(s0);
+    if (v === undefined) continue; // complex principal solutions do not give real ones
+    const k = Math.floor(v / pv + 1e-12);
+    const s = k === 0 ? s0 : add(s0, mul(-k, P));
+    const sv = v - k * pv;
+    base.set(s.key, [s, sv]);
+  }
+  const sols = [...base.values()].sort((a, b) => a[1] - b[1]);
+  if (!sols.length) return EmptySet;
+  const n = new Dummy('n');
+  // Union orders its arguments by sort_key (not by value)
+  const sets = sols.map(([s]) => imageSet(n, add(mul(P, n), s), Integers)).sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
+  return sets.length === 1 ? sets[0]! : new SetOp('Union', sets);
+}
+
+/** a*exp(u) + b = 0 with u linear in x over the complex numbers. */
+function complexExpSolutions(g: Expr, x: Sym): SetExpr | undefined {
+  const terms = g instanceof Add ? g.args : [g];
+  const dep = terms.filter((t) => t.has(x));
+  if (dep.length !== 1) return undefined;
+  const t = dep[0]!;
+  const fs = t instanceof Mul ? t.args : [t];
+  const e = fs.find((h) => h instanceof Pow && h.base instanceof Constant && h.base.name === 'E' && h.has(x)) as Pow | undefined;
+  if (!e || fs.filter((h) => h.has(x)).length !== 1) return undefined;
+  const pc = Poly.from(e.exp, [x]);
+  if (pc.degree() !== 1) return undefined;
+  const a = mul(...fs.filter((h) => h !== e));
+  const c = mul(-1, add(...terms.filter((u) => !u.has(x))), pow(a, -1));
+  if (c instanceof Rational && c.isZero) return EmptySet;
+  const k = pc.LC();
+  const rest = add(e.exp, mul(-1, k, x));
+  const n = new Dummy('n');
+  // u = log|c| + I*(2*n*pi + arg(c))
+  const u = add(mul(S.I, add(mul(2, n, S.Pi), fn('arg', [c]))), log(fn('abs', [c])));
+  return imageSet(n, mul(add(u, mul(-1, rest)), pow(k, -1)), Integers);
 }
 
 // ---------------------------------------------------------------------------

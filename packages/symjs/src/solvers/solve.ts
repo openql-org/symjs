@@ -177,7 +177,31 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   }
   const lw = lambertSolve(num, x);
   if (lw) return lw;
+  // a*sin(u) + b*cos(u) = 0  ->  tan(u) = -b/a
+  const sc = sinCosLinear(num, x);
+  if (sc) return sc;
   throw new Error(`solve: cannot solve ${f.toString()} for ${x.name}`);
+}
+
+function sinCosLinear(e: Expr, x: Sym): Expr[] | undefined {
+  const terms = e instanceof Add ? e.args : [e];
+  let a: Expr = S.Zero;
+  let b: Expr = S.Zero;
+  let u: Expr | undefined;
+  for (const t of terms) {
+    const fs = t instanceof Mul ? t.args : [t];
+    const trig = fs.filter((g) => g instanceof Fn && (g.name === 'sin' || g.name === 'cos') && g.has(x)) as Fn[];
+    if (trig.length !== 1) return undefined;
+    const g = trig[0]!;
+    if (u && u.key !== g.args[0]!.key) return undefined;
+    u = g.args[0]!;
+    const c = mul(...fs.filter((h) => h !== g));
+    if (c.has(x)) return undefined;
+    if (g.name === 'sin') a = add(a, c);
+    else b = add(b, c);
+  }
+  if (!u || a instanceof Rational && a.isZero || b instanceof Rational && b.isZero) return undefined;
+  return solveRaw(add(u, mul(-1, atan(mul(-1, b, pow(a, -1))))), x);
 }
 
 /**

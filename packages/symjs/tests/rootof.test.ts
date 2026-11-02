@@ -50,3 +50,15 @@ describe('real root isolation (SymPy intervals / refine_root)', () => {
     expect(show(P('(x - 1)**2*(x + 2)*x').intervals())).toBe('((-2, -2), 1), ((0, 0), 1), ((1, 1), 2)');
   });
 });
+
+import { Reals, solveset, sin } from '../src';
+
+describe('solveset with ImageSet and ConditionSet', () => {
+  it('periodic, complex exponential and unsolvable equations', () => {
+    expect(String(solveset(sin(x), x, Reals))).toBe('Union(ImageSet(Lambda(_n, 2*_n*pi), Integers), ImageSet(Lambda(_n, 2*_n*pi + pi), Integers))');
+    expect(String(solveset(parse('sin(x) + cos(x)'), x, Reals))).toBe('Union(ImageSet(Lambda(_n, 2*_n*pi + 3*pi/4), Integers), ImageSet(Lambda(_n, 2*_n*pi + 7*pi/4), Integers))');
+    expect(String(solveset(parse('exp(x) + 1'), x))).toBe('ImageSet(Lambda(_n, I*(2*_n*pi + pi)), Integers)');
+    expect(String(solveset(parse('cos(x) - 2'), x, Reals))).toBe('EmptySet');
+    expect(String(solveset(parse('x**2 + x*sin(x) - 1'), x, Reals))).toBe('ConditionSet(x, Eq(x**2 + x*sin(x) - 1, 0), Reals)');
+  });
+});

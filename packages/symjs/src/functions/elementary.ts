@@ -242,8 +242,26 @@ const evalLog: Evaluator = (x) => {
   return undefined;
 };
 
+/** Sign of a real constant expression decided numerically (SymPy evaluates is_positive by evalf). */
+function numericSign(x: Expr): 1 | -1 | undefined {
+  if (x.freeSymbols().size || x instanceof Rational || x.has(S.I)) return undefined;
+  if (!(x instanceof Fn || x instanceof Mul || x instanceof Pow || x instanceof Add)) return undefined;
+  try {
+    const v = x.toComplex();
+    if (Math.abs(v.im) > 1e-14 * Math.max(1, Math.abs(v.re)) || !Number.isFinite(v.re) || Math.abs(v.re) < 1e-12) return undefined;
+    return v.re > 0 ? 1 : -1;
+  } catch {
+    return undefined;
+  }
+}
+
 const evalAbs: Evaluator = (x) => {
   if (isNum(x)) return numAbs(x);
+  if (!isNonNegative(x) && !isNegative(x)) {
+    const sg = numericSign(x);
+    if (sg === 1) return x;
+    if (sg === -1) return neg(x);
+  }
   if (x instanceof Special) return x.name === 'nan' ? S.NaN : S.Infinity;
   if (isI(x)) return S.One;
   if (isNonNegative(x)) return x;
@@ -362,6 +380,11 @@ const evalArg: Evaluator = (x) => {
     if (depth === 3 || (depth === 2 && isReal(a) === true)) return S.NaN;
   }
   if (isPositive(x)) return S.Zero;
+  {
+    const sg = numericSign(x);
+    if (sg === 1) return S.Zero;
+    if (sg === -1) return S.Pi;
+  }
   // a + b*I with real numeric a, b
   if (x.freeSymbols().size === 0 && !isReal(x)) {
     const a = re(x);

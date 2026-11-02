@@ -179,6 +179,59 @@ export function finiteSet(...xs: ExprLike[]): SetExpr {
 }
 
 // ---------------------------------------------------------------------------
+// ImageSet / ConditionSet
+// ---------------------------------------------------------------------------
+
+/** { expr(v) : v in base } (SymPy ImageSet(Lambda(v, expr), base)). */
+export class ImageSet extends SetExpr {
+  readonly args: readonly Expr[];
+  constructor(
+    readonly variable: Expr,
+    readonly expr: Expr,
+    readonly base: SetExpr,
+  ) {
+    super();
+    this.args = [variable, expr, base];
+  }
+  get className(): string {
+    return 'ImageSet';
+  }
+  protected computeKey(): string {
+    return `ImageSet(${this.variable.key},${this.expr.key},${this.base.key})`;
+  }
+  printStr(p: (e: Expr) => string): string {
+    return `ImageSet(Lambda(${p(this.variable)}, ${p(this.expr)}), ${p(this.base)})`;
+  }
+}
+
+/** { v in base : condition } (SymPy ConditionSet). */
+export class ConditionSet extends SetExpr {
+  readonly args: readonly Expr[];
+  constructor(
+    readonly variable: Expr,
+    readonly condition: Expr,
+    readonly base: SetExpr,
+  ) {
+    super();
+    this.args = [variable, condition, base];
+  }
+  get className(): string {
+    return 'ConditionSet';
+  }
+  protected computeKey(): string {
+    return `ConditionSet(${this.variable.key},${this.condition.key},${this.base.key})`;
+  }
+  printStr(p: (e: Expr) => string): string {
+    return `ConditionSet(${p(this.variable)}, ${p(this.condition)}, ${p(this.base)})`;
+  }
+}
+
+/** ImageSet(Lambda(v, expr), base). */
+export function imageSet(v: Expr, expr: ExprLike, base: SetExpr): SetExpr {
+  return new ImageSet(v, sympify(expr), base);
+}
+
+// ---------------------------------------------------------------------------
 // Union / Intersection / Complement
 // ---------------------------------------------------------------------------
 
