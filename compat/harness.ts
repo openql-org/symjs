@@ -305,6 +305,10 @@ export function deserialize(tree: Tree): unknown {
     case 'Mul':
     case 'MatMul':
       return sj.mul(...(tree['args'] as Tree[]).map((a) => lambdaAsNode(deserialize(a)) as Expr));
+    case 'Curve': {
+      const [t, a, b] = (tree['limits'] as Tree[]).map((l) => deserialize(l) as Expr);
+      return new sj.Curve((tree['functions'] as Tree[]).map((f) => deserialize(f) as Expr), [t as Sym, a!, b!]);
+    }
     case 'Indexed':
       return new sj.Indexed([deserialize(tree['base'] as Tree) as Expr, ...(tree['indices'] as Tree[]).map((t) => deserialize(t) as Expr)]);
     case 'IndexedBase':
@@ -1852,8 +1856,22 @@ export const ADAPTERS: Record<string, Adapter> = {
   solve_poly_system: (args, kw) => polySystemSolutions(args, kw),
   solve_triangulated: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'extension') throw new Unsupported(`kwargs ${k}`);
-    // without extension only rational solutions are reported, with it all of them
-    return polySystemSolutions(args, {}, !kw['extension']);
+    // without extension only rational solutions are reported, with it all of them as CRootOf (SymPy)
+    const sols = polySystemSolutions(args, {}, !kw['extension']) as JsList;
+    if (!kw['extension']) return sols;
+    const x0 = asSym(args[1]);
+    const asRoot = (v: unknown): unknown => {
+      if (!(v instanceof Expr) || v instanceof sj.Rational) return v;
+      const mp = sj.minimalPolynomial(v, x0);
+      const rs = sj.Poly.from(mp, [x0]).allRoots();
+      const target = v.toComplex();
+      const idx = rs.findIndex((r) => {
+        const c = r.toComplex();
+        return Math.hypot(c.re - target.re, c.im - target.im) < 1e-9;
+      });
+      return idx < 0 ? v : new sj.CRootOf(mp, idx);
+    };
+    return new JsList(sols.items.map((t) => new JsTuple((t as JsTuple).items.map(asRoot))));
   },
   substitution: (args, kw) => {
     noKw(kw);
@@ -2141,6 +2159,13 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.together': exprMethod(sj.together),
   numer: exprFn((e) => sj.fraction(e)[0]),
   kroneckersimp: exprFn(sj.kroneckersimp),
+  line_integrate: (args, kw) => (noKw(kw), sj.lineIntegrate(asExpr(args[0]), args[1] as sj.Curve, (args[2] as JsList).items.map(asSym))),
+  minimal_polynomial: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'polys') throw new Unsupported(`kwargs ${k}`);
+    const x = args[1] instanceof Sym ? args[1] : new Sym('x');
+    const p = sj.minimalPolynomial(asExpr(args[0]), x);
+    return kw['polys'] ? sj.Poly.from(p, [x]) : p;
+  },
   KroneckerDelta: (args, kw) => (noKw(kw), sj.KroneckerDelta(asExpr(args[0]), asExpr(args[1]))),
   hyper: (args, kw) => (noKw(kw), sj.hyper((args[0] as JsTuple).items.map(asExpr), (args[1] as JsTuple).items.map(asExpr), asExpr(args[2]))),
   jn: (args, kw) => (noKw(kw), sj.jn(asExpr(args[0]), asExpr(args[1]))),

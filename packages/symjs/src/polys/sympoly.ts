@@ -1021,6 +1021,15 @@ export class Poly {
       if (realOnly && !isRealConst(c)) continue;
       const v = expand(xreplace(this.asExpr(), [[x, c]]));
       if (v instanceof Rational && v.isZero) out.push(c);
+      else if (!(v instanceof Rational)) {
+        // implicit candidates (CRootOf): decided numerically
+        try {
+          const z = evalfExpr(v, 30).toComplex();
+          if (Math.hypot(z.re, z.im) < 1e-12) out.push(c);
+        } catch {
+          // not evaluable
+        }
+      }
     }
     return out;
   }
@@ -1614,4 +1623,24 @@ export function sqfNorm(fIn: ExprLike, x: Sym, extension: readonly Expr[]): [num
     if (r.gcd(r.diff(x)).degree() <= 0) return [extension.map(() => s), g, r.asExpr()];
   }
   throw new Error('sqf_norm: no square-free norm found');
+}
+
+/**
+ * SymPy minimal_polynomial(v, x) for algebraic numbers built from rationals,
+ * I and square roots of rationals: the irreducible factor of the norm of
+ * x - v that vanishes at v (primitive, positive leading coefficient).
+ */
+export function minimalPolynomial(vIn: ExprLike, x: Sym): Expr {
+  const v = sympify(vIn);
+  if (v instanceof Rational) return add(mul(v.q, x), -v.p);
+  const N = Poly.from(add(x, mul(-1, v)), [x]).norm();
+  for (const [f] of N.factorList()[1]) {
+    const val = xreplace(f.asExpr(), [[x, v]]);
+    const z = evalfExpr(val, 30).toComplex();
+    if (Math.hypot(z.re, z.im) < 1e-12) {
+      const lc = f.LC();
+      return lc instanceof Rational && lc.isNegative ? mul(-1, f.asExpr()) : f.asExpr();
+    }
+  }
+  throw new Error('minimal_polynomial: not an algebraic number built from square roots');
 }

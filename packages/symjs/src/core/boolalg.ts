@@ -9,7 +9,7 @@
 import { BoolAtom, Expr, ExprLike, Rel, S, Special, impl } from './nodes';
 import { compareKeys, sortKey } from '../printing/sortkey';
 
-export type BoolOpName = 'And' | 'Or' | 'Not' | 'Xor';
+export type BoolOpName = 'And' | 'Or' | 'Not' | 'Xor' | 'ITE';
 
 /** And(...), Or(...) or Not(x). @internal ctor: use and/or/not. */
 export class BoolOp extends Expr {
@@ -28,6 +28,7 @@ export class BoolOp extends Expr {
   }
   /** SymPy StrPrinter: args sorted by default_sort_key, joined by & or |. */
   printStr(p: (e: Expr) => string): string {
+    if (this.op === 'ITE') return `ITE(${this.args.map(p).join(', ')})`;
     if (this.op === 'Not') {
       const a = this.args[0]!;
       return a instanceof Rel || a instanceof BoolOp ? `~(${p(a)})` : `~${p(a)}`;

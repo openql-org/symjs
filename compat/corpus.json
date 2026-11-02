@@ -53530,7 +53530,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a5d4340>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x1088e2890>, 3)"
   },
   {
    "fn": ".LC",
@@ -53737,7 +53737,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a4e3070>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x1088fc850>, 4)"
   },
   {
    "fn": ".TC",
@@ -90662,7 +90662,110 @@
   },
   {
    "fn": "line_integrate",
-   "unsupportedArg": "Curve",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "Curve",
+     "functions": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Fn",
+         "name": "exp",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "t",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Fn",
+         "name": "exp",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "t",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     ],
+     "limits": [
+      {
+       "t": "Symbol",
+       "name": "t",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Fn",
+       "name": "log",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.integrals.integrals",
    "src": "line_integrate(x + y, C, [x, y])",

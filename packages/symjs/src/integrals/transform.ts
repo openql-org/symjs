@@ -5,7 +5,7 @@
  * @file Change of variables in integrals (SymPy Integral.transform).
  */
 
-import { Dummy, Expr, ExprLike, Integral, Rational, S, Sym } from '../core/nodes';
+import { Dummy, Expr, ExprLike, Integral, Rational, S, Sym, impl } from '../core/nodes';
 import { Sum, doitConcrete } from '../concrete/summations';
 import { isNonNegative } from '../core/assumptions';
 import { FiniteSet as FiniteSetClass } from '../sets/sets';
@@ -105,4 +105,30 @@ export function asSum(integral: Integral, n: ExprLike, method: 'left' | 'right' 
   }
   const s = Sum(body, [k, 1, upper]);
   return mul(dx, add(extra, evaluate ? doitConcrete(s as never) : s));
+}
+
+/** SymPy Curve(functions, (t, a, b)): a parametric curve. */
+export class Curve {
+  readonly functions: Expr[];
+  constructor(
+    functions: readonly ExprLike[],
+    readonly limits: readonly [Sym, Expr, Expr],
+  ) {
+    this.functions = functions.map(sympify);
+  }
+  toString(): string {
+    return `Curve((${this.functions.map(String).join(', ')}), (${this.limits.map(String).join(', ')}))`;
+  }
+}
+
+/** SymPy line_integrate(field, curve, vars): the integral of field along the curve with respect to arc length. */
+export function lineIntegrate(field: ExprLike, curve: Curve, vars: readonly Sym[]): Expr {
+  const [t0, a, b] = curve.limits;
+  if (vars.length !== curve.functions.length) throw new Error('line_integrate: the curve and the variables differ in dimension');
+  // the parameter is real
+  const t = new Dummy(t0.name, { real: true });
+  const fs = curve.functions.map((g) => subs(g, [[t0, t]]));
+  const f = subs(sympify(field), vars.map((v, i) => [v, fs[i]!] as [Expr, Expr]));
+  const speed = pow(add(...fs.map((g) => pow(diff(g, t), 2))), S.Half);
+  return integrate(impl.simplify(mul(f, impl.simplify(speed))), t, [a, b]);
 }

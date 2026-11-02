@@ -9,6 +9,9 @@ import { Special } from './nodes';
 import { BoolAtom, Expr, ExprLike, Float, Piecewise, Rational, Rel, RelOp, S, isNum } from './nodes';
 import { numCmp } from './num';
 import { add, mul, sympify } from './ops';
+import { BoolOp } from './boolalg';
+
+const isBoolean = (e: Expr): boolean => e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp;
 
 /** Create a relation, evaluating it to True/False when the difference is a number. */
 export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
@@ -55,7 +58,11 @@ const isFalse = (c: Expr) => c instanceof BoolAtom && !c.value;
 export function piecewise(...pairs: readonly (readonly [ExprLike, ExprLike | boolean])[]): Expr {
   const out: Expr[] = [];
   for (const [e, c0] of pairs) {
-    const c = typeof c0 === 'boolean' ? (c0 ? S.true : S.false) : sympify(c0);
+    let c = typeof c0 === 'boolean' ? (c0 ? S.true : S.false) : sympify(c0);
+    // a boolean Piecewise as a condition is the if-then-else ITE(c1, a, b) (SymPy rewrite(ITE))
+    if (c instanceof Piecewise && c.args.length === 4 && isTrue(c.args[3]!) && isBoolean(c.args[0]!) && isBoolean(c.args[2]!)) {
+      c = new BoolOp('ITE', [c.args[1]!, c.args[0]!, c.args[2]!]);
+    }
     if (isFalse(c)) continue;
     out.push(sympify(e), c);
     if (isTrue(c)) break;

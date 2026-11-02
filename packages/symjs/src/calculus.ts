@@ -20,6 +20,8 @@ export {
   transformIntegral,
   principalValue,
   asSum,
+  Curve,
+  lineIntegrate,
 } from './integrals/transform';
 export {
   limit,
