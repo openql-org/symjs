@@ -549,3 +549,24 @@ export function asExprSetPairs(p: Expr, domain: SetExpr = Reals): [Expr, SetExpr
   }
   return out;
 }
+
+/**
+ * SymPy not_empty_in: the values of x for which the intersection of a
+ * FiniteSet of expressions with an Interval is not empty (over the reals).
+ */
+export function notEmptyIn(setIn: SetExpr, x: Sym): SetExpr {
+  const parts = setIn.className === 'Intersection' ? (setIn.args as SetExpr[]) : [];
+  const fset = parts.find((p): p is FiniteSet => p instanceof FiniteSet);
+  const ivals = parts.filter((p): p is Interval => p instanceof Interval);
+  if (!fset || ivals.length !== 1) throw new Error('not_empty_in: FiniteSet intersected with an Interval expected');
+  const iv = ivals[0]!;
+  const solveRel = (r: Expr): SetExpr => solveUnivariateInequality(r, x, { relational: false }) as SetExpr;
+  let out: SetExpr = EmptySet;
+  for (const f of fset.args) {
+    let s: SetExpr = Reals;
+    if (!(iv.start instanceof Special)) s = intersection(s, solveRel(iv.leftOpen ? Gt(f, iv.start) : Ge(f, iv.start)));
+    if (!(iv.end instanceof Special)) s = intersection(s, solveRel(iv.rightOpen ? Lt(f, iv.end) : Le(f, iv.end)));
+    out = union(out, s);
+  }
+  return out;
+}

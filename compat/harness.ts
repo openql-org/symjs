@@ -1138,6 +1138,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   cancel: exprFn(sj.cancel),
   trigsimp: exprFn(sj.trigsimp),
   exptrigsimp: exprFn(sj.exptrigsimp),
+  not_empty_in: (args, kw) => {
+    noKw(kw);
+    if (args.length !== 2) throw new Unsupported('arity');
+    return sj.notEmptyIn(args[0] as sj.SetExpr, asSym(args[1]));
+  },
   powsimp: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['deep', 'combine', 'force'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     return sj.powsimp(asExpr(args[0]), {

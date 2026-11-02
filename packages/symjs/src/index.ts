@@ -393,6 +393,7 @@ export {
   maximum,
   minimum,
   asExprSetPairs,
+  notEmptyIn,
 } from './solvers/inequalities';
 export {
   bernoulli,
