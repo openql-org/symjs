@@ -259,3 +259,20 @@ describe('jordan_form', () => {
     expect(Js[4]).toBe('Matrix([[0, 1, 0], [0, 0, 1], [0, 0, 0]])');
   });
 });
+
+describe('systems of linear ODEs', () => {
+  it('match SymPy dsolve', async () => {
+    const { dsolve } = await import('../src');
+    const t = symbols('t')[0];
+    const P = (s: string) => parse(s, { symbols: { t } } as never);
+    const show = (eqs: string[]) => (dsolve(eqs.map(P)) as unknown[]).map((e) => sstr(e as never));
+    expect(show(['Eq(Derivative(x(t), t), 2*x(t) + y(t))', 'Eq(Derivative(y(t), t), x(t) + 2*y(t))'])).toEqual(['Eq(x(t), -C1*exp(t) + C2*exp(3*t))', 'Eq(y(t), C1*exp(t) + C2*exp(3*t))']);
+    expect(show(['Eq(Derivative(x(t), t), y(t))', 'Eq(Derivative(y(t), t), -x(t))'])).toEqual(['Eq(x(t), C1*sin(t) + C2*cos(t))', 'Eq(y(t), C1*cos(t) - C2*sin(t))']);
+    expect(show(['Eq(Derivative(x(t), t), x(t) - 2*y(t))', 'Eq(Derivative(y(t), t), 2*x(t) + y(t))'])).toEqual(['Eq(x(t), -C1*exp(t)*sin(2*t) - C2*exp(t)*cos(2*t))', 'Eq(y(t), C1*exp(t)*cos(2*t) - C2*exp(t)*sin(2*t))']);
+    expect(show(['Eq(Derivative(x(t), t), 2*x(t) + y(t))', 'Eq(Derivative(y(t), t), 2*y(t))'])).toEqual(['Eq(x(t), C1*exp(2*t) + C2*t*exp(2*t))', 'Eq(y(t), C2*exp(2*t))']);
+    // inhomogeneous (variation of parameters); the solution satisfies the system
+    const [ex, ey] = dsolve([P('Eq(Derivative(x(t), t), y(t) + exp(t))'), P('Eq(Derivative(y(t), t), x(t))')]) as never as { rhs: never }[];
+    const { diff: d, simplify: simp, sub } = await import('../src');
+    expect(sstr(simp(sub(d(ex!.rhs, t), sub(ey!.rhs, P('-exp(t)')))))).toBe('0');
+  });
+});

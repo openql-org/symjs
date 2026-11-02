@@ -2304,6 +2304,11 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'ics' && k !== 'hint') throw new Unsupported(`kwargs ${k}`);
     if (kw['hint'] !== undefined && !['1st_exact', 'almost_linear', 'default'].includes(String(kw['hint']))) throw new Unsupported('dsolve hint');
     const ics = kw['ics'] instanceof PyDict ? (kw['ics'] as PyDict).entries.map(([k, v]) => [asExpr(k), asExpr(v)] as [Expr, Expr]) : undefined;
+    if (args[0] instanceof PyTuple || args[0] instanceof PyList) {
+      // a system of ODEs
+      const fs = args[1] instanceof PyTuple || args[1] instanceof PyList ? args[1].items.map(asExpr) : undefined;
+      return new PyList(sj.dsolve(args[0].items.map(asExpr), fs) as Expr[]);
+    }
     const eq = asExpr(args[0]);
     let fx: Expr | undefined = args[1] === undefined ? undefined : asExpr(args[1]);
     if (fx === undefined) {

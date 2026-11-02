@@ -8,6 +8,7 @@
  * grouping) and particular solutions by undetermined coefficients.
  */
 
+import { dsolveSystem } from './odesystem';
 import { SubsNode } from '../core/subsnode';
 import { Add, Derivative, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
@@ -215,12 +216,15 @@ function particular(coeffs: Expr[], rhs: Expr, x: Sym): Expr | undefined {
  * Solve an ordinary differential equation for f(x). Like SymPy, a list of
  * equations is returned when the general solution has several branches.
  */
-export function dsolve(eqIn: ExprLike, fx: Expr, opts: { ics?: [Expr, ExprLike][]; hint?: string } = {}): Expr | Expr[] {
+export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts: { ics?: [Expr, ExprLike][]; hint?: string } = {}): Expr | Expr[] {
+  // a system of equations: linear first-order with constant coefficients
+  if (Array.isArray(eqIn)) return dsolveSystem(eqIn, Array.isArray(fx) ? (fx as UndefFn[]) : undefined);
+  if (Array.isArray(fx) || fx === undefined) throw new Error('dsolve: the unknown function f(x) is required');
   if (!(fx instanceof UndefFn) || fx.args.length !== 1 || !(fx.args[0] instanceof Sym)) {
     throw new Error('dsolve: f(x) with a single symbol argument expected');
   }
   const x = fx.args[0];
-  const eq = asEquation(eqIn);
+  const eq = asEquation(eqIn as ExprLike);
   const n = odeOrder(eq, fx);
   if (n === 0) throw new Error('dsolve: not a differential equation');
   // SymPy's hints in order (solvers/dsolve.ts); the older direct solvers below are a fallback

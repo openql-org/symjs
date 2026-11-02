@@ -18,6 +18,7 @@ export {
   solveUndeterminedCoeffs,
   nsolve,
 } from './solvers/solve';
+export { dsolveSystem } from './solvers/odesystem';
 export {
   dsolve,
   homogeneousOrder,
