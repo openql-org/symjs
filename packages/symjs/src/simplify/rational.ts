@@ -22,7 +22,7 @@ const negExponent = (x: Expr): boolean => {
 };
 
 /** Split e into [numerator, denominator]. */
-export function fraction(ex: ExprLike): [Expr, Expr] {
+export function fraction(ex: ExprLike, opts: { exact?: boolean } = {}): [Expr, Expr] {
   const e = sympify(ex);
   const factors = e instanceof Mul ? e.args : [e];
   const num: Expr[] = [];
@@ -31,6 +31,13 @@ export function fraction(ex: ExprLike): [Expr, Expr] {
     if (f instanceof Rational) {
       num.push(Rational.of(f.p));
       den.push(Rational.of(f.q));
+    } else if (opts.exact && f instanceof Pow) {
+      // SymPy exact=True: only exponents known to be negative, symbolic ones stay in the numerator
+      const ex = f.exp;
+      const negative = ex instanceof Rational ? ex.isNegative : isNegative(ex) === true;
+      if (negative && ex instanceof Rational && ex.p === -1n && ex.q === 1n) den.push(f.base);
+      else if (negative && ex.freeSymbols().size === 0) den.push(pow(f.base, mul(-1, ex)));
+      else num.push(f);
     } else if (f instanceof Pow && negExponent(f.exp)) {
       den.push(pow(f.base, mul(-1, f.exp)));
     } else {

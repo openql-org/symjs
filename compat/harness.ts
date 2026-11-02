@@ -1212,7 +1212,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     const syms = args[1] instanceof PyTuple ? args[1].items.map(asExpr) : [asExpr(args[1])];
     return sj.collect(asExpr(args[0]), syms, exact === undefined ? {} : { exact: Boolean(exact) });
   },
-  fraction: exprFn((e) => new PyTuple(sj.fraction(e))),
+  fraction: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'exact') throw new Unsupported(`kwargs ${k}`);
+    return new PyTuple(sj.fraction(asExpr(args[0]), { exact: Boolean(kw['exact']) }));
+  },
   diff: (args, kw) => (noKw(kw), diffArgs(asExpr(args[0]), args.slice(1))),
   integrate: (args, kw) => {
     noKw(kw);
