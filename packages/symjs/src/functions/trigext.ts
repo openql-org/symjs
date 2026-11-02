@@ -331,6 +331,8 @@ const evalCot: Evaluator = (x) => {
   const pc = piCoeffOnly(x);
   if (pc !== undefined) {
     if (pc.isInteger) return S.ComplexInfinity;
+    // cot((k + 1/2)*pi) = 0
+    if (pc.q === 2n) return S.Zero;
     if (pc.q % 2n === 0n) {
       const v = halfAngle(pc, 1);
       if (v !== undefined) return v;

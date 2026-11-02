@@ -8,7 +8,7 @@
  */
 
 import type { ExprLike } from './nodes';
-import { Add, Constant, Derivative, Expr, Float, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, Wild, WildFunction, impl } from './nodes';
+import { Add, Constant, Derivative, Expr, ExtensionExpr, Float, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, Wild, WildFunction, impl } from './nodes';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { rebuild, xreplace } from './traverse';
 import { compareKeys, sortKey } from '../printing/sortkey';
@@ -62,6 +62,9 @@ function basicMatches(p: Expr, e: Expr, d: Dict, old: boolean): Dict | undefined
   if (p instanceof UndefFn && (e as UndefFn).name !== p.name) return undefined;
   if (isExpPow(p) !== isExpPow(e)) return undefined;
   if ((p as { kind2?: string }).kind2 !== (e as { kind2?: string }).kind2) return undefined;
+  // extension nodes of different classes (Heaviside and DiracDelta), And and Or, Lt and Gt do not match
+  if (p instanceof ExtensionExpr && (e.constructor !== p.constructor || (e as ExtensionExpr).name !== p.name)) return undefined;
+  if ((p as { op?: string }).op !== (e as { op?: string }).op) return undefined;
   if (p.args.length !== e.args.length) return undefined;
   let out: Dict | undefined = copy(d);
   for (let i = 0; i < p.args.length; i++) {

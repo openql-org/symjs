@@ -261,24 +261,25 @@ function evalPolygamma(n: Expr, x: Expr): Expr | undefined {
 
 /** digamma(p/q) by Gauss's theorem (SymPy polygamma._eval_expand_func, J. Choi 2007). */
 function digammaRational(z: Rational): Expr {
-  const p = z.p;
-  const q = Number(z.q);
-  const terms: Expr[] = [
-    mul(-1, S.EulerGamma),
-    mul(-1, S.Pi, fnN('cot', mul(R(p, z.q), S.Pi)), S.Half),
-    mul(-1, log(R(z.q))),
-  ];
-  for (let k = 1; k < q; k++) {
-    terms.push(mul(cos(mul(R(2n * BigInt(k) * p, z.q), S.Pi)), log(mul(2, sin(mul(R(k, q), S.Pi))))));
-  }
+  // the shift to z0 in (0, 1] by the recurrence digamma(x + 1) = digamma(x) + 1/x
+  const terms: Expr[] = [];
+  let z0: Rational;
   if (z.isPositive) {
-    const n = z.p / z.q;
-    const z0 = numAdd(z, R(-n)) as Rational;
+    const n = (z.p - 1n) / z.q; // z0 = z - n in (0, 1]
+    z0 = numAdd(z, R(-n)) as Rational;
     for (let k = 0n; k < n; k++) terms.push(pow(numAdd(z0, R(k)), -1));
   } else {
     const n = (z.q - z.p) / z.q; // floor(1 - z)
-    const z0 = numAdd(z, R(n)) as Rational;
+    z0 = numAdd(z, R(n)) as Rational;
     for (let k = 0n; k < n; k++) terms.push(mul(-1, pow(numAdd(z0, R(-1n - k)), -1)));
+  }
+  if (z0.q === 1n) return add(mul(-1, S.EulerGamma), ...terms);
+  // Gauss's digamma theorem for 0 < p < q
+  const p = z0.p;
+  const q = Number(z0.q);
+  terms.push(mul(-1, S.EulerGamma), mul(-1, S.Pi, fnN('cot', mul(R(p, z0.q), S.Pi)), S.Half), mul(-1, log(R(z0.q))));
+  for (let k = 1; k < q; k++) {
+    terms.push(mul(cos(mul(R(2n * BigInt(k) * p, z0.q), S.Pi)), log(mul(2, sin(mul(R(k, q), S.Pi))))));
   }
   return add(...terms);
 }
