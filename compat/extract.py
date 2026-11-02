@@ -291,6 +291,9 @@ def main(dst):
             exec("from sympy import *", globs)
             for ex in test.examples:
                 src = ex.source.strip()
+                if ex.options.get(doctest.SKIP):
+                    # SymPy does not run these either (random or illustrative output)
+                    continue
                 try:
                     tree = ast.parse(src, mode="eval")
                 except SyntaxError:

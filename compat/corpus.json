@@ -8102,94 +8102,6 @@
   {
    "fn": ".aseries",
    "self": {
-    "t": "Fn",
-    "name": "exp",
-    "args": [
-     {
-      "t": "Mul",
-      "args": [
-       {
-        "t": "Pow",
-        "args": [
-         {
-          "t": "Add",
-          "args": [
-           {
-            "t": "Rational",
-            "p": "1",
-            "q": "1"
-           },
-           {
-            "t": "Mul",
-            "args": [
-             {
-              "t": "Rational",
-              "p": "-1",
-              "q": "1"
-             },
-             {
-              "t": "Pow",
-              "args": [
-               {
-                "t": "Symbol",
-                "name": "x",
-                "assume": {}
-               },
-               {
-                "t": "Rational",
-                "p": "-1",
-                "q": "1"
-               }
-              ]
-             }
-            ]
-           }
-          ]
-         },
-         {
-          "t": "Rational",
-          "p": "-1",
-          "q": "1"
-         }
-        ]
-       },
-       {
-        "t": "Fn",
-        "name": "exp",
-        "args": [
-         {
-          "t": "Symbol",
-          "name": "x",
-          "assume": {}
-         }
-        ]
-       }
-      ]
-     }
-    ]
-   },
-   "args": [
-    {
-     "t": "Symbol",
-     "name": "x",
-     "assume": {}
-    }
-   ],
-   "kwargs": {
-    "bound": {
-     "t": "Rational",
-     "p": "3",
-     "q": "1"
-    }
-   },
-   "category": "core",
-   "module": "sympy.core.expr",
-   "src": "e.aseries(x, bound=3) # doctest: +SKIP",
-   "expected": "exp(exp(x)/(1 - 1/x))"
-  },
-  {
-   "fn": ".aseries",
-   "self": {
     "t": "Pow",
     "args": [
      {
@@ -28489,15 +28401,6 @@
    "expected": "False"
   },
   {
-   "fn": "Dummy",
-   "args": [],
-   "kwargs": {},
-   "category": "core",
-   "module": "sympy.core.symbol",
-   "src": "Dummy() #doctest: +SKIP",
-   "expected": "_Dummy_1061"
-  },
-  {
    "fn": ".match",
    "self": {
     "t": "Symbol",
@@ -29220,18 +29123,6 @@
       ],
       [
        {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Symbol",
-        "name": "x_1",
-        "assume": {}
-       }
-      ],
-      [
-       {
         "t": "Dummy",
         "name": "x",
         "index": 0,
@@ -29240,6 +29131,18 @@
        {
         "t": "Symbol",
         "name": "x",
+        "assume": {}
+       }
+      ],
+      [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "x_1",
         "assume": {}
        }
       ]
@@ -29821,66 +29724,6 @@
    "module": "sympy.core.relational",
    "src": "Eq(exp(x), exp(x).rewrite(cos))",
    "expected": "Eq(exp(x), sinh(x) + cosh(x))"
-  },
-  {
-   "fn": ".rewrite",
-   "self": {
-    "t": "Rel",
-    "op": "Equality",
-    "args": [
-     {
-      "t": "Add",
-      "args": [
-       {
-        "t": "Symbol",
-        "name": "b",
-        "assume": {}
-       },
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       }
-      ]
-     },
-     {
-      "t": "Add",
-      "args": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Mul",
-        "args": [
-         {
-          "t": "Rational",
-          "p": "-1",
-          "q": "1"
-         },
-         {
-          "t": "Symbol",
-          "name": "b",
-          "assume": {}
-         }
-        ]
-       }
-      ]
-     }
-    ]
-   },
-   "args": [
-    {
-     "t": "Type",
-     "name": "Add"
-    }
-   ],
-   "kwargs": {},
-   "category": "core",
-   "module": "sympy.core.relational",
-   "src": "eq.rewrite(Add)  #doctest: +SKIP",
-   "expected": "2*b"
   },
   {
    "fn": ".as_poly",
@@ -33704,7 +33547,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_1105",
+         "name": "Dummy_879",
          "index": 0,
          "assume": {
           "real": true
@@ -52583,7 +52426,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10886e950>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x109ef48e0>, 3)"
   },
   {
    "fn": ".LC",
@@ -52790,7 +52633,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x108a53460>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x109ef4d00>, 4)"
   },
   {
    "fn": ".TC",
@@ -108538,116 +108381,6 @@
    "module": "sympy.matrices.dense",
    "src": "matrix_multiply_elementwise(A, B)",
    "expected": "Matrix([[0, 10, 200], [300, 40, 5]])"
-  },
-  {
-   "fn": "randMatrix",
-   "args": [
-    {
-     "t": "Rational",
-     "p": "3",
-     "q": "1"
-    }
-   ],
-   "kwargs": {},
-   "category": "matrices",
-   "module": "sympy.matrices.dense",
-   "src": "randMatrix(3) # doctest:+SKIP",
-   "expected": "Matrix([[92, 16, 57], [3, 55, 17], [15, 19, 46]])"
-  },
-  {
-   "fn": "randMatrix",
-   "args": [
-    {
-     "t": "Rational",
-     "p": "3",
-     "q": "1"
-    },
-    {
-     "t": "Rational",
-     "p": "2",
-     "q": "1"
-    }
-   ],
-   "kwargs": {},
-   "category": "matrices",
-   "module": "sympy.matrices.dense",
-   "src": "randMatrix(3, 2) # doctest:+SKIP",
-   "expected": "Matrix([[91, 17], [69, 1], [10, 66]])"
-  },
-  {
-   "fn": "randMatrix",
-   "args": [
-    {
-     "t": "Rational",
-     "p": "3",
-     "q": "1"
-    },
-    {
-     "t": "Rational",
-     "p": "3",
-     "q": "1"
-    },
-    {
-     "t": "Rational",
-     "p": "0",
-     "q": "1"
-    },
-    {
-     "t": "Rational",
-     "p": "2",
-     "q": "1"
-    }
-   ],
-   "kwargs": {},
-   "category": "matrices",
-   "module": "sympy.matrices.dense",
-   "src": "randMatrix(3, 3, 0, 2) # doctest:+SKIP",
-   "expected": "Matrix([[2, 0, 2], [1, 0, 0], [2, 2, 0]])"
-  },
-  {
-   "fn": "randMatrix",
-   "args": [
-    {
-     "t": "Rational",
-     "p": "3",
-     "q": "1"
-    }
-   ],
-   "kwargs": {
-    "symmetric": {
-     "t": "Py",
-     "v": true
-    }
-   },
-   "category": "matrices",
-   "module": "sympy.matrices.dense",
-   "src": "randMatrix(3, symmetric=True) # doctest:+SKIP",
-   "expected": "Matrix([[43, 32, 69], [32, 37, 1], [69, 1, 40]])"
-  },
-  {
-   "fn": "randMatrix",
-   "args": [
-    {
-     "t": "Rational",
-     "p": "3",
-     "q": "1"
-    }
-   ],
-   "kwargs": {
-    "symmetric": {
-     "t": "Py",
-     "v": true
-    },
-    "percent": {
-     "t": "Rational",
-     "p": "50",
-     "q": "1"
-    }
-   },
-   "category": "matrices",
-   "module": "sympy.matrices.dense",
-   "src": "randMatrix(3, symmetric=True, percent=50) # doctest:+SKIP",
-   "expected": "Matrix([[0, 0, 0], [0, 58, 68], [0, 68, 67]])"
   },
   {
    "fn": "rot_axis1",
