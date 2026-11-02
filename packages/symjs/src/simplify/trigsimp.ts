@@ -86,7 +86,7 @@ export function exptotrig(ex: ExprLike): Expr {
  * expression without trigonometric functions is returned unchanged, and the
  * result is never more complex than the input.
  */
-export function trigsimp(ex: ExprLike, opts: { old?: boolean; deep?: boolean; method?: string; combineFractions?: boolean } = {}): Expr {
+export function trigsimp(ex: ExprLike, opts: { old?: boolean; deep?: boolean; method?: string; combineFractions?: boolean; keepReciprocals?: boolean } = {}): Expr {
   if (opts.old && !opts.deep) {
     // SymPy trigsimp_old without deep does not look inside other functions
     const frozen: [Expr, Expr][] = [];
@@ -98,10 +98,12 @@ export function trigsimp(ex: ExprLike, opts: { old?: boolean; deep?: boolean; me
       }
       return x;
     });
-    const inner = { combineFractions: opts.method === 'groebner' };
+    const inner = { combineFractions: opts.method === 'groebner', keepReciprocals: true };
     return frozen.length ? xreplace(trigsimp(outer, inner), frozen) : trigsimp(outer, inner);
   }
   let e = sympify(ex);
+  // SymPy's old algorithm leaves a lone power of a reciprocal function alone (1/cot(x)**2)
+  if (opts.keepReciprocals && e instanceof Pow && e.base instanceof Fn && RECIPROCAL[e.base.name]) return e;
   // reciprocal functions (cot, coth, sec, ...) in terms of the basic ones when that is shorter
   const recip = mapBottomUp(e, (x) => {
     if (!(x instanceof Fn)) return x;

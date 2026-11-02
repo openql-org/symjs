@@ -1462,7 +1462,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   cancel: exprFn(sj.cancel),
   trigsimp: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!["old", "deep", "method"].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!["old", "deep", "method", "compare"].includes(k)) throw new Unsupported(`kwargs ${k}`);
     return sj.trigsimp(asExpr(args[0]), { old: Boolean(kw["old"]), deep: Boolean(kw["deep"]), method: kw["method"] as string | undefined });
   },
   exptrigsimp: exprFn(sj.exptrigsimp),

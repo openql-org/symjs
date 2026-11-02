@@ -129,6 +129,7 @@ other traversals) and override `printStr`, `printLatex`, `diffSelf`,
 See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable gaps:
 
 - `simplify` is a lighter heuristic than SymPy's; results can differ in form
-- `factor` over finite fields (`modulus=`) and general algebraic extensions (only `gaussian=` and simple `extension=` cases); `RootSum`
-- Integration beyond the implemented heuristics (no Risch or Meijer G algorithms yet)
-- ODE solving follows SymPy's single-equation hints (separable, exact, linear, Bernoulli, Riccati special, constant and Euler linear equations, undetermined coefficients, variation of parameters, Liouville, reducible order, Airy, Bessel); systems are solved when linear, first order and with constant coefficients; homogeneous-coefficient, linear-coefficient, power series and Lie group hints, other systems, PDEs and Diophantine equations are not ported yet (see the ODE checks in the report)
+- `factor` over general algebraic extensions (only `gaussian=` and simple `extension=` cases); algebraic numbers in `minimal_polynomial` and norms are limited to square roots and I
+- Integration beyond the implemented heuristics (no Risch or Meijer G algorithms yet); `hyper` and `meijerg` are available as functions but are not used to integrate or to evaluate in closed form
+- ODE solving follows SymPy's single-equation hints (separable, exact, linear, Bernoulli, Riccati special, constant and Euler linear equations, undetermined coefficients, variation of parameters, Liouville, reducible order, Airy, Bessel); systems are solved when linear, first order and with constant coefficients; `classify_ode` reports SymPy's hints, but homogeneous-coefficient, linear-coefficient, power series and Lie group solvers, nonlinear systems, PDEs and Diophantine equations are not ported yet (see the ODE checks in the report)
+- `ratsimpmodprime`, symbolic `Mod`, and asymptotic series of nested exponentials are not implemented
