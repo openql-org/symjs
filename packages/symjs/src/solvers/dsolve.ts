@@ -8,10 +8,10 @@
  */
 
 import { isReal } from '../core/assumptions';
-import { Add, Derivative, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, UndefFn } from '../core/nodes';
+import { Add, Derivative, Dummy, Expr, ExprLike, Fn, Integral, Mul, Pow, Rational, Rel, S, Special, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
-import { freeSymbols, subs, xreplace } from '../core/traverse';
+import { freeSymbols, some, subs, xreplace } from '../core/traverse';
 import { derivative } from '../core/undef';
 import { diff } from '../calculus/diff';
 import { abs, cos, fn, im, log, re, sin, tan } from '../functions/elementary';
@@ -744,6 +744,120 @@ const bessel: Solver = (p) => {
 };
 
 // ---------------------------------------------------------------------------
+// homogeneous coefficients and linear coefficients (SymPy single.py)
+// ---------------------------------------------------------------------------
+
+/** d + e*f' of a first-order equation with f(x) replaced by y (SymPy's wilds match, collected with cancel). */
+function deMatch(p: OdeProblem): { d: Expr; e: Expr; y: Dummy } | undefined {
+  if (p.order !== 1) return undefined;
+  const parts = firstOrderParts(expand(p.eq), p);
+  if (!parts) return undefined;
+  const y = new Dummy('y');
+  const d = cancel(xreplace(parts[0], [[p.fx, y]]));
+  const e = cancel(xreplace(parts[1], [[p.fx, y]]));
+  if (d.has(D(p, 1)) || e.has(D(p, 1))) return undefined;
+  return { d, e, y };
+}
+
+/** d and e are homogeneous of the same order in x and y (SymPy HomogeneousCoeff _verify). */
+function sameHomogeneousOrder(d: Expr, e: Expr, x: Sym, y: Dummy): boolean {
+  const od = homogeneousOrder(separatevars(d) as Expr, x, y);
+  const oe = homogeneousOrder(separatevars(e) as Expr, x, y);
+  return od !== undefined && oe !== undefined && od.key === oe.key;
+}
+
+/**
+ * SymPy 1st_homogeneous_coeff_subs_dep_div_indep (u = y/x) or
+ * _subs_indep_div_dep (u = x/y) before odesimp; the solution is shifted
+ * back by (xarg, yarg) for linear coefficients.
+ */
+function homogeneousSolution(p: OdeProblem, m: { d: Expr; e: Expr; y: Dummy }, dep: boolean, xarg: Expr = S.Zero, yarg: Expr = S.Zero): Expr | undefined {
+  const { d, e, y } = m;
+  const x = p.x;
+  const u1 = new Dummy('u1');
+  const integrand = dep ? cancel(subs(mul(-1, e, pow(add(d, mul(u1, e)), -1)), [[x, 1], [y, u1]])) : simplify(subs(mul(-1, d, pow(add(e, mul(u1, d)), -1)), [[x, u1], [y, 1]]));
+  if (integrand instanceof Special) return undefined;
+  const I = integrate(integrand, u1);
+  if (some(I, (t) => t instanceof Integral)) return undefined;
+  const lhs = dep ? log(x) : log(p.fx);
+  const arg = dep ? mul(p.fx, pow(x, -1)) : mul(x, pow(p.fx, -1));
+  // SymPy combines the logs while the integral is still unevaluated, so log(C1) stays apart (constantsimp then makes it C1)
+  let sol = Eq(lhs, add(subs(I, [[u1, arg]]), C(1))) as Expr;
+  if (!isZero(xarg) || !isZero(yarg)) {
+    const u = new Dummy('u');
+    sol = xreplace(sol, [[p.fx, u]]);
+    sol = subs(sol, [[u, add(u, mul(-1, yarg))]]);
+    sol = subs(sol, [[x, add(x, mul(-1, xarg))]]);
+    sol = xreplace(sol, [[u, p.fx]]);
+  }
+  return sol;
+}
+
+/** SymPy ode_sol_simplicity: solved for f(x) first, then without Integrals, then shortest. */
+function solSimplicity(sols: Expr[], fx: Expr): number {
+  if (sols.some((s) => some(s, (t) => t instanceof Integral))) return Infinity;
+  if (sols.every((s) => s instanceof Rel && s.lhs.key === fx.key && !s.rhs.has(fx))) return -2;
+  return sols.map(String).join(', ').length;
+}
+
+/** SymPy HomogeneousCoeffBest: both substitutions, the simpler result (after odesimp). */
+function homogeneousBest(p: OdeProblem, m: { d: Expr; e: Expr; y: Dummy }, xarg?: Expr, yarg?: Expr): Expr[] | undefined {
+  const cands: Expr[][] = [];
+  for (const [dep, hint] of [[false, '1st_homogeneous_coeff_subs_indep_div_dep'], [true, '1st_homogeneous_coeff_subs_dep_div_indep']] as const) {
+    try {
+      const raw = homogeneousSolution(p, m, dep, xarg, yarg);
+      if (raw) cands.push(odesimp(p.eq, raw, p.fx, hint));
+    } catch {
+      // this substitution fails; the other one may work
+    }
+  }
+  if (!cands.length) return undefined;
+  return cands.reduce((a, b) => (solSimplicity(b, p.fx) < solSimplicity(a, p.fx) ? b : a));
+}
+
+const homogeneousCoeffBest: Solver = (p) => {
+  const m = deMatch(p);
+  if (!m || !sameHomogeneousOrder(m.d, m.e, p.x, m.y)) return undefined;
+  if (isZero(simplify(subs(add(m.d, mul(new Dummy('u'), m.e)), [[p.x, 1]])))) return undefined;
+  return homogeneousBest(p, m);
+};
+
+/** a*x + b*y + c with rational a, b, c (SymPy _linear_coeff_match abc). */
+function linearABC(e: Expr, x: Sym, y: Expr): [Rational, Rational, Rational] | undefined {
+  const pe = expand(e);
+  const c = subs(pe, [[x, 0], [y, 0]]);
+  const a = subs(diff(pe, x), [[y, 0]]);
+  const b = subs(diff(pe, y as Sym), [[x, 0]]);
+  if (!(a instanceof Rational && b instanceof Rational && c instanceof Rational)) return undefined;
+  return isZero(expand(add(pe, mul(-1, add(mul(a, x), mul(b, y), c))))) ? [a, b, c] : undefined;
+}
+
+const linearCoefficientsSolver: Solver = (p) => {
+  const m = deMatch(p);
+  if (!m) return undefined;
+  const x = p.x;
+  const F = cancel(mul(m.d, pow(m.e, -1)));
+  const [num, den] = fraction(F);
+  const n1 = linearABC(num, x, m.y);
+  const n2 = linearABC(den, x, m.y);
+  if (!n1 || !n2) return undefined;
+  const [a1, b1, c1] = n1;
+  const [a2, b2, c2] = n2;
+  const det = add(mul(a2, b1), mul(-1, a1, b2));
+  if (isZero(det) || (isZero(c1) && isZero(c2))) return undefined;
+  const xarg = mul(add(mul(b2, c1), mul(-1, b1, c2)), pow(det, -1));
+  const yarg = mul(add(mul(a1, c2), mul(-1, a2, c1)), pow(det, -1));
+  // d and e after x -> x + xarg, y -> y + yarg are homogeneous
+  const shift = (t: Expr) => cancel(subs(t, [[x, add(x, xarg)], [m.y, add(m.y, yarg)]]));
+  const sm = { d: shift(m.d), e: shift(m.e), y: m.y };
+  if (!sameHomogeneousOrder(sm.d, sm.e, x, sm.y)) return undefined;
+  return homogeneousBest(p, sm, xarg, yarg);
+};
+
+/** Hints whose solvers return solutions already simplified by odesimp. */
+const PRESIMPLIFIED = new Set(['1st_homogeneous_coeff_best', 'linear_coefficients']);
+
+// ---------------------------------------------------------------------------
 // driver
 // ---------------------------------------------------------------------------
 
@@ -759,6 +873,8 @@ const HINTS: [string, Solver][] = [
   ['1st_linear', firstLinear],
   ['Bernoulli', bernoulli],
   ['Riccati_special_minus2', riccatiSpecial],
+  ['1st_homogeneous_coeff_best', homogeneousCoeffBest],
+  ['linear_coefficients', linearCoefficientsSolver],
   ['nth_linear_constant_coeff_variation_of_parameters', variationOfParameters],
   // SymPy reaches f'' + f'**2 = 0 through factorable/nth_order_reducible before Liouville
   ['nth_order_reducible', nthOrderReducible],
@@ -801,7 +917,8 @@ export function dsolveRaw(eqIn: Expr, fx: UndefFn, hint?: string): Expr[] | unde
     if (!raw) continue;
     try {
       const out: Expr[] = [];
-      for (const r of raw) out.push(...odesimp(eq, r, fx, h));
+      if (PRESIMPLIFIED.has(h)) out.push(...raw);
+      else for (const r of raw) out.push(...odesimp(eq, r, fx, h));
       return out;
     } catch {
       continue;
