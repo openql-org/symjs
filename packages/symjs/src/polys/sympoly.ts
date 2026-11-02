@@ -1318,3 +1318,19 @@ function factorOverExtension(e: Expr, ext: readonly Expr[]): Expr | undefined {
   const remaining = rest.degree() > 0 ? factor(mul(rest.asExpr(), pow(lc, -1))) : S.One;
   return mul(lc, remaining, ...lin);
 }
+
+/**
+ * Factor an expression with non-commutative symbols (a light SymPy
+ * factor_nc): the non-commutative symbols are replaced by commutative
+ * dummies, the result is factored and accepted when expanding it with the
+ * original symbols gives back the input.
+ */
+export function factorNc(ex: ExprLike): Expr {
+  const e = sympify(ex);
+  if (e.isCommutative) return factor(e);
+  const nc = [...freeSymbols(e)].filter((s) => !s.isCommutative);
+  const reps = nc.map((s) => [s, new Sym(`_nc_${s.name}`)] as [Expr, Expr]);
+  const f = factor(xreplace(e, reps));
+  const back = xreplace(f, reps.map(([a, b]) => [b, a] as [Expr, Expr]));
+  return expand(back).key === expand(e).key ? back : e;
+}

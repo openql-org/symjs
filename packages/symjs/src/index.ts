@@ -215,6 +215,7 @@ export {
   Poly,
   PolificationFailed,
   factor,
+  factorNc,
   factorListExpr as factorList,
   polyGcd as gcd,
   polyLcm as lcm,

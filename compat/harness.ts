@@ -40,6 +40,11 @@ export class PySet {
 export class Unsupported extends Error {}
 
 /** An undefined function class (SymPy `Function('f')` itself, not applied). */
+/** A polynomial ground domain (ZZ, QQ). */
+export class PyDomain {
+  constructor(readonly name: string) {}
+}
+
 /** A predicate lambda testing a SymPy is_* attribute (lambda e: e.is_Mul). */
 export class PyPred {
   constructor(readonly attr: string) {}
@@ -286,6 +291,8 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'AlgebraicNumber':
       return new sj.AlgebraicNumber(deserialize(tree['root'] as Tree) as Expr, (tree['coeffs'] as Tree[]).map((t) => deserialize(t) as Expr));
+    case 'Domain':
+      return new PyDomain(tree['name'] as string);
     case 'PyPred':
       return new PyPred(tree['attr'] as string);
     case 'PyLambda':
@@ -412,6 +419,24 @@ function polyFactorial(args: unknown[], kw: Record<string, unknown>, dir: 1 | -1
   let acc: Expr = S.One;
   for (let i = 0; i < Number((k as sj.Rational).p); i++) acc = sj.mul(acc, sj.xreplace(p.asExpr(), [[g, sj.add(g, dir * i)]]));
   return sj.Poly.from(sj.expand(acc), p.gens);
+}
+/** Univariate division over ZZ (SymPy dup_rr_div): stops when the leading coefficient does not divide. */
+function divOverZZ(f: Expr, g: Expr): [Expr, Expr] {
+  const gens = sj.sortGens([...sj.freeSymbols(sj.add(f, g))]) as Sym[];
+  if (gens.length !== 1) throw new Unsupported('div over ZZ');
+  const x = gens[0]!;
+  let r = sj.Poly.from(f, [x]);
+  const G = sj.Poly.from(g, [x]);
+  const lg = G.LC() as sj.Rational;
+  let q: Expr = S.Zero;
+  while (!r.isZero && r.degree() >= G.degree()) {
+    const lr = r.LC() as sj.Rational;
+    if (!lr.isInteger || !lg.isInteger || lr.p % lg.p !== 0n) break;
+    const t = sj.mul(sj.Rational.of(lr.p / lg.p), sj.pow(x, r.degree() - G.degree()));
+    q = sj.add(q, t);
+    r = sj.Poly.from(sj.expand(sj.add(r.asExpr(), sj.mul(-1, t, G.asExpr()))), [x]);
+  }
+  return [q, r.asExpr()];
 }
 const asSym = (v: unknown): Sym => {
   if (v instanceof Sym) return v;
@@ -1211,6 +1236,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   trigsimp: exprFn(sj.trigsimp),
   exptrigsimp: exprFn(sj.exptrigsimp),
   Id: exprFn((e) => e),
+  factor_nc: exprFn(sj.factorNc),
   arity: (args, kw) => {
     noKw(kw);
     if (args[0] instanceof PyLambda) return sj.Rational.of(args[0].vars.length);
@@ -1950,11 +1976,16 @@ export const ADAPTERS: Record<string, Adapter> = {
     return args[0] instanceof sj.Poly ? sj.Poly.from(r, (args[0] as sj.Poly).gens) : r;
   },
   div: (args, kw) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
+    if (kw['domain'] instanceof PyDomain && kw['domain'].name === 'ZZ') return new PyTuple(divOverZZ(asExpr(args[0]), asExpr(args[1])));
     if (args[0] instanceof sj.Poly) return new PyTuple(args[0].div(args[1] as sj.Poly));
     return new PyTuple(sj.polyDiv(asExpr(args[0]), asExpr(args[1])));
   },
-  rem: (args, kw) => (noKw(kw), args[0] instanceof sj.Poly ? args[0].rem(args[1] as sj.Poly) : sj.polyDiv(asExpr(args[0]), asExpr(args[1]))[1]),
+  rem: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
+    if (kw['domain'] instanceof PyDomain && kw['domain'].name === 'ZZ') return divOverZZ(asExpr(args[0]), asExpr(args[1]))[1];
+    return args[0] instanceof sj.Poly ? args[0].rem(args[1] as sj.Poly) : sj.polyDiv(asExpr(args[0]), asExpr(args[1]))[1];
+  },
   quo: (args, kw) => (noKw(kw), args[0] instanceof sj.Poly ? args[0].quo(args[1] as sj.Poly) : sj.polyDiv(asExpr(args[0]), asExpr(args[1]))[0]),
   factor_list: (args, kw) => {
     noKw(kw);

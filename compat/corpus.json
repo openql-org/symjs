@@ -29123,6 +29123,18 @@
       ],
       [
        {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "x_1",
+        "assume": {}
+       }
+      ],
+      [
+       {
         "t": "Dummy",
         "name": "x",
         "index": 0,
@@ -29131,18 +29143,6 @@
        {
         "t": "Symbol",
         "name": "x",
-        "assume": {}
-       }
-      ],
-      [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Symbol",
-        "name": "x_1",
         "assume": {}
        }
       ]
@@ -33547,7 +33547,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_879",
+         "name": "Dummy_876",
          "index": 0,
          "assume": {
           "real": true
@@ -52426,7 +52426,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x109ef48e0>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a664790>, 3)"
   },
   {
    "fn": ".LC",
@@ -52633,7 +52633,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x109ef4d00>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a8baec0>, 4)"
   },
   {
    "fn": ".TC",
@@ -66704,7 +66704,12 @@
      ]
     }
    ],
-   "unsupportedArg": "IntegerRing",
+   "kwargs": {
+    "domain": {
+     "t": "Domain",
+     "name": "ZZ"
+    }
+   },
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "div(x**2 + 1, 2*x - 4, domain=ZZ)",
@@ -66764,7 +66769,12 @@
      ]
     }
    ],
-   "unsupportedArg": "RationalField",
+   "kwargs": {
+    "domain": {
+     "t": "Domain",
+     "name": "QQ"
+    }
+   },
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "div(x**2 + 1, 2*x - 4, domain=QQ)",
@@ -71627,7 +71637,12 @@
      ]
     }
    ],
-   "unsupportedArg": "IntegerRing",
+   "kwargs": {
+    "domain": {
+     "t": "Domain",
+     "name": "ZZ"
+    }
+   },
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "rem(x**2 + 1, 2*x - 4, domain=ZZ)",
@@ -71687,7 +71702,12 @@
      ]
     }
    ],
-   "unsupportedArg": "RationalField",
+   "kwargs": {
+    "domain": {
+     "t": "Domain",
+     "name": "QQ"
+    }
+   },
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "rem(x**2 + 1, 2*x - 4, domain=QQ)",

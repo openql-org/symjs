@@ -144,6 +144,9 @@ def ser(o):
     from sympy.core.function import WildFunction as _WF
     if isinstance(o, sympy.FunctionClass) and not isinstance(o, _UF):
         return {"t": "FnClass", "name": o.__name__}
+    from sympy.polys.domains.domain import Domain as _Domain
+    if isinstance(o, _Domain) and str(o) in ("ZZ", "QQ"):
+        return {"t": "Domain", "name": str(o)}
     if not isinstance(o, Basic):
         raise Unsupported(type(o).__name__)
     if isinstance(o, sympy.AlgebraicNumber):

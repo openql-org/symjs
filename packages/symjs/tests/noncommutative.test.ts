@@ -52,3 +52,12 @@ describe('coeff and as_independent with non-commutative symbols (SymPy)', () => 
     expect(asIndependent(mul(n1, n2, n3), [n2]).map(String)).toEqual(['n1', 'n2*n3']);
   });
 });
+
+import { expand, factorNc } from '../src';
+
+describe('factor_nc', () => {
+  it('factors through commutative dummies when the expansion matches', () => {
+    expect(String(factorNc(expand(pow(add(x, A), 2))))).toBe('(x + A)**2');
+    expect(String(factorNc(expand(mul(add(x, A), add(x, B)))))).toBe('(x + A)*(x + B)');
+  });
+});
