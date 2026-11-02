@@ -234,7 +234,17 @@ export interface Impl {
   series(e: Expr, x: Sym, x0?: ExprLike, n?: number): Expr;
 }
 
-export const impl: Impl = {} as Impl;
+/** An implementation provided by a feature area that has not been imported. */
+function notLoaded(name: string, entry: string): never {
+  throw new Error(`${name} is not available: import '@symjs/symjs/${entry}' (or '@symjs/symjs')`);
+}
+
+export const impl: Impl = {
+  simplify: () => notLoaded('simplify', 'simplify'),
+  integrate: () => notLoaded('integrate', 'calculus'),
+  limit: () => notLoaded('limit', 'calculus'),
+  series: () => notLoaded('series', 'calculus'),
+} as Partial<Impl> as Impl;
 
 export abstract class Expr {
   abstract readonly kind: Kind;
@@ -332,7 +342,7 @@ export abstract class Expr {
   }
   /** Rewrite in terms of another function (SymPy `rewrite`), e.g. `sin(x).rewrite('exp')`. */
   rewrite(target: string, opts?: { pattern?: readonly string[]; deep?: boolean }): Expr {
-    if (!impl.rewrite) throw new Error('rewrite is not available');
+    if (!impl.rewrite) notLoaded('rewrite', 'simplify');
     return impl.rewrite(this, target, opts);
   }
   /** Alias of evalf (SymPy `.n()`). */

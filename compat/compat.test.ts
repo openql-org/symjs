@@ -45,7 +45,8 @@ function readCoverage(): { files: FileCoverage[] } | undefined {
   for (const [abs, v] of Object.entries(data)) {
     if (abs === 'total') continue;
     const path = abs.startsWith(root) ? abs.slice(root.length) : abs;
-    if (path.endsWith('/src/index.ts')) continue;
+    // entry points only re-export
+    if (path.endsWith('/src/index.ts') || /^packages\/symjs\/src\/[^/]+\.ts$/.test(path)) continue;
     const p = { statements: v['statements']!.pct, branches: v['branches']!.pct, functions: v['functions']!.pct, lines: v['lines']!.pct };
     files.push({ path, category: categoryOf(path), statements: v['statements']!.total, pct: p, full: Object.values(p).every((x) => x === 100) });
   }

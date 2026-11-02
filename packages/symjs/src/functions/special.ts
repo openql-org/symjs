@@ -6,6 +6,7 @@
  * evaluation rules, derivatives, conjugation and numeric evaluation.
  */
 
+import '../numeric/mpspecialfns';
 import { isIntegerQ, isNegative, isPositive } from '../core/assumptions';
 import {
   Add,

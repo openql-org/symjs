@@ -7,6 +7,7 @@
  * airybiprime with SymPy's evaluation rules, derivatives and numerics.
  */
 
+import '../numeric/mpspecialfns';
 import { isIntegerQ, isPositive } from '../core/assumptions';
 import { ComplexValue as C, Expr, ExprLike, Rational, S, Special } from '../core/nodes';
 import { add, couldExtractMinusSign, mul, neg, pow } from '../core/ops';

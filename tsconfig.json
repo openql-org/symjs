@@ -22,6 +22,9 @@
     "paths": {
       "@symjs/symjs": [
         "./packages/symjs/src/index.ts"
+      ],
+      "@symjs/symjs/*": [
+        "./packages/symjs/src/*.ts"
       ]
     }
   },

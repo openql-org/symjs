@@ -50,6 +50,23 @@ gates.H().mul(gates.H()).equals(Matrix.eye(2)); // true
 
 The quantum package will be ported from `sympy.physics.quantum`; the current `gates` are provisional.
 
+### Entry points and bundle size
+
+`@symjs/symjs` imports the whole base module. Each feature area is also an entry point of its own, so that a bundler includes only what an application uses:
+
+| Entry point | Contents |
+|---|---|
+| `@symjs/symjs/core` | Expressions, numbers and assumptions, symbols and undefined functions, elementary functions, substitution and matching, `diff`, `expand`, `evalf`, parsing, `str` and `latex` |
+| `@symjs/symjs/special` | Special and combinatorial functions (Gamma, zeta, error functions, Bessel and Airy functions, ...) |
+| `@symjs/symjs/simplify` | `simplify`, `trigsimp`, `powsimp`, `radsimp`, `together`, `cancel`, `rewrite`, ... |
+| `@symjs/symjs/polys` | Polynomials: `factor`, `roots`, `CRootOf`, `groebner`, `apart`, ... |
+| `@symjs/symjs/calculus` | `integrate`, `limit`, `series`, `Sum`, `Product`, ... |
+| `@symjs/symjs/solvers` | `solve`, `solveset`, `nonlinsolve`, `rsolve`, `dsolve`, inequalities |
+| `@symjs/symjs/sets` | Intervals, finite sets, image and condition sets |
+| `@symjs/symjs/matrices` | `Matrix` and linear algebra |
+
+Every entry point includes the core. The core does not depend on the other areas: methods such as `expr.simplify()` or `expr.integrate(x)` work once the area that implements them has been imported (from its entry point or from the root), and otherwise throw an error naming the entry point to import. The modules that register implementations on load are listed in the `sideEffects` field of `package.json` (kept up to date by `node scripts/side-effects.mjs`, checked by the tests). `node scripts/size.mjs --check` (after `pnpm build`) measures the minified bundle of typical imports against size budgets; for example `import { parse, diff, str } from '@symjs/symjs/core'` is about 110 KiB minified (35 KiB gzip), and the whole base module about 390 KiB (130 KiB gzip).
+
 ### Repository layout
 
 ```
@@ -94,7 +111,8 @@ See [compat/REPORT.md](compat/REPORT.md) for the current numbers and the highest
 pnpm install
 pnpm test        # vitest (all packages; extend modules use the base module from source)
 pnpm typecheck   # tsc --noEmit
-pnpm build       # every package: tsup (ESM/CJS) + tsc (declarations)
+pnpm build       # every package: tsup (ESM/CJS, one file per module) + tsc (declarations)
+node packages/symjs/scripts/size.mjs --check   # bundle sizes of typical imports against budgets
 pnpm golden      # regenerate the SymPy expectations of the golden tests
 ```
 

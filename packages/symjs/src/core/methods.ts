@@ -7,14 +7,13 @@
  */
 
 import { isIntegerQ, isNegative as isNegativeQ, isPositive, isReal, isZero as isZeroQ } from './assumptions';
-import { Add, Constant, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Special, Sym, isNum } from './nodes';
+import { Add, Constant, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
 import { add, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
 import { freeSymbols, xreplace as xreplaceM } from './traverse';
 import { diff } from '../calculus/diff';
 import { abs, arg, im, log, re } from '../functions/elementary';
 import { asRealImagExpand, expandMul } from '../simplify/expand';
-import { simplify } from '../simplify/simplify';
 
 const isOne = (e: Expr) => e instanceof Rational && e.isOne;
 const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
@@ -570,7 +569,13 @@ export function isConstant(eIn: ExprLike, wrt: readonly Sym[] = []): boolean {
   for (const v of vars) {
     let d: Expr;
     try {
-      d = simplify(diff(e, v));
+      // simplify is late-bound so that the core does not depend on the simplification modules
+      d = diff(e, v);
+      try {
+        d = impl.simplify(d);
+      } catch {
+        // simplification not loaded: decide on the derivative as it is
+      }
     } catch {
       return false;
     }

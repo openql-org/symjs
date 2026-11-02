@@ -1,0 +1,83 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
+
+/**
+ * @file Entry point `@symjs/symjs/special`: special and combinatorial functions
+ * (Gamma, zeta, error functions, Bessel and Airy functions, polar numbers, ...).
+ */
+
+// every entry point brings the core with its registrations
+import './core';
+
+export {
+  factorial,
+  factorial2,
+  binomial,
+  ff,
+  rf,
+  subfactorial,
+  harmonic,
+  catalan,
+  gamma,
+  loggamma,
+  polygamma,
+  digamma,
+  trigamma,
+  lowergamma,
+  uppergamma,
+  beta,
+  zeta,
+  erf,
+  erfc,
+  erfi,
+  erf2,
+  erfinv,
+  erfcinv,
+  erf2inv,
+  Ei,
+  LambertW,
+  li,
+  Li,
+  Si,
+  Ci,
+  Shi,
+  Chi,
+  expint,
+  E1,
+  fresnels,
+  fresnelc,
+  sign,
+  floor,
+  ceiling,
+  atan2,
+  Min,
+  Max,
+  expandFunc,
+} from './functions/special';
+export { besselj, bessely, besseli, besselk, airyai, airybi, airyaiprime, airybiprime } from './functions/bessel';
+export {
+  bernoulli,
+  euler,
+  genocchi,
+  bell,
+  fibonacci,
+  lucas,
+  tribonacci,
+  partition,
+  totientFn as totient,
+  reducedTotient,
+  mobius,
+  divisorSigma,
+  primenu,
+  primeomega,
+  primepiFn as primepi,
+  multigamma,
+  frac,
+  isprime,
+  jacobiSymbol,
+  kroneckerSymbol,
+  firstMotzkins,
+  motzkinNumbersInRange,
+  isMotzkin,
+} from './functions/combinatorial';
+export { polarify, expPolar, polarLift, periodicArgument, principalBranch, unbranchedArgument, unpolarify, extractBranchFactor } from './functions/polar';
