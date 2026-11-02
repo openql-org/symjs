@@ -46,6 +46,7 @@ import {
   isSubset,
   realValue,
   union,
+  UniversalSet,
 } from '../sets/sets';
 
 const isRealSym = (e: Expr) => !e.has(S.I);
@@ -723,4 +724,31 @@ export function notEmptyIn(setIn: SetExpr, x: Sym): SetExpr {
     out = union(out, s);
   }
   return out;
+}
+
+/**
+ * SymPy Boolean.as_set(): the set of real values of the one free symbol
+ * for which a relation or a boolean combination of relations holds
+ * (`(x > 0).as_set()` = Interval.open(0, oo)); true is UniversalSet and
+ * false EmptySet.
+ */
+export function asSet(eIn: ExprLike | boolean): SetExpr {
+  const e = typeof eIn === 'boolean' ? (eIn ? S.true : S.false) : sympify(eIn);
+  if (e.kind === 'Bool') return (e as unknown as { value: boolean }).value ? UniversalSet : EmptySet;
+  const syms = [...e.freeSymbols()];
+  if (syms.length !== 1) throw new NotImplementedError('as_set: only expressions with one free symbol are supported');
+  const x = syms[0]!;
+  const go = (b: Expr): SetExpr => {
+    if (b instanceof Rel) return solveset(b, x, Reals);
+    if (b.kind === 'Bool') return (b as unknown as { value: boolean }).value ? Reals : EmptySet;
+    if (b.kind === 'BoolOp') {
+      const op = (b as unknown as { op: string }).op;
+      const parts = b.args.map(go);
+      if (op === 'And') return intersection(...parts);
+      if (op === 'Or') return union(...parts);
+      if (op === 'Not') return complement(Reals, parts[0]!);
+    }
+    throw new NotImplementedError(`as_set: ${b.toString()}`);
+  };
+  return go(e);
 }

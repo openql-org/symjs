@@ -7,7 +7,7 @@
  */
 
 import type { ExprLike } from './nodes';
-import { BoolAtom, Expr, Rel, S, Special, impl } from './nodes';
+import { BoolAtom, Expr, Rational, Rel, S, Special, impl } from './nodes';
 import { compareKeys, sortKey } from '../printing/sortkey';
 
 export type BoolOpName = 'And' | 'Or' | 'Not' | 'Xor' | 'ITE';
@@ -85,6 +85,12 @@ function canonicalRhsIsNegOo(r: Rel): boolean {
   if (isNegOo(r.lhs) && !isOo(r.rhs)) return true;
   return false;
 }
+/** A boolean argument: the integers 1 and 0 are true and false (SymPy's boolean context). */
+const boolArg = (x0: ExprLike | boolean): Expr => {
+  const x = typeof x0 === 'boolean' ? (x0 ? S.true : S.false) : impl.sympify(x0);
+  if (x instanceof Rational && x.q === 1n && (x.p === 1n || x.p === 0n)) return x.p === 1n ? S.true : S.false;
+  return x;
+};
 const isTrue = (e: Expr) => e instanceof BoolAtom && e.value;
 const isFalse = (e: Expr) => e instanceof BoolAtom && !e.value;
 
@@ -97,7 +103,7 @@ function lattice(op: 'And' | 'Or', xs: readonly (ExprLike | boolean)[]): Expr {
     else out.set(x.key, x);
   };
   for (const x0 of xs) {
-    const x = typeof x0 === 'boolean' ? (x0 ? S.true : S.false) : impl.sympify(x0);
+    const x = boolArg(x0);
     if (x.key === zero.key) return zero;
     if (x.key === identity.key) continue;
     visit(x);
@@ -110,7 +116,7 @@ function lattice(op: 'And' | 'Or', xs: readonly (ExprLike | boolean)[]): Expr {
 export const and = (...xs: (ExprLike | boolean)[]): Expr => lattice('And', xs);
 export const or = (...xs: (ExprLike | boolean)[]): Expr => lattice('Or', xs);
 export function not(x0: ExprLike | boolean): Expr {
-  const x = typeof x0 === 'boolean' ? (x0 ? S.true : S.false) : impl.sympify(x0);
+  const x = boolArg(x0);
   if (isTrue(x)) return S.false;
   if (isFalse(x)) return S.true;
   if (x instanceof BoolOp && x.op === 'Not') return x.args[0]!;
@@ -126,7 +132,7 @@ export function xor(...xs: (ExprLike | boolean)[]): Expr {
   let parity = false;
   const counts = new Map<string, [Expr, number]>();
   for (const x0 of xs) {
-    const x = typeof x0 === 'boolean' ? (x0 ? S.true : S.false) : impl.sympify(x0);
+    const x = boolArg(x0);
     if (isTrue(x)) parity = !parity;
     else if (!isFalse(x)) {
       const c = counts.get(x.key);

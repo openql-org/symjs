@@ -41,6 +41,7 @@ export {
 export {
   solveset,
   solveUnivariateInequality,
+  asSet,
   solvePolyInequality,
   solveRationalInequalities,
   reduceInequalities,

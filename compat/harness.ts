@@ -14,6 +14,7 @@ import * as sj from '../packages/symjs/src';
 import { equivalent } from './equivalence';
 import { PORTS } from './ports';
 import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../packages/symjs/src';
+import { Fn } from '../packages/symjs/src/core/nodes';
 
 // ---------------------------------------------------------------------------
 // Python-like containers for formatting results
@@ -63,6 +64,10 @@ export class JsPred {
         return e instanceof sj.Rational && e.isInteger;
       case 'is_Rational':
         return e instanceof sj.Rational;
+      case 'is_rational':
+        return sj.ask(sj.Q.rational(e)) === true;
+      case 'is_commutative':
+        return e.isCommutative;
       case 'is_Mul':
         return e instanceof sj.Mul;
       case 'is_Add':
@@ -138,6 +143,8 @@ export function fmt(v: unknown): string {
   if (v instanceof JsSet) return v.items.length === 0 ? 'set()' : `{${v.items.map(fmt).join(', ')}}`;
   if (v instanceof UFnClass || v instanceof FnClass) return v.name;
   if (v instanceof TypeRef) return `<class 'sympy.${v.name}'>`;
+  // library objects with their own SymPy-like str (Cycle, PropKB, ...)
+  if (typeof v === 'object' && (v as { toString: unknown }).toString !== Object.prototype.toString) return String(v);
   throw new Unsupported(`cannot format ${String(v)}`);
 }
 
@@ -196,12 +203,20 @@ export function matches(v: unknown, expected: string): boolean {
   const got = fmt(v);
   if (got === expected) return true;
   if (got.includes('{') && normalizeSets(got) === normalizeSets(expected)) return true;
+  const listPrefix = "defaultdict(<class 'list'>, ";
+  if (expected.startsWith(listPrefix)) return matches(v, expected.slice(listPrefix.length, -1));
   const ddPrefix = "defaultdict(<class 'int'>, ";
   if (v instanceof JsDefaultDict && expected.startsWith(ddPrefix)) return matches(new JsDict(v.entries), expected.slice(ddPrefix.length, -1));
   if ((v instanceof JsDict || v instanceof JsSet) && expected.startsWith('{')) {
     const a = topLevelItems(got).sort();
     const b = topLevelItems(expected).sort();
     return a.length === b.length && a.every((x, i) => x === b[i]);
+  }
+  if (v instanceof JsList || v instanceof JsTuple) {
+    // JavaScript has only arrays: a Python tuple and list of the same items agree
+    const brackets = (t: string) => t.replace(/,\)/g, ')').replace(/\(/g, '[').replace(/\)/g, ']');
+    if (brackets(got) === brackets(expected)) return true;
+    if (normalizeSets(brackets(got)) === normalizeSets(brackets(expected))) return true;
   }
   return false;
 }
@@ -224,6 +239,7 @@ const REL_OPS: Record<string, sj.RelOp> = {
 const SPECIAL_NAMES = ['bernoulli', 'euler', 'genocchi', 'bell', 'fibonacci', 'lucas', 'tribonacci', 'partition', 'totient', 'reduced_totient', 'mobius', 'divisor_sigma', 'primenu', 'primeomega', 'primepi', 'multigamma', 'factorial', 'factorial2', 'binomial', 'ff', 'rf', 'subfactorial', 'harmonic', 'catalan', 'gamma', 'loggamma', 'polygamma', 'lowergamma', 'uppergamma', 'beta', 'zeta', 'erf', 'erfc', 'erfi', 'erf2', 'erfinv', 'erfcinv', 'erf2inv', 'Ei', 'li', 'Li', 'Si', 'Ci', 'Shi', 'Chi', 'expint', 'fresnels', 'fresnelc', 'sign', 'floor', 'ceiling', 'atan2', 'Min', 'Max'] as const;
 
 const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
+  Mod: ([a, b]) => sj.Mod(a!, b!),
   ...Object.fromEntries(SPECIAL_NAMES.map((n) => [n, (args: Expr[]) => sj.fn(n, args)])),
   RisingFactorial: (args) => sj.fn('rf', args),
   Rem: ([p, q]) => sj.Rem(p!, q!),
@@ -384,6 +400,11 @@ export function deserialize(tree: Tree): unknown {
       return sj.rel(op, a!, b!);
     }
     case 'Fn': {
+      // a factorial too large to evaluate was built with evaluate=False in SymPy
+      if (tree['name'] === 'factorial') {
+        const a = deserialize((tree['args'] as Tree[])[0]!);
+        if (a instanceof sj.Rational && a.q === 1n && a.p > 100000n) return new Fn('factorial', [a]);
+      }
       const f = FUNCTIONS[tree['name'] as string];
       if (!f) throw new Unsupported(`function ${tree['name']}`);
       return f((tree['args'] as Tree[]).map((a) => deserialize(a)) as Expr[]);
@@ -447,6 +468,56 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'QKeys':
       return sj.Q;
+    case 'Sieve':
+      return new sj.Sieve();
+    case 'Permutation':
+      return new sj.Permutation(tree['array'] as number[]);
+    case 'Cycle': {
+      let c = new sj.Cycle();
+      for (const cyc of tree['cycles'] as number[][]) c = c.call(...cyc) as sj.Cycle;
+      const size = tree['size'] as number;
+      if (size > c.size) c = c.call(size - 1) as sj.Cycle;
+      return c;
+    }
+    case 'NDimArray': {
+      const cls = (sj as unknown as Record<string, (flat: unknown, shape: number[]) => unknown>)[tree['cls'] as string];
+      if (!cls) throw new Unsupported(`array class ${tree['cls']}`);
+      return cls((tree['flat'] as Tree[]).map((x) => deserialize(x)), tree['shape'] as number[]);
+    }
+    case 'Idx': {
+      const label = deserialize(tree['label'] as Tree) as Expr;
+      const lo = tree['lower'] as Tree | null;
+      const hi = tree['upper'] as Tree | null;
+      return lo === null || hi === null ? sj.Idx(label) : sj.Idx(label, [deserialize(lo) as Expr, deserialize(hi) as Expr]);
+    }
+    case 'PropKB': {
+      const kb = new sj.PropKB();
+      for (const c of tree['clauses'] as Tree[]) kb.tell(deserialize(c) as Expr);
+      return kb;
+    }
+    case 'Logic': {
+      const xs = (tree['args'] as Tree[]).map((x) => deserialize(x) as Expr);
+      switch (tree['op']) {
+        case 'Not':
+          return sj.not(xs[0]!);
+        case 'Xor':
+          return sj.Xor(...xs);
+        case 'Implies':
+          return sj.Implies(...xs);
+        case 'Equivalent':
+          return sj.Equivalent(...xs);
+        case 'Nand':
+          return sj.Nand(...xs, { evaluate: false });
+        case 'Nor':
+          return sj.Nor(...xs, { evaluate: false });
+        case 'Xnor':
+          return sj.Xnor(...xs, { evaluate: false });
+        case 'ITE':
+          return sj.ITE(xs[0]!, xs[1]!, xs[2]!, { evaluate: false });
+        default:
+          throw new Unsupported(`logic ${tree['op']}`);
+      }
+    }
     case 'Pred': {
       const p = sj.Q[tree['name'] as string];
       if (!p) throw new Unsupported(`predicate ${tree['name']}`);
@@ -2324,6 +2395,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.equals': (args, kw, self) => {
     noKw(kw);
     if (self instanceof Matrix) return (self as Matrix).equals(args[0] as Matrix);
+    if (self instanceof sj.BoolOp || self instanceof sj.AppliedPredicate || self instanceof sj.BoolAtom) return none(sj.booleanEquals(self, asExpr(args[0])));
     const d = sj.simplify(sj.sub(asExpr(self), asExpr(args[0])));
     return d instanceof sj.Rational && d.isZero ? true : d.isNumber ? false : null;
   },
@@ -2584,6 +2656,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.atoms': (args, kw, self) => {
     noKw(kw);
+    if (self instanceof sj.Permutation) return new JsSet([...self.atoms()].map((i) => sj.Rational.of(BigInt(i))));
     const preds = args.map((a) => {
       if (a instanceof FnClass || a instanceof TypeRef || a instanceof UFnClass) {
         const q = toQuery(a);
@@ -3275,6 +3348,19 @@ export interface Case {
   assume?: Tree[];
 }
 
+ADAPTERS['Indexed'] = (args, kw) => {
+  noKw(kw);
+  const [b, ...ix] = args;
+  const label = typeof b === 'string' ? sj.symbol(b) : b instanceof sj.IndexedBase ? b.label : asExpr(b);
+  return new sj.Indexed([label, ...ix.map(asExpr)]);
+};
+ADAPTERS['.sort'] = (args, kw, self) => {
+  if (!(self instanceof JsList || self instanceof JsTuple) || args.length || Object.keys(kw).length) throw new Unsupported('.sort');
+  return null;
+};
+
+ADAPTERS['.as_set'] = (_args, kw, self) => (noKw(kw), sj.asSet(self as Expr | boolean));
+
 // assumptions: an AssumptionsContext (global_assumptions) and Q.<predicate>(...)
 for (const m of ['add', 'remove', 'clear'] as const) {
   const prev = ADAPTERS[`.${m}`];
@@ -3298,6 +3384,120 @@ for (const name of Object.keys(sj.Q)) {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Generic adapter: SymPy name -> camelCase export or method (snake_case
+// keywords become an options object), for the modules whose API follows the
+// naming policy directly (logic, combinatorics, utilities, tensor, ntheory).
+// ---------------------------------------------------------------------------
+
+/** Categories whose integer arguments are JS numbers (indices, sizes, sequences). */
+const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor']);
+
+const camel = (n: string): string => (/^[A-Z]/.test(n) ? n : n.replace(/_([a-z0-9])/g, (_m, ch: string) => ch.toUpperCase()));
+
+/** A deserialized argument as the JS value the API takes. */
+function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
+  if ((numbers || inArray) && v instanceof sj.Rational && v.q === 1n) {
+    const n = Number(v.p);
+    return Number.isSafeInteger(n) ? n : v.p;
+  }
+  if (v instanceof JsList || v instanceof JsTuple) return v.items.map((x) => toJs(x, numbers, true));
+  if (v instanceof JsSet) return new Set(v.items.map((x) => toJs(x, numbers, true)));
+  if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [toJs(k, numbers, true), toJs(x, numbers, true)]));
+  if (v instanceof JsLambda) return (...xs: unknown[]) => v.call(...xs.map((x) => (typeof x === 'number' ? sj.Rational.of(BigInt(x)) : x)) as Expr[]);
+  if (v instanceof JsPred) return (e: Expr) => v.test(e);
+  return v;
+}
+
+/** A JS result as the value the formatter compares (generators are materialized). */
+function fromJs(v: unknown): unknown {
+  if (v !== null && typeof v === 'object' && typeof (v as { next?: unknown }).next === 'function' && typeof (v as { [Symbol.iterator]?: unknown })[Symbol.iterator] === 'function') {
+    return new JsList([...(v as Iterable<unknown>)].map(fromJs));
+  }
+  if (Array.isArray(v)) return new JsList(v.map(fromJs));
+  if (v instanceof Map && !(v instanceof JsDict)) return new JsDict([...v].map(([k, x]) => [keyFromJs(k), fromJs(x)]));
+  if (v instanceof Set) return new JsSet([...v].map(fromJs));
+  if (sj.isNoMatch(v) || sj.isUnsolved(v) || v === 'unknown') return null;
+  return v;
+}
+
+/** A dict key: arrays are Python tuples. */
+const keyFromJs = (k: unknown): unknown => (Array.isArray(k) ? new JsTuple(k.map(keyFromJs)) : fromJs(k));
+
+/** The parameter names of a JS function (from its source). */
+function paramNames(f: (...a: unknown[]) => unknown): string[] {
+  const src = Function.prototype.toString.call(f);
+  const m = /^[^(]*\(([^)]*)\)/.exec(src);
+  if (!m) return [];
+  // parameters copied to locals are named xIn (no-param-reassign)
+  return m[1]!.split(',').map((p) => p.trim().replace(/^\.\.\./, '').split(/[=\s:]/)[0]!.replace(/In$/, '')).filter(Boolean);
+}
+
+/** Positional arguments and keywords: a keyword naming a parameter goes to its position, the rest form an options object. */
+function placeArgs(f: (...a: unknown[]) => unknown, args: unknown[], kw: Record<string, unknown>, conv: (x: unknown) => unknown): unknown[] {
+  const out = args.map(conv);
+  const names = paramNames(f);
+  const opts: Record<string, unknown> = {};
+  for (const [k, x] of Object.entries(kw)) {
+    const i = names.indexOf(camel(k));
+    if (i >= 0 && i >= args.length && !/^(opts|options)$/.test(names[i]!)) out[i] = conv(x);
+    else opts[camel(k)] = conv(x);
+  }
+  if (Object.keys(opts).length) {
+    // the options object goes to the parameter named opts/options, else last
+    const k = names.findIndex((n) => /^(opts|options)$/.test(n));
+    if (k >= out.length) out[k] = opts;
+    else out.push(opts);
+  }
+  for (let i = 0; i < out.length; i++) if (!(i in out)) out[i] = undefined;
+  return out;
+}
+
+function autoAdapter(c: Case): Adapter | undefined {
+  const numbers = NUMERIC_CATEGORIES.has(c.category);
+  const conv = (x: unknown): unknown => toJs(x, numbers);
+  if (c.fn.startsWith('.')) {
+    const name = camel(c.fn.slice(1));
+    return (args, kw, self0) => {
+      // a static method called on the class (Permutation.unrank_lex, ...)
+      const self = self0 instanceof TypeRef ? (sj as unknown as Record<string, unknown>)[self0.name] : self0;
+      if (self === null || (typeof self !== 'object' && typeof self !== 'function')) throw new Unsupported(`no adapter for ${c.fn}`);
+      let m = (self as Record<string, unknown>)[name];
+      let thisArg: unknown = self;
+      // a classmethod called on an instance (p.unrank_lex(...))
+      if (m === undefined && typeof self === 'object') {
+        thisArg = (self as object).constructor;
+        m = (thisArg as Record<string, unknown>)[name];
+      }
+      if (typeof m === 'function') return fromJs((m as (...a: unknown[]) => unknown).call(thisArg, ...placeArgs(m as (...a: unknown[]) => unknown, args, kw, conv)));
+      if (m === undefined || args.length) throw new Unsupported(`no adapter for ${c.fn}`);
+      return fromJs(m);
+    };
+  }
+  const f = (sj as unknown as Record<string, unknown>)[camel(c.fn)] ?? (sj as unknown as Record<string, unknown>)[c.fn];
+  if (typeof f !== 'function') return undefined;
+  const isClass = /^class[\s{]/.test(Function.prototype.toString.call(f));
+  return (args, kw) => {
+    const a = placeArgs(f as (...a: unknown[]) => unknown, args, kw, conv);
+    return fromJs(isClass ? new (f as new (...a: unknown[]) => unknown)(...a) : (f as (...a: unknown[]) => unknown)(...a));
+  };
+}
+
+/** The SymPy API name has a symjs counterpart: an adapter, a camelCase export, or a method or property of the owner class. */
+export function hasCounterpart(a: { name: string; owner?: string }): boolean {
+  if (ADAPTERS[a.name]) return true;
+  const lib = sj as unknown as Record<string, unknown>;
+  // SymPy's true and false are S.true and S.false (reserved words in JavaScript)
+  if (a.name === 'true' || a.name === 'false') return true;
+  if (!a.name.startsWith('.')) return lib[camel(a.name)] !== undefined || lib[a.name] !== undefined;
+  const m = camel(a.name.slice(1));
+  // a classmethod ported as a function (MatrixExpr.from_index_summation -> fromIndexSummation)
+  if (lib[m] !== undefined && typeof lib[m] === 'function' && a.owner === 'MatrixExpr') return true;
+  const owners: Record<string, unknown> = { Expr, Matrix, ImmutableDenseNDimArray: lib['ImmutableDenseNDimArray'], Permutation: lib['Permutation'], MatrixExpr: lib['MatrixExpr'] };
+  const cls = owners[a.owner ?? ''] as { prototype?: object } | undefined;
+  return cls?.prototype !== undefined && (m in cls.prototype || a.name.slice(1) in cls.prototype || m in (cls as object));
+}
+
 export type Outcome = { status: 'pass' } | { status: 'equivalent'; got: string } | { status: 'fail'; got: string } | { status: 'unsupported'; reason: string } | {
   status: 'error';
   reason: string;
@@ -3308,20 +3508,29 @@ export function runCase(c: Case): Outcome {
   if (port) {
     // a doctest that needs Python code (classes, lambdas) runs as its JavaScript translation
     try {
-      const v = port();
+      const v = fromJs(port());
       return matches(v, c.expected) ? { status: 'pass' } : { status: 'fail', got: fmt(v) };
     } catch (e) {
       return { status: 'error', reason: e instanceof Error ? e.message : String(e) };
     }
   }
   if (c.unsupportedArg) return { status: 'unsupported', reason: `argument type ${c.unsupportedArg}` };
-  const adapter = ADAPTERS[c.fn];
+  const adapter = ADAPTERS[c.fn] ?? autoAdapter(c);
   if (!adapter) return { status: 'unsupported', reason: `no adapter for ${c.fn}` };
   try {
     const args = (c.args ?? []).map(deserialize);
     const kwargs = Object.fromEntries(Object.entries(c.kwargs ?? {}).map(([k, v]) => [k, deserialize(v)]));
     const self = c.self ? deserialize(c.self) : undefined;
-    const v = c.assume ? sj.assuming(c.assume.map((t) => deserialize(t) as Expr), () => adapter(args, kwargs, self)) : adapter(args, kwargs, self);
+    const call = (a: Adapter): unknown => (c.assume ? sj.assuming(c.assume.map((t) => deserialize(t) as Expr), () => a(args, kwargs, self)) : a(args, kwargs, self));
+    let v: unknown;
+    try {
+      v = call(adapter);
+    } catch (e) {
+      // an adapter written for another owner of the same method name (Poly.add, ...): try the generic one
+      const auto = adapter === ADAPTERS[c.fn] ? autoAdapter(c) : undefined;
+      if (!auto || !(e instanceof Unsupported || e instanceof TypeError)) throw e;
+      v = call(auto);
+    }
     if (matches(v, c.expected)) return { status: 'pass' };
     const got = fmt(v);
     // the same capability with a different printed form counts as compatible

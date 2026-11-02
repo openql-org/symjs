@@ -9,6 +9,8 @@
 // every entry point brings the core with its registrations
 import './core';
 
+export { Mod } from './functions/mod';
+
 export {
   factorial,
   factorial2,

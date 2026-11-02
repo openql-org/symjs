@@ -35804,7 +35804,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_878",
+         "name": "Dummy_874",
          "index": 0,
          "assume": {
           "real": true
@@ -124209,8 +124209,8 @@
   {
    "fn": ".equals",
    "self": {
-    "t": "Fn",
-    "name": "Implies",
+    "t": "Logic",
+    "op": "Implies",
     "args": [
      {
       "t": "Symbol",
@@ -124226,12 +124226,12 @@
    },
    "args": [
     {
-     "t": "Fn",
-     "name": "Implies",
+     "t": "Logic",
+     "op": "Implies",
      "args": [
       {
-       "t": "Fn",
-       "name": "Not",
+       "t": "Logic",
+       "op": "Not",
        "args": [
         {
          "t": "Symbol",
@@ -124241,8 +124241,8 @@
        ]
       },
       {
-       "t": "Fn",
-       "name": "Not",
+       "t": "Logic",
+       "op": "Not",
        "args": [
         {
          "t": "Symbol",
@@ -124263,8 +124263,8 @@
   {
    "fn": ".equals",
    "self": {
-    "t": "Fn",
-    "name": "Not",
+    "t": "Logic",
+    "op": "Not",
     "args": [
      {
       "t": "BoolOp",
@@ -124295,8 +124295,8 @@
      "op": "And",
      "args": [
       {
-       "t": "Fn",
-       "name": "Not",
+       "t": "Logic",
+       "op": "Not",
        "args": [
         {
          "t": "Symbol",
@@ -124306,8 +124306,8 @@
        ]
       },
       {
-       "t": "Fn",
-       "name": "Not",
+       "t": "Logic",
+       "op": "Not",
        "args": [
         {
          "t": "Symbol",
@@ -124317,8 +124317,8 @@
        ]
       },
       {
-       "t": "Fn",
-       "name": "Not",
+       "t": "Logic",
+       "op": "Not",
        "args": [
         {
          "t": "Symbol",
@@ -124339,8 +124339,8 @@
   {
    "fn": ".equals",
    "self": {
-    "t": "Fn",
-    "name": "Not",
+    "t": "Logic",
+    "op": "Not",
     "args": [
      {
       "t": "BoolOp",
@@ -124352,8 +124352,8 @@
         "assume": {}
        },
        {
-        "t": "Fn",
-        "name": "Not",
+        "t": "Logic",
+        "op": "Not",
         "args": [
          {
           "t": "Symbol",
@@ -124377,8 +124377,8 @@
        "assume": {}
       },
       {
-       "t": "Fn",
-       "name": "Not",
+       "t": "Logic",
+       "op": "Not",
        "args": [
         {
          "t": "Symbol",
@@ -125011,8 +125011,8 @@
        "op": "Or",
        "args": [
         {
-         "t": "Fn",
-         "name": "Not",
+         "t": "Logic",
+         "op": "Not",
          "args": [
           {
            "t": "Symbol",
@@ -125022,8 +125022,8 @@
          ]
         },
         {
-         "t": "Fn",
-         "name": "Not",
+         "t": "Logic",
+         "op": "Not",
          "args": [
           {
            "t": "Symbol",
@@ -126381,8 +126381,8 @@
   {
    "fn": ".subs",
    "self": {
-    "t": "Fn",
-    "name": "Xor",
+    "t": "Logic",
+    "op": "Xor",
     "args": [
      {
       "t": "Symbol",
@@ -126427,8 +126427,8 @@
        "assume": {}
       },
       {
-       "t": "Fn",
-       "name": "Not",
+       "t": "Logic",
+       "op": "Not",
        "args": [
         {
          "t": "Symbol",
@@ -126449,8 +126449,8 @@
        "assume": {}
       },
       {
-       "t": "Fn",
-       "name": "Not",
+       "t": "Logic",
+       "op": "Not",
        "args": [
         {
          "t": "Symbol",
@@ -126501,8 +126501,8 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Not",
+         "t": "Logic",
+         "op": "Not",
          "args": [
           {
            "t": "Symbol",
@@ -126523,8 +126523,8 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Not",
+         "t": "Logic",
+         "op": "Not",
          "args": [
           {
            "t": "Symbol",
@@ -126567,8 +126567,8 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Not",
+         "t": "Logic",
+         "op": "Not",
          "args": [
           {
            "t": "Symbol",
@@ -126589,8 +126589,8 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Not",
+         "t": "Logic",
+         "op": "Not",
          "args": [
           {
            "t": "Symbol",
@@ -126628,8 +126628,8 @@
        "assume": {}
       },
       {
-       "t": "Fn",
-       "name": "Xor",
+       "t": "Logic",
+       "op": "Xor",
        "args": [
         {
          "t": "Symbol",
@@ -126660,8 +126660,8 @@
        "assume": {}
       },
       {
-       "t": "Fn",
-       "name": "Xor",
+       "t": "Logic",
+       "op": "Xor",
        "args": [
         {
          "t": "Symbol",
@@ -126701,8 +126701,8 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Not",
+         "t": "Logic",
+         "op": "Not",
          "args": [
           {
            "t": "Symbol",
@@ -126712,8 +126712,8 @@
          ]
         },
         {
-         "t": "Fn",
-         "name": "Not",
+         "t": "Logic",
+         "op": "Not",
          "args": [
           {
            "t": "Symbol",
@@ -126729,8 +126729,8 @@
        "op": "And",
        "args": [
         {
-         "t": "Fn",
-         "name": "Not",
+         "t": "Logic",
+         "op": "Not",
          "args": [
           {
            "t": "Symbol",
@@ -126740,8 +126740,8 @@
          ]
         },
         {
-         "t": "Fn",
-         "name": "Not",
+         "t": "Logic",
+         "op": "Not",
          "args": [
           {
            "t": "Symbol",
@@ -126751,8 +126751,8 @@
          ]
         },
         {
-         "t": "Fn",
-         "name": "Not",
+         "t": "Logic",
+         "op": "Not",
          "args": [
           {
            "t": "Symbol",
@@ -126817,8 +126817,8 @@
        "assume": {}
       },
       {
-       "t": "Fn",
-       "name": "Not",
+       "t": "Logic",
+       "op": "Not",
        "args": [
         {
          "t": "BoolOp",
@@ -126880,8 +126880,8 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Not",
+         "t": "Logic",
+         "op": "Not",
          "args": [
           {
            "t": "Symbol",
@@ -126991,8 +126991,8 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Not",
+         "t": "Logic",
+         "op": "Not",
          "args": [
           {
            "t": "Symbol",
@@ -127013,8 +127013,8 @@
          "assume": {}
         },
         {
-         "t": "Fn",
-         "name": "Not",
+         "t": "Logic",
+         "op": "Not",
          "args": [
           {
            "t": "Symbol",
@@ -127042,8 +127042,8 @@
    "fn": "to_nnf",
    "args": [
     {
-     "t": "Fn",
-     "name": "Not",
+     "t": "Logic",
+     "op": "Not",
      "args": [
       {
        "t": "BoolOp",
@@ -127070,8 +127070,8 @@
          "op": "And",
          "args": [
           {
-           "t": "Fn",
-           "name": "Not",
+           "t": "Logic",
+           "op": "Not",
            "args": [
             {
              "t": "Symbol",
@@ -127081,8 +127081,8 @@
            ]
           },
           {
-           "t": "Fn",
-           "name": "Not",
+           "t": "Logic",
+           "op": "Not",
            "args": [
             {
              "t": "Symbol",
@@ -127108,12 +127108,12 @@
    "fn": "to_nnf",
    "args": [
     {
-     "t": "Fn",
-     "name": "Equivalent",
+     "t": "Logic",
+     "op": "Equivalent",
      "args": [
       {
-       "t": "Fn",
-       "name": "Implies",
+       "t": "Logic",
+       "op": "Implies",
        "args": [
         {
          "t": "Symbol",
@@ -127128,8 +127128,8 @@
        ]
       },
       {
-       "t": "Fn",
-       "name": "Implies",
+       "t": "Logic",
+       "op": "Implies",
        "args": [
         {
          "t": "Symbol",
@@ -127154,7 +127154,52 @@
   },
   {
    "fn": ".tell",
-   "unsupportedArg": "PropKB",
+   "self": {
+    "t": "PropKB",
+    "clauses": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Logic",
+      "op": "Not",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "BoolOp",
+     "op": "And",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Logic",
+       "op": "Not",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "logic",
    "module": "sympy.logic.inference",
    "src": "l.tell(x & ~y)",
@@ -127162,7 +127207,35 @@
   },
   {
    "fn": ".ask",
-   "unsupportedArg": "PropKB",
+   "self": {
+    "t": "PropKB",
+    "clauses": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Logic",
+      "op": "Not",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "logic",
    "module": "sympy.logic.inference",
    "src": "l.ask(x)",
@@ -127170,7 +127243,35 @@
   },
   {
    "fn": ".ask",
-   "unsupportedArg": "PropKB",
+   "self": {
+    "t": "PropKB",
+    "clauses": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Logic",
+      "op": "Not",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "y",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "logic",
    "module": "sympy.logic.inference",
    "src": "l.ask(y)",
@@ -127178,7 +127279,46 @@
   },
   {
    "fn": ".tell",
-   "unsupportedArg": "PropKB",
+   "self": {
+    "t": "PropKB",
+    "clauses": [
+     {
+      "t": "BoolOp",
+      "op": "Or",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "BoolOp",
+     "op": "Or",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "logic",
    "module": "sympy.logic.inference",
    "src": "l.tell(x | y)",
@@ -127186,7 +127326,29 @@
   },
   {
    "fn": ".retract",
-   "unsupportedArg": "PropKB",
+   "self": {
+    "t": "PropKB",
+    "clauses": []
+   },
+   "args": [
+    {
+     "t": "BoolOp",
+     "op": "Or",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "logic",
    "module": "sympy.logic.inference",
    "src": "l.retract(x | y)",
@@ -127194,7 +127356,46 @@
   },
   {
    "fn": ".tell",
-   "unsupportedArg": "PropKB",
+   "self": {
+    "t": "PropKB",
+    "clauses": [
+     {
+      "t": "BoolOp",
+      "op": "Or",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "BoolOp",
+     "op": "Or",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "logic",
    "module": "sympy.logic.inference",
    "src": "l.tell(x | y)",
@@ -127202,7 +127403,40 @@
   },
   {
    "fn": ".tell",
-   "unsupportedArg": "PropKB",
+   "self": {
+    "t": "PropKB",
+    "clauses": [
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     },
+     {
+      "t": "BoolOp",
+      "op": "Or",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "y",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "logic",
    "module": "sympy.logic.inference",
    "src": "l.tell(y)",
@@ -127221,8 +127455,8 @@
        "assume": {}
       },
       {
-       "t": "Fn",
-       "name": "Not",
+       "t": "Logic",
+       "op": "Not",
        "args": [
         {
          "t": "Symbol",
@@ -127253,8 +127487,8 @@
        "assume": {}
       },
       {
-       "t": "Fn",
-       "name": "Not",
+       "t": "Logic",
+       "op": "Not",
        "args": [
         {
          "t": "Symbol",
@@ -127288,7 +127522,66 @@
   },
   {
    "fn": ".applyfunc",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "self": {
+    "t": "NDimArray",
+    "cls": "ImmutableDenseNDimArray",
+    "shape": [
+     2,
+     2
+    ],
+    "flat": [
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "JsLambda",
+     "params": [
+      {
+       "t": "Dummy",
+       "name": "i",
+       "index": 0,
+       "assume": {}
+      }
+     ],
+     "body": {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Dummy",
+        "name": "i",
+        "index": 0,
+        "assume": {}
+       }
+      ]
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.ndim_array",
    "src": "m.applyfunc(lambda i: 2*i)",
@@ -127296,7 +127589,54 @@
   },
   {
    "fn": ".diff",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "self": {
+    "t": "NDimArray",
+    "cls": "ImmutableDenseNDimArray",
+    "shape": [
+     2,
+     2
+    ],
+    "flat": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     },
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.ndim_array",
    "src": "M.diff(x)",
@@ -127304,7 +127644,5421 @@
   },
   {
    "fn": ".rank",
-   "unsupportedArg": "MutableDenseNDimArray",
+   "self": {
+    "t": "NDimArray",
+    "cls": "MutableDenseNDimArray",
+    "shape": [
+     3,
+     4,
+     5,
+     6,
+     3
+    ],
+    "flat": [
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.ndim_array",
    "src": "a.rank()",
@@ -127489,7 +133243,70 @@
   },
   {
    "fn": "permutedims",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "args": [
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2,
+      3
+     ],
+     "flat": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "z",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "t",
+       "assume": {}
+      },
+      {
+       "t": "Fn",
+       "name": "sin",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.arrayop",
    "src": "permutedims(a, (1, 0))",
@@ -127497,7 +133314,55 @@
   },
   {
    "fn": "transpose",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "args": [
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2,
+      3
+     ],
+     "flat": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "z",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "t",
+       "assume": {}
+      },
+      {
+       "t": "Fn",
+       "name": "sin",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.arrayop",
    "src": "transpose(a)",
@@ -127505,7 +133370,80 @@
   },
   {
    "fn": "permutedims",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "args": [
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2,
+      2,
+      2
+     ],
+     "flat": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "6",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.arrayop",
    "src": "permutedims(b, (2, 1, 0))",
@@ -127513,7 +133451,80 @@
   },
   {
    "fn": "permutedims",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "args": [
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2,
+      2,
+      2
+     ],
+     "flat": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "6",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.arrayop",
    "src": "permutedims(b, (1, 2, 0))",
@@ -127521,7 +133532,69 @@
   },
   {
    "fn": "permutedims",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "args": [
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2,
+      2,
+      2
+     ],
+     "flat": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "6",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {
+    "index_order_old": {
+     "t": "Str",
+     "v": "cba"
+    },
+    "index_order_new": {
+     "t": "Str",
+     "v": "abc"
+    }
+   },
    "category": "tensor",
    "module": "sympy.tensor.array.arrayop",
    "src": "permutedims(b, index_order_old=\"cba\", index_order_new=\"abc\")",
@@ -127529,7 +133602,69 @@
   },
   {
    "fn": "permutedims",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "args": [
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2,
+      2,
+      2
+     ],
+     "flat": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "6",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {
+    "index_order_old": {
+     "t": "Str",
+     "v": "cab"
+    },
+    "index_order_new": {
+     "t": "Str",
+     "v": "abc"
+    }
+   },
    "category": "tensor",
    "module": "sympy.tensor.array.arrayop",
    "src": "permutedims(b, index_order_old=\"cab\", index_order_new=\"abc\")",
@@ -127537,7 +133672,68 @@
   },
   {
    "fn": "permutedims",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "args": [
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2,
+      2,
+      2
+     ],
+     "flat": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "6",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Permutation",
+     "array": [
+      1,
+      2,
+      0
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.arrayop",
    "src": "permutedims(b, Permutation([1, 2, 0]))",
@@ -127630,7 +133826,125 @@
   },
   {
    "fn": "tensorcontraction",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "args": [
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      3,
+      2,
+      3
+     ],
+     "flat": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "6",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "9",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "11",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "12",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "13",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "14",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "15",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "16",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "17",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.arrayop",
    "src": "tensorcontraction(A, (0, 2))",
@@ -127638,7 +133952,276 @@
   },
   {
    "fn": "tensorcontraction",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "args": [
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2,
+      2,
+      2,
+      2
+     ],
+     "flat": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "a",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "e",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "a",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "f",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "a",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "g",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "a",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "h",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "b",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "e",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "b",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "f",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "b",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "g",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "b",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "h",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "c",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "e",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "c",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "f",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "c",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "g",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "c",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "h",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "d",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "e",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "d",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "f",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "d",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "g",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "d",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "h",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.arrayop",
    "src": "tensorcontraction(p, (1, 2))",
@@ -127790,7 +134373,125 @@
   },
   {
    "fn": "tensordiagonal",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "args": [
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      3,
+      2,
+      3
+     ],
+     "flat": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "6",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "9",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "11",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "12",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "13",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "14",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "15",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "16",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "17",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.arrayop",
    "src": "tensordiagonal(A, (0, 2))",
@@ -127798,7 +134499,58 @@
   },
   {
    "fn": "tensorproduct",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "args": [
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2,
+      2
+     ],
+     "flat": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2
+     ],
+     "flat": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.arrayop",
    "src": "tensorproduct(A, B)",
@@ -127806,7 +134558,44 @@
   },
   {
    "fn": "tensorproduct",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "args": [
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2,
+      2
+     ],
+     "flat": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.arrayop",
    "src": "tensorproduct(A, x)",
@@ -127814,7 +134603,77 @@
   },
   {
    "fn": "tensorproduct",
-   "unsupportedArg": "ImmutableDenseNDimArray",
+   "args": [
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2,
+      2
+     ],
+     "flat": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2
+     ],
+     "flat": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2
+     ],
+     "flat": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.arrayop",
    "src": "tensorproduct(A, B, B)",
@@ -127822,7 +134681,115 @@
   },
   {
    "fn": "get_indices",
-   "unsupportedArg": "Idx",
+   "args": [
+    {
+     "t": "Indexed",
+     "base": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     },
+     "indices": [
+      {
+       "t": "Idx",
+       "label": {
+        "t": "Symbol",
+        "name": "i",
+        "assume": {
+         "integer": true
+        }
+       },
+       "lower": {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       "upper": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {
+           "integer": true
+          }
+         }
+        ]
+       }
+      },
+      {
+       "t": "Idx",
+       "label": {
+        "t": "Symbol",
+        "name": "j",
+        "assume": {
+         "integer": true
+        }
+       },
+       "lower": {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       "upper": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {
+           "integer": true
+          }
+         }
+        ]
+       }
+      },
+      {
+       "t": "Idx",
+       "label": {
+        "t": "Symbol",
+        "name": "j",
+        "assume": {
+         "integer": true
+        }
+       },
+       "lower": {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       "upper": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {
+           "integer": true
+          }
+         }
+        ]
+       }
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.indexed",
    "src": "get_indices(A[i, j, j])",
@@ -127830,7 +134797,115 @@
   },
   {
    "fn": "get_contraction_structure",
-   "unsupportedArg": "Idx",
+   "args": [
+    {
+     "t": "Indexed",
+     "base": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     },
+     "indices": [
+      {
+       "t": "Idx",
+       "label": {
+        "t": "Symbol",
+        "name": "i",
+        "assume": {
+         "integer": true
+        }
+       },
+       "lower": {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       "upper": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {
+           "integer": true
+          }
+         }
+        ]
+       }
+      },
+      {
+       "t": "Idx",
+       "label": {
+        "t": "Symbol",
+        "name": "j",
+        "assume": {
+         "integer": true
+        }
+       },
+       "lower": {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       "upper": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {
+           "integer": true
+          }
+         }
+        ]
+       }
+      },
+      {
+       "t": "Idx",
+       "label": {
+        "t": "Symbol",
+        "name": "j",
+        "assume": {
+         "integer": true
+        }
+       },
+       "lower": {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       "upper": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {
+           "integer": true
+          }
+         }
+        ]
+       }
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.indexed",
    "src": "get_contraction_structure(A[i, j, j])",
@@ -127838,7 +134913,37 @@
   },
   {
    "fn": "Indexed",
-   "unsupportedArg": "Idx",
+   "args": [
+    {
+     "t": "Str",
+     "v": "A"
+    },
+    {
+     "t": "Idx",
+     "label": {
+      "t": "Symbol",
+      "name": "i",
+      "assume": {
+       "integer": true
+      }
+     },
+     "lower": null,
+     "upper": null
+    },
+    {
+     "t": "Idx",
+     "label": {
+      "t": "Symbol",
+      "name": "j",
+      "assume": {
+       "integer": true
+      }
+     },
+     "lower": null,
+     "upper": null
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.indexed",
    "src": "Indexed('A', i, j)",
@@ -129251,7 +136356,17 @@
   },
   {
    "fn": ".extend",
-   "unsupportedArg": "Sieve",
+   "self": {
+    "t": "Sieve"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "30",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "ntheory",
    "module": "sympy.ntheory.generate",
    "src": "sieve.extend(30)",
@@ -129259,7 +136374,17 @@
   },
   {
    "fn": ".extend_to_no",
-   "unsupportedArg": "Sieve",
+   "self": {
+    "t": "Sieve"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "9",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "ntheory",
    "module": "sympy.ntheory.generate",
    "src": "sieve.extend_to_no(9)",
@@ -129267,7 +136392,17 @@
   },
   {
    "fn": ".search",
-   "unsupportedArg": "Sieve",
+   "self": {
+    "t": "Sieve"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "25",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "ntheory",
    "module": "sympy.ntheory.generate",
    "src": "sieve.search(25)",
@@ -129275,7 +136410,17 @@
   },
   {
    "fn": ".search",
-   "unsupportedArg": "Sieve",
+   "self": {
+    "t": "Sieve"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "23",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "ntheory",
    "module": "sympy.ntheory.generate",
    "src": "sieve.search(23)",
@@ -133280,7 +140425,22 @@
   },
   {
    "fn": ".apply",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     1,
+     2,
+     0
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.apply(x)",
@@ -133289,33 +140449,14 @@
   {
    "fn": ".list",
    "self": {
-    "t": "Dict",
-    "items": [
+    "t": "Cycle",
+    "cycles": [
      [
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "1"
-      }
+      1,
+      2
      ]
-    ]
+    ],
+    "size": 3
    },
    "args": [],
    "kwargs": {},
@@ -133327,57 +140468,14 @@
   {
    "fn": ".list",
    "self": {
-    "t": "Dict",
-    "items": [
+    "t": "Cycle",
+    "cycles": [
      [
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "3",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "3",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "4",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "4",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "1"
-      }
+      1,
+      2
      ]
-    ]
+    ],
+    "size": 5
    },
    "args": [],
    "kwargs": {},
@@ -133389,57 +140487,14 @@
   {
    "fn": ".list",
    "self": {
-    "t": "Dict",
-    "items": [
+    "t": "Cycle",
+    "cycles": [
      [
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "3",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "3",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "4",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "4",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "1"
-      }
+      1,
+      2
      ]
-    ]
+    ],
+    "size": 5
    },
    "args": [
     {
@@ -133457,57 +140512,14 @@
   {
    "fn": ".list",
    "self": {
-    "t": "Dict",
-    "items": [
+    "t": "Cycle",
+    "cycles": [
      [
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "3",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "3",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "4",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "4",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "1"
-      }
+      1,
+      2
      ]
-    ]
+    ],
+    "size": 5
    },
    "args": [
     {
@@ -133524,7 +140536,18 @@
   },
   {
    "fn": ".transpositions",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     2,
+     1,
+     4,
+     3
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "Perm(Cycle(1, 2)(3, 4).list()).transpositions()",
@@ -133598,57 +140621,18 @@
   {
    "fn": ".list",
    "self": {
-    "t": "Dict",
-    "items": [
+    "t": "Cycle",
+    "cycles": [
      [
-      {
-       "t": "Rational",
-       "p": "4",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "5",
-       "q": "1"
-      }
+      2,
+      3
      ],
      [
-      {
-       "t": "Rational",
-       "p": "5",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "4",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "3",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "3",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      }
+      4,
+      5
      ]
-    ]
+    ],
+    "size": 6
    },
    "args": [],
    "kwargs": {},
@@ -133660,57 +140644,18 @@
   {
    "fn": ".list",
    "self": {
-    "t": "Dict",
-    "items": [
+    "t": "Cycle",
+    "cycles": [
      [
-      {
-       "t": "Rational",
-       "p": "4",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "5",
-       "q": "1"
-      }
+      2,
+      3
      ],
      [
-      {
-       "t": "Rational",
-       "p": "5",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "4",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "3",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "3",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      }
+      4,
+      5
      ]
-    ]
+    ],
+    "size": 6
    },
    "args": [
     {
@@ -133728,45 +140673,14 @@
   {
    "fn": ".list",
    "self": {
-    "t": "Dict",
-    "items": [
+    "t": "Cycle",
+    "cycles": [
      [
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "1"
-      }
-     ],
-     [
-      {
-       "t": "Rational",
-       "p": "4",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "4",
-       "q": "1"
-      }
+      1,
+      2
      ]
-    ]
+    ],
+    "size": 5
    },
    "args": [
     {
@@ -133783,7 +140697,17 @@
   },
   {
    "fn": ".list",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     3,
+     1,
+     2
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "Permutation(1, 2)(2, 3).list()",
@@ -133791,7 +140715,17 @@
   },
   {
    "fn": ".list",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     2,
+     3,
+     1
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "Permutation([(1, 2), (2, 3)][::-1]).list()",
@@ -134056,7 +140990,19 @@
   },
   {
    "fn": ".transpositions",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     2,
+     1,
+     4,
+     5,
+     3
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "Permutation([[1, 2], [3, 4, 5]]).transpositions()",
@@ -134064,7 +141010,17 @@
   },
   {
    "fn": ".rank",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     1,
+     0,
+     2,
+     3
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.rank()",
@@ -134072,7 +141028,17 @@
   },
   {
    "fn": ".next_lex",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     1,
+     0,
+     2,
+     3
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.next_lex()",
@@ -134080,7 +141046,29 @@
   },
   {
    "fn": ".unrank_lex",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     1,
+     0,
+     2,
+     3
+    ]
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "1"
+    }
+   ],
+   "kwargs": {
+    "rank": {
+     "t": "Rational",
+     "p": "7",
+     "q": "1"
+    }
+   },
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.unrank_lex(p.size, rank=7)",
@@ -134321,7 +141309,17 @@
   },
   {
    "fn": ".order",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     2,
+     0,
+     3,
+     1
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.order()",
@@ -134329,7 +141327,18 @@
   },
   {
    "fn": ".ascents",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     4,
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.ascents()",
@@ -134337,7 +141346,19 @@
   },
   {
    "fn": ".atoms",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "Permutation([0, 1, 2, 3, 4, 5]).atoms()",
@@ -134345,7 +141366,19 @@
   },
   {
    "fn": ".atoms",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     1,
+     0,
+     3,
+     2,
+     5,
+     4
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "Permutation([[0, 1], [2, 3], [4, 5]]).atoms()",
@@ -134353,7 +141386,31 @@
   },
   {
    "fn": ".commutes_with",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     1,
+     4,
+     3,
+     0,
+     2,
+     5
+    ]
+   },
+   "args": [
+    {
+     "t": "Permutation",
+     "array": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "a.commutes_with(b)",
@@ -134361,7 +141418,31 @@
   },
   {
    "fn": ".commutes_with",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     1,
+     4,
+     3,
+     0,
+     2,
+     5
+    ]
+   },
+   "args": [
+    {
+     "t": "Permutation",
+     "array": [
+      2,
+      3,
+      5,
+      4,
+      1,
+      0
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "a.commutes_with(b)",
@@ -134369,7 +141450,18 @@
   },
   {
    "fn": ".descents",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     4,
+     0,
+     1,
+     3,
+     2
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.descents()",
@@ -134458,7 +141550,29 @@
   },
   {
    "fn": ".get_adjacency_distance",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     3,
+     1,
+     2,
+     4
+    ]
+   },
+   "args": [
+    {
+     "t": "Permutation",
+     "array": [
+      3,
+      2,
+      4,
+      0,
+      1
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.get_adjacency_distance(q)",
@@ -134466,7 +141580,29 @@
   },
   {
    "fn": ".get_adjacency_distance",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     3,
+     1,
+     2,
+     4
+    ]
+   },
+   "args": [
+    {
+     "t": "Permutation",
+     "array": [
+      0,
+      2,
+      1,
+      4,
+      3
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.get_adjacency_distance(r)",
@@ -134474,7 +141610,19 @@
   },
   {
    "fn": ".get_adjacency_matrix",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     2,
+     5,
+     3,
+     1,
+     4,
+     0
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.get_adjacency_matrix()",
@@ -134482,7 +141630,17 @@
   },
   {
    "fn": ".get_adjacency_matrix",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     1,
+     2,
+     3
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "q.get_adjacency_matrix()",
@@ -134490,7 +141648,29 @@
   },
   {
    "fn": ".get_positional_distance",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     3,
+     1,
+     2,
+     4
+    ]
+   },
+   "args": [
+    {
+     "t": "Permutation",
+     "array": [
+      3,
+      2,
+      4,
+      0,
+      1
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.get_positional_distance(q)",
@@ -134498,7 +141678,29 @@
   },
   {
    "fn": ".get_positional_distance",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     3,
+     1,
+     2,
+     4
+    ]
+   },
+   "args": [
+    {
+     "t": "Permutation",
+     "array": [
+      3,
+      1,
+      4,
+      0,
+      2
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.get_positional_distance(r)",
@@ -134506,7 +141708,29 @@
   },
   {
    "fn": ".get_precedence_distance",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     2,
+     0,
+     4,
+     3,
+     1
+    ]
+   },
+   "args": [
+    {
+     "t": "Permutation",
+     "array": [
+      3,
+      1,
+      2,
+      4,
+      0
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.get_precedence_distance(q)",
@@ -134514,7 +141738,29 @@
   },
   {
    "fn": ".get_precedence_distance",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     3,
+     1,
+     2,
+     4,
+     0
+    ]
+   },
+   "args": [
+    {
+     "t": "Permutation",
+     "array": [
+      2,
+      0,
+      4,
+      3,
+      1
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "q.get_precedence_distance(p)",
@@ -134522,7 +141768,19 @@
   },
   {
    "fn": ".get_precedence_matrix",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     2,
+     5,
+     3,
+     1,
+     4,
+     0
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.get_precedence_matrix()",
@@ -134530,7 +141788,18 @@
   },
   {
    "fn": ".index",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     3,
+     0,
+     2,
+     1,
+     4
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.index()",
@@ -134538,7 +141807,22 @@
   },
   {
    "fn": ".inversion_vector",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     4,
+     8,
+     0,
+     7,
+     1,
+     5,
+     3,
+     6,
+     2
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.inversion_vector()",
@@ -134546,7 +141830,17 @@
   },
   {
    "fn": ".inversion_vector",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     3,
+     2,
+     1,
+     0
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.inversion_vector()",
@@ -134554,7 +141848,19 @@
   },
   {
    "fn": ".inversions",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.inversions()",
@@ -134562,7 +141868,17 @@
   },
   {
    "fn": ".inversions",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     3,
+     2,
+     1,
+     0
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "Permutation([3, 2, 1, 0]).inversions()",
@@ -134570,7 +141886,17 @@
   },
   {
    "fn": ".length",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     3,
+     2,
+     1
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "Permutation([0, 3, 2, 1]).length()",
@@ -134578,7 +141904,17 @@
   },
   {
    "fn": ".length",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     1,
+     0,
+     3,
+     2
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "Permutation([[0, 1], [2, 3]]).length()",
@@ -134586,7 +141922,19 @@
   },
   {
    "fn": ".list",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     1,
+     3,
+     2,
+     5,
+     4
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.list()",
@@ -134594,7 +141942,25 @@
   },
   {
    "fn": ".list",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     1,
+     3,
+     2,
+     5,
+     4
+    ]
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "10",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.list(10)",
@@ -134602,7 +141968,24 @@
   },
   {
    "fn": ".list",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     2,
+     1,
+     3,
+     4
+    ]
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "-1",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "Permutation(2, 4)(1, 2, 4).list(-1)",
@@ -134610,7 +141993,23 @@
   },
   {
    "fn": ".list",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     1,
+     2,
+     3
+    ]
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "-1",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "Permutation(3).list(-1)",
@@ -134618,7 +142017,18 @@
   },
   {
    "fn": ".max",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     1,
+     0,
+     2,
+     3,
+     4
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.max()",
@@ -134626,7 +142036,18 @@
   },
   {
    "fn": ".min",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     1,
+     4,
+     3,
+     2
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.min()",
@@ -134634,7 +142055,17 @@
   },
   {
    "fn": ".rank_nonlex",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     3,
+     0,
+     1,
+     2
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.rank_nonlex()",
@@ -134642,7 +142073,17 @@
   },
   {
    "fn": ".rank_trotterjohnson",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     3,
+     0,
+     2,
+     1
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.rank_trotterjohnson()",
@@ -134650,7 +142091,17 @@
   },
   {
    "fn": ".rank_trotterjohnson",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     3,
+     2,
+     1
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.rank_trotterjohnson()",
@@ -134658,7 +142109,19 @@
   },
   {
    "fn": ".order",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     3,
+     1,
+     5,
+     2,
+     4,
+     0
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.order()",
@@ -134666,7 +142129,17 @@
   },
   {
    "fn": ".parity",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     1,
+     2,
+     3
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.parity()",
@@ -134674,7 +142147,17 @@
   },
   {
    "fn": ".parity",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     3,
+     2,
+     0,
+     1
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.parity()",
@@ -134682,7 +142165,17 @@
   },
   {
    "fn": ".rank",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     1,
+     2,
+     3
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.rank()",
@@ -134690,7 +142183,17 @@
   },
   {
    "fn": ".rank",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     3,
+     2,
+     1,
+     0
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.rank()",
@@ -134698,7 +142201,17 @@
   },
   {
    "fn": ".rank_nonlex",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     1,
+     2,
+     3
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.rank_nonlex()",
@@ -134706,7 +142219,17 @@
   },
   {
    "fn": ".rank_trotterjohnson",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     1,
+     2,
+     3
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.rank_trotterjohnson()",
@@ -134714,7 +142237,17 @@
   },
   {
    "fn": ".rank_trotterjohnson",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.rank_trotterjohnson()",
@@ -134722,7 +142255,22 @@
   },
   {
    "fn": ".runs",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     2,
+     5,
+     7,
+     3,
+     6,
+     0,
+     1,
+     4,
+     8
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.runs()",
@@ -134730,7 +142278,17 @@
   },
   {
    "fn": ".runs",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     1,
+     3,
+     2,
+     0
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "q.runs()",
@@ -134738,7 +142296,16 @@
   },
   {
    "fn": ".inversions",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     1,
+     2
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.inversions()",
@@ -134746,7 +142313,16 @@
   },
   {
    "fn": ".signature",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     1,
+     2
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.signature()",
@@ -134754,7 +142330,16 @@
   },
   {
    "fn": ".inversions",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     2,
+     1
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "q.inversions()",
@@ -134762,7 +142347,16 @@
   },
   {
    "fn": ".signature",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     2,
+     1
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "q.signature()",
@@ -134770,7 +142364,18 @@
   },
   {
    "fn": ".support",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     1,
+     0,
+     3,
+     2,
+     4
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.support()",
@@ -134778,7 +142383,18 @@
   },
   {
    "fn": ".rank",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     0,
+     2,
+     4,
+     1,
+     3
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "a.rank()",
@@ -134858,7 +142474,17 @@
   },
   {
    "fn": ".order",
-   "unsupportedArg": "Permutation",
+   "self": {
+    "t": "Permutation",
+    "array": [
+     2,
+     0,
+     3,
+     1
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.permutations",
    "src": "p.order()",

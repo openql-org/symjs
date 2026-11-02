@@ -158,10 +158,11 @@ export interface PermutedimsOptions {
  * permutation can also be given by naming the axes,
  * `permutedims(b, { indexOrderOld: 'cba', indexOrderNew: 'abc' })`.
  */
-export function permutedims(expr: TensorArg, perm: PermutationLike | PermutedimsOptions, opts: PermutedimsOptions = {}): NDimArray {
+export function permutedims(expr: TensorArg, perm?: PermutationLike | PermutedimsOptions, opts: PermutedimsOptions = {}): NDimArray {
   const array = toArray(expr);
   let p: readonly number[];
-  if (Array.isArray(perm) || 'arrayForm' in perm) {
+  if (perm === undefined) p = permutationFromIndexOrders(opts, array.rank());
+  else if (Array.isArray(perm) || 'arrayForm' in perm) {
     if (opts.indexOrderNew !== undefined) throw new RangeError('index_order_new cannot be defined with permutation');
     if (opts.indexOrderOld !== undefined) throw new RangeError('index_order_old cannot be defined with permutation');
     p = Array.isArray(perm) ? (perm as readonly number[]) : perm.arrayForm;

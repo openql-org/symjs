@@ -18,7 +18,7 @@
  */
 
 import type { Assumptions } from '../core/nodes';
-import { Expr, Sym, isNum } from '../core/nodes';
+import { BoolAtom, Expr, Rational, Sym, isNum } from '../core/nodes';
 import { neg } from '../core/ops';
 import { MultisetPartitionTraverser, listVisitor, multisetPartitionsTaocp } from './enumerative';
 import { combinations, combinationsWithReplacement, permutations, product } from './itertools';
@@ -413,7 +413,9 @@ export function sift<T, K>(seq: Iterable<T>, keyfunc: (x: T) => K, opts: { binar
   const T: T[] = [];
   const F: T[] = [];
   for (const x of seq) {
-    const k = keyfunc(x) as unknown;
+    const k0 = keyfunc(x) as unknown;
+    // Python's 1 and 0 (also as SymPy Integers and S.true/S.false) equal True and False
+    const k = k0 instanceof Rational && k0.q === 1n && (k0.p === 0n || k0.p === 1n) ? k0.p === 1n : k0 instanceof BoolAtom ? k0.value : k0;
     if (k === true || k === 1) T.push(x);
     else if (k === false || k === 0) F.push(x);
     else throw new RangeError('keyfunc gave non-binary output');

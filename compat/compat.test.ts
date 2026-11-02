@@ -53,7 +53,7 @@ function readCoverage(): { files: FileCoverage[] } | undefined {
   return { files };
 }
 import { expect, it } from 'vitest';
-import { ADAPTERS, Case, Outcome, runCase } from './harness';
+import { Case, Outcome, hasCounterpart, runCase } from './harness';
 import { PORTS } from './ports';
 
 interface Corpus {
@@ -90,7 +90,7 @@ it('computes SymPy compatibility metrics', () => {
   for (const a of corpus.api) {
     const r = row(a.category);
     r.api++;
-    if (ADAPTERS[a.name]) r.apiDone++;
+    if (hasCounterpart(a)) r.apiDone++;
   }
 
   // impact list: unsupported functions by number of cases

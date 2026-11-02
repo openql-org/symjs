@@ -155,6 +155,25 @@ def ser(o):
         return {"t": "AssumptionsContext", "items": [ser(a) for a in o]}
     if isinstance(o, _AK):
         return {"t": "QKeys"}
+    from sympy.ntheory.generate import Sieve as _Sieve
+    if isinstance(o, _Sieve):
+        return {"t": "Sieve"}
+    from sympy.combinatorics import Permutation as _Perm
+    from sympy.combinatorics.permutations import Cycle as _Cycle
+    if isinstance(o, _Perm):
+        return {"t": "Permutation", "array": [int(i) for i in o.array_form]}
+    if isinstance(o, _Cycle):
+        return {"t": "Cycle", "cycles": [[int(i) for i in c] for c in _Perm(o).cyclic_form], "size": int(o.size)}
+    from sympy.tensor.array import NDimArray as _NDA
+    if isinstance(o, _NDA):
+        return {"t": "NDimArray", "cls": type(o).__name__, "shape": [int(k) for k in o.shape], "flat": [ser(i) for i in o._array] if hasattr(o, "_array") else [ser(o[i]) for i in __import__("itertools").product(*[range(k) for k in o.shape])]}
+    if isinstance(o, sympy.Idx):
+        return {"t": "Idx", "label": ser(o.label), "lower": ser(o.lower) if o.lower is not None else None, "upper": ser(o.upper) if o.upper is not None else None}
+    from sympy.logic.inference import PropKB as _PropKB
+    if isinstance(o, _PropKB):
+        return {"t": "PropKB", "clauses": [ser(c) for c in sorted(o.clauses, key=sympy.default_sort_key)]}
+    if isinstance(o, (sympy.Not, sympy.Xor, sympy.Implies, sympy.Equivalent, sympy.Nand, sympy.Nor, sympy.logic.boolalg.Xnor, sympy.ITE)):
+        return {"t": "Logic", "op": type(o).__name__, "args": [ser(i) for i in o.args]}
     if isinstance(o, int):
         return {"t": "Rational", "p": str(o), "q": "1"}
     if isinstance(o, float):

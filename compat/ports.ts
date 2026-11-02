@@ -224,4 +224,45 @@ export const PORTS: Record<string, () => unknown> = {
   },
   // Q.P = Predicate("P")
   'sympy.assumptions.assume:Q.P(1)': () => sj.Predicate('P')(1),
+  // class MyOp(Basic): pass
+  'sympy.utilities.iterables:flatten([MyOp(S(1), MyOp(S(2), S(3)))], cls=MyOp)': () => {
+    class MyOp extends sj.BasicNode {
+      constructor(args: readonly Expr[]) {
+        super(args, 'MyOp');
+      }
+    }
+    const one = sj.Rational.of(1n);
+    return sj.flatten([new MyOp([one, new MyOp([sj.Rational.of(2n), sj.Rational.of(3n)])])], { cls: MyOp });
+  },
+  // sift(..., lambda x: x.as_base_exp()[0]); the dict is a defaultdict(list)
+  'sympy.utilities.iterables:sift([sqrt(x), exp(x), (y**x)**2],\n     lambda x: x.as_base_exp()[0])': () =>
+    sj.sift([sj.sqrt(x), sj.exp(x), sj.pow(sj.pow(y, x), 2)], (e: Expr) => sj.asBaseExp(e)[0]),
+  // F = lambda x: (2048*pow(x, 2, n) + 32767) % n
+  'sympy.ntheory.factor_:pollard_rho(n, F=F)': () => {
+    const n = 16843009n;
+    return sj.pollardRho(n, { F: (v: bigint) => (2048n * ((v * v) % n) + 32767n) % n });
+  },
+  // Permutation.from_sequence('SymPy', key=lambda x: x.lower())
+  "sympy.combinatorics.permutations:Permutation.from_sequence('SymPy', key=lambda x: x.lower())": () =>
+    sj.Permutation.fromSequence('SymPy', (c: string) => c.toLowerCase()),
+  // G = PermutationGroup(Cycle(2, 3)(4, 5), Cycle(1, 2, 3, 4, 5)); p2 = Permutation(Cycle(1, 2, 3))
+  'sympy.combinatorics.permutations:G.contains(p2,strict=False)': () => {
+    const gens = [new sj.Permutation(new sj.Cycle(2, 3).call(4, 5) as sj.Cycle), new sj.Permutation(new sj.Cycle(1, 2, 3, 4, 5))];
+    const degree = Math.max(...gens.map((g) => g.size));
+    const key = (q: sj.Permutation) => new sj.Permutation(q, { size: degree }).arrayForm.join(',');
+    const seen = new Map<string, sj.Permutation>([[key(new sj.Permutation([], { size: degree })), new sj.Permutation([], { size: degree })]]);
+    const queue = [...seen.values()];
+    while (queue.length) {
+      const q = queue.pop()!;
+      for (const g of gens) {
+        const r = q.mul(g);
+        if (!seen.has(key(r))) {
+          seen.set(key(r), r);
+          queue.push(r);
+        }
+      }
+    }
+    // strict=False: the permutation is resized to the degree of the group
+    return seen.has(key(new sj.Permutation(new sj.Cycle(1, 2, 3))));
+  },
 };

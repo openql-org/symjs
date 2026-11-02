@@ -136,3 +136,5 @@ export type ArrayKind = ArrayKindNode;
  */
 export const Idx = /* @__PURE__ */ callableClass(IdxNode, (label: string | Expr | number | bigint, range?: IdxRange): Expr => makeIdx(label, range));
 export type Idx = IdxNode;
+export { IndexConformanceException, getContractionStructure, getIndices } from './indexmethods';
+export type { ContractionKey, ContractionStructure } from './indexmethods';
