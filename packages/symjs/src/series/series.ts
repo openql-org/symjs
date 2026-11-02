@@ -6,7 +6,7 @@
  */
 
 import { Add, Expr, ExprLike, Fn, Order, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
-import { add, mul, neg, pow, sympify } from '../core/ops';
+import { add, exp, mul, neg, pow, sympify } from '../core/ops';
 import { mapBottomUp, xreplace as subs } from '../core/traverse';
 import { log, sin } from '../functions/elementary';
 import { Expander } from './puiseux';
@@ -52,9 +52,19 @@ export function O(ex: ExprLike, x?: Sym, x0: ExprLike = 0): Expr {
  * Series expansion of e about x = x0 up to O((x - x0)**n). Like SymPy, an
  * exact (finite) expansion is returned without an Order term.
  */
-export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' | '-' = '+'): Expr {
+export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' | '-' = '+', opts: { logx?: Expr } = {}): Expr {
   // sinc(u) = sin(u)/u has a removable singularity at u = 0
-  const e = mapBottomUp(sympify(ex), (t) => (t instanceof Fn && t.name === 'sinc' ? mul(sin(t.args[0]!), pow(t.args[0]!, -1)) : t));
+  let e = mapBottomUp(sympify(ex), (t) => (t instanceof Fn && t.name === 'sinc' ? mul(sin(t.args[0]!), pow(t.args[0]!, -1)) : t));
+  const x00 = sympify(x0x);
+  const atZero = x00 instanceof Rational && x00.isZero;
+  if (opts.logx && atZero) {
+    // SymPy logx: log(x) stands for the given symbol; x**c = exp(c*log(x)) for symbolic c
+    e = mapBottomUp(e, (t) => (t instanceof Pow && t.base.key === x.key && !(t.exp instanceof Rational) && !t.exp.has(x) ? exp(mul(t.exp, log(x))) : t));
+    e = subs(e, [[log(x), opts.logx]]);
+    if (!e.has(x)) return e;
+  }
+  // x**c with symbolic c is its own expansion at 0
+  if (atZero && e instanceof Pow && e.base.key === x.key && !(e.exp instanceof Rational) && !e.exp.has(x)) return e;
   const x0 = sympify(x0x);
   if (x0 instanceof Special) throw new Error('series: expansion at infinity is not supported yet');
   if (!e.has(x)) return e;

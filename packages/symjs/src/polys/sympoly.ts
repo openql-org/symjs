@@ -585,6 +585,22 @@ export class Poly {
     return q;
   }
   /** f(x + a). */
+  /** Greatest factorial factorization (SymPy gff_list, dup_gff_list). */
+  gffList(): [Poly, number][] {
+    if (this.isZero) throw new Error('gff_list: zero polynomial');
+    const f = this.monic();
+    if (f.degree() <= 0) return [];
+    const g0 = f.gcd(f.shift(1));
+    const H = g0.gffList();
+    let g = g0;
+    const out: [Poly, number][] = H.map(([h, k]) => {
+      g = g.mul(h.shift(-k));
+      return [h, k + 1];
+    });
+    const q = f.quo(g);
+    return q.degree() <= 0 ? out : [[q, 1], ...out];
+  }
+
   shift(a: ExprLike): Poly {
     const x = this.gens[0]!;
     return this.like(expand(xreplace(this.asExpr(), [[x, add(x, a)]])));

@@ -198,3 +198,17 @@ describe('convergence of infinite products', () => {
     expect(sumIsConvergent(Product(parse('cos(pi/n)'), [n, 1, oo]) as Concrete)).toBe(true);
   });
 });
+
+import { Poly } from '../src';
+
+describe('greatest factorial factorization and nseries logx', () => {
+  it('gff_list', () => {
+    const p = Poly.from(parse('x**5 + 2*x**4 - x**3 - 2*x**2'), [x]);
+    expect(p.gffList().map(([h, k]) => `${h.asExpr()}:${k}`)).toEqual(['x:1', 'x + 2:4']);
+  });
+  it('series with logx', () => {
+    const logx = new Sym('logx');
+    expect(String(series(parse('x**y'), x, 0, 2, '+', { logx }))).toBe('exp(logx*y)');
+    expect(String(series(parse('x**y'), x, 0, 2))).toBe('x**y');
+  });
+});

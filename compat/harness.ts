@@ -1148,8 +1148,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.as_leading_term': (args, kw, self) => (noKw(kw), sj.asLeadingTerm(asExpr(self), asSym(args[0]))),
   '.getn': exprMethod((e) => sj.getn(e) ?? null),
   '.nseries': (args, kw, self) => {
-    noKw(kw);
-    return sj.series(asExpr(self), asSym(args[0]), args[1] === undefined ? 0 : asExpr(args[1]), args[2] === undefined ? 6 : intArg(args[2]));
+    for (const k of Object.keys(kw)) if (k !== 'logx') throw new Unsupported(`kwargs ${k}`);
+    const x = asSym(args[0]);
+    const x0 = args[1] === undefined ? 0 : asExpr(args[1]);
+    const n = args[2] === undefined ? 6 : intArg(args[2]);
+    return sj.series(asExpr(self), x, x0, n, '+', kw['logx'] === undefined ? {} : { logx: asExpr(kw['logx']) });
   },
   root: (args, kw) => (noKw(kw), sj.root(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? 0 : asExpr(args[2]))),
   cbrt: exprFn(sj.cbrt),
@@ -1236,6 +1239,16 @@ export const ADAPTERS: Record<string, Adapter> = {
   trigsimp: exprFn(sj.trigsimp),
   exptrigsimp: exprFn(sj.exptrigsimp),
   Id: exprFn((e) => e),
+  gff_list: (args, kw) => {
+    noKw(kw);
+    const p = polyOf(args);
+    return new PyList(p.gffList().map(([h, k]) => new PyTuple([sj.Poly.from(h.asExpr(), p.gens), sj.Rational.of(k)])));
+  },
+  '.gff_list': (_a, kw, self) => {
+    noKw(kw);
+    const p = asPoly(self);
+    return new PyList(p.gffList().map(([h, k]) => new PyTuple([sj.Poly.from(h.asExpr(), p.gens), sj.Rational.of(k)])));
+  },
   factor_nc: exprFn(sj.factorNc),
   arity: (args, kw) => {
     noKw(kw);
