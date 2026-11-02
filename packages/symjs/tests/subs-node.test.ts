@@ -236,3 +236,26 @@ describe('rcollect, hypersimilar, number theory and matrix helpers', () => {
     void x;
   });
 });
+
+describe('jordan_form', () => {
+  it('gives A = P*J*P**-1 with Jordan blocks', async () => {
+    const { Matrix, jordanForm, simplify: simp } = await import('../src');
+    const cases = [
+      [[5, 4, 2, 1], [0, 1, -1, -1], [-1, -1, 3, 0], [1, 1, -1, 2]],
+      [[2, 1], [0, 2]],
+      [[1, 2], [3, 4]],
+      [[2, 0, 0], [0, 2, 0], [0, 0, 3]],
+      [[0, 1, 0], [0, 0, 1], [0, 0, 0]],
+    ];
+    const Js: string[] = [];
+    for (const rows of cases) {
+      const A = Matrix.of(rows);
+      const [P, J] = jordanForm(A);
+      const back = P.mul(J).mul(P.inv()).map((e) => simp(e));
+      expect(String(back)).toBe(String(A));
+      Js.push(String(J));
+    }
+    expect(Js[0]).toBe('Matrix([[1, 0, 0, 0], [0, 2, 0, 0], [0, 0, 4, 1], [0, 0, 0, 4]])');
+    expect(Js[4]).toBe('Matrix([[0, 1, 0], [0, 0, 1], [0, 0, 0]])');
+  });
+});

@@ -46,6 +46,7 @@ export {
   rotGivens,
   jordanBlock,
   gaussJordanSolve,
+  jordanForm,
   rrefRhs,
   rankDecomposition,
   invMod,

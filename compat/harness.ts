@@ -837,6 +837,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.permute_rows': matrixMethod((m, [p]) => sj.permuteRows(m, (p as PyList).items.map((i) => Number((i as sj.Rational).p)))),
   '.permute_cols': matrixMethod((m, [p]) => sj.permuteCols(m, (p as PyList).items.map((i) => Number((i as sj.Rational).p)))),
   '.rmultiply': matrixMethod((m, [b]) => (b as Matrix).mul(m)),
+  '.jordan_form': matrixMethod((m) => new PyTuple(sj.jordanForm(m))),
   '.berkowitz_eigenvals': (args, kw, self) => ADAPTERS['.eigenvals']!(args, kw, self),
   '.is_hypergeometric': (args, kw, self) => (noKw(kw), sj.isHypergeometric(asExpr(self), asExpr(args[0]))),
   '.taylor_term': (args, kw, self) => (noKw(kw), sj.taylorTerm(asExpr(self), Number((args[0] as sj.Rational).p), asSym(args[1]))),

@@ -756,3 +756,60 @@ export function permuteRows(A: Matrix, perm: readonly number[]): Matrix {
 export function permuteCols(A: Matrix, perm: readonly number[]): Matrix {
   return Matrix.fromFunction(A.rows, A.cols, (i, j) => A.get(i, perm[j] ?? j));
 }
+
+/**
+ * SymPy Matrix.jordan_form: [P, J] with A = P*J*P**-1, J block diagonal with
+ * Jordan blocks (eigenvalues in increasing order of their real parts) and the
+ * columns of P Jordan chains of generalized eigenvectors.
+ */
+export function jordanForm(A: Matrix): [Matrix, Matrix] {
+  if (!A.isSquare) throw new Error('jordan_form: square matrix expected');
+  const n = A.rows;
+  const counts = new Map<string, [Expr, number]>();
+  for (const v of A.eigenvals()) {
+    const cur = counts.get(v.key);
+    if (cur) cur[1]++;
+    else counts.set(v.key, [v, 1]);
+  }
+  const eig = [...counts.values()].sort((a, b) => {
+    const ca = impl.toComplex(a[0]);
+    const cb = impl.toComplex(b[0]);
+    return ca.re - cb.re || ca.im - cb.im;
+  });
+  if (eig.reduce((s, [, m]) => s + m, 0) !== n) throw new Error('jordan_form: could not compute all eigenvalues');
+  const columns: Matrix[] = [];
+  const blocks: [Expr, number][] = [];
+  const simp = (m: Matrix) => m.map((e) => simplify(e));
+  const independent = (vs: readonly Matrix[]) => (vs.length ? rank(vs.reduce((acc, v) => acc.hstack(v))) === vs.length : true);
+  for (const [lam, mult] of eig) {
+    const N = simp(A.sub(Matrix.eye(n).scale(lam)));
+    // null spaces of N**k until their dimension reaches the multiplicity
+    const kernels: Matrix[][] = [[]];
+    let Nk = Matrix.eye(n);
+    while (kernels[kernels.length - 1]!.length < mult) {
+      Nk = simp(Nk.mul(N));
+      kernels.push(nullspace(Nk));
+      if (kernels.length > n + 1) throw new Error('jordan_form: generalized eigenvectors not found');
+    }
+    // chains from the top level down: v, N*v, N**2*v, ...
+    const chainsOf: Matrix[][] = [];
+    for (let k = kernels.length - 1; k >= 1; k--) {
+      for (const v of kernels[k]!) {
+        // v must be new modulo ker(N**(k-1)) and the vectors already taken at this level
+        // chains are stored from the eigenvector up: level k is entry k - 1
+        const atLevel = chainsOf.filter((c) => c.length >= k).map((c) => c[k - 1]!);
+        if (!independent([...kernels[k - 1]!, ...atLevel, v])) continue;
+        const chain: Matrix[] = [v];
+        for (let i = 1; i < k; i++) chain.push(simp(N.mul(chain[i - 1]!)));
+        chainsOf.push(chain.reverse());
+      }
+    }
+    for (const chain of chainsOf) {
+      columns.push(...chain);
+      blocks.push([lam, chain.length]);
+    }
+  }
+  const P = columns.reduce((acc, c) => acc.hstack(c));
+  const J = blockDiag(...blocks.map(([lam, k]) => (k === 1 ? lam : jordanBlock(k, lam))));
+  return [P, J];
+}
