@@ -264,11 +264,13 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
     const was = e;
     if (h.complex) e = applyBottomUp(e, expandComplexNode, false);
     if (h.log) e = applyBottomUp(e, (x) => expandLogNode(x, h.force), h.deep);
+    // SymPy applies the hints in the order log, multinomial, mul, power_base, power_exp, trig
+    if (h.mul) e = h.deep ? expandMul(e) : expandMulShallow(e, h.mul, h.multinomial);
+    else if (h.multinomial) e = applyBottomUp(e, (x) => expandMulShallow(x, false, true), h.deep);
     if (h.power_base) e = applyBottomUp(e, (x) => powerBase(x, h.force), h.deep);
     if (h.power_exp) e = applyBottomUp(e, (x) => powerExp(x, h.force), h.deep);
     if (h.trig) e = applyBottomUp(e, expandTrigNode, h.deep);
-    if (h.mul) e = h.deep ? expandMul(e) : expandMulShallow(e, h.mul, h.multinomial);
-    else if (h.multinomial) e = applyBottomUp(e, (x) => expandMulShallow(x, false, true), h.deep);
+    if (h.mul && e.key !== was.key) e = h.deep ? expandMul(e) : expandMulShallow(e, h.mul, h.multinomial);
     if (e.key === was.key) break;
   }
   return e;
