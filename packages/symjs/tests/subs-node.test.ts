@@ -459,3 +459,14 @@ describe('series at infinity and aseries', () => {
     expect(sstr(aseries(parse('1/x'), x, 8))).toBe('1/x');
   });
 });
+
+describe('binomial modulo prime powers, pure quadratics, ImageSet parameters', () => {
+  it('match SymPy', async () => {
+    const { binomialMod, solveset, roots } = await import('../src');
+    expect(binomialMod(10n ** 18n, 10n ** 12n, 100003n ** 2n)).toBe(3744312326n);
+    expect([binomialMod(100n, 37n, 1000n), binomialMod(50n, 20n, 97n)]).toEqual([600n, 49n]);
+    const [y, c] = symbols('y c');
+    expect(sstr(solveset(parse('exp(-y) - 3', { symbols: { y } } as never), y))).toBe('ImageSet(Lambda(_n, 2*_n*I*pi - log(3)), Integers)');
+    expect(roots(parse('y**2 + c', { symbols: { y, c } } as never), y, { multiple: true }).map((e) => sstr(e))).toEqual(['-sqrt(-c)', 'sqrt(-c)']);
+  });
+});

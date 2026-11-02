@@ -9,7 +9,8 @@
  */
 
 import { Add, Constant, Dummy, Expr, ExprLike, Fn, Mul, Piecewise, Pow, Rational, Rel, RelOp, S, Special, Sym, impl } from '../core/nodes';
-import { add, mul, pow, sympify } from '../core/ops';
+import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
+import { expandMul } from '../simplify/expand';
 import { and, or as orB } from '../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne } from '../core/logic';
 import { some, xreplace } from '../core/traverse';
@@ -520,7 +521,11 @@ function complexExpSolutions(g: Expr, x: Sym): SetExpr | undefined {
   const n = new Dummy('n');
   // u = log|c| + I*(2*n*pi + arg(c))
   const u = add(mul(S.I, add(mul(2, n, S.Pi), fn('arg', [c]))), log(fn('abs', [c])));
-  return imageSet(n, mul(add(u, mul(-1, rest)), pow(k, -1)), Integers);
+  let sol = mul(add(u, mul(-1, rest)), pow(k, -1));
+  // n ranges over the integers: a negative coefficient of n is flipped (SymPy writes 2*n*I*pi - log(3))
+  const coeffN = expandMul(mul(add(sol, mul(-1, xreplace(sol, [[n, S.Zero]]))), pow(n, -1)));
+  if (couldExtractMinusSign(coeffN)) sol = xreplace(sol, [[n, mul(-1, n)]]);
+  return imageSet(n, sol, Integers);
 }
 
 // ---------------------------------------------------------------------------

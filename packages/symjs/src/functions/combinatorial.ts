@@ -514,3 +514,118 @@ export function andre(n: number): bigint {
   }
   return row[n]!;
 }
+
+// ---- binomial coefficients modulo m ------------------------------------------------
+
+const bmod = (a: bigint, m: bigint) => ((a % m) + m) % m;
+function bmodInv(a: bigint, m: bigint): bigint {
+  let [r0, r1, s0, s1] = [bmod(a, m), m, 1n, 0n];
+  while (r1 !== 0n) {
+    const q = r0 / r1;
+    [r0, r1, s0, s1] = [r1, r0 - q * r1, s1, s0 - q * s1];
+  }
+  if (r0 !== 1n) throw new Error('binomial_mod: not invertible');
+  return bmod(s0, m);
+}
+function bpow(b: bigint, e: bigint, m: bigint): bigint {
+  let r = 1n;
+  let x = bmod(b, m);
+  for (let k = e; k > 0n; k >>= 1n) {
+    if (k & 1n) r = (r * x) % m;
+    x = (x * x) % m;
+  }
+  return r;
+}
+
+/** G(r) = product of the integers in [1, r] prime to p, modulo p**e, for r < p**e. */
+function pFreeProductFactory(p: bigint, e: number): (r: bigint) => bigint {
+  const pe = p ** BigInt(e);
+  if (pe <= 4_000_000n) {
+    const n = Number(pe);
+    const table = new Array<bigint>(n);
+    let acc = 1n;
+    table[0] = 1n;
+    for (let i = 1; i < n; i++) {
+      if (BigInt(i) % p !== 0n) acc = (acc * BigInt(i)) % pe;
+      table[i] = acc;
+    }
+    return (r) => table[Number(r)]!;
+  }
+  if (e === 1 && p <= 20_000_000n) {
+    const n = Number(p);
+    const fact = new Array<bigint>(n);
+    fact[0] = 1n;
+    for (let i = 1; i < n; i++) fact[i] = (fact[i - 1]! * BigInt(i)) % p;
+    return (r) => fact[Number(r)]!;
+  }
+  if (e === 2 && p >= 3n && p <= 20_000_000n) {
+    // r = a*p + b: ((p - 1)!)**a * b! * (1 + a*p*H_b) mod p**2 (each full block is (p - 1)! since H_{p-1} = 0 mod p)
+    const n = Number(p);
+    const fact = new Array<bigint>(n);
+    const harm = new Array<bigint>(n);
+    fact[0] = 1n;
+    harm[0] = 0n;
+    for (let i = 1; i < n; i++) {
+      fact[i] = (fact[i - 1]! * BigInt(i)) % pe;
+      harm[i] = (harm[i - 1]! + bmodInv(BigInt(i), p)) % p;
+    }
+    const block = fact[n - 1]!;
+    return (r) => {
+      const a = r / p;
+      const b = Number(r % p);
+      return (bpow(block, a, pe) * fact[b]! % pe) * bmod(1n + a * p * harm[b]!, pe) % pe;
+    };
+  }
+  throw new Error('binomial_mod: modulus too large');
+}
+
+/** (n!)_p = n! without its factors p, modulo p**e. */
+function pFreeFactorial(n: bigint, p: bigint, e: number, G: (r: bigint) => bigint): bigint {
+  const pe = p ** BigInt(e);
+  // the product over a full period of p**e is -1 (1 for 2**e, e >= 3)
+  const period = p === 2n && e >= 3 ? 1n : pe - 1n;
+  let r = 1n;
+  for (let m = n; m > 0n; m /= p) r = (r * bpow(period, m / pe, pe) % pe) * G(m % pe) % pe;
+  return r;
+}
+
+const digitSum = (n: bigint, p: bigint) => {
+  let s = 0n;
+  for (let m = n; m > 0n; m /= p) s += m % p;
+  return s;
+};
+
+/** binomial(n, k) modulo m for nonnegative integers (prime-power moduli of moderate size). */
+export function binomialMod(n: bigint, k: bigint, m: bigint): bigint {
+  if (k < 0n || k > n) return 0n;
+  if (m === 1n) return 0n;
+  // prime-power parts of m, combined by the Chinese remainder theorem
+  let result = 0n;
+  let mod = 1n;
+  let rest = m;
+  for (let p = 2n; p * p <= rest || rest > 1n; p++) {
+    if (p * p > rest) p = rest;
+    if (rest % p !== 0n) continue;
+    let e = 0;
+    while (rest % p === 0n) {
+      rest /= p;
+      e++;
+    }
+    const pe = p ** BigInt(e);
+    // Kummer: the exponent of p in binomial(n, k)
+    const v = (digitSum(k, p) + digitSum(n - k, p) - digitSum(n, p)) / (p - 1n);
+    let r: bigint;
+    if (v >= BigInt(e)) r = 0n;
+    else {
+      const G = pFreeProductFactory(p, e);
+      const u = pFreeFactorial(n, p, e, G) * bmodInv(pFreeFactorial(k, p, e, G) * pFreeFactorial(n - k, p, e, G), pe);
+      r = (p ** v * u) % pe;
+    }
+    // combine x = result (mod mod) and x = r (mod pe)
+    const t = bmod((r - result) * bmodInv(mod, pe), pe);
+    result += mod * t;
+    mod *= pe;
+    if (rest === 1n) break;
+  }
+  return bmod(result, mod);
+}

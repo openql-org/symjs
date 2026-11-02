@@ -319,6 +319,11 @@ export function deserialize(tree: Tree): unknown {
       const [b, e] = (tree['args'] as Tree[]).map((a) => deserialize(a) as Expr);
       // a power of rationals that SymPy kept as a Pow was built with evaluate=False
       if (b instanceof sj.Rational && e instanceof sj.Rational && e.isInteger && sj.pow(b, e) instanceof sj.Rational) return new sj.Pow(b, e);
+      // a power of a power that SymPy did not combine ((1/x)**-1) was built unevaluated too
+      if (b instanceof sj.Pow) {
+        const v = sj.pow(b, e!);
+        if (!(v instanceof sj.Pow && v.base.key === b.key)) return new sj.Pow(b, e!);
+      }
       return sj.pow(b!, e!);
     }
     case 'Rel': {
@@ -521,6 +526,23 @@ function substitutionSolve(eqs: Expr[], syms: Sym[]): Expr[][] {
       const v = syms.find((s) => eqs[one]!.has(s))!;
       const w = syms.find((s) => s !== v)!;
       const vs = sj.solveset(eqs[one]!, v);
+      if (vs instanceof sj.ImageSet) {
+        // complex family: the real solutions and the ImageSet, each substituted into the other equation (SymPy)
+        const other = eqs[1 - one]!;
+        const out: Expr[][] = [];
+        const real = sj.solveset(eqs[one]!, v, sj.Reals);
+        const reals = real instanceof sj.FiniteSet ? real.args : [];
+        const roots = (e: Expr): Expr[] => {
+          const r = sj.solveset(e, w);
+          return r instanceof sj.FiniteSet ? [...r.args] : sj.solve(e, w);
+        };
+        for (const val of reals) for (const c of roots(sj.subs(other, [[v, val]]))) out.push(syms.map((s) => (s === v ? val : c)));
+        for (const c of roots(sj.subs(other, [[v, vs.expr]]))) {
+          const img = sj.imageset(vs.variable, c, vs.base);
+          out.push(syms.map((s) => (s === v ? vs : img)));
+        }
+        return out;
+      }
       if (vs instanceof sj.FiniteSet) {
         const other = eqs[1 - one]!;
         const out: Expr[][] = [];
@@ -1487,6 +1509,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     const [a, m] = args.map(asExpr);
     if (a instanceof sj.Rational && m instanceof sj.Rational && a.isInteger && m.isInteger) return sj.Rational.of(((a.p % m.p) + m.p) % m.p);
+    // an unevaluated binomial of integers (SymPy binomial._eval_Mod)
+    if (a instanceof sj.AppliedFunction && a.name === 'binomial' && m instanceof sj.Rational && a.args.every((u) => u instanceof sj.Rational && u.isInteger)) {
+      return sj.Rational.of(sj.binomialMod((a.args[0] as sj.Rational).p, (a.args[1] as sj.Rational).p, m.p));
+    }
     throw new Unsupported('symbolic Mod');
   },
   '.as_poly': (args, kw, self) => {

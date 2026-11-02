@@ -199,8 +199,20 @@ const FORM_FUNCTIONS = new Set([
 
 export type EquivalenceOptions = { fn?: string; input?: string };
 
+/** Bound variables of ConditionSet, ImageSet and Lambda renamed canonically (alpha-equivalence). */
+function renameBound(s: string): string {
+  let out = s;
+  let k = 0;
+  for (const m of [...s.matchAll(/(?:ConditionSet|Lambda)\(\(?(_?[A-Za-z]\w*)/g)]) {
+    const v = m[1]!;
+    out = out.replace(new RegExp(`(?<![\\w.])${v.replace(/[$]/g, '\\$')}(?![\\w(])`, 'g'), `_bound${k++}`);
+  }
+  return out;
+}
+
 export function equivalent(got: string, expected: string, symbols: readonly sj.Sym[] = [], opts: EquivalenceOptions = {}): boolean {
   if (got === expected) return true;
+  if (/ConditionSet|Lambda\(/.test(expected) && renameBound(got) === renameBound(expected)) return true;
   if (opts.fn && FORM_FUNCTIONS.has(opts.fn)) {
     if (opts.input !== undefined && got === opts.input) return false;
     try {

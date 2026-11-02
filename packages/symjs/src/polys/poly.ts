@@ -393,7 +393,14 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
   const zeros: Expr[] = Array.from({ length: low }, () => S.Zero);
   const effDeg = deg - low;
   if (effDeg === 1) return [...zeros, expand(mul(-1, get(low), pow(get(low + 1), -1)))];
-  if (effDeg === 2) return [...zeros, ...quadraticRoots(get(low + 2), get(low + 1), get(low))];
+  if (effDeg === 2) {
+    // x**2 + c: +-sqrt(-c) (SymPy roots_quadratic with b = 0)
+    if (!normalized.has(low + 1)) {
+      const r = sqrt(expand(mul(-1, get(low), pow(get(low + 2), -1))));
+      return [...zeros, mul(-1, r), r];
+    }
+    return [...zeros, ...quadraticRoots(get(low + 2), get(low + 1), get(low))];
+  }
   throw new Error(`roots: symbolic polynomials of degree ${effDeg} are not supported`);
 }
 

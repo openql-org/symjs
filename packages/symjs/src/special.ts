@@ -89,6 +89,7 @@ export {
   firstMotzkins,
   motzkinNumbersInRange,
   isMotzkin,
+  binomialMod,
   legendreSymbol,
   motzkin,
   andre,
