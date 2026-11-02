@@ -1660,6 +1660,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.as_ordered_terms': exprMethod((e) => new PyList(e instanceof sj.Add ? asOrdered(e) : [e])),
 
   // ---- ODEs
+  homogeneous_order: (args, kw) => (noKw(kw), sj.homogeneousOrder(asExpr(args[0]), ...args.slice(1).map(asExpr)) ?? null),
   dsolve: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'ics') throw new Unsupported(`kwargs ${k}`);
     const ics = kw['ics'] instanceof PyDict ? (kw['ics'] as PyDict).entries.map(([k, v]) => [asExpr(k), asExpr(v)] as [Expr, Expr]) : undefined;

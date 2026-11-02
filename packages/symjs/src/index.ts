@@ -235,7 +235,7 @@ export {
   nsolve,
   invertEquation,
 } from './solvers/solve';
-export { dsolve, odeOrder } from './solvers/ode';
+export { dsolve, homogeneousOrder, odeOrder } from './solvers/ode';
 
 // numerics
 export { piecewiseIntegrate } from './integrals/integrate';

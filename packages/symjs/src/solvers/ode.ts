@@ -8,10 +8,11 @@
  * grouping) and particular solutions by undetermined coefficients.
  */
 
-import { Add, Derivative, Expr, ExprLike, Fn, Mul, Pow, Rational, S, Sym, UndefFn } from '../core/nodes';
+import { Add, Derivative, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, S, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
-import { xreplace } from '../core/traverse';
+import { freeSymbols, xreplace } from '../core/traverse';
+import { powsimp } from '../simplify/powsimp';
 import { diff } from '../calculus/diff';
 import { cos, im, re, sin } from '../functions/elementary';
 import { integrate } from '../integrals/integrate';
@@ -312,4 +313,34 @@ function applyIcs(sol: Expr, fx: UndefFn, x: Sym, ics: [Expr, ExprLike][]): Expr
   const s = linsolve(eqs, cs);
   if (!s) throw new Error('dsolve: initial conditions are inconsistent');
   return simplify(xreplace(sol, cs.map((c, i) => [c, s[i]!] as const)));
+}
+
+/**
+ * SymPy homogeneous_order(eq, *symbols): n such that eq(t*x, t*y, ...) = t**n * eq(x, y, ...),
+ * or undefined when eq is not homogeneous in the symbols.
+ */
+export function homogeneousOrder(eqIn: ExprLike, ...symbols: Expr[]): Expr | undefined {
+  let eq = sympify(eqIn);
+  const hasDeriv = (e: Expr): boolean => e instanceof Derivative || e.args.some(hasDeriv);
+  if (hasDeriv(eq)) return undefined;
+  if (freeSymbols(eq).size === 0) return S.Zero;
+  // replace applied functions of the symbols by dummies
+  const syms: Expr[] = [];
+  for (const s of symbols) {
+    if (s instanceof UndefFn) {
+      if (s.args.some((a) => !symbols.some((t) => t.key === a.key))) return undefined;
+      const d = new Dummy('d');
+      eq = xreplace(eq, [[s, d]]);
+      syms.push(d);
+    } else syms.push(s);
+  }
+  if (![...freeSymbols(eq)].some((s) => syms.some((t) => t.key === s.key))) return undefined;
+  if (eq instanceof Fn) return homogeneousOrder(eq.args[0]!, ...syms)?.key === S.Zero.key ? S.Zero : undefined;
+  const t = new Dummy('t', { positive: true });
+  const scaled = xreplace(eq, syms.map((s) => [s, mul(t, s)] as const));
+  const ratio = simplify(powsimp(mul(scaled, pow(eq, -1)), { force: false }));
+  if (ratio instanceof Rational && ratio.isOne) return S.Zero;
+  if (ratio.key === t.key) return S.One;
+  if (ratio instanceof Pow && ratio.base.key === t.key && !ratio.exp.has(t)) return ratio.exp;
+  return undefined;
 }
