@@ -287,6 +287,10 @@ export class Expander {
       }
       throw new SeriesError(`cannot expand ${e.name}`);
     }
+    // gamma has poles at 0, -1, -2, ...: gamma(u) = gamma(u + 1)/u
+    if (e.name === 'gamma' && g0 instanceof Rational && g0.isInteger && !g0.isPositive) {
+      return this.ser(mul(fn('gamma', [add(g, 1)]), pow(g, -1)), n);
+    }
     return this.analytic((w) => fn(e.name, [w]), g0, h, n);
   }
 

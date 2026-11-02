@@ -212,3 +212,17 @@ describe('greatest factorial factorization and nseries logx', () => {
     expect(String(series(parse('x**y'), x, 0, 2))).toBe('x**y');
   });
 });
+
+import { gamma, maximum, minimum } from '../src';
+
+describe('series at poles of gamma and extrema of periodic functions', () => {
+  it('Laurent series of gamma at 0', () => {
+    expect(String(series(gamma(x), x, 0, 3))).toBe(
+      '1/x - EulerGamma + x*(EulerGamma**2/2 + pi**2/12) + x**2*(-EulerGamma*pi**2/12 - zeta(3)/3 - EulerGamma**3/6) + O(x**3)',
+    );
+  });
+  it('maximum and minimum of sin(x)*cos(x)', () => {
+    expect(String(maximum(parse('sin(x)*cos(x)'), x))).toBe('1/2');
+    expect(String(minimum(parse('sin(x)*cos(x)'), x))).toBe('-1/2');
+  });
+});

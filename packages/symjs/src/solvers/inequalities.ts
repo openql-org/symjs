@@ -509,7 +509,16 @@ function extremeValues(f: Expr, x: Sym, domain: SetExpr): Expr[] {
     if (P && !(P instanceof Rational && P.isZero)) dom = interval(0, P);
   }
   const [lo, hi] = bounds(dom);
-  const crit = realZeros(fraction(cancel(diff(f, x)))[0], x, lo, hi);
+  const num = fraction(cancel(diff(f, x)))[0];
+  let crit: Expr[];
+  try {
+    crit = realZeros(num, x, lo, hi);
+  } catch (err) {
+    // e.g. cos(x)**2 - sin(x)**2: retry with the simplified derivative (cos(2*x))
+    const simp = simplify(num);
+    if (simp.key === num.key) throw err;
+    crit = realZeros(simp, x, lo, hi);
+  }
   const vals: Expr[] = crit.map((c) => simplify(xreplace(f, [[x, c]])));
   for (const [end, dir] of [
     [lo, '+'],
@@ -541,8 +550,19 @@ export function asExprSetPairs(p: Expr, domain: SetExpr = Reals): [Expr, SetExpr
   const x = [...syms.values()][0]!;
   let remaining: SetExpr = domain;
   const out: [Expr, SetExpr][] = [];
+  const condSet = (c: Expr): SetExpr => {
+    if (c.kind === 'Bool') return (c as unknown as { value: boolean }).value ? Reals : EmptySet;
+    if (c.kind === 'BoolOp') {
+      const op = (c as unknown as { op: string }).op;
+      const parts = c.args.map(condSet);
+      if (op === 'And') return parts.reduce((a, b) => intersection(a, b));
+      if (op === 'Or') return parts.reduce((a, b) => union(a, b));
+      return complement(Reals, parts[0]!);
+    }
+    return solveSign(add((c as Rel).lhs, mul(-1, (c as Rel).rhs)), (c as Rel).op, x, Reals);
+  };
   for (const [e, c] of pairs) {
-    const s: SetExpr = c.kind === 'Bool' ? ((c as unknown as { value: boolean }).value ? Reals : EmptySet) : solveSign(add((c as Rel).lhs, mul(-1, (c as Rel).rhs)), (c as Rel).op, x, Reals);
+    const s: SetExpr = condSet(c);
     const piece = intersection(remaining, s);
     if (piece !== EmptySet) out.push([e, piece]);
     remaining = complement(remaining, s);
