@@ -11,10 +11,10 @@
  * which are ubiquitous in products of rotation gates.
  */
 
-import { Add, Constant, Expr, ExprLike, Fn, Mul, Pow, S } from '../core/nodes';
-import { add, couldExtractMinusSign, exp, mul, neg, sympify } from '../core/ops';
+import { Add, Constant, Expr, ExprLike, Fn, FnName, Mul, Pow, S } from '../core/nodes';
+import { add, couldExtractMinusSign, exp, mul, neg, pow, sympify } from '../core/ops';
 import { countOps, mapBottomUp, some } from '../core/traverse';
-import { cos, cosh, sin, sinh } from '../functions/elementary';
+import { cos, cosh, fn, sin, sinh } from '../functions/elementary';
 import { expandMul as expand } from './expand';
 import { rewrite } from './rewrite';
 
@@ -86,7 +86,14 @@ export function exptotrig(ex: ExprLike): Expr {
  * result is never more complex than the input.
  */
 export function trigsimp(ex: ExprLike): Expr {
-  const e = sympify(ex);
+  let e = sympify(ex);
+  // reciprocal functions (cot, coth, sec, ...) in terms of the basic ones when that is shorter
+  const recip = mapBottomUp(e, (x) => {
+    if (!(x instanceof Fn)) return x;
+    const r = RECIPROCAL[x.name];
+    return r ? pow(fn(r as FnName, [x.args[0]!]), -1) : x;
+  });
+  if (recip.key !== e.key && countOps(recip) < countOps(e)) e = recip;
   if (!hasTrigFunctions(e)) return e;
   const t = exptotrig(e);
   // SymPy futrig objective: fewer trigonometric functions first, then count_ops
@@ -96,6 +103,7 @@ export function trigsimp(ex: ExprLike): Expr {
   return countOps(t) <= countOps(e) ? t : e;
 }
 
+const RECIPROCAL: Record<string, string> = { cot: 'tan', coth: 'tanh', sec: 'cos', csc: 'sin', sech: 'cosh', csch: 'sinh' };
 const TRIG_NAMES = new Set(['sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch']);
 function trigCount(e: Expr): number {
   let n = 0;
