@@ -1800,9 +1800,24 @@ export const ADAPTERS: Record<string, Adapter> = {
   transpose: (args, kw) => (noKw(kw), args[0] instanceof Matrix ? args[0].transpose() : sj.transpose(asExpr(args[0]))),
   homogeneous_order: (args, kw) => (noKw(kw), sj.homogeneousOrder(asExpr(args[0]), ...args.slice(1).map(asExpr)) ?? null),
   dsolve: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'ics') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (k !== 'ics' && k !== 'hint') throw new Unsupported(`kwargs ${k}`);
+    if (kw['hint'] !== undefined && !['1st_exact', 'almost_linear', 'default'].includes(String(kw['hint']))) throw new Unsupported('dsolve hint');
     const ics = kw['ics'] instanceof PyDict ? (kw['ics'] as PyDict).entries.map(([k, v]) => [asExpr(k), asExpr(v)] as [Expr, Expr]) : undefined;
-    return sj.dsolve(asExpr(args[0]), asExpr(args[1]), ics ? { ics } : {});
+    const eq = asExpr(args[0]);
+    let fx: Expr | undefined = args[1] === undefined ? undefined : asExpr(args[1]);
+    if (fx === undefined) {
+      // the single applied undefined function in the equation
+      const found = new Map<string, Expr>();
+      const walk = (e: Expr) => {
+        if (e.kind === 'Undef') found.set(e.key, e);
+        e.args.forEach(walk);
+      };
+      walk(eq);
+      if (found.size !== 1) throw new Unsupported('dsolve function');
+      fx = [...found.values()][0]!;
+    }
+    const r = sj.dsolve(eq, fx, ics ? { ics } : {});
+    return Array.isArray(r) ? new PyList(r) : r;
   },
 
   // ---- polynomials

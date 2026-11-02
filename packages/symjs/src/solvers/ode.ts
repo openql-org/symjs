@@ -209,7 +209,11 @@ function particular(coeffs: Expr[], rhs: Expr, x: Sym): Expr | undefined {
  * Solve an ordinary differential equation for f(x). Returns Eq(f(x), solution).
  * ics maps initial conditions, e.g. new Map([[f(0), 1], [Derivative(f(x), x).subs(x, 0), 0]]).
  */
-export function dsolve(eqIn: ExprLike, fx: Expr, opts: { ics?: [Expr, ExprLike][] } = {}): Expr {
+/**
+ * Solve an ordinary differential equation for f(x). Like SymPy, a list of
+ * equations is returned when the general solution has several branches.
+ */
+export function dsolve(eqIn: ExprLike, fx: Expr, opts: { ics?: [Expr, ExprLike][] } = {}): Expr | Expr[] {
   if (!(fx instanceof UndefFn) || fx.args.length !== 1 || !(fx.args[0] instanceof Sym)) {
     throw new Error('dsolve: f(x) with a single symbol argument expected');
   }
@@ -283,6 +287,14 @@ export function dsolve(eqIn: ExprLike, fx: Expr, opts: { ics?: [Expr, ExprLike][
       }
     }
   }
+  if (sol === undefined && n === 1) {
+    // 1st_exact: M(x, y) + N(x, y)*y' = 0 with dM/dy = dN/dx
+    const sols = firstExact(e, x, ys[0]!, ys[1]!);
+    if (sols) {
+      const out = sols.map((s0) => Eq(fx, xreplace(s0, [[ys[0]!, fx]])));
+      return out.length === 1 ? out[0]! : out;
+    }
+  }
   if (sol === undefined) throw new Error('dsolve: unsupported equation');
   let result = sol;
   if (opts.ics && opts.ics.length) result = applyIcs(result, fx, x, opts.ics);
@@ -343,4 +355,41 @@ export function homogeneousOrder(eqIn: ExprLike, ...symbols: Expr[]): Expr | und
   if (ratio.key === t.key) return S.One;
   if (ratio instanceof Pow && ratio.base.key === t.key && !ratio.exp.has(t)) return ratio.exp;
   return undefined;
+}
+
+
+/**
+ * SymPy 1st_exact: for M + N*y' = 0 with dM/dy = dN/dx the potential
+ * F = Integral(M, x) + Integral(N - d/dy Integral(M, x), y) is constant.
+ * Returns the explicit solutions for y, or undefined.
+ */
+function firstExact(e: Expr, x: Sym, y: Sym, yp: Sym): Expr[] | undefined {
+  const pc = polyCoefficients(e, yp);
+  if (!pc || Math.max(...pc.keys()) !== 1) return undefined;
+  const N = pc.get(1)!;
+  const M = pc.get(0) ?? S.Zero;
+  if (N.has(yp) || M.has(yp) || !N.has(y) && !M.has(y)) return undefined;
+  const yy = y as unknown as Sym;
+  const diffMN = simplify(add(diff(M, yy), mul(-1, diff(N, x))));
+  if (!isZeroE(diffMN)) return undefined;
+  const Fx = integrate(M, x);
+  const rest = simplify(add(N, mul(-1, diff(Fx, yy))));
+  const F = add(Fx, integrate(rest, yy));
+  if (F.has(S.NaN) || containsIntegral(F)) return undefined;
+  const C1 = new Sym('C1');
+  let sols: Expr[];
+  try {
+    sols = solve(add(F, mul(-1, C1)), yy, { check: false });
+  } catch {
+    return undefined;
+  }
+  if (!sols.length) return undefined;
+  // absorb a sign into the constant like SymPy constantsimp (-C1 -> C1) when that is simpler
+  const flipped = sols.map((s0) => xreplace(s0, [[C1, mul(-1, C1)]]));
+  const minus = (xs: Expr[]) => xs.reduce((n, t) => n + (t.toString().match(/-/g)?.length ?? 0), 0);
+  return minus(flipped) < minus(sols) ? flipped : sols;
+}
+
+function containsIntegral(e: Expr): boolean {
+  return e.kind === 'Integral' || e.args.some(containsIntegral);
 }

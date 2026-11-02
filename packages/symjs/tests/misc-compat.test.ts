@@ -141,3 +141,17 @@ describe('factor over an algebraic extension', () => {
     expect(String(factor(parse('x**3 + x'), { extension: [I] }))).toBe('x*(x - I)*(x + I)');
   });
 });
+
+import { acos, cos, dsolve, sin } from '../src';
+
+describe('first-order exact ODEs and acos of negated arguments', () => {
+  it('acos(-u) stays unevaluated', () => {
+    expect(String(acos(neg(x)))).toBe('acos(-x)');
+  });
+  it('1st_exact gives both branches', () => {
+    const f = Fn('f');
+    const eq = add(mul(cos(f(x)), sin(x)), mul(diff(f(x), x), cos(x), sin(f(x))));
+    const r = dsolve(eq, f(x));
+    expect(Array.isArray(r) ? r.map(String) : String(r)).toEqual(['Eq(f(x), -acos(C1/cos(x)) + 2*pi)', 'Eq(f(x), acos(C1/cos(x)))']);
+  });
+});

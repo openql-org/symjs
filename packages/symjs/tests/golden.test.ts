@@ -67,7 +67,10 @@ function runOp(op: string, e: Expr): string | string[] {
     }
     return str(integrate(e, sym));
   }
-  if (op === 'dsolve') return str(dsolve(e, Function('f')(x)));
+  if (op === 'dsolve') {
+    const r = dsolve(e, Function('f')(x));
+    return Array.isArray(r) ? `[${r.map(str).join(', ')}]` : str(r);
+  }
   if (op.startsWith('series:')) {
     const [v, pt, n] = op.slice('series:'.length).split(',');
     return str(series(e, symbols[v!]!, pt ? parse(pt, { symbols }) : 0, n ? Number(n) : 6));

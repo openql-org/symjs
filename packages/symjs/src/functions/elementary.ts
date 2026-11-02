@@ -187,7 +187,9 @@ const evalAcos: Evaluator = (x) => {
   if (x instanceof Special && x.name === 'oo') return mul(S.I, S.Infinity);
   if (x instanceof Special && x.name === '-oo') return mul(-1, S.I, S.Infinity);
   const v = evalAsin(x);
-  if (v === undefined || v instanceof Fn) return undefined;
+  // only exact values; acos(-u) stays (SymPy does not rewrite it through asin)
+  const hasAsin = (t: Expr): boolean => (t instanceof Fn && t.name === 'asin') || t.args.some(hasAsin);
+  if (v === undefined || hasAsin(v)) return undefined;
   return add(mul(S.Half, S.Pi), neg(v));
 };
 
