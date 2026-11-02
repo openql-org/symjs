@@ -8,10 +8,10 @@
  * values, pseudo-inverse, matrix exponential and structural helpers.
  */
 
-import { Dummy, Expr, ExprLike, Rational, S, Special, Sym } from '../core/nodes';
+import { Dummy, Expr, ExprLike, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { diff } from '../calculus/diff';
-import { abs, conjugate, cos, sin } from '../functions/elementary';
+import { abs, conjugate, cos, log, sin } from '../functions/elementary';
 import { Max, Min } from '../functions/special';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { expandMul } from '../simplify/expand';
@@ -197,6 +197,62 @@ export function matrixExp(m: Matrix): Matrix {
   const [P, D] = diagonalize(m);
   const E = Matrix.diag(...Array.from({ length: D.rows }, (_, i) => exp(D.get(i, i))));
   return P.mul(E).mul(P.inv()).map((e) => expandMul(e));
+}
+
+/**
+ * f(A) for an analytic function f of x (SymPy Matrix.analytic_func): the
+ * interpolating polynomial matching f and its derivatives at the
+ * eigenvalues (with multiplicity) evaluated at A.
+ */
+export function analyticFunc(m: Matrix, fIn: ExprLike, x: Sym): Matrix {
+  if (!m.isSquare) throw new Error('analytic_func: square matrix expected');
+  const f = sympify(fIn);
+  const n = m.rows;
+  const eig = new Map<string, [Expr, number]>();
+  for (const v of m.eigenvals()) {
+    const e = eig.get(v.key);
+    eig.set(v.key, [v, (e?.[1] ?? 0) + 1]);
+  }
+  const maxMul = Math.max(...[...eig.values()].map(([, k]) => k));
+  const derivs: Expr[] = [f];
+  for (let i = 1; i < maxMul; i++) derivs.push(diff(derivs[i - 1]!, x));
+  const r: Expr[][] = [];
+  const fv: Expr[][] = [];
+  for (const [lam, k] of eig.values()) {
+    for (let d = 0; d < k; d++) {
+      // d-th derivative of x**a at lam: a!/(a-d)! lam**(a-d)
+      const row: Expr[] = [];
+      for (let a = 0; a < n; a++) {
+        if (a < d) {
+          row.push(S.Zero);
+          continue;
+        }
+        let c = 1;
+        for (let t = 0; t < d; t++) c *= a - t;
+        row.push(mul(c, pow(lam, a - d)));
+      }
+      r.push(row);
+      fv.push([subsValue(derivs[d]!, x, lam)]);
+    }
+  }
+  const c = Matrix.of(r).inv().mul(Matrix.of(fv));
+  let ans = Matrix.zeros(n);
+  let pre = Matrix.eye(n);
+  for (let i = 0; i < n; i++) {
+    ans = ans.add(pre.scale(c.get(i, 0)));
+    pre = pre.mul(m);
+  }
+  return ans.map((e) => cancel(expandMul(e)));
+}
+
+function subsValue(e: Expr, x: Sym, v: Expr): Expr {
+  return impl.subs!(e, [[x, v]]);
+}
+
+/** Matrix logarithm (SymPy Matrix.log) via analytic_func. */
+export function matrixLog(m: Matrix): Matrix {
+  const x = new Dummy('x');
+  return analyticFunc(m, log(x), x);
 }
 
 // ---------------------------------------------------------------------------

@@ -276,6 +276,8 @@ export {
   isDiagonalizable,
   diagonalize,
   matrixExp,
+  matrixLog,
+  analyticFunc,
   cholesky,
   ldl,
   luDecomposition,
