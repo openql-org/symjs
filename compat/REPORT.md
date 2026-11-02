@@ -48,7 +48,7 @@ A source file counts as **fully compatible** when the unit tests (`pnpm coverage
 | `packages/symjs/src/concrete/summations.ts` | core | 24.66% | 22.07% | 26.22% | 27.65% |  |
 | `packages/symjs/src/core/assumptions.ts` | core | 90.38% | 84.06% | 100% | 97.05% |  |
 | `packages/symjs/src/core/basic.ts` | core | 66.66% | 100% | 66.66% | 66.66% |  |
-| `packages/symjs/src/core/boolalg.ts` | core | 82.75% | 61.53% | 86.95% | 98.38% |  |
+| `packages/symjs/src/core/boolalg.ts` | core | 83.9% | 65.93% | 86.95% | 98.38% |  |
 | `packages/symjs/src/core/callable.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/core/classes.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/core/defun.ts` | core | 94.73% | 76.47% | 100% | 100% |  |
@@ -57,7 +57,7 @@ A source file counts as **fully compatible** when the unit tests (`pnpm coverage
 | `packages/symjs/src/core/factors.ts` | core | 70.46% | 61.6% | 95.23% | 72.03% |  |
 | `packages/symjs/src/core/indexed.ts` | core | 70% | 25% | 70% | 70% |  |
 | `packages/symjs/src/core/lambda.ts` | core | 94.44% | 75% | 100% | 100% |  |
-| `packages/symjs/src/core/logic.ts` | core | 80.7% | 65.62% | 92.3% | 86.84% |  |
+| `packages/symjs/src/core/logic.ts` | core | 80.7% | 67.18% | 92.3% | 86.84% |  |
 | `packages/symjs/src/core/match.ts` | core | 68.76% | 56.3% | 71.79% | 73.25% |  |
 | `packages/symjs/src/core/methods.ts` | core | 50.27% | 42.92% | 45.89% | 57.29% |  |
 | `packages/symjs/src/core/nodes.ts` | core | 85.81% | 83.58% | 77.93% | 87.8% |  |
@@ -74,9 +74,9 @@ A source file counts as **fully compatible** when the unit tests (`pnpm coverage
 | `packages/symjs/src/core/undef.ts` | core | 90% | 73.68% | 85.71% | 95.65% |  |
 | `packages/symjs/src/numeric/complex.ts` | core | 84.78% | 77.35% | 82.6% | 93.84% |  |
 | `packages/symjs/src/numeric/evalf.ts` | core | 70.46% | 59.66% | 75.47% | 72.34% |  |
-| `packages/symjs/src/numeric/floatctor.ts` | core | 23.52% | 22.22% | 25% | 30% |  |
+| `packages/symjs/src/numeric/floatctor.ts` | core | 44.11% | 49.38% | 25% | 54% |  |
 | `packages/symjs/src/numeric/mpeval.ts` | core | 74.8% | 73.03% | 56.66% | 74.75% |  |
-| `packages/symjs/src/numeric/mpf.ts` | core | 89.28% | 79.67% | 100% | 95.6% |  |
+| `packages/symjs/src/numeric/mpf.ts` | core | 89.68% | 80.76% | 100% | 95.6% |  |
 | `packages/symjs/src/numeric/mpfun.ts` | core | 80.14% | 72.18% | 95.08% | 82.02% |  |
 | `packages/symjs/src/numeric/mpspecial.ts` | core | 80.37% | 68.18% | 87.5% | 79.62% |  |
 | `packages/symjs/src/numeric/mpspecialfns.ts` | core | 77.01% | 75.75% | 68.18% | 78.8% |  |
@@ -137,7 +137,7 @@ A source file counts as **fully compatible** when the unit tests (`pnpm coverage
 | `packages/symjs/src/solvers/public.ts` | solvers | 81.81% | 70% | 69.23% | 93.75% |  |
 | `packages/symjs/src/solvers/recurr.ts` | solvers | 6.68% | 4.5% | 11.76% | 7.86% |  |
 | `packages/symjs/src/solvers/solve.ts` | solvers | 72.04% | 63.23% | 77.03% | 79.07% |  |
-| `packages/symjs/src/functions/special.ts` | special | 37.74% | 40.26% | 39.26% | 43.42% |  |
+| `packages/symjs/src/functions/special.ts` | special | 38.4% | 40.87% | 40.18% | 44.24% |  |
 
 ## Base scope checks
 

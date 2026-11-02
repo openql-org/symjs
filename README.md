@@ -38,6 +38,7 @@ symjs is a pnpm monorepo. The general-purpose CAS is the **base module**; functi
 |---|---|---|
 | [`@symjs/symjs`](packages/symjs) | `packages/symjs/` | Base module: expressions, numbers, printing and parsing, functions, simplification, polynomials, calculus, equation solving, matrices, sets |
 | [`@symjs/physics-quantum`](packages/physics-quantum) | `packages/physics-quantum/` | Extend module for quantum physics (SymPy `sympy.physics.quantum`) |
+| [`@symjs/mathjs`](packages/mathjs) | `packages/mathjs/` | Extend module: conversion to and from math.js (math.js is not a dependency) |
 
 Extend modules depend only on the public API of the base module, which they declare as a peer dependency (`@symjs/symjs`), so every extend module installed in an application shares one copy of the base module. Which sub-packages belong to the base module and which become extend modules is to be decided by the community; `physics-quantum` is the first example.
 
