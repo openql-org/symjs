@@ -9,7 +9,8 @@
  * I*pi/2).
  */
 
-import { Add, Expr, ExprLike, Float, Fn, FnName, Mul, Rational, S, Special } from '../core/nodes';
+import type { Expr, ExprLike, FnName } from '../core/nodes';
+import { Add, Float, Fn, Mul, Rational, S, Special } from '../core/nodes';
 import { add, couldExtractMinusSign, mul, neg, pow, sqrt } from '../core/ops';
 import { asCoefficient } from '../core/methods';
 import { isReal } from '../core/assumptions';
@@ -20,7 +21,8 @@ import { mpFns } from '../numeric/mpeval';
 import * as F from '../numeric/mpf';
 import * as M from '../numeric/mpfun';
 import type { Mpc } from '../numeric/mpfun';
-import { Evaluator, acos, asin, atan, conjugateCommutes, cos, cosh, evaluators, fn, log, sin, sinh, splitPiTerm, tan, tanh } from './elementary';
+import type { Evaluator } from './elementary';
+import { acos, asin, atan, conjugateCommutes, cos, cosh, evaluators, fn, log, sin, sinh, splitPiTerm, tan, tanh } from './elementary';
 
 export const cot = (x: ExprLike): Expr => fn('cot', [x]);
 export const sec = (x: ExprLike): Expr => fn('sec', [x]);

@@ -7,12 +7,14 @@
  * that assumption, so every simplification that uses assumptions applies.
  */
 
-import { Assumptions, Expr, ExprLike, Sym } from './nodes';
+import type { Assumptions, ExprLike } from './nodes';
+import { Expr, Sym } from './nodes';
 import { sympify } from './ops';
 import { xreplace } from './traverse';
 import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from './assumptions';
 import { str } from '../printing/str';
-import { Truth, toTruth } from './truth';
+import type { Truth } from './truth';
+import { toTruth } from './truth';
 
 /** Predicate names of Q (SymPy Q.<name>). */
 export type PredicateName =
@@ -135,7 +137,7 @@ function assume(assumptions: Assumption | boolean | undefined): [Map<string, Sym
 function reevaluate(e: Expr, forward: Map<string, Sym>): Expr {
   return xreplace(
     e,
-    [...forward].map(([k, s]) => [findByKey(e, k)!, s] as const).filter(([a]) => a !== undefined),
+    [...forward].flatMap(([k, s]) => { const a = findByKey(e, k); return a ? [[a, s] as const] : []; }),
   );
 }
 

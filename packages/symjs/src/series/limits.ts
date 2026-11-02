@@ -16,7 +16,8 @@
 import { toGamma } from '../simplify/gammasimp';
 import { powsimp } from '../simplify/powsimp';
 import { isNegative, isPositive } from '../core/assumptions';
-import { Add, Expr, ExprLike, Fn, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Fn, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { mapBottomUp, xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
@@ -307,7 +308,7 @@ export function limit(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' | '+-'
     const r = limit(e, z, z0, '+');
     if (l.key !== r.key) {
       if (l instanceof Special && r instanceof Special && l.name !== 'nan' && r.name !== 'nan') return S.ComplexInfinity;
-      throw new Error(
+      throw new RangeError(
         `The limit does not exist since left hand limit = ${l.toString()} and right hand limit = ${r.toString()}`,
       );
     }
@@ -335,7 +336,7 @@ function gammaAsymptotic(e: Expr, n: Sym): Expr | undefined {
   const isGammaLike = (x: Expr): boolean => (x instanceof Fn && ['gamma', 'factorial', 'binomial', 'rf', 'ff'].includes(x.name) && x.has(n)) || x.args.some(isGammaLike);
   if (!isGammaLike(e)) return undefined;
   const g = toGamma(e);
-  let failed = false;
+  let failed = false as boolean; // set inside a callback
   const out = mapBottomUp(g, (x: Expr) => {
     if (!(x instanceof Fn && x.name === 'gamma') || !x.has(n)) return x;
     const c = expand(add(x.args[0]!, mul(-1, n)));

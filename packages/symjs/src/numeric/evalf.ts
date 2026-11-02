@@ -6,19 +6,20 @@
  */
 
 import { DeferredVector } from '../core/classes';
+import type {
+  ComplexValue as C,
+  EvalfOptions,
+  ExprLike,
+  NumericValues } from '../core/nodes';
 import {
   Add,
   BoolAtom,
-  ComplexValue as C,
   Constant,
   Expr,
   ExtensionExpr,
-  EvalfOptions,
-  ExprLike,
   Float,
   Fn,
   Mul,
-  NumericValues,
   Piecewise,
   Pow,
   Rational,
@@ -102,7 +103,7 @@ const FN_NUMERIC1: Partial<Record<Fn['name'], (a: C) => C>> = {
 
 /** Numeric implementations of functions (multi-argument); special.ts registers more. */
 export const numericFns: Partial<Record<Fn['name'], (args: C[]) => C>> = Object.fromEntries(
-  Object.entries(FN_NUMERIC1).map(([k, f]) => [k, (args: C[]) => f!(args[0]!)]),
+  Object.entries(FN_NUMERIC1).map(([k, f]) => [k, (args: C[]) => f(args[0]!)]),
 );
 
 const CONSTANT_VALUES: Record<string, C> = {
@@ -150,7 +151,7 @@ function compile(e: Expr, resolve: (s: Sym) => Compiled): Compiled {
   if (e instanceof Fn) {
     const fas = e.args.map((a) => compile(a, resolve));
     const op = numericFns[e.name];
-    if (!op) throw new Error(`Cannot evaluate ${e.name} numerically`);
+    if (!op) throw new TypeError(`Cannot evaluate ${e.name} numerically`);
     return (env) => op(fas.map((f) => f(env)));
   }
   if (e instanceof Piecewise) {
@@ -160,7 +161,7 @@ function compile(e: Expr, resolve: (s: Sym) => Compiled): Compiled {
       throw new RangeError('Piecewise: no condition is satisfied');
     };
   }
-  throw new Error(`Cannot evaluate ${e.toString()}`);
+  throw new TypeError(`Cannot evaluate ${e.toString()}`);
 }
 
 function compileCond(e: Expr, resolve: (s: Sym) => Compiled): (env: readonly C[]) => boolean {
@@ -189,7 +190,7 @@ function compileCond(e: Expr, resolve: (s: Sym) => Compiled): (env: readonly C[]
       }
     };
   }
-  throw new Error(`Cannot evaluate condition ${e.toString()}`);
+  throw new TypeError(`Cannot evaluate condition ${e.toString()}`);
 }
 
 /**
@@ -202,7 +203,7 @@ export function toComplex(ex: ExprLike, values?: NumericValues): C {
   const lookup = makeLookup(values);
   const f = compile(e, (s) => {
     const v = lookup(s);
-    if (v === undefined) throw new Error(`toComplex: no value for symbol '${s.name}'`);
+    if (v === undefined) throw new TypeError(`toComplex: no value for symbol '${s.name}'`);
     return () => v;
   });
   return f([]);
@@ -229,7 +230,7 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
     return [F.fromNumber(v.re), F.fromNumber(v.im)];
   };
   const go = (x: Expr): Expr => {
-    let numeric = true;
+    let numeric = true as boolean; // set inside visit
     const visit = (y: Expr) => {
       if (y instanceof ExtensionExpr && y.numericValue(5) !== undefined) return;
       if (y instanceof Sym && lookup(y) === undefined) numeric = false;
@@ -277,7 +278,7 @@ export function lambdify(ex: ExprLike, params: readonly Sym[]): (...args: (numbe
       return (env) => env[slot]!;
     }
     const i = index.get(s.name);
-    if (i === undefined) throw new Error(`lambdify: symbol '${s.name}' is not a parameter`);
+    if (i === undefined) throw new TypeError(`lambdify: symbol '${s.name}' is not a parameter`);
     return (env) => env[i]!;
   });
   return (...args) => {

@@ -5,7 +5,8 @@
  * @file Undefined functions (SymPy `Function('f')`) and unevaluated derivatives.
  */
 
-import { Derivative, Expr, ExprLike, Rational, Sym, UndefFn } from './nodes';
+import type { Expr, ExprLike } from './nodes';
+import { Derivative, Rational, Sym, UndefFn } from './nodes';
 import { sympify } from './ops';
 
 /** A callable undefined function: f(x, y) builds the application. */

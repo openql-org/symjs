@@ -6,7 +6,8 @@
  * (e.g. `x**2 + 2*x*y - sqrt(2)/2`).
  */
 
-import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import type { Expr } from '../core/nodes';
+import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
 import { numNeg } from '../core/num';
 import { floatToString } from '../numeric/mpf';
@@ -73,7 +74,7 @@ function printMul(e: Mul): string {
   let expr: Expr = e;
   if (c.isNegative) {
     sign = '-';
-    expr = keepCoeff(numNeg(c) as Rational | Float, rest);
+    expr = keepCoeff(numNeg(c), rest);
   }
   const a: Expr[] = [];
   const b: Expr[] = [];

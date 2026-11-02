@@ -9,7 +9,8 @@
  */
 
 import * as F from './mpf';
-import { Mpf, ONE, ZERO } from './mpf';
+import type { Mpf } from './mpf';
+import { ONE, ZERO } from './mpf';
 
 // ---------------------------------------------------------------------------
 // Constants (fixed point, cached)

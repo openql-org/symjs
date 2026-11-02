@@ -17,12 +17,14 @@
 
 import { isNegative as isNegativeQ, isNonZero, isPositive as isPositiveQ } from '../core/assumptions';
 import { Gt, Ne, piecewise } from '../core/logic';
+import type {
+  Expr,
+  ExprLike,
+  RelOp } from '../core/nodes';
 import {
   Add,
   BoolAtom,
   Constant,
-  Expr,
-  ExprLike,
   Fn,
   Integral,
   Mul,
@@ -30,7 +32,6 @@ import {
   Pow,
   Rational,
   Rel,
-  RelOp,
   S,
   Special,
   Sym,
@@ -224,7 +225,7 @@ class Integrator {
       // 1/sqrt(c - k*x**2) -> asin(sqrt(k/c)*x)/sqrt(k)
       if (n instanceof Rational && n.p === -1n && n.q === 2n) {
         const q = polyCoefficients(b, x);
-        if (q && q.size === 2 && q.has(0) && q.has(2)) {
+        if (q?.size === 2 && q.has(0) && q.has(2)) {
           const c = q.get(0)!;
           const k = mul(-1, q.get(2)!);
           if (isNum(c) && isNum(k) && c.isPositive && k.isPositive) {

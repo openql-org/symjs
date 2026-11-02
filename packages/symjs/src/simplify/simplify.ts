@@ -5,7 +5,8 @@
  * @file simplify(): try several strategies and keep the simplest result.
  */
 
-import { Add, Expr, ExprLike, Fn, Mul, Pow, Rational, impl } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Fn, Mul, Pow, Rational, impl } from '../core/nodes';
 import { splitCoeff, sympify } from '../core/ops';
 import { countOps, mapBottomUp, some } from '../core/traverse';
 import { combsimp } from './gammasimp';
@@ -22,7 +23,7 @@ const hasDenominator = (e: Expr): boolean =>
 
 /** A sum with a non-integer rational term, e.g. x - 3/2 (SymPy clears such denominators). */
 function hasRationalCoeffInsideSum(e: Expr): boolean {
-  if (e instanceof Add && e.args.some((a) => (a instanceof Rational && !a.isInteger) || (a instanceof Mul && a.args[0] instanceof Rational && !(a.args[0] as Rational).isInteger))) return true;
+  if (e instanceof Add && e.args.some((a) => (a instanceof Rational && !a.isInteger) || (a instanceof Mul && a.args[0] instanceof Rational && !(a.args[0]).isInteger))) return true;
   return e.args.some(hasRationalCoeffInsideSum);
 }
 

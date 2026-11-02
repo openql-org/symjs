@@ -6,7 +6,8 @@
  * (SymPy Basic.rewrite and the `_eval_rewrite_as_*` methods).
  */
 
-import { Add, Constant, Dummy, Expr, ExtensionExpr, ExprLike, Fn, Integral, Mul, Pow, Rational, S, UndefFn, impl } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Constant, Dummy, ExtensionExpr, Fn, Integral, Mul, Pow, Rational, S, UndefFn, impl } from '../core/nodes';
 import { Eq, Ge, Gt, Lt, Ne, piecewise } from '../core/logic';
 import { isIntegerQ, isNegative, isPositive, isReal } from '../core/assumptions';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';

@@ -12,7 +12,8 @@
  * their entry point (or the root `@symjs/symjs`) is imported.
  */
 
-import { Assumptions, Derivative as DerivativeNode, Expr as ExprNode, ExprLike as ExprLikeT, Piecewise as PiecewiseNode, Sym as SymbolNode } from './core/nodes';
+import type { Assumptions, Expr as ExprNode, ExprLike as ExprLikeT } from './core/nodes';
+import { Derivative as DerivativeNode, Piecewise as PiecewiseNode, Sym as SymbolNode } from './core/nodes';
 import { expandSymbolNames as expandNames } from './core/numberutils';
 import { derivative as derivativeFn } from './core/undef';
 import { piecewise as piecewiseFn } from './core/logic';
@@ -81,7 +82,22 @@ export { classKey } from './printing/sortkey';
 export { expand_power_base as separate } from './simplify/expand';
 export { Q, ask, refine, AppliedPredicate } from './core/refine';
 export type { Assumption, PredicateName } from './core/refine';
-export { SympifyError, PoleError, PrecisionExhausted, NonlinearError, NotImplementedError, seterr } from './core/errors';
+export {
+  SympifyError,
+  PoleError,
+  PrecisionExhausted,
+  NonlinearError,
+  NotImplementedError,
+  NotLoadedError,
+  PolynomialError,
+  DomainError,
+  ExactQuotientFailed,
+  NotInvertible,
+  MatrixError,
+  NonSquareMatrixError,
+  NonInvertibleMatrixError,
+  seterr,
+} from './core/errors';
 export { Basic, BasicNode } from './core/basic';
 export { SymNumber as Number, RealNumber, Atom, AtomicExpr, FunctionClass, UnevaluatedExpr, DeferredVector, genericExpr } from './core/classes';
 export { defineFunction, implementedFunction, DefinedFunctionCall } from './core/defun';

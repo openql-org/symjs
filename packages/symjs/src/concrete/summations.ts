@@ -5,7 +5,8 @@
  * @file Sums and products (SymPy Sum/Product/summation/product).
  */
 
-import { Expr, ExprLike, Mul, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Mul, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { Lt, piecewise } from '../core/logic';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
@@ -378,7 +379,7 @@ export function sumIsConvergent(c: Concrete): boolean | undefined {
   }
   // ratio test
   const ratio = limOo(impl.abs(mul(xreplace(f, [[k, add(k, 1)]]), pow(f, -1))), k);
-  if (ratio !== undefined && ratio.freeSymbols().size === 0 && !(ratio instanceof Special)) {
+  if (ratio?.freeSymbols().size === 0 && !(ratio instanceof Special)) {
     const v = ratio.toNumber();
     if (v < 1) return true;
     if (v > 1) return false;
@@ -404,8 +405,9 @@ export function sumIsAbsolutelyConvergent(c: Concrete): boolean | undefined {
  * SymPy Sum.euler_maclaurin(m, n): [approximation, error estimate] by the
  * Euler-Maclaurin formula with m explicit leading terms and n correction terms.
  */
-export function eulerMaclaurin(sum: Concrete, m = 0, n = 0): [Expr, Expr] {
-  if (sum.kind !== 'Concrete' || sum.limits.length !== 1) throw new Error('euler_maclaurin: a Sum with one limit expected');
+export function eulerMaclaurin(sum: Concrete, mIn = 0, n = 0): [Expr, Expr] {
+  let m = mIn;
+  if (!(sum instanceof Concrete) || sum.limits.length !== 1) throw new TypeError('euler_maclaurin: a Sum with one limit expected');
   let f = sum.function;
   const [i0, a0, b0] = sum.limits[0]!;
   const i = i0 as Sym;
@@ -420,7 +422,7 @@ export function eulerMaclaurin(sum: Concrete, m = 0, n = 0): [Expr, Expr] {
   const at = (e: Expr, p: Expr) => xreplace(e, [[i, p]]);
   let s: Expr = S.Zero;
   if (m) {
-    if (a instanceof Rational && b instanceof Rational) m = Math.min(m, Number((b as Rational).p - (a as Rational).p) + 1);
+    if (a instanceof Rational && b instanceof Rational) m = Math.min(m, Number((b).p - (a).p) + 1);
     s = add(...Array.from({ length: m }, (_, k) => at(f, add(a, k))));
     if (add(b, mul(-1, a), 1).key === Rational.of(m).key) return [s, S.Zero];
     a = add(a, m);

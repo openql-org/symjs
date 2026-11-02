@@ -9,7 +9,8 @@
  * (minsolve_linear_system with quick=True).
  */
 
-import { Dummy, Expr, ExprLike, Rational, S, Sym } from '../core/nodes';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
+import { Dummy, Rational, S } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { ordered } from '../core/match';
 import { xreplace } from '../core/traverse';
@@ -23,7 +24,7 @@ const isZero = (e: Expr) => e instanceof Rational && e.isZero;
 
 /** SymPy minsolve_linear_system(system, *symbols, quick=True) for linear equations. */
 function particularSolution(eqs: readonly Expr[], vars: readonly Sym[]): Map<string, Expr> | undefined {
-  const sol0 = linsolve(eqs as Expr[], vars as Sym[]);
+  const sol0 = linsolve(eqs, vars);
   if (!sol0) return undefined;
   // pivot variables only (free variables are solved as themselves)
   const s = new Map<string, [Sym, Expr]>();
@@ -93,7 +94,9 @@ export function ratsimpmodprime(exprIn: ExprLike, G: readonly ExprLike[], gens: 
     return [...out, ...staircase(n - 1)];
   };
   const totalDegree = (e: Expr) => Poly.from(e, gens).totalDegree();
-  const step = (a: Expr, b: Expr, N: number, D: number): [Expr, Expr] => {
+  const step = (a: Expr, b: Expr, NIn: number, DIn: number): [Expr, Expr] => {
+    let N = NIn;
+    let D = DIn;
     let [c, d] = [a, b];
     let steps = 0;
     const maxdeg = totalDegree(a) + totalDegree(b);
@@ -116,7 +119,7 @@ export function ratsimpmodprime(exprIn: ExprLike, G: readonly ExprLike[], gens: 
         const ones = ng.map((u) => [u, S.One] as [Expr, Expr]);
         c = xreplace(xreplace(cHat, reps), ones);
         d = xreplace(xreplace(dHat, reps), ones);
-        if (isZero(d)) throw new Error('ratsimpmodprime: ideal not prime?');
+        if (isZero(d)) throw new RangeError('ratsimpmodprime: ideal not prime?');
         break;
       }
       steps++;

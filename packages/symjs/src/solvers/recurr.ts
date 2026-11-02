@@ -6,7 +6,9 @@
  * sympy.solvers.recurr: rsolve_poly, rsolve_ratio, rsolve_hyper, rsolve).
  */
 
-import { Add, Dummy, Expr, ExprLike, Mul, Rational, S, Sym, UndefFn } from '../core/nodes';
+import { NotImplementedError } from '../core/errors';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Dummy, Mul, Rational, S, Sym, UndefFn } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { asNumerDenom } from '../core/methods';
@@ -381,7 +383,7 @@ export function rsolveHyper(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
 export function rsolve(fIn: ExprLike, y: Expr, init?: [ExprLike, ExprLike][]): Expr | undefined {
   let f = sympify(fIn);
   if (f.kind === 'Rel') f = add(f.args[0]!, mul(-1, f.args[1]!));
-  if (!(y instanceof UndefFn) || !(y.args[0] instanceof Sym)) throw new Error('rsolve: y(n) expected');
+  if (!(y instanceof UndefFn) || !(y.args[0] instanceof Sym)) throw new TypeError('rsolve: y(n) expected');
   const n = y.args[0];
   const hPart = new Map<number, Expr[]>();
   const iPart: Expr[] = [];
@@ -393,9 +395,9 @@ export function rsolve(fIn: ExprLike, y: Expr, init?: [ExprLike, ExprLike][]): E
       iPart.push(g);
       continue;
     }
-    if (dep.length > 1) throw new Error('rsolve: nonlinear recurrence');
+    if (dep.length > 1) throw new NotImplementedError('rsolve: nonlinear recurrence');
     const k = add(dep[0]!.args[0]!, mul(-1, n));
-    if (!isIntR(k)) throw new Error(`rsolve: '${y.name}(${n.name} + k)' expected`);
+    if (!isIntR(k)) throw new TypeError(`rsolve: '${y.name}(${n.name} + k)' expected`);
     const coeff = mul(...fs.filter((t) => t !== dep[0]));
     const key = Number(k.p);
     hPart.set(key, [...(hPart.get(key) ?? []), coeff]);
@@ -405,7 +407,7 @@ export function rsolve(fIn: ExprLike, y: Expr, init?: [ExprLike, ExprLike][]): E
   let common: Expr = S.One;
   for (const c of H.values()) {
     const [num, den] = asNumerDenom(c);
-    if (!isPolyIn(num, n) || !isPolyIn(den, n)) throw new Error('rsolve: polynomial or rational coefficients expected');
+    if (!isPolyIn(num, n) || !isPolyIn(den, n)) throw new NotImplementedError('rsolve: polynomial or rational coefficients expected');
     if (!isPolyIn(c, n)) common = polyLcm(common, den);
   }
   const [iNum, iDen] = asNumerDenom(ip);
@@ -436,7 +438,7 @@ export function rsolve(fIn: ExprLike, y: Expr, init?: [ExprLike, ExprLike][]): E
   const order = kMax;
   const pinned = (init?.length ?? 0) >= order;
   if (symbols.length < order && !pinned) return undefined;
-  if (init && init.length && symbols.length) {
+  if (init?.length && symbols.length) {
     const eqs: Expr[] = [];
     for (const [kIn, v] of init) {
       const k = sympify(kIn);
@@ -449,7 +451,7 @@ export function rsolve(fIn: ExprLike, y: Expr, init?: [ExprLike, ExprLike][]): E
     symbols = [];
   }
   // a partial family is the answer only when it meets every initial value
-  if (init && init.length) {
+  if (init?.length) {
     for (const [kIn, v] of init) {
       const k = sympify(kIn);
       const i = k instanceof UndefFn ? k.args[0]! : k;

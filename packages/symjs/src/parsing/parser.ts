@@ -12,7 +12,8 @@
  *   atom    := number | name | name '(' args ')' | '(' sum ')' | interpolated value
  */
 
-import { Add, Assumptions, Expr, ExprLike, FnName, Mul, Pow, Rational, RelOp, S, SpecialFnName, Sym, impl } from '../core/nodes';
+import type { Assumptions, Expr, ExprLike, FnName, RelOp, SpecialFnName } from '../core/nodes';
+import { Add, Mul, Pow, Rational, S, Sym, impl } from '../core/nodes';
 import { and, not, or, xor } from '../core/boolalg';
 import { add, div, exp, mul, neg, pow, sqrt, sub, sympify } from '../core/ops';
 import { fn } from '../functions/elementary';

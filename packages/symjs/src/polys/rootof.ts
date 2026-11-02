@@ -5,11 +5,12 @@
  * @file Indexed roots of polynomials (SymPy ComplexRootOf / CRootOf).
  */
 
-import { Expr, ExprLike, ExtensionExpr, Float, Rational, Sym } from '../core/nodes';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
+import { ExtensionExpr, Float, Rational } from '../core/nodes';
 import { sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import { nroots } from './nroots';
-import { Poly } from './sympoly';
+import { Poly, rootHooks } from './sympoly';
 
 /**
  * The index-th root of a polynomial with rational coefficients (SymPy
@@ -57,3 +58,5 @@ export function rootOf(f: ExprLike | Poly, index: number): Expr {
   if (index < -deg || index >= deg) throw new RangeError(`rootof: index ${index} out of range`);
   return new CRootOf(p.asExpr(), index < 0 ? deg + index : index);
 }
+
+rootHooks.crootof = (e, i) => new CRootOf(e, i);

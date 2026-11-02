@@ -8,6 +8,7 @@
  * modules defining these functions so that the core does not carry them.
  */
 
+import { NotImplementedError } from '../core/errors';
 import * as F from './mpf';
 import { ZERO } from './mpf';
 import * as M from './mpfun';
@@ -18,7 +19,7 @@ import { mpFns } from './mpeval';
 
 const toInt = (z: Mpc): number => {
   const [p, q] = F.toRational(z[0]);
-  if (!F.isZero(z[1]) || q !== 1n) throw new Error('integer expected');
+  if (!F.isZero(z[1]) || q !== 1n) throw new TypeError('integer expected');
   return Number(p);
 };
 const one: Mpc = M.C1;
@@ -29,7 +30,7 @@ Object.assign(mpFns, {
   factorial: ([a], p) => SP.cgamma(M.cadd(a!, one, p + 20), p),
   polygamma: ([n, z], p) => SP.cpolygamma(toInt(n!), z!, p),
   harmonic: (args, p) => {
-    if (args.length !== 1) throw new Error('harmonic(n, m)');
+    if (args.length !== 1) throw new NotImplementedError('harmonic(n, m)');
     const wp = p + 20;
     return M.cadd(SP.cpolygamma(0, M.cadd(args[0]!, one, wp), wp), [M.mpEuler(wp), ZERO], p);
   },
@@ -46,7 +47,7 @@ Object.assign(mpFns, {
     return M.cdiv(M.cmul(SP.cgamma(a!, wp), SP.cgamma(b!, wp), wp), SP.cgamma(M.cadd(a!, b!, wp), wp), p);
   },
   zeta: (args, p) => {
-    if (args.length !== 1) throw new Error('Hurwitz zeta');
+    if (args.length !== 1) throw new NotImplementedError('Hurwitz zeta');
     return SP.czeta(args[0]!, p);
   },
   erf: ([a], p) => SP.cerf(a!, p),
@@ -54,11 +55,11 @@ Object.assign(mpFns, {
   erfi: ([a], p) => SP.cerfi(a!, p),
   erf2: ([x, y], p) => M.csub(SP.cerf(y!, p + 20), SP.cerf(x!, p + 20), p),
   erfinv: ([a], p) => {
-    if (!M.isReal(a!)) throw new Error('complex erfinv');
+    if (!M.isReal(a!)) throw new NotImplementedError('complex erfinv');
     return [SP.erfinv(a![0], p), ZERO];
   },
   erfcinv: ([a], p) => {
-    if (!M.isReal(a!)) throw new Error('complex erfcinv');
+    if (!M.isReal(a!)) throw new NotImplementedError('complex erfcinv');
     return [SP.erfinv(F.sub(F.ONE, a![0], p + 20), p), ZERO];
   },
   fresnels: ([a], p) => SP.cfresnel('S', a!, p),
@@ -104,7 +105,7 @@ function mpLambertW(z: Mpc, k: number, p: number): Mpc {
 }
 
 function numericFnsForStart(z: Mpc, k: number): { re: number; im: number } {
-  return cLambertW({ re: F.toNumber(z[0]), im: F.toNumber(z[1]) } as never, k);
+  return cLambertW({ re: F.toNumber(z[0]), im: F.toNumber(z[1]) }, k);
 }
 
 

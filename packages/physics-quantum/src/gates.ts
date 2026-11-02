@@ -10,7 +10,8 @@
  */
 
 // extend modules depend on the public API of the base module only
-import { Expr, ExprLike, Matrix, Rational, S, add, cos, exp, expandMul as expand, mul, neg, sin, sqrt } from '@symjs/symjs';
+import type { Expr, ExprLike } from '@symjs/symjs';
+import { Matrix, Rational, S, add, cos, exp, expandMul as expand, mul, neg, sin, sqrt } from '@symjs/symjs';
 
 const half = (t: ExprLike) => mul(S.Half, t);
 const iExp = (t: ExprLike) => exp(mul(S.I, t));

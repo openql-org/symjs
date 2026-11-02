@@ -8,7 +8,8 @@
  */
 
 import { isReal } from '../core/assumptions';
-import { Add, Derivative, Dummy, Expr, ExprLike, Fn, Integral, Mul, Pow, Rational, Rel, S, Special, Sym, UndefFn } from '../core/nodes';
+import type { ExprLike } from '../core/nodes';
+import { Add, Derivative, Dummy, Expr, Fn, Integral, Mul, Pow, Rational, Rel, S, Special, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols, some, subs, xreplace } from '../core/traverse';
@@ -30,7 +31,7 @@ import { simplify } from '../simplify/simplify';
 import { trigsimp } from '../simplify/trigsimp';
 import { odesimp } from './odesimp';
 import { linsolve, solve } from './solve';
-import { homogeneousOrder } from './ode';
+import { homogeneousOrder } from './homogeneous';
 
 const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
 
@@ -624,7 +625,7 @@ const nthOrderReducible: Solver = (p) => {
   const g = new UndefFn('_g', [p.x]);
   let geq = p.eq;
   for (const k of [...ords].sort((a, b) => b - a)) geq = xreplace(geq, [[D(p, k), k === n ? g : derivative(g, [[p.x, k - n]], true)]]);
-  const gsol = dsolveRaw(geq, g as UndefFn);
+  const gsol = dsolveRaw(geq, g);
   if (!gsol) return undefined;
   const out: Expr[] = [];
   for (const gs of gsol) {
@@ -648,6 +649,7 @@ const factorable: Solver = (p) => {
     return undefined;
   }
   const fs = eq instanceof Mul ? eq.args : [eq];
+  // oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- the tuple type is needed by tsc
   const bases = fs.map((f) => (f instanceof Pow ? [f.base, f.exp] : [f, S.One]) as [Expr, Expr]).filter(([b]) => b.args.length !== 0);
   let eqs: Expr[] = [];
   if (bases.length > 1 || (bases[0] && !(bases[0][1] instanceof Rational && bases[0][1].isOne))) {
@@ -715,7 +717,7 @@ const bessel: Solver = (p) => {
   const a3 = r.get(2)!;
   // a3 = A*x**k
   const pa = polyCoefficients(expand(a3), x);
-  if (!pa || pa.size !== 1) return undefined;
+  if (pa?.size !== 1) return undefined;
   const [k, A] = [...pa.entries()][0]!;
   if (k === 0 || A.has(x)) return undefined;
   const norm = (e: Expr) => cancel(mul(e, pow(mul(A, pow(x, k - 2)), -1)));
@@ -730,7 +732,7 @@ const bessel: Solver = (p) => {
   const ind = add(...terms.filter((t) => !t.has(x)));
   if (dep.length !== 1) return undefined;
   const pd = polyCoefficients(dep[0]!, x);
-  if (!pd || pd.size !== 1) return undefined;
+  if (pd?.size !== 1) return undefined;
   const [e2, alpha2] = [...pd.entries()][0]!;
   if (e2 % 2 !== 0) return undefined;
   const d = e2 / 2;
@@ -782,7 +784,7 @@ function homogeneousSolution(p: OdeProblem, m: { d: Expr; e: Expr; y: Dummy }, d
   const lhs = dep ? log(x) : log(p.fx);
   const arg = dep ? mul(p.fx, pow(x, -1)) : mul(x, pow(p.fx, -1));
   // SymPy combines the logs while the integral is still unevaluated, so log(C1) stays apart (constantsimp then makes it C1)
-  let sol = Eq(lhs, add(subs(I, [[u1, arg]]), C(1))) as Expr;
+  let sol = Eq(lhs, add(subs(I, [[u1, arg]]), C(1)));
   if (!isZero(xarg) || !isZero(yarg)) {
     const u = new Dummy('u');
     sol = xreplace(sol, [[p.fx, u]]);
@@ -827,7 +829,7 @@ function linearABC(e: Expr, x: Sym, y: Expr): [Rational, Rational, Rational] | u
   const pe = expand(e);
   const c = subs(pe, [[x, 0], [y, 0]]);
   const a = subs(diff(pe, x), [[y, 0]]);
-  const b = subs(diff(pe, y as Sym), [[x, 0]]);
+  const b = subs(diff(pe, y), [[x, 0]]);
   if (!(a instanceof Rational && b instanceof Rational && c instanceof Rational)) return undefined;
   return isZero(expand(add(pe, mul(-1, add(mul(a, x), mul(b, y), c))))) ? [a, b, c] : undefined;
 }
@@ -977,6 +979,7 @@ function classifyExtra(p: OdeProblem): Set<string> {
     const fac = factor(n);
     const factors = fac instanceof Mul ? fac.args : [fac];
     const withF = factors.filter((u) => u.has(p.fx));
+    // oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- the tuple type is needed by tsc
     const bases = factors.filter((u) => u.args.length).map((u) => (u instanceof Pow && u.exp instanceof Rational ? [u.base, Number(u.exp.p)] : [u, 1]) as [Expr, number]);
     if ((bases.length > 1 || (bases[0] && bases[0][1] > 1)) && withF.length) out.add('factorable');
     else {

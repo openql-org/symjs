@@ -5,11 +5,12 @@
  * @file Rational-function manipulation: fraction, together, cancel.
  */
 
-import { Add, Constant, Expr, Fn, impl, ExprLike, Mul, Pow, Rational, Sym, isNum } from '../core/nodes';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
+import { Add, Constant, Fn, impl, Mul, Pow, Rational, isNum } from '../core/nodes';
 import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { freeSymbols, rebuild } from '../core/traverse';
 import { divExact, mgcd } from '../polys/mpoly';
-import { UPoly } from '../polys/poly';
+import { UPoly, polyHooks } from '../polys/poly';
 import { expandMul as expand } from './expand';
 import { isNegative, isPositive } from '../core/assumptions';
 
@@ -163,3 +164,5 @@ export function ratsimp(ex: ExprLike): Expr {
 function polyDivide(f: Expr, g: Expr, gens: readonly Expr[]): [Expr, Expr] | undefined {
   return impl.polyReduce ? impl.polyReduce(f, g, gens) : undefined;
 }
+
+polyHooks.cancel = (e) => cancel(e);

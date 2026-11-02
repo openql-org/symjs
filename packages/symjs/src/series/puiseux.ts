@@ -10,14 +10,17 @@
  * log(t) grows slower than any power of t.
  */
 
-import { Add, Constant, Expr, Fn, Mul, Pow, Rational, S, Special, Sym } from '../core/nodes';
+import { NotImplementedError } from '../core/errors';
+import type { Expr } from '../core/nodes';
+import { Add, Constant, Fn, Mul, Pow, Rational, S, Special, Sym } from '../core/nodes';
 import { numAdd, numCmp, numMul, numNeg } from '../core/num';
 import { add, exp, mul, pow } from '../core/ops';
 import { xreplace as subs } from '../core/traverse';
 import { fn, log } from '../functions/elementary';
 import { expandMul as expand } from '../simplify/expand';
 
-export class SeriesError extends Error {}
+/** A series that the expansion cannot compute (SymPy raises NotImplementedError or ValueError). */
+export class SeriesError extends NotImplementedError {}
 
 const INF = Rational.of(1000000n);
 
@@ -210,8 +213,8 @@ export class Expander {
     const u = s.scale(pow(c0, -1)).shift(numNeg(e0) as Rational).add(PS.constant(S.NegOne)).truncate(rel);
     const d = u.lead()?.e;
     let acc = PS.constant(S.One);
-    const infinite = !!(d && d.isPositive);
-    if (d && d.isPositive) {
+    const infinite = !!(d?.isPositive);
+    if (d?.isPositive) {
       let term = PS.constant(S.One);
       let binom: Expr = S.One;
       const J = Math.ceil(rel.value / d.value) + 1;

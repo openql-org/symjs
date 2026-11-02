@@ -8,7 +8,8 @@
  * into polynomial factors, e.g. gamma(x + 3)/gamma(x + 1) = (x + 1)*(x + 2).
  */
 
-import { Add, Expr, ExprLike, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
+import { Add, Fn, Mul, Pow, Rational, S } from '../core/nodes';
 import { polyCoefficients } from '../polys/poly';
 import { powsimp } from './powsimp';
 import { cancel, fraction } from './rational';

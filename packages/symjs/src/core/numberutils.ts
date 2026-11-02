@@ -114,7 +114,7 @@ export function expandSymbolNames(spec: string): string[] {
     let empty = false;
     for (const t of split) {
       if (t.includes(':')) {
-        if (t.endsWith(':')) throw new Error('missing end range');
+        if (t.endsWith(':')) throw new SyntaxError('missing end range');
         const [a, b] = t.split(':') as [string, string];
         if (/[0-9]$/.test(b)) {
           const lo = a ? Number(a) : 0;
@@ -181,7 +181,8 @@ export function integerNthroot(y: bigint, n: number): [bigint, boolean] {
 }
 
 /** Number of trailing zero bits (SymPy trailing). */
-export function trailing(n: bigint): number {
+export function trailing(nIn: bigint): number {
+  let n = nIn;
   n = babs(n);
   if (n === 0n) return 0;
   let k = 0;

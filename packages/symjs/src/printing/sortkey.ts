@@ -8,7 +8,8 @@
  * (e.g. `x**2*y`, `1 - 2*I`, `-sqrt(2)/4 + sqrt(6)/4`, `I*sin(x) + cos(x)`).
  */
 
-import { Add, ComplexValue, Constant, Derivative, Dummy, Expr, ExtensionExpr, Float, Fn, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, impl, isNum } from '../core/nodes';
+import type { ComplexValue, Expr } from '../core/nodes';
+import { Add, Constant, Derivative, Dummy, ExtensionExpr, Float, Fn, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, impl, isNum } from '../core/nodes';
 import { pow, splitCoeff } from '../core/ops';
 
 /** A SymPy-style sort key: nested tuples of numbers and strings. */

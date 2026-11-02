@@ -13,6 +13,7 @@
  * definitions free of circular imports.
  */
 
+import { NotLoadedError } from './errors';
 import { gcd } from './numbers';
 import { type Mpf, fromNumber as mpfFromNumber, normalize as mpfNormalize, toNumber as mpfToNumber } from '../numeric/mpf';
 
@@ -256,7 +257,7 @@ export interface Impl {
 
 /** An implementation provided by a feature area that has not been imported. */
 function notLoaded(name: string, entry: string): never {
-  throw new Error(`${name} is not available: import '@symjs/symjs/${entry}' (or '@symjs/symjs')`);
+  throw new NotLoadedError(`${name} is not available: import '@symjs/symjs/${entry}' (or '@symjs/symjs')`);
 }
 
 export const impl: Impl = {
@@ -294,7 +295,7 @@ export abstract class Expr {
   private _commutative?: boolean;
   /** False when the expression contains a non-commutative symbol in a product-like position. */
   get isCommutative(): boolean {
-    if (this._commutative === undefined) this._commutative = this.computeCommutative();
+    this._commutative ??= this.computeCommutative();
     return this._commutative;
   }
   protected computeCommutative(): boolean {
@@ -471,8 +472,9 @@ export class Float extends Expr {
    * A float from a JS number (rounded to `prec` bits) or a raw mpf value.
    * @param prec binary precision; defaults to 53 (15 decimal digits).
    */
-  constructor(value: number | Mpf, prec = 53) {
+  constructor(valueIn: number | Mpf, prec = 53) {
     super();
+    let value = valueIn;
     if (typeof value === 'number') {
       if (!Number.isFinite(value)) throw new RangeError(`Float: non-finite value ${value}`);
       value = mpfFromNumber(value);

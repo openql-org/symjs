@@ -6,10 +6,11 @@
  * linear and polynomial systems, undetermined coefficients and nsolve.
  */
 
-import { NotImplementedError } from '../core/errors';
+import { NotImplementedError, PolynomialError } from '../core/errors';
 import { solvePolySystem } from './polysys';
 import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
-import { Add, Constant, Dummy, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, some, xreplace, xreplace as xreplaceS } from '../core/traverse';
 import { evalf } from '../numeric/evalf';
@@ -115,7 +116,7 @@ function invertFn(f: Fn | Pow, y: Expr): [Expr, Expr[]] | undefined {
 
 /** Solutions of f = 0 for x (without the final check). */
 function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
-  if (depth > 12) throw new Error('solve: recursion too deep');
+  if (depth > 12) throw new NotImplementedError('solve: recursion too deep');
   const f = f0;
   if (!f.has(x)) return [];
   // a single exponential term or 1/x: isolate it before clearing denominators
@@ -242,7 +243,7 @@ function singleRadical(num: Expr, x: Sym, depth: number): Expr[] | undefined {
  */
 function radicalsOfX(num: Expr, x: Sym): Expr[] | undefined {
   const dens = new Set<bigint>();
-  let ok = true;
+  let ok = true as boolean; // set inside a callback
   const walk = (e: Expr) => {
     if (e instanceof Pow && e.base.key === x.key && e.exp instanceof Rational) {
       if (e.exp.q > 1n) dens.add(e.exp.q);
@@ -397,7 +398,7 @@ export function solve(e: ExprLike, x?: Sym | Expr, opts: { check?: boolean; cubi
   const v = x ?? (syms.length === 1 ? syms[0] : undefined);
   if (v === undefined) {
     if (syms.length === 0) return [];
-    throw new Error('solve: specify the symbol to solve for');
+    throw new TypeError('solve: specify the symbol to solve for');
   }
   const raw0 = solveRaw(f, v);
   // SymPy: high-order root lists (more than two roots) are not simplified
@@ -623,7 +624,7 @@ export function solveUndeterminedCoeffs(e: ExprLike, coeffs: readonly Sym[], sym
       return;
     }
     const pc = polyCoefficients(expr, vars[0]!);
-    if (!pc) throw new Error('solve_undetermined_coeffs: not polynomial in the symbols');
+    if (!pc) throw new PolynomialError('solve_undetermined_coeffs: not polynomial in the symbols');
     for (const c of pc.values()) collect(c, vars.slice(1));
   };
   if (syms.every((v) => polyCoefficients(f, v) !== undefined)) collect(f, syms);
@@ -681,7 +682,7 @@ function nsolveBisect(e: ExprLike, x: Sym, [a0, b0]: readonly [ExprLike, ExprLik
   let a = sympify(a0).toNumber();
   let b = sympify(b0).toNumber();
   let fa = val(a);
-  if (Math.sign(fa) === Math.sign(val(b))) throw new Error('nsolve: no sign change in the interval');
+  if (Math.sign(fa) === Math.sign(val(b))) throw new RangeError('nsolve: no sign change in the interval');
   for (let i = 0; i < 200 && b - a > 0; i++) {
     const m = (a + b) / 2;
     if (m === a || m === b) break;

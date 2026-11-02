@@ -23,7 +23,7 @@ export const isFalse = (t: Truth): t is false => t === false;
 export const isUnknown = (t: Truth): t is 'unknown' => t === 'unknown';
 
 /** @internal A Truth from the base module's boolean | undefined. */
-export const toTruth = (v: boolean | undefined | null): Truth => (v === undefined || v === null ? 'unknown' : v);
+export const toTruth = (v: boolean | undefined | null): Truth => (v ?? 'unknown');
 
 /** Negation (unknown stays unknown). */
 export const truthNot = (t: Truth): Truth => (t === 'unknown' ? t : !t);
@@ -64,6 +64,6 @@ export const Unsolved: UnsolvedResult = new UnsolvedResult();
 export const isUnsolved = (v: unknown): v is UnsolvedResult => v === Unsolved;
 
 /** @internal NoMatch for undefined. */
-export const orNoMatch = <T>(v: T | undefined | null): T | NoMatchResult => (v === undefined || v === null ? NoMatch : v);
+export const orNoMatch = <T>(v: T | undefined | null): T | NoMatchResult => (v ?? NoMatch);
 /** @internal Unsolved for undefined. */
-export const orUnsolved = <T>(v: T | undefined | null): T | UnsolvedResult => (v === undefined || v === null ? Unsolved : v);
+export const orUnsolved = <T>(v: T | undefined | null): T | UnsolvedResult => (v ?? Unsolved);

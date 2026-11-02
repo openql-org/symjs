@@ -6,8 +6,10 @@
  * coefficients method).
  */
 
+import { NotImplementedError } from '../core/errors';
 import { apartFull } from './rootsum';
-import { Expr, ExprLike, Rational, S, Sym } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { linsolve } from '../matrices/linsys';
 import { rebuild as impl_rebuild } from '../core/traverse';
@@ -20,7 +22,7 @@ export function apart(fIn: ExprLike, xIn?: Sym, opts: { full?: boolean } = {}): 
   const f = cancel(together(sympify(fIn)));
   const syms = [...f.freeSymbols()];
   const x = xIn ?? (syms.length === 1 ? syms[0] : undefined);
-  if (!x) throw new Error('apart: specify the variable');
+  if (!x) throw new TypeError('apart: specify the variable');
   // Bronstein's full decomposition over the algebraic closure (RootSum)
   if (opts.full) return apartFull(f, x);
   const [P, Q] = fraction(f);
@@ -60,7 +62,7 @@ export function apart(fIn: ExprLike, xIn?: Sym, opts: { full?: boolean } = {}): 
   const diffPoly = Poly.from(expandMul(add(rhs, mul(-1, lhs))), [x]);
   const eqs = diffPoly.coeffs();
   const sol = linsolve(eqs, unknowns);
-  if (!sol) throw new Error('apart: no decomposition found');
+  if (!sol) throw new NotImplementedError('apart: no decomposition found');
   const reps = new Map(unknowns.map((u, i) => [u.key, sol[i]!]));
   const sub = (e: Expr): Expr => {
     if (e instanceof Sym && reps.has(e.key)) return reps.get(e.key)!;

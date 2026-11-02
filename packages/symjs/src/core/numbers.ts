@@ -9,7 +9,9 @@ export function babs(a: bigint): bigint {
   return a < 0n ? -a : a;
 }
 
-export function gcd(a: bigint, b: bigint): bigint {
+export function gcd(aIn: bigint, bIn: bigint): bigint {
+  let a = aIn;
+  let b = bIn;
   a = babs(a);
   b = babs(b);
   while (b !== 0n) {
@@ -68,7 +70,8 @@ const TRIAL_LIMIT = 1n << 16n;
  * Trial division up to a limit; the remaining cofactor is checked for being a
  * perfect power and otherwise treated as a single (possibly composite) factor.
  */
-export function factorInt(n: bigint): Map<bigint, bigint> {
+export function factorInt(nIn: bigint): Map<bigint, bigint> {
+  let n = nIn;
   if (n <= 0n) throw new RangeError('factorInt: n must be positive');
   const out = new Map<bigint, bigint>();
   const push = (p: bigint, e: bigint) => out.set(p, (out.get(p) ?? 0n) + e);

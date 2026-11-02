@@ -5,7 +5,8 @@
  * @file Rounding of numeric expressions to decimal places (SymPy Expr.round).
  */
 
-import { Expr, ExprLike, Float, Rational, S, Special } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Float, Rational, S, Special } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
 import { atoms } from '../core/methods';
 import { im, re } from '../functions/elementary';

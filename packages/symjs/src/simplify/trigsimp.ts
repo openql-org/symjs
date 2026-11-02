@@ -11,7 +11,8 @@
  * which are ubiquitous in products of rotation gates.
  */
 
-import { Add, Constant, Dummy, Expr, ExprLike, Fn, FnName, Mul, Pow, Rational, S } from '../core/nodes';
+import type { Expr, ExprLike, FnName } from '../core/nodes';
+import { Add, Constant, Dummy, Fn, Mul, Pow, Rational, S } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, sympify } from '../core/ops';
 import { countOps, mapBottomUp, some, xreplace } from '../core/traverse';
 import { cos, cosh, fn, sin, sinh } from '../functions/elementary';
@@ -156,7 +157,7 @@ function pythagorean(e: Expr): Expr {
     const j = terms.findIndex((t, k) => {
       if (k === i) return false;
       const b = split(t);
-      return b !== undefined && b[1] === partner && b[2].key === a[2].key && b[0].key === mul(sign, a[0]).key;
+      return b?.[1] === partner && b[2].key === a[2].key && b[0].key === mul(sign, a[0]).key;
     });
     if (j < 0) continue;
     const c = a[1] === 'sinh' ? split(terms[j]!)![0] : a[0];

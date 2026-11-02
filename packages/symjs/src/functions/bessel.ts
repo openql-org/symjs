@@ -7,9 +7,11 @@
  * airybiprime with SymPy's evaluation rules, derivatives and numerics.
  */
 
+import { NotImplementedError } from '../core/errors';
 import '../numeric/mpspecialfns';
 import { isIntegerQ, isPositive } from '../core/assumptions';
-import { ComplexValue as C, Expr, ExprLike, Rational, S, Special } from '../core/nodes';
+import type { ComplexValue as C, Expr, ExprLike } from '../core/nodes';
+import { Rational, S, Special } from '../core/nodes';
 import { add, couldExtractMinusSign, mul, neg, pow } from '../core/ops';
 import { fnPartials } from '../calculus/diff';
 import { c as cx, cadd, cdiv, clog, cmul, cpow } from '../numeric/complex';
@@ -161,7 +163,7 @@ for (const name of ['besselj', 'bessely', 'besseli', 'besselk'] as const) {
   evaluators[name] = evalBessel(name);
   numericFns[name] = ([nu, z]) => besselNumeric(name, nu!, z!);
   fnPartials[name] = ([nu, z], i) => {
-    if (i === 0) throw new Error(`diff: ${name} w.r.t. its order`);
+    if (i === 0) throw new NotImplementedError(`diff: ${name} w.r.t. its order`);
     const lo = fn(name, [add(nu!, -1), z!]);
     const hi = fn(name, [add(nu!, 1), z!]);
     if (name === 'besseli') return add(mul(S.Half, lo), mul(S.Half, hi));

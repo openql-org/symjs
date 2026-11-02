@@ -9,8 +9,10 @@
  * and Kronecker symbols, and the multivariate gamma function.
  */
 
+import { NotInvertible } from '../core/errors';
 import { isIntegerQ, isNegative, isPositive, isReal as isRealQ } from '../core/assumptions';
-import { Dummy, Expr, ExprLike, Fn, FnName, Rational, S } from '../core/nodes';
+import type { Expr, ExprLike, FnName } from '../core/nodes';
+import { Dummy, Fn, Rational, S } from '../core/nodes';
 import { Product } from '../core/concrete';
 import { add, mul, pow, sympify } from '../core/ops';
 import { factorInt } from '../core/numbers';
@@ -29,14 +31,14 @@ function binom(n: number, k: number): bigint {
 
 /** Bernoulli number with SymPy's convention B_1 = +1/2. */
 function bernoulliPlus(n: number): Rational {
-  return n === 1 ? R(1, 2) : (bernoulliNumber(n) as Rational);
+  return n === 1 ? R(1, 2) : (bernoulliNumber(n));
 }
 
 /** Bernoulli polynomial B_n(x) = sum C(n,k) B_k x^(n-k) with B_1 = -1/2. */
 function bernoulliPoly(n: number, x: Expr): Expr {
   const terms: Expr[] = [];
   for (let k = 0; k <= n; k++) {
-    const b = k === 1 ? R(-1, 2) : (bernoulliNumber(k) as Rational);
+    const b = k === 1 ? R(-1, 2) : (bernoulliNumber(k));
     if (b.isZero) continue;
     terms.push(mul(R(binom(n, k)), b, pow(x, n - k)));
   }
@@ -159,7 +161,9 @@ export function isprime(nIn: ExprLike | bigint): boolean {
     d /= 2n;
     s++;
   }
-  const powmod = (b: bigint, e: bigint, m: bigint) => {
+  const powmod = (bIn: bigint, eIn: bigint, m: bigint) => {
+    let b = bIn;
+    let e = eIn;
     let r = 1n;
     b %= m;
     while (e > 0n) {
@@ -186,7 +190,8 @@ export function isprime(nIn: ExprLike | bigint): boolean {
 }
 
 /** Jacobi symbol (m/n) for odd positive n. */
-export function jacobiSymbol(mIn: bigint, n: bigint): number {
+export function jacobiSymbol(mIn: bigint, nIn: bigint): number {
+  let n = nIn;
   if (n <= 0n || n % 2n === 0n) throw new RangeError('jacobi_symbol: n must be an odd positive integer');
   let m = ((mIn % n) + n) % n;
   let t = 1;
@@ -204,7 +209,8 @@ export function jacobiSymbol(mIn: bigint, n: bigint): number {
 }
 
 /** Kronecker symbol (a/n). */
-export function kroneckerSymbol(a: bigint, n: bigint): number {
+export function kroneckerSymbol(a: bigint, nIn: bigint): number {
+  let n = nIn;
   if (n === 0n) return a === 1n || a === -1n ? 1 : 0;
   let t = 1;
   if (n < 0n) {
@@ -255,20 +261,20 @@ function primepi(n: bigint): bigint {
 const small = (n: bigint) => n >= 0n && n <= 5000n;
 
 const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
-  bernoulli: (n, x) => {
+  bernoulli: (n, x?: Expr) => {
     const k = asInt(n);
     if (k === undefined || k < 0n) return undefined;
     if (x !== undefined) return small(k) ? bernoulliPoly(Number(k), x) : undefined;
     if (k > 1n && k % 2n === 1n) return S.Zero;
     return small(k) ? bernoulliPlus(Number(k)) : undefined;
   },
-  euler: (n, x) => {
+  euler: (n, x?: Expr) => {
     const k = asInt(n);
     if (k === undefined || k < 0n) return undefined;
     if (x !== undefined) return small(k) ? eulerPoly(Number(k), x) : undefined;
     return small(k) ? R(eulerNumber(Number(k))) : undefined;
   },
-  genocchi: (n, x) => {
+  genocchi: (n, x?: Expr) => {
     const k = asInt(n);
     if (k === undefined) {
       // genocchi(n) = 0 for odd n > 1
@@ -283,7 +289,7 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     }
     return mul(2, add(1, mul(-1, R(2n ** k))), bernoulliPlus(kk));
   },
-  bell: (n, a, ...rest) => {
+  bell: (n, a?: Expr, ...rest: Expr[]) => {
     const b = rest.length ? rest[0] : undefined;
     const k = asInt(n);
     if (k === undefined || k < 0n) return undefined;
@@ -297,7 +303,7 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     if (kk === undefined) return undefined;
     return incompleteBell(Number(k), Number(kk), rest);
   },
-  fibonacci: (n, x) => {
+  fibonacci: (n, x?: Expr) => {
     const k = asInt(n);
     if (k === undefined) return undefined;
     if (x !== undefined) return k >= 0n ? fibPoly(Number(k), x) : undefined;
@@ -308,7 +314,7 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     if (k === undefined || k < 0n) return undefined;
     return R(fibNumber(k + 1n) + fibNumber(k - 1n));
   },
-  tribonacci: (n, x) => {
+  tribonacci: (n, x?: Expr) => {
     const k = asInt(n);
     if (k === undefined || k < 0n) return undefined;
     if (x !== undefined) return tribPoly(Number(k), x);
@@ -338,7 +344,7 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
       const fs = n.kind === 'Mul' ? n.args : [n];
       for (const f of fs) {
         if (f instanceof Rational && f.isInteger && [...factorInt(f.p < 0n ? -f.p : f.p).values()].some((e) => e > 1n)) return S.Zero;
-        if (f.kind === 'Pow' && f.args[1] instanceof Rational && (f.args[1] as Rational).isInteger && (f.args[1] as Rational).p > 1n) return S.Zero;
+        if (f.kind === 'Pow' && f.args[1] instanceof Rational && (f.args[1]).isInteger && (f.args[1]).p > 1n) return S.Zero;
       }
       return undefined;
     }
@@ -350,7 +356,7 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     }
     return R(r);
   },
-  divisor_sigma: (n, kIn) => {
+  divisor_sigma: (n, kIn?: Expr) => {
     const m = asInt(n);
     const k = kIn === undefined ? 1n : asInt(kIn);
     if (m === undefined || k === undefined || m <= 0n) return undefined;
@@ -524,7 +530,7 @@ function bmodInv(a: bigint, m: bigint): bigint {
     const q = r0 / r1;
     [r0, r1, s0, s1] = [r1, r0 - q * r1, s1, s0 - q * s1];
   }
-  if (r0 !== 1n) throw new Error('binomial_mod: not invertible');
+  if (r0 !== 1n) throw new NotInvertible('binomial_mod: not invertible');
   return bmod(s0, m);
 }
 function bpow(b: bigint, e: bigint, m: bigint): bigint {
@@ -576,7 +582,7 @@ function pFreeProductFactory(p: bigint, e: number): (r: bigint) => bigint {
       return (bpow(block, a, pe) * fact[b]! % pe) * bmod(1n + a * p * harm[b]!, pe) % pe;
     };
   }
-  throw new Error('binomial_mod: modulus too large');
+  throw new RangeError('binomial_mod: modulus too large');
 }
 
 /** (n!)_p = n! without its factors p, modulo p**e. */

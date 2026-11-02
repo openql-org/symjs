@@ -9,7 +9,8 @@
  */
 
 import { NotImplementedError } from '../core/errors';
-import { Expr, ExprLike, Float, Rational, S, Special, impl } from '../core/nodes';
+import type { ExprLike } from '../core/nodes';
+import { Expr, Float, Rational, S, Special, impl } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
 import { Eq, Le, Lt } from '../core/logic';
 import { and, or } from '../core/boolalg';
@@ -147,7 +148,9 @@ export class Interval extends SetExpr {
 }
 
 /** Interval(a, b) with open ends; empty or degenerate intervals simplify. */
-export function interval(aIn: ExprLike, bIn: ExprLike, leftOpen = false, rightOpen = false): SetExpr {
+export function interval(aIn: ExprLike, bIn: ExprLike, leftOpenIn = false, rightOpenIn = false): SetExpr {
+  let leftOpen = leftOpenIn;
+  let rightOpen = rightOpenIn;
   const a = sympify(aIn);
   const b = sympify(bIn);
   const c = cmpReal(a, b);
@@ -353,7 +356,7 @@ export function union(...sets0: SetExpr[]): SetExpr {
   // absorb points
   const rest: Expr[] = [];
   for (const pt of points) {
-    let absorbed = false;
+    let absorbed = false as boolean; // set inside a callback
     ivs = ivs.map((iv) => {
       if (absorbed) return iv;
       if (containsQ(iv, pt) === true) {
@@ -400,7 +403,9 @@ function mergeIntervals(ivs0: Interval[]): Interval[] {
   return ivs;
 }
 
-function mergeTwo(a: Interval, b: Interval): Interval | undefined {
+function mergeTwo(aIn: Interval, bIn: Interval): Interval | undefined {
+  let a = aIn;
+  let b = bIn;
   // order so that a starts first
   const c = cmpReal(a.start, b.start);
   if (c === undefined) return undefined;

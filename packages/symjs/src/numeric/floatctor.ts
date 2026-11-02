@@ -6,7 +6,8 @@
  * decimal strings, rounding of doubles, integers and exact numbers.
  */
 
-import { Expr, Float, Rational, S, Special } from '../core/nodes';
+import type { Expr } from '../core/nodes';
+import { Float, Rational, S, Special } from '../core/nodes';
 import * as F from './mpf';
 import { evalAdaptive } from './mpeval';
 
@@ -33,7 +34,8 @@ function decimalIsInteger(s: string): boolean {
  *   string. Without `dps`, strings get max(15, their digit count).
  * - `precision` gives the binary precision instead of `dps`.
  */
-export function float(num: number | bigint | string | Expr, dps?: number | '', precision?: number): Expr {
+export function float(num: number | bigint | string | Expr, dpsIn?: number | '', precision?: number): Expr {
+  let dps = dpsIn;
   let n: number | string | Expr = typeof num === 'bigint' ? String(num) : num;
   if (n instanceof Rational && n.isInteger) n = String(n.p);
   if (n instanceof Float && dps === undefined && precision === undefined) return n;

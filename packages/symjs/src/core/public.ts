@@ -6,12 +6,13 @@
  * answers as Truth, a missing form as NoMatch; never undefined.
  */
 
-import { Expr, ExprLike, Sym } from './nodes';
+import type { Expr, ExprLike, Sym } from './nodes';
 import { sympify } from './ops';
 import * as A from './assumptions';
 import * as M from './methods';
 import { match as matchImpl } from './match';
-import { NoMatch, NoMatchResult, Truth, orNoMatch, toTruth } from './truth';
+import type { NoMatchResult, Truth } from './truth';
+import { NoMatch, orNoMatch, toTruth } from './truth';
 
 /** e is real (SymPy is_real): true, false or 'unknown'. */
 export const isReal = (e: ExprLike): Truth => toTruth(A.isReal(sympify(e)));

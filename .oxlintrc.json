@@ -1,7 +1,8 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": [
-    "typescript"
+    "typescript",
+    "import"
   ],
   "ignorePatterns": [
     "**/dist/**",
@@ -34,6 +35,32 @@
           "error",
           {
             "considerDefaultExhaustiveForUnions": true
+          }
+        ],
+        "import/no-cycle": "error",
+        "typescript/consistent-type-imports": "error",
+        "typescript/no-deprecated": "error",
+        "typescript/no-unnecessary-condition": "error",
+        "typescript/no-unnecessary-type-assertion": "error",
+        "typescript/no-explicit-any": "error",
+        "typescript/ban-ts-comment": "error",
+        "typescript/only-throw-error": "error",
+        "typescript/prefer-nullish-coalescing": [
+          "error",
+          {
+            "ignorePrimitives": {
+              "string": true
+            }
+          }
+        ],
+        "typescript/prefer-optional-chain": "error",
+        "no-console": "error",
+        "no-param-reassign": "error",
+        "no-restricted-globals": [
+          "error",
+          {
+            "name": "Error",
+            "message": "throw a specific error class (TypeError, RangeError, NotImplementedError, PolynomialError, ... in core/errors.ts), see docs/api-policy.md"
           }
         ]
       }
@@ -499,6 +526,14 @@
             ]
           }
         ]
+      }
+    },
+    {
+      "files": [
+        "packages/symjs/src/core/errors.ts"
+      ],
+      "rules": {
+        "no-restricted-globals": "off"
       }
     }
   ]

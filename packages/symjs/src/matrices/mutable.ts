@@ -7,7 +7,7 @@
  * matrix into an immutable copy, as SymPy does.
  */
 
-import { Expr, ExprLike } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
 import { sympifyMethod } from '../core/sympify';
 import { Matrix } from './matrix';
@@ -39,7 +39,9 @@ export class MutableDenseMatrix extends Matrix {
   }
 
   /** Set the entry at (i, j) (SymPy M[i, j] = v). */
-  set(i: number, j: number, v: ExprLike): void {
+  set(iIn: number, jIn: number, v: ExprLike): void {
+    let i = iIn;
+    let j = jIn;
     if (i < 0) i += this.rows;
     if (j < 0) j += this.cols;
     if (i < 0 || i >= this.rows || j < 0 || j >= this.cols) throw new RangeError(`index (${i}, ${j}) out of range`);

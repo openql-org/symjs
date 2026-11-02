@@ -6,7 +6,9 @@
  * the options they were built with) and gff.
  */
 
-import { Dummy, Expr, ExprLike } from '../core/nodes';
+import { NotImplementedError } from '../core/errors';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Dummy } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
 import { Poly, inferDomain } from './sympoly';
 
@@ -41,5 +43,5 @@ export function parallelPolyFromExpr(exprs: readonly ExprLike[], gens: readonly 
  * implemented in SymPy either (use Poly.gffList).
  */
 export function gff(_f: ExprLike): never {
-  throw new Error('symbolic falling factorial');
+  throw new NotImplementedError('symbolic falling factorial');
 }

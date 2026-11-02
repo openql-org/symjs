@@ -7,7 +7,8 @@
  * and of implemented_function.
  */
 
-import { Expr, ExprLike, ExtensionExpr, Float } from './nodes';
+import type { Expr, ExprLike } from './nodes';
+import { ExtensionExpr, Float } from './nodes';
 import { add, mul, sympify } from './ops';
 
 /** The behaviour of a function defined with defineFunction. *

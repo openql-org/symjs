@@ -9,7 +9,9 @@
  * and printing.
  */
 
-import { Expr, ExprLike, Rational, S, Sym, type Assumptions } from '../core/nodes';
+import { MatrixError } from '../core/errors';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Rational, S, Sym, type Assumptions } from '../core/nodes';
 import { add, mul, pow, sqrt, sub, sympify } from '../core/ops';
 import { abs } from '../functions/elementary';
 import { sign } from '../functions/special';
@@ -211,7 +213,7 @@ export function luDecompositionFF(M: Matrix): [Matrix, Matrix, Matrix, Matrix] {
   for (let k = 0; k < n - 1; k++) {
     if (isZeroExpr(U[k]![k]!)) {
       const kp = range(k + 1, n).find((r) => !isZeroExpr(U[r]![k]!));
-      if (kp === undefined) throw new Error('Matrix is not full rank');
+      if (kp === undefined) throw new MatrixError('Matrix is not full rank');
       for (let c = k; c < m; c++) [U[k]![c], U[kp]![c]] = [U[kp]![c]!, U[k]![c]!];
       for (let c = 0; c < k; c++) [L[k]![c], L[kp]![c]] = [L[kp]![c]!, L[k]![c]!];
       [P[k], P[kp]] = [P[kp]!, P[k]!];
@@ -236,12 +238,16 @@ export function luDecompositionFF(M: Matrix): [Matrix, Matrix, Matrix, Matrix] {
 // ---------------------------------------------------------------------------
 
 type Q = [bigint, bigint];
-const qn = (p: bigint, q = 1n): Q => {
+const qn = (pIn: bigint, qIn = 1n): Q => {
+  let p = pIn;
+  let q = qIn;
   if (q < 0n) [p, q] = [-p, -q];
   const g = gcdBig(p < 0n ? -p : p, q);
   return g > 1n ? [p / g, q / g] : [p, q];
 };
-function gcdBig(a: bigint, b: bigint): bigint {
+function gcdBig(aIn: bigint, bIn: bigint): bigint {
+  let a = aIn;
+  let b = bIn;
   while (b) [a, b] = [b, a % b];
   return a || 1n;
 }
@@ -249,7 +255,7 @@ const qadd = (a: Q, b: Q): Q => qn(a[0] * b[1] + b[0] * a[1], a[1] * b[1]);
 const qsub = (a: Q, b: Q): Q => qn(a[0] * b[1] - b[0] * a[1], a[1] * b[1]);
 const qmul = (a: Q, b: Q): Q => qn(a[0] * b[0], a[1] * b[1]);
 const qdiv = (a: Q, b: Q): Q => {
-  if (b[0] === 0n) throw new Error('input matrix contains linearly dependent rows');
+  if (b[0] === 0n) throw new MatrixError('input matrix contains linearly dependent rows');
   return qn(a[0] * b[1], a[1] * b[0]);
 };
 const qcmp = (a: Q, b: Q): number => {

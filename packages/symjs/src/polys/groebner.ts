@@ -7,7 +7,9 @@
  * ideal membership (SymPy groebner / GroebnerBasis).
  */
 
-import { Expr, ExprLike, Rational, S, Sym, impl } from '../core/nodes';
+import { DomainError, PolynomialError } from '../core/errors';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
+import { Rational, S, impl } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { Poly } from './sympoly';
 
@@ -94,7 +96,7 @@ function spoly(f: SP, g: SP, order: MonomialOrder): SP {
   const l = fm.map((e, i) => Math.max(e, gm[i]!));
   let out: SP = new Map();
   for (const [m, c] of f.values()) addTerm(out, m.map((e, i) => e + l[i]! - fm[i]!), rdiv(c, fc));
-  out = subMul(out, rdiv(S.One as Rational, gc), l.map((e, i) => e - gm[i]!), g);
+  out = subMul(out, rdiv(S.One, gc), l.map((e, i) => e - gm[i]!), g);
   return out;
 }
 
@@ -109,7 +111,7 @@ function fromExpr(e: Expr, gens: readonly Sym[]): SP {
   const p = Poly.from(e, gens);
   const out: SP = new Map();
   for (const [m, c] of p.terms()) {
-    if (!(c instanceof Rational)) throw new Error('groebner: rational coefficients expected');
+    if (!(c instanceof Rational)) throw new DomainError('groebner: rational coefficients expected');
     if (!c.isZero) out.set(mkey(m), [m, c]);
   }
   return out;
@@ -204,6 +206,6 @@ export function reduced(f: ExprLike, G: readonly ExprLike[], gens: readonly Sym[
 /** The leading monomial (exponent vector) of a polynomial in the given generators and order. */
 export function leadingMonomial(f: ExprLike, gens: readonly Sym[], order: MonomialOrder = 'lex'): number[] {
   const l = lead(fromExpr(sympify(f), gens), order);
-  if (!l) throw new Error('leading monomial of zero');
+  if (!l) throw new PolynomialError('leading monomial of zero');
   return l[0];
 }

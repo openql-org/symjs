@@ -9,14 +9,15 @@
 import { NotImplementedError } from '../core/errors';
 import '../numeric/mpspecialfns';
 import { isIntegerQ, isNegative, isPositive } from '../core/assumptions';
-import {
-  Add,
+import type {
   ComplexValue as C,
-  Constant,
   Expr,
   ExprLike,
+  FnName } from '../core/nodes';
+import {
+  Add,
+  Constant,
   Fn,
-  FnName,
   Mul,
   Rational,
   S,
@@ -55,7 +56,7 @@ function factorialBig(n: bigint): bigint {
 const bernoulliCache: Rational[] = [];
 export function bernoulliNumber(n: number): Rational {
   // Akiyama–Tanigawa algorithm (gives B_1 = +1/2)
-  if (bernoulliCache[n]) return bernoulliCache[n]!;
+  if (bernoulliCache[n]) return bernoulliCache[n];
   const a: Rational[] = [];
   for (let m = 0; m <= n; m++) {
     a[m] = R(1, m + 1);
@@ -413,7 +414,7 @@ function evalErfinv(z: Expr): Expr | undefined {
     if (z.isOne) return S.Infinity;
     if (z.p === -1n && z.q === 1n) return S.NegativeInfinity;
   }
-  if (z instanceof Fn && z.name === 'erf' && (isNum(z.args[0]!) || false)) return z.args[0];
+  if (z instanceof Fn && z.name === 'erf' && isNum(z.args[0]!)) return z.args[0];
   return odd('erfinv', z);
 }
 
@@ -520,7 +521,7 @@ function evalFresnel(name: 'fresnels' | 'fresnelc', z: Expr): Expr | undefined {
   if (isIOo(z)) return name === 'fresnels' ? mul(S.NegHalf, S.I) : mul(S.Half, S.I);
   if (isNegIOo(z)) return name === 'fresnels' ? mul(S.Half, S.I) : mul(S.NegHalf, S.I);
   const w = imagFactor(z);
-  if (w !== undefined && !(w instanceof Rational && w.isOne && false)) {
+  if (w !== undefined) {
     // fresnels(I z) = -I fresnels(z), fresnelc(I z) = I fresnelc(z)
     if (!couldExtractMinusSign(w)) return mul(name === 'fresnels' ? neg(S.I) : S.I, fnN(name, w));
   }
@@ -961,7 +962,7 @@ const SPECS: Partial<Record<FnName, Spec>> = {
         for (let i = v; i > 1; i -= 2) r *= i;
         return cx(r);
       }
-      throw new Error('factorial2: non-integer');
+      throw new RangeError('factorial2: non-integer');
     },
   },
   binomial: {
@@ -974,7 +975,7 @@ const SPECS: Partial<Record<FnName, Spec>> = {
   rf: { eval: evalRF, numeric: ([x, k]) => cdiv(cgamma(cadd(x!, k!)), cgamma(x!)) },
   subfactorial: { eval: evalSubfactorial },
   harmonic: {
-    eval: (n, m) => evalHarmonic(n, m ?? S.One),
+    eval: (n, m?: Expr) => evalHarmonic(n, m ?? S.One),
     numeric: ([n, m]) => {
       if (m === undefined || m.re === 1) return cadd(cdigamma(cadd(n!, cx(1))), cx(EULER_GAMMA));
       throw new NotImplementedError('harmonic: unsupported');
@@ -1006,7 +1007,7 @@ const SPECS: Partial<Record<FnName, Spec>> = {
     eval: evalPolygamma,
     partials: ([n, x], i) => {
       if (i === 1) return fnN('polygamma', add(n!, 1), x!);
-      throw new Error('diff: polygamma w.r.t. its order');
+      throw new NotImplementedError('diff: polygamma w.r.t. its order');
     },
     numeric: ([n, z]) => cpolygamma(n!.re, z!),
     conjugate: true,
@@ -1015,7 +1016,7 @@ const SPECS: Partial<Record<FnName, Spec>> = {
     eval: evalLowergamma,
     partials: ([s, x], i) => {
       if (i === 1) return mul(pow(x!, add(s!, -1)), exp(neg(x!)));
-      throw new Error('diff: lowergamma w.r.t. s');
+      throw new NotImplementedError('diff: lowergamma w.r.t. s');
     },
     numeric: ([s, x]) => lowergammaNum(s!, x!),
   },
@@ -1023,7 +1024,7 @@ const SPECS: Partial<Record<FnName, Spec>> = {
     eval: evalUppergamma,
     partials: ([s, x], i) => {
       if (i === 1) return mul(-1, pow(x!, add(s!, -1)), exp(neg(x!)));
-      throw new Error('diff: uppergamma w.r.t. s');
+      throw new NotImplementedError('diff: uppergamma w.r.t. s');
     },
     numeric: ([s, x]) => cadd(cgamma(s!), cmul(cx(-1), lowergammaNum(s!, x!))),
   },
@@ -1093,7 +1094,7 @@ const SPECS: Partial<Record<FnName, Spec>> = {
     eval: evalExpint,
     partials: ([nu, z], i) => {
       if (i === 1) return mul(-1, fnN('expint', add(nu!, -1), z!));
-      throw new Error('diff: expint w.r.t. its order');
+      throw new NotImplementedError('diff: expint w.r.t. its order');
     },
     numeric: ([n, z]) => cExpint(n!.re, z!),
   },
@@ -1181,7 +1182,7 @@ export const floor = (x: ExprLike): Expr => fn('floor', [x]);
 export const Rem = (p: ExprLike, q: ExprLike): Expr => fn('Rem', [p, q]);
 evaluators.Rem = (p, q) => {
   if (p instanceof Rational && q instanceof Rational && p.isInteger && q.isInteger && q.p !== 0n) return Rational.of(p.p % q.p);
-  if (p!.key === q!.key) return S.Zero;
+  if (p.key === q.key) return S.Zero;
   return undefined;
 };
 export const ceiling = (x: ExprLike): Expr => fn('ceiling', [x]);
@@ -1209,7 +1210,7 @@ export function expandFunc(e: Expr): Expr {
       }
       if (a instanceof Add && isNum(a.args[0]!)) {
         let coeff = a.args[0] as Rational;
-        let tail: Expr[] = a.args.slice(1) as Expr[];
+        let tail: Expr[] = a.args.slice(1);
         if (coeff.q !== 1n) {
           const ip = R(coeff.p >= 0n ? coeff.p / coeff.q : -((-coeff.p + coeff.q - 1n) / coeff.q));
           tail = [add(coeff, neg(ip)), ...tail];
@@ -1236,8 +1237,8 @@ export function expandFunc(e: Expr): Expr {
           return add(...terms);
         }
       }
-      if (y.name === 'expint' && isInt(y.args[0]!) && (y.args[0] as Rational).p > 1n) {
-        const n = (y.args[0] as Rational).p;
+      if (y.name === 'expint' && isInt(y.args[0]!) && (y.args[0]).p > 1n) {
+        const n = (y.args[0]).p;
         const z = y.args[1]!;
         // E_n(z) = (-z)^(n-1)/(n-1)! E_1(z) + e^-z/(n-1)! sum_{k=0}^{n-2} (n-k-2)! (-z)^k
         const f = factorialBig(n - 1n);
@@ -1255,7 +1256,7 @@ export function expandFunc(e: Expr): Expr {
 }
 
 function splitAddInt(e: Expr): [bigint, Expr] {
-  if (e instanceof Add && isInt(e.args[0]!)) return [(e.args[0] as Rational).p, add(...e.args.slice(1))];
+  if (e instanceof Add && isInt(e.args[0]!)) return [(e.args[0]).p, add(...e.args.slice(1))];
   return [0n, e];
 }
 

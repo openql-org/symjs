@@ -7,7 +7,9 @@
  * them without depending on the solvers layer.
  */
 
-import { Add, Expr, ExprLike, Mul, Pow, Rational, Rel, S, Sym } from '../core/nodes';
+import { NonlinearError } from '../core/errors';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Mul, Pow, Rational, Rel, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import { polyCoefficients } from '../polys/poly';
@@ -54,7 +56,7 @@ export function linearEqToMatrix(eqs: readonly ExprLike[], syms: readonly Sym[])
  */
 export function linsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Expr[] | undefined {
   const lin = linearEqToMatrix(eqs, syms);
-  if (!lin) throw new Error('linsolve: nonlinear system');
+  if (!lin) throw new NonlinearError('linsolve: nonlinear system');
   const [A, b] = lin;
   return solveAugmented(A.hstack(b), syms);
 }
@@ -81,7 +83,7 @@ function fieldElement(v: Expr): Expr {
   if (den.isNumber) return expandMul(c);
   // the denominator with a positive leading coefficient in lex order (1 - y -> y - 1)
   try {
-    const lc = Poly.from(den, sortGens([...freeSymbols(den)]) as Sym[]).LC();
+    const lc = Poly.from(den, sortGens([...freeSymbols(den)])).LC();
     if (lc.isNumber && lc.toNumber() < 0) [num, den] = [mul(-1, num), expandMul(mul(-1, den))];
   } catch {
     // not a polynomial: keep the sign

@@ -6,7 +6,8 @@
  */
 
 import { isNegative } from '../core/assumptions';
-import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import type { Expr } from '../core/nodes';
+import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
 import { numNeg } from '../core/num';
 import { asOrderedFactors, asOrderedTerms } from './sortkey';

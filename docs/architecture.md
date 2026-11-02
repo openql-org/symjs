@@ -28,3 +28,29 @@ The rules are enforced by `pnpm lint` (`no-restricted-imports` in
 `.oxlintrc.json`). When a lower layer needs something from a higher one, add
 a late-bound entry to `Impl` in `core/nodes.ts` and register it in the higher
 layer, or move the shared code down to the lowest layer that uses it.
+
+## Cycles and other lint rules
+
+Modules of the same layer must not import each other in a cycle
+(`import/no-cycle`). When two modules need each other, the lower one keeps a
+small hook object that the other fills in when it is loaded (for example
+`polyHooks` in `polys/poly.ts`, set by `simplify/rational.ts`), or the shared
+code moves to its own module (`solvers/homogeneous.ts`).
+
+`pnpm lint` (Oxlint, type-aware) also enforces, for `packages/*/src`:
+
+| Rule | Purpose |
+|---|---|
+| `explicit-module-boundary-types` | exported functions declare their return types |
+| `strict-boolean-expressions` | no truthiness test of a `Truth` (`'unknown'` is truthy) |
+| `switch-exhaustiveness-check` | discriminated unions are handled completely |
+| `consistent-type-imports` | type-only imports are marked (`import type`), so layering and bundling see only value dependencies |
+| `no-deprecated` | deprecated aliases are not used internally (they are removed in 1.0) |
+| `no-unnecessary-condition`, `no-unnecessary-type-assertion` | no dead checks and casts |
+| `prefer-nullish-coalescing` (strings excepted), `prefer-optional-chain` | `??` and `?.` for undefined |
+| `no-param-reassign` | parameters are not reassigned (copy them to a local) |
+| `no-explicit-any`, `ban-ts-comment`, `no-console`, `only-throw-error` | kept at zero |
+| `no-restricted-globals` (`Error`) | errors are specific classes: `TypeError`, `RangeError`, `SyntaxError`, or those of `core/errors.ts` (`NotImplementedError`, `PolynomialError`, `DomainError`, `ExactQuotientFailed`, `NotInvertible`, `MatrixError`, `NonSquareMatrixError`, `NonInvertibleMatrixError`, `NonlinearError`, `SympifyError`, `NotLoadedError`, ...) |
+
+Not enabled yet (to be adopted later): `no-non-null-assertion` and
+`no-unsafe-type-assertion`.

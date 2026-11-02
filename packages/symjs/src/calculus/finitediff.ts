@@ -6,7 +6,8 @@
  * Derivative.as_finite_difference).
  */
 
-import { Derivative, Expr, ExprLike, Rational, S, Sym } from '../core/nodes';
+import type { Derivative, Expr, ExprLike, Sym } from '../core/nodes';
+import { Rational, S } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { derivative as impl_derivative } from '../core/undef';

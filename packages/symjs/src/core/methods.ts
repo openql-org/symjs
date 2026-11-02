@@ -7,7 +7,8 @@
  */
 
 import { isIntegerQ, isNegative as isNegativeQ, isPositive, isReal, isZero as isZeroQ } from './assumptions';
-import { Add, Constant, Expr, ExprLike, Float, Fn, FnName, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from './nodes';
+import type { ExprLike, FnName } from './nodes';
+import { Add, Constant, Expr, Float, Fn, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
 import { add, asBaseExp, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
 import { ExprMap } from './exprmap';
@@ -26,7 +27,9 @@ const addArgs = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
 const mulArgs = (e: Expr): readonly Expr[] => (e instanceof Mul ? e.args : [e]);
 
 /** SymPy `_keep_coeff`: coeff*factors without distributing a Rational over a sum. */
-export function keepCoeff(coeff: Expr, factors: Expr): Expr {
+export function keepCoeff(coeffIn: Expr, factorsIn: Expr): Expr {
+  let coeff = coeffIn;
+  let factors = factorsIn;
   if (!coeff.isNumber) {
     if (factors.isNumber) [coeff, factors] = [factors, coeff];
     else return mul(coeff, factors);
@@ -39,7 +42,7 @@ export function keepCoeff(coeff: Expr, factors: Expr): Expr {
     const margs = [...factors.args];
     if (margs[0]!.isNumber) {
       margs[0] = mul(margs[0]!, coeff);
-      if (isOne(margs[0]!)) margs.shift();
+      if (isOne(margs[0])) margs.shift();
     } else margs.unshift(coeff);
     return margs.length === 1 ? margs[0]! : new Mul(margs);
   }

@@ -6,7 +6,8 @@
  * each depend on fewer symbols (SymPy simplify.separatevars).
  */
 
-import { Add, Constant, Expr, ExprLike, Mul, Pow, Sym } from '../core/nodes';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
+import { Add, Constant, Mul, Pow } from '../core/nodes';
 import { mul, pow, sympify } from '../core/ops';
 import { splitCoeff } from '../core/ops';
 import { xreplace } from '../core/traverse';

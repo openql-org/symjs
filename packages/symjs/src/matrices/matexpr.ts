@@ -7,7 +7,8 @@
  * transposes (`A.T`) and adjoints (`Adjoint(A)`).
  */
 
-import { Expr, ExprLike, ExtensionExpr } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { ExtensionExpr } from '../core/nodes';
 import { sympify } from '../core/ops';
 
 /** SymPy MatrixSymbol: a symbolic n x m matrix. */

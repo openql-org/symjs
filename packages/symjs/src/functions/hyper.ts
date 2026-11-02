@@ -6,7 +6,9 @@
  * (meijerg), spherical Bessel functions (jn, yn) and the Kronecker delta.
  */
 
-import { Expr, ExprLike, ExtensionExpr, Mul, Rational, S } from '../core/nodes';
+import { NotImplementedError } from '../core/errors';
+import type { Expr, ExprLike } from '../core/nodes';
+import { ExtensionExpr, Mul, Rational, S } from '../core/nodes';
 import { rebuild } from '../core/traverse';
 import { isPositive } from '../core/assumptions';
 import { Gt, piecewise } from '../core/logic';
@@ -137,7 +139,7 @@ evaluators.yn = () => undefined;
 // d/dz jn(n, z) = jn(n - 1, z) - (n + 1)/z * jn(n, z) (SymPy fdiff)
 for (const name of ['jn', 'yn'] as const) {
   fnPartials[name] = ([n, z], i) => {
-    if (i !== 1) throw new Error(`diff: ${name} w.r.t. its order`);
+    if (i !== 1) throw new NotImplementedError(`diff: ${name} w.r.t. its order`);
     return add(fn(name, [add(n!, -1), z!]), mul(-1, add(n!, 1), pow(z!, -1), fn(name, [n!, z!])));
   };
   numericFns[name] = ([n, z]) => {
@@ -166,8 +168,8 @@ export function expandJn(n: number, z: Expr, kind: 'jn' | 'yn' = 'jn'): Expr {
 /** SymPy KroneckerDelta(i, j): 1 when equal, 0 for distinct numbers, unevaluated otherwise. */
 export const KroneckerDelta = (i: ExprLike, j: ExprLike): Expr => fn('KroneckerDelta', [i, j]);
 evaluators.KroneckerDelta = (i, j) => {
-  if (i!.key === j!.key) return S.One;
-  const d = add(i!, mul(-1, j!));
+  if (i.key === j.key) return S.One;
+  const d = add(i, mul(-1, j));
   if (d.isNumber && !(d instanceof Rational && d.isZero) && d.freeSymbols().size === 0) return S.Zero;
   return undefined;
 };

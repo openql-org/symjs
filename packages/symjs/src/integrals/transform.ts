@@ -5,7 +5,8 @@
  * @file Change of variables in integrals (SymPy Integral.transform).
  */
 
-import { Dummy, Expr, ExprLike, Integral, Rational, S, Sym, impl } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Dummy, Integral, Rational, S, Sym, impl } from '../core/nodes';
 import { Sum, doitConcrete } from '../concrete/summations';
 import { isNonNegative } from '../core/assumptions';
 import { FiniteSet as FiniteSetClass } from '../sets/sets';
@@ -25,14 +26,14 @@ import { solve } from '../solvers/solve';
 export function transformIntegral(integral: Integral, x: Sym, gIn: ExprLike, uIn?: Sym): Integral {
   const g = sympify(gIn);
   const u = uIn ?? (g instanceof Sym ? g : undefined);
-  if (!u) throw new Error('transform: the new variable must be given');
-  if (integral.variable.key !== x.key) throw new Error('transform: x is not the integration variable');
+  if (!u) throw new TypeError('transform: the new variable must be given');
+  if (integral.variable.key !== x.key) throw new TypeError('transform: x is not the integration variable');
   const f = mul(subs(integral.integrand, [[x, g]]), diff(g, u));
   const lim = integral.limits;
   if (!lim) return new Integral([f, u]);
   const mapLimit = (a: Expr): Expr => {
     const sols = solve(add(g, mul(-1, a)), u);
-    if (sols.length !== 1) throw new Error('transform: the substitution is not invertible on the limits');
+    if (sols.length !== 1) throw new RangeError('transform: the substitution is not invertible on the limits');
     return sols[0]!;
   };
   return new Integral([f, u, mapLimit(lim[0]), mapLimit(lim[1])]);
@@ -42,7 +43,7 @@ export function transformIntegral(integral: Integral, x: Sym, gIn: ExprLike, uIn
 export function principalValue(integral: Integral): Expr {
   const lim = integral.limits;
   const x = integral.variable;
-  if (!lim || !(x instanceof Sym)) throw new Error('principal_value: a definite integral is required');
+  if (!lim || !(x instanceof Sym)) throw new TypeError('principal_value: a definite integral is required');
   const [a, b] = lim;
   if (a.key === b.key) return S.Zero;
   const f = integral.integrand;
@@ -54,7 +55,7 @@ export function principalValue(integral: Integral): Expr {
   const sing = singularities(f, x);
   const points = sing instanceof FiniteSetClass ? sing.args.filter(inRange) : [];
   for (const s of points) {
-    if (s.key === a.key || s.key === b.key) throw new Error('principal_value: singularity at an end point');
+    if (s.key === a.key || s.key === b.key) throw new RangeError('principal_value: singularity at an end point');
   }
   const F = integrate(f, x);
   if (some(F, (e) => e instanceof Integral)) return integral;
@@ -76,7 +77,7 @@ export function principalValue(integral: Integral): Expr {
  */
 export function asSum(integral: Integral, n: ExprLike, method: 'left' | 'right' | 'midpoint' | 'trapezoid' = 'midpoint', opts: { evaluate?: boolean } = {}): Expr {
   const lim = integral.limits;
-  if (!lim) throw new Error('as_sum: a definite integral is required');
+  if (!lim) throw new TypeError('as_sum: a definite integral is required');
   const N = sympify(n);
   const [a, b] = lim;
   const x = integral.variable;
@@ -124,7 +125,7 @@ export class Curve {
 /** SymPy line_integrate(field, curve, vars): the integral of field along the curve with respect to arc length. */
 export function lineIntegrate(field: ExprLike, curve: Curve, vars: readonly Sym[]): Expr {
   const [t0, a, b] = curve.limits;
-  if (vars.length !== curve.functions.length) throw new Error('line_integrate: the curve and the variables differ in dimension');
+  if (vars.length !== curve.functions.length) throw new RangeError('line_integrate: the curve and the variables differ in dimension');
   // the parameter is real
   const t = new Dummy(t0.name, { real: true });
   const fs = curve.functions.map((g) => subs(g, [[t0, t]]));

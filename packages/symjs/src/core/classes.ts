@@ -7,7 +7,8 @@
  * and DeferredVector.
  */
 
-import { Expr, ExprLike, ExtensionExpr, Float, Rational, Sym, type Assumptions } from './nodes';
+import type { ExprLike } from './nodes';
+import { Expr, ExtensionExpr, Float, Rational, Sym, type Assumptions } from './nodes';
 import { sympify } from './ops';
 import { BasicNode } from './basic';
 import { Function as undefinedFunction } from './undef';

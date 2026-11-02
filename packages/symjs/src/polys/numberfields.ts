@@ -6,7 +6,8 @@
  * (a minimal port of SymPy AlgebraicNumber).
  */
 
-import { Expr, ExprLike, Rational } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Rational } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { expandMul } from '../simplify/expand';
 

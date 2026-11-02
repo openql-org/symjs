@@ -6,7 +6,8 @@
  * variables are bound in its expression.
  */
 
-import { Expr, ExprLike, ExtensionExpr } from './nodes';
+import type { Expr, ExprLike } from './nodes';
+import { ExtensionExpr } from './nodes';
 import { sympify } from './ops';
 
 /** Lambda(variables, expr): args are [...variables, expr]. */

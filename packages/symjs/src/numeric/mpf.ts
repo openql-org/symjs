@@ -21,7 +21,8 @@ export const ONE: Mpf = { man: 1n, exp: 0 };
 const babs = (n: bigint): bigint => (n < 0n ? -n : n);
 
 /** Number of bits of |n| (0 for 0). */
-export function bitLength(n: bigint): number {
+export function bitLength(nIn: bigint): number {
+  let n = nIn;
   if (n < 0n) n = -n;
   if (n === 0n) return 0;
   const s = n.toString(16);
@@ -29,7 +30,8 @@ export function bitLength(n: bigint): number {
   return (s.length - 1) * 4 + (32 - Math.clz32(top));
 }
 
-function trailingZeros(n: bigint): number {
+function trailingZeros(nIn: bigint): number {
+  let n = nIn;
   if (n === 0n) return 0;
   let k = 0;
   while ((n & 0xffffffffn) === 0n) {
@@ -54,7 +56,8 @@ function strip(man: bigint, exp: number): Mpf {
  * Round man*2**exp to prec bits (half to even). `sticky` marks that the
  * true value is slightly larger in magnitude than man*2**exp (lost bits).
  */
-export function normalize(man: bigint, exp: number, prec: number, sticky = false): Mpf {
+export function normalize(man: bigint, expIn: number, prec: number, sticky = false): Mpf {
+  let exp = expIn;
   if (man === 0n) return ZERO;
   const neg = man < 0n;
   let m = neg ? -man : man;
@@ -97,7 +100,9 @@ export function fromNumber(v: number): Mpf {
 }
 
 /** p/q rounded to prec bits. */
-export function fromRational(p: bigint, q: bigint, prec: number): Mpf {
+export function fromRational(pIn: bigint, qIn: bigint, prec: number): Mpf {
+  let p = pIn;
+  let q = qIn;
   if (q < 0n) {
     p = -p;
     q = -q;
@@ -131,7 +136,9 @@ export function round(a: Mpf, prec: number): Mpf {
   return normalize(a.man, a.exp, prec);
 }
 
-export function add(a: Mpf, b: Mpf, prec?: number): Mpf {
+export function add(aIn: Mpf, bIn: Mpf, prec?: number): Mpf {
+  let a = aIn;
+  let b = bIn;
   if (a.man === 0n) return prec === undefined ? b : round(b, prec);
   if (b.man === 0n) return prec === undefined ? a : round(a, prec);
   if (a.exp < b.exp) [a, b] = [b, a];
@@ -298,7 +305,8 @@ export function fromStr(s0: string, prec: number): Mpf {
 }
 
 /** mpmath to_digits_exp: (sign, digits, exponent), digits rounded toward zero. */
-function toDigitsExp(a: Mpf, dps: number): [string, string, number] {
+function toDigitsExp(aIn: Mpf, dps: number): [string, string, number] {
+  let a = aIn;
   let sgn = '';
   if (a.man < 0n) {
     sgn = '-';
@@ -324,10 +332,12 @@ function toDigitsExp(a: Mpf, dps: number): [string, string, number] {
 }
 
 /** mpmath to_str. */
-export function toStr(a: Mpf, dps: number, stripZeros = true, minFixed?: number, maxFixed?: number): string {
+export function toStr(a: Mpf, dps: number, stripZeros = true, minFixedIn?: number, maxFixedIn?: number): string {
+  let minFixed = minFixedIn;
+  let maxFixed = maxFixedIn;
   if (a.man === 0n) return dps ? '0.0' : '.0';
-  if (minFixed === undefined) minFixed = Math.min(-Math.floor(dps / 3), -5);
-  if (maxFixed === undefined) maxFixed = dps;
+  minFixed ??= Math.min(-Math.floor(dps / 3), -5);
+  maxFixed ??= dps;
   let [sgn, digits, exponent] = toDigitsExp(a, dps + 3);
   if (!dps) {
     if ('56789'.includes(digits[0]!)) exponent += 1;

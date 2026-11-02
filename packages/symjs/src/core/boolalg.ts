@@ -6,7 +6,8 @@
  * logic.boolalg, the parts used by inequality solving).
  */
 
-import { BoolAtom, Expr, ExprLike, Rel, S, Special, impl } from './nodes';
+import type { ExprLike } from './nodes';
+import { BoolAtom, Expr, Rel, S, Special, impl } from './nodes';
 import { compareKeys, sortKey } from '../printing/sortkey';
 
 export type BoolOpName = 'And' | 'Or' | 'Not' | 'Xor' | 'ITE';

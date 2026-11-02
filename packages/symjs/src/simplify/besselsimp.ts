@@ -7,7 +7,8 @@
  * elementary functions and integer orders reduced to orders 0 and 1.
  */
 
-import { Add, Expr, ExprLike, Fn, Mul, Rational, S } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Fn, Mul, Rational, S } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { mapBottomUp, xreplace } from '../core/traverse';
 import { cos, cosh, fn, sin, sinh } from '../functions/elementary';

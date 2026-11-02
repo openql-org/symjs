@@ -8,7 +8,8 @@
 import { piecewise, rel } from './logic';
 import { Concrete } from './concrete';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { Add, Constant, Derivative, ExtensionExpr, Expr, ExprLike, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Substitution, Sym, UndefFn, impl } from './nodes';
+import type { Expr, ExprLike, Substitution } from './nodes';
+import { Add, Constant, Derivative, ExtensionExpr, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Sym, UndefFn, impl } from './nodes';
 import { add, mul, pow, sympify } from './ops';
 import { SubsNode } from './subsnode';
 

@@ -8,8 +8,9 @@
  * values, pseudo-inverse, matrix exponential and structural helpers.
  */
 
-import { NotImplementedError } from '../core/errors';
-import { Dummy, Expr, ExprLike, Rational, S, Special, Sym, impl } from '../core/nodes';
+import { MatrixError, NonInvertibleMatrixError, NonSquareMatrixError, NotImplementedError } from '../core/errors';
+import type { ExprLike } from '../core/nodes';
+import { Dummy, Expr, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { diff } from '../calculus/diff';
 import { abs, conjugate, cos, log, sin } from '../functions/elementary';
@@ -180,7 +181,7 @@ export function isDiagonalizable(m: Matrix, realsOnly = false): boolean {
 
 /** (P, D) with M = P D P^-1. */
 export function diagonalize(m: Matrix): [Matrix, Matrix] {
-  if (!isDiagonalizable(m)) throw new Error('Matrix is not diagonalizable');
+  if (!isDiagonalizable(m)) throw new MatrixError('Matrix is not diagonalizable');
   const cols: Matrix[] = [];
   const vals: Expr[] = [];
   for (const [v, , vecs] of eigenvects(m)) {
@@ -206,7 +207,7 @@ export function matrixExp(m: Matrix): Matrix {
  * eigenvalues (with multiplicity) evaluated at A.
  */
 export function analyticFunc(m: Matrix, fIn: ExprLike, x: Sym): Matrix {
-  if (!m.isSquare) throw new Error('analytic_func: square matrix expected');
+  if (!m.isSquare) throw new NonSquareMatrixError('analytic_func: square matrix expected');
   const f = sympify(fIn);
   const n = m.rows;
   const eig = new Map<string, [Expr, number]>();
@@ -247,7 +248,7 @@ export function analyticFunc(m: Matrix, fIn: ExprLike, x: Sym): Matrix {
 }
 
 function subsValue(e: Expr, x: Sym, v: Expr): Expr {
-  return impl.subs!(e, [[x, v]]);
+  return impl.subs(e, [[x, v]]);
 }
 
 /** Matrix logarithm (SymPy Matrix.log) via analytic_func. */
@@ -262,7 +263,7 @@ export function matrixLog(m: Matrix): Matrix {
 
 /** Cholesky: lower L with A = L L^H (hermitian) or A = L L^T. */
 export function cholesky(m: Matrix, hermitian = true): Matrix {
-  if (!m.isSquare) throw new Error('Matrix must be square');
+  if (!m.isSquare) throw new NonSquareMatrixError('Matrix must be square');
   const n = m.rows;
   const L: Expr[][] = Array.from({ length: n }, () => Array.from({ length: n }, () => S.Zero as Expr));
   const cj = (e: Expr) => (hermitian ? conjugate(e) : e);
@@ -389,7 +390,7 @@ export function norm(m: Matrix, ord?: ExprLike | string): Expr {
     if (o instanceof Special && o.name === '-oo') return Min(...vals.map((v) => abs(v)));
     if (o instanceof Rational && o.isOne) return add(...vals.map((v) => abs(v)));
     if (o instanceof Expr) return pow(add(...vals.map((v) => pow(abs(v), o))), pow(o, -1));
-    throw new Error(`norm: unsupported order ${String(ord)}`);
+    throw new RangeError(`norm: unsupported order ${String(ord)}`);
   }
   if (o === undefined || o === 'fro' || o === 'f') return sqrt(add(...vals.map((v) => pow(abs(v), 2))));
   if (o instanceof Rational && o.isOne) {
@@ -400,7 +401,7 @@ export function norm(m: Matrix, ord?: ExprLike | string): Expr {
   }
   if (o instanceof Rational && o.p === 2n && o.q === 1n) return Max(...singularValues(m));
   if (o instanceof Rational && o.p === -2n && o.q === 1n) return Min(...singularValues(m));
-  throw new Error(`norm: unsupported order ${String(ord)}`);
+  throw new RangeError(`norm: unsupported order ${String(ord)}`);
 }
 
 /** Moore-Penrose pseudo-inverse (full rank matrices). */
@@ -550,7 +551,8 @@ export function companion(coeffs: readonly Expr[]): Matrix {
 }
 
 /** Permanent of a square matrix (Laplace expansion). */
-export function permanent(m: Matrix): Expr {
+export function permanent(mIn: Matrix): Expr {
+  let m = mIn;
   let [r, c] = m.shape;
   if (r > c) {
     m = m.transpose();
@@ -647,7 +649,7 @@ export function gaussJordanSolve(A: Matrix, b: Matrix): [Matrix, Matrix] {
   for (let i = 0; i < R.rows; i++) {
     const row = Array.from({ length: n }, (_, j) => R.get(i, j));
     if (row.every((c) => c instanceof Rational && c.isZero) && !(R.get(i, n) instanceof Rational && (R.get(i, n) as Rational).isZero)) {
-      throw new Error('Linear system has no solution');
+      throw new RangeError('Linear system has no solution');
     }
   }
   const pv = pivots.filter((p) => p < n);
@@ -667,7 +669,7 @@ export function gaussJordanSolve(A: Matrix, b: Matrix): [Matrix, Matrix] {
 /** SymPy Matrix.solve (and LUsolve, QRsolve, ...): the unique solution of A*x = b. */
 export function matrixSolve(A: Matrix, b: Matrix): Matrix {
   const [sol, params] = gaussJordanSolve(A, b);
-  if (params.rows) throw new Error('Matrix det == 0; not invertible.');
+  if (params.rows) throw new NonInvertibleMatrixError('Matrix det == 0; not invertible.');
   return sol;
 }
 
@@ -684,7 +686,7 @@ export function gramSchmidt(vs: readonly Matrix[], orthonormal = false): Matrix[
     let u = v;
     for (const w of out) u = u.sub(w.scale(cancel(mul(dot(w, v), pow(dot(w, w), -1)))));
     u = u.map((e) => cancel(e));
-    if (u.data.every((e) => e instanceof Rational && e.isZero)) throw new Error('GramSchmidt: the vectors are not linearly independent');
+    if (u.data.every((e) => e instanceof Rational && e.isZero)) throw new RangeError('GramSchmidt: the vectors are not linearly independent');
     out.push(u);
   }
   return orthonormal ? out.map((u) => normalized(u)) : out;
@@ -735,7 +737,7 @@ export function rankDecomposition(A: Matrix): [Matrix, Matrix] {
 export function invMod(A: Matrix, m: number | bigint): Matrix {
   const M = BigInt(m);
   const toInt = (e: Expr): bigint => {
-    if (!(e instanceof Rational && e.q === 1n)) throw new Error('inv_mod: integer matrix expected');
+    if (!(e instanceof Rational && e.q === 1n)) throw new TypeError('inv_mod: integer matrix expected');
     return ((e.p % M) + M) % M;
   };
   const det = toInt(A.det());
@@ -745,7 +747,7 @@ export function invMod(A: Matrix, m: number | bigint): Matrix {
     const q = r0 / r1;
     [r0, r1, s0, s1] = [r1, r0 - q * r1, s1, s0 - q * s1];
   }
-  if (r0 !== 1n) throw new Error(`Matrix is not invertible (mod ${M})`);
+  if (r0 !== 1n) throw new NonInvertibleMatrixError(`Matrix is not invertible (mod ${M})`);
   const dinv = ((s0 % M) + M) % M;
   return A.adjugate().map((e) => Rational.of((((toInt(e) * dinv) % M) + M) % M));
 }
@@ -764,7 +766,7 @@ export function permuteCols(A: Matrix, perm: readonly number[]): Matrix {
  * columns of P Jordan chains of generalized eigenvectors.
  */
 export function jordanForm(A: Matrix): [Matrix, Matrix] {
-  if (!A.isSquare) throw new Error('jordan_form: square matrix expected');
+  if (!A.isSquare) throw new NonSquareMatrixError('jordan_form: square matrix expected');
   const n = A.rows;
   const counts = new Map<string, [Expr, number]>();
   for (const v of A.eigenvals()) {
@@ -790,7 +792,7 @@ export function jordanForm(A: Matrix): [Matrix, Matrix] {
     while (kernels[kernels.length - 1]!.length < mult) {
       Nk = simp(Nk.mul(N));
       kernels.push(nullspace(Nk));
-      if (kernels.length > n + 1) throw new Error('jordan_form: generalized eigenvectors not found');
+      if (kernels.length > n + 1) throw new NotImplementedError('jordan_form: generalized eigenvectors not found');
     }
     // chains from the top level down: v, N*v, N**2*v, ...
     const chainsOf: Matrix[][] = [];
@@ -875,7 +877,7 @@ export function irregular(ntop: number, ...blocks: Matrix[]): Matrix {
       left[j]!--;
       if (left[j] === 0 && q.length) active[a] = q.shift()!;
     });
-    if (r.length !== cols) throw new Error('Matrices provided do not appear to fill the space completely.');
+    if (r.length !== cols) throw new RangeError('Matrices provided do not appear to fill the space completely.');
     rows.push(r);
   }
   return Matrix.of(rows);

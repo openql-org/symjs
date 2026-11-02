@@ -9,7 +9,8 @@
  * split_surds).
  */
 
-import { Add, Constant, Expr, ExprLike, Mul, Pow, Rational, S, impl } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Constant, Mul, Pow, Rational, S, impl } from '../core/nodes';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { countOps, ordered } from '../core/match';
 import { keepCoeff } from '../core/methods';
@@ -21,6 +22,8 @@ import { gcdTerms, signsimp } from './exprtools';
 import { powdenest, powsimp } from './powsimp';
 import { compareKeys, sortKey } from '../printing/sortkey';
 
+// an internal control-flow signal that never leaves this module
+// oxlint-disable-next-line no-restricted-globals
 class StopDenest extends Error {}
 
 const isHalfAbs = (e: Expr) => e instanceof Rational && e.q === 2n && (e.p === 1n || e.p === -1n);
@@ -50,7 +53,7 @@ export function sqrtDepth(p: Expr): number {
 function isAlgebraic(p: Expr): boolean {
   if (p instanceof Rational) return true;
   if (p.args.length === 0) return false;
-  if (isSqrt(p) || (p instanceof Pow && p.exp instanceof Rational && p.exp.isInteger)) return isAlgebraic((p as Pow).base);
+  if (isSqrt(p) || (p instanceof Pow && p.exp instanceof Rational && p.exp.isInteger)) return isAlgebraic((p).base);
   if (p instanceof Add || p instanceof Mul) return p.args.every(isAlgebraic);
   return false;
 }
@@ -495,7 +498,7 @@ function denesterRec(nested: Expr[], av0: (Expr | undefined)[], h: number, maxDe
   let values: [Expr, Expr, Expr][];
   let nested2: Expr[];
   if (av0[0] !== undefined) {
-    values = [[av0[0], av0[1]!, S.Zero]];
+    values = [[av0[0], av0[1], S.Zero]];
     R = av0[2]!;
     nested2 = [av0[3]!, R];
     av0[0] = undefined;
@@ -532,21 +535,21 @@ function denesterRec(nested: Expr[], av0: (Expr | undefined)[], h: number, maxDe
   if (!f[nested.length]) {
     const vad = mexpand(add(v0, d));
     if (num(vad) <= 0) return [sqrt(nested[nested.length - 1]!), Array<number>(nested.length).fill(0)];
-    if (!(sqrtDepth(vad) <= sqrtDepth(R!) + 1 || pow(vad, 2).isNumber)) {
+    if (!(sqrtDepth(vad) <= sqrtDepth(R) + 1 || pow(vad, 2).isNumber)) {
       av0[1] = undefined;
       return [undefined, undefined];
     }
     const sqvad = sqrtdenest1(sqrt(vad), false);
-    if (!(sqrtDepth(sqvad) <= sqrtDepth(R!) + 1)) {
+    if (!(sqrtDepth(sqvad) <= sqrtDepth(R) + 1)) {
       av0[1] = undefined;
       return [undefined, undefined];
     }
     const sqvad1 = radsimp(pow(sqvad, -1));
-    return [mexpand(add(mul(sqvad, pow(sqrt(2), -1)), mul(v1, sqrt(R!), sqvad1, pow(sqrt(2), -1)))), f];
+    return [mexpand(add(mul(sqvad, pow(sqrt(2), -1)), mul(v1, sqrt(R), sqvad1, pow(sqrt(2), -1)))), f];
   }
-  const s2 = add(mexpand(mul(v1, R!)), d);
+  const s2 = add(mexpand(mul(v1, R)), d);
   if (num(s2) <= 0) return [sqrt(nested[nested.length - 1]!), Array<number>(nested.length).fill(0)];
-  const FR = pow(mexpand(R!), Rational.of(1n, 4n));
+  const FR = pow(mexpand(R), Rational.of(1n, 4n));
   const s = sqrt(s2);
   return [mexpand(add(mul(s, pow(mul(sqrt(2), FR), -1)), mul(v0, FR, pow(mul(sqrt(2), s), -1)))), f];
 }

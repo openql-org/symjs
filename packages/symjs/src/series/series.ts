@@ -6,7 +6,8 @@
  */
 
 import { NotImplementedError } from '../core/errors';
-import { Add, Expr, ExprLike, Fn, Order, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Fn, Order, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { add, exp, mul, neg, pow, sympify } from '../core/ops';
 import { Mul } from '../core/nodes';
 import { expandMul } from '../simplify/expand';
@@ -22,7 +23,7 @@ export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): E
   const e = sympify(ex);
   const p = sympify(x0);
   const syms = [...e.freeSymbols()];
-  const vars = Array.isArray(xIn) ? (xIn as readonly Sym[]) : xIn === undefined && syms.length > 1 ? (sortSyms(syms) as Sym[]) : undefined;
+  const vars = Array.isArray(xIn) ? (xIn as readonly Sym[]) : xIn === undefined && syms.length > 1 ? (sortSyms(syms)) : undefined;
   if (vars && vars.length > 1) return orderMulti(e, vars, p);
   const x: Sym | undefined = Array.isArray(xIn) ? (xIn as readonly Sym[])[0] : (xIn as Sym | undefined);
   const v = x ?? (syms.length === 1 ? syms[0] : undefined);
@@ -79,7 +80,7 @@ function orderMulti(e: Expr, vars: readonly Sym[], p: Expr): Expr {
     };
     const ds = terms.map(deg);
     if (ds.every((d) => d !== undefined)) {
-      const target = atZero ? Math.min(...(ds as number[])) : Math.max(...(ds as number[]));
+      const target = atZero ? Math.min(...(ds)) : Math.max(...(ds));
       const strip = (t: Expr) => mul(...(t instanceof Mul ? t.args : [t]).filter((f) => !(f instanceof Rational || f.freeSymbols().size === 0)));
       reduced = add(...terms.filter((_, i) => ds[i] === target).map(strip));
     }
@@ -180,7 +181,7 @@ export function asLeadingTerm(ex: ExprLike, x: Sym): Expr {
 /** Order of the O term in a sum, or undefined (SymPy getn). */
 export function getn(ex: ExprLike): Expr | undefined {
   const e = sympify(ex);
-  const o = (e instanceof Add ? e.args : [e]).find((a) => a instanceof Order) as Order | undefined;
+  const o = (e instanceof Add ? e.args : [e]).find((a) => a instanceof Order);
   if (!o) return undefined;
   const b = o.args[0]!;
   if (b instanceof Pow) return b.exp;
@@ -216,8 +217,8 @@ export function taylorTerm(eIn: ExprLike, n: number, x: Sym): Expr {
 export function aseries(ex: ExprLike, x: Sym, n = 6, hir = false): Expr {
   const e = sympify(ex);
   const rates: Rational[] = [];
-  let growing = false;
-  let other = false;
+  let growing = false as boolean; // set inside a callback
+  let other = false as boolean;
   const walk = (u: Expr) => {
     if (u instanceof Pow && u.base === S.E && u.exp.has(x)) {
       const c = expandMul(mul(u.exp, pow(x, -1)));

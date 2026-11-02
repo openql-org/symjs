@@ -6,7 +6,8 @@
  */
 
 import { Special } from './nodes';
-import { BoolAtom, Expr, ExprLike, Float, Piecewise, Rational, Rel, RelOp, S, isNum } from './nodes';
+import type { Expr, ExprLike, RelOp } from './nodes';
+import { BoolAtom, Piecewise, Rational, Rel, S, isNum } from './nodes';
 import { numCmp } from './num';
 import { add, mul, sympify } from './ops';
 import { BoolOp } from './boolalg';
@@ -24,7 +25,7 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   }
   const d = add(lhs, mul(-1, rhs));
   if (isNum(d)) {
-    const c = d instanceof Rational ? numCmp(d, S.Zero) : Math.sign((d as Float).value);
+    const c = d instanceof Rational ? numCmp(d, S.Zero) : Math.sign((d).value);
     const v = { Eq: c === 0, Ne: c !== 0, Lt: c < 0, Le: c <= 0, Gt: c > 0, Ge: c >= 0 }[op];
     return v ? S.true : S.false;
   }
@@ -70,7 +71,7 @@ export function piecewise(...pairs: readonly (readonly [ExprLike, ExprLike | boo
     out.push(sympify(e), c);
     if (isTrue(c)) break;
   }
-  if (out.length === 0) throw new Error('piecewise: no condition can be satisfied');
+  if (out.length === 0) throw new RangeError('piecewise: no condition can be satisfied');
   if (out.length === 2 && isTrue(out[1]!)) return out[0]!;
   return new Piecewise(out);
 }

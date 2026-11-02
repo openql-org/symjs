@@ -5,7 +5,8 @@
  * @file Immutable matrices with symbolic entries.
  */
 
-import { ComplexValue, EvalfOptions, Expr, ExprLike, NumericValues, Rational, S, Substitution, Sym } from '../core/nodes';
+import type { ComplexValue, EvalfOptions, ExprLike, NumericValues, Substitution } from '../core/nodes';
+import { Expr, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { subs } from '../core/traverse';
 import { sympifyMethod } from '../core/sympify';

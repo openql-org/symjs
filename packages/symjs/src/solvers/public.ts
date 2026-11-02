@@ -8,10 +8,11 @@
  * a nonlinear system a NonlinearError.
  */
 
-import { Expr, ExprLike, Sym } from '../core/nodes';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { sympify } from '../core/ops';
 import { NonlinearError } from '../core/errors';
-import { NoMatchResult, Truth, UnsolvedResult, orNoMatch, orUnsolved, toTruth } from '../core/truth';
+import type { NoMatchResult, Truth, UnsolvedResult } from '../core/truth';
+import { orNoMatch, orUnsolved, toTruth } from '../core/truth';
 import { EmptySet, Reals, type SetExpr } from '../sets/sets';
 import type { Matrix } from '../matrices/matrix';
 import * as S from './solve';

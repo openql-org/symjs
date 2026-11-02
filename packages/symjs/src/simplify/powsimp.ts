@@ -7,7 +7,8 @@
  */
 
 import { isIntegerQ, isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
-import { Add, Constant, Dummy, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { countOps, ordered } from '../core/match';
 import { keepCoeff } from '../core/methods';
@@ -64,7 +65,8 @@ function ilcm(a: bigint, b: bigint): bigint {
 }
 
 /** Number of times p divides n (both positive integers). */
-function multiplicityInt(p: bigint, n: bigint): number {
+function multiplicityInt(p: bigint, nIn: bigint): number {
+  let n = nIn;
   if (n === 0n || p <= 1n) return 0;
   let m = 0;
   while (n % p === 0n) {
@@ -448,7 +450,9 @@ function denestPow(eq: Pow): Expr {
   return pow(exp(logcombine(mul(...adds))), mul(e, ...other));
 }
 
-function gcdI(a: bigint, b: bigint): bigint {
+function gcdI(aIn: bigint, bIn: bigint): bigint {
+  let a = aIn;
+  let b = bIn;
   a = a < 0n ? -a : a;
   b = b < 0n ? -b : b;
   while (b) [a, b] = [b, a % b];

@@ -70,16 +70,16 @@ export const doitConcrete = _doitConcrete_;
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const piecewiseIntegrate = _piecewiseIntegrate_;
 
+/** SymPy Sum.is_convergent: true, false or 'unknown'. */
+export const isConvergent = (s: _Concrete_): Truth => _toTruth_(_sumIsConvergent_(s));
+/** SymPy Sum.is_absolutely_convergent: true, false or 'unknown'. */
+export const isAbsolutelyConvergent = (s: _Concrete_): Truth => _toTruth_(_sumIsAbsolutelyConvergent_(s));
+
 /** @deprecated Use `isConvergent`. */
-export const sumIsConvergent = (s: _Concrete_): Truth => _toTruth_(_sumIsConvergent_(s));
+export const sumIsConvergent = isConvergent;
 
 /** @deprecated Use `isAbsolutelyConvergent`. */
-export const sumIsAbsolutelyConvergent = (s: _Concrete_): Truth => _toTruth_(_sumIsAbsolutelyConvergent_(s));
-
-/** SymPy Sum.is_convergent: true, false or 'unknown'. */
-export const isConvergent = sumIsConvergent;
-/** SymPy Sum.is_absolutely_convergent: true, false or 'unknown'. */
-export const isAbsolutelyConvergent = sumIsAbsolutelyConvergent;
+export const sumIsAbsolutelyConvergent = isAbsolutelyConvergent;
 
 /** SymPy Order.getn: the order of the Order term in the expression, or NoMatch. */
 export function getn(e: _ExprLike_): _Expr_ | NoMatchResult {

@@ -9,7 +9,8 @@
  */
 
 import { isPositive } from '../core/assumptions';
-import { Add, Constant, Dummy, Expr, ExprLike, Fn, FnName, Mul, Pow, Rational, S, Special, Sym } from '../core/nodes';
+import type { Expr, ExprLike, FnName } from '../core/nodes';
+import { Add, Constant, Dummy, Fn, Mul, Pow, Rational, S, Special, Sym } from '../core/nodes';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { asCoefficient } from '../core/methods';
 import { rebuild, xreplace } from '../core/traverse';
@@ -83,7 +84,7 @@ export function extractBranchFactor(eIn: ExprLike, allowHalf = false): [Expr, Ex
   let c = add(coeff, mul(-1, branchfact)) as Rational;
   if (allowHalf && c.p === c.q) {
     n = add(n, Rational.of(1n, 2n));
-    c = S.Zero as Rational;
+    c = S.Zero;
   }
   const newexp = add(mul(ipi(), add(c, ...tail)), ...extras);
   if (!(newexp instanceof Rational && newexp.isZero)) res = mul(res, expPolar(newexp));
@@ -252,9 +253,9 @@ trigIntegral('Si', Si, (z, s) => mul(S.I, Shi(z), s), (z) => mul(-1, Si(z)), tru
 trigIntegral('Shi', Shi, (z, s) => mul(S.I, Si(z), s), (z) => mul(-1, Shi(z)), true);
 
 evaluators.expint = (nu, z) => {
-  const r = base.expint!(nu, z!);
+  const r = base.expint!(nu, z);
   if (r !== undefined) return r;
-  const [nz, n] = extractBranchFactor(z!);
+  const [nz, n] = extractBranchFactor(z);
   if (n instanceof Rational && n.isZero) return undefined;
   if (nu instanceof Rational && nu.isInteger) {
     if (!nu.isPositive) return undefined;

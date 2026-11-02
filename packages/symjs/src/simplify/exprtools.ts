@@ -7,7 +7,8 @@
  * built on it (collect_const, signsimp).
  */
 
-import { Add, Constant, Expr, ExprLike, Float, Mul, Pow, Rational, S, Special, impl } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Constant, Float, Mul, Pow, Rational, S, Special, impl } from '../core/nodes';
 import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { argsCncSplit, asContentPrimitive, asIndependent, primitive } from '../core/methods';
 import { rebuild, xreplace } from '../core/traverse';
@@ -34,7 +35,9 @@ function rawAdd(args: Expr[]): Expr {
 }
 
 /** SymPy _keep_coeff(coeff, factors, clear, sign). */
-export function keepCoeff(coeff: Expr, factors: Expr, clear = true, sign = false): Expr {
+export function keepCoeff(coeffIn: Expr, factorsIn: Expr, clear = true, sign = false): Expr {
+  let coeff = coeffIn;
+  let factors = factorsIn;
   if (!isNumber(coeff)) {
     if (isNumber(factors)) [factors, coeff] = [coeff, factors];
     else return mul(coeff, factors);
@@ -57,8 +60,8 @@ export function keepCoeff(coeff: Expr, factors: Expr, clear = true, sign = false
   if (factors instanceof Mul) {
     const margs = [...factors.args];
     if (isNumber(margs[0]!)) {
-      margs[0] = mul(margs[0]!, coeff);
-      if (isOneE(margs[0]!)) margs.shift();
+      margs[0] = mul(margs[0], coeff);
+      if (isOneE(margs[0])) margs.shift();
     } else margs.unshift(coeff);
     return rawMul(margs);
   }

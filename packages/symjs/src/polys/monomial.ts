@@ -6,7 +6,7 @@
  * optional generators.
  */
 
-import { Expr } from '../core/nodes';
+import type { Expr } from '../core/nodes';
 import { mul, pow } from '../core/ops';
 import { str } from '../printing/str';
 
@@ -20,7 +20,7 @@ export class Monomial {
   /** The monomial as an expression (SymPy as_expr). */
   asExpr(...gens: Expr[]): Expr {
     const g = gens.length ? gens : this.gens;
-    if (!g.length) throw new Error(`Cannot convert ${this.toString()} to an expression without generators`);
+    if (!g.length) throw new TypeError(`Cannot convert ${this.toString()} to an expression without generators`);
     return mul(...g.map((x, i) => pow(x, this.exponents[i] ?? 0)));
   }
   /** Product of monomials (exponents added). */

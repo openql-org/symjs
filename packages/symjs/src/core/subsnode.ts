@@ -6,7 +6,8 @@
  * derivative at a point, `Subs(Derivative(f(x), x), x, 0)`.
  */
 
-import { Expr, ExprLike, ExtensionExpr } from './nodes';
+import type { Expr, ExprLike } from './nodes';
+import { ExtensionExpr } from './nodes';
 import { add, mul, sympify } from './ops';
 
 /** Subs(expr, variables, points): args are [expr, ...variables, ...points]. */
@@ -67,7 +68,7 @@ export function Subs(exprIn: ExprLike, variables: ExprLike | readonly ExprLike[]
   const expr = sympify(exprIn);
   const vs = (Array.isArray(variables) ? variables : [variables]).map((v) => sympify(v as ExprLike));
   const ps = (Array.isArray(point) ? point : [point]).map((p) => sympify(p as ExprLike));
-  if (vs.length !== ps.length) throw new Error('Subs: number of variables and points differ');
+  if (vs.length !== ps.length) throw new RangeError('Subs: number of variables and points differ');
   if (!vs.length) return expr;
   return new SubsNode([expr, ...vs, ...ps]);
 }

@@ -18,7 +18,7 @@ export class ExprMap<V> extends Map<Expr, V> {
 
   constructor(entries?: Iterable<readonly [ExprLike, V]> | null) {
     super();
-    if (entries) for (const [k, v] of entries) this.set(k as Expr, v);
+    if (entries) for (const [k, v] of entries) this.set(k, v);
   }
 
   #canonical(k: ExprLike): Expr | undefined {

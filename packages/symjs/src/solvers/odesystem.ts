@@ -10,9 +10,9 @@
  */
 
 import { NotImplementedError } from '../core/errors';
-import { Derivative, Dummy, Expr, ExprLike, I, Integral, Mul, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Derivative, Dummy, I, Integral, Mul, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
 import { Function } from '../core/undef';
-import { dsolve as dsolveOne } from './ode';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { Eq } from '../core/logic';
@@ -24,6 +24,15 @@ import { Matrix } from '../matrices/matrix';
 import { jordanForm } from '../matrices/linalg';
 import { linearEqToMatrix } from './solve';
 
+/** The single-equation dsolve, registered by solvers/ode.ts (which imports this module). */
+let dsolveOne: (eq: Expr, f: Expr) => Expr | Expr[] = () => {
+  throw new NotImplementedError('dsolve: single equations are not loaded');
+};
+/** @internal */
+export function registerSingleOdeSolver(f: (eq: Expr, fx: Expr) => Expr | Expr[]): void {
+  dsolveOne = f;
+}
+
 const isZero = (e: Expr) => e instanceof Rational && e.isZero;
 
 /** SymPy dsolve([eq1, eq2, ...], [f(t), g(t), ...]) for x' = A*x + b(t) with constant A. */
@@ -34,7 +43,7 @@ export function dsolveSystem(eqsIn: readonly ExprLike[], funcsIn?: readonly Unde
   });
   const funcs = funcsIn ?? findFunctions(eqs);
   const n = funcs.length;
-  if (n === 0 || eqs.length !== n) throw new Error('dsolve: as many equations as functions are needed');
+  if (n === 0 || eqs.length !== n) throw new TypeError('dsolve: as many equations as functions are needed');
   const t = funcs[0]!.args[0] as Sym;
   // replace derivatives and functions by symbols, then read the coefficients
   const ds = funcs.map((_, i) => new Dummy(`d${i}`));
@@ -49,7 +58,7 @@ export function dsolveSystem(eqsIn: readonly ExprLike[], funcsIn?: readonly Unde
   const [M, rhs] = lin;
   const Md = Matrix.fromFunction(n, n, (i, j) => M.get(i, j));
   const Mu = Matrix.fromFunction(n, n, (i, j) => M.get(i, n + j));
-  if (Md.det().key === S.Zero.key) throw new Error('dsolve: the system is not of first order in every function');
+  if (Md.det().key === S.Zero.key) throw new NotImplementedError('dsolve: the system is not of first order in every function');
   // d = A*u + b
   const MdInv = Md.inv();
   const A = MdInv.mul(Mu).scale(-1).map((e) => simplify(e));
@@ -100,8 +109,8 @@ function fundamentalSolutions(A: Matrix, t: Sym): Matrix[] {
         const bb = simplify(im(lam));
         const tr = new Dummy('t', { real: true });
         const w = v.map((e) => xreplace(e, [[t, tr]])).scale(mul(exp(mul(a, tr)), add(cos(mul(bb, tr)), mul(I, sin(mul(bb, tr))))));
-        const ex = w.map((e) => expand(e, { complex: true } as never));
-        const back = (e: Expr) => simplify(xreplace(expand(e, { complex: true } as never), [[tr, t]]));
+        const ex = w.map((e) => expand(e, { complex: true }));
+        const back = (e: Expr) => simplify(xreplace(expand(e, { complex: true }), [[tr, t]]));
         out.push(ex.map((e) => back(re(e))), ex.map((e) => back(im(e))));
       }
     }

@@ -6,7 +6,8 @@
  * used as a container in pattern matching and tree manipulation.
  */
 
-import { Expr, ExprLike, ExtensionExpr } from './nodes';
+import type { Expr, ExprLike } from './nodes';
+import { ExtensionExpr } from './nodes';
 import { sympify } from './ops';
 
 /**

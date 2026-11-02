@@ -7,7 +7,8 @@
  * containers converted element by element.
  */
 
-import { Expr, ExprLike } from './nodes';
+import type { ExprLike } from './nodes';
+import { Expr } from './nodes';
 import { sympify as toExpr } from './ops';
 
 /**

@@ -5,21 +5,25 @@
  * @file Univariate polynomials over the rationals, coefficient extraction and root finding.
  */
 
-import { NotImplementedError } from '../core/errors';
+import { NotImplementedError, PolynomialError } from '../core/errors';
 import { ExprMap } from '../core/exprmap';
-import { Add, Expr, ExprLike, Mul, Pow, Rational, S, Sym, compareExpr, impl } from '../core/nodes';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
+import { Add, Mul, Pow, Rational, S, compareExpr, impl } from '../core/nodes';
 import { zassenhaus } from './zassenhaus';
 import { numAdd, numCmp, numInv, numMul, numNeg, numPowInt } from '../core/num';
 import { factorInt, gcd as gcdBig, lcm } from '../core/numbers';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import { expandMul as expand } from '../simplify/expand';
-import { cancel } from '../simplify/rational';
 
 /**
  * Coefficients of e as a polynomial in x (degree -> coefficient expression),
  * or undefined if e is not polynomial in x.
  */
+/** cancel, registered by simplify/rational (which imports this module). @internal */
+export const polyHooks: { cancel: (e: Expr) => Expr } = { cancel: (e) => e };
+const cancel = (e: Expr): Expr => polyHooks.cancel(e);
+
 export function polyCoefficients(ex: ExprLike, x: Sym): Map<number, Expr> | undefined {
   const e = expand(sympify(ex));
   const out = new Map<number, Expr>();
@@ -174,7 +178,8 @@ export class UPoly {
     const a0 = ints[lo]!;
     const an = ints[ints.length - 1]!;
     if (ints.length - 1 === lo) return roots;
-    const divisors = (n: bigint): bigint[] => {
+    const divisors = (nIn: bigint): bigint[] => {
+      let n = nIn;
       n = n < 0n ? -n : n;
       let ds = [1n];
       for (const [p, k] of factorInt(n)) {
@@ -361,7 +366,7 @@ export function rootsDict(ex: ExprLike, x: Sym, opts: { multiple?: boolean; skip
 /** Roots repeated by multiplicity (the list form used internally). */
 export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}): Expr[] {
   const coeffs = polyCoefficients(ex, x);
-  if (!coeffs) throw new Error('roots: expression is not a polynomial in the given symbol');
+  if (!coeffs) throw new PolynomialError('roots: expression is not a polynomial in the given symbol');
   const deg = Math.max(-1, ...coeffs.keys());
   if (deg <= 0) return [];
   const p = UPoly.fromExpr(ex, x);
@@ -450,7 +455,7 @@ export function factorPoly(ex: ExprLike, x: Sym): Expr {
     for (const v of ints) g = gcdBig(g, v);
     const scale = Rational.of(d, g); // f * scale is primitive
     const prim = f.scale(scale);
-    content = numMul(content, numPowInt(numInv(scale) as Rational, BigInt(m))) as Rational;
+    content = numMul(content, numPowInt(numInv(scale), BigInt(m))) as Rational;
     parts.push(pow(prim.toExpr(x), m));
   }
   parts.sort(compareExpr);

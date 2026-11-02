@@ -13,15 +13,16 @@
  */
 
 import { isIntegerQ, isNegative, isPositive, isReal } from './assumptions';
+import type {
+  ExprLike,
+  Num } from './nodes';
 import {
   Add,
   Constant,
   Expr,
-  ExprLike,
   Float,
   Fn,
   Mul,
-  Num,
   Pow,
   Rational,
   S,
@@ -69,7 +70,7 @@ export function splitCoeff(e: Expr): [Num, Expr] {
   if (isNum(e)) return [e, S.One];
   if (e instanceof Mul && isNum(e.args[0]!)) {
     const rest = e.args.length === 2 ? e.args[1]! : new Mul(e.args.slice(1));
-    return [e.args[0] as Num, rest];
+    return [e.args[0], rest];
   }
   return [S.One, e];
 }
@@ -242,7 +243,8 @@ class Radicals {
   /** exponent of -1 */
   negOne: Rational = S.Zero;
 
-  addPower(base: Rational, exp: Rational): void {
+  addPower(baseIn: Rational, exp: Rational): void {
+    let base = baseIn;
     if (base.isNegative) {
       this.negOne = numAdd(this.negOne, exp) as Rational;
       base = Rational.of(-base.p, base.q);
@@ -490,7 +492,7 @@ export function mul(...xs: ExprLike[]): Expr {
   if (factors.length === 1 && isOne) return factors[0]!;
   // end of SymPy Mul.flatten: Number * Add distributes (2*(1 + a) -> 2 + 2*a)
   if (factors.length === 1 && factors[0] instanceof Add) {
-    const c = coeff as Num;
+    const c = coeff;
     return add(...factors[0].args.map((t) => keepCoeffMul(c, t)));
   }
   return new Mul(isOne ? factors : [coeff, ...factors]);
@@ -720,7 +722,7 @@ function pureComplex(e: Add): [Num, Num] | undefined {
   const [h, t] = e.args as [Expr, Expr];
   if (!isNum(h)) return undefined;
   if (isI(t)) return [h, S.One];
-  if (t instanceof Mul && t.args.length === 2 && isNum(t.args[0]!) && isI(t.args[1]!)) return [h, t.args[0] as Num];
+  if (t instanceof Mul && t.args.length === 2 && isNum(t.args[0]!) && isI(t.args[1]!)) return [h, t.args[0]];
   return undefined;
 }
 

@@ -10,10 +10,12 @@
  * cancellation.
  */
 
-import { Add, Constant, Expr, ExtensionExpr, Float, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
+import type { Expr } from '../core/nodes';
+import { Add, Constant, ExtensionExpr, Float, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { add, mul } from '../core/ops';
 import * as F from './mpf';
-import { Mpf, ZERO } from './mpf';
+import type { Mpf } from './mpf';
+import { ZERO } from './mpf';
 import * as M from './mpfun';
 import { type Mpc } from './mpfun';
 
@@ -75,7 +77,7 @@ function constant(name: string, prec: number): Mpc {
     case 'TribonacciConstant':
       return [M.mpTribonacci(prec), ZERO];
   }
-  throw new Error(`unknown constant ${name}`);
+  throw new TypeError(`unknown constant ${name}`);
 }
 
 /** Evaluate at working precision wp (each operation rounded to wp bits). */
@@ -86,7 +88,7 @@ export function evalMp(e: Expr, wp: number, lookup: (s: Sym) => Mpc | undefined)
     if (x instanceof Constant) return constant(x.name, wp);
     if (x instanceof Sym) {
       const v = lookup(x);
-      if (v === undefined) throw new Error(`no value for ${x.name}`);
+      if (v === undefined) throw new TypeError(`no value for ${x.name}`);
       return v;
     }
     if (x instanceof Add) {
@@ -115,13 +117,13 @@ export function evalMp(e: Expr, wp: number, lookup: (s: Sym) => Mpc | undefined)
       if (f) return f(args, wp);
       const d = doubleFallback(x.name, args);
       if (d) return d;
-      throw new Error(`cannot evaluate ${x.name}`);
+      throw new TypeError(`cannot evaluate ${x.name}`);
     }
     if (x instanceof ExtensionExpr) {
       const v = x.numericValue(Math.ceil(wp / 3.32) + 5);
       if (v !== undefined) return ev(v);
     }
-    throw new Error(`cannot evaluate ${x.kind}`);
+    throw new TypeError(`cannot evaluate ${x.kind}`);
   };
   return ev(e);
 }

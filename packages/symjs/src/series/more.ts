@@ -6,7 +6,8 @@
  * (fourier_series), and Expr.dir (the direction of approach).
  */
 
-import { Add, Dummy, Expr, ExprLike, Order, Rational, S, Special, Sym } from '../core/nodes';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
+import { Add, Dummy, Order, Rational, S, Special } from '../core/nodes';
 import { add, mul, pow, sub, sympify } from '../core/ops';
 import { subs } from '../core/traverse';
 import { diff } from '../calculus/diff';

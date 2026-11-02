@@ -6,7 +6,8 @@
  */
 
 import * as F from '../numeric/mpf';
-import { Float, Num, Rational } from './nodes';
+import type { Num } from './nodes';
+import { Float, Rational } from './nodes';
 import { ipow } from './numbers';
 
 const toNumber = (a: Num): number => (a instanceof Rational ? a.value : a.value);

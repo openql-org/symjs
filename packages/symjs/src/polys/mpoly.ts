@@ -7,7 +7,9 @@
  * and a heuristic multivariate factorization.
  */
 
-import { Add, Expr, Mul, Rational, S, Sym } from '../core/nodes';
+import { PolynomialError } from '../core/errors';
+import type { Expr, Sym } from '../core/nodes';
+import { Add, Mul, Rational, S } from '../core/nodes';
 import { numMul } from '../core/num';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
 import { add, mul, pow } from '../core/ops';
@@ -21,13 +23,13 @@ const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
 export function degreeIn(e: Expr, x: Sym): number {
   if (isZeroE(e)) return -1;
   const pc = polyCoefficients(e, x);
-  if (!pc) throw new Error('degreeIn: not a polynomial');
+  if (!pc) throw new PolynomialError('degreeIn: not a polynomial');
   return Math.max(...pc.keys());
 }
 
 function coeffsIn(e: Expr, x: Sym): Map<number, Expr> {
   const pc = polyCoefficients(e, x);
-  if (!pc) throw new Error('not a polynomial');
+  if (!pc) throw new PolynomialError('not a polynomial');
   return pc;
 }
 
@@ -183,7 +185,8 @@ export function mfactorList(f0: Expr, vars: readonly Sym[], uniFactor: (e: Expr,
     if (e) e[1] += k;
     else out.push([g, k]);
   };
-  const rec = (p: Expr, k: number) => {
+  const rec = (pIn: Expr, k: number) => {
+    let p = pIn;
     p = expand(p);
     if (p instanceof Rational) {
       content = numMul(content, pow(p, k) as Rational) as Rational;

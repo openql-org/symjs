@@ -5,7 +5,8 @@
  * @file The unevaluated Sum / Product node.
  */
 
-import { Expr, ExprLike, Sym } from './nodes';
+import type { ExprLike, Sym } from './nodes';
+import { Expr } from './nodes';
 import { sympify } from './ops';
 
 /**

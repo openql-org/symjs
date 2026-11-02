@@ -8,7 +8,8 @@
 import { NotImplementedError } from '../core/errors';
 import { isReal } from '../core/assumptions';
 import { piecewise } from '../core/logic';
-import { Add, ExtensionExpr, Constant, Derivative, Dummy, Expr, ExprLike, Fn, Integral, Mul, Piecewise, Pow, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import type { ExprLike } from '../core/nodes';
+import { Add, ExtensionExpr, Constant, Derivative, Dummy, Expr, Fn, Integral, Mul, Piecewise, Pow, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { derivative } from '../core/undef';
 import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
@@ -43,7 +44,7 @@ function d(e: Expr, x: Expr): Expr {
   if (e instanceof ExtensionExpr) {
     const r = e.diffSelf(x, d);
     if (r !== undefined) return r;
-    throw new Error(`diff: ${e.name} does not define a derivative`);
+    throw new NotImplementedError(`diff: ${e.name} does not define a derivative`);
   }
 
   if (e instanceof Mul) {
@@ -87,7 +88,7 @@ function d(e: Expr, x: Expr): Expr {
       throw new NotImplementedError('diff: derivative of abs() of a non-real argument is not supported');
     }
     const f = fnDerivative[e.name];
-    if (!f) throw new Error(`diff: unknown derivative for ${e.name}`);
+    if (!f) throw new NotImplementedError(`diff: unknown derivative for ${e.name}`);
     return mul(f(u), du);
   }
   if (e instanceof UndefFn) {

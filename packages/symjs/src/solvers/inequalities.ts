@@ -9,7 +9,8 @@
  */
 
 import { NotImplementedError } from '../core/errors';
-import { Add, Constant, Dummy, Expr, ExprLike, Fn, Mul, Piecewise, Pow, Rational, Rel, RelOp, S, Special, Sym, impl } from '../core/nodes';
+import type { Expr, ExprLike, RelOp, Sym } from '../core/nodes';
+import { Add, Constant, Dummy, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Special, impl } from '../core/nodes';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { expandMul } from '../simplify/expand';
 import { and, or as orB } from '../core/boolalg';
@@ -23,6 +24,8 @@ import { cancel, fraction } from '../simplify/rational';
 import { simplify } from '../simplify/simplify';
 import { solve } from './solve';
 import { compareKeys, sortKey } from '../printing/sortkey';
+import type {
+  SetExpr } from '../sets/sets';
 import {
   SetOp,
   ConditionSet,
@@ -33,7 +36,6 @@ import {
   FiniteSet,
   Interval,
   Reals,
-  SetExpr,
   asRelational,
   cmpReal,
   complement,
@@ -124,7 +126,7 @@ export function periodicity(fIn: ExprLike, x: Sym): Expr | undefined {
         return undefined;
       }
     })();
-    if (!p || p.degree() !== 1) return undefined;
+    if (p?.degree() !== 1) return undefined;
     const c = p.LC();
     return c.has(x) ? undefined : c;
   };
@@ -279,7 +281,7 @@ export function solveUnivariateInequality(
   opts: { relational?: boolean; domain?: SetExpr } = {},
 ): Expr {
   const rel = sympify(relIn);
-  if (!(rel instanceof Rel)) throw new Error('solve_univariate_inequality: relational expected');
+  if (!(rel instanceof Rel)) throw new TypeError('solve_univariate_inequality: relational expected');
   const domain = opts.domain ?? Reals;
   const s = solveSign(add(rel.lhs, mul(-1, rel.rhs)), rel.op, x, domain);
   return opts.relational === false ? s : asRelational(s, x);
@@ -372,7 +374,7 @@ export function reduceInequalities(ineqsIn: readonly ExprLike[] | ExprLike, symb
       continue;
     }
     const fs = [...r.freeSymbols()].filter((s) => gens.some((g) => g.key === s.key));
-    if (fs.length !== 1) throw new Error('reduce_inequalities: multivariate inequality');
+    if (fs.length !== 1) throw new NotImplementedError('reduce_inequalities: multivariate inequality');
     const g = fs[0]!;
     if (!byGen.has(g.key)) byGen.set(g.key, []);
     byGen.get(g.key)!.push(r);
@@ -409,12 +411,12 @@ function dropInfiniteBounds(e: Expr): Expr {
 function linearInequality(r: Rel, x: Sym): Expr {
   const f = add(r.lhs, mul(-1, r.rhs));
   const p = Poly.from(f, [x]);
-  if (p.degree() !== 1) throw new Error('reduce_inequalities: nonlinear inequality with parameters');
+  if (p.degree() !== 1) throw new NotImplementedError('reduce_inequalities: nonlinear inequality with parameters');
   const a = p.LC();
   const b = p.TC();
   const sol = mul(-1, b, pow(a, -1));
   const av = realValue(a);
-  if (av === undefined) throw new Error('reduce_inequalities: unknown sign of coefficient');
+  if (av === undefined) throw new NotImplementedError('reduce_inequalities: unknown sign of coefficient');
   const flip: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
   const op = av < 0 ? flip[r.op] : r.op;
   const main = relFn[op](x, sol);
@@ -560,8 +562,8 @@ export function stationaryPoints(fIn: ExprLike, x: Sym, domain: SetExpr = Reals)
 
 function monotonic(f: Expr, op: RelOp, iv: SetExpr, x?: Sym): boolean | undefined {
   const free = [...f.freeSymbols()];
-  const v = x ?? (free.length === 1 ? (free[0] as Sym) : undefined);
-  if (!v) throw new Error('monotonicity: specify the symbol');
+  const v = x ?? (free.length === 1 ? (free[0]) : undefined);
+  if (!v) throw new TypeError('monotonicity: specify the symbol');
   const d = diff(f, v);
   const s = solveSign(d, op, v, Reals);
   return isSubset(iv, s);
@@ -633,7 +635,7 @@ export function asExprSetPairs(p: Expr, domain: SetExpr = Reals): [Expr, SetExpr
   const pairs = (p as unknown as { pairs: [Expr, Expr][] }).pairs;
   const syms = new Map<string, Sym>();
   for (const [, c] of pairs) for (const s of c.freeSymbols()) syms.set(s.key, s);
-  if (syms.size !== 1) throw new Error('as_expr_set_pairs: univariate conditions expected');
+  if (syms.size !== 1) throw new NotImplementedError('as_expr_set_pairs: univariate conditions expected');
   const x = [...syms.values()][0]!;
   let remaining: SetExpr = domain;
   const out: [Expr, SetExpr][] = [];
@@ -677,7 +679,7 @@ export function piecewiseExclusive(p: Expr, opts: { skipNan?: boolean } = {}): E
   const pairs = (p as unknown as { pairs: [Expr, Expr][] }).pairs;
   const syms = new Map<string, Sym>();
   for (const [, c] of pairs) for (const t of c.freeSymbols()) syms.set(t.key, t);
-  if (syms.size !== 1) throw new Error('piecewise_exclusive: univariate conditions expected');
+  if (syms.size !== 1) throw new NotImplementedError('piecewise_exclusive: univariate conditions expected');
   const x = [...syms.values()][0]!;
   const condSet = (c: Expr): SetExpr => {
     if (c.kind === 'Bool') return (c as unknown as { value: boolean }).value ? Reals : EmptySet;
@@ -710,7 +712,7 @@ export function notEmptyIn(setIn: SetExpr, x: Sym): SetExpr {
   const parts = setIn.className === 'Intersection' ? (setIn.args as SetExpr[]) : [];
   const fset = parts.find((p): p is FiniteSet => p instanceof FiniteSet);
   const ivals = parts.filter((p): p is Interval => p instanceof Interval);
-  if (!fset || ivals.length !== 1) throw new Error('not_empty_in: FiniteSet intersected with an Interval expected');
+  if (!fset || ivals.length !== 1) throw new NotImplementedError('not_empty_in: FiniteSet intersected with an Interval expected');
   const iv = ivals[0]!;
   const solveRel = (r: Expr): SetExpr => solveUnivariateInequality(r, x, { relational: false }) as SetExpr;
   let out: SetExpr = EmptySet;

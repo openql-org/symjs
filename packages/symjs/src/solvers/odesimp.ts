@@ -6,7 +6,8 @@
  * odesimp, constantsimp and constant_renumber).
  */
 
-import { Add, Constant, Expr, Fn, Integral, Mul, Pow, Rational, Rel, Sym, UndefFn } from '../core/nodes';
+import type { Expr } from '../core/nodes';
+import { Add, Constant, Fn, Integral, Mul, Pow, Rational, Rel, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { add, couldExtractMinusSign, mul, pow } from '../core/ops';
 import { freeSymbols, subs, xreplace } from '../core/traverse';
@@ -167,7 +168,7 @@ export function odesimp(ode: Expr, solIn: Expr, fx: UndefFn, hint: string): Expr
   let sol = hint === 'nth_linear_constant_coeff_homogeneous' ? solIn : doit(solIn);
   if (hint.startsWith('nth_linear_euler_eq_nonhomogeneous') && sol instanceof Rel) sol = Eq(simplify(sol.lhs), simplify(sol.rhs));
   if (!(sol instanceof Rel)) throw new TypeError('odesimp: an equation is expected');
-  const constants = [...freeSymbols(sol)].filter((s) => !odeSyms.some((o) => o.key === s.key)) as Sym[];
+  const constants = [...freeSymbols(sol)].filter((s) => !odeSyms.some((o) => o.key === s.key));
   sol = constantsimp(sol, constants);
   let eqs: Expr[];
   const s = sol as Rel;

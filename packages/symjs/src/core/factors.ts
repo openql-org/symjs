@@ -6,7 +6,8 @@
  * base to exponent, with quotient and remainder by another product.
  */
 
-import { Add, Expr, ExprLike, Mul, Rational, S, isNum } from './nodes';
+import type { Expr, ExprLike } from './nodes';
+import { Add, Mul, Rational, S, isNum } from './nodes';
 import { ExprMap } from './exprmap';
 import { add, asBaseExp, mul, neg, pow, sub, sympify } from './ops';
 import { argsCncSplit, asPowersDict, extractAdditively } from './methods';
@@ -19,7 +20,7 @@ const isOne = (e: Expr): boolean => e instanceof Rational && e.p === 1n && e.q =
 /** SymPy as_coeff_Add: the numeric term and the rest. */
 function asCoeffAddTerm(e: Expr): [Expr, Expr] {
   if (isNum(e)) return [e, S.Zero];
-  if (e instanceof Add && isNum(e.args[0]!)) return [e.args[0]!, add(...e.args.slice(1))];
+  if (e instanceof Add && isNum(e.args[0]!)) return [e.args[0], add(...e.args.slice(1))];
   return [S.Zero, e];
 }
 

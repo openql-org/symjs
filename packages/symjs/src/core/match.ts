@@ -7,7 +7,8 @@
  * replace, find and SymPy's count_ops.
  */
 
-import { Add, Constant, Derivative, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, Wild, WildFunction, impl } from './nodes';
+import type { ExprLike } from './nodes';
+import { Add, Constant, Derivative, Expr, Float, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, Wild, WildFunction, impl } from './nodes';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { rebuild, xreplace } from './traverse';
 import { compareKeys, sortKey } from '../printing/sortkey';
@@ -103,7 +104,9 @@ function asPowersDict(e: Expr): Map<string, [Expr, Expr]> {
   return out;
 }
 
-function mulCombineInverse(lhs: Expr, rhs: Expr): Expr {
+function mulCombineInverse(lhsIn: Expr, rhsIn: Expr): Expr {
+  let lhs = lhsIn;
+  let rhs = rhsIn;
   if (lhs.key === rhs.key) return S.One;
   if ([lhs, rhs].some((i) => i instanceof Pow || i instanceof Mul)) {
     const a = asPowersDict(lhs);
@@ -365,14 +368,14 @@ export function replace(
   let q: (e: Expr) => Map<Sym, Expr> | boolean | undefined;
   let v: (e: Expr, r: Map<Sym, Expr> | boolean) => Expr | undefined;
   const callFn = (name: string, args: Expr[]): Expr => {
-    if (!opts.apply) throw new Error('replace: no function constructor');
+    if (!opts.apply) throw new TypeError('replace: no function constructor');
     return opts.apply(name, args);
   };
   const callType = (type: string, args: Expr[]): Expr => {
     if (type === 'Add') return add(...args);
     if (type === 'Mul') return mul(...args);
     if (type === 'Pow') return pow(args[0]!, args[1]!);
-    if (!opts.applyType) throw new Error('replace: no type constructor');
+    if (!opts.applyType) throw new TypeError('replace: no type constructor');
     return opts.applyType(type, args);
   };
   if (typeof query === 'object' && 'fn' in query) {
@@ -389,7 +392,7 @@ export function replace(
     if (typeof value === 'object' && 'fn' in value) v = (e) => callFn(value.fn, fnArgs(e));
     else if (typeof value === 'object' && 'type' in value) v = (e) => callType(value.type, fnArgs(e));
     else if (value instanceof Expr) v = () => value;
-    else v = (e) => (value as (...a: Expr[]) => Expr)(...fnArgs(e));
+    else v = (e) => (value)(...fnArgs(e));
   } else if (query instanceof Expr) {
     const exact = opts.exact ?? wilds(query).size > 1;
     const allNonZero = (r: Map<Sym, Expr>) => [...r.values()].every((x) => !(x instanceof Rational && x.isZero));
@@ -405,11 +408,11 @@ export function replace(
         if (exact && !allNonZero(m)) return e;
         // keyword call: values ordered like the Wilds in the pattern
         const order = [...wilds(query).values()];
-        return (value as (...a: Expr[]) => Expr)(...order.map((w) => [...m].find(([k]) => k.key === w.key)?.[1] ?? S.Zero));
+        return (value)(...order.map((w) => [...m].find(([k]) => k.key === w.key)?.[1] ?? S.Zero));
       };
     } else throw new TypeError('replace: unsupported replacement');
   } else {
-    if (typeof value === 'function') v = (e) => (value as (e: Expr) => Expr)(e);
+    if (typeof value === 'function') v = (e) => (value)(e);
     else if (value instanceof Expr) v = () => value;
     else throw new TypeError('replace: unsupported replacement');
   }

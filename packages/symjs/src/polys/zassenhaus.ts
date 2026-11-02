@@ -10,6 +10,8 @@
  * Polynomials are bigint coefficient arrays, lowest degree first.
  */
 
+import { NotImplementedError, NotInvertible } from '../core/errors';
+
 type P = bigint[];
 
 const babs = (a: bigint) => (a < 0n ? -a : a);
@@ -30,7 +32,7 @@ function modInv(a: bigint, m: bigint): bigint {
     [r0, r1] = [r1, r0 - q * r1];
     [s0, s1] = [s1, s0 - q * s1];
   }
-  if (r0 !== 1n) throw new Error('zassenhaus: not invertible');
+  if (r0 !== 1n) throw new NotInvertible('zassenhaus: not invertible');
   return mod(s0, m);
 }
 
@@ -60,7 +62,7 @@ function pdivmod(f: P, g: P, m: bigint): [P, P] {
   const gg = trim(g);
   let r = pmod(f, m);
   const dg = gg.length - 1;
-  if (dg < 0) throw new Error('zassenhaus: division by zero');
+  if (dg < 0) throw new RangeError('zassenhaus: division by zero');
   const inv = modInv(gg[dg]!, m);
   const q: bigint[] = Array(Math.max(0, r.length - dg)).fill(0n);
   while (r.length - 1 >= dg && r.length) {
@@ -155,7 +157,7 @@ function edf(f: P, d: number, p: bigint): P[] {
     const g = pgcd(f, b, p);
     if (deg(g) > 0 && deg(g) < n) return [...edf(g, d, p), ...edf(pdivmod(f, g, p)[0], d, p)];
   }
-  throw new Error('zassenhaus: equal-degree factorization failed');
+  throw new NotImplementedError('zassenhaus: equal-degree factorization failed');
 }
 
 // ---- Hensel lifting ----------------------------------------------------------------
@@ -260,7 +262,7 @@ export function zassenhaus(f0: P): P[] {
     p = q;
     break;
   }
-  if (!p) throw new Error('zassenhaus: no suitable prime');
+  if (!p) throw new NotImplementedError('zassenhaus: no suitable prime');
   const fpm = monic(pmod(f, p), p);
   const modFactors: P[] = [];
   for (const [g, d] of ddf(fpm, p)) modFactors.push(...edf(g, d, p));
@@ -328,7 +330,7 @@ function edf2(f: P, d: number): P[] {
     const g = pgcd(f, b, 2n);
     if (deg(g) > 0 && deg(g) < n) return [...edf2(g, d), ...edf2(pdivmod(f, g, 2n)[0], d)];
   }
-  throw new Error('factorModP: equal-degree factorization failed');
+  throw new NotImplementedError('factorModP: equal-degree factorization failed');
 }
 
 /** Square-free decomposition modulo p (SymPy gf_sqf_list): [factor, multiplicity] of a monic f. */

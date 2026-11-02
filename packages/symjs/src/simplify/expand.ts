@@ -6,7 +6,8 @@
  */
 
 import { isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../core/assumptions';
-import { Add, Constant, Expr, ExprLike, ExtensionExpr, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Constant, ExtensionExpr, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { cos, cosh, im, log, re, sin, sinh, tan } from '../functions/elementary';
 import { rebuild } from '../core/traverse';

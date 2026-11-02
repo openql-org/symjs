@@ -9,13 +9,13 @@
  */
 
 import { NotImplementedError } from '../core/errors';
-import { dsolveSystem } from './odesystem';
+import { dsolveSystem, registerSingleOdeSolver } from './odesystem';
 import { SubsNode } from '../core/subsnode';
-import { Add, Derivative, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
+import type { Expr, ExprLike, Rel } from '../core/nodes';
+import { Add, Derivative, Fn, Mul, Pow, Rational, S, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
-import { freeSymbols, xreplace } from '../core/traverse';
-import { powsimp } from '../simplify/powsimp';
+import { xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { cos, im, re, sin } from '../functions/elementary';
 import { integrate } from '../integrals/integrate';
@@ -220,18 +220,18 @@ function particular(coeffs: Expr[], rhs: Expr, x: Sym): Expr | undefined {
 export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts: { ics?: [Expr, ExprLike][]; hint?: string } = {}): Expr | Expr[] {
   // a system of equations: linear first-order with constant coefficients
   if (Array.isArray(eqIn)) return dsolveSystem(eqIn, Array.isArray(fx) ? (fx as UndefFn[]) : undefined);
-  if (Array.isArray(fx) || fx === undefined) throw new Error('dsolve: the unknown function f(x) is required');
+  if (Array.isArray(fx) || fx === undefined) throw new TypeError('dsolve: the unknown function f(x) is required');
   if (!(fx instanceof UndefFn) || fx.args.length !== 1 || !(fx.args[0] instanceof Sym)) {
-    throw new Error('dsolve: f(x) with a single symbol argument expected');
+    throw new TypeError('dsolve: f(x) with a single symbol argument expected');
   }
   const x = fx.args[0];
   const eq = asEquation(eqIn as ExprLike);
   const n = odeOrder(eq, fx);
-  if (n === 0) throw new Error('dsolve: not a differential equation');
+  if (n === 0) throw new TypeError('dsolve: not a differential equation');
   // SymPy's hints in order (solvers/dsolve.ts); the older direct solvers below are a fallback
   const viaHints = dsolveRaw(eq, fx, opts.hint);
-  if (viaHints && viaHints.length) {
-    const out = opts.ics && opts.ics.length ? viaHints.map((s) => Eq(fx, applyIcs((s as Rel).rhs, fx, x, opts.ics!))) : viaHints;
+  if (viaHints?.length) {
+    const out = opts.ics?.length ? viaHints.map((s) => Eq(fx, applyIcs((s as Rel).rhs, fx, x, opts.ics!))) : viaHints;
     return out.length === 1 ? out[0]! : out;
   }
   const [E, ys] = toSymbols(eq, fx, n);
@@ -295,7 +295,7 @@ export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonl
         const C1 = new Sym('C1');
         const lhs = integrate(pow(h, -1), ys[0]!);
         const r = add(integrate(g, x), C1);
-        const sols = solve(add(lhs, mul(-1, r)), ys[0]!, { check: false });
+        const sols = solve(add(lhs, mul(-1, r)), ys[0], { check: false });
         if (sols.length === 1) sol = pullMinus(sols[0]!);
       }
     }
@@ -310,7 +310,7 @@ export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonl
   }
   if (sol === undefined) throw new NotImplementedError('dsolve: unsupported equation');
   let result = sol;
-  if (opts.ics && opts.ics.length) result = applyIcs(result, fx, x, opts.ics);
+  if (opts.ics?.length) result = applyIcs(result, fx, x, opts.ics);
   return Eq(fx, result);
 }
 
@@ -335,44 +335,16 @@ function applyIcs(sol: Expr, fx: UndefFn, x: Sym, ics: [Expr, ExprLike][]): Expr
       eqs.push(add(xreplace(diff(sol, x, k), [[x, cond.point[0]!]]), mul(-1, sympify(val))));
     } else if (cond instanceof Derivative && cond.expr instanceof UndefFn) {
       const k = cond.variableCount.reduce((s, [, m]) => s + m, 0);
-      const at = (cond.expr.args[0] as Expr) ?? x;
+      const at = cond.expr.args[0] ?? x;
       eqs.push(add(xreplace(diff(sol, x, k), [[x, at]]), mul(-1, sympify(val))));
     }
   }
   const s = linsolve(eqs, cs);
-  if (!s) throw new Error('dsolve: initial conditions are inconsistent');
+  if (!s) throw new RangeError('dsolve: initial conditions are inconsistent');
   return simplify(xreplace(sol, cs.map((c, i) => [c, s[i]!] as const)));
 }
 
-/**
- * SymPy homogeneous_order(eq, *symbols): n such that eq(t*x, t*y, ...) = t**n * eq(x, y, ...),
- * or undefined when eq is not homogeneous in the symbols.
- */
-export function homogeneousOrder(eqIn: ExprLike, ...symbols: Expr[]): Expr | undefined {
-  let eq = sympify(eqIn);
-  const hasDeriv = (e: Expr): boolean => e instanceof Derivative || e.args.some(hasDeriv);
-  if (hasDeriv(eq)) return undefined;
-  if (freeSymbols(eq).size === 0) return S.Zero;
-  // replace applied functions of the symbols by dummies
-  const syms: Expr[] = [];
-  for (const s of symbols) {
-    if (s instanceof UndefFn) {
-      if (s.args.some((a) => !symbols.some((t) => t.key === a.key))) return undefined;
-      const d = new Dummy('d');
-      eq = xreplace(eq, [[s, d]]);
-      syms.push(d);
-    } else syms.push(s);
-  }
-  if (![...freeSymbols(eq)].some((s) => syms.some((t) => t.key === s.key))) return undefined;
-  if (eq instanceof Fn) return homogeneousOrder(eq.args[0]!, ...syms)?.key === S.Zero.key ? S.Zero : undefined;
-  const t = new Dummy('t', { positive: true });
-  const scaled = xreplace(eq, syms.map((s) => [s, mul(t, s)] as const));
-  const ratio = simplify(powsimp(mul(scaled, pow(eq, -1)), { force: false }));
-  if (ratio instanceof Rational && ratio.isOne) return S.Zero;
-  if (ratio.key === t.key) return S.One;
-  if (ratio instanceof Pow && ratio.base.key === t.key && !ratio.exp.has(t)) return ratio.exp;
-  return undefined;
-}
+export { homogeneousOrder } from './homogeneous';
 
 
 /**
@@ -386,7 +358,7 @@ function firstExact(e: Expr, x: Sym, y: Sym, yp: Sym): Expr[] | undefined {
   const N = pc.get(1)!;
   const M = pc.get(0) ?? S.Zero;
   if (N.has(yp) || M.has(yp) || !N.has(y) && !M.has(y)) return undefined;
-  const yy = y as unknown as Sym;
+  const yy = y;
   const diffMN = simplify(add(diff(M, yy), mul(-1, diff(N, x))));
   if (!isZeroE(diffMN)) return undefined;
   const Fx = integrate(M, x);
@@ -410,3 +382,5 @@ function firstExact(e: Expr, x: Sym, y: Sym, yp: Sym): Expr[] | undefined {
 function containsIntegral(e: Expr): boolean {
   return e.kind === 'Integral' || e.args.some(containsIntegral);
 }
+
+registerSingleOdeSolver((eq, fx) => dsolve(eq, fx));

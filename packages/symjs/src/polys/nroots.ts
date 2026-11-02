@@ -7,12 +7,14 @@
  * Newton refinement, sorted like SymPy (real roots first).
  */
 
-import { Expr, ExprLike, Float, Rational, S, Sym } from '../core/nodes';
+import { DomainError } from '../core/errors';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
+import { Float, Rational, S } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
 import * as F from '../numeric/mpf';
 import * as M from '../numeric/mpfun';
 import type { Mpc } from '../numeric/mpfun';
-import { Poly } from './sympoly';
+import { Poly, rootHooks } from './sympoly';
 import { evalAdaptive } from '../numeric/mpeval';
 import { freeSymbols } from '../core/traverse';
 
@@ -77,7 +79,7 @@ export function nroots(fIn: ExprLike | Poly, n = 15, x?: Sym): Expr[] {
   const syms = p.gens.filter((g) => freeSymbols(g).size > 0);
   if (syms.length === 1 && p.gens.length > 1) p = Poly.from(p.asExpr(), syms);
   const coeffs = p.allCoeffs().map((c) => {
-    if (!(c instanceof Rational) && freeSymbols(c).size > 0) throw new Error('nroots: numeric coefficients expected');
+    if (!(c instanceof Rational) && freeSymbols(c).size > 0) throw new DomainError('nroots: numeric coefficients expected');
     return c;
   });
   const prec = F.dpsToPrec(n);
@@ -97,3 +99,5 @@ export function nroots(fIn: ExprLike | Poly, n = 15, x?: Sym): Expr[] {
     return add(re, mul(new Float(r[1], prec), S.I));
   });
 }
+
+rootHooks.nroots = (f, n) => nroots(f, n);

@@ -6,7 +6,9 @@
  * solvers/polysys.py factor_system and factor_system_cond).
  */
 
-import { Expr, ExprLike, Rational, Sym } from '../core/nodes';
+import { NotImplementedError } from '../core/errors';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
+import { Rational } from '../core/nodes';
 import { mul, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
 import { groebner } from '../polys/groebner';
@@ -167,7 +169,7 @@ function solveReduced(system: Expr[], gens: readonly Sym[], entry: boolean, rati
   if (basis.length === 1 && basis[0] instanceof Rational) return [];
   const others = new Set(gens.slice(0, -1).map((g) => g.key));
   const univariate = basis.filter((b) => ![...freeSymbols(b)].some((s) => others.has(s.key)) && b.has(gen));
-  if (univariate.length !== 1) throw new Error('solve_poly_system: only zero-dimensional systems are supported');
+  if (univariate.length !== 1) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
   const f = univariate[0]!;
   const zeros = distinctRoots(f);
   if (basis.length === 1) return zeros.map((z) => [z]);
@@ -181,7 +183,7 @@ function solveReduced(system: Expr[], gens: readonly Sym[], entry: boolean, rati
     const partial = rationalCoeffs ? solveReduced(sub, gens.slice(0, -1), false, rationalOnly) : backSubstitute(sub, gens.slice(0, -1), rationalOnly);
     for (const s of partial) out.push([...s, z]);
   }
-  if (entry && out.length && out[0]!.length !== gens.length) throw new Error('solve_poly_system: only zero-dimensional systems are supported');
+  if (entry && out.length && out[0]!.length !== gens.length) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
   return out;
 }
 
@@ -197,7 +199,7 @@ function backSubstitute(system: Expr[], gens: readonly Sym[], rationalOnly: bool
   const gen = gens[gens.length - 1]!;
   const others = new Set(gens.slice(0, -1).map((g) => g.key));
   const uni = system.filter((b) => b.has(gen) && ![...freeSymbols(b)].some((s) => others.has(s.key)));
-  if (!uni.length) throw new Error('solve_poly_system: only zero-dimensional systems are supported');
+  if (!uni.length) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
   const [first, ...rest] = [...uni].sort((a, b) => Poly.from(a, [gen]).degree() - Poly.from(b, [gen]).degree());
   const vanishes = (e: Expr) => {
     const c = e.toComplex();

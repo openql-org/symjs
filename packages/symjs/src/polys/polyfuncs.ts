@@ -6,7 +6,8 @@
  * (SymPy polys.polyfuncs.symmetrize).
  */
 
-import { Expr, ExprLike, Sym } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { expandMul } from '../simplify/expand';
@@ -77,7 +78,7 @@ export function rationalInterpolate(data: readonly (readonly [ExprLike, ExprLike
   const xs = data.map(([a]) => sympify(a));
   const ys = data.map(([, b]) => sympify(b));
   const k = xs.length - degnum - 1;
-  if (k < 0) throw new Error('rational_interpolate: too few values for the required degree');
+  if (k < 0) throw new RangeError('rational_interpolate: too few values for the required degree');
   const rows = degnum + k + 1;
   const c: Expr[][] = Array.from({ length: rows }, () => Array.from({ length: degnum + k + 2 }, () => sympify(1)));
   for (let j = 0; j < Math.max(degnum, k); j++) for (let i = 0; i < rows; i++) c[i]![j + 1] = mul(c[i]![j]!, xs[i]!);

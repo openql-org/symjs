@@ -6,7 +6,8 @@
  * sums/products and derivatives, innermost first.
  */
 
-import { Derivative, Expr, ExprLike, ExtensionExpr, Integral, Limit, Sym } from '../core/nodes';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
+import { Derivative, ExtensionExpr, Integral, Limit } from '../core/nodes';
 import { sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
 import { Concrete, doitConcrete } from '../concrete/summations';

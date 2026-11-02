@@ -10,7 +10,7 @@ import { Float, Rational } from '../core/nodes';
 import { freeSymbols } from '../core/traverse';
 import { str } from '../printing/str';
 import { inferDomain } from '../polys/sympoly';
-import { Matrix } from './matrix';
+import type { Matrix } from './matrix';
 
 /** A matrix over a domain (SymPy DomainMatrix), stored sparsely like SymPy's repr. */
 export class DomainMatrix {

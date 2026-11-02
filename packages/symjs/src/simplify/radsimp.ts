@@ -5,7 +5,8 @@
  * @file radsimp (rationalize denominators) and collect (group terms by powers).
  */
 
-import { Add, Constant, Derivative, Expr, impl, ExprLike, Mul, Pow, Rational, S, UndefFn, Wild } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Constant, Derivative, impl, Mul, Pow, Rational, S, UndefFn, Wild } from '../core/nodes';
 import { add, asBaseExp, mul, pow, sympify } from '../core/ops';
 import { rebuild } from '../core/traverse';
 

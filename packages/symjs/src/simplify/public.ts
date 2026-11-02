@@ -6,8 +6,9 @@
  * form as NoMatch (docs/api-policy.md).
  */
 
-import { Expr, ExprLike, Sym } from '../core/nodes';
-import { NoMatchResult, orNoMatch } from '../core/truth';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
+import type { NoMatchResult } from '../core/truth';
+import { orNoMatch } from '../core/truth';
 import { hypersimp as hypersimpImpl } from './gammasimp';
 import { separatevars as separatevarsImpl } from './separatevars';
 

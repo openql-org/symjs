@@ -64,3 +64,67 @@ export class NotImplementedError extends Error {
     this.name = 'NotImplementedError';
   }
 }
+
+/** A feature whose entry point has not been imported (e.g. simplify before importing '@symjs/symjs/simplify'). */
+export class NotLoadedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'NotLoadedError';
+  }
+}
+
+/** The expression is not a polynomial as required, or a polynomial operation is not defined for it (SymPy PolynomialError). */
+export class PolynomialError extends TypeError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PolynomialError';
+  }
+}
+
+/** The coefficients are outside the domain an algorithm needs, e.g. rational coefficients (SymPy DomainError). */
+export class DomainError extends TypeError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'DomainError';
+  }
+}
+
+/** An exact division that leaves a remainder (SymPy ExactQuotientFailed). */
+export class ExactQuotientFailed extends RangeError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ExactQuotientFailed';
+  }
+}
+
+/** An element without an inverse (SymPy NotInvertible). */
+export class NotInvertible extends RangeError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'NotInvertible';
+  }
+}
+
+/** A matrix without the property an operation needs (SymPy MatrixError). */
+export class MatrixError extends RangeError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'MatrixError';
+  }
+}
+
+/** A square matrix is required (SymPy NonSquareMatrixError). */
+export class NonSquareMatrixError extends MatrixError {
+  constructor(message = 'Matrix must be square') {
+    super(message);
+    this.name = 'NonSquareMatrixError';
+  }
+}
+
+/** The matrix is singular (SymPy NonInvertibleMatrixError). */
+export class NonInvertibleMatrixError extends MatrixError {
+  constructor(message = 'Matrix det == 0; not invertible.') {
+    super(message);
+    this.name = 'NonInvertibleMatrixError';
+  }
+}

@@ -10,7 +10,8 @@
  */
 
 import * as F from './mpf';
-import { Mpf, ONE, ZERO } from './mpf';
+import type { Mpf } from './mpf';
+import { ONE, ZERO } from './mpf';
 import * as M from './mpfun';
 import { C0, C1, type Mpc, cadd, cdiv, cexp, clog, cmul, cneg, csub } from './mpfun';
 
@@ -27,7 +28,9 @@ const scale = (z: Mpc, k: number): Mpc => [F.ldexp(z[0], k), F.ldexp(z[1], k)];
 // ---------------------------------------------------------------------------
 
 const bern: [bigint, bigint][] = [[1n, 1n]]; // B_0, B_1 = -1/2 handled separately
-function gcd(a: bigint, b: bigint): bigint {
+function gcd(aIn: bigint, bIn: bigint): bigint {
+  let a = aIn;
+  let b = bIn;
   if (a < 0n) a = -a;
   if (b < 0n) b = -b;
   while (b) [a, b] = [b, a % b];

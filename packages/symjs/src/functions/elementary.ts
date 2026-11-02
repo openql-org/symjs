@@ -7,13 +7,14 @@
 
 import { precToDps } from '../numeric/mpf';
 import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
+import type {
+  Expr,
+  ExprLike,
+  FnName } from '../core/nodes';
 import {
   Add,
   Constant,
-  Expr,
-  ExprLike,
   Fn,
-  FnName,
   Mul,
   Pow,
   Float,
@@ -390,7 +391,7 @@ const evalArg: Evaluator = (x) => {
     const a = re(x);
     const b = im(x);
     if (isNum(a) && isNum(b) && (a instanceof Float || b instanceof Float)) {
-      return new Float(Math.atan2(b instanceof Rational ? b.value : (b as Float).value, a instanceof Rational ? a.value : (a as Float).value));
+      return new Float(Math.atan2(b instanceof Rational ? b.value : (b).value, a instanceof Rational ? a.value : (a).value));
     }
     if (!(a instanceof Fn) && !(b instanceof Fn) && a.freeSymbols().size === 0) {
       const sa = isPositive(a) ? 1 : isNegative(a) ? -1 : 0;

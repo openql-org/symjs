@@ -32,7 +32,12 @@ import {
   freeSymbols,
   mul,
   pow,
-  rel,
+  Eq,
+  Ne,
+  Lt,
+  Le,
+  Gt,
+  Ge,
   str,
   sub,
   And,
@@ -164,7 +169,7 @@ const fail = (what: string): never => {
  * math.js function names), e.g. `((2 * x) + sin(y))`.
  */
 export function toMathjsString(expr: ExprLike): string {
-  const e = expr instanceof Expr ? expr : (add(expr, 0) as Expr);
+  const e = expr instanceof Expr ? expr : (add(expr, 0));
   return printNode(e);
 }
 
@@ -188,7 +193,7 @@ function printNode(e: Expr): string {
   }
   if (e instanceof Rel) {
     const op = ({ Eq: '==', Ne: '!=', Lt: '<', Le: '<=', Gt: '>', Ge: '>=' } as Record<string, string>)[e.op] ?? fail(`relation ${e.op}`);
-    return `(${printNode(e.args[0]!)} ${op} ${printNode(e.args[1]!)})`;
+    return `(${printNode(e.args[0])} ${op} ${printNode(e.args[1])})`;
   }
   if (e.kind === 'BoolOp') {
     const head = (e as unknown as { op: string }).op;
@@ -214,7 +219,7 @@ export function toMathjs(expr: ExprLike, math: Pick<MathInstance, 'parse'>): Mat
  * Complex.
  */
 export function toMathjsValue(expr: ExprLike, math: Pick<MathInstance, 'bignumber' | 'fraction' | 'complex'>, opts: { bignumber?: boolean; fraction?: boolean } = {}): MathValue {
-  const e = expr instanceof Expr ? expr : (add(expr, 0) as Expr);
+  const e = expr instanceof Expr ? expr : (add(expr, 0));
   if (e instanceof Rational) {
     if (e.q !== 1n && opts.fraction === true) return math.fraction(e.p.toString(), e.q.toString());
     if (opts.bignumber === true) return e.q === 1n ? math.bignumber(e.p.toString()) : math.bignumber(str(float(e, 30)));
@@ -289,18 +294,18 @@ const OPERATORS: Readonly<Record<string, (args: Expr[]) => Expr>> = {
   unaryPlus: ([a]) => a!,
   mod: ([a, m]) => (a instanceof Rational && m instanceof Rational && a.q === 1n && m.q === 1n && m.p !== 0n ? Rational.of(((a.p % m.p) + m.p) % m.p) : UndefinedFunctionOf('mod')(a!, m!)),
   factorial: (a) => fn('factorial', a),
-  equal: ([a, b]) => rel('Eq', a!, b!),
-  unequal: ([a, b]) => rel('Ne', a!, b!),
-  smaller: ([a, b]) => rel('Lt', a!, b!),
-  smallerEq: ([a, b]) => rel('Le', a!, b!),
-  larger: ([a, b]) => rel('Gt', a!, b!),
-  largerEq: ([a, b]) => rel('Ge', a!, b!),
+  equal: ([a, b]) => Eq(a!, b!),
+  unequal: ([a, b]) => Ne(a!, b!),
+  smaller: ([a, b]) => Lt(a!, b!),
+  smallerEq: ([a, b]) => Le(a!, b!),
+  larger: ([a, b]) => Gt(a!, b!),
+  largerEq: ([a, b]) => Ge(a!, b!),
   and: (a) => And(...a),
   or: (a) => Or(...a),
   xor: (a) => Xor(...a),
   not: ([a]) => Not(a!),
 };
-const RELATIONS: Readonly<Record<string, string>> = { equal: 'Eq', unequal: 'Ne', smaller: 'Lt', smallerEq: 'Le', larger: 'Gt', largerEq: 'Ge' };
+const RELATIONS: Readonly<Record<string, (a: Expr, b: Expr) => Expr>> = { equal: Eq, unequal: Ne, smaller: Lt, smallerEq: Le, larger: Gt, largerEq: Ge };
 
 const SYMBOLS_FROM: Readonly<Record<string, () => Expr>> = {
   pi: () => S.Pi,
@@ -352,7 +357,7 @@ export function fromMathjs(node: MathNode, opts: FromMathjsOptions = {}): Expr {
       }
       case 'RelationalNode': {
         const params = (n.params ?? []).map(go);
-        const parts = (n.conditionals ?? []).map((c, i) => rel((RELATIONS[c] ?? fail(`relation ${c}`)) as never, params[i]!, params[i + 1]!));
+        const parts = (n.conditionals ?? []).map((c, i) => (RELATIONS[c] ?? fail(`relation ${c}`))(params[i]!, params[i + 1]!));
         return And(...parts);
       }
       default:

@@ -5,7 +5,8 @@
  * @file nfloat and comp (SymPy core.function.nfloat, core.numbers.comp).
  */
 
-import { Dummy, Expr, ExprLike, Float, Pow, Rational, S } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Dummy, Float, Pow, Rational, S } from '../core/nodes';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
 import { evalf } from './evalf';

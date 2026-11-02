@@ -7,11 +7,13 @@
  * apart_list, assemble_partfrac_list).
  */
 
-import { Dummy, Expr, ExprLike, ExtensionExpr, Mul, Rational, S, Sym } from '../core/nodes';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
+import { Dummy, ExtensionExpr, Mul, Rational, S } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { asIndependent } from '../core/methods';
-import { Lambda, LambdaNode } from '../core/lambda';
+import type { LambdaNode } from '../core/lambda';
+import { Lambda } from '../core/lambda';
 import { Function } from '../core/undef';
 import { diff } from '../calculus/diff';
 import { cancel, fraction, together } from '../simplify/rational';

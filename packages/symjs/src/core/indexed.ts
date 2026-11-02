@@ -6,7 +6,8 @@
  * usable as unknowns and inside sums.
  */
 
-import { Expr, ExprLike, ExtensionExpr, Sym } from './nodes';
+import type { Expr, ExprLike } from './nodes';
+import { ExtensionExpr, Sym } from './nodes';
 import { sympify } from './ops';
 
 /** SymPy Indexed(base, *indices): args are [base symbol, ...indices]; printed base[i, j]. */
