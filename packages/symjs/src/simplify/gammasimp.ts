@@ -8,11 +8,11 @@
  * into polynomial factors, e.g. gamma(x + 3)/gamma(x + 1) = (x + 1)*(x + 2).
  */
 
-import { Expr, ExprLike, Fn, Mul, Pow, Rational, Sym } from '../core/nodes';
+import { Add, Expr, ExprLike, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { polyCoefficients } from '../polys/poly';
 import { powsimp } from './powsimp';
 import { cancel, fraction } from './rational';
-import { add, mul, pow, sympify } from '../core/ops';
+import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { countOps, mapBottomUp } from '../core/traverse';
 import { isIntegerQ, isNegative as isNegativeQ, isZero as isZeroQ } from '../core/assumptions';
 import { fn } from '../functions/elementary';
@@ -106,9 +106,49 @@ function combineProduct(e: Expr): Expr {
 }
 
 /** SymPy `gammasimp`: combine Gamma functions whose arguments differ by integers. */
+/**
+ * The reflection formula in a product: gamma(a)**e*gamma(b)**e with a + b an
+ * integer n becomes (pi/sin(pi*a) * gamma(b)/gamma(1 - a))**e, the last
+ * ratio being a polynomial (gamma(1 - z)*gamma(1 + z) = pi*z/sin(pi*z)).
+ */
+function reflect(e: Expr): Expr {
+  if (!(e instanceof Mul)) return e;
+  const fs = [...e.args];
+  const gam = (f: Expr): [Expr, Expr] | undefined => {
+    const [b, k] = f instanceof Pow ? [f.base, f.exp] : [f, Rational.of(1n)];
+    return b instanceof Fn && b.name === 'gamma' && k instanceof Rational && (k.p === 1n || k.p === -1n) && k.q === 1n ? [b.args[0]!, k] : undefined;
+  };
+  for (let i = 0; i < fs.length; i++) {
+    const gi = gam(fs[i]!);
+    if (!gi) continue;
+    for (let j = i + 1; j < fs.length; j++) {
+      const gj = gam(fs[j]!);
+      if (!gj || gj[1].key !== gi[1].key) continue;
+      const n = add(gi[0], gj[0]);
+      if (!(n instanceof Rational && n.q === 1n) || isIntegerQ(gi[0]) === true) continue;
+      // a: the argument that does not look negated, so that sin(pi*a) reads naturally
+      const a = couldExtractMinusSign(gi[0]) ? gj[0] : gi[0];
+      const k = Number(n.p) - 1;
+      // gamma(b)/gamma(1 - a) with b = (1 - a) + k
+      const w = add(1, mul(-1, a));
+      let ratio: Expr = S.One;
+      if (k > 0) for (let t = 0; t < k; t++) ratio = mul(ratio, add(w, t));
+      else for (let t = 1; t <= -k; t++) ratio = mul(ratio, pow(add(w, -t), -1));
+      // sin(pi*(a0 + m)) = (-1)**m*sin(pi*a0) for the integer part m of a
+      const m = a instanceof Add && a.args[0] instanceof Rational && a.args[0].q === 1n ? a.args[0] : S.Zero;
+      const a0 = add(a, mul(-1, m));
+      const sgn = m instanceof Rational && m.p % 2n !== 0n ? -1 : 1;
+      const pair = mul(sgn, S.Pi, pow(fn('sin', [mul(S.Pi, a0)]), -1), ratio);
+      const rest = fs.filter((_, m) => m !== i && m !== j);
+      return reflect(mul(...rest, pow(pair, gi[1])));
+    }
+  }
+  return e;
+}
+
 export function gammasimp(exIn: ExprLike): Expr {
   const ex = sympify(exIn);
-  const g = mapBottomUp(toGamma(ex), combineProduct);
+  const g = mapBottomUp(mapBottomUp(toGamma(ex), combineProduct), reflect);
   if (hasGamma(g)) return g;
   try {
     return factor(g);

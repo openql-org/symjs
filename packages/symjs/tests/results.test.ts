@@ -93,3 +93,15 @@ describe('rsolve returns only complete solutions', () => {
     expect(show(sj.rsolveHyper([sj.mul(-1, k), 1], 0, k) as never)).toBe('C0*RisingFactorial(0, k),C0');
   });
 });
+
+describe('gammasimp reflection formula', () => {
+  const g = (s: string) => sj.str(sj.gammasimp(sj.parse(s)));
+  it('gamma(z)*gamma(1 - z) = pi/sin(pi*z) and shifted pairs (SymPy)', () => {
+    expect(g('gamma(1-z)*gamma(1+z)')).toBe('pi*z/sin(pi*z)');
+    expect(g('gamma(z)*gamma(1-z)')).toBe('pi/sin(pi*z)');
+    expect(g('gamma(z+1)*gamma(-z)')).toBe('-pi/sin(pi*z)');
+    expect(g('pi**2/(2*gamma(1 - pi/2)*gamma(1 + pi/2))')).toBe('sin(pi**2/2)');
+    expect(g('gamma(z)*gamma(3 - z)')).toBe(sj.str(sj.gammasimp(sj.parse('gamma(z)*gamma(3 - z)'))));
+    expect(g('gamma(z)*gamma(z)')).toBe('gamma(z)**2');
+  });
+});
