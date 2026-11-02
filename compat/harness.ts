@@ -40,6 +40,17 @@ export class PySet {
 export class Unsupported extends Error {}
 
 /** An undefined function class (SymPy `Function('f')` itself, not applied). */
+/** SymPy Lambda(variables, expr). */
+export class PyLambda {
+  constructor(
+    readonly vars: Expr[],
+    readonly body: Expr,
+  ) {}
+  call(...xs: Expr[]): Expr {
+    return sj.xreplace(this.body, this.vars.map((v, i) => [v, xs[i]!] as [Expr, Expr]));
+  }
+}
+
 export class UFnClass {
   constructor(readonly name: string) {}
 }
@@ -127,6 +138,7 @@ const SPECIAL_NAMES = ['bernoulli', 'euler', 'genocchi', 'bell', 'fibonacci', 'l
 const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   ...Object.fromEntries(SPECIAL_NAMES.map((n) => [n, (args: Expr[]) => sj.fn(n, args)])),
   RisingFactorial: (args) => sj.fn('rf', args),
+  Lambda: ([vs, body]) => new PyLambda((vs as unknown as PyTuple).items as Expr[], body!) as unknown as Expr,
   FallingFactorial: (args) => sj.fn('ff', args),
   exp: ([a]) => sj.exp(a!),
   Abs: ([a]) => sj.abs(a!),
@@ -753,6 +765,23 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (r === undefined) return null;
     if (r instanceof Map) return new PyDict([...r].map(([k, v]) => [k, v] as const));
     return r;
+  },
+  assemble_partfrac_list: (args, kw) => {
+    noKw(kw);
+    const [common, polypart, parts] = (args[0] as PyTuple).items as [Expr, sj.Poly, PyTuple];
+    const terms: Expr[] = [polypart.asExpr()];
+    for (const part of parts.items) {
+      const [r, nf, df, ex] = (part as PyTuple).items as [unknown, PyLambda, PyLambda, Expr];
+      let rs: Expr[];
+      if (r instanceof sj.Poly) {
+        // RootSum(auto=False, quadratic=False) evaluates only over linear factors
+        const g = r.gens[0] as Sym;
+        rs = sj.roots(r.asExpr(), g);
+        if (rs.length !== r.degree() || rs.some((x) => !(x instanceof sj.Rational))) throw new Unsupported('RootSum');
+      } else rs = (r as PyTuple).items as Expr[];
+      for (const root of rs) terms.push(sj.mul(nf.call(root), sj.pow(sj.pow(df.call(root), ex), -1)));
+    }
+    return sj.mul(common, sj.add(...terms));
   },
   apart: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'full' || kw[k]) throw new Unsupported(`kwargs ${k}`);
