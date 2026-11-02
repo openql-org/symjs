@@ -6,7 +6,7 @@
  * (e.g. `x**2 + 2*x*y - sqrt(2)/2`).
  */
 
-import { Add, BoolAtom, Constant, Derivative, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
 import { numNeg } from '../core/num';
 import { floatToString } from '../numeric/mpf';
@@ -175,6 +175,7 @@ function strInner(e: Expr): string {
     if (!v || !p || (p instanceof Rational && p.isZero)) return `O(${str(x!)})`;
     return `O(${str(x!)}, (${str(v)}, ${str(p)}))`;
   }
+  if (e instanceof ExtensionExpr) return e.printStr(str);
   const custom = e as unknown as { printStr?: (p: (x: Expr) => string) => string };
   if (typeof custom.printStr === 'function') return custom.printStr(str);
   if (e instanceof Integral) {

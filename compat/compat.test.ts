@@ -7,6 +7,7 @@
  */
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { runBaseChecks } from './base-scope';
 
 type FileCoverage = {
   path: string;
@@ -114,12 +115,17 @@ it('computes SymPy compatibility metrics', () => {
   lines.push(
     '- **Behavior compatibility**: share of SymPy doctest examples (public API calls in the in-scope modules) that symjs reproduces exactly (same `str()` output). Cases whose arguments symjs cannot represent count as failures.',
     '- **API coverage**: share of in-scope public SymPy names (functions, classes, `Expr`/`Matrix` methods) that have a symjs counterpart.',
+    '- **Base scope checks**: behaviors the base module is meant to guarantee (assumptions, non-commutativity, bound variables, unevaluated objects, extension nodes, ...), checked against SymPy output (`compat/base-scope.ts`).',
+    '- **Fully compatible**: source files whose unit tests reach 100% coverage. This measures test coverage, not SymPy behavior.',
     '',
   );
   lines.push(
     `**Overall: behavior ${pct(total.pass, total.cases)} (${total.pass}/${total.cases}), API ${pct(total.apiDone, total.api)} (${total.apiDone}/${total.api})**`,
     '',
   );
+  const base = runBaseChecks();
+  const basePass = base.filter((b) => b.pass).length;
+  lines.push(`**Base scope checks: ${pct(basePass, base.length)} (${basePass}/${base.length})**`, '');
   const cov = readCoverage();
   if (cov) {
     const full = cov.files.filter((f) => f.full);
@@ -151,6 +157,18 @@ it('computes SymPy compatibility metrics', () => {
       lines.push(`| \`${f.path}\` | ${f.category} | ${f.pct.statements}% | ${f.pct.branches}% | ${f.pct.functions}% | ${f.pct.lines}% | ${f.full ? 'yes' : ''} |`);
     }
   }
+  lines.push('', '## Base scope checks', '');
+  lines.push('| Area | Pass | Checks |', '|---|---:|---:|');
+  const areas = [...new Set(base.map((b) => b.area))];
+  for (const a of areas) {
+    const bs = base.filter((b) => b.area === a);
+    lines.push(`| ${a} | ${bs.filter((b) => b.pass).length} | ${bs.length} |`);
+  }
+  const baseFail = base.filter((b) => !b.pass);
+  if (baseFail.length) {
+    lines.push('', '| Failing check | Area | Expected (SymPy) | symjs |', '|---|---|---|---|');
+    for (const b of baseFail) lines.push(`| ${b.name} | ${b.area} | \`${b.expected}\` | \`${b.got}\` |`);
+  }
   lines.push('', '## Highest-impact gaps', '', 'API names with the most non-passing cases.', '');
   lines.push('| API | Category | Non-passing cases |', '|---|---|---:|');
   for (const [fn, m] of [...missing].sort((a, b) => b[1].n - a[1].n).slice(0, 40)) {
@@ -164,6 +182,7 @@ it('computes SymPy compatibility metrics', () => {
       {
         sympy: corpus.sympy,
         overall: total,
+        baseScope: { pass: basePass, total: base.length, failures: baseFail },
         categories: Object.fromEntries(cats.map((c) => [c, rows.get(c)])),
         failures: results
           .filter(({ o }) => o.status !== 'pass')

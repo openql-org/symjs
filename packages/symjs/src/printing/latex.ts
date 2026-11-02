@@ -6,7 +6,7 @@
  */
 
 import { isNegative } from '../core/assumptions';
-import { Add, BoolAtom, Constant, Derivative, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Expr, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
 import { numNeg } from '../core/num';
 import { asOrderedFactors, asOrderedTerms } from './sortkey';
@@ -283,6 +283,7 @@ function floatLatex(f: Float): string {
 }
 
 export function latex(e: Expr): string {
+  if (e instanceof ExtensionExpr) return e.printLatex(latex);
   if (e instanceof Rational) {
     if (e.q === 1n) return `${e.p}`;
     return e.p < 0n ? `- \\frac{${-e.p}}{${e.q}}` : `\\frac{${e.p}}{${e.q}}`;

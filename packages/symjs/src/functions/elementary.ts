@@ -22,6 +22,7 @@ import {
   Special,
   impl,
   isNum,
+  ExtensionExpr,
 } from '../core/nodes';
 import { numAbs, numNeg, ratMod } from '../core/num';
 import { add, couldExtractMinusSign, mul, neg, pow, splitCoeff, sqrt, sympify } from '../core/ops';
@@ -382,6 +383,10 @@ export const conjugateCommutes = new Set<string>();
 /** Complex conjugate, pushed through the expression tree. */
 export function conjugate(xx: ExprLike): Expr {
   const x = sympify(xx);
+  if (x instanceof ExtensionExpr) {
+    const r = x.conjugateSelf();
+    if (r !== undefined) return r;
+  }
   if (isReal(x)) return x;
   if (isI(x)) return neg(S.I);
   if (x instanceof Add) return add(...x.args.map(conjugate));
@@ -421,6 +426,10 @@ export function conjugate(xx: ExprLike): Expr {
  */
 export function adjoint(xx: ExprLike): Expr {
   const x = sympify(xx);
+  if (x instanceof ExtensionExpr) {
+    const r = x.adjointSelf();
+    if (r !== undefined) return r;
+  }
   if (x.isCommutative) return conjugate(x);
   if (x instanceof Add) return add(...x.args.map(adjoint));
   if (x instanceof Mul) return mul(...[...x.args].reverse().map(adjoint));
@@ -437,6 +446,10 @@ export function adjoint(xx: ExprLike): Expr {
 /** Transpose (SymPy transpose): commutative scalars are unchanged, products reverse. */
 export function transpose(xx: ExprLike): Expr {
   const x = sympify(xx);
+  if (x instanceof ExtensionExpr) {
+    const r = x.transposeSelf();
+    if (r !== undefined) return r;
+  }
   if (x.isCommutative) return x;
   if (x instanceof Add) return add(...x.args.map(transpose));
   if (x instanceof Mul) return mul(...[...x.args].reverse().map(transpose));

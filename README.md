@@ -98,6 +98,14 @@ pnpm build       # every package: tsup (ESM/CJS) + tsc (declarations)
 pnpm golden      # regenerate the SymPy expectations of the golden tests
 ```
 
+## Custom expression nodes in extend modules
+
+An extend module defines its own node types by subclassing `ExtensionExpr`
+from `@symjs/symjs`. Implement `withArgs` (used by `subs`, `xreplace` and
+other traversals) and override `printStr`, `printLatex`, `diffSelf`,
+`adjointSelf`, `conjugateSelf` or `transposeSelf` as needed. Override
+`isCommutative` to return `false` for operators and states.
+
 ## Current limitations
 
 See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable gaps:
@@ -106,5 +114,3 @@ See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable
 - Algebraic extensions and finite fields in `factor` (`extension=`, `gaussian=`, `modulus=`), `RootOf`/`RootSum`
 - Integration beyond the implemented heuristics (no Risch or Meijer G algorithms yet)
 - ODE solving covers a few hints only; systems, PDEs and Diophantine equations are not ported
-- No public API yet for extend modules to register their own expression node types
-- `adjoint`/`Dagger` and expression-level `transpose` are not in the base module yet

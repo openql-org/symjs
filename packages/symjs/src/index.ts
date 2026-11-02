@@ -53,6 +53,7 @@ export {
   isFn,
   isInteger,
   isNum,
+  ExtensionExpr,
 } from './core/nodes';
 export type {
   Kind,

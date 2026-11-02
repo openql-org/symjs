@@ -7,7 +7,7 @@
 
 import { isReal } from '../core/assumptions';
 import { piecewise } from '../core/logic';
-import { Add, Constant, Derivative, Dummy, Expr, ExprLike, Fn, Integral, Mul, Piecewise, Pow, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import { Add, ExtensionExpr, Constant, Derivative, Dummy, Expr, ExprLike, Fn, Integral, Mul, Piecewise, Pow, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { derivative } from '../core/undef';
 import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
@@ -39,6 +39,11 @@ function d(e: Expr, x: Expr): Expr {
   if (!e.has(x)) return S.Zero;
 
   if (e instanceof Add) return add(...e.args.map((a) => d(a, x)));
+  if (e instanceof ExtensionExpr) {
+    const r = e.diffSelf(x, d);
+    if (r !== undefined) return r;
+    throw new Error(`diff: ${e.name} does not define a derivative`);
+  }
 
   if (e instanceof Mul) {
     const terms: Expr[] = [];

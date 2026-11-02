@@ -36,7 +36,8 @@ export type Kind =
   | 'Derivative'
   | 'Concrete'
   | 'BoolOp'
-  | 'Set';
+  | 'Set'
+  | 'Extension';
 
 /** Anything that can be turned into an expression. */
 export type ExprLike = Expr | number | bigint;
@@ -838,3 +839,47 @@ export const isPow = (e: Expr): e is Pow => e instanceof Pow;
 export const isFn = (e: Expr, name?: FnName): e is Fn =>
   e instanceof Fn && (name === undefined || e.name === name);
 export const isInteger = (e: Expr): e is Rational => e instanceof Rational && e.q === 1n;
+
+/**
+ * Base class for expression nodes defined outside the base module (extend
+ * packages). Subclasses describe themselves through the methods below; the
+ * base module calls them from rebuild/subs/xreplace, the str and LaTeX
+ * printers, diff and adjoint/conjugate/transpose.
+ */
+export abstract class ExtensionExpr extends Expr {
+  readonly kind = 'Extension' as const;
+  constructor(
+    /** Class name used in the structural key and the default printers. */
+    readonly name: string,
+    readonly args: readonly Expr[],
+  ) {
+    super();
+  }
+  /** A node of the same class with new arguments (required for traversals). */
+  abstract withArgs(args: readonly Expr[]): Expr;
+  /** str() form; defaults to Name(arg1, arg2, ...). */
+  printStr(print: (e: Expr) => string): string {
+    return `${this.name}(${this.args.map(print).join(', ')})`;
+  }
+  /** LaTeX form; defaults to \operatorname{Name}\left(...\right). */
+  printLatex(print: (e: Expr) => string): string {
+    return `\\operatorname{${this.name}}\\left(${this.args.map(print).join(', ')}\\right)`;
+  }
+  /** Derivative with respect to x, or undefined when unknown (diff then fails). */
+  diffSelf(_x: Expr, _d: (e: Expr, x: Expr) => Expr): Expr | undefined {
+    return undefined;
+  }
+  /** Hermitian adjoint, conjugate and transpose; undefined keeps the generic unevaluated form. */
+  adjointSelf(): Expr | undefined {
+    return undefined;
+  }
+  conjugateSelf(): Expr | undefined {
+    return undefined;
+  }
+  transposeSelf(): Expr | undefined {
+    return undefined;
+  }
+  protected computeKey(): string {
+    return `${this.name}(${this.args.map((a) => a.key).join(',')})`;
+  }
+}

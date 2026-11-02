@@ -9,11 +9,12 @@ import { fn } from '../functions/elementary';
 import { piecewise, rel } from './logic';
 import { Concrete } from '../concrete/node';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { Add, Derivative, Expr, ExprLike, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Substitution, Sym, UndefFn, impl } from './nodes';
+import { Add, Derivative, ExtensionExpr, Expr, ExprLike, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Substitution, Sym, UndefFn, impl } from './nodes';
 import { add, mul, pow, sympify } from './ops';
 
 /** Rebuild a node of the same type with new arguments (re-canonicalizing). */
 export function rebuild(e: Expr, args: readonly Expr[]): Expr {
+  if (e instanceof ExtensionExpr) return e.withArgs(args);
   if (e instanceof Add) return add(...args);
   if (e instanceof Mul) return mul(...args);
   if (e instanceof Pow) return pow(args[0]!, args[1]!);
