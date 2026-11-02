@@ -1530,12 +1530,16 @@ export function factor(ex: ExprLike, opts: { deep?: boolean; extension?: readonl
   const vars = sortGens([...freeSymbols(e)]) as Sym[];
   if (vars.length === 0) return e;
   // rational functions: factor numerator and denominator
-  const n = e instanceof Mul ? e.args.filter((f) => !(f instanceof Pow && f.exp instanceof Rational && f.exp.isNegative)) : [e];
-  const d = e instanceof Mul ? e.args.filter((f) => f instanceof Pow && f.exp instanceof Rational && f.exp.isNegative) : [];
+  const isDen = (f: Expr) => f instanceof Pow && f.exp instanceof Rational && f.exp.isNegative;
+  const fsAll = e instanceof Mul ? e.args : [e];
+  const n = fsAll.filter((f) => !isDen(f));
+  const d = fsAll.filter(isDen);
   if (d.length) {
-    const fn_ = factor(mul(...n));
-    const fd = factor(mul(...d.map((f) => pow((f as Pow).base, mul(-1, (f as Pow).exp)))));
-    return mul(fn_, pow(fd, -1));
+    // SymPy: the numerator and the denominator are factored with their constants collected
+    // into one coefficient (-x/(1 - y) -> x/(y - 1))
+    const [cn, fn_] = factorWithCoeff(mul(...n));
+    const [cd, fd] = factorWithCoeff(mul(...d.map((f) => pow((f as Pow).base, mul(-1, (f as Pow).exp)))));
+    return mul(cn, pow(cd, -1), fn_, pow(fd, -1));
   }
   // powers of sums are factored base-wise (SymPy _symbolic_factor_list), which
   // also avoids expanding large powers
@@ -1584,6 +1588,28 @@ export function factor(ex: ExprLike, opts: { deep?: boolean; extension?: readonl
   return c.isOne ? new Mul(sorted) : new Mul([c, ...sorted]);
 }
 
+
+/** factor(e) split into its rational coefficient and the product of the factors (SymPy factor_list). */
+function factorWithCoeff(e: Expr): [Rational, Expr] {
+  const vars = sortGens([...freeSymbols(e)]) as Sym[];
+  if (vars.length) {
+    try {
+      const poly = expand(e);
+      Poly.from(poly, vars);
+      const [c, fs] = factorListExpr(poly, vars);
+      if (c instanceof Rational) {
+        const parts = fs.map(([f, k]) => pow(f, k)).sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+        return [c, parts.length === 0 ? S.One : parts.length === 1 ? parts[0]! : new Mul(parts)];
+      }
+    } catch {
+      // not a polynomial: factored as a whole below
+    }
+  }
+  const f = factor(e);
+  if (f instanceof Rational) return [f, S.One];
+  if (f instanceof Mul && f.args[0] instanceof Rational) return [f.args[0], mul(...f.args.slice(1))];
+  return [Rational.of(1n), f];
+}
 
 /**
  * Factor a univariate polynomial with rational coefficients over Q(ext):
@@ -1697,3 +1723,5 @@ export function minimalPolynomial(vIn: ExprLike, x: Sym): Expr {
   }
   throw new Error('minimal_polynomial: not an algebraic number built from square roots');
 }
+
+impl.factor = (e) => factor(e);

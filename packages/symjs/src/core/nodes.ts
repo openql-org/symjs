@@ -236,6 +236,8 @@ export interface Impl {
   match?(e: Expr, pattern: Expr): Map<Sym, Expr> | undefined;
   /** SymPy radsimp (registered by simplify/sqrtdenest). */
   radsimp?(e: Expr): Expr;
+  /** SymPy factor (set by the polys module). */
+  factor?(e: Expr): Expr;
   /** SymPy fraction (registered by simplify/rational). */
   fraction?(e: Expr): [Expr, Expr];
   conjugate(e: Expr): Expr;

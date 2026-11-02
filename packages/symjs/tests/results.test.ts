@@ -122,3 +122,30 @@ describe('NotImplementedError', () => {
     expect(() => sj.dsolve(x, f(x))).not.toThrow(sj.NotImplementedError);
   });
 });
+
+describe('SymPy output forms', () => {
+  const P = sj.parse;
+  const [a, b, x, y, d] = sj.symbols('a b x y d') as sj.Sym[];
+  const show = (r: unknown) => (Array.isArray(r) ? r.map((e) => sj.str(e as sj.Expr)) : String(r));
+  it('linear systems: polynomial in the free unknowns over QQ(params), cancelled and distributed over EX', () => {
+    expect(show(sj.linsolve([P('a*x+b-2*x-3')], [a!, b!]))).toEqual(['-b/x + (2*x + 3)/x', 'b']);
+    expect(show(sj.linsolve([P('x*y+3*y+sqrt(3)'), P('d+y+2')], [y!, d!]))).toEqual(['-sqrt(3)/(x + 3)', '-2*x/(x + 3) - 6/(x + 3) + sqrt(3)/(x + 3)']);
+    expect(show(sj.linsolve([P('x - d*y + d')], [d!]))).toEqual(['x/(y - 1)']);
+    expect(show(sj.linsolve([P('x+y-3*a'), P('x-y-b')], [x!, y!]))).toEqual(['3*a/2 + b/2', '3*a/2 - b/2']);
+    expect(show(sj.linsolve([P('x*a+y-1'), P('x-y*b')], [x!, y!]))).toEqual(['b/(a*b + 1)', '1/(a*b + 1)']);
+  });
+  it('linear roots with symbolic coefficients are factored; factor collects the constants of numerator and denominator', () => {
+    expect(show(sj.solve(P('x - d*y + d'), d!))).toEqual(['x/(y - 1)']);
+    expect(sj.str(sj.factor(P('x/(1 - y)')))).toBe('-x/(y - 1)');
+    expect(sj.str(sj.factor(P('1/(1 - y)')))).toBe('-1/(y - 1)');
+    expect(sj.str(sj.factor(P('(x**2 - 1)/(2 - 2*y)')))).toBe('-(x - 1)*(x + 1)/(2*(y - 1))');
+    expect(sj.str(sj.factor(P('1 - y')))).toBe('1 - y');
+  });
+  it('Fresnel integrals in SymPy form', () => {
+    const z = new sj.Sym('z');
+    expect(sj.str(sj.integrate(P('cos(pi*z**2/2)'), z))).toBe('fresnelc(z)*gamma(1/4)/(4*gamma(5/4))');
+    expect(sj.str(sj.integrate(P('sin(pi*z**2/2)'), z))).toBe('3*fresnels(z)*gamma(3/4)/(4*gamma(7/4))');
+    expect(sj.str(sj.integrate(P('cos(a*z**2)'), z))).toBe('sqrt(2)*sqrt(pi)*fresnelc(sqrt(2)*sqrt(a)*z/sqrt(pi))*gamma(1/4)/(8*sqrt(a)*gamma(5/4))');
+    expect(sj.str(sj.integrate(P('sin(3*pi*z**2)'), z))).toBe('sqrt(6)*fresnels(sqrt(6)*z)*gamma(3/4)/(8*gamma(7/4))');
+  });
+});

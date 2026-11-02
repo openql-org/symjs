@@ -393,7 +393,18 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
   while (!normalized.has(low)) low++;
   const zeros: Expr[] = Array.from({ length: low }, () => S.Zero);
   const effDeg = deg - low;
-  if (effDeg === 1) return [...zeros, expand(mul(-1, get(low), pow(get(low + 1), -1)))];
+  if (effDeg === 1) {
+    // SymPy roots_linear: over a polynomial ring the root is factored (x/(y - 1), not -x/(1 - y))
+    const r = expand(mul(-1, get(low), pow(get(low + 1), -1)));
+    if (freeSymbols(r).size && impl.factor) {
+      try {
+        return [...zeros, impl.factor(r)];
+      } catch {
+        return [...zeros, r];
+      }
+    }
+    return [...zeros, r];
+  }
   if (effDeg === 2) {
     // x**2 + c: +-sqrt(-c) (SymPy roots_quadratic with b = 0)
     if (!normalized.has(low + 1)) {

@@ -18,7 +18,7 @@ import { acos, asin, atan, log } from '../functions/elementary';
 import { Matrix } from '../matrices/matrix';
 import { rref } from '../matrices/linalg';
 import { polyCoefficients, roots } from '../polys/poly';
-import { Poly } from '../polys/sympoly';
+import { Poly, sortGens } from '../polys/sympoly';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { expandMul } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
@@ -471,19 +471,56 @@ export function linsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Expr[]
   return solveAugmented(A.hstack(b), syms);
 }
 
+/**
+ * The coefficients of a linear system are rational functions with rational
+ * coefficients of the parameters (SymPy's domain QQ(params) rather than EX).
+ */
+function rationalFunctionDomain(entries: readonly Expr[], syms: readonly Sym[]): boolean {
+  const isRatPoly = (e: Expr): boolean => {
+    if (e instanceof Rational) return true;
+    if (e instanceof Sym) return !syms.some((s) => s.key === e.key);
+    if (e instanceof Add || e instanceof Mul) return e.args.every(isRatPoly);
+    if (e instanceof Pow) return e.exp instanceof Rational && e.exp.q === 1n && isRatPoly(e.base);
+    return false;
+  };
+  return entries.every(isRatPoly);
+}
+
+/** An element of QQ(params) as SymPy prints it: numerator/denominator, expanded over a constant denominator. */
+function fieldElement(v: Expr): Expr {
+  const c = cancel(v);
+  let [num, den] = fraction(c);
+  if (den.isNumber) return expandMul(c);
+  // the denominator with a positive leading coefficient in lex order (1 - y -> y - 1)
+  try {
+    const lc = Poly.from(den, sortGens([...freeSymbols(den)]) as Sym[]).LC();
+    if (lc.isNumber && lc.toNumber() < 0) [num, den] = [mul(-1, num), expandMul(mul(-1, den))];
+  } catch {
+    // not a polynomial: keep the sign
+  }
+  return mul(expandMul(num), pow(den, -1));
+}
+
 /** Solve [A | b] for syms. */
 export function solveAugmented(aug: Matrix, syms: readonly Sym[]): Expr[] | undefined {
   const n = syms.length;
   const [R, pivots] = rref(aug);
   if (pivots.includes(n)) return undefined; // inconsistent
+  // SymPy solve_lin_sys: over QQ(params) the solution is a polynomial in the free unknowns with
+  // coefficients in the field; over EX each value is cancelled and its numerator distributed
+  const field = rationalFunctionDomain(aug.data, syms);
   const sol: Expr[] = syms.map((s) => s);
   pivots.forEach((pc, i) => {
+    const terms: Expr[] = [];
     let v: Expr = R.get(i, n);
     for (let j = 0; j < n; j++) {
       if (j === pc || pivots.includes(j)) continue;
-      v = add(v, mul(-1, R.get(i, j), syms[j]!));
+      const c = mul(-1, R.get(i, j));
+      v = add(v, mul(c, syms[j]!));
+      if (field) terms.push(mul(fieldElement(c), syms[j]!));
     }
-    sol[pc] = cancel(v);
+    if (field) sol[pc] = add(...terms, fieldElement(R.get(i, n)));
+    else sol[pc] = expandMul(cancel(v));
   });
   return sol;
 }
