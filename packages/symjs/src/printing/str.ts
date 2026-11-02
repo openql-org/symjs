@@ -150,7 +150,11 @@ function strInner(e: Expr): string {
   if (e instanceof Special) return e.name;
   if (e instanceof Fn) return `${sympyFunctionName(e.name)}(${e.args.map(str).join(', ')})`;
   if (e instanceof Add) return printAdd(e);
-  if (e instanceof Mul) return printMul(e);
+  if (e instanceof Mul) {
+    // an unevaluated product of several numbers (Mul(1, 2, evaluate=False)) prints as written
+    if (e.args.filter((a) => a instanceof Rational).length > 1) return e.args.map((a) => parenthesize(a, PREC.MUL)).join('*');
+    return printMul(e);
+  }
   if (e instanceof Pow) return printPow(e);
   if (e instanceof BoolAtom) return e.value ? 'True' : 'False';
   if (e instanceof Rel) {

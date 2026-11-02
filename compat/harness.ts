@@ -301,6 +301,8 @@ export function deserialize(tree: Tree): unknown {
       return sj.mul(...(tree['args'] as Tree[]).map((a) => deserialize(a) as Expr));
     case 'Pow': {
       const [b, e] = (tree['args'] as Tree[]).map((a) => deserialize(a) as Expr);
+      // a power of rationals that SymPy kept as a Pow was built with evaluate=False
+      if (b instanceof sj.Rational && e instanceof sj.Rational && e.isInteger && sj.pow(b, e) instanceof sj.Rational) return new sj.Pow(b, e);
       return sj.pow(b!, e!);
     }
     case 'Rel': {
@@ -858,9 +860,21 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   MutableDenseMatrix: (args, kw) => ADAPTERS['Matrix']!(args, kw),
   MutableMatrix: (args, kw) => ADAPTERS['Matrix']!(args, kw),
+  parse_expr: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['transformations', 'evaluate', 'local_dict'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const tr = kw['transformations'];
+    if (tr !== undefined && tr !== 'all' && tr !== 'implicit') throw new Unsupported('transformations');
+    const locals = kw['local_dict'] instanceof PyDict ? Object.fromEntries(kw['local_dict'].entries.map(([k, v]) => [String(k), asExpr(v)])) : undefined;
+    return sj.parse(String(args[0]), { ...(tr ? { transformations: tr as 'all' } : {}), ...(kw['evaluate'] === false ? { evaluate: false } : {}), ...(locals ? { symbols: locals } : {}) });
+  },
   sympify: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'rational' && !(k === 'evaluate' && kw[k] === true) && !(k === 'convert_xor' && kw[k] === true)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['rational', 'evaluate', 'convert_xor', 'locals'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const v = args[0];
+    const localsArg = args[1] instanceof PyDict ? args[1] : kw['locals'] instanceof PyDict ? kw['locals'] : undefined;
+    if (typeof v === 'string' && (kw['evaluate'] === false || kw['convert_xor'] === false || localsArg)) {
+      const symbols = localsArg ? Object.fromEntries(localsArg.entries.map(([k, x]) => [String(k), asExpr(x)])) : undefined;
+      return sj.parse(v, { ...(kw['evaluate'] === false ? { evaluate: false } : {}), ...(kw['convert_xor'] === false ? { convertXor: false } : {}), ...(symbols ? { symbols } : {}) });
+    }
     if (typeof v === 'string') {
       if (kw['rational'] === true) {
         // decimal literals become exact rationals
@@ -913,7 +927,6 @@ export const ADAPTERS: Record<string, Adapter> = {
   Mul: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
     if (kw['evaluate'] === false) {
-      if (args.every((a) => a instanceof sj.Rational)) throw new Unsupported('unevaluated numeric product');
       return new sj.Mul(args.map(asExpr));
     }
     return sj.mul(...args.map(asExpr));
@@ -2304,7 +2317,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.as_real_imag': exprMethod((e) => new PyTuple(sj.asRealImag(e))),
   '.as_numer_denom': exprMethod((e) => new PyTuple(sj.asNumerDenom(e))),
-  '.as_base_exp': exprMethod((e) => new PyTuple(sj.asBaseExp(e))),
+  '.as_base_exp': exprMethod((e) => {
+    // SymPy Pow.as_base_exp: (1/q)**e is reported as q**(-e)
+    if (e instanceof sj.Pow && e.base instanceof sj.Rational && e.base.p === 1n && e.base.q !== 1n) return new PyTuple([sj.Rational.of(e.base.q), sj.neg(e.exp)]);
+    return new PyTuple(sj.asBaseExp(e));
+  }),
   '.args_cnc': (args, kw, self) => {
     const split1 = kw['split_1'];
     for (const k of Object.keys(kw)) if (k !== 'split_1' && k !== 'cset') throw new Unsupported(`kwargs ${k}`);

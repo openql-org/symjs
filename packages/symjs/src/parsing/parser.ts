@@ -12,7 +12,8 @@
  *   atom    := number | name | name '(' args ')' | '(' sum ')' | interpolated value
  */
 
-import { Assumptions, Expr, ExprLike, FnName, Rational, S, SpecialFnName, Sym, impl } from '../core/nodes';
+import { Add, Assumptions, Expr, ExprLike, FnName, Mul, Pow, Rational, S, SpecialFnName, Sym, impl } from '../core/nodes';
+import { and, not, or, xor } from '../core/boolalg';
 import { add, div, exp, mul, neg, pow, sqrt, sub, sympify } from '../core/ops';
 import { fn } from '../functions/elementary';
 import { Eq } from '../core/logic';
@@ -23,6 +24,16 @@ export interface ParseOptions {
   symbols?: Readonly<Record<string, Expr>> | readonly Sym[];
   /** Assumptions for symbols created implicitly by the parser. */
   assumptions?: Assumptions;
+  /** false: keep the arithmetic unevaluated (SymPy evaluate=False). */
+  evaluate?: boolean;
+  /** false: '^' is logical Xor instead of power (SymPy convert_xor=False). */
+  convertXor?: boolean;
+  /**
+   * SymPy parse_expr transformations: 'implicit' allows implicit
+   * multiplication (2x, x y, x(y + 1)) and function application without
+   * parentheses (sin x); 'all' is the same here.
+   */
+  transformations?: 'standard' | 'implicit' | 'all';
 }
 
 type Token =
@@ -43,7 +54,7 @@ function repeatingDecimal(s: string): Rational {
 }
 
 function tokenize(src: string, offset: number, out: Token[]): void {
-  const re = /\s*(?:(\d*\.\d*\[\d+\])|(\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)|([A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*)|(\*\*|[-+*/^(),]))/y;
+  const re = /\s*(?:(\d*\.\d*\[\d+\])|(\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)|([A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*)|(\*\*|[-+*/^(),&|~]))/y;
   let i = 0;
   while (i < src.length) {
     if (/^\s*$/.test(src.slice(i))) return;
@@ -181,8 +192,27 @@ class Parser {
     if (t.t !== 'op' || t.v !== v) throw new SyntaxError(`Expected '${v}' at ${t.pos}`);
   }
 
+  private get implicit(): boolean {
+    return this.opts.transformations === 'implicit' || this.opts.transformations === 'all';
+  }
+  private get raw(): boolean {
+    return this.opts.evaluate === false;
+  }
+  // unevaluated arithmetic (SymPy evaluate=False): nodes built as written, sums and products flattened
+  private add2(a: Expr, b: Expr): Expr {
+    if (!this.raw) return add(a, b);
+    return new Add([...(a instanceof Add ? a.args : [a]), ...(b instanceof Add ? b.args : [b])]);
+  }
+  private mul2(a: Expr, b: Expr): Expr {
+    if (!this.raw) return mul(a, b);
+    return new Mul([...(a instanceof Mul ? a.args : [a]), ...(b instanceof Mul ? b.args : [b])]);
+  }
+  private pow2(a: Expr, b: Expr): Expr {
+    return this.raw ? new Pow(a, b) : pow(a, b);
+  }
+
   parse(): Expr {
-    const e = this.sum();
+    const e = this.boolOr();
     const t = this.peek();
     if (t.t !== 'end') {
       const hint = t.t === 'name' || t.t === 'num' || (t.t === 'op' && t.v === '(') || t.t === 'value' ? ' (implicit multiplication is not supported; use *)' : '';
@@ -191,17 +221,57 @@ class Parser {
     return e;
   }
 
+  // logical operators (lowest precedence): | then ^ (Xor, without convert_xor) then & then ~
+  private boolOr(): Expr {
+    let e = this.boolXor();
+    while (this.isOp('|')) {
+      this.next();
+      e = or(e, this.boolXor());
+    }
+    return e;
+  }
+  private boolXor(): Expr {
+    let e = this.boolAnd();
+    while (this.opts.convertXor === false && this.isOp('^')) {
+      this.next();
+      e = xor(e, this.boolAnd());
+    }
+    return e;
+  }
+  private boolAnd(): Expr {
+    let e = this.boolNot();
+    while (this.isOp('&')) {
+      this.next();
+      e = and(e, this.boolNot());
+    }
+    return e;
+  }
+  private boolNot(): Expr {
+    if (this.isOp('~')) {
+      this.next();
+      return not(this.boolNot());
+    }
+    return this.sum();
+  }
+
   private sum(): Expr {
     let e = this.product();
     for (;;) {
       if (this.isOp('+')) {
         this.next();
-        e = add(e, this.product());
+        e = this.add2(e, this.product());
       } else if (this.isOp('-')) {
         this.next();
-        e = sub(e, this.product());
+        const t = this.product();
+        e = this.raw ? this.add2(e, this.mul2(Rational.of(-1n), t)) : sub(e, t);
       } else return e;
     }
+  }
+
+  /** Can the next token start a factor of an implicit product? */
+  private startsFactor(): boolean {
+    const t = this.peek();
+    return t.t === 'num' || t.t === 'name' || t.t === 'value' || (t.t === 'op' && t.v === '(');
   }
 
   private product(): Expr {
@@ -209,10 +279,13 @@ class Parser {
     for (;;) {
       if (this.isOp('*')) {
         this.next();
-        e = mul(e, this.unary());
+        e = this.mul2(e, this.unary());
       } else if (this.isOp('/')) {
         this.next();
-        e = div(e, this.unary());
+        const d = this.unary();
+        e = this.raw ? this.mul2(e, new Pow(d, Rational.of(-1n))) : div(e, d);
+      } else if (this.implicit && this.startsFactor()) {
+        e = this.mul2(e, this.unary());
       } else return e;
     }
   }
@@ -220,7 +293,9 @@ class Parser {
   private unary(): Expr {
     if (this.isOp('-')) {
       this.next();
-      return neg(this.unary());
+      const u = this.unary();
+      if (this.raw) return u instanceof Rational ? Rational.of(-u.p, u.q) : new Mul([Rational.of(-1n), u]);
+      return neg(u);
     }
     if (this.isOp('+')) {
       this.next();
@@ -231,9 +306,9 @@ class Parser {
 
   private power(): Expr {
     const base = this.atom();
-    if (this.isOp('^') || this.isOp('**')) {
+    if ((this.isOp('^') && this.opts.convertXor !== false) || this.isOp('**')) {
       this.next();
-      return pow(base, this.unary());
+      return this.pow2(base, this.unary());
     }
     return base;
   }
@@ -246,7 +321,11 @@ class Parser {
       case 'value':
         return t.v;
       case 'name': {
-        if (this.isOp('(')) {
+        // implicit application: sin x
+        if (this.implicit && FUNCTIONS[t.v] && !this.isOp('(') && this.startsFactor()) return FUNCTIONS[t.v]!([this.power()]);
+        // with implicit multiplication a known symbol before '(' multiplies (x(y + 1))
+        const asSymbol = this.implicit && !FUNCTIONS[t.v] && this.isOp('(');
+        if (this.isOp('(') && !asSymbol) {
           // unknown names applied to arguments are undefined functions (like SymPy's parse_expr)
           const f = FUNCTIONS[t.v] ?? ((args: Expr[]) => Function(t.v)(...args));
           this.next();
@@ -266,7 +345,7 @@ class Parser {
       }
       case 'op':
         if (t.v === '(') {
-          const e = this.sum();
+          const e = this.boolOr();
           this.expect(')');
           return e;
         }

@@ -290,6 +290,7 @@ export {
   and as And,
   or as Or,
   not as Not,
+  xor as Xor,
 } from './core/boolalg';
 
 /**

@@ -276,3 +276,14 @@ describe('systems of linear ODEs', () => {
     expect(sstr(simp(sub(d(ex!.rhs, t), sub(ey!.rhs, P('-exp(t)')))))).toBe('0');
   });
 });
+
+describe('parser options', () => {
+  it('logical operators, Xor, evaluate=False and implicit multiplication', () => {
+    expect(sstr(parse('x^y', { convertXor: false }))).toBe('x ^ y');
+    expect(sstr(parse('~x | y & x'))).toBe('~x | (x & y)');
+    expect(sstr(parse('2**2 / 3 + 5', { evaluate: false }))).toBe('2**2/3 + 5');
+    expect(sstr(parse('4/2+7', { evaluate: false }))).toBe('4/2 + 7');
+    expect(sstr(parse('2x y + sin x', { transformations: 'all' }))).toBe('2*x*y + sin(x)');
+    expect(sstr(parse('x(y+1)', { transformations: 'all' }))).toBe('x*(y + 1)');
+  });
+});

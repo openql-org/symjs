@@ -9,7 +9,7 @@
 import { BoolAtom, Expr, ExprLike, Rel, S, Special, impl } from './nodes';
 import { compareKeys, sortKey } from '../printing/sortkey';
 
-export type BoolOpName = 'And' | 'Or' | 'Not';
+export type BoolOpName = 'And' | 'Or' | 'Not' | 'Xor';
 
 /** And(...), Or(...) or Not(x). @internal ctor: use and/or/not. */
 export class BoolOp extends Expr {
@@ -32,7 +32,7 @@ export class BoolOp extends Expr {
       const a = this.args[0]!;
       return a instanceof Rel || a instanceof BoolOp ? `~(${p(a)})` : `~${p(a)}`;
     }
-    const sep = this.op === 'And' ? ' & ' : ' | ';
+    const sep = this.op === 'And' ? ' & ' : this.op === 'Xor' ? ' ^ ' : ' | ';
     let args = [...this.args];
     if (this.op === 'And') {
       // SymPy _print_And: relations whose canonical rhs is -oo come first
@@ -91,4 +91,23 @@ export function not(x0: ExprLike | boolean): Expr {
     return new Rel(neg[x.op], x.lhs, x.rhs);
   }
   return new BoolOp('Not', [x]);
+}
+
+/** SymPy Xor(*args): true when an odd number of the arguments is true. */
+export function xor(...xs: (ExprLike | boolean)[]): Expr {
+  let parity = false;
+  const counts = new Map<string, [Expr, number]>();
+  for (const x0 of xs) {
+    const x = typeof x0 === 'boolean' ? (x0 ? S.true : S.false) : impl.sympify(x0);
+    if (isTrue(x)) parity = !parity;
+    else if (!isFalse(x)) {
+      const c = counts.get(x.key);
+      counts.set(x.key, [x, (c?.[1] ?? 0) + 1]);
+    }
+  }
+  // x ^ x = false
+  const rest = [...counts.values()].filter(([, n]) => n % 2 === 1).map(([x]) => x);
+  if (!rest.length) return parity ? S.true : S.false;
+  const core = rest.length === 1 ? rest[0]! : new BoolOp('Xor', sortArgs(rest));
+  return parity ? not(core) : core;
 }
