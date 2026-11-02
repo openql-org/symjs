@@ -87,3 +87,12 @@ describe('solve with radicals', () => {
     expect(show('-x + (x**3 - 3*x**2)**(1/3) + 1', { check: false })).toEqual(['1/3']);
   });
 });
+
+describe('roots of polynomials with algebraic coefficients', () => {
+  it('uses the norm polynomial like SymPy', async () => {
+    const { Poly } = await import('../src');
+    const x = symbols('x')[0];
+    expect(Poly.from(parse('x**2 + I*x - 1'), [x]).allRoots().map((e) => sstr(e))).toEqual(['CRootOf(x**4 - x**2 + 1, 0)', 'CRootOf(x**4 - x**2 + 1, 2)']);
+    expect(Poly.from(parse('sqrt(2)*x**3 + x**2 - 1'), [x]).realRoots().map((e) => sstr(e))).toEqual(['sqrt(2)/2']);
+  });
+});

@@ -9,6 +9,7 @@
 
 import { factorModP } from './zassenhaus';
 import { Add, Constant, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
+import { evalf as evalfExpr } from '../numeric/evalf';
 import { add, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, mapBottomUp, rebuild, xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
@@ -803,6 +804,41 @@ export class Poly {
     void sign;
     return this.like(expand(mul(r, pow(lc, -1), this.LC())));
   }
+  /**
+   * Roots of a polynomial with algebraic coefficients (I, square roots of
+   * integers), like SymPy: the roots of the norm polynomial over QQ (the
+   * product of the conjugates) that are roots of this polynomial.
+   */
+  private liftedRoots(realOnly: boolean): Expr[] | undefined {
+    const cs = this.allCoeffs();
+    if (cs.every((c) => c instanceof Rational)) return undefined;
+    const gens = new Map<string, Expr>();
+    const findGens = (e: Expr) => {
+      if (e instanceof Constant && e.name === 'I') gens.set(e.key, e);
+      else if (e instanceof Pow && e.base instanceof Rational && e.base.isInteger && e.exp instanceof Rational && e.exp.key === S.Half.key) gens.set(e.key, e);
+      else e.args.forEach(findGens);
+    };
+    cs.forEach(findGens);
+    const gl = [...gens.values()];
+    if (!gl.length || gl.length > 3) return undefined;
+    const f = this.asExpr();
+    let norm: Expr = S.One;
+    for (let mask = 0; mask < 1 << gl.length; mask++) {
+      norm = mul(norm, xreplace(f, gl.map((g, i) => [g, mask & (1 << i) ? mul(-1, g) : g] as [Expr, Expr])));
+    }
+    const N = Poly.from(expand(norm), [this.univariate()]);
+    if (!N.allCoeffs().every((c) => c instanceof Rational)) return undefined;
+    const x = this.univariate();
+    const scale = cs.reduce((m, c) => Math.max(m, Math.hypot(c.toComplex().re, c.toComplex().im)), 1);
+    return N.rootsWhere(realOnly).filter((r) => {
+      try {
+        const v = evalfExpr(xreplace(f, [[x, evalfExpr(r, 30)]]), 30).toComplex();
+        return Math.hypot(v.re, v.im) < 1e-12 * scale;
+      } catch {
+        return false;
+      }
+    });
+  }
   /** Real roots (rational and quadratic surds), sorted, with multiplicity. */
   realRoots(): Expr[] {
     return this.rootsWhere(true);
@@ -811,6 +847,8 @@ export class Poly {
     return this.rootsWhere(false);
   }
   private rootsWhere(realOnly: boolean): Expr[] {
+    const lifted = this.liftedRoots(realOnly);
+    if (lifted) return lifted;
     const x = this.univariate();
     const [, fs] = this.factorList();
     type R = [Expr, { re: number; im: number }];
