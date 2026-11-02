@@ -8,7 +8,7 @@
 
 import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
 import { Add, Constant, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
-import { add, exp, mul, pow, sympify } from '../core/ops';
+import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, xreplace, xreplace as xreplaceS } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { acos, asin, atan, log } from '../functions/elementary';
@@ -71,7 +71,15 @@ function checkSolution(f: Expr, x: Sym, v: Expr): boolean {
 function invertFn(f: Fn | Pow, y: Expr): [Expr, Expr[]] | undefined {
   if (f instanceof Pow) {
     const [b, n] = f.args;
-    if (b instanceof Constant && b.name === 'E') return [n, [log(y)]];
+    if (b instanceof Constant && b.name === 'E') {
+      // exp(-u) = y  ->  u = log(1/y), with 1/(-a - b) written as -1/(a + b) like SymPy
+      if (couldExtractMinusSign(n)) {
+        const iy = pow(y, -1);
+        const inv = iy instanceof Pow && iy.base instanceof Add && couldExtractMinusSign(iy.base) ? mul(-1, pow(mul(-1, iy.base), -1)) : iy;
+        return [mul(-1, n), [log(inv)]];
+      }
+      return [n, [log(y)]];
+    }
     if (!(n instanceof Rational)) return undefined;
     if (n.isInteger) return undefined; // handled as a polynomial
     return [b, [pow(y, Rational.of(n.q, n.p))]];
@@ -96,6 +104,27 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   if (depth > 12) throw new Error('solve: recursion too deep');
   const f = f0;
   if (!f.has(x)) return [];
+  // a single exponential term or 1/x: isolate it before clearing denominators
+  if (f instanceof Add) {
+    const dep = f.args.filter((t) => t.has(x));
+    if (dep.length === 1) {
+      const t = dep[0]!;
+      const fs = t instanceof Mul ? t.args : [t];
+      const F = fs.filter((g) => g.has(x));
+      if (F.length === 1 && F[0] instanceof Pow && F[0].base.key === x.key && F[0].exp instanceof Rational && F[0].exp.p === -1n && F[0].exp.q === 1n) {
+        // a/x + b = 0  ->  x = 1/(-b/a)
+        const a = mul(...fs.filter((g) => !g.has(x)));
+        const y = mul(-1, add(...f.args.filter((u) => !u.has(x))), pow(a, -1));
+        return isZeroE(y) ? [] : [pow(y, -1)];
+      }
+      if (F.length === 1 && F[0] instanceof Pow && F[0].base instanceof Constant && F[0].base.name === 'E') {
+        const a = mul(...fs.filter((g) => !g.has(x)));
+        const y = mul(-1, add(...f.args.filter((u) => !u.has(x))), pow(a, -1));
+        const inv = invertFn(F[0], y)!;
+        return inv[1].flatMap((yy) => solveRaw(add(inv[0], mul(-1, yy)), x, depth + 1));
+      }
+    }
+  }
   // rational function: solve the numerator
   const [num] = fraction(together(f));
   const n = expandMul(num);

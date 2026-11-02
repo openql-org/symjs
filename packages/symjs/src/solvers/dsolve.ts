@@ -11,7 +11,7 @@ import { isReal } from '../core/assumptions';
 import { Add, Derivative, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
-import { freeSymbols, xreplace } from '../core/traverse';
+import { freeSymbols, subs, xreplace } from '../core/traverse';
 import { derivative } from '../core/undef';
 import { diff } from '../calculus/diff';
 import { abs, cos, im, log, re, sin, tan } from '../functions/elementary';
@@ -616,7 +616,7 @@ const nthOrderReducible: Solver = (p) => {
   if (ords.size < 2) return undefined;
   const n = Math.min(...ords);
   const t = new Dummy('t');
-  if (xreplace(p.eq, [[D(p, n), t]]).has(p.fx)) return undefined;
+  if (subs(p.eq, [[D(p, n), t]]).has(p.fx)) return undefined;
   const g = new UndefFn('_g', [p.x]);
   let geq = p.eq;
   for (const k of [...ords].sort((a, b) => b - a)) geq = xreplace(geq, [[D(p, k), k === n ? g : derivative(g, [[p.x, k - n]], true)]]);
@@ -661,6 +661,18 @@ const factorable: Solver = (p) => {
     if (rs.length < 2) return undefined;
     eqs = rs.map((r) => add(df, mul(-1, r)));
   }
+  // SymPy iterates the factors in Mul argument order
+  const argCmp = (a: Expr, b: Expr): number => {
+    // like Basic.compare for sums: compare the (sorted) terms one by one
+    const ta = [...(a instanceof Add ? a.args : [a])].sort((u, v) => compareKeys(sortKey(u), sortKey(v)));
+    const tb = [...(b instanceof Add ? b.args : [b])].sort((u, v) => compareKeys(sortKey(u), sortKey(v)));
+    for (let i = 0; i < Math.min(ta.length, tb.length); i++) {
+      const c = compareKeys(sortKey(ta[i]!), sortKey(tb[i]!));
+      if (c) return c;
+    }
+    return ta.length - tb.length;
+  };
+  eqs = [...eqs].sort(argCmp);
   const sols: Expr[] = [];
   for (const e of eqs) {
     const s = dsolveRaw(e, p.fx);
@@ -686,8 +698,9 @@ const HINTS: [string, Solver][] = [
   ['Bernoulli', bernoulli],
   ['Riccati_special_minus2', riccatiSpecial],
   ['nth_linear_constant_coeff_variation_of_parameters', variationOfParameters],
-  ['Liouville', liouville],
+  // SymPy reaches f'' + f'**2 = 0 through factorable/nth_order_reducible before Liouville
   ['nth_order_reducible', nthOrderReducible],
+  ['Liouville', liouville],
   ['nth_algebraic', nthAlgebraic],
 ];
 

@@ -185,7 +185,7 @@ export function odesimp(ode: Expr, solIn: Expr, fx: UndefFn, hint: string): Expr
       const expandSol = (t0: Expr): Expr => {
         // 1/(-a - b) -> -1/(a + b) like SymPy's solve output
         let t = t0;
-        if (t instanceof Pow && t.base instanceof Add && t.exp instanceof Rational && t.exp.isInteger && t.exp.isNegative && couldExtractMinusSign(t.base)) {
+        if (t instanceof Pow && t.base instanceof Add && t.exp instanceof Rational && t.exp.isInteger && t.exp.isNegative && t.base.args.every((a) => couldExtractMinusSign(a))) {
           t = mul(t.exp.p % 2n === 0n ? 1 : -1, pow(mul(-1, t.base), t.exp));
         }
         const [, den] = asNumerDenom(t);
