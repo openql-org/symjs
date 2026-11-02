@@ -372,6 +372,17 @@ export function sumIsConvergent(c: Concrete): boolean | undefined {
   // p-series: f ~ C*k**(-p) for rational functions
   const r = pSeriesOrder(f, k);
   if (r !== undefined) return r > 1;
+  // limit comparison with a p-series: f ~ c*k**(-p) as k -> oo with real c != 0
+  try {
+    const t = new Sym('_t', { positive: true });
+    const [c0, e0] = impl.leadterm!(xreplace(f, [[k, pow(t, -1)]]), t);
+    if (e0 instanceof Rational && c0.freeSymbols().size === 0 && !(c0 instanceof Rational && c0.isZero)) {
+      const cv = c0.toComplex();
+      if (Math.abs(cv.im) < 1e-300 && cv.re !== 0) return e0.value > 1;
+    }
+  } catch {
+    // no asymptotic expansion
+  }
   // ratio test
   const ratio = limOo(impl.abs(mul(xreplace(f, [[k, add(k, 1)]]), pow(f, -1))), k);
   if (ratio !== undefined && ratio.freeSymbols().size === 0 && !(ratio instanceof Special)) {

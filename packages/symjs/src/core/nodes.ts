@@ -210,6 +210,8 @@ export interface Impl {
   couldExtractMinusSign?(e: Expr): boolean;
   /** SymPy collect (registered by simplify/radsimp). */
   collect?(e: Expr, syms: readonly Expr[]): Expr;
+  /** Leading term [c, e] of e ~ c*x**e as x -> 0+ (registered by series/series). */
+  leadterm?(e: Expr, x: Sym): [Expr, Expr];
   /** Lambert W function (registered by functions/special). */
   lambertW?(x: Expr, k?: number): Expr;
   /** SymPy fraction (registered by simplify/rational). */

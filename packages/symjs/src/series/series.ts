@@ -74,6 +74,7 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
 }
 
 impl.series = series;
+impl.leadterm = (e, x) => leadterm(e, x);
 
 /** Leading term c*x**e of e as x -> 0 (SymPy leadterm): [c, e]. */
 export function leadterm(ex: ExprLike, x: Sym): [Expr, Expr] {

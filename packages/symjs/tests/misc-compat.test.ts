@@ -182,9 +182,19 @@ describe('gamma-type definite integrals', () => {
   it('conditional result like SymPy', () => {
     const [a] = symbols('a');
     const n = new Sym('n', { positive: true });
-    const f = parse('x**a*exp(-x)', { locals: { a } });
+    const f = parse('x**a*exp(-x)', { symbols: { a } });
     expect(String(integrate(f, x, [0, oo]))).toBe('Piecewise((gamma(a + 1), re(a) > -1), (Integral(x**a*exp(-x), (x, 0, oo)), True))');
     expect(String(integrate(f, x, [0, oo], { conds: 'none' }))).toBe('gamma(a + 1)');
     expect(String(integrate(mul(pow(x, n), parse('exp(-x)')), x, [0, oo]))).toBe('gamma(n + 1)');
+  });
+});
+
+import { Product, sumIsConvergent, Concrete } from '../src';
+
+describe('convergence of infinite products', () => {
+  it('uses the comparison with p-series of log(term)', () => {
+    const n = new Sym('n');
+    expect(sumIsConvergent(Product(parse('n/(n + 1)'), [n, 1, oo]) as Concrete)).toBe(false);
+    expect(sumIsConvergent(Product(parse('cos(pi/n)'), [n, 1, oo]) as Concrete)).toBe(true);
   });
 });
