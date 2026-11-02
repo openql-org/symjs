@@ -327,6 +327,28 @@ const asPoly = (v: unknown): sj.Poly => {
 };
 const polyOf = (args: unknown[]): sj.Poly =>
   args[0] instanceof sj.Poly ? args[0] : sj.Poly.from(asExpr(args[0]), args.slice(1).map(asExpr));
+/** SymPy parallel_poly_from_expr: n leading arguments as Polys over common gens (rest are gens). */
+const parallelPolys = (args: unknown[], n: number): { ps: sj.Poly[]; asPolys: boolean } => {
+  const fs = args.slice(0, n);
+  const asPolys = fs.some((f) => f instanceof sj.Poly);
+  let gens = args.slice(n).map(asExpr);
+  if (!gens.length) {
+    const g = new Map<string, Expr>();
+    for (const f of fs) for (const x of f instanceof sj.Poly ? f.gens : sj.Poly.from(asExpr(f)).gens) g.set(x.key, x);
+    gens = sj.sortGens([...g.values()]);
+  }
+  return { ps: fs.map((f) => sj.Poly.from(asExprOrPoly(f), gens)), asPolys };
+};
+const polyFn =
+  (n: number, f: (ps: sj.Poly[], rest: unknown[]) => unknown, nExtra = 0): Adapter =>
+  (args, kw) => {
+    noKw(kw);
+    const extra = args.slice(n, n + nExtra);
+    const { ps, asPolys } = parallelPolys([...args.slice(0, n), ...args.slice(n + nExtra)], n);
+    const out = (v: unknown): unknown =>
+      v instanceof sj.Poly ? (asPolys ? v : v.asExpr()) : v instanceof PyTuple ? new PyTuple(v.items.map(out), v.isList) : v instanceof PyList ? new PyList(v.items.map(out)) : Array.isArray(v) ? new PyList(v.map(out)) : v;
+    return out(f(ps, extra));
+  };
 const asSym = (v: unknown): Sym => {
   if (v instanceof Sym) return v;
   throw new Unsupported('expected a symbol');
@@ -831,6 +853,41 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new PyTuple([c, q.asExpr()]);
   },
   content: (args, kw) => (noKw(kw), polyOf(args).content()),
+  pdiv: polyFn(2, ([f, g]) => new PyTuple(f!.pdiv(g!))),
+  prem: polyFn(2, ([f, g]) => f!.prem(g!)),
+  pexquo: polyFn(2, ([f, g]) => f!.pexquo(g!)),
+  gcdex: polyFn(2, ([f, g]) => new PyTuple(f!.gcdex(g!))),
+  half_gcdex: polyFn(2, ([f, g]) => new PyTuple(f!.halfGcdex(g!))),
+  sturm: polyFn(1, ([f]) => f!.sturm()),
+  sqf_part: polyFn(1, ([f]) => f!.sqfPart()),
+  monic: polyFn(1, ([f]) => f!.monic()),
+  trunc: polyFn(1, ([f], [p]) => f!.trunc(asExpr(p)), 1),
+  sqf_list: polyFn(1, ([f]) => {
+    const [c, fs] = f!.sqfListAll(false);
+    return new PyTuple([c, new PyList(fs.map(([g, k]) => new PyTuple([g, k])))]);
+  }),
+  sqf: (args, kw) => {
+    noKw(kw);
+    const { ps, asPolys } = parallelPolys(args, 1);
+    const [c, fs] = ps[0]!.sqfListAll(false);
+    const e = sj.mul(c, ...fs.map(([g, k]) => sj.pow(g.asExpr(), k)));
+    return asPolys ? sj.Poly.from(e, ps[0]!.gens) : e;
+  },
+  gcd_list: (args, kw) => {
+    noKw(kw);
+    const fs = (args[0] as PyTuple).items;
+    const { ps, asPolys } = parallelPolys([...fs, ...args.slice(1)], fs.length);
+    const r = ps.reduce((a, b) => a.gcd(b));
+    return asPolys ? r : r.asExpr();
+  },
+  lcm_list: (args, kw) => {
+    noKw(kw);
+    const fs = (args[0] as PyTuple).items;
+    const { ps, asPolys } = parallelPolys([...fs, ...args.slice(1)], fs.length);
+    const r = ps.reduce((a, b) => a.lcm(b));
+    return asPolys ? r : r.asExpr();
+  },
+  poly: (args, kw) => (noKw(kw), sj.Poly.from(asExprOrPoly(args[0]), args.slice(1).map(asExpr))),
   pquo: (args, kw) => {
     noKw(kw);
     const f = asExpr(args[0]);
@@ -1561,9 +1618,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     return p;
   },
   degree: (args, kw) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (k !== 'gen') throw new Unsupported(`kwargs ${k}`);
     const f = args[0] instanceof sj.Poly ? args[0] : asExpr(args[0]);
-    return sj.degree(f, args[1] === undefined ? undefined : asExpr(args[1]));
+    const gen = kw['gen'] ?? args[1];
+    return sj.degree(f, gen === undefined ? undefined : asExpr(gen));
   },
   total_degree: (args, kw) => {
     noKw(kw);
@@ -1610,7 +1668,11 @@ export const ADAPTERS: Record<string, Adapter> = {
     }
     return sj.termsGcd(asExpr(args[0]), ...args.slice(1).map(asSym), opts);
   },
-  horner: (args, kw) => (noKw(kw), sj.horner(asExpr(args[0]), args[1] ? asSym(args[1]) : undefined)),
+  horner: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'wrt') throw new Unsupported(`kwargs ${k}`);
+    const wrt = kw['wrt'] ?? args[1];
+    return sj.horner(asExpr(args[0]), wrt ? asSym(wrt) : undefined);
+  },
   interpolate: (args, kw) => {
     noKw(kw);
     const data = args[0] as PyTuple;

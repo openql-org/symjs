@@ -1091,15 +1091,18 @@ export interface TermsGcdOptions {
 
 const isOneExpr = (e: Expr) => e instanceof Rational && e.isOne;
 
-/** Horner form of a univariate polynomial. */
+/** Horner form (SymPy horner): multivariate polynomials recurse on the coefficients. */
 export function horner(f: ExprLike, x?: Sym): Expr {
   const e = sympify(f);
-  const v = x ?? varsFor(e)[0];
+  if (e.isNumber) return e;
+  let gens = Poly.from(e).gens;
+  if (x) gens = [x, ...gens.filter((g) => g.key !== x.key)];
+  const v = gens[0];
   if (!v) return e;
   const p = Poly.from(e, [v]);
-  const cs = p.allCoeffs();
-  let acc: Expr = cs[0]!;
-  for (const c of cs.slice(1)) acc = add(mul(acc, v), c);
+  const multi = gens.length > 1;
+  let acc: Expr = S.Zero;
+  for (const c of p.allCoeffs()) acc = add(mul(acc, v), multi ? horner(c) : c);
   return acc;
 }
 
