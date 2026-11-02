@@ -255,6 +255,8 @@ export function deserialize(tree: Tree): unknown {
       if (!f) throw new Unsupported(`function ${tree['name']}`);
       return f((tree['args'] as Tree[]).map((a) => deserialize(a)) as Expr[]);
     }
+    case 'PyLambda':
+      return new PyLambda((tree['params'] as Tree[]).map((t) => deserialize(t) as Expr), deserialize(tree['body'] as Tree) as Expr);
     case 'Tuple':
       return new PyTuple((tree['items'] as Tree[]).map(deserialize), Boolean(tree['list']));
     case 'Poly':
@@ -1174,6 +1176,17 @@ export const ADAPTERS: Record<string, Adapter> = {
   trigsimp: exprFn(sj.trigsimp),
   exptrigsimp: exprFn(sj.exptrigsimp),
   Id: exprFn((e) => e),
+  arity: (args, kw) => {
+    noKw(kw);
+    if (args[0] instanceof PyLambda) return sj.Rational.of(args[0].vars.length);
+    throw new Unsupported('arity');
+  },
+  '.applyfunc': (args, kw, self) => {
+    noKw(kw);
+    const f = args[0];
+    if (!(self instanceof Matrix) || !(f instanceof PyLambda)) throw new Unsupported('applyfunc');
+    return self.map((e) => f.call(e));
+  },
   '.as_dummy': (_args, kw, self) => {
     noKw(kw);
     if (self instanceof Sym && !(self instanceof sj.Dummy)) return new sj.Dummy(self.name, self.assumptions);
@@ -1417,6 +1430,10 @@ export const ADAPTERS: Record<string, Adapter> = {
     }
     if (a instanceof PyTuple) return Matrix.col(...a.items.map(asExpr));
     if (a === undefined) return Matrix.zeros(0, 0);
+    if (a instanceof sj.Rational && args[1] instanceof sj.Rational && args[2] instanceof PyLambda) {
+      const f = args[2];
+      return Matrix.fromFunction(Number(a.p), Number(args[1].p), (i, j) => f.call(sj.Rational.of(i), sj.Rational.of(j)));
+    }
     if (a instanceof sj.Rational && args[1] instanceof sj.Rational && args[2] instanceof PyTuple) {
       const r = Number(a.p);
       const c = Number(args[1].p);
@@ -1667,7 +1684,20 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (!['exact', 'map'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const q = toQuery(args[0]);
     const v = args[1];
-    const value: sj.Replacement = v instanceof FnClass || v instanceof UFnClass ? { fn: v.name } : v instanceof TypeRef ? { type: v.name } : asExpr(v);
+    let value: sj.Replacement;
+    if (v instanceof PyLambda) {
+      if (q instanceof Expr) {
+        // keyword call by Wild name, values arrive ordered like the Wilds of the pattern
+        const ws: sj.Wild[] = [];
+        const walk = (e: Expr) => {
+          if (e instanceof sj.Wild && !ws.some((w) => w.key === e.key)) ws.push(e);
+          e.args.forEach(walk);
+        };
+        walk(q);
+        value = (...vals: Expr[]) =>
+          v.call(...v.vars.map((p) => vals[ws.findIndex((w) => w.name === (p as Sym).name)] ?? S.Zero));
+      } else value = (...vals: Expr[]) => v.call(...vals);
+    } else value = v instanceof FnClass || v instanceof UFnClass ? { fn: v.name } : v instanceof TypeRef ? { type: v.name } : asExpr(v);
     const r = sj.replace(asExpr(self), q, value, {
       exact: kw['exact'] === undefined ? undefined : Boolean(kw['exact']),
       map: Boolean(kw['map']),
@@ -2163,9 +2193,6 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.row_insert': matrixMethod((m, [p, b]) => sj.linalg.rowInsert(m, Number((p as sj.Rational).p), b as Matrix)),
   '.col': matrixMethod((m, [j]) => m.col(Number((j as sj.Rational).p))),
   '.row': matrixMethod((m, [i]) => m.row(Number((i as sj.Rational).p))),
-  '.applyfunc': matrixMethod(() => {
-    throw new Unsupported('applyfunc');
-  }),
   rot_axis1: exprFn(sj.rotAxis1),
   rot_axis2: exprFn(sj.rotAxis2),
   rot_axis3: exprFn(sj.rotAxis3),

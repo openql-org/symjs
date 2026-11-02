@@ -238,6 +238,24 @@ class Timeout(Exception):
     pass
 
 
+def ser_arg(node, globs):
+    """Serialize a call argument; a lambda whose body evaluates to an expression
+    when applied to dummies becomes {"t": "PyLambda", params, body}."""
+    if isinstance(node, ast.Lambda) and not node.args.vararg and not node.args.kwonlyargs and not node.args.kwarg:
+        names = [a.arg for a in node.args.args]
+        ds = [sympy.Dummy(n) for n in names]
+        loc = dict(globs)
+        loc.update(zip(names, ds))
+        try:
+            body = eval(compile(ast.Expression(node.body), "<lambda>", "eval"), loc)
+        except Exception:
+            raise Unsupported("function")
+        if not isinstance(body, Basic) or isinstance(body, sympy.logic.boolalg.BooleanAtom):
+            raise Unsupported("function")
+        return {"t": "PyLambda", "params": [ser(d) for d in ds], "body": ser(body)}
+    return ser(eval(compile(ast.Expression(node), "<a>", "eval"), globs))
+
+
 def _alarm(signum, frame):
     raise Timeout()
 
@@ -296,10 +314,8 @@ def main(dst):
                 try:
                     if "selfSrc" in record:
                         record["self"] = ser(eval(record.pop("selfSrc"), globs))
-                    record["args"] = [ser(eval(compile(ast.Expression(a), "<a>", "eval"), globs)) for a in call.args]
-                    record["kwargs"] = {
-                        k.arg: ser(eval(compile(ast.Expression(k.value), "<k>", "eval"), globs)) for k in call.keywords
-                    }
+                    record["args"] = [ser_arg(a, globs) for a in call.args]
+                    record["kwargs"] = {k.arg: ser_arg(k.value, globs) for k in call.keywords}
                 except Unsupported as e:
                     # keep the case (it counts as a failure) so the rate is not inflated
                     skipped[str(e)] = skipped.get(str(e), 0) + 1
