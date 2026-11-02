@@ -441,7 +441,28 @@ export function solveUndeterminedCoeffs(e: ExprLike, coeffs: readonly Sym[], sym
 }
 
 /** Numeric root of f near x0 by Newton's method (complex arithmetic). */
-export function nsolve(e: ExprLike, x: Sym, x0: ExprLike): Expr {
+export function nsolve(e: ExprLike, x: Sym, x0: ExprLike, opts: { prec?: number } = {}): Expr {
+  const r = nsolveDouble(e, x, x0);
+  const dps = opts.prec;
+  if (dps === undefined || dps <= 15) return r;
+  // refine with Newton steps in arbitrary precision (SymPy nsolve(..., prec=n))
+  const f = asEquation(e);
+  const df = diff(f, x);
+  const wp = dps + 10;
+  let z = impl.evalf(r, wp);
+  let last = '';
+  for (let i = 0; i < 60; i++) {
+    const fv = impl.evalf(xreplace(f, [[x, z]]), wp);
+    const dv = impl.evalf(xreplace(df, [[x, z]]), wp);
+    z = impl.evalf(add(z, mul(-1, fv, pow(dv, -1))), wp);
+    const cur = impl.evalf(z, dps).toString();
+    if (cur === last) break;
+    last = cur;
+  }
+  return impl.evalf(z, dps);
+}
+
+function nsolveDouble(e: ExprLike, x: Sym, x0: ExprLike): Expr {
   const f = asEquation(e);
   const df = diff(f, x);
   const z0 = sympify(x0).toComplex();

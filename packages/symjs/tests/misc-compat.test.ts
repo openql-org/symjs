@@ -169,3 +169,11 @@ describe('abs series and derivative substitution', () => {
     expect(String(subsE(derivative(f(x), [[x, 2]]), [[derivative(f(x), [[x, 1]]), yy]]))).toBe('Derivative(y, x)');
   });
 });
+
+import { nsolve } from '../src';
+
+describe('nsolve with a precision', () => {
+  it('refines in arbitrary precision', () => {
+    expect(String(nsolve(parse('cos(x) - x'), x, 1, { prec: 50 }))).toBe('0.73908513321516064165531208767387340401341175890076');
+  });
+});

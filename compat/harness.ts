@@ -1393,12 +1393,13 @@ export const ADAPTERS: Record<string, Adapter> = {
     return dicts.length === 1 ? dicts[0] : new PyList(dicts);
   },
   nsolve: (args, kw) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (k !== 'prec') throw new Unsupported(`kwargs ${k}`);
+    const opts = kw['prec'] === undefined ? {} : { prec: Number((kw['prec'] as sj.Rational).p) };
     const e = asExpr(args[0]);
-    if (args.length === 3) return sj.nsolve(e, asSym(args[1]), asExpr(args[2]));
+    if (args.length === 3) return sj.nsolve(e, asSym(args[1]), asExpr(args[2]), opts);
     const syms = [...sj.freeSymbols(e)];
     if (syms.length !== 1) throw new Unsupported('nsolve form');
-    return sj.nsolve(e, syms[0]!, asExpr(args[1]));
+    return sj.nsolve(e, syms[0]!, asExpr(args[1]), opts);
   },
   Matrix: (args, kw) => {
     noKw(kw);
