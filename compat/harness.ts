@@ -1573,7 +1573,14 @@ export const ADAPTERS: Record<string, Adapter> = {
     const [c, fs] = sj.factorList(asExprOrPoly(args[0]));
     return new PyTuple([c, new PyList(fs.map(([f, k]) => new PyTuple([f, k])))]);
   },
-  terms_gcd: exprFn(sj.termsGcd),
+  terms_gcd: (args, kw) => {
+    const opts: { expand?: boolean; deep?: boolean; clear?: boolean } = {};
+    for (const k of Object.keys(kw)) {
+      if (k !== 'expand' && k !== 'deep' && k !== 'clear') throw new Unsupported(`kwargs ${k}`);
+      opts[k] = kw[k] === true;
+    }
+    return sj.termsGcd(asExpr(args[0]), ...args.slice(1).map(asSym), opts);
+  },
   horner: (args, kw) => (noKw(kw), sj.horner(asExpr(args[0]), args[1] ? asSym(args[1]) : undefined)),
   interpolate: (args, kw) => {
     noKw(kw);

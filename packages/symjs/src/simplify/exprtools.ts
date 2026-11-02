@@ -68,7 +68,7 @@ export function keepCoeff(coeff: Expr, factors: Expr, clear = true, sign = false
 }
 
 /** SymPy decompose_power: expr = base**e with integer e. */
-function decomposePower(e: Expr): [Expr, number] {
+export function decomposePower(e: Expr): [Expr, number] {
   if (isExpPow(e)) {
     const [c, tail] = splitCoeff((e as Pow).exp);
     if (c instanceof Rational && c.q === 1n && !isOneE(c)) return [pow(S.E, tail), Number(c.p)];

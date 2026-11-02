@@ -15,6 +15,7 @@ import { integrate } from '../integrals/integrate';
 import { str } from '../printing/str';
 import { expandMul as expand } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
+import { decomposePower, keepCoeff } from '../simplify/exprtools';
 import { divExact, mfactorList, mgcd, mlcm, prem as mprem } from './mpoly';
 import { UPoly, roots as rootsOf } from './poly';
 
@@ -1014,18 +1015,81 @@ export function polyDiv(f: Poly | ExprLike, g: Poly | ExprLike): [Expr, Expr] {
 }
 
 /** terms_gcd: pull out the gcd of all terms (numeric content and common monomial). */
-export function termsGcd(f: ExprLike): Expr {
-  const e = expand(sympify(f));
-  const vars = varsFor(e);
-  const p = Poly.from(e, vars);
-  if (p.isZero) return S.Zero;
-  const mins = vars.map((_, i) => Math.min(...p.termList.map((t) => t.monom[i]!)));
-  const [c] = p.primitive();
-  const mono = mul(c, ...mins.map((k, i) => pow(vars[i]!, k)));
-  const rest = expand(mul(e, pow(mono, -1)));
-  if (rest instanceof Add) return new Mul([...(mono instanceof Mul ? mono.args : [mono]), rest].filter((x) => !(x instanceof Rational && x.isOne)));
-  return mul(mono, rest);
+export function termsGcd(f: ExprLike, ...rest: (Sym | TermsGcdOptions)[]): Expr {
+  const opts: TermsGcdOptions = rest.length && !(rest[rest.length - 1] instanceof Expr) ? (rest.pop() as TermsGcdOptions) : {};
+  const gens = rest as Sym[];
+  const orig = sympify(f);
+  if (orig.args.length === 0 || orig.isNumber) return orig;
+  if (opts.deep) {
+    const inner = rebuild(orig, orig.args.map((a) => termsGcd(a, ...gens, { ...opts })));
+    return termsGcd(inner, ...gens, { ...opts, deep: false, expand: false });
+  }
+  const e = opts.expand === false ? orig : expand(orig);
+  // terms as (rational coefficient, generator -> exponent)
+  const terms: [Rational, Map<string, [Expr, number]>][] = [];
+  for (const t of e instanceof Add ? e.args : [e]) {
+    const fs = t instanceof Mul ? t.args : [t];
+    let c = S.One as Rational;
+    const m = new Map<string, [Expr, number]>();
+    for (const g of fs) {
+      if (g instanceof Rational) {
+        c = mul(c, g) as Rational;
+        continue;
+      }
+      if (g.isNumber && !(g instanceof Pow) && !(g instanceof Constant)) return orig;
+      let [b, k] = decomposePower(g);
+      if (k < 0) {
+        b = pow(b, -1);
+        k = -k;
+      }
+      const cur = m.get(b.key);
+      m.set(b.key, [b, (cur ? cur[1] : 0) + k]);
+    }
+    terms.push([c, m]);
+  }
+  if (terms.length === 1 && terms[0]![0].isZero) return S.Zero;
+  // exponents common to all terms
+  const J = new Map<string, [Expr, number]>();
+  for (const [k, v] of terms[0]![1]) J.set(k, [...v]);
+  for (const [, m] of terms.slice(1)) {
+    for (const [k, v] of [...J]) {
+      const o = m.get(k);
+      if (!o) J.delete(k);
+      else v[1] = Math.min(v[1], o[1]);
+    }
+  }
+  let num = 0n;
+  let den = 1n;
+  const g2 = (a: bigint, b: bigint): bigint => (b === 0n ? (a < 0n ? -a : a) : g2(b, a % b));
+  for (const [c] of terms) {
+    num = g2(num, c.p);
+    den = (den / g2(den, c.q)) * c.q;
+  }
+  const coeff = num === 0n ? S.One : Rational.of(num, den);
+  const term = mul(...[...J.values()].map(([b, k]) => pow(b, k)));
+  if (coeff.isOne && isOneExpr(term)) return orig;
+  const fExpr = add(
+    ...terms.map(([c, m]) =>
+      mul(
+        mul(c, pow(coeff, -1)),
+        ...[...m].map(([k, [b, n]]) => pow(b, n - (J.get(k)?.[1] ?? 0))),
+      ),
+    ),
+  );
+  if (opts.clear !== false) return keepCoeff(coeff, mul(term, fExpr));
+  const kc = keepCoeff(coeff, fExpr, false);
+  const [c2, f2] = kc instanceof Mul && kc.args[0] instanceof Rational ? [kc.args[0], kc.args.length === 2 ? kc.args[1]! : new Mul(kc.args.slice(1))] : [S.One, kc];
+  return keepCoeff(c2, mul(term, f2), false);
 }
+
+/** Options of terms_gcd. */
+export interface TermsGcdOptions {
+  expand?: boolean;
+  deep?: boolean;
+  clear?: boolean;
+}
+
+const isOneExpr = (e: Expr) => e instanceof Rational && e.isOne;
 
 /** Horner form of a univariate polynomial. */
 export function horner(f: ExprLike, x?: Sym): Expr {
