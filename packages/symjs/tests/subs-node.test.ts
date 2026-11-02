@@ -137,3 +137,16 @@ describe('powdenest and finite differences', () => {
     );
   });
 });
+
+describe('nonlinsolve and undetermined coefficients', () => {
+  it('handle radicals, polynomial systems and non-polynomial terms', async () => {
+    const { nonlinsolve, solveUndeterminedCoeffs } = await import('../src');
+    const [x, y] = symbols('x y', { real: true });
+    const P = (s: string) => parse(s, { symbols: { x, y } } as never);
+    const show = (r: unknown[][]) => r.map((t) => '(' + t.map((e) => sstr(e as never)).join(', ') + ')').join(' ');
+    expect(show(nonlinsolve([P('sqrt(x**2+y**2)-10'), P('sqrt(y**2+(10-x)**2)-3')], [x, y]))).toBe('(191/20, -3*sqrt(391)/20) (191/20, 3*sqrt(391)/20)');
+    const [a, b, c, u, v] = symbols('a b c u v');
+    const eq = parse('-v - 2*u**v + a*v + b*u**v - 3*v*u**v + c*v*u**v', { symbols: { a, b, c, u, v } } as never);
+    expect(show(solveUndeterminedCoeffs(eq, [a, b, c], [u, v]))).toBe('(1, 2, 3)');
+  });
+});

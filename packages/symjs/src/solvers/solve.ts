@@ -6,6 +6,7 @@
  * linear and polynomial systems, undetermined coefficients and nsolve.
  */
 
+import { solvePolySystem } from './polysys';
 import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
 import { Add, Constant, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
@@ -499,10 +500,65 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
       }
       return;
     }
+    // a polynomial system: Groebner basis and back substitution
+    const numers = pending.map(numerOf);
+    if (numers.every((e) => unknowns.every((u) => polyCoefficients(e, u) !== undefined))) {
+      for (const sol of solvePolySystem(numers, unknowns)) {
+        const next = new Map(assigned);
+        unknowns.forEach((u, i) => next.set(u.key, sol[i]!));
+        for (const [k, w] of next) next.set(k, simplifyBack(xreplace(w, unknowns.map((u, i) => [u, sol[i]!] as [Expr, Expr]))));
+        results.push(syms.map((s) => next.get(s.key) ?? s));
+      }
+      return;
+    }
     throw new Error('nonlinsolve: unsupported system');
   };
-  go(eqs.map(asEquation), new Map());
-  return results;
+  const original = eqs.map(asEquation);
+  // equations with one radical are squared away (SymPy unrad); spurious solutions are removed below
+  const prepared = original.map((e) => unradOnce(e, syms) ?? e);
+  go(prepared, new Map());
+  if (prepared.every((e, i) => e === original[i])) return results;
+  return results.filter((sol) =>
+    original.every((e) => {
+      const r = xreplace(e, syms.map((s, i) => [s, sol[i]!] as [Expr, Expr]));
+      if (freeSymbols(r).size) return true;
+      try {
+        const c = evalf(r, 30).toComplex();
+        return !(Math.hypot(c.re, c.im) > 1e-12);
+      } catch {
+        return true;
+      }
+    }),
+  );
+}
+
+/** a*R + b = 0 with one radical R = g**(p/q) in the unknowns: a**q*g**p - (-b)**q. */
+function unradOnce(num: Expr, syms: readonly Sym[]): Expr | undefined {
+  const hasVar = (e: Expr) => syms.some((s) => e.has(s));
+  const rads = new Map<string, Pow>();
+  const find = (e: Expr) => {
+    if (e instanceof Pow && e.exp instanceof Rational && !e.exp.isInteger && hasVar(e.base)) rads.set(e.key, e);
+    e.args.forEach(find);
+  };
+  find(num);
+  if (rads.size !== 1) return undefined;
+  const R = [...rads.values()][0]!;
+  const terms = num instanceof Add ? num.args : [num];
+  const as: Expr[] = [];
+  const bs: Expr[] = [];
+  for (const t of terms) {
+    if (!t.has(R)) {
+      bs.push(t);
+      continue;
+    }
+    const c = mul(t, pow(R, -1));
+    if (c.has(R)) return undefined;
+    as.push(c);
+  }
+  const p = (R.exp as Rational).p;
+  const q = (R.exp as Rational).q;
+  if (p < 0n || q > 6n) return undefined;
+  return expandMul(add(mul(pow(add(...as), Rational.of(q)), pow(R.base, Rational.of(p))), mul(-1, pow(mul(-1, add(...bs)), Rational.of(q)))));
 }
 
 const numerOf = (e: Expr): Expr => expandMul(fraction(together(e))[0]);
@@ -567,7 +623,18 @@ export function solveUndeterminedCoeffs(e: ExprLike, coeffs: readonly Sym[], sym
     if (!pc) throw new Error('solve_undetermined_coeffs: not polynomial in the symbols');
     for (const c of pc.values()) collect(c, vars.slice(1));
   };
-  collect(f, syms);
+  if (syms.every((v) => polyCoefficients(f, v) !== undefined)) collect(f, syms);
+  else {
+    // other functions of the symbols (x**y, exp(x), ...): group the terms by their part depending on the symbols
+    const groups = new Map<string, Expr[]>();
+    for (const t of f instanceof Add ? f.args : [f]) {
+      const fs = t instanceof Mul ? t.args : [t];
+      const dep = mul(...fs.filter((g) => syms.some((v) => g.has(v))));
+      const c = mul(...fs.filter((g) => !syms.some((v) => g.has(v))));
+      groups.set(dep.key, [...(groups.get(dep.key) ?? []), c]);
+    }
+    for (const cs of groups.values()) eqs.push(add(...cs));
+  }
   return nonlinsolve(eqs, coeffs);
 }
 
