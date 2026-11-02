@@ -94,13 +94,15 @@ function d(e: Expr, x: Expr): Expr {
     const terms: Expr[] = [];
     for (const a of e.args) {
       if (!a.has(x)) continue;
-      if (a.key === x.key) terms.push(derivative(e, [[x, 1]]));
+      if (a.key === x.key) terms.push(derivative(e, [[x, 1]], true));
+      // f(g(x)): Derivative(f(g(x)), g(x))*Derivative(g(x), x) like SymPy
+      else if (a instanceof UndefFn) terms.push(mul(derivative(e, [[a, 1]]), d(a, x)));
       else throw new Error('diff: derivative of an undefined function of a composite argument is not supported');
     }
     return add(...terms);
   }
   if (e instanceof Derivative) {
-    if (e.expr instanceof UndefFn && e.expr.args.some((a) => a.key === x.key)) return derivative(e, [[x, 1]]);
+    if (e.expr instanceof UndefFn && e.expr.args.some((a) => a.key === x.key)) return derivative(e, [[x, 1]], true);
     return S.Zero;
   }
   if (e instanceof Piecewise) return piecewise(...e.pairs.map(([v, c]) => [d(v, x), c] as const));

@@ -174,6 +174,7 @@ export {
 
 // calculus
 export { diff } from './calculus/diff';
+export { doit } from './calculus/doit';
 export { Function, functions, derivative } from './core/undef';
 export type { UndefinedFunction } from './core/undef';
 export { integrate } from './integrals/integrate';

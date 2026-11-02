@@ -5,7 +5,7 @@
  * @file Undefined functions (SymPy `Function('f')`) and unevaluated derivatives.
  */
 
-import { Derivative, Expr, ExprLike, Rational, UndefFn } from './nodes';
+import { Derivative, Expr, ExprLike, Rational, Sym, UndefFn } from './nodes';
 import { sympify } from './ops';
 
 /** A callable undefined function: f(x, y) builds the application. */
@@ -32,7 +32,7 @@ export function functions(names: string): UndefinedFunction[] {
 }
 
 /** Build Derivative(expr, (v, n)...), merging repeated consecutive variables. */
-export function derivative(expr: Expr, variables: readonly [Expr, number][]): Expr {
+export function derivative(expr: Expr, variables: readonly [Expr, number][], evaluated = false): Expr {
   let e = expr;
   let vc: [Expr, number][] = [];
   if (e instanceof Derivative) {
@@ -43,6 +43,16 @@ export function derivative(expr: Expr, variables: readonly [Expr, number][]): Ex
     const last = vc[vc.length - 1];
     if (last && last[0].key === v.key) last[1] += n;
     else vc.push([v, n]);
+  }
+  // evaluated derivatives: SymPy sorts symbol variables (they commute) and merges repeats
+  if (evaluated && vc.every(([v]) => v instanceof Sym)) {
+    const merged = new Map<string, [Expr, number]>();
+    for (const [v, n] of vc) {
+      const m = merged.get(v.key);
+      if (m) m[1] += n;
+      else merged.set(v.key, [v, n]);
+    }
+    vc = [...merged.values()].sort(([a], [b]) => ((a as Sym).name < (b as Sym).name ? -1 : (a as Sym).name > (b as Sym).name ? 1 : 0));
   }
   return new Derivative([e, ...vc.flatMap(([v, n]) => [v, Rational.of(n)])]);
 }

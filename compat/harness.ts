@@ -1559,18 +1559,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.doit': (args, kw, self) => {
     noKw(kw);
     if (args.length) throw new Unsupported('doit args');
-    const e = asExpr(self);
-    const doit = (x: Expr): Expr => {
-      const y = x.args.length ? sj.rebuild(x, x.args.map(doit)) : x;
-      if (y instanceof Integral) {
-        const [f, v, a, b] = y.args;
-        return a && b ? sj.integrate(f!, v as Sym, [a, b]) : sj.integrate(f!, v as Sym);
-      }
-      if (y instanceof sj.Limit) return sj.limit(y.args[0]!, y.args[1] as Sym, y.args[2]!, y.dir);
-      if (y instanceof sj.Concrete) return sj.doitConcrete(y);
-      return y;
-    };
-    return doit(e);
+    return sj.doit(asExpr(self));
   },
   '.evalf': (args, kw, self) => evalfAdapter(self, args, kw),
   '.n': (args, kw, self) => evalfAdapter(self, args, kw),

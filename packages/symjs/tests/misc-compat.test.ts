@@ -46,3 +46,21 @@ describe('rational_interpolate and harmonic at infinity', () => {
     expect(String(harmonic(oo, neg(m)))).toBe('nan');
   });
 });
+
+import { Function as Fn, diff, doit, derivative } from '../src';
+
+describe('derivatives of undefined functions', () => {
+  const f = Fn('f');
+  const g = Fn('g');
+  const y = symbols('y')[0];
+  it('chain rule through a nested undefined function', () => {
+    expect(String(diff(f(g(x)), x))).toBe('Derivative(f(g(x)), g(x))*Derivative(g(x), x)');
+  });
+  it('sorts symbol variables of evaluated derivatives only', () => {
+    expect(String(diff(diff(f(x, y), y), x))).toBe('Derivative(f(x, y), x, y)');
+    expect(String(derivative(f(x, y), [[y, 1], [x, 1]]))).toBe('Derivative(f(x, y), y, x)');
+  });
+  it('doit evaluates Derivative objects', () => {
+    expect(String(doit(derivative(f(f(x)), [[x, 1]])))).toBe('Derivative(f(x), x)*Derivative(f(f(x)), f(x))');
+  });
+});
