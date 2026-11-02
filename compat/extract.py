@@ -115,6 +115,7 @@ MODULES = {
     "sympy.ntheory.egyptian_fraction": "ntheory",
     "sympy.assumptions.ask": "assumptions",
     "sympy.assumptions.refine": "assumptions",
+    "sympy.assumptions.assume": "assumptions",
     "sympy.utilities.iterables": "utilities",
     "sympy.combinatorics.permutations": "combinatorics",
     "sympy.printing.pretty.pretty": "printing",
@@ -148,6 +149,12 @@ def ser(o):
 
     if o is None or isinstance(o, bool):
         return {"t": "Js", "v": o}
+    from sympy.assumptions.assume import AssumptionsContext as _AC
+    from sympy.assumptions.ask import AssumptionKeys as _AK
+    if isinstance(o, _AC):
+        return {"t": "AssumptionsContext", "items": [ser(a) for a in o]}
+    if isinstance(o, _AK):
+        return {"t": "QKeys"}
     if isinstance(o, int):
         return {"t": "Rational", "p": str(o), "q": "1"}
     if isinstance(o, float):
@@ -226,6 +233,10 @@ def ser(o):
             return {"t": "NamedSet", "name": v}
     if isinstance(o, (sympy.And, sympy.Or)):
         return {"t": "BoolOp", "op": type(o).__name__, "args": [ser(i) for i in o.args]}
+    if isinstance(o, sympy.Not) and isinstance(o.args[0], sympy.AppliedPredicate):
+        return {"t": "BoolOp", "op": "Not", "args": [ser(o.args[0])]}
+    if isinstance(o, sympy.AppliedPredicate):
+        return {"t": "Pred", "name": str(o.function).removeprefix("Q."), "args": [ser(a) for a in o.arguments]}
     if isinstance(o, sympy.Wild):
         props = []
         for f in o.properties:
@@ -390,6 +401,8 @@ def main(dst):
                         record = {"fn": call.func.id}
                     elif isinstance(call.func, ast.Attribute):
                         record = {"fn": "." + call.func.attr, "selfSrc": ast.unparse(call.func.value)}
+                from sympy.assumptions import global_assumptions as _ga
+                assumed = list(_ga)
                 try:
                     signal.alarm(10)
                     result = eval(compile(tree, "<doctest>", "eval"), globs)
@@ -412,6 +425,9 @@ def main(dst):
                         record["self"] = ser(eval(record.pop("selfSrc"), globs))
                     record["args"] = [ser_arg(a, globs) for a in call.args]
                     record["kwargs"] = {k.arg: ser_arg(k.value, globs) for k in call.keywords}
+                    if assumed:
+                        # the global assumptions in force (SymPy global_assumptions)
+                        record["assume"] = [ser(a) for a in assumed]
                 except Unsupported as e:
                     # keep the case (it counts as a failure) so the rate is not inflated
                     skipped[str(e)] = skipped.get(str(e), 0) + 1

@@ -81,8 +81,8 @@ export { isTrue, isFalse, isUnknown, truthNot, truthAnd, truthOr, NoMatch, NoMat
 export type { Truth } from './core/truth';
 export { classKey } from './printing/sortkey';
 export { expand_power_base as separate } from './simplify/expand';
-export { Q, ask, refine, AppliedPredicate } from './core/refine';
-export type { Assumption, PredicateName } from './core/refine';
+export { Q, ask, refine, AppliedPredicate, Predicate, registerHandler, removeHandler, AssumptionsContext, globalAssumptions, assuming } from './core/refine';
+export type { Assumption, PredicateName, PredicateHandler } from './core/refine';
 export {
   SympifyError,
   PoleError,

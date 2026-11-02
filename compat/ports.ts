@@ -213,4 +213,15 @@ export const PORTS: Record<string, () => unknown> = {
   // def func(k, coeff): k = k[0]; return coeff//10**(2-k)
   'sympy.polys.polytools:Poly(x**2 + 20*x + 400).termwise(func)': () =>
     sj.Poly.from(sj.add(sj.pow(x, 2), sj.mul(20, x), 400)).termwise((k, coeff) => sj.floor(sj.mul(coeff, sj.pow(10, -(2 - k[0]!))))),
+  // class SexyPrimePredicate(Predicate): name = "sexyprime"; registered for (Integer, Integer)
+  'sympy.assumptions.assume:ask(Q.sexyprime(5, 11))': () => {
+    const sexyprime = sj.Predicate('sexyprime', (_e, assumptions, [a, b]) =>
+      a instanceof sj.Rational && b instanceof sj.Rational && a.q === 1n && b.q === 1n
+        ? sj.ask(sj.Q.prime(a), assumptions) === true && sj.ask(sj.Q.prime(b), assumptions) === true && (b.p - a.p === 6n || a.p - b.p === 6n)
+        : 'unknown',
+    );
+    return sj.ask(sexyprime(5, 11));
+  },
+  // Q.P = Predicate("P")
+  'sympy.assumptions.assume:Q.P(1)': () => sj.Predicate('P')(1),
 };

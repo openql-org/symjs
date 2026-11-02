@@ -176,7 +176,7 @@ describe('assumptions: Q, ask, refine', () => {
     expect(sj.ask(sj.Q.nonzero(x), sj.Q.prime(x))).toBe(true);
     expect(sj.ask(sj.Q.nonpositive(x), sj.Q.negative(x))).toBe(true);
     expect(sj.ask(sj.Q.commutative(x))).toBe(true);
-    expect(sj.ask(sj.Q.odd(x), sj.Q.odd(x))).toBe('unknown');
+    expect(sj.ask(sj.Q.odd(x), sj.Q.odd(x))).toBe(true);
   });
 });
 

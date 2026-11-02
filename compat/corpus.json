@@ -22,8 +22,16 @@
    "category": "logic"
   },
   {
+   "name": "AppliedPredicate",
+   "category": "assumptions"
+  },
+  {
    "name": "Array",
    "category": "tensor"
+  },
+  {
+   "name": "AssumptionsContext",
+   "category": "assumptions"
   },
   {
    "name": "Atom",
@@ -406,6 +414,10 @@
    "category": "core"
   },
   {
+   "name": "Predicate",
+   "category": "assumptions"
+  },
+  {
    "name": "Product",
    "category": "calculus"
   },
@@ -592,6 +604,10 @@
   {
    "name": "assemble_partfrac_list",
    "category": "simplify"
+  },
+  {
+   "name": "assuming",
+   "category": "assumptions"
   },
   {
    "name": "atan",
@@ -35788,7 +35804,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_876",
+         "name": "Dummy_878",
          "index": 0,
          "assume": {
           "real": true
@@ -130639,7 +130655,19 @@
   },
   {
    "fn": "ask",
-   "unsupportedArg": "AppliedPredicate",
+   "args": [
+    {
+     "t": "Pred",
+     "name": "rational",
+     "args": [
+      {
+       "t": "Const",
+       "name": "pi"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "assumptions",
    "module": "sympy.assumptions.ask",
    "src": "ask(Q.rational(pi))",
@@ -130647,7 +130675,58 @@
   },
   {
    "fn": "ask",
-   "unsupportedArg": "AppliedPredicate",
+   "args": [
+    {
+     "t": "Pred",
+     "name": "even",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "BoolOp",
+     "op": "And",
+     "args": [
+      {
+       "t": "Pred",
+       "name": "even",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Pred",
+       "name": "integer",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "assumptions",
    "module": "sympy.assumptions.ask",
    "src": "ask(Q.even(x*y), Q.even(x) & Q.integer(y))",
@@ -130655,7 +130734,41 @@
   },
   {
    "fn": "ask",
-   "unsupportedArg": "AppliedPredicate",
+   "args": [
+    {
+     "t": "Pred",
+     "name": "prime",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Pred",
+     "name": "integer",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "assumptions",
    "module": "sympy.assumptions.ask",
    "src": "ask(Q.prime(4*x), Q.integer(x))",
@@ -130663,7 +130776,36 @@
   },
   {
    "fn": "ask",
-   "unsupportedArg": "AppliedPredicate",
+   "args": [
+    {
+     "t": "Pred",
+     "name": "positive",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "Rel",
+     "op": "StrictGreaterThan",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "assumptions",
    "module": "sympy.assumptions.ask",
    "src": "ask(Q.positive(x), x > 0)",
@@ -130671,7 +130813,45 @@
   },
   {
    "fn": "refine",
-   "unsupportedArg": "AppliedPredicate",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "2"
+      }
+     ]
+    },
+    {
+     "t": "Pred",
+     "name": "real",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "assumptions",
    "module": "sympy.assumptions.refine",
    "src": "refine(sqrt(x**2), Q.real(x))",
@@ -130679,7 +130859,45 @@
   },
   {
    "fn": "refine",
-   "unsupportedArg": "AppliedPredicate",
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "2"
+      }
+     ]
+    },
+    {
+     "t": "Pred",
+     "name": "positive",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "assumptions",
    "module": "sympy.assumptions.refine",
    "src": "refine(sqrt(x**2), Q.positive(x))",
@@ -130687,7 +130905,31 @@
   },
   {
    "fn": "refine",
-   "unsupportedArg": "AppliedPredicate",
+   "args": [
+    {
+     "t": "Pred",
+     "name": "real",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "Pred",
+     "name": "positive",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "assumptions",
    "module": "sympy.assumptions.refine",
    "src": "refine(Q.real(x), Q.positive(x))",
@@ -130695,11 +130937,311 @@
   },
   {
    "fn": "refine",
-   "unsupportedArg": "AppliedPredicate",
+   "args": [
+    {
+     "t": "Pred",
+     "name": "positive",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "Pred",
+     "name": "real",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "assumptions",
    "module": "sympy.assumptions.refine",
    "src": "refine(Q.positive(x), Q.real(x))",
    "expected": "Q.positive(x)"
+  },
+  {
+   "fn": ".integer",
+   "self": {
+    "t": "QKeys"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "1",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "assumptions",
+   "module": "sympy.assumptions.assume",
+   "src": "Q.integer(1)",
+   "expected": "Q.integer(1)"
+  },
+  {
+   "fn": "ask",
+   "args": [
+    {
+     "t": "Pred",
+     "name": "integer",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "assumptions",
+   "module": "sympy.assumptions.assume",
+   "src": "ask(Q.integer(1))",
+   "expected": "True"
+  },
+  {
+   "fn": ".add",
+   "self": {
+    "t": "AssumptionsContext",
+    "items": [
+     {
+      "t": "Pred",
+      "name": "real",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Pred",
+     "name": "real",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "assumptions",
+   "module": "sympy.assumptions.assume",
+   "src": "global_assumptions.add(Q.real(x))",
+   "expected": "None"
+  },
+  {
+   "fn": "ask",
+   "args": [
+    {
+     "t": "Pred",
+     "name": "real",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "assume": [
+    {
+     "t": "Pred",
+     "name": "real",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "category": "assumptions",
+   "module": "sympy.assumptions.assume",
+   "src": "ask(Q.real(x))",
+   "expected": "True"
+  },
+  {
+   "fn": ".remove",
+   "self": {
+    "t": "AssumptionsContext",
+    "items": []
+   },
+   "args": [
+    {
+     "t": "Pred",
+     "name": "real",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "assume": [
+    {
+     "t": "Pred",
+     "name": "real",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "category": "assumptions",
+   "module": "sympy.assumptions.assume",
+   "src": "global_assumptions.remove(Q.real(x))",
+   "expected": "None"
+  },
+  {
+   "fn": ".add",
+   "self": {
+    "t": "AssumptionsContext",
+    "items": [
+     {
+      "t": "Pred",
+      "name": "positive",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Pred",
+     "name": "positive",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "assumptions",
+   "module": "sympy.assumptions.assume",
+   "src": "global_assumptions.add(Q.positive(x))",
+   "expected": "None"
+  },
+  {
+   "fn": ".clear",
+   "self": {
+    "t": "AssumptionsContext",
+    "items": []
+   },
+   "args": [],
+   "kwargs": {},
+   "assume": [
+    {
+     "t": "Pred",
+     "name": "positive",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "category": "assumptions",
+   "module": "sympy.assumptions.assume",
+   "src": "global_assumptions.clear()",
+   "expected": "None"
+  },
+  {
+   "fn": "ask",
+   "args": [
+    {
+     "t": "Pred",
+     "name": "prime",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "7",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "assumptions",
+   "module": "sympy.assumptions.assume",
+   "src": "ask(Q.prime(7))",
+   "expected": "True"
+  },
+  {
+   "fn": "ask",
+   "args": [
+    {
+     "t": "Pred",
+     "name": "sexyprime",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "11",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "assumptions",
+   "module": "sympy.assumptions.assume",
+   "src": "ask(Q.sexyprime(5, 11))",
+   "expected": "True"
+  },
+  {
+   "fn": ".P",
+   "self": {
+    "t": "QKeys"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "1",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "assumptions",
+   "module": "sympy.assumptions.assume",
+   "src": "Q.P(1)",
+   "expected": "Q.P(1)"
   },
   {
    "fn": "flatten",
@@ -136634,7 +137176,40 @@
   },
   {
    "fn": "sin",
-   "unsupportedArg": "AccumulationBounds",
+   "args": [
+    {
+     "t": "AccumBounds",
+     "min": {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "6"
+       },
+       {
+        "t": "Const",
+        "name": "pi"
+       }
+      ]
+     },
+     "max": {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "3"
+       },
+       {
+        "t": "Const",
+        "name": "pi"
+       }
+      ]
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.accumulationbounds",
    "src": "sin(AccumBounds(pi/6, pi/3))",
@@ -136642,7 +137217,22 @@
   },
   {
    "fn": "exp",
-   "unsupportedArg": "AccumulationBounds",
+   "args": [
+    {
+     "t": "AccumBounds",
+     "min": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "max": {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.accumulationbounds",
    "src": "exp(AccumBounds(0, 1))",
@@ -136650,7 +137240,21 @@
   },
   {
    "fn": "log",
-   "unsupportedArg": "AccumulationBounds",
+   "args": [
+    {
+     "t": "AccumBounds",
+     "min": {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     "max": {
+      "t": "Const",
+      "name": "E"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.accumulationbounds",
    "src": "log(AccumBounds(1, E))",
@@ -136698,7 +137302,27 @@
      }
     ]
    },
-   "unsupportedArg": "AccumulationBounds",
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    },
+    {
+     "t": "AccumBounds",
+     "min": {
+      "t": "Rational",
+      "p": "-1",
+      "q": "1"
+     },
+     "max": {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.accumulationbounds",
    "src": "(x**2 + 2*x + 1).subs(x, AccumBounds(-1, 1))",
@@ -136731,7 +137355,27 @@
      }
     ]
    },
-   "unsupportedArg": "AccumulationBounds",
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    },
+    {
+     "t": "AccumBounds",
+     "min": {
+      "t": "Rational",
+      "p": "-1",
+      "q": "1"
+     },
+     "max": {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.accumulationbounds",
    "src": "((x + 1)**2).subs(x, AccumBounds(-1, 1))",
@@ -136739,7 +137383,35 @@
   },
   {
    "fn": ".intersection",
-   "unsupportedArg": "AccumulationBounds",
+   "self": {
+    "t": "AccumBounds",
+    "min": {
+     "t": "Rational",
+     "p": "1",
+     "q": "1"
+    },
+    "max": {
+     "t": "Rational",
+     "p": "3",
+     "q": "1"
+    }
+   },
+   "args": [
+    {
+     "t": "AccumBounds",
+     "min": {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     "max": {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.accumulationbounds",
    "src": "AccumBounds(1, 3).intersection(AccumBounds(2, 4))",
@@ -136747,7 +137419,35 @@
   },
   {
    "fn": ".intersection",
-   "unsupportedArg": "AccumulationBounds",
+   "self": {
+    "t": "AccumBounds",
+    "min": {
+     "t": "Rational",
+     "p": "1",
+     "q": "1"
+    },
+    "max": {
+     "t": "Rational",
+     "p": "3",
+     "q": "1"
+    }
+   },
+   "args": [
+    {
+     "t": "AccumBounds",
+     "min": {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     },
+     "max": {
+      "t": "Rational",
+      "p": "6",
+      "q": "1"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.accumulationbounds",
    "src": "AccumBounds(1, 3).intersection(AccumBounds(4, 6))",
@@ -136755,7 +137455,42 @@
   },
   {
    "fn": ".intersection",
-   "unsupportedArg": "AccumulationBounds",
+   "self": {
+    "t": "AccumBounds",
+    "min": {
+     "t": "Rational",
+     "p": "1",
+     "q": "1"
+    },
+    "max": {
+     "t": "Rational",
+     "p": "4",
+     "q": "1"
+    }
+   },
+   "args": [
+    {
+     "t": "FiniteSet",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.calculus.accumulationbounds",
    "src": "AccumBounds(1, 4).intersection(FiniteSet(1, 2, 5))",

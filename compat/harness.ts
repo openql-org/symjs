@@ -438,7 +438,19 @@ export function deserialize(tree: Tree): unknown {
       return new JsSet((tree['items'] as Tree[]).map(deserialize));
     case 'BoolOp': {
       const xs = (tree['args'] as Tree[]).map((x) => deserialize(x) as Expr);
-      return tree['op'] === 'And' ? sj.and(...xs) : sj.or(...xs);
+      return tree['op'] === 'And' ? sj.and(...xs) : tree['op'] === 'Not' ? sj.not(xs[0]!) : sj.or(...xs);
+    }
+    case 'AssumptionsContext': {
+      const ctx = new sj.AssumptionsContext();
+      ctx.add(...(tree['items'] as Tree[]).map((x) => deserialize(x) as Expr));
+      return ctx;
+    }
+    case 'QKeys':
+      return sj.Q;
+    case 'Pred': {
+      const p = sj.Q[tree['name'] as string];
+      if (!p) throw new Unsupported(`predicate ${tree['name']}`);
+      return p(...(tree['args'] as Tree[]).map((x) => deserialize(x) as Expr));
     }
     case 'Type':
       return new TypeRef(tree['name'] as string);
@@ -3105,10 +3117,12 @@ Object.assign(ADAPTERS, {
   '.sort_key': (_args, _kw, self) => keyTree(sj.sortKey(asExpr(self))),
   '.dir': (args, kw, self) => (noKw(kw), sj.dir(asExpr(self), asSym(args[0]), asExpr(args[1]))),
   '.separate': (args, kw, self) => sj.separate(asExpr(self), { deep: Boolean(kw['deep'] ?? args[0]), force: Boolean(kw['force'] ?? args[1]) }),
+  ask: (args, kw) => (noKw(kw), none(sj.ask(args[0] as Expr | boolean, args[1] === undefined ? true : (args[1] as Expr | boolean)))),
+  refine: (args, kw) => (noKw(kw), sj.refine(args[0] as Expr, args[1] === undefined ? true : (args[1] as Expr | boolean))),
   '.refine': (args, kw, self) => {
     noKw(kw);
-    if (!(args[0] instanceof sj.AppliedPredicate) && args[0] !== undefined) throw new Unsupported('assumption');
-    return self instanceof Matrix ? sj.refine(self, args[0] as sj.AppliedPredicate | undefined) : sj.refine(asExpr(self), args[0] as sj.AppliedPredicate | undefined);
+    const a = args[0] === undefined ? true : (args[0] as Expr | boolean);
+    return self instanceof Matrix ? sj.refine(self, a) : sj.refine(asExpr(self), a);
   },
   '.lseries': (args, kw, self) => {
     noKw(kw);
@@ -3258,6 +3272,30 @@ export interface Case {
   kwargs?: Record<string, Tree>;
   self?: Tree;
   unsupportedArg?: string;
+  assume?: Tree[];
+}
+
+// assumptions: an AssumptionsContext (global_assumptions) and Q.<predicate>(...)
+for (const m of ['add', 'remove', 'clear'] as const) {
+  const prev = ADAPTERS[`.${m}`];
+  ADAPTERS[`.${m}`] = (args, kw, self) => {
+    if (self instanceof sj.AssumptionsContext) {
+      noKw(kw);
+      if (m === 'clear') self.clear();
+      else self[m](...(args as Expr[]));
+      return null;
+    }
+    if (!prev) throw new Unsupported(`.${m}`);
+    return prev(args, kw, self);
+  };
+}
+for (const name of Object.keys(sj.Q)) {
+  const prev = ADAPTERS[`.${name}`];
+  ADAPTERS[`.${name}`] = (args, kw, self) => {
+    if (self === sj.Q) return (noKw(kw), sj.Q[name]!(...(args as Expr[])));
+    if (!prev) throw new Unsupported(`.${name}`);
+    return prev(args, kw, self);
+  };
 }
 
 export type Outcome = { status: 'pass' } | { status: 'equivalent'; got: string } | { status: 'fail'; got: string } | { status: 'unsupported'; reason: string } | {
@@ -3283,7 +3321,7 @@ export function runCase(c: Case): Outcome {
     const args = (c.args ?? []).map(deserialize);
     const kwargs = Object.fromEntries(Object.entries(c.kwargs ?? {}).map(([k, v]) => [k, deserialize(v)]));
     const self = c.self ? deserialize(c.self) : undefined;
-    const v = adapter(args, kwargs, self);
+    const v = c.assume ? sj.assuming(c.assume.map((t) => deserialize(t) as Expr), () => adapter(args, kwargs, self)) : adapter(args, kwargs, self);
     if (matches(v, c.expected)) return { status: 'pass' };
     const got = fmt(v);
     // the same capability with a different printed form counts as compatible
