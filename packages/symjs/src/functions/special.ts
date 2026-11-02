@@ -118,6 +118,7 @@ function evalFF(x: Expr, k: Expr): Expr | undefined {
 }
 
 function evalRF(x: Expr, k: Expr): Expr | undefined {
+  if (x instanceof Rational && x.isOne) return fn('factorial', [k]);
   if (isInt(k)) {
     if (k.isZero) return S.One;
     if (k.isPositive) return mul(...Array.from({ length: Number(k.p) }, (_, i) => add(x, i)));

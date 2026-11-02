@@ -1660,6 +1660,20 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.as_ordered_terms': exprMethod((e) => new PyList(e instanceof sj.Add ? asOrdered(e) : [e])),
 
   // ---- ODEs
+  rsolve_poly: (args, kw) => (noKw(kw), sj.rsolvePoly((args[0] as PyTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2]))?.[0] ?? null),
+  rsolve_ratio: (args, kw) => (noKw(kw), sj.rsolveRatio((args[0] as PyTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2]))?.[0] ?? null),
+  rsolve_hyper: (args, kw) => (noKw(kw), sj.rsolveHyper((args[0] as PyTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2]))?.[0] ?? null),
+  rsolve: (args, kw) => {
+    noKw(kw);
+    const init = args[2];
+    const pairs =
+      init instanceof PyDict
+        ? init.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as [Expr, Expr])
+        : init instanceof PyTuple
+          ? init.items.map((v, i) => [sj.sympify(i), asExpr(v)] as [Expr, Expr])
+          : undefined;
+    return sj.rsolve(asExpr(args[0]), asExpr(args[1]), pairs) ?? null;
+  },
   homogeneous_order: (args, kw) => (noKw(kw), sj.homogeneousOrder(asExpr(args[0]), ...args.slice(1).map(asExpr)) ?? null),
   dsolve: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'ics') throw new Unsupported(`kwargs ${k}`);

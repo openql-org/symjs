@@ -10,7 +10,7 @@ import { Lt, piecewise } from '../core/logic';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
 import { abs, log, sin, tan } from '../functions/elementary';
-import { bernoulliNumber, factorial } from '../functions/special';
+import { bernoulliNumber, factorial, rf } from '../functions/special';
 import { polyCoefficients, roots } from '../polys/poly';
 import { expandMul as expand } from '../simplify/expand';
 import { Concrete } from './node';
@@ -226,14 +226,53 @@ function productOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
     for (let i = 0n; i <= diff_.p; i++) terms.push(xreplace(f, [[k, add(a, Rational.of(i))]]));
     return mul(...terms);
   }
-  if (!f.has(k)) return pow(f, add(b, mul(-1, a), 1));
-  // k**p from 1 to m
-  if (a instanceof Rational && a.isOne) {
-    if (f.key === k.key) return factorial(b);
-    if (f instanceof Pow && f.base.key === k.key && !f.exp.has(k)) return pow(factorial(b), f.exp);
-    if (f instanceof Mul) {
-      const parts = f.args.map((g) => productOne(g, k, a, b));
-      if (parts.every((p): p is Expr => p !== undefined)) return mul(...parts);
+  return evalProduct(f, k, a, b);
+}
+
+/** Port of SymPy Product._eval_product for the indefinite cases. */
+function evalProduct(term: Expr, k: Sym, a: Expr, n: Expr): Expr | undefined {
+  const count = add(n, mul(-1, a), 1);
+  if (!term.has(k)) return term instanceof Rational && term.isOne ? S.One : pow(term, count);
+  if (a.key === n.key) return xreplace(term, [[k, a]]);
+  const pc = polyCoefficients(expand(term), k);
+  if (pc) {
+    const deg = Math.max(...pc.keys());
+    let rs: Expr[];
+    try {
+      rs = roots(expand(term), k);
+    } catch {
+      rs = [];
+    }
+    const mult = new Map<string, [Expr, number]>();
+    for (const r of rs) {
+      const cur = mult.get(r.key);
+      mult.set(r.key, [r, (cur ? cur[1] : 0) + 1]);
+    }
+    let A: Expr = S.One;
+    let M = 0;
+    for (const [r, m] of mult.values()) {
+      M += m;
+      A = mul(A, pow(rf(add(a, mul(-1, r)), count), m));
+    }
+    if (M < deg) return undefined;
+    return mul(pow(pc.get(deg)!, count), A);
+  }
+  if (term instanceof Mul) {
+    const without = term.args.filter((t) => !t.has(k));
+    const withK = term.args.filter((t) => t.has(k));
+    const parts: Expr[] = [];
+    for (const t of withK) {
+      const p = evalProduct(t, k, a, n);
+      if (p === undefined) return undefined;
+      parts.push(p);
+    }
+    return mul(pow(mul(...without), count), ...parts);
+  }
+  if (term instanceof Pow) {
+    if (!term.base.has(k)) return pow(term.base, summation(term.exp, [k, a, n]));
+    if (!term.exp.has(k)) {
+      const p = evalProduct(term.base, k, a, n);
+      if (p !== undefined) return pow(p, term.exp);
     }
   }
   return undefined;
@@ -254,7 +293,7 @@ export function product(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Ex
   let e = sympify(f);
   for (const [k, a, b] of limits) {
     const r = productOne(e, k, sympify(a), sympify(b));
-    if (r === undefined) return Product(e, [k, a, b]);
+    if (r === undefined || r.key === S.NaN.key) return Product(e, [k, a, b]);
     e = r;
   }
   return e;

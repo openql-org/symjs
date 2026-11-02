@@ -411,3 +411,4 @@ export {
   kroneckerSymbol,
 } from './functions/combinatorial';
 export { expPolar, polarLift, periodicArgument, principalBranch, unbranchedArgument, unpolarify, extractBranchFactor } from './functions/polar';
+export { rsolve, rsolveHyper, rsolvePoly, rsolveRatio } from './solvers/recurr';
