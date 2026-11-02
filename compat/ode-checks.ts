@@ -12,7 +12,38 @@ import * as sj from '../packages/symjs/src';
 import { Expr } from '../packages/symjs/src';
 
 type OdeCheck = { hint: string; eq: string; ics?: [string, string][]; expected: string };
-export type OdeCheckResult = OdeCheck & { got: string; pass: boolean };
+/** exact: same printed solution as SymPy; equivalent: a different form that solves the ODE with as many constants. */
+export type OdeCheckResult = OdeCheck & { got: string; pass: boolean; exact: boolean };
+
+/** Number of distinct integration constants C1, C2, ... in a printed solution. */
+const constantCount = (s: string) => new Set(s.match(/\bC\d+\b/g) ?? []).size;
+
+/** SymPy checkodesol for explicit solutions: substitute and evaluate at test points. */
+function solvesOde(eq: Expr, fx: Expr, x: sj.Sym, sols: Expr[]): boolean {
+  if (!sols.length) return false;
+  for (const s of sols) {
+    if (!(s instanceof sj.Rel) || s.lhs.key !== fx.key || s.rhs.has(fx)) return false;
+    const order = 6;
+    let r = eq;
+    for (let k = order; k >= 1; k--) r = sj.xreplace(r, [[sj.derivative(fx, [[x, k]]), sj.diff(s.rhs, x, k)]]);
+    r = sj.xreplace(r, [[fx, s.rhs]]);
+    const syms = [...sj.freeSymbols(r)];
+    let ok = 0;
+    for (const t of [0.37, 0.83, 1.41]) {
+      const rep = syms.map((v, i) => [v, sj.float(v.name === 'x' ? t : 0.5 + 0.3 * i + t / 7)] as [Expr, Expr]);
+      try {
+        const c = sj.evalf(sj.doit(sj.xreplace(r, rep)), 20).toComplex();
+        if (!Number.isFinite(c.re) || !Number.isFinite(c.im)) continue;
+        if (Math.hypot(c.re, c.im) > 1e-8) return false;
+        ok++;
+      } catch {
+        continue;
+      }
+    }
+    if (ok < 2) return false;
+  }
+  return true;
+}
 
 export function runOdeChecks(): OdeCheckResult[] {
   const data = JSON.parse(readFileSync(new URL('./ode-checks.json', import.meta.url), 'utf8')) as { checks: OdeCheck[] };
@@ -21,15 +52,19 @@ export function runOdeChecks(): OdeCheckResult[] {
   const fx = f(x);
   return data.checks.map((c) => {
     let got: string;
+    let solves = false;
     try {
       const eq = sj.parse(c.eq);
       const ics = c.ics?.map(([k, v]) => [icsKey(k, fx, x), sj.parse(v)] as [Expr, Expr]);
       const r = sj.dsolve(eq, fx, ics ? { ics } : {});
+      const sols = Array.isArray(r) ? r : [r];
       got = Array.isArray(r) ? `[${r.map(String).join(', ')}]` : String(r);
+      solves = !c.ics && solvesOde(eq, fx, x, sols) && constantCount(got) === constantCount(c.expected);
     } catch (e) {
       got = `error: ${(e as Error).message}`;
     }
-    return { ...c, got, pass: got === c.expected };
+    const exact = got === c.expected;
+    return { ...c, got, exact, pass: exact || solves };
   });
 }
 

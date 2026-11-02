@@ -11,6 +11,7 @@
  */
 
 import * as sj from '../packages/symjs/src';
+import { equivalent } from './equivalence';
 import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../packages/symjs/src';
 
 // ---------------------------------------------------------------------------
@@ -2478,7 +2479,7 @@ export interface Case {
   unsupportedArg?: string;
 }
 
-export type Outcome = { status: 'pass' } | { status: 'fail'; got: string } | { status: 'unsupported'; reason: string } | {
+export type Outcome = { status: 'pass' } | { status: 'equivalent'; got: string } | { status: 'fail'; got: string } | { status: 'unsupported'; reason: string } | {
   status: 'error';
   reason: string;
 };
@@ -2492,7 +2493,19 @@ export function runCase(c: Case): Outcome {
     const kwargs = Object.fromEntries(Object.entries(c.kwargs ?? {}).map(([k, v]) => [k, deserialize(v)]));
     const self = c.self ? deserialize(c.self) : undefined;
     const v = adapter(args, kwargs, self);
-    return matches(v, c.expected) ? { status: 'pass' } : { status: 'fail', got: fmt(v) };
+    if (matches(v, c.expected)) return { status: 'pass' };
+    const got = fmt(v);
+    // the same capability with a different printed form counts as compatible
+    const syms = new Map<string, Sym>();
+    const collect = (x: unknown): void => {
+      if (x instanceof Expr) for (const s of sj.freeSymbols(x)) syms.set(s.name, s);
+      else if (x instanceof PyTuple || x instanceof PyList || x instanceof PySet) x.items.forEach(collect);
+      else if (x instanceof PyDict) x.entries.forEach(([k, w]) => (collect(k), collect(w)));
+      else if (x instanceof Matrix) x.data.forEach(collect);
+    };
+    [...args, ...Object.values(kwargs), self].forEach(collect);
+    const input = self !== undefined ? fmt(self) : args.length ? fmt(args[0]) : undefined;
+    return equivalent(got, c.expected, [...syms.values()], { fn: c.fn, input }) ? { status: 'equivalent', got } : { status: 'fail', got };
   } catch (e) {
     if (e instanceof Unsupported) return { status: 'unsupported', reason: e.message };
     return { status: 'error', reason: e instanceof Error ? e.message : String(e) };
