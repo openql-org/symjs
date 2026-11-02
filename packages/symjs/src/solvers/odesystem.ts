@@ -9,7 +9,9 @@
  * solution from variation of parameters.
  */
 
-import { Derivative, Dummy, Expr, ExprLike, I, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
+import { Derivative, Dummy, Expr, ExprLike, I, Integral, Mul, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
+import { Function } from '../core/undef';
+import { dsolve as dsolveOne } from './ode';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { Eq } from '../core/logic';
@@ -42,7 +44,7 @@ export function dsolveSystem(eqsIn: readonly ExprLike[], funcsIn?: readonly Unde
   ];
   const sub = eqs.map((e) => xreplace(e, reps));
   const lin = linearEqToMatrix(sub, [...ds, ...us]);
-  if (!lin) throw new Error('dsolve: only linear first-order systems are supported');
+  if (!lin) return triangularSystem(eqs, funcs);
   const [M, rhs] = lin;
   const Md = Matrix.fromFunction(n, n, (i, j) => M.get(i, j));
   const Mu = Matrix.fromFunction(n, n, (i, j) => M.get(i, n + j));
@@ -51,7 +53,10 @@ export function dsolveSystem(eqsIn: readonly ExprLike[], funcsIn?: readonly Unde
   const MdInv = Md.inv();
   const A = MdInv.mul(Mu).scale(-1).map((e) => simplify(e));
   const b = MdInv.mul(rhs).map((e) => simplify(e));
-  if (A.data.some((e) => e.has(t))) throw new Error('dsolve: only constant-coefficient systems are supported');
+  if (A.data.some((e) => e.has(t))) {
+    if (n === 2 && b.data.every((e) => isZero(e))) return linear2VariableCoefficients(A, funcs, t);
+    return triangularSystem(eqs, funcs);
+  }
   const fundamental = fundamentalSolutions(A, t);
   const Phi = fundamental.reduce((acc, c) => acc.hstack(c));
   const Cs = Array.from({ length: n }, (_, i) => new Sym(`C${i + 1}`));
@@ -121,3 +126,55 @@ function findFunctions(eqs: readonly Expr[]): UndefFn[] {
   return [...seen.values()];
 }
 
+
+/**
+ * x' = f*x + g*y, y' = h*x + p*y with variable coefficients (SymPy's form in
+ * terms of a particular solution x0(t), y0(t)):
+ * x = C1*x0 + C2*x0*Integral(g*F/x0**2), y = C1*y0 + C2*(y0*Integral(g*F/x0**2) + F/x0),
+ * F = exp(Integral(f))*exp(Integral(p)).
+ */
+function linear2VariableCoefficients(A: Matrix, funcs: readonly UndefFn[], t: Sym): Expr[] {
+  const [f, g, , p] = [A.get(0, 0), A.get(0, 1), A.get(1, 0), A.get(1, 1)];
+  const x0 = Function('x0')(t);
+  const y0 = Function('y0')(t);
+  // keep exp(Integral(f))*exp(Integral(p)) as two factors (no automatic combination of the exponents)
+  const Fraw = new Mul([exp(new Integral([p, t])), exp(new Integral([f, t]))]);
+  const Ig = new Integral([mul(g, Fraw, pow(x0, -2)), t]);
+  const [C1, C2] = [new Sym('C1'), new Sym('C2')];
+  return [
+    Eq(funcs[0]!, add(mul(C1, x0), mul(C2, x0, Ig))),
+    Eq(funcs[1]!, add(mul(C1, y0), mul(C2, add(mul(y0, Ig), mul(Fraw, pow(x0, -1)))))),
+  ];
+}
+
+/**
+ * A triangular (possibly nonlinear) system: an equation in one unknown
+ * function is solved first, its solution substituted into the others, and so
+ * on; the constants are numbered in that order.
+ */
+function triangularSystem(eqs: readonly Expr[], funcs: readonly UndefFn[]): Expr[] {
+  const remaining = eqs.map((e, i) => [e, i] as [Expr, number]);
+  const solved = new Map<string, Expr>();
+  let nextC = 1;
+  const out: Expr[] = Array(funcs.length);
+  while (remaining.length) {
+    const idx = remaining.findIndex(([e]) => funcs.filter((f) => !solved.has(f.key) && e.has(f)).length === 1);
+    if (idx < 0) throw new Error('dsolve: only linear or triangular systems are supported');
+    const [e] = remaining.splice(idx, 1)[0]!;
+    const f = funcs.find((g) => !solved.has(g.key) && e.has(g))!;
+    // constants of the solutions already substituted are protected while solving
+    const known = [...solved.values()].flatMap((v) => [...v.freeSymbols()].filter((c) => /^C\d+$/.test(c.name)));
+    const protect = [...new Map(known.map((c) => [c.key, c])).values()].map((c) => [c, new Dummy(c.name)] as [Expr, Expr]);
+    const sub = xreplace(xreplace(e, [...solved.entries()].map(([k, v]) => [funcs.find((g) => g.key === k)!, v] as [Expr, Expr])), protect);
+    const r = dsolveOne(sub, f);
+    const sol = Array.isArray(r) ? r[0]! : r;
+    let rhs = (sol as Rel).rhs;
+    // the new constants continue the numbering
+    const cs = [...rhs.freeSymbols()].filter((c) => /^C\d+$/.test(c.name) && !(c instanceof Dummy)).sort((a, b) => Number(a.name.slice(1)) - Number(b.name.slice(1)));
+    rhs = xreplace(rhs, cs.map((c) => [c, new Sym(`C${nextC++}`)] as [Expr, Expr]));
+    rhs = xreplace(rhs, protect.map(([c, d]) => [d, c] as [Expr, Expr]));
+    solved.set(f.key, rhs);
+    out[funcs.indexOf(f)] = Eq(f, rhs);
+  }
+  return out;
+}

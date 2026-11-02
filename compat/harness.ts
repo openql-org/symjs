@@ -2185,6 +2185,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.together': exprMethod(sj.together),
   numer: exprFn((e) => sj.fraction(e)[0]),
   kroneckersimp: exprFn(sj.kroneckersimp),
+  ratsimpmodprime: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'order' && k !== 'quick') throw new Unsupported(`kwargs ${k}`);
+    const G = (args[1] as JsList).items.map(asExpr);
+    const gens = args.slice(2).map(asSym);
+    return sj.ratsimpmodprime(asExpr(args[0]), G, gens, { ...(kw['order'] ? { order: kw['order'] as 'lex' } : {}), ...(kw['quick'] === false ? { quick: false } : {}) });
+  },
   '.aseries': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'n' && k !== 'hir') throw new Unsupported(`kwargs ${k}`);
     const x = args[0] === undefined ? ([...sj.freeSymbols(asExpr(self))][0] as Sym) : asSym(args[0]);

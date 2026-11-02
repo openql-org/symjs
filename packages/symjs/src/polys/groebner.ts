@@ -200,3 +200,10 @@ export function reduced(f: ExprLike, G: readonly ExprLike[], gens: readonly Sym[
   );
   return [qs.map((q) => toExpr(q, gens)), toExpr(r, gens)];
 }
+
+/** The leading monomial (exponent vector) of a polynomial in the given generators and order. */
+export function leadingMonomial(f: ExprLike, gens: readonly Sym[], order: MonomialOrder = 'lex'): number[] {
+  const l = lead(fromExpr(sympify(f), gens), order);
+  if (!l) throw new Error('leading monomial of zero');
+  return l[0];
+}

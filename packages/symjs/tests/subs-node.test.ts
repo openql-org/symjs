@@ -470,3 +470,20 @@ describe('binomial modulo prime powers, pure quadratics, ImageSet parameters', (
     expect(roots(parse('y**2 + c', { symbols: { y, c } } as never), y, { multiple: true }).map((e) => sstr(e))).toEqual(['-sqrt(-c)', 'sqrt(-c)']);
   });
 });
+
+describe('ratsimpmodprime and further ODE systems', () => {
+  it('match SymPy (and correct where SymPy is not)', async () => {
+    const { ratsimpmodprime, dsolve, sin: s, simplify: simp, sub } = await import('../src');
+    const [x, y, t] = symbols('x y t');
+    const P = (e: string) => parse(e, { symbols: { x, y, t } } as never);
+    expect(sstr(ratsimpmodprime(P('(x + y**5 + y)/(x - y)'), [P('x*y**5 - x - y')], [x, y], { order: 'lex' }))).toBe('(-x**2 - x*y - x - y)/(-x**2 + x*y)');
+    expect(sstr(ratsimpmodprime(P('(x**2+y**2)/(x+y)'), [P('x**2+y**2-1')], [x, y]))).toBe('1/(x + y)');
+    const lin = dsolve(['Eq(Derivative(x(t), t), 12*t*x(t) + 8*y(t))', 'Eq(Derivative(y(t), t), 21*x(t) + 7*t*y(t))'].map(P)) as never as { rhs: never }[];
+    expect(sstr((lin[0] as never))).toBe('Eq(x(t), C1*x0(t) + C2*x0(t)*Integral(8*exp(Integral(7*t, t))*exp(Integral(12*t, t))/x0(t)**2, t))');
+    // SymPy's answer to this system does not satisfy it (checkodesol False); ours does
+    const [xs, ys] = (dsolve(['Eq(Derivative(x(t), t), x(t)*y(t)*sin(t))', 'Eq(Derivative(y(t), t), y(t)**2*sin(t))'].map(P)) as never as { rhs: never }[]).map((e) => e.rhs);
+    expect(sstr(simp(sub(diff(xs!, t), parse('X*Y*sin(t)', { symbols: { X: xs, Y: ys, t } } as never))))).toBe('0');
+    expect(sstr(simp(sub(diff(ys!, t), parse('Y**2*sin(t)', { symbols: { Y: ys, t } } as never))))).toBe('0');
+    void s;
+  });
+});

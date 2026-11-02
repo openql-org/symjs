@@ -11,6 +11,7 @@ import './core';
 export {
   simplify,
 } from './simplify/simplify';
+export { ratsimpmodprime } from './simplify/ratsimpmodprime';
 export { gammasimp, combsimp, hypersimp, hypersimilar, isHypergeometric } from './simplify/gammasimp';
 export {
   besselsimp,
