@@ -11,11 +11,12 @@
  * which are ubiquitous in products of rotation gates.
  */
 
-import { Constant, Expr, ExprLike, Fn, Mul, Pow, S } from '../core/nodes';
+import { Add, Constant, Expr, ExprLike, Fn, Mul, Pow, S } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, neg, sympify } from '../core/ops';
 import { countOps, mapBottomUp, some } from '../core/traverse';
-import { cos, sin } from '../functions/elementary';
+import { cos, cosh, sin, sinh } from '../functions/elementary';
 import { expandMul as expand } from './expand';
+import { rewrite } from './rewrite';
 
 const isE = (e: Expr) => e instanceof Constant && e.name === 'E';
 const isI = (e: Expr) => e instanceof Constant && e.name === 'I';
@@ -110,3 +111,55 @@ export function expsimp(ex: ExprLike): Expr {
   return combineExp(expand(rewriteExp(sympify(ex))));
 }
 
+
+/**
+ * Simplify between exponential and trigonometric/hyperbolic forms (a port of
+ * the main steps of SymPy exptrigsimp): every subexpression is replaced by
+ * the shorter of itself and its exponential form, then pairs
+ * c*exp(a) +- c*exp(-a) are recombined into 2*c*cosh(a) or 2*c*sinh(a).
+ */
+export function exptrigsimp(ex: ExprLike): Expr {
+  const e0 = sympify(ex);
+  const step1 = mapBottomUp(e0, (e) => {
+    if (!some(e, (x) => x instanceof Fn && TRIG_NAMES.has(x.name)) || !(e instanceof Fn || e instanceof Add)) return e;
+    const r = expand(rewrite(e, 'exp'));
+    return countOps(r) < countOps(e) ? r : e;
+  });
+  const step2 = mapBottomUp(step1, (e) => (e instanceof Add ? combineExpPairs(e) : e));
+  return countOps(step2) <= countOps(e0) ? step2 : e0;
+}
+
+function expTerm(t: Expr): [Expr, Expr] | undefined {
+  const factors = t instanceof Mul ? t.args : [t];
+  const i = factors.findIndex((f) => f instanceof Pow && f.base instanceof Constant && f.base.name === 'E');
+  if (i < 0) return undefined;
+  const c = mul(...factors.filter((_, j) => j !== i));
+  return [c, (factors[i] as Pow).exp];
+}
+
+function combineExpPairs(e: Add): Expr {
+  const terms = [...e.args];
+  const used = new Set<number>();
+  const out: Expr[] = [];
+  for (let i = 0; i < terms.length; i++) {
+    if (used.has(i)) continue;
+    const ti = expTerm(terms[i]!);
+    if (ti) {
+      for (let j = i + 1; j < terms.length; j++) {
+        if (used.has(j)) continue;
+        const tj = expTerm(terms[j]!);
+        if (!tj || add(ti[1], tj[1]).key !== S.Zero.key) continue;
+        const [pos, neg_] = couldExtractMinusSign(ti[1]) ? [tj, ti] : [ti, tj];
+        if (pos[0].key === neg_[0].key) {
+          out.push(mul(2, pos[0], cosh(pos[1])));
+        } else if (pos[0].key === neg(neg_[0]).key) {
+          out.push(mul(2, pos[0], sinh(pos[1])));
+        } else continue;
+        used.add(i).add(j);
+        break;
+      }
+    }
+    if (!used.has(i)) out.push(terms[i]!);
+  }
+  return add(...out);
+}

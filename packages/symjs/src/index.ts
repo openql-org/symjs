@@ -204,7 +204,7 @@ export type { PowsimpOptions } from './simplify/powsimp';
 export { radsimp, collect } from './simplify/radsimp';
 export { rewrite, registerRewrite, rewriteRules } from './simplify/rewrite';
 export { gcdTerms, factorTerms, collectConst, signsimp, keepCoeff as keepCoeffSympy, unevaluatedAdd } from './simplify/exprtools';
-export { trigsimp, rewriteExp, rewriteTrig, expsimp, exptotrig, combineExp } from './simplify/trigsimp';
+export { trigsimp, exptrigsimp, rewriteExp, rewriteTrig, expsimp, exptotrig, combineExp } from './simplify/trigsimp';
 export { together, cancel, fraction , ratsimp } from './simplify/rational';
 
 // polynomials

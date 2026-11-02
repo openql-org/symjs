@@ -24,3 +24,13 @@ describe('Integral.principal_value', () => {
     expect(String(principalValue(new Integral([add(x, 1), x, S.NegativeInfinity, S.Infinity])))).toBe('oo');
   });
 });
+
+import { exptrigsimp } from '../src';
+
+describe('exptrigsimp', () => {
+  it('recombines exponentials into hyperbolic functions and back', () => {
+    expect(String(exptrigsimp(parse('exp(z) + exp(-z)')))).toBe('2*cosh(z)');
+    expect(String(exptrigsimp(parse('exp(z) - exp(-z)')))).toBe('2*sinh(z)');
+    expect(String(exptrigsimp(parse('cosh(z) - sinh(z)')))).toBe('exp(-z)');
+  });
+});

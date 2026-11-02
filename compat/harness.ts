@@ -1137,6 +1137,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   cancel: exprFn(sj.cancel),
   trigsimp: exprFn(sj.trigsimp),
+  exptrigsimp: exprFn(sj.exptrigsimp),
   powsimp: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['deep', 'combine', 'force'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     return sj.powsimp(asExpr(args[0]), {
@@ -1420,7 +1421,12 @@ export const ADAPTERS: Record<string, Adapter> = {
       if (a instanceof Matrix) blocks.push(a);
       else if (a instanceof PyTuple) {
         if (unpack && args.length === 1) a.items.forEach((x) => blocks.push(asExpr(x)));
-        else if (a.items.every((r) => r instanceof PyTuple)) blocks.push(Matrix.of(a.items.map((r) => (r as PyTuple).items.map(asExpr))));
+        else if (a.items.every((r) => r instanceof PyTuple)) {
+          // SymPy pads ragged rows with zeros
+          const rows = a.items.map((r) => (r as PyTuple).items.map(asExpr));
+          const w = Math.max(...rows.map((r) => r.length));
+          blocks.push(Matrix.of(rows.map((r) => [...r, ...Array.from({ length: w - r.length }, () => S.Zero)])));
+        }
         else blocks.push(Matrix.col(...a.items.map(asExpr)));
       } else blocks.push(asExpr(a));
     }
