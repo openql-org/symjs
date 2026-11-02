@@ -239,6 +239,22 @@ export class Expander {
   }
 
   private serFn(e: Fn, n: Rational): PS {
+    if (e.args.length > 1) {
+      // several arguments: expand in the only one that depends on the variable
+      const dep = e.args.map((a, i) => [a, i] as const).filter(([a]) => a.has(this.t));
+      if (dep.length !== 1) throw new SeriesError(`cannot expand ${e.name}`);
+      const [g, k] = dep[0]!;
+      const sg = this.ser(g, n.isPositive ? n : S.One);
+      for (const term of sg.terms) {
+        if (term.e.isNegative && !isZeroCoeff(term.c)) throw new SeriesError('essential singularity');
+      }
+      const g0 = sg.coeff(S.Zero);
+      const h = new PS(
+        sg.terms.filter((x) => x.e.isPositive),
+        sg.order,
+      );
+      return this.analytic((w) => fn(e.name, e.args.map((a, i) => (i === k ? w : a))), g0, h, n);
+    }
     const g = e.args[0]!;
     if (e.name === 'log') {
       let sg = this.ser(g, n);

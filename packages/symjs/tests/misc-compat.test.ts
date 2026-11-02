@@ -90,3 +90,16 @@ describe('nested Min/Max collapse (SymPy)', () => {
     expect(String(Min(a, Max(b, Min(c, d, Max(a, e)))))).toBe('Min(a, Max(b, Min(a, c, d)))');
   });
 });
+
+import { arg, atan2 } from '../src';
+
+describe('series of multi-argument functions and nested arg', () => {
+  const [y] = symbols('y');
+  it('atan2 series in either argument', () => {
+    expect(String(series(atan2(x, y), x, 0, 2))).toBe('atan2(0, y) + x/y + O(x**2)');
+    expect(String(series(atan2(x, y), y, 0, 2))).toBe('-y/x + atan2(x, 0) + O(y**2)');
+  });
+  it('arg of nested arg', () => {
+    expect(String(arg(arg(arg(arg(x)))))).toBe('nan');
+  });
+});

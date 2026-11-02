@@ -349,6 +349,16 @@ const evalIm: Evaluator = (x) => {
 };
 
 const evalArg: Evaluator = (x) => {
+  // SymPy: arg(arg(arg(...))) is nan, and so is arg(arg(r)) for real r
+  {
+    let a = x;
+    let depth = 0;
+    while (depth < 3 && a instanceof Fn && a.name === 'arg') {
+      a = a.args[0]!;
+      depth++;
+    }
+    if (depth === 3 || (depth === 2 && isReal(a) === true)) return S.NaN;
+  }
   if (isPositive(x)) return S.Zero;
   // a + b*I with real numeric a, b
   if (x.freeSymbols().size === 0 && !isReal(x)) {
