@@ -361,6 +361,13 @@ const polyFn =
       v instanceof sj.Poly ? (asPolys ? v : v.asExpr()) : v instanceof PyTuple ? new PyTuple(v.items.map(out), v.isList) : v instanceof PyList ? new PyList(v.items.map(out)) : Array.isArray(v) ? new PyList(v.map(out)) : v;
     return out(f(ps, extra));
   };
+/** SymPy solve_poly_system / solve_triangulated (Gröbner basis, solutions sorted by default_sort_key). */
+function polySystemSolutions(args: unknown[], kw: Record<string, unknown>, rationalOnly = false): unknown {
+  noKw(kw);
+  const eqs = (args[0] as PyList | PyTuple).items.map(asExpr);
+  const syms = args.slice(1).map(asSym);
+  return new PyList(sj.solvePolySystem(eqs, syms, { rationalOnly }).map((t) => new PyTuple(t)));
+}
 const asSym = (v: unknown): Sym => {
   if (v instanceof Sym) return v;
   throw new Unsupported('expected a symbol');
@@ -1272,6 +1279,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     } else throw new Unsupported('linsolve form');
     return sol ? new PySet([new PyTuple(sol)]) : 'EmptySet';
   },
+  solve_poly_system: (args, kw) => polySystemSolutions(args, kw),
+  solve_triangulated: (args, kw) => polySystemSolutions(args, kw, true),
   nonlinsolve: (args, kw) => {
     noKw(kw);
     const eqs = (args[0] as PyTuple).items.map(asExpr);

@@ -8,7 +8,10 @@
 
 import { Expr, ExprLike, Rational, Sym } from '../core/nodes';
 import { mul, sympify } from '../core/ops';
-import { freeSymbols } from '../core/traverse';
+import { freeSymbols, xreplace } from '../core/traverse';
+import { groebner } from '../polys/groebner';
+import { roots } from '../polys/poly';
+import { compareKeys, sortKey } from '../printing/sortkey';
 import { Poly, factorListExpr, sortGens } from '../polys/sympoly';
 import { expand } from '../simplify/expand';
 
@@ -124,4 +127,56 @@ function cmpSysKey(a: Key[], b: Key[]): number {
     if (a.length !== b.length) return a.length - b.length;
   }
   return 0;
+}
+
+/**
+ * Solve a zero-dimensional polynomial system with a lexicographic Gröbner
+ * basis (SymPy solve_poly_system / solve_generic). Solutions are tuples in
+ * the order of `gens`, sorted like SymPy (default_sort_key). Throws for
+ * systems that are not zero-dimensional.
+ */
+export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], opts: { rationalOnly?: boolean } = {}): Expr[][] {
+  const system = eqs.map((e) => expand(sympify(e))).filter((e) => !(e instanceof Rational && e.isZero));
+  const sols = solveReduced(system, gens, true, opts.rationalOnly ?? false);
+  return sols.sort((a, b) => {
+    for (let i = 0; i < a.length; i++) {
+      const c = compareKeys(sortKey(a[i]!), sortKey(b[i]!));
+      if (c) return c;
+    }
+    return 0;
+  });
+}
+
+function solveReduced(system: Expr[], gens: readonly Sym[], entry: boolean, rationalOnly: boolean): Expr[][] {
+  const gen = gens[gens.length - 1]!;
+  const distinctRoots = (f: Expr): Expr[] => {
+    const seen = new Map<string, Expr>();
+    for (const r of roots(f, gen)) if (!rationalOnly || r instanceof Rational) seen.set(r.key, r);
+    return [...seen.values()];
+  };
+  if (system.length === 1 && gens.length === 1) return distinctRoots(system[0]!).map((z) => [z]);
+  if (gens.length === 1) {
+    // common roots (works for algebraic coefficients, unlike the Gröbner basis over QQ)
+    const [first, ...others] = [...system].sort((a, b) => Poly.from(a, [gen]).degree() - Poly.from(b, [gen]).degree());
+    return distinctRoots(first!)
+      .filter((z) => others.every((o) => expand(xreplace(o, [[gen, z]])).equals(Rational.of(0))))
+      .map((z) => [z]);
+  }
+  const basis = [...groebner(system, [...gens], 'lex').exprs];
+  if (basis.length === 1 && basis[0] instanceof Rational) return [];
+  const others = new Set(gens.slice(0, -1).map((g) => g.key));
+  const univariate = basis.filter((b) => ![...freeSymbols(b)].some((s) => others.has(s.key)) && b.has(gen));
+  if (univariate.length !== 1) throw new Error('solve_poly_system: only zero-dimensional systems are supported');
+  const f = univariate[0]!;
+  const zeros = distinctRoots(f);
+  if (basis.length === 1) return zeros.map((z) => [z]);
+  const out: Expr[][] = [];
+  const rest = basis.filter((b) => b !== f);
+  for (const z of zeros) {
+    const sub = rest.map((b) => expand(xreplace(b, [[gen, z]]))).filter((b) => !(b instanceof Rational && b.isZero));
+    if (sub.some((b) => b.freeSymbols().size === 0)) continue;
+    for (const s of solveReduced(sub, gens.slice(0, -1), false, rationalOnly)) out.push([...s, z]);
+  }
+  if (entry && out.length && out[0]!.length !== gens.length) throw new Error('solve_poly_system: only zero-dimensional systems are supported');
+  return out;
 }

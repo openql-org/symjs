@@ -14,7 +14,7 @@ import { powsimp } from './powsimp';
 import { factorTerms } from './exprtools';
 import { radsimp } from './radsimp';
 import { cancel } from './rational';
-import { exptotrig, expsimp, hasTrig } from './trigsimp';
+import { exptotrig, expsimp, hasTrig, trigsimp } from './trigsimp';
 
 const hasDenominator = (e: Expr): boolean =>
   some(e, (x) => x instanceof Pow && splitCoeff(x.exp)[0].isNegative && !x.base.isNumber);
@@ -50,7 +50,7 @@ function simplifyCore(e: Expr): Expr {
       bestCost = cost;
     }
   }
-  return best;
+  return hasTrig(best) ? trigsimp(best) : best;
 }
 
 /**
