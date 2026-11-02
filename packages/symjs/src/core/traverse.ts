@@ -177,9 +177,28 @@ function splitAddCoeff(e: Expr): [Expr, Expr] {
   return [Rational.of(0n), e];
 }
 
+/** Variables bound by a definite Integral or a Sum/Product (SymPy bound_symbols). */
+export function boundSymbols(e: Expr): Expr[] {
+  if (e instanceof Integral && e.args.length === 4) return [e.args[1]!];
+  if (e instanceof Concrete) return e.limits.map(([k]) => k);
+  return [];
+}
+
 function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
   if (e.key === old.key) return nw;
   if (e.args.length === 0) return e;
+  // a bound variable is not free: only the limits are substituted
+  const bound = boundSymbols(e);
+  if (bound.length && bound.some((b) => old.key === b.key)) {
+    if (e instanceof Integral) {
+      const [f, v, a, b] = e.args as [Expr, Expr, Expr, Expr];
+      const a2 = subsOne(a, old, nw);
+      const b2 = subsOne(b, old, nw);
+      return a2 === a && b2 === b ? e : rebuild(e, [f, v, a2, b2]);
+    }
+    const args = e.args.map((a, i) => (i === 0 || (i - 1) % 3 === 0 ? a : subsOne(a, old, nw)));
+    return args.some((a, i) => a !== e.args[i]) ? rebuild(e, args) : e;
+  }
   const r = evalSubs(e, old, nw);
   if (r !== undefined) return r;
   const args = e.args.map((a) => subsOne(a, old, nw));
@@ -217,7 +236,13 @@ export function freeSymbols(e: Expr): Set<Sym> {
   const out = new Map<string, Sym>();
   const go = (x: Expr) => {
     if (x instanceof Sym) out.set(x.key, x);
-    else if (x instanceof Concrete) {
+    else if (x instanceof Integral && x.args.length === 4) {
+      // the integration variable of a definite integral is bound
+      const v = x.args[1]!;
+      for (const s of freeSymbols(x.args[0]!)) if (s.key !== v.key) out.set(s.key, s);
+      go(x.args[2]!);
+      go(x.args[3]!);
+    } else if (x instanceof Concrete) {
       // bound summation variables are not free
       const bound = new Set(x.limits.map(([k]) => k.key));
       for (const s of freeSymbols(x.function)) if (!bound.has(s.key)) out.set(s.key, s);

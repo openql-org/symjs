@@ -102,7 +102,9 @@ pnpm golden      # regenerate the SymPy expectations of the golden tests
 
 See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable gaps:
 
-- Arbitrary-precision numerics (`evalf(n)`, `Float(..., dps)`): numeric evaluation is double precision
-- Pattern matching (`Wild`, `match`, `replace`) and most `rewrite` targets
-- Sets, inequalities (`solveset`, `reduce_inequalities`), `RootOf` and cubic/quartic formulas
-- Non-commutative symbols and the quantum module (`sympy.physics.quantum`) are not ported yet
+- `simplify` is a lighter heuristic than SymPy's; results can differ in form
+- Algebraic extensions and finite fields in `factor` (`extension=`, `gaussian=`, `modulus=`), `RootOf`/`RootSum`
+- Integration beyond the implemented heuristics (no Risch or Meijer G algorithms yet)
+- ODE solving covers a few hints only; systems, PDEs and Diophantine equations are not ported
+- No public API yet for extend modules to register their own expression node types
+- `adjoint`/`Dagger` and expression-level `transpose` are not in the base module yet
