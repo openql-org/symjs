@@ -1443,6 +1443,29 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   solve_poly_system: (args, kw) => polySystemSolutions(args, kw),
   solve_triangulated: (args, kw) => polySystemSolutions(args, kw, true),
+  substitution: (args, kw) => {
+    noKw(kw);
+    // SymPy solveset.substitution(system, symbols, result=[{}], known_symbols=[], exclude=[], all_symbols=None)
+    const eqs = (args[0] as PyTuple).items.map(asExpr);
+    const syms = (args[1] as PyTuple).items.map(asSym);
+    const results = args[2] instanceof PyTuple ? args[2].items.map((d) => (d as PyDict).entries.map(([k, v]) => [asExpr(k), asExpr(v)] as [Expr, Expr])) : [[]];
+    const exclude = args[4] instanceof PySet ? args[4].items.map(asExpr) : args[4] instanceof PyTuple ? args[4].items.map(asExpr) : [];
+    const all = args[5] instanceof PyTuple ? args[5].items.map(asSym) : syms;
+    const out: Expr[][] = [];
+    for (const known of results) {
+      const sub = eqs.map((e) => sj.expand(sj.subs(e, known))).filter((e) => !(e instanceof sj.Rational && e.isZero));
+      const free = syms.filter((v) => !known.some(([k]) => k.key === v.key));
+      const sols = free.length ? sj.nonlinsolve(sub, free) : sub.length ? [] : [[]];
+      for (const sol of sols) {
+        const vals = new Map<string, Expr>(known.map(([k, v]) => [k.key, v]));
+        free.forEach((v, i) => vals.set(v.key, sol[i]!));
+        const rep = [...vals.entries()].map(([k, v]) => [[...syms, ...all].find((s) => s.key === k)!, v] as [Expr, Expr]);
+        if (exclude.some((ex) => sj.expand(sj.subs(ex, rep)).equals(S.Zero))) continue;
+        out.push(all.map((v) => vals.get(v.key) ?? v));
+      }
+    }
+    return out.length ? new PySet(out.map((t) => new PyTuple(t))) : 'EmptySet';
+  },
   nonlinsolve: (args, kw) => {
     noKw(kw);
     const eqs = (args[0] as PyTuple).items.map(asExpr);
