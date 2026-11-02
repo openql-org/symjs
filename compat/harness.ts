@@ -561,7 +561,7 @@ export function deserialize(tree: Tree): unknown {
       return new sj.Dummy(tree['name'] as string, a, 1_000_000 + (tree['index'] as number));
     }
     case 'UFn':
-      return sj.Function(tree['name'] as string)(...(tree['args'] as Tree[]).map((a) => deserialize(a) as Expr));
+      return sj.SymFunction(tree['name'] as string)(...(tree['args'] as Tree[]).map((a) => deserialize(a) as Expr));
     case 'Derivative':
       return sj.derivative(
         deserialize(tree['expr'] as Tree) as Expr,
@@ -890,7 +890,7 @@ function toQuery(v: unknown): sj.Query {
 function applyFn(name: string, args: Expr[]): Expr {
   const f = FUNCTIONS[name];
   if (f) return f(args);
-  return sj.Function(name)(...args);
+  return sj.SymFunction(name)(...args);
 }
 
 function matchDict(m: Map<Sym, Expr> | sj.NoMatchResult | undefined): unknown {
@@ -3185,7 +3185,7 @@ Object.assign(ADAPTERS, {
   Atom: generic((...a) => sj.Atom(...a)),
   AtomicExpr: generic((...a) => sj.AtomicExpr(...a)),
   NumberSymbol: generic((...a) => new sj.BasicNode(a, 'NumberSymbol')),
-  Number: (args, kw) => (noKw(kw), sj.Number(typeof args[0] === 'string' ? args[0] : asExpr(args[0]))),
+  Number: (args, kw) => (noKw(kw), sj.SymNumber(typeof args[0] === 'string' ? args[0] : asExpr(args[0]))),
   RealNumber: (args, kw) => ADAPTERS['Float']!(args, kw),
   FunctionClass: (args, kw) => (noKw(kw), new UFnClass(String(args[0]))),
   UnevaluatedExpr: (args, kw) => (noKw(kw), new sj.UnevaluatedExpr(asExpr(args[0]))),
@@ -3418,7 +3418,9 @@ for (const name of Object.keys(sj.Q)) {
 /** Categories whose integer arguments are JS numbers (indices, sizes, sequences). */
 const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor']);
 
-const camel = (n: string): string => (/^[A-Z]/.test(n) ? n : n.replace(/_([a-z0-9])/g, (_m, ch: string) => ch.toUpperCase()));
+/** SymPy names that are JavaScript globals, and the symjs names that do not shadow them. */
+const JS_GLOBAL_RENAMES: Record<string, string> = { Symbol: 'Sym', Number: 'SymNumber', Function: 'SymFunction', Array: 'SymArray', Set: 'SetExpr' };
+const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? (/^[A-Z]/.test(n) ? n : n.replace(/_([a-z0-9])/g, (_m, ch: string) => ch.toUpperCase()));
 
 /** A deserialized argument as the JS value the API takes. */
 function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
@@ -3431,7 +3433,7 @@ function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
   if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [toJs(k, numbers, true), toJs(x, numbers, true)]));
   if (v instanceof JsLambda) return (...xs: unknown[]) => v.call(...xs.map((x) => (typeof x === 'number' ? sj.Rational.of(BigInt(x)) : x)) as Expr[]);
   if (v instanceof JsPred) return (e: Expr) => v.test(e);
-  if (v instanceof UFnClass) return sj.Function(v.name);
+  if (v instanceof UFnClass) return sj.SymFunction(v.name);
   return v;
 }
 
@@ -3520,7 +3522,7 @@ export function hasCounterpart(a: { name: string; owner?: string }): boolean {
   const lib = sj as unknown as Record<string, unknown>;
   // SymPy's true and false are S.true and S.false (reserved words in JavaScript)
   if (a.name === 'true' || a.name === 'false') return true;
-  if (!a.name.startsWith('.')) return lib[camel(a.name)] !== undefined || lib[a.name] !== undefined;
+  if (!a.name.startsWith('.')) return lib[camel(a.name)] !== undefined || (!(a.name in JS_GLOBAL_RENAMES) && lib[a.name] !== undefined);
   const m = camel(a.name.slice(1));
   // a classmethod ported as a function (MatrixExpr.from_index_summation -> fromIndexSummation)
   if (lib[m] !== undefined && typeof lib[m] === 'function' && a.owner === 'MatrixExpr') return true;

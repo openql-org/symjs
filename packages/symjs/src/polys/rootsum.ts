@@ -14,7 +14,7 @@ import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { asIndependent } from '../core/methods';
 import { Lambda, LambdaNode } from '../core/lambda';
-import { Function } from '../core/undef';
+import { SymFunction } from '../core/undef';
 import { diff } from '../calculus/diff';
 import { cancel, fraction, together } from '../simplify/rational';
 import { expandMul } from '../simplify/expand';
@@ -116,7 +116,7 @@ export function apartList(fIn: ExprLike, x: Sym): [Expr, Poly, PartfracTerm[], S
   const [polyPart, P] = P0.divAuto(Q);
   const w = new Dummy('w');
   const a = new Dummy('a');
-  const u = Function('u')(x);
+  const u = SymFunction('u')(x);
   const U = (k: number): Expr => (k === 0 ? u : diff(u, x, k));
   const out: PartfracTerm[] = [];
   for (const [d, n] of Q.sqfListInclude()) {

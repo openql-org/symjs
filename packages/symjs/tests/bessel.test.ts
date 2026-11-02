@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-  Function as Fn,
+  SymFunction as Fn,
   I,
   Rational,
   Sym,

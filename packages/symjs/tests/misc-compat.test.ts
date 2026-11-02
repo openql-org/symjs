@@ -47,7 +47,7 @@ describe('rational_interpolate and harmonic at infinity', () => {
   });
 });
 
-import { Function as Fn, diff, doit, derivative } from '../src';
+import { SymFunction as Fn, diff, doit, derivative } from '../src';
 
 describe('derivatives of undefined functions', () => {
   const f = Fn('f');

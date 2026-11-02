@@ -5,7 +5,7 @@ Status: adopted (2026-11-02) and implemented; it may change by decision of the c
 ## Conventions
 
 1. **Names are camelCase.** SymPy functions keep their SymPy name converted mechanically from snake_case (`factor_list` -> `factorList`, `expand_log` -> `expandLog`).
-2. **Classes use SymPy's names** (`Symbol`, `Integer`, `Rational`, `Float`, `Add`, `Mul`, `Pow`, `Derivative`, `Integral`, `Piecewise`, `Interval`, `FiniteSet`, `And`, ...). Names that are also JavaScript globals (`Symbol`, `Number`, `Function`, `Array`, `Set`) are exported under the SymPy name as well, and each also has a name that does not shadow the global: `Sym`, `SymNumber`, `ImmutableDenseNDimArray`, `SetExpr` (for `Function`, import it renamed: `import { Function as SymFunction }`). A module that also uses the JavaScript global imports the namespace (`import * as sj`) or the non-shadowing name.
+2. **Classes use SymPy's names** (`Integer`, `Rational`, `Float`, `Add`, `Mul`, `Pow`, `Derivative`, `Integral`, `Piecewise`, `Interval`, `FiniteSet`, `And`, ...), **except names that are JavaScript globals**, which would shadow the global wherever they are imported: SymPy `Symbol` is `Sym`, `Number` is `SymNumber`, `Function` is `SymFunction`, `Array` is `SymArray` and `Set` is `SetExpr`. The SymPy spellings `Symbol`, `Number`, `Function` and `Array` remain as deprecated aliases during 0.x and are removed in 1.0.
 3. **Functions are primary; methods are thin aliases.** `subs(e, ...)`, `expand(e)`, ... are the API. `e.subs(...)`, `e.expand()` call the same functions, so unused features stay out of bundles.
 4. **Keyword arguments are a trailing options object** with camelCase keys (`factor(e, { deep: true })`, `solve(e, x, { cubics: false })`). Positional arguments follow SymPy's order.
 5. **Inputs accept `ExprLike`** (expressions, numbers, bigints, strings parsed like `sympify`).
@@ -79,7 +79,7 @@ Notes on the implementation:
 
 | Export | Level | New name | Note |
 |---|---|---|---|
-| `Sym` | stable | `Symbol` | SymPy class name |
+| `Sym` | stable |  | SymPy `Symbol` (renamed: `Symbol` is a JavaScript global) |
 | `Constant` | stable | `NumberSymbol` | pi, E, ... (SymPy NumberSymbol) |
 | `Fn` | experimental | `AppliedFunction` | node class of known functions |
 | `BoolAtom` | stable | `BooleanAtom` | SymPy class name |
@@ -131,7 +131,7 @@ Notes on the implementation:
 | `airybi` | stable |  | SymPy airybi |
 | `airyaiprime` | stable |  | SymPy airyaiprime |
 | `airybiprime` | stable |  | SymPy airybiprime |
-| `functions` | internal |  | symbols(..., { cls: Function }) |
+| `functions` | internal |  | symbols(..., { cls: SymFunction }) |
 | `derivative` | stable | `Derivative` | SymPy class name |
 | `transformIntegral` | stable |  | Integral.transform |
 | `principalValue` | stable |  | Integral.principal_value |

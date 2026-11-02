@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { Dummy, Eq, Function as UFunction, KroneckerDelta, Lambda, Matrix, Poly, Reals, Rational, S, Sum, adjoint, exp, latex, matrixExp, mul, sin, sstr, symbol, symbols, transpose } from '../src';
+import { Dummy, Eq, SymFunction as UFunction, KroneckerDelta, Lambda, Matrix, Poly, Reals, Rational, S, Sum, adjoint, exp, latex, matrixExp, mul, sin, sstr, symbol, symbols, transpose } from '../src';
 import { irregular } from '../src/matrices/linalg';
 import type { MatrixExpr } from '../src/matrices/expressions';
 import {

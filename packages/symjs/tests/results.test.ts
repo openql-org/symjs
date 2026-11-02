@@ -68,7 +68,7 @@ describe('NoMatch, Unsolved, EmptySet and errors', () => {
 });
 
 describe('rsolve returns only complete solutions', () => {
-  const f = sj.Function('f');
+  const f = sj.SymFunction('f');
   const k = new sj.Sym('k', { integer: true });
   const P = (s: string) => sj.parse(s, { symbols: { k }, locals: { f } } as never);
   const show = (r: unknown) => (r instanceof sj.Expr ? sj.str(r) : String(r));
@@ -108,7 +108,7 @@ describe('gammasimp reflection formula', () => {
 
 describe('NotImplementedError', () => {
   it('is thrown for valid input that the methods cannot handle', () => {
-    const f = sj.Function('f');
+    const f = sj.SymFunction('f');
     const x = new sj.Sym('x');
     expect(() => sj.dsolve(sj.parse('Derivative(f(x), x) - sin(f(x)*x)*exp(f(x)**2*x)'), f(x))).toThrow(sj.NotImplementedError);
     expect(() => sj.solve(sj.parse('x + sin(x)*exp(x) - log(x)'), x)).toThrow(sj.NotImplementedError);
@@ -116,7 +116,7 @@ describe('NotImplementedError', () => {
     expect([e.name, e instanceof Error]).toEqual(['NotImplementedError', true]);
   });
   it('invalid input keeps its own error', () => {
-    const f = sj.Function('f');
+    const f = sj.SymFunction('f');
     const x = new sj.Sym('x');
     expect(() => sj.dsolve(x, f(x))).toThrow('not a differential equation');
     expect(() => sj.dsolve(x, f(x))).not.toThrow(sj.NotImplementedError);

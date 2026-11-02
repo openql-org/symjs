@@ -104,10 +104,10 @@ export const MutableSparseNDimArray = /* @__PURE__ */ callableClass(
 export type MutableSparseNDimArray = MutableSparseNDimArrayNode;
 
 /**
- * SymPy Array: ImmutableDenseNDimArray. Exported as `Array`, which shadows
- * JavaScript's Array where it is imported under that name.
+ * SymPy Array (ImmutableDenseNDimArray), named `SymArray` so that it does
+ * not shadow JavaScript's Array where it is imported.
  */
-export { ImmutableDenseNDimArray as Array };
+export { ImmutableDenseNDimArray as SymArray };
 
 /**
  * SymPy ArrayComprehension(function, *limits): the array of `function`

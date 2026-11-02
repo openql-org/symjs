@@ -164,7 +164,7 @@ export const PORTS: Record<string, () => unknown> = {
   'sympy.core.basic:MySin(x).rewrite(cos)': () => sj.rewrite(new MySinCos(x), 'cos'),
 
   'sympy.core.function:(1 + 42**f(x).diff(x)).replace(lambda arg: arg.is_Derivative,\n    lambda arg: arg.as_finite_difference())': () => {
-    const f = sj.Function('f');
+    const f = sj.SymFunction('f');
     return sj.replace(
       sj.add(1, sj.pow(42, sj.diff(f(x), x))),
       (e) => e instanceof sj.Derivative,

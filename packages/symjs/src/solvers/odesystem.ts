@@ -13,7 +13,7 @@ import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Derivative, Dummy, I, Integral, Mul, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
 import { at, cast, defined, first } from '../core/guard';
-import { Function } from '../core/undef';
+import { SymFunction } from '../core/undef';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { Eq } from '../core/logic';
@@ -146,8 +146,8 @@ function findFunctions(eqs: readonly Expr[]): UndefFn[] {
  */
 function linear2VariableCoefficients(A: Matrix, funcs: readonly UndefFn[], t: Sym): Expr[] {
   const [f, g, , p] = [A.get(0, 0), A.get(0, 1), A.get(1, 0), A.get(1, 1)];
-  const x0 = Function('x0')(t);
-  const y0 = Function('y0')(t);
+  const x0 = SymFunction('x0')(t);
+  const y0 = SymFunction('y0')(t);
   // keep exp(Integral(f))*exp(Integral(p)) as two factors (no automatic combination of the exponents)
   const Fraw = new Mul([exp(new Integral([p, t])), exp(new Integral([f, t]))]);
   const Ig = new Integral([mul(g, Fraw, pow(x0, -2)), t]);

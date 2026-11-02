@@ -26,7 +26,7 @@ export {
   Expr,
   Rational,
   Float,
-  Sym as Symbol,
+  Sym,
   Wild,
   WildFunction,
   Dummy,
@@ -101,7 +101,7 @@ export {
 } from './core/errors';
 export { Basic, BasicNode } from './core/basic';
 export { Kind, NumberKind, BooleanKind, UndefinedKind } from './core/kind';
-export { SymNumber as Number, SymNumber, RealNumber, Atom, AtomicExpr, FunctionClass, UnevaluatedExpr, DeferredVector, genericExpr } from './core/classes';
+export { SymNumber, RealNumber, Atom, AtomicExpr, FunctionClass, UnevaluatedExpr, DeferredVector, genericExpr } from './core/classes';
 export { defineFunction, implementedFunction, DefinedFunctionCall } from './core/defun';
 export type { DefinedFunction, FunctionDefinition } from './core/defun';
 export type {
@@ -219,7 +219,7 @@ export {
   diff,
 } from './calculus/diff';
 export {
-  Function,
+  SymFunction,
 } from './core/undef';
 export type { UndefinedFunction } from './core/undef';
 export {
@@ -363,7 +363,6 @@ export type Lambda = LambdaNode;
 
 // ---- deprecated names (kept during 0.x, removed in 1.0; see docs/api-policy.md) ----
 
-import { Sym as _Sym_ } from './core/nodes';
 import { Constant as _Constant_ } from './core/nodes';
 import { Fn as _Fn_ } from './core/nodes';
 import { BoolAtom as _BoolAtom_ } from './core/nodes';
@@ -399,16 +398,14 @@ import { rationalFromFloat as _rationalFromFloat_ } from './core/numberutils';
 import { rationalFromString as _rationalFromString_ } from './core/numberutils';
 import { expandSymbolNames as _expandSymbolNames_ } from './core/numberutils';
 import { factorInt as _factorInt_ } from './core/numbers';
+import { Sym as _Sym_ } from './core/nodes';
+import { SymNumber as _SymNumber_ } from './core/classes';
+import { SymFunction as _SymFunction_ } from './core/undef';
 import { BoolOp as _BoolOp_ } from './core/boolalg';
 import { and as _and_ } from './core/boolalg';
 import { or as _or_ } from './core/boolalg';
 import { not as _not_ } from './core/boolalg';
 
-/** @deprecated Use `Symbol`. */
-export const Sym = _Sym_;
-
-/** @deprecated Use `Symbol`. */
-export type Sym = _Sym_;
 
 /** @deprecated Use `NumberSymbol`. */
 export const Constant = _Constant_;
@@ -544,3 +541,17 @@ export const or = _or_;
 
 /** @deprecated Use `Not`. */
 export const not = _not_;
+
+// SymPy names that are JavaScript globals (this module does not use the globals)
+
+/** @deprecated Use `Sym` (`Symbol` shadows the JavaScript global); removed in 1.0. */
+export const Symbol = _Sym_;
+
+/** @deprecated Use `Sym` (`Symbol` shadows the JavaScript global); removed in 1.0. */
+export type Symbol = _Sym_;
+
+/** @deprecated Use `SymNumber` (`Number` shadows the JavaScript global); removed in 1.0. */
+export const Number = _SymNumber_;
+
+/** @deprecated Use `SymFunction` (`Function` shadows the JavaScript global); removed in 1.0. */
+export const Function = _SymFunction_;

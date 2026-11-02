@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { NoMatch, Rational, Symbol as Sym, isNoMatch, latex, str, symbols } from '../src';
+import { NoMatch, Rational, Sym, isNoMatch, latex, str, symbols } from '../src';
 import { NotImplementedError } from '../src/core/errors';
 import type { NoMatchResult } from '../src/core/truth';
 import {

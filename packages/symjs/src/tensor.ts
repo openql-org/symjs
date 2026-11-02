@@ -9,3 +9,11 @@
 import './core';
 
 export * from './tensor/index';
+
+import { ImmutableDenseNDimArray as _ImmutableDenseNDimArray_ } from './tensor/index';
+
+/** @deprecated Use `SymArray` (`Array` shadows the JavaScript global); removed in 1.0. */
+export const Array = _ImmutableDenseNDimArray_;
+
+/** @deprecated Use `SymArray` (`Array` shadows the JavaScript global); removed in 1.0. */
+export type Array = _ImmutableDenseNDimArray_;

@@ -226,15 +226,15 @@ describe('Expr helpers and base classes', () => {
   });
 
   it('Number, RealNumber, Atom, FunctionClass', () => {
-    expect(s(sj.Number(3))).toBe('3');
-    expect(s(sj.Number(1.5))).toBe('1.50000000000000');
-    expect(s(sj.Number('2/3'))).toBe('2/3');
-    expect(s(sj.Number('-7'))).toBe('-7');
-    expect(s(sj.Number('0.25'))).toBe('0.250000000000000');
-    expect(() => sj.Number('abc')).toThrow(TypeError);
-    expect(() => sj.Number(x)).toThrow(TypeError);
-    expect(sj.Rational.of(1n) instanceof (sj.Number as never)).toBe(true);
-    expect(x instanceof (sj.Number as never)).toBe(false);
+    expect(s(sj.SymNumber(3))).toBe('3');
+    expect(s(sj.SymNumber(1.5))).toBe('1.50000000000000');
+    expect(s(sj.SymNumber('2/3'))).toBe('2/3');
+    expect(s(sj.SymNumber('-7'))).toBe('-7');
+    expect(s(sj.SymNumber('0.25'))).toBe('0.250000000000000');
+    expect(() => sj.SymNumber('abc')).toThrow(TypeError);
+    expect(() => sj.SymNumber(x)).toThrow(TypeError);
+    expect(sj.Rational.of(1n) instanceof (sj.SymNumber as never)).toBe(true);
+    expect(x instanceof (sj.SymNumber as never)).toBe(false);
     expect(new sj.RealNumber(2)).toBeInstanceOf(sj.Float);
     expect(s(sj.Atom())).toBe('Atom()');
     expect(s(sj.AtomicExpr())).toBe('AtomicExpr()');

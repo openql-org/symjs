@@ -11,7 +11,7 @@ import { describe, expect, it } from 'vitest';
 import * as sj from '@symjs/symjs';
 import { fromMathjs, fromMathjsMatrix, fromMathjsString, fromMathjsValue, toMathjs, toMathjsMatrix, toMathjsString, toMathjsValue, type MathInstance, type MathNode } from '../src';
 
-const [x, y] = sj.symbols('x y') as [sj.Symbol, sj.Symbol];
+const [x, y] = sj.symbols('x y') as [sj.Sym, sj.Sym];
 const s = (e: sj.Expr): string => sj.str(e);
 const bigText = (v: unknown): string => (v as { toString(): string }).toString();
 
@@ -44,7 +44,7 @@ describe('symjs -> math.js', () => {
     expect(toMathjsString(new sj.Float(-1.5))).toBe('(-1.50000000000000)');
     expect(toMathjsString(sj.And(sj.Lt(x, 1), sj.Ne(y, 2)))).toBe('((x < 1) and (y != 2))');
     expect(toMathjsString(sj.Not(x))).toBe('(not x)');
-    expect(toMathjsString(sj.Function('f')(x))).toBe('f(x)');
+    expect(toMathjsString(sj.SymFunction('f')(x))).toBe('f(x)');
     expect(toMathjsString(sj.S.true)).toBe('true');
     expect(toMathjsString(2)).toBe('2');
     expect(() => toMathjsString(sj.S.Catalan)).toThrow(TypeError);
@@ -89,7 +89,7 @@ describe('math.js -> symjs', () => {
   });
 
   it('uses given symbols and functions', () => {
-    const [p] = sj.symbols('p', { positive: true }) as [sj.Symbol];
+    const [p] = sj.symbols('p', { positive: true }) as [sj.Sym];
     expect(sj.isPositive(fromMathjs(Sy('p'), { symbols: { p } }))).toBe(true);
     expect(s(fromMathjs(Fn('double', Sy('x')), { functions: { double: (a) => sj.mul(2, a) } }))).toBe('2*x');
     expect(s(fromMathjsString('x', { parse: () => Sy('x') }))).toBe('x');

@@ -19,7 +19,7 @@ import { add, div, exp, mul, neg, pow, sqrt, sub, sympify } from '../core/ops';
 import { fn } from '../functions/elementary';
 import { defined } from '../core/guard';
 import { Eq, rel } from '../core/logic';
-import { Function, derivative } from '../core/undef';
+import { SymFunction, derivative } from '../core/undef';
 
 export interface ParseOptions {
   /** Predefined symbols (by name). */
@@ -373,7 +373,7 @@ class Parser {
         if (this.isOp('(') && !asSymbol) {
           // unknown names applied to arguments are undefined functions (like SymPy's parse_expr)
           const local = this.localFns.get(t.v);
-          const f = local ? (args: Expr[]) => sympify(local(...args)) : (FUNCTIONS[t.v] ?? ((args: Expr[]) => Function(t.v)(...args)));
+          const f = local ? (args: Expr[]) => sympify(local(...args)) : (FUNCTIONS[t.v] ?? ((args: Expr[]) => SymFunction(t.v)(...args)));
           this.next();
           const args: Expr[] = [this.sum()];
           while (this.isOp(',')) {

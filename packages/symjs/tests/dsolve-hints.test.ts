@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 import { describe, expect, it } from 'vitest';
-import { Function as Fn, dsolve, integrate, parse, symbols } from '../src';
+import { SymFunction as Fn, dsolve, integrate, parse, symbols } from '../src';
 
 const [x] = symbols('x');
 const f = Fn('f');

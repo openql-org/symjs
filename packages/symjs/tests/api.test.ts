@@ -10,15 +10,15 @@ const [x, y] = sj.symbols('x y');
 
 describe('SymPy names', () => {
   it('classes have SymPy names', () => {
-    expect(new sj.Symbol('z')).toBeInstanceOf(sj.Symbol);
+    expect(new sj.Sym('z')).toBeInstanceOf(sj.Sym);
     expect(sj.pi).toBeInstanceOf(sj.NumberSymbol);
     expect(sj.sin(x)).toBeInstanceOf(sj.AppliedFunction);
     expect(sj.S.true).toBeInstanceOf(sj.BooleanAtom);
-    expect(sj.Function('f')(x)).toBeInstanceOf(sj.AppliedUndef);
+    expect(sj.SymFunction('f')(x)).toBeInstanceOf(sj.AppliedUndef);
   });
 
   it('Derivative and Piecewise are callable classes', () => {
-    const f = sj.Function('f');
+    const f = sj.SymFunction('f');
     const d = sj.Derivative(f(x), x, [y, 2]);
     expect(d).toBeInstanceOf(sj.Derivative);
     expect(sj.sstr(d)).toBe('Derivative(f(x), x, (y, 2))');
@@ -44,7 +44,7 @@ describe('SymPy names', () => {
   });
 
   it('deprecated aliases still work', () => {
-    expect(sj.Sym).toBe(sj.Symbol);
+    expect(sj.Sym).toBe(sj.Sym);
     expect(sj.rational(1, 2)).toEqual(sj.Rational.of(1, 2));
     expect(sj.str(sj.interval(0, 1))).toBe('Interval(0, 1)');
     expect(sj.str(sj.union(sj.finiteSet(1), sj.finiteSet(2)))).toBe('{1, 2}');

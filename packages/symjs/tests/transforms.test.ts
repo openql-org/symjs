@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { Expr } from '../src';
-import { Eq, Function, Ge, Gt, Le, Lt, Matrix, Ne, Piecewise, S, Symbol, UndefFn, abs, add, and, cos, diff, doit, exp, gamma, latex, mapBottomUp, mul, oo, parse, pi, pow, sin, solve, sqrt, sub, symbols } from '../src';
+import { Eq, SymFunction, Ge, Gt, Le, Lt, Matrix, Ne, Piecewise, S, Sym, UndefFn, abs, add, and, cos, diff, doit, exp, gamma, latex, mapBottomUp, mul, oo, parse, pi, pow, sin, solve, sqrt, sub, symbols } from '../src';
 import {
   CosineTransform,
   DiracDelta,
@@ -49,7 +49,7 @@ describe('sympy.integrals.transforms doctests', () => {
   });
 
   it('_rewrite_gamma', () => {
-    const s = new Symbol('s');
+    const s = new Sym('s');
     const ninf = S.NegativeInfinity;
     expect(show(rewriteGamma(mul(s, add(s, 3), add(s, -1)), s, ninf, oo))).toBe('(((), (-3, 0, 1)), ((-2, 1, 2), ()), 1, 1, -1)');
     expect(show(rewriteGamma(pow(add(s, -1), 2), s, ninf, oo))).toBe('(((), (1, 1)), ((2, 2), ()), 1, 1, 1)');
@@ -64,7 +64,7 @@ describe('sympy.integrals.transforms doctests', () => {
   });
 
   it('_rewrite_sin', () => {
-    const s = new Symbol('s');
+    const s = new Sym('s');
     expect(show(rewriteSin([pi, 0], s, 0, 1))).toBe('(gamma(s), gamma(1 - s), pi)');
     expect(show(rewriteSin([pi, 0], s, 1, 0))).toBe('(gamma(s - 1), gamma(2 - s), -pi)');
     expect(show(rewriteSin([pi, 0], s, -1, 0))).toBe('(gamma(s + 1), gamma(-s), -pi)');
@@ -140,7 +140,7 @@ describe('sympy.integrals.transforms doctests', () => {
 
 describe('sympy.integrals.laplace doctests', () => {
   it('_simplifyconds', () => {
-    const x = new Symbol('x');
+    const x = new Sym('x');
     expect(String(simplifyConds(Lt(abs(pow(x, 2)), 1), x, 1))).toBe('False');
     expect(String(simplifyConds(Lt(abs(pow(x, 2)), 1), x, 2))).toBe('False');
     // symjs evaluates Abs(x**2) to Abs(x)**2 where SymPy keeps Abs(x**2)
@@ -155,13 +155,13 @@ describe('sympy.integrals.laplace doctests', () => {
 
   it('inverse_laplace_transform', () => {
     const [s, t] = symbols('s t');
-    const a = new Symbol('a', { positive: true });
+    const a = new Sym('a', { positive: true });
     expect(String(inverseLaplaceTransform(mul(exp(mul(-1, a, s)), pow(s, -1)), s, t))).toBe('Heaviside(-a + t)');
   });
 
   it('laplace_correspondence', () => {
     const [t, s] = symbols('t s');
-    const [y, Y, z, Z] = [Function('y'), Function('Y'), Function('z'), Function('Z')];
+    const [y, Y, z, Z] = [SymFunction('y'), SymFunction('Y'), SymFunction('z'), SymFunction('Z')];
     const f = laplaceTransform(add(diff(y(t), t), z(t)), t, s, { noconds: true });
     expect(String(laplaceCorrespondence(f, new Map([[y, Y], [z, Z]])))).toBe('s*Y(s) + Z(s) - y(0)');
     const g = inverseLaplaceTransform(Y(s), s, t);
@@ -170,7 +170,7 @@ describe('sympy.integrals.laplace doctests', () => {
 
   it('laplace_initial_conds', () => {
     const [t, s] = symbols('t s');
-    const [y, Y] = [Function('y'), Function('Y')];
+    const [y, Y] = [SymFunction('y'), SymFunction('Y')];
     const f = laplaceTransform(diff(y(t), t, 3), t, s, { noconds: true });
     const g = laplaceCorrespondence(f, new Map([[y, Y]]));
     expect(String(laplaceInitialConds(g, t, new Map([[y, [2, 4, 8, 16, 32]]])))).toBe('s**3*Y(s) - 2*s**2 - 4*s - 8');
@@ -185,7 +185,7 @@ describe('sympy.integrals.laplace doctests', () => {
 
   it("laplace_transform: solving m*x''(t) + d*x'(t) + k*x(t) = 0", () => {
     const [t, s, d, k, m, v] = symbols('t s d k m v');
-    const [x, X] = [Function('x'), Function('X')];
+    const [x, X] = [SymFunction('x'), SymFunction('X')];
     const f = add(mul(m, diff(x(t), t, 2)), mul(d, diff(x(t), t)), mul(k, x(t)));
     let F = laplaceTransform(f, t, s, { noconds: true });
     F = laplaceCorrespondence(F, new Map([[x, X]]));
@@ -199,7 +199,7 @@ describe('sympy.integrals.laplace doctests', () => {
 
 describe('unevaluated transforms', () => {
   const [t, s, x, k, nu] = symbols('t s x k nu');
-  const f = Function('f');
+  const f = SymFunction('f');
 
   it('print like SymPy and evaluate with doit', () => {
     expect(String(new LaplaceTransform(f(t), t, s))).toBe('LaplaceTransform(f(t), t, s)');
@@ -261,7 +261,7 @@ describe('unevaluated transforms', () => {
 
 describe('piecewise functions and derivatives (test_laplace.py)', () => {
   const [s, t, x, w, a] = symbols('s t x w a');
-  const [F, f] = [Function('F'), Function('f')];
+  const [F, f] = [SymFunction('F'), SymFunction('f')];
   it('Piecewise is written with Heaviside', () => {
     expect(show(laplaceTransform(Piecewise([0, Le(t, 0)], [1, Le(t, 1)], [0, true]), t, s))).toBe('(1/s - exp(-s)/s, 0, True)');
     expect(show(laplaceTransform(Piecewise([0, Le(t, 0)], [t, Le(t, 1)], [sub(2, t), Le(t, 2)], [0, true]), t, s))).toBe('(s**(-2) - 2*exp(-s)/s**2 + exp(-2*s)/s**2, 0, True)');
@@ -286,7 +286,7 @@ describe('piecewise functions and derivatives (test_laplace.py)', () => {
 
 describe('Heaviside and DiracDelta', () => {
   it('evaluate like SymPy', () => {
-    const x = new Symbol('x');
+    const x = new Sym('x');
     expect(String(Heaviside(0))).toBe('1/2');
     expect(String(Heaviside(-2))).toBe('0');
     expect(String(Heaviside(3))).toBe('1');
@@ -573,7 +573,7 @@ const FNS: Record<string, (...a: never[]) => unknown> = {
 describe("SymPy's test suites (exact matches)", () => {
   it.each(ROWS.map((r, i) => [i, ...r] as const))('%i %s %j', (_i, fn, args, hints, syms, want) => {
     const table: Record<string, Expr> = {};
-    for (const [n, a] of Object.entries(syms)) table[n] = new Symbol(n, a);
+    for (const [n, a] of Object.entries(syms)) table[n] = new Sym(n, a);
     const conv = (a: string | string[]): unknown => (Array.isArray(a) ? a.map(conv) : a === 'None' ? undefined : fixFunctions(parse(a, { symbols: table })));
     const vals = args.map(conv);
     // inverse_laplace_transform takes the plane as its fourth argument

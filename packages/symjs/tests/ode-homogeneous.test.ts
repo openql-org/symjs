@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../src';
 
-const f = sj.Function('f');
+const f = sj.SymFunction('f');
 const x = new sj.Sym('x');
 const solve = (s: string, hint?: string) => {
   const r = sj.dsolve(sj.parse(s), f(x), hint ? { hint } : {});

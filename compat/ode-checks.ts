@@ -61,7 +61,7 @@ function solvesOde(eq: Expr, fx: Expr, x: sj.Sym, sols: Expr[]): boolean {
 
 export function runOdeChecks(): OdeCheckResult[] {
   const data = JSON.parse(readFileSync(new URL('./ode-checks.json', import.meta.url), 'utf8')) as { checks: OdeCheck[] };
-  const f = sj.Function('f');
+  const f = sj.SymFunction('f');
   const x = new sj.Sym('x');
   const fx = f(x);
   return data.checks.map((c) => {
@@ -88,7 +88,7 @@ function icsKey(k: string, fx: Expr, x: sj.Sym): Expr {
   if (m) {
     const order = m[1]!.split(',').length;
     const at = sj.parse(m[2]!);
-    return sj.derivative(sj.Function('f')(at), [[x, order]]);
+    return sj.derivative(sj.SymFunction('f')(at), [[x, order]]);
   }
   void fx;
   return sj.parse(k);

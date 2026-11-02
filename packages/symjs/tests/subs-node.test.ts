@@ -2,10 +2,10 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 import { describe, expect, it } from 'vitest';
-import { Expr, NoMatch, Derivative, Function, Subs, diff, doit, freeSymbols, latex, parse, sstr, symbols } from '../src';
+import { Expr, NoMatch, Derivative, SymFunction, Subs, diff, doit, freeSymbols, latex, parse, sstr, symbols } from '../src';
 
 const [x, y, z] = symbols('x y z');
-const f = Function('f');
+const f = SymFunction('f');
 
 describe('Subs (SymPy Subs)', () => {
   it('derivative at a point', () => {
@@ -130,8 +130,8 @@ describe('powdenest and finite differences', () => {
     const { powdenest, asFiniteDifference, Derivative: D } = await import('../src');
     const [x, h] = symbols('x h');
     expect(sstr(powdenest(parse('(x**(2*i)*y**(4*i))**z'), { force: true }))).toBe('(x*y**2)**(2*i*z)');
-    const f = Function('f');
-    const dx = Function('dx');
+    const f = SymFunction('f');
+    const dx = SymFunction('dx');
     expect(sstr(asFiniteDifference(D(f(x), x) as never, dx(x), parse('x - h', { symbols: { x, h } } as never)))).toBe(
       '-f(-h + x - dx(-h + x)/2)/dx(-h + x) + f(-h + x + dx(-h + x)/2)/dx(-h + x)',
     );
@@ -433,7 +433,7 @@ describe('classify_ode', () => {
   it('reports the matching hints in SymPy order', async () => {
     const { classifyOde, Eq } = await import('../src');
     const x = symbols('x')[0];
-    const f = Function('f');
+    const f = SymFunction('f');
     expect(classifyOde(Eq(diff(f(x), x), 0), f(x) as never)).toEqual([
       'nth_algebraic', 'separable', '1st_exact', '1st_linear', 'Bernoulli', '1st_homogeneous_coeff_best', '1st_homogeneous_coeff_subs_indep_div_dep',
       '1st_homogeneous_coeff_subs_dep_div_indep', '1st_power_series', 'lie_group', 'nth_linear_constant_coeff_homogeneous', 'nth_linear_euler_eq_homogeneous',

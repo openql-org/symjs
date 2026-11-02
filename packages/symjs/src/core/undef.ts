@@ -17,7 +17,7 @@ export interface UndefinedFunction {
 }
 
 /** Create an undefined function, like SymPy `Function('f')`. */
-export function Function(name: string): UndefinedFunction {
+export function SymFunction(name: string): UndefinedFunction {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) throw new SyntaxError(`Invalid function name: ${name}`);
   const f = (...args: ExprLike[]) => new UndefFn(name, args.map(sympify));
   Object.defineProperty(f, 'functionName', { value: name });
@@ -31,7 +31,7 @@ export function functions(names: string): UndefinedFunction[] {
   return names
     .split(/[\s,]+/)
     .filter(Boolean)
-    .map(Function);
+    .map((n) => SymFunction(n));
 }
 
 /** Build Derivative(expr, (v, n)...), merging repeated consecutive variables. */

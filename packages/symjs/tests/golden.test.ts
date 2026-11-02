@@ -14,7 +14,7 @@ import {
   limit,
   series,
   dsolve,
-  Function,
+  SymFunction,
   latex,
   parse,
   roots,
@@ -68,7 +68,7 @@ function runOp(op: string, e: Expr): string | string[] {
     return str(integrate(e, sym));
   }
   if (op === 'dsolve') {
-    const r = dsolve(e, Function('f')(x));
+    const r = dsolve(e, SymFunction('f')(x));
     return Array.isArray(r) ? `[${r.map(str).join(', ')}]` : str(r);
   }
   if (op.startsWith('series:')) {

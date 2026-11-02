@@ -31,7 +31,7 @@ import { Indexed } from '../src/core/indexed';
 import { isIntegerQ } from '../src/core/assumptions';
 import { NoMatch } from '../src/core/truth';
 import {
-  Array as SArray,
+  SymArray as SArray,
   ArrayComprehension,
   ArrayComprehensionMap,
   ArrayKind,

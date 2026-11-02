@@ -42,4 +42,15 @@ describe('one definition per exported name', () => {
     expect(utilities.connectedComponents(A)).toEqual([[0, 2], [1]]);
     expect(utilities.stronglyConnectedComponents(A)).toEqual([[0, 2], [1]]);
   });
+
+  it('SymPy names that are JavaScript globals are renamed (the old spellings are deprecated aliases)', () => {
+    const lib = root as unknown as Record<string, unknown>;
+    const renames: [string, string][] = [['Symbol', 'Sym'], ['Number', 'SymNumber'], ['Function', 'SymFunction'], ['Array', 'SymArray']];
+    for (const [old, name] of renames) {
+      expect(lib[name]).toBeDefined();
+      expect(lib[old]).toBe(lib[name]);
+    }
+    expect(lib['Set']).toBeUndefined();
+    expect(lib['SetExpr']).toBeDefined();
+  });
 });
