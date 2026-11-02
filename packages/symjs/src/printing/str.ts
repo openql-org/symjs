@@ -171,6 +171,13 @@ function strInner(e: Expr): string {
     return `Limit(${str(f!)}, ${str(z!)}, ${str(z0!)}, dir='${e.dir}')`;
   }
   if (e instanceof Order) {
+    if (e.args.length > 3) {
+      // several variables: O(e, x, y) at 0, O(e, (x, p), (y, p)) elsewhere
+      const vs = e.args.slice(1, -1);
+      const pt = e.args[e.args.length - 1]!;
+      const at0 = pt instanceof Rational && pt.isZero;
+      return `O(${str(e.args[0]!)}, ${vs.map((v) => (at0 ? str(v) : `(${str(v)}, ${str(pt)})`)).join(', ')})`;
+    }
     const [x, v, p] = e.args;
     if (!v || !p || (p instanceof Rational && p.isZero)) return `O(${str(x!)})`;
     return `O(${str(x!)}, (${str(v)}, ${str(p)}))`;

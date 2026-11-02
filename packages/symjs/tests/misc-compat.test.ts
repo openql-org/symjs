@@ -226,3 +226,14 @@ describe('series at poles of gamma and extrema of periodic functions', () => {
     expect(String(minimum(parse('sin(x)*cos(x)'), x))).toBe('-1/2');
   });
 });
+
+import { O } from '../src';
+
+describe('Order terms in several variables (SymPy)', () => {
+  const [xx, yy] = symbols('x y');
+  it('at 0 and at infinity', () => {
+    expect(String(O(parse('1 + x*y')))).toBe('O(1, x, y)');
+    expect(String(O(parse('x**2 + y**2 + x*y**3'), [xx, yy]))).toBe('O(x**2 + y**2, x, y)');
+    expect(String(O(parse('1 + x*y'), [xx, yy], oo))).toBe('O(x*y, (x, oo), (y, oo))');
+  });
+});

@@ -229,6 +229,17 @@ function concreteNode(kind: 'Sum' | 'Product', args: unknown[]): Expr {
 function orderNode(e: unknown, rest: unknown[]): Expr {
   const r = rest[0];
   if (r === undefined) return sj.O(e as Expr);
+  if (rest.length > 1) {
+    // O(e, x, y) or O(e, (x, p), (y, p))
+    if (rest.every((t) => t instanceof Sym)) return sj.O(e as Expr, rest as Sym[]);
+    if (rest.every((t) => t instanceof PyTuple && t.items.length === 2)) {
+      const ts = rest as PyTuple[];
+      const p = ts[0]!.items[1] as Expr;
+      if (ts.some((t) => (t.items[1] as Expr).key !== p.key)) throw new Unsupported('Order points');
+      return sj.O(e as Expr, ts.map((t) => t.items[0] as Sym), p);
+    }
+    throw new Unsupported('Order arguments');
+  }
   if (r instanceof PyTuple && r.items.length === 2) return sj.O(e as Expr, r.items[0] as Sym, r.items[1] as Expr);
   if (r instanceof Sym) return sj.O(e as Expr, r);
   throw new Unsupported('Order arguments');

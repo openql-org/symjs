@@ -7,6 +7,8 @@
 
 import { Add, Expr, ExprLike, Fn, Order, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { add, exp, mul, neg, pow, sympify } from '../core/ops';
+import { Mul } from '../core/nodes';
+import { expandMul } from '../simplify/expand';
 import { mapBottomUp, xreplace as subs } from '../core/traverse';
 import { log, sin } from '../functions/elementary';
 import { Expander } from './puiseux';
@@ -15,10 +17,13 @@ import { Expander } from './puiseux';
  * O(expr) for x -> x0. Like SymPy, the argument is reduced to its leading
  * power: O(x + x**2) = O(x), O(cos(x)) = O(1), O(cos(x), x, pi/2) = O(x - pi/2).
  */
-export function O(ex: ExprLike, x?: Sym, x0: ExprLike = 0): Expr {
+export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): Expr {
   const e = sympify(ex);
   const p = sympify(x0);
   const syms = [...e.freeSymbols()];
+  const vars = Array.isArray(xIn) ? (xIn as readonly Sym[]) : xIn === undefined && syms.length > 1 ? (sortSyms(syms) as Sym[]) : undefined;
+  if (vars && vars.length > 1) return orderMulti(e, vars, p);
+  const x: Sym | undefined = Array.isArray(xIn) ? (xIn as readonly Sym[])[0] : (xIn as Sym | undefined);
   const v = x ?? (syms.length === 1 ? syms[0] : undefined);
   const atZero = p instanceof Rational && p.isZero;
   if (v !== undefined && p instanceof Special && p.name === 'oo' && syms.length === 1) {
@@ -46,6 +51,39 @@ export function O(ex: ExprLike, x?: Sym, x0: ExprLike = 0): Expr {
     // keep the expression as given
   }
   return atZero ? new Order([reduced]) : new Order([reduced, v, p]);
+}
+
+function sortSyms(xs: Sym[]): Sym[] {
+  return [...xs].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+}
+
+/**
+ * Order term in several variables at 0 or oo: the terms of lowest (at 0) or
+ * highest (at oo) total degree, without their coefficients (SymPy Order).
+ */
+function orderMulti(e: Expr, vars: readonly Sym[], p: Expr): Expr {
+  const atZero = p instanceof Rational && p.isZero;
+  const atOo = p instanceof Special && p.name === 'oo';
+  let reduced = e;
+  if (atZero || atOo) {
+    const terms = expandMul(e) instanceof Add ? expandMul(e).args : [expandMul(e)];
+    const deg = (t: Expr): number | undefined => {
+      let d = 0;
+      for (const f of t instanceof Mul ? t.args : [t]) {
+        if (vars.some((v) => v.key === f.key)) d += 1;
+        else if (f instanceof Pow && vars.some((v) => v.key === f.base.key) && f.exp instanceof Rational) d += f.exp.value;
+        else if (f.freeSymbols().size && [...f.freeSymbols()].some((s) => vars.some((v) => v.key === s.key))) return undefined;
+      }
+      return d;
+    };
+    const ds = terms.map(deg);
+    if (ds.every((d) => d !== undefined)) {
+      const target = atZero ? Math.min(...(ds as number[])) : Math.max(...(ds as number[]));
+      const strip = (t: Expr) => mul(...(t instanceof Mul ? t.args : [t]).filter((f) => !(f instanceof Rational || f.freeSymbols().size === 0)));
+      reduced = add(...terms.filter((_, i) => ds[i] === target).map(strip));
+    }
+  }
+  return new Order([reduced, ...vars, p]);
 }
 
 /**
