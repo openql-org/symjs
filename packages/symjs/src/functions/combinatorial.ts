@@ -9,7 +9,7 @@
  * and Kronecker symbols, and the multivariate gamma function.
  */
 
-import { isIntegerQ, isReal as isRealQ } from '../core/assumptions';
+import { isIntegerQ, isNegative, isPositive, isReal as isRealQ } from '../core/assumptions';
 import { Expr, ExprLike, Fn, FnName, Rational, S } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { factorInt } from '../core/numbers';
@@ -270,7 +270,8 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
   genocchi: (n, x) => {
     const k = asInt(n);
     if (k === undefined) {
-      // genocchi(2*n + 1) = 0 for odd arguments > 1
+      // genocchi(n) = 0 for odd n > 1
+      if (x === undefined && isIntegerQ(mul(add(n, -1), R(1, 2))) === true && isPositive(add(n, -1)) === true) return S.Zero;
       return undefined;
     }
     if (k < 0n) return undefined;
@@ -316,7 +317,7 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
   },
   partition: (n) => {
     const k = asInt(n);
-    if (k === undefined) return undefined;
+    if (k === undefined) return isIntegerQ(n) === true && isNegative(n) === true ? S.Zero : undefined;
     if (k < 0n) return S.Zero;
     return R(partitionNumber(Number(k)));
   },
