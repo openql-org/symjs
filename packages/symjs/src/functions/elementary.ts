@@ -228,6 +228,7 @@ const evalLog: Evaluator = (x) => {
     if (x.isOne) return S.Zero;
     if (x.isZero) return S.ComplexInfinity;
     if (x.isNegative) return add(log(numNeg(x)), mul(S.I, S.Pi));
+    if (x.p === 1n && x.q !== 1n) return neg(log(Rational.of(x.q, 1n)));
   }
   if (x instanceof Constant && x.name === 'E') return S.One;
   if (isI(x)) return mul(S.Half, S.I, S.Pi);
@@ -532,7 +533,29 @@ export const atan = (x: ExprLike): Expr => fn('atan', [x]);
 export const sinh = (x: ExprLike): Expr => fn('sinh', [x]);
 export const cosh = (x: ExprLike): Expr => fn('cosh', [x]);
 export const tanh = (x: ExprLike): Expr => fn('tanh', [x]);
-export const log = (x: ExprLike): Expr => fn('log', [x]);
+/**
+ * Natural logarithm, or log(x, base) = log(x)/log(base) like SymPy
+ * (pulling out integer powers of a rational base first).
+ */
+export function log(x: ExprLike, base?: ExprLike): Expr {
+  if (base === undefined) return fn('log', [x]);
+  const b = sympify(base);
+  const a = sympify(x);
+  if (b instanceof Constant && b.name === 'E') return fn('log', [a]);
+  if (b instanceof Rational && b.isOne) return a instanceof Rational && a.isOne ? S.NaN : S.ComplexInfinity;
+  if (b instanceof Rational && b.isInteger && b.p > 1n && a instanceof Rational && !a.isZero) {
+    const count = (v: bigint) => {
+      let m = 0;
+      let w = v < 0n ? -v : v;
+      while (w % b.p === 0n) { w /= b.p; m++; }
+      return m;
+    };
+    let m = count(a.p);
+    if (m === 0) m = -count(a.q);
+    if (m !== 0) return add(m, mul(fn('log', [mul(a, pow(b, -m))]), pow(fn('log', [b]), -1)));
+  }
+  return mul(fn('log', [a]), pow(fn('log', [b]), -1));
+}
 export const abs = (x: ExprLike): Expr => fn('abs', [x]);
 export const re = (x: ExprLike): Expr => fn('re', [x]);
 export const im = (x: ExprLike): Expr => fn('im', [x]);

@@ -142,8 +142,9 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   FallingFactorial: (args) => sj.fn('ff', args),
   exp: ([a]) => sj.exp(a!),
   Abs: ([a]) => sj.abs(a!),
+  log: (args) => sj.log(args[0]!, args[1]),
   ...Object.fromEntries(
-    (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate', 'adjoint', 'transpose', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc', 'exp_polar', 'polar_lift', 'periodic_argument', 'principal_branch'] as const).map(
+    (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 're', 'im', 'arg', 'conjugate', 'adjoint', 'transpose', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc', 'exp_polar', 'polar_lift', 'periodic_argument', 'principal_branch'] as const).map(
       (n) => [n, (args: Expr[]) => sj.fn(n, args)],
     ),
   ),
@@ -1080,6 +1081,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   exp: exprFn(sj.exp),
   Abs: exprFn(sj.abs),
   ...Object.fromEntries(FN_NAMES.map((n) => [n, exprFn((e) => sj.fn(n, [e]))])),
+  log: (args, kw) => {
+    noKw(kw);
+    if (args.length < 1 || args.length > 2) throw new Unsupported('arity');
+    return sj.log(asExpr(args[0]), args[1] === undefined ? undefined : asExpr(args[1]));
+  },
   Eq: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
     if (kw['evaluate'] === false) return new sj.Rel('Eq', asExpr(args[0]), asExpr(args[1] ?? 0));
