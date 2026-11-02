@@ -808,6 +808,36 @@ export const ADAPTERS: Record<string, Adapter> = {
     (['pi', 'E', 'I', 'oo', 'nan', 'zoo', 'Catalan', 'EulerGamma', 'GoldenRatio', 'TribonacciConstant'] as const).map((n) => [n, () => sj.parse(n)] as [string, Adapter]),
   ),
   hypersimp: (args, kw) => (noKw(kw), sj.hypersimp(asExpr(args[0]), asExpr(args[1])) ?? null),
+  hypersimilar: (args, kw) => (noKw(kw), sj.hypersimilar(asExpr(args[0]), asExpr(args[1]), asExpr(args[2]))),
+  rcollect: (args, kw) => (noKw(kw), sj.rcollect(asExpr(args[0]), ...args.slice(1).map(asExpr))),
+  Piecewise: (args, kw) => (noKw(kw), sj.Piecewise(...args.map((a) => (a as PyTuple).items.map((x) => (typeof x === 'boolean' ? x : asExpr(x))) as [Expr, Expr | boolean]))),
+  '.matches': (args, kw, self) => (noKw(kw), matchDict(sj.match(asExpr(args[0]), asExpr(self)))),
+  legendre_symbol: (args, kw) => (noKw(kw), sj.Rational.of(sj.legendreSymbol((args[0] as sj.Rational).p, (args[1] as sj.Rational).p))),
+  motzkin: (args, kw) => (noKw(kw), sj.Rational.of(sj.motzkin(Number((args[0] as sj.Rational).p)))),
+  andre: (args, kw) => (noKw(kw), sj.Rational.of(sj.andre(Number((args[0] as sj.Rational).p)))),
+  PurePoly: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
+    return sj.Poly.from(asExpr(args[0]), args.slice(1).map(asExpr), { pure: true, ...(kw['domain'] ? { domain: String(kw['domain']) } : {}) });
+  },
+  GroebnerBasis: (args, kw) => ADAPTERS['groebner']!([new PyList(args[0] instanceof PyList || args[0] instanceof PyTuple ? args[0].items : [args[0]]), ...args.slice(1)], kw),
+  nth_power_roots_poly: (args, kw) => (noKw(kw), polyOf([args[0]]).nthPowerRootsPoly(Number((args[1] as sj.Rational).p))),
+  det_quick: (args, kw) => (noKw(kw), (args[0] as Matrix).det()),
+  inv_quick: (args, kw) => (noKw(kw), (args[0] as Matrix).inv()),
+  linear_eq_to_matrix: (args, kw) => {
+    noKw(kw);
+    const eqs = args[0] instanceof PyList || args[0] instanceof PyTuple ? args[0].items.map(asExpr) : [asExpr(args[0])];
+    const syms = args[1] instanceof PyList || args[1] instanceof PyTuple ? args[1].items.map(asSym) : args.slice(1).map(asSym);
+    const r = sj.linearEqToMatrix(eqs, syms);
+    if (!r) throw new Error('linear_eq_to_matrix: nonlinear equations');
+    return new PyTuple(r);
+  },
+  '.rref_rhs': matrixMethod((m, [b]) => new PyTuple(sj.rrefRhs(m, b as Matrix))),
+  '.rank_decomposition': matrixMethod((m) => new PyTuple(sj.rankDecomposition(m))),
+  '.inv_mod': matrixMethod((m, [k]) => sj.invMod(m, (k as sj.Rational).p)),
+  '.permute_rows': matrixMethod((m, [p]) => sj.permuteRows(m, (p as PyList).items.map((i) => Number((i as sj.Rational).p)))),
+  '.permute_cols': matrixMethod((m, [p]) => sj.permuteCols(m, (p as PyList).items.map((i) => Number((i as sj.Rational).p)))),
+  '.rmultiply': matrixMethod((m, [b]) => (b as Matrix).mul(m)),
+  '.berkowitz_eigenvals': (args, kw, self) => ADAPTERS['.eigenvals']!(args, kw, self),
   '.is_hypergeometric': (args, kw, self) => (noKw(kw), sj.isHypergeometric(asExpr(self), asExpr(args[0]))),
   '.taylor_term': (args, kw, self) => (noKw(kw), sj.taylorTerm(asExpr(self), Number((args[0] as sj.Rational).p), asSym(args[1]))),
   '.as_immutable': (_a, kw, self) => (noKw(kw), self),

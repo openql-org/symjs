@@ -488,3 +488,29 @@ export function isMotzkin(n: bigint): boolean {
   if (n < 1n) return false;
   return motzkinNumbersInRange(n, n).length > 0;
 }
+
+/** SymPy legendre_symbol(a, p) for an odd prime p: 0, 1 or -1. */
+export function legendreSymbol(a: bigint | number, p: bigint | number): number {
+  const P = BigInt(p);
+  if (P < 3n || !isprime(P)) throw new RangeError('legendre_symbol: p should be an odd prime');
+  return jacobiSymbol(BigInt(a), P);
+}
+
+/** SymPy motzkin(n) (motzkin.find_first_n_motzkins(n)[n - 1]). */
+export function motzkin(n: number): bigint {
+  if (!Number.isInteger(n) || n < 1) throw new RangeError('motzkin: n must be a positive integer');
+  return firstMotzkins(n)[n - 1]!;
+}
+
+/** SymPy andre(n): Euler zigzag (up/down) numbers 1, 1, 1, 2, 5, 16, 61, ... */
+export function andre(n: number): bigint {
+  if (!Number.isInteger(n) || n < 0) throw new RangeError('andre: n must be a nonnegative integer');
+  // Seidel-Entringer triangle
+  let row: bigint[] = [1n];
+  for (let i = 1; i <= n; i++) {
+    const next: bigint[] = [0n];
+    for (let j = 1; j <= i; j++) next.push(next[j - 1]! + row[i - j]!);
+    row = next;
+  }
+  return row[n]!;
+}

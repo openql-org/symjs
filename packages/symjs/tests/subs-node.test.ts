@@ -217,3 +217,22 @@ describe('Lambda, hypersimp and taylor terms', () => {
     expect(sstr(taylorTerm(parse('sin(x)'), 3, x))).toBe('-x**3/6');
   });
 });
+
+describe('rcollect, hypersimilar, number theory and matrix helpers', () => {
+  it('match SymPy', async () => {
+    const { rcollect, hypersimilar, legendreSymbol, motzkin, andre, Matrix, rrefRhs, rankDecomposition, invMod, permuteRows } = await import('../src');
+    const [x, y] = symbols('x y');
+    expect(sstr(rcollect(parse('(x**2*y + x*y + x + y)/(x + y)'), y))).toBe('(x + y*(x**2 + x + 1))/(x + y)');
+    const k = symbols('k')[0];
+    expect(hypersimilar(parse('factorial(k)', { symbols: { k } } as never), parse('factorial(k + 1)', { symbols: { k } } as never), k)).toBe(true);
+    expect([legendreSymbol(3, 7), legendreSymbol(2, 7)]).toEqual([-1, 1]);
+    expect([2, 3, 6].map((n) => motzkin(n))).toEqual([1n, 2n, 21n]);
+    expect([0, 1, 2, 3, 4, 5, 6, 7].map((n) => andre(n))).toEqual([1n, 1n, 1n, 2n, 5n, 16n, 61n, 272n]);
+    const M = Matrix.of([[1, 2], [3, 4]]);
+    expect(rrefRhs(M, Matrix.col(5, 6)).map(String)).toEqual(['Matrix([[1, 0], [0, 1]])', 'Matrix([[-4], [9/2]])']);
+    expect(rankDecomposition(M).map(String)).toEqual(['Matrix([[1, 2], [3, 4]])', 'Matrix([[1, 0], [0, 1]])']);
+    expect(String(invMod(M, 5))).toBe('Matrix([[3, 1], [4, 2]])');
+    expect(String(permuteRows(M, [1, 0]))).toBe('Matrix([[3, 4], [1, 2]])');
+    void x;
+  });
+});

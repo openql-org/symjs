@@ -144,3 +144,11 @@ export function hypersimp(fIn: ExprLike, k: Expr): Expr | undefined {
 export function isHypergeometric(f: ExprLike, k: Expr): boolean {
   return hypersimp(f, k) !== undefined;
 }
+
+/** SymPy hypersimilar(f, g, k): is f/g a rational function of k (after combinatorial simplification)? */
+export function hypersimilar(f: ExprLike, g: ExprLike, k: Expr): boolean {
+  const r = combsimp(mul(sympify(f), pow(sympify(g), -1)));
+  const [n, d] = fraction(cancel(r));
+  const isPoly = (e: Expr) => !e.has(k) || polyCoefficients(expand(e), k as Sym) !== undefined;
+  return isPoly(n) && isPoly(d);
+}

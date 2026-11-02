@@ -89,6 +89,9 @@ export {
   firstMotzkins,
   motzkinNumbersInRange,
   isMotzkin,
+  legendreSymbol,
+  motzkin,
+  andre,
 } from './functions/combinatorial';
 export {
   polarify,

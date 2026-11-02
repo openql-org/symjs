@@ -11,7 +11,7 @@ import './core';
 export {
   simplify,
 } from './simplify/simplify';
-export { gammasimp, combsimp, hypersimp, isHypergeometric } from './simplify/gammasimp';
+export { gammasimp, combsimp, hypersimp, hypersimilar, isHypergeometric } from './simplify/gammasimp';
 export {
   besselsimp,
 } from './simplify/besselsimp';
@@ -25,6 +25,7 @@ export type { PowsimpOptions } from './simplify/powsimp';
 export {
   radsimp,
   collect,
+  rcollect,
 } from './simplify/radsimp';
 export {
   rewrite,

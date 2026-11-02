@@ -11,6 +11,7 @@ import { add, asBaseExp, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { expandMul } from './expand';
 import { fraction } from './rational';
 import { gcdTerms } from './exprtools';
+import { rebuild } from '../core/traverse';
 
 /** Is t a rational multiple of a square root of a positive rational? */
 function sqrtTerm(t: Expr): [Expr, Expr] | undefined {
@@ -139,3 +140,13 @@ export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: { exac
 
 
 impl.collect = (e, syms) => collect(e, syms);
+
+/** SymPy rcollect(expr, *vars): collect recursively, innermost sums first. */
+export function rcollect(ex: ExprLike, ...vars: Expr[]): Expr {
+  const go = (e: Expr): Expr => {
+    if (e.isAtom || !vars.some((v) => e.has(v))) return e;
+    const r = rebuild(e, e.args.map(go));
+    return r instanceof Add ? collect(r, vars) : r;
+  };
+  return go(sympify(ex));
+}

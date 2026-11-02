@@ -714,3 +714,45 @@ export function casoratian(seqs: readonly ExprLike[], n: Expr, zero = true): Exp
   const k = (i: number) => (zero ? Rational.of(i) : add(n, i));
   return Matrix.fromFunction(es.length, es.length, (i, j) => impl.subs(es[j]!, [[n, k(i)]])).det();
 }
+
+/** SymPy Matrix.rref_rhs(rhs): [rref of A, the right-hand side transformed alike]. */
+export function rrefRhs(A: Matrix, rhs: Matrix): [Matrix, Matrix] {
+  const [R] = rref(A.hstack(rhs));
+  const range = (a: number, b: number) => Array.from({ length: b - a }, (_, i) => a + i);
+  return [R.slice(range(0, A.rows), range(0, A.cols)), R.slice(range(0, A.rows), range(A.cols, A.cols + rhs.cols))];
+}
+
+/** SymPy Matrix.rank_decomposition: [C, F] with A = C*F, C the pivot columns of A and F the nonzero rows of rref(A). */
+export function rankDecomposition(A: Matrix): [Matrix, Matrix] {
+  const [R, pivots] = rref(A);
+  const C = Matrix.fromFunction(A.rows, pivots.length, (i, j) => A.get(i, pivots[j]!));
+  const F = Matrix.fromFunction(pivots.length, A.cols, (i, j) => R.get(i, j));
+  return [C, F];
+}
+
+/** SymPy Matrix.inv_mod(m): the inverse modulo m of an integer matrix. */
+export function invMod(A: Matrix, m: number | bigint): Matrix {
+  const M = BigInt(m);
+  const toInt = (e: Expr): bigint => {
+    if (!(e instanceof Rational && e.q === 1n)) throw new Error('inv_mod: integer matrix expected');
+    return ((e.p % M) + M) % M;
+  };
+  const det = toInt(A.det());
+  // inverse of det modulo M by the extended Euclidean algorithm
+  let [r0, r1, s0, s1] = [det, M, 1n, 0n];
+  while (r1 !== 0n) {
+    const q = r0 / r1;
+    [r0, r1, s0, s1] = [r1, r0 - q * r1, s1, s0 - q * s1];
+  }
+  if (r0 !== 1n) throw new Error(`Matrix is not invertible (mod ${M})`);
+  const dinv = ((s0 % M) + M) % M;
+  return A.adjugate().map((e) => Rational.of((((toInt(e) * dinv) % M) + M) % M));
+}
+
+/** SymPy Matrix.permute_rows(perm) / permute_cols(perm) with a list of indices (direction 'forward'). */
+export function permuteRows(A: Matrix, perm: readonly number[]): Matrix {
+  return Matrix.fromFunction(A.rows, A.cols, (i, j) => A.get(perm[i] ?? i, j));
+}
+export function permuteCols(A: Matrix, perm: readonly number[]): Matrix {
+  return Matrix.fromFunction(A.rows, A.cols, (i, j) => A.get(i, perm[j] ?? j));
+}
