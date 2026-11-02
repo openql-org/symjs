@@ -1,0 +1,198 @@
+# Public API policy of `@symjs/symjs`
+
+Status: agreed conventions (2026-11-02); the classification below is a proposal under review.
+
+## Conventions
+
+1. **Names are camelCase.** SymPy functions keep their SymPy name converted mechanically from snake_case (`factor_list` -> `factorList`, `expand_log` -> `expandLog`).
+2. **Classes use SymPy's names** (`Symbol`, `Integer`, `Rational`, `Float`, `Add`, `Mul`, `Pow`, `Derivative`, `Integral`, `Piecewise`, `Interval`, `FiniteSet`, `And`, ...). `Set` is exported as `SetExpr` because JavaScript already has `Set`.
+3. **Functions are primary; methods are thin aliases.** `subs(e, ...)`, `expand(e)`, ... are the API. `e.subs(...)`, `e.expand()` call the same functions, so unused features stay out of bundles.
+4. **Keyword arguments are a trailing options object** with camelCase keys (`factor(e, { deep: true })`, `solve(e, x, { cubics: false })`). Positional arguments follow SymPy's order.
+5. **Inputs accept `ExprLike`** (expressions, numbers, bigints, strings parsed like `sympify`).
+6. **Results have SymPy's structure:** lists are arrays, tuples are fixed-length arrays, dicts are `Map`s keyed by expressions, sets are `SetExpr`. Where SymPy returns either one value or a list (`dsolve`), symjs does the same.
+7. **Failures behave like SymPy:** an error where SymPy raises, an unevaluated object where SymPy returns one (`Integral`, `ConditionSet`, ...).
+8. **Mathematical correctness wins** where SymPy's output is wrong; such cases are documented.
+
+## Stability levels
+
+- **stable**: documented and covered by semantic versioning from 1.0 on.
+- **experimental**: exported, but may change in a minor release (marked `@experimental`).
+- **internal**: implementation details; to be removed from the public entry point.
+- **deprecated**: kept as an alias of the new name during 0.x, removed in 1.0.
+
+Renamed exports keep their old name as a `@deprecated` alias during 0.x. The public API is recorded in an API report (API Extractor) that is reviewed with every change.
+
+## Inventory (461 exports)
+
+| Group | Count | Treatment |
+|---|---:|---|
+| Same name as a SymPy public name | 194 | stable |
+| SymPy name after camelCase conversion | 53 | stable |
+| SymPy method as a function | 62 | stable |
+| symjs-specific or internal | 154 | classified below |
+
+## Classification of symjs-specific and internal exports
+
+| Export | Level | New name | Note |
+|---|---|---|---|
+| `Sym` | stable | `Symbol` | SymPy class name |
+| `Constant` | stable | `NumberSymbol` | pi, E, ... (SymPy NumberSymbol) |
+| `Fn` | experimental | `AppliedFunction` | node class of known functions |
+| `BoolAtom` | stable | `BooleanAtom` | SymPy class name |
+| `Special` | internal |  | oo, zoo, nan are reached through S |
+| `UndefFn` | stable | `AppliedUndef` | SymPy class name |
+| `S` | stable |  | SymPy singleton registry |
+| `compareExpr` | internal |  | use ordered/sortKey |
+| `isRational` | stable |  | SymPy is_Rational |
+| `isFloat` | stable |  | SymPy is_Float |
+| `isSymbol` | stable |  | SymPy is_Symbol |
+| `isAdd` | stable |  | SymPy is_Add |
+| `isMul` | stable |  | SymPy is_Mul |
+| `isPow` | stable |  | SymPy is_Pow |
+| `isFn` | stable | `isFunction` | SymPy is_Function |
+| `isInteger` | stable |  | SymPy is_Integer (type guard) |
+| `isNum` | stable | `isNumber` | SymPy is_Number |
+| `ExtensionExpr` | stable |  | base class for extend modules |
+| `mul` | stable |  | arithmetic helper (SymPy Mul) |
+| `sub` | stable |  | arithmetic helper |
+| `neg` | stable |  | arithmetic helper |
+| `rational` | deprecated | `Rational.of` |  |
+| `splitCoeff` | internal |  | use asCoeffMul |
+| `isReal` | stable |  | assumption query (SymPy is_real) |
+| `isPositive` | stable |  | assumption query |
+| `isNegative` | stable |  | assumption query |
+| `isNonNegative` | stable |  | assumption query |
+| `isNonZero` | stable |  | assumption query |
+| `isZero` | stable |  | assumption query |
+| `isIntegerQ` | stable | `isIntegerValued` | assumption query (SymPy is_integer) |
+| `keepCoeff` | internal |  | SymPy _keep_coeff (private) |
+| `argsCncSplit` | internal |  | use argsCnc |
+| `asTwoTerms` | stable |  | SymPy as_two_terms |
+| `freeSymbols` | stable |  | SymPy free_symbols |
+| `mapBottomUp` | stable | `bottomUp` | SymPy bottom_up |
+| `rebuild` | experimental |  | func(*args) for extension authors |
+| `ordered` | stable |  | SymPy ordered |
+| `countOpsVisual` | internal |  | countOps(e, { visual: true }) |
+| `isInstance` | internal |  |  |
+| `fn` | experimental |  | build a known function by name |
+| `abs` | stable | `Abs` | SymPy class name (abs kept as alias) |
+| `dagger` | experimental |  | SymPy physics Dagger |
+| `beta` | stable |  | SymPy beta |
+| `zeta` | stable |  | SymPy zeta |
+| `besselj` | stable |  | SymPy besselj |
+| `bessely` | stable |  | SymPy bessely |
+| `besseli` | stable |  | SymPy besseli |
+| `besselk` | stable |  | SymPy besselk |
+| `airyai` | stable |  | SymPy airyai |
+| `airybi` | stable |  | SymPy airybi |
+| `airyaiprime` | stable |  | SymPy airyaiprime |
+| `airybiprime` | stable |  | SymPy airybiprime |
+| `functions` | internal |  | symbols(..., { cls: Function }) |
+| `derivative` | stable | `Derivative` | SymPy class name |
+| `transformIntegral` | stable |  | Integral.transform |
+| `principalValue` | stable |  | Integral.principal_value |
+| `doitConcrete` | internal |  | use doit |
+| `reverseOrder` | stable |  | Sum.reverse_order |
+| `Concrete` | experimental |  | node class of Sum/Product |
+| `rel` | internal |  | use Eq, Lt, ... |
+| `piecewise` | stable | `Piecewise` | SymPy class name |
+| `registerRewrite` | experimental |  | rewrite rules for extend modules |
+| `rewriteRules` | internal |  |  |
+| `keepCoeffSympy` | internal |  |  |
+| `unevaluatedAdd` | internal |  |  |
+| `rewriteExp` | internal |  | rewrite(e, 'exp') |
+| `rewriteTrig` | internal |  | rewrite(e, 'cos') |
+| `expsimp` | internal |  |  |
+| `exptotrig` | internal |  |  |
+| `combineExp` | internal |  |  |
+| `UPoly` | internal |  | use Poly |
+| `polyCoefficients` | internal |  | use Poly |
+| `factorPoly` | internal |  | use factorList |
+| `PolificationFailed` | stable |  | SymPy exception |
+| `polyDiv` | stable | `div` | SymPy div |
+| `sortGens` | internal |  |  |
+| `mgcd` | internal |  | use gcd |
+| `mlcm` | internal |  | use lcm |
+| `divExact` | internal |  | use exquo |
+| `CRootOf` | stable |  | SymPy CRootOf |
+| `rootOf` | stable | `rootof` | SymPy rootof |
+| `asEquation` | internal |  |  |
+| `invertEquation` | internal |  | SymPy _invert (private) |
+| `odeOrder` | stable |  | SymPy ode_order |
+| `piecewiseIntegrate` | internal |  | integrate handles Piecewise |
+| `sumIsConvergent` | stable | `isConvergent` | Sum.is_convergent |
+| `sumIsAbsolutelyConvergent` | stable | `isAbsolutelyConvergent` | Sum.is_absolutely_convergent |
+| `symmetrizeExpr` | internal |  | use symmetrize |
+| `evalfPrec` | internal |  | evalf with a binary precision |
+| `toComplex` | experimental |  | double-precision value |
+| `lambdify` | stable |  | SymPy lambdify |
+| `float` | stable |  | Float constructor helper |
+| `precToDps` | stable |  | mpmath prec_to_dps |
+| `dpsToPrec` | stable |  | mpmath dps_to_prec |
+| `str` | stable | `sstr` | SymPy sstr (str kept as alias) |
+| `orderedTerms` | stable | `asOrderedTerms` | SymPy as_ordered_terms |
+| `orderedFactors` | stable | `asOrderedFactors` | SymPy as_ordered_factors |
+| `compareKeys` | internal |  |  |
+| `latex` | stable |  | SymPy latex |
+| `parse` | stable | `parseExpr` | SymPy parse_expr (parse kept as alias) |
+| `ex` | experimental |  | tagged template parser |
+| `matrixExp` | stable |  | Matrix.exp |
+| `matrixLog` | stable |  | Matrix.log |
+| `ldl` | stable | `LDLdecomposition` | Matrix.LDLdecomposition |
+| `luDecomposition` | stable | `LUdecomposition` | Matrix.LUdecomposition |
+| `qrDecomposition` | stable | `QRdecomposition` | Matrix.QRdecomposition |
+| `blockDiag` | stable |  | SymPy block_diag |
+| `permanent` | stable |  | Matrix.permanent |
+| `rationalFromFloat` | internal |  | Rational.fromFloat |
+| `rationalFromString` | internal |  | Rational.fromString |
+| `expandSymbolNames` | internal |  | symbols() parsing |
+| `limitDenominator` | stable |  | Rational.limit_denominator |
+| `factorInt` | stable | `factorint` | SymPy factorint |
+| `extractLeadingOrder` | internal |  |  |
+| `finiteDiffWeights` | stable |  | SymPy finite_diff_weights |
+| `asFiniteDifference` | stable |  | Derivative.as_finite_difference |
+| `SetExpr` | stable |  | SymPy Set (JavaScript Set is taken) |
+| `Interval` | stable |  | SymPy Interval |
+| `FiniteSet` | stable |  | SymPy FiniteSet |
+| `SetOp` | internal |  | Union/Intersection/Complement nodes |
+| `ImageSet` | stable |  | SymPy ImageSet |
+| `ConditionSet` | stable |  | SymPy ConditionSet |
+| `imageSet` | stable | `imageset` | SymPy imageset |
+| `EmptySet` | stable |  | SymPy EmptySet |
+| `Reals` | stable |  | SymPy Reals |
+| `Integers` | stable |  | SymPy Integers |
+| `Naturals` | stable |  | SymPy Naturals |
+| `Naturals0` | stable |  | SymPy Naturals0 |
+| `Complexes` | stable |  | SymPy Complexes |
+| `interval` | deprecated | `Interval.of` |  |
+| `openInterval` | deprecated | `Interval.open` | SymPy Interval.open |
+| `Lopen` | deprecated | `Interval.Lopen` | SymPy Interval.Lopen |
+| `Ropen` | deprecated | `Interval.Ropen` | SymPy Interval.Ropen |
+| `finiteSet` | deprecated | `FiniteSet.of` |  |
+| `union` | stable | `Union` | SymPy class name |
+| `intersection` | stable | `Intersection` | SymPy class name |
+| `complement` | stable | `Complement` | SymPy class name |
+| `contains` | stable |  | Set.contains |
+| `containsQ` | internal |  |  |
+| `isSubset` | stable |  | Set.is_subset |
+| `asRelational` | stable |  | Set.as_relational |
+| `inf` | stable |  | Set.inf |
+| `sup` | stable |  | Set.sup |
+| `BoolOp` | internal |  | And/Or/Not nodes |
+| `and` | stable | `And` | SymPy class name |
+| `or` | stable | `Or` | SymPy class name |
+| `not` | stable | `Not` | SymPy class name |
+| `asExprSetPairs` | stable |  | Piecewise.as_expr_set_pairs |
+| `isprime` | stable |  | SymPy isprime |
+| `firstMotzkins` | experimental |  | motzkin.find_first_n_motzkins |
+| `motzkinNumbersInRange` | experimental |  | motzkin.find_motzkin_numbers_in_range |
+| `isMotzkin` | experimental |  | motzkin.is_motzkin |
+| `factorSystemCond` | stable |  | SymPy factor_system_cond |
+| `symbol` | stable |  | Symbol constructor helper |
+| `expand_mul` | stable | `expandMul` | camelCase |
+| `expand_multinomial` | stable | `expandMultinomial` | camelCase |
+| `expand_power_exp` | stable | `expandPowerExp` | camelCase |
+| `expand_power_base` | stable | `expandPowerBase` | camelCase |
+| `expand_log` | stable | `expandLog` | camelCase |
+| `expand_trig` | stable | `expandTrig` | camelCase |
+| `expand_complex` | stable | `expandComplex` | camelCase |
