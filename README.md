@@ -122,7 +122,34 @@ An extend module defines its own node types by subclassing `ExtensionExpr`
 from `@symjs/symjs`. Implement `withArgs` (used by `subs`, `xreplace` and
 other traversals) and override `printStr`, `printLatex`, `diffSelf`,
 `adjointSelf`, `conjugateSelf` or `transposeSelf` as needed. Override
-`isCommutative` to return `false` for operators and states.
+`isCommutative` to return `false` for operators and states. The hooks
+`rewriteSelf` (SymPy `_eval_rewrite`), `expandSelf` (SymPy
+`_eval_expand_<hint>`, called by `expand(e, { hint: true })`) and `isScalar`
+cover the remaining customizations of a SymPy `Expr` subclass.
+
+## User-defined functions
+
+`defineFunction` is the counterpart of subclassing SymPy's `Function`:
+
+```ts
+import { cos, defineFunction, diff, fn, pi, rewrite, sub, symbols } from '@symjs/symjs';
+
+const [x] = symbols('x');
+const mysin = defineFunction('mysin', {
+  eval: (a) => (a.equals(0) ? 0 : undefined),           // SymPy eval
+  fdiff: ([a]) => cos(a!),                              // SymPy fdiff
+  rewrite: { cos: (a) => fn('cos', [sub(pi.div(2), a)], { evaluate: false }) },
+  evalf: Math.sin,                                      // numeric value
+});
+diff(mysin(x.pow(2)), x);   // 2*x*cos(x**2)
+rewrite(mysin(x), 'cos');   // cos(-x + pi/2)
+```
+
+`implementedFunction(name, f)` attaches a numeric implementation to a
+symbolic function (SymPy `implemented_function`). Objects of your own classes
+are converted by `sympify` when they define a `[sympifyMethod]()` method or
+are registered in `converter` (SymPy `_sympy_` and `converter`), and `parse`
+accepts `locals` with values and functions by name.
 
 ## Current limitations
 

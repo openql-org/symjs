@@ -10,8 +10,8 @@ import { splitCoeff, sympify } from '../core/ops';
 import { countOps, mapBottomUp, some } from '../core/traverse';
 import { combsimp } from './gammasimp';
 import { fn } from '../functions/elementary';
-import { expandMul as expand } from './expand';
-import { powsimp } from './powsimp';
+import { expand_log, expandMul as expand } from './expand';
+import { logcombine, powsimp } from './powsimp';
 import { factorTerms } from './exprtools';
 import { radsimp } from './radsimp';
 import { cancel } from './rational';
@@ -76,11 +76,33 @@ function simplifyCore(e: Expr): Expr {
  * exponential rewriting and rational-function cancellation. The candidate
  * with the fewest nodes wins.
  */
-export function simplify(ex: ExprLike): Expr {
-  const e = mapBottomUp(sympify(ex), (x) =>
+export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
+  const original = sympify(ex);
+  const e = mapBottomUp(original, (x) =>
     x instanceof Fn ? fn(x.name, x.args.map(simplifyCore)) : x,
   );
-  return simplifyCore(e);
+  let r = simplifyCore(e);
+  const measure = opts.measure ?? countOps;
+  const size = (x: Expr): number => {
+    const m = measure(x);
+    return typeof m === 'number' ? m : m.toNumber();
+  };
+  // SymPy: with a custom measure, logarithms are expanded or combined, whichever is shorter
+  if (opts.measure && some(r, (x) => x instanceof Fn && x.name === 'log')) {
+    const choices = [expand_log(r, true), logcombine(r)];
+    r = size(choices[1]!) < size(choices[0]!) ? choices[1]! : choices[0]!;
+  }
+  // SymPy: a result longer than ratio times the input (by the measure) is rejected
+  const ratio = opts.ratio ?? 1.7;
+  return size(r) > ratio * size(original) ? original : r;
+}
+
+/** Options of simplify (SymPy ratio and measure). */
+export interface SimplifyOptions {
+  /** The largest accepted measure(result)/measure(input); default 1.7. */
+  ratio?: number;
+  /** The size of an expression; default countOps. A number or a numeric expression. */
+  measure?: (e: Expr) => number | Expr;
 }
 
 impl.simplify = simplify;

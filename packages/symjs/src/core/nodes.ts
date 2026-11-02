@@ -943,6 +943,30 @@ export abstract class ExtensionExpr extends Expr {
   doitSelf(): Expr | undefined {
     return undefined;
   }
+  /**
+   * SymPy is_scalar. Differentiating a node with respect to itself gives 1
+   * for a scalar and stays an unevaluated Derivative otherwise.
+   */
+  get isScalar(): boolean {
+    return true;
+  }
+  /**
+   * SymPy _eval_rewrite(rule, args): this node rewritten in terms of
+   * `target` (a function or class name such as 'cos'), given its arguments
+   * already rewritten; undefined keeps the node.
+   */
+  rewriteSelf(_target: string, _args: readonly Expr[]): Expr | undefined {
+    return undefined;
+  }
+  /**
+   * SymPy _eval_expand_<hint>: this node expanded by a hint the base module
+   * does not know (expand(e, { double: true }) calls it with 'double'). The
+   * arguments are already expanded when the expansion is deep; `hints`
+   * holds every hint of the call (force, deep, ...). Undefined keeps the node.
+   */
+  expandSelf(_hint: string, _hints: Readonly<Record<string, unknown>>): Expr | undefined {
+    return undefined;
+  }
   protected computeKey(): string {
     return `${this.name}(${this.args.map((a) => a.key).join(',')})`;
   }

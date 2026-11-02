@@ -12,6 +12,7 @@
 
 import * as sj from '../packages/symjs/src';
 import { equivalent } from './equivalence';
+import { PORTS } from './ports';
 import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../packages/symjs/src';
 
 // ---------------------------------------------------------------------------
@@ -113,6 +114,10 @@ export function fmt(v: unknown): string {
   if (v instanceof Matrix) return v.toString();
   if (v instanceof sj.Poly) return v.toString();
   if (v instanceof sj.GroebnerBasis) return v.toString();
+  if (v instanceof sj.Monomial || v instanceof sj.Factors) return v.toString();
+  if (v instanceof Map) return fmt(new JsDict([...v]));
+  if (Array.isArray(v)) return fmt(new JsTuple(v));
+  if (v instanceof Set) return fmt(new JsSet([...v]));
   if (v === -Infinity) return '-oo';
   if (typeof v === 'boolean') return v ? 'True' : 'False';
   if (v === null || v === undefined) return 'None';
@@ -747,9 +752,11 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (!['dps', 'precision'].includes(k)) throw new Unsupported(`Float kwarg ${k}`);
     let num = args[0];
     if (num instanceof JsTuple) {
+      // an mpf tuple (sign, mantissa, exponent[, bitcount]) at the given decimal precision
       const [sg, man, ex] = num.items.map((x) => (x as sj.Rational).p);
-      if (num.items.length !== 3) throw new Unsupported('Float tuple');
-      return new sj.Float({ man: sg ? -man! : man!, exp: Number(ex) }, 53);
+      const d = args[1] ?? kw['dps'];
+      const prec = d === undefined ? 53 : sj.dpsToPrec(intArg(d));
+      return new sj.Float({ man: sg ? -man! : man!, exp: Number(ex) }, prec);
     }
     const d = args[1] ?? kw['dps'];
     const dps = d === undefined ? undefined : typeof d === 'string' ? (d as '') : intArg(d);
@@ -2673,6 +2680,19 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.total_degree': (_a, kw, self) => (noKw(kw), asPoly(self).totalDegree()),
   '.LC': (_a, kw, self) => (noKw(kw), asPoly(self).LC()),
+  // Poly.LT()/ET(): (Monomial, coefficient) of the leading/trailing term
+  '.LT': (_a, kw, self) => {
+    noKw(kw);
+    const p = asPoly(self);
+    const [m, c] = p.LT();
+    return new JsTuple([new sj.Monomial(m, p.gens), c]);
+  },
+  '.ET': (_a, kw, self) => {
+    noKw(kw);
+    const p = asPoly(self);
+    const [m, c] = p.terms().at(-1)!;
+    return new JsTuple([new sj.Monomial(m, p.gens), c]);
+  },
   '.coeffs': (_a, kw, self) => (noKw(kw), new JsList(self instanceof sj.AlgebraicNumber ? self.coeffs() : asPoly(self).coeffs())),
   '.to_root': (_a, kw, self) => {
     noKw(kw);
@@ -2986,6 +3006,16 @@ export type Outcome = { status: 'pass' } | { status: 'equivalent'; got: string }
 };
 
 export function runCase(c: Case): Outcome {
+  const port = PORTS[`${c.module}:${c.src}`];
+  if (port) {
+    // a doctest that needs Python code (classes, lambdas) runs as its JavaScript translation
+    try {
+      const v = port();
+      return matches(v, c.expected) ? { status: 'pass' } : { status: 'fail', got: fmt(v) };
+    } catch (e) {
+      return { status: 'error', reason: e instanceof Error ? e.message : String(e) };
+    }
+  }
   if (c.unsupportedArg) return { status: 'unsupported', reason: `argument type ${c.unsupportedArg}` };
   const adapter = ADAPTERS[c.fn];
   if (!adapter) return { status: 'unsupported', reason: `no adapter for ${c.fn}` };

@@ -8,6 +8,7 @@
 import { ComplexValue, EvalfOptions, Expr, ExprLike, NumericValues, Rational, S, Substitution, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { subs } from '../core/traverse';
+import { sympifyMethod } from '../core/sympify';
 import { conjugate } from '../functions/elementary';
 import { evalf, lambdify, toComplex } from '../numeric/evalf';
 import { roots } from '../polys/poly';
@@ -22,7 +23,7 @@ export class Matrix {
   /** Row-major entries. */
   readonly data: readonly Expr[];
 
-  private constructor(rows: number, cols: number, data: readonly Expr[]) {
+  protected constructor(rows: number, cols: number, data: readonly Expr[]) {
     this.rows = rows;
     this.cols = cols;
     this.data = data;
@@ -309,7 +310,7 @@ export class Matrix {
     return this.map(expand);
   }
   simplify(): Matrix {
-    return this.map(simplify);
+    return this.map((e) => simplify(e));
   }
   evalf(n?: number | NumericValues, opts?: EvalfOptions): Matrix {
     return this.map((e) => evalf(e, n, opts));
@@ -329,6 +330,14 @@ export class Matrix {
   /** Structural equality of all entries. */
   equals(o: Matrix): boolean {
     return this.rows === o.rows && this.cols === o.cols && this.data.every((e, k) => e.key === o.data[k]!.key);
+  }
+  /**
+   * SymPy Basic.is_same: the same class (mutable or immutable) and the
+   * same entries; numbers are compared with `approx` when given.
+   */
+  isSame(o: unknown, approx?: (a: Expr, b: Expr) => boolean): boolean {
+    if (!(o instanceof Matrix) || o.constructor !== this.constructor || this.rows !== o.rows || this.cols !== o.cols) return false;
+    return this.data.every((e, k) => (approx && e.isNumber && o.data[k]!.isNumber ? approx(e, o.data[k]!) : e.key === o.data[k]!.key));
   }
   /** Equality after simplifying the difference. */
   equalsSimplified(o: Matrix): boolean {
@@ -359,6 +368,10 @@ export class Matrix {
   }
   [Symbol.for('nodejs.util.inspect.custom')](): string {
     return this.toString();
+  }
+  /** sympify of an (immutable) matrix is the matrix itself. */
+  [sympifyMethod](): Matrix {
+    return this;
   }
 }
 

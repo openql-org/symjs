@@ -60,6 +60,10 @@ export {
 } from './core/nodes';
 export { ExprMap } from './core/exprmap';
 export { Indexed, IndexedBase } from './core/indexed';
+export { Factors } from './core/factors';
+export { Basic, BasicNode } from './core/basic';
+export { defineFunction, implementedFunction, DefinedFunctionCall } from './core/defun';
+export type { DefinedFunction, FunctionDefinition } from './core/defun';
 export type {
   Kind,
   ExprLike,
@@ -73,8 +77,9 @@ export type {
   ConstantName,
   RelOp,
 } from './core/nodes';
+export { sympify, sympifyMethod, converter } from './core/sympify';
+export type { Sympifiable } from './core/sympify';
 export {
-  sympify,
   add,
   mul,
   pow,
@@ -114,6 +119,8 @@ export {
   asCoefficientsDict,
   asCoeffExponent,
   asPowersDict,
+  isSame,
+  equalValued,
   asTwoTerms,
   hasXfree,
   isAlgebraicExpr,

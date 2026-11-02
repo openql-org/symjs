@@ -10,6 +10,7 @@ import './core';
 
 export {
   simplify,
+  type SimplifyOptions,
 } from './simplify/simplify';
 export { ratsimpmodprime } from './simplify/ratsimpmodprime';
 export { gammasimp, combsimp, hypersimp, hypersimilar, isHypergeometric } from './simplify/gammasimp';

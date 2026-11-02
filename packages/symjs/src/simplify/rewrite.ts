@@ -6,7 +6,7 @@
  * (SymPy Basic.rewrite and the `_eval_rewrite_as_*` methods).
  */
 
-import { Add, Constant, Dummy, Expr, ExprLike, Fn, Integral, Mul, Pow, Rational, S, UndefFn, impl } from '../core/nodes';
+import { Add, Constant, Dummy, Expr, ExtensionExpr, ExprLike, Fn, Integral, Mul, Pow, Rational, S, UndefFn, impl } from '../core/nodes';
 import { Eq, Ge, Gt, Lt, Ne, piecewise } from '../core/logic';
 import { isIntegerQ, isNegative, isPositive, isReal } from '../core/assumptions';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
@@ -79,6 +79,10 @@ function hasClass(e: Expr, name: string): boolean {
 function rw(e: Expr, pattern: readonly string[], target: string, deep: boolean): Expr {
   const args = deep ? fnArgs(e).map((a) => rw(a, pattern, target, deep)) : fnArgs(e);
   const cls = className(e);
+  if (e instanceof ExtensionExpr && (!pattern.length || pattern.includes(e.name))) {
+    const r = e.rewriteSelf(target, args);
+    if (r !== undefined) return r;
+  }
   if (!pattern.length || pattern.includes(cls)) {
     const rule = rewriteRules[cls]?.[target];
     if (rule) {

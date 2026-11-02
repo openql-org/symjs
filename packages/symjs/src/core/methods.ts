@@ -888,3 +888,39 @@ export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | un
   };
   return go(e);
 }
+
+/**
+ * SymPy Basic.is_same(a, b, approx): structural equality where the numbers
+ * are compared with `approx` when it is given (e.g. equalValued). Objects
+ * other than expressions (matrices) compare by their own isSame.
+ */
+export function isSame(a: unknown, b: unknown, approx?: (x: Expr, y: Expr) => boolean): boolean {
+  if (a instanceof Expr && b instanceof Expr) {
+    const same = (x: Expr, y: Expr): boolean =>
+      x.isNumber && y.isNumber && x.args.length === 0 && y.args.length === 0 && approx
+        ? approx(x, y)
+        : x.kind === y.kind && x.args.length === y.args.length && (x.args.length ? x.args.every((u, i) => same(u, y.args[i]!)) : x.key === y.key);
+    return same(a, b);
+  }
+  const m = (a as { isSame?: (o: unknown, f?: typeof approx) => boolean } | null)?.isSame;
+  return typeof m === 'function' ? m.call(a, b, approx) : a === b;
+}
+
+/** The exact value of a Rational or Float as a Rational, else undefined. */
+function exactRational(e: Expr): Rational | undefined {
+  if (e instanceof Rational) return e;
+  if (e instanceof Float) {
+    const { man, exp } = e.mpf;
+    return exp >= 0 ? Rational.of(man << BigInt(exp)) : Rational.of(man, 1n << BigInt(-exp));
+  }
+  return undefined;
+}
+
+/** SymPy equal_valued: two numbers with exactly the same value (Float(2.0) and 2). */
+export function equalValued(x: ExprLike, y: ExprLike): boolean {
+  const a = sympify(x);
+  const b = sympify(y);
+  const ra = exactRational(a);
+  const rb = exactRational(b);
+  return ra !== undefined && rb !== undefined ? ra.key === rb.key : a.key === b.key;
+}

@@ -377,8 +377,12 @@ def main(dst):
                     record["unsupportedArg"] = str(e)
                 except Exception:
                     continue
+                from sympy.polys.monomials import Monomial as _Monomial
                 if isinstance(result, (MatrixBase,)):
                     expected = str(result)
+                elif isinstance(result, tuple) and any(isinstance(i, _Monomial) for i in result):
+                    # a Monomial's repr is its address; its str is x**2*y**0
+                    expected = "(" + ", ".join(str(i) for i in result) + ")"
                 elif isinstance(result, (Basic, list, tuple, dict, set, int, float, bool)) or result is None:
                     expected = str(result)
                 else:

@@ -559,8 +559,14 @@ export function countOpsMap(exprIn: ExprLike): Map<string, number> {
 
 const sympyName = (n: string): string => ({ abs: 'Abs', ff: 'FallingFactorial', rf: 'RisingFactorial' })[n] ?? n;
 
-/** SymPy count_ops(expr): the total number of operations. */
-export function countOps(exprIn: ExprLike): number {
+/**
+ * SymPy count_ops(expr): the total number of operations; with
+ * `{ visual: true }` the operations as an expression such as 2*ADD + SIN.
+ */
+export function countOps(exprIn: ExprLike, opts?: { visual?: false }): number;
+export function countOps(exprIn: ExprLike, opts: { visual: true }): Expr;
+export function countOps(exprIn: ExprLike, opts: { visual?: boolean } = {}): number | Expr {
+  if (opts.visual) return countOpsVisual(exprIn);
   let n = 0;
   for (const v of countOpsMap(exprIn).values()) n += v;
   return n;

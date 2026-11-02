@@ -529,12 +529,14 @@ export const evaluators: Partial<Record<FnName, Evaluator>> = {
 };
 
 /**
- * Apply a named function with automatic evaluation.
+ * Apply a named function with automatic evaluation; `{ evaluate: false }`
+ * keeps the call as written (SymPy cos(pi/2 - x, evaluate=False)).
  *
  * @experimental May change in a minor release.
  */
-export function fn(name: FnName, args: readonly ExprLike[]): Expr {
+export function fn(name: FnName, args: readonly ExprLike[], opts: { evaluate?: boolean } = {}): Expr {
   const xs = args.map(sympify);
+  if (opts.evaluate === false) return new Fn(name, xs);
   const ev = evaluators[name];
   const v = ev ? ev(xs[0]!, ...xs.slice(1)) : undefined;
   if (v !== undefined) return v;

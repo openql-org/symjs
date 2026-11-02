@@ -6,7 +6,7 @@
  */
 
 import { isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../core/assumptions';
-import { Add, Constant, Expr, ExprLike, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
+import { Add, Constant, Expr, ExprLike, ExtensionExpr, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { cos, cosh, im, log, re, sin, sinh, tan } from '../functions/elementary';
 import { rebuild } from '../core/traverse';
@@ -92,7 +92,12 @@ export interface ExpandHints {
   numer?: boolean;
   /** Expand only the denominator (SymPy denom=True). */
   denom?: boolean;
+  /** Hints defined by extension nodes (ExtensionExpr.expandSelf), e.g. { double: true }. */
+  [hint: string]: unknown;
 }
+
+const BUILTIN_HINTS = new Set(['deep', 'mul', 'multinomial', 'power_exp', 'power_base', 'log', 'complex', 'trig', 'force', 'func', 'frac', 'numer', 'denom', 'modulus', 'basic']);
+
 
 const isE = (e: Expr) => e instanceof Constant && e.name === 'E';
 
@@ -261,6 +266,11 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
     ...hints,
   };
   let e = sympify(ex);
+  // hints of extension nodes (SymPy _eval_expand_<hint>), applied first like SymPy's unknown hints
+  for (const [hint, on] of Object.entries(hints)) {
+    if (!on || BUILTIN_HINTS.has(hint)) continue;
+    e = applyBottomUp(e, (x) => (x instanceof ExtensionExpr ? (x.expandSelf(hint, h) ?? x) : x), h.deep);
+  }
   if (h.func && impl.expandFunc) e = impl.expandFunc(e);
   for (let round = 0; round < 6; round++) {
     const was = e;

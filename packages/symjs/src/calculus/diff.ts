@@ -144,6 +144,8 @@ function diffIntegral(e: Integral, x: Expr): Expr {
 export function diff(ex: ExprLike, x: Expr, n = 1): Expr {
   if (!Number.isInteger(n) || n < 0) throw new RangeError('diff: order must be a non-negative integer');
   let e = sympify(ex);
+  // SymPy: a variable that is not a scalar (is_scalar = False) keeps the derivative unevaluated
+  if (x instanceof ExtensionExpr && !x.isScalar && n > 0 && e.has(x)) return derivative(e, [[x, n]]);
   if (!(x instanceof Sym)) {
     // differentiate with respect to an expression such as f(x): treat it as a symbol
     const t = new Dummy('xi');

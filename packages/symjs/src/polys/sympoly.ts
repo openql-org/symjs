@@ -228,6 +228,46 @@ export class Poly {
     return this.termList.length === 0;
   }
 
+  /**
+   * Apply func to every term (SymPy termwise): it returns the new
+   * coefficient, or a [monomial, coefficient] pair; zero coefficients drop.
+   */
+  termwise(func: (monom: number[], coeff: Expr) => ExprLike | readonly [readonly number[], ExprLike], gens: readonly Expr[] = this.gens): Poly {
+    const out = new Map<string, Term>();
+    for (const t of this.termList) {
+      const r = func([...t.monom], t.coeff);
+      const [monom, c] = Array.isArray(r) ? [[...(r as readonly [readonly number[], ExprLike])[0]], sympify((r as readonly [readonly number[], ExprLike])[1])] : [[...t.monom], sympify(r as ExprLike)];
+      if (c instanceof Rational && c.isZero) continue;
+      const k = monom.join(',');
+      if (out.has(k)) throw new Error(`termwise: monomial ${k} was generated twice`);
+      out.set(k, { monom, coeff: c });
+    }
+    return new Poly([...gens], [...out.values()], inferDomain(out.size ? [...out.values()].map((t) => t.coeff) : [S.Zero]), this.pure);
+  }
+
+  /**
+   * A polynomial with this domain from a dense representation (SymPy per):
+   * nested coefficient lists, highest degree first, one level per
+   * generator. `remove` drops the generator at that index.
+   */
+  per(rep: readonly unknown[], opts: { gens?: readonly Expr[]; remove?: number } = {}): Poly | Expr {
+    let gens = [...(opts.gens ?? this.gens)];
+    if (opts.remove !== undefined) gens = gens.filter((_, i) => i !== opts.remove);
+    const terms: Term[] = [];
+    const walk = (r: unknown, level: number, prefix: number[]): void => {
+      if (level === gens.length) {
+        const c = sympify(r as ExprLike);
+        if (!(c instanceof Rational && c.isZero)) terms.push({ monom: prefix, coeff: c });
+        return;
+      }
+      const list = r as readonly unknown[];
+      list.forEach((x, i) => walk(x, level + 1, [...prefix, list.length - 1 - i]));
+    };
+    if (!gens.length) return sympify((rep.length ? rep[0] : 0) as ExprLike);
+    walk(rep, 0, []);
+    return new Poly(gens, terms, this.domain, this.pure);
+  }
+
   /** [(monomial, coefficient)] in lex order. */
   terms(): [number[], Expr][] {
     if (this.isZero) return [[this.gens.map(() => 0), S.Zero]];

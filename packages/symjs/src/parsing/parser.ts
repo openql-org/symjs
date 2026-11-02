@@ -34,6 +34,11 @@ export interface ParseOptions {
    * parentheses (sin x); 'all' is the same here.
    */
   transformations?: 'standard' | 'implicit' | 'all';
+  /**
+   * Names to use while parsing (SymPy locals / local_dict): an expression
+   * replaces the name, a function is called with the parsed arguments.
+   */
+  locals?: Readonly<Record<string, ExprLike | ((...args: Expr[]) => ExprLike)>>;
 }
 
 type Token =
@@ -175,7 +180,12 @@ class Parser {
     const s = opts.symbols;
     if (Array.isArray(s)) for (const sym of s as readonly Sym[]) this.symbols.set(sym.name, sym);
     else if (s) for (const [k, v] of Object.entries(s as Record<string, Expr>)) this.symbols.set(k, v);
+    for (const [k, v] of Object.entries(opts.locals ?? {})) {
+      if (typeof v === 'function') this.localFns.set(k, v);
+      else this.symbols.set(k, sympify(v));
+    }
   }
+  private readonly localFns = new Map<string, (...args: Expr[]) => ExprLike>();
 
   private peek(): Token {
     return this.tokens[this.i]!;
@@ -336,10 +346,11 @@ class Parser {
         // implicit application: sin x
         if (this.implicit && FUNCTIONS[t.v] && !this.isOp('(') && this.startsFactor()) return FUNCTIONS[t.v]!([this.power()]);
         // with implicit multiplication a known symbol before '(' multiplies (x(y + 1))
-        const asSymbol = this.implicit && !FUNCTIONS[t.v] && this.isOp('(');
+        const asSymbol = this.implicit && !FUNCTIONS[t.v] && !this.localFns.has(t.v) && this.isOp('(');
         if (this.isOp('(') && !asSymbol) {
           // unknown names applied to arguments are undefined functions (like SymPy's parse_expr)
-          const f = FUNCTIONS[t.v] ?? ((args: Expr[]) => Function(t.v)(...args));
+          const local = this.localFns.get(t.v);
+          const f = local ? (args: Expr[]) => sympify(local(...args)) : (FUNCTIONS[t.v] ?? ((args: Expr[]) => Function(t.v)(...args)));
           this.next();
           const args: Expr[] = [this.sum()];
           while (this.isOp(',')) {
