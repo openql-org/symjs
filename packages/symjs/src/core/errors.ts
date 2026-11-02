@@ -128,3 +128,15 @@ export class NonInvertibleMatrixError extends MatrixError {
     this.name = 'NonInvertibleMatrixError';
   }
 }
+
+/**
+ * An internal invariant does not hold: an index out of range, a missing map
+ * entry or a node of an unexpected class where the algorithm guarantees one
+ * (a bug in symjs, not an invalid input).
+ */
+export class InvariantError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvariantError';
+  }
+}
