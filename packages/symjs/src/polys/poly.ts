@@ -396,7 +396,7 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
   if (effDeg === 2) {
     // x**2 + c: +-sqrt(-c) (SymPy roots_quadratic with b = 0)
     if (!normalized.has(low + 1)) {
-      const r = sqrt(expand(mul(-1, get(low), pow(get(low + 2), -1))));
+      const r = sqrtRemoveSquares(expand(mul(-1, get(low), pow(get(low + 2), -1))));
       return [...zeros, mul(-1, r), r];
     }
     return [...zeros, ...quadraticRoots(get(low + 2), get(low + 1), get(low))];

@@ -159,10 +159,43 @@ function topLevelItems(s: string): string[] {
   return out;
 }
 
+/**
+ * Python set and dict literals at any depth with their items sorted: sets
+ * print in hash order, and SymPy fills its result dicts while iterating
+ * sets, so neither order carries meaning (top-level dicts and sets are
+ * already compared without order).
+ */
+function normalizeSets(s: string): string {
+  let out = '';
+  let i = 0;
+  while (i < s.length) {
+    const ch = s[i]!;
+    if (ch !== '{') {
+      out += ch;
+      i++;
+      continue;
+    }
+    // find the matching brace
+    let depth = 0;
+    let j = i;
+    for (; j < s.length; j++) {
+      if ('([{'.includes(s[j]!)) depth++;
+      if (')]}'.includes(s[j]!)) depth--;
+      if (depth === 0) break;
+    }
+    const inner = s.slice(i, j + 1);
+    const items = topLevelItems(inner).map(normalizeSets);
+    out += `{${[...items].sort().join(', ')}}`;
+    i = j + 1;
+  }
+  return out;
+}
+
 /** Compare with Python's str(); dict and set item order is ignored. */
 export function matches(v: unknown, expected: string): boolean {
   const got = fmt(v);
   if (got === expected) return true;
+  if (got.includes('{') && normalizeSets(got) === normalizeSets(expected)) return true;
   const ddPrefix = "defaultdict(<class 'int'>, ";
   if (v instanceof JsDefaultDict && expected.startsWith(ddPrefix)) return matches(new JsDict(v.entries), expected.slice(ddPrefix.length, -1));
   if ((v instanceof JsDict || v instanceof JsSet) && expected.startsWith('{')) {
