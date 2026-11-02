@@ -228,6 +228,7 @@ export {
   sortGens,
 } from './polys/sympoly';
 export { mgcd, mlcm, divExact } from './polys/mpoly';
+export { AlgebraicNumber } from './polys/numberfields';
 
 // solvers
 export {

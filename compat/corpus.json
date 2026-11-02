@@ -26294,7 +26294,44 @@
   },
   {
    "fn": ".evalf",
-   "unsupportedArg": "AlgebraicNumber",
+   "self": {
+    "t": "AlgebraicNumber",
+    "root": {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "2"
+      }
+     ]
+    },
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "10",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a1.evalf(10)",
@@ -26302,7 +26339,38 @@
   },
   {
    "fn": ".as_expr",
-   "unsupportedArg": "AlgebraicNumber",
+   "self": {
+    "t": "AlgebraicNumber",
+    "root": {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "2"
+      }
+     ]
+    },
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "-5",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a2.as_expr()",
@@ -26310,7 +26378,38 @@
   },
   {
    "fn": ".as_expr",
-   "unsupportedArg": "AlgebraicNumber",
+   "self": {
+    "t": "AlgebraicNumber",
+    "root": {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "2"
+      }
+     ]
+    },
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "-5",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a2.as_expr()",
@@ -26318,7 +26417,38 @@
   },
   {
    "fn": ".as_expr",
-   "unsupportedArg": "AlgebraicNumber",
+   "self": {
+    "t": "AlgebraicNumber",
+    "root": {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "2"
+      }
+     ]
+    },
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "6",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "-11",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a3.as_expr()",
@@ -26380,7 +26510,68 @@
   },
   {
    "fn": ".to_root",
-   "unsupportedArg": "AlgebraicNumber",
+   "self": {
+    "t": "AlgebraicNumber",
+    "root": {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        }
+       ]
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        }
+       ]
+      }
+     ]
+    },
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "2"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "-9",
+      "q": "2"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a4.to_root()",
@@ -26388,7 +26579,68 @@
   },
   {
    "fn": ".primitive_element",
-   "unsupportedArg": "AlgebraicNumber",
+   "self": {
+    "t": "AlgebraicNumber",
+    "root": {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        }
+       ]
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        }
+       ]
+      }
+     ]
+    },
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "2"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "-9",
+      "q": "2"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a4.primitive_element()",
@@ -26396,7 +26648,68 @@
   },
   {
    "fn": ".coeffs",
-   "unsupportedArg": "AlgebraicNumber",
+   "self": {
+    "t": "AlgebraicNumber",
+    "root": {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        }
+       ]
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        }
+       ]
+      }
+     ]
+    },
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "2"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "-9",
+      "q": "2"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a4.coeffs()",
@@ -26404,7 +26717,68 @@
   },
   {
    "fn": ".to_root",
-   "unsupportedArg": "AlgebraicNumber",
+   "self": {
+    "t": "AlgebraicNumber",
+    "root": {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        }
+       ]
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        }
+       ]
+      }
+     ]
+    },
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "2"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "-9",
+      "q": "2"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a4.to_root()",
@@ -26412,7 +26786,68 @@
   },
   {
    "fn": ".primitive_element",
-   "unsupportedArg": "AlgebraicNumber",
+   "self": {
+    "t": "AlgebraicNumber",
+    "root": {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        }
+       ]
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        }
+       ]
+      }
+     ]
+    },
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "2"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "-9",
+      "q": "2"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a4.primitive_element()",
@@ -26496,7 +26931,7 @@
   },
   {
    "fn": ".evalf",
-   "unsupportedArg": "AlgebraicNumber",
+   "unsupportedArg": "ComplexRootOf",
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a5.evalf()",
@@ -26540,7 +26975,58 @@
   },
   {
    "fn": ".evalf",
-   "unsupportedArg": "AlgebraicNumber",
+   "self": {
+    "t": "AlgebraicNumber",
+    "root": {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "2"
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "5",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "2"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a6.primitive_element().evalf()",
@@ -26624,7 +27110,7 @@
   },
   {
    "fn": ".evalf",
-   "unsupportedArg": "AlgebraicNumber",
+   "unsupportedArg": "ComplexRootOf",
    "category": "core",
    "module": "sympy.core.numbers",
    "src": "a6_wrong.primitive_element().evalf()",
@@ -28009,7 +28495,7 @@
    "category": "core",
    "module": "sympy.core.symbol",
    "src": "Dummy() #doctest: +SKIP",
-   "expected": "_Dummy_1067"
+   "expected": "_Dummy_1061"
   },
   {
    "fn": ".match",
@@ -33218,7 +33704,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_1109",
+         "name": "Dummy_1105",
          "index": 0,
          "assume": {
           "real": true
@@ -52097,7 +52583,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10c3daa10>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10886e950>, 3)"
   },
   {
    "fn": ".LC",
@@ -52304,7 +52790,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10c3f15a0>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x108a53460>, 4)"
   },
   {
    "fn": ".TC",
@@ -108066,7 +108552,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3) # doctest:+SKIP",
-   "expected": "Matrix([[40, 12, 35], [86, 36, 79], [19, 67, 82]])"
+   "expected": "Matrix([[92, 16, 57], [3, 55, 17], [15, 19, 46]])"
   },
   {
    "fn": "randMatrix",
@@ -108086,7 +108572,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, 2) # doctest:+SKIP",
-   "expected": "Matrix([[33, 9], [65, 30], [79, 99]])"
+   "expected": "Matrix([[91, 17], [69, 1], [10, 66]])"
   },
   {
    "fn": "randMatrix",
@@ -108116,7 +108602,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, 3, 0, 2) # doctest:+SKIP",
-   "expected": "Matrix([[1, 1, 0], [1, 1, 1], [2, 0, 2]])"
+   "expected": "Matrix([[2, 0, 2], [1, 0, 0], [2, 2, 0]])"
   },
   {
    "fn": "randMatrix",
@@ -108136,7 +108622,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, symmetric=True) # doctest:+SKIP",
-   "expected": "Matrix([[19, 47, 41], [47, 27, 50], [41, 50, 84]])"
+   "expected": "Matrix([[43, 32, 69], [32, 37, 1], [69, 1, 40]])"
   },
   {
    "fn": "randMatrix",
@@ -108161,7 +108647,7 @@
    "category": "matrices",
    "module": "sympy.matrices.dense",
    "src": "randMatrix(3, symmetric=True, percent=50) # doctest:+SKIP",
-   "expected": "Matrix([[0, 67, 91], [67, 68, 0], [91, 0, 0]])"
+   "expected": "Matrix([[0, 0, 0], [0, 58, 68], [0, 68, 67]])"
   },
   {
    "fn": "rot_axis1",

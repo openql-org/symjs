@@ -284,6 +284,8 @@ export function deserialize(tree: Tree): unknown {
       if (!f) throw new Unsupported(`function ${tree['name']}`);
       return f((tree['args'] as Tree[]).map((a) => deserialize(a)) as Expr[]);
     }
+    case 'AlgebraicNumber':
+      return new sj.AlgebraicNumber(deserialize(tree['root'] as Tree) as Expr, (tree['coeffs'] as Tree[]).map((t) => deserialize(t) as Expr));
     case 'PyPred':
       return new PyPred(tree['attr'] as string);
     case 'PyLambda':
@@ -566,6 +568,7 @@ function evalfAdapter(self: unknown, args: unknown[], kw: Record<string, unknown
   const chop = kw['chop'];
   if (chop !== undefined) opts.chop = typeof chop === "boolean" ? chop : asExpr(chop).toNumber();
   if (self instanceof Matrix) return self.evalf(n, opts);
+  if (self instanceof sj.AlgebraicNumber) return self.asExpr().evalf(n, opts);
   return asExpr(self).evalf(n, opts);
 }
 
@@ -2004,11 +2007,22 @@ export const ADAPTERS: Record<string, Adapter> = {
       return self.asExprAt(args.map(asExpr));
     }
     if (self instanceof Expr) return self;
+    if (self instanceof sj.AlgebraicNumber) return self.asExpr();
     throw new Unsupported('as_expr');
   },
   '.total_degree': (_a, kw, self) => (noKw(kw), asPoly(self).totalDegree()),
   '.LC': (_a, kw, self) => (noKw(kw), asPoly(self).LC()),
-  '.coeffs': (_a, kw, self) => (noKw(kw), new PyList(asPoly(self).coeffs())),
+  '.coeffs': (_a, kw, self) => (noKw(kw), new PyList(self instanceof sj.AlgebraicNumber ? self.coeffs() : asPoly(self).coeffs())),
+  '.to_root': (_a, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof sj.AlgebraicNumber)) throw new Unsupported('to_root');
+    return self.toRoot();
+  },
+  '.primitive_element': (_a, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof sj.AlgebraicNumber)) throw new Unsupported('primitive_element');
+    return self.primitiveElement();
+  },
   '.all_coeffs': (_a, kw, self) => (noKw(kw), new PyList(asPoly(self).allCoeffs())),
   '.monoms': (_a, kw, self) => (noKw(kw), new PyList(asPoly(self).monoms().map((m) => new PyTuple(m)))),
   '.terms': (_a, kw, self) => (noKw(kw), new PyList(asPoly(self).terms().map(([m, c]) => new PyTuple([new PyTuple(m), c])))),
