@@ -926,6 +926,9 @@ export class Poly {
   }
   /** Roots in radicals (SymPy extension=True for algebraic coefficients), real ones first, sorted. */
   private radicalRoots(realOnly: boolean): Expr[] {
+    // algebraic numbers detected as generators (sqrt(2)*x + ...): the polynomial in its symbol
+    const syms = this.gens.filter((g) => g instanceof Sym);
+    if (this.gens.length > 1 && syms.length === 1) return Poly.from(this.asExpr(), syms).radicalRoots(realOnly);
     if (this.allCoeffs().every((c) => c instanceof Rational)) return this.rootsWhere(realOnly);
     const rs = rootsOf(this.asExpr(), this.univariate()).map((r) => [r, impl.toComplex(r)] as const);
     const isReal = (v: { im: number; re: number }) => Math.abs(v.im) <= 1e-12 * Math.max(1, Math.abs(v.re));
