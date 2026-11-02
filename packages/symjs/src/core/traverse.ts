@@ -12,7 +12,11 @@ import { compareKeys, sortKey } from '../printing/sortkey';
 import { Add, Constant, Derivative, ExtensionExpr, Expr, ExprLike, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Substitution, Sym, UndefFn, impl } from './nodes';
 import { add, mul, pow, sympify } from './ops';
 
-/** Rebuild a node of the same type with new arguments (re-canonicalizing). */
+/**
+ * Rebuild a node of the same type with new arguments (re-canonicalizing).
+ *
+ * @experimental May change in a minor release.
+ */
 export function rebuild(e: Expr, args: readonly Expr[]): Expr {
   if (e instanceof ExtensionExpr) return e.withArgs(args);
   if (e instanceof Add) return add(...args);

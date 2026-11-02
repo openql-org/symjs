@@ -643,7 +643,11 @@ export class Pow extends Expr {
   }
 }
 
-/** Application of a named function. @internal ctor */
+/**
+ * Application of a named function. @internal ctor
+ *
+ * @experimental May change in a minor release.
+ */
 export class Fn extends Expr {
   readonly kind = 'Fn' as const;
   constructor(readonly name: FnName, readonly args: readonly Expr[]) {

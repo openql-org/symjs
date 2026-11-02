@@ -5,6 +5,7 @@
  * @file Univariate polynomials over the rationals, coefficient extraction and root finding.
  */
 
+import { ExprMap } from '../core/exprmap';
 import { Add, Expr, ExprLike, Mul, Pow, Rational, S, Sym, compareExpr, impl } from '../core/nodes';
 import { zassenhaus } from './zassenhaus';
 import { numAdd, numCmp, numInv, numMul, numNeg, numPowInt } from '../core/num';
@@ -340,6 +341,23 @@ function quadraticRoots(a: Expr, b: Expr, c: Expr): Expr[] {
  * Supports: any degree with rational coefficients (via rational roots and
  * quadratic factors), degree <= 2 with symbolic coefficients.
  */
+/**
+ * SymPy `roots(f, x)`: the roots with their multiplicities. With
+ * `{ multiple: true }` a list with each root repeated by its multiplicity
+ * (SymPy `roots(f, x, multiple=True)`). With `{ skipQuintic: true }` the roots
+ * of irreducible factors of degree 5 or more are omitted, as SymPy does.
+ */
+export function rootsDict(ex: ExprLike, x: Sym, opts: { multiple: true; skipQuintic?: boolean }): Expr[];
+export function rootsDict(ex: ExprLike, x: Sym, opts?: { multiple?: false; skipQuintic?: boolean }): ExprMap<number>;
+export function rootsDict(ex: ExprLike, x: Sym, opts: { multiple?: boolean; skipQuintic?: boolean } = {}): ExprMap<number> | Expr[] {
+  const rs = roots(ex, x, opts);
+  if (opts.multiple) return rs;
+  const m = new ExprMap<number>();
+  for (const r of rs) m.set(r, (m.get(r) ?? 0) + 1);
+  return m;
+}
+
+/** Roots repeated by multiplicity (the list form used internally). */
 export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}): Expr[] {
   const coeffs = polyCoefficients(ex, x);
   if (!coeffs) throw new Error('roots: expression is not a polynomial in the given symbol');

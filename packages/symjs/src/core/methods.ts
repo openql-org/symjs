@@ -10,6 +10,7 @@ import { isIntegerQ, isNegative as isNegativeQ, isPositive, isReal, isZero as is
 import { Add, Constant, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
 import { add, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
+import { ExprMap } from './exprmap';
 import { freeSymbols, xreplace as xreplaceM } from './traverse';
 import { diff } from '../calculus/diff';
 import { abs, arg, im, log, re } from '../functions/elementary';
@@ -713,7 +714,7 @@ export function hasFree(eIn: ExprLike, ...patterns: (ExprLike | { fn: string })[
 }
 
 /** SymPy `as_coefficients_dict(*syms)`: term -> coefficient. */
-export function asCoefficientsDict(eIn: ExprLike, syms: readonly Expr[] = []): [Expr, Expr][] {
+export function asCoefficientsDict(eIn: ExprLike, syms: readonly Expr[] = []): ExprMap<Expr> {
   const e = sympify(eIn);
   const out = new Map<string, [Expr, Expr[]]>();
   const put = (k: Expr, v: Expr) => {
@@ -726,7 +727,7 @@ export function asCoefficientsDict(eIn: ExprLike, syms: readonly Expr[] = []): [
       const [c, m] = splitCoeff(a);
       put(m, c);
     }
-    return [...out.values()].map(([k, v]) => [k, v.length === 1 ? v[0]! : add(...v)]);
+    return new ExprMap([...out.values()].map(([k, v]) => [k, v.length === 1 ? v[0]! : add(...v)]));
   }
   const [ind, dep] = asIndependent(e, syms, { asAdd: true });
   for (const i of dep instanceof Add ? dep.args : [dep]) {
@@ -738,8 +739,8 @@ export function asCoefficientsDict(eIn: ExprLike, syms: readonly Expr[] = []): [
       else put(x.length === 1 ? x[0]! : new Mul(x), c);
     } else put(i, S.One);
   }
-  const res: [Expr, Expr][] = [...out.values()].map(([k, v]) => [k, add(...v)]);
-  if (!isZeroE(ind)) res.push([S.One, ind]);
+  const res = new ExprMap<Expr>([...out.values()].map(([k, v]) => [k, add(...v)]));
+  if (!isZeroE(ind)) res.set(S.One, ind);
   return res;
 }
 

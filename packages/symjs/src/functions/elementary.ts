@@ -528,7 +528,11 @@ export const evaluators: Partial<Record<FnName, Evaluator>> = {
   },
 };
 
-/** Apply a named function with automatic evaluation. */
+/**
+ * Apply a named function with automatic evaluation.
+ *
+ * @experimental May change in a minor release.
+ */
 export function fn(name: FnName, args: readonly ExprLike[]): Expr {
   const xs = args.map(sympify);
   const ev = evaluators[name];
@@ -596,7 +600,11 @@ export const re = (x: ExprLike): Expr => fn('re', [x]);
 export const im = (x: ExprLike): Expr => fn('im', [x]);
 export const arg = (x: ExprLike): Expr => fn('arg', [x]);
 
-/** Hermitian adjoint of a scalar is its conjugate. */
+/**
+ * Hermitian adjoint of a scalar is its conjugate.
+ *
+ * @experimental May change in a minor release.
+ */
 export const dagger = conjugate;
 
 impl.conjugate = conjugate;

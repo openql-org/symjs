@@ -286,6 +286,8 @@ export function parse(src: string, opts: ParseOptions = {}): Expr {
  * @example
  * const t = symbol('theta', { real: true });
  * ex`cos(${t}/2) - I*sin(${t}/2)`
+ *
+ * @experimental May change in a minor release.
  */
 export function ex(strings: TemplateStringsArray, ...values: ExprLike[]): Expr {
   const tokens: Token[] = [];

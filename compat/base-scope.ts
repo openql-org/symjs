@@ -85,7 +85,7 @@ export const BASE_CHECKS: BaseCheck[] = [
   { area: 'extension nodes', name: 'subs inside a custom node', expected: 'x*|x>', run: () => sj.subs(sj.mul(x, new Ket(new Sym('psi'))), [[new Sym('psi'), x]]) },
   { area: 'extension nodes', name: 'custom node keeps product order', expected: '|psi>*A', run: () => sj.mul(new Ket(new Sym('psi')), A) },
   // exact polynomial arithmetic
-  { area: 'polynomials', name: 'div(x**3 + 2*x + 1, x**2 - 3) reconstructs', expected: 'x**3 + 2*x + 1', run: () => { const [qq, r] = sj.polyDiv(P('x**3 + 2*x + 1'), P('x**2 - 3')); return sj.expand(sj.add(sj.mul(qq, P('x**2 - 3')), r)); } },
+  { area: 'polynomials', name: 'div(x**3 + 2*x + 1, x**2 - 3) reconstructs', expected: 'x**3 + 2*x + 1', run: () => { const [qq, r] = sj.div(P('x**3 + 2*x + 1'), P('x**2 - 3')); return sj.expand(sj.add(sj.mul(qq, P('x**2 - 3')), r)); } },
   { area: 'polynomials', name: 'factor(x**4 - 1)', expected: '(x - 1)*(x + 1)*(x**2 + 1)', run: () => sj.factor(P('x**4 - 1')) },
   // numerics with explicit precision
   { area: 'numerics', name: 'N(pi, 30)', expected: '3.14159265358979323846264338328', run: () => sj.evalf(sj.S.Pi, 30) },

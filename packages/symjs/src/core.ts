@@ -12,31 +12,32 @@
  * their entry point (or the root `@symjs/symjs`) is imported.
  */
 
-import { Assumptions, Sym } from './core/nodes';
-import { expandSymbolNames } from './core/numberutils';
+import { Assumptions, Derivative as DerivativeNode, Expr as ExprNode, ExprLike as ExprLikeT, Piecewise as PiecewiseNode, Sym as SymbolNode } from './core/nodes';
+import { expandSymbolNames as expandNames } from './core/numberutils';
+import { derivative as derivativeFn } from './core/undef';
+import { piecewise as piecewiseFn } from './core/logic';
+import { sympify as sympifyFn } from './core/ops';
+import { callableClass } from './core/callable';
 
 export {
   Expr,
   Rational,
   Float,
-  Sym,
+  Sym as Symbol,
   Wild,
   WildFunction,
   Dummy,
-  Constant,
+  Constant as NumberSymbol,
   Add,
   Mul,
   Pow,
-  Fn,
-  BoolAtom,
+  Fn as AppliedFunction,
+  BoolAtom as BooleanAtom,
   Rel,
-  Piecewise,
   Integral,
   Limit,
   Order,
-  Special,
-  UndefFn,
-  Derivative,
+  UndefFn as AppliedUndef,
   S,
   pi,
   E,
@@ -44,18 +45,18 @@ export {
   oo,
   zoo,
   nan,
-  compareExpr,
   isRational,
   isFloat,
   isSymbol,
   isAdd,
   isMul,
   isPow,
-  isFn,
+  isFn as isFunction,
   isInteger,
-  isNum,
+  isNum as isNumber,
   ExtensionExpr,
 } from './core/nodes';
+export { ExprMap } from './core/exprmap';
 export type {
   Kind,
   ExprLike,
@@ -69,12 +70,28 @@ export type {
   ConstantName,
   RelOp,
 } from './core/nodes';
-export { sympify, add, mul, pow, sub, div, neg, sqrt, exp, rational, splitCoeff, asBaseExp } from './core/ops';
-export { isReal, isPositive, isNegative, isNonNegative, isNonZero, isZero, isIntegerQ } from './core/assumptions';
 export {
-  keepCoeff,
+  sympify,
+  add,
+  mul,
+  pow,
+  sub,
+  neg,
+  sqrt,
+  exp,
+  asBaseExp,
+} from './core/ops';
+export {
+  isReal,
+  isPositive,
+  isNegative,
+  isNonNegative,
+  isNonZero,
+  isZero,
+  isIntegerQ as isIntegerValued,
+} from './core/assumptions';
+export {
   argsCnc,
-  argsCncSplit,
   coeff,
   asIndependent,
   asCoeffAdd,
@@ -98,9 +115,25 @@ export {
   dummyEq,
   isMeromorphic,
 } from './core/methods';
-export { root, cbrt, realRoot } from './core/ops';
-export { subs, xreplace, freeSymbols, mapBottomUp, rebuild } from './core/traverse';
-export { match, replace, find, ordered, countOps, countOpsVisual, isInstance } from './core/match';
+export {
+  root,
+  cbrt,
+  realRoot,
+} from './core/ops';
+export {
+  subs,
+  xreplace,
+  freeSymbols,
+  mapBottomUp as bottomUp,
+  rebuild,
+} from './core/traverse';
+export {
+  match,
+  replace,
+  find,
+  ordered,
+  countOps,
+} from './core/match';
 export type { Query, Replacement } from './core/match';
 export {
   fn,
@@ -115,6 +148,7 @@ export {
   tanh,
   log,
   abs,
+  abs as Abs,
   re,
   im,
   arg,
@@ -123,36 +157,89 @@ export {
   adjoint,
   transpose,
 } from './functions/elementary';
-export { cot, sec, csc, acot, asec, acsc, coth, sech, csch, asinh, acosh, atanh, acoth, asech, acsch, sinc } from './functions/trigext';
-export { diff } from './calculus/diff';
-export { Function, functions, derivative } from './core/undef';
+export {
+  cot,
+  sec,
+  csc,
+  acot,
+  asec,
+  acsc,
+  coth,
+  sech,
+  csch,
+  asinh,
+  acosh,
+  atanh,
+  acoth,
+  asech,
+  acsch,
+  sinc,
+} from './functions/trigext';
+export {
+  diff,
+} from './calculus/diff';
+export {
+  Function,
+} from './core/undef';
 export type { UndefinedFunction } from './core/undef';
-export { rel, Eq, Ne, Lt, Le, Gt, Ge, piecewise } from './core/logic';
+export {
+  Eq,
+  Ne,
+  Lt,
+  Le,
+  Gt,
+  Ge,
+} from './core/logic';
 export {
   expand,
-  expandMul,
-  expand_mul,
-  expand_multinomial,
-  expand_power_exp,
-  expand_power_base,
-  expand_log,
-  expand_trig,
-  expand_complex,
+  expand_mul as expandMul,
+  expand_multinomial as expandMultinomial,
+  expand_power_exp as expandPowerExp,
+  expand_power_base as expandPowerBase,
+  expand_log as expandLog,
+  expand_trig as expandTrig,
+  expand_complex as expandComplex,
 } from './simplify/expand';
 export type { ExpandHints } from './simplify/expand';
-export { evalf, evalfPrec, toComplex, lambdify } from './numeric/evalf';
-export { float } from './numeric/floatctor';
-export { round } from './numeric/round';
-export { precToDps, dpsToPrec } from './numeric/mpf';
-export { str } from './printing/str';
-export { asOrderedTerms as orderedTerms, asOrderedFactors as orderedFactors, sortKey, compareKeys } from './printing/sortkey';
-export { couldExtractMinusSign } from './core/ops';
-export { latex } from './printing/latex';
-export { parse, ex } from './parsing/parser';
+export {
+  evalf,
+  toComplex,
+  lambdify,
+} from './numeric/evalf';
+export {
+  float,
+} from './numeric/floatctor';
+export {
+  round,
+} from './numeric/round';
+export {
+  precToDps,
+  dpsToPrec,
+} from './numeric/mpf';
+export {
+  str,
+  str as sstr,
+} from './printing/str';
+export {
+  asOrderedTerms,
+  asOrderedFactors,
+  sortKey,
+} from './printing/sortkey';
+export {
+  couldExtractMinusSign,
+} from './core/ops';
+export {
+  latex,
+} from './printing/latex';
+export {
+  parse,
+  parse as parseExpr,
+  ex,
+} from './parsing/parser';
 export type { ParseOptions } from './parsing/parser';
 /** Create a symbol. */
-export function symbol(name: string, assumptions: Assumptions = {}): Sym {
-  return new Sym(name, assumptions);
+export function symbol(name: string, assumptions: Assumptions = {}): SymbolNode {
+  return new SymbolNode(name, assumptions);
 }
 type Trim<S extends string> = S extends ` ${infer R}` ? Trim<R> : S extends `${infer R} ` ? Trim<R> : S;
 type SplitNames<S extends string> =
@@ -164,8 +251,8 @@ type SplitNames<S extends string> =
         ? []
         : [Trim<S>];
 /** Tuple of symbols matching the names in a string literal, e.g. 'x y' -> [Sym, Sym]. */
-type ToSyms<T extends readonly unknown[]> = { [K in keyof T]: Sym };
-export type SymbolTuple<S extends string> = string extends S ? Sym[] : ToSyms<SplitNames<S>>;
+type ToSyms<T extends readonly unknown[]> = { [K in keyof T]: SymbolNode };
+export type SymbolTuple<S extends string> = string extends S ? SymbolNode[] : ToSyms<SplitNames<S>>;
 /**
  * Create several symbols at once from a space- or comma-separated list.
  * With a string literal the result is a typed tuple.
@@ -174,13 +261,10 @@ export type SymbolTuple<S extends string> = string extends S ? Sym[] : ToSyms<Sp
  * const [theta, phi] = symbols('theta phi', { real: true });
 */
 export function symbols<S extends string>(names: S, assumptions: Assumptions = {}): SymbolTuple<S> {
-  return expandSymbolNames(names).map((n) => new Sym(n, assumptions)) as SymbolTuple<S>;
+  return expandNames(names).map((n) => new SymbolNode(n, assumptions)) as SymbolTuple<S>;
 }
 export {
-  rationalFromFloat,
-  rationalFromString,
   integerLog,
-  expandSymbolNames,
   igcd,
   ilcm,
   integerNthroot,
@@ -189,6 +273,222 @@ export {
   modInverse,
   limitDenominator,
 } from './core/numberutils';
-export { nfloat, comp, nsimplify } from './numeric/nfloat';
-export { factorInt } from './core/numbers';
-export { BoolOp, and, or, not } from './core/boolalg';
+export {
+  nfloat,
+  comp,
+  nsimplify,
+} from './numeric/nfloat';
+export {
+  factorInt as factorint,
+} from './core/numbers';
+export {
+  and as And,
+  or as Or,
+  not as Not,
+} from './core/boolalg';
+
+/**
+ * SymPy `Derivative(expr, *variables)`: an unevaluated derivative. Each
+ * variable is a symbol or a `[symbol, count]` pair. Also the node class
+ * (`e instanceof Derivative`).
+ */
+export const Derivative = /* @__PURE__ */ callableClass(
+  DerivativeNode,
+  (expr: ExprLikeT, ...variables: (ExprNode | readonly [ExprNode, number])[]): ExprNode =>
+    derivativeFn(
+      sympifyFn(expr),
+      variables.map((v) => (Array.isArray(v) ? [v[0], v[1]] : [v, 1]) as [ExprNode, number]),
+    ),
+);
+export type Derivative = DerivativeNode;
+
+/**
+ * SymPy `Piecewise((expr, cond), ...)` with `[expr, cond]` pairs. Also the
+ * node class (`e instanceof Piecewise`).
+ */
+export const Piecewise = /* @__PURE__ */ callableClass(PiecewiseNode, piecewiseFn);
+export type Piecewise = PiecewiseNode;
+
+// ---- deprecated names (kept during 0.x, removed in 1.0; see docs/api-policy.md) ----
+
+import { Sym as _Sym_ } from './core/nodes';
+import { Constant as _Constant_ } from './core/nodes';
+import { Fn as _Fn_ } from './core/nodes';
+import { BoolAtom as _BoolAtom_ } from './core/nodes';
+import { Special as _Special_ } from './core/nodes';
+import { UndefFn as _UndefFn_ } from './core/nodes';
+import { compareExpr as _compareExpr_ } from './core/nodes';
+import { isFn as _isFn_ } from './core/nodes';
+import { isNum as _isNum_ } from './core/nodes';
+import { rational as _rational_ } from './core/ops';
+import { splitCoeff as _splitCoeff_ } from './core/ops';
+import { isIntegerQ as _isIntegerQ_ } from './core/assumptions';
+import { keepCoeff as _keepCoeff_ } from './core/methods';
+import { argsCncSplit as _argsCncSplit_ } from './core/methods';
+import { mapBottomUp as _mapBottomUp_ } from './core/traverse';
+import { countOpsVisual as _countOpsVisual_ } from './core/match';
+import { isInstance as _isInstance_ } from './core/match';
+import { functions as _functions_ } from './core/undef';
+import { derivative as _derivative_ } from './core/undef';
+import { rel as _rel_ } from './core/logic';
+import { piecewise as _piecewise_ } from './core/logic';
+import { expand_mul as _expand_mul_ } from './simplify/expand';
+import { expand_multinomial as _expand_multinomial_ } from './simplify/expand';
+import { expand_power_exp as _expand_power_exp_ } from './simplify/expand';
+import { expand_power_base as _expand_power_base_ } from './simplify/expand';
+import { expand_log as _expand_log_ } from './simplify/expand';
+import { expand_trig as _expand_trig_ } from './simplify/expand';
+import { expand_complex as _expand_complex_ } from './simplify/expand';
+import { evalfPrec as _evalfPrec_ } from './numeric/evalf';
+import { asOrderedTerms as _orderedTerms_ } from './printing/sortkey';
+import { asOrderedFactors as _orderedFactors_ } from './printing/sortkey';
+import { compareKeys as _compareKeys_ } from './printing/sortkey';
+import { rationalFromFloat as _rationalFromFloat_ } from './core/numberutils';
+import { rationalFromString as _rationalFromString_ } from './core/numberutils';
+import { expandSymbolNames as _expandSymbolNames_ } from './core/numberutils';
+import { factorInt as _factorInt_ } from './core/numbers';
+import { BoolOp as _BoolOp_ } from './core/boolalg';
+import { and as _and_ } from './core/boolalg';
+import { or as _or_ } from './core/boolalg';
+import { not as _not_ } from './core/boolalg';
+
+/** @deprecated Use `Symbol`. */
+export const Sym = _Sym_;
+
+/** @deprecated Use `Symbol`. */
+export type Sym = _Sym_;
+
+/** @deprecated Use `NumberSymbol`. */
+export const Constant = _Constant_;
+
+/** @deprecated Use `NumberSymbol`. */
+export type Constant = _Constant_;
+
+/** @deprecated Use `AppliedFunction`. */
+export const Fn = _Fn_;
+
+/** @deprecated Use `AppliedFunction`. */
+export type Fn = _Fn_;
+
+/** @deprecated Use `BooleanAtom`. */
+export const BoolAtom = _BoolAtom_;
+
+/** @deprecated Use `BooleanAtom`. */
+export type BoolAtom = _BoolAtom_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const Special = _Special_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export type Special = _Special_;
+
+/** @deprecated Use `AppliedUndef`. */
+export const UndefFn = _UndefFn_;
+
+/** @deprecated Use `AppliedUndef`. */
+export type UndefFn = _UndefFn_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const compareExpr = _compareExpr_;
+
+/** @deprecated Use `isFunction`. */
+export const isFn = _isFn_;
+
+/** @deprecated Use `isNumber`. */
+export const isNum = _isNum_;
+
+/** @deprecated Use `Rational.of`. */
+export const rational = _rational_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const splitCoeff = _splitCoeff_;
+
+/** @deprecated Use `isIntegerValued`. */
+export const isIntegerQ = _isIntegerQ_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const keepCoeff = _keepCoeff_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const argsCncSplit = _argsCncSplit_;
+
+/** @deprecated Use `bottomUp`. */
+export const mapBottomUp = _mapBottomUp_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const countOpsVisual = _countOpsVisual_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const isInstance = _isInstance_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const functions = _functions_;
+
+/** @deprecated Use `Derivative`. */
+export const derivative = _derivative_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const rel = _rel_;
+
+/** @deprecated Use `Piecewise`. */
+export const piecewise = _piecewise_;
+
+/** @deprecated Use `expandMul`. */
+export const expand_mul = _expand_mul_;
+
+/** @deprecated Use `expandMultinomial`. */
+export const expand_multinomial = _expand_multinomial_;
+
+/** @deprecated Use `expandPowerExp`. */
+export const expand_power_exp = _expand_power_exp_;
+
+/** @deprecated Use `expandPowerBase`. */
+export const expand_power_base = _expand_power_base_;
+
+/** @deprecated Use `expandLog`. */
+export const expand_log = _expand_log_;
+
+/** @deprecated Use `expandTrig`. */
+export const expand_trig = _expand_trig_;
+
+/** @deprecated Use `expandComplex`. */
+export const expand_complex = _expand_complex_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const evalfPrec = _evalfPrec_;
+
+/** @deprecated Use `asOrderedTerms`. */
+export const orderedTerms = _orderedTerms_;
+
+/** @deprecated Use `asOrderedFactors`. */
+export const orderedFactors = _orderedFactors_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const compareKeys = _compareKeys_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const rationalFromFloat = _rationalFromFloat_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const rationalFromString = _rationalFromString_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const expandSymbolNames = _expandSymbolNames_;
+
+/** @deprecated Use `factorint`. */
+export const factorInt = _factorInt_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const BoolOp = _BoolOp_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export type BoolOp = _BoolOp_;
+
+/** @deprecated Use `And`. */
+export const and = _and_;
+
+/** @deprecated Use `Or`. */
+export const or = _or_;
+
+/** @deprecated Use `Not`. */
+export const not = _not_;

@@ -191,7 +191,11 @@ function compileCond(e: Expr, resolve: (s: Sym) => Compiled): (env: readonly C[]
   throw new Error(`Cannot evaluate condition ${e.toString()}`);
 }
 
-/** Evaluate to a complex number. All free symbols must be given values. */
+/**
+ * Evaluate to a complex number. All free symbols must be given values.
+ *
+ * @experimental May change in a minor release.
+ */
 export function toComplex(ex: ExprLike, values?: NumericValues): C {
   const e = sympify(ex);
   const lookup = makeLookup(values);

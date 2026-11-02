@@ -806,7 +806,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const conv = (v: unknown): Expr =>
       typeof v === 'string' ? sj.rationalFromString(v) : v instanceof sj.Float ? sj.rationalFromFloat(v.value) : asExpr(v);
     const [p, q] = args.map(conv);
-    return q ? sj.div(p!, q) : p;
+    return q ? sj.mul(p!, sj.pow(q, -1)) : p;
   },
   Integer: (args, kw) => {
     noKw(kw);
@@ -982,7 +982,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       if (r instanceof sj.Poly) {
         // RootSum(auto=False, quadratic=False) evaluates only over linear factors
         const g = r.gens[0] as Sym;
-        rs = sj.roots(r.asExpr(), g);
+        rs = sj.roots(r.asExpr(), g, { multiple: true });
         if (rs.length !== r.degree() || rs.some((x) => !(x instanceof sj.Rational))) throw new Unsupported('RootSum');
       } else rs = (r as PyTuple).items as Expr[];
       for (const root of rs) terms.push(sj.mul(nf.call(root), sj.pow(sj.pow(df.call(root), ex), -1)));
@@ -1227,7 +1227,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.as_coefficients_dict': (args, kw, self) => {
     noKw(kw);
-    return new PyDefaultDict(sj.asCoefficientsDict(asExpr(self), args.map(asExpr)));
+    return new PyDefaultDict([...sj.asCoefficientsDict(asExpr(self), args.map(asExpr))]);
   },
   Pow: (args, kw) => (noKw(kw), sj.pow(asExpr(args[0]), asExpr(args[1]))),
   sqrt: exprFn(sj.sqrt),
@@ -1480,13 +1480,13 @@ export const ADAPTERS: Record<string, Adapter> = {
       // a list of coefficients
       const cs = args[0].items.map(asExpr);
       const t = new Sym('x');
-      return rootsDict(sj.roots(sj.add(...cs.map((c, i) => sj.mul(c, sj.pow(t, cs.length - 1 - i)))), t, { skipQuintic: true }));
+      return rootsDict(sj.roots(sj.add(...cs.map((c, i) => sj.mul(c, sj.pow(t, cs.length - 1 - i)))), t, { multiple: true, skipQuintic: true }));
     }
     const e = asExprOrPoly(args[0]);
     const syms = [...sj.freeSymbols(e)];
     const x = args[1] ? asSym(args[1]) : args[0] instanceof sj.Poly ? (args[0].gens[0] as Sym) : syms.length === 1 ? syms[0]! : undefined;
     if (!x) throw new Unsupported('roots generator');
-    return rootsDict(sj.roots(e, x, { skipQuintic: true }));
+    return rootsDict(sj.roots(e, x, { multiple: true, skipQuintic: true }));
   },
   solve: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'check' && k !== 'cubics') throw new Unsupported(`kwargs ${k}`);

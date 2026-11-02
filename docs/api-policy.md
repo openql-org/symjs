@@ -1,6 +1,6 @@
 # Public API policy of `@symjs/symjs`
 
-Status: agreed conventions (2026-11-02); the classification below is a proposal under review.
+Status: adopted (2026-11-02) and implemented; it may change by decision of the community.
 
 ## Conventions
 
@@ -20,7 +20,14 @@ Status: agreed conventions (2026-11-02); the classification below is a proposal 
 - **internal**: implementation details; to be removed from the public entry point.
 - **deprecated**: kept as an alias of the new name during 0.x, removed in 1.0.
 
-Renamed exports keep their old name as a `@deprecated` alias during 0.x. The public API is recorded in an API report (API Extractor) that is reviewed with every change.
+Renamed exports keep their old name as a `@deprecated` alias during 0.x; exports classified as internal are likewise deprecated during 0.x and removed from the entry points in 1.0. The public API is recorded in [packages/symjs/api-report.md](../packages/symjs/api-report.md) (every export of every entry point with its kind and level, from the `@experimental` and `@deprecated` JSDoc tags), generated and checked by `tests/api-report.test.ts`; changes to it are reviewed with every change.
+
+Notes on the implementation:
+
+- `Derivative` and `Piecewise` are the node classes and can also be called like SymPy's constructors (`Derivative(f(x), x, [y, 2])`, `Piecewise([x, Lt(x, 0)], [0, true])`).
+- Results that are dicts in SymPy are `ExprMap`s: `Map`s whose expression keys compare structurally. `roots(f, x)` returns root -> multiplicity; `roots(f, x, { multiple: true })` returns the list.
+- `div` is SymPy's polynomial division; the former arithmetic helper `div(a, b)` is `a.div(b)` (or `mul(a, pow(b, -1))`).
+- `expandMul` is SymPy's `expand_mul`.
 
 ## Entry points and tree-shaking
 

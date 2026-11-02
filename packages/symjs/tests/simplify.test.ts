@@ -65,9 +65,9 @@ describe('simplify', () => {
 
 describe('polynomials', () => {
   it('finds roots', () => {
-    expect(roots(add(pow(x, 2), -1), x).map(String)).toEqual(['-1', '1']);
-    expect(roots(add(pow(x, 2), -2), x).map(String)).toEqual(['-sqrt(2)', 'sqrt(2)']);
-    expect(roots(add(pow(x, 2), 1), x).map(String)).toEqual(['-I', 'I']);
+    expect(roots(add(pow(x, 2), -1), x, { multiple: true }).map(String)).toEqual(['-1', '1']);
+    expect(roots(add(pow(x, 2), -2), x, { multiple: true }).map(String)).toEqual(['-sqrt(2)', 'sqrt(2)']);
+    expect(roots(add(pow(x, 2), 1), x, { multiple: true }).map(String)).toEqual(['-I', 'I']);
     expect(solve(add(pow(x, 3), mul(-6, pow(x, 2)), mul(11, x), -6), x).map(String)).toEqual(['1', '2', '3']);
     expect(solve(add(mul(a, pow(x, 2)), mul(-1, a)), x).map(String)).toEqual(['-1', '1']);
   });

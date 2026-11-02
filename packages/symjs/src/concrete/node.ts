@@ -7,7 +7,11 @@
 
 import { Expr } from '../core/nodes';
 
-/** Sum or Product: args [f, k1, a1, b1, k2, a2, b2, ...]. @internal ctor */
+/**
+ * Sum or Product: args [f, k1, a1, b1, k2, a2, b2, ...]. @internal ctor
+ *
+ * @experimental May change in a minor release.
+ */
 export class Concrete extends Expr {
   readonly kind = 'Concrete' as const;
   constructor(readonly kind2: 'Sum' | 'Product', readonly args: readonly Expr[]) {

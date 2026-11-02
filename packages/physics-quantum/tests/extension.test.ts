@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Expr, ExtensionExpr, Sym, adjoint, diff, latex, mul, subs, xreplace } from '@symjs/symjs';
+import { Expr, ExtensionExpr, Symbol, adjoint, diff, latex, mul, subs, xreplace } from '@symjs/symjs';
 
 /** A minimal Ket node defined outside the base module, using only its public API. */
 class Ket extends ExtensionExpr {
@@ -44,8 +44,8 @@ class Bra extends ExtensionExpr {
   }
 }
 
-const x = new Sym('x');
-const psi = new Sym('psi');
+const x = new Symbol('x');
+const psi = new Symbol('psi');
 
 describe('extension nodes via ExtensionExpr', () => {
   it('print, substitute and rebuild', () => {

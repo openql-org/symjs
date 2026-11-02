@@ -54,7 +54,16 @@ export {
   Max,
   expandFunc,
 } from './functions/special';
-export { besselj, bessely, besseli, besselk, airyai, airybi, airyaiprime, airybiprime } from './functions/bessel';
+export {
+  besselj,
+  bessely,
+  besseli,
+  besselk,
+  airyai,
+  airybi,
+  airyaiprime,
+  airybiprime,
+} from './functions/bessel';
 export {
   bernoulli,
   euler,
@@ -80,4 +89,13 @@ export {
   motzkinNumbersInRange,
   isMotzkin,
 } from './functions/combinatorial';
-export { polarify, expPolar, polarLift, periodicArgument, principalBranch, unbranchedArgument, unpolarify, extractBranchFactor } from './functions/polar';
+export {
+  polarify,
+  expPolar,
+  polarLift,
+  periodicArgument,
+  principalBranch,
+  unbranchedArgument,
+  unpolarify,
+  extractBranchFactor,
+} from './functions/polar';

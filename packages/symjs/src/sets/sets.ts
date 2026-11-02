@@ -96,7 +96,23 @@ export const UniversalSet = new NamedSet('UniversalSet');
 
 export class Interval extends SetExpr {
   readonly args: readonly Expr[];
-  /** @internal use interval() */
+  /** SymPy `Interval(a, b, left_open, right_open)` (EmptySet or a point when degenerate). */
+  static of(a: ExprLike, b: ExprLike, leftOpen = false, rightOpen = false): SetExpr {
+    return interval(a, b, leftOpen, rightOpen);
+  }
+  /** SymPy `Interval.open(a, b)`. */
+  static open(a: ExprLike, b: ExprLike): SetExpr {
+    return interval(a, b, true, true);
+  }
+  /** SymPy `Interval.Lopen(a, b)`: open on the left. */
+  static Lopen(a: ExprLike, b: ExprLike): SetExpr {
+    return interval(a, b, true, false);
+  }
+  /** SymPy `Interval.Ropen(a, b)`: open on the right. */
+  static Ropen(a: ExprLike, b: ExprLike): SetExpr {
+    return interval(a, b, false, true);
+  }
+  /** @internal use Interval.of() */
   constructor(
     readonly start: Expr,
     readonly end: Expr,
@@ -156,7 +172,11 @@ export const Ropen = (a: ExprLike, b: ExprLike) => interval(a, b, false, true);
 
 export class FiniteSet extends SetExpr {
   readonly args: readonly Expr[];
-  /** @internal use finiteSet() */
+  /** SymPy `FiniteSet(*elements)` (EmptySet when empty, duplicates removed). */
+  static of(...xs: ExprLike[]): SetExpr {
+    return finiteSet(...xs);
+  }
+  /** @internal use FiniteSet.of() */
   constructor(elems: readonly Expr[]) {
     super();
     this.args = [...elems].sort((x, y) => compareKeys(sortKey(x), sortKey(y)));

@@ -22,6 +22,7 @@ export type RewriteRule = (args: Expr[], self: Expr) => Expr | undefined;
 /** rewriteRules[functionName][target] (SymPy class names, e.g. 'Abs', 'exp'). */
 export const rewriteRules: Record<string, Record<string, RewriteRule>> = {};
 
+/** @experimental May change in a minor release. */
 export function registerRewrite(fnName: string, target: string, rule: RewriteRule): void {
   (rewriteRules[fnName] ??= {})[target] = rule;
 }

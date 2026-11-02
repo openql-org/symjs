@@ -27,7 +27,7 @@ expand(parse('(x + 1)**3')).toString();      // 'x**3 + 3*x**2 + 3*x + 1'
 factor(parse('x**3 - x')).toString();        // 'x*(x - 1)*(x + 1)'
 latex(parse('sin(x)**2/2'));                 // '\\frac{\\sin^{2}{\\left(x \\right)}}{2}'
 diff(parse('x**x'), x).toString();           // 'x**x*(log(x) + 1)'
-roots(parse('x**2 + x + 1'), x).map(String); // ['-1/2 - sqrt(3)*I/2', '-1/2 + sqrt(3)*I/2']
+roots(parse('x**2 + x + 1'), x);             // Map { -1/2 - sqrt(3)*I/2 => 1, -1/2 + sqrt(3)*I/2 => 1 }
 ```
 
 ## Packages: base and extend modules
@@ -103,7 +103,7 @@ See [compat/REPORT.md](compat/REPORT.md) for the current numbers and the highest
 - Expressions are immutable. Equality is structural (`a.equals(b)`).
 - `symbols('x y')` infers a tuple type of the right length from a string literal.
 - Numbers may be given as `number` (integers become exact rationals, non-integers become `Float`) or `bigint`. Use `rational(1, 3)` for exact fractions.
-- Compatibility targets results (computed values and printed output). Class names and return types follow TypeScript conventions (e.g. `roots` returns an array with multiplicities).
+- Names follow SymPy, converted to camelCase (`expand_log` -> `expandLog`); classes keep SymPy's names (`Symbol`, `Derivative`, `Piecewise`, `Interval`, ...). Results that are dicts in SymPy are `ExprMap`s, `Map`s whose expression keys compare structurally (`roots(f, x).get(1)`). See [docs/api-policy.md](docs/api-policy.md) and the generated [API report](packages/symjs/api-report.md) for the stability level of every export; renamed exports keep their old name as a deprecated alias during 0.x.
 
 ## Development
 

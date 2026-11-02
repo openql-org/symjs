@@ -55,7 +55,7 @@ const OPS: Record<string, (e: Expr) => string | string[]> = {
   cancel: (e) => str(cancel(e)),
   conjugate: (e) => str(conjugate(e)),
   diff_x: (e) => str(diff(e, x)),
-  roots_x: (e) => roots(e, x).map(str).sort(),
+  roots_x: (e) => roots(e, x, { multiple: true }).map(str).sort(),
 };
 
 function runOp(op: string, e: Expr): string | string[] {

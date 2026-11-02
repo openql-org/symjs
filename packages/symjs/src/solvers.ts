@@ -11,16 +11,18 @@ import './core';
 
 export {
   solve,
-  asEquation,
   linsolve,
   linearEqToMatrix,
   nonlinsolve,
   solveLinear,
   solveUndeterminedCoeffs,
   nsolve,
-  invertEquation,
 } from './solvers/solve';
-export { dsolve, homogeneousOrder, odeOrder } from './solvers/ode';
+export {
+  dsolve,
+  homogeneousOrder,
+  odeOrder,
+} from './solvers/ode';
 export {
   solveset,
   solveUnivariateInequality,
@@ -42,5 +44,25 @@ export {
   notEmptyIn,
   piecewiseExclusive,
 } from './solvers/inequalities';
-export { factorSystem, factorSystemCond, solvePolySystem } from './solvers/polysys';
-export { rsolve, rsolveHyper, rsolvePoly, rsolveRatio } from './solvers/recurr';
+export {
+  factorSystem,
+  factorSystemCond,
+  solvePolySystem,
+} from './solvers/polysys';
+export {
+  rsolve,
+  rsolveHyper,
+  rsolvePoly,
+  rsolveRatio,
+} from './solvers/recurr';
+
+// ---- deprecated names (kept during 0.x, removed in 1.0; see docs/api-policy.md) ----
+
+import { asEquation as _asEquation_ } from './solvers/solve';
+import { invertEquation as _invertEquation_ } from './solvers/solve';
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const asEquation = _asEquation_;
+
+/** @deprecated Internal; removed from the public API in 1.0. */
+export const invertEquation = _invertEquation_;

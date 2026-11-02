@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 import { describe, expect, it } from 'vitest';
-import { I, Matrix, add, mul, pi, rational, symbols } from '@symjs/symjs';
+import { I, Matrix, Rational, add, mul, pi, symbols } from '@symjs/symjs';
 import { gates } from '../src';
 
 const [theta, phi] = symbols('theta phi', { real: true });
@@ -28,7 +28,7 @@ describe('quantum gates', () => {
     expect(Ry(theta).mul(Ry(phi)).simplify().equals(Ry(add(theta, phi)))).toBe(true);
     expect(Rx(theta).mul(Rx(phi)).simplify().equals(Rx(add(theta, phi)))).toBe(true);
     expect(Rx(theta).isUnitary()).toBe(true);
-    expect(gates.U(theta, phi, rational(1, 3)).isUnitary()).toBe(true);
+    expect(gates.U(theta, phi, Rational.of(1, 3)).isUnitary()).toBe(true);
   });
 
   it('T^2 = S, S^2 = Z', () => {
