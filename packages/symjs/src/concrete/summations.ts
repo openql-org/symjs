@@ -23,6 +23,8 @@ const isOo = (e: Expr) => e instanceof Special && e.name === 'oo';
 
 export { Sum, Product } from '../core/concrete';
 import { Sum, Product } from '../core/concrete';
+import { InvariantError } from '../core/errors';
+import { cast, defined, first, getOrThrow } from '../core/guard';
 
 /** S_p(n) = sum_{k=1}^{n} k^p (Faulhaber, with B_1 = +1/2). */
 function powerSum(p: number, n: Expr): Expr {
@@ -79,7 +81,7 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
     const P = dep[0];
     const ePc = polyCoefficients(P.exp, k);
     if (ePc && Math.max(...ePc.keys()) === 1) {
-      const r = pow(P.base, ePc.get(1)!);
+      const r = pow(P.base, getOrThrow(ePc, 1));
       const first = xreplace(ef, [[k, a]]);
       if (isOo(b)) {
         const closed = mul(first, pow(add(1, mul(-1, r)), -1));
@@ -92,9 +94,9 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   }
   // exponential series: x**k / k! from 0 to oo
   if (isOo(b) && a instanceof Rational && a.isZero) {
-    const num = factors.find((g) => g instanceof Pow && g.exp.key === k.key);
+    const num = factors.find((g): g is Pow => g instanceof Pow && g.exp.key === k.key);
     const den = factors.find((g) => g instanceof Pow && g.exp instanceof Rational && g.exp.p === -1n && g.base.key === factorial(k).key);
-    if (num && den && factors.length === 2) return exp((num as Pow).base);
+    if (num && den && factors.length === 2) return exp(num.base);
   }
   return undefined;
 }
@@ -161,15 +163,15 @@ function evalSumResidue(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   if (!(isInt(a) && isOo(b))) return undefined;
   if (!isEven()) {
     const n = deg(pd);
-    const lead = pd.get(n)!;
+    const lead = getOrThrow(pd, n);
     const sub = pd.get(n - 1) ?? S.Zero;
     const shift = mul(-1, sub, pow(lead, -1), Rational.of(1, n));
     if (!isInt(shift) || shift.isZero) return undefined;
     const sh = (p: Map<number, Expr>) => expand(xreplace(toExpr(p), [[k, add(k, shift)]]));
     const nn = sh(pn);
     const dd = sh(pd);
-    pn = polyCoefficients(nn, k)!;
-    pd = polyCoefficients(dd, k)!;
+    pn = defined(polyCoefficients(nn, k), 'shifted numerator coefficients');
+    pd = defined(polyCoefficients(dd, k), 'shifted denominator coefficients');
     if (!isEven()) return undefined;
     const g = alternating ? mul(pow(-1, k), pow(-1, shift), nn, pow(dd, -1)) : mul(nn, pow(dd, -1));
     return evalSumResidue(g, k, add(a, mul(-1, shift)), b);
@@ -249,7 +251,7 @@ function evalProduct(term: Expr, k: Sym, a: Expr, n: Expr): Expr | undefined {
       A = mul(A, pow(rf(add(a, mul(-1, r)), count), m));
     }
     if (M < deg) return undefined;
-    return mul(pow(pc.get(deg)!, count), A);
+    return mul(pow(getOrThrow(pc, deg), count), A);
   }
   if (term instanceof Mul) {
     const without = term.args.filter((t) => !t.has(k));
@@ -295,7 +297,7 @@ export function product(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Ex
 
 /** doit() for a Concrete node. */
 export function doitConcrete(c: Concrete): Expr {
-  const lims = c.limits.map(([k, a, b]) => [k as Sym, a, b] as [Sym, Expr, Expr]);
+  const lims = c.limits.map(([k, a, b]): [Sym, Expr, Expr] => [cast(k, Sym, 'limit variable'), a, b]);
   return c.kind2 === 'Sum' ? summation(c.function, ...lims) : product(c.function, ...lims);
 }
 
@@ -305,7 +307,7 @@ export function reverseOrder(c: Concrete, ...which: (number | Sym)[]): Expr {
   let f = c.function;
   for (const w of which) {
     const i = typeof w === 'number' ? w : lims.findIndex(([k]) => k.key === w.key);
-    const [k, a, b] = lims[i]!;
+    const [k, a, b] = defined(lims[i], `limit ${String(w)}`);
     lims[i] = [k, add(b, 1), add(a, -1)];
     f = c.kind2 === 'Sum' ? mul(-1, f) : pow(f, -1);
   }
@@ -351,8 +353,8 @@ function fractionOf(f: Expr): [Expr, Expr] {
 
 /** SymPy Sum.is_convergent for common series tests (divergence, p-series, ratio, alternating). */
 export function sumIsConvergent(c: Concrete): boolean | undefined {
-  const [kE, a, b] = c.limits[0]!;
-  const k = kE as Sym;
+  const [kE, a, b] = first(c.limits);
+  const k = cast(kE, Sym, 'limit variable');
   const f = c.function;
   if (isFiniteBound(a) && isFiniteBound(b)) return true;
   if (isNegOo(a) || isNegOo(b)) return undefined;
@@ -369,7 +371,8 @@ export function sumIsConvergent(c: Concrete): boolean | undefined {
   // limit comparison with a p-series: f ~ c*k**(-p) as k -> oo with real c != 0
   try {
     const t = new Sym('_t', { positive: true });
-    const [c0, e0] = impl.leadterm!(xreplace(f, [[k, pow(t, -1)]]), t);
+    if (impl.leadterm === undefined) throw new InvariantError('impl.leadterm is not registered');
+    const [c0, e0] = impl.leadterm(xreplace(f, [[k, pow(t, -1)]]), t);
     if (e0 instanceof Rational && c0.freeSymbols().size === 0 && !(c0 instanceof Rational && c0.isZero)) {
       const cv = c0.toComplex();
       if (Math.abs(cv.im) < 1e-300 && cv.re !== 0) return e0.value > 1;
@@ -409,8 +412,8 @@ export function eulerMaclaurin(sum: Concrete, mIn = 0, n = 0): [Expr, Expr] {
   let m = mIn;
   if (!(sum instanceof Concrete) || sum.limits.length !== 1) throw new TypeError('euler_maclaurin: a Sum with one limit expected');
   let f = sum.function;
-  const [i0, a0, b0] = sum.limits[0]!;
-  const i = i0 as Sym;
+  const [i0, a0, b0] = first(sum.limits);
+  const i = cast(i0, Sym, 'limit variable');
   let a = a0;
   let b = b0;
   const bmaNum = add(b, mul(-1, a));

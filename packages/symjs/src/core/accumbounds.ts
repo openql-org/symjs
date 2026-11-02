@@ -12,7 +12,8 @@ import type { Expr, ExprLike } from './nodes';
 import { ExtensionExpr, Rational, S, Special, impl } from './nodes';
 import { add, mul, pow, sympify } from './ops';
 import { callableClass } from './callable';
-import { NotImplementedError } from './errors';
+import { NotImplementedError, NotLoadedError } from './errors';
+import { at, cast } from './guard';
 
 const isInf = (e: Expr): boolean => e instanceof Special && e.name === 'oo';
 const isNegInf = (e: Expr): boolean => e instanceof Special && e.name === '-oo';
@@ -27,21 +28,27 @@ const bmul = (a: Expr, b: Expr): Expr => {
   return z(a) || z(b) ? S.Zero : mul(a, b);
 };
 
+const setsNotLoaded = (): never => {
+  throw new NotLoadedError("sets are not available: import '@symjs/symjs/sets' (or '@symjs/symjs')");
+};
+
+const asAB = (e: Expr): AccumBoundsNode => cast(e, AccumBoundsNode, 'AccumBounds operand');
+
 /** A closed interval [min, max] of real values (SymPy AccumulationBounds). */
 export class AccumBoundsNode extends ExtensionExpr {
   constructor(min: Expr, max: Expr) {
     super('AccumBounds', [min, max]);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return accumBounds(args[0]!, args[1]!);
+    return accumBounds(at(args, 0), at(args, 1));
   }
   /** The lower bound. */
   get min(): Expr {
-    return this.args[0]!;
+    return at(this.args, 0);
   }
   /** The upper bound. */
   get max(): Expr {
-    return this.args[1]!;
+    return at(this.args, 1);
   }
   /** max - min (SymPy delta). */
   get delta(): Expr {
@@ -64,10 +71,11 @@ export class AccumBoundsNode extends ExtensionExpr {
     if (other instanceof AccumBoundsNode) {
       const lo = lt(this.min, other.min) ? other.min : this.min;
       const hi = lt(this.max, other.max) ? this.max : other.max;
-      if (lt(hi, lo)) return impl.emptySet!();
+      if (lt(hi, lo)) return impl.emptySet === undefined ? setsNotLoaded() : impl.emptySet();
       return accumBounds(lo, hi);
     }
-    return impl.setIntersection!(impl.interval!(this.min, this.max), other);
+    if (impl.setIntersection === undefined || impl.interval === undefined) return setsNotLoaded();
+    return impl.setIntersection(impl.interval(this.min, this.max), other);
   }
   /** The union with an overlapping AccumBounds (SymPy union). */
   union(other: AccumBoundsNode): Expr {
@@ -92,17 +100,18 @@ export const AccumBounds = /* @__PURE__ */ callableClass(AccumBoundsNode, accumB
 // ---- interval arithmetic used by add/mul/pow -------------------------------------------
 
 /** The sum of intervals and a number. */
-function abAdd(abs: AccumBoundsNode[], c: Expr): Expr {
-  const lo = add(c, ...abs.map((a) => a.min));
-  const hi = add(c, ...abs.map((a) => a.max));
+function abAdd(abs: readonly Expr[], c: Expr): Expr {
+  const lo = add(c, ...abs.map((a) => asAB(a).min));
+  const hi = add(c, ...abs.map((a) => asAB(a).max));
   return accumBounds(lo, hi);
 }
 
 /** The product of intervals and a number. */
-function abMul(abs: AccumBoundsNode[], c: Expr): Expr {
+function abMul(abs: readonly Expr[], c: Expr): Expr {
   let lo: Expr = c;
   let hi: Expr = c;
-  for (const a of abs) {
+  for (const x of abs) {
+    const a = asAB(x);
     const cands = [bmul(lo, a.min), bmul(lo, a.max), bmul(hi, a.min), bmul(hi, a.max)];
     [lo, hi] = [minOf(cands), maxOf(cands)];
   }
@@ -123,7 +132,7 @@ function abPow(a: AccumBoundsNode, e: Expr): Expr {
     }
     // negative powers: 1/[a, b]
     const inv = val(a.min) > 0 || val(a.max) < 0 ? accumBounds(pow(a.max, -1), pow(a.min, -1)) : accumBounds(S.NegativeInfinity, S.Infinity);
-    return n === -1n ? inv : abPow(inv as AccumBoundsNode, Rational.of(-n));
+    return n === -1n ? inv : inv instanceof AccumBoundsNode ? abPow(inv, Rational.of(-n)) : pow(inv, Rational.of(-n));
   }
   if (val(a.min) >= 0 && v > 0) return accumBounds(pow(a.min, e), pow(a.max, e));
   if (val(a.min) > 0 && v < 0) return accumBounds(pow(a.max, e), pow(a.min, e));
@@ -132,9 +141,12 @@ function abPow(a: AccumBoundsNode, e: Expr): Expr {
 
 impl.accumBounds = {
   is: (e: Expr): e is Expr => e instanceof AccumBoundsNode,
-  add: (abs: readonly Expr[], c: Expr) => abAdd(abs as AccumBoundsNode[], c),
-  mul: (abs: readonly Expr[], c: Expr) => abMul(abs as AccumBoundsNode[], c),
-  pow: (a: Expr, e: Expr) => abPow(a as AccumBoundsNode, e),
-  bounds: (a: Expr) => [(a as AccumBoundsNode).min, (a as AccumBoundsNode).max],
+  add: (abs: readonly Expr[], c: Expr) => abAdd(abs, c),
+  mul: (abs: readonly Expr[], c: Expr) => abMul(abs, c),
+  pow: (a: Expr, e: Expr) => abPow(asAB(a), e),
+  bounds: (a: Expr) => {
+    const ab = asAB(a);
+    return [ab.min, ab.max];
+  },
   make: (lo: Expr, hi: Expr) => accumBounds(lo, hi),
 };

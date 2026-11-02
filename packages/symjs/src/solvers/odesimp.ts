@@ -12,6 +12,7 @@ import { Eq } from '../core/logic';
 import { add, couldExtractMinusSign, mul, pow } from '../core/ops';
 import { freeSymbols, subs, xreplace } from '../core/traverse';
 import { asNumerDenom } from '../core/methods';
+import { at, cast, first } from '../core/guard';
 import { doit } from '../calculus/doit';
 import { termsGcd } from '../polys/sympoly';
 import { compareKeys, sortKey } from '../printing/sortkey';
@@ -115,7 +116,7 @@ export function constantsimp(exprIn: Expr, Cs: readonly Sym[]): Expr {
     for (const xe of constantSubexpressions(expr, Cs)) {
       const xes = [...freeSymbols(xe)].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
       if (!xes.length) continue;
-      if (xes.every((c) => count(expr, c) === count(xe, c))) expr = subs(expr, [[xe, xes[0]!]]);
+      if (xes.every((c) => count(expr, c) === count(xe, c))) expr = subs(expr, [[xe, first(xes)]]);
     }
     expr = removeLinearRedundancies(expr, Cs);
     expr = conditionalTermFactoring(expr);
@@ -141,7 +142,7 @@ export function constantRenumber(expr: Expr, variables: readonly Expr[]): Expr {
     const hasC = consts.some((c) => e.has(c));
     if (!(e instanceof Mul || e instanceof Add || e instanceof Pow) && !(e instanceof Fn || e instanceof UndefFn) && !hasC) return;
     if (isConst(e)) {
-      if (!found.some((c) => c.key === e.key)) found.push(e as Sym);
+      if (!found.some((c) => c.key === e.key)) found.push(cast(e, Sym));
       return;
     }
     if (e instanceof Fn || e instanceof UndefFn || e instanceof Pow) {
@@ -153,8 +154,8 @@ export function constantRenumber(expr: Expr, variables: readonly Expr[]): Expr {
   walk(expr);
   const fresh = found.map((_, i) => new Sym(`C${i + 1}`));
   const tmp = found.map((_, i) => new Sym(`_Ctmp${i}`));
-  let r = xreplace(expr, found.map((c, i) => [c, tmp[i]!] as [Expr, Expr]));
-  r = xreplace(r, tmp.map((t, i) => [t, fresh[i]!] as [Expr, Expr]));
+  let r = xreplace(expr, found.map((c, i): [Expr, Expr] => [c, at(tmp, i)]));
+  r = xreplace(r, tmp.map((t, i): [Expr, Expr] => [t, at(fresh, i)]));
   return r;
 }
 
@@ -163,7 +164,7 @@ export function constantRenumber(expr: Expr, variables: readonly Expr[]): Expr {
  * possible and renumber the constants.
  */
 export function odesimp(ode: Expr, solIn: Expr, fx: UndefFn, hint: string): Expr[] {
-  const x = fx.args[0] as Sym;
+  const x = cast(first(fx.args), Sym);
   const odeSyms = [...freeSymbols(ode)];
   let sol = hint === 'nth_linear_constant_coeff_homogeneous' ? solIn : doit(solIn);
   if (hint.startsWith('nth_linear_euler_eq_nonhomogeneous') && sol instanceof Rel) sol = Eq(simplify(sol.lhs), simplify(sol.rhs));
@@ -171,7 +172,7 @@ export function odesimp(ode: Expr, solIn: Expr, fx: UndefFn, hint: string): Expr
   const constants = [...freeSymbols(sol)].filter((s) => !odeSyms.some((o) => o.key === s.key));
   sol = constantsimp(sol, constants);
   let eqs: Expr[];
-  const s = sol as Rel;
+  const s = cast(sol, Rel);
   if (s.rhs.key === fx.key && !s.lhs.has(fx)) eqs = [Eq(s.rhs, s.lhs)];
   else if (s.lhs.key === fx.key && !s.rhs.has(fx)) eqs = [s];
   else {
@@ -197,8 +198,8 @@ export function odesimp(ode: Expr, solIn: Expr, fx: UndefFn, hint: string): Expr
     if (hint.startsWith('1st_homogeneous_coeff')) {
       const C1 = constants.find((c) => c.name === 'C1') ?? new Sym('C1');
       eqs = eqs.map((e) => {
-        let ni = logcombine(e, { force: true }) as Rel;
-        if (ni.lhs instanceof Fn && ni.lhs.name === 'log' && ni.rhs instanceof Rational && ni.rhs.isZero) ni = Eq(mul(ni.lhs.args[0]!, C1.pow(-1)), C1) as Rel;
+        const ni = logcombine(e, { force: true });
+        if (ni instanceof Rel && ni.lhs instanceof Fn && ni.lhs.name === 'log' && ni.rhs instanceof Rational && ni.rhs.isZero) return Eq(mul(first(ni.lhs.args), C1.pow(-1)), C1);
         return ni;
       });
     }

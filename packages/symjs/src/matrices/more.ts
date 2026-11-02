@@ -9,9 +9,10 @@
  * and printing.
  */
 
-import { MatrixError } from '../core/errors';
-import type { Expr, ExprLike } from '../core/nodes';
-import { Rational, S, Sym, type Assumptions } from '../core/nodes';
+import { MatrixError, SympifyError } from '../core/errors';
+import { at, defined, last } from '../core/guard';
+import type { ExprLike } from '../core/nodes';
+import { Expr, Rational, S, Sym, type Assumptions } from '../core/nodes';
 import { add, mul, pow, sqrt, sub, sympify } from '../core/ops';
 import { abs } from '../functions/elementary';
 import { sign } from '../functions/special';
@@ -22,6 +23,8 @@ import { connectedComponents, diagonalize, jordanBlock, jordanForm, norm, qrDeco
 const isZeroExpr = (e: Expr): boolean => e instanceof Rational && e.isZero;
 const rows = (m: Matrix): Expr[][] => m.toArray();
 const range = (a: number, b: number): number[] => Array.from({ length: Math.max(0, b - a) }, (_, i) => a + i);
+/** The entry (i, j) of a row-major grid; throws when out of range. */
+const get2 = <T>(g: readonly (readonly T[])[], i: number, j: number): T => at(at(g, i), j);
 
 // ---------------------------------------------------------------------------
 // Berkowitz
@@ -45,9 +48,13 @@ export function berkowitz(M: Matrix): Expr[][] {
     const a = mul(-1, A.get(k, k));
     A = A.slice(range(0, k), range(0, k));
     const items: Matrix[] = [C];
-    for (let i = 0; i < n - 2; i++) items.push(A.mul(items[i]!));
+    let item = C;
+    for (let i = 0; i < n - 2; i++) {
+      item = A.mul(item);
+      items.push(item);
+    }
     const vals: Expr[] = [S.One, a, ...items.map((B) => R.mul(B).get(0, 0))];
-    const T = Matrix.fromFunction(n + 1, n, (i, j) => (i >= j && i - j < vals.length ? vals[i - j]! : 0));
+    const T = Matrix.fromFunction(n + 1, n, (i, j) => (i >= j && i - j < vals.length ? at(vals, i - j) : 0));
     transforms[k - 1] = T;
   }
   let poly = Matrix.of([[S.One], [mul(-1, A.get(0, 0))]]);
@@ -64,7 +71,7 @@ export function berkowitzMinors(M: Matrix): Expr[] {
   let sgn: Expr = S.One;
   const out: Expr[] = [];
   for (const p of berkowitz(M)) {
-    out.push(mul(sgn, p[p.length - 1]!));
+    out.push(mul(sgn, last(p)));
     sgn = mul(-1, sgn);
   }
   return out;
@@ -177,24 +184,30 @@ export function luDecompositionSimple(M: Matrix): [Matrix, [number, number][]] {
   for (let pivotRow = 0; pivotRow < M.rows - 1; pivotRow++) {
     let cand = -1;
     while (pivotCol !== M.cols) {
-      cand = range(pivotRow, M.rows).find((r) => !isZeroExpr(lu[r]![pivotCol]!)) ?? -1;
+      cand = range(pivotRow, M.rows).find((r) => !isZeroExpr(get2(lu, r, pivotCol))) ?? -1;
       if (cand >= 0) break;
       pivotCol++;
     }
     if (cand < 0) return [Matrix.of(lu), swaps];
     if (cand !== pivotRow) {
       swaps.push([pivotRow, cand]);
+      const rowP = at(lu, pivotRow);
+      const rowC = at(lu, cand);
       for (const c of [...range(0, pivotRow), ...range(pivotCol, M.cols)]) {
-        const t = lu[pivotRow]![c]!;
-        lu[pivotRow]![c] = lu[cand]![c]!;
-        lu[cand]![c] = t;
+        const t = at(rowP, c);
+        rowP[c] = at(rowC, c);
+        rowC[c] = t;
       }
     }
+    const pivRow = at(lu, pivotRow);
+    const pivInv = pow(at(pivRow, pivotCol), -1);
     for (let r = pivotRow + 1; r < M.rows; r++) {
-      lu[r]![pivotRow] = mul(lu[r]![pivotCol]!, pow(lu[pivotRow]![pivotCol]!, -1));
-      for (let c = pivotCol + 1; c < M.cols; c++) lu[r]![c] = sub(lu[r]![c]!, mul(lu[r]![pivotRow]!, lu[pivotRow]![c]!));
+      const lr = at(lu, r);
+      const f = mul(at(lr, pivotCol), pivInv);
+      lr[pivotRow] = f;
+      for (let c = pivotCol + 1; c < M.cols; c++) lr[c] = sub(at(lr, c), mul(f, at(pivRow, c)));
     }
-    if (pivotRow !== pivotCol) for (let r = pivotRow + 1; r < M.rows; r++) lu[r]![pivotCol] = S.Zero;
+    if (pivotRow !== pivotCol) for (let r = pivotRow + 1; r < M.rows; r++) at(lu, r)[pivotCol] = S.Zero;
     pivotCol++;
     if (pivotCol === M.cols) break;
   }
@@ -211,25 +224,32 @@ export function luDecompositionFF(M: Matrix): [Matrix, Matrix, Matrix, Matrix] {
   const DD = rows(Matrix.zeros(n, n));
   let oldpivot: Expr = S.One;
   for (let k = 0; k < n - 1; k++) {
-    if (isZeroExpr(U[k]![k]!)) {
-      const kp = range(k + 1, n).find((r) => !isZeroExpr(U[r]![k]!));
+    if (isZeroExpr(get2(U, k, k))) {
+      const kp = range(k + 1, n).find((r) => !isZeroExpr(get2(U, r, k)));
       if (kp === undefined) throw new MatrixError('Matrix is not full rank');
-      for (let c = k; c < m; c++) [U[k]![c], U[kp]![c]] = [U[kp]![c]!, U[k]![c]!];
-      for (let c = 0; c < k; c++) [L[k]![c], L[kp]![c]] = [L[kp]![c]!, L[k]![c]!];
-      [P[k], P[kp]] = [P[kp]!, P[k]!];
+      const Uk = at(U, k);
+      const Ukp = at(U, kp);
+      for (let c = k; c < m; c++) [Uk[c], Ukp[c]] = [at(Ukp, c), at(Uk, c)];
+      const Lk = at(L, k);
+      const Lkp = at(L, kp);
+      for (let c = 0; c < k; c++) [Lk[c], Lkp[c]] = [at(Lkp, c), at(Lk, c)];
+      [P[k], P[kp]] = [at(P, kp), at(P, k)];
     }
-    const Ukk = U[k]![k]!;
-    L[k]![k] = Ukk;
-    DD[k]![k] = mul(oldpivot, Ukk);
+    const Uk = at(U, k);
+    const Ukk = at(Uk, k);
+    at(L, k)[k] = Ukk;
+    at(DD, k)[k] = mul(oldpivot, Ukk);
+    const oldInv = pow(oldpivot, -1);
     for (let i = k + 1; i < n; i++) {
-      const Uik = U[i]![k]!;
-      L[i]![k] = Uik;
-      for (let j = k + 1; j < m; j++) U[i]![j] = mul(sub(mul(Ukk, U[i]![j]!), mul(U[k]![j]!, Uik)), pow(oldpivot, -1));
-      U[i]![k] = S.Zero;
+      const Ui = at(U, i);
+      const Uik = at(Ui, k);
+      at(L, i)[k] = Uik;
+      for (let j = k + 1; j < m; j++) Ui[j] = mul(sub(mul(Ukk, at(Ui, j)), mul(at(Uk, j), Uik)), oldInv);
+      Ui[k] = S.Zero;
     }
     oldpivot = Ukk;
   }
-  DD[n - 1]![n - 1] = oldpivot;
+  at(DD, n - 1)[n - 1] = oldpivot;
   return [Matrix.of(P), Matrix.of(L), Matrix.of(DD), Matrix.of(U)];
 }
 
@@ -287,23 +307,35 @@ function lllCore(M: Matrix, delta: Q, withT: boolean): [Matrix, Matrix | undefin
   const half: Q = [1n, 2n];
   const qabs = (a: Q): Q => [a[0] < 0n ? -a[0] : a[0], a[1]];
   for (let i = 0; i < m; i++) {
-    ystar[i] = y[i]!.map((v) => [v, 1n] as Q);
+    const yi = at(y, i);
+    const mui = at(mu, i);
+    let ys = yi.map((v) => [v, 1n] as Q);
     for (let j = 0; j < i; j++) {
+      const ysj = at(ystar, j);
       let dot: Q = [0n, 1n];
-      for (let z = 0; z < n; z++) dot = qadd(dot, qmul([y[i]![z]!, 1n], ystar[j]![z]!));
-      mu[i]![j] = qdiv(dot, g[j]!);
-      ystar[i] = ystar[i]!.map((v, z) => qsub(v, qmul(mu[i]![j]!, ystar[j]![z]!)));
+      for (let z = 0; z < n; z++) dot = qadd(dot, qmul([at(yi, z), 1n], at(ysj, z)));
+      const muij = qdiv(dot, at(g, j));
+      mui[j] = muij;
+      ys = ys.map((v, z) => qsub(v, qmul(muij, at(ysj, z))));
     }
-    g[i] = ystar[i]!.reduce<Q>((s, v) => qadd(s, qmul(v, v)), [0n, 1n]);
+    ystar[i] = ys;
+    g[i] = ys.reduce<Q>((s, v) => qadd(s, qmul(v, v)), [0n, 1n]);
   }
-  const lovasz = (k: number) => qcmp(g[k]!, qmul(qsub(delta, qmul(mu[k]![k - 1]!, mu[k]![k - 1]!)), g[k - 1]!)) >= 0;
-  const small = (k: number, j: number) => qcmp(qabs(mu[k]![j]!), half) <= 0;
+  const lovasz = (k: number) => {
+    const muk = get2(mu, k, k - 1);
+    return qcmp(at(g, k), qmul(qsub(delta, qmul(muk, muk)), at(g, k - 1))) >= 0;
+  };
+  const small = (k: number, j: number) => qcmp(qabs(get2(mu, k, j)), half) <= 0;
   const reduce = (k: number, j: number) => {
-    const r = closestInteger(mu[k]![j]!);
-    y[k] = y[k]!.map((v, z) => v - r * y[j]![z]!);
-    for (let z = 0; z < j; z++) mu[k]![z] = qsub(mu[k]![z]!, qmul([r, 1n], mu[j]![z]!));
-    mu[k]![j] = qsub(mu[k]![j]!, [r, 1n]);
-    T[k] = T[k]!.map((v, z) => v - r * T[j]![z]!);
+    const muk = at(mu, k);
+    const muj = at(mu, j);
+    const r = closestInteger(at(muk, j));
+    const yj = at(y, j);
+    y[k] = at(y, k).map((v, z) => v - r * at(yj, z));
+    for (let z = 0; z < j; z++) muk[z] = qsub(at(muk, z), qmul([r, 1n], at(muj, z)));
+    muk[j] = qsub(at(muk, j), [r, 1n]);
+    const Tj = at(T, j);
+    T[k] = at(T, k).map((v, z) => v - r * at(Tj, z));
   };
   let k = 1;
   while (k < m) {
@@ -312,20 +344,25 @@ function lllCore(M: Matrix, delta: Q, withT: boolean): [Matrix, Matrix | undefin
       for (let l = k - 2; l >= 0; l--) if (!small(k, l)) reduce(k, l);
       k++;
     } else {
-      const nu = mu[k]![k - 1]!;
-      const alpha = qadd(g[k]!, qmul(qmul(nu, nu), g[k - 1]!));
-      const beta = qdiv(g[k - 1]!, alpha);
-      mu[k]![k - 1] = qmul(nu, beta);
-      g[k] = qmul(g[k]!, beta);
+      const muk = at(mu, k);
+      const muk1 = at(mu, k - 1);
+      const nu = at(muk, k - 1);
+      const gk1 = at(g, k - 1);
+      const alpha = qadd(at(g, k), qmul(qmul(nu, nu), gk1));
+      const beta = qdiv(gk1, alpha);
+      muk[k - 1] = qmul(nu, beta);
+      g[k] = qmul(at(g, k), beta);
       g[k - 1] = alpha;
-      [y[k], y[k - 1]] = [y[k - 1]!, y[k]!];
-      for (let z = 0; z < k - 1; z++) [mu[k]![z], mu[k - 1]![z]] = [mu[k - 1]![z]!, mu[k]![z]!];
+      [y[k], y[k - 1]] = [at(y, k - 1), at(y, k)];
+      for (let z = 0; z < k - 1; z++) [muk[z], muk1[z]] = [at(muk1, z), at(muk, z)];
       for (let i = k + 1; i < m; i++) {
-        const xi = mu[i]![k]!;
-        mu[i]![k] = qsub(mu[i]![k - 1]!, qmul(nu, xi));
-        mu[i]![k - 1] = qadd(qmul(mu[k]![k - 1]!, mu[i]![k]!), xi);
+        const mui = at(mu, i);
+        const xi = at(mui, k);
+        const muik = qsub(at(mui, k - 1), qmul(nu, xi));
+        mui[k] = muik;
+        mui[k - 1] = qadd(qmul(at(muk, k - 1), muik), xi);
       }
-      [T[k], T[k - 1]] = [T[k - 1]!, T[k]!];
+      [T[k], T[k - 1]] = [at(T, k - 1), at(T, k)];
       k = Math.max(k - 1, 1);
     }
   }
@@ -346,7 +383,7 @@ export function lll(M: Matrix, delta: ExprLike = Rational.of(3n, 4n)): Matrix {
 /** SymPy Matrix.lll_transform: [B, T] with the reduced basis B = T M. */
 export function lllTransform(M: Matrix, delta: ExprLike = Rational.of(3n, 4n)): [Matrix, Matrix] {
   const [B, T] = lllCore(M, deltaQ(delta), true);
-  return [B, T!];
+  return [B, defined(T, 'transform matrix')];
 }
 
 // ---------------------------------------------------------------------------
@@ -402,13 +439,15 @@ export function elementaryColOp(M: Matrix, o: ElementaryOp): Matrix {
 }
 
 /** Rows permuted by a list of swaps (in order, or reversed backward) or by an index list (row i <- perm[i]). */
-function permuteBySwaps(M: Matrix, perm: readonly (readonly [number, number])[] | readonly number[], backward: boolean): Matrix {
-  if (perm.length && typeof perm[0] === 'number') return Matrix.fromFunction(M.rows, M.cols, (i, j) => M.get((perm as readonly number[])[i] ?? i, j));
+type SwapsOrIndices = readonly (readonly [number, number])[] | readonly number[];
+const isIndexList = (perm: SwapsOrIndices): perm is readonly number[] => perm.length > 0 && typeof perm[0] === 'number';
+function permuteBySwaps(M: Matrix, perm: SwapsOrIndices, backward: boolean): Matrix {
+  if (isIndexList(perm)) return Matrix.fromFunction(M.rows, M.cols, (i, j) => M.get(perm[i] ?? i, j));
   const order = range(0, M.rows);
-  const swaps = [...(perm as readonly (readonly [number, number])[])];
+  const swaps = [...perm];
   if (backward) swaps.reverse();
-  for (const [a, b] of swaps) [order[a], order[b]] = [order[b]!, order[a]!];
-  return Matrix.fromFunction(M.rows, M.cols, (i, j) => M.get(order[i]!, j));
+  for (const [a, b] of swaps) [order[a], order[b]] = [at(order, b), at(order, a)];
+  return Matrix.fromFunction(M.rows, M.cols, (i, j) => M.get(at(order, i), j));
 }
 /** SymPy Matrix.permuteFwd(perm): rows permuted by the swaps in order. */
 export function permuteFwd(M: Matrix, perm: readonly (readonly [number, number])[] | readonly number[]): Matrix {
@@ -495,8 +534,8 @@ export function jordanCells(M: Matrix): [Matrix, Matrix[]] {
 function leviCivita(...a: number[]): Expr {
   let num = 1n;
   let den = 1n;
-  for (let i = 0; i < a.length; i++) {
-    for (let j = i + 1; j < a.length; j++) num *= BigInt(a[j]! - a[i]!);
+  for (const [i, ai] of a.entries()) {
+    for (const aj of a.slice(i + 1)) num *= BigInt(aj - ai);
     let f = 1n;
     for (let k = 2n; k <= BigInt(i); k++) f *= k;
     den *= f;
@@ -514,16 +553,16 @@ export function dual(M: Matrix): Matrix {
     for (let j = 1; j < n; j++) {
       let acc: Expr = S.Zero;
       for (let k = 1; k < n; k++) acc = add(acc, mul(leviCivita(i, j, 0, k), M.get(0, k)));
-      w[i]![j] = acc;
-      w[j]![i] = mul(-1, acc);
+      at(w, i)[j] = acc;
+      at(w, j)[i] = mul(-1, acc);
     }
   }
   for (let l = 1; l < n; l++) {
     let acc: Expr = S.Zero;
     for (let a = 1; a < n; a++) for (let b = 1; b < n; b++) acc = add(acc, mul(leviCivita(0, l, a, b), M.get(a, b)));
     acc = mul(acc, Rational.of(1n, 2n));
-    w[0]![l] = mul(-1, acc);
-    w[l]![0] = acc;
+    at(w, 0)[l] = mul(-1, acc);
+    at(w, l)[0] = acc;
   }
   return Matrix.of(w);
 }
@@ -566,18 +605,20 @@ const sliceBounds = (s: IndexSlice, n: number): [number, number] => {
   return step > 0 ? [clamp(s.start, 0), clamp(s.stop, n)] : [clamp(s.start, n - 1), clamp(s.stop, -1)];
 };
 const isSlice = (k: unknown): k is IndexSlice => typeof k === 'object' && k !== null;
+type IndexKey = number | IndexSlice | readonly [number | IndexSlice, number | IndexSlice];
+const isKeyPair = (k: IndexKey): k is readonly [number | IndexSlice, number | IndexSlice] => Array.isArray(k);
 
 /**
  * SymPy Matrix.key2ij: a key normalized to valid indices; slices are kept,
  * a flat index becomes [row, column].
  */
-export function key2ij(M: Matrix, key: number | IndexSlice | readonly [number | IndexSlice, number | IndexSlice]): [number | IndexSlice, number | IndexSlice] | [number, number] {
-  if (Array.isArray(key)) {
-    const [a, b] = key as readonly [number | IndexSlice, number | IndexSlice];
+export function key2ij(M: Matrix, key: IndexKey): [number | IndexSlice, number | IndexSlice] | [number, number] {
+  if (isKeyPair(key)) {
+    const [a, b] = key;
     return [isSlice(a) ? a : a2idx(a, M.rows), isSlice(b) ? b : a2idx(b, M.cols)];
   }
   if (isSlice(key)) return sliceBounds(key, M.rows * M.cols);
-  const k = a2idx(key as number, M.rows * M.cols);
+  const k = a2idx(key, M.rows * M.cols);
   return [Math.floor(k / M.cols), k % M.cols];
 }
 /** SymPy Matrix.key2bounds: [rowLo, rowHi, colLo, colHi] of a key of indices and slices. */
@@ -619,7 +660,7 @@ export function table(M: Matrix, opts: TableOptions = {}): string {
   if (M.rows === 0 || M.cols === 0) return '[]';
   const p = opts.printer ?? str;
   const cells = rows(M).map((r) => r.map(p));
-  const widths = range(0, M.cols).map((j) => Math.max(...cells.map((r) => r[j]!.length)));
+  const widths = range(0, M.cols).map((j) => Math.max(...cells.map((r) => at(r, j).length)));
   const align = { left: 'l', '<': 'l', right: 'r', '>': 'r', center: 'c', '^': 'c' }[opts.align ?? 'right'];
   const pad = (s: string, w: number): string => {
     if (align === 'l') return s.padEnd(w);
@@ -629,7 +670,7 @@ export function table(M: Matrix, opts: TableOptions = {}): string {
     const left = Math.floor(total / 2) + (total % 2 && w % 2 ? 1 : 0);
     return ' '.repeat(left) + s + ' '.repeat(total - left);
   };
-  return cells.map((r) => `${opts.rowstart ?? '['}${r.map((c, j) => pad(c, widths[j]!)).join(opts.colsep ?? ', ')}${opts.rowend ?? ']'}`).join(opts.rowsep ?? '\n');
+  return cells.map((r) => `${opts.rowstart ?? '['}${r.map((c, j) => pad(c, at(widths, j))).join(opts.colsep ?? ', ')}${opts.rowend ?? ']'}`).join(opts.rowsep ?? '\n');
 }
 
 // ---------------------------------------------------------------------------
@@ -681,19 +722,20 @@ export function randMatrix(r: number, c: number = r, opts: RandMatrixOptions = {
   const pick = () => lo + Math.floor(rnd() * (hi - lo + 1));
   if (opts.symmetric && r !== c) throw new RangeError('For symmetric matrices, r must equal c');
   const data: number[][] = range(0, r).map(() => range(0, c).map(pick));
-  if (opts.symmetric) for (let i = 0; i < r; i++) for (let j = 0; j < i; j++) data[i]![j] = data[j]![i]!;
+  if (opts.symmetric) for (let i = 0; i < r; i++) for (let j = 0; j < i; j++) at(data, i)[j] = get2(data, j, i);
   const percent = opts.percent ?? 100;
   if (percent < 100) {
     const cells = range(0, r * c);
     const zeros = Math.round((r * c * (100 - percent)) / 100);
     for (let k = 0; k < zeros; k++) {
       const idx = k + Math.floor(rnd() * (cells.length - k));
-      [cells[k], cells[idx]] = [cells[idx]!, cells[k]!];
-      const cell = cells[k]!;
+      const cell = at(cells, idx);
+      cells[idx] = at(cells, k);
+      cells[k] = cell;
       const i = Math.floor(cell / c);
       const j = cell % c;
-      data[i]![j] = 0;
-      if (opts.symmetric) data[j]![i] = 0;
+      at(data, i)[j] = 0;
+      if (opts.symmetric) at(data, j)[i] = 0;
     }
   }
   return Matrix.of(data);
@@ -703,7 +745,7 @@ export function randMatrix(r: number, c: number = r, opts: RandMatrixOptions = {
 export function symarray(prefix: string, shape: number | readonly number[], assumptions: Assumptions = {}): unknown[] {
   const dims = typeof shape === 'number' ? [shape] : [...shape];
   const build = (level: number, idx: number[]): unknown[] =>
-    range(0, dims[level]!).map((i) => (level === dims.length - 1 ? new Sym(`${prefix}_${[...idx, i].join('_')}`, assumptions) : build(level + 1, [...idx, i])));
+    range(0, at(dims, level)).map((i) => (level === dims.length - 1 ? new Sym(`${prefix}_${[...idx, i].join('_')}`, assumptions) : build(level + 1, [...idx, i])));
   return build(0, []);
 }
 
@@ -711,8 +753,13 @@ export function symarray(prefix: string, shape: number | readonly number[], assu
 export function matrix2numpy(M: Matrix, dtype: 'object' | 'float' = 'object'): (Expr | number)[][] {
   return rows(M).map((r) => r.map((e) => (dtype === 'float' ? e.toNumber() : e)));
 }
+/** v as an expression; throws SympifyError (as sympify does) for anything but an Expr, number or bigint. */
+const toExpr = (v: unknown): Expr => {
+  if (v instanceof Expr || typeof v === 'number' || typeof v === 'bigint') return sympify(v);
+  throw new SympifyError(`Cannot convert ${String(v)} to an expression`, v);
+};
 /** A (nested) list as an array of expressions (SymPy list2numpy). */
 export function list2numpy(list: readonly unknown[], dtype: 'object' | 'float' = 'object'): unknown[] {
-  return list.map((v) => (Array.isArray(v) ? list2numpy(v, dtype) : dtype === 'float' ? sympify(v as ExprLike).toNumber() : sympify(v as ExprLike)));
+  return list.map((v) => (Array.isArray(v) ? list2numpy(v, dtype) : dtype === 'float' ? toExpr(v).toNumber() : toExpr(v)));
 }
 

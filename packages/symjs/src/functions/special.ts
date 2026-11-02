@@ -7,6 +7,7 @@
  */
 
 import { NotImplementedError } from '../core/errors';
+import { at, defined, first, pair } from '../core/guard';
 import '../numeric/mpspecialfns';
 import { isIntegerQ, isNegative, isPositive } from '../core/assumptions';
 import type {
@@ -32,7 +33,7 @@ import { impl } from '../core/nodes';
 import { c as cx, cadd, cdiv, cexp, clog, cLambertW, cmul, cpow, csin } from '../numeric/complex';
 import { numericFns } from '../numeric/evalf';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { conjugateCommutes, cos, cosh, evaluators, fn, log, sin, sinh } from './elementary';
+import { conjugateCommutes, cos, cosh, evaluators, fn, forEachEntry, log, sin, sinh } from './elementary';
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -40,6 +41,9 @@ import { conjugateCommutes, cos, cosh, evaluators, fn, log, sin, sinh } from './
 
 const isInt = (e: Expr): e is Rational => e instanceof Rational && e.isInteger;
 const R = (p: bigint | number, q: bigint | number = 1) => Rational.of(p, q);
+/** Exact rational sum and product (numAdd/numMul restricted to Rational). */
+const qAdd = (a: Rational, b: Rational): Rational => (a.q === b.q ? Rational.of(a.p + b.p, a.q) : Rational.of(a.p * b.q + b.p * a.q, a.q * b.q));
+const qMul = (a: Rational, b: Rational): Rational => (a.isOne ? b : b.isOne ? a : Rational.of(a.p * b.p, a.q * b.q));
 const isOo = (e: Expr) => e instanceof Special && e.name === 'oo';
 const isNegOo = (e: Expr) => e instanceof Special && e.name === '-oo';
 const iOo = () => mul(S.I, S.Infinity);
@@ -61,11 +65,12 @@ export function bernoulliNumber(n: number): Rational {
   for (let m = 0; m <= n; m++) {
     a[m] = R(1, m + 1);
     for (let j = m; j >= 1; j--) {
-      a[j - 1] = numMul(R(j), numAdd(a[j - 1]!, numMul(R(-1), a[j]!))) as Rational;
+      a[j - 1] = qMul(R(j), qAdd(at(a, j - 1), qMul(R(-1), at(a, j))));
     }
   }
-  bernoulliCache[n] = a[0]!;
-  return a[0]!;
+  const b = first(a);
+  bernoulliCache[n] = b;
+  return b;
 }
 
 const fnN = (name: FnName, ...args: ExprLike[]) => fn(name, args);
@@ -90,7 +95,7 @@ function evalFactorial2(n: Expr): Expr | undefined {
   if (n.p % 2n === 0n) return S.ComplexInfinity;
   // negative odd: n!! = (n + 2)!! / (n + 2)
   let v: Rational = S.One;
-  for (let k = -1n; k > n.p; k -= 2n) v = numMul(v, R(1n, k)) as Rational;
+  for (let k = -1n; k > n.p; k -= 2n) v = qMul(v, R(1n, k));
   return v;
 }
 
@@ -107,7 +112,7 @@ function evalBinomial(n: Expr, k: Expr): Expr | undefined {
         return evalBinomial(n, R(n.p - k.p));
       }
       let num: Rational = S.One;
-      for (let i = 0n; i < k.p; i++) num = numMul(num, numAdd(n, R(-i))) as Rational;
+      for (let i = 0n; i < k.p; i++) num = qMul(num, qAdd(n, R(-i)));
       return numMul(num, R(1n, factorialBig(k.p)));
     }
     if (k.isOne) return n;
@@ -176,7 +181,7 @@ function evalHarmonic(n: Expr, m: Expr = S.One): Expr | undefined {
   }
   if (isInt(n) && !n.isNegative && isInt(m)) {
     let s: Rational = S.Zero;
-    for (let k = 1n; k <= n.p; k++) s = numAdd(s, numMul(S.One, R(1n, k ** m.p))) as Rational;
+    for (let k = 1n; k <= n.p; k++) s = qAdd(s, qMul(S.One, R(1n, k ** m.p)));
     return s;
   }
   if (isInt(n) && n.isZero) return S.Zero;
@@ -217,7 +222,7 @@ function evalLoggamma(x: Expr): Expr | undefined {
   if (x instanceof Rational && x.q === 2n) return log(gammaHalf((x.p - 1n) / 2n));
   // half of a positive integer symbol: log(sqrt(pi)*2**(1 - p)*gamma(p)/gamma((p + 1)/2))
   if (x instanceof Mul && x.args.length === 2 && x.args[0] instanceof Rational && x.args[0].p === 1n && x.args[0].q === 2n) {
-    const p = x.args[1]!;
+    const p = at(x.args, 1);
     if (isIntegerQ(p) === true && isPositive(p) === true) {
       return log(mul(sqrt(S.Pi), pow(2, add(1, neg(p))), fnN('gamma', p), pow(fnN('gamma', mul(add(p, 1), S.Half)), -1)));
     }
@@ -241,7 +246,7 @@ function evalPolygamma(n: Expr, x: Expr): Expr | undefined {
   if (n.isZero) {
     if (isInt(x)) {
       if (!x.isPositive) return S.ComplexInfinity;
-      const h = evalHarmonic(R(x.p - 1n))!;
+      const h = defined(evalHarmonic(R(x.p - 1n)), 'harmonic number');
       return add(h, mul(-1, S.EulerGamma));
     }
     if (x instanceof Rational && x.p === 1n && x.q === 2n) return add(mul(-2, log(2)), mul(-1, S.EulerGamma));
@@ -252,7 +257,7 @@ function evalPolygamma(n: Expr, x: Expr): Expr | undefined {
     // psi^(n)(m) = (-1)^(n+1) n! (zeta(n+1) - sum_{k<m} 1/k^(n+1))
     const z = evalZeta(R(n.p + 1n)) ?? fnN('zeta', R(n.p + 1n));
     let partial: Rational = S.Zero;
-    for (let k = 1n; k < x.p; k++) partial = numAdd(partial, R(1n, k ** (n.p + 1n))) as Rational;
+    for (let k = 1n; k < x.p; k++) partial = qAdd(partial, R(1n, k ** (n.p + 1n)));
     const sign = n.p % 2n === 0n ? -1n : 1n;
     return mul(R(sign * factorialBig(n.p)), add(z, mul(-1, partial)));
   }
@@ -266,11 +271,11 @@ function digammaRational(z: Rational): Expr {
   let z0: Rational;
   if (z.isPositive) {
     const n = (z.p - 1n) / z.q; // z0 = z - n in (0, 1]
-    z0 = numAdd(z, R(-n)) as Rational;
+    z0 = qAdd(z, R(-n));
     for (let k = 0n; k < n; k++) terms.push(pow(numAdd(z0, R(k)), -1));
   } else {
     const n = (z.q - z.p) / z.q; // floor(1 - z)
-    z0 = numAdd(z, R(n)) as Rational;
+    z0 = qAdd(z, R(n));
     for (let k = 0n; k < n; k++) terms.push(mul(-1, pow(numAdd(z0, R(-1n - k)), -1)));
   }
   if (z0.q === 1n) return add(mul(-1, S.EulerGamma), ...terms);
@@ -328,11 +333,11 @@ function evalUppergamma(s: Expr, x: Expr): Expr | undefined {
     while (numAdd(s, numMul(k, R(-1))).isPositive) {
       // uppergamma(k + 1) = k uppergamma(k) + x^k e^-x
       v = add(mul(k, v), mul(pow(x, k), exp(neg(x))));
-      k = numAdd(k, S.One) as Rational;
+      k = qAdd(k, S.One);
     }
     while (numAdd(k, numMul(s, R(-1))).isPositive) {
       // uppergamma(k - 1) = (uppergamma(k) - x^(k-1) e^-x)/(k - 1)
-      const km1 = numAdd(k, R(-1)) as Rational;
+      const km1 = qAdd(k, R(-1));
       v = mul(add(v, mul(-1, pow(x, km1), exp(neg(x)))), pow(km1, -1));
       k = km1;
     }
@@ -353,10 +358,10 @@ function evalLowergamma(s: Expr, x: Expr): Expr | undefined {
     while (numAdd(s, numMul(k, R(-1))).isPositive) {
       // lowergamma(k + 1) = k lowergamma(k) - x^k e^-x
       v = add(mul(k, v), mul(-1, pow(x, k), exp(neg(x))));
-      k = numAdd(k, S.One) as Rational;
+      k = qAdd(k, S.One);
     }
     while (numAdd(k, numMul(s, R(-1))).isPositive) {
-      const km1 = numAdd(k, R(-1)) as Rational;
+      const km1 = qAdd(k, R(-1));
       v = mul(add(v, mul(pow(x, km1), exp(neg(x)))), pow(km1, -1));
       k = km1;
     }
@@ -415,7 +420,7 @@ function evalErfinv(z: Expr): Expr | undefined {
     if (z.isOne) return S.Infinity;
     if (z.p === -1n && z.q === 1n) return S.NegativeInfinity;
   }
-  if (z instanceof Fn && z.name === 'erf' && isNum(z.args[0]!)) return z.args[0];
+  if (z instanceof Fn && z.name === 'erf' && z.args[0] !== undefined && isNum(z.args[0])) return z.args[0];
   return odd('erfinv', z);
 }
 
@@ -536,7 +541,7 @@ function evalSign(x: Expr): Expr | undefined {
   if (x instanceof Constant && x.name === 'I') return S.I;
   if (x instanceof Mul) {
     const [c, r] = splitCoeff(x);
-    if (!(c instanceof Rational && c.isOne)) return mul(evalSign(c)!, fnN('sign', r));
+    if (!(c instanceof Rational && c.isOne)) return mul(defined(evalSign(c), 'sign of the coefficient'), fnN('sign', r));
   }
   return undefined;
 }
@@ -555,8 +560,8 @@ function evalFloorCeil(name: 'floor' | 'ceiling', x: Expr): Expr | undefined {
   const w = imagFactor(x);
   if (w !== undefined && w instanceof Rational) return mul(S.I, evalFloorCeil(name, w) ?? fnN(name, w));
   if (x instanceof Add && x.args.length === 2 && x.args[0] instanceof Rational) {
-    const iw = imagFactor(x.args[1]!);
-    if (iw instanceof Rational) return add(evalFloorCeil(name, x.args[0])!, mul(S.I, evalFloorCeil(name, iw)!));
+    const iw = imagFactor(at(x.args, 1));
+    if (iw instanceof Rational) return add(defined(evalFloorCeil(name, x.args[0])), mul(S.I, defined(evalFloorCeil(name, iw))));
   }
   if (x instanceof Rational) {
     const f = x.p / x.q - (x.p % x.q !== 0n && x.p < 0n ? 1n : 0n);
@@ -625,12 +630,12 @@ function evalMinMax(name: 'Min' | 'Max', ...args: Expr[]): Expr | undefined {
   const nums = flat.filter((a) => numericReal(a) !== undefined);
   const syms = flat.filter((a) => numericReal(a) === undefined);
   let best: Expr | undefined;
+  let bv = 0;
   for (const n of nums) {
-    if (best === undefined) best = n;
-    else {
-      const bv = numericReal(best)!;
-      const nv = numericReal(n)!;
-      if (name === 'Min' ? nv < bv : nv > bv) best = n;
+    const nv = defined(numericReal(n), 'numeric value');
+    if (best === undefined || (name === 'Min' ? nv < bv : nv > bv)) {
+      best = n;
+      bv = nv;
     }
   }
   const rest = collapseMinMax(name, [...(best ? [best] : []), ...uniq(syms)]);
@@ -650,7 +655,7 @@ function collapseMinMax(name: 'Min' | 'Max', argsIn: Expr[]): Expr[] {
   const isMM = (e: Expr): e is Fn => e instanceof Fn && (e.name === 'Min' || e.name === 'Max');
   if (!argsIn.some(isMM)) return argsIn;
   const args = [...argsIn];
-  const build = (n: string, xs: Expr[]) => new Fn(n as FnName, [...xs].sort((u, v) => compareKeys(sortKey(u), sortKey(v))));
+  const build = (n: FnName, xs: Expr[]) => new Fn(n, [...xs].sort((u, v) => compareKeys(sortKey(u), sortKey(v))));
   const doIt = (ai: Expr, a: Expr): Expr => {
     if (!isMM(ai)) return ai;
     if (!ai.args.some((t) => t.key === a.key)) return build(ai.name, ai.args.map((t) => doIt(t, a)));
@@ -658,7 +663,8 @@ function collapseMinMax(name: 'Min' | 'Max', argsIn: Expr[]): Expr[] {
     return a;
   };
   for (let i = 0; i < args.length; i++) {
-    for (let j = i + 1; j < args.length; j++) args[j] = doIt(args[j]!, args[i]!);
+    const ai = at(args, i);
+    for (let j = i + 1; j < args.length; j++) args[j] = doIt(at(args, j), ai);
   }
   return args;
 }
@@ -670,7 +676,7 @@ function collapseMinMax(name: 'Min' | 'Max', argsIn: Expr[]): Expr[] {
 const LANCZOS = [
   0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059,
   12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7,
-];
+] as const;
 
 export function cgamma(z: C): C {
   if (z.re < 0.5) {
@@ -679,9 +685,10 @@ export function cgamma(z: C): C {
     return cdiv(cx(Math.PI), cmul(s, cgamma(cadd(cx(1), cmul(cx(-1), z)))));
   }
   const zz = cadd(z, cx(-1));
-  let a = cx(LANCZOS[0]!);
+  const [l0, ...ls] = LANCZOS;
+  let a = cx(l0);
   const t = cadd(zz, cx(7.5));
-  for (let i = 1; i < 9; i++) a = cadd(a, cdiv(cx(LANCZOS[i]!), cadd(zz, cx(i))));
+  for (const [j, l] of ls.entries()) a = cadd(a, cdiv(cx(l), cadd(zz, cx(j + 1))));
   const r = cmul(cmul(cx(Math.sqrt(2 * Math.PI)), cpow(t, cadd(zz, cx(0.5)))), cmul(cexp(cmul(cx(-1), t)), a));
   return r;
 }
@@ -729,12 +736,13 @@ function cpolygamma(n: number, z: C): C {
   for (let i = 2; i <= n - 1; i++) fnm1 *= i;
   let s = cadd(cdiv(cx(fnm1), cpow(w, cx(n))), cdiv(cx(fact / 2), cpow(w, cx(n + 1))));
   const B = [1 / 6, -1 / 30, 1 / 42, -1 / 30, 5 / 66, -691 / 2730, 7 / 6];
-  for (let k = 1; k <= B.length; k++) {
+  for (const [k0, b] of B.entries()) {
+    const k = k0 + 1;
     let num = 1;
     for (let i = 2; i <= 2 * k + n - 1; i++) num *= i;
     let den = 1;
     for (let i = 2; i <= 2 * k; i++) den *= i;
-    s = cadd(s, cdiv(cx((B[k - 1]! * num) / den), cpow(w, cx(2 * k + n))));
+    s = cadd(s, cdiv(cx((b * num) / den), cpow(w, cx(2 * k + n))));
   }
   return cadd(cmul(cx(sign), s), acc);
 }
@@ -909,8 +917,9 @@ function zetaReal(s: number): number {
     }
     d.push(n * t);
   }
-  for (let k = 0; k < n; k++) sum += ((-1) ** k * (d[k]! - d[n]!)) / (k + 1) ** s;
-  return -sum / (d[n]! * (1 - 2 ** (1 - s)));
+  const dn = at(d, n);
+  for (const [k, dk] of d.slice(0, n).entries()) sum += ((-1) ** k * (dk - dn)) / (k + 1) ** s;
+  return -sum / (dn * (1 - 2 ** (1 - s)));
 }
 
 function factorialN(n: number): number {
@@ -945,191 +954,217 @@ type Spec = {
 };
 
 const twoOverSqrtPi = () => mul(2, pow(sqrt(S.Pi), -1));
-const realC = (f: (x: number) => number) => (a: C[]) => cx(f(a[0]!.re));
+/** A spec function of the single argument. */
+const unary =
+  <T, R>(f: (x: T) => R) =>
+  (args: readonly T[]): R =>
+    f(first(args));
+/** A spec function of the two arguments (and, for partials, the index of the differentiated one). */
+const binary =
+  <T, R>(f: (x: T, y: T, i: number) => R) =>
+  (args: readonly T[], i = 0): R => {
+    const [x, y] = pair(args);
+    return f(x, y, i);
+  };
+const realC = (f: (x: number) => number) => unary((z: C) => cx(f(z.re)));
 
 const SPECS: Partial<Record<FnName, Spec>> = {
   factorial: {
     eval: evalFactorial,
-    partials: ([n]) => mul(fnN('gamma', add(n!, 1)), fnN('polygamma', 0, add(n!, 1))),
-    numeric: ([n]) => cgamma(cadd(n!, cx(1))),
+    partials: unary((n) => mul(fnN('gamma', add(n, 1)), fnN('polygamma', 0, add(n, 1)))),
+    numeric: unary((n) => cgamma(cadd(n, cx(1)))),
     conjugate: true,
   },
   factorial2: {
     eval: evalFactorial2,
-    numeric: ([n]) => {
-      const v = n!.re;
+    numeric: unary((n) => {
+      const v = n.re;
       if (Number.isInteger(v)) {
         let r = 1;
         for (let i = v; i > 1; i -= 2) r *= i;
         return cx(r);
       }
       throw new RangeError('factorial2: non-integer');
-    },
+    }),
   },
   binomial: {
     eval: evalBinomial,
-    numeric: ([n, k]) =>
-      cdiv(cgamma(cadd(n!, cx(1))), cmul(cgamma(cadd(k!, cx(1))), cgamma(cadd(cadd(n!, cmul(cx(-1), k!)), cx(1))))),
+    numeric: binary((n, k) =>
+      cdiv(cgamma(cadd(n, cx(1))), cmul(cgamma(cadd(k, cx(1))), cgamma(cadd(cadd(n, cmul(cx(-1), k)), cx(1))))),
+    ),
     conjugate: true,
   },
-  ff: { eval: evalFF, numeric: ([x, k]) => cdiv(cgamma(cadd(x!, cx(1))), cgamma(cadd(cadd(x!, cmul(cx(-1), k!)), cx(1)))) },
-  rf: { eval: evalRF, numeric: ([x, k]) => cdiv(cgamma(cadd(x!, k!)), cgamma(x!)) },
+  ff: { eval: evalFF, numeric: binary((x, k) => cdiv(cgamma(cadd(x, cx(1))), cgamma(cadd(cadd(x, cmul(cx(-1), k)), cx(1))))) },
+  rf: { eval: evalRF, numeric: binary((x, k) => cdiv(cgamma(cadd(x, k)), cgamma(x))) },
   subfactorial: { eval: evalSubfactorial },
   harmonic: {
     eval: (n, m?: Expr) => evalHarmonic(n, m ?? S.One),
-    numeric: ([n, m]) => {
-      if (m === undefined || m.re === 1) return cadd(cdigamma(cadd(n!, cx(1))), cx(EULER_GAMMA));
+    numeric: (args) => {
+      const n = first(args);
+      const m = args[1];
+      if (m === undefined || m.re === 1) return cadd(cdigamma(cadd(n, cx(1))), cx(EULER_GAMMA));
       throw new NotImplementedError('harmonic: unsupported');
     },
   },
   catalan: {
     eval: evalCatalan,
-    partials: ([n]) =>
+    partials: unary((n) =>
       mul(
-        add(fnN('polygamma', 0, add(n!, S.Half)), mul(-1, fnN('polygamma', 0, add(n!, 2))), log(4)),
-        fnN('catalan', n!),
+        add(fnN('polygamma', 0, add(n, S.Half)), mul(-1, fnN('polygamma', 0, add(n, 2))), log(4)),
+        fnN('catalan', n),
       ),
-    numeric: ([n]) =>
-      cdiv(cmul(cpow(cx(4), n!), cgamma(cadd(n!, cx(0.5)))), cmul(cx(Math.sqrt(Math.PI)), cgamma(cadd(n!, cx(2))))),
+    ),
+    numeric: unary((n) =>
+      cdiv(cmul(cpow(cx(4), n), cgamma(cadd(n, cx(0.5)))), cmul(cx(Math.sqrt(Math.PI)), cgamma(cadd(n, cx(2))))),
+    ),
   },
   gamma: {
     eval: evalGamma,
-    partials: ([x]) => mul(fnN('gamma', x!), fnN('polygamma', 0, x!)),
-    numeric: ([z]) => cgamma(z!),
+    partials: unary((x) => mul(fnN('gamma', x), fnN('polygamma', 0, x))),
+    numeric: unary(cgamma),
     conjugate: true,
   },
   loggamma: {
     eval: evalLoggamma,
-    partials: ([x]) => fnN('polygamma', 0, x!),
-    numeric: ([z]) => cloggamma(z!),
+    partials: unary((x) => fnN('polygamma', 0, x)),
+    numeric: unary(cloggamma),
     conjugate: true,
   },
   polygamma: {
     eval: evalPolygamma,
-    partials: ([n, x], i) => {
-      if (i === 1) return fnN('polygamma', add(n!, 1), x!);
+    partials: binary((n, x, i) => {
+      if (i === 1) return fnN('polygamma', add(n, 1), x);
       throw new NotImplementedError('diff: polygamma w.r.t. its order');
-    },
-    numeric: ([n, z]) => cpolygamma(n!.re, z!),
+    }),
+    numeric: binary((n, z) => cpolygamma(n.re, z)),
     conjugate: true,
   },
   lowergamma: {
     eval: evalLowergamma,
-    partials: ([s, x], i) => {
-      if (i === 1) return mul(pow(x!, add(s!, -1)), exp(neg(x!)));
+    partials: binary((s, x, i) => {
+      if (i === 1) return mul(pow(x, add(s, -1)), exp(neg(x)));
       throw new NotImplementedError('diff: lowergamma w.r.t. s');
-    },
-    numeric: ([s, x]) => lowergammaNum(s!, x!),
+    }),
+    numeric: binary((s, x) => lowergammaNum(s, x)),
   },
   uppergamma: {
     eval: evalUppergamma,
-    partials: ([s, x], i) => {
-      if (i === 1) return mul(-1, pow(x!, add(s!, -1)), exp(neg(x!)));
+    partials: binary((s, x, i) => {
+      if (i === 1) return mul(-1, pow(x, add(s, -1)), exp(neg(x)));
       throw new NotImplementedError('diff: uppergamma w.r.t. s');
-    },
-    numeric: ([s, x]) => cadd(cgamma(s!), cmul(cx(-1), lowergammaNum(s!, x!))),
+    }),
+    numeric: binary((s, x) => cadd(cgamma(s), cmul(cx(-1), lowergammaNum(s, x)))),
   },
   beta: {
-    partials: ([a, b], i) =>
+    partials: binary((a, b, i) =>
       i === 0
-        ? mul(fnN('beta', a!, b!), add(fnN('polygamma', 0, a!), mul(-1, fnN('polygamma', 0, add(a!, b!)))))
-        : mul(fnN('beta', a!, b!), add(fnN('polygamma', 0, b!), mul(-1, fnN('polygamma', 0, add(a!, b!))))),
-    numeric: ([a, b]) => cdiv(cmul(cgamma(a!), cgamma(b!)), cgamma(cadd(a!, b!))),
+        ? mul(fnN('beta', a, b), add(fnN('polygamma', 0, a), mul(-1, fnN('polygamma', 0, add(a, b)))))
+        : mul(fnN('beta', a, b), add(fnN('polygamma', 0, b), mul(-1, fnN('polygamma', 0, add(a, b))))),
+    ),
+    numeric: binary((a, b) => cdiv(cmul(cgamma(a), cgamma(b)), cgamma(cadd(a, b)))),
     conjugate: true,
   },
   zeta: { eval: evalZeta, numeric: realC(zetaReal) },
-  erf: { eval: evalErf, partials: ([z]) => mul(twoOverSqrtPi(), exp(neg(pow(z!, 2)))), numeric: ([z]) => cerf(z!), conjugate: true },
+  erf: { eval: evalErf, partials: unary((z) => mul(twoOverSqrtPi(), exp(neg(pow(z, 2))))), numeric: unary(cerf), conjugate: true },
   erfc: {
     eval: evalErfc,
-    partials: ([z]) => mul(-1, twoOverSqrtPi(), exp(neg(pow(z!, 2)))),
-    numeric: ([z]) => cerfc(z!),
+    partials: unary((z) => mul(-1, twoOverSqrtPi(), exp(neg(pow(z, 2))))),
+    numeric: unary(cerfc),
     conjugate: true,
   },
-  erfi: { eval: evalErfi, partials: ([z]) => mul(twoOverSqrtPi(), exp(pow(z!, 2))), numeric: ([z]) => cerfi(z!), conjugate: true },
+  erfi: { eval: evalErfi, partials: unary((z) => mul(twoOverSqrtPi(), exp(pow(z, 2)))), numeric: unary(cerfi), conjugate: true },
   erf2: {
     eval: evalErf2,
-    partials: ([x, y], i) =>
-      i === 0 ? mul(-1, twoOverSqrtPi(), exp(neg(pow(x!, 2)))) : mul(twoOverSqrtPi(), exp(neg(pow(y!, 2)))),
-    numeric: ([x, y]) => cadd(cerf(y!), cmul(cx(-1), cerf(x!))),
+    partials: binary((x, y, i) =>
+      i === 0 ? mul(-1, twoOverSqrtPi(), exp(neg(pow(x, 2)))) : mul(twoOverSqrtPi(), exp(neg(pow(y, 2)))),
+    ),
+    numeric: binary((x, y) => cadd(cerf(y), cmul(cx(-1), cerf(x)))),
     conjugate: true,
   },
   erfinv: {
     eval: evalErfinv,
-    partials: ([x]) => mul(S.Half, sqrt(S.Pi), exp(pow(fnN('erfinv', x!), 2))),
+    partials: unary((x) => mul(S.Half, sqrt(S.Pi), exp(pow(fnN('erfinv', x), 2)))),
     numeric: realC(erfinvReal),
   },
   erfcinv: {
     eval: evalErfcinv,
-    partials: ([x]) => mul(S.NegHalf, sqrt(S.Pi), exp(pow(fnN('erfcinv', x!), 2))),
+    partials: unary((x) => mul(S.NegHalf, sqrt(S.Pi), exp(pow(fnN('erfcinv', x), 2)))),
     numeric: realC((y) => erfinvReal(1 - y)),
   },
   erf2inv: {
     eval: evalErf2inv,
-    partials: ([x, y], i) =>
+    partials: binary((x, y, i) =>
       i === 0
-        ? exp(add(neg(pow(x!, 2)), pow(fnN('erf2inv', x!, y!), 2)))
-        : mul(S.Half, sqrt(S.Pi), exp(pow(fnN('erf2inv', x!, y!), 2))),
-    numeric: ([x, y]) => cx(erfinvReal(erfReal(x!.re) + y!.re)),
+        ? exp(add(neg(pow(x, 2)), pow(fnN('erf2inv', x, y), 2)))
+        : mul(S.Half, sqrt(S.Pi), exp(pow(fnN('erf2inv', x, y), 2))),
+    ),
+    numeric: binary((x, y) => cx(erfinvReal(erfReal(x.re) + y.re))),
   },
   LambertW: {
     eval: evalLambertW,
-    partials: ([x, k]) => {
-      const w = k === undefined ? fnN('LambertW', x!) : fnN('LambertW', x!, k);
-      return mul(w, pow(mul(x!, add(w, 1)), -1));
+    partials: (args) => {
+      const x = first(args);
+      const k = args[1];
+      const w = k === undefined ? fnN('LambertW', x) : fnN('LambertW', x, k);
+      return mul(w, pow(mul(x, add(w, 1)), -1));
     },
-    numeric: ([x, k]) => cLambertW(x!, k === undefined ? 0 : Math.round(k.re)),
+    numeric: (args) => {
+      const k = args[1];
+      return cLambertW(first(args), k === undefined ? 0 : Math.round(k.re));
+    },
   },
-  Ei: { eval: evalEi, partials: ([z]) => mul(exp(z!), pow(z!, -1)), numeric: ([z]) => cEi(z!), conjugate: true },
-  li: { eval: evalLi, partials: ([z]) => pow(log(z!), -1), numeric: ([z]) => cEi(clog(z!)), conjugate: true },
+  Ei: { eval: evalEi, partials: unary((z) => mul(exp(z), pow(z, -1))), numeric: unary(cEi), conjugate: true },
+  li: { eval: evalLi, partials: unary((z) => pow(log(z), -1)), numeric: unary((z) => cEi(clog(z))), conjugate: true },
   Li: {
     eval: evalLiOffset,
-    partials: ([z]) => pow(log(z!), -1),
-    numeric: ([z]) => cadd(cEi(clog(z!)), cx(-1.045163780117493)),
+    partials: unary((z) => pow(log(z), -1)),
+    numeric: unary((z) => cadd(cEi(clog(z)), cx(-1.045163780117493))),
     conjugate: true,
   },
-  Si: { eval: evalSi, partials: ([z]) => mul(sin(z!), pow(z!, -1)), numeric: ([z]) => cSiCi('Si', z!), conjugate: true },
-  Ci: { eval: evalCi, partials: ([z]) => mul(cos(z!), pow(z!, -1)), numeric: ([z]) => cSiCi('Ci', z!) },
-  Shi: { eval: evalShi, partials: ([z]) => mul(sinh(z!), pow(z!, -1)), numeric: ([z]) => cSiCi('Shi', z!), conjugate: true },
-  Chi: { eval: evalChi, partials: ([z]) => mul(cosh(z!), pow(z!, -1)), numeric: ([z]) => cSiCi('Chi', z!) },
+  Si: { eval: evalSi, partials: unary((z) => mul(sin(z), pow(z, -1))), numeric: unary((z) => cSiCi('Si', z)), conjugate: true },
+  Ci: { eval: evalCi, partials: unary((z) => mul(cos(z), pow(z, -1))), numeric: unary((z) => cSiCi('Ci', z)) },
+  Shi: { eval: evalShi, partials: unary((z) => mul(sinh(z), pow(z, -1))), numeric: unary((z) => cSiCi('Shi', z)), conjugate: true },
+  Chi: { eval: evalChi, partials: unary((z) => mul(cosh(z), pow(z, -1))), numeric: unary((z) => cSiCi('Chi', z)) },
   expint: {
     eval: evalExpint,
-    partials: ([nu, z], i) => {
-      if (i === 1) return mul(-1, fnN('expint', add(nu!, -1), z!));
+    partials: binary((nu, z, i) => {
+      if (i === 1) return mul(-1, fnN('expint', add(nu, -1), z));
       throw new NotImplementedError('diff: expint w.r.t. its order');
-    },
-    numeric: ([n, z]) => cExpint(n!.re, z!),
+    }),
+    numeric: binary((n, z) => cExpint(n.re, z)),
   },
   fresnels: {
     eval: (z) => evalFresnel('fresnels', z),
-    partials: ([z]) => sin(mul(S.Half, S.Pi, pow(z!, 2))),
-    numeric: ([z]) => cFresnel('S', z!),
+    partials: unary((z) => sin(mul(S.Half, S.Pi, pow(z, 2)))),
+    numeric: unary((z) => cFresnel('S', z)),
     conjugate: true,
   },
   fresnelc: {
     eval: (z) => evalFresnel('fresnelc', z),
-    partials: ([z]) => cos(mul(S.Half, S.Pi, pow(z!, 2))),
-    numeric: ([z]) => cFresnel('C', z!),
+    partials: unary((z) => cos(mul(S.Half, S.Pi, pow(z, 2)))),
+    numeric: unary((z) => cFresnel('C', z)),
     conjugate: true,
   },
-  sign: { eval: evalSign, numeric: ([z]) => (z!.re === 0 && z!.im === 0 ? cx(0) : cdiv(z!, cx(Math.hypot(z!.re, z!.im)))) },
-  floor: { eval: (x) => evalFloorCeil('floor', x), numeric: ([z]) => cx(Math.floor(z!.re)) },
-  ceiling: { eval: (x) => evalFloorCeil('ceiling', x), numeric: ([z]) => cx(Math.ceil(z!.re)) },
+  sign: { eval: evalSign, numeric: unary((z) => (z.re === 0 && z.im === 0 ? cx(0) : cdiv(z, cx(Math.hypot(z.re, z.im))))) },
+  floor: { eval: (x) => evalFloorCeil('floor', x), numeric: unary((z) => cx(Math.floor(z.re))) },
+  ceiling: { eval: (x) => evalFloorCeil('ceiling', x), numeric: unary((z) => cx(Math.ceil(z.re))) },
   atan2: {
     eval: evalAtan2,
-    partials: ([y, x], i) =>
-      i === 0 ? mul(x!, pow(add(pow(x!, 2), pow(y!, 2)), -1)) : mul(-1, y!, pow(add(pow(x!, 2), pow(y!, 2)), -1)),
-    numeric: ([y, x]) => cx(Math.atan2(y!.re, x!.re)),
+    partials: binary((y, x, i) =>
+      i === 0 ? mul(x, pow(add(pow(x, 2), pow(y, 2)), -1)) : mul(-1, y, pow(add(pow(x, 2), pow(y, 2)), -1)),
+    ),
+    numeric: binary((y, x) => cx(Math.atan2(y.re, x.re))),
   },
   Min: { eval: (...a) => evalMinMax('Min', ...a), numeric: (a) => cx(Math.min(...a.map((v) => v.re))) },
   Max: { eval: (...a) => evalMinMax('Max', ...a), numeric: (a) => cx(Math.max(...a.map((v) => v.re))) },
 };
 
-for (const [name, spec] of Object.entries(SPECS) as [FnName, Spec][]) {
+forEachEntry(SPECS, (name, spec) => {
   if (spec.eval) evaluators[name] = spec.eval;
   if (spec.partials) fnPartials[name] = spec.partials;
   if (spec.numeric) numericFns[name] = spec.numeric;
   if (spec.conjugate) conjugateCommutes.add(name);
-}
+});
 
 // ---------------------------------------------------------------------------
 // public constructors
@@ -1203,14 +1238,15 @@ export function expandFunc(e: Expr): Expr {
     const changed = args.some((a, i) => a !== x.args[i]);
     const y = !changed ? x : x instanceof Fn ? fn(x.name, args) : rebuild(x, args);
     if (y instanceof Fn && y.name === 'gamma') {
-      const a = y.args[0]!;
+      const a = first(y.args);
       if (a instanceof Rational && (a.p < 0n ? -a.p : a.p) > a.q) {
         const n = a.p >= 0n ? a.p / a.q : -((-a.p + a.q - 1n) / a.q);
         const frac = R(a.p - n * a.q, a.q);
         return mul(fn('gamma', [frac]), fn('rf', [frac, R(n)]));
       }
-      if (a instanceof Add && isNum(a.args[0]!)) {
-        let coeff = a.args[0] as Rational;
+      const a0 = a.args[0];
+      if (a instanceof Add && a0 instanceof Rational) {
+        let coeff = a0;
         let tail: Expr[] = a.args.slice(1);
         if (coeff.q !== 1n) {
           const ip = R(coeff.p >= 0n ? coeff.p / coeff.q : -((-coeff.p + coeff.q - 1n) / coeff.q));
@@ -1224,12 +1260,12 @@ export function expandFunc(e: Expr): Expr {
     if (y instanceof Fn) {
       if (y.name === 'binomial') {
         const [n, k] = y.args;
-        if (isInt(k!) && k.isPositive) {
-          return mul(...Array.from({ length: Number(k.p) }, (_, i) => add(n!, -i)), R(1n, factorialBig(k.p)));
+        if (n !== undefined && k !== undefined && isInt(k) && k.isPositive) {
+          return mul(...Array.from({ length: Number(k.p) }, (_, i) => add(n, -i)), R(1n, factorialBig(k.p)));
         }
       }
       if (y.name === 'harmonic' && y.args.length === 1) {
-        const [c, rest] = splitAddInt(y.args[0]!);
+        const [c, rest] = splitAddInt(first(y.args));
         if (c !== 0n) {
           const base = fn('harmonic', [rest]);
           const terms: Expr[] = [base];
@@ -1238,9 +1274,10 @@ export function expandFunc(e: Expr): Expr {
           return add(...terms);
         }
       }
-      if (y.name === 'expint' && isInt(y.args[0]!) && (y.args[0]).p > 1n) {
-        const n = (y.args[0]).p;
-        const z = y.args[1]!;
+      const [y0, y1] = y.args;
+      if (y.name === 'expint' && y0 !== undefined && y1 !== undefined && isInt(y0) && y0.p > 1n) {
+        const n = y0.p;
+        const z = y1;
         // E_n(z) = (-z)^(n-1)/(n-1)! E_1(z) + e^-z/(n-1)! sum_{k=0}^{n-2} (n-k-2)! (-z)^k
         const f = factorialBig(n - 1n);
         const sumTerms: Expr[] = [];
@@ -1257,7 +1294,8 @@ export function expandFunc(e: Expr): Expr {
 }
 
 function splitAddInt(e: Expr): [bigint, Expr] {
-  if (e instanceof Add && isInt(e.args[0]!)) return [(e.args[0]).p, add(...e.args.slice(1))];
+  const c = e.args[0];
+  if (e instanceof Add && c !== undefined && isInt(c)) return [c.p, add(...e.args.slice(1))];
   return [0n, e];
 }
 

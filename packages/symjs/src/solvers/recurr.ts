@@ -8,7 +8,8 @@
 
 import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Dummy, Mul, Rational, S, Sym, UndefFn } from '../core/nodes';
+import { Add, Dummy, Mul, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
+import { at, defined, first, getOrThrow } from '../core/guard';
 import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { asNumerDenom } from '../core/methods';
@@ -29,10 +30,10 @@ const isPolyIn = (e: Expr, x: Sym) => polyCoefficients(expand(e), x) !== undefin
 
 /** Degree and leading coefficient of e as a polynomial in x ([-Infinity, 0] for zero). */
 function lt(e: Expr, x: Sym): [number, Expr] {
-  const pc = polyCoefficients(expand(e), x)!;
+  const pc = defined(polyCoefficients(expand(e), x), 'polynomial coefficients');
   let d = -Infinity;
   for (const [k, c] of pc) if (!isZeroE(c) && k > d) d = k;
-  return d === -Infinity ? [d, S.Zero] : [d, pc.get(d)!];
+  return d === -Infinity ? [d, S.Zero] : [d, getOrThrow(pc, d)];
 }
 
 /** Distinct roots of e in x (empty when roots cannot be computed). */
@@ -73,24 +74,24 @@ export function rsolvePoly(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym,
   const terms: [Expr, number][] = [];
   for (let i = 0; i <= r; i++) {
     let p: Expr = S.Zero;
-    for (let j = i; j <= r; j++) p = add(p, mul(coeffs[j]!, binomial(j, i)));
+    for (let j = i; j <= r; j++) p = add(p, mul(at(coeffs, j), binomial(j, i)));
     polys.push(expand(p));
     const [d, c] = lt(p, n);
     terms.push([c, d]);
   }
-  let d = terms[0]![1];
-  let b = terms[0]![1];
+  let d = at(terms, 0)[1];
+  let b = at(terms, 0)[1];
   for (let i = 1; i <= r; i++) {
-    if (terms[i]![1] > d) d = terms[i]![1];
-    if (terms[i]![1] - i > b) b = terms[i]![1] - i;
+    if (at(terms, i)[1] > d) d = at(terms, i)[1];
+    if (at(terms, i)[1] - i > b) b = at(terms, i)[1] - i;
   }
   const x = new Dummy('x');
   let degreePoly: Expr = S.Zero;
   for (let i = 0; i <= r; i++) {
-    if (terms[i]![1] - i === b) {
+    if (at(terms, i)[1] - i === b) {
       let ffx: Expr = S.One;
       for (let j = 0; j < i; j++) ffx = mul(ffx, add(x, -j));
-      degreePoly = add(degreePoly, mul(terms[i]![0], ffx));
+      degreePoly = add(degreePoly, mul(at(terms, i)[0], ffx));
     }
   }
   const Ns: number[] = [];
@@ -109,10 +110,10 @@ export function rsolvePoly(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym,
     let y: Expr = S.Zero;
     for (let i = 0; i <= N; i++) {
       C.push(new Sym(`C${i + shift}`));
-      y = add(y, mul(C[i]!, pow(n, i)));
+      y = add(y, mul(at(C, i), pow(n, i)));
     }
     let E: Expr = S.Zero;
-    for (let i = 0; i <= r; i++) E = add(E, mul(coeffs[i]!, subs(y, n, add(n, i))));
+    for (let i = 0; i <= r; i++) E = add(E, mul(at(coeffs, i), subs(y, n, add(n, i))));
     let sols: Expr[][];
     try {
       sols = solveUndeterminedCoeffs(add(E, mul(-1, f)), C, [n]);
@@ -120,14 +121,14 @@ export function rsolvePoly(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym,
       return undefined;
     }
     if (!sols.length) return undefined;
-    const sol = sols[0]!;
+    const sol = at(sols, 0);
     _C = C;
-    C = C.filter((c, i) => sol[i]!.key === c.key);
-    result = xreplace(y, _C.map((c, i) => [c, sol[i]!] as [Expr, Expr]));
+    C = C.filter((c, i) => at(sol, i).key === c.key);
+    result = xreplace(y, _C.map((c, i) => [c, at(sol, i)] as [Expr, Expr]));
   } else {
     const A = r;
     const U = N + A + b + 1;
-    const nra = maxNniRoot(polys[r]!, n);
+    const nra = maxNniRoot(at(polys, r), n);
     const a = nra !== undefined ? nra + 1 : 0;
     const delta = (p: Expr, k: number): Expr => {
       let B: Expr = S.One;
@@ -141,13 +142,13 @@ export function rsolvePoly(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym,
     const alpha = new Map<number, Expr>();
     for (let i = -A; i <= d; i++) {
       const I: Expr[] = Array.from({ length: d + 1 }, () => S.One);
-      for (let k = 1; k <= d; k++) I[k] = mul(I[k - 1]!, add(x, i - k + 1), Rational.of(1, k));
+      for (let k = 1; k <= d; k++) I[k] = mul(at(I, k - 1), add(x, i - k + 1), Rational.of(1, k));
       let al: Expr = S.Zero;
       for (let j = 0; j <= A; j++) {
         for (let k = 0; k <= d; k++) {
           const B = i + j < 0 || i + j > k ? S.Zero : binomial(k, i + j);
           if (isZeroE(B)) continue;
-          al = add(al, mul(I[k]!, B, delta(polys[j]!, k)));
+          al = add(al, mul(at(I, k), B, delta(at(polys, j), k)));
         }
       }
       alpha.set(i, al);
@@ -159,42 +160,42 @@ export function rsolvePoly(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym,
       let g: Expr = S.Zero;
       for (let k = 1; k <= A + b; k++) {
         if (i - k < 0) break;
-        const B = subs(alpha.get(k - A)!, x, i - k);
-        for (let j = 0; j < A; j++) v[j] = add(v[j]!, mul(B, V[i - k]![j]!));
-        if (!homogeneous) g = add(g, mul(B, G[i - k]!));
+        const B = subs(getOrThrow(alpha, k - A), x, i - k);
+        for (let j = 0; j < A; j++) v[j] = add(at(v, j), mul(B, at(at(V, i - k), j)));
+        if (!homogeneous) g = add(g, mul(B, at(G, i - k)));
       }
-      const denom = subs(alpha.get(-A)!, x, i);
-      for (let j = 0; j < A; j++) V[i]![j] = mul(-1, v[j]!, pow(denom, -1));
+      const denom = subs(getOrThrow(alpha, -A), x, i);
+      for (let j = 0; j < A; j++) at(V, i)[j] = mul(-1, at(v, j), pow(denom, -1));
       if (!homogeneous) G[i] = mul(add(delta(f, i - A), mul(-1, g)), pow(denom, -1));
     }
     const P: Expr[] = Array.from({ length: U }, () => S.One);
-    for (let i = 1; i < U; i++) P[i] = expand(mul(P[i - 1]!, add(n, -a - i + 1), Rational.of(1, i)));
+    for (let i = 1; i < U; i++) P[i] = expand(mul(at(P, i - 1), add(n, -a - i + 1), Rational.of(1, i)));
     const Q: Expr[] = [];
-    for (let i = 0; i < A; i++) Q.push(add(...V.map((row, j) => expand(mul(row[i]!, P[j]!)))));
-    const h = homogeneous ? S.Zero : add(...G.map((g, j) => expand(mul(g, P[j]!))));
+    for (let i = 0; i < A; i++) Q.push(add(...V.map((row, j) => expand(mul(at(row, i), at(P, j))))));
+    const h = homogeneous ? S.Zero : add(...G.map((g, j) => expand(mul(g, at(P, j)))));
     C = Array.from({ length: A }, (_, i) => new Sym(`C${i + shift}`));
-    const gf = (i: number) => add(...C.map((c, j) => mul(c, delta(Q[j]!, i))));
+    const gf = (i: number) => add(...C.map((c, j) => mul(c, delta(at(Q, j), i))));
     const E: Expr[] = [];
     for (let i = N + 1; i < U; i++) E.push(homogeneous ? gf(i) : add(gf(i), delta(h, i)));
     let solved = new Map<string, Expr>();
     if (E.length) {
       const sol = linsolve(E, C);
       if (!sol) return homogeneous ? [S.Zero, []] : undefined;
-      solved = new Map(C.map((c, i) => [c.key, sol[i]!] as [string, Expr]).filter(([k, v]) => v.key !== k));
+      solved = new Map(C.map((c, i) => [c.key, at(sol, i)] as [string, Expr]).filter(([k, v]) => v.key !== k));
     }
     result = h;
     _C = [...C];
     const remaining: Sym[] = [];
     C.forEach((c, i) => {
       const sv = solved.get(c.key);
-      const s = sv ? mul(sv, Q[i]!) : mul(c, Q[i]!);
+      const s = sv ? mul(sv, at(Q, i)) : mul(c, at(Q, i));
       if (!sv) remaining.push(c);
       result = add(result, expand(s));
     });
     C = remaining;
   }
-  if (C.length !== _C.length || C.some((c, i) => c.key !== _C[i]!.key)) {
-    result = xreplace(result, C.map((c, i) => [c, _C[i]!] as [Expr, Expr]));
+  if (C.length !== _C.length || C.some((c, i) => c.key !== at(_C, i).key)) {
+    result = xreplace(result, C.map((c, i) => [c, at(_C, i)] as [Expr, Expr]));
     C = _C.slice(0, C.length);
   }
   return [result, C];
@@ -203,7 +204,7 @@ export function rsolvePoly(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym,
 /** Resultant of f and g in x via the Sylvester determinant (coefficients may contain other symbols). */
 function sylvesterResultant(f: Expr, g: Expr, x: Sym): Expr {
   const cf = (e: Expr) => {
-    const pc = polyCoefficients(expand(e), x)!;
+    const pc = defined(polyCoefficients(expand(e), x), 'polynomial coefficients');
     const d = lt(e, x)[0];
     return Array.from({ length: d + 1 }, (_, i) => pc.get(d - i) ?? S.Zero);
   };
@@ -214,8 +215,8 @@ function sylvesterResultant(f: Expr, g: Expr, x: Sym): Expr {
   const N = m + k;
   if (N === 0) return S.One;
   const rows: Expr[][] = [];
-  for (let i = 0; i < k; i++) rows.push(Array.from({ length: N }, (_, j) => (j - i >= 0 && j - i <= m ? a[j - i]! : S.Zero)));
-  for (let i = 0; i < m; i++) rows.push(Array.from({ length: N }, (_, j) => (j - i >= 0 && j - i <= k ? b[j - i]! : S.Zero)));
+  for (let i = 0; i < k; i++) rows.push(Array.from({ length: N }, (_, j) => (j - i >= 0 && j - i <= m ? at(a, j - i) : S.Zero)));
+  for (let i = 0; i < m; i++) rows.push(Array.from({ length: N }, (_, j) => (j - i >= 0 && j - i <= k ? at(b, j - i) : S.Zero)));
   return expand(Matrix.of(rows).det());
 }
 
@@ -226,8 +227,8 @@ export function rsolveRatio(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
   if (!isPolyIn(f, n)) return undefined;
   const coeffs = coeffsIn.map((c) => sympify(c));
   const r = coeffs.length - 1;
-  let A = expand(subs(coeffs[r]!, n, add(n, -r)));
-  let B = coeffs[0]!;
+  let A = expand(subs(at(coeffs, r), n, add(n, -r)));
+  let B = at(coeffs, 0);
   const h = new Dummy('h');
   const res = sylvesterResultant(A, subs(B, n, add(n, h)), n);
   const top = maxNniRoot(res, h);
@@ -242,11 +243,11 @@ export function rsolveRatio(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
   const denoms = coeffs.map((_, i) => subs(C, n, add(n, i)));
   const numers: Expr[] = [];
   for (let i = 0; i <= r; i++) {
-    const g = gcdN(expand(coeffs[i]!), expand(denoms[i]!));
-    numers.push(quo(coeffs[i]!, g));
-    denoms[i] = quo(denoms[i]!, g);
+    const g = gcdN(expand(at(coeffs, i)), expand(at(denoms, i)));
+    numers.push(quo(at(coeffs, i), g));
+    denoms[i] = quo(at(denoms, i), g);
   }
-  for (let i = 0; i <= r; i++) numers[i] = mul(numers[i]!, ...denoms.slice(0, i), ...denoms.slice(i + 1));
+  for (let i = 0; i <= r; i++) numers[i] = mul(at(numers, i), ...denoms.slice(0, i), ...denoms.slice(i + 1));
   const result = rsolvePoly(numers, mul(f, ...denoms), n);
   if (!result) return undefined;
   return [simplify(mul(result[0], pow(C, -1))), result[1]];
@@ -291,18 +292,18 @@ export function rsolveHyper(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
     } else if (hypersimp(f, n)) inhomogeneous = [f];
     else return undefined;
     for (let i = 0; i < inhomogeneous.length; i++) {
-      const g = inhomogeneous[i]!;
+      const g = at(inhomogeneous, i);
       let coeff: Expr = S.One;
       const polys = [...coeffs];
       const denoms: Expr[] = coeffs.map(() => S.One);
-      const s = hypersimp(g, n)!;
+      const s = defined(hypersimp(g, n), 'hypergeometric term ratio');
       for (let j = 1; j <= r; j++) {
         coeff = mul(coeff, subs(s, n, add(n, j - 1)));
         const [p, q] = asNumerDenom(coeff);
-        polys[j] = mul(polys[j]!, p);
+        polys[j] = mul(at(polys, j), p);
         denoms[j] = q;
       }
-      for (let j = 0; j <= r; j++) polys[j] = mul(polys[j]!, ...denoms.slice(0, j), ...denoms.slice(j + 1));
+      for (let j = 0; j <= r; j++) polys[j] = mul(at(polys, j), ...denoms.slice(0, j), ...denoms.slice(j + 1));
       let R: Expr | undefined;
       const rr = rsolveRatio(polys, mul(...denoms), n);
       if (rr) R = xreplace(rr[0], rr[1].map((c) => [c, S.Zero] as [Expr, Expr]));
@@ -313,8 +314,8 @@ export function rsolveHyper(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
     result = simplify(add(...inhomogeneous));
   }
   const Z = new Dummy('Z');
-  const p0 = coeffs[0]!;
-  const qr = subs(coeffs[r]!, n, add(n, -r + 1));
+  const p0 = at(coeffs, 0);
+  const qr = subs(at(coeffs, r), n, add(n, -r + 1));
   const pRoots = distinctRoots(p0, n);
   const qRoots = distinctRoots(qr, n);
   let factors: [Expr, Expr][] = [[S.One, S.One]];
@@ -332,7 +333,7 @@ export function rsolveHyper(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
     for (let i = 0; i <= r; i++) {
       const a = mul(...Array.from({ length: i }, (_, j) => subs(A, n, add(n, j))));
       const b = mul(...Array.from({ length: r - i }, (_, j) => subs(B, n, add(n, i + j))));
-      const poly = quo(mul(coeffs[i]!, a, b), D);
+      const poly = quo(mul(at(coeffs, i), a, b), D);
       polys.push(poly);
       if (!isZeroE(poly)) degrees.push(lt(poly, n)[0]);
     }
@@ -340,7 +341,7 @@ export function rsolveHyper(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
     const d = Math.max(...degrees);
     let zpoly: Expr = S.Zero;
     for (let i = 0; i <= r; i++) {
-      const c = polyCoefficients(expand(polys[i]!), n)!.get(d) ?? S.Zero;
+      const c = defined(polyCoefficients(expand(at(polys, i)), n), 'polynomial coefficients').get(d) ?? S.Zero;
       if (!isZeroE(c)) zpoly = add(zpoly, mul(c, pow(Z, i)));
     }
     for (const z of distinctRoots(zpoly, Z)) {
@@ -364,7 +365,7 @@ export function rsolveHyper(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
           if (cand instanceof Rational && n0 instanceof Rational && cand.value > n0.value) n0 = cand;
         }
         let K = product(ratio, [n, n0, add(n, -1)]);
-        const hasComb = (e: Expr): boolean => ['factorial', 'ff', 'rf'].includes((e as { name?: string }).name ?? '') || e.args.some(hasComb);
+        const hasComb = (e: Expr): boolean => ('name' in e && typeof e.name === 'string' && ['factorial', 'ff', 'rf'].includes(e.name)) || e.args.some(hasComb);
         if (hasComb(K)) K = simplify(K);
         if (!isZeroE(simplify(casoratian([...kernel, K], n)))) kernel.push(K);
       }
@@ -372,7 +373,7 @@ export function rsolveHyper(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
   }
   kernel.sort((u, v) => compareKeys(sortKey(u), sortKey(v)));
   const consts = kernel.map((_, i) => new Sym(`C${i}`));
-  result = add(result, ...kernel.map((k, i) => mul(consts[i]!, k)));
+  result = add(result, ...kernel.map((k, i) => mul(at(consts, i), k)));
   return [result, consts];
 }
 
@@ -382,7 +383,7 @@ export function rsolveHyper(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
  */
 export function rsolve(fIn: ExprLike, y: Expr, init?: [ExprLike, ExprLike][]): Expr | undefined {
   let f = sympify(fIn);
-  if (f.kind === 'Rel') f = add(f.args[0]!, mul(-1, f.args[1]!));
+  if (f instanceof Rel) f = add(f.lhs, mul(-1, f.rhs));
   if (!(y instanceof UndefFn) || !(y.args[0] instanceof Sym)) throw new TypeError('rsolve: y(n) expected');
   const n = y.args[0];
   const hPart = new Map<number, Expr[]>();
@@ -390,13 +391,13 @@ export function rsolve(fIn: ExprLike, y: Expr, init?: [ExprLike, ExprLike][]): E
   const e = expand(f);
   for (const g of e instanceof Add ? e.args : [e]) {
     const fs = g instanceof Mul ? g.args : [g];
-    const dep = fs.filter((t) => t instanceof UndefFn && t.name === y.name);
+    const dep = fs.filter((t): t is UndefFn => t instanceof UndefFn && t.name === y.name);
     if (!dep.length) {
       iPart.push(g);
       continue;
     }
     if (dep.length > 1) throw new NotImplementedError('rsolve: nonlinear recurrence');
-    const k = add(dep[0]!.args[0]!, mul(-1, n));
+    const k = add(first(first(dep).args), mul(-1, n));
     if (!isIntR(k)) throw new TypeError(`rsolve: '${y.name}(${n.name} + k)' expected`);
     const coeff = mul(...fs.filter((t) => t !== dep[0]));
     const key = Number(k.p);
@@ -442,19 +443,19 @@ export function rsolve(fIn: ExprLike, y: Expr, init?: [ExprLike, ExprLike][]): E
     const eqs: Expr[] = [];
     for (const [kIn, v] of init) {
       const k = sympify(kIn);
-      const i = k instanceof UndefFn ? k.args[0]! : k;
+      const i = k instanceof UndefFn ? first(k.args) : k;
       eqs.push(add(subs(solution, n, i), mul(-1, v)));
     }
     const s = linsolve(eqs, symbols);
     if (!s) return undefined;
-    solution = xreplace(solution, symbols.map((c, i) => [c, s[i]!] as [Expr, Expr]));
+    solution = xreplace(solution, symbols.map((c, i) => [c, at(s, i)] as [Expr, Expr]));
     symbols = [];
   }
   // a partial family is the answer only when it meets every initial value
   if (init?.length) {
     for (const [kIn, v] of init) {
       const k = sympify(kIn);
-      const i = k instanceof UndefFn ? k.args[0]! : k;
+      const i = k instanceof UndefFn ? first(k.args) : k;
       const r = simplify(add(subs(solution, n, i), mul(-1, v)));
       if (!(r instanceof Rational && r.isZero)) return undefined;
     }

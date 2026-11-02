@@ -96,8 +96,8 @@ export class MutableDenseMatrix extends Matrix {
    * flat list fills a column, a nested list fills rows.
    */
   copyinList(i: number, j: number, values: readonly ExprLike[] | readonly (readonly ExprLike[])[]): void {
-    const nested = values.length > 0 && Array.isArray(values[0]);
-    const rows = nested ? (values as readonly (readonly ExprLike[])[]) : (values as readonly ExprLike[]).map((v) => [v]);
+    const items: readonly (ExprLike | readonly ExprLike[])[] = values;
+    const rows = items.map((v): readonly ExprLike[] => (isRow(v) ? v : [v]));
     this.copyinMatrix(i, j, Matrix.of(rows));
   }
   /** An immutable copy (SymPy as_immutable). */
@@ -112,3 +112,5 @@ export class MutableDenseMatrix extends Matrix {
 
 /** SymPy alias. */
 export const MutableMatrix = MutableDenseMatrix;
+
+const isRow = (v: ExprLike | readonly ExprLike[]): v is readonly ExprLike[] => Array.isArray(v);

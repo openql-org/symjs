@@ -9,6 +9,7 @@
 import type { Expr, ExprLike } from './nodes';
 import { ExtensionExpr, Sym } from './nodes';
 import { sympify } from './ops';
+import { at } from './guard';
 
 /** SymPy Indexed(base, *indices): args are [base symbol, ...indices]; printed base[i, j]. */
 export class Indexed extends ExtensionExpr {
@@ -16,7 +17,7 @@ export class Indexed extends ExtensionExpr {
     super('Indexed', args);
   }
   get base(): Expr {
-    return this.args[0]!;
+    return at(this.args, 0);
   }
   get indices(): Expr[] {
     return this.args.slice(1);

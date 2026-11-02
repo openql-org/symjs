@@ -9,6 +9,7 @@
  * Stirling / Euler-Maclaurin expansions after shifting the argument.
  */
 
+import { at } from '../core/guard';
 import * as F from './mpf';
 import type { Mpf } from './mpf';
 import { ONE, ZERO } from './mpf';
@@ -45,7 +46,7 @@ function bernoulli(n: number): [bigint, bigint] {
     let q = 1n;
     let c = 1n; // C(m+1, k)
     for (let k = 0; k < m; k++) {
-      const [bp, bq] = k === 1 ? [-1n, 2n] : bern[k]!;
+      const [bp, bq] = k === 1 ? [-1n, 2n] : at(bern, k);
       // p/q += c * bp/bq
       p = p * bq + c * bp * q;
       q = q * bq;
@@ -59,7 +60,7 @@ function bernoulli(n: number): [bigint, bigint] {
     const g = gcd(p, q) || 1n;
     bern.push(m === 1 ? [-1n, 2n] : [p / g, q / g]);
   }
-  return bern[n]!;
+  return at(bern, n);
 }
 
 function ratC(p: bigint, q: bigint, wp: number): Mpc {

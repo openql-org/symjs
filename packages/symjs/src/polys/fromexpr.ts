@@ -7,6 +7,7 @@
  */
 
 import { NotImplementedError } from '../core/errors';
+import { at } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Dummy } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
@@ -34,7 +35,7 @@ export function parallelPolyFromExpr(exprs: readonly ExprLike[], gens: readonly 
   const g = gens.length ? [...gens] : [...Poly.from(add(...es.map((e, i) => mul(e, new Dummy(`w${i}`)))), undefined).gens.filter((v) => !(v instanceof Dummy))];
   const first = es.map((e) => Poly.from(e, g, opts));
   const domain = opts.domain ?? inferDomain(first.flatMap((p) => p.coeffs()));
-  const polys = es.map((e, i) => (first[i]!.domain === domain ? first[i]! : Poly.from(e, g, { domain })));
+  const polys = first.map((p, i) => (p.domain === domain ? p : Poly.from(at(es, i), g, { domain })));
   return [polys, { gens: g, domain }];
 }
 

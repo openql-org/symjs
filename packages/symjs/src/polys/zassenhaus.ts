@@ -11,6 +11,7 @@
  */
 
 import { NotImplementedError, NotInvertible } from '../core/errors';
+import { at } from '../core/guard';
 
 type P = bigint[];
 
@@ -52,8 +53,13 @@ function pmul(f: P, g: P, m: bigint): P {
   if (!f.length || !g.length) return [];
   const r: bigint[] = Array(f.length + g.length - 1).fill(0n);
   for (let i = 0; i < f.length; i++) {
-    if (f[i] === 0n) continue;
-    for (let j = 0; j < g.length; j++) r[i + j] = r[i + j]! + f[i]! * g[j]!;
+    const fi = f[i];
+    if (fi === undefined || fi === 0n) continue;
+    let k = i;
+    for (const gj of g) {
+      r[k] = (r[k] ?? 0n) + fi * gj;
+      k++;
+    }
   }
   return pmod(r, m);
 }
@@ -63,13 +69,17 @@ function pdivmod(f: P, g: P, m: bigint): [P, P] {
   let r = pmod(f, m);
   const dg = gg.length - 1;
   if (dg < 0) throw new RangeError('zassenhaus: division by zero');
-  const inv = modInv(gg[dg]!, m);
+  const inv = modInv(at(gg, dg), m);
   const q: bigint[] = Array(Math.max(0, r.length - dg)).fill(0n);
   while (r.length - 1 >= dg && r.length) {
     const k = r.length - 1 - dg;
-    const c = mod(r[r.length - 1]! * inv, m);
+    const c = mod(at(r, -1) * inv, m);
     q[k] = c;
-    for (let j = 0; j <= dg; j++) r[k + j] = mod(r[k + j]! - c * gg[j]!, m);
+    let i = k;
+    for (const gj of gg) {
+      r[i] = mod((r[i] ?? 0n) - c * gj, m);
+      i++;
+    }
     r = trim(r);
   }
   return [trim(q), r];
@@ -79,7 +89,7 @@ const prem = (f: P, g: P, m: bigint) => pdivmod(f, g, m)[1];
 function monic(f: P, m: bigint): P {
   const t = trim(f);
   if (!t.length) return t;
-  const inv = modInv(t[t.length - 1]!, m);
+  const inv = modInv(at(t, -1), m);
   return pmod(t.map((c) => c * inv), m);
 }
 
@@ -101,7 +111,7 @@ function pgcdex(a0: P, b0: P, p: bigint): [P, P] {
     [s0, s1] = [s1, psub(s0, pmul(q, s1, p), p)];
     [t0, t1] = [t1, psub(t0, pmul(q, t1, p), p)];
   }
-  const inv = modInv(r0[0]!, p);
+  const inv = modInv(at(r0, 0), p);
   return [pmod(s0.map((c) => c * inv), p), pmod(t0.map((c) => c * inv), p)];
 }
 
@@ -175,7 +185,7 @@ function henselLift(f: P, fs: P[], p: bigint, l: number): P[] {
   const k = Math.floor(fs.length / 2);
   const left = fs.slice(0, k);
   const right = fs.slice(k);
-  const lc = trim(f)[deg(f)]!;
+  const lc = at(trim(f), -1);
   let g = left.reduce((acc, q) => pmul(acc, q, p), [mod(lc, p)] as P);
   let h = right.reduce((acc, q) => pmul(acc, q, p), [1n] as P);
   let [s, t] = pgcdex(g, h, p);
@@ -216,15 +226,19 @@ function zzDivExact(f: P, g: P): P | undefined {
   let r = trim([...f]);
   const gg = trim(g);
   const dg = gg.length - 1;
-  const lg = gg[dg]!;
+  const lg = at(gg, dg);
   const q: bigint[] = Array(Math.max(0, r.length - dg)).fill(0n);
   while (r.length - 1 >= dg && r.length) {
-    const lr = r[r.length - 1]!;
+    const lr = at(r, -1);
     if (lr % lg !== 0n) return undefined;
     const c = lr / lg;
     const k = r.length - 1 - dg;
     q[k] = c;
-    for (let j = 0; j <= dg; j++) r[k + j] = r[k + j]! - c * gg[j]!;
+    let i = k;
+    for (const gj of gg) {
+      r[i] = (r[i] ?? 0n) - c * gj;
+      i++;
+    }
     r = trim(r);
   }
   return r.length ? undefined : trim(q);
@@ -239,7 +253,7 @@ function primitivePart(f: P): P {
     g = a;
   }
   const t = trim(f);
-  const sign = t[t.length - 1]! < 0n ? -1n : 1n;
+  const sign = t.length && at(t, -1) < 0n ? -1n : 1n;
   return g ? t.map((c) => (sign * c) / g) : t;
 }
 
@@ -251,7 +265,7 @@ export function zassenhaus(f0: P): P[] {
   const f = primitivePart(f0);
   const n = deg(f);
   if (n <= 1) return [f];
-  const lc = f[n]!;
+  const lc = at(f, n);
   // a prime keeping the degree and square-freeness
   let p = 0n;
   for (const q of SMALL_PRIMES) {
@@ -287,8 +301,8 @@ export function zassenhaus(f0: P): P[] {
     let found = false;
     const idx = Array.from({ length: size }, (_, i) => i);
     for (;;) {
-      const lcr = trim(rest)[deg(rest)]!;
-      const prod = idx.reduce((acc, i) => pmul(acc, remaining[i]!, m), [mod(lcr, m)] as P);
+      const lcr = at(trim(rest), -1);
+      const prod = idx.reduce((acc, i) => pmul(acc, at(remaining, i), m), [mod(lcr, m)] as P);
       const cand = primitivePart(prod.map(sym));
       const q = deg(cand) > 0 ? zzDivExact(rest, cand) : undefined;
       if (q) {
@@ -302,8 +316,8 @@ export function zassenhaus(f0: P): P[] {
       let i = size - 1;
       while (i >= 0 && idx[i] === remaining.length - size + i) i--;
       if (i < 0) break;
-      idx[i]!++;
-      for (let j = i + 1; j < size; j++) idx[j] = idx[j - 1]! + 1;
+      idx[i] = at(idx, i) + 1;
+      for (let j = i + 1; j < size; j++) idx[j] = at(idx, j - 1) + 1;
     }
     if (!found) size++;
   }
@@ -375,7 +389,7 @@ function sqfListModP(f0: P, p: bigint): [P, number][] {
 export function factorModP(f0: P, p: bigint): [bigint, [P, number][]] {
   const f = pmod(f0, p);
   if (!f.length) return [0n, []];
-  const lc = f[f.length - 1]!;
+  const lc = at(f, -1);
   const out: [P, number][] = [];
   for (const [g, m] of sqfListModP(f, p)) {
     for (const [h, d] of ddf(g, p)) {

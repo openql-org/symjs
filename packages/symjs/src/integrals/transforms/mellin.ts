@@ -13,8 +13,8 @@
  * F(s) are inverted by residues.
  */
 
-import type { Expr, ExprLike, Sym } from '../../core/nodes';
-import { Add, Dummy, Fn, Integral, Mul, Pow, Rational, S, Constant } from '../../core/nodes';
+import type { ExprLike, Sym } from '../../core/nodes';
+import { Add, Dummy, Expr, Fn, Integral, Mul, Pow, Rational, S, Constant } from '../../core/nodes';
 import { and, or } from '../../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne } from '../../core/logic';
 import { add, exp, mul, neg, pow, sqrt, sub, sympify } from '../../core/ops';
@@ -36,7 +36,9 @@ import { gammasimp } from '../../simplify/gammasimp';
 import { rewrite } from '../../simplify/rewrite';
 import type { TransformHints, TransformResult } from './base';
 import type { IntegralTransform } from './base';
-import { GenericIntegralTransform, IntegralTransformError, decide, holds, isFalseExpr, isPolyIn, matchByName, mget, mulArgs, wild } from './base';
+import { GenericIntegralTransform, IntegralTransformError, decide, holds, isFalseExpr, isPolyIn, matchByName, mget, mulArgs, wild, transformArgs } from './base';
+import { at, defined, first, pair } from '../../core/guard';
+import { InvariantError } from '../../core/errors';
 import { Heaviside, isHeaviside } from './delta';
 
 const isExpPow = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
@@ -73,7 +75,7 @@ function mellinTable(f: Expr, x: Sym, s: Expr): [Expr, Expr, Expr, Expr] | undef
   const p = wild('p', x);
   const r = wild('r', x);
   if (rest.length === 1) {
-    const g = rest[0]!;
+    const g = at(rest, 0);
     // exp(-b*x**p)
     if (g instanceof Pow && isExpPow(g)) {
       const lin = matchByName(g.exp, mul(-1, b, x));
@@ -92,7 +94,7 @@ function mellinTable(f: Expr, x: Sym, s: Expr): [Expr, Expr, Expr, Expr] | undef
     }
     // Heaviside(1 - x), Heaviside(x - 1)
     if (isHeaviside(g) && g.args.length === 1) {
-      const a0 = g.args[0]!;
+      const a0 = at(g.args, 0);
       if (a0.key === sub(1, x).key) return [mul(C, pow(sp, -1)), re(neg(alpha)), S.Infinity, S.true];
       if (a0.key === sub(x, 1).key) return [mul(C, -1, pow(sp, -1)), S.NegativeInfinity, re(neg(alpha)), S.true];
     }
@@ -110,7 +112,7 @@ function mellinTable(f: Expr, x: Sym, s: Expr): [Expr, Expr, Expr, Expr] | undef
       }
     }
     if (g instanceof Fn && (g.name === 'sin' || g.name === 'cos' || g.name === 'besselj')) {
-      const argi = g.name === 'besselj' ? g.args[1]! : g.args[0]!;
+      const argi = g.name === 'besselj' ? at(g.args, 1) : at(g.args, 0);
       const m = matchByName(argi, mul(b, x));
       if (m && isPositive(mget(m, 'b')) === true) {
         const B = mget(m, 'b');
@@ -123,7 +125,7 @@ function mellinTable(f: Expr, x: Sym, s: Expr): [Expr, Expr, Expr, Expr] | undef
           const F = mul(C, pow(2, sp), S.Half, sqrt(S.Pi), gamma(mul(sp, S.Half)), pow(gamma(sub(S.Half, mul(sp, S.Half))), -1), scale);
           return [F, re(neg(alpha)), re(sub(1, alpha)), S.true];
         }
-        const nu = g.args[0]!;
+        const nu = at(g.args, 0);
         const F = mul(C, pow(2, sub(sp, 1)), gamma(mul(add(nu, sp), S.Half)), pow(gamma(add(mul(sub(nu, sp), S.Half), 1)), -1), scale);
         return [F, re(sub(neg(nu), alpha)), re(sub(Rational.of(3n, 2n), alpha)), S.true];
       }
@@ -131,18 +133,18 @@ function mellinTable(f: Expr, x: Sym, s: Expr): [Expr, Expr, Expr, Expr] | undef
   }
   if (rest.length === 2) {
     // (x - 1)**(r - 1)*Heaviside(x - 1)
-    const hj = rest.findIndex((g) => isHeaviside(g) && g.args.length === 1 && g.args[0]!.key === sub(x, 1).key);
+    const hj = rest.findIndex((g) => isHeaviside(g) && g.args.length === 1 && at(g.args, 0).key === sub(x, 1).key);
     if (hj >= 0) {
-      const m = matchByName(rest[1 - hj]!, pow(sub(x, 1), r));
+      const m = matchByName(at(rest, 1 - hj), pow(sub(x, 1), r));
       if (m) {
         const R = add(mget(m, 'r'), 1);
         return [mul(C, gamma(R), gamma(sub(sub(1, R), sp)), pow(gamma(sub(1, sp)), -1)), S.NegativeInfinity, re(sub(sub(1, R), alpha)), Gt0(re(R))];
       }
     }
     // (1 - x)**(r - 1)*Heaviside(1 - x)
-    const hi = rest.findIndex((g) => isHeaviside(g) && g.args.length === 1 && g.args[0]!.key === sub(1, x).key);
+    const hi = rest.findIndex((g) => isHeaviside(g) && g.args.length === 1 && at(g.args, 0).key === sub(1, x).key);
     if (hi >= 0) {
-      const other = rest[1 - hi]!;
+      const other = at(rest, 1 - hi);
       const m = matchByName(other, pow(sub(1, x), r));
       if (m) {
         const R = add(mget(m, 'r'), 1);
@@ -180,7 +182,7 @@ export class MellinTransform extends GenericIntegralTransform {
     return '\\mathcal{M}';
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new MellinTransform(args[0]!, args[1] as Sym, args[2] as Sym);
+    return new MellinTransform(...transformArgs(args));
   }
   protected withFunction(f: Expr): IntegralTransform {
     return new MellinTransform(f, this.functionVariable, this.transformVariable);
@@ -197,7 +199,9 @@ export class MellinTransform extends GenericIntegralTransform {
     const as: Expr[] = [];
     const bs: Expr[] = [];
     const conds: Expr[] = [];
-    for (const [strip, c] of extra as readonly (readonly [readonly [Expr, Expr], Expr])[]) {
+    for (const e of extra) {
+      const [strip, c] = pair(e);
+      if (strip instanceof Expr || !(c instanceof Expr)) throw new InvariantError('Mellin transform extra data is not (strip, condition)');
       as.push(strip[0]);
       bs.push(strip[1]);
       conds.push(c);
@@ -293,8 +297,8 @@ export function rewriteGamma(fIn: ExprLike, s: Sym, aIn: ExprLike | undefined, b
     });
     return [...out.values()];
   };
-  for (const g of fnAtoms(['gamma'])) collectCoeff(g.args[0]!, S.One);
-  for (const g of fnAtoms(['sin', 'cos', 'tan', 'cot'])) collectCoeff(g.args[0]!, S.Pi);
+  for (const g of fnAtoms(['gamma'])) collectCoeff(at(g.args, 0), S.One);
+  for (const g of fnAtoms(['sin', 'cos', 'tan', 'cot'])) collectCoeff(at(g.args, 0), S.Pi);
   const sMults = mults.map((x) => (isReal(x) === true ? abs(x) : x));
   let common: Expr = S.One;
   for (const x of sMults) {
@@ -328,11 +332,10 @@ export function rewriteGamma(fIn: ExprLike, s: Sym, aIn: ExprLike | undefined, b
     if (!isPolyIn(argE, s)) throw exception(fact);
     const p = Poly.from(argE, [s]);
     if (p.degree() !== 1) throw exception(fact);
-    const cs = p.allCoeffs();
-    return [cs[0]!, cs[1]!];
+    return pair(p.allCoeffs());
   };
   while (args.length) {
-    const [item, isNumer] = args.pop()!;
+    const [item, isNumer] = defined(args.pop(), 'factor');
     const [ugammas, lgammas] = isNumer ? [numerGammas, denomGammas] : [denomGammas, numerGammas];
     const ufacs = isNumer ? facs : dfacs;
     if (item.sinArg !== undefined) {
@@ -374,7 +377,7 @@ export function rewriteGamma(fIn: ExprLike, s: Sym, aIn: ExprLike | undefined, b
         for (const c of rs) args.push([{ fact: sub(s, c) }, isNumer]);
         continue;
       }
-      const [a, c0] = p.allCoeffs() as [Expr, Expr];
+      const [a, c0] = pair(p.allCoeffs());
       ufacs.push(a);
       const cc = mul(c0, -1, pow(a, -1));
       if (left(cc, isNumer) === true) {
@@ -386,7 +389,7 @@ export function rewriteGamma(fIn: ExprLike, s: Sym, aIn: ExprLike | undefined, b
         lgammas.push([S.NegOne, cc]);
       }
     } else if (fact instanceof Fn && fact.name === 'gamma') {
-      const [a, b] = linearArg(fact.args[0]!, fact);
+      const [a, b] = linearArg(at(fact.args, 0), fact);
       if (isNumer) {
         const pos = holds(Lt(0, a));
         const negv = holds(Lt(a, 0));
@@ -395,14 +398,14 @@ export function rewriteGamma(fIn: ExprLike, s: Sym, aIn: ExprLike | undefined, b
       }
       ugammas.push([a, b]);
     } else if (fact instanceof Fn && fact.name === 'sin') {
-      args.push([{ sinArg: fact.args[0]! }, isNumer]);
+      args.push([{ sinArg: at(fact.args, 0) }, isNumer]);
     } else if (fact instanceof Fn && fact.name === 'tan') {
-      const a = fact.args[0]!;
+      const a = at(fact.args, 0);
       args.push([{ sinArg: a }, isNumer], [{ sinArg: sub(mul(S.Pi, S.Half), a) }, !isNumer]);
     } else if (fact instanceof Fn && fact.name === 'cos') {
-      args.push([{ sinArg: sub(mul(S.Pi, S.Half), fact.args[0]!) }, isNumer]);
+      args.push([{ sinArg: sub(mul(S.Pi, S.Half), at(fact.args, 0)) }, isNumer]);
     } else if (fact instanceof Fn && fact.name === 'cot') {
-      const a = fact.args[0]!;
+      const a = at(fact.args, 0);
       args.push([{ sinArg: sub(mul(S.Pi, S.Half), a) }, isNumer], [{ sinArg: a }, !isNumer]);
     } else throw exception(fact);
   }
@@ -417,11 +420,11 @@ export function rewriteGamma(fIn: ExprLike, s: Sym, aIn: ExprLike | undefined, b
     [denomGammas, bq, ap, false],
   ] as const) {
     while (gammas.length) {
-      const [a, c] = gammas.pop()!;
+      const [a, c] = defined(gammas.pop(), 'gamma factor');
       if (a.key !== S.One.key && a.key !== S.NegOne.key) {
         if (!(a instanceof Rational) || !a.isInteger) throw new TypeError('a is not an integer');
         const p = a.isNegative ? neg(a) : a;
-        const P = Number((p as Rational).p);
+        const P = Number(a.isNegative ? -a.p : a.p);
         const newa = mul(a, pow(p, -1));
         const newc = mul(c, pow(p, -1));
         for (let k = 0; k < P; k++) gammas.push([newa, add(newc, Rational.of(BigInt(k), BigInt(P)))]);
@@ -475,7 +478,8 @@ function meijergClosedForm(an0: readonly Expr[], ap0: readonly Expr[], bm0: read
     const a = [...xs];
     const b = [...ys];
     for (let i = a.length - 1; i >= 0; i--) {
-      const j = b.findIndex((y) => y.key === a[i]!.key);
+      const ai = at(a, i);
+      const j = b.findIndex((y) => y.key === ai.key);
       if (j >= 0) {
         a.splice(i, 1);
         b.splice(j, 1);
@@ -493,25 +497,25 @@ function meijergClosedForm(an0: readonly Expr[], ap0: readonly Expr[], bm0: read
   const stepAbove = (): Expr => (zc && isPositive(zc[0]) === true ? (isPositive(zc[1]) === true ? Heaviside(sub(zc[0], pow(xv, zc[1]))) : Heaviside(sub(pow(xv, zc[1]), zc[0]))) : Heaviside(sub(z, 1)));
   // G^{1,0}_{1,1}(z | a; b) = z**b*(1 - z)**(a - b - 1)/gamma(a - b) for z < 1
   if (m === 1 && n === 0 && ap.length === 1 && bq.length === 0) {
-    const a = ap[0]!;
-    const b = bm[0]!;
+    const a = at(ap, 0);
+    const b = at(bm, 0);
     return mul(pow(z, b), pow(sub(1, z), sub(sub(a, b), 1)), pow(gamma(sub(a, b)), -1), stepBelow());
   }
   // G^{0,1}_{1,1}(z | a; b) = z**(a - 1)*(1 - 1/z)**(a - b - 1)/gamma(a - b) for z > 1
   if (m === 0 && n === 1 && ap.length === 0 && bq.length === 1) {
-    const a = an[0]!;
-    const b = bq[0]!;
+    const a = at(an, 0);
+    const b = at(bq, 0);
     const w = pow(z, -1);
     return mul(pow(w, sub(1, a)), pow(sub(1, w), sub(sub(a, b), 1)), pow(gamma(sub(a, b)), -1), stepAbove());
   }
   // G^{1,0}_{0,1}(z | -; b) = z**b*exp(-z)
-  if (m === 1 && n === 0 && p === 0 && q === 1) return mul(pow(z, bm[0]!), exp(neg(z)));
+  if (m === 1 && n === 0 && p === 0 && q === 1) return mul(pow(z, at(bm, 0)), exp(neg(z)));
   // G^{0,1}_{1,0}(z | a; -) = z**(a - 1)*exp(-1/z)
-  if (m === 0 && n === 1 && p === 1 && q === 0) return mul(pow(z, sub(an[0]!, 1)), exp(neg(pow(z, -1))));
+  if (m === 0 && n === 1 && p === 1 && q === 0) return mul(pow(z, sub(at(an, 0), 1)), exp(neg(pow(z, -1))));
   // G^{1,1}_{1,1}(z | a; b) = gamma(1 - a + b)*z**b*(1 + z)**(a - b - 1)
   if (m === 1 && n === 1 && p === 1 && q === 1) {
-    const a = an[0]!;
-    const b = bm[0]!;
+    const a = at(an, 0);
+    const b = at(bm, 0);
     const q = sub(sub(a, b), 1);
     // with z = C/x**e (x > 0): z**b*(1 + z)**q = C**b*x**(-e*(b + q))*(x**e + C)**q
     if (zc) {
@@ -522,12 +526,12 @@ function meijergClosedForm(an0: readonly Expr[], ap0: readonly Expr[], bm0: read
   }
   // G^{1,0}_{0,2}(z | -; b1, b2) = z**((b1 + b2)/2)*besselj(b1 - b2, 2*sqrt(z))
   if (m === 1 && n === 0 && p === 0 && q === 2) {
-    const [b1, b2] = [bm[0]!, bq[0]!];
+    const [b1, b2] = [at(bm, 0), at(bq, 0)];
     return mul(pow(z, mul(add(b1, b2), S.Half)), besselj(sub(b1, b2), mul(2, sqrt(z))));
   }
   // G^{2,0}_{0,2}(z | -; b1, b2) = 2*z**((b1 + b2)/2)*besselk(b1 - b2, 2*sqrt(z))
   if (m === 2 && n === 0 && p === 0 && q === 2) {
-    const [b1, b2] = [bm[0]!, bm[1]!];
+    const [b1, b2] = pair(bm);
     return mul(2, pow(z, mul(add(b1, b2), S.Half)), besselk(sub(b1, b2), mul(2, sqrt(z))));
   }
   return undefined;
@@ -553,11 +557,11 @@ function powerFactored(terms: readonly Expr[], x: Expr, low: boolean, pullConten
   });
   if (!exps.every(isRat) || terms.some((t) => some(t, (n) => n instanceof Fn && n.name === 'log'))) return add(...terms);
   const vals = exps.filter(isRat).map((e) => e.value);
-  const e0 = exps[vals.indexOf(low ? Math.min(...vals) : Math.max(...vals))]!;
+  const e0 = defined(exps[vals.indexOf(low ? Math.min(...vals) : Math.max(...vals))], 'extreme exponent');
   const inner = terms.map((t) => mul(t, pow(x, neg(e0))));
   if (!pullContent) return new Mul([pow(x, e0), add(...inner)].sort((p, q) => compareKeys(sortKey(p), sortKey(q))));
   const cs = inner.map((t) => asCoeffMul(t)[0]);
-  const c = cs[0]!;
+  const c = first(cs);
   return mul(c, pow(x, e0), add(...inner.map((t) => mul(t, pow(c, -1)))));
 }
 
@@ -660,14 +664,14 @@ export class InverseMellinTransform extends GenericIntegralTransform {
   }
   /** The fundamental strip; undefined bounds were not given (SymPy fundamental_strip). */
   get fundamentalStrip(): [Expr | undefined, Expr | undefined] {
-    const [a, b] = [this.args[3]!, this.args[4]!];
+    const [a, b] = [at(this.args, 3), at(this.args, 4)];
     return [a === NONE_SENTINEL ? undefined : a, b === NONE_SENTINEL ? undefined : b];
   }
   protected override get defaultNoconds(): boolean {
     return true;
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new InverseMellinTransform(args[0]!, args[1] as Sym, args[2] as Sym, args[3], args[4]);
+    return new InverseMellinTransform(...transformArgs(args), args[3], args[4]);
   }
   protected withFunction(f: Expr): IntegralTransform {
     const [a, b] = this.fundamentalStrip;

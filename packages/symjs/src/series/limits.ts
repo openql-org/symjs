@@ -26,9 +26,12 @@ import { polyCoefficients } from '../polys/poly';
 import { expandMul as expand } from '../simplify/expand';
 import { fraction, together } from '../simplify/rational';
 import { Expander } from './puiseux';
+import { first, getOrThrow } from '../core/guard';
 
 const BOUNDED = Symbol('bounded');
 type LV = Expr | typeof BOUNDED | undefined;
+/** A determined limit value (neither undetermined nor merely bounded). */
+const isValue = (v: LV): v is Expr => v !== undefined && v !== BOUNDED;
 
 const isInf = (e: LV): e is Special => e instanceof Special && e.name !== 'nan';
 const isNaN_ = (e: LV) => e instanceof Special && e.name === 'nan';
@@ -101,7 +104,7 @@ class Limiter {
         const infs = vals.filter(isInf);
         return infs.length ? add(...infs) : BOUNDED;
       }
-      return add(...(vals as Expr[]));
+      return add(...vals.filter(isValue));
     }
 
     if (f instanceof Mul) {
@@ -113,7 +116,7 @@ class Limiter {
         const p = mul(...others);
         return isZeroE(p) ? S.Zero : BOUNDED;
       }
-      return mul(...(vals as Expr[]));
+      return mul(...vals.filter(isValue));
     }
 
     if (f instanceof Pow) {
@@ -146,14 +149,15 @@ class Limiter {
 
     if (f instanceof Fn && f.args.length > 1) {
       const ls = f.args.map((a) => this.lim(a));
-      if (ls.some((v) => v === undefined || v === BOUNDED)) return undefined;
-      const r = fn(f.name, ls as Expr[]);
+      const vs = ls.filter(isValue);
+      if (vs.length !== ls.length) return undefined;
+      const r = fn(f.name, vs);
       if (hasSpecialInside(r) || isNaN_(r)) return undefined;
       return r;
     }
 
     if (f instanceof Fn) {
-      const arg = f.args[0]!;
+      const arg = first(f.args);
       const la = this.lim(arg);
       if (la === undefined || la === BOUNDED) return undefined;
       if (la instanceof Special) {
@@ -202,7 +206,7 @@ class Limiter {
     const pc = polyCoefficients(c, ex.L);
     if (!pc) return undefined;
     const m = Math.max(...pc.keys());
-    const a = expand(pc.get(m)!);
+    const a = expand(getOrThrow(pc, m));
     if (e.isPositive) return S.Zero;
     if (e.isZero && m === 0) return c;
     const sign = m % 2 === 0 ? a : mul(-1, a);
@@ -339,7 +343,7 @@ function gammaAsymptotic(e: Expr, n: Sym): Expr | undefined {
   let failed = false as boolean; // set inside a callback
   const out = mapBottomUp(g, (x: Expr) => {
     if (!(x instanceof Fn && x.name === 'gamma') || !x.has(n)) return x;
-    const c = expand(add(x.args[0]!, mul(-1, n)));
+    const c = expand(add(first(x.args), mul(-1, n)));
     if (c.has(n)) {
       failed = true;
       return x;

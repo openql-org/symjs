@@ -6,6 +6,7 @@
  * and qs_factor) with SymPy's seeded polynomial choice.
  */
 
+import { at, defined, first, last } from '../core/guard';
 import { gcd } from '../core/numbers';
 import { perfectPowerInt } from './factor';
 import type { IntLike } from './intutil';
@@ -55,7 +56,7 @@ function generateFactorBase(primeBound: bigint, n: bigint): [number | undefined,
     if (powmod(n, (prime - 1n) / 2n, prime) === 1n) {
       if (prime > 1000n && idx1000 === undefined) idx1000 = fb.length - 1;
       if (prime > 5000n && idx5000 === undefined) idx5000 = fb.length - 1;
-      const residue = sqrtModPrimePower(n, prime, 1n)![0]!;
+      const residue = first(defined(sqrtModPrimePower(n, prime, 1n), 'square root of n modulo a factor base prime'));
       const logP = pyRound(Math.log(Number(prime)) * 2 ** 10);
       fb.push({ prime, p: Number(prime), tmemP: residue, logP, soln1: undefined, soln2: 0, bAinv: [] });
     }
@@ -77,7 +78,7 @@ function* generatePolynomial(N: bigint, M: number, fb: FactorBaseElem[], idx1000
       while (pyLog(a) < approxVal) {
         let randP = 0;
         while (randP === 0 || q.includes(randP)) randP = Number(randint(BigInt(start), BigInt(end)));
-        a *= fb[randP]!.prime;
+        a *= at(fb, randP).prime;
         q.push(randP);
       }
       const ratio = Math.exp(pyLog(a) - approxVal);
@@ -90,8 +91,8 @@ function* generatePolynomial(N: bigint, M: number, fb: FactorBaseElem[], idx1000
     const a = bestA;
     const B: bigint[] = [];
     for (const val of bestQ) {
-      const ql = fb[val]!.prime;
-      let gamma = pmod(fb[val]!.tmemP * invert(a / ql, ql), ql);
+      const ql = at(fb, val).prime;
+      let gamma = pmod(at(fb, val).tmemP * invert(a / ql, ql), ql);
       if (2n * gamma > ql) gamma = ql - gamma;
       B.push((a / ql) * gamma);
     }
@@ -111,12 +112,12 @@ function* generatePolynomial(N: bigint, M: number, fb: FactorBaseElem[], idx1000
     for (let i = 1; i < 2 ** (B.length - 1); i++) {
       const v = bitScan1(BigInt(i));
       const negPow = 2 * ((i >> (v + 1)) % 2) - 1;
-      const nb = g.b + 2n * BigInt(negPow) * B[v]!;
+      const nb = g.b + 2n * BigInt(negPow) * at(B, v);
       g = new SievePolynomial(g.a, nb, N);
       for (const f of fb) {
         if (f.soln1 === undefined) continue;
-        f.soln1 = (((f.soln1 - negPow * f.bAinv[v]!) % f.p) + f.p) % f.p;
-        f.soln2 = (((f.soln2 - negPow * f.bAinv[v]!) % f.p) + f.p) % f.p;
+        f.soln1 = (((f.soln1 - negPow * at(f.bAinv, v)) % f.p) + f.p) % f.p;
+        f.soln2 = (((f.soln2 - negPow * at(f.bAinv, v)) % f.p) + f.p) % f.p;
       }
       yield g;
     }
@@ -127,9 +128,10 @@ function genSieveArray(M: number, fb: readonly FactorBaseElem[]): Float64Array {
   const arr = new Float64Array(2 * M + 1);
   for (const f of fb) {
     if (f.soln1 === undefined) continue;
-    for (let idx = (M + f.soln1) % f.p; idx < 2 * M; idx += f.p) arr[idx]! += f.logP;
+    // idx < 2M < arr.length, so the elements exist (`?? 0` only satisfies the index type)
+    for (let idx = (M + f.soln1) % f.p; idx < 2 * M; idx += f.p) arr[idx] = (arr[idx] ?? 0) + f.logP;
     if (f.p === 2) continue;
-    for (let idx = (M + f.soln2) % f.p; idx < 2 * M; idx += f.p) arr[idx]! += f.logP;
+    for (let idx = (M + f.soln2) % f.p; idx < 2 * M; idx += f.p) arr[idx] = (arr[idx] ?? 0) + f.logP;
   }
   return arr;
 }
@@ -160,9 +162,9 @@ function trialDivisionStage(N: bigint, M: number, fb: readonly FactorBaseElem[],
   const accumulated = (Math.log(M) + pyLog(N) / 2 - errorTerm) * 2 ** 10;
   const smooth: Relation[] = [];
   const proper: bigint[] = [];
-  const upper = 128n * fb[fb.length - 1]!.prime;
-  for (let k = 0; k < sieveArray.length; k++) {
-    if (sieveArray[k]! < accumulated) continue;
+  const upper = 128n * last(fb).prime;
+  for (const [k, s] of sieveArray.entries()) {
+    if (s < accumulated) continue;
     const x = BigInt(k - M);
     let v = poly.evalV(x);
     let [vec, num] = checkSmoothness(v, fb);
@@ -194,24 +196,24 @@ function* findFactor(N: bigint, smooth: readonly Relation[], col: number): Gener
   for (let pos = 0; pos < col; pos++) {
     const m = 1n << BigInt(pos);
     for (let i = 0; i < row; i++) {
-      const p = matrix[i]! & m;
+      const p = at(matrix, i) & m;
       if (p) {
-        const addCol = p ^ matrix[i]!;
+        const addCol = p ^ at(matrix, i);
         matrix[i] = m;
         mark[i] = true;
-        for (let j = i + 1; j < row; j++) if (matrix[j]! & m) matrix[j] = matrix[j]! ^ addCol;
+        for (let j = i + 1; j < row; j++) if (at(matrix, j) & m) matrix[j] = at(matrix, j) ^ addCol;
         break;
       }
     }
   }
   for (let i = 0; i < row; i++) {
     if (mark[i]) continue;
-    let u = smooth[i]![0];
-    let v = smooth[i]![1];
+    let u = at(smooth, i)[0];
+    let v = at(smooth, i)[1];
     for (let j = 0; j < row; j++) {
-      if (mark[j] && matrix[i]! & matrix[j]!) {
-        u *= smooth[j]![0];
-        v *= smooth[j]![1];
+      if (mark[j] && at(matrix, i) & at(matrix, j)) {
+        u *= at(smooth, j)[0];
+        v *= at(smooth, j)[1];
       }
     }
     v = isqrt(v);

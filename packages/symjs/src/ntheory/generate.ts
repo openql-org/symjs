@@ -7,6 +7,7 @@
  * cycle_length, composite and compositepi.
  */
 
+import { at, getOrThrow, last } from '../core/guard';
 import { Expr } from '../core/nodes';
 import type { NoMatchResult, UnsolvedResult } from '../core/truth';
 import { NoMatch, Unsolved } from '../core/truth';
@@ -16,7 +17,16 @@ import { isprime } from './primetest';
 import { rng } from './random';
 import { bisectLeft, sieve } from './sieve';
 
-const lastPrime = (): bigint => BigInt(sieve.primes[sieve.primes.length - 1]!);
+const lastPrime = (): bigint => BigInt(last(sieve.primes));
+
+/** prevprime(n) for 3 <= n < 8. */
+const SMALL_PREVPRIME = new Map<bigint, bigint>([
+  [3n, 2n],
+  [4n, 3n],
+  [5n, 3n],
+  [6n, 5n],
+  [7n, 5n],
+]);
 
 /** The logarithmic integral li(x) for x > 1 in double precision (Ramanujan's series). */
 export function liFloat(x: number): number {
@@ -51,18 +61,18 @@ export function primepiInt(nIn: IntLike): bigint {
   const skip = new Uint8Array(lim + 1);
   for (let i = 3; i <= lim; i += 2) {
     if (skip[i]) continue;
-    const p = arr1[i - 1]!;
+    const p = at(arr1, i - 1);
     for (let j = i; j <= lim; j += i) skip[j] = 1;
     const top = Math.min(Math.floor(n / (i * i)), lim);
     for (let j = 1; j <= top; j += 2) {
       if (skip[j]) continue;
       const st = i * j;
-      if (st <= lim) arr2[j]! -= arr2[st]! - p;
-      else arr2[j]! -= arr1[Math.floor(n / st)]! - p;
+      const sub = st <= lim ? at(arr2, st) : at(arr1, Math.floor(n / st));
+      arr2[j] = at(arr2, j) - (sub - p);
     }
-    for (let j = lim; j > Math.min(lim, i * i - 1); j--) arr1[j]! -= arr1[Math.floor(j / i)]! - p;
+    for (let j = lim; j > Math.min(lim, i * i - 1); j--) arr1[j] = at(arr1, j) - (at(arr1, Math.floor(j / i)) - p);
   }
-  return BigInt(arr2[1]!);
+  return BigInt(at(arr2, 1));
 }
 
 /** The nth prime, prime(1) = 2 (SymPy prime). */
@@ -95,10 +105,10 @@ export function nextprime(nIn: IntLike, ithIn: IntLike = 1): bigint {
     i -= 1n;
   }
   const ps = sieve.primes;
-  if (n <= BigInt(ps[ps.length - 2]!)) {
+  if (n <= BigInt(at(ps, ps.length - 2))) {
     const l = sieve.search(n)[0];
-    if (l + i - 1n < BigInt(ps.length)) return BigInt(ps[Number(l + i - 1n)]!);
-    n = BigInt(ps[ps.length - 1]!);
+    if (l + i - 1n < BigInt(ps.length)) return BigInt(at(ps, Number(l + i - 1n)));
+    n = BigInt(at(ps, ps.length - 1));
     i += l - BigInt(ps.length);
   }
   const nn = 6n * (n / 6n);
@@ -135,7 +145,7 @@ export function nextprime(nIn: IntLike, ithIn: IntLike = 1): bigint {
 export function prevprime(nIn: IntLike): bigint {
   let n = asIntCeiling(nIn);
   if (n < 3n) throw new RangeError('no preceding primes');
-  if (n < 8n) return ({ 3: 2n, 4: 3n, 5: 3n, 6: 5n, 7: 5n } as Record<string, bigint>)[n.toString()]!;
+  if (n < 8n) return getOrThrow(SMALL_PREVPRIME, n);
   if (n <= lastPrime()) {
     const [l, u] = sieve.search(n);
     return l === u ? sieve.get(l - 1n) : sieve.get(l);
@@ -274,7 +284,7 @@ export function composite(nth: IntLike): bigint {
   const n = asInt(nth);
   if (n < 1n) throw new RangeError('nth must be a positive integer; composite(1) == 4');
   const arr = [4n, 6n, 8n, 9n, 10n, 12n, 14n, 15n, 16n, 18n];
-  if (n <= 10n) return arr[Number(n) - 1]!;
+  if (n <= 10n) return at(arr, Number(n) - 1);
   let a = 4n;
   let b = lastPrime();
   if (n <= b - primepiInt(b) - 1n) {

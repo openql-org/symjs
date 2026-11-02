@@ -13,6 +13,7 @@
 import type { Expr } from '../core/nodes';
 import { Add, Constant, ExtensionExpr, Float, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { add, mul } from '../core/ops';
+import { at } from '../core/guard';
 import * as F from './mpf';
 import type { Mpf } from './mpf';
 import { ZERO } from './mpf';
@@ -22,36 +23,48 @@ import { type Mpc } from './mpfun';
 
 export type { Mpc };
 
+/** An mpFns entry taking exactly one argument. */
+export const mpFn1 =
+  (f: (a: Mpc, prec: number) => Mpc) =>
+  (args: Mpc[], prec: number): Mpc =>
+    f(at(args, 0), prec);
+
+/** An mpFns entry taking exactly two arguments. */
+export const mpFn2 =
+  (f: (a: Mpc, b: Mpc, prec: number) => Mpc) =>
+  (args: Mpc[], prec: number): Mpc =>
+    f(at(args, 0), at(args, 1), prec);
+
 /** Arbitrary-precision implementations of functions: args and result as Mpc at `prec` bits. */
 export const mpFns: Record<string, (args: Mpc[], prec: number) => Mpc> = {
-  sin: ([a], p) => M.csin(a!, p),
-  cos: ([a], p) => M.ccos(a!, p),
-  tan: ([a], p) => M.ctan(a!, p),
-  asin: ([a], p) => M.casin(a!, p),
-  acos: ([a], p) => M.cacos(a!, p),
-  atan: ([a], p) => M.catan(a!, p),
-  sinh: ([a], p) => M.csinh(a!, p),
-  cosh: ([a], p) => M.ccosh(a!, p),
-  tanh: ([a], p) => M.ctanh(a!, p),
-  asinh: ([a], p) => M.casinh(a!, p),
-  acosh: ([a], p) => M.cacosh(a!, p),
-  atanh: ([a], p) => M.catanh(a!, p),
+  sin: mpFn1(M.csin),
+  cos: mpFn1(M.ccos),
+  tan: mpFn1(M.ctan),
+  asin: mpFn1(M.casin),
+  acos: mpFn1(M.cacos),
+  atan: mpFn1(M.catan),
+  sinh: mpFn1(M.csinh),
+  cosh: mpFn1(M.ccosh),
+  tanh: mpFn1(M.ctanh),
+  asinh: mpFn1(M.casinh),
+  acosh: mpFn1(M.cacosh),
+  atanh: mpFn1(M.catanh),
   log: (args, p) => {
-    const l = M.clog(args[0]!, p + 10);
+    const l = M.clog(at(args, 0), p + 10);
     if (args.length === 1) return [F.round(l[0], p), F.round(l[1], p)];
-    return M.cdiv(l, M.clog(args[1]!, p + 10), p);
+    return M.cdiv(l, M.clog(at(args, 1), p + 10), p);
   },
-  exp: ([a], p) => M.cexp(a!, p),
-  abs: ([a], p) => [M.cabs(a!, p), ZERO],
-  re: ([a], p) => [F.round(a![0], p), ZERO],
-  im: ([a], p) => [F.round(a![1], p), ZERO],
-  arg: ([a], p) => [M.carg(a!, p), ZERO],
-  conjugate: ([a], p) => [F.round(a![0], p), F.round(F.neg(a![1]), p)],
-  sign: ([a], p) => {
-    if (M.isReal(a!)) return [F.fromInt(BigInt(F.sign(a![0]))), ZERO];
-    return M.cdiv(a!, [M.cabs(a!, p + 10), ZERO], p);
-  },
-  atan2: ([y, x], p) => [M.atan2(y![0], x![0], p), ZERO],
+  exp: mpFn1(M.cexp),
+  abs: mpFn1((a, p) => [M.cabs(a, p), ZERO]),
+  re: mpFn1((a, p) => [F.round(a[0], p), ZERO]),
+  im: mpFn1((a, p) => [F.round(a[1], p), ZERO]),
+  arg: mpFn1((a, p) => [M.carg(a, p), ZERO]),
+  conjugate: mpFn1((a, p) => [F.round(a[0], p), F.round(F.neg(a[1]), p)]),
+  sign: mpFn1((a, p) => {
+    if (M.isReal(a)) return [F.fromInt(BigInt(F.sign(a[0]))), ZERO];
+    return M.cdiv(a, [M.cabs(a, p + 10), ZERO], p);
+  }),
+  atan2: mpFn2((y, x, p) => [M.atan2(y[0], x[0], p), ZERO]),
 };
 
 /** Fallback double-precision implementations (registered by evalf.ts / special.ts). */
@@ -151,16 +164,18 @@ export function evalAdaptive(e: Expr, prec: number, lookup: (s: Sym) => Mpc | un
     const wp2 = prec + 20 + 40 * 2 ** (i + 1);
     const cur = evalMp(e, wp2, lookup);
     const ref = Math.max(F.mag(cur[0]), F.mag(cur[1]));
-    let ok = true;
-    const out: Mpf[] = [];
-    for (const k of [0, 1] as const) {
-      const negPrev = negligible(prev[k], Math.max(F.mag(prev[0]), F.mag(prev[1])), wp);
+    const refPrev = Math.max(F.mag(prev[0]), F.mag(prev[1]));
+    // The stable value of one component, or undefined when it has not settled.
+    const settled = (k: 0 | 1): Mpf | undefined => {
+      const negPrev = negligible(prev[k], refPrev, wp);
       const negCur = negligible(cur[k], ref, wp2);
-      if (negPrev && negCur) out.push(ZERO);
-      else if (!negPrev && !negCur && sameAt(prev[k], cur[k], prec)) out.push(F.round(cur[k], prec));
-      else ok = false;
-    }
-    if (ok) return [out[0]!, out[1]!];
+      if (negPrev && negCur) return ZERO;
+      if (!negPrev && !negCur && sameAt(prev[k], cur[k], prec)) return F.round(cur[k], prec);
+      return undefined;
+    };
+    const re = settled(0);
+    const im = settled(1);
+    if (re !== undefined && im !== undefined) return [re, im];
     prev = cur;
     wp = wp2;
   }

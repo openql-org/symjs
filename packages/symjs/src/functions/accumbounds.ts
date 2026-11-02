@@ -9,13 +9,14 @@
 
 import type { Expr } from '../core/nodes';
 import { S, impl } from '../core/nodes';
+import { defined } from '../core/guard';
 
 const INCREASING = new Set(['exp', 'log', 'atan', 'asinh', 'sinh', 'tanh', 'erf', 'asin', 'acosh', 'atanh']);
 const DECREASING = new Set(['acos', 'acot']);
 
 /** f([a, b]) for a function of one AccumBounds argument; undefined when it is not handled. */
-export function accumBoundsFunction(name: string, iv: Expr, apply: (name: string, x: Expr) => Expr): Expr | undefined {
-  const ab = impl.accumBounds!;
+export function accumBoundsFunction<N extends string>(name: N, iv: Expr, apply: (name: N, x: Expr) => Expr): Expr | undefined {
+  const ab = defined(impl.accumBounds, 'AccumBounds support');
   const [lo, hi] = ab.bounds(iv);
   if (INCREASING.has(name)) return ab.make(apply(name, lo), apply(name, hi));
   if (DECREASING.has(name)) return ab.make(apply(name, hi), apply(name, lo));

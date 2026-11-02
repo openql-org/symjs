@@ -28,12 +28,17 @@ import {
   det,
   doitArg,
   hasNode,
+  isMatrix,
   parenLatex,
   toExpr,
   trace,
   transposeOf,
 } from './matexpr';
 import { PRECEDENCE, isInt, same, sameList, toInt } from './util';
+import { at, cast, first } from '../../core/guard';
+
+/** The factors of a Kronecker product (all matrix expressions). */
+const factors = (e: Expr): MatrixExpr[] => e.args.map((a) => cast(a, MatrixExpr));
 
 const isKron = (e: Expr): e is KroneckerProductNode => e instanceof KroneckerProductNode;
 
@@ -45,8 +50,8 @@ export class KroneckerProductNode extends MatrixExpr {
   /** SymPy KroneckerProduct(*args): identities give an identity; validated, unevaluated. */
   static create(argsIn: readonly MatArg[], check = true): Expr {
     const args = argsIn.map(toExpr);
-    if (args.length && args.every((a) => a instanceof MatrixExpr && a.isIdentity === true)) {
-      const ret = new IdentityNode(mul(...args.map((a) => (a as MatrixExpr).rows)));
+    if (args.length && args.every(isMatrix) && args.every((a) => a.isIdentity === true)) {
+      const ret = new IdentityNode(mul(...args.map((a) => a.rows)));
       if (args.every((a) => a instanceof ImmutableMatrixNode)) return new ImmutableMatrixNode(ret.asExplicit());
       return ret;
     }
@@ -54,14 +59,14 @@ export class KroneckerProductNode extends MatrixExpr {
     return new KroneckerProductNode(args);
   }
   get shape(): [Expr, Expr] {
-    const ms = this.args as MatrixExpr[];
+    const ms = factors(this);
     return [mul(...ms.map((m) => m.rows)), mul(...ms.map((m) => m.cols))];
   }
   withArgs(args: readonly Expr[]): Expr {
     return new KroneckerProductNode(args);
   }
   override entry(i0: Expr, j0: Expr): Expr {
-    const ms = this.args as MatrixExpr[];
+    const ms = factors(this);
     if (!isInt(i0) || !isInt(j0) || !ms.every((m) => isInt(m.rows) && isInt(m.cols))) return new MatrixElementNode(this, i0, j0);
     let i = toInt(i0);
     let j = toInt(j0);
@@ -81,7 +86,7 @@ export class KroneckerProductNode extends MatrixExpr {
     return doitKron(this.args.map((a) => adjointFn(a)));
   }
   override evalConjugate(): Expr {
-    return doitKron(this.args.map((a) => (a as MatrixExpr).conjugate()));
+    return doitKron(this.args.map((a) => cast(a, MatrixExpr).conjugate()));
   }
   override evalTranspose(): Expr {
     return doitKron(this.args.map(transposeOf));
@@ -90,14 +95,14 @@ export class KroneckerProductNode extends MatrixExpr {
     return mul(...this.args.map((a) => trace(a)));
   }
   override evalDeterminant(): Expr {
-    const ms = this.args as MatrixExpr[];
+    const ms = factors(this);
     if (!ms.every((a) => a.isSquare === true)) return new DeterminantNode(this);
     const m = this.rows;
     return mul(...ms.map((a) => pow(det(a), mul(m, pow(a.rows, -1)))));
   }
   override evalInverse(): Expr {
     try {
-      return KroneckerProductNode.create(this.args.map((a) => (a as MatrixExpr).inverse()));
+      return KroneckerProductNode.create(this.args.map((a) => cast(a, MatrixExpr).inverse()));
     } catch (e) {
       if (e instanceof ShapeError) return new InverseNode(this);
       throw e;
@@ -109,7 +114,7 @@ export class KroneckerProductNode extends MatrixExpr {
       other instanceof KroneckerProductNode &&
       sameList(this.shape, other.shape) &&
       this.args.length === other.args.length &&
-      this.args.every((a, k) => sameList((a as MatrixExpr).shape, (other.args[k] as MatrixExpr).shape))
+      this.args.every((a, k) => sameList(cast(a, MatrixExpr).shape, cast(other.args[k], MatrixExpr).shape))
     );
   }
   /** SymPy has_matching_shape: the factors can be multiplied factorwise. */
@@ -118,7 +123,7 @@ export class KroneckerProductNode extends MatrixExpr {
       other instanceof KroneckerProductNode &&
       same(this.cols, other.rows) &&
       this.args.length === other.args.length &&
-      this.args.every((a, k) => same((a as MatrixExpr).cols, (other.args[k] as MatrixExpr).rows))
+      this.args.every((a, k) => same(cast(a, MatrixExpr).cols, cast(other.args[k], MatrixExpr).rows))
     );
   }
   /** SymPy _eval_expand_kroneckerproduct: distributed over sums of the factors. */
@@ -136,12 +141,12 @@ export class KroneckerProductNode extends MatrixExpr {
   }
   /** SymPy _kronecker_add. */
   kroneckerAdd(other: Expr): Expr {
-    if (this.structurallyEqual(other)) return new KroneckerProductNode(this.args.map((a, k) => MatAddNode.create([a, other.args[k]!]).doit()));
+    if (this.structurallyEqual(other)) return new KroneckerProductNode(this.args.map((a, k) => MatAddNode.create([a, at(other.args, k)]).doit()));
     return MatAddNode.create([this, other]).doit();
   }
   /** SymPy _kronecker_mul. */
   kroneckerMul(other: Expr): Expr {
-    if (this.hasMatchingShape(other)) return new KroneckerProductNode(this.args.map((a, k) => times(a, other.args[k]!)));
+    if (this.hasMatchingShape(other)) return new KroneckerProductNode(this.args.map((a, k) => times(a, at(other.args, k))));
     return times(this, other);
   }
   override doit(hints: DoitHints = {}): Expr {
@@ -173,14 +178,14 @@ export type KroneckerProduct = KroneckerProductNode;
 /** SymPy kronecker_product(*matrices): the evaluated Kronecker product (explicit for explicit factors). */
 export function kroneckerProduct(...matrices: MatArg[]): Expr {
   if (!matrices.length) throw new TypeError('Empty Kronecker product is undefined');
-  if (matrices.length === 1) return toExpr(matrices[0]!);
+  if (matrices.length === 1) return toExpr(first(matrices));
   return doitKron(matrices.map(toExpr));
 }
 
 /** SymPy matrix_kronecker_product(*matrices): the Kronecker product of explicit matrices. */
 export function matrixKroneckerProduct(...matrices: Matrix[]): Matrix {
   if (!matrices.length || !matrices.every((m) => m instanceof Matrix)) throw new TypeError('Sequence of Matrices expected');
-  return matrices.slice(1).reduce((a, b) => a.kron(b), matrices[0]!);
+  return matrices.slice(1).reduce((a, b) => a.kron(b), first(matrices));
 }
 
 function extractCommutative(kron: KroneckerProductNode): Expr {
@@ -190,7 +195,7 @@ function extractCommutative(kron: KroneckerProductNode): Expr {
     if (arg instanceof MatMulNode) {
       cPart.push(...arg.args.filter((a) => !(a instanceof MatrixExpr) && a.isCommutative));
       const nc = arg.args.filter((a) => a instanceof MatrixExpr || !a.isCommutative);
-      ncPart.push(nc.length === 1 ? nc[0]! : new MatMulNode(nc));
+      ncPart.push(nc.length === 1 ? first(nc) : new MatMulNode(nc));
     } else ncPart.push(arg);
   }
   const c = mul(...cPart);
@@ -204,7 +209,7 @@ function canonicalizeKron(e0: Expr): Expr {
   for (;;) {
     if (!isKron(e)) return e;
     let next: Expr = e;
-    if (e.args.length === 1) next = e.args[0]!;
+    if (e.args.length === 1) next = first(e.args);
     else if (e.args.every((a) => a instanceof ImmutableMatrixNode)) next = new ImmutableMatrixNode(matrixKroneckerProduct(...e.args.map((a) => (a).matrix)));
     else if (e.args.some(isKron)) next = new KroneckerProductNode(e.args.flatMap((a) => (isKron(a) ? a.args : [a])));
     else next = extractCommutative(e);
@@ -213,7 +218,7 @@ function canonicalizeKron(e0: Expr): Expr {
   }
 }
 
-const dimsKey = (e: Expr): string => (isKron(e) ? e.args.map((a) => (a as MatrixExpr).shape.map((s) => s.key).join('x')).join(';') : '');
+const dimsKey = (e: Expr): string => (isKron(e) ? e.args.map((a) => cast(a, MatrixExpr).shape.map((s) => s.key).join('x')).join(';') : '');
 
 function kroneckerMatAdd(e: Expr): Expr {
   const groups = new Map<string, Expr[]>();
@@ -224,18 +229,18 @@ function kroneckerMatAdd(e: Expr): Expr {
     else groups.set(k, [...(groups.get(k) ?? []), a]);
   }
   if (!groups.size) return e;
-  const krons = [...groups.values()].map((g) => g.slice(1).reduce((x, y) => (isKron(x) ? x.kroneckerAdd(y) : MatAddNode.create([x, y]).doit()), g[0]!));
+  const krons = [...groups.values()].map((g) => g.slice(1).reduce((x, y) => (isKron(x) ? x.kroneckerAdd(y) : MatAddNode.create([x, y]).doit()), first(g)));
   if (!nonkrons.length) return MatAddNode.create(krons);
   return MatAddNode.create([...krons, ...nonkrons]).doit();
 }
 
 function kroneckerMatMul(e: Expr): Expr {
-  const [factor, ms] = (e as MatMulNode).asCoeffMatrices();
+  const [factor, ms] = cast(e, MatMulNode).asCoeffMatrices();
   const matrices: Expr[] = [...ms];
   let i = 0;
   while (i < matrices.length - 1) {
-    const A = matrices[i]!;
-    const B = matrices[i + 1]!;
+    const A = at(matrices, i);
+    const B = at(matrices, i + 1);
     if (isKron(A) && isKron(B)) {
       matrices[i] = A.kroneckerMul(B);
       matrices.splice(i + 1, 1);
@@ -245,8 +250,8 @@ function kroneckerMatMul(e: Expr): Expr {
 }
 
 function kroneckerMatPow(e: Expr): Expr {
-  const p = e as MatPowNode;
-  if (isKron(p.base) && p.base.args.every((a) => (a as MatrixExpr).isSquare === true)) {
+  const p = cast(e, MatPowNode);
+  if (isKron(p.base) && p.base.args.every((a) => cast(a, MatrixExpr).isSquare === true)) {
     return new KroneckerProductNode(p.base.args.map((a) => MatPowNode.create(a, p.exp)));
   }
   return e;

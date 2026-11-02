@@ -19,6 +19,7 @@ import { cos, cosh, fn, sin, sinh } from '../functions/elementary';
 import { expandMul as expand } from './expand';
 import { rewrite } from './rewrite';
 import { cancel, fraction, together } from './rational';
+import { at, defined, first } from '../core/guard';
 
 const isE = (e: Expr) => e instanceof Constant && e.name === 'E';
 const isI = (e: Expr) => e instanceof Constant && e.name === 'I';
@@ -35,7 +36,7 @@ export const hasTrig = (e: Expr): boolean => some(e, (x) => isTrigFn(x) || (x in
 export function combineExp(ex: ExprLike): Expr {
   return mapBottomUp(sympify(ex), (e) => {
     if (!(e instanceof Mul)) return e;
-    const exps = e.args.filter((f) => f instanceof Pow && isE(f.base)) as Pow[];
+    const exps = e.args.filter((f): f is Pow => f instanceof Pow && isE(f.base));
     if (exps.length < 2) return e;
     const others = e.args.filter((f) => !(f instanceof Pow && isE(f.base)));
     return mul(...others, exp(expand(add(...exps.map((f) => f.exp)))));
@@ -46,7 +47,7 @@ export function combineExp(ex: ExprLike): Expr {
 export function rewriteExp(ex: ExprLike): Expr {
   return mapBottomUp(sympify(ex), (e) => {
     if (!(e instanceof Fn)) return e;
-    const u = e.args[0]!;
+    const u = first(e.args);
     const ep = exp(mul(S.I, u));
     const em = exp(mul(-1, S.I, u));
     if (e.name === 'cos') return mul(S.Half, add(ep, em));
@@ -109,7 +110,7 @@ export function trigsimp(ex: ExprLike, opts: { old?: boolean; deep?: boolean; me
   const recip = mapBottomUp(e, (x) => {
     if (!(x instanceof Fn)) return x;
     const r = RECIPROCAL[x.name];
-    return r ? pow(fn(r as FnName, [x.args[0]!]), -1) : x;
+    return r ? pow(fn(r, [first(x.args)]), -1) : x;
   });
   if (recip.key !== e.key && countOps(recip) < countOps(e)) e = recip;
   if (!hasTrigFunctions(e)) return e;
@@ -141,17 +142,22 @@ export function trigsimp(ex: ExprLike, opts: { old?: boolean; deep?: boolean; me
 function pythagorean(e: Expr): Expr {
   if (!(e instanceof Add)) return e;
   const terms = [...e.args];
-  const split = (t: Expr): [Expr, string, Expr] | undefined => {
+  const PARTNER = { sin: 'cos', cos: 'sin', sinh: 'cosh', cosh: 'sinh' } as const;
+  type Squared = keyof typeof PARTNER;
+  const isSquared = (name: string): name is Squared => Object.hasOwn(PARTNER, name);
+  const split = (t: Expr): [Expr, Squared, Expr] | undefined => {
     const fs = t instanceof Mul ? t.args : [t];
-    const i = fs.findIndex((f) => f instanceof Pow && f.exp instanceof Rational && f.exp.p === 2n && f.exp.q === 1n && f.base instanceof Fn && ['sin', 'cos', 'sinh', 'cosh'].includes(f.base.name));
-    if (i < 0) return undefined;
-    const b = (fs[i] as Pow).base as Fn;
-    return [mul(...fs.filter((_, j) => j !== i)), b.name, b.args[0]!];
+    for (const [i, f] of fs.entries()) {
+      if (f instanceof Pow && f.exp instanceof Rational && f.exp.p === 2n && f.exp.q === 1n && f.base instanceof Fn && isSquared(f.base.name)) {
+        return [mul(...fs.filter((_, j) => j !== i)), f.base.name, first(f.base.args)];
+      }
+    }
+    return undefined;
   };
-  for (let i = 0; i < terms.length; i++) {
-    const a = split(terms[i]!);
+  for (const [i, ti] of terms.entries()) {
+    const a = split(ti);
     if (!a) continue;
-    const partner = { sin: 'cos', cos: 'sin', sinh: 'cosh', cosh: 'sinh' }[a[1]]!;
+    const partner = PARTNER[a[1]];
     // sin**2 + cos**2 = 1; cosh**2 - sinh**2 = 1
     const sign = a[1] === 'sinh' ? -1 : a[1] === 'cosh' ? -1 : 1;
     const j = terms.findIndex((t, k) => {
@@ -160,14 +166,14 @@ function pythagorean(e: Expr): Expr {
       return b?.[1] === partner && b[2].key === a[2].key && b[0].key === mul(sign, a[0]).key;
     });
     if (j < 0) continue;
-    const c = a[1] === 'sinh' ? split(terms[j]!)![0] : a[0];
+    const c = a[1] === 'sinh' ? defined(split(at(terms, j)))[0] : a[0];
     const rest = terms.filter((_, k) => k !== i && k !== j);
     return pythagorean(add(...rest, c));
   }
   return e;
 }
 
-const RECIPROCAL: Record<string, string> = { cot: 'tan', coth: 'tanh', sec: 'cos', csc: 'sin', sech: 'cosh', csch: 'sinh' };
+const RECIPROCAL: Record<string, FnName> = { cot: 'tan', coth: 'tanh', sec: 'cos', csc: 'sin', sech: 'cosh', csch: 'sinh' };
 const TRIG_NAMES = new Set(['sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch']);
 function trigCount(e: Expr): number {
   let n = 0;
@@ -203,23 +209,23 @@ export function exptrigsimp(ex: ExprLike): Expr {
 
 function expTerm(t: Expr): [Expr, Expr] | undefined {
   const factors = t instanceof Mul ? t.args : [t];
-  const i = factors.findIndex((f) => f instanceof Pow && f.base instanceof Constant && f.base.name === 'E');
-  if (i < 0) return undefined;
-  const c = mul(...factors.filter((_, j) => j !== i));
-  return [c, (factors[i] as Pow).exp];
+  for (const [i, f] of factors.entries()) {
+    if (f instanceof Pow && f.base instanceof Constant && f.base.name === 'E') return [mul(...factors.filter((_, j) => j !== i)), f.exp];
+  }
+  return undefined;
 }
 
 function combineExpPairs(e: Add): Expr {
   const terms = [...e.args];
   const used = new Set<number>();
   const out: Expr[] = [];
-  for (let i = 0; i < terms.length; i++) {
+  for (const [i, term] of terms.entries()) {
     if (used.has(i)) continue;
-    const ti = expTerm(terms[i]!);
+    const ti = expTerm(term);
     if (ti) {
-      for (let j = i + 1; j < terms.length; j++) {
-        if (used.has(j)) continue;
-        const tj = expTerm(terms[j]!);
+      for (const [j, termJ] of terms.entries()) {
+        if (j <= i || used.has(j)) continue;
+        const tj = expTerm(termJ);
         if (!tj || add(ti[1], tj[1]).key !== S.Zero.key) continue;
         const [pos, neg_] = couldExtractMinusSign(ti[1]) ? [tj, ti] : [ti, tj];
         if (pos[0].key === neg_[0].key) {
@@ -231,7 +237,7 @@ function combineExpPairs(e: Add): Expr {
         break;
       }
     }
-    if (!used.has(i)) out.push(terms[i]!);
+    if (!used.has(i)) out.push(term);
   }
   return add(...out);
 }

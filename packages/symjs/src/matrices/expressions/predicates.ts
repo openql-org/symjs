@@ -33,6 +33,7 @@ import {
   toExpr,
 } from './matexpr';
 import { isInt, same, sameList } from './util';
+import { at, first } from '../../core/guard';
 
 /** Names of the matrix predicates (SymPy Q.<name>). */
 export type MatrixPredicateName =
@@ -163,7 +164,7 @@ function askPred(name: MatrixPredicateName, m: Expr, as: readonly MatrixPredicat
       if (m instanceof MatAddNode) return all(m.args.map((x) => askPred(name, x, as)));
       if (m instanceof MatMulNode) {
         const [, ms] = m.asCoeffMatrices();
-        if (ms.length === 2 && same(ms[1]!, ms[0]!.transpose())) return true;
+        if (ms.length === 2 && same(at(ms, 1), at(ms, 0).transpose())) return true;
         if (ms.every((x) => askPred(name, x, as) === true) && sameList(ms, [...ms].reverse())) return true;
         return 'unknown';
       }
@@ -240,7 +241,7 @@ function refineNode(e: Expr, as: readonly MatrixPredicate[]): Expr {
       if (a instanceof MatrixExpr) exprargs.push(a);
       else newargs.push(a);
     }
-    let last: MatrixExpr = exprargs[0]!;
+    let last: MatrixExpr = first(exprargs);
     for (const arg of exprargs.slice(1)) {
       if (same(arg, last.T) && askPred('orthogonal', arg, as) === true) last = new IdentityNode(arg.rows);
       // X*Adjoint(X) = I for a unitary X (SymPy compares with the conjugate, which is not the inverse)

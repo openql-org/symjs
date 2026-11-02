@@ -6,6 +6,7 @@
  * optional range, used with IndexedBase and as a summation index.
  */
 
+import { at } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Rational, Special, Sym } from '../core/nodes';
 import { add, sympify } from '../core/ops';
@@ -69,16 +70,18 @@ export class IdxNode extends Sym {
   }
 }
 
+const isRangeList = (r: IdxRange): r is readonly ExprLike[] => Array.isArray(r);
+
 function parseRange(range: IdxRange | undefined): readonly [Expr, Expr] | undefined {
   if (range === undefined) return undefined;
-  if (Array.isArray(range)) {
-    const r = range as readonly ExprLike[];
+  if (isRangeList(range)) {
+    const r = range;
     if (r.length !== 2) throw new RangeError(`Idx range tuple must have length 2, but got ${r.length}`);
     const bounds = r.map((b) => sympify(b));
     for (const b of bounds) if (isIntegerQ(b) === false && !isInfinite(b)) throw new TypeError('Idx object requires integer bounds.');
-    return [bounds[0]!, bounds[1]!];
+    return [at(bounds, 0), at(bounds, 1)];
   }
-  const n = sympify(range as ExprLike);
+  const n = sympify(range);
   if (n instanceof Special && n.name === 'oo') return [Rational.of(0), n];
   if (isIntegerQ(n) === false) throw new TypeError('Idx object requires an integer dimension.');
   return [Rational.of(0), add(n, -1)];

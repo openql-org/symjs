@@ -5,6 +5,8 @@
  * @file Immutable matrices with symbolic entries.
  */
 
+import { InvariantError } from '../core/errors';
+import { at, defined, first } from '../core/guard';
 import type { ComplexValue, EvalfOptions, ExprLike, NumericValues, Substitution } from '../core/nodes';
 import { Expr, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
@@ -45,9 +47,13 @@ export class Matrix {
       return top ? top.vstack(...others) : new Matrix(0, 0, []);
     }
     const r = rows.length;
-    const c = r === 0 ? 0 : rows[0]!.length;
+    const c = rows[0]?.length ?? 0;
     for (const row of rows) if (row.length !== c) throw new RangeError('Matrix.of: ragged rows');
-    return new Matrix(r, c, rows.flatMap((row) => row.map((x) => sympify(x as ExprLike))));
+    const entry = (x: ExprLike | Matrix): Expr => {
+      if (x instanceof Matrix) throw new InvariantError('Matrix.of: unexpected block');
+      return sympify(x);
+    };
+    return new Matrix(r, c, rows.flatMap((row) => row.map(entry)));
   }
 
   /** Build from a generator f(i, j). */
@@ -67,7 +73,7 @@ export class Matrix {
 
   static diag(...entries: ExprLike[]): Matrix {
     const d = entries.map(sympify);
-    return Matrix.fromFunction(d.length, d.length, (i, j) => (i === j ? d[i]! : 0));
+    return Matrix.fromFunction(d.length, d.length, (i, j) => (i === j ? at(d, i) : 0));
   }
 
   /** Column vector. */
@@ -83,7 +89,7 @@ export class Matrix {
   /** Kronecker (tensor) product of several matrices, left to right. */
   static kron(...ms: Matrix[]): Matrix {
     if (ms.length === 0) return Matrix.eye(1);
-    return ms.slice(1).reduce((acc, m) => acc.kron(m), ms[0]!);
+    return ms.slice(1).reduce((acc, m) => acc.kron(m), first(ms));
   }
 
   // ---- access ----------------------------------------------------------------
@@ -97,7 +103,7 @@ export class Matrix {
 
   get(i: number, j: number): Expr {
     if (i < 0 || i >= this.rows || j < 0 || j >= this.cols) throw new RangeError(`Matrix index (${i}, ${j}) out of range`);
-    return this.data[i * this.cols + j]!;
+    return at(this.data, i * this.cols + j);
   }
 
   /** Return a copy with entry (i, j) replaced. */
@@ -117,7 +123,7 @@ export class Matrix {
 
   /** Sub-matrix of the given rows and columns. */
   slice(rows: readonly number[], cols: readonly number[]): Matrix {
-    return Matrix.fromFunction(rows.length, cols.length, (i, j) => this.get(rows[i]!, cols[j]!));
+    return Matrix.fromFunction(rows.length, cols.length, (i, j) => this.get(at(rows, i), at(cols, j)));
   }
 
   /** Remove row i and column j. */
@@ -141,7 +147,7 @@ export class Matrix {
     if (this.rows !== o.rows || this.cols !== o.cols) {
       throw new RangeError(`Matrix ${op}: shape mismatch ${this.rows}x${this.cols} vs ${o.rows}x${o.cols}`);
     }
-    return new Matrix(this.rows, this.cols, this.data.map((a, k) => f(a, o.data[k]!)));
+    return new Matrix(this.rows, this.cols, this.data.map((a, k) => f(a, at(o.data, k))));
   }
 
   add(o: Matrix): Matrix {
@@ -213,7 +219,7 @@ export class Matrix {
   hstack(...others: Matrix[]): Matrix {
     const all = [this, ...others];
     if (all.some((m) => m.rows !== this.rows)) throw new RangeError('hstack: row count mismatch');
-    return Matrix.of(Array.from({ length: this.rows }, (_, i) => all.flatMap((m) => m.toArray()[i]!)));
+    return Matrix.of(Array.from({ length: this.rows }, (_, i) => all.flatMap((m) => m.row(i).data)));
   }
 
   /** Stack vertically. */
@@ -276,7 +282,7 @@ export class Matrix {
     if (n === 1) return this.get(0, 0);
     if (n === 2) return expand(add(mul(this.get(0, 0), this.get(1, 1)), mul(-1, this.get(0, 1), this.get(1, 0))));
     const cs = berkowitz(this);
-    return expand(n % 2 === 0 ? cs[n]! : mul(-1, cs[n]!));
+    return expand(n % 2 === 0 ? at(cs, n) : mul(-1, at(cs, n)));
   }
 
   /** Matrix of cofactors. */
@@ -314,7 +320,7 @@ export class Matrix {
   subs(s: Substitution): Matrix;
   subs(from: Expr, to: ExprLike): Matrix;
   subs(a: Substitution | Expr, b?: ExprLike): Matrix {
-    const spec: Substitution = a instanceof Expr ? [[a, b as ExprLike]] : a;
+    const spec: Substitution = a instanceof Expr ? [[a, defined(b, 'subs replacement')]] : a;
     return this.map((e) => subs(e, spec));
   }
   expand(): Matrix {
@@ -340,7 +346,7 @@ export class Matrix {
 
   /** Structural equality of all entries. */
   equals(o: Matrix): boolean {
-    return this.rows === o.rows && this.cols === o.cols && this.data.every((e, k) => e.key === o.data[k]!.key);
+    return this.rows === o.rows && this.cols === o.cols && this.data.every((e, k) => e.key === at(o.data, k).key);
   }
   /**
    * SymPy Basic.is_same: the same class (mutable or immutable) and the
@@ -348,7 +354,10 @@ export class Matrix {
    */
   isSame(o: unknown, approx?: (a: Expr, b: Expr) => boolean): boolean {
     if (!(o instanceof Matrix) || o.constructor !== this.constructor || this.rows !== o.rows || this.cols !== o.cols) return false;
-    return this.data.every((e, k) => (approx && e.isNumber && o.data[k]!.isNumber ? approx(e, o.data[k]!) : e.key === o.data[k]!.key));
+    return this.data.every((e, k) => {
+      const b = at(o.data, k);
+      return approx && e.isNumber && b.isNumber ? approx(e, b) : e.key === b.key;
+    });
   }
   /** Equality after simplifying the difference. */
   equalsSimplified(o: Matrix): boolean {
@@ -407,7 +416,7 @@ function berkowitz(M: Matrix): Expr[] {
   const out: Expr[] = [];
   for (let i = 0; i <= n; i++) {
     const terms: Expr[] = [];
-    for (let j = 0; j < n; j++) if (j <= i) terms.push(mul(diags[i - j]!, sub[j]!));
+    for (let j = 0; j < n; j++) if (j <= i) terms.push(mul(at(diags, i - j), at(sub, j)));
     out.push(expand(add(...terms)));
   }
   return out;

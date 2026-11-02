@@ -8,6 +8,8 @@
  * and `list_visitor`.
  */
 
+import { at } from '../core/guard';
+
 /** One component of one part of the current partition (SymPy PartComponent). */
 export class PartComponent {
   /** Component number. */
@@ -36,10 +38,10 @@ export function* multisetPartitionsTaocp(multiplicities: readonly number[]): Gen
   const pstack = Array.from({ length: n * m + 1 }, () => new PartComponent());
   const f: number[] = new Array<number>(n + 1).fill(0);
   for (let j = 0; j < m; j++) {
-    const ps = pstack[j]!;
+    const ps = at(pstack, j);
     ps.c = j;
-    ps.u = multiplicities[j]!;
-    ps.v = multiplicities[j]!;
+    ps.u = at(multiplicities, j);
+    ps.v = at(multiplicities, j);
   }
   f[0] = 0;
   let a = 0;
@@ -52,8 +54,8 @@ export function* multisetPartitionsTaocp(multiplicities: readonly number[]): Gen
       let k = b;
       let x = false;
       for (let j = a; j < b; j++) {
-        const pk = pstack[k]!;
-        const pj = pstack[j]!;
+        const pk = at(pstack, k);
+        const pj = at(pstack, j);
         pk.u = pj.u - pj.v;
         if (pk.u === 0) {
           x = true;
@@ -83,16 +85,16 @@ export function* multisetPartitionsTaocp(multiplicities: readonly number[]): Gen
     // M5: decrease v
     for (;;) {
       let j = b - 1;
-      while (pstack[j]!.v === 0) j--;
-      if (j === a && pstack[j]!.v === 1) {
+      while (at(pstack, j).v === 0) j--;
+      if (j === a && at(pstack, j).v === 1) {
         // M6: backtrack
         if (lpart === 0) return;
         lpart--;
         b = a;
-        a = f[lpart]!;
+        a = at(f, lpart);
       } else {
-        pstack[j]!.v -= 1;
-        for (let k = j + 1; k < b; k++) pstack[k]!.v = pstack[k]!.u;
+        at(pstack, j).v -= 1;
+        for (let k = j + 1; k < b; k++) at(pstack, k).v = at(pstack, k).u;
         break;
       }
     }
@@ -105,9 +107,9 @@ export function listVisitor<T>(state: PartitionState, components: readonly T[]):
   const partition: T[][] = [];
   for (let i = 0; i <= lpart; i++) {
     const part: T[] = [];
-    for (let s = f[i]!; s < f[i + 1]!; s++) {
-      const ps = pstack[s]!;
-      for (let r = 0; r < ps.v; r++) part.push(components[ps.c]!);
+    for (let s = at(f, i); s < at(f, i + 1); s++) {
+      const ps = at(pstack, s);
+      for (let r = 0; r < ps.v; r++) part.push(at(components, ps.c));
     }
     partition.push(part);
   }
@@ -127,10 +129,10 @@ export class MultisetPartitionTraverser {
     this.pstack = Array.from({ length: numComponents * cardinality + 1 }, () => new PartComponent());
     this.f = new Array<number>(cardinality + 1).fill(0);
     for (let j = 0; j < numComponents; j++) {
-      const ps = this.pstack[j]!;
+      const ps = at(this.pstack, j);
       ps.c = j;
-      ps.u = multiplicities[j]!;
-      ps.v = multiplicities[j]!;
+      ps.u = at(multiplicities, j);
+      ps.v = at(multiplicities, j);
     }
     this.f[0] = 0;
     this.f[1] = numComponents;
@@ -141,10 +143,10 @@ export class MultisetPartitionTraverser {
   decrementPart(part: readonly PartComponent[]): boolean {
     const plen = part.length;
     for (let j = plen - 1; j >= 0; j--) {
-      const pj = part[j]!;
+      const pj = at(part, j);
       if ((j === 0 && pj.v > 1) || (j > 0 && pj.v > 0)) {
         pj.v -= 1;
-        for (let k = j + 1; k < plen; k++) part[k]!.v = part[k]!.u;
+        for (let k = j + 1; k < plen; k++) at(part, k).v = at(part, k).u;
         return true;
       }
     }
@@ -156,13 +158,13 @@ export class MultisetPartitionTraverser {
     if (this.lpart >= ub - 1) return false;
     const plen = part.length;
     for (let j = plen - 1; j >= 0; j--) {
-      const p0 = part[0]!;
+      const p0 = at(part, 0);
       if (j === 0 && (p0.v - 1) * (ub - this.lpart) < p0.u) return false;
-      const pj = part[j]!;
+      const pj = at(part, j);
       if ((j === 0 && pj.v > 1) || (j > 0 && pj.v > 0)) {
         pj.v -= 1;
-        for (let k = j + 1; k < plen; k++) part[k]!.v = part[k]!.u;
-        if (plen > 1 && part[1]!.v === 0 && p0.u - p0.v === (ub - this.lpart - 1) * p0.v) return false;
+        for (let k = j + 1; k < plen; k++) at(part, k).v = at(part, k).u;
+        if (plen > 1 && at(part, 1).v === 0 && p0.u - p0.v === (ub - this.lpart - 1) * p0.v) return false;
         return true;
       }
     }
@@ -184,7 +186,7 @@ export class MultisetPartitionTraverser {
     let deficit = minUnalloc - (totalMult - totalAlloc);
     if (deficit <= 0) return true;
     for (let i = part.length - 1; i >= 0; i--) {
-      const pi = part[i]!;
+      const pi = at(part, i);
       if (i === 0) {
         if (pi.v > deficit) {
           pi.v -= deficit;
@@ -209,12 +211,12 @@ export class MultisetPartitionTraverser {
 
   /** Spread the unallocated multiplicity of the top part into a new part. */
   spreadPartMultiplicity(): boolean {
-    let k = this.f[this.lpart + 1]!;
+    let k = at(this.f, this.lpart + 1);
     const base = k;
     let changed = false;
-    for (let j = this.f[this.lpart]!; j < this.f[this.lpart + 1]!; j++) {
-      const pk = this.pstack[k]!;
-      const pj = this.pstack[j]!;
+    for (let j = at(this.f, this.lpart); j < at(this.f, this.lpart + 1); j++) {
+      const pk = at(this.pstack, k);
+      const pj = at(this.pstack, j);
       pk.u = pj.u - pj.v;
       if (pk.u === 0) {
         changed = true;

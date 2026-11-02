@@ -11,6 +11,8 @@
 
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Mul, Pow, Rational, Sym } from '../core/nodes';
+import { InvariantError } from '../core/errors';
+import { at, defined, first } from '../core/guard';
 import { sympify } from '../core/ops';
 import { gcd, lcm } from '../core/numbers';
 import type { NoMatchResult } from '../core/truth';
@@ -52,6 +54,13 @@ export function nOrder(aIn: IntLike, nIn: IntLike): bigint {
     aOrder = lcm(aOrder, order);
   }
   return aOrder;
+}
+
+/** The first value of a generator that always yields at least once. */
+function firstYield<T>(it: Iterator<T>): T {
+  const r = it.next();
+  if (r.done === true) throw new InvariantError('generator yielded nothing');
+  return r.value;
 }
 
 function* primitiveRootPrimeIter(p: bigint): Generator<bigint, void, undefined> {
@@ -116,7 +125,7 @@ export function primitiveRoot(pIn: IntLike, opts: { smallest?: boolean } = {}): 
   if (pEven) {
     for (let i = 3n; i < p; i += 2n) if (i % q !== 0n && isPrimitiveRoot(i, p)) return i;
   }
-  const g = primitiveRootPrimeIter(q).next().value as bigint;
+  const g = firstYield(primitiveRootPrimeIter(q));
   if (e === 1n || powmod(g, q - 1n, q * q) !== 1n) return g;
   for (let i = g + 1n; i < p; i++) if (i % q !== 0n && isPrimitiveRoot(i, p)) return i;
   return NoMatch;
@@ -245,7 +254,7 @@ function* iproduct2<A, B>(it1: Iterator<A>, it2: Iterator<B>): Generator<[A, B],
   append(it1, e1);
   append(it2, e2);
   while (n <= e1.length + e2.length) {
-    for (let m = n - e1.length + 1; m < e2.length; m++) yield [e1[n - m]!, e2[m]!];
+    for (let m = n - e1.length + 1; m < e2.length; m++) yield [at(e1, n - m), at(e2, m)];
     n++;
     append(it1, e1);
     append(it2, e2);
@@ -254,19 +263,20 @@ function* iproduct2<A, B>(it1: Iterator<A>, it2: Iterator<B>): Generator<[A, B],
 
 /** SymPy iproduct: the Cartesian product in diagonal order. */
 function* iproduct<T>(lists: readonly (readonly T[])[]): Generator<T[], void, undefined> {
-  if (lists.length === 0) {
+  const [l0, l1, ...rest] = lists;
+  if (l0 === undefined) {
     yield [];
     return;
   }
-  if (lists.length === 1) {
-    for (const e of lists[0]!) yield [e];
+  if (l1 === undefined) {
+    for (const e of l0) yield [e];
     return;
   }
-  if (lists.length === 2) {
-    for (const [a, b] of iproduct2(lists[0]![Symbol.iterator](), lists[1]![Symbol.iterator]())) yield [a, b];
+  if (rest.length === 0) {
+    for (const [a, b] of iproduct2(l0[Symbol.iterator](), l1[Symbol.iterator]())) yield [a, b];
     return;
   }
-  for (const [ef, eo] of iproduct2(lists[0]![Symbol.iterator](), iproduct(lists.slice(1)))) yield [ef, ...eo];
+  for (const [ef, eo] of iproduct2(l0[Symbol.iterator](), iproduct(lists.slice(1)))) yield [ef, ...eo];
 }
 
 /** The square roots of a modulo p, in SymPy's order (SymPy sqrt_mod_iter). */
@@ -288,7 +298,7 @@ export function* sqrtModIter(aIn: IntLike, pIn: IntLike): Generator<bigint, void
     pv.push(px ** ex);
   }
   if (v.length === 1) {
-    yield* v[0]!;
+    yield* first(v);
     return;
   }
   const [mm, e, s] = gfCrt1(pv);
@@ -384,7 +394,7 @@ export function isNthpowResidue(aIn: IntLike, nIn: IntLike, mIn: IntLike): boole
 }
 
 function nthrootMod1(s: bigint, q: bigint, p: bigint): bigint[] {
-  const g = primitiveRootPrimeIter(p).next().value as bigint;
+  const g = firstYield(primitiveRootPrimeIter(p));
   let r = s;
   for (const [qx, ex] of factorint(q)) {
     let f = (p - 1n) / qx ** ex;
@@ -490,7 +500,7 @@ export function nthrootMod(aIn: IntLike, nIn: IntLike, pIn: IntLike, allRoots = 
   const [P, E, S] = gfCrt1(primePower);
   const ret = sortBig(new Set([...product(base)].map((c) => gfCrt2(c, primePower, P, E, S))));
   if (allRoots) return ret;
-  return ret.length > 0 ? ret[0]! : NoMatch;
+  return ret.length > 0 ? first(ret) : NoMatch;
 }
 
 /** The sorted list of quadratic residues modulo p (SymPy quadratic_residues). */
@@ -612,7 +622,7 @@ function dlogIsSmooth(nIn: bigint, factorbase: readonly bigint[]): bigint[] | un
   const factors = factorbase.map(() => 0n);
   factorbase.forEach((p, i) => {
     while (n % p === 0n) {
-      factors[i]! += 1n;
+      factors[i] = at(factors, i) + 1n;
       n /= p;
     }
   });
@@ -656,30 +666,30 @@ function dlogIndexCalculus(n: bigint, aIn: bigint, bIn: bigint, order: bigint, r
     const relation = [...rel0, x];
     let index = lf;
     for (let i = 0; i < lf; i++) {
-      const ri = pmod(relation[i]!, order);
+      const ri = pmod(at(relation, i), order);
       const reli = relations[i];
-      if (ri > 0n && reli !== undefined) for (let j = 0; j <= lf; j++) relation[j] = pmod(relation[j]! - ri * reli[j]!, order);
+      if (ri > 0n && reli !== undefined) for (let j = 0; j <= lf; j++) relation[j] = pmod(at(relation, j) - ri * at(reli, j), order);
       else relation[i] = ri;
-      if (relation[i]! > 0n && index === lf) index = i;
+      if (at(relation, i) > 0n && index === lf) index = i;
     }
     if (index === lf || relations[index] !== undefined) continue;
-    const rinv = invert(relation[index]!, order);
-    for (let j = index; j <= lf; j++) relation[j] = (rinv * relation[j]!) % order;
+    const rinv = invert(at(relation, index), order);
+    for (let j = index; j <= lf; j++) relation[j] = (rinv * at(relation, j)) % order;
     relations[index] = relation;
     let broke = false;
     for (let i = 0; i < lf; i++) {
       const reli = relations[i];
-      if (relationa[i]! > 0n && reli !== undefined) {
-        const rbi = relationa[i]!;
-        for (let j = 0; j <= lf; j++) relationa[j] = pmod(relationa[j]! - rbi * reli[j]!, order);
+      if (at(relationa, i) > 0n && reli !== undefined) {
+        const rbi = at(relationa, i);
+        for (let j = 0; j <= lf; j++) relationa[j] = pmod(at(relationa, j) - rbi * at(reli, j), order);
       }
-      if (relationa[i]! > 0n) {
+      if (at(relationa, i) > 0n) {
         broke = true;
         break;
       }
     }
     if (!broke) {
-      const x2 = pmod(order - relationa[lf]!, order);
+      const x2 = pmod(order - at(relationa, lf), order);
       if (powmod(b, x2, n) === a) return x2;
       throw new RangeError('Index Calculus failed');
     }
@@ -821,20 +831,20 @@ const gfTrunc = (f: readonly bigint[], p: bigint): bigint[] => gfStrip(f.map((c)
 function gfMul(f: readonly bigint[], g: readonly bigint[], p: bigint): bigint[] {
   if (f.length === 0 || g.length === 0) return [];
   const out = new Array<bigint>(f.length + g.length - 1).fill(0n);
-  f.forEach((a, i) => g.forEach((b, j) => (out[i + j] = out[i + j]! + a * b)));
+  f.forEach((a, i) => g.forEach((b, j) => (out[i + j] = at(out, i + j) + a * b)));
   return gfTrunc(out, p);
 }
 
 function gfDiv(f: readonly bigint[], g: readonly bigint[], p: bigint): [bigint[], bigint[]] {
   if (g.length === 0) throw new RangeError('polynomial division by zero');
   if (f.length < g.length) return [[], [...f]];
-  const inv = invert(g[0]!, p);
+  const inv = invert(at(g, 0), p);
   const r = [...f];
   const q: bigint[] = [];
   for (let i = 0; i <= f.length - g.length; i++) {
-    const c = pmod(r[i]! * inv, p);
+    const c = pmod(at(r, i) * inv, p);
     q.push(c);
-    if (c !== 0n) for (let j = 0; j < g.length; j++) r[i + j] = pmod(r[i + j]! - c * g[j]!, p);
+    if (c !== 0n) for (let j = 0; j < g.length; j++) r[i + j] = pmod(at(r, i + j) - c * at(g, j), p);
   }
   return [gfStrip(q), gfStrip(r.slice(f.length - g.length + 1))];
 }
@@ -856,7 +866,7 @@ function gfGcd(fIn: readonly bigint[], gIn: readonly bigint[], p: bigint): bigin
   let g = [...gIn];
   while (g.length > 0) [f, g] = [g, gfDiv(f, g, p)[1]];
   if (f.length === 0) return f;
-  const inv = invert(f[0]!, p);
+  const inv = invert(at(f, 0), p);
   return f.map((c) => pmod(c * inv, p));
 }
 
@@ -865,7 +875,7 @@ function gfSubGround(f: readonly bigint[], a: bigint, p: bigint): bigint[] {
     const r = pmod(-a, p);
     return r ? [r] : [];
   }
-  const r = pmod(f[f.length - 1]! - a, p);
+  const r = pmod(at(f, f.length - 1) - a, p);
   if (f.length > 1) return [...f.slice(0, -1), r];
   return r ? [r] : [];
 }
@@ -897,17 +907,17 @@ function csolvePrimeLasVegas(fIn: readonly bigint[], p: bigint): bigint[] {
   g = gfSubGround(g, 1n, p);
   const factors = [gfGcd(fIn, g, p)];
   while (factors.length > 0) {
-    const f = factors.pop()!;
+    const f = defined(factors.pop(), 'polynomial factor');
     if (f.length <= 1) continue;
     if (f.length === 2) {
-      root.add(pmod(-invert(f[0]!, p) * f[1]!, p));
+      root.add(pmod(-invert(at(f, 0), p) * at(f, 1), p));
       continue;
     }
     if (f.length === 3) {
-      const inv = invert(f[0]!, p);
-      let b = (f[1]! * inv) % p;
+      const inv = invert(at(f, 0), p);
+      let b = (at(f, 1) * inv) % p;
       b = (b + p * (b % 2n)) / 2n;
-      for (const r of sqrtMod(b * b - f[2]! * inv, p, true)) root.add(pmod(r - b, p));
+      for (const r of sqrtMod(b * b - at(f, 2) * inv, p, true)) root.add(pmod(r - b, p));
       continue;
     }
     for (;;) {
@@ -935,7 +945,7 @@ function csolvePrime(f: readonly bigint[], p: bigint, e: bigint): bigint[] {
   const g0 = [...f];
   const pn = Number(p);
   for (let i = 0; i < g0.length - pn; i++) {
-    g0[i + pn - 1] = g0[i + pn - 1]! + g0[i]!;
+    g0[i + pn - 1] = at(g0, i + pn - 1) + at(g0, i);
     g0[i] = 0n;
   }
   let g = gfTrunc(g0, p);
@@ -959,7 +969,7 @@ function csolvePrime(f: readonly bigint[], p: bigint, e: bigint): bigint[] {
   const X: bigint[] = [];
   const S: [bigint, bigint][] = X1.map((x) => [x, 1n]);
   while (S.length > 0) {
-    const [x, s] = S.pop()!;
+    const [x, s] = defined(S.pop(), 'lifting stack entry');
     if (s === e) X.push(x);
     else {
       const ps = p ** s;
@@ -1020,9 +1030,9 @@ export function polynomialCongruence(expr: ExprLike, mIn: IntLike): bigint[] {
   const m = asInt(mIn);
   const coefficients = polyCoeffs(expr).map((c) => pmod(c, m));
   const rank = coefficients.length;
-  if (rank === 3) return quadraticCongruence(coefficients[0]!, coefficients[1]!, coefficients[2]!, m);
-  if (rank === 2) return quadraticCongruence(0n, coefficients[0]!, coefficients[1]!, m);
-  const last = coefficients[rank - 1]!;
+  if (rank === 3) return quadraticCongruence(at(coefficients, 0), at(coefficients, 1), at(coefficients, 2), m);
+  if (rank === 2) return quadraticCongruence(0n, at(coefficients, 0), at(coefficients, 1), m);
+  const last = at(coefficients, rank - 1);
   if (coefficients[0] === 1n && 1n + last === coefficients.reduce((s, c) => s + c, 0n)) return nthrootMod(-last, rank - 1, m, true);
   return gfCsolve(coefficients, m);
 }

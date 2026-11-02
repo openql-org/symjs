@@ -9,6 +9,7 @@ import type { Expr, ExprLike } from '../core/nodes';
 import { Derivative, Dummy, Fn, Pow, Rational, S, UndefFn } from '../core/nodes';
 import { mul, pow, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
+import { first } from '../core/guard';
 import { powsimp } from '../simplify/powsimp';
 import { simplify } from '../simplify/simplify';
 
@@ -32,7 +33,7 @@ export function homogeneousOrder(eqIn: ExprLike, ...symbols: Expr[]): Expr | und
     } else syms.push(s);
   }
   if (![...freeSymbols(eq)].some((s) => syms.some((t) => t.key === s.key))) return undefined;
-  if (eq instanceof Fn) return homogeneousOrder(eq.args[0]!, ...syms)?.key === S.Zero.key ? S.Zero : undefined;
+  if (eq instanceof Fn) return homogeneousOrder(first(eq.args), ...syms)?.key === S.Zero.key ? S.Zero : undefined;
   const t = new Dummy('t', { positive: true });
   const scaled = xreplace(eq, syms.map((s) => [s, mul(t, s)] as const));
   const ratio = simplify(powsimp(mul(scaled, pow(eq, -1)), { force: false }));

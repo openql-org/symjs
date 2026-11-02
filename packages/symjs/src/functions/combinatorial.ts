@@ -10,6 +10,7 @@
  */
 
 import { NotInvertible } from '../core/errors';
+import { at, first, last } from '../core/guard';
 import { isIntegerQ, isNegative, isPositive, isReal as isRealQ } from '../core/assumptions';
 import type { Expr, ExprLike, FnName } from '../core/nodes';
 import { Dummy, Fn, Rational, S } from '../core/nodes';
@@ -17,7 +18,7 @@ import { Product } from '../core/concrete';
 import { add, mul, pow, sympify } from '../core/ops';
 import { factorInt } from '../core/numbers';
 import { expandMul } from '../simplify/expand';
-import { evaluators, fn } from './elementary';
+import { evaluators, fn, forEachEntry } from './elementary';
 import { bernoulliNumber, floor as floorFn, gamma } from './special';
 import { isprime as ntheoryIsprime } from '../ntheory/primetest';
 
@@ -58,10 +59,10 @@ function eulerNumber(n: number): bigint {
     }
     // sum_{k=0}^{m} C(m,k) E_k = 0 for even m > 0 (over even k)
     let s = 0n;
-    for (let k = 0; k < m; k += 2) s += binom(m, k) * eulerCache[k]!;
+    for (const [k, e] of eulerCache.entries()) if (k % 2 === 0) s += binom(m, k) * e;
     eulerCache.push(-s);
   }
-  return eulerCache[n]!;
+  return at(eulerCache, n);
 }
 
 /** Euler polynomial E_n(x) = sum C(n,k) E_k/2^k (x - 1/2)^(n-k). */
@@ -80,22 +81,27 @@ function bellNumber(n: number): bigint {
   let row: bigint[] = [1n];
   const bells: bigint[] = [1n];
   for (let i = 1; i <= n; i++) {
-    const next = [row[row.length - 1]!];
-    for (const v of row) next.push(next[next.length - 1]! + v);
+    let acc = last(row);
+    const next = [acc];
+    for (const v of row) {
+      acc += v;
+      next.push(acc);
+    }
     row = next;
-    bells.push(row[0]!);
+    bells.push(first(row));
   }
-  return bells[n]!;
+  return at(bells, n);
 }
 
 /** Stirling numbers of the second kind S(n, k). */
 function stirling2(n: number, k: number): bigint {
-  const t: bigint[][] = [[1n]];
+  let prev: bigint[] = [1n];
   for (let i = 1; i <= n; i++) {
-    t[i] = [0n];
-    for (let j = 1; j <= i; j++) t[i]![j] = BigInt(j) * (t[i - 1]![j] ?? 0n) + (t[i - 1]![j - 1] ?? 0n);
+    const row: bigint[] = [0n];
+    for (let j = 1; j <= i; j++) row[j] = BigInt(j) * (prev[j] ?? 0n) + (prev[j - 1] ?? 0n);
+    prev = row;
   }
-  return t[n]![k] ?? 0n;
+  return prev[k] ?? 0n;
 }
 
 /** Incomplete Bell polynomial B_{n,k}(x_1, ..., x_{n-k+1}). */
@@ -126,9 +132,10 @@ function fibNumber(n: bigint): bigint {
 }
 
 function tribPoly(n: number, x: Expr): Expr {
-  const t: Expr[] = [S.Zero, S.One, pow(x, 2)];
-  for (let i = 3; i <= n; i++) t[i] = expandMul(add(mul(pow(x, 2), t[i - 1]!), mul(x, t[i - 2]!), t[i - 3]!));
-  return t[n]!;
+  let [a, b, c]: [Expr, Expr, Expr] = [S.Zero, S.One, pow(x, 2)];
+  if (n < 3) return [a, b, c][n] ?? S.Zero;
+  for (let i = 3; i <= n; i++) [a, b, c] = [b, c, expandMul(add(mul(pow(x, 2), c), mul(x, b), a))];
+  return c;
 }
 
 function partitionNumber(n: number): bigint {
@@ -140,12 +147,12 @@ function partitionNumber(n: number): bigint {
       const g2 = (k * (3 * k + 1)) / 2;
       if (g1 > i) break;
       const sign = k % 2 === 1 ? 1n : -1n;
-      s += sign * p[i - g1]!;
-      if (g2 <= i) s += sign * p[i - g2]!;
+      s += sign * at(p, i - g1);
+      if (g2 <= i) s += sign * at(p, i - g2);
     }
     p.push(s);
   }
-  return p[n]!;
+  return at(p, n);
 }
 
 /** Primality test (deterministic Miller-Rabin for 64-bit, trial division otherwise). */
@@ -283,9 +290,9 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     const k = asInt(n);
     if (k === undefined || k < 0n) return undefined;
     if (x !== undefined) return tribPoly(Number(k), x);
-    const t = [0n, 1n, 1n];
-    for (let i = 3; i <= Number(k); i++) t[i] = t[i - 1]! + t[i - 2]! + t[i - 3]!;
-    return R(t[Number(k)]!);
+    let [a, b, c] = [0n, 1n, 1n];
+    for (let i = 3; i <= Number(k); i++) [a, b, c] = [b, c, a + b + c];
+    return R(k === 0n ? a : k === 1n ? b : c);
   },
   partition: (n) => {
     const k = asInt(n);
@@ -387,14 +394,14 @@ function evalFrac(x: Expr): Expr | undefined {
   const r = one(real);
   const i = one(imag);
   const out = add(r, mul(S.I, i));
-  if (out instanceof Fn && out.name === 'frac' && out.args[0]!.key === x.key) return undefined;
+  if (out instanceof Fn && out.name === 'frac' && first(out.args).key === x.key) return undefined;
   return out;
 }
 EVAL.frac = evalFrac;
 
-for (const [name, f] of Object.entries(EVAL) as [FnName, (...a: Expr[]) => Expr | undefined][]) {
+forEachEntry(EVAL, (name, f) => {
   evaluators[name] = (...a: Expr[]) => f(...a);
-}
+});
 
 export const bernoulli = (n: ExprLike, x?: ExprLike): Expr => fn('bernoulli', x === undefined ? [n] : [n, x]);
 export const euler = (n: ExprLike, x?: ExprLike): Expr => fn('euler', x === undefined ? [n] : [n, x]);
@@ -423,9 +430,16 @@ export const frac = (x: ExprLike): Expr => fn('frac', [x]);
  */
 export function firstMotzkins(n: number): bigint[] {
   const m: bigint[] = [];
+  let a = 1n; // M(k - 2)
+  let b = 1n; // M(k - 1)
   for (let k = 0; k < n; k++) {
     if (k < 2) m.push(1n);
-    else m.push(((2n * BigInt(k) + 1n) * m[k - 1]! + (3n * BigInt(k) - 3n) * m[k - 2]!) / (BigInt(k) + 2n));
+    else {
+      const c = ((2n * BigInt(k) + 1n) * b + (3n * BigInt(k) - 3n) * a) / (BigInt(k) + 2n);
+      m.push(c);
+      a = b;
+      b = c;
+    }
   }
   return m;
 }
@@ -470,7 +484,7 @@ export function legendreSymbol(a: bigint | number, p: bigint | number): number {
 /** SymPy motzkin(n) (motzkin.find_first_n_motzkins(n)[n - 1]). */
 export function motzkin(n: number): bigint {
   if (!Number.isInteger(n) || n < 1) throw new RangeError('motzkin: n must be a positive integer');
-  return firstMotzkins(n)[n - 1]!;
+  return at(firstMotzkins(n), n - 1);
 }
 
 /** SymPy andre(n): Euler zigzag (up/down) numbers 1, 1, 1, 2, 5, 16, 61, ... */
@@ -480,10 +494,14 @@ export function andre(n: number): bigint {
   let row: bigint[] = [1n];
   for (let i = 1; i <= n; i++) {
     const next: bigint[] = [0n];
-    for (let j = 1; j <= i; j++) next.push(next[j - 1]! + row[i - j]!);
+    let acc = 0n;
+    for (let j = 1; j <= i; j++) {
+      acc += at(row, i - j);
+      next.push(acc);
+    }
     row = next;
   }
-  return row[n]!;
+  return at(row, n);
 }
 
 // ---- binomial coefficients modulo m ------------------------------------------------
@@ -520,14 +538,18 @@ function pFreeProductFactory(p: bigint, e: number): (r: bigint) => bigint {
       if (BigInt(i) % p !== 0n) acc = (acc * BigInt(i)) % pe;
       table[i] = acc;
     }
-    return (r) => table[Number(r)]!;
+    return (r) => at(table, Number(r));
   }
   if (e === 1 && p <= 20_000_000n) {
     const n = Number(p);
     const fact = new Array<bigint>(n);
     fact[0] = 1n;
-    for (let i = 1; i < n; i++) fact[i] = (fact[i - 1]! * BigInt(i)) % p;
-    return (r) => fact[Number(r)]!;
+    let f = 1n;
+    for (let i = 1; i < n; i++) {
+      f = (f * BigInt(i)) % p;
+      fact[i] = f;
+    }
+    return (r) => at(fact, Number(r));
   }
   if (e === 2 && p >= 3n && p <= 20_000_000n) {
     // r = a*p + b: ((p - 1)!)**a * b! * (1 + a*p*H_b) mod p**2 (each full block is (p - 1)! since H_{p-1} = 0 mod p)
@@ -536,15 +558,19 @@ function pFreeProductFactory(p: bigint, e: number): (r: bigint) => bigint {
     const harm = new Array<bigint>(n);
     fact[0] = 1n;
     harm[0] = 0n;
+    let f = 1n;
+    let h = 0n;
     for (let i = 1; i < n; i++) {
-      fact[i] = (fact[i - 1]! * BigInt(i)) % pe;
-      harm[i] = (harm[i - 1]! + bmodInv(BigInt(i), p)) % p;
+      f = (f * BigInt(i)) % pe;
+      h = (h + bmodInv(BigInt(i), p)) % p;
+      fact[i] = f;
+      harm[i] = h;
     }
-    const block = fact[n - 1]!;
+    const block = f;
     return (r) => {
       const a = r / p;
       const b = Number(r % p);
-      return (bpow(block, a, pe) * fact[b]! % pe) * bmod(1n + a * p * harm[b]!, pe) % pe;
+      return (bpow(block, a, pe) * at(fact, b) % pe) * bmod(1n + a * p * at(harm, b), pe) % pe;
     };
   }
   throw new RangeError('binomial_mod: modulus too large');
@@ -603,7 +629,13 @@ export function binomialMod(n: bigint, k: bigint, m: bigint): bigint {
 
 // ---- Carmichael numbers (SymPy carmichael / sympy.ntheory.factor_) ----------------
 
-const toBig = (n: ExprLike | bigint | number): bigint => (typeof n === 'bigint' ? n : typeof n === 'number' ? BigInt(n) : (sympify(n) as Rational).p);
+function toBig(n: ExprLike | bigint | number): bigint {
+  if (typeof n === 'bigint') return n;
+  if (typeof n === 'number') return BigInt(n);
+  const v = sympify(n);
+  if (!(v instanceof Rational)) throw new TypeError(`expected an integer, got ${v.toString()}`);
+  return v.p;
+}
 
 /** SymPy is_carmichael: n is composite, squarefree and p - 1 | n - 1 for each prime p | n (Korselt). */
 export function isCarmichael(nIn: ExprLike | bigint | number): boolean {

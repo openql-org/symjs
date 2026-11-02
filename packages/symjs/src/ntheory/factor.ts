@@ -13,6 +13,7 @@
 
 import type { Expr } from '../core/nodes';
 import { Mul, Pow, Rational, S } from '../core/nodes';
+import { at, defined, expectType, first, getOrThrow, last } from '../core/guard';
 import { sympify } from '../core/ops';
 import { gcd } from '../core/numbers';
 import type { UnsolvedResult } from '../core/truth';
@@ -39,7 +40,10 @@ export function multiplicityInFactorial(pIn: IntLike, nIn: IntLike): bigint {
   if (p <= 0n) throw new RangeError(`expecting positive integer got ${p}`);
   if (n < 0n) throw new RangeError(`expecting non-negative integer got ${n}`);
   const f = new Map<bigint, bigint>();
-  for (const [k, v] of factorintInt(p, {})) f.set(v, (f.get(v) ?? 0n) > k ? f.get(v)! : k);
+  for (const [k, v] of factorintInt(p, {})) {
+    const prev = f.get(v);
+    f.set(v, prev !== undefined && prev > k ? prev : k);
+  }
   let best: bigint | undefined;
   for (const [v, k] of f) {
     const s = digits(n, k).reduce((a, b) => a + b, 0n);
@@ -72,7 +76,7 @@ export function multiplicity(pIn: IntLike, nIn: IntLike): bigint {
     return remove(ne.p, pe.p)[1];
   }
   if (pe instanceof Rational && pe.q === 1n && isFactorial(ne)) {
-    const k = ne.args[0]!;
+    const k = first(ne.args);
     if (k instanceof Rational && k.q === 1n && k.p >= 0n) return multiplicityInFactorial(pe.p, k.p);
   }
   throw new TypeError(`expecting ints or fractions, got ${pe.toString()} and ${ne.toString()}`);
@@ -255,8 +259,9 @@ function perfectPowerBig(nIn: bigint, candidatesIn: readonly bigint[] | undefine
       if (!big) {
         const e0s = primefactors(e);
         if (e0s[0] !== e) {
-          r = r ** (e / e0s[0]!);
-          e = e0s[0]!;
+          const e0 = first(e0s);
+          r = r ** (e / e0);
+          e = e0;
         }
       }
       return [r, e];
@@ -301,7 +306,7 @@ export function perfectPower(nIn: IntLike, candidatesIn?: readonly (bigint | num
     if (candidates === undefined) {
       const pp = perfectPower(pos, undefined, { big: true, factor });
       if (pp === false) return false;
-      const b = pp[0] as Rational;
+      const b = expectType(pp[0], isRational, 'base of a rational perfect power');
       const e2 = pp[1] & -pp[1];
       const bb = Rational.of(b.p ** e2, b.q ** e2);
       const ee = pp[1] / e2;
@@ -314,7 +319,7 @@ export function perfectPower(nIn: IntLike, candidatesIn?: readonly (bigint | num
     if (odd.length === 0) return false;
     const pp = perfectPower(pos, odd, { big, factor });
     if (pp === false) return false;
-    const b = pp[0] as Rational;
+    const b = expectType(pp[0], isRational, 'base of a rational perfect power');
     return [Rational.of(-b.p, b.q), pp[1]];
   }
   const p = e.p;
@@ -522,8 +527,9 @@ export function ecmOneFactor(n: bigint, B1 = 10000n, B2 = 100000n, maxCurve = 20
     beta[0] = pmod(Sx[0].x * Sx[0].z, n);
     beta[1] = pmod(Sx[1].x * Sx[1].z, n);
     for (let d = 2; d < Dn; d++) {
-      Sx[d] = Sx[d - 1]!.add(Q2, Sx[d - 2]!);
-      beta[d] = pmod(Sx[d]!.x * Sx[d]!.z, n);
+      const sd = at(Sx, d - 1).add(Q2, at(Sx, d - 2));
+      Sx[d] = sd;
+      beta[d] = pmod(sd.x * sd.z, n);
     }
     g = 1n;
     const W = Q.montLadder(4n * D);
@@ -532,8 +538,8 @@ export function ecmOneFactor(n: bigint, B1 = 10000n, B2 = 100000n, maxCurve = 20
     for (const deltas of deltasList) {
       const alpha = pmod(R.x * R.z, n);
       for (const delta of deltas) {
-        const s = Sx[Number(delta)]!;
-        const f = (R.x - s.x) * (R.z + s.z) - alpha + beta[Number(delta)]!;
+        const s = at(Sx, Number(delta));
+        const f = (R.x - s.x) * (R.z + s.z) - alpha + at(beta, Number(delta));
         g = pmod(g * f, n);
       }
       [T, R] = [R, R.add(W, T)];
@@ -831,18 +837,23 @@ function visualOf(fd: Map<bigint, bigint>): Expr {
     d.delete(-1n);
     args.push(S.NegOne);
   }
-  for (const k of sortedKeys(d)) args.push(new Pow(Rational.of(k), Rational.of(d.get(k)!)));
-  return args.length === 1 ? args[0]! : new Mul(args);
+  for (const k of sortedKeys(d)) args.push(new Pow(Rational.of(k), Rational.of(getOrThrow(d, k))));
+  return args.length === 1 ? first(args) : new Mul(args);
 }
 
 function listOf(fac: Map<bigint, bigint>): (bigint | Rational)[] {
   const out: (bigint | Rational)[] = [];
   for (const p of sortedKeys(fac)) {
-    const e = fac.get(p)!;
+    const e = getOrThrow(fac, p);
     for (let i = 0n; i < (e > 0n ? e : -e); i++) out.push(e > 0n ? p : Rational.of(1n, p));
   }
   return out;
 }
+
+const isRational = (x: unknown): x is Rational => x instanceof Rational;
+
+/** Whether the factorint argument is a map of factors. */
+const isFactorMap = (n: IntLike | ReadonlyMap<bigint | number, bigint | number>): n is ReadonlyMap<bigint | number, bigint | number> => n instanceof Map;
 
 const optsOf = (o: FactorintOptions): Opts => ({
   limit: o.limit === undefined ? undefined : truncInt(o.limit),
@@ -886,25 +897,28 @@ export function factorint(n: IntLike, opts?: FactorintOptions): Map<bigint, bigi
 export function factorint(nIn: IntLike | ReadonlyMap<bigint | number, bigint | number>, opts: FactorintOptions = {}): Map<bigint, bigint> | Expr | (bigint | Rational)[] {
   const o = optsOf(opts);
   if (opts.multiple === true) {
-    const fac = factorint(nIn as IntLike, { ...opts, visual: false, multiple: false });
+    const plain: FactorintOptions & { visual: false } = { ...opts, visual: false, multiple: false };
+    const fac = isFactorMap(nIn) ? factorint(nIn, plain) : factorint(nIn, plain);
     return listOf(fac);
   }
   const visual = opts.visual;
-  const isMap = nIn instanceof Map;
+  const mapIn = isFactorMap(nIn) ? nIn : undefined;
+  const intIn = isFactorMap(nIn) ? undefined : nIn;
+  const isMap = mapIn !== undefined;
   let mulIn: Mul | undefined;
   let e: Expr | undefined;
-  if (!isMap && typeof nIn !== 'bigint' && typeof nIn !== 'number') {
-    e = sympify(nIn as IntLike);
+  if (intIn !== undefined && typeof intIn !== 'bigint' && typeof intIn !== 'number') {
+    e = sympify(intIn);
     if (e instanceof Mul) mulIn = e;
   }
   let fd = new Map<bigint, bigint>();
-  if (visual === true && !isMap && mulIn === undefined) fd = factorint(nIn as IntLike, { ...opts, visual: false });
+  if (visual === true && intIn !== undefined && mulIn === undefined) fd = factorint(intIn, { ...opts, visual: false });
   else if (mulIn !== undefined) fd = mulPowers(mulIn);
-  else if (isMap) for (const [k, v] of nIn as ReadonlyMap<bigint | number, bigint | number>) fd.set(BigInt(k), BigInt(v));
+  else if (mapIn !== undefined) for (const [k, v] of mapIn) fd.set(BigInt(k), BigInt(v));
   if (fd.size > 0 && (isMap || mulIn !== undefined)) {
     for (const key of [...fd.keys()]) {
       if (isprime(key)) continue;
-      const ex = fd.get(key)!;
+      const ex = getOrThrow(fd, key);
       fd.delete(key);
       for (const [k, v] of factorintInt(key, o)) fd.set(k, (fd.get(k) ?? 0n) + v * ex);
     }
@@ -912,13 +926,13 @@ export function factorint(nIn: IntLike | ReadonlyMap<bigint | number, bigint | n
   if (visual === true || (isMap && visual === undefined)) return visualOf(fd);
   if (isMap || mulIn !== undefined) return fd;
   if (e !== undefined && isFactorial(e)) {
-    const x = asInt(e.args[0]!);
+    const x = asInt(first(e.args));
     if (x >= 20n) return factorintFactorial(x);
     let f = 1n;
     for (let i = 2n; i <= x; i++) f *= i;
     return factorintInt(f, o);
   }
-  return factorintInt(asInt(e ?? (nIn as IntLike)), o);
+  return factorintInt(asInt(e ?? defined(intIn, 'integer argument')), o);
 }
 
 /**
@@ -937,10 +951,10 @@ export function factorrat(ratIn: IntLike, opts: FactorintOptions = {}): Map<bigi
   for (const [p, e] of factorintInt(r.q, o)) f.set(p, (f.get(p) ?? 0n) - e);
   if (f.size > 1 && f.has(1n)) f.delete(1n);
   if (opts.multiple === true) {
-    const key = (p: bigint): number => (f.get(p)! > 0n ? Number(p) : 1 / Number(p));
+    const key = (p: bigint): number => (getOrThrow(f, p) > 0n ? Number(p) : 1 / Number(p));
     const out: (bigint | Rational)[] = [];
     for (const p of [...f.keys()].sort((x, y) => key(x) - key(y))) {
-      const e = f.get(p)!;
+      const e = getOrThrow(f, p);
       for (let i = 0n; i < (e > 0n ? e : -e); i++) out.push(e > 0n ? p : Rational.of(1n, p));
     }
     return out;
@@ -954,7 +968,8 @@ export function primefactors(nIn: IntLike, opts: { limit?: bigint | number } = {
   const n = truncInt(nIn);
   const factors = sortedKeys(factorintInt(n, { limit: opts.limit === undefined ? undefined : truncInt(opts.limit) }));
   const s = factors.slice(0, -1).filter((f) => f !== -1n && f !== 0n && f !== 1n);
-  if (factors.length > 0 && isprime(factors[factors.length - 1]!)) s.push(factors[factors.length - 1]!);
+  const lastFactor = factors.at(-1);
+  if (lastFactor !== undefined && isprime(lastFactor)) s.push(lastFactor);
   return s;
 }
 
@@ -975,7 +990,9 @@ function* divisorsGen(n: bigint, proper: boolean): Generator<bigint, void, undef
       return;
     }
     const pows = [1n];
-    for (let k = 0n; k < fd.get(ps[i]!)!; k++) pows.push(pows[pows.length - 1]! * ps[i]!);
+    const p = at(ps, i);
+    const e = getOrThrow(fd, p);
+    for (let k = 0n; k < e; k++) pows.push(last(pows) * p);
     for (const q of rec(i + 1)) for (const p of pows) yield p * q;
   }
   for (const d of rec(0)) if (!proper || d !== n) yield d;
@@ -1074,7 +1091,7 @@ export function mersennePrimeExponent(nth: IntLike): bigint {
   const n = asInt(nth);
   if (n < 1n) throw new RangeError('nth must be a positive integer; mersenne_prime_exponent(1) == 2');
   if (n > 51n) throw new RangeError('There are only 51 perfect numbers; nth must be less than or equal to 51');
-  return BigInt(MERSENNE_PRIME_EXPONENTS[Number(n) - 1]!);
+  return BigInt(at(MERSENNE_PRIME_EXPONENTS, Number(n) - 1));
 }
 
 /** sigma(n) - 2n (SymPy abundance). */

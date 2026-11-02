@@ -8,6 +8,7 @@
  * values, pseudo-inverse, matrix exponential and structural helpers.
  */
 
+import { at, defined, first, getOrThrow, last } from '../core/guard';
 import { MatrixError, NonInvertibleMatrixError, NonSquareMatrixError, NotImplementedError } from '../core/errors';
 import type { ExprLike } from '../core/nodes';
 import { Dummy, Expr, Rational, S, Special, Sym, impl } from '../core/nodes';
@@ -52,6 +53,10 @@ const tidy = (e: Expr): Expr => {
 
 type Rows = Expr[][];
 const rowsOf = (m: Matrix): Rows => m.toArray();
+/** The entry (i, j) of a row array; throws when out of range. */
+const ent = (A: readonly (readonly Expr[])[], i: number, j: number): Expr => at(at(A, i), j);
+/** The zero test used for structural (exact zero) checks. */
+const isExactZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
 const fromRows = (r: Rows, cols?: number): Matrix =>
   r.length === 0 ? Matrix.zeros(0, cols ?? 0) : Matrix.of(r);
 
@@ -67,19 +72,23 @@ export function rref(m: Matrix): [Matrix, number[]] {
   for (let c = 0; c < m.cols && r < m.rows; c++) {
     let p = -1;
     for (let i = r; i < m.rows; i++) {
-      if (!isZeroE(A[i]![c]!)) {
+      if (!isZeroE(ent(A, i, c))) {
         p = i;
         break;
       }
     }
     if (p < 0) continue;
-    [A[r], A[p]] = [A[p]!, A[r]!];
-    const inv = pow(A[r]![c]!, -1);
-    A[r] = A[r]!.map((v) => tidy(mul(v, inv)));
+    const rowP = at(A, p);
+    A[p] = at(A, r);
+    const inv = pow(at(rowP, c), -1);
+    const pivotRow = rowP.map((v) => tidy(mul(v, inv)));
+    A[r] = pivotRow;
     for (let i = 0; i < m.rows; i++) {
-      if (i === r || isZeroE(A[i]![c]!)) continue;
-      const f = A[i]![c]!;
-      A[i] = A[i]!.map((v, j) => tidy(add(v, mul(-1, f, A[r]![j]!))));
+      if (i === r) continue;
+      const Ai = at(A, i);
+      const f = at(Ai, c);
+      if (isZeroE(f)) continue;
+      A[i] = Ai.map((v, j) => tidy(add(v, mul(-1, f, at(pivotRow, j)))));
     }
     pivots.push(c);
     r++;
@@ -94,18 +103,21 @@ export function echelonForm(m: Matrix): Matrix {
   for (let c = 0; c < m.cols && r < m.rows; c++) {
     let p = -1;
     for (let i = r; i < m.rows; i++) {
-      if (!isZeroE(A[i]![c]!)) {
+      if (!isZeroE(ent(A, i, c))) {
         p = i;
         break;
       }
     }
     if (p < 0) continue;
-    [A[r], A[p]] = [A[p]!, A[r]!];
-    const piv = A[r]![c]!;
+    const pivotRow = at(A, p);
+    A[p] = at(A, r);
+    A[r] = pivotRow;
+    const piv = at(pivotRow, c);
     for (let i = r + 1; i < m.rows; i++) {
-      const f = A[i]![c]!;
+      const Ai = at(A, i);
+      const f = at(Ai, c);
       if (isZeroE(f)) continue;
-      A[i] = A[i]!.map((v, j) => tidy(add(mul(piv, v), mul(-1, f, A[r]![j]!))));
+      A[i] = Ai.map((v, j) => tidy(add(mul(piv, v), mul(-1, f, at(pivotRow, j)))));
     }
     r++;
   }
@@ -192,7 +204,7 @@ export function diagonalize(m: Matrix): [Matrix, Matrix] {
       vals.push(v);
     }
   }
-  const P = cols[0]!.hstack(...cols.slice(1));
+  const P = first(cols).hstack(...cols.slice(1));
   return [P, Matrix.diag(...vals)];
 }
 
@@ -219,7 +231,7 @@ export function analyticFunc(m: Matrix, fIn: ExprLike, x: Sym): Matrix {
   }
   const maxMul = Math.max(...[...eig.values()].map(([, k]) => k));
   const derivs: Expr[] = [f];
-  for (let i = 1; i < maxMul; i++) derivs.push(diff(derivs[i - 1]!, x));
+  for (let i = 1; i < maxMul; i++) derivs.push(diff(at(derivs, i - 1), x));
   const r: Expr[][] = [];
   const fv: Expr[][] = [];
   for (const [lam, k] of eig.values()) {
@@ -236,7 +248,7 @@ export function analyticFunc(m: Matrix, fIn: ExprLike, x: Sym): Matrix {
         row.push(mul(c, pow(lam, a - d)));
       }
       r.push(row);
-      fv.push([subsValue(derivs[d]!, x, lam)]);
+      fv.push([subsValue(at(derivs, d), x, lam)]);
     }
   }
   const c = Matrix.of(r).inv().mul(Matrix.of(fv));
@@ -270,14 +282,16 @@ export function cholesky(m: Matrix, hermitian = true): Matrix {
   const L: Expr[][] = Array.from({ length: n }, () => Array.from({ length: n }, () => S.Zero as Expr));
   const cj = (e: Expr) => (hermitian ? conjugate(e) : e);
   for (let i = 0; i < n; i++) {
+    const Li = at(L, i);
     for (let j = 0; j < i; j++) {
+      const Lj = at(L, j);
       let s: Expr = m.get(i, j);
-      for (let k = 0; k < j; k++) s = add(s, mul(-1, L[i]![k]!, cj(L[j]![k]!)));
-      L[i]![j] = tidy(mul(s, pow(L[j]![j]!, -1)));
+      for (let k = 0; k < j; k++) s = add(s, mul(-1, at(Li, k), cj(at(Lj, k))));
+      Li[j] = tidy(mul(s, pow(at(Lj, j), -1)));
     }
     let d: Expr = m.get(i, i);
-    for (let k = 0; k < i; k++) d = add(d, mul(-1, L[i]![k]!, cj(L[i]![k]!)));
-    L[i]![i] = sqrt(tidy(d));
+    for (let k = 0; k < i; k++) d = add(d, mul(-1, at(Li, k), cj(at(Li, k))));
+    Li[i] = sqrt(tidy(d));
   }
   return Matrix.of(L);
 }
@@ -289,13 +303,15 @@ export function ldl(m: Matrix, hermitian = true): [Matrix, Matrix] {
   const D: Expr[] = [];
   const cj = (e: Expr) => (hermitian ? conjugate(e) : e);
   for (let i = 0; i < n; i++) {
+    const Li = at(L, i);
     for (let j = 0; j < i; j++) {
+      const Lj = at(L, j);
       let s: Expr = m.get(i, j);
-      for (let k = 0; k < j; k++) s = add(s, mul(-1, L[i]![k]!, cj(L[j]![k]!), D[k]!));
-      L[i]![j] = tidy(mul(s, pow(D[j]!, -1)));
+      for (let k = 0; k < j; k++) s = add(s, mul(-1, at(Li, k), cj(at(Lj, k)), at(D, k)));
+      Li[j] = tidy(mul(s, pow(at(D, j), -1)));
     }
     let d: Expr = m.get(i, i);
-    for (let k = 0; k < i; k++) d = add(d, mul(-1, L[i]![k]!, cj(L[i]![k]!), D[k]!));
+    for (let k = 0; k < i; k++) d = add(d, mul(-1, at(Li, k), cj(at(Li, k)), at(D, k)));
     D.push(tidy(d));
   }
   return [Matrix.of(L), Matrix.diag(...D)];
@@ -309,17 +325,28 @@ export function luDecomposition(m: Matrix): [Matrix, Matrix, [number, number][]]
   const perm: [number, number][] = [];
   for (let c = 0; c < Math.min(n, m.cols); c++) {
     let p = c;
-    while (p < n && isZeroE(U[p]![c]!)) p++;
+    while (p < n && isZeroE(ent(U, p, c))) p++;
     if (p === n) continue;
     if (p !== c) {
-      [U[p], U[c]] = [U[c]!, U[p]!];
-      for (let k = 0; k < c; k++) [L[p]![k], L[c]![k]] = [L[c]![k]!, L[p]![k]!];
+      const Up = at(U, p);
+      U[p] = at(U, c);
+      U[c] = Up;
+      const Lp = at(L, p);
+      const Lc = at(L, c);
+      for (let k = 0; k < c; k++) {
+        const t = at(Lp, k);
+        Lp[k] = at(Lc, k);
+        Lc[k] = t;
+      }
       perm.push([c, p]);
     }
+    const Uc = at(U, c);
+    const pivInv = pow(at(Uc, c), -1);
     for (let i = c + 1; i < n; i++) {
-      const f = tidy(mul(U[i]![c]!, pow(U[c]![c]!, -1)));
-      L[i]![c] = f;
-      U[i] = U[i]!.map((v, j) => tidy(add(v, mul(-1, f, U[c]![j]!))));
+      const Ui = at(U, i);
+      const f = tidy(mul(at(Ui, c), pivInv));
+      at(L, i)[c] = f;
+      U[i] = Ui.map((v, j) => tidy(add(v, mul(-1, f, at(Uc, j)))));
     }
   }
   return [Matrix.of(L), fromRows(U, m.cols), perm];
@@ -344,8 +371,8 @@ export function qrDecomposition(m: Matrix): [Matrix, Matrix] {
     R.push(rcol);
   }
   const k = qs.length;
-  const Rm = Matrix.fromFunction(k, m.cols, (i, j) => (j < R.length && i < R[j]!.length ? R[j]![i]! : 0));
-  return [qs[0]!.hstack(...qs.slice(1)), Rm];
+  const Rm = Matrix.fromFunction(k, m.cols, (i, j) => R[j]?.[i] ?? 0);
+  return [first(qs).hstack(...qs.slice(1)), Rm];
 }
 
 // ---------------------------------------------------------------------------
@@ -359,18 +386,24 @@ export function dot(a: Matrix, b: Matrix, hermitian = false, convention: 'maths'
   let y = b.data;
   if (hermitian && convention === 'maths') x = x.map((e) => conjugate(e));
   if (hermitian && convention === 'physics') y = y.map((e) => conjugate(e));
-  return add(...x.map((e, i) => mul(e, y[i]!)));
+  return add(...x.map((e, i) => mul(e, at(y, i))));
 }
 
 export function cross(a: Matrix, b: Matrix): Matrix {
-  const [a1, a2, a3] = a.data;
-  const [b1, b2, b3] = b.data;
+  const [a1, a2, a3] = threeEntries(a);
+  const [b1, b2, b3] = threeEntries(b);
   const v = [
-    add(mul(a2!, b3!), mul(-1, a3!, b2!)),
-    add(mul(a3!, b1!), mul(-1, a1!, b3!)),
-    add(mul(a1!, b2!), mul(-1, a2!, b1!)),
+    add(mul(a2, b3), mul(-1, a3, b2)),
+    add(mul(a3, b1), mul(-1, a1, b3)),
+    add(mul(a1, b2), mul(-1, a2, b1)),
   ];
   return a.rows === 1 ? Matrix.row(...v) : Matrix.col(...v);
+}
+
+function threeEntries(v: Matrix): [Expr, Expr, Expr] {
+  const [x, y, z] = v.data;
+  if (x === undefined || y === undefined || z === undefined) throw new RangeError('cross: 3-vectors expected');
+  return [x, y, z];
 }
 
 export function singularValues(m: Matrix): Expr[] {
@@ -416,7 +449,7 @@ export function pinv(m: Matrix): Matrix {
 export function jacobian(X: Matrix, Y: Matrix | readonly Expr[]): Matrix {
   const ys = Y instanceof Matrix ? Y.data : Y;
   const xs = X.data;
-  return Matrix.fromFunction(xs.length, ys.length, (i, j) => diff(xs[i]!, ys[j] as Sym));
+  return Matrix.fromFunction(xs.length, ys.length, (i, j) => diff(at(xs, i), at(ys, j)));
 }
 
 // ---------------------------------------------------------------------------
@@ -439,13 +472,13 @@ export function extract(m: Matrix, rows: readonly (number | boolean)[], cols: re
   const norm_ = (idx: readonly (number | boolean)[], n: number) =>
     idx.every((v) => typeof v === 'boolean')
       ? idx.flatMap((v, i) => (v ? [i] : []))
-      : (idx as number[]).map((v) => (v < 0 ? v + n : v));
+      : idx.map((v) => (typeof v === 'boolean' ? Number(v) : v < 0 ? v + n : v));
   return m.slice(norm_(rows, m.rows), norm_(cols, m.cols));
 }
 
 export function reshape(m: Matrix, r: number, c: number): Matrix {
   if (r * c !== m.data.length) throw new RangeError('reshape: invalid size');
-  return Matrix.fromFunction(r, c, (i, j) => m.data[i * c + j]!);
+  return Matrix.fromFunction(r, c, (i, j) => at(m.data, i * c + j));
 }
 
 export function rot90(m: Matrix, k = 1): Matrix {
@@ -511,7 +544,10 @@ export function blockDiag(...blocks: (Matrix | ExprLike)[]): Matrix {
   let r0 = 0;
   let c0 = 0;
   for (const m of ms) {
-    for (let i = 0; i < m.rows; i++) for (let j = 0; j < m.cols; j++) out[r0 + i]![c0 + j] = m.get(i, j);
+    for (let i = 0; i < m.rows; i++) {
+      const row = at(out, r0 + i);
+      for (let j = 0; j < m.cols; j++) row[c0 + j] = m.get(i, j);
+    }
     r0 += m.rows;
     c0 += m.cols;
   }
@@ -549,7 +585,7 @@ export function jordanBlock(size: number, eigenvalue: ExprLike, band: 'upper' | 
 /** Companion matrix of a monic polynomial given by its coefficients (highest first). */
 export function companion(coeffs: readonly Expr[]): Matrix {
   const n = coeffs.length - 1;
-  return Matrix.fromFunction(n, n, (i, j) => (j === n - 1 ? mul(-1, coeffs[n - i]!) : i === j + 1 ? 1 : 0));
+  return Matrix.fromFunction(n, n, (i, j) => (j === n - 1 ? mul(-1, at(coeffs, n - i)) : i === j + 1 ? 1 : 0));
 }
 
 /** Permanent of a square matrix (Laplace expansion). */
@@ -579,14 +615,13 @@ function matrixConnectedComponents(m: Matrix): number[][] {
   const n = m.shape[0];
   const seen = new Set<number>();
   const out: number[][] = [];
-  const nz = (i: number, j: number) => !(m.get(i, j) instanceof Rational && (m.get(i, j) as Rational).isZero);
+  const nz = (i: number, j: number) => !isExactZero(m.get(i, j));
   for (let s = 0; s < n; s++) {
     if (seen.has(s)) continue;
     const comp: number[] = [];
     const stack = [s];
     seen.add(s);
-    while (stack.length) {
-      const v = stack.pop()!;
+    for (let v = stack.pop(); v !== undefined; v = stack.pop()) {
       comp.push(v);
       for (let w = 0; w < n; w++) if (!seen.has(w) && (nz(v, w) || nz(w, v))) {
         seen.add(w);
@@ -608,7 +643,7 @@ export function stronglyConnectedComponents<T>(m: Matrix | Graph<T>): number[][]
 
 function matrixStronglyConnectedComponents(m: Matrix): number[][] {
   const n = m.shape[0];
-  const nz = (i: number, j: number) => !(m.get(i, j) instanceof Rational && (m.get(i, j) as Rational).isZero);
+  const nz = (i: number, j: number) => !isExactZero(m.get(i, j));
   let index = 0;
   const idx = new Map<number, number>();
   const low = new Map<number, number>();
@@ -625,13 +660,13 @@ function matrixStronglyConnectedComponents(m: Matrix): number[][] {
       if (!nz(v, w)) continue;
       if (!idx.has(w)) {
         strong(w);
-        low.set(v, Math.min(low.get(v)!, low.get(w)!));
-      } else if (onStack.has(w)) low.set(v, Math.min(low.get(v)!, idx.get(w)!));
+        low.set(v, Math.min(getOrThrow(low, v), getOrThrow(low, w)));
+      } else if (onStack.has(w)) low.set(v, Math.min(getOrThrow(low, v), getOrThrow(idx, w)));
     }
     if (low.get(v) === idx.get(v)) {
       const comp: number[] = [];
       for (;;) {
-        const w = stack.pop()!;
+        const w = defined(stack.pop(), 'Tarjan stack entry');
         onStack.delete(w);
         comp.push(w);
         if (w === v) break;
@@ -664,7 +699,7 @@ export function gaussJordanSolve(A: Matrix, b: Matrix): [Matrix, Matrix] {
   const [R, pivots] = rref(A.hstack(b));
   for (let i = 0; i < R.rows; i++) {
     const row = Array.from({ length: n }, (_, j) => R.get(i, j));
-    if (row.every((c) => c instanceof Rational && c.isZero) && !(R.get(i, n) instanceof Rational && (R.get(i, n) as Rational).isZero)) {
+    if (row.every((c) => c instanceof Rational && c.isZero) && !isExactZero(R.get(i, n))) {
       throw new RangeError('Linear system has no solution');
     }
   }
@@ -674,12 +709,12 @@ export function gaussJordanSolve(A: Matrix, b: Matrix): [Matrix, Matrix] {
   const cols = b.cols;
   const sol = Matrix.fromFunction(n, cols, (j, c) => {
     const f = free.indexOf(j);
-    if (f >= 0) return taus[f]!;
+    if (f >= 0) return at(taus, f);
     const i = pv.indexOf(j);
     // x_j = rhs_i - sum over free columns
-    return add(R.get(i, n + c), ...free.map((fj, k) => mul(-1, R.get(i, fj), taus[k]!)));
+    return add(R.get(i, n + c), ...free.map((fj, k) => mul(-1, R.get(i, fj), at(taus, k))));
   });
-  return [sol, Matrix.fromFunction(taus.length, 1, (i) => taus[i]!)];
+  return [sol, Matrix.fromFunction(taus.length, 1, (i) => at(taus, i))];
 }
 
 /** SymPy Matrix.solve (and LUsolve, QRsolve, ...): the unique solution of A*x = b. */
@@ -717,21 +752,21 @@ export function normalized(v: Matrix): Matrix {
 /** SymPy hessian(f, varlist): the matrix of second derivatives. */
 export function hessian(f: ExprLike, vars: readonly Expr[]): Matrix {
   const e = sympify(f);
-  return Matrix.fromFunction(vars.length, vars.length, (i, j) => diff(diff(e, vars[i]!), vars[j]!));
+  return Matrix.fromFunction(vars.length, vars.length, (i, j) => diff(diff(e, at(vars, i)), at(vars, j)));
 }
 
 /** SymPy wronskian(functions, var): det of the derivatives 0..n-1 of the functions. */
 export function wronskian(fs: readonly ExprLike[], x: Expr): Expr {
   const es = fs.map(sympify);
   if (!es.length) return S.One;
-  return Matrix.fromFunction(es.length, es.length, (i, j) => diff(es[j]!, x, i)).det();
+  return Matrix.fromFunction(es.length, es.length, (i, j) => diff(at(es, j), x, i)).det();
 }
 
 /** SymPy casoratian(seqs, n, zero=True): det of the shifted sequences (n = 0, 1, ... when zero). */
 export function casoratian(seqs: readonly ExprLike[], n: Expr, zero = true): Expr {
   const es = seqs.map(sympify);
   const k = (i: number) => (zero ? Rational.of(i) : add(n, i));
-  return Matrix.fromFunction(es.length, es.length, (i, j) => impl.subs(es[j]!, [[n, k(i)]])).det();
+  return Matrix.fromFunction(es.length, es.length, (i, j) => impl.subs(at(es, j), [[n, k(i)]])).det();
 }
 
 /** SymPy Matrix.rref_rhs(rhs): [rref of A, the right-hand side transformed alike]. */
@@ -744,7 +779,7 @@ export function rrefRhs(A: Matrix, rhs: Matrix): [Matrix, Matrix] {
 /** SymPy Matrix.rank_decomposition: [C, F] with A = C*F, C the pivot columns of A and F the nonzero rows of rref(A). */
 export function rankDecomposition(A: Matrix): [Matrix, Matrix] {
   const [R, pivots] = rref(A);
-  const C = Matrix.fromFunction(A.rows, pivots.length, (i, j) => A.get(i, pivots[j]!));
+  const C = Matrix.fromFunction(A.rows, pivots.length, (i, j) => A.get(i, at(pivots, j)));
   const F = Matrix.fromFunction(pivots.length, A.cols, (i, j) => R.get(i, j));
   return [C, F];
 }
@@ -805,7 +840,7 @@ export function jordanForm(A: Matrix): [Matrix, Matrix] {
     // null spaces of N**k until their dimension reaches the multiplicity
     const kernels: Matrix[][] = [[]];
     let Nk = Matrix.eye(n);
-    while (kernels[kernels.length - 1]!.length < mult) {
+    while (last(kernels).length < mult) {
       Nk = simp(Nk.mul(N));
       kernels.push(nullspace(Nk));
       if (kernels.length > n + 1) throw new NotImplementedError('jordan_form: generalized eigenvectors not found');
@@ -813,13 +848,13 @@ export function jordanForm(A: Matrix): [Matrix, Matrix] {
     // chains from the top level down: v, N*v, N**2*v, ...
     const chainsOf: Matrix[][] = [];
     for (let k = kernels.length - 1; k >= 1; k--) {
-      for (const v of kernels[k]!) {
+      for (const v of at(kernels, k)) {
         // v must be new modulo ker(N**(k-1)) and the vectors already taken at this level
         // chains are stored from the eigenvector up: level k is entry k - 1
-        const atLevel = chainsOf.filter((c) => c.length >= k).map((c) => c[k - 1]!);
-        if (!independent([...kernels[k - 1]!, ...atLevel, v])) continue;
+        const atLevel = chainsOf.filter((c) => c.length >= k).map((c) => at(c, k - 1));
+        if (!independent([...at(kernels, k - 1), ...atLevel, v])) continue;
         const chain: Matrix[] = [v];
-        for (let i = 1; i < k; i++) chain.push(simp(N.mul(chain[i - 1]!)));
+        for (let i = 1; i < k; i++) chain.push(simp(N.mul(at(chain, i - 1))));
         chainsOf.push(chain.reverse());
       }
     }
@@ -840,14 +875,13 @@ export function jordanForm(A: Matrix): [Matrix, Matrix] {
  */
 export function liupc(A: Matrix): [number[][], number[]] {
   const n = A.rows;
-  const R: number[][] = Array.from({ length: n }, (_, r) => Array.from({ length: r + 1 }, (_, c) => c).filter((c) => !(A.get(r, c) instanceof Rational && (A.get(r, c) as Rational).isZero)));
+  const R: number[][] = Array.from({ length: n }, (_, r) => Array.from({ length: r + 1 }, (_, c) => c).filter((c) => !isExactZero(A.get(r, c))));
   const inf = n;
   const parent = Array<number>(n).fill(inf);
   const virtual = Array<number>(n).fill(inf);
   for (let r = 0; r < n; r++) {
-    for (let c of R[r]!.slice(0, -1)) {
-      while (virtual[c]! < r) {
-        const t = virtual[c]!;
+    for (let c of at(R, r).slice(0, -1)) {
+      for (let t = at(virtual, c); t < r; t = at(virtual, c)) {
         virtual[c] = r;
         c = t;
       }
@@ -866,7 +900,7 @@ export function rowStructureSymbolicCholesky(A: Matrix): number[][] {
     for (let j of row) {
       while (j !== inf && j !== k) {
         out.add(j);
-        j = parent[j]!;
+        j = at(parent, j);
       }
     }
     return [...out].sort((a, b) => a - b);
@@ -882,16 +916,18 @@ export function irregular(ntop: number, ...blocks: Matrix[]): Matrix {
   const q = blocks.map((_, i) => i);
   const left = blocks.map((b) => b.rows);
   const active = q.splice(0, ntop);
-  const cols = active.reduce((s, i) => s + blocks[i]!.cols, 0);
+  const cols = active.reduce((s, i) => s + at(blocks, i).cols, 0);
   const rows: Expr[][] = [];
   while (left.some((d) => d > 0)) {
     const r: Expr[] = [];
     active.forEach((j, a) => {
-      const b = blocks[j]!;
-      const ri = b.rows - left[j]!;
+      const b = at(blocks, j);
+      const remaining = at(left, j);
+      const ri = b.rows - remaining;
       for (let c = 0; c < b.cols; c++) r.push(b.get(ri, c));
-      left[j]!--;
-      if (left[j] === 0 && q.length) active[a] = q.shift()!;
+      left[j] = remaining - 1;
+      const next = left[j] === 0 ? q.shift() : undefined;
+      if (next !== undefined) active[a] = next;
     });
     if (r.length !== cols) throw new RangeError('Matrices provided do not appear to fill the space completely.');
     rows.push(r);

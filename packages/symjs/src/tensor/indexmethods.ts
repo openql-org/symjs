@@ -7,6 +7,7 @@
  * repeated indices summed over, Einstein convention).
  */
 
+import { at, getOrThrow } from '../core/guard';
 import type { Expr } from '../core/nodes';
 import { Add, Fn, Mul, Piecewise, Pow, UndefFn } from '../core/nodes';
 import { Indexed } from '../core/indexed';
@@ -71,8 +72,8 @@ function indicesOf(e: Expr): ExprSet {
   if (e instanceof Add) {
     const nonScalar = e.args.map(indicesOf).filter((s) => s.size > 0);
     if (!nonScalar.length) return new ExprSet();
-    if (!nonScalar.every((s) => s.sameAs(nonScalar[0]!))) throw new IndexConformanceException(`Indices are not consistent: ${e.toString()}`);
-    return nonScalar[0]!;
+    if (!nonScalar.every((s) => s.sameAs(at(nonScalar, 0)))) throw new IndexConformanceException(`Indices are not consistent: ${e.toString()}`);
+    return at(nonScalar, 0);
   }
   if (e instanceof Pow) {
     const out = new ExprSet();
@@ -103,11 +104,13 @@ export type ContractionKey = readonly Expr[] | null;
 /** The contraction structure: key -> terms, and nested structures under the expressions that contain them. */
 export type ContractionStructure = Map<ContractionKey | Expr, Set<Expr> | ContractionStructure[]>;
 
+const isKeyList = (k: ContractionKey | Expr): k is readonly Expr[] => Array.isArray(k);
+
 /** Keys compare by their indices. */
 function keyOf(k: ContractionKey | Expr): string {
   if (k === null) return 'None';
-  if (Array.isArray(k)) return `(${(k as readonly Expr[]).map((i) => i.key).join(',')})`;
-  return `expr:${(k as Expr).key}`;
+  if (isKeyList(k)) return `(${k.map((i) => i.key).join(',')})`;
+  return `expr:${k.key}`;
 }
 
 function isTrivial(d: ContractionStructure): boolean {
@@ -144,7 +147,7 @@ function structure(e: Expr): ContractionStructure {
           keys.set(id, k);
           result.set(k, v instanceof Set ? new Set(v) : [...v]);
         } else {
-          const cur = result.get(existing)!;
+          const cur = getOrThrow(result, existing);
           if (cur instanceof Set && v instanceof Set) for (const x of v) cur.add(x);
           else if (Array.isArray(cur) && Array.isArray(v)) cur.push(...v);
         }

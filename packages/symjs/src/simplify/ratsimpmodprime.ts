@@ -18,6 +18,7 @@ import { leadingMonomial, reduced, type MonomialOrder } from '../polys/groebner'
 import { Poly } from '../polys/sympoly';
 import { linsolve } from '../matrices/linsys';
 import { cancel, fraction } from './rational';
+import { at, defined, last } from '../core/guard';
 import { compareKeys, sortKey } from '../printing/sortkey';
 
 const isZero = (e: Expr) => e instanceof Rational && e.isZero;
@@ -29,13 +30,14 @@ function particularSolution(eqs: readonly Expr[], vars: readonly Sym[]): Map<str
   // pivot variables only (free variables are solved as themselves)
   const s = new Map<string, [Sym, Expr]>();
   vars.forEach((v, i) => {
-    if (sol0[i]!.key !== v.key) s.set(v.key, [v, sol0[i]!]);
+    const si = at(sol0, i);
+    if (si.key !== v.key) s.set(v.key, [v, si]);
   });
   if ([...s.values()].every(([, v]) => isZero(v)) && s.size === vars.length) return new Map([...s].map(([k, [, v]]) => [k, v]));
   const determined = new Map<string, Expr>();
   const update = () => {
     for (const [k, [v, e]] of [...s]) {
-      const e2 = xreplace(e, [...determined].map(([dk, dv]) => [vars.find((u) => u.key === dk)!, dv] as [Expr, Expr]));
+      const e2 = xreplace(e, [...determined].map(([dk, dv]): [Expr, Expr] => [defined(vars.find((u) => u.key === dk)), dv]));
       if (e2.freeSymbols().size === 0 || ![...e2.freeSymbols()].some((f) => vars.some((u) => u.key === f.key))) {
         determined.set(k, e2);
         s.delete(k);
@@ -51,8 +53,8 @@ function particularSolution(eqs: readonly Expr[], vars: readonly Sym[]): Map<str
       const b = m.freeSymbols().size;
       return a > b || (a === b && compareKeys(sortKey(e), sortKey(m)) > 0) ? e : m;
     });
-    const kfree = ordered([...k.freeSymbols()]) as Sym[];
-    const x = kfree[kfree.length - 1]!;
+    const kfree = ordered([...k.freeSymbols()]);
+    const x = last(kfree);
     if (kfree.length !== 1) determined.set(x.key, S.Zero);
     else {
       // k is linear in x: its root
@@ -75,18 +77,18 @@ export function ratsimpmodprime(exprIn: ExprLike, G: readonly ExprLike[], gens: 
   let [num, denom] = fraction(cancel(sympify(exprIn)));
   const lms = Gs.map((g) => leadingMonomial(g, gens, order));
   const tested = new Set<string>();
-  const divides = (m: number[], l: number[]) => l.every((k, i) => m[i]! >= k);
+  const divides = (m: number[], l: number[]) => l.every((k, i) => at(m, i) >= k);
   const staircase = (n: number): Expr[] => {
     if (n === 0) return [S.One];
     const out: Expr[] = [];
     const rec = (start: number, left: number, m: number[]) => {
       if (left === 0) {
-        if (lms.every((l) => !divides(m, l))) out.push(mul(...m.map((k, i) => pow(gens[i]!, k))));
+        if (lms.every((l) => !divides(m, l))) out.push(mul(...m.map((k, i) => pow(at(gens, i), k))));
         return;
       }
       for (let i = start; i < gens.length; i++) {
         const m2 = [...m];
-        m2[i]!++;
+        m2[i] = at(m2, i) + 1;
         rec(i, left - 1, m2);
       }
     };
@@ -108,14 +110,14 @@ export function ratsimpmodprime(exprIn: ExprLike, G: readonly ExprLike[], gens: 
       const M2 = staircase(D);
       const Cs = M1.map((_, i) => new Dummy(`c${i}`));
       const Ds = M2.map((_, i) => new Dummy(`d${i}`));
-      const cHat = add(...Cs.map((ci, i) => mul(ci, M1[i]!)));
-      const dHat = add(...Ds.map((di, i) => mul(di, M2[i]!)));
+      const cHat = add(...Cs.map((ci, i) => mul(ci, at(M1, i))));
+      const dHat = add(...Ds.map((di, i) => mul(di, at(M2, i))));
       const ng = [...Cs, ...Ds];
       const r = reduced(add(mul(a, dHat), mul(-1, b, cHat)), Gs, [...gens, ...ng], order)[1];
       const Seqs = Poly.from(r, gens).coeffs();
       const sol = particularSolution(Seqs, ng);
       if (sol && ![...sol.values()].every(isZero)) {
-        const reps = [...sol].map(([k, v]) => [ng.find((u) => u.key === k)!, v] as [Expr, Expr]);
+        const reps = [...sol].map(([k, v]): [Expr, Expr] => [defined(ng.find((u) => u.key === k)), v]);
         const ones = ng.map((u) => [u, S.One] as [Expr, Expr]);
         c = xreplace(xreplace(cHat, reps), ones);
         d = xreplace(xreplace(dHat, reps), ones);

@@ -53,7 +53,7 @@ export function round(xIn: ExprLike, n?: number): Expr {
   if (x instanceof Rational && x.isInteger) return Rational.of(roundInt(x.p, p));
   const digitsToDecimal = decimalMag(v[0]);
   let allow = digitsToDecimal + p;
-  const precs = atoms(x, (a) => a instanceof Float).map((f) => (f as Float).prec);
+  const precs = atoms(x, (a) => a instanceof Float).flatMap((f) => (f instanceof Float ? [f.prec] : []));
   let dps: number;
   if (precs.length) {
     dps = F.precToDps(Math.max(...precs));

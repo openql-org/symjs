@@ -9,7 +9,8 @@
  */
 
 import { isPositive } from '../core/assumptions';
-import type { Expr, ExprLike, FnName } from '../core/nodes';
+import { defined, first, pair } from '../core/guard';
+import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, Dummy, Fn, Mul, Pow, Rational, S, Special, Sym } from '../core/nodes';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { asCoefficient } from '../core/methods';
@@ -44,13 +45,12 @@ export function extractBranchFactor(eIn: ExprLike, allowHalf = false): [Expr, Ex
   let res: Expr = S.One;
   const exps: Expr[] = [];
   for (const a of e instanceof Mul ? e.args : [e]) {
-    if (isFnN(a, 'exp_polar')) exps.push(a.args[0]!);
+    if (isFnN(a, 'exp_polar')) exps.push(first(a.args));
     else res = mul(res, a);
   }
   let piimult: Expr = S.Zero;
   const extras: Expr[] = [];
-  while (exps.length) {
-    const x = exps.pop()!;
+  for (let x = exps.pop(); x !== undefined; x = exps.pop()) {
     if (x instanceof Add) {
       exps.push(...x.args);
       continue;
@@ -77,11 +77,11 @@ export function extractBranchFactor(eIn: ExprLike, allowHalf = false): [Expr, Ex
   if (!(coeff instanceof Rational)) return [e, S.Zero];
   // round down to the nearest multiple of 2
   const v = Rational.of(coeff.p, coeff.q * 2n);
-  const half = add(v, Rational.of(-1n, 2n)) as Rational;
+  const half = Rational.of(2n * v.p - v.q, 2n * v.q); // v - 1/2
   const ceil = half.p >= 0n ? (half.p + half.q - 1n) / half.q : -((-half.p) / half.q);
   const branchfact = Rational.of(ceil * 2n);
   let n: Expr = Rational.of(ceil);
-  let c = add(coeff, mul(-1, branchfact)) as Rational;
+  let c = Rational.of(coeff.p - branchfact.p * coeff.q, coeff.q); // coeff - branchfact
   if (allowHalf && c.p === c.q) {
     n = add(n, Rational.of(1n, 2n));
     c = S.Zero;
@@ -96,9 +96,9 @@ export function unpolarify(eIn: ExprLike): Expr {
   const go = (x: Expr): Expr => {
     if (x.args.length === 0) return x;
     const args = x.args.map(go);
-    if (isFnN(x, 'exp_polar')) return exp(args[0]!);
-    if (isFnN(x, 'polar_lift')) return args[0]!;
-    if (isFnN(x, 'principal_branch') && args[1]!.key === mul(2, S.Pi).key) return args[0]!;
+    if (isFnN(x, 'exp_polar')) return exp(first(args));
+    if (isFnN(x, 'polar_lift')) return first(args);
+    if (isFnN(x, 'principal_branch') && args[1]?.key === mul(2, S.Pi).key) return first(args);
     return args.every((a, i) => a === x.args[i]) ? x : rebuild(x, args);
   };
   return go(sympify(eIn));
@@ -107,8 +107,8 @@ export function unpolarify(eIn: ExprLike): Expr {
 function unbranched(ar: Expr): Expr | undefined {
   let u: Expr = S.Zero;
   for (const a of ar instanceof Mul ? ar.args : [ar]) {
-    if (isFnN(a, 'exp_polar')) u = add(u, im(a.args[0]!));
-    else if (isFnN(a, 'polar_lift')) u = add(u, arg(a.args[0]!));
+    if (isFnN(a, 'exp_polar')) u = add(u, im(first(a.args)));
+    else if (isFnN(a, 'polar_lift')) u = add(u, arg(first(a.args)));
     else if (a instanceof Pow && isPolar(a.base)) return undefined;
     else if (!isPolar(a)) u = add(u, arg(a));
     else return undefined;
@@ -118,8 +118,8 @@ function unbranched(ar: Expr): Expr | undefined {
 
 const evalPeriodicArgument = (ar: Expr, period: Expr): Expr | undefined => {
   if (isPositive(period) !== true) return undefined;
-  if (isOo(period) && isFnN(ar, 'principal_branch')) return periodicArgument(ar.args[0]!, ar.args[1]!);
-  if (isFnN(ar, 'polar_lift') && (isOo(period) || (period.freeSymbols().size === 0 && period.toNumber() >= 2 * Math.PI))) return periodicArgument(ar.args[0]!, period);
+  if (isOo(period) && isFnN(ar, 'principal_branch')) return periodicArgument(...pair(ar.args));
+  if (isFnN(ar, 'polar_lift') && (isOo(period) || (period.freeSymbols().size === 0 && period.toNumber() >= 2 * Math.PI))) return periodicArgument(first(ar.args), period);
   if (ar instanceof Mul) {
     const keep = ar.args.filter((x) => isPositive(x) !== true);
     if (keep.length !== ar.args.length) return periodicArgument(mul(...keep), period);
@@ -147,7 +147,7 @@ function findFns(e: Expr): Set<string> {
 }
 
 const evalPrincipalBranch = (x: Expr, period: Expr): Expr | undefined => {
-  if (isFnN(x, 'polar_lift')) return principalBranch(x.args[0]!, period);
+  if (isFnN(x, 'polar_lift')) return principalBranch(first(x.args), period);
   if (isOo(period)) return x;
   const factors = x instanceof Mul ? x.args : [x];
   let c: Expr = S.One;
@@ -198,20 +198,29 @@ evaluators.exp_polar = () => undefined;
 evaluators.polar_lift = evalPolarLift;
 evaluators.periodic_argument = evalPeriodicArgument;
 evaluators.principal_branch = evalPrincipalBranch;
-fnPartials.exp_polar = ([z]) => expPolar(z!);
-mpFns.exp_polar = ([z], p) => M.cexp(z!, p);
-mpFns.polar_lift = ([z]) => z!;
-numericFns.exp_polar = ([z]) => {
-  const m = Math.exp(z!.re);
-  return { re: m * Math.cos(z!.im), im: m * Math.sin(z!.im) };
+fnPartials.exp_polar = (args) => expPolar(first(args));
+mpFns.exp_polar = (args, p) => M.cexp(first(args), p);
+mpFns.polar_lift = (args) => first(args);
+numericFns.exp_polar = (args) => {
+  const z = first(args);
+  const m = Math.exp(z.re);
+  return { re: m * Math.cos(z.im), im: m * Math.sin(z.im) };
 };
-numericFns.polar_lift = ([z]) => z!;
+numericFns.polar_lift = (args) => first(args);
 
 // ---------------------------------------------------------------------------
 // branch rules of the exponential integrals
 // ---------------------------------------------------------------------------
 
-const base = { ...evaluators };
+/** The evaluators of special.ts, captured before the branch rules below wrap them. */
+const base = {
+  Ei: defined(evaluators.Ei),
+  expint: defined(evaluators.expint),
+  Si: defined(evaluators.Si),
+  Ci: defined(evaluators.Ci),
+  Shi: defined(evaluators.Shi),
+  Chi: defined(evaluators.Chi),
+};
 const pl = (z: ExprLike) => polarLift(z);
 const extractFactor = (z: Expr, f: Expr): Expr | undefined => {
   const fs = z instanceof Mul ? z.args : [z];
@@ -220,7 +229,7 @@ const extractFactor = (z: Expr, f: Expr): Expr | undefined => {
 };
 
 evaluators.Ei = (z) => {
-  const r = base.Ei!(z);
+  const r = base.Ei(z);
   if (r !== undefined) return r;
   const [nz, n] = extractBranchFactor(z);
   if (!(n instanceof Rational && n.isZero)) return add(Ei(nz), mul(2, S.I, S.Pi, n));
@@ -228,8 +237,8 @@ evaluators.Ei = (z) => {
 };
 
 function trigIntegral(name: 'Si' | 'Ci' | 'Shi' | 'Chi', self: (z: Expr) => Expr, iFactor: (z: Expr, s: number) => Expr, minus: (z: Expr) => Expr, atZeroIsZero: boolean): void {
-  const prev = base[name as FnName]!;
-  evaluators[name as FnName] = (z) => {
+  const prev = base[name];
+  evaluators[name] = (z) => {
     for (const [f, s] of [
       [pl(S.I), 1],
       [pl(mul(-1, S.I)), -1],
@@ -253,7 +262,7 @@ trigIntegral('Si', Si, (z, s) => mul(S.I, Shi(z), s), (z) => mul(-1, Si(z)), tru
 trigIntegral('Shi', Shi, (z, s) => mul(S.I, Si(z), s), (z) => mul(-1, Shi(z)), true);
 
 evaluators.expint = (nu, z) => {
-  const r = base.expint!(nu, z);
+  const r = base.expint(nu, z);
   if (r !== undefined) return r;
   const [nz, n] = extractBranchFactor(z);
   if (n instanceof Rational && n.isZero) return undefined;

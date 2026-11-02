@@ -11,6 +11,7 @@ import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { Rational } from '../core/nodes';
 import { mul, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
+import { at, defined, getOrThrow } from '../core/guard';
 import { groebner } from '../polys/groebner';
 import { roots } from '../polys/poly';
 import { compareKeys, sortKey } from '../printing/sortkey';
@@ -44,10 +45,13 @@ function factorSystemRaw(eqsIn: readonly ExprLike[], gensIn: readonly Expr[]): F
   const eqs = eqsIn.map((e) => expand(sympify(e)));
   const all = new Map<string, Sym>();
   for (const e of eqs) for (const s of freeSymbols(e)) all.set(s.key, s);
-  const gens = (gensIn.length ? gensIn : sortGens([...all.values()])) as Sym[];
+  // sortGens returns the same Sym instances, looked up again by key to keep their type
+  const sortSyms = (xs: Sym[]): Sym[] => sortGens(xs).map((g) => getOrThrow(all, g.key));
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- user generators are passed through as is (factorListExpr types its generators as Sym but treats them as Poly generators)
+  const gens: readonly Sym[] = gensIn.length ? (gensIn as readonly Sym[]) : sortSyms([...all.values()]);
   const genKeys = new Set(gens.map((g) => g.key));
   if (!gens.length) return eqs.every((e) => e instanceof Rational && e.isZero) ? [[]] : [];
-  const vars = [...gens, ...sortGens([...all.values()].filter((s) => !genKeys.has(s.key))) as Sym[]];
+  const vars = [...gens, ...sortSyms([...all.values()].filter((s) => !genKeys.has(s.key)))];
   const hasGen = (e: Expr) => [...freeSymbols(e)].some((s) => genKeys.has(s.key));
 
   const factorSets: Factor[][] = [];
@@ -110,21 +114,21 @@ function cmpAtom(a: number | Expr, b: number | Expr): number {
 
 function cmpList(a: (number | Expr)[], b: (number | Expr)[]): number {
   for (let i = 0; i < Math.min(a.length, b.length); i++) {
-    const c = cmpAtom(a[i]!, b[i]!);
+    const c = cmpAtom(at(a, i), at(b, i));
     if (c) return c;
   }
   return a.length - b.length;
 }
 
 function cmpKey(a: Key, b: Key): number {
-  return cmpList(a[0]!, b[0]!) || cmpList(a[1]!, b[1]!);
+  return cmpList(at(a, 0), at(b, 0)) || cmpList(at(a, 1), at(b, 1));
 }
 
 /** SymPy _sys_sort_key: degree lists of all members first, then representations. */
 function cmpSysKey(a: Key[], b: Key[]): number {
   for (let part = 0; part < 2; part++) {
     for (let i = 0; i < Math.min(a.length, b.length); i++) {
-      const c = cmpList(a[i]![part]!, b[i]![part]!);
+      const c = cmpList(at(at(a, i), part), at(at(b, i), part));
       if (c) return c;
     }
     if (a.length !== b.length) return a.length - b.length;
@@ -143,7 +147,7 @@ export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], 
   const sols = solveReduced(system, gens, true, opts.rationalOnly ?? false);
   return sols.sort((a, b) => {
     for (let i = 0; i < a.length; i++) {
-      const c = compareKeys(sortKey(a[i]!), sortKey(b[i]!));
+      const c = compareKeys(sortKey(at(a, i)), sortKey(at(b, i)));
       if (c) return c;
     }
     return 0;
@@ -151,17 +155,17 @@ export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], 
 }
 
 function solveReduced(system: Expr[], gens: readonly Sym[], entry: boolean, rationalOnly: boolean): Expr[][] {
-  const gen = gens[gens.length - 1]!;
+  const gen = at(gens, -1);
   const distinctRoots = (f: Expr): Expr[] => {
     const seen = new Map<string, Expr>();
     for (const r of roots(f, gen)) if (!rationalOnly || r instanceof Rational) seen.set(r.key, r);
     return [...seen.values()];
   };
-  if (system.length === 1 && gens.length === 1) return distinctRoots(system[0]!).map((z) => [z]);
+  if (system.length === 1 && gens.length === 1) return distinctRoots(at(system, 0)).map((z) => [z]);
   if (gens.length === 1) {
     // common roots (works for algebraic coefficients, unlike the Gröbner basis over QQ)
     const [first, ...others] = [...system].sort((a, b) => Poly.from(a, [gen]).degree() - Poly.from(b, [gen]).degree());
-    return distinctRoots(first!)
+    return distinctRoots(defined(first, 'equation'))
       .filter((z) => others.every((o) => expand(xreplace(o, [[gen, z]])).equals(Rational.of(0))))
       .map((z) => [z]);
   }
@@ -170,7 +174,7 @@ function solveReduced(system: Expr[], gens: readonly Sym[], entry: boolean, rati
   const others = new Set(gens.slice(0, -1).map((g) => g.key));
   const univariate = basis.filter((b) => ![...freeSymbols(b)].some((s) => others.has(s.key)) && b.has(gen));
   if (univariate.length !== 1) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
-  const f = univariate[0]!;
+  const f = at(univariate, 0);
   const zeros = distinctRoots(f);
   if (basis.length === 1) return zeros.map((z) => [z]);
   const out: Expr[][] = [];
@@ -183,7 +187,7 @@ function solveReduced(system: Expr[], gens: readonly Sym[], entry: boolean, rati
     const partial = rationalCoeffs ? solveReduced(sub, gens.slice(0, -1), false, rationalOnly) : backSubstitute(sub, gens.slice(0, -1), rationalOnly);
     for (const s of partial) out.push([...s, z]);
   }
-  if (entry && out.length && out[0]!.length !== gens.length) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
+  if (entry && out.length && at(out, 0).length !== gens.length) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
   return out;
 }
 
@@ -196,7 +200,7 @@ const hasIrrational = (e: Expr): boolean => {
 /** Solutions of a triangular system with algebraic coefficients, last generator first. */
 function backSubstitute(system: Expr[], gens: readonly Sym[], rationalOnly: boolean): Expr[][] {
   if (!gens.length) return system.every((b) => Math.abs(b.toComplex().re) + Math.abs(b.toComplex().im) < 1e-9) ? [[]] : [];
-  const gen = gens[gens.length - 1]!;
+  const gen = at(gens, -1);
   const others = new Set(gens.slice(0, -1).map((g) => g.key));
   const uni = system.filter((b) => b.has(gen) && ![...freeSymbols(b)].some((s) => others.has(s.key)));
   if (!uni.length) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
@@ -206,7 +210,7 @@ function backSubstitute(system: Expr[], gens: readonly Sym[], rationalOnly: bool
     return Math.hypot(c.re, c.im) < 1e-9;
   };
   const seen = new Map<string, Expr>();
-  for (const r0 of roots(first!, gen)) {
+  for (const r0 of roots(defined(first, 'equation'), gen)) {
     // roots of polynomials with algebraic coefficients come with radical denominators
     const r = expand(radsimp(r0));
     if (!rationalOnly || r instanceof Rational) seen.set(r.key, r);

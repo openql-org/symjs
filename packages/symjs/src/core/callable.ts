@@ -9,5 +9,6 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export function callableClass<C extends abstract new (...args: any[]) => any, F extends (...args: any[]) => any>(cls: C, call: F): C & F {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the Proxy's apply trap makes the class callable as F; the type system cannot express a Proxy that adds a call signature
   return new Proxy(cls, { apply: (_target, _self, args) => call(...args) }) as C & F;
 }

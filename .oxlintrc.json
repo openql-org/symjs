@@ -62,7 +62,9 @@
             "name": "Error",
             "message": "throw a specific error class (TypeError, RangeError, NotImplementedError, PolynomialError, ... in core/errors.ts), see docs/api-policy.md"
           }
-        ]
+        ],
+        "typescript/no-non-null-assertion": "error",
+        "typescript/no-unsafe-type-assertion": "error"
       }
     },
     {

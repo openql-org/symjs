@@ -7,13 +7,13 @@
  * apart_list, assemble_partfrac_list).
  */
 
-import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Dummy, ExtensionExpr, Mul, Rational, S } from '../core/nodes';
+import { at, cast, first, pair } from '../core/guard';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Dummy, ExtensionExpr, Mul, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { asIndependent } from '../core/methods';
-import type { LambdaNode } from '../core/lambda';
-import { Lambda } from '../core/lambda';
+import { Lambda, LambdaNode } from '../core/lambda';
 import { Function } from '../core/undef';
 import { diff } from '../calculus/diff';
 import { cancel, fraction, together } from '../simplify/rational';
@@ -27,13 +27,13 @@ export class RootSumNode extends ExtensionExpr {
     super('RootSum', args);
   }
   get poly(): Expr {
-    return this.args[0]!;
+    return at(this.args, 0);
   }
   get fun(): LambdaNode {
-    return this.args[1] as LambdaNode;
+    return cast(at(this.args, 1), LambdaNode, 'RootSum function');
   }
   get variable(): Expr {
-    return this.args[2]!;
+    return at(this.args, 2);
   }
   withArgs(args: readonly Expr[]): Expr {
     return new RootSumNode(args);
@@ -49,7 +49,7 @@ export class RootSumNode extends ExtensionExpr {
   }
   /** The sum over the roots (in radicals). */
   override doitSelf(): Expr {
-    return add(...roots(this.poly, this.variable as Sym).map((r) => this.fun.call(r)));
+    return add(...roots(this.poly, cast(this.variable, Sym, 'RootSum variable')).map((r) => this.fun.call(r)));
   }
 }
 
@@ -61,7 +61,7 @@ export function RootSum(polyIn: ExprLike, x: Sym, fun: LambdaNode): Expr {
   const poly = sympify(polyIn);
   const P = Poly.from(poly, [x]);
   const deg = P.degree();
-  const v = fun.variables[0]!;
+  const v = first(fun.variables);
   let body = fun.expr;
   if (!body.has(v)) return mul(deg, body);
   let addConst: Expr = S.Zero;
@@ -80,8 +80,8 @@ export function RootSum(polyIn: ExprLike, x: Sym, fun: LambdaNode): Expr {
   const terms: Expr[] = [];
   for (const [g, k] of P.factorList()[1]) {
     if (g.degree() === 1) {
-      const [c1, c0] = g.allCoeffs();
-      terms.push(mul(k, f.call(mul(-1, c0!, pow(c1!, -1)))));
+      const [c1, c0] = pair(g.allCoeffs());
+      terms.push(mul(k, f.call(mul(-1, c0, pow(c1, -1)))));
     } else {
       terms.push(mul(k, new RootSumNode([g.asExpr(), f, x])));
     }
@@ -124,13 +124,13 @@ export function apartList(fIn: ExprLike, x: Sym): [Expr, Poly, PartfracTerm[], S
     const b = d.asExpr();
     const h = mul(cancel(mul(P.asExpr(), pow(Q.quo(d.pow(n)).asExpr(), -1))), pow(u, -n));
     const H: Expr[] = [h];
-    for (let j = 1; j < n; j++) H.push(mul(diff(H[j - 1]!, x), Rational.of(1, j)));
+    for (let j = 1; j < n; j++) H.push(mul(diff(at(H, j - 1), x), Rational.of(1, j)));
     const subs: [Expr, Expr][] = [];
     for (let j = 1; j <= n; j++) subs.push([U(j - 1), mul(diff(b, x, j), Rational.of(1, j))]);
     for (let j = 0; j < n; j++) {
-      let [p, q] = fraction(cancel(H[j]!));
-      for (let i = 0; i <= j; i++) p = p.subs([subs[j - i]!]);
-      q = q.subs([subs[0]!]);
+      let [p, q] = fraction(cancel(at(H, j)));
+      for (let i = 0; i <= j; i++) p = p.subs([at(subs, j - i)]);
+      q = q.subs([at(subs, 0)]);
       const Pp = Poly.from(p, [x]);
       const Qp = Poly.from(q, [x]);
       const G = Pp.gcd(d);
@@ -139,7 +139,7 @@ export function apartList(fIn: ExprLike, x: Sym): [Expr, Poly, PartfracTerm[], S
       const bb = Pp.mul(B.quo(g)).rem(D);
       const Dw = xreplace(D.asExpr(), [[x, w]]);
       // coefficients as cancelled fractions (SymPy's ground field of rational functions)
-      const numer = add(...bb.terms().map(([[k], c]) => mul(clearedFraction(c), pow(a, k!))));
+      const numer = add(...bb.terms().map(([m, c]) => mul(clearedFraction(c), pow(a, first(m)))));
       out.push([Dw, Lambda(a, numer), Lambda(a, add(x, mul(-1, a))), n - j]);
     }
   }
@@ -151,8 +151,8 @@ export function assemblePartfracList(list: [Expr, Poly, PartfracTerm[], Sym]): E
   const [common, polyPart, terms, w] = list;
   const parts: Expr[] = [polyPart.asExpr()];
   for (const [r, nf, df, ex] of terms) {
-    const a = nf.variables[0]!;
-    const de = xreplace(df.expr, [[df.variables[0]!, a]]);
+    const a = first(nf.variables);
+    const de = xreplace(df.expr, [[first(df.variables), a]]);
     const fun = Lambda(a, mul(nf.expr, pow(de, -ex)));
     if (Array.isArray(r)) parts.push(...r.map((root) => fun.call(root)));
     else parts.push(RootSum(r, w, fun));

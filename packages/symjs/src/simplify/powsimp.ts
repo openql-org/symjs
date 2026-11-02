@@ -18,6 +18,7 @@ import { compareKeys, sortKey } from '../printing/sortkey';
 import { expand_log, expandMul } from './expand';
 import { factorTerms } from './exprtools';
 import { fraction } from './rational';
+import { defined, first, getOrThrow } from '../core/guard';
 
 type Combine = 'all' | 'exp' | 'base';
 export interface PowsimpOptions {
@@ -27,6 +28,8 @@ export interface PowsimpOptions {
 }
 
 const isExpPow = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
+/** The exponent of exp(x), or undefined for any other node. */
+const expExponent = (e: Expr): Expr | undefined => (e instanceof Pow && isExpPow(e) ? e.exp : undefined);
 const isRat = (e: Expr): e is Rational => e instanceof Rational;
 const isInt = (e: Expr): e is Rational => e instanceof Rational && e.isInteger;
 const isOneE = (e: Expr) => e instanceof Rational && e.isOne;
@@ -102,8 +105,8 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
   if (expr.args.length === 0) return expr;
 
   if (deep || expr instanceof Add || (expr instanceof Mul && !expr.args.some((a) => a.key === Y.key))) {
-    const args = isExpPow(expr) ? [recurse((expr as Pow).exp)] : expr.args.map((w) => recurse(w));
-    expr = isExpPow(expr) ? exp(args[0]!) : rebuild(expr, args);
+    const ex = expExponent(expr);
+    expr = ex !== undefined ? exp(recurse(ex)) : rebuild(expr, expr.args.map((w) => recurse(w)));
   }
   if (expr instanceof Pow) {
     return mul(recurse(mul(expr, Y), { deep: false }), pow(Y, -1));
@@ -166,14 +169,14 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
         }
         if (b.key !== binv.key && summed.has(binv)) {
           if (isOneE(fraction(b)[0])) {
-            const e = summed.get(b)!;
+            const e = defined(summed.get(b));
             summed.delete(b);
-            summed.set(binv, add(summed.get(binv)!, mul(-1, e)));
+            summed.set(binv, add(defined(summed.get(binv)), mul(-1, e)));
           } else {
             skip.add(binv.key);
-            const e = summed.get(binv)!;
+            const e = defined(summed.get(binv));
             summed.delete(binv);
-            summed.set(b, add(summed.get(b)!, mul(-1, e)));
+            summed.set(b, add(defined(summed.get(b)), mul(-1, e)));
           }
         }
         void e0;
@@ -182,16 +185,18 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
     // base and negated base pairs
     for (const [b] of summed.entries()) {
       const nb = mul(-1, b);
-      if ((b instanceof Sym || b instanceof Add) && summed.has(nb) && summed.has(b)) {
-        let e = summed.get(b)!;
+      const eb = summed.get(b);
+      const enb = summed.get(nb);
+      if ((b instanceof Sym || b instanceof Add) && enb !== undefined && eb !== undefined) {
+        let e = eb;
         if (isPositive(b) !== undefined || isIntegerQ(e) === true) {
           if (isIntegerQ(e) === true || isNegative(b) === true) {
-            summed.set(nb, add(summed.get(nb)!, e));
+            summed.set(nb, add(enb, e));
             summed.delete(b);
           } else {
-            e = summed.get(nb)!;
+            e = enb;
             summed.delete(nb);
-            summed.set(b, add(summed.get(b)!, e));
+            summed.set(b, add(eb, e));
           }
           const cur = summed.get(S.NegOne);
           summed.set(S.NegOne, cur ? add(cur, e) : e);
@@ -224,8 +229,8 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
     const cbGet = (k: BKey) => commonB.get(k.key)?.[1];
     const cbSet = (k: BKey, v: Expr) => commonB.set(k.key, [commonB.get(k.key)?.[0] ?? k, v]);
     const update = (k: BKey) => {
-      const v = cbGet(k)!;
-      if (!isInt(v)) return;
+      const v = cbGet(k);
+      if (v === undefined || !isInt(v)) return;
       const q = BigInt(k.q);
       const newe = v.p >= 0n ? v.p / q : -((-v.p + q - 1n) / q);
       const r = v.p - newe * q;
@@ -242,7 +247,8 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
     };
     for (const [b0, e0] of cList) {
       const [b, e] = bkey(b0, e0);
-      cbSet(b, cbGet(b) ? add(cbGet(b)!, e) : e);
+      const cur = cbGet(b);
+      cbSet(b, cur ? add(cur, e) : e);
       if (b.q !== 1n && b.b instanceof Mul) bases.push(b);
     }
     bases.sort((x, y) => compareKeys(sortKey(x.b), sortKey(y.b)) || Number(x.q - y.q));
@@ -257,7 +263,7 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
         const bstart = b;
         const qstart = qlcm;
         let bb: BKey[] = [];
-        let ee: [Expr, Expr][] = [];
+        let ee: [Rational, Rational][] = [];
         for (const bi of mulArgs(b)) {
           const [bib, bie] = bkey(bi);
           const cur = cbGet(bib);
@@ -274,10 +280,12 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
             const q = a.p / d.p;
             return a.p < 0n !== d.p < 0n && q * d.p !== a.p ? q - 1n : q;
           };
-          let min1 = fl(ee[0]![1] as Rational, ee[0]![0] as Rational);
+          const e0 = first(ee);
+          const eRest = ee.slice(1);
+          let min1 = fl(e0[1], e0[0]);
           let ok = true;
-          for (let i = 1; i < ee.length; i++) {
-            const rat = fl(ee[i]![1] as Rational, ee[i]![0] as Rational);
+          for (const [eie, eicur] of eRest) {
+            const rat = fl(eicur, eie);
             if (rat < 1n) {
               ok = false;
               break;
@@ -285,10 +293,10 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
             if (rat < min1) min1 = rat;
           }
           if (ok) {
-            for (let i = 0; i < bb.length; i++) {
-              cbSet(bb[i]!, add(cbGet(bb[i]!)!, mul(-1, Rational.of(min1), ee[i]![0])));
-              if (commonB.has(bb[i]!.key)) update(bb[i]!);
-            }
+            bb.forEach((bk, i) => {
+              cbSet(bk, add(defined(cbGet(bk)), mul(-1, Rational.of(min1), defined(ee[i])[0])));
+              if (commonB.has(bk.key)) update(bk);
+            });
             cbSet(base, add(cbGet(base) ?? S.Zero, mul(Rational.of(min1), Rational.of(qstart), exponent)));
           }
         }
@@ -347,7 +355,7 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
   };
   for (const [e, bases] of cExp.entries()) {
     let newBase: Expr;
-    if (bases.length === 1) newBase = bases[0]!;
+    if (bases.length === 1) newBase = first(bases);
     else if (isIntegerQ(e) === true || force) newBase = mul(...bases);
     else {
       let unk: Expr[] = [];
@@ -392,7 +400,7 @@ const Y = new Dummy('y');
 
 function orderedEntries<V>(xs: [Expr, V][]): [Expr, V][] {
   const keys = ordered(xs.map(([k]) => k));
-  return keys.map((k) => xs.find(([b]) => b.key === k.key)!);
+  return keys.map((k) => defined(xs.find(([b]) => b.key === k.key)));
 }
 
 /** SymPy _denest_pow: denest one power. */
@@ -414,7 +422,7 @@ function denestPow(eq: Pow): Expr {
     const logb = expand_log(log(b));
     if (logb instanceof Mul) {
       const [c, l] = splitCoeff(logb);
-      if (l instanceof Fn && l.name === 'log') return pow(l.args[0]!, mul(e, c));
+      if (l instanceof Fn && l.name === 'log') return pow(first(l.args), mul(e, c));
     }
   }
   if (!(b instanceof Mul) || b.args.some((s) => s.args.length === 0)) return eq;
@@ -429,7 +437,7 @@ function denestPow(eq: Pow): Expr {
       const common = mulArgs(mb).filter((x) => sa.has(x.key));
       return mul(g, ...common);
     };
-    const g = args.slice(1).reduce(ncGcd, args[0]!);
+    const g = args.slice(1).reduce(ncGcd, first(args));
     // the gcd stays outside the sum (SymPy _keep_coeff)
     if (!isOneE(g)) glogb = keepCoeff(g, add(...args.map((a) => mul(a, pow(g, -1)))));
   }
@@ -517,7 +525,7 @@ export function logcombine(exprIn: ExprLike, opts: { force?: boolean } = {}): Ex
   const gooda = (a: Expr) =>
     !(a instanceof Rational && a.p === -1n && a.q === 1n) && (isReal(a) === true || (force && isReal(a) !== false));
   const goodlog = (l: Fn) => {
-    const a = l.args[0]!;
+    const a = first(l.args);
     return isPositive(a) === true || (force && !(isNegative(a) === true || (a instanceof Rational && a.isZero)));
   };
   const f = (rv: Expr): Expr => {
@@ -547,25 +555,29 @@ export function logcombine(exprIn: ExprLike, opts: { force?: boolean } = {}): Ex
           else ot.push(ai);
         }
         if (lo.length > 1) logs.push([ot, co, lo]);
-        else if (lo.length) put(ot, [co, lo[0]!]);
+        else if (lo.length) put(ot, [co, first(lo)]);
         else other.push(a);
       }
     }
-    if (other.length === 1 && isLog(other[0]!)) put([], [[], other.pop() as Fn]);
-    if (!logs.length && [...log1.values()].every((v) => v.items.length === 1 && v.items[0]![0].length === 0)) return rv;
+    const only = other.length === 1 ? first(other) : undefined;
+    if (only !== undefined && isLog(only)) {
+      other.pop();
+      put([], [[], only]);
+    }
+    if (!logs.length && [...log1.values()].every((v) => v.items.length === 1 && first(v.items)[0].length === 0)) return rv;
     for (const [o, e0, l0] of logs) {
-      const l = ordered(l0) as Fn[];
-      let e: Expr = log(pow(l.shift()!.args[0]!, mul(...e0)));
-      while (l.length) e = log(pow(l.shift()!.args[0]!, e));
+      const [l1, ...lRest] = ordered(l0).map((x) => first(x.args));
+      let e: Expr = log(pow(defined(l1), mul(...e0)));
+      for (const li of lRest) e = log(pow(li, e));
       const c = mul(...o);
       if (isLog(e)) put([c], [[], e]);
       else other.push(mul(c, e));
     }
-    const combined = new Map<string, [Expr, Expr]>();
+    const combined = new Map<string, [Expr, Expr, Expr]>();
     for (const { k, items } of log1.values()) {
       const kk = mul(...k);
-      const inner = logcombine(mul(...items.map(([c, l]) => pow(l.args[0]!, mul(...c)))), opts);
-      combined.set(kk.key, [kk, new Fn('log', [inner])]);
+      const inner = logcombine(mul(...items.map(([c, l]) => pow(first(l.args), mul(...c)))), opts);
+      combined.set(kk.key, [kk, new Fn('log', [inner]), inner]);
     }
     for (const k of ordered([...combined.values()].map(([kk]) => kk))) {
       if (!combined.has(k.key)) continue;
@@ -574,13 +586,13 @@ export function logcombine(exprIn: ExprLike, opts: { force?: boolean } = {}): Ex
         let num = k;
         let den = nk;
         if (countOps(num) > countOps(den)) [num, den] = [den, num];
-        const a = combined.get(num.key)![1].args[0]!;
-        const b = combined.get(den.key)![1].args[0]!;
+        const a = getOrThrow(combined, num.key)[2];
+        const b = getOrThrow(combined, den.key)[2];
         combined.delete(num.key);
         combined.delete(den.key);
         other.push(mul(num, new Fn('log', [mul(a, pow(b, -1))])));
       } else {
-        other.push(mul(k, combined.get(k.key)![1]));
+        other.push(mul(k, getOrThrow(combined, k.key)[1]));
         combined.delete(k.key);
       }
     }
@@ -588,8 +600,13 @@ export function logcombine(exprIn: ExprLike, opts: { force?: boolean } = {}): Ex
   };
   const bottomUp = (e: Expr): Expr => {
     if (e.args.length === 0) return e;
-    const args = isExpPow(e) ? [bottomUp((e as Pow).exp)] : e.args.map(bottomUp);
-    const ne = isExpPow(e) ? exp(args[0]!) : args.every((a, i) => a === e.args[i]) ? e : rebuild(e, args);
+    const ex = expExponent(e);
+    let ne: Expr;
+    if (ex !== undefined) ne = exp(bottomUp(ex));
+    else {
+      const args = e.args.map(bottomUp);
+      ne = args.every((a, i) => a === e.args[i]) ? e : rebuild(e, args);
+    }
     return f(ne);
   };
   return bottomUp(sympify(exprIn));

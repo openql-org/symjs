@@ -9,6 +9,7 @@
  * monomials, and bool_map.
  */
 
+import { at, cast, getOrThrow } from '../core/guard';
 import type { Expr } from '../core/nodes';
 import { BoolAtom, Dummy, Rational, Rel, S, Sym, impl } from '../core/nodes';
 import { ExprMap } from '../core/exprmap';
@@ -65,14 +66,14 @@ function simplifiedPairs(terms: readonly Term[]): Term[] {
     const ones = t.filter((x) => x === 1).length;
     termdict.set(ones, [...(termdict.get(ones) ?? []), n]);
   });
-  const nvars = terms[0]!.length;
+  const nvars = at(terms, 0).length;
   for (let k = 0; k < nvars; k++) {
     for (const i of termdict.get(k) ?? []) {
       for (const j of termdict.get(k + 1) ?? []) {
-        const index = checkPair(terms[i]!, terms[j]!);
+        const index = checkPair(at(terms, i), at(terms, j));
         if (index !== -1) {
           todo[i] = todo[j] = null;
-          const newterm = [...terms[i]!];
+          const newterm = [...at(terms, i)];
           newterm[index] = 3;
           if (!includesTerm(simplified, newterm)) simplified.push(newterm);
         }
@@ -80,7 +81,7 @@ function simplifiedPairs(terms: readonly Term[]): Term[] {
     }
   }
   if (simplified.length) simplified = simplifiedPairs(simplified);
-  for (const i of todo) if (i !== null) simplified.push(terms[i]!);
+  for (const i of todo) if (i !== null) simplified.push(at(terms, i));
   return simplified;
 }
 
@@ -95,9 +96,9 @@ function remRedundancy(l1: readonly Term[], terms: readonly Term[]): Term[] {
   l1.forEach((prime, pi) => {
     terms.forEach((term, ti) => {
       if (prime.every((t, n) => t === 3 || t === term[n])) {
-        dom[ti]![pi] = 1;
-        colcount[pi]!++;
-        rowcount[ti]!++;
+        at(dom, ti)[pi] = 1;
+        colcount[pi] = at(colcount, pi) + 1;
+        rowcount[ti] = at(rowcount, ti) + 1;
       }
     });
   });
@@ -106,17 +107,17 @@ function remRedundancy(l1: readonly Term[], terms: readonly Term[]): Term[] {
     changed = false;
     for (let ri = 0; ri < nterms; ri++) {
       if (!rowcount[ri]) continue;
-      const row = dom[ri]!;
+      const row = at(dom, ri);
       for (let r2 = 0; r2 < nterms; r2++) {
-        if (ri !== r2 && rowcount[ri] && rowcount[ri]! <= rowcount[r2]!) {
-          const row2 = dom[r2]!;
-          if (row2.every((v, n) => v >= row[n]!)) {
+        if (ri !== r2 && rowcount[ri] && at(rowcount, ri) <= at(rowcount, r2)) {
+          const row2 = at(dom, r2);
+          if (row2.every((v, n) => v >= at(row, n))) {
             rowcount[r2] = 0;
             changed = true;
             row2.forEach((p, pi) => {
               if (p) {
                 row2[pi] = 0;
-                colcount[pi]!--;
+                colcount[pi] = at(colcount, pi) - 1;
               }
             });
           }
@@ -127,7 +128,7 @@ function remRedundancy(l1: readonly Term[], terms: readonly Term[]): Term[] {
     const column = (c: number): number[] => {
       let col = colcache.get(c);
       if (!col) {
-        col = dom.map((r) => r[c]!);
+        col = dom.map((r) => at(r, c));
         colcache.set(c, col);
       }
       return col;
@@ -136,15 +137,15 @@ function remRedundancy(l1: readonly Term[], terms: readonly Term[]): Term[] {
       if (!colcount[ci]) continue;
       const col = column(ci);
       for (let c2 = 0; c2 < nl1; c2++) {
-        if (ci !== c2 && colcount[c2] && colcount[ci]! >= colcount[c2]!) {
+        if (ci !== c2 && colcount[c2] && at(colcount, ci) >= at(colcount, c2)) {
           const col2 = column(c2);
-          if (col.every((v, n) => v >= col2[n]!)) {
+          if (col.every((v, n) => v >= at(col2, n))) {
             colcount[c2] = 0;
             changed = true;
             col2.forEach((t, ti) => {
-              if (t && dom[ti]![c2]) {
-                dom[ti]![c2] = 0;
-                rowcount[ti]!--;
+              if (t && at(dom, ti)[c2]) {
+                at(dom, ti)[c2] = 0;
+                rowcount[ti] = at(rowcount, ti) - 1;
               }
             });
           }
@@ -156,21 +157,21 @@ function remRedundancy(l1: readonly Term[], terms: readonly Term[]): Term[] {
       let maxterms = 0;
       let best = -1;
       for (let ci = 0; ci < nl1; ci++) {
-        if (colcount[ci]! > maxterms) {
+        if (at(colcount, ci) > maxterms) {
           best = ci;
-          maxterms = colcount[ci]!;
+          maxterms = at(colcount, ci);
         }
       }
       if (best !== -1 && maxterms > 1) {
-        const bestcol = colcache.get(best)!;
+        const bestcol = column(best);
         for (let pi = 0; pi < nl1; pi++) {
           if (pi === best) continue;
           bestcol.forEach((t, ti) => {
-            if (t && dom[ti]![pi]) {
-              dom[ti]![pi] = 0;
+            if (t && at(dom, ti)[pi]) {
+              at(dom, ti)[pi] = 0;
               changed = true;
-              rowcount[ti]!--;
-              colcount[pi]!--;
+              rowcount[ti] = at(rowcount, ti) - 1;
+              colcount[pi] = at(colcount, pi) - 1;
             }
           });
         }
@@ -190,8 +191,8 @@ function inputToBinlist(inputs: readonly TermSpec[], variables: readonly Expr[])
       const free = variables.filter((v) => !spec.has(v.key));
       for (let k = 0; k < 2 ** free.length; k++) {
         const t = integerToTerm(k, free.length);
-        const d = new Map(free.map((v, i) => [v.key, t[i]!] as const));
-        out.push(variables.map((v) => spec.get(v.key) ?? d.get(v.key)!));
+        const d = new Map(free.map((v, i) => [v.key, at(t, i)] as const));
+        out.push(variables.map((v) => spec.get(v.key) ?? getOrThrow(d, v.key)));
       }
     } else if (Array.isArray(val)) {
       if (val.length !== bits) throw new RangeError(`Each term must contain ${bits} bits as there are ${bits} variables (or be an integer).`);
@@ -201,8 +202,8 @@ function inputToBinlist(inputs: readonly TermSpec[], variables: readonly Expr[])
   return out;
 }
 
-const toVarsSOP = (t: Term, vars: readonly Expr[]): Expr => andFn(...t.flatMap((v, n) => (v === 3 ? [] : [v === 1 ? vars[n]! : notFn(vars[n]!)])));
-const toVarsPOS = (t: Term, vars: readonly Expr[]): Expr => orFn(...t.flatMap((v, n) => (v === 3 ? [] : [v === 0 ? vars[n]! : notFn(vars[n]!)])));
+const toVarsSOP = (t: Term, vars: readonly Expr[]): Expr => andFn(...t.flatMap((v, n) => (v === 3 ? [] : [v === 1 ? at(vars, n) : notFn(at(vars, n))])));
+const toVarsPOS = (t: Term, vars: readonly Expr[]): Expr => orFn(...t.flatMap((v, n) => (v === 3 ? [] : [v === 0 ? at(vars, n) : notFn(at(vars, n))])));
 const toVarsANF = (t: Term, vars: readonly Expr[]): Expr => {
   const xs = vars.filter((_, n) => t[n] === 1);
   return xs.length ? andFn(...xs) : S.true;
@@ -260,13 +261,13 @@ export function anfCoeffs(truthvalues: readonly number[]): number[] {
   for (let i = 0; i < n; i++) {
     const tmp: number[][] = [];
     for (let j = 0; j < 2 ** (n - i - 1); j++) {
-      const a = coeffs[2 * j]!;
-      const b = coeffs[2 * j + 1]!;
-      tmp.push([...a, ...a.map((x, k) => x ^ b[k]!)]);
+      const a = at(coeffs, 2 * j);
+      const b = at(coeffs, 2 * j + 1);
+      tmp.push([...a, ...a.map((x, k) => x ^ at(b, k))]);
     }
     coeffs = tmp;
   }
-  return coeffs[0]!;
+  return at(coeffs, 0);
 }
 
 /** SymPy ANFform: the algebraic normal form (Zhegalkin polynomial) of a truth table. */
@@ -351,7 +352,7 @@ export function simplifyLogic(
     const d = new Dummy();
     undo.set(d.key, r);
     repl.set(r.key, d);
-    const nr = relNegated(r as Rel);
+    const nr = relNegated(cast(r, Rel));
     if (pending.has(nr.key)) {
       repl.set(nr.key, notFn(d));
       pending.delete(nr.key);
@@ -396,7 +397,7 @@ function truthRows(vars: readonly Expr[], e: Expr, c: readonly number[]): Term[]
     const t = integerToTerm(k, vars.length);
     if (evalBool(e, new Map(vars.map((v, i) => [v.key, t[i] === 1] as const)))) out.push([...c, ...t]);
   }
-  return out.length === 1 && out[0]!.length === 0 ? [] : out;
+  return out.length === 1 && at(out, 0).length === 0 ? [] : out;
 }
 
 /** Options of toCnf and toDnf. */
@@ -450,7 +451,7 @@ function finger(eq: Expr): Map<string, Expr[]> {
   };
   for (const a of eq.args) {
     if (a instanceof Sym) info(a)[0]++;
-    else if (isOp(a, 'Not')) info(a.args[0]!)[1]++;
+    else if (isOp(a, 'Not')) info(at(a.args, 0))[1]++;
     else {
       const o = `${a.args.length},${a.args.filter((x) => isOp(x, 'Not')).length}`;
       for (const ai of a.args) {
@@ -458,17 +459,17 @@ function finger(eq: Expr): Map<string, Expr[]> {
           const i = info(ai);
           i[2]++;
           i[4].set(o, (i[4].get(o) ?? 0) + 1);
-        } else if (isOp(ai, 'Not')) info(ai.args[0]!)[3]++;
+        } else if (isOp(ai, 'Not')) info(at(ai.args, 0))[3]++;
         else throw new NotImplementedError('unexpected level of nesting');
       }
     }
   }
   const inv = new Map<string, Expr[]>();
   for (const s of ordered(syms)) {
-    const [a, b, c, dd, m] = d.get(s.key)!;
+    const [a, b, c, dd, m] = getOrThrow(d, s.key);
     const triples = [...m]
       .map(([k, n]) => [...k.split(',').map(Number), n])
-      .sort((x, y) => x[0]! - y[0]! || x[1]! - y[1]! || x[2]! - y[2]!);
+      .sort((x, y) => at(x, 0) - at(y, 0) || at(x, 1) - at(y, 1) || at(x, 2) - at(y, 2));
     const key = JSON.stringify([a, b, c, dd, triples]);
     inv.set(key, [...(inv.get(key) ?? []), s]);
   }
@@ -476,7 +477,7 @@ function finger(eq: Expr): Map<string, Expr[]> {
 }
 
 function matchBool(f1: Expr, f2: Expr): ExprMap<Expr> | undefined {
-  const cls = (x: Expr): string => (x as { className?: string }).className ?? x.kind;
+  const cls = (x: Expr): string => 'className' in x && typeof x.className === 'string' ? x.className : x.kind;
   if (cls(f1) !== cls(f2) || f1.kind !== f2.kind) return undefined;
   if (f1.args.length !== f2.args.length) return undefined;
   if (f1 instanceof Sym) return new ExprMap([[f1, f2]]);
@@ -487,7 +488,7 @@ function matchBool(f1: Expr, f2: Expr): ExprMap<Expr> | undefined {
   for (const [k, xs] of a) {
     const ys = b.get(k);
     if (!ys || ys.length !== xs.length) return undefined;
-    xs.forEach((x, i) => m.set(x, ys[i]!));
+    xs.forEach((x, i) => m.set(x, at(ys, i)));
   }
   return m;
 }
@@ -502,6 +503,6 @@ export function boolMap(bool1: BoolLike, bool2: BoolLike): [Expr, ExprMap<Expr>]
   const b = simplifyLogic(bool2);
   const m = matchBool(a, b);
   if (!m || m.size === 0) return NoMatch;
-  const sortedMap = new ExprMap<Expr>(ordered([...m.keys()]).map((k) => [k, m.get(k)!] as const));
+  const sortedMap = new ExprMap<Expr>(ordered([...m.keys()]).map((k) => [k, getOrThrow(m, k)] as const));
   return [a, sortedMap];
 }

@@ -10,7 +10,8 @@ import { ExprMap } from '../core/exprmap';
 import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { Add, Mul, Pow, Rational, S, compareExpr, impl } from '../core/nodes';
 import { zassenhaus } from './zassenhaus';
-import { numAdd, numCmp, numInv, numMul, numNeg, numPowInt } from '../core/num';
+import { numCmp } from '../core/num';
+import { at, defined, first, last } from '../core/guard';
 import { factorInt, gcd as gcdBig, lcm } from '../core/numbers';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
@@ -47,13 +48,27 @@ export function polyCoefficients(ex: ExprLike, x: Sym): Map<number, Expr> | unde
 
 const R = (n: bigint | number, d: bigint | number = 1n) => Rational.of(n, d);
 
+// Exact rational arithmetic (the Rational cases of core/num, typed as Rational).
+const qAdd = (a: Rational, b: Rational): Rational => (a.q === b.q ? Rational.of(a.p + b.p, a.q) : Rational.of(a.p * b.q + b.p * a.q, a.q * b.q));
+const qMul = (a: Rational, b: Rational): Rational => (a.isOne ? b : b.isOne ? a : Rational.of(a.p * b.p, a.q * b.q));
+const qNeg = (a: Rational): Rational => Rational.of(-a.p, a.q);
+function qInv(a: Rational): Rational {
+  if (a.isZero) throw new RangeError('Division by zero');
+  return Rational.of(a.q, a.p);
+}
+function qPowInt(a: Rational, n: bigint): Rational {
+  if (n >= 0n) return Rational.of(a.p ** n, a.q ** n);
+  if (a.isZero) throw new RangeError('Division by zero: 0 raised to a negative power');
+  return Rational.of(a.q ** -n, a.p ** -n);
+}
+
 /** Dense univariate polynomial with rational coefficients (index = degree). */
 export class UPoly {
   readonly coeffs: readonly Rational[];
 
   constructor(coeffs: readonly Rational[]) {
     const c = [...coeffs];
-    while (c.length > 0 && c[c.length - 1]!.isZero) c.pop();
+    while (c.at(-1)?.isZero) c.pop();
     this.coeffs = c;
   }
 
@@ -87,11 +102,11 @@ export class UPoly {
   add(o: UPoly): UPoly {
     const n = Math.max(this.coeffs.length, o.coeffs.length);
     const out: Rational[] = [];
-    for (let i = 0; i < n; i++) out.push(numAdd(this.coeffs[i] ?? S.Zero, o.coeffs[i] ?? S.Zero) as Rational);
+    for (let i = 0; i < n; i++) out.push(qAdd(this.coeffs[i] ?? S.Zero, o.coeffs[i] ?? S.Zero));
     return new UPoly(out);
   }
   scale(k: Rational): UPoly {
-    return new UPoly(this.coeffs.map((c) => numMul(c, k) as Rational));
+    return new UPoly(this.coeffs.map((c) => qMul(c, k)));
   }
   sub(o: UPoly): UPoly {
     return this.add(o.scale(S.NegOne));
@@ -101,7 +116,7 @@ export class UPoly {
     const out: Rational[] = Array.from({ length: this.coeffs.length + o.coeffs.length - 1 }, () => S.Zero);
     this.coeffs.forEach((a, i) =>
       o.coeffs.forEach((b, j) => {
-        out[i + j] = numAdd(out[i + j]!, numMul(a, b)) as Rational;
+        out[i + j] = qAdd(out[i + j] ?? S.Zero, qMul(a, b));
       }),
     );
     return new UPoly(out);
@@ -111,19 +126,19 @@ export class UPoly {
     if (d.isZero) throw new RangeError('Polynomial division by zero');
     let r: UPoly = this;
     const q: Rational[] = Array.from({ length: Math.max(0, this.degree - d.degree + 1) }, () => S.Zero);
-    const inv = numInv(d.lc) as Rational;
+    const inv = qInv(d.lc);
     while (!r.isZero && r.degree >= d.degree) {
       const k = r.degree - d.degree;
-      const c = numMul(r.lc, inv) as Rational;
+      const c = qMul(r.lc, inv);
       q[k] = c;
-      const shifted = new UPoly([...Array.from({ length: k }, () => S.Zero), ...d.coeffs.map((x) => numMul(x, c) as Rational)]);
+      const shifted = new UPoly([...Array.from({ length: k }, () => S.Zero), ...d.coeffs.map((x) => qMul(x, c))]);
       r = r.sub(shifted);
     }
     return [new UPoly(q), r];
   }
 
   monic(): UPoly {
-    return this.isZero ? this : this.scale(numInv(this.lc) as Rational);
+    return this.isZero ? this : this.scale(qInv(this.lc));
   }
 
   gcd(o: UPoly): UPoly {
@@ -134,13 +149,11 @@ export class UPoly {
   }
 
   derivative(): UPoly {
-    return new UPoly(this.coeffs.slice(1).map((c, i) => numMul(c, R(i + 1)) as Rational));
+    return new UPoly(this.coeffs.slice(1).map((c, i) => qMul(c, R(i + 1))));
   }
 
   evalAt(x: Rational): Rational {
-    let acc: Rational = S.Zero;
-    for (let i = this.coeffs.length - 1; i >= 0; i--) acc = numAdd(numMul(acc, x), this.coeffs[i]!) as Rational;
-    return acc;
+    return this.coeffs.reduceRight<Rational>((acc, c) => qAdd(qMul(acc, x), c), S.Zero);
   }
 
   /** Square-free decomposition (Yun): returns [factor, multiplicity][] of monic factors. */
@@ -175,8 +188,8 @@ export class UPoly {
     let lo = 0;
     while (ints[lo] === 0n) lo++;
     if (lo > 0) roots.push(S.Zero);
-    const a0 = ints[lo]!;
-    const an = ints[ints.length - 1]!;
+    const a0 = at(ints, lo);
+    const an = last(ints);
     if (ints.length - 1 === lo) return roots;
     const divisors = (nIn: bigint): bigint[] => {
       let n = nIn;
@@ -221,7 +234,7 @@ export class UPoly {
     for (const [p, m] of this.squareFree()) {
       let rest = p;
       for (const r of p.rationalRoots()) {
-        const lin = new UPoly([numNeg(r) as Rational, S.One]);
+        const lin = new UPoly([qNeg(r), S.One]);
         factors.push([lin, m]);
         rest = rest.divmod(lin)[0];
       }
@@ -230,7 +243,7 @@ export class UPoly {
         const den = rest.coeffs.reduce((l, c) => (l * c.q) / gcdBig(l, c.q), 1n);
         const ints = rest.coeffs.map((c) => (c.p * den) / c.q);
         for (const g of zassenhaus(ints)) {
-          const lcg = g[g.length - 1]!;
+          const lcg = last(g);
           factors.push([new UPoly(g.map((c) => Rational.of(c, lcg))), m]);
         }
       } else if (rest.degree > 0) factors.push([rest, m]);
@@ -260,29 +273,29 @@ function sqrtRemoveSquares(d: Expr): Expr {
 /** Roots of a quadratic a x^2 + b x + c (symbolic coefficients allowed). */
 /** SymPy roots_cubic (Cardano) for x**3 + a*x**2 + b*x + c with rational coefficients. */
 function cubicRoots(lc: Rational, c2: Rational, c1: Rational, c0: Rational): Expr[] {
-  const a = numMul(c2, numInv(lc)) as Rational;
-  const b = numMul(c1, numInv(lc)) as Rational;
-  const c = numMul(c0, numInv(lc)) as Rational;
+  const a = qMul(c2, qInv(lc));
+  const b = qMul(c1, qInv(lc));
+  const c = qMul(c0, qInv(lc));
   const third = Rational.of(1n, 3n);
   const cbrt = (x: Expr) => pow(x, third);
   if (c.isZero) {
     const [x1, x2] = quadraticRoots(S.One, a, b);
-    return [x1!, S.Zero, x2!];
+    return [x1, S.Zero, x2];
   }
-  const p = add(b, mul(-1, pow(a, 2), third));
-  const q = add(c, mul(-1, a, b, third), mul(2, pow(a, 3), Rational.of(1n, 27n)));
+  const p = qAdd(b, qNeg(qMul(qMul(a, a), third)));
+  const q = qAdd(qAdd(c, qNeg(qMul(qMul(a, b), third))), qMul(qMul(Rational.of(2n), qPowInt(a, 3n)), Rational.of(1n, 27n)));
   const pon3 = mul(p, third);
   const aon3 = mul(a, third);
   let u1: Expr | undefined;
-  const pz = p instanceof Rational && p.isZero;
-  const qz = q instanceof Rational && q.isZero;
+  const pz = p.isZero;
+  const qz = q.isZero;
   if (pz) {
     if (qz) return [neg(aon3), neg(aon3), neg(aon3)];
-    u1 = (q as Rational).isPositive ? neg(cbrt(q)) : cbrt(neg(q));
+    u1 = q.isPositive ? neg(cbrt(q)) : cbrt(neg(q));
   } else if (qz) {
     const [y1, y2] = quadraticRoots(S.One, S.Zero, p);
-    return [y1!, S.Zero, y2!].map((t) => add(t, neg(aon3)));
-  } else if ((q as Rational).isNegative) {
+    return [y1, S.Zero, y2].map((t) => add(t, neg(aon3)));
+  } else if (q.isNegative) {
     u1 = neg(cbrt(add(mul(-1, q, Rational.of(1n, 2n)), sqrt(add(mul(pow(q, 2), Rational.of(1n, 4n)), pow(pon3, 3))))));
   }
   const coeff = mul(S.I, sqrt(3), Rational.of(1n, 2n));
@@ -303,12 +316,12 @@ const neg = (e: Expr): Expr => mul(-1, e);
 
 /** SymPy roots_binomial: roots of a*x**n + b in SymPy's order. */
 function binomialRoots(a: Rational, b: Rational, n: number): Expr[] {
-  const base = numMul(numNeg(b), numInv(a)) as Rational;
+  const base = qMul(qNeg(b), qInv(a));
   let alpha: Expr = pow(base, Rational.of(1n, BigInt(n)));
   alpha = impl.expandComplex ? impl.expandComplex(alpha) : alpha;
   const negB = base.isNegative;
   const even = n % 2 === 0;
-  const big = negB && even && (numAdd(base, S.One) as Rational).isPositive;
+  const big = negB && even && qAdd(base, S.One).isPositive;
   let ks: number[] = [];
   let imax = Math.floor(n / 2);
   if (even) {
@@ -330,12 +343,12 @@ function binomialRoots(a: Rational, b: Rational, n: number): Expr[] {
   }
   return ks.map((k) => {
     const ang = mul(Rational.of(BigInt(2 * k), BigInt(n)), S.Pi);
-    const zeta = add(impl.cos!(ang), mul(S.I, impl.sin!(ang)));
+    const zeta = add(defined(impl.cos?.(ang), 'cos'), mul(S.I, defined(impl.sin?.(ang), 'sin')));
     return expand(mul(alpha, zeta));
   });
 }
 
-function quadraticRoots(a: Expr, b: Expr, c: Expr): Expr[] {
+function quadraticRoots(a: Expr, b: Expr, c: Expr): [Expr, Expr] {
   const disc = expand(add(pow(b, 2), mul(-4, a, c)));
   const s = sqrtRemoveSquares(disc);
   const inv2a = pow(mul(2, a), -1);
@@ -370,16 +383,17 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
   const deg = Math.max(-1, ...coeffs.keys());
   if (deg <= 0) return [];
   const p = UPoly.fromExpr(ex, x);
-  if (p && deg >= 2 && p.coeffs.filter((c) => !c.isZero).length === 2 && !p.coeffs[0]!.isZero) {
-    return binomialRoots(p.coeffs[deg]!, p.coeffs[0]!, deg);
+  if (p && deg >= 2 && p.coeffs.filter((c) => !c.isZero).length === 2 && !first(p.coeffs).isZero) {
+    return binomialRoots(at(p.coeffs, deg), first(p.coeffs), deg);
   }
   if (p) {
     const out: Expr[] = [];
     for (const [f, m] of p.factor().factors) {
       let rs: Expr[];
-      if (f.degree === 1) rs = [numMul(numNeg(f.coeffs[0]!), numInv(f.coeffs[1]!))];
-      else if (f.degree === 2) rs = quadraticRoots(f.coeffs[2]!, f.coeffs[1]!, f.coeffs[0]!);
-      else if (f.degree === 3) rs = cubicRoots(f.coeffs[3]!, f.coeffs[2]!, f.coeffs[1]!, f.coeffs[0]!);
+      const [c0 = S.Zero, c1 = S.Zero, c2 = S.Zero, c3 = S.Zero] = f.coeffs;
+      if (f.degree === 1) rs = [qMul(qNeg(c0), qInv(c1))];
+      else if (f.degree === 2) rs = quadraticRoots(c2, c1, c0);
+      else if (f.degree === 3) rs = cubicRoots(c3, c2, c1, c0);
       else if (opts.skipQuintic && f.degree >= 5) continue; // SymPy roots() omits roots it cannot express in radicals
       else throw new NotImplementedError(`roots: cannot solve irreducible factor of degree ${f.degree}`);
       for (const r of rs) for (let i = 0; i < m; i++) out.push(r);
@@ -387,7 +401,7 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
     return out;
   }
   // Normalize by the leading coefficient; this often yields rational coefficients.
-  const lead = coeffs.get(deg)!;
+  const lead = defined(coeffs.get(deg), 'leading coefficient');
   const normalized = new Map([...coeffs].map(([k, v]) => [k, cancel(mul(v, pow(lead, -1)))] as const));
   if ([...normalized.values()].every((v) => v instanceof Rational)) {
     return roots(add(...[...normalized].map(([k, v]) => mul(v, pow(x, k)))), x);
@@ -455,11 +469,12 @@ export function factorPoly(ex: ExprLike, x: Sym): Expr {
     for (const v of ints) g = gcdBig(g, v);
     const scale = Rational.of(d, g); // f * scale is primitive
     const prim = f.scale(scale);
-    content = numMul(content, numPowInt(numInv(scale), BigInt(m))) as Rational;
+    content = qMul(content, qPowInt(qInv(scale), BigInt(m)));
     parts.push(pow(prim.toExpr(x), m));
   }
   parts.sort(compareExpr);
-  if (parts.length === 1 && content.isOne) return parts[0]!;
+  const [only] = parts;
+  if (parts.length === 1 && only !== undefined && content.isOne) return only;
   return new Mul(content.isOne ? parts : [content, ...parts]);
 }
 
@@ -467,6 +482,7 @@ export function factorPoly(ex: ExprLike, x: Sym): Expr {
 export function factor(ex: ExprLike): Expr {
   const e = sympify(ex);
   const syms = [...freeSymbols(e)];
-  if (syms.length !== 1) return e;
-  return factorPoly(e, syms[0]!);
+  const [x] = syms;
+  if (syms.length !== 1 || x === undefined) return e;
+  return factorPoly(e, x);
 }

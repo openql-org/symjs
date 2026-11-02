@@ -117,6 +117,7 @@ export function defineFunction(name: string, def: FunctionDefinition = {}): Defi
   Object.defineProperty(f, 'functionName', { value: name });
   Object.defineProperty(f, 'name', { value: name });
   Object.defineProperty(f, 'isApplied', { value: (e: Expr) => e instanceof DefinedFunctionCall && e.name === name && e.definition === def });
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the members of DefinedFunction were added above with Object.defineProperty (non-enumerable, read-only)
   return f as unknown as DefinedFunction;
 }
 

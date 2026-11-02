@@ -11,6 +11,7 @@ import { BoolAtom, Piecewise, Rational, Rel, S, isNum } from './nodes';
 import { numCmp } from './num';
 import { add, mul, sympify } from './ops';
 import { BoolOp } from './boolalg';
+import { at } from './guard';
 
 const isBoolean = (e: Expr): boolean => e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp;
 
@@ -61,17 +62,17 @@ export function piecewise(...pairs: readonly (readonly [ExprLike, ExprLike | boo
   for (const [e, c0] of pairs) {
     let c = typeof c0 === 'boolean' ? (c0 ? S.true : S.false) : sympify(c0);
     // a boolean Piecewise as a condition is the if-then-else ITE(c1, a, b) (SymPy rewrite(ITE))
-    if (c instanceof Piecewise && c.args.length === 4 && isTrue(c.args[3]!) && isBoolean(c.args[0]!) && isBoolean(c.args[2]!)) {
+    if (c instanceof Piecewise && c.args.length === 4 && isTrue(at(c.args, 3)) && isBoolean(at(c.args, 0)) && isBoolean(at(c.args, 2))) {
       // the relations are canonical (a number on the right: 2 < y -> y > 2)
-      const flip: Record<string, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
-      const canon = (r: Expr): Expr => (r instanceof Rel && isNum(r.lhs) && !isNum(r.rhs) ? new Rel(flip[r.op]!, r.rhs, r.lhs) : r);
-      c = new BoolOp('ITE', [canon(c.args[1]!), canon(c.args[0]!), canon(c.args[2]!)]);
+      const flip: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
+      const canon = (r: Expr): Expr => (r instanceof Rel && isNum(r.lhs) && !isNum(r.rhs) ? new Rel(flip[r.op], r.rhs, r.lhs) : r);
+      c = new BoolOp('ITE', [canon(at(c.args, 1)), canon(at(c.args, 0)), canon(at(c.args, 2))]);
     }
     if (isFalse(c)) continue;
     out.push(sympify(e), c);
     if (isTrue(c)) break;
   }
   if (out.length === 0) throw new RangeError('piecewise: no condition can be satisfied');
-  if (out.length === 2 && isTrue(out[1]!)) return out[0]!;
+  if (out.length === 2 && isTrue(at(out, 1))) return at(out, 0);
   return new Piecewise(out);
 }

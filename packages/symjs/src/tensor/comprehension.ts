@@ -7,6 +7,8 @@
  * expression or a function of their indices over integer ranges.
  */
 
+import { InvariantError } from '../core/errors';
+import { at } from '../core/guard';
 import type { ExprLike } from '../core/nodes';
 import { Expr, ExtensionExpr, Rational, Sym } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
@@ -29,12 +31,13 @@ function checkLimits(limits: readonly ComprehensionLimit[]): Expr[] {
   const out: Expr[] = [];
   for (const l of limits) {
     if (!Array.isArray(l) || (l as readonly unknown[]).length !== 3) throw new RangeError('ArrayComprehension requires values lower and upper bound for the expression');
-    const [v, lo, hi] = l.map((x) => {
+    const bounds = l.map((x) => {
       if (!(x instanceof Expr) && typeof x !== 'number' && typeof x !== 'bigint') {
         throw new TypeError('Bounds should be an Expression(combination of Integer and Symbol)');
       }
       return sympify(x);
-    }) as [Expr, Expr, Expr];
+    });
+    const [v, lo, hi] = [at(bounds, 0), at(bounds, 1), at(bounds, 2)];
     if (![lo, hi].every(onlyIntegersAndSymbols)) throw new TypeError('Bounds should be an Expression(combination of Integer and Symbol)');
     const d = add(hi, mul(-1, lo));
     if (d instanceof Rational && d.isNegative) throw new RangeError('Lower bound should be inferior to upper bound');
@@ -66,12 +69,12 @@ export class ArrayComprehensionNode extends ExtensionExpr {
 
   /** The expression of the elements (SymPy function). */
   get function(): Expr {
-    return this.args[0]!;
+    return at(this.args, 0);
   }
   /** The limits [variable, lower, upper] (SymPy limits). */
   get limits(): [Expr, Expr, Expr][] {
     const out: [Expr, Expr, Expr][] = [];
-    for (let k = 1; k < this.args.length; k += 3) out.push([this.args[k]!, this.args[k + 1]!, this.args[k + 2]!]);
+    for (let k = 1; k < this.args.length; k += 3) out.push([at(this.args, k), at(this.args, k + 1), at(this.args, k + 2)]);
     return out;
   }
   /** The index variables (SymPy variables). */
@@ -111,7 +114,7 @@ export class ArrayComprehensionNode extends ExtensionExpr {
   protected element(values: readonly number[]): Expr {
     return subs(
       this.function,
-      this.variables.map((v, k) => [v, values[k]!] as const),
+      this.variables.map((v, k) => [v, at(values, k)] as const),
     );
   }
 
@@ -124,15 +127,15 @@ export class ArrayComprehensionNode extends ExtensionExpr {
   }
   private expandArray(): ImmutableDenseNDimArray {
     const ranges = this.limits.map(([, lo, hi]) => {
-      const a = Number((lo as Rational).p);
-      const b = Number((hi as Rational).p);
+      const a = rationalInt(lo);
+      const b = rationalInt(hi);
       return Array.from({ length: b - a + 1 }, (_, i) => a + i);
     });
     let tuples: number[][] = [[]];
     for (const r of ranges) tuples = tuples.flatMap((t) => r.map((v) => [...t, v]));
     return new ImmutableDenseNDimArray(
       tuples.map((t) => this.element(t)),
-      this.shape.map((s) => Number((s as Rational).p)),
+      this.shape.map((s) => rationalInt(s)),
     );
   }
   /** SymPy tolist (numeric shape only). */
@@ -149,8 +152,8 @@ export class ArrayComprehensionNode extends ExtensionExpr {
 
   withArgs(args: readonly Expr[]): Expr {
     const lim: ComprehensionLimit[] = [];
-    for (let k = 1; k < args.length; k += 3) lim.push([args[k]!, args[k + 1]!, args[k + 2]!]);
-    return new ArrayComprehensionNode(args[0]!, ...lim);
+    for (let k = 1; k < args.length; k += 3) lim.push([at(args, k), at(args, k + 1), at(args, k + 2)]);
+    return new ArrayComprehensionNode(at(args, 0), ...lim);
   }
   protected limitsStr(print: (e: Expr) => string): string[] {
     return this.limits.map((l) => `(${l.map(print).join(', ')})`);
@@ -168,6 +171,15 @@ export class ArrayComprehensionNode extends ExtensionExpr {
 
 /** The function of an ArrayComprehensionMap: no argument, or the product of the index values. */
 export type ComprehensionLambda = (() => ExprLike) | ((n: number) => ExprLike);
+
+/** The value of an integer bound or dimension (numeric once the shape is). */
+function rationalInt(e: Expr): number {
+  if (!(e instanceof Rational)) throw new InvariantError(`${e.toString()} is not numeric`);
+  return Number(e.p);
+}
+
+/** A lambda declaring no parameter is called without arguments (SymPy checks its arity). */
+const isNullary = (f: ComprehensionLambda): f is () => ExprLike => f.length === 0;
 
 const lambdaIds = new WeakMap<Function, number>();
 let lambdaCounter = 0;
@@ -203,11 +215,11 @@ export class ArrayComprehensionMapNode extends ArrayComprehensionNode {
   }
   protected override element(values: readonly number[]): Expr {
     const f = this.#fn;
-    return sympify(f.length === 0 ? (f as () => ExprLike)() : f(values.reduce((a, b) => a * b, 1)));
+    return sympify(isNullary(f) ? f() : f(values.reduce((a, b) => a * b, 1)));
   }
   override withArgs(args: readonly Expr[]): Expr {
     const lim: ComprehensionLimit[] = [];
-    for (let k = 1; k < args.length; k += 3) lim.push([args[k]!, args[k + 1]!, args[k + 2]!]);
+    for (let k = 1; k < args.length; k += 3) lim.push([at(args, k), at(args, k + 1), at(args, k + 2)]);
     return new ArrayComprehensionMapNode(this.#fn, ...lim);
   }
   override printStr(print: (e: Expr) => string): string {

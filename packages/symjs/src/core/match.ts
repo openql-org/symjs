@@ -12,16 +12,26 @@ import { Add, Constant, Derivative, Expr, ExtensionExpr, Float, Fn, Mul, Pow, Ra
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { rebuild, xreplace } from './traverse';
 import { compareKeys, sortKey } from '../printing/sortkey';
+import { InvariantError } from './errors';
+import { at, defined, first } from './guard';
 
 /** Match result: wild key -> [wild, value]. */
 type Dict = Map<string, readonly [Sym, Expr]>;
 
 const isExpPow = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
 
+/** The `kind2` (Sum/Product) and `op` (relations, connectives) discriminators of a node, if it has them. */
+const kind2Of = (e: Expr): unknown => ('kind2' in e ? e.kind2 : undefined);
+const opOf = (e: Expr): unknown => ('op' in e ? e.op : undefined);
+const kind2Name = (e: Expr): string => {
+  const k = kind2Of(e);
+  return typeof k === 'string' ? k : 'SUM';
+};
+
 /** SymPy _node_count (Floats count 1/2, exp(x) is one node). */
 function nodeCount(e: Expr): number {
   if (e instanceof Float) return 0.5;
-  if (isExpPow(e)) return 1 + nodeCount((e as Pow).exp);
+  if (e instanceof Pow && isExpPow(e)) return 1 + nodeCount(e.exp);
   let n = 1;
   for (const a of e.args) n += nodeCount(a);
   return n;
@@ -58,18 +68,18 @@ function basicMatches(p: Expr, e: Expr, d: Dict, old: boolean): Dict | undefined
   if (p.key === e.key) return copy(d);
   if (p.args.length === 0 || e.args.length === 0) return undefined;
   if (p.kind !== e.kind) return undefined;
-  if (p instanceof Fn && (e as Fn).name !== p.name) return undefined;
-  if (p instanceof UndefFn && (e as UndefFn).name !== p.name) return undefined;
+  if (p instanceof Fn && !(e instanceof Fn && e.name === p.name)) return undefined;
+  if (p instanceof UndefFn && !(e instanceof UndefFn && e.name === p.name)) return undefined;
   if (isExpPow(p) !== isExpPow(e)) return undefined;
-  if ((p as { kind2?: string }).kind2 !== (e as { kind2?: string }).kind2) return undefined;
+  if (kind2Of(p) !== kind2Of(e)) return undefined;
   // extension nodes of different classes (Heaviside and DiracDelta), And and Or, Lt and Gt do not match
-  if (p instanceof ExtensionExpr && (e.constructor !== p.constructor || (e as ExtensionExpr).name !== p.name)) return undefined;
-  if ((p as { op?: string }).op !== (e as { op?: string }).op) return undefined;
+  if (p instanceof ExtensionExpr && (e.constructor !== p.constructor || !(e instanceof ExtensionExpr) || e.name !== p.name)) return undefined;
+  if (opOf(p) !== opOf(e)) return undefined;
   if (p.args.length !== e.args.length) return undefined;
   let out: Dict | undefined = copy(d);
   for (let i = 0; i < p.args.length; i++) {
-    const a = p.args[i]!;
-    const b = e.args[i]!;
+    const a = at(p.args, i);
+    const b = at(e.args, i);
     if (a.key === b.key) continue;
     out = matchesImpl(applyD(a, out), b, out, old);
     if (!out) return undefined;
@@ -136,12 +146,12 @@ const addCombineInverse = (lhs: Expr, rhs: Expr): Expr => (lhs.key === rhs.key ?
 
 const makeArgs = (isAdd: boolean, e: Expr): readonly Expr[] => (isAdd ? (e instanceof Add ? e.args : [e]) : e instanceof Mul ? e.args : [e]);
 const newRaw = (isAdd: boolean, xs: Expr[]): Expr =>
-  xs.length === 0 ? (isAdd ? S.Zero : S.One) : xs.length === 1 ? xs[0]! : isAdd ? new Add(xs) : new Mul(xs);
+  xs.length === 0 ? (isAdd ? S.Zero : S.One) : xs.length === 1 ? first(xs) : isAdd ? new Add(xs) : new Mul(xs);
 
 function coeffIsNeg(e: Expr): boolean {
   if (e instanceof Rational || e instanceof Float) return e.isNegative;
   if (e instanceof Mul) {
-    const c = e.args[0]!;
+    const c = first(e.args);
     return (c instanceof Rational || c instanceof Float) && c.isNegative;
   }
   return false;
@@ -149,7 +159,7 @@ function coeffIsNeg(e: Expr): boolean {
 
 function numberSortKey(x: Expr): number {
   if (x instanceof Mul) {
-    const c = x.args[0]!;
+    const c = first(x.args);
     if (c instanceof Rational || c instanceof Float) return c.value;
   }
   return 0;
@@ -163,14 +173,14 @@ function commutativeMatches(p: Add | Mul, e: Expr, d: Dict, old: boolean): Dict 
     const c = p.args[0] instanceof Rational || p.args[0] instanceof Float ? p.args[0] : undefined;
     const terms = c ? p.args.slice(1) : p.args;
     if (terms.length === 1) {
-      const r = matchesImpl(terms[0]!, add(e, mul(-1, c ?? S.Zero)), d, old);
+      const r = matchesImpl(first(terms), add(e, mul(-1, c ?? S.Zero)), d, old);
       if (r) return r;
     }
   } else {
     const [c, rest] = splitCoeff(p);
     const terms = rest instanceof Mul ? rest.args : [rest];
     if (terms.length === 1) {
-      const r = matchesImpl(terms[0]!, mulCombineInverse(e, c), d, old);
+      const r = matchesImpl(first(terms), mulCombineInverse(e, c), d, old);
       if (r) return r;
     }
   }
@@ -345,14 +355,14 @@ export function isFunctionOf(e: Expr, name: string): boolean {
 }
 
 function fnArgs(e: Expr): Expr[] {
-  return isExpPow(e) ? [(e as Pow).exp] : [...e.args];
+  return e instanceof Pow && isExpPow(e) ? [e.exp] : [...e.args];
 }
 
 function walk(e: Expr, f: (e: Expr) => Expr): Expr {
   let rv = e;
   if (rv.args.length) {
     const newargs = rv.args.map((a) => walk(a, f));
-    if (newargs.some((a, i) => a !== rv.args[i] && a.key !== rv.args[i]!.key)) rv = rebuild(rv, newargs);
+    if (newargs.some((a, i) => a !== rv.args[i] && a.key !== at(rv.args, i).key)) rv = rebuild(rv, newargs);
   }
   return f(rv);
 }
@@ -377,7 +387,7 @@ export function replace(
   const callType = (type: string, args: Expr[]): Expr => {
     if (type === 'Add') return add(...args);
     if (type === 'Mul') return mul(...args);
-    if (type === 'Pow') return pow(args[0]!, args[1]!);
+    if (type === 'Pow') return pow(at(args, 0), at(args, 1));
     if (!opts.applyType) throw new TypeError('replace: no type constructor');
     return opts.applyType(type, args);
   };
@@ -401,13 +411,15 @@ export function replace(
     const allNonZero = (r: Map<Sym, Expr>) => [...r.values()].every((x) => !(x instanceof Rational && x.isZero));
     if (value instanceof Expr) {
       v = (e, r) => {
-        const m = r as Map<Sym, Expr>;
+        if (typeof r === 'boolean') throw new InvariantError('a pattern query yields a match dictionary');
+        const m = r;
         if (exact && !allNonZero(m)) return e;
         return impl.subs(value, new Map([...m]));
       };
     } else if (typeof value === 'function') {
       v = (e, r) => {
-        const m = r as Map<Sym, Expr>;
+        if (typeof r === 'boolean') throw new InvariantError('a pattern query yields a match dictionary');
+        const m = r;
         if (exact && !allNonZero(m)) return e;
         // keyword call: values ordered like the Wilds in the pattern
         const order = [...wilds(query).values()];
@@ -483,7 +495,7 @@ export function countOpsMap(exprIn: ExprLike): Map<string, number> {
   const bump = (k: string, n = 1) => ops.set(k, (ops.get(k) ?? 0) + n);
   const args: Expr[] = [sympify(exprIn)];
   while (args.length) {
-    let a = args.pop()!;
+    let a = defined(args.pop());
     if (a instanceof Rational) {
       if (!a.isOne) {
         if (a.p < 0n) bump('NEG');
@@ -521,7 +533,7 @@ export function countOpsMap(exprIn: ExprLike): Map<string, number> {
         }
       });
       if (negs === a.args.length) bump('NEG');
-      else if (coeffIsNeg(a.args[0]!)) {
+      else if (coeffIsNeg(first(a.args))) {
         bump('SUB');
         bump('ADD', -1);
       }
@@ -536,9 +548,9 @@ export function countOpsMap(exprIn: ExprLike): Map<string, number> {
       bump('EXP');
       continue;
     }
-    if (isExpPow(a)) {
+    if (a instanceof Pow && isExpPow(a)) {
       bump('EXP');
-      args.push((a as Pow).exp);
+      args.push(a.exp);
       continue;
     }
     if (a instanceof Mul) bump('MUL', a.args.length - 1);
@@ -554,7 +566,7 @@ export function countOpsMap(exprIn: ExprLike): Map<string, number> {
                 ? 'DERIVATIVE'
                 : a.kind === 'Integral'
                   ? 'INTEGRAL'
-                  : ((a as { kind2?: string }).kind2 ?? 'SUM').toUpperCase();
+                  : kind2Name(a).toUpperCase();
       bump(name);
     }
     if (!(a instanceof Sym)) args.push(...a.args);

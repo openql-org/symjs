@@ -6,6 +6,7 @@
  */
 
 import { accumBoundsFunction } from './accumbounds';
+import { first } from '../core/guard';
 import { precToDps } from '../numeric/mpf';
 import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
 import type {
@@ -31,6 +32,14 @@ import { add, couldExtractMinusSign, mul, neg, pow, splitCoeff, sqrt, sympify } 
 
 export type Evaluator = (x: Expr, ...rest: Expr[]) => Expr | undefined;
 
+/** Calls f for every entry of a registration table keyed by function name. */
+export function forEachEntry<K extends string, V>(table: Partial<Record<K, V>>, f: (name: K, value: V) => void): void {
+  for (const name in table) {
+    const v = table[name];
+    if (v !== undefined) f(name, v);
+  }
+}
+
 const isI = (e: Expr) => e instanceof Constant && e.name === 'I';
 const isPi = (e: Expr) => e instanceof Constant && e.name === 'pi';
 
@@ -48,8 +57,8 @@ export function splitPiTerm(x: Expr): [Expr, Rational] {
   const c = piCoeff(x);
   if (c) return [S.Zero, c];
   if (x instanceof Add) {
-    for (let i = 0; i < x.args.length; i++) {
-      const ci = piCoeff(x.args[i]!);
+    for (const [i, xi] of x.args.entries()) {
+      const ci = piCoeff(xi);
       if (ci) return [add(...x.args.filter((_, j) => j !== i)), ci];
     }
   }
@@ -285,7 +294,7 @@ const evalAbs: Evaluator = (x) => {
     if (b instanceof Constant && b.name === 'E') return pow(b, re(e));
     if (isReal(e)) return pow(abs(b), e);
   }
-  if (x instanceof Fn && (x.name === 'abs' || x.name === 'conjugate')) return abs(x.args[0]!);
+  if (x instanceof Fn && (x.name === 'abs' || x.name === 'conjugate')) return abs(first(x.args));
   // a + b*I with real a, b
   const [a, b] = reIm(x);
   if (!(b instanceof Rational && b.isZero) && !hasReIm(a) && !hasReIm(b)) {
@@ -339,7 +348,7 @@ const evalRe: Evaluator = (x) => {
     }
   }
   if (x instanceof Fn && x.name === 're') return x;
-  if (x instanceof Fn && x.name === 'conjugate') return re(x.args[0]!);
+  if (x instanceof Fn && x.name === 'conjugate') return re(first(x.args));
   return undefined;
 };
 
@@ -366,7 +375,7 @@ const evalIm: Evaluator = (x) => {
       return re(w);
     }
   }
-  if (x instanceof Fn && x.name === 'conjugate') return neg(im(x.args[0]!));
+  if (x instanceof Fn && x.name === 'conjugate') return neg(im(first(x.args)));
   return undefined;
 };
 
@@ -376,7 +385,7 @@ const evalArg: Evaluator = (x) => {
     let a = x;
     let depth = 0;
     while (depth < 3 && a instanceof Fn && a.name === 'arg') {
-      a = a.args[0]!;
+      a = first(a.args);
       depth++;
     }
     if (depth === 3 || (depth === 2 && isReal(a) === true)) return S.NaN;
@@ -437,14 +446,14 @@ export function conjugate(xx: ExprLike): Expr {
   if (x instanceof Fn) {
     switch (x.name) {
       case 'conjugate':
-        return x.args[0]!;
+        return first(x.args);
       case 'sin':
       case 'cos':
       case 'tan':
       case 'sinh':
       case 'cosh':
       case 'tanh':
-        return fn(x.name, [conjugate(x.args[0]!)]);
+        return fn(x.name, [conjugate(first(x.args))]);
       case 're':
       case 'im':
       case 'abs':
@@ -473,9 +482,9 @@ export function adjoint(xx: ExprLike): Expr {
   if (x instanceof Mul) return mul(...[...x.args].reverse().map(adjoint));
   if (x instanceof Pow && x.exp.isCommutative && isReal(x.exp)) return pow(adjoint(x.base), x.exp);
   if (x instanceof Fn) {
-    if (x.name === 'adjoint') return x.args[0]!;
-    if (x.name === 'conjugate') return transpose(x.args[0]!);
-    if (x.name === 'transpose') return conjugate(x.args[0]!);
+    if (x.name === 'adjoint') return first(x.args);
+    if (x.name === 'conjugate') return transpose(first(x.args));
+    if (x.name === 'transpose') return conjugate(first(x.args));
   }
   if (x instanceof Pow && x.base instanceof Constant && x.base.name === 'E') return pow(x.base, adjoint(x.exp));
   return new Fn('adjoint', [x]);
@@ -493,9 +502,9 @@ export function transpose(xx: ExprLike): Expr {
   if (x instanceof Mul) return mul(...[...x.args].reverse().map(transpose));
   if (x instanceof Pow && x.exp.isCommutative && isReal(x.exp)) return pow(transpose(x.base), x.exp);
   if (x instanceof Fn) {
-    if (x.name === 'transpose') return x.args[0]!;
-    if (x.name === 'conjugate') return adjoint(x.args[0]!);
-    if (x.name === 'adjoint') return conjugate(x.args[0]!);
+    if (x.name === 'transpose') return first(x.args);
+    if (x.name === 'conjugate') return adjoint(first(x.args));
+    if (x.name === 'adjoint') return conjugate(first(x.args));
   }
   if (x instanceof Pow && x.base instanceof Constant && x.base.name === 'E') return pow(x.base, transpose(x.exp));
   return new Fn('transpose', [x]);
@@ -539,12 +548,13 @@ export const evaluators: Partial<Record<FnName, Evaluator>> = {
 export function fn(name: FnName, args: readonly ExprLike[], opts: { evaluate?: boolean } = {}): Expr {
   const xs = args.map(sympify);
   if (opts.evaluate === false) return new Fn(name, xs);
-  if (xs.length === 1 && impl.accumBounds?.is(xs[0]!)) {
-    const r = accumBoundsFunction(name, xs[0]!, (n, x) => fn(n as FnName, [x]));
+  const [x0, ...rest] = xs;
+  if (x0 !== undefined && rest.length === 0 && impl.accumBounds?.is(x0)) {
+    const r = accumBoundsFunction(name, x0, (n, x) => fn(n, [x]));
     if (r !== undefined) return r;
   }
   const ev = evaluators[name];
-  const v = ev ? ev(xs[0]!, ...xs.slice(1)) : undefined;
+  const v = ev && x0 !== undefined ? ev(x0, ...rest) : undefined;
   if (v !== undefined) return v;
   const f = new Fn(name, xs);
   // SymPy Function.__new__: evaluate numerically when every argument is a Float
@@ -567,7 +577,7 @@ function shouldEvalf(a: Expr): number {
   if (!(a instanceof Add) || a.args.length !== 2) return -1;
   const [r, t] = a.args;
   const im = t instanceof Mul && t.args.length === 2 && t.args[1] === S.I ? t.args[0] : undefined;
-  if (!isNum(r!) || im === undefined || !isNum(im)) return -1;
+  if (r === undefined || !isNum(r) || im === undefined || !isNum(im)) return -1;
   return Math.max(r instanceof Float ? r.prec : -1, im instanceof Float ? im.prec : -1);
 }
 

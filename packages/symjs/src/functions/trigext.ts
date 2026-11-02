@@ -10,6 +10,7 @@
  */
 
 import type { Expr, ExprLike, FnName } from '../core/nodes';
+import { defined, first, pair } from '../core/guard';
 import { Add, Float, Fn, Mul, Rational, S, Special } from '../core/nodes';
 import { add, couldExtractMinusSign, mul, neg, pow, sqrt } from '../core/ops';
 import { asCoefficient } from '../core/methods';
@@ -22,7 +23,7 @@ import * as F from '../numeric/mpf';
 import * as M from '../numeric/mpfun';
 import type { Mpc } from '../numeric/mpfun';
 import type { Evaluator } from './elementary';
-import { acos, asin, atan, conjugateCommutes, cos, cosh, evaluators, fn, log, sin, sinh, splitPiTerm, tan, tanh } from './elementary';
+import { acos, asin, atan, conjugateCommutes, cos, cosh, evaluators, fn, forEachEntry, log, sin, sinh, splitPiTerm, tan, tanh } from './elementary';
 
 export const cot = (x: ExprLike): Expr => fn('cot', [x]);
 export const sec = (x: ExprLike): Expr => fn('sec', [x]);
@@ -108,8 +109,8 @@ function piCoeffOnly(arg: Expr): Rational | undefined {
 /** Replace cos(u) by 1/sec(u) and sin(u) by 1/csc(u) (rewrite(sec)/rewrite(csc)). */
 function recipRewrite(t: Expr, which: 'sec' | 'csc'): Expr {
   return mapBottomUp(pow(t, -1), (e) => {
-    if (which === 'sec' && isFn(e, 'cos')) return pow(sec(e.args[0]!), -1);
-    if (which === 'csc' && isFn(e, 'sin')) return pow(csc(e.args[0]!), -1);
+    if (which === 'sec' && isFn(e, 'cos')) return pow(sec(first(e.args)), -1);
+    if (which === 'csc' && isFn(e, 'sin')) return pow(csc(first(e.args)), -1);
     return e;
   });
 }
@@ -120,7 +121,9 @@ function recipRewrite(t: Expr, which: 'sec' | 'csc'): Expr {
 
 function trigOfInverse(name: 'sin' | 'cos' | 'tan' | 'cot', arg: Expr): Expr | undefined {
   if (!(arg instanceof Fn)) return undefined;
-  const x = arg.args[0]!;
+  const x = arg.args[0];
+  if (x === undefined) return undefined;
+  const atan2Args = () => pair(arg.args);
   const s1mx2 = () => sqrt(add(1, neg(pow(x, 2))));
   const s1m1x2 = () => sqrt(add(1, neg(pow(x, -2))));
   switch (`${name}:${arg.name}`) {
@@ -131,8 +134,10 @@ function trigOfInverse(name: 'sin' | 'cos' | 'tan' | 'cot', arg: Expr): Expr | u
       return x;
     case 'sin:atan':
       return div(x, sqrt(add(1, pow(x, 2))));
-    case 'sin:atan2':
-      return div(arg.args[0]!, sqrt(add(pow(arg.args[1]!, 2), pow(arg.args[0]!, 2))));
+    case 'sin:atan2': {
+      const [y2, x2] = atan2Args();
+      return div(y2, sqrt(add(pow(x2, 2), pow(y2, 2))));
+    }
     case 'sin:acos':
       return s1mx2();
     case 'sin:acot':
@@ -143,8 +148,10 @@ function trigOfInverse(name: 'sin' | 'cos' | 'tan' | 'cot', arg: Expr): Expr | u
       return s1m1x2();
     case 'cos:atan':
       return div(1, sqrt(add(1, pow(x, 2))));
-    case 'cos:atan2':
-      return div(arg.args[1]!, sqrt(add(pow(arg.args[1]!, 2), pow(arg.args[0]!, 2))));
+    case 'cos:atan2': {
+      const [y2, x2] = atan2Args();
+      return div(x2, sqrt(add(pow(x2, 2), pow(y2, 2))));
+    }
     case 'cos:asin':
       return s1mx2();
     case 'cos:acot':
@@ -153,8 +160,10 @@ function trigOfInverse(name: 'sin' | 'cos' | 'tan' | 'cot', arg: Expr): Expr | u
       return s1m1x2();
     case 'cos:asec':
       return div(1, x);
-    case 'tan:atan2':
-      return div(arg.args[0]!, arg.args[1]!);
+    case 'tan:atan2': {
+      const [y2, x2] = atan2Args();
+      return div(y2, x2);
+    }
     case 'tan:asin':
       return div(x, s1mx2());
     case 'tan:acos':
@@ -167,8 +176,10 @@ function trigOfInverse(name: 'sin' | 'cos' | 'tan' | 'cot', arg: Expr): Expr | u
       return mul(s1m1x2(), x);
     case 'cot:atan':
       return div(1, x);
-    case 'cot:atan2':
-      return div(arg.args[1]!, arg.args[0]!);
+    case 'cot:atan2': {
+      const [y2, x2] = atan2Args();
+      return div(x2, y2);
+    }
     case 'cot:asin':
       return div(s1mx2(), x);
     case 'cot:acos':
@@ -183,7 +194,8 @@ function trigOfInverse(name: 'sin' | 'cos' | 'tan' | 'cot', arg: Expr): Expr | u
 
 function hypOfInverse(name: 'sinh' | 'cosh' | 'tanh' | 'coth', arg: Expr): Expr | undefined {
   if (!(arg instanceof Fn)) return undefined;
-  const x = arg.args[0]!;
+  const x = arg.args[0];
+  if (x === undefined) return undefined;
   const sxm = () => mul(sqrt(add(x, -1)), sqrt(add(x, 1)));
   switch (`${name}:${arg.name}`) {
     case 'sinh:asinh':
@@ -223,17 +235,27 @@ function hypOfInverse(name: 'sinh' | 'cosh' | 'tanh' | 'coth', arg: Expr): Expr 
 // Strengthen sin/cos/tan/sinh/cosh/tanh/asin/atan
 // ---------------------------------------------------------------------------
 
-const base = { ...evaluators };
+/** The evaluators of elementary.ts, captured before they are strengthened below. */
+const base = {
+  sin: defined(evaluators.sin),
+  cos: defined(evaluators.cos),
+  tan: defined(evaluators.tan),
+  sinh: defined(evaluators.sinh),
+  cosh: defined(evaluators.cosh),
+  tanh: defined(evaluators.tanh),
+  asin: defined(evaluators.asin),
+  atan: defined(evaluators.atan),
+};
 
 evaluators.sin = (x) => {
-  const r = base.sin!(x);
+  const r = base.sin(x);
   if (r !== undefined) return r;
   const c = iCoeff(x);
   if (c !== undefined) return mul(I, sinh(c));
   return trigOfInverse('sin', x);
 };
 evaluators.cos = (x) => {
-  const r = base.cos!(x);
+  const r = base.cos(x);
   if (r !== undefined) return r;
   const c = iCoeff(x);
   if (c !== undefined) return cosh(c);
@@ -258,7 +280,7 @@ evaluators.tan = (x) => {
   }
   const [rest, m] = peeloffPi(x);
   if (!m.isZero && m.q === 2n) return neg(cot(rest));
-  const r = base.tan!(x);
+  const r = base.tan(x);
   if (r !== undefined) return r;
   const c = iCoeff(x);
   if (c !== undefined) return couldExtractMinusSign(c) ? neg(mul(I, tanh(neg(c)))) : mul(I, tanh(c));
@@ -268,7 +290,7 @@ evaluators.sinh = (x) => {
   if (isZoo(x)) return S.NaN;
   const c = iCoeff(x);
   if (c !== undefined) return mul(I, sin(c));
-  const r = base.sinh!(x);
+  const r = base.sinh(x);
   if (r !== undefined) return r;
   const [rest, m] = peeloffIpi(x);
   if (!m.isZero) {
@@ -281,7 +303,7 @@ evaluators.cosh = (x) => {
   if (isZoo(x)) return S.NaN;
   const c = iCoeff(x);
   if (c !== undefined) return cos(c);
-  const r = base.cosh!(x);
+  const r = base.cosh(x);
   if (r !== undefined) return r;
   const [rest, m] = peeloffIpi(x);
   if (!m.isZero) {
@@ -294,7 +316,7 @@ evaluators.tanh = (x) => {
   if (isZoo(x)) return S.NaN;
   const c = iCoeff(x);
   if (c !== undefined) return couldExtractMinusSign(c) ? neg(mul(I, tan(neg(c)))) : mul(I, tan(c));
-  const r = base.tanh!(x);
+  const r = base.tanh(x);
   if (r !== undefined) return r;
   const [rest, m] = peeloffIpi(x);
   if (!m.isZero) {
@@ -304,14 +326,14 @@ evaluators.tanh = (x) => {
   return hypOfInverse('tanh', x);
 };
 evaluators.asin = (x) => {
-  const r = base.asin!(x);
+  const r = base.asin(x);
   if (r !== undefined) return r;
   const c = iCoeff(x);
   if (c !== undefined) return mul(I, asinh(c));
   return undefined;
 };
 evaluators.atan = (x) => {
-  const r = base.atan!(x);
+  const r = base.atan(x);
   if (r !== undefined) return r;
   const c = iCoeff(x);
   if (c !== undefined) return mul(I, atanh(c));
@@ -361,7 +383,7 @@ function reciprocalTrig(name: 'sec' | 'csc', recipOf: 'cos' | 'sin', inverse: st
       }
     }
     if (isFn(x, inverse)) return x.args[0];
-    const t = evaluators[recipOf]!(x);
+    const t = defined(evaluators[recipOf], recipOf)(x);
     if (t === undefined) return undefined;
     if (isFn(t, 'cos') || isFn(neg(t), 'cos')) return recipRewrite(t, 'sec');
     if (isFn(t, 'sin') || isFn(neg(t), 'sin')) return recipRewrite(t, 'csc');
@@ -390,7 +412,7 @@ function reciprocalHyp(name: 'sech' | 'csch', recipOf: 'cosh' | 'sinh', inverse:
   const self = name === 'sech' ? sech : csch;
   return (x) => {
     if (couldExtractMinusSign(x)) return even ? self(neg(x)) : neg(self(neg(x)));
-    const t = evaluators[recipOf]!(x);
+    const t = defined(evaluators[recipOf], recipOf)(x);
     if (isFn(x, inverse)) return x.args[0];
     return t === undefined ? undefined : pow(t, -1);
   };
@@ -502,7 +524,10 @@ const evalAtanh: Evaluator = (x) => {
   const c = iCoeff(x);
   if (c !== undefined) return mul(I, atan(c));
   if (couldExtractMinusSign(x)) return neg(atanh(neg(x)));
-  if (isFn(x, 'tanh')) return x.args[0]!.freeSymbols().size === 0 && x.args[0]!.kind !== 'Fn' ? x.args[0] : undefined;
+  if (isFn(x, 'tanh')) {
+    const t = first(x.args);
+    return t.freeSymbols().size === 0 && t.kind !== 'Fn' ? t : undefined;
+  }
   return undefined;
 };
 
@@ -655,13 +680,14 @@ const SPECS: Partial<Record<FnName, Spec>> = {
   },
 };
 
-for (const [name, spec] of Object.entries(SPECS) as [FnName, Spec][]) {
+forEachEntry(SPECS, (name, spec) => {
   evaluators[name] = spec.eval;
-  fnPartials[name] = ([x]) => spec.partial(x!);
-  mpFns[name] = ([z], p) => spec.mp(z!, p);
-  numericFns[name] = ([z]) => {
-    const r = spec.mp([F.fromNumber(z!.re), F.fromNumber(z!.im)], 64);
+  fnPartials[name] = (args) => spec.partial(first(args));
+  mpFns[name] = (args, p) => spec.mp(first(args), p);
+  numericFns[name] = (args) => {
+    const z = first(args);
+    const r = spec.mp([F.fromNumber(z.re), F.fromNumber(z.im)], 64);
     return { re: F.toNumber(r[0]), im: F.toNumber(r[1]) };
   };
   if (spec.conjugate) conjugateCommutes.add(name);
-}
+});

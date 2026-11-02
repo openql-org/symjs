@@ -6,6 +6,7 @@
  * (sympy.matrices.expressions.diagonal).
  */
 
+import { cast, first } from '../../core/guard';
 import { callableClass } from '../../core/callable';
 import type { Expr } from '../../core/nodes';
 import { S } from '../../core/nodes';
@@ -40,7 +41,7 @@ export class DiagonalMatrixNode extends MatrixExpr {
   }
   /** The matrix. */
   get arg(): MatrixExpr {
-    return this.args[0] as MatrixExpr;
+    return cast(first(this.args), MatrixExpr);
   }
   get shape(): [Expr, Expr] {
     return this.arg.shape;
@@ -50,7 +51,7 @@ export class DiagonalMatrixNode extends MatrixExpr {
     return diagonalLength(...this.shape);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new DiagonalMatrixNode(args[0]!);
+    return new DiagonalMatrixNode(first(args));
   }
   override entry(i: Expr, j: Expr): Expr {
     const len = this.diagonalLength;
@@ -73,7 +74,7 @@ export class DiagonalOfNode extends MatrixExpr {
   }
   /** The matrix. */
   get arg(): MatrixExpr {
-    return this.args[0] as MatrixExpr;
+    return cast(first(this.args), MatrixExpr);
   }
   get shape(): [Expr, Expr] {
     return [diagonalLength(...this.arg.shape), S.One];
@@ -83,7 +84,7 @@ export class DiagonalOfNode extends MatrixExpr {
     return this.shape[0];
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new DiagonalOfNode(args[0]!);
+    return new DiagonalOfNode(first(args));
   }
   override entry(i: Expr, _j: Expr, ctx?: EntryContext): Expr {
     return this.arg.entry(i, i, ctx);
@@ -101,7 +102,7 @@ export class DiagMatrixNode extends MatrixExpr {
   }
   /** The vector. */
   get vector(): MatrixExpr {
-    return this.args[0] as MatrixExpr;
+    return cast(first(this.args), MatrixExpr);
   }
   private get isColumn(): boolean {
     return !same(this.vector.rows, S.One);
@@ -112,7 +113,7 @@ export class DiagMatrixNode extends MatrixExpr {
     return [d, d];
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new DiagMatrixNode(args[0]!);
+    return new DiagMatrixNode(first(args));
   }
   override entry(i: Expr, j: Expr, ctx?: EntryContext): Expr {
     const r = this.isColumn ? this.vector.entry(i, S.Zero, ctx) : this.vector.entry(S.Zero, j, ctx);
@@ -126,7 +127,7 @@ export class DiagMatrixNode extends MatrixExpr {
     return Matrix.diag(...v);
   }
   override doit(hints: DoitHints = {}): Expr {
-    const vector = hints.deep === false ? this.vector : (doitArg(this.vector, hints) as MatrixExpr);
+    const vector = hints.deep === false ? this.vector : cast(doitArg(this.vector, hints), MatrixExpr);
     if (same(vector.rows, S.One) && same(vector.cols, S.One)) return vector;
     if (vector instanceof ImmutableMatrixNode) {
       const m = vector.matrix;

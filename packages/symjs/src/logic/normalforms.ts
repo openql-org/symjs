@@ -7,6 +7,7 @@
  * form (to_anf), truth tables and gate input counts.
  */
 
+import { at, pair } from '../core/guard';
 import type { Expr } from '../core/nodes';
 import { Rational, S, Sym, impl } from '../core/nodes';
 import { BoolOp } from '../core/boolalg';
@@ -81,9 +82,9 @@ function xorClauses(args: readonly Expr[], start: number): Expr[] {
 /** The to_nnf method of each boolean class. */
 function nnf(e: Expr, simplify: boolean): Expr {
   if (e instanceof LogicOp) {
-    if (e.name === 'Implies') return latticeToNnf('Or', [notFn(e.args[0]!), e.args[1]!], simplify);
+    if (e.name === 'Implies') return latticeToNnf('Or', [notFn(at(e.args, 0)), at(e.args, 1)], simplify);
     const a = e.args;
-    const cl = a.map((x, i) => orFn(notFn(x), a[(i + 1) % a.length]!));
+    const cl = a.map((x, i) => orFn(notFn(x), at(a, (i + 1) % a.length)));
     return latticeToNnf('And', cl, simplify);
   }
   if (e instanceof BoolOp) {
@@ -96,13 +97,13 @@ function nnf(e: Expr, simplify: boolean): Expr {
       case 'Xor':
         return latticeToNnf('And', xorClauses(e.args, 0), simplify);
       case 'ITE': {
-        const [a, b, c] = e.args as [Expr, Expr, Expr];
+        const [a, b, c] = [at(e.args, 0), at(e.args, 1), at(e.args, 2)];
         return latticeToNnf('And', [orFn(notFn(a), b), orFn(a, c)], simplify);
       }
     }
   }
   if (e instanceof LogicGate && e.gate === 'ITE') {
-    const [a, b, c] = e.args as [Expr, Expr, Expr];
+    const [a, b, c] = [at(e.args, 0), at(e.args, 1), at(e.args, 2)];
     return latticeToNnf('And', [orFn(notFn(a), b), orFn(a, c)], simplify);
   }
   if (e instanceof LogicGate) {
@@ -114,18 +115,18 @@ function nnf(e: Expr, simplify: boolean): Expr {
 
 function notToNnf(e: BoolOp, simplify: boolean): Expr {
   if (isLiteral(e)) return e;
-  const x = e.args[0]!;
+  const x = at(e.args, 0);
   const args = x.args;
   if (isOp(x, 'And')) return latticeToNnf('Or', args.map(notFn), simplify);
   if (isOp(x, 'Or')) return latticeToNnf('And', args.map(notFn), simplify);
-  if (x instanceof LogicOp && x.name === 'Implies') return latticeToNnf('And', [args[0]!, notFn(args[1]!)], simplify);
+  if (x instanceof LogicOp && x.name === 'Implies') return latticeToNnf('And', [at(args, 0), notFn(at(args, 1))], simplify);
   if (x instanceof LogicOp) return latticeToNnf('And', [orFn(...args), orFn(...args.map(notFn))], simplify);
   if (isOp(x, 'Xor')) return latticeToNnf('And', xorClauses(args, 1), simplify);
   if (isITE(x)) {
-    const [a, b, c] = args as [Expr, Expr, Expr];
+    const [a, b, c] = [at(args, 0), at(args, 1), at(args, 2)];
     return latticeToNnf('And', [orFn(a, notFn(c)), orFn(notFn(a), notFn(b))], simplify);
   }
-  throw new TypeError(`Illegal operator ${(x as { className?: string }).className ?? x.kind} in expression`);
+  throw new TypeError(`Illegal operator ${'className' in x && typeof x.className === 'string' ? x.className : x.kind} in expression`);
 }
 
 /**
@@ -136,8 +137,7 @@ export function isNnf(expr: BoolLike, simplified = true): boolean {
   const e0 = toBool(expr);
   if (isLiteral(e0)) return true;
   const stack = [e0];
-  while (stack.length) {
-    const e = stack.pop()!;
+  for (let e = stack.pop(); e !== undefined; e = stack.pop()) {
     if (isOp(e, 'And') || isOp(e, 'Or')) {
       if (simplified) {
         const keys = new Set(e.args.map((a) => a.key));
@@ -251,7 +251,7 @@ function argsToAnf(args: readonly Expr[], deep: boolean): Expr[] {
 function anf(e: Expr, deep: boolean): Expr {
   if (e instanceof LogicOp) {
     if (e.name === 'Implies') {
-      const [a, b] = e.args as [Expr, Expr];
+      const [a, b] = pair(e.args);
       return xorFn(argsToAnf([S.true, a, andFn(a, b)], deep), false);
     }
     const a = andFn(...e.args);
@@ -266,18 +266,20 @@ function anf(e: Expr, deep: boolean): Expr {
         const terms: Expr[] = [];
         for (let j = 1; j <= e.args.length; j++) {
           for (const c of combinations(e.args.length, j)) {
-            const t = andFn(...c.map((i) => e.args[i]!));
+            const t = andFn(...c.map((i) => at(e.args, i)));
             terms.push(deep ? toAnf(t, deep) : t);
           }
         }
         return xorFn(terms, false);
       }
       case 'Not':
-        return xorFn(argsToAnf([S.true, e.args[0]!], deep), false);
+        return xorFn(argsToAnf([S.true, at(e.args, 0)], deep), false);
       case 'Xor':
         return xorFn(argsToAnf(e.args, deep), false);
-      case 'ITE':
-        return ITE(...(argsToAnf(e.args, deep) as [Expr, Expr, Expr]));
+      case 'ITE': {
+        const xs = argsToAnf(e.args, deep);
+        return ITE(at(xs, 0), at(xs, 1), at(xs, 2));
+      }
     }
   }
   if (e instanceof LogicGate) return rebuildBool(e, argsToAnf(e.args, deep));
@@ -305,7 +307,7 @@ export function toIntRepr(clauses: readonly BoolLike[], symbols: readonly BoolLi
   };
   return clauses.map((c0) => {
     const c = toBool(c0);
-    return new Set((isOp(c, 'Or') ? c.args : [c]).map((a) => (isOp(a, 'Not') ? -lookup(a.args[0]!) : lookup(a))));
+    return new Set((isOp(c, 'Or') ? c.args : [c]).map((a) => (isOp(a, 'Not') ? -lookup(at(a.args, 0)) : lookup(a))));
   });
 }
 
@@ -337,7 +339,7 @@ export function truthTable(expr: BoolLike, variables: readonly BoolLike[], input
   const rows: [number[], Expr][] = [];
   for (let k = 0; k < 2 ** vars.length; k++) {
     const term = integerToTerm(k, vars.length);
-    const reps = new Map(vars.map((v, i) => [v.key, Rational.of(BigInt(term[i]!))] as const));
+    const reps = new Map(vars.map((v, i) => [v.key, Rational.of(BigInt(at(term, i)))] as const));
     rows.push([term, boolXreplace(e, reps)]);
   }
   return input ? rows : rows.map(([, v]) => v);

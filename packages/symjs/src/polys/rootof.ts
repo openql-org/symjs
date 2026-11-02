@@ -5,6 +5,8 @@
  * @file Indexed roots of polynomials (SymPy ComplexRootOf / CRootOf).
  */
 
+import { InvariantError } from '../core/errors';
+import { at, first, pair } from '../core/guard';
 import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { ExtensionExpr, Float, Rational } from '../core/nodes';
 import { sympify } from '../core/ops';
@@ -25,10 +27,12 @@ export class CRootOf extends ExtensionExpr {
     this.index = i;
   }
   get poly(): Expr {
-    return this.args[0]!;
+    return at(this.args, 0);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new CRootOf(args[0]!, args[1] as Rational);
+    const [poly, index] = pair(args);
+    if (!(index instanceof Rational)) throw new InvariantError('CRootOf index is not a Rational');
+    return new CRootOf(poly, index);
   }
   override printStr(print: (e: Expr) => string): string {
     return `CRootOf(${print(this.poly)}, ${this.index})`;
@@ -38,7 +42,7 @@ export class CRootOf extends ExtensionExpr {
   }
   /** The generator of the polynomial. */
   get gen(): Sym {
-    return [...freeSymbols(this.poly)][0] as Sym;
+    return first([...freeSymbols(this.poly)]);
   }
   override numericValue(dps: number): Expr | undefined {
     const rs = nroots(Poly.from(this.poly, [this.gen]), dps);

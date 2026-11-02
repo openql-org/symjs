@@ -21,6 +21,7 @@ import { fraction } from './rational';
 import { gcdTerms, signsimp } from './exprtools';
 import { powdenest, powsimp } from './powsimp';
 import { compareKeys, sortKey } from '../printing/sortkey';
+import { at, defined, first, last } from '../core/guard';
 
 // an internal control-flow signal that never leaves this module
 // oxlint-disable-next-line no-restricted-globals
@@ -36,7 +37,7 @@ const mexpand = (e: Expr): Expr => expand(e, { power_exp: false, power_base: fal
 const num = (e: Expr): number => e.toComplex().re;
 const isRat = (e: Expr): e is Rational => e instanceof Rational;
 const asCoeffMul = (e: Expr): [Expr, Expr] => {
-  if (e instanceof Mul && e.args[0] instanceof Rational) return [e.args[0], e.args.length === 2 ? e.args[1]! : new Mul(e.args.slice(1))];
+  if (e instanceof Mul && e.args[0] instanceof Rational) return [e.args[0], e.args.length === 2 ? at(e.args, 1) : new Mul(e.args.slice(1))];
   if (e instanceof Rational) return [e, S.One];
   return [S.One, e];
 };
@@ -69,7 +70,7 @@ function subsets(n: number): number[][] {
 // ---- radsimp helpers -------------------------------------------------------------
 
 function splitGcd(...a: Expr[]): [Expr, Expr[], Expr[]] {
-  let g = a[0]!;
+  let g = first(a);
   const b1 = [g];
   const b2: Expr[] = [];
   for (const x of a.slice(1)) {
@@ -126,17 +127,18 @@ export function radsimp(exIn: ExprLike, opts: { symbolic?: boolean; maxTerms?: n
   const expr0 = sympify(exIn);
   const sq = (x: Expr) => sqrt(x);
   const numFor = (rterms: [Expr, Expr][]): Expr => {
-    if (rterms.length === 1) return sq(rterms[0]![0]);
-    const [[A, a], [B, b]] = rterms as [[Expr, Expr], [Expr, Expr]];
+    const [A, a] = first(rterms);
+    if (rterms.length === 1) return sq(A);
+    const [B, b] = at(rterms, 1);
     if (rterms.length === 2) return add(mul(sq(A), a), mul(-1, sq(B), b));
-    const [C, c] = rterms[2]!;
+    const [C, c] = at(rterms, 2);
     if (rterms.length === 3) {
       return mul(
         add(mul(sq(A), a), mul(sq(B), b), mul(-1, sq(C), c)),
         add(mul(2, sq(A), sq(B), a, b), mul(-1, A, pow(a, 2)), mul(-1, B, pow(b, 2)), mul(C, pow(c, 2))),
       );
     }
-    const [D, d] = rterms[3]!;
+    const [D, d] = at(rterms, 3);
     return mul(
       add(mul(sq(A), a), mul(sq(B), b), mul(-1, sq(C), c), mul(-1, sq(D), d)),
       add(mul(2, sq(A), sq(B), a, b), mul(-1, A, pow(a, 2)), mul(-1, B, pow(b, 2)), mul(-2, sq(C), sq(D), c, d), mul(C, pow(c, 2)), mul(D, pow(d, 2))),
@@ -210,7 +212,7 @@ export function radsimp(exIn: ExprLike, opts: { symbolic?: boolean; maxTerms?: n
       }
       let rterms: [Expr, Expr][] = [...collected.values()].map(([k, v]) => [mul(...k), add(...v)] as [Expr, Expr]);
       rterms = rterms.sort((x, y) => compareKeys(sortKey(x[0]), sortKey(y[0])));
-      const nrad = rterms.length - (isOne(rterms[0]![0]) ? 1 : 0);
+      const nrad = rterms.length - (isOne(first(rterms)[0]) ? 1 : 0);
       if (nrad < 1) break;
       if (nrad > maxTerms) {
         keep = false;
@@ -291,7 +293,7 @@ function sqrtMatch(p0: Expr): [Expr, Expr, Expr] | undefined {
     const nmax = v.reduce((m, c) => (c[0] > m[0] || (c[0] === m[0] && compareKeys(sortKey(c[1]), sortKey(m[1])) > 0) ? c : m));
     if (nmax[0] === 0) return undefined;
     const [depth, , idx] = nmax;
-    let r = pargs.splice(idx, 1)[0]!;
+    let r = first(pargs.splice(idx, 1));
     v.splice(idx, 1);
     let b: Expr = S.One;
     if (r instanceof Mul) {
@@ -326,7 +328,10 @@ function sqrtdenest0(expr: Expr): Expr {
       let e: Expr = n;
       if (n instanceof Pow && n.base instanceof Add) {
         const args = sortedArgs(n.base);
-        if (args.length > 2 && args.every((x) => pow(x, 2) instanceof Rational && (pow(x, 2) as Rational).isInteger)) {
+        if (args.length > 2 && args.every((x) => {
+            const x2 = pow(x, 2);
+            return x2 instanceof Rational && x2.isInteger;
+          })) {
           try {
             return sqrtdenestRec(n);
           } catch (err) {
@@ -341,8 +346,12 @@ function sqrtdenest0(expr: Expr): Expr {
   }
   if (expr instanceof Add) {
     const parts = expr.args.map(asCoeffMul);
-    if (parts.every(([c]) => c instanceof Rational) && parts.every(([, a]) => isSqrt(a))) {
-      return sqrtRatcomb(parts.map(([c]) => c), parts.map(([, a]) => a as Pow));
+    const radicals = parts.map(([, a]) => a).filter(isSqrt);
+    if (parts.every(([c]) => c instanceof Rational) && radicals.length === parts.length) {
+      return sqrtRatcomb(
+        parts.map(([c]) => c),
+        radicals,
+      );
     }
   }
   if (expr.args.length) return rebuild(expr, expr.args.map(sqrtdenest0));
@@ -492,15 +501,15 @@ function denesterRec(nested: Expr[], av0: (Expr | undefined)[], h: number, maxDe
       const sqp = sqrt(p);
       if (sqp instanceof Rational) return [sqp, f];
     }
-    return [sqrt(nested[nested.length - 1]!), Array<number>(nested.length).fill(0)];
+    return [sqrt(last(nested)), Array<number>(nested.length).fill(0)];
   }
   let R: Expr | undefined;
   let values: [Expr, Expr, Expr][];
   let nested2: Expr[];
   if (av0[0] !== undefined) {
     values = [[av0[0], av0[1], S.Zero]];
-    R = av0[2]!;
-    nested2 = [av0[3]!, R];
+    R = defined(av0[2]);
+    nested2 = [defined(av0[3]), R];
     av0[0] = undefined;
   } else {
     values = nested.map(sqrtMatch).filter((v): v is [Expr, Expr, Expr] => v !== undefined);
@@ -514,13 +523,14 @@ function denesterRec(nested: Expr[], av0: (Expr | undefined)[], h: number, maxDe
         } else R = v[2];
       }
     }
-    if (R === undefined) return [sqrt(nested[nested.length - 1]!), Array<number>(nested.length).fill(0)];
-    nested2 = [...values.map((v) => add(mexpand(pow(v[0], 2)), mul(-1, mexpand(mul(R!, pow(v[1], 2)))))), R];
+    if (R === undefined) return [sqrt(last(nested)), Array<number>(nested.length).fill(0)];
+    const r0 = R;
+    nested2 = [...values.map((v) => add(mexpand(pow(v[0], 2)), mul(-1, mexpand(mul(r0, pow(v[1], 2)))))), r0];
   }
   const [d, f] = denesterRec(nested2, av0, h + 1, maxDepth);
   if (!f || d === undefined) return [undefined, undefined];
   if (!nested.some((_, i) => f[i])) {
-    const v = values[values.length - 1]!;
+    const v = last(values);
     return [sqrt(add(v[0], mexpand(mul(v[1], d)))), f];
   }
   const p = mul(...nested.filter((_, i) => f[i]));
@@ -534,7 +544,7 @@ function denesterRec(nested: Expr[], av0: (Expr | undefined)[], h: number, maxDe
   }
   if (!f[nested.length]) {
     const vad = mexpand(add(v0, d));
-    if (num(vad) <= 0) return [sqrt(nested[nested.length - 1]!), Array<number>(nested.length).fill(0)];
+    if (num(vad) <= 0) return [sqrt(last(nested)), Array<number>(nested.length).fill(0)];
     if (!(sqrtDepth(vad) <= sqrtDepth(R) + 1 || pow(vad, 2).isNumber)) {
       av0[1] = undefined;
       return [undefined, undefined];
@@ -548,7 +558,7 @@ function denesterRec(nested: Expr[], av0: (Expr | undefined)[], h: number, maxDe
     return [mexpand(add(mul(sqvad, pow(sqrt(2), -1)), mul(v1, sqrt(R), sqvad1, pow(sqrt(2), -1)))), f];
   }
   const s2 = add(mexpand(mul(v1, R)), d);
-  if (num(s2) <= 0) return [sqrt(nested[nested.length - 1]!), Array<number>(nested.length).fill(0)];
+  if (num(s2) <= 0) return [sqrt(last(nested)), Array<number>(nested.length).fill(0)];
   const FR = pow(mexpand(R), Rational.of(1n, 4n));
   const s = sqrt(s2);
   return [mexpand(add(mul(s, pow(mul(sqrt(2), FR), -1)), mul(v0, FR, pow(mul(sqrt(2), s), -1)))), f];
@@ -559,8 +569,9 @@ function sqrtRatcomb(cs0: Expr[], args0: Pow[]): Expr {
   const args = [...args0];
   const find = (): [Expr, number, number] | undefined => {
     for (let i = 0; i < args.length - 1; i++) {
+      const ai = at(args, i);
       for (let j = i + 1; j < args.length; j++) {
-        const p = mexpand(mul(args[i]!.base, args[j]!.base));
+        const p = mexpand(mul(ai.base, at(args, j).base));
         const s = sqrtdenest(sqrt(p));
         if (s.key !== sqrt(p).key) return [s, i, j];
       }
@@ -568,12 +579,12 @@ function sqrtRatcomb(cs0: Expr[], args0: Pow[]): Expr {
     return undefined;
   };
   const found = find();
-  if (!found) return add(...cs.map((c, i) => mul(c, args[i]!)));
+  if (!found) return add(...cs.map((c, i) => mul(c, at(args, i))));
   const [s, i1, i2] = found;
-  const c2 = cs.splice(i2, 1)[0]!;
+  const c2 = first(cs.splice(i2, 1));
   args.splice(i2, 1);
-  const a1 = args[i1]!;
-  cs[i1] = add(cs[i1]!, radsimp(mul(c2, s, pow(a1.base, -1))));
+  const a1 = at(args, i1);
+  cs[i1] = add(at(cs, i1), radsimp(mul(c2, s, pow(a1.base, -1))));
   return sqrtRatcomb(cs, args);
 }
 

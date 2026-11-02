@@ -8,13 +8,14 @@
  * into polynomial factors, e.g. gamma(x + 3)/gamma(x + 1) = (x + 1)*(x + 2).
  */
 
-import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Add, Fn, Mul, Pow, Rational, S } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Dummy, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { polyCoefficients } from '../polys/poly';
 import { powsimp } from './powsimp';
 import { cancel, fraction } from './rational';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
-import { countOps, mapBottomUp } from '../core/traverse';
+import { countOps, mapBottomUp, xreplace } from '../core/traverse';
+import { at, first, pair } from '../core/guard';
 import { isIntegerQ, isNegative as isNegativeQ, isZero as isZeroQ } from '../core/assumptions';
 import { fn } from '../functions/elementary';
 import { expand } from './expand';
@@ -37,18 +38,23 @@ const knownNegative = (x: Expr): boolean => (x instanceof Rational ? x.p < 0n : 
 export function toGamma(e: Expr): Expr {
   return mapBottomUp(e, (x) => {
     if (!(x instanceof Fn)) return x;
-    const [a, b] = x.args;
     switch (x.name) {
       case 'factorial':
-        return gamma(add(a!, 1));
-      case 'binomial':
-        return mul(gamma(add(a!, 1)), pow(gamma(add(b!, 1)), -1), pow(gamma(add(a!, mul(-1, b!), 1)), -1));
-      case 'rf':
-        if (knownNonPositive(a!)) return mul(pow(-1, b!), gamma(add(1, mul(-1, a!))), pow(gamma(add(1, mul(-1, a!), mul(-1, b!))), -1));
-        return mul(gamma(add(a!, b!)), pow(gamma(a!), -1));
-      case 'ff':
-        if (knownNegative(a!)) return mul(pow(-1, b!), gamma(add(b!, mul(-1, a!))), pow(gamma(mul(-1, a!)), -1));
-        return mul(gamma(add(a!, 1)), pow(gamma(add(a!, mul(-1, b!), 1)), -1));
+        return gamma(add(first(x.args), 1));
+      case 'binomial': {
+        const [a, b] = pair(x.args);
+        return mul(gamma(add(a, 1)), pow(gamma(add(b, 1)), -1), pow(gamma(add(a, mul(-1, b), 1)), -1));
+      }
+      case 'rf': {
+        const [a, b] = pair(x.args);
+        if (knownNonPositive(a)) return mul(pow(-1, b), gamma(add(1, mul(-1, a))), pow(gamma(add(1, mul(-1, a), mul(-1, b))), -1));
+        return mul(gamma(add(a, b)), pow(gamma(a), -1));
+      }
+      case 'ff': {
+        const [a, b] = pair(x.args);
+        if (knownNegative(a)) return mul(pow(-1, b), gamma(add(b, mul(-1, a))), pow(gamma(mul(-1, a)), -1));
+        return mul(gamma(add(a, 1)), pow(gamma(add(a, mul(-1, b), 1)), -1));
+      }
       default:
         return x;
     }
@@ -62,7 +68,7 @@ function combineProduct(e: Expr): Expr {
   const gs: [Expr, number][] = []; // gamma argument, integer exponent
   for (const f of e.args) {
     const [b, n] = f instanceof Pow && f.exp instanceof Rational && f.exp.isInteger ? [f.base, Number(f.exp.p)] : [f, 1];
-    if (b instanceof Fn && b.name === 'gamma') gs.push([b.args[0]!, n]);
+    if (b instanceof Fn && b.name === 'gamma') gs.push([first(b.args), n]);
     else rest.push(f);
   }
   if (gs.length < 2) return e;
@@ -117,13 +123,13 @@ function reflect(e: Expr): Expr {
   const fs = [...e.args];
   const gam = (f: Expr): [Expr, Expr] | undefined => {
     const [b, k] = f instanceof Pow ? [f.base, f.exp] : [f, Rational.of(1n)];
-    return b instanceof Fn && b.name === 'gamma' && k instanceof Rational && (k.p === 1n || k.p === -1n) && k.q === 1n ? [b.args[0]!, k] : undefined;
+    return b instanceof Fn && b.name === 'gamma' && k instanceof Rational && (k.p === 1n || k.p === -1n) && k.q === 1n ? [first(b.args), k] : undefined;
   };
   for (let i = 0; i < fs.length; i++) {
-    const gi = gam(fs[i]!);
+    const gi = gam(at(fs, i));
     if (!gi) continue;
     for (let j = i + 1; j < fs.length; j++) {
-      const gj = gam(fs[j]!);
+      const gj = gam(at(fs, j));
       if (!gj || gj[1].key !== gi[1].key) continue;
       const n = add(gi[0], gj[0]);
       if (!(n instanceof Rational && n.q === 1n) || isIntegerQ(gi[0]) === true) continue;
@@ -170,7 +176,7 @@ export function combsimp(exIn: ExprLike): Expr {
   if (hasGamma(c)) {
     if (c.key === g.key && countOps(g) >= countOps(ex)) return ex;
     // as_comb: Gamma of an integer is written as a factorial again
-    return mapBottomUp(c, (x) => (x instanceof Fn && x.name === 'gamma' && isIntegerQ(x.args[0]!) === true ? fn('factorial', [add(x.args[0]!, -1)]) : x));
+    return mapBottomUp(c, (x) => (x instanceof Fn && x.name === 'gamma' && isIntegerQ(first(x.args)) === true ? fn('factorial', [add(first(x.args), -1)]) : x));
   }
   try {
     return factor(c);
@@ -193,8 +199,15 @@ export function hypersimp(fIn: ExprLike, k: Expr): Expr | undefined {
     // keep the combined ratio
   }
   const [n, d] = fraction(r);
-  const isPoly = (e: Expr) => !e.has(k) || polyCoefficients(expand(e), k as Sym) !== undefined;
-  return isPoly(n) && isPoly(d) ? r : undefined;
+  return isPolyIn(n, k) && isPolyIn(d, k) ? r : undefined;
+}
+
+/** Is e a polynomial in k (k need not be a symbol: it is replaced by a dummy first)? */
+function isPolyIn(e: Expr, k: Expr): boolean {
+  if (!e.has(k)) return true;
+  if (k instanceof Sym) return polyCoefficients(expand(e), k) !== undefined;
+  const d = new Dummy('k');
+  return polyCoefficients(xreplace(expand(e), [[k, d]]), d) !== undefined;
 }
 
 /** SymPy Expr.is_hypergeometric(k). */
@@ -206,6 +219,5 @@ export function isHypergeometric(f: ExprLike, k: Expr): boolean {
 export function hypersimilar(f: ExprLike, g: ExprLike, k: Expr): boolean {
   const r = combsimp(mul(sympify(f), pow(sympify(g), -1)));
   const [n, d] = fraction(cancel(r));
-  const isPoly = (e: Expr) => !e.has(k) || polyCoefficients(expand(e), k as Sym) !== undefined;
-  return isPoly(n) && isPoly(d);
+  return isPolyIn(n, k) && isPolyIn(d, k);
 }

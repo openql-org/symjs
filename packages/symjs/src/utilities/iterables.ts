@@ -17,6 +17,7 @@
  * partitions themselves instead of copies of the last state.
  */
 
+import { at, defined, expectType, first, getOrThrow, last, pair } from '../core/guard';
 import type { Assumptions } from '../core/nodes';
 import { BoolAtom, Expr, Rational, Sym, isNum } from '../core/nodes';
 import { neg } from '../core/ops';
@@ -34,8 +35,9 @@ export type Graph<T> = readonly [vertices: readonly T[], edges: readonly (readon
 /** A sequence: an array or a string. */
 type Sequence<T> = readonly T[] | string;
 
-/** The number at index i (arrays of numbers are dense here). */
-const at = (xs: readonly number[], i: number): number => xs[i] as number;
+/** Whether x can be iterated with `for...of` (a string or an object with an iterator). */
+const isIterable = (x: unknown): x is Iterable<unknown> =>
+  typeof x === 'string' || (typeof x === 'object' && x !== null && Symbol.iterator in x && typeof x[Symbol.iterator] === 'function');
 
 function checkInt(n: number, what: string): number {
   if (!Number.isInteger(n)) throw new TypeError(`${what} must be an integer, got ${n}`);
@@ -60,11 +62,13 @@ function isInstance(x: unknown, spec: TypeSpec): boolean {
   return x instanceof spec;
 }
 
+const isTypeSpecList = (spec: TypeSpec | readonly TypeSpec[]): spec is readonly TypeSpec[] => Array.isArray(spec);
+
 function isInstanceOfAny(x: unknown, spec: TypeSpec | readonly TypeSpec[]): boolean {
-  return Array.isArray(spec) ? (spec as readonly TypeSpec[]).some((s) => isInstance(x, s)) : isInstance(x, spec as TypeSpec);
+  return isTypeSpecList(spec) ? spec.some((s) => isInstance(x, s)) : isInstance(x, spec);
 }
 
-const GeneratorPrototype = Object.getPrototypeOf(Object.getPrototypeOf((function* () {})())) as object;
+const GeneratorPrototype: object = Object.getPrototypeOf(Object.getPrototypeOf((function* () {})()));
 
 /**
  * The type of generator objects (Python `types.GeneratorType`), usable as an
@@ -130,7 +134,7 @@ export function flatten(iter: Iterable<unknown>, opts: { levels?: number | null;
   let levels = opts.levels ?? null;
   const cls = opts.cls ?? null;
   if (levels !== null) {
-    if (levels === 0) return iter as unknown[];
+    if (levels === 0) return Array.isArray(iter) ? iter : [...iter];
     if (levels > 0) levels -= 1;
     else throw new RangeError(`expected non-negative number of levels, got ${levels}`);
   }
@@ -138,7 +142,7 @@ export function flatten(iter: Iterable<unknown>, opts: { levels?: number | null;
   const result: unknown[] = [];
   for (const el of iter) {
     if (reducible(el)) {
-      const inner = el instanceof Expr ? el.args : (el as Iterable<unknown>);
+      const inner = el instanceof Expr ? el.args : expectType(el, isIterable, 'flattened element');
       result.push(...flatten(inner, { levels, cls }));
     } else {
       result.push(el);
@@ -161,8 +165,11 @@ export function unflatten<T>(iter: readonly T[], n = 2): T[][] {
 /** A reshape template: counts, nested arrays (lists and tuples) and sets of counts. */
 export type ReshapeTemplate = readonly (number | ReshapeTemplate | ReadonlySet<number | ReshapeTemplate>)[] | ReadonlySet<number | ReshapeTemplate>;
 
-function templateSum(how: ReshapeTemplate): number {
-  return (flatten(how as Iterable<unknown>) as number[]).reduce((a, b) => a + b, 0);
+function templateSum(how: ReshapeTemplate | number): number {
+  if (typeof how === 'number') return how;
+  let s = 0;
+  for (const h of how) s += templateSum(h);
+  return s;
 }
 
 /**
@@ -185,7 +192,7 @@ export function reshape<T>(seq: readonly T[], how: ReshapeTemplate): unknown[] {
         i += hi;
       } else {
         const c = templateSum(hi);
-        const inner = reshape(seq.slice(i, i + c), hi)[0] as unknown[] | Set<unknown>;
+        const inner = expectType(first(reshape(seq.slice(i, i + c), hi)), isIterable, 'reshaped part');
         part.push(hi instanceof Set ? new Set(inner) : [...inner]);
         i += c;
       }
@@ -210,7 +217,7 @@ export function group<T>(seq: Iterable<T>, opts: { multiple?: boolean } = {}): T
     else runs.push([x]);
   }
   if (opts.multiple ?? true) return runs;
-  return runs.map((r): [T, number] => [r[0] as T, r.length]);
+  return runs.map((r): [T, number] => [first(r), r.length]);
 }
 
 const iproduct2 = function* <A, B>(iterable1: Iterable<A>, iterable2: Iterable<B>): Generator<[A, B], void, undefined> {
@@ -226,7 +233,7 @@ const iproduct2 = function* <A, B>(iterable1: Iterable<A>, iterable2: Iterable<B
   append(it1, elems1);
   append(it2, elems2);
   while (n <= elems1.length + elems2.length) {
-    for (let m = n - elems1.length + 1; m < elems2.length; m++) yield [elems1[n - m]!, elems2[m]!];
+    for (let m = n - elems1.length + 1; m < elems2.length; m++) yield [at(elems1, n - m), at(elems2, m)];
     n++;
     append(it1, elems1);
     append(it2, elems2);
@@ -238,20 +245,20 @@ const iproduct2 = function* <A, B>(iterable1: Iterable<A>, iterable2: Iterable<B
  * iterables; every tuple of the product is reached eventually.
  */
 export function* iproduct<T>(...iterables: Iterable<T>[]): Generator<T[], void, undefined> {
-  if (iterables.length === 0) {
+  const [it0, it1, ...rest] = iterables;
+  if (it0 === undefined) {
     yield [];
     return;
   }
-  if (iterables.length === 1) {
-    for (const e of iterables[0]!) yield [e];
+  if (it1 === undefined) {
+    for (const e of it0) yield [e];
     return;
   }
-  if (iterables.length === 2) {
-    for (const [a, b] of iproduct2(iterables[0]!, iterables[1]!)) yield [a, b];
+  if (rest.length === 0) {
+    for (const [a, b] of iproduct2(it0, it1)) yield [a, b];
     return;
   }
-  const [first, ...others] = iterables;
-  for (const [ef, eo] of iproduct2(first!, iproduct(...others))) yield [ef, ...eo];
+  for (const [ef, eo] of iproduct2(it0, iproduct(it1, ...rest))) yield [ef, ...eo];
 }
 
 /**
@@ -360,6 +367,7 @@ export function numberedSymbols<S extends Sym = Sym>(
   opts: { cls?: SymbolClass<S>; start?: number; exclude?: Iterable<Expr> } & Assumptions = {},
 ): Generator<S, never, undefined> {
   const { cls, start = 0, exclude = [], ...assumptions } = opts;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- without cls the symbols are Syms, the default of S; TS cannot tie the default class to the type parameter
   const C = cls ?? (Sym as unknown as SymbolClass<S>);
   const ex = new Set<string>();
   for (const e of exclude) ex.add(e.key);
@@ -444,23 +452,23 @@ export function dictMerge<K, V>(...dicts: ReadonlyMap<K, V>[]): ValueMap<K, V> {
 /** SymPy `common_prefix(*seqs)`: the longest common start of the sequences. */
 export function commonPrefix<T>(...seqs: readonly (readonly T[])[]): T[] {
   if (seqs.length === 0 || seqs.some((s) => s.length === 0)) return [];
-  const first = seqs[0]!;
-  if (seqs.length === 1) return [...first];
+  const s0 = first(seqs);
+  if (seqs.length === 1) return [...s0];
   const n = Math.min(...seqs.map((s) => s.length));
   let i = 0;
-  while (i < n && seqs.every((s) => valueEquals(s[i], first[i]))) i++;
-  return first.slice(0, i);
+  while (i < n && seqs.every((s) => valueEquals(s[i], s0[i]))) i++;
+  return s0.slice(0, i);
 }
 
 /** SymPy `common_suffix(*seqs)`: the longest common ending of the sequences. */
 export function commonSuffix<T>(...seqs: readonly (readonly T[])[]): T[] {
   if (seqs.length === 0 || seqs.some((s) => s.length === 0)) return [];
-  const first = seqs[0]!;
-  if (seqs.length === 1) return [...first];
+  const s0 = first(seqs);
+  if (seqs.length === 1) return [...s0];
   const n = Math.min(...seqs.map((s) => s.length));
   let i = 0;
-  while (i < n && seqs.every((s) => valueEquals(s[s.length - 1 - i], first[first.length - 1 - i]))) i++;
-  return first.slice(first.length - i);
+  while (i < n && seqs.every((s) => valueEquals(s[s.length - 1 - i], s0[s0.length - 1 - i]))) i++;
+  return s0.slice(s0.length - i);
 }
 
 /** SymPy `prefixes(seq)`: the prefixes of `seq`, shortest first. */
@@ -501,7 +509,8 @@ export function topologicalSort<T>(graph: Graph<T>, key?: (v: T) => unknown): T[
     .sort((a, b) => compareValues(kf(b[0]), kf(a[0])) || a[1] - b[1])
     .map(([v]) => v);
   while (S.length) {
-    const node = S.pop()!;
+    const node = last(S);
+    S.pop();
     L.push(node);
     for (const edge of [...E]) {
       const [u, v] = edge;
@@ -536,7 +545,8 @@ function stronglyConnected<T>(V: readonly T[], gmap: ValueMap<T, T[]>): T[][] {
   const finish = (v1: T) => {
     if (lowlink.get(v1) === indices.get(v1)) {
       const pop = () => {
-        const x = stack.pop() as T;
+        const x = last(stack);
+        stack.pop();
         onStack.delete(valueKey(x));
         return x;
       };
@@ -544,22 +554,22 @@ function stronglyConnected<T>(V: readonly T[], gmap: ValueMap<T, T[]>): T[][] {
       while (!valueEquals(component[component.length - 1], v1)) component.push(pop());
       components.push(component.reverse());
     }
-    const [v2] = callstack.pop()!;
+    const [v2] = defined(callstack.pop(), 'call stack entry');
     const top = callstack[callstack.length - 1];
     if (top) {
       const [u] = top;
-      lowlink.set(u, Math.min(lowlink.get(u)!, lowlink.get(v2)!));
+      lowlink.set(u, Math.min(getOrThrow(lowlink, u), getOrThrow(lowlink, v2)));
     }
   };
   for (const v of V) {
     if (indices.has(v)) continue;
     start(v);
     while (callstack.length) {
-      const [v1, it1] = callstack[callstack.length - 1]!;
+      const [v1, it1] = last(callstack);
       const r = it1.next();
       if (r.done === true) finish(v1);
       else if (!indices.has(r.value)) start(r.value);
-      else if (onStack.has(valueKey(r.value))) lowlink.set(v1, Math.min(lowlink.get(v1)!, indices.get(r.value)!));
+      else if (onStack.has(valueKey(r.value))) lowlink.set(v1, Math.min(getOrThrow(lowlink, v1), getOrThrow(indices, r.value)));
     }
   }
   return components;
@@ -621,16 +631,17 @@ export function rotateRight<T>(x: readonly T[] | string, y: number): T[] | strin
  * elements compared by `key`.
  */
 export function leastRotation<T>(x: Sequence<T>, key?: (e: T) => unknown): number {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- for a string the key receives its characters, which the public type (key over T) cannot express
   const kf = (key ?? ((e: T) => e)) as (e: unknown) => unknown;
   const S: unknown[] = [...(x as Iterable<unknown>), ...(x as Iterable<unknown>)];
   const f: number[] = new Array<number>(S.length).fill(-1);
   let k = 0;
   for (let j = 1; j < S.length; j++) {
     const sj = S[j];
-    let i = f[j - k - 1]!;
+    let i = at(f, j - k - 1);
     while (i !== -1 && !valueEquals(sj, S[k + i + 1])) {
       if (compareValues(kf(sj), kf(S[k + i + 1])) < 0) k = j - i - 1;
-      i = f[i]!;
+      i = at(f, i);
     }
     if (!valueEquals(sj, S[k + i + 1])) {
       if (compareValues(kf(sj), kf(S[k])) < 0) k = j;
@@ -660,6 +671,7 @@ export function minlex<T>(seq: readonly T[] | string, opts: { directed?: boolean
     const rseq = typeof seq === 'string' ? seq.split('').reverse().join('') : [...seq].reverse();
     const rbest = rot(rseq);
     // min(best, rbest, key=key): the key applies to the whole sequences
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- as in SymPy's min(..., key=key) the key is applied to whole rotated sequences, not to elements of type T
     const kf = (key ?? ((e: unknown) => e)) as (e: unknown) => unknown;
     if (compareValues(kf(rbest), kf(best)) < 0) best = rbest;
   }
@@ -675,7 +687,7 @@ export function runs<T>(seq: Iterable<T>, op: (a: T, b: T) => boolean = (a, b) =
   let run: T[] | undefined;
   for (const ei of seq) {
     if (run === undefined) run = [ei];
-    else if (op(ei, run[run.length - 1]!)) run.push(ei);
+    else if (op(ei, last(run))) run.push(ei);
     else {
       cycles.push(run);
       run = [ei];
@@ -725,8 +737,7 @@ const multisetCombinationsG = function* <T>(n: number, g: readonly MultisetEntry
     yield [];
     return;
   }
-  for (let i = 0; i < g.length; i++) {
-    const [k, v0] = g[i]!;
+  for (const [i, [k, v0]] of g.entries()) {
     let v = v0;
     if (v >= n) {
       yield new Array<T>(n).fill(k);
@@ -740,6 +751,11 @@ const multisetCombinationsG = function* <T>(n: number, g: readonly MultisetEntry
     }
   }
 };
+
+/** Whether a multiset argument is given as a map from element to multiplicity. */
+function isCountMap<T>(m: Iterable<T> | ReadonlyMap<T, number>): m is ReadonlyMap<T, number> {
+  return m instanceof Map;
+}
 
 function checkCounts(m: ReadonlyMap<unknown, number>): void {
   for (const v of m.values()) {
@@ -755,17 +771,16 @@ function checkCounts(m: ReadonlyMap<unknown, number>): void {
  */
 export function* multisetCombinations<T>(m: Iterable<T> | ReadonlyMap<T, number>, n: number): Generator<T[], void, undefined> {
   let g: MultisetEntry<T>[];
-  if (m instanceof Map) {
-    const mm = m as ReadonlyMap<T, number>;
-    checkCounts(mm);
-    const N = [...mm.values()].reduce((a, b) => a + b, 0);
+  if (isCountMap(m)) {
+    checkCounts(m);
+    const N = [...m.values()].reduce((a, b) => a + b, 0);
     if (n > N) return;
-    g = orderedValues(mm.keys()).map((k) => [k, mm.get(k)!]);
+    g = orderedValues(m.keys()).map((k) => [k, getOrThrow(m, k)]);
   } else {
-    const items = [...(m as Iterable<T>)];
+    const items = [...m];
     if (n > items.length) return;
     const ms = multiset(items);
-    g = orderedValues(ms.keys()).map((k) => [k, ms.get(k)!]);
+    g = orderedValues(ms.keys()).map((k) => [k, getOrThrow(ms, k)]);
   }
   yield* multisetCombinationsG(n, g);
 }
@@ -780,7 +795,7 @@ const multisetPermutationsG = function* <T>(size: number | null, g: MultisetEntr
   if (size === 1) {
     for (const [k] of doo) yield [k];
   } else if (doo.length === 1) {
-    const [k, v] = doo[0]!;
+    const [k, v] = first(doo);
     const c = size === null ? v : size <= v ? size : 0;
     yield new Array<T>(c).fill(k);
   } else if (doo.every(([, v]) => v === 1)) {
@@ -806,12 +821,11 @@ const multisetPermutationsG = function* <T>(size: number | null, g: MultisetEntr
  */
 export function* multisetPermutations<T>(m: Iterable<T> | ReadonlyMap<T, number>, size?: number | null): Generator<T[], void, undefined> {
   let g: MultisetEntry<T>[];
-  if (m instanceof Map) {
-    const mm = m as ReadonlyMap<T, number>;
-    checkCounts(mm);
-    g = orderedValues(mm.keys()).map((k) => [k, mm.get(k)!]);
+  if (isCountMap(m)) {
+    checkCounts(m);
+    g = orderedValues(m.keys()).map((k) => [k, getOrThrow(m, k)]);
   } else {
-    g = group(orderedValues(m as Iterable<T>), { multiple: false });
+    g = group(orderedValues(m), { multiple: false });
   }
   yield* multisetPermutationsG(size ?? null, g);
 }
@@ -826,7 +840,7 @@ const setPartitions = function* (n: number): Generator<[number, number[]], void,
     let i: number;
     for (;;) {
       m -= 1;
-      i = q[m]!;
+      i = at(q, m);
       if (p[i] !== 1) break;
       q[m] = 0;
     }
@@ -834,13 +848,13 @@ const setPartitions = function* (n: number): Generator<[number, number[]], void,
     q[m] = i;
     m += 1;
     nc += m - n;
-    p[0]! += n - m;
+    p[0] = at(p, 0) + n - m;
     if (i === nc) {
       p[nc] = 0;
       nc += 1;
     }
-    p[i - 1]! -= 1;
-    p[i]! += 1;
+    p[i - 1] = at(p, i - 1) - 1;
+    p[i] = at(p, i) + 1;
     yield [nc, q];
   }
 };
@@ -874,7 +888,7 @@ export function* multisetPartitions<T>(multiset: Iterable<T> | number, m?: numbe
     for (const [nc, q] of setPartitions(n)) {
       if (mm === null || nc === mm) {
         const rv: number[][] = Array.from({ length: nc }, () => []);
-        for (let i = 0; i < n; i++) rv[q[i]!]!.push(ms[i]!);
+        q.forEach((qi, i) => at(rv, qi).push(at(ms, i)));
         yield rv;
       }
     }
@@ -892,8 +906,8 @@ export function* multisetPartitions<T>(multiset: Iterable<T> | number, m?: numbe
     for (const [size, p] of partitions(n, { m: mm, size: true })) {
       if (mm === null || size === mm) {
         const rv: T[][] = [];
-        for (const k of [...p.keys()].sort((a, b) => a - b)) {
-          for (let r = 0; r < p.get(k)!; r++) rv.push(Array.from({ length: k }, () => x[0]!));
+        for (const [k, c] of [...p].sort((a, b) => a[0] - b[0])) {
+          for (let r = 0; r < c; r++) rv.push(Array.from({ length: k }, () => first(x)));
         }
         yield rv;
       }
@@ -921,8 +935,8 @@ export function* multisetPartitions<T>(multiset: Iterable<T> | number, m?: numbe
     for (const [nc, q] of setPartitions(n)) {
       if (mm === null || nc === mm) {
         const rv: number[][] = Array.from({ length: nc }, () => []);
-        for (let i = 0; i < n; i++) rv[q[i]!]!.push(i);
-        yield rv.map((part) => part.map((j) => ms[j]!));
+        q.forEach((qi, i) => at(rv, qi).push(i));
+        yield rv.map((part) => part.map((j) => at(ms, j)));
       }
     }
   }
@@ -971,7 +985,7 @@ export function* partitions(
     let reuse: number;
     if (keys[keys.length - 1] === 1) {
       keys.pop();
-      reuse = ms.get(1)!;
+      reuse = getOrThrow(ms, 1);
       ms.delete(1);
       room += reuse;
     } else {
@@ -979,8 +993,8 @@ export function* partitions(
     }
     let need: number;
     for (;;) {
-      let i = keys[keys.length - 1]!;
-      const newcount = ms.get(i)! - 1;
+      let i = last(keys);
+      const newcount = getOrThrow(ms, i) - 1;
       ms.set(i, newcount);
       reuse += i;
       if (newcount === 0) {
@@ -1031,7 +1045,7 @@ const orderedPartitionsInPlace = function* (n: number, m: number | null, sort: b
     let v = n;
     while (v > 0) {
       v -= 1;
-      let x = a[v]! + 1;
+      let x = at(a, v) + 1;
       while (y >= 2 * x) {
         a[v] = x;
         y -= x;
@@ -1045,8 +1059,9 @@ const orderedPartitionsInPlace = function* (n: number, m: number | null, sort: b
         x += 1;
         y -= 1;
       }
-      a[v] = x + y;
-      y = a[v]! - 1;
+      const s = x + y;
+      a[v] = s;
+      y = s - 1;
       yield a.slice(0, w);
     }
   } else if (m === 1) {
@@ -1106,8 +1121,8 @@ export function* binaryPartitions(n: number): Generator<number[], void, undefine
       continue;
     }
     partition.push(1);
-    partition[lastNum] = partition[lastNum]! >> 1;
-    let x = partition[lastNum]!;
+    let x = at(partition, lastNum) >> 1;
+    partition[lastNum] = x;
     partition[lastNum + 1] = x;
     lastNum += 1;
     while (x > 1) {
@@ -1159,14 +1174,15 @@ export function hasVariety(seq: Iterable<unknown>): boolean {
  * RangeError when an array changes size during the iteration.
  */
 export function* uniq<T>(seq: Iterable<T>): Generator<T, void, undefined> {
-  const n = Array.isArray(seq) ? seq.length : null;
+  const arr: readonly unknown[] | null = Array.isArray(seq) ? seq : null;
+  const n = arr === null ? null : arr.length;
   const seen = new Set<string>();
   for (const s of seq) {
     const k = valueKey(s);
     if (seen.has(k)) continue;
     seen.add(k);
     yield s;
-    if (n !== null && (seq as readonly T[]).length !== n) throw new RangeError('sequence changed size during iteration');
+    if (arr !== null && arr.length !== n) throw new RangeError('sequence changed size during iteration');
   }
 }
 
@@ -1203,16 +1219,21 @@ export function* generateBell(n: number): Generator<number[], void, undefined> {
       let big = -1;
       let bigValue = -1;
       for (let i = 0; i < n; i++) {
-        if (op[i] && l[i]! > bigValue) {
+        const li = at(l, i);
+        if (op[i] && li > bigValue) {
           big = i;
-          bigValue = l[i]!;
+          bigValue = li;
         }
       }
       if (big < 0) break;
       const i = big;
-      const j = i + op[i]!;
-      [l[i], l[j]] = [l[j]!, l[i]!];
-      [op[i], op[j]] = [op[j]!, op[i]!];
+      const opi = at(op, i);
+      const j = i + opi;
+      const li = at(l, i);
+      l[i] = at(l, j);
+      l[j] = li;
+      op[i] = at(op, j);
+      op[j] = opi;
       const lj = at(l, j);
       if (j === 0 || j === m || at(l, j + at(op, j)) > lj) op[j] = 0;
       for (let t = 0; t < j; t++) if (at(l, t) > lj) op[t] = 1;
@@ -1225,19 +1246,22 @@ export function* generateBell(n: number): Generator<number[], void, undefined> {
 export function* generateInvolutions(n: number): Generator<number[], void, undefined> {
   const idx = Array.from({ length: n }, (_, i) => i);
   for (const p of permutations(idx)) {
-    if (idx.every((i) => p[p[i]!] === i)) yield p;
+    if (idx.every((i) => p[at(p, i)] === i)) yield p;
   }
 }
 
 const setDerangements = function* <T>(s: readonly T[]): Generator<T[], void, undefined> {
   if (s.length < 2) return;
   if (s.length === 2) {
-    yield [s[1]!, s[0]!];
+    const [a, b] = pair(s);
+    yield [b, a];
     return;
   }
   if (s.length === 3) {
-    yield [s[1]!, s[2]!, s[0]!];
-    yield [s[2]!, s[0]!, s[1]!];
+    const [a, b] = pair(s);
+    const c = at(s, 2);
+    yield [b, c, a];
+    yield [c, a, b];
     return;
   }
   for (const p of permutations(s)) {
@@ -1263,7 +1287,7 @@ export function* multisetDerangements<T>(s: Iterable<T>): Generator<T[], void, u
     yield* setDerangements(seq);
     return;
   }
-  let M = seq[0] as T;
+  let M = first(seq);
   for (const [k, v] of ms) {
     if (v === mx) {
       M = k;
@@ -1274,12 +1298,13 @@ export function* multisetDerangements<T>(s: Iterable<T>): Generator<T[], void, u
   const iM: number[] = [];
   for (let i = 0; i < n; i++) (valueEquals(seq[i], M) ? iM : inonM).push(i);
   const rv: (T | undefined)[] = new Array<T | undefined>(n).fill(undefined);
-  const emit = (): T[] => [...rv] as T[];
+  // every position is filled when a derangement is emitted
+  const emit = (): T[] => rv.map((x) => defined(x, 'derangement entry'));
 
   // half are the same
   if (2 * mx === n) {
     for (const i of inonM) rv[i] = M;
-    for (const p of multisetPermutations(inonM.map((i) => seq[i]!))) {
+    for (const p of multisetPermutations(inonM.map((i) => at(seq, i)))) {
       iM.forEach((i, t) => (rv[i] = p[t]));
       yield emit();
     }
@@ -1287,11 +1312,10 @@ export function* multisetDerangements<T>(s: Iterable<T>): Generator<T[], void, u
   }
   // a single repeat covers all but one of the non-repeats
   if (n - 2 * mx === 1 && ms.size === n - mx + 1) {
-    for (let i = 0; i < inonM.length; i++) {
-      const i1 = inonM[i]!;
+    for (const [i, i1] of inonM.entries()) {
       const ifill = [...inonM.slice(0, i), ...inonM.slice(i + 1)];
       for (const j of ifill) rv[j] = M;
-      for (const p of permutations(ifill.map((j) => seq[j]!))) {
+      for (const p of permutations(ifill.map((j) => at(seq, j)))) {
         rv[i1] = seq[i1];
         iM.forEach((j, t) => (rv[j] = p[t]));
         let k = i1;
@@ -1312,8 +1336,7 @@ export function* multisetDerangements<T>(s: Iterable<T>): Generator<T[], void, u
     return out;
   };
   function* finishDerangements(): Generator<T[], void, undefined> {
-    const [a, aCt] = takeList[1]!;
-    const [b, bCt] = takeList[0]!;
+    const [[b, bCt], [a, aCt]] = pair(takeList);
     const forcedA: number[] = [];
     const forcedB: number[] = [];
     const openFree: number[] = [];
@@ -1340,7 +1363,7 @@ export function* multisetDerangements<T>(s: Iterable<T>): Generator<T[], void, u
       yield* finishDerangements();
       return;
     }
-    const [E, c] = takeList[j]!;
+    const [E, c] = at(takeList, j);
     for (const places of combinations(iopen(E), c)) {
       for (const p of places) rv[p] = E;
       yield* doPlace(j - 1);
@@ -1360,10 +1383,10 @@ function seededChoice(seed: number): <T>(xs: readonly T[]) => T {
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  return <T>(xs: readonly T[]): T => xs[Math.floor(next() * xs.length)]!;
+  return <T>(xs: readonly T[]): T => at(xs, Math.floor(next() * xs.length));
 }
 
-const defaultChoice = <T>(xs: readonly T[]): T => xs[Math.floor(Math.random() * xs.length)]!;
+const defaultChoice = <T>(xs: readonly T[]): T => at(xs, Math.floor(Math.random() * xs.length));
 
 /** A function picking one element of a nonempty array. */
 export type Choice = <T>(xs: readonly T[]) => T;
@@ -1388,7 +1411,9 @@ function derange<T>(t: readonly T[], choice: Choice, strict: boolean): T[] {
     for (let i = rv.length - 1; i > 0; i--) {
       const x = choice(rv.slice(0, i + 1));
       const j = rv.findIndex((e) => valueEquals(e, x));
-      [rv[i], rv[j]] = [rv[j]!, rv[i]!];
+      const ri = at(rv, i);
+      rv[i] = at(rv, j);
+      rv[j] = ri;
     }
   };
   const pick = <E>(rv: E[], k: number): E[] => {
@@ -1398,7 +1423,7 @@ function derange<T>(t: readonly T[], choice: Choice, strict: boolean): T[] {
   const ms = [...multiset(t)].map((e, i) => [e, i] as const).sort((a, b) => a[0][1] - b[0][1] || a[1] - b[1]).map(([e]) => e);
   const tot = t.length;
   if (tot === 0) return [];
-  const [M, mx] = ms[ms.length - 1]!;
+  const [M, mx] = last(ms);
   const n = t.length;
   const xs = 2 * mx - tot;
   if (xs > 0) {
@@ -1423,7 +1448,7 @@ function derange<T>(t: readonly T[], choice: Choice, strict: boolean): T[] {
   for (;;) {
     let ok = true;
     for (let j = ms.length - 1; j >= 0; j--) {
-      const [e, c] = ms[j]!;
+      const [e, c] = at(ms, j);
       const opts: number[] = [];
       for (let i = 0; i < n; i++) if (rv[i] === undefined && !valueEquals(t[i], e)) opts.push(i);
       if (opts.length < c) {
@@ -1432,9 +1457,10 @@ function derange<T>(t: readonly T[], choice: Choice, strict: boolean): T[] {
         break;
       }
       pick(opts, c);
-      for (let i = 0; i < c; i++) rv[opts[i]!] = e;
+      for (const o of opts.slice(0, c)) rv[o] = e;
     }
-    if (ok) return rv as T[];
+    // every position is filled once all elements are placed
+    if (ok) return rv.map((x) => defined(x, 'derangement entry'));
   }
 }
 
@@ -1465,8 +1491,8 @@ export function* necklaces(n: number, k: number, opts: { free?: boolean } = {}):
       i -= 1;
       if (i === -1) return;
     }
-    a[i]! += 1;
-    for (let j = 0; j < n - i - 1; j++) a[j + i + 1] = a[j]!;
+    a[i] = at(a, i) + 1;
+    for (let j = 0; j < n - i - 1; j++) a[j + i + 1] = at(a, j);
     if (n % (i + 1) === 0) {
       let ok = true;
       if (free) {
@@ -1494,17 +1520,18 @@ export function* generateOrientedForest(n: number): Generator<number[], void, un
   const P = Array.from({ length: n + 1 }, (_, i) => i - 1);
   for (;;) {
     yield P.slice(1);
-    if (P[n]! > 0) {
-      P[n] = P[P[n]!]!;
+    const pn = at(P, n);
+    if (pn > 0) {
+      P[n] = at(P, pn);
     } else {
       let found = false;
       for (let p = n - 1; p > 0; p--) {
         if (P[p] !== 0) {
-          const target = P[p]! - 1;
+          const target = at(P, p) - 1;
           let q = p - 1;
           for (; q > 0; q--) if (P[q] === target) break;
           const offset = p - q;
-          for (let i = p; i <= n; i++) P[i] = P[i - offset]!;
+          for (let i = p; i <= n; i++) P[i] = at(P, i - offset);
           found = true;
           break;
         }
@@ -1526,7 +1553,9 @@ export function* sequencePartitions<T>(l: readonly T[] | string, n: number): Gen
     return;
   }
   for (let i = 1; i < l.length; i++) {
-    for (const part of sequencePartitions(l.slice(i) as readonly T[], n - 1)) yield [l.slice(0, i), ...part];
+    const rest = l.slice(i);
+    const parts: Iterable<(T[] | string)[]> = typeof rest === 'string' ? sequencePartitions(rest, n - 1) : sequencePartitions(rest, n - 1);
+    for (const part of parts) yield [l.slice(0, i), ...part];
   }
 }
 
@@ -1543,7 +1572,9 @@ export function* sequencePartitionsEmpty<T>(l: readonly T[] | string, n: number)
     return;
   }
   for (let i = 0; i <= l.length; i++) {
-    for (const part of sequencePartitionsEmpty(l.slice(i) as readonly T[], n - 1)) yield [l.slice(0, i), ...part];
+    const rest = l.slice(i);
+    const parts: Iterable<(T[] | string)[]> = typeof rest === 'string' ? sequencePartitionsEmpty(rest, n - 1) : sequencePartitionsEmpty(rest, n - 1);
+    for (const part of parts) yield [l.slice(0, i), ...part];
   }
 }
 
@@ -1597,6 +1628,7 @@ export function* permuteSigns<S extends Signed>(t: readonly S[]): Generator<S[],
   const nz = t.filter((x) => !isZeroValue(x)).length;
   for (const signs of product(Array.from({ length: nz }, () => [1, -1]))) {
     const ss = [...signs];
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the negation of a number, bigint or expression is of the same kind; the element type S cannot be tracked through neg()
     yield t.map((x) => (isZeroValue(x) ? x : ss.pop() === -1 ? (negate(x) as S) : x));
   }
 }
@@ -1623,7 +1655,7 @@ export function* postorderTraversal(node: unknown, keys?: boolean | KeyFunction<
     }
     for (const arg of args) yield* postorderTraversal(arg, keys);
   } else if (iterable(node)) {
-    for (const item of node as Iterable<unknown>) yield* postorderTraversal(item, keys);
+    for (const item of expectType(node, isIterable, 'traversed node')) yield* postorderTraversal(item, keys);
   }
   yield node;
 }

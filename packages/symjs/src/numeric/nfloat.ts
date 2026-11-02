@@ -11,6 +11,7 @@ import { add, exp, mul, pow, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
 import { evalf } from './evalf';
 import { float } from './floatctor';
+import { pair } from '../core/guard';
 import * as F from './mpf';
 import { limitDenominator } from '../core/numberutils';
 
@@ -39,7 +40,7 @@ export function nfloat(exIn: ExprLike, n = 15, exponent = false): Expr {
   else {
     const fix = (x: Expr): Expr => {
       const args = x.args.map(fix);
-      const y = args.some((a, i) => a !== x.args[i]) ? (x instanceof Pow ? pow(args[0]!, args[1]!) : rebuild(x, args)) : x;
+      const y = args.some((a, i) => a !== x.args[i]) ? (x instanceof Pow ? pow(...pair(args)) : rebuild(x, args)) : x;
       if (y instanceof Pow && y.exp instanceof Rational && y.exp.isInteger) return new Pow(y.base, float(y.exp, n));
       return y;
     };

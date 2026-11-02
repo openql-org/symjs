@@ -17,6 +17,7 @@ import { factorTerms } from './exprtools';
 import { radsimp } from './radsimp';
 import { cancel } from './rational';
 import { exptotrig, expsimp, hasTrig, trigsimp } from './trigsimp';
+import { first } from '../core/guard';
 
 const hasDenominator = (e: Expr): boolean =>
   some(e, (x) => x instanceof Pow && splitCoeff(x.exp)[0].isNegative && !x.base.isNumber);
@@ -51,7 +52,7 @@ function simplifyCore(e: Expr): Expr {
     tryPush(() => cancel(e));
     if (hasTrig(e)) tryPush(() => cancel(exptotrig(e)));
   }
-  let best = candidates[0]!;
+  let best = first(candidates);
   let bestCost = countOps(best);
   for (const c of candidates.slice(1)) {
     const cost = countOps(c);
@@ -90,8 +91,9 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
   };
   // SymPy: with a custom measure, logarithms are expanded or combined, whichever is shorter
   if (opts.measure && some(r, (x) => x instanceof Fn && x.name === 'log')) {
-    const choices = [expand_log(r, true), logcombine(r)];
-    r = size(choices[1]!) < size(choices[0]!) ? choices[1]! : choices[0]!;
+    const expanded = expand_log(r, true);
+    const combined = logcombine(r);
+    r = size(combined) < size(expanded) ? combined : expanded;
   }
   // SymPy: a result longer than ratio times the input (by the measure) is rejected
   const ratio = opts.ratio ?? 1.7;

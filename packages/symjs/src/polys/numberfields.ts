@@ -77,7 +77,7 @@ function polyCoeffsIn(e: Expr, theta: Expr): Expr[] {
     const rest: Expr[] = [];
     for (const f of fs) {
       if (f.key === theta.key) k += 1;
-      else if (f.kind === 'Pow' && f.args[0]!.key === theta.key && f.args[1] instanceof Rational && f.args[1].isInteger) k += Number(f.args[1].p);
+      else if (f.kind === 'Pow' && f.args[0]?.key === theta.key && f.args[1] instanceof Rational && f.args[1].isInteger) k += Number(f.args[1].p);
       else rest.push(f);
     }
     const list = byPow.get(k) ?? [];

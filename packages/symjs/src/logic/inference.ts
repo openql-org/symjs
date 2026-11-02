@@ -7,6 +7,7 @@
  * propositional knowledge base PropKB, literal_symbol and Boolean.equals.
  */
 
+import { at, getOrThrow } from '../core/guard';
 import type { Expr } from '../core/nodes';
 import { BoolAtom, Rel, S, Sym, impl } from '../core/nodes';
 import { ExprMap } from '../core/exprmap';
@@ -50,13 +51,13 @@ function toNNF(e: Expr): Nnf {
   const sub = (): Nnf[] => e.args.map(toNNF);
   if (e instanceof LogicOp) {
     const xs = sub();
-    if (e.name === 'Implies') return { t: 'or', args: [invert(xs[0]!), xs[1]!] };
-    return { t: 'and', args: xs.map((a, i) => ({ t: 'or', args: [invert(a), xs[(i + 1) % xs.length]!] })) };
+    if (e.name === 'Implies') return { t: 'or', args: [invert(at(xs, 0)), at(xs, 1)] };
+    return { t: 'and', args: xs.map((a, i) => ({ t: 'or', args: [invert(a), at(xs, (i + 1) % xs.length)] })) };
   }
   if (e instanceof BoolOp) {
     switch (e.op) {
       case 'Not':
-        return invert(toNNF(e.args[0]!));
+        return invert(toNNF(at(e.args, 0)));
       case 'And':
         return { t: 'and', args: sub() };
       case 'Or':
@@ -64,14 +65,16 @@ function toNNF(e: Expr): Nnf {
       case 'Xor':
         return xorNnf(sub());
       case 'ITE': {
-        const [l, m, r] = sub() as [Nnf, Nnf, Nnf];
+        const xs = sub();
+        const [l, m, r] = [at(xs, 0), at(xs, 1), at(xs, 2)];
         return { t: 'and', args: [{ t: 'or', args: [invert(l), m] }, { t: 'or', args: [l, r] }] };
       }
     }
   }
   if (e instanceof LogicGate) {
     if (e.gate === 'ITE') {
-      const [l, m, r] = sub() as [Nnf, Nnf, Nnf];
+      const xs = sub();
+      const [l, m, r] = [at(xs, 0), at(xs, 1), at(xs, 2)];
       return { t: 'and', args: [{ t: 'or', args: [invert(l), m] }, { t: 'or', args: [l, r] }] };
     }
     if (e.gate === 'Nand') return invert({ t: 'and', args: sub() });
@@ -92,7 +95,7 @@ function toClauses(n: Nnf): Map<string, Clause> {
     for (const p of parts) for (const [k, c] of p) out.set(k, c);
     return out;
   }
-  let acc = parts[0]!;
+  let acc = at(parts, 0);
   for (const p of parts.slice(1)) {
     const next = new Map<string, Clause>();
     for (const a of acc.values()) {
@@ -124,7 +127,7 @@ function encode(e: Expr): Encoded {
   let unsat = false;
   const data: number[][] = [];
   for (const c of clauses) {
-    const ints = [...c.values()].map((l) => (l.atom.key === S.false.key ? 0 : l.neg ? -index.get(l.atom.key)! : index.get(l.atom.key)!));
+    const ints = [...c.values()].map((l) => (l.atom.key === S.false.key ? 0 : l.neg ? -getOrThrow(index, l.atom.key) : getOrThrow(index, l.atom.key)));
     if (ints.length === 1 && ints[0] === 0) unsat = true;
     // a false literal adds nothing to a clause
     data.push([...new Set(ints.filter((x) => x !== 0))].sort((a, b) => a - b));
@@ -135,7 +138,7 @@ function encode(e: Expr): Encoded {
 
 function toModel(symbols: readonly Expr[], lits: readonly number[]): ExprMap<boolean> {
   const sorted = [...lits].sort((a, b) => Math.abs(a) - Math.abs(b));
-  return new ExprMap(sorted.map((l) => [symbols[Math.abs(l) - 1]!, l > 0] as const));
+  return new ExprMap(sorted.map((l) => [at(symbols, Math.abs(l) - 1), l > 0] as const));
 }
 
 function firstModel(clauses: readonly (readonly number[])[], n: number): number[] | undefined {
@@ -247,7 +250,7 @@ export function plTrue(expr: BoolLike, model: ReadonlyMap<Expr, BoolLike> = new 
 export function literalSymbol(literal: BoolLike): Expr {
   const e = toBool(literal);
   if (e instanceof BoolAtom || e instanceof Sym) return e;
-  if (isOp(e, 'Not')) return literalSymbol(e.args[0]!);
+  if (isOp(e, 'Not')) return literalSymbol(at(e.args, 0));
   throw new RangeError('Argument must be a boolean literal.');
 }
 

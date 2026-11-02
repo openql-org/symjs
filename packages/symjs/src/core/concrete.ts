@@ -8,6 +8,7 @@
 import type { ExprLike, Sym } from './nodes';
 import { Expr } from './nodes';
 import { sympify } from './ops';
+import { at } from './guard';
 
 /**
  * Sum or Product: args [f, k1, a1, b1, k2, a2, b2, ...]. @internal ctor
@@ -20,11 +21,11 @@ export class Concrete extends Expr {
     super();
   }
   get function(): Expr {
-    return this.args[0]!;
+    return at(this.args, 0);
   }
   get limits(): [Expr, Expr, Expr][] {
     const out: [Expr, Expr, Expr][] = [];
-    for (let i = 1; i < this.args.length; i += 3) out.push([this.args[i]!, this.args[i + 1]!, this.args[i + 2]!]);
+    for (let i = 1; i < this.args.length; i += 3) out.push([at(this.args, i), at(this.args, i + 1), at(this.args, i + 2)]);
     return out;
   }
   protected computeKey(): string {

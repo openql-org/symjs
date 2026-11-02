@@ -50,7 +50,5 @@ code moves to its own module (`solvers/homogeneous.ts`).
 | `prefer-nullish-coalescing` (strings excepted), `prefer-optional-chain` | `??` and `?.` for undefined |
 | `no-param-reassign` | parameters are not reassigned (copy them to a local) |
 | `no-explicit-any`, `ban-ts-comment`, `no-console`, `only-throw-error` | kept at zero |
-| `no-restricted-globals` (`Error`) | errors are specific classes: `TypeError`, `RangeError`, `SyntaxError`, or those of `core/errors.ts` (`NotImplementedError`, `PolynomialError`, `DomainError`, `ExactQuotientFailed`, `NotInvertible`, `MatrixError`, `NonSquareMatrixError`, `NonInvertibleMatrixError`, `NonlinearError`, `SympifyError`, `NotLoadedError`, ...) |
-
-Planned (to be enabled once the SymPy compatibility of the base candidate
-packages is in place): `no-non-null-assertion` and `no-unsafe-type-assertion`.
+| `no-restricted-globals` (`Error`) | errors are specific classes: `TypeError`, `RangeError`, `SyntaxError`, or those of `core/errors.ts` (`NotImplementedError`, `PolynomialError`, `DomainError`, `ExactQuotientFailed`, `NotInvertible`, `MatrixError`, `NonSquareMatrixError`, `NonInvertibleMatrixError`, `NonlinearError`, `SympifyError`, `NotLoadedError`, `InvariantError`, ...) |
+| `no-non-null-assertion`, `no-unsafe-type-assertion` | no `x!` and no unchecked `x as T`: values an algorithm guarantees are read through the checked helpers of `core/guard.ts` (`at`, `first`, `last`, `defined`, `getOrThrow`, `cast`, `expectType`, `pair`), which throw `InvariantError` when the guarantee is violated, or narrowed by the type system; the few remaining assertions carry an `oxlint-disable-next-line` comment giving the reason |

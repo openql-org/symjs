@@ -16,6 +16,8 @@
  * their structural key follows their current contents.
  */
 
+import { InvariantError } from '../core/errors';
+import { at, cast, expectType } from '../core/guard';
 import type { EvalfOptions, ExprLike, NumericValues, Substitution } from '../core/nodes';
 import { BoolAtom, Derivative, Expr, ExtensionExpr, Integral, Rational, Rel, S, UndefFn } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
@@ -110,6 +112,21 @@ function parseSliceString(s: string): Slice {
 
 type Item = number | Expr | Slice;
 
+const isIndexItem = (v: unknown): v is IndexItem =>
+  typeof v === 'number' || typeof v === 'bigint' || typeof v === 'string' || v instanceof Expr || v instanceof Slice;
+
+const isIndexList = (v: unknown): v is readonly IndexItem[] => Array.isArray(v) && v.every(isIndexItem);
+
+/** The index items of get/set: one list is an index tuple, otherwise each argument is one index. */
+function normItems(args: readonly (IndexItem | readonly IndexItem[])[]): Item[] {
+  const a0 = args[0];
+  if (args.length === 1 && isIndexList(a0)) return a0.map(normItem);
+  return args.map((i) => {
+    if (isIndexList(i)) throw new TypeError('array indices must be integers or slices');
+    return normItem(i);
+  });
+}
+
 function normItem(i: IndexItem): Item {
   if (typeof i === 'string') return parseSliceString(i);
   if (typeof i === 'bigint') return Number(i);
@@ -140,6 +157,10 @@ const toElement = (v: unknown): Expr => {
 const isIterable = (v: unknown): v is Iterable<unknown> =>
   typeof v === 'object' && v !== null && !(v instanceof Expr && !(v instanceof NDimArray)) && Symbol.iterator in v;
 
+/** Input of the array constructors: a scalar, a Matrix or array, nested iterables or a sparse Map. */
+const isArrayInput = (v: unknown): v is ArrayInput =>
+  typeof v === 'number' || typeof v === 'bigint' || typeof v === 'boolean' || v instanceof Expr || v instanceof Matrix || (typeof v === 'object' && v !== null && Symbol.iterator in v);
+
 /** SymPy _scan_iterable_shape: the flat elements and shape of nested lists. */
 function scanShape(pointer: unknown): [unknown[], number[]] {
   if (pointer instanceof Matrix) return scanShape(pointer.toArray());
@@ -147,9 +168,9 @@ function scanShape(pointer: unknown): [unknown[], number[]] {
   const items = [...pointer];
   if (items.length === 0) return [[], [0]];
   const parts = items.map(scanShape);
-  const s0 = parts[0]![1].join(',');
+  const s0 = at(parts, 0)[1].join(',');
   if (parts.some(([, s]) => s.join(',') !== s0)) throw new RangeError('could not determine shape unambiguously');
-  return [parts.flatMap(([e]) => e), [parts.length, ...parts[0]![1]]];
+  return [parts.flatMap(([e]) => e), [parts.length, ...at(parts, 0)[1]]];
 }
 
 /** Flatten nested lists and matrices (SymPy flatten) for an explicit shape. */
@@ -172,11 +193,7 @@ function parseShape(shape: ShapeInput): number[] {
 
 const product = (xs: readonly number[]): number => xs.reduce((a, b) => a * b, 1);
 
-interface Parsed {
-  shape: number[];
-  flat?: Expr[];
-  sparse?: Map<number, Expr>;
-}
+type Parsed = { shape: number[]; flat: Expr[]; sparse?: undefined } | { shape: number[]; sparse: Map<number, Expr>; flat?: undefined };
 
 /** SymPy _handle_ndarray_creation_inputs. */
 function parseInput(iterable: ArrayInput, shapeIn: ShapeInput | undefined): Parsed {
@@ -199,7 +216,7 @@ function parseInput(iterable: ArrayInput, shapeIn: ShapeInput | undefined): Pars
       if (typeof k === 'number') key = k;
       else {
         key = 0;
-        k.forEach((idx, i) => (key = key * shape[i]! + idx));
+        k.forEach((idx, i) => (key = key * at(shape, i) + idx));
       }
       const e = toElement(v);
       if (!isZeroElement(e)) sparse.set(key, e);
@@ -242,7 +259,8 @@ export abstract class NDimArray extends ExtensionExpr {
   }
 
   /** @internal A new array of the same class (SymPy type(self)(iterable, shape)). */
-  newLike(iterable: ArrayInput, shape: readonly number[]): this {
+  newLike(iterable: ArrayInput, shape?: readonly number[]): this {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- every concrete array class has the (iterable, shape) constructor, and this.constructor is typed as Function
     const C = this.constructor as new (it: ArrayInput, sh?: ShapeInput) => this;
     return new C(iterable, shape);
   }
@@ -267,7 +285,7 @@ export abstract class NDimArray extends ExtensionExpr {
     const out: number[] = [];
     let r = k;
     for (let d = this.shape.length - 1; d >= 0; d--) {
-      const sh = this.shape[d]!;
+      const sh = at(this.shape, d);
       out.push(r % sh);
       r = Math.floor(r / sh);
     }
@@ -284,7 +302,7 @@ export abstract class NDimArray extends ExtensionExpr {
     if (index.length !== this.rank()) throw new RangeError('Wrong number of array axes');
     let k = 0;
     index.forEach((i, d) => {
-      const sh = this.shape[d]!;
+      const sh = at(this.shape, d);
       if (i >= sh || i < -sh) throw new RangeError(`Index ${pyTuple(index)} out of border`);
       k = k * sh + (i < 0 ? i + sh : i);
     });
@@ -298,14 +316,14 @@ export abstract class NDimArray extends ExtensionExpr {
    * unevaluated Indexed `a[i, j]`. A single list is an index tuple.
    */
   get(...indexIn: (IndexItem | readonly IndexItem[])[]): Expr {
-    const raw: Item[] = (indexIn.length === 1 && Array.isArray(indexIn[0]) ? (indexIn[0] as readonly IndexItem[]) : (indexIn as IndexItem[])).map(normItem);
+    const raw = normItems(indexIn);
     if (raw.some(isSymbolicItem)) {
       const exprs = raw.map((i) => {
         if (i instanceof Slice) throw new TypeError('slices cannot be combined with symbolic indices');
         return sympify(i);
       });
       exprs.forEach((i, d) => {
-        if (d < this.shape.length && outOfRange(i, this.shape[d]!)) throw new RangeError('index out of range');
+        if (d < this.shape.length && outOfRange(i, at(this.shape, d))) throw new RangeError('index out of range');
       });
       return new ArrayIndexed([this, ...exprs]);
     }
@@ -313,7 +331,7 @@ export abstract class NDimArray extends ExtensionExpr {
     while (index.length < this.rank()) index.push(new Slice());
     if (index.length > this.rank()) throw new RangeError('Dimension of index greater than rank of array');
     if (index.some((i) => i instanceof Slice)) {
-      const factors = index.map((i, d) => (i instanceof Slice ? i.expand(this.shape[d]!) : [intIndex(i)]));
+      const factors = index.map((i, d) => (i instanceof Slice ? i.expand(at(this.shape, d)) : [intIndex(i)]));
       const flat = cartesian(factors).map((t) => this.item(this.parseIndex(t)));
       const nshape = factors.filter((_, d) => index[d] instanceof Slice).map((f) => f.length);
       return this.newLike(flat, nshape);
@@ -325,7 +343,7 @@ export abstract class NDimArray extends ExtensionExpr {
   tolist(): NestedList {
     if (this.rank() === 0) throw new RangeError('tolist: an array of rank 0 has no list form');
     const build = (d: number, offset: number, size: number): NestedList => {
-      const n = this.shape[d]!;
+      const n = at(this.shape, d);
       const sub = n === 0 ? 0 : size / n;
       return Array.from({ length: n }, (_, e) =>
         d === this.rank() - 1 ? this.item(offset + e) : build(d + 1, offset + e * sub, sub),
@@ -340,7 +358,7 @@ export abstract class NDimArray extends ExtensionExpr {
       yield this.item(0);
       return;
     }
-    for (let i = 0; i < this.shape[0]!; i++) yield this.get(i);
+    for (let i = 0; i < at(this.shape, 0); i++) yield this.get(i);
   }
 
   /** SymPy reshape(*newshape): the same elements with another shape. */
@@ -349,7 +367,7 @@ export abstract class NDimArray extends ExtensionExpr {
   /** SymPy tomatrix: the Matrix of a rank-2 array. */
   tomatrix(): Matrix {
     if (this.rank() !== 2) throw new RangeError('Dimensions must be of size of 2');
-    return Matrix.fromFunction(this.shape[0]!, this.shape[1]!, (i, j) => this.item(i * this.shape[1]! + j));
+    return Matrix.fromFunction(at(this.shape, 0), at(this.shape, 1), (i, j) => this.item(i * at(this.shape, 1) + j));
   }
 
   /** SymPy as_immutable. */
@@ -369,7 +387,7 @@ export abstract class NDimArray extends ExtensionExpr {
     if (o.shape.join(',') !== this.shape.join(',')) throw new RangeError('array shape mismatch');
     const b = o.flatElements();
     return this.newLike(
-      this.flatElements().map((a, k) => f(a, b[k]!)),
+      this.flatElements().map((a, k) => f(a, at(b, k))),
       this.shape,
     );
   }
@@ -421,7 +439,7 @@ export abstract class NDimArray extends ExtensionExpr {
     if (!(other instanceof NDimArray)) return false;
     if (other.shape.join(',') !== this.shape.join(',')) return false;
     const b = other.flatElements();
-    return this.flatElements().every((a, k) => a.key === b[k]!.key);
+    return this.flatElements().every((a, k) => a.key === at(b, k).key);
   }
 
   /** SymPy transpose: the transpose of a rank-2 array. */
@@ -460,14 +478,14 @@ export abstract class NDimArray extends ExtensionExpr {
       if (typeof s === 'number') {
         if (pairs.length === 0) throw new TypeError('diff: a count must follow a variable');
         if (!Number.isInteger(s) || s < 0) throw new RangeError('diff: counts must be non-negative integers');
-        pairs[pairs.length - 1]![1] += s - 1;
+        at(pairs, pairs.length - 1)[1] += s - 1;
       } else pairs.push([s, 1]);
     }
     if (pairs.length === 0) throw new TypeError('diff: no variable given');
     let cur: NDimArray = this.asImmutable();
     for (const [v, n] of pairs) {
       for (let c = 0; c < n; c++) {
-        cur = v instanceof NDimArray ? (deriveByArray(cur, v) as NDimArray) : cur.applyfunc((e) => diffExpr(e, v));
+        cur = v instanceof NDimArray ? cast(deriveByArray(cur, v), NDimArray) : cur.applyfunc((e) => diffExpr(e, v));
       }
     }
     return cur;
@@ -478,7 +496,13 @@ export abstract class NDimArray extends ExtensionExpr {
 
   /** Substitution in every element (a Substitution, or `from` and `to`). */
   override subs(a: Substitution | Expr, b?: ExprLike): this {
-    return (a instanceof Expr ? super.subs(a, b as ExprLike) : super.subs(a)) as this;
+    let r: Expr;
+    if (a instanceof Expr) {
+      if (b === undefined) throw new TypeError('subs(from, to) requires a replacement');
+      r = super.subs(a, b);
+    } else r = super.subs(a);
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- substitution rebuilds the array through withArgs/newLike, which keeps its class
+    return r as this;
   }
   /** Elementwise expand. */
   override expand(): this {
@@ -504,7 +528,7 @@ export abstract class NDimArray extends ExtensionExpr {
     if (this.rank() === 0) return print(this.item(0));
     if (this.shape.includes(0)) return `${this.name}([], ${pyTuple(this.shape)})`;
     const f = (d: number, offset: number, size: number): string => {
-      const n = this.shape[d]!;
+      const n = at(this.shape, d);
       const sub = size / n;
       const parts = Array.from({ length: n }, (_, e) => (d === this.rank() - 1 ? print(this.item(offset + e)) : f(d + 1, offset + e * sub, sub)));
       return `[${parts.join(', ')}]`;
@@ -516,27 +540,27 @@ export abstract class NDimArray extends ExtensionExpr {
   override printLatex(print: (e: Expr) => string): string {
     if (this.rank() === 0) return print(this.item(0));
     const rank = this.rank();
-    const matStr = this.shape[rank - 1]! <= 10 ? 'matrix' : 'array';
-    const cols = matStr === 'array' ? `{${'c'.repeat(this.shape[0]!)}}` : '';
+    const matStr = at(this.shape, rank - 1) <= 10 ? 'matrix' : 'array';
+    const cols = matStr === 'array' ? `{${'c'.repeat(at(this.shape, 0))}}` : '';
     const block = (s: string): string => `\\left[\\begin{${matStr}}${cols}${s}\\end{${matStr}}\\right]`;
     if (this.shape.includes(0)) return block('');
     const level: string[][] = Array.from({ length: rank + 1 }, () => []);
     for (let k = 0; k < this.#loopSize; k++) {
-      level[rank]!.push(print(this.item(k)));
+      at(level, rank).push(print(this.item(k)));
       let even = true;
       for (let back = rank - 1; back >= 0; back--) {
-        if (level[back + 1]!.length < this.shape[back]!) break;
-        if (even) level[back]!.push(level[back + 1]!.join(' & '));
+        if (at(level, back + 1).length < at(this.shape, back)) break;
+        if (even) at(level, back).push(at(level, back + 1).join(' & '));
         else {
-          let s = block(level[back + 1]!.join('\\\\'));
-          if (level[back + 1]!.length === 1) s = `\\left[${s}\\right]`;
-          level[back]!.push(s);
+          let s = block(at(level, back + 1).join('\\\\'));
+          if (at(level, back + 1).length === 1) s = `\\left[${s}\\right]`;
+          at(level, back).push(s);
         }
         even = !even;
         level[back + 1] = [];
       }
     }
-    const out = level[0]![0]!;
+    const out = at(at(level, 0), 0);
     return rank % 2 === 1 ? block(out) : out;
   }
 }
@@ -577,14 +601,21 @@ export abstract class DenseNDimArray extends NDimArray {
     if (p.sparse) {
       const sp = p.sparse;
       flat = Array.from({ length: p.shape.length === 0 ? 1 : product(p.shape) }, (_, k) => sp.get(k) ?? S.Zero);
-    } else flat = p.flat!;
+    } else flat = p.flat;
     checkSpecialBounds(flat.length, p.shape);
     const size = p.shape.length === 0 ? 1 : product(p.shape);
     if (flat.length < size) throw new RangeError(`${pyTuple(p.shape)} needs ${size} elements, got ${flat.length}`);
-    super(name, flat.length > size ? flat.slice(0, size) : flat, p.shape);
+    const cells = flat.length > size ? flat.slice(0, size) : flat;
+    super(name, cells, p.shape);
+    this.#cells = cells;
+  }
+  readonly #cells: Expr[];
+  /** The stored elements (the args array itself), for in-place changes of the mutable subclass. */
+  protected get cells(): Expr[] {
+    return this.#cells;
   }
   protected item(k: number): Expr {
-    return this.args[k]!;
+    return at(this.args, k);
   }
   override flatElements(): Expr[] {
     return [...this.args];
@@ -623,11 +654,9 @@ export class ImmutableDenseNDimArray extends DenseNDimArray {
 
 /** SymPy MutableDenseNDimArray: a dense array changed in place with `set`. */
 export class MutableDenseNDimArray extends DenseNDimArray {
-  readonly #cells: Expr[];
   /** From nested lists, a flat list and a shape, a Matrix or another array. */
   constructor(iterable: ArrayInput, shape?: ShapeInput) {
     super('MutableDenseNDimArray', iterable, shape);
-    this.#cells = this.args as Expr[];
   }
   /** An array of zeros of the given shape. */
   static zeros(...shape: number[]): MutableDenseNDimArray {
@@ -642,7 +671,7 @@ export class MutableDenseNDimArray extends DenseNDimArray {
    * position, and slices assign a sub-array (`m.set(0, ':', [9, 8])`).
    */
   set(...args: [...(IndexItem | readonly IndexItem[])[], ArrayInput]): void {
-    assignItems(this, args, (k, v) => (this.#cells[k] = v));
+    assignItems(this, args, (k, v) => (this.cells[k] = v));
   }
   asImmutable(): ImmutableDenseNDimArray {
     return new ImmutableDenseNDimArray(this);
@@ -664,15 +693,22 @@ export abstract class SparseNDimArray extends NDimArray {
       sparse = p.sparse;
       checkSpecialBounds(p.sparse.size, p.shape);
     } else {
-      checkSpecialBounds(p.flat!.length, p.shape);
+      checkSpecialBounds(p.flat.length, p.shape);
       sparse = new Map();
-      p.flat!.forEach((e, k) => {
+      p.flat.forEach((e, k) => {
         if (!isZeroElement(e)) sparse.set(k, e);
       });
     }
     sparse = new Map([...sparse].sort(([a], [b]) => a - b));
-    super(name, [...sparse.values()], p.shape);
+    const values = [...sparse.values()];
+    super(name, values, p.shape);
     this.sparse = sparse;
+    this.#values = values;
+  }
+  readonly #values: Expr[];
+  /** The stored nonzero elements (the args array itself), for in-place changes of the mutable subclass. */
+  protected get values(): Expr[] {
+    return this.#values;
   }
   protected item(k: number): Expr {
     return this.sparse.get(k) ?? S.Zero;
@@ -712,7 +748,7 @@ export abstract class SparseNDimArray extends NDimArray {
   }
   withArgs(args: readonly Expr[]): Expr {
     const keys = [...this.sparse.keys()];
-    return this.newLike(new Map(keys.map((k, i) => [k, args[i]!])), this.shape);
+    return this.newLike(new Map(keys.map((k, i) => [k, at(args, i)])), this.shape);
   }
   protected override computeKey(): string {
     return `${this.name}[${this.shape.join(',')}](${[...this.sparse].map(([k, v]) => `${k}:${v.key}`).join(',')})`;
@@ -763,7 +799,7 @@ export class MutableSparseNDimArray extends SparseNDimArray {
     const sorted = [...this.sparse].sort(([a], [b]) => a - b);
     this.sparse.clear();
     for (const [k, v] of sorted) this.sparse.set(k, v);
-    const args2 = this.args as Expr[];
+    const args2 = this.values;
     args2.length = 0;
     args2.push(...this.sparse.values());
   }
@@ -778,23 +814,26 @@ export class MutableSparseNDimArray extends SparseNDimArray {
 /** SymPy __setitem__ of the mutable arrays. */
 function assignItems(a: NDimArray, args: readonly unknown[], store: (k: number, v: Expr) => void): void {
   if (args.length === 0) throw new TypeError('set: a value is required');
-  const value = args[args.length - 1] as ArrayInput;
-  const idxArgs = args.slice(0, -1) as (IndexItem | readonly IndexItem[])[];
+  const value: unknown = args[args.length - 1];
+  const idxArgs = args.slice(0, -1).map((x) => {
+    if (isIndexItem(x) || isIndexList(x)) return x;
+    throw new TypeError('array indices must be integers or slices');
+  });
   const tuple = !(idxArgs.length === 1 && !Array.isArray(idxArgs[0]));
-  const items: Item[] = (idxArgs.length === 1 && Array.isArray(idxArgs[0]) ? (idxArgs[0] as readonly IndexItem[]) : (idxArgs as IndexItem[])).map(normItem);
+  const items = normItems(idxArgs);
   if (items.some(isSymbolicItem)) throw new TypeError('cannot assign to a symbolic index');
   if (items.some((i) => i instanceof Slice)) {
-    const v = value instanceof NDimArray ? value : new (a.constructor as new (it: ArrayInput) => NDimArray)(value);
+    const v = value instanceof NDimArray ? value : a.newLike(expectType(value, isArrayInput, 'array value'));
     const factors = items.map((i, d) => (i instanceof Slice ? i.expand(a.shape[d] ?? 0) : [intIndex(i)]));
     // SymPy: the position in the value is the index minus the smallest index of each slice
-    const offsets = items.flatMap((i, d) => (i instanceof Slice && factors[d]!.length > 0 ? [[d, Math.min(...factors[d]!)] as const] : []));
-    for (const t of cartesian(factors)) store(a.parseIndex(t), v.get(offsets.map(([d, o]) => t[d]! - o)));
+    const offsets = items.flatMap((i, d) => (i instanceof Slice && at(factors, d).length > 0 ? [[d, Math.min(...at(factors, d))] as const] : []));
+    for (const t of cartesian(factors)) store(a.parseIndex(t), v.get(offsets.map(([d, o]) => at(t, d) - o)));
     return;
   }
-  if (value instanceof NDimArray || value instanceof Matrix || (typeof value === 'object' && Symbol.iterator in value)) {
+  if (value instanceof NDimArray || value instanceof Matrix || (typeof value === 'object' && (value === null || Symbol.iterator in value))) {
     throw new TypeError('array element must be a scalar');
   }
-  store(a.parseIndex(tuple ? items.map(intIndex) : intIndex(items[0]!)), toElement(value));
+  store(a.parseIndex(tuple ? items.map(intIndex) : intIndex(at(items, 0))), toElement(value));
 }
 
 // ---- Indexed with an array base ------------------------------------------------------
@@ -839,7 +878,7 @@ export class Flatten implements Iterable<Expr> {
 export function kindOf(e: Expr): Kind {
   if (e instanceof NDimArray) return ArrayKindNode.union(e.flatElements().map(kindOf));
   if (e instanceof BoolAtom || e instanceof Rel || e instanceof BoolOp) return BooleanKind;
-  if (e instanceof Integral || e instanceof Derivative) return kindOf(e.args[0]!);
+  if (e instanceof Integral || e instanceof Derivative) return kindOf(at(e.args, 0));
   if (e instanceof ExtensionExpr && !(e instanceof Indexed) && e.isScalar === false) return UndefinedKind;
   return e.isCommutative ? NumberKind : UndefinedKind;
 }
@@ -850,19 +889,19 @@ export function permuteArray<T extends NDimArray>(a: T, perm: readonly number[])
   if ([...perm].sort((x, y) => x - y).some((v, i) => v !== i)) throw new RangeError(`invalid permutation ${pyTuple(perm)}`);
   const inv: number[] = [];
   perm.forEach((p, i) => (inv[p] = i));
-  const newShape = perm.map((p) => a.shape[p]!);
+  const newShape = perm.map((p) => at(a.shape, p));
   if (a instanceof SparseNDimArray) {
     const m = new Map<readonly number[], Expr>();
     for (const [k, v] of a.sparseArray) {
       const t = a.tupleIndex(k);
       m.set(
-        perm.map((p) => t[p]!),
+        perm.map((p) => at(t, p)),
         v,
       );
     }
     return a.newLike(m, newShape);
   }
-  const flat = cartesian(newShape.map((n) => Array.from({ length: n }, (_, i) => i))).map((idx) => a.get(inv.map((j) => idx[j]!)));
+  const flat = cartesian(newShape.map((n) => Array.from({ length: n }, (_, i) => i))).map((idx) => a.get(inv.map((j) => at(idx, j))));
   return a.newLike(flat, newShape);
 }
 
@@ -879,6 +918,10 @@ const diffWrt = (e: Expr): boolean =>
  * dx.shape + expr.shape.
  */
 export function deriveByArray(expr: ExprLike | Matrix | readonly NestedArrayInput[], dx: ExprLike | Matrix | readonly NestedArrayInput[]): Expr {
+  const scalarDx = (): Expr => {
+    if (isArrayLike(dx)) throw new InvariantError('dx is an array');
+    return sympify(dx);
+  };
   let dxa: NDimArray | undefined;
   if (isArrayLike(dx)) {
     dxa = new ImmutableDenseNDimArray(dx);
@@ -888,23 +931,22 @@ export function deriveByArray(expr: ExprLike | Matrix | readonly NestedArrayInpu
     const ea = expr instanceof NDimArray ? expr.asImmutable() : new ImmutableDenseNDimArray(expr);
     if (dxa) {
       const vars = dxa.flatElements();
-      const C = ea.constructor as new (it: ArrayInput, sh?: ShapeInput) => NDimArray;
       if (ea instanceof SparseNDimArray) {
         const lp = ea.length;
         const m = new Map<number, Expr>();
         vars.forEach((x, i) => {
-          for (const [k, v] of (ea.diff(x) as SparseNDimArray).sparseArray) m.set(k + i * lp, v);
+          for (const [k, v] of cast(ea.diff(x), SparseNDimArray).sparseArray) m.set(k + i * lp, v);
         });
-        return new C(m, [...dxa.shape, ...ea.shape]);
+        return ea.newLike(m, [...dxa.shape, ...ea.shape]);
       }
-      return new C(
+      return ea.newLike(
         vars.flatMap((x) => ea.flatElements().map((y) => diffExpr(y, x))),
         [...dxa.shape, ...ea.shape],
       );
     }
-    return ea.diff(sympify(dx as ExprLike));
+    return ea.diff(scalarDx());
   }
   const e = sympify(expr);
   if (dxa) return new ImmutableDenseNDimArray(dxa.flatElements().map((v) => diffExpr(e, v)), dxa.shape);
-  return diffExpr(e, sympify(dx as ExprLike));
+  return diffExpr(e, scalarDx());
 }

@@ -18,6 +18,7 @@ import { add, exp, mul, pow } from '../core/ops';
 import { xreplace as subs } from '../core/traverse';
 import { fn, log } from '../functions/elementary';
 import { expandMul as expand } from '../simplify/expand';
+import { first } from '../core/guard';
 
 /** A series that the expansion cannot compute (SymPy raises NotImplementedError or ValueError). */
 export class SeriesError extends NotImplementedError {}
@@ -82,8 +83,8 @@ export class PS {
   }
 
   shift(d: Rational): PS {
-    const order = this.isExact ? this.order : (numAdd(this.order, d) as Rational);
-    return new PS(this.terms.map((t) => ({ e: numAdd(t.e, d) as Rational, c: t.c })), order);
+    const order = this.isExact ? this.order : numAdd(this.order, d);
+    return new PS(this.terms.map((t) => ({ e: numAdd(t.e, d), c: t.c })), order);
   }
 
   mul(o: PS): PS {
@@ -93,11 +94,11 @@ export class PS {
       this.isExact && o.isExact
         ? INF
         : minR(
-            this.isExact ? INF : (numAdd(this.order, lb) as Rational),
-            o.isExact ? INF : (numAdd(o.order, la) as Rational),
+            this.isExact ? INF : numAdd(this.order, lb),
+            o.isExact ? INF : numAdd(o.order, la),
           );
     const out: Term[] = [];
-    for (const a of this.terms) for (const b of o.terms) out.push({ e: numAdd(a.e, b.e) as Rational, c: mul(a.c, b.c) });
+    for (const a of this.terms) for (const b of o.terms) out.push({ e: numAdd(a.e, b.e), c: mul(a.c, b.c) });
     return new PS(normalize(out, order), order);
   }
 
@@ -174,12 +175,14 @@ export class Expander {
 
   private serMul(factors: readonly Expr[], n: Rational): PS {
     // first pass for the leading exponents, second pass with enough precision
-    const first = factors.map((f) => this.ser(f, n));
-    const leads = first.map((s) => s.leadExp());
-    const total = leads.reduce((a, b) => numAdd(a, b) as Rational, S.Zero);
-    const parts = factors.map((f, i) => {
-      const need = numAdd(n, numNeg(numAdd(total, numNeg(leads[i]!)))) as Rational;
-      return numCmp(need, first[i]!.order) > 0 && numCmp(need, n) > 0 ? this.ser(f, need) : first[i]!;
+    const firstPass = factors.map((f) => {
+      const s = this.ser(f, n);
+      return { f, s, lead: s.leadExp() };
+    });
+    const total = firstPass.reduce((a, { lead }) => numAdd(a, lead), S.Zero);
+    const parts = firstPass.map(({ f, s, lead }) => {
+      const need = numAdd(n, numNeg(numAdd(total, numNeg(lead))));
+      return numCmp(need, s.order) > 0 && numCmp(need, n) > 0 ? this.ser(f, need) : s;
     });
     return parts.reduce((a, b) => a.mul(b)).truncate(n);
   }
@@ -190,7 +193,7 @@ export class Expander {
     let lead = sb.lead();
     if (!lead) {
       // try harder before giving up
-      sb = this.ser(b, numAdd(n, Rational.of(6n)) as Rational);
+      sb = this.ser(b, numAdd(n, Rational.of(6n)));
       lead = sb.lead();
       if (!lead) throw new SeriesError('cannot determine leading term');
     }
@@ -198,7 +201,7 @@ export class Expander {
     const c0 = lead.c;
     if (k instanceof Rational && k.isInteger && k.p >= 0n && k.p <= 16n) {
       // repeated multiplication with enough precision
-      const need = numAdd(n, numMul(Rational.of(1n - k.p), e0)) as Rational;
+      const need = numAdd(n, numMul(Rational.of(1n - k.p), e0));
       const s = numCmp(need, sb.order) > 0 ? this.ser(b, need) : sb;
       let r = PS.constant(S.One);
       for (let i = 0n; i < k.p; i++) r = r.mul(s);
@@ -207,10 +210,10 @@ export class Expander {
     // b = c0 t^e0 (1 + u)
     const ke0 = mul(k, e0);
     if (!(ke0 instanceof Rational)) throw new SeriesError('non-rational exponent');
-    const rel = numAdd(n, numNeg(ke0)) as Rational; // relative precision needed for (1+u)^k
-    const need = numAdd(e0, rel) as Rational;
+    const rel = numAdd(n, numNeg(ke0)); // relative precision needed for (1+u)^k
+    const need = numAdd(e0, rel);
     const s = numCmp(need, sb.order) > 0 ? this.ser(b, need) : sb;
-    const u = s.scale(pow(c0, -1)).shift(numNeg(e0) as Rational).add(PS.constant(S.NegOne)).truncate(rel);
+    const u = s.scale(pow(c0, -1)).shift(numNeg(e0)).add(PS.constant(S.NegOne)).truncate(rel);
     const d = u.lead()?.e;
     let acc = PS.constant(S.One);
     const infinite = !!(d?.isPositive);
@@ -246,7 +249,7 @@ export class Expander {
       // several arguments: expand in the only one that depends on the variable
       const dep = e.args.map((a, i) => [a, i] as const).filter(([a]) => a.has(this.t));
       if (dep.length !== 1) throw new SeriesError(`cannot expand ${e.name}`);
-      const [g, k] = dep[0]!;
+      const [g, k] = first(dep);
       const sg = this.ser(g, n.isPositive ? n : S.One);
       for (const term of sg.terms) {
         if (term.e.isNegative && !isZeroCoeff(term.c)) throw new SeriesError('essential singularity');
@@ -258,17 +261,17 @@ export class Expander {
       );
       return this.analytic((w) => fn(e.name, e.args.map((a, i) => (i === k ? w : a))), g0, h, n);
     }
-    const g = e.args[0]!;
+    const g = first(e.args);
     if (e.name === 'log') {
       let sg = this.ser(g, n);
       let lead = sg.lead();
       if (!lead) {
-        sg = this.ser(g, numAdd(n, Rational.of(6n)) as Rational);
+        sg = this.ser(g, numAdd(n, Rational.of(6n)));
         lead = sg.lead();
         if (!lead) throw new SeriesError('cannot determine leading term');
       }
-      const s = numCmp(numAdd(n, lead.e), sg.order) > 0 ? this.ser(g, numAdd(n, lead.e) as Rational) : sg;
-      const u = s.scale(pow(lead.c, -1)).shift(numNeg(lead.e) as Rational).add(PS.constant(S.NegOne));
+      const s = numCmp(numAdd(n, lead.e), sg.order) > 0 ? this.ser(g, numAdd(n, lead.e)) : sg;
+      const u = s.scale(pow(lead.c, -1)).shift(numNeg(lead.e)).add(PS.constant(S.NegOne));
       const head = PS.constant(add(log(lead.c), mul(lead.e, this.L)));
       return head.add(this.analytic((w) => log(add(1, w)), S.Zero, u, n));
     }

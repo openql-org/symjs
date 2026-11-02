@@ -11,9 +11,10 @@
 import { NotImplementedError } from '../core/errors';
 import { dsolveSystem, registerSingleOdeSolver } from './odesystem';
 import { SubsNode } from '../core/subsnode';
-import type { Expr, ExprLike, Rel } from '../core/nodes';
-import { Add, Derivative, Fn, Mul, Pow, Rational, S, Sym, UndefFn } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Derivative, Fn, Mul, Pow, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
+import { at, cast, defined, first, getOrThrow } from '../core/guard';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
@@ -39,14 +40,16 @@ export function odeOrder(e: Expr, f: UndefFn): number {
   return n;
 }
 
+const isExprList = <T>(v: T | readonly T[] | undefined): v is readonly T[] => Array.isArray(v);
+
 /** Replace f and its derivatives by symbols y0, y1, ... */
 function toSymbols(e: Expr, f: UndefFn, n: number): [Expr, Sym[]] {
   const ys = Array.from({ length: n + 1 }, (_, i) => new Sym(`_y${i}`));
   const go = (x: Expr): Expr => {
-    if (x.key === f.key) return ys[0]!;
+    if (x.key === f.key) return at(ys, 0);
     if (x instanceof Derivative && x.expr.key === f.key) {
       const k = x.variableCount.reduce((s, [, m]) => s + m, 0);
-      return ys[k]!;
+      return at(ys, k);
     }
     if (x.args.length === 0) return x;
     return rebuildWith(x, go);
@@ -59,8 +62,8 @@ function rebuildWith(x: Expr, go: (e: Expr) => Expr): Expr {
   if (args.every((a, i) => a === x.args[i])) return x;
   if (x instanceof Add) return add(...args);
   if (x instanceof Mul) return mul(...args);
-  if (x instanceof Pow) return pow(args[0]!, args[1]!);
-  if (x instanceof Fn) return xreplace(x, x.args.map((a, i) => [a, args[i]!] as const));
+  if (x instanceof Pow) return pow(at(args, 0), at(args, 1));
+  if (x instanceof Fn) return xreplace(x, x.args.map((a, i) => [a, at(args, i)] as const));
   return x;
 }
 
@@ -117,7 +120,7 @@ function constantCoeffHomogeneous(coeffs: Expr[], x: Sym): [Expr, number] {
       build: (cs) => {
         const terms: Expr[] = [];
         for (let i = 0; i < c.mult; i++) {
-          terms.push(mul(cs[2 * i]!, pow(x, i), sin(mul(c.b, x))), mul(cs[2 * i + 1]!, pow(x, i), cos(mul(c.b, x))));
+          terms.push(mul(at(cs, 2 * i), pow(x, i), sin(mul(c.b, x))), mul(at(cs, 2 * i + 1), pow(x, i), cos(mul(c.b, x))));
         }
         const s = add(...terms);
         return isZeroE(c.a) ? s : mul(s, exp(mul(c.a, x)));
@@ -129,9 +132,10 @@ function constantCoeffHomogeneous(coeffs: Expr[], x: Sym): [Expr, number] {
   const simple = complexes.length === 0 && reals.every((g) => g.mult === 1) && reals.length > 1;
   const signs = reals.map((g) => Math.sign(num(g.root) ?? NaN));
   if (simple && (signs.every((s) => s > 0) || signs.every((s) => s < 0))) {
-    const r0 = parts[0]!.root!;
+    // only real roots here, so every part has its root
+    const r0 = defined(first(parts).root, 'real root');
     const cs = constants(n);
-    const inner = add(...parts.map((p, i) => mul(cs[i]!, exp(mul(add(p.root!, mul(-1, r0)), x)))));
+    const inner = add(...parts.map((p, i) => mul(at(cs, i), exp(mul(add(defined(p.root, 'real root'), mul(-1, r0)), x)))));
     return [mul(inner, exp(mul(r0, x))), n];
   }
   let k = 1;
@@ -149,7 +153,8 @@ function particular(coeffs: Expr[], rhs: Expr, x: Sym): Expr | undefined {
   const r = new Sym('_r');
   const chareq = add(...coeffs.map((c, k) => mul(c, pow(r, k))));
   const multiplicity = (z: Expr) => roots(chareq, r).filter((v) => isZeroE(simplify(add(v, mul(-1, z))))).length;
-  const terms = expand(rhs) instanceof Add ? (expand(rhs) as Add).args : [expand(rhs)];
+  const rhsExpanded = expand(rhs);
+  const terms = rhsExpanded instanceof Add ? rhsExpanded.args : [rhsExpanded];
   // group terms by (exponent a, frequency b) of exp(a x) * {poly, sin(bx), cos(bx)}
   const trial: Expr[] = [];
   const unknowns: Sym[] = [];
@@ -173,9 +178,9 @@ function particular(coeffs: Expr[], rhs: Expr, x: Sym): Expr | undefined {
         if (!pc || Math.max(...pc.keys()) > 1) return undefined;
         a = add(a, pc.get(1) ?? S.Zero);
       } else if (f instanceof Fn && (f.name === 'sin' || f.name === 'cos')) {
-        const pc = polyCoefficients(f.args[0]!, x);
+        const pc = polyCoefficients(first(f.args), x);
         if (!pc || Math.max(...pc.keys()) > 1 || pc.has(0)) return undefined;
-        b = pc.get(1)!;
+        b = getOrThrow(pc, 1);
       } else return undefined;
     }
     const key = `${a.key}|${b.key}`;
@@ -206,7 +211,7 @@ function particular(coeffs: Expr[], rhs: Expr, x: Sym): Expr | undefined {
   for (const cs of basis.values()) eqs.push(add(...cs));
   const sol = linsolve(eqs, unknowns);
   if (!sol) return undefined;
-  return expand(xreplace(yp, unknowns.map((s, i) => [s, sol[i]!] as const)));
+  return expand(xreplace(yp, unknowns.map((s, i) => [s, at(sol, i)] as const)));
 }
 
 /**
@@ -219,22 +224,25 @@ function particular(coeffs: Expr[], rhs: Expr, x: Sym): Expr | undefined {
  */
 export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts: { ics?: [Expr, ExprLike][]; hint?: string } = {}): Expr | Expr[] {
   // a system of equations: linear first-order with constant coefficients
-  if (Array.isArray(eqIn)) return dsolveSystem(eqIn, Array.isArray(fx) ? (fx as UndefFn[]) : undefined);
-  if (Array.isArray(fx) || fx === undefined) throw new TypeError('dsolve: the unknown function f(x) is required');
+  if (isExprList(eqIn)) return dsolveSystem(eqIn, isExprList(fx) ? fx.map((f) => cast(f, UndefFn, 'unknown function')) : undefined);
+  if (isExprList(fx) || fx === undefined) throw new TypeError('dsolve: the unknown function f(x) is required');
   if (!(fx instanceof UndefFn) || fx.args.length !== 1 || !(fx.args[0] instanceof Sym)) {
     throw new TypeError('dsolve: f(x) with a single symbol argument expected');
   }
   const x = fx.args[0];
-  const eq = asEquation(eqIn as ExprLike);
+  const eq = asEquation(eqIn);
   const n = odeOrder(eq, fx);
   if (n === 0) throw new TypeError('dsolve: not a differential equation');
   // SymPy's hints in order (solvers/dsolve.ts); the older direct solvers below are a fallback
   const viaHints = dsolveRaw(eq, fx, opts.hint);
   if (viaHints?.length) {
-    const out = opts.ics?.length ? viaHints.map((s) => Eq(fx, applyIcs((s as Rel).rhs, fx, x, opts.ics!))) : viaHints;
-    return out.length === 1 ? out[0]! : out;
+    const ics = opts.ics;
+    const out = ics?.length ? viaHints.map((s) => Eq(fx, applyIcs(cast(s, Rel, 'dsolve solution').rhs, fx, x, ics))) : viaHints;
+    return out.length === 1 ? first(out) : out;
   }
   const [E, ys] = toSymbols(eq, fx, n);
+  const y0 = at(ys, 0);
+  const y1 = at(ys, 1);
   const e = expand(E);
   let sol: Expr | undefined;
 
@@ -260,7 +268,7 @@ export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonl
   if (linear && ys.some((z) => rest.has(z))) linear = false;
 
   if (linear) {
-    const lead = coeffs[n]!;
+    const lead = at(coeffs, n);
     const norm = coeffs.map((c) => cancel(mul(c, pow(lead, -1))));
     const rhs = cancel(mul(-1, rest, pow(lead, -1)));
     const constCoeff = norm.every((c) => !c.has(x));
@@ -271,7 +279,7 @@ export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonl
     }
     if (sol === undefined && n === 1) {
       // y' + p y = q
-      const p = norm[0]!;
+      const p = first(norm);
       const q = rhs;
       const C1 = new Sym('C1');
       if (isZeroE(p)) sol = add(C1, integrate(q, x));
@@ -285,27 +293,27 @@ export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonl
   }
   if (sol === undefined && n === 1) {
     // separable: y' = g(x) h(y)
-    const pc = polyCoefficients(e, ys[1]!);
+    const pc = polyCoefficients(e, y1);
     if (pc && Math.max(...pc.keys()) === 1) {
-      const rhs = cancel(mul(-1, pc.get(0) ?? S.Zero, pow(pc.get(1)!, -1)));
+      const rhs = cancel(mul(-1, pc.get(0) ?? S.Zero, pow(getOrThrow(pc, 1), -1)));
       const factors = rhs instanceof Mul ? rhs.args : [rhs];
-      const g = mul(...factors.filter((f) => !f.has(ys[0]!)));
-      const h = mul(...factors.filter((f) => f.has(ys[0]!)));
-      if (!g.has(ys[0]!) && !h.has(x)) {
+      const g = mul(...factors.filter((f) => !f.has(y0)));
+      const h = mul(...factors.filter((f) => f.has(y0)));
+      if (!g.has(y0) && !h.has(x)) {
         const C1 = new Sym('C1');
-        const lhs = integrate(pow(h, -1), ys[0]!);
+        const lhs = integrate(pow(h, -1), y0);
         const r = add(integrate(g, x), C1);
-        const sols = solve(add(lhs, mul(-1, r)), ys[0], { check: false });
-        if (sols.length === 1) sol = pullMinus(sols[0]!);
+        const sols = solve(add(lhs, mul(-1, r)), y0, { check: false });
+        if (sols.length === 1) sol = pullMinus(first(sols));
       }
     }
   }
   if (sol === undefined && n === 1) {
     // 1st_exact: M(x, y) + N(x, y)*y' = 0 with dM/dy = dN/dx
-    const sols = firstExact(e, x, ys[0]!, ys[1]!);
+    const sols = firstExact(e, x, y0, y1);
     if (sols) {
-      const out = sols.map((s0) => Eq(fx, xreplace(s0, [[ys[0]!, fx]])));
-      return out.length === 1 ? out[0]! : out;
+      const out = sols.map((s0) => Eq(fx, xreplace(s0, [[y0, fx]])));
+      return out.length === 1 ? first(out) : out;
     }
   }
   if (sol === undefined) throw new NotImplementedError('dsolve: unsupported equation');
@@ -328,20 +336,20 @@ function applyIcs(sol: Expr, fx: UndefFn, x: Sym, ics: [Expr, ExprLike][]): Expr
   for (const [cond, val] of ics) {
     // cond is f(a) or Derivative(f(x), x) evaluated at a (Subs) -- we accept f(a) and (Derivative, a) pairs
     if (cond instanceof UndefFn && cond.name === fx.name) {
-      eqs.push(add(xreplace(sol, [[x, cond.args[0]!]]), mul(-1, sympify(val))));
+      eqs.push(add(xreplace(sol, [[x, first(cond.args)]]), mul(-1, sympify(val))));
     } else if (cond instanceof SubsNode && cond.expr instanceof Derivative && cond.expr.expr instanceof UndefFn && cond.variables.length === 1) {
       // f(x).diff(x, k).subs(x, a): Subs(Derivative(f(x), (x, k)), x, a)
       const k = cond.expr.variableCount.reduce((s, [, m]) => s + m, 0);
-      eqs.push(add(xreplace(diff(sol, x, k), [[x, cond.point[0]!]]), mul(-1, sympify(val))));
+      eqs.push(add(xreplace(diff(sol, x, k), [[x, first(cond.point)]]), mul(-1, sympify(val))));
     } else if (cond instanceof Derivative && cond.expr instanceof UndefFn) {
       const k = cond.variableCount.reduce((s, [, m]) => s + m, 0);
-      const at = cond.expr.args[0] ?? x;
-      eqs.push(add(xreplace(diff(sol, x, k), [[x, at]]), mul(-1, sympify(val))));
+      const point = cond.expr.args[0] ?? x;
+      eqs.push(add(xreplace(diff(sol, x, k), [[x, point]]), mul(-1, sympify(val))));
     }
   }
   const s = linsolve(eqs, cs);
   if (!s) throw new RangeError('dsolve: initial conditions are inconsistent');
-  return simplify(xreplace(sol, cs.map((c, i) => [c, s[i]!] as const)));
+  return simplify(xreplace(sol, cs.map((c, i) => [c, at(s, i)] as const)));
 }
 
 export { homogeneousOrder } from './homogeneous';
@@ -355,7 +363,7 @@ export { homogeneousOrder } from './homogeneous';
 function firstExact(e: Expr, x: Sym, y: Sym, yp: Sym): Expr[] | undefined {
   const pc = polyCoefficients(e, yp);
   if (!pc || Math.max(...pc.keys()) !== 1) return undefined;
-  const N = pc.get(1)!;
+  const N = getOrThrow(pc, 1);
   const M = pc.get(0) ?? S.Zero;
   if (N.has(yp) || M.has(yp) || !N.has(y) && !M.has(y)) return undefined;
   const yy = y;

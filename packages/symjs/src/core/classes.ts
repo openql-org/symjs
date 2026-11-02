@@ -13,6 +13,7 @@ import { sympify } from './ops';
 import { BasicNode } from './basic';
 import { Function as undefinedFunction } from './undef';
 import { str } from '../printing/str';
+import { at } from './guard';
 
 /** A callable with a custom instanceof check. */
 function withInstanceCheck<F extends (...args: never[]) => unknown>(f: F, check: (v: unknown) => boolean): F {
@@ -30,7 +31,7 @@ export const SymNumber = /* @__PURE__ */ withInstanceCheck(
       const t = x.trim();
       if (/^[-+]?\d+$/.test(t)) return Rational.of(BigInt(t));
       const m = /^([-+]?\d+)\/(\d+)$/.exec(t);
-      if (m) return Rational.of(BigInt(m[1]!), BigInt(m[2]!));
+      if (m) return Rational.of(BigInt(at(m, 1)), BigInt(at(m, 2)));
       const v = globalThis.Number(t);
       if (Number.isNaN(v)) throw new TypeError(`Number: cannot convert ${x}`);
       return new Float(v);
@@ -60,7 +61,7 @@ export const genericExpr = generic('Expr');
  */
 export const FunctionClass = /* @__PURE__ */ withInstanceCheck(
   (name: string) => undefinedFunction(name),
-  (v) => typeof v === 'function' && typeof (v as { functionName?: unknown }).functionName === 'string',
+  (v) => typeof v === 'function' && 'functionName' in v && typeof v.functionName === 'string',
 );
 
 /**
@@ -72,19 +73,19 @@ export class UnevaluatedExpr extends ExtensionExpr {
     super('UnevaluatedExpr', [sympify(arg)]);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new UnevaluatedExpr(args[0]!);
+    return new UnevaluatedExpr(at(args, 0));
   }
   override printStr(print: (e: Expr) => string): string {
-    return print(this.args[0]!);
+    return print(at(this.args, 0));
   }
   override printLatex(print: (e: Expr) => string): string {
-    return print(this.args[0]!);
+    return print(at(this.args, 0));
   }
   override doitSelf(): Expr {
-    return this.args[0]!;
+    return at(this.args, 0);
   }
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
-    return d(this.args[0]!, x);
+    return d(at(this.args, 0), x);
   }
 }
 

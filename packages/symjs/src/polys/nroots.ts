@@ -8,6 +8,7 @@
  */
 
 import { DomainError } from '../core/errors';
+import { first } from '../core/guard';
 import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { Float, Rational, S } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
@@ -28,7 +29,7 @@ const cdv = (a: C, b: C): C => {
 
 function durandKerner(coeffs: C[]): C[] {
   const n = coeffs.length - 1;
-  const lc = coeffs[0]!;
+  const lc = first(coeffs);
   const a = coeffs.map((c) => cdv(c, lc));
   const evalP = (z: C): C => a.reduce<C>((acc, c) => ({ re: acc.re * z.re - acc.im * z.im + c.re, im: acc.re * z.im + acc.im * z.re + c.im }), { re: 0, im: 0 });
   let z: C[] = Array.from({ length: n }, (_, k) => {

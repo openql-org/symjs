@@ -8,6 +8,7 @@
  */
 
 import { DomainError, PolynomialError } from '../core/errors';
+import { defined } from '../core/guard';
 import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { Rational, S, impl } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
@@ -23,7 +24,10 @@ const mkey = (m: Monom) => m.join(',');
 
 function cmpMonom(a: Monom, b: Monom, order: MonomialOrder): number {
   const lex = (x: Monom, y: Monom) => {
-    for (let i = 0; i < x.length; i++) if (x[i] !== y[i]) return x[i]! - y[i]!;
+    for (let i = 0; i < x.length; i++) {
+      const d = (x[i] ?? 0) - (y[i] ?? 0);
+      if (d !== 0) return d;
+    }
     return 0;
   };
   if (order === 'lex') return lex(a, b);
@@ -32,19 +36,25 @@ function cmpMonom(a: Monom, b: Monom, order: MonomialOrder): number {
   if (da !== db) return da - db;
   if (order === 'grlex') return lex(a, b);
   // grevlex: the smaller last exponent wins
-  for (let i = a.length - 1; i >= 0; i--) if (a[i] !== b[i]) return b[i]! - a[i]!;
+  for (let i = a.length - 1; i >= 0; i--) {
+    const d = (b[i] ?? 0) - (a[i] ?? 0);
+    if (d !== 0) return d;
+  }
   return 0;
 }
 
-const radd = (a: Rational, b: Rational) => add(a, b) as Rational;
-const rmul = (a: Rational, b: Rational) => mul(a, b) as Rational;
-const rdiv = (a: Rational, b: Rational) => mul(a, pow(b, -1)) as Rational;
+const radd = (a: Rational, b: Rational): Rational => Rational.of(a.p * b.q + b.p * a.q, a.q * b.q);
+const rmul = (a: Rational, b: Rational): Rational => Rational.of(a.p * b.p, a.q * b.q);
+const rdiv = (a: Rational, b: Rational): Rational => Rational.of(a.p * b.q, a.q * b.p);
 
-function lead(p: SP, order: MonomialOrder): [Monom, Rational] | undefined {
+function leadOrUndefined(p: SP, order: MonomialOrder): [Monom, Rational] | undefined {
   let best: [Monom, Rational] | undefined;
   for (const t of p.values()) if (!best || cmpMonom(t[0], best[0], order) > 0) best = t;
   return best;
 }
+
+/** The leading term of a nonzero polynomial. */
+const lead = (p: SP, order: MonomialOrder): [Monom, Rational] => defined(leadOrUndefined(p, order), 'leading term');
 
 function addTerm(p: SP, m: Monom, c: Rational): void {
   const k = mkey(m);
@@ -57,11 +67,11 @@ function addTerm(p: SP, m: Monom, c: Rational): void {
 /** p - c * x^m * q */
 function subMul(p: SP, c: Rational, m: Monom, q: SP): SP {
   const out: SP = new Map(p);
-  for (const [qm, qc] of q.values()) addTerm(out, qm.map((e, i) => e + m[i]!), rmul(rmul(c, qc), Rational.of(-1n)));
+  for (const [qm, qc] of q.values()) addTerm(out, qm.map((e, i) => e + (m[i] ?? 0)), rmul(rmul(c, qc), Rational.of(-1n)));
   return out;
 }
 
-const divides = (a: Monom, b: Monom) => a.every((e, i) => e <= b[i]!);
+const divides = (a: Monom, b: Monom) => a.every((e, i) => e <= (b[i] ?? 0));
 
 /** Full reduction of p by G: [quotients, remainder]. */
 function divide(p0: SP, G: SP[], order: MonomialOrder): [SP[], SP] {
@@ -69,15 +79,15 @@ function divide(p0: SP, G: SP[], order: MonomialOrder): [SP[], SP] {
   const qs: SP[] = G.map(() => new Map());
   const r: SP = new Map();
   while (p.size) {
-    const [lm, lc] = lead(p, order)!;
+    const [lm, lc] = lead(p, order);
     let done = false;
-    for (let i = 0; i < G.length; i++) {
-      const [gm, gc] = lead(G[i]!, order)!;
+    for (const [i, g] of G.entries()) {
+      const [gm, gc] = lead(g, order);
       if (divides(gm, lm)) {
-        const m = lm.map((e, j) => e - gm[j]!);
+        const m = lm.map((e, j) => e - (gm[j] ?? 0));
         const c = rdiv(lc, gc);
-        addTerm(qs[i]!, m, c);
-        p = subMul(p, c, m, G[i]!);
+        addTerm(defined(qs[i]), m, c);
+        p = subMul(p, c, m, g);
         done = true;
         break;
       }
@@ -91,23 +101,24 @@ function divide(p0: SP, G: SP[], order: MonomialOrder): [SP[], SP] {
 }
 
 function spoly(f: SP, g: SP, order: MonomialOrder): SP {
-  const [fm, fc] = lead(f, order)!;
-  const [gm, gc] = lead(g, order)!;
-  const l = fm.map((e, i) => Math.max(e, gm[i]!));
+  const [fm, fc] = lead(f, order);
+  const [gm, gc] = lead(g, order);
+  const l = fm.map((e, i) => Math.max(e, gm[i] ?? 0));
+  const shift = l.map((e, i) => e - (fm[i] ?? 0));
   let out: SP = new Map();
-  for (const [m, c] of f.values()) addTerm(out, m.map((e, i) => e + l[i]! - fm[i]!), rdiv(c, fc));
-  out = subMul(out, rdiv(S.One, gc), l.map((e, i) => e - gm[i]!), g);
+  for (const [m, c] of f.values()) addTerm(out, m.map((e, i) => e + (shift[i] ?? 0)), rdiv(c, fc));
+  out = subMul(out, rdiv(S.One, gc), l.map((e, i) => e - (gm[i] ?? 0)), g);
   return out;
 }
 
 function monic(p: SP, order: MonomialOrder): SP {
-  const [, lc] = lead(p, order)!;
+  const [, lc] = lead(p, order);
   const out: SP = new Map();
   for (const [m, c] of p.values()) out.set(mkey(m), [m, rdiv(c, lc)]);
   return out;
 }
 
-function fromExpr(e: Expr, gens: readonly Sym[]): SP {
+function fromExpr(e: Expr, gens: readonly Expr[]): SP {
   const p = Poly.from(e, gens);
   const out: SP = new Map();
   for (const [m, c] of p.terms()) {
@@ -117,8 +128,8 @@ function fromExpr(e: Expr, gens: readonly Sym[]): SP {
   return out;
 }
 
-function toExpr(p: SP, gens: readonly Sym[]): Expr {
-  return add(...[...p.values()].map(([m, c]) => mul(c, ...m.map((k, i) => pow(gens[i]!, k)))));
+function toExpr(p: SP, gens: readonly Expr[]): Expr {
+  return add(...[...p.values()].map(([m, c]) => mul(c, ...gens.map((g, i) => pow(g, defined(m[i], 'exponent'))))));
 }
 
 /** Reduced Groebner basis (monic over QQ). */
@@ -127,12 +138,14 @@ function buchberger(F: SP[], order: MonomialOrder): SP[] {
   const pairs: [number, number][] = [];
   for (let i = 0; i < G.length; i++) for (let j = 0; j < i; j++) pairs.push([j, i]);
   while (pairs.length) {
-    const [i, j] = pairs.shift()!;
-    const [li] = lead(G[i]!, order)!;
-    const [lj] = lead(G[j]!, order)!;
+    const [i, j] = defined(pairs.shift());
+    const gi = defined(G[i]);
+    const gj = defined(G[j]);
+    const [li] = lead(gi, order);
+    const [lj] = lead(gj, order);
     // Buchberger's first criterion: coprime leading monomials
     if (li.every((e, k) => e === 0 || lj[k] === 0)) continue;
-    const [, r] = divide(spoly(G[i]!, G[j]!, order), G, order);
+    const [, r] = divide(spoly(gi, gj, order), G, order);
     if (r.size) {
       G.push(monic(r, order));
       for (let k = 0; k < G.length - 1; k++) pairs.push([k, G.length - 1]);
@@ -140,12 +153,16 @@ function buchberger(F: SP[], order: MonomialOrder): SP[] {
   }
   // minimize
   G = G.filter((g, i) => {
-    const [lg] = lead(g, order)!;
-    return !G.some((h, j) => j !== i && divides(lead(h, order)![0], lg) && (mkey(lead(h, order)![0]) !== mkey(lg) || j < i));
+    const [lg] = lead(g, order);
+    return !G.some((h, j) => {
+      if (j === i) return false;
+      const [lh] = lead(h, order);
+      return divides(lh, lg) && (mkey(lh) !== mkey(lg) || j < i);
+    });
   });
   // reduce
   G = G.map((g, i) => monic(divide(g, G.filter((_, j) => j !== i), order)[1], order));
-  return G.sort((a, b) => cmpMonom(lead(b, order)![0], lead(a, order)![0], order));
+  return G.sort((a, b) => cmpMonom(lead(b, order)[0], lead(a, order)[0], order));
 }
 
 /** A Groebner basis with its generators, domain and order (SymPy GroebnerBasis). */
@@ -158,7 +175,8 @@ export class GroebnerBasis {
   ) {}
   /** Is f in the ideal? */
   contains(f: ExprLike): boolean {
-    return this.reduce(f)[1] instanceof Rational && (this.reduce(f)[1] as Rational).isZero;
+    const r = this.reduce(f)[1];
+    return r instanceof Rational && r.isZero;
   }
   /** Division of f by the basis: [quotients, remainder]. */
   reduce(f: ExprLike): [Expr[], Expr] {
@@ -188,9 +206,8 @@ export function groebner(F: readonly ExprLike[], gens: readonly Sym[], order: Mo
 }
 
 impl.polyReduce = (f, g, gens) => {
-  const syms = gens as Sym[];
-  const [qs, r] = divide(fromExpr(f, syms), [fromExpr(g, syms)], 'lex');
-  return [toExpr(qs[0]!, syms), toExpr(r, syms)];
+  const [qs, r] = divide(fromExpr(f, gens), [fromExpr(g, gens)], 'lex');
+  return [toExpr(defined(qs[0], 'quotient'), gens), toExpr(r, gens)];
 };
 
 /** SymPy reduced(f, G, *gens): multivariate division of f by G, returning [quotients, remainder]. */
@@ -205,7 +222,7 @@ export function reduced(f: ExprLike, G: readonly ExprLike[], gens: readonly Sym[
 
 /** The leading monomial (exponent vector) of a polynomial in the given generators and order. */
 export function leadingMonomial(f: ExprLike, gens: readonly Sym[], order: MonomialOrder = 'lex'): number[] {
-  const l = lead(fromExpr(sympify(f), gens), order);
+  const l = leadOrUndefined(fromExpr(sympify(f), gens), order);
   if (!l) throw new PolynomialError('leading monomial of zero');
   return l[0];
 }

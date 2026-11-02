@@ -45,7 +45,7 @@ import {
   Not,
   Xor,
 } from '@symjs/symjs';
-import type { ExprLike } from '@symjs/symjs';
+import type { ExprLike, FnName } from '@symjs/symjs';
 
 // ---------------------------------------------------------------------------
 // Structural types of the math.js objects used (no dependency on math.js)
@@ -106,52 +106,53 @@ export interface MathInstance {
 // ---------------------------------------------------------------------------
 
 /** symjs function name -> math.js function name (where they differ or are known to match). */
-const TO_MATHJS: Readonly<Record<string, string>> = {
-  abs: 'abs',
-  sin: 'sin',
-  cos: 'cos',
-  tan: 'tan',
-  cot: 'cot',
-  sec: 'sec',
-  csc: 'csc',
-  asin: 'asin',
-  acos: 'acos',
-  atan: 'atan',
-  acot: 'acot',
-  asec: 'asec',
-  acsc: 'acsc',
-  atan2: 'atan2',
-  sinh: 'sinh',
-  cosh: 'cosh',
-  tanh: 'tanh',
-  coth: 'coth',
-  sech: 'sech',
-  csch: 'csch',
-  asinh: 'asinh',
-  acosh: 'acosh',
-  atanh: 'atanh',
-  acoth: 'acoth',
-  asech: 'asech',
-  acsch: 'acsch',
-  log: 'log',
-  re: 're',
-  im: 'im',
-  arg: 'arg',
-  conjugate: 'conj',
-  sign: 'sign',
-  floor: 'floor',
-  ceiling: 'ceil',
-  factorial: 'factorial',
-  gamma: 'gamma',
-  lgamma: 'lgamma',
-  loggamma: 'lgamma',
-  erf: 'erf',
-  zeta: 'zeta',
-  binomial: 'combinations',
-  Min: 'min',
-  Max: 'max',
-};
-const FROM_MATHJS: Readonly<Record<string, string>> = Object.fromEntries([...Object.entries(TO_MATHJS).map(([a, b]) => [b, a]), ['ceil', 'ceiling'], ['conj', 'conjugate']]);
+const TO_MATHJS_PAIRS: readonly (readonly [FnName, string])[] = [
+  ['abs', 'abs'],
+  ['sin', 'sin'],
+  ['cos', 'cos'],
+  ['tan', 'tan'],
+  ['cot', 'cot'],
+  ['sec', 'sec'],
+  ['csc', 'csc'],
+  ['asin', 'asin'],
+  ['acos', 'acos'],
+  ['atan', 'atan'],
+  ['acot', 'acot'],
+  ['asec', 'asec'],
+  ['acsc', 'acsc'],
+  ['atan2', 'atan2'],
+  ['sinh', 'sinh'],
+  ['cosh', 'cosh'],
+  ['tanh', 'tanh'],
+  ['coth', 'coth'],
+  ['sech', 'sech'],
+  ['csch', 'csch'],
+  ['asinh', 'asinh'],
+  ['acosh', 'acosh'],
+  ['atanh', 'atanh'],
+  ['acoth', 'acoth'],
+  ['asech', 'asech'],
+  ['acsch', 'acsch'],
+  ['log', 'log'],
+  ['re', 're'],
+  ['im', 'im'],
+  ['arg', 'arg'],
+  ['conjugate', 'conj'],
+  ['sign', 'sign'],
+  ['floor', 'floor'],
+  ['ceiling', 'ceil'],
+  ['factorial', 'factorial'],
+  ['gamma', 'gamma'],
+  ['loggamma', 'lgamma'],
+  ['erf', 'erf'],
+  ['zeta', 'zeta'],
+  ['binomial', 'combinations'],
+  ['Min', 'min'],
+  ['Max', 'max'],
+];
+const TO_MATHJS: Readonly<Record<string, string>> = Object.fromEntries([...TO_MATHJS_PAIRS, ['lgamma', 'lgamma']]);
+/** math.js function name -> symjs function name. */
+const FROM_MATHJS: ReadonlyMap<string, FnName> = new Map<string, FnName>([...TO_MATHJS_PAIRS.map(([a, b]): [string, FnName] => [b, a]), ['ceil', 'ceiling'], ['conj', 'conjugate']]);
 
 /** symjs constant -> math.js symbol. */
 const CONSTANTS_TO: Readonly<Record<string, string>> = { pi: 'pi', E: 'e', I: 'i', GoldenRatio: 'phi', oo: 'Infinity', '-oo': '-Infinity', nan: 'NaN', zoo: 'Infinity' };
@@ -195,9 +196,9 @@ function printNode(e: Expr): string {
     const op = ({ Eq: '==', Ne: '!=', Lt: '<', Le: '<=', Gt: '>', Ge: '>=' } as Record<string, string>)[e.op] ?? fail(`relation ${e.op}`);
     return `(${printNode(e.args[0])} ${op} ${printNode(e.args[1])})`;
   }
-  if (e.kind === 'BoolOp') {
-    const head = (e as unknown as { op: string }).op;
-    if (head === 'Not') return `(not ${printNode(e.args[0]!)})`;
+  if (e.kind === 'BoolOp' && 'op' in e && typeof e.op === 'string') {
+    const head = e.op;
+    if (head === 'Not') return `(not ${printNode(e.args[0] ?? fail('Not without an argument'))})`;
     if (head === 'And' || head === 'Or' || head === 'Xor') return `(${e.args.map(printNode).join(` ${head.toLowerCase()} `)})`;
   }
   if (e instanceof AppliedFunction || e instanceof AppliedUndef) {
@@ -242,6 +243,26 @@ export function toMathjsMatrix(m: Matrix, math: Pick<MathInstance, 'matrix' | 'b
 // ---------------------------------------------------------------------------
 
 const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null;
+const isArray = (v: unknown): v is readonly unknown[] => Array.isArray(v);
+const isBigNumber = (v: Record<string, unknown>): v is Record<string, unknown> & MathBigNumber => v['isBigNumber'] === true;
+/** A fraction.js field (sign, numerator or denominator) as a BigInt argument. */
+const fractionPart = (x: unknown): number | bigint | string => (typeof x === 'number' || typeof x === 'bigint' || typeof x === 'string' ? x : fail(`invalid math.js Fraction field ${typeof x}`));
+/** A math.js value for an error message. */
+function describeValue(v: unknown): string {
+  switch (typeof v) {
+    case 'object':
+      return JSON.stringify(v);
+    case 'symbol':
+    case 'function':
+      return typeof v;
+    case 'string':
+    case 'number':
+    case 'bigint':
+    case 'boolean':
+    case 'undefined':
+      return `${v}`;
+  }
+}
 
 /** Options of fromMathjs. */
 export interface FromMathjsOptions {
@@ -266,8 +287,8 @@ export function fromMathjsValue(v: unknown): Expr {
   if (typeof v === 'bigint') return Rational.of(v);
   if (typeof v === 'boolean') return v ? S.true : S.false;
   if (isObject(v)) {
-    if (v['isBigNumber'] === true) {
-      const s = (v as unknown as MathBigNumber).toString();
+    if (isBigNumber(v)) {
+      const s = v.toString();
       if (/^-?\d+$/.test(s)) return Rational.of(BigInt(s));
       if (s === 'NaN') return S.NaN;
       if (s === 'Infinity' || s === '-Infinity') return s === 'Infinity' ? S.Infinity : S.NegativeInfinity;
@@ -275,35 +296,37 @@ export function fromMathjsValue(v: unknown): Expr {
       return float(s, Math.max(15, digits));
     }
     if (v['isFraction'] === true || ('n' in v && 'd' in v && 's' in v)) {
-      const sgn = BigInt(v['s'] as number | bigint);
-      return Rational.of(sgn * BigInt(v['n'] as number | bigint), BigInt(v['d'] as number | bigint));
+      const sgn = BigInt(fractionPart(v['s']));
+      return Rational.of(sgn * BigInt(fractionPart(v['n'])), BigInt(fractionPart(v['d'])));
     }
     if (v['isComplex'] === true) return add(fromMathjsValue(v['re']), mul(fromMathjsValue(v['im']), S.I));
   }
-  return fail(`cannot convert the math.js value ${typeof v === 'object' ? JSON.stringify(v) : typeof v === 'symbol' || typeof v === 'function' ? typeof v : `${v as string | number | boolean | bigint | undefined}`}`);
+  return fail(`cannot convert the math.js value ${describeValue(v)}`);
 }
 
+/** An operand of a math.js operator; throws when the node has too few arguments. */
+const opd = (x: Expr | undefined): Expr => x ?? fail('operator with too few arguments');
 const OPERATORS: Readonly<Record<string, (args: Expr[]) => Expr>> = {
   add: (a) => add(...a),
-  subtract: ([a, b]) => sub(a!, b!),
+  subtract: ([a, b]) => sub(opd(a), opd(b)),
   multiply: (a) => mul(...a),
-  divide: ([a, b]) => mul(a!, pow(b!, -1)),
-  pow: ([a, b]) => pow(a!, b!),
-  dotPow: ([a, b]) => pow(a!, b!),
-  unaryMinus: ([a]) => mul(-1, a!),
-  unaryPlus: ([a]) => a!,
-  mod: ([a, m]) => (a instanceof Rational && m instanceof Rational && a.q === 1n && m.q === 1n && m.p !== 0n ? Rational.of(((a.p % m.p) + m.p) % m.p) : UndefinedFunctionOf('mod')(a!, m!)),
+  divide: ([a, b]) => mul(opd(a), pow(opd(b), -1)),
+  pow: ([a, b]) => pow(opd(a), opd(b)),
+  dotPow: ([a, b]) => pow(opd(a), opd(b)),
+  unaryMinus: ([a]) => mul(-1, opd(a)),
+  unaryPlus: ([a]) => opd(a),
+  mod: ([a, m]) => (a instanceof Rational && m instanceof Rational && a.q === 1n && m.q === 1n && m.p !== 0n ? Rational.of(((a.p % m.p) + m.p) % m.p) : UndefinedFunctionOf('mod')(opd(a), opd(m))),
   factorial: (a) => fn('factorial', a),
-  equal: ([a, b]) => Eq(a!, b!),
-  unequal: ([a, b]) => Ne(a!, b!),
-  smaller: ([a, b]) => Lt(a!, b!),
-  smallerEq: ([a, b]) => Le(a!, b!),
-  larger: ([a, b]) => Gt(a!, b!),
-  largerEq: ([a, b]) => Ge(a!, b!),
+  equal: ([a, b]) => Eq(opd(a), opd(b)),
+  unequal: ([a, b]) => Ne(opd(a), opd(b)),
+  smaller: ([a, b]) => Lt(opd(a), opd(b)),
+  smallerEq: ([a, b]) => Le(opd(a), opd(b)),
+  larger: ([a, b]) => Gt(opd(a), opd(b)),
+  largerEq: ([a, b]) => Ge(opd(a), opd(b)),
   and: (a) => And(...a),
   or: (a) => Or(...a),
   xor: (a) => Xor(...a),
-  not: ([a]) => Not(a!),
+  not: ([a]) => Not(opd(a)),
 };
 const RELATIONS: Readonly<Record<string, (a: Expr, b: Expr) => Expr>> = { equal: Eq, unequal: Ne, smaller: Lt, smallerEq: Le, larger: Gt, largerEq: Ge };
 
@@ -342,22 +365,23 @@ export function fromMathjs(node: MathNode, opts: FromMathjsOptions = {}): Expr {
       case 'FunctionNode': {
         const name = typeof n.fn === 'object' && n.fn.name !== undefined ? n.fn.name : typeof n.name === 'string' ? n.name : fail('FunctionNode without a name');
         const args = (n.args ?? []).map(go);
+        const arg = (xs: readonly Expr[], i: number): Expr => xs[i] ?? fail(`${name} needs ${i + 1} arguments`);
         const user = opts.functions?.[name];
         if (user) return user(...args);
-        if (name === 'exp') return pow(S.E, args[0]!);
-        if (name === 'sqrt') return pow(args[0]!, Rational.of(1n, 2n));
-        if (name === 'cbrt') return pow(args[0]!, Rational.of(1n, 3n));
-        if (name === 'nthRoot') return pow(args[0]!, pow(args[1]!, -1));
-        if (name === 'log' && args.length === 2) return mul(fn('log', [args[0]!]), pow(fn('log', [args[1]!]), -1));
-        if (name === 'log10') return mul(fn('log', [args[0]!]), pow(fn('log', [10]), -1));
-        if (name === 'log2') return mul(fn('log', [args[0]!]), pow(fn('log', [2]), -1));
-        const sympyName = FROM_MATHJS[name];
-        if (sympyName) return fn(sympyName as Parameters<typeof fn>[0], args);
+        if (name === 'exp') return pow(S.E, arg(args, 0));
+        if (name === 'sqrt') return pow(arg(args, 0), Rational.of(1n, 2n));
+        if (name === 'cbrt') return pow(arg(args, 0), Rational.of(1n, 3n));
+        if (name === 'nthRoot') return pow(arg(args, 0), pow(arg(args, 1), -1));
+        if (name === 'log' && args.length === 2) return mul(fn('log', [arg(args, 0)]), pow(fn('log', [arg(args, 1)]), -1));
+        if (name === 'log10') return mul(fn('log', [arg(args, 0)]), pow(fn('log', [10]), -1));
+        if (name === 'log2') return mul(fn('log', [arg(args, 0)]), pow(fn('log', [2]), -1));
+        const sympyName = FROM_MATHJS.get(name);
+        if (sympyName !== undefined) return fn(sympyName, args);
         return UndefinedFunctionOf(name)(...args);
       }
       case 'RelationalNode': {
         const params = (n.params ?? []).map(go);
-        const parts = (n.conditionals ?? []).map((c, i) => (RELATIONS[c] ?? fail(`relation ${c}`))(params[i]!, params[i + 1]!));
+        const parts = (n.conditionals ?? []).map((c, i) => (RELATIONS[c] ?? fail(`relation ${c}`))(params[i] ?? fail('relation without an operand'), params[i + 1] ?? fail('relation without an operand')));
         return And(...parts);
       }
       default:
@@ -374,7 +398,7 @@ export function fromMathjsString(text: string, math: Pick<MathInstance, 'parse'>
 
 /** A math.js Matrix (or nested array) of values as a Matrix; a vector becomes a column. */
 export function fromMathjsMatrix(m: MathMatrix | readonly unknown[]): Matrix {
-  const data = Array.isArray(m) ? (m as unknown[]) : (m as MathMatrix).toArray();
-  const rows = data.map((r) => (Array.isArray(r) ? (r as unknown[]).map(fromMathjsValue) : [fromMathjsValue(r)]));
+  const data: readonly unknown[] = isArray(m) ? m : m.toArray();
+  const rows = data.map((r) => (isArray(r) ? r.map((x) => fromMathjsValue(x)) : [fromMathjsValue(r)]));
   return Matrix.of(rows);
 }

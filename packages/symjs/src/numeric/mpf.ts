@@ -10,6 +10,8 @@
  * round-half-to-even, like mpmath's `round_nearest`.
  */
 
+import { at, pair } from '../core/guard';
+
 export interface Mpf {
   readonly man: bigint;
   readonly exp: number;
@@ -26,7 +28,7 @@ export function bitLength(nIn: bigint): number {
   if (n < 0n) n = -n;
   if (n === 0n) return 0;
   const s = n.toString(16);
-  const top = parseInt(s[0]!, 16);
+  const top = parseInt(s.charAt(0), 16);
   return (s.length - 1) * 4 + (32 - Math.clz32(top));
 }
 
@@ -291,7 +293,7 @@ export function dpsToPrec(n: number): number {
 export function fromStr(s0: string, prec: number): Mpf {
   const s = s0.toLowerCase().trim().replace(/_/g, '');
   if (s.includes('/')) {
-    const [p, q] = s.split('/') as [string, string];
+    const [p, q] = pair(s.split('/'));
     return fromRational(BigInt(p), BigInt(q), prec);
   }
   const m = /^([+-]?)(\d*)(?:\.(\d*))?(?:e([+-]?\d+))?$/.exec(s);
@@ -340,10 +342,10 @@ export function toStr(a: Mpf, dps: number, stripZeros = true, minFixedIn?: numbe
   maxFixed ??= dps;
   let [sgn, digits, exponent] = toDigitsExp(a, dps + 3);
   if (!dps) {
-    if ('56789'.includes(digits[0]!)) exponent += 1;
+    if ('56789'.includes(at(digits, 0))) exponent += 1;
     digits = '.0';
   } else {
-    if (digits.length > dps && '56789'.includes(digits[dps]!)) {
+    if (digits.length > dps && '56789'.includes(at(digits, dps))) {
       digits = digits.slice(0, dps);
       let i = dps - 1;
       while (i >= 0 && digits[i] === '9') i--;

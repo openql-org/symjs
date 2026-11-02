@@ -15,6 +15,7 @@ import { add, mul, sympify } from '../core/ops';
 import { Eq, Le, Lt } from '../core/logic';
 import { and, or } from '../core/boolalg';
 import { compareKeys, sortKey } from '../printing/sortkey';
+import { at, cast, first } from '../core/guard';
 
 /** Base class of all sets. */
 export abstract class SetExpr extends Expr {
@@ -262,7 +263,7 @@ export function imageSet(v: Expr, expr: ExprLike, base: SetExpr): SetExpr {
 class SetOp extends SetExpr {
   constructor(
     readonly op: 'Union' | 'Intersection' | 'Complement',
-    readonly args: readonly Expr[],
+    readonly args: readonly SetExpr[],
   ) {
     super();
   }
@@ -308,7 +309,7 @@ export function containsQ(s: SetExpr, x: Expr): boolean | undefined {
     return okLo && okHi;
   }
   if (s instanceof SetOp) {
-    const parts = s.args.map((a) => containsQ(a as SetExpr, x));
+    const parts = s.args.map((a) => containsQ(a, x));
     if (s.op === 'Union') return parts.some((v) => v === true) ? true : parts.every((v) => v === false) ? false : undefined;
     if (s.op === 'Intersection') return parts.every((v) => v === true) ? true : parts.some((v) => v === false) ? false : undefined;
     const [a, b] = parts;
@@ -333,13 +334,16 @@ function intervalParts(s: SetExpr): Interval[] | undefined {
   if (s instanceof Interval) return [s];
   if (s === Reals) return [new Interval(S.NegativeInfinity, S.Infinity, true, true)];
   if (s === EmptySet) return [];
-  if (s instanceof SetOp && s.op === 'Union' && s.args.every((a) => a instanceof Interval)) return s.args as Interval[];
+  if (s instanceof SetOp && s.op === 'Union') {
+    const ivs = s.args.filter((a) => a instanceof Interval);
+    if (ivs.length === s.args.length) return ivs;
+  }
   return undefined;
 }
 
 /** Union of sets, merging overlapping intervals and absorbing points. */
 export function union(...sets0: SetExpr[]): SetExpr {
-  const sets = sets0.flatMap((s) => (s instanceof SetOp && s.op === 'Union' ? (s.args as SetExpr[]) : [s])).filter((s) => s !== EmptySet);
+  const sets = sets0.flatMap((s) => (s instanceof SetOp && s.op === 'Union' ? s.args : [s])).filter((s) => s !== EmptySet);
   if (!sets.length) return EmptySet;
   if (sets.some((s) => s === Reals) && sets.every((s) => s === Reals || s instanceof Interval || (s instanceof FiniteSet && s.args.every((a) => containsQ(Reals, a) === true)))) return Reals;
   let ivs: Interval[] = [];
@@ -379,7 +383,7 @@ export function union(...sets0: SetExpr[]): SetExpr {
   const out: SetExpr[] = ivs.map((iv) => (isNegOo(iv.start) && isOo(iv.end) ? Reals : iv));
   if (rest.length) out.push(finiteSet(...rest));
   out.push(...others);
-  if (out.length === 1) return out[0]!;
+  if (out.length === 1) return first(out);
   return new SetOp('Union', sortSets(out));
 }
 
@@ -389,8 +393,9 @@ function mergeIntervals(ivs0: Interval[]): Interval[] {
   while (changed) {
     changed = false;
     outer: for (let i = 0; i < ivs.length; i++) {
+      const iv = at(ivs, i);
       for (let j = i + 1; j < ivs.length; j++) {
-        const m = mergeTwo(ivs[i]!, ivs[j]!);
+        const m = mergeTwo(iv, at(ivs, j));
         if (m) {
           ivs.splice(j, 1);
           ivs[i] = m;
@@ -430,15 +435,16 @@ function mergeTwo(aIn: Interval, bIn: Interval): Interval | undefined {
 /** Intersection of sets. */
 export function intersection(...sets: SetExpr[]): SetExpr {
   if (sets.some((s) => s === EmptySet)) return EmptySet;
-  let acc: SetExpr = sets[0]!;
+  let acc: SetExpr = first(sets);
   for (const s of sets.slice(1)) acc = intersectTwo(acc, s);
   return acc;
 }
 
 function intersectTwo(a: SetExpr, b: SetExpr): SetExpr {
   if (a === EmptySet || b === EmptySet) return EmptySet;
-  if (a instanceof FiniteSet || b instanceof FiniteSet) {
-    const [f, o] = a instanceof FiniteSet ? [a, b] : [b as FiniteSet, a];
+  const fo: [FiniteSet, SetExpr] | undefined = a instanceof FiniteSet ? [a, b] : b instanceof FiniteSet ? [b, a] : undefined;
+  if (fo !== undefined) {
+    const [f, o] = fo;
     const keep: Expr[] = [];
     const unknown: Expr[] = [];
     for (const x of f.args) {
@@ -461,8 +467,8 @@ function intersectTwo(a: SetExpr, b: SetExpr): SetExpr {
     for (const x of pa) for (const y of pb) out.push(intersectIntervals(x, y));
     return union(...out);
   }
-  if (a instanceof SetOp && a.op === 'Union') return union(...(a.args as SetExpr[]).map((s) => intersectTwo(s, b)));
-  if (b instanceof SetOp && b.op === 'Union') return union(...(b.args as SetExpr[]).map((s) => intersectTwo(a, s)));
+  if (a instanceof SetOp && a.op === 'Union') return union(...a.args.map((s) => intersectTwo(s, b)));
+  if (b instanceof SetOp && b.op === 'Union') return union(...b.args.map((s) => intersectTwo(a, s)));
   return new SetOp('Intersection', sortSets([a, b]));
 }
 
@@ -492,7 +498,7 @@ export function complement(a: SetExpr, b: SetExpr): SetExpr {
   }
   const pa = intervalParts(a);
   if (pa && b instanceof FiniteSet && b.args.every((x) => realValue(x) !== undefined)) {
-    const pts = [...b.args].sort((x, y) => cmpReal(x, y)!);
+    const pts = [...b.args].sort((x, y) => cmpReal(x, y) ?? 0);
     let parts: SetExpr[] = pa;
     for (const pt of pts) {
       parts = parts.flatMap((iv) => {
@@ -544,8 +550,8 @@ export function asRelational(s: SetExpr, x: Expr): Expr {
     return and(left, right);
   }
   if (s instanceof FiniteSet) return or(...s.args.map((a) => Eq(x, a)));
-  if (s instanceof SetOp && s.op === 'Union') return or(...s.args.map((a) => asRelational(a as SetExpr, x)));
-  if (s instanceof SetOp && s.op === 'Intersection') return and(...s.args.map((a) => asRelational(a as SetExpr, x)));
+  if (s instanceof SetOp && s.op === 'Union') return or(...s.args.map((a) => asRelational(a, x)));
+  if (s instanceof SetOp && s.op === 'Intersection') return and(...s.args.map((a) => asRelational(a, x)));
   throw new NotImplementedError('as_relational: unsupported set');
 }
 
@@ -553,18 +559,18 @@ export function asRelational(s: SetExpr, x: Expr): Expr {
 export function inf(s: SetExpr): Expr {
   if (s instanceof Interval) return s.start;
   if (s === Reals) return S.NegativeInfinity;
-  if (s instanceof FiniteSet) return [...s.args].sort((a, b) => cmpReal(a, b) ?? 0)[0]!;
-  if (s instanceof SetOp && s.op === 'Union') return (s.args as SetExpr[]).map(inf).sort((a, b) => cmpReal(a, b) ?? 0)[0]!;
+  if (s instanceof FiniteSet) return first([...s.args].sort((a, b) => cmpReal(a, b) ?? 0));
+  if (s instanceof SetOp && s.op === 'Union') return first(s.args.map(inf).sort((a, b) => cmpReal(a, b) ?? 0));
   throw new NotImplementedError('inf: unsupported set');
 }
 export function sup(s: SetExpr): Expr {
   if (s instanceof Interval) return s.end;
   if (s === Reals) return S.Infinity;
-  if (s instanceof FiniteSet) return [...s.args].sort((a, b) => cmpReal(b, a) ?? 0)[0]!;
-  if (s instanceof SetOp && s.op === 'Union') return (s.args as SetExpr[]).map(sup).sort((a, b) => cmpReal(b, a) ?? 0)[0]!;
+  if (s instanceof FiniteSet) return first([...s.args].sort((a, b) => cmpReal(b, a) ?? 0));
+  if (s instanceof SetOp && s.op === 'Union') return first(s.args.map(sup).sort((a, b) => cmpReal(b, a) ?? 0));
   throw new NotImplementedError('sup: unsupported set');
 }
 
 impl.emptySet = () => EmptySet;
 impl.interval = (a, b) => interval(a, b);
-impl.setIntersection = (a, b) => intersection(a as SetExpr, b as SetExpr);
+impl.setIntersection = (a, b) => intersection(cast(a, SetExpr, 'intersection operand'), cast(b, SetExpr, 'intersection operand'));

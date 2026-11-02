@@ -14,14 +14,14 @@ import { isIntegerQ, isNegative } from '../../core/assumptions';
 import { sympify } from '../../core/ops';
 import type { Truth } from '../../core/truth';
 import { Poly } from '../../polys/sympoly';
-import { containsQ } from '../../sets/sets';
-import type { SetExpr } from '../../sets/sets';
+import { SetExpr, containsQ } from '../../sets/sets';
 import { latex } from '../../printing/latex';
 import { companion } from '../linalg';
 import type { Matrix } from '../matrix';
 import type { DoitHints, MatArg } from './matexpr';
 import { MatScalar, MatrixExpr, checkDim, doitArg, parenLatex, toExpr, toMatrix, transposeOf } from './matexpr';
 import { isInt, same } from './util';
+import { at, cast, defined, first, pair } from '../../core/guard';
 
 // ---------------------------------------------------------------------------
 // DotProduct
@@ -48,11 +48,11 @@ export class DotProductNode extends MatScalar {
     return new DotProductNode(a, b);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new DotProductNode(args[0]!, args[1]!);
+    return new DotProductNode(...pair(args));
   }
   override doit(hints: DoitHints = {}): Expr {
-    const [a0, b0] = this.args.map((x) => (hints.deep === false ? x : doitArg(x, hints))) as [MatrixExpr, MatrixExpr];
-    const mul = (x: Expr, y: Expr): MatrixExpr => (x as MatrixExpr).mul(y) as MatrixExpr;
+    const [a0, b0] = pair(this.args.map((x) => cast(hints.deep === false ? x : doitArg(x, hints), MatrixExpr)));
+    const mul = (x: Expr, y: Expr): MatrixExpr => cast(cast(x, MatrixExpr).mul(y), MatrixExpr);
     let m: MatrixExpr;
     if (same(a0.rows, b0.rows) && same(a0.cols, b0.cols)) m = same(a0.rows, S.One) ? mul(a0, transposeOf(b0)) : mul(transposeOf(a0), b0);
     else m = same(a0.rows, S.One) ? mul(a0, b0) : mul(transposeOf(a0), transposeOf(b0));
@@ -62,7 +62,7 @@ export class DotProductNode extends MatScalar {
     return 49;
   }
   override printLatex(): string {
-    return `${parenLatex(this.args[0]!, 49)} \\cdot ${parenLatex(this.args[1]!, 49)}`;
+    return `${parenLatex(at(this.args, 0), 49)} \\cdot ${parenLatex(at(this.args, 1), 49)}`;
   }
 }
 
@@ -95,7 +95,7 @@ export class CompanionMatrixNode extends MatrixExpr {
     return [n, n];
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new CompanionMatrixNode(Poly.from(args[0]!, args.slice(1)));
+    return new CompanionMatrixNode(Poly.from(first(args), args.slice(1)));
   }
   protected override computeKey(): string {
     return `CompanionMatrix(${String(this.poly)})`;
@@ -107,7 +107,7 @@ export class CompanionMatrixNode extends MatrixExpr {
     const c = Number(j.p);
     if (c === n - 1) {
       const cs = this.poly.allCoeffs();
-      return sympify(cs[cs.length - 1 - r]!).neg();
+      return sympify(defined(cs[cs.length - 1 - r], 'coefficient')).neg();
     }
     return r === c + 1 ? S.One : S.Zero;
   }
@@ -148,14 +148,14 @@ export class MatrixSetNode extends ExtensionExpr {
   }
   /** The shape (n, m). */
   get shape(): [Expr, Expr] {
-    return [this.args[0]!, this.args[1]!];
+    return pair(this.args);
   }
   /** The set of the entries. */
   get set(): SetExpr {
-    return this.args[2] as SetExpr;
+    return cast(at(this.args, 2), SetExpr);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new MatrixSetNode(args[0]!, args[1]!, args[2] as SetExpr);
+    return new MatrixSetNode(at(args, 0), at(args, 1), cast(at(args, 2), SetExpr));
   }
   /** SymPy X in M: true, false or 'unknown'. */
   contains(other: MatArg): Truth {
@@ -199,13 +199,13 @@ export class FactorizationNode extends MatrixExpr {
   }
   /** The factorized matrix. */
   get arg(): MatrixExpr {
-    return this.args[0] as MatrixExpr;
+    return cast(first(this.args), MatrixExpr);
   }
   get shape(): [Expr, Expr] {
     return this.arg.shape;
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new FactorizationNode(this.name, args[0]!, this.predicates);
+    return new FactorizationNode(this.name, first(args), this.predicates);
   }
 }
 

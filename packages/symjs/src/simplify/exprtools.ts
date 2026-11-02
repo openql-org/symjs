@@ -15,22 +15,26 @@ import { rebuild, xreplace } from '../core/traverse';
 import { Concrete } from '../concrete/node';
 import { Dummy } from '../core/nodes';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
+import { InvariantError } from '../core/errors';
+import { at, first, getOrThrow } from '../core/guard';
 
 const isNumber = (e: Expr): e is Rational | Float => e instanceof Rational || e instanceof Float;
 const isOneE = (e: Expr) => e instanceof Rational && e.isOne;
 const isNegOneE = (e: Expr) => e instanceof Rational && e.p === -1n && e.q === 1n;
 const isExpPow = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
+/** The exponent of exp(x), or undefined for any other node. */
+const expExponent = (e: Expr): Expr | undefined => (e instanceof Pow && isExpPow(e) ? e.exp : undefined);
 
 /** An unevaluated product (SymPy Mul(..., evaluate=False) / Mul._from_args). */
 function rawMul(args: Expr[]): Expr {
   const xs = args.flatMap((a) => (a instanceof Mul ? [...a.args] : [a]));
   if (xs.length === 0) return S.One;
-  if (xs.length === 1) return xs[0]!;
+  if (xs.length === 1) return first(xs);
   return new Mul(xs);
 }
 function rawAdd(args: Expr[]): Expr {
   if (args.length === 0) return S.Zero;
-  if (args.length === 1) return args[0]!;
+  if (args.length === 1) return first(args);
   return new Add(args);
 }
 
@@ -59,8 +63,9 @@ export function keepCoeff(coeffIn: Expr, factorsIn: Expr, clear = true, sign = f
   }
   if (factors instanceof Mul) {
     const margs = [...factors.args];
-    if (isNumber(margs[0]!)) {
-      margs[0] = mul(margs[0], coeff);
+    const m0 = first(margs);
+    if (isNumber(m0)) {
+      margs[0] = mul(m0, coeff);
       if (isOneE(margs[0])) margs.shift();
     } else margs.unshift(coeff);
     return rawMul(margs);
@@ -72,8 +77,9 @@ export function keepCoeff(coeffIn: Expr, factorsIn: Expr, clear = true, sign = f
 
 /** SymPy decompose_power: expr = base**e with integer e. */
 export function decomposePower(e: Expr): [Expr, number] {
-  if (isExpPow(e)) {
-    const [c, tail] = splitCoeff((e as Pow).exp);
+  const ex = expExponent(e);
+  if (ex !== undefined) {
+    const [c, tail] = splitCoeff(ex);
     if (c instanceof Rational && c.q === 1n && !isOneE(c)) return [pow(S.E, tail), Number(c.p)];
     return [e, 1];
   }
@@ -155,7 +161,8 @@ class Factors {
     const args: Expr[] = [];
     for (const [b, e] of this.f.values()) {
       if (e !== 1) {
-        const [bb, ee] = b instanceof Pow && !isExpPow(b) ? [b.base, b.exp] : isExpPow(b) ? [S.E, (b as Pow).exp] : [b, S.One];
+        const ex = expExponent(b);
+        const [bb, ee] = ex !== undefined ? [S.E, ex] : b instanceof Pow ? [b.base, b.exp] : [b, S.One];
         args.push(pow(bb, keepCoeff(Rational.of(BigInt(e)), ee)));
       } else args.push(b);
     }
@@ -165,19 +172,21 @@ class Factors {
 
 class Term {
   constructor(
-    readonly coeff: Rational | Float,
+    /** The numeric coefficient (a Rational or Float, kept as computed by products and inverses). */
+    readonly coeff: Expr,
     readonly numer: Factors,
     readonly denom: Factors,
   ) {}
   static of(term: Expr): Term {
-    let [coeff, rest] = splitCoeff(term);
+    const [coeff0, rest] = splitCoeff(term);
+    let coeff: Expr = coeff0;
     const numer: [Expr, number][] = [];
     const denom: [Expr, number][] = [];
     for (const factor of rest instanceof Mul ? rest.args : isOneE(rest) ? [] : [rest]) {
       let [base, e] = decomposePower(factor);
       if (base instanceof Add) {
         const [cont, prim] = primitive(base);
-        coeff = mul(coeff, pow(cont, e)) as Rational;
+        coeff = mul(coeff, pow(cont, e));
         base = prim;
       }
       if (e > 0) numer.push([base, e]);
@@ -189,12 +198,12 @@ class Term {
     return mul(this.coeff, this.numer.asExpr(), pow(this.denom.asExpr(), -1));
   }
   mul(o: Term): Term {
-    const coeff = mul(this.coeff, o.coeff) as Rational;
+    const coeff = mul(this.coeff, o.coeff);
     const [n, d] = this.numer.mul(o.numer).normal(this.denom.mul(o.denom));
     return new Term(coeff, n, d);
   }
   inv(): Term {
-    return new Term(pow(this.coeff, -1) as Rational, this.denom, this.numer);
+    return new Term(pow(this.coeff, -1), this.denom, this.numer);
   }
   quo(o: Term): Term {
     return this.mul(o.inv());
@@ -205,7 +214,7 @@ class Term {
 }
 
 /** Rational.gcd: gcd of numerators over lcm of denominators. */
-function numGcd(a: Rational | Float, b: Rational | Float): Rational {
+function numGcd(a: Expr, b: Expr): Rational {
   if (!(a instanceof Rational) || !(b instanceof Rational)) return S.One;
   return Rational.of(igcd(a.p, b.p), ilcm(a.q, b.q));
 }
@@ -217,17 +226,18 @@ function gcdTermsCore(terms0: Expr[], isprimitive: boolean, fraction: boolean): 
   let numer: Expr;
   let denom: Expr;
   if (terms.length === 1) {
-    cont = terms[0]!.coeff;
-    numer = terms[0]!.numer.asExpr();
-    denom = terms[0]!.denom.asExpr();
+    const t0 = first(terms);
+    cont = t0.coeff;
+    numer = t0.numer.asExpr();
+    denom = t0.denom.asExpr();
   } else {
-    let c = terms[0]!;
+    let c = first(terms);
     for (const t of terms.slice(1)) c = c.gcd(t);
     const qs = terms.map((t) => t.quo(c));
     let numers: Expr[];
     let den: Factors;
     if (fraction) {
-      den = qs[0]!.denom;
+      den = first(qs).denom;
       for (const t of qs.slice(1)) den = den.lcm(t.denom);
       numers = qs.map((t) => mul(t.coeff, t.numer.mul(den.quo(t.denom)).asExpr()));
     } else {
@@ -307,7 +317,7 @@ export function factorTerms(
     if (expr.args.length === 0) return expr;
     if (expr instanceof Pow || expr.kind === 'Fn' || expr.kind === 'Undef' || expr.kind === 'Rel') {
       const newargs = expr.args.map(doit);
-      if (newargs.every((a, i) => a.key === expr.args[i]!.key)) return expr;
+      if (newargs.every((a, i) => a.key === expr.args[i]?.key)) return expr;
       return rebuild(expr, newargs);
     }
     if (expr instanceof Concrete && expr.kind2 === 'Sum') return factorSum(expr, doit);
@@ -424,7 +434,7 @@ export function collectConst(exprIn: ExprLike, varsIn: readonly Expr[] = [], opt
   if (!numbers) vars = vars.filter((v) => !(v instanceof Rational || v instanceof Float));
   vars = orderedExprs(vars);
   for (let vi = 0; vi < vars.length; vi++) {
-    const v = vars[vi]!;
+    const v = at(vars, vi);
     const Fv = factorsOf(v);
     const terms = new Map<string, [Expr, Expr[]]>();
     for (const m of expr instanceof Add ? expr.args : [expr]) {
@@ -436,13 +446,15 @@ export function collectConst(exprIn: ExprLike, varsIn: readonly Expr[] = [], opt
           return was instanceof Rational && was.isInteger && !(x instanceof Rational && x.isInteger);
         });
         if (!changed) {
-          if (!terms.has(v.key)) terms.set(v.key, [v, []]);
-          terms.get(v.key)![1].push(factorsExpr(q));
+          const cur = terms.get(v.key);
+          if (cur) cur[1].push(factorsExpr(q));
+          else terms.set(v.key, [v, [factorsExpr(q)]]);
           continue;
         }
       }
-      if (!terms.has(S.One.key)) terms.set(S.One.key, [S.One, []]);
-      terms.get(S.One.key)![1].push(m);
+      const one = terms.get(S.One.key);
+      if (one) one[1].push(m);
+      else terms.set(S.One.key, [S.One, [m]]);
     }
     const args: Expr[] = [];
     let hit = false;
@@ -457,7 +469,7 @@ export function collectConst(exprIn: ExprLike, varsIn: readonly Expr[] = [], opt
         w = add(...list);
         hit = true;
         if (recurse && w.key !== expr.key) vars.push(w);
-      } else w = list[0]!;
+      } else w = first(list);
       if (numbers && (k instanceof Rational || k instanceof Float) && w instanceof Add) {
         args.push(keepCoeff(k, w, true, true));
         uneval = true;
@@ -473,7 +485,7 @@ export function collectConst(exprIn: ExprLike, varsIn: readonly Expr[] = [], opt
 
 function orderedEntries(terms: Map<string, [Expr, Expr[]]>): [Expr, Expr[]][] {
   const ks = orderedExprs([...terms.values()].map(([k]) => k));
-  return ks.map((k) => terms.get(k.key)!);
+  return ks.map((k) => getOrThrow(terms, k.key));
 }
 
 /** SymPy ordered(): node count, then the default sort key. */
@@ -486,18 +498,20 @@ export function unevaluatedAdd(argsIn: Expr[]): Expr {
   const args = [...argsIn];
   const out: Expr[] = [];
   let co: Expr = S.Zero;
-  while (args.length) {
-    const a = args.pop()!;
+  for (let a = args.pop(); a !== undefined; a = args.pop()) {
     if (a instanceof Add) args.push(...a.args);
     else if (a instanceof Rational || a instanceof Float) co = add(co, a);
     else out.push(a);
   }
   if (!(co instanceof Rational && co.isZero)) out.unshift(co);
   if (out.length === 0) return S.Zero;
-  return out.length === 1 ? out[0]! : new Add(out);
+  return out.length === 1 ? first(out) : new Add(out);
 }
 
-const couldNeg = (e: Expr): boolean => impl.couldExtractMinusSign!(e);
+const couldNeg = (e: Expr): boolean => {
+  if (impl.couldExtractMinusSign === undefined) throw new InvariantError('impl.couldExtractMinusSign is not registered');
+  return impl.couldExtractMinusSign(e);
+};
 
 /** SymPy signsimp: write sums with a leading minus sign as -(...). */
 export function signsimp(exprIn: ExprLike, evaluate = true): Expr {
@@ -528,7 +542,7 @@ function subPre(e: Expr): Expr {
 
 /** Rebuild a node; a Pow keeps an unevaluated exponent. */
 function rebuildKeep(e: Expr, args: Expr[]): Expr {
-  if (e instanceof Pow) return new Pow(args[0]!, args[1]!);
+  if (e instanceof Pow) return new Pow(first(args), at(args, 1));
   return rebuild(e, args);
 }
 

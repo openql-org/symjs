@@ -10,6 +10,7 @@
 import type { ExprLike } from './nodes';
 import { Expr } from './nodes';
 import { sympify as toExpr } from './ops';
+import { SympifyError } from './errors';
 
 /**
  * Key of the conversion method (SymPy _sympy_): an object with a method
@@ -20,7 +21,7 @@ import { sympify as toExpr } from './ops';
  *
  * @experimental May change in a minor release.
  */
-export const sympifyMethod: unique symbol = Symbol.for('symjs.sympify') as never;
+export const sympifyMethod: unique symbol = Symbol.for('symjs.sympify');
 
 /** An object converted by its own method (SymPy _sympy_). *
  * @experimental May change in a minor release.
@@ -48,18 +49,23 @@ export function sympify<T>(x: ReadonlySet<T>): Set<unknown>;
 export function sympify(x: readonly unknown[]): unknown[];
 export function sympify(x: ExprLike): Expr;
 export function sympify(x: unknown): unknown {
+  return sympifyAny(x);
+}
+
+function sympifyAny(x: unknown): unknown {
   if (x instanceof Expr || typeof x === 'number' || typeof x === 'bigint') return toExpr(x);
   if (x !== null && typeof x === 'object') {
     const own = (x as Partial<Sympifiable>)[sympifyMethod];
     if (typeof own === 'function') return own.call(x);
     for (let p = Object.getPrototypeOf(x); p; p = Object.getPrototypeOf(p)) {
       const conv = converter.get(p.constructor);
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- converter entries are keyed by class, and x is an instance of that class (found on its prototype chain)
       if (conv) return conv(x as never);
     }
-    const item = (v: unknown): unknown => (v instanceof Expr || typeof v === 'number' || typeof v === 'bigint' || (v !== null && typeof v === 'object') ? sympify(v as ExprLike) : v);
+    const item = (v: unknown): unknown => (v instanceof Expr || typeof v === 'number' || typeof v === 'bigint' || (v !== null && typeof v === 'object') ? sympifyAny(v) : v);
     if (Array.isArray(x)) return x.map(item);
     if (x instanceof Map) return new Map([...x].map(([k, v]) => [item(k), item(v)]));
     if (x instanceof Set) return new Set([...x].map(item));
   }
-  return toExpr(x as ExprLike);
+  throw new SympifyError(`Cannot convert ${String(x)} to an expression`, x);
 }

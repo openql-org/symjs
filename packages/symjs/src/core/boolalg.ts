@@ -9,6 +9,7 @@
 import type { ExprLike } from './nodes';
 import { BoolAtom, Expr, Rational, Rel, S, Special, impl } from './nodes';
 import { compareKeys, sortKey } from '../printing/sortkey';
+import { at } from './guard';
 
 export type BoolOpName = 'And' | 'Or' | 'Not' | 'Xor' | 'ITE';
 
@@ -35,7 +36,7 @@ export class BoolOp extends Expr {
       case 'Or':
         return or(...args);
       case 'Not':
-        return not(args[0]!);
+        return not(at(args, 0));
       case 'Xor':
         return xor(...args);
       case 'ITE':
@@ -46,10 +47,10 @@ export class BoolOp extends Expr {
   printLatex(p: (e: Expr) => string): string {
     const paren = (a: Expr) => (a instanceof BoolOp && a.op !== 'Not' ? `\\left(${p(a)}\\right)` : p(a));
     if (this.op === 'Not') {
-      const a = this.args[0]!;
+      const a = at(this.args, 0);
       return a instanceof BoolOp ? `\\neg \\left(${p(a)}\\right)` : `\\neg ${p(a)}`;
     }
-    if (this.op === 'ITE') return `\\left(${p(this.args[1]!)} \\text{ if } ${p(this.args[0]!)} \\text{ else } ${p(this.args[2]!)}\\right)`;
+    if (this.op === 'ITE') return `\\left(${p(at(this.args, 1))} \\text{ if } ${p(at(this.args, 0))} \\text{ else } ${p(at(this.args, 2))}\\right)`;
     const sep = this.op === 'And' ? ' \\wedge ' : this.op === 'Or' ? ' \\vee ' : ' \\veebar ';
     return this.args.map(paren).join(sep);
   }
@@ -57,7 +58,7 @@ export class BoolOp extends Expr {
   printStr(p: (e: Expr) => string): string {
     if (this.op === 'ITE') return `ITE(${this.args.map(p).join(', ')})`;
     if (this.op === 'Not') {
-      const a = this.args[0]!;
+      const a = at(this.args, 0);
       return a instanceof Rel || a instanceof BoolOp ? `~(${p(a)})` : `~${p(a)}`;
     }
     const sep = this.op === 'And' ? ' & ' : this.op === 'Xor' ? ' ^ ' : ' | ';
@@ -109,7 +110,7 @@ function lattice(op: 'And' | 'Or', xs: readonly (ExprLike | boolean)[]): Expr {
     visit(x);
   }
   if (out.size === 0) return identity;
-  if (out.size === 1) return [...out.values()][0]!;
+  if (out.size === 1) return at([...out.values()], 0);
   return new BoolOp(op, sortArgs([...out.values()]));
 }
 
@@ -119,7 +120,7 @@ export function not(x0: ExprLike | boolean): Expr {
   const x = boolArg(x0);
   if (isTrue(x)) return S.false;
   if (isFalse(x)) return S.true;
-  if (x instanceof BoolOp && x.op === 'Not') return x.args[0]!;
+  if (x instanceof BoolOp && x.op === 'Not') return at(x.args, 0);
   if (x instanceof Rel) {
     const neg = { Eq: 'Ne', Ne: 'Eq', Lt: 'Ge', Le: 'Gt', Gt: 'Le', Ge: 'Lt' } as const;
     return new Rel(neg[x.op], x.lhs, x.rhs);
@@ -142,6 +143,6 @@ export function xor(...xs: (ExprLike | boolean)[]): Expr {
   // x ^ x = false
   const rest = [...counts.values()].filter(([, n]) => n % 2 === 1).map(([x]) => x);
   if (!rest.length) return parity ? S.true : S.false;
-  const core = rest.length === 1 ? rest[0]! : new BoolOp('Xor', sortArgs(rest));
+  const core = rest.length === 1 ? at(rest, 0) : new BoolOp('Xor', sortArgs(rest));
   return parity ? not(core) : core;
 }

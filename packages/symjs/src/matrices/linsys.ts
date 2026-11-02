@@ -8,6 +8,7 @@
  */
 
 import { NonlinearError } from '../core/errors';
+import { at } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Mul, Pow, Rational, Rel, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
@@ -106,8 +107,9 @@ export function solveAugmented(aug: Matrix, syms: readonly Sym[]): Expr[] | unde
     for (let j = 0; j < n; j++) {
       if (j === pc || pivots.includes(j)) continue;
       const c = mul(-1, R.get(i, j));
-      v = add(v, mul(c, syms[j]!));
-      if (field) terms.push(mul(fieldElement(c), syms[j]!));
+      const sj = at(syms, j);
+      v = add(v, mul(c, sj));
+      if (field) terms.push(mul(fieldElement(c), sj));
     }
     if (field) sol[pc] = add(...terms, fieldElement(R.get(i, n)));
     else sol[pc] = expandMul(cancel(v));

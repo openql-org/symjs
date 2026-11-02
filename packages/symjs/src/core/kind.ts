@@ -6,6 +6,8 @@
  * them: NumberKind, BooleanKind, UndefinedKind and ArrayKind.
  */
 
+import { at } from './guard';
+
 /** SymPy Kind: the mathematical kind of an object (number, boolean, array, ...). */
 export abstract class Kind {
   abstract toString(): string;
@@ -56,7 +58,7 @@ export class ArrayKindNode extends Kind {
    */
   static union(kinds: readonly Kind[]): ArrayKindNode {
     const set = new Set(kinds);
-    return ArrayKindNode.of(set.size === 1 ? [...set][0]! : UndefinedKind);
+    return ArrayKindNode.of(set.size === 1 ? at(kinds, 0) : UndefinedKind);
   }
   toString(): string {
     return `ArrayKind(${this.elementKind.toString()})`;

@@ -8,6 +8,7 @@
 import type { Expr, ExprLike } from './nodes';
 import { Derivative, Rational, Sym, UndefFn } from './nodes';
 import { sympify } from './ops';
+import { cast } from './guard';
 
 /** A callable undefined function: f(x, y) builds the application. */
 export interface UndefinedFunction {
@@ -21,6 +22,7 @@ export function Function(name: string): UndefinedFunction {
   const f = (...args: ExprLike[]) => new UndefFn(name, args.map(sympify));
   Object.defineProperty(f, 'functionName', { value: name });
   Object.defineProperty(f, 'name', { value: name });
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- functionName was added above with Object.defineProperty (non-enumerable, read-only)
   return f as unknown as UndefinedFunction;
 }
 
@@ -53,7 +55,11 @@ export function derivative(expr: Expr, variables: readonly [Expr, number][], eva
       if (m) m[1] += n;
       else merged.set(v.key, [v, n]);
     }
-    vc = [...merged.values()].sort(([a], [b]) => ((a as Sym).name < (b as Sym).name ? -1 : (a as Sym).name > (b as Sym).name ? 1 : 0));
+    vc = [...merged.values()].sort(([a], [b]) => {
+      const an = cast(a, Sym).name;
+      const bn = cast(b, Sym).name;
+      return an < bn ? -1 : an > bn ? 1 : 0;
+    });
   }
   return new Derivative([e, ...vc.flatMap(([v, n]) => [v, Rational.of(n)])]);
 }

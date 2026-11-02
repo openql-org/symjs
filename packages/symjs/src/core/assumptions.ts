@@ -7,6 +7,7 @@
 
 import type { Expr } from './nodes';
 import { Add, Constant, Fn, Float, Mul, Pow, Rational, Special, Sym, impl } from './nodes';
+import { at } from './guard';
 
 export type Tri = boolean | undefined;
 
@@ -58,7 +59,7 @@ export function isReal(e: Expr): Tri {
     return undefined;
   }
   if (e instanceof Fn) {
-    const a = e.args[0]!;
+    const a = at(e.args, 0);
     switch (e.name) {
       case 'abs':
       case 're':
@@ -118,7 +119,7 @@ export function isPositive(e: Expr): Tri {
     return undefined;
   }
   if (e instanceof Fn) {
-    if (e.name === 'abs') return isNonZero(e.args[0]!) ? true : undefined;
+    if (e.name === 'abs') return isNonZero(at(e.args, 0)) ? true : undefined;
   }
   return undefined;
 }

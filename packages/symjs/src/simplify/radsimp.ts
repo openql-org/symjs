@@ -9,6 +9,7 @@ import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, Derivative, impl, Mul, Pow, Rational, S, UndefFn, Wild } from '../core/nodes';
 import { add, asBaseExp, mul, pow, sympify } from '../core/ops';
 import { rebuild } from '../core/traverse';
+import { first } from '../core/guard';
 
 // radsimp is the port of SymPy's algorithm in sqrtdenest.ts (they call each other)
 export { radsimp } from './sqrtdenest';
@@ -42,9 +43,10 @@ function extractPattern(term: Expr, p: Expr, exact: boolean): [Expr, Expr] | und
   const factors = term instanceof Mul ? [...term.args] : [term];
   if (hasWild(p) && impl.match) {
     // a pattern with Wild symbols: the factor matching it is the key (SymPy collect(..., w**y))
-    const i = factors.findIndex((f) => impl.match!(f, p) !== undefined);
-    if (i < 0) return undefined;
-    return [factors[i]!, mul(...factors.filter((_, j) => j !== i))];
+    for (const [i, f] of factors.entries()) {
+      if (impl.match(f, p) !== undefined) return [f, mul(...factors.filter((_, j) => j !== i))];
+    }
+    return undefined;
   }
   if (p instanceof Mul) {
     // every factor of the pattern must occur in the term, possibly as a higher integer power
@@ -57,18 +59,16 @@ function extractPattern(term: Expr, p: Expr, exact: boolean): [Expr, Expr] | und
         continue;
       }
       if (exact) return undefined;
-      const j = remaining.findIndex((f) => {
-        const k = powerOf(f, q, false);
-        return k !== undefined && k.isInteger && k.p > 1n;
-      });
-      if (j < 0) return undefined;
-      const k = powerOf(remaining[j]!, q, false)!;
-      remaining[j] = pow(q, Number(k.p) - 1);
+      const found = remaining
+        .map((f, j) => [j, powerOf(f, q, false)] as const)
+        .find(([, k]) => k !== undefined && k.isInteger && k.p > 1n);
+      const k = found?.[1];
+      if (found === undefined || k === undefined) return undefined;
+      remaining[found[0]] = pow(q, Number(k.p) - 1);
     }
     return [p, mul(...remaining)];
   }
-  for (let i = 0; i < factors.length; i++) {
-    const f = factors[i]!;
+  for (const [i, f] of factors.entries()) {
     const k = powerOf(f, p, exact);
     if (k !== undefined) return [pow(p, k), mul(...factors.filter((_, j) => j !== i))];
     const b = f instanceof Pow ? f.base : f;
@@ -77,6 +77,9 @@ function extractPattern(term: Expr, p: Expr, exact: boolean): [Expr, Expr] | und
   return undefined;
 }
 
+/** Array.isArray does not narrow a readonly array union. */
+const isExprList = (v: readonly Expr[] | Expr): v is readonly Expr[] => Array.isArray(v);
+
 /**
  * Collect additive terms by powers of the given patterns (SymPy collect):
  * collect(a*x**2 + b*x**2 + a*x - b*x + c, x) = c + x**2*(a + b) + x*(a - b).
@@ -84,7 +87,7 @@ function extractPattern(term: Expr, p: Expr, exact: boolean): [Expr, Expr] | und
  */
 export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: { exact?: boolean | null; func?: (c: Expr) => Expr } = {}): Expr {
   const e = sympify(ex);
-  const list = Array.isArray(syms) ? (syms as readonly Expr[]) : [syms as Expr];
+  const list = isExprList(syms) ? syms : [syms];
   if (list.length === 0) return e;
   if (opts.exact === null || opts.func) {
     // exact=None (and a coefficient function): group the terms by their whole part depending on the symbols
@@ -94,7 +97,8 @@ export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: { exac
     }
     return groupByDependent(e, list, opts.func);
   }
-  const [p, ...rest] = list as [Expr, ...Expr[]];
+  const p = first(list);
+  const rest = list.slice(1);
   const terms = e instanceof Add ? e.args : [e];
   const groups = new Map<string, { k: Expr; coeffs: Expr[] }>();
   const free: Expr[] = [];

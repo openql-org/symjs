@@ -14,6 +14,8 @@ import { rel } from '../../core/logic';
 import { isReal } from '../../core/assumptions';
 import type { Truth } from '../../core/truth';
 import { precedence } from '../../printing/str';
+import { InvariantError } from '../../core/errors';
+import { at } from '../../core/guard';
 
 /** SymPy precedence values (sympy.printing.precedence.PRECEDENCE). */
 export const PRECEDENCE = { Add: 40, Mul: 50, Pow: 60, Atom: 1000 } as const;
@@ -28,7 +30,7 @@ export const isNumber = (e: Expr): e is Rational | Float => e instanceof Rationa
 export const same = (a: Expr, b: Expr): boolean => a === b || a.key === b.key;
 
 /** Structural equality of two lists of expressions. */
-export const sameList = (a: readonly Expr[], b: readonly Expr[]): boolean => a.length === b.length && a.every((x, i) => same(x, b[i]!));
+export const sameList = (a: readonly Expr[], b: readonly Expr[]): boolean => a.length === b.length && a.every((x, i) => same(x, at(b, i)));
 
 /** The truth value of a relation (SymPy `(a < b) == True` and `== False`). */
 export function relTruth(op: 'Eq' | 'Ne' | 'Lt' | 'Le' | 'Gt' | 'Ge', a: Expr, b: Expr): Truth {
@@ -39,7 +41,10 @@ export function relTruth(op: 'Eq' | 'Ne' | 'Lt' | 'Le' | 'Gt' | 'Ge', a: Expr, b
 }
 
 /** A JavaScript integer from an explicit integer expression. */
-export const toInt = (e: Expr): number => Number((e as Rational).p);
+export function toInt(e: Expr): number {
+  if (!(e instanceof Rational)) throw new InvariantError('integer is not a Rational');
+  return Number(e.p);
+}
 
 /** The truth value of a BoolAtom result, 'unknown' otherwise. */
 export const truthOf = (e: Expr): Truth => (e instanceof BoolAtom ? e.value : 'unknown');

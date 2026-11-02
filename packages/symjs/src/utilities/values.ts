@@ -11,6 +11,7 @@
  * element, sets and maps by content; other objects by identity.
  */
 
+import { at, expectType, getOrThrow } from '../core/guard';
 import { ordered } from '../core/match';
 import { Derivative, Expr, Float, S, isNum } from '../core/nodes';
 import { sympify } from '../core/ops';
@@ -126,7 +127,7 @@ export class ValueMap<K, V> extends Map<K, V> {
 
   override set(k: K, v: V): this {
     const vk = valueKey(k);
-    if (this.#byKey.has(vk)) return super.set(this.#byKey.get(vk) as K, v);
+    if (this.#byKey.has(vk)) return super.set(getOrThrow(this.#byKey, vk), v);
     this.#byKey.set(vk, k);
     return super.set(k, v);
   }
@@ -134,7 +135,7 @@ export class ValueMap<K, V> extends Map<K, V> {
   override delete(k: K): boolean {
     const vk = valueKey(k);
     if (!this.#byKey.has(vk)) return false;
-    const c = this.#byKey.get(vk) as K;
+    const c = getOrThrow(this.#byKey, vk);
     this.#byKey.delete(vk);
     return super.delete(c);
   }
@@ -146,6 +147,9 @@ export class ValueMap<K, V> extends Map<K, V> {
 }
 
 const ONE_KEY: Key = sortKey(S.One);
+
+/** Whether x is a sort key (shallow: the elements of an array key are not inspected). */
+const isKey = (x: unknown): x is Key => typeof x === 'number' || typeof x === 'string' || Array.isArray(x);
 
 const isIterableObject = (x: unknown): x is Iterable<unknown> =>
   typeof x === 'object' && x !== null && typeof (x as { [Symbol.iterator]?: unknown })[Symbol.iterator] === 'function';
@@ -191,7 +195,7 @@ export function nodesOf(e: unknown): number {
   if (e instanceof Derivative) {
     let n = nodesOf(e.args[0]);
     for (let i = 1; i < e.args.length; i += 2) {
-      const c = e.args[i + 1]!;
+      const c = at(e.args, i + 1);
       n += isNum(c) ? c.value : nodesOf(c);
     }
     return n;
@@ -221,8 +225,11 @@ export type KeyFunction<T> = (x: T) => unknown;
 export function orderedValues<T>(seq: Iterable<T>, keys?: KeyFunction<T> | readonly KeyFunction<T>[] | null, defaultKeys = true): T[] {
   const items = [...seq];
   if (keys === undefined || keys === null) {
-    if (items.every((x) => x instanceof Expr) && items.every((x) => !(x instanceof Derivative))) {
-      return ordered(items) as unknown as T[];
+    const exprs = items.filter((x): x is T & Expr => x instanceof Expr);
+    if (exprs.length === items.length && exprs.every((x) => !(x instanceof Derivative))) {
+      // ordered() sorts the same objects; map them back to the element type
+      const back = new Map<Expr, T>(exprs.map((x) => [x, x]));
+      return ordered(exprs).map((e) => getOrThrow(back, e));
     }
     return orderedBy(items, [nodesOf, defaultSortKeyOf], false, true);
   }
@@ -243,7 +250,7 @@ function orderedBy<T>(items: T[], keys: readonly KeyFunction<T>[], defaultKeys: 
     if (g) g.push(a);
     else groups.set(k, [a]);
   }
-  const cmp = sortKeys ? (a: unknown, b: unknown) => compareKeys(a as Key, b as Key) : compareValues;
+  const cmp = sortKeys ? (a: unknown, b: unknown) => compareKeys(expectType(a, isKey, 'sort key'), expectType(b, isKey, 'sort key')) : compareValues;
   const sorted = [...groups].sort((a, b) => cmp(a[0], b[0]));
   const out: T[] = [];
   for (const [, g] of sorted) {

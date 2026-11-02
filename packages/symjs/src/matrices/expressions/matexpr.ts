@@ -14,7 +14,8 @@
 
 import { callableClass } from '../../core/callable';
 import { Concrete, Sum } from '../../core/concrete';
-import { MatrixError, NonInvertibleMatrixError, NonSquareMatrixError, NotImplementedError } from '../../core/errors';
+import { InvariantError, MatrixError, NonInvertibleMatrixError, NonSquareMatrixError, NotImplementedError } from '../../core/errors';
+import { at, cast, last } from '../../core/guard';
 import { LambdaNode } from '../../core/lambda';
 import type { ExprLike , Expr} from '../../core/nodes';
 import { Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Sym } from '../../core/nodes';
@@ -146,8 +147,9 @@ export function matSortKey(e: Expr): Key {
       args = args.slice(1);
     }
     if (args.length === 1) {
-      const k = matSortKey(args[0]!) as Key[];
-      return [k[0]!, k[1]!, k[2]!, coeff];
+      const k = matSortKey(at(args, 0));
+      if (!Array.isArray(k)) throw new InvariantError('sort key of a matrix factor is not a tuple');
+      return [at(k, 0), at(k, 1), at(k, 2), coeff];
     }
     const cpart = args.filter((a) => !(a instanceof MatrixExpr) && a.isCommutative);
     const ncpart = args.filter((a) => a instanceof MatrixExpr || !a.isCommutative);
@@ -501,7 +503,7 @@ export abstract class MatrixExpr extends ExtensionExpr {
     }
     if (a.rows !== b.rows || a.cols !== b.cols) return false;
     return a.data.every((x, k) => {
-      const y = b.data[k]!;
+      const y = at(b.data, k);
       if (same(x, y)) return true;
       const d = simplifyScalar(add(x, mul(-1, y)));
       return isZero(d) === true;
@@ -628,13 +630,13 @@ export class MatrixSymbolNode extends MatrixExpr {
   }
   /** The name of the matrix (SymPy MatrixSymbol.name). */
   get symbolName(): string {
-    return (this.args[0] as Str).value;
+    return cast(this.args[0], Str).value;
   }
   get shape(): [Expr, Expr] {
-    return [this.args[1]!, this.args[2]!];
+    return [at(this.args, 1), at(this.args, 2)];
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new MatrixSymbolNode((args[0] as Str).value, args[1]!, args[2]!);
+    return new MatrixSymbolNode(cast(args[0], Str).value, at(args, 1), at(args, 2));
   }
   override entry(i: Expr, j: Expr): Expr {
     return new MatrixElementNode(this, i, j);
@@ -690,7 +692,7 @@ export class ImmutableMatrixNode extends MatrixExpr {
   }
   withArgs(args: readonly Expr[]): Expr {
     const { rows, cols } = this.matrix;
-    return new ImmutableMatrixNode(Matrix.fromFunction(rows, cols, (i, j) => args[i * cols + j]!));
+    return new ImmutableMatrixNode(Matrix.fromFunction(rows, cols, (i, j) => at(args, i * cols + j)));
   }
   protected override computeKey(): string {
     return `ImmutableDenseMatrix(${this.matrix.rows},${this.matrix.cols};${this.args.map((a) => a.key).join(',')})`;
@@ -754,7 +756,7 @@ export class ImmutableMatrixNode extends MatrixExpr {
 
 /** Explicit matrix product, sum or scaling used by the merge rules. */
 function explicitOf(e: Expr): Matrix {
-  return (e as ImmutableMatrixNode).matrix;
+  return cast(e, ImmutableMatrixNode).matrix;
 }
 
 // ---------------------------------------------------------------------------
@@ -768,27 +770,27 @@ export class MatrixElementNode extends MatScalar {
   }
   /** The matrix. */
   get parent(): Expr {
-    return this.args[0]!;
+    return at(this.args, 0);
   }
   /** The row index. */
   get i(): Expr {
-    return this.args[1]!;
+    return at(this.args, 1);
   }
   /** The column index. */
   get j(): Expr {
-    return this.args[2]!;
+    return at(this.args, 2);
   }
   /** [i, j]. */
   get indices(): [Expr, Expr] {
     return [this.i, this.j];
   }
   withArgs(args: readonly Expr[]): Expr {
-    return matrixElement(args[0]!, args[1]!, args[2]!);
+    return matrixElement(at(args, 0), at(args, 1), at(args, 2));
   }
   override doit(hints: DoitHints = {}): Expr {
     const args = hints.deep === false ? this.args : this.args.map((a) => doitArg(a, hints));
-    const p = args[0]!;
-    if (p instanceof MatrixExpr) return p.at(args[1]!, args[2]);
+    const p = at(args, 0);
+    if (p instanceof MatrixExpr) return p.at(at(args, 1), at(args, 2));
     return this;
   }
   override printStr(print: (e: Expr) => string): string {
@@ -833,7 +835,7 @@ export class IdentityNode extends MatrixExpr {
     super('Identity', [dim(n)]);
   }
   get shape(): [Expr, Expr] {
-    return [this.args[0]!, this.args[0]!];
+    return [at(this.args, 0), at(this.args, 0)];
   }
   override get isSquare(): Truth {
     return true;
@@ -842,7 +844,7 @@ export class IdentityNode extends MatrixExpr {
     return true;
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new IdentityNode(args[0]!);
+    return new IdentityNode(at(args, 0));
   }
   override evalTranspose(): Expr {
     return this;
@@ -904,13 +906,13 @@ export class ZeroMatrixNode extends MatrixExpr {
     super('ZeroMatrix', [dim(m), dim(n)]);
   }
   get shape(): [Expr, Expr] {
-    return [this.args[0]!, this.args[1]!];
+    return [at(this.args, 0), at(this.args, 1)];
   }
   override get isZeroMatrix(): boolean {
     return true;
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new ZeroMatrixNode(args[0]!, args[1]!);
+    return new ZeroMatrixNode(at(args, 0), at(args, 1));
   }
   override evalPower(exp: Expr): Expr {
     if (relTruth('Lt', exp, S.Zero) === true) throw new NonInvertibleMatrixError('Matrix det == 0; not invertible');
@@ -976,12 +978,12 @@ export class OneMatrixNode extends MatrixExpr {
     return o;
   }
   get shape(): [Expr, Expr] {
-    return [this.args[0]!, this.args[1]!];
+    return [at(this.args, 0), at(this.args, 1)];
   }
   /** True when the matrix is known to be 1 x 1. */
   is1x1(): Truth {
-    const a = relTruth('Eq', this.args[0]!, S.One);
-    const b = relTruth('Eq', this.args[1]!, S.One);
+    const a = relTruth('Eq', at(this.args, 0), S.One);
+    const b = relTruth('Eq', at(this.args, 1), S.One);
     if (a === false || b === false) return false;
     return a === true && b === true ? true : 'unknown';
   }
@@ -989,7 +991,7 @@ export class OneMatrixNode extends MatrixExpr {
     return this.is1x1() === true;
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new OneMatrixNode(args[0]!, args[1]!);
+    return new OneMatrixNode(at(args, 0), at(args, 1));
   }
   override asExplicit(): Matrix {
     const [r, c] = this.shape;
@@ -998,7 +1000,7 @@ export class OneMatrixNode extends MatrixExpr {
   }
   override doit(hints: DoitHints = {}): Expr {
     const args = hints.deep === false ? this.args : this.args.map((a) => doitArg(a, hints));
-    return OneMatrixNode.create(args[0]!, args[1]!, true);
+    return OneMatrixNode.create(at(args, 0), at(args, 1), true);
   }
   override evalPower(exp: Expr): Expr {
     if (this.is1x1() === true) return new IdentityNode(1);
@@ -1060,8 +1062,8 @@ export function validateMatAdd(args: readonly MatrixExpr[]): void {
 /** SymPy validate_matmul_integer: integer inner dimensions of a product must agree. */
 export function validateMatMul(args: readonly MatrixExpr[]): void {
   for (let k = 0; k + 1 < args.length; k++) {
-    const i = args[k]!.cols;
-    const j = args[k + 1]!.rows;
+    const i = at(args, k).cols;
+    const j = at(args, k + 1).rows;
     if (isInt(i) && isInt(j) && i.p !== j.p) throw new ShapeError(`Matrices are not aligned: ${str(i)}, ${str(j)}`);
   }
 }
@@ -1070,8 +1072,8 @@ export function validateMatMul(args: readonly MatrixExpr[]): void {
 export function isMataddValid(...args: MatArg[]): Expr {
   const ms = args.map((a) => toMatrix(a));
   const conds: Expr[] = [];
-  for (let k = 0; k + 1 < ms.length; k++) conds.push(Eq(ms[k]!.rows, ms[k + 1]!.rows));
-  for (let k = 0; k + 1 < ms.length; k++) conds.push(Eq(ms[k]!.cols, ms[k + 1]!.cols));
+  for (let k = 0; k + 1 < ms.length; k++) conds.push(Eq(at(ms, k).rows, at(ms, k + 1).rows));
+  for (let k = 0; k + 1 < ms.length; k++) conds.push(Eq(at(ms, k).cols, at(ms, k + 1).cols));
   return and(...conds);
 }
 
@@ -1079,7 +1081,7 @@ export function isMataddValid(...args: MatArg[]): Expr {
 export function isMatmulValid(...args: MatArg[]): Expr {
   const ms = args.map(toExpr).filter((a): a is MatrixExpr => a instanceof MatrixExpr);
   const conds: Expr[] = [];
-  for (let k = 0; k + 1 < ms.length; k++) conds.push(Eq(ms[k]!.cols, ms[k + 1]!.rows));
+  for (let k = 0; k + 1 < ms.length; k++) conds.push(Eq(at(ms, k).cols, at(ms, k + 1).rows));
   return and(...conds);
 }
 
@@ -1107,13 +1109,13 @@ export class MatAddNode extends MatrixExpr {
     return new MatAddNode(args);
   }
   get shape(): [Expr, Expr] {
-    return (this.args[0] as MatrixExpr).shape;
+    return cast(this.args[0], MatrixExpr).shape;
   }
   withArgs(args: readonly Expr[]): Expr {
     return new MatAddNode(args);
   }
   override entry(i: Expr, j: Expr, ctx?: EntryContext): Expr {
-    return add(...this.args.map((a) => (a as MatrixExpr).entry(i, j, ctx)));
+    return add(...this.args.map((a) => cast(a, MatrixExpr).entry(i, j, ctx)));
   }
   override evalTranspose(): Expr {
     return MatAddNode.create(this.args.map(transposeOf)).doit();
@@ -1209,20 +1211,20 @@ function rmId(e: Expr, isId: (a: Expr) => boolean, raw: (args: readonly Expr[]) 
   const n = ids.filter(Boolean).length;
   if (n === 0) return e;
   if (n !== ids.length) return raw(e.args.filter((_, k) => !ids[k]));
-  return raw([e.args[0]!]);
+  return raw([at(e.args, 0)]);
 }
 
-const unpackRule = (e: Expr): Expr => (e.args.length === 1 && (e instanceof MatAddNode || e instanceof MatMulNode) ? e.args[0]! : e);
+const unpackRule = (e: Expr): Expr => (e.args.length === 1 && (e instanceof MatAddNode || e instanceof MatMulNode) ? at(e.args, 0) : e);
 
 /** SymPy unpack of a single-argument MatMul. */
-export const unpackMat = (e: Expr): Expr => (e instanceof MatMulNode && e.args.length === 1 ? e.args[0]! : e);
+export const unpackMat = (e: Expr): Expr => (e instanceof MatMulNode && e.args.length === 1 ? at(e.args, 0) : e);
 
 const flattenAdd = (e: Expr): Expr => new MatAddNode(e.args.flatMap((a) => (a instanceof MatAddNode ? a.args : [a])));
 
 function glomAdd(e: Expr): Expr {
   const groups = new Map<string, { mat: Expr; cnt: Expr }>();
   for (const arg of e.args) {
-    const [c, mm] = (arg as MatrixExpr).asCoeffMmul();
+    const [c, mm] = cast(arg, MatrixExpr).asCoeffMmul();
     const mat = unpackMat(mm);
     const g = groups.get(mat.key);
     if (g) g.cnt = add(g.cnt, c);
@@ -1283,7 +1285,7 @@ export class MatMulNode extends MatrixExpr {
   }
   get shape(): [Expr, Expr] {
     const ms = this.args.filter((a): a is MatrixExpr => a instanceof MatrixExpr);
-    return [ms[0]!.rows, ms[ms.length - 1]!.cols];
+    return [at(ms, 0).rows, last(ms).cols];
   }
   withArgs(args: readonly Expr[]): Expr {
     return new MatMulNode(args);
@@ -1302,16 +1304,16 @@ export class MatMulNode extends MatrixExpr {
   }
   override entry(i: Expr, j: Expr, ctx?: EntryContext): Expr {
     const [coeff, matrices] = this.asCoeffMatrices();
-    if (matrices.length === 1) return mul(coeff, matrices[0]!.at(i, j));
+    if (matrices.length === 1) return mul(coeff, at(matrices, 0).at(i, j));
     let counter = 0;
     const gen: EntryContext = ctx ?? { dummy: () => new Dummy(`i_${++counter}`) };
-    const indices: Expr[] = [i];
-    for (let k = 1; k < matrices.length; k++) indices.push(gen.dummy());
-    indices.push(j);
+    const dummies: Dummy[] = [];
+    for (let k = 1; k < matrices.length; k++) dummies.push(gen.dummy());
+    const indices: Expr[] = [i, ...dummies, j];
     const ranges = matrices.slice(0, -1).map((m) => add(m.cols, -1));
-    const entries = matrices.map((m, k) => m.entry(indices[k]!, indices[k + 1]!, gen));
+    const entries = matrices.map((m, k) => m.entry(at(indices, k), at(indices, k + 1), gen));
     const summand = mul(...entries);
-    const limits = indices.slice(1, -1).map((d, k) => [d as Sym, S.Zero, ranges[k]!] as [Sym, Expr, Expr]);
+    const limits = dummies.map((d, k): [Sym, Expr, Expr] => [d, S.Zero, at(ranges, k)]);
     const result = mul(coeff, Sum(summand, ...limits));
     const expand = ranges.some(isInt);
     return expand ? doitArg(result) : result;
@@ -1353,7 +1355,7 @@ export class MatMulNode extends MatrixExpr {
       const terms = f instanceof MatAddNode ? f.args : [f];
       products = products.flatMap((p) => terms.map((t) => [...p, t]));
     }
-    if (products.length === 1) return canonicalizeMatMul(MatMulNode.create(products[0]!));
+    if (products.length === 1) return canonicalizeMatMul(MatMulNode.create(at(products, 0)));
     return MatAddNode.create(products.map((p) => matMul(...p))).doit();
   }
   override strPrecedence(): number {
@@ -1385,8 +1387,8 @@ export class MatMulNode extends MatrixExpr {
     const parens = (x: Expr): string => (x instanceof Mul ? latex(x) : parenLatex(x, level));
     let args = [...this.args];
     if (mulCouldExtractMinus(this)) {
-      if (same(args[0]!, S.NegOne)) args = args.slice(1);
-      else args[0] = mul(-1, args[0]!);
+      if (same(at(args, 0), S.NegOne)) args = args.slice(1);
+      else args[0] = mul(-1, at(args, 0));
       return `- ${args.map(parens).join(' ')}`;
     }
     return args.map(parens).join(' ');
@@ -1414,11 +1416,11 @@ export type MatMul = MatMulNode;
 
 /** SymPy only_squares: consecutive matrices grouped into square products. */
 export function onlySquares(matrices: readonly MatrixExpr[]): Expr[] {
-  if (!same(matrices[0]!.rows, matrices[matrices.length - 1]!.cols)) throw new MatrixError('Invalid matrices being multiplied');
+  if (!same(at(matrices, 0).rows, last(matrices).cols)) throw new MatrixError('Invalid matrices being multiplied');
   const out: Expr[] = [];
   let start = 0;
   matrices.forEach((m, i) => {
-    if (same(m.cols, matrices[start]!.rows)) {
+    if (same(m.cols, at(matrices, start).rows)) {
       out.push(matMul(...matrices.slice(start, i + 1)));
       start = i + 1;
     }
@@ -1429,7 +1431,7 @@ export function onlySquares(matrices: readonly MatrixExpr[]): Expr[] {
 // ---- MatMul rules (sympy.matrices.expressions.matmul.canonicalize) ----
 
 function newmul(args: readonly Expr[]): Expr {
-  return new MatMulNode(args.length && same(args[0]!, S.One) ? args.slice(1) : args);
+  return new MatMulNode(args.length && same(at(args, 0), S.One) ? args.slice(1) : args);
 }
 
 function distributeMonom(e: Expr): Expr {
@@ -1445,24 +1447,24 @@ function distributeMonom(e: Expr): Expr {
 function anyZeros(e: Expr): Expr {
   if (e.args.some((a) => (a instanceof MatrixExpr ? a.isZeroMatrix : isZero(a) === true))) {
     const ms = e.args.filter((a): a is MatrixExpr => a instanceof MatrixExpr);
-    return new ZeroMatrixNode(ms[0]!.rows, ms[ms.length - 1]!.cols);
+    return new ZeroMatrixNode(at(ms, 0).rows, last(ms).cols);
   }
   return e;
 }
 
 function removeIds(e: Expr): Expr {
-  const [factor, mmul] = (e as MatMulNode).asCoeffMmul();
+  const [factor, mmul] = cast(e, MatMulNode).asCoeffMmul();
   const result = rmId(mmul, (a) => a instanceof MatrixExpr && a.isIdentity === true, (args) => new MatMulNode(args));
   if (!same(result, mmul)) return newmul([factor, ...result.args]);
   return e;
 }
 
 function combineOneMatrices(e: Expr): Expr {
-  const [f0, args] = (e as MatMulNode).asCoeffMatrices();
+  const [f0, args] = cast(e, MatMulNode).asCoeffMatrices();
   let factor = f0;
-  const newArgs: Expr[] = [args[0]!];
+  const newArgs: Expr[] = [at(args, 0)];
   for (const B of args.slice(1)) {
-    const A = newArgs[newArgs.length - 1]!;
+    const A = last(newArgs);
     if (!(A instanceof OneMatrixNode) || !(B instanceof OneMatrixNode)) {
       newArgs.push(B);
       continue;
@@ -1475,12 +1477,12 @@ function combineOneMatrices(e: Expr): Expr {
 }
 
 function combinePowers(e: Expr): Expr {
-  const [factor, args0] = (e as MatMulNode).asCoeffMatrices();
+  const [factor, args0] = cast(e, MatMulNode).asCoeffMatrices();
   const args: MatrixExpr[] = [...args0];
-  let newArgs: MatrixExpr[] = [args[0]!];
+  let newArgs: MatrixExpr[] = [at(args, 0)];
   for (let i = 1; i < args.length; i++) {
-    const A = newArgs[newArgs.length - 1]!;
-    const B = args[i]!;
+    const A = last(newArgs);
+    const B = at(args, i);
     if (B instanceof InverseNode && B.arg instanceof MatMulNode) {
       const bargs = B.arg.args;
       const l = bargs.length;
@@ -1526,7 +1528,7 @@ function combinePowers(e: Expr): Expr {
   return newmul([factor, ...newArgs]);
 }
 
-const asMat = (e: Expr): MatrixExpr => e as MatrixExpr;
+const asMat = (e: Expr): MatrixExpr => cast(e, MatrixExpr);
 
 const rmOnes = (e: Expr): Expr => rmId(e, (a) => same(a, S.One), (args) => new MatMulNode(args));
 
@@ -1541,20 +1543,20 @@ function mergeExplicitMul(e: Expr): Expr {
   if (!e.args.some((a) => a instanceof ImmutableMatrixNode)) return e;
   const ok = (x: Expr) => x instanceof ImmutableMatrixNode || isNumber(x);
   const newArgs: Expr[] = [];
-  let last = e.args[0]!;
+  let cur = at(e.args, 0);
   for (const arg of e.args.slice(1)) {
-    if (ok(arg) && ok(last)) last = mulExplicit(last, arg);
+    if (ok(arg) && ok(cur)) cur = mulExplicit(cur, arg);
     else {
-      newArgs.push(last);
-      last = arg;
+      newArgs.push(cur);
+      cur = arg;
     }
   }
-  newArgs.push(last);
+  newArgs.push(cur);
   return MatMulNode.create(newArgs);
 }
 
 function factorInFront(e: Expr): Expr {
-  const [factor, matrices] = (e as MatMulNode).asCoeffMatrices();
+  const [factor, matrices] = cast(e, MatMulNode).asCoeffMatrices();
   if (!same(factor, S.One)) return newmul([factor, ...matrices]);
   return e;
 }
@@ -1570,9 +1572,9 @@ const isComposable = (e: Expr): e is MatrixExpr & Composable => e instanceof Mat
 function combinePermutations(e: Expr): Expr {
   const args = e.args;
   if (args.length < 2) return e;
-  const result: Expr[] = [args[0]!];
+  const result: Expr[] = [at(args, 0)];
   for (const B of args.slice(1)) {
-    const A = result[result.length - 1]!;
+    const A = last(result);
     if (isComposable(A) && isComposable(B)) result[result.length - 1] = A.composeWith(B);
     else result.push(B);
   }
@@ -1608,24 +1610,25 @@ export class MatPowNode extends MatrixExpr {
   }
   /** The base. */
   get base(): MatrixExpr {
-    return this.args[0] as MatrixExpr;
+    return cast(this.args[0], MatrixExpr);
   }
   /** The exponent. */
   get exp(): Expr {
-    return this.args[1]!;
+    return at(this.args, 1);
   }
   get shape(): [Expr, Expr] {
     return this.base.shape;
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new MatPowNode(args[0]!, args[1]!);
+    return new MatPowNode(at(args, 0), at(args, 1));
   }
   override entry(i: Expr, j: Expr): Expr {
     let A = this.doit();
     if (A instanceof MatPowNode) {
       const e = A.exp;
       if (isInt(e) && e.p > 0n) {
-        A = new MatMulNode(Array.from({ length: toInt(e) }, () => (A as MatPowNode).base));
+        const base = A.base;
+        A = new MatMulNode(Array.from({ length: toInt(e) }, () => base));
       } else if (isInt(this.rows) && isInt(this.cols)) {
         const m = A.base.asExplicit();
         const p = isInt(e) ? (toInt(e) >= 0 ? m.pow(toInt(e)) : m.inv().pow(-toInt(e))) : undefined;
@@ -1633,20 +1636,20 @@ export class MatPowNode extends MatrixExpr {
         return new MatrixElementNode(this, i, j);
       } else return new MatrixElementNode(this, i, j);
     }
-    return (A as MatrixExpr).at(i, j);
+    return cast(A, MatrixExpr).at(i, j);
   }
   override doit(hints: DoitHints = {}): Expr {
-    let base: Expr = this.args[0]!;
-    let exp: Expr = this.args[1]!;
+    let base: Expr = at(this.args, 0);
+    let exp: Expr = at(this.args, 1);
     if (hints.deep !== false) {
       base = doitArg(base, hints);
       exp = doitArg(exp, hints);
     }
     while (base instanceof MatPowNode) {
-      exp = mul(exp, base.args[1]!);
-      base = base.args[0]!;
+      exp = mul(exp, at(base.args, 1));
+      base = at(base.args, 0);
     }
-    const b = base as MatrixExpr;
+    const b = cast(base, MatrixExpr);
     if (b instanceof ImmutableMatrixNode) return b.evalPower(exp);
     if (same(exp, S.One)) return b;
     if (same(exp, S.Zero)) return new IdentityNode(b.rows);
@@ -1705,10 +1708,10 @@ export class InverseNode extends MatPowNode {
   }
   /** The inverted matrix. */
   get arg(): MatrixExpr {
-    return this.args[0] as MatrixExpr;
+    return cast(this.args[0], MatrixExpr);
   }
   override withArgs(args: readonly Expr[]): Expr {
-    return new InverseNode(args[0]!);
+    return new InverseNode(at(args, 0));
   }
   override evalInverse(): Expr {
     return this.arg;
@@ -1753,17 +1756,17 @@ export class TransposeNode extends MatrixExpr {
   }
   /** The transposed matrix. */
   get arg(): MatrixExpr {
-    return this.args[0] as MatrixExpr;
+    return cast(this.args[0], MatrixExpr);
   }
   get shape(): [Expr, Expr] {
     const [r, c] = this.arg.shape;
     return [c, r];
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new TransposeNode(args[0]!);
+    return new TransposeNode(at(args, 0));
   }
   override doit(hints: DoitHints = {}): Expr {
-    const arg = hints.deep === false ? this.args[0]! : doitArg(this.args[0]!, hints);
+    const arg = hints.deep === false ? at(this.args, 0) : doitArg(at(this.args, 0), hints);
     return arg instanceof MatrixExpr ? arg.evalTranspose() : transposeFn(arg);
   }
   override entry(i: Expr, j: Expr, ctx?: EntryContext): Expr {
@@ -1816,17 +1819,17 @@ export class AdjointNode extends MatrixExpr {
   }
   /** The matrix. */
   get arg(): MatrixExpr {
-    return this.args[0] as MatrixExpr;
+    return cast(this.args[0], MatrixExpr);
   }
   get shape(): [Expr, Expr] {
     const [r, c] = this.arg.shape;
     return [c, r];
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new AdjointNode(args[0]!);
+    return new AdjointNode(at(args, 0));
   }
   override doit(hints: DoitHints = {}): Expr {
-    const arg = hints.deep === false ? this.args[0]! : doitArg(this.args[0]!, hints);
+    const arg = hints.deep === false ? at(this.args, 0) : doitArg(at(this.args, 0), hints);
     return adjointFn(arg);
   }
   override entry(i: Expr, j: Expr, ctx?: EntryContext): Expr {
@@ -1865,12 +1868,14 @@ export type Adjoint = AdjointNode;
 
 type Triple = [Expr, Expr, Expr];
 
+const isSliceTuple = (s: SliceSpec): s is readonly [(ExprLike | null)?, (ExprLike | null)?, (ExprLike | null)?] => Array.isArray(s);
+
 /** SymPy slice.normalize. */
 function normalizeSlice(spec: SliceSpec, size: Expr): Triple {
   let parts: (Expr | null)[];
-  if (Array.isArray(spec)) parts = (spec as readonly (ExprLike | null | undefined)[]).map((x) => (x === null || x === undefined ? null : sympify(x)));
+  if (isSliceTuple(spec)) parts = spec.map((x) => (x === null || x === undefined ? null : sympify(x)));
   else {
-    let i = sympify(spec as ExprLike);
+    let i = sympify(spec);
     if (relTruth('Lt', i, S.Zero) === true) i = add(i, size);
     parts = [i, add(i, 1), S.One];
   }
@@ -1879,7 +1884,8 @@ function normalizeSlice(spec: SliceSpec, size: Expr): Triple {
   let stop = parts[1] ?? size;
   if (relTruth('Lt', start, S.Zero) === true) start = add(start, size);
   if (relTruth('Lt', stop, S.Zero) === true) stop = add(stop, size);
-  const step = parts[2] === null || same(parts[2]!, S.Zero) ? S.One : parts[2]!;
+  const p2 = at(parts, 2);
+  const step = p2 === null || same(p2, S.Zero) ? S.One : p2;
   if (relTruth('Lt', mul(add(stop, mul(-1, start)), step), S.One) === true) throw new RangeError('Invalid slice');
   return [start, stop, step];
 }
@@ -1912,15 +1918,15 @@ export class MatrixSliceNode extends MatrixExpr {
   }
   /** The sliced matrix. */
   get parent(): MatrixExpr {
-    return this.args[0] as MatrixExpr;
+    return cast(this.args[0], MatrixExpr);
   }
   /** (start, stop, step) of the rows. */
   get rowslice(): Triple {
-    return [this.args[1]!, this.args[2]!, this.args[3]!];
+    return [at(this.args, 1), at(this.args, 2), at(this.args, 3)];
   }
   /** (start, stop, step) of the columns. */
   get colslice(): Triple {
-    return [this.args[4]!, this.args[5]!, this.args[6]!];
+    return [at(this.args, 4), at(this.args, 5), at(this.args, 6)];
   }
   /** SymPy on_diag: the row and column slices agree. */
   get onDiag(): boolean {
@@ -1934,7 +1940,7 @@ export class MatrixSliceNode extends MatrixExpr {
     return [len(this.rowslice), len(this.colslice)];
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new MatrixSliceNode(args[0]!, [args[1]!, args[2]!, args[3]!], [args[4]!, args[5]!, args[6]!]);
+    return new MatrixSliceNode(at(args, 0), [at(args, 1), at(args, 2), at(args, 3)], [at(args, 4), at(args, 5), at(args, 6)]);
   }
   override sortArgs(): readonly Expr[] {
     return [this.parent, new TupleNode(this.rowslice), new TupleNode(this.colslice)];
@@ -1994,10 +2000,10 @@ export class TraceNode extends MatScalar {
   }
   /** The matrix. */
   get arg(): MatrixExpr {
-    return this.args[0] as MatrixExpr;
+    return cast(this.args[0], MatrixExpr);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new TraceNode(args[0]!);
+    return new TraceNode(at(args, 0));
   }
   override doit(hints: DoitHints = {}): Expr {
     if (hints.deep !== false) {
@@ -2062,10 +2068,10 @@ export class DeterminantNode extends MatScalar {
   }
   /** The matrix. */
   get arg(): MatrixExpr {
-    return this.args[0] as MatrixExpr;
+    return cast(this.args[0], MatrixExpr);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new DeterminantNode(args[0]!);
+    return new DeterminantNode(at(args, 0));
   }
   override doit(hints: DoitHints = {}): Expr {
     const arg = hints.deep === false ? this.arg : doitArg(this.arg, hints);
@@ -2074,8 +2080,8 @@ export class DeterminantNode extends MatScalar {
   override printLatex(print: (e: Expr) => string): string {
     const m = this.arg;
     if (m instanceof ImmutableMatrixNode) return `\\left|{${explicitLatexContents(m.matrix, print)}}\\right|`;
-    if (m.name === 'BlockMatrix' || m.name === 'BlockDiagMatrix') {
-      const blocks = (m as unknown as { blocks: Matrix }).blocks;
+    if ((m.name === 'BlockMatrix' || m.name === 'BlockDiagMatrix') && 'blocks' in m && m.blocks instanceof Matrix) {
+      const blocks = m.blocks;
       return `\\left|{${explicitLatexContents(blocks, print)}}\\right|`;
     }
     return `\\left|{${print(m)}}\\right|`;
@@ -2105,10 +2111,10 @@ export class PermanentNode extends MatScalar {
   }
   /** The matrix. */
   get arg(): MatrixExpr {
-    return this.args[0] as MatrixExpr;
+    return cast(this.args[0], MatrixExpr);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new PermanentNode(args[0]!);
+    return new PermanentNode(at(args, 0));
   }
   override doit(): Expr {
     if (this.arg instanceof ImmutableMatrixNode) return explicitPermanent(this.arg.matrix);
@@ -2157,22 +2163,22 @@ export class ElementwiseApplyFunctionNode extends MatrixExpr {
   }
   /** The function (a Lambda). */
   get function(): LambdaNode {
-    return this.args[0] as LambdaNode;
+    return cast(this.args[0], LambdaNode);
   }
   /** The matrix. */
   get expr(): MatrixExpr {
-    return this.args[1] as MatrixExpr;
+    return cast(this.args[1], MatrixExpr);
   }
   get shape(): [Expr, Expr] {
     return this.expr.shape;
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new ElementwiseApplyFunctionNode(args[0] as LambdaNode, args[1]!);
+    return new ElementwiseApplyFunctionNode(cast(args[0], LambdaNode), at(args, 1));
   }
   override doit(hints: DoitHints = {}): Expr {
     const expr = hints.deep === false ? this.expr : doitArg(this.expr, hints);
     const f = this.function;
-    if (f.variables.length === 1 && same(f.variables[0]!, f.expr)) return expr;
+    if (f.variables.length === 1 && same(at(f.variables, 0), f.expr)) return expr;
     if (expr instanceof ImmutableMatrixNode) return new ImmutableMatrixNode(expr.matrix.map((e) => f.call(e)));
     if (expr instanceof ElementwiseApplyFunctionNode) {
       const g = expr.function;

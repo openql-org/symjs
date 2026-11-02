@@ -6,6 +6,7 @@
  */
 
 import { NotImplementedError } from '../core/errors';
+import { first } from '../core/guard';
 import { isReal } from '../core/assumptions';
 import { piecewise } from '../core/logic';
 import type { ExprLike } from '../core/nodes';
@@ -49,8 +50,8 @@ function d(e: Expr, x: Expr): Expr {
 
   if (e instanceof Mul) {
     const terms: Expr[] = [];
-    for (let i = 0; i < e.args.length; i++) {
-      const di = d(e.args[i]!, x);
+    for (const [i, ai] of e.args.entries()) {
+      const di = d(ai, x);
       if (di.key === S.Zero.key) continue;
       terms.push(mul(...e.args.map((a, j) => (j === i ? di : a))));
     }
@@ -67,17 +68,17 @@ function d(e: Expr, x: Expr): Expr {
     return mul(e, add(mul(dn, log(b)), mul(n, db, pow(b, -1))));
   }
 
-  if (e instanceof Fn && fnPartials[e.name]) {
-    const partial = fnPartials[e.name]!;
-    const terms: Expr[] = [];
-    e.args.forEach((a, i) => {
-      const da = d(a, x);
-      if (!(da instanceof Expr && da.key === S.Zero.key)) terms.push(mul(partial(e.args, i), da));
-    });
-    return add(...terms);
-  }
   if (e instanceof Fn) {
-    const u = e.args[0]!;
+    const partial = fnPartials[e.name];
+    if (partial) {
+      const terms: Expr[] = [];
+      e.args.forEach((a, i) => {
+        const da = d(a, x);
+        if (!(da instanceof Expr && da.key === S.Zero.key)) terms.push(mul(partial(e.args, i), da));
+      });
+      return add(...terms);
+    }
+    const u = first(e.args);
     const du = d(u, x);
     if (e.name === 'conjugate') return conjugate(du);
     // re/im are linear; valid for differentiation w.r.t. a real variable
@@ -118,12 +119,14 @@ function d(e: Expr, x: Expr): Expr {
  * Integral(df/dx) otherwise. A bound variable is not free.
  */
 function diffIntegral(e: Integral, x: Expr): Expr {
-  const [f, v, a, b] = e.args as [Expr, Expr, Expr | undefined, Expr | undefined];
+  const f = e.integrand;
+  const v = e.variable;
+  const [, , a, b] = e.args;
   if (![...impl.freeSymbols(e)].some((s) => s.key === x.key)) return S.Zero;
   if (a === undefined && v.key === x.key) return f;
   const terms: Expr[] = [];
   // an inner indefinite integral in v at p is the antiderivative there: Integral(g, (v, p))
-  const at = (p: Expr) => (f instanceof Integral && f.args.length === 2 && f.args[1]!.key === v.key ? new Integral([f.args[0]!, v, p]) : impl.subs(f, [[v, p]]));
+  const at = (p: Expr) => (f instanceof Integral && f.args.length === 2 && f.variable.key === v.key ? new Integral([f.integrand, v, p]) : impl.subs(f, [[v, p]]));
   // (v, b): the antiderivative at b; (v, a, b): limits a and b
   const upper = b ?? a;
   const lower = b === undefined ? undefined : a;

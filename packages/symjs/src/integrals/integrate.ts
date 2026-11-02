@@ -39,6 +39,7 @@ import {
   isNum,
 } from '../core/nodes';
 import { numAdd, numInv, numMul, numNeg } from '../core/num';
+import { at, defined, expectType, getOrThrow, pair } from '../core/guard';
 import { gcd, lcm } from '../core/numbers';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { mapBottomUp as mapBottomUpI, xreplace as subs } from '../core/traverse';
@@ -54,7 +55,8 @@ type R = Expr | undefined;
 
 const isE = (e: Expr) => e instanceof Constant && e.name === 'E';
 const isI = (e: Expr) => e instanceof Constant && e.name === 'I';
-const isExp = (e: Expr): boolean => e instanceof Pow && isE(e.base);
+const isRational = (v: unknown): v is Rational => v instanceof Rational;
+const isExp = (e: Expr): e is Pow => e instanceof Pow && isE(e.base);
 const isZeroR = (e: Expr) => e instanceof Rational && e.isZero;
 
 class Integrator {
@@ -146,19 +148,21 @@ class Integrator {
     if (!(f instanceof Pow && f.base instanceof Constant && f.base.name === 'E')) return undefined;
     const pc = polyCoefficients(f.exp, x);
     if (!pc || Math.max(...pc.keys()) !== 2) return undefined;
-    const A = pc.get(2)!;
+    const A = pc.get(2);
+    if (A === undefined) return undefined;
     const B = pc.get(1) ?? S.Zero;
     const C = pc.get(0) ?? S.Zero;
     const shift = mul(B, pow(mul(2, A), -1));
     const k0 = add(C, mul(-1, pow(B, 2), pow(mul(4, A), -1)));
-    const pref = (k: Expr) => mul(sqrt(S.Pi), pow(mul(2, k), -1), impl.exp!(k0));
+    const pref = (k: Expr) => mul(sqrt(S.Pi), pow(mul(2, k), -1), exp(k0));
     const neg = isNegativeQ(A);
     if (neg === true || (neg === undefined && !isPositiveQ(A))) {
       const k = sqrt(mul(-1, A));
       const F = mul(pref(k), fnErf('erf', [expand(mul(k, add(x, shift)))]));
       if (neg === true) return F;
       if (B instanceof Rational && B.isZero && C instanceof Rational && C.isZero) {
-        const factors = (mul(-1, A) instanceof Mul ? (mul(-1, A) as Mul).args : [mul(-1, A)]).filter((t) => !isNum(t));
+        const negA = mul(-1, A);
+        const factors = (negA instanceof Mul ? negA.args : [negA]).filter((t) => !isNum(t));
         return piecewise([F, Ne(mul(...factors), 0)], [x, true]);
       }
       return undefined;
@@ -172,9 +176,10 @@ class Integrator {
   private fresnel(f: Expr): R {
     const x = this.x;
     if (!(f instanceof Fn && (f.name === 'sin' || f.name === 'cos'))) return undefined;
-    const pc = polyCoefficients(f.args[0]!, x);
+    const pc = polyCoefficients(at(f.args, 0), x);
     if (!pc || Math.max(...pc.keys()) !== 2 || pc.has(1) || pc.has(0)) return undefined;
-    let a = pc.get(2)!;
+    let a = pc.get(2);
+    if (a === undefined) return undefined;
     let sign: Expr = S.One;
     if (isNegativeQ(a) === true) {
       a = mul(-1, a);
@@ -226,8 +231,8 @@ class Integrator {
       if (n instanceof Rational && n.p === -1n && n.q === 2n) {
         const q = polyCoefficients(b, x);
         if (q?.size === 2 && q.has(0) && q.has(2)) {
-          const c = q.get(0)!;
-          const k = mul(-1, q.get(2)!);
+          const c = getOrThrow(q, 0);
+          const k = mul(-1, getOrThrow(q, 2));
           if (isNum(c) && isNum(k) && c.isPositive && k.isPositive) {
             return mul(asin(mul(sqrt(mul(k, pow(c, -1))), x)), pow(sqrt(k), -1));
           }
@@ -235,7 +240,7 @@ class Integrator {
       }
     }
     if (f instanceof Fn) {
-      const u = f.args[0]!;
+      const u = at(f.args, 0);
       const lin = this.linear(u);
       if (lin) {
         const [a] = lin;
@@ -263,7 +268,7 @@ class Integrator {
           case 'erf':
           case 'erfc':
           case 'erfi':
-            if (u.key === x.key) return add(mul(x, f), SPECIAL_PARTS[f.name]!(x));
+            if (u.key === x.key) return add(mul(x, f), defined(SPECIAL_PARTS[f.name], 'special antiderivative')(x));
             break;
           case 'asin':
           case 'acos':
@@ -357,7 +362,7 @@ class Integrator {
       }
       if (!this.free(q)) continue;
       if (n.p === -1n && n.q === 1n) return mul(q, log(base));
-      const n1 = numAdd(n, S.One) as Rational;
+      const n1 = expectType(numAdd(n, S.One), isRational, 'n + 1');
       if (!n1.isInteger && n1.p > n1.q) {
         // SymPy form: g**(k + r) -> expanded g**k * g**r (e.g. (x**2 + 1)**(3/2) -> x**2*sqrt(x**2 + 1) + sqrt(x**2 + 1))
         const k = n1.p / n1.q;
@@ -385,7 +390,7 @@ class Integrator {
         k = Number(t.exp.p);
       }
       if (!(base instanceof Fn && (base.name === 'sin' || base.name === 'cos'))) return undefined;
-      const arg = base.args[0]!;
+      const arg = at(base.args, 0);
       if (u === undefined) u = arg;
       else if (u.key !== arg.key) return undefined;
       if (base.name === 'sin') m += k;
@@ -397,7 +402,7 @@ class Integrator {
     const [a] = lin;
     const s = new Sym('_u');
     const polyInt = (p: Expr): Expr => {
-      const pc = polyCoefficients(p, s)!;
+      const pc = defined(polyCoefficients(p, s), 'polynomial coefficients');
       return add(...[...pc].map(([k, c]) => mul(c, pow(s, k + 1), Rational.of(1, k + 1))));
     };
     let F: Expr;
@@ -441,10 +446,10 @@ class Integrator {
     const P = mul(...polyPart);
 
     if (others.length === 1) {
-      const g = others[0]!;
+      const g = at(others, 0);
       // P * exp(a*x + b)
       if (isExp(g)) {
-        const lin = this.linear((g as Pow).exp);
+        const lin = this.linear(g.exp);
         if (lin && polyPart.length > 0) {
           const [a] = lin;
           return this.nonzero(a, f, () => {
@@ -462,7 +467,7 @@ class Integrator {
       }
       // P * sin/cos(a*x + b)
       if (g instanceof Fn && (g.name === 'sin' || g.name === 'cos') && polyPart.length > 0) {
-        const u = g.args[0]!;
+        const u = at(g.args, 0);
         const lin = this.linear(u);
         if (lin) {
           const [a] = lin;
@@ -478,14 +483,14 @@ class Integrator {
 
     // P * log(x)^k
     const logs = others.map((t) => {
-      if (t instanceof Fn && t.name === 'log' && t.args[0]!.key === x.key) return 1;
-      if (t instanceof Pow && t.base instanceof Fn && t.base.name === 'log' && t.base.args[0]!.key === x.key) {
+      if (t instanceof Fn && t.name === 'log' && at(t.args, 0).key === x.key) return 1;
+      if (t instanceof Pow && t.base instanceof Fn && t.base.name === 'log' && at(t.base.args, 0).key === x.key) {
         return t.exp instanceof Rational && t.exp.isInteger && t.exp.p > 0n ? Number(t.exp.p) : 0;
       }
       return 0;
     });
-    if (others.length === 1 && logs[0]! > 0) {
-      const k = logs[0]!;
+    const k = logs[0];
+    if (others.length === 1 && k !== undefined && k > 0) {
       const Q = this.integrate(P);
       if (Q === undefined) return undefined;
       const lx = log(x);
@@ -497,11 +502,11 @@ class Integrator {
 
     // exp(a*x + b) * sin/cos(c*x + d)
     if (polyPart.length === 0 && others.length === 2) {
-      const e = others.find(isExp) as Pow | undefined;
-      const t = others.find((o) => o instanceof Fn && (o.name === 'sin' || o.name === 'cos')) as Fn | undefined;
+      const e = others.find(isExp);
+      const t = others.find((o): o is Fn => o instanceof Fn && (o.name === 'sin' || o.name === 'cos'));
       if (e && t) {
         const l1 = this.linear(e.exp);
-        const u = t.args[0]!;
+        const u = at(t.args, 0);
         const l2 = this.linear(u);
         if (l1 && l2 && isNum(l1[0]) && isNum(l2[0])) {
           const [a] = l1;
@@ -523,7 +528,7 @@ class Integrator {
   private expImaginary(f: Expr): R {
     if (!hasTrigFunctions(f)) return undefined;
     const hasImagExp = (e: Expr): boolean =>
-      (isExp(e) && (e as Pow).exp.has(S.I)) || e.args.some(hasImagExp);
+      (isExp(e) && e.exp.has(S.I)) || e.args.some(hasImagExp);
     if (!hasImagExp(f)) return undefined;
     const g = expsimp(f);
     if (g.key === f.key) return undefined;
@@ -586,20 +591,20 @@ class Integrator {
         g = { f: fi, j, A: Array.from({ length: fi.degree }, () => S.Zero) };
         groups.set(key, g);
       }
-      g.A[k] = sol[idx]!;
+      g.A[k] = at(sol, idx);
     });
 
     for (const { f: fi, j, A } of groups.values()) {
       const fx = fi.toExpr(x);
       if (fi.degree === 1) {
-        const alpha = A[0]!;
+        const alpha = at(A, 0);
         if (alpha.isZero) continue;
         if (j === 1) terms.push(mul(alpha, log(fx)));
         else terms.push(mul(numNeg(alpha), Rational.of(1, j - 1), pow(fx, 1 - j)));
       } else if (fi.degree === 2 && j === 1) {
-        const [beta, alpha] = [A[0]!, A[1]!];
-        const b = fi.coeffs[1]!;
-        const c = fi.coeffs[0]!;
+        const [beta, alpha] = pair(A);
+        const b = at(fi.coeffs, 1);
+        const c = at(fi.coeffs, 0);
         if (!alpha.isZero) terms.push(mul(numMul(alpha, S.Half), log(fx)));
         const coef = numAdd(beta, numNeg(numMul(alpha, numMul(b, S.Half))));
         if (!coef.isZero) {
@@ -642,20 +647,24 @@ function primitive(e: Expr, x: Sym): [Rational, Expr] {
 /** Solve a square linear system over the rationals (Gauss-Jordan). */
 function solveLinear(A: Rational[][], b: Rational[]): Rational[] | undefined {
   const n = b.length;
-  const M = A.map((row, i) => [...row, b[i]!]);
+  const M = A.map((row, i) => [...row, at(b, i)]);
+  const rat = (v: Expr): Rational => expectType(v, isRational, 'rational entry');
   for (let col = 0; col < n; col++) {
-    const piv = M.findIndex((row, i) => i >= col && !row[col]!.isZero);
+    const piv = M.findIndex((row, i) => i >= col && !at(row, col).isZero);
     if (piv < 0) return undefined;
-    [M[col], M[piv]] = [M[piv]!, M[col]!];
-    const inv = numInv(M[col]![col]!) as Rational;
-    M[col] = M[col]!.map((v) => numMul(v, inv) as Rational);
+    const pivRow = at(M, piv);
+    M[piv] = at(M, col);
+    const inv = rat(numInv(at(pivRow, col)));
+    const scaled = pivRow.map((v) => rat(numMul(v, inv)));
+    M[col] = scaled;
     for (let i = 0; i < n; i++) {
-      if (i === col || M[i]![col]!.isZero) continue;
-      const k = M[i]![col]!;
-      M[i] = M[i]!.map((v, jj) => numAdd(v, numNeg(numMul(k, M[col]![jj]!))) as Rational);
+      const row = at(M, i);
+      const k = at(row, col);
+      if (i === col || k.isZero) continue;
+      M[i] = row.map((v, jj) => rat(numAdd(v, numNeg(numMul(k, at(scaled, jj))))));
     }
   }
-  return M.map((row) => row[n]!);
+  return M.map((row) => at(row, n));
 }
 
 /**
@@ -697,7 +706,7 @@ function integratePiecewise(f: Piecewise, x: Sym): Expr | undefined {
       const k = add(subs(prevF, [[x, prevBreak]]), mul(-1, subs(F, [[x, prevBreak]])));
       F = add(F, k);
     }
-    pieces.push([F, c === undefined ? S.true : f.pairs[pieces.length]![1]]);
+    pieces.push([F, c === undefined ? S.true : at(f.pairs, pieces.length)[1]]);
     prevF = F;
     prevBreak = c;
   }
@@ -714,16 +723,16 @@ function simplifyConditionsOnInterval(f: Expr, x: Sym, a: Expr, b: Expr): Expr {
   const sa = a.freeSymbols().size === 0 ? Math.sign(a.toNumber()) : 0;
   const sb = b.freeSymbols().size === 0 ? Math.sign(b.toNumber()) : 0;
   if (!sa || sa !== sb) return f;
-  const flip: Record<string, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
+  const flip: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
   const cond = (c: Expr): Expr => {
     if (!(c instanceof Rel) || !(c.rhs instanceof Rational && c.rhs.isZero) || !(c.lhs instanceof Mul)) return c;
     const xs = c.lhs.args.filter((g) => g.key === x.key || (g instanceof Pow && g.base.key === x.key && g.exp instanceof Rational && g.exp.isInteger));
     if (!xs.length || c.lhs.args.filter((g) => g.has(x)).length !== xs.length) return c;
-    const k = xs.reduce((s2, g) => s2 + (g instanceof Pow ? Number((g.exp as Rational).p) : 1), 0);
+    const k = xs.reduce((s2, g) => s2 + (g instanceof Pow && g.exp instanceof Rational ? Number(g.exp.p) : 1), 0);
     const rest = mul(...c.lhs.args.filter((g) => !g.has(x)));
     // the sign of x**k on the interval
     const negative = sa < 0 && k % 2 !== 0;
-    return new Rel(negative ? flip[c.op]! : c.op, rest, S.Zero);
+    return new Rel(negative ? flip[c.op] : c.op, rest, S.Zero);
   };
   return mapBottomUpI(f, (e: Expr) => (e instanceof Piecewise ? piecewise(...e.pairs.map(([v, c]) => [v, cond(c)] as const)) : e));
 }
@@ -738,7 +747,7 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
     if (!parts.some((r) => r instanceof Integral)) return add(...parts);
   }
   if (f instanceof Mul && f.args.filter((t) => t instanceof Piecewise).length === 1 && f.args.every((t) => t instanceof Piecewise || !t.has(x))) {
-    const pw = f.args.find((t) => t instanceof Piecewise)!;
+    const pw = defined(f.args.find((t) => t instanceof Piecewise), 'Piecewise factor');
     const r = integrate(pw, x, limits, opts);
     if (!(r instanceof Integral)) return mul(...f.args.filter((t) => t !== pw), r);
   }

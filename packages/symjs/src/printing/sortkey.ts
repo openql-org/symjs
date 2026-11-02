@@ -8,9 +8,10 @@
  * (e.g. `x**2*y`, `1 - 2*I`, `-sqrt(2)/4 + sqrt(6)/4`, `I*sin(x) + cos(x)`).
  */
 
-import type { ComplexValue, Expr } from '../core/nodes';
+import type { ComplexValue, ConstantName, Expr, RelOp, SpecialName } from '../core/nodes';
 import { Add, Constant, Derivative, Dummy, ExtensionExpr, Float, Fn, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, impl, isNum } from '../core/nodes';
 import { pow, splitCoeff } from '../core/ops';
+import { at, pair } from '../core/guard';
 
 /** A SymPy-style sort key: nested tuples of numbers and strings. */
 export type Key = number | string | Key[];
@@ -19,7 +20,7 @@ export function compareKeys(a: Key, b: Key): number {
   if (Array.isArray(a) && Array.isArray(b)) {
     const n = Math.min(a.length, b.length);
     for (let i = 0; i < n; i++) {
-      const c = compareKeys(a[i]!, b[i]!);
+      const c = compareKeys(at(a, i), at(b, i));
       if (c !== 0) return c;
     }
     return a.length - b.length;
@@ -32,7 +33,7 @@ export function compareKeys(a: Key, b: Key): number {
 }
 
 /** SymPy class names used in class keys. */
-const CONSTANT_CLASS: Record<string, string> = {
+const CONSTANT_CLASS: Record<ConstantName, string> = {
   I: 'ImaginaryUnit',
   pi: 'Pi',
   E: 'Exp1',
@@ -69,7 +70,7 @@ export function sympyFunctionName(name: string): string {
 
 const isExp = (e: Expr): e is Pow => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
 
-const REL_CLASS: Record<string, string> = { Eq: 'Equality', Ne: 'Unequality', Lt: 'StrictLessThan', Le: 'LessThan', Gt: 'StrictGreaterThan', Ge: 'GreaterThan' };
+const REL_CLASS: Record<RelOp, string> = { Eq: 'Equality', Ne: 'Unequality', Lt: 'StrictLessThan', Le: 'LessThan', Gt: 'StrictGreaterThan', Ge: 'GreaterThan' };
 
 const symClass = (e: Sym): string =>
   e instanceof WildFunction ? 'WildFunction' : e instanceof Wild ? 'Wild' : e instanceof Dummy ? 'Dummy' : 'Symbol';
@@ -78,7 +79,7 @@ const symClass = (e: Sym): string =>
 export function classKey(e: Expr): Key {
   if (isNum(e) || e instanceof Special) return [1, 0, 'Number'];
   if (e instanceof Sym) return [2, 0, symClass(e)];
-  if (e instanceof Constant) return [2, 0, CONSTANT_CLASS[e.name]!];
+  if (e instanceof Constant) return [2, 0, CONSTANT_CLASS[e.name]];
   if (e instanceof Mul) return [3, 0, 'Mul'];
   if (e instanceof Add) return [3, 1, 'Add'];
   if (isExp(e)) return [4, 10, 'exp'];
@@ -89,10 +90,9 @@ export function classKey(e: Expr): Key {
   }
   if (e instanceof UndefFn) return [4, 0, e.name];
   if (e instanceof Derivative) return [5, 0, 'Derivative'];
-  if (e instanceof Rel) return [5, 0, REL_CLASS[e.op]!];
+  if (e instanceof Rel) return [5, 0, REL_CLASS[e.op]];
   if (e instanceof ExtensionExpr) return [5, 0, e.name];
-  const cn = (e as unknown as { className?: string }).className;
-  if (cn) return [5, 0, cn];
+  if ('className' in e && typeof e.className === 'string' && e.className) return [5, 0, e.className];
   return [5, 0, e.kind];
 }
 
@@ -102,11 +102,11 @@ const numValue = (e: Expr): number =>
 const ONE_KEY: Key = [[1, 0, 'Number'], [0, []], [], 1];
 
 /** SymPy `Basic.sort_key()` / `default_sort_key`. */
-const SPECIAL_VALUE: Record<string, number> = { oo: Infinity, '-oo': -Infinity, zoo: Infinity, nan: NaN };
+const SPECIAL_VALUE: Record<SpecialName, number> = { oo: Infinity, '-oo': -Infinity, zoo: Infinity, nan: NaN };
 
 export function sortKey(e: Expr): Key {
   if (isNum(e)) return [[1, 0, 'Number'], [0, []], [], numValue(e)];
-  if (e instanceof Special) return [[1, 0, 'Number'], [0, []], [], SPECIAL_VALUE[e.name]!];
+  if (e instanceof Special) return [[1, 0, 'Number'], [0, []], [], SPECIAL_VALUE[e.name]];
   if (e instanceof Dummy) return [[2, 0, 'Dummy'], [2, [e.name, e.dummyIndex]], ONE_KEY, 1];
   if (e instanceof Sym) return [[2, 0, symClass(e)], [1, [e.printName]], ONE_KEY, 1];
   if (e instanceof Constant) return [classKey(e), [1, [impl.str(e)]], ONE_KEY, 1];
@@ -182,9 +182,9 @@ export function asOrderedTerms(e: Expr): Expr[] {
   if (terms.length === 2) {
     const isNumberLike = (t: Expr) => isNum(t) || (t instanceof Constant && t.name !== 'I');
     const sorted = [...terms].sort((a, b) => (isNumberLike(a) ? 0 : 1) - (isNumberLike(b) ? 0 : 1));
-    const [n, m] = sorted as [Expr, Expr];
+    const [n, m] = pair(sorted);
     if (isNumberLike(n) && m instanceof Mul && m.args.length === 2) {
-      const c = m.args[0]!;
+      const c = at(m.args, 0);
       const positive = isNum(n) ? n.isPositive : true;
       if (positive && isNum(c) && c.isNegative) return sorted;
     }

@@ -6,8 +6,9 @@
  * crt1, crt2, solve_congruence, symmetric_residue, and galoistools gf_crt).
  */
 
+import { at } from '../core/guard';
 import type { NoMatchResult } from '../core/truth';
-import { NoMatch } from '../core/truth';
+import { NoMatch, isNoMatch } from '../core/truth';
 import type { IntLike } from './intutil';
 import { asInt, fdiv, gcdN, gcdext, pmod, prod } from './intutil';
 import { isprime } from './primetest';
@@ -24,7 +25,7 @@ export function gfCrt(U: readonly bigint[], M: readonly bigint[]): bigint {
   M.forEach((m, i) => {
     const e = fdiv(p, m);
     const s = gcdext(e, m)[1];
-    v += e * pmod(U[i]! * s, m);
+    v += e * pmod(at(U, i) * s, m);
   });
   return pmod(v, p);
 }
@@ -46,7 +47,7 @@ export function gfCrt1(M: readonly bigint[]): [bigint, bigint[], bigint[]] {
 export function gfCrt2(U: readonly bigint[], M: readonly bigint[], p: bigint, E: readonly bigint[], S: readonly bigint[]): bigint {
   let v = 0n;
   M.forEach((m, i) => {
-    v += E[i]! * pmod(U[i]! * S[i]!, m);
+    v += at(E, i) * pmod(at(U, i) * at(S, i), m);
   });
   return pmod(v, p);
 }
@@ -64,13 +65,13 @@ export function crt(m: readonly IntLike[], v: readonly IntLike[], opts: { symmet
   let result = gfCrt(vs, ms);
   let mm = prod(ms);
   if (check) {
-    if (!vs.every((vi, i) => pmod(vi, ms[i]!) === pmod(result, ms[i]!))) {
+    if (!vs.every((vi, i) => pmod(vi, at(ms, i)) === pmod(result, at(ms, i)))) {
       const r = solveCongruence(
-        vs.map((vi, i): [bigint, bigint] => [vi, ms[i]!]),
+        vs.map((vi, i): [bigint, bigint] => [vi, at(ms, i)]),
         { check: false, symmetric },
       );
-      if (r === NoMatch) return NoMatch;
-      [result, mm] = r as [bigint, bigint];
+      if (isNoMatch(r)) return NoMatch;
+      [result, mm] = r;
     }
   }
   if (symmetric) return [symmetricResidue(result, mm), mm];

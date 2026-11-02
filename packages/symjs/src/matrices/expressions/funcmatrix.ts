@@ -17,6 +17,7 @@ import { latex } from '../../printing/latex';
 import { MatrixExpr, TraceNode, checkDim } from './matexpr';
 import { isInt } from './util';
 import { sympify } from '../../core/ops';
+import { at, cast, defined, first, pair } from '../../core/guard';
 
 /** A function of the row and column indices: a Lambda, a JavaScript function or SymPy's 'lambda i, j: ...' string. */
 export type IndexFunction = LambdaNode | ((i: Expr, j: Expr) => Expr) | string;
@@ -29,9 +30,12 @@ function toLambda2(f: IndexFunction): LambdaNode {
   if (typeof f === 'string') {
     const m = /^\s*lambda\s+(\w+)\s*,\s*(\w+)\s*:(.*)$/s.exec(f);
     if (!m) throw new RangeError(`${f} should be compatible with SymPy function classes.`);
-    const i = new Sym(m[1]!);
-    const j = new Sym(m[2]!);
-    return new LambdaNode([i, j, parse(m[3]!.trim(), { symbols: { [m[1]!]: i, [m[2]!]: j } })]);
+    const iName = defined(m[1], 'row index name');
+    const jName = defined(m[2], 'column index name');
+    const body = defined(m[3], 'lambda body');
+    const i = new Sym(iName);
+    const j = new Sym(jName);
+    return new LambdaNode([i, j, parse(body.trim(), { symbols: { [iName]: i, [jName]: j } })]);
   }
   const i = new Dummy('i');
   const j = new Dummy('j');
@@ -48,14 +52,14 @@ export class FunctionMatrixNode extends MatrixExpr {
     return new FunctionMatrixNode(checkDim(sympify(rows)), checkDim(sympify(cols)), toLambda2(lamda));
   }
   get shape(): [Expr, Expr] {
-    return [this.args[0]!, this.args[1]!];
+    return pair(this.args);
   }
   /** The function of the indices. */
   get lamda(): LambdaNode {
-    return this.args[2] as LambdaNode;
+    return cast(at(this.args, 2), LambdaNode);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new FunctionMatrixNode(args[0]!, args[1]!, args[2] as LambdaNode);
+    return new FunctionMatrixNode(at(args, 0), at(args, 1), cast(at(args, 2), LambdaNode));
   }
   override entry(i: Expr, j: Expr): Expr {
     return this.lamda.call(i, j);
@@ -94,13 +98,13 @@ export class DFTNode extends MatrixExpr {
   }
   /** The size (SymPy DFT.n; n is evalf in symjs). */
   get size(): Expr {
-    return this.args[0]!;
+    return first(this.args);
   }
   get shape(): [Expr, Expr] {
     return [this.size, this.size];
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new DFTNode(args[0]!);
+    return new DFTNode(first(args));
   }
   override entry(i: Expr, j: Expr): Expr {
     return dftEntry(this.size, mul(i, j));
@@ -119,7 +123,7 @@ export class IDFTNode extends DFTNode {
     super(n, 'IDFT');
   }
   override withArgs(args: readonly Expr[]): Expr {
-    return new IDFTNode(args[0]!);
+    return new IDFTNode(first(args));
   }
   override entry(i: Expr, j: Expr): Expr {
     return dftEntry(this.size, mul(-1, i, j));

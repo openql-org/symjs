@@ -37,7 +37,8 @@ import { rewrite } from '../../simplify/rewrite';
 import { simplify as simplifyExpr } from '../../simplify/simplify';
 import { piecewiseExclusive } from '../../solvers/inequalities';
 import type { TransformHints } from './base';
-import { IntegralTransform, addArgs, diffTransforms, holds, isPolyIn, maxPlane, planeAdd, matchByName, polyCoeffs, mget, mulArgs, wild } from './base';
+import { IntegralTransform, addArgs, diffTransforms, holds, isPolyIn, maxPlane, planeAdd, matchByName, polyCoeffs, mget, mulArgs, wild, symArg, transformArgs } from './base';
+import { at, cast, defined, last, pair } from '../../core/guard';
 import { DiracDelta, Heaviside, isDiracDelta, isHeaviside } from './delta';
 import { InverseLaplaceTransform } from './inverse-laplace';
 
@@ -74,7 +75,7 @@ function collectAbs(e: Expr): Expr {
     const absF = x.args.filter((f) => f instanceof Fn && f.name === 'abs');
     if (absF.length < 2) return x;
     const other = x.args.filter((f) => !(f instanceof Fn && f.name === 'abs'));
-    return mul(...other, abs(mul(...absF.map((f) => f.args[0]!))));
+    return mul(...other, abs(mul(...absF.map((f) => at(f.args, 0)))));
   });
 }
 
@@ -94,7 +95,7 @@ export function simplifyConds(exprIn: ExprLike, s: Sym, aIn: ExprLike): Expr {
   };
   const isAbsFn = (e: Expr): e is Fn => e instanceof Fn && e.name === 'abs';
   // Abs(y) -> y; Abs(y)**n (symjs's form of Abs(y**n)) -> y**n
-  const stripAbs = (e: Expr): Expr => (isAbsFn(e) ? e.args[0]! : e instanceof Pow && isAbsFn(e.base) ? pow(e.base.args[0]!, e.exp) : e);
+  const stripAbs = (e: Expr): Expr => (isAbsFn(e) ? at(e.args, 0) : e instanceof Pow && isAbsFn(e.base) ? pow(at(e.base.args, 0), e.exp) : e);
   const bigger = (ex1In: Expr, ex2In: Expr): boolean | undefined => {
     if (ex1In.has(s) && ex2In.has(s)) return undefined;
     const ex1 = stripAbs(ex1In);
@@ -341,7 +342,7 @@ function getRules(): RuleTable {
 function linearIn(e: Expr, t: Expr): [Expr, Expr] | undefined {
   const cs = polyCoeffs(laplaceDeepCollect(e, t), t);
   if (!cs || cs.length > 2) return undefined;
-  return cs.length === 1 ? [S.Zero, cs[0]!] : [cs[0]!, cs[1]!];
+  return cs.length === 1 ? [S.Zero, at(cs, 0)] : pair(cs);
 }
 
 /** The Heaviside and DiracDelta rules of the table (written out, as they need exact function heads). */
@@ -349,7 +350,7 @@ function laplaceDistributionRules(f: Expr, t: Expr, s: Expr): LaplaceTriple | un
   const isH = isHeaviside(f) && f.args.length === 1;
   const isD = isDiracDelta(f) && f.args.length === 1;
   if (!isH && !isD) return undefined;
-  const lin = linearIn(f.args[0]!, t);
+  const lin = linearIn(at(f.args, 0), t);
   if (!lin) return undefined;
   const [a, mb] = lin;
   if (a.key === S.Zero.key) return undefined;
@@ -418,7 +419,7 @@ function laplaceRuleTimescale(f: Expr, t: Sym, s: Expr): LaplaceTriple | undefin
     inner = f.exp;
     build = (x) => exp(x);
   } else if ((f instanceof Fn || f instanceof UndefFn || f instanceof ExtensionExpr) && f.args.length === 1 && !(f instanceof IntegralTransform)) {
-    inner = f.args[0]!;
+    inner = at(f.args, 0);
     build = (x) => rebuild(f, [x]);
   }
   if (!inner || !build) return undefined;
@@ -438,7 +439,7 @@ function laplaceRuleHeaviside(f: Expr, t: Sym, s: Expr): LaplaceTriple | undefin
   const facs = mulArgs(f);
   const i = facs.findIndex((x) => isHeaviside(x) && x.args.length === 1);
   if (i < 0) return undefined;
-  const y = facs[i]!.args[0]!;
+  const y = at(at(facs, i).args, 0);
   const g = mul(...facs.filter((_, j) => j !== i));
   const a = wild('a', t);
   const m1 = matchByName(y, sub(t, a));
@@ -464,7 +465,7 @@ function laplaceRuleExp(f: Expr, t: Sym, s: Expr): LaplaceTriple | undefined {
   const facs = mulArgs(f);
   const i = facs.findIndex(isExpPow);
   if (i < 0) return undefined;
-  const y = (facs[i] as Pow).exp;
+  const y = cast(at(facs, i), Pow, 'exp factor').exp;
   const z = mul(...facs.filter((_, j) => j !== i));
   const a = wild('a', t);
   const m = matchByName(collect(y, [t]), mul(a, t));
@@ -479,7 +480,7 @@ function laplaceRuleDelta(f: Expr, t: Sym, s: Expr): LaplaceTriple | undefined {
   const facs = mulArgs(f);
   const i = facs.findIndex((x) => isDiracDelta(x) && x.args.length === 1);
   if (i < 0) return undefined;
-  const y = facs[i]!.args[0]!;
+  const y = at(at(facs, i).args, 0);
   const z = mul(...facs.filter((_, j) => j !== i));
   if (some(z, isDiracDelta)) return undefined;
   const lin = linearIn(y, t);
@@ -491,7 +492,7 @@ function laplaceRuleDelta(f: Expr, t: Sym, s: Expr): LaplaceTriple | undefined {
     const imZero = im(loc);
     if (holds(reNonNeg) && imZero.key === S.Zero.key) {
       let fn = mul(exp(mul(-1, A, pow(b, -1), s)), z);
-      if (some(fn, (n) => n instanceof Fn && (n.name === 'sin' || n.name === 'cos'))) fn = safe(() => cancel(mapBottomUp(fn, (u) => (u instanceof Fn && u.name === 'sin' ? mul(u.args[0]!, sinc(u.args[0]!)) : u))), fn);
+      if (some(fn, (n) => n instanceof Fn && (n.name === 'sin' || n.name === 'cos'))) fn = safe(() => cancel(mapBottomUp(fn, (u) => (u instanceof Fn && u.name === 'sin' ? mul(at(u.args, 0), sinc(at(u.args, 0))) : u))), fn);
       const [n0, d0] = asNumerDenom(fn);
       const n = subs(n0, [[t, loc]]);
       const d = subs(d0, [[t, loc]]);
@@ -609,12 +610,12 @@ function laplaceTrigLtex(xm0: ExpTerm[], s: Expr): [Expr, Expr] {
     return mul(poly(simpc(nc)), pow(poly(dc), -1));
   };
   while (xm.length > 0) {
-    const t1 = xm.pop()!;
+    const t1 = defined(xm.pop(), 'term');
     let iImag: number | undefined;
     let iReal: number | undefined;
     let iPoint: number | undefined;
     for (let i = 0; i < xm.length; i++) {
-      const x = xm[i]!;
+      const x = at(xm, i);
       const realEq = sameExpr(t1.re, x.re);
       const realSym = sameExpr(t1.re, neg(x.re));
       const imagEq = sameExpr(t1.im, x.im);
@@ -626,19 +627,19 @@ function laplaceTrigLtex(xm0: ExpTerm[], s: Expr): [Expr, Expr] {
       else if (realEq && imagSym && imNz) iImag = i;
     }
     if (iImag !== undefined && iReal !== undefined && iPoint !== undefined) {
-      results.push(quadpole(t1, xm[iImag]!.k, xm[iReal]!.k, xm[iPoint]!.k));
+      results.push(quadpole(t1, at(xm, iImag).k, at(xm, iReal).k, at(xm, iPoint).k));
       planes.push(abs(re(t1.a)));
       for (const i of [iImag, iReal, iPoint].sort((p, q) => q - p)) xm.splice(i, 1);
     } else if (iImag !== undefined) {
-      results.push(ccpole(t1, xm[iImag]!.k));
+      results.push(ccpole(t1, at(xm, iImag).k));
       planes.push(t1.re);
       xm.splice(iImag, 1);
     } else if (iReal !== undefined) {
-      results.push(rspole(t1, xm[iReal]!.k));
+      results.push(rspole(t1, at(xm, iReal).k));
       planes.push(abs(t1.re));
       xm.splice(iReal, 1);
     } else if (iPoint !== undefined) {
-      results.push(sypole(t1, xm[iPoint]!.k));
+      results.push(sypole(t1, at(xm, iPoint).k));
       planes.push(abs(t1.re));
       xm.splice(iPoint, 1);
     } else {
@@ -675,12 +676,13 @@ function laplaceRuleDiff(f: Expr, t: Sym, s: Expr): LaplaceTriple | undefined {
   const facs = mulArgs(f);
   const i = facs.findIndex((x) => x instanceof Derivative);
   if (i < 0) return undefined;
-  const d = facs[i] as Derivative;
+  const d = cast(at(facs, i), Derivative);
   const a = mul(...facs.filter((_, j) => j !== i));
   if (a.has(t)) return undefined;
   const vc = d.variableCount;
-  if (vc.length !== 1 || vc[0]![0].key !== t.key) return undefined;
-  const n = vc[0]![1];
+  const vc0 = vc[0];
+  if (vc.length !== 1 || vc0 === undefined || vc0[0].key !== t.key) return undefined;
+  const n = vc0[1];
   const g = d.expr;
   if (!(g instanceof UndefFn || g instanceof Fn || g instanceof ExtensionExpr)) return undefined;
   if (g.args.filter((z) => z.has(t)).length !== 1) return undefined;
@@ -716,9 +718,9 @@ function laplaceRuleSdiff(f: Expr, t: Sym, s: Sym): LaplaceTriple | undefined {
           for (let k = 0; k < N - 1; k++) deri.push(mul(pow(-1, k + 1), derivative(r_, [[s, k + 1]])));
         } else if (d1) {
           deri.push(d1);
-          for (let k = 0; k < N - 2; k++) deri.push(neg(diffTransforms(deri[deri.length - 1]!, s, 1)));
+          for (let k = 0; k < N - 2; k++) deri.push(neg(diffTransforms(last(deri), s, 1)));
         }
-        if (d1) return [add(...pc.map((_, n) => mul(pc[N - n - 1]!, deri[n]!))), p_, c_];
+        if (d1) return [add(...pc.map((_, n) => mul(at(pc, N - n - 1), at(deri, n)))), p_, c_];
       }
     }
   }
@@ -789,11 +791,12 @@ export function piecewiseToHeaviside(f: Expr, t: Sym): Expr {
         } else return f;
       }
     } else if (cond instanceof BoolOp && cond.op === 'And' && cond.args.length === 2) {
-      let [c0, c1] = cond.args as [Expr, Expr];
-      if (c0 instanceof Rel && c1 instanceof Rel && c0.lhs.key === t.key && c1.lhs.key === t.key) {
-        if (c0.op === 'Gt' || c0.op === 'Ge') [c0, c1] = [c1, c0];
-        const [g1, l1] = gtsLts(c1 as Rel);
-        const [g0, l0] = gtsLts(c0 as Rel);
+      const [a0, a1] = pair(cond.args);
+      if (a0 instanceof Rel && a1 instanceof Rel && a0.lhs.key === t.key && a1.lhs.key === t.key) {
+        const swap = a0.op === 'Gt' || a0.op === 'Ge';
+        const [c0, c1] = swap ? [a1, a0] : [a0, a1];
+        const [g1, l1] = gtsLts(c1);
+        const [g0, l0] = gtsLts(c0);
         out.push(mul(sub(Heaviside(sub(g1, l1)), Heaviside(sub(l0, g0))), fn));
       } else return f;
     } else return f;
@@ -811,7 +814,7 @@ function laplaceTransformIntegration(f: Expr, t: Sym, s: Expr): LaplaceTriple | 
   // a factor Heaviside(a*t - b) with a < 0 and b >= 0 vanishes for t > 0 (the integral is 0)
   for (const fac of mulArgs(f)) {
     if (!isHeaviside(fac) || fac.args.length !== 1) continue;
-    const lin = linearIn(fac.args[0]!, t);
+    const lin = linearIn(at(fac.args, 0), t);
     if (lin && holds(Lt(lin[0], 0)) && holds(Le(lin[1], 0))) return [S.Zero, S.NegativeInfinity, S.true];
   }
   if (f instanceof Pow && f.base.key === t.key && !f.exp.has(t)) {
@@ -826,7 +829,7 @@ function laplaceTransformIntegration(f: Expr, t: Sym, s: Expr): LaplaceTriple | 
  * recursively to every term.
  */
 export function laplaceTransformImpl(fn: Expr, t: Sym, s: Sym | Expr, simplify: boolean): LaplaceTriple {
-  const sv = s as Sym;
+  const sv = symArg(s);
   const terms: [Expr, Expr][] = [];
   for (const ff of addArgs(fn)) {
     const [k, ft] = asIndependent(ff, [t], { asAdd: false });
@@ -905,7 +908,7 @@ export function laplaceCorrespondence(f: ExprLike, fdict: ReadonlyMap<UndefinedF
   const e = sympify(f);
   const isLT = (x: Expr): boolean => x instanceof LaplaceTransform || x instanceof InverseLaplaceTransform;
   if (!some(e, isLT)) return e;
-  const appliedTo = (g: Expr, name: string, v: Expr): boolean => g instanceof UndefFn && g.name === name && g.args.length === 1 && g.args[0]!.key === v.key;
+  const appliedTo = (g: Expr, name: string, v: Expr): boolean => g instanceof UndefFn && g.name === name && g.args.length === 1 && at(g.args, 0).key === v.key;
   for (const [y, Y] of fdict) {
     if (e instanceof LaplaceTransform && appliedTo(e.function, y.functionName, e.functionVariable)) return Y(e.transformVariable);
     if (e instanceof InverseLaplaceTransform && appliedTo(e.function, Y.functionName, e.functionVariable)) return y(e.transformVariable);
@@ -926,7 +929,7 @@ export function laplaceInitialConds(f: ExprLike, t: Sym, fdict: ReadonlyMap<Unde
   for (const [y, ic] of fdict) {
     for (let k = 0; k < ic.length; k++) {
       const target = k === 0 ? y(0) : Subs(derivative(y(t), [[t, k]]), t, 0);
-      e = xreplace(e, [[target, sympify(ic[k]!)]]);
+      e = xreplace(e, [[target, sympify(at(ic, k))]]);
     }
   }
   return e;
@@ -949,7 +952,7 @@ export class LaplaceTransform extends IntegralTransform {
     return '\\mathcal{L}';
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new LaplaceTransform(args[0]!, args[1] as Sym, args[2] as Sym);
+    return new LaplaceTransform(...transformArgs(args));
   }
   get asIntegral(): Expr {
     return new Integral([mul(this.function, exp(mul(-1, this.transformVariable, this.functionVariable))), this.functionVariable, S.Zero, S.Infinity]);

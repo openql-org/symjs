@@ -6,8 +6,9 @@
  * sums/products and derivatives, innermost first.
  */
 
-import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Derivative, ExtensionExpr, Integral, Limit } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Derivative, ExtensionExpr, Integral, Limit, Sym } from '../core/nodes';
+import { at, cast } from '../core/guard';
 import { sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
 import { Concrete, doitConcrete } from '../concrete/summations';
@@ -20,12 +21,14 @@ export function doit(ex: ExprLike): Expr {
   const go = (x: Expr): Expr => {
     const y = x.args.length ? rebuild(x, x.args.map(go)) : x;
     if (y instanceof Integral) {
-      const [f, v, a, b] = y.args;
+      const [, , a, b] = y.args;
+      const f = y.integrand;
+      const v = cast(y.variable, Sym, 'integration variable');
       // (x, b): the antiderivative at b
-      if (a && !b) return xreplace(integrate(f!, v as Sym), [[v!, a]]);
-      return a && b ? integrate(f!, v as Sym, [a, b]) : integrate(f!, v as Sym);
+      if (a && !b) return xreplace(integrate(f, v), [[v, a]]);
+      return a && b ? integrate(f, v, [a, b]) : integrate(f, v);
     }
-    if (y instanceof Limit) return limit(y.args[0]!, y.args[1] as Sym, y.args[2]!, y.dir);
+    if (y instanceof Limit) return limit(at(y.args, 0), cast(y.args[1], Sym, 'limit variable'), at(y.args, 2), y.dir);
     if (y instanceof Concrete) return doitConcrete(y);
     if (y instanceof ExtensionExpr) return y.doitSelf() ?? y;
     if (y instanceof Derivative) {

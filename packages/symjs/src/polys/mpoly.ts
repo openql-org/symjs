@@ -7,7 +7,8 @@
  * and a heuristic multivariate factorization.
  */
 
-import { PolynomialError } from '../core/errors';
+import { InvariantError, PolynomialError } from '../core/errors';
+import { at, defined } from '../core/guard';
 import type { Expr, Sym } from '../core/nodes';
 import { Add, Mul, Rational, S } from '../core/nodes';
 import { numMul } from '../core/num';
@@ -56,14 +57,21 @@ function numericContent(e: Expr): Rational {
   return g.isZero ? S.One : g;
 }
 
+/** b**k for a rational b and a nonnegative integer k (a Rational). */
+function powRat(b: Rational, k: number): Rational {
+  const r = pow(b, k);
+  if (!(r instanceof Rational)) throw new InvariantError('power of a rational is not a Rational');
+  return r;
+}
+
 /** Exact quotient f/g in Q[vars], or undefined when g does not divide f. */
 export function divExact(f0: Expr, g0: Expr, vars: readonly Sym[]): Expr | undefined {
   const f = expand(f0);
   const g = expand(g0);
   if (isZeroE(g)) throw new RangeError('division by zero polynomial');
   if (isZeroE(f)) return S.Zero;
-  if (vars.length === 0) return expand(mul(f, pow(g, -1)));
-  const [x, ...rest] = vars as [Sym, ...Sym[]];
+  const [x, ...rest] = vars;
+  if (x === undefined) return expand(mul(f, pow(g, -1)));
   const dg = degreeIn(g, x);
   if (dg === 0) {
     // divide every coefficient
@@ -118,7 +126,7 @@ function normalizeSign(e: Expr, vars: readonly Sym[]): Expr {
     if (!c.has(v)) continue;
     c = lcIn(c, v);
   }
-  const lead = c instanceof Add ? c.args[c.args.length - 1]! : c;
+  const lead = c instanceof Add ? at(c.args, -1) : c;
   const k = lead instanceof Mul && lead.args[0] instanceof Rational ? lead.args[0] : lead instanceof Rational ? lead : S.One;
   return k.isNegative ? expand(mul(-1, e)) : e;
 }
@@ -130,18 +138,18 @@ export function mgcd(f0: Expr, g0: Expr, vars: readonly Sym[]): Expr {
   if (isZeroE(f)) return normalizeSign(g, vars);
   if (isZeroE(g)) return normalizeSign(f, vars);
   const live = vars.filter((v) => f.has(v) || g.has(v));
-  if (live.length === 0) {
+  const [x, ...rest] = live;
+  if (x === undefined) {
     if (f instanceof Rational && g instanceof Rational) return rationalGcd(f, g);
     return rationalGcd(numericContent(f), numericContent(g));
   }
-  const [x, ...rest] = live as [Sym, ...Sym[]];
   if (!f.has(x)) return mgcd(f, contentIn(g, x, rest), rest);
   if (!g.has(x)) return mgcd(contentIn(f, x, rest), g, rest);
   const cf = contentIn(f, x, rest);
   const cg = contentIn(g, x, rest);
   const c = mgcd(cf, cg, rest);
-  let a = divExact(f, cf, live)!;
-  let b = divExact(g, cg, live)!;
+  let a = defined(divExact(f, cf, live), 'f / content');
+  let b = defined(divExact(g, cg, live), 'g / content');
   if (degreeIn(a, x) < degreeIn(b, x)) [a, b] = [b, a];
   for (let guard = 0; guard < 200 && !isZeroE(b) && degreeIn(b, x) > 0; guard++) {
     const r = prem(a, b, x);
@@ -152,14 +160,14 @@ export function mgcd(f0: Expr, g0: Expr, vars: readonly Sym[]): Expr {
     }
     b = divExact(r, contentIn(r, x, rest), live) ?? r;
   }
-  const g1 = isZeroE(b) ? divExact(a, contentIn(a, x, rest), live)! : S.One;
+  const g1 = isZeroE(b) ? defined(divExact(a, contentIn(a, x, rest), live), 'primitive part') : S.One;
   return normalizeSign(expand(mul(c, g1)), live);
 }
 
 /** lcm of two polynomials. */
 export function mlcm(f: Expr, g: Expr, vars: readonly Sym[]): Expr {
   const d = mgcd(f, g, vars);
-  return normalizeSign(expand(mul(divExact(f, d, vars)!, g)), vars);
+  return normalizeSign(expand(mul(defined(divExact(f, d, vars), 'f / gcd'), g)), vars);
 }
 
 /** Sorted generator list for a set of expressions (alphabetical by name). */
@@ -189,13 +197,13 @@ export function mfactorList(f0: Expr, vars: readonly Sym[], uniFactor: (e: Expr,
     let p = pIn;
     p = expand(p);
     if (p instanceof Rational) {
-      content = numMul(content, pow(p, k) as Rational) as Rational;
+      content = numMul(content, powRat(p, k));
       return;
     }
     const lv = live.filter((v) => p.has(v));
     if (lv.length === 1) {
-      const [c, fs] = uniFactor(p, lv[0]!);
-      content = numMul(content, pow(c, k) as Rational) as Rational;
+      const [c, fs] = uniFactor(p, at(lv, 0));
+      content = numMul(content, powRat(c, k));
       for (const [g, m] of fs) push(g, m * k);
       return;
     }
@@ -204,7 +212,7 @@ export function mfactorList(f0: Expr, vars: readonly Sym[], uniFactor: (e: Expr,
       const cv = contentIn(p, v, lv.filter((u) => u !== v));
       if (!(cv instanceof Rational) && cv.freeSymbols().size > 0) {
         rec(cv, k);
-        rec(divExact(p, cv, lv)!, k);
+        rec(defined(divExact(p, cv, lv), 'p / content'), k);
         return;
       }
       // powers of v dividing every term
@@ -212,14 +220,14 @@ export function mfactorList(f0: Expr, vars: readonly Sym[], uniFactor: (e: Expr,
       const low = Math.min(...pc.keys());
       if (low > 0) {
         push(v, low * k);
-        rec(divExact(p, pow(v, low), lv)!, k);
+        rec(defined(divExact(p, pow(v, low), lv), 'p / monomial'), k);
         return;
       }
     }
     // numeric content
     const nc = numericContent(p);
     if (!nc.isOne) {
-      content = numMul(content, pow(nc, k) as Rational) as Rational;
+      content = numMul(content, powRat(nc, k));
       rec(expand(mul(p, pow(nc, -1))), k);
       return;
     }
@@ -245,14 +253,14 @@ export function mfactorList(f0: Expr, vars: readonly Sym[], uniFactor: (e: Expr,
       const g2 = prim(add(mul(2, a, v), b, s));
       const ratio = divExact(p, expand(mul(g1, g2)), lv);
       if (!(ratio instanceof Rational)) continue;
-      content = numMul(content, pow(ratio, k) as Rational) as Rational;
+      content = numMul(content, powRat(ratio, k));
       rec(g1, k);
       rec(g2, k);
       return;
     }
     const q = normalizeSign(p, lv);
     // keep the sign removed by the normalization in the content
-    if (q.key !== p.key && k % 2 === 1) content = numMul(content, S.NegOne) as Rational;
+    if (q.key !== p.key && k % 2 === 1) content = numMul(content, S.NegOne);
     push(q, k);
   };
   rec(f, 1);

@@ -9,10 +9,15 @@ import { piecewise, rel } from './logic';
 import { Concrete } from './concrete';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import type { Expr, ExprLike, Substitution } from './nodes';
-import { Add, Constant, Derivative, ExtensionExpr, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Sym, UndefFn, impl } from './nodes';
+import { Add, Constant, Derivative, ExtensionExpr, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Sym, UndefFn, asRational, impl } from './nodes';
 import { add, mul, pow, sympify } from './ops';
 import { SubsNode } from './subsnode';
 import { BoolOp } from './boolalg';
+import { InvariantError } from './errors';
+import { at, first } from './guard';
+
+const isSubsMap = (s: Substitution): s is ReadonlyMap<Expr, ExprLike> => s instanceof Map;
+const isSubsPairs = (s: Substitution): s is readonly (readonly [Expr, ExprLike])[] => Array.isArray(s);
 
 /**
  * Rebuild a node of the same type with new arguments (re-canonicalizing).
@@ -23,12 +28,15 @@ export function rebuild(e: Expr, args: readonly Expr[]): Expr {
   if (e instanceof ExtensionExpr || e instanceof BoolOp) return e.withArgs(args);
   if (e instanceof Add) return add(...args);
   if (e instanceof Mul) return mul(...args);
-  if (e instanceof Pow) return pow(args[0]!, args[1]!);
-  if (e instanceof Fn) return impl.fn!(e.name, args);
-  if (e instanceof Rel) return rel(e.op, args[0]!, args[1]!);
+  if (e instanceof Pow) return pow(at(args, 0), at(args, 1));
+  if (e instanceof Fn) {
+    if (impl.fn === undefined) throw new InvariantError('function constructors are not registered');
+    return impl.fn(e.name, args);
+  }
+  if (e instanceof Rel) return rel(e.op, at(args, 0), at(args, 1));
   if (e instanceof Piecewise) {
     const pairs: [Expr, Expr][] = [];
-    for (let i = 0; i < args.length; i += 2) pairs.push([args[i]!, args[i + 1]!]);
+    for (let i = 0; i < args.length; i += 2) pairs.push([at(args, i), at(args, i + 1)]);
     return piecewise(...pairs);
   }
   if (e instanceof Integral) return new Integral(args);
@@ -37,10 +45,10 @@ export function rebuild(e: Expr, args: readonly Expr[]): Expr {
   if (e instanceof UndefFn) return new UndefFn(e.name, args);
   if (e instanceof Concrete) return new Concrete(e.kind2, args);
   if (e instanceof Derivative) {
-    const expr = args[0]!;
+    const expr = first(args);
     // evaluate when the expression no longer contains undefined functions
     const vc: [Expr, number][] = [];
-    for (let i = 1; i < args.length; i += 2) vc.push([args[i]!, Number((args[i + 1] as Rational).p)]);
+    for (let i = 1; i < args.length; i += 2) vc.push([at(args, i), Number(asRational(at(args, i + 1), 'derivative count').p)]);
     if (vc.every(([v]) => v instanceof Sym) && !hasUndef(expr)) {
       return vc.reduce((acc, [v, n]) => impl.diff(acc, v, n), expr);
     }
@@ -70,12 +78,12 @@ function toRules(s: Substitution): Rule[] {
       rules.push({ match: (e) => e.key === key, to: target });
     }
   };
-  if (s instanceof Map) {
-    for (const [k, v] of s) pushPair(k as Expr | string, v as ExprLike);
-  } else if (Array.isArray(s)) {
-    for (const [k, v] of s as readonly (readonly [Expr, ExprLike])[]) pushPair(k, v);
+  if (isSubsMap(s)) {
+    for (const [k, v] of s) pushPair(k, v);
+  } else if (isSubsPairs(s)) {
+    for (const [k, v] of s) pushPair(k, v);
   } else {
-    for (const [k, v] of Object.entries(s as Record<string, ExprLike>)) pushPair(k, v);
+    for (const [k, v] of Object.entries(s)) pushPair(k, v);
   }
   return rules;
 }
@@ -100,9 +108,9 @@ export function xreplace(e: Expr, s: Substitution): Expr {
 function toPairs(s: Substitution): [Expr, Expr][] {
   const out: [Expr, Expr][] = [];
   const key = (k: Expr | string): Expr => (typeof k === 'string' ? new Sym(k) : k);
-  if (s instanceof Map) for (const [k, v] of s) out.push([key(k as Expr | string), sympify(v as ExprLike)]);
-  else if (Array.isArray(s)) for (const [k, v] of s as readonly (readonly [Expr, ExprLike])[]) out.push([k, sympify(v)]);
-  else for (const [k, v] of Object.entries(s as Record<string, ExprLike>)) out.push([key(k), sympify(v)]);
+  if (isSubsMap(s)) for (const [k, v] of s) out.push([key(k), sympify(v)]);
+  else if (isSubsPairs(s)) for (const [k, v] of s) out.push([k, sympify(v)]);
+  else for (const [k, v] of Object.entries(s)) out.push([key(k), sympify(v)]);
   return out;
 }
 
@@ -201,16 +209,17 @@ function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
 }
 
 function splitAddCoeff(e: Expr): [Expr, Expr] {
-  if (e instanceof Add && e.args[0]!.isNumber) {
-    return [e.args[0]!, e.args.length === 2 ? e.args[1]! : new Add(e.args.slice(1))];
+  if (e instanceof Add) {
+    const c = first(e.args);
+    if (c.isNumber) return [c, e.args.length === 2 ? at(e.args, 1) : new Add(e.args.slice(1))];
   }
   return [Rational.of(0n), e];
 }
 
 /** Variables bound by a definite Integral or a Sum/Product (SymPy bound_symbols). */
 export function boundSymbols(e: Expr): Expr[] {
-  if (e instanceof Integral && e.args.length >= 3) return [e.args[1]!];
-  if (e instanceof ExtensionExpr) return (e.bindings()?.variables ?? []).map((i) => e.args[i]!);
+  if (e instanceof Integral && e.args.length >= 3) return [e.variable];
+  if (e instanceof ExtensionExpr) return (e.bindings()?.variables ?? []).map((i) => at(e.args, i));
   if (e instanceof Concrete) return e.limits.map(([k]) => k);
   return [];
 }
@@ -223,12 +232,13 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
     return new SubsNode([e, old, nw]);
   }
   // the variable of an indefinite integral replaced: the antiderivative at that point (SymPy (x, b) limit)
-  if (e instanceof Integral && e.args.length === 2 && e.args[1]!.key === old.key && !(nw instanceof Sym)) return new Integral([e.args[0]!, old, nw]);
+  if (e instanceof Integral && e.args.length === 2 && e.variable.key === old.key && !(nw instanceof Sym)) return new Integral([e.integrand, old, nw]);
   // a bound variable is not free: only the limits are substituted
   const bound = boundSymbols(e);
   if (bound.length && bound.some((b) => old.key === b.key)) {
     if (e instanceof ExtensionExpr) {
-      const b = e.bindings()!;
+      const b = e.bindings();
+      if (b === undefined) throw new InvariantError('bound symbols without bindings');
       const fixed = new Set([...b.variables, ...b.scope]);
       const args = e.args.map((a, i) => (fixed.has(i) ? a : subsOne(a, old, nw)));
       return args.some((a, i) => a !== e.args[i]) ? e.withArgs(args) : e;
@@ -237,7 +247,7 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
       // only the limits are substituted ((x, b) or (x, a, b))
       const lims = e.args.slice(2);
       const lims2 = lims.map((l) => subsOne(l, old, nw));
-      return lims2.every((l, i) => l === lims[i]) ? e : rebuild(e, [e.args[0]!, e.args[1]!, ...lims2]);
+      return lims2.every((l, i) => l === lims[i]) ? e : rebuild(e, [e.integrand, e.variable, ...lims2]);
     }
     const args = e.args.map((a, i) => (i === 0 || (i - 1) % 3 === 0 ? a : subsOne(a, old, nw)));
     return args.some((a, i) => a !== e.args[i]) ? rebuild(e, args) : e;
@@ -265,8 +275,8 @@ export function subs(e: Expr, s: Substitution, opts: { simultaneous?: boolean } 
   if (opts.simultaneous) {
     const dummies = pairs.map((_, i) => new Sym(`_subs${i}`));
     let r = e;
-    pairs.forEach(([o], i) => (r = subsOne(r, o, dummies[i]!)));
-    return xreplace(r, pairs.map(([, n], i) => [dummies[i]!, n] as const));
+    pairs.forEach(([o], i) => (r = subsOne(r, o, at(dummies, i))));
+    return xreplace(r, pairs.map(([, n], i) => [at(dummies, i), n] as const));
   }
   let r = e;
   for (const [o, n] of pairs) r = subsOne(r, o, n);
@@ -278,10 +288,10 @@ const hasUndef = (e: Expr): boolean => e instanceof UndefFn || e instanceof Deri
 export function freeSymbols(e: Expr): Set<Sym> {
   const out = new Map<string, Sym>();
   const go = (x: Expr) => {
+    const b = x instanceof ExtensionExpr ? x.bindings() : undefined;
     if (x instanceof Sym) out.set(x.key, x);
-    else if (x instanceof ExtensionExpr && x.bindings()) {
-      const b = x.bindings()!;
-      const bound = new Set(b.variables.map((i) => x.args[i]!.key));
+    else if (b) {
+      const bound = new Set(b.variables.map((i) => at(x.args, i).key));
       x.args.forEach((a, i) => {
         if (b.variables.includes(i)) return;
         if (b.scope.includes(i)) {
@@ -290,8 +300,8 @@ export function freeSymbols(e: Expr): Set<Sym> {
       });
     } else if (x instanceof Integral && x.args.length >= 3) {
       // the integration variable of a definite integral (or one with an upper limit) is bound
-      const v = x.args[1]!;
-      for (const s of freeSymbols(x.args[0]!)) if (s.key !== v.key) out.set(s.key, s);
+      const v = x.variable;
+      for (const s of freeSymbols(x.integrand)) if (s.key !== v.key) out.set(s.key, s);
       x.args.slice(2).forEach(go);
     } else if (x instanceof Concrete) {
       // bound summation variables are not free

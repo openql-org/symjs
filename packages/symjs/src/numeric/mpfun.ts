@@ -8,6 +8,7 @@
  * driver re-evaluates at higher precision to certify digits.
  */
 
+import { at } from '../core/guard';
 import * as F from './mpf';
 import type { Mpf } from './mpf';
 import { ONE, ZERO } from './mpf';
@@ -275,7 +276,7 @@ export function sinCos(x: Mpf, prec: number): [Mpf, Mpf] {
     [F.neg(s), F.neg(c)],
     [F.neg(c), s],
   ];
-  const [a, b] = out[n]!;
+  const [a, b] = at(out, n);
   return [F.round(a, prec), F.round(b, prec)];
 }
 
@@ -397,7 +398,7 @@ export function cdiv(a: Mpc, b: Mpc, prec: number): Mpc {
   const d = F.add(F.mul(b[0], b[0]), F.mul(b[1], b[1]));
   const re = F.add(F.mul(a[0], b[0]), F.mul(a[1], b[1]));
   const im = F.sub(F.mul(a[1], b[0]), F.mul(a[0], b[1]));
-  return [F.div(re, d, wp), F.div(im, d, wp)].map((v) => F.round(v, prec)) as unknown as Mpc;
+  return [F.round(F.div(re, d, wp), prec), F.round(F.div(im, d, wp), prec)];
 }
 export function cabs(z: Mpc, prec: number): Mpf {
   if (F.isZero(z[1])) return F.round(F.abs(z[0]), prec);

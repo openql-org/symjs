@@ -27,6 +27,7 @@ import {
 import { compareKeys } from '../../printing/sortkey';
 import { PRECEDENCE, same } from './util';
 import { latexPrecedence } from './matexpr';
+import { at, cast, first, pair } from '../../core/guard';
 
 /** SymPy HadamardProduct(*args): the elementwise product of matrices of the same shape. */
 export class HadamardProductNode extends MatrixExpr {
@@ -43,13 +44,13 @@ export class HadamardProductNode extends MatrixExpr {
     return evaluate ? obj.doit({ deep: false }) : obj;
   }
   get shape(): [Expr, Expr] {
-    return (this.args[0] as MatrixExpr).shape;
+    return cast(first(this.args), MatrixExpr).shape;
   }
   withArgs(args: readonly Expr[]): Expr {
     return new HadamardProductNode(args);
   }
   override entry(i: Expr, j: Expr, ctx?: EntryContext): Expr {
-    return mul(...this.args.map((a) => (a as MatrixExpr).entry(i, j, ctx)));
+    return mul(...this.args.map((a) => cast(a, MatrixExpr).entry(i, j, ctx)));
   }
   override evalTranspose(): Expr {
     return new HadamardProductNode(this.args.map(transposeOf));
@@ -60,8 +61,8 @@ export class HadamardProductNode extends MatrixExpr {
     const explicit = args.filter((a): a is ImmutableMatrixNode => a instanceof ImmutableMatrixNode);
     if (explicit.length) {
       const remainder = args.filter((a) => !(a instanceof ImmutableMatrixNode));
-      const first = explicit[0]!.matrix;
-      const m = Matrix.fromFunction(first.rows, first.cols, (i, j) => mul(...explicit.map((x) => x.matrix.get(i, j))));
+      const m0 = first(explicit).matrix;
+      const m = Matrix.fromFunction(m0.rows, m0.cols, (i, j) => mul(...explicit.map((x) => x.matrix.get(i, j))));
       expr = new HadamardProductNode([new ImmutableMatrixNode(m), ...remainder]);
     }
     return canonicalize(expr);
@@ -81,7 +82,7 @@ export type HadamardProduct = HadamardProductNode;
 /** SymPy hadamard_product(*matrices): the evaluated elementwise product. */
 export function hadamardProduct(...matrices: MatArg[]): Expr {
   if (!matrices.length) throw new TypeError('Empty Hadamard product is undefined');
-  if (matrices.length === 1) return toExpr(matrices[0]!);
+  if (matrices.length === 1) return toExpr(first(matrices));
   const r = HadamardProductNode.create(matrices);
   return r instanceof MatrixExpr ? r.doit() : r;
 }
@@ -105,7 +106,7 @@ export function canonicalize(x0: Expr): Expr {
     const ids = x.args.map((a) => a instanceof OneMatrixNode);
     const n = ids.filter(Boolean).length;
     if (n && n !== ids.length) x = new HadamardProductNode(x.args.filter((_, k) => !ids[k]));
-    else if (n) x = new HadamardProductNode([x.args[0]!]);
+    else if (n) x = new HadamardProductNode([first(x.args)]);
   }
   // absorbing by the zero matrix
   if (x instanceof HadamardProductNode && x.args.some((a) => a instanceof ZeroMatrixNode)) {
@@ -132,7 +133,7 @@ export function canonicalize(x0: Expr): Expr {
     );
   }
   // unpacking
-  if (x instanceof HadamardProductNode && x.args.length === 1) return x.args[0]!;
+  if (x instanceof HadamardProductNode && x.args.length === 1) return first(x.args);
   return x;
 }
 
@@ -151,17 +152,17 @@ export class HadamardPowerNode extends MatrixExpr {
   }
   /** The base. */
   get base(): Expr {
-    return this.args[0]!;
+    return at(this.args, 0);
   }
   /** The exponent. */
   get exp(): Expr {
-    return this.args[1]!;
+    return at(this.args, 1);
   }
   get shape(): [Expr, Expr] {
-    return this.base instanceof MatrixExpr ? this.base.shape : (this.exp as MatrixExpr).shape;
+    return this.base instanceof MatrixExpr ? this.base.shape : cast(this.exp, MatrixExpr).shape;
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new HadamardPowerNode(args[0]!, args[1]!);
+    return new HadamardPowerNode(...pair(args));
   }
   override entry(i: Expr, j: Expr, ctx?: EntryContext): Expr {
     const a = this.base instanceof MatrixExpr ? this.base.entry(i, j, ctx) : this.base;

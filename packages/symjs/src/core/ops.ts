@@ -36,7 +36,8 @@ import { mkFloat, numAdd, numInv, numMul, numNeg, numPowInt, ratFloor, toMpf } f
 import { ZERO as MPF_ZERO, precToDps } from '../numeric/mpf';
 import { cpow as mpCpow, powReal as mpPowReal } from '../numeric/mpfun';
 import { factorInt } from './numbers';
-import { SympifyError, errorSettings } from './errors';
+import { InvariantError, SympifyError, errorSettings } from './errors';
+import { at, cast, pair } from './guard';
 
 export function sympify(x: ExprLike): Expr {
   if (x instanceof Expr) return x;
@@ -50,7 +51,7 @@ export function sympify(x: ExprLike): Expr {
 
 /** Float ** number (SymPy Float._eval_power / Rational._eval_power with a Float exponent). */
 function floatPow(b: Num, e: Num): Expr {
-  const fb = b instanceof Float ? b : new Float(toMpf(b, (e as Float).prec), (e as Float).prec);
+  const fb = b instanceof Float ? b : new Float(toMpf(b, cast(e, Float).prec), cast(e, Float).prec);
   if (fb.isZero) return e.isPositive ? fb : S.ComplexInfinity;
   if (e instanceof Rational && e.p === 1n && e.q % 2n === 1n && fb.isNegative) {
     return mul(new Pow(S.NegOne, e), pow(numNeg(fb), e));
@@ -68,9 +69,9 @@ const isE = (e: Expr): boolean => e instanceof Constant && e.name === 'E';
 /** Split e into numeric coefficient and the remaining factor: e = c * rest. */
 export function splitCoeff(e: Expr): [Num, Expr] {
   if (isNum(e)) return [e, S.One];
-  if (e instanceof Mul && isNum(e.args[0]!)) {
-    const rest = e.args.length === 2 ? e.args[1]! : new Mul(e.args.slice(1));
-    return [e.args[0], rest];
+  if (e instanceof Mul) {
+    const c = e.args[0];
+    if (c !== undefined && isNum(c)) return [c, e.args.length === 2 ? at(e.args, 1) : new Mul(e.args.slice(1))];
   }
   return [S.One, e];
 }
@@ -141,9 +142,13 @@ function lowestPower(term: Expr, t: Expr): number | undefined {
     return k;
   }
   if (term instanceof Add) {
-    const ps = term.args.map((a) => lowestPower(a, t));
-    if (ps.some((p) => p === undefined)) return undefined;
-    return Math.min(...(ps as number[]));
+    const ps: number[] = [];
+    for (const a of term.args) {
+      const p = lowestPower(a, t);
+      if (p === undefined) return undefined;
+      ps.push(p);
+    }
+    return Math.min(...ps);
   }
   return undefined;
 }
@@ -160,7 +165,7 @@ function addOrder(args: Expr[]): Expr | undefined {
     const [b, k] = o.expr instanceof Pow ? o.expr.args : [o.expr, S.One];
     return { o, base: b, k: k instanceof Rational ? k.value : NaN };
   });
-  const sameBase = info.every((i) => i.base.key === info[0]!.base.key);
+  const sameBase = info.every((i) => i.base.key === at(info, 0).base.key);
   if (!sameBase) return undefined;
   const weakest = info.reduce((a, b) => (b.k < a.k ? b : a));
   const base = weakest.base;
@@ -238,7 +243,7 @@ export function add(...xs: ExprLike[]): Expr {
   if (out.length === 0) return c;
   out.sort(compareExpr);
   if (!c.isZero) out.unshift(c);
-  if (out.length === 1) return out[0]!;
+  if (out.length === 1) return at(out, 0);
   return new Add(out);
 }
 
@@ -256,15 +261,15 @@ class Radicals {
   addPower(baseIn: Rational, exp: Rational): void {
     let base = baseIn;
     if (base.isNegative) {
-      this.negOne = numAdd(this.negOne, exp) as Rational;
+      this.negOne = numAdd(this.negOne, exp);
       base = Rational.of(-base.p, base.q);
     }
     if (base.isOne) return;
     const push = (n: bigint, sign: bigint) => {
       if (n === 1n) return;
       for (const [p, k] of factorInt(n)) {
-        const inc = numMul(exp, Rational.of(sign * k)) as Rational;
-        this.primes.set(p, numAdd(this.primes.get(p) ?? S.Zero, inc) as Rational);
+        const inc = numMul(exp, Rational.of(sign * k));
+        this.primes.set(p, numAdd(this.primes.get(p) ?? S.Zero, inc));
       }
     };
     push(base.p, 1n);
@@ -285,8 +290,8 @@ class Radicals {
     for (const [p, e] of this.primes) {
       if (e.isZero) continue;
       const k = ratFloor(e);
-      const f = numAdd(e, Rational.of(-k)) as Rational;
-      if (k !== 0n) coeff = numMul(coeff, numPowInt(Rational.of(p), k)) as Rational;
+      const f = numAdd(e, Rational.of(-k));
+      if (k !== 0n) coeff = numMul(coeff, numPowInt(Rational.of(p), k));
       if (!f.isZero) {
         const g = groups.get(f.key);
         if (g) g.base *= p;
@@ -299,15 +304,15 @@ class Radicals {
     let n = this.negOne;
     if (!n.isZero) {
       const k = ratFloor(Rational.of(n.p, n.q * 2n));
-      n = numAdd(n, Rational.of(-2n * k)) as Rational; // n in [0, 2)
-      const twice = numMul(n, S.Two) as Rational;
+      n = numAdd(n, Rational.of(-2n * k)); // n in [0, 2)
+      const twice = numMul(n, S.Two);
       if (twice.isInteger) {
         iPow += twice.p; // (-1)^(m/2) = I^m
       } else {
         // SymPy: (-1)**(p/q) = (-1)**i * (-1)**(r/q) with r/q in [0, 1)
         let r = n;
         if (numCmp1(n) > 0) {
-          r = numAdd(n, Rational.of(-1n)) as Rational;
+          r = numAdd(n, Rational.of(-1n));
           iPow += 2n;
         }
         factors.push(new Pow(S.NegOne, r));
@@ -370,7 +375,7 @@ export function mul(...xs: ExprLike[]): Expr {
 
   // SymPy's two-argument rule: Rational * Add distributes (2*(x + 1) -> 2*x + 2).
   if (args.length === 2) {
-    let [a, b] = args as [Expr, Expr];
+    let [a, b] = pair(args);
     if (b instanceof Rational) [a, b] = [b, a];
     if (a instanceof Rational && !a.isZero && !a.isOne) {
       const [r, rest] = splitCoeff(b);
@@ -493,7 +498,7 @@ export function mul(...xs: ExprLike[]): Expr {
   // exp_polar(a)*exp_polar(b) = exp_polar(a + b)
   const eps = factors.filter((f) => f instanceof Fn && f.name === 'exp_polar');
   if (eps.length > 1) {
-    const merged = new Fn('exp_polar', [add(...eps.map((f) => f.args[0]!))]);
+    const merged = new Fn('exp_polar', [add(...eps.map((f) => at(f.args, 0)))]);
     for (const f of eps) factors.splice(factors.indexOf(f), 1);
     factors.push(merged);
   }
@@ -501,12 +506,12 @@ export function mul(...xs: ExprLike[]): Expr {
     factors.sort(compareExpr);
     const isOne1 = coeff instanceof Rational && coeff.isOne;
     const all = [...(isOne1 ? [] : [coeff]), ...factors, ...ncPart];
-    return all.length === 1 ? all[0]! : new Mul(all);
+    return all.length === 1 ? at(all, 0) : new Mul(all);
   }
   if (factors.length === 0) return coeff;
   factors.sort(compareExpr);
   const isOne = coeff instanceof Rational && coeff.isOne;
-  if (factors.length === 1 && isOne) return factors[0]!;
+  if (factors.length === 1 && isOne) return at(factors, 0);
   // end of SymPy Mul.flatten: Number * Add distributes (2*(1 + a) -> 2 + 2*a)
   if (factors.length === 1 && factors[0] instanceof Add) {
     const c = coeff;
@@ -544,7 +549,7 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   }
   if (b instanceof Rational && b.isOne && !(e instanceof Special)) return S.One;
   if (isE(b) && e instanceof Float) return impl.evalf(new Pow(b, e), precToDps(e.prec));
-  if (b instanceof Fn && b.name === 'exp_polar') return new Fn('exp_polar', [mul(b.args[0]!, e)]);
+  if (b instanceof Fn && b.name === 'exp_polar') return new Fn('exp_polar', [mul(at(b.args, 0), e)]);
 
   if (b instanceof Special || e instanceof Special) {
     const r = powSpecial(b, e);
@@ -568,7 +573,7 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
 
   if (isI(b) && e instanceof Rational && e.isInteger) {
     const m = ((e.p % 4n) + 4n) % 4n;
-    return [S.One, S.I, S.NegOne, mul(-1, S.I)][Number(m)]!;
+    return at([S.One, S.I, S.NegOne, mul(-1, S.I)], Number(m));
   }
 
   if (b instanceof Add && e instanceof Rational && e.p === -1n && e.q === 1n) {
@@ -584,8 +589,8 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   }
 
   // Abs(u)**(2k) = u**(2k) for real u
-  if (b instanceof Fn && b.name === 'abs' && e instanceof Rational && e.isInteger && e.p % 2n === 0n && isReal(b.args[0]!)) {
-    return pow(b.args[0]!, e);
+  if (b instanceof Fn && b.name === 'abs' && e instanceof Rational && e.isInteger && e.p % 2n === 0n && isReal(at(b.args, 0))) {
+    return pow(at(b.args, 0), e);
   }
 
   if (b instanceof Pow) {
@@ -630,7 +635,7 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   }
 
   if (isE(b)) {
-    if (e instanceof Fn && e.name === 'log') return e.args[0]!;
+    if (e instanceof Fn && e.name === 'log') return at(e.args, 0);
     const terms = e instanceof Add ? e.args : [e];
     let m = 0n;
     let extracted = false;
@@ -638,7 +643,7 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
     for (const t of terms) {
       const [c, rest] = splitCoeff(t);
       if (c instanceof Rational && rest.key === iPi().key) {
-        const twice = numMul(c, S.Two) as Rational;
+        const twice = numMul(c, S.Two);
         if (twice.isInteger) {
           m += twice.p;
           extracted = true;
@@ -649,7 +654,7 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
     }
     if (extracted) {
       const k = ((m % 4n) + 4n) % 4n;
-      const f = [S.One, S.I, S.NegOne, mul(-1, S.I)][Number(k)]!;
+      const f = at([S.One, S.I, S.NegOne, mul(-1, S.I)], Number(k));
       return mul(f, pow(b, add(...remaining)));
     }
     // exp(c*log(x)) -> x**c when the other factors are numbers (SymPy exp.eval)
@@ -663,7 +668,7 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
             ok = false;
             break;
           }
-          logTerm = t.args[0]!;
+          logTerm = at(t.args, 0);
         } else if (impl.freeSymbols(t).size === 0 && isReal(t) === true) coeffs.push(t);
         else {
           ok = false;
@@ -726,7 +731,7 @@ function powSpecial(b: Expr, e: Expr): Expr | undefined {
     return undefined;
   }
   // exponent is oo, -oo or zoo
-  const ex = e as Special;
+  const ex = cast(e, Special, 'exponent');
   if (ex.name === 'zoo') return S.NaN;
   const v = realValue(b);
   if (v === undefined) return undefined;
@@ -743,10 +748,13 @@ function powSpecial(b: Expr, e: Expr): Expr | undefined {
 /** SymPy `pure_complex`: a + b*I with numeric a, b. */
 function pureComplex(e: Add): [Num, Num] | undefined {
   if (e.args.length !== 2) return undefined;
-  const [h, t] = e.args as [Expr, Expr];
+  const [h, t] = pair(e.args);
   if (!isNum(h)) return undefined;
   if (isI(t)) return [h, S.One];
-  if (t instanceof Mul && t.args.length === 2 && isNum(t.args[0]!) && isI(t.args[1]!)) return [h, t.args[0]];
+  if (t instanceof Mul && t.args.length === 2) {
+    const [t0, t1] = pair(t.args);
+    if (isNum(t0) && isI(t1)) return [h, t0];
+  }
   return undefined;
 }
 
@@ -784,7 +792,7 @@ export function rational(p: bigint | number, q: bigint | number = 1): Rational {
 export function couldExtractMinusSign(e: Expr): boolean {
   if (isNum(e)) return e.isNegative;
   if (e instanceof Mul) {
-    const c = e.args[0]!;
+    const c = at(e.args, 0);
     return isNum(c) && c.isNegative;
   }
   if (e instanceof Add) {
@@ -826,7 +834,10 @@ export function realRoot(xIn: ExprLike, nIn: ExprLike): Expr {
   const n = sympify(nIn);
   if (n instanceof Rational && n.isInteger) {
     if (n.p === 1n || n.p === -1n) return root(x, n);
-    if (n.p % 2n !== 0n && isReal(x) === true) return mul(impl.sign!(x), root(impl.abs(x), n));
+    if (n.p % 2n !== 0n && isReal(x) === true) {
+      if (impl.sign === undefined) throw new InvariantError('sign is not registered');
+      return mul(impl.sign(x), root(impl.abs(x), n));
+    }
   }
   return root(x, n);
 }

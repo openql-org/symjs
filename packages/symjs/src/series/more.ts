@@ -54,7 +54,8 @@ export function* lseries(ex: ExprLike, x: Sym, x0: ExprLike = 0, dir: '+' | '-' 
   let done = 0;
   for (;;) {
     const { terms, exact } = seriesTerms(e, x, p, n, dir);
-    for (; done < terms.length; done++) yield terms[done]!;
+    for (const t of terms.slice(done)) yield t;
+    done = Math.max(done, terms.length);
     if (exact || n > 4096) return;
     n *= 2;
   }

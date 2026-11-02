@@ -271,6 +271,9 @@ export {
 export {
   latex,
 } from './printing/latex';
+// 2D pretty printing (SymPy sympy.printing.pretty)
+export { pretty, pprint, prettyPrint, pagerPrint, PrettyPrinter, PrettyTuple, prettyHooks, StringPict, PrettyForm } from './printing/pretty/index';
+export type { PrettyOptions, Printable, MatrixLike } from './printing/pretty/index';
 export {
   parse,
   parse as parseExpr,
@@ -301,6 +304,7 @@ export type SymbolTuple<S extends string> = string extends S ? SymbolNode[] : To
  * const [theta, phi] = symbols('theta phi', { real: true });
 */
 export function symbols<S extends string>(names: S, assumptions: Assumptions = {}): SymbolTuple<S> {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the tuple length is computed from the literal type S, which the type system cannot relate to the runtime split
   return expandNames(names).map((n) => new SymbolNode(n, assumptions)) as SymbolTuple<S>;
 }
 export {
@@ -328,6 +332,8 @@ export {
   xor as Xor,
 } from './core/boolalg';
 
+const isCountPair = (v: ExprNode | readonly [ExprNode, number]): v is readonly [ExprNode, number] => Array.isArray(v);
+
 /**
  * SymPy `Derivative(expr, *variables)`: an unevaluated derivative. Each
  * variable is a symbol or a `[symbol, count]` pair. Also the node class
@@ -338,7 +344,7 @@ export const Derivative = /* @__PURE__ */ callableClass(
   (expr: ExprLikeT, ...variables: (ExprNode | readonly [ExprNode, number])[]): ExprNode =>
     derivativeFn(
       sympifyFn(expr),
-      variables.map((v) => (Array.isArray(v) ? [v[0], v[1]] : [v, 1]) as [ExprNode, number]),
+      variables.map((v): [ExprNode, number] => (isCountPair(v) ? [v[0], v[1]] : [v, 1])),
     ),
 );
 export type Derivative = DerivativeNode;

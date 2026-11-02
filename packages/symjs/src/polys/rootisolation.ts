@@ -8,6 +8,7 @@
  * Polynomials are dense bigint arrays, highest degree first (SymPy's dup).
  */
 
+import { at } from '../core/guard';
 import { Rational } from '../core/nodes';
 
 type P = bigint[];
@@ -23,7 +24,7 @@ function strip(f: P): P {
 }
 const degree = (f: P) => strip(f).length - 1;
 const LC = (f: P) => strip(f)[0] ?? 0n;
-const TC = (f: P) => (f.length ? f[f.length - 1]! : 0n);
+const TC = (f: P) => f[f.length - 1] ?? 0n;
 
 /** floor(log2(a)) for a > 0. */
 const ilog2 = (a: bigint) => a.toString(2).length - 1;
@@ -32,7 +33,14 @@ const ilog2 = (a: bigint) => a.toString(2).length - 1;
 function shift(f0: P, a: bigint): P {
   const f = [...f0];
   const n = f.length - 1;
-  for (let i = n; i > 0; i--) for (let j = 0; j < i; j++) f[j + 1] = f[j + 1]! + a * f[j]!;
+  for (let i = n; i > 0; i--) {
+    // f[j + 1] += a * f[j], with f[j] already updated in this pass
+    let prev = f[0] ?? 0n;
+    for (let j = 1; j <= i; j++) {
+      prev = (f[j] ?? 0n) + a * prev;
+      f[j] = prev;
+    }
+  }
   return f;
 }
 const reverse = (f: P): P => strip([...f].reverse());
@@ -64,17 +72,19 @@ function rootUpperBound(f0: P): Q | undefined {
   f = [...f].reverse();
   const P: number[] = [];
   for (let i = 0; i < n; i++) {
-    if (f[i]! >= 0n) continue;
-    const a = ilog2(-f[i]!);
+    const fi = at(f, i);
+    if (fi >= 0n) continue;
+    const a = ilog2(-fi);
     const QL: [number, number][] = [];
     for (let j = i + 1; j < n; j++) {
-      if (f[j]! <= 0n) continue;
-      const q = t[j]! + a - ilog2(f[j]!);
+      const fj = at(f, j);
+      if (fj <= 0n) continue;
+      const q = at(t, j) + a - ilog2(fj);
       QL.push([Math.floor(q / (j - i)), j]);
     }
     if (!QL.length) continue;
     const q = QL.reduce((m, v) => (v[0] < m[0] || (v[0] === m[0] && v[1] < m[1]) ? v : m));
-    t[q[1]] = t[q[1]]! + 1;
+    t[q[1]] = at(t, q[1]) + 1;
     P.push(q[0]);
   }
   if (!P.length) return undefined;
@@ -150,8 +160,8 @@ function innerIsolate(f0: P, eps?: Q): [P, M][] {
   const roots: [P, M][] = [];
   if (k0 === 1) return [innerRefine(f, [1n, 0n, 0n, 1n], eps)];
   const stack: [bigint, bigint, bigint, bigint, P, number][] = [[1n, 0n, 0n, 1n, f, k0]];
-  while (stack.length) {
-    let [a, b, c, d, g, k] = stack.pop()!;
+  for (let top = stack.pop(); top !== undefined; top = stack.pop()) {
+    let [a, b, c, d, g, k] = top;
     f = g;
     const A = rootLowerBound(f);
     if (A >= 1n) {
@@ -243,8 +253,8 @@ export function isolateRealRoots(factors: [P, number][], eps?: Q): [[Q, Q], numb
   const disjoin = (list: E[]) => {
     for (let i = 0; i < list.length; i++) {
       for (let j = i + 1; j < list.length; j++) {
-        let [f, m, k] = list[i]!;
-        let [g, n, l] = list[j]!;
+        let [f, m, k] = at(list, i);
+        let [g, n, l] = at(list, j);
         while (!disjoint(m, n)) {
           [f, m] = innerRefine(f, m, undefined, 1);
           [g, n] = innerRefine(g, n, undefined, 1);
@@ -296,21 +306,27 @@ function transform(f: P, [a, b, c, d]: M): P {
   const n = f.length - 1;
   const mulP = (x: P, y: P): P => {
     const r: bigint[] = Array(x.length + y.length - 1).fill(0n);
-    for (let i = 0; i < x.length; i++) for (let j = 0; j < y.length; j++) r[i + j] = r[i + j]! + x[i]! * y[j]!;
+    x.forEach((xi, i) => {
+      let k = i;
+      for (const yj of y) {
+        r[k] = (r[k] ?? 0n) + xi * yj;
+        k++;
+      }
+    });
     return r;
   };
   const addP = (x: P, y: P): P => {
     const L = Math.max(x.length, y.length);
     const xx = Array(L - x.length).fill(0n).concat(x);
     const yy = Array(L - y.length).fill(0n).concat(y);
-    return xx.map((v, i) => v + yy[i]!);
+    return xx.map((v, i) => v + (yy[i] ?? 0n));
   };
   const p: P = [a, b];
   const q: P = [c, d];
   let res: P = [0n];
-  for (let i = 0; i <= n; i++) {
+  for (const [i, fi] of f.entries()) {
     // coefficient f[i] of x**(n - i): p**(n - i) * q**i
-    let term: P = [f[i]!];
+    let term: P = [fi];
     for (let k = 0; k < n - i; k++) term = mulP(term, p);
     for (let k = 0; k < i; k++) term = mulP(term, q);
     res = addP(res, term);

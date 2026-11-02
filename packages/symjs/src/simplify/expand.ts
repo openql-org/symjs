@@ -11,6 +11,8 @@ import { Add, Constant, ExtensionExpr, Fn, Mul, Pow, Rational, S, Sym, impl, isN
 import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { cos, cosh, im, log, re, sin, sinh, tan } from '../functions/elementary';
 import { rebuild } from '../core/traverse';
+import { InvariantError } from '../core/errors';
+import { first } from '../core/guard';
 
 const termsOf = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
 
@@ -134,15 +136,15 @@ function powerBase(e: Expr, force: boolean): Expr {
   }
   if (nonneg.length === 0) return e;
   // exp_polar(c)**y = exp_polar(c*y)
-  const parts = nonneg.map((f) => (f instanceof Fn && f.name === 'exp_polar' ? new Fn('exp_polar', [mul(f.args[0]!, x)]) : pow(f, x)));
-  if (other.length === 1) parts.push(pow(other[0]!, x));
+  const parts = nonneg.map((f) => (f instanceof Fn && f.name === 'exp_polar' ? new Fn('exp_polar', [mul(first(f.args), x)]) : pow(f, x)));
+  if (other.length === 1) parts.push(pow(first(other), x));
   else if (other.length > 1) parts.push(new Pow(new Mul(other), x));
   return mul(...parts);
 }
 
 function expandLogNode(e: Expr, force: boolean): Expr {
   if (!(e instanceof Fn && e.name === 'log')) return e;
-  const a = e.args[0]!;
+  const a = first(e.args);
   const ok = (f: Expr) => force || isPositive(f) === true;
   if (a instanceof Mul) {
     const factors = a.args;
@@ -162,17 +164,17 @@ function expandLogNode(e: Expr, force: boolean): Expr {
 /** Expand sin/cos/tan of sums and integer multiples (SymPy expand_trig). */
 function expandTrigNode(e: Expr): Expr {
   if (!(e instanceof Fn) || !['sin', 'cos', 'tan'].includes(e.name)) return e;
-  const a = e.args[0]!;
+  const a = first(e.args);
   if (a instanceof Add) {
-    const [first, ...rest] = a.args;
-    const r = add(...rest);
-    const s1 = expandTrigNode(sin(first!));
-    const c1 = expandTrigNode(cos(first!));
+    const a1 = first(a.args);
+    const r = add(...a.args.slice(1));
+    const s1 = expandTrigNode(sin(a1));
+    const c1 = expandTrigNode(cos(a1));
     const s2 = expandTrigNode(sin(r));
     const c2 = expandTrigNode(cos(r));
     if (e.name === 'sin') return expandMul(add(mul(s1, c2), mul(c1, s2)));
     if (e.name === 'cos') return expandMul(add(mul(c1, c2), mul(-1, s1, s2)));
-    const t1 = expandTrigNode(tan(first!));
+    const t1 = expandTrigNode(tan(a1));
     const t2 = expandTrigNode(tan(r));
     return mul(add(t1, t2), pow(add(1, mul(-1, t1, t2)), -1));
   }
@@ -214,7 +216,7 @@ function expandComplexNode(e: Expr): Expr {
 
 export function asRealImagExpand(e: Expr): [Expr, Expr] {
   if (e instanceof Fn) {
-    const a = e.args[0]!;
+    const a = first(e.args);
     const ra = re(a);
     const ia = im(a);
     switch (e.name) {
@@ -249,7 +251,8 @@ function applyBottomUp(e: Expr, f: (e: Expr) => Expr, deep: boolean): Expr {
 export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
   const { frac, numer, denom, ...rest } = hints;
   if (frac || numer || denom) {
-    const [n, d] = impl.fraction!(sympify(ex));
+    if (impl.fraction === undefined) throw new InvariantError('impl.fraction is not registered');
+    const [n, d] = impl.fraction(sympify(ex));
     const en = frac || numer ? expand(n, rest) : n;
     const ed = frac || denom ? expand(d, rest) : d;
     return mul(en, pow(ed, -1));

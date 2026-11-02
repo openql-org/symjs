@@ -7,10 +7,11 @@
  * functions (degree, LC/LM/LT, gcd, lcm, div, factor_list, ...).
  */
 
-import { DomainError, ExactQuotientFailed, NotImplementedError, NotInvertible, PolynomialError } from '../core/errors';
+import { DomainError, ExactQuotientFailed, InvariantError, NotImplementedError, NotInvertible, PolynomialError, SympifyError } from '../core/errors';
 import { parse } from '../parsing/parser';
 import type { NoMatchResult } from '../core/truth';
 import { NoMatch } from '../core/truth';
+import { at, defined, first } from '../core/guard';
 import { factorModP } from './zassenhaus';
 import type { ExprLike } from '../core/nodes';
 import { Add, Constant, Expr, Float, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
@@ -27,10 +28,16 @@ import { divExact, mfactorList, mgcd, mlcm, prem as mprem } from './mpoly';
 import { isolateRealRoots, refineRealRoot } from './rootisolation';
 import { UPoly, polyCoefficients, roots as rootsOf } from './poly';
 
+/** x as a Rational; throws InvariantError when the algorithm's guarantee that it is one fails. */
+function asRational(x: Expr, what: string): Rational {
+  if (x instanceof Rational) return x;
+  throw new InvariantError(`${what} is not a Rational`);
+}
+
 /** The expression cannot be written as a polynomial in the generators (SymPy PolificationFailed). */
 /** Numeric roots and CRootOf, registered by polys/nroots and polys/rootof (which import this module). @internal */
 export const rootHooks: { nroots?: (f: Poly, n: number) => Expr[]; crootof?: (e: Expr, i: number) => Expr } = {};
-const nroots = (f: Poly, n: number): Expr[] => rootHooks.nroots!(f, n);
+const nroots = (f: Poly, n: number): Expr[] => defined(rootHooks.nroots, 'nroots hook')(f, n);
 
 export class PolificationFailed extends PolynomialError {}
 
@@ -46,20 +53,19 @@ const GENS_ORDER: Record<string, number> = {
 /** SymPy `_sort_gens` order key. */
 function genKey(g: Expr): [number, string, number] {
   const s = str(g);
-  const m = /^(.*?)(\d*)$/.exec(s)!;
-  const name = m[1]!;
-  const index = m[2] ? Number(m[2]) : 0;
+  // the pattern matches every string
+  const [, name = '', digits = ''] = /^(.*?)(\d*)$/.exec(s) ?? [];
+  const index = digits ? Number(digits) : 0;
   return [GENS_ORDER[name] ?? 1000, name, index];
 }
 
-export function sortGens(gens: Expr[]): Expr[] {
+export function sortGens<T extends Expr>(gens: readonly T[]): T[] {
   return [...gens].sort((a, b) => {
-    const ka = genKey(a);
-    const kb = genKey(b);
-    for (let i = 0; i < 3; i++) {
-      if (ka[i]! < kb[i]!) return -1;
-      if (ka[i]! > kb[i]!) return 1;
-    }
+    const [a0, a1, a2] = genKey(a);
+    const [b0, b1, b2] = genKey(b);
+    if (a0 !== b0) return a0 < b0 ? -1 : 1;
+    if (a1 !== b1) return a1 < b1 ? -1 : 1;
+    if (a2 !== b2) return a2 < b2 ? -1 : 1;
     return 0;
   });
 }
@@ -100,7 +106,7 @@ function numberDomain(cs: Expr[]): string | undefined {
     const parts = c instanceof Add ? c.args : [c];
     let ok = true;
     for (const p of parts) {
-      const [k, r] = p instanceof Mul && p.args[0] instanceof Rational ? [p.args[0], p.args.length === 2 ? p.args[1]! : new Mul(p.args.slice(1))] : [S.One, p];
+      const [k, r] = p instanceof Mul && p.args[0] instanceof Rational ? [p.args[0], p.args.length === 2 ? at(p.args, 1) : new Mul(p.args.slice(1))] : [S.One, p];
       if (r instanceof Constant && r.name === 'I') {
         complex = true;
         if (!(k).isInteger) rational = true;
@@ -122,7 +128,7 @@ export function inferDomain(cs: Expr[]): string {
   const syms = new Map<string, Sym>();
   for (const c of cs) for (const s of freeSymbols(c)) syms.set(s.key, s);
   if (syms.size === 0) return 'EX';
-  const gens = sortGens([...syms.values()]) as Sym[];
+  const gens = sortGens([...syms.values()]);
   // polynomial ring?
   let rational = false as boolean; // set inside the callbacks below
   const polyOk = cs.every((c) => {
@@ -161,10 +167,40 @@ export function inferDomain(cs: Expr[]): string {
 
 type Term = { monom: number[]; coeff: Expr };
 
-const monomCmp = (a: number[], b: number[]): number => {
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i]! - b[i]!;
+/** Lex comparison of two monomials of the same length. */
+const monomCmp = (a: readonly number[], b: readonly number[]): number => {
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i] ?? 0;
+    const y = b[i] ?? 0;
+    if (x !== y) return x - y;
+  }
   return 0;
 };
+
+/** A [monomial, coefficient] result of a termwise callback. */
+/** The double value of a Rational or Float; NaN for any other expression. */
+const numValue = (e: Expr): number => (e instanceof Rational || e instanceof Float ? e.value : NaN);
+
+/** A [generator, value] entry of a substitution list. */
+const isGenValue = (v: ExprLike | readonly [Expr, ExprLike]): v is readonly [Expr, ExprLike] => Array.isArray(v);
+
+const isTermPair = (r: ExprLike | readonly [readonly number[], ExprLike]): r is readonly [readonly number[], ExprLike] => Array.isArray(r);
+
+/** A dense-representation leaf converted like sympify (SympifyError for other values). */
+function sympifyLeaf(x: unknown): Expr {
+  if (x instanceof Expr || typeof x === 'number' || typeof x === 'bigint') return sympify(x);
+  throw new SympifyError(`Cannot convert ${String(x)} to an expression`, x);
+}
+
+/**
+ * The generators as the Sym list the mpoly routines are typed with: those
+ * routines only compare generators structurally (key and has), so any
+ * generator expression works there.
+ */
+function mpolyVars(gens: readonly Expr[]): readonly Sym[] {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- mpoly is typed with Sym but treats variables structurally; Poly generators may be any expression
+  return gens as readonly Sym[];
+}
 
 export class Poly {
   readonly gens: readonly Expr[];
@@ -193,13 +229,13 @@ export class Poly {
       for (const f of t instanceof Mul ? t.args : [t]) {
         const i = gs.findIndex((g) => g.key === f.key);
         if (i >= 0) {
-          monom[i]! += 1;
+          monom[i] = (monom[i] ?? 0) + 1;
           continue;
         }
         if (f instanceof Pow && f.exp instanceof Rational && f.exp.isInteger && f.exp.isPositive) {
           const j = gs.findIndex((g) => g.key === f.base.key);
           if (j >= 0) {
-            monom[j]! += Number(f.exp.p);
+            monom[j] = (monom[j] ?? 0) + Number(f.exp.p);
             continue;
           }
         }
@@ -225,7 +261,7 @@ export class Poly {
   }
 
   private termExpr(t: Term): Expr {
-    return mul(t.coeff, ...t.monom.map((k, i) => pow(this.gens[i]!, k)));
+    return mul(t.coeff, ...t.monom.map((k, i) => pow(at(this.gens, i), k)));
   }
 
   asExpr(): Expr {
@@ -244,7 +280,7 @@ export class Poly {
     const out = new Map<string, Term>();
     for (const t of this.termList) {
       const r = func([...t.monom], t.coeff);
-      const [monom, c] = Array.isArray(r) ? [[...(r as readonly [readonly number[], ExprLike])[0]], sympify((r as readonly [readonly number[], ExprLike])[1])] : [[...t.monom], sympify(r as ExprLike)];
+      const [monom, c] = isTermPair(r) ? [[...r[0]], sympify(r[1])] : [[...t.monom], sympify(r)];
       if (c instanceof Rational && c.isZero) continue;
       const k = monom.join(',');
       if (out.has(k)) throw new PolynomialError(`termwise: monomial ${k} was generated twice`);
@@ -264,14 +300,15 @@ export class Poly {
     const terms: Term[] = [];
     const walk = (r: unknown, level: number, prefix: number[]): void => {
       if (level === gens.length) {
-        const c = sympify(r as ExprLike);
+        const c = sympifyLeaf(r);
         if (!(c instanceof Rational && c.isZero)) terms.push({ monom: prefix, coeff: c });
         return;
       }
-      const list = r as readonly unknown[];
+      if (!Array.isArray(r)) throw new PolynomialError('per: dense representation nested less deeply than the generators');
+      const list: readonly unknown[] = r;
       list.forEach((x, i) => walk(x, level + 1, [...prefix, list.length - 1 - i]));
     };
-    if (!gens.length) return sympify((rep.length ? rep[0] : 0) as ExprLike);
+    if (!gens.length) return sympifyLeaf(rep.length ? rep[0] : 0);
     walk(rep, 0, []);
     return new Poly(gens, terms, this.domain, this.pure);
   }
@@ -302,7 +339,7 @@ export class Poly {
   }
   LM(): Expr {
     const t = this.termList[0];
-    return t ? mul(...t.monom.map((k, i) => pow(this.gens[i]!, k))) : S.One;
+    return t ? mul(...t.monom.map((k, i) => pow(at(this.gens, i), k))) : S.One;
   }
   LT(): [number[], Expr] {
     const t = this.termList[0];
@@ -313,7 +350,7 @@ export class Poly {
     const i = gen === undefined ? 0 : typeof gen === 'number' ? gen : this.gens.findIndex((g) => g.key === gen.key);
     if (this.isZero) return -Infinity;
     if (i < 0) return 0;
-    return Math.max(...this.termList.map((t) => t.monom[i]!));
+    return Math.max(...this.termList.map((t) => at(t.monom, i)));
   }
   degreeList(): number[] {
     return this.gens.map((_, i) => this.degree(i));
@@ -433,19 +470,20 @@ export class Poly {
     const x = this.univariate();
     const k = this.degree() - o.degree() + 1;
     const scaled = mul(pow(o.LC(), Math.max(0, k)), this.asExpr());
-    return Poly.from(divExact(expand(add(scaled, mul(-1, mprem(this.asExpr(), o.asExpr(), x)))), o.asExpr(), [x])!, this.gens);
+    // the scaled dividend minus the pseudo-remainder is an exact multiple of o
+    return Poly.from(defined(divExact(expand(add(scaled, mul(-1, mprem(this.asExpr(), o.asExpr(), x)))), o.asExpr(), [x]), 'pseudo-quotient'), this.gens);
   }
   exquo(o: Poly): Poly {
-    const q = divExact(this.asExpr(), o.asExpr(), this.gens as Sym[]);
+    const q = divExact(this.asExpr(), o.asExpr(), mpolyVars(this.gens));
     if (q === undefined) throw new ExactQuotientFailed('exquo: inexact division');
     return Poly.from(q, this.gens);
   }
 
   gcd(o: Poly): Poly {
-    return Poly.from(mgcd(this.asExpr(), o.asExpr(), this.gens as Sym[]), this.gens);
+    return Poly.from(mgcd(this.asExpr(), o.asExpr(), mpolyVars(this.gens)), this.gens);
   }
   lcm(o: Poly): Poly {
-    return Poly.from(mlcm(this.asExpr(), o.asExpr(), this.gens as Sym[]), this.gens);
+    return Poly.from(mlcm(this.asExpr(), o.asExpr(), mpolyVars(this.gens)), this.gens);
   }
   monic(): Poly {
     const lc = this.LC();
@@ -464,11 +502,11 @@ export class Poly {
   }
 
   diff(x?: Expr): Poly {
-    return Poly.from(diff(this.asExpr(), (x ?? this.gens[0]) as Sym), this.gens);
+    return Poly.from(diff(this.asExpr(), x ?? first(this.gens)), this.gens);
   }
   /** The antiderivative in a generator (SymPy Poly.integrate), term by term. */
   integrate(x?: Expr): Poly {
-    const v = x ?? this.gens[0]!;
+    const v = x ?? first(this.gens);
     const i = this.gens.findIndex((g) => g.key === v.key);
     const domain = this.domain === 'ZZ' ? 'QQ' : this.domain;
     if (i < 0) {
@@ -477,14 +515,14 @@ export class Poly {
       return Poly.from(mul(this.asExpr(), v), this.gens, { domain });
     }
     const terms = this.termList.map((t) => {
-      const k = t.monom[i]! + 1;
-      return mul(t.coeff, Rational.of(1n, BigInt(k)), ...t.monom.map((e, j) => pow(this.gens[j]!, j === i ? k : e)));
+      const k = at(t.monom, i) + 1;
+      return mul(t.coeff, Rational.of(1n, BigInt(k)), ...t.monom.map((e, j) => pow(at(this.gens, j), j === i ? k : e)));
     });
     return Poly.from(add(...terms), this.gens, { domain });
   }
   /** Evaluate at gen = a (first generator by default). */
   eval(a: ExprLike, gen?: Expr): Expr | Poly {
-    const g = gen ?? this.gens[0]!;
+    const g = gen ?? first(this.gens);
     const v = xreplace(this.asExpr(), [[g, sympify(a)]]);
     const rest = this.gens.filter((h) => h.key !== g.key);
     return rest.length ? Poly.from(v, rest) : expand(v);
@@ -492,7 +530,7 @@ export class Poly {
 
   /** (content, [(factor, multiplicity)]) with primitive integer factors. */
   factorList(): [Rational, [Poly, number][]] {
-    const [c, fs] = factorListExpr(this.asExpr(), this.gens as Sym[]);
+    const [c, fs] = factorListExpr(this.asExpr(), mpolyVars(this.gens));
     return [c, fs.map(([f, k]) => [Poly.from(f, this.gens), k] as [Poly, number])];
   }
   sqfList(): [Rational, [Poly, number][]] {
@@ -515,7 +553,7 @@ export class Poly {
   private denseInts(): bigint[] {
     const x = this.univariate();
     const n = this.degree();
-    const cs = Array.from({ length: n + 1 }, (_, i) => this.coeffMonomial([n - i]) as Rational);
+    const cs = Array.from({ length: n + 1 }, (_, i) => asRational(this.coeffMonomial([n - i]), 'integer coefficient'));
     void x;
     const den = cs.reduce((l, c) => (l * c.q) / bigGcd(l, c.q), 1n);
     return cs.map((c) => (c.p * den) / c.q);
@@ -567,7 +605,7 @@ export class Poly {
     const k = sympify(c);
     if (this.domain === 'ZZ' && k instanceof Rational && k.isInteger) {
       return this.mapCoeffs((x) => {
-        const v = (x as Rational).p;
+        const v = asRational(x, 'ZZ coefficient').p;
         const q = v / k.p;
         return Rational.of(v % k.p !== 0n && (v < 0n) !== (k.p < 0n) ? q - 1n : q);
       }, 'ZZ');
@@ -592,10 +630,8 @@ export class Poly {
   }
   /** Evaluate at the given generator values (positional) or a substitution list. */
   asExprAt(values: readonly ExprLike[] | readonly (readonly [Expr, ExprLike])[]): Expr {
-    const reps: [Expr, Expr][] =
-      values.length && Array.isArray(values[0])
-        ? (values as readonly (readonly [Expr, ExprLike])[]).map(([g, v]) => [g, sympify(v)])
-        : (values as readonly ExprLike[]).map((v, i) => [this.gens[i]!, sympify(v)]);
+    const vs: readonly (ExprLike | readonly [Expr, ExprLike])[] = values;
+    const reps = vs.map((v, i): [Expr, Expr] => (isGenValue(v) ? [v[0], sympify(v[1])] : [at(this.gens, i), sympify(v)]));
     return expand(xreplace(this.asExpr(), reps));
   }
   /** (gcd, f/gcd, g/gcd). */
@@ -604,7 +640,7 @@ export class Poly {
     return [h, this.exquo(h), o.exquo(h)];
   }
   compose(o: Poly): Poly {
-    return this.like(expand(xreplace(this.asExpr(), [[this.gens[0]!, o.asExpr()]])));
+    return this.like(expand(xreplace(this.asExpr(), [[first(this.gens), o.asExpr()]])));
   }
   discriminant(): Expr {
     return discriminant(this.asExpr(), this.univariate());
@@ -646,8 +682,8 @@ export class Poly {
   }
   /** Remove generators that do not occur. */
   exclude(): Poly {
-    const keep = this.gens.filter((_, i) => this.termList.some((t) => t.monom[i]! > 0));
-    return Poly.from(this.asExpr(), keep.length ? keep : [this.gens[0]!], { domain: this.domain });
+    const keep = this.gens.filter((_, i) => this.termList.some((t) => at(t.monom, i) > 0));
+    return Poly.from(this.asExpr(), keep.length ? keep : [first(this.gens)], { domain: this.domain });
   }
   hasOnlyGens(...gens: Expr[]): boolean {
     return this.gens.every((g, i) => gens.some((h) => h.key === g.key) || this.termList.every((t) => t.monom[i] === 0));
@@ -656,7 +692,8 @@ export class Poly {
   homogeneousOrder(): number | NoMatchResult {
     if (this.isZero) return -Infinity;
     const ds = this.termList.map((t) => t.monom.reduce((a, b) => a + b, 0));
-    return ds.every((d) => d === ds[0]) ? ds[0]! : NoMatch;
+    const [d0] = ds;
+    return d0 !== undefined && ds.every((d) => d === d0) ? d0 : NoMatch;
   }
   homogenize(s: Expr): Poly {
     const d = this.totalDegree();
@@ -703,29 +740,30 @@ export class Poly {
   }
 
   shift(a: ExprLike): Poly {
-    const x = this.gens[0]!;
+    const x = first(this.gens);
     return this.like(expand(xreplace(this.asExpr(), [[x, add(x, a)]])));
   }
   /** Square-free part. */
   sqfPart(): Poly {
     const x = this.univariate();
     const g = mgcd(this.asExpr(), diff(this.asExpr(), x), [x]);
-    const q = divExact(this.asExpr(), g, [x])!;
+    const q = defined(divExact(this.asExpr(), g, [x]), 'quotient by gcd(f, f\')');
     const p = Poly.from(q, this.gens);
     const [, prim] = p.primitive();
-    return prim.LC() instanceof Rational && (prim.LC() as Rational).isNegative ? prim.neg() : prim;
+    const lc = prim.LC();
+    return lc instanceof Rational && lc.isNegative ? prim.neg() : prim;
   }
   /** (gcd of the monomials, quotient). */
   termsGcd(): [number[], Poly] {
-    const m = this.gens.map((_, i) => Math.min(...this.termList.map((t) => t.monom[i]!)));
-    const e = add(...this.termList.map((t) => this.termExpr({ monom: t.monom.map((k, i) => k - m[i]!), coeff: t.coeff })));
+    const m = this.gens.map((_, i) => Math.min(...this.termList.map((t) => at(t.monom, i))));
+    const e = add(...this.termList.map((t) => this.termExpr({ monom: t.monom.map((k, i) => k - at(m, i)), coeff: t.coeff })));
     return [m, Poly.from(e, this.gens, { domain: this.domain })];
   }
   /** (gcd of the exponents per generator, deflated polynomial). */
   deflate(): [number[], Poly] {
     const g = (a: number, b: number): number => (b === 0 ? a : g(b, a % b));
-    const J = this.gens.map((_, i) => this.termList.reduce((acc, t) => g(acc, t.monom[i]!), 0) || 1);
-    const e = add(...this.termList.map((t) => this.termExpr({ monom: t.monom.map((k, i) => k / J[i]!), coeff: t.coeff })));
+    const J = this.gens.map((_, i) => this.termList.reduce((acc, t) => g(acc, at(t.monom, i)), 0) || 1);
+    const e = add(...this.termList.map((t) => this.termExpr({ monom: t.monom.map((k, i) => k / at(J, i)), coeff: t.coeff })));
     return [J, Poly.from(e, this.gens, { domain: this.domain })];
   }
   toField(): Poly {
@@ -737,25 +775,26 @@ export class Poly {
   toExact(): Poly {
     const e = xreplace(
       this.asExpr(),
-      this.termList.filter((t) => t.coeff instanceof Float).map((t) => [t.coeff, rationalOfFloat(t.coeff as Float)] as [Expr, Expr]),
+      this.termList.flatMap((t): [Expr, Expr][] => (t.coeff instanceof Float ? [[t.coeff, rationalOfFloat(t.coeff)]] : [])),
     );
     return Poly.from(e, this.gens, { domain: 'QQ' });
   }
   /** q**n * f(p/q). */
   transform(p: Poly, q: Poly): Poly {
     const n = this.degree();
-    const x = this.gens[0]!;
     const e = add(
-      ...this.termList.map((t) => mul(t.coeff, pow(p.asExpr(), t.monom[0]!), pow(q.asExpr(), n - t.monom[0]!))),
+      ...this.termList.map((t) => {
+        const k = first(t.monom);
+        return mul(t.coeff, pow(p.asExpr(), k), pow(q.asExpr(), n - k));
+      }),
     );
-    void x;
     return this.like(expand(e));
   }
   /** Reduce the coefficients modulo p into the symmetric range. */
   trunc(pIn: ExprLike): Poly {
-    const p = (sympify(pIn) as Rational).p;
+    const p = asRational(sympify(pIn), 'modulus').p;
     return this.mapCoeffs((c) => {
-      let v = ((c as Rational).p % p + p) % p;
+      let v = (asRational(c, 'coefficient').p % p + p) % p;
       if (v > p / 2n) v -= p;
       return Rational.of(v);
     });
@@ -800,7 +839,7 @@ export class Poly {
     const x = this.univariate();
     const seq: Poly[] = [this.toField(), Poly.from(diff(this.asExpr(), x), [x], { domain: 'QQ' })];
     for (;;) {
-      const r = seq[seq.length - 2]!.div(seq[seq.length - 1]!)[1];
+      const r = at(seq, -2).div(at(seq, -1))[1];
       if (r.isZero) break;
       seq.push(Poly.from(mul(-1, r.asExpr()), [x], { domain: 'QQ' }));
     }
@@ -813,12 +852,12 @@ export class Poly {
     const signChanges = (v: Expr | 'inf' | '-inf'): number => {
       const vals = seq.map((p) => {
         if (v === 'inf' || v === '-inf') {
-          const lc = (p.LC() as Rational).value;
+          const lc = numValue(p.LC());
           const d = p.degree();
           return v === 'inf' ? Math.sign(lc) : Math.sign(lc) * (d % 2 === 0 ? 1 : -1);
         }
         const r = xreplace(p.asExpr(), [[x, v]]);
-        return Math.sign((r as Rational).value);
+        return Math.sign(numValue(r));
       }).filter((s) => s !== 0);
       let n = 0;
       for (let i = 1; i < vals.length; i++) if (vals[i] !== vals[i - 1]) n++;
@@ -827,7 +866,10 @@ export class Poly {
     const lo = a === undefined ? '-inf' : sympify(a);
     const hi = b === undefined ? 'inf' : sympify(b);
     let n = signChanges(lo) - signChanges(hi);
-    if (lo !== '-inf' && (xreplace(this.asExpr(), [[x, lo]]) as Rational).isZero) n += 1;
+    if (lo !== '-inf') {
+      const at0 = xreplace(this.asExpr(), [[x, lo]]);
+      if ((at0 instanceof Rational || at0 instanceof Float) && at0.isZero) n += 1;
+    }
     return n;
   }
   private sqfPartQQ(): Poly {
@@ -835,7 +877,7 @@ export class Poly {
   }
   /** Rational roots with multiplicities (SymPy ground_roots). */
   groundRoots(opts: { extension?: boolean } = {}): [Expr, number][] {
-    const x = this.gens[0]!;
+    const x = first(this.gens);
     if (opts.extension) {
       const out = new Map<string, [Expr, number]>();
       for (const r of this.radicalRoots(false)) {
@@ -861,8 +903,8 @@ export class Poly {
     for (const [f, k] of fs) {
       if (f.degree() === 1) out.push([mul(-1, f.TC(), pow(f.LC(), -1)), k]);
     }
-    const [m] = this.termsGcd();
-    if (m[0]! > 0 && !out.some(([r]) => r instanceof Rational && r.isZero)) out.push([S.Zero, m[0]!]);
+    const [[m0 = 0]] = this.termsGcd();
+    if (m0 > 0 && !out.some(([r]) => r instanceof Rational && r.isZero)) out.push([S.Zero, m0]);
     return out;
   }
   /** Series reversion: g with f*g = 1 mod x**n. */
@@ -939,7 +981,7 @@ export class Poly {
     const dm = /^(?:QQ|ZZ)<(.*)>$/.exec(this.domain);
     if (dm) {
       try {
-        findGens(parse(dm[1]!));
+        findGens(parse(dm[1] ?? ''));
       } catch {
         // not an expression we can read
       }
@@ -979,7 +1021,7 @@ export class Poly {
   getModulus(): bigint {
     const m = /^GF\((\d+)\)$/.exec(this.domain);
     if (!m) throw new DomainError('get_modulus: not a polynomial over a finite field');
-    return BigInt(m[1]!);
+    return BigInt(defined(m[1], 'modulus'));
   }
   /** SymPy Poly.set_modulus: the polynomial over GF(p), coefficients in the symmetric range. */
   setModulus(p: number | bigint): Poly {
@@ -990,7 +1032,7 @@ export class Poly {
       if (r > P / 2n) r -= P;
       return Rational.of(r);
     };
-    const e = add(...this.termList.map((t) => mul(red(t.coeff), ...t.monom.map((k, i) => pow(this.gens[i]!, k)))));
+    const e = add(...this.termList.map((t) => mul(red(t.coeff), ...t.monom.map((k, i) => pow(at(this.gens, i), k)))));
     return Poly.from(e, this.gens, { domain: `GF(${P})` });
   }
   /** SymPy Poly.eject(*gens): move generators into the ground domain (ZZ -> ZZ[x]). */
@@ -1007,11 +1049,12 @@ export class Poly {
   inject(opts: { front?: boolean } = {}): Poly {
     const m = this.domain.match(/^(ZZ|QQ)\[(.*)\]$/);
     if (!m) return this;
-    const names = m[2]!.split(',');
+    const [, ground = '', inner = ''] = m;
+    const names = inner.split(',');
     const syms = new Map([...freeSymbols(this.asExpr())].map((s) => [str(s), s] as [string, Expr]));
     const dg = names.map((n) => syms.get(n)).filter((s): s is Expr => s !== undefined);
     const gens = opts.front ? [...dg, ...this.gens] : [...this.gens, ...dg];
-    return Poly.from(this.asExpr(), gens, { domain: m[1]! });
+    return Poly.from(this.asExpr(), gens, { domain: ground });
   }
   /** SymPy Poly.lift: the norm over the ground field of an algebraic extension (ZZ_I -> ZZ, QQ<a> -> QQ). */
   lift(): Poly {
@@ -1058,8 +1101,9 @@ export class Poly {
       if (f.degree() > 2) {
         // irreducible factors of degree >= 3: CRootOf(f, i) like SymPy
         const vals = nroots(f, 15).map((v) => v.toComplex());
+        const crootof = defined(rootHooks.crootof, 'crootof hook');
         vals.forEach((v, i) => {
-          const r = rootHooks.crootof!(f.asExpr(), i);
+          const r = crootof(f.asExpr(), i);
           for (let j = 0; j < k; j++) (v.im === 0 ? real : cplx).push([r, v]);
         });
         continue;
@@ -1074,7 +1118,7 @@ export class Poly {
     return realOnly ? real.map(([r]) => r) : [...real, ...cplx].map(([r]) => r);
   }
   root(i: number): Expr {
-    return this.allRoots()[i]!;
+    return at(this.allRoots(), i);
   }
   whichRealRoots(cands: readonly Expr[]): Expr[] {
     return this.whichRoots(cands, true);
@@ -1105,16 +1149,18 @@ export class Poly {
   /** [(f, k)] with the content folded into the first factor. */
   factorListInclude(): [Poly, number][] {
     const [c, fs] = this.factorList();
-    if (!fs.length) return [[Poly.from(c, this.gens), 1]];
-    if (!(c instanceof Rational && c.isOne)) fs[0] = [Poly.from(mul(c, fs[0]![0].asExpr()), this.gens), fs[0]![1]];
+    const [f0, ...rest] = fs;
+    if (f0 === undefined) return [[Poly.from(c, this.gens), 1]];
+    if (!(c instanceof Rational && c.isOne)) return [[Poly.from(mul(c, f0[0].asExpr()), this.gens), f0[1]], ...rest];
     return fs;
   }
   sqfListInclude(all = false): [Poly, number][] {
     const [c, fs] = this.sqfListAll(all);
     const out: [Poly, number][] = [[Poly.from(c, this.gens, { domain: this.domain }), 1], ...fs];
-    if (fs.length && fs[0]![1] === 1) {
+    const f0 = fs[0];
+    if (f0?.[1] === 1) {
       out.shift();
-      out[0] = [Poly.from(mul(c, fs[0]![0].asExpr()), this.gens), 1];
+      out[0] = [Poly.from(mul(c, f0[0].asExpr()), this.gens), 1];
     }
     return out;
   }
@@ -1201,7 +1247,8 @@ function rationalOfFloat(f: Float): Rational {
 function primitiveIntPoly(e: Expr, x: Sym): Poly {
   const p = Poly.from(e, [x]);
   const [, prim] = p.primitive();
-  return prim.LC() instanceof Rational && (prim.LC() as Rational).isNegative ? prim.neg() : prim;
+  const lc = prim.LC();
+  return lc instanceof Rational && lc.isNegative ? prim.neg() : prim;
 }
 
 function bigGcd(a: bigint, b: bigint): bigint {
@@ -1212,7 +1259,7 @@ function bigGcd(a: bigint, b: bigint): bigint {
 
 /** factor_list on expressions: (content, [(factor, multiplicity)]). */
 export function factorListExpr(e: Expr, gens?: readonly Sym[]): [Rational, [Expr, number][]] {
-  const vars = gens ?? (sortGens([...freeSymbols(e)]) as Sym[]);
+  const vars = gens ?? sortGens([...freeSymbols(e)]);
   const [c, fs] = factorListRaw(e, vars);
   return [c, sortFactors(fs, vars)];
 }
@@ -1226,9 +1273,10 @@ function sortFactors(fs: [Expr, number][], vars: readonly Sym[]): [Expr, number]
     return [p.degree(0) + 1, []];
   };
   const cmpCoeffs = (a: Expr[], b: Expr[]): number => {
-    for (let i = 0; i < Math.min(a.length, b.length); i++) {
-      const x = a[i]!;
-      const y = b[i]!;
+    const n = Math.min(a.length, b.length);
+    for (let i = 0; i < n; i++) {
+      const x = a[i];
+      const y = b[i];
       if (x instanceof Rational && y instanceof Rational) {
         const d = x.p * y.q - y.p * x.q;
         if (d !== 0n) return d < 0n ? -1 : 1;
@@ -1262,8 +1310,8 @@ function factorListRaw(e: Expr, vars: readonly Sym[]): [Rational, [Expr, number]
   });
 }
 
-const mulR = (a: Rational, b: Rational): Rational => mul(a, b) as Rational;
-const powR = (a: Rational, k: number): Rational => pow(a, k) as Rational;
+const mulR = (a: Rational, b: Rational): Rational => asRational(mul(a, b), 'product of rationals');
+const powR = (a: Rational, k: number): Rational => asRational(pow(a, k), 'power of a rational');
 
 // ---------------------------------------------------------------------------
 // printing (SymPy StrPrinter._print_Poly)
@@ -1286,7 +1334,7 @@ export function polyStr(p: Poly): string {
   for (const [monom, coeff] of p.terms()) {
     const sm: string[] = [];
     monom.forEach((e, i) => {
-      if (e > 0) sm.push(e === 1 ? gens[i]! : `${gens[i]}**${e}`);
+      if (e > 0) sm.push(e === 1 ? at(gens, i) : `${at(gens, i)}**${e}`);
     });
     const sMonom = sm.join('*');
     let sCoeff: string;
@@ -1325,7 +1373,7 @@ const toExpr = (f: Poly | ExprLike): Expr => (f instanceof Poly ? f.asExpr() : s
 const varsFor = (...fs: Expr[]): Sym[] => {
   const m = new Map<string, Sym>();
   for (const f of fs) for (const s of freeSymbols(f)) m.set(s.key, s);
-  return sortGens([...m.values()]) as Sym[];
+  return sortGens([...m.values()]);
 };
 
 /** gcd of polynomials (expressions). */
@@ -1361,8 +1409,9 @@ export function polyDiv(f: Poly | ExprLike, g: Poly | ExprLike): [Expr, Expr] {
 
 /** terms_gcd: pull out the gcd of all terms (numeric content and common monomial). */
 export function termsGcd(f: ExprLike, ...rest: (Sym | TermsGcdOptions)[]): Expr {
-  const opts: TermsGcdOptions = rest.length && !(rest[rest.length - 1] instanceof Expr) ? (rest.pop() as TermsGcdOptions) : {};
-  const gens = rest as Sym[];
+  const lastArg = rest[rest.length - 1];
+  const opts: TermsGcdOptions = lastArg !== undefined && !(lastArg instanceof Expr) ? lastArg : {};
+  const gens = rest.filter((g): g is Sym => g instanceof Expr);
   const orig = sympify(f);
   if (orig.args.length === 0 || orig.isNumber) return orig;
   if (opts.deep) {
@@ -1378,7 +1427,7 @@ export function termsGcd(f: ExprLike, ...rest: (Sym | TermsGcdOptions)[]): Expr 
     const m = new Map<string, [Expr, number]>();
     for (const g of fs) {
       if (g instanceof Rational) {
-        c = mul(c, g) as Rational;
+        c = asRational(mul(c, g), 'product of rational coefficients');
         continue;
       }
       if (g.isNumber && !(g instanceof Pow) && !(g instanceof Constant)) return orig;
@@ -1392,10 +1441,12 @@ export function termsGcd(f: ExprLike, ...rest: (Sym | TermsGcdOptions)[]): Expr 
     }
     terms.push([c, m]);
   }
-  if (terms.length === 1 && terms[0]![0].isZero) return S.Zero;
+  const [t0] = terms;
+  if (t0 === undefined) throw new InvariantError('terms_gcd: no terms');
+  if (terms.length === 1 && t0[0].isZero) return S.Zero;
   // exponents common to all terms
   const J = new Map<string, [Expr, number]>();
-  for (const [k, v] of terms[0]![1]) J.set(k, [...v]);
+  for (const [k, v] of t0[1]) J.set(k, [...v]);
   for (const [, m] of terms.slice(1)) {
     for (const [k, v] of [...J]) {
       const o = m.get(k);
@@ -1423,7 +1474,7 @@ export function termsGcd(f: ExprLike, ...rest: (Sym | TermsGcdOptions)[]): Expr 
   );
   if (opts.clear !== false) return keepCoeff(coeff, mul(term, fExpr));
   const kc = keepCoeff(coeff, fExpr, false);
-  const [c2, f2] = kc instanceof Mul && kc.args[0] instanceof Rational ? [kc.args[0], kc.args.length === 2 ? kc.args[1]! : new Mul(kc.args.slice(1))] : [S.One, kc];
+  const [c2, f2] = kc instanceof Mul && kc.args[0] instanceof Rational ? [kc.args[0], kc.args.length === 2 ? at(kc.args, 1) : new Mul(kc.args.slice(1))] : [S.One, kc];
   return keepCoeff(c2, mul(term, f2), false);
 }
 
@@ -1451,11 +1502,12 @@ export function horner(f: ExprLike, x?: Sym): Expr {
   return acc;
 }
 
+const isPoint = (d: readonly [ExprLike, ExprLike] | ExprLike): d is readonly [ExprLike, ExprLike] => Array.isArray(d);
+
 /** Lagrange interpolating polynomial through points (x_i, y_i) or y-values at 1..n. */
 export function interpolate(data: readonly (readonly [ExprLike, ExprLike])[] | readonly ExprLike[], x: Sym): Expr {
-  const pts: [Expr, Expr][] = (data as unknown[]).map((d, i) =>
-    Array.isArray(d) ? [sympify(d[0] as ExprLike), sympify(d[1] as ExprLike)] : [Rational.of(i + 1), sympify(d as ExprLike)],
-  );
+  const items: readonly (readonly [ExprLike, ExprLike] | ExprLike)[] = data;
+  const pts = items.map((d, i): [Expr, Expr] => (isPoint(d) ? [sympify(d[0]), sympify(d[1])] : [Rational.of(i + 1), sympify(d)]));
   const terms = pts.map(([xi, yi], i) =>
     mul(yi, ...pts.filter((_, j) => j !== i).map(([xj]) => mul(add(x, mul(-1, xj)), pow(add(xi, mul(-1, xj)), -1)))),
   );
@@ -1501,12 +1553,17 @@ export function discriminant(f: ExprLike, x: Sym): Expr {
  */
 function factorModulus(e: Expr, p: bigint): Expr {
   const vars = [...freeSymbols(e)];
-  if (vars.length !== 1) throw new PolynomialError('factor: modulus requires a univariate polynomial');
-  const x = vars[0]!;
+  const [x] = vars;
+  if (x === undefined || vars.length !== 1) throw new PolynomialError('factor: modulus requires a univariate polynomial');
   const cs = polyCoefficients(e, x);
-  if (!cs || [...cs.values()].some((c) => !(c instanceof Rational && c.q === 1n))) throw new DomainError('factor: modulus requires integer coefficients');
+  if (!cs) throw new DomainError('factor: modulus requires integer coefficients');
+  const ints = new Map<number, bigint>();
+  for (const [k, c] of cs) {
+    if (!(c instanceof Rational && c.q === 1n)) throw new DomainError('factor: modulus requires integer coefficients');
+    ints.set(k, c.p);
+  }
   const n = Math.max(...cs.keys());
-  const f = Array.from({ length: n + 1 }, (_, i) => (cs.get(i) as Rational | undefined)?.p ?? 0n);
+  const f = Array.from({ length: n + 1 }, (_, i) => ints.get(i) ?? 0n);
   const sym = (c: bigint) => (c > p / 2n ? c - p : c);
   const [lc, fs] = factorModP(f, p);
   const toExpr = (g: bigint[]) => add(...g.map((c, i) => mul(Rational.of(sym(c)), pow(x, i))));
@@ -1516,7 +1573,7 @@ function factorModulus(e: Expr, p: bigint): Expr {
 export function factor(ex: ExprLike, opts: { deep?: boolean; extension?: readonly Expr[]; gaussian?: boolean; modulus?: number | bigint; fraction?: boolean } = {}): Expr {
   if (opts.modulus !== undefined) return factorModulus(sympify(ex), BigInt(opts.modulus));
   if (opts.gaussian || opts.extension?.length) {
-    const r = factorOverExtension(sympify(ex), opts.gaussian ? [S.I] : opts.extension!);
+    const r = factorOverExtension(sympify(ex), opts.gaussian ? [S.I] : (opts.extension ?? []));
     if (r) return r;
   }
   if (opts.deep) {
@@ -1543,10 +1600,10 @@ export function factor(ex: ExprLike, opts: { deep?: boolean; extension?: readonl
     return factor(inner);
   }
   const e = sympify(ex);
-  const vars = sortGens([...freeSymbols(e)]) as Sym[];
+  const vars = sortGens([...freeSymbols(e)]);
   if (vars.length === 0) return e;
   // rational functions: factor numerator and denominator
-  const isDen = (f: Expr) => f instanceof Pow && f.exp instanceof Rational && f.exp.isNegative;
+  const isDen = (f: Expr): f is Pow => f instanceof Pow && f.exp instanceof Rational && f.exp.isNegative;
   const fsAll = e instanceof Mul ? e.args : [e];
   const n = fsAll.filter((f) => !isDen(f));
   const d = fsAll.filter(isDen);
@@ -1554,13 +1611,13 @@ export function factor(ex: ExprLike, opts: { deep?: boolean; extension?: readonl
     // SymPy: the numerator and the denominator are factored with their constants collected
     // into one coefficient (-x/(1 - y) -> x/(y - 1))
     const [cn, fn_] = factorWithCoeff(mul(...n));
-    const [cd, fd] = factorWithCoeff(mul(...d.map((f) => pow((f as Pow).base, mul(-1, (f as Pow).exp)))));
+    const [cd, fd] = factorWithCoeff(mul(...d.map((f) => pow(f.base, mul(-1, f.exp)))));
     return mul(cn, pow(cd, -1), fn_, pow(fd, -1));
   }
   // powers of sums are factored base-wise (SymPy _symbolic_factor_list), which
   // also avoids expanding large powers
-  const isSumPow = (f: Expr) => f instanceof Pow && f.base instanceof Add && f.exp instanceof Rational && f.exp.isInteger && f.exp.p > 1n;
-  if (isSumPow(e)) return pow(factor((e as Pow).base), (e as Pow).exp);
+  const isSumPow = (f: Expr): f is Pow => f instanceof Pow && f.base instanceof Add && f.exp instanceof Rational && f.exp.isInteger && f.exp.p > 1n;
+  if (isSumPow(e)) return pow(factor(e.base), e.exp);
   if (e instanceof Pow && e.base instanceof Add && e.exp instanceof Rational && !e.exp.isInteger) return pow(factor(e.base), e.exp);
   if (e instanceof Mul && e.args.some(isSumPow)) return mul(...e.args.map((f) => factor(f)));
   let poly: Expr;
@@ -1596,10 +1653,11 @@ export function factor(ex: ExprLike, opts: { deep?: boolean; extension?: readonl
   }
   const [c, fs] = factorListExpr(poly, vars);
   const parts = fs.map(([f, k]) => pow(f, k));
-  if (parts.length === 0) return c;
-  if (parts.length === 1 && c.isOne) return parts[0]!;
+  const [p0] = parts;
+  if (p0 === undefined) return c;
+  if (parts.length === 1 && c.isOne) return p0;
   // SymPy _keep_coeff: -1 times a single factor is evaluated (-(x + 1) -> -x - 1)
-  if (parts.length === 1 && c.p === -1n && c.q === 1n) return mul(-1, parts[0]!);
+  if (parts.length === 1 && c.p === -1n && c.q === 1n) return mul(-1, p0);
   const sorted = [...parts].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
   return c.isOne ? new Mul(sorted) : new Mul([c, ...sorted]);
 }
@@ -1607,7 +1665,7 @@ export function factor(ex: ExprLike, opts: { deep?: boolean; extension?: readonl
 
 /** factor(e) split into its rational coefficient and the product of the factors (SymPy factor_list). */
 function factorWithCoeff(e: Expr): [Rational, Expr] {
-  const vars = sortGens([...freeSymbols(e)]) as Sym[];
+  const vars = sortGens([...freeSymbols(e)]);
   if (vars.length) {
     try {
       const poly = expand(e);
@@ -1615,7 +1673,7 @@ function factorWithCoeff(e: Expr): [Rational, Expr] {
       const [c, fs] = factorListExpr(poly, vars);
       if (c instanceof Rational) {
         const parts = fs.map(([f, k]) => pow(f, k)).sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
-        return [c, parts.length === 0 ? S.One : parts.length === 1 ? parts[0]! : new Mul(parts)];
+        return [c, parts.length === 0 ? S.One : parts.length === 1 ? at(parts, 0) : new Mul(parts)];
       }
     } catch {
       // not a polynomial: factored as a whole below
@@ -1634,9 +1692,9 @@ function factorWithCoeff(e: Expr): [Rational, Expr] {
  * as a factor over QQ.
  */
 function factorOverExtension(e: Expr, ext: readonly Expr[]): Expr | undefined {
-  const vars = [...freeSymbols(e)] as Sym[];
-  if (vars.length !== 1) return undefined;
-  const x = vars[0]!;
+  const vars = [...freeSymbols(e)];
+  const [x] = vars;
+  if (x === undefined || vars.length !== 1) return undefined;
   let p: Poly;
   try {
     p = Poly.from(expand(e), [x]);

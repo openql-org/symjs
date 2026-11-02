@@ -12,6 +12,7 @@
 import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Derivative, Dummy, I, Integral, Mul, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
+import { at, cast, defined, first } from '../core/guard';
 import { Function } from '../core/undef';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
@@ -44,13 +45,13 @@ export function dsolveSystem(eqsIn: readonly ExprLike[], funcsIn?: readonly Unde
   const funcs = funcsIn ?? findFunctions(eqs);
   const n = funcs.length;
   if (n === 0 || eqs.length !== n) throw new TypeError('dsolve: as many equations as functions are needed');
-  const t = funcs[0]!.args[0] as Sym;
+  const t = cast(first(first(funcs).args), Sym);
   // replace derivatives and functions by symbols, then read the coefficients
   const ds = funcs.map((_, i) => new Dummy(`d${i}`));
   const us = funcs.map((_, i) => new Dummy(`u${i}`));
   const reps: [Expr, Expr][] = [
-    ...funcs.map((f, i) => [new Derivative([f, t, S.One]), ds[i]!] as [Expr, Expr]),
-    ...funcs.map((f, i) => [f, us[i]!] as [Expr, Expr]),
+    ...funcs.map((f, i): [Expr, Expr] => [new Derivative([f, t, S.One]), at(ds, i)]),
+    ...funcs.map((f, i): [Expr, Expr] => [f, at(us, i)]),
   ];
   const sub = eqs.map((e) => xreplace(e, reps));
   const lin = linearEqToMatrix(sub, [...ds, ...us]);
@@ -152,8 +153,8 @@ function linear2VariableCoefficients(A: Matrix, funcs: readonly UndefFn[], t: Sy
   const Ig = new Integral([mul(g, Fraw, pow(x0, -2)), t]);
   const [C1, C2] = [new Sym('C1'), new Sym('C2')];
   return [
-    Eq(funcs[0]!, add(mul(C1, x0), mul(C2, x0, Ig))),
-    Eq(funcs[1]!, add(mul(C1, y0), mul(C2, add(mul(y0, Ig), mul(Fraw, pow(x0, -1)))))),
+    Eq(at(funcs, 0), add(mul(C1, x0), mul(C2, x0, Ig))),
+    Eq(at(funcs, 1), add(mul(C1, y0), mul(C2, add(mul(y0, Ig), mul(Fraw, pow(x0, -1)))))),
   ];
 }
 
@@ -170,15 +171,15 @@ function triangularSystem(eqs: readonly Expr[], funcs: readonly UndefFn[]): Expr
   while (remaining.length) {
     const idx = remaining.findIndex(([e]) => funcs.filter((f) => !solved.has(f.key) && e.has(f)).length === 1);
     if (idx < 0) throw new NotImplementedError('dsolve: only linear or triangular systems are supported');
-    const [e] = remaining.splice(idx, 1)[0]!;
-    const f = funcs.find((g) => !solved.has(g.key) && e.has(g))!;
+    const [e] = first(remaining.splice(idx, 1));
+    const f = defined(funcs.find((g) => !solved.has(g.key) && e.has(g)), 'unknown function');
     // constants of the solutions already substituted are protected while solving
     const known = [...solved.values()].flatMap((v) => [...v.freeSymbols()].filter((c) => /^C\d+$/.test(c.name)));
     const protect = [...new Map(known.map((c) => [c.key, c])).values()].map((c) => [c, new Dummy(c.name)] as [Expr, Expr]);
-    const sub = xreplace(xreplace(e, [...solved.entries()].map(([k, v]) => [funcs.find((g) => g.key === k)!, v] as [Expr, Expr])), protect);
+    const sub = xreplace(xreplace(e, [...solved.entries()].map(([k, v]) => [defined(funcs.find((g) => g.key === k), 'solved function'), v] as [Expr, Expr])), protect);
     const r = dsolveOne(sub, f);
-    const sol = Array.isArray(r) ? r[0]! : r;
-    let rhs = (sol as Rel).rhs;
+    const sol = Array.isArray(r) ? first(r) : r;
+    let rhs = cast(sol, Rel, 'solution').rhs;
     // the new constants continue the numbering
     const cs = [...rhs.freeSymbols()].filter((c) => /^C\d+$/.test(c.name) && !(c instanceof Dummy)).sort((a, b) => Number(a.name.slice(1)) - Number(b.name.slice(1)));
     rhs = xreplace(rhs, cs.map((c) => [c, new Sym(`C${nextC++}`)] as [Expr, Expr]));

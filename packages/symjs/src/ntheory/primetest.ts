@@ -9,6 +9,7 @@
  * consults.
  */
 
+import { at, last } from '../core/guard';
 import type { ExprLike } from '../core/nodes';
 import { Add, I, Mul, Rational } from '../core/nodes';
 import { sympify } from '../core/ops';
@@ -147,8 +148,7 @@ export function isprime(nIn: IntLike): boolean {
     const r = powmod(2n, n >> 1n, n);
     return (r === 1n || r === n - 1n) && ![8321n, 31621n, 42799n, 49141n, 49981n].includes(n);
   }
-  const last = sieve.primes[sieve.primes.length - 1]!;
-  if (n <= BigInt(last)) {
+  if (n <= BigInt(last(sieve.primes))) {
     const i = bisectLeft(sieve.primes, Number(n));
     return sieve.primes[i] === Number(n);
   }
@@ -159,7 +159,7 @@ export function isprime(nIn: IntLike): boolean {
     let h = ((n >> 16n) ^ n) * 73244475n;
     h = ((h >> 16n) ^ h) * 73244475n;
     h = ((h >> 16n) ^ h) & 255n;
-    return mr(n, [BigInt(MR_BASES_32[Number(h)]!)]);
+    return mr(n, [BigInt(at(MR_BASES_32, Number(h)))]);
   }
   if (n < 350269456337n) return mr(n, [4230279247111683200n, 14694767155120705706n, 16641139526367750375n]);
   if (n < 55245642489451n) return mr(n, [2n, 141889084524735n, 1199124725622454117n, 11096072698276303650n]);
@@ -200,7 +200,7 @@ export function isGaussianPrime(num: ExprLike | bigint): boolean {
   for (const t of terms) {
     if (t instanceof Rational && t.q === 1n) a += t.p;
     else if (t.key === I.key) b += 1n;
-    else if (t instanceof Mul && t.args.length === 2 && t.args[0] instanceof Rational && t.args[0].q === 1n && t.args[1]!.key === I.key) b += t.args[0].p;
+    else if (t instanceof Mul && t.args.length === 2 && t.args[0] instanceof Rational && t.args[0].q === 1n && t.args[1]?.key === I.key) b += t.args[0].p;
     else throw new TypeError(`${e.toString()} is not a Gaussian integer`);
   }
   if (a === 0n) {
@@ -295,7 +295,7 @@ export class FactorCache {
   get(nIn: IntLike): bigint | NoMatchResult {
     const n = asInt(nIn);
     const ps = sieve.primes;
-    if (n <= BigInt(ps[ps.length - 1]!) && n >= 0n) {
+    if (n <= BigInt(last(ps)) && n >= 0n) {
       const i = bisectLeft(ps, Number(n));
       if (ps[i] === Number(n)) return n;
     }

@@ -6,6 +6,7 @@
  * the Greedy, Graham Jewett, Takenouchi and Golomb algorithms.
  */
 
+import { at } from '../core/guard';
 import type { ExprLike } from '../core/nodes';
 import { Rational } from '../core/nodes';
 import { sympify } from '../core/ops';
@@ -33,14 +34,17 @@ function greedy(xIn: bigint, yIn: bigint): bigint[] {
 const cmp = (a: bigint, b: bigint): number => (a < b ? -1 : a > b ? 1 : 0);
 const hasDup = (l: bigint[]): boolean => new Set(l).size !== l.length;
 
+const isIntPair = (r: ExprLike | readonly [bigint | number, bigint | number]): r is readonly [bigint | number, bigint | number] => Array.isArray(r);
+
 function grahamJewett(x: bigint, y: bigint): bigint[] {
   const l = new Array<bigint>(Number(x)).fill(y);
   while (hasDup(l)) {
     l.sort(cmp);
     let i = 0;
     for (; i < l.length - 1; i++) if (l[i] === l[i + 1]) break;
-    l[i + 1] = l[i]! + 1n;
-    l.push(l[i]! * (l[i]! + 1n));
+    const li = at(l, i);
+    l[i + 1] = li + 1n;
+    l.push(li * (li + 1n));
   }
   return l.sort(cmp);
 }
@@ -58,7 +62,7 @@ function takenouchi(x: bigint, y: bigint): bigint[] {
     l.sort(cmp);
     let i = 0;
     for (; i < l.length - 1; i++) if (l[i] === l[i + 1]) break;
-    const k = l[i]!;
+    const k = at(l, i);
     if (k % 2n === 0n) {
       l[i] = k / 2n;
       l.splice(i + 1, 1);
@@ -83,11 +87,10 @@ function golomb(x: bigint, y: bigint): bigint[] {
  */
 export function egyptianFraction(r: ExprLike | readonly [bigint | number, bigint | number], algorithm: EgyptianAlgorithm = 'Greedy'): bigint[] {
   let q: Rational;
-  if (Array.isArray(r)) {
-    const pair = r as readonly [bigint | number, bigint | number];
-    q = Rational.of(BigInt(pair[0]), BigInt(pair[1]));
+  if (isIntPair(r)) {
+    q = Rational.of(BigInt(r[0]), BigInt(r[1]));
   } else {
-    const e = sympify(r as ExprLike);
+    const e = sympify(r);
     if (!(e instanceof Rational)) throw new TypeError('Value must be a Rational or tuple of ints');
     q = e;
   }

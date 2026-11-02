@@ -28,7 +28,8 @@ import { expand, expandMul } from '../../simplify/expand';
 import { cancel, together } from '../../simplify/rational';
 import { simplify as simplifyExpr } from '../../simplify/simplify';
 import type { TransformHints } from './base';
-import { IntegralTransform, addArgs, decide, diffTransforms, matchByName, mget, mulArgs, polyCoeffs, wild } from './base';
+import { IntegralTransform, addArgs, decide, diffTransforms, matchByName, mget, mulArgs, polyCoeffs, wild, symArg, transformArgs } from './base';
+import { at, cast, first, pair } from '../../core/guard';
 import { DiracDelta, Heaviside } from './delta';
 
 /** An inverse Laplace transform result: (f, condition). */
@@ -62,11 +63,11 @@ export class InverseLaplaceTransform extends IntegralTransform {
   }
   /** The plane of convergence, or undefined when not given (SymPy fundamental_plane). */
   get fundamentalPlane(): Expr | undefined {
-    const p = this.args[3]!;
+    const p = at(this.args, 3);
     return p === NONE_SENTINEL ? undefined : p;
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new InverseLaplaceTransform(args[0]!, args[1] as Sym, args[2] as Sym, args[3]);
+    return new InverseLaplaceTransform(...transformArgs(args), args[3]);
   }
   get asIntegral(): Expr {
     const c = new Dummy('c');
@@ -142,13 +143,14 @@ function inverseLaplaceDiff(f: Expr, s: Sym, t: Expr, plane: Expr | undefined): 
   const facs = mulArgs(f);
   const i = facs.findIndex((x) => x instanceof Derivative);
   if (i < 0) return undefined;
-  const d = facs[i] as Derivative;
+  const d = cast(at(facs, i), Derivative);
   const a = mul(...facs.filter((_, j) => j !== i));
   if (a.has(s)) return undefined;
   const vc = d.variableCount;
-  if (vc.length !== 1 || vc[0]![0].key !== s.key) return undefined;
+  const vc0 = vc[0];
+  if (vc.length !== 1 || vc0 === undefined || vc0[0].key !== s.key) return undefined;
   const [r, c] = inverseLaplaceTransformImpl(d.expr, s, t, plane, false, false);
-  return [mul(a, pow(neg(t), vc[0]![1]), r), c];
+  return [mul(a, pow(neg(t), vc0[1]), r), c];
 }
 
 /** SymPy _inverse_laplace_time_shift: exp(-a*s)*F(s) -> Heaviside(t - a)*f(t - a). */
@@ -161,19 +163,18 @@ function inverseLaplaceTimeShift(F: Expr, s: Sym, t: Expr, plane: Expr | undefin
     if (m) {
       const A = mget(m, 'a');
       if (isNegative(A) === true) return [DiracDelta(add(t, A)), S.true];
-      return [new InverseLaplaceTransform(F, s, t as Sym, plane), S.true];
+      return [new InverseLaplaceTransform(F, s, symArg(t), plane), S.true];
     }
   }
   const facs = mulArgs(F);
-  for (let i = 0; i < facs.length; i++) {
-    const fac = facs[i]!;
+  for (const [i, fac] of facs.entries()) {
     if (!isExpPow(fac)) continue;
     const m = matchByName(fac.exp, mul(a, s));
     if (!m) continue;
     const A = mget(m, 'a');
     const g = mul(...facs.filter((_, j) => j !== i));
     if (isNegative(A) === true) return inverseLaplaceTransformImpl(g, s, add(t, A), plane, false, true);
-    return [new InverseLaplaceTransform(F, s, t as Sym, plane), S.true];
+    return [new InverseLaplaceTransform(F, s, symArg(t), plane), S.true];
   }
   return undefined;
 }
@@ -183,10 +184,10 @@ function inverseLaplaceFreqShift(F: Expr, s: Sym, t: Expr, plane: Expr | undefin
   if (!F.has(s)) return [mul(F, DiracDelta(t)), S.true];
   if (F.args.length === 1 && (F instanceof UndefFn || F instanceof Fn)) {
     const a = wild('a', s);
-    const m = matchByName(F.args[0]!, sub(s, a));
+    const m = matchByName(at(F.args, 0), sub(s, a));
     if (m && isPositive(re(mget(m, 'a'))) === true) {
       const A = mget(m, 'a');
-      return [mul(exp(mul(-1, A, t)), new InverseLaplaceTransform(rebuild(F, [s]), s, t as Sym, plane)), S.true];
+      return [mul(exp(mul(-1, A, t)), new InverseLaplaceTransform(rebuild(F, [s]), s, symArg(t), plane)), S.true];
     }
   }
   return undefined;
@@ -254,12 +255,16 @@ function besseljEval(nu: ExprLike, z: Expr): Expr {
 /** SymPy _inverse_laplace_irrational: Bateman 5.3 for powers of sqrt(s). */
 function inverseLaplaceIrrational(fn: Expr, s: Sym, t: Expr): InverseLaplacePair | undefined {
   const fa = asOrderedFactors(fn);
-  const ma = fa.map((x) => powerFactor(x, s));
-  if (ma.some((x) => x === undefined)) return undefined;
+  const ma: PowerFactor[] = [];
+  for (const x of fa) {
+    const pf = powerFactor(x, s);
+    if (pf === undefined) return undefined;
+    ma.push(pf);
+  }
   let constants: Expr = S.One;
   const zeros: PowerFactor[] = [];
   const poles: PowerFactor[] = [];
-  for (const term of ma as PowerFactor[]) {
+  for (const term of ma) {
     if (isZeroE(term.a)) constants = mul(constants, pow(term.b, term.n));
     else if (isPositive(term.n) === true) zeros.push(term);
     else if (isNegative(term.n) === true) poles.push(term);
@@ -280,8 +285,8 @@ function inverseLaplaceIrrational(fn: Expr, s: Sym, t: Expr): InverseLaplacePair
   const pi = S.Pi;
   const st = sqrt(t);
   let result: Expr | undefined;
-  const P = (i: number): PowerFactor => poles[i]!;
-  const Zr = (i: number): PowerFactor => zeros[i]!;
+  const P = (i: number): PowerFactor => at(poles, i);
+  const Zr = (i: number): PowerFactor => at(zeros, i);
   const pos = (e: Expr): boolean => isPositive(e) === true;
   if (poles.length === 1 && zeros.length === 0) {
     const p0 = P(0);
@@ -488,21 +493,21 @@ function purePower(d: Expr, s: Sym): [Expr, Expr, number] | undefined {
   const cs = polyCoeffs(expand(d), s);
   if (!cs || cs.length < 3) return undefined;
   const n = cs.length - 1;
-  const lc = cs[0]!;
+  const lc = at(cs, 0);
   const norm = cs.map((x) => mul(x, pow(lc, -1)));
   const check = (p: Expr, m: number): boolean => {
     const diffE = expand(sub(mul(lc, pow(p, m)), d));
     return diffE.key === S.Zero.key || cancel(diffE).key === S.Zero.key;
   };
   // (s + c)**n
-  const c = cancel(mul(norm[1]!, Rational.of(1n, BigInt(n))));
+  const c = cancel(mul(at(norm, 1), Rational.of(1n, BigInt(n))));
   const lin = add(s, c);
   if (check(lin, n)) return [lc, lin, n];
   // (s**2 + p*s + q)**m
   if (n % 2 === 0 && n >= 4) {
     const m = n / 2;
-    const pc = cancel(mul(norm[1]!, Rational.of(1n, BigInt(m))));
-    const qc = cancel(mul(sub(norm[2]!, mul(Rational.of(BigInt(m * (m - 1)), 2n), pow(pc, 2))), Rational.of(1n, BigInt(m))));
+    const pc = cancel(mul(at(norm, 1), Rational.of(1n, BigInt(m))));
+    const qc = cancel(mul(sub(at(norm, 2), mul(Rational.of(BigInt(m * (m - 1)), 2n), pow(pc, 2))), Rational.of(1n, BigInt(m))));
     const quad = add(pow(s, 2), mul(pc, s), qc);
     if (check(quad, m)) return [lc, quad, m];
   }
@@ -541,7 +546,7 @@ function apartS(f: Expr, s: Sym): Expr {
       out.push(mul(n, pow(fd, -1)));
       continue;
     }
-    const [p, m] = sf[0]!;
+    const [p, m] = at(sf, 0);
     const pc = polyCoeffs(p, s);
     const nc = polyCoeffs(n, s);
     if (!pc || !nc || pc.length > 3 || m === 1 || nc.length < pc.length) {
@@ -581,19 +586,19 @@ function inverseLaplaceRational(fn: Expr, s: Sym, t: Expr, plane: Expr | undefin
   for (const term of addArgs(f)) {
     const [n, d] = asNumerDenom(term);
     let dc = allCoeffs(d, s);
-    const dcLead = dc[0]!;
+    const dcLead = at(dc, 0);
     dc = dc.map((x) => mul(x, pow(dcLead, -1)));
     let nc = allCoeffs(n, s).map((x) => mul(x, pow(dcLead, -1)));
     if (dc.length === 1) {
       const N = nc.length - 1;
       nc.forEach((c, i) => termsT.push(mul(c, N - i === 0 ? DiracDelta(t) : DiracDelta(t, N - i))));
     } else if (dc.length === 2) {
-      termsT.push(mul(Heaviside(t), nc[0]!, exp(mul(-1, dc[1]!, t))));
+      termsT.push(mul(Heaviside(t), at(nc, 0), exp(mul(-1, at(dc, 1), t))));
     } else if (dc.length === 3) {
-      const a = mul(dc[1]!, S.Half);
-      let b = factor(together(sub(dc[2]!, pow(a, 2))));
+      const a = mul(at(dc, 1), S.Half);
+      let b = factor(together(sub(at(dc, 2), pow(a, 2))));
       if (nc.length === 1) nc = [S.Zero, ...nc];
-      const [l, m] = nc as [Expr, Expr];
+      const [l, m] = pair(nc);
       let r: Expr;
       if (isZeroE(b)) {
         r = mul(add(mul(m, t), mul(l, sub(1, mul(a, t)))), exp(mul(-1, a, t)));
@@ -603,7 +608,7 @@ function inverseLaplaceRational(fn: Expr, s: Sym, t: Expr, plane: Expr | undefin
           b = neg(b);
           hyp = true;
         }
-        const b2 = [...rootsDict(sub(pow(xD, 2), b), xD).keys()][0]!;
+        const b2 = first([...rootsDict(sub(pow(xD, 2), b), xD).keys()]);
         const bs = distributeMinusOne(simplifyExpr(sqrt(b)));
         r = hyp
           ? add(mul(l, exp(mul(-1, a, t)), cosh(mul(b2, t))), mul(sub(m, mul(a, l)), pow(bs, -1), exp(mul(-1, a, t)), sinh(mul(bs, t))))
@@ -631,9 +636,13 @@ function inverseLaplaceTransformIntegration(F: Expr, s: Sym, t: Expr, plane: Exp
   if (isRationalFunction(F, [s])) {
     const G = apart(F, s);
     if (G instanceof Add) {
-      const parts = G.args.map((X) => inverseLaplaceTransformIntegration(X, s, t, plane, simplify));
-      if (parts.some((p) => p === undefined)) return undefined;
-      return [add(...parts.map((p) => p![0])), S.true];
+      const parts: Expr[] = [];
+      for (const X of G.args) {
+        const p = inverseLaplaceTransformIntegration(X, s, t, plane, simplify);
+        if (p === undefined) return undefined;
+        parts.push(p[0]);
+      }
+      return [add(...parts), S.true];
     }
   }
   return undefined;
@@ -654,8 +663,8 @@ export function inverseLaplaceTransformImpl(fn: Expr, s: Sym, t: Expr, plane: Ex
     if (dorational && isRationalFunction(term, [s])) r = inverseLaplaceRational(f, s, t, plane, simplify);
     r ??= inverseLaplaceApplySimpleRules(f, s, t) ?? inverseLaplaceIrrational(f, s, t) ?? inverseLaplaceExpand(f, s, t, plane) ?? inverseLaplaceApplyProgRules(f, s, t, plane);
     if (!r) {
-      if (some(f, (u) => u instanceof UndefFn && u.has(s))) r = [new InverseLaplaceTransform(f, s, t as Sym, plane), S.true];
-      else r = inverseLaplaceTransformIntegration(f, s, t, plane, simplify) ?? [new InverseLaplaceTransform(f, s, t as Sym, plane), S.true];
+      if (some(f, (u) => u instanceof UndefFn && u.has(s))) r = [new InverseLaplaceTransform(f, s, symArg(t), plane), S.true];
+      else r = inverseLaplaceTransformIntegration(f, s, t, plane, simplify) ?? [new InverseLaplaceTransform(f, s, symArg(t), plane), S.true];
     }
     termsT.push(mul(k, r[0]));
     conditions.push(r[1]);

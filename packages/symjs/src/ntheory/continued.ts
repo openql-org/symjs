@@ -15,6 +15,7 @@ import { add, div, mul, sqrt, sub, sympify } from '../core/ops';
 import { asNumerDenom } from '../core/methods';
 import { gcd, lcm } from '../core/numbers';
 import { NotImplementedError } from '../core/errors';
+import { expectType, getOrThrow, pair } from '../core/guard';
 import { floor as floorFn } from '../functions/special';
 import { factorintInt } from './factor';
 import type { IntLike } from './intutil';
@@ -59,7 +60,7 @@ export function continuedFractionPeriodic(pIn: IntLike, qIn: IntLike, dIn: IntLi
   if (signQuad(p, s, d) < 0n) {
     const w = floorQuad(-p, -s, d, q);
     const oneF = continuedFractionPeriodic((w + 1n) * q + p, q, d, s);
-    oneF[0] = (oneF[0] as bigint) - (w + 1n);
+    oneF[0] = expectType(oneF[0], isBigint, 'integer part of a continued fraction') - (w + 1n);
     return oneF;
   }
   let sigma = sgn(s);
@@ -79,7 +80,7 @@ export function continuedFractionPeriodic(pIn: IntLike, qIn: IntLike, dIn: IntLi
     p = t * q - p;
     q = fdiv(d - p * p, q);
   }
-  const i = pq.get(`${p},${q}`)!;
+  const i = getOrThrow(pq, `${p},${q}`);
   return [...terms.slice(0, i), terms.slice(i)];
 }
 
@@ -91,30 +92,38 @@ function allRationalAtoms(e: Expr): boolean {
 
 const isInt = (e: Expr): e is Rational => e instanceof Rational && e.q === 1n;
 const isHalf = (e: Expr): boolean => e instanceof Rational && e.p === 1n && e.q === 2n;
-const isSqrtOfInt = (e: Expr): e is Pow => e instanceof Pow && isHalf(e.exp) && isInt(e.base);
+/** sqrt(n) for an integer n. */
+type SqrtOfInt = Pow & { readonly base: Rational };
+const isSqrtOfInt = (e: Expr): e is SqrtOfInt => e instanceof Pow && isHalf(e.exp) && isInt(e.base);
+const isBigint = (x: unknown): x is bigint => typeof x === 'bigint';
+
+/** A term of a continued fraction given as a list: a number or (last) the periodic part. */
+type CfTerm = ExprLike | readonly ExprLike[];
+const isPeriod = (t: CfTerm): t is readonly ExprLike[] => Array.isArray(t);
+const isTermList = (cf: Iterable<CfTerm>): cf is readonly CfTerm[] => Array.isArray(cf);
 
 /** The continued fraction of a rational number or a quadratic irrational (SymPy continued_fraction). */
 export function continuedFraction(a: ExprLike): ContinuedFraction {
   const e = sympify(a);
   if (allRationalAtoms(e)) {
     if (e instanceof Rational) return e.q === 1n ? continuedFractionPeriodic(e.p, 1n, 0n) : continuedFractionPeriodic(e.p, e.q, 0n);
-    if (isSqrtOfInt(e)) return continuedFractionPeriodic(0n, 1n, (e.base as Rational).p);
+    if (isSqrtOfInt(e)) return continuedFractionPeriodic(0n, 1n, e.base.p);
     if (e instanceof Mul && e.args.length === 2) {
-      const [r, sq] = [e.args[0]!, e.args[1]!];
-      if (r instanceof Rational && isSqrtOfInt(sq)) return continuedFractionPeriodic(0n, r.q, (sq.base as Rational).p, r.p);
+      const [r, sq] = pair(e.args);
+      if (r instanceof Rational && isSqrtOfInt(sq)) return continuedFractionPeriodic(0n, r.q, sq.base.p, r.p);
     }
     const [p, dd] = asNumerDenom(e.expand());
     if (isInt(dd)) {
       if (p instanceof Rational) return continuedFractionPeriodic(p.p, dd.p * p.q);
       let a0: Expr = S.Zero;
       let bc: Expr = p;
-      if (p instanceof Add && p.args.length === 2) [a0, bc] = [p.args[0]!, p.args[1]!];
+      if (p instanceof Add && p.args.length === 2) [a0, bc] = pair(p.args);
       if (isInt(a0)) {
         let b: Expr | undefined;
         let c: Expr | undefined;
-        if (bc instanceof Mul && bc.args.length === 2) [b, c] = [bc.args[0]!, bc.args[1]!];
+        if (bc instanceof Mul && bc.args.length === 2) [b, c] = pair(bc.args);
         else if (bc instanceof Pow) [b, c] = [S.One, bc];
-        if (b !== undefined && c !== undefined && isInt(b) && isSqrtOfInt(c)) return continuedFractionPeriodic(a0.p, dd.p, (c.base as Rational).p, b.p);
+        if (b !== undefined && c !== undefined && isInt(b) && isSqrtOfInt(c)) return continuedFractionPeriodic(a0.p, dd.p, c.base.p, b.p);
       }
     }
   }
@@ -153,9 +162,9 @@ export function* continuedFractionIterator(xIn: ExprLike): Generator<bigint, voi
  */
 export function* continuedFractionConvergents(cf: Iterable<ExprLike | bigint | readonly (ExprLike | bigint)[]>): Generator<Expr, void, undefined> {
   let terms: Iterable<ExprLike | bigint | readonly (ExprLike | bigint)[]> = cf;
-  if (Array.isArray(cf) && cf.length > 0 && Array.isArray(cf[cf.length - 1])) {
-    const arr = cf as readonly (ExprLike | bigint | readonly (ExprLike | bigint)[])[];
-    const period = arr[arr.length - 1] as readonly (ExprLike | bigint)[];
+  const period = isTermList(cf) ? cf.at(-1) : undefined;
+  if (isTermList(cf) && period !== undefined && isPeriod(period)) {
+    const arr = cf;
     terms = (function* () {
       yield* arr.slice(0, -1);
       for (;;) yield* period;
@@ -164,8 +173,8 @@ export function* continuedFractionConvergents(cf: Iterable<ExprLike | bigint | r
   let [p2, q2]: [Expr, Expr] = [S.Zero, S.One];
   let [p1, q1]: [Expr, Expr] = [S.One, S.Zero];
   for (const t of terms) {
-    if (Array.isArray(t)) throw new TypeError('the periodic part must be the last element');
-    const a = sympify(t as ExprLike);
+    if (isPeriod(t)) throw new TypeError('the periodic part must be the last element');
+    const a = sympify(t);
     const p = add(mul(a, p1), p2);
     const q = add(mul(a, q1), q2);
     [p2, q2] = [p1, q1];
@@ -218,11 +227,11 @@ export function continuedFractionReduce(cf: readonly (ExprLike | bigint | readon
   const prefix: (ExprLike | bigint)[] = [];
   let period: (ExprLike | bigint)[] | undefined;
   for (const t of cf) {
-    if (Array.isArray(t)) {
-      period = [...(t as readonly (ExprLike | bigint)[])];
+    if (isPeriod(t)) {
+      period = [...t];
       break;
     }
-    prefix.push(t as ExprLike | bigint);
+    prefix.push(t);
   }
   if (period === undefined) {
     let a: Expr = S.Zero;

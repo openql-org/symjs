@@ -15,6 +15,7 @@ import { add, mul, sympify } from '../../core/ops';
 import { compareKeys, sortKey } from '../../printing/sortkey';
 import { MatAddNode, MatMulNode, MatrixElementNode, MatrixExpr, TraceNode, transposeOf } from './matexpr';
 import { same } from './util';
+import { at, pair } from '../../core/guard';
 
 interface Edge {
   readonly mat: MatrixExpr;
@@ -77,7 +78,7 @@ function convertProduct(body: Expr, limits: readonly Limit[], first?: Expr, last
       const k = edges.findIndex((e, n) => !used.has(n) && (same(e.a, cur) || same(e.b, cur)));
       if (k < 0) break;
       used.add(k);
-      const e = edges[k]!;
+      const e = at(edges, k);
       if (same(e.a, cur)) {
         mats.push(e.mat);
         cur = e.b;
@@ -93,18 +94,19 @@ function convertProduct(body: Expr, limits: readonly Limit[], first?: Expr, last
   let matrix: Expr | undefined;
   if (free.length === 2) {
     const ordered = [...free].sort((x, y) => compareKeys(sortKey(x), sortKey(y)));
-    let start = first ?? ordered[0]!;
-    let stop = start === ordered[0] ? ordered[1]! : ordered[0]!;
+    const [o0, o1] = pair(ordered);
+    let start = first ?? o0;
+    let stop = start === o0 ? o1 : o0;
     if (first === undefined && last !== undefined) {
       stop = last;
-      start = same(last, ordered[0]!) ? ordered[1]! : ordered[0]!;
+      start = same(last, o0) ? o1 : o0;
     } else if (last !== undefined) stop = last;
     matrix = prod(S.One, walk(start, stop));
   } else if (free.length !== 0) throw new NotImplementedError('from_index_summation: unsupported index structure');
   let result: Expr = coeff;
-  for (let k = 0; k < edges.length; k++) {
+  for (const [k, edge] of edges.entries()) {
     if (used.has(k)) continue;
-    const mats = walk(edges[k]!.a);
+    const mats = walk(edge.a);
     result = mul(result, new TraceNode(prod(S.One, mats)));
   }
   if (matrix === undefined) return result;

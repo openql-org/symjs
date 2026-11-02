@@ -7,8 +7,9 @@
  */
 
 import { NotImplementedError } from '../core/errors';
+import { at, defined, first, pair } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
-import { ExtensionExpr, Mul, Rational, S } from '../core/nodes';
+import { ExtensionExpr, Fn, Mul, Rational, S } from '../core/nodes';
 import { rebuild } from '../core/traverse';
 import { isPositive } from '../core/assumptions';
 import { Gt, piecewise } from '../core/logic';
@@ -20,7 +21,7 @@ import { c as cx, cmul } from '../numeric/complex';
 import { besselj, bessely } from './bessel';
 import { registerRewrite } from '../simplify/rewrite';
 
-const tuple = (print: (e: Expr) => string, xs: readonly Expr[]) => (xs.length === 1 ? `(${print(xs[0]!)},)` : `(${xs.map(print).join(', ')})`);
+const tuple = (print: (e: Expr) => string, xs: readonly Expr[]) => (xs.length === 1 ? `(${print(first(xs))},)` : `(${xs.map(print).join(', ')})`);
 
 /** SymPy hyper(ap, bq, z): args are [z, ...ap, ...bq]. */
 export class Hyper extends ExtensionExpr {
@@ -37,7 +38,7 @@ export class Hyper extends ExtensionExpr {
     return this.args.slice(1 + this.p);
   }
   get argument(): Expr {
-    return this.args[0]!;
+    return first(this.args);
   }
   withArgs(args: readonly Expr[]): Expr {
     return new Hyper(args, this.p);
@@ -96,14 +97,14 @@ export class MeijerG extends ExtensionExpr {
   }
   private part(i: number): Expr[] {
     const start = 1 + this.sizes.slice(0, i).reduce((s, k) => s + k, 0);
-    return this.args.slice(start, start + this.sizes[i]!);
+    return this.args.slice(start, start + at(this.sizes, i));
   }
   withArgs(args: readonly Expr[]): Expr {
     return new MeijerG(args, this.sizes);
   }
   override printStr(print: (e: Expr) => string): string {
     const t = (xs: Expr[]) => tuple(print, xs);
-    return `meijerg((${t(this.part(0))}, ${t(this.part(1))}), (${t(this.part(2))}, ${t(this.part(3))}), ${print(this.args[0]!)})`;
+    return `meijerg((${t(this.part(0))}, ${t(this.part(1))}), (${t(this.part(2))}, ${t(this.part(3))}), ${print(first(this.args))})`;
   }
   protected override computeKey(): string {
     return `meijerg[${this.sizes.join(',')}](${this.args.map((a) => a.key).join(',')})`;
@@ -113,19 +114,25 @@ export class MeijerG extends ExtensionExpr {
 /** SymPy meijerg(((an), (ap)), ((bm), (bq)), z). */
 export function meijerg(an: readonly ExprLike[], ap: readonly ExprLike[], bm: readonly ExprLike[], bq: readonly ExprLike[], z: ExprLike): Expr {
   const parts = [an, ap, bm, bq].map((xs) => xs.map(sympify));
-  return new MeijerG([sympify(z), ...parts.flat()], parts.map((p) => p.length) as [number, number, number, number]);
+  const sizes: [number, number, number, number] = [an.length, ap.length, bm.length, bq.length];
+  return new MeijerG([sympify(z), ...parts.flat()], sizes);
 }
 
 // d/dnu expint(nu, z) (SymPy expint.fdiff(1))
 const expintPartials = fnPartials['expint'];
 fnPartials['expint'] = (args, i) => {
-  const [nu, z] = args as [Expr, Expr];
-  if (i === 0) return mul(-1, pow(z, add(nu, -1)), meijerg([], [1, 1], [0, 0, add(1, mul(-1, nu))], [], z));
-  return expintPartials!(args, i);
+  if (i === 0) {
+    const [nu, z] = pair(args);
+    return mul(-1, pow(z, add(nu, -1)), meijerg([], [1, 1], [0, 0, add(1, mul(-1, nu))], [], z));
+  }
+  return defined(expintPartials, 'expint partial derivatives')(args, i);
 };
 
 // catalan(n) = hyper((-n, 1 - n), (2,), 1)
-registerRewrite('catalan', 'hyper', ([n]) => hyper([mul(-1, n!), add(1, mul(-1, n!))], [2], 1));
+registerRewrite('catalan', 'hyper', (args) => {
+  const n = first(args);
+  return hyper([mul(-1, n), add(1, mul(-1, n))], [2], 1);
+});
 
 // ---- spherical Bessel functions --------------------------------------------------
 
@@ -138,20 +145,21 @@ evaluators.jn = (n, z) => (z instanceof Rational && z.isZero && n instanceof Rat
 evaluators.yn = () => undefined;
 // d/dz jn(n, z) = jn(n - 1, z) - (n + 1)/z * jn(n, z) (SymPy fdiff)
 for (const name of ['jn', 'yn'] as const) {
-  fnPartials[name] = ([n, z], i) => {
+  fnPartials[name] = (args, i) => {
     if (i !== 1) throw new NotImplementedError(`diff: ${name} w.r.t. its order`);
-    return add(fn(name, [add(n!, -1), z!]), mul(-1, add(n!, 1), pow(z!, -1), fn(name, [n!, z!])));
+    const [n, z] = pair(args);
+    return add(fn(name, [add(n, -1), z]), mul(-1, add(n, 1), pow(z, -1), fn(name, [n, z])));
   };
-  numericFns[name] = ([n, z]) => {
+  numericFns[name] = (args) => {
+    const [n, zz] = pair(args);
     // sqrt(pi/(2 z)) * J_{n+1/2}(z)
-    const v = (name === 'jn' ? besselj : bessely)(n!.re + 0.5, add(z!.re, mul(z!.im, S.I))).toComplex();
-    const zz = z!;
+    const v = (name === 'jn' ? besselj : bessely)(n.re + 0.5, add(zz.re, mul(zz.im, S.I))).toComplex();
     const r = Math.sqrt(Math.PI / 2) / Math.sqrt(Math.hypot(zz.re, zz.im));
     const ph = -Math.atan2(zz.im, zz.re) / 2;
     return cmul(v, { re: r * Math.cos(ph), im: r * Math.sin(ph) });
   };
 }
-registerRewrite('sinc', 'jn', ([z]) => jn(0, z!));
+registerRewrite('sinc', 'jn', (args) => jn(0, first(args)));
 
 /** jn(n, z) for integer n >= 0 in terms of sin and cos (SymPy expand_func). */
 export function expandJn(n: number, z: Expr, kind: 'jn' | 'yn' = 'jn'): Expr {
@@ -184,12 +192,13 @@ export function kroneckersimp(eIn: ExprLike): Expr {
     const args = x.args.map(go);
     const y = args.some((a, i) => a !== x.args[i]) ? rebuild(x, args) : x;
     if (!(y instanceof Mul)) return y;
-    const deltas = y.args.filter((f) => f.kind === 'Fn' && (f as unknown as { name: string }).name === 'KroneckerDelta');
-    for (let a = 0; a < deltas.length; a++) {
-      for (let b = a + 1; b < deltas.length; b++) {
-        const [p, q] = deltas[a]!.args;
-        const [r, s] = deltas[b]!.args;
-        for (const [u, v, w, t] of [[p, q, r, s], [p, q, s, r], [q, p, r, s], [q, p, s, r]] as [Expr, Expr, Expr, Expr][]) {
+    const deltas = y.args.filter((f): f is Fn => f instanceof Fn && f.name === 'KroneckerDelta');
+    for (const [a, da] of deltas.entries()) {
+      for (const db of deltas.slice(a + 1)) {
+        const [p, q] = pair(da.args);
+        const [r, s] = pair(db.args);
+        const orders: [Expr, Expr, Expr, Expr][] = [[p, q, r, s], [p, q, s, r], [q, p, r, s], [q, p, s, r]];
+        for (const [u, v, w, t] of orders) {
           if (v.key === t.key && u.freeSymbols().size === 0 && w.freeSymbols().size === 0 && u.key !== w.key) return S.Zero;
         }
       }
@@ -201,12 +210,13 @@ export function kroneckersimp(eIn: ExprLike): Expr {
 
 
 // rf(x, n) = gamma(x + n)/gamma(x) for x > 0, (-1)**n*gamma(1 - x)/gamma(1 - x - n) otherwise (SymPy)
-registerRewrite('RisingFactorial', 'gamma', ([x, n]) => {
-  const pos = mul(fn('gamma', [add(n!, x!)]), pow(fn('gamma', [x!]), -1));
-  const neg = mul(pow(-1, n!), fn('gamma', [add(1, mul(-1, x!))]), pow(fn('gamma', [add(1, mul(-1, x!), mul(-1, n!))]), -1));
+registerRewrite('RisingFactorial', 'gamma', (args) => {
+  const [x, n] = pair(args);
+  const pos = mul(fn('gamma', [add(n, x)]), pow(fn('gamma', [x]), -1));
+  const neg = mul(pow(-1, n), fn('gamma', [add(1, mul(-1, x))]), pow(fn('gamma', [add(1, mul(-1, x), mul(-1, n))]), -1));
   // a number: decided by its value
-  const p = x!.freeSymbols().size === 0 ? x!.toNumber() > 0 : isPositive(x!);
+  const p = x.freeSymbols().size === 0 ? x.toNumber() > 0 : isPositive(x);
   if (p === true) return pos;
   if (p === false) return neg;
-  return piecewise([pos, Gt(x!, 0)], [neg, true]);
+  return piecewise([pos, Gt(x, 0)], [neg, true]);
 });

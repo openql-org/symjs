@@ -7,6 +7,7 @@
  * arrays of bigints (in SymPy's insertion order).
  */
 
+import { at, getOrThrow } from '../core/guard';
 import type { IntLike } from './intutil';
 import { asInt } from './intutil';
 
@@ -45,11 +46,11 @@ function mcInternal(m: number, n: number): Map<string, [number[], bigint]> {
   const r = new Map<string, [number[], bigint]>();
   const t = [n, ...new Array<number>(m - 1).fill(0)];
   const key = (x: number[]) => x.join(',');
-  const get = (x: number[]) => r.get(key(x))![1];
+  const get = (x: number[]) => getOrThrow(r, key(x))[1];
   r.set(key(t), [[...t], 1n]);
   let j = n ? 0 : m;
   while (j < m - 1) {
-    const tj = t[j]!;
+    const tj = at(t, j);
     if (j) {
       t[j] = 0;
       t[0] = tj;
@@ -57,7 +58,7 @@ function mcInternal(m: number, n: number): Map<string, [number[], bigint]> {
     let start: number;
     let v: bigint;
     if (tj > 1) {
-      t[j + 1]!++;
+      t[j + 1] = at(t, j + 1) + 1;
       j = 0;
       start = 1;
       v = 0n;
@@ -65,17 +66,17 @@ function mcInternal(m: number, n: number): Map<string, [number[], bigint]> {
       j++;
       start = j + 1;
       v = get(t);
-      t[j]!++;
+      t[j] = at(t, j) + 1;
     }
     for (let k = start; k < m; k++) {
       if (t[k]) {
-        t[k]!--;
+        t[k] = at(t, k) - 1;
         v += get(t);
-        t[k]!++;
+        t[k] = at(t, k) + 1;
       }
     }
-    t[0]!--;
-    r.set(key(t), [[...t], (v * BigInt(tj)) / BigInt(n - t[0]!)]);
+    t[0] = at(t, 0) - 1;
+    r.set(key(t), [[...t], (v * BigInt(tj)) / BigInt(n - at(t, 0))]);
   }
   return r;
 }
@@ -104,23 +105,23 @@ export function* multinomialCoefficientsIterator(mIn: IntLike, nIn: IntLike): Ge
   const mc = new Map<string, bigint>();
   for (const [k, v] of mcInternal(n, n).values()) mc.set(k.filter((x) => x).join(','), v);
   const t = [n, ...new Array<number>(m - 1).fill(0)];
-  const b = (x: number[]) => mc.get(x.filter((y) => y).join(','))!;
+  const b = (x: number[]) => getOrThrow(mc, x.filter((y) => y).join(','));
   yield [t.map(BigInt), b(t)];
   let j = n ? 0 : m;
   while (j < m - 1) {
-    const tj = t[j]!;
+    const tj = at(t, j);
     if (j) {
       t[j] = 0;
       t[0] = tj;
     }
     if (tj > 1) {
-      t[j + 1]!++;
+      t[j + 1] = at(t, j + 1) + 1;
       j = 0;
     } else {
       j++;
-      t[j]!++;
+      t[j] = at(t, j) + 1;
     }
-    t[0]!--;
+    t[0] = at(t, 0) - 1;
     yield [t.map(BigInt), b(t)];
   }
 }

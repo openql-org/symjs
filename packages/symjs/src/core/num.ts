@@ -9,13 +9,15 @@ import * as F from '../numeric/mpf';
 import type { Num } from './nodes';
 import { Float, Rational } from './nodes';
 import { ipow } from './numbers';
+import { InvariantError } from './errors';
 
 const toNumber = (a: Num): number => (a instanceof Rational ? a.value : a.value);
 
 /** Working precision of a Float operation (SymPy: the larger Float precision). */
 function opPrec(a: Num, b: Num): number {
-  if (a instanceof Float && b instanceof Float) return Math.max(a.prec, b.prec);
-  return a instanceof Float ? a.prec : (b as Float).prec;
+  if (a instanceof Float) return b instanceof Float ? Math.max(a.prec, b.prec) : a.prec;
+  if (b instanceof Float) return b.prec;
+  throw new InvariantError('opPrec needs a Float operand');
 }
 
 /** Value as mpf; rationals are rounded to prec (SymPy Rational._as_mpf_op). */
@@ -29,6 +31,8 @@ export function mkFloat(v: F.Mpf, prec: number): Num {
   return F.isZero(v) ? Rational.of(0n) : new Float(v, prec);
 }
 
+export function numAdd(a: Rational, b: Rational): Rational;
+export function numAdd(a: Num, b: Num): Num;
 export function numAdd(a: Num, b: Num): Num {
   if (a instanceof Rational && b instanceof Rational) {
     if (a.q === b.q) return Rational.of(a.p + b.p, a.q);
@@ -38,6 +42,8 @@ export function numAdd(a: Num, b: Num): Num {
   return mkFloat(F.add(toMpf(a, prec), toMpf(b, prec), prec), prec);
 }
 
+export function numMul(a: Rational, b: Rational): Rational;
+export function numMul(a: Num, b: Num): Num;
 export function numMul(a: Num, b: Num): Num {
   if (a instanceof Rational && b instanceof Rational) {
     if (a.isOne) return b;
@@ -48,6 +54,8 @@ export function numMul(a: Num, b: Num): Num {
   return mkFloat(F.mul(toMpf(a, prec), toMpf(b, prec), prec), prec);
 }
 
+export function numNeg(a: Rational): Rational;
+export function numNeg(a: Num): Num;
 export function numNeg(a: Num): Num {
   return a instanceof Rational ? Rational.of(-a.p, a.q) : new Float(F.neg(a.mpf), a.prec);
 }
@@ -58,6 +66,8 @@ export function numInv(a: Num): Num {
 }
 
 /** a^n for integer n. */
+export function numPowInt(a: Rational, n: bigint): Rational;
+export function numPowInt(a: Num, n: bigint): Num;
 export function numPowInt(a: Num, n: bigint): Num {
   if (a instanceof Rational) {
     if (n >= 0n) return Rational.of(ipow(a.p, n), ipow(a.q, n));
@@ -99,6 +109,6 @@ export function ratFloor(a: Rational): bigint {
 /** a mod m for rationals, result in [0, m). */
 export function ratMod(a: Rational, m: Rational): Rational {
   const k = ratFloor(Rational.of(a.p * m.q, a.q * m.p));
-  return numAdd(a, numNeg(numMul(Rational.of(k), m))) as Rational;
+  return numAdd(a, numNeg(numMul(Rational.of(k), m)));
 }
 

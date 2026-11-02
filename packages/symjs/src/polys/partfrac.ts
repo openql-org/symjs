@@ -7,6 +7,7 @@
  */
 
 import { NotImplementedError } from '../core/errors';
+import { at } from '../core/guard';
 import { apartFull } from './rootsum';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Rational, S, Sym } from '../core/nodes';
@@ -33,7 +34,7 @@ export function apart(fIn: ExprLike, xIn?: Sym, opts: { full?: boolean } = {}): 
   const quotient = qPoly.asExpr();
   const r = rPoly.asExpr();
   if (r instanceof Rational && r.isZero) return quotient;
-  const gens = sortGens([...Q.freeSymbols()]) as Sym[];
+  const gens = sortGens([...Q.freeSymbols()]);
   const [content, factors0] = factorListExpr(expandMul(Q), gens);
   let c: Expr = content;
   const factors: [Expr, number][] = [];
@@ -63,9 +64,10 @@ export function apart(fIn: ExprLike, xIn?: Sym, opts: { full?: boolean } = {}): 
   const eqs = diffPoly.coeffs();
   const sol = linsolve(eqs, unknowns);
   if (!sol) throw new NotImplementedError('apart: no decomposition found');
-  const reps = new Map(unknowns.map((u, i) => [u.key, sol[i]!]));
+  const reps = new Map(unknowns.map((u, i) => [u.key, at(sol, i)]));
   const sub = (e: Expr): Expr => {
-    if (e instanceof Sym && reps.has(e.key)) return reps.get(e.key)!;
+    const rep = e instanceof Sym ? reps.get(e.key) : undefined;
+    if (rep !== undefined) return rep;
     if (e.args.length === 0) return e;
     return impl_rebuild(e, e.args.map(sub));
   };

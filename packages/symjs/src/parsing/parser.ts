@@ -17,6 +17,7 @@ import { Add, Mul, Pow, Rational, S, Sym, impl } from '../core/nodes';
 import { and, not, or, xor } from '../core/boolalg';
 import { add, div, exp, mul, neg, pow, sqrt, sub, sympify } from '../core/ops';
 import { fn } from '../functions/elementary';
+import { defined } from '../core/guard';
 import { Eq, rel } from '../core/logic';
 import { Function, derivative } from '../core/undef';
 
@@ -51,12 +52,13 @@ type Token =
 
 /** SymPy repeating decimals: '1.2[3]' = 1.2333... = 37/30. */
 function repeatingDecimal(s: string): Rational {
-  const [, int, frac, rep] = /^(\d*)\.(\d*)\[(\d+)\]$/.exec(s)!;
+  // the tokenizer only passes strings of this form, so every group is present
+  const [, int = '', frac = '', rep = ''] = defined(/^(\d*)\.(\d*)\[(\d+)\]$/.exec(s), 'repeating decimal');
   const fixed = BigInt((int || '0') + frac);
-  const scale = 10n ** BigInt(frac!.length);
-  const nines = 10n ** BigInt(rep!.length) - 1n;
+  const scale = 10n ** BigInt(frac.length);
+  const nines = 10n ** BigInt(rep.length) - 1n;
   // fixed/scale + rep/(nines*scale)
-  return Rational.of(fixed * nines + BigInt(rep!), nines * scale);
+  return Rational.of(fixed * nines + BigInt(rep), nines * scale);
 }
 
 function tokenize(src: string, offset: number, out: Token[]): void {
@@ -71,7 +73,7 @@ function tokenize(src: string, offset: number, out: Token[]): void {
     if (m[1] !== undefined) out.push({ t: 'value', v: repeatingDecimal(m[1]), pos });
     else if (m[2] !== undefined) out.push({ t: 'num', v: m[2], pos });
     else if (m[3] !== undefined) out.push({ t: 'name', v: m[3], pos });
-    else out.push({ t: 'op', v: m[4]!, pos });
+    else out.push({ t: 'op', v: defined(m[4], 'operator token'), pos });
     i = re.lastIndex;
   }
 }
@@ -126,32 +128,44 @@ const SPECIAL_NAMES: SpecialFnName[] = [
   'Max',
 ];
 
+/** The argument at index i of a parsed call; a SyntaxError when the call has too few. */
+function argAt(args: readonly Expr[], i: number, name: string): Expr {
+  const a = args[i];
+  if (a === undefined) throw new SyntaxError(`${name}() takes at least ${i + 1} argument${i === 0 ? '' : 's'}`);
+  return a;
+}
+
 const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
-  sqrt: ([x]) => sqrt(x!),
-  exp: ([x]) => exp(x!),
+  sqrt: (args) => sqrt(argAt(args, 0, 'sqrt')),
+  exp: (args) => exp(argAt(args, 0, 'exp')),
   ...Object.fromEntries(
     (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 'abs', 're', 'im', 'arg', 'conjugate', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc'] as FnName[]).map(
       (n) => [n, (args: Expr[]) => fn(n, args)],
     ),
   ),
-  ln: ([x]) => fn('log', [x!]),
-  Abs: ([x]) => fn('abs', [x!]),
+  ln: (args) => fn('log', [argAt(args, 0, 'ln')]),
+  Abs: (args) => fn('abs', [argAt(args, 0, 'Abs')]),
   ...Object.fromEntries(SPECIAL_NAMES.map((n) => [n, (args: Expr[]) => fn(n, args)])),
-  digamma: ([x]) => fn('polygamma', [0, x!]),
-  trigamma: ([x]) => fn('polygamma', [1, x!]),
-  E1: ([x]) => fn('expint', [1, x!]),
+  digamma: (args) => fn('polygamma', [0, argAt(args, 0, 'digamma')]),
+  trigamma: (args) => fn('polygamma', [1, argAt(args, 0, 'trigamma')]),
+  E1: (args) => fn('expint', [1, argAt(args, 0, 'E1')]),
   RisingFactorial: (args) => fn('rf', args),
-  Derivative: ([e, ...rest]) => {
+  Derivative: (args) => {
+    const e = argAt(args, 0, 'Derivative');
     // Derivative(f, x, y, ...) with repeated variables, or Derivative(f, x, n) with an integer order
     const vc: [Expr, number][] = [];
-    for (const a of rest) {
-      if (a instanceof Rational && a.isInteger && vc.length) vc[vc.length - 1]![1] += Number(a.p) - 1;
+    for (const a of args.slice(1)) {
+      const prev = vc.at(-1);
+      if (a instanceof Rational && a.isInteger && prev) prev[1] += Number(a.p) - 1;
       else vc.push([a, 1]);
     }
-    return derivative(e!, vc);
+    return derivative(e, vc);
   },
-  diff: ([e, v, n]) => impl.diff(e!, v!, n instanceof Rational ? Number(n.p) : 1),
-  Eq: ([a, b]) => Eq(a!, b ?? 0),
+  diff: (args) => {
+    const n = args[2];
+    return impl.diff(argAt(args, 0, 'diff'), argAt(args, 1, 'diff'), n instanceof Rational ? Number(n.p) : 1);
+  },
+  Eq: (args) => Eq(argAt(args, 0, 'Eq'), args[1] ?? 0),
   FallingFactorial: (args) => fn('ff', args),
 };
 
@@ -168,6 +182,8 @@ const CONSTANTS: Record<string, Expr> = {
   TribonacciConstant: S.TribonacciConstant,
 };
 
+const isSymbolList = (s: ParseOptions['symbols']): s is readonly Sym[] => Array.isArray(s);
+
 function parseNumber(s: string): Expr {
   if (/^\d+$/.test(s)) return Rational.of(BigInt(s));
   return sympify(Number(s));
@@ -179,8 +195,8 @@ class Parser {
 
   constructor(private readonly tokens: Token[], private readonly opts: ParseOptions) {
     const s = opts.symbols;
-    if (Array.isArray(s)) for (const sym of s as readonly Sym[]) this.symbols.set(sym.name, sym);
-    else if (s) for (const [k, v] of Object.entries(s as Record<string, Expr>)) this.symbols.set(k, v);
+    if (isSymbolList(s)) for (const sym of s) this.symbols.set(sym.name, sym);
+    else if (s) for (const [k, v] of Object.entries(s)) this.symbols.set(k, v);
     for (const [k, v] of Object.entries(opts.locals ?? {})) {
       if (typeof v === 'function') this.localFns.set(k, v);
       else this.symbols.set(k, sympify(v));
@@ -189,10 +205,14 @@ class Parser {
   private readonly localFns = new Map<string, (...args: Expr[]) => ExprLike>();
 
   private peek(): Token {
-    return this.tokens[this.i]!;
+    const t = this.tokens[this.i];
+    if (t === undefined) throw new SyntaxError('unexpected end of input');
+    return t;
   }
   private next(): Token {
-    return this.tokens[this.i++]!;
+    const t = this.peek();
+    this.i++;
+    return t;
   }
   private isOp(v: string): boolean {
     const t = this.peek();
@@ -270,9 +290,10 @@ class Parser {
     const lhs = this.sum();
     const ops: Record<string, RelOp> = { '<': 'Lt', '<=': 'Le', '>': 'Gt', '>=': 'Ge' };
     const t = this.peek();
-    if (t.t === 'op' && ops[t.v]) {
+    const op = t.t === 'op' ? ops[t.v] : undefined;
+    if (op) {
       this.next();
-      return rel(ops[t.v]!, lhs, this.sum());
+      return rel(op, lhs, this.sum());
     }
     return lhs;
   }
@@ -345,7 +366,8 @@ class Parser {
         return t.v;
       case 'name': {
         // implicit application: sin x
-        if (this.implicit && FUNCTIONS[t.v] && !this.isOp('(') && this.startsFactor()) return FUNCTIONS[t.v]!([this.power()]);
+        const knownFn = FUNCTIONS[t.v];
+        if (this.implicit && knownFn && !this.isOp('(') && this.startsFactor()) return knownFn([this.power()]);
         // with implicit multiplication a known symbol before '(' multiplies (x(y + 1))
         const asSymbol = this.implicit && !FUNCTIONS[t.v] && !this.localFns.has(t.v) && this.isOp('(');
         if (this.isOp('(') && !asSymbol) {
@@ -410,8 +432,9 @@ export function ex(strings: TemplateStringsArray, ...values: ExprLike[]): Expr {
   strings.forEach((s, i) => {
     tokenize(s, offset, tokens);
     offset += s.length;
-    if (i < values.length) {
-      const v = sympify(values[i]!);
+    const value = values[i];
+    if (value !== undefined) {
+      const v = sympify(value);
       // bare names in the template refer to the interpolated symbols of the same name
       if (v instanceof Sym) symbols[v.name] = v;
       tokens.push({ t: 'value', v, pos: offset });

@@ -6,21 +6,24 @@
  * tensorproduct, tensorcontraction, tensordiagonal and permutedims.
  */
 
+import { at } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
 import { S } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
 import { Matrix } from '../matrices/matrix';
-import type { ArrayInput, NestedArrayInput, ShapeInput } from './ndimarray';
+import type { ArrayInput, NestedArrayInput } from './ndimarray';
 import { ImmutableDenseNDimArray, ImmutableSparseNDimArray, NDimArray, SparseNDimArray, permuteArray } from './ndimarray';
 
 /** An argument of the array operations: an array, a Matrix, nested lists or (for tensorproduct) a scalar. */
 export type TensorArg = NDimArray | Matrix | readonly NestedArrayInput[] | ExprLike;
 
 /** SymPy _arrayfy: arrays stay, matrices and lists become ImmutableDenseNDimArray, scalars are sympified. */
+const isNestedList = (a: TensorArg): a is readonly NestedArrayInput[] => Array.isArray(a);
+
 function arrayfy(a: TensorArg): NDimArray | Expr {
   if (a instanceof NDimArray) return a;
-  if (a instanceof Matrix || Array.isArray(a)) return new ImmutableDenseNDimArray(a as ArrayInput);
-  return sympify(a as ExprLike);
+  if (a instanceof Matrix || isNestedList(a)) return new ImmutableDenseNDimArray(a);
+  return sympify(a);
 }
 
 function toArray(a: TensorArg): NDimArray {
@@ -30,7 +33,7 @@ function toArray(a: TensorArg): NDimArray {
 }
 
 const newOfClass = (a: NDimArray, it: ArrayInput, shape: readonly number[]): NDimArray =>
-  new (a.constructor as new (it: ArrayInput, sh?: ShapeInput) => NDimArray)(it, shape);
+  a.newLike(it, shape);
 
 /**
  * SymPy tensorproduct(*args): the tensor (outer) product of arrays,
@@ -43,10 +46,10 @@ const newOfClass = (a: NDimArray, it: ArrayInput, shape: readonly number[]): NDi
  */
 export function tensorproduct(...args: TensorArg[]): Expr {
   if (args.length === 0) return S.One;
-  if (args.length === 1) return arrayfy(args[0]!);
-  if (args.length > 2) return tensorproduct(tensorproduct(args[0]!, args[1]!), ...args.slice(2));
-  const a = arrayfy(args[0]!);
-  const b = arrayfy(args[1]!);
+  if (args.length === 1) return arrayfy(at(args, 0));
+  if (args.length > 2) return tensorproduct(tensorproduct(at(args, 0), at(args, 1)), ...args.slice(2));
+  const a = arrayfy(at(args, 0));
+  const b = arrayfy(at(args, 1));
   if (!(a instanceof NDimArray) || !(b instanceof NDimArray)) {
     if (a instanceof NDimArray) return a.mul(b);
     if (b instanceof NDimArray) return b.rmul(a);
@@ -71,7 +74,7 @@ function contractionData(array: NDimArray, groups: readonly (readonly number[])[
   const taken = new Set<number>();
   for (const g of groups) {
     if (!Array.isArray(g)) throw new RangeError('collections of contraction/diagonal axes expected');
-    const dim = array.shape[g[0]!];
+    const dim = array.shape[at(g, 0)];
     for (const d of g) {
       if (taken.has(d)) throw new RangeError('dimension specified more than once');
       if (dim !== array.shape[d]) throw new RangeError('cannot contract or diagonalize between axes of different dimension');
@@ -83,13 +86,13 @@ function contractionData(array: NDimArray, groups: readonly (readonly number[])[
   let c = 1;
   for (let i = rank - 1; i >= 0; i--) {
     cum[i] = c;
-    c *= array.shape[i]!;
+    c *= at(array.shape, i);
   }
   const keep = [...Array(rank).keys()].filter((i) => !taken.has(i));
   return {
-    remaining: keep.map((i) => Array.from({ length: array.shape[i]! }, (_, j) => cum[i]! * j)),
-    remainingShape: keep.map((i) => array.shape[i]!),
-    deltas: groups.map((g) => Array.from({ length: array.shape[g[0]!]! }, (_, js) => g.reduce((s, ig) => s + cum[ig]! * js, 0))),
+    remaining: keep.map((i) => Array.from({ length: at(array.shape, i) }, (_, j) => at(cum, i) * j)),
+    remainingShape: keep.map((i) => at(array.shape, i)),
+    deltas: groups.map((g) => Array.from({ length: at(array.shape, at(g, 0)) }, (_, js) => g.reduce((s, ig) => s + at(cum, ig) * js, 0))),
   };
 }
 
@@ -112,8 +115,8 @@ export function tensorcontraction(arrayIn: TensorArg, ...axes: (readonly number[
   const { remaining, remainingShape, deltas } = contractionData(array, axes);
   const flat = array.flatElements();
   const offsets = productSums(deltas);
-  const out = productSums(remaining).map((base) => add(...offsets.map((o) => flat[base + o]!)));
-  if (remaining.length === 0) return out[0]!;
+  const out = productSums(remaining).map((base) => add(...offsets.map((o) => at(flat, base + o))));
+  if (remaining.length === 0) return at(out, 0);
   return newOfClass(array, out, remainingShape);
 }
 
@@ -137,7 +140,7 @@ export function tensordiagonal(arrayIn: TensorArg, ...axes: (readonly number[])[
   const { remaining, remainingShape, deltas } = contractionData(array, axes);
   const flat = array.flatElements();
   const offsets = productSums(deltas);
-  const out = productSums(remaining).flatMap((base) => offsets.map((o) => flat[base + o]!));
+  const out = productSums(remaining).flatMap((base) => offsets.map((o) => at(flat, base + o)));
   return newOfClass(array, out, [...remainingShape, ...deltas.map((d) => d.length)]);
 }
 
@@ -162,13 +165,16 @@ export function permutedims(expr: TensorArg, perm?: PermutationLike | Permutedim
   const array = toArray(expr);
   let p: readonly number[];
   if (perm === undefined) p = permutationFromIndexOrders(opts, array.rank());
-  else if (Array.isArray(perm) || 'arrayForm' in perm) {
+  else if (isPermutationLike(perm)) {
     if (opts.indexOrderNew !== undefined) throw new RangeError('index_order_new cannot be defined with permutation');
     if (opts.indexOrderOld !== undefined) throw new RangeError('index_order_old cannot be defined with permutation');
-    p = Array.isArray(perm) ? (perm as readonly number[]) : perm.arrayForm;
-  } else p = permutationFromIndexOrders(perm as PermutedimsOptions, array.rank());
+    p = isIndexArray(perm) ? perm : perm.arrayForm;
+  } else p = permutationFromIndexOrders(perm, array.rank());
   return permuteArray(array, p);
 }
+
+const isIndexArray = (p: PermutationLike | PermutedimsOptions): p is readonly number[] => Array.isArray(p);
+const isPermutationLike = (p: PermutationLike | PermutedimsOptions): p is PermutationLike => isIndexArray(p) || 'arrayForm' in p;
 
 /** SymPy PermuteDims._get_permutation_from_index_orders. */
 function permutationFromIndexOrders(opts: PermutedimsOptions, dim: number): number[] {

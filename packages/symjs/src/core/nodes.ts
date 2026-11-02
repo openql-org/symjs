@@ -13,7 +13,8 @@
  * definitions free of circular imports.
  */
 
-import { NotLoadedError } from './errors';
+import { InvariantError, NotLoadedError } from './errors';
+import { at } from './guard';
 import { gcd } from './numbers';
 import { type Mpf, fromNumber as mpfFromNumber, normalize as mpfNormalize, toNumber as mpfToNumber } from '../numeric/mpf';
 
@@ -273,6 +274,7 @@ function notLoaded(name: string, entry: string): never {
   throw new NotLoadedError(`${name} is not available: import '@symjs/symjs/${entry}' (or '@symjs/symjs')`);
 }
 
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- registry: the remaining entries are installed by the feature modules at import time
 export const impl: Impl = {
   simplify: () => notLoaded('simplify', 'simplify'),
   integrate: () => notLoaded('integrate', 'calculus'),
@@ -339,7 +341,10 @@ export abstract class Expr {
   subs(s: Substitution): Expr;
   subs(from: Expr, to: ExprLike): Expr;
   subs(a: Substitution | Expr, b?: ExprLike): Expr {
-    if (a instanceof Expr) return impl.subs(this, [[a, b as ExprLike]]);
+    if (a instanceof Expr) {
+      if (b === undefined) throw new TypeError('subs(from, to) requires a replacement');
+      return impl.subs(this, [[a, b]]);
+    }
     return impl.subs(this, a);
   }
   diff(x: Expr, n = 1): Expr {
@@ -417,6 +422,12 @@ export abstract class Expr {
 // ---------------------------------------------------------------------------
 // Atoms
 // ---------------------------------------------------------------------------
+
+/** e as a Rational; throws InvariantError when it is not one (what names the value in the message). */
+export function asRational(e: Expr, what = 'value'): Rational {
+  if (!(e instanceof Rational)) throw new InvariantError(`${what} is not a Rational`);
+  return e;
+}
 
 /** Exact rational number p/q (q > 0, gcd(p, q) = 1). Integers have q = 1. */
 export class Rational extends Expr {
@@ -755,7 +766,7 @@ export class Piecewise extends Expr {
   }
   get pairs(): [Expr, Expr][] {
     const out: [Expr, Expr][] = [];
-    for (let i = 0; i < this.args.length; i += 2) out.push([this.args[i]!, this.args[i + 1]!]);
+    for (let i = 0; i < this.args.length; i += 2) out.push([at(this.args, i), at(this.args, i + 1)]);
     return out;
   }
   protected computeKey(): string {
@@ -770,13 +781,13 @@ export class Integral extends Expr {
     super();
   }
   get integrand(): Expr {
-    return this.args[0]!;
+    return at(this.args, 0);
   }
   get variable(): Expr {
-    return this.args[1]!;
+    return at(this.args, 1);
   }
   get limits(): [Expr, Expr] | undefined {
-    return this.args.length === 4 ? [this.args[2]!, this.args[3]!] : undefined;
+    return this.args.length === 4 ? [at(this.args, 2), at(this.args, 3)] : undefined;
   }
   protected computeKey(): string {
     return `Integral(${this.args.map((a) => a.key).join(',')})`;
@@ -804,12 +815,12 @@ export class Derivative extends Expr {
     super();
   }
   get expr(): Expr {
-    return this.args[0]!;
+    return at(this.args, 0);
   }
   get variableCount(): [Expr, number][] {
     const out: [Expr, number][] = [];
     for (let i = 1; i < this.args.length; i += 2) {
-      out.push([this.args[i]!, Number((this.args[i + 1] as Rational).p)]);
+      out.push([at(this.args, i), Number(asRational(at(this.args, i + 1), 'derivative count').p)]);
     }
     return out;
   }
@@ -823,6 +834,18 @@ export class Limit extends Expr {
   readonly kind = 'Limit' as const;
   constructor(readonly args: readonly Expr[], readonly dir: '+' | '-' | '+-' = '+') {
     super();
+  }
+  /** The expression whose limit is taken. */
+  get expr(): Expr {
+    return at(this.args, 0);
+  }
+  /** The limit variable. */
+  get variable(): Expr {
+    return at(this.args, 1);
+  }
+  /** The point the variable approaches. */
+  get point(): Expr {
+    return at(this.args, 2);
   }
   protected computeKey(): string {
     return `Limit(${this.args.map((a) => a.key).join(',')},${this.dir})`;
@@ -839,7 +862,7 @@ export class Order extends Expr {
     super();
   }
   get expr(): Expr {
-    return this.args[0]!;
+    return at(this.args, 0);
   }
   get variable(): Expr | undefined {
     return this.args[1];

@@ -10,10 +10,11 @@
 
 import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike, RelOp, Sym } from '../core/nodes';
-import { Add, Constant, Dummy, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Special, impl } from '../core/nodes';
+import { Add, BoolAtom, Constant, Dummy, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Special, impl } from '../core/nodes';
+import { at, cast, defined, first } from '../core/guard';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { expandMul } from '../simplify/expand';
-import { and, or as orB } from '../core/boolalg';
+import { BoolOp, and, or as orB } from '../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne } from '../core/logic';
 import { some, xreplace } from '../core/traverse';
 import { fn, log } from '../functions/elementary';
@@ -24,9 +25,8 @@ import { cancel, fraction } from '../simplify/rational';
 import { simplify } from '../simplify/simplify';
 import { solve } from './solve';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import type {
-  SetExpr } from '../sets/sets';
 import {
+  SetExpr,
   SetOp,
   ConditionSet,
   imageSet,
@@ -50,6 +50,8 @@ import {
 } from '../sets/sets';
 
 const isRealSym = (e: Expr) => !e.has(S.I);
+const isDefined = <T>(v: T | undefined): v is T => v !== undefined;
+const isExprList = (v: readonly ExprLike[] | ExprLike): v is readonly ExprLike[] => Array.isArray(v);
 const relFn: Record<RelOp, (a: ExprLike, b: ExprLike) => Expr> = { Eq, Ne, Lt, Le, Gt, Ge };
 
 function holds(op: RelOp, v: number): boolean {
@@ -134,14 +136,14 @@ export function periodicity(fIn: ExprLike, x: Sym): Expr | undefined {
   if (f instanceof Fn) {
     const P = trigPeriod(f.name);
     if (P) {
-      const a = linCoeff(f.args[0]!);
+      const a = linCoeff(first(f.args));
       if (a !== undefined) return mul(P, pow(impl.abs(a), -1));
     }
     if (f.name === 'abs') {
-      const p = periodicity(f.args[0]!, x);
+      const p = periodicity(first(f.args), x);
       return p;
     }
-    if (f.args.length === 1 && !P) return periodicity(f.args[0]!, x);
+    if (f.args.length === 1 && !P) return periodicity(first(f.args), x);
     return undefined;
   }
   if (f instanceof Pow) {
@@ -156,14 +158,14 @@ export function periodicity(fIn: ExprLike, x: Sym): Expr | undefined {
     if (bh && !eh) return periodicity(f.base, x);
     if (eh && !bh) return periodicity(f.exp, x);
     const ps = [f.base, f.exp].map((a) => periodicity(a, x));
-    if (ps.some((p) => p === undefined)) return undefined;
-    return lcim(ps as Expr[]);
+    if (!ps.every(isDefined)) return undefined;
+    return lcim(ps);
   }
   if (f instanceof Mul || f instanceof Add) {
     const dep = f.args.filter((a) => a.has(x));
     const ps = dep.map((a) => periodicity(a, x));
-    if (ps.some((p) => p === undefined)) return undefined;
-    return lcim(ps.filter((p) => !(p instanceof Rational && p.isZero)) as Expr[]);
+    if (!ps.every(isDefined)) return undefined;
+    return lcim(ps.filter((p) => !(p instanceof Rational && p.isZero)));
   }
   return undefined;
 }
@@ -187,12 +189,13 @@ function realZeros(e: Expr, x: Sym, lo: Expr, hi: Expr): Expr[] {
   base = base.filter(isRealSym);
   const out: Expr[] = [];
   const P = base.length ? periodicity(e, x) : undefined;
-  const loV = realValue(lo)!;
-  const hiV = realValue(hi)!;
+  // an undecidable bound or period gives NaN, which skips the periodic extension
+  const loV = realValue(lo) ?? NaN;
+  const hiV = realValue(hi) ?? NaN;
   for (const r of base) {
     if (P && !(P instanceof Rational && P.isZero) && Number.isFinite(loV) && Number.isFinite(hiV)) {
-      const pv = realValue(P)!;
-      const rv = realValue(r)!;
+      const pv = realValue(P) ?? NaN;
+      const rv = realValue(r) ?? NaN;
       const kmin = Math.ceil((loV - rv) / pv - 1e-9);
       const kmax = Math.floor((hiV - rv) / pv + 1e-9);
       for (let k = kmin; k <= kmax; k++) out.push(add(r, mul(k, P)));
@@ -228,7 +231,7 @@ function sample(a: Expr, b: Expr): Expr {
  */
 /** First Abs(a) in e whose argument depends on x. */
 function findAbs(e: Expr, x: Sym): Expr | undefined {
-  if (e instanceof Fn && e.name === 'abs' && e.args[0]!.has(x)) return e;
+  if (e instanceof Fn && e.name === 'abs' && first(e.args).has(x)) return e;
   for (const a of e.args) {
     const r = findAbs(a, x);
     if (r) return r;
@@ -240,7 +243,7 @@ function solveSign(f0: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
   // Abs(a): split into the cases a >= 0 and a < 0 (SymPy reduce_abs_inequality)
   const ab = findAbs(f0, x);
   if (ab) {
-    const a = ab.args[0]!;
+    const a = first(ab.args);
     const pos = intersection(solveSign(a, 'Ge', x, domain), solveSign(xreplace(f0, [[ab, a]]), op, x, domain));
     const neg = intersection(solveSign(a, 'Lt', x, domain), solveSign(xreplace(f0, [[ab, mul(-1, a)]]), op, x, domain));
     return union(pos, neg);
@@ -256,12 +259,13 @@ function solveSign(f0: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
   const zeros = realZeros(num, x, lo, hi);
   const poles = realZeros(den, x, lo, hi);
   if (op === 'Eq') return intersection(finiteSet(...zeros.filter((z) => !poles.some((p) => p.key === z.key))), dom);
-  const pts = [...zeros, ...poles].sort((a, b) => cmpReal(a, b) ?? 0).filter((p, i, a) => i === 0 || p.key !== a[i - 1]!.key);
+  const pts = [...zeros, ...poles].sort((a, b) => cmpReal(a, b) ?? 0).filter((p, i, a) => i === 0 || p.key !== at(a, i - 1).key);
   const edges = [lo, ...pts.filter((p) => cmpReal(p, lo) !== 0 && cmpReal(p, hi) !== 0), hi];
   const parts: SetExpr[] = [];
   for (let i = 0; i + 1 < edges.length; i++) {
-    const v = numAt(f, x, sample(edges[i]!, edges[i + 1]!));
-    if (v !== undefined && holds(op, v)) parts.push(interval(edges[i]!, edges[i + 1]!, true, true));
+    const [l, r] = [at(edges, i), at(edges, i + 1)];
+    const v = numAt(f, x, sample(l, r));
+    if (v !== undefined && holds(op, v)) parts.push(interval(l, r, true, true));
   }
   if (op === 'Le' || op === 'Ge' || op === 'Ne') {
     for (const z of edges) {
@@ -290,7 +294,6 @@ export function solveUnivariateInequality(
 
 /** SymPy solve_poly_inequality: a list of intervals. */
 export function solvePolyInequality(poly: Poly, rel: string): SetExpr[] {
-  const x = poly.gens[0] as Sym;
   const roots = poly.realRoots();
   const reals: [Expr, number][] = [];
   for (const r of roots) {
@@ -298,7 +301,6 @@ export function solvePolyInequality(poly: Poly, rel: string): SetExpr[] {
     if (last && last[0].key === r.key) last[1]++;
     else reals.push([r, 1]);
   }
-  void x;
   const out: SetExpr[] = [];
   if (rel === '==') {
     for (const [r] of reals) out.push(finiteSet(r));
@@ -312,7 +314,8 @@ export function solvePolyInequality(poly: Poly, rel: string): SetExpr[] {
     }
     return out;
   }
-  let sign = (poly.LC() as Rational).isPositive ? 1 : -1;
+  const lc = poly.LC();
+  let sign = lc instanceof Rational && lc.isPositive ? 1 : -1;
   let eqSign = 0;
   let equal = false;
   if (rel === '>') eqSign = 1;
@@ -364,11 +367,11 @@ export function solveRationalInequalities(eqs: readonly (readonly [[Poly, Poly],
 
 /** SymPy reduce_inequalities: a relational description of the solutions. */
 export function reduceInequalities(ineqsIn: readonly ExprLike[] | ExprLike, symbols: readonly Sym[] = []): Expr {
-  const ineqs = (Array.isArray(ineqsIn) ? ineqsIn : [ineqsIn]).map((e) => sympify(e as ExprLike));
+  const ineqs = (isExprList(ineqsIn) ? ineqsIn : [ineqsIn]).map((e) => sympify(e));
   const rels: Expr[] = ineqs.map((e) => (e instanceof Rel || e.kind === 'Bool' ? e : Eq(e, 0)));
   const gens = symbols.length ? symbols : ([...new Map(rels.flatMap((r) => [...r.freeSymbols()]).map((s) => [s.key, s])).values()] as Sym[]);
   const parts: Expr[] = [];
-  const byGen = new Map<string, Expr[]>();
+  const byGen = new Map<string, Rel[]>();
   for (const r of rels) {
     if (!(r instanceof Rel)) {
       parts.push(r);
@@ -376,19 +379,20 @@ export function reduceInequalities(ineqsIn: readonly ExprLike[] | ExprLike, symb
     }
     const fs = [...r.freeSymbols()].filter((s) => gens.some((g) => g.key === s.key));
     if (fs.length !== 1) throw new NotImplementedError('reduce_inequalities: multivariate inequality');
-    const g = fs[0]!;
-    if (!byGen.has(g.key)) byGen.set(g.key, []);
-    byGen.get(g.key)!.push(r);
+    const g = first(fs);
+    const list = byGen.get(g.key);
+    if (list) list.push(r);
+    else byGen.set(g.key, [r]);
   }
   for (const [k, rs] of byGen) {
-    const g = gens.find((s) => s.key === k)!;
+    const g = defined(gens.find((s) => s.key === k), 'generator');
     const others = [...new Map(rs.flatMap((r) => [...r.freeSymbols()]).map((s) => [s.key, s])).values()].filter((s) => s.key !== g.key);
     if (others.length) {
-      for (const r of rs as Rel[]) parts.push(linearInequality(r, g));
+      for (const r of rs) parts.push(linearInequality(r, g));
       continue;
     }
     let set: SetExpr = Reals;
-    for (const r of rs as Rel[]) set = intersection(set, solveSign(add(r.lhs, mul(-1, r.rhs)), r.op, g, Reals_()));
+    for (const r of rs) set = intersection(set, solveSign(add(r.lhs, mul(-1, r.rhs)), r.op, g, Reals_()));
     parts.push(g.assumptions.real ? dropInfiniteBounds(asRelational(set, g)) : asRelational(set, g));
   }
   return and(...parts);
@@ -400,8 +404,8 @@ const Reals_ = (): SetExpr => Reals;
 function dropInfiniteBounds(e: Expr): Expr {
   const isInfBound = (r: Expr) => r instanceof Rel && (r.lhs instanceof Special || r.rhs instanceof Special) && (r.op === 'Lt' || r.op === 'Gt');
   if (isInfBound(e)) return S.true;
-  if (e.kind === 'BoolOp') {
-    const op = (e as unknown as { op: string }).op;
+  if (e instanceof BoolOp) {
+    const op = e.op;
     const args = e.args.map(dropInfiniteBounds);
     return op === 'And' ? and(...args) : op === 'Or' ? orB(...args) : e;
   }
@@ -503,7 +507,7 @@ function periodicSolutions(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefine
   const n = new Dummy('n');
   // Union orders its arguments by sort_key (not by value)
   const sets = sols.map(([s]) => imageSet(n, add(mul(P, n), s), Integers)).sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
-  return sets.length === 1 ? sets[0]! : new SetOp('Union', sets);
+  return sets.length === 1 ? first(sets) : new SetOp('Union', sets);
 }
 
 /** a*exp(u) + b = 0 with u linear in x over the complex numbers. */
@@ -511,9 +515,9 @@ function complexExpSolutions(g: Expr, x: Sym): SetExpr | undefined {
   const terms = g instanceof Add ? g.args : [g];
   const dep = terms.filter((t) => t.has(x));
   if (dep.length !== 1) return undefined;
-  const t = dep[0]!;
+  const t = first(dep);
   const fs = t instanceof Mul ? t.args : [t];
-  const e = fs.find((h) => h instanceof Pow && h.base instanceof Constant && h.base.name === 'E' && h.has(x)) as Pow | undefined;
+  const e = fs.find((h): h is Pow => h instanceof Pow && h.base instanceof Constant && h.base.name === 'E' && h.has(x));
   if (!e || fs.filter((h) => h.has(x)).length !== 1) return undefined;
   const pc = Poly.from(e.exp, [x]);
   if (pc.degree() !== 1) return undefined;
@@ -544,10 +548,10 @@ export function singularities(eIn: ExprLike, x: Sym, domain?: SetExpr): SetExpr 
   const visit = (t: Expr) => {
     t.args.forEach(visit);
     if (t instanceof Pow && t.exp instanceof Rational && t.exp.isNegative && t.base.has(x)) sings = union(sings, solveset(t.base, x, dom));
-    if (t instanceof Fn && ['log', 'asech', 'acsch'].includes(t.name)) sings = union(sings, solveset(t.args[0]!, x, dom));
-    if (t instanceof Fn && ['atanh', 'acoth'].includes(t.name)) sings = union(sings, solveset(add(t.args[0]!, -1), x, dom), solveset(add(t.args[0]!, 1), x, dom));
-    if (t instanceof Fn && ['tan', 'sec'].includes(t.name)) sings = union(sings, solveset(impl.sympify(cosOf(t.args[0]!)), x, dom));
-    if (t instanceof Fn && ['cot', 'csc'].includes(t.name)) sings = union(sings, solveset(sinOf(t.args[0]!), x, dom));
+    if (t instanceof Fn && ['log', 'asech', 'acsch'].includes(t.name)) sings = union(sings, solveset(first(t.args), x, dom));
+    if (t instanceof Fn && ['atanh', 'acoth'].includes(t.name)) sings = union(sings, solveset(add(first(t.args), -1), x, dom), solveset(add(first(t.args), 1), x, dom));
+    if (t instanceof Fn && ['tan', 'sec'].includes(t.name)) sings = union(sings, solveset(impl.sympify(cosOf(first(t.args))), x, dom));
+    if (t instanceof Fn && ['cot', 'csc'].includes(t.name)) sings = union(sings, solveset(sinOf(first(t.args)), x, dom));
   };
   visit(e);
   return sings;
@@ -633,23 +637,24 @@ export function minimum(fIn: ExprLike, x: Sym, domain: SetExpr = Reals): Expr {
 
 /** SymPy Piecewise.as_expr_set_pairs: disjoint real sets for each piece. */
 export function asExprSetPairs(p: Expr, domain: SetExpr = Reals): [Expr, SetExpr][] {
-  const pairs = (p as unknown as { pairs: [Expr, Expr][] }).pairs;
+  const pairs = cast(p, Piecewise, 'Piecewise').pairs;
   const syms = new Map<string, Sym>();
   for (const [, c] of pairs) for (const s of c.freeSymbols()) syms.set(s.key, s);
   if (syms.size !== 1) throw new NotImplementedError('as_expr_set_pairs: univariate conditions expected');
-  const x = [...syms.values()][0]!;
+  const x = first([...syms.values()]);
   let remaining: SetExpr = domain;
   const out: [Expr, SetExpr][] = [];
   const condSet = (c: Expr): SetExpr => {
-    if (c.kind === 'Bool') return (c as unknown as { value: boolean }).value ? Reals : EmptySet;
-    if (c.kind === 'BoolOp') {
-      const op = (c as unknown as { op: string }).op;
+    if (c instanceof BoolAtom) return c.value ? Reals : EmptySet;
+    if (c instanceof BoolOp) {
+      const op = c.op;
       const parts = c.args.map(condSet);
       if (op === 'And') return parts.reduce((a, b) => intersection(a, b));
       if (op === 'Or') return parts.reduce((a, b) => union(a, b));
-      return complement(Reals, parts[0]!);
+      return complement(Reals, first(parts));
     }
-    return solveSign(add((c as Rel).lhs, mul(-1, (c as Rel).rhs)), (c as Rel).op, x, Reals);
+    const r = cast(c, Rel, 'condition');
+    return solveSign(add(r.lhs, mul(-1, r.rhs)), r.op, x, Reals);
   };
   for (const [e, c] of pairs) {
     const s: SetExpr = condSet(c);
@@ -664,34 +669,35 @@ export function asExprSetPairs(p: Expr, domain: SetExpr = Reals): [Expr, SetExpr
 function setToCondition(st: SetExpr, x: Sym): Expr {
   if (st === EmptySet) return S.false;
   if (st === Reals) return S.true;
-  if (st instanceof FiniteSet && st.args.length === 1) return Eq(x, st.args[0]!);
+  if (st instanceof FiniteSet && st.args.length === 1) return Eq(x, first(st.args));
   if (st instanceof Interval) {
     const lo = st.start instanceof Special ? undefined : st.leftOpen ? Gt(x, st.start) : Ge(x, st.start);
     const hi = st.end instanceof Special ? undefined : st.rightOpen ? Lt(x, st.end) : Le(x, st.end);
     if (lo && hi) return and(lo, hi);
     return lo ?? hi ?? S.true;
   }
-  if (st.className === 'Union') return orB(...(st.args as SetExpr[]).map((a) => setToCondition(a, x)).reverse());
+  if (st.className === 'Union') return orB(...st.args.map((a) => setToCondition(cast(a, SetExpr, 'Union member'), x)).reverse());
   return asRelational(st, x);
 }
 
 /** SymPy piecewise_exclusive: make the conditions of a Piecewise mutually exclusive. */
 export function piecewiseExclusive(p: Expr, opts: { skipNan?: boolean } = {}): Expr {
-  const pairs = (p as unknown as { pairs: [Expr, Expr][] }).pairs;
+  const pairs = cast(p, Piecewise, 'Piecewise').pairs;
   const syms = new Map<string, Sym>();
   for (const [, c] of pairs) for (const t of c.freeSymbols()) syms.set(t.key, t);
   if (syms.size !== 1) throw new NotImplementedError('piecewise_exclusive: univariate conditions expected');
-  const x = [...syms.values()][0]!;
+  const x = first([...syms.values()]);
   const condSet = (c: Expr): SetExpr => {
-    if (c.kind === 'Bool') return (c as unknown as { value: boolean }).value ? Reals : EmptySet;
-    if (c.kind === 'BoolOp') {
-      const op = (c as unknown as { op: string }).op;
+    if (c instanceof BoolAtom) return c.value ? Reals : EmptySet;
+    if (c instanceof BoolOp) {
+      const op = c.op;
       const parts = c.args.map(condSet);
       if (op === 'And') return parts.reduce((a, b) => intersection(a, b));
       if (op === 'Or') return parts.reduce((a, b) => union(a, b));
-      return complement(Reals, parts[0]!);
+      return complement(Reals, first(parts));
     }
-    return solveSign(add((c as Rel).lhs, mul(-1, (c as Rel).rhs)), (c as Rel).op, x, Reals);
+    const r = cast(c, Rel, 'condition');
+    return solveSign(add(r.lhs, mul(-1, r.rhs)), r.op, x, Reals);
   };
   let covered: SetExpr = EmptySet;
   const out: Expr[] = [];
@@ -710,12 +716,12 @@ export function piecewiseExclusive(p: Expr, opts: { skipNan?: boolean } = {}): E
  * FiniteSet of expressions with an Interval is not empty (over the reals).
  */
 export function notEmptyIn(setIn: SetExpr, x: Sym): SetExpr {
-  const parts = setIn.className === 'Intersection' ? (setIn.args as SetExpr[]) : [];
+  const parts: readonly Expr[] = setIn.className === 'Intersection' ? setIn.args : [];
   const fset = parts.find((p): p is FiniteSet => p instanceof FiniteSet);
   const ivals = parts.filter((p): p is Interval => p instanceof Interval);
   if (!fset || ivals.length !== 1) throw new NotImplementedError('not_empty_in: FiniteSet intersected with an Interval expected');
-  const iv = ivals[0]!;
-  const solveRel = (r: Expr): SetExpr => solveUnivariateInequality(r, x, { relational: false }) as SetExpr;
+  const iv = first(ivals);
+  const solveRel = (r: Expr): SetExpr => cast(solveUnivariateInequality(r, x, { relational: false }), SetExpr, 'solution set');
   let out: SetExpr = EmptySet;
   for (const f of fset.args) {
     let s: SetExpr = Reals;
@@ -734,19 +740,19 @@ export function notEmptyIn(setIn: SetExpr, x: Sym): SetExpr {
  */
 export function asSet(eIn: ExprLike | boolean): SetExpr {
   const e = typeof eIn === 'boolean' ? (eIn ? S.true : S.false) : sympify(eIn);
-  if (e.kind === 'Bool') return (e as unknown as { value: boolean }).value ? UniversalSet : EmptySet;
+  if (e instanceof BoolAtom) return e.value ? UniversalSet : EmptySet;
   const syms = [...e.freeSymbols()];
   if (syms.length !== 1) throw new NotImplementedError('as_set: only expressions with one free symbol are supported');
-  const x = syms[0]!;
+  const x = first(syms);
   const go = (b: Expr): SetExpr => {
     if (b instanceof Rel) return solveset(b, x, Reals);
-    if (b.kind === 'Bool') return (b as unknown as { value: boolean }).value ? Reals : EmptySet;
-    if (b.kind === 'BoolOp') {
-      const op = (b as unknown as { op: string }).op;
+    if (b instanceof BoolAtom) return b.value ? Reals : EmptySet;
+    if (b instanceof BoolOp) {
+      const op = b.op;
       const parts = b.args.map(go);
       if (op === 'And') return intersection(...parts);
       if (op === 'Or') return union(...parts);
-      if (op === 'Not') return complement(Reals, parts[0]!);
+      if (op === 'Not') return complement(Reals, first(parts));
     }
     throw new NotImplementedError(`as_set: ${b.toString()}`);
   };

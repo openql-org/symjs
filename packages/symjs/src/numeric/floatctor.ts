@@ -8,19 +8,20 @@
 
 import type { Expr } from '../core/nodes';
 import { Float, Rational, S, Special } from '../core/nodes';
+import { defined, first } from '../core/guard';
 import * as F from './mpf';
 import { evalAdaptive } from './mpeval';
 
 /** Decimal digit count as Python's Decimal(...).as_tuple() reports it. */
 function decimalDigits(s: string): number {
-  const mant = s.split('e')[0]!.replace(/^[+-]/, '').replace(/[._]/g, '');
+  const mant = first(s.split('e')).replace(/^[+-]/, '').replace(/[._]/g, '');
   const d = mant.replace(/^0+/, '');
   return d.length === 0 ? 1 : d.length;
 }
 
 /** True when a decimal literal denotes an integer (exponent >= 0 in Decimal terms). */
 function decimalIsInteger(s: string): boolean {
-  const [mant, e] = s.split('e') as [string, string | undefined];
+  const [mant = '', e] = s.split('e');
   const frac = (mant.split('.')[1] ?? '').replace(/_/g, '');
   return Number(e ?? '0') - frac.length >= 0;
 }
@@ -77,7 +78,7 @@ export function float(num: number | bigint | string | Expr, dpsIn?: number | '',
     }
     dps = d;
   }
-  const prec = precision ?? F.dpsToPrec(dps as number);
+  const prec = precision ?? F.dpsToPrec(defined(dps, 'dps'));
   let mpf: F.Mpf;
   if (typeof n === 'number') mpf = F.round(F.fromNumber(n), prec);
   else if (typeof n === 'string') mpf = F.fromStr(n, prec);

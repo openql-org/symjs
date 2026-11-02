@@ -14,6 +14,10 @@ import { expandMul } from '../simplify/expand';
 import { mapBottomUp, xreplace as subs } from '../core/traverse';
 import { log, sin } from '../functions/elementary';
 import { Expander } from './puiseux';
+import { first, getOrThrow } from '../core/guard';
+
+/** Array.isArray does not narrow a readonly array union. */
+const isSymList = (v: Sym | readonly Sym[] | undefined): v is readonly Sym[] => Array.isArray(v);
 
 /**
  * O(expr) for x -> x0. Like SymPy, the argument is reduced to its leading
@@ -23,9 +27,9 @@ export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): E
   const e = sympify(ex);
   const p = sympify(x0);
   const syms = [...e.freeSymbols()];
-  const vars = Array.isArray(xIn) ? (xIn as readonly Sym[]) : xIn === undefined && syms.length > 1 ? (sortSyms(syms)) : undefined;
+  const vars = isSymList(xIn) ? xIn : xIn === undefined && syms.length > 1 ? (sortSyms(syms)) : undefined;
   if (vars && vars.length > 1) return orderMulti(e, vars, p);
-  const x: Sym | undefined = Array.isArray(xIn) ? (xIn as readonly Sym[])[0] : (xIn as Sym | undefined);
+  const x: Sym | undefined = isSymList(xIn) ? xIn[0] : xIn;
   const v = x ?? (syms.length === 1 ? syms[0] : undefined);
   const atZero = p instanceof Rational && p.isZero;
   if (v !== undefined && p instanceof Special && p.name === 'oo' && syms.length === 1) {
@@ -105,7 +109,7 @@ function seriesAtInfinity(e: Expr, x: Sym, sign: 1 | -1, n: number): Expr {
   let order: Expr | undefined;
   for (const u of terms) {
     if (u instanceof Order) {
-      const lead = u.args[0]!;
+      const lead = first(u.args);
       const k = lead instanceof Pow && lead.base.key === t.key ? lead.exp : lead.key === t.key ? S.One : undefined;
       order = k === undefined ? undefined : new Order([pow(x, neg(k)), x, sign === 1 ? S.Infinity : S.NegativeInfinity]);
     } else out.push(back(u));
@@ -128,7 +132,11 @@ function seriesAtInfinity(e: Expr, x: Sym, sign: 1 | -1, n: number): Expr {
 
 export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' | '-' = '+', opts: { logx?: Expr } = {}): Expr {
   // sinc(u) = sin(u)/u has a removable singularity at u = 0
-  let e = mapBottomUp(sympify(ex), (t) => (t instanceof Fn && t.name === 'sinc' ? mul(sin(t.args[0]!), pow(t.args[0]!, -1)) : t));
+  let e = mapBottomUp(sympify(ex), (t) => {
+    if (!(t instanceof Fn && t.name === 'sinc')) return t;
+    const u = first(t.args);
+    return mul(sin(u), pow(u, -1));
+  });
   const x00 = sympify(x0x);
   const atZero = x00 instanceof Rational && x00.isZero;
   if (opts.logx && atZero) {
@@ -163,6 +171,11 @@ impl.leadterm = (e, x) => leadterm(e, x);
 
 /** Leading term c*x**e of e as x -> 0 (SymPy leadterm): [c, e]. */
 export function leadterm(ex: ExprLike, x: Sym): [Expr, Expr] {
+  return leadtermExact(ex, x);
+}
+
+/** leadterm with the exponent typed as the Rational it always is. */
+function leadtermExact(ex: ExprLike, x: Sym): [Expr, Rational] {
   const e = sympify(ex);
   if (!e.has(x)) return [e, S.Zero];
   const t = new Sym('_s');
@@ -183,7 +196,7 @@ export function getn(ex: ExprLike): Expr | undefined {
   const e = sympify(ex);
   const o = (e instanceof Add ? e.args : [e]).find((a) => a instanceof Order);
   if (!o) return undefined;
-  const b = o.args[0]!;
+  const b = first(o.args);
   if (b instanceof Pow) return b.exp;
   if (b instanceof Sym) return S.One;
   return undefined;
@@ -194,9 +207,9 @@ export function getn(ex: ExprLike): Expr | undefined {
 export function extractLeadingOrder(ex: ExprLike, x: Sym): [Expr, Expr][] {
   const e = sympify(ex);
   const terms = e instanceof Add ? e.args : [e];
-  const orders = terms.map((t) => leadterm(t, x)[1]);
-  const minO = orders.reduce((m, o) => ((o as Rational).value < (m as Rational).value ? o : m));
-  return terms.filter((_, i) => orders[i]!.key === minO.key).map((t) => [t, new Order([t.has(x) ? t : S.One])]);
+  const orders = terms.map((t) => leadtermExact(t, x)[1]);
+  const minO = orders.reduce((m, o) => (o.value < m.value ? o : m));
+  return terms.filter((_, i) => orders[i]?.key === minO.key).map((t) => [t, new Order([t.has(x) ? t : S.One])]);
 }
 
 /** SymPy Expr.taylor_term(n, x): the n-th term of the Maclaurin series, f^(n)(0)*x**n/n!. */
@@ -254,10 +267,10 @@ export function aseries(ex: ExprLike, x: Sym, n = 6, hir = false): Expr {
   if (!ks.length) return e;
   const wx = (k: number) => exp(mul(k, b, x));
   if (!hir) {
-    const k = ks[0]!;
-    const coeff = series(add(...byPower.get(k)!), x, S.Infinity, n);
+    const k = first(ks);
+    const coeff = series(add(...getOrThrow(byPower, k)), x, S.Infinity, n);
     return mul(coeff, wx(k));
   }
-  const parts = ks.filter((k) => k < n).sort((a, c) => c - a).map((k) => mul(add(...byPower.get(k)!), wx(k)));
+  const parts = ks.filter((k) => k < n).sort((a, c) => c - a).map((k) => mul(add(...getOrThrow(byPower, k)), wx(k)));
   return new Add([...parts, new Order([wx(n), x, S.Infinity])]);
 }

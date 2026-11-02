@@ -6,6 +6,7 @@
  * with Montgomery curves and SymPy's seeded curve choice.
  */
 
+import { defined } from '../core/guard';
 import { ecmOneFactor, perfectPowerInt } from './factor';
 import type { IntLike } from './intutil';
 import { asInt } from './intutil';
@@ -58,7 +59,7 @@ export function ecm(nIn: IntLike, opts: EcmOptions = {}): Set<bigint> {
   };
   check(n);
   while (queue.length > 0) {
-    const m = queue.pop()!;
+    const m = defined(queue.pop(), 'queued factor');
     const factor = ecmOneFactor(m, B1, B2, maxCurve, seed);
     if (factor === undefined) throw new RangeError('Increase the bounds');
     check(factor);

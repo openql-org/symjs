@@ -6,6 +6,7 @@
  * sympy.ntheory.generate.Sieve) with its shared instance `sieve`.
  */
 
+import { at, last } from '../core/guard';
 import type { IntLike } from './intutil';
 import { asInt, asIntCeiling, isqrt } from './intutil';
 
@@ -15,7 +16,7 @@ export function bisectRight(a: ArrayLike<number>, x: number): number {
   let hi = a.length;
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
-    if (x < a[mid]!) hi = mid;
+    if (x < at(a, mid)) hi = mid;
     else lo = mid + 1;
   }
   return lo;
@@ -27,7 +28,7 @@ export function bisectLeft(a: ArrayLike<number>, x: number): number {
   let hi = a.length;
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
-    if (a[mid]! < x) lo = mid + 1;
+    if (at(a, mid) < x) lo = mid + 1;
     else hi = mid;
   }
   return lo;
@@ -85,7 +86,7 @@ export class Sieve {
   /** Grow the sieve to cover all primes <= n (SymPy Sieve.extend). */
   extend(nIn: IntLike): void {
     const n = Number(asInt(nIn));
-    let num = this.primes[this.primes.length - 1]! + 1;
+    let num = last(this.primes) + 1;
     if (n < num) return;
     let num2 = num * num;
     while (num2 <= n) {
@@ -113,7 +114,7 @@ export class Sieve {
       const lim = Number(isqrt(BigInt(a + 2 * blockSize + 1)));
       const end = bisectRight(this.primes, lim);
       for (let k = 1; k < end; k++) {
-        const p = this.primes[k]!;
+        const p = at(this.primes, k);
         // t = (-(a + 1 + p) // 2) % p with Python floor semantics
         let t = ((Math.floor(-(a + 1 + p) / 2) % p) + p) % p;
         for (; t < blockSize; t += p) block[t] = 0;
@@ -126,7 +127,7 @@ export class Sieve {
   /** Extend to include the ith prime number (SymPy Sieve.extend_to_no). */
   extendToNo(iIn: IntLike): void {
     const i = Number(asInt(iIn));
-    while (this.primes.length < i) this.extend(Math.floor(this.primes[this.primes.length - 1]! * 1.5));
+    while (this.primes.length < i) this.extend(Math.floor(last(this.primes) * 1.5));
   }
 
   /** All primes in [2, a) or [a, b) (SymPy Sieve.primerange). */
@@ -157,23 +158,30 @@ export class Sieve {
     const n = this.tlist.length;
     if (a >= b) return;
     if (b <= n) {
-      for (let i = a; i < b; i++) yield BigInt(this.tlist[i]!);
+      for (const v of this.tlist.slice(a, b)) yield BigInt(v);
       return;
     }
     const t = this.tlist;
     for (let i = n; i < b; i++) t.push(i);
     for (let i = 1; i < n; i++) {
-      const ti = t[i]!;
+      const ti = at(t, i);
       if (ti === i - 1) {
         const start = Math.floor((n + i - 1) / i) * i;
-        for (let j = start; j < b; j += i) t[j]! -= Math.floor(t[j]! / i);
+        for (let j = start; j < b; j += i) {
+          const tj = at(t, j);
+          t[j] = tj - Math.floor(tj / i);
+        }
       }
       if (i >= a) yield BigInt(ti);
     }
     for (let i = n; i < b; i++) {
-      const ti = t[i]!;
-      if (ti === i) for (let j = i; j < b; j += i) t[j]! -= Math.floor(t[j]! / i);
-      if (i >= a) yield BigInt(t[i]!);
+      if (at(t, i) === i) {
+        for (let j = i; j < b; j += i) {
+          const tj = at(t, j);
+          t[j] = tj - Math.floor(tj / i);
+        }
+      }
+      if (i >= a) yield BigInt(at(t, i));
     }
   }
 
@@ -185,20 +193,20 @@ export class Sieve {
     const n = this.mlist.length;
     if (a >= b) return;
     if (b <= n) {
-      for (let i = a; i < b; i++) yield BigInt(this.mlist[i]!);
+      for (const v of this.mlist.slice(a, b)) yield BigInt(v);
       return;
     }
     const m = this.mlist;
     for (let i = n; i < b; i++) m.push(0);
     for (let i = 1; i < n; i++) {
-      const mi = m[i]!;
+      const mi = at(m, i);
       const start = Math.floor((n + i - 1) / i) * i;
-      for (let j = start; j < b; j += i) m[j]! -= mi;
+      for (let j = start; j < b; j += i) m[j] = at(m, j) - mi;
       if (i >= a) yield BigInt(mi);
     }
     for (let i = n; i < b; i++) {
-      const mi = m[i]!;
-      for (let j = 2 * i; j < b; j += i) m[j]! -= mi;
+      const mi = at(m, i);
+      for (let j = 2 * i; j < b; j += i) m[j] = at(m, j) - mi;
       if (i >= a) yield BigInt(mi);
     }
   }
@@ -208,9 +216,9 @@ export class Sieve {
     const test = asIntCeiling(nIn);
     const n = asInt(nIn);
     if (n < 2n) throw new RangeError(`n should be >= 2 but got: ${n}`);
-    if (n > BigInt(this.primes[this.primes.length - 1]!)) this.extend(n);
+    if (n > BigInt(last(this.primes))) this.extend(n);
     const b = bisectRight(this.primes, toNum(n));
-    if (BigInt(this.primes[b - 1]!) === test) return [BigInt(b), BigInt(b)];
+    if (BigInt(at(this.primes, b - 1)) === test) return [BigInt(b), BigInt(b)];
     return [BigInt(b), BigInt(b + 1)];
   }
 
@@ -233,7 +241,7 @@ export class Sieve {
     const n = asInt(nIn);
     if (n < 1n) throw new RangeError('Sieve indices start at 1.');
     this.extendToNo(n);
-    return BigInt(this.primes[Number(n) - 1]!);
+    return BigInt(at(this.primes, Number(n) - 1));
   }
 
   /** The primes with indices in [start, stop) by step (SymPy sieve[start:stop:step]). */
@@ -245,7 +253,7 @@ export class Sieve {
     if (st <= 0) throw new RangeError('slice step must be positive');
     this.extendToNo(e);
     const out: bigint[] = [];
-    for (let i = s - 1; i < Math.min(e - 1, this.primes.length); i += st) out.push(BigInt(this.primes[i]!));
+    for (let i = s - 1; i < Math.min(e - 1, this.primes.length); i += st) out.push(BigInt(at(this.primes, i)));
     return out;
   }
 

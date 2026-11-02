@@ -13,6 +13,8 @@ import { divExact, mgcd } from '../polys/mpoly';
 import { UPoly, polyHooks } from '../polys/poly';
 import { expandMul as expand } from './expand';
 import { isNegative, isPositive } from '../core/assumptions';
+import { InvariantError } from '../core/errors';
+import { first } from '../core/guard';
 
 const negExponent = (x: Expr): boolean => {
   // SymPy fraction: exponents known to be negative go to the denominator
@@ -49,7 +51,7 @@ export function fraction(ex: ExprLike, opts: { exact?: boolean } = {}): [Expr, E
     // SymPy Mul(*numer, evaluate=not exact): the factors as they are (2*(x + 1) stays)
     const raw = (xs: Expr[]): Expr => {
       const ys = xs.filter((y) => !(y instanceof Rational && y.p === 1n && y.q === 1n));
-      return ys.length === 0 ? Rational.of(1n) : ys.length === 1 ? ys[0]! : new Mul(ys);
+      return ys.length === 0 ? Rational.of(1n) : ys.length === 1 ? first(ys) : new Mul(ys);
     };
     return [raw(num), raw(den)];
   }
@@ -64,7 +66,10 @@ export function together(ex: ExprLike, opts: { deep?: boolean } = {}): Expr {
     if (e.args.length === 0) return e;
     const isExp = e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
     if ((e instanceof Fn || isExp) && !deep) return e;
-    if (e instanceof Add) return impl.gcdTermsOf!(e.args.map(go));
+    if (e instanceof Add) {
+      if (impl.gcdTermsOf === undefined) throw new InvariantError('impl.gcdTermsOf is not registered');
+      return impl.gcdTermsOf(e.args.map(go));
+    }
     if (e instanceof Pow) return pow(go(e.base), deep ? go(e.exp) : e.exp);
     const args = e.args.map(go);
     return args.every((a, i) => a === e.args[i]) ? e : rebuild(e, args);
@@ -82,9 +87,15 @@ function radicalContent(e: Expr): [Expr, Expr] | undefined {
   let g = 0n;
   const gcd = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcd(b, a % b));
   for (const t of e.args) {
-    const r = (t instanceof Mul ? t.args : [t]).find((f) => f instanceof Pow && f.base instanceof Rational && f.base.q === 1n && f.exp instanceof Rational && f.exp.p === 1n && f.exp.q === 2n);
-    if (!r) return undefined;
-    g = gcd(g, ((r as Pow).base as Rational).p);
+    let radicand: bigint | undefined;
+    for (const f of t instanceof Mul ? t.args : [t]) {
+      if (f instanceof Pow && f.base instanceof Rational && f.base.q === 1n && f.exp instanceof Rational && f.exp.p === 1n && f.exp.q === 2n) {
+        radicand = f.base.p;
+        break;
+      }
+    }
+    if (radicand === undefined) return undefined;
+    g = gcd(g, radicand);
   }
   if (g <= 1n) return undefined;
   const sg = pow(Rational.of(g), Rational.of(1n, 2n));
@@ -110,7 +121,7 @@ export function cancel(ex: ExprLike): Expr {
   const syms = new Map<string, Sym>();
   for (const s of [...freeSymbols(n), ...freeSymbols(d)]) syms.set(s.key, s);
   if (syms.size === 1) {
-    const x = [...syms.values()][0]!;
+    const x = first([...syms.values()]);
     const pn = UPoly.fromExpr(n, x);
     const pd = UPoly.fromExpr(d, x);
     if (pn && pd) {

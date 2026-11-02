@@ -13,6 +13,7 @@ import { numNeg } from '../core/num';
 import { asOrderedFactors, asOrderedTerms } from './sortkey';
 import { PREC, floatString, precedence, startsNegative, str } from './str';
 import { BoolOp } from '../core/boolalg';
+import { at } from '../core/guard';
 
 // ---------------------------------------------------------------------------
 // Symbols
@@ -101,8 +102,8 @@ export function splitSuperSub(text: string): [string, string[], string[]] {
   name ??= '';
   const m = /^([^\W\d_]+)(\d+)$/u.exec(name);
   if (m) {
-    name = m[1]!;
-    subs.unshift(m[2]!);
+    name = at(m, 1);
+    subs.unshift(at(m, 2));
   }
   return [name, supers, subs];
 }
@@ -148,14 +149,14 @@ const parenthesizeSuper = (s: string) => (s.includes('^') ? `{${s}}` : s);
 
 /** Print a function, optionally raised to a power (SymPy prints sin(x)**2 as \sin^{2}...). */
 function printFunction(e: Fn, exp?: string): string {
-  const a = latex(e.args[0]!);
+  const a = latex(at(e.args, 0));
   switch (e.name) {
     case 'abs': {
       const tex = `\\left|{${a}}\\right|`;
       return exp !== undefined ? `${tex}^{${exp}}` : tex;
     }
     case 'adjoint': {
-      const base = `${parenthesize(e.args[0]!, PREC.POW)}^{\\dagger}`;
+      const base = `${parenthesize(at(e.args, 0), PREC.POW)}^{\\dagger}`;
       return exp !== undefined ? `\\left(${base}\\right)^{${exp}}` : base;
     }
     case 'conjugate': {
@@ -164,7 +165,7 @@ function printFunction(e: Fn, exp?: string): string {
     }
     case 're':
     case 'im': {
-      const tex = `\\operatorname{${e.name}}{\\left(${parenthesize(e.args[0]!, PREC.ATOM)}\\right)}`;
+      const tex = `\\operatorname{${e.name}}{\\left(${parenthesize(at(e.args, 0), PREC.ATOM)}\\right)}`;
       return exp !== undefined ? `${tex}^{${exp}}` : tex;
     }
     case 'besselj':
@@ -173,8 +174,8 @@ function printFunction(e: Fn, exp?: string): string {
     case 'besselk': {
       // SymPy: J_{\nu}\left(z\right)
       const sym = { besselj: 'J', bessely: 'Y', besseli: 'I', besselk: 'K' }[e.name];
-      const tex = `${sym}_{${latex(e.args[0]!)}}\\left(${latex(e.args[1]!)}\\right)`;
-      return exp !== undefined ? `${sym}_{${latex(e.args[0]!)}}^{${exp}}\\left(${latex(e.args[1]!)}\\right)` : tex;
+      const tex = `${sym}_{${latex(at(e.args, 0))}}\\left(${latex(at(e.args, 1))}\\right)`;
+      return exp !== undefined ? `${sym}_{${latex(at(e.args, 0))}}^{${exp}}\\left(${latex(at(e.args, 1))}\\right)` : tex;
     }
     case 'airyai':
     case 'airybi':
@@ -230,7 +231,7 @@ function convertArgs(args: readonly Expr[]): string {
 
 function convertFactors(fs: Expr[]): string {
   if (fs.length === 0) return '1';
-  if (fs.length === 1) return latex(fs[0]!);
+  if (fs.length === 1) return latex(at(fs, 0));
   return convertArgs(asOrderedFactors(new Mul(fs)));
 }
 
@@ -349,15 +350,16 @@ export function latex(e: Expr): string {
     return `${head} ${body}`;
   }
   if (e instanceof Limit) {
-    const [f, z, z0] = e.args;
+    const f = e.expr;
     const d = e.dir === '+-' ? '' : `^${e.dir}`;
-    const body = precedence(f!) < PREC.ADD ? addParens(latex(f!)) : latex(f!);
-    return `\\lim_{${latex(z!)} \\to ${latex(z0!)}${d}} ${body}`;
+    const body = precedence(f) < PREC.ADD ? addParens(latex(f)) : latex(f);
+    return `\\lim_{${latex(e.variable)} \\to ${latex(e.point)}${d}} ${body}`;
   }
   if (e instanceof Order) {
-    const [x, v, p] = e.args;
-    if (!v || !p || (p instanceof Rational && p.isZero)) return `O\\left(${latex(x!)}\\right)`;
-    return `O\\left(${latex(x!)}; ${latex(v)}\\rightarrow ${latex(p)}\\right)`;
+    const v = e.variable;
+    const p = e.point;
+    if (!v || !p || (p instanceof Rational && p.isZero)) return `O\\left(${latex(e.expr)}\\right)`;
+    return `O\\left(${latex(e.expr)}; ${latex(v)}\\rightarrow ${latex(p)}\\right)`;
   }
   if (e instanceof Integral) {
     // nested integrals: outer signs first, differentials innermost first

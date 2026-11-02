@@ -8,6 +8,7 @@
  */
 
 import { NotImplementedError } from '../core/errors';
+import { first, pair } from '../core/guard';
 import '../numeric/mpspecialfns';
 import { isIntegerQ, isPositive } from '../core/assumptions';
 import type { ComplexValue as C, Expr, ExprLike } from '../core/nodes';
@@ -161,11 +162,12 @@ function airyNumeric(kind: 'ai' | 'bi' | 'aip' | 'bip', z: C): C {
 
 for (const name of ['besselj', 'bessely', 'besseli', 'besselk'] as const) {
   evaluators[name] = evalBessel(name);
-  numericFns[name] = ([nu, z]) => besselNumeric(name, nu!, z!);
-  fnPartials[name] = ([nu, z], i) => {
+  numericFns[name] = (args) => besselNumeric(name, ...pair(args));
+  fnPartials[name] = (args, i) => {
     if (i === 0) throw new NotImplementedError(`diff: ${name} w.r.t. its order`);
-    const lo = fn(name, [add(nu!, -1), z!]);
-    const hi = fn(name, [add(nu!, 1), z!]);
+    const [nu, z] = pair(args);
+    const lo = fn(name, [add(nu, -1), z]);
+    const hi = fn(name, [add(nu, 1), z]);
     if (name === 'besseli') return add(mul(S.Half, lo), mul(S.Half, hi));
     if (name === 'besselk') return add(mul(S.NegHalf, lo), mul(S.NegHalf, hi));
     return add(mul(S.Half, lo), mul(S.NegHalf, hi));
@@ -184,14 +186,14 @@ evaluators.airybi = (z) => {
 };
 evaluators.airyaiprime = (z) => (isZero(z) ? mul(-1, pow(3, Rational.of(2, 3)), pow(mul(3, fn('gamma', [Rational.of(1, 3)])), -1)) : undefined);
 evaluators.airybiprime = (z) => (isZero(z) ? mul(pow(3, Rational.of(1, 6)), pow(fn('gamma', [Rational.of(1, 3)]), -1)) : undefined);
-fnPartials.airyai = ([z]) => fn('airyaiprime', [z!]);
-fnPartials.airybi = ([z]) => fn('airybiprime', [z!]);
-fnPartials.airyaiprime = ([z]) => mul(z!, fn('airyai', [z!]));
-fnPartials.airybiprime = ([z]) => mul(z!, fn('airybi', [z!]));
-numericFns.airyai = ([z]) => airyNumeric('ai', z!);
-numericFns.airybi = ([z]) => airyNumeric('bi', z!);
-numericFns.airyaiprime = ([z]) => airyNumeric('aip', z!);
-numericFns.airybiprime = ([z]) => airyNumeric('bip', z!);
+fnPartials.airyai = (args) => fn('airyaiprime', [first(args)]);
+fnPartials.airybi = (args) => fn('airybiprime', [first(args)]);
+fnPartials.airyaiprime = (args) => mul(first(args), fn('airyai', [first(args)]));
+fnPartials.airybiprime = (args) => mul(first(args), fn('airybi', [first(args)]));
+numericFns.airyai = (args) => airyNumeric('ai', first(args));
+numericFns.airybi = (args) => airyNumeric('bi', first(args));
+numericFns.airyaiprime = (args) => airyNumeric('aip', first(args));
+numericFns.airybiprime = (args) => airyNumeric('bip', first(args));
 for (const n of ['airyai', 'airybi', 'airyaiprime', 'airybiprime'] as const) conjugateCommutes.add(n);
 
 

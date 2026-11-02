@@ -7,13 +7,14 @@
  * _simplify and the helpers used by every transform).
  */
 
-import type { Expr, ExprLike, Sym } from '../../core/nodes';
-import { Add, BoolAtom, Derivative, ExtensionExpr, Integral, Mul, Pow, Rational, Rel, S, UndefFn, Wild } from '../../core/nodes';
+import type { ExprLike, Sym } from '../../core/nodes';
+import { Add, BoolAtom, Expr, Derivative, ExtensionExpr, Integral, Mul, Pow, Rational, Rel, S, UndefFn, Wild } from '../../core/nodes';
 import { Max } from '../../functions/special';
 import { diff } from '../../calculus/diff';
 import { BoolOp } from '../../core/boolalg';
 import { isNegative, isNonNegative, isNonZero, isPositive, isZero } from '../../core/assumptions';
 import { NotImplementedError } from '../../core/errors';
+import { at, cast } from '../../core/guard';
 import { add, mul, sub, sympify } from '../../core/ops';
 import { asCoeffMul, isPolynomial } from '../../core/methods';
 import { Poly } from '../../polys/sympoly';
@@ -60,6 +61,9 @@ export type TransformTuple = readonly [Expr, ...(Expr | readonly [Expr, Expr])[]
 
 /** The result of a transform: an expression or a tuple with conditions. */
 export type TransformResult = Expr | TransformTuple;
+
+/** True when a transform result carries conditions (a tuple rather than a bare expression). */
+export const isTransformTuple = (r: TransformResult): r is TransformTuple => Array.isArray(r);
 
 /** The terms of a sum. */
 export const addArgs = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
@@ -230,15 +234,15 @@ export function simplifyTransform(expr: Expr, doit: boolean): Expr {
 export abstract class IntegralTransform extends ExtensionExpr {
   /** The function to be transformed. */
   get function(): Expr {
-    return this.args[0]!;
+    return at(this.args, 0);
   }
   /** The dependent variable of the function to be transformed. */
   get functionVariable(): Sym {
-    return this.args[1] as Sym;
+    return symArg(at(this.args, 1));
   }
   /** The independent transform variable. */
   get transformVariable(): Sym {
-    return this.args[2] as Sym;
+    return symArg(at(this.args, 2));
   }
   /** The descriptive name of the transform (SymPy _name, e.g. 'Laplace'). */
   abstract get transformName(): string;
@@ -255,7 +259,7 @@ export abstract class IntegralTransform extends ExtensionExpr {
   }
   override doitSelf(): Expr {
     const r = this.doit();
-    return Array.isArray(r) ? (r as TransformTuple)[0] : (r as Expr);
+    return isTransformTuple(r) ? r[0] : r;
   }
   /** The LaTeX symbol of the transform (SymPy _print_IntegralTransform), or undefined for the generic form. */
   protected get latexName(): string | undefined {
@@ -283,7 +287,7 @@ export abstract class GenericIntegralTransform extends IntegralTransform {
   protected abstract withFunction(f: Expr): IntegralTransform;
   /** Combine the extra data of the terms (SymPy _collapse_extra). */
   protected collapseExtra(extra: readonly (readonly (Expr | readonly [Expr, Expr])[])[]): readonly (Expr | readonly [Expr, Expr])[] {
-    const cond = and(...extra.map((x) => x[0] as Expr));
+    const cond = and(...extra.map((x) => cast(at(x, 0), Expr, 'condition')));
     if (isFalseExpr(cond)) throw new IntegralTransformError(this.transformName, undefined, '');
     return [cond];
   }
@@ -313,17 +317,17 @@ export abstract class GenericIntegralTransform extends IntegralTransform {
       const extra: (readonly (Expr | readonly [Expr, Expr])[])[] = [];
       const ress: Expr[] = [];
       for (const r of res) {
-        if (Array.isArray(r)) {
-          const tup = r as TransformTuple;
-          ress.push(tup[0]);
-          if (tup.length >= 2) extra.push(tup.slice(1));
-        } else ress.push(r as Expr);
+        if (isTransformTuple(r)) {
+          ress.push(r[0]);
+          if (r.length >= 2) extra.push(r.slice(1));
+        } else ress.push(r);
       }
       const sum = simplify ? simplifyExpr(add(...ress)) : add(...ress);
       if (extra.length === 0) return sum;
       try {
         const collapsed = this.collapseExtra(extra);
-        return [sum, ...collapsed] as TransformTuple;
+        const tup: TransformTuple = [sum, ...collapsed];
+        return tup;
       } catch (e) {
         if (!(e instanceof IntegralTransformError)) throw e;
       }
@@ -337,6 +341,23 @@ export abstract class GenericIntegralTransform extends IntegralTransform {
     const t = this.withFunction(term);
     return t instanceof IntegralTransform ? t.doit(hints) : t;
   }
+}
+
+/** The (function, function variable, transform variable) arguments of a transform rebuilt from its args. */
+export function transformArgs(args: readonly Expr[]): [Expr, Sym, Sym] {
+  return [at(args, 0), symArg(at(args, 1)), symArg(at(args, 2))];
+}
+
+/**
+ * An argument in a variable position of a transform, typed as Sym. Like
+ * SymPy, any expression is accepted there at run time (substituting s = 2
+ * gives LaplaceTransform(f, t, 2), and the rules transform at s/a), while
+ * the public API types the variables as Sym; this is the single place
+ * where that gap is bridged.
+ */
+export function symArg(e: Expr): Sym {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- SymPy allows any expression as the transform variable (e.g. after subs(s, 2)); the public constructors and getters type it as Sym
+  return e as Sym;
 }
 
 /** sympify for transform arguments. */

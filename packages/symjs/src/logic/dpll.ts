@@ -7,6 +7,9 @@
  * the models of a CNF given as clauses of signed variable numbers.
  */
 
+import { InvariantError } from '../core/errors';
+import { at, getOrThrow, last } from '../core/guard';
+
 /** Min-heap of [score, literal] pairs ordered like Python tuples. */
 class LitHeap {
   private readonly items: [number, number][] = [];
@@ -17,37 +20,42 @@ class LitHeap {
     return a[0] < b[0] || (a[0] === b[0] && a[1] < b[1]);
   }
   peek(): [number, number] {
-    return this.items[0]!;
+    return at(this.items, 0);
   }
   push(x: [number, number]): void {
     const h = this.items;
+    // sift up: move the hole at the end towards the root, then drop x into it
+    let i = h.length;
     h.push(x);
-    let i = h.length - 1;
     while (i > 0) {
       const p = (i - 1) >> 1;
-      if (!LitHeap.less(h[i]!, h[p]!)) break;
-      [h[i], h[p]] = [h[p]!, h[i]!];
+      const parent = h[p];
+      if (parent === undefined || !LitHeap.less(x, parent)) break;
+      h[i] = parent;
       i = p;
     }
+    h[i] = x;
   }
   pop(): [number, number] {
     const h = this.items;
-    const top = h[0]!;
-    const last = h.pop()!;
-    if (h.length) {
-      h[0] = last;
-      let i = 0;
-      for (;;) {
-        const l = 2 * i + 1;
-        const r = l + 1;
-        let m = i;
-        if (l < h.length && LitHeap.less(h[l]!, h[m]!)) m = l;
-        if (r < h.length && LitHeap.less(h[r]!, h[m]!)) m = r;
-        if (m === i) break;
-        [h[i], h[m]] = [h[m]!, h[i]!];
-        i = m;
-      }
+    const top = h[0];
+    const x = h.pop();
+    if (top === undefined || x === undefined) throw new InvariantError('pop from an empty heap');
+    const n = h.length;
+    if (n === 0) return top;
+    // sift down: move the hole at the root towards the leaves, then drop x into it
+    let i = 0;
+    for (;;) {
+      const l = 2 * i + 1;
+      const left = h[l];
+      if (left === undefined) break;
+      const right = h[l + 1];
+      const [m, child] = right !== undefined && LitHeap.less(right, left) ? [l + 1, right] : [l, left];
+      if (!LitHeap.less(child, x)) break;
+      h[i] = child;
+      i = m;
     }
+    h[i] = x;
     return top;
   }
 }
@@ -85,18 +93,18 @@ export class SATSolver {
         return;
       }
       if (clause.length === 1) {
-        this.unitQueue.push(clause[0]!);
+        this.unitQueue.push(at(clause, 0));
         return;
       }
-      this.sentinel(clause[0]!).add(i);
-      this.sentinel(clause[clause.length - 1]!).add(i);
+      this.sentinel(at(clause, 0)).add(i);
+      this.sentinel(last(clause)).add(i);
       for (const lit of clause) this.occurrence.set(lit, (this.occurrence.get(lit) ?? 0) + 1);
     });
     for (let v = 1; v <= nvars; v++) {
       this.scores.set(v, -(this.occurrence.get(v) ?? 0));
       this.scores.set(-v, -(this.occurrence.get(-v) ?? 0));
-      this.heap.push([this.scores.get(v)!, v]);
-      this.heap.push([this.scores.get(-v)!, -v]);
+      this.heap.push([getOrThrow(this.scores, v), v]);
+      this.heap.push([getOrThrow(this.scores, -v), -v]);
     }
   }
 
@@ -110,7 +118,7 @@ export class SATSolver {
   }
 
   private get current(): Level {
-    return this.levels[this.levels.length - 1]!;
+    return last(this.levels);
   }
 
   /** The models, each as the assigned literals (positive = true). */
@@ -160,7 +168,7 @@ export class SATSolver {
   }
 
   private clauseSat(c: number): boolean {
-    return this.clauses[c]!.some((l) => this.varSettings.has(l));
+    return at(this.clauses, c).some((l) => this.varSettings.has(l));
   }
 
   private assign(lit: number): void {
@@ -170,7 +178,7 @@ export class SATSolver {
     for (const c of [...this.sentinel(-lit)]) {
       if (this.clauseSat(c)) continue;
       let other: number | undefined;
-      for (const nl of this.clauses[c]!) {
+      for (const nl of at(this.clauses, c)) {
         if (nl === -lit) continue;
         if (this.sentinel(nl).has(c)) other = nl;
         else if (!this.variableSet[Math.abs(nl)]) {
@@ -188,16 +196,15 @@ export class SATSolver {
     for (const lit of this.current.varSettings) {
       this.varSettings.delete(lit);
       const v = Math.abs(lit);
-      this.heap.push([this.scores.get(v)!, v]);
-      this.heap.push([this.scores.get(-v)!, -v]);
+      this.heap.push([getOrThrow(this.scores, v), v]);
+      this.heap.push([getOrThrow(this.scores, -v), -v]);
       this.variableSet[v] = false;
     }
     this.levels.pop();
   }
 
   private simplify(): void {
-    while (this.unitQueue.length) {
-      const next = this.unitQueue.pop()!;
+    for (let next = this.unitQueue.pop(); next !== undefined; next = this.unitQueue.pop()) {
       if (this.varSettings.has(-next)) {
         this.isUnsatisfied = true;
         this.unitQueue = [];

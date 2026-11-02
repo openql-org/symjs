@@ -13,6 +13,7 @@ import { defineFunction } from '../../core/defun';
 import { S, Rational } from '../../core/nodes';
 import { isNegative, isNonZero, isPositive, isZero } from '../../core/assumptions';
 import { mul, neg, splitCoeff } from '../../core/ops';
+import { at } from '../../core/guard';
 
 const isMinusOne = (c: Expr): boolean => c instanceof Rational && c.p === -1n && c.q === 1n;
 
@@ -28,9 +29,9 @@ const heavisideDef = defineFunction('Heaviside', {
     if (h0 !== undefined && h0.key === S.Half.key) return heavisideDef(x);
     return undefined;
   },
-  fdiff: (args) => DiracDelta(args[0]!),
-  latex: (args) => `\\theta\\left(${args[0]!}\\right)`,
-  evalf: (...v: number[]) => (v[0]! > 0 ? 1 : v[0]! < 0 ? 0 : v.length > 1 ? v[1]! : 0.5),
+  fdiff: (args) => DiracDelta(at(args, 0)),
+  latex: (args) => `\\theta\\left(${at(args, 0)}\\right)`,
+  evalf: (x = Number.NaN, h0 = 0.5) => (x > 0 ? 1 : x < 0 ? 0 : h0),
 });
 
 const diracDef = defineFunction('DiracDelta', {
@@ -54,9 +55,9 @@ const diracDef = defineFunction('DiracDelta', {
   },
   fdiff: (args) => {
     const k = args[1] ?? S.Zero;
-    return diracDef(args[0]!, mul(1, k).add(1));
+    return diracDef(at(args, 0), mul(1, k).add(1));
   },
-  latex: (args) => (args.length > 1 ? `\\delta^{\\left( ${args[1]!} \\right)}\\left(${args[0]!}\\right)` : `\\delta\\left(${args[0]!}\\right)`),
+  latex: (args) => (args.length > 1 ? `\\delta^{\\left( ${at(args, 1)} \\right)}\\left(${at(args, 0)}\\right)` : `\\delta\\left(${at(args, 0)}\\right)`),
 });
 
 /**

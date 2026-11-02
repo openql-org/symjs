@@ -14,21 +14,22 @@ import { xreplace } from '../core/traverse';
 import { factor } from '../polys/sympoly';
 import { expand } from './expand';
 import { posify } from './powsimp';
+import { first, getOrThrow } from '../core/guard';
 
 function sep(e0: Expr, force: boolean): Expr {
   let e = e0;
   if (e.freeSymbols().size < 2) return e;
   if (e instanceof Mul) {
-    const args = e.args.map((a) => separatevars(a, { force }) as Expr);
-    return args.some((a, i) => a.key !== e.args[i]!.key) ? mul(...args) : e;
+    const args = e.args.map((a) => sep(a, force));
+    return args.some((a, i) => a.key !== e.args[i]?.key) ? mul(...args) : e;
   }
-  if (e instanceof Pow && !(e.base instanceof Constant && e.base.name === 'E')) e = pow(separatevars(e.base, { force }) as Expr, e.exp);
+  if (e instanceof Pow && !(e.base instanceof Constant && e.base.name === 'E')) e = pow(sep(e.base, force), e.exp);
   e = expand(e, { mul: false, multinomial: false, force });
   const [pe, reps] = force ? posify(e) : [e, new Map<Expr, Expr>()];
   e = xreplace(factor(pe), [...reps]);
   if (!(e instanceof Add)) return e;
   const cSets = e.args.map((a) => new Map((a instanceof Mul ? a.args : [a]).map((f) => [f.key, f] as const)));
-  let common = [...cSets[0]!.values()].filter((f) => cSets.every((s) => s.has(f.key)));
+  let common = [...first(cSets).values()].filter((f) => cSets.every((s) => s.has(f.key)));
   let commonc = splitCoeff(mul(...common))[1];
   common = commonc instanceof Mul ? [...commonc.args] : [commonc];
   const commonKeys = new Set(common.map((f) => f.key));
@@ -58,8 +59,7 @@ export function separatevars(
   for (const f of e instanceof Mul ? e.args : [e]) {
     const inter = symbols.filter((s) => f.has(s));
     if (inter.length > 1) return undefined;
-    if (inter.length === 0) ret.get('coeff')!.push(f);
-    else ret.get(inter[0]!)!.push(f);
+    getOrThrow(ret, inter.length === 0 ? 'coeff' : first(inter)).push(f);
   }
   return new Map([...ret].map(([k, v]) => [k, mul(...v)] as [Sym | 'coeff', Expr]));
 }

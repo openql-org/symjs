@@ -12,6 +12,7 @@ import { ExprMap } from './exprmap';
 import { add, asBaseExp, mul, neg, pow, sub, sympify } from './ops';
 import { argsCncSplit, asPowersDict, extractAdditively } from './methods';
 import { str } from '../printing/str';
+import { getOrThrow } from './guard';
 
 const isNumber = (e: Expr): boolean => isNum(e);
 const isZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
@@ -20,12 +21,18 @@ const isOne = (e: Expr): boolean => e instanceof Rational && e.p === 1n && e.q =
 /** SymPy as_coeff_Add: the numeric term and the rest. */
 function asCoeffAddTerm(e: Expr): [Expr, Expr] {
   if (isNum(e)) return [e, S.Zero];
-  if (e instanceof Add && isNum(e.args[0]!)) return [e.args[0], add(...e.args.slice(1))];
+  if (e instanceof Add) {
+    const c = e.args[0];
+    if (c !== undefined && isNum(c)) return [c, add(...e.args.slice(1))];
+  }
   return [S.Zero, e];
 }
 
 /** Sign of a number expression (-1, 0 or 1). */
 const sign = (e: Expr): number => Math.sign(e.toNumber());
+
+/** A Map input of Factors (its values are converted by sympify). */
+const isExprMap = (x: unknown): x is ReadonlyMap<Expr, ExprLike> => x instanceof Map;
 
 /** A product as base -> exponent (SymPy Factors). */
 export class Factors {
@@ -39,14 +46,15 @@ export class Factors {
   private static build(input: Factors | ExprLike | ReadonlyMap<Expr, ExprLike> | null | undefined): ExprMap<Expr> {
     if (input instanceof Factors) return new ExprMap(input.factors);
     if (input === undefined || input === null) return new ExprMap();
-    if (input instanceof Map) {
-      const f = new ExprMap<Expr>([...input].map(([k, v]) => [k, sympify(v as ExprLike)] as const));
+    if (isExprMap(input)) {
+      const f = new ExprMap<Expr>([...input].map(([k, v]) => [k, sympify(v)] as const));
       // powers of -1 and I are made canonical
       const handle = [...f.keys()].filter((k) => k.key === S.I.key || k.key === S.NegOne.key || k.key === S.One.key);
       let i1: Expr = S.One;
       for (const k of handle) {
-        if (!isNumber(f.get(k)!)) continue;
-        i1 = mul(i1, pow(k, f.get(k)!));
+        const v = f.get(k);
+        if (v === undefined || !isNumber(v)) continue;
+        i1 = mul(i1, pow(k, v));
         f.delete(k);
       }
       if (!isOne(i1)) {
@@ -60,7 +68,7 @@ export class Factors {
       }
       return f;
     }
-    const e = sympify(input as ExprLike);
+    const e = sympify(input);
     if (isOne(e)) return new ExprMap();
     if (isZero(e)) return new ExprMap([[S.Zero, S.One]]);
     if (e instanceof Rational) {
@@ -88,7 +96,7 @@ export class Factors {
       if (k instanceof Rational && k.q !== 1n) {
         const p = Rational.of(k.p);
         const q = Rational.of(k.q);
-        const ek = f.get(k)!;
+        const ek = getOrThrow(f, k);
         f.delete(k);
         f.set(p, add(f.get(p) ?? S.Zero, ek));
         f.set(q, sub(f.get(q) ?? S.Zero, ek));

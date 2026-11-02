@@ -11,6 +11,7 @@
 
 import { isIntegerQ, isNegative, isNonNegative } from '../core/assumptions';
 import { NotImplementedError } from '../core/errors';
+import { at, cast, defined, last } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
 import { ExtensionExpr, Rational } from '../core/nodes';
 import { add, sympify } from '../core/ops';
@@ -74,7 +75,7 @@ function bgcd(a: bigint, b: bigint): bigint {
 function pyIndex<T>(a: readonly T[], i: number): T {
   const j = i < 0 ? i + a.length : i;
   if (j < 0 || j >= a.length) throw new RangeError('list index out of range');
-  return a[j]!;
+  return at(a, j);
 }
 
 /** Python's str of a list of ints: [0, 2, 1]. */
@@ -120,8 +121,8 @@ export function afRmul(a: readonly number[], b: readonly number[]): number[] {
 /** SymPy _af_rmuln(a, b, c, ...): the product ...*c*b*a of array forms; the ith value is a[b[c[i]]]. */
 export function afRmuln(...abc: (readonly number[])[]): number[] {
   if (abc.length === 0) throw new RangeError('String must not be empty');
-  let rv = [...abc[abc.length - 1]!];
-  for (let k = abc.length - 2; k >= 0; k--) rv = afRmul(abc[k]!, rv);
+  let rv = [...last(abc)];
+  for (let k = abc.length - 2; k >= 0; k--) rv = afRmul(at(abc, k), rv);
   return rv;
 }
 
@@ -136,7 +137,7 @@ export function afParity(pi: readonly number[]): number {
       seen[j] = true;
       let i = j;
       while (pi[i] !== j) {
-        i = pi[i]!;
+        i = at(pi, i);
         seen[i] = true;
       }
     }
@@ -163,9 +164,9 @@ export function afPow(a: readonly number[], n: number | bigint): number[] {
   }
   let b = Array.from({ length: a.length }, (_, i) => i);
   while (e > 0n) {
-    if (e & 1n) b = b.map((i) => base[i]!);
+    if (e & 1n) b = b.map((i) => at(base, i));
     e >>= 1n;
-    if (e > 0n) base = base.map((i) => base[i]!);
+    if (e > 0n) base = base.map((i) => at(base, i));
   }
   return b;
 }
@@ -213,7 +214,7 @@ export class Cycle implements Iterable<number> {
     const ints = (args as readonly unknown[]).map((v) => asInt(v));
     if (ints.some((i) => i < 0)) throw new RangeError('negative integers are not allowed in a cycle.');
     if (new Set(ints).size !== ints.length) throw new RangeError('All elements must be unique in a cycle.');
-    for (let i = 0; i < ints.length; i++) this.#map.set(ints[i]!, ints[(i + 1) % ints.length]!);
+    for (let i = 0; i < ints.length; i++) this.#map.set(at(ints, i), at(ints, (i + 1) % ints.length));
   }
 
   /** SymPy cycle[i]: the image of i (i itself when i is not in the cycle). */
@@ -247,7 +248,7 @@ export class Cycle implements Iterable<number> {
     const rv = new Cycle(...other);
     const keys = this.keys();
     const vals = keys.map((k) => rv.get(this.get(k)));
-    keys.forEach((k, i) => rv.#map.set(k, vals[i]!));
+    keys.forEach((k, i) => rv.#map.set(k, at(vals, i)));
     return rv;
   }
 
@@ -325,7 +326,8 @@ export interface PermutationPrintOptions {
   permCyclic?: boolean;
 }
 
-const AF = Symbol('afNew');
+/** The array form afNew hands to the next Permutation constructor call (taken before anything else runs). */
+let pendingAf: number[] | undefined;
 
 function isOptions(v: unknown): v is PermutationOptions {
   return typeof v === 'object' && v !== null && !Array.isArray(v) && !(v instanceof Permutation) && !(v instanceof Cycle);
@@ -334,13 +336,13 @@ function isOptions(v: unknown): v is PermutationOptions {
 function parseArgs(input: readonly unknown[]): number[] {
   let args = input;
   let size: number | undefined;
-  if (args.length > 0 && isOptions(args[args.length - 1])) {
-    const o = args[args.length - 1] as PermutationOptions;
+  const o = args[args.length - 1];
+  if (args.length > 0 && isOptions(o)) {
     if (o.size !== undefined) size = asInt(o.size, 'size');
     args = args.slice(0, -1);
   }
   if (args.length === 0) return Array.from({ length: size ?? 0 }, (_, i) => i);
-  if (args.length > 1) return new Cycle(...(args as number[])).list(size);
+  if (args.length > 1) return new Cycle(...args.map((v) => asInt(v))).list(size);
   const a = args[0];
   if (a instanceof Permutation) return size === undefined || size === a.size ? a.arrayForm : parseArgs([a.arrayForm, { size }]);
   if (a instanceof Cycle) return a.list(size);
@@ -354,11 +356,11 @@ function parseArgs(input: readonly unknown[]): number[] {
   if (seqs.some((s) => s) && seqs.some((s) => !s)) {
     throw new TypeError('Permutation argument must be a list of ints, a list of lists, Permutation or Cycle.');
   }
-  const isCycle = seqs.length > 0 && seqs[0]!;
+  const isCycle = seqs.length > 0 && at(seqs, 0);
   let aform: number[];
   if (isCycle) {
     let c = new Cycle();
-    for (const ci of arr as readonly (readonly unknown[])[]) c = c.call(...ci.map((v) => asInt(v)));
+    for (const ci of arr) if (Array.isArray(ci)) c = c.call(...ci.map((v: unknown) => asInt(v)));
     aform = c.list();
   } else {
     const ints = arr.map((v) => asInt(v));
@@ -386,7 +388,8 @@ function cycleLatex(p: Permutation): string {
 
 /** Wrap an array form without validation (SymPy _af_new). */
 function afNew(perm: number[]): Permutation {
-  return new Permutation(AF as never, perm as never);
+  pendingAf = perm;
+  return new Permutation();
 }
 
 /**
@@ -410,9 +413,10 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
   /** SymPy Permutation(arg, size=...) from an array form, cyclic form, Cycle or Permutation. */
   constructor(arg: PermutationInput, options?: PermutationOptions);
   constructor(...input: readonly unknown[]) {
+    const af = pendingAf;
+    pendingAf = undefined;
     super('Permutation', []);
-    if (input[0] === AF) this.#af = input[1] as number[];
-    else this.#af = parseArgs(input);
+    this.#af = af ?? parseArgs(input);
   }
 
   /** The node itself (a Permutation has no expression arguments). */
@@ -476,8 +480,8 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
         const cycle = [i];
         unchecked[i] = false;
         let j = i;
-        while (unchecked[af[j]!]) {
-          j = af[j]!;
+        while (unchecked[at(af, j)]) {
+          j = at(af, j);
           cycle.push(j);
           unchecked[j] = false;
         }
@@ -547,7 +551,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const b = other.arrayForm;
     if (b.length === 0) return afNew(a);
     for (let i = b.length; i < a.length; i++) b.push(i);
-    return afNew([...a.map((i) => b[i]!), ...b.slice(a.length)]);
+    return afNew([...a.map((i) => at(b, i)), ...b.slice(a.length)]);
   }
 
   /** SymPy p**n: the nth power (n may be negative). */
@@ -570,7 +574,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const a = new Array<number>(this.size).fill(0);
     const hf = h.#af;
     const p = this.#af;
-    for (let i = 0; i < this.size; i++) a[hf[i]!] = hf[p[i]!]!;
+    for (let i = 0; i < this.size; i++) a[at(hf, i)] = at(hf, at(p, i));
     return afNew(a);
   }
 
@@ -630,7 +634,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     if (b.length !== n) throw new RangeError('The permutations must be of equal size.');
     const inva = afInvert(a);
     const invb = afInvert(b);
-    return afNew(invb.map((i) => a[b[inva[i]!]!]!));
+    return afNew(invb.map((i) => at(a, at(b, at(inva, i)))));
   }
 
   // ---- application -------------------------------------------------------------
@@ -655,7 +659,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
       if (k < 0 || k >= this.size) throw new TypeError(`${k} should be an integer between 0 and ${this.size - 1}`);
       return this.#af[k];
     }
-    return this.mul(new Permutation(new Cycle(...(i as number[])), { size: this.size }));
+    return this.mul(new Permutation(new Cycle(...i.map((v) => asInt(v))), { size: this.size }));
   }
 
   /**
@@ -669,7 +673,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     if (isNegative(x) === true || isNonNegative(add(x, -n)) === true) {
       throw new NotImplementedError(`${x.toString()} should be an integer between 0 and ${n - 1}`);
     }
-    if (x instanceof Rational) return Rational.of(this.#af[Number(x.p)]!);
+    if (x instanceof Rational) return Rational.of(at(this.#af, Number(x.p)));
     return new AppliedPermutation(this, x);
   }
 
@@ -734,7 +738,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
   ascents(): number[] {
     const a = this.#af;
     const out: number[] = [];
-    for (let i = 0; i < a.length - 1; i++) if (a[i]! < a[i + 1]!) out.push(i);
+    for (let i = 0; i < a.length - 1; i++) if (at(a, i) < at(a, i + 1)) out.push(i);
     return out;
   }
 
@@ -742,7 +746,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
   descents(): number[] {
     const a = this.#af;
     const out: number[] = [];
-    for (let i = 0; i < a.length - 1; i++) if (a[i]! > a[i + 1]!) out.push(i);
+    for (let i = 0; i < a.length - 1; i++) if (at(a, i) > at(a, i + 1)) out.push(i);
     return out;
   }
 
@@ -770,7 +774,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const n = a.length;
     if (n < 130) {
       let inv = 0;
-      for (let i = 0; i < n - 1; i++) for (let j = i + 1; j < n; j++) if (a[i]! > a[j]!) inv++;
+      for (let i = 0; i < n - 1; i++) for (let j = i + 1; j < n; j++) if (at(a, i) > at(a, j)) inv++;
       return inv;
     }
     // merge sort counting
@@ -785,14 +789,14 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
         let j = mid;
         let k = lo;
         while (i < mid && j < hi) {
-          if (arr[i]! < arr[j]!) tmp[k++] = arr[i++]!;
+          if (at(arr, i) < at(arr, j)) tmp[k++] = at(arr, i++);
           else {
-            tmp[k++] = arr[j++]!;
+            tmp[k++] = at(arr, j++);
             inv += mid - i;
           }
         }
-        while (i < mid) tmp[k++] = arr[i++]!;
-        while (j < hi) tmp[k++] = arr[j++]!;
+        while (i < mid) tmp[k++] = at(arr, i++);
+        while (j < hi) tmp[k++] = at(arr, j++);
       }
       [arr, tmp] = [tmp, arr];
     }
@@ -806,7 +810,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const out: number[] = [];
     for (let i = 0; i < n - 1; i++) {
       let v = 0;
-      for (let j = i + 1; j < n; j++) if (a[j]! < a[i]!) v++;
+      for (let j = i + 1; j < n; j++) if (at(a, j) < at(a, i)) v++;
       out.push(v);
     }
     return out;
@@ -822,10 +826,10 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const a = this.#af;
     if (a.length === 0) return [];
     const out: number[][] = [];
-    let run = [a[0]!];
+    let run = [at(a, 0)];
     for (let i = 1; i < a.length; i++) {
-      const e = a[i]!;
-      if (e > run[run.length - 1]!) run.push(e);
+      const e = at(a, i);
+      if (e > last(run)) run.push(e);
       else {
         out.push(run);
         run = [e];
@@ -839,9 +843,9 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
   transpositions(): [number, number][] {
     const res: [number, number][] = [];
     for (const x of this.cyclicForm) {
-      const first = x[0]!;
-      if (x.length === 2) res.push([first, x[1]!]);
-      else for (let k = x.length - 1; k > 0; k--) res.push([first, x[k]!]);
+      const first = at(x, 0);
+      if (x.length === 2) res.push([first, at(x, 1)]);
+      else for (let k = x.length - 1; k > 0; k--) res.push([first, at(x, k)]);
     }
     return res;
   }
@@ -881,8 +885,8 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     let n = size - 1;
     let psize = ifac(n);
     for (let j = 0; j < size - 1; j++) {
-      rank += BigInt(rho[j]!) * psize;
-      for (let i = j + 1; i < size; i++) if (rho[i]! > rho[j]!) rho[i]!--;
+      rank += BigInt(at(rho, j)) * psize;
+      for (let i = j + 1; i < size; i++) if (at(rho, i) > at(rho, j)) rho[i] = at(rho, i) - 1;
       psize /= BigInt(n);
       n--;
     }
@@ -901,7 +905,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
       r -= d * psize;
       const dn = Number(d);
       perm[size - i - 1] = dn;
-      for (let j = size - i; j < size; j++) if (perm[j]! > dn - 1) perm[j]!++;
+      for (let j = size - i; j < size; j++) if (at(perm, j) > dn - 1) perm[j] = at(perm, j) + 1;
       psize = newPsize;
     }
     return afNew(perm);
@@ -912,15 +916,15 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const perm = this.arrayForm;
     const n = perm.length;
     let i = n - 2;
-    while (i >= 0 && perm[i + 1]! < perm[i]!) i--;
+    while (i >= 0 && at(perm, i + 1) < at(perm, i)) i--;
     if (i < 0) return NoMatch;
     let j = n - 1;
-    while (perm[j]! < perm[i]!) j--;
-    [perm[i], perm[j]] = [perm[j]!, perm[i]!];
+    while (at(perm, j) < at(perm, i)) j--;
+    [perm[i], perm[j]] = [at(perm, j), at(perm, i)];
     i++;
     j = n - 1;
     while (i < j) {
-      [perm[i], perm[j]] = [perm[j]!, perm[i]!];
+      [perm[i], perm[j]] = [at(perm, j), at(perm, i)];
       i++;
       j--;
     }
@@ -934,7 +938,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     for (let m = n; m > 0; m--) {
       const bm = BigInt(m);
       const k = Number(pmod(rr, bm));
-      [a[m - 1], a[k]] = [a[k]!, a[m - 1]!];
+      [a[m - 1], a[k]] = [at(a, k), at(a, m - 1)];
       rr = pfloordiv(rr, bm);
     }
     return afNew(a);
@@ -947,10 +951,10 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const perm = this.arrayForm;
     const rank1 = (n: number): bigint => {
       if (n === 1) return 0n;
-      const s = perm[n - 1]!;
-      const t = inv[n - 1]!;
-      [perm[n - 1], perm[t]] = [perm[t]!, s];
-      [inv[n - 1], inv[s]] = [inv[s]!, t];
+      const s = at(perm, n - 1);
+      const t = at(inv, n - 1);
+      [perm[n - 1], perm[t]] = [at(perm, t), s];
+      [inv[n - 1], inv[s]] = [at(inv, s), t];
       return BigInt(s) + BigInt(n) * rank1(n - 1);
     };
     return rank1(perm.length);
@@ -974,7 +978,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
       let k = 1;
       let i = 0;
       while (perm[i] !== j) {
-        if (perm[i]! < j) k++;
+        if (at(perm, i) < j) k++;
         i++;
       }
       const j1 = BigInt(j + 1);
@@ -1016,19 +1020,19 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     let m = n - 1;
     while (m > 0 && !done) {
       const d = rho.indexOf(m);
-      for (let i = d; i < m; i++) rho[i] = rho[i + 1]!;
+      for (let i = d; i < m; i++) rho[i] = at(rho, i + 1);
       const par = afParity(rho.slice(0, m));
       if (par === 1) {
         if (d === m) m--;
         else {
-          [pi[st + d], pi[st + d + 1]] = [pi[st + d + 1]!, pi[st + d]!];
+          [pi[st + d], pi[st + d + 1]] = [at(pi, st + d + 1), at(pi, st + d)];
           done = true;
         }
       } else if (d === 0) {
         m--;
         st++;
       } else {
-        [pi[st + d], pi[st + d - 1]] = [pi[st + d - 1]!, pi[st + d]!];
+        [pi[st + d], pi[st + d - 1]] = [at(pi, st + d - 1), at(pi, st + d)];
         done = true;
       }
     }
@@ -1042,7 +1046,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const n = this.size;
     const m = Array.from({ length: n }, () => new Array<number>(n).fill(0));
     const perm = this.#af;
-    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) m[perm[i]!]![perm[j]!] = 1;
+    for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) at(m, at(perm, i))[at(perm, j)] = 1;
     return m;
   }
 
@@ -1050,7 +1054,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const n = this.size;
     const m = Array.from({ length: n }, () => new Array<number>(n).fill(0));
     const perm = this.#af;
-    for (let i = 0; i < n - 1; i++) m[perm[i]!]![perm[i + 1]!] = 1;
+    for (let i = 0; i < n - 1; i++) at(m, at(perm, i))[at(perm, i + 1)] = 1;
     return m;
   }
 
@@ -1066,7 +1070,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const b = other.#precedence();
     const n = this.size;
     let nPrec = 0;
-    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (i !== j && a[i]![j]! * b[i]![j]! === 1) nPrec++;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (i !== j && at(at(a, i), j) * at(at(b, i), j) === 1) nPrec++;
     return Math.floor((n * Math.max(n - 1, 0)) / 2) - nPrec;
   }
 
@@ -1082,7 +1086,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const b = other.#adjacency();
     const n = this.size;
     let nAdj = 0;
-    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (i !== j && a[i]![j]! * b[i]![j]! === 1) nAdj++;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) if (i !== j && at(at(a, i), j) * at(at(b, i), j) === 1) nAdj++;
     return n - nAdj - 1;
   }
 
@@ -1091,7 +1095,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const a = this.#af;
     const b = other.#af;
     if (a.length !== b.length) throw new RangeError('The permutations must be of the same size.');
-    return a.reduce((s, ai, i) => s + Math.abs(ai - b[i]!), 0);
+    return a.reduce((s, ai, i) => s + Math.abs(ai - at(b, i)), 0);
   }
 
   // ---- constructors --------------------------------------------------------------------
@@ -1104,8 +1108,8 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const q = Array.from({ length: n }, (_, i) => i);
     const perm: number[] = [];
     while (q.length > Math.max(s, 1)) {
-      for (let dp = 0; dp < m - 1; dp++) q.push(q.shift()!);
-      perm.push(q.shift()!);
+      for (let dp = 0; dp < m - 1; dp++) q.push(defined(q.shift()));
+      perm.push(defined(q.shift()));
     }
     perm.push(...q);
     return new Permutation(perm);
@@ -1117,10 +1121,10 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const N = Array.from({ length: size + 1 }, (_, i) => i);
     const perm: number[] = [];
     for (let k = 0; k < size; k++) {
-      let idx = inversion[k]!;
+      let idx = at(inversion, k);
       if (idx < 0) idx += N.length;
       if (idx < 0 || idx >= N.length) throw new RangeError('The inversion vector is not valid.');
-      perm.push(N[idx]!);
+      perm.push(at(N, idx));
       N.splice(idx, 1);
     }
     perm.push(...N);
@@ -1135,6 +1139,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const items: readonly unknown[] = typeof seq === 'string' ? Array.from(seq) : seq;
     const ic = items.map((x, i) => [x, i] as const);
     if (key) {
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- items are seq's elements (or a string's characters, which the signature cannot tie to T)
       const keys = ic.map(([x]) => key(x as T));
       ic.sort((u, v) => pyCompare(keys[u[1]], keys[v[1]]) || u[1] - v[1]);
     } else ic.sort((u, v) => pyCompare(u[0], v[0]) || u[1] - v[1]);
@@ -1150,7 +1155,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     const a = Array.from({ length: n }, (_, i) => i);
     for (let i = n - 1; i > 0; i--) {
       const j = Math.floor(rnd() * (i + 1));
-      [a[i], a[j]] = [a[j]!, a[i]!];
+      [a[i], a[j]] = [at(a, j), at(a, i)];
     }
     return afNew(a);
   }
@@ -1176,7 +1181,7 @@ export function permutationStr(p: Permutation, opts: PermutationPrintOptions = {
   const s = p.support();
   const af = p.arrayForm;
   if (s.length === 0) return p.size < 5 ? `Permutation(${listStr(af)})` : `Permutation([], size=${p.size})`;
-  const trim = `${listStr(af.slice(0, s[s.length - 1]! + 1))}, size=${p.size}`;
+  const trim = `${listStr(af.slice(0, last(s) + 1))}, size=${p.size}`;
   const full = listStr(af);
   return `Permutation(${trim.length < full.length ? trim : full})`;
 }
@@ -1231,12 +1236,12 @@ export class AppliedPermutation extends ExtensionExpr {
 
   /** The permutation. */
   get perm(): Permutation {
-    return this.args[0] as Permutation;
+    return cast(this.args[0], Permutation, 'AppliedPermutation perm');
   }
 
   /** The argument. */
   get x(): Expr {
-    return this.args[1]!;
+    return at(this.args, 1);
   }
 
   /** Rebuilds the node, evaluating it when the argument is an Integer. */

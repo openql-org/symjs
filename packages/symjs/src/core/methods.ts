@@ -8,18 +8,33 @@
 
 import { isIntegerQ, isNegative as isNegativeQ, isPositive, isReal, isZero as isZeroQ } from './assumptions';
 import type { ExprLike, FnName } from './nodes';
-import { Add, Constant, Expr, Float, Fn, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from './nodes';
+import { Add, Constant, Expr, Float, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, asRational, impl, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
 import { add, asBaseExp, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
 import { ExprMap } from './exprmap';
 import { freeSymbols, xreplace as xreplaceM } from './traverse';
+import { at, getOrThrow } from './guard';
+import { InvariantError } from './errors';
 
 // Higher layers are reached through impl (docs/architecture.md: the core imports no other layer)
 const diff = (e: Expr, x: Expr): Expr => impl.diff(e, x, 1);
-const applyFn = (name: FnName) => (a: Expr): Expr => impl.fn!(name, [a]);
-const [abs, arg, im, log, re] = (['abs', 'arg', 'im', 'log', 're'] as const).map(applyFn) as [(a: Expr) => Expr, (a: Expr) => Expr, (a: Expr) => Expr, (a: Expr) => Expr, (a: Expr) => Expr];
-const expandMul = (e: Expr): Expr => impl.expandMul!(e);
-const asRealImagExpand = (e: Expr): [Expr, Expr] => impl.asRealImagExpand!(e);
+const applyFn = (name: FnName) => (a: Expr): Expr => {
+  if (impl.fn === undefined) throw new InvariantError('function constructors are not registered');
+  return impl.fn(name, [a]);
+};
+const abs = applyFn('abs');
+const arg = applyFn('arg');
+const im = applyFn('im');
+const log = applyFn('log');
+const re = applyFn('re');
+const expandMul = (e: Expr): Expr => {
+  if (impl.expandMul === undefined) throw new InvariantError('expandMul is not registered');
+  return impl.expandMul(e);
+};
+const asRealImagExpand = (e: Expr): [Expr, Expr] => {
+  if (impl.asRealImagExpand === undefined) throw new InvariantError('asRealImagExpand is not registered');
+  return impl.asRealImagExpand(e);
+};
 
 const isOne = (e: Expr) => e instanceof Rational && e.isOne;
 const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
@@ -40,11 +55,11 @@ export function keepCoeff(coeffIn: Expr, factorsIn: Expr): Expr {
   if (factors instanceof Add) return new Mul([coeff, factors]);
   if (factors instanceof Mul) {
     const margs = [...factors.args];
-    if (margs[0]!.isNumber) {
-      margs[0] = mul(margs[0]!, coeff);
+    if (at(margs, 0).isNumber) {
+      margs[0] = mul(at(margs, 0), coeff);
       if (isOne(margs[0])) margs.shift();
     } else margs.unshift(coeff);
-    return margs.length === 1 ? margs[0]! : new Mul(margs);
+    return margs.length === 1 ? at(margs, 0) : new Mul(margs);
   }
   const m = mul(coeff, factors);
   if (m.isNumber && !factors.isNumber) return new Mul([coeff, factors]);
@@ -98,7 +113,7 @@ export function coeff(eIn: ExprLike, xIn: ExprLike, n = 1, right = false, first 
   const selfC = e.isCommutative;
   const xC = x.isCommutative;
   if (selfC && !xC) return S.Zero;
-  const same = (a: readonly Expr[], b: readonly Expr[]) => a.length === b.length && a.every((t, i) => t.key === b[i]!.key);
+  const same = (a: readonly Expr[], b: readonly Expr[]) => a.length === b.length && a.every((t, i) => t.key === at(b, i).key);
   if (first && e instanceof Add && !selfC && !xC) {
     // the part that depends on x exactly
     const xargs = [...mulArgs(x)];
@@ -106,7 +121,7 @@ export function coeff(eIn: ExprLike, xIn: ExprLike, n = 1, right = false, first 
     const rv = coeff(d, x, 1, right, false);
     if (!(rv instanceof Add) || !right) return rv;
     const parts = rv.args.map((i) => argsCncSplit(i));
-    const c0 = parts[0]![0];
+    const c0 = at(parts, 0)[0];
     if (parts.some(([c]) => !same(c, c0))) return rv;
     return add(...parts.map(([, nc]) => mul(...nc)));
   }
@@ -134,22 +149,22 @@ export function coeff(eIn: ExprLike, xIn: ExprLike, n = 1, right = false, first 
     const L = fromLeft ? l : [...l].reverse();
     const T = fromLeft ? sub : [...sub].reverse();
     for (let i = 0; i <= L.length - k; i++) {
-      if (T.every((t, j) => L[i + j]!.key === t.key)) return fromLeft ? i : L.length - (i + k);
+      if (T.every((t, j) => at(L, i + j).key === t.key)) return fromLeft ? i : L.length - (i + k);
     }
     return undefined;
   };
   const incommon = (l1: readonly Expr[], l2: readonly Expr[]): Expr[] => {
     if (!l1.length || !l2.length) return [];
     const m = Math.min(l1.length, l2.length);
-    for (let i = 0; i < m; i++) if (l1[i]!.key !== l2[i]!.key) return l1.slice(0, i);
+    for (let i = 0; i < m; i++) if (at(l1, i).key !== at(l2, i).key) return l1.slice(0, i);
     return [...l1];
   };
   const fromLeft = !right;
-  if (co.every(([, nc]) => same(nc, co[0]![1]))) {
-    const ii = find(co[0]![1], nx, fromLeft);
+  if (co.every(([, nc]) => same(nc, at(co, 0)[1]))) {
+    const ii = find(at(co, 0)[1], nx, fromLeft);
     if (ii !== undefined) {
-      if (!right) return mul(add(...co.map(([r]) => mul(...r))), mul(...co[0]![1].slice(0, ii)));
-      return mul(...co[0]![1].slice(ii + nx.length));
+      if (!right) return mul(add(...co.map(([r]) => mul(...r))), mul(...at(co, 0)[1].slice(0, ii)));
+      return mul(...at(co, 0)[1].slice(ii + nx.length));
     }
   }
   const beg = co.map(([, nc]) => nc).reduce((a, b) => incommon(a, b));
@@ -157,8 +172,8 @@ export function coeff(eIn: ExprLike, xIn: ExprLike, n = 1, right = false, first 
     const ii = find(beg, nx, fromLeft);
     if (ii !== undefined) {
       if (!right) {
-        let gcdc = co[0]![0];
-        for (let i = 1; i < co.length && gcdc.length; i++) gcdc = gcdc.filter((g) => co[i]![0].some((h) => h.key === g.key));
+        let gcdc = at(co, 0)[0];
+        for (let i = 1; i < co.length && gcdc.length; i++) gcdc = gcdc.filter((g) => at(co, i)[0].some((h) => h.key === g.key));
         return mul(...gcdc, ...beg.slice(0, ii));
       }
       const m = ii + nx.length;
@@ -220,8 +235,8 @@ export function asIndependent(eIn: ExprLike, deps: readonly Expr[], opts: { asAd
   }
   const depend = args.filter(has);
   const indep = args.filter((a) => !has(a));
-  if (e instanceof Add) return [add(...indep), depend.length === 0 ? S.Zero : depend.length === 1 ? depend[0]! : new Add(depend)];
-  return [mul(...indep), depend.length === 0 ? S.One : depend.length === 1 ? depend[0]! : new Mul(depend)];
+  if (e instanceof Add) return [add(...indep), depend.length === 0 ? S.Zero : depend.length === 1 ? at(depend, 0) : new Add(depend)];
+  return [mul(...indep), depend.length === 0 ? S.One : depend.length === 1 ? at(depend, 0) : new Mul(depend)];
 }
 
 /** SymPy `as_coeff_add(*deps)`. */
@@ -234,7 +249,7 @@ export function asCoeffAdd(eIn: ExprLike, deps: readonly Expr[] = []): [Expr, Ex
     return [add(...ind), dep];
   }
   if (isNum(e)) return [e, []];
-  if (e instanceof Add && e.args[0]!.isNumber) return [e.args[0]!, [...e.args.slice(1)]];
+  if (e instanceof Add && at(e.args, 0).isNumber) return [at(e.args, 0), [...e.args.slice(1)]];
   return [S.Zero, e instanceof Add ? [...e.args] : [e]];
 }
 
@@ -248,7 +263,7 @@ export function asCoeffMul(eIn: ExprLike, deps: readonly Expr[] = []): [Expr, Ex
     return [mul(...ind), dep];
   }
   if (isNum(e)) return [e, []];
-  if (e instanceof Mul && e.args[0]!.isNumber) return [e.args[0]!, [...e.args.slice(1)]];
+  if (e instanceof Mul && at(e.args, 0).isNumber) return [at(e.args, 0), [...e.args.slice(1)]];
   return [S.One, [e]];
 }
 
@@ -307,7 +322,7 @@ export function asContentPrimitive(eIn: ExprLike, opts: { clear?: boolean; radic
     const args: Expr[] = [];
     for (const a of e.args) {
       const [c, p] = asContentPrimitive(a, opts);
-      coef = mul(coef, c) as Rational;
+      coef = asRational(mul(coef, c));
       if (!isOne(p)) args.push(p);
     }
     return [coef, mul(...args)];
@@ -319,7 +334,7 @@ export function asContentPrimitive(eIn: ExprLike, opts: { clear?: boolean; radic
     if (b instanceof Rational && !b.isZero) {
       const [h, t] = splitAddRational(pe);
       if (h instanceof Rational) {
-        const ceh = mul(ce, h) as Rational;
+        const ceh = asRational(mul(ce, h));
         let c = pow(b, ceh);
         let r: Expr = S.Zero;
         if (!(c instanceof Rational)) {
@@ -367,8 +382,9 @@ export function extractMultiplicatively(eIn: ExprLike, cIn: ExprLike): Expr | un
   }
   if (c instanceof Mul) {
     const [a, ...rest] = c.args;
-    const b = rest.length === 1 ? rest[0]! : new Mul(rest);
-    const x = extractMultiplicatively(e, a!);
+    if (a === undefined) return undefined;
+    const b = rest.length === 1 ? at(rest, 0) : new Mul(rest);
+    const x = extractMultiplicatively(e, a);
     return x === undefined ? undefined : extractMultiplicatively(x, b);
   }
   const quotient = mul(e, pow(c, -1));
@@ -390,7 +406,7 @@ export function extractMultiplicatively(eIn: ExprLike, cIn: ExprLike): Expr | un
   if (e instanceof Sym || e instanceof Constant) {
     if (quotient instanceof Mul && quotient.args.length === 2) {
       const [q0, q1] = quotient.args;
-      if (q0 instanceof Rational && q0.isInteger && q0.isPositive && q1!.key === e.key) return quotient;
+      if (q0 instanceof Rational && q0.isInteger && q0.isPositive && q1?.key === e.key) return quotient;
     } else if (quotient instanceof Rational && quotient.isInteger && c.isNumber) return quotient;
     return undefined;
   }
@@ -420,7 +436,7 @@ export function extractMultiplicatively(eIn: ExprLike, cIn: ExprLike): Expr | un
   if (e instanceof Mul) {
     const args = [...e.args];
     for (let i = 0; i < args.length; i++) {
-      const n = extractMultiplicatively(args[i]!, c);
+      const n = extractMultiplicatively(at(args, i), c);
       if (n !== undefined) {
         args[i] = n;
         return mul(...args);
@@ -465,7 +481,7 @@ export function extractAdditively(eIn: ExprLike, cIn: ExprLike): Expr | undefine
     const xa = extractAdditively(co, c);
     return xa === undefined ? undefined : add(xa, t);
   }
-  if (c instanceof Add && c.args[0]!.isNumber) {
+  if (c instanceof Add && at(c.args, 0).isNumber) {
     const co = coeff(e, c);
     const xa0 = mul(extractAdditively(co, 1) ?? S.Zero, c);
     if (!isZeroE(xa0)) {
@@ -499,14 +515,14 @@ export function extractAdditively(eIn: ExprLike, cIn: ExprLike): Expr | undefine
   let self = e;
   const coeffs: Expr[] = [];
   for (const a of addArgs(c)) {
-    const [ac, at] = splitCoeff(a);
-    const co2 = coeff(self, at);
+    const [ac, aRest] = splitCoeff(a);
+    const co2 = coeff(self, aRest);
     if (isZeroE(co2)) return undefined;
     const [coc, cot] = splitAddRational(co2);
     const xa = extractAdditively(coc, ac);
     if (xa === undefined) return undefined;
-    self = add(self, mul(-1, co2, at));
-    coeffs.push(mul(add(cot, xa), at));
+    self = add(self, mul(-1, co2, aRest));
+    coeffs.push(mul(add(cot, xa), aRest));
   }
   coeffs.push(self);
   return add(...coeffs);
@@ -597,7 +613,7 @@ export function isConstant(eIn: ExprLike, wrt: readonly Sym[] = []): boolean {
 export function asRealImag(eIn: ExprLike): [Expr, Expr] {
   const e0 = sympify(eIn);
   if (e0 instanceof Fn && e0.name === 'log') {
-    const a = e0.args[0]!;
+    const a = at(e0.args, 0);
     return [log(abs(a)), arg(a)];
   }
   if ((e0 instanceof Pow && e0.base instanceof Constant && e0.base.name === 'E') || e0 instanceof Fn) {
@@ -666,11 +682,11 @@ export function asNumerDenom(eIn: ExprLike): [Expr, Expr] {
     }
     const groups = [...nd.values()];
     if (groups.length === 1) {
-      const [d, ns] = groups[0]!;
+      const [d, ns] = at(groups, 0);
       return [add(...ns.map((ni) => keepCoeff(ncon, ni))), keepCoeff(dcon, d)];
     }
     const denoms = groups.map(([d]) => d);
-    const numers = groups.map(([, ns]) => (ns.length === 1 ? ns[0]! : add(...ns)));
+    const numers = groups.map(([, ns]) => (ns.length === 1 ? at(ns, 0) : add(...ns)));
     const n = add(...numers.map((ni, i) => mul(...denoms.slice(0, i), ni, ...denoms.slice(i + 1))));
     return [keepCoeff(ncon, n), keepCoeff(dcon, mul(...denoms))];
   }
@@ -704,7 +720,7 @@ export function hasFree(eIn: ExprLike, ...patterns: (ExprLike | { fn: string })[
   return patterns.some((p) => {
     if (typeof p === 'object' && !(p instanceof Expr)) {
       const name = p.fn;
-      const go = (x: Expr): boolean => (x.kind === 'Undef' && (x as { name?: string }).name === name) || x.args.some(go);
+      const go = (x: Expr): boolean => (x instanceof UndefFn && x.name === name) || x.args.some(go);
       return go(e);
     }
     const q = sympify(p);
@@ -779,7 +795,7 @@ export function asCoefficientsDict(eIn: ExprLike, syms: readonly Expr[] = []): E
       const [c, m] = splitCoeff(a);
       put(m, c);
     }
-    return new ExprMap([...out.values()].map(([k, v]) => [k, v.length === 1 ? v[0]! : add(...v)]));
+    return new ExprMap([...out.values()].map(([k, v]) => [k, v.length === 1 ? at(v, 0) : add(...v)]));
   }
   const [ind, dep] = asIndependent(e, syms, { asAdd: true });
   for (const i of dep instanceof Add ? dep.args : [dep]) {
@@ -788,7 +804,7 @@ export function asCoefficientsDict(eIn: ExprLike, syms: readonly Expr[] = []): E
       const c = mul(...i.args.filter((a) => !syms.some((s) => a.has(s))));
       const x = i.args.filter((a) => syms.some((s) => a.has(s)));
       if (c instanceof Rational && c.isOne) put(i, c);
-      else put(x.length === 1 ? x[0]! : new Mul(x), c);
+      else put(x.length === 1 ? at(x, 0) : new Mul(x), c);
     } else put(i, S.One);
   }
   const res = new ExprMap<Expr>([...out.values()].map(([k, v]) => [k, add(...v)]));
@@ -799,8 +815,8 @@ export function asCoefficientsDict(eIn: ExprLike, syms: readonly Expr[] = []): E
 /** SymPy as_two_terms: (head, tail) of an Add or Mul. */
 export function asTwoTerms(eIn: ExprLike): [Expr, Expr] {
   const e = sympify(eIn);
-  if (e instanceof Add) return [e.args[0]!, add(...e.args.slice(1))];
-  if (e instanceof Mul) return [e.args[0]!, mul(...e.args.slice(1))];
+  if (e instanceof Add) return [at(e.args, 0), add(...e.args.slice(1))];
+  if (e instanceof Mul) return [at(e.args, 0), mul(...e.args.slice(1))];
   return [S.One, e];
 }
 
@@ -833,12 +849,12 @@ export function dummyEq(aIn: ExprLike, bIn: ExprLike, symbol?: Expr): boolean {
   const dummies = [...freeSymbols(a)].filter((s) => s.constructor.name === 'Dummy');
   if (dummies.length === 0) return a.key === b.key;
   if (dummies.length > 1) return false;
-  const d = dummies[0]!;
+  const d = at(dummies, 0);
   let target = symbol;
   if (!target) {
     const cand = [...freeSymbols(b)].filter((s) => ![...freeSymbols(a)].some((t) => t.key === s.key));
     if (cand.length !== 1) return false;
-    target = cand[0]!;
+    target = at(cand, 0);
   }
   return xreplaceM(a, [[d, target]]).key === b.key;
 }
@@ -856,8 +872,8 @@ const SINGULARITIES: Record<string, string[]> = {
 /** SymPy is_meromorphic(x, a): true/false/undefined. */
 export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | undefined {
   const e = sympify(eIn);
-  const at = sympify(a);
-  const subsAt = (t: Expr) => xreplaceM(t, [[x, at]]);
+  const point = sympify(a);
+  const subsAt = (t: Expr) => xreplaceM(t, [[x, point]]);
   const isZoo = (t: Expr) => t instanceof Special && (t.name === 'zoo' || t.name === 'oo' || t.name === '-oo');
   const go = (t: Expr): boolean | undefined => {
     if (!t.has(x)) return true;
@@ -882,7 +898,7 @@ export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | un
     }
     if (t instanceof Fn) {
       if (t.args.slice(1).some((u) => u.has(x))) return undefined;
-      const arg0 = t.args[0]!;
+      const arg0 = at(t.args, 0);
       if (!go(arg0)) return undefined;
       const sing = SINGULARITIES[t.name];
       if (!sing) return undefined;
@@ -906,11 +922,11 @@ export function isSame(a: unknown, b: unknown, approx?: (x: Expr, y: Expr) => bo
     const same = (x: Expr, y: Expr): boolean =>
       x.isNumber && y.isNumber && x.args.length === 0 && y.args.length === 0 && approx
         ? approx(x, y)
-        : x.kind === y.kind && x.args.length === y.args.length && (x.args.length ? x.args.every((u, i) => same(u, y.args[i]!)) : x.key === y.key);
+        : x.kind === y.kind && x.args.length === y.args.length && (x.args.length ? x.args.every((u, i) => same(u, at(y.args, i))) : x.key === y.key);
     return same(a, b);
   }
-  const m = (a as { isSame?: (o: unknown, f?: typeof approx) => boolean } | null)?.isSame;
-  return typeof m === 'function' ? m.call(a, b, approx) : a === b;
+  if (typeof a === 'object' && a !== null && 'isSame' in a && typeof a.isSame === 'function') return Boolean(a.isSame(b, approx));
+  return a === b;
 }
 
 /** The exact value of a Rational or Float as a Rational, else undefined. */
@@ -983,7 +999,7 @@ export function asTerms(eIn: ExprLike): [[Expr, [[number, number], number[], Exp
   const index = new Map(sorted.map((g, i) => [g.key, i]));
   const out = terms.map(([term, coeff, cpart, nc]) => {
     const monom = sorted.map(() => 0);
-    for (const [k, [, ex]] of cpart) monom[index.get(k)!] = ex;
+    for (const [k, [, ex]] of cpart) monom[getOrThrow(index, k)] = ex;
     return [term, [coeff, monom, nc]] as [Expr, [[number, number], number[], Expr[]]];
   });
   return [out, sorted];

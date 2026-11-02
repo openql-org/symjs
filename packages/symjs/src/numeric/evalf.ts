@@ -8,6 +8,7 @@
 import { DeferredVector } from '../core/classes';
 import type {
   ComplexValue as C,
+  ConstantName,
   EvalfOptions,
   ExprLike,
   NumericValues } from '../core/nodes';
@@ -28,6 +29,8 @@ import {
   Sym,
   impl,
 } from '../core/nodes';
+import { InvariantError } from '../core/errors';
+import { at } from '../core/guard';
 import { mul, sympify } from '../core/ops';
 import { rebuild } from '../core/traverse';
 import {
@@ -60,18 +63,19 @@ type Value = number | C | Expr;
 
 const toC = (v: Value): C => (typeof v === 'number' ? c(v) : v instanceof Expr ? toComplex(v) : v);
 
+const isValueMap = (v: NumericValues): v is ReadonlyMap<Expr | string, Value> => v instanceof Map;
+
 /** Look up the raw value given for a symbol. Matches by name. */
 function makeRawLookup(values: NumericValues | undefined): (s: Sym) => Value | undefined {
   if (!values) return () => undefined;
-  if (values instanceof Map) {
+  if (isValueMap(values)) {
     const byName = new Map<string, Value>();
-    for (const [k, v] of values as ReadonlyMap<Expr | string, Value>) {
+    for (const [k, v] of values) {
       byName.set(typeof k === 'string' ? k : k instanceof Sym ? k.name : k.key, v);
     }
     return (s) => byName.get(s.name);
   }
-  const rec = values as Readonly<Record<string, Value>>;
-  return (s) => (Object.prototype.hasOwnProperty.call(rec, s.name) ? rec[s.name]! : undefined);
+  return (s) => (Object.prototype.hasOwnProperty.call(values, s.name) ? values[s.name] : undefined);
 }
 
 /** Look up a numeric value for a symbol. Matches by name. */
@@ -103,10 +107,10 @@ const FN_NUMERIC1: Partial<Record<Fn['name'], (a: C) => C>> = {
 
 /** Numeric implementations of functions (multi-argument); special.ts registers more. */
 export const numericFns: Partial<Record<Fn['name'], (args: C[]) => C>> = Object.fromEntries(
-  Object.entries(FN_NUMERIC1).map(([k, f]) => [k, (args: C[]) => f(args[0]!)]),
+  Object.entries(FN_NUMERIC1).map(([k, f]) => [k, (args: C[]) => f(at(args, 0))]),
 );
 
-const CONSTANT_VALUES: Record<string, C> = {
+const CONSTANT_VALUES: Record<ConstantName, C> = {
   pi: c(Math.PI),
   E: c(Math.E),
   I: c(0, 1),
@@ -126,7 +130,7 @@ function compile(e: Expr, resolve: (s: Sym) => Compiled): Compiled {
     return () => v;
   }
   if (e instanceof Constant) {
-    const v = CONSTANT_VALUES[e.name]!;
+    const v = CONSTANT_VALUES[e.name];
     return () => v;
   }
   if (e instanceof Special) {
@@ -256,6 +260,13 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
   return go(e);
 }
 
+const isVector = (a: number | C | readonly (number | C)[]): a is readonly (number | C)[] => Array.isArray(a);
+
+/** A lambdify environment slot that was not filled (the slots are filled from the arguments). */
+function missingSlot(i: number): never {
+  throw new InvariantError(`lambdify: environment slot ${i} is missing`);
+}
+
 /**
  * Compile an expression into a fast numeric function of the given symbols.
  *
@@ -271,25 +282,28 @@ export function lambdify(ex: ExprLike, params: readonly Sym[]): (...args: (numbe
   const slots: [number, number][] = [];
   const f = compile(e, (s) => {
     const m = /^(.*)\[(\d+)\]$/.exec(s.name);
-    const vi = m ? vectors.get(m[1]!) : undefined;
-    if (vi !== undefined) {
-      const slot = params.length + slots.length;
-      slots.push([vi, Number(m![2])]);
-      return (env) => env[slot]!;
+    if (m) {
+      const [, base = '', k = ''] = m;
+      const vi = vectors.get(base);
+      if (vi !== undefined) {
+        const slot = params.length + slots.length;
+        slots.push([vi, Number(k)]);
+        return (env) => env[slot] ?? missingSlot(slot);
+      }
     }
     const i = index.get(s.name);
     if (i === undefined) throw new TypeError(`lambdify: symbol '${s.name}' is not a parameter`);
-    return (env) => env[i]!;
+    return (env) => env[i] ?? missingSlot(i);
   });
   return (...args) => {
     if (args.length !== params.length) {
       throw new RangeError(`lambdify: expected ${params.length} arguments, got ${args.length}`);
     }
-    const env = args.map((a) => (Array.isArray(a) ? toC(0) : toC(a as number | C)));
+    const env = args.map((a) => (isVector(a) ? toC(0) : toC(a)));
     for (const [i, k] of slots) {
       const v = args[i];
-      if (!Array.isArray(v) || k >= v.length) throw new RangeError(`lambdify: ${params[i]!.name}[${k}] is not given`);
-      env.push(toC(v[k] as number | C));
+      if (v === undefined || !isVector(v) || k >= v.length) throw new RangeError(`lambdify: ${at(params, i).name}[${k}] is not given`);
+      env.push(toC(at(v, k)));
     }
     return f(env);
   };
@@ -298,7 +312,8 @@ export function lambdify(ex: ExprLike, params: readonly Sym[]): (...args: (numbe
 impl.evalf = evalf;
 
 setDoubleFallback((name, args) => {
-  const f = numericFns[name as Fn['name']];
+  const fns: Partial<Record<string, (args: C[]) => C>> = numericFns;
+  const f = fns[name];
   if (!f) return undefined;
   const r = f(args.map((a) => c(F.toNumber(a[0]), F.toNumber(a[1]))));
   if (!Number.isFinite(r.re) || !Number.isFinite(r.im)) throw new RangeError('non-finite');

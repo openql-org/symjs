@@ -7,7 +7,8 @@
 
 import type { Expr, ExprLike } from '../core/nodes';
 import { Dummy, Integral, Rational, S, Sym, impl } from '../core/nodes';
-import { Sum, doitConcrete } from '../concrete/summations';
+import { Concrete, Sum, doitConcrete } from '../concrete/summations';
+import { at, cast, first } from '../core/guard';
 import { isNonNegative } from '../core/assumptions';
 import { FiniteSet as FiniteSetClass } from '../sets/sets';
 import { singularities } from '../solvers/inequalities';
@@ -34,7 +35,7 @@ export function transformIntegral(integral: Integral, x: Sym, gIn: ExprLike, uIn
   const mapLimit = (a: Expr): Expr => {
     const sols = solve(add(g, mul(-1, a)), u);
     if (sols.length !== 1) throw new RangeError('transform: the substitution is not invertible on the limits');
-    return sols[0]!;
+    return first(sols);
   };
   return new Integral([f, u, mapLimit(lim[0]), mapLimit(lim[1])]);
 }
@@ -84,18 +85,18 @@ export function asSum(integral: Integral, n: ExprLike, method: 'left' | 'right' 
   const f = integral.integrand;
   const dx = mul(add(b, mul(-1, a)), pow(N, -1));
   const k = new Dummy('k', { integer: true, positive: true });
-  const at = (p: Expr) => subs(f, [[x, p]]);
+  const atPoint = (p: Expr) => subs(f, [[x, p]]);
   let body: Expr;
   let extra: Expr = S.Zero;
   let upper: Expr = N;
   // points written like SymPy: a + k*dx - dx/2 for the midpoint rule
-  if (method === 'left') body = at(add(a, mul(k, dx), mul(-1, dx)));
-  else if (method === 'right') body = at(add(a, mul(k, dx)));
-  else if (method === 'midpoint') body = at(add(a, mul(k, dx), mul(S.NegHalf, dx)));
+  if (method === 'left') body = atPoint(add(a, mul(k, dx), mul(-1, dx)));
+  else if (method === 'right') body = atPoint(add(a, mul(k, dx)));
+  else if (method === 'midpoint') body = atPoint(add(a, mul(k, dx), mul(S.NegHalf, dx)));
   else {
     // trapezoid: (f(a) + f(b))/2 + the inner points
-    extra = mul(add(at(a), at(b)), S.Half);
-    body = at(add(a, mul(k, dx)));
+    extra = mul(add(atPoint(a), atPoint(b)), S.Half);
+    body = atPoint(add(a, mul(k, dx)));
     upper = add(N, -1);
   }
   const evaluate = opts.evaluate !== false;
@@ -105,7 +106,7 @@ export function asSum(integral: Integral, n: ExprLike, method: 'left' | 'right' 
     return mul(dx, add(extra, ...terms));
   }
   const s = Sum(body, [k, 1, upper]);
-  return mul(dx, add(extra, evaluate ? doitConcrete(s as never) : s));
+  return mul(dx, add(extra, evaluate ? doitConcrete(cast(s, Concrete, 'Sum')) : s));
 }
 
 /** SymPy Curve(functions, (t, a, b)): a parametric curve. */
@@ -129,7 +130,10 @@ export function lineIntegrate(field: ExprLike, curve: Curve, vars: readonly Sym[
   // the parameter is real
   const t = new Dummy(t0.name, { real: true });
   const fs = curve.functions.map((g) => subs(g, [[t0, t]]));
-  const f = subs(sympify(field), vars.map((v, i) => [v, fs[i]!] as [Expr, Expr]));
+  const f = subs(
+    sympify(field),
+    vars.map((v, i): [Expr, Expr] => [v, at(fs, i)]),
+  );
   const speed = pow(add(...fs.map((g) => pow(diff(g, t), 2))), S.Half);
   return integrate(impl.simplify(mul(f, impl.simplify(speed))), t, [a, b]);
 }

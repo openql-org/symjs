@@ -9,6 +9,7 @@
  * normal forms, the minimization and the SAT solver build on.
  */
 
+import { at, pair } from '../core/guard';
 import type { BoolOpName } from '../core/boolalg';
 import { BoolOp, and as coreAnd, not as coreNot, or as coreOr } from '../core/boolalg';
 import type { ExprLike, RelOp } from '../core/nodes';
@@ -48,6 +49,7 @@ export class LogicOp extends BoolOp {
     args: readonly Expr[],
   ) {
     // the op field carries the class name; LogicOp nodes are told apart by instanceof
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- core BoolOp.op is typed BoolOpName; LogicOp stores its own class name there (dispatch uses instanceof LogicOp)
     super(name as unknown as BoolOpName, args);
   }
   override get className(): string {
@@ -150,11 +152,11 @@ export function relCanonical(r0: Rel): Rel {
   if (r.rhs.isNumber) {
     if (isNum(r.lhs) && isNum(r.rhs) && isTrueAtom(impl.sympify(compareNum(r.lhs, r.rhs)))) r = reversedRel(r);
   } else if (r.lhs.isNumber) r = reversedRel(r);
-  else if (ordered([r.lhs, r.rhs])[0]!.key !== r.lhs.key) r = reversedRel(r);
+  else if (at(ordered([r.lhs, r.rhs]), 0).key !== r.lhs.key) r = reversedRel(r);
   if (r.lhs instanceof BoolAtom || r.rhs instanceof BoolAtom) return r;
   if (couldExtractMinusSign(r.lhs)) return reversedSign(r);
   if (!r.rhs.isNumber && couldExtractMinusSign(r.rhs)) {
-    const e1 = ordered([r.lhs, impl.mul(-1, r.rhs)])[0]!;
+    const e1 = at(ordered([r.lhs, impl.mul(-1, r.rhs)]), 0);
     if (e1.key !== r.lhs.key) return reversedSign(reversedRel(r));
   }
   return r;
@@ -233,9 +235,9 @@ export function xorFn(xs: readonly BoolLike[], removeTrue = true): Expr {
   let odd = false;
   const remove: [Expr, Expr][] = [];
   for (let i = 0; i < rels.length; i++) {
-    const [r, c, nc] = rels[i]!;
+    const [r, c, nc] = at(rels, i);
     for (let j = i + 1; j < rels.length; j++) {
-      const [rj, cj] = rels[j]!;
+      const [rj, cj] = at(rels, j);
       if (cj.key === nc.key) {
         odd = !odd;
         remove.push([r, rj]);
@@ -253,7 +255,7 @@ export function xorFn(xs: readonly BoolLike[], removeTrue = true): Expr {
     argset.delete(b.key);
   }
   if (argset.size === 0) return S.false;
-  if (argset.size === 1) return [...argset.values()][0]!;
+  if (argset.size === 1) return at([...argset.values()], 0);
   if (argset.has(S.true.key) && removeTrue) {
     argset.delete(S.true.key);
     return coreNot(xorFn([...argset.values()]));
@@ -271,7 +273,7 @@ export function xorFn(xs: readonly BoolLike[], removeTrue = true): Expr {
 export function Implies(...args: readonly BoolLike[]): Expr {
   if (args.length !== 2) throw new RangeError(`${args.length} operand(s) used for an Implies (pairs are required)`);
   const orig = args.map(toBool);
-  const [A, B] = orig.map(numberToBool) as [Expr, Expr];
+  const [A, B] = pair(orig.map(numberToBool));
   if (A instanceof BoolAtom || B instanceof BoolAtom) return orFn(notFn(A), B);
   if (A.key === B.key) return S.true;
   if (A instanceof Rel && B instanceof Rel) {
@@ -296,9 +298,9 @@ export function Equivalent(...args: readonly BoolLike[]): Expr {
   const rels = [...argset.values()].filter((r): r is Rel => r instanceof Rel).map((r) => [r, relCanonical(r), relCanonical(relNegated(r))] as const);
   const remove: [Expr, Expr][] = [];
   for (let i = 0; i < rels.length; i++) {
-    const [r, c, nc] = rels[i]!;
+    const [r, c, nc] = at(rels, i);
     for (let j = i + 1; j < rels.length; j++) {
-      const [rj, cj] = rels[j]!;
+      const [rj, cj] = at(rels, j);
       if (cj.key === nc.key) return S.false;
       if (cj.key === c.key) {
         remove.push([r, rj]);
@@ -327,14 +329,18 @@ const GATES: Record<LogicGateName, (args: readonly Expr[], evaluate: boolean) =>
   Nand: (args, ev) => (ev ? notFn(andFn(...args)) : new LogicGate('Nand', args)),
   Nor: (args, ev) => (ev ? notFn(orFn(...args)) : new LogicGate('Nor', args)),
   Xnor: (args, ev) => (ev ? notFn(xorFn(args)) : new LogicGate('Xnor', args)),
-  ITE: (args, ev) => ITE(args[0]!, args[1]!, args[2]!, { evaluate: ev }),
+  ITE: (args, ev) => ITE(at(args, 0), at(args, 1), at(args, 2), { evaluate: ev }),
 };
 
 const splitOptions = (args: readonly (BoolLike | LogicEvalOptions)[]): [Expr[], boolean] => {
   const last = args[args.length - 1];
   const isOpts = (v: unknown): v is LogicEvalOptions => typeof v === 'object' && v !== null && !(v instanceof Expr);
-  if (args.length > 0 && isOpts(last)) return [(args.slice(0, -1) as BoolLike[]).map(toBool), last.evaluate !== false];
-  return [(args as BoolLike[]).map(toBool), true];
+  const toArg = (a: BoolLike | LogicEvalOptions): Expr => {
+    if (isOpts(a)) throw new TypeError('the options object must be the last argument');
+    return toBool(a);
+  };
+  if (args.length > 0 && isOpts(last)) return [args.slice(0, -1).map(toArg), last.evaluate !== false];
+  return [args.map(toArg), true];
 };
 
 /** SymPy Nand(*args): Not(And(*args)); with `{ evaluate: false }` the unevaluated Nand(a, b). */
@@ -359,7 +365,7 @@ export function Xnor(...args: readonly (BoolLike | LogicEvalOptions)[]): Expr {
 export function Exclusive(...args: readonly BoolLike[]): Expr {
   const xs = args.map(toBool);
   const out: Expr[] = [];
-  for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) out.push(notFn(andFn(xs[i]!, xs[j]!)));
+  for (let i = 0; i < xs.length; i++) for (let j = i + 1; j < xs.length; j++) out.push(notFn(andFn(at(xs, i), at(xs, j))));
   return andFn(...out);
 }
 
@@ -444,7 +450,7 @@ export function ITE(a0: BoolLike, b0: BoolLike, c0: BoolLike, opts: LogicEvalOpt
  * non-boolean expression whose arguments are atoms (x + y).
  */
 export function isLiteral(e: Expr): boolean {
-  if (isOp(e, 'Not')) return isLiteral(e.args[0]!);
+  if (isOp(e, 'Not')) return isLiteral(at(e.args, 0));
   if (e instanceof BoolAtom || e.args.length === 0) return true;
   return !isBooleanFunction(e) && e.args.every((a) => a.args.length === 0);
 }
@@ -471,11 +477,11 @@ export function rebuildBool(e: Expr, args: readonly Expr[]): Expr {
       case 'Or':
         return orFn(...args);
       case 'Not':
-        return notFn(args[0]!);
+        return notFn(at(args, 0));
       case 'Xor':
         return xorFn(args);
       case 'ITE':
-        return ITE(args[0]!, args[1]!, args[2]!);
+        return ITE(at(args, 0), at(args, 1), at(args, 2));
     }
   }
   return rebuild(e, args);
@@ -525,7 +531,7 @@ export function evalBool(e: Expr, env: ReadonlyMap<string, boolean>): boolean {
   const args = (): boolean[] => e.args.map((a) => evalBool(a, env));
   if (e instanceof LogicOp) {
     const [a, ...rest] = args();
-    return e.name === 'Implies' ? !a || rest[0]! : rest.every((b) => b === a);
+    return e.name === 'Implies' ? !a || at(rest, 0) : rest.every((b) => b === a);
   }
   if (e instanceof BoolOp) {
     switch (e.op) {
@@ -534,15 +540,15 @@ export function evalBool(e: Expr, env: ReadonlyMap<string, boolean>): boolean {
       case 'Or':
         return args().some(Boolean);
       case 'Not':
-        return !evalBool(e.args[0]!, env);
+        return !evalBool(at(e.args, 0), env);
       case 'Xor':
         return args().filter(Boolean).length % 2 === 1;
       case 'ITE':
-        return evalBool(e.args[0]!, env) ? evalBool(e.args[1]!, env) : evalBool(e.args[2]!, env);
+        return evalBool(at(e.args, 0), env) ? evalBool(at(e.args, 1), env) : evalBool(at(e.args, 2), env);
     }
   }
   if (e instanceof LogicGate) {
-    if (e.gate === 'ITE') return evalBool(e.args[0]!, env) ? evalBool(e.args[1]!, env) : evalBool(e.args[2]!, env);
+    if (e.gate === 'ITE') return evalBool(at(e.args, 0), env) ? evalBool(at(e.args, 1), env) : evalBool(at(e.args, 2), env);
     const xs = args();
     if (e.gate === 'Nand') return !xs.every(Boolean);
     if (e.gate === 'Nor') return !xs.some(Boolean);

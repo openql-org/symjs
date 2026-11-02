@@ -22,6 +22,8 @@ import { mapBottomUp, xreplace } from './traverse';
 import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from './assumptions';
 import { BoolOp, and, not, or } from './boolalg';
 import type { Truth } from './truth';
+import { at, getOrThrow } from './guard';
+import { SympifyError } from './errors';
 
 /** Predicate names of Q (SymPy Q.<name>). */
 export type PredicateName =
@@ -96,7 +98,7 @@ export class AppliedPredicate extends ExtensionExpr {
   }
   /** The (first) argument. */
   get arg(): Expr {
-    return this.args[0]!;
+    return at(this.args, 0);
   }
   override printLatex(print: (e: Expr) => string): string {
     return `Q_{\\text{${this.predicate.replace(/_/g, '\\_')}}}\\left(${this.args.map(print).join(', ')}\\right)`;
@@ -139,6 +141,7 @@ export function Predicate(name: string, handler?: PredicateHandler): Predicate {
   Object.defineProperty(f, 'predicateName', { value: name });
   Object.defineProperty(f, 'toString', { value: () => `Q.${name}` });
   if (handler) registerHandler(name, handler);
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- predicateName was added above with Object.defineProperty (non-enumerable, read-only)
   return f as Predicate;
 }
 
@@ -153,10 +156,11 @@ const BUILTIN = [
   'complex_elements',
 ] as const satisfies readonly PredicateName[];
 
+const predicates: Record<string, Predicate> = Object.fromEntries(BUILTIN.map((n) => [n, Predicate(n)]));
+
 /** SymPy Q: the assumption predicates (Q.positive(x), Q.even(n), Q.gt(x, y), ...). */
-export const Q: { readonly [K in PredicateName]: Predicate } & { readonly [name: string]: Predicate | undefined } = Object.fromEntries(
-  BUILTIN.map((n) => [n, Predicate(n)]),
-) as { readonly [K in PredicateName]: Predicate };
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- predicates holds an entry for every name in BUILTIN, which covers PredicateName (checked by satisfies above)
+export const Q = predicates as { readonly [K in PredicateName]: Predicate } & { readonly [name: string]: Predicate | undefined };
 
 /**
  * Adds a handler for a predicate (SymPy register_handler); a predicate not
@@ -165,7 +169,7 @@ export const Q: { readonly [K in PredicateName]: Predicate } & { readonly [name:
 export function registerHandler(key: string | Predicate, handler: PredicateHandler): void {
   const name = typeof key === 'string' ? key : key.predicateName;
   handlers.set(name, [...(handlers.get(name) ?? []), handler]);
-  if (!(name in Q)) (Q as Record<string, Predicate>)[name] = Predicate(name);
+  if (!(name in predicates)) predicates[name] = Predicate(name);
 }
 
 /** Removes a handler added by registerHandler (SymPy remove_handler). */
@@ -302,8 +306,8 @@ class Inconsistent extends RangeError {}
 
 function addFact(facts: Facts, name: string, value: boolean): void {
   const todo: Literal[] = [[name, value]];
-  while (todo.length) {
-    const [n, v] = todo.pop()!;
+  for (let lit = todo.pop(); lit !== undefined; lit = todo.pop()) {
+    const [n, v] = lit;
     const cur = facts.get(n);
     if (cur === v) continue;
     if (cur !== undefined) throw new Inconsistent('inconsistent assumptions');
@@ -315,15 +319,15 @@ function addFact(facts: Facts, name: string, value: boolean): void {
 const asList = (a: Assumption): Expr[] => (typeof a === 'boolean' ? (a ? [] : [S.false]) : a instanceof Expr ? [a] : [...a]);
 
 /** The assumptions in disjunctive normal form: a list of conjunctions of literals. */
-function dnf(e: Expr, negated = false): (readonly [Expr, boolean])[][] {
+function dnf(e: Expr, negated = false): (readonly [AppliedPredicate, boolean])[][] {
   if (e instanceof BoolAtom) return e.value !== negated ? [[]] : [];
   if (e instanceof BoolOp) {
-    if (e.op === 'Not') return dnf(e.args[0]!, !negated);
+    if (e.op === 'Not') return dnf(at(e.args, 0), !negated);
     const isAnd = (e.op === 'And') !== negated;
     if (e.op !== 'And' && e.op !== 'Or') return [[]];
     const parts = e.args.map((a) => dnf(a, negated));
     if (!isAnd) return parts.flat();
-    let acc: (readonly [Expr, boolean])[][] = [[]];
+    let acc: (readonly [AppliedPredicate, boolean])[][] = [[]];
     for (const p of parts) {
       acc = acc.flatMap((c) => p.map((d) => [...c, ...d]));
       if (acc.length > 256) return [[]];
@@ -342,8 +346,7 @@ function branches(assumptions: Assumption): Branch[] {
   for (const conj of dnf(all)) {
     const facts = new Map<string, { expr: Expr; facts: Facts }>();
     try {
-      for (const [p, v] of conj) {
-        const ap = p as AppliedPredicate;
+      for (const [ap, v] of conj) {
         const rel = relationFact(ap, v);
         if (rel) {
           const entry = facts.get(rel[0].key) ?? { expr: rel[0], facts: new Map<string, boolean>() };
@@ -369,7 +372,7 @@ function branches(assumptions: Assumption): Branch[] {
 /** Q.gt(a, b) as a fact about a - b (Q.positive(a - b)). */
 function relationFact(p: AppliedPredicate, v: boolean): [Expr, string, boolean] | undefined {
   if (p.args.length !== 2) return undefined;
-  const d = add(p.args[0]!, mul(-1, p.args[1]!));
+  const d = add(at(p.args, 0), mul(-1, at(p.args, 1)));
   switch (p.predicate) {
     case 'gt':
       return [d, 'positive', v];
@@ -641,7 +644,7 @@ class Decider {
       if (rs.every((r) => r === true)) return true;
       const irr = rs.filter((r) => r === false).length;
       if (irr === 1 && rs.filter((r) => r === undefined).length === 0) {
-        const bad = e.args[rs.indexOf(false)]!;
+        const bad = at(e.args, rs.indexOf(false));
         if (this.q('irrational', bad) !== true && this.q('real', bad) !== true) return undefined;
         if (e instanceof Add) return false;
         return e.args.every((a, i) => i === rs.indexOf(false) || this.q('nonzero', a) === true) ? false : undefined;
@@ -650,7 +653,7 @@ class Decider {
       return undefined;
     }
     if (e instanceof Pow) {
-      const [b, x] = e.args as [Expr, Expr];
+      const [b, x] = e.args;
       if (isConst(b, 'E')) return this.q('rational', x) === true && this.q('nonzero', x) === true ? false : undefined;
       if (this.q('integer', x) === true && this.q('rational', b) === true) return this.q('nonzero', b) === true || this.q('nonnegative', x) === true ? true : undefined;
       if (b instanceof Rational && x instanceof Rational) return b.isNegative ? false : false; // an unevaluated rational power of a rational is irrational
@@ -687,7 +690,7 @@ class Decider {
       return undefined;
     }
     if (e instanceof Pow) {
-      const [b, x] = e.args as [Expr, Expr];
+      const [b, x] = e.args;
       if (isConst(b, 'E')) return this.q('algebraic', x) === true && this.q('nonzero', x) === true ? false : undefined;
       if (this.q('rational', x) === true) return this.q('algebraic', b);
       return undefined;
@@ -722,12 +725,16 @@ class Decider {
     }
     if (e instanceof Add) {
       if (!e.args.every((a) => this.q('integer', a) === true)) return undefined;
-      const ps = e.args.map(par);
-      if (ps.includes(undefined)) return undefined;
-      return ps.reduce<bigint>((s, p) => s + p!, 0n) % 2n === r;
+      let sum = 0n;
+      for (const a of e.args) {
+        const p = par(a);
+        if (p === undefined) return undefined;
+        sum += p;
+      }
+      return sum % 2n === r;
     }
     if (e instanceof Pow) {
-      const [b, x] = e.args as [Expr, Expr];
+      const [b, x] = e.args;
       if (this.q('integer', b) === true && this.q('positive', x) === true && this.q('integer', x) === true) {
         const p = par(b);
         return p === undefined ? undefined : p === r;
@@ -735,7 +742,7 @@ class Decider {
       return undefined;
     }
     if (e instanceof Fn && e.name === 'abs') {
-      const p = par(e.args[0]!);
+      const p = par(at(e.args, 0));
       return p === undefined ? undefined : p === r;
     }
     if (integer === true) {
@@ -755,7 +762,7 @@ class Decider {
       return e.args.some((a) => isInt(a) && a.p > 1n && !isPrimeBig(a.p)) ? false : undefined;
     }
     if (e instanceof Pow) {
-      const [b, x] = e.args as [Expr, Expr];
+      const [b, x] = e.args;
       if (this.q('integer', b) === true && this.q('integer', x) === true && isInt(x) && x.p > 1n) return false;
       return undefined;
     }
@@ -771,7 +778,7 @@ class Decider {
     if (this.q('real', e) === true || this.q('imaginary', e) === true) return true;
     if (e instanceof Add || e instanceof Mul) return allTri(e.args, (a) => this.q('complex', a)) === true ? true : this.q('infinite', e) === true ? false : undefined;
     if (e instanceof Pow) {
-      const [b, x] = e.args as [Expr, Expr];
+      const [b, x] = e.args;
       if (this.q('complex', b) === true && this.q('complex', x) === true && (this.q('nonzero', b) === true || this.q('nonnegative', x) === true || isConst(b, 'E'))) return true;
       return undefined;
     }
@@ -795,7 +802,7 @@ class Decider {
     }
     if (e instanceof Add) return allTri(e.args, (a) => this.q('imaginary', a)) === true && this.q('nonzero', mul(-1, S.I, e)) === true ? true : undefined;
     if (e instanceof Pow) {
-      const [b, x] = e.args as [Expr, Expr];
+      const [b, x] = e.args;
       if (isConst(b, 'E') && this.q('rational', mul(x, pow(mul(S.I, S.Pi), -1))) === true) return undefined;
       if (this.q('negative', b) === true && x instanceof Rational && x.equals(Rational.of(1n, 2n))) return true;
       return undefined;
@@ -809,7 +816,7 @@ class Decider {
     if (e instanceof Sym) return this.q('real', e) === true || this.q('complex', e) === true ? true : undefined;
     if (e instanceof Add || e instanceof Mul) return allTri(e.args, (a) => this.q('finite', a)) === true ? true : undefined;
     if (e instanceof Pow) {
-      const [b, x] = e.args as [Expr, Expr];
+      const [b, x] = e.args;
       if (this.q('finite', b) === true && this.q('finite', x) === true && (this.q('nonzero', b) === true || this.q('nonnegative', x) === true || isConst(b, 'E'))) return true;
       return undefined;
     }
@@ -908,16 +915,17 @@ export function refine(expr: ExprLike, assumptions?: Assumption): Expr;
 /** A matrix (any object with map) refined entry by entry (SymPy Matrix.refine). */
 export function refine<M extends { map(f: (e: Expr) => ExprLike): M }>(expr: M, assumptions?: Assumption): M;
 export function refine(expr: unknown, assumptions: Assumption = true): unknown {
-  if (!(expr instanceof Expr) && typeof expr === 'object' && expr !== null && typeof (expr as { map?: unknown }).map === 'function') {
-    return (expr as { map(f: (e: Expr) => ExprLike): unknown }).map((x) => refine(x, assumptions));
+  if (!(expr instanceof Expr) && typeof expr === 'object' && expr !== null && 'map' in expr && typeof expr.map === 'function') {
+    return expr.map((x: Expr) => refine(x, assumptions));
   }
-  const e = sympify(expr as ExprLike);
+  if (!(expr instanceof Expr) && typeof expr !== 'number' && typeof expr !== 'bigint') throw new SympifyError(`Cannot convert ${String(expr)} to an expression`, expr);
+  const e = sympify(expr);
   if (e instanceof AppliedPredicate || (e instanceof BoolOp && (e.op === 'And' || e.op === 'Or' || e.op === 'Not'))) {
     const v = ask(e, assumptions);
     if (v !== 'unknown') return v ? S.true : S.false;
     if (e instanceof BoolOp) {
       const args = e.args.map((a) => refine(a, assumptions));
-      return e.op === 'And' ? and(...args) : e.op === 'Or' ? or(...args) : not(args[0]!);
+      return e.op === 'And' ? and(...args) : e.op === 'Or' ? or(...args) : not(at(args, 0));
     }
     return e;
   }
@@ -929,11 +937,11 @@ export function refine(expr: unknown, assumptions: Assumption = true): unknown {
   const bs = branches(assumed);
   const results = bs.map((b) => {
     const d = new Decider(b, assumed);
-    const back = [...b.forward].map(([k, s]) => [s, b.facts.get(k)!.expr] as [Expr, Expr]);
+    const back = [...b.forward].map(([k, s]): [Expr, Expr] => [s, getOrThrow(b.facts, k).expr]);
     const r = reevaluate(e, b.forward);
     const restored = back.length ? xreplace(r, back) : r;
     return refineSignPowers(restored, d);
   });
-  const first = results[0]!;
+  const first = at(results, 0);
   return results.every((r) => r.key === first.key) ? first : e;
 }

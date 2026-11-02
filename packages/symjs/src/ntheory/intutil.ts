@@ -10,6 +10,7 @@
  * inputs to bigint (SymPy as_int).
  */
 
+import { at, last } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Fn, Rational } from '../core/nodes';
 import { sympify } from '../core/ops';
@@ -80,7 +81,7 @@ export function remove(xIn: bigint, f: bigint): [bigint, bigint] {
     if (m > 5n) {
       const powList = [f * f];
       while (powList.length > 0) {
-        const ff = powList[powList.length - 1]!;
+        const ff = last(powList);
         if (x % ff === 0n) {
           m += 1n << BigInt(powList.length);
           x /= ff;
@@ -331,11 +332,12 @@ export function* product<T>(lists: readonly (readonly T[])[]): Generator<T[], vo
   if (lists.some((l) => l.length === 0)) return;
   const idx: number[] = lists.map(() => 0);
   for (;;) {
-    yield idx.map((i, k) => lists[k]![i]!);
+    yield idx.map((i, k) => at(at(lists, k), i));
     let k = lists.length - 1;
     while (k >= 0) {
-      idx[k]!++;
-      if (idx[k]! < lists[k]!.length) break;
+      const v = at(idx, k) + 1;
+      idx[k] = v;
+      if (v < at(lists, k).length) break;
       idx[k] = 0;
       k--;
     }

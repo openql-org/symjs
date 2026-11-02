@@ -16,10 +16,12 @@ import { factor } from '../polys/sympoly';
 import { expandMul as expand } from './expand';
 import { fraction, together } from './rational';
 import { factorTerms } from './exprtools';
+import { first, pair } from '../core/guard';
 
 type BName = 'besselj' | 'bessely' | 'besseli' | 'besselk';
-const BESSEL = new Set(['besselj', 'bessely', 'besseli', 'besselk']);
-const isBessel = (e: Expr): e is Fn => e instanceof Fn && BESSEL.has(e.name);
+const BESSEL: ReadonlySet<string> = new Set<BName>(['besselj', 'bessely', 'besseli', 'besselk']);
+const isBName = (name: string): name is BName => BESSEL.has(name);
+const isBessel = (e: Expr): e is Fn => e instanceof Fn && isBName(e.name);
 
 /** z = rest * exp_polar(I*pi*k) (or polar_lift(-1), ...): [rest, k] with k in {1, 1/2, -1/2}. */
 function polarFactor(z: Expr): [Expr, Rational] | undefined {
@@ -28,10 +30,10 @@ function polarFactor(z: Expr): [Expr, Rational] | undefined {
     if (!(f instanceof Fn)) continue;
     let k: Rational | undefined;
     if (f.name === 'exp_polar') {
-      const q = mul(f.args[0]!, pow(mul(S.I, S.Pi), -1));
+      const q = mul(first(f.args), pow(mul(S.I, S.Pi), -1));
       if (q instanceof Rational) k = q;
     } else if (f.name === 'polar_lift') {
-      const a = f.args[0]!;
+      const a = first(f.args);
       if (a instanceof Rational && a.p === -1n && a.q === 1n) k = S.One;
       else if (a.key === S.I.key) k = S.Half;
       else if (a.key === mul(-1, S.I).key) k = S.NegHalf;
@@ -43,7 +45,7 @@ function polarFactor(z: Expr): [Expr, Rational] | undefined {
 
 function polarRule(e: Fn): Expr | undefined {
   if (e.name !== 'besselj' && e.name !== 'besseli') return undefined;
-  const [nu, z] = e.args as [Expr, Expr];
+  const [nu, z] = pair(e.args);
   const pf = polarFactor(z);
   if (!pf) return undefined;
   const [rest, k] = pf;
@@ -134,10 +136,10 @@ export function besselsimp(ex: ExprLike): Expr {
   const orig = sympify(ex);
   let e = mapBottomUp(orig, (t) => (isBessel(t) ? (polarRule(t) ?? t) : t));
   e = mapBottomUp(e, (t) => {
-    if (!isBessel(t)) return t;
-    const [nu, z] = t.args as [Expr, Expr];
-    if (nu instanceof Rational && nu.q === 2n) return halfInteger(t.name as BName, nu, z);
-    if (nu instanceof Rational && nu.isInteger && nu.p > 1n) return integerReduce(t.name as BName, Number(nu.p), z);
+    if (!(t instanceof Fn) || !isBName(t.name)) return t;
+    const [nu, z] = pair(t.args);
+    if (nu instanceof Rational && nu.q === 2n) return halfInteger(t.name, nu, z);
+    if (nu instanceof Rational && nu.isInteger && nu.p > 1n) return integerReduce(t.name, Number(nu.p), z);
     return t;
   });
   if (e.key !== orig.key) {

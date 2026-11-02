@@ -13,6 +13,7 @@ import { numNeg } from '../core/num';
 import { floatToString } from '../numeric/mpf';
 import { asOrderedFactors, asOrderedTerms, sympyFunctionName } from './sortkey';
 import { Concrete } from '../core/concrete';
+import { at } from '../core/guard';
 
 /** SymPy precedence values. */
 export const PREC = { REL: 35, ADD: 40, MUL: 50, POW: 60, FUNC: 70, ATOM: 1000 } as const;
@@ -26,7 +27,7 @@ export function startsNegative(e: Expr): boolean {
   if (isNum(e)) return e.isNegative;
   if (e instanceof Special) return e.name === '-oo';
   if (e instanceof Mul) {
-    const c = e.args[0]!;
+    const c = at(e.args, 0);
     return isNum(c) && c.isNegative;
   }
   return false;
@@ -172,31 +173,31 @@ function strInner(e: Expr): string {
     return `Derivative(${str(e.expr)}, ${vs.join(', ')})`;
   }
   if (e instanceof Limit) {
-    const [f, z, z0] = e.args;
-    return `Limit(${str(f!)}, ${str(z!)}, ${str(z0!)}, dir='${e.dir}')`;
+    return `Limit(${str(e.expr)}, ${str(e.variable)}, ${str(e.point)}, dir='${e.dir}')`;
   }
   if (e instanceof Order) {
     if (e.args.length > 3) {
       // several variables: O(e, x, y) at 0, O(e, (x, p), (y, p)) elsewhere
       const vs = e.args.slice(1, -1);
-      const pt = e.args[e.args.length - 1]!;
+      const pt = at(e.args, e.args.length - 1);
       const at0 = pt instanceof Rational && pt.isZero;
-      return `O(${str(e.args[0]!)}, ${vs.map((v) => (at0 ? str(v) : `(${str(v)}, ${str(pt)})`)).join(', ')})`;
+      return `O(${str(at(e.args, 0))}, ${vs.map((v) => (at0 ? str(v) : `(${str(v)}, ${str(pt)})`)).join(', ')})`;
     }
-    const [x, v, p] = e.args;
-    if (!v || !p || (p instanceof Rational && p.isZero)) return `O(${str(x!)})`;
-    return `O(${str(x!)}, (${str(v)}, ${str(p)}))`;
+    const v = e.variable;
+    const p = e.point;
+    if (!v || !p || (p instanceof Rational && p.isZero)) return `O(${str(e.expr)})`;
+    return `O(${str(e.expr)}, (${str(v)}, ${str(p)}))`;
   }
   if (e instanceof ExtensionExpr) return e.printStr(str);
-  const custom = e as unknown as { printStr?: (p: (x: Expr) => string) => string };
-  if (typeof custom.printStr === 'function') return custom.printStr(str);
+  if ('printStr' in e && typeof e.printStr === 'function') return String(e.printStr(str));
   if (e instanceof Integral) {
     // nested integrals print as one multiple integral, innermost limits first (SymPy)
     const lims: string[] = [];
     let cur: Expr = e;
     while (cur instanceof Integral) {
-      const [, v, a, b] = cur.args;
-      lims.unshift(a === undefined ? str(v!) : b === undefined ? `(${str(v!)}, ${str(a)})` : `(${str(v!)}, ${str(a)}, ${str(b)})`);
+      const [, , a, b] = cur.args;
+      const v = cur.variable;
+      lims.unshift(a === undefined ? str(v) : b === undefined ? `(${str(v)}, ${str(a)})` : `(${str(v)}, ${str(a)}, ${str(b)})`);
       cur = cur.integrand;
     }
     return `Integral(${str(cur)}, ${lims.join(', ')})`;

@@ -8,6 +8,7 @@
  */
 
 import { Rational, impl } from './nodes';
+import { at, pair } from './guard';
 
 /** Exact rational value of a double (SymPy Rational(0.2) = 3602879701896397/18014398509481984). */
 export function rationalFromFloat(v: number): Rational {
@@ -105,9 +106,9 @@ export function expandSymbolNames(spec: string): string[] {
     const split = name.split(/([0-9]*:[0-9]+|[a-zA-Z]?:[a-zA-Z])/);
     // remove one layer of parentheses around ranges
     for (let i = 1; i < split.length - 1; i++) {
-      if (split[i]!.includes(':') && split[i] !== ':' && split[i - 1]!.endsWith('(') && split[i + 1]!.startsWith(')')) {
-        split[i - 1] = split[i - 1]!.slice(0, -1);
-        split[i + 1] = split[i + 1]!.slice(1);
+      if (at(split, i).includes(':') && split[i] !== ':' && at(split, i - 1).endsWith('(') && at(split, i + 1).startsWith(')')) {
+        split[i - 1] = at(split, i - 1).slice(0, -1);
+        split[i + 1] = at(split, i + 1).slice(1);
       }
     }
     const lists: string[][] = [];
@@ -115,7 +116,7 @@ export function expandSymbolNames(spec: string): string[] {
     for (const t of split) {
       if (t.includes(':')) {
         if (t.endsWith(':')) throw new SyntaxError('missing end range');
-        const [a, b] = t.split(':') as [string, string];
+        const [a, b] = pair(t.split(':'));
         if (/[0-9]$/.test(b)) {
           const lo = a ? Number(a) : 0;
           lists.push(Array.from({ length: Math.max(0, Number(b) - lo) }, (_, k) => String(lo + k)));
@@ -123,9 +124,9 @@ export function expandSymbolNames(spec: string): string[] {
           const letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
           const lo = letters.indexOf(a || 'a');
           const hi = letters.indexOf(b);
-          lists.push(Array.from({ length: Math.max(0, hi - lo + 1) }, (_, k) => letters[lo + k]!));
+          lists.push(Array.from({ length: Math.max(0, hi - lo + 1) }, (_, k) => at(letters, lo + k)));
         }
-        if (!lists[lists.length - 1]!.length) {
+        if (!at(lists, lists.length - 1).length) {
           empty = true;
           break;
         }

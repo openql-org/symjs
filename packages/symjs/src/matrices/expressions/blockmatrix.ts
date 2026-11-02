@@ -10,6 +10,7 @@
 
 import { callableClass } from '../../core/callable';
 import { NonInvertibleMatrixError } from '../../core/errors';
+import { at, cast } from '../../core/guard';
 import type { ExprLike , Expr} from '../../core/nodes';
 import { ExtensionExpr, S } from '../../core/nodes';
 import { add, mul, sympify } from '../../core/ops';
@@ -43,7 +44,7 @@ import {
 import { askInvertible } from './predicates';
 import { isInt, relTruth, same, sameList } from './util';
 
-const asMat = (e: Expr): MatrixExpr => e as MatrixExpr;
+const asMat = (e: Expr): MatrixExpr => cast(e, MatrixExpr);
 
 /** M1 * M2 with SymPy's operator (MatMul(...).doit()). */
 function times(...xs: Expr[]): Expr {
@@ -81,9 +82,10 @@ export class BlockMatrixNode extends MatrixExpr {
   static create(rowsIn: Matrix | readonly MatArg[] | readonly (readonly MatArg[])[]): BlockMatrixNode {
     if (rowsIn instanceof Matrix) return new BlockMatrixNode(rowsIn.data, [rowsIn.rows, rowsIn.cols]);
     const isRow = (r: unknown): r is readonly MatArg[] => Array.isArray(r);
+    const isRowList = (x: readonly MatArg[] | readonly (readonly MatArg[])[]): x is readonly (readonly MatArg[])[] => !x.length || isRow(x[0]);
     let rows: Expr[][];
-    if (rowsIn.length && !isRow(rowsIn[0])) rows = [(rowsIn as readonly MatArg[]).map(toExpr)];
-    else rows = (rowsIn as readonly (readonly MatArg[])[]).map((r) => r.map(toExpr));
+    if (isRowList(rowsIn)) rows = rowsIn.map((r) => r.map(toExpr));
+    else rows = [rowsIn.map(toExpr)];
     if (!rows.length || !rows.every((r) => r.every((b) => b instanceof MatrixExpr))) {
       throw new RangeError('expecting a sequence of 1 or more rows containing Matrices.');
     }
@@ -98,8 +100,8 @@ export class BlockMatrixNode extends MatrixExpr {
       }
       blocky = ok;
       if (ok) {
-        for (let c = 0; c < ms[0]!.length; c++) {
-          ok = distinct(ms.map((r) => r[c]!.cols)) === 1;
+        for (let c = 0; c < at(ms, 0).length; c++) {
+          ok = distinct(ms.map((r) => at(r, c).cols)) === 1;
           if (!ok) break;
         }
       }
@@ -115,12 +117,12 @@ export class BlockMatrixNode extends MatrixExpr {
         "When there are not the same number of rows in each row's matrices or there are not the same number of total columns in each row, the matrix is not a block matrix. If this matrix is known to consist of blocks fully filling a 2-D space then see Matrix.irregular.",
       );
     }
-    return new BlockMatrixNode(ms.flat(), [ms.length, ms[0]!.length]);
+    return new BlockMatrixNode(ms.flat(), [ms.length, at(ms, 0).length]);
   }
   /** The blocks as an explicit matrix of matrix expressions. */
   get blocks(): Matrix {
     const [r, c] = this.bshape;
-    return Matrix.fromFunction(r, c, (i, j) => this.args[i * c + j]!);
+    return Matrix.fromFunction(r, c, (i, j) => at(this.args, i * c + j));
   }
   /** The block at block position (i, j). */
   block(i: number, j: number): MatrixExpr {
@@ -169,7 +171,7 @@ export class BlockMatrixNode extends MatrixExpr {
       const b = other.blocks;
       const out = Matrix.fromFunction(a.rows, b.cols, (i, j) => {
         const vec = Array.from({ length: a.cols }, (_, k) => times(a.get(i, k), b.get(k, j)));
-        return vec.length === 1 ? vec[0]! : MatAddNode.create(vec).doit({ deep: false });
+        return vec.length === 1 ? at(vec, 0) : MatAddNode.create(vec).doit({ deep: false });
       });
       return BlockMatrixNode.create(out);
     }
@@ -327,9 +329,9 @@ export class BlockMatrixNode extends MatrixExpr {
     const rs = this.rowblocksizes;
     let rowBlock = 0;
     for (; rowBlock < rs.length; rowBlock++) {
-      const cmp = relTruth('Lt', i, rs[rowBlock]!);
+      const cmp = relTruth('Lt', i, at(rs, rowBlock));
       if (cmp === true) break;
-      if (cmp === false) i = add(i, mul(-1, rs[rowBlock]!));
+      if (cmp === false) i = add(i, mul(-1, at(rs, rowBlock)));
       else if (rowBlock < br - 1) return new MatrixElementNode(this, iIn, jIn);
       else break;
     }
@@ -337,9 +339,9 @@ export class BlockMatrixNode extends MatrixExpr {
     const cs = this.colblocksizes;
     let colBlock = 0;
     for (; colBlock < cs.length; colBlock++) {
-      const cmp = relTruth('Lt', j, cs[colBlock]!);
+      const cmp = relTruth('Lt', j, at(cs, colBlock));
       if (cmp === true) break;
-      if (cmp === false) j = add(j, mul(-1, cs[colBlock]!));
+      if (cmp === false) j = add(j, mul(-1, at(cs, colBlock)));
       else if (colBlock < bc - 1) return new MatrixElementNode(this, iIn, jIn);
       else break;
     }
@@ -405,7 +407,7 @@ export class BlockDiagMatrixNode extends BlockMatrixNode {
   }
   override get blocks(): Matrix {
     const ms = this.diag;
-    return Matrix.fromFunction(ms.length, ms.length, (i, j) => (i === j ? ms[i]! : new ZeroMatrixNode(ms[i]!.rows, ms[j]!.cols)));
+    return Matrix.fromFunction(ms.length, ms.length, (i, j) => (i === j ? at(ms, i) : new ZeroMatrixNode(at(ms, i).rows, at(ms, j).cols)));
   }
   override get shape(): [Expr, Expr] {
     return [total(this.diag.map((b) => b.rows)), total(this.diag.map((b) => b.cols))];
@@ -439,7 +441,7 @@ export class BlockDiagMatrixNode extends BlockMatrixNode {
   }
   override blockmul(other: Expr): Expr {
     if (other instanceof BlockDiagMatrixNode && keysEqual(this.colblocksizes, other.rowblocksizes)) {
-      return BlockDiagMatrixNode.create(this.diag.map((a, k) => times(a, other.diag[k]!)));
+      return BlockDiagMatrixNode.create(this.diag.map((a, k) => times(a, at(other.diag, k))));
     }
     return super.blockmul(other);
   }
@@ -450,7 +452,7 @@ export class BlockDiagMatrixNode extends BlockMatrixNode {
       keysEqual(this.rowblocksizes, other.rowblocksizes) &&
       keysEqual(this.colblocksizes, other.colblocksizes)
     ) {
-      return BlockDiagMatrixNode.create(this.diag.map((a, k) => plus(a, other.diag[k]!)));
+      return BlockDiagMatrixNode.create(this.diag.map((a, k) => plus(a, at(other.diag, k))));
     }
     return super.blockadd(other);
   }
@@ -501,7 +503,7 @@ function bottomUp(rule: Rule, e: Expr): Expr {
 }
 
 function bcUnpack(e: Expr): Expr {
-  const b = e as BlockMatrixNode;
+  const b = cast(e, BlockMatrixNode);
   const [r, c] = b.blockshape;
   return r === 1 && c === 1 ? b.block(0, 0) : e;
 }
@@ -510,8 +512,8 @@ function bcMatAdd(e: Expr): Expr {
   const blocks = e.args.filter(isBlock);
   if (!blocks.length) return e;
   const nonblocks = e.args.filter((a) => !isBlock(a));
-  let block: Expr = blocks[0]!;
-  for (const b of blocks.slice(1)) block = (block as BlockMatrixNode).blockadd(b);
+  let block: Expr = at(blocks, 0);
+  for (const b of blocks.slice(1)) block = cast(block, BlockMatrixNode).blockadd(b);
   if (nonblocks.length) return plus(MatAddNode.create(nonblocks), block);
   return block;
 }
@@ -520,8 +522,8 @@ function bcBlockPlusIdent(e: Expr): Expr {
   const idents = e.args.filter((a) => a instanceof MatrixExpr && a.isIdentity === true);
   if (!idents.length) return e;
   const blocks = e.args.filter(isBlock);
-  if (blocks.length && blocks.every((b) => b.structurallyEqual(blocks[0]!)) && blocks[0]!.isStructurallySymmetric) {
-    const blockId = BlockDiagMatrixNode.create(blocks[0]!.rowblocksizes.map((k) => new IdentityNode(k)));
+  if (blocks.length && blocks.every((b) => b.structurallyEqual(at(blocks, 0))) && at(blocks, 0).isStructurallySymmetric) {
+    const blockId = BlockDiagMatrixNode.create(at(blocks, 0).rowblocksizes.map((k) => new IdentityNode(k)));
     const rest = e.args.filter((a) => !(a instanceof MatrixExpr && a.isIdentity === true) && !isBlock(a));
     return MatAddNode.create([times(blockId, sympify(idents.length)), ...blocks, ...rest]).doit();
   }
@@ -529,7 +531,7 @@ function bcBlockPlusIdent(e: Expr): Expr {
 }
 
 function bcDist(e: Expr): Expr {
-  const [factor, mat] = (e as MatrixExpr).asCoeffMmul();
+  const [factor, mat] = cast(e, MatrixExpr).asCoeffMmul();
   if (same(factor, S.One)) return e;
   const unpacked = unpackMat(mat);
   if (unpacked instanceof BlockDiagMatrixNode) return BlockDiagMatrixNode.create(unpacked.diag.map((m) => times(factor, m)));
@@ -547,14 +549,14 @@ function bcMatMul(e: Expr): Expr {
       matrices = Array.from({ length: Number(k.p) }, () => e.base);
     } else return e;
   } else {
-    const [f, ms] = (e as MatMulNode).asCoeffMatrices();
+    const [f, ms] = cast(e, MatMulNode).asCoeffMatrices();
     factor = f;
     matrices = ms;
   }
   let i = 0;
   while (i + 1 < matrices.length) {
-    const A = matrices[i]!;
-    const B = matrices[i + 1]!;
+    const A = at(matrices, i);
+    const B = at(matrices, i + 1);
     if (isBlock(A) && isBlock(B)) {
       matrices[i] = A.blockmul(B);
       matrices.splice(i + 1, 1);
@@ -570,12 +572,12 @@ function bcMatMul(e: Expr): Expr {
 }
 
 function bcTranspose(e: Expr): Expr {
-  const collapse = blockCollapse((e as MatrixExpr).args[0]!);
+  const collapse = blockCollapse(at(e.args, 0));
   return collapse instanceof MatrixExpr ? collapse.evalTranspose() : e;
 }
 
 function bcInverse(e: Expr): Expr {
-  const inv = e as InverseNode;
+  const inv = cast(e, InverseNode);
   if (inv.arg instanceof BlockDiagMatrixNode) return inv.arg.inverse();
   const e2 = blockinverse1x1(inv);
   if (!same(e2, inv)) return e2;
@@ -641,12 +643,12 @@ function choose2x2InversionFormula(A: MatrixExpr, B: MatrixExpr, C: MatrixExpr, 
 export function deblock(B: Expr): Expr {
   if (!(B instanceof BlockMatrixNode) || !B.blocks.data.some((b) => hasNode(b, isBlock))) return B;
   const bb = B.blocks.map((x) => (isBlock(x) ? x : BlockMatrixNode.create([[x]])));
-  const inner = (i: number, j: number): Matrix => (bb.get(i, j) as BlockMatrixNode).blocks;
+  const inner = (i: number, j: number): Matrix => cast(bb.get(i, j), BlockMatrixNode).blocks;
   const rows: Expr[][] = [];
   for (let r = 0; r < bb.rows; r++) {
     const h = inner(r, 0).rows;
     for (let c = 0; c < bb.cols; c++) if (inner(r, c).rows !== h) return B;
-    for (let k = 0; k < h; k++) rows.push(Array.from({ length: bb.cols }, (_, c) => inner(r, c).toArray()[k]!).flat());
+    for (let k = 0; k < h; k++) rows.push(Array.from({ length: bb.cols }, (_, c) => at(inner(r, c).toArray(), k)).flat());
   }
   if (new Set(rows.map((r) => r.length)).size > 1) return B;
   return BlockMatrixNode.create(Matrix.of(rows));

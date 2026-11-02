@@ -9,13 +9,14 @@
  */
 
 import { NotImplementedError } from '../core/errors';
+import { at } from '../core/guard';
 import * as F from './mpf';
 import { ZERO } from './mpf';
 import * as M from './mpfun';
 import { type Mpc } from './mpfun';
 import * as SP from './mpspecial';
 import { cLambertW } from './complex';
-import { mpFns } from './mpeval';
+import { mpFn1, mpFn2, mpFns } from './mpeval';
 
 const toInt = (z: Mpc): number => {
   const [p, q] = F.toRational(z[0]);
@@ -25,63 +26,66 @@ const toInt = (z: Mpc): number => {
 const one: Mpc = M.C1;
 
 Object.assign(mpFns, {
-  gamma: ([a], p) => SP.cgamma(a!, p),
-  loggamma: ([a], p) => SP.cloggamma(a!, p),
-  factorial: ([a], p) => SP.cgamma(M.cadd(a!, one, p + 20), p),
-  polygamma: ([n, z], p) => SP.cpolygamma(toInt(n!), z!, p),
+  gamma: mpFn1(SP.cgamma),
+  loggamma: mpFn1(SP.cloggamma),
+  factorial: mpFn1((a, p) => SP.cgamma(M.cadd(a, one, p + 20), p)),
+  polygamma: mpFn2((n, z, p) => SP.cpolygamma(toInt(n), z, p)),
   harmonic: (args, p) => {
     if (args.length !== 1) throw new NotImplementedError('harmonic(n, m)');
     const wp = p + 20;
-    return M.cadd(SP.cpolygamma(0, M.cadd(args[0]!, one, wp), wp), [M.mpEuler(wp), ZERO], p);
+    return M.cadd(SP.cpolygamma(0, M.cadd(at(args, 0), one, wp), wp), [M.mpEuler(wp), ZERO], p);
   },
-  catalan: ([z], p) => {
+  catalan: mpFn1((z, p) => {
     // 4^z Gamma(z + 1/2) / (sqrt(pi) Gamma(z + 2))
     const wp = p + 30;
     const half: Mpc = [{ man: 1n, exp: -1 }, ZERO];
-    const num = M.cmul(M.cpow([F.fromInt(4n), ZERO], z!, wp), SP.cgamma(M.cadd(z!, half, wp), wp), wp);
-    const den = M.cmul([F.sqrt(M.mpPi(wp), wp), ZERO], SP.cgamma(M.cadd(z!, [F.fromInt(2n), ZERO], wp), wp), wp);
+    const num = M.cmul(M.cpow([F.fromInt(4n), ZERO], z, wp), SP.cgamma(M.cadd(z, half, wp), wp), wp);
+    const den = M.cmul([F.sqrt(M.mpPi(wp), wp), ZERO], SP.cgamma(M.cadd(z, [F.fromInt(2n), ZERO], wp), wp), wp);
     return M.cdiv(num, den, p);
-  },
-  beta: ([a, b], p) => {
+  }),
+  beta: mpFn2((a, b, p) => {
     const wp = p + 30;
-    return M.cdiv(M.cmul(SP.cgamma(a!, wp), SP.cgamma(b!, wp), wp), SP.cgamma(M.cadd(a!, b!, wp), wp), p);
-  },
+    return M.cdiv(M.cmul(SP.cgamma(a, wp), SP.cgamma(b, wp), wp), SP.cgamma(M.cadd(a, b, wp), wp), p);
+  }),
   zeta: (args, p) => {
     if (args.length !== 1) throw new NotImplementedError('Hurwitz zeta');
-    return SP.czeta(args[0]!, p);
+    return SP.czeta(at(args, 0), p);
   },
-  erf: ([a], p) => SP.cerf(a!, p),
-  erfc: ([a], p) => SP.cerfc(a!, p),
-  erfi: ([a], p) => SP.cerfi(a!, p),
-  erf2: ([x, y], p) => M.csub(SP.cerf(y!, p + 20), SP.cerf(x!, p + 20), p),
-  erfinv: ([a], p) => {
-    if (!M.isReal(a!)) throw new NotImplementedError('complex erfinv');
-    return [SP.erfinv(a![0], p), ZERO];
+  erf: mpFn1(SP.cerf),
+  erfc: mpFn1(SP.cerfc),
+  erfi: mpFn1(SP.cerfi),
+  erf2: mpFn2((x, y, p) => M.csub(SP.cerf(y, p + 20), SP.cerf(x, p + 20), p)),
+  erfinv: mpFn1((a, p) => {
+    if (!M.isReal(a)) throw new NotImplementedError('complex erfinv');
+    return [SP.erfinv(a[0], p), ZERO];
+  }),
+  erfcinv: mpFn1((a, p) => {
+    if (!M.isReal(a)) throw new NotImplementedError('complex erfcinv');
+    return [SP.erfinv(F.sub(F.ONE, a[0], p + 20), p), ZERO];
+  }),
+  fresnels: mpFn1((a, p) => SP.cfresnel('S', a, p)),
+  fresnelc: mpFn1((a, p) => SP.cfresnel('C', a, p)),
+  Ei: mpFn1(SP.cei),
+  LambertW: (args, p) => {
+    const k = args[1];
+    return mpLambertW(at(args, 0), k ? toInt(k) : 0, p);
   },
-  erfcinv: ([a], p) => {
-    if (!M.isReal(a!)) throw new NotImplementedError('complex erfcinv');
-    return [SP.erfinv(F.sub(F.ONE, a![0], p + 20), p), ZERO];
-  },
-  fresnels: ([a], p) => SP.cfresnel('S', a!, p),
-  fresnelc: ([a], p) => SP.cfresnel('C', a!, p),
-  Ei: ([a], p) => SP.cei(a!, p),
-  LambertW: ([a, k], p) => mpLambertW(a!, k ? toInt(k) : 0, p),
-  besselj: ([nu, z], p) => mpBessel('J', nu!, z!, p),
-  bessely: ([nu, z], p) => mpBessel('Y', nu!, z!, p),
-  besseli: ([nu, z], p) => mpBessel('I', nu!, z!, p),
-  besselk: ([nu, z], p) => mpBessel('K', nu!, z!, p),
-  airyai: ([z], p) => mpAiry('ai', z!, p),
-  airybi: ([z], p) => mpAiry('bi', z!, p),
-  airyaiprime: ([z], p) => mpAiry('aip', z!, p),
-  airybiprime: ([z], p) => mpAiry('bip', z!, p),
-  li: ([a], p) => SP.cli(a!, p),
-  Li: ([a], p) => M.csub(SP.cli(a!, p + 20), SP.cli([F.fromInt(2n), ZERO], p + 20), p),
-  Si: ([a], p) => SP.csi(a!, p, false),
-  Shi: ([a], p) => SP.csi(a!, p, true),
-  Ci: ([a], p) => SP.cci(a!, p, false),
-  Chi: ([a], p) => SP.cci(a!, p, true),
-  lowergamma: ([s, z], p) => SP.clowergamma(s!, z!, p),
-  uppergamma: ([s, z], p) => SP.cuppergamma(s!, z!, p),
+  besselj: mpFn2((nu, z, p) => mpBessel('J', nu, z, p)),
+  bessely: mpFn2((nu, z, p) => mpBessel('Y', nu, z, p)),
+  besseli: mpFn2((nu, z, p) => mpBessel('I', nu, z, p)),
+  besselk: mpFn2((nu, z, p) => mpBessel('K', nu, z, p)),
+  airyai: mpFn1((z, p) => mpAiry('ai', z, p)),
+  airybi: mpFn1((z, p) => mpAiry('bi', z, p)),
+  airyaiprime: mpFn1((z, p) => mpAiry('aip', z, p)),
+  airybiprime: mpFn1((z, p) => mpAiry('bip', z, p)),
+  li: mpFn1(SP.cli),
+  Li: mpFn1((a, p) => M.csub(SP.cli(a, p + 20), SP.cli([F.fromInt(2n), ZERO], p + 20), p)),
+  Si: mpFn1((a, p) => SP.csi(a, p, false)),
+  Shi: mpFn1((a, p) => SP.csi(a, p, true)),
+  Ci: mpFn1((a, p) => SP.cci(a, p, false)),
+  Chi: mpFn1((a, p) => SP.cci(a, p, true)),
+  lowergamma: mpFn2(SP.clowergamma),
+  uppergamma: mpFn2(SP.cuppergamma),
 } satisfies typeof mpFns);
 
 /** Lambert W by Halley iteration from a double-precision start (branch k). */

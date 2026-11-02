@@ -6,13 +6,14 @@
  * linear and polynomial systems, undetermined coefficients and nsolve.
  */
 
-import { NotImplementedError, PolynomialError } from '../core/errors';
+import { InvariantError, NotImplementedError, PolynomialError } from '../core/errors';
 import { solvePolySystem } from './polysys';
 import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, some, xreplace, xreplace as xreplaceS } from '../core/traverse';
+import { at, defined, first, getOrThrow } from '../core/guard';
 import { evalf } from '../numeric/evalf';
 import { diff } from '../calculus/diff';
 import { acos, asin, atan, log } from '../functions/elementary';
@@ -99,7 +100,8 @@ function invertFn(f: Fn | Pow, y: Expr): [Expr, Expr[]] | undefined {
     if (n.isInteger) return undefined; // handled as a polynomial
     return [b, [pow(y, Rational.of(n.q, n.p))]];
   }
-  const u = f.args[0]!;
+  const u = f.args[0];
+  if (u === undefined) return undefined;
   switch (f.name) {
     case 'log':
       return [u, [exp(y)]];
@@ -123,7 +125,7 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   if (f instanceof Add) {
     const dep = f.args.filter((t) => t.has(x));
     if (dep.length === 1) {
-      const t = dep[0]!;
+      const t = first(dep);
       const fs = t instanceof Mul ? t.args : [t];
       const F = fs.filter((g) => g.has(x));
       if (F.length === 1 && F[0] instanceof Pow && F[0].base.key === x.key && F[0].exp instanceof Rational && F[0].exp.p === -1n && F[0].exp.q === 1n) {
@@ -135,7 +137,7 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
       if (F.length === 1 && F[0] instanceof Pow && F[0].base instanceof Constant && F[0].base.name === 'E') {
         const a = mul(...fs.filter((g) => !g.has(x)));
         const y = mul(-1, add(...f.args.filter((u) => !u.has(x))), pow(a, -1));
-        const inv = invertFn(F[0], y)!;
+        const inv = defined(invertFn(F[0], y), 'inverse of exp');
         return inv[1].flatMap((yy) => solveRaw(add(inv[0], mul(-1, yy)), x, depth + 1));
       }
     }
@@ -173,12 +175,12 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   const dep = terms.filter((t) => t.has(x));
   if (dep.length === 1) {
     const b = add(...terms.filter((t) => !t.has(x)));
-    const t = dep[0]!;
+    const t = first(dep);
     const factors = t instanceof Mul ? t.args : [t];
     const fdep = factors.filter((g) => g.has(x));
     if (fdep.length === 1) {
       const a = mul(...factors.filter((g) => !g.has(x)));
-      const F = fdep[0]!;
+      const F = first(fdep);
       const y = mul(-1, b, pow(a, -1));
       if (F instanceof Fn || F instanceof Pow) {
         const inv = invertFn(F, y);
@@ -214,7 +216,9 @@ function singleRadical(num: Expr, x: Sym, depth: number): Expr[] | undefined {
   };
   find(num);
   if (rads.size !== 1) return undefined;
-  const R = [...rads.values()][0]!;
+  const R = first([...rads.values()]);
+  const Rexp = R.exp;
+  if (!(Rexp instanceof Rational)) return undefined; // collected only with a rational exponent
   const terms = num instanceof Add ? num.args : [num];
   const as: Expr[] = [];
   const bs: Expr[] = [];
@@ -229,8 +233,8 @@ function singleRadical(num: Expr, x: Sym, depth: number): Expr[] | undefined {
   }
   const a = add(...as);
   const b = add(...bs);
-  const p = (R.exp as Rational).p;
-  const q = (R.exp as Rational).q;
+  const p = Rexp.p;
+  const q = Rexp.q;
   if (p < 0n || q > 6n) return undefined;
   const eq = add(mul(pow(a, Rational.of(q)), pow(R.base, Rational.of(p))), mul(-1, pow(mul(-1, b), Rational.of(q))));
   return solveRaw(expandMul(eq), x, depth + 1);
@@ -294,11 +298,12 @@ function sinCosLinear(e: Expr, x: Sym): Expr[] | undefined {
   let u: Expr | undefined;
   for (const t of terms) {
     const fs = t instanceof Mul ? t.args : [t];
-    const trig = fs.filter((g) => g instanceof Fn && (g.name === 'sin' || g.name === 'cos') && g.has(x)) as Fn[];
+    const trig = fs.filter((g): g is Fn => g instanceof Fn && (g.name === 'sin' || g.name === 'cos') && g.has(x));
     if (trig.length !== 1) return undefined;
-    const g = trig[0]!;
-    if (u && u.key !== g.args[0]!.key) return undefined;
-    u = g.args[0]!;
+    const g = first(trig);
+    const arg = first(g.args);
+    if (u && u.key !== arg.key) return undefined;
+    u = arg;
     const c = mul(...fs.filter((h) => h !== g));
     if (c.has(x)) return undefined;
     if (g.name === 'sin') a = add(a, c);
@@ -321,13 +326,13 @@ function lambertSolve(num: Expr, x: Sym): Expr[] | undefined {
   const without: Expr[] = [];
   for (const t of terms) {
     const factors = t instanceof Mul ? t.args : [t];
-    const ex = factors.filter((g) => isExp(g) && g.has(x));
+    const ex = factors.filter((g): g is Pow => isExp(g) && g.has(x));
     if (ex.length > 1) return undefined;
     if (ex.length === 0) {
       without.push(t);
       continue;
     }
-    const ue = (ex[0] as Pow).exp;
+    const ue = first(ex).exp;
     if (u && u.key !== ue.key) return undefined;
     u = ue;
     withExp.push(mul(...factors.filter((g) => g !== ex[0])));
@@ -339,9 +344,12 @@ function lambertSolve(num: Expr, x: Sym): Expr[] | undefined {
   if (!P || !Q || !U) return undefined;
   const deg = (m: Map<number, Expr>) => Math.max(-1, ...[...m.entries()].filter(([, v]) => !(v instanceof Rational && v.isZero)).map(([k]) => k));
   if (deg(U) !== 1) return undefined;
-  const d = U.get(1)!;
+  const d = getOrThrow(U, 1);
   const e = U.get(0) ?? S.Zero;
-  const W = (arg: Expr, k?: number) => (k === undefined ? impl.lambertW!(arg) : impl.lambertW!(arg, k));
+  const W = (arg: Expr, k?: number) => {
+    if (!impl.lambertW) throw new InvariantError('LambertW implementation is missing');
+    return k === undefined ? impl.lambertW(arg) : impl.lambertW(arg, k);
+  };
   const branches = (arg: Expr, sol: (k?: number) => Expr): Expr[] => {
     const out = [sol()];
     if (arg.freeSymbols().size === 0) {
@@ -351,14 +359,14 @@ function lambertSolve(num: Expr, x: Sym): Expr[] | undefined {
     return out;
   };
   if (deg(P) === 0 && deg(Q) === 1) {
-    const c = P.get(0)!;
-    const a = Q.get(1)!;
+    const c = getOrThrow(P, 0);
+    const a = getOrThrow(Q, 1);
     const ba = mul(Q.get(0) ?? S.Zero, pow(a, -1));
     const arg = mul(c, d, pow(a, -1), exp(add(e, mul(-1, d, ba))));
     return branches(arg, (k) => add(mul(-1, W(arg, k), pow(d, -1)), mul(-1, ba)));
   }
   if (deg(P) === 1 && deg(Q) <= 0) {
-    const a = P.get(1)!;
+    const a = getOrThrow(P, 1);
     const ba = mul(P.get(0) ?? S.Zero, pow(a, -1));
     const c = Q.get(0) ?? S.Zero;
     if (c instanceof Rational && c.isZero) return undefined;
@@ -419,7 +427,7 @@ function replaceTarget(e: Expr, target: Expr, t: Expr): Expr {
     }
     if (x.args.length === 0) return x;
     const args = x.args.map(go);
-    return args.every((a, i) => a === x.args[i]) ? x : xreplaceS(x, x.args.map((a, i) => [a, args[i]!] as [Expr, Expr]).filter(([a, b]) => a !== b));
+    return args.every((a, i) => a === x.args[i]) ? x : xreplaceS(x, x.args.map((a, i): [Expr, Expr] => [a, at(args, i)]).filter(([a, b]) => a !== b));
   };
   return go(e);
 }
@@ -465,7 +473,7 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
       for (const u of unknowns) {
         const pc = polyCoefficients(numerOf(e), u);
         if (pc && Math.max(...pc.keys()) === 1) {
-          const c1 = pc.get(1)!;
+          const c1 = getOrThrow(pc, 1);
           const c0 = pc.get(0) ?? S.Zero;
           const val = cancel(mul(-1, c0, pow(c1, -1)));
           if (val.has(u)) continue;
@@ -484,7 +492,7 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
     for (const e of pending) {
       const vars = unknowns.filter((u) => e.has(u));
       if (vars.length !== 1) continue;
-      const u = vars[0]!;
+      const u = first(vars);
       let sols: Expr[];
       try {
         sols = solve(e, u, { check: false }).filter((v) =>
@@ -509,8 +517,8 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
     if (numers.every((e) => unknowns.every((u) => polyCoefficients(e, u) !== undefined))) {
       for (const sol of solvePolySystem(numers, unknowns)) {
         const next = new Map(assigned);
-        unknowns.forEach((u, i) => next.set(u.key, sol[i]!));
-        for (const [k, w] of next) next.set(k, simplifyBack(xreplace(w, unknowns.map((u, i) => [u, sol[i]!] as [Expr, Expr]))));
+        unknowns.forEach((u, i) => next.set(u.key, at(sol, i)));
+        for (const [k, w] of next) next.set(k, simplifyBack(xreplace(w, unknowns.map((u, i): [Expr, Expr] => [u, at(sol, i)]))));
         results.push(syms.map((s) => next.get(s.key) ?? s));
       }
       return;
@@ -524,7 +532,7 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
   if (prepared.every((e, i) => e === original[i])) return results;
   return results.filter((sol) =>
     original.every((e) => {
-      const r = xreplace(e, syms.map((s, i) => [s, sol[i]!] as [Expr, Expr]));
+      const r = xreplace(e, syms.map((s, i): [Expr, Expr] => [s, at(sol, i)]));
       if (freeSymbols(r).size) return true;
       try {
         const c = evalf(r, 30).toComplex();
@@ -546,7 +554,9 @@ function unradOnce(num: Expr, syms: readonly Sym[]): Expr | undefined {
   };
   find(num);
   if (rads.size !== 1) return undefined;
-  const R = [...rads.values()][0]!;
+  const R = first([...rads.values()]);
+  const Rexp = R.exp;
+  if (!(Rexp instanceof Rational)) return undefined; // collected only with a rational exponent
   const terms = num instanceof Add ? num.args : [num];
   const as: Expr[] = [];
   const bs: Expr[] = [];
@@ -559,8 +569,8 @@ function unradOnce(num: Expr, syms: readonly Sym[]): Expr | undefined {
     if (c.has(R)) return undefined;
     as.push(c);
   }
-  const p = (R.exp as Rational).p;
-  const q = (R.exp as Rational).q;
+  const p = Rexp.p;
+  const q = Rexp.q;
   if (p < 0n || q > 6n) return undefined;
   return expandMul(add(mul(pow(add(...as), Rational.of(q)), pow(R.base, Rational.of(p))), mul(-1, pow(mul(-1, add(...bs)), Rational.of(q)))));
 }
@@ -580,8 +590,9 @@ export function solveLinear(e: ExprLike, opts: { symbols?: Sym[]; exclude?: Sym[
   const [n, d] = asNumerDenom(eq);
   if (isZeroE(n)) return [S.Zero, S.One];
   let symbols = [...freeSymbols(n)];
-  if (opts.symbols) symbols = symbols.filter((s) => opts.symbols!.some((t) => t.key === s.key));
-  if (opts.exclude) symbols = symbols.filter((s) => !opts.exclude!.some((t) => t.key === s.key));
+  const { symbols: only, exclude } = opts;
+  if (only) symbols = symbols.filter((s) => only.some((t) => t.key === s.key));
+  if (exclude) symbols = symbols.filter((s) => !exclude.some((t) => t.key === s.key));
   if (!symbols.length) return [S.Zero, S.One];
   symbols.sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
   // denominators of eq that depend on the symbols (SymPy _simple_dens)
@@ -623,7 +634,7 @@ export function solveUndeterminedCoeffs(e: ExprLike, coeffs: readonly Sym[], sym
       eqs.push(expr);
       return;
     }
-    const pc = polyCoefficients(expr, vars[0]!);
+    const pc = polyCoefficients(expr, first(vars));
     if (!pc) throw new PolynomialError('solve_undetermined_coeffs: not polynomial in the symbols');
     for (const c of pc.values()) collect(c, vars.slice(1));
   };
@@ -642,10 +653,12 @@ export function solveUndeterminedCoeffs(e: ExprLike, coeffs: readonly Sym[], sym
   return nonlinsolve(eqs, coeffs);
 }
 
+const isBracket = (v: ExprLike | readonly [ExprLike, ExprLike]): v is readonly [ExprLike, ExprLike] => Array.isArray(v);
+
 /** Numeric root of f near x0 by Newton's method (complex arithmetic). */
 export function nsolve(e: ExprLike, x: Sym, x0: ExprLike | readonly [ExprLike, ExprLike], opts: { prec?: number; solver?: 'newton' | 'bisect' } = {}): Expr {
-  if (Array.isArray(x0)) return nsolveBisect(e, x, x0 as readonly [ExprLike, ExprLike]);
-  const r = nsolveDouble(e, x, x0 as ExprLike);
+  if (isBracket(x0)) return nsolveBisect(e, x, x0);
+  const r = nsolveDouble(e, x, x0);
   // refine with Newton steps in arbitrary precision so that the result is the
   // correctly rounded root (SymPy's mpmath findroot; nsolve(..., prec=n))
   const dps = opts.prec ?? 15;
@@ -743,7 +756,7 @@ export function invertEquation(eqIn: ExprLike, symbols: readonly Sym[] = [], opt
     }
     if (lhs instanceof Fn && lhs.name === 'log' && lhs.args.length === 1) {
       rhs = exp(rhs);
-      lhs = lhs.args[0]!;
+      lhs = first(lhs.args);
     } else if (lhs instanceof Pow && lhs.base instanceof Constant && lhs.base.name === 'E') {
       rhs = log(rhs);
       lhs = lhs.exp;
@@ -754,7 +767,8 @@ export function invertEquation(eqIn: ExprLike, symbols: readonly Sym[] = [], opt
     }
     if (lhs instanceof Pow && !(lhs.base instanceof Constant)) {
       const intExp = lhs.exp instanceof Rational && lhs.exp.isInteger;
-      const multi = syms.length > 1 && syms.filter((s) => (lhs as Pow).base.has(s)).length > 1;
+      const base = lhs.base;
+      const multi = syms.length > 1 && syms.filter((s) => base.has(s)).length > 1;
       if ((intExp && opts.integerPower) || (!intExp && multi)) {
         rhs = pow(rhs, pow(lhs.exp, -1));
         lhs = lhs.base;

@@ -31,11 +31,12 @@ import { posify, powdenest, powsimp } from '../../simplify/powsimp';
 import { simplify as simplifyExpr } from '../../simplify/simplify';
 import { rewrite } from '../../simplify/rewrite';
 import type { TransformHints, TransformResult } from './base';
-import { GenericIntegralTransform, IntegralTransform, IntegralTransformError, addArgs, isPolyIn, matchByName, mget, mulArgs, polyCoeffs as polyCoeffsIn, wild } from './base';
+import { GenericIntegralTransform, IntegralTransform, IntegralTransformError, addArgs, isPolyIn, matchByName, mget, mulArgs, polyCoeffs as polyCoeffsIn, wild, transformArgs } from './base';
+import { at, defined, pair } from '../../core/guard';
 import { isDiracDelta, isHeaviside } from './delta';
 
-const isExpPow = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
-const expOf = (e: Expr): Expr => (e as Pow).exp;
+const isExpPow = (e: Expr): e is Pow => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
+const expOf = (e: Pow): Expr => e.exp;
 const isRat = (e: Expr): e is Rational => e instanceof Rational;
 const isNonNegInt = (e: Expr): e is Rational => e instanceof Rational && e.isInteger && !e.isNegative;
 
@@ -94,7 +95,7 @@ function hyperexpandForm(e: Expr, k: Expr): Expr {
     const terms = t.base.args;
     const k2 = pow(k, 2);
     if (!terms.some((u) => u.key === k2.key) || terms.length !== 2) return t;
-    const A = terms.find((u) => u.key !== k2.key)!;
+    const A = defined(terms.find((u) => u.key !== k2.key), 'the other term');
     if (A.has(k)) return t;
     return mul(pow(k, mul(2, t.exp)), pow(add(mul(A, pow(k, -2)), 1), t.exp));
   });
@@ -149,7 +150,7 @@ function halfLineIntegral(f0: Expr, x: Sym, k: Expr, kernel: Kernel): Expr | und
   if (rest.length === 0) {
     r = powerKernel(mu, kp, kernel);
   } else if (rest.length === 1) {
-    const g = rest[0]!;
+    const g = at(rest, 0);
     const n = sub(mu, 1);
     if (isExpPow(g)) {
       const e = expOf(g);
@@ -205,11 +206,11 @@ function halfLineIntegral(f0: Expr, x: Sym, k: Expr, kernel: Kernel): Expr | und
     }
   } else if (rest.length === 2 && kernel.kind === 'cos' && mu.key === S.One.key) {
     // exp(-a*sqrt(x))*cos(a*sqrt(x))
-    const ei = rest.findIndex(isExpPow);
-    const ci = rest.findIndex((u) => u instanceof Fn && u.name === 'cos');
-    if (ei >= 0 && ci >= 0) {
-      const m1 = matchByName(expOf(rest[ei]!), mul(-1, alpha, sqrt(x)));
-      const m2 = matchByName((rest[ci] as Fn).args[0]!, mul(beta, sqrt(x)));
+    const ex = rest.find(isExpPow);
+    const co = rest.find((u): u is Fn => u instanceof Fn && u.name === 'cos');
+    if (ex !== undefined && co !== undefined) {
+      const m1 = matchByName(expOf(ex), mul(-1, alpha, sqrt(x)));
+      const m2 = matchByName(at(co.args, 0), mul(beta, sqrt(x)));
       if (m1 && m2 && mget(m1, 'alpha').key === mget(m2, 'beta').key) {
         const a = mget(m1, 'alpha');
         r = mul(sqrt(mul(S.Pi, S.Half)), a, exp(mul(-1, pow(a, 2), pow(mul(2, kp), -1))), pow(mul(2, pow(kp, Rational.of(3n, 2n))), -1));
@@ -238,7 +239,8 @@ function realLineIntegral(f: Expr, x: Sym, Bk: Expr): Expr | undefined {
   if (rest.length === 0 && isPolyIn(E, x)) {
     const p = Poly.from(expand(E), [x]);
     if (p.degree() !== 2) return undefined;
-    const [c2, c1, c0] = p.allCoeffs() as [Expr, Expr, Expr];
+    const cs = p.allCoeffs();
+    const [c2, c1, c0] = [at(cs, 0), at(cs, 1), at(cs, 2)];
     const a = neg(c2);
     if (isPositive(a) === false) return undefined;
     const b = new Dummy('b');
@@ -257,19 +259,19 @@ function realLineIntegral(f: Expr, x: Sym, Bk: Expr): Expr | undefined {
     }
   }
   if (rest.length === 1 && n === 0) {
-    const g = rest[0]!;
-    if (isDiracDelta(g) && g.args.length === 1 && isPolyIn(g.args[0]!, x) && E.key === S.Zero.key) {
-      const p = Poly.from(g.args[0]!, [x]);
+    const g = at(rest, 0);
+    if (isDiracDelta(g) && g.args.length === 1 && isPolyIn(at(g.args, 0), x) && E.key === S.Zero.key) {
+      const p = Poly.from(at(g.args, 0), [x]);
       if (p.degree() === 1) {
-        const [s1, s0] = p.allCoeffs() as [Expr, Expr];
+        const [s1, s0] = pair(p.allCoeffs());
         const x0 = mul(-1, s0, pow(s1, -1));
         return mul(C, exp(mul(iBk, x0)), pow(abs(s1), -1));
       }
     }
   }
-  if (rest.some((g) => isHeaviside(g) && g.args.length === 1 && g.args[0]!.key === x.key)) {
+  if (rest.some((g) => isHeaviside(g) && g.args.length === 1 && at(g.args, 0).key === x.key)) {
     // Heaviside(x)*x**n*exp(-c*x)*(sines and cosines): sum of n!/(c - I*B*k)**(n + 1)
-    const others = rest.filter((g) => !(isHeaviside(g) && g.args.length === 1 && g.args[0]!.key === x.key));
+    const others = rest.filter((g) => !(isHeaviside(g) && g.args.length === 1 && at(g.args, 0).key === x.key));
     const body = expand(rewrite(mul(pow(x, n), exp(E), ...others), 'exp'));
     const out: Expr[] = [];
     for (const term of addArgs(body)) {
@@ -286,9 +288,9 @@ function realLineIntegral(f: Expr, x: Sym, Bk: Expr): Expr | undefined {
       }
       const lin = polyCoeffsIn(e, x);
       if (!lin || lin.length > 2) return undefined;
-      const cc = lin.length === 2 ? neg(lin[0]!) : S.Zero;
-      if (lin.length === 2) c = mul(c, exp(lin[1]!));
-      else c = mul(c, exp(lin[0]!));
+      const cc = lin.length === 2 ? neg(at(lin, 0)) : S.Zero;
+      if (lin.length === 2) c = mul(c, exp(at(lin, 1)));
+      else c = mul(c, exp(at(lin, 0)));
       if (cc.key === S.Zero.key || isNegative(re(cc)) === true) return undefined;
       let fact = 1;
       for (let i = 2; i <= k; i++) fact *= i;
@@ -307,7 +309,7 @@ function finish(F: Expr, simplify: boolean): Expr {
   const s1 = simplifyExpr(powsimp(P));
   const s2 = xreplace(s1, [...back].map(([d, v]) => [d, v] as [Expr, Expr]));
   // SymPy's results keep the arguments of gamma functions expanded
-  return mapBottomUp(s2, (t) => (t instanceof Fn && t.name === 'gamma' ? gamma(expand(t.args[0]!)) : t));
+  return mapBottomUp(s2, (t) => (t instanceof Fn && t.name === 'gamma' ? gamma(expand(at(t.args, 0))) : t));
 }
 
 // ---------------------------------------------------------------------------
@@ -358,7 +360,7 @@ export class FourierTransform extends FourierTypeTransform {
     return mul(-2, S.Pi);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new FourierTransform(args[0]!, args[1] as Sym, args[2] as Sym);
+    return new FourierTransform(...transformArgs(args));
   }
   protected withFunction(f: Expr): IntegralTransform {
     return new FourierTransform(f, this.functionVariable, this.transformVariable);
@@ -385,7 +387,7 @@ export class InverseFourierTransform extends FourierTypeTransform {
     return mul(2, S.Pi);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new InverseFourierTransform(args[0]!, args[1] as Sym, args[2] as Sym);
+    return new InverseFourierTransform(...transformArgs(args));
   }
   protected withFunction(f: Expr): IntegralTransform {
     return new InverseFourierTransform(f, this.functionVariable, this.transformVariable);
@@ -466,7 +468,7 @@ export class SineTransform extends SineCosineTypeTransform {
     return 'sin';
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new SineTransform(args[0]!, args[1] as Sym, args[2] as Sym);
+    return new SineTransform(...transformArgs(args));
   }
   protected withFunction(f: Expr): IntegralTransform {
     return new SineTransform(f, this.functionVariable, this.transformVariable);
@@ -490,7 +492,7 @@ export class InverseSineTransform extends SineCosineTypeTransform {
     return 'sin';
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new InverseSineTransform(args[0]!, args[1] as Sym, args[2] as Sym);
+    return new InverseSineTransform(...transformArgs(args));
   }
   protected withFunction(f: Expr): IntegralTransform {
     return new InverseSineTransform(f, this.functionVariable, this.transformVariable);
@@ -514,7 +516,7 @@ export class CosineTransform extends SineCosineTypeTransform {
     return 'cos';
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new CosineTransform(args[0]!, args[1] as Sym, args[2] as Sym);
+    return new CosineTransform(...transformArgs(args));
   }
   protected withFunction(f: Expr): IntegralTransform {
     return new CosineTransform(f, this.functionVariable, this.transformVariable);
@@ -538,7 +540,7 @@ export class InverseCosineTransform extends SineCosineTypeTransform {
     return 'cos';
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new InverseCosineTransform(args[0]!, args[1] as Sym, args[2] as Sym);
+    return new InverseCosineTransform(...transformArgs(args));
   }
   protected withFunction(f: Expr): IntegralTransform {
     return new InverseCosineTransform(f, this.functionVariable, this.transformVariable);
@@ -589,7 +591,7 @@ export function inverseCosineTransform(F: ExprLike, k: Sym, x: Sym, hints: Trans
 export abstract class HankelTypeTransform extends IntegralTransform {
   /** The order nu of the Bessel function. */
   get nu(): Expr {
-    return this.args[3]!;
+    return at(this.args, 3);
   }
   get asIntegral(): Expr {
     const r = this.functionVariable;
@@ -619,7 +621,7 @@ export class HankelTransform extends HankelTypeTransform {
     return 'Hankel';
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new HankelTransform(args[0]!, args[1] as Sym, args[2] as Sym, args[3]!);
+    return new HankelTransform(...transformArgs(args), at(args, 3));
   }
 }
 
@@ -634,7 +636,7 @@ export class InverseHankelTransform extends HankelTypeTransform {
     return 'Inverse Hankel';
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new InverseHankelTransform(args[0]!, args[1] as Sym, args[2] as Sym, args[3]!);
+    return new InverseHankelTransform(...transformArgs(args), at(args, 3));
   }
 }
 
