@@ -308,3 +308,77 @@ export function zassenhaus(f0: P): P[] {
   out.push(primitivePart(rest));
   return out;
 }
+
+// ---- factorization over GF(p) ------------------------------------------------------
+
+/** Equal-degree factorization modulo 2 (trace map instead of the (p**d - 1)/2 power). */
+function edf2(f: P, d: number): P[] {
+  const n = deg(f);
+  if (n === d) return [monic(f, 2n)];
+  for (let tries = 0; tries < 400; tries++) {
+    const a = trim(Array.from({ length: n }, () => rand(2n)));
+    if (deg(a) < 1) continue;
+    // b = a + a**2 + a**4 + ... + a**(2**(d - 1)) mod f
+    let t = a;
+    let b = a;
+    for (let i = 1; i < d; i++) {
+      t = prem(pmul(t, t, 2n), f, 2n);
+      b = padd(b, t, 2n);
+    }
+    const g = pgcd(f, b, 2n);
+    if (deg(g) > 0 && deg(g) < n) return [...edf2(g, d), ...edf2(pdivmod(f, g, 2n)[0], d)];
+  }
+  throw new Error('factorModP: equal-degree factorization failed');
+}
+
+/** Square-free decomposition modulo p (SymPy gf_sqf_list): [factor, multiplicity] of a monic f. */
+function sqfListModP(f0: P, p: bigint): [P, number][] {
+  const out: [P, number][] = [];
+  let f = monic(f0, p);
+  let n = 1;
+  if (deg(f) < 1) return out;
+  for (;;) {
+    let sqf = false;
+    const F = pmod(derivative(f), p);
+    if (F.length) {
+      let g = pgcd(f, F, p);
+      let h = pdivmod(f, g, p)[0];
+      let i = 1;
+      while (!(h.length === 1 && h[0] === 1n)) {
+        const G = pgcd(g, h, p);
+        const H = pdivmod(h, G, p)[0];
+        if (deg(H) > 0) out.push([monic(H, p), i * n]);
+        g = pdivmod(g, G, p)[0];
+        h = G;
+        i++;
+      }
+      if (g.length === 1 && g[0] === 1n) sqf = true;
+      else f = g;
+    }
+    if (sqf) break;
+    // f is a p-th power: take the p-th root (coefficients at multiples of p)
+    const r = Number(p);
+    const d = Math.floor(deg(f) / r);
+    f = Array.from({ length: d + 1 }, (_, i) => f[i * r] ?? 0n);
+    n *= r;
+  }
+  return out;
+}
+
+/**
+ * Factorization of an integer polynomial over GF(p), p prime (coefficients
+ * lowest degree first): the leading coefficient modulo p and the monic
+ * irreducible factors with their multiplicities.
+ */
+export function factorModP(f0: P, p: bigint): [bigint, [P, number][]] {
+  const f = pmod(f0, p);
+  if (!f.length) return [0n, []];
+  const lc = f[f.length - 1]!;
+  const out: [P, number][] = [];
+  for (const [g, m] of sqfListModP(f, p)) {
+    for (const [h, d] of ddf(g, p)) {
+      for (const irr of p === 2n ? edf2(h, d) : edf(h, d, p)) out.push([irr, m]);
+    }
+  }
+  return [lc, out];
+}

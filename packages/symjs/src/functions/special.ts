@@ -23,7 +23,7 @@ import {
   isNum,
 } from '../core/nodes';
 import { numAdd, numMul } from '../core/num';
-import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt } from '../core/ops';
+import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt, sympify } from '../core/ops';
 import { fnPartials } from '../calculus/diff';
 import { rebuild } from '../core/traverse';
 import { impl } from '../core/nodes';
@@ -1143,8 +1143,12 @@ export const catalan = (n: ExprLike): Expr => fn('catalan', [n]);
 export const gamma = (x: ExprLike): Expr => fn('gamma', [x]);
 export const loggamma = (x: ExprLike): Expr => fn('loggamma', [x]);
 export const polygamma = (n: ExprLike, x: ExprLike): Expr => fn('polygamma', [n, x]);
-export const digamma = (x: ExprLike): Expr => fn('polygamma', [0, x]);
-export const trigamma = (x: ExprLike): Expr => fn('polygamma', [1, x]);
+/** SymPy digamma(x) = polygamma(0, x); with `{ evaluate: false }` the unevaluated digamma(x). */
+export const digamma = (x: ExprLike, opts: { evaluate?: boolean } = {}): Expr =>
+  opts.evaluate === false ? new Fn('digamma', [sympify(x)]) : fn('polygamma', [0, x]);
+/** SymPy trigamma(x) = polygamma(1, x); with `{ evaluate: false }` the unevaluated trigamma(x). */
+export const trigamma = (x: ExprLike, opts: { evaluate?: boolean } = {}): Expr =>
+  opts.evaluate === false ? new Fn('trigamma', [sympify(x)]) : fn('polygamma', [1, x]);
 export const lowergamma = (s: ExprLike, x: ExprLike): Expr => fn('lowergamma', [s, x]);
 export const uppergamma = (s: ExprLike, x: ExprLike): Expr => fn('uppergamma', [s, x]);
 export const beta = (a: ExprLike, b: ExprLike): Expr => fn('beta', [a, b]);

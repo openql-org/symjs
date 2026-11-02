@@ -7,6 +7,7 @@
  * functions (degree, LC/LM/LT, gcd, lcm, div, factor_list, ...).
  */
 
+import { factorModP } from './zassenhaus';
 import { Add, Constant, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, mapBottomUp, rebuild, xreplace } from '../core/traverse';
@@ -20,7 +21,7 @@ import { divExact, mfactorList, mgcd, mlcm, prem as mprem } from './mpoly';
 import { CRootOf } from './rootof';
 import { isolateRealRoots, refineRealRoot } from './rootisolation';
 import { nroots } from './nroots';
-import { UPoly, roots as rootsOf } from './poly';
+import { UPoly, polyCoefficients, roots as rootsOf } from './poly';
 
 export class PolificationFailed extends Error {}
 
@@ -1245,7 +1246,26 @@ export function discriminant(f: ExprLike, x: Sym): Expr {
  * Factor an expression over the rationals (multivariate), SymPy style:
  * an unevaluated product of the content and primitive factors.
  */
-export function factor(ex: ExprLike, opts: { deep?: boolean; extension?: readonly Expr[]; gaussian?: boolean } = {}): Expr {
+/**
+ * Factorization of a univariate integer polynomial over GF(p) (SymPy
+ * factor(f, modulus=p)), with coefficients in the symmetric range.
+ */
+function factorModulus(e: Expr, p: bigint): Expr {
+  const vars = [...freeSymbols(e)];
+  if (vars.length !== 1) throw new Error('factor: modulus requires a univariate polynomial');
+  const x = vars[0]!;
+  const cs = polyCoefficients(e, x);
+  if (!cs || [...cs.values()].some((c) => !(c instanceof Rational && c.q === 1n))) throw new Error('factor: modulus requires integer coefficients');
+  const n = Math.max(...cs.keys());
+  const f = Array.from({ length: n + 1 }, (_, i) => (cs.get(i) as Rational | undefined)?.p ?? 0n);
+  const sym = (c: bigint) => (c > p / 2n ? c - p : c);
+  const [lc, fs] = factorModP(f, p);
+  const toExpr = (g: bigint[]) => add(...g.map((c, i) => mul(Rational.of(sym(c)), pow(x, i))));
+  return keepCoeff(Rational.of(sym(lc)), mul(...fs.map(([g, m]) => pow(toExpr(g), m))));
+}
+
+export function factor(ex: ExprLike, opts: { deep?: boolean; extension?: readonly Expr[]; gaussian?: boolean; modulus?: number | bigint } = {}): Expr {
+  if (opts.modulus !== undefined) return factorModulus(sympify(ex), BigInt(opts.modulus));
   if (opts.gaussian || opts.extension?.length) {
     const r = factorOverExtension(sympify(ex), opts.gaussian ? [S.I] : opts.extension!);
     if (r) return r;

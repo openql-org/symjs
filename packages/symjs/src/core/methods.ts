@@ -274,7 +274,7 @@ export function primitive(eIn: ExprLike): [Rational, Expr] {
 }
 
 /** SymPy `as_content_primitive(radical=False, clear=True)`. */
-export function asContentPrimitive(eIn: ExprLike, opts: { clear?: boolean } = {}): [Rational, Expr] {
+export function asContentPrimitive(eIn: ExprLike, opts: { clear?: boolean; radical?: boolean } = {}): [Rational, Expr] {
   const e = sympify(eIn);
   const clear = opts.clear ?? true;
   if (e instanceof Rational) {
@@ -292,6 +292,7 @@ export function asContentPrimitive(eIn: ExprLike, opts: { clear?: boolean } = {}
         con = Rational.of(con.p);
       }
     }
+    if (opts.radical && prim instanceof Add) prim = extractCommonRadical(prim);
     return [con, prim];
   }
   if (e instanceof Mul) {
@@ -711,6 +712,25 @@ export function hasFree(eIn: ExprLike, ...patterns: (ExprLike | { fn: string })[
     };
     return go(e);
   });
+}
+
+/** sqrt(2) + 2*sqrt(10) -> sqrt(2)*(1 + 2*sqrt(5)): the square root of the gcd of the radicands. */
+function extractCommonRadical(e: Add): Expr {
+  const radicand = (t: Expr): bigint | undefined => {
+    for (const f of mulArgs(t)) {
+      if (f instanceof Pow && f.base instanceof Rational && f.base.q === 1n && f.exp instanceof Rational && f.exp.p === 1n && f.exp.q === 2n) return f.base.p;
+    }
+    return undefined;
+  };
+  let g = 0n;
+  for (const t of e.args) {
+    const r = radicand(t);
+    if (r === undefined) return e;
+    g = gcd(g, r);
+  }
+  if (g <= 1n) return e;
+  const s = pow(Rational.of(g), S.Half);
+  return mul(s, add(...e.args.map((t) => mul(t, pow(s, -1)))));
 }
 
 /** SymPy `as_coefficients_dict(*syms)`: term -> coefficient. */

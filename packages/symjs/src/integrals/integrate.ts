@@ -126,6 +126,7 @@ class Integrator {
     return (
       this.table(f) ??
       this.gaussian(f) ??
+      this.fresnel(f) ??
       this.derivativeDivides(f) ??
       this.trigPowers(f) ??
       this.substitution(f) ??
@@ -162,6 +163,25 @@ class Integrator {
     }
     const k = sqrt(A);
     return mul(pref(k), fnErf('erfi', [expand(mul(k, add(x, shift)))]));
+  }
+
+  // ---- sin(a*x**2), cos(a*x**2) -> Fresnel integrals ------------------------
+
+  private fresnel(f: Expr): R {
+    const x = this.x;
+    if (!(f instanceof Fn && (f.name === 'sin' || f.name === 'cos'))) return undefined;
+    const pc = polyCoefficients(f.args[0]!, x);
+    if (!pc || Math.max(...pc.keys()) !== 2 || pc.has(1) || pc.has(0)) return undefined;
+    let a = pc.get(2)!;
+    let sign: Expr = S.One;
+    if (isNegativeQ(a) === true) {
+      a = mul(-1, a);
+      if (f.name === 'sin') sign = S.NegOne;
+    }
+    if (isPositiveQ(a) !== true) return undefined;
+    // integral of cos(a*x**2) = sqrt(pi/(2*a))*fresnelc(sqrt(2*a/pi)*x), likewise sin with fresnels
+    const k = sqrt(mul(2, a, pow(S.Pi, -1)));
+    return mul(sign, pow(k, -1), fnErf(f.name === 'sin' ? 'fresnels' : 'fresnelc', [mul(k, x)]));
   }
 
   // ---- table of elementary antiderivatives ---------------------------------

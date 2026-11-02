@@ -58,3 +58,19 @@ describe('parser and assumptions', () => {
     expect(sstr(expandPowerExp(parse('x**(y + 2)')))).toBe('x**(y + 2)');
   });
 });
+
+describe('factor over GF(p)', () => {
+  it('matches SymPy factor(f, modulus=p)', async () => {
+    const { factor } = await import('../src');
+    const cases: [string, number, string][] = [
+      ['x**2 + 1', 2, '(x + 1)**2'],
+      ['x**4 + 1', 3, '(x**2 - x - 1)*(x**2 + x - 1)'],
+      ['x**6 - 1', 7, '(x - 3)*(x - 2)*(x - 1)*(x + 1)*(x + 2)*(x + 3)'],
+      ['x**5 + x + 1', 2, '(x**2 + x + 1)*(x**3 + x**2 + 1)'],
+      ['3*x**3 + 2*x + 1', 5, '-2*(x**3 - x + 2)'],
+      ['x**8 + x**4', 2, 'x**4*(x + 1)**4'],
+      ['x**9 - x', 3, 'x*(x - 1)*(x + 1)*(x**2 + 1)*(x**2 - x - 1)*(x**2 + x - 1)'],
+    ];
+    for (const [f, p, want] of cases) expect(sstr(factor(parse(f), { modulus: p }))).toBe(want);
+  });
+});

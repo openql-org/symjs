@@ -23124,7 +23124,59 @@
   },
   {
    "fn": "count_ops",
-   "unsupportedArg": "NoneType",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Fn",
+       "name": "sin",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Py",
+       "v": null
+      },
+      {
+       "t": "Py",
+       "v": true
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "visual": {
+     "t": "Py",
+     "v": false
+    }
+   },
    "category": "core",
    "module": "sympy.core.function",
    "src": "count_ops([x, sin(x), None, True, x + 2], visual=False)",
@@ -23132,7 +23184,59 @@
   },
   {
    "fn": "count_ops",
-   "unsupportedArg": "NoneType",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Fn",
+       "name": "sin",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Py",
+       "v": null
+      },
+      {
+       "t": "Py",
+       "v": true
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "visual": {
+     "t": "Py",
+     "v": true
+    }
+   },
    "category": "core",
    "module": "sympy.core.function",
    "src": "count_ops([x, sin(x), None, True, x + 2], visual=True)",
@@ -33572,7 +33676,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_878",
+         "name": "Dummy_876",
          "index": 0,
          "assume": {
           "real": true
@@ -43082,7 +43186,12 @@
      "assume": {}
     }
    ],
-   "unsupportedArg": "NoneType",
+   "kwargs": {
+    "exact": {
+     "t": "Py",
+     "v": null
+    }
+   },
    "category": "simplify",
    "module": "sympy.simplify.radsimp",
    "src": "collect(x*exp(x) + sin(x)*y + sin(x)*2 + 3*x, x, exact=None)",
@@ -43168,7 +43277,12 @@
      "list": true
     }
    ],
-   "unsupportedArg": "NoneType",
+   "kwargs": {
+    "exact": {
+     "t": "Py",
+     "v": null
+    }
+   },
    "category": "simplify",
    "module": "sympy.simplify.radsimp",
    "src": "collect(a*x*y + x*y + b*x + x, [x, y], exact=None)",
@@ -52457,7 +52571,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10bdbc760>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x108a0bc40>, 3)"
   },
   {
    "fn": ".LC",
@@ -52664,7 +52778,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10cca69e0>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x108a62830>, 4)"
   },
   {
    "fn": ".TC",

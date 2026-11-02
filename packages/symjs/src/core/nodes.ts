@@ -134,6 +134,8 @@ export type SpecialFnName =
   | 'harmonic'
   | 'catalan'
   | 'gamma'
+  | 'digamma'
+  | 'trigamma'
   | 'loggamma'
   | 'polygamma'
   | 'lowergamma'

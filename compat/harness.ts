@@ -1247,8 +1247,14 @@ export const ADAPTERS: Record<string, Adapter> = {
   ),
   ff: (args, kw) => polyFactorial(args, kw, -1),
   rf: (args, kw) => polyFactorial(args, kw, 1),
-  digamma: exprFn(sj.digamma),
-  trigamma: exprFn(sj.trigamma),
+  digamma: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
+    return sj.digamma(asExpr(args[0]), { evaluate: kw['evaluate'] !== false });
+  },
+  trigamma: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
+    return sj.trigamma(asExpr(args[0]), { evaluate: kw['evaluate'] !== false });
+  },
   E1: exprFn(sj.E1),
   RisingFactorial: (args, kw) => (noKw(kw), sj.rf(asExpr(args[0]), asExpr(args[1]))),
   FallingFactorial: (args, kw) => (noKw(kw), sj.ff(asExpr(args[0]), asExpr(args[1]))),
@@ -1305,8 +1311,9 @@ export const ADAPTERS: Record<string, Adapter> = {
   expand_complex: exprFn(sj.expand_complex),
   simplify: exprFn(sj.simplify),
   factor: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['deep', 'gaussian', 'extension'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['deep', 'gaussian', 'extension', 'modulus'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 1) throw new Unsupported('arity');
+    if (kw['modulus'] !== undefined) return sj.factor(asExpr(args[0]), { modulus: (kw['modulus'] as sj.Rational).p });
     const ext = kw['extension'];
     const extension = ext === undefined ? undefined : ext instanceof PyTuple || ext instanceof PyList ? ext.items.map(asExpr) : [asExpr(ext)];
     return sj.factor(asExpr(args[0]), { deep: Boolean(kw['deep']), gaussian: Boolean(kw['gaussian']), extension });
@@ -1453,7 +1460,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'exact') throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 2) throw new Unsupported('collect arity');
     const syms = args[1] instanceof PyTuple ? args[1].items.map(asExpr) : [asExpr(args[1])];
-    return sj.collect(asExpr(args[0]), syms, exact === undefined ? {} : { exact: Boolean(exact) });
+    return sj.collect(asExpr(args[0]), syms, exact === undefined || exact === null ? {} : { exact: Boolean(exact) });
   },
   fraction: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'exact') throw new Unsupported(`kwargs ${k}`);
@@ -1972,7 +1979,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'visual') throw new Unsupported(`kwargs ${k}`);
     const visual = Boolean(kw['visual'] ?? args[1]);
     if (args[0] instanceof PyList || args[0] instanceof PyTuple) {
-      const items = (args[0] as PyList).items.map(asExpr);
+      // None and booleans count as nothing
+      const items = (args[0] as PyList).items.filter((i) => i !== null && typeof i !== 'boolean').map(asExpr);
       return visual ? sj.add(...items.map(sj.countOpsVisual)) : items.reduce((n, e) => n + sj.countOps(e), 0);
     }
     return visual ? sj.countOpsVisual(asExpr(args[0])) : sj.countOps(asExpr(args[0]));
@@ -2013,9 +2021,9 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.as_content_primitive': (args, kw, self) => {
     const clear = kw['clear'];
-    for (const k of Object.keys(kw)) if (k !== 'clear') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (k !== 'clear' && k !== 'radical') throw new Unsupported(`kwargs ${k}`);
     if (args.length) throw new Unsupported('arity');
-    return new PyTuple(sj.asContentPrimitive(asExpr(self), clear === undefined ? {} : { clear: Boolean(clear) }));
+    return new PyTuple(sj.asContentPrimitive(asExpr(self), { ...(clear === undefined ? {} : { clear: Boolean(clear) }), radical: Boolean(kw['radical']) }));
   },
   '.extract_multiplicatively': (args, kw, self) => (noKw(kw), sj.extractMultiplicatively(asExpr(self), asExpr(args[0])) ?? null),
   '.extract_additively': (args, kw, self) => (noKw(kw), sj.extractAdditively(asExpr(self), asExpr(args[0])) ?? null),

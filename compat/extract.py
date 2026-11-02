@@ -112,7 +112,7 @@ def ser(o):
     from sympy import Float, Integer, Rational, Symbol, Tuple
     from sympy.core.relational import Relational
 
-    if isinstance(o, bool):
+    if o is None or isinstance(o, bool):
         return {"t": "Py", "v": o}
     if isinstance(o, int):
         return {"t": "Rational", "p": str(o), "q": "1"}
