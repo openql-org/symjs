@@ -11,7 +11,7 @@
     "typecheck": "tsc --noEmit",
     "coverage": "vitest run --coverage",
     "compat": "vitest run --coverage --reporter=dot && vitest run --config compat/vitest.config.ts",
-    "compat:extract": "MPLBACKEND=Agg python3 compat/extract.py compat/corpus.json < /dev/null",
+    "compat:extract": "MPLBACKEND=Agg PYTHONHASHSEED=0 python3 compat/extract.py compat/corpus.json < /dev/null",
     "golden": "python3 scripts/gen_golden.py packages/symjs/tests/golden/cases.json packages/symjs/tests/golden/expected.json"
   },
   "engines": {

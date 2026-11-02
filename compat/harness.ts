@@ -40,6 +40,35 @@ export class PySet {
 export class Unsupported extends Error {}
 
 /** An undefined function class (SymPy `Function('f')` itself, not applied). */
+/** A predicate lambda testing a SymPy is_* attribute (lambda e: e.is_Mul). */
+export class PyPred {
+  constructor(readonly attr: string) {}
+  test(e: Expr): boolean {
+    switch (this.attr) {
+      case 'is_Number':
+        return e instanceof sj.Rational || e instanceof sj.Float;
+      case 'is_Integer':
+        return e instanceof sj.Rational && e.isInteger;
+      case 'is_Rational':
+        return e instanceof sj.Rational;
+      case 'is_Mul':
+        return e instanceof sj.Mul;
+      case 'is_Add':
+        return e instanceof sj.Add;
+      case 'is_Pow':
+        return e instanceof sj.Pow;
+      case 'is_Symbol':
+        return e instanceof Sym;
+      case 'is_Derivative':
+        return e instanceof sj.Derivative;
+      case 'is_Function':
+        return e instanceof sj.Fn || e instanceof sj.UndefFn;
+      default:
+        throw new Unsupported(`predicate ${this.attr}`);
+    }
+  }
+}
+
 /** SymPy Lambda(variables, expr). */
 export class PyLambda {
   constructor(
@@ -255,6 +284,8 @@ export function deserialize(tree: Tree): unknown {
       if (!f) throw new Unsupported(`function ${tree['name']}`);
       return f((tree['args'] as Tree[]).map((a) => deserialize(a)) as Expr[]);
     }
+    case 'PyPred':
+      return new PyPred(tree['attr'] as string);
     case 'PyLambda':
       return new PyLambda((tree['params'] as Tree[]).map((t) => deserialize(t) as Expr), deserialize(tree['body'] as Tree) as Expr);
     case 'Tuple':
@@ -543,6 +574,7 @@ function toQuery(v: unknown): sj.Query {
   if (v instanceof FnClass || v instanceof UFnClass) return { fn: v.name };
   if (v instanceof TypeRef) return { type: v.name };
   if (v instanceof Expr) return v;
+  if (v instanceof PyPred) return (e: Expr) => v.test(e);
   throw new Unsupported('query');
 }
 

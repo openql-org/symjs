@@ -8,7 +8,8 @@ call ``f(args...)`` or method call ``obj.m(args...)``, the arguments are
 evaluated in the doctest namespace and serialized to a JSON tree. The
 expected output is ``str()`` of the result computed by the installed SymPy.
 
-Usage: python3 compat/extract.py compat/corpus.json
+Usage: PYTHONHASHSEED=0 python3 compat/extract.py compat/corpus.json
+(the fixed hash seed keeps the order of printed sets reproducible)
 """
 
 import os
@@ -99,6 +100,9 @@ MODULES = {
 ASSUMPTION_KEYS = ["real", "positive", "negative", "nonnegative", "nonpositive", "integer", "commutative"]
 
 
+DUMMY_IDS = {}
+
+
 class Unsupported(Exception):
     pass
 
@@ -166,7 +170,9 @@ def ser(o):
         return {"t": "WildFunction", "name": o.name, "nargs": lst}
     if isinstance(o, sympy.Dummy):
         a = {k: True for k in ASSUMPTION_KEYS if o._assumptions_orig.get(k) is True}
-        return {"t": "Dummy", "name": o.name, "index": o.dummy_index, "assume": a}
+        # indices are renumbered per case so that the corpus is reproducible
+        idx = DUMMY_IDS.setdefault(o.dummy_index, len(DUMMY_IDS))
+        return {"t": "Dummy", "name": o.name, "index": idx, "assume": a}
     if o.is_Symbol and type(o) is Symbol:
         a = {k: True for k in ASSUMPTION_KEYS if o._assumptions_orig.get(k) is True}
         if o._assumptions_orig.get("commutative") is False:
@@ -243,6 +249,11 @@ def ser_arg(node, globs):
     when applied to dummies becomes {"t": "PyLambda", params, body}."""
     if isinstance(node, ast.Lambda) and not node.args.vararg and not node.args.kwonlyargs and not node.args.kwarg:
         names = [a.arg for a in node.args.args]
+        b = node.body
+        if (len(names) == 1 and isinstance(b, ast.Attribute) and isinstance(b.value, ast.Name)
+                and b.value.id == names[0] and b.attr.startswith("is_")):
+            # a predicate such as lambda e: e.is_Mul
+            return {"t": "PyPred", "attr": b.attr}
         ds = [sympy.Dummy(n) for n in names]
         loc = dict(globs)
         loc.update(zip(names, ds))
@@ -261,6 +272,8 @@ def _alarm(signum, frame):
 
 
 def main(dst):
+    import random
+    random.seed(0)  # randMatrix and friends: keep the corpus reproducible
     warnings.filterwarnings("ignore")
     signal.signal(signal.SIGALRM, _alarm)
     finder = doctest.DocTestFinder(exclude_empty=True)
@@ -311,6 +324,7 @@ def main(dst):
                         continue
                 elif fn not in PUBLIC or fn in globs and getattr(globs[fn], "__module__", "").startswith("__"):
                     continue
+                DUMMY_IDS.clear()
                 try:
                     if "selfSrc" in record:
                         record["self"] = ser(eval(record.pop("selfSrc"), globs))
