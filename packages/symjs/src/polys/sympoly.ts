@@ -17,6 +17,8 @@ import { expandMul as expand } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
 import { decomposePower, keepCoeff } from '../simplify/exprtools';
 import { divExact, mfactorList, mgcd, mlcm, prem as mprem } from './mpoly';
+import { CRootOf } from './rootof';
+import { nroots } from './nroots';
 import { UPoly, roots as rootsOf } from './poly';
 
 export class PolificationFailed extends Error {}
@@ -788,18 +790,27 @@ export class Poly {
   private rootsWhere(realOnly: boolean): Expr[] {
     const x = this.univariate();
     const [, fs] = this.factorList();
-    const real: Expr[] = [];
-    const cplx: Expr[] = [];
+    type R = [Expr, { re: number; im: number }];
+    const real: R[] = [];
+    const cplx: R[] = [];
     for (const [f, k] of fs) {
-      if (f.degree() > 2) throw new Error('real_roots: CRootOf is not supported');
+      if (f.degree() > 2) {
+        // irreducible factors of degree >= 3: CRootOf(f, i) like SymPy
+        const vals = nroots(f, 15).map((v) => v.toComplex());
+        vals.forEach((v, i) => {
+          const r = new CRootOf(f.asExpr(), i);
+          for (let j = 0; j < k; j++) (v.im === 0 ? real : cplx).push([r, v]);
+        });
+        continue;
+      }
       for (const r of rootsOf(f.asExpr(), x)) {
-        for (let i = 0; i < k; i++) (isRealConst(r) ? real : cplx).push(r);
+        const v = impl.toComplex(r) as { re: number; im: number };
+        for (let i = 0; i < k; i++) (isRealConst(r) ? real : cplx).push([r, v]);
       }
     }
-    const num = (e: Expr) => (impl.toComplex(e) as { re: number; im: number });
-    real.sort((a, b) => num(a).re - num(b).re);
-    cplx.sort((a, b) => num(a).re - num(b).re || Math.abs(num(a).im) - Math.abs(num(b).im) || num(a).im - num(b).im);
-    return realOnly ? real : [...real, ...cplx];
+    real.sort((a, b) => a[1].re - b[1].re);
+    cplx.sort((a, b) => a[1].re - b[1].re || a[1].im - b[1].im);
+    return realOnly ? real.map(([r]) => r) : [...real, ...cplx].map(([r]) => r);
   }
   root(i: number): Expr {
     return this.allRoots()[i]!;

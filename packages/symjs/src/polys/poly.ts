@@ -6,6 +6,7 @@
  */
 
 import { Add, Expr, ExprLike, Mul, Pow, Rational, S, Sym, compareExpr, impl } from '../core/nodes';
+import { zassenhaus } from './zassenhaus';
 import { numAdd, numCmp, numInv, numMul, numNeg, numPowInt } from '../core/num';
 import { factorInt, gcd as gcdBig, lcm } from '../core/numbers';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
@@ -217,7 +218,15 @@ export class UPoly {
         factors.push([lin, m]);
         rest = rest.divmod(lin)[0];
       }
-      if (rest.degree > 0) factors.push([rest, m]);
+      if (rest.degree > 1) {
+        // the remaining part has no rational roots: full factorization over ZZ (Zassenhaus)
+        const den = rest.coeffs.reduce((l, c) => (l * c.q) / gcdBig(l, c.q), 1n);
+        const ints = rest.coeffs.map((c) => (c.p * den) / c.q);
+        for (const g of zassenhaus(ints)) {
+          const lcg = g[g.length - 1]!;
+          factors.push([new UPoly(g.map((c) => Rational.of(c, lcg))), m]);
+        }
+      } else if (rest.degree > 0) factors.push([rest, m]);
     }
     return { content, factors };
   }

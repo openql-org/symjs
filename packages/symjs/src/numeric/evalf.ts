@@ -11,6 +11,7 @@ import {
   ComplexValue as C,
   Constant,
   Expr,
+  ExtensionExpr,
   EvalfOptions,
   ExprLike,
   Float,
@@ -225,6 +226,7 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
   const go = (x: Expr): Expr => {
     let numeric = true;
     const visit = (y: Expr) => {
+      if (y instanceof ExtensionExpr && y.numericValue(5) !== undefined) return;
       if (y instanceof Sym && lookup(y) === undefined) numeric = false;
       else if (y instanceof Special || y instanceof Rel || y instanceof BoolAtom) numeric = false;
       else y.args.forEach(visit);

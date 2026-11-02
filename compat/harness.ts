@@ -1420,8 +1420,9 @@ export const ADAPTERS: Record<string, Adapter> = {
     return rootsDict(sj.roots(e, x, { skipQuintic: true }));
   },
   solve: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'check') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (k !== 'check' && k !== 'cubics') throw new Unsupported(`kwargs ${k}`);
     const check = kw['check'] === undefined ? undefined : Boolean(kw['check']);
+    const cubics = kw['cubics'] === false ? false : undefined;
     const first = args[0];
     // systems of inequalities in one symbol
     if (first instanceof PyTuple && first.items.length && first.items.every((i) => i instanceof sj.Rel && i.op !== 'Eq' && i.op !== 'Ne')) {
@@ -1472,7 +1473,7 @@ export const ADAPTERS: Record<string, Adapter> = {
             : undefined;
     if (args.length === 1 && syms.length === 0) return new PyList([]);
     if (!x || args.length > 2) throw new Unsupported('solve form');
-    return new PyList(sj.solve(e, x, check === undefined ? {} : { check }));
+    return new PyList(sj.solve(e, x, { ...(check === undefined ? {} : { check }), ...(cubics === false ? { cubics } : {}) }));
   },
   checksol: (args, kw) => {
     noKw(kw);
@@ -2237,7 +2238,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.half_gcdex': polyM((p, a) => new PyTuple(p.halfGcdex(a[0] as sj.Poly))),
   '.sturm': polyM((p) => new PyList(p.sturm())),
   '.count_roots': polyM((p, a) => {
-    if (a.some((v) => v instanceof Expr && v.has(sj.I))) throw new Unsupported('complex count_roots');
+    if (a.some((v) => v instanceof Expr && v.has(sj.I))) return ADAPTERS['count_roots']!([p, ...a], {});
     return p.countRoots(a[0] === undefined ? undefined : asExpr(a[0]), a[1] === undefined ? undefined : asExpr(a[1]));
   }),
   '.ground_roots': polyM((p) => new PyDict(p.groundRoots())),
@@ -2271,7 +2272,15 @@ export const ADAPTERS: Record<string, Adapter> = {
   count_roots: (args, kw) => {
     noKw(kw);
     const p = args[0] instanceof sj.Poly ? args[0] : sj.Poly.from(asExpr(args[0]));
-    if (args.slice(1).some((v) => v instanceof Expr && v.has(sj.I))) throw new Unsupported('complex count_roots');
+    if (args.slice(1).some((v) => v instanceof Expr && v.has(sj.I))) {
+      // roots in the rectangle spanned by the two complex bounds
+      const a = asExpr(args[1]).toComplex();
+      const b = asExpr(args[2]).toComplex();
+      const eps = 1e-12;
+      return sj.Rational.of(
+        sj.nroots(p, 15).map((r) => r.toComplex()).filter((r) => r.re >= a.re - eps && r.re <= b.re + eps && r.im >= a.im - eps && r.im <= b.im + eps).length,
+      );
+    }
     return p.countRoots(args[1] === undefined ? undefined : asExpr(args[1]), args[2] === undefined ? undefined : asExpr(args[2]));
   },
   '.pquo': (args, kw, self) => (noKw(kw), asPoly(self).pquo(args[0] as sj.Poly)),

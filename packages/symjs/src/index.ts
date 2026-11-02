@@ -230,6 +230,7 @@ export {
 } from './polys/sympoly';
 export { mgcd, mlcm, divExact } from './polys/mpoly';
 export { AlgebraicNumber } from './polys/numberfields';
+export { CRootOf, rootOf } from './polys/rootof';
 
 // solvers
 export {

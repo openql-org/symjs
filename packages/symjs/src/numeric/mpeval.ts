@@ -10,7 +10,7 @@
  * cancellation.
  */
 
-import { Add, Constant, Expr, Float, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
+import { Add, Constant, Expr, ExtensionExpr, Float, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { add, mul } from '../core/ops';
 import * as F from './mpf';
 import { Mpf, ZERO } from './mpf';
@@ -173,6 +173,10 @@ export function evalMp(e: Expr, wp: number, lookup: (s: Sym) => Mpc | undefined)
       const d = doubleFallback(x.name, args);
       if (d) return d;
       throw new Error(`cannot evaluate ${x.name}`);
+    }
+    if (x instanceof ExtensionExpr) {
+      const v = x.numericValue(Math.ceil(wp / 3.32) + 5);
+      if (v !== undefined) return ev(v);
     }
     throw new Error(`cannot evaluate ${x.kind}`);
   };

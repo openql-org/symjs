@@ -15,6 +15,7 @@ import { acos, asin, atan, log } from '../functions/elementary';
 import { Matrix } from '../matrices/matrix';
 import { rref } from '../matrices/linalg';
 import { polyCoefficients, roots } from '../polys/poly';
+import { Poly } from '../polys/sympoly';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { expandMul } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
@@ -129,7 +130,23 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   const [num] = fraction(together(f));
   const n = expandMul(num);
   const pc = polyCoefficients(n, x);
-  if (pc) return roots(n, x);
+  if (pc) {
+    const degree = Math.max(...pc.keys());
+    const rational = [...pc.values()].every((c) => c instanceof Rational);
+    if (noCubics && degree >= 3) {
+      // SymPy cubics=False: CRootOf instead of the general formulas
+      return rational ? uniqueKeys(Poly.from(n, [x]).allRoots()) : [];
+    }
+    let rs: Expr[];
+    try {
+      rs = roots(n, x);
+    } catch (err) {
+      if (!rational) throw err;
+      rs = [];
+    }
+    if (rational && rs.length < degree) return uniqueKeys(Poly.from(n, [x]).allRoots());
+    return rs;
+  }
   // products: union of the factors
   if (num instanceof Mul) {
     const sols: Expr[] = [];
@@ -228,7 +245,18 @@ function lambertSolve(num: Expr, x: Sym): Expr[] | undefined {
  * SymPy. Solutions violating the assumptions on x or making a denominator
  * vanish are removed unless check is false.
  */
-export function solve(e: ExprLike, x?: Sym | Expr, opts: { check?: boolean } = {}): Expr[] {
+let noCubics = false;
+const uniqueKeys = (xs: Expr[]): Expr[] => [...new Map(xs.map((r) => [r.key, r])).values()];
+
+export function solve(e: ExprLike, x?: Sym | Expr, opts: { check?: boolean; cubics?: boolean } = {}): Expr[] {
+  if (opts.cubics === false && !noCubics) {
+    noCubics = true;
+    try {
+      return solve(e, x, { ...opts, cubics: undefined });
+    } finally {
+      noCubics = false;
+    }
+  }
   if (x !== undefined && !(x instanceof Sym)) {
     // solve for an expression such as f(x), Derivative(f(x), x) or x + 2: treat it as a symbol
     const t = new Dummy('t');
@@ -247,8 +275,9 @@ export function solve(e: ExprLike, x?: Sym | Expr, opts: { check?: boolean } = {
   const raw0 = solveRaw(f, v);
   // SymPy: high-order root lists (more than two roots) are not simplified
   const raw = raw0.length > 2 ? raw0 : raw0.map((r) => simplifySolution(r));
-  const checked = opts.check === false ? raw : raw.filter((r) => checkSolution(f, v, r));
-  return sortExprs(checked);
+  const checked = opts.check === false || raw.some((r) => r.kind === 'Extension') ? raw : raw.filter((r) => checkSolution(f, v, r));
+  // indexed roots (CRootOf) keep their order
+  return raw.some((r) => r.kind === 'Extension') ? checked : sortExprs(checked);
 }
 
 /** Replace free occurrences of target (not inside derivatives); a sum target may match part of a sum. */

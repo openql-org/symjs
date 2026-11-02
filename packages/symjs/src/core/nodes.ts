@@ -872,6 +872,13 @@ export abstract class ExtensionExpr extends Expr {
     return `\\operatorname{${this.name}}\\left(${this.args.map(print).join(', ')}\\right)`;
   }
   /** Derivative with respect to x, or undefined when unknown (diff then fails). */
+  /**
+   * A numeric value with at least `dps` correct digits as an expression of
+   * Floats (and I), used by evalf; undefined when the node has no value.
+   */
+  numericValue(_dps: number): Expr | undefined {
+    return undefined;
+  }
   diffSelf(_x: Expr, _d: (e: Expr, x: Expr) => Expr): Expr | undefined {
     return undefined;
   }
