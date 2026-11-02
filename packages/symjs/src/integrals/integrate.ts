@@ -16,7 +16,7 @@
  */
 
 import { isNegative as isNegativeQ, isNonZero, isPositive as isPositiveQ } from '../core/assumptions';
-import { Ne, piecewise } from '../core/logic';
+import { Gt, Ne, piecewise } from '../core/logic';
 import {
   Add,
   BoolAtom,
@@ -635,7 +635,7 @@ function integratePiecewise(f: Piecewise, x: Sym): Expr | undefined {
   return piecewise(...pieces);
 }
 
-export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, ExprLike]): Expr {
+export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, ExprLike], opts: { conds?: 'piecewise' | 'none' } = {}): Expr {
   const f = sympify(ex);
   if (f instanceof Piecewise && !limits) {
     const r = integratePiecewise(f, x);
@@ -645,7 +645,18 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
   if (!limits) return F ?? new Integral([f, x]);
   const a = sympify(limits[0]);
   const b = sympify(limits[1]);
-  if (F === undefined) return new Integral([f, x, a, b]);
+  if (F === undefined) {
+    const unevaluated = new Integral([f, x, a, b]);
+    if (a instanceof Rational && a.isZero && b instanceof Special && b.name === 'oo') {
+      const g = gammaIntegral(f, x);
+      if (g) {
+        const [val, cond] = g;
+        if (cond === true || opts.conds === 'none') return val;
+        return piecewise([val, cond], [unevaluated, true]);
+      }
+    }
+    return unevaluated;
+  }
   // endpoint values: substitute, or take a one-sided limit at infinities / indeterminate points
   const at = (p: Expr, dir: '+' | '-'): Expr => {
     const v = subs(F, [[x, p]]);
@@ -669,3 +680,31 @@ const SPECIAL_PARTS: Record<string, (x: Expr) => Expr> = {
   erfc: (x) => mul(-1, exp(mul(-1, pow(x, 2))), pow(sqrt(S.Pi), -1)),
   erfi: (x) => mul(-1, exp(pow(x, 2)), pow(sqrt(S.Pi), -1)),
 };
+
+
+/**
+ * Integral(c*x**a*exp(-b*x), (x, 0, oo)) = c*gamma(a + 1)/b**(a + 1) for
+ * re(a) > -1 and b > 0 (SymPy's Mellin-transform result). Returns the value
+ * and the convergence condition (true when it is known to hold).
+ */
+function gammaIntegral(f: Expr, x: Sym): [Expr, Expr | true] | undefined {
+  const factors = f instanceof Mul ? f.args : [f];
+  let a: Expr | undefined;
+  let b: Expr | undefined;
+  const c: Expr[] = [];
+  for (const g of factors) {
+    if (!g.has(x)) c.push(g);
+    else if (g.key === x.key && a === undefined) a = S.One;
+    else if (g instanceof Pow && g.base.key === x.key && !g.exp.has(x) && a === undefined) a = g.exp;
+    else if (g instanceof Pow && g.base instanceof Constant && g.base.name === 'E' && b === undefined) {
+      const k = cancel(mul(-1, g.exp, pow(x, -1)));
+      if (k.has(x)) return undefined;
+      b = k;
+    } else return undefined;
+  }
+  if (a === undefined || b === undefined) return undefined;
+  if (isPositiveQ(b) !== true) return undefined;
+  const val = mul(...c, fnErf('gamma', [add(a, 1)]), pow(b, mul(-1, add(a, 1))));
+  if (isPositiveQ(add(a, 1)) === true) return [val, true];
+  return [val, Gt(fnErf('re', [a]), S.NegOne)];
+}

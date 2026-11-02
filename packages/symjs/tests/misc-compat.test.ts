@@ -24,7 +24,7 @@ describe('rewrites and series of special functions', () => {
   });
 });
 
-import { add, factor, harmonic, neg, oo, rationalInterpolate, Rational, Sym } from '../src';
+import { add, factor, harmonic, neg, oo, pow, rationalInterpolate, Rational, Sym } from '../src';
 
 describe('factor of powers and deep factoring', () => {
   it('factors bases of large powers without expanding', () => {
@@ -175,5 +175,16 @@ import { nsolve } from '../src';
 describe('nsolve with a precision', () => {
   it('refines in arbitrary precision', () => {
     expect(String(nsolve(parse('cos(x) - x'), x, 1, { prec: 50 }))).toBe('0.73908513321516064165531208767387340401341175890076');
+  });
+});
+
+describe('gamma-type definite integrals', () => {
+  it('conditional result like SymPy', () => {
+    const [a] = symbols('a');
+    const n = new Sym('n', { positive: true });
+    const f = parse('x**a*exp(-x)', { locals: { a } });
+    expect(String(integrate(f, x, [0, oo]))).toBe('Piecewise((gamma(a + 1), re(a) > -1), (Integral(x**a*exp(-x), (x, 0, oo)), True))');
+    expect(String(integrate(f, x, [0, oo], { conds: 'none' }))).toBe('gamma(a + 1)');
+    expect(String(integrate(mul(pow(x, n), parse('exp(-x)')), x, [0, oo]))).toBe('gamma(n + 1)');
   });
 });

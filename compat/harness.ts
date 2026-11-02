@@ -1244,7 +1244,8 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   diff: (args, kw) => (noKw(kw), diffArgs(asExpr(args[0]), args.slice(1))),
   integrate: (args, kw) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (k !== 'conds') throw new Unsupported(`kwargs ${k}`);
+    const conds = kw['conds'] === undefined ? 'piecewise' : String(kw['conds']);
     let f = asExpr(args[0]);
     let lims = args.slice(1);
     if (!lims.length) {
@@ -1254,9 +1255,15 @@ export const ADAPTERS: Record<string, Adapter> = {
     }
     for (const v of lims) {
       if (v instanceof Sym) f = sj.integrate(f, v);
-      else if (v instanceof PyTuple && v.items.length === 3) f = sj.integrate(f, asSym(v.items[0]), [asExpr(v.items[1]), asExpr(v.items[2])]);
+      else if (v instanceof PyTuple && v.items.length === 3)
+        f = sj.integrate(f, asSym(v.items[0]), [asExpr(v.items[1]), asExpr(v.items[2])], { conds: conds === 'none' ? 'none' : 'piecewise' });
       else if (v instanceof PyTuple && v.items.length === 1) f = sj.integrate(f, asSym(v.items[0]));
       else throw new Unsupported('integrate limits');
+    }
+    if (conds === 'separate') {
+      // (value, condition) instead of a Piecewise
+      if (f instanceof sj.Piecewise && f.pairs.length === 2) return new PyTuple([f.pairs[0]![0], f.pairs[0]![1]]);
+      return f;
     }
     return f;
   },
