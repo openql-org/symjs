@@ -80,3 +80,13 @@ describe('antiderivatives of special and inverse functions', () => {
     for (const [f, F] of cases) expect(String(integrate(parse(f), x))).toBe(F);
   });
 });
+
+import { Max, Min } from '../src';
+
+describe('nested Min/Max collapse (SymPy)', () => {
+  const [a, b, c, d, e] = symbols('a b c d e');
+  it('drops repeated arguments inside nested Min/Max', () => {
+    expect(String(Min(a, Max(b, Min(a, c, d))))).toBe('Min(a, Max(b, Min(c, d)))');
+    expect(String(Min(a, Max(b, Min(c, d, Max(a, e)))))).toBe('Min(a, Max(b, Min(a, c, d)))');
+  });
+});

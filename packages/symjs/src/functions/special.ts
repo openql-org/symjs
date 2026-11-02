@@ -28,6 +28,7 @@ import { rebuild } from '../core/traverse';
 import { impl } from '../core/nodes';
 import { c as cx, cadd, cdiv, cexp, clog, cmul, cpow, csin } from '../numeric/complex';
 import { numericFns } from '../numeric/evalf';
+import { compareKeys, sortKey } from '../printing/sortkey';
 import { conjugateCommutes, cos, cosh, evaluators, fn, log, sin, sinh } from './elementary';
 
 // ---------------------------------------------------------------------------
@@ -595,13 +596,35 @@ function evalMinMax(name: 'Min' | 'Max', ...args: Expr[]): Expr | undefined {
       if (name === 'Min' ? nv < bv : nv > bv) best = n;
     }
   }
-  const rest = [...(best ? [best] : []), ...uniq(syms)];
+  const rest = collapseMinMax(name, [...(best ? [best] : []), ...uniq(syms)]);
   if (rest.length === 1) return rest[0];
   if (rest.length === flat.length && flat.length === args.length && rest.every((r, i) => r === args[i])) return undefined;
   return new Fn(name, rest);
 }
 
 const uniq = (xs: Expr[]) => [...new Map(xs.map((x) => [x.key, x])).values()];
+
+/**
+ * SymPy MinMaxBase._collapse_arguments (the part that removes an argument
+ * from nested Min/Max): in Min(a, Max(b, Min(a, c))) the inner a is dropped,
+ * and in Min(a, Max(b, Min(c, Max(a, e)))) the inner Max(a, e) becomes a.
+ */
+function collapseMinMax(name: 'Min' | 'Max', argsIn: Expr[]): Expr[] {
+  const isMM = (e: Expr): e is Fn => e instanceof Fn && (e.name === 'Min' || e.name === 'Max');
+  if (!argsIn.some(isMM)) return argsIn;
+  const args = [...argsIn];
+  const build = (n: string, xs: Expr[]) => new Fn(n as FnName, [...xs].sort((u, v) => compareKeys(sortKey(u), sortKey(v))));
+  const doIt = (ai: Expr, a: Expr): Expr => {
+    if (!isMM(ai)) return ai;
+    if (!ai.args.some((t) => t.key === a.key)) return build(ai.name, ai.args.map((t) => doIt(t, a)));
+    if (ai.name === name) return build(ai.name, ai.args.filter((t) => t.key !== a.key).map((t) => doIt(t, a)));
+    return a;
+  };
+  for (let i = 0; i < args.length; i++) {
+    for (let j = i + 1; j < args.length; j++) args[j] = doIt(args[j]!, args[i]!);
+  }
+  return args;
+}
 
 // ---------------------------------------------------------------------------
 // numerics (double precision)
