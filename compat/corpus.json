@@ -29477,6 +29477,18 @@
       ],
       [
        {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "x_1",
+        "assume": {}
+       }
+      ],
+      [
+       {
         "t": "Dummy",
         "name": "x",
         "index": 0,
@@ -29485,18 +29497,6 @@
        {
         "t": "Symbol",
         "name": "x",
-        "assume": {}
-       }
-      ],
-      [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Symbol",
-        "name": "x_1",
         "assume": {}
        }
       ]
@@ -33917,7 +33917,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_872",
+         "name": "Dummy_873",
          "index": 0,
          "assume": {
           "real": true
@@ -49971,7 +49971,148 @@
   },
   {
    "fn": ".doit",
-   "unsupportedArg": "RootSum",
+   "self": {
+    "t": "RootSum",
+    "poly": {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Dummy",
+         "name": "w",
+         "index": 0,
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Dummy",
+       "name": "w",
+       "index": 0,
+       "assume": {}
+      }
+     ]
+    },
+    "fun": {
+     "t": "Fn",
+     "name": "Lambda",
+     "args": [
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Dummy",
+         "name": "a",
+         "index": 1,
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-1",
+               "q": "1"
+              },
+              {
+               "t": "Dummy",
+               "name": "a",
+               "index": 1,
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Mul",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "3"
+            },
+            {
+             "t": "Symbol",
+             "name": "y",
+             "assume": {}
+            }
+           ]
+          },
+          {
+           "t": "Mul",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "-2",
+             "q": "3"
+            },
+            {
+             "t": "Symbol",
+             "name": "y",
+             "assume": {}
+            },
+            {
+             "t": "Dummy",
+             "name": "a",
+             "index": 1,
+             "assume": {}
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "var": {
+     "t": "Dummy",
+     "name": "w",
+     "index": 0,
+     "assume": {}
+    }
+   },
+   "args": [],
+   "kwargs": {},
    "category": "simplify",
    "module": "sympy.polys.partfrac",
    "src": "apart(y/(x**2 + x + 1), x, full=True).doit()",
@@ -51334,7 +51475,117 @@
   },
   {
    "fn": ".doit",
-   "unsupportedArg": "RootSum",
+   "self": {
+    "t": "Mul",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "2"
+     },
+     {
+      "t": "RootSum",
+      "poly": {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-2",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "w",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      "fun": {
+       "t": "Fn",
+       "name": "Lambda",
+       "args": [
+        {
+         "t": "Tuple",
+         "items": [
+          {
+           "t": "Dummy",
+           "name": "a",
+           "index": 1,
+           "assume": {}
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Dummy",
+                 "name": "a",
+                 "index": 1,
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Dummy",
+           "name": "a",
+           "index": 1,
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      "var": {
+       "t": "Dummy",
+       "name": "w",
+       "index": 0,
+       "assume": {}
+      }
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "simplify",
    "module": "sympy.polys.partfrac",
    "src": "pfda.doit()",
@@ -53101,7 +53352,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x107e6d6f0>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10cb0cf70>, 3)"
   },
   {
    "fn": ".LC",
@@ -53308,7 +53559,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x107e43250>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x10cadb250>, 4)"
   },
   {
    "fn": ".TC",

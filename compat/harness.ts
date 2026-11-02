@@ -322,6 +322,11 @@ export function deserialize(tree: Tree): unknown {
       return new PyDomain(tree['name'] as string);
     case 'PyPred':
       return new PyPred(tree['attr'] as string);
+    case 'RootSum': {
+      const fun = deserialize(tree['fun'] as Tree);
+      const lam = fun instanceof PyLambda ? sj.Lambda(fun.vars, fun.body) : (fun as sj.Lambda);
+      return new sj.RootSumNode([deserialize(tree['poly'] as Tree) as Expr, lam, deserialize(tree['var'] as Tree) as Expr]);
+    }
     case 'PyFunc':
       return new PyFunc(tree['name'] as string);
     case 'PyLambda':
@@ -1083,26 +1088,34 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (r instanceof Map) return new PyDict([...r].map(([k, v]) => [k, v] as const));
     return r;
   },
+
+  apart: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'full') throw new Unsupported(`kwargs ${k}`);
+    return sj.apart(asExpr(args[0]), args[1] === undefined ? undefined : asSym(args[1]), { full: Boolean(kw['full']) });
+  },
+  apart_list: (args, kw) => {
+    noKw(kw);
+    const e = asExpr(args[0]);
+    const x = args[1] === undefined ? ([...sj.freeSymbols(e)][0] as Sym) : asSym(args[1]);
+    const [common, poly, terms, w] = sj.apartList(e, x);
+    return new PyTuple([common, poly, new PyList(terms.map(([r, nf, df, ex]) => new PyTuple([Array.isArray(r) ? new PyList(r) : sj.Poly.from(r, [w]), nf, df, sj.Rational.of(ex)])))]);
+  },
   assemble_partfrac_list: (args, kw) => {
     noKw(kw);
-    const [common, polypart, parts] = (args[0] as PyTuple).items as [Expr, sj.Poly, PyTuple];
-    const terms: Expr[] = [polypart.asExpr()];
-    for (const part of parts.items) {
-      const [r, nf, df, ex] = (part as PyTuple).items as [unknown, PyLambda, PyLambda, Expr];
-      let rs: Expr[];
+    const t = args[0] as PyTuple;
+    const toLam = (f: unknown) => (f instanceof PyLambda ? sj.Lambda(f.vars, f.body) : (f as sj.Lambda));
+    let w: Sym | undefined;
+    const terms = ((t.items[2] as PyList).items as PyTuple[]).map((it) => {
+      const [r, nf, df, ex] = it.items;
+      let rr: Expr | Expr[];
       if (r instanceof sj.Poly) {
-        // RootSum(auto=False, quadratic=False) evaluates only over linear factors
-        const g = r.gens[0] as Sym;
-        rs = sj.roots(r.asExpr(), g, { multiple: true });
-        if (rs.length !== r.degree() || rs.some((x) => !(x instanceof sj.Rational))) throw new Unsupported('RootSum');
-      } else rs = (r as PyTuple).items as Expr[];
-      for (const root of rs) terms.push(sj.mul(nf.call(root), sj.pow(sj.pow(df.call(root), ex), -1)));
-    }
-    return sj.mul(common, sj.add(...terms));
-  },
-  apart: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'full' || kw[k]) throw new Unsupported(`kwargs ${k}`);
-    return sj.apart(asExpr(args[0]), args[1] === undefined ? undefined : asSym(args[1]));
+        w = r.gens[0] as Sym;
+        rr = r.asExpr();
+      } else rr = (r as PyList).items.map(asExpr);
+      return [rr, toLam(nf), toLam(df), Number((ex as sj.Rational).p)] as sj.PartfracTerm;
+    });
+    const poly = t.items[1] instanceof sj.Poly ? t.items[1] : sj.Poly.from(asExpr(t.items[1]));
+    return sj.assemblePartfracList([asExpr(t.items[0]), poly, terms, w ?? new sj.Dummy('w')]);
   },
   exp_polar: (args, kw) => (noKw(kw), sj.expPolar(asExpr(args[0]))),
   polar_lift: (args, kw) => (noKw(kw), sj.polarLift(asExpr(args[0]))),

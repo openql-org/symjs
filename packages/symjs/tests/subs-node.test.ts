@@ -287,3 +287,17 @@ describe('parser options', () => {
     expect(sstr(parse('x(y+1)', { transformations: 'all' }))).toBe('x*(y + 1)');
   });
 });
+
+describe('RootSum and full partial fractions', () => {
+  it('match SymPy apart(full=True)', async () => {
+    const { apart } = await import('../src');
+    const x = symbols('x')[0];
+    const full = (s: string) => sstr(apart(parse(s), x, { full: true }));
+    expect(full('y/(x**2 + x + 1)')).toBe('RootSum(_w**2 + _w + 1, Lambda(_a, (-2*_a*y/3 - y/3)/(-_a + x)))');
+    expect(full('1/(x**2-2)')).toBe('RootSum(_w**2 - 2, Lambda(_a, _a/(-_a + x)))/4');
+    expect(full('1/(x**3+1)')).toBe('-RootSum(_w**2 - _w + 1, Lambda(_a, _a/(-_a + x)))/3 + 1/(3*(x + 1))');
+    expect(full('t/(x**2+x+t)')).toBe('RootSum(_w**2 + _w + t, Lambda(_a, (-2*_a*t/(4*t - 1) - t/(4*t - 1))/(-_a + x)))');
+    expect(full('36/(x**5 - 2*x**4 - 2*x**3 + 4*x**2 + x - 2)')).toBe('-4/(x + 1) - 3/(x + 1)**2 - 9/(x - 1)**2 + 4/(x - 2)');
+    expect(sstr(doit(apart(parse('2/(x**2-2)'), x, { full: true })))).toBe('-sqrt(2)/(2*(x + sqrt(2))) + sqrt(2)/(2*(x - sqrt(2)))');
+  });
+});

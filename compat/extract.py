@@ -130,6 +130,8 @@ def ser(o):
         if mod.startswith("sympy") or mod == "math":
             return {"t": "PyFunc", "name": ("math." if mod == "math" else "") + o.__name__}
         raise Unsupported("function")
+    if isinstance(o, sympy.RootSum):
+        return {"t": "RootSum", "poly": ser(o.expr), "fun": ser(o.fun), "var": ser(o.poly.gen)}
     if isinstance(o, sympy.MatrixSymbol):
         return {"t": "MatrixSymbol", "name": o.name, "rows": ser(o.shape[0]), "cols": ser(o.shape[1])}
     if isinstance(o, (set, frozenset)):

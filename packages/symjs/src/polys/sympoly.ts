@@ -430,7 +430,14 @@ export class Poly {
   sqfList(): [Rational, [Poly, number][]] {
     const x = this.univariate();
     const up = UPoly.fromExpr(this.asExpr(), x);
-    if (!up) throw new Error('sqf_list: rational coefficients expected');
+    if (!up) {
+      // symbolic coefficients: a square-free polynomial is its own decomposition
+      if (this.gcd(this.diff(x)).degree() <= 0) {
+        const [c, p] = this.primitive();
+        return [(c instanceof Rational ? c : S.One) as Rational, [[c instanceof Rational ? p : this, 1]]];
+      }
+      throw new Error('sqf_list: rational coefficients expected');
+    }
     const content = up.lc;
     const out: [Poly, number][] = up.squareFree().map(([f, k]) => [primitiveIntPoly(f.toExpr(x), x), k]);
     return [content, out];

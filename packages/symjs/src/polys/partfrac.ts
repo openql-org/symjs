@@ -6,6 +6,7 @@
  * coefficients method).
  */
 
+import { apartFull } from './rootsum';
 import { Expr, ExprLike, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { linsolve } from '../solvers/solve';
@@ -15,11 +16,13 @@ import { cancel, fraction, together } from '../simplify/rational';
 import { Poly, factor, factorListExpr, sortGens } from './sympoly';
 
 /** Partial fraction decomposition of a rational function in x. */
-export function apart(fIn: ExprLike, xIn?: Sym): Expr {
+export function apart(fIn: ExprLike, xIn?: Sym, opts: { full?: boolean } = {}): Expr {
   const f = cancel(together(sympify(fIn)));
   const syms = [...f.freeSymbols()];
   const x = xIn ?? (syms.length === 1 ? syms[0] : undefined);
   if (!x) throw new Error('apart: specify the variable');
+  // Bronstein's full decomposition over the algebraic closure (RootSum)
+  if (opts.full) return apartFull(f, x);
   const [P, Q] = fraction(f);
   if (!Q.has(x)) return f;
   const Pp = Poly.from(P, [x]);
