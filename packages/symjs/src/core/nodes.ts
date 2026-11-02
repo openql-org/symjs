@@ -474,7 +474,8 @@ export class Sym extends Expr {
 
   constructor(readonly name: string, assumptions: Assumptions = {}) {
     super();
-    if (!/^[A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*$/.test(name)) {
+    // like SymPy, any non-empty string is a valid name (e.g. symbols(':3') gives 0, 1, 2)
+    if (typeof name !== 'string' || name.length === 0) {
       throw new SyntaxError(`Invalid symbol name: ${JSON.stringify(name)}`);
     }
     const positive = assumptions.positive === true;

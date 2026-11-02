@@ -103,3 +103,15 @@ describe('series of multi-argument functions and nested arg', () => {
     expect(String(arg(arg(arg(arg(x)))))).toBe('nan');
   });
 });
+
+import { expandSymbolNames } from '../src';
+
+describe('symbols name parsing (SymPy)', () => {
+  it('ranges, parentheses and escaped commas', () => {
+    expect(expandSymbolNames(':3:2')).toEqual(['00', '01', '10', '11', '20', '21']);
+    expect(expandSymbolNames('x((a:b))')).toEqual(['x(a)', 'x(b)']);
+    expect(expandSymbolNames('x(:1\\,:2)')).toEqual(['x(0,0)', 'x(0,1)']);
+    expect(expandSymbolNames('x:3, y')).toEqual(['x0', 'x1', 'x2', 'y']);
+    expect(expandSymbolNames('a:d')).toEqual(['a', 'b', 'c', 'd']);
+  });
+});

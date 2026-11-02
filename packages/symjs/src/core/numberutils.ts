@@ -75,84 +75,68 @@ export function integerLog(n: bigint, b: bigint): [bigint, boolean] {
  * ':c', 'x(:c)' -> xa xb xc, 'x:2(1:3)' -> x01 x02 x11 x12.
  */
 export function expandSymbolNames(spec: string): string[] {
-  const names = splitNames(spec);
-  return names.flatMap(expandOne);
-}
-
-function splitNames(spec: string): string[] {
+  // a port of the name parsing in SymPy symbols(): escaped separators (\, \: \ ),
+  // comma/whitespace splitting and ranges such as x:3, a:d, x(:2)(:3)
+  const literals: [string, string][] = [];
+  let names = spec;
+  let marker = 0xe000;
+  for (const splitter of ['\\,', '\\:', '\\ ']) {
+    if (names.includes(splitter)) {
+      while (names.includes(String.fromCharCode(marker))) marker++;
+      const c = String.fromCharCode(marker++);
+      names = names.split(splitter).join(c);
+      literals.push([c, splitter.slice(1)]);
+    }
+  }
+  const literal = (t: string) => literals.reduce((acc, [c, l]) => acc.split(c).join(l), t);
+  names = names.trim();
+  if (names.endsWith(',')) names = names.slice(0, -1).trimEnd();
+  if (!names) return [];
+  const parts = names
+    .split(',')
+    .map((n) => n.trim())
+    .flatMap((n) => n.split(/\s+/).filter((t) => t.length));
   const out: string[] = [];
-  let depth = 0;
-  let cur = '';
-  for (const ch of spec) {
-    if (ch === '(') depth++;
-    if (ch === ')') depth--;
-    if (depth === 0 && (ch === ',' || /\s/.test(ch))) {
-      if (cur) out.push(cur);
-      cur = '';
-    } else cur += ch;
+  for (const name of parts) {
+    if (!name.includes(':')) {
+      out.push(literal(name));
+      continue;
+    }
+    const split = name.split(/([0-9]*:[0-9]+|[a-zA-Z]?:[a-zA-Z])/);
+    // remove one layer of parentheses around ranges
+    for (let i = 1; i < split.length - 1; i++) {
+      if (split[i]!.includes(':') && split[i] !== ':' && split[i - 1]!.endsWith('(') && split[i + 1]!.startsWith(')')) {
+        split[i - 1] = split[i - 1]!.slice(0, -1);
+        split[i + 1] = split[i + 1]!.slice(1);
+      }
+    }
+    const lists: string[][] = [];
+    let empty = false;
+    for (const t of split) {
+      if (t.includes(':')) {
+        if (t.endsWith(':')) throw new Error('missing end range');
+        const [a, b] = t.split(':') as [string, string];
+        if (/[0-9]$/.test(b)) {
+          const lo = a ? Number(a) : 0;
+          lists.push(Array.from({ length: Math.max(0, Number(b) - lo) }, (_, k) => String(lo + k)));
+        } else {
+          const letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+          const lo = letters.indexOf(a || 'a');
+          const hi = letters.indexOf(b);
+          lists.push(Array.from({ length: Math.max(0, hi - lo + 1) }, (_, k) => letters[lo + k]!));
+        }
+        if (!lists[lists.length - 1]!.length) {
+          empty = true;
+          break;
+        }
+      } else lists.push([t]);
+    }
+    if (empty) continue;
+    let acc = [''];
+    for (const vals of lists) acc = acc.flatMap((x) => vals.map((v) => x + v));
+    out.push(...acc.map(literal));
   }
-  if (cur) out.push(cur);
   return out;
-}
-
-function expandOne(name: string): string[] {
-  if (!name.includes(':')) return [name.replace(/[()]/g, '')];
-  // split into literal parts and range parts; ranges are either inside () or a bare a:b
-  const tokens: (string | string[])[] = [];
-  let i = 0;
-  while (i < name.length) {
-    if (name[i] === '(') {
-      const j = name.indexOf(')', i);
-      const inner = name.slice(i + 1, j);
-      tokens.push(inner.includes(':') ? rangeValues(inner) : inner);
-      i = j + 1;
-      continue;
-    }
-    // bare segment until next '('
-    const j = name.indexOf('(', i);
-    const seg = name.slice(i, j < 0 ? name.length : j);
-    i = j < 0 ? name.length : j;
-    const colon = seg.indexOf(':');
-    if (colon < 0) {
-      tokens.push(seg);
-      continue;
-    }
-    const before = seg.slice(0, colon);
-    const hi = seg.slice(colon + 1);
-    let prefix: string;
-    let lo: string;
-    if (/^[A-Za-z]$/.test(hi)) {
-      // letter range: the character before ':' (if any) is the start
-      lo = before.length ? before.slice(-1) : 'a';
-      prefix = before.length ? before.slice(0, -1) : '';
-    } else {
-      const m = /^(.*?)(\d*)$/.exec(before)!;
-      prefix = m[1]!;
-      lo = m[2]!;
-    }
-    tokens.push(prefix);
-    tokens.push(rangeValues(`${lo}:${hi}`));
-  }
-  let acc = [''];
-  for (const t of tokens) {
-    const vals = typeof t === 'string' ? [t] : t;
-    acc = acc.flatMap((a) => vals.map((v) => a + v));
-  }
-  return acc;
-}
-
-function rangeValues(r: string): string[] {
-  const [lo, hi] = r.split(':') as [string, string];
-  if (/^[A-Za-z]$/.test(hi) || /^[A-Za-z]$/.test(lo)) {
-    const a = (lo || 'a').charCodeAt(0);
-    const b = hi.charCodeAt(0);
-    const out: string[] = [];
-    for (let c = a; c <= b; c++) out.push(String.fromCharCode(c));
-    return out;
-  }
-  const a = lo === '' ? 0 : Number(lo);
-  const b = Number(hi);
-  return Array.from({ length: Math.max(0, b - a) }, (_, k) => String(a + k));
 }
 impl.rationalFromFloat = (f) => rationalFromFloat(f.value);
 
