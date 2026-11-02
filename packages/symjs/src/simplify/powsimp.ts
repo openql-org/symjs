@@ -10,6 +10,7 @@ import { isIntegerQ, isNegative, isNonNegative, isPositive, isReal } from '../co
 import { Add, Constant, Dummy, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { countOps, ordered } from '../core/match';
+import { keepCoeff } from '../core/methods';
 import { rebuild, subs, xreplace } from '../core/traverse';
 import { log } from '../functions/elementary';
 import { compareKeys, sortKey } from '../printing/sortkey';
@@ -427,7 +428,8 @@ function denestPow(eq: Pow): Expr {
       return mul(g, ...common);
     };
     const g = args.slice(1).reduce(ncGcd, args[0]!);
-    if (!isOneE(g)) glogb = mul(g, add(...args.map((a) => mul(a, pow(g, -1)))));
+    // the gcd stays outside the sum (SymPy _keep_coeff)
+    if (!isOneE(g)) glogb = keepCoeff(g, add(...args.map((a) => mul(a, pow(g, -1)))));
   }
   if ((glogb instanceof Fn && glogb.name === 'log') || !(glogb instanceof Mul)) {
     const a0 = glogb.args[0];

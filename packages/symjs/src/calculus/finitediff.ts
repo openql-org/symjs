@@ -52,7 +52,8 @@ export function asFiniteDifference(d: Derivative, points: ExprLike | readonly Ex
   let pts: Expr[];
   if (Array.isArray(points)) pts = (points as readonly ExprLike[]).map(sympify);
   else {
-    const h = sympify(points as ExprLike);
+    // a step depending on x (e.g. dx(x)) is taken at x0 (SymPy)
+    const h = xreplace(sympify(points as ExprLike), [[x, X0]]);
     pts = [];
     if (order % 2 === 0) for (let i = -order / 2; i <= order / 2; i++) pts.push(add(X0, mul(h, i)));
     else for (let i = -order; i <= order; i += 2) pts.push(add(X0, mul(h, Rational.of(i, 2))));

@@ -124,3 +124,16 @@ describe('multiple integrals', () => {
     expect(sstr(subs(new Integral([pow(x, 2), x]), [[x, Rational.of(1)]]))).toBe('Integral(x**2, (x, 1))');
   });
 });
+
+describe('powdenest and finite differences', () => {
+  it('match SymPy', async () => {
+    const { powdenest, asFiniteDifference, Derivative: D } = await import('../src');
+    const [x, h] = symbols('x h');
+    expect(sstr(powdenest(parse('(x**(2*i)*y**(4*i))**z'), { force: true }))).toBe('(x*y**2)**(2*i*z)');
+    const f = Function('f');
+    const dx = Function('dx');
+    expect(sstr(asFiniteDifference(D(f(x), x) as never, dx(x), parse('x - h', { symbols: { x, h } } as never)))).toBe(
+      '-f(-h + x - dx(-h + x)/2)/dx(-h + x) + f(-h + x + dx(-h + x)/2)/dx(-h + x)',
+    );
+  });
+});
