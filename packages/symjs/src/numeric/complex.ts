@@ -76,3 +76,33 @@ export const catan = (z: C): C => {
   if (z.im === 0) return c(Math.atan(z.re));
   return cmul(c(0, 0.5), clog(cdiv(cadd(I1, z), cadd(I1, cneg(z)))));
 };
+
+/** Branch k of the Lambert W function by Halley iteration (double precision). */
+export function cLambertW(z: C, k: number): C {
+  // initial guess: asymptotic log expansion, or the branch-point series near -1/e
+  const twoPiIk = c(0, 2 * Math.PI * k);
+  let w: C;
+  const nearBranch = Math.hypot(z.re + Math.exp(-1), z.im) < 0.3;
+  if (k === 0 && nearBranch) w = cadd(c(-1), csqrtC(cmul(c(2 * Math.E), cadd(z, c(Math.exp(-1))))));
+  else if (k === 0 && Math.hypot(z.re, z.im) <= 3) w = clog(cadd(c(1), z));
+  else if (k === -1 && nearBranch && Math.abs(z.im) < 1e-300 && z.re < 0) w = cadd(c(-1), cmul(c(-1), csqrtC(cmul(c(2 * Math.E), cadd(z, c(Math.exp(-1)))))));
+  else {
+    const L1 = cadd(clog(z), twoPiIk);
+    w = cadd(L1, cmul(c(-1), clog(L1)));
+  }
+  for (let i = 0; i < 100; i++) {
+    const ew = cexp(w);
+    const f = cadd(cmul(w, ew), cmul(c(-1), z));
+    const wp1 = cadd(w, c(1));
+    const denom = cadd(cmul(ew, wp1), cmul(c(-1), cdiv(cmul(cadd(w, c(2)), f), cmul(c(2), wp1))));
+    const dw = cdiv(f, denom);
+    w = cadd(w, cmul(c(-1), dw));
+    if (Math.hypot(dw.re, dw.im) <= 1e-17 * Math.max(1, Math.hypot(w.re, w.im))) break;
+  }
+  return w;
+}
+
+function csqrtC(z: C): C {
+  return cpow(z, c(0.5));
+}
+

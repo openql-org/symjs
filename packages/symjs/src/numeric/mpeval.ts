@@ -17,6 +17,7 @@ import { Mpf, ZERO } from './mpf';
 import * as M from './mpfun';
 import { type Mpc } from './mpfun';
 import * as SP from './mpspecial';
+import { cLambertW } from './complex';
 
 const toInt = (z: Mpc): number => {
   const [p, q] = F.toRational(z[0]);
@@ -97,6 +98,7 @@ export const mpFns: Record<string, (args: Mpc[], prec: number) => Mpc> = {
   fresnels: ([a], p) => SP.cfresnel('S', a!, p),
   fresnelc: ([a], p) => SP.cfresnel('C', a!, p),
   Ei: ([a], p) => SP.cei(a!, p),
+  LambertW: ([a, k], p) => mpLambertW(a!, k ? toInt(k) : 0, p),
   li: ([a], p) => SP.cli(a!, p),
   Li: ([a], p) => M.csub(SP.cli(a!, p + 20), SP.cli([F.fromInt(2n), ZERO], p + 20), p),
   Si: ([a], p) => SP.csi(a!, p, false),
@@ -229,4 +231,29 @@ export function fromMpc(v: Mpc, prec: number, chop?: boolean | number): Expr {
   const imPart = mul(new Float(im, prec), S.I);
   if (F.isZero(re)) return imPart;
   return add(new Float(re, prec), imPart);
+}
+
+
+/** Lambert W by Halley iteration from a double-precision start (branch k). */
+function mpLambertW(z: Mpc, k: number, p: number): Mpc {
+  const wp = p + 30;
+  const start = numericFnsForStart(z, k);
+  let w: Mpc = [F.fromNumber(start.re), F.fromNumber(start.im)];
+  const two: Mpc = [F.fromInt(2n), ZERO];
+  for (let i = 0; i < 200; i++) {
+    const ew = M.cexp(w, wp);
+    const f = M.csub(M.cmul(w, ew, wp), z, wp);
+    const wp1 = M.cadd(w, one, wp);
+    const denom = M.csub(M.cmul(ew, wp1, wp), M.cdiv(M.cmul(M.cadd(w, two, wp), f, wp), M.cmul(two, wp1, wp), wp), wp);
+    const dw = M.cdiv(f, denom, wp);
+    w = M.csub(w, dw, wp);
+    const small = F.mag(M.cabs(dw, wp));
+    const size = Math.max(0, F.mag(M.cabs(w, wp)));
+    if (F.toNumber(M.cabs(dw, wp)) === 0 || small < size - wp + 4) break;
+  }
+  return [F.round(w[0], p), F.round(w[1], p)];
+}
+
+function numericFnsForStart(z: Mpc, k: number): { re: number; im: number } {
+  return cLambertW({ re: F.toNumber(z[0]), im: F.toNumber(z[1]) } as never, k);
 }

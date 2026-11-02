@@ -26,7 +26,7 @@ import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt } from
 import { fnPartials } from '../calculus/diff';
 import { rebuild } from '../core/traverse';
 import { impl } from '../core/nodes';
-import { c as cx, cadd, cdiv, cexp, clog, cmul, cpow, csin } from '../numeric/complex';
+import { c as cx, cadd, cdiv, cexp, clog, cLambertW, cmul, cpow, csin } from '../numeric/complex';
 import { numericFns } from '../numeric/evalf';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { conjugateCommutes, cos, cosh, evaluators, fn, log, sin, sinh } from './elementary';
@@ -272,6 +272,26 @@ function digammaRational(z: Rational): Expr {
     for (let k = 0n; k < n; k++) terms.push(mul(-1, pow(numAdd(z0, R(-1n - k)), -1)));
   }
   return add(...terms);
+}
+
+/** SymPy LambertW.eval. */
+function evalLambertW(x: Expr, k?: Expr): Expr | undefined {
+  if (k !== undefined && k instanceof Rational && k.isZero) return fnN('LambertW', x);
+  const main = k === undefined || (k instanceof Rational && k.isZero);
+  const minusInvE = mul(-1, pow(S.E, -1));
+  if (main) {
+    if (x instanceof Rational && x.isZero) return S.Zero;
+    if (x.key === S.E.key) return S.One;
+    if (x.key === minusInvE.key) return S.NegOne;
+    if (x.key === mul(-1, log(2), S.Half).key) return mul(-1, log(2));
+    if (isOo(x)) return S.Infinity;
+    return undefined;
+  }
+  if (k instanceof Rational && k.p === -1n && k.q === 1n) {
+    if (x.key === minusInvE.key) return S.NegOne;
+    if (x instanceof Rational && x.isZero) return S.NegativeInfinity;
+  }
+  return undefined;
 }
 
 function sumSeries(x: Expr, s: number): Expr {
@@ -1041,6 +1061,14 @@ const SPECS: Partial<Record<FnName, Spec>> = {
         : mul(S.Half, sqrt(S.Pi), exp(pow(fnN('erf2inv', x!, y!), 2))),
     numeric: ([x, y]) => cx(erfinvReal(erfReal(x!.re) + y!.re)),
   },
+  LambertW: {
+    eval: evalLambertW,
+    partials: ([x, k]) => {
+      const w = k === undefined ? fnN('LambertW', x!) : fnN('LambertW', x!, k);
+      return mul(w, pow(mul(x!, add(w, 1)), -1));
+    },
+    numeric: ([x, k]) => cLambertW(x!, k === undefined ? 0 : Math.round(k.re)),
+  },
   Ei: { eval: evalEi, partials: ([z]) => mul(exp(z!), pow(z!, -1)), numeric: ([z]) => cEi(z!), conjugate: true },
   li: { eval: evalLi, partials: ([z]) => pow(log(z!), -1), numeric: ([z]) => cEi(clog(z!)), conjugate: true },
   Li: {
@@ -1122,6 +1150,8 @@ export const erfinv = (z: ExprLike): Expr => fn('erfinv', [z]);
 export const erfcinv = (z: ExprLike): Expr => fn('erfcinv', [z]);
 export const erf2inv = (x: ExprLike, y: ExprLike): Expr => fn('erf2inv', [x, y]);
 export const Ei = (z: ExprLike): Expr => fn('Ei', [z]);
+export const LambertW = (x: ExprLike, k?: ExprLike): Expr => fn('LambertW', k === undefined ? [x] : [x, k]);
+impl.lambertW = (x, k) => LambertW(x, k);
 export const li = (z: ExprLike): Expr => fn('li', [z]);
 export const Li = (z: ExprLike): Expr => fn('Li', [z]);
 export const Si = (z: ExprLike): Expr => fn('Si', [z]);

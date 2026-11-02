@@ -129,7 +129,69 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
       }
     }
   }
+  const lw = lambertSolve(num, x);
+  if (lw) return lw;
   throw new Error(`solve: cannot solve ${f.toString()} for ${x.name}`);
+}
+
+/**
+ * Lambert W forms (a, b, c, d, e free of x):
+ *   a*x + b + c*exp(d*x + e) = 0   ->  x = -W(c*d/a*exp(e - b*d/a))/d - b/a
+ *   (a*x + b)*exp(d*x + e) + c = 0 ->  x = W(-c*d/a*exp(b*d/a - e))/d - b/a
+ */
+function lambertSolve(num: Expr, x: Sym): Expr[] | undefined {
+  const terms = num instanceof Add ? num.args : [num];
+  const isExp = (g: Expr): g is Pow => g instanceof Pow && g.base instanceof Constant && g.base.name === 'E';
+  let u: Expr | undefined;
+  const withExp: Expr[] = [];
+  const without: Expr[] = [];
+  for (const t of terms) {
+    const factors = t instanceof Mul ? t.args : [t];
+    const ex = factors.filter((g) => isExp(g) && g.has(x));
+    if (ex.length > 1) return undefined;
+    if (ex.length === 0) {
+      without.push(t);
+      continue;
+    }
+    const ue = (ex[0] as Pow).exp;
+    if (u && u.key !== ue.key) return undefined;
+    u = ue;
+    withExp.push(mul(...factors.filter((g) => g !== ex[0])));
+  }
+  if (!u) return undefined;
+  const P = polyCoefficients(add(...withExp), x);
+  const Q = polyCoefficients(add(...without), x);
+  const U = polyCoefficients(u, x);
+  if (!P || !Q || !U) return undefined;
+  const deg = (m: Map<number, Expr>) => Math.max(-1, ...[...m.entries()].filter(([, v]) => !(v instanceof Rational && v.isZero)).map(([k]) => k));
+  if (deg(U) !== 1) return undefined;
+  const d = U.get(1)!;
+  const e = U.get(0) ?? S.Zero;
+  const W = (arg: Expr, k?: number) => (k === undefined ? impl.lambertW!(arg) : impl.lambertW!(arg, k));
+  const branches = (arg: Expr, sol: (k?: number) => Expr): Expr[] => {
+    const out = [sol()];
+    if (arg.freeSymbols().size === 0) {
+      const v = arg.toComplex();
+      if (Math.abs(v.im) < 1e-300 && v.re < 0 && v.re > -Math.exp(-1)) out.push(sol(-1));
+    }
+    return out;
+  };
+  if (deg(P) === 0 && deg(Q) === 1) {
+    const c = P.get(0)!;
+    const a = Q.get(1)!;
+    const ba = mul(Q.get(0) ?? S.Zero, pow(a, -1));
+    const arg = mul(c, d, pow(a, -1), exp(add(e, mul(-1, d, ba))));
+    return branches(arg, (k) => add(mul(-1, W(arg, k), pow(d, -1)), mul(-1, ba)));
+  }
+  if (deg(P) === 1 && deg(Q) <= 0) {
+    const a = P.get(1)!;
+    const ba = mul(P.get(0) ?? S.Zero, pow(a, -1));
+    const c = Q.get(0) ?? S.Zero;
+    if (c instanceof Rational && c.isZero) return undefined;
+    const arg = mul(-1, c, d, pow(a, -1), exp(add(mul(d, ba), mul(-1, e))));
+    return branches(arg, (k) => add(mul(W(arg, k), pow(d, -1)), mul(-1, ba)));
+  }
+  return undefined;
 }
 
 /**

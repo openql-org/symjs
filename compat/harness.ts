@@ -1155,6 +1155,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   trigsimp: exprFn(sj.trigsimp),
   exptrigsimp: exprFn(sj.exptrigsimp),
   Id: exprFn((e) => e),
+  LambertW: (args, kw) => (noKw(kw), sj.LambertW(asExpr(args[0]), args[1] === undefined ? undefined : asExpr(args[1]))),
   rational_interpolate: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'X') throw new Unsupported(`kwargs ${k}`);
     const data = (args[0] as PyTuple | PyList).items.map((t) => (t as PyTuple).items.map(asExpr) as [Expr, Expr]);
@@ -1252,10 +1253,16 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'check') throw new Unsupported(`kwargs ${k}`);
     const check = kw['check'] === undefined ? undefined : Boolean(kw['check']);
     const first = args[0];
+    // systems of inequalities in one symbol
+    if (first instanceof PyTuple && first.items.length && first.items.every((i) => i instanceof sj.Rel && i.op !== 'Eq' && i.op !== 'Ne')) {
+      const syms = args.slice(1).filter((a) => a instanceof Sym) as Sym[];
+      return sj.reduceInequalities(first.items.map(asExpr), syms);
+    }
     // systems of equations
     if (first instanceof PyTuple) {
-      const eqs = first.items.map(asExpr);
       const syms = args[1] instanceof PyTuple ? args[1].items.map(asSym) : args.slice(1).map(asSym);
+      // like SymPy, equations free of the requested symbols are dropped
+      const eqs = first.items.map(asExpr).filter((e) => !syms.length || syms.some((s) => e.has(s)));
       const vars = syms.length ? syms : allSymbols(eqs);
       if (sj.linearEqToMatrix(eqs, vars)) {
         const s = sj.linsolve(eqs, vars);

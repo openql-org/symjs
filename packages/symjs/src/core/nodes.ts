@@ -144,6 +144,7 @@ export type SpecialFnName =
   | 'erfcinv'
   | 'erf2inv'
   | 'Ei'
+  | 'LambertW'
   | 'li'
   | 'Li'
   | 'Si'
@@ -209,6 +210,8 @@ export interface Impl {
   couldExtractMinusSign?(e: Expr): boolean;
   /** SymPy collect (registered by simplify/radsimp). */
   collect?(e: Expr, syms: readonly Expr[]): Expr;
+  /** Lambert W function (registered by functions/special). */
+  lambertW?(x: Expr, k?: number): Expr;
   /** SymPy fraction (registered by simplify/rational). */
   fraction?(e: Expr): [Expr, Expr];
   conjugate(e: Expr): Expr;

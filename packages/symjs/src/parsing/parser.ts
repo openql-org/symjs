@@ -72,6 +72,7 @@ const SPECIAL_NAMES: SpecialFnName[] = [
   'erfcinv',
   'erf2inv',
   'Ei',
+  'LambertW',
   'li',
   'Li',
   'Si',
