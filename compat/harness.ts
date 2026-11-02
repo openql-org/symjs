@@ -1490,9 +1490,23 @@ export const ADAPTERS: Record<string, Adapter> = {
     }
     return diffArgs(asExpr(self), args);
   },
-  '.integrate': (args, kw, self) => ADAPTERS['integrate']!([self, ...args], kw),
+  '.integrate': (args, kw, self) =>
+    self instanceof sj.Poly
+      ? (() => {
+          noKw(kw);
+          if (!args.length) return self.integrate();
+          let p: sj.Poly = self;
+          for (const spec of args) {
+            const [g, m] = spec instanceof PyTuple ? spec.items : [spec, 1];
+            const gen = g instanceof sj.Rational ? p.gens[Number(g.p)]! : asExpr(g);
+            for (let i = 0; i < Number(m instanceof sj.Rational ? m.p : m); i++) p = p.integrate(gen);
+          }
+          return p;
+        })()
+      : self instanceof Matrix ? self.map((e) => asExpr(ADAPTERS['integrate']!([e, ...args], kw))) : ADAPTERS['integrate']!([self, ...args], kw),
   '.series': (args, kw, self) => ADAPTERS['series']!([self, ...args], kw),
-  '.limit': (args, kw, self) => ADAPTERS['limit']!([self, ...args], kw),
+  '.limit': (args, kw, self) =>
+    self instanceof Matrix ? self.map((e) => asExpr(ADAPTERS['limit']!([e, ...args], kw))) : ADAPTERS['limit']!([self, ...args], kw),
   '.removeO': exprMethod((e) => (e instanceof sj.Add ? sj.add(...e.args.filter((a) => !(a instanceof sj.Order))) : e instanceof sj.Order ? S.Zero : e)),
   '.doit': (args, kw, self) => {
     noKw(kw);

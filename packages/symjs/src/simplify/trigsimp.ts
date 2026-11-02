@@ -88,7 +88,21 @@ export function trigsimp(ex: ExprLike): Expr {
   const e = sympify(ex);
   if (!hasTrigFunctions(e)) return e;
   const t = exptotrig(e);
+  // SymPy futrig objective: fewer trigonometric functions first, then count_ops
+  const lt = trigCount(t);
+  const le = trigCount(e);
+  if (lt !== le) return lt < le && countOps(t) <= countOps(e) + 1 ? t : countOps(t) <= countOps(e) ? t : e;
   return countOps(t) <= countOps(e) ? t : e;
+}
+
+const TRIG_NAMES = new Set(['sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch']);
+function trigCount(e: Expr): number {
+  let n = 0;
+  some(e, (x) => {
+    if (x instanceof Fn && TRIG_NAMES.has(x.name)) n++;
+    return false;
+  });
+  return n;
 }
 
 /** Exponential form: sin/cos rewritten as exponentials, expanded and combined. */

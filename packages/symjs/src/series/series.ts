@@ -6,7 +6,7 @@
  */
 
 import { Add, Expr, ExprLike, Order, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
-import { add, mul, pow, sympify } from '../core/ops';
+import { add, mul, neg, pow, sympify } from '../core/ops';
 import { xreplace as subs } from '../core/traverse';
 import { log } from '../functions/elementary';
 import { Expander } from './puiseux';
@@ -21,6 +21,16 @@ export function O(ex: ExprLike, x?: Sym, x0: ExprLike = 0): Expr {
   const syms = [...e.freeSymbols()];
   const v = x ?? (syms.length === 1 ? syms[0] : undefined);
   const atZero = p instanceof Rational && p.isZero;
+  if (v !== undefined && p instanceof Special && p.name === 'oo' && syms.length === 1) {
+    // leading behaviour at infinity: substitute x = 1/t, t -> 0+
+    try {
+      const t = new Sym('_o', { positive: true });
+      const lead = new Expander(t).leading(subs(e, [[v, pow(t, -1)]]));
+      if (!lead.c.has(t)) return new Order([pow(v, neg(lead.e)), v, p]);
+    } catch {
+      // keep the expression as given
+    }
+  }
   if (v === undefined || p instanceof Special) {
     return new Order(x === undefined || atZero ? [e] : [e, x, p]);
   }
