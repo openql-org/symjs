@@ -7,6 +7,7 @@
  * functions (degree, LC/LM/LT, gcd, lcm, div, factor_list, ...).
  */
 
+import { parse } from '../parsing/parser';
 import { factorModP } from './zassenhaus';
 import { Add, Constant, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { evalf as evalfExpr } from '../numeric/evalf';
@@ -174,7 +175,9 @@ export class Poly {
   /** Build a polynomial; generators are detected unless given. */
   static from(ex: ExprLike, gens?: readonly Expr[], opts: { domain?: string; pure?: boolean } = {}): Poly {
     const e = expand(sympify(ex));
-    const gs = gens && gens.length ? [...gens] : detectGens(e);
+    // over RR the generators are the symbols (numbers such as sqrt(3) become coefficients)
+    const real = opts.domain === 'R' || opts.domain === 'RR';
+    const gs = gens && gens.length ? [...gens] : real ? (sortGens([...freeSymbols(e)]) as Expr[]) : detectGens(e);
     const terms = new Map<string, Term>();
     for (const t of e instanceof Add ? e.args : [e]) {
       const monom = gs.map(() => 0);
@@ -204,6 +207,11 @@ export class Poly {
     const list = [...terms.values()]
       .map((t) => ({ monom: t.monom, coeff: gs.length && !t.coeff.isNumber ? expand(t.coeff) : t.coeff }))
       .filter((t) => !(t.coeff instanceof Rational && t.coeff.isZero));
+    if (opts.domain === 'R' || opts.domain === 'RR') {
+      // real floating-point coefficients
+      const real = list.map((t) => ({ monom: t.monom, coeff: impl.evalf(t.coeff, 15) }));
+      return new Poly(gs, real, 'RR', opts.pure ?? false);
+    }
     const domain = opts.domain ?? inferDomain(list.length ? list.map((t) => t.coeff) : [S.Zero]);
     return new Poly(gs, list, domain, opts.pure ?? false);
   }
@@ -857,7 +865,8 @@ export class Poly {
   norm(strict: true): Poly | undefined;
   norm(strict = false): Poly | undefined {
     const cs = this.allCoeffs();
-    if (cs.every((c) => c instanceof Rational)) return strict ? undefined : this;
+    const algebraicDomain = /^(?:QQ|ZZ)<.*>$/.test(this.domain);
+    if (cs.every((c) => c instanceof Rational) && !algebraicDomain) return strict ? undefined : this;
     const gens = new Map<string, Expr>();
     const findGens = (e: Expr) => {
       if (e instanceof Constant && e.name === 'I') gens.set(e.key, e);
@@ -865,6 +874,15 @@ export class Poly {
       else e.args.forEach(findGens);
     };
     cs.forEach(findGens);
+    // the generators of an algebraic field domain QQ<a> count too (QQ<sqrt(2) + sqrt(3)> has degree 4)
+    const dm = /^(?:QQ|ZZ)<(.*)>$/.exec(this.domain);
+    if (dm) {
+      try {
+        findGens(parse(dm[1]!));
+      } catch {
+        // not an expression we can read
+      }
+    }
     const gl = [...gens.values()];
     if (!gl.length || gl.length > 3) {
       if (strict) return undefined;
@@ -879,6 +897,22 @@ export class Poly {
     if (N.allCoeffs().every((c) => c instanceof Rational)) return N;
     if (strict) return undefined;
     throw new Error('norm: unsupported coefficient field');
+  }
+  /** SymPy Poly.make_monic_over_integers_by_scaling_roots: [monic integer polynomial g, s] with g(x) = f(x/s)*s**n/LC(f). */
+  makeMonicOverIntegersByScalingRoots(): [Poly, Expr] {
+    const x = this.univariate();
+    const n = this.degree();
+    const lc = this.LC();
+    const cs = this.allCoeffs().map((c) => impl.mul(c, impl.pow(lc, -1)));
+    let s = 1n;
+    const g = (a: bigint, b: bigint): bigint => (b === 0n ? a : g(b, a % b));
+    for (const c of cs) {
+      if (!(c instanceof Rational)) throw new Error('make_monic_over_integers_by_scaling_roots: rational coefficients expected');
+      s = (s * c.q) / g(s, c.q);
+    }
+    const S_ = Rational.of(s);
+    const e = impl.add(...cs.map((c, i) => impl.mul(c, impl.pow(S_, i), impl.pow(x, n - i))));
+    return [Poly.from(e, [x], { domain: 'ZZ' }), S_];
   }
   /** SymPy Poly.get_modulus: p of a polynomial over GF(p). */
   getModulus(): bigint {
@@ -1160,7 +1194,7 @@ const powR = (a: Rational, k: number): Rational => pow(a, k) as Rational;
 function coeffStr(c: Expr): string {
   if (c instanceof Float) {
     const v = c.value;
-    return Number.isInteger(v) ? `${v}.0` : `${v}`;
+    return Number.isInteger(v) ? `${v}.0` : `${Number(v.toPrecision(15))}`;
   }
   return str(c);
 }
@@ -1545,4 +1579,21 @@ export function factorNc(ex: ExprLike): Expr {
   const f = factor(xreplace(e, reps));
   const back = xreplace(f, reps.map(([a, b]) => [b, a] as [Expr, Expr]));
   return expand(back).key === expand(e).key ? back : e;
+}
+
+/**
+ * SymPy sqf_norm(f, extension): [s, g, r] with g(x) = f(x - s*a) for the
+ * primitive element a (the sum of the extension generators) and r = norm(g)
+ * square-free over QQ.
+ */
+export function sqfNorm(fIn: ExprLike, x: Sym, extension: readonly Expr[]): [number[], Expr, Expr] {
+  const f = sympify(fIn);
+  const a = add(...extension);
+  const domain = `QQ<${str(a)}>`;
+  for (let s = 0; s < 50; s++) {
+    const g = expand(xreplace(f, [[x, add(x, mul(-s, a))]]));
+    const r = Poly.from(g, [x], { domain }).norm();
+    if (r.gcd(r.diff(x)).degree() <= 0) return [extension.map(() => s), g, r.asExpr()];
+  }
+  throw new Error('sqf_norm: no square-free norm found');
 }

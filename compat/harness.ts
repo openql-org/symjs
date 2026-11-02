@@ -1850,7 +1850,11 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sol ? new JsSet([new JsTuple(sol)]) : 'EmptySet';
   },
   solve_poly_system: (args, kw) => polySystemSolutions(args, kw),
-  solve_triangulated: (args, kw) => polySystemSolutions(args, kw, true),
+  solve_triangulated: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'extension') throw new Unsupported(`kwargs ${k}`);
+    // without extension only rational solutions are reported, with it all of them
+    return polySystemSolutions(args, {}, !kw['extension']);
+  },
   substitution: (args, kw) => {
     noKw(kw);
     // SymPy solveset.substitution(system, symbols, result=[{}], known_symbols=[], exclude=[], all_symbols=None)
@@ -2483,9 +2487,9 @@ export const ADAPTERS: Record<string, Adapter> = {
   Poly: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
     const [e, ...gens] = args;
-    const p = sj.Poly.from(asExprOrPoly(e), gens.map(asExpr));
-    if (kw['domain'] !== undefined) throw new Unsupported('explicit domain');
-    return p;
+    const dom = kw['domain'];
+    if (dom !== undefined && dom !== 'R' && dom !== 'RR' && dom !== 'ZZ' && dom !== 'QQ') throw new Unsupported('explicit domain');
+    return sj.Poly.from(asExprOrPoly(e), gens.map(asExpr), dom === undefined ? {} : { domain: String(dom) });
   },
   degree: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'gen') throw new Unsupported(`kwargs ${k}`);
@@ -2641,7 +2645,22 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.compose': polyM((p, a) => p.compose(a[0] as sj.Poly)),
   '.degree_list': polyM((p) => new JsTuple(p.degreeList())),
   '.discriminant': polyM((p) => p.discriminant()),
-  '.resultant': polyM((p, a) => p.resultant(a[0] as sj.Poly)),
+  '.resultant': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'includePRS') throw new Unsupported(`kwargs ${k}`);
+    const p = asPoly(self);
+    const q = args[0] as sj.Poly;
+    if (kw['includePRS']) return new JsTuple([p.resultant(q), new JsList(p.subresultants(q))]);
+    return p.resultant(q);
+  },
+  '.make_monic_over_integers_by_scaling_roots': polyM((p) => new JsTuple(p.makeMonicOverIntegersByScalingRoots())),
+  sqf_norm: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'extension') throw new Unsupported(`kwargs ${k}`);
+    const e = asExpr(args[0]);
+    const x = args[1] instanceof Sym ? args[1] : ([...sj.freeSymbols(e)][0] as Sym);
+    const ext = kw['extension'] instanceof JsList || kw['extension'] instanceof JsTuple ? (kw['extension'] as JsList).items.map(asExpr) : [asExpr(kw['extension'])];
+    const [s, g, r] = sj.sqfNorm(e, x, ext);
+    return new JsTuple([new JsList(s.map((k) => sj.Rational.of(k))), g, r]);
+  },
   '.EC': polyM((p) => p.EC()),
   '.TC': polyM((p) => p.TC()),
   '.nth': polyM((p, a) => p.nth(...a.map(intArg))),

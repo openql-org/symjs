@@ -29,6 +29,7 @@ export {
 } from './polys/sympoly';
 
 export { rootsDict as roots } from './polys/poly';
+export { sqfNorm } from './polys/sympoly';
 export { RootSum, RootSumNode, apartList, assemblePartfracList } from './polys/rootsum';
 export type { PartfracTerm } from './polys/rootsum';
 export {

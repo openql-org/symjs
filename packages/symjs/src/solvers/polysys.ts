@@ -14,6 +14,7 @@ import { roots } from '../polys/poly';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { Poly, factorListExpr, sortGens } from '../polys/sympoly';
 import { expand } from '../simplify/expand';
+import { radsimp } from '../simplify/sqrtdenest';
 
 type Factor = { expr: Expr; ground: boolean };
 
@@ -175,8 +176,44 @@ function solveReduced(system: Expr[], gens: readonly Sym[], entry: boolean, rati
   for (const z of zeros) {
     const sub = rest.map((b) => expand(xreplace(b, [[gen, z]]))).filter((b) => !(b instanceof Rational && b.isZero));
     if (sub.some((b) => b.freeSymbols().size === 0)) continue;
-    for (const s of solveReduced(sub, gens.slice(0, -1), false, rationalOnly)) out.push([...s, z]);
+    // irrational coefficients: the lex basis is triangular, so back-substitute instead of a new basis over QQ
+    const rationalCoeffs = sub.every((b) => !hasIrrational(b));
+    const partial = rationalCoeffs ? solveReduced(sub, gens.slice(0, -1), false, rationalOnly) : backSubstitute(sub, gens.slice(0, -1), rationalOnly);
+    for (const s of partial) out.push([...s, z]);
   }
   if (entry && out.length && out[0]!.length !== gens.length) throw new Error('solve_poly_system: only zero-dimensional systems are supported');
+  return out;
+}
+
+/** Does a polynomial have a coefficient that is a number but not rational (sqrt(2), I, ...)? */
+const hasIrrational = (e: Expr): boolean => {
+  if (e.freeSymbols().size === 0) return !(e instanceof Rational);
+  return e.args.some(hasIrrational);
+};
+
+/** Solutions of a triangular system with algebraic coefficients, last generator first. */
+function backSubstitute(system: Expr[], gens: readonly Sym[], rationalOnly: boolean): Expr[][] {
+  if (!gens.length) return system.every((b) => Math.abs(b.toComplex().re) + Math.abs(b.toComplex().im) < 1e-9) ? [[]] : [];
+  const gen = gens[gens.length - 1]!;
+  const others = new Set(gens.slice(0, -1).map((g) => g.key));
+  const uni = system.filter((b) => b.has(gen) && ![...freeSymbols(b)].some((s) => others.has(s.key)));
+  if (!uni.length) throw new Error('solve_poly_system: only zero-dimensional systems are supported');
+  const [first, ...rest] = [...uni].sort((a, b) => Poly.from(a, [gen]).degree() - Poly.from(b, [gen]).degree());
+  const vanishes = (e: Expr) => {
+    const c = e.toComplex();
+    return Math.hypot(c.re, c.im) < 1e-9;
+  };
+  const seen = new Map<string, Expr>();
+  for (const r0 of roots(first!, gen)) {
+    // roots of polynomials with algebraic coefficients come with radical denominators
+    const r = expand(radsimp(r0));
+    if (!rationalOnly || r instanceof Rational) seen.set(r.key, r);
+  }
+  const out: Expr[][] = [];
+  for (const z of seen.values()) {
+    if (!rest.every((o) => vanishes(xreplace(o, [[gen, z]])))) continue;
+    const sub = system.filter((b) => !uni.includes(b)).map((b) => expand(xreplace(b, [[gen, z]])));
+    for (const s of backSubstitute(sub, gens.slice(0, -1), rationalOnly)) out.push([...s, z]);
+  }
   return out;
 }

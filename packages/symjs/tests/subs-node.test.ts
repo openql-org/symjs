@@ -340,3 +340,17 @@ describe('as_sum, euler_maclaurin and nsolve bisection', () => {
     expect(sstr(nsolve(parse('cos(x)*cosh(x) - 1'), x, [313, 317]))).toBe('315.730061685774');
   });
 });
+
+describe('polynomial helpers and systems with irrational solutions', () => {
+  it('match SymPy', async () => {
+    const { Poly, sqfNorm, solvePolySystem, sqrt: rt } = await import('../src');
+    const [x, y, z] = symbols('x y z');
+    expect(String(Poly.from(parse('x**2 + 2*x + sqrt(3)'), [], { domain: 'R' }))).toBe("Poly(1.0*x**2 + 2.0*x + 1.73205080756888, x, domain='RR')");
+    expect(sqfNorm(parse('x**2+1'), x, [rt(3)]).map(String)).toEqual(['1', 'x**2 - 2*sqrt(3)*x + 4', 'x**4 - 4*x**2 + 16']);
+    expect(String(Poly.from(parse('x - sqrt(2)'), [x], { domain: 'QQ<sqrt(2) + sqrt(3)>' }).norm())).toBe("Poly(x**4 - 4*x**2 + 4, x, domain='QQ')");
+    const [g, s] = Poly.from(parse('x**2/2 + x/4 + 1/8'), [x]).makeMonicOverIntegersByScalingRoots();
+    expect([String(g), sstr(s)]).toEqual(["Poly(x**2 + 2*x + 4, x, domain='ZZ')", '4']);
+    const sols = solvePolySystem(['x**2+y+z-1', 'x+y**2+z-1', 'x+y+z**2-1'].map((e) => parse(e)), [x, y, z]).map((t) => t.map((e) => sstr(e)).join(','));
+    expect(sols).toEqual(['0,0,1', '0,1,0', '1,0,0', '-1 + sqrt(2),-1 + sqrt(2),-1 + sqrt(2)', '-sqrt(2) - 1,-sqrt(2) - 1,-sqrt(2) - 1']);
+  });
+});
