@@ -161,8 +161,19 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   Order: ([e, ...rest]) => orderNode(e!, rest),
 };
 
+const OP_STR: Record<string, sj.RelOp> = { '<': 'Lt', '>': 'Gt', '<=': 'Le', '>=': 'Ge', '==': 'Eq', '!=': 'Ne' };
+function reduceAbs(e: Expr, op: string, x: Sym): Expr {
+  const r = OP_STR[op];
+  if (!r) throw new Unsupported(`relation ${op}`);
+  return sj.solveUnivariateInequality(sj.rel(r, e, S.Zero), x);
+}
+
 function integralNode(args: unknown[]): Expr {
   const [f, lim] = args;
+  if (lim === undefined) {
+    const fs = [...sj.freeSymbols(f as Expr)];
+    if (fs.length === 1) return new Integral([f as Expr, fs[0]!]);
+  }
   if (lim instanceof Sym) return new Integral([f as Expr, lim]);
   if (lim instanceof PyTuple && lim.items.length === 3) return new Integral([f as Expr, ...(lim.items as Expr[])]);
   if (lim instanceof PyTuple && lim.items.length === 1) return new Integral([f as Expr, lim.items[0] as Expr]);
@@ -695,6 +706,12 @@ export const ADAPTERS: Record<string, Adapter> = {
     );
     return sj.solveRationalInequalities(groups);
   },
+  reduce_abs_inequality: (args, kw) => (noKw(kw), reduceAbs(asExpr(args[0]), args[1] as string, asSym(args[2]))),
+  reduce_abs_inequalities: (args, kw) => {
+    noKw(kw);
+    const x = asSym(args[1]);
+    return sj.and(...(args[0] as PyTuple).items.map((it) => reduceAbs(asExpr((it as PyTuple).items[0]), (it as PyTuple).items[1] as string, x)));
+  },
   reduce_inequalities: (args, kw) => {
     noKw(kw);
     const a = args[0];
@@ -1134,14 +1151,20 @@ export const ADAPTERS: Record<string, Adapter> = {
   diff: (args, kw) => (noKw(kw), diffArgs(asExpr(args[0]), args.slice(1))),
   integrate: (args, kw) => {
     noKw(kw);
-    const f = asExpr(args[0]);
-    if (args.length !== 2) throw new Unsupported('integrate arity');
-    const v = args[1];
-    if (v instanceof Sym) return sj.integrate(f, v);
-    if (v instanceof PyTuple && v.items.length === 3) {
-      return sj.integrate(f, asSym(v.items[0]), [asExpr(v.items[1]), asExpr(v.items[2])]);
+    let f = asExpr(args[0]);
+    let lims = args.slice(1);
+    if (!lims.length) {
+      const fs = [...sj.freeSymbols(f)];
+      if (fs.length !== 1) throw new Unsupported('integrate arity');
+      lims = [fs[0]];
     }
-    throw new Unsupported('integrate limits');
+    for (const v of lims) {
+      if (v instanceof Sym) f = sj.integrate(f, v);
+      else if (v instanceof PyTuple && v.items.length === 3) f = sj.integrate(f, asSym(v.items[0]), [asExpr(v.items[1]), asExpr(v.items[2])]);
+      else if (v instanceof PyTuple && v.items.length === 1) f = sj.integrate(f, asSym(v.items[0]));
+      else throw new Unsupported('integrate limits');
+    }
+    return f;
   },
   roots: (args, kw) => {
     noKw(kw);

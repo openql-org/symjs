@@ -215,7 +215,25 @@ function sample(a: Expr, b: Expr): Expr {
  * Solve f(x) op 0 over a real domain by sign analysis between zeros and
  * poles. Returns the solution set.
  */
+/** First Abs(a) in e whose argument depends on x. */
+function findAbs(e: Expr, x: Sym): Expr | undefined {
+  if (e instanceof Fn && e.name === 'abs' && e.args[0]!.has(x)) return e;
+  for (const a of e.args) {
+    const r = findAbs(a, x);
+    if (r) return r;
+  }
+  return undefined;
+}
+
 function solveSign(f0: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
+  // Abs(a): split into the cases a >= 0 and a < 0 (SymPy reduce_abs_inequality)
+  const ab = findAbs(f0, x);
+  if (ab) {
+    const a = ab.args[0]!;
+    const pos = intersection(solveSign(a, 'Ge', x, domain), solveSign(xreplace(f0, [[ab, a]]), op, x, domain));
+    const neg = intersection(solveSign(a, 'Lt', x, domain), solveSign(xreplace(f0, [[ab, mul(-1, a)]]), op, x, domain));
+    return union(pos, neg);
+  }
   const f = cancel(f0);
   const [num, den] = fraction(f);
   let dom = domain;
