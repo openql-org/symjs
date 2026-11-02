@@ -44,7 +44,7 @@ import { diff } from '../calculus/diff';
 import { asin, atan, cos, cosh, log, sin, sinh } from '../functions/elementary';
 import { UPoly, polyCoefficients } from '../polys/poly';
 import { fn as fnErf } from '../functions/elementary';
-import { expandMul as expand } from '../simplify/expand';
+import { expand as expandFull, expandMul as expand } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { expsimp, hasTrigFunctions } from '../simplify/trigsimp';
 
@@ -128,6 +128,7 @@ class Integrator {
       this.gaussian(f) ??
       this.derivativeDivides(f) ??
       this.trigPowers(f) ??
+      this.substitution(f) ??
       this.byParts(f) ??
       this.expImaginary(f) ??
       this.rational(f) ??
@@ -252,6 +253,47 @@ class Integrator {
             break;
         }
       }
+    }
+    return undefined;
+  }
+
+  // ---- substitution u = g(x) -------------------------------------------------
+
+  /**
+   * f = F(u)*u' for an inner expression u (a function argument or an
+   * exponent): integrate F in u and substitute back.
+   */
+  private substitution(f: Expr): R {
+    const x = this.x;
+    if (this.depth > 6) return undefined;
+    const cands: Expr[] = [];
+    const seen = new Set<string>();
+    const walk = (e: Expr) => {
+      const inner = e instanceof Fn ? [...e.args, e] : e instanceof Pow && e.base instanceof Constant && e.base.name === 'E' ? [e.exp] : [];
+      for (const u of inner) {
+        if (u.has(x) && u.key !== x.key && !seen.has(u.key)) {
+          seen.add(u.key);
+          cands.push(u);
+        }
+      }
+      e.args.forEach(walk);
+    };
+    walk(f);
+    for (const u of cands) {
+      const du = diff(u, x);
+      if (isZeroR(du)) continue;
+      let q: Expr;
+      try {
+        q = cancel(expandFull(mul(f, pow(du, -1)), { trig: true }));
+      } catch {
+        continue;
+      }
+      const t = new Sym('_u');
+      const g = subs(q, [[u, t]]);
+      if (g.has(x)) continue;
+      const G = new Integrator(t).integrate(g);
+      if (G === undefined) continue;
+      return expand(subs(G, [[t, u]]));
     }
     return undefined;
   }

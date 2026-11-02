@@ -165,7 +165,7 @@ export function odesimp(ode: Expr, solIn: Expr, fx: UndefFn, hint: string): Expr
   const x = fx.args[0] as Sym;
   const odeSyms = [...freeSymbols(ode)];
   let sol = hint === 'nth_linear_constant_coeff_homogeneous' ? solIn : doit(solIn);
-  if (hint.startsWith('nth_linear_euler_eq_nonhomogeneous')) sol = simplify(sol);
+  if (hint.startsWith('nth_linear_euler_eq_nonhomogeneous') && sol instanceof Rel) sol = Eq(simplify(sol.lhs), simplify(sol.rhs));
   if (!(sol instanceof Rel)) throw new TypeError('odesimp: an equation is expected');
   const constants = [...freeSymbols(sol)].filter((s) => !odeSyms.some((o) => o.key === s.key)) as Sym[];
   sol = constantsimp(sol, constants);
