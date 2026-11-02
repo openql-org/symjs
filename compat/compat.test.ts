@@ -62,7 +62,7 @@ interface Corpus {
   cases: Case[];
 }
 
-const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'ode', 'calculus', 'matrices', 'special'];
+const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'ode', 'calculus', 'matrices', 'special', 'logic', 'tensor', 'ntheory', 'assumptions', 'utilities', 'combinatorics', 'printing'];
 
 // a rate below 100% never prints as 100.0%
 const pct = (a: number, b: number) => (b === 0 ? '-' : `${(a < b ? Math.min((100 * a) / b, 99.9) : 100).toFixed(1)}%`);

@@ -95,6 +95,40 @@ MODULES = {
     "sympy.functions.combinatorial.numbers": "special",
     "sympy.functions.special.gamma_functions": "special",
     "sympy.functions.special.error_functions": "special",
+    # general-purpose packages that many SymPy packages depend on (base candidates)
+    "sympy.logic.boolalg": "logic",
+    "sympy.logic.inference": "logic",
+    "sympy.tensor.array.dense_ndim_array": "tensor",
+    "sympy.tensor.array.ndim_array": "tensor",
+    "sympy.tensor.array.arrayop": "tensor",
+    "sympy.tensor.array.array_derivatives": "tensor",
+    "sympy.tensor.indexed": "tensor",
+    "sympy.ntheory.factor_": "ntheory",
+    "sympy.ntheory.primetest": "ntheory",
+    "sympy.ntheory.generate": "ntheory",
+    "sympy.ntheory.residue_ntheory": "ntheory",
+    "sympy.ntheory.continued_fraction": "ntheory",
+    "sympy.ntheory.partitions_": "ntheory",
+    "sympy.ntheory.modular": "ntheory",
+    "sympy.ntheory.multinomial": "ntheory",
+    "sympy.ntheory.digits": "ntheory",
+    "sympy.ntheory.egyptian_fraction": "ntheory",
+    "sympy.assumptions.ask": "assumptions",
+    "sympy.assumptions.refine": "assumptions",
+    "sympy.utilities.iterables": "utilities",
+    "sympy.combinatorics.permutations": "combinatorics",
+    "sympy.printing.pretty.pretty": "printing",
+    "sympy.integrals.transforms": "calculus",
+    "sympy.integrals.laplace": "calculus",
+    "sympy.calculus.accumulationbounds": "calculus",
+    "sympy.matrices.expressions.matexpr": "matrices",
+    "sympy.matrices.expressions.matmul": "matrices",
+    "sympy.matrices.expressions.matadd": "matrices",
+    "sympy.matrices.expressions.inverse": "matrices",
+    "sympy.matrices.expressions.trace": "matrices",
+    "sympy.matrices.expressions.determinant": "matrices",
+    "sympy.matrices.expressions.blockmatrix": "matrices",
+    "sympy.matrices.expressions.transpose": "matrices",
 }
 
 ASSUMPTION_KEYS = ["real", "positive", "negative", "nonnegative", "nonpositive", "integer", "commutative", "polar"]
@@ -250,7 +284,10 @@ def ser(o):
     raise Unsupported(name)
 
 
-PUBLIC = set(sympy.__all__)
+import sympy.combinatorics as _combinatorics
+PUBLIC = set(sympy.__all__) | {"Permutation", "Cycle"}
+setattr(sympy, "Permutation", _combinatorics.Permutation)
+setattr(sympy, "Cycle", _combinatorics.permutations.Cycle)
 
 
 def api_inventory():
@@ -267,7 +304,9 @@ def api_inventory():
                     cat = c
         if cat:
             out.append({"name": name, "category": cat})
-    for cls, cat in ((sympy.Expr, "core"), (sympy.Matrix, "matrices")):
+    owners = ((sympy.Expr, "core"), (sympy.Matrix, "matrices"), (sympy.ImmutableDenseNDimArray, "tensor"),
+              (_combinatorics.Permutation, "combinatorics"), (sympy.MatrixExpr, "matrices"))
+    for cls, cat in owners:
         for name in sorted(dir(cls)):
             if name.startswith("_"):
                 continue
