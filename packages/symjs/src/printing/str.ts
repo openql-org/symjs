@@ -78,7 +78,7 @@ function printMul(e: Mul): string {
   const a: Expr[] = [];
   const b: Expr[] = [];
   for (const item of expr instanceof Mul ? asOrderedFactors(expr) : [expr]) {
-    if (item instanceof Pow && !isExp(item) && splitCoeff(item.exp)[0].isNegative) {
+    if (item instanceof Pow && item.isCommutative && !isExp(item) && splitCoeff(item.exp)[0].isNegative) {
       const x = item.exp;
       b.push(x instanceof Rational && x.p === -1n && x.q === 1n ? item.base : pow(item.base, mul(-1, x)));
     } else if (item instanceof Rational) {
@@ -100,8 +100,8 @@ function printPow(e: Pow): string {
   if (isExp(e)) return `exp(${str(x)})`;
   if (x instanceof Rational) {
     if (x.p === 1n && x.q === 2n) return `sqrt(${str(b)})`;
-    if (x.p === -1n && x.q === 2n) return `1/sqrt(${str(b)})`;
-    if (x.p === -1n && x.q === 1n) return `1/${parenthesize(b, PREC.POW)}`;
+    if (x.p === -1n && x.q === 2n && e.isCommutative) return `1/sqrt(${str(b)})`;
+    if (x.p === -1n && x.q === 1n && e.isCommutative) return `1/${parenthesize(b, PREC.POW)}`;
   }
   return `${parenthesize(b, PREC.POW)}**${parenthesize(x, PREC.POW)}`;
 }

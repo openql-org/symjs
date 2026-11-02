@@ -372,9 +372,11 @@ export function mul(...xs: ExprLike[]): Expr {
     if (last) {
       const [b1, e1] = asBaseExp(last);
       const [b2, e2] = asBaseExp(e);
-      if (b1.key === b2.key) {
+      // SymPy: combine only when the new exponent is not an Add (A**x*A**y and exp(A)*exp(B) stay apart)
+      const ne = b1.key === b2.key ? add(e1, e2) : undefined;
+      if (ne && !(ne instanceof Add)) {
         ncPart.pop();
-        const r = pow(b1, add(e1, e2));
+        const r = pow(b1, ne);
         if (!(r instanceof Rational && r.isOne)) pushNc(r);
         return;
       }

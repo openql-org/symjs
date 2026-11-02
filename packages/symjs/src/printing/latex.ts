@@ -177,7 +177,7 @@ function fraction(e: Expr): [Expr[], Expr[]] {
   const numer: Expr[] = [];
   const denom: Expr[] = [];
   for (const term of e instanceof Mul ? e.args : [e]) {
-    if (term instanceof Pow) {
+    if (term instanceof Pow && term.isCommutative) {
       const [b, x] = term.args;
       if (isNegative(x)) {
         if (x instanceof Rational && x.p === -1n && x.q === 1n) denom.push(b);
@@ -248,7 +248,7 @@ function printPow(e: Pow): string {
       const tex = x.q === 2n ? `\\sqrt{${base}}` : `\\sqrt[${x.q}]{${base}}`;
       return x.p < 0n ? `\\frac{1}{${tex}}` : tex;
     }
-    if (x.p < 0n) return printMulLike(e);
+    if (x.p < 0n && b.isCommutative) return printMulLike(e);
   }
   if (b instanceof Fn) return printFunction(b, latex(x));
   if (b instanceof UndefFn) return `${parenthesizeSuper(hprintFunction(b.name))}^{${latex(x)}}{\\left(${b.args.map(latex).join(',')} \\right)}`;
