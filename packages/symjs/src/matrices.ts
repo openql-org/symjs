@@ -14,7 +14,9 @@ export {
 export { MutableDenseMatrix, MutableMatrix } from './matrices/mutable';
 export { DomainMatrix, toDM } from './matrices/domainmatrix';
 export { Matrix as MatrixBase } from './matrices/matrix';
-export { MatrixSymbol, MatrixTranspose, MatrixAdjoint } from './matrices/matexpr';
+export { MatrixTranspose, MatrixAdjoint } from './matrices/matexpr';
+// matrix expressions (SymPy sympy.matrices.expressions)
+export * from './matrices/expressions/index';
 export * as linalg from './matrices/linalg';
 export {
   rref,

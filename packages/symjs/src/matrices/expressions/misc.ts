@@ -1,0 +1,256 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
+
+/**
+ * @file Smaller modules of sympy.matrices.expressions: DotProduct
+ * (dotproduct), CompanionMatrix (companion), MatrixSet (sets) and the
+ * symbolic factorizations LofLU, QofQR, ... (factorizations).
+ */
+
+import { callableClass } from '../../core/callable';
+import type { ExprLike , Expr} from '../../core/nodes';
+import { ExtensionExpr, Float, S } from '../../core/nodes';
+import { isIntegerQ, isNegative } from '../../core/assumptions';
+import { sympify } from '../../core/ops';
+import type { Truth } from '../../core/truth';
+import { Poly } from '../../polys/sympoly';
+import { containsQ } from '../../sets/sets';
+import type { SetExpr } from '../../sets/sets';
+import { latex } from '../../printing/latex';
+import { companion } from '../linalg';
+import type { Matrix } from '../matrix';
+import type { DoitHints, MatArg } from './matexpr';
+import { MatScalar, MatrixExpr, checkDim, doitArg, parenLatex, toExpr, toMatrix, transposeOf } from './matexpr';
+import { isInt, same } from './util';
+
+// ---------------------------------------------------------------------------
+// DotProduct
+// ---------------------------------------------------------------------------
+
+/** SymPy DotProduct(a, b): the dot product of two vectors of the same length. */
+export class DotProductNode extends MatScalar {
+  constructor(a: Expr, b: Expr) {
+    super('DotProduct', [a, b]);
+  }
+  /** SymPy DotProduct(arg1, arg2): validated. */
+  static create(a1: MatArg, a2: MatArg): DotProductNode {
+    const a = toExpr(a1);
+    const b = toExpr(a2);
+    if (!(a instanceof MatrixExpr)) throw new TypeError('Argument 1 of DotProduct is not a matrix');
+    if (!(b instanceof MatrixExpr)) throw new TypeError('Argument 2 of DotProduct is not a matrix');
+    const one = (m: MatrixExpr) => m.shape.some((d) => same(d, S.One));
+    if (!one(a)) throw new TypeError('Argument 1 of DotProduct is not a vector');
+    if (!one(b)) throw new TypeError('Argument 2 of DotProduct is not a vector');
+    const set = (m: MatrixExpr) => new Set(m.shape.map((d) => d.key));
+    const sa = set(a);
+    const sb = set(b);
+    if (sa.size !== sb.size || [...sa].some((k) => !sb.has(k))) throw new TypeError('DotProduct arguments are not the same length');
+    return new DotProductNode(a, b);
+  }
+  withArgs(args: readonly Expr[]): Expr {
+    return new DotProductNode(args[0]!, args[1]!);
+  }
+  override doit(hints: DoitHints = {}): Expr {
+    const [a0, b0] = this.args.map((x) => (hints.deep === false ? x : doitArg(x, hints))) as [MatrixExpr, MatrixExpr];
+    const mul = (x: Expr, y: Expr): MatrixExpr => (x as MatrixExpr).mul(y) as MatrixExpr;
+    let m: MatrixExpr;
+    if (same(a0.rows, b0.rows) && same(a0.cols, b0.cols)) m = same(a0.rows, S.One) ? mul(a0, transposeOf(b0)) : mul(transposeOf(a0), b0);
+    else m = same(a0.rows, S.One) ? mul(a0, b0) : mul(transposeOf(a0), transposeOf(b0));
+    return m.at(0);
+  }
+  override latexPrecedence(): number {
+    return 49;
+  }
+  override printLatex(): string {
+    return `${parenLatex(this.args[0]!, 49)} \\cdot ${parenLatex(this.args[1]!, 49)}`;
+  }
+}
+
+/** SymPy DotProduct(a, b). */
+export const DotProduct = /* @__PURE__ */ callableClass(DotProductNode, (a: MatArg, b: MatArg): DotProductNode => DotProductNode.create(a, b));
+export type DotProduct = DotProductNode;
+
+// ---------------------------------------------------------------------------
+// CompanionMatrix
+// ---------------------------------------------------------------------------
+
+/** SymPy CompanionMatrix(poly): the companion matrix of a monic univariate polynomial. */
+export class CompanionMatrixNode extends MatrixExpr {
+  /** The polynomial. */
+  readonly poly: Poly;
+  constructor(poly: Poly) {
+    super('CompanionMatrix', [poly.asExpr(), ...poly.gens]);
+    this.poly = poly;
+  }
+  /** SymPy CompanionMatrix(poly): the polynomial must be monic, univariate and of degree >= 1. */
+  static create(poly: Poly): CompanionMatrixNode {
+    if (!(poly instanceof Poly)) throw new RangeError(`${String(poly)} must be a Poly instance.`);
+    if (poly.gens.length !== 1) throw new RangeError(`${String(poly)} must be a univariate polynomial.`);
+    if (!same(poly.allCoeffs()[0] ?? S.Zero, S.One)) throw new RangeError(`${String(poly)} must be a monic polynomial.`);
+    if (poly.degree() < 1) throw new RangeError(`${String(poly)} must have degree not less than 1.`);
+    return new CompanionMatrixNode(poly);
+  }
+  get shape(): [Expr, Expr] {
+    const n = sympify(this.poly.degree());
+    return [n, n];
+  }
+  withArgs(args: readonly Expr[]): Expr {
+    return new CompanionMatrixNode(Poly.from(args[0]!, args.slice(1)));
+  }
+  protected override computeKey(): string {
+    return `CompanionMatrix(${String(this.poly)})`;
+  }
+  override entry(i: Expr, j: Expr): Expr {
+    const n = this.poly.degree();
+    if (!isInt(i) || !isInt(j)) throw new TypeError('CompanionMatrix entries need integer indices');
+    const r = Number(i.p);
+    const c = Number(j.p);
+    if (c === n - 1) {
+      const cs = this.poly.allCoeffs();
+      return sympify(cs[cs.length - 1 - r]!).neg();
+    }
+    return r === c + 1 ? S.One : S.Zero;
+  }
+  override asExplicit(): Matrix {
+    return companion(this.poly.allCoeffs());
+  }
+  override printStr(): string {
+    return `CompanionMatrix(${String(this.poly)})`;
+  }
+  override printLatex(): string {
+    const dom = ({ ZZ: '\\mathbb{Z}', QQ: '\\mathbb{Q}', RR: '\\mathbb{R}', CC: '\\mathbb{C}' } as Record<string, string>)[this.poly.domain] ?? this.poly.domain;
+    const gens = this.poly.gens.map((g) => latex(g)).join(', ');
+    return `\\operatorname{CompanionMatrix}\\left(\\operatorname{Poly}{\\left( ${latex(this.poly.asExpr())}, ${gens}, domain=${dom} \\right)}\\right)`;
+  }
+}
+
+/** SymPy CompanionMatrix(poly). */
+export const CompanionMatrix = /* @__PURE__ */ callableClass(CompanionMatrixNode, (poly: Poly): CompanionMatrixNode => CompanionMatrixNode.create(poly));
+export type CompanionMatrix = CompanionMatrixNode;
+
+// ---------------------------------------------------------------------------
+// MatrixSet
+// ---------------------------------------------------------------------------
+
+/** SymPy MatrixSet(n, m, set): the set of n x m matrices with entries in a set. */
+export class MatrixSetNode extends ExtensionExpr {
+  constructor(n: Expr, m: Expr, set: SetExpr) {
+    super('MatrixSet', [n, m, set]);
+  }
+  /** SymPy MatrixSet(n, m, set). */
+  static create(n: ExprLike, m: ExprLike, set: SetExpr): MatrixSetNode {
+    const d = (x: ExprLike): Expr => {
+      const e = sympify(x);
+      if (e instanceof Float || isIntegerQ(e) === false || isNegative(e) === true) throw new RangeError(`The dimension specification ${String(e)} should be a nonnegative integer.`);
+      return checkDim(e);
+    };
+    return new MatrixSetNode(d(n), d(m), set);
+  }
+  /** The shape (n, m). */
+  get shape(): [Expr, Expr] {
+    return [this.args[0]!, this.args[1]!];
+  }
+  /** The set of the entries. */
+  get set(): SetExpr {
+    return this.args[2] as SetExpr;
+  }
+  withArgs(args: readonly Expr[]): Expr {
+    return new MatrixSetNode(args[0]!, args[1]!, args[2] as SetExpr);
+  }
+  /** SymPy X in M: true, false or 'unknown'. */
+  contains(other: MatArg): Truth {
+    const x = toExpr(other);
+    if (!(x instanceof MatrixExpr)) throw new TypeError(`${String(x)} should be an instance of MatrixExpr.`);
+    const [r, c] = this.shape;
+    if (!same(x.rows, r) || !same(x.cols, c)) {
+      if ([...x.shape, r, c].some((d) => !isInt(d))) return 'unknown';
+      return false;
+    }
+    let result: Truth = true;
+    for (const e of x.asExplicit().data) {
+      const t = containsQ(this.set, e);
+      if (t === false) return false;
+      if (t !== true) result = 'unknown';
+    }
+    return result;
+  }
+  override printLatex(print: (e: Expr) => string): string {
+    return `\\operatorname{MatrixSet}\\left(${this.args.map(print).join(', ')}\\right)`;
+  }
+}
+
+/** SymPy MatrixSet(n, m, set). */
+export const MatrixSet = /* @__PURE__ */ callableClass(MatrixSetNode, (n: ExprLike, m: ExprLike, set: SetExpr): MatrixSetNode => MatrixSetNode.create(n, m, set));
+export type MatrixSet = MatrixSetNode;
+
+// ---------------------------------------------------------------------------
+// Factorizations
+// ---------------------------------------------------------------------------
+
+/** SymPy Factorization: a factor of a matrix factorization, with the shape of the matrix. */
+export class FactorizationNode extends MatrixExpr {
+  constructor(
+    name: string,
+    arg: Expr,
+    /** The predicates the factor satisfies (SymPy predicates, e.g. 'lower_triangular'). */
+    readonly predicates: readonly string[],
+  ) {
+    super(name, [arg]);
+  }
+  /** The factorized matrix. */
+  get arg(): MatrixExpr {
+    return this.args[0] as MatrixExpr;
+  }
+  get shape(): [Expr, Expr] {
+    return this.arg.shape;
+  }
+  withArgs(args: readonly Expr[]): Expr {
+    return new FactorizationNode(this.name, args[0]!, this.predicates);
+  }
+}
+
+const factor = (name: string, preds: readonly string[]) => (m: MatArg) => new FactorizationNode(name, toMatrix(m), preds);
+
+/** SymPy LofLU(X). */
+export const LofLU = factor('LofLU', ['lower_triangular']);
+/** SymPy UofLU(X). */
+export const UofLU = factor('UofLU', ['upper_triangular']);
+/** SymPy LofCholesky(X). */
+export const LofCholesky = factor('LofCholesky', ['lower_triangular']);
+/** SymPy UofCholesky(X). */
+export const UofCholesky = factor('UofCholesky', ['upper_triangular']);
+/** SymPy QofQR(X). */
+export const QofQR = factor('QofQR', ['orthogonal']);
+/** SymPy RofQR(X). */
+export const RofQR = factor('RofQR', ['upper_triangular']);
+/** SymPy EigenVectors(X). */
+export const EigenVectors = factor('EigenVectors', ['orthogonal']);
+/** SymPy EigenValues(X). */
+export const EigenValues = factor('EigenValues', ['diagonal']);
+/** SymPy UofSVD(X). */
+export const UofSVD = factor('UofSVD', ['orthogonal']);
+/** SymPy SofSVD(X). */
+export const SofSVD = factor('SofSVD', ['diagonal']);
+/** SymPy VofSVD(X). */
+export const VofSVD = factor('VofSVD', ['orthogonal']);
+
+/** SymPy lu(X): (LofLU(X), UofLU(X)). */
+export function lu(expr: MatArg): [FactorizationNode, FactorizationNode] {
+  return [LofLU(expr), UofLU(expr)];
+}
+
+/** SymPy qr(X): (QofQR(X), RofQR(X)). */
+export function qr(expr: MatArg): [FactorizationNode, FactorizationNode] {
+  return [QofQR(expr), RofQR(expr)];
+}
+
+/** SymPy eig(X): (EigenValues(X), EigenVectors(X)). */
+export function eig(expr: MatArg): [FactorizationNode, FactorizationNode] {
+  return [EigenValues(expr), EigenVectors(expr)];
+}
+
+/** SymPy svd(X): (UofSVD(X), SofSVD(X), VofSVD(X)). */
+export function svd(expr: MatArg): [FactorizationNode, FactorizationNode, FactorizationNode] {
+  return [UofSVD(expr), SofSVD(expr), VofSVD(expr)];
+}
+

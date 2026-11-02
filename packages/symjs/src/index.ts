@@ -27,3 +27,4 @@ export * from './tensor';
 export { connectedComponents, stronglyConnectedComponents } from './matrices';
 // SymPy's factorint (with its options) and is_palindromic of a number or a sequence
 export { factorint, isPalindromic } from './ntheory';
+export type { PermutationLike } from './tensor';
