@@ -18,23 +18,23 @@ import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../packages/symjs/src'
 // Python-like containers for formatting results
 // ---------------------------------------------------------------------------
 
-export class PyList {
+export class JsList {
   constructor(readonly items: readonly unknown[]) {}
 }
-export class PyTuple {
+export class JsTuple {
   constructor(
     readonly items: readonly unknown[],
     /** the Python value was a list */
     readonly isList = false,
   ) {}
 }
-export class PyDict {
+export class JsDict {
   constructor(readonly entries: readonly (readonly [unknown, unknown])[]) {}
 }
-export class PyDefaultDict {
+export class JsDefaultDict {
   constructor(readonly entries: readonly (readonly [unknown, unknown])[]) {}
 }
-export class PySet {
+export class JsSet {
   constructor(readonly items: readonly unknown[]) {}
 }
 
@@ -42,12 +42,12 @@ export class Unsupported extends Error {}
 
 /** An undefined function class (SymPy `Function('f')` itself, not applied). */
 /** A polynomial ground domain (ZZ, QQ). */
-export class PyDomain {
+export class JsDomain {
   constructor(readonly name: string) {}
 }
 
 /** A predicate lambda testing a SymPy is_* attribute (lambda e: e.is_Mul). */
-export class PyPred {
+export class JsPred {
   constructor(readonly attr: string) {}
   test(e: Expr): boolean {
     switch (this.attr) {
@@ -76,7 +76,7 @@ export class PyPred {
 }
 
 /** SymPy Lambda(variables, expr). */
-export class PyLambda {
+export class JsLambda {
   constructor(
     readonly vars: Expr[],
     readonly body: Expr,
@@ -87,7 +87,7 @@ export class PyLambda {
 }
 
 /** A library function passed as an argument (equal_valued, factor, math.isclose, ...). */
-export class PyFunc {
+export class JsFunc {
   constructor(readonly name: string) {}
 }
 
@@ -116,11 +116,11 @@ export function fmt(v: unknown): string {
   if (typeof v === 'number' || typeof v === 'bigint') return String(v);
   if (v === 'EmptySet') return 'EmptySet';
   if (typeof v === 'string') return `'${v}'`;
-  if (v instanceof PyList) return `[${v.items.map(fmt).join(', ')}]`;
-  if (v instanceof PyTuple) return v.items.length === 1 ? `(${fmt(v.items[0])},)` : `(${v.items.map(fmt).join(', ')})`;
-  if (v instanceof PyDefaultDict) return `defaultdict(<class 'int'>, ${fmt(new PyDict(v.entries))})`;
-  if (v instanceof PyDict) return `{${v.entries.map(([k, x]) => `${fmt(k)}: ${fmt(x)}`).join(', ')}}`;
-  if (v instanceof PySet) return v.items.length === 0 ? 'set()' : `{${v.items.map(fmt).join(', ')}}`;
+  if (v instanceof JsList) return `[${v.items.map(fmt).join(', ')}]`;
+  if (v instanceof JsTuple) return v.items.length === 1 ? `(${fmt(v.items[0])},)` : `(${v.items.map(fmt).join(', ')})`;
+  if (v instanceof JsDefaultDict) return `defaultdict(<class 'int'>, ${fmt(new JsDict(v.entries))})`;
+  if (v instanceof JsDict) return `{${v.entries.map(([k, x]) => `${fmt(k)}: ${fmt(x)}`).join(', ')}}`;
+  if (v instanceof JsSet) return v.items.length === 0 ? 'set()' : `{${v.items.map(fmt).join(', ')}}`;
   if (v instanceof UFnClass || v instanceof FnClass) return v.name;
   if (v instanceof TypeRef) return `<class 'sympy.${v.name}'>`;
   throw new Unsupported(`cannot format ${String(v)}`);
@@ -149,8 +149,8 @@ export function matches(v: unknown, expected: string): boolean {
   const got = fmt(v);
   if (got === expected) return true;
   const ddPrefix = "defaultdict(<class 'int'>, ";
-  if (v instanceof PyDefaultDict && expected.startsWith(ddPrefix)) return matches(new PyDict(v.entries), expected.slice(ddPrefix.length, -1));
-  if ((v instanceof PyDict || v instanceof PySet) && expected.startsWith('{')) {
+  if (v instanceof JsDefaultDict && expected.startsWith(ddPrefix)) return matches(new JsDict(v.entries), expected.slice(ddPrefix.length, -1));
+  if ((v instanceof JsDict || v instanceof JsSet) && expected.startsWith('{')) {
     const a = topLevelItems(got).sort();
     const b = topLevelItems(expected).sort();
     return a.length === b.length && a.every((x, i) => x === b[i]);
@@ -179,7 +179,7 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   ...Object.fromEntries(SPECIAL_NAMES.map((n) => [n, (args: Expr[]) => sj.fn(n, args)])),
   RisingFactorial: (args) => sj.fn('rf', args),
   Rem: ([p, q]) => sj.Rem(p!, q!),
-  Lambda: ([vs, body]) => new PyLambda((vs as unknown as PyTuple).items as Expr[], body!) as unknown as Expr,
+  Lambda: ([vs, body]) => new JsLambda((vs as unknown as JsTuple).items as Expr[], body!) as unknown as Expr,
   FallingFactorial: (args) => sj.fn('ff', args),
   exp: ([a]) => sj.exp(a!),
   Abs: ([a]) => sj.abs(a!),
@@ -194,7 +194,7 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   ),
   Piecewise: (args) =>
     sj.piecewise(
-      ...(args as unknown as PyTuple[]).map((t) => {
+      ...(args as unknown as JsTuple[]).map((t) => {
         const [e, c] = t.items;
         return [asExpr(e), typeof c === 'boolean' ? c : asExpr(c)] as const;
       }),
@@ -222,9 +222,9 @@ function integralNode(args: unknown[]): Expr {
     if (fs.length === 1) return new Integral([f as Expr, fs[0]!]);
   }
   if (lim instanceof Sym) return new Integral([f as Expr, lim]);
-  if (lim instanceof PyTuple && lim.items.length === 3) return new Integral([f as Expr, ...(lim.items as Expr[])]);
-  if (lim instanceof PyTuple && lim.items.length === 1) return new Integral([f as Expr, lim.items[0] as Expr]);
-  if (lim instanceof PyTuple && lim.items.length === 2 && args.length === 2) return new Integral([f as Expr, ...(lim.items as Expr[])]);
+  if (lim instanceof JsTuple && lim.items.length === 3) return new Integral([f as Expr, ...(lim.items as Expr[])]);
+  if (lim instanceof JsTuple && lim.items.length === 1) return new Integral([f as Expr, lim.items[0] as Expr]);
+  if (lim instanceof JsTuple && lim.items.length === 2 && args.length === 2) return new Integral([f as Expr, ...(lim.items as Expr[])]);
   throw new Unsupported('Integral limits');
 }
 
@@ -233,7 +233,7 @@ const concreteDoit = (e: Expr): Expr => (e instanceof sj.Concrete ? sj.doitConcr
 function concreteNode(kind: 'Sum' | 'Product', args: unknown[]): Expr {
   const [f, ...lims] = args;
   const ls = lims.map((l) => {
-    if (!(l instanceof PyTuple) || l.items.length !== 3) throw new Unsupported('limits');
+    if (!(l instanceof JsTuple) || l.items.length !== 3) throw new Unsupported('limits');
     return l.items as [Sym, Expr, Expr];
   });
   return kind === 'Sum' ? sj.Sum(f as Expr, ...ls) : sj.Product(f as Expr, ...ls);
@@ -245,22 +245,22 @@ function orderNode(e: unknown, rest: unknown[]): Expr {
   if (rest.length > 1) {
     // O(e, x, y) or O(e, (x, p), (y, p))
     if (rest.every((t) => t instanceof Sym)) return sj.O(e as Expr, rest as Sym[]);
-    if (rest.every((t) => t instanceof PyTuple && t.items.length === 2)) {
-      const ts = rest as PyTuple[];
+    if (rest.every((t) => t instanceof JsTuple && t.items.length === 2)) {
+      const ts = rest as JsTuple[];
       const p = ts[0]!.items[1] as Expr;
       if (ts.some((t) => (t.items[1] as Expr).key !== p.key)) throw new Unsupported('Order points');
       return sj.O(e as Expr, ts.map((t) => t.items[0] as Sym), p);
     }
     throw new Unsupported('Order arguments');
   }
-  if (r instanceof PyTuple && r.items.length === 2) return sj.O(e as Expr, r.items[0] as Sym, r.items[1] as Expr);
+  if (r instanceof JsTuple && r.items.length === 2) return sj.O(e as Expr, r.items[0] as Sym, r.items[1] as Expr);
   if (r instanceof Sym) return sj.O(e as Expr, r);
   throw new Unsupported('Order arguments');
 }
 
 export function deserialize(tree: Tree): unknown {
   switch (tree.t) {
-    case 'Py':
+    case 'Js':
       return tree['v'];
     case 'Str':
       return tree['v'];
@@ -319,20 +319,20 @@ export function deserialize(tree: Tree): unknown {
     case 'AlgebraicNumber':
       return new sj.AlgebraicNumber(deserialize(tree['root'] as Tree) as Expr, (tree['coeffs'] as Tree[]).map((t) => deserialize(t) as Expr));
     case 'Domain':
-      return new PyDomain(tree['name'] as string);
-    case 'PyPred':
-      return new PyPred(tree['attr'] as string);
+      return new JsDomain(tree['name'] as string);
+    case 'JsPred':
+      return new JsPred(tree['attr'] as string);
     case 'RootSum': {
       const fun = deserialize(tree['fun'] as Tree);
-      const lam = fun instanceof PyLambda ? sj.Lambda(fun.vars, fun.body) : (fun as sj.Lambda);
+      const lam = fun instanceof JsLambda ? sj.Lambda(fun.vars, fun.body) : (fun as sj.Lambda);
       return new sj.RootSumNode([deserialize(tree['poly'] as Tree) as Expr, lam, deserialize(tree['var'] as Tree) as Expr]);
     }
-    case 'PyFunc':
-      return new PyFunc(tree['name'] as string);
-    case 'PyLambda':
-      return new PyLambda((tree['params'] as Tree[]).map((t) => deserialize(t) as Expr), deserialize(tree['body'] as Tree) as Expr);
+    case 'JsFunc':
+      return new JsFunc(tree['name'] as string);
+    case 'JsLambda':
+      return new JsLambda((tree['params'] as Tree[]).map((t) => deserialize(t) as Expr), deserialize(tree['body'] as Tree) as Expr);
     case 'Tuple':
-      return new PyTuple((tree['items'] as Tree[]).map(deserialize), Boolean(tree['list']));
+      return new JsTuple((tree['items'] as Tree[]).map(deserialize), Boolean(tree['list']));
     case 'Poly':
       return sj.Poly.from(
         deserialize(tree['expr'] as Tree) as Expr,
@@ -362,8 +362,8 @@ export function deserialize(tree: Tree): unknown {
         'ZZ',
         tree['order'] as sj.MonomialOrder,
       );
-    case 'PySet':
-      return new PySet((tree['items'] as Tree[]).map(deserialize));
+    case 'JsSet':
+      return new JsSet((tree['items'] as Tree[]).map(deserialize));
     case 'BoolOp': {
       const xs = (tree['args'] as Tree[]).map((x) => deserialize(x) as Expr);
       return tree['op'] === 'And' ? sj.and(...xs) : sj.or(...xs);
@@ -372,7 +372,7 @@ export function deserialize(tree: Tree): unknown {
       return new TypeRef(tree['name'] as string);
     case 'Wild': {
       const a = tree['assume'] as Record<string, boolean>;
-      const props = ((tree['props'] as string[] | undefined) ?? []).map((attr) => (e: Expr) => new PyPred(attr).test(e));
+      const props = ((tree['props'] as string[] | undefined) ?? []).map((attr) => (e: Expr) => new JsPred(attr).test(e));
       return new sj.Wild(tree['name'] as string, { exclude: (tree['exclude'] as Tree[]).map((x) => deserialize(x) as Expr), ...a, ...(props.length ? { properties: props } : {}) });
     }
     case 'WildFunction':
@@ -389,7 +389,7 @@ export function deserialize(tree: Tree): unknown {
         (tree['vc'] as [Tree, number][]).map(([v, n]) => [deserialize(v) as Expr, n] as [Expr, number]),
       );
     case 'Dict':
-      return new PyDict((tree['items'] as [Tree, Tree][]).map(([k, v]) => [deserialize(k), deserialize(v)] as const));
+      return new JsDict((tree['items'] as [Tree, Tree][]).map(([k, v]) => [deserialize(k), deserialize(v)] as const));
     case 'MatrixSymbol':
       return new sj.MatrixSymbol(tree['name'] as string, deserialize(tree['rows'] as Tree) as Expr, deserialize(tree['cols'] as Tree) as Expr);
     case 'Matrix':
@@ -439,15 +439,15 @@ const polyFn =
     const extra = args.slice(n, n + nExtra);
     const { ps, asPolys } = parallelPolys([...args.slice(0, n), ...args.slice(n + nExtra)], n);
     const out = (v: unknown): unknown =>
-      v instanceof sj.Poly ? (asPolys ? v : v.asExpr()) : v instanceof PyTuple ? new PyTuple(v.items.map(out), v.isList) : v instanceof PyList ? new PyList(v.items.map(out)) : Array.isArray(v) ? new PyList(v.map(out)) : v;
+      v instanceof sj.Poly ? (asPolys ? v : v.asExpr()) : v instanceof JsTuple ? new JsTuple(v.items.map(out), v.isList) : v instanceof JsList ? new JsList(v.items.map(out)) : Array.isArray(v) ? new JsList(v.map(out)) : v;
     return out(f(ps, extra));
   };
 /** SymPy solve_poly_system / solve_triangulated (Gröbner basis, solutions sorted by default_sort_key). */
 function polySystemSolutions(args: unknown[], kw: Record<string, unknown>, rationalOnly = false): unknown {
   noKw(kw);
-  const eqs = (args[0] as PyList | PyTuple).items.map(asExpr);
+  const eqs = (args[0] as JsList | JsTuple).items.map(asExpr);
   const syms = args.slice(1).map(asSym);
-  return new PyList(sj.solvePolySystem(eqs, syms, { rationalOnly }).map((t) => new PyTuple(t)));
+  return new JsList(sj.solvePolySystem(eqs, syms, { rationalOnly }).map((t) => new JsTuple(t)));
 }
 /** ff/rf of a Poly: product of the polynomial shifted by -i (ff) or +i (rf). */
 function polyFactorial(args: unknown[], kw: Record<string, unknown>, dir: 1 | -1): unknown {
@@ -486,12 +486,12 @@ function epsArg(v: unknown): sj.Rational | undefined {
 }
 function intervalsAdapter(p: sj.Poly, kw: Record<string, unknown>): unknown {
   for (const k of Object.keys(kw)) if (k !== 'eps') throw new Unsupported(`kwargs ${k}`);
-  return new PyList(p.intervals(epsArg(kw['eps'])).map(([[s, t], k]) => new PyTuple([new PyTuple([s, t]), sj.Rational.of(k)])));
+  return new JsList(p.intervals(epsArg(kw['eps'])).map(([[s, t], k]) => new JsTuple([new JsTuple([s, t]), sj.Rational.of(k)])));
 }
 function refineAdapter(p: sj.Poly, args: unknown[], kw: Record<string, unknown>): unknown {
   for (const k of Object.keys(kw)) if (k !== 'eps' && k !== 'steps') throw new Unsupported(`kwargs ${k}`);
   const [s, t] = p.refineRoot(asExpr(args[0]) as sj.Rational, asExpr(args[1]) as sj.Rational, epsArg(kw['eps']), kw['steps'] === undefined ? undefined : intArg(kw['steps']));
-  return new PyTuple([s, t]);
+  return new JsTuple([s, t]);
 }
 /**
  * SymPy's substitution method for small systems: solve an equation in a
@@ -554,14 +554,14 @@ const matrixMethod =
   };
 
 /** Python str() of a list of roots with multiplicity -> SymPy dict {root: multiplicity}. */
-function rootsDict(rs: Expr[]): PyDict {
+function rootsDict(rs: Expr[]): JsDict {
   const m = new Map<string, [Expr, number]>();
   for (const r of rs) {
     const e = m.get(r.key);
     if (e) e[1]++;
     else m.set(r.key, [r, 1]);
   }
-  return new PyDict([...m.values()].map(([r, k]) => [r, k] as const));
+  return new JsDict([...m.values()].map(([r, k]) => [r, k] as const));
 }
 
 function diffArgs(e: Expr, rest: unknown[]): Expr {
@@ -585,12 +585,12 @@ function diffArgs(e: Expr, rest: unknown[]): Expr {
 function subsArgs(e: Expr, args: unknown[]): Expr {
   if (args.length === 2) return e.subs(asExpr(args[0]), asExpr(args[1]));
   const a = args[0];
-  if (a instanceof PyDict) return sj.subs(e, new Map(a.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const)));
-  if (a instanceof PyTuple) {
+  if (a instanceof JsDict) return sj.subs(e, new Map(a.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const)));
+  if (a instanceof JsTuple) {
     // sequential substitution like SymPy
     let out = e;
     for (const p of a.items) {
-      if (!(p instanceof PyTuple)) throw new Unsupported('subs pair');
+      if (!(p instanceof JsTuple)) throw new Unsupported('subs pair');
       out = out.subs(asExpr(p.items[0]), asExpr(p.items[1]));
     }
     return out;
@@ -628,7 +628,7 @@ function solveAug(aug: Matrix, syms: Sym[]): Expr[] | undefined {
 }
 
 function idxList(v: unknown): (number | boolean)[] {
-  if (!(v instanceof PyTuple)) throw new Unsupported('index list');
+  if (!(v instanceof JsTuple)) throw new Unsupported('index list');
   return v.items.map((x) => (typeof x === 'boolean' ? x : Number((x as sj.Rational).p)));
 }
 
@@ -672,7 +672,7 @@ function evalfAdapter(self: unknown, args: unknown[], kw: Record<string, unknown
   const opts: sj.EvalfOptions = {};
   const subs = kw['subs'];
   if (subs !== undefined) {
-    if (!(subs instanceof PyDict)) throw new Unsupported('evalf subs');
+    if (!(subs instanceof JsDict)) throw new Unsupported('evalf subs');
     opts.subs = new Map(subs.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const));
   }
   const chop = kw['chop'];
@@ -687,7 +687,7 @@ function toQuery(v: unknown): sj.Query {
   if (v instanceof FnClass || v instanceof UFnClass) return { fn: v.name };
   if (v instanceof TypeRef) return { type: v.name };
   if (v instanceof Expr) return v;
-  if (v instanceof PyPred) return (e: Expr) => v.test(e);
+  if (v instanceof JsPred) return (e: Expr) => v.test(e);
   throw new Unsupported('query');
 }
 
@@ -698,7 +698,7 @@ function applyFn(name: string, args: Expr[]): Expr {
 }
 
 function matchDict(m: Map<Sym, Expr> | undefined): unknown {
-  return m ? new PyDict([...m]) : null;
+  return m ? new JsDict([...m]) : null;
 }
 
 const FN_NAMES = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc'] as const;
@@ -708,7 +708,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   Float: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['dps', 'precision'].includes(k)) throw new Unsupported(`Float kwarg ${k}`);
     let num = args[0];
-    if (num instanceof PyTuple) {
+    if (num instanceof JsTuple) {
       const [sg, man, ex] = num.items.map((x) => (x as sj.Rational).p);
       if (num.items.length !== 3) throw new Unsupported('Float tuple');
       return new sj.Float({ man: sg ? -man! : man!, exp: Number(ex) }, 53);
@@ -726,7 +726,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   Subs: (args, kw) => {
     noKw(kw);
-    const many = (a: unknown) => (a instanceof PyTuple ? a.items.map(asExpr) : asExpr(a));
+    const many = (a: unknown) => (a instanceof JsTuple ? a.items.map(asExpr) : asExpr(a));
     return sj.Subs(asExpr(args[0]), many(args[1]), many(args[2]));
   },
   Derivative: (args, kw) => {
@@ -734,7 +734,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (kw['evaluate'] === true) {
       let e = asExpr(args[0]);
       for (const a of args.slice(1)) {
-        if (a instanceof PyTuple) e = sj.diff(e, asExpr(a.items[0]), Number((a.items[1] as sj.Rational).p));
+        if (a instanceof JsTuple) e = sj.diff(e, asExpr(a.items[0]), Number((a.items[1] as sj.Rational).p));
         else e = sj.diff(e, asExpr(a));
       }
       return e;
@@ -742,7 +742,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const e = asExpr(args[0]);
     const vc: [Expr, number][] = [];
     for (const a of args.slice(1)) {
-      if (a instanceof PyTuple) vc.push([asExpr(a.items[0]), Number((a.items[1] as sj.Rational).p)]);
+      if (a instanceof JsTuple) vc.push([asExpr(a.items[0]), Number((a.items[1] as sj.Rational).p)]);
       else vc.push([asExpr(a), 1]);
     }
     return sj.derivative(e, vc);
@@ -768,12 +768,12 @@ export const ADAPTERS: Record<string, Adapter> = {
       const names = sj.expandSymbolNames(spec);
       const syms: unknown[] = names.map((n) => (asFunctions ? new UFnClass(n) : new Sym(n, a)));
       const isSeq = seq || spec.includes(',') || spec.trim().includes(' ') || spec.includes(':');
-      return syms.length === 1 && !isSeq ? syms[0] : new PyTuple(syms);
+      return syms.length === 1 && !isSeq ? syms[0] : new JsTuple(syms);
     };
     const first = args[0];
-    if (first instanceof PySet) return new PySet(first.items.map((s) => one(String(s))));
-    if (first instanceof PyList || (first instanceof PyTuple && first.isList)) return new PyList((first as PyTuple).items.map((s) => one(String(s))));
-    if (first instanceof PyTuple) return new PyTuple(first.items.map((s) => one(String(s))));
+    if (first instanceof JsSet) return new JsSet(first.items.map((s) => one(String(s))));
+    if (first instanceof JsList || (first instanceof JsTuple && first.isList)) return new JsList((first as JsTuple).items.map((s) => one(String(s))));
+    if (first instanceof JsTuple) return new JsTuple(first.items.map((s) => one(String(s))));
     return one(String(first));
   },
   Rel: (args, kw) => {
@@ -789,7 +789,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   integer_log: (args, kw) => {
     noKw(kw);
     const [e, t] = sj.integerLog((asExpr(args[0]) as sj.Rational).p, (asExpr(args[1]) as sj.Rational).p);
-    return new PyTuple([sj.Rational.of(e), t]);
+    return new JsTuple([sj.Rational.of(e), t]);
   },
   Symbol: (args, kw) => {
     const a: Record<string, boolean> = {};
@@ -809,7 +809,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   Wild: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'exclude') throw new Unsupported(`kwargs ${k}`);
-    const ex = kw['exclude'] instanceof PyList || kw['exclude'] instanceof PyTuple ? (kw['exclude'] as PyList).items.map(asExpr) : [];
+    const ex = kw['exclude'] instanceof JsList || kw['exclude'] instanceof JsTuple ? (kw['exclude'] as JsList).items.map(asExpr) : [];
     return new sj.Wild(String(args[0]), { exclude: ex });
   },
   WildFunction: (args, kw) => (noKw(kw), new sj.WildFunction(String(args[0]))),
@@ -817,7 +817,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   Unequality: (args, kw) => (noKw(kw), sj.Ne(asExpr(args[0]), asExpr(args[1]))),
   Lambda: (args, kw) => {
     noKw(kw);
-    const vs = args[0] instanceof PyTuple ? args[0].items.map(asExpr) : [asExpr(args[0])];
+    const vs = args[0] instanceof JsTuple ? args[0].items.map(asExpr) : [asExpr(args[0])];
     return sj.Lambda(vs, asExpr(args[1]));
   },
   ...Object.fromEntries(
@@ -826,7 +826,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   hypersimp: (args, kw) => (noKw(kw), sj.hypersimp(asExpr(args[0]), asExpr(args[1])) ?? null),
   hypersimilar: (args, kw) => (noKw(kw), sj.hypersimilar(asExpr(args[0]), asExpr(args[1]), asExpr(args[2]))),
   rcollect: (args, kw) => (noKw(kw), sj.rcollect(asExpr(args[0]), ...args.slice(1).map(asExpr))),
-  Piecewise: (args, kw) => (noKw(kw), sj.Piecewise(...args.map((a) => (a as PyTuple).items.map((x) => (typeof x === 'boolean' ? x : asExpr(x))) as [Expr, Expr | boolean]))),
+  Piecewise: (args, kw) => (noKw(kw), sj.Piecewise(...args.map((a) => (a as JsTuple).items.map((x) => (typeof x === 'boolean' ? x : asExpr(x))) as [Expr, Expr | boolean]))),
   '.matches': (args, kw, self) => (noKw(kw), matchDict(sj.match(asExpr(args[0]), asExpr(self)))),
   legendre_symbol: (args, kw) => (noKw(kw), sj.Rational.of(sj.legendreSymbol((args[0] as sj.Rational).p, (args[1] as sj.Rational).p))),
   motzkin: (args, kw) => (noKw(kw), sj.Rational.of(sj.motzkin(Number((args[0] as sj.Rational).p)))),
@@ -835,31 +835,31 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
     return sj.Poly.from(asExpr(args[0]), args.slice(1).map(asExpr), { pure: true, ...(kw['domain'] ? { domain: String(kw['domain']) } : {}) });
   },
-  GroebnerBasis: (args, kw) => ADAPTERS['groebner']!([new PyList(args[0] instanceof PyList || args[0] instanceof PyTuple ? args[0].items : [args[0]]), ...args.slice(1)], kw),
+  GroebnerBasis: (args, kw) => ADAPTERS['groebner']!([new JsList(args[0] instanceof JsList || args[0] instanceof JsTuple ? args[0].items : [args[0]]), ...args.slice(1)], kw),
   nth_power_roots_poly: (args, kw) => (noKw(kw), polyOf([args[0]]).nthPowerRootsPoly(Number((args[1] as sj.Rational).p))),
   det_quick: (args, kw) => (noKw(kw), (args[0] as Matrix).det()),
   inv_quick: (args, kw) => (noKw(kw), (args[0] as Matrix).inv()),
   linear_eq_to_matrix: (args, kw) => {
     noKw(kw);
-    const eqs = args[0] instanceof PyList || args[0] instanceof PyTuple ? args[0].items.map(asExpr) : [asExpr(args[0])];
-    const syms = args[1] instanceof PyList || args[1] instanceof PyTuple ? args[1].items.map(asSym) : args.slice(1).map(asSym);
+    const eqs = args[0] instanceof JsList || args[0] instanceof JsTuple ? args[0].items.map(asExpr) : [asExpr(args[0])];
+    const syms = args[1] instanceof JsList || args[1] instanceof JsTuple ? args[1].items.map(asSym) : args.slice(1).map(asSym);
     const r = sj.linearEqToMatrix(eqs, syms);
     if (!r) throw new Error('linear_eq_to_matrix: nonlinear equations');
-    return new PyTuple(r);
+    return new JsTuple(r);
   },
-  '.rref_rhs': matrixMethod((m, [b]) => new PyTuple(sj.rrefRhs(m, b as Matrix))),
-  '.rank_decomposition': matrixMethod((m) => new PyTuple(sj.rankDecomposition(m))),
+  '.rref_rhs': matrixMethod((m, [b]) => new JsTuple(sj.rrefRhs(m, b as Matrix))),
+  '.rank_decomposition': matrixMethod((m) => new JsTuple(sj.rankDecomposition(m))),
   '.inv_mod': matrixMethod((m, [k]) => sj.invMod(m, (k as sj.Rational).p)),
-  '.permute_rows': matrixMethod((m, [p]) => sj.permuteRows(m, (p as PyList).items.map((i) => Number((i as sj.Rational).p)))),
-  '.permute_cols': matrixMethod((m, [p]) => sj.permuteCols(m, (p as PyList).items.map((i) => Number((i as sj.Rational).p)))),
+  '.permute_rows': matrixMethod((m, [p]) => sj.permuteRows(m, (p as JsList).items.map((i) => Number((i as sj.Rational).p)))),
+  '.permute_cols': matrixMethod((m, [p]) => sj.permuteCols(m, (p as JsList).items.map((i) => Number((i as sj.Rational).p)))),
   '.rmultiply': matrixMethod((m, [b]) => (b as Matrix).mul(m)),
-  '.jordan_form': matrixMethod((m) => new PyTuple(sj.jordanForm(m))),
+  '.jordan_form': matrixMethod((m) => new JsTuple(sj.jordanForm(m))),
   '.liupc': matrixMethod((m) => {
     const [R, parent] = sj.liupc(m);
-    const ints = (xs: number[]) => new PyList(xs.map((i) => sj.Rational.of(i)));
-    return new PyTuple([new PyList(R.map(ints)), ints(parent)]);
+    const ints = (xs: number[]) => new JsList(xs.map((i) => sj.Rational.of(i)));
+    return new JsTuple([new JsList(R.map(ints)), ints(parent)]);
   }),
-  '.row_structure_symbolic_cholesky': matrixMethod((m) => new PyList(sj.rowStructureSymbolicCholesky(m).map((xs) => new PyList(xs.map((i) => sj.Rational.of(i)))))),
+  '.row_structure_symbolic_cholesky': matrixMethod((m) => new JsList(sj.rowStructureSymbolicCholesky(m).map((xs) => new JsList(xs.map((i) => sj.Rational.of(i)))))),
   '.irregular': (args, kw) => (noKw(kw), sj.irregular(Number((args[0] as sj.Rational).p), ...(args.slice(1) as Matrix[]))),
   '.berkowitz_eigenvals': (args, kw, self) => ADAPTERS['.eigenvals']!(args, kw, self),
   '.is_hypergeometric': (args, kw, self) => (noKw(kw), sj.isHypergeometric(asExpr(self), asExpr(args[0]))),
@@ -868,7 +868,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.as_mutable': (_a, kw, self) => (noKw(kw), self),
   '.orthogonalize': (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'normalize') throw new Unsupported(`kwargs ${k}`);
-    return new PyList(sj.GramSchmidt(args as Matrix[], Boolean(kw['normalize'])));
+    return new JsList(sj.GramSchmidt(args as Matrix[], Boolean(kw['normalize'])));
   },
   MutableDenseMatrix: (args, kw) => ADAPTERS['Matrix']!(args, kw),
   MutableMatrix: (args, kw) => ADAPTERS['Matrix']!(args, kw),
@@ -876,13 +876,13 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (!['transformations', 'evaluate', 'local_dict'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const tr = kw['transformations'];
     if (tr !== undefined && tr !== 'all' && tr !== 'implicit') throw new Unsupported('transformations');
-    const locals = kw['local_dict'] instanceof PyDict ? Object.fromEntries(kw['local_dict'].entries.map(([k, v]) => [String(k), asExpr(v)])) : undefined;
+    const locals = kw['local_dict'] instanceof JsDict ? Object.fromEntries(kw['local_dict'].entries.map(([k, v]) => [String(k), asExpr(v)])) : undefined;
     return sj.parse(String(args[0]), { ...(tr ? { transformations: tr as 'all' } : {}), ...(kw['evaluate'] === false ? { evaluate: false } : {}), ...(locals ? { symbols: locals } : {}) });
   },
   sympify: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['rational', 'evaluate', 'convert_xor', 'locals'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const v = args[0];
-    const localsArg = args[1] instanceof PyDict ? args[1] : kw['locals'] instanceof PyDict ? kw['locals'] : undefined;
+    const localsArg = args[1] instanceof JsDict ? args[1] : kw['locals'] instanceof JsDict ? kw['locals'] : undefined;
     if (typeof v === 'string' && (kw['evaluate'] === false || kw['convert_xor'] === false || localsArg)) {
       const symbols = localsArg ? Object.fromEntries(localsArg.entries.map(([k, x]) => [String(k), asExpr(x)])) : undefined;
       return sj.parse(v, { ...(kw['evaluate'] === false ? { evaluate: false } : {}), ...(kw['convert_xor'] === false ? { convertXor: false } : {}), ...(symbols ? { symbols } : {}) });
@@ -907,11 +907,11 @@ export const ADAPTERS: Record<string, Adapter> = {
           } else cur += ch;
         }
         if (cur.trim()) items.push(cur);
-        return new PyList(items.map((i) => sj.parse(i.trim())));
+        return new JsList(items.map((i) => sj.parse(i.trim())));
       }
       return sj.parse(v);
     }
-    if (v instanceof PyTuple) return new PyList(v.items.map((i) => (typeof i === 'string' ? sj.parse(i) : asExpr(i))));
+    if (v instanceof JsTuple) return new JsList(v.items.map((i) => (typeof i === 'string' ? sj.parse(i) : asExpr(i))));
     return asExpr(v);
   },
   S: (args, kw) => ADAPTERS['sympify']!(args, kw),
@@ -969,12 +969,12 @@ export const ADAPTERS: Record<string, Adapter> = {
     const dom = (kw['domain'] ?? args[3]) as sj.SetExpr | undefined;
     return sj.solveUnivariateInequality(asExpr(args[0]), asSym(args[1]), { relational: rel === undefined ? true : Boolean(rel), domain: dom });
   },
-  solve_poly_inequality: (args, kw) => (noKw(kw), new PyList(sj.solvePolyInequality(asPoly(args[0]), args[1] as string))),
+  solve_poly_inequality: (args, kw) => (noKw(kw), new JsList(sj.solvePolyInequality(asPoly(args[0]), args[1] as string))),
   solve_rational_inequalities: (args, kw) => {
     noKw(kw);
-    const groups = (args[0] as PyList).items.map((g) =>
-      (g as PyList).items.map((it) => {
-        const [nd, rel] = (it as PyTuple).items as [PyTuple, string];
+    const groups = (args[0] as JsList).items.map((g) =>
+      (g as JsList).items.map((it) => {
+        const [nd, rel] = (it as JsTuple).items as [JsTuple, string];
         return [[asPoly(nd.items[0]), asPoly(nd.items[1])], rel] as [[sj.Poly, sj.Poly], string];
       }),
     );
@@ -984,13 +984,13 @@ export const ADAPTERS: Record<string, Adapter> = {
   reduce_abs_inequalities: (args, kw) => {
     noKw(kw);
     const x = asSym(args[1]);
-    return sj.and(...(args[0] as PyTuple).items.map((it) => reduceAbs(asExpr((it as PyTuple).items[0]), (it as PyTuple).items[1] as string, x)));
+    return sj.and(...(args[0] as JsTuple).items.map((it) => reduceAbs(asExpr((it as JsTuple).items[0]), (it as JsTuple).items[1] as string, x)));
   },
   reduce_inequalities: (args, kw) => {
     noKw(kw);
     const a = args[0];
-    const ineqs = a instanceof PyList || a instanceof PyTuple ? a.items.map(asExpr) : [asExpr(a)];
-    const syms = args[1] instanceof PyList || args[1] instanceof PyTuple ? args[1].items.map(asSym) : [];
+    const ineqs = a instanceof JsList || a instanceof JsTuple ? a.items.map(asExpr) : [asExpr(a)];
+    const syms = args[1] instanceof JsList || args[1] instanceof JsTuple ? args[1].items.map(asSym) : [];
     return sj.reduceInequalities(ineqs, syms);
   },
   periodicity: (args, kw) => (noKw(kw), sj.periodicity(asExpr(args[0]), asSym(args[1])) ?? null),
@@ -1013,7 +1013,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   kronecker_symbol: (args, kw) => (noKw(kw), sj.kroneckerSymbol((args[0] as sj.Rational).p, (args[1] as sj.Rational).p)),
   '.piecewise_integrate': (args, kw, self) => (noKw(kw), sj.piecewiseIntegrate(self as sj.Piecewise, asSym(args[0]))),
   '.as_expr_set_pairs': (args, kw, self) =>
-    (noKw(kw), new PyList(sj.asExprSetPairs(asExpr(self), (args[0] as sj.SetExpr | undefined) ?? sj.Reals).map(([e, st]) => new PyTuple([e, st])))),
+    (noKw(kw), new JsList(sj.asExprSetPairs(asExpr(self), (args[0] as sj.SetExpr | undefined) ?? sj.Reals).map(([e, st]) => new JsTuple([e, st])))),
   piecewise_fold: (args, kw) => {
     noKw(kw);
     const e = asExpr(args[0]);
@@ -1039,7 +1039,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       const gens = sj.sortGens([...sj.freeSymbols(sj.add(f, g))]);
       return sj.Poly.from(f, gens).invert(sj.Poly.from(g, gens)).asExpr();
     }
-    return new PyTuple(sj.invertEquation(asExpr(args[0]), syms, { integerPower: Boolean(kw['integer_power']) }));
+    return new JsTuple(sj.invertEquation(asExpr(args[0]), syms, { integerPower: Boolean(kw['integer_power']) }));
   },
   '.invert': (args, kw, self) => {
     noKw(kw);
@@ -1049,13 +1049,13 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   factor_system: (args, kw) => {
     noKw(kw);
-    const eqs = (args[0] as PyList).items.map(asExpr);
-    const gens = args[1] === undefined ? [] : (args[1] as PyList).items.map(asExpr);
-    return new PyList(sj.factorSystem(eqs, gens).map((s) => new PyList(s)));
+    const eqs = (args[0] as JsList).items.map(asExpr);
+    const gens = args[1] === undefined ? [] : (args[1] as JsList).items.map(asExpr);
+    return new JsList(sj.factorSystem(eqs, gens).map((s) => new JsList(s)));
   },
   is_zero_dimensional: (args, kw) => {
     noKw(kw);
-    const F = (args[0] as PyList).items.map(asExpr);
+    const F = (args[0] as JsList).items.map(asExpr);
     const gens = args.slice(1).map(asSym);
     const vars = gens.length ? gens : (sj.sortGens([...sj.freeSymbols(sj.add(...F))]) as Sym[]);
     // zero-dimensional: every variable has a pure power as a leading monomial of the basis
@@ -1065,7 +1065,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   groebner: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['order', 'method'].includes(k)) throw new Unsupported(`kwargs ${k}`);
-    const F = (args[0] as PyList).items.map(asExpr);
+    const F = (args[0] as JsList).items.map(asExpr);
     const gens = args.slice(1).map(asSym);
     return sj.groebner(F, gens.length ? gens : (sj.sortGens([...sj.freeSymbols(sj.add(...F))]) as Sym[]), (kw['order'] as sj.MonomialOrder | undefined) ?? 'lex');
   },
@@ -1075,24 +1075,24 @@ export const ADAPTERS: Record<string, Adapter> = {
     const isPoly = args[0] instanceof sj.Poly;
     const [qs, r] = self.reduce(isPoly ? (args[0] as sj.Poly).asExpr() : asExpr(args[0]));
     const wrap = (e: Expr) => (isPoly ? sj.Poly.from(e, self.gens, { domain: 'ZZ' }) : e);
-    return new PyTuple([new PyList(qs.map(wrap)), wrap(r)]);
+    return new JsTuple([new JsList(qs.map(wrap)), wrap(r)]);
   },
   symmetrize: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'formal') throw new Unsupported(`kwargs ${k}`);
     const gens = args.slice(1).map(asSym);
     if (kw['formal']) {
       const [s, r, m] = sj.symmetrize(asExpr(args[0]), gens);
-      return new PyTuple([s, r, new PyList(m.map(([a, b]) => new PyTuple([a, b])))]);
+      return new JsTuple([s, r, new JsList(m.map(([a, b]) => new JsTuple([a, b])))]);
     }
-    return new PyTuple(sj.symmetrizeExpr(asExpr(args[0]), gens));
+    return new JsTuple(sj.symmetrizeExpr(asExpr(args[0]), gens));
   },
   separatevars: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['symbols', 'dict', 'force'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const symsArg = kw['symbols'] ?? args[1];
-    const symbols = symsArg instanceof PyTuple || symsArg instanceof PyList ? symsArg.items.map(asSym) : [];
+    const symbols = symsArg instanceof JsTuple || symsArg instanceof JsList ? symsArg.items.map(asSym) : [];
     const r = sj.separatevars(asExpr(args[0]), { symbols, dict: Boolean(kw['dict']), force: Boolean(kw['force']) });
     if (r === undefined) return null;
-    if (r instanceof Map) return new PyDict([...r].map(([k, v]) => [k, v] as const));
+    if (r instanceof Map) return new JsDict([...r].map(([k, v]) => [k, v] as const));
     return r;
   },
 
@@ -1105,20 +1105,20 @@ export const ADAPTERS: Record<string, Adapter> = {
     const e = asExpr(args[0]);
     const x = args[1] === undefined ? ([...sj.freeSymbols(e)][0] as Sym) : asSym(args[1]);
     const [common, poly, terms, w] = sj.apartList(e, x);
-    return new PyTuple([common, poly, new PyList(terms.map(([r, nf, df, ex]) => new PyTuple([Array.isArray(r) ? new PyList(r) : sj.Poly.from(r, [w]), nf, df, sj.Rational.of(ex)])))]);
+    return new JsTuple([common, poly, new JsList(terms.map(([r, nf, df, ex]) => new JsTuple([Array.isArray(r) ? new JsList(r) : sj.Poly.from(r, [w]), nf, df, sj.Rational.of(ex)])))]);
   },
   assemble_partfrac_list: (args, kw) => {
     noKw(kw);
-    const t = args[0] as PyTuple;
-    const toLam = (f: unknown) => (f instanceof PyLambda ? sj.Lambda(f.vars, f.body) : (f as sj.Lambda));
+    const t = args[0] as JsTuple;
+    const toLam = (f: unknown) => (f instanceof JsLambda ? sj.Lambda(f.vars, f.body) : (f as sj.Lambda));
     let w: Sym | undefined;
-    const terms = ((t.items[2] as PyList).items as PyTuple[]).map((it) => {
+    const terms = ((t.items[2] as JsList).items as JsTuple[]).map((it) => {
       const [r, nf, df, ex] = it.items;
       let rr: Expr | Expr[];
       if (r instanceof sj.Poly) {
         w = r.gens[0] as Sym;
         rr = r.asExpr();
-      } else rr = (r as PyList).items.map(asExpr);
+      } else rr = (r as JsList).items.map(asExpr);
       return [rr, toLam(nf), toLam(df), Number((ex as sj.Rational).p)] as sj.PartfracTerm;
     });
     const poly = t.items[1] instanceof sj.Poly ? t.items[1] : sj.Poly.from(asExpr(t.items[1]));
@@ -1132,12 +1132,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   unpolarify: (args, kw) => (noKw(kw), sj.unpolarify(asExpr(args[0]))),
   '.extract_branch_factor': (_args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'allow_half') throw new Unsupported(`kwargs ${k}`);
-    return new PyTuple(sj.extractBranchFactor(asExpr(self), Boolean(kw['allow_half'])));
+    return new JsTuple(sj.extractBranchFactor(asExpr(self), Boolean(kw['allow_half'])));
   },
   frac: exprFn(sj.frac),
   nsimplify: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['tolerance', 'rational', 'rational_conversion'].includes(k)) throw new Unsupported(`kwargs ${k}`);
-    const constants = args[1] instanceof PyList || args[1] instanceof PyTuple ? args[1].items.map(asExpr) : undefined;
+    const constants = args[1] instanceof JsList || args[1] instanceof JsTuple ? args[1].items.map(asExpr) : undefined;
     return sj.nsimplify(asExpr(args[0]), {
       ...(constants ? { constants } : {}),
       tolerance: kw['tolerance'] === undefined ? undefined : asExpr(kw['tolerance']).toNumber(),
@@ -1147,12 +1147,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   sqrtdenest: exprFn(sj.sqrtdenest),
   '.extract_leading_order': (args, kw, self) =>
-    (noKw(kw), new PyTuple(sj.extractLeadingOrder(asExpr(self), asSym(args[0])).map(([a, b]) => new PyTuple([a, b])))),
+    (noKw(kw), new JsTuple(sj.extractLeadingOrder(asExpr(self), asSym(args[0])).map(([a, b]) => new JsTuple([a, b])))),
   '.as_finite_difference': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (!['points', 'x0', 'wrt'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (!(self instanceof sj.Derivative)) throw new Unsupported('as_finite_difference');
     const pts = kw['points'] ?? args[0];
-    const points = pts === undefined ? 1 : pts instanceof PyList || pts instanceof PyTuple ? pts.items.map(asExpr) : asExpr(pts);
+    const points = pts === undefined ? 1 : pts instanceof JsList || pts instanceof JsTuple ? pts.items.map(asExpr) : asExpr(pts);
     const x0 = kw['x0'] ?? args[1];
     return sj.asFiniteDifference(self, points, x0 === undefined ? undefined : asExpr(x0), kw['wrt'] === undefined ? undefined : asSym(kw['wrt']));
   },
@@ -1165,34 +1165,34 @@ export const ADAPTERS: Record<string, Adapter> = {
   primitive: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'expand') throw new Unsupported(`kwargs ${k}`);
     // expand=False: the expression as it is (SymPy treats it as a single term structure)
-    if (kw['expand'] === false) return new PyTuple(sj.primitive(asExpr(args[0])));
+    if (kw['expand'] === false) return new JsTuple(sj.primitive(asExpr(args[0])));
     const p = polyOf(args);
     const [c, q] = p.primitive();
-    return new PyTuple([c, q.asExpr()]);
+    return new JsTuple([c, q.asExpr()]);
   },
   content: (args, kw) => (noKw(kw), polyOf(args).content()),
-  pdiv: polyFn(2, ([f, g]) => new PyTuple(f!.pdiv(g!))),
+  pdiv: polyFn(2, ([f, g]) => new JsTuple(f!.pdiv(g!))),
   prem: polyFn(2, ([f, g]) => f!.prem(g!)),
   pexquo: polyFn(2, ([f, g]) => f!.pexquo(g!)),
-  gcdex: polyFn(2, ([f, g]) => new PyTuple(f!.gcdex(g!))),
-  half_gcdex: polyFn(2, ([f, g]) => new PyTuple(f!.halfGcdex(g!))),
+  gcdex: polyFn(2, ([f, g]) => new JsTuple(f!.gcdex(g!))),
+  half_gcdex: polyFn(2, ([f, g]) => new JsTuple(f!.halfGcdex(g!))),
   sturm: polyFn(1, ([f]) => f!.sturm()),
   sqf_part: polyFn(1, ([f]) => f!.sqfPart()),
   subresultants: polyFn(2, ([f, g]) => f!.subresultants(g!)),
   reduced: (args, kw) => {
     noKw(kw);
-    const G = (args[1] as PyTuple).items;
+    const G = (args[1] as JsTuple).items;
     const { ps, asPolys } = parallelPolys([args[0], ...G, ...args.slice(2)], G.length + 1);
     const gens = ps[0]!.gens as Sym[];
     const [qs, r] = sj.reduced(ps[0]!.asExpr(), ps.slice(1).map((p) => p.asExpr()), gens);
     const out = (e: Expr) => (asPolys ? sj.Poly.from(e, gens) : e);
-    return new PyTuple([new PyList(qs.map(out)), out(r)]);
+    return new JsTuple([new JsList(qs.map(out)), out(r)]);
   },
   monic: polyFn(1, ([f]) => f!.monic()),
   trunc: polyFn(1, ([f], [p]) => f!.trunc(asExpr(p)), 1),
   sqf_list: polyFn(1, ([f]) => {
     const [c, fs] = f!.sqfListAll(false);
-    return new PyTuple([c, new PyList(fs.map(([g, k]) => new PyTuple([g, k])))]);
+    return new JsTuple([c, new JsList(fs.map(([g, k]) => new JsTuple([g, k])))]);
   }),
   sqf: (args, kw) => {
     noKw(kw);
@@ -1203,14 +1203,14 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   gcd_list: (args, kw) => {
     noKw(kw);
-    const fs = (args[0] as PyTuple).items;
+    const fs = (args[0] as JsTuple).items;
     const { ps, asPolys } = parallelPolys([...fs, ...args.slice(1)], fs.length);
     const r = ps.reduce((a, b) => a.gcd(b));
     return asPolys ? r : r.asExpr();
   },
   lcm_list: (args, kw) => {
     noKw(kw);
-    const fs = (args[0] as PyTuple).items;
+    const fs = (args[0] as JsTuple).items;
     const { ps, asPolys } = parallelPolys([...fs, ...args.slice(1)], fs.length);
     const r = ps.reduce((a, b) => a.lcm(b));
     return asPolys ? r : r.asExpr();
@@ -1221,17 +1221,17 @@ export const ADAPTERS: Record<string, Adapter> = {
     const x = args[2] ? asSym(args[2]) : (sj.sortGens([...sj.freeSymbols(f)])[0] as Sym);
     const p = sj.Poly.from(f, [x]);
     const n = p.degree();
-    const rs = args[1] ? (args[1] as PyTuple).items.map(asExpr) : Array.from({ length: n }, (_, i) => new Sym(`r${i + 1}`));
+    const rs = args[1] ? (args[1] as JsTuple).items.map(asExpr) : Array.from({ length: n }, (_, i) => new Sym(`r${i + 1}`));
     const cs = p.allCoeffs();
     const lc = cs[0]!;
-    const out: PyTuple[] = [];
+    const out: JsTuple[] = [];
     // elementary symmetric polynomials of the roots
     const choose = (k: number, start: number): Expr[][] => (k === 0 ? [[]] : rs.slice(start).flatMap((r, i) => choose(k - 1, start + i + 1).map((c) => [r, ...c])));
     for (let k = 1; k <= n; k++) {
       const sym = sj.add(...choose(k, 0).map((c) => sj.mul(...c)));
-      out.push(new PyTuple([sym, sj.mul(k % 2 ? -1 : 1, cs[k]!, sj.pow(lc, -1))]));
+      out.push(new JsTuple([sym, sj.mul(k % 2 ? -1 : 1, cs[k]!, sj.pow(lc, -1))]));
     }
-    return new PyList(out);
+    return new JsList(out);
   },
   poly: (args, kw) => (noKw(kw), sj.Poly.from(asExprOrPoly(args[0]), args.slice(1).map(asExpr))),
   pquo: (args, kw) => {
@@ -1253,7 +1253,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const f = asExpr(args[0]);
     const g = asExpr(args[1]);
     const gens = sj.sortGens([...sj.freeSymbols(sj.add(f, g))]);
-    return new PyTuple(sj.Poly.from(f, gens).cofactors(sj.Poly.from(g, gens)).map((p) => p.asExpr()));
+    return new JsTuple(sj.Poly.from(f, gens).cofactors(sj.Poly.from(g, gens)).map((p) => p.asExpr()));
   },
   compose: (args, kw) => {
     noKw(kw);
@@ -1262,9 +1262,9 @@ export const ADAPTERS: Record<string, Adapter> = {
     const gens = sj.sortGens([...sj.freeSymbols(sj.add(f, g))]);
     return sj.Poly.from(f, gens).compose(sj.Poly.from(g, gens)).asExpr();
   },
-  decompose: (args, kw) => (noKw(kw), new PyList(polyOf(args).decompose().map((p) => p.asExpr()))),
-  '.decompose': polyM((p) => new PyList(p.decompose())),
-  degree_list: (args, kw) => (noKw(kw), new PyTuple(polyOf(args).degreeList())),
+  decompose: (args, kw) => (noKw(kw), new JsList(polyOf(args).decompose().map((p) => p.asExpr()))),
+  '.decompose': polyM((p) => new JsList(p.decompose())),
+  degree_list: (args, kw) => (noKw(kw), new JsTuple(polyOf(args).degreeList())),
   '.retract': (_args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'field') throw new Unsupported(`kwargs ${k}`);
     return asPoly(self).retract(Boolean(kw['field']));
@@ -1272,12 +1272,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   nroots: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'n') throw new Unsupported(`kwargs ${k}`);
     const n = kw['n'] ?? args[1];
-    return new PyList(sj.nroots(args[0] instanceof sj.Poly ? args[0] : asExpr(args[0]), n === undefined ? 15 : intArg(n)));
+    return new JsList(sj.nroots(args[0] instanceof sj.Poly ? args[0] : asExpr(args[0]), n === undefined ? 15 : intArg(n)));
   },
   '.nroots': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'n') throw new Unsupported(`kwargs ${k}`);
     const n = kw['n'] ?? args[0];
-    return new PyList(sj.nroots(asPoly(self), n === undefined ? 15 : intArg(n)));
+    return new JsList(sj.nroots(asPoly(self), n === undefined ? 15 : intArg(n)));
   },
   '.is_convergent': (_args, kw, self) => {
     noKw(kw);
@@ -1314,14 +1314,14 @@ export const ADAPTERS: Record<string, Adapter> = {
   integer_nthroot: (args, kw) => {
     noKw(kw);
     const [r, ok] = sj.integerNthroot((args[0] as sj.Rational).p, intArg(args[1]));
-    return new PyTuple([sj.Rational.of(r), ok]);
+    return new JsTuple([sj.Rational.of(r), ok]);
   },
   trailing: (args, kw) => (noKw(kw), sj.trailing((args[0] as sj.Rational).p)),
   num_digits: (args, kw) => (noKw(kw), sj.numDigits((args[0] as sj.Rational).p, args[1] === undefined ? 10 : intArg(args[1]))),
   mod_inverse: (args, kw) => (noKw(kw), sj.modInverse(args[0] as sj.Rational, args[1] as sj.Rational)),
   prod: (args, kw) => {
     noKw(kw);
-    const xs = args[0] instanceof PyList || args[0] instanceof PyTuple ? args[0].items.map(asExpr) : [];
+    const xs = args[0] instanceof JsList || args[0] instanceof JsTuple ? args[0].items.map(asExpr) : [];
     return sj.mul(args[1] === undefined ? 1 : asExpr(args[1]), ...xs);
   },
   nfloat: (args, kw) => {
@@ -1335,14 +1335,14 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   var: (args, kw) => ADAPTERS['symbols']!(args, kw),
   '.limit_denominator': (args, kw, self) => (noKw(kw), sj.limitDenominator(self as sj.Rational, (args[0] as sj.Rational).p)),
-  '.as_two_terms': exprMethod((e) => new PyTuple(sj.asTwoTerms(e))),
-  '.has_xfree': (args, kw, self) => (noKw(kw), sj.hasXfree(asExpr(self), (args[0] as PySet).items.filter((i) => !(i instanceof UFnClass)).map(asExpr))),
+  '.as_two_terms': exprMethod((e) => new JsTuple(sj.asTwoTerms(e))),
+  '.has_xfree': (args, kw, self) => (noKw(kw), sj.hasXfree(asExpr(self), (args[0] as JsSet).items.filter((i) => !(i instanceof UFnClass)).map(asExpr))),
   '.is_algebraic_expr': (args, kw, self) => (noKw(kw), sj.isAlgebraicExpr(asExpr(self), args.map(asExpr))),
   '.dummy_eq': (args, kw, self) => (noKw(kw), sj.dummyEq(asExpr(self), asExpr(args[0]), args[1] === undefined ? undefined : asExpr(args[1]))),
   '.compare': (args, kw, self) => (noKw(kw), Math.sign(sj.compareKeys(sj.sortKey(asExpr(self)), sj.sortKey(asExpr(args[0]))))),
   '.could_extract_minus_sign': exprMethod((e) => sj.couldExtractMinusSign(e)),
-  '.as_ordered_factors': exprMethod((e) => new PyList(sj.orderedFactors ? sj.orderedFactors(e) : [e])),
-  '.leadterm': (args, kw, self) => (noKw(kw), new PyTuple(sj.leadterm(asExpr(self), asSym(args[0])))),
+  '.as_ordered_factors': exprMethod((e) => new JsList(sj.orderedFactors ? sj.orderedFactors(e) : [e])),
+  '.leadterm': (args, kw, self) => (noKw(kw), new JsTuple(sj.leadterm(asExpr(self), asSym(args[0])))),
   '.as_leading_term': (args, kw, self) => (noKw(kw), sj.asLeadingTerm(asExpr(self), asSym(args[0]))),
   '.getn': exprMethod((e) => sj.getn(e) ?? null),
   '.nseries': (args, kw, self) => {
@@ -1361,7 +1361,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.as_coefficients_dict': (args, kw, self) => {
     noKw(kw);
-    return new PyDefaultDict([...sj.asCoefficientsDict(asExpr(self), args.map(asExpr))]);
+    return new JsDefaultDict([...sj.asCoefficientsDict(asExpr(self), args.map(asExpr))]);
   },
   Pow: (args, kw) => (noKw(kw), sj.pow(asExpr(args[0]), asExpr(args[1]))),
   sqrt: exprFn(sj.sqrt),
@@ -1370,7 +1370,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       n,
       ((args, kw) => {
         noKw(kw);
-        return sj.fn(n, args.flatMap((a) => (a instanceof PyTuple ? a.items.map(asExpr) : [asExpr(a)])));
+        return sj.fn(n, args.flatMap((a) => (a instanceof JsTuple ? a.items.map(asExpr) : [asExpr(a)])));
       }) as Adapter,
     ]),
   ),
@@ -1444,7 +1444,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (args.length !== 1) throw new Unsupported('arity');
     if (kw['modulus'] !== undefined) return sj.factor(asExpr(args[0]), { modulus: (kw['modulus'] as sj.Rational).p });
     const ext = kw['extension'];
-    const extension = ext === undefined ? undefined : ext instanceof PyTuple || ext instanceof PyList ? ext.items.map(asExpr) : [asExpr(ext)];
+    const extension = ext === undefined ? undefined : ext instanceof JsTuple || ext instanceof JsList ? ext.items.map(asExpr) : [asExpr(ext)];
     return sj.factor(asExpr(args[0]), { deep: Boolean(kw['deep']), gaussian: Boolean(kw['gaussian']), extension });
   },
   together: (args, kw) => {
@@ -1463,7 +1463,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   polarify: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'lift' && k !== 'subs') throw new Unsupported(`kwargs ${k}`);
     const r = sj.polarify(asExpr(args[0]), { lift: kw['lift'] === undefined ? undefined : Boolean(kw['lift']), subs: kw['subs'] === undefined ? undefined : Boolean(kw['subs']) });
-    return Array.isArray(r) ? new PyTuple([r[0], new PyDict(r[1])]) : r;
+    return Array.isArray(r) ? new JsTuple([r[0], new JsDict(r[1])]) : r;
   },
   piecewise_exclusive: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'skip_nan') throw new Unsupported(`kwargs ${k}`);
@@ -1489,7 +1489,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.permute': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (!['orientation', 'direction'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (!(self instanceof Matrix)) throw new Unsupported('permute');
-    const swaps = (args[0] as PyTuple).items.map((t) => (t as PyTuple).items.map((v) => Number((v as sj.Rational).p)) as [number, number]);
+    const swaps = (args[0] as JsTuple).items.map((t) => (t as JsTuple).items.map((v) => Number((v as sj.Rational).p)) as [number, number]);
     const rows = (kw['orientation'] ?? 'rows') === 'rows';
     const order = (kw['direction'] ?? 'forward') === 'forward' ? swaps : [...swaps].reverse();
     let data = rows ? Array.from({ length: self.rows }, (_, i) => self.row(i)) : Array.from({ length: self.cols }, (_, j) => self.col(j));
@@ -1502,29 +1502,29 @@ export const ADAPTERS: Record<string, Adapter> = {
   gff_list: (args, kw) => {
     noKw(kw);
     const p = polyOf(args);
-    return new PyList(p.gffList().map(([h, k]) => new PyTuple([sj.Poly.from(h.asExpr(), p.gens), sj.Rational.of(k)])));
+    return new JsList(p.gffList().map(([h, k]) => new JsTuple([sj.Poly.from(h.asExpr(), p.gens), sj.Rational.of(k)])));
   },
   '.gff_list': (_a, kw, self) => {
     noKw(kw);
     const p = asPoly(self);
-    return new PyList(p.gffList().map(([h, k]) => new PyTuple([sj.Poly.from(h.asExpr(), p.gens), sj.Rational.of(k)])));
+    return new JsList(p.gffList().map(([h, k]) => new JsTuple([sj.Poly.from(h.asExpr(), p.gens), sj.Rational.of(k)])));
   },
   factor_nc: exprFn(sj.factorNc),
   arity: (args, kw) => {
     noKw(kw);
-    if (args[0] instanceof PyLambda) return sj.Rational.of(args[0].vars.length);
+    if (args[0] instanceof JsLambda) return sj.Rational.of(args[0].vars.length);
     if (args[0] instanceof FnClass) {
       // functions with optional arguments report (min, max) like SymPy
       const ranges: Record<string, [number, number]> = { log: [1, 2], atan2: [2, 2], polygamma: [2, 2], besselj: [2, 2], zeta: [1, 2], harmonic: [1, 2] };
       const r = ranges[args[0].name] ?? [1, 1];
-      return r[0] === r[1] ? sj.Rational.of(r[0]) : new PyTuple(r.map((k) => sj.Rational.of(k)));
+      return r[0] === r[1] ? sj.Rational.of(r[0]) : new JsTuple(r.map((k) => sj.Rational.of(k)));
     }
     throw new Unsupported('arity');
   },
   '.applyfunc': (args, kw, self) => {
     noKw(kw);
     const f = args[0];
-    if (!(self instanceof Matrix) || !(f instanceof PyLambda)) throw new Unsupported('applyfunc');
+    if (!(self instanceof Matrix) || !(f instanceof JsLambda)) throw new Unsupported('applyfunc');
     return self.map((e) => f.call(e));
   },
   '.as_dummy': (_args, kw, self) => {
@@ -1544,7 +1544,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     const a = asExpr(self);
     const b = asExpr(args[0]);
-    const fn = args[1] instanceof PyFunc ? args[1].name : undefined;
+    const fn = args[1] instanceof JsFunc ? args[1].name : undefined;
     // numbers are compared with the given function, everything else structurally
     const num = (x: Expr, y: Expr): boolean => {
       if (fn === 'equal_valued') {
@@ -1565,10 +1565,10 @@ export const ADAPTERS: Record<string, Adapter> = {
         : x.kind === y.kind && x.args.length === y.args.length && (x.args.length ? x.args.every((u, i) => same(u, y.args[i]!)) : x.key === y.key);
     return same(a, b);
   },
-  '.fromiter': (args, kw) => (noKw(kw), new PyTuple((args[0] as PyTuple).items)),
+  '.fromiter': (args, kw) => (noKw(kw), new JsTuple((args[0] as JsTuple).items)),
   rational_interpolate: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'X') throw new Unsupported(`kwargs ${k}`);
-    const data = (args[0] as PyTuple | PyList).items.map((t) => (t as PyTuple).items.map(asExpr) as [Expr, Expr]);
+    const data = (args[0] as JsTuple | JsList).items.map((t) => (t as JsTuple).items.map(asExpr) as [Expr, Expr]);
     return sj.rationalInterpolate(data, Number((args[1] as sj.Rational).p), kw['X'] ? asSym(kw['X']) : undefined);
   },
   '.is_motzkin': (args, kw) => {
@@ -1577,17 +1577,17 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.find_motzkin_numbers_in_range': (args, kw) => {
     noKw(kw);
-    return new PyList(sj.motzkinNumbersInRange((args[0] as sj.Rational).p, (args[1] as sj.Rational).p).map((v) => sj.Rational.of(v)));
+    return new JsList(sj.motzkinNumbersInRange((args[0] as sj.Rational).p, (args[1] as sj.Rational).p).map((v) => sj.Rational.of(v)));
   },
   '.find_first_n_motzkins': (args, kw) => {
     noKw(kw);
-    return new PyList(sj.firstMotzkins(Number((args[0] as sj.Rational).p)).map((v) => sj.Rational.of(v)));
+    return new JsList(sj.firstMotzkins(Number((args[0] as sj.Rational).p)).map((v) => sj.Rational.of(v)));
   },
   '.factors': (args, kw, self) => {
     noKw(kw);
     if (args.length || !(self instanceof sj.Rational) || !self.isInteger) throw new Unsupported('factors');
     const n = self.p < 0n ? -self.p : self.p;
-    return new PyDict([...sj.factorInt(n)].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([p, k]) => [sj.Rational.of(p), sj.Rational.of(k)] as const));
+    return new JsDict([...sj.factorInt(n)].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([p, k]) => [sj.Rational.of(p), sj.Rational.of(k)] as const));
   },
   not_empty_in: (args, kw) => {
     noKw(kw);
@@ -1613,17 +1613,20 @@ export const ADAPTERS: Record<string, Adapter> = {
   posify: (args, kw) => {
     noKw(kw);
     const [e, m] = sj.posify(asExpr(args[0]));
-    return new PyTuple([e, new PyDict([...m])]);
+    return new JsTuple([e, new JsDict([...m])]);
   },
-  radsimp: exprFn(sj.radsimp),
+  radsimp: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'symbolic' && k !== 'max_terms') throw new Unsupported(`kwargs ${k}`);
+    return sj.radsimp(asExpr(args[0]), { symbolic: kw['symbolic'] !== false, ...(kw['max_terms'] ? { maxTerms: Number((kw['max_terms'] as sj.Rational).p) } : {}) });
+  },
   collect: (args, kw) => {
     const exact = kw['exact'];
     for (const k of Object.keys(kw)) if (k !== 'exact') throw new Unsupported(`kwargs ${k}`);
-    if (args.length === 3 && args[2] instanceof PyFunc) {
+    if (args.length === 3 && args[2] instanceof JsFunc) {
       // collect(expr, syms, func): func applied to each collected coefficient
       const f = ADAPTERS[args[2].name];
       if (!f) throw new Unsupported('collect func');
-      const syms = args[1] instanceof PyTuple ? args[1].items.map(asExpr) : [asExpr(args[1])];
+      const syms = args[1] instanceof JsTuple ? args[1].items.map(asExpr) : [asExpr(args[1])];
       const c = sj.collect(asExpr(args[0]), syms);
       const terms = c instanceof sj.Add ? c.args : [c];
       return sj.add(
@@ -1634,12 +1637,12 @@ export const ADAPTERS: Record<string, Adapter> = {
       );
     }
     if (args.length !== 2) throw new Unsupported('collect arity');
-    const syms = args[1] instanceof PyTuple ? args[1].items.map(asExpr) : [asExpr(args[1])];
+    const syms = args[1] instanceof JsTuple ? args[1].items.map(asExpr) : [asExpr(args[1])];
     return sj.collect(asExpr(args[0]), syms, exact === undefined || exact === null ? {} : { exact: Boolean(exact) });
   },
   fraction: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'exact') throw new Unsupported(`kwargs ${k}`);
-    return new PyTuple(sj.fraction(asExpr(args[0]), { exact: Boolean(kw['exact']) }));
+    return new JsTuple(sj.fraction(asExpr(args[0]), { exact: Boolean(kw['exact']) }));
   },
   diff: (args, kw) => (noKw(kw), diffArgs(asExpr(args[0]), args.slice(1))),
   integrate: (args, kw) => {
@@ -1654,21 +1657,21 @@ export const ADAPTERS: Record<string, Adapter> = {
     }
     for (const v of lims) {
       if (v instanceof Sym) f = sj.integrate(f, v);
-      else if (v instanceof PyTuple && v.items.length === 3)
+      else if (v instanceof JsTuple && v.items.length === 3)
         f = sj.integrate(f, asSym(v.items[0]), [asExpr(v.items[1]), asExpr(v.items[2])], { conds: conds === 'none' ? 'none' : 'piecewise' });
-      else if (v instanceof PyTuple && v.items.length === 1) f = sj.integrate(f, asSym(v.items[0]));
+      else if (v instanceof JsTuple && v.items.length === 1) f = sj.integrate(f, asSym(v.items[0]));
       else throw new Unsupported('integrate limits');
     }
     if (conds === 'separate') {
       // (value, condition) instead of a Piecewise
-      if (f instanceof sj.Piecewise && f.pairs.length === 2) return new PyTuple([f.pairs[0]![0], f.pairs[0]![1]]);
+      if (f instanceof sj.Piecewise && f.pairs.length === 2) return new JsTuple([f.pairs[0]![0], f.pairs[0]![1]]);
       return f;
     }
     return f;
   },
   roots: (args, kw) => {
     noKw(kw);
-    if (args[0] instanceof PyTuple) {
+    if (args[0] instanceof JsTuple) {
       // a list of coefficients
       const cs = args[0].items.map(asExpr);
       const t = new Sym('x');
@@ -1684,23 +1687,23 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'check' && k !== 'cubics' && k !== 'set') throw new Unsupported(`kwargs ${k}`);
     if (kw['set'] === true) {
       // set=True: ([symbols], {(solution,), ...}) for one equation in one unknown
-      if (args.length !== 2 || args[0] instanceof PyTuple || args[0] instanceof PyList) throw new Unsupported('solve set form');
+      if (args.length !== 2 || args[0] instanceof JsTuple || args[0] instanceof JsList) throw new Unsupported('solve set form');
       const t = asExpr(args[1]);
       const d = t instanceof Sym ? t : new sj.Dummy('_t');
       const e = t instanceof Sym ? asExpr(args[0]) : sj.subs(asExpr(args[0]), [[t, d]]);
       const sols = sj.solve(e, d);
-      return new PyTuple([new PyList([t]), new PySet(sols.map((v) => new PyTuple([v])))]);
+      return new JsTuple([new JsList([t]), new JsSet(sols.map((v) => new JsTuple([v])))]);
     }
     const check = kw['check'] === undefined ? undefined : Boolean(kw['check']);
     const cubics = kw['cubics'] === false ? false : undefined;
     const first = args[0];
     // systems of inequalities in one symbol
-    if (first instanceof PyTuple && first.items.length && first.items.every((i) => i instanceof sj.Rel && i.op !== 'Eq' && i.op !== 'Ne')) {
+    if (first instanceof JsTuple && first.items.length && first.items.every((i) => i instanceof sj.Rel && i.op !== 'Eq' && i.op !== 'Ne')) {
       const syms = args.slice(1).filter((a) => a instanceof Sym) as Sym[];
       return sj.reduceInequalities(first.items.map(asExpr), syms);
     }
     // equations mixed with inequalities in one symbol (SymPy _solve_system with inequalities)
-    if ((first instanceof PyTuple || first instanceof PyList) && first.items.some((i) => i instanceof sj.Rel && i.op !== 'Eq' && i.op !== 'Ne') && first.items.some((i) => !(i instanceof sj.Rel) || i.op === 'Eq')) {
+    if ((first instanceof JsTuple || first instanceof JsList) && first.items.some((i) => i instanceof sj.Rel && i.op !== 'Eq' && i.op !== 'Ne') && first.items.some((i) => !(i instanceof sj.Rel) || i.op === 'Eq')) {
       const isEq = (i: unknown) => !(i instanceof sj.Rel) || i.op === 'Eq';
       const syms = args.slice(1).filter((a) => a instanceof Sym) as Sym[];
       const eqs = first.items.filter(isEq).map(asExpr);
@@ -1711,9 +1714,9 @@ export const ADAPTERS: Record<string, Adapter> = {
       return sj.And(ineq, sj.Eq(syms[0]!, sols[0]!));
     }
     // systems of equations
-    if (first instanceof PyTuple) {
+    if (first instanceof JsTuple) {
       // unknowns that are not symbols (x + 2, x*y) are solved for as dummies, like SymPy
-      const targets = (args[1] instanceof PyTuple ? args[1].items : args.slice(1)).map(asExpr);
+      const targets = (args[1] instanceof JsTuple ? args[1].items : args.slice(1)).map(asExpr);
       const syms = targets.map((t, i) => (t instanceof Sym ? t : new sj.Dummy(`_t${i}`)));
       const reps = targets.map((t, i) => [t, syms[i]!] as [Expr, Expr]).filter(([t]) => !(t instanceof Sym));
       const back = (v: Expr) => targets[syms.indexOf(v as Sym)] ?? v;
@@ -1722,14 +1725,14 @@ export const ADAPTERS: Record<string, Adapter> = {
       const vars = syms.length ? syms : allSymbols(eqs);
       if (sj.linearEqToMatrix(eqs, vars)) {
         const s = sj.linsolve(eqs, vars);
-        if (!s) return new PyList([]);
+        if (!s) return new JsList([]);
         // underdetermined: SymPy lists only the solved (pivot) symbols
-        return new PyDict(vars.map((v, i) => [back(v), s[i]!] as const).filter(([v, e]) => v.key !== e.key));
+        return new JsDict(vars.map((v, i) => [back(v), s[i]!] as const).filter(([v, e]) => v.key !== e.key));
       }
       const sols = sj.nonlinsolve(eqs, vars);
-      return new PyList(sols.map((t) => new PyDict(vars.map((v, i) => [back(v), t[i]!] as const))));
+      return new JsList(sols.map((t) => new JsDict(vars.map((v, i) => [back(v), t[i]!] as const))));
     }
-    if (first instanceof PyList && first.items.some((i) => i instanceof sj.Rel && i.op !== 'Eq')) {
+    if (first instanceof JsList && first.items.some((i) => i instanceof sj.Rel && i.op !== 'Eq')) {
       const syms = args.slice(1).filter((a) => a instanceof Sym) as Sym[];
       const isEq = (i: unknown) => !(i instanceof sj.Rel) || i.op === 'Eq';
       if (first.items.some(isEq)) {
@@ -1747,14 +1750,14 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (e instanceof sj.Rel && e.op !== 'Eq' && e.op !== 'Ne') {
       return sj.reduceInequalities([e], args[1] instanceof Sym ? [args[1]] : []);
     }
-    if (args[1] instanceof PyTuple) {
+    if (args[1] instanceof JsTuple) {
       // a single equation in several unknowns with other free symbols: undetermined coefficients
       const coeffs = args[1].items.map(asSym);
       const others = [...sj.freeSymbols(e)].filter((s) => !coeffs.some((c) => c.key === s.key));
       if (!others.length) throw new Unsupported('solve for several symbols');
       const sols = sj.solveUndeterminedCoeffs(e, coeffs, others as Sym[]);
       if (sols.length !== 1) throw new Unsupported('solve for several symbols');
-      return new PyDict(coeffs.map((c, i) => [c, sols[0]![i]!] as const));
+      return new JsDict(coeffs.map((c, i) => [c, sols[0]![i]!] as const));
     }
     const syms = [...sj.freeSymbols(e)];
     const x =
@@ -1765,15 +1768,15 @@ export const ADAPTERS: Record<string, Adapter> = {
           : args.length === 1 && syms.length === 1
             ? syms[0]!
             : undefined;
-    if (args.length === 1 && syms.length === 0) return new PyList([]);
+    if (args.length === 1 && syms.length === 0) return new JsList([]);
     if (!x || args.length > 2) throw new Unsupported('solve form');
-    return new PyList(sj.solve(e, x, { ...(check === undefined ? {} : { check }), ...(cubics === false ? { cubics } : {}) }));
+    return new JsList(sj.solve(e, x, { ...(check === undefined ? {} : { check }), ...(cubics === false ? { cubics } : {}) }));
   },
   checksol: (args, kw) => {
     noKw(kw);
     const e = asExpr(args[0]);
     let reps: [Expr, Expr][];
-    if (args[1] instanceof PyDict) reps = args[1].entries.map(([k, v]) => [asExpr(k), asExpr(v)]);
+    if (args[1] instanceof JsDict) reps = args[1].entries.map(([k, v]) => [asExpr(k), asExpr(v)]);
     else reps = [[asExpr(args[1]), asExpr(args[2])]];
     const v = sj.simplify(sj.subs(e, new Map(reps)));
     if (v instanceof sj.Rational) return v.isZero;
@@ -1786,30 +1789,30 @@ export const ADAPTERS: Record<string, Adapter> = {
   linsolve: (args, kw) => {
     noKw(kw);
     const first = args[0];
-    const syms = args[1] instanceof PyTuple ? args[1].items.map(asSym) : args.slice(1).map(asSym);
+    const syms = args[1] instanceof JsTuple ? args[1].items.map(asSym) : args.slice(1).map(asSym);
     let sol: Expr[] | undefined;
-    if (first instanceof PyTuple && first.items.length === 2 && first.items[0] instanceof Matrix) {
+    if (first instanceof JsTuple && first.items.length === 2 && first.items[0] instanceof Matrix) {
       const [A, b] = first.items as [Matrix, Matrix];
       if (!syms.length) throw new Unsupported('linsolve without symbols');
       sol = solveAug(A.hstack(b), syms);
     } else if (first instanceof Matrix) {
       sol = solveAug(first, syms);
-    } else if (first instanceof PyTuple) {
+    } else if (first instanceof JsTuple) {
       if (first.items.length === 0) return 'EmptySet';
       sol = sj.linsolve(first.items.map(asExpr), syms);
     } else throw new Unsupported('linsolve form');
-    return sol ? new PySet([new PyTuple(sol)]) : 'EmptySet';
+    return sol ? new JsSet([new JsTuple(sol)]) : 'EmptySet';
   },
   solve_poly_system: (args, kw) => polySystemSolutions(args, kw),
   solve_triangulated: (args, kw) => polySystemSolutions(args, kw, true),
   substitution: (args, kw) => {
     noKw(kw);
     // SymPy solveset.substitution(system, symbols, result=[{}], known_symbols=[], exclude=[], all_symbols=None)
-    const eqs = (args[0] as PyTuple).items.map(asExpr);
-    const syms = (args[1] as PyTuple).items.map(asSym);
-    const results = args[2] instanceof PyTuple ? args[2].items.map((d) => (d as PyDict).entries.map(([k, v]) => [asExpr(k), asExpr(v)] as [Expr, Expr])) : [[]];
-    const exclude = args[4] instanceof PySet ? args[4].items.map(asExpr) : args[4] instanceof PyTuple ? args[4].items.map(asExpr) : [];
-    const all = args[5] instanceof PyTuple ? args[5].items.map(asSym) : syms;
+    const eqs = (args[0] as JsTuple).items.map(asExpr);
+    const syms = (args[1] as JsTuple).items.map(asSym);
+    const results = args[2] instanceof JsTuple ? args[2].items.map((d) => (d as JsDict).entries.map(([k, v]) => [asExpr(k), asExpr(v)] as [Expr, Expr])) : [[]];
+    const exclude = args[4] instanceof JsSet ? args[4].items.map(asExpr) : args[4] instanceof JsTuple ? args[4].items.map(asExpr) : [];
+    const all = args[5] instanceof JsTuple ? args[5].items.map(asSym) : syms;
     const out: Expr[][] = [];
     for (const known of results) {
       const sub = eqs.map((e) => sj.expand(sj.subs(e, known))).filter((e) => !(e instanceof sj.Rational && e.isZero));
@@ -1823,21 +1826,21 @@ export const ADAPTERS: Record<string, Adapter> = {
         out.push(all.map((v) => vals.get(v.key) ?? v));
       }
     }
-    return out.length ? new PySet(out.map((t) => new PyTuple(t))) : 'EmptySet';
+    return out.length ? new JsSet(out.map((t) => new JsTuple(t))) : 'EmptySet';
   },
   nonlinsolve: (args, kw) => {
     noKw(kw);
-    const eqs = (args[0] as PyTuple).items.map(asExpr);
-    const syms = (args[1] as PyTuple).items.map(asSym);
+    const eqs = (args[0] as JsTuple).items.map(asExpr);
+    const syms = (args[1] as JsTuple).items.map(asSym);
     const sols = substitutionSolve(eqs, syms);
-    return sols.length ? new PySet(sols.map((t) => new PyTuple(t))) : 'EmptySet';
+    return sols.length ? new JsSet(sols.map((t) => new JsTuple(t))) : 'EmptySet';
   },
   solve_linear: (args, kw) => {
     const opts: { symbols?: Sym[]; exclude?: Sym[] } = {};
-    if (kw['symbols']) opts.symbols = (kw['symbols'] as PyTuple).items.map(asSym);
-    if (kw['exclude']) opts.exclude = (kw['exclude'] as PyTuple).items.map(asSym);
+    if (kw['symbols']) opts.symbols = (kw['symbols'] as JsTuple).items.map(asSym);
+    if (kw['exclude']) opts.exclude = (kw['exclude'] as JsTuple).items.map(asSym);
     if (args.length > 1) opts.symbols = args.slice(1).map(asSym);
-    return new PyTuple(sj.solveLinear(asExpr(args[0]), opts));
+    return new JsTuple(sj.solveLinear(asExpr(args[0]), opts));
   },
   solve_linear_system_LU: (args, kw) => ADAPTERS['solve_linear_system']!(args, kw),
   solve_linear_system: (args, kw) => {
@@ -1845,17 +1848,17 @@ export const ADAPTERS: Record<string, Adapter> = {
     const syms = args.slice(1).map(asSym);
     const s = solveAug(args[0] as Matrix, syms);
     // free variables (solved as themselves) are not listed, like SymPy
-    return s ? new PyDict(syms.map((v, i) => [v, s[i]!] as const).filter(([v, e]) => v.key !== e.key)) : null;
+    return s ? new JsDict(syms.map((v, i) => [v, s[i]!] as const).filter(([v, e]) => v.key !== e.key)) : null;
   },
   solve_undetermined_coeffs: (args, kw) => {
     const dict = Boolean(kw['dict']);
     for (const k of Object.keys(kw)) if (k !== 'dict') throw new Unsupported(`kwargs ${k}`);
-    const coeffs = (args[1] as PyTuple).items.map(asSym);
-    const syms = args[2] === undefined ? [] : args[2] instanceof PyTuple ? args[2].items.map(asSym) : [asSym(args[2])];
+    const coeffs = (args[1] as JsTuple).items.map(asSym);
+    const syms = args[2] === undefined ? [] : args[2] instanceof JsTuple ? args[2].items.map(asSym) : [asSym(args[2])];
     const sols = sj.solveUndeterminedCoeffs(asExpr(args[0]), coeffs, syms);
-    const dicts = sols.map((t) => new PyDict(coeffs.map((v, i) => [v, t[i]!] as const)));
-    if (dict) return new PyList(dicts);
-    return dicts.length === 1 ? dicts[0] : new PyList(dicts);
+    const dicts = sols.map((t) => new JsDict(coeffs.map((v, i) => [v, t[i]!] as const)));
+    if (dict) return new JsList(dicts);
+    return dicts.length === 1 ? dicts[0] : new JsList(dicts);
   },
   nsolve: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'prec') throw new Unsupported(`kwargs ${k}`);
@@ -1870,19 +1873,19 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     const a = args[0];
     if (a instanceof Matrix) return a;
-    if (a instanceof PyTuple && a.items.every((r) => r instanceof PyTuple)) {
-      return Matrix.of(a.items.map((r) => (r as PyTuple).items.map(asExpr)));
+    if (a instanceof JsTuple && a.items.every((r) => r instanceof JsTuple)) {
+      return Matrix.of(a.items.map((r) => (r as JsTuple).items.map(asExpr)));
     }
-    if (a instanceof PyTuple) return Matrix.col(...a.items.map(asExpr));
+    if (a instanceof JsTuple) return Matrix.col(...a.items.map(asExpr));
     if (a === undefined) return Matrix.zeros(0, 0);
-    if (a instanceof sj.Rational && args[1] instanceof sj.Rational && args[2] instanceof PyLambda) {
+    if (a instanceof sj.Rational && args[1] instanceof sj.Rational && args[2] instanceof JsLambda) {
       const f = args[2];
       return Matrix.fromFunction(Number(a.p), Number(args[1].p), (i, j) => f.call(sj.Rational.of(i), sj.Rational.of(j)));
     }
-    if (a instanceof sj.Rational && args[1] instanceof sj.Rational && args[2] instanceof PyTuple) {
+    if (a instanceof sj.Rational && args[1] instanceof sj.Rational && args[2] instanceof JsTuple) {
       const r = Number(a.p);
       const c = Number(args[1].p);
-      const items = (args[2] as PyTuple).items.map(asExpr);
+      const items = (args[2] as JsTuple).items.map(asExpr);
       return Matrix.fromFunction(r, c, (i, j) => items[i * c + j]!);
     }
     throw new Unsupported('Matrix constructor');
@@ -1911,13 +1914,13 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.from_dok': (args, kw, self) => typeMethod(self, 'Matrix', () => {
     const r = intArg(args[0]);
     const c = intArg(args[1]);
-    const d = args[2] as PyDict;
-    const m = new Map(d.entries.map(([k, v]) => [(k as PyTuple).items.map(intArg).join(','), asExpr(v)] as const));
+    const d = args[2] as JsDict;
+    const m = new Map(d.entries.map(([k, v]) => [(k as JsTuple).items.map(intArg).join(','), asExpr(v)] as const));
     return Matrix.fromFunction(r, c, (i, j) => m.get(`${i},${j}`) ?? 0);
   }, kw),
   '.copy': matrixMethod((m) => m),
-  '.flat': matrixMethod((m) => new PyList(m.data)),
-  '.values': matrixMethod((m) => new PyList(m.data.filter((x) => !(x instanceof sj.Rational && x.isZero)))),
+  '.flat': matrixMethod((m) => new JsList(m.data)),
+  '.values': matrixMethod((m) => new JsList(m.data.filter((x) => !(x instanceof sj.Rational && x.isZero)))),
   '.is_symbolic': matrixMethod((m) => m.data.some((x) => sj.freeSymbols(x).size > 0)),
   '.hat': matrixMethod((m) => {
     const [a, b, c] = m.data as Expr[];
@@ -1934,9 +1937,9 @@ export const ADAPTERS: Record<string, Adapter> = {
     const [r, c] = m.shape;
     for (let i = 0; i < r; i++) for (let j = 0; j < c; j++) {
       const v = m.get(i, j);
-      if (!(v instanceof sj.Rational && v.isZero)) out.push([new PyTuple([i, j]), v]);
+      if (!(v instanceof sj.Rational && v.isZero)) out.push([new JsTuple([i, j]), v]);
     }
-    return new PyDict(out);
+    return new JsDict(out);
   }),
   '.todod': matrixMethod((m) => {
     const out: (readonly [unknown, unknown])[] = [];
@@ -1947,17 +1950,17 @@ export const ADAPTERS: Record<string, Adapter> = {
         const v = m.get(i, j);
         if (!(v instanceof sj.Rational && v.isZero)) row.push([j, v]);
       }
-      if (row.length) out.push([i, new PyDict(row)]);
+      if (row.length) out.push([i, new JsDict(row)]);
     }
-    return new PyDict(out);
+    return new JsDict(out);
   }),
-  '.connected_components': matrixMethod((m) => new PyList(sj.connectedComponents(m).map((c) => new PyList(c)))),
-  '.strongly_connected_components': matrixMethod((m) => new PyList(sj.stronglyConnectedComponents(m).map((c) => new PyList(c)))),
+  '.connected_components': matrixMethod((m) => new JsList(sj.connectedComponents(m).map((c) => new JsList(c)))),
+  '.strongly_connected_components': matrixMethod((m) => new JsList(sj.stronglyConnectedComponents(m).map((c) => new JsList(c)))),
   '.condition_number': matrixMethod((m) => {
     const sv = sj.singularValues(m);
     return sj.mul(sj.Max(...sv), sj.pow(sj.Min(...sv), -1));
   }),
-  '.left_eigenvects': matrixMethod((m) => new PyList(sj.eigenvects(m.transpose()).map(([v, k, vs]) => new PyTuple([v, k, new PyList(vs.map((x) => x.transpose()))])))),
+  '.left_eigenvects': matrixMethod((m) => new JsList(sj.eigenvects(m.transpose()).map(([v, k, vs]) => new JsTuple([v, k, new JsList(vs.map((x) => x.transpose()))])))),
   eye: (args, kw) => (noKw(kw), Matrix.eye(Number((args[0] as sj.Rational).p))),
   ones: (args, kw) => {
     noKw(kw);
@@ -1969,18 +1972,18 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.ones': (args, kw) => ADAPTERS['ones']!(args, kw),
   GramSchmidt: (args, kw) => {
     noKw(kw);
-    const vs = (args[0] as PyList).items as Matrix[];
-    return new PyList(sj.GramSchmidt(vs, Boolean(args[1])));
+    const vs = (args[0] as JsList).items as Matrix[];
+    return new JsList(sj.GramSchmidt(vs, Boolean(args[1])));
   },
   hessian: (args, kw) => {
     noKw(kw);
-    const vs = args[1] instanceof PyTuple || args[1] instanceof PyList ? args[1].items.map(asExpr) : args[1] instanceof Matrix ? args[1].data : [asExpr(args[1])];
+    const vs = args[1] instanceof JsTuple || args[1] instanceof JsList ? args[1].items.map(asExpr) : args[1] instanceof Matrix ? args[1].data : [asExpr(args[1])];
     return sj.hessian(asExpr(args[0]), vs);
   },
-  wronskian: (args, kw) => (noKw(kw), sj.wronskian((args[0] as PyList).items.map(asExpr), asExpr(args[1]))),
+  wronskian: (args, kw) => (noKw(kw), sj.wronskian((args[0] as JsList).items.map(asExpr), asExpr(args[1]))),
   casoratian: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'zero') throw new Unsupported(`kwargs ${k}`);
-    return sj.casoratian((args[0] as PyList).items.map(asExpr), asExpr(args[1]), kw['zero'] === undefined ? true : Boolean(kw['zero']));
+    return sj.casoratian((args[0] as JsList).items.map(asExpr), asExpr(args[1]), kw['zero'] === undefined ? true : Boolean(kw['zero']));
   },
   '.solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
   '.LUsolve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
@@ -1991,7 +1994,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.upper_triangular_solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
   '.lower_triangular_solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
   '.diagonal_solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
-  '.gauss_jordan_solve': matrixMethod((m, [b]) => new PyTuple(sj.gaussJordanSolve(m, b as Matrix))),
+  '.gauss_jordan_solve': matrixMethod((m, [b]) => new JsTuple(sj.gaussJordanSolve(m, b as Matrix))),
   '.solve_least_squares': matrixMethod((m, [b]) => sj.solveLeastSquares(m, b as Matrix)),
   '.normalized': matrixMethod((m) => sj.normalized(m)),
   '.multiply': matrixMethod((m, [b]) => m.mul(b as Matrix)),
@@ -2020,11 +2023,11 @@ export const ADAPTERS: Record<string, Adapter> = {
     const blocks: (Matrix | Expr)[] = [];
     for (const a of args) {
       if (a instanceof Matrix) blocks.push(a);
-      else if (a instanceof PyTuple) {
+      else if (a instanceof JsTuple) {
         if (unpack && args.length === 1) a.items.forEach((x) => blocks.push(asExpr(x)));
-        else if (a.items.every((r) => r instanceof PyTuple)) {
+        else if (a.items.every((r) => r instanceof JsTuple)) {
           // SymPy pads ragged rows with zeros
-          const rows = a.items.map((r) => (r as PyTuple).items.map(asExpr));
+          const rows = a.items.map((r) => (r as JsTuple).items.map(asExpr));
           const w = Math.max(...rows.map((r) => r.length));
           blocks.push(Matrix.of(rows.map((r) => [...r, ...Array.from({ length: w - r.length }, () => S.Zero)])));
         }
@@ -2084,13 +2087,13 @@ export const ADAPTERS: Record<string, Adapter> = {
   denom: exprFn((e) => sj.fraction(e)[1]),
   ln: exprFn((e) => sj.log(e)),
   Rem: (args, kw) => (noKw(kw), sj.Rem(asExpr(args[0]), asExpr(args[1]))),
-  '.as_powers_dict': (_a, kw, self) => (noKw(kw), new PyDefaultDict([...sj.asPowersDict(asExpr(self))])),
-  '.as_coeff_exponent': (args, kw, self) => (noKw(kw), new PyTuple(sj.asCoeffExponent(asExpr(self), asExpr(args[0])))),
+  '.as_powers_dict': (_a, kw, self) => (noKw(kw), new JsDefaultDict([...sj.asPowersDict(asExpr(self))])),
+  '.as_coeff_exponent': (args, kw, self) => (noKw(kw), new JsTuple(sj.asCoeffExponent(asExpr(self), asExpr(args[0])))),
   '.as_coeff_Add': (_a, kw, self) => {
     noKw(kw);
     const e = asExpr(self);
-    if (e instanceof sj.Add && e.args[0]!.isNumber) return new PyTuple([e.args[0]!, sj.add(...e.args.slice(1))]);
-    return new PyTuple([e.isNumber ? e : S.Zero, e.isNumber ? S.Zero : e]);
+    if (e instanceof sj.Add && e.args[0]!.isNumber) return new JsTuple([e.args[0]!, sj.add(...e.args.slice(1))]);
+    return new JsTuple([e.isNumber ? e : S.Zero, e.isNumber ? S.Zero : e]);
   },
   '.count': (args, kw, self) => (noKw(kw), sj.Rational.of(sj.count(asExpr(self), asExpr(args[0])))),
   '.normal': exprMethod((e) => {
@@ -2129,8 +2132,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (neg(P) && neg(Q)) [P, Q] = [P.neg(), Q.neg()];
     else if (neg(P)) [cp, P] = [S.NegOne, P.neg()];
     else if (neg(Q)) [cp, Q] = [S.NegOne, Q.neg()];
-    if (kw['include']) return new PyTuple([P.mul(sj.Poly.from(cp, P.gens)), Q]);
-    return new PyTuple([cp, P, Q]);
+    if (kw['include']) return new JsTuple([P.mul(sj.Poly.from(cp, P.gens)), Q]);
+    return new JsTuple([cp, P, Q]);
   },
   '.trigsimp': exprMethod(sj.trigsimp),
   '.conjugate': exprMethod(sj.conjugate),
@@ -2139,7 +2142,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'simultaneous') throw new Unsupported(`kwargs ${k}`);
     if (simultaneous) {
       const a = args[0];
-      const pairs = a instanceof PyDict ? a.entries : a instanceof PyTuple ? a.items.map((p) => (p as PyTuple).items) : undefined;
+      const pairs = a instanceof JsDict ? a.entries : a instanceof JsTuple ? a.items.map((p) => (p as JsTuple).items) : undefined;
       if (!pairs) throw new Unsupported('subs simultaneous');
       return sj.subs(asExpr(self), pairs.map(([k, v]) => [asExpr(k), asExpr(v)] as const), { simultaneous: true });
     }
@@ -2152,10 +2155,10 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.diff': (args, kw, self) => {
     noKw(kw);
     if (self instanceof sj.Poly) {
-      if (args.length && args.every((a) => a instanceof PyTuple)) {
+      if (args.length && args.every((a) => a instanceof JsTuple)) {
         // Poly.diff((gen_index, order), ...)
         let p: sj.Poly = self;
-        for (const a of args as PyTuple[]) {
+        for (const a of args as JsTuple[]) {
           const gen = p.gens[Number((a.items[0] as sj.Rational).p)]!;
           for (let i = 0; i < Number((a.items[1] as sj.Rational).p); i++) p = p.diff(gen);
         }
@@ -2175,7 +2178,7 @@ export const ADAPTERS: Record<string, Adapter> = {
           if (!args.length) return self.integrate();
           let p: sj.Poly = self;
           for (const spec of args) {
-            const [g, m] = spec instanceof PyTuple ? spec.items : [spec, 1];
+            const [g, m] = spec instanceof JsTuple ? spec.items : [spec, 1];
             const gen = g instanceof sj.Rational ? p.gens[Number(g.p)]! : asExpr(g);
             for (let i = 0; i < Number(m instanceof sj.Rational ? m.p : m); i++) p = p.integrate(gen);
           }
@@ -2204,7 +2207,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     const e = self instanceof Matrix ? self.data : [asExpr(self)];
     return args.some((a) =>
-      a instanceof PyFunc
+      a instanceof JsFunc
         ? false
         : a instanceof FnClass || a instanceof TypeRef || a instanceof UFnClass
         ? e.some((x) => sj.find(x, toQuery(a)).length > 0)
@@ -2221,7 +2224,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const q = toQuery(args[0]);
     const v = args[1];
     let value: sj.Replacement;
-    if (v instanceof PyLambda) {
+    if (v instanceof JsLambda) {
       if (q instanceof Expr) {
         // keyword call by Wild name, values arrive ordered like the Wilds of the pattern
         const ws: sj.Wild[] = [];
@@ -2239,7 +2242,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       map: Boolean(kw['map']),
       apply: applyFn,
     });
-    if (Array.isArray(r)) return new PyTuple([r[0], new PyDict([...r[1]])]);
+    if (Array.isArray(r)) return new JsTuple([r[0], new JsDict([...r[1]])]);
     return r;
   },
   gcd_terms: (args, kw) => {
@@ -2269,20 +2272,20 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (!args.length) return asExpr(self);
     const target = name(args[args.length - 1]);
     let pattern = args.slice(0, -1);
-    if (pattern.length === 1 && (pattern[0] instanceof PyList || pattern[0] instanceof PyTuple)) pattern = [...(pattern[0] as PyList).items];
+    if (pattern.length === 1 && (pattern[0] instanceof JsList || pattern[0] instanceof JsTuple)) pattern = [...(pattern[0] as JsList).items];
     return sj.rewrite(asExpr(self), target, { pattern: pattern.map(name), deep: kw['deep'] === undefined ? true : Boolean(kw['deep']) });
   },
   '.find': (args, kw, self) => {
     noKw(kw);
-    return new PySet(sj.find(asExpr(self), toQuery(args[0])));
+    return new JsSet(sj.find(asExpr(self), toQuery(args[0])));
   },
   count_ops: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'visual') throw new Unsupported(`kwargs ${k}`);
     const visual = Boolean(kw['visual'] ?? args[1]);
-    if (args[0] instanceof PyDict) return ADAPTERS['count_ops']!([new PyList(args[0].entries.flat())], kw);
-    if (args[0] instanceof PyList || args[0] instanceof PyTuple) {
+    if (args[0] instanceof JsDict) return ADAPTERS['count_ops']!([new JsList(args[0].entries.flat())], kw);
+    if (args[0] instanceof JsList || args[0] instanceof JsTuple) {
       // None and booleans count as nothing
-      const items = (args[0] as PyList).items.filter((i) => i !== null && typeof i !== 'boolean').map(asExpr);
+      const items = (args[0] as JsList).items.filter((i) => i !== null && typeof i !== 'boolean').map(asExpr);
       return visual ? sj.add(...items.map(sj.countOpsVisual)) : items.reduce((n, e) => n + sj.countOps(e), 0);
     }
     return visual ? sj.countOpsVisual(asExpr(args[0])) : sj.countOps(asExpr(args[0]));
@@ -2299,23 +2302,23 @@ export const ADAPTERS: Record<string, Adapter> = {
     const asAdd = kw['as_Add'];
     for (const k of Object.keys(kw)) if (k !== 'as_Add') throw new Unsupported(`kwargs ${k}`);
     const opts = asAdd === undefined ? {} : { asAdd: Boolean(asAdd) };
-    return new PyTuple(sj.asIndependent(asExpr(self), args.map(asExpr), opts));
+    return new JsTuple(sj.asIndependent(asExpr(self), args.map(asExpr), opts));
   },
   '.as_coeff_add': (args, kw, self) => {
     noKw(kw);
     const [c, t] = sj.asCoeffAdd(asExpr(self), args.map(asExpr));
-    return new PyTuple([c, new PyTuple(t)]);
+    return new JsTuple([c, new JsTuple(t)]);
   },
   '.as_coeff_mul': (args, kw, self) => {
     noKw(kw);
     const [c, t] = sj.asCoeffMul(asExpr(self), args.map(asExpr));
-    return new PyTuple([c, new PyTuple(t)]);
+    return new JsTuple([c, new JsTuple(t)]);
   },
-  '.as_coeff_Mul': exprMethod((e) => new PyTuple(sj.splitCoeff(e))),
+  '.as_coeff_Mul': exprMethod((e) => new JsTuple(sj.splitCoeff(e))),
   '.primitive': (_a, kw, self) => {
     noKw(kw);
-    if (self instanceof sj.Poly) return new PyTuple(self.primitive());
-    return new PyTuple(sj.primitive(asExpr(self)));
+    if (self instanceof sj.Poly) return new JsTuple(self.primitive());
+    return new JsTuple(sj.primitive(asExpr(self)));
   },
   '.degree': (args, kw, self) => {
     noKw(kw);
@@ -2325,7 +2328,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const clear = kw['clear'];
     for (const k of Object.keys(kw)) if (k !== 'clear' && k !== 'radical') throw new Unsupported(`kwargs ${k}`);
     if (args.length) throw new Unsupported('arity');
-    return new PyTuple(sj.asContentPrimitive(asExpr(self), { ...(clear === undefined ? {} : { clear: Boolean(clear) }), radical: Boolean(kw['radical']) }));
+    return new JsTuple(sj.asContentPrimitive(asExpr(self), { ...(clear === undefined ? {} : { clear: Boolean(clear) }), radical: Boolean(kw['radical']) }));
   },
   '.extract_multiplicatively': (args, kw, self) => (noKw(kw), sj.extractMultiplicatively(asExpr(self), asExpr(args[0])) ?? null),
   '.extract_additively': (args, kw, self) => (noKw(kw), sj.extractAdditively(asExpr(self), asExpr(args[0])) ?? null),
@@ -2336,26 +2339,26 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     return sj.isConstant(asExpr(self), args.map(asSym));
   },
-  '.as_real_imag': exprMethod((e) => new PyTuple(sj.asRealImag(e))),
-  '.as_numer_denom': exprMethod((e) => new PyTuple(sj.asNumerDenom(e))),
+  '.as_real_imag': exprMethod((e) => new JsTuple(sj.asRealImag(e))),
+  '.as_numer_denom': exprMethod((e) => new JsTuple(sj.asNumerDenom(e))),
   '.as_base_exp': exprMethod((e) => {
     // SymPy Pow.as_base_exp: (1/q)**e is reported as q**(-e)
-    if (e instanceof sj.Pow && e.base instanceof sj.Rational && e.base.p === 1n && e.base.q !== 1n) return new PyTuple([sj.Rational.of(e.base.q), sj.neg(e.exp)]);
-    return new PyTuple(sj.asBaseExp(e));
+    if (e instanceof sj.Pow && e.base instanceof sj.Rational && e.base.p === 1n && e.base.q !== 1n) return new JsTuple([sj.Rational.of(e.base.q), sj.neg(e.exp)]);
+    return new JsTuple(sj.asBaseExp(e));
   }),
   '.args_cnc': (args, kw, self) => {
     const split1 = kw['split_1'];
     for (const k of Object.keys(kw)) if (k !== 'split_1' && k !== 'cset') throw new Unsupported(`kwargs ${k}`);
     if (args.length) throw new Unsupported('arity');
     const [c, nc] = sj.argsCncSplit(asExpr(self), split1 === undefined ? true : Boolean(split1));
-    return new PyList([kw['cset'] ? new PySet(c) : new PyList(c), new PyList(nc)]);
+    return new JsList([kw['cset'] ? new JsSet(c) : new JsList(c), new JsList(nc)]);
   },
   '.xreplace': (args, kw, self) => {
     noKw(kw);
     const d = args[0];
-    if (!(d instanceof PyDict)) throw new Unsupported('xreplace mapping');
+    if (!(d instanceof JsDict)) throw new Unsupported('xreplace mapping');
     const reps = d.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const);
-    if (self instanceof PyTuple) return new PyTuple(self.items.map((e) => sj.xreplace(asExpr(e), reps)));
+    if (self instanceof JsTuple) return new JsTuple(self.items.map((e) => sj.xreplace(asExpr(e), reps)));
     return sj.xreplace(asExpr(self), reps);
   },
   '.atoms': (args, kw, self) => {
@@ -2374,23 +2377,23 @@ export const ADAPTERS: Record<string, Adapter> = {
     });
     const pred = preds.length ? (x: Expr) => preds.some((p) => p(x)) : () => true;
     if (args.some((a) => a instanceof FnClass || a instanceof TypeRef || a instanceof UFnClass)) {
-      return new PySet(sj.find(asExpr(self), pred));
+      return new JsSet(sj.find(asExpr(self), pred));
     }
-    return new PySet(sj.atoms(asExpr(self), pred));
+    return new JsSet(sj.atoms(asExpr(self), pred));
   },
-  '.as_ordered_terms': exprMethod((e) => new PyList(e instanceof sj.Add ? asOrdered(e) : [e])),
+  '.as_ordered_terms': exprMethod((e) => new JsList(e instanceof sj.Add ? asOrdered(e) : [e])),
 
   // ---- ODEs
-  rsolve_poly: (args, kw) => (noKw(kw), sj.rsolvePoly((args[0] as PyTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2]))?.[0] ?? null),
-  rsolve_ratio: (args, kw) => (noKw(kw), sj.rsolveRatio((args[0] as PyTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2]))?.[0] ?? null),
-  rsolve_hyper: (args, kw) => (noKw(kw), sj.rsolveHyper((args[0] as PyTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2]))?.[0] ?? null),
+  rsolve_poly: (args, kw) => (noKw(kw), sj.rsolvePoly((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2]))?.[0] ?? null),
+  rsolve_ratio: (args, kw) => (noKw(kw), sj.rsolveRatio((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2]))?.[0] ?? null),
+  rsolve_hyper: (args, kw) => (noKw(kw), sj.rsolveHyper((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2]))?.[0] ?? null),
   rsolve: (args, kw) => {
     noKw(kw);
     const init = args[2];
     const pairs =
-      init instanceof PyDict
+      init instanceof JsDict
         ? init.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as [Expr, Expr])
-        : init instanceof PyTuple
+        : init instanceof JsTuple
           ? init.items.map((v, i) => [sj.sympify(i), asExpr(v)] as [Expr, Expr])
           : undefined;
     return sj.rsolve(asExpr(args[0]), asExpr(args[1]), pairs) ?? null;
@@ -2401,11 +2404,11 @@ export const ADAPTERS: Record<string, Adapter> = {
   dsolve: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'ics' && k !== 'hint') throw new Unsupported(`kwargs ${k}`);
     if (kw['hint'] !== undefined && !['1st_exact', 'almost_linear', 'default'].includes(String(kw['hint']))) throw new Unsupported('dsolve hint');
-    const ics = kw['ics'] instanceof PyDict ? (kw['ics'] as PyDict).entries.map(([k, v]) => [asExpr(k), asExpr(v)] as [Expr, Expr]) : undefined;
-    if (args[0] instanceof PyTuple || args[0] instanceof PyList) {
+    const ics = kw['ics'] instanceof JsDict ? (kw['ics'] as JsDict).entries.map(([k, v]) => [asExpr(k), asExpr(v)] as [Expr, Expr]) : undefined;
+    if (args[0] instanceof JsTuple || args[0] instanceof JsList) {
       // a system of ODEs
-      const fs = args[1] instanceof PyTuple || args[1] instanceof PyList ? args[1].items.map(asExpr) : undefined;
-      return new PyList(sj.dsolve(args[0].items.map(asExpr), fs) as Expr[]);
+      const fs = args[1] instanceof JsTuple || args[1] instanceof JsList ? args[1].items.map(asExpr) : undefined;
+      return new JsList(sj.dsolve(args[0].items.map(asExpr), fs) as Expr[]);
     }
     const eq = asExpr(args[0]);
     let fx: Expr | undefined = args[1] === undefined ? undefined : asExpr(args[1]);
@@ -2421,7 +2424,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       fx = [...found.values()][0]!;
     }
     const r = sj.dsolve(eq, fx, ics ? { ics } : {});
-    return Array.isArray(r) ? new PyList(r) : r;
+    return Array.isArray(r) ? new JsList(r) : r;
   },
 
   // ---- polynomials
@@ -2465,20 +2468,20 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   div: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
-    if (kw['domain'] instanceof PyDomain && kw['domain'].name === 'ZZ') return new PyTuple(divOverZZ(asExpr(args[0]), asExpr(args[1])));
-    if (args[0] instanceof sj.Poly) return new PyTuple(args[0].div(args[1] as sj.Poly));
-    return new PyTuple(sj.polyDiv(asExpr(args[0]), asExpr(args[1])));
+    if (kw['domain'] instanceof JsDomain && kw['domain'].name === 'ZZ') return new JsTuple(divOverZZ(asExpr(args[0]), asExpr(args[1])));
+    if (args[0] instanceof sj.Poly) return new JsTuple(args[0].div(args[1] as sj.Poly));
+    return new JsTuple(sj.polyDiv(asExpr(args[0]), asExpr(args[1])));
   },
   rem: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
-    if (kw['domain'] instanceof PyDomain && kw['domain'].name === 'ZZ') return divOverZZ(asExpr(args[0]), asExpr(args[1]))[1];
+    if (kw['domain'] instanceof JsDomain && kw['domain'].name === 'ZZ') return divOverZZ(asExpr(args[0]), asExpr(args[1]))[1];
     return args[0] instanceof sj.Poly ? args[0].rem(args[1] as sj.Poly) : sj.polyDiv(asExpr(args[0]), asExpr(args[1]))[1];
   },
   quo: (args, kw) => (noKw(kw), args[0] instanceof sj.Poly ? args[0].quo(args[1] as sj.Poly) : sj.polyDiv(asExpr(args[0]), asExpr(args[1]))[0]),
   factor_list: (args, kw) => {
     noKw(kw);
     const [c, fs] = sj.factorList(asExprOrPoly(args[0]));
-    return new PyTuple([c, new PyList(fs.map(([f, k]) => new PyTuple([f, k])))]);
+    return new JsTuple([c, new JsList(fs.map(([f, k]) => new JsTuple([f, k])))]);
   },
   terms_gcd: (args, kw) => {
     const opts: { expand?: boolean; deep?: boolean; clear?: boolean } = {};
@@ -2497,9 +2500,9 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     const data = args[0];
     const pts =
-      data instanceof PyDict
+      data instanceof JsDict
         ? data.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const)
-        : (data as PyTuple).items.map((d) => (d instanceof PyTuple ? ([asExpr(d.items[0]), asExpr(d.items[1])] as const) : asExpr(d)));
+        : (data as JsTuple).items.map((d) => (d instanceof JsTuple ? ([asExpr(d.items[0]), asExpr(d.items[1])] as const) : asExpr(d)));
     const at = asExpr(args[1]);
     if (at instanceof Sym) return sj.interpolate(pts as never, at);
     const t = new sj.Dummy('x');
@@ -2522,7 +2525,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     if (self instanceof sj.Poly) {
       if (!args.length) return self.asExpr();
-      if (args[0] instanceof PyDict) return self.asExprAt(args[0].entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const));
+      if (args[0] instanceof JsDict) return self.asExprAt(args[0].entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const));
       return self.asExprAt(args.map(asExpr));
     }
     if (self instanceof Expr) return self;
@@ -2531,7 +2534,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   '.total_degree': (_a, kw, self) => (noKw(kw), asPoly(self).totalDegree()),
   '.LC': (_a, kw, self) => (noKw(kw), asPoly(self).LC()),
-  '.coeffs': (_a, kw, self) => (noKw(kw), new PyList(self instanceof sj.AlgebraicNumber ? self.coeffs() : asPoly(self).coeffs())),
+  '.coeffs': (_a, kw, self) => (noKw(kw), new JsList(self instanceof sj.AlgebraicNumber ? self.coeffs() : asPoly(self).coeffs())),
   '.to_root': (_a, kw, self) => {
     noKw(kw);
     if (!(self instanceof sj.AlgebraicNumber)) throw new Unsupported('to_root');
@@ -2542,29 +2545,29 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (!(self instanceof sj.AlgebraicNumber)) throw new Unsupported('primitive_element');
     return self.primitiveElement();
   },
-  '.all_coeffs': (_a, kw, self) => (noKw(kw), new PyList(asPoly(self).allCoeffs())),
-  '.monoms': (_a, kw, self) => (noKw(kw), new PyList(asPoly(self).monoms().map((m) => new PyTuple(m)))),
-  '.terms': (_a, kw, self) => (noKw(kw), new PyList(asPoly(self).terms().map(([m, c]) => new PyTuple([new PyTuple(m), c])))),
+  '.all_coeffs': (_a, kw, self) => (noKw(kw), new JsList(asPoly(self).allCoeffs())),
+  '.monoms': (_a, kw, self) => (noKw(kw), new JsList(asPoly(self).monoms().map((m) => new JsTuple(m)))),
+  '.terms': (_a, kw, self) => (noKw(kw), new JsList(asPoly(self).terms().map(([m, c]) => new JsTuple([new JsTuple(m), c])))),
   '.coeff_monomial': (args, kw, self) => {
     noKw(kw);
     const p = asPoly(self);
     const m = args[0];
-    if (m instanceof PyTuple) return p.coeffMonomial(m.items.map((x) => Number((x as sj.Rational).p)));
+    if (m instanceof JsTuple) return p.coeffMonomial(m.items.map((x) => Number((x as sj.Rational).p)));
     const mono = sj.Poly.from(asExpr(m), p.gens);
     return p.coeffMonomial(mono.monoms()[0]!);
   },
   '.eval': (args, kw, self) => {
     noKw(kw);
     const p = asPoly(self);
-    if (args[0] instanceof PyDict) return p.evalMany(args[0].entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const));
-    if (args[0] instanceof PyTuple) return p.evalMany(args[0].items.map((v, i) => [p.gens[i]!, asExpr(v)] as const));
+    if (args[0] instanceof JsDict) return p.evalMany(args[0].entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const));
+    if (args[0] instanceof JsTuple) return p.evalMany(args[0].items.map((v, i) => [p.gens[i]!, asExpr(v)] as const));
     if (args.length === 1) return p.eval(asExpr(args[0]));
     return p.eval(asExpr(args[1]), asExpr(args[0]));
   },
   '.monic': (_a, kw, self) => (noKw(kw), asPoly(self).monic()),
   '.gcd': (args, kw, self) => (noKw(kw), asPoly(self).gcd(args[0] as sj.Poly)),
   '.lcm': (args, kw, self) => (noKw(kw), asPoly(self).lcm(args[0] as sj.Poly)),
-  '.div': (args, kw, self) => new PyTuple(asPoly(self).divAuto(args[0] as sj.Poly, autoKw(kw))),
+  '.div': (args, kw, self) => new JsTuple(asPoly(self).divAuto(args[0] as sj.Poly, autoKw(kw))),
   '.rem': (args, kw, self) => asPoly(self).rem(args[0] as sj.Poly, autoKw(kw)),
   '.quo': (args, kw, self) => asPoly(self).quo(args[0] as sj.Poly, autoKw(kw)),
   '.abs': polyM((p) => p.abs()),
@@ -2579,12 +2582,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.mul_ground': polyM((p, a) => p.mulGround(asExpr(a[0]))),
   '.quo_ground': polyM((p, a) => p.quoGround(asExpr(a[0]))),
   '.exquo_ground': polyM((p, a) => p.exquoGround(asExpr(a[0]))),
-  '.all_monoms': polyM((p) => new PyList(p.allMonoms().map((m) => new PyTuple(m)))),
-  '.all_terms': polyM((p) => new PyList(p.allTerms().map(([m, c]) => new PyTuple([new PyTuple(m), c])))),
-  '.as_dict': polyM((p) => new PyDict(p.asDict().map(([m, c]) => [new PyTuple(m), c] as const))),
-  '.cofactors': polyM((p, a) => new PyTuple(p.cofactors(a[0] as sj.Poly))),
+  '.all_monoms': polyM((p) => new JsList(p.allMonoms().map((m) => new JsTuple(m)))),
+  '.all_terms': polyM((p) => new JsList(p.allTerms().map(([m, c]) => new JsTuple([new JsTuple(m), c])))),
+  '.as_dict': polyM((p) => new JsDict(p.asDict().map(([m, c]) => [new JsTuple(m), c] as const))),
+  '.cofactors': polyM((p, a) => new JsTuple(p.cofactors(a[0] as sj.Poly))),
   '.compose': polyM((p, a) => p.compose(a[0] as sj.Poly)),
-  '.degree_list': polyM((p) => new PyTuple(p.degreeList())),
+  '.degree_list': polyM((p) => new JsTuple(p.degreeList())),
   '.discriminant': polyM((p) => p.discriminant()),
   '.resultant': polyM((p, a) => p.resultant(a[0] as sj.Poly)),
   '.EC': polyM((p) => p.EC()),
@@ -2599,18 +2602,18 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.homogenize': polyM((p, a) => p.homogenize(asExpr(a[0]))),
   '.ltrim': polyM((p, a) => p.ltrim(a[0] instanceof sj.Rational ? Number(a[0].p) : asExpr(a[0]))),
   '.reorder': polyM((p, a) => p.reorder(...a.map(asExpr))),
-  '.pdiv': polyM((p, a) => new PyTuple(p.pdiv(a[0] as sj.Poly))),
+  '.pdiv': polyM((p, a) => new JsTuple(p.pdiv(a[0] as sj.Poly))),
   '.pexquo': polyM((p, a) => p.pexquo(a[0] as sj.Poly)),
   '.shift': polyM((p, a) => p.shift(asExpr(a[0]))),
   '.sqf_part': polyM((p) => p.sqfPart()),
-  '.subresultants': polyM((p, a) => new PyList(p.subresultants(a[0] as sj.Poly))),
+  '.subresultants': polyM((p, a) => new JsList(p.subresultants(a[0] as sj.Poly))),
   '.terms_gcd': polyM((p) => {
     const [m, q] = p.termsGcd();
-    return new PyTuple([new PyTuple(m), q]);
+    return new JsTuple([new JsTuple(m), q]);
   }),
   '.deflate': polyM((p) => {
     const [m, q] = p.deflate();
-    return new PyTuple([new PyTuple(m), q]);
+    return new JsTuple([new JsTuple(m), q]);
   }),
   '.to_field': polyM((p) => p.toField()),
   '.to_ring': polyM((p) => p.toRing()),
@@ -2624,7 +2627,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (self instanceof sj.Integral) {
       noKw(kw);
       const spec = args[1];
-      if (spec instanceof PyTuple) return sj.transformIntegral(self, asSym(args[0]), asExpr(spec.items[0]), asSym(spec.items[1]));
+      if (spec instanceof JsTuple) return sj.transformIntegral(self, asSym(args[0]), asExpr(spec.items[0]), asSym(spec.items[1]));
       return sj.transformIntegral(self, asSym(args[0]), asExpr(spec));
     }
     return polyM((p, a) => p.transform(a[0] as sj.Poly, a[1] as sj.Poly))(args, kw, self);
@@ -2632,41 +2635,41 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.trunc': polyM((p, a) => p.trunc(asExpr(a[0]))),
   '.clear_denoms': (_args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'convert') throw new Unsupported(`kwargs ${k}`);
-    return new PyTuple(asPoly(self).clearDenoms(Boolean(kw['convert'])));
+    return new JsTuple(asPoly(self).clearDenoms(Boolean(kw['convert'])));
   },
-  '.gcdex': polyM((p, a) => new PyTuple(p.gcdex(a[0] as sj.Poly))),
-  '.half_gcdex': polyM((p, a) => new PyTuple(p.halfGcdex(a[0] as sj.Poly))),
-  '.sturm': polyM((p) => new PyList(p.sturm())),
+  '.gcdex': polyM((p, a) => new JsTuple(p.gcdex(a[0] as sj.Poly))),
+  '.half_gcdex': polyM((p, a) => new JsTuple(p.halfGcdex(a[0] as sj.Poly))),
+  '.sturm': polyM((p) => new JsList(p.sturm())),
   '.count_roots': polyM((p, a) => {
     if (a.some((v) => v instanceof Expr && v.has(sj.I))) return ADAPTERS['count_roots']!([p, ...a], {});
     return p.countRoots(a[0] === undefined ? undefined : asExpr(a[0]), a[1] === undefined ? undefined : asExpr(a[1]));
   }),
-  '.ground_roots': polyM((p) => new PyDict(p.groundRoots())),
+  '.ground_roots': polyM((p) => new JsDict(p.groundRoots())),
   '.revert': polyM((p, a) => p.revert(intArg(a[0]))),
   '.nth_power_roots_poly': polyM((p, a) => p.nthPowerRootsPoly(intArg(a[0]))),
-  '.real_roots': polyM((p) => new PyList(p.realRoots())),
-  '.all_roots': polyM((p) => new PyList(p.allRoots())),
+  '.real_roots': polyM((p) => new JsList(p.realRoots())),
+  '.all_roots': polyM((p) => new JsList(p.allRoots())),
   '.lift': polyM((p) => p.lift()),
   '.get_modulus': polyM((p) => sj.Rational.of(p.getModulus())),
   '.set_modulus': polyM((p, [m]) => p.setModulus((m as sj.Rational).p)),
   '.eject': (args, kw, self) => (noKw(kw), (self as sj.Poly).eject(...args.map(asExpr))),
   '.inject': (_args, kw, self) => (self as sj.Poly).inject({ front: Boolean(kw['front']) }),
   '.root': polyM((p, a) => p.root(intArg(a[0]))),
-  '.which_real_roots': polyM((p, a) => new PyList(p.whichRealRoots((a[0] as PyList).items.map(asExpr)))),
-  '.which_all_roots': polyM((p, a) => new PyList(p.whichAllRoots((a[0] as PyList).items.map(asExpr)))),
-  '.factor_list_include': polyM((p) => new PyList(p.factorListInclude().map(([f, k]) => new PyTuple([f, k])))),
+  '.which_real_roots': polyM((p, a) => new JsList(p.whichRealRoots((a[0] as JsList).items.map(asExpr)))),
+  '.which_all_roots': polyM((p, a) => new JsList(p.whichAllRoots((a[0] as JsList).items.map(asExpr)))),
+  '.factor_list_include': polyM((p) => new JsList(p.factorListInclude().map(([f, k]) => new JsTuple([f, k])))),
   '.sqf_list_include': (_args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'all') throw new Unsupported(`kwargs ${k}`);
-    return new PyList(asPoly(self).sqfListInclude(Boolean(kw['all'])).map(([f, k]) => new PyTuple([f, k])));
+    return new JsList(asPoly(self).sqfListInclude(Boolean(kw['all'])).map(([f, k]) => new JsTuple([f, k])));
   },
   ground_roots: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'extension') throw new Unsupported(`kwargs ${k}`);
-    return new PyDict(polyOf(args).groundRoots({ extension: Boolean(kw['extension']) }));
+    return new JsDict(polyOf(args).groundRoots({ extension: Boolean(kw['extension']) }));
   },
   real_roots: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'multiple' && k !== 'extension') throw new Unsupported(`kwargs ${k}`);
     const rs = polyOf(args).realRoots({ extension: Boolean(kw['extension']) });
-    if (kw['multiple'] !== false) return new PyList(rs);
+    if (kw['multiple'] !== false) return new JsList(rs);
     // multiple=False: [(root, multiplicity)] in order
     const out: [Expr, number][] = [];
     for (const r of rs) {
@@ -2674,11 +2677,11 @@ export const ADAPTERS: Record<string, Adapter> = {
       if (last && last[0].key === r.key) last[1]++;
       else out.push([r, 1]);
     }
-    return new PyList(out.map(([r, k]) => new PyTuple([r, sj.Rational.of(k)])));
+    return new JsList(out.map(([r, k]) => new JsTuple([r, sj.Rational.of(k)])));
   },
   all_roots: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'extension') throw new Unsupported(`kwargs ${k}`);
-    return new PyList(polyOf(args).allRoots({ extension: Boolean(kw['extension']) }));
+    return new JsList(polyOf(args).allRoots({ extension: Boolean(kw['extension']) }));
   },
   count_roots: (args, kw) => {
     noKw(kw);
@@ -2700,27 +2703,27 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.factor_list': (_a, kw, self) => {
     noKw(kw);
     const [c, fs] = asPoly(self).factorList();
-    return new PyTuple([c, new PyList(fs.map(([f, k]) => new PyTuple([f, k])))]);
+    return new JsTuple([c, new JsList(fs.map(([f, k]) => new JsTuple([f, k])))]);
   },
   '.sqf_list': (_a, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'all') throw new Unsupported(`kwargs ${k}`);
     const [c, fs] = asPoly(self).sqfListAll(Boolean(kw['all']));
-    return new PyTuple([c, new PyList(fs.map(([f, k]) => new PyTuple([f, k])))]);
+    return new JsTuple([c, new JsList(fs.map(([f, k]) => new JsTuple([f, k])))]);
   },
   '.content': (_a, kw, self) => (noKw(kw), asPoly(self).content()),
 
   // ---- Matrix methods (linear algebra)
   '.rref': matrixMethod((m) => {
     const [r, p] = sj.rref(m);
-    return new PyTuple([r, new PyTuple(p)]);
+    return new JsTuple([r, new JsTuple(p)]);
   }),
   '.echelon_form': matrixMethod((m) => sj.echelonForm(m)),
   '.rank': matrixMethod((m) => sj.rank(m)),
-  '.nullspace': matrixMethod((m) => new PyList(sj.nullspace(m))),
-  '.columnspace': matrixMethod((m) => new PyList(sj.columnspace(m))),
-  '.rowspace': matrixMethod((m) => new PyList(sj.rowspace(m))),
-  '.eigenvects': matrixMethod((m) => new PyList(sj.eigenvects(m).map(([v, k, vs]) => new PyTuple([v, k, new PyList(vs)])))),
-  '.diagonalize': matrixMethod((m) => new PyTuple(sj.diagonalize(m))),
+  '.nullspace': matrixMethod((m) => new JsList(sj.nullspace(m))),
+  '.columnspace': matrixMethod((m) => new JsList(sj.columnspace(m))),
+  '.rowspace': matrixMethod((m) => new JsList(sj.rowspace(m))),
+  '.eigenvects': matrixMethod((m) => new JsList(sj.eigenvects(m).map(([v, k, vs]) => new JsTuple([v, k, new JsList(vs)])))),
+  '.diagonalize': matrixMethod((m) => new JsTuple(sj.diagonalize(m))),
   '.is_diagonalizable': (_args, kw, self) => {
     if (!(self instanceof Matrix)) throw new Unsupported('Matrix');
     return sj.isDiagonalizable(self, Boolean(kw['reals_only']));
@@ -2729,15 +2732,15 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (!(self instanceof Matrix)) throw new Unsupported('Matrix');
     return sj.cholesky(self, kw['hermitian'] === undefined ? true : Boolean(kw['hermitian']));
   },
-  '.LDLdecomposition': matrixMethod((m) => new PyTuple(sj.ldl(m))),
+  '.LDLdecomposition': matrixMethod((m) => new JsTuple(sj.ldl(m))),
   '.LUdecomposition': matrixMethod((m) => {
     const [L, U, p] = sj.luDecomposition(m);
-    return new PyTuple([L, U, new PyList(p.map((x) => new PyList(x)))]);
+    return new JsTuple([L, U, new JsList(p.map((x) => new JsList(x)))]);
   }),
-  '.QRdecomposition': matrixMethod((m) => new PyTuple(sj.qrDecomposition(m))),
+  '.QRdecomposition': matrixMethod((m) => new JsTuple(sj.qrDecomposition(m))),
   '.dot': (args, kw, self) => {
     if (!(self instanceof Matrix)) throw new Unsupported('Matrix');
-    const b = args[0] instanceof Matrix ? args[0] : args[0] instanceof PyTuple ? Matrix.col(...args[0].items.map(asExpr)) : undefined;
+    const b = args[0] instanceof Matrix ? args[0] : args[0] instanceof JsTuple ? Matrix.col(...args[0].items.map(asExpr)) : undefined;
     if (!b) throw new Unsupported('dot argument');
     const conv = (kw['conjugate_convention'] as string | undefined) ?? 'maths';
     return sj.dot(self, b, Boolean(kw['hermitian']), conv === 'physics' || conv === 'right' ? 'physics' : 'maths');
@@ -2746,9 +2749,9 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.norm': (args, kw, self) => (self instanceof sj.Poly ? (noKw(kw), self.norm()) : matrixMethod((m, [o]) => sj.norm(m, o as ExprLike | undefined))(args, kw, self)),
   '.gammasimp': exprMethod(sj.gammasimp),
   '.combsimp': exprMethod(sj.combsimp),
-  '.singular_values': matrixMethod((m) => new PyList(sj.singularValues(m))),
+  '.singular_values': matrixMethod((m) => new JsList(sj.singularValues(m))),
   '.pinv': matrixMethod((m) => sj.pinv(m)),
-  '.jacobian': matrixMethod((m, [y]) => sj.jacobian(m, y instanceof Matrix ? y : (y as PyTuple).items.map(asExpr))),
+  '.jacobian': matrixMethod((m, [y]) => sj.jacobian(m, y instanceof Matrix ? y : (y as JsTuple).items.map(asExpr))),
   '.exp': matrixMethod((m) => sj.matrixExp(m)),
   '.log': matrixMethod((m) => sj.matrixLog(m)),
   '.analytic_func': matrixMethod((m, [f, x]) => sj.analyticFunc(m, asExpr(f), asSym(x))),
@@ -2804,7 +2807,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.trace': matrixMethod((m) => m.trace()),
   '.eigenvals': matrixMethod((m) => rootsDict(m.eigenvals())),
   '.is_symmetric': (_args, _kw, self) => sj.linalg.isSymmetric(self as Matrix),
-  '.tolist': matrixMethod((m) => new PyList(m.toArray().map((r) => new PyList(r)))),
+  '.tolist': matrixMethod((m) => new JsList(m.toArray().map((r) => new JsList(r)))),
 };
 
 // ---------------------------------------------------------------------------
@@ -2843,8 +2846,8 @@ export function runCase(c: Case): Outcome {
     const syms = new Map<string, Sym>();
     const collect = (x: unknown): void => {
       if (x instanceof Expr) for (const s of sj.freeSymbols(x)) syms.set(s.name, s);
-      else if (x instanceof PyTuple || x instanceof PyList || x instanceof PySet) x.items.forEach(collect);
-      else if (x instanceof PyDict) x.entries.forEach(([k, w]) => (collect(k), collect(w)));
+      else if (x instanceof JsTuple || x instanceof JsList || x instanceof JsSet) x.items.forEach(collect);
+      else if (x instanceof JsDict) x.entries.forEach(([k, w]) => (collect(k), collect(w)));
       else if (x instanceof Matrix) x.data.forEach(collect);
     };
     [...args, ...Object.values(kwargs), self].forEach(collect);

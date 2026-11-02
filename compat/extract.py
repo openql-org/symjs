@@ -113,7 +113,7 @@ def ser(o):
     from sympy.core.relational import Relational
 
     if o is None or isinstance(o, bool):
-        return {"t": "Py", "v": o}
+        return {"t": "Js", "v": o}
     if isinstance(o, int):
         return {"t": "Rational", "p": str(o), "q": "1"}
     if isinstance(o, float):
@@ -128,14 +128,14 @@ def ser(o):
         # a library function passed as an argument (equal_valued, factor, math.isclose, ...)
         mod = getattr(o, "__module__", "") or ""
         if mod.startswith("sympy") or mod == "math":
-            return {"t": "PyFunc", "name": ("math." if mod == "math" else "") + o.__name__}
+            return {"t": "JsFunc", "name": ("math." if mod == "math" else "") + o.__name__}
         raise Unsupported("function")
     if isinstance(o, sympy.RootSum):
         return {"t": "RootSum", "poly": ser(o.expr), "fun": ser(o.fun), "var": ser(o.poly.gen)}
     if isinstance(o, sympy.MatrixSymbol):
         return {"t": "MatrixSymbol", "name": o.name, "rows": ser(o.shape[0]), "cols": ser(o.shape[1])}
     if isinstance(o, (set, frozenset)):
-        return {"t": "PySet", "items": [ser(i) for i in o]}
+        return {"t": "JsSet", "items": [ser(i) for i in o]}
     if isinstance(o, list):
         return {"t": "Tuple", "items": [ser(i) for i in o], "list": True}
     if isinstance(o, range):
@@ -226,7 +226,7 @@ def ser(o):
     if isinstance(o, sympy.Derivative):
         return {"t": "Derivative", "expr": ser(o.expr), "vc": [[ser(v), int(n)] for v, n in o.variable_count]}
     if o is sympy.true or o is sympy.false:
-        return {"t": "Py", "v": bool(o)}
+        return {"t": "Js", "v": bool(o)}
     if isinstance(o, Relational):
         return {"t": "Rel", "op": type(o).__name__, "args": [ser(a) for a in o.args]}
     name = type(o).__name__
@@ -274,14 +274,14 @@ class Timeout(Exception):
 
 def ser_arg(node, globs):
     """Serialize a call argument; a lambda whose body evaluates to an expression
-    when applied to dummies becomes {"t": "PyLambda", params, body}."""
+    when applied to dummies becomes {"t": "JsLambda", params, body}."""
     if isinstance(node, ast.Lambda) and not node.args.vararg and not node.args.kwonlyargs and not node.args.kwarg:
         names = [a.arg for a in node.args.args]
         b = node.body
         if (len(names) == 1 and isinstance(b, ast.Attribute) and isinstance(b.value, ast.Name)
                 and b.value.id == names[0] and b.attr.startswith("is_")):
             # a predicate such as lambda e: e.is_Mul
-            return {"t": "PyPred", "attr": b.attr}
+            return {"t": "JsPred", "attr": b.attr}
         ds = [sympy.Dummy(n) for n in names]
         loc = dict(globs)
         loc.update(zip(names, ds))
@@ -291,7 +291,7 @@ def ser_arg(node, globs):
             raise Unsupported("function")
         if not isinstance(body, Basic) or isinstance(body, sympy.logic.boolalg.BooleanAtom):
             raise Unsupported("function")
-        return {"t": "PyLambda", "params": [ser(d) for d in ds], "body": ser(body)}
+        return {"t": "JsLambda", "params": [ser(d) for d in ds], "body": ser(body)}
     return ser(eval(compile(ast.Expression(node), "<a>", "eval"), globs))
 
 

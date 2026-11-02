@@ -2900,7 +2900,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -2925,7 +2925,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -3116,7 +3116,7 @@
    "args": [],
    "kwargs": {
     "radical": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -3813,7 +3813,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -3838,7 +3838,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -4783,7 +4783,7 @@
    "args": [],
    "kwargs": {
     "split_1": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -4817,7 +4817,7 @@
    "args": [],
    "kwargs": {
     "cset": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -6375,7 +6375,7 @@
    "args": [],
    "kwargs": {
     "radical": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -6448,7 +6448,7 @@
    "args": [],
    "kwargs": {
     "clear": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -7172,7 +7172,7 @@
    ],
    "kwargs": {
     "as_Add": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -7207,7 +7207,7 @@
    ],
    "kwargs": {
     "as_Add": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -7242,7 +7242,7 @@
    ],
    "kwargs": {
     "as_Add": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -8031,7 +8031,7 @@
      "q": "1"
     },
     "hir": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -9186,7 +9186,7 @@
    ],
    "kwargs": {
     "right": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -10064,7 +10064,7 @@
    "args": [],
    "kwargs": {
     "allow_half": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -10102,7 +10102,7 @@
    "args": [],
    "kwargs": {
     "allow_half": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -10140,7 +10140,7 @@
    "args": [],
    "kwargs": {
     "allow_half": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -10178,7 +10178,7 @@
    "args": [],
    "kwargs": {
     "allow_half": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -14935,7 +14935,7 @@
    "args": [],
    "kwargs": {
     "deep": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -15684,7 +15684,7 @@
    },
    "args": [
     {
-     "t": "PySet",
+     "t": "JsSet",
      "items": [
       {
        "t": "UFnClass",
@@ -15714,7 +15714,7 @@
    },
    "args": [
     {
-     "t": "PySet",
+     "t": "JsSet",
      "items": [
       {
        "t": "UFn",
@@ -15761,7 +15761,7 @@
    },
    "args": [
     {
-     "t": "PySet",
+     "t": "JsSet",
      "items": [
       {
        "t": "Symbol",
@@ -15802,7 +15802,7 @@
    },
    "args": [
     {
-     "t": "PySet",
+     "t": "JsSet",
      "items": [
       {
        "t": "Add",
@@ -15858,7 +15858,7 @@
    },
    "args": [
     {
-     "t": "PySet",
+     "t": "JsSet",
      "items": [
       {
        "t": "Add",
@@ -15900,7 +15900,7 @@
      "prec": 7
     },
     {
-     "t": "PyFunc",
+     "t": "JsFunc",
      "name": "equal_valued"
     }
    ],
@@ -15928,7 +15928,7 @@
      "prec": 37
     },
     {
-     "t": "PyFunc",
+     "t": "JsFunc",
      "name": "equal_valued"
     }
    ],
@@ -15956,7 +15956,7 @@
      "prec": 37
     },
     {
-     "t": "PyFunc",
+     "t": "JsFunc",
      "name": "equal_valued"
     }
    ],
@@ -15984,7 +15984,7 @@
      "prec": 37
     },
     {
-     "t": "PyFunc",
+     "t": "JsFunc",
      "name": "math.isclose"
     }
    ],
@@ -16448,7 +16448,7 @@
    ],
    "kwargs": {
     "old": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -16505,7 +16505,7 @@
    ],
    "kwargs": {
     "old": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -16670,7 +16670,7 @@
    ],
    "kwargs": {
     "map": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -16769,7 +16769,7 @@
      "name": "sin"
     },
     {
-     "t": "PyLambda",
+     "t": "JsLambda",
      "params": [
       {
        "t": "Dummy",
@@ -17394,7 +17394,7 @@
    ],
    "kwargs": {
     "exact": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -17469,7 +17469,7 @@
      ]
     },
     {
-     "t": "PyLambda",
+     "t": "JsLambda",
      "params": [
       {
        "t": "Dummy",
@@ -17543,11 +17543,11 @@
    },
    "args": [
     {
-     "t": "PyPred",
+     "t": "JsPred",
      "attr": "is_Number"
     },
     {
-     "t": "PyLambda",
+     "t": "JsLambda",
      "params": [
       {
        "t": "Dummy",
@@ -17619,11 +17619,11 @@
    },
    "args": [
     {
-     "t": "PyPred",
+     "t": "JsPred",
      "attr": "is_Mul"
     },
     {
-     "t": "PyLambda",
+     "t": "JsLambda",
      "params": [
       {
        "t": "Dummy",
@@ -17712,7 +17712,7 @@
      ]
     },
     {
-     "t": "PyLambda",
+     "t": "JsLambda",
      "params": [
       {
        "t": "Dummy",
@@ -17751,7 +17751,7 @@
    ],
    "kwargs": {
     "exact": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -17816,7 +17816,7 @@
      ]
     },
     {
-     "t": "PyLambda",
+     "t": "JsLambda",
      "params": [
       {
        "t": "Dummy",
@@ -17855,7 +17855,7 @@
    ],
    "kwargs": {
     "exact": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -17910,7 +17910,7 @@
      ]
     },
     {
-     "t": "PyLambda",
+     "t": "JsLambda",
      "params": [
       {
        "t": "Dummy",
@@ -17949,7 +17949,7 @@
    ],
    "kwargs": {
     "exact": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -18004,7 +18004,7 @@
      ]
     },
     {
-     "t": "PyLambda",
+     "t": "JsLambda",
      "params": [
       {
        "t": "Dummy",
@@ -18043,7 +18043,7 @@
    ],
    "kwargs": {
     "exact": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -18955,7 +18955,7 @@
    ],
    "kwargs": {
     "simultaneous": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -19148,7 +19148,7 @@
    ],
    "kwargs": {
     "simultaneous": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -20199,7 +20199,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -20325,7 +20325,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -20372,7 +20372,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -22986,7 +22986,7 @@
    "fn": "arity",
    "args": [
     {
-     "t": "PyLambda",
+     "t": "JsLambda",
      "params": [
       {
        "t": "Dummy",
@@ -23053,7 +23053,7 @@
    "args": [],
    "kwargs": {
     "visual": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -23082,7 +23082,7 @@
    "args": [],
    "kwargs": {
     "visual": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -23126,7 +23126,7 @@
    "args": [],
    "kwargs": {
     "visual": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -23187,7 +23187,7 @@
    "args": [],
    "kwargs": {
     "visual": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -23248,7 +23248,7 @@
    "args": [],
    "kwargs": {
     "visual": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -23297,7 +23297,7 @@
    "args": [],
    "kwargs": {
     "visual": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -23329,11 +23329,11 @@
        ]
       },
       {
-       "t": "Py",
+       "t": "Js",
        "v": null
       },
       {
-       "t": "Py",
+       "t": "Js",
        "v": true
       },
       {
@@ -23357,7 +23357,7 @@
    ],
    "kwargs": {
     "visual": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -23389,11 +23389,11 @@
        ]
       },
       {
-       "t": "Py",
+       "t": "Js",
        "v": null
       },
       {
-       "t": "Py",
+       "t": "Js",
        "v": true
       },
       {
@@ -23417,7 +23417,7 @@
    ],
    "kwargs": {
     "visual": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -23487,7 +23487,7 @@
    ],
    "kwargs": {
     "visual": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -23697,7 +23697,7 @@
    "args": [],
    "kwargs": {
     "mul": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -23741,7 +23741,7 @@
    "args": [],
    "kwargs": {
     "multinomial": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -23776,7 +23776,7 @@
    "args": [],
    "kwargs": {
     "power_exp": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -23815,7 +23815,7 @@
    "args": [],
    "kwargs": {
     "power_exp": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -23854,7 +23854,7 @@
    "args": [],
    "kwargs": {
     "power_base": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -23893,11 +23893,11 @@
    "args": [],
    "kwargs": {
     "power_base": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     },
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -23936,7 +23936,7 @@
    "args": [],
    "kwargs": {
     "power_base": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -23981,7 +23981,7 @@
    "args": [],
    "kwargs": {
     "log": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -24026,11 +24026,11 @@
    "args": [],
    "kwargs": {
     "log": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     },
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -24079,7 +24079,7 @@
    "args": [],
    "kwargs": {
     "log": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -24108,7 +24108,7 @@
    "args": [],
    "kwargs": {
     "complex": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -24133,7 +24133,7 @@
    "args": [],
    "kwargs": {
     "complex": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -24168,7 +24168,7 @@
    "args": [],
    "kwargs": {
     "func": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -24203,7 +24203,7 @@
    "args": [],
    "kwargs": {
     "trig": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -24238,7 +24238,7 @@
    "args": [],
    "kwargs": {
     "trig": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -24343,7 +24343,7 @@
    "args": [],
    "kwargs": {
     "power_exp": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -24398,7 +24398,7 @@
    "args": [],
    "kwargs": {
     "mul": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -24495,7 +24495,7 @@
    "args": [],
    "kwargs": {
     "deep": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -24641,7 +24641,7 @@
    ],
    "kwargs": {
     "log": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -24752,7 +24752,7 @@
    ],
    "kwargs": {
     "mul": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -24953,7 +24953,7 @@
    ],
    "kwargs": {
     "frac": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -25043,7 +25043,7 @@
    ],
    "kwargs": {
     "numer": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -25133,7 +25133,7 @@
    ],
    "kwargs": {
     "denom": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -25732,7 +25732,7 @@
    ],
    "kwargs": {
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -25778,7 +25778,7 @@
    ],
    "kwargs": {
     "deep": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -25824,7 +25824,7 @@
    ],
    "kwargs": {
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -26454,7 +26454,7 @@
    ],
    "kwargs": {
     "exponent": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -27988,7 +27988,7 @@
    "args": [],
    "kwargs": {
     "func": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -28458,7 +28458,7 @@
    "args": [],
    "kwargs": {
     "func": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -29477,18 +29477,6 @@
       ],
       [
        {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Symbol",
-        "name": "x_1",
-        "assume": {}
-       }
-      ],
-      [
-       {
         "t": "Dummy",
         "name": "x",
         "index": 0,
@@ -29497,6 +29485,18 @@
        {
         "t": "Symbol",
         "name": "x",
+        "assume": {}
+       }
+      ],
+      [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "x_1",
         "assume": {}
        }
       ]
@@ -29610,7 +29610,7 @@
    "fn": "symbols",
    "args": [
     {
-     "t": "PySet",
+     "t": "JsSet",
      "items": [
       {
        "t": "Str",
@@ -29643,7 +29643,7 @@
    ],
    "kwargs": {
     "seq": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -29937,7 +29937,7 @@
    ],
    "kwargs": {
     "real": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -30022,7 +30022,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -30943,7 +30943,7 @@
    ],
    "kwargs": {
     "chop": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -31864,7 +31864,7 @@
    ],
    "kwargs": {
     "clear": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -31904,7 +31904,7 @@
    ],
    "kwargs": {
     "clear": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -31999,7 +31999,7 @@
    ],
    "kwargs": {
     "sign": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -32049,7 +32049,7 @@
    ],
    "kwargs": {
     "sign": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -32209,7 +32209,7 @@
    ],
    "kwargs": {
     "clear": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -32259,7 +32259,7 @@
    ],
    "kwargs": {
     "clear": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -32354,7 +32354,7 @@
    ],
    "kwargs": {
     "fraction": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -32404,11 +32404,11 @@
    ],
    "kwargs": {
     "fraction": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     },
     "clear": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -32573,7 +32573,7 @@
    ],
    "kwargs": {
     "clear": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -32658,11 +32658,11 @@
    ],
    "kwargs": {
     "clear": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     },
     "fraction": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -32871,7 +32871,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -32890,7 +32890,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -32909,7 +32909,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -32929,7 +32929,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -32964,7 +32964,7 @@
    ],
    "kwargs": {
     "convert_xor": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -32983,7 +32983,7 @@
    ],
    "kwargs": {
     "convert_xor": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -33002,7 +33002,7 @@
    ],
    "kwargs": {
     "rational": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -33021,7 +33021,7 @@
    ],
    "kwargs": {
     "rational": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -33917,7 +33917,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_873",
+         "name": "Dummy_874",
          "index": 0,
          "assume": {
           "real": true
@@ -34672,7 +34672,7 @@
    ],
    "kwargs": {
     "lift": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -34712,7 +34712,7 @@
    ],
    "kwargs": {
     "lift": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -38939,7 +38939,7 @@
    ],
    "kwargs": {
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -38967,7 +38967,7 @@
    },
    "args": [
     {
-     "t": "PyFunc",
+     "t": "JsFunc",
      "name": "sqrt"
     }
    ],
@@ -39461,7 +39461,7 @@
         ]
        },
        {
-        "t": "Py",
+        "t": "Js",
         "v": true
        }
       ]
@@ -39569,7 +39569,7 @@
         ]
        },
        {
-        "t": "Py",
+        "t": "Js",
         "v": true
        }
       ]
@@ -39666,7 +39666,7 @@
            ]
           },
           {
-           "t": "Py",
+           "t": "Js",
            "v": true
           }
          ]
@@ -39749,7 +39749,7 @@
         "q": "1"
        },
        {
-        "t": "Py",
+        "t": "Js",
         "v": true
        }
       ]
@@ -39836,7 +39836,7 @@
         "q": "1"
        },
        {
-        "t": "Py",
+        "t": "Js",
         "v": true
        }
       ]
@@ -39945,7 +39945,7 @@
         "q": "1"
        },
        {
-        "t": "Py",
+        "t": "Js",
         "v": true
        }
       ]
@@ -40048,7 +40048,7 @@
         "q": "1"
        },
        {
-        "t": "Py",
+        "t": "Js",
         "v": true
        }
       ]
@@ -40145,7 +40145,7 @@
         "q": "1"
        },
        {
-        "t": "Py",
+        "t": "Js",
         "v": true
        }
       ]
@@ -40232,7 +40232,7 @@
         "q": "1"
        },
        {
-        "t": "Py",
+        "t": "Js",
         "v": true
        }
       ]
@@ -40324,7 +40324,7 @@
          "q": "1"
         },
         {
-         "t": "Py",
+         "t": "Js",
          "v": true
         }
        ]
@@ -40422,7 +40422,7 @@
    ],
    "kwargs": {
     "skip_nan": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -40481,7 +40481,7 @@
            "q": "1"
           },
           {
-           "t": "Py",
+           "t": "Js",
            "v": true
           }
          ]
@@ -40905,7 +40905,7 @@
    ],
    "kwargs": {
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -41051,7 +41051,7 @@
    ],
    "kwargs": {
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -41243,7 +41243,7 @@
    ],
    "kwargs": {
     "rational": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     },
     "rational_conversion": {
@@ -41267,7 +41267,7 @@
    ],
    "kwargs": {
     "rational": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -41536,7 +41536,7 @@
    ],
    "kwargs": {
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -41728,7 +41728,7 @@
      ]
     },
     "dict": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -41840,7 +41840,7 @@
    ],
    "kwargs": {
     "dict": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -41946,7 +41946,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -43319,7 +43319,7 @@
    ],
    "kwargs": {
     "exact": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -43404,7 +43404,7 @@
    ],
    "kwargs": {
     "exact": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -43507,7 +43507,7 @@
    ],
    "kwargs": {
     "exact": {
-     "t": "Py",
+     "t": "Js",
      "v": null
     }
    },
@@ -43598,7 +43598,7 @@
    ],
    "kwargs": {
     "exact": {
-     "t": "Py",
+     "t": "Js",
      "v": null
     }
    },
@@ -43911,7 +43911,7 @@
    ],
    "kwargs": {
     "exact": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -44392,7 +44392,7 @@
      "assume": {}
     },
     {
-     "t": "PyFunc",
+     "t": "JsFunc",
      "name": "factor"
     }
    ],
@@ -45342,7 +45342,7 @@
    ],
    "kwargs": {
     "exact": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -45417,7 +45417,7 @@
    ],
    "kwargs": {
     "exact": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -45952,7 +45952,7 @@
    ],
    "kwargs": {
     "symbolic": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -46496,7 +46496,7 @@
    ],
    "kwargs": {
     "old": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -46584,7 +46584,7 @@
    ],
    "kwargs": {
     "old": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -46672,11 +46672,11 @@
    ],
    "kwargs": {
     "deep": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     },
     "old": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -46810,7 +46810,7 @@
    ],
    "kwargs": {
     "old": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -46948,7 +46948,7 @@
      "v": "groebner"
     },
     "old": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -46984,11 +46984,11 @@
    ],
    "kwargs": {
     "compare": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     },
     "old": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -47465,7 +47465,7 @@
    ],
    "kwargs": {
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -47631,7 +47631,7 @@
    ],
    "kwargs": {
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -47673,7 +47673,7 @@
    ],
    "kwargs": {
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -47717,7 +47717,7 @@
    ],
    "kwargs": {
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -47916,7 +47916,7 @@
      "v": "base"
     },
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -48000,7 +48000,7 @@
      "v": "all"
     },
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -48164,7 +48164,7 @@
      "v": "base"
     },
     "force": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -48263,7 +48263,7 @@
    ],
    "kwargs": {
     "deep": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -49596,7 +49596,7 @@
    ],
    "kwargs": {
     "deep": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -49960,7 +49960,7 @@
    ],
    "kwargs": {
     "full": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -53352,7 +53352,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10cb0cf70>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x1099b5bd0>, 3)"
   },
   {
    "fn": ".LC",
@@ -53559,7 +53559,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10cadb250>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x109292290>, 4)"
   },
   {
    "fn": ".TC",
@@ -54741,7 +54741,7 @@
    ],
    "kwargs": {
     "include": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -54838,7 +54838,7 @@
    "args": [],
    "kwargs": {
     "convert": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -56532,7 +56532,7 @@
    ],
    "kwargs": {
     "auto": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -59188,7 +59188,7 @@
    "args": [],
    "kwargs": {
     "front": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -62466,7 +62466,7 @@
    ],
    "kwargs": {
     "auto": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -62778,7 +62778,7 @@
    ],
    "kwargs": {
     "includePRS": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -62875,7 +62875,7 @@
    "args": [],
    "kwargs": {
     "field": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -63753,7 +63753,7 @@
    "args": [],
    "kwargs": {
     "all": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -64010,7 +64010,7 @@
    "args": [],
    "kwargs": {
     "all": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -66214,7 +66214,7 @@
    ],
    "kwargs": {
     "extension": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -66263,7 +66263,7 @@
    ],
    "kwargs": {
     "extension": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -66327,7 +66327,7 @@
    ],
    "kwargs": {
     "extension": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -66442,7 +66442,7 @@
    ],
    "kwargs": {
     "extension": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -68018,7 +68018,7 @@
    ],
    "kwargs": {
     "gaussian": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -68374,7 +68374,7 @@
    ],
    "kwargs": {
     "deep": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -68450,7 +68450,7 @@
    ],
    "kwargs": {
     "deep": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -68526,11 +68526,11 @@
    ],
    "kwargs": {
     "deep": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     },
     "fraction": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -71444,7 +71444,7 @@
    ],
    "kwargs": {
     "expand": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -71783,7 +71783,7 @@
    ],
    "kwargs": {
     "multiple": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -71893,7 +71893,7 @@
    ],
    "kwargs": {
     "extension": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -72008,7 +72008,7 @@
    ],
    "kwargs": {
     "extension": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -73412,7 +73412,7 @@
    ],
    "kwargs": {
     "expand": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -73482,11 +73482,11 @@
    ],
    "kwargs": {
     "expand": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     },
     "deep": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -73532,7 +73532,7 @@
    ],
    "kwargs": {
     "deep": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -73607,7 +73607,7 @@
    ],
    "kwargs": {
     "clear": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -73662,7 +73662,7 @@
    ],
    "kwargs": {
     "clear": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -73712,7 +73712,7 @@
    ],
    "kwargs": {
     "clear": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -75582,7 +75582,7 @@
    ],
    "kwargs": {
     "formal": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -75697,7 +75697,7 @@
    ],
    "kwargs": {
     "formal": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -76149,7 +76149,7 @@
    ],
    "kwargs": {
     "integer_power": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -76696,7 +76696,7 @@
      "v": "bisect"
     },
     "verify": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -77410,7 +77410,7 @@
    ],
    "kwargs": {
     "set": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -77704,7 +77704,7 @@
    ],
    "kwargs": {
     "set": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -77789,7 +77789,7 @@
    ],
    "kwargs": {
     "implicit": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -78383,7 +78383,7 @@
    ],
    "kwargs": {
     "check": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -78578,7 +78578,7 @@
    ],
    "kwargs": {
     "check": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -79291,7 +79291,7 @@
    ],
    "kwargs": {
     "cubics": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -79351,7 +79351,7 @@
    ],
    "kwargs": {
     "cubics": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -79421,7 +79421,7 @@
    ],
    "kwargs": {
     "cubics": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -79606,7 +79606,7 @@
    ],
    "kwargs": {
     "check": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -81207,7 +81207,7 @@
    ],
    "kwargs": {
     "dict": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -83580,7 +83580,7 @@
      "list": true
     },
     {
-     "t": "PySet",
+     "t": "JsSet",
      "items": []
     },
     {
@@ -83690,7 +83690,7 @@
      "list": true
     },
     {
-     "t": "PySet",
+     "t": "JsSet",
      "items": [
       {
        "t": "Add",
@@ -83818,7 +83818,7 @@
      "list": true
     },
     {
-     "t": "PySet",
+     "t": "JsSet",
      "items": [
       {
        "t": "Add",
@@ -86834,7 +86834,7 @@
    ],
    "kwargs": {
     "extension": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -87774,7 +87774,7 @@
    ],
    "kwargs": {
     "relational": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -87818,7 +87818,7 @@
      "assume": {}
     },
     {
-     "t": "Py",
+     "t": "Js",
      "v": false
     },
     {
@@ -87875,7 +87875,7 @@
    ],
    "kwargs": {
     "relational": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -89179,7 +89179,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -89267,7 +89267,7 @@
           "q": "1"
          },
          {
-          "t": "Py",
+          "t": "Js",
           "v": true
          }
         ]
@@ -94860,7 +94860,7 @@
          ]
         },
         {
-         "t": "Py",
+         "t": "Js",
          "v": true
         }
        ]
@@ -95060,7 +95060,7 @@
          ]
         },
         {
-         "t": "Py",
+         "t": "Js",
          "v": true
         }
        ]
@@ -98838,7 +98838,7 @@
      "q": "1"
     },
     {
-     "t": "PyLambda",
+     "t": "JsLambda",
      "params": [
       {
        "t": "Dummy",
@@ -99036,7 +99036,7 @@
    },
    "args": [
     {
-     "t": "PyLambda",
+     "t": "JsLambda",
      "params": [
       {
        "t": "Dummy",
@@ -100794,7 +100794,7 @@
    ],
    "kwargs": {
     "unpack": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -101286,7 +101286,7 @@
    ],
    "kwargs": {
     "hermitian": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -101355,7 +101355,7 @@
    ],
    "kwargs": {
     "hermitian": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -101426,7 +101426,7 @@
    ],
    "kwargs": {
     "hermitian": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     },
     "conjugate_convention": {
@@ -101501,7 +101501,7 @@
    ],
    "kwargs": {
     "hermitian": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     },
     "conjugate_convention": {
@@ -102195,15 +102195,15 @@
      "t": "Tuple",
      "items": [
       {
-       "t": "Py",
+       "t": "Js",
        "v": true
       },
       {
-       "t": "Py",
+       "t": "Js",
        "v": false
       },
       {
-       "t": "Py",
+       "t": "Js",
        "v": true
       }
      ],
@@ -103857,7 +103857,7 @@
    "args": [],
    "kwargs": {
     "simplify": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -104168,7 +104168,7 @@
    "args": [],
    "kwargs": {
     "reals_only": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -104215,7 +104215,7 @@
    "args": [],
    "kwargs": {
     "reals_only": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -104799,7 +104799,7 @@
    "args": [],
    "kwargs": {
     "simplify": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -109553,7 +109553,7 @@
    "args": [],
    "kwargs": {
     "diagonal": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -110016,7 +110016,7 @@
    ],
    "kwargs": {
     "unpack": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -110786,7 +110786,7 @@
    "args": [],
    "kwargs": {
     "reals_only": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -110833,7 +110833,7 @@
    "args": [],
    "kwargs": {
     "reals_only": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -113312,7 +113312,7 @@
    "args": [],
    "kwargs": {
     "func": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -115319,7 +115319,7 @@
          ]
         },
         {
-         "t": "Py",
+         "t": "Js",
          "v": true
         }
        ]
@@ -116097,7 +116097,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -116117,7 +116117,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -117938,7 +117938,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -117958,7 +117958,7 @@
    ],
    "kwargs": {
     "evaluate": {
-     "t": "Py",
+     "t": "Js",
      "v": false
     }
    },
@@ -118464,7 +118464,7 @@
    "args": [],
    "kwargs": {
     "chop": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },
@@ -118503,7 +118503,7 @@
    "args": [],
    "kwargs": {
     "chop": {
-     "t": "Py",
+     "t": "Js",
      "v": true
     }
    },

@@ -313,3 +313,18 @@ describe('nsimplify of exact numbers', () => {
     expect(sstr(nsimplify(parse('I**I'), { constants: [pi] }))).toBe('exp(-pi/2)');
   });
 });
+
+describe('sqrtdenest and radsimp (SymPy ports)', () => {
+  it('denest and rationalize like SymPy', async () => {
+    const { sqrtdenest, radsimp, sqrt: rt, expand: ex } = await import('../src');
+    const sd = (s: string) => sstr(sqrtdenest(parse(s)));
+    expect(sd('sqrt(1+sqrt(3)) + sqrt(3+3*sqrt(3)) - sqrt(10+6*sqrt(3))')).toBe('0');
+    expect(sstr(sqrtdenest(rt(ex(parse('(1 + sqrt(2) + sqrt(1+sqrt(1+sqrt(3))))**2')))))).toBe('1 + sqrt(2) + sqrt(1 + sqrt(1 + sqrt(3)))');
+    expect(['sqrt(5 + 2*sqrt(6))', 'sqrt(3 + 2*sqrt(2))', 'sqrt(x + 2*sqrt(x - 1))', 'sqrt(4 + 2*sqrt(3)) / 2'].map(sd)).toEqual(['sqrt(2) + sqrt(3)', '1 + sqrt(2)', 'sqrt(x + 2*sqrt(x - 1))', '1/2 + sqrt(3)/2']);
+    const rs = (s: string, o = {}) => sstr(radsimp(parse(s), o));
+    expect(['1/(sqrt(2) + sqrt(3))', '1/(1 + sqrt(2) + sqrt(3))', '1/(a + b*sqrt(c))', '1/(2 + sqrt(2))'].map((s) => rs(s))).toEqual([
+      '-sqrt(2) + sqrt(3)', '(-sqrt(6) + sqrt(2) + 2)/4', '(a - b*sqrt(c))/(a**2 - b**2*c)', '(2 - sqrt(2))/2',
+    ]);
+    expect(rs('1/(a + b*sqrt(c))', { symbolic: false })).toBe('1/(a + b*sqrt(c))');
+  });
+});

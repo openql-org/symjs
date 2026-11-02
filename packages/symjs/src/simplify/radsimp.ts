@@ -5,52 +5,12 @@
  * @file radsimp (rationalize denominators) and collect (group terms by powers).
  */
 
-import { keepCoeff } from '../core/methods';
 import { Add, Constant, Derivative, Expr, impl, ExprLike, Mul, Pow, Rational, S, UndefFn } from '../core/nodes';
-import { add, asBaseExp, mul, pow, splitCoeff, sympify } from '../core/ops';
-import { expandMul } from './expand';
-import { fraction } from './rational';
-import { gcdTerms } from './exprtools';
+import { add, asBaseExp, mul, pow, sympify } from '../core/ops';
 import { rebuild } from '../core/traverse';
 
-/** Is t a rational multiple of a square root of a positive rational? */
-function sqrtTerm(t: Expr): [Expr, Expr] | undefined {
-  const [c, r] = splitCoeff(t);
-  if (r instanceof Pow && r.base instanceof Rational && r.exp instanceof Rational && r.exp.p === 1n && r.exp.q === 2n) {
-    return [c, r];
-  }
-  return undefined;
-}
-
-/**
- * Rationalize a denominator of the form a + b*sqrt(c) (SymPy radsimp for
- * the common case): 1/(2 + sqrt(2)) -> (2 - sqrt(2))/2.
- */
-export function radsimp(ex: ExprLike): Expr {
-  const e = sympify(ex);
-  const [n, d0] = fraction(e);
-  const d = expandMul(d0);
-  if (!(d instanceof Add)) return e;
-  const rads = d.args.filter((t) => sqrtTerm(t) !== undefined);
-  if (rads.length !== 1) return e;
-  const rad = rads[0]!;
-  const rest = add(...d.args.filter((t) => t !== rad));
-  if (rest.has(S.I)) return e;
-  const conj = add(rest, mul(-1, rad));
-  const den = expandMul(mul(d, conj));
-  if (den instanceof Add) return e;
-  const num = expandMul(mul(n, conj));
-  if (den instanceof Rational) {
-    const inv = Rational.of(den.q, den.p);
-    // keep (num)/den unevaluated like SymPy, e.g. (2 - sqrt(2))/2
-    const r = num instanceof Add ? keepCoeff(inv, num) : mul(inv, num);
-    // SymPy: n, d = fraction(gcd_terms(n/d)) when that does not grow the denominator
-    const [n2, d2] = fraction(gcdTerms(r));
-    if (d2 instanceof Rational && d2.isOne && !(n2 instanceof Add)) return n2;
-    return r;
-  }
-  return mul(num, pow(den, -1));
-}
+// radsimp is the port of SymPy's algorithm in sqrtdenest.ts (they call each other)
+export { radsimp } from './sqrtdenest';
 
 /** Power of pattern p in term factor f: f = p**k with rational k, or undefined. */
 function powerOf(f: Expr, p: Expr, exact: boolean): Rational | undefined {
