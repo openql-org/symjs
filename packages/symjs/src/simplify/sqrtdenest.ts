@@ -9,7 +9,7 @@
  * split_surds).
  */
 
-import { Add, Constant, Expr, ExprLike, Mul, Pow, Rational, S } from '../core/nodes';
+import { Add, Constant, Expr, ExprLike, Mul, Pow, Rational, S, impl } from '../core/nodes';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { countOps, ordered } from '../core/match';
 import { keepCoeff } from '../core/methods';
@@ -573,3 +573,5 @@ function sqrtRatcomb(cs0: Expr[], args0: Pow[]): Expr {
   cs[i1] = add(cs[i1]!, radsimp(mul(c2, s, pow(a1.base, -1))));
   return sqrtRatcomb(cs, args);
 }
+
+impl.radsimp = (e) => radsimp(e);

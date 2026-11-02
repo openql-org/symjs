@@ -73,10 +73,18 @@ function extractPattern(term: Expr, p: Expr, exact: boolean): [Expr, Expr] | und
  * collect(a*x**2 + b*x**2 + a*x - b*x + c, x) = c + x**2*(a + b) + x*(a - b).
  * With several patterns, terms free of the first pattern are collected by the next.
  */
-export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: { exact?: boolean } = {}): Expr {
+export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: { exact?: boolean | null; func?: (c: Expr) => Expr } = {}): Expr {
   const e = sympify(ex);
   const list = Array.isArray(syms) ? (syms as readonly Expr[]) : [syms as Expr];
   if (list.length === 0) return e;
+  if (opts.exact === null || opts.func) {
+    // exact=None (and a coefficient function): group the terms by their whole part depending on the symbols
+    if (opts.exact !== null) {
+      const c = collect(e, list, { exact: opts.exact });
+      return groupByDependent(c, list, opts.func);
+    }
+    return groupByDependent(e, list, opts.func);
+  }
   const [p, ...rest] = list as [Expr, ...Expr[]];
   const terms = e instanceof Add ? e.args : [e];
   const groups = new Map<string, { k: Expr; coeffs: Expr[] }>();
@@ -98,6 +106,20 @@ export function collect(ex: ExprLike, syms: readonly Expr[] | Expr, opts: { exac
   return add(freePart, ...parts);
 }
 
+
+/** Terms grouped by the product of their factors containing the symbols; func applied to each coefficient. */
+function groupByDependent(e: Expr, syms: readonly Expr[], func?: (c: Expr) => Expr): Expr {
+  const groups = new Map<string, [Expr, Expr[]]>();
+  for (const t of e instanceof Add ? e.args : [e]) {
+    const fs = t instanceof Mul ? t.args : [t];
+    const dep = mul(...fs.filter((f) => syms.some((s) => f.has(s))));
+    const c = mul(...fs.filter((f) => !syms.some((s) => f.has(s))));
+    const g = groups.get(dep.key);
+    if (g) g[1].push(c);
+    else groups.set(dep.key, [dep, [c]]);
+  }
+  return add(...[...groups.values()].map(([dep, cs]) => mul(func ? func(add(...cs)) : add(...cs), dep)));
+}
 
 impl.collect = (e, syms) => collect(e, syms);
 

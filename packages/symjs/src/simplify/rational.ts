@@ -67,12 +67,37 @@ export function together(ex: ExprLike, opts: { deep?: boolean } = {}): Expr {
  * Put e into the form p/q with expanded p, q and cancel common factors.
  * Polynomial GCD cancellation is performed for univariate rational functions.
  */
+/** sqrt(g) times a sum: the square root of the gcd of the integer radicands of every term. */
+function radicalContent(e: Expr): [Expr, Expr] | undefined {
+  if (!(e instanceof Add)) return undefined;
+  let g = 0n;
+  const gcd = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcd(b, a % b));
+  for (const t of e.args) {
+    const r = (t instanceof Mul ? t.args : [t]).find((f) => f instanceof Pow && f.base instanceof Rational && f.base.q === 1n && f.exp instanceof Rational && f.exp.p === 1n && f.exp.q === 2n);
+    if (!r) return undefined;
+    g = gcd(g, ((r as Pow).base as Rational).p);
+  }
+  if (g <= 1n) return undefined;
+  const sg = pow(Rational.of(g), Rational.of(1n, 2n));
+  return [sg, expand(mul(e, pow(sg, -1)))];
+}
+
+function radicalContentRatio(n: Expr, d: Expr): Expr | undefined {
+  const a = radicalContent(n);
+  const b = radicalContent(d);
+  if (!a || !b || a[1].key !== b[1].key) return undefined;
+  return impl.radsimp ? impl.radsimp(mul(a[0], pow(b[0], -1))) : mul(a[0], pow(b[0], -1));
+}
+
 export function cancel(ex: ExprLike): Expr {
   const e = together(sympify(ex));
   let [n, d] = fraction(e);
   n = expand(n);
   d = expand(d);
   if (d instanceof Rational && d.isOne) return n;
+  // a common square root content: (sqrt(3) + sqrt(15)*A)/(sqrt(2) + sqrt(10)*A) = sqrt(6)/2
+  const rc = radicalContentRatio(n, d);
+  if (rc) return rc;
   const syms = new Map<string, Sym>();
   for (const s of [...freeSymbols(n), ...freeSymbols(d)]) syms.set(s.key, s);
   if (syms.size === 1) {

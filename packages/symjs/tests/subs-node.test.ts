@@ -370,3 +370,19 @@ describe('hyper, meijerg, spherical Bessel, KroneckerDelta and Gamma limits', ()
     expect(sstr(limit(P('4**n*factorial(n)**2/(2**(2*n)*rf(1/2, n)*rf(3/2, n))'), n, oo))).toBe('pi/2');
   });
 });
+
+describe('collect exact=None/func, deep factor with exponentials, radical content in cancel', () => {
+  it('match SymPy', async () => {
+    const { collect, factor, cancel, Symbol: Sym } = await import('../src');
+    const [x, y, a, b] = symbols('x y a b');
+    const P = (s: string) => parse(s, { symbols: { x, y, a, b } } as never);
+    expect(sstr(collect(P('x*exp(x) + sin(x)*y + sin(x)*2 + 3*x'), [x], { exact: null }))).toBe('x*exp(x) + 3*x + (y + 2)*sin(x)');
+    expect(sstr(collect(P('a*x*y + x*y + b*x + x'), [x, y], { exact: null }))).toBe('x*y*(a + 1) + x*(b + 1)');
+    expect(sstr(collect(P('expand((x + a + 1)**3)').subs([]) as never, [x]))).toBeTruthy();
+    expect(sstr(factor(P('5*x + 3*exp(2 - 7*x)'), { deep: true }))).toBe('(5*x*exp(7*x) + 3*exp(2))*exp(-7*x)');
+    expect(sstr(factor(P('5*x + 3*exp(2 - 7*x)'), { deep: true, fraction: false }))).toBe('5*x + 3*exp(2)*exp(-7*x)');
+    expect(sstr(factor(P('exp(x)+exp(-x)'), { deep: true }))).toBe('(exp(2*x) + 1)*exp(-x)');
+    const A = new Sym('A', { commutative: false });
+    expect(sstr(cancel(parse('(sqrt(3) + sqrt(15)*A)/(sqrt(2) + sqrt(10)*A)', { symbols: { A } } as never)))).toBe('sqrt(6)/2');
+  });
+});

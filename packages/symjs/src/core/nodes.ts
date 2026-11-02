@@ -232,6 +232,8 @@ export interface Impl {
   leadterm?(e: Expr, x: Sym): [Expr, Expr];
   /** Lambert W function (registered by functions/special). */
   lambertW?(x: Expr, k?: number): Expr;
+  /** SymPy radsimp (registered by simplify/sqrtdenest). */
+  radsimp?(e: Expr): Expr;
   /** SymPy fraction (registered by simplify/rational). */
   fraction?(e: Expr): [Expr, Expr];
   conjugate(e: Expr): Expr;

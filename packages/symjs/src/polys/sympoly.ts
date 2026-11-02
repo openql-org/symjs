@@ -11,13 +11,13 @@ import { parse } from '../parsing/parser';
 import { factorModP } from './zassenhaus';
 import { Add, Constant, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { evalf as evalfExpr } from '../numeric/evalf';
-import { add, mul, pow, sympify } from '../core/ops';
+import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, mapBottomUp, rebuild, xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { integrate } from '../integrals/integrate';
 import { str } from '../printing/str';
 import { expandMul as expand } from '../simplify/expand';
-import { cancel } from '../simplify/rational';
+import { cancel, together } from '../simplify/rational';
 import { decomposePower, keepCoeff } from '../simplify/exprtools';
 import { divExact, mfactorList, mgcd, mlcm, prem as mprem } from './mpoly';
 import { CRootOf } from './rootof';
@@ -1435,7 +1435,7 @@ function factorModulus(e: Expr, p: bigint): Expr {
   return keepCoeff(Rational.of(sym(lc)), mul(...fs.map(([g, m]) => pow(toExpr(g), m))));
 }
 
-export function factor(ex: ExprLike, opts: { deep?: boolean; extension?: readonly Expr[]; gaussian?: boolean; modulus?: number | bigint } = {}): Expr {
+export function factor(ex: ExprLike, opts: { deep?: boolean; extension?: readonly Expr[]; gaussian?: boolean; modulus?: number | bigint; fraction?: boolean } = {}): Expr {
   if (opts.modulus !== undefined) return factorModulus(sympify(ex), BigInt(opts.modulus));
   if (opts.gaussian || opts.extension?.length) {
     const r = factorOverExtension(sympify(ex), opts.gaussian ? [S.I] : opts.extension!);
@@ -1444,6 +1444,24 @@ export function factor(ex: ExprLike, opts: { deep?: boolean; extension?: readonl
   if (opts.deep) {
     // factor the arguments of functions and powers first (SymPy deep=True)
     const inner = mapBottomUp(sympify(ex), (t) => (t instanceof Fn || (t instanceof Pow && !(t.exp instanceof Rational)) ? rebuild(t, t.args.map((a) => factor(a))) : t));
+    // exp(a - b) = exp(a)*exp(-b) (SymPy exp.as_numer_denom) ...
+    const isE = (b: Expr) => b instanceof Constant && b.name === 'E';
+    const negPart = (u: Expr) => couldExtractMinusSign(u);
+    const split = mapBottomUp(inner, (t) => {
+      if (!(t instanceof Pow && isE(t.base) && t.exp instanceof Add)) return t;
+      const neg = t.exp.args.filter(negPart);
+      if (!neg.length || neg.length === t.exp.args.length) return t;
+      return new Mul([pow(S.E, add(...t.exp.args.filter((u) => !negPart(u)))), pow(S.E, add(...neg))]);
+    });
+    if (opts.fraction === false) return split.key === inner.key ? factor(inner) : split;
+    // ... and exp with a negative exponent is a denominator (fraction=True)
+    const t = together(split);
+    const fs = t instanceof Mul ? t.args : [t];
+    const den = fs.filter((f) => f instanceof Pow && isE(f.base) && negPart(f.exp));
+    if (den.length && den.length < fs.length) {
+      const num = mul(...fs.filter((f) => !den.includes(f)));
+      return mul(factor(num), ...den);
+    }
     return factor(inner);
   }
   const e = sympify(ex);

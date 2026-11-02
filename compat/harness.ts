@@ -1441,12 +1441,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   expand_complex: exprFn(sj.expand_complex),
   simplify: exprFn(sj.simplify),
   factor: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['deep', 'gaussian', 'extension', 'modulus'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['deep', 'gaussian', 'extension', 'modulus', 'fraction'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 1) throw new Unsupported('arity');
     if (kw['modulus'] !== undefined) return sj.factor(asExpr(args[0]), { modulus: (kw['modulus'] as sj.Rational).p });
     const ext = kw['extension'];
     const extension = ext === undefined ? undefined : ext instanceof JsTuple || ext instanceof JsList ? ext.items.map(asExpr) : [asExpr(ext)];
-    return sj.factor(asExpr(args[0]), { deep: Boolean(kw['deep']), gaussian: Boolean(kw['gaussian']), extension });
+    return sj.factor(asExpr(args[0]), { deep: Boolean(kw['deep']), gaussian: Boolean(kw['gaussian']), extension, ...(kw['fraction'] === false ? { fraction: false } : {}) });
   },
   together: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
@@ -1635,18 +1635,11 @@ export const ADAPTERS: Record<string, Adapter> = {
       const f = ADAPTERS[args[2].name];
       if (!f) throw new Unsupported('collect func');
       const syms = args[1] instanceof JsTuple ? args[1].items.map(asExpr) : [asExpr(args[1])];
-      const c = sj.collect(asExpr(args[0]), syms);
-      const terms = c instanceof sj.Add ? c.args : [c];
-      return sj.add(
-        ...terms.map((t) => {
-          const [ind, dep] = sj.asIndependent(t, syms);
-          return sj.mul(f([ind], {}) as Expr, dep);
-        }),
-      );
+      return sj.collect(asExpr(args[0]), syms, { func: (c) => f([c], {}) as Expr });
     }
     if (args.length !== 2) throw new Unsupported('collect arity');
     const syms = args[1] instanceof JsTuple ? args[1].items.map(asExpr) : [asExpr(args[1])];
-    return sj.collect(asExpr(args[0]), syms, exact === undefined || exact === null ? {} : { exact: Boolean(exact) });
+    return sj.collect(asExpr(args[0]), syms, exact === undefined ? {} : exact === null ? { exact: null } : { exact: Boolean(exact) });
   },
   fraction: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'exact') throw new Unsupported(`kwargs ${k}`);
