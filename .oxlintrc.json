@@ -85,6 +85,11 @@
             "patterns": [
               {
                 "group": [
+                  "../ntheory/*",
+                  "../tensor/*",
+                  "../combinatorics/*",
+                  "../logic/*",
+                  "../utilities/*",
                   "../functions/*",
                   "../parsing/*",
                   "../calculus/*",
@@ -132,6 +137,11 @@
             "patterns": [
               {
                 "group": [
+                  "../ntheory/*",
+                  "../tensor/*",
+                  "../combinatorics/*",
+                  "../logic/*",
+                  "../utilities/*",
                   "../functions/*",
                   "../parsing/*",
                   "../calculus/*",
@@ -178,7 +188,9 @@
         "packages/symjs/src/calculus/diff.ts",
         "packages/symjs/src/calculus/finitediff.ts",
         "packages/symjs/src/simplify/expand.ts",
-        "packages/symjs/src/simplify/rewrite.ts"
+        "packages/symjs/src/simplify/rewrite.ts",
+        "packages/symjs/src/utilities/**",
+        "packages/symjs/src/logic/**"
       ],
       "rules": {
         "no-restricted-imports": [
@@ -187,6 +199,8 @@
             "patterns": [
               {
                 "group": [
+                  "../tensor/*",
+                  "../combinatorics/*",
                   "../polys/*",
                   "../matrices/*",
                   "../sets/*",
@@ -225,6 +239,8 @@
             "patterns": [
               {
                 "group": [
+                  "../tensor/*",
+                  "../combinatorics/*",
                   "../polys/*",
                   "../matrices/*",
                   "../sets/*",
@@ -263,6 +279,11 @@
             "patterns": [
               {
                 "group": [
+                  "../ntheory/*",
+                  "../tensor/*",
+                  "../combinatorics/*",
+                  "../logic/*",
+                  "../utilities/*",
                   "../functions/*",
                   "../parsing/*",
                   "../calculus/*",
@@ -313,6 +334,8 @@
             "patterns": [
               {
                 "group": [
+                  "../tensor/*",
+                  "../combinatorics/*",
                   "../polys/*",
                   "../matrices/*",
                   "../sets/*",
@@ -353,6 +376,8 @@
             "patterns": [
               {
                 "group": [
+                  "../tensor/*",
+                  "../combinatorics/*",
                   "../polys/*",
                   "../matrices/*",
                   "../sets/*",
@@ -389,7 +414,9 @@
         "packages/symjs/src/series/**",
         "packages/symjs/src/sets/**",
         "packages/symjs/src/calculus/**",
-        "packages/symjs/src/concrete/summations.ts"
+        "packages/symjs/src/concrete/summations.ts",
+        "packages/symjs/src/combinatorics/**",
+        "packages/symjs/src/tensor/**"
       ],
       "rules": {
         "no-restricted-imports": [
@@ -425,6 +452,8 @@
             "patterns": [
               {
                 "group": [
+                  "../tensor/*",
+                  "../combinatorics/*",
                   "../polys/*",
                   "../matrices/*",
                   "../sets/*",
@@ -465,6 +494,8 @@
             "patterns": [
               {
                 "group": [
+                  "../tensor/*",
+                  "../combinatorics/*",
                   "../polys/*",
                   "../matrices/*",
                   "../sets/*",

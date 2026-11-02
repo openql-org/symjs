@@ -5,7 +5,8 @@
  * @file Entry point of the base module `@symjs/symjs`: the whole computer
  * algebra system. Each feature area is also available as its own entry point
  * (`@symjs/symjs/core`, `/special`, `/simplify`, `/polys`, `/calculus`,
- * `/solvers`, `/sets`, `/matrices`) for smaller bundles. Domain-specific
+ * `/solvers`, `/sets`, `/matrices`, `/logic`, `/combinatorics`, `/utilities`,
+ * `/tensor`) for smaller bundles. Domain-specific
  * extend modules are separate packages (packages/* in the repository).
  */
 
@@ -17,3 +18,9 @@ export * from './calculus';
 export * from './solvers';
 export * from './sets';
 export * from './matrices';
+export * from './logic';
+export * from './combinatorics';
+export * from './utilities';
+export * from './tensor';
+// a Matrix or a graph [vertices, edges]
+export { connectedComponents, stronglyConnectedComponents } from './matrices';

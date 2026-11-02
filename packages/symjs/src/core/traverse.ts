@@ -12,6 +12,7 @@ import type { Expr, ExprLike, Substitution } from './nodes';
 import { Add, Constant, Derivative, ExtensionExpr, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Sym, UndefFn, impl } from './nodes';
 import { add, mul, pow, sympify } from './ops';
 import { SubsNode } from './subsnode';
+import { BoolOp } from './boolalg';
 
 /**
  * Rebuild a node of the same type with new arguments (re-canonicalizing).
@@ -19,7 +20,7 @@ import { SubsNode } from './subsnode';
  * @experimental May change in a minor release.
  */
 export function rebuild(e: Expr, args: readonly Expr[]): Expr {
-  if (e instanceof ExtensionExpr) return e.withArgs(args);
+  if (e instanceof ExtensionExpr || e instanceof BoolOp) return e.withArgs(args);
   if (e instanceof Add) return add(...args);
   if (e instanceof Mul) return mul(...args);
   if (e instanceof Pow) return pow(args[0]!, args[1]!);

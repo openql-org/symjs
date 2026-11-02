@@ -21,6 +21,8 @@ import { cancel } from '../simplify/rational';
 import { simplify } from '../simplify/simplify';
 import { exp } from '../core/ops';
 import { Matrix } from './matrix';
+import type { Graph } from '../utilities/iterables';
+import { connectedComponents as graphConnectedComponents, stronglyConnectedComponents as graphStronglyConnectedComponents } from '../utilities/iterables';
 
 const isZeroE = (e: Expr): boolean => {
   if (e instanceof Rational) return e.isZero;
@@ -566,7 +568,14 @@ export function permanent(mIn: Matrix): Expr {
 }
 
 /** Connected components of the graph of nonzero entries (undirected). */
-export function connectedComponents(m: Matrix): number[][] {
+export function connectedComponents(m: Matrix): number[][];
+/** Connected components of a graph [vertices, edges] (SymPy utilities.iterables.connected_components). */
+export function connectedComponents<T>(graph: Graph<T>): T[][];
+export function connectedComponents<T>(m: Matrix | Graph<T>): number[][] | T[][] {
+  return m instanceof Matrix ? matrixConnectedComponents(m) : graphConnectedComponents(m);
+}
+
+function matrixConnectedComponents(m: Matrix): number[][] {
   const n = m.shape[0];
   const seen = new Set<number>();
   const out: number[][] = [];
@@ -590,7 +599,14 @@ export function connectedComponents(m: Matrix): number[][] {
 }
 
 /** Strongly connected components in SymPy's (Tarjan, reverse topological) order. */
-export function stronglyConnectedComponents(m: Matrix): number[][] {
+export function stronglyConnectedComponents(m: Matrix): number[][];
+/** Strongly connected components of a graph [vertices, edges] (SymPy utilities.iterables.strongly_connected_components). */
+export function stronglyConnectedComponents<T>(graph: Graph<T>): T[][];
+export function stronglyConnectedComponents<T>(m: Matrix | Graph<T>): number[][] | T[][] {
+  return m instanceof Matrix ? matrixStronglyConnectedComponents(m) : graphStronglyConnectedComponents(m);
+}
+
+function matrixStronglyConnectedComponents(m: Matrix): number[][] {
   const n = m.shape[0];
   const nz = (i: number, j: number) => !(m.get(i, j) instanceof Rational && (m.get(i, j) as Rational).isZero);
   let index = 0;

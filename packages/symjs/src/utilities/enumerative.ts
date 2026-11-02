@@ -1,0 +1,274 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
+
+/**
+ * @file Port of the parts of SymPy's `sympy.utilities.enumerative` used by
+ * `multiset_partitions`: Knuth's Algorithm 7.1.2.5M (`multiset_partitions_taocp`),
+ * the range-restricted traversal (`MultisetPartitionTraverser.enum_range`)
+ * and `list_visitor`.
+ */
+
+/** One component of one part of the current partition (SymPy PartComponent). */
+export class PartComponent {
+  /** Component number. */
+  c = 0;
+  /** The as yet unpartitioned amount in component c before this triple. */
+  u = 0;
+  /** Amount of the c component in the current part (v <= u). */
+  v = 0;
+
+  toString(): string {
+    return `c:${this.c} u:${this.u} v:${this.v}`;
+  }
+}
+
+/** The state of a partition enumeration: frame array f, index of the last part and the stack. */
+export type PartitionState = readonly [f: number[], lpart: number, pstack: PartComponent[]];
+
+/**
+ * SymPy `multiset_partitions_taocp(multiplicities)`: enumerate the
+ * partitions of a multiset with the given multiplicities (the state is
+ * reused between steps; decode it with {@link listVisitor}).
+ */
+export function* multisetPartitionsTaocp(multiplicities: readonly number[]): Generator<PartitionState, void, undefined> {
+  const m = multiplicities.length;
+  const n = multiplicities.reduce((a, b) => a + b, 0);
+  const pstack = Array.from({ length: n * m + 1 }, () => new PartComponent());
+  const f: number[] = new Array<number>(n + 1).fill(0);
+  for (let j = 0; j < m; j++) {
+    const ps = pstack[j]!;
+    ps.c = j;
+    ps.u = multiplicities[j]!;
+    ps.v = multiplicities[j]!;
+  }
+  f[0] = 0;
+  let a = 0;
+  let lpart = 0;
+  f[1] = m;
+  let b = m;
+  for (;;) {
+    for (;;) {
+      // M2: subtract v from u
+      let k = b;
+      let x = false;
+      for (let j = a; j < b; j++) {
+        const pk = pstack[k]!;
+        const pj = pstack[j]!;
+        pk.u = pj.u - pj.v;
+        if (pk.u === 0) {
+          x = true;
+        } else if (!x) {
+          pk.c = pj.c;
+          pk.v = Math.min(pj.v, pk.u);
+          x = pk.u < pj.v;
+          k++;
+        } else {
+          pk.c = pj.c;
+          pk.v = pk.u;
+          k++;
+        }
+      }
+      // M3: push if nonzero
+      if (k > b) {
+        a = b;
+        b = k;
+        lpart++;
+        f[lpart + 1] = b;
+      } else {
+        break;
+      }
+    }
+    // M4: visit a partition
+    yield [f, lpart, pstack];
+    // M5: decrease v
+    for (;;) {
+      let j = b - 1;
+      while (pstack[j]!.v === 0) j--;
+      if (j === a && pstack[j]!.v === 1) {
+        // M6: backtrack
+        if (lpart === 0) return;
+        lpart--;
+        b = a;
+        a = f[lpart]!;
+      } else {
+        pstack[j]!.v -= 1;
+        for (let k = j + 1; k < b; k++) pstack[k]!.v = pstack[k]!.u;
+        break;
+      }
+    }
+  }
+}
+
+/** SymPy `list_visitor(state, components)`: the partition as a list of lists. */
+export function listVisitor<T>(state: PartitionState, components: readonly T[]): T[][] {
+  const [f, lpart, pstack] = state;
+  const partition: T[][] = [];
+  for (let i = 0; i <= lpart; i++) {
+    const part: T[] = [];
+    for (let s = f[i]!; s < f[i + 1]!; s++) {
+      const ps = pstack[s]!;
+      for (let r = 0; r < ps.v; r++) part.push(components[ps.c]!);
+    }
+    partition.push(part);
+  }
+  return partition;
+}
+
+/** SymPy `MultisetPartitionTraverser` (the enumeration with a range of part counts). */
+export class MultisetPartitionTraverser {
+  pstack: PartComponent[] = [];
+  f: number[] = [];
+  lpart = 0;
+  discarded = 0;
+
+  private initializeEnumeration(multiplicities: readonly number[]): void {
+    const numComponents = multiplicities.length;
+    const cardinality = multiplicities.reduce((a, b) => a + b, 0);
+    this.pstack = Array.from({ length: numComponents * cardinality + 1 }, () => new PartComponent());
+    this.f = new Array<number>(cardinality + 1).fill(0);
+    for (let j = 0; j < numComponents; j++) {
+      const ps = this.pstack[j]!;
+      ps.c = j;
+      ps.u = multiplicities[j]!;
+      ps.v = multiplicities[j]!;
+    }
+    this.f[0] = 0;
+    this.f[1] = numComponents;
+    this.lpart = 0;
+  }
+
+  /** Decrement the part like a multi-digit number whose leading digit stays positive. */
+  decrementPart(part: readonly PartComponent[]): boolean {
+    const plen = part.length;
+    for (let j = plen - 1; j >= 0; j--) {
+      const pj = part[j]!;
+      if ((j === 0 && pj.v > 1) || (j > 0 && pj.v > 0)) {
+        pj.v -= 1;
+        for (let k = j + 1; k < plen; k++) part[k]!.v = part[k]!.u;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Decrement, failing when the part can only have children with more than ub parts. */
+  decrementPartSmall(part: readonly PartComponent[], ub: number): boolean {
+    if (this.lpart >= ub - 1) return false;
+    const plen = part.length;
+    for (let j = plen - 1; j >= 0; j--) {
+      const p0 = part[0]!;
+      if (j === 0 && (p0.v - 1) * (ub - this.lpart) < p0.u) return false;
+      const pj = part[j]!;
+      if ((j === 0 && pj.v > 1) || (j > 0 && pj.v > 0)) {
+        pj.v -= 1;
+        for (let k = j + 1; k < plen; k++) part[k]!.v = part[k]!.u;
+        if (plen > 1 && part[1]!.v === 0 && p0.u - p0.v === (ub - this.lpart - 1) * p0.v) return false;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Decrement (when amt is 1) and enforce that more than lb parts remain reachable. */
+  decrementPartLarge(part: readonly PartComponent[], amt: number, lb: number): boolean {
+    if (amt === 1 && !this.decrementPart(part)) return false;
+    const minUnalloc = lb - this.lpart;
+    if (minUnalloc <= 0) return true;
+    let totalMult = 0;
+    let totalAlloc = 0;
+    for (const pc of part) {
+      totalMult += pc.u;
+      totalAlloc += pc.v;
+    }
+    if (totalMult <= minUnalloc) return false;
+    let deficit = minUnalloc - (totalMult - totalAlloc);
+    if (deficit <= 0) return true;
+    for (let i = part.length - 1; i >= 0; i--) {
+      const pi = part[i]!;
+      if (i === 0) {
+        if (pi.v > deficit) {
+          pi.v -= deficit;
+          return true;
+        }
+        return false;
+      }
+      if (pi.v >= deficit) {
+        pi.v -= deficit;
+        return true;
+      }
+      deficit -= pi.v;
+      pi.v = 0;
+    }
+    return false;
+  }
+
+  /** Combination of the small and large decrements. */
+  decrementPartRange(part: readonly PartComponent[], lb: number, ub: number): boolean {
+    return this.decrementPartSmall(part, ub) && this.decrementPartLarge(part, 0, lb);
+  }
+
+  /** Spread the unallocated multiplicity of the top part into a new part. */
+  spreadPartMultiplicity(): boolean {
+    let k = this.f[this.lpart + 1]!;
+    const base = k;
+    let changed = false;
+    for (let j = this.f[this.lpart]!; j < this.f[this.lpart + 1]!; j++) {
+      const pk = this.pstack[k]!;
+      const pj = this.pstack[j]!;
+      pk.u = pj.u - pj.v;
+      if (pk.u === 0) {
+        changed = true;
+      } else {
+        pk.c = pj.c;
+        if (changed) {
+          pk.v = pk.u;
+        } else if (pk.u < pj.v) {
+          pk.v = pk.u;
+          changed = true;
+        } else {
+          pk.v = pj.v;
+        }
+        k++;
+      }
+    }
+    if (k > base) {
+      this.lpart++;
+      this.f[this.lpart + 1] = k;
+      return true;
+    }
+    return false;
+  }
+
+  /** The current top part on the stack. */
+  topPart(): PartComponent[] {
+    return this.pstack.slice(this.f[this.lpart], this.f[this.lpart + 1]);
+  }
+
+  /** Enumerate the partitions of a multiset with lb < (number of parts) <= ub. */
+  *enumRange(multiplicities: readonly number[], lb: number, ub: number): Generator<PartitionState, void, undefined> {
+    this.discarded = 0;
+    if (ub <= 0 || lb >= multiplicities.reduce((a, b) => a + b, 0)) return;
+    this.initializeEnumeration(multiplicities);
+    this.decrementPartLarge(this.topPart(), 0, lb);
+    for (;;) {
+      let good = true;
+      while (this.spreadPartMultiplicity()) {
+        if (!this.decrementPartLarge(this.topPart(), 0, lb)) {
+          this.discarded++;
+          good = false;
+          break;
+        } else if (this.lpart >= ub) {
+          this.discarded++;
+          good = false;
+          this.lpart = ub - 2;
+          break;
+        }
+      }
+      if (good) yield [this.f, this.lpart, this.pstack];
+      while (!this.decrementPartRange(this.topPart(), lb, ub)) {
+        if (this.lpart === 0) return;
+        this.lpart--;
+      }
+    }
+  }
+}

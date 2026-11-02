@@ -100,11 +100,12 @@ export {
   seterr,
 } from './core/errors';
 export { Basic, BasicNode } from './core/basic';
+export { Kind, NumberKind, BooleanKind, UndefinedKind } from './core/kind';
 export { SymNumber as Number, RealNumber, Atom, AtomicExpr, FunctionClass, UnevaluatedExpr, DeferredVector, genericExpr } from './core/classes';
 export { defineFunction, implementedFunction, DefinedFunctionCall } from './core/defun';
 export type { DefinedFunction, FunctionDefinition } from './core/defun';
 export type {
-  Kind,
+  ExprKind,
   ExprLike,
   ComplexValue,
   NumericValues,

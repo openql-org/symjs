@@ -27,6 +27,32 @@ export class BoolOp extends Expr {
   protected computeKey(): string {
     return `${this.op}(${this.args.map((a) => a.key).join(',')})`;
   }
+  /** A node of the same class with new arguments (re-evaluated). */
+  withArgs(args: readonly Expr[]): Expr {
+    switch (this.op) {
+      case 'And':
+        return and(...args);
+      case 'Or':
+        return or(...args);
+      case 'Not':
+        return not(args[0]!);
+      case 'Xor':
+        return xor(...args);
+      case 'ITE':
+        return new BoolOp('ITE', args);
+    }
+  }
+  /** SymPy LatexPrinter: x \wedge y, x \vee y, x \veebar y, \neg x. */
+  printLatex(p: (e: Expr) => string): string {
+    const paren = (a: Expr) => (a instanceof BoolOp && a.op !== 'Not' ? `\\left(${p(a)}\\right)` : p(a));
+    if (this.op === 'Not') {
+      const a = this.args[0]!;
+      return a instanceof BoolOp ? `\\neg \\left(${p(a)}\\right)` : `\\neg ${p(a)}`;
+    }
+    if (this.op === 'ITE') return `\\left(${p(this.args[1]!)} \\text{ if } ${p(this.args[0]!)} \\text{ else } ${p(this.args[2]!)}\\right)`;
+    const sep = this.op === 'And' ? ' \\wedge ' : this.op === 'Or' ? ' \\vee ' : ' \\veebar ';
+    return this.args.map(paren).join(sep);
+  }
   /** SymPy StrPrinter: args sorted by default_sort_key, joined by & or |. */
   printStr(p: (e: Expr) => string): string {
     if (this.op === 'ITE') return `ITE(${this.args.map(p).join(', ')})`;

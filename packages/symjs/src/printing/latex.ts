@@ -12,6 +12,7 @@ import { mul, pow, splitCoeff } from '../core/ops';
 import { numNeg } from '../core/num';
 import { asOrderedFactors, asOrderedTerms } from './sortkey';
 import { PREC, floatString, precedence, startsNegative, str } from './str';
+import { BoolOp } from '../core/boolalg';
 
 // ---------------------------------------------------------------------------
 // Symbols
@@ -302,7 +303,7 @@ function floatLatex(f: Float): string {
 }
 
 export function latex(e: Expr): string {
-  if (e instanceof ExtensionExpr) return e.printLatex(latex);
+  if (e instanceof ExtensionExpr || e instanceof BoolOp) return e.printLatex(latex);
   if (e instanceof Rational) {
     if (e.q === 1n) return `${e.p}`;
     return e.p < 0n ? `- \\frac{${-e.p}}{${e.q}}` : `\\frac{${e.p}}{${e.q}}`;

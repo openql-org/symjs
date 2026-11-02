@@ -51,6 +51,26 @@
       "import": "./dist/sets.js",
       "require": "./dist/sets.cjs"
     },
+    "./logic": {
+      "types": "./dist/logic.d.ts",
+      "import": "./dist/logic.js",
+      "require": "./dist/logic.cjs"
+    },
+    "./combinatorics": {
+      "types": "./dist/combinatorics.d.ts",
+      "import": "./dist/combinatorics.js",
+      "require": "./dist/combinatorics.cjs"
+    },
+    "./utilities": {
+      "types": "./dist/utilities.d.ts",
+      "import": "./dist/utilities.js",
+      "require": "./dist/utilities.cjs"
+    },
+    "./tensor": {
+      "types": "./dist/tensor.d.ts",
+      "import": "./dist/tensor.js",
+      "require": "./dist/tensor.cjs"
+    },
     "./matrices": {
       "types": "./dist/matrices.d.ts",
       "import": "./dist/matrices.js",
@@ -77,6 +97,9 @@
     "./src/calculus/diff.ts",
     "./dist/calculus/diff.js",
     "./dist/calculus/diff.cjs",
+    "./src/combinatorics.ts",
+    "./dist/combinatorics.js",
+    "./dist/combinatorics.cjs",
     "./src/core.ts",
     "./dist/core.js",
     "./dist/core.cjs",
@@ -125,9 +148,27 @@
     "./src/integrals/integrate.ts",
     "./dist/integrals/integrate.js",
     "./dist/integrals/integrate.cjs",
+    "./src/integrals/transforms/fourier.ts",
+    "./dist/integrals/transforms/fourier.js",
+    "./dist/integrals/transforms/fourier.cjs",
+    "./src/integrals/transforms/inverse-laplace.ts",
+    "./dist/integrals/transforms/inverse-laplace.js",
+    "./dist/integrals/transforms/inverse-laplace.cjs",
+    "./src/logic.ts",
+    "./dist/logic.js",
+    "./dist/logic.cjs",
     "./src/matrices.ts",
     "./dist/matrices.js",
     "./dist/matrices.cjs",
+    "./src/ntheory/factor.ts",
+    "./dist/ntheory/factor.js",
+    "./dist/ntheory/factor.cjs",
+    "./src/ntheory/qs.ts",
+    "./dist/ntheory/qs.js",
+    "./dist/ntheory/qs.cjs",
+    "./src/ntheory/residue.ts",
+    "./dist/ntheory/residue.js",
+    "./dist/ntheory/residue.cjs",
     "./src/numeric/evalf.ts",
     "./dist/numeric/evalf.js",
     "./dist/numeric/evalf.cjs",
@@ -199,6 +240,12 @@
     "./dist/solvers/ode.cjs",
     "./src/special.ts",
     "./dist/special.js",
-    "./dist/special.cjs"
+    "./dist/special.cjs",
+    "./src/tensor.ts",
+    "./dist/tensor.js",
+    "./dist/tensor.cjs",
+    "./src/utilities.ts",
+    "./dist/utilities.js",
+    "./dist/utilities.cjs"
   ]
 }

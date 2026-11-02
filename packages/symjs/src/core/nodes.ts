@@ -17,7 +17,7 @@ import { NotLoadedError } from './errors';
 import { gcd } from './numbers';
 import { type Mpf, fromNumber as mpfFromNumber, normalize as mpfNormalize, toNumber as mpfToNumber } from '../numeric/mpf';
 
-export type Kind =
+export type ExprKind =
   | 'Rational'
   | 'Float'
   | 'Symbol'
@@ -281,7 +281,7 @@ export const impl: Impl = {
 } as Partial<Impl> as Impl;
 
 export abstract class Expr {
-  abstract readonly kind: Kind;
+  abstract readonly kind: ExprKind;
   abstract readonly args: readonly Expr[];
   #key: string | undefined;
 
