@@ -446,3 +446,16 @@ describe('classify_ode', () => {
     ]);
   });
 });
+
+describe('series at infinity and aseries', () => {
+  it('match SymPy', async () => {
+    const { series, aseries, oo } = await import('../src');
+    const x = symbols('x')[0];
+    expect(sstr(series(parse('cos(1/x)'), x, oo, 6))).toBe('1/(24*x**4) - 1/(2*x**2) + 1 + O(x**(-6), (x, oo))');
+    expect(sstr(series(parse('x/(x+1)'), x, oo, 4))).toBe('-1/x**3 + x**(-2) - 1/x + 1 + O(x**(-4), (x, oo))');
+    const e = parse('sin(1/x + exp(-x)) - sin(1/x)');
+    expect(sstr(aseries(e, x))).toBe('(1/(24*x**4) - 1/(2*x**2) + 1 + O(x**(-6), (x, oo)))*exp(-x)');
+    expect(sstr(aseries(e, x, 3, true))).toBe('-exp(-2*x)*sin(1/x)/2 + exp(-x)*cos(1/x) + O(exp(-3*x), (x, oo))');
+    expect(sstr(aseries(parse('1/x'), x, 8))).toBe('1/x');
+  });
+});

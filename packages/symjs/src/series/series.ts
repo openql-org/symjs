@@ -90,6 +90,40 @@ function orderMulti(e: Expr, vars: readonly Sym[], p: Expr): Expr {
  * Series expansion of e about x = x0 up to O((x - x0)**n). Like SymPy, an
  * exact (finite) expansion is returned without an Order term.
  */
+/**
+ * Series at +oo or -oo (SymPy series(f, x, oo, n)): x = sign/t with t -> 0+,
+ * the expansion in t written back in x, with O(x**(-n), (x, oo)).
+ */
+function seriesAtInfinity(e: Expr, x: Sym, sign: 1 | -1, n: number): Expr {
+  const t = new Sym('_t_inf', { positive: true });
+  const st = series(subs(e, [[x, mul(sign, pow(t, -1))]]), t, 0, n);
+  const back = (u: Expr) => subs(u, [[t, mul(sign, pow(x, -1))]]);
+  const terms = st instanceof Add ? st.args : [st];
+  const out: Expr[] = [];
+  let order: Expr | undefined;
+  for (const u of terms) {
+    if (u instanceof Order) {
+      const lead = u.args[0]!;
+      const k = lead instanceof Pow && lead.base.key === t.key ? lead.exp : lead.key === t.key ? S.One : undefined;
+      order = k === undefined ? undefined : new Order([pow(x, neg(k)), x, sign === 1 ? S.Infinity : S.NegativeInfinity]);
+    } else out.push(back(u));
+  }
+  if (!order) return add(...out);
+  // the Order at infinity must not absorb the terms (they are larger there): smallest terms first, like SymPy
+  const body = add(...out);
+  const parts = (body instanceof Add ? body.args : [body]).filter((u) => !(u instanceof Rational && u.isZero));
+  const deg = (u: Expr): number => {
+    let d = 0;
+    for (const f of u instanceof Mul ? u.args : [u]) {
+      if (f.key === x.key) d += 1;
+      else if (f instanceof Pow && f.base.key === x.key && f.exp instanceof Rational) d += f.exp.toNumber();
+    }
+    return d;
+  };
+  parts.sort((a, b) => deg(a) - deg(b));
+  return new Add([...parts, order]);
+}
+
 export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' | '-' = '+', opts: { logx?: Expr } = {}): Expr {
   // sinc(u) = sin(u)/u has a removable singularity at u = 0
   let e = mapBottomUp(sympify(ex), (t) => (t instanceof Fn && t.name === 'sinc' ? mul(sin(t.args[0]!), pow(t.args[0]!, -1)) : t));
@@ -104,7 +138,8 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
   // x**c with symbolic c is its own expansion at 0
   if (atZero && e instanceof Pow && e.base.key === x.key && !(e.exp instanceof Rational) && !e.exp.has(x)) return e;
   const x0 = sympify(x0x);
-  if (x0 instanceof Special) throw new Error('series: expansion at infinity is not supported yet');
+  if (x0 instanceof Special && (x0.name === 'oo' || x0.name === '-oo')) return seriesAtInfinity(e, x, x0.name === 'oo' ? 1 : -1, n);
+  if (x0 instanceof Special) throw new Error('series: expansion at this point is not supported');
   if (!e.has(x)) return e;
   const t = new Sym('_s');
   const ex0 = new Expander(t);
@@ -168,4 +203,59 @@ export function taylorTerm(eIn: ExprLike, n: number, x: Sym): Expr {
   let fact = 1n;
   for (let i = 2n; i <= BigInt(n); i++) fact *= i;
   return mul(subs(impl.diff(e, x, n), [[x, S.Zero]]), pow(x, n), Rational.of(1n, fact));
+}
+
+/**
+ * SymPy Expr.aseries(x, n, hir): asymptotic expansion at x -> oo in the most
+ * rapidly varying decaying exponential w = exp(-b*x). Without hir only the
+ * leading term in w is kept and its coefficient is expanded in 1/x; with hir
+ * the terms up to w**n. Expressions without exponentials give their series
+ * at infinity; growing exponentials are returned unchanged.
+ */
+export function aseries(ex: ExprLike, x: Sym, n = 6, hir = false): Expr {
+  const e = sympify(ex);
+  const rates: Rational[] = [];
+  let growing = false;
+  let other = false;
+  const walk = (u: Expr) => {
+    if (u instanceof Pow && u.base === S.E && u.exp.has(x)) {
+      const c = expandMul(mul(u.exp, pow(x, -1)));
+      if (c instanceof Rational) {
+        if (c.isPositive) growing = true;
+        else rates.push(c);
+      } else other = true;
+    }
+    u.args.forEach(walk);
+  };
+  walk(e);
+  if (growing || other) return e;
+  if (!rates.length) return series(e, x, S.Infinity, n);
+  const b = rates.reduce((m, r) => (Math.abs(r.toNumber()) < Math.abs(m.toNumber()) ? r : m));
+  const w = new Sym('_w_as', { positive: true });
+  // exp(c*x) = w**(c/b)
+  const replaced = mapBottomUp(e, (u) => (u instanceof Pow && u.base === S.E && u.exp.has(x) ? pow(w, mul(expandMul(mul(u.exp, pow(x, -1))), pow(b, -1))) : u));
+  const sw = series(replaced, w, 0, hir ? n : 3);
+  const terms = sw instanceof Add ? sw.args : [sw];
+  const byPower = new Map<number, Expr[]>();
+  for (const t of terms) {
+    if (t instanceof Order) continue;
+    let k = 0;
+    const cs: Expr[] = [];
+    for (const f of t instanceof Mul ? t.args : [t]) {
+      if (f.key === w.key) k += 1;
+      else if (f instanceof Pow && f.base.key === w.key && f.exp instanceof Rational) k += f.exp.toNumber();
+      else cs.push(f);
+    }
+    byPower.set(k, [...(byPower.get(k) ?? []), mul(...cs)]);
+  }
+  const ks = [...byPower.keys()].sort((a, c) => a - c);
+  if (!ks.length) return e;
+  const wx = (k: number) => exp(mul(k, b, x));
+  if (!hir) {
+    const k = ks[0]!;
+    const coeff = series(add(...byPower.get(k)!), x, S.Infinity, n);
+    return mul(coeff, wx(k));
+  }
+  const parts = ks.filter((k) => k < n).sort((a, c) => c - a).map((k) => mul(add(...byPower.get(k)!), wx(k)));
+  return new Add([...parts, new Order([wx(n), x, S.Infinity])]);
 }

@@ -2159,6 +2159,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.together': exprMethod(sj.together),
   numer: exprFn((e) => sj.fraction(e)[0]),
   kroneckersimp: exprFn(sj.kroneckersimp),
+  '.aseries': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (k !== 'n' && k !== 'hir') throw new Unsupported(`kwargs ${k}`);
+    const x = args[0] === undefined ? ([...sj.freeSymbols(asExpr(self))][0] as Sym) : asSym(args[0]);
+    const n = Number(((kw['n'] ?? args[2] ?? sj.Rational.of(6)) as sj.Rational).p);
+    return sj.aseries(asExpr(self), x, n, Boolean(kw['hir']));
+  },
   classify_ode: (args, kw) => {
     noKw(kw);
     const eq = asExpr(args[0]);
