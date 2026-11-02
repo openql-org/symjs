@@ -13,7 +13,7 @@ import { Expr } from '../src';
 
 const [x, y] = sj.symbols('x y') as [sj.Sym, sj.Sym];
 const s = (e: unknown) => (e instanceof Expr ? sj.str(e) : String(e));
-const M = sj.Matrix.of;
+const M = (rows: readonly (readonly sj.ExprLike[])[]): sj.Matrix => sj.Matrix.of(rows);
 const A = M([[1, 2], [3, 4]]);
 
 describe('matrix methods', () => {
@@ -169,14 +169,14 @@ describe('assumptions: Q, ask, refine', () => {
   });
   it('asks', () => {
     expect(sj.ask(sj.Q.positive(sj.add(x, 1)), sj.Q.positive(x))).toBe(true);
-    expect(sj.ask(sj.Q.real(x))).toBeUndefined();
+    expect(sj.ask(sj.Q.real(x))).toBe('unknown');
     expect(sj.ask(sj.Q.integer(sj.mul(2, x)), sj.Q.even(x))).toBe(true);
     expect(sj.ask(sj.Q.negative(x), sj.Q.positive(x))).toBe(false);
     expect(sj.ask(sj.Q.nonnegative(x), sj.Q.zero(x))).toBe(true);
     expect(sj.ask(sj.Q.nonzero(x), sj.Q.prime(x))).toBe(true);
     expect(sj.ask(sj.Q.nonpositive(x), sj.Q.negative(x))).toBe(true);
     expect(sj.ask(sj.Q.commutative(x))).toBe(true);
-    expect(sj.ask(sj.Q.odd(x), sj.Q.odd(x))).toBeUndefined();
+    expect(sj.ask(sj.Q.odd(x), sj.Q.odd(x))).toBe('unknown');
   });
 });
 

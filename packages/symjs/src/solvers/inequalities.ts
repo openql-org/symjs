@@ -566,10 +566,10 @@ function monotonic(f: Expr, op: RelOp, iv: SetExpr, x?: Sym): boolean | undefine
   return isSubset(iv, s);
 }
 
-export const isIncreasing = (f: ExprLike, iv: SetExpr = Reals, x?: Sym) => monotonic(sympify(f), 'Ge', iv, x);
-export const isStrictlyIncreasing = (f: ExprLike, iv: SetExpr = Reals, x?: Sym) => monotonic(sympify(f), 'Gt', iv, x);
-export const isDecreasing = (f: ExprLike, iv: SetExpr = Reals, x?: Sym) => monotonic(sympify(f), 'Le', iv, x);
-export const isStrictlyDecreasing = (f: ExprLike, iv: SetExpr = Reals, x?: Sym) => monotonic(sympify(f), 'Lt', iv, x);
+export const isIncreasing = (f: ExprLike, iv: SetExpr = Reals, x?: Sym): boolean | undefined => monotonic(sympify(f), 'Ge', iv, x);
+export const isStrictlyIncreasing = (f: ExprLike, iv: SetExpr = Reals, x?: Sym): boolean | undefined => monotonic(sympify(f), 'Gt', iv, x);
+export const isDecreasing = (f: ExprLike, iv: SetExpr = Reals, x?: Sym): boolean | undefined => monotonic(sympify(f), 'Le', iv, x);
+export const isStrictlyDecreasing = (f: ExprLike, iv: SetExpr = Reals, x?: Sym): boolean | undefined => monotonic(sympify(f), 'Lt', iv, x);
 export function isMonotonic(f: ExprLike, iv: SetExpr = Reals, x?: Sym): boolean | undefined {
   const inc = isIncreasing(f, iv, x);
   if (inc) return true;

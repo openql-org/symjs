@@ -280,12 +280,12 @@ export function refineRealRoot(f0: P, s0: Q, t0: Q, eps?: Q, steps?: number): [Q
       f = mirror(f);
       [s, t] = [R(-t.p, t.q), R(-s.p, s.q)];
       negative = true;
-    } else throw new Error(`Cannot refine a real root in (${s}, ${t})`);
+    } else throw new Error(`Cannot refine a real root in (${s.toString()}, ${t.toString()})`);
   }
   const m: M = [s.p, t.p, s.q, t.q];
   // f transformed by the Mobius map x -> (a*x + b)/(c*x + d)
   const tr = transform(f, m);
-  if (signVariations(tr) !== 1) throw new Error(`there should be exactly one root in (${s}, ${t}) interval`);
+  if (signVariations(tr) !== 1) throw new Error(`there should be exactly one root in (${s.toString()}, ${t.toString()}) interval`);
   const [, mm] = innerRefine(tr, m, eps, steps);
   const [u, v] = interval(mm);
   return negative ? [R(-v.p, v.q), R(-u.p, u.q)] : [u, v];

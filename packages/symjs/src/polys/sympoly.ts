@@ -8,6 +8,7 @@
  */
 
 import { parse } from '../parsing/parser';
+import { NoMatch, NoMatchResult } from '../core/truth';
 import { factorModP } from './zassenhaus';
 import { Add, Constant, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { evalf as evalfExpr } from '../numeric/evalf';
@@ -633,11 +634,11 @@ export class Poly {
   hasOnlyGens(...gens: Expr[]): boolean {
     return this.gens.every((g, i) => gens.some((h) => h.key === g.key) || this.termList.every((t) => t.monom[i] === 0));
   }
-  /** Total degree when homogeneous, else undefined. */
-  homogeneousOrder(): number | undefined {
+  /** Total degree when homogeneous (SymPy homogeneous_order), else NoMatch. */
+  homogeneousOrder(): number | NoMatchResult {
     if (this.isZero) return -Infinity;
     const ds = this.termList.map((t) => t.monom.reduce((a, b) => a + b, 0));
-    return ds.every((d) => d === ds[0]) ? ds[0] : undefined;
+    return ds.every((d) => d === ds[0]) ? ds[0]! : NoMatch;
   }
   homogenize(s: Expr): Poly {
     const d = this.totalDegree();
@@ -895,16 +896,17 @@ export class Poly {
    * over QQ. Undefined when the coefficients are rational.
    */
   private normPoly(): Poly | undefined {
-    return this.norm(true);
+    return this.normOrSelf(true);
   }
   /**
    * SymPy Poly.norm: the product of the conjugates of a polynomial over an
    * algebraic extension, a polynomial over QQ (itself when the coefficients
    * are rational).
    */
-  norm(): Poly;
-  norm(strict: true): Poly | undefined;
-  norm(strict = false): Poly | undefined {
+  norm(): Poly {
+    return this.normOrSelf(false) ?? this;
+  }
+  private normOrSelf(strict: boolean): Poly | undefined {
     const cs = this.allCoeffs();
     const algebraicDomain = /^(?:QQ|ZZ)<.*>$/.test(this.domain);
     if (cs.every((c) => c instanceof Rational) && !algebraicDomain) return strict ? undefined : this;

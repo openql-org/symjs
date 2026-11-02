@@ -28,7 +28,7 @@ export class SubsNode extends ExtensionExpr {
   withArgs(args: readonly Expr[]): Expr {
     return new SubsNode(args);
   }
-  override bindings() {
+  override bindings(): { variables: readonly number[]; scope: readonly number[] } {
     const n = (this.args.length - 1) / 2;
     return { variables: Array.from({ length: n }, (_, i) => 1 + i), scope: [0] };
   }

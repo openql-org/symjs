@@ -26,7 +26,6 @@ export {
   intersection as Intersection,
   complement as Complement,
   contains,
-  isSubset,
   asRelational,
   inf,
   sup,
@@ -44,7 +43,9 @@ import { finiteSet as _finiteSet_ } from './sets/sets';
 import { union as _union_ } from './sets/sets';
 import { intersection as _intersection_ } from './sets/sets';
 import { complement as _complement_ } from './sets/sets';
-import { containsQ as _containsQ_ } from './sets/sets';
+import { containsQ as _containsQ_, isSubset as _isSubset_, type SetExpr as _SetExpr_ } from './sets/sets';
+import { type Truth, toTruth as _toTruth_ } from './core/truth';
+import type { Expr as _Expr_ } from './core/nodes';
 
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const SetOp = _SetOp_;
@@ -80,4 +81,9 @@ export const intersection = _intersection_;
 export const complement = _complement_;
 
 /** @deprecated Internal; removed from the public API in 1.0. */
-export const containsQ = _containsQ_;
+export const containsQ = (s: _SetExpr_, x: _Expr_): Truth => _toTruth_(_containsQ_(s, x));
+
+/** SymPy is_subset: a is a subset of b (true, false or 'unknown'). */
+export function isSubset(a: _SetExpr_, b: _SetExpr_): Truth {
+  return _toTruth_(_isSubset_(a, b));
+}

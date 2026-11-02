@@ -61,11 +61,27 @@ export {
 export { ExprMap } from './core/exprmap';
 export { Indexed, IndexedBase } from './core/indexed';
 export { Factors } from './core/factors';
+export {
+  isReal,
+  isPositive,
+  isNegative,
+  isNonNegative,
+  isNonZero,
+  isZero,
+  isIntegerValued,
+  match,
+  extractMultiplicatively,
+  extractAdditively,
+  asCoefficient,
+  isMeromorphic,
+} from './core/public';
+export { isTrue, isFalse, isUnknown, truthNot, truthAnd, truthOr, NoMatch, NoMatchResult, isNoMatch, Unsolved, UnsolvedResult, isUnsolved } from './core/truth';
+export type { Truth } from './core/truth';
 export { classKey } from './printing/sortkey';
 export { expand_power_base as separate } from './simplify/expand';
 export { Q, ask, refine, AppliedPredicate } from './core/refine';
 export type { Assumption, PredicateName } from './core/refine';
-export { SympifyError, PoleError, PrecisionExhausted, seterr } from './core/errors';
+export { SympifyError, PoleError, PrecisionExhausted, NonlinearError, seterr } from './core/errors';
 export { Basic, BasicNode } from './core/basic';
 export { SymNumber as Number, RealNumber, Atom, AtomicExpr, FunctionClass, UnevaluatedExpr, DeferredVector, genericExpr } from './core/classes';
 export { defineFunction, implementedFunction, DefinedFunctionCall } from './core/defun';
@@ -96,15 +112,6 @@ export {
   asBaseExp,
 } from './core/ops';
 export {
-  isReal,
-  isPositive,
-  isNegative,
-  isNonNegative,
-  isNonZero,
-  isZero,
-  isIntegerQ as isIntegerValued,
-} from './core/assumptions';
-export {
   argsCnc,
   coeff,
   asIndependent,
@@ -112,9 +119,6 @@ export {
   asCoeffMul,
   primitive,
   asContentPrimitive,
-  extractMultiplicatively,
-  extractAdditively,
-  asCoefficient,
   isPolynomial,
   isRationalFunction,
   isConstant,
@@ -132,7 +136,6 @@ export {
   hasXfree,
   isAlgebraicExpr,
   dummyEq,
-  isMeromorphic,
 } from './core/methods';
 export {
   root,
@@ -147,7 +150,6 @@ export {
   rebuild,
 } from './core/traverse';
 export {
-  match,
   replace,
   find,
   ordered,
@@ -354,10 +356,10 @@ import { isFn as _isFn_ } from './core/nodes';
 import { isNum as _isNum_ } from './core/nodes';
 import { rational as _rational_ } from './core/ops';
 import { splitCoeff as _splitCoeff_ } from './core/ops';
-import { isIntegerQ as _isIntegerQ_ } from './core/assumptions';
 import { keepCoeff as _keepCoeff_ } from './core/methods';
 import { argsCncSplit as _argsCncSplit_ } from './core/methods';
 import { mapBottomUp as _mapBottomUp_ } from './core/traverse';
+import * as _pub_ from './core/public';
 import { countOpsVisual as _countOpsVisual_ } from './core/match';
 import { isInstance as _isInstance_ } from './core/match';
 import { functions as _functions_ } from './core/undef';
@@ -436,7 +438,7 @@ export const rational = _rational_;
 export const splitCoeff = _splitCoeff_;
 
 /** @deprecated Use `isIntegerValued`. */
-export const isIntegerQ = _isIntegerQ_;
+export const isIntegerQ = _pub_.isIntegerValued;
 
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const keepCoeff = _keepCoeff_;

@@ -40,7 +40,7 @@ export function sideEffectModules() {
     const entry = !relative(src, f).includes('/') && !relative(src, f).includes('\\');
     if (entry || lines.some((l) => !DECL.test(l))) out.push(relative(src, f).replace(/\\/g, '/').replace(/\.ts$/, ''));
   }
-  return out.sort();
+  return out.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 }
 
 export function sideEffectsField(mods = sideEffectModules()) {

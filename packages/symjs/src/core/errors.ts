@@ -43,3 +43,11 @@ export const errorSettings = { divide: false };
 export function seterr(opts: { divide?: boolean } = {}): void {
   errorSettings.divide = Boolean(opts.divide);
 }
+
+/** The equations are not linear in the unknowns (SymPy NonlinearError). */
+export class NonlinearError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'NonlinearError';
+  }
+}

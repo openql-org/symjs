@@ -1,0 +1,50 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript"
+  ],
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/coverage/**"
+  ],
+  "rules": {
+    "typescript/no-this-alias": "off"
+  },
+  "overrides": [
+    {
+      "files": [
+        "packages/*/src/**/*.ts"
+      ],
+      "rules": {
+        "typescript/explicit-module-boundary-types": "error",
+        "typescript/strict-boolean-expressions": [
+          "error",
+          {
+            "allowString": true,
+            "allowNumber": true,
+            "allowNullableObject": true,
+            "allowNullableBoolean": true,
+            "allowNullableString": true,
+            "allowNullableNumber": true,
+            "allowNullableEnum": true,
+            "allowAny": true
+          }
+        ],
+        "typescript/switch-exhaustiveness-check": [
+          "error",
+          {
+            "considerDefaultExhaustiveForUnions": true
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/*/tests/**/*.ts"
+      ],
+      "rules": {
+        "typescript/restrict-template-expressions": "off"
+      }
+    }
+  ]
+}

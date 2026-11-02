@@ -149,7 +149,7 @@ export const PORTS: Record<string, () => unknown> = {
     const [a, b, c] = sym('a b c');
     const w = new sj.Wild('x');
     const m = sj.match(sj.Basic(sj.add(a!, b!, c!), sj.add(b!, c!)), sj.Basic(sj.add(a!, w), w));
-    return m && new JsDict([...m]);
+    return m instanceof Map ? new JsDict([...m]) : null;
   },
   'sympy.core.basic:(x*y).replace(Mul, lambda *args: sin(2*Mul(*args)))': () =>
     sj.replace(sj.mul(x, y), { type: 'Mul' }, (...args: Expr[]) => sj.sin(sj.mul(2, sj.mul(...args)))),

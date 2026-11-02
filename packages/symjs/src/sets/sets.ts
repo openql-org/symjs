@@ -162,9 +162,9 @@ export function interval(aIn: ExprLike, bIn: ExprLike, leftOpen = false, rightOp
   return new Interval(a, b, leftOpen, rightOpen);
 }
 
-export const openInterval = (a: ExprLike, b: ExprLike) => interval(a, b, true, true);
-export const Lopen = (a: ExprLike, b: ExprLike) => interval(a, b, true, false);
-export const Ropen = (a: ExprLike, b: ExprLike) => interval(a, b, false, true);
+export const openInterval = (a: ExprLike, b: ExprLike): SetExpr => interval(a, b, true, true);
+export const Lopen = (a: ExprLike, b: ExprLike): SetExpr => interval(a, b, true, false);
+export const Ropen = (a: ExprLike, b: ExprLike): SetExpr => interval(a, b, false, true);
 
 // ---------------------------------------------------------------------------
 // FiniteSet

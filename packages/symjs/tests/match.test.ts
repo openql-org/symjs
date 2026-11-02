@@ -2,11 +2,11 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 import { describe, expect, it } from 'vitest';
-import { Wild, add, countOps, cos, find, log, match, mul, pow, replace, sin, str, symbols, tan } from '../src';
+import { NoMatchResult, Wild, add, countOps, cos, find, log, match, mul, pow, replace, sin, str, symbols, tan } from '../src';
 
 const [x, y, z] = symbols('x y z');
-const fmt = (m: Map<unknown, unknown> | undefined) =>
-  m === undefined
+const fmt = (m: Map<unknown, unknown> | NoMatchResult) =>
+  !(m instanceof Map)
     ? 'None'
     : `{${[...m]
         .map(([k, v]) => `${str(k as never)}: ${str(v as never)}`)

@@ -138,13 +138,13 @@ function evalSumResidue(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   // poles: all roots of the denominator, which must be simple
   const poles = (): [Rational[], Expr[]] | undefined => {
     const D = toExpr(pd);
-    let rs: Expr[] | undefined;
+    let rs: Expr[];
     try {
       rs = roots(D, k);
     } catch {
       return undefined;
     }
-    if (!rs || rs.length !== deg(pd) || new Set(rs.map((r) => r.key)).size !== rs.length) return undefined;
+    if (rs.length !== deg(pd) || new Set(rs.map((r) => r.key)).size !== rs.length) return undefined;
     return [rs.filter(isInt), rs.filter((r) => !isInt(r))];
   };
   const residues = (rs: Expr[]): Expr => {

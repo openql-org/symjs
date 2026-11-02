@@ -698,10 +698,10 @@ const typeMethod = (self: unknown, type: string, f: () => unknown, kw: Record<st
   return f();
 };
 const monoAdapter =
-  (f: (e: Expr, iv?: sj.SetExpr, x?: Sym) => boolean | undefined): Adapter =>
+  (f: (e: Expr, iv?: sj.SetExpr, x?: Sym) => sj.Truth): Adapter =>
   (args, kw) => {
     noKw(kw);
-    return f(asExpr(args[0]), (args[1] as sj.SetExpr | undefined) ?? sj.Reals, args[2] === undefined ? undefined : asSym(args[2])) ?? null;
+    return none(f(asExpr(args[0]), (args[1] as sj.SetExpr | undefined) ?? sj.Reals, args[2] === undefined ? undefined : asSym(args[2])));
   };
 const autoKw = (kw: Record<string, unknown>): boolean => {
   for (const k of Object.keys(kw)) if (k !== 'auto') throw new Unsupported(`kwargs ${k}`);
@@ -747,9 +747,24 @@ function applyFn(name: string, args: Expr[]): Expr {
   return sj.Function(name)(...args);
 }
 
-function matchDict(m: Map<Sym, Expr> | undefined): unknown {
-  return m ? new JsDict([...m]) : null;
+function matchDict(m: Map<Sym, Expr> | sj.NoMatchResult | undefined): unknown {
+  return m instanceof Map ? new JsDict([...m]) : null;
 }
+
+/** The first element of a solution pair, or None. */
+const first0 = (r: [Expr, Sym[]] | sj.UnsolvedResult): unknown => (Array.isArray(r) ? r[0] : null);
+/** The equations are linear in the symbols. */
+const isLinearSystem = (eqs: Expr[], vars: Sym[]): boolean => {
+  try {
+    sj.linearEqToMatrix(eqs, vars);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/** SymPy None for the public API's 'unknown', NoMatch and Unsolved. */
+const none = (v: unknown): unknown => (v === undefined || v === null || v === 'unknown' || sj.isNoMatch(v) || sj.isUnsolved(v) ? null : v);
 
 const FN_NAMES = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc'] as const;
 
@@ -875,7 +890,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   ...Object.fromEntries(
     (['pi', 'E', 'I', 'oo', 'nan', 'zoo', 'Catalan', 'EulerGamma', 'GoldenRatio', 'TribonacciConstant'] as const).map((n) => [n, () => sj.parse(n)] as [string, Adapter]),
   ),
-  hypersimp: (args, kw) => (noKw(kw), sj.hypersimp(asExpr(args[0]), asExpr(args[1])) ?? null),
+  hypersimp: (args, kw) => (noKw(kw), none(sj.hypersimp(asExpr(args[0]), asExpr(args[1])))),
   hypersimilar: (args, kw) => (noKw(kw), sj.hypersimilar(asExpr(args[0]), asExpr(args[1]), asExpr(args[2]))),
   rcollect: (args, kw) => (noKw(kw), sj.rcollect(asExpr(args[0]), ...args.slice(1).map(asExpr))),
   Piecewise: (args, kw) => (noKw(kw), sj.Piecewise(...args.map((a) => (a as JsTuple).items.map((x) => (typeof x === 'boolean' ? x : asExpr(x))) as [Expr, Expr | boolean]))),
@@ -895,9 +910,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     const eqs = args[0] instanceof JsList || args[0] instanceof JsTuple ? args[0].items.map(asExpr) : [asExpr(args[0])];
     const syms = args[1] instanceof JsList || args[1] instanceof JsTuple ? args[1].items.map(asSym) : args.slice(1).map(asSym);
-    const r = sj.linearEqToMatrix(eqs, syms);
-    if (!r) throw new Error('linear_eq_to_matrix: nonlinear equations');
-    return new JsTuple(r);
+    return new JsTuple(sj.linearEqToMatrix(eqs, syms));
   },
   '.rref_rhs': matrixMethod((m, [b]) => new JsTuple(sj.rrefRhs(m, b as Matrix))),
   '.rank_decomposition': matrixMethod((m) => new JsTuple(sj.rankDecomposition(m))),
@@ -1007,7 +1020,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.contains': (args, kw, self) => (noKw(kw), self instanceof sj.GroebnerBasis ? self.contains(asExpr(args[0])) : sj.contains(asSet(self), asExpr(args[0]))),
   '.intersect': (args, kw, self) => (noKw(kw), sj.intersection(asSet(self), asSet(args[0]))),
   '.union': (args, kw, self) => (noKw(kw), sj.union(asSet(self), asSet(args[0]))),
-  '.is_subset': (args, kw, self) => (noKw(kw), sj.isSubset(asSet(self), asSet(args[0])) ?? null),
+  '.is_subset': (args, kw, self) => (noKw(kw), none(sj.isSubset(asSet(self), asSet(args[0])))),
   '.as_relational': (args, kw, self) => (noKw(kw), sj.asRelational(asSet(self), asExpr(args[0]))),
   solveset: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
@@ -1046,7 +1059,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const syms = args[1] instanceof JsList || args[1] instanceof JsTuple ? args[1].items.map(asSym) : [];
     return sj.reduceInequalities(ineqs, syms);
   },
-  periodicity: (args, kw) => (noKw(kw), sj.periodicity(asExpr(args[0]), asSym(args[1])) ?? null),
+  periodicity: (args, kw) => (noKw(kw), none(sj.periodicity(asExpr(args[0]), asSym(args[1])))),
   singularities: (args, kw) => (noKw(kw), sj.singularities(asExpr(args[0]), asSym(args[1]), args[2] as sj.SetExpr | undefined)),
   stationary_points: (args, kw) => (noKw(kw), sj.stationaryPoints(asExpr(args[0]), asSym(args[1]), (args[2] as sj.SetExpr | undefined) ?? sj.Reals)),
   maximum: (args, kw) => (noKw(kw), sj.maximum(asExpr(args[0]), asSym(args[1]), (args[2] as sj.SetExpr | undefined) ?? sj.Reals)),
@@ -1143,8 +1156,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (!['symbols', 'dict', 'force'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const symsArg = kw['symbols'] ?? args[1];
     const symbols = symsArg instanceof JsTuple || symsArg instanceof JsList ? symsArg.items.map(asSym) : [];
-    const r = sj.separatevars(asExpr(args[0]), { symbols, dict: Boolean(kw['dict']), force: Boolean(kw['force']) });
-    if (r === undefined) return null;
+    const r = kw['dict'] ? sj.separatevars(asExpr(args[0]), { symbols, dict: true, force: Boolean(kw['force']) }) : sj.separatevars(asExpr(args[0]), { symbols, force: Boolean(kw['force']) });
+    if (sj.isNoMatch(r)) return null;
     if (r instanceof Map) return new JsDict([...r].map(([k, v]) => [k, v] as const));
     return r;
   },
@@ -1213,7 +1226,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     for (const k of Object.keys(kw)) if (k !== 'arbitrary_matrix') throw new Unsupported(`kwargs ${k}`);
     return sj.pinvSolve(self as Matrix, args[0] as Matrix, kw['arbitrary_matrix'] as Matrix | undefined);
   },
-  '.is_meromorphic': (args, kw, self) => (noKw(kw), sj.isMeromorphic(asExpr(self), asExpr(args[0]), asExpr(args[1])) ?? null),
+  '.is_meromorphic': (args, kw, self) => (noKw(kw), none(sj.isMeromorphic(asExpr(self), asExpr(args[0]), asExpr(args[1])))),
   ratsimp: exprFn(sj.ratsimp),
   primitive: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'expand') throw new Unsupported(`kwargs ${k}`);
@@ -1335,12 +1348,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.is_convergent': (_args, kw, self) => {
     noKw(kw);
     if (!(self instanceof sj.Concrete)) throw new Unsupported('is_convergent');
-    return sj.sumIsConvergent(self) ?? null;
+    return none(sj.isConvergent(self));
   },
   '.is_absolutely_convergent': (_args, kw, self) => {
     noKw(kw);
     if (!(self instanceof sj.Concrete)) throw new Unsupported('is_absolutely_convergent');
-    return sj.sumIsAbsolutelyConvergent(self) ?? null;
+    return none(sj.isAbsolutelyConvergent(self));
   },
   '.as_sum': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'method' && k !== 'evaluate') throw new Unsupported(`kwargs ${k}`);
@@ -1389,7 +1402,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.as_ordered_factors': exprMethod((e) => new JsList(sj.orderedFactors ? sj.orderedFactors(e) : [e])),
   '.leadterm': (args, kw, self) => (noKw(kw), new JsTuple(sj.leadterm(asExpr(self), asSym(args[0])))),
   '.as_leading_term': (args, kw, self) => (noKw(kw), sj.asLeadingTerm(asExpr(self), asSym(args[0]))),
-  '.getn': exprMethod((e) => sj.getn(e) ?? null),
+  '.getn': exprMethod((e) => none(sj.getn(e))),
   '.nseries': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'logx') throw new Unsupported(`kwargs ${k}`);
     const x = asSym(args[0]);
@@ -1786,9 +1799,9 @@ export const ADAPTERS: Record<string, Adapter> = {
       // like SymPy, equations free of the requested symbols are dropped
       const eqs = first.items.map((e) => (reps.length ? sj.subs(asExpr(e), reps) : asExpr(e))).filter((e) => !syms.length || syms.some((s) => e.has(s)));
       const vars = syms.length ? syms : allSymbols(eqs);
-      if (sj.linearEqToMatrix(eqs, vars)) {
+      if (isLinearSystem(eqs, vars)) {
         const s = sj.linsolve(eqs, vars);
-        if (!s) return new JsList([]);
+        if (!Array.isArray(s)) return new JsList([]);
         // underdetermined: SymPy lists only the solved (pivot) symbols
         return new JsDict(vars.map((v, i) => [back(v), s[i]!] as const).filter(([v, e]) => v.key !== e.key));
       }
@@ -1889,7 +1902,8 @@ export const ADAPTERS: Record<string, Adapter> = {
       sol = solveAug(first, syms);
     } else if (first instanceof JsTuple) {
       if (first.items.length === 0) return 'EmptySet';
-      sol = sj.linsolve(first.items.map(asExpr), syms);
+      const r = sj.linsolve(first.items.map(asExpr), syms);
+      sol = Array.isArray(r) ? r : undefined;
     } else throw new Unsupported('linsolve form');
     return sol ? new JsSet([new JsTuple(sol)]) : 'EmptySet';
   },
@@ -2483,9 +2497,9 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (args.length) throw new Unsupported('arity');
     return new JsTuple(sj.asContentPrimitive(asExpr(self), { ...(clear === undefined ? {} : { clear: Boolean(clear) }), radical: Boolean(kw['radical']) }));
   },
-  '.extract_multiplicatively': (args, kw, self) => (noKw(kw), sj.extractMultiplicatively(asExpr(self), asExpr(args[0])) ?? null),
-  '.extract_additively': (args, kw, self) => (noKw(kw), sj.extractAdditively(asExpr(self), asExpr(args[0])) ?? null),
-  '.as_coefficient': (args, kw, self) => (noKw(kw), sj.asCoefficient(asExpr(self), asExpr(args[0])) ?? null),
+  '.extract_multiplicatively': (args, kw, self) => (noKw(kw), none(sj.extractMultiplicatively(asExpr(self), asExpr(args[0])))),
+  '.extract_additively': (args, kw, self) => (noKw(kw), none(sj.extractAdditively(asExpr(self), asExpr(args[0])))),
+  '.as_coefficient': (args, kw, self) => (noKw(kw), none(sj.asCoefficient(asExpr(self), asExpr(args[0])))),
   '.is_polynomial': (args, kw, self) => (noKw(kw), sj.isPolynomial(asExpr(self), args.map(asExpr))),
   '.is_rational_function': (args, kw, self) => (noKw(kw), sj.isRationalFunction(asExpr(self), args.map(asExpr))),
   '.is_constant': (args, kw, self) => {
@@ -2537,9 +2551,9 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.as_ordered_terms': exprMethod((e) => new JsList(e instanceof sj.Add ? asOrdered(e) : [e])),
 
   // ---- ODEs
-  rsolve_poly: (args, kw) => (noKw(kw), sj.rsolvePoly((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2]))?.[0] ?? null),
-  rsolve_ratio: (args, kw) => (noKw(kw), sj.rsolveRatio((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2]))?.[0] ?? null),
-  rsolve_hyper: (args, kw) => (noKw(kw), sj.rsolveHyper((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2]))?.[0] ?? null),
+  rsolve_poly: (args, kw) => (noKw(kw), first0(sj.rsolvePoly((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2])))),
+  rsolve_ratio: (args, kw) => (noKw(kw), first0(sj.rsolveRatio((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2])))),
+  rsolve_hyper: (args, kw) => (noKw(kw), first0(sj.rsolveHyper((args[0] as JsTuple).items.map(asExpr), asExpr(args[1]), asSym(args[2])))),
   rsolve: (args, kw) => {
     noKw(kw);
     const init = args[2];
@@ -2549,11 +2563,11 @@ export const ADAPTERS: Record<string, Adapter> = {
         : init instanceof JsTuple
           ? init.items.map((v, i) => [sj.sympify(i), asExpr(v)] as [Expr, Expr])
           : undefined;
-    return sj.rsolve(asExpr(args[0]), asExpr(args[1]), pairs) ?? null;
+    return none(sj.rsolve(asExpr(args[0]), asExpr(args[1]), pairs));
   },
   adjoint: (args, kw) => (noKw(kw), args[0] instanceof Matrix ? args[0].dagger() : sj.adjoint(asExpr(args[0]))),
   transpose: (args, kw) => (noKw(kw), args[0] instanceof Matrix ? args[0].transpose() : sj.transpose(asExpr(args[0]))),
-  homogeneous_order: (args, kw) => (noKw(kw), sj.homogeneousOrder(asExpr(args[0]), ...args.slice(1).map(asExpr)) ?? null),
+  homogeneous_order: (args, kw) => (noKw(kw), none(sj.homogeneousOrder(asExpr(args[0]), ...args.slice(1).map(asExpr)))),
   dsolve: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'ics' && k !== 'hint') throw new Unsupported(`kwargs ${k}`);
     if (kw['hint'] !== undefined && !['1st_exact', 'almost_linear', 'default'].includes(String(kw['hint']))) throw new Unsupported('dsolve hint');
@@ -2779,7 +2793,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.max_norm': polyM((p) => p.maxNorm()),
   '.exclude': polyM((p) => p.exclude()),
   '.has_only_gens': polyM((p, a) => p.hasOnlyGens(...a.map(asExpr))),
-  '.homogeneous_order': polyM((p) => p.homogeneousOrder() ?? null),
+  '.homogeneous_order': polyM((p) => none(p.homogeneousOrder())),
   '.homogenize': polyM((p, a) => p.homogenize(asExpr(a[0]))),
   '.ltrim': polyM((p, a) => p.ltrim(a[0] instanceof sj.Rational ? Number(a[0].p) : asExpr(a[0]))),
   '.reorder': polyM((p, a) => p.reorder(...a.map(asExpr))),

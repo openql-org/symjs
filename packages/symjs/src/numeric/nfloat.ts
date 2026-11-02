@@ -53,7 +53,7 @@ export function comp(z1In: ExprLike, z2In: ExprLike, tol?: number | ''): boolean
   let z2 = sympify(z2In);
   if (z1 instanceof Rational && z1.isZero) [z1, z2] = [z2, z1];
   if (z1 instanceof Rational && z1.isZero) return true;
-  if (!tol) {
+  if (tol === undefined || tol === '' || tol === 0) {
     if (tol === '') return z1.toString() === z2.toString();
     const fa = floats(z1);
     const fb = floats(z2);

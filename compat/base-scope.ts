@@ -92,7 +92,7 @@ export const BASE_CHECKS: BaseCheck[] = [
   { area: 'numerics', name: 'N(1/3, 50)', expected: '0.33333333333333333333333333333333333333333333333333', run: () => sj.evalf(sj.Rational.of(1, 3), 50) },
   // linear algebra
   { area: 'linear algebra', name: 'Matrix([[x, y], [1, 2]]).inv()', expected: 'Matrix([[2/(2*x - y), -y/(2*x - y)], [-1/(2*x - y), x/(2*x - y)]])', run: () => sj.Matrix.of([[x, y], [1, 2]]).inv() },
-  { area: 'linear algebra', name: 'linsolve([x + y - 3, x - y - 1], [x, y])', expected: '2, 1', run: () => sj.linsolve([P('x + y - 3'), P('x - y - 1')], [x, y])?.map(String).join(', ') },
+  { area: 'linear algebra', name: 'linsolve([x + y - 3, x - y - 1], [x, y])', expected: '2, 1', run: () => { const r = sj.linsolve([P('x + y - 3'), P('x - y - 1')], [x, y]); return Array.isArray(r) ? r.map(String).join(', ') : String(r); } },
 ];
 
 export type BaseCheckResult = { area: string; name: string; expected: string; got: string; pass: boolean };

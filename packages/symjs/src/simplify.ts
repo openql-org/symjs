@@ -13,7 +13,7 @@ export {
   type SimplifyOptions,
 } from './simplify/simplify';
 export { ratsimpmodprime } from './simplify/ratsimpmodprime';
-export { gammasimp, combsimp, hypersimp, hypersimilar, isHypergeometric } from './simplify/gammasimp';
+export { gammasimp, combsimp, hypersimilar, isHypergeometric } from './simplify/gammasimp';
 export {
   besselsimp,
 } from './simplify/besselsimp';
@@ -50,8 +50,8 @@ export {
   ratsimp,
 } from './simplify/rational';
 export {
-  separatevars,
 } from './simplify/separatevars';
+export { hypersimp, separatevars } from './simplify/public';
 export {
   sqrtdenest,
 } from './simplify/sqrtdenest';

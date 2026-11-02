@@ -12,6 +12,32 @@ Status: adopted (2026-11-02) and implemented; it may change by decision of the c
 6. **Results have SymPy's structure:** lists are arrays, tuples are fixed-length arrays, dicts are `Map`s keyed by expressions, sets are `SetExpr`. Where SymPy returns either one value or a list (`dsolve`), symjs does the same.
 7. **Failures behave like SymPy:** an error where SymPy raises, an unevaluated object where SymPy returns one (`Integral`, `ConditionSet`, ...).
 8. **Mathematical correctness wins** where SymPy's output is wrong; such cases are documented.
+9. **Results are never `undefined` or `null`** (see below).
+
+## Results of the public computation API
+
+The public computation API of symjs does not represent a missing result with `undefined` or `null`. An unevaluated computation is kept as an expression; an undecidable answer, a mismatch and the absence of a solution each have a type with a meaning. Invalid input is reported as a clear error according to the contract of each API.
+
+symjs keeps SymPy's mathematical meaning while letting TypeScript handle the state of a result explicitly.
+
+| Situation | SymPy | symjs |
+|---|---|---|
+| A computation that cannot be carried out | an unevaluated object | the unevaluated expression (`Integral`, `Limit`, `ConditionSet`, ...) |
+| An undecidable predicate (`is_positive`, `ask`, `is_convergent`, `is_subset`, ...) | `None` | `Truth`: `true`, `false` or `'unknown'` |
+| The expression does not have the requested form (`match`, `extract_additively`, `as_coefficient`, `hypersimp`, `homogeneous_order`, `periodicity`, ...) | `None` | `NoMatch` |
+| The methods find no solution in closed form (`rsolve`, ...) | `None` | `Unsolved` (not a proof that none exists) |
+| No solution exists (`linsolve`, `solveset`, ...) | `EmptySet` | `EmptySet` |
+| Invalid input (a nonlinear system for `linear_eq_to_matrix`, a value that cannot be sympified, ...) | an exception | a thrown error (`NonlinearError`, `SympifyError`, `RangeError`, ...) |
+
+`'unknown'` is truthy: test a `Truth` with `isTrue`, `isFalse` or `isUnknown` (or compare with `=== true`), never with `if (truth)`. `truthNot`, `truthAnd` and `truthOr` combine answers with three-valued logic.
+
+Exceptions, which follow other contracts: the hooks of `ExtensionExpr` (`diffSelf`, `rewriteSelf`, ...) that extension authors implement, where `undefined` means "no override"; `ExprMap.get`, which keeps the standard `Map` contract; functions returning `void`.
+
+The policy is enforced by:
+
+- `tsconfig.json`: `strict` (including `strictNullChecks`), `noImplicitReturns`, `noUncheckedIndexedAccess`.
+- `pnpm lint` (Oxlint with type-aware rules): `explicit-module-boundary-types` (exported functions declare their return type), `strict-boolean-expressions` (no truthiness test of a `Truth`), `switch-exhaustiveness-check`.
+- `packages/symjs/tests/api-results.test.ts`: no public function or method of the base module or the extend modules has `undefined` or `null` in its return type.
 
 ## Stability levels
 

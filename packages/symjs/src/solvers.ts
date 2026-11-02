@@ -10,9 +10,23 @@
 import './core';
 
 export {
-  solve,
   linsolve,
   linearEqToMatrix,
+  homogeneousOrder,
+  periodicity,
+  isIncreasing,
+  isStrictlyIncreasing,
+  isDecreasing,
+  isStrictlyDecreasing,
+  isMonotonic,
+  rsolve,
+  rsolveHyper,
+  rsolvePoly,
+  rsolveRatio,
+} from './solvers/public';
+
+export {
+  solve,
   nonlinsolve,
   solveLinear,
   solveUndeterminedCoeffs,
@@ -22,7 +36,6 @@ export { dsolveSystem } from './solvers/odesystem';
 export { classifyOde } from './solvers/dsolve';
 export {
   dsolve,
-  homogeneousOrder,
   odeOrder,
 } from './solvers/ode';
 export {
@@ -31,14 +44,8 @@ export {
   solvePolyInequality,
   solveRationalInequalities,
   reduceInequalities,
-  periodicity,
   singularities,
   stationaryPoints,
-  isIncreasing,
-  isStrictlyIncreasing,
-  isDecreasing,
-  isStrictlyDecreasing,
-  isMonotonic,
   isConvex,
   maximum,
   minimum,
@@ -52,10 +59,6 @@ export {
   solvePolySystem,
 } from './solvers/polysys';
 export {
-  rsolve,
-  rsolveHyper,
-  rsolvePoly,
-  rsolveRatio,
 } from './solvers/recurr';
 
 // ---- deprecated names (kept during 0.x, removed in 1.0; see docs/api-policy.md) ----

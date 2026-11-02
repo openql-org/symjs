@@ -208,7 +208,7 @@ function numGcd(a: Rational | Float, b: Rational | Float): Rational {
 }
 
 function gcdTermsCore(terms0: Expr[], isprimitive: boolean, fraction: boolean): [Expr, Expr, Expr] {
-  const terms = terms0.filter((t) => !(t instanceof Rational && t.isZero)).map(Term.of);
+  const terms = terms0.filter((t) => !(t instanceof Rational && t.isZero)).map((t) => Term.of(t));
   if (terms.length === 0) return [S.Zero, S.Zero, S.One];
   let cont: Expr;
   let numer: Expr;

@@ -1081,7 +1081,7 @@ const SPECS: Partial<Record<FnName, Spec>> = {
   Li: {
     eval: evalLiOffset,
     partials: ([z]) => pow(log(z!), -1),
-    numeric: ([z]) => cadd(cEi(clog(z!)), cx(-1.0451637801174928)),
+    numeric: ([z]) => cadd(cEi(clog(z!)), cx(-1.045163780117493)),
     conjugate: true,
   },
   Si: { eval: evalSi, partials: ([z]) => mul(sin(z!), pow(z!, -1)), numeric: ([z]) => cSiCi('Si', z!), conjugate: true },

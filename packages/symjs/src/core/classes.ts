@@ -97,7 +97,6 @@ export class DeferredVector extends Sym {
   }
   /** The component symbol X[i]. */
   at(i: number): Sym {
-    if (i === -0) i = 0;
     if (i < 0) throw new RangeError('DeferredVector index out of range');
     return new Sym(`${this.name}[${i}]`);
   }

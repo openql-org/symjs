@@ -12,6 +12,7 @@ import { sympify } from './ops';
 import { xreplace } from './traverse';
 import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from './assumptions';
 import { str } from '../printing/str';
+import { Truth, toTruth } from './truth';
 
 /** Predicate names of Q (SymPy Q.<name>). */
 export type PredicateName =
@@ -166,10 +167,14 @@ export function refine(expr: unknown, assumptions: Assumption | boolean = true):
 }
 
 /**
- * SymPy ask(proposition, assumptions): true, false, or undefined when it
+ * SymPy ask(proposition, assumptions): true, false, or 'unknown' when it
  * cannot be decided.
  */
-export function ask(proposition: AppliedPredicate, assumptions: Assumption | boolean = true): boolean | undefined {
+export function ask(proposition: AppliedPredicate, assumptions: Assumption | boolean = true): Truth {
+  return toTruth(askTri(proposition, assumptions));
+}
+
+function askTri(proposition: AppliedPredicate, assumptions: Assumption | boolean): boolean | undefined {
   const [forward] = assume(assumptions);
   const x = forward.size ? reevaluate(proposition.arg, forward) : proposition.arg;
   const tri = (v: boolean | undefined | null): boolean | undefined => (v === null ? undefined : v);

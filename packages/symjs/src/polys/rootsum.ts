@@ -36,7 +36,7 @@ export class RootSumNode extends ExtensionExpr {
   withArgs(args: readonly Expr[]): Expr {
     return new RootSumNode(args);
   }
-  override bindings() {
+  override bindings(): { variables: readonly number[]; scope: readonly number[] } {
     return { variables: [2], scope: [0] };
   }
   override printStr(print: (e: Expr) => string): string {

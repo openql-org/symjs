@@ -62,6 +62,8 @@ export type { MonomialOrder } from './polys/groebner';
 
 import { UPoly as _UPoly_ } from './polys/poly';
 import { polyCoefficients as _polyCoefficients_ } from './polys/poly';
+import { type NoMatchResult, orNoMatch as _orNoMatch_ } from './core/truth';
+import type { Expr as _Expr_, ExprLike as _ExprLike_, Sym as _Sym_ } from './core/nodes';
 import { factorPoly as _factorPoly_ } from './polys/poly';
 import { polyDiv as _polyDiv_ } from './polys/sympoly';
 import { sortGens as _sortGens_ } from './polys/sympoly';
@@ -78,7 +80,7 @@ export const UPoly = _UPoly_;
 export type UPoly = _UPoly_;
 
 /** @deprecated Internal; removed from the public API in 1.0. */
-export const polyCoefficients = _polyCoefficients_;
+export const polyCoefficients = (e: _ExprLike_, x: _Sym_): Map<number, _Expr_> | NoMatchResult => _orNoMatch_(_polyCoefficients_(e, x));
 
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const factorPoly = _factorPoly_;
@@ -96,7 +98,7 @@ export const mgcd = _mgcd_;
 export const mlcm = _mlcm_;
 
 /** @deprecated Internal; removed from the public API in 1.0. */
-export const divExact = _divExact_;
+export const divExact = (f: _Expr_, g: _Expr_, vars: readonly _Sym_[]): _Expr_ | NoMatchResult => _orNoMatch_(_divExact_(f, g, vars));
 
 /** @deprecated Use `rootof`. */
 export const rootOf = _rootOf_;

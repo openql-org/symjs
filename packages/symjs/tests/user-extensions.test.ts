@@ -223,7 +223,7 @@ describe('Basic, Monomial and Poly helpers', () => {
     const [a, b, c] = sj.symbols('a b c') as [sj.Sym, sj.Sym, sj.Sym];
     const w = new sj.Wild('x');
     const m = sj.match(sj.Basic(sj.add(a, b, c), sj.add(b, c)), sj.Basic(sj.add(a, w), w));
-    expect(m && s(m.get(w))).toBe('b + c');
+    expect(m instanceof Map && s(m.get(w))).toBe('b + c');
     expect(s(sj.Basic(x, 1))).toBe('Basic(x, 1)');
   });
   it('Monomial', () => {

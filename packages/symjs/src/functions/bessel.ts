@@ -127,7 +127,7 @@ function besselNumeric(name: BName, nu: C, z: C): C {
 
 /** Airy functions by their power series (f, g with Ai = c1 f - c2 g, Bi = sqrt(3) (c1 f + c2 g)). */
 function airyNumeric(kind: 'ai' | 'bi' | 'aip' | 'bip', z: C): C {
-  const c1 = 1 / (Math.pow(3, 2 / 3) * 1.3541179394264004); // Gamma(2/3)
+  const c1 = 1 / (Math.pow(3, 2 / 3) * 1.3541179394264005); // Gamma(2/3)
   const c2 = 1 / (Math.pow(3, 1 / 3) * 2.678938534707747); // Gamma(1/3)
   const deriv = kind === 'aip' || kind === 'bip';
   // f = sum 3**k (1/3)_k z**(3k)/(3k)!, g = sum 3**k (2/3)_k z**(3k+1)/(3k+1)!

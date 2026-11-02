@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 import { describe, expect, it } from 'vitest';
-import { Derivative, Function, Subs, diff, doit, freeSymbols, latex, parse, sstr, symbols } from '../src';
+import { Expr, NoMatch, Derivative, Function, Subs, diff, doit, freeSymbols, latex, parse, sstr, symbols } from '../src';
 
 const [x, y, z] = symbols('x y z');
 const f = Function('f');
@@ -208,10 +208,10 @@ describe('Lambda, hypersimp and taylor terms', () => {
     expect(sstr(Lambda([x, n], parse('x + n')))).toBe('Lambda((x, n), n + x)');
     const k = symbols('k', { integer: true })[0];
     const P = (s: string) => parse(s, { symbols: { k } } as never);
-    expect(sstr(hypersimp(P('factorial(k)'), k)!)).toBe('k + 1');
-    expect(sstr(hypersimp(P('2**k'), k)!)).toBe('2');
-    expect(hypersimp(P('log(k)'), k)).toBeUndefined();
-    expect(sstr(hypersimp(P('factorial(2*k)/factorial(k)**2'), k)!)).toBe('2*(2*k + 1)/(k + 1)');
+    expect(sstr(hypersimp(P('factorial(k)'), k) as Expr)).toBe('k + 1');
+    expect(sstr(hypersimp(P('2**k'), k) as Expr)).toBe('2');
+    expect(hypersimp(P('log(k)'), k)).toBe(NoMatch);
+    expect(sstr(hypersimp(P('factorial(2*k)/factorial(k)**2'), k) as Expr)).toBe('2*(2*k + 1)/(k + 1)');
     expect(isHypergeometric(P('binomial(n, k)'), k)).toBe(true);
     expect(sstr(taylorTerm(parse('exp(x)'), 3, x))).toBe('x**3/6');
     expect(sstr(taylorTerm(parse('sin(x)'), 3, x))).toBe('-x**3/6');

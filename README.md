@@ -103,6 +103,7 @@ See [compat/REPORT.md](compat/REPORT.md) for the current numbers and the highest
 - Expressions are immutable. Equality is structural (`a.equals(b)`).
 - `symbols('x y')` infers a tuple type of the right length from a string literal.
 - Numbers may be given as `number` (integers become exact rationals, non-integers become `Float`) or `bigint`. Use `rational(1, 3)` for exact fractions.
+- Results are never `undefined` or `null`: undecidable answers are `'unknown'` (`Truth`), a missing form is `NoMatch`, no closed form is `Unsolved`, no solution is `EmptySet` (see [docs/api-policy.md](docs/api-policy.md)).
 - Names follow SymPy, converted to camelCase (`expand_log` -> `expandLog`); classes keep SymPy's names (`Symbol`, `Derivative`, `Piecewise`, `Interval`, ...). Results that are dicts in SymPy are `ExprMap`s, `Map`s whose expression keys compare structurally (`roots(f, x).get(1)`). See [docs/api-policy.md](docs/api-policy.md) and the generated [API report](packages/symjs/api-report.md) for the stability level of every export; renamed exports keep their old name as a deprecated alias during 0.x.
 
 ## Development
@@ -111,6 +112,7 @@ See [compat/REPORT.md](compat/REPORT.md) for the current numbers and the highest
 pnpm install
 pnpm test        # vitest (all packages; extend modules use the base module from source)
 pnpm typecheck   # tsc --noEmit
+pnpm lint        # oxlint with type-aware rules (see docs/api-policy.md)
 pnpm build       # every package: tsup (ESM/CJS, one file per module) + tsc (declarations)
 node packages/symjs/scripts/size.mjs --check   # bundle sizes of typical imports against budgets
 pnpm golden      # regenerate the SymPy expectations of the golden tests
