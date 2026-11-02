@@ -348,8 +348,12 @@ export function deserialize(tree: Tree): unknown {
     case 'Add':
       return sj.add(...(tree['args'] as Tree[]).map((a) => lambdaAsNode(deserialize(a)) as Expr));
     case 'Mul':
-    case 'MatMul':
-      return sj.mul(...(tree['args'] as Tree[]).map((a) => lambdaAsNode(deserialize(a)) as Expr));
+    case 'MatMul': {
+      const args = (tree['args'] as Tree[]).map((a) => lambdaAsNode(deserialize(a)) as Expr);
+      // SymPy distributes a number over a sum (2*(x + 1) -> 2*x + 2): a Mul(number, Add) was built with evaluate=False
+      if (tree['t'] === 'Mul' && args.length === 2 && args[0] instanceof sj.Rational && args[1] instanceof sj.Add) return new sj.Mul(args);
+      return sj.mul(...args);
+    }
     case 'Curve': {
       const [t, a, b] = (tree['limits'] as Tree[]).map((l) => deserialize(l) as Expr);
       return new sj.Curve((tree['functions'] as Tree[]).map((f) => deserialize(f) as Expr), [t as Sym, a!, b!]);

@@ -44,6 +44,14 @@ export function fraction(ex: ExprLike, opts: { exact?: boolean } = {}): [Expr, E
       num.push(f);
     }
   }
+  if (opts.exact) {
+    // SymPy Mul(*numer, evaluate=not exact): the factors as they are (2*(x + 1) stays)
+    const raw = (xs: Expr[]): Expr => {
+      const ys = xs.filter((y) => !(y instanceof Rational && y.p === 1n && y.q === 1n));
+      return ys.length === 0 ? Rational.of(1n) : ys.length === 1 ? ys[0]! : new Mul(ys);
+    };
+    return [raw(num), raw(den)];
+  }
   return [mul(...num), mul(...den)];
 }
 
