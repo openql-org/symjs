@@ -813,3 +813,69 @@ export function jordanForm(A: Matrix): [Matrix, Matrix] {
   const J = blockDiag(...blocks.map(([lam, k]) => (k === 1 ? lam : jordanBlock(k, lam))));
   return [P, J];
 }
+
+/**
+ * SymPy Matrix.liupc: the nonzero column indices on or below the diagonal of
+ * each row and the parent array of the elimination tree (Liu's algorithm,
+ * for symbolic sparse Cholesky factorization).
+ */
+export function liupc(A: Matrix): [number[][], number[]] {
+  const n = A.rows;
+  const R: number[][] = Array.from({ length: n }, (_, r) => Array.from({ length: r + 1 }, (_, c) => c).filter((c) => !(A.get(r, c) instanceof Rational && (A.get(r, c) as Rational).isZero)));
+  const inf = n;
+  const parent = Array<number>(n).fill(inf);
+  const virtual = Array<number>(n).fill(inf);
+  for (let r = 0; r < n; r++) {
+    for (let c of R[r]!.slice(0, -1)) {
+      while (virtual[c]! < r) {
+        const t = virtual[c]!;
+        virtual[c] = r;
+        c = t;
+      }
+      if (virtual[c] === inf) parent[c] = virtual[c] = r;
+    }
+  }
+  return [R, parent];
+}
+
+/** SymPy Matrix.row_structure_symbolic_cholesky: the nonzero structure of the rows of L. */
+export function rowStructureSymbolicCholesky(A: Matrix): number[][] {
+  const [R, parent] = liupc(A);
+  const inf = R.length;
+  return R.map((row, k) => {
+    const out = new Set(row);
+    for (let j of row) {
+      while (j !== inf && j !== k) {
+        out.add(j);
+        j = parent[j]!;
+      }
+    }
+    return [...out].sort((a, b) => a - b);
+  });
+}
+
+/**
+ * SymPy Matrix.irregular(ntop, *matrices): the matrix filled by the blocks in
+ * order of appearance from left to right, top to bottom, ntop of them in the
+ * first row.
+ */
+export function irregular(ntop: number, ...blocks: Matrix[]): Matrix {
+  const q = blocks.map((_, i) => i);
+  const left = blocks.map((b) => b.rows);
+  const active = q.splice(0, ntop);
+  const cols = active.reduce((s, i) => s + blocks[i]!.cols, 0);
+  const rows: Expr[][] = [];
+  while (left.some((d) => d > 0)) {
+    const r: Expr[] = [];
+    active.forEach((j, a) => {
+      const b = blocks[j]!;
+      const ri = b.rows - left[j]!;
+      for (let c = 0; c < b.cols; c++) r.push(b.get(ri, c));
+      left[j]!--;
+      if (left[j] === 0 && q.length) active[a] = q.shift()!;
+    });
+    if (r.length !== cols) throw new Error('Matrices provided do not appear to fill the space completely.');
+    rows.push(r);
+  }
+  return Matrix.of(rows);
+}

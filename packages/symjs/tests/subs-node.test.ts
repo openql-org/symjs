@@ -301,3 +301,15 @@ describe('RootSum and full partial fractions', () => {
     expect(sstr(doit(apart(parse('2/(x**2-2)'), x, { full: true })))).toBe('-sqrt(2)/(2*(x + sqrt(2))) + sqrt(2)/(2*(x - sqrt(2)))');
   });
 });
+
+describe('nsimplify of exact numbers', () => {
+  it('identifies closed forms like SymPy', async () => {
+    const { nsimplify, pi } = await import('../src');
+    const ns = (s: string) => sstr(nsimplify(parse(s)));
+    expect(['pi', 'sqrt(2)', 'cos(pi/5)', '1/(exp(3*pi*I/5)+1)', 'sin(pi/12)', '2**(1/3)', 'log(2)'].map(ns)).toEqual([
+      'pi', 'sqrt(2)', '1/4 + sqrt(5)/4', '1/2 - I*sqrt(sqrt(5)/10 + 1/4)', 'sqrt(1/2 - sqrt(3)/4)', '2**(1/3)', 'log(2)',
+    ]);
+    expect(sstr(nsimplify(parse('4/(1+sqrt(5))'), { constants: [parse('GoldenRatio')] }))).toBe('-2 + 2*GoldenRatio');
+    expect(sstr(nsimplify(parse('I**I'), { constants: [pi] }))).toBe('exp(-pi/2)');
+  });
+});

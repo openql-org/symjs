@@ -854,6 +854,13 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.permute_cols': matrixMethod((m, [p]) => sj.permuteCols(m, (p as PyList).items.map((i) => Number((i as sj.Rational).p)))),
   '.rmultiply': matrixMethod((m, [b]) => (b as Matrix).mul(m)),
   '.jordan_form': matrixMethod((m) => new PyTuple(sj.jordanForm(m))),
+  '.liupc': matrixMethod((m) => {
+    const [R, parent] = sj.liupc(m);
+    const ints = (xs: number[]) => new PyList(xs.map((i) => sj.Rational.of(i)));
+    return new PyTuple([new PyList(R.map(ints)), ints(parent)]);
+  }),
+  '.row_structure_symbolic_cholesky': matrixMethod((m) => new PyList(sj.rowStructureSymbolicCholesky(m).map((xs) => new PyList(xs.map((i) => sj.Rational.of(i)))))),
+  '.irregular': (args, kw) => (noKw(kw), sj.irregular(Number((args[0] as sj.Rational).p), ...(args.slice(1) as Matrix[]))),
   '.berkowitz_eigenvals': (args, kw, self) => ADAPTERS['.eigenvals']!(args, kw, self),
   '.is_hypergeometric': (args, kw, self) => (noKw(kw), sj.isHypergeometric(asExpr(self), asExpr(args[0]))),
   '.taylor_term': (args, kw, self) => (noKw(kw), sj.taylorTerm(asExpr(self), Number((args[0] as sj.Rational).p), asSym(args[1]))),
@@ -1130,8 +1137,9 @@ export const ADAPTERS: Record<string, Adapter> = {
   frac: exprFn(sj.frac),
   nsimplify: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['tolerance', 'rational', 'rational_conversion'].includes(k)) throw new Unsupported(`kwargs ${k}`);
-    if (args.length > 1) throw new Unsupported('nsimplify constants');
+    const constants = args[1] instanceof PyList || args[1] instanceof PyTuple ? args[1].items.map(asExpr) : undefined;
     return sj.nsimplify(asExpr(args[0]), {
+      ...(constants ? { constants } : {}),
       tolerance: kw['tolerance'] === undefined ? undefined : asExpr(kw['tolerance']).toNumber(),
       rational: kw['rational'] as boolean | undefined,
       rationalConversion: kw['rational_conversion'] as 'base10' | 'exact' | undefined,

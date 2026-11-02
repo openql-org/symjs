@@ -5,8 +5,8 @@
  * @file nfloat and comp (SymPy core.function.nfloat, core.numbers.comp).
  */
 
-import { Dummy, Expr, ExprLike, Float, Pow, Rational } from '../core/nodes';
-import { pow, sympify } from '../core/ops';
+import { Dummy, Expr, ExprLike, Float, Pow, Rational, S } from '../core/nodes';
+import { add, exp, mul, pow, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
 import { evalf } from './evalf';
 import { float } from './floatctor';
@@ -109,8 +109,16 @@ function simpleRational(v: number, rtol: number): Rational | undefined {
  * `tolerance` bounds the error, `rational: true` with `rationalConversion:
  * 'exact'` uses the exact binary value.
  */
-export function nsimplify(exIn: ExprLike, opts: { tolerance?: number; rational?: boolean; rationalConversion?: 'base10' | 'exact' } = {}): Expr {
+export function nsimplify(
+  exIn: ExprLike,
+  opts: { tolerance?: number; rational?: boolean; rationalConversion?: 'base10' | 'exact'; constants?: readonly ExprLike[] } = {},
+): Expr {
   const e = sympify(exIn);
+  if (!opts.rational && opts.tolerance === undefined && e.freeSymbols().size === 0 && !(e instanceof Rational) && !hasFloat(e)) {
+    // an exact number: identified from its value (SymPy uses mpmath.identify)
+    const r = identifyNumber(e, (opts.constants ?? []).map((c) => sympify(c)));
+    if (r) return r;
+  }
   const conv = (f: Float): Expr => {
     if (opts.rationalConversion === 'exact') {
       const [p, q] = F.toRational(f.mpf);
@@ -136,6 +144,79 @@ export function nsimplify(exIn: ExprLike, opts: { tolerance?: number; rational?:
     return args.every((a, i) => a === x.args[i]) ? x : rebuild(x, args);
   };
   return go(e);
+}
+
+const hasFloat = (e: Expr): boolean => e instanceof Float || e.args.some(hasFloat);
+
+/** The value of an exact number as a closed form (real and imaginary parts identified separately). */
+function identifyNumber(e: Expr, constants: readonly Expr[]): Expr | undefined {
+  let v: { re: number; im: number };
+  try {
+    v = evalf(e, 30).toComplex();
+  } catch {
+    return undefined;
+  }
+  if (!Number.isFinite(v.re) || !Number.isFinite(v.im)) return undefined;
+  const cs = constants.map((c) => [c, c.toNumber()] as [Expr, number]);
+  const part = (x: number): Expr | undefined => (Math.abs(x) < 1e-14 ? Rational.of(0n) : identifyReal(x, cs));
+  const re = part(v.re);
+  const im = part(v.im);
+  if (!re || !im) return undefined;
+  const r = add(re, mul(im, S.I));
+  return r;
+}
+
+/** Closed form of a real number: rational, linear in a constant, or a quadratic irrational, also after x**2, 1/x and log(x). */
+function identifyReal(x: number, cs: readonly [Expr, number][]): Expr | undefined {
+  const tol = (t: number) => 1e-11 * Math.max(1, Math.abs(t));
+  const rational = (t: number): Expr | undefined => {
+    const r = simpleRational(t, 1e-13);
+    return r && r.q <= 10000n && Math.abs(Number(r.p)) <= 1e8 ? r : undefined;
+  };
+  const linear = (t: number): Expr | undefined => {
+    for (const [C, c] of cs) {
+      for (let d = 1; d <= 60; d++) {
+        for (let b = -60; b <= 60; b++) {
+          if (b === 0) continue;
+          const a = d * t - b * c;
+          if (Math.abs(a - Math.round(a)) < tol(d * t) && Math.abs(a) < 1e6) return mul(add(Math.round(a), mul(b, C)), Rational.of(1, d));
+        }
+      }
+    }
+    return undefined;
+  };
+  const quadratic = (t: number): Expr | undefined => {
+    for (let a = 1; a <= 100; a++) {
+      for (let b = -200; b <= 200; b++) {
+        const c = -(a * t * t + b * t);
+        const cr = Math.round(c);
+        if (Math.abs(c - cr) >= tol(a * t * t) || Math.abs(cr) > 10000) continue;
+        const disc = b * b - 4 * a * cr;
+        if (disc <= 0) continue;
+        const sq = Math.sqrt(disc);
+        if (Number.isInteger(sq)) continue;
+        const plus = (-b + sq) / (2 * a);
+        const sign = Math.abs(plus - t) < Math.abs((-b - sq) / (2 * a) - t) ? 1 : -1;
+        return mul(add(-b, mul(sign, pow(Rational.of(BigInt(disc)), S.Half))), Rational.of(1, 2 * a));
+      }
+    }
+    return undefined;
+  };
+  const direct = (t: number) => rational(t) ?? linear(t) ?? quadratic(t);
+  const d = direct(x);
+  if (d) return d;
+  // x**2
+  const sq = direct(x * x);
+  if (sq) return mul(Math.sign(x), pow(sq, S.Half));
+  // 1/x
+  const inv = direct(1 / x);
+  if (inv) return pow(inv, -1);
+  // log(x) in terms of the constants
+  if (x > 0 && cs.length) {
+    const l = linear(Math.log(x));
+    if (l) return exp(l);
+  }
+  return undefined;
 }
 
 function limitDenominatorR(f: Float, lim: bigint): Rational {
