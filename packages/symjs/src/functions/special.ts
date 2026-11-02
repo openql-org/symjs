@@ -206,6 +206,13 @@ function evalLoggamma(x: Expr): Expr | undefined {
     return log(R(factorialBig(x.p - 1n)));
   }
   if (x instanceof Rational && x.q === 2n) return log(gammaHalf((x.p - 1n) / 2n));
+  // half of a positive integer symbol: log(sqrt(pi)*2**(1 - p)*gamma(p)/gamma((p + 1)/2))
+  if (x instanceof Mul && x.args.length === 2 && x.args[0] instanceof Rational && x.args[0].p === 1n && x.args[0].q === 2n) {
+    const p = x.args[1]!;
+    if (isIntegerQ(p) === true && isPositive(p) === true) {
+      return log(mul(sqrt(S.Pi), pow(2, add(1, neg(p))), fnN('gamma', p), pow(fnN('gamma', mul(add(p, 1), S.Half)), -1)));
+    }
+  }
   if (isOo(x)) return S.Infinity;
   if (isNegOo(x)) return S.ComplexInfinity;
   if (isIntegerQ(x) === true) {

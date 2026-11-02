@@ -6,7 +6,7 @@
  * (SymPy Basic.rewrite and the `_eval_rewrite_as_*` methods).
  */
 
-import { Add, Constant, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, S, UndefFn, impl } from '../core/nodes';
+import { Add, Constant, Dummy, Expr, ExprLike, Fn, Integral, Mul, Pow, Rational, S, UndefFn, impl } from '../core/nodes';
 import { Eq, Ge, Gt, Lt, Ne, piecewise } from '../core/logic';
 import { isIntegerQ, isNegative, isPositive, isReal } from '../core/assumptions';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
@@ -302,3 +302,15 @@ registerRewrite('floor', 'ceiling', ([x]) => neg(raw('ceiling', neg(x!))));
 registerRewrite('ceiling', 'floor', ([x]) => neg(raw('floor', neg(x!))));
 registerRewrite('floor', 'frac', ([x]) => add(x!, neg(raw('frac', x!))));
 registerRewrite('ceiling', 'frac', ([x]) => add(x!, raw('frac', neg(x!))));
+
+// integral representations (SymPy Si/Ei rewrite(Integral) and Si rewrite(sinc))
+const siIntegral = ([z]: readonly Expr[]) => {
+  const t = new Dummy('t');
+  return new Integral([raw('sinc', t), t, S.Zero, z!]);
+};
+registerRewrite('Si', 'sinc', siIntegral);
+registerRewrite('Si', 'Integral', siIntegral);
+registerRewrite('Ei', 'Integral', ([z]) => {
+  const t = new Dummy('t');
+  return new Integral([mul(exp(t), pow(t, -1)), t, S.NegativeInfinity, z!]);
+});

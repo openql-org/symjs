@@ -10,7 +10,8 @@
  */
 
 import { isIntegerQ, isNegative, isPositive, isReal as isRealQ } from '../core/assumptions';
-import { Expr, ExprLike, Fn, FnName, Rational, S } from '../core/nodes';
+import { Dummy, Expr, ExprLike, Fn, FnName, Rational, S } from '../core/nodes';
+import { Product } from '../concrete/summations';
 import { add, mul, pow, sympify } from '../core/ops';
 import { factorInt } from '../core/numbers';
 import { expandMul } from '../simplify/expand';
@@ -381,6 +382,11 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
   },
   multigamma: (x, p) => {
     const k = asInt(p);
+    if (k === undefined && isIntegerQ(p) === true && isPositive(p) === true) {
+      // pi**(p*(p - 1)/4)*Product(gamma(x + (1 - k)/2), (k, 1, p)) like SymPy
+      const d = new Dummy('k');
+      return mul(pow(S.Pi, mul(p, add(p, -1), R(1, 4))), Product(gamma(add(x, mul(add(1, mul(-1, d)), R(1, 2)))), [d, 1, p]));
+    }
     if (k === undefined || k < 1n) return undefined;
     const kk = Number(k);
     const factors: Expr[] = [pow(S.Pi, R(kk * (kk - 1), 4))];

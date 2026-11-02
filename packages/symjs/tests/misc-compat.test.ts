@@ -115,3 +115,19 @@ describe('symbols name parsing (SymPy)', () => {
     expect(expandSymbolNames('a:d')).toEqual(['a', 'b', 'c', 'd']);
   });
 });
+
+import { loggamma, mul, multigamma } from '../src';
+
+describe('symbolic gamma-family evaluation (SymPy)', () => {
+  const n = new Sym('n', { positive: true, integer: true });
+  const p = new Sym('p', { positive: true, integer: true });
+  it('loggamma of a half integer symbol', () => {
+    expect(String(loggamma(mul(Rational.of(1, 2), n)))).toBe('log(2**(1 - n)*sqrt(pi)*gamma(n)/gamma(n/2 + 1/2))');
+  });
+  it('multigamma with a symbolic order', () => {
+    expect(String(multigamma(x, p))).toBe('pi**(p*(p - 1)/4)*Product(gamma(-_k/2 + x + 1/2), (_k, 1, p))');
+  });
+  it('Si as an integral of sinc', () => {
+    expect(String(rewrite(parse('Si(z)'), 'sinc'))).toBe('Integral(sinc(_t), (_t, 0, z))');
+  });
+});
