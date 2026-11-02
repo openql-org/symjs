@@ -89,7 +89,7 @@ function extractPattern(term: Expr, p: Expr, exact: boolean): [Expr, Expr] | und
     const k = powerOf(f, p, exact);
     if (k !== undefined) return [pow(p, k), mul(...factors.filter((_, j) => j !== i))];
     const b = f instanceof Pow ? f.base : f;
-    if (exact ? b.key === p.key : derivativeOf(b, p)) return [f, mul(...factors.filter((_, j) => j !== i))];
+    if (!exact && derivativeOf(b, p)) return [f, mul(...factors.filter((_, j) => j !== i))];
   }
   return undefined;
 }
