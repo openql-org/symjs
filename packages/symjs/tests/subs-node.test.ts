@@ -182,3 +182,16 @@ describe('matrix solving and constructions', () => {
     expect(String(normalized(Matrix.col(3, 4)))).toBe('Matrix([[3/5], [4/5]])');
   });
 });
+
+describe('small core functions', () => {
+  it('match SymPy', async () => {
+    const { count, asCoeffExponent, asPowersDict, Rem } = await import('../src');
+    const [x, y] = symbols('x y');
+    expect(count(parse('x*sin(x) + x'), x)).toBe(3);
+    expect(asCoeffExponent(parse('x**3*y'), x).map((e) => sstr(e))).toEqual(['y', '3']);
+    expect([...asPowersDict(parse('x**2*y'))].map(([b, e]) => `${sstr(b)}:${sstr(e)}`).sort()).toEqual(['x:2', 'y:1']);
+    expect(sstr(Rem(-7, 3))).toBe('-1');
+    expect(sstr(Rem(parse('x**3'), y))).toBe('Rem(x**3, y)');
+    expect(sstr(Rem(parse('x**3'), y).subs([[x, -5], [y, 3]] as never))).toBe('-2');
+  });
+});

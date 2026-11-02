@@ -1175,6 +1175,14 @@ export const fresnels = (z: ExprLike): Expr => fn('fresnels', [z]);
 export const fresnelc = (z: ExprLike): Expr => fn('fresnelc', [z]);
 export const sign = (x: ExprLike): Expr => fn('sign', [x]);
 export const floor = (x: ExprLike): Expr => fn('floor', [x]);
+
+/** SymPy Rem(p, q): the remainder of truncated division (sign of p); unevaluated for symbols. */
+export const Rem = (p: ExprLike, q: ExprLike): Expr => fn('Rem', [p, q]);
+evaluators.Rem = (p, q) => {
+  if (p instanceof Rational && q instanceof Rational && p.isInteger && q.isInteger && q.p !== 0n) return Rational.of(p.p % q.p);
+  if (p!.key === q!.key) return S.Zero;
+  return undefined;
+};
 export const ceiling = (x: ExprLike): Expr => fn('ceiling', [x]);
 export const atan2 = (y: ExprLike, x: ExprLike): Expr => fn('atan2', [y, x]);
 export const Min = (...xs: ExprLike[]): Expr => fn('Min', xs);

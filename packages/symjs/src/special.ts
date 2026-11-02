@@ -48,6 +48,7 @@ export {
   fresnelc,
   sign,
   floor,
+  Rem,
   ceiling,
   atan2,
   Min,

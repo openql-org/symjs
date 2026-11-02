@@ -173,6 +173,7 @@ const SPECIAL_NAMES = ['bernoulli', 'euler', 'genocchi', 'bell', 'fibonacci', 'l
 const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   ...Object.fromEntries(SPECIAL_NAMES.map((n) => [n, (args: Expr[]) => sj.fn(n, args)])),
   RisingFactorial: (args) => sj.fn('rf', args),
+  Rem: ([p, q]) => sj.Rem(p!, q!),
   Lambda: ([vs, body]) => new PyLambda((vs as unknown as PyTuple).items as Expr[], body!) as unknown as Expr,
   FallingFactorial: (args) => sj.fn('ff', args),
   exp: ([a]) => sj.exp(a!),
@@ -1924,6 +1925,41 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.simplify': (_args, _kw, self) => (self instanceof Matrix ? null : sj.simplify(asExpr(self))),
   '.factor': exprMethod(sj.factor),
   '.together': exprMethod(sj.together),
+  numer: exprFn((e) => sj.fraction(e)[0]),
+  denom: exprFn((e) => sj.fraction(e)[1]),
+  ln: exprFn((e) => sj.log(e)),
+  Rem: (args, kw) => (noKw(kw), sj.Rem(asExpr(args[0]), asExpr(args[1]))),
+  '.as_powers_dict': (_a, kw, self) => (noKw(kw), new PyDefaultDict([...sj.asPowersDict(asExpr(self))])),
+  '.as_coeff_exponent': (args, kw, self) => (noKw(kw), new PyTuple(sj.asCoeffExponent(asExpr(self), asExpr(args[0])))),
+  '.as_coeff_Add': (_a, kw, self) => {
+    noKw(kw);
+    const e = asExpr(self);
+    if (e instanceof sj.Add && e.args[0]!.isNumber) return new PyTuple([e.args[0]!, sj.add(...e.args.slice(1))]);
+    return new PyTuple([e.isNumber ? e : S.Zero, e.isNumber ? S.Zero : e]);
+  },
+  '.count': (args, kw, self) => (noKw(kw), sj.Rational.of(sj.count(asExpr(self), asExpr(args[0])))),
+  '.normal': exprMethod((e) => {
+    const [n, d] = sj.fraction(sj.together(e));
+    return sj.mul(n, sj.pow(d, -1));
+  }),
+  '.equals': (args, kw, self) => {
+    noKw(kw);
+    if (self instanceof Matrix) return (self as Matrix).equals(args[0] as Matrix);
+    const d = sj.simplify(sj.sub(asExpr(self), asExpr(args[0])));
+    return d instanceof sj.Rational && d.isZero ? true : d.isNumber ? false : null;
+  },
+  '.getO': (_a, kw, self) => {
+    noKw(kw);
+    const e = asExpr(self);
+    const o = (e instanceof sj.Add ? e.args : [e]).find((t) => t instanceof sj.Order);
+    return o ?? null;
+  },
+  '.apart': (args, kw, self) => ADAPTERS['apart']!([self, ...args], kw),
+  '.collect': (args, kw, self) => ADAPTERS['collect']!([self, ...args], kw),
+  '.nsimplify': (args, kw, self) => ADAPTERS['nsimplify']!([self, ...args], kw),
+  '.powsimp': (args, kw, self) => ADAPTERS['powsimp']!([self, ...args], kw),
+  '.radsimp': (args, kw, self) => ADAPTERS['radsimp']!([self, ...args], kw),
+  '.ratsimp': (args, kw, self) => ADAPTERS['ratsimp']!([self, ...args], kw),
   '.cancel': (args, kw, self) => {
     if (!(self instanceof sj.Poly)) return exprMethod(sj.cancel)(args, kw, self);
     for (const k of Object.keys(kw)) if (k !== 'include') throw new Unsupported(`kwargs ${k}`);

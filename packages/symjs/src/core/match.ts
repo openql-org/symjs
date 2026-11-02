@@ -428,6 +428,26 @@ export function replace(
 }
 
 /** All subexpressions satisfying the query (SymPy Basic.find). */
+/** SymPy Basic.count(query): the number of subexpressions (with repetition) matching the query. */
+export function count(exprIn: ExprLike, query: Query): number {
+  const expr = sympify(exprIn);
+  const q: (e: Expr) => boolean =
+    typeof query === 'function'
+      ? query
+      : query instanceof Expr
+        ? (e) => match(e, query) !== undefined
+        : 'fn' in query
+          ? (e) => isFunctionOf(e, query.fn)
+          : (e) => isInstance(e, query.type);
+  let n = 0;
+  const walk = (e: Expr) => {
+    if (q(e)) n++;
+    e.args.forEach(walk);
+  };
+  walk(expr);
+  return n;
+}
+
 export function find(exprIn: ExprLike, query: Query): Expr[] {
   const expr = sympify(exprIn);
   const q: (e: Expr) => boolean =

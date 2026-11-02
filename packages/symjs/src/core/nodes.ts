@@ -190,7 +190,8 @@ export type SpecialFnName =
   | 'primeomega'
   | 'primepi'
   | 'multigamma'
-  | 'frac';
+  | 'frac'
+  | 'Rem';
 
 /**
  * Late-bound implementations. Filled in by the modules that implement them.

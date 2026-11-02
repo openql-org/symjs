@@ -733,6 +733,31 @@ function extractCommonRadical(e: Add): Expr {
   return mul(s, add(...e.args.map((t) => mul(t, pow(s, -1)))));
 }
 
+/** SymPy as_coeff_exponent(x): [c, e] with self = c*x**e and c free of x, else [self, 0]. */
+export function asCoeffExponent(eIn: ExprLike, x: Expr): [Expr, Expr] {
+  const e = sympify(eIn);
+  const cs: Expr[] = [];
+  const es: Expr[] = [];
+  for (const f of mulArgs(e)) {
+    if (f.key === x.key) es.push(S.One);
+    else if (f instanceof Pow && f.base.key === x.key && !f.exp.has(x)) es.push(f.exp);
+    else if (f.has(x)) return [e, S.Zero];
+    else cs.push(f);
+  }
+  return [mul(...cs), add(...es)];
+}
+
+/** SymPy as_powers_dict: base -> exponent of the factors of a product. */
+export function asPowersDict(eIn: ExprLike): ExprMap<Expr> {
+  const e = sympify(eIn);
+  const out = new ExprMap<Expr>();
+  for (const f of mulArgs(e)) {
+    const [b, x] = f instanceof Pow ? [f.base, f.exp] : [f, S.One];
+    out.set(b, add(out.get(b) ?? S.Zero, x));
+  }
+  return out;
+}
+
 /** SymPy `as_coefficients_dict(*syms)`: term -> coefficient. */
 export function asCoefficientsDict(eIn: ExprLike, syms: readonly Expr[] = []): ExprMap<Expr> {
   const e = sympify(eIn);

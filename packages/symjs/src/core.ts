@@ -110,6 +110,8 @@ export {
   atoms,
   hasFree,
   asCoefficientsDict,
+  asCoeffExponent,
+  asPowersDict,
   asTwoTerms,
   hasXfree,
   isAlgebraicExpr,
@@ -134,6 +136,7 @@ export {
   find,
   ordered,
   countOps,
+  count,
 } from './core/match';
 export type { Query, Replacement } from './core/match';
 export {
