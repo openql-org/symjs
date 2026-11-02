@@ -632,3 +632,85 @@ export function pinvSolve(A: Matrix, B: Matrix, arbitrary?: Matrix): Matrix {
   const proj = Matrix.eye(n).sub(Ap.mul(A));
   return Ap.mul(B).add(proj.mul(W)).map((e) => expandMul(e));
 }
+
+// ---- solving and constructions (SymPy Matrix.solve, GramSchmidt, hessian, wronskian, casoratian) ----
+
+/**
+ * SymPy Matrix.gauss_jordan_solve: [solution, parameters]. Free variables of
+ * an underdetermined system are the parameters tau0, tau1, ...; an
+ * inconsistent system throws.
+ */
+export function gaussJordanSolve(A: Matrix, b: Matrix): [Matrix, Matrix] {
+  const n = A.cols;
+  const [R, pivots] = rref(A.hstack(b));
+  for (let i = 0; i < R.rows; i++) {
+    const row = Array.from({ length: n }, (_, j) => R.get(i, j));
+    if (row.every((c) => c instanceof Rational && c.isZero) && !(R.get(i, n) instanceof Rational && (R.get(i, n) as Rational).isZero)) {
+      throw new Error('Linear system has no solution');
+    }
+  }
+  const pv = pivots.filter((p) => p < n);
+  const free = Array.from({ length: n }, (_, j) => j).filter((j) => !pv.includes(j));
+  const taus = free.map((_, k) => new Sym(`tau${k}`));
+  const cols = b.cols;
+  const sol = Matrix.fromFunction(n, cols, (j, c) => {
+    const f = free.indexOf(j);
+    if (f >= 0) return taus[f]!;
+    const i = pv.indexOf(j);
+    // x_j = rhs_i - sum over free columns
+    return add(R.get(i, n + c), ...free.map((fj, k) => mul(-1, R.get(i, fj), taus[k]!)));
+  });
+  return [sol, Matrix.fromFunction(taus.length, 1, (i) => taus[i]!)];
+}
+
+/** SymPy Matrix.solve (and LUsolve, QRsolve, ...): the unique solution of A*x = b. */
+export function matrixSolve(A: Matrix, b: Matrix): Matrix {
+  const [sol, params] = gaussJordanSolve(A, b);
+  if (params.rows) throw new Error('Matrix det == 0; not invertible.');
+  return sol;
+}
+
+/** SymPy Matrix.solve_least_squares: the x minimizing |A*x - b| (A of full column rank). */
+export function solveLeastSquares(A: Matrix, b: Matrix): Matrix {
+  const At = A.transpose();
+  return matrixSolve(At.mul(A), At.mul(b));
+}
+
+/** SymPy GramSchmidt(vlist, orthonormal=False). */
+export function gramSchmidt(vs: readonly Matrix[], orthonormal = false): Matrix[] {
+  const out: Matrix[] = [];
+  for (const v of vs) {
+    let u = v;
+    for (const w of out) u = u.sub(w.scale(cancel(mul(dot(w, v), pow(dot(w, w), -1)))));
+    u = u.map((e) => cancel(e));
+    if (u.data.every((e) => e instanceof Rational && e.isZero)) throw new Error('GramSchmidt: the vectors are not linearly independent');
+    out.push(u);
+  }
+  return orthonormal ? out.map((u) => normalized(u)) : out;
+}
+
+/** SymPy Matrix.normalized: v/|v|. */
+export function normalized(v: Matrix): Matrix {
+  const n = norm(v);
+  return v.map((e) => mul(e, pow(n, -1)));
+}
+
+/** SymPy hessian(f, varlist): the matrix of second derivatives. */
+export function hessian(f: ExprLike, vars: readonly Expr[]): Matrix {
+  const e = sympify(f);
+  return Matrix.fromFunction(vars.length, vars.length, (i, j) => diff(diff(e, vars[i]!), vars[j]!));
+}
+
+/** SymPy wronskian(functions, var): det of the derivatives 0..n-1 of the functions. */
+export function wronskian(fs: readonly ExprLike[], x: Expr): Expr {
+  const es = fs.map(sympify);
+  if (!es.length) return S.One;
+  return Matrix.fromFunction(es.length, es.length, (i, j) => diff(es[j]!, x, i)).det();
+}
+
+/** SymPy casoratian(seqs, n, zero=True): det of the shifted sequences (n = 0, 1, ... when zero). */
+export function casoratian(seqs: readonly ExprLike[], n: Expr, zero = true): Expr {
+  const es = seqs.map(sympify);
+  const k = (i: number) => (zero ? Rational.of(i) : add(n, i));
+  return Matrix.fromFunction(es.length, es.length, (i, j) => impl.subs(es[j]!, [[n, k(i)]])).det();
+}

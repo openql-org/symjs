@@ -1803,6 +1803,57 @@ export const ADAPTERS: Record<string, Adapter> = {
   }),
   '.left_eigenvects': matrixMethod((m) => new PyList(sj.eigenvects(m.transpose()).map(([v, k, vs]) => new PyTuple([v, k, new PyList(vs.map((x) => x.transpose()))])))),
   eye: (args, kw) => (noKw(kw), Matrix.eye(Number((args[0] as sj.Rational).p))),
+  ones: (args, kw) => {
+    noKw(kw);
+    const [r, c] = args.map((a) => Number((a as sj.Rational).p));
+    return Matrix.zeros(r!, c ?? r!).map(() => S.One);
+  },
+  '.eye': (args, kw) => ADAPTERS['eye']!(args, kw),
+  '.zeros': (args, kw) => ADAPTERS['zeros']!(args, kw),
+  '.ones': (args, kw) => ADAPTERS['ones']!(args, kw),
+  GramSchmidt: (args, kw) => {
+    noKw(kw);
+    const vs = (args[0] as PyList).items as Matrix[];
+    return new PyList(sj.GramSchmidt(vs, Boolean(args[1])));
+  },
+  hessian: (args, kw) => {
+    noKw(kw);
+    const vs = args[1] instanceof PyTuple || args[1] instanceof PyList ? args[1].items.map(asExpr) : args[1] instanceof Matrix ? args[1].data : [asExpr(args[1])];
+    return sj.hessian(asExpr(args[0]), vs);
+  },
+  wronskian: (args, kw) => (noKw(kw), sj.wronskian((args[0] as PyList).items.map(asExpr), asExpr(args[1]))),
+  casoratian: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'zero') throw new Unsupported(`kwargs ${k}`);
+    return sj.casoratian((args[0] as PyList).items.map(asExpr), asExpr(args[1]), kw['zero'] === undefined ? true : Boolean(kw['zero']));
+  },
+  '.solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
+  '.LUsolve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
+  '.QRsolve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
+  '.LDLsolve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
+  '.cholesky_solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
+  '.cramer_solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
+  '.upper_triangular_solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
+  '.lower_triangular_solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
+  '.diagonal_solve': matrixMethod((m, [b]) => sj.matrixSolve(m, b as Matrix)),
+  '.gauss_jordan_solve': matrixMethod((m, [b]) => new PyTuple(sj.gaussJordanSolve(m, b as Matrix))),
+  '.solve_least_squares': matrixMethod((m, [b]) => sj.solveLeastSquares(m, b as Matrix)),
+  '.normalized': matrixMethod((m) => sj.normalized(m)),
+  '.multiply': matrixMethod((m, [b]) => m.mul(b as Matrix)),
+  '.minorEntry': matrixMethod((m, [i, j]) => sj.linalg.minorDet(m, Number((i as sj.Rational).p), Number((j as sj.Rational).p))),
+  '.minorMatrix': matrixMethod((m, [i, j]) => m.minor(Number((i as sj.Rational).p), Number((j as sj.Rational).p))),
+  '.cofactorMatrix': matrixMethod((m) => m.cofactorMatrix()),
+  '.inverse_GE': matrixMethod((m) => m.inv()),
+  '.inverse_LU': matrixMethod((m) => m.inv()),
+  '.inverse_ADJ': matrixMethod((m) => m.inv()),
+  '.inverse_CH': matrixMethod((m) => m.inv()),
+  '.inverse_LDL': matrixMethod((m) => m.inv()),
+  '.inverse_QR': matrixMethod((m) => m.inv()),
+  '.inverse_BLOCK': matrixMethod((m) => m.inv()),
+  '.det_bareis': matrixMethod((m) => m.det()),
+  '.det_LU_decomposition': matrixMethod((m) => m.det()),
+  '.berkowitz_det': matrixMethod((m) => m.det()),
+  '.berkowitz_charpoly': (args, kw, self) => ADAPTERS['.charpoly']!(args, kw, self),
+  '.adjoint': (_args, kw, self) => (noKw(kw), self instanceof Matrix ? self.dagger() : sj.adjoint(asExpr(self))),
   zeros: (args, kw) => {
     noKw(kw);
     const [r, c] = args.map((a) => Number((a as sj.Rational).p));

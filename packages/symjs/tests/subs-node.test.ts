@@ -165,3 +165,20 @@ describe('matrix symbols', () => {
     expect(latex(transpose(A))).toBe('A^{T}');
   });
 });
+
+describe('matrix solving and constructions', () => {
+  it('match SymPy', async () => {
+    const { Matrix, matrixSolve, gaussJordanSolve, solveLeastSquares, GramSchmidt, hessian, wronskian, casoratian, normalized } = await import('../src');
+    const [x, y, n] = symbols('x y n');
+    const A = Matrix.of([[2, 1], [1, 3]]);
+    expect(String(matrixSolve(A, Matrix.col(1, 2)))).toBe('Matrix([[1/5], [3/5]])');
+    const [sol, params] = gaussJordanSolve(Matrix.of([[1, 2], [2, 4]]), Matrix.col(3, 6));
+    expect([String(sol), String(params)]).toEqual(['Matrix([[3 - 2*tau0], [tau0]])', 'Matrix([[tau0]])']);
+    expect(String(solveLeastSquares(Matrix.of([[1, 2], [3, 4], [5, 6]]), Matrix.col(1, 2, 4)))).toBe('Matrix([[2/3], [1/12]])');
+    expect(GramSchmidt([Matrix.col(3, 1), Matrix.col(2, 2)]).map(String)).toEqual(['Matrix([[3], [1]])', 'Matrix([[-2/5], [6/5]])']);
+    expect(String(hessian(parse('x**2*y'), [x, y]))).toBe('Matrix([[2*y, 2*x], [2*x, 0]])');
+    expect(sstr(wronskian([parse('sin(x)'), parse('cos(x)')], x))).toBe('-sin(x)**2 - cos(x)**2');
+    expect(sstr(casoratian([1, parse('2**n')], n))).toBe('1');
+    expect(String(normalized(Matrix.col(3, 4)))).toBe('Matrix([[3/5], [4/5]])');
+  });
+});
