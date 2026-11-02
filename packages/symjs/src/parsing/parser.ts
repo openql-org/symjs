@@ -105,7 +105,15 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   trigamma: ([x]) => fn('polygamma', [1, x!]),
   E1: ([x]) => fn('expint', [1, x!]),
   RisingFactorial: (args) => fn('rf', args),
-  Derivative: ([e, v, n]) => derivative(e!, [[v!, n instanceof Rational ? Number(n.p) : 1]]),
+  Derivative: ([e, ...rest]) => {
+    // Derivative(f, x, y, ...) with repeated variables, or Derivative(f, x, n) with an integer order
+    const vc: [Expr, number][] = [];
+    for (const a of rest) {
+      if (a instanceof Rational && a.isInteger && vc.length) vc[vc.length - 1]![1] += Number(a.p) - 1;
+      else vc.push([a, 1]);
+    }
+    return derivative(e!, vc);
+  },
   diff: ([e, v, n]) => impl.diff(e!, v!, n instanceof Rational ? Number(n.p) : 1),
   Eq: ([a, b]) => Eq(a!, b ?? 0),
   FallingFactorial: (args) => fn('ff', args),

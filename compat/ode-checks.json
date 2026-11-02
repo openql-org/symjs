@@ -1,0 +1,226 @@
+{
+ "sympy": "1.14.0",
+ "checks": [
+  {
+   "hint": "separable",
+   "eq": "-x*f(x) + Derivative(f(x), x)",
+   "expected": "Eq(f(x), C1*exp(x**2/2))"
+  },
+  {
+   "hint": "separable",
+   "eq": "-f(x)**2 + Derivative(f(x), x)",
+   "expected": "Eq(f(x), -1/(C1 + x))"
+  },
+  {
+   "hint": "separable",
+   "eq": "-exp(x + f(x)) + Derivative(f(x), x)",
+   "expected": "Eq(f(x), log(-1/(C1 + exp(x))))"
+  },
+  {
+   "hint": "1st_linear",
+   "eq": "-x**2 + Derivative(f(x), x) + f(x)/x",
+   "expected": "Eq(f(x), (C1 + x**4/4)/x)"
+  },
+  {
+   "hint": "1st_linear",
+   "eq": "-2*f(x) - exp(x) + Derivative(f(x), x)",
+   "expected": "Eq(f(x), (C1*exp(x) - 1)*exp(x))"
+  },
+  {
+   "hint": "1st_linear",
+   "eq": "f(x)*cos(x) - sin(2*x)/2 + Derivative(f(x), x)",
+   "expected": "Eq(f(x), C1*exp(-sin(x)) + sin(x) - 1)"
+  },
+  {
+   "hint": "Bernoulli",
+   "eq": "-f(x)**2 + Derivative(f(x), x) + f(x)/x",
+   "expected": "Eq(f(x), 1/(x*(C1 - log(x))))"
+  },
+  {
+   "hint": "Bernoulli",
+   "eq": "-x*f(x)**3 - f(x) + Derivative(f(x), x)",
+   "expected": "[Eq(f(x), -sqrt(2)*sqrt(exp(2*x)/(C1 - 2*x*exp(2*x) + exp(2*x)))), Eq(f(x), sqrt(2)*sqrt(exp(2*x)/(C1 - 2*x*exp(2*x) + exp(2*x))))]"
+  },
+  {
+   "hint": "1st_exact",
+   "eq": "2*x*f(x) + (x**2 + 1)*Derivative(f(x), x)",
+   "expected": "Eq(f(x), C1/(x**2 + 1))"
+  },
+  {
+   "hint": "1st_exact",
+   "eq": "sin(x)*cos(f(x)) + sin(f(x))*cos(x)*Derivative(f(x), x)",
+   "expected": "[Eq(f(x), -acos(C1/cos(x)) + 2*pi), Eq(f(x), acos(C1/cos(x)))]"
+  },
+  {
+   "hint": "1st_homogeneous_coeff",
+   "eq": "Derivative(f(x), x) - (x + f(x))/x",
+   "expected": "Eq(f(x), x*(C1 + log(x)))"
+  },
+  {
+   "hint": "1st_homogeneous_coeff",
+   "eq": "-x**2 + x*f(x)*Derivative(f(x), x) - f(x)**2",
+   "expected": "[Eq(f(x), -x*sqrt(C1 + 2*log(x))), Eq(f(x), x*sqrt(C1 + 2*log(x)))]"
+  },
+  {
+   "hint": "almost_linear",
+   "eq": "-x**2 + x*Derivative(f(x), x) + f(x)",
+   "expected": "Eq(f(x), (C1 + x**3/3)/x)"
+  },
+  {
+   "hint": "Riccati_special_minus2",
+   "eq": "f(x)**2 + Derivative(f(x), x) + 2/x**2",
+   "expected": "Eq(f(x), (-sqrt(7)*tan(C1 + sqrt(7)*log(x)/2) + 1)/(2*x))"
+  },
+  {
+   "hint": "linear_coefficients",
+   "eq": "Derivative(f(x), x) - (x + f(x) - 1)/(x - f(x) + 3)",
+   "expected": "Eq(log(x + 1), C1 - log(sqrt(1 + (f(x) - 2)**2/(x + 1)**2)) + atan((f(x) - 2)/(x + 1)))"
+  },
+  {
+   "hint": "nth_algebraic",
+   "eq": "(Derivative(f(x), x) - 1)*Derivative(f(x), x)",
+   "expected": "[Eq(f(x), C1 + x), Eq(f(x), C1)]"
+  },
+  {
+   "hint": "factorable",
+   "eq": "(-f(x) + Derivative(f(x), x))*(Derivative(f(x), x) - 1)",
+   "expected": "[Eq(f(x), C1 + x), Eq(f(x), C1*exp(x))]"
+  },
+  {
+   "hint": "nth_linear_constant_coeff_homogeneous",
+   "eq": "9*f(x) + Derivative(f(x), x, x)",
+   "expected": "Eq(f(x), C1*sin(3*x) + C2*cos(3*x))"
+  },
+  {
+   "hint": "nth_linear_constant_coeff_homogeneous",
+   "eq": "2*f(x) - 3*Derivative(f(x), x) + Derivative(f(x), x, x)",
+   "expected": "Eq(f(x), (C1 + C2*exp(x))*exp(x))"
+  },
+  {
+   "hint": "nth_linear_constant_coeff_homogeneous",
+   "eq": "f(x) + 2*Derivative(f(x), x) + Derivative(f(x), x, x)",
+   "expected": "Eq(f(x), (C1 + C2*x)*exp(-x))"
+  },
+  {
+   "hint": "nth_linear_constant_coeff_homogeneous",
+   "eq": "-f(x) + Derivative(f(x), x, x, x)",
+   "expected": "Eq(f(x), C3*exp(x) + (C1*sin(sqrt(3)*x/2) + C2*cos(sqrt(3)*x/2))*exp(-x/2))"
+  },
+  {
+   "hint": "nth_linear_constant_coeff_homogeneous",
+   "eq": "5*f(x) - 2*Derivative(f(x), x) + Derivative(f(x), x, x)",
+   "expected": "Eq(f(x), (C1*sin(2*x) + C2*cos(2*x))*exp(x))"
+  },
+  {
+   "hint": "nth_linear_constant_coeff_undetermined_coefficients",
+   "eq": "2*f(x) + 3*Derivative(f(x), x) + Derivative(f(x), x, x) - 4",
+   "expected": "Eq(f(x), C1*exp(-2*x) + C2*exp(-x) + 2)"
+  },
+  {
+   "hint": "nth_linear_constant_coeff_undetermined_coefficients",
+   "eq": "-f(x) - exp(x) + Derivative(f(x), x, x)",
+   "expected": "Eq(f(x), C2*exp(-x) + (C1 + x/2)*exp(x))"
+  },
+  {
+   "hint": "nth_linear_constant_coeff_undetermined_coefficients",
+   "eq": "f(x) - sin(x) + Derivative(f(x), x, x)",
+   "expected": "Eq(f(x), C2*sin(x) + (C1 - x/2)*cos(x))"
+  },
+  {
+   "hint": "nth_linear_constant_coeff_undetermined_coefficients",
+   "eq": "-x**2 + 4*f(x) + Derivative(f(x), x, x)",
+   "expected": "Eq(f(x), C1*sin(2*x) + C2*cos(2*x) + x**2/4 - 1/8)"
+  },
+  {
+   "hint": "nth_linear_constant_coeff_undetermined_coefficients",
+   "eq": "-x*exp(x) + f(x) - 2*Derivative(f(x), x) + Derivative(f(x), x, x)",
+   "expected": "Eq(f(x), (C1 + x*(C2 + x**2/6))*exp(x))"
+  },
+  {
+   "hint": "nth_linear_constant_coeff_variation_of_parameters",
+   "eq": "f(x) + Derivative(f(x), x, x) - 1/cos(x)",
+   "expected": "Eq(f(x), (C1 + x)*sin(x) + (C2 + log(cos(x)))*cos(x))"
+  },
+  {
+   "hint": "nth_linear_constant_coeff_variation_of_parameters",
+   "eq": "f(x) - 2*Derivative(f(x), x) + Derivative(f(x), x, x) - exp(x)/x",
+   "expected": "Eq(f(x), (C1 + x*(C2 + log(x)))*exp(x))"
+  },
+  {
+   "hint": "nth_linear_euler_eq_homogeneous",
+   "eq": "x**2*Derivative(f(x), x, x) + x*Derivative(f(x), x) - f(x)",
+   "expected": "Eq(f(x), C1/x + C2*x)"
+  },
+  {
+   "hint": "nth_linear_euler_eq_homogeneous",
+   "eq": "x**2*Derivative(f(x), x, x) - 2*f(x)",
+   "expected": "Eq(f(x), C1/x + C2*x**2)"
+  },
+  {
+   "hint": "nth_linear_euler_eq_homogeneous",
+   "eq": "x**2*Derivative(f(x), x, x) - x*Derivative(f(x), x) + f(x)",
+   "expected": "Eq(f(x), x*(C1 + C2*log(x)))"
+  },
+  {
+   "hint": "nth_linear_euler_eq_nonhomogeneous_undetermined_coefficients",
+   "eq": "-x**3 + x**2*Derivative(f(x), x, x) - 2*x*Derivative(f(x), x) + 2*f(x)",
+   "expected": "Eq(f(x), x*(C1 + C2*x + x**2/2))"
+  },
+  {
+   "hint": "Liouville",
+   "eq": "Derivative(f(x), x)**2 + Derivative(f(x), x, x)",
+   "expected": "Eq(f(x), C1 + log(C2 + x))"
+  },
+  {
+   "hint": "nth_order_reducible",
+   "eq": "x*Derivative(f(x), x, x) - Derivative(f(x), x)",
+   "expected": "Eq(f(x), C1 + C2*x**2)"
+  },
+  {
+   "hint": "nth_order_reducible",
+   "eq": "-Derivative(f(x), x, x) + Derivative(f(x), x, x, x)",
+   "expected": "Eq(f(x), C1 + C2*x + C3*exp(x))"
+  },
+  {
+   "hint": "2nd_nonlinear_autonomous_conserved",
+   "eq": "f(x) + Derivative(f(x), x, x)",
+   "expected": "Eq(f(x), C1*sin(x) + C2*cos(x))"
+  },
+  {
+   "hint": "2nd_linear_airy",
+   "eq": "-x*f(x) + Derivative(f(x), x, x)",
+   "expected": "Eq(f(x), C1*airyai(x) + C2*airybi(x))"
+  },
+  {
+   "hint": "2nd_linear_bessel",
+   "eq": "x**2*Derivative(f(x), x, x) + x*Derivative(f(x), x) + (x**2 - 4)*f(x)",
+   "expected": "Eq(f(x), C1*besselj(2, x) + C2*bessely(2, x))"
+  },
+  {
+   "hint": "ics",
+   "eq": "-f(x) + Derivative(f(x), x)",
+   "ics": [
+    [
+     "f(0)",
+     "2"
+    ]
+   ],
+   "expected": "Eq(f(x), 2*exp(x))"
+  },
+  {
+   "hint": "ics",
+   "eq": "f(x) + Derivative(f(x), x, x)",
+   "ics": [
+    [
+     "f(0)",
+     "0"
+    ],
+    [
+     "Subs(Derivative(f(x), x), x, 0)",
+     "1"
+    ]
+   ],
+   "expected": "Eq(f(x), sin(x))"
+  }
+ ]
+}
