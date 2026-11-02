@@ -17,7 +17,8 @@ import { freeSymbols, mapBottomUp, rebuild, xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { integrate } from '../integrals/integrate';
 import { str } from '../printing/str';
-import { expandMul as expand } from '../simplify/expand';
+import { expand as expandFull, expandMul as expand } from '../simplify/expand';
+import { sqrtdenest } from '../simplify/sqrtdenest';
 import { cancel, together } from '../simplify/rational';
 import { decomposePower, keepCoeff } from '../simplify/exprtools';
 import { divExact, mfactorList, mgcd, mlcm, prem as mprem } from './mpoly';
@@ -1014,7 +1015,15 @@ export class Poly {
     const syms = this.gens.filter((g) => g instanceof Sym);
     if (this.gens.length > 1 && syms.length === 1) return Poly.from(this.asExpr(), syms).radicalRoots(realOnly);
     if (this.allCoeffs().every((c) => c instanceof Rational)) return this.rootsWhere(realOnly);
-    const rs = rootsOf(this.asExpr(), this.univariate()).map((r) => [r, impl.toComplex(r)] as const);
+    // like SymPy's roots over the algebraic field: nested square roots denested
+    // (sqrt(5 - 2*sqrt(6)) = sqrt(3) - sqrt(2)) and square roots of complex numbers expanded
+    const tidy = (r0: Expr): Expr => {
+      let r = expandFull(sqrtdenest(r0));
+      const complexRadical = (e: Expr): boolean => (e instanceof Pow && !(e.exp instanceof Rational && e.exp.isInteger) && freeSymbols(e.base).size === 0 && e.base.has(S.I)) || e.args.some(complexRadical);
+      if (complexRadical(r)) r = expandFull(r, { complex: true });
+      return r;
+    };
+    const rs = rootsOf(this.asExpr(), this.univariate()).map((r) => tidy(r)).map((r) => [r, impl.toComplex(r)] as const);
     const isReal = (v: { im: number; re: number }) => Math.abs(v.im) <= 1e-12 * Math.max(1, Math.abs(v.re));
     const real = rs.filter(([, v]) => isReal(v)).sort((a, b) => a[1].re - b[1].re);
     const cplx = rs.filter(([, v]) => !isReal(v)).sort((a, b) => a[1].re - b[1].re || a[1].im - b[1].im);

@@ -1925,7 +1925,10 @@ export const ADAPTERS: Record<string, Adapter> = {
       });
       return idx < 0 ? v : new sj.CRootOf(mp, idx);
     };
-    return new JsList(sols.items.map((t) => new JsTuple((t as JsTuple).items.map(asRoot))));
+    // SymPy sorts the solutions (algebraic numbers printed as CRootOf) by default_sort_key
+    const tuples = sols.items.map((t) => (t as JsTuple).items.map(asRoot) as Expr[]);
+    tuples.sort((a, b) => sj.compareKeys(sj.sortKey(sj.Basic(...a)), sj.sortKey(sj.Basic(...b))));
+    return new JsList(tuples.map((t) => new JsTuple(t)));
   },
   substitution: (args, kw) => {
     noKw(kw);
