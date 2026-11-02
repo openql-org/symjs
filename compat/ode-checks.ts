@@ -16,21 +16,31 @@ type OdeCheck = { hint: string; eq: string; ics?: [string, string][]; expected: 
 export type OdeCheckResult = OdeCheck & { got: string; pass: boolean; exact: boolean };
 
 /** Number of distinct integration constants C1, C2, ... in a printed solution. */
-const constantCount = (s: string) => new Set(s.match(/\bC\d+\b/g) ?? []).size;
+export const constantCount = (s: string) => new Set(s.match(/\bC\d+\b/g) ?? []).size;
 
-/** SymPy checkodesol for explicit solutions: substitute and evaluate at test points. */
-function solvesOde(eq: Expr, fx: Expr, x: sj.Sym, sols: Expr[]): boolean {
+/**
+ * SymPy checkodesol for explicit solutions of an equation or a system:
+ * substitute every solved function (and its derivatives) and evaluate the
+ * residuals at test points.
+ */
+export function solvesOdeSystem(eqs: readonly Expr[], x: sj.Sym, sols: readonly Expr[]): boolean {
   if (!sols.length) return false;
+  const pairs: [Expr, Expr][] = [];
   for (const s of sols) {
-    if (!(s instanceof sj.Rel) || s.lhs.key !== fx.key || s.rhs.has(fx)) return false;
-    const order = 6;
-    let r = eq;
-    for (let k = order; k >= 1; k--) r = sj.xreplace(r, [[sj.derivative(fx, [[x, k]]), sj.diff(s.rhs, x, k)]]);
-    r = sj.xreplace(r, [[fx, s.rhs]]);
+    if (!(s instanceof sj.Rel) || !(s.lhs instanceof sj.UndefFn) || s.rhs.has(s.lhs)) return false;
+    pairs.push([s.lhs, s.rhs]);
+  }
+  const order = 6;
+  for (const eq of eqs) {
+    let r = eq instanceof sj.Rel ? sj.sub(eq.lhs, eq.rhs) : eq;
+    for (const [fx, rhs] of pairs) {
+      for (let k = order; k >= 1; k--) r = sj.xreplace(r, [[sj.derivative(fx, [[x, k]]), sj.diff(rhs, x, k)]]);
+    }
+    r = sj.xreplace(r, pairs);
     const syms = [...sj.freeSymbols(r)];
     let ok = 0;
     for (const t of [0.37, 0.83, 1.41]) {
-      const rep = syms.map((v, i) => [v, sj.float(v.name === 'x' ? t : 0.5 + 0.3 * i + t / 7)] as [Expr, Expr]);
+      const rep = syms.map((v, i) => [v, sj.float(v.name === x.name ? t : 0.5 + 0.3 * i + t / 7)] as [Expr, Expr]);
       try {
         const c = sj.evalf(sj.doit(sj.xreplace(r, rep)), 20).toComplex();
         if (!Number.isFinite(c.re) || !Number.isFinite(c.im)) continue;
@@ -43,6 +53,10 @@ function solvesOde(eq: Expr, fx: Expr, x: sj.Sym, sols: Expr[]): boolean {
     if (ok < 2) return false;
   }
   return true;
+}
+
+function solvesOde(eq: Expr, fx: Expr, x: sj.Sym, sols: Expr[]): boolean {
+  return sols.every((s) => s instanceof sj.Rel && s.lhs.key === fx.key) && solvesOdeSystem([eq], x, sols);
 }
 
 export function runOdeChecks(): OdeCheckResult[] {

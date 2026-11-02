@@ -13,6 +13,7 @@
 import * as sj from '../packages/symjs/src';
 import { equivalent } from './equivalence';
 import { PORTS } from './ports';
+import { constantCount, solvesOdeSystem } from './ode-checks';
 import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../packages/symjs/src';
 import { Fn } from '../packages/symjs/src/core/nodes';
 
@@ -3577,9 +3578,23 @@ export function runCase(c: Case): Outcome {
     };
     [...args, ...Object.values(kwargs), self].forEach(collect);
     const input = self !== undefined ? fmt(self) : args.length ? fmt(args[0]) : undefined;
-    return equivalent(got, c.expected, [...syms.values()], { fn: c.fn, input }) ? { status: 'equivalent', got } : { status: 'fail', got };
+    if (equivalent(got, c.expected, [...syms.values()], { fn: c.fn, input })) return { status: 'equivalent', got };
+    // dsolve: a solution in another form that satisfies the equations with as many constants (SymPy checkodesol);
+    // this also accepts a correct solution where SymPy's printed one is wrong
+    if (c.fn === 'dsolve' && solvesDsolveCase(args[0], v) && constantCount(got) === constantCount(c.expected)) return { status: 'equivalent', got };
+    return { status: 'fail', got };
   } catch (e) {
     if (e instanceof Unsupported) return { status: 'unsupported', reason: e.message };
     return { status: 'error', reason: e instanceof Error ? e.message : String(e) };
   }
+}
+
+/** The dsolve result v solves the equation (or system) eqArg. */
+function solvesDsolveCase(eqArg: unknown, v: unknown): boolean {
+  const eqs = (eqArg instanceof JsTuple || eqArg instanceof JsList ? eqArg.items : [eqArg]).filter((e): e is Expr => e instanceof Expr);
+  const sols = (v instanceof JsTuple || v instanceof JsList || v instanceof JsSet ? v.items : Array.isArray(v) ? v : [v]).filter((e): e is Expr => e instanceof Expr);
+  const fns = sols.flatMap((s) => (s instanceof sj.Rel && s.lhs instanceof sj.UndefFn ? [s.lhs] : []));
+  const x = fns[0]?.args[0];
+  if (!eqs.length || !(x instanceof Sym)) return false;
+  return solvesOdeSystem(eqs, x, sols);
 }
