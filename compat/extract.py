@@ -164,6 +164,9 @@ def ser(o):
         if mod.startswith("sympy") or mod == "math":
             return {"t": "JsFunc", "name": ("math." if mod == "math" else "") + o.__name__}
         raise Unsupported("function")
+    from sympy.calculus.accumulationbounds import AccumulationBounds as _AB
+    if isinstance(o, _AB):
+        return {"t": "AccumBounds", "min": ser(o.min), "max": ser(o.max)}
     from sympy.geometry import Curve as _Curve
     if isinstance(o, _Curve):
         return {"t": "Curve", "functions": [ser(f) for f in o.functions], "limits": [ser(l) for l in o.limits]}

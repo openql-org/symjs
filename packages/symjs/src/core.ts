@@ -62,6 +62,7 @@ export {
 export { ExprMap } from './core/exprmap';
 export { Indexed, IndexedBase } from './core/indexed';
 export { Factors } from './core/factors';
+export { AccumBounds, AccumBoundsNode } from './core/accumbounds';
 export {
   isReal,
   isPositive,

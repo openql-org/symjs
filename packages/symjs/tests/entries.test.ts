@@ -49,7 +49,7 @@ function imports(file: string): string[] {
 describe('module layering', () => {
   it('the core entry reaches only core modules', () => {
     const CORE_DIRS = ['core/', 'numeric/', 'printing/', 'parsing/'];
-    const CORE_FILES = ['core.ts', 'functions/elementary.ts', 'functions/trigext.ts', 'calculus/diff.ts', 'simplify/expand.ts', 'concrete/node.ts'];
+    const CORE_FILES = ['core.ts', 'functions/elementary.ts', 'functions/accumbounds.ts', 'functions/trigext.ts', 'calculus/diff.ts', 'simplify/expand.ts', 'concrete/node.ts'];
     const isCore = (f: string) => CORE_FILES.includes(f) || CORE_DIRS.some((d) => f.startsWith(d) && f !== 'numeric/mpspecial.ts' && f !== 'numeric/mpspecialfns.ts');
     const seen = new Set<string>();
     const outside: string[] = [];

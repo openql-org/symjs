@@ -565,4 +565,6 @@ export function sup(s: SetExpr): Expr {
   throw new NotImplementedError('sup: unsupported set');
 }
 
-
+impl.emptySet = () => EmptySet;
+impl.interval = (a, b) => interval(a, b);
+impl.setIntersection = (a, b) => intersection(a as SetExpr, b as SetExpr);

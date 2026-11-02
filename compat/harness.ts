@@ -354,6 +354,8 @@ export function deserialize(tree: Tree): unknown {
       if (tree['t'] === 'Mul' && args.length === 2 && args[0] instanceof sj.Rational && args[1] instanceof sj.Add) return new sj.Mul(args);
       return sj.mul(...args);
     }
+    case 'AccumBounds':
+      return sj.AccumBounds(deserialize(tree['min'] as Tree) as Expr, deserialize(tree['max'] as Tree) as Expr);
     case 'Curve': {
       const [t, a, b] = (tree['limits'] as Tree[]).map((l) => deserialize(l) as Expr);
       return new sj.Curve((tree['functions'] as Tree[]).map((f) => deserialize(f) as Expr), [t as Sym, a!, b!]);
@@ -3215,6 +3217,19 @@ Object.assign(ADAPTERS, {
   },
   matrix2numpy: matrixMethod((m) => sj.matrix2numpy(m)),
   list2numpy: (args, kw) => (noKw(kw), sj.list2numpy((args[0] as JsList).items)),
+
+  // ---- AccumBounds
+  AccumBounds: (args, kw) => (noKw(kw), sj.AccumBounds(asExpr(args[0]), asExpr(args[1]))),
+  '.intersection': (args, kw, self) => {
+    noKw(kw);
+    if (self instanceof sj.AccumBoundsNode) return self.intersection(args[0] instanceof sj.AccumBoundsNode ? args[0] : (asSet(args[0]) as unknown as Expr));
+    return sj.intersection(asSet(self), asSet(args[0]));
+  },
+  '.union': (args, kw, self) => {
+    noKw(kw);
+    if (self instanceof sj.AccumBoundsNode && args[0] instanceof sj.AccumBoundsNode) return self.union(args[0]);
+    return sj.union(asSet(self), asSet(args[0]));
+  },
 
   // ---- polys and number theory
   poly_from_expr: (args, kw) => {

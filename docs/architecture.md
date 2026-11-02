@@ -52,5 +52,5 @@ code moves to its own module (`solvers/homogeneous.ts`).
 | `no-explicit-any`, `ban-ts-comment`, `no-console`, `only-throw-error` | kept at zero |
 | `no-restricted-globals` (`Error`) | errors are specific classes: `TypeError`, `RangeError`, `SyntaxError`, or those of `core/errors.ts` (`NotImplementedError`, `PolynomialError`, `DomainError`, `ExactQuotientFailed`, `NotInvertible`, `MatrixError`, `NonSquareMatrixError`, `NonInvertibleMatrixError`, `NonlinearError`, `SympifyError`, `NotLoadedError`, ...) |
 
-Not enabled yet (to be adopted later): `no-non-null-assertion` and
-`no-unsafe-type-assertion`.
+Planned (to be enabled once the SymPy compatibility of the base candidate
+packages is in place): `no-non-null-assertion` and `no-unsafe-type-assertion`.

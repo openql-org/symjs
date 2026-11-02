@@ -5,6 +5,7 @@
  * @file Elementary functions with automatic evaluation of special values.
  */
 
+import { accumBoundsFunction } from './accumbounds';
 import { precToDps } from '../numeric/mpf';
 import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
 import type {
@@ -538,6 +539,10 @@ export const evaluators: Partial<Record<FnName, Evaluator>> = {
 export function fn(name: FnName, args: readonly ExprLike[], opts: { evaluate?: boolean } = {}): Expr {
   const xs = args.map(sympify);
   if (opts.evaluate === false) return new Fn(name, xs);
+  if (xs.length === 1 && impl.accumBounds?.is(xs[0]!)) {
+    const r = accumBoundsFunction(name, xs[0]!, (n, x) => fn(n as FnName, [x]));
+    if (r !== undefined) return r;
+  }
   const ev = evaluators[name];
   const v = ev ? ev(xs[0]!, ...xs.slice(1)) : undefined;
   if (v !== undefined) return v;

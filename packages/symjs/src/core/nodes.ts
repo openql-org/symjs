@@ -243,6 +243,19 @@ export interface Impl {
   expandMul?(e: Expr): Expr;
   /** as_real_imag of exp and functions (registered by simplify/expand). */
   asRealImagExpand?(e: Expr): [Expr, Expr];
+  /** AccumBounds interval arithmetic (registered by core/accumbounds). */
+  accumBounds?: {
+    is(e: Expr): boolean;
+    add(abs: readonly Expr[], c: Expr): Expr;
+    mul(abs: readonly Expr[], c: Expr): Expr;
+    pow(a: Expr, e: Expr): Expr;
+    bounds(a: Expr): [Expr, Expr];
+    make(lo: Expr, hi: Expr): Expr;
+  };
+  /** Sets (registered by sets/sets). */
+  emptySet?(): Expr;
+  interval?(a: Expr, b: Expr): Expr;
+  setIntersection?(a: Expr, b: Expr): Expr;
   /** SymPy factor (set by the polys module). */
   factor?(e: Expr): Expr;
   /** SymPy fraction (registered by simplify/rational). */

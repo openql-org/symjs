@@ -194,6 +194,16 @@ function lowestPowerShifted(term: Expr, base: Expr): number | undefined {
 
 export function add(...xs: ExprLike[]): Expr {
   const sx = xs.map(sympify);
+  const ab = impl.accumBounds;
+  if (ab && sx.some((e) => ab.is(e) || (e instanceof Add && e.args.some((a) => ab.is(a))))) {
+    // interval arithmetic: the intervals absorb a numeric remainder, symbolic terms stay beside them
+    const flat = sx.flatMap((e) => (e instanceof Add ? e.args : [e]));
+    const abs = flat.filter((e) => ab.is(e));
+    const rest = add(...flat.filter((e) => !ab.is(e)));
+    if (rest.freeSymbols().size === 0) return ab.add(abs, rest);
+    const iv = ab.add(abs, S.Zero);
+    return new Add([...(rest instanceof Add ? rest.args : [rest]), iv]);
+  }
   if (sx.some((e) => e instanceof Order || (e instanceof Add && e.args.some((a) => a instanceof Order)))) {
     const r = addOrder(sx);
     if (r) return r;
@@ -346,6 +356,13 @@ function mulSpecial(args: Expr[]): Expr | undefined {
 
 export function mul(...xs: ExprLike[]): Expr {
   const args = xs.map(sympify);
+  const ab = impl.accumBounds;
+  if (ab && args.some((e) => ab.is(e))) {
+    const abs = args.filter((e) => ab.is(e));
+    const rest = mul(...args.filter((e) => !ab.is(e)));
+    if (rest.freeSymbols().size === 0) return ab.mul(abs, rest);
+    return new Mul([rest, ab.mul(abs, S.One)]);
+  }
   if (args.some((e) => e instanceof Special || (e instanceof Mul && e.args.some((a) => a instanceof Special)))) {
     const r = mulSpecial(args);
     if (r) return r;
@@ -513,6 +530,13 @@ const iPi = (): Expr => (IPI ??= new Mul([S.I, S.Pi]));
 export function pow(bx: ExprLike, ex: ExprLike): Expr {
   const b = sympify(bx);
   const e = sympify(ex);
+  if (impl.accumBounds?.is(b) && e.freeSymbols().size === 0) return impl.accumBounds.pow(b, e);
+  if (impl.accumBounds?.is(e) && b.freeSymbols().size === 0 && b.toNumber() > 0) {
+    // a positive base: b**x is monotone in x (exp(AccumBounds(0, 1)) = AccumBounds(1, E))
+    const [lo, hi] = impl.accumBounds.bounds(e);
+    const [p, q] = [pow(b, lo), pow(b, hi)];
+    return b.toNumber() >= 1 ? impl.accumBounds.make(p, q) : impl.accumBounds.make(q, p);
+  }
 
   if (e instanceof Rational) {
     if (e.isZero) return S.One;
