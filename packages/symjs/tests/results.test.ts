@@ -66,3 +66,30 @@ describe('NoMatch, Unsolved, EmptySet and errors', () => {
     expect(sj.isConvergent(sj.Sum(sj.pow(n, -2), [n, 1, sj.oo]) as never)).toBe(true);
   });
 });
+
+describe('rsolve returns only complete solutions', () => {
+  const f = sj.Function('f');
+  const k = new sj.Sym('k', { integer: true });
+  const P = (s: string) => sj.parse(s, { symbols: { k }, locals: { f } } as never);
+  const show = (r: unknown) => (r instanceof sj.Expr ? sj.str(r) : String(r));
+  it('is Unsolved when the hypergeometric solutions do not span the solution space', () => {
+    // SymPy returns 0 here: only the trivial solution of a second-order recurrence
+    expect(sj.rsolve(P('f(k+2) - k*f(k+1) - f(k)'), f(k))).toBe(sj.Unsolved);
+    expect(sj.rsolve(P('f(k+2) - (k**2 + 1)*f(k)'), f(k))).toBe(sj.Unsolved);
+    // initial values that the partial family cannot meet
+    expect(sj.rsolve(P('f(k+2) - k*f(k+1) - f(k)'), f(k), [[0, 1], [1, 0]])).toBe(sj.Unsolved);
+  });
+  it('gives the solution when it is complete or fixed by the initial values', () => {
+    expect(show(sj.rsolve(P('f(k+2) - k*f(k+1) - f(k)'), f(k), [[0, 0], [1, 0]]))).toBe('0');
+    expect(show(sj.rsolve(P('f(k+1) - k*f(k)'), f(k)))).toBe('C0*RisingFactorial(0, k)');
+    expect(show(sj.rsolve(P('f(k+2) - f(k+1) - f(k)'), f(k)))).toBe('C0*(1/2 - sqrt(5)/2)**k + C1*(1/2 + sqrt(5)/2)**k');
+    expect(show(sj.rsolve(P('f(k+1) - 2*f(k) - 1'), f(k)))).toBe('2**k*C0 - 1');
+  });
+  it('RisingFactorial(0, k) is not simplified to 0 (it is 1 at k = 0)', () => {
+    const r = sj.fn('rf', [0, k]);
+    expect(show(sj.simplify(r))).toBe('RisingFactorial(0, k)');
+    expect(show(sj.gammasimp(r))).toBe('(-1)**k/gamma(1 - k)');
+    expect(show(sj.gammasimp(sj.fn('ff', [-2, k])))).toBe('(-1)**k*gamma(k + 2)');
+    expect(show(sj.rsolveHyper([sj.mul(-1, k), 1], 0, k) as never)).toBe('C0*RisingFactorial(0, k),C0');
+  });
+});

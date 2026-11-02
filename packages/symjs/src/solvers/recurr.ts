@@ -429,6 +429,13 @@ export function rsolve(fIn: ExprLike, y: Expr, init?: [ExprLike, ExprLike][]): E
   const res = rsolveHyper(coeffs, mul(-1, ip), n);
   if (!res) return undefined;
   let [solution, symbols] = res;
+  // The hypergeometric solutions found may not span the solution space (an
+  // order-k recurrence has k independent solutions). Without enough initial
+  // values that pin the solution down, such a partial answer (SymPy returns
+  // e.g. 0 for y(n+2) - n*y(n+1) - y(n)) is not the general solution.
+  const order = kMax;
+  const pinned = (init?.length ?? 0) >= order;
+  if (symbols.length < order && !pinned) return undefined;
   if (init && init.length && symbols.length) {
     const eqs: Expr[] = [];
     for (const [kIn, v] of init) {
@@ -440,6 +447,15 @@ export function rsolve(fIn: ExprLike, y: Expr, init?: [ExprLike, ExprLike][]): E
     if (!s) return undefined;
     solution = xreplace(solution, symbols.map((c, i) => [c, s[i]!] as [Expr, Expr]));
     symbols = [];
+  }
+  // a partial family is the answer only when it meets every initial value
+  if (init && init.length) {
+    for (const [kIn, v] of init) {
+      const k = sympify(kIn);
+      const i = k instanceof UndefFn ? k.args[0]! : k;
+      const r = simplify(add(subs(solution, n, i), mul(-1, v)));
+      if (!(r instanceof Rational && r.isZero)) return undefined;
+    }
   }
   return solution;
 }

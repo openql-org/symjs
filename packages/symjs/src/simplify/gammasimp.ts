@@ -14,7 +14,7 @@ import { powsimp } from './powsimp';
 import { cancel, fraction } from './rational';
 import { add, mul, pow, sympify } from '../core/ops';
 import { countOps, mapBottomUp } from '../core/traverse';
-import { isIntegerQ } from '../core/assumptions';
+import { isIntegerQ, isNegative as isNegativeQ, isZero as isZeroQ } from '../core/assumptions';
 import { fn } from '../functions/elementary';
 import { expand } from './expand';
 import { factor } from '../polys/sympoly';
@@ -23,8 +23,16 @@ const MAX_SHIFT = 50;
 const gamma = (x: Expr) => fn('gamma', [x]);
 const hasGamma = (e: Expr): boolean => (e instanceof Fn && e.name === 'gamma') || e.args.some(hasGamma);
 
-/** factorial, binomial, rf, ff written with gamma. */
-/** factorial, binomial, rf and ff written with gamma. */
+/** x <= 0 is known (SymPy (x <= 0) == True). */
+const knownNonPositive = (x: Expr): boolean => (x instanceof Rational ? x.p <= 0n : isNegativeQ(x) === true || isZeroQ(x) === true);
+/** x < 0 is known. */
+const knownNegative = (x: Expr): boolean => (x instanceof Rational ? x.p < 0n : isNegativeQ(x) === true);
+
+/**
+ * factorial, binomial, rf and ff written with gamma (SymPy rewrite(gamma,
+ * piecewise=False)): rf(x, k) for x <= 0 and ff(x, k) for x < 0 use the
+ * reflected form, so that rf(0, k) does not become gamma(k)/gamma(0) = 0.
+ */
 export function toGamma(e: Expr): Expr {
   return mapBottomUp(e, (x) => {
     if (!(x instanceof Fn)) return x;
@@ -35,8 +43,10 @@ export function toGamma(e: Expr): Expr {
       case 'binomial':
         return mul(gamma(add(a!, 1)), pow(gamma(add(b!, 1)), -1), pow(gamma(add(a!, mul(-1, b!), 1)), -1));
       case 'rf':
+        if (knownNonPositive(a!)) return mul(pow(-1, b!), gamma(add(1, mul(-1, a!))), pow(gamma(add(1, mul(-1, a!), mul(-1, b!))), -1));
         return mul(gamma(add(a!, b!)), pow(gamma(a!), -1));
       case 'ff':
+        if (knownNegative(a!)) return mul(pow(-1, b!), gamma(add(b!, mul(-1, a!))), pow(gamma(mul(-1, a!)), -1));
         return mul(gamma(add(a!, 1)), pow(gamma(add(a!, mul(-1, b!), 1)), -1));
       default:
         return x;
