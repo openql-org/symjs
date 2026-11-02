@@ -179,10 +179,15 @@ class Integrator {
       a = mul(-1, a);
       if (f.name === 'sin') sign = S.NegOne;
     }
-    if (isPositiveQ(a) !== true) return undefined;
-    // integral of cos(a*x**2) = sqrt(pi/(2*a))*fresnelc(sqrt(2*a/pi)*x), likewise sin with fresnels
-    const k = sqrt(mul(2, a, pow(S.Pi, -1)));
-    return mul(sign, pow(k, -1), fnErf(f.name === 'sin' ? 'fresnels' : 'fresnelc', [mul(k, x)]));
+    if (a.has(x)) return undefined;
+    // integral of cos(a*x**2) = sqrt(pi/(2*a))*fresnelc(sqrt(2*a/pi)*x), likewise sin with fresnels.
+    // SymPy (through Meijer G) keeps the factor gamma(1/4)/(4*gamma(5/4)) = 1 (3*gamma(3/4)/(4*gamma(7/4)) for sin)
+    const k = mul(sqrt(2), sqrt(a), pow(sqrt(S.Pi), -1));
+    const unit =
+      f.name === 'sin'
+        ? mul(3, fnErf('gamma', [Rational.of(3n, 4n)]), pow(mul(4, fnErf('gamma', [Rational.of(7n, 4n)])), -1))
+        : mul(fnErf('gamma', [Rational.of(1n, 4n)]), pow(mul(4, fnErf('gamma', [Rational.of(5n, 4n)])), -1));
+    return mul(sign, pow(k, -1), fnErf(f.name === 'sin' ? 'fresnels' : 'fresnelc', [mul(k, x)]), unit);
   }
 
   // ---- table of elementary antiderivatives ---------------------------------
