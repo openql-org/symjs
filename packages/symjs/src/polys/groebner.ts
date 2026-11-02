@@ -190,3 +190,13 @@ impl.polyReduce = (f, g, gens) => {
   const [qs, r] = divide(fromExpr(f, syms), [fromExpr(g, syms)], 'lex');
   return [toExpr(qs[0]!, syms), toExpr(r, syms)];
 };
+
+/** SymPy reduced(f, G, *gens): multivariate division of f by G, returning [quotients, remainder]. */
+export function reduced(f: ExprLike, G: readonly ExprLike[], gens: readonly Sym[], order: MonomialOrder = 'lex'): [Expr[], Expr] {
+  const [qs, r] = divide(
+    fromExpr(sympify(f), gens),
+    G.map((g) => fromExpr(sympify(g), gens)),
+    order,
+  );
+  return [qs.map((q) => toExpr(q, gens)), toExpr(r, gens)];
+}

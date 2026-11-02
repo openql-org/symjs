@@ -337,6 +337,36 @@ export class Poly {
   prem(o: Poly): Poly {
     return Poly.from(mprem(this.asExpr(), o.asExpr(), this.univariate()), this.gens);
   }
+  /** Subresultant PRS (SymPy dup_inner_subresultants), univariate. */
+  subresultants(o: Poly): Poly[] {
+    let f: Poly = this;
+    let g: Poly = o;
+    let n = f.degree();
+    let m = g.degree();
+    if (n < m) {
+      [f, g] = [g, f];
+      [n, m] = [m, n];
+    }
+    if (f.isZero) return [];
+    if (g.isZero) return [f];
+    const R = [f, g];
+    let d = n - m;
+    let h = f.prem(g).mulGround(Rational.of(d % 2 === 0 ? -1 : 1));
+    let lc = g.LC();
+    let c: Expr = pow(lc, d);
+    c = mul(-1, c);
+    while (!h.isZero) {
+      const k = h.degree();
+      R.push(h);
+      [f, g, d, m] = [g, h, m - k, k];
+      const b = mul(-1, lc, pow(c, d));
+      h = f.prem(g).exquoGround(b);
+      lc = g.LC();
+      if (d > 1) c = cancel(mul(pow(mul(-1, lc), d), pow(pow(c, d - 1), -1)));
+      else c = mul(-1, lc);
+    }
+    return R;
+  }
   /** Pseudo-quotient. */
   pquo(o: Poly): Poly {
     const x = this.univariate();

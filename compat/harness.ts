@@ -860,6 +860,16 @@ export const ADAPTERS: Record<string, Adapter> = {
   half_gcdex: polyFn(2, ([f, g]) => new PyTuple(f!.halfGcdex(g!))),
   sturm: polyFn(1, ([f]) => f!.sturm()),
   sqf_part: polyFn(1, ([f]) => f!.sqfPart()),
+  subresultants: polyFn(2, ([f, g]) => f!.subresultants(g!)),
+  reduced: (args, kw) => {
+    noKw(kw);
+    const G = (args[1] as PyTuple).items;
+    const { ps, asPolys } = parallelPolys([args[0], ...G, ...args.slice(2)], G.length + 1);
+    const gens = ps[0]!.gens as Sym[];
+    const [qs, r] = sj.reduced(ps[0]!.asExpr(), ps.slice(1).map((p) => p.asExpr()), gens);
+    const out = (e: Expr) => (asPolys ? sj.Poly.from(e, gens) : e);
+    return new PyTuple([new PyList(qs.map(out)), out(r)]);
+  },
   monic: polyFn(1, ([f]) => f!.monic()),
   trunc: polyFn(1, ([f], [p]) => f!.trunc(asExpr(p)), 1),
   sqf_list: polyFn(1, ([f]) => {
@@ -1766,6 +1776,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.pexquo': polyM((p, a) => p.pexquo(a[0] as sj.Poly)),
   '.shift': polyM((p, a) => p.shift(asExpr(a[0]))),
   '.sqf_part': polyM((p) => p.sqfPart()),
+  '.subresultants': polyM((p, a) => new PyList(p.subresultants(a[0] as sj.Poly))),
   '.terms_gcd': polyM((p) => {
     const [m, q] = p.termsGcd();
     return new PyTuple([new PyTuple(m), q]);
