@@ -19,6 +19,7 @@ import { factorInt } from '../core/numbers';
 import { expandMul } from '../simplify/expand';
 import { evaluators, fn } from './elementary';
 import { bernoulliNumber, floor as floorFn, gamma } from './special';
+import { isprime as ntheoryIsprime } from '../ntheory/primetest';
 
 const R = (p: bigint | number, q: bigint | number = 1n) => Rational.of(BigInt(p), BigInt(q));
 const asInt = (e: Expr): bigint | undefined => (e instanceof Rational && e.isInteger ? e.p : undefined);
@@ -149,44 +150,8 @@ function partitionNumber(n: number): bigint {
 
 /** Primality test (deterministic Miller-Rabin for 64-bit, trial division otherwise). */
 export function isprime(nIn: ExprLike | bigint): boolean {
-  const n = typeof nIn === 'bigint' ? nIn : asInt(sympify(nIn));
-  if (n === undefined || n < 2n) return false;
-  for (const p of [2n, 3n, 5n, 7n, 11n, 13n, 17n, 19n, 23n, 29n, 31n, 37n]) {
-    if (n === p) return true;
-    if (n % p === 0n) return false;
-  }
-  let d = n - 1n;
-  let s = 0;
-  while (d % 2n === 0n) {
-    d /= 2n;
-    s++;
-  }
-  const powmod = (bIn: bigint, eIn: bigint, m: bigint) => {
-    let b = bIn;
-    let e = eIn;
-    let r = 1n;
-    b %= m;
-    while (e > 0n) {
-      if (e & 1n) r = (r * b) % m;
-      b = (b * b) % m;
-      e >>= 1n;
-    }
-    return r;
-  };
-  for (const a of [2n, 3n, 5n, 7n, 11n, 13n, 17n, 19n, 23n, 29n, 31n, 37n]) {
-    let x = powmod(a, d, n);
-    if (x === 1n || x === n - 1n) continue;
-    let ok = false;
-    for (let r = 1; r < s; r++) {
-      x = (x * x) % n;
-      if (x === n - 1n) {
-        ok = true;
-        break;
-      }
-    }
-    if (!ok) return false;
-  }
-  return true;
+  // SymPy's test (trial division, Miller-Rabin with fixed bases, then BPSW): no strong pseudoprimes pass
+  return ntheoryIsprime(nIn);
 }
 
 /** Jacobi symbol (m/n) for odd positive n. */

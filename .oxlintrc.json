@@ -190,7 +190,8 @@
         "packages/symjs/src/simplify/expand.ts",
         "packages/symjs/src/simplify/rewrite.ts",
         "packages/symjs/src/utilities/**",
-        "packages/symjs/src/logic/**"
+        "packages/symjs/src/logic/**",
+        "packages/symjs/src/ntheory/**"
       ],
       "rules": {
         "no-restricted-imports": [

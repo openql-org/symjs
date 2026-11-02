@@ -51,6 +51,11 @@
       "import": "./dist/sets.js",
       "require": "./dist/sets.cjs"
     },
+    "./ntheory": {
+      "types": "./dist/ntheory.d.ts",
+      "import": "./dist/ntheory.js",
+      "require": "./dist/ntheory.cjs"
+    },
     "./logic": {
       "types": "./dist/logic.d.ts",
       "import": "./dist/logic.js",
@@ -160,6 +165,9 @@
     "./src/matrices.ts",
     "./dist/matrices.js",
     "./dist/matrices.cjs",
+    "./src/ntheory.ts",
+    "./dist/ntheory.js",
+    "./dist/ntheory.cjs",
     "./src/ntheory/factor.ts",
     "./dist/ntheory/factor.js",
     "./dist/ntheory/factor.cjs",

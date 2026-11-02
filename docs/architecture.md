@@ -14,7 +14,7 @@ without the higher ones.
 | Layer | Contents | Paths (under `packages/symjs/src/`) |
 |---|---|---|
 | L0 kernel | expression tree, numbers (including the mpf arithmetic), symbols and assumptions, automatic evaluation, traversal and substitution, Sum/Product nodes, str/LaTeX printing | `core/`, `printing/`, `numeric/mpf.ts`, `numeric/mpfun.ts`, `numeric/complex.ts` |
-| L1 functions | elementary and special functions, numeric evaluation (evalf, lambdify), parsing, differentiation, expansion and rewriting, propositional logic, iterable utilities | `functions/`, `logic/`, `utilities/`, `numeric/` (other files), `parsing/`, `concrete/node.ts`, `calculus/diff.ts`, `calculus/finitediff.ts`, `simplify/expand.ts`, `simplify/rewrite.ts` |
+| L1 functions | elementary and special functions, numeric evaluation (evalf, lambdify), parsing, differentiation, expansion and rewriting, propositional logic, number theory, iterable utilities | `functions/`, `logic/`, `ntheory/`, `utilities/`, `numeric/` (other files), `parsing/`, `concrete/node.ts`, `calculus/diff.ts`, `calculus/finitediff.ts`, `simplify/expand.ts`, `simplify/rewrite.ts` |
 | L2 algebra | polynomials, simplification, matrices (including linear systems), series and limits, sets, sums and products, permutations, N-dimensional arrays | `polys/`, `combinatorics/`, `tensor/`, `simplify/`, `matrices/`, `series/`, `sets/`, `calculus/` (other files), `concrete/summations.ts` |
 | L3 solvers and integration | equation solving, ODEs, recurrences, inequalities, integration, `doit`, Fourier and formal power series | `solvers/`, `integrals/`, `calculus/doit.ts`, `series/more.ts` |
 
