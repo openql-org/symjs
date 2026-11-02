@@ -8,7 +8,7 @@
  */
 
 import { isReal } from '../core/assumptions';
-import { Add, Derivative, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
+import { Add, Derivative, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols, subs, xreplace } from '../core/traverse';
@@ -24,12 +24,15 @@ import { compareKeys, sortKey } from '../printing/sortkey';
 import { expand, expandMul } from '../simplify/expand';
 import { powsimp } from '../simplify/powsimp';
 import { collect } from '../simplify/radsimp';
-import { cancel, fraction } from '../simplify/rational';
+import { cancel, fraction, together } from '../simplify/rational';
 import { separatevars } from '../simplify/separatevars';
 import { simplify } from '../simplify/simplify';
 import { trigsimp } from '../simplify/trigsimp';
 import { odesimp } from './odesimp';
 import { linsolve, solve } from './solve';
+import { homogeneousOrder } from './ode';
+
+const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
 
 const isZero = (e: Expr) => e instanceof Rational && e.isZero;
 const C = (i: number) => new Sym(`C${i}`);
@@ -765,8 +768,8 @@ const HINTS: [string, Solver][] = [
   ['nth_algebraic', nthAlgebraic],
 ];
 
-/** The hints (SymPy classify_ode names) that match the equation, in SymPy's order. */
-export function classifyOde(eqIn: ExprLike, fx: UndefFn): string[] {
+/** The hints with a solver here that match the equation (solver order). */
+function solverHints(eqIn: ExprLike, fx: UndefFn): string[] {
   const eq = toZeroForm(sympify(eqIn));
   const p: OdeProblem = { eq, fx, x: fx.args[0] as Sym, order: orderOf(eq, fx) };
   return HINTS.filter(([, s]) => {
@@ -807,3 +810,126 @@ export function dsolveRaw(eqIn: Expr, fx: UndefFn, hint?: string): Expr[] | unde
   return undefined;
 }
 
+
+// ---- SymPy classify_ode -------------------------------------------------------------
+
+/** SymPy allhints, the order in which classify_ode reports the matching hints. */
+const ALL_HINTS = [
+  'factorable', 'nth_algebraic', 'separable', '1st_exact', '1st_linear', 'Bernoulli', '1st_rational_riccati', 'Riccati_special_minus2',
+  '1st_homogeneous_coeff_best', '1st_homogeneous_coeff_subs_indep_div_dep', '1st_homogeneous_coeff_subs_dep_div_indep', 'almost_linear',
+  'linear_coefficients', 'separable_reduced', '1st_power_series', 'lie_group', 'nth_linear_constant_coeff_homogeneous',
+  'nth_linear_euler_eq_homogeneous', 'nth_linear_constant_coeff_undetermined_coefficients',
+  'nth_linear_euler_eq_nonhomogeneous_undetermined_coefficients', 'nth_linear_constant_coeff_variation_of_parameters',
+  'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters', 'Liouville', '2nd_linear_airy', '2nd_linear_bessel', '2nd_hypergeometric',
+  '2nd_hypergeometric_Integral', 'nth_order_reducible', '2nd_power_series_ordinary', '2nd_power_series_regular', 'nth_algebraic_Integral',
+  'separable_Integral', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral', '1st_homogeneous_coeff_subs_indep_div_dep_Integral',
+  '1st_homogeneous_coeff_subs_dep_div_indep_Integral', 'almost_linear_Integral', 'linear_coefficients_Integral', 'separable_reduced_Integral',
+  'nth_linear_constant_coeff_variation_of_parameters_Integral', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters_Integral',
+  'Liouville_Integral', '2nd_nonlinear_autonomous_conserved', '2nd_nonlinear_autonomous_conserved_Integral',
+];
+
+/** d + e*f'(x) = eq (first order): [d, e] with f(x) replaced by y, or undefined. */
+function firstOrderDE(p: OdeProblem, y: Sym): [Expr, Expr] | undefined {
+  if (p.order !== 1) return undefined;
+  const df = new Derivative([p.fx, p.x, S.One]);
+  const ex = expandMul(p.eq);
+  const terms = ex instanceof Add ? ex.args : [ex];
+  const e: Expr[] = [];
+  const d: Expr[] = [];
+  for (const t of terms) {
+    if (!t.has(df)) d.push(t);
+    else {
+      const c = mul(t, pow(df, -1));
+      if (c.has(df)) return undefined;
+      e.push(c);
+    }
+  }
+  const rep = (u: Expr) => xreplace(u, [[p.fx, y]]);
+  return [rep(add(...d)), rep(add(...e))];
+}
+
+/** Extra matchers for the hints classify_ode reports without a solver here. */
+function classifyExtra(p: OdeProblem): Set<string> {
+  const out = new Set<string>();
+  const x = p.x;
+  const y = new Sym('y_cls');
+  const df = new Derivative([p.fx, x, S.One]);
+  // factorable (SymPy Factorable._matches): several factors, or solvable for f' with a different equation
+  try {
+    const [n] = fraction(together(p.eq));
+    const fac = factor(n);
+    const factors = fac instanceof Mul ? fac.args : [fac];
+    const withF = factors.filter((u) => u.has(p.fx));
+    const bases = factors.filter((u) => u.args.length).map((u) => (u instanceof Pow && u.exp instanceof Rational ? [u.base, Number(u.exp.p)] : [u, 1]) as [Expr, number]);
+    if ((bases.length > 1 || (bases[0] && bases[0][1] > 1)) && withF.length) out.add('factorable');
+    else {
+      const t = new Dummy('df');
+      const roots = solve(xreplace(n, [[df, t]]), t);
+      if (roots.length && !(roots.length === 1 && add(df, mul(-1, roots[0]!)).key === p.eq.key)) out.add('factorable');
+    }
+  } catch {
+    // not decided
+  }
+  const de = firstOrderDE(p, y);
+  if (de) {
+    const [d, e] = de;
+    // Bernoulli: f' + P*f - Q*f**n (linear equations included)
+    const rest = expandMul(mul(d, pow(e, -1)));
+    const exps = new Set<string>();
+    let bern = !isZeroE(e);
+    for (const t of rest instanceof Add ? rest.args : [rest]) {
+      const fs = t instanceof Mul ? t.args : [t];
+      const yf = fs.filter((u) => u.has(y));
+      if (yf.length > 1) bern = false;
+      else if (yf.length === 1) {
+        const u = yf[0]!;
+        if (u.key === y.key) exps.add('1');
+        else if (u instanceof Pow && u.base.key === y.key && !u.exp.has(x) && !u.exp.has(y)) exps.add(u.exp.key);
+        else bern = false;
+      } else exps.add('0');
+    }
+    if (bern && [...exps].filter((k) => k !== '1').length <= 1) out.add('Bernoulli');
+    // homogeneous coefficients: d and e homogeneous of the same order
+    try {
+      const sep = (u: Expr): Expr => {
+        const r = separatevars(u);
+        return r instanceof Expr ? r : u;
+      };
+      const od = homogeneousOrder(sep(d), x, y);
+      const oe = homogeneousOrder(sep(e), x, y);
+      if (od !== undefined && oe !== undefined && od.key === oe.key) {
+        const u = new Sym('u_cls');
+        const indep = !isZeroE(simplify(xreplace(add(e, mul(u, d)), [[x, u], [y, S.One]])));
+        const dep = !isZeroE(simplify(xreplace(add(d, mul(u, e)), [[x, S.One], [y, u]])));
+        if (indep) out.add('1st_homogeneous_coeff_subs_indep_div_dep');
+        if (dep) out.add('1st_homogeneous_coeff_subs_dep_div_indep');
+        if (indep && dep) out.add('1st_homogeneous_coeff_best');
+      }
+    } catch {
+      // not homogeneous
+    }
+    // 1st_power_series: d/e and its x-derivative finite at x = 0, f(0) = C1
+    try {
+      const C1 = new Sym('C1');
+      const check = cancel(mul(d, pow(e, -1)));
+      const bad = (v: Expr): boolean => v instanceof Special || v.args.some(bad);
+      const c1 = xreplace(check, [[x, S.Zero], [y, C1]]);
+      const c2 = xreplace(diff(c1, x), [[x, S.Zero], [y, C1]]);
+      if (!bad(c1) && !bad(c2)) out.add('1st_power_series');
+    } catch {
+      // not decided
+    }
+    out.add('lie_group');
+  }
+  return out;
+}
+
+/** SymPy classify_ode(eq, f(x)): the names of the matching hints in SymPy's order, with their _Integral variants. */
+export function classifyOde(eqIn: ExprLike, fx: UndefFn): string[] {
+  const eq = toZeroForm(sympify(eqIn));
+  const p: OdeProblem = { eq, fx, x: fx.args[0] as Sym, order: orderOf(eq, fx) };
+  const matched = new Set(solverHints(eq, fx).filter((h) => h !== 'factorable'));
+  for (const h of classifyExtra(p)) matched.add(h);
+  for (const h of [...matched]) if (ALL_HINTS.includes(`${h}_Integral`)) matched.add(`${h}_Integral`);
+  return ALL_HINTS.filter((h) => matched.has(h));
+}

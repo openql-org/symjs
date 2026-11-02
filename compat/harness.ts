@@ -2159,6 +2159,21 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.together': exprMethod(sj.together),
   numer: exprFn((e) => sj.fraction(e)[0]),
   kroneckersimp: exprFn(sj.kroneckersimp),
+  classify_ode: (args, kw) => {
+    noKw(kw);
+    const eq = asExpr(args[0]);
+    let fx = args[1] === undefined ? undefined : asExpr(args[1]);
+    if (!fx) {
+      const found = new Map<string, Expr>();
+      const walk = (e: Expr) => {
+        if (e.kind === 'Undef') found.set(e.key, e);
+        e.args.forEach(walk);
+      };
+      walk(eq);
+      fx = [...found.values()][0];
+    }
+    return new JsTuple(sj.classifyOde(eq, fx as never));
+  },
   line_integrate: (args, kw) => (noKw(kw), sj.lineIntegrate(asExpr(args[0]), args[1] as sj.Curve, (args[2] as JsList).items.map(asSym))),
   minimal_polynomial: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'polys') throw new Unsupported(`kwargs ${k}`);

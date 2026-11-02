@@ -19,6 +19,7 @@ export {
   nsolve,
 } from './solvers/solve';
 export { dsolveSystem } from './solvers/odesystem';
+export { classifyOde } from './solvers/dsolve';
 export {
   dsolve,
   homogeneousOrder,

@@ -428,3 +428,21 @@ describe('relations in the parser, Wild collect and piecewise definite integrals
     void y;
   });
 });
+
+describe('classify_ode', () => {
+  it('reports the matching hints in SymPy order', async () => {
+    const { classifyOde, Eq } = await import('../src');
+    const x = symbols('x')[0];
+    const f = Function('f');
+    expect(classifyOde(Eq(diff(f(x), x), 0), f(x) as never)).toEqual([
+      'nth_algebraic', 'separable', '1st_exact', '1st_linear', 'Bernoulli', '1st_homogeneous_coeff_best', '1st_homogeneous_coeff_subs_indep_div_dep',
+      '1st_homogeneous_coeff_subs_dep_div_indep', '1st_power_series', 'lie_group', 'nth_linear_constant_coeff_homogeneous', 'nth_linear_euler_eq_homogeneous',
+      'nth_algebraic_Integral', 'separable_Integral', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral',
+      '1st_homogeneous_coeff_subs_indep_div_dep_Integral', '1st_homogeneous_coeff_subs_dep_div_indep_Integral',
+    ]);
+    expect(classifyOde(parse('Derivative(f(x), x, x) + 3*Derivative(f(x), x) + 2*f(x) - 4'), f(x) as never)).toEqual([
+      'factorable', 'nth_linear_constant_coeff_undetermined_coefficients', 'nth_linear_constant_coeff_variation_of_parameters',
+      'nth_linear_constant_coeff_variation_of_parameters_Integral',
+    ]);
+  });
+});
