@@ -111,6 +111,6 @@ other traversals) and override `printStr`, `printLatex`, `diffSelf`,
 See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable gaps:
 
 - `simplify` is a lighter heuristic than SymPy's; results can differ in form
-- Algebraic extensions and finite fields in `factor` (`extension=`, `gaussian=`, `modulus=`), `RootOf`/`RootSum`
+- `factor` over finite fields (`modulus=`) and general algebraic extensions (only `gaussian=` and simple `extension=` cases); `RootSum`
 - Integration beyond the implemented heuristics (no Risch or Meijer G algorithms yet)
-- ODE solving covers a few hints only; systems, PDEs and Diophantine equations are not ported
+- ODE solving follows SymPy's single-equation hints (separable, exact, linear, Bernoulli, Riccati special, constant and Euler linear equations, undetermined coefficients, variation of parameters, Liouville, reducible order, Airy, Bessel); homogeneous-coefficient, linear-coefficient, power series and Lie group hints, systems, PDEs and Diophantine equations are not ported yet (see the ODE checks in the report)

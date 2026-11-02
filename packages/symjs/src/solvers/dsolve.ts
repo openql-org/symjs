@@ -792,8 +792,7 @@ export function dsolveRaw(eqIn: Expr, fx: UndefFn, hint?: string): Expr[] | unde
     let raw: Expr[] | undefined;
     try {
       raw = s(p);
-    } catch (err) {
-      if (process.env['SYMJS_DEBUG_ODE']) console.error(h, err);
+    } catch {
       raw = undefined;
     }
     if (!raw) continue;
@@ -801,12 +800,10 @@ export function dsolveRaw(eqIn: Expr, fx: UndefFn, hint?: string): Expr[] | unde
       const out: Expr[] = [];
       for (const r of raw) out.push(...odesimp(eq, r, fx, h));
       return out;
-    } catch (err) {
-      if (process.env['SYMJS_DEBUG_ODE']) console.error(h, 'odesimp', err);
+    } catch {
       continue;
     }
   }
   return undefined;
 }
 
-export const __debug = { eulerMatch, linearCoefficients, eulerHomogeneous, nthOrderReducible, orderOf };
