@@ -33,11 +33,21 @@ export class Matrix {
   // ---- construction --------------------------------------------------------
 
   /** Build from nested arrays (row-major). */
-  static of(rows: readonly (readonly ExprLike[])[]): Matrix {
+  static of(rows: readonly (readonly (ExprLike | Matrix)[])[]): Matrix {
+    // SymPy Matrix([[A, B], [C, D]]) of matrices joins the blocks
+    if (rows.some((row) => row.some((x) => x instanceof Matrix))) {
+      const block = (x: ExprLike | Matrix): Matrix => (x instanceof Matrix ? x : new Matrix(1, 1, [sympify(x)]));
+      const bands = rows.map((row) => {
+        const [first, ...rest] = row.map(block);
+        return first ? first.hstack(...rest) : new Matrix(0, 0, []);
+      });
+      const [top, ...others] = bands;
+      return top ? top.vstack(...others) : new Matrix(0, 0, []);
+    }
     const r = rows.length;
     const c = r === 0 ? 0 : rows[0]!.length;
     for (const row of rows) if (row.length !== c) throw new RangeError('Matrix.of: ragged rows');
-    return new Matrix(r, c, rows.flatMap((row) => row.map(sympify)));
+    return new Matrix(r, c, rows.flatMap((row) => row.map((x) => sympify(x as ExprLike))));
   }
 
   /** Build from a generator f(i, j). */

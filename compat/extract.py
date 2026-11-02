@@ -206,6 +206,12 @@ def ser(o):
         return {"t": "RootSum", "poly": ser(o.expr), "fun": ser(o.fun), "var": ser(o.poly.gen)}
     if isinstance(o, sympy.MatrixSymbol):
         return {"t": "MatrixSymbol", "name": o.name, "rows": ser(o.shape[0]), "cols": ser(o.shape[1])}
+    if (isinstance(o, sympy.MatrixExpr) or (type(o).__module__ or "").startswith("sympy.matrices.expressions")) and not isinstance(o, MatrixBase):
+        name = type(o).__name__
+        if name == "MatrixSlice":
+            sl = lambda t: [ser(t[0]), ser(t[1]), ser(t[2])]
+            return {"t": "MatExpr", "cls": name, "args": [ser(o.args[0])], "slices": [sl(o.args[1]), sl(o.args[2])]}
+        return {"t": "MatExpr", "cls": name, "args": [ser(a) for a in o.args]}
     if isinstance(o, (set, frozenset)):
         return {"t": "JsSet", "items": [ser(i) for i in o]}
     if isinstance(o, list):
@@ -299,6 +305,8 @@ def ser(o):
         return {"t": "UFnClass", "name": o.__name__}
     if isinstance(o, AppliedUndef):
         return {"t": "UFn", "name": type(o).__name__, "args": [ser(a) for a in o.args]}
+    if isinstance(o, sympy.Subs):
+        return {"t": "Subs", "expr": ser(o.expr), "vars": [ser(v) for v in o.variables], "point": [ser(p) for p in o.point]}
     if isinstance(o, sympy.Derivative):
         return {"t": "Derivative", "expr": ser(o.expr), "vc": [[ser(v), int(n)] for v, n in o.variable_count]}
     if o is sympy.true or o is sympy.false:

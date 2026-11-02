@@ -35804,7 +35804,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_874",
+         "name": "Dummy_876",
          "index": 0,
          "assume": {
           "real": true
@@ -37070,7 +37070,8 @@
    "fn": "transpose",
    "args": [
     {
-     "t": "MatMul",
+     "t": "MatExpr",
+     "cls": "MatMul",
      "args": [
       {
        "t": "MatrixSymbol",
@@ -144547,7 +144548,235 @@
   },
   {
    "fn": "laplace_initial_conds",
-   "unsupportedArg": "Subs",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Subs",
+         "expr": {
+          "t": "Derivative",
+          "expr": {
+           "t": "UFn",
+           "name": "y",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "t",
+             "assume": {}
+            }
+           ]
+          },
+          "vc": [
+           [
+            {
+             "t": "Symbol",
+             "name": "t",
+             "assume": {}
+            },
+            2
+           ]
+          ]
+         },
+         "vars": [
+          {
+           "t": "Symbol",
+           "name": "t",
+           "assume": {}
+          }
+         ],
+         "point": [
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "s",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "UFn",
+         "name": "Y",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "s",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "s",
+         "assume": {}
+        },
+        {
+         "t": "Subs",
+         "expr": {
+          "t": "Derivative",
+          "expr": {
+           "t": "UFn",
+           "name": "y",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "t",
+             "assume": {}
+            }
+           ]
+          },
+          "vc": [
+           [
+            {
+             "t": "Symbol",
+             "name": "t",
+             "assume": {}
+            },
+            1
+           ]
+          ]
+         },
+         "vars": [
+          {
+           "t": "Symbol",
+           "name": "t",
+           "assume": {}
+          }
+         ],
+         "point": [
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "s",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "UFn",
+         "name": "y",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Symbol",
+     "name": "t",
+     "assume": {}
+    },
+    {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "UFnClass",
+        "name": "y"
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "8",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "16",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "32",
+          "q": "1"
+         }
+        ],
+        "list": true
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.integrals.laplace",
    "src": "laplace_initial_conds(g, t, {y: [2, 4, 8, 16, 32]})",
@@ -145124,7 +145353,19 @@
   },
   {
    "fn": ".as_explicit",
-   "unsupportedArg": "Identity",
+   "self": {
+    "t": "MatExpr",
+    "cls": "Identity",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.expressions.matexpr",
    "src": "I.as_explicit()",
@@ -145132,7 +145373,19 @@
   },
   {
    "fn": ".as_mutable",
-   "unsupportedArg": "Identity",
+   "self": {
+    "t": "MatExpr",
+    "cls": "Identity",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.expressions.matexpr",
    "src": "I.as_mutable()",
@@ -145140,7 +145393,80 @@
   },
   {
    "fn": ".equals",
-   "unsupportedArg": "Identity",
+   "self": {
+    "t": "MatExpr",
+    "cls": "Identity",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     ],
+     "shape": [
+      3,
+      3
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.expressions.matexpr",
    "src": "Identity(3).equals(eye(3))",
@@ -145152,7 +145478,110 @@
     "t": "Type",
     "name": "MatrixExpr"
    },
-   "unsupportedArg": "MatrixElement",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "Sum",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "MatExpr",
+         "cls": "MatrixElement",
+         "args": [
+          {
+           "t": "MatrixSymbol",
+           "name": "A",
+           "rows": {
+            "t": "Symbol",
+            "name": "N",
+            "assume": {}
+           },
+           "cols": {
+            "t": "Symbol",
+            "name": "N",
+            "assume": {}
+           }
+          },
+          {
+           "t": "Symbol",
+           "name": "i",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "j",
+           "assume": {}
+          }
+         ]
+        },
+        {
+         "t": "MatExpr",
+         "cls": "MatrixElement",
+         "args": [
+          {
+           "t": "MatrixSymbol",
+           "name": "B",
+           "rows": {
+            "t": "Symbol",
+            "name": "N",
+            "assume": {}
+           },
+           "cols": {
+            "t": "Symbol",
+            "name": "N",
+            "assume": {}
+           }
+          },
+          {
+           "t": "Symbol",
+           "name": "j",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Symbol",
+         "name": "j",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "N",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.expressions.matexpr",
    "src": "MatrixExpr.from_index_summation(expr)",
@@ -145164,7 +145593,110 @@
     "t": "Type",
     "name": "MatrixExpr"
    },
-   "unsupportedArg": "MatrixElement",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "Sum",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "MatExpr",
+         "cls": "MatrixElement",
+         "args": [
+          {
+           "t": "MatrixSymbol",
+           "name": "A",
+           "rows": {
+            "t": "Symbol",
+            "name": "N",
+            "assume": {}
+           },
+           "cols": {
+            "t": "Symbol",
+            "name": "N",
+            "assume": {}
+           }
+          },
+          {
+           "t": "Symbol",
+           "name": "j",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "i",
+           "assume": {}
+          }
+         ]
+        },
+        {
+         "t": "MatExpr",
+         "cls": "MatrixElement",
+         "args": [
+          {
+           "t": "MatrixSymbol",
+           "name": "B",
+           "rows": {
+            "t": "Symbol",
+            "name": "N",
+            "assume": {}
+           },
+           "cols": {
+            "t": "Symbol",
+            "name": "N",
+            "assume": {}
+           }
+          },
+          {
+           "t": "Symbol",
+           "name": "j",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Symbol",
+         "name": "j",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "N",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.expressions.matexpr",
    "src": "MatrixExpr.from_index_summation(expr)",
@@ -145176,7 +145708,75 @@
     "t": "Type",
     "name": "MatrixExpr"
    },
-   "unsupportedArg": "MatrixElement",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "Sum",
+     "args": [
+      {
+       "t": "MatExpr",
+       "cls": "MatrixElement",
+       "args": [
+        {
+         "t": "MatrixSymbol",
+         "name": "A",
+         "rows": {
+          "t": "Symbol",
+          "name": "N",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "N",
+          "assume": {}
+         }
+        },
+        {
+         "t": "Symbol",
+         "name": "i",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "i",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Symbol",
+         "name": "i",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "N",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.expressions.matexpr",
    "src": "MatrixExpr.from_index_summation(expr)",
@@ -145188,7 +145788,170 @@
     "t": "Type",
     "name": "MatrixExpr"
    },
-   "unsupportedArg": "MatrixElement",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "Sum",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "MatExpr",
+         "cls": "MatrixElement",
+         "args": [
+          {
+           "t": "MatrixSymbol",
+           "name": "A",
+           "rows": {
+            "t": "Symbol",
+            "name": "N",
+            "assume": {}
+           },
+           "cols": {
+            "t": "Symbol",
+            "name": "N",
+            "assume": {}
+           }
+          },
+          {
+           "t": "Symbol",
+           "name": "i",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "j",
+           "assume": {}
+          }
+         ]
+        },
+        {
+         "t": "MatExpr",
+         "cls": "MatrixElement",
+         "args": [
+          {
+           "t": "MatrixSymbol",
+           "name": "A",
+           "rows": {
+            "t": "Symbol",
+            "name": "N",
+            "assume": {}
+           },
+           "cols": {
+            "t": "Symbol",
+            "name": "N",
+            "assume": {}
+           }
+          },
+          {
+           "t": "Symbol",
+           "name": "l",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          }
+         ]
+        },
+        {
+         "t": "MatExpr",
+         "cls": "MatrixElement",
+         "args": [
+          {
+           "t": "MatrixSymbol",
+           "name": "B",
+           "rows": {
+            "t": "Symbol",
+            "name": "N",
+            "assume": {}
+           },
+           "cols": {
+            "t": "Symbol",
+            "name": "N",
+            "assume": {}
+           }
+          },
+          {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "j",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Symbol",
+         "name": "j",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "N",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Symbol",
+         "name": "k",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "N",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.expressions.matexpr",
    "src": "MatrixExpr.from_index_summation(expr)",
@@ -145325,7 +146088,8 @@
   {
    "fn": ".inverse",
    "self": {
-    "t": "MatMul",
+    "t": "MatExpr",
+    "cls": "MatMul",
     "args": [
      {
       "t": "MatrixSymbol",
@@ -145368,7 +146132,8 @@
    "fn": "Inverse",
    "args": [
     {
-     "t": "MatMul",
+     "t": "MatExpr",
+     "cls": "MatMul",
      "args": [
       {
        "t": "MatrixSymbol",
@@ -145433,7 +146198,74 @@
   },
   {
    "fn": ".simplify",
-   "unsupportedArg": "Trace",
+   "self": {
+    "t": "MatExpr",
+    "cls": "Trace",
+    "args": [
+     {
+      "t": "Matrix",
+      "rows": [
+       [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ]
+      ],
+      "shape": [
+       3,
+       3
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.expressions.trace",
    "src": "Trace(eye(3)).simplify()",
@@ -145443,7 +146275,8 @@
    "fn": "trace",
    "args": [
     {
-     "t": "MatMul",
+     "t": "MatExpr",
+     "cls": "MatMul",
      "args": [
       {
        "t": "Rational",
@@ -145569,7 +146402,74 @@
   },
   {
    "fn": ".doit",
-   "unsupportedArg": "Determinant",
+   "self": {
+    "t": "MatExpr",
+    "cls": "Determinant",
+    "args": [
+     {
+      "t": "Matrix",
+      "rows": [
+       [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ]
+      ],
+      "shape": [
+       3,
+       3
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.expressions.determinant",
    "src": "Determinant(eye(3)).doit()",
@@ -145601,7 +146501,74 @@
   },
   {
    "fn": ".doit",
-   "unsupportedArg": "Permanent",
+   "self": {
+    "t": "MatExpr",
+    "cls": "Permanent",
+    "args": [
+     {
+      "t": "Matrix",
+      "rows": [
+       [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ]
+      ],
+      "shape": [
+       3,
+       3
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.expressions.determinant",
    "src": "Permanent(ones(3, 3)).doit()",
@@ -146154,7 +147121,83 @@
   },
   {
    "fn": ".schur",
-   "unsupportedArg": "BlockMatrix",
+   "self": {
+    "t": "MatExpr",
+    "cls": "BlockMatrix",
+    "args": [
+     {
+      "t": "Matrix",
+      "rows": [
+       [
+        {
+         "t": "MatrixSymbol",
+         "name": "A",
+         "rows": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         }
+        },
+        {
+         "t": "MatrixSymbol",
+         "name": "B",
+         "rows": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         }
+        }
+       ],
+       [
+        {
+         "t": "MatrixSymbol",
+         "name": "C",
+         "rows": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         }
+        },
+        {
+         "t": "MatrixSymbol",
+         "name": "D",
+         "rows": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         }
+        }
+       ]
+      ],
+      "shape": [
+       2,
+       2
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.expressions.blockmatrix",
    "src": "X.schur()",
@@ -146162,7 +147205,88 @@
   },
   {
    "fn": ".schur",
-   "unsupportedArg": "BlockMatrix",
+   "self": {
+    "t": "MatExpr",
+    "cls": "BlockMatrix",
+    "args": [
+     {
+      "t": "Matrix",
+      "rows": [
+       [
+        {
+         "t": "MatrixSymbol",
+         "name": "A",
+         "rows": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         }
+        },
+        {
+         "t": "MatrixSymbol",
+         "name": "B",
+         "rows": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         }
+        }
+       ],
+       [
+        {
+         "t": "MatrixSymbol",
+         "name": "C",
+         "rows": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         }
+        },
+        {
+         "t": "MatrixSymbol",
+         "name": "D",
+         "rows": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         }
+        }
+       ]
+      ],
+      "shape": [
+       2,
+       2
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Str",
+     "v": "D"
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.expressions.blockmatrix",
    "src": "X.schur('D')",
@@ -146170,7 +147294,93 @@
   },
   {
    "fn": ".schur",
-   "unsupportedArg": "BlockMatrix",
+   "self": {
+    "t": "MatExpr",
+    "cls": "BlockMatrix",
+    "args": [
+     {
+      "t": "Matrix",
+      "rows": [
+       [
+        {
+         "t": "MatrixSymbol",
+         "name": "A",
+         "rows": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         }
+        },
+        {
+         "t": "MatrixSymbol",
+         "name": "B",
+         "rows": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         }
+        }
+       ],
+       [
+        {
+         "t": "MatrixSymbol",
+         "name": "C",
+         "rows": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         }
+        },
+        {
+         "t": "MatrixSymbol",
+         "name": "D",
+         "rows": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         }
+        }
+       ]
+      ],
+      "shape": [
+       2,
+       2
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Str",
+     "v": "B"
+    }
+   ],
+   "kwargs": {
+    "generalized": {
+     "t": "Js",
+     "v": true
+    }
+   },
    "category": "matrices",
    "module": "sympy.matrices.expressions.blockmatrix",
    "src": "X.schur('B', generalized=True)",
@@ -146178,7 +147388,93 @@
   },
   {
    "fn": ".schur",
-   "unsupportedArg": "BlockMatrix",
+   "self": {
+    "t": "MatExpr",
+    "cls": "BlockMatrix",
+    "args": [
+     {
+      "t": "Matrix",
+      "rows": [
+       [
+        {
+         "t": "MatrixSymbol",
+         "name": "A",
+         "rows": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         }
+        },
+        {
+         "t": "MatrixSymbol",
+         "name": "B",
+         "rows": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         }
+        }
+       ],
+       [
+        {
+         "t": "MatrixSymbol",
+         "name": "C",
+         "rows": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {}
+         }
+        },
+        {
+         "t": "MatrixSymbol",
+         "name": "D",
+         "rows": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         },
+         "cols": {
+          "t": "Symbol",
+          "name": "m",
+          "assume": {}
+         }
+        }
+       ]
+      ],
+      "shape": [
+       2,
+       2
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Str",
+     "v": "C"
+    }
+   ],
+   "kwargs": {
+    "generalized": {
+     "t": "Js",
+     "v": true
+    }
+   },
    "category": "matrices",
    "module": "sympy.matrices.expressions.blockmatrix",
    "src": "X.schur('C', generalized=True)",
@@ -146186,7 +147482,148 @@
   },
   {
    "fn": "ImmutableMatrix",
-   "unsupportedArg": "MatrixSlice",
+   "args": [
+    {
+     "t": "MatExpr",
+     "cls": "MatrixSlice",
+     "args": [
+      {
+       "t": "Matrix",
+       "rows": [
+        [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ],
+        [
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "5",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "6",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "7",
+          "q": "1"
+         }
+        ],
+        [
+         {
+          "t": "Rational",
+          "p": "8",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "9",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "10",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "11",
+          "q": "1"
+         }
+        ],
+        [
+         {
+          "t": "Rational",
+          "p": "12",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "13",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "14",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "15",
+          "q": "1"
+         }
+        ]
+       ],
+       "shape": [
+        4,
+        4
+       ]
+      }
+     ],
+     "slices": [
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "4",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.expressions.blockmatrix",
    "src": "ImmutableMatrix(B.blocks[0, 1])",
@@ -146220,7 +147657,8 @@
    "fn": "Transpose",
    "args": [
     {
-     "t": "MatMul",
+     "t": "MatExpr",
+     "cls": "MatMul",
      "args": [
       {
        "t": "MatrixSymbol",
@@ -146263,7 +147701,8 @@
    "fn": "transpose",
    "args": [
     {
-     "t": "MatMul",
+     "t": "MatExpr",
+     "cls": "MatMul",
      "args": [
       {
        "t": "MatrixSymbol",

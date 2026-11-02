@@ -239,6 +239,10 @@ const REL_OPS: Record<string, sj.RelOp> = {
 const SPECIAL_NAMES = ['bernoulli', 'euler', 'genocchi', 'bell', 'fibonacci', 'lucas', 'tribonacci', 'partition', 'totient', 'reduced_totient', 'mobius', 'divisor_sigma', 'primenu', 'primeomega', 'primepi', 'multigamma', 'factorial', 'factorial2', 'binomial', 'ff', 'rf', 'subfactorial', 'harmonic', 'catalan', 'gamma', 'loggamma', 'polygamma', 'lowergamma', 'uppergamma', 'beta', 'zeta', 'erf', 'erfc', 'erfi', 'erf2', 'erfinv', 'erfcinv', 'erf2inv', 'Ei', 'li', 'Li', 'Si', 'Ci', 'Shi', 'Chi', 'expint', 'fresnels', 'fresnelc', 'sign', 'floor', 'ceiling', 'atan2', 'Min', 'Max'] as const;
 
 const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
+  LaplaceTransform: ([f, t, s]) => new sj.LaplaceTransform(f!, t as Sym, s as Sym),
+  InverseLaplaceTransform: ([F, s, t, plane]) => new sj.InverseLaplaceTransform(F!, s as Sym, t as Sym, plane instanceof sj.Dummy && plane.name === 'None' ? undefined : plane),
+  DiracDelta: ([x, k]) => sj.DiracDelta(x!, k),
+  Heaviside: ([x, h0]) => sj.Heaviside(x!, h0),
   Mod: ([a, b]) => sj.Mod(a!, b!),
   ...Object.fromEntries(SPECIAL_NAMES.map((n) => [n, (args: Expr[]) => sj.fn(n, args)])),
   RisingFactorial: (args) => sj.fn('rf', args),
@@ -468,6 +472,25 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'QKeys':
       return sj.Q;
+    case 'Subs':
+      return sj.Subs(
+        deserialize(tree['expr'] as Tree) as Expr,
+        (tree['vars'] as Tree[]).map((x) => deserialize(x) as Expr) as never,
+        (tree['point'] as Tree[]).map((x) => deserialize(x) as Expr) as never,
+      );
+    case 'MatExpr': {
+      const cls = tree['cls'] as string;
+      const args = (tree['args'] as Tree[]).map((x) => deserialize(x));
+      const lib = sj as unknown as Record<string, (...a: unknown[]) => unknown>;
+      if (cls === 'MatrixSlice') {
+        const sl = (t: Tree[]) => t.map((x) => deserialize(x) as Expr);
+        const [r, c] = tree['slices'] as Tree[][];
+        return sj.MatrixSlice(args[0] as Expr, sl(r!) as never, sl(c!) as never);
+      }
+      const f = lib[cls];
+      if (typeof f !== 'function') throw new Unsupported(`matrix expression ${cls}`);
+      return f(...args);
+    }
     case 'Sieve':
       return new sj.Sieve();
     case 'Permutation':
@@ -2127,7 +2150,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const a = args[0];
     if (a instanceof Matrix) return a;
     if (a instanceof JsTuple && a.items.every((r) => r instanceof JsTuple)) {
-      return Matrix.of(a.items.map((r) => (r as JsTuple).items.map(asExpr)));
+      return Matrix.of(a.items.map((r) => (r as JsTuple).items.map((x) => (x instanceof Matrix ? x : asExpr(x)))));
     }
     if (a instanceof JsTuple) return Matrix.col(...a.items.map(asExpr));
     if (a === undefined) return Matrix.zeros(0, 0);
@@ -2396,6 +2419,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     if (self instanceof Matrix) return (self as Matrix).equals(args[0] as Matrix);
     if (self instanceof sj.BoolOp || self instanceof sj.AppliedPredicate || self instanceof sj.BoolAtom) return none(sj.booleanEquals(self, asExpr(args[0])));
+    if (self instanceof sj.MatrixExpr) return none(self.equalsExplicit(args[0] instanceof Matrix ? sj.ImmutableMatrix(args[0]) : asExpr(args[0])));
     const d = sj.simplify(sj.sub(asExpr(self), asExpr(args[0])));
     return d instanceof sj.Rational && d.isZero ? true : d.isNumber ? false : null;
   },
@@ -3406,6 +3430,7 @@ function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
   if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [toJs(k, numbers, true), toJs(x, numbers, true)]));
   if (v instanceof JsLambda) return (...xs: unknown[]) => v.call(...xs.map((x) => (typeof x === 'number' ? sj.Rational.of(BigInt(x)) : x)) as Expr[]);
   if (v instanceof JsPred) return (e: Expr) => v.test(e);
+  if (v instanceof UFnClass) return sj.Function(v.name);
   return v;
 }
 
@@ -3469,6 +3494,11 @@ function autoAdapter(c: Case): Adapter | undefined {
         thisArg = (self as object).constructor;
         m = (thisArg as Record<string, unknown>)[name];
       }
+      // a classmethod ported as a function (MatrixExpr.from_index_summation -> fromIndexSummation)
+      if (m === undefined && typeof self === 'function' && typeof (sj as unknown as Record<string, unknown>)[name] === 'function') {
+        const g = (sj as unknown as Record<string, (...a: unknown[]) => unknown>)[name]!;
+        return fromJs(g(...placeArgs(g, args, kw, conv)));
+      }
       if (typeof m === 'function') return fromJs((m as (...a: unknown[]) => unknown).call(thisArg, ...placeArgs(m as (...a: unknown[]) => unknown, args, kw, conv)));
       if (m === undefined || args.length) throw new Unsupported(`no adapter for ${c.fn}`);
       return fromJs(m);
@@ -3523,11 +3553,15 @@ export function runCase(c: Case): Outcome {
     const self = c.self ? deserialize(c.self) : undefined;
     const call = (a: Adapter): unknown => (c.assume ? sj.assuming(c.assume.map((t) => deserialize(t) as Expr), () => a(args, kwargs, self)) : a(args, kwargs, self));
     let v: unknown;
+    // matrix expressions (MatMul, Trace, BlockMatrix, ...) use their own methods and constructors
+    const isMatExpr = (x: unknown) => x instanceof sj.MatrixExpr || x instanceof sj.MatScalar;
+    const auto0 = isMatExpr(self) || args.some(isMatExpr) ? autoAdapter(c) : undefined;
     try {
-      v = call(adapter);
+      v = call(auto0 ?? adapter);
     } catch (e) {
       // an adapter written for another owner of the same method name (Poly.add, ...): try the generic one
-      const auto = adapter === ADAPTERS[c.fn] ? autoAdapter(c) : undefined;
+      // (or the adapter, when the generic one was tried first for a matrix expression)
+      const auto = auto0 ? adapter : adapter === ADAPTERS[c.fn] ? autoAdapter(c) : undefined;
       if (!auto || !(e instanceof Unsupported || e instanceof TypeError)) throw e;
       v = call(auto);
     }

@@ -2237,8 +2237,10 @@ export type MatrixElement = MatrixElementNode;
  */
 export const ImmutableMatrix = /* @__PURE__ */ callableClass(
   ImmutableMatrixNode,
-  (a: Matrix | readonly (readonly ExprLike[])[] | number, cols?: number, entries?: readonly ExprLike[] | ((i: number, j: number) => ExprLike)): ImmutableMatrixNode => {
+  (a: Matrix | MatrixExpr | readonly (readonly ExprLike[])[] | number, cols?: number, entries?: readonly ExprLike[] | ((i: number, j: number) => ExprLike)): ImmutableMatrixNode => {
     if (a instanceof Matrix) return new ImmutableMatrixNode(a);
+    // the explicit matrix of a matrix expression of known shape
+    if (a instanceof MatrixExpr) return new ImmutableMatrixNode(a.asExplicit());
     if (typeof a === 'number') {
       const c = cols ?? 0;
       const f = typeof entries === 'function' ? entries : (i: number, j: number): ExprLike => entries?.[i * c + j] ?? 0;
