@@ -13,6 +13,8 @@ import * as F from '../numeric/mpf';
 import * as M from '../numeric/mpfun';
 import type { Mpc } from '../numeric/mpfun';
 import { Poly } from './sympoly';
+import { evalAdaptive } from '../numeric/mpeval';
+import { freeSymbols } from '../core/traverse';
 
 type C = { re: number; im: number };
 const cm = (a: C, b: C): C => ({ re: a.re * b.re - a.im * b.im, im: a.re * b.im + a.im * b.re });
@@ -22,11 +24,11 @@ const cdv = (a: C, b: C): C => {
   return { re: (a.re * b.re + a.im * b.im) / d, im: (a.im * b.re - a.re * b.im) / d };
 };
 
-function durandKerner(coeffs: number[]): C[] {
+function durandKerner(coeffs: C[]): C[] {
   const n = coeffs.length - 1;
   const lc = coeffs[0]!;
-  const a = coeffs.map((c) => c / lc);
-  const evalP = (z: C): C => a.reduce<C>((acc, c) => ({ re: acc.re * z.re - acc.im * z.im + c, im: acc.re * z.im + acc.im * z.re }), { re: 0, im: 0 });
+  const a = coeffs.map((c) => cdv(c, lc));
+  const evalP = (z: C): C => a.reduce<C>((acc, c) => ({ re: acc.re * z.re - acc.im * z.im + c.re, im: acc.re * z.im + acc.im * z.re + c.im }), { re: 0, im: 0 });
   let z: C[] = Array.from({ length: n }, (_, k) => {
     const r = 0.4;
     const t = 0.9;
@@ -51,9 +53,9 @@ function durandKerner(coeffs: number[]): C[] {
 }
 
 /** Newton refinement of a root at the given binary precision. */
-function refine(coeffs: Rational[], z0: C, prec: number): Mpc {
+function refine(coeffs: Expr[], z0: C, prec: number): Mpc {
   const wp = prec + 30;
-  const cf: Mpc[] = coeffs.map((c) => [F.fromRational(c.p, c.q, wp), F.ZERO]);
+  const cf: Mpc[] = coeffs.map((c) => (c instanceof Rational ? [F.fromRational(c.p, c.q, wp), F.ZERO] : evalAdaptive(c, wp, () => undefined)));
   const dcf: Mpc[] = cf.slice(0, -1).map((c, i) => M.cmul(c, [F.fromInt(BigInt(cf.length - 1 - i)), F.ZERO], wp));
   const horner = (cs0: Mpc[], z: Mpc): Mpc => cs0.reduce<Mpc>((acc, c) => M.cadd(M.cmul(acc, z, wp), c, wp), M.C0);
   let z: Mpc = [F.fromNumber(z0.re), F.fromNumber(z0.im)];
@@ -70,13 +72,16 @@ function refine(coeffs: Rational[], z0: C, prec: number): Mpc {
 
 /** Numerical roots to n digits. */
 export function nroots(fIn: ExprLike | Poly, n = 15, x?: Sym): Expr[] {
-  const p = fIn instanceof Poly ? fIn : Poly.from(sympify(fIn), x ? [x] : undefined);
+  let p = fIn instanceof Poly ? fIn : Poly.from(sympify(fIn), x ? [x] : undefined);
+  // numeric generators such as sqrt(2) belong to the coefficients
+  const syms = p.gens.filter((g) => freeSymbols(g).size > 0);
+  if (syms.length === 1 && p.gens.length > 1) p = Poly.from(p.asExpr(), syms);
   const coeffs = p.allCoeffs().map((c) => {
-    if (!(c instanceof Rational)) throw new Error('nroots: rational coefficients expected');
+    if (!(c instanceof Rational) && freeSymbols(c).size > 0) throw new Error('nroots: numeric coefficients expected');
     return c;
   });
   const prec = F.dpsToPrec(n);
-  const approx = durandKerner(coeffs.map((c) => c.value));
+  const approx = durandKerner(coeffs.map((c) => (c instanceof Rational ? { re: c.value, im: 0 } : c.toComplex())));
   const roots = approx.map((z) => refine(coeffs, z, prec));
   const tol = -prec + 4;
   const items = roots.map((r) => {

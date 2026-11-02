@@ -897,6 +897,24 @@ export const ADAPTERS: Record<string, Adapter> = {
     const r = ps.reduce((a, b) => a.lcm(b));
     return asPolys ? r : r.asExpr();
   },
+  viete: (args, kw) => {
+    noKw(kw);
+    const f = asExprOrPoly(args[0]);
+    const x = args[2] ? asSym(args[2]) : (sj.sortGens([...sj.freeSymbols(f)])[0] as Sym);
+    const p = sj.Poly.from(f, [x]);
+    const n = p.degree();
+    const rs = args[1] ? (args[1] as PyTuple).items.map(asExpr) : Array.from({ length: n }, (_, i) => new Sym(`r${i + 1}`));
+    const cs = p.allCoeffs();
+    const lc = cs[0]!;
+    const out: PyTuple[] = [];
+    // elementary symmetric polynomials of the roots
+    const choose = (k: number, start: number): Expr[][] => (k === 0 ? [[]] : rs.slice(start).flatMap((r, i) => choose(k - 1, start + i + 1).map((c) => [r, ...c])));
+    for (let k = 1; k <= n; k++) {
+      const sym = sj.add(...choose(k, 0).map((c) => sj.mul(...c)));
+      out.push(new PyTuple([sym, sj.mul(k % 2 ? -1 : 1, cs[k]!, sj.pow(lc, -1))]));
+    }
+    return new PyList(out);
+  },
   poly: (args, kw) => (noKw(kw), sj.Poly.from(asExprOrPoly(args[0]), args.slice(1).map(asExpr))),
   pquo: (args, kw) => {
     noKw(kw);
@@ -1127,6 +1145,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   roots: (args, kw) => {
     noKw(kw);
+    if (args[0] instanceof PyTuple) {
+      // a list of coefficients
+      const cs = args[0].items.map(asExpr);
+      const t = new Sym('x');
+      return rootsDict(sj.roots(sj.add(...cs.map((c, i) => sj.mul(c, sj.pow(t, cs.length - 1 - i)))), t, { skipQuintic: true }));
+    }
     const e = asExprOrPoly(args[0]);
     const syms = [...sj.freeSymbols(e)];
     const x = args[1] ? asSym(args[1]) : args[0] instanceof sj.Poly ? (args[0].gens[0] as Sym) : syms.length === 1 ? syms[0]! : undefined;
@@ -1635,9 +1659,9 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   total_degree: (args, kw) => {
     noKw(kw);
-    const e = asExprOrPoly(args[0]);
     const gens = args.slice(1).map(asExpr);
-    return sj.Poly.from(e, gens).totalDegree();
+    if (args[0] instanceof sj.Poly && !gens.length) return args[0].totalDegree();
+    return sj.Poly.from(asExprOrPoly(args[0]), gens).totalDegree();
   },
   LC: (args, kw) => (noKw(kw), polyOf(args).LC()),
   LM: (args, kw) => (noKw(kw), polyOf(args).LM()),
@@ -1685,9 +1709,15 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   interpolate: (args, kw) => {
     noKw(kw);
-    const data = args[0] as PyTuple;
-    const pts = data.items.map((d) => (d instanceof PyTuple ? ([asExpr(d.items[0]), asExpr(d.items[1])] as const) : asExpr(d)));
-    return sj.interpolate(pts as never, asSym(args[1]));
+    const data = args[0];
+    const pts =
+      data instanceof PyDict
+        ? data.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const)
+        : (data as PyTuple).items.map((d) => (d instanceof PyTuple ? ([asExpr(d.items[0]), asExpr(d.items[1])] as const) : asExpr(d)));
+    const at = asExpr(args[1]);
+    if (at instanceof Sym) return sj.interpolate(pts as never, at);
+    const t = new sj.Dummy('x');
+    return sj.xreplace(sj.interpolate(pts as never, t), [[t, at]]);
   },
   resultant: (args, kw) => {
     noKw(kw);

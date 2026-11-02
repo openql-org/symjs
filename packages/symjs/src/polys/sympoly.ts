@@ -718,15 +718,25 @@ export class Poly {
   }
   /** Rational roots with multiplicities (SymPy ground_roots). */
   groundRoots(): [Expr, number][] {
+    const x = this.gens[0]!;
+    const full = Poly.from(this.asExpr());
+    if (this.gens.length === 1 && full.gens.length > 1 && full.gens.every((g) => g instanceof Sym)) {
+      // symbolic coefficients: factor over all generators, keep factors linear in x
+      const [, ffs] = full.factorList();
+      const out: [Expr, number][] = [];
+      for (const [f, k] of ffs) {
+        const fx = Poly.from(f.asExpr(), [x]);
+        if (fx.degree() === 1) out.push([cancel(mul(-1, fx.TC(), pow(fx.LC(), -1))), k]);
+      }
+      return out;
+    }
     const [, fs] = this.factorList();
     const out: [Expr, number][] = [];
     for (const [f, k] of fs) {
       if (f.degree() === 1) out.push([mul(-1, f.TC(), pow(f.LC(), -1)), k]);
     }
-    const x = this.gens[0]!;
     const [m] = this.termsGcd();
     if (m[0]! > 0 && !out.some(([r]) => r instanceof Rational && r.isZero)) out.push([S.Zero, m[0]!]);
-    void x;
     return out;
   }
   /** Series reversion: g with f*g = 1 mod x**n. */
