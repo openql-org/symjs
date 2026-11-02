@@ -405,6 +405,7 @@ export {
   minimum,
   asExprSetPairs,
   notEmptyIn,
+  piecewiseExclusive,
 } from './solvers/inequalities';
 export {
   bernoulli,
@@ -431,6 +432,6 @@ export {
   motzkinNumbersInRange,
   isMotzkin,
 } from './functions/combinatorial';
-export { expPolar, polarLift, periodicArgument, principalBranch, unbranchedArgument, unpolarify, extractBranchFactor } from './functions/polar';
+export { polarify, expPolar, polarLift, periodicArgument, principalBranch, unbranchedArgument, unpolarify, extractBranchFactor } from './functions/polar';
 export { factorSystem, factorSystemCond, solvePolySystem } from './solvers/polysys';
 export { rsolve, rsolveHyper, rsolvePoly, rsolveRatio } from './solvers/recurr';

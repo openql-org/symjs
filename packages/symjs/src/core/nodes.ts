@@ -76,6 +76,8 @@ export interface Assumptions {
   readonly nonpositive?: boolean;
   /** false for non-commutative symbols (operators). */
   readonly commutative?: boolean;
+  /** a point on the Riemann surface of the logarithm (SymPy polar=True). */
+  readonly polar?: boolean;
 }
 
 /** Function names known to the library. */
@@ -505,6 +507,7 @@ export class Sym extends Expr {
     if (nonpositive) a.nonpositive = true;
     if (integer) a.integer = true;
     if (assumptions.commutative === false) a.commutative = false;
+    if (assumptions.polar === true) a.polar = true;
     this.assumptions = Object.freeze(a);
   }
 
@@ -519,7 +522,7 @@ export class Sym extends Expr {
 
   protected computeKey(): string {
     const a = this.assumptions;
-    const flags = `${a.real ? 'r' : ''}${a.nonnegative ? 'n' : ''}${a.positive ? 'p' : ''}${a.integer ? 'i' : ''}${a.negative ? 'N' : ''}${a.nonpositive ? 'P' : ''}${a.commutative === false ? 'c' : ''}`;
+    const flags = `${a.real ? 'r' : ''}${a.nonnegative ? 'n' : ''}${a.positive ? 'p' : ''}${a.integer ? 'i' : ''}${a.negative ? 'N' : ''}${a.nonpositive ? 'P' : ''}${a.commutative === false ? 'c' : ''}${a.polar ? 'o' : ''}`;
     return flags ? `$${this.name}[${flags}]` : `$${this.name}`;
   }
 }

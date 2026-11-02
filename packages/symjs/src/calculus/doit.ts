@@ -8,7 +8,7 @@
 
 import { Derivative, Expr, ExprLike, Integral, Limit, Sym } from '../core/nodes';
 import { sympify } from '../core/ops';
-import { rebuild } from '../core/traverse';
+import { rebuild, xreplace } from '../core/traverse';
 import { Concrete, doitConcrete } from '../concrete/summations';
 import { integrate } from '../integrals/integrate';
 import { limit } from '../series/limits';
@@ -20,6 +20,8 @@ export function doit(ex: ExprLike): Expr {
     const y = x.args.length ? rebuild(x, x.args.map(go)) : x;
     if (y instanceof Integral) {
       const [f, v, a, b] = y.args;
+      // (x, b): the antiderivative at b
+      if (a && !b) return xreplace(integrate(f!, v as Sym), [[v!, a]]);
       return a && b ? integrate(f!, v as Sym, [a, b]) : integrate(f!, v as Sym);
     }
     if (y instanceof Limit) return limit(y.args[0]!, y.args[1] as Sym, y.args[2]!, y.dir);

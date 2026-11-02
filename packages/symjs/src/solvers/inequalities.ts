@@ -8,7 +8,7 @@
  * convexity, periodicity).
  */
 
-import { Add, Constant, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, RelOp, S, Special, Sym, impl } from '../core/nodes';
+import { Add, Constant, Dummy, Expr, ExprLike, Fn, Mul, Piecewise, Pow, Rational, Rel, RelOp, S, Special, Sym, impl } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { and, or as orB } from '../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne } from '../core/logic';
@@ -649,6 +649,51 @@ export function asExprSetPairs(p: Expr, domain: SetExpr = Reals): [Expr, SetExpr
     remaining = complement(remaining, s);
   }
   return out;
+}
+
+/** A relational for a set of reals in x, written like SymPy's simplified conditions. */
+function setToCondition(st: SetExpr, x: Sym): Expr {
+  if (st === EmptySet) return S.false;
+  if (st === Reals) return S.true;
+  if (st instanceof FiniteSet && st.args.length === 1) return Eq(x, st.args[0]!);
+  if (st instanceof Interval) {
+    const lo = st.start instanceof Special ? undefined : st.leftOpen ? Gt(x, st.start) : Ge(x, st.start);
+    const hi = st.end instanceof Special ? undefined : st.rightOpen ? Lt(x, st.end) : Le(x, st.end);
+    if (lo && hi) return and(lo, hi);
+    return lo ?? hi ?? S.true;
+  }
+  if (st.className === 'Union') return orB(...(st.args as SetExpr[]).map((a) => setToCondition(a, x)).reverse());
+  return asRelational(st, x);
+}
+
+/** SymPy piecewise_exclusive: make the conditions of a Piecewise mutually exclusive. */
+export function piecewiseExclusive(p: Expr, opts: { skipNan?: boolean } = {}): Expr {
+  const pairs = (p as unknown as { pairs: [Expr, Expr][] }).pairs;
+  const syms = new Map<string, Sym>();
+  for (const [, c] of pairs) for (const t of c.freeSymbols()) syms.set(t.key, t);
+  if (syms.size !== 1) throw new Error('piecewise_exclusive: univariate conditions expected');
+  const x = [...syms.values()][0]!;
+  const condSet = (c: Expr): SetExpr => {
+    if (c.kind === 'Bool') return (c as unknown as { value: boolean }).value ? Reals : EmptySet;
+    if (c.kind === 'BoolOp') {
+      const op = (c as unknown as { op: string }).op;
+      const parts = c.args.map(condSet);
+      if (op === 'And') return parts.reduce((a, b) => intersection(a, b));
+      if (op === 'Or') return parts.reduce((a, b) => union(a, b));
+      return complement(Reals, parts[0]!);
+    }
+    return solveSign(add((c as Rel).lhs, mul(-1, (c as Rel).rhs)), (c as Rel).op, x, Reals);
+  };
+  let covered: SetExpr = EmptySet;
+  const out: Expr[] = [];
+  pairs.forEach(([e, c], i) => {
+    const sc = condSet(c);
+    const own = complement(sc, covered);
+    out.push(e, i === 0 ? c : setToCondition(own, x));
+    covered = union(covered, sc);
+  });
+  if (!opts.skipNan && covered !== Reals) out.push(S.NaN, setToCondition(complement(Reals, covered), x));
+  return new Piecewise(out);
 }
 
 /**

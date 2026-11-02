@@ -246,3 +246,31 @@ describe('large binomial coefficients', () => {
     expect(String(binomial(10n ** 18n as unknown as number, 10n ** 12n as unknown as number))).toBe('binomial(1000000000000000000, 1000000000000)');
   });
 });
+
+import { Expr, Gt, Integral, Le, Lt, doit as doitE, expand, freeSymbols, piecewise, piecewiseExclusive, polarLift, polarify } from '../src';
+
+describe('piecewise_exclusive, upper-limit integrals and polarify (SymPy)', () => {
+  it('piecewise_exclusive', () => {
+    expect(String(piecewiseExclusive(piecewise([0, Lt(x, 0)], [Rational.of(1, 2), Le(x, 0)], [1, true])))).toBe(
+      'Piecewise((0, x < 0), (1/2, Eq(x, 0)), (1, x > 0))',
+    );
+    expect(String(piecewiseExclusive(piecewise([2, Gt(x, 1)])))).toBe('Piecewise((2, x > 1), (nan, x <= 1))');
+    expect(String(piecewiseExclusive(piecewise([2, Gt(x, 1)]), { skipNan: true }))).toBe('Piecewise((2, x > 1))');
+  });
+  it('Integral(f, (x, b))', () => {
+    const [y] = symbols('y');
+    const i = new Integral([mul(x, y), x, y]);
+    expect(String(i)).toBe('Integral(x*y, (x, y))');
+    expect([...freeSymbols(i)].map(String)).toEqual(['y']);
+    expect(String(doitE(i))).toBe('y**3/2');
+  });
+  it('polarify', () => {
+    const [y] = symbols('y');
+    const [e, reps] = polarify(pow(mul(-1, x), y)) as [Expr, [Expr, Expr][]];
+    expect(String(e)).toBe('(_x*exp_polar(I*pi))**_y');
+    expect(reps.map(([a, b]) => `${a}: ${b}`)).toEqual(['_x: x', '_y: y']);
+    expect(String(expand(e))).toBe('_x**_y*exp_polar(_y*I*pi)');
+    expect(String(polarify(parse('x*(1 + y)'), { lift: true }))).toBe('polar_lift(x)*polar_lift(y + 1)');
+    expect(String(polarLift(mul(4, new Sym('p', { polar: true }))))).toBe('4*p');
+  });
+});

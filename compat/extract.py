@@ -97,7 +97,7 @@ MODULES = {
     "sympy.functions.special.error_functions": "special",
 }
 
-ASSUMPTION_KEYS = ["real", "positive", "negative", "nonnegative", "nonpositive", "integer", "commutative"]
+ASSUMPTION_KEYS = ["real", "positive", "negative", "nonnegative", "nonpositive", "integer", "commutative", "polar"]
 
 
 DUMMY_IDS = {}

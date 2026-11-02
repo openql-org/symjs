@@ -9,10 +9,10 @@
  */
 
 import { isPositive } from '../core/assumptions';
-import { Add, Expr, ExprLike, Fn, FnName, Mul, Pow, Rational, S, Special, Sym } from '../core/nodes';
+import { Add, Constant, Dummy, Expr, ExprLike, Fn, FnName, Mul, Pow, Rational, S, Special, Sym } from '../core/nodes';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { asCoefficient } from '../core/methods';
-import { rebuild } from '../core/traverse';
+import { rebuild, xreplace } from '../core/traverse';
 import { fnPartials } from '../calculus/diff';
 import { mpFns } from '../numeric/mpeval';
 import { numericFns } from '../numeric/evalf';
@@ -29,7 +29,13 @@ export const unbranchedArgument = (z: ExprLike): Expr => periodicArgument(z, S.I
 const ipi = () => mul(S.Pi, S.I);
 const isFnN = (e: Expr, name: string): e is Fn => e instanceof Fn && e.name === name;
 const isOo = (e: Expr) => e instanceof Special && e.name === 'oo';
-const isPolar = (e: Expr): boolean => isFnN(e, 'exp_polar') || isFnN(e, 'polar_lift') || isFnN(e, 'principal_branch');
+export const isPolar = (e: Expr): boolean =>
+  isFnN(e, 'exp_polar') ||
+  isFnN(e, 'polar_lift') ||
+  isFnN(e, 'principal_branch') ||
+  (e instanceof Sym && e.assumptions.polar === true) ||
+  (e instanceof Mul && e.args.every((a) => isPolar(a) || (a instanceof Rational && a.isPositive))) ||
+  (e instanceof Pow && isPolar(e.base) && e.exp.freeSymbols().size === 0);
 
 /** SymPy Expr.extract_branch_factor: (rest, n) with the exp_polar argument reduced by 2*pi*I*n. */
 export function extractBranchFactor(eIn: ExprLike, allowHalf = false): [Expr, Expr] {
@@ -259,3 +265,34 @@ evaluators.expint = (nu, z) => {
   }
   return add(mul(add(exp(mul(2, S.I, S.Pi, nu, n)), -1), pow(nz, add(nu, -1)), gamma(add(1, mul(-1, nu)))), expint(nu, nz));
 };
+
+
+/** SymPy _polarify. */
+function polarifyInner(eq: Expr, lift: boolean, pause = false): Expr {
+  if (isPolar(eq)) return eq;
+  if (eq.freeSymbols().size === 0 && !pause && !(eq instanceof Special)) return polarLift(eq);
+  if (eq instanceof Sym && !pause && lift) return polarLift(eq);
+  if (eq.args.length === 0) return eq;
+  if (eq instanceof Add) {
+    const r = add(...eq.args.map((a) => polarifyInner(a, lift, true)));
+    return lift ? polarLift(r) : r;
+  }
+  if (eq instanceof Pow && eq.base instanceof Constant && eq.base.name === 'E') return exp(polarifyInner(eq.exp, lift, false));
+  if (eq instanceof Fn) return fn(eq.name, eq.args.map((a) => polarifyInner(a, lift, false)));
+  return rebuild(eq, eq.args.map((a) => polarifyInner(a, lift, pause)));
+}
+
+/**
+ * SymPy polarify: numbers become polar numbers (exp_polar) and, with subs,
+ * the symbols are replaced by polar dummies; returns [expr, reps] in that
+ * case (reps maps each dummy back to its symbol).
+ */
+export function polarify(ex: ExprLike, opts: { subs?: boolean; lift?: boolean } = {}): Expr | [Expr, [Expr, Expr][]] {
+  const lift = opts.lift ?? false;
+  const subs = lift ? false : (opts.subs ?? true);
+  const eq = polarifyInner(sympify(ex), lift);
+  if (!subs) return eq;
+  const syms = [...eq.freeSymbols()].sort((a, b) => (a.name < b.name ? -1 : 1));
+  const reps = syms.map((s) => [s, new Dummy(s.name, { ...s.assumptions, polar: true })] as [Expr, Expr]);
+  return [xreplace(eq, reps), reps.map(([s, d]) => [d, s] as [Expr, Expr])];
+}

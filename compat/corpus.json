@@ -33570,7 +33570,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_877",
+         "name": "Dummy_875",
          "index": 0,
          "assume": {
           "real": true
@@ -34178,7 +34178,9 @@
       {
        "t": "Symbol",
        "name": "p",
-       "assume": {}
+       "assume": {
+        "polar": true
+       }
       }
      ]
     }
@@ -34270,7 +34272,9 @@
         "t": "Dummy",
         "name": "x",
         "index": 0,
-        "assume": {}
+        "assume": {
+         "polar": true
+        }
        },
        {
         "t": "Fn",
@@ -34297,7 +34301,9 @@
       "t": "Dummy",
       "name": "y",
       "index": 1,
-      "assume": {}
+      "assume": {
+       "polar": true
+      }
      }
     ]
    },
@@ -52449,7 +52455,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x106c8a050>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x109a4b6a0>, 3)"
   },
   {
    "fn": ".LC",
@@ -52656,7 +52662,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x108111d20>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x109ca46a0>, 4)"
   },
   {
    "fn": ".TC",

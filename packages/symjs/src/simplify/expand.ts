@@ -6,7 +6,7 @@
  */
 
 import { isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../core/assumptions';
-import { Add, Constant, Expr, ExprLike, Fn, Mul, Pow, Rational, S, impl, isNum } from '../core/nodes';
+import { Add, Constant, Expr, ExprLike, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { cos, cosh, im, log, re, sin, sinh, tan } from '../functions/elementary';
 import { rebuild } from '../core/traverse';
@@ -118,15 +118,17 @@ function powerBase(e: Expr, force: boolean): Expr {
   if (!(b instanceof Mul)) return e;
   if (x instanceof Rational && x.isInteger) return mul(...b.args.map((f) => pow(f, x)));
   if (force) return mul(...b.args.map((f) => pow(f, x)));
-  // factors known to be nonnegative (or I) can be split off
+  // factors known to be nonnegative or polar (SymPy polar=True, exp_polar) can be split off
+  const polar = (f: Expr) => (f instanceof Fn && f.name === 'exp_polar') || (f instanceof Sym && f.assumptions.polar === true);
   const nonneg: Expr[] = [];
   const other: Expr[] = [];
   for (const f of b.args) {
-    if (isNonNegative(f) === true) nonneg.push(f);
+    if (isNonNegative(f) === true || polar(f)) nonneg.push(f);
     else other.push(f);
   }
   if (nonneg.length === 0) return e;
-  const parts = nonneg.map((f) => pow(f, x));
+  // exp_polar(c)**y = exp_polar(c*y)
+  const parts = nonneg.map((f) => (f instanceof Fn && f.name === 'exp_polar' ? new Fn('exp_polar', [mul(f.args[0]!, x)]) : pow(f, x)));
   if (other.length === 1) parts.push(pow(other[0]!, x));
   else if (other.length > 1) parts.push(new Pow(new Mul(other), x));
   return mul(...parts);

@@ -188,6 +188,7 @@ function strInner(e: Expr): string {
   if (e instanceof Integral) {
     const lim = e.limits;
     const v = str(e.variable);
+    if (e.args.length === 3) return `Integral(${str(e.integrand)}, (${v}, ${str(e.args[2]!)}))`;
     return `Integral(${str(e.integrand)}, ${lim ? `(${v}, ${str(lim[0])}, ${str(lim[1])})` : v})`;
   }
   return e.key;

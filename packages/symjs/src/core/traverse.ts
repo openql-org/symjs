@@ -203,7 +203,7 @@ function splitAddCoeff(e: Expr): [Expr, Expr] {
 
 /** Variables bound by a definite Integral or a Sum/Product (SymPy bound_symbols). */
 export function boundSymbols(e: Expr): Expr[] {
-  if (e instanceof Integral && e.args.length === 4) return [e.args[1]!];
+  if (e instanceof Integral && e.args.length >= 3) return [e.args[1]!];
   if (e instanceof Concrete) return e.limits.map(([k]) => k);
   return [];
 }
@@ -215,10 +215,10 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
   const bound = boundSymbols(e);
   if (bound.length && bound.some((b) => old.key === b.key)) {
     if (e instanceof Integral) {
-      const [f, v, a, b] = e.args as [Expr, Expr, Expr, Expr];
-      const a2 = subsOne(a, old, nw);
-      const b2 = subsOne(b, old, nw);
-      return a2 === a && b2 === b ? e : rebuild(e, [f, v, a2, b2]);
+      // only the limits are substituted ((x, b) or (x, a, b))
+      const lims = e.args.slice(2);
+      const lims2 = lims.map((l) => subsOne(l, old, nw));
+      return lims2.every((l, i) => l === lims[i]) ? e : rebuild(e, [e.args[0]!, e.args[1]!, ...lims2]);
     }
     const args = e.args.map((a, i) => (i === 0 || (i - 1) % 3 === 0 ? a : subsOne(a, old, nw)));
     return args.some((a, i) => a !== e.args[i]) ? rebuild(e, args) : e;
@@ -260,12 +260,11 @@ export function freeSymbols(e: Expr): Set<Sym> {
   const out = new Map<string, Sym>();
   const go = (x: Expr) => {
     if (x instanceof Sym) out.set(x.key, x);
-    else if (x instanceof Integral && x.args.length === 4) {
-      // the integration variable of a definite integral is bound
+    else if (x instanceof Integral && x.args.length >= 3) {
+      // the integration variable of a definite integral (or one with an upper limit) is bound
       const v = x.args[1]!;
       for (const s of freeSymbols(x.args[0]!)) if (s.key !== v.key) out.set(s.key, s);
-      go(x.args[2]!);
-      go(x.args[3]!);
+      x.args.slice(2).forEach(go);
     } else if (x instanceof Concrete) {
       // bound summation variables are not free
       const bound = new Set(x.limits.map(([k]) => k.key));

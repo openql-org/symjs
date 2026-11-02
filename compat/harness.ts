@@ -215,6 +215,7 @@ function integralNode(args: unknown[]): Expr {
   if (lim instanceof Sym) return new Integral([f as Expr, lim]);
   if (lim instanceof PyTuple && lim.items.length === 3) return new Integral([f as Expr, ...(lim.items as Expr[])]);
   if (lim instanceof PyTuple && lim.items.length === 1) return new Integral([f as Expr, lim.items[0] as Expr]);
+  if (lim instanceof PyTuple && lim.items.length === 2 && args.length === 2) return new Integral([f as Expr, ...(lim.items as Expr[])]);
   throw new Unsupported('Integral limits');
 }
 
@@ -264,7 +265,7 @@ export function deserialize(tree: Tree): unknown {
     case 'Symbol': {
       const a = tree['assume'] as Record<string, boolean>;
       for (const k of Object.keys(a)) {
-        if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive', 'commutative'].includes(k)) throw new Unsupported(`assumption ${k}`);
+        if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive', 'commutative', 'polar'].includes(k)) throw new Unsupported(`assumption ${k}`);
       }
       return new Sym(tree['name'] as string, a);
     }
@@ -1312,6 +1313,15 @@ export const ADAPTERS: Record<string, Adapter> = {
   trigsimp: exprFn(sj.trigsimp),
   exptrigsimp: exprFn(sj.exptrigsimp),
   besselsimp: exprFn(sj.besselsimp),
+  polarify: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'lift' && k !== 'subs') throw new Unsupported(`kwargs ${k}`);
+    const r = sj.polarify(asExpr(args[0]), { lift: kw['lift'] === undefined ? undefined : Boolean(kw['lift']), subs: kw['subs'] === undefined ? undefined : Boolean(kw['subs']) });
+    return Array.isArray(r) ? new PyTuple([r[0], new PyDict(r[1])]) : r;
+  },
+  piecewise_exclusive: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'skip_nan') throw new Unsupported(`kwargs ${k}`);
+    return sj.piecewiseExclusive(asExpr(args[0]), { skipNan: Boolean(kw['skip_nan']) });
+  },
   Id: exprFn((e) => e),
   intervals: (args, kw) => intervalsAdapter(polyOf(args), kw),
   '.intervals': (_a, kw, self) => intervalsAdapter(asPoly(self), kw),
@@ -1367,7 +1377,13 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.as_dummy': (_args, kw, self) => {
     noKw(kw);
     if (self instanceof Sym && !(self instanceof sj.Dummy)) return new sj.Dummy(self.name, self.assumptions);
-    if (self instanceof sj.Integral && !self.limits) return self;
+    if (self instanceof sj.Integral && self.args.length === 2) return self;
+    if (self instanceof sj.Integral) {
+      // bound variable replaced by a Dummy named 0 (SymPy as_dummy)
+      const d = new sj.Dummy('0');
+      const v = self.args[1]!;
+      return new sj.Integral([sj.xreplace(self.args[0]!, [[v, d]]), d, ...self.args.slice(2)]);
+    }
     throw new Unsupported('as_dummy');
   },
   LambertW: (args, kw) => (noKw(kw), sj.LambertW(asExpr(args[0]), args[1] === undefined ? undefined : asExpr(args[1]))),
