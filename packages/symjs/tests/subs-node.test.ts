@@ -411,6 +411,6 @@ describe('minimal polynomials, line integrals and ITE conditions', () => {
     const C = new Curve([parse('exp(t) + 1'), parse('exp(t) - 1')], [t, Rational.of(0), parse('log(2)')]);
     expect(sstr(lineIntegrate(parse('x + y'), C, [x, y]))).toBe('3*sqrt(2)');
     const cond = Piecewise([Gt(y, 2), Lt(x, 0)], [Gt(y, 3), true]);
-    expect(sstr(Piecewise([1, cond as never]))).toBe('Piecewise((1, ITE(x < 0, 2 < y, 3 < y)))');
+    expect(sstr(Piecewise([1, cond as never]))).toBe('Piecewise((1, ITE(x < 0, y > 2, y > 3)))');
   });
 });

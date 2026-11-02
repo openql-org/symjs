@@ -61,7 +61,10 @@ export function piecewise(...pairs: readonly (readonly [ExprLike, ExprLike | boo
     let c = typeof c0 === 'boolean' ? (c0 ? S.true : S.false) : sympify(c0);
     // a boolean Piecewise as a condition is the if-then-else ITE(c1, a, b) (SymPy rewrite(ITE))
     if (c instanceof Piecewise && c.args.length === 4 && isTrue(c.args[3]!) && isBoolean(c.args[0]!) && isBoolean(c.args[2]!)) {
-      c = new BoolOp('ITE', [c.args[1]!, c.args[0]!, c.args[2]!]);
+      // the relations are canonical (a number on the right: 2 < y -> y > 2)
+      const flip: Record<string, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
+      const canon = (r: Expr): Expr => (r instanceof Rel && isNum(r.lhs) && !isNum(r.rhs) ? new Rel(flip[r.op]!, r.rhs, r.lhs) : r);
+      c = new BoolOp('ITE', [canon(c.args[1]!), canon(c.args[0]!), canon(c.args[2]!)]);
     }
     if (isFalse(c)) continue;
     out.push(sympify(e), c);
