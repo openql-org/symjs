@@ -8,6 +8,7 @@
  * grouping) and particular solutions by undetermined coefficients.
  */
 
+import { NotImplementedError } from '../core/errors';
 import { dsolveSystem } from './odesystem';
 import { SubsNode } from '../core/subsnode';
 import { Add, Derivative, Dummy, Expr, ExprLike, Fn, Mul, Pow, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
@@ -307,7 +308,7 @@ export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonl
       return out.length === 1 ? out[0]! : out;
     }
   }
-  if (sol === undefined) throw new Error('dsolve: unsupported equation');
+  if (sol === undefined) throw new NotImplementedError('dsolve: unsupported equation');
   let result = sol;
   if (opts.ics && opts.ics.length) result = applyIcs(result, fx, x, opts.ics);
   return Eq(fx, result);

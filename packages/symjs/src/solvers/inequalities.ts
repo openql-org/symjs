@@ -8,6 +8,7 @@
  * convexity, periodicity).
  */
 
+import { NotImplementedError } from '../core/errors';
 import { Add, Constant, Dummy, Expr, ExprLike, Fn, Mul, Piecewise, Pow, Rational, Rel, RelOp, S, Special, Sym, impl } from '../core/nodes';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { expandMul } from '../simplify/expand';
@@ -206,7 +207,7 @@ function realZeros(e: Expr, x: Sym, lo: Expr, hi: Expr): Expr[] {
 function bounds(domain: SetExpr): [Expr, Expr, boolean, boolean] {
   if (domain === Reals) return [S.NegativeInfinity, S.Infinity, true, true];
   if (domain instanceof Interval) return [domain.start, domain.end, domain.leftOpen, domain.rightOpen];
-  throw new Error('inequalities: unsupported domain');
+  throw new NotImplementedError('inequalities: unsupported domain');
 }
 
 function sample(a: Expr, b: Expr): Expr {

@@ -8,6 +8,7 @@
  * values, pseudo-inverse, matrix exponential and structural helpers.
  */
 
+import { NotImplementedError } from '../core/errors';
 import { Dummy, Expr, ExprLike, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { diff } from '../calculus/diff';
@@ -776,7 +777,7 @@ export function jordanForm(A: Matrix): [Matrix, Matrix] {
     const cb = impl.toComplex(b[0]);
     return ca.re - cb.re || ca.im - cb.im;
   });
-  if (eig.reduce((s, [, m]) => s + m, 0) !== n) throw new Error('jordan_form: could not compute all eigenvalues');
+  if (eig.reduce((s, [, m]) => s + m, 0) !== n) throw new NotImplementedError('jordan_form: could not compute all eigenvalues');
   const columns: Matrix[] = [];
   const blocks: [Expr, number][] = [];
   const simp = (m: Matrix) => m.map((e) => simplify(e));

@@ -8,6 +8,7 @@
  * for real intervals and finite sets with comparable elements.
  */
 
+import { NotImplementedError } from '../core/errors';
 import { Expr, ExprLike, Float, Rational, S, Special, impl } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
 import { Eq, Le, Lt } from '../core/logic';
@@ -540,7 +541,7 @@ export function asRelational(s: SetExpr, x: Expr): Expr {
   if (s instanceof FiniteSet) return or(...s.args.map((a) => Eq(x, a)));
   if (s instanceof SetOp && s.op === 'Union') return or(...s.args.map((a) => asRelational(a as SetExpr, x)));
   if (s instanceof SetOp && s.op === 'Intersection') return and(...s.args.map((a) => asRelational(a as SetExpr, x)));
-  throw new Error('as_relational: unsupported set');
+  throw new NotImplementedError('as_relational: unsupported set');
 }
 
 /** Infimum / supremum of a real set. */
@@ -549,14 +550,14 @@ export function inf(s: SetExpr): Expr {
   if (s === Reals) return S.NegativeInfinity;
   if (s instanceof FiniteSet) return [...s.args].sort((a, b) => cmpReal(a, b) ?? 0)[0]!;
   if (s instanceof SetOp && s.op === 'Union') return (s.args as SetExpr[]).map(inf).sort((a, b) => cmpReal(a, b) ?? 0)[0]!;
-  throw new Error('inf: unsupported set');
+  throw new NotImplementedError('inf: unsupported set');
 }
 export function sup(s: SetExpr): Expr {
   if (s instanceof Interval) return s.end;
   if (s === Reals) return S.Infinity;
   if (s instanceof FiniteSet) return [...s.args].sort((a, b) => cmpReal(b, a) ?? 0)[0]!;
   if (s instanceof SetOp && s.op === 'Union') return (s.args as SetExpr[]).map(sup).sort((a, b) => cmpReal(b, a) ?? 0)[0]!;
-  throw new Error('sup: unsupported set');
+  throw new NotImplementedError('sup: unsupported set');
 }
 
 

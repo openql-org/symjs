@@ -9,6 +9,7 @@
  * solution from variation of parameters.
  */
 
+import { NotImplementedError } from '../core/errors';
 import { Derivative, Dummy, Expr, ExprLike, I, Integral, Mul, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
 import { Function } from '../core/undef';
 import { dsolve as dsolveOne } from './ode';
@@ -106,7 +107,7 @@ function fundamentalSolutions(A: Matrix, t: Sym): Matrix[] {
     }
     i += k;
   }
-  if (out.length !== n) throw new Error('dsolve: could not build the fundamental solutions');
+  if (out.length !== n) throw new NotImplementedError('dsolve: could not build the fundamental solutions');
   return out;
 }
 
@@ -159,7 +160,7 @@ function triangularSystem(eqs: readonly Expr[], funcs: readonly UndefFn[]): Expr
   const out: Expr[] = Array(funcs.length);
   while (remaining.length) {
     const idx = remaining.findIndex(([e]) => funcs.filter((f) => !solved.has(f.key) && e.has(f)).length === 1);
-    if (idx < 0) throw new Error('dsolve: only linear or triangular systems are supported');
+    if (idx < 0) throw new NotImplementedError('dsolve: only linear or triangular systems are supported');
     const [e] = remaining.splice(idx, 1)[0]!;
     const f = funcs.find((g) => !solved.has(g.key) && e.has(g))!;
     // constants of the solutions already substituted are protected while solving

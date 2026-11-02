@@ -5,6 +5,7 @@
  * @file Symbolic differentiation.
  */
 
+import { NotImplementedError } from '../core/errors';
 import { isReal } from '../core/assumptions';
 import { piecewise } from '../core/logic';
 import { Add, ExtensionExpr, Constant, Derivative, Dummy, Expr, ExprLike, Fn, Integral, Mul, Piecewise, Pow, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
@@ -83,7 +84,7 @@ function d(e: Expr, x: Expr): Expr {
     if (e.name === 'im') return fnIm(du);
     if (e.name === 'abs') {
       if (isReal(u)) return mul(u, pow(abs(u), -1), du);
-      throw new Error('diff: derivative of abs() of a non-real argument is not supported');
+      throw new NotImplementedError('diff: derivative of abs() of a non-real argument is not supported');
     }
     const f = fnDerivative[e.name];
     if (!f) throw new Error(`diff: unknown derivative for ${e.name}`);
@@ -97,7 +98,7 @@ function d(e: Expr, x: Expr): Expr {
       if (a.key === x.key) terms.push(derivative(e, [[x, 1]], true));
       // f(g(x)): Derivative(f(g(x)), g(x))*Derivative(g(x), x) like SymPy
       else if (a instanceof UndefFn) terms.push(mul(derivative(e, [[a, 1]]), d(a, x)));
-      else throw new Error('diff: derivative of an undefined function of a composite argument is not supported');
+      else throw new NotImplementedError('diff: derivative of an undefined function of a composite argument is not supported');
     }
     return add(...terms);
   }
@@ -107,7 +108,7 @@ function d(e: Expr, x: Expr): Expr {
   }
   if (e instanceof Piecewise) return piecewise(...e.pairs.map(([v, c]) => [d(v, x), c] as const));
   if (e instanceof Integral) return diffIntegral(e, x);
-  throw new Error(`diff: unsupported expression ${e.toString()}`);
+  throw new NotImplementedError(`diff: unsupported expression ${e.toString()}`);
 }
 
 /**

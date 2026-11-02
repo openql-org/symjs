@@ -6,6 +6,7 @@
  * evaluation rules, derivatives, conjugation and numeric evaluation.
  */
 
+import { NotImplementedError } from '../core/errors';
 import '../numeric/mpspecialfns';
 import { isIntegerQ, isNegative, isPositive } from '../core/assumptions';
 import {
@@ -976,7 +977,7 @@ const SPECS: Partial<Record<FnName, Spec>> = {
     eval: (n, m) => evalHarmonic(n, m ?? S.One),
     numeric: ([n, m]) => {
       if (m === undefined || m.re === 1) return cadd(cdigamma(cadd(n!, cx(1))), cx(EULER_GAMMA));
-      throw new Error('harmonic: unsupported');
+      throw new NotImplementedError('harmonic: unsupported');
     },
   },
   catalan: {

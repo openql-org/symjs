@@ -6,6 +6,7 @@
  * linear and polynomial systems, undetermined coefficients and nsolve.
  */
 
+import { NotImplementedError } from '../core/errors';
 import { solvePolySystem } from './polysys';
 import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
 import { Add, Constant, Dummy, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
@@ -197,7 +198,7 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   // a*sin(u) + b*cos(u) = 0  ->  tan(u) = -b/a
   const sc = sinCosLinear(num, x);
   if (sc) return sc;
-  throw new Error(`solve: cannot solve ${f.toString()} for ${x.name}`);
+  throw new NotImplementedError(`solve: cannot solve ${f.toString()} for ${x.name}`);
 }
 
 /**
@@ -564,7 +565,7 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
       }
       return;
     }
-    throw new Error('nonlinsolve: unsupported system');
+    throw new NotImplementedError('nonlinsolve: unsupported system');
   };
   const original = eqs.map(asEquation);
   // equations with one radical are squared away (SymPy unrad); spurious solutions are removed below

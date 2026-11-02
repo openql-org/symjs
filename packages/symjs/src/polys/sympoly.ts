@@ -7,6 +7,7 @@
  * functions (degree, LC/LM/LT, gcd, lcm, div, factor_list, ...).
  */
 
+import { NotImplementedError } from '../core/errors';
 import { parse } from '../parsing/parser';
 import { NoMatch, NoMatchResult } from '../core/truth';
 import { factorModP } from './zassenhaus';
@@ -930,7 +931,7 @@ export class Poly {
     const gl = [...gens.values()];
     if (!gl.length || gl.length > 3) {
       if (strict) return undefined;
-      throw new Error('norm: unsupported coefficient field');
+      throw new NotImplementedError('norm: unsupported coefficient field');
     }
     const f = this.asExpr();
     let norm: Expr = S.One;
@@ -940,7 +941,7 @@ export class Poly {
     const N = Poly.from(expand(norm), [this.univariate()], { domain: 'QQ' });
     if (N.allCoeffs().every((c) => c instanceof Rational)) return N;
     if (strict) return undefined;
-    throw new Error('norm: unsupported coefficient field');
+    throw new NotImplementedError('norm: unsupported coefficient field');
   }
   /** SymPy Poly.make_monic_over_integers_by_scaling_roots: [monic integer polynomial g, s] with g(x) = f(x/s)*s**n/LC(f). */
   makeMonicOverIntegersByScalingRoots(): [Poly, Expr] {

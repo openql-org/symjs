@@ -81,7 +81,7 @@ export { classKey } from './printing/sortkey';
 export { expand_power_base as separate } from './simplify/expand';
 export { Q, ask, refine, AppliedPredicate } from './core/refine';
 export type { Assumption, PredicateName } from './core/refine';
-export { SympifyError, PoleError, PrecisionExhausted, NonlinearError, seterr } from './core/errors';
+export { SympifyError, PoleError, PrecisionExhausted, NonlinearError, NotImplementedError, seterr } from './core/errors';
 export { Basic, BasicNode } from './core/basic';
 export { SymNumber as Number, RealNumber, Atom, AtomicExpr, FunctionClass, UnevaluatedExpr, DeferredVector, genericExpr } from './core/classes';
 export { defineFunction, implementedFunction, DefinedFunctionCall } from './core/defun';

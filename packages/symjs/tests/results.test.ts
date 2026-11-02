@@ -105,3 +105,20 @@ describe('gammasimp reflection formula', () => {
     expect(g('gamma(z)*gamma(z)')).toBe('gamma(z)**2');
   });
 });
+
+describe('NotImplementedError', () => {
+  it('is thrown for valid input that the methods cannot handle', () => {
+    const f = sj.Function('f');
+    const x = new sj.Sym('x');
+    expect(() => sj.dsolve(sj.parse('Derivative(f(x), x) - sin(f(x)*x)*exp(f(x)**2*x)'), f(x))).toThrow(sj.NotImplementedError);
+    expect(() => sj.solve(sj.parse('x + sin(x)*exp(x) - log(x)'), x)).toThrow(sj.NotImplementedError);
+    const e = new sj.NotImplementedError('m');
+    expect([e.name, e instanceof Error]).toEqual(['NotImplementedError', true]);
+  });
+  it('invalid input keeps its own error', () => {
+    const f = sj.Function('f');
+    const x = new sj.Sym('x');
+    expect(() => sj.dsolve(x, f(x))).toThrow('not a differential equation');
+    expect(() => sj.dsolve(x, f(x))).not.toThrow(sj.NotImplementedError);
+  });
+});

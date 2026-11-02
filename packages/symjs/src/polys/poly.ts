@@ -5,6 +5,7 @@
  * @file Univariate polynomials over the rationals, coefficient extraction and root finding.
  */
 
+import { NotImplementedError } from '../core/errors';
 import { ExprMap } from '../core/exprmap';
 import { Add, Expr, ExprLike, Mul, Pow, Rational, S, Sym, compareExpr, impl } from '../core/nodes';
 import { zassenhaus } from './zassenhaus';
@@ -375,7 +376,7 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
       else if (f.degree === 2) rs = quadraticRoots(f.coeffs[2]!, f.coeffs[1]!, f.coeffs[0]!);
       else if (f.degree === 3) rs = cubicRoots(f.coeffs[3]!, f.coeffs[2]!, f.coeffs[1]!, f.coeffs[0]!);
       else if (opts.skipQuintic && f.degree >= 5) continue; // SymPy roots() omits roots it cannot express in radicals
-      else throw new Error(`roots: cannot solve irreducible factor of degree ${f.degree}`);
+      else throw new NotImplementedError(`roots: cannot solve irreducible factor of degree ${f.degree}`);
       for (const r of rs) for (let i = 0; i < m; i++) out.push(r);
     }
     return out;
@@ -401,7 +402,7 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
     }
     return [...zeros, ...quadraticRoots(get(low + 2), get(low + 1), get(low))];
   }
-  throw new Error(`roots: symbolic polynomials of degree ${effDeg} are not supported`);
+  throw new NotImplementedError(`roots: symbolic polynomials of degree ${effDeg} are not supported`);
 }
 
 /** Distinct solutions of e = 0 for x (polynomial equations only). */

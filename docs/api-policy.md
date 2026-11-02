@@ -27,6 +27,7 @@ symjs keeps SymPy's mathematical meaning while letting TypeScript handle the sta
 | The expression does not have the requested form (`match`, `extract_additively`, `as_coefficient`, `hypersimp`, `homogeneous_order`, `periodicity`, ...) | `None` | `NoMatch` |
 | The methods find no solution in closed form (`rsolve`, ...) | `None` | `Unsolved` (not a proof that none exists) |
 | No solution exists (`linsolve`, `solveset`, ...) | `EmptySet` | `EmptySet` |
+| Valid input that the implemented methods cannot handle (an ODE `dsolve` cannot solve, an equation `solve` cannot solve, ...) | `NotImplementedError` | a thrown `NotImplementedError` |
 | Invalid input (a nonlinear system for `linear_eq_to_matrix`, a value that cannot be sympified, ...) | an exception | a thrown error (`NonlinearError`, `SympifyError`, `RangeError`, ...) |
 
 `'unknown'` is truthy: test a `Truth` with `isTrue`, `isFalse` or `isUnknown` (or compare with `=== true`), never with `if (truth)`. `truthNot`, `truthAnd` and `truthOr` combine answers with three-valued logic.

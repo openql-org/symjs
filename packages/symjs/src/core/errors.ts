@@ -51,3 +51,16 @@ export class NonlinearError extends Error {
     this.name = 'NonlinearError';
   }
 }
+
+/**
+ * The input is valid but the implemented methods cannot handle it (SymPy
+ * NotImplementedError): an equation dsolve or solve cannot solve, a series
+ * point or a set operation not supported yet. Unlike invalid input, the
+ * same request may succeed in a later version.
+ */
+export class NotImplementedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'NotImplementedError';
+  }
+}

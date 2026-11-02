@@ -5,6 +5,7 @@
  * @file series(): power series expansion with an Order term, SymPy style.
  */
 
+import { NotImplementedError } from '../core/errors';
 import { Add, Expr, ExprLike, Fn, Order, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { add, exp, mul, neg, pow, sympify } from '../core/ops';
 import { Mul } from '../core/nodes';
@@ -139,7 +140,7 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
   if (atZero && e instanceof Pow && e.base.key === x.key && !(e.exp instanceof Rational) && !e.exp.has(x)) return e;
   const x0 = sympify(x0x);
   if (x0 instanceof Special && (x0.name === 'oo' || x0.name === '-oo')) return seriesAtInfinity(e, x, x0.name === 'oo' ? 1 : -1, n);
-  if (x0 instanceof Special) throw new Error('series: expansion at this point is not supported');
+  if (x0 instanceof Special) throw new NotImplementedError('series: expansion at this point is not supported');
   if (!e.has(x)) return e;
   const t = new Sym('_s');
   const ex0 = new Expander(t);
