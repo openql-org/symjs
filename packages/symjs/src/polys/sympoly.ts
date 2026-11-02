@@ -839,8 +839,18 @@ export class Poly {
    * over QQ. Undefined when the coefficients are rational.
    */
   private normPoly(): Poly | undefined {
+    return this.norm(true);
+  }
+  /**
+   * SymPy Poly.norm: the product of the conjugates of a polynomial over an
+   * algebraic extension, a polynomial over QQ (itself when the coefficients
+   * are rational).
+   */
+  norm(): Poly;
+  norm(strict: true): Poly | undefined;
+  norm(strict = false): Poly | undefined {
     const cs = this.allCoeffs();
-    if (cs.every((c) => c instanceof Rational)) return undefined;
+    if (cs.every((c) => c instanceof Rational)) return strict ? undefined : this;
     const gens = new Map<string, Expr>();
     const findGens = (e: Expr) => {
       if (e instanceof Constant && e.name === 'I') gens.set(e.key, e);
@@ -849,14 +859,19 @@ export class Poly {
     };
     cs.forEach(findGens);
     const gl = [...gens.values()];
-    if (!gl.length || gl.length > 3) return undefined;
+    if (!gl.length || gl.length > 3) {
+      if (strict) return undefined;
+      throw new Error('norm: unsupported coefficient field');
+    }
     const f = this.asExpr();
     let norm: Expr = S.One;
     for (let mask = 0; mask < 1 << gl.length; mask++) {
       norm = mul(norm, xreplace(f, gl.map((g, i) => [g, mask & (1 << i) ? mul(-1, g) : g] as [Expr, Expr])));
     }
-    const N = Poly.from(expand(norm), [this.univariate()]);
-    return N.allCoeffs().every((c) => c instanceof Rational) ? N : undefined;
+    const N = Poly.from(expand(norm), [this.univariate()], { domain: 'QQ' });
+    if (N.allCoeffs().every((c) => c instanceof Rational)) return N;
+    if (strict) return undefined;
+    throw new Error('norm: unsupported coefficient field');
   }
   /** SymPy Poly.get_modulus: p of a polynomial over GF(p). */
   getModulus(): bigint {

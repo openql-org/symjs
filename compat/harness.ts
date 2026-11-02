@@ -291,6 +291,7 @@ export function deserialize(tree: Tree): unknown {
     case 'Add':
       return sj.add(...(tree['args'] as Tree[]).map((a) => deserialize(a) as Expr));
     case 'Mul':
+    case 'MatMul':
       return sj.mul(...(tree['args'] as Tree[]).map((a) => deserialize(a) as Expr));
     case 'Pow': {
       const [b, e] = (tree['args'] as Tree[]).map((a) => deserialize(a) as Expr);
@@ -951,6 +952,16 @@ export const ADAPTERS: Record<string, Adapter> = {
     const gens = args[1] === undefined ? [] : (args[1] as PyList).items.map(asExpr);
     return new PyList(sj.factorSystem(eqs, gens).map((s) => new PyList(s)));
   },
+  is_zero_dimensional: (args, kw) => {
+    noKw(kw);
+    const F = (args[0] as PyList).items.map(asExpr);
+    const gens = args.slice(1).map(asSym);
+    const vars = gens.length ? gens : (sj.sortGens([...sj.freeSymbols(sj.add(...F))]) as Sym[]);
+    // zero-dimensional: every variable has a pure power as a leading monomial of the basis
+    const G = sj.groebner(F, vars, 'grevlex');
+    const lms = G.exprs.map((g) => sj.Poly.from(g, vars).monoms()[0]!);
+    return vars.every((_, i) => lms.some((m) => m.every((k, j) => (j === i ? k > 0 : k === 0))));
+  },
   groebner: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['order', 'method'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const F = (args[0] as PyList).items.map(asExpr);
@@ -1042,7 +1053,9 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.is_meromorphic': (args, kw, self) => (noKw(kw), sj.isMeromorphic(asExpr(self), asExpr(args[0]), asExpr(args[1])) ?? null),
   ratsimp: exprFn(sj.ratsimp),
   primitive: (args, kw) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (k !== 'expand') throw new Unsupported(`kwargs ${k}`);
+    // expand=False: the expression as it is (SymPy treats it as a single term structure)
+    if (kw['expand'] === false) return new PyTuple(sj.primitive(asExpr(args[0])));
     const p = polyOf(args);
     const [c, q] = p.primitive();
     return new PyTuple([c, q.asExpr()]);
@@ -1670,6 +1683,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (args.length > 1) opts.symbols = args.slice(1).map(asSym);
     return new PyTuple(sj.solveLinear(asExpr(args[0]), opts));
   },
+  solve_linear_system_LU: (args, kw) => ADAPTERS['solve_linear_system']!(args, kw),
   solve_linear_system: (args, kw) => {
     noKw(kw);
     const syms = args.slice(1).map(asSym);
@@ -1931,9 +1945,12 @@ export const ADAPTERS: Record<string, Adapter> = {
     self instanceof Matrix ? self.map((e) => asExpr(ADAPTERS['limit']!([e, ...args], kw))) : ADAPTERS['limit']!([self, ...args], kw),
   '.removeO': exprMethod((e) => (e instanceof sj.Add ? sj.add(...e.args.filter((a) => !(a instanceof sj.Order))) : e instanceof sj.Order ? S.Zero : e)),
   '.doit': (args, kw, self) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
     if (args.length) throw new Unsupported('doit args');
-    return sj.doit(asExpr(self));
+    const e = asExpr(self);
+    // deep=False: only the top-level object is evaluated
+    if (kw['deep'] === false && !(e instanceof sj.Integral || e instanceof sj.Derivative || e instanceof sj.Limit || e instanceof sj.Concrete || e instanceof sj.Subs)) return e;
+    return sj.doit(e);
   },
   '.evalf': (args, kw, self) => evalfAdapter(self, args, kw),
   '.n': (args, kw, self) => evalfAdapter(self, args, kw),
@@ -2079,10 +2096,10 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.as_base_exp': exprMethod((e) => new PyTuple(sj.asBaseExp(e))),
   '.args_cnc': (args, kw, self) => {
     const split1 = kw['split_1'];
-    for (const k of Object.keys(kw)) if (k !== 'split_1') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (k !== 'split_1' && k !== 'cset') throw new Unsupported(`kwargs ${k}`);
     if (args.length) throw new Unsupported('arity');
     const [c, nc] = sj.argsCncSplit(asExpr(self), split1 === undefined ? true : Boolean(split1));
-    return new PyList([new PyList(c), new PyList(nc)]);
+    return new PyList([kw['cset'] ? new PySet(c) : new PyList(c), new PyList(nc)]);
   },
   '.xreplace': (args, kw, self) => {
     noKw(kw);
@@ -2470,7 +2487,9 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.dot(self, b, Boolean(kw['hermitian']), conv === 'physics' || conv === 'right' ? 'physics' : 'maths');
   },
   '.cross': matrixMethod((m, [b]) => sj.cross(m, b as Matrix)),
-  '.norm': matrixMethod((m, [o]) => sj.norm(m, o as ExprLike | undefined)),
+  '.norm': (args, kw, self) => (self instanceof sj.Poly ? (noKw(kw), self.norm()) : matrixMethod((m, [o]) => sj.norm(m, o as ExprLike | undefined))(args, kw, self)),
+  '.gammasimp': exprMethod(sj.gammasimp),
+  '.combsimp': exprMethod(sj.combsimp),
   '.singular_values': matrixMethod((m) => new PyList(sj.singularValues(m))),
   '.pinv': matrixMethod((m) => sj.pinv(m)),
   '.jacobian': matrixMethod((m, [y]) => sj.jacobian(m, y instanceof Matrix ? y : (y as PyTuple).items.map(asExpr))),
