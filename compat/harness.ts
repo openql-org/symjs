@@ -41,6 +41,11 @@ export class JsSet {
 
 export class Unsupported extends Error {}
 
+/** A Python float (printed as 2.0, 0.5, ...). */
+export class JsFloat {
+  constructor(readonly v: number) {}
+}
+
 /** An undefined function class (SymPy `Function('f')` itself, not applied). */
 /** A polynomial ground domain (ZZ, QQ). */
 export class JsDomain {
@@ -114,7 +119,9 @@ export function fmt(v: unknown): string {
   if (v instanceof Matrix) return v.toString();
   if (v instanceof sj.Poly) return v.toString();
   if (v instanceof sj.GroebnerBasis) return v.toString();
-  if (v instanceof sj.Monomial || v instanceof sj.Factors) return v.toString();
+  if (v instanceof sj.Monomial || v instanceof sj.Factors || v instanceof sj.DomainMatrix) return v.toString();
+  if (v instanceof JsFloat) return Number.isInteger(v.v) ? v.v.toFixed(1) : String(v.v);
+  if (v instanceof Error) return v.message;
   if (v instanceof Map) return fmt(new JsDict([...v]));
   if (Array.isArray(v)) return fmt(new JsTuple(v));
   if (v instanceof Set) return fmt(new JsSet([...v]));
@@ -2983,6 +2990,190 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.is_symmetric': (_args, _kw, self) => sj.linalg.isSymmetric(self as Matrix),
   '.tolist': matrixMethod((m) => new JsList(m.toArray().map((r) => new JsList(r)))),
 };
+
+// ---------------------------------------------------------------------------
+// Adapters of SymPy base classes, Expr methods and more Matrix methods
+// ---------------------------------------------------------------------------
+
+/** Run an in-place operation of SymPy's mutable Matrix on a copy; like SymPy it returns None. */
+const mutating =
+  (f: (m: sj.MutableDenseMatrix, args: unknown[]) => void): Adapter =>
+  (args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof Matrix)) throw new Unsupported('expected a Matrix');
+    f(sj.MutableDenseMatrix.from(self), args);
+    return null;
+  };
+const lambdaArg = (v: unknown): ((...xs: Expr[]) => Expr) => {
+  if (v instanceof JsLambda) return (...xs: Expr[]) => v.call(...xs);
+  throw new Unsupported('function argument');
+};
+const keyTree = (k: unknown): unknown => (Array.isArray(k) ? new JsTuple(k.map(keyTree)) : typeof k === 'number' ? sj.Rational.of(k) : k);
+const generic = (make: (...a: Expr[]) => Expr): Adapter => (args, kw) => (noKw(kw), make(...args.map(asExpr)));
+const errorAdapter = (E: new (m: string) => Error): Adapter => (args, kw) => (noKw(kw), new E(args.length ? String(args[0]) : ''));
+
+Object.assign(ADAPTERS, {
+  // ---- base classes
+  Basic: generic((...a) => sj.Basic(...a)),
+  Expr: generic((...a) => sj.genericExpr(...a)),
+  Atom: generic((...a) => sj.Atom(...a)),
+  AtomicExpr: generic((...a) => sj.AtomicExpr(...a)),
+  NumberSymbol: generic((...a) => new sj.BasicNode(a, 'NumberSymbol')),
+  Number: (args, kw) => (noKw(kw), sj.Number(typeof args[0] === 'string' ? args[0] : asExpr(args[0]))),
+  RealNumber: (args, kw) => ADAPTERS['Float']!(args, kw),
+  FunctionClass: (args, kw) => (noKw(kw), new UFnClass(String(args[0]))),
+  UnevaluatedExpr: (args, kw) => (noKw(kw), new sj.UnevaluatedExpr(asExpr(args[0]))),
+  AlgebraicNumber: (args, kw) => {
+    noKw(kw);
+    const coeffs = args[1] instanceof JsList || args[1] instanceof JsTuple ? args[1].items.map(asExpr) : undefined;
+    return new sj.AlgebraicNumber(asExpr(args[0]), coeffs).asExpr();
+  },
+  SympifyError: errorAdapter(sj.SympifyError),
+  PoleError: errorAdapter(sj.PoleError),
+  PrecisionExhausted: errorAdapter(sj.PrecisionExhausted),
+  seterr: (args, kw) => {
+    sj.seterr({ divide: Boolean(kw['divide'] ?? args[0]) });
+    return null;
+  },
+  DeferredVector: (args, kw) => (noKw(kw), new sj.DeferredVector(String(args[0]))),
+
+  // ---- Expr methods
+  '.as_terms': exprMethod((e) => {
+    const [terms, gens] = sj.asTerms(e);
+    return new JsTuple([
+      new JsList(terms.map(([t, [[re, im], monom, nc]]) => new JsTuple([t, new JsTuple([new JsTuple([new JsFloat(re), new JsFloat(im)]), new JsTuple(monom.map((k) => sj.Rational.of(k))), new JsTuple(nc)])]))),
+      new JsList(gens),
+    ]);
+  }),
+  '.class_key': exprMethod((e) => keyTree(sj.classKey(e))),
+  '.sort_key': (_args, _kw, self) => keyTree(sj.sortKey(asExpr(self))),
+  '.dir': (args, kw, self) => (noKw(kw), sj.dir(asExpr(self), asSym(args[0]), asExpr(args[1]))),
+  '.separate': (args, kw, self) => sj.separate(asExpr(self), { deep: Boolean(kw['deep'] ?? args[0]), force: Boolean(kw['force'] ?? args[1]) }),
+  '.refine': (args, kw, self) => {
+    noKw(kw);
+    if (!(args[0] instanceof sj.AppliedPredicate) && args[0] !== undefined) throw new Unsupported('assumption');
+    return self instanceof Matrix ? sj.refine(self, args[0] as sj.AppliedPredicate | undefined) : sj.refine(asExpr(self), args[0] as sj.AppliedPredicate | undefined);
+  },
+  '.lseries': (args, kw, self) => {
+    noKw(kw);
+    const x = args[0] === undefined ? ([...sj.freeSymbols(asExpr(self))][0] as Sym) : asSym(args[0]);
+    return sj.lseries(asExpr(self), x, args[1] === undefined ? 0 : asExpr(args[1]));
+  },
+  '.fps': (args, kw, self) => {
+    noKw(kw);
+    const x = args[0] === undefined ? ([...sj.freeSymbols(asExpr(self))][0] as Sym) : asSym(args[0]);
+    return sj.fps(asExpr(self), x, args[1] === undefined ? 0 : asExpr(args[1]));
+  },
+  '.fourier_series': (args, kw, self) => {
+    noKw(kw);
+    const lim = args[0] instanceof JsTuple ? args[0].items : undefined;
+    const x = lim ? asSym(lim[0]) : ([...sj.freeSymbols(asExpr(self))][0] as Sym);
+    return sj.fourierSeries(asExpr(self), x, lim && lim.length === 3 ? [asExpr(lim[1]), asExpr(lim[2])] : undefined);
+  },
+
+  // ---- Matrix methods
+  '.berkowitz': matrixMethod((m) => new JsTuple(sj.berkowitz(m).map((r) => new JsTuple(r)))),
+  '.berkowitz_minors': matrixMethod((m) => new JsTuple(sj.berkowitzMinors(m))),
+  '.bidiagonalize': (_args, kw, self) => sj.bidiagonalize(self as Matrix, kw['upper'] === undefined ? true : Boolean(kw['upper'])),
+  '.bidiagonal_decomposition': (_args, kw, self) => new JsTuple(sj.bidiagonalDecomposition(self as Matrix, kw['upper'] === undefined ? true : Boolean(kw['upper']))),
+  '.upper_hessenberg_decomposition': matrixMethod((m) => new JsTuple(sj.upperHessenbergDecomposition(m))),
+  '.singular_value_decomposition': matrixMethod((m) => new JsTuple(sj.singularValueDecomposition(m))),
+  '.LUdecomposition_Simple': matrixMethod((m) => {
+    const [lu, swaps] = sj.LUdecompositionSimple(m);
+    return new JsTuple([lu, new JsList(swaps.map((s) => new JsList(s.map((k) => sj.Rational.of(k)))))]);
+  }),
+  '.LUdecompositionFF': matrixMethod((m) => new JsTuple(sj.LUdecompositionFF(m))),
+  '.lll': matrixMethod((m) => sj.lll(m)),
+  '.lll_transform': matrixMethod((m) => new JsTuple(sj.lllTransform(m))),
+  '.elementary_row_op': (args, kw, self) =>
+    sj.elementaryRowOp(self as Matrix, {
+      op: (kw['op'] ?? args[0] ?? 'n->kn') as sj.ElementaryOp['op'],
+      ...(kw['row'] !== undefined ? { index: intArg(kw['row']) } : {}),
+      ...(kw['k'] !== undefined ? { k: asExpr(kw['k']) } : {}),
+      ...(kw['row1'] !== undefined ? { index1: intArg(kw['row1']) } : {}),
+      ...(kw['row2'] !== undefined ? { index2: intArg(kw['row2']) } : {}),
+    }),
+  '.elementary_col_op': (args, kw, self) =>
+    sj.elementaryColOp(self as Matrix, {
+      op: (kw['op'] ?? args[0] ?? 'n->kn') as sj.ElementaryOp['op'],
+      ...(kw['col'] !== undefined ? { index: intArg(kw['col']) } : {}),
+      ...(kw['k'] !== undefined ? { k: asExpr(kw['k']) } : {}),
+      ...(kw['col1'] !== undefined ? { index1: intArg(kw['col1']) } : {}),
+      ...(kw['col2'] !== undefined ? { index2: intArg(kw['col2']) } : {}),
+    }),
+  '.permuteFwd': matrixMethod((m, [p]) => sj.permuteFwd(m, (p as JsList).items.map((i) => (i instanceof JsList || i instanceof JsTuple ? (i.items.map(intArg) as [number, number]) : intArg(i))) as never)),
+  '.permuteBkwd': matrixMethod((m, [p]) => sj.permuteBkwd(m, (p as JsList).items.map((i) => (i instanceof JsList || i instanceof JsTuple ? (i.items.map(intArg) as [number, number]) : intArg(i))) as never)),
+  '.row_del': mutating((m, [i]) => void sj.rowDel(m, intArg(i))),
+  '.col_del': mutating((m, [j]) => void sj.colDel(m, intArg(j))),
+  '.row_swap': mutating((m, [i, j]) => m.rowSwap(intArg(i), intArg(j))),
+  '.col_swap': mutating((m, [i, j]) => m.colSwap(intArg(i), intArg(j))),
+  '.row_op': mutating((m, [i, f]) => m.rowOp(intArg(i), (v, j) => lambdaArg(f)(v, sj.Rational.of(j)))),
+  '.col_op': mutating((m, [j, f]) => m.colOp(intArg(j), (v, i) => lambdaArg(f)(v, sj.Rational.of(i)))),
+  '.zip_row_op': mutating((m, [i, k, f]) => m.zipRowOp(intArg(i), intArg(k), (v, u) => lambdaArg(f)(v, u))),
+  '.row_add': mutating((m, [s0, t, k]) => m.rowAdd(intArg(s0), intArg(t), asExpr(k))),
+  '.row_mult': mutating((m, [i, k]) => m.rowMult(intArg(i), asExpr(k))),
+  '.fill': mutating((m, [v]) => m.fill(asExpr(v))),
+  '.copyin_matrix': mutating((m, [key, v]) => {
+    const [i, j] = (key as JsTuple).items.map(intArg);
+    m.copyinMatrix(i!, j!, v as Matrix);
+  }),
+  '.copyin_list': mutating((m, [key, v]) => {
+    const [i, j] = (key as JsTuple).items.map(intArg);
+    const vals = (v as JsList).items.map((r) => (r instanceof JsList ? r.items.map(asExpr) : asExpr(r)));
+    m.copyinList(i!, j!, vals as Expr[]);
+  }),
+  '.get_diag_blocks': matrixMethod((m) => new JsList(sj.getDiagBlocks(m))),
+  '.connected_components_decomposition': matrixMethod((m) => new JsTuple(sj.connectedComponentsDecomposition(m))),
+  '.strongly_connected_components_decomposition': (_args, kw, self) => new JsTuple(sj.stronglyConnectedComponentsDecomposition(self as Matrix, kw['lower'] === undefined ? true : Boolean(kw['lower']))),
+  '.jordan_cell': matrixMethod((_m, [e, n]) => sj.jordanCell(asExpr(e), intArg(n))),
+  '.jordan_cells': matrixMethod((m) => {
+    const [P, blocks] = sj.jordanCells(m);
+    return new JsTuple([P, new JsList(blocks)]);
+  }),
+  '.dual': matrixMethod((m) => sj.dual(m)),
+  '.iter_items': matrixMethod((m) => sj.iterItems(m).map(([[i, j], v]) => new JsTuple([new JsTuple([sj.Rational.of(i), sj.Rational.of(j)]), v]))),
+  '.iter_values': matrixMethod((m) => sj.iterValues(m)),
+  '.key2ij': matrixMethod((m, [k]) => {
+    if (!(k instanceof JsTuple)) return keyTree(sj.key2ij(m, intArg(k)));
+    return new JsList(sj.key2ij(m, k.items.map(intArg) as [number, number]).map((v) => sj.Rational.of(v as number)));
+  }),
+  '.key2bounds': matrixMethod((m, [k]) => keyTree(sj.key2bounds(m, (k as JsTuple).items.map(intArg) as [number, number]))),
+  '.print_nonzero': (args, _kw, self) => {
+    // SymPy prints the pattern and returns None
+    sj.printNonzero(self as Matrix, args[0] === undefined ? 'X' : String(args[0]));
+    return null;
+  },
+  '.table': (_args, kw, self) => {
+    for (const k of Object.keys(kw)) if (!['rowstart', 'rowend', 'rowsep', 'colsep', 'align'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    return sj.table(self as Matrix, kw as sj.TableOptions);
+  },
+  '.to_DM': (_args, kw, self) => sj.toDM(self as Matrix, { field: Boolean(kw['field']) }),
+  '.wilkinson': (args, kw) => (noKw(kw), new JsTuple(sj.wilkinson(intArg(args[0])))),
+  MatrixBase: (args, kw) => ADAPTERS['Matrix']!(args, kw),
+  randMatrix: (args, kw) => {
+    const n = (k: string, i: number) => (kw[k] ?? args[i]) as unknown;
+    const num = (v: unknown) => (v === undefined || v === null ? undefined : intArg(v));
+    return sj.randMatrix(intArg(args[0]), num(n('c', 1)), { min: num(n('min', 2)), max: num(n('max', 3)), seed: num(n('seed', 4)), symmetric: Boolean(n('symmetric', 5)), percent: num(n('percent', 6)) });
+  },
+  symarray: (args, kw) => {
+    const shape = args[1] instanceof JsTuple ? args[1].items.map(intArg) : intArg(args[1]);
+    return sj.symarray(String(args[0]), shape, kw as sj.Assumptions);
+  },
+  matrix2numpy: matrixMethod((m) => sj.matrix2numpy(m)),
+  list2numpy: (args, kw) => (noKw(kw), sj.list2numpy((args[0] as JsList).items)),
+
+  // ---- polys and number theory
+  poly_from_expr: (args, kw) => {
+    const [p, o] = sj.polyFromExpr(asExpr(args[0]), args.slice(1).map(asExpr), kw['domain'] ? { domain: String(kw['domain']) } : {});
+    return new JsTuple([p, new JsDict([['gens', new JsTuple(o.gens)], ['domain', new UFnClass(o.domain)], ['polys', false]])]);
+  },
+  parallel_poly_from_expr: (args, _kw) => {
+    const [ps, o] = sj.parallelPolyFromExpr((args[0] as JsList).items.map(asExpr), args.slice(1).map(asExpr));
+    return new JsTuple([new JsList(ps), new JsDict([['gens', new JsTuple(o.gens)], ['domain', new UFnClass(o.domain)], ['polys', false]])]);
+  },
+  gff: (args, kw) => (noKw(kw), sj.gff(asExpr(args[0]))),
+  carmichael: (args, kw) => (noKw(kw), sj.carmichael.isCarmichael(asExpr(args[0]))),
+} satisfies Record<string, Adapter>);
 
 // ---------------------------------------------------------------------------
 // Runner

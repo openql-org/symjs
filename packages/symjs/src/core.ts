@@ -61,7 +61,13 @@ export {
 export { ExprMap } from './core/exprmap';
 export { Indexed, IndexedBase } from './core/indexed';
 export { Factors } from './core/factors';
+export { classKey } from './printing/sortkey';
+export { expand_power_base as separate } from './simplify/expand';
+export { Q, ask, refine, AppliedPredicate } from './core/refine';
+export type { Assumption, PredicateName } from './core/refine';
+export { SympifyError, PoleError, PrecisionExhausted, seterr } from './core/errors';
 export { Basic, BasicNode } from './core/basic';
+export { SymNumber as Number, RealNumber, Atom, AtomicExpr, FunctionClass, UnevaluatedExpr, DeferredVector, genericExpr } from './core/classes';
 export { defineFunction, implementedFunction, DefinedFunctionCall } from './core/defun';
 export type { DefinedFunction, FunctionDefinition } from './core/defun';
 export type {
@@ -121,6 +127,7 @@ export {
   asPowersDict,
   isSame,
   equalValued,
+  asTerms,
   asTwoTerms,
   hasXfree,
   isAlgebraicExpr,

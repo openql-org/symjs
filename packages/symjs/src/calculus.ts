@@ -77,3 +77,4 @@ export const sumIsAbsolutelyConvergent = _sumIsAbsolutelyConvergent_;
 
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const extractLeadingOrder = _extractLeadingOrder_;
+export { lseries, dir, fps, fourierSeries, FormalPowerSeries, FourierSeries } from './series/more';

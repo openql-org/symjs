@@ -9,13 +9,20 @@
 import { Expr, ExprLike, ExtensionExpr } from './nodes';
 import { sympify } from './ops';
 
-/** A generic node holding its arguments (SymPy Basic instance). */
+/**
+ * A generic node holding its arguments: an instance of one of SymPy's base
+ * classes (Basic, Expr, Atom, AtomicExpr) created directly.
+ */
 export class BasicNode extends ExtensionExpr {
-  constructor(args: readonly Expr[]) {
-    super('Basic', args);
+  constructor(
+    args: readonly Expr[],
+    /** The SymPy class name printed (Basic by default). */
+    head = 'Basic',
+  ) {
+    super(head, args);
   }
   withArgs(args: readonly Expr[]): Expr {
-    return new BasicNode(args);
+    return new BasicNode(args, this.name);
   }
 }
 

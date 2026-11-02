@@ -108,7 +108,8 @@ function numberDomain(cs: Expr[]): string | undefined {
   return rational ? 'QQ' : 'ZZ';
 }
 
-function inferDomain(cs: Expr[]): string {
+/** The ground domain of the coefficients (SymPy construct_domain): ZZ, QQ, RR, ZZ_I, ZZ[x], ZZ(x), EX. */
+export function inferDomain(cs: Expr[]): string {
   const nd = numberDomain(cs);
   if (nd) return nd;
   const syms = new Map<string, Sym>();

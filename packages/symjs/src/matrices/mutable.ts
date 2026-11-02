@@ -8,7 +8,7 @@
  */
 
 import { Expr, ExprLike } from '../core/nodes';
-import { sympify } from '../core/ops';
+import { add, mul, sympify } from '../core/ops';
 import { sympifyMethod } from '../core/sympify';
 import { Matrix } from './matrix';
 
@@ -80,6 +80,23 @@ export class MutableDenseMatrix extends Matrix {
   /** Row i entries replaced by f(value, value in row k) (SymPy zip_row_op). */
   zipRowOp(i: number, k: number, f: (v: Expr, u: Expr) => ExprLike): void {
     for (let c = 0; c < this.cols; c++) this.set(i, c, f(this.get(i, c), this.get(k, c)));
+  }
+  /** Add k times row s to row t (SymPy row_add). */
+  rowAdd(s: number, t: number, k: ExprLike): void {
+    for (let c = 0; c < this.cols; c++) this.set(t, c, add(this.get(t, c), mul(k, this.get(s, c))));
+  }
+  /** Multiply row i by k (SymPy row_mult). */
+  rowMult(i: number, k: ExprLike): void {
+    for (let c = 0; c < this.cols; c++) this.set(i, c, mul(k, this.get(i, c)));
+  }
+  /**
+   * Copy a list into the block starting at (i, j) (SymPy copyin_list): a
+   * flat list fills a column, a nested list fills rows.
+   */
+  copyinList(i: number, j: number, values: readonly ExprLike[] | readonly (readonly ExprLike[])[]): void {
+    const nested = values.length > 0 && Array.isArray(values[0]);
+    const rows = nested ? (values as readonly (readonly ExprLike[])[]) : (values as readonly ExprLike[]).map((v) => [v]);
+    this.copyinMatrix(i, j, Matrix.of(rows));
   }
   /** An immutable copy (SymPy as_immutable). */
   asImmutable(): Matrix {

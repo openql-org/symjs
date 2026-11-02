@@ -12,6 +12,8 @@ export {
   Matrix,
 } from './matrices/matrix';
 export { MutableDenseMatrix, MutableMatrix } from './matrices/mutable';
+export { DomainMatrix, toDM } from './matrices/domainmatrix';
+export { Matrix as MatrixBase } from './matrices/matrix';
 export { MatrixSymbol, MatrixTranspose, MatrixAdjoint } from './matrices/matexpr';
 export * as linalg from './matrices/linalg';
 export {
@@ -70,6 +72,45 @@ export {
   connectedComponents,
   stronglyConnectedComponents,
 } from './matrices/linalg';
+export {
+  berkowitz,
+  berkowitzMinors,
+  bidiagonalize,
+  bidiagonalDecomposition,
+  upperHessenbergDecomposition,
+  singularValueDecomposition,
+  luDecompositionSimple as LUdecompositionSimple,
+  luDecompositionFF as LUdecompositionFF,
+  lll,
+  lllTransform,
+  elementaryRowOp,
+  elementaryColOp,
+  permuteFwd,
+  permuteBkwd,
+  rowDel,
+  colDel,
+  getDiagBlocks,
+  connectedComponentsDecomposition,
+  stronglyConnectedComponentsDecomposition,
+  jordanCell,
+  jordanCells,
+  dual,
+  iterItems,
+  iterValues,
+  key2ij,
+  key2bounds,
+  printNonzero,
+  table,
+  wilkinson,
+  randMatrix,
+  symarray,
+  matrix2numpy,
+  list2numpy,
+  type ElementaryOp,
+  type IndexSlice,
+  type TableOptions,
+  type RandMatrixOptions,
+} from './matrices/more';
 
 // ---- deprecated names (kept during 0.x, removed in 1.0; see docs/api-policy.md) ----
 

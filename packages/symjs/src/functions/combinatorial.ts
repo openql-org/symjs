@@ -231,7 +231,7 @@ function totient(n: bigint): bigint {
   return r;
 }
 
-function carmichael(n: bigint): bigint {
+function carmichaelLambda(n: bigint): bigint {
   const g = (a: bigint, b: bigint): bigint => (b === 0n ? a : g(b, a % b));
   let l = 1n;
   for (const [p, e] of factorInt(n)) {
@@ -328,7 +328,7 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
   },
   reduced_totient: (n) => {
     const k = asInt(n);
-    return k !== undefined && k > 0n ? R(carmichael(k)) : undefined;
+    return k !== undefined && k > 0n ? R(carmichaelLambda(k)) : undefined;
   },
   mobius: (n) => {
     const k = asInt(n);
@@ -629,3 +629,35 @@ export function binomialMod(n: bigint, k: bigint, m: bigint): bigint {
   }
   return bmod(result, mod);
 }
+
+// ---- Carmichael numbers (SymPy carmichael / sympy.ntheory.factor_) ----------------
+
+const toBig = (n: ExprLike | bigint | number): bigint => (typeof n === 'bigint' ? n : typeof n === 'number' ? BigInt(n) : (sympify(n) as Rational).p);
+
+/** SymPy is_carmichael: n is composite, squarefree and p - 1 | n - 1 for each prime p | n (Korselt). */
+export function isCarmichael(nIn: ExprLike | bigint | number): boolean {
+  const n = toBig(nIn);
+  if (n < 561n || n % 2n === 0n || isprime(n)) return false;
+  for (const [p, e] of factorInt(n)) if (e > 1n || (n - 1n) % (p - 1n) !== 0n) return false;
+  return true;
+}
+
+/** SymPy find_carmichael_numbers_in_range(x, y): the Carmichael numbers in [x, y). */
+export function findCarmichaelNumbersInRange(x: ExprLike | bigint | number, y: ExprLike | bigint | number): bigint[] {
+  const lo = toBig(x);
+  const hi = toBig(y);
+  if (lo < 0n || hi < 0n || lo > hi) throw new RangeError('The provided range is not valid. x and y must be non-negative integers and x <= y');
+  const out: bigint[] = [];
+  for (let k = lo % 2n === 0n ? lo + 1n : lo; k < hi; k += 2n) if (isCarmichael(k)) out.push(k);
+  return out;
+}
+
+/** SymPy find_first_n_carmichaels(n): the first n Carmichael numbers. */
+export function findFirstNCarmichaels(n: number): bigint[] {
+  const out: bigint[] = [];
+  for (let k = 561n; out.length < n; k += 2n) if (isCarmichael(k)) out.push(k);
+  return out;
+}
+
+/** SymPy carmichael (the deprecated class): its static methods. */
+export const carmichael = { isCarmichael, findCarmichaelNumbersInRange, findFirstNCarmichaels } as const;

@@ -31,6 +31,7 @@ export {
 export { rootsDict as roots } from './polys/poly';
 export { sqfNorm, minimalPolynomial } from './polys/sympoly';
 export { Monomial } from './polys/monomial';
+export { polyFromExpr, parallelPolyFromExpr, gff, type PolyOptions } from './polys/fromexpr';
 export { RootSum, RootSumNode, apartList, assemblePartfracList } from './polys/rootsum';
 export type { PartfracTerm } from './polys/rootsum';
 export {

@@ -9,7 +9,7 @@
 import { isIntegerQ, isNegative as isNegativeQ, isPositive, isReal, isZero as isZeroQ } from './assumptions';
 import { Add, Constant, Expr, ExprLike, Float, Fn, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
-import { add, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
+import { add, asBaseExp, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
 import { ExprMap } from './exprmap';
 import { freeSymbols, xreplace as xreplaceM } from './traverse';
 import { diff } from '../calculus/diff';
@@ -923,4 +923,61 @@ export function equalValued(x: ExprLike, y: ExprLike): boolean {
   const ra = exactRational(a);
   const rb = exactRational(b);
   return ra !== undefined && rb !== undefined ? ra.key === rb.key : a.key === b.key;
+}
+
+/** Base and integer exponent of a factor (SymPy decompose_power): x**(3/2) -> [sqrt(x), 3]. */
+function decomposePower(e: Expr): [Expr, number] {
+  const [b, ex] = asBaseExp(e);
+  if (ex instanceof Rational) {
+    if (ex.q === 1n) return [b, Number(ex.p)];
+    return [pow(b, Rational.of(1n, ex.q)), Number(ex.p)];
+  }
+  // a symbolic exponent c*t: the integer coefficient c moves to the exponent
+  const [c, rest] = splitCoeff(ex);
+  if (c instanceof Rational && c.q === 1n && !(c.p === 1n)) return [pow(b, rest), Number(c.p)];
+  return [e, 1];
+}
+
+/**
+ * SymPy Expr.as_terms: the terms with their complex coefficient
+ * [re, im], exponent vector over the generators and noncommutative part,
+ * and the sorted generators.
+ */
+export function asTerms(eIn: ExprLike): [[Expr, [[number, number], number[], Expr[]]][], Expr[]] {
+  const e = sympify(eIn);
+  const gens: Expr[] = [];
+  const terms: [Expr, [number, number], Map<string, [Expr, number]>, Expr[]][] = [];
+  for (const term of e instanceof Add ? e.args : [e]) {
+    const [c0, rest] = splitCoeff(term);
+    let coeff = { re: c0.toNumber(), im: 0 };
+    const cpart = new Map<string, [Expr, number]>();
+    const nc: Expr[] = [];
+    if (!(rest instanceof Rational && rest.p === 1n && rest.q === 1n)) {
+      for (const f of rest instanceof Mul ? rest.args : [rest]) {
+        if (impl.freeSymbols(f).size === 0) {
+          try {
+            const v = f.toComplex();
+            coeff = { re: coeff.re * v.re - coeff.im * v.im, im: coeff.re * v.im + coeff.im * v.re };
+            continue;
+          } catch {
+            // not a numeric value: kept as a generator
+          }
+        }
+        if (f.isCommutative) {
+          const [b, k] = decomposePower(f);
+          cpart.set(b.key, [b, k]);
+          if (!gens.some((g) => g.key === b.key)) gens.push(b);
+        } else nc.push(f);
+      }
+    }
+    terms.push([term, [coeff.re, coeff.im], cpart, nc]);
+  }
+  const sorted = impl.ordered ? impl.ordered(gens) : gens;
+  const index = new Map(sorted.map((g, i) => [g.key, i]));
+  const out = terms.map(([term, coeff, cpart, nc]) => {
+    const monom = sorted.map(() => 0);
+    for (const [k, [, ex]] of cpart) monom[index.get(k)!] = ex;
+    return [term, [coeff, monom, nc]] as [Expr, [[number, number], number[], Expr[]]];
+  });
+  return [out, sorted];
 }

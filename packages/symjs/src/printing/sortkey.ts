@@ -8,7 +8,7 @@
  * (e.g. `x**2*y`, `1 - 2*I`, `-sqrt(2)/4 + sqrt(6)/4`, `I*sin(x) + cos(x)`).
  */
 
-import { Add, ComplexValue, Constant, Derivative, Dummy, Expr, Float, Fn, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, impl, isNum } from '../core/nodes';
+import { Add, ComplexValue, Constant, Derivative, Dummy, Expr, ExtensionExpr, Float, Fn, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, impl, isNum } from '../core/nodes';
 import { pow, splitCoeff } from '../core/ops';
 
 /** A SymPy-style sort key: nested tuples of numbers and strings. */
@@ -73,7 +73,8 @@ const REL_CLASS: Record<string, string> = { Eq: 'Equality', Ne: 'Unequality', Lt
 const symClass = (e: Sym): string =>
   e instanceof WildFunction ? 'WildFunction' : e instanceof Wild ? 'Wild' : e instanceof Dummy ? 'Dummy' : 'Symbol';
 
-function classKey(e: Expr): Key {
+/** SymPy class_key: (priority, sub-priority, class name) used to order expressions. */
+export function classKey(e: Expr): Key {
   if (isNum(e) || e instanceof Special) return [1, 0, 'Number'];
   if (e instanceof Sym) return [2, 0, symClass(e)];
   if (e instanceof Constant) return [2, 0, CONSTANT_CLASS[e.name]!];
@@ -88,6 +89,7 @@ function classKey(e: Expr): Key {
   if (e instanceof UndefFn) return [4, 0, e.name];
   if (e instanceof Derivative) return [5, 0, 'Derivative'];
   if (e instanceof Rel) return [5, 0, REL_CLASS[e.op]!];
+  if (e instanceof ExtensionExpr) return [5, 0, e.name];
   const cn = (e as unknown as { className?: string }).className;
   if (cn) return [5, 0, cn];
   return [5, 0, e.kind];

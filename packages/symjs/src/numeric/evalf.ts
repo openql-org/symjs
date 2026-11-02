@@ -5,6 +5,7 @@
  * @file Numeric evaluation: evalf, toComplex and lambdify (compile to a closure).
  */
 
+import { DeferredVector } from '../core/classes';
 import {
   Add,
   BoolAtom,
@@ -261,10 +262,20 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
  * const f = lambdify(cos(theta).mul(exp(I.mul(phi))), [theta, phi]);
  * f(0.1, 0.2) // => { re, im }
  */
-export function lambdify(ex: ExprLike, params: readonly Sym[]): (...args: (number | C)[]) => C {
+export function lambdify(ex: ExprLike, params: readonly Sym[]): (...args: (number | C | readonly (number | C)[])[]) => C {
   const e = sympify(ex);
   const index = new Map(params.map((p, i) => [p.name, i]));
+  // a DeferredVector parameter X takes an array; the symbol X[k] is its k-th entry
+  const vectors = new Map(params.flatMap((p, i) => (p instanceof DeferredVector ? [[p.name, i] as const] : [])));
+  const slots: [number, number][] = [];
   const f = compile(e, (s) => {
+    const m = /^(.*)\[(\d+)\]$/.exec(s.name);
+    const vi = m ? vectors.get(m[1]!) : undefined;
+    if (vi !== undefined) {
+      const slot = params.length + slots.length;
+      slots.push([vi, Number(m![2])]);
+      return (env) => env[slot]!;
+    }
     const i = index.get(s.name);
     if (i === undefined) throw new Error(`lambdify: symbol '${s.name}' is not a parameter`);
     return (env) => env[i]!;
@@ -273,7 +284,13 @@ export function lambdify(ex: ExprLike, params: readonly Sym[]): (...args: (numbe
     if (args.length !== params.length) {
       throw new RangeError(`lambdify: expected ${params.length} arguments, got ${args.length}`);
     }
-    return f(args.map(toC));
+    const env = args.map((a) => (Array.isArray(a) ? toC(0) : toC(a as number | C)));
+    for (const [i, k] of slots) {
+      const v = args[i];
+      if (!Array.isArray(v) || k >= v.length) throw new RangeError(`lambdify: ${params[i]!.name}[${k}] is not given`);
+      env.push(toC(v[k] as number | C));
+    }
+    return f(env);
   };
 }
 

@@ -35,6 +35,7 @@ import { mkFloat, numAdd, numInv, numMul, numNeg, numPowInt, ratFloor, toMpf } f
 import { ZERO as MPF_ZERO, precToDps } from '../numeric/mpf';
 import { cpow as mpCpow, powReal as mpPowReal } from '../numeric/mpfun';
 import { factorInt } from './numbers';
+import { SympifyError, errorSettings } from './errors';
 
 export function sympify(x: ExprLike): Expr {
   if (x instanceof Expr) return x;
@@ -43,7 +44,7 @@ export function sympify(x: ExprLike): Expr {
     if (Number.isInteger(x)) return Rational.of(BigInt(x));
     return new Float(x);
   }
-  throw new TypeError(`Cannot convert ${String(x)} to an expression`);
+  throw new SympifyError(`Cannot convert ${String(x)} to an expression`, x);
 }
 
 /** Float ** number (SymPy Float._eval_power / Rational._eval_power with a Float exponent). */
@@ -317,7 +318,11 @@ function mulSpecial(args: Expr[]): Expr | undefined {
   if (specials.length === 0) return undefined;
   if (specials.some((e) => e.name === 'nan')) return S.NaN;
   const c = mul(...flat.filter((e) => !(e instanceof Special)));
-  if (c instanceof Rational && c.isZero) return S.NaN;
+  if (c instanceof Rational && c.isZero) {
+    // 0/0 (SymPy seterr(divide=True) raises)
+    if (errorSettings.divide && specials.some((e) => e.name === 'zoo')) throw new RangeError('Indeterminate 0/0');
+    return S.NaN;
+  }
   if (specials.some((e) => e.name === 'zoo')) {
     return impl.freeSymbols(c).size === 0 ? S.ComplexInfinity : new Mul([c, S.ComplexInfinity]);
   }
