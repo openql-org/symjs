@@ -124,6 +124,8 @@ def ser(o):
         return {"t": "PySet", "items": [ser(i) for i in o]}
     if isinstance(o, list):
         return {"t": "Tuple", "items": [ser(i) for i in o], "list": True}
+    if isinstance(o, range):
+        return {"t": "Tuple", "items": [ser(i) for i in o], "list": True}
     if isinstance(o, (tuple, Tuple)):
         return {"t": "Tuple", "items": [ser(i) for i in o]}
     if isinstance(o, dict):

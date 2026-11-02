@@ -4148,7 +4148,30 @@
   },
   {
    "fn": "prod",
-   "unsupportedArg": "range",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.mul",
    "src": "prod(range(3))",
@@ -33547,7 +33570,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_876",
+         "name": "Dummy_877",
          "index": 0,
          "assume": {
           "real": true
@@ -52426,7 +52449,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).ET()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a664790>, 3)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x106c8a050>, 3)"
   },
   {
    "fn": ".LC",
@@ -52633,7 +52656,7 @@
    "category": "polys",
    "module": "sympy.polys.polytools",
    "src": "Poly(4*x**2 + 2*x*y**2 + x*y + 3*y, x, y).LT()",
-   "expected": "(<sympy.polys.monomials.Monomial object at 0x10a8baec0>, 4)"
+   "expected": "(<sympy.polys.monomials.Monomial object at 0x108111d20>, 4)"
   },
   {
    "fn": ".TC",
@@ -100797,7 +100820,36 @@
      ]
     ]
    },
-   "unsupportedArg": "range",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "m.extract(range(0, m.rows, 2), [-1])",

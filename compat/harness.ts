@@ -177,6 +177,8 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   exp: ([a]) => sj.exp(a!),
   Abs: ([a]) => sj.abs(a!),
   log: (args) => sj.log(args[0]!, args[1]),
+  LambertW: (args) => sj.LambertW(args[0]!, args[1]),
+  frac: ([a]) => sj.frac(a!),
   ...Object.fromEntries(
     (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 're', 'im', 'arg', 'conjugate', 'adjoint', 'transpose', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc', 'exp_polar', 'polar_lift', 'periodic_argument', 'principal_branch'] as const).map(
       (n) => [n, (args: Expr[]) => sj.fn(n, args)],
@@ -676,6 +678,7 @@ export const ADAPTERS: Record<string, Adapter> = {
         seq = Boolean(v);
         continue;
       }
+      if (k === 'cls' && v instanceof FnClass && v.name === 'Function') continue;
       if (k === 'commutative' && v === false) {
         a[k] = false;
         continue;
@@ -683,9 +686,10 @@ export const ADAPTERS: Record<string, Adapter> = {
       if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive'].includes(k) || v !== true) throw new Unsupported(`symbols ${k}`);
       a[k] = true;
     }
+    const asFunctions = kw['cls'] instanceof FnClass;
     const one = (spec: string): unknown => {
       const names = sj.expandSymbolNames(spec);
-      const syms = names.map((n) => new Sym(n, a));
+      const syms: unknown[] = names.map((n) => (asFunctions ? new UFnClass(n) : new Sym(n, a)));
       const isSeq = seq || spec.includes(',') || spec.trim().includes(' ') || spec.includes(':');
       return syms.length === 1 && !isSeq ? syms[0] : new PyTuple(syms);
     };
@@ -718,7 +722,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new Sym(String(args[0]), a);
   },
   sympify: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'rational' && !(k === 'evaluate' && kw[k] === true)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (k !== 'rational' && !(k === 'evaluate' && kw[k] === true) && !(k === 'convert_xor' && kw[k] === true)) throw new Unsupported(`kwargs ${k}`);
     const v = args[0];
     if (typeof v === 'string') {
       if (kw['rational'] === true) {
@@ -1222,7 +1226,18 @@ export const ADAPTERS: Record<string, Adapter> = {
   // ---- manipulation
   expand: (args, kw) => {
     if (args.length !== 1) throw new Unsupported('arity');
-    return sj.expand(asExpr(args[0]), expandHints(kw));
+    const { modulus, ...rest } = kw;
+    const r = sj.expand(asExpr(args[0]), expandHints(rest));
+    if (modulus === undefined) return r;
+    // coefficients reduced modulo m (SymPy modulus hint, symmetric=False)
+    const m = (modulus as sj.Rational).p;
+    const gens = sj.sortGens([...sj.freeSymbols(r)]);
+    const P = sj.Poly.from(r, gens);
+    return sj.add(...P.terms().map(([mon, c]) => {
+      const q = c as sj.Rational;
+      if (!q.isInteger) throw new Unsupported('modulus with rational coefficients');
+      return sj.mul(sj.Rational.of(((q.p % m) + m) % m), ...mon.map((k, i) => sj.pow(gens[i]!, k)));
+    }));
   },
   expand_mul: exprFn(sj.expand_mul),
   expand_multinomial: exprFn(sj.expand_multinomial),
@@ -1250,6 +1265,31 @@ export const ADAPTERS: Record<string, Adapter> = {
   trigsimp: exprFn(sj.trigsimp),
   exptrigsimp: exprFn(sj.exptrigsimp),
   Id: exprFn((e) => e),
+  Mod: (args, kw) => {
+    noKw(kw);
+    const [a, m] = args.map(asExpr);
+    if (a instanceof sj.Rational && m instanceof sj.Rational && a.isInteger && m.isInteger) return sj.Rational.of(((a.p % m.p) + m.p) % m.p);
+    throw new Unsupported('symbolic Mod');
+  },
+  '.as_poly': (args, kw, self) => {
+    noKw(kw);
+    let e = asExpr(self);
+    if (e instanceof sj.Rel && e.op === 'Eq') e = sj.add(e.lhs, sj.mul(-1, e.rhs));
+    return sj.Poly.from(e, args.map(asExpr));
+  },
+  '.permute': (args, kw, self) => {
+    for (const k of Object.keys(kw)) if (!['orientation', 'direction'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    if (!(self instanceof Matrix)) throw new Unsupported('permute');
+    const swaps = (args[0] as PyTuple).items.map((t) => (t as PyTuple).items.map((v) => Number((v as sj.Rational).p)) as [number, number]);
+    const rows = (kw['orientation'] ?? 'rows') === 'rows';
+    const order = (kw['direction'] ?? 'forward') === 'forward' ? swaps : [...swaps].reverse();
+    let data = rows ? Array.from({ length: self.rows }, (_, i) => self.row(i)) : Array.from({ length: self.cols }, (_, j) => self.col(j));
+    for (const [i, j] of order) {
+      data = [...data];
+      [data[i], data[j]] = [data[j]!, data[i]!];
+    }
+    return rows ? Matrix.of(data.map((r) => Array.from({ length: self.cols }, (_, j) => r.get(0, j)))) : Matrix.of(Array.from({ length: self.rows }, (_, i) => data.map((c) => c.get(i, 0))));
+  },
   gff_list: (args, kw) => {
     noKw(kw);
     const p = polyOf(args);

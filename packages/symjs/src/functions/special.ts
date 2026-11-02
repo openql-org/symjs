@@ -97,6 +97,12 @@ function evalBinomial(n: Expr, k: Expr): Expr | undefined {
     if (k.isZero) return S.One;
     if (isInt(n) && !n.isNegative && k.p > n.p) return S.Zero;
     if (n instanceof Rational) {
+      // very large k: keep binomial(n, k) unevaluated instead of looping k times
+      if (k.p > 100000n && !(isInt(n) && n.p - k.p <= 100000n && n.p - k.p >= 0n)) return undefined;
+      if (isInt(n) && n.p >= 0n && n.p - k.p < k.p) {
+        // binomial(n, k) = binomial(n, n - k)
+        return evalBinomial(n, R(n.p - k.p));
+      }
       let num: Rational = S.One;
       for (let i = 0n; i < k.p; i++) num = numMul(num, numAdd(n, R(-i))) as Rational;
       return numMul(num, R(1n, factorialBig(k.p)));

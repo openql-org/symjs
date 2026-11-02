@@ -237,3 +237,12 @@ describe('Order terms in several variables (SymPy)', () => {
     expect(String(O(parse('1 + x*y'), [xx, yy], oo))).toBe('O(x*y, (x, oo), (y, oo))');
   });
 });
+
+import { binomial } from '../src';
+
+describe('large binomial coefficients', () => {
+  it('uses the symmetry and keeps huge ones unevaluated', () => {
+    expect(String(binomial(100000, 99998))).toBe('4999950000');
+    expect(String(binomial(10n ** 18n as unknown as number, 10n ** 12n as unknown as number))).toBe('binomial(1000000000000000000, 1000000000000)');
+  });
+});
