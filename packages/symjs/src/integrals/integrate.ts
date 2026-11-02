@@ -38,7 +38,7 @@ import {
 } from '../core/nodes';
 import { numAdd, numInv, numMul, numNeg } from '../core/num';
 import { gcd, lcm } from '../core/numbers';
-import { add, mul, pow, sqrt, sympify } from '../core/ops';
+import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { asin, atan, cos, cosh, log, sin, sinh } from '../functions/elementary';
@@ -228,9 +228,20 @@ class Integrator {
           case 'log':
             if (u.key === x.key) return add(mul(x, log(x)), mul(-1, x));
             break;
+          case 'li':
+          case 'Ei':
+          case 'Si':
+          case 'Shi':
+          case 'erf':
+          case 'erfc':
+          case 'erfi':
+            if (u.key === x.key) return add(mul(x, f), SPECIAL_PARTS[f.name]!(x));
+            break;
           case 'asin':
           case 'acos':
           case 'atan':
+          case 'asinh':
+          case 'acot':
             if (u.key === x.key) {
               // integration by parts: x*f(x) - Integral(x*f'(x))
               const r = this.integrate(mul(x, diff(f, x)));
@@ -646,3 +657,15 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
 
 impl.integrate = (e, x, limits) => integrate(e, x, limits);
 
+
+
+/** x*f(x) - Integral(f'(x)*x) for special functions (SymPy results). */
+const SPECIAL_PARTS: Record<string, (x: Expr) => Expr> = {
+  li: (x) => mul(-1, fnErf('Ei', [mul(2, log(x))])),
+  Ei: (x) => mul(-1, exp(x)),
+  Si: (x) => cos(x),
+  Shi: (x) => mul(-1, cosh(x)),
+  erf: (x) => mul(exp(mul(-1, pow(x, 2))), pow(sqrt(S.Pi), -1)),
+  erfc: (x) => mul(-1, exp(mul(-1, pow(x, 2))), pow(sqrt(S.Pi), -1)),
+  erfi: (x) => mul(-1, exp(pow(x, 2)), pow(sqrt(S.Pi), -1)),
+};

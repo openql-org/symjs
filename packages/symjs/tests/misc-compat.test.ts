@@ -64,3 +64,19 @@ describe('derivatives of undefined functions', () => {
     expect(String(doit(derivative(f(f(x)), [[x, 1]])))).toBe('Derivative(f(x), x)*Derivative(f(f(x)), f(x))');
   });
 });
+
+import { integrate } from '../src';
+
+describe('antiderivatives of special and inverse functions', () => {
+  it('matches SymPy', () => {
+    const cases: [string, string][] = [
+      ['li(x)', 'x*li(x) - Ei(2*log(x))'],
+      ['Ei(x)', 'x*Ei(x) - exp(x)'],
+      ['Si(x)', 'x*Si(x) + cos(x)'],
+      ['erf(x)', 'x*erf(x) + exp(-x**2)/sqrt(pi)'],
+      ['asinh(x)', 'x*asinh(x) - sqrt(x**2 + 1)'],
+      ['acot(x)', 'x*acot(x) + log(x**2 + 1)/2'],
+    ];
+    for (const [f, F] of cases) expect(String(integrate(parse(f), x))).toBe(F);
+  });
+});
