@@ -17,6 +17,7 @@ import { countOps, mapBottomUp, some, xreplace } from '../core/traverse';
 import { cos, cosh, fn, sin, sinh } from '../functions/elementary';
 import { expandMul as expand } from './expand';
 import { rewrite } from './rewrite';
+import { cancel, fraction, together } from './rational';
 
 const isE = (e: Expr) => e instanceof Constant && e.name === 'E';
 const isI = (e: Expr) => e instanceof Constant && e.name === 'I';
@@ -85,7 +86,7 @@ export function exptotrig(ex: ExprLike): Expr {
  * expression without trigonometric functions is returned unchanged, and the
  * result is never more complex than the input.
  */
-export function trigsimp(ex: ExprLike, opts: { old?: boolean; deep?: boolean; method?: string } = {}): Expr {
+export function trigsimp(ex: ExprLike, opts: { old?: boolean; deep?: boolean; method?: string; combineFractions?: boolean } = {}): Expr {
   if (opts.old && !opts.deep) {
     // SymPy trigsimp_old without deep does not look inside other functions
     const frozen: [Expr, Expr][] = [];
@@ -97,7 +98,8 @@ export function trigsimp(ex: ExprLike, opts: { old?: boolean; deep?: boolean; me
       }
       return x;
     });
-    return frozen.length ? xreplace(trigsimp(outer), frozen) : trigsimp(outer);
+    const inner = { combineFractions: opts.method === 'groebner' };
+    return frozen.length ? xreplace(trigsimp(outer, inner), frozen) : trigsimp(outer, inner);
   }
   let e = sympify(ex);
   // reciprocal functions (cot, coth, sec, ...) in terms of the basic ones when that is shorter
@@ -108,7 +110,19 @@ export function trigsimp(ex: ExprLike, opts: { old?: boolean; deep?: boolean; me
   });
   if (recip.key !== e.key && countOps(recip) < countOps(e)) e = recip;
   if (!hasTrigFunctions(e)) return e;
-  const t = exptotrig(e);
+  let t = exptotrig(e);
+  // a sum of fractions: simplify the combined numerator, then cancel (SymPy trigsimp_groebner-like)
+  // (SymPy's old algorithm without method="groebner" does not do this)
+  const combine = opts.combineFractions ?? !(opts.old && opts.method !== 'groebner');
+  if (combine && e instanceof Add && e.args.some((a) => fraction(a)[1].freeSymbols().size > 0)) {
+    try {
+      const [n, d] = fraction(together(e));
+      const c = cancel(mul(exptotrig(expand(n)), pow(d, -1)));
+      if (trigCount(c) < trigCount(t) || (trigCount(c) === trigCount(t) && countOps(c) < countOps(t))) t = c;
+    } catch {
+      // keep the plain result
+    }
+  }
   // SymPy futrig objective: fewer trigonometric functions first, then count_ops
   const lt = trigCount(t);
   const le = trigCount(e);

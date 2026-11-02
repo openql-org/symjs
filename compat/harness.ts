@@ -1526,6 +1526,17 @@ export const ADAPTERS: Record<string, Adapter> = {
       const syms = args.slice(1).filter((a) => a instanceof Sym) as Sym[];
       return sj.reduceInequalities(first.items.map(asExpr), syms);
     }
+    // equations mixed with inequalities in one symbol (SymPy _solve_system with inequalities)
+    if ((first instanceof PyTuple || first instanceof PyList) && first.items.some((i) => i instanceof sj.Rel && i.op !== 'Eq' && i.op !== 'Ne') && first.items.some((i) => !(i instanceof sj.Rel) || i.op === 'Eq')) {
+      const isEq = (i: unknown) => !(i instanceof sj.Rel) || i.op === 'Eq';
+      const syms = args.slice(1).filter((a) => a instanceof Sym) as Sym[];
+      const eqs = first.items.filter(isEq).map(asExpr);
+      if (syms.length !== 1 || eqs.length !== 1) throw new Unsupported('mixed system');
+      const sols = sj.solve(eqs[0]!, syms[0]!);
+      if (sols.length !== 1) throw new Unsupported('mixed system');
+      const ineq = sj.reduceInequalities(first.items.filter((i) => !isEq(i)).map(asExpr), syms);
+      return sj.And(ineq, sj.Eq(syms[0]!, sols[0]!));
+    }
     // systems of equations
     if (first instanceof PyTuple) {
       // unknowns that are not symbols (x + 2, x*y) are solved for as dummies, like SymPy

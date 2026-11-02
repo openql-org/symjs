@@ -105,14 +105,13 @@ export function gammasimp(exIn: ExprLike): Expr {
 /**
  * SymPy `combsimp`: simplify combinatorial expressions (factorials,
  * binomials, rising and falling factorials). The expression is returned
- * unchanged when no Gamma factors could be combined.
+ * unchanged when Gamma factors remain and none could be combined.
  */
 export function combsimp(exIn: ExprLike): Expr {
   const ex = sympify(exIn);
   const g = toGamma(ex);
   const c = mapBottomUp(g, combineProduct);
-  if (c.key === g.key) return ex;
-  if (hasGamma(c)) return c;
+  if (hasGamma(c)) return c.key === g.key ? ex : c;
   try {
     return factor(c);
   } catch {
