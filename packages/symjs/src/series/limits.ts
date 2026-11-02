@@ -13,10 +13,12 @@
  * An unevaluated `Limit` is returned when all strategies fail.
  */
 
+import { toGamma } from '../simplify/gammasimp';
+import { powsimp } from '../simplify/powsimp';
 import { isNegative, isPositive } from '../core/assumptions';
 import { Add, Expr, ExprLike, Fn, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { add, exp, mul, pow, sympify } from '../core/ops';
-import { xreplace as subs } from '../core/traverse';
+import { mapBottomUp, xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { fn, log } from '../functions/elementary';
 import { polyCoefficients } from '../polys/poly';
@@ -313,8 +315,39 @@ export function limit(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' | '+-'
   }
   const d = dir === '-' ? '-' : '+';
   const v = new Limiter(z, z0, d).lim(e);
-  if (v === undefined || v === BOUNDED) return new Limit([e, z, z0], dir);
+  if (v === undefined || v === BOUNDED) {
+    const g = z0 instanceof Special && z0.name === 'oo' ? gammaAsymptotic(e, z) : undefined;
+    if (g !== undefined) {
+      const w = new Limiter(z, z0, d).lim(g);
+      if (w !== undefined && w !== BOUNDED) return w;
+    }
+    return new Limit([e, z, z0], dir);
+  }
   return v;
+}
+
+/**
+ * Factorials, binomials and rising/falling factorials at infinity: written
+ * with Gamma, each Gamma(n + c) is replaced by Gamma(n)*n**c (the leading
+ * asymptotic behaviour); the result when the Gamma(n) factors cancel.
+ */
+function gammaAsymptotic(e: Expr, n: Sym): Expr | undefined {
+  const isGammaLike = (x: Expr): boolean => (x instanceof Fn && ['gamma', 'factorial', 'binomial', 'rf', 'ff'].includes(x.name) && x.has(n)) || x.args.some(isGammaLike);
+  if (!isGammaLike(e)) return undefined;
+  const g = toGamma(e);
+  let failed = false;
+  const out = mapBottomUp(g, (x: Expr) => {
+    if (!(x instanceof Fn && x.name === 'gamma') || !x.has(n)) return x;
+    const c = expand(add(x.args[0]!, mul(-1, n)));
+    if (c.has(n)) {
+      failed = true;
+      return x;
+    }
+    return mul(fn('gamma', [n]), pow(n, c));
+  });
+  if (failed) return undefined;
+  const r = powsimp(out);
+  return r.has(fn('gamma', [n])) ? undefined : r;
 }
 
 impl.limit = limit;

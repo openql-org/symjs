@@ -23,7 +23,8 @@ const gamma = (x: Expr) => fn('gamma', [x]);
 const hasGamma = (e: Expr): boolean => (e instanceof Fn && e.name === 'gamma') || e.args.some(hasGamma);
 
 /** factorial, binomial, rf, ff written with gamma. */
-function toGamma(e: Expr): Expr {
+/** factorial, binomial, rf and ff written with gamma. */
+export function toGamma(e: Expr): Expr {
   return mapBottomUp(e, (x) => {
     if (!(x instanceof Fn)) return x;
     const [a, b] = x.args;

@@ -354,3 +354,19 @@ describe('polynomial helpers and systems with irrational solutions', () => {
     expect(sols).toEqual(['0,0,1', '0,1,0', '1,0,0', '-1 + sqrt(2),-1 + sqrt(2),-1 + sqrt(2)', '-sqrt(2) - 1,-sqrt(2) - 1,-sqrt(2) - 1']);
   });
 });
+
+describe('hyper, meijerg, spherical Bessel, KroneckerDelta and Gamma limits', () => {
+  it('match SymPy', async () => {
+    const { hyper, jn, KroneckerDelta, kroneckersimp, rewrite, limit, oo } = await import('../src');
+    const [x, z, n, nu, i] = symbols('x z n nu i');
+    const P = (s: string) => parse(s, { symbols: { x, z, n, nu } } as never);
+    expect(sstr(kroneckersimp(parse('1 + KD', { symbols: { KD: KroneckerDelta(0, i).mul(KroneckerDelta(1, i)) } } as never)))).toBe('1');
+    expect(sstr(rewrite(P('sinc(x)'), 'jn'))).toBe('jn(0, x)');
+    expect(sstr(diff(jn(0, x), x))).toBe('jn(-1, x) - jn(0, x)/x');
+    expect(sstr(rewrite(P('catalan(n)'), 'hyper'))).toBe('hyper((-n, 1 - n), (2,), 1)');
+    expect(sstr(diff(hyper([1, 2], [3], z), z))).toBe('2*hyper((2, 3), (4,), z)/3');
+    expect(sstr(diff(P('expint(nu, z)'), nu))).toBe('-z**(nu - 1)*meijerg(((), (1, 1)), ((0, 0, 1 - nu), ()), z)');
+    expect(sstr(rewrite(P('rf(1 - pi/2, n)'), 'gamma'))).toBe('(-1)**n*gamma(pi/2)/gamma(-n + pi/2)');
+    expect(sstr(limit(P('4**n*factorial(n)**2/(2**(2*n)*rf(1/2, n)*rf(3/2, n))'), n, oo))).toBe('pi/2');
+  });
+});

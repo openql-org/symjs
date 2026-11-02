@@ -191,7 +191,10 @@ export type SpecialFnName =
   | 'primepi'
   | 'multigamma'
   | 'frac'
-  | 'Rem';
+  | 'Rem'
+  | 'jn'
+  | 'yn'
+  | 'KroneckerDelta';
 
 /**
  * Late-bound implementations. Filled in by the modules that implement them.

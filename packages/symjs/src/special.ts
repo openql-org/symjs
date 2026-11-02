@@ -103,3 +103,4 @@ export {
   unpolarify,
   extractBranchFactor,
 } from './functions/polar';
+export { Hyper, MeijerG, hyper, meijerg, jn, yn, expandJn, KroneckerDelta, kroneckersimp } from './functions/hyper';

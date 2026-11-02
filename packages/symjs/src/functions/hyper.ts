@@ -1,0 +1,210 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
+
+/**
+ * @file Generalized hypergeometric functions (SymPy hyper), Meijer G-functions
+ * (meijerg), spherical Bessel functions (jn, yn) and the Kronecker delta.
+ */
+
+import { Expr, ExprLike, ExtensionExpr, Mul, Rational, S } from '../core/nodes';
+import { rebuild } from '../core/traverse';
+import { isPositive } from '../core/assumptions';
+import { Gt, piecewise } from '../core/logic';
+import { add, mul, pow, sympify } from '../core/ops';
+import { fnPartials } from '../calculus/diff';
+import { cos, evaluators, fn, sin } from './elementary';
+import { numericFns } from '../numeric/evalf';
+import { c as cx, cmul } from '../numeric/complex';
+import { besselj, bessely } from './bessel';
+import { registerRewrite } from '../simplify/rewrite';
+
+const tuple = (print: (e: Expr) => string, xs: readonly Expr[]) => (xs.length === 1 ? `(${print(xs[0]!)},)` : `(${xs.map(print).join(', ')})`);
+
+/** SymPy hyper(ap, bq, z): args are [z, ...ap, ...bq]. */
+export class Hyper extends ExtensionExpr {
+  constructor(
+    args: readonly Expr[],
+    readonly p: number,
+  ) {
+    super('hyper', args);
+  }
+  get ap(): Expr[] {
+    return this.args.slice(1, 1 + this.p);
+  }
+  get bq(): Expr[] {
+    return this.args.slice(1 + this.p);
+  }
+  get argument(): Expr {
+    return this.args[0]!;
+  }
+  withArgs(args: readonly Expr[]): Expr {
+    return new Hyper(args, this.p);
+  }
+  override printStr(print: (e: Expr) => string): string {
+    return `hyper(${tuple(print, this.ap)}, ${tuple(print, this.bq)}, ${print(this.argument)})`;
+  }
+  override printLatex(print: (e: Expr) => string): string {
+    const col = (xs: Expr[]) => (xs.length ? xs.map(print).join(', ') : '');
+    return `{{}_{${this.ap.length}}F_{${this.bq.length}}\\left(\\begin{matrix} ${col(this.ap)} \\\\ ${col(this.bq)} \\end{matrix}\\middle| {${print(this.argument)}} \\right)}`;
+  }
+  /** d/dz hyper(a, b, z) = prod(a)/prod(b) * hyper(a + 1, b + 1, z). */
+  override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
+    if ([...this.ap, ...this.bq].some((e) => e.has(x))) return undefined;
+    const dz = d(this.argument, x);
+    const c = mul(mul(...this.ap), pow(mul(...this.bq), -1));
+    return mul(c, hyper(this.ap.map((a) => add(a, 1)), this.bq.map((b) => add(b, 1)), this.argument), dz);
+  }
+  /** The value by the power series (|z| < 1 or terminating). */
+  override numericValue(dps: number): Expr | undefined {
+    const z = this.argument.toComplex();
+    if (Math.hypot(z.re, z.im) >= 1) return undefined;
+    const as = this.ap.map((a) => a.toNumber());
+    const bs = this.bq.map((b) => b.toNumber());
+    let term = 1;
+    let zp = cx(1);
+    let acc = cx(1);
+    for (let k = 0; k < 2000; k++) {
+      const num = as.reduce((s, a) => s * (a + k), 1);
+      const den = bs.reduce((s, b) => s * (b + k), 1) * (k + 1);
+      term *= num / den;
+      zp = cmul(zp, z);
+      acc = { re: acc.re + term * zp.re, im: acc.im + term * zp.im };
+      if (Math.abs(term) * Math.hypot(zp.re, zp.im) < 1e-17 * Math.max(1, Math.hypot(acc.re, acc.im))) break;
+    }
+    void dps;
+    return add(acc.re, mul(acc.im, S.I));
+  }
+}
+
+/** SymPy hyper(ap, bq, z). */
+export function hyper(ap: readonly ExprLike[], bq: readonly ExprLike[], z: ExprLike): Expr {
+  const zz = sympify(z);
+  // hyper(..., 0) = 1
+  if (zz instanceof Rational && zz.isZero) return S.One;
+  return new Hyper([zz, ...ap.map(sympify), ...bq.map(sympify)], ap.length);
+}
+
+/** SymPy meijerg(((a_1..a_n), (a_n+1..a_p)), ((b_1..b_m), (b_m+1..b_q)), z): args are [z, ...an, ...ap, ...bm, ...bq]. */
+export class MeijerG extends ExtensionExpr {
+  constructor(
+    args: readonly Expr[],
+    readonly sizes: readonly [number, number, number, number],
+  ) {
+    super('meijerg', args);
+  }
+  private part(i: number): Expr[] {
+    const start = 1 + this.sizes.slice(0, i).reduce((s, k) => s + k, 0);
+    return this.args.slice(start, start + this.sizes[i]!);
+  }
+  withArgs(args: readonly Expr[]): Expr {
+    return new MeijerG(args, this.sizes);
+  }
+  override printStr(print: (e: Expr) => string): string {
+    const t = (xs: Expr[]) => tuple(print, xs);
+    return `meijerg((${t(this.part(0))}, ${t(this.part(1))}), (${t(this.part(2))}, ${t(this.part(3))}), ${print(this.args[0]!)})`;
+  }
+  protected override computeKey(): string {
+    return `meijerg[${this.sizes.join(',')}](${this.args.map((a) => a.key).join(',')})`;
+  }
+}
+
+/** SymPy meijerg(((an), (ap)), ((bm), (bq)), z). */
+export function meijerg(an: readonly ExprLike[], ap: readonly ExprLike[], bm: readonly ExprLike[], bq: readonly ExprLike[], z: ExprLike): Expr {
+  const parts = [an, ap, bm, bq].map((xs) => xs.map(sympify));
+  return new MeijerG([sympify(z), ...parts.flat()], parts.map((p) => p.length) as [number, number, number, number]);
+}
+
+// d/dnu expint(nu, z) (SymPy expint.fdiff(1))
+const expintPartials = fnPartials['expint'];
+fnPartials['expint'] = (args, i) => {
+  const [nu, z] = args as [Expr, Expr];
+  if (i === 0) return mul(-1, pow(z, add(nu, -1)), meijerg([], [1, 1], [0, 0, add(1, mul(-1, nu))], [], z));
+  return expintPartials!(args, i);
+};
+
+// catalan(n) = hyper((-n, 1 - n), (2,), 1)
+registerRewrite('catalan', 'hyper', ([n]) => hyper([mul(-1, n!), add(1, mul(-1, n!))], [2], 1));
+
+// ---- spherical Bessel functions --------------------------------------------------
+
+/** SymPy jn(n, z): spherical Bessel function of the first kind. */
+export const jn = (n: ExprLike, z: ExprLike): Expr => fn('jn', [n, z]);
+/** SymPy yn(n, z): spherical Bessel function of the second kind. */
+export const yn = (n: ExprLike, z: ExprLike): Expr => fn('yn', [n, z]);
+
+evaluators.jn = (n, z) => (z instanceof Rational && z.isZero && n instanceof Rational && n.isInteger && n.p > 0n ? S.Zero : undefined);
+evaluators.yn = () => undefined;
+// d/dz jn(n, z) = jn(n - 1, z) - (n + 1)/z * jn(n, z) (SymPy fdiff)
+for (const name of ['jn', 'yn'] as const) {
+  fnPartials[name] = ([n, z], i) => {
+    if (i !== 1) throw new Error(`diff: ${name} w.r.t. its order`);
+    return add(fn(name, [add(n!, -1), z!]), mul(-1, add(n!, 1), pow(z!, -1), fn(name, [n!, z!])));
+  };
+  numericFns[name] = ([n, z]) => {
+    // sqrt(pi/(2 z)) * J_{n+1/2}(z)
+    const v = (name === 'jn' ? besselj : bessely)(n!.re + 0.5, add(z!.re, mul(z!.im, S.I))).toComplex();
+    const zz = z!;
+    const r = Math.sqrt(Math.PI / 2) / Math.sqrt(Math.hypot(zz.re, zz.im));
+    const ph = -Math.atan2(zz.im, zz.re) / 2;
+    return cmul(v, { re: r * Math.cos(ph), im: r * Math.sin(ph) });
+  };
+}
+registerRewrite('sinc', 'jn', ([z]) => jn(0, z!));
+
+/** jn(n, z) for integer n >= 0 in terms of sin and cos (SymPy expand_func). */
+export function expandJn(n: number, z: Expr, kind: 'jn' | 'yn' = 'jn'): Expr {
+  // jn: j0 = sin(z)/z, j1 = sin(z)/z**2 - cos(z)/z, j_{k+1} = (2k + 1)/z j_k - j_{k-1}
+  let a = kind === 'jn' ? mul(sin(z), pow(z, -1)) : mul(-1, cos(z), pow(z, -1));
+  if (n === 0) return a;
+  let b = kind === 'jn' ? add(mul(sin(z), pow(z, -2)), mul(-1, cos(z), pow(z, -1))) : add(mul(-1, cos(z), pow(z, -2)), mul(-1, sin(z), pow(z, -1)));
+  for (let k = 1; k < n; k++) [a, b] = [b, add(mul(2 * k + 1, pow(z, -1), b), mul(-1, a))];
+  return b;
+}
+
+// ---- Kronecker delta ---------------------------------------------------------------
+
+/** SymPy KroneckerDelta(i, j): 1 when equal, 0 for distinct numbers, unevaluated otherwise. */
+export const KroneckerDelta = (i: ExprLike, j: ExprLike): Expr => fn('KroneckerDelta', [i, j]);
+evaluators.KroneckerDelta = (i, j) => {
+  if (i!.key === j!.key) return S.One;
+  const d = add(i!, mul(-1, j!));
+  if (d.isNumber && !(d instanceof Rational && d.isZero) && d.freeSymbols().size === 0) return S.Zero;
+  return undefined;
+};
+
+/**
+ * SymPy kroneckersimp: a product of deltas sharing an index with distinct
+ * numbers on the other side vanishes, e.g. KroneckerDelta(0, i)*KroneckerDelta(1, i) = 0.
+ */
+export function kroneckersimp(eIn: ExprLike): Expr {
+  const e = sympify(eIn);
+  const go = (x: Expr): Expr => {
+    const args = x.args.map(go);
+    const y = args.some((a, i) => a !== x.args[i]) ? rebuild(x, args) : x;
+    if (!(y instanceof Mul)) return y;
+    const deltas = y.args.filter((f) => f.kind === 'Fn' && (f as unknown as { name: string }).name === 'KroneckerDelta');
+    for (let a = 0; a < deltas.length; a++) {
+      for (let b = a + 1; b < deltas.length; b++) {
+        const [p, q] = deltas[a]!.args;
+        const [r, s] = deltas[b]!.args;
+        for (const [u, v, w, t] of [[p, q, r, s], [p, q, s, r], [q, p, r, s], [q, p, s, r]] as [Expr, Expr, Expr, Expr][]) {
+          if (v.key === t.key && u.freeSymbols().size === 0 && w.freeSymbols().size === 0 && u.key !== w.key) return S.Zero;
+        }
+      }
+    }
+    return y;
+  };
+  return go(e);
+}
+
+
+// rf(x, n) = gamma(x + n)/gamma(x) for x > 0, (-1)**n*gamma(1 - x)/gamma(1 - x - n) otherwise (SymPy)
+registerRewrite('RisingFactorial', 'gamma', ([x, n]) => {
+  const pos = mul(fn('gamma', [add(n!, x!)]), pow(fn('gamma', [x!]), -1));
+  const neg = mul(pow(-1, n!), fn('gamma', [add(1, mul(-1, x!))]), pow(fn('gamma', [add(1, mul(-1, x!), mul(-1, n!))]), -1));
+  // a number: decided by its value
+  const p = x!.freeSymbols().size === 0 ? x!.toNumber() > 0 : isPositive(x!);
+  if (p === true) return pos;
+  if (p === false) return neg;
+  return piecewise([pos, Gt(x!, 0)], [neg, true]);
+});
