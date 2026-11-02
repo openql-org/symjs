@@ -225,6 +225,7 @@ function evalPolygamma(n: Expr, x: Expr): Expr | undefined {
       return add(h, mul(-1, S.EulerGamma));
     }
     if (x instanceof Rational && x.p === 1n && x.q === 2n) return add(mul(-2, log(2)), mul(-1, S.EulerGamma));
+    if (x instanceof Rational && x.q <= 6n) return digammaRational(x);
     return undefined;
   }
   if (isInt(x) && x.isPositive) {
@@ -236,6 +237,30 @@ function evalPolygamma(n: Expr, x: Expr): Expr | undefined {
     return mul(R(sign * factorialBig(n.p)), add(z, mul(-1, partial)));
   }
   return undefined;
+}
+
+/** digamma(p/q) by Gauss's theorem (SymPy polygamma._eval_expand_func, J. Choi 2007). */
+function digammaRational(z: Rational): Expr {
+  const p = z.p;
+  const q = Number(z.q);
+  const terms: Expr[] = [
+    mul(-1, S.EulerGamma),
+    mul(-1, S.Pi, fnN('cot', mul(R(p, z.q), S.Pi)), S.Half),
+    mul(-1, log(R(z.q))),
+  ];
+  for (let k = 1; k < q; k++) {
+    terms.push(mul(cos(mul(R(2n * BigInt(k) * p, z.q), S.Pi)), log(mul(2, sin(mul(R(k, q), S.Pi))))));
+  }
+  if (z.isPositive) {
+    const n = z.p / z.q;
+    const z0 = numAdd(z, R(-n)) as Rational;
+    for (let k = 0n; k < n; k++) terms.push(pow(numAdd(z0, R(k)), -1));
+  } else {
+    const n = (z.q - z.p) / z.q; // floor(1 - z)
+    const z0 = numAdd(z, R(n)) as Rational;
+    for (let k = 0n; k < n; k++) terms.push(mul(-1, pow(numAdd(z0, R(-1n - k)), -1)));
+  }
+  return add(...terms);
 }
 
 function sumSeries(x: Expr, s: number): Expr {
