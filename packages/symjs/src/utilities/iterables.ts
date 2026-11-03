@@ -430,8 +430,8 @@ export function capture(func: (print: PrintFunction) => void): string {
   return out;
 }
 
-/** A truth-like key for the binary form of {@link sift}. */
-type BinaryKey = boolean | number | 'unknown';
+/** A truth-like key for the binary form of {@link sift} (an Integer 0/1 or S.true/S.false also counts). */
+type BinaryKey = boolean | number | 'unknown' | Expr;
 
 /**
  * SymPy `sift(seq, keyfunc, binary=False)`: the elements of `seq` grouped by
@@ -574,7 +574,7 @@ function stronglyConnected<T>(V: readonly T[], gmap: ValueMap<T, T[]>): T[][] {
     lowlink.set(v, index);
     stack.push(v);
     onStack.add(valueKey(v));
-    callstack.push([v, (gmap.get(v) ?? [])[Symbol.iterator]()]);
+    callstack.push([v, getOrThrow(gmap, v)[Symbol.iterator]()]);
   };
   const finish = (v1: T) => {
     if (lowlink.get(v1) === indices.get(v1)) {
@@ -637,6 +637,8 @@ export function stronglyConnectedComponents<T>(G: Graph<T> | AdjacencyMatrix): T
   for (const [v1, v2] of E) {
     const g = gmap.get(v1);
     if (!g) throw new RangeError(`edge from a vertex not in the graph: ${String(v1)}`);
+    // SymPy raises KeyError for either end outside the graph
+    if (!gmap.has(v2)) throw new RangeError(`edge to a vertex not in the graph: ${String(v2)}`);
     g.push(v2);
   }
   return stronglyConnected(V, gmap);
@@ -911,8 +913,8 @@ const multisetPermutationsG = function* <T>(size: number | null, g: MultisetEntr
     for (const [k] of doo) yield [k];
   } else if (doo.length === 1) {
     const [k, v] = first(doo);
-    const c = size === null ? v : size <= v ? size : 0;
-    yield new Array<T>(c).fill(k);
+    // size <= SUM = v here
+    yield new Array<T>(size ?? v).fill(k);
   } else if (doo.every(([, v]) => v === 1)) {
     yield* permutations(
       doo.map(([k]) => k),
@@ -923,7 +925,8 @@ const multisetPermutationsG = function* <T>(size: number | null, g: MultisetEntr
     for (const entry of doo) {
       const [k] = entry;
       entry[1] -= 1;
-      for (const j of multisetPermutationsG(sz - 1, doo)) if (j.length) yield [k, ...j];
+      // sz >= 2 here (size 1 and a single remaining entry are handled above), so j is never empty
+      for (const j of multisetPermutationsG(sz - 1, doo)) yield [k, ...j];
       entry[1] += 1;
     }
   }

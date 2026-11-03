@@ -12,6 +12,8 @@
 
 import { NotImplementedError, NotInvertible } from '../core/errors';
 import { at } from '../core/guard';
+import { iroot } from '../core/numbers';
+import { isprime } from '../ntheory/primetest';
 
 type P = bigint[];
 
@@ -41,14 +43,13 @@ function modInv(a: bigint, m: bigint): bigint {
 
 const pmod = (f: P, m: bigint): P => trim(f.map((c) => mod(c, m)));
 
-function padd(f: P, g: P, m: bigint): P {
+/** f + s*g modulo m (s = 1 or -1). */
+function paddScaled(f: P, g: P, s: bigint, m: bigint): P {
   const n = Math.max(f.length, g.length);
-  return pmod(Array.from({ length: n }, (_, i) => (f[i] ?? 0n) + (g[i] ?? 0n)), m);
+  return pmod(Array.from({ length: n }, (_, i) => (f[i] ?? 0n) + s * (g[i] ?? 0n)), m);
 }
-function psub(f: P, g: P, m: bigint): P {
-  const n = Math.max(f.length, g.length);
-  return pmod(Array.from({ length: n }, (_, i) => (f[i] ?? 0n) - (g[i] ?? 0n)), m);
-}
+const padd = (f: P, g: P, m: bigint): P => paddScaled(f, g, 1n, m);
+const psub = (f: P, g: P, m: bigint): P => paddScaled(f, g, -1n, m);
 function pmul(f: P, g: P, m: bigint): P {
   if (!f.length || !g.length) return [];
   const r: bigint[] = Array(f.length + g.length - 1).fill(0n);
@@ -57,18 +58,17 @@ function pmul(f: P, g: P, m: bigint): P {
     if (fi === undefined || fi === 0n) continue;
     let k = i;
     for (const gj of g) {
-      r[k] = (r[k] ?? 0n) + fi * gj;
+      r[k] = at(r, k) + fi * gj;
       k++;
     }
   }
   return pmod(r, m);
 }
-/** Division modulo a prime power m with a monic-invertible divisor. */
+/** Division modulo a prime power m by a nonzero divisor with an invertible leading coefficient. */
 function pdivmod(f: P, g: P, m: bigint): [P, P] {
   const gg = trim(g);
   let r = pmod(f, m);
   const dg = gg.length - 1;
-  if (dg < 0) throw new RangeError('zassenhaus: division by zero');
   const inv = modInv(at(gg, dg), m);
   const q: bigint[] = Array(Math.max(0, r.length - dg)).fill(0n);
   while (r.length - 1 >= dg && r.length) {
@@ -77,7 +77,7 @@ function pdivmod(f: P, g: P, m: bigint): [P, P] {
     q[k] = c;
     let i = k;
     for (const gj of gg) {
-      r[i] = mod((r[i] ?? 0n) - c * gj, m);
+      r[i] = mod(at(r, i) - c * gj, m);
       i++;
     }
     r = trim(r);
@@ -86,9 +86,9 @@ function pdivmod(f: P, g: P, m: bigint): [P, P] {
 }
 const prem = (f: P, g: P, m: bigint) => pdivmod(f, g, m)[1];
 
+/** f divided by its leading coefficient modulo m (f nonzero modulo m). */
 function monic(f: P, m: bigint): P {
   const t = trim(f);
-  if (!t.length) return t;
   const inv = modInv(at(t, -1), m);
   return pmod(t.map((c) => c * inv), m);
 }
@@ -211,14 +211,11 @@ function henselLift(f: P, fs: P[], p: bigint, l: number): P[] {
 
 // ---- driver --------------------------------------------------------------------------
 
-const SMALL_PRIMES = [3n, 5n, 7n, 11n, 13n, 17n, 19n, 23n, 29n, 31n, 37n, 41n, 43n, 47n, 53n, 59n, 61n, 67n, 71n, 73n, 79n, 83n, 89n, 97n, 101n, 103n, 107n, 109n, 113n];
-
-function isqrtCeil(n: bigint): bigint {
-  if (n < 2n) return n;
-  let x = BigInt(Math.ceil(Math.sqrt(Number(n))));
-  while (x * x < n) x++;
-  while ((x - 1n) * (x - 1n) >= n) x--;
-  return x;
+/** The least prime above an odd number q. */
+function nextOddPrime(q: bigint): bigint {
+  let r = q + 2n;
+  while (!isprime(r)) r += 2n;
+  return r;
 }
 
 /** Exact division over ZZ, or undefined. */
@@ -236,7 +233,7 @@ function zzDivExact(f: P, g: P): P | undefined {
     q[k] = c;
     let i = k;
     for (const gj of gg) {
-      r[i] = (r[i] ?? 0n) - c * gj;
+      r[i] = at(r, i) - c * gj;
       i++;
     }
     r = trim(r);
@@ -244,6 +241,11 @@ function zzDivExact(f: P, g: P): P | undefined {
   return r.length ? undefined : trim(q);
 }
 
+/**
+ * The primitive part of a nonzero polynomial with a positive leading
+ * coefficient (the polynomials factored here and their factors in the
+ * symmetric range, whose leading coefficient divides that of f, are such).
+ */
 function primitivePart(f: P): P {
   let g = 0n;
   for (const c of f) {
@@ -252,9 +254,7 @@ function primitivePart(f: P): P {
     while (b) [a, b] = [b, a % b];
     g = a;
   }
-  const t = trim(f);
-  const sign = t.length && at(t, -1) < 0n ? -1n : 1n;
-  return g ? t.map((c) => (sign * c) / g) : t;
+  return trim(f).map((c) => c / g);
 }
 
 /**
@@ -266,23 +266,23 @@ export function zassenhaus(f0: P): P[] {
   const n = deg(f);
   if (n <= 1) return [f];
   const lc = at(f, n);
-  // a prime keeping the degree and square-freeness
+  // a prime not dividing lc (keeping the degree) modulo which f stays
+  // square-free: one exists, as only the finitely many prime factors of lc
+  // and of the discriminant fail
   let p = 0n;
-  for (const q of SMALL_PRIMES) {
+  for (let q = 3n; ; q = nextOddPrime(q)) {
     if (lc % q === 0n) continue;
     const fp = pmod(f, q);
-    if (deg(fp) !== n) continue;
     if (deg(pgcd(fp, derivative(fp), q)) !== 0) continue;
     p = q;
     break;
   }
-  if (!p) throw new NotImplementedError('zassenhaus: no suitable prime');
   const fpm = monic(pmod(f, p), p);
   const modFactors: P[] = [];
   for (const [g, d] of ddf(fpm, p)) modFactors.push(...edf(g, d, p));
   if (modFactors.length === 1) return [f];
   // Mignotte bound for the coefficients of a factor, times lc
-  const norm = isqrtCeil(f.reduce((s, c) => s + c * c, 0n));
+  const norm = iroot(f.reduce((s, c) => s + c * c, 0n), 2n) + 1n;
   const bound = 2n * babs(lc) * (1n << BigInt(n)) * norm;
   let l = 1;
   while (p ** BigInt(l) <= bound) l++;
@@ -304,7 +304,8 @@ export function zassenhaus(f0: P): P[] {
       const lcr = at(trim(rest), -1);
       const prod = idx.reduce((acc, i) => pmul(acc, at(remaining, i), m), [mod(lcr, m)] as P);
       const cand = primitivePart(prod.map(sym));
-      const q = deg(cand) > 0 ? zzDivExact(rest, cand) : undefined;
+      // cand has the degree of the (nonempty) product of monic factors
+      const q = zzDivExact(rest, cand);
       if (q) {
         out.push(cand);
         rest = q;
@@ -375,7 +376,7 @@ function sqfListModP(f0: P, p: bigint): [P, number][] {
     // f is a p-th power: take the p-th root (coefficients at multiples of p)
     const r = Number(p);
     const d = Math.floor(deg(f) / r);
-    f = Array.from({ length: d + 1 }, (_, i) => f[i * r] ?? 0n);
+    f = Array.from({ length: d + 1 }, (_, i) => at(f, i * r));
     n *= r;
   }
   return out;

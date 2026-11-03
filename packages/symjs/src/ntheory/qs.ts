@@ -10,7 +10,7 @@ import { at, defined, first, last } from '../core/guard';
 import { gcd } from '../core/numbers';
 import { perfectPowerInt } from './factor';
 import type { IntLike } from './intutil';
-import { asInt, bitScan1, invert, isqrt, pmod, powmod, pyLog, pyRound } from './intutil';
+import { asInt, bitScan1, invert, isqrt, pmod, powmod, pyLog, pyRound, remove } from './intutil';
 import { isprime } from './primetest';
 import type { RandInt } from './random';
 import { randintFrom } from './random';
@@ -268,22 +268,24 @@ export function qsFactor(NIn: IntLike, primeBoundIn: IntLike, MIn: IntLike, opts
   const randint = randintFrom(opts.seed ?? 1234);
   const [idx1000, idx5000, fb] = generateFactorBase(primeBound, N);
   const threshold = Math.floor((fb.length * 105) / 100);
+  // remove every power of a factor p of Ncopy
   const takeOut = (p: bigint): void => {
-    let e = 1n;
-    Ncopy /= p;
-    while (Ncopy % p === 0n) {
-      Ncopy /= p;
-      e++;
-    }
+    const [m, e] = remove(Ncopy, p);
+    Ncopy = m;
     factors.set(p, e);
   };
+  // the primes above the factor base that divide N, met as large primes of
+  // partial relations (SymPy takes each out of N_copy when first met and
+  // skips it later; collecting them first gives the same factors in the same order)
+  const proper = new Set<bigint>();
   for (const g of generatePolynomial(N, M, fb, idx1000, idx5000, randint)) {
     const sieveArray = genSieveArray(M, fb);
     const [sRel, pF] = trialDivisionStage(N, M, fb, sieveArray, g, partial, errorTerm);
     smooth.push(...sRel);
-    for (const p of pF) if (Ncopy % p === 0n) takeOut(p);
+    for (const p of pF) proper.add(p);
     if (threshold <= smooth.length) break;
   }
+  for (const p of proper) takeOut(p);
   for (const factor of findFactor(N, smooth, fb.length + 1)) {
     if (Ncopy % factor === 0n) {
       takeOut(factor);

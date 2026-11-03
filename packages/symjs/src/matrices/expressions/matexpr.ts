@@ -702,7 +702,12 @@ export class ImmutableMatrixNode extends MatrixExpr {
     return new ImmutableMatrixNode(this.matrix.map((e) => conjugateFn(e)));
   }
   override evalInverse(): Expr {
-    return new ImmutableMatrixNode(this.matrix.inv());
+    try {
+      return new ImmutableMatrixNode(this.matrix.inv());
+    } catch {
+      // the matrix is square here (inverse() checks): Matrix.inv only fails for a singular one
+      throw new NonInvertibleMatrixError('Matrix det == 0; not invertible.');
+    }
   }
   override evalDeterminant(): Expr {
     return this.matrix.det();
@@ -1494,7 +1499,8 @@ function combinePowers(e: Expr): Expr {
       try {
         inv = bBase.inverse();
       } catch (err) {
-        if (!(err instanceof NonInvertibleMatrixError)) throw err;
+        // the base is square (or of unknown shape), so only a singular matrix has no inverse
+        cast(err, NonInvertibleMatrixError, 'error of inverse()');
         inv = undefined;
       }
       if (inv !== undefined && same(aBase, inv)) {
@@ -1985,8 +1991,8 @@ export class TraceNode extends MatScalar {
   }
   override doit(hints: DoitHints = {}): Expr {
     if (hints.deep !== false) {
-      const arg = doitArg(this.arg, hints);
-      return arg instanceof MatrixExpr ? arg.evalTrace() : new TraceNode(arg);
+      // the doit of a matrix expression is a matrix expression
+      return asMat(doitArg(this.arg, hints)).evalTrace();
     }
     return this.arg instanceof ImmutableMatrixNode ? trace(this.arg) : this;
   }
@@ -2010,8 +2016,8 @@ export class TraceNode extends MatScalar {
   }
   override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
     if (x instanceof MatrixElementNode) return d(this.rewriteAsSum(), x);
-    const r = mdiff(this.arg, x, d);
-    return r instanceof MatrixExpr ? trace(r) : undefined;
+    // the derivative of a matrix expression is a matrix expression (or diff throws)
+    return trace(asMat(mdiff(this.arg, x, d)));
   }
 }
 
@@ -2052,8 +2058,8 @@ export class DeterminantNode extends MatScalar {
     return new DeterminantNode(at(args, 0));
   }
   override doit(hints: DoitHints = {}): Expr {
-    const arg = hints.deep === false ? this.arg : doitArg(this.arg, hints);
-    return arg instanceof MatrixExpr ? arg.evalDeterminant() : this;
+    // the doit of a matrix expression is a matrix expression
+    return (hints.deep === false ? this.arg : asMat(doitArg(this.arg, hints))).evalDeterminant();
   }
   override printLatex(print: (e: Expr) => string): string {
     const m = this.arg;

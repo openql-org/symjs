@@ -7,11 +7,11 @@
  */
 
 import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Add, Dummy, Order, Rational, S, Special } from '../core/nodes';
-import { add, mul, pow, sub, sympify } from '../core/ops';
+import { Add, Dummy, Mul, Order, Pow, Rational, S, Special } from '../core/nodes';
+import { add, mul, neg, pow, sub, sympify } from '../core/ops';
 import { subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
-import { cos, sin } from '../functions/elementary';
+import { cos, log, sin } from '../functions/elementary';
 import { integrate } from '../integrals/integrate';
 import { simplify } from '../simplify/simplify';
 import { str } from '../printing/str';
@@ -32,12 +32,14 @@ function seriesTerms(e: Expr, x: Sym, x0: Expr, n: number, dir: '+' | '-'): { te
   const s = series(et, t, 0, n, dir);
   const parts = s instanceof Add ? s.args : [s];
   const terms = parts.filter((p) => !isOrder(p));
+  // each term is c*t**e or c*(-t)**e (from the left) with c free of t but for log(t) or log(-t)
+  // (leadterm would search the leading term of t**2000/2 to too small an order)
   const deg = (p: Expr): number => {
-    try {
-      return leadterm(p, t)[1].toNumber();
-    } catch {
-      return 0;
+    for (const f of p instanceof Mul ? p.args : [p]) {
+      if (f.key === t.key) return 1;
+      if (f instanceof Pow && f.exp instanceof Rational && (f.base.key === t.key || f.base.key === neg(t).key)) return f.exp.value;
     }
+    return 0;
   };
   const back = (p: Expr): Expr => subs(p, [[t, atZero ? x : sub(x, x0)]]);
   return { terms: [...terms].sort((a, b) => deg(a) - deg(b)).map(back), exact: !parts.some(isOrder) };
@@ -78,6 +80,8 @@ export function dir(ex: ExprLike, x: Sym, cdir: ExprLike): Expr {
     if (coeff instanceof Special && coeff.name === 'zoo') {
       try {
         coeff = leadterm(arg, x)[0];
+        // a leading coefficient with log(x) is not a direction (SymPy raises and takes the limit)
+        if (coeff.has(log(x))) coeff = limit(arg, x, 0);
       } catch {
         coeff = limit(arg, x, 0);
       }

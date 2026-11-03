@@ -105,29 +105,47 @@ function cosOfPiMultiple(c: Rational): Expr | undefined {
 // Evaluators
 // ---------------------------------------------------------------------------
 
+/** SymPy _peeloff_pi: the multiple of pi/2 in c*pi, c - (c mod 1/2). */
+function peelHalfPi(c: Rational): Rational {
+  const twice = Rational.of(c.p * 2n, c.q);
+  const fl = twice.p >= 0n ? twice.p / twice.q : -((-twice.p + twice.q - 1n) / twice.q);
+  return Rational.of(fl, 2n);
+}
+
+/** sin(c*pi) for rational c (SymPy sin.eval of a rational multiple of pi). */
+function sinPi(c: Rational): Expr | undefined {
+  const v = sinOfPiMultiple(c);
+  if (v !== undefined) return v;
+  const m = ratMod(c, S.Two);
+  if (m.p > m.q) return neg(sin(mul(Rational.of(m.p - m.q, m.q), S.Pi)));
+  if (2n * m.p > m.q) return sin(mul(Rational.of(m.q - m.p, m.q), S.Pi));
+  return m.equals(c) ? undefined : sin(mul(m, S.Pi));
+}
+
+/** cos(c*pi) for rational c (SymPy cos.eval of a rational multiple of pi). */
+function cosPi(c: Rational): Expr | undefined {
+  const v = cosOfPiMultiple(c);
+  if (v !== undefined) return v;
+  if (c.isNegative) return cos(mul(numNeg(c), S.Pi));
+  // the coefficient reduced into [0, 2); SymPy keeps cos(15*pi/7) as it is
+  const m = ratMod(c, S.Two);
+  if (m.p > m.q) return neg(cos(mul(Rational.of(m.p - m.q, m.q), S.Pi)));
+  if (2n * m.p > m.q) return neg(cos(mul(Rational.of(m.q - m.p, m.q), S.Pi)));
+  return undefined;
+}
+
 const evalSin: Evaluator = (x) => {
   if (x instanceof Rational && x.isZero) return S.Zero;
   const [rest, c] = splitPiTerm(x);
-  if (rest instanceof Rational && rest.isZero) return sinOfPiMultiple(c);
-  if (!c.isZero) {
-    // reduce shift modulo 2*pi and use quarter-period symmetries
-    const m = ratMod(c, S.Two);
-    const twice = Rational.of(m.p * 2n, m.q);
-    if (twice.isInteger) {
-      switch (twice.p) {
-        case 0n:
-          return sin(rest);
-        case 1n:
-          return cos(rest);
-        case 2n:
-          return neg(sin(rest));
-        case 3n:
-          return neg(cos(rest));
-      }
-    }
-    if (!m.equals(c)) return sin(add(rest, mul(m, S.Pi)));
-  }
+  if (rest instanceof Rational && rest.isZero) return sinPi(c);
   if (couldExtractMinusSign(x)) return neg(sin(neg(x)));
+  const m = peelHalfPi(c);
+  if (!m.isZero) {
+    // SymPy: sin(m*pi)*cos(x) + cos(m*pi)*sin(x) with x = arg - m*pi
+    const mp = mul(m, S.Pi);
+    const xr = add(rest, mul(add(c, numNeg(m)), S.Pi));
+    return add(mul(sin(mp), cos(xr)), mul(cos(mp), sin(xr)));
+  }
   if (x instanceof Fn && x.name === 'asin') return x.args[0];
   return undefined;
 };
@@ -135,25 +153,15 @@ const evalSin: Evaluator = (x) => {
 const evalCos: Evaluator = (x) => {
   if (x instanceof Rational && x.isZero) return S.One;
   const [rest, c] = splitPiTerm(x);
-  if (rest instanceof Rational && rest.isZero) return cosOfPiMultiple(c);
-  if (!c.isZero) {
-    const m = ratMod(c, S.Two);
-    const twice = Rational.of(m.p * 2n, m.q);
-    if (twice.isInteger) {
-      switch (twice.p) {
-        case 0n:
-          return cos(rest);
-        case 1n:
-          return neg(sin(rest));
-        case 2n:
-          return neg(cos(rest));
-        case 3n:
-          return sin(rest);
-      }
-    }
-    if (!m.equals(c)) return cos(add(rest, mul(m, S.Pi)));
-  }
+  if (rest instanceof Rational && rest.isZero) return cosPi(c);
   if (couldExtractMinusSign(x)) return cos(neg(x));
+  const m = peelHalfPi(c);
+  if (!m.isZero) {
+    // SymPy: cos(m*pi)*cos(x) - sin(m*pi)*sin(x) with x = arg - m*pi
+    const mp = mul(m, S.Pi);
+    const xr = add(rest, mul(add(c, numNeg(m)), S.Pi));
+    return add(mul(cos(mp), cos(xr)), neg(mul(sin(mp), sin(xr))));
+  }
   if (x instanceof Fn && x.name === 'acos') return x.args[0];
   return undefined;
 };
@@ -164,10 +172,13 @@ const evalTan: Evaluator = (x) => {
   if (rest instanceof Rational && rest.isZero) {
     const s = sinOfPiMultiple(c);
     const co = cosOfPiMultiple(c);
-    if (s && co) {
-      if (co instanceof Rational && co.isZero) return S.ComplexInfinity;
-      return mul(s, pow(co, -1));
-    }
+    // tan(pi/2 + k*pi) = 1/0 = zoo
+    if (s && co) return mul(s, pow(co, -1));
+    // SymPy: the coefficient reduced into [-1/2, 1/2)
+    const r1 = ratMod(Rational.of(2n * c.p + c.q, 2n * c.q), S.One);
+    const n = Rational.of(2n * r1.p - r1.q, 2n * r1.q);
+    if (!n.equals(c)) return tan(mul(n, S.Pi));
+    return c.isNegative ? neg(tan(mul(numNeg(c), S.Pi))) : undefined;
   }
   if (!c.isZero) {
     const m = ratMod(c, S.One);
@@ -315,6 +326,9 @@ const evalAbs: Evaluator = (x) => {
       if (isIntegerQ(e) === true) {
         if (isEven(e)) return x;
         if (b instanceof Rational && b.p === -1n && b.q === 1n) return S.One;
+        // SymPy Abs._eval_power: Abs(b)**n = b**(n - 1)*Abs(b) for an odd integer n other than -1
+        if (e instanceof Rational && e.p > 1n) return mul(pow(b, Rational.of(e.p - 1n)), abs(b));
+        if (e instanceof Rational && e.p < -1n) return mul(pow(b, Rational.of(e.p + 1n)), pow(abs(b), -1));
         return pow(abs(b), e);
       }
       if (isNonNegative(b) === true) return pow(b, re(e));
@@ -347,10 +361,7 @@ function unitRoot(x: Expr): [Expr, Expr] | undefined {
   if (!negOne && !isI(x.base)) return undefined;
   // I**r = (-1)**(r/2)
   const ang = mul(negOne ? x.exp : mul(x.exp, S.Half), S.Pi);
-  const c = cos(ang);
-  const s = sin(ang);
-  if (c instanceof Fn || s instanceof Fn) return undefined;
-  return [c, s];
+  return [cos(ang), sin(ang)];
 }
 
 const evalRe: Evaluator = (x) => {
@@ -376,7 +387,6 @@ const evalRe: Evaluator = (x) => {
       return neg(im(w));
     }
   }
-  if (x instanceof Fn && x.name === 're') return x;
   if (x instanceof Fn && x.name === 'conjugate') return re(first(x.args));
   return undefined;
 };
@@ -434,14 +444,17 @@ const evalArg: Evaluator = (x) => {
       return new Float(Math.atan2(b instanceof Rational ? b.value : (b).value, a instanceof Rational ? a.value : (a).value));
     }
     if (!(a instanceof Fn) && !(b instanceof Fn) && a.freeSymbols().size === 0) {
-      const sa = isPositive(a) ? 1 : isNegative(a) ? -1 : 0;
+      // signs decided by the assumptions, else numerically (SymPy evaluates is_positive by evalf)
+      const sign = (e: Expr): 1 | -1 | undefined => (isPositive(e) ? 1 : isNegative(e) ? -1 : numericSign(e));
       if (a instanceof Rational && a.isZero) {
-        if (isPositive(b)) return mul(S.Half, S.Pi);
-        if (isNegative(b)) return mul(S.NegHalf, S.Pi);
+        const sb = sign(b);
+        return sb === undefined ? undefined : mul(Rational.of(sb, 2), S.Pi);
       }
-      const t = atan(mul(b, pow(a, -1)));
-      if (sa === 1) return t;
-      if (sa === -1) return isNegative(b) ? add(t, neg(S.Pi)) : add(t, S.Pi);
+      const sa = sign(a);
+      if (sa !== undefined) {
+        const t = atan(mul(b, pow(a, -1)));
+        return sa === 1 ? t : sign(b) === -1 ? add(t, neg(S.Pi)) : add(t, S.Pi);
+      }
     }
   }
   if (isNegative(x)) return S.Pi;
@@ -513,6 +526,9 @@ export function adjoint(xx: ExprLike): Expr {
     if (x.name === 'adjoint') return first(x.args);
     if (x.name === 'conjugate') return transpose(first(x.args));
     if (x.name === 'transpose') return conjugate(first(x.args));
+    // SymPy Expr._eval_adjoint: transpose(conjugate(f)) when the conjugate evaluates
+    const c = conjugate(x);
+    if (!(c instanceof Fn && c.name === 'conjugate')) return transpose(c);
   }
   if (x instanceof Pow && x.base instanceof Constant && x.base.name === 'E') return pow(x.base, adjoint(x.exp));
   return new Fn('adjoint', [x]);
@@ -586,14 +602,14 @@ export function fn(name: FnName, args: readonly ExprLike[], opts: { evaluate?: b
   if (v !== undefined) return v;
   const f = new Fn(name, xs);
   // SymPy Function.__new__: evaluate numerically when every argument is a Float
-  if (xs.length > 0) {
-    const precs = xs.map(shouldEvalf);
-    if (Math.min(...precs) > 0) {
-      try {
-        return impl.evalf(f, precToDps(Math.max(...precs)));
-      } catch {
-        return f;
-      }
+  // (a call without arguments has max(-1) = -1)
+  const precs = xs.map(shouldEvalf);
+  const maxPrec = Math.max(-1, ...precs);
+  if (maxPrec > 0 && Math.min(...precs) > 0) {
+    try {
+      return impl.evalf(f, precToDps(maxPrec));
+    } catch {
+      return f;
     }
   }
   return f;

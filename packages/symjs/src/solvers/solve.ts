@@ -6,13 +6,13 @@
  * linear and polynomial systems, undetermined coefficients and nsolve.
  */
 
-import { InvariantError, NotImplementedError, PolynomialError } from '../core/errors';
+import { NotImplementedError } from '../core/errors';
 import { solvePolySystem } from './polysys';
 import { isNegative, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
-import { freeSymbols, some, xreplace, xreplace as xreplaceS } from '../core/traverse';
+import { freeSymbols, xreplace, xreplace as xreplaceS } from '../core/traverse';
 import { at, defined, first, getOrThrow } from '../core/guard';
 import { evalf } from '../numeric/evalf';
 import { diff } from '../calculus/diff';
@@ -97,7 +97,12 @@ function invertFn(f: Fn | Pow, y: Expr, x: Sym): [Expr, Expr[]] | undefined {
     }
     // b**n = y with n free of x  ->  b = y**(1/n) (SymPy solve(x**y - 2, x) = [2**(1/y)])
     if (!(n instanceof Rational)) return n.has(x) ? undefined : [b, [pow(y, pow(n, -1))]];
-    if (n.isInteger) return undefined; // handled as a polynomial
+    if (n.isInteger) {
+      // b**n = y: b is an n-th root of y (b = x itself was solved as a polynomial)
+      // (the exponent is positive: f is a factor of a numerator)
+      const t = new Dummy('t');
+      return [b, roots(add(pow(t, n), mul(-1, y)), t)];
+    }
     return [b, [pow(y, Rational.of(n.q, n.p))]];
   }
   // f has x, so it has an argument
@@ -225,15 +230,17 @@ function singleRadical(num: Expr, x: Sym, depth: number): Expr[] | undefined {
       bs.push(t);
       continue;
     }
+    // R is the only radical in x, so c is free of radicals unless it still contains R
     const c = mul(t, pow(R, -1));
-    if (c.has(R) || some(c, (u) => u instanceof Pow && u.exp instanceof Rational && !u.exp.isInteger && u.base.has(x))) return undefined;
+    if (c.has(R)) return undefined;
     as.push(c);
   }
   const a = add(...as);
   const b = add(...bs);
   const p = Rexp.p;
   const q = Rexp.q;
-  if (p < 0n || q > 6n) return undefined;
+  // num is a numerator, so p > 0
+  if (q > 6n) return undefined;
   const eq = add(mul(pow(a, Rational.of(q)), pow(R.base, Rational.of(p))), mul(-1, pow(mul(-1, b), Rational.of(q))));
   return solveRaw(expandMul(eq), x, depth + 1);
 }
@@ -270,8 +277,8 @@ function radicalsOfX(num: Expr, x: Sym): Expr[] | undefined {
   collectPowers(num);
   const reps: [Expr, Expr][] = [...powers.values()].map((e) => [e, pow(t, mul(e.exp, Rational.of(L)))]);
   const sub = expandMul(xreplace(xreplace(num, reps), [[x, pow(t, Rational.of(L))]]));
-  const pc = polyCoefficients(sub, t);
-  if (!pc) return undefined;
+  // the powers of x are nonnegative (num is a numerator), so sub is a polynomial in t
+  defined(polyCoefficients(sub, t), 'polynomial in t');
   // a polynomial with rational coefficients in the original variable name (SymPy prints CRootOf in x)
   const [n] = fraction(together(sub));
   const P = Poly.from(expandMul(xreplace(n, [[t, x]])), [x]);
@@ -307,8 +314,8 @@ function sinCosLinear(e: Expr, x: Sym): Expr[] | undefined {
     if (g.name === 'sin') a = add(a, c);
     else b = add(b, c);
   }
-  if (!u || a instanceof Rational && a.isZero || b instanceof Rational && b.isZero) return undefined;
-  return solveRaw(add(u, mul(-1, atan(mul(-1, b, pow(a, -1))))), x);
+  // a single sin or cos term, or terms with one function, were isolated before: both a and b are nonzero
+  return solveRaw(add(defined(u, 'argument'), mul(-1, atan(mul(-1, b, pow(a, -1))))), x);
 }
 
 /**
@@ -324,8 +331,8 @@ function lambertSolve(num: Expr, x: Sym): Expr[] | undefined {
   const without: Expr[] = [];
   for (const t of terms) {
     const factors = t instanceof Mul ? t.args : [t];
+    // exponentials in a product combine into one
     const ex = factors.filter((g): g is Pow => isExp(g) && g.has(x));
-    if (ex.length > 1) return undefined;
     if (ex.length === 0) {
       without.push(t);
       continue;
@@ -344,10 +351,8 @@ function lambertSolve(num: Expr, x: Sym): Expr[] | undefined {
   if (deg(U) !== 1) return undefined;
   const d = getOrThrow(U, 1);
   const e = U.get(0) ?? S.Zero;
-  const W = (arg: Expr, k?: number) => {
-    if (!impl.lambertW) throw new InvariantError('LambertW implementation is missing');
-    return k === undefined ? impl.lambertW(arg) : impl.lambertW(arg, k);
-  };
+  // the LambertW implementation is registered by functions/special
+  const W = (arg: Expr, k?: number) => defined(k === undefined ? impl.lambertW?.(arg) : impl.lambertW?.(arg, k), 'LambertW');
   const branches = (arg: Expr, sol: (k?: number) => Expr): Expr[] => {
     const out = [sol()];
     if (arg.freeSymbols().size === 0) {
@@ -366,8 +371,8 @@ function lambertSolve(num: Expr, x: Sym): Expr[] | undefined {
   if (deg(P) === 1 && deg(Q) <= 0) {
     const a = getOrThrow(P, 1);
     const ba = mul(P.get(0) ?? S.Zero, pow(a, -1));
-    const c = Q.get(0) ?? S.Zero;
-    if (c instanceof Rational && c.isZero) return undefined;
+    // together() factors out an exp(u) common to all terms, so some term is free of it
+    const c = getOrThrow(Q, 0);
     const arg = mul(-1, c, d, pow(a, -1), exp(add(mul(d, ba), mul(-1, e))));
     return branches(arg, (k) => add(mul(W(arg, k), pow(d, -1)), mul(-1, ba)));
   }
@@ -478,8 +483,8 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
         if (pc && Math.max(...pc.keys()) === 1) {
           const c1 = getOrThrow(pc, 1);
           const c0 = pc.get(0) ?? S.Zero;
+          // c0 and c1 are free of u, and so is the value
           const val = cancel(mul(-1, c0, pow(c1, -1)));
-          if (val.has(u)) continue;
           const next = new Map(assigned);
           next.set(u.key, val);
           for (const [k, w] of next) next.set(k, cancel(xreplace(w, [[u, val]])));
@@ -522,7 +527,8 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
         const next = new Map(assigned);
         unknowns.forEach((u, i) => next.set(u.key, at(sol, i)));
         for (const [k, w] of next) next.set(k, simplifyBack(xreplace(w, unknowns.map((u, i): [Expr, Expr] => [u, at(sol, i)]))));
-        results.push(syms.map((s) => next.get(s.key) ?? s));
+        // every unknown is assigned now
+        results.push(syms.map((s) => getOrThrow(next, s.key)));
       }
       return;
     }
@@ -635,8 +641,8 @@ export function solveUndeterminedCoeffs(e: ExprLike, coeffs: readonly Sym[], sym
       eqs.push(expr);
       return;
     }
-    const pc = polyCoefficients(expr, first(vars));
-    if (!pc) throw new PolynomialError('solve_undetermined_coeffs: not polynomial in the symbols');
+    // expr is a sum of monomials in the symbols (checked below), so its coefficients are polynomials in the rest
+    const pc = defined(polyCoefficients(expr, first(vars)), 'coefficients');
     for (const c of pc.values()) collect(c, vars.slice(1));
   };
   if (syms.every((v) => polyCoefficients(f, v) !== undefined)) collect(f, syms);
@@ -666,29 +672,20 @@ export function nsolve(e: ExprLike, x: Sym, x0: ExprLike | readonly [ExprLike, E
   const f = asEquation(e);
   const df = diff(f, x);
   const wp = dps + 10;
-  let z: Expr;
-  try {
-    z = impl.evalf(r, wp);
-  } catch {
-    return r;
-  }
+  // the functions evaluated in double precision above evaluate in any precision
+  let z = impl.evalf(r, wp);
   let last = '';
-  try {
-    for (let i = 0; i < 60; i++) {
-      const fv = impl.evalf(xreplace(f, [[x, z]]), wp);
-      // an exact root (a zero derivative there would give 0/0)
-      if (fv.toComplex().re === 0 && fv.toComplex().im === 0) break;
-      const dv = impl.evalf(xreplace(df, [[x, z]]), wp);
-      z = impl.evalf(add(z, mul(-1, fv, pow(dv, -1))), wp);
-      const cur = impl.evalf(z, dps).toString();
-      if (cur === last) break;
-      last = cur;
-    }
-    return impl.evalf(z, dps);
-  } catch {
-    // the double precision root (a zero derivative at the root, ...)
-    return dps <= 15 ? r : impl.evalf(z, dps);
+  for (let i = 0; i < 60; i++) {
+    const fv = impl.evalf(xreplace(f, [[x, z]]), wp);
+    // an exact root (a zero derivative there would give 0/0)
+    if (fv.toComplex().re === 0 && fv.toComplex().im === 0) break;
+    const dv = impl.evalf(xreplace(df, [[x, z]]), wp);
+    z = impl.evalf(add(z, mul(-1, fv, pow(dv, -1))), wp);
+    const cur = impl.evalf(z, dps).toString();
+    if (cur === last) break;
+    last = cur;
   }
+  return impl.evalf(z, dps);
 }
 
 /** A real root in [a, b] by bisection (SymPy nsolve(f, (a, b), solver='bisect')). */

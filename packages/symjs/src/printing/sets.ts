@@ -10,9 +10,7 @@
 import type { Expr } from '../core/nodes';
 import { Special, impl, isNum } from '../core/nodes';
 import { at } from '../core/guard';
-import { compareKeys, sortKey } from './sortkey';
-
-const byKey = (a: Expr, b: Expr): number => compareKeys(sortKey(a), sortKey(b));
+import { ordered } from '../core/match';
 
 /** Shape of SymPy sets (sets/ is a higher layer): the class name and the arguments. */
 interface SetLike {
@@ -66,9 +64,11 @@ function setInfimum(e: Expr): number | undefined {
 /**
  * The arguments of a Union or Intersection in SymPy's order: SymPy sorts
  * them by infimum (`ordered(args, Set._infimum_key)`; an unknown infimum
- * counts as oo), then by the default sort key.
+ * counts as oo), then like `ordered` by the node count and the default sort
+ * key.
  */
 export function setArgsOrdered(args: readonly Expr[]): Expr[] {
-  const keyed = args.map((a) => [setInfimum(a) ?? Infinity, a] as const);
-  return keyed.sort((p, q) => (p[0] < q[0] ? -1 : p[0] > q[0] ? 1 : byKey(p[1], q[1]))).map(([, a]) => a);
+  // a stable sort by infimum of the ordered arguments
+  const keyed = ordered(args).map((a) => [setInfimum(a) ?? Infinity, a] as const);
+  return keyed.sort((p, q) => (p[0] < q[0] ? -1 : p[0] > q[0] ? 1 : 0)).map(([, a]) => a);
 }

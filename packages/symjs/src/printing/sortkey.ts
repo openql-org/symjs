@@ -9,7 +9,7 @@
  */
 
 import type { ComplexValue, ConstantName, Expr, RelOp, SpecialName } from '../core/nodes';
-import { Add, Constant, Derivative, Dummy, ExtensionExpr, Float, Fn, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, impl, isNum } from '../core/nodes';
+import { Add, BoolAtom, Constant, Derivative, Dummy, ExtensionExpr, Float, Fn, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, impl, isNum } from '../core/nodes';
 import { pow, splitCoeff } from '../core/ops';
 import { at, pair } from '../core/guard';
 
@@ -72,13 +72,14 @@ const isExp = (e: Expr): e is Pow => e instanceof Pow && e.base instanceof Const
 
 const REL_CLASS: Record<RelOp, string> = { Eq: 'Equality', Ne: 'Unequality', Lt: 'StrictLessThan', Le: 'LessThan', Gt: 'StrictGreaterThan', Ge: 'GreaterThan' };
 
-const symClass = (e: Sym): string =>
-  e instanceof WildFunction ? 'WildFunction' : e instanceof Wild ? 'Wild' : e instanceof Dummy ? 'Dummy' : 'Symbol';
+// a WildFunction is a Function in SymPy (class key (4, 0, 'WildFunction'))
+const symClass = (e: Sym): Key => (e instanceof WildFunction ? [4, 0, 'WildFunction'] : [2, 0, e instanceof Wild ? 'Wild' : e instanceof Dummy ? 'Dummy' : 'Symbol']);
 
 /** SymPy class_key: (priority, sub-priority, class name) used to order expressions. */
 export function classKey(e: Expr): Key {
   if (isNum(e) || e instanceof Special) return [1, 0, 'Number'];
-  if (e instanceof Sym) return [2, 0, symClass(e)];
+  if (e instanceof BoolAtom) return [5, 0, e.value ? 'BooleanTrue' : 'BooleanFalse'];
+  if (e instanceof Sym) return symClass(e);
   if (e instanceof Constant) return [2, 0, CONSTANT_CLASS[e.name]];
   if (e instanceof Mul) return [3, 0, 'Mul'];
   if (e instanceof Add) return [3, 1, 'Add'];
@@ -96,23 +97,34 @@ export function classKey(e: Expr): Key {
   return [5, 0, e.kind];
 }
 
-const numValue = (e: Expr): number =>
-  e instanceof Rational || e instanceof Float ? e.value : e instanceof Special ? ({ oo: Infinity, '-oo': -Infinity } as Record<string, number>)[e.name] ?? NaN : NaN;
-
 const ONE_KEY: Key = [[1, 0, 'Number'], [0, []], [], 1];
 
-/** SymPy `Basic.sort_key()` / `default_sort_key`. */
 const SPECIAL_VALUE: Record<SpecialName, number> = { oo: Infinity, '-oo': -Infinity, zoo: Infinity, nan: NaN };
 
+/**
+ * SymPy `as_coeff_Mul()` as the value of the coefficient (the last entry of a
+ * sort key) and the rest, where oo, -oo, zoo and nan are coefficients too
+ * (they are Numbers in SymPy).
+ */
+function coeffMul(e: Expr): [number, Expr] {
+  const [c, rest] = splitCoeff(e);
+  const special = rest instanceof Mul ? rest.args.find((a) => a instanceof Special) : undefined;
+  if (special instanceof Special) return [c.value * SPECIAL_VALUE[special.name], impl.mul(...rest.args.filter((a) => a !== special))];
+  return [c.value, rest];
+}
+
+/** SymPy `Basic.sort_key()` / `default_sort_key`. */
+
 export function sortKey(e: Expr): Key {
-  if (isNum(e)) return [[1, 0, 'Number'], [0, []], [], numValue(e)];
+  if (isNum(e)) return [[1, 0, 'Number'], [0, []], [], e.value];
   if (e instanceof Special) return [[1, 0, 'Number'], [0, []], [], SPECIAL_VALUE[e.name]];
   if (e instanceof Dummy) return [[2, 0, 'Dummy'], [2, [e.name, e.dummyIndex]], ONE_KEY, 1];
-  if (e instanceof Sym) return [[2, 0, symClass(e)], [1, [e.printName]], ONE_KEY, 1];
+  if (e instanceof Sym) return [symClass(e), [1, [e.printName]], ONE_KEY, 1];
   if (e instanceof Constant) return [classKey(e), [1, [impl.str(e)]], ONE_KEY, 1];
+  if (e instanceof BoolAtom) return [classKey(e), [0, []], ONE_KEY, 1];
 
   // Expr.sort_key
-  const [coeff, rest] = splitCoeff(e);
+  const [coeff, rest] = coeffMul(e);
   let expr: Expr = rest;
   let exp: Expr = S.One;
   let ck: Key;
@@ -132,7 +144,7 @@ export function sortKey(e: Expr): Key {
     else if (expr instanceof Mul) args = asOrderedFactors(expr).map(sortKey);
     else args = expr.args.map(sortKey);
   }
-  return [ck, [args.length, args], sortKey(exp), numValue(coeff)];
+  return [ck, [args.length, args], sortKey(exp), coeff];
 }
 
 /** SymPy `Mul.as_ordered_factors()` (all factors are commutative here). */
@@ -197,7 +209,7 @@ function lexOrder(terms: readonly Expr[]): Expr[] {
   const gens = new Map<string, Expr>();
   const parsed = terms.map((term) => {
     const [c, rest] = splitCoeff(term);
-    let coeff: ComplexValue = { re: numValue(c), im: 0 };
+    let coeff: ComplexValue = { re: c.value, im: 0 };
     const cpart = new Map<string, number>();
     const ncpart: Expr[] = [];
     if (!(rest instanceof Rational && rest.isOne)) {

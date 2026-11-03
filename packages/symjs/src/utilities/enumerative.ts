@@ -157,18 +157,16 @@ export class MultisetPartitionTraverser {
   decrementPartSmall(part: readonly PartComponent[], ub: number): boolean {
     if (this.lpart >= ub - 1) return false;
     const plen = part.length;
-    for (let j = plen - 1; j >= 0; j--) {
-      const p0 = at(part, 0);
-      if (j === 0 && (p0.v - 1) * (ub - this.lpart) < p0.u) return false;
-      const pj = at(part, j);
-      if ((j === 0 && pj.v > 1) || (j > 0 && pj.v > 0)) {
-        pj.v -= 1;
-        for (let k = j + 1; k < plen; k++) at(part, k).v = at(part, k).u;
-        if (plen > 1 && at(part, 1).v === 0 && p0.u - p0.v === (ub - this.lpart - 1) * p0.v) return false;
-        return true;
-      }
-    }
-    return false;
+    const p0 = at(part, 0);
+    const decrement = (j: number): boolean => {
+      at(part, j).v -= 1;
+      for (let k = j + 1; k < plen; k++) at(part, k).v = at(part, k).u;
+      return !(plen > 1 && at(part, 1).v === 0 && p0.u - p0.v === (ub - this.lpart - 1) * p0.v);
+    };
+    for (let j = plen - 1; j > 0; j--) if (at(part, j).v > 0) return decrement(j);
+    if ((p0.v - 1) * (ub - this.lpart) < p0.u) return false;
+    // here p0.v > 1, as p0.u >= 1 and ub - lpart >= 2 (SymPy also tests p0.v > 1 and returns False otherwise)
+    return decrement(0);
   }
 
   /** Decrement (when amt is 1) and enforce that more than lb parts remain reachable. */
@@ -185,15 +183,8 @@ export class MultisetPartitionTraverser {
     if (totalMult <= minUnalloc) return false;
     let deficit = minUnalloc - (totalMult - totalAlloc);
     if (deficit <= 0) return true;
-    for (let i = part.length - 1; i >= 0; i--) {
+    for (let i = part.length - 1; i > 0; i--) {
       const pi = at(part, i);
-      if (i === 0) {
-        if (pi.v > deficit) {
-          pi.v -= deficit;
-          return true;
-        }
-        return false;
-      }
       if (pi.v >= deficit) {
         pi.v -= deficit;
         return true;
@@ -201,7 +192,10 @@ export class MultisetPartitionTraverser {
       deficit -= pi.v;
       pi.v = 0;
     }
-    return false;
+    // the first component keeps (total allocation) - (initial deficit) = totalMult - minUnalloc > 0
+    // (SymPy returns False here, "this shouldn't happen")
+    at(part, 0).v -= deficit;
+    return true;
   }
 
   /** Combination of the small and large decrements. */
@@ -249,17 +243,17 @@ export class MultisetPartitionTraverser {
   /** Enumerate the partitions of a multiset with lb < (number of parts) <= ub. */
   *enumRange(multiplicities: readonly number[], lb: number, ub: number): Generator<PartitionState, void, undefined> {
     this.discarded = 0;
-    if (ub <= 0 || lb >= multiplicities.reduce((a, b) => a + b, 0)) return;
+    // no number of parts k with lb < k <= ub (SymPy raises IndexError for ub = 1 <= lb; symjs looped forever)
+    if (ub <= 0 || lb >= ub || lb >= multiplicities.reduce((a, b) => a + b, 0)) return;
     this.initializeEnumeration(multiplicities);
     this.decrementPartLarge(this.topPart(), 0, lb);
     for (;;) {
       let good = true;
       while (this.spreadPartMultiplicity()) {
-        if (!this.decrementPartLarge(this.topPart(), 0, lb)) {
-          this.discarded++;
-          good = false;
-          break;
-        } else if (this.lpart >= ub) {
+        // never fails (SymPy counts a failure as discarded): the spread part has all the elements its
+        // parent left unallocated, at least lb - lpart + 1 of them, so more than lb - lpart
+        this.decrementPartLarge(this.topPart(), 0, lb);
+        if (this.lpart >= ub) {
           this.discarded++;
           good = false;
           this.lpart = ub - 2;

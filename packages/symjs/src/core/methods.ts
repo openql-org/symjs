@@ -10,10 +10,12 @@ import { isIntegerQ, isNegative as isNegativeQ, isPositive, isReal, isZero as is
 import type { ExprLike, FnName } from './nodes';
 import { Add, Constant, Expr, Float, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, asRational, impl, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
+import { numAdd, numNeg } from './num';
 import { add, asBaseExp, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
 import { ExprMap } from './exprmap';
 import { freeSymbols, xreplace as xreplaceM } from './traverse';
 import { at, getOrThrow } from './guard';
+import { ordered } from './match';
 import { InvariantError } from './errors';
 
 // Higher layers are reached through impl (docs/architecture.md: the core imports no other layer)
@@ -144,7 +146,8 @@ export function coeff(eIn: ExprLike, xIn: ExprLike, n = 1, right = false, first 
   // both non-commutative: compare the non-commutative parts
   if (!co.length) return S.Zero;
   const find = (l: readonly Expr[], sub: readonly Expr[], fromLeft: boolean): number | undefined => {
-    if (!sub.length || !l.length || sub.length > l.length) return undefined;
+    // sub is the noncommutative part of x, which is not empty here
+    if (sub.length > l.length) return undefined;
     const k = sub.length;
     const L = fromLeft ? l : [...l].reverse();
     const T = fromLeft ? sub : [...sub].reverse();
@@ -332,21 +335,20 @@ export function asContentPrimitive(eIn: ExprLike, opts: { clear?: boolean; radic
     const b = keepCoeff(...asContentPrimitive(b0, opts));
     const [ce, pe] = asContentPrimitive(x0, opts);
     if (b instanceof Rational && !b.isZero) {
+      // b**(ce*(h + t)) = b**iceh * b**(ce*t + r/ceh.q) with ce*h = iceh + r/ceh.q
       const [h, t] = splitAddRational(pe);
-      if (h instanceof Rational) {
-        const ceh = asRational(mul(ce, h));
-        let c = pow(b, ceh);
-        let r: Expr = S.Zero;
-        if (!(c instanceof Rational)) {
-          const iceh = ceh.p / ceh.q - (ceh.p % ceh.q !== 0n && ceh.p < 0n ? 1n : 0n);
-          const rem = ceh.p - iceh * ceh.q;
-          r = Rational.of(rem);
-          c = pow(b, Rational.of(iceh));
-        }
-        if (c instanceof Rational) {
-          return [c, pow(b, keepCoeff(ce, add(t, mul(r, pow(ce, -1), Rational.of(1n, ceh.q)))))];
-        }
+      const ceh = asRational(mul(ce, h));
+      const direct = pow(b, ceh);
+      let c: Rational;
+      let r: Expr = S.Zero;
+      if (direct instanceof Rational) c = direct;
+      else {
+        const iceh = ceh.p / ceh.q - (ceh.p % ceh.q !== 0n && ceh.p < 0n ? 1n : 0n);
+        r = Rational.of(ceh.p - iceh * ceh.q);
+        // an integer power of a nonzero rational
+        c = asRational(pow(b, Rational.of(iceh)));
       }
+      return [c, pow(b, keepCoeff(ce, add(t, mul(r, pow(ce, -1), Rational.of(1n, ceh.q)))))];
     }
     const ex = keepCoeff(ce, pe);
     if (ex instanceof Rational && b instanceof Mul) {
@@ -363,7 +365,7 @@ export function asContentPrimitive(eIn: ExprLike, opts: { clear?: boolean; radic
   return [S.One, e];
 }
 
-function splitAddRational(e: Expr): [Expr, Expr] {
+function splitAddRational(e: Expr): [Rational, Expr] {
   if (e instanceof Rational) return [e, S.Zero];
   if (e instanceof Add && e.args[0] instanceof Rational) return [e.args[0], add(...e.args.slice(1))];
   return [S.Zero, e];
@@ -407,7 +409,8 @@ export function extractMultiplicatively(eIn: ExprLike, cIn: ExprLike): Expr | un
     if (quotient instanceof Mul && quotient.args.length === 2) {
       const [q0, q1] = quotient.args;
       if (q0 instanceof Rational && q0.isInteger && q0.isPositive && q1?.key === e.key) return quotient;
-    } else if (quotient instanceof Rational && quotient.isInteger && c.isNumber) return quotient;
+    }
+    // (SymPy also accepts an Integer quotient for a Number c, which cannot happen: c is neither e nor a product)
     return undefined;
   }
   if (e instanceof Add) {
@@ -470,10 +473,10 @@ export function extractAdditively(eIn: ExprLike, cIn: ExprLike): Expr | undefine
   if (isZeroE(e)) return undefined;
   if (isNum(e)) {
     if (!isNum(c)) return undefined;
-    const d = add(e, mul(-1, c));
-    if (!isNum(d)) return undefined;
+    const d = numAdd(e, numNeg(c));
+    // SymPy: co > 0 and diff >= 0 and diff < co, or co < 0 and diff <= 0 and diff > co (diff - co = -c)
     const co = e;
-    if ((co.isPositive && !d.isNegative && cmpNum(d, co) < 0) || (co.isNegative && !d.isPositive && cmpNum(d, co) > 0)) return d;
+    if ((co.isPositive && !d.isNegative && c.isPositive) || (co.isNegative && !d.isPositive && c.isNegative)) return d;
     return undefined;
   }
   if (isNum(c)) {
@@ -485,9 +488,9 @@ export function extractAdditively(eIn: ExprLike, cIn: ExprLike): Expr | undefine
     const co = coeff(e, c);
     const xa0 = mul(extractAdditively(co, 1) ?? S.Zero, c);
     if (!isZeroE(xa0)) {
-      const diff_ = add(e, mul(-1, co, c));
-      const r = add(xa0, extractAdditively(diff_, c) ?? diff_);
-      return isZeroE(r) ? undefined : r;
+      // e - c = (co - 1)*c + diff (SymPy adds diff.extract_additively(c) or diff, which takes c off twice
+      // when diff contains it: ((y + 2)*(x + 1) + x + 1 + z).extract_additively(x + 1) = z + (x + 1)*(y + 1))
+      return add(xa0, add(e, mul(-1, co, c)));
     }
     const [h, t] = splitAddRational(c);
     const [sh, st] = splitAddRational(e);
@@ -508,10 +511,8 @@ export function extractAdditively(eIn: ExprLike, cIn: ExprLike): Expr | undefine
   const co = add(...coTerms);
   const diff_ = add(...diffTerms);
   const xa0 = mul(extractAdditively(co, 1) ?? S.Zero, c);
-  if (!isZeroE(xa0)) {
-    const r = add(xa0, extractAdditively(diff_, c) ?? diff_);
-    return isZeroE(r) ? undefined : r;
-  }
+  // e - c = (co - 1)*c + diff, as above
+  if (!isZeroE(xa0)) return add(xa0, diff_);
   let self = e;
   const coeffs: Expr[] = [];
   for (const a of addArgs(c)) {
@@ -527,11 +528,6 @@ export function extractAdditively(eIn: ExprLike, cIn: ExprLike): Expr | undefine
   coeffs.push(self);
   return add(...coeffs);
 }
-
-const cmpNum = (a: Expr, b: Expr): number => {
-  const d = add(a, mul(-1, b));
-  return isNum(d) ? (d.isNegative ? -1 : d.isZero ? 0 : 1) : 0;
-};
 
 /** SymPy `as_coefficient(expr)`. */
 export function asCoefficient(e: ExprLike, x: ExprLike): Expr | undefined {
@@ -669,12 +665,12 @@ export function asNumerDenom(eIn: ExprLike): [Expr, Expr] {
     return [pow(n, ex), pow(d, ex)];
   }
   if (e instanceof Add) {
+    // the primitive part of a sum is a sum (numbers distribute over it)
     const [content, expr] = primitive(e);
-    if (!(expr instanceof Add)) return asNumerDenom(mul(content, expr));
     const ncon = Rational.of(content.p);
     const dcon = Rational.of(content.q);
     const nd = new Map<string, [Expr, Expr[]]>();
-    for (const f of expr.args) {
+    for (const f of addArgs(expr)) {
       const [ni, di] = asNumerDenom(f);
       const cur = nd.get(di.key);
       if (cur) cur[1].push(ni);
@@ -791,11 +787,11 @@ export function asCoefficientsDict(eIn: ExprLike, syms: readonly Expr[] = []): E
     else out.set(k.key, [k, [v]]);
   };
   if (!syms.length) {
-    for (const a of e instanceof Add ? e.args : [e]) {
+    // the terms of a sum have distinct non-numeric parts
+    return new ExprMap((e instanceof Add ? e.args : [e]).map((a) => {
       const [c, m] = splitCoeff(a);
-      put(m, c);
-    }
-    return new ExprMap([...out.values()].map(([k, v]) => [k, v.length === 1 ? at(v, 0) : add(...v)]));
+      return [m, c];
+    }));
   }
   const [ind, dep] = asIndependent(e, syms, { asAdd: true });
   for (const i of dep instanceof Add ? dep.args : [dep]) {
@@ -1022,7 +1018,7 @@ export function asTerms(eIn: ExprLike): [[Expr, [[number, number], number[], Exp
     }
     terms.push([term, [coeff.re, coeff.im], cpart, nc]);
   }
-  const sorted = impl.ordered ? impl.ordered(gens) : gens;
+  const sorted = ordered(gens);
   const index = new Map(sorted.map((g, i) => [g.key, i]));
   const out = terms.map(([term, coeff, cpart, nc]) => {
     const monom = sorted.map(() => 0);

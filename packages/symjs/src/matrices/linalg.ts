@@ -9,6 +9,7 @@
  */
 
 import { at, first, last } from '../core/guard';
+import { isReal } from '../core/assumptions';
 import { MatrixError, NonInvertibleMatrixError, NonSquareMatrixError, NotImplementedError } from '../core/errors';
 import type { ExprLike } from '../core/nodes';
 import { Dummy, Expr, Rational, S, Special, Sym, impl } from '../core/nodes';
@@ -42,11 +43,8 @@ const isZeroE = (e: Expr): boolean => {
 /** Tidy an entry produced by elimination. */
 const tidy = (e: Expr): Expr => {
   if (e.freeSymbols().size === 0 && !(e instanceof Rational)) return expandMul(e);
-  try {
-    return cancel(e);
-  } catch {
-    return expandMul(e);
-  }
+  // cancel keeps what it cannot treat as a polynomial (it catches its own polynomial failures)
+  return cancel(e);
 };
 
 type Rows = Expr[][];
@@ -175,17 +173,23 @@ export function eigenvects(m: Matrix): [Expr, number, Matrix[]][] {
   });
 }
 
+/** SymPy val.is_real for an eigenvalue: a number by its numeric value, anything else by the assumptions. */
+function isRealEigenvalue(v: Expr): boolean {
+  if (v.freeSymbols().size === 0) {
+    try {
+      return Math.abs(v.toComplex().im) <= 1e-12;
+    } catch {
+      // not numerically evaluable (f(1)): decided by the assumptions
+    }
+  }
+  return isReal(v) === true;
+}
+
 export function isDiagonalizable(m: Matrix, realsOnly = false): boolean {
   if (!m.isSquare) return false;
   for (const [v, k, vecs] of eigenvects(m)) {
     if (vecs.length !== k) return false;
-    if (realsOnly && v.freeSymbols().size === 0) {
-      try {
-        if (Math.abs(v.toComplex().im) > 1e-12) return false;
-      } catch {
-        return false;
-      }
-    }
+    if (realsOnly && !isRealEigenvalue(v)) return false;
   }
   return true;
 }

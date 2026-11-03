@@ -43,10 +43,8 @@ export function isReal(e: Expr): Tri {
     for (const a of e.args) {
       const r = isReal(a);
       if (r === undefined) return undefined;
-      if (r === false) {
-        if (a instanceof Constant && a.name === 'I') nonReal++;
-        else return undefined;
-      }
+      // isReal is false only for the imaginary unit
+      if (r === false) nonReal++;
     }
     if (nonReal === 0) return true;
     return all(e.args.filter((a) => !(a instanceof Constant)), isNonZero) ? false : undefined;

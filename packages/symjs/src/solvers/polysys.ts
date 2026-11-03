@@ -7,11 +7,11 @@
  */
 
 import { NotImplementedError } from '../core/errors';
-import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Rational } from '../core/nodes';
+import type { ExprLike, Sym } from '../core/nodes';
+import { Expr, Rational } from '../core/nodes';
 import { mul, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
-import { at, defined, getOrThrow } from '../core/guard';
+import { at, cast, defined, expectType, first, getOrThrow } from '../core/guard';
 import { groebner } from '../polys/groebner';
 import { roots } from '../polys/poly';
 import { compareKeys, sortKey } from '../printing/sortkey';
@@ -68,8 +68,12 @@ function factorSystemRaw(eqsIn: readonly ExprLike[], gensIn: readonly Expr[]): F
   }
   if (!factorSets.length) return [[]];
   const systems = combineFactorSets(factorSets);
-  const sorted = systems.map((s) => [...s].sort((a, b) => -cmpKey(polyKey(a, gens), polyKey(b, gens))));
-  return sorted.sort((a, b) => -cmpSysKey(a.map((f) => polyKey(f, gens)), b.map((f) => polyKey(f, gens))));
+  // the coefficients are polynomials in the generators of the coefficient domain (SymPy ZZ[a, sqrt(a), ...])
+  const coeffGens = new Map<string, Expr>();
+  for (const f of systems.flat()) for (const c of Poly.from(f.expr, gens).coeffs()) for (const g of Poly.from(c).gens) coeffGens.set(g.key, g);
+  const params = sortGens([...coeffGens.values()]);
+  const sorted = systems.map((s) => [...s].sort((a, b) => -cmpKey(polyKey(a, gens), polyKey(b, gens), params)));
+  return sorted.sort((a, b) => -cmpSysKey(a.map((f) => polyKey(f, gens)), b.map((f) => polyKey(f, gens)), params));
 }
 
 /** SymPy _factor_sets: minimal sets hitting every factor list. */
@@ -84,7 +88,8 @@ function combineFactorSets(sets: Factor[][]): Factor[][] {
     }
     const next = remaining.reduce((m, s) => (s.length < m.length ? s : m));
     const rest = remaining.filter((s) => s !== next);
-    for (const f of next) visit(rest.filter((s) => !has(s, f)), has(current, f) ? current : [...current, f]);
+    // the sets containing a chosen factor are dropped, so f is never in current yet
+    for (const f of next) visit(rest.filter((s) => !has(s, f)), [...current, f]);
   };
   visit(sets, []);
   const all = [...result.values()];
@@ -92,48 +97,81 @@ function combineFactorSets(sets: Factor[][]): Factor[][] {
   return all.filter((s1) => !all.some((s2) => isProperSuperset(s1, s2)));
 }
 
-type Key = (number | Expr)[][];
+/** A dense recursive representation (SymPy DMP.to_list): coefficients at the innermost level. */
+type Dense = Expr | Dense[];
+type Key = [number[], Dense];
+
+/** SymPy dmp_zero(u): the zero polynomial at level u. */
+const dmpZero = (u: number): Dense[] => (u === 0 ? [] : [dmpZero(u - 1)]);
+
+/** The dense list of the terms at level u (u + 1 generators left), like SymPy's DMP rep. */
+function dense(terms: [number[], Expr][], u: number): Dense[] {
+  const d = Math.max(...terms.map(([m]) => first(m)));
+  const out: Dense[] = [];
+  for (let k = d; k >= 0; k--) {
+    const sub = terms.filter(([m]) => first(m) === k).map(([m, c]): [number[], Expr] => [m.slice(1), c]);
+    if (u === 0) out.push(sub.length ? at(sub, 0)[1] : Rational.of(0));
+    else out.push(sub.length ? dense(sub, u - 1) : dmpZero(u - 1));
+  }
+  return out;
+}
 
 /** SymPy _poly_sort_key: (degree_list, dense representation). */
 function polyKey(f: Factor, gens: readonly Expr[]): Key {
   const p = Poly.from(f.expr, gens);
-  const rep: (number | Expr)[] = [];
-  for (const [m, c] of p.terms()) rep.push(...m.map((k) => -k), c);
-  return [p.degreeList().map((d) => (d === -Infinity ? -1 : d)), rep];
+  return [p.degreeList(), dense(p.terms(), gens.length - 1)];
 }
 
-function cmpAtom(a: number | Expr, b: number | Expr): number {
-  if (typeof a === 'number' && typeof b === 'number') return a - b;
-  if (a instanceof Rational && b instanceof Rational) {
-    const d = a.p * b.q - b.p * a.q;
-    return d === 0n ? 0 : d < 0n ? -1 : 1;
-  }
-  return 0;
-}
-
-function cmpList(a: (number | Expr)[], b: (number | Expr)[]): number {
+/** Python ordering of sequences: elementwise, then by length. */
+function cmpSeq<T>(a: readonly T[], b: readonly T[], cmp: (u: T, v: T) => number): number {
   for (let i = 0; i < Math.min(a.length, b.length); i++) {
-    const c = cmpAtom(at(a, i), at(b, i));
+    const c = cmp(at(a, i), at(b, i));
     if (c) return c;
   }
   return a.length - b.length;
 }
 
-function cmpKey(a: Key, b: Key): number {
-  return cmpList(at(a, 0), at(b, 0)) || cmpList(at(a, 1), at(b, 1));
+const cmpNums = (a: readonly number[], b: readonly number[]): number => cmpSeq(a, b, (u, v) => u - v);
+
+/** Python ordering of numbers (exact for rationals). */
+function cmpNumber(a: Expr, b: Expr): number {
+  if (a instanceof Rational && b instanceof Rational) {
+    const d = a.p * b.q - b.p * a.q;
+    return d === 0n ? 0 : d < 0n ? -1 : 1;
+  }
+  return Math.sign(a.toComplex().re - b.toComplex().re);
 }
 
-/** SymPy _sys_sort_key: degree lists of all members first, then representations. */
-function cmpSysKey(a: Key[], b: Key[]): number {
-  for (let part = 0; part < 2; part++) {
-    for (let i = 0; i < Math.min(a.length, b.length); i++) {
-      const c = cmpList(at(at(a, i), part), at(at(b, i), part));
-      if (c) return c;
-    }
-    if (a.length !== b.length) return a.length - b.length;
-  }
-  return 0;
+/**
+ * Python ordering of coefficients: numbers by value; with generators in the
+ * coefficient domain, the coefficients are polynomials in them, ordered like
+ * SymPy PolyElement.sort_key (the number of terms, then the terms in lex order).
+ */
+function cmpCoeff(a: Expr, b: Expr, params: readonly Expr[]): number {
+  if (!params.length) return cmpNumber(a, b);
+  const terms = (c: Expr) => {
+    const p = Poly.from(c, params);
+    return p.isZero ? [] : p.terms();
+  };
+  const [ta, tb] = [terms(a), terms(b)];
+  return ta.length - tb.length || cmpSeq(ta, tb, ([ma, ca], [mb, cb]) => cmpNums(ma, mb) || cmpNumber(ca, cb));
 }
+
+const isDenseList = (v: unknown): v is Dense[] => Array.isArray(v);
+
+/** Python ordering of (nested) lists. */
+function cmpDense(a: Dense, b: Dense, params: readonly Expr[]): number {
+  // the keys of one system share the generators, so both are lists or both are coefficients
+  if (!Array.isArray(a)) return cmpCoeff(a, cast(b, Expr, 'coefficient'), params);
+  return cmpSeq<Dense>(a, expectType(b, isDenseList, 'dense list'), (u, v) => cmpDense(u, v, params));
+}
+
+/** SymPy _poly_sort_key order. */
+const cmpKey = (a: Key, b: Key, params: readonly Expr[]): number => cmpNums(a[0], b[0]) || cmpDense(a[1], b[1], params);
+
+/** SymPy _sys_sort_key: the degree lists of all members first, then the representations. */
+const cmpSysKey = (a: Key[], b: Key[], params: readonly Expr[]): number =>
+  cmpSeq(a, b, (u, v) => cmpNums(u[0], v[0])) || cmpSeq(a, b, (u, v) => cmpDense(u[1], v[1], params));
 
 /**
  * Solve a zero-dimensional polynomial system with a lexicographic Gröbner
@@ -143,17 +181,13 @@ function cmpSysKey(a: Key[], b: Key[]): number {
  */
 export function solvePolySystem(eqs: readonly ExprLike[], gens: readonly Sym[], opts: { rationalOnly?: boolean } = {}): Expr[][] {
   const system = eqs.map((e) => expand(sympify(e))).filter((e) => !(e instanceof Rational && e.isZero));
-  const sols = solveReduced(system, gens, true, opts.rationalOnly ?? false);
-  return sols.sort((a, b) => {
-    for (let i = 0; i < a.length; i++) {
-      const c = compareKeys(sortKey(at(a, i)), sortKey(at(b, i)));
-      if (c) return c;
-    }
-    return 0;
-  });
+  const sols = solveReduced(system, gens, opts.rationalOnly ?? false);
+  return sols.sort((a, b) => cmpSeq(a, b, (u, v) => compareKeys(sortKey(u), sortKey(v))));
 }
 
-function solveReduced(system: Expr[], gens: readonly Sym[], entry: boolean, rationalOnly: boolean): Expr[][] {
+function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolean): Expr[][] {
+  // no equation left to determine the generators: they are free
+  if (!system.length) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
   const gen = at(gens, -1);
   const distinctRoots = (f: Expr): Expr[] => {
     const seen = new Map<string, Expr>();
@@ -163,8 +197,8 @@ function solveReduced(system: Expr[], gens: readonly Sym[], entry: boolean, rati
   if (system.length === 1 && gens.length === 1) return distinctRoots(at(system, 0)).map((z) => [z]);
   if (gens.length === 1) {
     // common roots (works for algebraic coefficients, unlike the Gröbner basis over QQ)
-    const [first, ...others] = [...system].sort((a, b) => Poly.from(a, [gen]).degree() - Poly.from(b, [gen]).degree());
-    return distinctRoots(defined(first, 'equation'))
+    const [lowest, ...others] = [...system].sort((a, b) => Poly.from(a, [gen]).degree() - Poly.from(b, [gen]).degree());
+    return distinctRoots(defined(lowest, 'equation'))
       .filter((z) => others.every((o) => expand(xreplace(o, [[gen, z]])).equals(Rational.of(0))))
       .map((z) => [z]);
   }
@@ -176,19 +210,20 @@ function solveReduced(system: Expr[], gens: readonly Sym[], entry: boolean, rati
   const univariate = basis.filter((b) => ![...freeSymbols(b)].some((s) => others.has(s.key)) && b.has(gen));
   if (univariate.length !== 1) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
   const f = at(univariate, 0);
+  // a single polynomial in the last generator leaves the others free
+  if (basis.length === 1) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
   const zeros = distinctRoots(f);
-  if (basis.length === 1) return zeros.map((z) => [z]);
   const out: Expr[][] = [];
   const rest = basis.filter((b) => b !== f);
   for (const z of zeros) {
+    // every root of the eliminant extends to a solution (the projection of a finite
+    // variety is closed), so no basis element becomes a nonzero constant here
     const sub = rest.map((b) => expand(xreplace(b, [[gen, z]]))).filter((b) => !(b instanceof Rational && b.isZero));
-    if (sub.some((b) => b.freeSymbols().size === 0)) continue;
     // irrational coefficients: the lex basis is triangular, so back-substitute instead of a new basis over QQ
     const rationalCoeffs = sub.every((b) => !hasIrrational(b));
-    const partial = rationalCoeffs ? solveReduced(sub, gens.slice(0, -1), false, rationalOnly) : backSubstitute(sub, gens.slice(0, -1), rationalOnly);
+    const partial = rationalCoeffs ? solveReduced(sub, gens.slice(0, -1), rationalOnly) : backSubstitute(sub, gens.slice(0, -1), rationalOnly);
     for (const s of partial) out.push([...s, z]);
   }
-  if (entry && out.length && at(out, 0).length !== gens.length) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
   return out;
 }
 
@@ -214,13 +249,13 @@ function backSubstitute(system: Expr[], gens: readonly Sym[], rationalOnly: bool
   if (idx < 0) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
   const gen = at(gens, idx);
   const uni = alone(idx);
-  const [first, ...rest] = [...uni].sort((a, b) => Poly.from(a, [gen]).degree() - Poly.from(b, [gen]).degree());
+  const [lowest, ...rest] = [...uni].sort((a, b) => Poly.from(a, [gen]).degree() - Poly.from(b, [gen]).degree());
   const vanishes = (e: Expr) => {
     const c = e.toComplex();
     return Math.hypot(c.re, c.im) < 1e-9;
   };
   const seen = new Map<string, Expr>();
-  for (const r0 of roots(defined(first, 'equation'), gen)) {
+  for (const r0 of roots(defined(lowest, 'equation'), gen)) {
     // roots of polynomials with algebraic coefficients come with radical denominators
     const r = expand(radsimp(r0));
     if (!rationalOnly || r instanceof Rational) seen.set(r.key, r);

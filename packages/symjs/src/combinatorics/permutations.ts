@@ -11,9 +11,9 @@
 
 import { isIntegerQ, isNegative, isNonNegative } from '../core/assumptions';
 import { NotImplementedError } from '../core/errors';
-import { at, cast, defined, last } from '../core/guard';
-import type { Expr, ExprLike } from '../core/nodes';
-import { ExtensionExpr, Rational } from '../core/nodes';
+import { at, cast, defined, expectType, last } from '../core/guard';
+import type { ExprLike } from '../core/nodes';
+import { Expr, ExtensionExpr, Rational } from '../core/nodes';
 import { add, sympify } from '../core/ops';
 import type { NoMatchResult } from '../core/truth';
 import { NoMatch } from '../core/truth';
@@ -22,6 +22,8 @@ import { Matrix } from '../matrices/matrix';
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+const isUnknownArray = (x: unknown): x is readonly unknown[] => Array.isArray(x);
 
 /** A Python int: a safe JavaScript integer (bigints are converted). */
 function asInt(v: unknown, what = 'value'): number {
@@ -58,15 +60,10 @@ function pmod(a: bigint, b: bigint): bigint {
   return r !== 0n && r < 0n !== b < 0n ? r + b : r;
 }
 
-/** Python's a // b for bigints (floor division). */
-function pfloordiv(a: bigint, b: bigint): bigint {
-  const q = a / b;
-  return (a % b !== 0n && a < 0n !== b < 0n) ? q - 1n : q;
-}
-
+/** gcd of two positive bigints (the lengths of cycles). */
 function bgcd(a: bigint, b: bigint): bigint {
-  let x = a < 0n ? -a : a;
-  let y = b < 0n ? -b : b;
+  let x = a;
+  let y = b;
   while (y !== 0n) [x, y] = [y, x % y];
   return x;
 }
@@ -330,7 +327,7 @@ export interface PermutationPrintOptions {
 let pendingAf: number[] | undefined;
 
 function isOptions(v: unknown): v is PermutationOptions {
-  return typeof v === 'object' && v !== null && !Array.isArray(v) && !(v instanceof Permutation) && !(v instanceof Cycle);
+  return typeof v === 'object' && v !== null && !Array.isArray(v) && !(v instanceof Expr) && !(v instanceof Cycle);
 }
 
 function parseArgs(input: readonly unknown[]): number[] {
@@ -360,7 +357,8 @@ function parseArgs(input: readonly unknown[]): number[] {
   let aform: number[];
   if (isCycle) {
     let c = new Cycle();
-    for (const ci of arr) if (Array.isArray(ci)) c = c.call(...ci.map((v: unknown) => asInt(v)));
+    // every element is a list here (mixed lists were rejected above)
+    for (const ci of arr) c = c.call(...expectType(ci, isUnknownArray, 'cycle').map((v) => asInt(v)));
     aform = c.list();
   } else {
     const ints = arr.map((v) => asInt(v));
@@ -407,9 +405,9 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
   #rank: bigint | undefined;
 
   /** SymPy Permutation(*cycle, size=...): the cycle of the integers, or the identity of size a + 1 for one integer. */
-  constructor(...cycle: (number | bigint)[]);
+  constructor(...cycle: (number | bigint | Expr)[]);
   /** SymPy Permutation(*cycle, size=...). */
-  constructor(...args: [...cycle: (number | bigint)[], options: PermutationOptions]);
+  constructor(...args: [...cycle: (number | bigint | Expr)[], options: PermutationOptions]);
   /** SymPy Permutation(arg, size=...) from an array form, cyclic form, Cycle or Permutation. */
   constructor(arg: PermutationInput, options?: PermutationOptions);
   constructor(...input: readonly unknown[]) {
@@ -864,7 +862,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
         const hi = Math.max(...cycle);
         if (lo <= n - 1) {
           if (hi > n - 1) {
-            throw new RangeError(`The permutation cannot be resized to ${n} because the cycle (${cycle.join(', ')}${cycle.length === 1 ? ',' : ''}) may break.`);
+            throw new RangeError(`The permutation cannot be resized to ${n} because the cycle (${cycle.join(', ')}) may break.`);
           }
           kept.push(cycle);
         }
@@ -901,7 +899,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     let psize = 1n;
     for (let i = 0; i < size; i++) {
       const newPsize = psize * BigInt(i + 1);
-      const d = pfloordiv(pmod(r, newPsize), psize);
+      const d = pmod(r, newPsize) / psize;
       r -= d * psize;
       const dn = Number(d);
       perm[size - i - 1] = dn;
@@ -939,7 +937,7 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
       const bm = BigInt(m);
       const k = Number(pmod(rr, bm));
       [a[m - 1], a[k]] = [at(a, k), at(a, m - 1)];
-      rr = pfloordiv(rr, bm);
+      rr /= bm;
     }
     return afNew(a);
   }
@@ -987,16 +985,18 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     return rank;
   }
 
-  /** SymPy Permutation.unrank_trotterjohnson(size, rank). */
+  /** SymPy Permutation.unrank_trotterjohnson(size, rank), for 0 <= rank < size!. */
   static unrankTrotterjohnson(size: number, rank: number | bigint): Permutation {
     const perm = new Array<number>(size).fill(0);
     const r = BigInt(rank);
     let r2 = 0n;
     const nf = ifac(size);
+    // SymPy gives a list that is not a permutation ([0, 0, 2] for size 3 and rank -1) or an IndexError
+    if (r < 0n || r >= nf) throw new RangeError(`rank must be in [0, ${nf}), got ${r}`);
     let pj = 1n;
     for (let j = 2; j <= size; j++) {
       pj *= BigInt(j);
-      const r1 = pfloordiv(r * pj, nf);
+      const r1 = (r * pj) / nf;
       const k = Number(r1 - BigInt(j) * r2);
       if (r2 % 2n === 0n) {
         for (let i = j - 1; i > j - k - 1; i--) perm[i] = pyIndex(perm, i - 1);

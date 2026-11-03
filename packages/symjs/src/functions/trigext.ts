@@ -14,6 +14,7 @@ import { defined, first, pair } from '../core/guard';
 import { Add, Float, Fn, Mul, Rational, S, Special } from '../core/nodes';
 import { add, couldExtractMinusSign, mul, neg, pow, sqrt } from '../core/ops';
 import { asCoefficient } from '../core/methods';
+import { ratMod } from '../core/num';
 import { AccumBounds } from '../core/accumbounds';
 import { isReal } from '../core/assumptions';
 import { mapBottomUp } from '../core/traverse';
@@ -122,19 +123,17 @@ function recipRewrite(t: Expr, which: 'sec' | 'csc'): Expr {
 
 function trigOfInverse(name: 'sin' | 'cos' | 'tan' | 'cot', arg: Expr): Expr | undefined {
   if (!(arg instanceof Fn)) return undefined;
-  const x = arg.args[0];
-  if (x === undefined) return undefined;
+  // the argument, read only for the one-argument inverse functions matched below
+  const x = (): Expr => first(arg.args);
   const atan2Args = () => pair(arg.args);
-  const s1mx2 = () => sqrt(add(1, neg(pow(x, 2))));
-  const s1m1x2 = () => sqrt(add(1, neg(pow(x, -2))));
+  const s1mx2 = () => sqrt(add(1, neg(pow(x(), 2))));
+  const s1m1x2 = () => sqrt(add(1, neg(pow(x(), -2))));
+  // sin(asin(x)), cos(acos(x)) and tan(atan(x)) are already reduced by the evaluators of elementary.ts
   switch (`${name}:${arg.name}`) {
-    case 'sin:asin':
-    case 'cos:acos':
-    case 'tan:atan':
     case 'cot:acot':
-      return x;
+      return x();
     case 'sin:atan':
-      return div(x, sqrt(add(1, pow(x, 2))));
+      return div(x(), sqrt(add(1, pow(x(), 2))));
     case 'sin:atan2': {
       const [y2, x2] = atan2Args();
       return div(y2, sqrt(add(pow(x2, 2), pow(y2, 2))));
@@ -142,13 +141,13 @@ function trigOfInverse(name: 'sin' | 'cos' | 'tan' | 'cot', arg: Expr): Expr | u
     case 'sin:acos':
       return s1mx2();
     case 'sin:acot':
-      return div(1, mul(sqrt(add(1, pow(x, -2))), x));
+      return div(1, mul(sqrt(add(1, pow(x(), -2))), x()));
     case 'sin:acsc':
-      return div(1, x);
+      return div(1, x());
     case 'sin:asec':
       return s1m1x2();
     case 'cos:atan':
-      return div(1, sqrt(add(1, pow(x, 2))));
+      return div(1, sqrt(add(1, pow(x(), 2))));
     case 'cos:atan2': {
       const [y2, x2] = atan2Args();
       return div(x2, sqrt(add(pow(x2, 2), pow(y2, 2))));
@@ -156,78 +155,78 @@ function trigOfInverse(name: 'sin' | 'cos' | 'tan' | 'cot', arg: Expr): Expr | u
     case 'cos:asin':
       return s1mx2();
     case 'cos:acot':
-      return div(1, sqrt(add(1, pow(x, -2))));
+      return div(1, sqrt(add(1, pow(x(), -2))));
     case 'cos:acsc':
       return s1m1x2();
     case 'cos:asec':
-      return div(1, x);
+      return div(1, x());
     case 'tan:atan2': {
       const [y2, x2] = atan2Args();
       return div(y2, x2);
     }
     case 'tan:asin':
-      return div(x, s1mx2());
+      return div(x(), s1mx2());
     case 'tan:acos':
-      return div(s1mx2(), x);
+      return div(s1mx2(), x());
     case 'tan:acot':
-      return div(1, x);
+      return div(1, x());
     case 'tan:acsc':
-      return div(1, mul(s1m1x2(), x));
+      return div(1, mul(s1m1x2(), x()));
     case 'tan:asec':
-      return mul(s1m1x2(), x);
+      return mul(s1m1x2(), x());
     case 'cot:atan':
-      return div(1, x);
+      return div(1, x());
     case 'cot:atan2': {
       const [y2, x2] = atan2Args();
       return div(x2, y2);
     }
     case 'cot:asin':
-      return div(s1mx2(), x);
+      return div(s1mx2(), x());
     case 'cot:acos':
-      return div(x, s1mx2());
+      return div(x(), s1mx2());
     case 'cot:acsc':
-      return mul(s1m1x2(), x);
+      return mul(s1m1x2(), x());
     case 'cot:asec':
-      return div(1, mul(s1m1x2(), x));
+      return div(1, mul(s1m1x2(), x()));
   }
   return undefined;
 }
 
 function hypOfInverse(name: 'sinh' | 'cosh' | 'tanh' | 'coth', arg: Expr): Expr | undefined {
   if (!(arg instanceof Fn)) return undefined;
-  const x = arg.args[0];
-  if (x === undefined) return undefined;
-  const sxm = () => mul(sqrt(add(x, -1)), sqrt(add(x, 1)));
+  // the argument, read only for the one-argument inverse functions matched below
+  const x = (): Expr => first(arg.args);
+  const sxm = () => mul(sqrt(add(x(), -1)), sqrt(add(x(), 1)));
   switch (`${name}:${arg.name}`) {
     case 'sinh:asinh':
     case 'cosh:acosh':
     case 'tanh:atanh':
     case 'coth:acoth':
-      return x;
+      return x();
     case 'sinh:acosh':
       return sxm();
     case 'sinh:atanh':
-      return div(x, sqrt(add(1, neg(pow(x, 2)))));
+      return div(x(), sqrt(add(1, neg(pow(x(), 2)))));
     case 'sinh:acoth':
       return div(1, sxm());
     case 'cosh:asinh':
-      return sqrt(add(1, pow(x, 2)));
+      return sqrt(add(1, pow(x(), 2)));
     case 'cosh:atanh':
-      return div(1, sqrt(add(1, neg(pow(x, 2)))));
+      return div(1, sqrt(add(1, neg(pow(x(), 2)))));
     case 'cosh:acoth':
-      return div(x, sxm());
+      return div(x(), sxm());
     case 'tanh:asinh':
-      return div(x, sqrt(add(1, pow(x, 2))));
+      return div(x(), sqrt(add(1, pow(x(), 2))));
     case 'tanh:acosh':
-      return div(sxm(), x);
+      return div(sxm(), x());
     case 'tanh:acoth':
-      return div(1, x);
+      return div(1, x());
     case 'coth:asinh':
-      return div(sqrt(add(1, pow(x, 2))), x);
+      return div(sqrt(add(1, pow(x(), 2))), x());
     case 'coth:acosh':
-      return div(x, sxm());
+      return div(x(), sxm());
     case 'coth:atanh':
-      return div(1, x);
+      return div(1, x());
   }
   return undefined;
 }
@@ -304,7 +303,8 @@ evaluators.tan = (x) => {
   const r = base.tan(x);
   if (r !== undefined) return r;
   const c = iCoeff(x);
-  if (c !== undefined) return couldExtractMinusSign(c) ? neg(mul(I, tanh(neg(c)))) : mul(I, tanh(c));
+  // SymPy: I*tanh(c); tanh extracts the minus sign of c itself
+  if (c !== undefined) return mul(I, tanh(c));
   return trigOfInverse('tan', x);
 };
 evaluators.sinh = (x) => {
@@ -381,9 +381,14 @@ const evalCot: Evaluator = (x) => {
       const v = halfAngle(pc, 1);
       if (v !== undefined) return v;
     }
-    const co = cos(mul(pc, pi));
-    const si = sin(mul(pc, pi));
-    if (!isFn(co, 'cos') && !isFn(si, 'sin')) return div(co, si);
+    // SymPy: the coefficient reduced into [-1/2, 1/2)
+    const r1 = ratMod(Rational.of(2n * pc.p + pc.q, 2n * pc.q), S.One);
+    const n = Rational.of(2n * r1.p - r1.q, 2n * r1.q);
+    const narg = mul(n, pi);
+    const co = cos(narg);
+    const si = cos(add(narg, neg(div(pi, 2))));
+    if (!isFn(co, 'cos') && !isFn(si, 'cos')) return div(co, si);
+    if (!n.equals(pc)) return cot(narg);
   }
   const [rest, m] = peeloffPi(x);
   if (!m.isZero) return m.isInteger ? cot(rest) : neg(tan(rest));
@@ -397,10 +402,11 @@ function reciprocalTrig(name: 'sec' | 'csc', recipOf: 'cos' | 'sin', inverse: st
     const pc = piCoeffOnly(x);
     if (pc !== undefined && !Rational.of(pc.p * 2n, pc.q).isInteger) {
       const q = pc.q;
-      const p = ((pc.p % (2n * q)) + 2n * q) % (2n * q);
-      if (p > q) return neg(self(mul(add(pc, -1), pi)));
-      if (2n * p > q) {
-        const narg = mul(add(1, neg(pc)), pi);
+      // SymPy _pi_coeff: the coefficient reduced into [0, 2)
+      const pr = ratMod(pc, S.Two);
+      if (pr.p > q) return neg(self(mul(Rational.of(pr.p - q, q), pi)));
+      if (2n * pr.p > q) {
+        const narg = mul(Rational.of(q - pr.p, q), pi);
         return even ? neg(self(narg)) : self(narg);
       }
     }

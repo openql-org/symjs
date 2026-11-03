@@ -214,8 +214,8 @@ describe('factorization, roots and decomposition', () => {
     );
     expect(show(P('x**2 + a', x).sqfList())).toBe("[1, [[Poly(x**2 + a, x, domain='ZZ[a]'), 1]]]");
     expect(show(P('2*x**2 + 2*a', x).sqfList())).toBe("[2, [[Poly(x**2 + a, x, domain='ZZ[a]'), 1]]]");
-    // a symbolic square: SymPy gives [(x + a, 2)]; symjs supports rational coefficients only here
-    expect(() => P('x**2 + 2*a*x + a**2', x).sqfList()).toThrow(sj.DomainError);
+    // a symbolic square (Yun's algorithm over ZZ[a])
+    expect(show(P('x**2 + 2*a*x + a**2', x).sqfList())).toBe("[1, [[Poly(x + a, x, domain='ZZ[a]'), 2]]]");
   });
   it('Sturm sequences and real root counting', () => {
     expect(show(P('x**3 - 2*x**2 + x - 3', x).sturm())).toBe(

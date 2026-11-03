@@ -9,16 +9,9 @@ import * as F from '../numeric/mpf';
 import type { Num } from './nodes';
 import { Float, Rational } from './nodes';
 import { ipow } from './numbers';
-import { InvariantError } from './errors';
 
-const toNumber = (a: Num): number => (a instanceof Rational ? a.value : a.value);
-
-/** Working precision of a Float operation (SymPy: the larger Float precision). */
-function opPrec(a: Num, b: Num): number {
-  if (a instanceof Float) return b instanceof Float ? Math.max(a.prec, b.prec) : a.prec;
-  if (b instanceof Float) return b.prec;
-  throw new InvariantError('opPrec needs a Float operand');
-}
+/** Working precision of an operation with a Float operand (SymPy: the larger Float precision). */
+const opPrec = (a: Num, b: Num): number => Math.max(a instanceof Float ? a.prec : 0, b instanceof Float ? b.prec : 0);
 
 /** Value as mpf; rationals are rounded to prec (SymPy Rational._as_mpf_op). */
 export function toMpf(a: Num, prec: number): F.Mpf {
@@ -88,16 +81,8 @@ export function numCmp(a: Num, b: Num): number {
   return d < 0n ? -1 : d > 0n ? 1 : 0;
 }
 
-export function numIsOne(a: Num): boolean {
-  return a instanceof Rational ? a.isOne : a.mpf.man === 1n && a.mpf.exp === 0;
-}
-
 export function numAbs(a: Num): Num {
   return a.isNegative ? numNeg(a) : a;
-}
-
-export function numToNumber(a: Num): number {
-  return toNumber(a);
 }
 
 /** floor(a) for a rational. */

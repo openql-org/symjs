@@ -108,7 +108,9 @@ function buildInverseRules(): { rules: IltRule[]; s: Dummy; t: Dummy } {
     { pattern: mul(a, pow(s, -1)), f: (m) => g(m, 'a') },
     {
       pattern: mul(b, pow(add(s, a), neg(c))),
-      // SymPy drops the factor b, which is 1 for the inputs it receives; it is kept here
+      // SymPy drops the factor b, which is 1 for the inputs it receives; it is kept here.
+      // With a = 0 this rule also covers SymPy's separate rule 1/s**b o---o t**(b - 1)/gamma(b)
+      // (the matcher binds the Wild a to 0), which therefore is not repeated here
       f: (m) => mul(g(m, 'b'), pow(t, sub(g(m, 'c'), 1)), exp(mul(-1, g(m, 'a'), t)), pow(gamma(g(m, 'c')), -1)),
     },
     {
@@ -118,7 +120,6 @@ function buildInverseRules(): { rules: IltRule[]; s: Dummy; t: Dummy } {
         return mul(sub(sin(mul(A, t)), mul(A, t, cos(mul(A, t)))), pow(mul(2, pow(A, 3)), -1));
       },
     },
-    { pattern: pow(pow(s, b), -1), f: (m) => mul(pow(t, sub(g(m, 'b'), 1)), pow(gamma(g(m, 'b')), -1)) },
     {
       pattern: pow(mul(s, pow(add(s, a), b)), -1),
       f: (m) => mul(lowergamma(g(m, 'b'), mul(g(m, 'a'), t)), pow(mul(pow(g(m, 'a'), g(m, 'b')), gamma(g(m, 'b'))), -1)),
@@ -157,33 +158,28 @@ function inverseLaplaceDiff(f: Expr, s: Sym, t: Expr, plane: Expr | undefined): 
 
 /** SymPy _inverse_laplace_time_shift: exp(-a*s)*F(s) -> Heaviside(t - a)*f(t - a). */
 function inverseLaplaceTimeShift(F: Expr, s: Sym, t: Expr, plane: Expr | undefined): InverseLaplacePair | undefined {
-  if (!F.has(s)) return [mul(F, DiracDelta(t)), S.true];
+  // F always depends on s here: the front end splits off the factor independent of s
   if (!hasExp(F)) return undefined;
   const a = wild('a', s);
-  if (isExpPow(F)) {
-    const m = matchByName(F.exp, mul(a, s));
-    if (m) {
-      const A = mget(m, 'a');
-      if (isNegative(A) === true) return [DiracDelta(add(t, A)), S.true];
-      return [new InverseLaplaceTransform(F, s, t, plane), S.true];
-    }
-  }
   const facs = mulArgs(F);
   for (const [i, fac] of facs.entries()) {
     if (!isExpPow(fac)) continue;
-    const m = matchByName(fac.exp, mul(a, s));
+    // exp(c + a*s) = exp(c)*exp(a*s), as SymPy's match of exp(a*s)*g splits it
+    const [c, dep] = asIndependent(fac.exp, [s], { asAdd: true });
+    const m = matchByName(dep, mul(a, s));
     if (!m) continue;
     const A = mget(m, 'a');
-    const g = mul(...facs.filter((_, j) => j !== i));
-    if (isNegative(A) === true) return inverseLaplaceTransformImpl(g, s, add(t, A), plane, false, true);
-    return [new InverseLaplaceTransform(F, s, t, plane), S.true];
+    // a positive or unknown shift is not causal: SymPy shifts by a negative a only
+    // (for exp(a*s - b)/s SymPy 1.14 gives exp(-b)*Heaviside(a + t), a time advance)
+    if (isNegative(A) !== true) return [new InverseLaplaceTransform(F, s, t, plane), S.true];
+    const g = mul(exp(c), ...facs.filter((_, j) => j !== i));
+    return inverseLaplaceTransformImpl(g, s, add(t, A), plane, false, true);
   }
   return undefined;
 }
 
 /** SymPy _inverse_laplace_freq_shift: F(s - a) -> exp(a*t)*f(t). */
 function inverseLaplaceFreqShift(F: Expr, s: Sym, t: Expr, plane: Expr | undefined): InverseLaplacePair | undefined {
-  if (!F.has(s)) return [mul(F, DiracDelta(t)), S.true];
   if (F.args.length === 1 && (F instanceof UndefFn || F instanceof Fn)) {
     const a = wild('a', s);
     const m = matchByName(at(F.args, 0), sub(s, a));
@@ -226,25 +222,17 @@ const eqNum = (e: Expr, v: number): boolean => e instanceof Rational && e.value 
 function powerFactor(x: Expr, s: Sym): PowerFactor | undefined {
   const [base, n] = x instanceof Pow && !isExpBase(x) ? [x.base, x.exp] : [x, S.One];
   if (n.has(s)) return undefined;
-  if (!base.has(s)) return { a: S.Zero, b: base, m: S.One, n };
+  // every factor depends on s (the front end splits off the factor independent of s),
+  // so a is never 0 and SymPy's collection of such factors into a constant is not needed
   const terms = addArgs(base);
-  let a: Expr | undefined;
-  let m: Expr | undefined;
-  const bs: Expr[] = [];
-  for (const term of terms) {
-    if (!term.has(s)) {
-      bs.push(term);
-      continue;
-    }
-    if (a !== undefined) return undefined;
-    const [k, dep] = asIndependent(term, [s], { asAdd: false });
-    if (dep.key === s.key) m = S.One;
-    else if (dep instanceof Pow && dep.base.key === s.key && !dep.exp.has(s)) m = dep.exp;
-    else return undefined;
-    a = k;
-  }
-  if (a === undefined || m === undefined) return undefined;
-  return { a, b: add(...bs), m, n };
+  const dep = terms.filter((term) => term.has(s));
+  if (dep.length !== 1) return undefined;
+  const [a, sm] = asIndependent(first(dep), [s], { asAdd: false });
+  let m: Expr;
+  if (sm.key === s.key) m = S.One;
+  else if (sm instanceof Pow && sm.base.key === s.key && !sm.exp.has(s)) m = sm.exp;
+  else return undefined;
+  return { a, b: add(...terms.filter((term) => !term.has(s))), m, n };
 }
 
 /** besselj with SymPy's evaluation besselj(nu, I*z) = I**nu*besseli(nu, z). */
@@ -263,12 +251,10 @@ function inverseLaplaceIrrational(fn: Expr, s: Sym, t: Expr): InverseLaplacePair
     if (pf === undefined) return undefined;
     ma.push(pf);
   }
-  let constants: Expr = S.One;
   const zeros: PowerFactor[] = [];
   const poles: PowerFactor[] = [];
   for (const term of ma) {
-    if (isZeroE(term.a)) constants = mul(constants, pow(term.b, term.n));
-    else if (isPositive(term.n) === true) zeros.push(term);
+    if (isPositive(term.n) === true) zeros.push(term);
     else if (isNegative(term.n) === true) poles.push(term);
     else return undefined;
   }
@@ -294,20 +280,20 @@ function inverseLaplaceIrrational(fn: Expr, s: Sym, t: Expr): InverseLaplacePair
     const p0 = P(0);
     if (eqNum(p0.n, -1) && eqNum(p0.m, 0.5)) {
       const a_ = mul(p0.b, pow(p0.a, -1));
-      const k_ = mul(pow(p0.a, -1), constants);
+      const k_ = pow(p0.a, -1);
       if (pos(a_)) result = sub(mul(k_, pow(sqrt(pi), -1), pow(st, -1)), mul(k_, a_, exp(mul(pow(a_, 2), t)), erfc(mul(a_, st))));
     } else if (eqNum(p0.n, -2) && eqNum(p0.m, 0.5)) {
       const aSq = mul(p0.b, pow(p0.a, -1));
       const a_ = pow(aSq, 2);
-      const k_ = mul(pow(p0.a, -2), constants);
+      const k_ = pow(p0.a, -2);
       if (pos(aSq)) result = mul(k_, add(1, mul(-2, pow(sqrt(pi), -1), sqrt(a_), st), mul(sub(1, mul(2, a_, t)), exp(mul(a_, t)), sub(erf(mul(sqrt(a_), st)), 1))));
     } else if (eqNum(p0.n, -3) && eqNum(p0.m, 0.5)) {
       const a_ = mul(p0.b, pow(p0.a, -1));
-      const k_ = mul(pow(p0.a, -3), constants);
+      const k_ = pow(p0.a, -3);
       if (pos(a_)) result = mul(k_, sub(mul(2, pow(sqrt(pi), -1), add(mul(pow(a_, 2), t), 1), st), mul(a_, t, exp(mul(pow(a_, 2), t)), add(mul(2, pow(a_, 2), t), 3), erfc(mul(a_, st)))));
     } else if (eqNum(p0.n, -4) && eqNum(p0.m, 0.5)) {
       const a_ = mul(p0.b, pow(p0.a, -1));
-      const k_ = mul(pow(p0.a, -4), constants, Rational.of(1n, 3n));
+      const k_ = mul(pow(p0.a, -4), Rational.of(1n, 3n));
       if (pos(a_)) {
         result = mul(
           k_,
@@ -319,7 +305,7 @@ function inverseLaplaceIrrational(fn: Expr, s: Sym, t: Expr): InverseLaplacePair
       }
     } else if (eqNum(p0.n, -0.5) && eqNum(p0.m, 2)) {
       const a_ = sqrt(mul(p0.b, pow(p0.a, -1)));
-      const k_ = mul(pow(sqrt(p0.a), -1), constants);
+      const k_ = pow(sqrt(p0.a), -1);
       result = mul(k_, besseljEval(0, mul(a_, t)));
     }
   } else if (poles.length === 1 && zeros.length === 1) {
@@ -327,7 +313,7 @@ function inverseLaplaceIrrational(fn: Expr, s: Sym, t: Expr): InverseLaplacePair
     const z0 = Zr(0);
     if (eqNum(p0.n, -3) && eqNum(p0.m, 0.5) && eqNum(z0.n, 0.5) && isZeroE(z0.b)) {
       const a_ = p0.b;
-      const k_ = mul(sqrt(z0.a), pow(p0.a, -1), constants);
+      const k_ = mul(sqrt(z0.a), pow(p0.a, -1));
       result = sub(
         mul(k_, add(mul(2, pow(a_, 4), pow(t, 2)), mul(5, pow(a_, 2), t), 1), exp(mul(pow(a_, 2), t)), erfc(mul(a_, st))),
         mul(2, pow(sqrt(pi), -1), a_, add(mul(pow(a_, 2), t), 2), st),
@@ -336,7 +322,7 @@ function inverseLaplaceIrrational(fn: Expr, s: Sym, t: Expr): InverseLaplacePair
     if (eqNum(p0.n, -1) && eqNum(p0.m, 1) && eqNum(z0.n, 0.5) && eqNum(z0.m, 1)) {
       const a_ = mul(z0.b, pow(z0.a, -1));
       const b_ = mul(p0.b, pow(p0.a, -1));
-      const k_ = mul(sqrt(z0.a), pow(p0.a, -1), constants);
+      const k_ = mul(sqrt(z0.a), pow(p0.a, -1));
       result = mul(k_, add(mul(exp(mul(-1, a_, t)), pow(st, -1), pow(sqrt(pi), -1)), mul(sqrt(sub(a_, b_)), exp(mul(-1, b_, t)), erf(mul(sqrt(sub(a_, b_)), st)))));
     }
   } else if (poles.length === 2 && zeros.length === 0) {
@@ -344,37 +330,46 @@ function inverseLaplaceIrrational(fn: Expr, s: Sym, t: Expr): InverseLaplacePair
     const p1 = P(1);
     if (eqNum(p0.n, -1) && eqNum(p0.m, 1) && eqNum(p1.n, -0.5) && eqNum(p1.m, 1) && isZeroE(p1.b)) {
       const a_ = neg(mul(p0.b, pow(p0.a, -1)));
-      const k_ = mul(pow(sqrt(p1.a), -1), pow(p0.a, -1), constants);
+      const k_ = mul(pow(sqrt(p1.a), -1), pow(p0.a, -1));
       if (pos(a_)) result = mul(k_, pow(sqrt(a_), -1), exp(mul(a_, t)), erf(mul(sqrt(a_), st)));
     } else if (eqNum(p0.n, -1) && eqNum(p0.m, 1) && isZeroE(p0.b) && eqNum(p1.n, -1) && eqNum(p1.m, 0.5)) {
       const a_ = mul(p1.b, pow(p1.a, -1));
-      const k_ = mul(pow(p0.a, -1), pow(p1.a, -1), pow(a_, -1), constants);
+      const k_ = mul(pow(p0.a, -1), pow(p1.a, -1), pow(a_, -1));
       if (pos(a_)) result = mul(k_, sub(1, mul(exp(mul(pow(a_, 2), t)), erfc(mul(a_, st)))));
     } else if (eqNum(p0.n, -1) && eqNum(p0.m, 0.5) && eqNum(p1.n, -0.5) && eqNum(p1.m, 1) && isZeroE(p1.b)) {
       const a_ = mul(p0.b, pow(p0.a, -1));
-      const k_ = mul(pow(mul(p0.a, sqrt(p1.a)), -1), constants);
+      const k_ = pow(mul(p0.a, sqrt(p1.a)), -1);
       if (pos(a_)) result = mul(k_, exp(mul(pow(a_, 2), t)), erfc(mul(a_, st)));
     } else if (eqNum(p0.n, -1.5) && eqNum(p0.m, 1) && isZeroE(p0.b) && eqNum(p1.n, -1) && eqNum(p1.m, 0.5)) {
       const a_ = mul(p1.b, pow(p1.a, -1));
-      const k_ = mul(pow(mul(pow(p0.a, Rational.of(3n, 2n)), p1.a), -1), pow(a_, -2), constants);
+      const k_ = mul(pow(mul(pow(p0.a, Rational.of(3n, 2n)), p1.a), -1), pow(a_, -2));
       if (pos(a_)) result = mul(k_, add(mul(2, pow(sqrt(pi), -1), a_, st), mul(exp(mul(pow(a_, 2), t)), erfc(mul(a_, st))), -1));
+    } else if (eqNum(p0.n, -1.5) && eqNum(p0.m, 1) && isZeroE(p0.b) && eqNum(p1.n, -1) && eqNum(p1.m, 1)) {
+      // 1/((a0*s)**(3/2)*(a1*s + b1)), Bateman 5.3 (2) with s*sqrt(s) combined into
+      // s**(3/2); SymPy has this rule only for the three factors s, a1*s + b1 and
+      // sqrt(a2*s + b2) (below) and evaluates this form with Meijer G functions. It
+      // applies that rule also for b2 != 0, which is wrong (SymPy 1.14:
+      // 1/(s*(s - 1)*sqrt(s + 2)) -> (-2*sqrt(t)/sqrt(pi) + exp(t)*erf(sqrt(t)))*Heaviside(t))
+      const a_ = neg(mul(p1.b, pow(p1.a, -1)));
+      const k_ = pow(mul(pow(p0.a, Rational.of(3n, 2n)), p1.a), -1);
+      if (pos(a_)) result = mul(k_, sub(mul(pow(a_, Rational.of(-3n, 2n)), exp(mul(a_, t)), erf(mul(sqrt(a_), st))), mul(2, pow(a_, -1), pow(sqrt(pi), -1), st)));
     } else if (eqNum(p0.n, -2) && eqNum(p0.m, 0.5) && eqNum(p1.n, -1) && eqNum(p1.m, 1) && isZeroE(p1.b)) {
       const aSq = mul(p0.b, pow(p0.a, -1));
       const a_ = pow(aSq, 2);
-      const k_ = mul(pow(p0.a, -2), pow(p1.a, -1), constants);
+      const k_ = mul(pow(p0.a, -2), pow(p1.a, -1));
       if (pos(aSq)) result = mul(k_, add(pow(a_, -1), mul(sub(mul(2, t), pow(a_, -1)), exp(mul(a_, t)), erfc(mul(sqrt(a_), st))), mul(-2, pow(sqrt(pi), -1), pow(sqrt(a_), -1), st)));
     } else if (eqNum(p0.n, -2) && eqNum(p0.m, 0.5) && eqNum(p1.n, -0.5) && eqNum(p1.m, 1) && isZeroE(p1.b)) {
       const a_ = mul(p0.b, pow(p0.a, -1));
-      const k_ = mul(pow(p0.a, -2), pow(sqrt(p1.a), -1), constants);
+      const k_ = mul(pow(p0.a, -2), pow(sqrt(p1.a), -1));
       if (pos(a_)) result = mul(k_, sub(mul(2, pow(sqrt(pi), -1), st), mul(2, a_, t, exp(mul(pow(a_, 2), t)), erfc(mul(a_, st)))));
     } else if (eqNum(p0.n, -3) && eqNum(p0.m, 0.5) && eqNum(p1.n, -0.5) && eqNum(p1.m, 1) && isZeroE(p1.b)) {
       const a_ = p0.b;
-      const k_ = mul(constants, pow(sqrt(p1.a), -1), pow(p0.a, -1));
+      const k_ = mul(pow(sqrt(p1.a), -1), pow(p0.a, -1));
       result = mul(k_, sub(mul(add(mul(2, pow(a_, 2), t), 1), t, exp(mul(pow(a_, 2), t)), erfc(mul(a_, st))), mul(2, pow(sqrt(pi), -1), a_, pow(t, Rational.of(3n, 2n)))));
     } else if (eqNum(p0.n, -1) && eqNum(p0.m, 1) && eqNum(p1.n, -0.5) && eqNum(p1.m, 1)) {
       const a_ = mul(p0.b, pow(p0.a, -1));
       const b_ = mul(p1.b, pow(p1.a, -1));
-      const k_ = mul(constants, pow(sqrt(p1.a), -1), pow(p0.a, -1));
+      const k_ = mul(pow(sqrt(p1.a), -1), pow(p0.a, -1));
       result = mul(k_, pow(sqrt(sub(b_, a_)), -1), exp(mul(-1, a_, t)), erf(mul(sqrt(sub(b_, a_)), st)));
     }
   } else if (poles.length === 2 && zeros.length === 1) {
@@ -385,32 +380,35 @@ function inverseLaplaceIrrational(fn: Expr, s: Sym, t: Expr): InverseLaplacePair
       const aSq = mul(p1.b, pow(p1.a, -1));
       const a_ = pow(aSq, 2);
       const b_ = neg(mul(p0.b, pow(p0.a, -1)));
-      const k_ = mul(sqrt(z0.a), pow(p0.a, -1), pow(p1.a, -1), pow(sub(a_, b_), -1), constants);
+      const k_ = mul(sqrt(z0.a), pow(p0.a, -1), pow(p1.a, -1), pow(sub(a_, b_), -1));
       if (pos(aSq) && pos(b_)) {
         result = mul(
           k_,
-          add(mul(a_, exp(mul(a_, t)), erfc(mul(sqrt(a_), st))), mul(sqrt(a_), sqrt(b_), exp(mul(b_, t)), erfc(mul(sqrt(b_), st))), mul(-1, b_, exp(mul(b_, t)))),
+          // SymPy 1.14 has erfc in the second term (also in its test of rule 5.3.6), which is
+          // wrong: sqrt(s)/((s - b)*(sqrt(s) + sqrt(a))) = (s - sqrt(a)*sqrt(s))/((s - a)*(s - b))
+          // inverts to (a*exp(a*t)*erfc(sqrt(a*t)) + sqrt(a*b)*exp(b*t)*erf(sqrt(b*t)) - b*exp(b*t))/(a - b)
+          add(mul(a_, exp(mul(a_, t)), erfc(mul(sqrt(a_), st))), mul(sqrt(a_), sqrt(b_), exp(mul(b_, t)), erf(mul(sqrt(b_), st))), mul(-1, b_, exp(mul(b_, t)))),
         );
       }
     } else if (eqNum(p0.n, -1) && eqNum(p0.m, 1) && isZeroE(p0.b) && eqNum(p1.n, -1) && eqNum(p1.m, 0.5) && eqNum(z0.n, 1) && eqNum(z0.m, 0.5)) {
       const aNum = mul(z0.b, pow(z0.a, -1));
       const a_ = mul(p1.b, pow(p1.a, -1));
       if (isZeroE(add(a_, aNum))) {
-        const k_ = mul(z0.a, pow(p0.a, -1), pow(p1.a, -1), constants);
+        const k_ = mul(z0.a, pow(p0.a, -1), pow(p1.a, -1));
         result = mul(k_, sub(mul(2, exp(mul(pow(a_, 2), t)), erfc(mul(a_, st))), 1));
       }
     } else if (eqNum(p1.n, -1) && eqNum(p1.m, 1) && isZeroE(p1.b) && eqNum(p0.n, -2) && eqNum(p0.m, 0.5) && eqNum(z0.n, 2) && eqNum(z0.m, 0.5)) {
       const aNum = mul(z0.b, pow(z0.a, -1));
       const a_ = mul(p0.b, pow(p0.a, -1));
       if (isZeroE(add(a_, aNum))) {
-        const k_ = mul(pow(z0.a, 2), pow(p1.a, -1), pow(p0.a, -2), constants);
+        const k_ = mul(pow(z0.a, 2), pow(p1.a, -1), pow(p0.a, -2));
         result = mul(k_, add(1, mul(8, pow(a_, 2), t, exp(mul(pow(a_, 2), t)), erfc(mul(a_, st))), mul(-8, pow(sqrt(pi), -1), a_, st)));
       }
     } else if (eqNum(p1.n, -1) && eqNum(p1.m, 1) && isZeroE(p1.b) && eqNum(p0.n, -3) && eqNum(p0.m, 0.5) && eqNum(z0.n, 3) && eqNum(z0.m, 0.5)) {
       const aNum = mul(z0.b, pow(z0.a, -1));
       const a_ = mul(p0.b, pow(p0.a, -1));
       if (isZeroE(add(a_, aNum))) {
-        const k_ = mul(pow(z0.a, 3), pow(p1.a, -1), pow(p0.a, -3), constants);
+        const k_ = mul(pow(z0.a, 3), pow(p1.a, -1), pow(p0.a, -3));
         result = mul(
           k_,
           add(
@@ -425,9 +423,12 @@ function inverseLaplaceIrrational(fn: Expr, s: Sym, t: Expr): InverseLaplacePair
     const p0 = P(0);
     const p1 = P(1);
     const p2 = P(2);
-    if (eqNum(p0.n, -1) && isZeroE(p0.b) && eqNum(p0.m, 1) && eqNum(p1.n, -1) && eqNum(p1.m, 1) && eqNum(p2.n, -0.5) && eqNum(p2.m, 1)) {
+    if (eqNum(p0.n, -1) && isZeroE(p0.b) && eqNum(p0.m, 1) && eqNum(p1.n, -1) && eqNum(p1.m, 1) && eqNum(p2.n, -0.5) && eqNum(p2.m, 1) && isZeroE(p2.b)) {
+      // Bateman 5.3 (2) with the factors s and sqrt(a2*s) apart (sqrt(k*s) for a k not
+      // known to be positive). SymPy does not check b2 = 0 and so gives a wrong result
+      // for sqrt(a2*s + b2) (see the two-pole form of this rule above)
       const a_ = neg(mul(p1.b, pow(p1.a, -1)));
-      const k_ = mul(pow(p0.a, -1), pow(p1.a, -1), pow(sqrt(p2.a), -1), constants);
+      const k_ = mul(pow(p0.a, -1), pow(p1.a, -1), pow(sqrt(p2.a), -1));
       if (pos(a_)) result = mul(k_, sub(mul(pow(a_, Rational.of(-3n, 2n)), exp(mul(a_, t)), erf(mul(sqrt(a_), st))), mul(2, pow(a_, -1), pow(sqrt(pi), -1), st)));
     } else if (eqNum(p0.n, -1) && eqNum(p0.m, 1) && eqNum(p1.n, -1) && eqNum(p1.m, 0.5) && eqNum(p2.n, -0.5) && eqNum(p2.m, 1) && isZeroE(p2.b)) {
       const aSq = mul(p1.b, pow(p1.a, -1));
@@ -531,50 +532,23 @@ function apartS(f: Expr, s: Sym): Expr {
       continue;
     }
     const pp = purePower(d, s);
-    const fd = pp ? mul(pp[0], pow(pp[1], pp[2])) : factor(d);
-    let c: Expr = S.One;
-    const sf: [Expr, number][] = [];
-    if (pp) {
-      c = pp[0];
-      sf.push([pp[1], pp[2]]);
-    } else {
-      for (const fac of mulArgs(fd)) {
-        if (!fac.has(s)) c = mul(c, fac);
-        else if (fac instanceof Pow && fac.exp instanceof Rational && fac.exp.isInteger && fac.exp.isPositive) sf.push([fac.base, Number(fac.exp.p)]);
-        else sf.push([fac, 1]);
-      }
-    }
-    if (sf.length !== 1) {
-      out.push(mul(n, pow(fd, -1)));
+    // a denominator that is not a power of one linear or quadratic factor is only factored
+    // (apart has already split the coprime factors)
+    if (!pp) {
+      out.push(mul(n, pow(factor(d), -1)));
       continue;
     }
-    const [p, m] = at(sf, 0);
-    const pc = polyCoeffs(p, s);
-    const nc = polyCoeffs(n, s);
-    if (!pc || !nc || pc.length > 3 || m === 1 || nc.length < pc.length) {
-      out.push(mul(n, pow(fd, -1)));
-      continue;
+    const [c, p, m] = pp;
+    // n = sum q_j*p**j + rest*p**m with deg q_j < deg p (rest is 0 for the proper
+    // fractions of apart); zero coefficients vanish in the sum
+    let rest = Poly.from(n, [s]);
+    const P = Poly.from(p, [s]);
+    for (let j = 0; j < m; j++) {
+      const [q, r] = rest.div(P);
+      out.push(mul(r.asExpr(), pow(c, -1), pow(p, -(m - j))));
+      rest = q;
     }
-    try {
-      // n = sum q_j*p**j with deg q_j < deg p
-      let rest = Poly.from(n, [s]);
-      const P = Poly.from(p, [s]);
-      const qs: Expr[] = [];
-      for (let j = 0; j < m && !rest.isZero; j++) {
-        const [q, r] = rest.div(P);
-        qs.push(r.asExpr());
-        rest = q;
-      }
-      if (!rest.isZero) {
-        out.push(mul(n, pow(fd, -1)));
-        continue;
-      }
-      qs.forEach((q, j) => {
-        if (q.key !== S.Zero.key) out.push(mul(q, pow(c, -1), pow(p, -(m - j))));
-      });
-    } catch {
-      out.push(mul(n, pow(fd, -1)));
-    }
+    out.push(mul(rest.asExpr(), pow(c, -1)));
   }
   return add(...out);
 }
@@ -629,28 +603,6 @@ function inverseLaplaceRational(fn: Expr, s: Sym, t: Expr, plane: Expr | undefin
 }
 
 /**
- * SymPy _inverse_laplace_transform_integration. SymPy evaluates the
- * inversion integral with Meijer G functions; symjs has no Meijer G
- * integrator, so only the partial fraction expansion of rational functions
- * is attempted here (other inputs stay unevaluated).
- */
-function inverseLaplaceTransformIntegration(F: Expr, s: Sym, t: Expr, plane: Expr | undefined, simplify: boolean): InverseLaplacePair | undefined {
-  if (isRationalFunction(F, [s])) {
-    const G = apart(F, s);
-    if (G instanceof Add) {
-      const parts: Expr[] = [];
-      for (const X of G.args) {
-        const p = inverseLaplaceTransformIntegration(X, s, t, plane, simplify);
-        if (p === undefined) return undefined;
-        parts.push(p[0]);
-      }
-      return [add(...parts), S.true];
-    }
-  }
-  return undefined;
-}
-
-/**
  * SymPy _inverse_laplace_transform: the front end that applies the rules
  * recursively to every term.
  */
@@ -664,10 +616,11 @@ export function inverseLaplaceTransformImpl(fn: Expr, s: Sym, t: Expr, plane: Ex
     let r: InverseLaplacePair | undefined;
     if (dorational && isRationalFunction(term, [s])) r = inverseLaplaceRational(f, s, t, plane, simplify);
     r ??= inverseLaplaceApplySimpleRules(f, s, t) ?? inverseLaplaceIrrational(f, s, t) ?? inverseLaplaceExpand(f, s, t, plane) ?? inverseLaplaceApplyProgRules(f, s, t, plane);
-    if (!r) {
-      if (some(f, (u) => u instanceof UndefFn && u.has(s))) r = [new InverseLaplaceTransform(f, s, t, plane), S.true];
-      else r = inverseLaplaceTransformIntegration(f, s, t, plane, simplify) ?? [new InverseLaplaceTransform(f, s, t, plane), S.true];
-    }
+    // SymPy finally evaluates the inversion integral with Meijer G functions
+    // (_inverse_laplace_transform_integration); symjs has no Meijer G
+    // integrator, so the term stays unevaluated. (A rational function whose
+    // partial fractions form a sum was already handled by the expansion rule.)
+    r ??= [new InverseLaplaceTransform(f, s, t, plane), S.true];
     termsT.push(mul(k, r[0]));
     conditions.push(r[1]);
   }

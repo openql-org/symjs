@@ -12,20 +12,23 @@ import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { Add, Mul, Pow, Rational, S, compareExpr, impl } from '../core/nodes';
 import { zassenhaus } from './zassenhaus';
 import { numCmp } from '../core/num';
-import { at, defined, first, last } from '../core/guard';
-import { factorInt, gcd as gcdBig, lcm } from '../core/numbers';
+import { at, defined, first, getOrThrow, last } from '../core/guard';
+import { ordered } from '../core/match';
+import { gcd as gcdBig, lcm } from '../core/numbers';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
-import { expandMul as expand } from '../simplify/expand';
+import { expand as expandHints, expandMul as expand } from '../simplify/expand';
+
+/** cancel, registered by simplify/rational (which imports this module). @internal */
+export const polyHooks: { cancel?: (e: Expr) => Expr } = {};
+const cancel = (e: Expr): Expr => defined(polyHooks.cancel, 'cancel hook')(e);
+/** factor, registered by polys/sympoly (loaded with this module by every entry point). */
+const factorE = (e: Expr): Expr => defined(impl.factor?.(e), 'factor hook');
 
 /**
  * Coefficients of e as a polynomial in x (degree -> coefficient expression),
  * or undefined if e is not polynomial in x.
  */
-/** cancel, registered by simplify/rational (which imports this module). @internal */
-export const polyHooks: { cancel?: (e: Expr) => Expr } = {};
-const cancel = (e: Expr): Expr => defined(polyHooks.cancel, 'cancel hook')(e);
-
 export function polyCoefficients(ex: ExprLike, x: Expr): Map<number, Expr> | undefined {
   const e = expand(sympify(ex));
   const out = new Map<number, Expr>();
@@ -53,10 +56,8 @@ const R = (n: bigint | number, d: bigint | number = 1n) => Rational.of(n, d);
 const qAdd = (a: Rational, b: Rational): Rational => (a.q === b.q ? Rational.of(a.p + b.p, a.q) : Rational.of(a.p * b.q + b.p * a.q, a.q * b.q));
 const qMul = (a: Rational, b: Rational): Rational => (a.isOne ? b : b.isOne ? a : Rational.of(a.p * b.p, a.q * b.q));
 const qNeg = (a: Rational): Rational => Rational.of(-a.p, a.q);
-function qInv(a: Rational): Rational {
-  if (a.isZero) throw new RangeError('Division by zero');
-  return Rational.of(a.q, a.p);
-}
+/** 1/a for a nonzero a (leading coefficients and scale factors). */
+const qInv = (a: Rational): Rational => Rational.of(a.q, a.p);
 /** a**n for n >= 0. */
 function qPowInt(a: Rational, n: bigint): Rational {
   return Rational.of(a.p ** n, a.q ** n);
@@ -116,7 +117,7 @@ export class UPoly {
     const out: Rational[] = Array.from({ length: this.coeffs.length + o.coeffs.length - 1 }, () => S.Zero);
     this.coeffs.forEach((a, i) =>
       o.coeffs.forEach((b, j) => {
-        out[i + j] = qAdd(out[i + j] ?? S.Zero, qMul(a, b));
+        out[i + j] = qAdd(at(out, i + j), qMul(a, b));
       }),
     );
     return new UPoly(out);
@@ -177,76 +178,37 @@ export class UPoly {
     return out;
   }
 
-  /** Rational roots (without multiplicity). */
+  /**
+   * Rational roots (without multiplicity): the linear factors over ZZ of the
+   * square-free parts (no enumeration of the divisors of the leading and
+   * constant coefficients, which explodes for coefficients with many prime factors).
+   */
   rationalRoots(): Rational[] {
-    if (this.degree <= 0) return [];
-    // scale to integer coefficients
-    let den = 1n;
-    for (const c of this.coeffs) den = lcm(den, c.q);
-    const ints = this.coeffs.map((c) => (c.p * den) / c.q);
     const roots: Rational[] = [];
-    let lo = 0;
-    while (ints[lo] === 0n) lo++;
-    if (lo > 0) roots.push(S.Zero);
-    const a0 = at(ints, lo);
-    const an = last(ints);
-    if (ints.length - 1 === lo) return roots;
-    const divisors = (nIn: bigint): bigint[] => {
-      let n = nIn;
-      n = n < 0n ? -n : n;
-      let ds = [1n];
-      for (const [p, k] of factorInt(n)) {
-        const next: bigint[] = [];
-        for (const d of ds) {
-          let m = 1n;
-          for (let i = 0n; i <= k; i++) {
-            next.push(d * m);
-            m *= p;
-          }
-        }
-        ds = next;
-      }
-      return ds;
-    };
-    const seen = new Set<string>();
-    for (const p of divisors(a0)) {
-      for (const q of divisors(an)) {
-        for (const s of [1n, -1n]) {
-          const r = R(s * p, q);
-          if (seen.has(r.key)) continue;
-          seen.add(r.key);
-          if (this.evalAt(r).isZero) roots.push(r);
-        }
+    for (const [p] of this.squareFree()) {
+      const den = p.coeffs.reduce((l, c) => lcm(l, c.q), 1n);
+      for (const g of zassenhaus(p.coeffs.map((c) => (c.p * den) / c.q))) {
+        if (g.length === 2) roots.push(R(-first(g), last(g)));
       }
     }
     return roots.sort((a, b) => numCmp(a, b));
   }
 
   /**
-   * Factor over Q as content * prod(factor^multiplicity). Linear factors from
-   * rational roots are split off; remaining factors are returned as they are
-   * (they may still be reducible over Q).
+   * Factor over Q as content * prod(factor^multiplicity) with monic
+   * irreducible factors, the linear ones first (by their roots).
    */
   factor(): { content: Rational; factors: [UPoly, number][] } {
     if (this.isZero) return { content: S.Zero, factors: [] };
     const content = this.lc;
     const factors: [UPoly, number][] = [];
     for (const [p, m] of this.squareFree()) {
-      let rest = p;
-      for (const r of p.rationalRoots()) {
-        const lin = new UPoly([qNeg(r), S.One]);
-        factors.push([lin, m]);
-        rest = rest.divmod(lin)[0];
-      }
-      if (rest.degree > 1) {
-        // the remaining part has no rational roots: full factorization over ZZ (Zassenhaus)
-        const den = rest.coeffs.reduce((l, c) => (l * c.q) / gcdBig(l, c.q), 1n);
-        const ints = rest.coeffs.map((c) => (c.p * den) / c.q);
-        for (const g of zassenhaus(ints)) {
-          const lcg = last(g);
-          factors.push([new UPoly(g.map((c) => Rational.of(c, lcg))), m]);
-        }
-      } else if (rest.degree > 0) factors.push([rest, m]);
+      // full factorization over ZZ (Zassenhaus); the linear factors first, by their roots
+      const den = p.coeffs.reduce((l, c) => lcm(l, c.q), 1n);
+      const gs = zassenhaus(p.coeffs.map((c) => (c.p * den) / c.q)).map((g) => new UPoly(g.map((c) => Rational.of(c, last(g)))));
+      const root = (g: UPoly) => qNeg(first(g.coeffs));
+      for (const g of gs.filter((h) => h.degree === 1).sort((u, v) => numCmp(root(u), root(v)))) factors.push([g, m]);
+      for (const g of gs.filter((h) => h.degree > 1)) factors.push([g, m]);
     }
     return { content, factors };
   }
@@ -311,7 +273,7 @@ const isZeroE = (e: Expr): boolean => e instanceof Rational && e.isZero;
 function binomialRoots(a: Rational, b: Rational, n: number): Expr[] {
   const base = qMul(qNeg(b), qInv(a));
   let alpha: Expr = pow(base, Rational.of(1n, BigInt(n)));
-  alpha = impl.expandComplex ? impl.expandComplex(alpha) : alpha;
+  alpha = expandHints(alpha, { complex: true });
   const negB = base.isNegative;
   const big = negB && even(n) && qAdd(base, S.One).isPositive;
   return binomialOrder(n, negB, big).map((k) => expand(mul(alpha, unitRoot(k, n))));
@@ -370,11 +332,11 @@ function quadraticRoots(a: Expr, b: Expr, c: Expr): [Expr, Expr] {
 export function rootsDict(ex: ExprLike, x: Sym, opts: { multiple: true; skipQuintic?: boolean }): Expr[];
 export function rootsDict(ex: ExprLike, x: Sym, opts?: { multiple?: false; skipQuintic?: boolean }): ExprMap<number>;
 export function rootsDict(ex: ExprLike, x: Sym, opts: { multiple?: boolean; skipQuintic?: boolean } = {}): ExprMap<number> | Expr[] {
-  const rs = roots(ex, x, opts);
-  if (opts.multiple) return rs;
   const m = new ExprMap<number>();
-  for (const r of rs) m.set(r, (m.get(r) ?? 0) + 1);
-  return m;
+  for (const r of roots(ex, x, opts)) m.set(r, (m.get(r) ?? 0) + 1);
+  if (!opts.multiple) return m;
+  // SymPy: the roots in ordered() order, each repeated by its multiplicity
+  return ordered([...m.keys()]).flatMap((r) => Array.from({ length: getOrThrow(m, r) }, () => r));
 }
 
 /** Roots repeated by multiplicity (the list form used internally). */
@@ -416,14 +378,8 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
   if (effDeg === 1) {
     // SymPy roots_linear: over a polynomial ring the root is factored (x/(y - 1), not -x/(1 - y))
     const r = expand(mul(-1, get(low), pow(get(low + 1), -1)));
-    if (freeSymbols(r).size && impl.factor) {
-      try {
-        return [...zeros, impl.factor(r)];
-      } catch {
-        return [...zeros, r];
-      }
-    }
-    return [...zeros, r];
+    // factor() returns an expression it cannot treat as a polynomial unchanged
+    return [...zeros, freeSymbols(r).size ? factorE(r) : r];
   }
   if (effDeg === 2) {
     const orig = (k: number) => coeffs.get(k) ?? S.Zero;
@@ -440,7 +396,6 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
   throw new NotImplementedError(`roots: symbolic polynomials of degree ${effDeg} are not supported`);
 }
 
-const factorOr = (e: Expr): Expr => (impl.factor ? impl.factor(e) : e);
 
 /** SymPy roots_binomial for x**n + c with a symbolic c (in SymPy's order). */
 function symbolicBinomialRoots(c: Expr, n: number): Expr[] {
@@ -455,12 +410,12 @@ function symbolicBinomialRoots(c: Expr, n: number): Expr[] {
 function symbolicQuadraticRoots(a: Expr, b: Expr, c: Expr): [Expr, Expr] {
   // c = 0 does not occur: the roots at zero are split off before
   if (isZeroE(b)) {
-    const r = sqrtRemoveSquares(factorOr(mul(-1, c, pow(a, -1))));
+    const r = sqrtRemoveSquares(factorE(mul(-1, c, pow(a, -1))));
     return [neg(r), r];
   }
   const A = mul(2, a);
-  const B = factorOr(mul(-1, b, pow(A, -1)));
-  const D = mul(sqrtRemoveSquares(factorOr(expand(add(pow(b, 2), mul(-4, a, c))))), pow(A, -1));
+  const B = factorE(mul(-1, b, pow(A, -1)));
+  const D = mul(sqrtRemoveSquares(factorE(expand(add(pow(b, 2), mul(-4, a, c))))), pow(A, -1));
   const r0 = add(B, neg(D));
   const r1 = add(B, D);
   return isNegative(a) === true ? [r1, r0] : [r0, r1];
@@ -521,7 +476,6 @@ export function factorPoly(ex: ExprLike, x: Sym): Expr {
     parts.push(pow(prim.toExpr(x), m));
   }
   parts.sort(compareExpr);
-  const [only] = parts;
-  if (parts.length === 1 && only !== undefined && content.isOne) return only;
+  if (parts.length === 1 && content.isOne) return first(parts);
   return new Mul(content.isOne ? parts : [content, ...parts]);
 }

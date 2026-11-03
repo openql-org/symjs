@@ -8,7 +8,7 @@
 import { InvariantError } from '../core/errors';
 import { at, first, pair } from '../core/guard';
 import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { ExtensionExpr, Float, Rational } from '../core/nodes';
+import { ExtensionExpr, Float, Rational, S } from '../core/nodes';
 import { sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import { nroots } from './nroots';
@@ -48,10 +48,10 @@ export class CRootOf extends ExtensionExpr {
     const rs = nroots(Poly.from(this.poly, [this.gen]), dps);
     return rs[this.index];
   }
-  /** Is this root real? */
+  /** Is this root real? (nroots gives a Float, or 0, for each real root) */
   get isRealRoot(): boolean {
     const v = this.numericValue(15);
-    return v instanceof Float || v instanceof Rational;
+    return v instanceof Float || v === S.Zero;
   }
 }
 

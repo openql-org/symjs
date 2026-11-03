@@ -31,7 +31,6 @@ const heavisideDef = defineFunction('Heaviside', {
   },
   fdiff: (args) => DiracDelta(at(args, 0)),
   latex: (args) => `\\theta\\left(${at(args, 0)}\\right)`,
-  evalf: (x = Number.NaN, h0 = 0.5) => (x > 0 ? 1 : x < 0 ? 0 : h0),
 });
 
 const diracDef = defineFunction('DiracDelta', {
@@ -57,7 +56,7 @@ const diracDef = defineFunction('DiracDelta', {
     const k = args[1] ?? S.Zero;
     return diracDef(at(args, 0), mul(1, k).add(1));
   },
-  latex: (args) => (args.length > 1 ? `\\delta^{\\left( ${at(args, 1)} \\right)}\\left(${at(args, 0)}\\right)` : `\\delta\\left(${at(args, 0)}\\right)`),
+  latex: (args) => (args.length > 1 ? `\\delta^{\\left( ${at(args, 1)} \\right)}\\left( ${at(args, 0)} \\right)` : `\\delta\\left(${at(args, 0)}\\right)`),
 });
 
 /**

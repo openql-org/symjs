@@ -12,7 +12,7 @@ import { Add, Fn, Mul, Rational, S } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { mapBottomUp, xreplace } from '../core/traverse';
 import { cos, cosh, fn, sin, sinh } from '../functions/elementary';
-import { factor } from '../polys/sympoly';
+import { Poly, factor } from '../polys/sympoly';
 import { expandMul as expand } from './expand';
 import { fraction, together } from './rational';
 import { factorTerms } from './exprtools';
@@ -23,22 +23,16 @@ const BESSEL: ReadonlySet<string> = new Set<BName>(['besselj', 'bessely', 'besse
 const isBName = (name: string): name is BName => BESSEL.has(name);
 const isBessel = (e: Expr): e is Fn => e instanceof Fn && isBName(e.name);
 
-/** z = rest * exp_polar(I*pi*k) (or polar_lift(-1), ...): [rest, k] with k in {1, 1/2, -1/2}. */
+/**
+ * z = rest * exp_polar(I*pi*k): [rest, k] (polar_lift(-1), polar_lift(I) and
+ * polar_lift(-I) evaluate to exp_polar(I*pi), exp_polar(I*pi/2) and exp_polar(-I*pi/2)).
+ */
 function polarFactor(z: Expr): [Expr, Rational] | undefined {
   const fs = z instanceof Mul ? z.args : [z];
   for (const f of fs) {
-    if (!(f instanceof Fn)) continue;
-    let k: Rational | undefined;
-    if (f.name === 'exp_polar') {
-      const q = mul(first(f.args), pow(mul(S.I, S.Pi), -1));
-      if (q instanceof Rational) k = q;
-    } else if (f.name === 'polar_lift') {
-      const a = first(f.args);
-      if (a instanceof Rational && a.p === -1n && a.q === 1n) k = S.One;
-      else if (a.key === S.I.key) k = S.Half;
-      else if (a.key === mul(-1, S.I).key) k = S.NegHalf;
-    }
-    if (k) return [mul(...fs.filter((g) => g !== f)), k];
+    if (!(f instanceof Fn && f.name === 'exp_polar')) continue;
+    const k = mul(first(f.args), pow(mul(S.I, S.Pi), -1));
+    if (k instanceof Rational) return [mul(...fs.filter((g) => g !== f)), k];
   }
   return undefined;
 }
@@ -145,14 +139,15 @@ export function besselsimp(ex: ExprLike): Expr {
   if (e.key !== orig.key) {
     try {
       e = factor(together(expand(e)));
-      // pull out common factors and a leading minus sign of the numerator (SymPy factor)
+      // pull out common factors, and the sign of a sum whose leading coefficient (in SymPy's
+      // generator order) is negative, from the numerator (SymPy factor)
       const [n, d] = fraction(e);
       let num = factorTerms(n);
-      const inner = num instanceof Mul ? num.args.find((a) => a instanceof Add) : num instanceof Add ? num : undefined;
-      const negs = inner instanceof Add ? inner.args.filter((a) => couldExtractMinusSign(a)).length : 0;
-      const pull = inner instanceof Add && (2 * negs > inner.args.length || (2 * negs === inner.args.length && couldExtractMinusSign(inner)));
-      if (inner && pull) num = mul(-1, xreplace(num, [[inner, mul(-1, inner)]]));
-      e = mul(num, pow(d, -1));
+      const inner = num instanceof Mul ? num.args.find((a) => a instanceof Add) : num;
+      // (the sign goes into one product with the denominator: -1 times a lone sum would be distributed)
+      const pull = inner instanceof Add && couldExtractMinusSign(Poly.from(inner).LC());
+      if (pull) num = xreplace(num, [[inner, mul(-1, inner)]]);
+      e = mul(pull ? -1 : 1, num, pow(d, -1));
     } catch {
       // keep e
     }

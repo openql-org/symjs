@@ -116,11 +116,8 @@ export function asBoolean(x: BoolLike): Expr {
   const e = toBool(x);
   if (e instanceof BoolAtom) return e;
   if (isNum(e) && e instanceof Rational && e.q === 1n && (e.p === 0n || e.p === 1n)) return e.p === 1n ? S.true : S.false;
-  if (e instanceof Sym) {
-    const z = triIsZero(e);
-    if (z === undefined) return e;
-    return z ? S.false : S.true;
-  }
+  // the core knows a symbol to be nonzero (zero=False) but never to be zero
+  if (e instanceof Sym) return triIsZero(e) === false ? S.true : e;
   if (isBoolean(e)) return e;
   throw new TypeError(`expecting bool or Boolean, not \`${impl.str(e)}\`.`);
 }
@@ -192,10 +189,12 @@ export function orFn(...xs: readonly BoolLike[]): Expr {
 function lattice(op: 'And' | 'Or', xs: readonly Expr[]): Expr {
   const r = op === 'And' ? coreAnd(...xs) : coreOr(...xs);
   if (!isOp(r, op)) return r;
+  // SymPy And looks at the flattened arguments in sorted order, Or at the given arguments in the given order
+  const args = op === 'And' ? r.args : xs;
   const seen: Rel[] = [];
   const kept: Expr[] = [];
   let dropped = false;
-  for (const x of r.args) {
+  for (const x of args) {
     if (x instanceof Rel) {
       const c = relCanonical(x);
       if (seen.some((s) => s.key === c.key)) {

@@ -18,7 +18,7 @@ import { compareKeys, sortKey } from '../printing/sortkey';
 import { expand_log, expandMul } from './expand';
 import { factorTerms } from './exprtools';
 import { fraction } from './rational';
-import { defined, first, getOrThrow } from '../core/guard';
+import { cast, defined, first, getOrThrow } from '../core/guard';
 
 type Combine = 'all' | 'exp' | 'base';
 export interface PowsimpOptions {
@@ -57,9 +57,6 @@ class EMap<V> {
   entries(): [Expr, V][] {
     return [...this.m.values()];
   }
-  get size(): number {
-    return this.m.size;
-  }
 }
 
 function ilcm(a: bigint, b: bigint): bigint {
@@ -67,10 +64,9 @@ function ilcm(a: bigint, b: bigint): bigint {
   return (a / g(a, b)) * b;
 }
 
-/** Number of times p divides n (both positive integers). */
+/** Number of times p divides n (p >= 2, n >= 1: the callers pass the parts of rationals other than 0 and 1). */
 function multiplicityInt(p: bigint, nIn: bigint): number {
   let n = nIn;
-  if (n === 0n || p <= 1n) return 0;
   let m = 0;
   while (n % p === 0n) {
     n /= p;
@@ -178,10 +174,6 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
       if (skip.has(b.key) || !summed.has(b)) continue;
       if (isPositive(b)) {
         const binv = pow(b, -1);
-        if (b instanceof Float && b.value === 1) {
-          summed.set(b, S.One);
-          continue;
-        }
         if (b.key !== binv.key && summed.has(binv)) {
           if (isOneE(fraction(b)[0])) {
             const e = defined(summed.get(b));
@@ -243,9 +235,16 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
     const done: [Expr, Expr][] = [];
     const cbGet = (k: BKey) => commonB.get(k.key)?.[1];
     const cbSet = (k: BKey, v: Expr) => commonB.set(k.key, [commonB.get(k.key)?.[0] ?? k, v]);
+    /** common_b[k] += e (starting from 0). */
+    const cbAdd = (k: BKey, e: Expr) => {
+      const cur = cbGet(k);
+      cbSet(k, cur === undefined ? e : add(cur, e));
+    };
+    // update is called right after the exponent of k is set; it may be symbolic when an
+    // earlier update in the same step added n*e for an integer symbol n (SymPy raises there)
     const update = (k: BKey) => {
-      const v = cbGet(k);
-      if (v === undefined || !isInt(v)) return;
+      const v = defined(cbGet(k), 'exponent of the base');
+      if (!isInt(v)) return;
       const q = BigInt(k.q);
       const newe = v.p >= 0n ? v.p / q : -((-v.p + q - 1n) / q);
       const r = v.p - newe * q;
@@ -254,7 +253,7 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
         if (newe !== 0n) {
           for (const m of mulArgs(pow(k.b, Rational.of(newe)))) {
             const [bk, e] = bkey(m);
-            cbSet(bk, add(cbGet(bk) ?? S.Zero, e));
+            cbAdd(bk, e);
             if (bk.q !== 1n) bases.push(bk);
           }
         }
@@ -262,11 +261,11 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
     };
     for (const [b0, e0] of cList) {
       const [b, e] = bkey(b0, e0);
-      const cur = cbGet(b);
-      cbSet(b, cur ? add(cur, e) : e);
+      cbAdd(b, e);
       if (b.q !== 1n && b.b instanceof Mul) bases.push(b);
     }
-    bases.sort((x, y) => compareKeys(sortKey(x.b), sortKey(y.b)) || Number(x.q - y.q));
+    // (no two of these bases have the same b: each comes from a distinct product base of a rational power)
+    bases.sort((x, y) => compareKeys(sortKey(x.b), sortKey(y.b)));
     bases.sort((x, y) => countOps(y.b) - countOps(x.b));
     for (const base of bases) {
       if (!commonB.has(base.key)) continue;
@@ -309,10 +308,10 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
           }
           if (ok) {
             bb.forEach((bk, i) => {
-              cbSet(bk, add(defined(cbGet(bk)), mul(-1, Rational.of(min1), defined(ee[i])[0])));
-              if (commonB.has(bk.key)) update(bk);
+              cbAdd(bk, mul(-1, Rational.of(min1), defined(ee[i])[0]));
+              update(bk);
             });
-            cbSet(base, add(cbGet(base) ?? S.Zero, mul(Rational.of(min1), Rational.of(qstart), exponent)));
+            cbAdd(base, mul(Rational.of(min1), Rational.of(qstart), exponent));
           }
         }
         if (last || commonB.size === 1 || [...commonB.values()].every(([k]) => k.q === 1n)) break;
@@ -322,9 +321,10 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
         qlcm *= qstart;
         if (mulArgs(b).every((bi) => ratq(bi) === 1n)) last = true;
       }
-      const v = cbGet(base);
+      // update deletes only factor keys of base.b (never base itself), so the entry is still there
+      const v = defined(cbGet(base), 'exponent of the base');
       commonB.delete(base.key);
-      if (v !== undefined) done.push([base.b, mul(v, Rational.of(1n, base.q))]);
+      done.push([base.b, mul(v, Rational.of(1n, base.q))]);
     }
     cList = done;
     for (const [k, e] of commonB.values()) {
@@ -437,9 +437,10 @@ function denestPow(eq: Pow): Expr {
   if (isOneE(be) && !(b instanceof Mul || (isRat(b) && b.q !== 1n) || isPositive(b) === true)) return eq;
   if (isInt(b)) {
     const logb = expand_log(log(b));
+    // a perfect power: expand_log gives k*log(root)
     if (logb instanceof Mul) {
       const [c, l] = splitCoeff(logb);
-      if (l instanceof Fn && l.name === 'log') return pow(first(l.args), mul(e, c));
+      return pow(first(cast(l, Fn, 'the logarithm of the root').args), mul(e, c));
     }
   }
   if (!(b instanceof Mul) || b.args.some((s) => s.args.length === 0)) return eq;
@@ -458,17 +459,9 @@ function denestPow(eq: Pow): Expr {
     // the gcd stays outside the sum (SymPy _keep_coeff)
     if (!isOneE(g)) glogb = keepCoeff(g, add(...args.map((a) => mul(a, pow(g, -1)))));
   }
-  if ((glogb instanceof Fn && glogb.name === 'log') || !(glogb instanceof Mul)) {
-    const a0 = glogb.args[0];
-    if (a0 instanceof Pow) {
-      const d = denestPow(a0);
-      if (d instanceof Pow) {
-        const ev = d.exp.isNumber ? Math.abs(d.exp.toNumber()) : NaN;
-        if (ev < 1) return pow(d.base, mul(d.exp, e));
-      }
-    }
-    return eq;
-  }
+  // SymPy denests a power inside the logarithm here; b is a product of non-atoms, so
+  // expand_log gives log(b) itself or a sum of logarithms, never the log of a power
+  if ((glogb instanceof Fn && glogb.name === 'log') || !(glogb instanceof Mul)) return eq;
   const adds: Expr[] = [];
   const other: Expr[] = [];
   for (const a of glogb.args) (a instanceof Add ? adds : other).push(a);
@@ -548,11 +541,12 @@ export function logcombine(exprIn: ExprLike, opts: { force?: boolean } = {}): Ex
       return false;
     }
   };
-  const gooda = (a: Expr) =>
-    !(a instanceof Rational && a.p === -1n && a.q === 1n) && (isReal(a) === true || (force && isReal(a) !== false && !nonReal(a)));
+  // (SymPy also excludes a = -1, but negative rationals are split off before gooda is asked)
+  const gooda = (a: Expr) => isReal(a) === true || (force && isReal(a) !== false && !nonReal(a));
+  // (log(0) evaluates to zoo, so the argument of a logarithm is never 0)
   const goodlog = (l: Fn) => {
     const a = first(l.args);
-    return isPositive(a) === true || (force && !(isNegative(a) === true || (a instanceof Rational && a.isZero)));
+    return isPositive(a) === true || (force && isNegative(a) !== true);
   };
   const f = (rv: Expr): Expr => {
     if (!(rv instanceof Add || rv instanceof Mul)) return rv;
@@ -595,9 +589,8 @@ export function logcombine(exprIn: ExprLike, opts: { force?: boolean } = {}): Ex
       const [l1, ...lRest] = ordered(l0).map((x) => first(x.args));
       let e: Expr = log(pow(defined(l1), mul(...e0)));
       for (const li of lRest) e = log(pow(li, e));
-      const c = mul(...o);
-      if (isLog(e)) put([c], [[], e]);
-      else other.push(mul(c, e));
+      // a logarithm of a power of a positive (or forced) base stays a logarithm
+      put([mul(...o)], [[], cast(e, Fn, 'logcombine: the combined logarithm')]);
     }
     const combined = new Map<string, [Expr, Expr, Expr]>();
     for (const { k, items } of log1.values()) {

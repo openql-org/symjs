@@ -467,7 +467,7 @@ describe('binomial modulo prime powers, pure quadratics, ImageSet parameters', (
     expect([binomialMod(100n, 37n, 1000n), binomialMod(50n, 20n, 97n)]).toEqual([600n, 49n]);
     const [y, c] = symbols('y c');
     expect(sstr(solveset(parse('exp(-y) - 3', { symbols: { y } } as never), y))).toBe('ImageSet(Lambda(_n, 2*_n*I*pi - log(3)), Integers)');
-    expect(roots(parse('y**2 + c', { symbols: { y, c } } as never), y, { multiple: true }).map((e) => sstr(e))).toEqual(['-sqrt(-c)', 'sqrt(-c)']);
+    expect(roots(parse('y**2 + c', { symbols: { y, c } } as never), y, { multiple: true }).map((e) => sstr(e))).toEqual(['sqrt(-c)', '-sqrt(-c)']); // SymPy: ordered() order
   });
 });
 

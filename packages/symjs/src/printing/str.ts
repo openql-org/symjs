@@ -63,7 +63,8 @@ export function precedence(e: Expr): number {
   if (isExp(e)) return PREC.FUNC;
   if (e instanceof Pow) return PREC.POW;
   if (e instanceof Fn || e instanceof Piecewise || e instanceof UndefFn) return PREC.FUNC;
-  if (e instanceof Rel) return PREC.REL;
+  // SymPy PRECEDENCE_VALUES: Equality and Unequality bind like Mul
+  if (e instanceof Rel) return e.op === 'Eq' || e.op === 'Ne' ? PREC.MUL : PREC.REL;
   return PREC.ATOM;
 }
 

@@ -8,11 +8,11 @@
  */
 
 import type { ExprLike } from './nodes';
-import { Add, Constant, Derivative, Expr, ExtensionExpr, Float, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, Wild, WildFunction, impl } from './nodes';
+import { Add, Constant, Derivative, Expr, ExtensionExpr, Float, Fn, Integral, Mul, Pow, Rational, S, Special, Sym, UndefFn, Wild, WildFunction, impl } from './nodes';
+import { Concrete } from './concrete';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { rebuild, xreplace } from './traverse';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { InvariantError } from './errors';
 import { at, defined, first } from './guard';
 
 /** Match result: wild key -> [wild, value]. */
@@ -23,10 +23,6 @@ const isExpPow = (e: Expr): boolean => e instanceof Pow && e.base instanceof Con
 /** The `kind2` (Sum/Product) and `op` (relations, connectives) discriminators of a node, if it has them. */
 const kind2Of = (e: Expr): unknown => ('kind2' in e ? e.kind2 : undefined);
 const opOf = (e: Expr): unknown => ('op' in e ? e.op : undefined);
-const kind2Name = (e: Expr): string => {
-  const k = kind2Of(e);
-  return typeof k === 'string' ? k : 'SUM';
-};
 
 /** SymPy _node_count (Floats count 1/2, exp(x) is one node). */
 function nodeCount(e: Expr): number {
@@ -170,10 +166,10 @@ function commutativeMatches(p: Add | Mul, e: Expr, d: Dict, old: boolean): Dict 
   if (p.key === e.key) return copy(d);
   // _matches_simple
   if (isAdd) {
-    const c = p.args[0] instanceof Rational || p.args[0] instanceof Float ? p.args[0] : undefined;
-    const terms = c ? p.args.slice(1) : p.args;
-    if (terms.length === 1) {
-      const r = matchesImpl(first(terms), add(e, mul(-1, c ?? S.Zero)), d, old);
+    // a number plus one term (an Add has at least two arguments, so a single term needs a numeric coefficient)
+    const [c, term] = p.args;
+    if (p.args.length === 2 && (c instanceof Rational || c instanceof Float) && term !== undefined) {
+      const r = matchesImpl(term, add(e, mul(-1, c)), d, old);
       if (r) return r;
     }
   } else {
@@ -241,11 +237,12 @@ function commutativeMatches(p: Add | Mul, e: Expr, d: Dict, old: boolean): Dict 
         const was = expr;
         const did = new Set<string>();
         for (const w of [...wild].reverse()) {
-          const cpart = w instanceof Mul ? mul(...w.args.filter((a) => !hasWild(a))) : hasWild(w) ? S.One : w;
+          // every term of wild contains a Wild: only the exact factors of a product are collected on
+          const cpart = w instanceof Mul ? mul(...w.args.filter((a) => !hasWild(a))) : S.One;
           const free = [...cpart.freeSymbols()].filter((s) => !did.has(s.key));
           if (free.length) {
             free.forEach((s) => did.add(s.key));
-            expr = impl.collect ? impl.collect(expr, free) : expr;
+            expr = defined(impl.collect?.(expr, free), 'collect');
           }
         }
         if (expr.key !== was.key) continue;
@@ -280,15 +277,9 @@ export function match(exprIn: ExprLike, patternIn: ExprLike, opts: { old?: boole
   const expr = sympify(exprIn);
   const pattern = sympify(patternIn);
   const old = opts.old ?? false;
+  // SymPy 1.14 Basic.match is pattern.matches(expr): Wilds that the match does not need stay unassigned
   const m = matchesImpl(pattern, expr, new Map(), old);
   if (!m) return undefined;
-  const all = wilds(pattern);
-  const missing = [...all.keys()].filter((k) => !m.has(k));
-  if (missing.length) {
-    const wpat = applyD(pattern, m);
-    const w = matchesImpl(wpat, expr, new Map(), old);
-    if (w) for (const [k, v] of w) m.set(k, v);
-  }
   return new Map([...m.values()].map(([k, v]) => [k, v] as const));
 }
 
@@ -378,8 +369,6 @@ export function replace(
   opts: { exact?: boolean; map?: boolean; apply?: (name: string, args: Expr[]) => Expr; applyType?: (type: string, args: Expr[]) => Expr } = {},
 ): Expr | [Expr, Map<Expr, Expr>] {
   const expr = sympify(exprIn);
-  let q: (e: Expr) => Map<Sym, Expr> | boolean | undefined;
-  let v: (e: Expr, r: Map<Sym, Expr> | boolean) => Expr | undefined;
   const callFn = (name: string, args: Expr[]): Expr => {
     if (!opts.apply) throw new TypeError('replace: no function constructor');
     return opts.apply(name, args);
@@ -391,51 +380,46 @@ export function replace(
     if (!opts.applyType) throw new TypeError('replace: no type constructor');
     return opts.applyType(type, args);
   };
-  if (typeof query === 'object' && 'fn' in query) {
-    q = (e) => isFunctionOf(e, query.fn);
-  } else if (typeof query === 'object' && 'type' in query) {
-    q = (e) => isInstance(e, query.type);
-  } else if (query instanceof Expr) {
-    q = (e) => match(e, query);
-  } else {
-    q = query;
-  }
-  if (typeof query === 'object' && !(query instanceof Expr)) {
-    // class query: the replacement is applied to the arguments
-    if (typeof value === 'object' && 'fn' in value) v = (e) => callFn(value.fn, fnArgs(e));
-    else if (typeof value === 'object' && 'type' in value) v = (e) => callType(value.type, fnArgs(e));
-    else if (value instanceof Expr) v = () => value;
-    else v = (e) => (value)(...fnArgs(e));
-  } else if (query instanceof Expr) {
+  // the rule gives the replacement of a node, or undefined when the query does not select it
+  let rule: (e: Expr) => Expr | undefined;
+  if (query instanceof Expr) {
+    // pattern query: the replacement sees the values of the Wilds
     const exact = opts.exact ?? wilds(query).size > 1;
     const allNonZero = (r: Map<Sym, Expr>) => [...r.values()].every((x) => !(x instanceof Rational && x.isZero));
-    if (value instanceof Expr) {
-      v = (e, r) => {
-        if (typeof r === 'boolean') throw new InvariantError('a pattern query yields a match dictionary');
-        const m = r;
-        if (exact && !allNonZero(m)) return e;
-        return impl.subs(value, new Map([...m]));
-      };
-    } else if (typeof value === 'function') {
-      v = (e, r) => {
-        if (typeof r === 'boolean') throw new InvariantError('a pattern query yields a match dictionary');
-        const m = r;
-        if (exact && !allNonZero(m)) return e;
-        // keyword call: values ordered like the Wilds in the pattern
-        const order = [...wilds(query).values()];
-        return (value)(...order.map((w) => [...m].find(([k]) => k.key === w.key)?.[1] ?? S.Zero));
-      };
+    let v: (m: Map<Sym, Expr>) => Expr;
+    if (value instanceof Expr) v = (m) => impl.subs(value, new Map([...m]));
+    else if (typeof value === 'function') {
+      // keyword call: values ordered like the Wilds in the pattern (a Wild the match leaves unassigned gets 0)
+      const order = [...wilds(query).values()];
+      v = (m) => value(...order.map((w) => [...m].find(([k]) => k.key === w.key)?.[1] ?? S.Zero));
     } else throw new TypeError('replace: unsupported replacement');
+    rule = (e) => {
+      const m = match(e, query);
+      if (!m) return undefined;
+      return exact && !allNonZero(m) ? e : v(m);
+    };
   } else {
-    if (typeof value === 'function') v = (e) => (value)(e);
-    else if (value instanceof Expr) v = () => value;
-    else throw new TypeError('replace: unsupported replacement');
+    let test: (e: Expr) => boolean;
+    let v: (e: Expr) => Expr;
+    if (typeof query === 'function') {
+      // predicate query: the replacement sees the node
+      test = query;
+      if (typeof value === 'function') v = (e) => value(e);
+      else if (value instanceof Expr) v = () => value;
+      else throw new TypeError('replace: unsupported replacement');
+    } else {
+      // class query: the replacement is applied to the arguments
+      test = 'fn' in query ? (e) => isFunctionOf(e, query.fn) : (e) => isInstance(e, query.type);
+      if (value instanceof Expr) v = () => value;
+      else if (typeof value === 'function') v = (e) => value(...fnArgs(e));
+      else if ('fn' in value) v = (e) => callFn(value.fn, fnArgs(e));
+      else v = (e) => callType(value.type, fnArgs(e));
+    }
+    rule = (e) => (test(e) ? v(e) : undefined);
   }
   const mapping = new Map<Expr, Expr>();
   const rv = walk(expr, (e) => {
-    const r = q(e);
-    if (r === undefined || r === false) return e;
-    const nv = v(e, r);
+    const nv = rule(e);
     if (nv !== undefined && nv.key !== e.key) {
       if (opts.map) mapping.set(e, nv);
       return nv;
@@ -508,10 +492,10 @@ export function countOpsMap(exprIn: ExprLike): Map<string, number> {
         bump('NEG');
         a = a.args[0] instanceof Rational && a.args[0].p === -1n && a.args[0].q === 1n ? newRaw(false, a.args.slice(1)) : mul(-1, a);
       }
-      const [n, dd] = impl.fraction ? impl.fraction(a) : [a, S.One];
+      const [n, dd] = defined(impl.fraction?.(a), 'fraction');
+      // a negative numerator was made positive above (the coefficient of a product carries the sign)
       if (n instanceof Rational && n.isInteger) {
         bump('DIV');
-        if (n.isNegative) bump('NEG');
         args.push(dd);
         continue;
       } else if (!(dd instanceof Rational && dd.isOne)) {
@@ -553,8 +537,11 @@ export function countOpsMap(exprIn: ExprLike): Map<string, number> {
       args.push(a.exp);
       continue;
     }
+    // SymPy counts a Mul or a LatticeOp (Max, Min) once per argument after the first
     if (a instanceof Mul) bump('MUL', a.args.length - 1);
-    else if (a.args.length && (a instanceof Pow || a instanceof Fn || a instanceof UndefFn || a instanceof Derivative || a.kind === 'Integral' || a.kind === 'Concrete')) {
+    else if (a instanceof Fn && (a.name === 'Max' || a.name === 'Min')) bump(a.name.toUpperCase(), a.args.length - 1);
+    // and a Pow, a function, a Derivative, an Integral or a Sum (not a Product) once
+    else if (a.args.length && (a instanceof Pow || a instanceof Fn || a instanceof UndefFn || a instanceof Derivative || a instanceof Integral || (a instanceof Concrete && a.kind2 === 'Sum'))) {
       const name =
         a instanceof Pow
           ? 'POW'
@@ -564,9 +551,9 @@ export function countOpsMap(exprIn: ExprLike): Map<string, number> {
               ? `FUNC_${a.name.toUpperCase()}`
               : a instanceof Derivative
                 ? 'DERIVATIVE'
-                : a.kind === 'Integral'
+                : a instanceof Integral
                   ? 'INTEGRAL'
-                  : kind2Name(a).toUpperCase();
+                  : 'SUM';
       bump(name);
     }
     if (!(a instanceof Sym)) args.push(...a.args);

@@ -8,7 +8,7 @@
  * Polynomials are dense bigint arrays, highest degree first (SymPy's dup).
  */
 
-import { at } from '../core/guard';
+import { at, first, last } from '../core/guard';
 import { Rational } from '../core/nodes';
 
 type P = bigint[];
@@ -23,8 +23,8 @@ function strip(f: P): P {
   return f.slice(i);
 }
 const degree = (f: P) => strip(f).length - 1;
-const LC = (f: P) => strip(f)[0] ?? 0n;
-const TC = (f: P) => f[f.length - 1] ?? 0n;
+const LC = (f: P) => first(strip(f));
+const TC = (f: P) => last(f);
 
 /** floor(log2(a)) for a > 0. */
 const ilog2 = (a: bigint) => a.toString(2).length - 1;
@@ -35,9 +35,9 @@ function shift(f0: P, a: bigint): P {
   const n = f.length - 1;
   for (let i = n; i > 0; i--) {
     // f[j + 1] += a * f[j], with f[j] already updated in this pass
-    let prev = f[0] ?? 0n;
+    let prev = at(f, 0);
     for (let j = 1; j <= i; j++) {
-      prev = (f[j] ?? 0n) + a * prev;
+      prev = at(f, j) + a * prev;
       f[j] = prev;
     }
   }
@@ -63,8 +63,13 @@ function signVariations(f: P): number {
   return k;
 }
 
-/** SymPy dup_root_upper_bound (Kioustelidis/Akritas): a power of two, or undefined. */
-function rootUpperBound(f0: P): Q | undefined {
+/**
+ * SymPy dup_root_upper_bound (Kioustelidis/Akritas): a power of two. f has a
+ * sign variation (it is only used for polynomials with a positive root), so
+ * after making the leading coefficient positive some coefficient is negative,
+ * and a positive one (the leading coefficient) follows it.
+ */
+function rootUpperBound(f0: P): Q {
   let f = f0;
   const n = f.length;
   const t: number[] = Array(n).fill(1);
@@ -82,46 +87,38 @@ function rootUpperBound(f0: P): Q | undefined {
       const q = at(t, j) + a - ilog2(fj);
       QL.push([Math.floor(q / (j - i)), j]);
     }
-    if (!QL.length) continue;
     const q = QL.reduce((m, v) => (v[0] < m[0] || (v[0] === m[0] && v[1] < m[1]) ? v : m));
     t[q[1]] = at(t, q[1]) + 1;
     P.push(q[0]);
   }
-  if (!P.length) return undefined;
   const e = Math.max(...P) + 1;
   return e >= 0 ? R(2n ** BigInt(e)) : R(1n, 2n ** BigInt(-e));
 }
 
 function rootLowerBound(f: P): bigint {
   const b = rootUpperBound(reverse(f));
-  if (b === undefined) return 0n;
   // int(1/b)
   return b.q / b.p;
 }
 
+/** f(x + n) with the Mobius map composed with x -> x + n. */
+const shiftBy = (f: P, n: bigint, [a, b, c, d]: M): [P, M] => [shift(f, n), [a, n * a + b, c, n * c + d]];
+
 function stepRefine(f0: P, M0: M): [P, M] {
-  let f = f0;
-  let [a, b, c, d] = M0;
-  if (a === b && c === d) return [f, [a, b, c, d]];
-  const A = rootLowerBound(f);
-  if (A >= 1n) {
-    f = shift(f, A);
-    b = A * a + b;
-    d = A * c + d;
-    if (TC(f) === 0n) return [f, [b, b, d, d]];
+  if (M0[0] === M0[1] && M0[2] === M0[3]) return [f0, M0];
+  const A = rootLowerBound(f0);
+  // shift by the lower bound (when at least 1), then by 1; a root at the shift point is exact
+  let [f, m] = [f0, M0];
+  let [g, gm] = [f0, M0];
+  for (const n of A >= 1n ? [A, 1n] : [1n]) {
+    [g, gm] = [f, m];
+    [f, m] = shiftBy(g, n, gm);
+    if (TC(f) === 0n) return [f, [m[1], m[1], m[3], m[3]]];
   }
-  const g = f;
-  f = shift(f, 1n);
-  const [a1, b1, c1, d1] = [a, a + b, c, c + d];
-  if (TC(f) === 0n) return [f, [b1, b1, d1, d1]];
-  const k = signVariations(f);
-  if (k === 1) [a, b, c, d] = [a1, b1, c1, d1];
-  else {
-    f = shift(reverse(g), 1n);
-    if (TC(f) === 0n) f = rshift(f, 1);
-    [a, b, c, d] = [b, a + b, d, c + d];
-  }
-  return [f, [a, b, c, d]];
+  if (signVariations(f) === 1) return [f, m];
+  // the root is in (0, 1) of g: x -> 1/(x + 1). g(1) != 0, so the shifted reverse has no root at 0
+  const [a, b, c, d] = gm;
+  return [shift(reverse(g), 1n), [b, a + b, d, c + d]];
 }
 
 const interval = ([a, b, c, d]: M): [Q, Q] => {
@@ -153,6 +150,17 @@ function innerRefine(f0: P, M0: M, eps?: Q, steps?: number): [P, M] {
   return [f, m];
 }
 
+/**
+ * f(x + n) with the Mobius map shifted; a root at the shift point is recorded
+ * as exact and divided out. Returns [f, M, 1 if a root was taken out else 0].
+ */
+function shiftOut(f0: P, n: bigint, m0: M, roots: [P, M][]): [P, M, number] {
+  const [f, m] = shiftBy(f0, n, m0);
+  if (TC(f) !== 0n) return [f, m, 0];
+  roots.push([f, [m[1], m[1], m[3], m[3]]]);
+  return [rshift(f, 1), m, 1];
+}
+
 function innerIsolate(f0: P, eps?: Q): [P, M][] {
   let f = f0;
   const k0 = signVariations(f);
@@ -165,13 +173,7 @@ function innerIsolate(f0: P, eps?: Q): [P, M][] {
     f = g;
     const A = rootLowerBound(f);
     if (A >= 1n) {
-      f = shift(f, A);
-      b = A * a + b;
-      d = A * c + d;
-      if (TC(f) === 0n) {
-        roots.push([f, [b, b, d, d]]);
-        f = rshift(f, 1);
-      }
+      [f, [a, b, c, d]] = shiftOut(f, A, [a, b, c, d], roots);
       k = signVariations(f);
       if (k === 0) continue;
       if (k === 1) {
@@ -179,14 +181,7 @@ function innerIsolate(f0: P, eps?: Q): [P, M][] {
         continue;
       }
     }
-    let f1: P | undefined = shift(f, 1n);
-    let [a1, b1, c1, d1] = [a, a + b, c, c + d];
-    let r = 0;
-    if (TC(f1) === 0n) {
-      roots.push([f1, [b1, b1, d1, d1]]);
-      f1 = rshift(f1, 1);
-      r = 1;
-    }
+    let [f1, [a1, b1, c1, d1], r]: [P | undefined, M, number] = shiftOut(f, 1n, [a, b, c, d], roots);
     let k1 = signVariations(f1);
     let k2 = k - k1 - r;
     let [a2, b2, c2, d2] = [b, a + b, d, c + d];
@@ -202,10 +197,8 @@ function innerIsolate(f0: P, eps?: Q): [P, M][] {
       [f1, f2, k1, k2] = [f2, f1, k2, k1];
     }
     if (!k1) continue;
-    if (f1 === undefined) {
-      f1 = shift(reverse(f), 1n);
-      if (TC(f1) === 0n) f1 = rshift(f1, 1);
-    }
+    // f1 is only missing when k = 2 with the root at 1 taken out (k1 = 0, k2 = 1): f(1) = 0
+    f1 ??= rshift(shift(reverse(f), 1n), 1);
     if (k1 === 1) roots.push(innerRefine(f1, [a1, b1, c1, d1], eps));
     else stack.push([a1, b1, c1, d1, f1, k1]);
     if (!k2) continue;
@@ -309,7 +302,7 @@ function transform(f: P, [a, b, c, d]: M): P {
     x.forEach((xi, i) => {
       let k = i;
       for (const yj of y) {
-        r[k] = (r[k] ?? 0n) + xi * yj;
+        r[k] = at(r, k) + xi * yj;
         k++;
       }
     });
@@ -319,7 +312,7 @@ function transform(f: P, [a, b, c, d]: M): P {
     const L = Math.max(x.length, y.length);
     const xx = Array(L - x.length).fill(0n).concat(x);
     const yy = Array(L - y.length).fill(0n).concat(y);
-    return xx.map((v, i) => v + (yy[i] ?? 0n));
+    return xx.map((v, i) => v + at(yy, i));
   };
   const p: P = [a, b];
   const q: P = [c, d];

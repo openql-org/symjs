@@ -128,10 +128,13 @@ const SPECIAL_NAMES: SpecialFnName[] = [
   'Max',
 ];
 
-/** The argument at index i of a parsed call; a SyntaxError when the call has too few. */
+/**
+ * The argument at index i of a parsed call; a SyntaxError when the call has
+ * too few (a call has at least one argument, so only for i > 0).
+ */
 function argAt(args: readonly Expr[], i: number, name: string): Expr {
   const a = args[i];
-  if (a === undefined) throw new SyntaxError(`${name}() takes at least ${i + 1} argument${i === 0 ? '' : 's'}`);
+  if (a === undefined) throw new SyntaxError(`${name}() takes at least ${i + 1} arguments`);
   return a;
 }
 
@@ -165,7 +168,8 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
     const n = args[2];
     return impl.diff(argAt(args, 0, 'diff'), argAt(args, 1, 'diff'), n instanceof Rational ? Number(n.p) : 1);
   },
-  Eq: (args) => Eq(argAt(args, 0, 'Eq'), args[1] ?? 0),
+  // SymPy 1.14 Eq requires both sides (Eq(x) is a TypeError)
+  Eq: (args) => Eq(argAt(args, 0, 'Eq'), argAt(args, 1, 'Eq')),
   FallingFactorial: (args) => fn('ff', args),
 };
 

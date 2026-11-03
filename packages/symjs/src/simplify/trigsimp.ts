@@ -113,7 +113,8 @@ export function trigsimp(ex: ExprLike, opts: { old?: boolean; deep?: boolean; me
     return r ? pow(fn(r, [first(x.args)]), -1) : x;
   });
   if (recip.key !== e.key && countOps(recip) < countOps(e)) e = recip;
-  if (!hasTrigFunctions(e)) return e;
+  // hyperbolic functions count too (SymPy trigsimp(cosh(x)**2 - sinh(x)**2) = 1)
+  if (trigCount(e) === 0) return e;
   // SymPy futrig only rewrites trigonometric parts: c*sin(u)**2 + c*cos(u)**2 -> c without
   // touching the rest ((x + x**2)/(x*sin(y)**2 + x*cos(y)**2) -> (x**2 + x)/x)
   const pyth = mapBottomUp(e, pythagorean);
@@ -134,7 +135,8 @@ export function trigsimp(ex: ExprLike, opts: { old?: boolean; deep?: boolean; me
   // SymPy futrig objective: fewer trigonometric functions first, then count_ops
   const lt = trigCount(t);
   const le = trigCount(e);
-  if (lt !== le) return lt < le && countOps(t) <= countOps(e) + 1 ? t : countOps(t) <= countOps(e) ? t : e;
+  // (more trigonometric functions are never preferred: trigsimp(exp(I*x)/cos(x)) stays)
+  if (lt !== le) return lt < le && countOps(t) <= countOps(e) + 1 ? t : e;
   return countOps(t) <= countOps(e) ? t : e;
 }
 
@@ -203,8 +205,10 @@ export function exptrigsimp(ex: ExprLike): Expr {
     const r = expand(rewrite(e, 'exp'));
     return countOps(r) < countOps(e) ? r : e;
   });
-  const step2 = mapBottomUp(step1, (e) => (e instanceof Add ? combineExpPairs(e) : e));
-  return countOps(step2) <= countOps(e0) ? step2 : e0;
+  // step1 replaces a node only by a shorter form and a recombined pair (two exponentials and
+  // their sum) becomes one term, so the result is never longer than the input (as in SymPy,
+  // which does not compare the final result with the input)
+  return mapBottomUp(step1, (e) => (e instanceof Add ? combineExpPairs(e) : e));
 }
 
 function expTerm(t: Expr): [Expr, Expr] | undefined {

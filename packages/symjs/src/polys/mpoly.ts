@@ -7,14 +7,13 @@
  * and a heuristic multivariate factorization.
  */
 
-import { InvariantError, PolynomialError } from '../core/errors';
-import { at, defined } from '../core/guard';
-import type { Expr, Sym } from '../core/nodes';
+import { PolynomialError } from '../core/errors';
+import { at, defined, expectType, getOrThrow } from '../core/guard';
+import type { Expr } from '../core/nodes';
 import { Add, Mul, Rational, S } from '../core/nodes';
 import { numMul } from '../core/num';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
 import { add, mul, pow } from '../core/ops';
-import { freeSymbols } from '../core/traverse';
 import { expandMul as expand } from '../simplify/expand';
 import { polyCoefficients } from './poly';
 
@@ -22,10 +21,7 @@ const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
 
 /** Degree of e in x (polynomial assumed), -1 for zero. */
 export function degreeIn(e: Expr, x: Expr): number {
-  if (isZeroE(e)) return -1;
-  const pc = polyCoefficients(e, x);
-  if (!pc) throw new PolynomialError('degreeIn: not a polynomial');
-  return Math.max(...pc.keys());
+  return Math.max(-1, ...coeffsIn(e, x).keys());
 }
 
 function coeffsIn(e: Expr, x: Expr): Map<number, Expr> {
@@ -34,35 +30,30 @@ function coeffsIn(e: Expr, x: Expr): Map<number, Expr> {
   return pc;
 }
 
-/** Leading coefficient in x. */
+/** Leading coefficient in x of a nonzero polynomial. */
 export function lcIn(e: Expr, x: Expr): Expr {
   const pc = coeffsIn(e, x);
-  return pc.get(Math.max(...pc.keys())) ?? S.Zero;
+  return getOrThrow(pc, Math.max(...pc.keys()));
 }
 
-/** gcd of two rationals: gcd(numerators)/lcm(denominators). */
+/** gcd of two rationals, b nonzero: gcd(numerators)/lcm(denominators). */
 function rationalGcd(a: Rational, b: Rational): Rational {
   if (a.isZero) return Rational.of(b.p < 0n ? -b.p : b.p, b.q);
-  if (b.isZero) return Rational.of(a.p < 0n ? -a.p : a.p, a.q);
   return Rational.of(igcd(a.p, b.p), ilcm(a.q, b.q));
 }
 
-/** Numeric content of an expanded polynomial (gcd of its rational coefficients). */
+/** Numeric content of a nonzero expanded polynomial (gcd of its rational coefficients, all nonzero). */
 function numericContent(e: Expr): Rational {
   let g: Rational = S.Zero;
   for (const t of e instanceof Add ? e.args : [e]) {
     const c = t instanceof Mul && t.args[0] instanceof Rational ? t.args[0] : t instanceof Rational ? t : S.One;
     g = rationalGcd(g, c);
   }
-  return g.isZero ? S.One : g;
+  return g;
 }
 
-/** b**k for a rational b and a nonnegative integer k (a Rational). */
-function powRat(b: Rational, k: number): Rational {
-  const r = pow(b, k);
-  if (!(r instanceof Rational)) throw new InvariantError('power of a rational is not a Rational');
-  return r;
-}
+/** b**k for a rational b and a nonnegative integer k. */
+const powRat = (b: Rational, k: number): Rational => Rational.of(b.p ** BigInt(k), b.q ** BigInt(k));
 
 /** Exact quotient f/g in Q[vars], or undefined when g does not divide f. */
 export function divExact(f0: Expr, g0: Expr, vars: readonly Expr[]): Expr | undefined {
@@ -87,7 +78,8 @@ export function divExact(f0: Expr, g0: Expr, vars: readonly Expr[]): Expr | unde
   let r = f;
   const q: Expr[] = [];
   const lg = lcIn(g, x);
-  for (let guard = 0; guard < 1000 && !isZeroE(r); guard++) {
+  // each step cancels the leading term of r, so its degree in x decreases
+  while (!isZeroE(r)) {
     const dr = degreeIn(r, x);
     if (dr < dg) return undefined;
     const c = divExact(lcIn(r, x), lg, rest);
@@ -96,7 +88,7 @@ export function divExact(f0: Expr, g0: Expr, vars: readonly Expr[]): Expr | unde
     q.push(term);
     r = expand(add(r, mul(-1, term, g)));
   }
-  return isZeroE(r) ? expand(add(...q)) : undefined;
+  return expand(add(...q));
 }
 
 /** Pseudo-remainder of a by b in x. */
@@ -158,7 +150,7 @@ export function mgcd(f0: Expr, g0: Expr, vars: readonly Expr[]): Expr {
       b = S.Zero;
       break;
     }
-    b = divExact(r, contentIn(r, x, rest), live) ?? r;
+    b = defined(divExact(r, contentIn(r, x, rest), live), 'primitive part');
   }
   const g1 = isZeroE(b) ? defined(divExact(a, contentIn(a, x, rest), live), 'primitive part') : S.One;
   return normalizeSign(expand(mul(c, g1)), live);
@@ -168,13 +160,6 @@ export function mgcd(f0: Expr, g0: Expr, vars: readonly Expr[]): Expr {
 export function mlcm(f: Expr, g: Expr, vars: readonly Expr[]): Expr {
   const d = mgcd(f, g, vars);
   return normalizeSign(expand(mul(defined(divExact(f, d, vars), 'f / gcd'), g)), vars);
-}
-
-/** Sorted generator list for a set of expressions (alphabetical by name). */
-export function varsOf(...es: Expr[]): Sym[] {
-  const m = new Map<string, Sym>();
-  for (const e of es) for (const s of freeSymbols(e)) m.set(s.key, s);
-  return [...m.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 }
 
 /**
@@ -194,12 +179,8 @@ export function mfactorList(f0: Expr, vars: readonly Expr[], uniFactor: (e: Expr
     else out.push([g, k]);
   };
   const rec = (pIn: Expr, k: number) => {
-    let p = pIn;
-    p = expand(p);
-    if (p instanceof Rational) {
-      content = numMul(content, powRat(p, k));
-      return;
-    }
+    // never a constant: contents and factors taken out keep a variable
+    const p = expand(pIn);
     const lv = live.filter((v) => p.has(v));
     if (lv.length === 1) {
       const [c, fs] = uniFactor(p, at(lv, 0));
@@ -235,9 +216,10 @@ export function mfactorList(f0: Expr, vars: readonly Expr[], uniFactor: (e: Expr
     for (const v of lv) {
       if (degreeIn(p, v) !== 2) continue;
       const pc = coeffsIn(p, v);
-      const a = pc.get(2) ?? S.Zero;
+      // the constant term is nonzero: no variable divides p after the loop above
+      const a = getOrThrow(pc, 2);
       const b = pc.get(1) ?? S.Zero;
-      const c = pc.get(0) ?? S.Zero;
+      const c = getOrThrow(pc, 0);
       const disc = expand(add(pow(b, 2), mul(-4, a, c)));
       const s = polySqrt(disc, lv, uniFactor);
       if (s === undefined) continue;
@@ -245,14 +227,14 @@ export function mfactorList(f0: Expr, vars: readonly Expr[], uniFactor: (e: Expr
       const prim = (h: Expr): Expr => {
         let g = expand(h);
         const cv = contentIn(g, v, lv.filter((u) => u !== v));
-        g = divExact(g, cv, lv) ?? g;
+        g = defined(divExact(g, cv, lv), 'primitive part');
         const nc = numericContent(g);
         return expand(mul(g, pow(nc, -1)));
       };
       const g1 = prim(add(mul(2, a, v), b, mul(-1, s)));
       const g2 = prim(add(mul(2, a, v), b, s));
-      const ratio = divExact(p, expand(mul(g1, g2)), lv);
-      if (!(ratio instanceof Rational)) continue;
+      // p and g1*g2 are primitive, so (Gauss) they differ by a rational factor
+      const ratio = expectType(divExact(p, expand(mul(g1, g2)), lv), (r): r is Rational => r instanceof Rational, 'quadratic factor ratio');
       content = numMul(content, powRat(ratio, k));
       rec(g1, k);
       rec(g2, k);

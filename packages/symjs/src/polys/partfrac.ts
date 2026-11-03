@@ -7,10 +7,10 @@
  */
 
 import { NotImplementedError } from '../core/errors';
-import { at } from '../core/guard';
+import { at, defined, first } from '../core/guard';
 import { apartFull } from './rootsum';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Rational, S, Sym } from '../core/nodes';
+import { S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { linsolve } from '../matrices/linsys';
 import { rebuild as impl_rebuild } from '../core/traverse';
@@ -21,19 +21,24 @@ import { Poly, factor, factorListExpr, sortGens } from './sympoly';
 /** Partial fraction decomposition of a rational function in x. */
 export function apart(fIn: ExprLike, xIn?: Sym, opts: { full?: boolean } = {}): Expr {
   const f = cancel(together(sympify(fIn)));
-  const syms = [...f.freeSymbols()];
-  const x = xIn ?? (syms.length === 1 ? syms[0] : undefined);
-  if (!x) throw new TypeError('apart: specify the variable');
+  let x = xIn;
+  if (x === undefined) {
+    const syms = [...f.freeSymbols()];
+    if (syms.length > 1) throw new NotImplementedError('multivariate partial fraction decomposition');
+    // a constant is its own decomposition
+    if (!syms.length) return f;
+    x = first(syms);
+  }
   // Bronstein's full decomposition over the algebraic closure (RootSum)
   if (opts.full) return apartFull(f, x);
   const [P, Q] = fraction(f);
   if (!Q.has(x)) return f;
   const Pp = Poly.from(P, [x]);
   const Qp = Poly.from(Q, [x]);
+  // the remainder is nonzero: f is cancelled and Q depends on x
   const [qPoly, rPoly] = Pp.div(Qp);
   const quotient = qPoly.asExpr();
   const r = rPoly.asExpr();
-  if (r instanceof Rational && r.isZero) return quotient;
   const gens = sortGens([...Q.freeSymbols()]);
   const [content, factors0] = factorListExpr(expandMul(Q), gens);
   let c: Expr = content;
@@ -62,8 +67,8 @@ export function apart(fIn: ExprLike, xIn?: Sym, opts: { full?: boolean } = {}): 
   const lhs = mul(r, pow(c, -1));
   const diffPoly = Poly.from(expandMul(add(rhs, mul(-1, lhs))), [x]);
   const eqs = diffPoly.coeffs();
-  const sol = linsolve(eqs, unknowns);
-  if (!sol) throw new NotImplementedError('apart: no decomposition found');
+  // the partial fraction decomposition exists and is unique
+  const sol = defined(linsolve(eqs, unknowns), 'partial fraction coefficients');
   const reps = new Map(unknowns.map((u, i) => [u.key, at(sol, i)]));
   const sub = (e: Expr): Expr => {
     const rep = e instanceof Sym ? reps.get(e.key) : undefined;

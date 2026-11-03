@@ -72,9 +72,8 @@ class Integrator {
   private linear(u: Expr): [Expr, Expr] | undefined {
     const pc = polyCoefficients(u, this.x);
     if (!pc) return undefined;
-    if ([...pc.keys()].some((k) => k > 1)) return undefined;
     const a = pc.get(1);
-    if (!a) return undefined;
+    if ([...pc.keys()].some((k) => k > 1) || a === undefined) return undefined;
     return [a, pc.get(0) ?? S.Zero];
   }
 
@@ -82,14 +81,13 @@ class Integrator {
    * Return F, or Piecewise((F, Ne(a, 0)), (fallback, True)) when the
    * coefficient a might be zero (SymPy behavior for symbolic coefficients).
    */
-  private nonzero(a: Expr, f: Expr, F: () => R): R {
+  private nonzero(a: Expr, f: Expr, F: () => Expr): R {
     if (isNum(a) || isNonZero(a) === true || a.freeSymbols().size === 0) return F();
     const factors = (a instanceof Mul ? a.args : [a]).filter((t) => !isNum(t) && !isI(t));
     const cond = mul(...factors);
     const main = F();
-    if (main === undefined) return undefined;
-    const rest = this.integrate(subs(f, [[cond, S.Zero]]));
-    if (rest === undefined) return undefined;
+    // with the coefficient 0 the integrand is simpler (a constant or a polynomial): it has an antiderivative
+    const rest = defined(this.integrate(subs(f, [[cond, S.Zero]])), 'integral with a zero coefficient');
     return piecewise([main, Ne(cond, 0)], [rest, true]);
   }
 
@@ -148,8 +146,7 @@ class Integrator {
     if (!(f instanceof Pow && f.base instanceof Constant && f.base.name === 'E')) return undefined;
     const pc = polyCoefficients(f.exp, x);
     if (!pc || Math.max(...pc.keys()) !== 2) return undefined;
-    const A = pc.get(2);
-    if (A === undefined) return undefined;
+    const A = getOrThrow(pc, 2);
     const B = pc.get(1) ?? S.Zero;
     const C = pc.get(0) ?? S.Zero;
     const shift = mul(B, pow(mul(2, A), -1));
@@ -178,14 +175,13 @@ class Integrator {
     if (!(f instanceof Fn && (f.name === 'sin' || f.name === 'cos'))) return undefined;
     const pc = polyCoefficients(at(f.args, 0), x);
     if (!pc || Math.max(...pc.keys()) !== 2 || pc.has(1) || pc.has(0)) return undefined;
-    let a = pc.get(2);
-    if (a === undefined) return undefined;
+    // (a coefficient of the polynomial is free of x)
+    let a = getOrThrow(pc, 2);
     let sign: Expr = S.One;
     if (isNegativeQ(a) === true) {
       a = mul(-1, a);
       if (f.name === 'sin') sign = S.NegOne;
     }
-    if (a.has(x)) return undefined;
     // integral of cos(a*x**2) = sqrt(pi/(2*a))*fresnelc(sqrt(2*a/pi)*x), likewise sin with fresnels.
     // SymPy (through Meijer G) keeps the factor gamma(1/4)/(4*gamma(5/4)) = 1 (3*gamma(3/4)/(4*gamma(7/4)) for sin)
     const k = mul(sqrt(2), sqrt(a), pow(sqrt(S.Pi), -1));
@@ -268,18 +264,13 @@ class Integrator {
           case 'erf':
           case 'erfc':
           case 'erfi':
-            if (u.key === x.key) return add(mul(x, f), defined(SPECIAL_PARTS[f.name], 'special antiderivative')(x));
-            break;
           case 'asin':
           case 'acos':
           case 'atan':
           case 'asinh':
           case 'acot':
-            if (u.key === x.key) {
-              // integration by parts: x*f(x) - Integral(x*f'(x))
-              const r = this.integrate(mul(x, diff(f, x)));
-              return r === undefined ? undefined : add(mul(x, f), mul(-1, r));
-            }
+            // integration by parts: x*f(x) - Integral(x*f'(x))
+            if (u.key === x.key) return add(mul(x, f), defined(SPECIAL_PARTS[f.name], 'special antiderivative')(x));
             break;
           default:
             break;
@@ -314,12 +305,7 @@ class Integrator {
     for (const u of cands) {
       const du = diff(u, x);
       if (isZeroR(du)) continue;
-      let q: Expr;
-      try {
-        q = cancel(expandFull(mul(f, pow(du, -1)), { trig: true }));
-      } catch {
-        continue;
-      }
+      const q = cancel(expandFull(mul(f, pow(du, -1)), { trig: true }));
       const t = new Sym('_u');
       const g = subs(q, [[u, t]]);
       if (g.has(x)) continue;
@@ -340,13 +326,8 @@ class Integrator {
       if (g instanceof Pow && g.base instanceof Constant && g.base.name === 'E' && !this.free(g.exp)) {
         const du = diff(g.exp, x);
         if (!isZeroR(du)) {
-          let q: Expr | undefined;
-          try {
-            q = cancel(mul(...factors.filter((t) => t !== g), pow(du, -1)));
-          } catch {
-            q = undefined;
-          }
-          if (q !== undefined && this.free(q)) return mul(q, g);
+          const q = cancel(mul(...factors.filter((t) => t !== g), pow(du, -1)));
+          if (this.free(q)) return mul(q, g);
         }
       }
       if (!(g instanceof Pow) || this.free(g.base) || !(g.exp instanceof Rational)) continue;
@@ -354,12 +335,7 @@ class Integrator {
       const rest = mul(...factors.filter((t) => t !== g));
       const db = diff(base, x);
       if (isZeroR(db)) continue;
-      let q: Expr;
-      try {
-        q = cancel(mul(rest, pow(db, -1)));
-      } catch {
-        continue;
-      }
+      const q = cancel(mul(rest, pow(db, -1)));
       if (!this.free(q)) continue;
       if (n.p === -1n && n.q === 1n) return mul(q, log(base));
       const n1 = expectType(numAdd(n, S.One), isRational, 'n + 1');
@@ -491,6 +467,7 @@ class Integrator {
     });
     const k = logs[0];
     if (others.length === 1 && k !== undefined && k > 0) {
+      // (beyond the depth limit nothing is integrated)
       const Q = this.integrate(P);
       if (Q === undefined) return undefined;
       const lx = log(x);
@@ -530,31 +507,23 @@ class Integrator {
     const hasImagExp = (e: Expr): boolean =>
       (isExp(e) && e.exp.has(S.I)) || e.args.some(hasImagExp);
     if (!hasImagExp(f)) return undefined;
-    const g = expsimp(f);
-    if (g.key === f.key) return undefined;
-    return this.integrate(g);
+    // (the exponential form rewrites the trigonometric functions, so it differs from f)
+    return this.integrate(expsimp(f));
   }
 
   // ---- rational functions ------------------------------------------------------
 
   private rational(f: Expr): R {
     const x = this.x;
-    let N: Expr;
-    let D: Expr;
-    try {
-      [N, D] = fraction(together(f));
-    } catch {
-      return undefined;
-    }
+    const [N, D] = fraction(together(f));
     const pn = UPoly.fromExpr(N, x);
     const pd = UPoly.fromExpr(D, x);
     if (!pn || !pd || pd.degree < 1) return undefined;
     const [q, r] = pn.divmod(pd);
     const terms: Expr[] = [];
     if (!q.isZero) {
-      const qi = this.integrate(q.toExpr(x));
-      if (qi === undefined) return undefined;
-      terms.push(qi);
+      // (the quotient is a polynomial)
+      terms.push(defined(this.integrate(q.toExpr(x)), 'integral of a polynomial'));
     }
     if (r.isZero) return add(...terms);
 
@@ -574,13 +543,12 @@ class Integrator {
         }
       }
     }
+    // the basis has one column per degree of the denominator, and it is a basis (partial fractions exist)
     const n = pd.degree;
-    if (columns.length !== n) return undefined;
     const sol = solveLinear(
       Array.from({ length: n }, (_, row) => columns.map((col) => col.coeffs[row] ?? S.Zero)),
       Array.from({ length: n }, (_, row) => r.coeffs[row] ?? S.Zero),
     );
-    if (!sol) return undefined;
 
     // group numerators A_ij(x) = sum_k c_ijk x^k
     const groups = new Map<string, { f: UPoly; j: number; A: Rational[] }>();
@@ -626,11 +594,9 @@ class Integrator {
   }
 }
 
-/** Split a polynomial expression with rational coefficients into positive content and primitive part. */
+/** Split a nonzero polynomial expression with rational coefficients into positive content and primitive part. */
 function primitive(e: Expr, x: Sym): [Rational, Expr] {
-  const pc = polyCoefficients(e, x);
-  if (!pc) return [S.One, e];
-  const cs = [...pc.values()];
+  const cs = [...defined(polyCoefficients(e, x), 'polynomial coefficients').values()];
   if (!cs.every((c): c is Rational => c instanceof Rational)) return [S.One, e];
   let num = 0n;
   let den = 1n;
@@ -638,20 +604,19 @@ function primitive(e: Expr, x: Sym): [Rational, Expr] {
     num = gcd(num, c.p);
     den = lcm(den, c.q);
   }
-  if (num === 0n) return [S.One, e];
   const content = Rational.of(num, den);
   if (content.isOne) return [S.One, e];
   return [content, expand(mul(Rational.of(den, num), e))];
 }
 
-/** Solve a square linear system over the rationals (Gauss-Jordan). */
-function solveLinear(A: Rational[][], b: Rational[]): Rational[] | undefined {
+/** Solve a square nonsingular linear system over the rationals (Gauss-Jordan). */
+function solveLinear(A: Rational[][], b: Rational[]): Rational[] {
   const n = b.length;
   const M = A.map((row, i) => [...row, at(b, i)]);
   const rat = (v: Expr): Rational => expectType(v, isRational, 'rational entry');
   for (let col = 0; col < n; col++) {
+    // (at() rejects a missing pivot: the system is nonsingular)
     const piv = M.findIndex((row, i) => i >= col && !at(row, col).isZero);
-    if (piv < 0) return undefined;
     const pivRow = at(M, piv);
     M[piv] = at(M, col);
     const inv = rat(numInv(at(pivRow, col)));
@@ -793,6 +758,11 @@ const SPECIAL_PARTS: Record<string, (x: Expr) => Expr> = {
   erf: (x) => mul(exp(mul(-1, pow(x, 2))), pow(sqrt(S.Pi), -1)),
   erfc: (x) => mul(-1, exp(mul(-1, pow(x, 2))), pow(sqrt(S.Pi), -1)),
   erfi: (x) => mul(-1, exp(pow(x, 2)), pow(sqrt(S.Pi), -1)),
+  asin: (x) => sqrt(add(1, mul(-1, pow(x, 2)))),
+  acos: (x) => mul(-1, sqrt(add(1, mul(-1, pow(x, 2))))),
+  atan: (x) => mul(Rational.of(-1, 2), log(add(pow(x, 2), 1))),
+  asinh: (x) => mul(-1, sqrt(add(pow(x, 2), 1))),
+  acot: (x) => mul(S.Half, log(add(pow(x, 2), 1))),
 };
 
 
@@ -816,9 +786,10 @@ function gammaIntegral(f: Expr, x: Sym): [Expr, Expr | true] | undefined {
       b = k;
     } else return undefined;
   }
-  if (a === undefined || b === undefined) return undefined;
-  if (isPositiveQ(b) !== true) return undefined;
-  const val = mul(...c, fnErf('gamma', [add(a, 1)]), pow(b, mul(-1, add(a, 1))));
-  if (isPositiveQ(add(a, 1)) === true) return [val, true];
-  return [val, Gt(fnErf('re', [a]), S.NegOne)];
+  // (without one of the factors the integrand has an elementary antiderivative and is not passed here)
+  const [A, B] = [defined(a, 'power of x'), defined(b, 'exponential')];
+  if (isPositiveQ(B) !== true) return undefined;
+  const val = mul(...c, fnErf('gamma', [add(A, 1)]), pow(B, mul(-1, add(A, 1))));
+  if (isPositiveQ(add(A, 1)) === true) return [val, true];
+  return [val, Gt(fnErf('re', [A]), S.NegOne)];
 }

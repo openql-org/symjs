@@ -18,15 +18,15 @@ import { leadingMonomial, reduced, type MonomialOrder } from '../polys/groebner'
 import { Poly } from '../polys/sympoly';
 import { linsolve } from '../matrices/linsys';
 import { cancel, fraction } from './rational';
-import { at, defined, last } from '../core/guard';
+import { at, defined, expectType, last } from '../core/guard';
 import { compareKeys, sortKey } from '../printing/sortkey';
 
 const isZero = (e: Expr) => e instanceof Rational && e.isZero;
 
 /** SymPy minsolve_linear_system(system, *symbols, quick=True) for linear equations. */
-function particularSolution(eqs: readonly Expr[], vars: readonly Sym[]): Map<string, Expr> | undefined {
-  const sol0 = linsolve(eqs, vars);
-  if (!sol0) return undefined;
+function particularSolution(eqs: readonly Expr[], vars: readonly Sym[]): Map<string, Expr> {
+  // (the system is homogeneous, so it always has a solution)
+  const sol0 = defined(linsolve(eqs, vars), 'a solution of the homogeneous system');
   // pivot variables only (free variables are solved as themselves)
   const s = new Map<string, [Sym, Expr]>();
   vars.forEach((v, i) => {
@@ -116,7 +116,7 @@ export function ratsimpmodprime(exprIn: ExprLike, G: readonly ExprLike[], gens: 
       const r = reduced(add(mul(a, dHat), mul(-1, b, cHat)), Gs, [...gens, ...ng], order)[1];
       const Seqs = Poly.from(r, gens).coeffs();
       const sol = particularSolution(Seqs, ng);
-      if (sol && ![...sol.values()].every(isZero)) {
+      if (![...sol.values()].every(isZero)) {
         const reps = [...sol].map(([k, v]): [Expr, Expr] => [defined(ng.find((u) => u.key === k)), v]);
         const ones = ng.map((u) => [u, S.One] as [Expr, Expr]);
         c = xreplace(xreplace(cHat, reps), ones);
@@ -134,8 +134,14 @@ export function ratsimpmodprime(exprIn: ExprLike, G: readonly ExprLike[], gens: 
     }
     return [c, d];
   };
+  // over ZZ (integer coefficients in the input) the result is normalized like SymPy's clear_denoms
+  const overZZ = [num, denom, ...Gs].every((p) => Poly.from(p, gens).coeffs().every((k) => k instanceof Rational && k.isInteger));
   num = reduced(num, Gs, [...gens], order)[1];
   denom = reduced(denom, Gs, [...gens], order)[1];
   const [c, d] = step(num, denom, 0, 0);
-  return mul(c, pow(d, -1));
+  if (!overZZ) return mul(c, pow(d, -1));
+  const [cn, cp] = Poly.from(c, gens).clearDenoms(true);
+  const [dn, dp] = Poly.from(d, gens).clearDenoms(true);
+  const r = expectType(mul(cn, pow(dn, -1)), (v): v is Rational => v instanceof Rational, 'the ratio of the denominators');
+  return mul(cp.asExpr(), Rational.of(r.q), pow(mul(dp.asExpr(), Rational.of(r.p)), -1));
 }

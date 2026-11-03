@@ -25,12 +25,6 @@ export function lcm(a: bigint, b: bigint): bigint {
   return babs((a / gcd(a, b)) * b);
 }
 
-/** Floor division for bigints (rounds toward -infinity). */
-export function floorDiv(a: bigint, b: bigint): bigint {
-  const q = a / b;
-  return (a % b !== 0n && (a < 0n) !== (b < 0n)) ? q - 1n : q;
-}
-
 /** Integer power with non-negative exponent. */
 export function ipow(base: bigint, exp: bigint): bigint {
   if (exp < 0n) throw new RangeError('ipow: negative exponent');
@@ -49,18 +43,15 @@ export function ipow(base: bigint, exp: bigint): bigint {
 export function iroot(n: bigint, k: bigint): bigint {
   if (n < 0n) throw new RangeError('iroot: negative radicand');
   if (n < 2n || k === 1n) return n;
-  // Initial guess from floating point, then Newton refinement.
-  let x = BigInt(Math.floor(Math.pow(Number(n), 1 / Number(k)))) + 1n;
-  if (x < 1n) x = 1n;
+  // Newton's iteration from x0 = 2**ceil(bits/k) > n^(1/k) decreases to floor(n^(1/k)) and
+  // stops there (y >= x); a floating-point guess would overflow beyond 2**1024
+  let x = 1n << BigInt(Math.ceil(n.toString(2).length / Number(k)));
   for (;;) {
     // y = ((k-1) x + n / x^(k-1)) / k
     const y = ((k - 1n) * x + n / ipow(x, k - 1n)) / k;
-    if (y >= x) break;
+    if (y >= x) return x;
     x = y;
   }
-  while (ipow(x, k) > n) x -= 1n;
-  while (ipow(x + 1n, k) <= n) x += 1n;
-  return x;
 }
 
 const TRIAL_LIMIT = 1n << 16n;

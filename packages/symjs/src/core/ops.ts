@@ -13,9 +13,7 @@
  */
 
 import { isIntegerQ, isNegative, isPositive, isReal } from './assumptions';
-import type {
-  ExprLike,
-  Num } from './nodes';
+import type { ComplexValue, ExprLike, Num } from './nodes';
 import {
   Add,
   Constant,
@@ -35,8 +33,8 @@ import {
 import { mkFloat, numAdd, numInv, numMul, numNeg, numPowInt, ratFloor, toMpf } from './num';
 import { ZERO as MPF_ZERO, precToDps } from '../numeric/mpf';
 import { cpow as mpCpow, powReal as mpPowReal } from '../numeric/mpfun';
-import { factorInt } from './numbers';
-import { InvariantError, SympifyError, errorSettings } from './errors';
+import { factorInt, gcd, iroot, ipow } from './numbers';
+import { NotLoadedError, SympifyError, errorSettings } from './errors';
 import { at, cast, pair } from './guard';
 
 export function sympify(x: ExprLike): Expr {
@@ -51,8 +49,9 @@ export function sympify(x: ExprLike): Expr {
 
 /** Float ** number (SymPy Float._eval_power / Rational._eval_power with a Float exponent). */
 function floatPow(b: Num, e: Num): Expr {
+  // SymPy: 0**0.5 = 0 (the exact zero is kept), Float(0)**0.5 = 0.0
+  if (b.isZero) return e.isPositive ? b : S.ComplexInfinity;
   const fb = b instanceof Float ? b : new Float(toMpf(b, cast(e, Float).prec), cast(e, Float).prec);
-  if (fb.isZero) return e.isPositive ? fb : S.ComplexInfinity;
   if (e instanceof Rational && e.p === 1n && e.q % 2n === 1n && fb.isNegative) {
     return mul(new Pow(S.NegOne, e), pow(numNeg(fb), e));
   }
@@ -97,7 +96,6 @@ function mulCoeffRaw(c: Num, rest: Expr): Expr {
 /** Finite constant without free symbols (absorbed by an infinity). */
 function isFiniteConstant(e: Expr, real: boolean): boolean {
   if (isNum(e)) return true;
-  if (e instanceof Special) return false;
   if (impl.freeSymbols(e).size > 0) return false;
   try {
     const v = impl.toComplex(e);
@@ -107,12 +105,12 @@ function isFiniteConstant(e: Expr, real: boolean): boolean {
   }
 }
 
-function addSpecial(args: Expr[]): Expr | undefined {
+/** A sum with an infinity or nan among the terms (the caller has seen one). */
+function addSpecial(args: Expr[]): Expr {
   const flat: Expr[] = [];
   const visit = (e: Expr) => (e instanceof Add ? e.args.forEach(visit) : flat.push(e));
   args.forEach(visit);
   const specials = flat.filter((e): e is Special => e instanceof Special);
-  if (specials.length === 0) return undefined;
   const names = new Set(specials.map((e) => e.name));
   if (names.has('nan')) return S.NaN;
   let inf: Special;
@@ -122,8 +120,9 @@ function addSpecial(args: Expr[]): Expr | undefined {
   } else if (names.has('oo') && names.has('-oo')) return S.NaN;
   else inf = names.has('oo') ? S.Infinity : S.NegativeInfinity;
   const others = flat.filter((e) => !(e instanceof Special) && !isFiniteConstant(e, inf !== S.ComplexInfinity));
-  if (others.length === 0) return inf;
   const rest = add(...others);
+  // the symbolic terms may cancel ((x + oo) - x = oo)
+  if (rest instanceof Rational && rest.isZero) return inf;
   return new Add([...(rest instanceof Add ? rest.args : [rest]), inf].sort(compareExpr));
 }
 
@@ -153,13 +152,15 @@ function lowestPower(term: Expr, t: Expr): number | undefined {
   return undefined;
 }
 
-/** Sum containing Order terms: keep the weakest Order and drop the terms it absorbs. */
+/**
+ * Sum containing Order terms (the caller has seen one): keep the weakest Order
+ * and drop the terms it absorbs; undefined when the Orders have different bases.
+ */
 function addOrder(args: Expr[]): Expr | undefined {
   const flat: Expr[] = [];
   const visit = (e: Expr) => (e instanceof Add ? e.args.forEach(visit) : flat.push(e));
   args.forEach(visit);
   const orders = flat.filter((e): e is Order => e instanceof Order);
-  if (orders.length === 0) return undefined;
   // O((x - x0)**n) : base t = x - x0 (or x), exponent n
   const info = orders.map((o) => {
     const [b, k] = o.expr instanceof Pow ? o.expr.args : [o.expr, S.One];
@@ -181,9 +182,11 @@ function addOrder(args: Expr[]): Expr | undefined {
   return new Add([...parts, weakest.o].sort(compareExpr));
 }
 
-/** lowestPower for a shifted base (x - x0): only exact powers of the base are recognized. */
+/**
+ * lowestPower for a shifted base (x - x0): only exact powers of the base are
+ * recognized. The terms of a flattened sum are never the sum x - x0 itself.
+ */
 function lowestPowerShifted(term: Expr, base: Expr): number | undefined {
-  if (term.key === base.key) return 1;
   if (term instanceof Pow && term.base.key === base.key && term.exp instanceof Rational) return term.exp.value;
   if (term instanceof Mul) {
     let k = 0;
@@ -206,17 +209,15 @@ export function add(...xs: ExprLike[]): Expr {
     const abs = flat.filter((e) => ab.is(e));
     const rest = add(...flat.filter((e) => !ab.is(e)));
     if (rest.freeSymbols().size === 0) return ab.add(abs, rest);
-    const iv = ab.add(abs, S.Zero);
-    return new Add([...(rest instanceof Add ? rest.args : [rest]), iv]);
+    // like SymPy, the interval absorbs the numeric term: x + 1 + AccumBounds(1, 2) = x + AccumBounds(2, 3)
+    const [c, terms] = rest instanceof Add && isNum(at(rest.args, 0)) ? [at(rest.args, 0), rest.args.slice(1)] : [S.Zero, [rest]];
+    return new Add([...terms, ab.add(abs, c)]);
   }
   if (sx.some((e) => e instanceof Order || (e instanceof Add && e.args.some((a) => a instanceof Order)))) {
     const r = addOrder(sx);
     if (r) return r;
   }
-  if (sx.some((e) => e instanceof Special || (e instanceof Add && e.args.some((a) => a instanceof Special)))) {
-    const r = addSpecial(sx);
-    if (r) return r;
-  }
+  if (sx.some((e) => e instanceof Special || (e instanceof Add && e.args.some((a) => a instanceof Special)))) return addSpecial(sx);
   let c: Num = S.Zero;
   const terms = new Map<string, { term: Expr; coeff: Num }>();
   const visit = (e: Expr): void => {
@@ -252,9 +253,72 @@ export function add(...xs: ExprLike[]): Expr {
 // ---------------------------------------------------------------------------
 
 /** Accumulates rational bases raised to rational powers, factored into primes. */
+/** A positive integer raised to a rational power, before simplification. */
+type RatPow = readonly [bigint, Rational];
+
+/**
+ * The largest k with n = r**k (SymPy perfect_power), or undefined.
+ */
+function perfectPower(n: bigint): [bigint, bigint] | undefined {
+  for (let k = BigInt(n.toString(2).length); k >= 2n; k--) {
+    const r = iroot(n, k);
+    if (r > 1n && ipow(r, k) === n) return [r, k];
+  }
+  return undefined;
+}
+
+/**
+ * SymPy Integer._eval_power for a positive integer n and a rational e that is
+ * not an integer: an exact coefficient times powers with exponents in (0, 1)
+ * ((2**12)**(1/10) -> 2*2**(1/5), 12**(2/3) -> 2*18**(1/3)).
+ */
+function intPow(n: bigint, e: Rational): [Rational, RatPow[]] {
+  if (e.isNegative) {
+    // SymPy Rational._eval_power of 1/n: n**(p*(q - 1)/q) / n**p
+    const ne = numNeg(e);
+    const [c, rads] = intPow(n, Rational.of(ne.p * (ne.q - 1n), ne.q));
+    return [numMul(c, Rational.of(1n, ipow(n, ne.p))), rads];
+  }
+  const root = iroot(n, e.q);
+  if (ipow(root, e.q) === n) return [Rational.of(ipow(root, e.p)), []];
+  const pp = perfectPower(n);
+  const factors = pp ? new Map([pp]) : factorInt(n);
+  let outInt = 1n;
+  const out: RatPow[] = [];
+  const sqr: [bigint, bigint][] = [];
+  for (const [prime, k] of factors) {
+    const ex = k * e.p;
+    const divE = ex / e.q;
+    const divM = ex % e.q;
+    if (divE > 0n) outInt *= ipow(prime, divE);
+    if (divM > 0n) {
+      // (2**2)**(1/10) -> 2**(1/5)
+      const g = gcd(divM, e.q);
+      if (g !== 1n) out.push([prime, Rational.of(divM / g, e.q / g)]);
+      else sqr.push([prime, divM]);
+    }
+  }
+  const sqrGcd = sqr.reduce((g, [, m]) => (g === 0n ? m : gcd(g, m)), 0n);
+  const sqrInt = sqr.reduce((acc, [b, m]) => acc * ipow(b, m / sqrGcd), 1n);
+  if (sqrInt !== 1n) {
+    if (sqrInt === n && outInt === 1n && out.length === 0) return [S.One, [[n, e]]];
+    // the remaining power is evaluated again (Pow(sqr_int, sqr_gcd/q))
+    const [c, rads] = intPow(sqrInt, Rational.of(sqrGcd, e.q));
+    return [numMul(Rational.of(outInt), c), [...out, ...rads]];
+  }
+  return [Rational.of(outInt), out];
+}
+
+/**
+ * Numeric radicals of a product, combined as SymPy Mul.flatten does: powers of
+ * the same base add their exponents, bases with the same exponent multiply
+ * (sqrt(2)*sqrt(6) -> 2*sqrt(3)), and common factors of bases with different
+ * exponents are pulled out (2**(1/3)*6**(1/4) -> 2**(7/12)*3**(1/4)).
+ */
 class Radicals {
-  /** prime (or unfactored cofactor) -> exponent */
-  private readonly primes = new Map<bigint, Rational>();
+  /** positive integer base -> exponents */
+  private readonly bases = new Map<bigint, Rational[]>();
+  private coeff: Rational = S.One;
   /** exponent of -1 */
   negOne: Rational = S.Zero;
 
@@ -264,43 +328,95 @@ class Radicals {
       this.negOne = numAdd(this.negOne, exp);
       base = Rational.of(-base.p, base.q);
     }
-    if (base.isOne) return;
-    const push = (n: bigint, sign: bigint) => {
-      if (n === 1n) return;
-      for (const [p, k] of factorInt(n)) {
-        const inc = numMul(exp, Rational.of(sign * k));
-        this.primes.set(p, numAdd(this.primes.get(p) ?? S.Zero, inc));
-      }
-    };
-    push(base.p, 1n);
-    push(base.q, -1n);
+    this.addInt(base.p, exp);
+    this.addInt(base.q, numNeg(exp));
+  }
+
+  private addInt(n: bigint, exp: Rational): void {
+    if (n === 1n) return;
+    if (exp.isInteger) {
+      this.coeff = numMul(this.coeff, numPowInt(Rational.of(n), exp.p));
+      return;
+    }
+    const [c, rads] = intPow(n, exp);
+    this.coeff = numMul(this.coeff, c);
+    for (const [b, e] of rads) {
+      const es = this.bases.get(b);
+      if (es) es.push(e);
+      else this.bases.set(b, [e]);
+    }
   }
 
   get isEmpty(): boolean {
-    return this.primes.size === 0 && this.negOne.isZero;
+    return this.bases.size === 0 && this.negOne.isZero && this.coeff.isOne;
   }
 
   /** Resolve into a rational coefficient, a power of I, and leftover radical factors. */
   resolve(): { coeff: Rational; iPow: bigint; factors: Expr[] } {
-    let coeff: Rational = S.One;
-    let iPow = 0n;
-    const factors: Expr[] = [];
-    // group by fractional exponent
-    const groups = new Map<string, { exp: Rational; base: bigint }>();
-    for (const [p, e] of this.primes) {
-      if (e.isZero) continue;
-      const k = ratFloor(e);
-      const f = numAdd(e, Rational.of(-k));
-      if (k !== 0n) coeff = numMul(coeff, numPowInt(Rational.of(p), k));
-      if (!f.isZero) {
-        const g = groups.get(f.key);
-        if (g) g.base *= p;
-        else groups.set(f.key, { exp: f, base: p });
-      }
+    let coeff = this.coeff;
+    const mulCoeff = (r: Rational): void => {
+      coeff = numMul(coeff, r);
+    };
+    /** b**e with e reduced to (0, 1); undefined when nothing is left */
+    const reduce = (b: bigint, eIn: Rational): RatPow | undefined => {
+      const k = ratFloor(eIn);
+      if (k !== 0n) mulCoeff(numPowInt(Rational.of(b), k));
+      const e = numAdd(eIn, Rational.of(-k));
+      return e.isZero ? undefined : [b, e];
+    };
+    // same base: add the exponents; then same exponent: multiply the bases
+    const combE = new Map<string, { e: Rational; b: bigint }>();
+    for (const [b, es] of this.bases) {
+      // the exponents are in (0, 1) after intPow, so their sum is positive
+      const e = es.reduce((acc, x) => numAdd(acc, x), S.Zero);
+      const g = combE.get(e.key);
+      if (g) g.b *= b;
+      else combE.set(e.key, { e, b });
     }
-    for (const { exp, base } of groups.values()) factors.push(new Pow(Rational.of(base), exp));
+    const numRat: RatPow[] = [];
+    for (const { e, b } of combE.values()) {
+      const r = reduce(b, e);
+      if (r) numRat.push(r);
+    }
+    // pull out common factors of the bases: 4**r1*6**r2 -> 2**(r1+r2)*2**r1*3**r2
+    const pnew = new Map<string, { e: Rational; b: bigint }>();
+    const addNew = (b: bigint, e: Rational): void => {
+      const g = pnew.get(e.key);
+      if (g) g.b *= b;
+      else pnew.set(e.key, { e, b });
+    };
+    for (let i = 0; i < numRat.length; i++) {
+      let [bi] = at(numRat, i);
+      const ei = at(numRat, i)[1];
+      if (bi === 1n) continue;
+      const grow: RatPow[] = [];
+      for (let j = i + 1; j < numRat.length && bi !== 1n; j++) {
+        const [bj, ej] = at(numRat, j);
+        const g = gcd(bi, bj);
+        if (g === 1n) continue;
+        const r = reduce(g, numAdd(ei, ej));
+        if (r) grow.push(r);
+        numRat[j] = [bj / g, ej];
+        bi /= g;
+      }
+      if (bi !== 1n) {
+        // sqrt(12) -> 2*sqrt(3)
+        const [c, rads] = intPow(bi, ei);
+        mulCoeff(c);
+        for (const [b, e] of rads) addNew(b, e);
+      }
+      numRat.push(...grow);
+    }
+    const factors: Expr[] = [];
+    for (const { e, b } of pnew.values()) {
+      // the merged base is evaluated again (Pow(b, e))
+      const [c, rads] = intPow(b, e);
+      mulCoeff(c);
+      for (const [rb, re] of rads) factors.push(new Pow(Rational.of(rb), re));
+    }
 
     // (-1)^n with n reduced to [0, 2)
+    let iPow = 0n;
     let n = this.negOne;
     if (!n.isZero) {
       const k = ratFloor(Rational.of(n.p, n.q * 2n));
@@ -311,7 +427,7 @@ class Radicals {
       } else {
         // SymPy: (-1)**(p/q) = (-1)**i * (-1)**(r/q) with r/q in [0, 1)
         let r = n;
-        if (numCmp1(n) > 0) {
+        if (n.p > n.q) {
           r = numAdd(n, Rational.of(-1n));
           iPow += 2n;
         }
@@ -322,17 +438,12 @@ class Radicals {
   }
 }
 
-const numCmp1 = (r: Rational): number => {
-  const d = r.p - r.q;
-  return d > 0n ? 1 : d < 0n ? -1 : 0;
-};
-
-function mulSpecial(args: Expr[]): Expr | undefined {
+/** A product with an infinity or nan among the factors (the caller has seen one). */
+function mulSpecial(args: Expr[]): Expr {
   const flat: Expr[] = [];
   const visit = (e: Expr) => (e instanceof Mul ? e.args.forEach(visit) : flat.push(e));
   args.forEach(visit);
   const specials = flat.filter((e): e is Special => e instanceof Special);
-  if (specials.length === 0) return undefined;
   if (specials.some((e) => e.name === 'nan')) return S.NaN;
   const c = mul(...flat.filter((e) => !(e instanceof Special)));
   if (c instanceof Rational && c.isZero) {
@@ -368,10 +479,7 @@ export function mul(...xs: ExprLike[]): Expr {
     if (rest.freeSymbols().size === 0) return ab.mul(abs, rest);
     return new Mul([rest, ab.mul(abs, S.One)]);
   }
-  if (args.some((e) => e instanceof Special || (e instanceof Mul && e.args.some((a) => a instanceof Special)))) {
-    const r = mulSpecial(args);
-    if (r) return r;
-  }
+  if (args.some((e) => e instanceof Special || (e instanceof Mul && e.args.some((a) => a instanceof Special)))) return mulSpecial(args);
 
   // SymPy's two-argument rule: Rational * Add distributes (2*(x + 1) -> 2*x + 2).
   if (args.length === 2) {
@@ -476,11 +584,10 @@ export function mul(...xs: ExprLike[]): Expr {
     }
   }
 
+  // a number raised to a symbolic exponent is a number, a power or an infinity (never a product)
   for (const { exp, bases } of numExp.values()) {
     const b = bases.reduce((acc, k) => numMul(acc, k));
-    const r = bases.length === 1 ? new Pow(b, exp) : pow(b, exp);
-    if (r instanceof Mul) r.args.forEach(absorb);
-    else absorb(r);
+    absorb(bases.length === 1 ? new Pow(b, exp) : pow(b, exp));
   }
 
   if (!radicals.isEmpty) {
@@ -494,7 +601,6 @@ export function mul(...xs: ExprLike[]): Expr {
   if (m >= 2n) coeff = numNeg(coeff);
   if (m % 2n === 1n) factors.push(S.I);
 
-  if (coeff instanceof Rational && coeff.isZero) return S.Zero;
   // exp_polar(a)*exp_polar(b) = exp_polar(a + b)
   const eps = factors.filter((f) => f instanceof Fn && f.name === 'exp_polar');
   if (eps.length > 1) {
@@ -584,7 +690,8 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
       const num = add(r, mul(numNeg(i), S.I));
       const k = den instanceof Rational ? Rational.of(den.q, den.p) : numInv(den);
       if (k instanceof Rational && k.isOne) return num;
-      return new Mul([k, ...(num instanceof Mul ? num.args : [num])]);
+      // num = r - i*I is a sum: r is the nonzero numeric term of b
+      return new Mul([k, num]);
     }
   }
 
@@ -700,46 +807,68 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   return new Pow(b, e);
 }
 
-function realValue(e: Expr): number | undefined {
-  if (isNum(e)) return e instanceof Rational ? e.value : e.value;
+/** The complex value of an expression without free symbols; undefined when it has none. */
+function numericValue(e: Expr): ComplexValue | undefined {
+  if (isNum(e)) return { re: e.value, im: 0 };
   if (impl.freeSymbols(e).size > 0) return undefined;
   try {
-    const v = impl.toComplex(e);
-    return v.im === 0 ? v.re : undefined;
+    return impl.toComplex(e);
   } catch {
     return undefined;
   }
+}
+
+/** oo**e (SymPy Infinity._eval_power); undefined when it stays unevaluated. */
+function infPow(e: Expr): Expr | undefined {
+  if (e instanceof Special) return e.name === 'oo' ? S.Infinity : e.name === '-oo' ? S.Zero : S.NaN;
+  if (isPositive(e)) return S.Infinity;
+  if (isNegative(e)) return S.Zero;
+  const v = numericValue(e);
+  if (v === undefined) return undefined;
+  // a real number of unknown sign: decided numerically unless it is too close to 0
+  if (v.im === 0) return Math.abs(v.re) > 1e-9 ? (v.re > 0 ? S.Infinity : S.Zero) : undefined;
+  // a non-real exponent: the sign of the real part decides
+  return v.re > 0 ? S.ComplexInfinity : v.re < 0 ? S.Zero : S.NaN;
 }
 
 /** Powers involving oo, -oo, zoo, nan (exponent 0 and 1 are handled by the caller). */
 function powSpecial(b: Expr, e: Expr): Expr | undefined {
   if ((b instanceof Special && b.name === 'nan') || (e instanceof Special && e.name === 'nan')) return S.NaN;
   if (b instanceof Special) {
-    const pos = isPositive(e);
-    const neg = isNegative(e);
-    if (b.name === 'oo' || b.name === 'zoo') {
-      if (pos) return b;
-      if (neg) return S.Zero;
+    if (b.name === 'oo') return infPow(e);
+    if (b.name === 'zoo') {
+      // SymPy gives zoo**oo = 0; |zoo|**oo is infinite, so zoo**oo = zoo here
+      if (e instanceof Special && e.name === 'zoo') return S.NaN;
+      if (isPositive(e)) return b;
+      if (isNegative(e)) return S.Zero;
       return undefined;
     }
-    // -oo
+    // -oo (SymPy NegativeInfinity._eval_power: (-1)**e * oo**e)
+    if (e instanceof Special) return S.NaN;
     if (e instanceof Rational && e.isInteger) {
       if (e.isNegative) return S.Zero;
       return e.p % 2n === 0n ? S.Infinity : S.NegativeInfinity;
     }
-    if (neg) return S.Zero;
-    return undefined;
+    if (impl.freeSymbols(e).size > 0) return isNegative(e) ? S.Zero : undefined;
+    const inf = infPow(e);
+    // (-oo)**(1/2) = oo*I; a Float exponent stays unevaluated
+    if (inf === S.Infinity) return e instanceof Float ? undefined : mul(pow(S.NegOne, e), S.Infinity);
+    // 0 for a negative exponent; zoo or nan for a non-real one, as (-1)**e is finite and nonzero
+    return inf;
   }
   // exponent is oo, -oo or zoo
   const ex = cast(e, Special, 'exponent');
   if (ex.name === 'zoo') return S.NaN;
-  const v = realValue(b);
-  if (v === undefined) return undefined;
+  const c = numericValue(b);
+  // a non-real base (such as (1 + I)**oo) stays unevaluated, as in SymPy
+  if (c?.im !== 0) return undefined;
+  const v = c.re;
   const up = ex.name === 'oo';
   if (v === 1 || v === -1) return S.NaN;
   if (v > 1) return up ? S.Infinity : S.Zero;
   if (v > -1) {
     if (v === 0) return up ? S.Zero : S.ComplexInfinity;
+    // SymPy gives (-1/2)**-oo = nan but (-2)**oo = zoo; both have modulus oo, so zoo here
     return up ? S.Zero : v > 0 ? S.Infinity : S.ComplexInfinity;
   }
   return up ? S.ComplexInfinity : S.Zero;
@@ -835,10 +964,9 @@ export function realRoot(xIn: ExprLike, nIn: ExprLike): Expr {
   if (n instanceof Rational && n.isInteger) {
     if (n.p === 1n || n.p === -1n) return root(x, n);
     if (n.p % 2n !== 0n && isReal(x) === true) {
-      if (impl.sign === undefined) throw new InvariantError('sign is not registered');
+      if (impl.sign === undefined) throw new NotLoadedError("sign is not available: import '@symjs/symjs/core' (or '@symjs/symjs')");
       return mul(impl.sign(x), root(impl.abs(x), n));
     }
   }
   return root(x, n);
 }
-impl.exp = (e) => exp(e);

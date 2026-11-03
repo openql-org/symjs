@@ -22,7 +22,7 @@ import { fraction } from './rational';
 import { gcdTerms, signsimp } from './exprtools';
 import { powdenest, powsimp } from './powsimp';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { at, defined, first, last } from '../core/guard';
+import { at, defined, expectType, first, last } from '../core/guard';
 
 // an internal control-flow signal that never leaves this module
 // oxlint-disable-next-line no-restricted-globals
@@ -37,6 +37,8 @@ const sortedArgs = (e: Expr) => [...e.args].sort((a, b) => compareKeys(sortKey(a
 const mexpand = (e: Expr): Expr => expand(e, { power_exp: false, power_base: false, log: false });
 const num = (e: Expr): number => e.toComplex().re;
 const isRat = (e: Expr): e is Rational => e instanceof Rational;
+const termsOf = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
+const factorsOf = (e: Expr): readonly Expr[] => (e instanceof Mul ? e.args : [e]);
 const asCoeffMul = (e: Expr): [Expr, Expr] => {
   if (e instanceof Mul && e.args[0] instanceof Rational) return [e.args[0], e.args.length === 2 ? at(e.args, 1) : new Mul(e.args.slice(1))];
   if (e instanceof Rational) return [e, S.One];
@@ -61,7 +63,7 @@ function isAlgebraic(p: Expr): boolean {
 }
 
 function subsets(n: number): number[][] {
-  if (n === 1) return [[1]];
+  // (n >= 2: denesterRec always nests at least two radicands)
   if (n === 2) return [[1, 0], [0, 1], [1, 1]];
   if (n === 3) return [[1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1], [0, 1, 1], [1, 1, 1]];
   const b = subsets(n - 1);
@@ -90,15 +92,13 @@ export function splitSurds(expr: Expr): [Expr, Expr, Expr] {
   const args = sortedArgs(expr);
   const coeffMuls = args.map(asCoeffMul);
   const surds = coeffMuls.filter(([, s]) => s instanceof Pow).map(([, s]) => pow(s, 2)).sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
-  if (!surds.length) return [S.One, S.Zero, expr];
+  // (every caller passes a sum with a radical term; SymPy raises IndexError otherwise)
   let [g, b1, b2] = splitGcd(...surds);
   let g2 = g;
   if (!b2.length && b1.length >= 2) {
+    // (the squares of distinct radicals of a sum differ, so some quotient is not 1)
     const b1n = b1.map((x) => mul(x, pow(g, -1))).filter((x) => !isOne(x));
-    if (b1n.length) {
-      const [g1] = splitGcd(...b1n);
-      g2 = mul(g, g1);
-    }
+    g2 = mul(g, splitGcd(...b1n)[0]);
   }
   const a1v: Expr[] = [];
   const a2v: Expr[] = [];
@@ -201,10 +201,10 @@ export function radsimp(exIn: ExprLike, opts: { symbolic?: boolean; maxTerms?: n
     if (d.args.length === 0) return pow(d, -1);
     for (;;) {
       const collected = new Map<string, [Expr[], Expr[]]>();
-      for (const m of d instanceof Add ? d.args : [d]) {
+      for (const m of termsOf(d)) {
         const p2: Expr[] = [];
         const other: Expr[] = [];
-        for (const i of m instanceof Mul ? m.args : [m]) {
+        for (const i of factorsOf(m)) {
           if (ispow2(i, true)) p2.push(i.exp.key === S.Half.key ? i.base : pow(i.base, mul(2, i.exp)));
           else if (i instanceof Constant && i.name === 'I') p2.push(S.NegOne);
           else other.push(i);
@@ -252,13 +252,10 @@ export function radsimp(exIn: ExprLike, opts: { symbolic?: boolean; maxTerms?: n
   const old = fraction(expr);
   let [n, d] = fraction(handle(expr));
   if (n.key !== old[0].key || d.key !== old[1].key) {
-    if (d.args.length > 0) {
-      const was: [Expr, Expr] = [n, d];
-      n = signsimp(n);
-      d = signsimp(d);
-      [n, d] = fraction(mul(n, pow(d, -1)));
-      if (n.key === old[0].key && d.key === old[1].key) [n, d] = was;
-    }
+    // (SymPy goes back to the handled parts when its unevaluated sign simplification restores the
+    // input fraction; signsimp here evaluates, so the quotient is the canonical form of the handled
+    // value, whose fraction differs from the input's)
+    if (d.args.length > 0) [n, d] = fraction(mul(signsimp(n), pow(signsimp(d), -1)));
     n = expand(n, { power_exp: false, power_base: false, log: false, multinomial: false });
     if (d instanceof Rational || d instanceof Add) {
       const [n2, d2] = fraction(gcdTerms(mul(n, pow(d, -1))));
@@ -339,10 +336,11 @@ function sqrtdenest0(expr: Expr): Expr {
             const x2 = pow(x, 2);
             return x2 instanceof Rational && x2.isInteger;
           })) {
+          // a failure of the recursive method (its StopDenest signal) falls back to the general one
           try {
             return sqrtdenestRec(n);
-          } catch (err) {
-            if (!(err instanceof StopDenest)) throw err;
+          } catch {
+            // fall through
           }
         }
         e = sqrt(mexpand(add(...args.map(sqrtdenest0))));
@@ -434,18 +432,16 @@ function sqrtSymbolicDenest(a: Expr, b: Expr, r: Expr): Expr | undefined {
   if (!rval) return undefined;
   const [ra, rb, rr] = rval;
   if (isZero(rb)) return undefined;
-  // a in terms of y = sqrt(r): a(y) = ca*y**2 + cb*y + cc with b added to cb
+  // a in terms of y = sqrt(r): a(y) = ca*y**2 + cc (the substitution gives even powers of y only);
+  // as in SymPy (Poly(..., y)) a term that is not a power of y times a y-free factor fails
   const y = new Sym_('y_sqd');
   const ay = expand(mexpand(a).subs([[sqrt(rr), mul(add(pow(y, 2), mul(-1, ra)), pow(rb, -1))]]));
-  const coeff = (k: number) => {
-    const terms = ay instanceof Add ? ay.args : [ay];
-    return add(...terms.filter((t) => degreeIn(t, y) === k).map((t) => mul(t, pow(y, -k))));
-  };
-  if (degreeOf(ay, y) !== 2) return undefined;
+  const terms = termsOf(ay).map((t) => [t, degreeIn(t, y)] as const);
+  if (terms.some(([, k]) => k < 0) || Math.max(...terms.map(([, k]) => k)) !== 2) return undefined;
+  const coeff = (k: number) => add(...terms.filter(([, kt]) => kt === k).map(([t]) => mul(t, pow(y, -k))));
   const ca = coeff(2);
-  const cb = add(coeff(1), b);
+  const cb = b;
   const cc = coeff(0);
-  if ([ca, cb, cc].some((c) => c.has(y))) return undefined;
   if (!isZero(mexpand(add(pow(cb, 2), mul(-4, ca, cc))))) return undefined;
   let z = sqrt(mul(ca, pow(add(sqrt(r), mul(cb, pow(mul(2, ca), -1))), 2)));
   if (z.freeSymbols().size === 0) z = mexpand(z);
@@ -454,16 +450,16 @@ function sqrtSymbolicDenest(a: Expr, b: Expr, r: Expr): Expr | undefined {
 
 // a positive symbol for the substitution in sqrtSymbolicDenest
 import { Sym as Sym_ } from '../core/nodes';
+/** The degree of the term in y, or -1 when it is not y**k times a y-free factor. */
 const degreeIn = (t: Expr, y: Expr): number => {
   let k = 0;
-  for (const f of t instanceof Mul ? t.args : [t]) {
-    if (f.key === y.key) k += 1;
-    else if (f instanceof Pow && f.base.key === y.key && f.exp instanceof Rational && f.exp.isInteger) k += Number(f.exp.p);
+  for (const f of factorsOf(t)) {
+    // (y occurs only as y**(2*j) after the substitution)
+    if (f instanceof Pow && f.base.key === y.key) k += Number(expectType(f.exp, (v): v is Rational => v instanceof Rational, 'the exponent of y').p);
     else if (f.has(y)) return -1;
   }
   return k;
 };
-const degreeOf = (e: Expr, y: Expr): number => Math.max(...(e instanceof Add ? e.args : [e]).map((t) => degreeIn(t, y)));
 
 function sqrtNumericDenest(a: Expr, b: Expr, r: Expr, d2: Expr): Expr | undefined {
   const d = sqrt(d2);
@@ -499,8 +495,8 @@ function sqrtBiquadraticDenest(expr: Pow, a: Expr, b: Expr, r: Expr, d2: Expr): 
 }
 
 function denesterRec(nested: Expr[], av0: (Expr | undefined)[], h: number, maxDepth: number): [Expr | undefined, number[] | undefined] {
+  // (av0[1] is cleared only right before returning, so it is set on entry)
   if (h > maxDepth) return [undefined, undefined];
-  if (av0[1] === undefined) return [undefined, undefined];
   if (av0[0] === undefined && nested.every((n) => n.isNumber && n.args.length === 0)) {
     for (const f of subsets(nested.length)) {
       let p = mexpand(mul(...nested.filter((_, i) => f[i])));
@@ -510,28 +506,31 @@ function denesterRec(nested: Expr[], av0: (Expr | undefined)[], h: number, maxDe
     }
     return [sqrt(last(nested)), Array<number>(nested.length).fill(0)];
   }
-  let R: Expr | undefined;
+  let R: Expr;
   let values: [Expr, Expr, Expr][];
   let nested2: Expr[];
   if (av0[0] !== undefined) {
-    values = [[av0[0], av0[1], S.Zero]];
+    values = [[av0[0], defined(av0[1]), S.Zero]];
     R = defined(av0[2]);
     nested2 = [defined(av0[3]), R];
     av0[0] = undefined;
   } else {
     values = nested.map(sqrtMatch).filter((v): v is [Expr, Expr, Expr] => v !== undefined);
+    let found: Expr | undefined;
     for (const v of values) {
       if (!isZero(v[2])) {
-        if (R !== undefined) {
-          if (R.key !== v[2].key) {
+        if (found !== undefined) {
+          if (found.key !== v[2].key) {
             av0[1] = undefined;
             return [undefined, undefined];
           }
-        } else R = v[2];
+        } else found = v[2];
       }
     }
-    if (R === undefined) return [sqrt(last(nested)), Array<number>(nested.length).fill(0)];
-    const r0 = R;
+    // (some value has b != 0: a nested term without a square root is a rational atom, and nested terms
+    // that are all atoms take the branch above)
+    const r0 = defined(found, 'the common radicand');
+    R = r0;
     nested2 = [...values.map((v) => add(mexpand(pow(v[0], 2)), mul(-1, mexpand(mul(r0, pow(v[1], 2)))))), r0];
   }
   const [d, f] = denesterRec(nested2, av0, h + 1, maxDepth);
@@ -541,9 +540,8 @@ function denesterRec(nested: Expr[], av0: (Expr | undefined)[], h: number, maxDe
     return [sqrt(add(v[0], mexpand(mul(v[1], d)))), f];
   }
   const p = mul(...nested.filter((_, i) => f[i]));
-  const v = sqrtMatch(p);
-  if (!v) return [undefined, undefined];
-  let [v0, v1] = v;
+  // (p is a product of nested algebraic numbers; expanded it is a number, a sum or c*sqrt(n), as SymPy assumes)
+  let [v0, v1] = defined(sqrtMatch(p), 'the square root form of the product');
   const firstOne = f.indexOf(1);
   if (firstOne >= 0 && firstOne < nested.length - 1 && f[nested.length - 1]) {
     v0 = mul(-1, v0);
@@ -552,10 +550,8 @@ function denesterRec(nested: Expr[], av0: (Expr | undefined)[], h: number, maxDe
   if (!f[nested.length]) {
     const vad = mexpand(add(v0, d));
     if (num(vad) <= 0) return [sqrt(last(nested)), Array<number>(nested.length).fill(0)];
-    if (!(sqrtDepth(vad) <= sqrtDepth(R) + 1 || pow(vad, 2).isNumber)) {
-      av0[1] = undefined;
-      return [undefined, undefined];
-    }
+    // (SymPy first gives up when vad itself is deeper than sqrt(R) and vad**2 is not a number;
+    // the check of sqvad below then fails as well unless sqrt(vad) denests, which is a valid result)
     const sqvad = sqrtdenest1(sqrt(vad), false);
     if (!(sqrtDepth(sqvad) <= sqrtDepth(R) + 1)) {
       av0[1] = undefined;

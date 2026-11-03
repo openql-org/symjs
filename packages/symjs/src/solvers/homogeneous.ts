@@ -5,11 +5,11 @@
  * @file SymPy homogeneous_order (shared by dsolve and its hint solvers).
  */
 
-import type { Expr, ExprLike } from '../core/nodes';
+import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { Derivative, Dummy, Fn, Mul, Rational, S, UndefFn } from '../core/nodes';
 import { asBaseExp, mul, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
-import { first } from '../core/guard';
+import { expectType, first, getOrThrow } from '../core/guard';
 import { separatevars } from '../simplify/separatevars';
 
 /**
@@ -37,7 +37,9 @@ export function homogeneousOrder(eqIn: ExprLike, ...symbols: Expr[]): Expr | und
   const t = new Dummy('t', { positive: true });
   const scaled = xreplace(eq, syms.map((s) => [s, mul(t, s)] as const));
   const sep = separatevars(scaled, { symbols: [t], dict: true });
-  const eqs = (sep instanceof Map ? sep.get(t) : undefined) ?? S.One;
+  // with the single symbol t the dict form always exists and has an entry for t
+  const isDict = (v: unknown): v is Map<Sym | 'coeff', Expr> => v instanceof Map;
+  const eqs = getOrThrow(expectType(sep, isDict, 'separatevars dict'), t);
   if (eqs instanceof Rational && eqs.isOne) return S.Zero;
   const [b, e] = asBaseExp(mul(...(eqs instanceof Mul ? eqs.args : [eqs]).filter((a) => a.has(t))));
   if (b.key === t.key) return e;

@@ -9,7 +9,7 @@
 
 import { at, cast, first, pair } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Dummy, ExtensionExpr, Mul, Rational, S, Sym } from '../core/nodes';
+import { Add, Dummy, ExtensionExpr, Mul, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { asIndependent } from '../core/methods';
@@ -19,7 +19,7 @@ import { diff } from '../calculus/diff';
 import { cancel, fraction, together } from '../simplify/rational';
 import { expandMul } from '../simplify/expand';
 import { roots } from './poly';
-import { Poly } from './sympoly';
+import { Poly, factor, factorListExpr } from './sympoly';
 
 /** RootSum(poly, Lambda): args are [poly expression, Lambda, polynomial variable]. */
 export class RootSumNode extends ExtensionExpr {
@@ -41,11 +41,16 @@ export class RootSumNode extends ExtensionExpr {
   override bindings(): { variables: readonly number[]; scope: readonly number[] } {
     return { variables: [2], scope: [0] };
   }
+  /** The printed arguments: the polynomial, and the function unless it is the identity (SymPy). */
+  private printArgs(print: (e: Expr) => string): string {
+    const f = this.fun;
+    return f.expr.key === first(f.variables).key ? print(this.poly) : `${print(this.poly)}, ${print(f)}`;
+  }
   override printStr(print: (e: Expr) => string): string {
-    return `RootSum(${print(this.poly)}, ${print(this.fun)})`;
+    return `RootSum(${this.printArgs(print)})`;
   }
   override printLatex(print: (e: Expr) => string): string {
-    return `\\operatorname{RootSum} {\\left(${print(this.poly)}, ${print(this.fun)} \\right)}`;
+    return `\\operatorname{RootSum} {\\left(${this.printArgs(print)}\\right)}`;
   }
   /** The sum over the roots (in radicals). */
   override doitSelf(): Expr {
@@ -78,7 +83,10 @@ export function RootSum(polyIn: ExprLike, x: Sym, fun: LambdaNode): Expr {
   }
   const f = Lambda(v, body);
   const terms: Expr[] = [];
-  for (const [g, k] of P.factorList()[1]) {
+  // the factors over the integers in all symbols (SymPy factors over ZZ[t]); those free of x have no roots
+  for (const [ge, k] of factorListExpr(poly)[1]) {
+    if (!ge.has(x)) continue;
+    const g = Poly.from(ge, [x]);
     if (g.degree() === 1) {
       const [c1, c0] = pair(g.allCoeffs());
       terms.push(mul(k, f.call(mul(-1, c0, pow(c1, -1)))));
@@ -160,7 +168,10 @@ export function assemblePartfracList(list: [Expr, Poly, PartfracTerm[], Sym]): E
   return mul(common, add(...parts));
 }
 
-/** SymPy apart(f, x, full=True). */
+const hasRootSum = (e: Expr): boolean => e instanceof RootSumNode || e.args.some(hasRootSum);
+
+/** SymPy apart(f, x, full=True): the terms without a RootSum are factored (as one fraction, like SymPy's factor). */
 export function apartFull(f: ExprLike, x: Sym): Expr {
-  return assemblePartfracList(apartList(f, x));
+  const r = assemblePartfracList(apartList(f, x));
+  return add(...(r instanceof Add ? r.args : [r]).map((t) => (hasRootSum(t) ? t : factor(together(t)))));
 }

@@ -11,7 +11,7 @@
 
 import type { Expr, ExprLike } from '../../core/nodes';
 import { Sym } from '../../core/nodes';
-import { Add, BoolAtom, Constant, Derivative, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, UndefFn, Wild } from '../../core/nodes';
+import { Add, BoolAtom, Constant, Derivative, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, UndefFn } from '../../core/nodes';
 import { BoolOp, and, or } from '../../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt } from '../../core/logic';
 import { add, exp, mul, neg, pow, sqrt, sub, sympify } from '../../core/ops';
@@ -38,7 +38,7 @@ import { rewrite } from '../../simplify/rewrite';
 import { simplify as simplifyExpr } from '../../simplify/simplify';
 import { piecewiseExclusive } from '../../solvers/inequalities';
 import type { TransformHints } from './base';
-import { IntegralTransform, addArgs, diffTransforms, holds, isPolyIn, maxPlane, planeAdd, matchByName, polyCoeffs, mget, mulArgs, wild, transformArgs, asSymbolVariable } from './base';
+import { IntegralTransform, addArgs, isFalseExpr, diffTransforms, holds, isPolyIn, maxPlane, planeAdd, matchByName, polyCoeffs, mget, mulArgs, wild, transformArgs, asSymbolVariable } from './base';
 import { at, cast, defined, last, pair } from '../../core/guard';
 import { DiracDelta, Heaviside, isDiracDelta, isHeaviside } from './delta';
 import { InverseLaplaceTransform } from './inverse-laplace';
@@ -64,7 +64,6 @@ export function laplaceDeepCollect(f: Expr, t: Expr): Expr {
       // not a polynomial in the strict sense
     }
   }
-  if (f.args.length === 0) return f;
   const args = f.args.map((a) => laplaceDeepCollect(a, t));
   return args.every((a, i) => a === f.args[i]) ? f : rebuild(f, args);
 }
@@ -104,14 +103,11 @@ export function simplifyConds(exprIn: ExprLike, s: Sym, aIn: ExprLike): Expr {
     if (ex1.has(s)) return bigger(pow(ex2, -1), pow(ex1, -1));
     const n = power(ex2);
     if (n === undefined) return undefined;
-    try {
-      const bound = pow(abs(a), n);
-      if (bound.key === S.ComplexInfinity.key || bound.key === S.NaN.key) return undefined;
-      if (holds(Gt(n, 0)) && holds(Le(abs(ex1), bound))) return false;
-      if (holds(Lt(n, 0)) && holds(Ge(abs(ex1), bound))) return true;
-    } catch {
-      return undefined;
-    }
+    // SymPy catches the TypeError of comparing a non-real n; symjs's relationals stay undecided instead
+    const bound = pow(abs(a), n);
+    if (bound.key === S.ComplexInfinity.key || bound.key === S.NaN.key) return undefined;
+    if (holds(Gt(n, 0)) && holds(Le(abs(ex1), bound))) return false;
+    if (holds(Lt(n, 0)) && holds(Ge(abs(ex1), bound))) return true;
     return undefined;
   };
   const isAbs = (e: Expr): boolean => isAbsFn(e) || (e instanceof Pow && isAbsFn(e.base));
@@ -175,7 +171,7 @@ function buildRules(): RuleTable {
   const absArgLtPi = (x: Expr): Expr => Lt(abs(arg(x)), S.Pi);
   const pi = S.Pi;
   const rules: LaplaceRule[] = [
-    r(a, (m) => mul(g(m, 'a'), pow(s, -1)), () => T, () => Z), // 4.2.1
+    // 4.2.1 (a constant) is applied by laplaceApplySimpleRules before the table
     r(t, () => pow(s, -2), () => T, () => Z), // 4.2.3
     r(pow(add(mul(a, t), b), -1), (m) => {
       const ba = mul(g(m, 'b'), pow(g(m, 'a'), -1));
@@ -227,7 +223,9 @@ function buildRules(): RuleTable {
       const B = g(m, 'b');
       return mul(sub(log(B), mul(exp(mul(s, pow(B, -1), pow(A, -1))), pow(s, -1), A, Ei(mul(-1, s, pow(B, -1))))), pow(s, -1), A);
     }, (m) => and(Gt(g(m, 'a'), 0), absArgLtPi(g(m, 'b'))), () => Z), // 4.6.5
-    r(mul(log(t), pow(sqrt(t), -1)), () => mul(-1, sqrt(mul(pi, pow(s, -1))), log(mul(4, s, exp(S.EulerGamma)))), () => T, () => Z), // 4.6.9
+    // 4.6.9, log(t)/sqrt(t) -> -sqrt(pi/s)*log(4*s*exp(EulerGamma)), is left out: SymPy never
+    // applies it (a pattern without Wilds matches with the empty, falsy dict), so log(t)/sqrt(t)
+    // goes to 4.6.11 with n = -1/2, which gives the same function written as SymPy writes it
     r(mul(pow(t, n), log(t)), (m) => {
       const N = g(m, 'n');
       return mul(gamma(add(N, 1)), pow(s, sub(neg(N), 1)), sub(digamma(add(N, 1)), log(s)));
@@ -339,11 +337,10 @@ function getRules(): RuleTable {
   return ruleTable;
 }
 
-/** Split a linear argument b*t + c (b, c free of t); undefined otherwise. */
+/** Split a linear argument b*t + c (b != 0 and c free of t); undefined otherwise. */
 function linearIn(e: Expr, t: Expr): [Expr, Expr] | undefined {
   const cs = polyCoeffs(laplaceDeepCollect(e, t), t);
-  if (!cs || cs.length > 2) return undefined;
-  return cs.length === 1 ? [S.Zero, at(cs, 0)] : pair(cs);
+  return cs?.length === 2 ? pair(cs) : undefined;
 }
 
 /** The Heaviside and DiracDelta rules of the table (written out, as they need exact function heads). */
@@ -354,7 +351,6 @@ function laplaceDistributionRules(f: Expr, t: Expr, s: Expr): LaplaceTriple | un
   const lin = linearIn(at(f.args, 0), t);
   if (!lin) return undefined;
   const [a, mb] = lin;
-  if (a.key === S.Zero.key) return undefined;
   const b = neg(mb);
   const ok = (c: Expr): boolean => holds(c);
   if (isD) {
@@ -377,17 +373,16 @@ function laplaceApplySimpleRules(f: Expr, t: Sym, s: Expr): LaplaceTriple | unde
   if (!prepF.has(tD)) return [mul(prepF, pow(s, -1)), S.Zero, S.true];
   const dist = laplaceDistributionRules(prepF, tD, sD);
   if (dist) return [subs(dist[0], [[sD, s]]), dist[1], dist[2]];
+  // the patterns contain no ExtensionExpr (DiracDelta, Heaviside, ...): a Wild would match such a function as a generic one
+  if (some(prepF, (n) => n instanceof ExtensionExpr)) return undefined;
   for (const rule of rules) {
-    if (hasExtension(prepF)) {
-      // patterns never contain DiracDelta or Heaviside: avoid matching them as generic functions
-      if (!sameExtensionHeads(prepF, rule.pattern)) continue;
-    }
     const m = matchByName(prepF, rule.pattern);
     if (!m) continue;
     let c: Expr;
     try {
       c = rule.check(m);
     } catch {
+      // SymPy skips a rule whose check raises TypeError, as ordering nan does (arg(0) is nan)
       continue;
     }
     if (holds(c)) return [subs(rule.F(m), [[sD, s]]), rule.plane(m), S.true];
@@ -395,41 +390,22 @@ function laplaceApplySimpleRules(f: Expr, t: Sym, s: Expr): LaplaceTriple | unde
   return undefined;
 }
 
-const hasExtension = (e: Expr): boolean => some(e, (n) => n instanceof ExtensionExpr);
-function sameExtensionHeads(e: Expr, p: Expr): boolean {
-  const names = (x: Expr): string[] => {
-    const out: string[] = [];
-    some(x, (n) => {
-      if (n instanceof ExtensionExpr) out.push(n.name);
-      return false;
-    });
-    return out.sort();
-  };
-  return names(e).join(',') === names(p).join(',');
-}
-
 // ---------------------------------------------------------------------------
 // Program rules
 // ---------------------------------------------------------------------------
 
-/** SymPy _laplace_rule_timescale: f(a*t) -> F(s/a)/a for a > 0. */
+/**
+ * SymPy _laplace_rule_timescale: f(a*t) -> F(s/a)/a for a > 0. exp(a*t) never gets here: table
+ * rule 4.5.1 transforms it for every a.
+ */
 function laplaceRuleTimescale(f: Expr, t: Sym, s: Expr): LaplaceTriple | undefined {
-  let inner: Expr | undefined;
-  let build: ((x: Expr) => Expr) | undefined;
-  if (isExpPow(f)) {
-    inner = f.exp;
-    build = (x) => exp(x);
-  } else if ((f instanceof Fn || f instanceof UndefFn || f instanceof ExtensionExpr) && f.args.length === 1 && !(f instanceof IntegralTransform)) {
-    inner = at(f.args, 0);
-    build = (x) => rebuild(f, [x]);
-  }
-  if (!inner || !build) return undefined;
+  if (!((f instanceof Fn || f instanceof UndefFn || f instanceof ExtensionExpr) && f.args.length === 1 && !(f instanceof IntegralTransform))) return undefined;
   const a = wild('a', t);
-  const m = matchByName(collect(inner, [t]), mul(a, t));
+  const m = matchByName(collect(at(f.args, 0), [t]), mul(a, t));
   if (!m) return undefined;
   const A = mget(m, 'a');
   if (isPositive(A) === true && A.key !== S.One.key) {
-    const [r, pr, cr] = laplaceTransformImpl(mul(pow(A, -1), build(t)), t, mul(s, pow(A, -1)), false);
+    const [r, pr, cr] = laplaceTransformImpl(mul(pow(A, -1), rebuild(f, [t])), t, mul(s, pow(A, -1)), false);
     return [r, pr, cr];
   }
   return undefined;
@@ -485,7 +461,7 @@ function laplaceRuleDelta(f: Expr, t: Sym, s: Expr): LaplaceTriple | undefined {
   const z = mul(...facs.filter((_, j) => j !== i));
   if (some(z, isDiracDelta)) return undefined;
   const lin = linearIn(y, t);
-  if (lin && lin[0].key !== S.Zero.key) {
+  if (lin) {
     const [b, ma] = lin;
     const A = neg(ma);
     const loc = mul(A, pow(b, -1));
@@ -493,11 +469,12 @@ function laplaceRuleDelta(f: Expr, t: Sym, s: Expr): LaplaceTriple | undefined {
     const imZero = im(loc);
     if (holds(reNonNeg) && imZero.key === S.Zero.key) {
       let fn = mul(exp(mul(-1, A, pow(b, -1), s)), z);
-      if (some(fn, (n) => n instanceof Fn && (n.name === 'sin' || n.name === 'cos'))) fn = safe(() => cancel(mapBottomUp(fn, (u) => (u instanceof Fn && u.name === 'sin' ? mul(at(u.args, 0), sinc(at(u.args, 0))) : u))), fn);
+      if (some(fn, (n) => n instanceof Fn && (n.name === 'sin' || n.name === 'cos'))) fn = cancel(mapBottomUp(fn, (u) => (u instanceof Fn && u.name === 'sin' ? mul(at(u.args, 0), sinc(at(u.args, 0))) : u)));
       const [n0, d0] = asNumerDenom(fn);
       const n = subs(n0, [[t, loc]]);
       const d = subs(d0, [[t, loc]]);
-      if (d.key !== S.Zero.key) return [mul(n, pow(d, -1), pow(b, -1)), S.NegativeInfinity, S.true];
+      // delta(b*t - a) = delta(t - a/b)/|b|: SymPy 1.14 divides by b, which flips the sign for b < 0
+      if (d.key !== S.Zero.key) return [mul(n, pow(d, -1), pow(abs(b), -1)), S.NegativeInfinity, S.true];
       return undefined;
     }
     if (holds(Lt(re(loc), 0)) || (imZero.isNumber && imZero.key !== S.Zero.key)) return [S.Zero, S.NegativeInfinity, S.true];
@@ -514,7 +491,9 @@ function laplaceRuleDelta(f: Expr, t: Sym, s: Expr): LaplaceTriple | undefined {
       const slope = diff(y, t);
       const terms: Expr[] = [];
       for (const [x] of ro) {
-        if (im(x).key === S.Zero.key && holds(Ge(re(x), 0))) terms.push(mul(exp(mul(-1, x, s)), subs(z, [[t, s]]), pow(subs(slope, [[t, x]]), -1)));
+        // delta(y(t)) = sum delta(t - x)/|y'(x)| over the simple roots x; SymPy 1.14 substitutes s
+        // for t in the other factor and divides by y'(x) without Abs, which is wrong
+        if (im(x).key === S.Zero.key && holds(Ge(re(x), 0))) terms.push(mul(exp(mul(-1, x, s)), subs(z, [[t, x]]), pow(abs(subs(slope, [[t, x]])), -1)));
       }
       return [add(...terms), S.NegativeInfinity, S.true];
     }
@@ -709,33 +688,20 @@ function laplaceRuleSdiff(f: Expr, t: Sym, s: Sym): LaplaceTriple | undefined {
         const oex = mul(...ofac);
         const [r_, p_, c_] = laplaceTransformImpl(oex, t, s, false);
         const deri: Expr[] = [r_];
-        let d1: Expr | undefined;
-        try {
-          d1 = neg(diffTransforms(r_, s, 1));
-        } catch {
-          d1 = undefined;
-        }
+        // SymPy catches the ValueError of differentiating with respect to a non-symbol; s is a symbol here.
+        // A zero first derivative (falsy in SymPy) gives the same sum as the derivatives taken below.
         if (some(r_, (x) => x instanceof LaplaceTransform)) {
           for (let k = 0; k < N - 1; k++) deri.push(mul(pow(-1, k + 1), derivative(r_, [[s, k + 1]])));
-        } else if (d1) {
-          deri.push(d1);
-          for (let k = 0; k < N - 2; k++) deri.push(neg(diffTransforms(last(deri), s, 1)));
+        } else {
+          for (let k = 0; k < N - 1; k++) deri.push(neg(diffTransforms(last(deri), s, 1)));
         }
-        if (d1) return [add(...pc.map((_, n) => mul(at(pc, N - n - 1), at(deri, n)))), p_, c_];
+        return [add(...pc.map((_, n) => mul(at(pc, N - n - 1), at(deri, n)))), p_, c_];
       }
     }
   }
-  const n = wild('n', t);
-  const g = new Wild('g');
-  const m = matchByName(f, mul(pow(t, n), g));
-  if (m) {
-    const N = mget(m, 'n');
-    // symjs Derivative nodes have numeric orders: a symbolic order stays unevaluated
-    if (N instanceof Rational && N.isInteger && N.isPositive) {
-      const [r_, p_, c_] = laplaceTransformImpl(mget(m, 'g'), t, s, false);
-      return [mul(pow(-1, N), diffTransforms(r_, s, N)), p_, c_];
-    }
-  }
+  // SymPy also matches t**n*g with a symbolic positive integer n and returns (-1)**n times the n-th
+  // derivative of G; symjs Derivative nodes need a numeric order, so that case stays unevaluated
+  // (a numeric power of t is a polynomial factor, handled above)
   return undefined;
 }
 
@@ -775,31 +741,41 @@ export function piecewiseToHeaviside(f: Expr, t: Sym): Expr {
     const r = new Dummy('r', { real: true });
     return xreplace(piecewiseToHeaviside(xreplace(f, [[t, r]]), r), [[r, t]]);
   }
+  // symjs's piecewise_exclusive takes conditions in t only; SymPy's keeps the others, and a
+  // condition with another symbol makes the loop below return f (or a Heaviside of t - y for t > y)
+  if (cast(f, Piecewise, 'Piecewise').pairs.some(([, c]) => [...c.freeSymbols()].some((v) => v.key !== t.key))) return f;
   const x = piecewiseExclusive(f);
-  if (!(x instanceof Piecewise)) return f;
+  // a single piece that holds everywhere (SymPy 1.14 then iterates over the args of that expression
+  // and returns 0)
+  if (!(x instanceof Piecewise)) return x;
   const out: Expr[] = [];
-  const gtsLts = (c: Rel): [Expr, Expr] => (c.op === 'Gt' || c.op === 'Ge' ? [c.lhs, c.rhs] : [c.rhs, c.lhs]);
+  // An inequality linear in t as [b, lower]: t > b (or t >= b) when lower, t < b (or t <= b) otherwise.
+  // SymPy's Piecewise holds canonical relationals (t > 5/2 for 2*t > 5 or 5/2 < t) and accepts only
+  // those with t on one side; symjs keeps the relationals as written and solves them here.
+  const bound = (c: Expr): [Expr, boolean] | undefined => {
+    if (!(c instanceof Rel) || c.op === 'Eq' || c.op === 'Ne') return undefined;
+    const [g, l] = c.op === 'Gt' || c.op === 'Ge' ? [c.lhs, c.rhs] : [c.rhs, c.lhs];
+    const lin = linearIn(sub(g, l), t);
+    if (!lin) return undefined;
+    // k is a nonzero real number: the conditions have no symbol but t (checked above)
+    const [k, c0] = lin;
+    return [neg(mul(c0, pow(k, -1))), isPositive(k) === true];
+  };
+  const step = ([b, lower]: [Expr, boolean]): Expr => Heaviside(lower ? sub(t, b) : sub(b, t));
   for (const [fn, cond] of x.pairs) {
-    if (cond instanceof Rel && cond.args.some((a) => a.key === t.key)) {
-      if (cond.op === 'Eq' || cond.op === 'Ne') return f;
-      const [gts, lts] = gtsLts(cond);
-      out.push(mul(Heaviside(sub(gts, lts)), fn));
-    } else if (cond instanceof BoolOp && cond.op === 'Or' && cond.args.length === 2) {
-      for (const c2 of cond.args) {
-        if (c2 instanceof Rel && c2.lhs.key === t.key) {
-          const [gts, lts] = gtsLts(c2);
-          out.push(mul(Heaviside(sub(gts, lts)), fn));
-        } else return f;
-      }
-    } else if (cond instanceof BoolOp && cond.op === 'And' && cond.args.length === 2) {
-      const [a0, a1] = pair(cond.args);
-      if (a0 instanceof Rel && a1 instanceof Rel && a0.lhs.key === t.key && a1.lhs.key === t.key) {
-        const swap = a0.op === 'Gt' || a0.op === 'Ge';
-        const [c0, c1] = swap ? [a1, a0] : [a0, a1];
-        const [g1, l1] = gtsLts(c1);
-        const [g0, l0] = gtsLts(c0);
-        out.push(mul(sub(Heaviside(sub(g1, l1)), Heaviside(sub(l0, g0))), fn));
-      } else return f;
+    const b = bound(cond);
+    if (b) {
+      out.push(mul(step(b), fn));
+      continue;
+    }
+    // Eq and Ne (single points, SymPy returns f), and conditions that are not linear in t
+    if (!(cond instanceof BoolOp) || cond.args.length !== 2) return f;
+    const [b0, b1] = pair(cond.args.map(bound));
+    if (!b0 || !b1) return f;
+    if (cond.op === 'Or') out.push(mul(step(b0), fn), mul(step(b1), fn));
+    else if (cond.op === 'And' && b0[1] !== b1[1]) {
+      const [lo, hi] = b0[1] ? [b0, b1] : [b1, b0];
+      out.push(mul(sub(Heaviside(sub(t, lo[0])), Heaviside(sub(t, hi[0]))), fn));
     } else return f;
   }
   return add(...out);
@@ -820,7 +796,10 @@ function laplaceTransformIntegration(f: Expr, t: Sym, s: Expr): LaplaceTriple | 
   }
   if (f instanceof Pow && f.base.key === t.key && !f.exp.has(t)) {
     const a = f.exp;
-    return [mul(gamma(add(a, 1)), pow(s, -1), pow(s, neg(a))), S.Zero, Gt(re(a), -1)];
+    const cond = Gt(re(a), -1);
+    // the integral diverges at 0 for re(a) <= -1 (SymPy leaves 1/t and t**(-3/2) unevaluated)
+    if (isFalseExpr(cond)) return undefined;
+    return [mul(gamma(add(a, 1)), pow(s, -1), pow(s, neg(a))), S.Zero, cond];
   }
   return undefined;
 }
@@ -915,7 +894,6 @@ export function laplaceCorrespondence(f: ExprLike, fdict: ReadonlyMap<UndefinedF
     if (e instanceof LaplaceTransform && appliedTo(e.function, y.functionName, e.functionVariable)) return Y(e.transformVariable);
     if (e instanceof InverseLaplaceTransform && appliedTo(e.function, Y.functionName, e.functionVariable)) return y(e.transformVariable);
   }
-  if (e.args.length === 0) return e;
   return rebuild(
     e,
     e.args.map((a) => laplaceCorrespondence(a, fdict)),
@@ -964,14 +942,5 @@ export class LaplaceTransform extends IntegralTransform {
     const t = this.functionVariable;
     const r: LaplaceTriple = t instanceof Sym ? laplaceTransformImpl(this.function, t, this.transformVariable, hints.simplify ?? false) : [this, S.NegativeInfinity, S.true];
     return hints.noconds === false ? r : r[0];
-  }
-}
-
-/** Run f, returning the fallback when it throws. */
-function safe(f: () => Expr, fallback: Expr): Expr {
-  try {
-    return f();
-  } catch {
-    return fallback;
   }
 }

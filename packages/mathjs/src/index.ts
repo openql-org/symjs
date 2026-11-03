@@ -45,7 +45,7 @@ import {
   Not,
   Xor,
 } from '@symjs/symjs';
-import type { ExprLike, FnName } from '@symjs/symjs';
+import type { ExprLike, FnName, RelOp } from '@symjs/symjs';
 
 // ---------------------------------------------------------------------------
 // Structural types of the math.js objects used (no dependency on math.js)
@@ -174,6 +174,8 @@ export function toMathjsString(expr: ExprLike): string {
   return printNode(e);
 }
 
+const REL_TO_MATHJS: Record<RelOp, string> = { Eq: '==', Ne: '!=', Lt: '<', Le: '<=', Gt: '>', Ge: '>=' };
+
 function printNode(e: Expr): string {
   if (e instanceof Rational) return e.q === 1n ? (e.p < 0n ? `(${e.p})` : `${e.p}`) : `(${e.p} / ${e.q})`;
   if (e instanceof Float) {
@@ -193,12 +195,12 @@ function printNode(e: Expr): string {
     return `(${printNode(b)} ^ ${printNode(e.exp)})`;
   }
   if (e instanceof Rel) {
-    const op = ({ Eq: '==', Ne: '!=', Lt: '<', Le: '<=', Gt: '>', Ge: '>=' } as Record<string, string>)[e.op] ?? fail(`relation ${e.op}`);
+    const op = REL_TO_MATHJS[e.op];
     return `(${printNode(e.args[0])} ${op} ${printNode(e.args[1])})`;
   }
   if (e.kind === 'BoolOp' && 'op' in e && typeof e.op === 'string') {
     const head = e.op;
-    if (head === 'Not') return `(not ${printNode(e.args[0] ?? fail('Not without an argument'))})`;
+    if (head === 'Not') return `(not ${e.args.map(printNode).join(', ')})`;
     if (head === 'And' || head === 'Or' || head === 'Xor') return `(${e.args.map(printNode).join(` ${head.toLowerCase()} `)})`;
   }
   if (e instanceof AppliedFunction || e instanceof AppliedUndef) {

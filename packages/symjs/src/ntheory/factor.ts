@@ -647,6 +647,8 @@ interface Opts {
   useRho?: boolean;
   usePm1?: boolean;
   useEcm?: boolean;
+  /** The first ECM bound B1 (10000; a test sets a small one to see it widen). */
+  ecmB1?: bigint;
 }
 
 function trial(factors: Map<bigint, bigint>, nIn: bigint, candidates: Iterable<bigint>): [bigint, boolean] {
@@ -794,7 +796,7 @@ export function factorintInt(nIn: bigint, o: Opts): Map<bigint, bigint> {
     if (useEcm && iteration >= 3 && n.toString().length >= 24) break;
     [low, high] = [high, high * 2n];
   }
-  let B1 = 10000n;
+  let B1 = o.ecmB1 ?? 10000n;
   let B2 = 100n * B1;
   let numCurves = 50;
   for (;;) {
@@ -1115,9 +1117,10 @@ export function isPerfect(nIn: IntLike): boolean {
     [324n, 81n],
   ];
   if (conds.every(([m, r]) => n % m !== r)) return false;
-  const result = abundance(n) === 0n;
-  if (result) throw new RangeError(`odd perfect number found: ${n}`);
-  return result;
+  // SymPy raises ValueError on an odd perfect number (none is known, and the
+  // conditions above make one impossible to meet in practice); it is perfect,
+  // so the answer is true
+  return abundance(n) === 0n;
 }
 
 /** n is an abundant number (SymPy is_abundant). */

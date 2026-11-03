@@ -7,32 +7,41 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Rational } from '../core/nodes';
+import { Dummy, S } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { expandMul } from '../simplify/expand';
+import { Poly, minimalPolynomial } from './sympoly';
+
+/** The minimal polynomial of theta in t, when symjs can compute it. */
+function minpolyIn(theta: Expr, t: Dummy): Poly | undefined {
+  try {
+    return Poly.from(minimalPolynomial(theta, t), [t]);
+  } catch {
+    // SymPy computes minimal polynomials of all algebraic numbers (e.g. cos(pi/7))
+    return undefined;
+  }
+}
+
+/** c[0]*t**(n-1) + ... + c[n-1] (Horner). */
+const horner = (cs: readonly Expr[], t: Expr): Expr => cs.reduce<Expr>((acc, c) => add(mul(acc, t), c), S.Zero);
 
 /**
  * An element of Q(theta) written as c[0]*theta**(n-1) + ... + c[n-1] for a
- * primitive element theta (SymPy AlgebraicNumber(theta, coeffs)).
+ * primitive element theta (SymPy AlgebraicNumber(theta, coeffs)). The
+ * polynomial is reduced modulo the minimal polynomial of theta.
  */
 export class AlgebraicNumber {
   readonly root: Expr;
   readonly coeffList: readonly Expr[];
   constructor(root: ExprLike | AlgebraicNumber, coeffs: readonly ExprLike[] = [1, 0]) {
+    const t = new Dummy('t');
     const cs = coeffs.map((c) => sympify(c));
-    if (root instanceof AlgebraicNumber) {
-      // an element of an element: compose the polynomials in the inner primitive element
-      this.root = root.root;
-      const inner = root.asPolyExpr();
-      const outer = cs.reduceRight<{ acc: Expr; k: number }>(
-        (s, c) => ({ acc: add(s.acc, mul(c, pow(inner, s.k))), k: s.k + 1 }),
-        { acc: Rational.of(0), k: 0 },
-      ).acc;
-      this.coeffList = polyCoeffsIn(expandMul(outer), root.root);
-    } else {
-      this.root = sympify(root);
-      this.coeffList = cs;
-    }
+    // an element of an element: the polynomials composed in the inner primitive element
+    const inner = root instanceof AlgebraicNumber ? horner(root.coeffList, t) : t;
+    this.root = root instanceof AlgebraicNumber ? root.root : sympify(root);
+    const p = Poly.from(expandMul(horner(cs, inner)), [t]);
+    const m = minpolyIn(this.root, t);
+    this.coeffList = (m ? p.rem(m) : p).allCoeffs();
   }
 
   /** c[0]*theta**(n-1) + ... + c[n-1] with theta kept symbolic. */
@@ -64,26 +73,4 @@ export class AlgebraicNumber {
   evalf(n = 15): Expr {
     return this.asExpr().evalf(n);
   }
-}
-
-/** Coefficients of a polynomial expression in theta (theta treated as an atom). */
-function polyCoeffsIn(e: Expr, theta: Expr): Expr[] {
-  // write e as a polynomial in a fresh symbol t = theta when possible
-  const terms = e.kind === 'Add' ? e.args : [e];
-  const byPow = new Map<number, Expr[]>();
-  for (const t of terms) {
-    const fs = t.kind === 'Mul' ? t.args : [t];
-    let k = 0;
-    const rest: Expr[] = [];
-    for (const f of fs) {
-      if (f.key === theta.key) k += 1;
-      else if (f.kind === 'Pow' && f.args[0]?.key === theta.key && f.args[1] instanceof Rational && f.args[1].isInteger) k += Number(f.args[1].p);
-      else rest.push(f);
-    }
-    const list = byPow.get(k) ?? [];
-    list.push(mul(...rest));
-    byPow.set(k, list);
-  }
-  const deg = Math.max(0, ...byPow.keys());
-  return Array.from({ length: deg + 1 }, (_, i) => add(...(byPow.get(deg - i) ?? [Rational.of(0)])));
 }

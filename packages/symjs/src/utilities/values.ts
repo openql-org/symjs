@@ -224,7 +224,10 @@ export type KeyFunction<T> = (x: T) => unknown;
  */
 export function orderedValues<T>(seq: Iterable<T>, keys?: KeyFunction<T> | readonly KeyFunction<T>[] | null, defaultKeys = true): T[] {
   const items = [...seq];
-  if (keys === undefined || keys === null) {
+  const ks = keys === undefined || keys === null ? [] : typeof keys === 'function' ? [keys] : [...keys];
+  const [f, ...rest] = ks;
+  if (f === undefined) {
+    if (!defaultKeys) throw new RangeError('if default=False then keys must be provided');
     const exprs = items.filter((x): x is T & Expr => x instanceof Expr);
     if (exprs.length === items.length && exprs.every((x) => !(x instanceof Derivative))) {
       // ordered() sorts the same objects; map them back to the element type
@@ -233,16 +236,12 @@ export function orderedValues<T>(seq: Iterable<T>, keys?: KeyFunction<T> | reado
     }
     return orderedBy(items, [nodesOf, defaultSortKeyOf], false, true);
   }
-  const ks = typeof keys === 'function' ? [keys] : [...keys];
-  return orderedBy(items, ks, defaultKeys, false);
+  return orderedBy(items, [f, ...rest], defaultKeys, false);
 }
 
-function orderedBy<T>(items: T[], keys: readonly KeyFunction<T>[], defaultKeys: boolean, sortKeys: boolean): T[] {
+function orderedBy<T>(items: T[], keys: readonly [KeyFunction<T>, ...KeyFunction<T>[]], defaultKeys: boolean, sortKeys: boolean): T[] {
   if (items.length < 2) return items;
   const [f, ...rest] = keys;
-  if (f === undefined) {
-    return defaultKeys ? orderedBy(items, [nodesOf, defaultSortKeyOf], false, true) : items;
-  }
   const groups = new ValueMap<unknown, T[]>();
   for (const a of items) {
     const k = f(a);
@@ -254,7 +253,8 @@ function orderedBy<T>(items: T[], keys: readonly KeyFunction<T>[], defaultKeys: 
   const sorted = [...groups].sort((a, b) => cmp(a[0], b[0]));
   const out: T[] = [];
   for (const [, g] of sorted) {
-    if (g.length > 1) out.push(...(rest.length ? orderedBy(g, rest, defaultKeys, sortKeys) : defaultKeys ? orderedBy(g, [nodesOf, defaultSortKeyOf], false, true) : g));
+    const [f2, ...rest2] = rest;
+    if (g.length > 1) out.push(...(f2 !== undefined ? orderedBy(g, [f2, ...rest2], defaultKeys, sortKeys) : defaultKeys ? orderedBy(g, [nodesOf, defaultSortKeyOf], false, true) : g));
     else out.push(...g);
   }
   return out;

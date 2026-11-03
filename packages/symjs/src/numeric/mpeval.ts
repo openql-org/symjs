@@ -67,8 +67,11 @@ export const mpFns: Record<string, (args: Mpc[], prec: number) => Mpc> = {
   atan2: mpFn2((y, x, p) => [M.atan2(y[0], x[0], p), ZERO]),
 };
 
+/** No value (the default symbol lookup and the fallback before evalf.ts registers one). */
+const noValue = (): Mpc | undefined => undefined;
+
 /** Fallback double-precision implementations (registered by evalf.ts / special.ts). */
-let doubleFallback: (name: string, args: Mpc[]) => Mpc | undefined = () => undefined;
+let doubleFallback: (name: string, args: Mpc[]) => Mpc | undefined = noValue;
 export function setDoubleFallback(f: typeof doubleFallback): void {
   doubleFallback = f;
 }
@@ -88,8 +91,6 @@ const CONSTANTS: Record<ConstantName, (prec: number) => Mpc> = {
  * serves expressions without free symbols (no symbol has a value).
  */
 export type SymbolLookup = (s: Sym, wp: number) => Mpc | undefined;
-
-const noValue = (): Mpc | undefined => undefined;
 
 /** Evaluate at working precision wp (each operation rounded to wp bits). */
 export function evalMp(e: Expr, wp: number, lookup: SymbolLookup = noValue): Mpc {

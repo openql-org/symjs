@@ -7,32 +7,38 @@
 
 import { Special } from './nodes';
 import type { Expr, ExprLike, RelOp } from './nodes';
-import { BoolAtom, Piecewise, Rational, Rel, S, isNum } from './nodes';
+import { BoolAtom, Float, Piecewise, Rational, Rel, S, isNum } from './nodes';
 import { numCmp } from './num';
 import { add, mul, sympify } from './ops';
 import { BoolOp } from './boolalg';
 import { at } from './guard';
 
 const isBoolean = (e: Expr): boolean => e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp;
+const isSpecial = (name: string) => (x: Expr): boolean => x instanceof Special && x.name === name;
 
 /** Create a relation, evaluating it to True/False when the difference is a number. */
 export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   const lhs = sympify(a);
   const rhs = sympify(b);
-  // nan is not equal to anything (SymPy Eq(nan, nan) is False)
-  if ([lhs, rhs].some((x) => x instanceof Special && x.name === 'nan')) {
-    if (op === 'Eq') return S.false;
-    if (op === 'Ne') return S.true;
+  const equality = op === 'Eq' || op === 'Ne';
+  // nan is not equal to anything (SymPy Eq(nan, nan) is False) and cannot be ordered
+  if ([lhs, rhs].some(isSpecial('nan'))) {
+    if (!equality) throw new TypeError('Invalid NaN comparison');
+    return op === 'Eq' ? S.false : S.true;
   }
+  if (!equality && [lhs, rhs].some(isSpecial('zoo'))) throw new TypeError('Invalid comparison of non-real zoo');
+  const byCmp = (c: number): Expr => ({ Eq: c === 0, Ne: c !== 0, Lt: c < 0, Le: c <= 0, Gt: c > 0, Ge: c >= 0 }[op] ? S.true : S.false);
+  // equal sides (such as oo and oo, whose difference is nan)
+  if (lhs.key === rhs.key) return byCmp(0);
   const d = add(lhs, mul(-1, rhs));
-  if (isNum(d)) {
-    const c = d instanceof Rational ? numCmp(d, S.Zero) : Math.sign((d).value);
-    const v = { Eq: c === 0, Ne: c !== 0, Lt: c < 0, Le: c <= 0, Gt: c > 0, Ge: c >= 0 }[op];
-    return v ? S.true : S.false;
-  }
-  if ((op === 'Eq' || op === 'Ne') && lhs.key === rhs.key) return op === 'Eq' ? S.true : S.false;
+  if (d instanceof Rational) return byCmp(numCmp(d, S.Zero));
+  if (d instanceof Float) return byCmp(Math.sign(d.value));
+  // the difference is oo or -oo for oo against a finite number (SymPy Lt(-oo, oo) is True)
+  if (isSpecial('oo')(d) || isSpecial('-oo')(d)) return byCmp(isSpecial('oo')(d) ? 1 : -1);
+  // zoo differs from every finite number and from oo (the difference is zoo or nan)
+  if (equality && d instanceof Special) return op === 'Eq' ? S.false : S.true;
   // numeric expressions that are clearly different
-  if ((op === 'Eq' || op === 'Ne') && d.freeSymbols().size === 0 && !(d instanceof Special)) {
+  if (equality && d.freeSymbols().size === 0) {
     try {
       const v = d.toComplex();
       if (Math.hypot(v.re, v.im) > 1e-9) return op === 'Eq' ? S.false : S.true;
@@ -72,7 +78,8 @@ export function piecewise(...pairs: readonly (readonly [ExprLike, ExprLike | boo
     out.push(sympify(e), c);
     if (isTrue(c)) break;
   }
-  if (out.length === 0) throw new RangeError('piecewise: no condition can be satisfied');
+  // SymPy: no condition can hold, so the value is undefined (nan)
+  if (out.length === 0) return S.NaN;
   if (out.length === 2 && isTrue(at(out, 1))) return at(out, 0);
   return new Piecewise(out);
 }

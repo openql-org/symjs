@@ -172,7 +172,8 @@ export function isprime(nIn: IntLike): boolean {
   return isStrongBpswPrp(n);
 }
 
-function lucasLehmer(p: number): boolean {
+/** @internal The Lucas-Lehmer test: 2**p - 1 is prime, for an odd prime p. */
+export function lucasLehmer(p: number): boolean {
   let v = 4n;
   const m = (1n << BigInt(p)) - 1n;
   for (let i = 0; i < p - 2; i++) v = powmod(v, 2n, m) - 2n;
@@ -181,15 +182,25 @@ function lucasLehmer(p: number): boolean {
 
 /** n is a Mersenne prime 2**p - 1 (SymPy is_mersenne_prime). */
 export function isMersennePrime(nIn: IntLike): boolean {
-  const n = asInt(nIn);
+  // GIMPS verified every exponent below 65 million on September 19, 2023
+  return mersennePrimeCheck(asInt(nIn), 65_000_000);
+}
+
+/**
+ * @internal isMersennePrime with the bound below which every Mersenne
+ * prime exponent is known as a parameter (a test reaches the Lucas-Lehmer
+ * test with a small exponent).
+ */
+export function mersennePrimeCheck(n: bigint, verifiedBelow: number): boolean {
   if (n < 1n) return false;
   if ((n & (n + 1n)) !== 0n) return false;
   const p = bitLength(n);
   if (MERSENNE_PRIME_EXPONENTS.includes(p)) return true;
-  if (p < 65000000 || !isprime(p)) return false;
-  const result = lucasLehmer(p);
-  if (result) throw new RangeError(`This Mersenne Prime, 2^${p} - 1, should be added to SymPy's known values.`);
-  return result;
+  // 2**p - 1 is composite for a composite p
+  if (p < verifiedBelow || !isprime(p)) return false;
+  // SymPy raises ValueError on a prime found here to have its exponent added
+  // to the known values; it is a Mersenne prime, so the answer is true
+  return lucasLehmer(p);
 }
 
 /** num = a + b*I is a Gaussian prime (SymPy is_gaussian_prime). */

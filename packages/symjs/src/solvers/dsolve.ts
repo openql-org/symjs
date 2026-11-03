@@ -11,7 +11,7 @@ import { isReal } from '../core/assumptions';
 import type { ExprLike } from '../core/nodes';
 import { Add, Derivative, Dummy, Expr, Fn, Integral, Mul, Pow, Rational, Rel, S, Special, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
-import { at, cast, defined, first, getOrThrow } from '../core/guard';
+import { at, cast, defined, expectType, first, getOrThrow } from '../core/guard';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols, some, subs, xreplace } from '../core/traverse';
 import { derivative } from '../core/undef';
@@ -37,6 +37,10 @@ import { homogeneousOrder } from './homogeneous';
 const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
 
 const isZero = (e: Expr) => e instanceof Rational && e.isZero;
+/** The terms of a sum (an expression that is not a sum is one term). */
+const addTerms = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
+/** The factors of a product (an expression that is not a product is one factor). */
+const mulFactors = (e: Expr): readonly Expr[] => (e instanceof Mul ? e.args : [e]);
 const C = (i: number) => new Sym(`C${i}`);
 
 export interface OdeProblem {
@@ -62,7 +66,7 @@ function orderOf(e: Expr, fx: UndefFn): number {
 /** e = A + B*f' with A, B free of f' (B != 0), or undefined. */
 function firstOrderParts(e: Expr, p: OdeProblem): [Expr, Expr] | undefined {
   const df = D(p, 1);
-  const terms = e instanceof Add ? e.args : [e];
+  const terms = addTerms(e);
   const A: Expr[] = [];
   const B: Expr[] = [];
   for (const t of terms) {
@@ -70,14 +74,14 @@ function firstOrderParts(e: Expr, p: OdeProblem): [Expr, Expr] | undefined {
       A.push(t);
       continue;
     }
-    const fs = t instanceof Mul ? t.args : [t];
+    const fs = mulFactors(t);
     const i = fs.findIndex((g) => g.key === df.key);
     if (i < 0) return undefined;
     const c = mul(...fs.filter((_, j) => j !== i));
     if (c.has(df)) return undefined;
     B.push(c);
   }
-  if (!B.length) return undefined;
+  // the equations are of first order, so some term has f'
   return [add(...A), add(...B)];
 }
 
@@ -87,8 +91,8 @@ function linearCoefficients(e: Expr, p: OdeProblem): Map<number, Expr> | undefin
   const out = new Map<number, Expr[]>();
   for (let k = -1; k <= p.order; k++) out.set(k, []);
   const ds = Array.from({ length: p.order + 1 }, (_, k) => D(p, k));
-  for (const t of ex instanceof Add ? ex.args : [ex]) {
-    const fs = t instanceof Mul ? t.args : [t];
+  for (const t of addTerms(ex)) {
+    const fs = mulFactors(t);
     const hits = fs.map((g, i) => [g, i] as const).filter(([g]) => ds.some((d) => g.has(d) || g.key === d.key));
     if (!hits.length) {
       getOrThrow(out, -1).push(t);
@@ -106,6 +110,8 @@ function linearCoefficients(e: Expr, p: OdeProblem): Map<number, Expr> | undefin
 }
 
 type Solver = (p: OdeProblem) => Expr[] | undefined;
+
+const isSepDict = (v: unknown): v is Map<Sym | 'coeff', Expr> => v instanceof Map;
 
 /** separatevars without dict: always an expression. */
 const separateExpr = (e: Expr): Expr => cast(separatevars(e), Expr, 'separatevars result');
@@ -132,7 +138,8 @@ const separable: Solver = (p) => {
   const m1 = sepDict(xreplace(d, [[p.fx, y]]), p.x, y);
   const m2 = sepDict(xreplace(e, [[p.fx, y]]), p.x, y);
   if (!m1 || !m2) return undefined;
-  const g = (m: Map<Sym | 'coeff', Expr>, k: Sym | 'coeff') => m.get(k) ?? S.One;
+  // the dict form has an entry for each symbol and the coefficient
+  const g = (m: Map<Sym | 'coeff', Expr>, k: Sym | 'coeff') => getOrThrow(m, k);
   const lhs = xreplace(integrate(mul(g(m2, 'coeff'), g(m2, y), pow(g(m1, y), -1)), y), [[y, p.fx]]);
   const rhs = add(integrate(mul(-1, g(m1, 'coeff'), g(m1, p.x), pow(g(m2, p.x), -1)), p.x), C(1));
   return [Eq(lhs, rhs)];
@@ -173,7 +180,7 @@ function linearFirst(p: OdeProblem): [Expr, Expr] | undefined {
   if (!pc || Math.max(...pc.keys()) > 1) return undefined;
   const P = cancel(pc.get(1) ?? S.Zero);
   const Q = cancel(mul(-1, pc.get(0) ?? S.Zero));
-  if (P.has(p.fx) || Q.has(p.fx)) return undefined;
+  // polynomial coefficients in f(x) are free of f(x)
   return [P, Q];
 }
 
@@ -197,8 +204,8 @@ const bernoulli: Solver = (p) => {
   let P: Expr = S.Zero;
   let Q: Expr = S.Zero;
   let n: Expr | undefined;
-  for (const t of a instanceof Add ? a.args : [a]) {
-    const fs = t instanceof Mul ? t.args : [t];
+  for (const t of addTerms(a)) {
+    const fs = mulFactors(t);
     const i = fs.findIndex((g) => g.key === p.fx.key || (g instanceof Pow && g.base.key === p.fx.key));
     if (i < 0) return undefined;
     const g = at(fs, i);
@@ -231,7 +238,7 @@ const riccatiSpecial: Solver = (p) => {
   let d: Expr = S.Zero;
   const df = D(p, 1);
   const x = p.x;
-  for (const t of e instanceof Add ? e.args : [e]) {
+  for (const t of addTerms(e)) {
     if (t.has(df)) {
       const k = cancel(mul(t, pow(df, -1)));
       if (k.has(x) || k.has(p.fx) || k.has(df)) return undefined;
@@ -261,8 +268,8 @@ const riccatiSpecial: Solver = (p) => {
 
 const nthAlgebraic: Solver = (p) => {
   // the equation involves only derivatives of a single order n and x: f = n-fold integral of the roots
+  // (order 0, an algebraic equation, as in SymPy's classify_ode)
   const n = p.order;
-  if (n < 1) return undefined;
   const dn = D(p, n);
   const t = new Dummy('t');
   const e = xreplace(p.eq, [[dn, t]]);
@@ -350,8 +357,8 @@ function constantCoeffMatch(p: OdeProblem): Map<number, Expr> | undefined {
   if (p.order < 1) return undefined;
   const r = linearCoefficients(p.eq, p);
   if (!r) return undefined;
+  // the remaining term (key -1) is free of f and its derivatives by construction
   for (const [k, c] of r) if (k >= 0 && (c.has(p.x) || c.has(p.fx))) return undefined;
-  if (getOrThrow(r, -1).has(p.fx)) return undefined;
   return r;
 }
 
@@ -416,7 +423,7 @@ function trialSet(expr0: Expr, x: Sym, homogeneous?: (t: Expr) => boolean): Expr
     return acc;
   };
   const out = new Map<string, Expr>();
-  for (const i of expr instanceof Add ? expr.args : [expr]) {
+  for (const i of addTerms(expr)) {
     let act = [...getTrial(i, new Map()).values()];
     if (homogeneous) {
       for (let guard = 0; guard < 10 && act.some(homogeneous); guard++) act = act.map((t) => mul(x, t));
@@ -443,20 +450,21 @@ const undeterminedCoefficients: Solver = (p) => {
   const homog = add(p.eq, mul(-1, getOrThrow(r, -1)));
   const trial = trialSet(getOrThrow(r, -1), p.x, (t) => isZero(expand(subFuncDoit(homog, p, t))));
   if (!trial) return undefined;
+  // roots() finds all the roots of the characteristic polynomial or throws, so there are p.order solutions
   const [gensols, terms] = constCharacteristicSols(r, p);
-  if (gensols.length !== p.order) return undefined;
   const cs = trial.map((_, i) => new Dummy(`a${i}`));
   const trialfunc = add(...trial.map((t, i) => mul(at(cs, i), t)));
   const eqs = expand(subFuncDoit(p.eq, p, trialfunc));
   const byTerm = new Map<string, Expr[]>();
-  for (const t of eqs instanceof Add ? eqs.args : [eqs]) {
-    const m = separatevars(t, { dict: true, symbols: [p.x] });
-    if (!(m instanceof Map)) return undefined;
-    const k = (m.get(p.x) ?? S.One).key;
-    byTerm.set(k, [...(byTerm.get(k) ?? []), m.get('coeff') ?? S.One]);
+  for (const t of addTerms(eqs)) {
+    // with the single symbol x the dict form exists and has the entries x and coeff
+    const m = expectType(separatevars(t, { dict: true, symbols: [p.x] }), isSepDict, 'separatevars dict');
+    const k = getOrThrow(m, p.x).key;
+    byTerm.set(k, [...(byTerm.get(k) ?? []), getOrThrow(m, 'coeff')]);
   }
-  const sol = linsolve([...byTerm.values()].map((v) => add(...v)), cs);
-  if (!sol) return undefined;
+  // the trial set holds every derivative of the right-hand side terms (times x while homogeneous), so the
+  // coefficients exist
+  const sol = defined(linsolve([...byTerm.values()].map((v) => add(...v)), cs), 'undetermined coefficients');
   const psol = xreplace(trialfunc, cs.map((c, i): [Expr, Expr] => [c, at(sol, i)]));
   const gsol = add(...gensols.map((g, i) => mul(C(i + 1), g)), psol);
   return [Eq(p.fx, simplifiedSol(gsol, p, terms))];
@@ -472,9 +480,8 @@ const variationOfParameters: Solver = (p) => {
   const r = constantCoeffMatch(p);
   if (!r || isZero(getOrThrow(r, -1))) return undefined;
   const [gensols, terms] = constCharacteristicSols(r, p);
-  if (gensols.length !== p.order) return undefined;
+  // the fundamental solutions are linearly independent: the Wronskian is not zero
   let wr = trigsimp(simplify(wronskian(gensols, p.x)));
-  if (isZero(wr)) return undefined;
   let psol: Expr = S.Zero;
   let sign = p.order % 2 === 0 ? 1 : -1;
   for (const g of gensols) {
@@ -496,8 +503,8 @@ function eulerMatch(p: OdeProblem): Map<number, Expr> | undefined {
   if (p.order < 1) return undefined;
   const m = linearCoefficients(p.eq, p);
   if (!m) return undefined;
+  // f^(n) occurs (n is the order), so its coefficient is not zero
   const lead = getOrThrow(m, p.order);
-  if (isZero(lead)) return undefined;
   const r = new Map<number, Expr>();
   for (const [k, c] of m) r.set(k, cancel(mul(pow(p.x, p.order), pow(lead, -1), c)));
   for (const [k, c] of r) {
@@ -571,16 +578,18 @@ const eulerUndetermined: Solver = (p) => {
   // substitute x = exp(t): a linear equation with constant coefficients in t
   const s = new Dummy('x');
   const x = p.x;
-  const pc = polyCoefficients(eulerChareq(r, x, s), s);
-  if (!pc) return undefined;
-  const rhs = simplify(xreplace(getOrThrow(r, -1), [[x, exp(x)]]));
+  // the characteristic polynomial of an Euler equation
+  const pc = defined(polyCoefficients(eulerChareq(r, x, s), s), 'characteristic polynomial');
+  // x -> exp(x) with x positive (SymPy posify), so that log(exp(x)) = x
+  const xp = new Dummy('x', { positive: true });
+  const rhs = xreplace(simplify(xreplace(getOrThrow(r, -1), [[x, exp(xp)]])), [[xp, x]]);
   if (!trialSet(rhs, x)) return undefined;
   let eq: Expr = S.Zero;
   for (const [k, c] of pc) eq = add(eq, mul(c, D(p, k)));
   eq = add(eq, rhs);
   const sub: OdeProblem = { eq, fx: p.fx, x, order: p.order };
-  const sols = undeterminedCoefficients(sub);
-  if (!sols) return undefined;
+  // the transformed equation has constant coefficients and the right-hand side passed the trial test
+  const sols = defined(undeterminedCoefficients(sub), 'undetermined coefficients solution');
   const s0 = cast(first(sols), Rel, 'solution');
   return [Eq(p.fx, expand(xreplace(s0.rhs, [[x, log(x)]])))];
 };
@@ -598,7 +607,7 @@ const liouville: Solver = (p) => {
   let dd: Expr = S.Zero;
   let ee: Expr = S.Zero;
   let kk: Expr = S.Zero;
-  for (const t of e0 instanceof Add ? e0.args : [e0]) {
+  for (const t of addTerms(e0)) {
     if (t.has(d2)) {
       const c = cancel(mul(t, pow(d2, -1)));
       if (c.has(d2) || c.has(d1)) return undefined;
@@ -654,13 +663,9 @@ const nthOrderReducible: Solver = (p) => {
 
 const factorable: Solver = (p) => {
   const eq0 = p.eq;
-  let eq: Expr;
-  try {
-    eq = fraction(factor(eq0))[0];
-  } catch {
-    return undefined;
-  }
-  const fs = eq instanceof Mul ? eq.args : [eq];
+  // (a failure of factor is caught by the driver like any failing solver)
+  const eq = fraction(factor(eq0))[0];
+  const fs = mulFactors(eq);
   // oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- the tuple type is needed by tsc
   const bases = fs.map((f) => (f instanceof Pow ? [f.base, f.exp] : [f, S.One]) as [Expr, Expr]).filter(([b]) => b.args.length !== 0);
   let eqs: Expr[] = [];
@@ -682,8 +687,8 @@ const factorable: Solver = (p) => {
   // SymPy iterates the factors in Mul argument order
   const argCmp = (a: Expr, b: Expr): number => {
     // like Basic.compare for sums: compare the (sorted) terms one by one
-    const ta = [...(a instanceof Add ? a.args : [a])].sort((u, v) => compareKeys(sortKey(u), sortKey(v)));
-    const tb = [...(b instanceof Add ? b.args : [b])].sort((u, v) => compareKeys(sortKey(u), sortKey(v)));
+    const ta = [...addTerms(a)].sort((u, v) => compareKeys(sortKey(u), sortKey(v)));
+    const tb = [...addTerms(b)].sort((u, v) => compareKeys(sortKey(u), sortKey(v)));
     for (let i = 0; i < Math.min(ta.length, tb.length); i++) {
       const c = compareKeys(sortKey(at(ta, i)), sortKey(at(tb, i)));
       if (c) return c;
@@ -711,8 +716,8 @@ const airy: Solver = (p) => {
   const pc = polyCoefficients(q, p.x);
   if (!pc || Math.max(...pc.keys()) !== 1) return undefined;
   const b = pc.get(0) ?? S.Zero;
+  // polynomial coefficients are free of x
   const m = getOrThrow(pc, 1);
-  if (m.has(p.x)) return undefined;
   const cbrt = (e: Expr) => pow(e, Rational.of(1, 3));
   const arg =
     m instanceof Rational && m.isPositive
@@ -739,20 +744,20 @@ const bessel: Solver = (p) => {
   const c4 = cancel(mul(b3, pow(x, -1)));
   if (c4.has(x)) return undefined;
   // c3 = alpha**2*x**(2*d) - n**2
-  const terms = c3 instanceof Add ? c3.args : [c3];
+  const terms = addTerms(c3);
   const dep = terms.filter((t) => t.has(x));
   const ind = add(...terms.filter((t) => !t.has(x)));
   if (dep.length !== 1) return undefined;
   const pd = polyCoefficients(first(dep), x);
   if (pd?.size !== 1) return undefined;
   const [e2, alpha2] = first([...pd.entries()]);
-  if (e2 % 2 !== 0) return undefined;
-  const d = e2 / 2;
+  // d may be a half integer (x**2*f'' + x*f' + (x - 4)*f: besselj(4, 2*sqrt(x)))
+  const d = Rational.of(e2, 2);
   const alpha = sqrt(alpha2);
   const nsq = mul(-1, ind);
   const n = sqrt(add(nsq, mul(Rational.of(1, 4), pow(add(c4, -1), 2))));
-  const argB = mul(alpha, pow(x, d), Rational.of(1, d));
-  const nu = mul(n, Rational.of(1, d));
+  const argB = mul(alpha, pow(x, d), pow(d, -1));
+  const nu = mul(n, pow(d, -1));
   const pre = pow(x, mul(Rational.of(1, 2), add(1, mul(-1, c4))));
   return [Eq(p.fx, mul(pre, add(mul(C(1), fn('besselj', [nu, argB])), mul(C(2), fn('bessely', [nu, argB])))))];
 };
@@ -768,8 +773,8 @@ function deMatch(p: OdeProblem): { d: Expr; e: Expr; y: Dummy } | undefined {
   if (!parts) return undefined;
   const y = new Dummy('y');
   const d = cancel(xreplace(parts[0], [[p.fx, y]]));
+  // both parts are free of f' (firstOrderParts)
   const e = cancel(xreplace(parts[1], [[p.fx, y]]));
-  if (d.has(D(p, 1)) || e.has(D(p, 1))) return undefined;
   return { d, e, y };
 }
 
@@ -807,9 +812,11 @@ function homogeneousSolution(p: OdeProblem, m: { d: Expr; e: Expr; y: Dummy }, d
   return sol;
 }
 
-/** SymPy ode_sol_simplicity: solved for f(x) first, then without Integrals, then shortest. */
+/**
+ * SymPy ode_sol_simplicity: solved for f(x) first, then shortest (the candidates are free of
+ * Integrals: homogeneousSolution gives up on an unevaluated integral).
+ */
 function solSimplicity(sols: Expr[], fx: Expr): number {
-  if (sols.some((s) => some(s, (t) => t instanceof Integral))) return Infinity;
   if (sols.every((s) => s instanceof Rel && s.lhs.key === fx.key && !s.rhs.has(fx))) return -2;
   return sols.map(String).join(', ').length;
 }
@@ -832,7 +839,10 @@ function homogeneousBest(p: OdeProblem, m: { d: Expr; e: Expr; y: Dummy }, xarg?
 const homogeneousCoeffBest: Solver = (p) => {
   const m = deMatch(p);
   if (!m || !sameHomogeneousOrder(m.d, m.e, p.x, m.y)) return undefined;
-  if (isZero(simplify(subs(add(m.d, mul(new Dummy('u'), m.e)), [[p.x, 1]])))) return undefined;
+  // SymPy HomogeneousCoeffBest._verify: d + u*e at (1, u) and e + u*d at (u, 1) are not zero; d/e is
+  // homogeneous of order 0, so both vanish exactly when d/e = -y/x and the first test decides
+  const u = new Dummy('u');
+  if (isZero(simplify(subs(add(m.d, mul(u, m.e)), [[p.x, 1], [m.y, u]])))) return undefined;
   return homogeneousBest(p, m);
 };
 
@@ -929,14 +939,11 @@ export function dsolveRaw(eqIn: Expr, fx: UndefFn, hint?: string): Expr[] | unde
       raw = undefined;
     }
     if (!raw) continue;
-    try {
-      const out: Expr[] = [];
-      if (PRESIMPLIFIED.has(h)) out.push(...raw);
-      else for (const r of raw) out.push(...odesimp(eq, r, fx, h));
-      return out;
-    } catch {
-      continue;
-    }
+    // like SymPy, a failure of odesimp is not caught
+    const out: Expr[] = [];
+    if (PRESIMPLIFIED.has(h)) out.push(...raw);
+    else for (const r of raw) out.push(...odesimp(eq, r, fx, h));
+    return out;
   }
   return undefined;
 }
@@ -964,7 +971,7 @@ function firstOrderDE(p: OdeProblem, y: Sym): [Expr, Expr] | undefined {
   if (p.order !== 1) return undefined;
   const df = new Derivative([p.fx, p.x, S.One]);
   const ex = expandMul(p.eq);
-  const terms = ex instanceof Add ? ex.args : [ex];
+  const terms = addTerms(ex);
   const e: Expr[] = [];
   const d: Expr[] = [];
   for (const t of terms) {
@@ -989,7 +996,7 @@ function classifyExtra(p: OdeProblem): Set<string> {
   try {
     const [n] = fraction(together(p.eq));
     const fac = factor(n);
-    const factors = fac instanceof Mul ? fac.args : [fac];
+    const factors = mulFactors(fac);
     const withF = factors.filter((u) => u.has(p.fx));
     // oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- the tuple type is needed by tsc
     const bases = factors.filter((u) => u.args.length).map((u) => (u instanceof Pow && u.exp instanceof Rational ? [u.base, Number(u.exp.p)] : [u, 1]) as [Expr, number]);
@@ -1009,8 +1016,8 @@ function classifyExtra(p: OdeProblem): Set<string> {
     const rest = expandMul(mul(d, pow(e, -1)));
     const exps = new Set<string>();
     let bern = !isZeroE(e);
-    for (const t of rest instanceof Add ? rest.args : [rest]) {
-      const fs = t instanceof Mul ? t.args : [t];
+    for (const t of addTerms(rest)) {
+      const fs = mulFactors(t);
       const yf = fs.filter((u) => u.has(y));
       if (yf.length > 1) bern = false;
       else if (yf.length === 1) {
@@ -1023,12 +1030,8 @@ function classifyExtra(p: OdeProblem): Set<string> {
     if (bern && [...exps].filter((k) => k !== '1').length <= 1) out.add('Bernoulli');
     // homogeneous coefficients: d and e homogeneous of the same order
     try {
-      const sep = (u: Expr): Expr => {
-        const r = separatevars(u);
-        return r instanceof Expr ? r : u;
-      };
-      const od = homogeneousOrder(sep(d), x, y);
-      const oe = homogeneousOrder(sep(e), x, y);
+      const od = homogeneousOrder(separateExpr(d), x, y);
+      const oe = homogeneousOrder(separateExpr(e), x, y);
       if (od !== undefined && oe !== undefined && od.key === oe.key) {
         const u = new Sym('u_cls');
         const indep = !isZeroE(simplify(xreplace(add(e, mul(u, d)), [[x, u], [y, S.One]])));

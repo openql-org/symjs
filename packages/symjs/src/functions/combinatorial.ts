@@ -9,7 +9,6 @@
  * and Kronecker symbols, and the multivariate gamma function.
  */
 
-import { NotInvertible } from '../core/errors';
 import { at, first, last } from '../core/guard';
 import { isIntegerQ, isNegative, isPositive, isReal as isRealQ } from '../core/assumptions';
 import type { Expr, ExprLike, FnName } from '../core/nodes';
@@ -22,6 +21,7 @@ import { expandMul } from '../simplify/expand';
 import { evaluators, fn, forEachEntry } from './elementary';
 import { bernoulliNumber, floor as floorFn, gamma } from './special';
 import { isprime as ntheoryIsprime } from '../ntheory/primetest';
+import { invert } from '../ntheory/intutil';
 
 const R = (p: bigint | number, q: bigint | number = 1n) => Rational.of(BigInt(p), BigInt(q));
 const asInt = (e: Expr): bigint | undefined => (e instanceof Rational && e.isInteger ? e.p : undefined);
@@ -99,10 +99,10 @@ function stirling2(n: number, k: number): bigint {
   let prev: bigint[] = [1n];
   for (let i = 1; i <= n; i++) {
     const row: bigint[] = [0n];
-    for (let j = 1; j <= i; j++) row[j] = BigInt(j) * (prev[j] ?? 0n) + (prev[j - 1] ?? 0n);
+    for (let j = 1; j <= i; j++) row[j] = BigInt(j) * (prev[j] ?? 0n) + at(prev, j - 1);
     prev = row;
   }
-  return prev[k] ?? 0n;
+  return at(prev, k);
 }
 
 /** Incomplete Bell polynomial B_{n,k}(x_1, ..., x_{n-k+1}). */
@@ -111,7 +111,7 @@ function incompleteBell(n: number, k: number, xs: readonly Expr[]): Expr {
   if (n === 0 || k === 0) return S.Zero;
   const terms: Expr[] = [];
   for (let m = 1; m <= n - k + 1; m++) {
-    terms.push(mul(R(binom(n - 1, m - 1)), xs[m - 1] ?? S.Zero, incompleteBell(n - m, k - 1, xs)));
+    terms.push(mul(R(binom(n - 1, m - 1)), at(xs, m - 1), incompleteBell(n - m, k - 1, xs)));
   }
   return expandMul(add(...terms));
 }
@@ -134,7 +134,7 @@ function fibNumber(n: bigint): bigint {
 
 function tribPoly(n: number, x: Expr): Expr {
   let [a, b, c]: [Expr, Expr, Expr] = [S.Zero, S.One, pow(x, 2)];
-  if (n < 3) return [a, b, c][n] ?? S.Zero;
+  if (n < 3) return at([a, b, c], n);
   for (let i = 3; i <= n; i++) [a, b, c] = [b, c, expandMul(add(mul(pow(x, 2), c), mul(x, b), a))];
   return c;
 }
@@ -276,14 +276,20 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
       for (let j = 0; j <= Number(k); j++) terms.push(mul(R(stirling2(Number(k), j)), pow(a, j)));
       return add(...terms);
     }
+    // SymPy raises TypeError for a symbolic k and IndexError when the symbols run out
     const kk = asInt(a);
-    if (kk === undefined) return undefined;
+    if (kk === undefined) throw new TypeError('bell: k must be an integer');
+    if (k >= 1n && kk >= 1n && k - kk + 1n > BigInt(rest.length)) throw new RangeError('bell: too few symbols');
     return incompleteBell(Number(k), Number(kk), rest);
   },
   fibonacci: (n, x?: Expr) => {
     const k = asInt(n);
     if (k === undefined) return undefined;
-    if (x !== undefined) return k >= 0n ? fibPoly(Number(k), x) : undefined;
+    if (x !== undefined) {
+      // SymPy raises ValueError for indices below 1; fibonacci(0, x) = 0 is kept (see the cov-functions tests)
+      if (k < 0n) throw new RangeError('Fibonacci polynomials are defined only for positive integer indices.');
+      return fibPoly(Number(k), x);
+    }
     return R(fibNumber(k));
   },
   lucas: (n) => {
@@ -327,7 +333,7 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
       }
       return undefined;
     }
-    if (k <= 0n) return undefined;
+    if (k <= 0n) throw new RangeError('mobius: n should be a positive integer');
     let r = 1n;
     for (const e of factorInt(k).values()) {
       if (e > 1n) return S.Zero;
@@ -372,7 +378,7 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
       const d = new Dummy('k');
       return mul(pow(S.Pi, mul(p, add(p, -1), R(1, 4))), Product(gamma(add(x, mul(add(1, mul(-1, d)), R(1, 2)))), [d, 1, p]));
     }
-    if (k === undefined || k < 1n) return undefined;
+    if (k === undefined || k < 1n) throw new RangeError('multigamma: Order parameter p must be positive integer.');
     const kk = Number(k);
     const factors: Expr[] = [pow(S.Pi, R(kk * (kk - 1), 4))];
     for (let j = 1; j <= kk; j++) factors.push(gamma(add(x, R(1 - j, 2))));
@@ -514,15 +520,6 @@ export function andre(n: number): bigint {
 // ---- binomial coefficients modulo m ------------------------------------------------
 
 const bmod = (a: bigint, m: bigint) => ((a % m) + m) % m;
-function bmodInv(a: bigint, m: bigint): bigint {
-  let [r0, r1, s0, s1] = [bmod(a, m), m, 1n, 0n];
-  while (r1 !== 0n) {
-    const q = r0 / r1;
-    [r0, r1, s0, s1] = [r1, r0 - q * r1, s1, s0 - q * s1];
-  }
-  if (r0 !== 1n) throw new NotInvertible('binomial_mod: not invertible');
-  return bmod(s0, m);
-}
 function bpow(b: bigint, e: bigint, m: bigint): bigint {
   let r = 1n;
   let x = bmod(b, m);
@@ -569,7 +566,7 @@ function pFreeProductFactory(p: bigint, e: number): (r: bigint) => bigint {
     let h = 0n;
     for (let i = 1; i < n; i++) {
       f = (f * BigInt(i)) % pe;
-      h = (h + bmodInv(BigInt(i), p)) % p;
+      h = (h + invert(BigInt(i), p)) % p;
       fact[i] = f;
       harm[i] = h;
     }
@@ -622,11 +619,11 @@ export function binomialMod(n: bigint, k: bigint, m: bigint): bigint {
     if (v >= BigInt(e)) r = 0n;
     else {
       const G = pFreeProductFactory(p, e);
-      const u = pFreeFactorial(n, p, e, G) * bmodInv(pFreeFactorial(k, p, e, G) * pFreeFactorial(n - k, p, e, G), pe);
+      const u = pFreeFactorial(n, p, e, G) * invert(pFreeFactorial(k, p, e, G) * pFreeFactorial(n - k, p, e, G), pe);
       r = (p ** v * u) % pe;
     }
     // combine x = result (mod mod) and x = r (mod pe)
-    const t = bmod((r - result) * bmodInv(mod, pe), pe);
+    const t = bmod((r - result) * invert(mod, pe), pe);
     result += mod * t;
     mod *= pe;
     if (rest === 1n) break;

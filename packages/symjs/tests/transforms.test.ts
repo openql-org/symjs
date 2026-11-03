@@ -335,7 +335,8 @@ const ROWS: Row[] = [
   ["ILT", ["1/(s*sqrt(k*s)*(-a + c*s))", "s", "t"], {}, {"k": {"real": true}, "a": {"negative": false, "nonzero": true, "positive": true, "real": true}, "c": {"negative": false, "nonzero": true, "positive": true, "real": true}, "t": {"real": true}}, "(-2*c*sqrt(t)/(sqrt(pi)*a) + c**(3/2)*exp(a*t/c)*erf(sqrt(a)*sqrt(t)/sqrt(c))/a**(3/2))*Heaviside(t)/(c*sqrt(k))"],
   ["ILT", ["1/(a + sqrt(c)*sqrt(s))", "s", "t"], {}, {"c": {"negative": false, "nonzero": true, "positive": true, "real": true}, "a": {"negative": false, "nonzero": true, "positive": true, "real": true}, "t": {"real": true}}, "(-a*exp(a**2*t/c)*erfc(a*sqrt(t)/sqrt(c))/c + 1/(sqrt(pi)*sqrt(c)*sqrt(t)))*Heaviside(t)"],
   ["ILT", ["a/(s*(a + b*sqrt(s)))", "s", "t"], {}, {"a": {"negative": false, "nonzero": true, "positive": true, "real": true}, "b": {"negative": false, "nonzero": true, "positive": true, "real": true}, "t": {"real": true}}, "(-exp(a**2*t/b**2)*erfc(a*sqrt(t)/b) + 1)*Heaviside(t)"],
-  ["ILT", ["sqrt(s)*(a - b)/((sqrt(a) + sqrt(s))*(-b + s))", "s", "t"], {}, {"a": {"negative": false, "nonzero": true, "positive": true, "real": true}, "b": {"negative": false, "nonzero": true, "positive": true, "real": true}, "t": {"real": true}}, "(sqrt(a)*sqrt(b)*exp(b*t)*erfc(sqrt(b)*sqrt(t)) + a*exp(a*t)*erfc(sqrt(a)*sqrt(t)) - b*exp(b*t))*Heaviside(t)"],
+  // SymPy 1.14 (and its test of Bateman 5.3 (6)) has erfc(sqrt(b)*sqrt(t)), which is wrong; see inverse-laplace.ts
+  ["ILT", ["sqrt(s)*(a - b)/((sqrt(a) + sqrt(s))*(-b + s))", "s", "t"], {}, {"a": {"negative": false, "nonzero": true, "positive": true, "real": true}, "b": {"negative": false, "nonzero": true, "positive": true, "real": true}, "t": {"real": true}}, "(sqrt(a)*sqrt(b)*exp(b*t)*erf(sqrt(b)*sqrt(t)) + a*exp(a*t)*erfc(sqrt(a)*sqrt(t)) - b*exp(b*t))*Heaviside(t)"],
   ["ILT", ["a**2/(s**(3/2)*(a + sqrt(s)))", "s", "t"], {}, {"a": {"negative": false, "nonzero": true, "positive": true, "real": true}, "t": {"real": true}}, "(2*a*sqrt(t)/sqrt(pi) + exp(a**2*t)*erfc(a*sqrt(t)) - 1)*Heaviside(t)"],
   ["ILT", ["sqrt(b)*(a - b)/(sqrt(s)*(sqrt(a) + sqrt(s))*(-b + s))", "s", "t"], {}, {"a": {"negative": false, "nonzero": true, "positive": true, "real": true}, "b": {"negative": false, "nonzero": true, "positive": true, "real": true}, "t": {"real": true}}, "(sqrt(a)*exp(b*t)*erf(sqrt(b)*sqrt(t)) + sqrt(b)*exp(a*t)*erfc(sqrt(a)*sqrt(t)) - sqrt(b)*exp(b*t))*Heaviside(t)"],
   ["ILT", ["(sqrt(a) + sqrt(s))**(-2)", "s", "t"], {}, {"a": {"negative": false, "nonzero": true, "positive": true, "real": true}, "t": {"real": true}}, "(-2*sqrt(a)*sqrt(t)/sqrt(pi) + (-2*a*t + 1)*(erf(sqrt(a)*sqrt(t)) - 1)*exp(a*t) + 1)*Heaviside(t)"],
@@ -473,7 +474,8 @@ const ROWS: Row[] = [
   ["LT", ["SingularityFunction(t, a, x)", "t", "s"], {}, {"a": {"negative": false, "nonzero": true, "positive": true, "real": true}}, "(LaplaceTransform(SingularityFunction(t, a, x), t, s), -oo, True)"],
   ["LT", ["DiracDelta(t**2)", "t", "s"], {"noconds": true}, {}, "LaplaceTransform(DiracDelta(t**2), t, s)"],
   ["LT", ["DiracDelta(t**2 - 1)", "t", "s"], {}, {}, "(exp(-s)/2, -oo, True)"],
-  ["LT", ["DiracDelta(t*(1 - t))", "t", "s"], {}, {}, "(1 - exp(-s), -oo, True)"],
+  // SymPy 1.14: (1 - exp(-s), -oo, True); delta(t*(1 - t)) = delta(t) + delta(t - 1), each divided by |d/dt t*(1 - t)| = 1
+  ["LT", ["DiracDelta(t*(1 - t))", "t", "s"], {}, {}, "(1 + exp(-s), -oo, True)"],
   ["LT", ["(DiracDelta(t) + 1)*(DiracDelta(t - 1) + 1)", "t", "s"], {}, {}, "(LaplaceTransform(DiracDelta(t)*DiracDelta(t - 1), t, s) + 1 + exp(-s) + 1/s, 0, True)"],
   ["LT", ["DiracDelta(2*t - 2*exp(a))", "t", "s"], {}, {"a": {"negative": false, "nonzero": true, "positive": true, "real": true}}, "(exp(-s*exp(a))/2, -oo, True)"],
   ["LT", ["DiracDelta(-2*t + 2*exp(a))", "t", "s"], {}, {"a": {"negative": false, "nonzero": true, "positive": true, "real": true}}, "(exp(-s*exp(a))/2, -oo, True)"],

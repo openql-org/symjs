@@ -7,7 +7,7 @@
  */
 
 import type { Expr, ExprLike } from './nodes';
-import { ExtensionExpr, Sym } from './nodes';
+import { ExtensionExpr, S, Sym } from './nodes';
 import { sympify } from './ops';
 import { at } from './guard';
 
@@ -31,9 +31,12 @@ export class Indexed extends ExtensionExpr {
   override printLatex(print: (e: Expr) => string): string {
     return `{${print(this.base)}}_{${this.indices.map(print).join(',')}}`;
   }
-  /** d A[i]/d A[i] = 1; other indexed objects and symbols do not depend on it. */
-  override diffSelf(x: Expr): Expr | undefined {
-    return x.key === this.key ? sympify(1) : undefined;
+  /**
+   * The derivative with respect to a symbol inside A[i] (diff handles indexed variables):
+   * nan for an index (SymPy: d A[i]/d i is not defined), 0 for the label.
+   */
+  override diffSelf(x: Expr): Expr {
+    return this.indices.some((i) => i.has(x)) ? S.NaN : S.Zero;
   }
 }
 

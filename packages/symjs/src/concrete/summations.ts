@@ -11,7 +11,7 @@ import { Eq, Lt, piecewise } from '../core/logic';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
 import { abs, log, sin, tan } from '../functions/elementary';
-import { bernoulliNumber, factorial, rf } from '../functions/special';
+import { bernoulliNumber, factorial, harmonic, rf } from '../functions/special';
 import { polyCoefficients, roots } from '../polys/poly';
 import { expandMul as expand } from '../simplify/expand';
 import { combsimp } from '../simplify/gammasimp';
@@ -25,7 +25,6 @@ const isOo = (e: Expr) => e instanceof Special && e.name === 'oo';
 
 export { Sum, Product } from '../core/concrete';
 import { Sum, Product } from '../core/concrete';
-import { InvariantError } from '../core/errors';
 import { cast, defined, first, getOrThrow } from '../core/guard';
 
 /** S_p(n) = sum_{k=1}^{n} k^p (Faulhaber, with B_1 = +1/2). */
@@ -50,18 +49,11 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
     if (isOo(b) || isNegOo(a)) return f instanceof Rational && f.isZero ? S.Zero : mul(f, S.Infinity);
     return expand(mul(f, add(b, mul(-1, a), 1)));
   }
-  // Karr convention for reversed limits
+  // Karr convention for reversed limits (a range with a known length always has a sum)
   const diff_ = add(b, mul(-1, a));
-  if (isInt(diff_) && diff_.p < -1n) {
-    const r = sumOne(f, k, add(b, 1), add(a, -1));
-    return r === undefined ? undefined : mul(-1, r);
-  }
-  // explicit evaluation for short finite ranges
-  if (isInt(diff_) && diff_.p >= -1n && diff_.p <= 1000n) {
-    const terms: Expr[] = [];
-    for (let i = 0n; i <= diff_.p; i++) terms.push(xreplace(f, [[k, add(a, Rational.of(i))]]));
-    return add(...terms);
-  }
+  if (isInt(diff_) && diff_.p < -1n) return mul(-1, defined(sumOne(f, k, add(b, 1), add(a, -1)), 'sum over a finite range'));
+  // explicit evaluation for short finite ranges (SymPy: fewer than 100 terms)
+  if (isInt(diff_) && diff_.p < 100n) return directSum(f, k, a, diff_.p);
   // Karr convention: sum_{k=a}^{-oo} f = -sum_{k=-oo}^{a-1} f
   if (isNegOo(b) && !isNegOo(a)) {
     const r = sumOne(f, k, b, add(a, -1));
@@ -86,8 +78,15 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   const factors = ef instanceof Mul ? ef.args : [ef];
   const dep = factors.filter((g) => g.has(k));
   const c = mul(...factors.filter((g) => !g.has(k)));
-  if (!isNegOo(a) && dep.length === 1 && dep[0] instanceof Pow && !dep[0].base.has(k)) {
-    const P = dep[0];
+  // c * k**(-m) from a positive integer: generalized harmonic numbers (SymPy; harmonic(oo, m) = zeta(m))
+  const [d0] = dep;
+  if (dep.length === 1 && d0 instanceof Pow && d0.base.key === k.key && isInt(d0.exp) && d0.exp.isNegative && isInt(a) && a.isPositive) {
+    const m = -d0.exp.p;
+    const H = (u: Expr) => (m === 1n ? harmonic(u) : harmonic(u, Rational.of(m)));
+    return mul(c, add(H(b), mul(-1, H(add(a, -1)))));
+  }
+  if (!isNegOo(a) && dep.length === 1 && d0 instanceof Pow && !d0.base.has(k)) {
+    const P = d0;
     const ePc = polyCoefficients(P.exp, k);
     if (ePc && Math.max(...ePc.keys()) === 1) {
       const r = pow(P.base, getOrThrow(ePc, 1));
@@ -118,7 +117,15 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
     const den = factors.find((g) => g instanceof Pow && g.exp instanceof Rational && g.exp.p === -1n && g.base.key === factorial(k).key);
     if (num && den && factors.length === 2) return exp(num.base);
   }
-  return undefined;
+  // no closed form: a range with a known length is summed term by term (SymPy eval_sum_direct)
+  return isInt(diff_) ? directSum(f, k, a, diff_.p) : undefined;
+}
+
+/** sum_{i=0}^{len} f(a + i). */
+function directSum(f: Expr, k: Sym, a: Expr, len: bigint): Expr {
+  const terms: Expr[] = [];
+  for (let i = 0n; i <= len; i++) terms.push(xreplace(f, [[k, add(a, Rational.of(i))]]));
+  return add(...terms);
 }
 
 /**
@@ -244,23 +251,25 @@ function numeric(e: Expr): number | undefined {
 
 function productOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   const diff_ = add(b, mul(-1, a));
-  if (isInt(diff_) && diff_.p < -1n) {
-    const r = productOne(f, k, add(b, 1), add(a, -1));
-    return r === undefined ? undefined : pow(r, -1);
-  }
-  if (isInt(diff_) && diff_.p >= -1n && diff_.p <= 1000n) {
-    const terms: Expr[] = [];
-    for (let i = 0n; i <= diff_.p; i++) terms.push(xreplace(f, [[k, add(a, Rational.of(i))]]));
-    return mul(...terms);
-  }
-  return evalProduct(f, k, a, b);
+  // Karr convention for reversed limits (a range with a known length always has a product)
+  if (isInt(diff_) && diff_.p < -1n) return pow(defined(productOne(f, k, add(b, 1), add(a, -1)), 'product over a finite range'), -1);
+  // explicit evaluation for short finite ranges (SymPy: fewer than 100 factors)
+  if (isInt(diff_) && diff_.p < 100n) return directProduct(f, k, a, diff_.p);
+  // no closed form: a range with a known length is multiplied out (SymPy _eval_product_direct)
+  return evalProduct(f, k, a, b) ?? (isInt(diff_) ? directProduct(f, k, a, diff_.p) : undefined);
+}
+
+/** prod_{i=0}^{len} f(a + i). */
+function directProduct(f: Expr, k: Sym, a: Expr, len: bigint): Expr {
+  const terms: Expr[] = [];
+  for (let i = 0n; i <= len; i++) terms.push(xreplace(f, [[k, add(a, Rational.of(i))]]));
+  return mul(...terms);
 }
 
 /** Port of SymPy Product._eval_product for the indefinite cases. */
 function evalProduct(term: Expr, k: Sym, a: Expr, n: Expr): Expr | undefined {
   const count = add(n, mul(-1, a), 1);
   if (!term.has(k)) return term instanceof Rational && term.isOne ? S.One : pow(term, count);
-  if (a.key === n.key) return xreplace(term, [[k, a]]);
   const pc = polyCoefficients(expand(term), k);
   if (pc) {
     const deg = Math.max(...pc.keys());
@@ -285,15 +294,20 @@ function evalProduct(term: Expr, k: Sym, a: Expr, n: Expr): Expr | undefined {
     return mul(pow(getOrThrow(pc, deg), count), A);
   }
   if (term instanceof Mul) {
+    // the factors with a product, times the Product of the others (SymPy: of several factors with k
+    // at least one must have a product; a single one stays a Product times the constant factors)
     const without = term.args.filter((t) => !t.has(k));
     const withK = term.args.filter((t) => t.has(k));
-    const parts: Expr[] = [];
+    const done: Expr[] = [];
+    const left: Expr[] = [];
     for (const t of withK) {
       const p = evalProduct(t, k, a, n);
-      if (p === undefined) return undefined;
-      parts.push(p);
+      if (p === undefined) left.push(t);
+      else done.push(p);
     }
-    return mul(pow(mul(...without), count), ...parts);
+    if (!done.length && withK.length > 1) return undefined;
+    const rest = left.length ? Product(mul(...left), [k, a, n]) : S.One;
+    return mul(pow(mul(...without), count), ...done, rest);
   }
   if (term instanceof Pow) {
     if (!term.base.has(k)) return pow(term.base, summation(term.exp, [k, a, n]));
@@ -348,12 +362,9 @@ const isFiniteBound = (e: Expr) => !(e instanceof Special);
 
 /** Limit of f(k) as k -> oo, or undefined. */
 function limOo(f: Expr, k: Sym): Expr | undefined {
-  try {
-    const l = impl.limit(f, k, S.Infinity);
-    return l instanceof Limit ? undefined : l;
-  } catch {
-    return undefined;
-  }
+  // (a limit at oo does not raise: an undetermined one is an unevaluated Limit)
+  const l = impl.limit(f, k, S.Infinity);
+  return l instanceof Limit ? undefined : l;
 }
 
 /** Decay order p of a rational function f(k) ~ C*k**(-p) (or k**(-p) with rational p). */
@@ -396,32 +407,45 @@ export function sumIsConvergent(c: Concrete): boolean | undefined {
     const right = sumIsConvergent(new Concrete(c.kind2, [f0, k0, S.Zero, S.Infinity]));
     return left === false || right === false ? false : left === true && right === true ? true : undefined;
   }
-  // Karr convention: Sum(f, (k, a, -oo)) = -Sum(f, (k, -oo, a - 1))
+  // Karr convention: Sum(f, (k, a, -oo)) = -Sum(f, (k, -oo, a - 1)) and Sum(f, (k, oo, b)) = -Sum(f, (k, b + 1, oo))
   if (isNegOo(b)) return sumIsConvergent(new Concrete(c.kind2, [f0, k0, b, add(a, -1)]));
+  if (isOo(a) && !isOo(b)) return sumIsConvergent(new Concrete(c.kind2, [f0, k0, add(b, 1), S.Infinity]));
+  // a complex infinity or nan as a limit
   if (!isOo(b)) return undefined;
   // other symbols (Sum(x**k, ...)): the answer depends on them (SymPy raises NotImplementedError)
   if ([...freeSymbols(f0)].some((v) => v.key !== k0.key)) return undefined;
   const f = xreplace(f0, [[k0, k]]);
+  // a product converges with the sum of the logarithms of its factors (SymPy), which needs factors -> 1
   if (c.kind2 === 'Product') {
     const l = limOo(f, k);
-    if (l === undefined) return undefined;
-    if (!(l instanceof Rational && l.isOne)) return false;
+    if (l !== undefined && !(l instanceof Rational && l.isOne)) return false;
     return sumIsConvergent(new Concrete('Sum', [log(f0), ...c.args.slice(1)]));
   }
+  // divergence test: the terms (or their moduli) do not tend to 0
   const l = limOo(f, k);
   if (l !== undefined && !(l instanceof Rational && l.isZero)) return false;
+  const la = limOo(impl.abs(f), k);
+  if (la !== undefined && !(la instanceof Rational && la.isZero)) return false;
   // p-series: f ~ C*k**(-p) for rational functions
   const r = pSeriesOrder(f, k);
   if (r !== undefined) return r > 1;
-  // limit comparison with a p-series: f ~ c*k**(-p) as k -> oo with real c != 0
+  // limit comparison with a p-series: f ~ c*k**(-p) as k -> oo with a constant c != 0 (for a
+  // complex c the real or the imaginary part compares, and |f| ~ |c|*k**(-p))
   try {
     const t = new Sym('_t', { positive: true });
-    if (impl.leadterm === undefined) throw new InvariantError('impl.leadterm is not registered');
-    const [c0, e0] = impl.leadterm(xreplace(f, [[k, pow(t, -1)]]), t);
-    if (e0 instanceof Rational && c0.freeSymbols().size === 0 && !(c0 instanceof Rational && c0.isZero)) {
-      const cv = c0.toComplex();
-      if (Math.abs(cv.im) < 1e-300 && cv.re !== 0) return e0.value > 1;
+    const [c0, e0] = defined(impl.leadterm?.(xreplace(f, [[k, pow(t, -1)]]), t), 'impl.leadterm');
+    // f ~ C*k**(-p)*log(k)**(-q) (log(t) = -log(k) in the coefficient of t**p): it converges for p > 1,
+    // or p = 1 and q > 1 (SymPy's comparison with 1/(n**p*log(n)**q))
+    const logT = log(t);
+    let q = 0;
+    const rest: Expr[] = [];
+    for (const g of c0 instanceof Mul ? c0.args : [c0]) {
+      if (g.key === logT.key) q -= 1;
+      else if (g instanceof Pow && g.base.key === logT.key && g.exp instanceof Rational) q -= g.exp.value;
+      else rest.push(g);
     }
+    const C = mul(...rest);
+    if (e0 instanceof Rational && C.freeSymbols().size === 0 && !(C instanceof Rational && C.isZero)) return e0.value > 1 || (e0.value === 1 && q > 1);
   } catch {
     // no asymptotic expansion
   }

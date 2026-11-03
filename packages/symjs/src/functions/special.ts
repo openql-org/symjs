@@ -44,7 +44,7 @@ const isInt = (e: Expr): e is Rational => e instanceof Rational && e.isInteger;
 const R = (p: bigint | number, q: bigint | number = 1) => Rational.of(p, q);
 /** Exact rational sum and product (numAdd/numMul restricted to Rational). */
 const qAdd = (a: Rational, b: Rational): Rational => (a.q === b.q ? Rational.of(a.p + b.p, a.q) : Rational.of(a.p * b.q + b.p * a.q, a.q * b.q));
-const qMul = (a: Rational, b: Rational): Rational => (a.isOne ? b : b.isOne ? a : Rational.of(a.p * b.p, a.q * b.q));
+const qMul = (a: Rational, b: Rational): Rational => Rational.of(a.p * b.p, a.q * b.q);
 const isOo = (e: Expr) => e instanceof Special && e.name === 'oo';
 const isNegOo = (e: Expr) => e instanceof Special && e.name === '-oo';
 const iOo = () => mul(S.I, S.Infinity);
@@ -111,8 +111,16 @@ function evalBinomial(n: Expr, k: Expr): Expr | undefined {
     if (k.isZero) return S.One;
     if (isInt(n) && !n.isNegative && k.p > n.p) return S.Zero;
     if (n instanceof Rational) {
-      // very large k: keep binomial(n, k) unevaluated instead of looping k times
-      if (k.p > 100000n && !(isInt(n) && n.p - k.p <= 100000n && n.p - k.p >= 0n)) return undefined;
+      // very large k: keep binomial(n, k) unevaluated instead of looping k times, unless
+      // n - k is small (n >= k here for an integer n >= 0) or the reflection
+      // binomial(n, k) = (-1)**k*binomial(k - n - 1, -n - 1) of a negative integer n is cheap
+      if (k.p > 100000n) {
+        if (isInt(n) && n.isNegative) {
+          const v = evalBinomial(R(k.p - n.p - 1n), R(-n.p - 1n));
+          return v === undefined ? undefined : k.p % 2n === 0n ? v : neg(v);
+        }
+        if (!(isInt(n) && n.p - k.p <= 100000n)) return undefined;
+      }
       if (isInt(n) && n.p >= 0n && n.p - k.p < k.p) {
         // binomial(n, k) = binomial(n, n - k)
         return evalBinomial(n, R(n.p - k.p));
@@ -184,12 +192,14 @@ function evalHarmonic(n: Expr, m: Expr = S.One): Expr | undefined {
     if (isInt(m) && m.p > 1n) return fnN('zeta', m);
     if (isNegative(m) === true) return S.NaN;
     if (isPositive(add(m, -1)) === true) return fnN('zeta', m);
-    if (isNegative(add(m, -1)) === true || (isPositive(m) === false && isNegative(m) === false)) return S.Infinity;
+    // SymPy: oo for m <= 1
+    if (isPositive(add(m, -1)) === false) return S.Infinity;
     return undefined;
   }
   if (isInt(n) && !n.isNegative && isInt(m)) {
     let s: Rational = S.Zero;
-    for (let k = 1n; k <= n.p; k++) s = qAdd(s, qMul(S.One, R(1n, k ** m.p)));
+    // k**-m for m >= 0, k**|m| for a negative m (SymPy harmonic(3, -2) = 14)
+    for (let k = 1n; k <= n.p; k++) s = qAdd(s, m.p >= 0n ? R(1n, k ** m.p) : R(k ** -m.p));
     return s;
   }
   if (isInt(n) && n.isZero) return S.Zero;
@@ -620,9 +630,11 @@ function evalFloorCeil(name: 'floor' | 'ceiling', x: Expr): Expr | undefined {
   }
   if (isIntegerQ(x) === true) return x;
   if (x instanceof Add) {
-    const ints = x.args.filter((a) => isIntegerQ(a) === true);
+    // SymPy floor/ceiling.eval: integer terms and imaginary terms with an integer imaginary part come out
+    const isIntPart = (a: Expr): boolean => isIntegerQ(a) === true || (isReal(a) === false && isIntegerQ(mul(-1, S.I, a)) === true);
+    const ints = x.args.filter(isIntPart);
     if (ints.length && ints.length < x.args.length) {
-      return add(...ints, fnN(name, add(...x.args.filter((a) => isIntegerQ(a) !== true))));
+      return add(...ints, fnN(name, add(...x.args.filter((a) => !isIntPart(a)))));
     }
   }
   const v = numericComplex(x);
@@ -638,11 +650,13 @@ function evalFloorCeil(name: 'floor' | 'ceiling', x: Expr): Expr | undefined {
 function evalAtan2(y: Expr, x: Expr): Expr | undefined {
   const yv = numericReal(y);
   const xv = numericReal(x);
-  if (y instanceof Rational && y.isZero) {
+  // a zero Float counts as zero (SymPy atan2(1, 0.0) = pi/2)
+  const isZeroNum = (e: Expr): boolean => isNum(e) && e.isZero;
+  if (isZeroNum(y)) {
     if (isPositive(x) === true) return S.Zero;
     if (isNegative(x) === true) return S.Pi;
   }
-  if (x instanceof Rational && x.isZero) {
+  if (isZeroNum(x)) {
     if (isPositive(y) === true) return mul(S.Half, S.Pi);
     if (isNegative(y) === true) return mul(S.NegHalf, S.Pi);
   }
@@ -689,7 +703,8 @@ function evalMinMax(name: 'Min' | 'Max', ...args: Expr[]): Expr | undefined {
       bv = nv;
     }
   }
-  const rest = collapseMinMax(name, [...(best ? [best] : []), ...uniq(syms)]);
+  // SymPy keeps the arguments of Min/Max in sort_key order
+  const rest = collapseMinMax(name, [...(best ? [best] : []), ...uniq(syms)]).sort((u, v) => compareKeys(sortKey(u), sortKey(v)));
   if (rest.length === 1) return rest[0];
   if (rest.length === flat.length && flat.length === args.length && rest.every((r, i) => r === args[i])) return undefined;
   return new Fn(name, rest);
@@ -841,16 +856,14 @@ function erfReal(x: number): number {
 /** erfc(x) for x > 0 by continued fraction (Lentz). */
 function erfcPos(x: number): number {
   if (x < 2.5) return 1 - erfReal(x);
+  // every partial numerator a and x are positive, so D and Cc stay positive (no zero guard needed)
   let f = x;
   let Cc = x;
   let D = 0;
-  const tiny = 1e-300;
   for (let n = 1; n < 500; n++) {
     const a = n / 2;
     D = x + a * D;
-    D = D === 0 ? tiny : D;
     Cc = x + a / Cc;
-    Cc = Cc === 0 ? tiny : Cc;
     D = 1 / D;
     const delta = Cc * D;
     f *= delta;

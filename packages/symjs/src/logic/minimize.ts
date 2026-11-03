@@ -41,25 +41,15 @@ type Term = number[];
 /** A minterm given as an integer, a list of bits, or a partial assignment of the variables. */
 export type TermSpec = number | readonly number[] | ReadonlyMap<Expr, number>;
 
-const sameTerm = (a: Term, b: Term): boolean => a.length === b.length && a.every((x, i) => x === b[i]);
-const includesTerm = (xs: readonly Term[], t: Term): boolean => xs.some((x) => sameTerm(x, t));
-
-/** SymPy _check_pair: the index where two terms differ when they differ in exactly one position, else -1. */
-function checkPair(t1: Term, t2: Term): number {
-  let index = -1;
-  for (let x = 0; x < t1.length; x++) {
-    if (t1[x] !== t2[x]) {
-      if (index === -1) index = x;
-      else return -1;
-    }
-  }
-  return index;
-}
+/** A string key of a term, for sets of terms. */
+const termKey = (t: Term): string => t.join('');
+const termKeys = (xs: readonly Term[]): Set<string> => new Set(xs.map(termKey));
 
 /** SymPy _simplified_pairs: merge terms differing in one bit until no more merges are possible. */
 function simplifiedPairs(terms: readonly Term[]): Term[] {
   if (!terms.length) return [];
   let simplified: Term[] = [];
+  const seen = new Set<string>();
   const todo: (number | null)[] = terms.map((_, i) => i);
   const termdict = new Map<number, number[]>();
   terms.forEach((t, n) => {
@@ -67,15 +57,33 @@ function simplifiedPairs(terms: readonly Term[]): Term[] {
     termdict.set(ones, [...(termdict.get(ones) ?? []), n]);
   });
   const nvars = at(terms, 0).length;
+  // the terms of each group by key: a term of group k+1 pairs with a term of group k
+  // when it equals that term with one non-1 entry set to 1 (SymPy compares every pair)
+  const byKey = new Map<string, number[]>();
+  terms.forEach((t, n) => {
+    const key = termKey(t);
+    byKey.set(key, [...(byKey.get(key) ?? []), n]);
+  });
   for (let k = 0; k < nvars; k++) {
     for (const i of termdict.get(k) ?? []) {
-      for (const j of termdict.get(k + 1) ?? []) {
-        const index = checkPair(at(terms, i), at(terms, j));
-        if (index !== -1) {
-          todo[i] = todo[j] = null;
-          const newterm = [...at(terms, i)];
-          newterm[index] = 3;
-          if (!includesTerm(simplified, newterm)) simplified.push(newterm);
+      const ti = at(terms, i);
+      const partners: [number, number][] = [];
+      ti.forEach((v, index) => {
+        if (v === 1) return;
+        const t = [...ti];
+        t[index] = 1;
+        for (const j of byKey.get(termKey(t)) ?? []) partners.push([j, index]);
+      });
+      // in the order SymPy visits them (increasing j)
+      partners.sort((a, b) => a[0] - b[0]);
+      for (const [j, index] of partners) {
+        todo[i] = todo[j] = null;
+        const newterm = [...ti];
+        newterm[index] = 3;
+        const key = termKey(newterm);
+        if (!seen.has(key)) {
+          seen.add(key);
+          simplified.push(newterm);
         }
       }
     }
@@ -213,7 +221,8 @@ function prepare(variables: readonly BoolLike[], minterms: readonly TermSpec[], 
   const vars = variables.map(toBool);
   const mins = inputToBinlist(minterms, vars);
   const dcs = inputToBinlist(dontcares, vars);
-  for (const d of dcs) if (includesTerm(mins, d)) throw new RangeError(`[${d.join(', ')}] in minterms is also in dontcares`);
+  const minKeys = termKeys(mins);
+  for (const d of dcs) if (minKeys.has(termKey(d))) throw new RangeError(`[${d.join(', ')}] in minterms is also in dontcares`);
   return [vars, mins, dcs];
 }
 
@@ -224,9 +233,10 @@ function sopForm(vars: readonly Expr[], minterms: readonly Term[], dontcares: re
 
 function posForm(vars: readonly Expr[], minterms: readonly Term[], dontcares: readonly Term[]): Expr {
   const maxterms: Term[] = [];
+  const taken = termKeys([...minterms, ...dontcares]);
   for (let k = 0; k < 2 ** vars.length; k++) {
     const t = integerToTerm(k, vars.length);
-    if (!includesTerm(minterms, t) && !includesTerm(dontcares, t)) maxterms.push(t);
+    if (!taken.has(termKey(t))) maxterms.push(t);
   }
   const essential = remRedundancy(simplifiedPairs([...maxterms, ...dontcares]), maxterms);
   return andFn(...essential.map((t) => toVarsPOS(t, vars)));
@@ -383,7 +393,8 @@ export function simplifyLogic(
   let dctable: Term[] = [];
   if (dc) {
     dctable = truthRows(vs, dc, c);
-    table = table.filter((t) => !includesTerm(dctable, t));
+    const dcKeys = termKeys(dctable);
+    table = table.filter((t) => !dcKeys.has(termKey(t)));
   }
   const big = table.length >= 2 ** (allVars.length - 1);
   const result = f === 'dnf' || (f === null && big) ? sopForm(allVars, table, dctable) : posForm(allVars, table, dctable);
@@ -397,7 +408,8 @@ function truthRows(vars: readonly Expr[], e: Expr, c: readonly number[]): Term[]
     const t = integerToTerm(k, vars.length);
     if (evalBool(e, new Map(vars.map((v, i) => [v.key, t[i] === 1] as const)))) out.push([...c, ...t]);
   }
-  return out.length === 1 && at(out, 0).length === 0 ? [] : out;
+  // a boolean function has a predicate, so no row is empty (SymPy checks for [[]])
+  return out;
 }
 
 /** Options of toCnf and toDnf. */
@@ -467,10 +479,9 @@ function finger(eq: Expr): Map<string, Expr[]> {
   const inv = new Map<string, Expr[]>();
   for (const s of ordered(syms)) {
     const [a, b, c, dd, m] = getOrThrow(d, s.key);
-    const triples = [...m]
-      .map(([k, n]) => [...k.split(',').map(Number), n])
-      .sort((x, y) => at(x, 0) - at(y, 0) || at(x, 1) - at(y, 1) || at(x, 2) - at(y, 2));
-    const key = JSON.stringify([a, b, c, dd, triples]);
+    // the (number of arguments, number of negations) counts in a canonical order
+    const counts = [...m].map(([k, n]) => `${k},${n}`).sort();
+    const key = JSON.stringify([a, b, c, dd, counts]);
     inv.set(key, [...(inv.get(key) ?? []), s]);
   }
   return inv;

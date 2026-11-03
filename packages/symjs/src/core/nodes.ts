@@ -219,7 +219,6 @@ export interface Impl {
   ordered?(xs: readonly Expr[]): Expr[];
   expandFunc?(e: Expr): Expr;
   expandComplex?(e: Expr): Expr;
-  exp?(e: Expr): Expr;
   polyReduce?(f: Expr, g: Expr, gens: readonly Expr[]): [Expr, Expr];
   gcdTermsOf?(terms: readonly Expr[]): Expr;
   cos?(e: Expr): Expr;
@@ -721,9 +720,6 @@ export class Special extends Expr {
     return `%${this.name}`;
   }
 }
-
-export const isSpecial = (e: Expr, name?: SpecialName): e is Special =>
-  e instanceof Special && (name === undefined || e.name === name);
 
 /** Boolean constant (SymPy `true` / `false`). */
 export class BoolAtom extends Expr {

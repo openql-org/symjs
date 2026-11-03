@@ -87,12 +87,11 @@ export function extractBranchFactor(eIn: ExprLike, allowHalf = false): [Expr, Ex
       c = S.Zero;
     }
   } else {
-    // an irrational real number: its ceiling numerically (a rational number would be exact)
+    // an irrational or complex number: its ceiling numerically, part by part like SymPy's
+    // ceiling (a rational number would be exact)
     const v = coeff.toComplex();
-    if (v.im !== 0 || !Number.isFinite(v.re)) return [e, S.Zero];
-    const ceil = Math.ceil(v.re / 2 - 0.5);
-    n = Rational.of(ceil);
-    c = add(coeff, -2 * ceil);
+    n = add(Rational.of(BigInt(Math.ceil(v.re / 2 - 0.5))), mul(Rational.of(BigInt(Math.ceil(v.im / 2))), S.I));
+    c = add(coeff, mul(-2, n));
   }
   const newexp = add(mul(ipi(), add(c, ...tail)), ...extras);
   if (!(newexp instanceof Rational && newexp.isZero)) res = mul(res, expPolar(newexp));
@@ -165,8 +164,9 @@ const evalPrincipalBranch = (x: Expr, period: Expr): Expr | undefined => {
     else others.push(y);
   }
   const a = periodicArgument(c, period);
+  // c has no free symbols apart from positive factors, which periodic_argument drops, so an
+  // evaluated a is a number
   if (isFnN(a, 'periodic_argument')) return undefined;
-  if (a.freeSymbols().size) return undefined;
   const ub = unbranchedArgument(c);
   const absC = abs(unpolarify(c));
   if (ub.key !== a.key || (a instanceof Rational && a.isZero && others.length && !(c instanceof Rational && c.isOne))) {
@@ -276,8 +276,8 @@ evaluators.expint = (nu, z) => {
   if (r !== undefined) return unpolarify(r);
   const [nz, n] = extractBranchFactor(z);
   if (n instanceof Rational && n.isZero) return undefined;
+  // an integer nu <= 0 is evaluated by base.expint (z**(nu - 1)*uppergamma(1 - nu, z))
   if (nu instanceof Rational && nu.isInteger) {
-    if (!nu.isPositive) return undefined;
     return add(
       expint(nu, nz),
       mul(-2, S.Pi, S.I, n, pow(-1, add(nu, -1)), pow(factorial(add(nu, -1)), -1), pow(unpolarify(nz), add(nu, -1))),

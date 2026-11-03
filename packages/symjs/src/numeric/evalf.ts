@@ -27,6 +27,7 @@ import {
   Rel,
   Special,
   Sym,
+  UndefFn,
   impl,
 } from '../core/nodes';
 import { at } from '../core/guard';
@@ -249,7 +250,8 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
         // not numerically evaluable: fall through to the arguments
       }
     }
-    if (x.args.length === 0) return x;
+    // SymPy: an undefined function keeps its arguments exact (f(1).evalf() == f(1))
+    if (x.args.length === 0 || x instanceof UndefFn) return x;
     // keep integer exponents exact (SymPy: (x**2).evalf() == x**2)
     if (x instanceof Pow && x.exp instanceof Rational && x.exp.isInteger) return rebuild(x, [go(x.base), x.exp]);
     if (x instanceof Mul && x.args[0] instanceof Rational && x.args[0].p === -1n && x.args[0].q === 1n) {

@@ -8,8 +8,11 @@
  */
 
 import type { Expr, ExprLike } from './nodes';
-import { ExtensionExpr, Float } from './nodes';
+import { Dummy, ExtensionExpr, Float, Sym, UndefFn } from './nodes';
 import { add, mul, sympify } from './ops';
+import { derivative } from './undef';
+import { SubsNode } from './subsnode';
+import { at } from './guard';
 
 /** The behaviour of a function defined with defineFunction. *
  * @experimental May change in a minor release.
@@ -63,12 +66,23 @@ export class DefinedFunctionCall extends ExtensionExpr {
     return applyDefined(this.name, this.definition, args);
   }
   override printLatex(print: (e: Expr) => string): string {
-    return this.definition.latex ? this.definition.latex(this.args.map(print)) : super.printLatex(print);
+    // by default like an undefined function of the same name (SymPy \operatorname{name}{\left(x \right)})
+    return this.definition.latex ? this.definition.latex(this.args.map(print)) : print(new UndefFn(this.name, this.args));
   }
-  override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
-    const fdiff = this.definition.fdiff;
-    if (!fdiff) return undefined;
+  override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr {
+    const fdiff = this.definition.fdiff ?? ((args: readonly Expr[], i: number) => this.defaultPartial(args, i));
     return add(...this.args.map((a, i) => (a.has(x) ? mul(sympify(fdiff(this.args, i)), d(a, x)) : 0)));
+  }
+  /**
+   * SymPy Function.fdiff without a definition: Derivative(f(x), x) for a symbol that
+   * no other argument contains, Derivative(f(g(x)), g(x)) for a function g(x), else
+   * Subs(Derivative(f(xi), xi), xi, a).
+   */
+  private defaultPartial(args: readonly Expr[], i: number): Expr {
+    const a = at(args, i);
+    if (a instanceof UndefFn || (a instanceof Sym && !args.some((v, j) => j !== i && v.has(a)))) return derivative(this, [[a, 1]]);
+    const xi = new Dummy(`xi_${i + 1}`);
+    return new SubsNode([derivative(this.withArgs(args.map((b, j) => (j === i ? xi : b))), [[xi, 1]]), xi, a]);
   }
   override rewriteSelf(target: string, args: readonly Expr[]): Expr | undefined {
     const r = this.definition.rewrite?.[target]?.(...args);

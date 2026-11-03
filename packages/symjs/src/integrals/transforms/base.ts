@@ -7,15 +7,14 @@
  * _simplify and the helpers used by every transform).
  */
 
-import type { ExprLike } from '../../core/nodes';
-import { Add, BoolAtom, Dummy, Expr, Derivative, Sym, ExtensionExpr, Integral, Mul, Pow, Rational, Rel, S, UndefFn, Wild } from '../../core/nodes';
+import { Add, BoolAtom, Dummy, Expr, Sym, ExtensionExpr, Mul, Pow, Rel, S, UndefFn, Wild } from '../../core/nodes';
 import { Max } from '../../functions/special';
 import { diff } from '../../calculus/diff';
 import { BoolOp } from '../../core/boolalg';
 import { isNegative, isNonNegative, isNonZero, isPositive, isZero } from '../../core/assumptions';
 import { NotImplementedError } from '../../core/errors';
-import { at, cast } from '../../core/guard';
-import { add, mul, sub, sympify } from '../../core/ops';
+import { at, cast, getOrThrow } from '../../core/guard';
+import { add, mul, sub } from '../../core/ops';
 import { asCoeffMul, isPolynomial } from '../../core/methods';
 import { Poly } from '../../polys/sympoly';
 import { match } from '../../core/match';
@@ -24,7 +23,6 @@ import { mapBottomUp, some, xreplace } from '../../core/traverse';
 import { derivative } from '../../core/undef';
 import { expandMul } from '../../simplify/expand';
 import { simplify as simplifyExpr } from '../../simplify/simplify';
-import { powdenest } from '../../simplify/powsimp';
 
 /**
  * A transform could not be computed (SymPy IntegralTransformError). Raised
@@ -70,8 +68,6 @@ export const addArgs = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args 
 /** The factors of a product. */
 export const mulArgs = (e: Expr): readonly Expr[] => (e instanceof Mul ? e.args : [e]);
 
-/** True when e is SymPy's true. */
-export const isTrueExpr = (e: Expr): boolean => e.key === S.true.key;
 /** True when e is SymPy's false. */
 export const isFalseExpr = (e: Expr): boolean => e.key === S.false.key;
 
@@ -92,29 +88,6 @@ export function decide(c: Expr): boolean | undefined {
   if (!(c instanceof Rel)) return undefined;
   const d = sub(c.lhs, c.rhs);
   if (d.key === S.NaN.key || d.key === S.ComplexInfinity.key) return undefined;
-  if (d.freeSymbols().size === 0 && d.isNumber) {
-    let v: { re: number; im: number };
-    try {
-      v = d.toComplex();
-    } catch {
-      return undefined;
-    }
-    if (Number.isNaN(v.re) || Number.isNaN(v.im)) return undefined;
-    if (c.op === 'Eq') return v.re === 0 && v.im === 0 ? true : Math.abs(v.re) + Math.abs(v.im) > 1e-12 ? false : undefined;
-    if (c.op === 'Ne') return v.re === 0 && v.im === 0 ? false : Math.abs(v.re) + Math.abs(v.im) > 1e-12 ? true : undefined;
-    if (Math.abs(v.im) > 1e-12) return undefined;
-    const x = v.re;
-    switch (c.op) {
-      case 'Lt':
-        return x < 0;
-      case 'Le':
-        return x <= 0;
-      case 'Gt':
-        return x > 0;
-      case 'Ge':
-        return x >= 0;
-    }
-  }
   const neg = isNegative(d);
   const pos = isPositive(d);
   const zero = c.lhs.key === c.rhs.key ? true : isZero(d);
@@ -151,9 +124,7 @@ export function matchByName(e: Expr, pattern: Expr): Map<string, Expr> | undefin
 
 /** Get a matched value (the pattern guarantees its presence). */
 export function mget(m: ReadonlyMap<string, Expr>, name: string): Expr {
-  const v = m.get(name);
-  if (v === undefined) throw new RangeError(`missing match for ${name}`);
-  return v;
+  return getOrThrow(m, name);
 }
 
 /** True when e is a polynomial in x (nodes depending on x other than powers are not). */
@@ -165,11 +136,8 @@ export function isPolyIn(e: Expr, x: Expr): boolean {
 /** The coefficients of a polynomial in x, highest first, or undefined. */
 export function polyCoeffs(e: Expr, x: Expr): Expr[] | undefined {
   if (!isPolyIn(e, x)) return undefined;
-  try {
-    return Poly.from(e, [x]).allCoeffs();
-  } catch {
-    return undefined;
-  }
+  // a polynomial in x with coefficients free of x: Poly.from accepts it
+  return Poly.from(e, [x]).allCoeffs();
 }
 
 /** p + q for convergence abscissas, keeping -oo and oo (SymPy -oo + re(a) is -oo). */
@@ -183,7 +151,8 @@ export function maxPlane(planes: readonly Expr[]): Expr {
   const uniq: Expr[] = [];
   for (const p of planes) if (!uniq.some((q) => q.key === p.key)) uniq.push(p);
   const kept = uniq.filter((p, i) => !uniq.some((q, j) => j !== i && (p.key === S.NegativeInfinity.key || decide(new Rel('Ge', q, p)) === true) && !(decide(new Rel('Ge', p, q)) === true && j > i)));
-  return Max(...(kept.length ? kept : uniq));
+  // the first of the greatest planes is never dominated, so kept is not empty
+  return Max(...kept);
 }
 
 /**
@@ -191,7 +160,7 @@ export function maxPlane(planes: readonly Expr[]): Expr {
  * transform depending on x is differentiated as an unknown function
  * (Derivative(LaplaceTransform(f(t), t, s), (s, 2))).
  */
-export function diffTransforms(e: Expr, x: Expr, n: Expr | number): Expr {
+export function diffTransforms(e: Expr, x: Expr, n: number): Expr {
   const reps: [Expr, Expr][] = [];
   let i = 0;
   const masked = mapBottomUp(e, (node) => {
@@ -202,29 +171,13 @@ export function diffTransforms(e: Expr, x: Expr, n: Expr | number): Expr {
     }
     return node;
   });
-  let r: Expr;
-  if (typeof n === 'number' || n instanceof Rational) {
-    const k = typeof n === 'number' ? n : Number(n.p);
-    r = masked;
-    for (let j = 0; j < k; j++) r = diff(r, x);
-  } else {
-    // symbolic order: Derivative(e, (x, n))
-    return new Derivative([e, x, n]);
-  }
+  let r = masked;
+  for (let j = 0; j < n; j++) r = diff(r, x);
   return xreplace(r, reps);
 }
 
 /** True when an undefined function applied to an expression containing x occurs in e. */
 export const hasUndefOf = (e: Expr, x: Expr): boolean => some(e, (n) => n instanceof UndefFn && n.has(x));
-
-/** True when an unevaluated integral occurs in e. */
-export const hasIntegral = (e: Expr): boolean => some(e, (n) => n instanceof Integral);
-
-/** SymPy transforms._simplify: simplify(powdenest(expr)) when doit is true. */
-export function simplifyTransform(expr: Expr, doit: boolean): Expr {
-  if (!doit) return expr;
-  return simplifyExpr(powdenest(expr));
-}
 
 /**
  * Base class of the unevaluated integral transforms (SymPy
@@ -267,7 +220,8 @@ export abstract class IntegralTransform extends ExtensionExpr {
   }
   override printLatex(print: (e: Expr) => string): string {
     const name = this.latexName;
-    if (name === undefined) return super.printLatex(print);
+    // SymPy's _print_Function form for the transforms without a symbol of their own
+    if (name === undefined) return `\\operatorname{${this.name}}{\\left(${this.args.map(print).join(',')} \\right)}`;
     return `${name}_{${print(this.functionVariable)}}\\left[${print(this.function)}\\right]\\left(${print(this.transformVariable)}\\right)`;
   }
   override rewriteSelf(target: string): Expr | undefined {
@@ -320,9 +274,10 @@ export abstract class GenericIntegralTransform extends IntegralTransform {
       const extra: (readonly (Expr | readonly [Expr, Expr])[])[] = [];
       const ress: Expr[] = [];
       for (const r of res) {
+        // a tuple always carries its conditions after the transform
         if (isTransformTuple(r)) {
           ress.push(r[0]);
-          if (r.length >= 2) extra.push(r.slice(1));
+          extra.push(r.slice(1));
         } else ress.push(r);
       }
       const sum = simplify ? simplifyExpr(add(...ress)) : add(...ress);
@@ -341,8 +296,7 @@ export abstract class GenericIntegralTransform extends IntegralTransform {
   }
 
   private withFunctionDoit(term: Expr, hints: TransformHints): TransformResult {
-    const t = this.withFunction(term);
-    return t instanceof IntegralTransform ? t.doit(hints) : t;
+    return this.withFunction(term).doit(hints);
   }
 }
 
@@ -369,6 +323,3 @@ export function mapTransformResult(r: TransformResult, f: (e: Expr) => Expr): Tr
   const [head, ...rest] = r;
   return [f(head), ...rest.map((x): Expr | readonly [Expr, Expr] => (x instanceof Expr ? f(x) : [f(x[0]), f(x[1])]))];
 }
-
-/** sympify for transform arguments. */
-export const toExpr = (e: ExprLike): Expr => sympify(e);

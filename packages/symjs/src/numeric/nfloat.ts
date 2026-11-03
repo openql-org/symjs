@@ -88,8 +88,12 @@ function floats(e: Expr): Float[] {
 
 
 
-/** Simplest rational within a relative tolerance of v (continued fractions). */
-function simpleRational(v: number, rtol: number): Rational | undefined {
+/**
+ * @internal Simplest rational within a relative tolerance of v (continued
+ * fractions), or undefined when none of the first 40 convergents of the
+ * double is within it.
+ */
+export function simpleRational(v: number, rtol: number): Rational | undefined {
   if (!Number.isFinite(v)) return undefined;
   const sign = v < 0 ? -1n : 1n;
   let x = Math.abs(v);
@@ -133,15 +137,14 @@ export function nsimplify(
       const lim = BigInt(Math.ceil(1 / opts.tolerance));
       return limitDenominatorR(f, lim);
     }
-    const r = simpleRational(f.value, 1e-14);
-    return r ?? f;
+    return simpleRationalOr(f.value, 1e-14, f);
   };
   // a lone Float with a tolerance is identified like any number (SymPy mpmath.identify)
   if (e instanceof Float && (opts.rational || opts.tolerance === undefined)) return conv(e);
   if (!opts.rational && e.freeSymbols().size === 0 && !(e instanceof Rational) && opts.tolerance !== undefined) {
     // rational approximation of a constant, e.g. nsimplify(pi, tolerance=0.01) = 22/7
     // the simplest fraction within the tolerance (continued-fraction convergents)
-    return simpleRational(e.toNumber(), opts.tolerance) ?? e;
+    return simpleRationalOr(e.toNumber(), opts.tolerance, e);
   }
   const go = (x: Expr): Expr => {
     if (x instanceof Float) return conv(x);
@@ -151,6 +154,9 @@ export function nsimplify(
   };
   return go(e);
 }
+
+/** simpleRational(v, rtol), or the expression otherwise when there is none. */
+const simpleRationalOr = (v: number, rtol: number, otherwise: Expr): Expr => simpleRational(v, rtol) ?? otherwise;
 
 const hasFloat = (e: Expr): boolean => e instanceof Float || e.args.some(hasFloat);
 
@@ -200,9 +206,10 @@ function identifyReal(x: number, cs: readonly [Expr, number][]): Expr | undefine
         const disc = b * b - 4 * a * cr;
         if (disc <= 0) continue;
         const sq = Math.sqrt(disc);
-        if (Number.isInteger(sq)) continue;
         const plus = (-b + sq) / (2 * a);
         const sign = Math.abs(plus - t) < Math.abs((-b - sq) / (2 * a) - t) ? 1 : -1;
+        // a square discriminant: t is the rational root nearer to it (SymPy finds it too)
+        if (Number.isInteger(sq)) return Rational.of(BigInt(-b + sign * sq), BigInt(2 * a));
         return mul(add(-b, mul(sign, pow(Rational.of(BigInt(disc)), S.Half))), Rational.of(1, 2 * a));
       }
     }

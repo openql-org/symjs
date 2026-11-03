@@ -12,7 +12,7 @@ import { Eq } from '../core/logic';
 import { add, couldExtractMinusSign, mul, pow } from '../core/ops';
 import { freeSymbols, rebuild, subs, xreplace } from '../core/traverse';
 import { asNumerDenom } from '../core/methods';
-import { at, cast, first } from '../core/guard';
+import { at, cast, first, getOrThrow } from '../core/guard';
 import { diff } from '../calculus/diff';
 import { doit } from '../calculus/doit';
 import { termsGcd } from '../polys/sympoly';
@@ -29,6 +29,9 @@ function count(e: Expr, c: Expr): number {
   if (e.key === c.key) return 1;
   return e.args.reduce((n, a) => n + count(a, c), 0);
 }
+
+/** Order of symbols by name (SymPy sort(key=str)); the symbols compared have distinct names. */
+const byName = (a: Sym, b: Sym): number => (a.name < b.name ? -1 : 1);
 
 const isZero = (e: Expr) => e instanceof Rational && e.isZero;
 const subset = (e: Expr, Cs: readonly Sym[]) => [...freeSymbols(e)].every((s) => Cs.some((c) => c.key === s.key));
@@ -50,8 +53,9 @@ function constantSubexpressions(expr: Expr, Cs: readonly Sym[]): Expr[] {
         const x = e instanceof Add ? add(...consts) : mul(...consts);
         if (freeSymbols(x).size) out.push(x);
       }
-    } else if (e instanceof Integral) {
-      if (subset(e, Cs) && e.limits) out.push(e);
+    } else if (e instanceof Integral && !fs.size) {
+      // an integral in the constants alone was taken above; without free symbols it is definite
+      out.push(e);
     }
     e.args.forEach(walk);
   };
@@ -62,7 +66,7 @@ function constantSubexpressions(expr: Expr, Cs: readonly Sym[]): Expr[] {
 /** SymPy __remove_linear_redundancies: C1*u + C2*u -> C1*u, then the Equality normalization. */
 function removeLinearRedundancies(expr: Expr, CsIn: readonly Sym[]): Expr {
   const cnts = new Map(CsIn.map((c) => [c.key, count(expr, c)]));
-  const Cs = CsIn.filter((c) => (cnts.get(c.key) ?? 0) > 0);
+  const Cs = CsIn.filter((c) => getOrThrow(cnts, c.key) > 0);
   const isC = (e: Expr) => Cs.some((c) => c.key === e.key);
   // in a sum, constants that occur only there, linearly and with the same coefficient are one constant
   const linear = (e0: Expr): Expr => {
@@ -75,7 +79,7 @@ function removeLinearRedundancies(expr: Expr, CsIn: readonly Sym[]): Expr {
       byCoeff.set(k, [...(byCoeff.get(k) ?? []), c]);
     }
     for (const cs of byCoeff.values()) {
-      const sorted = [...cs].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+      const sorted = [...cs].sort(byName);
       for (const c of sorted.slice(1)) e = subs(e, [[c, Rational.of(0)]]);
     }
     return e;
@@ -105,13 +109,7 @@ function removeLinearRedundancies(expr: Expr, CsIn: readonly Sym[]): Expr {
 
 /** terms_gcd unless it would put exp both outside and inside a sum (SymPy _conditional_term_factoring). */
 function conditionalTermFactoring(expr: Expr): Expr {
-  const apply = (e: Expr): Expr => {
-    try {
-      return termsGcd(e, { clear: false, deep: true, expand: false });
-    } catch {
-      return e;
-    }
-  };
+  const apply = (e: Expr): Expr => termsGcd(e, { clear: false, deep: true, expand: false });
   // SymPy applies terms_gcd to the whole Equality, so the exp check below never fires for equations
   if (expr instanceof Rel) return Eq(apply(expr.lhs), apply(expr.rhs));
   const ne = apply(expr);
@@ -133,7 +131,7 @@ export function constantsimp(exprIn: Expr, Cs: readonly Sym[]): Expr {
   for (let round = 0; round < 10; round++) {
     const orig = expr;
     for (const xe of constantSubexpressions(expr, Cs)) {
-      const xes = [...freeSymbols(xe)].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+      const xes = [...freeSymbols(xe)].sort(byName);
       if (!xes.length) continue;
       if (xes.every((c) => count(expr, c) === count(xe, c))) expr = subs(expr, [[xe, first(xes)]]);
     }
@@ -187,11 +185,10 @@ export function odesimp(ode: Expr, solIn: Expr, fx: UndefFn, hint: string): Expr
   const odeSyms = [...freeSymbols(ode)];
   let sol = hint === 'nth_linear_constant_coeff_homogeneous' ? solIn : doit(solIn);
   if (hint.startsWith('nth_linear_euler_eq_nonhomogeneous') && sol instanceof Rel) sol = Eq(simplify(sol.lhs), simplify(sol.rhs));
-  if (!(sol instanceof Rel)) throw new TypeError('odesimp: an equation is expected');
   const constants = [...freeSymbols(sol)].filter((s) => !odeSyms.some((o) => o.key === s.key));
-  sol = constantsimp(sol, constants);
+  // the hint solvers return equations, which constantsimp keeps
+  const s = cast(constantsimp(cast(sol, Rel, 'solution'), constants), Rel, 'solution');
   let eqs: Expr[];
-  const s = cast(sol, Rel);
   if (s.rhs.key === fx.key && !s.lhs.has(fx)) eqs = [Eq(s.rhs, s.lhs)];
   else if (s.lhs.key === fx.key && !s.rhs.has(fx)) eqs = [s];
   else {

@@ -7,7 +7,6 @@
  * the models of a CNF given as clauses of signed variable numbers.
  */
 
-import { InvariantError } from '../core/errors';
 import { at, getOrThrow, last } from '../core/guard';
 
 /** Min-heap of [score, literal] pairs ordered like Python tuples. */
@@ -38,9 +37,9 @@ class LitHeap {
   }
   pop(): [number, number] {
     const h = this.items;
-    const top = h[0];
-    const x = h.pop();
-    if (top === undefined || x === undefined) throw new InvariantError('pop from an empty heap');
+    const top = at(h, 0);
+    const x = last(h);
+    h.pop();
     const n = h.length;
     if (n === 0) return top;
     // sift down: move the hole at the root towards the leaves, then drop x into it

@@ -36,7 +36,8 @@ function powerOf(f: Expr, p: Expr, exact: boolean): Rational | undefined {
 function derivativeOf(f: Expr, p: Expr): boolean {
   if (!(f instanceof Derivative)) return false;
   const base = p instanceof Derivative ? p.expr : p;
-  return f.expr.key === base.key && (base instanceof UndefFn || base.kind === 'Undef');
+  // (only an applied undefined function has kind 'Undef')
+  return f.expr.key === base.key && base instanceof UndefFn;
 }
 
 /** [matched part (a power of p or a derivative of it), remaining coefficient]. */

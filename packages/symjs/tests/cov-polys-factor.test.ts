@@ -125,7 +125,7 @@ describe('factor options', () => {
     expect(String(sj.minimalPolynomial(E('sqrt(2) + sqrt(3)'), x))).toBe('x**4 - 10*x**2 + 1');
     expect(String(sj.minimalPolynomial(E('3/4'), x))).toBe('4*x - 3');
     expect(String(sj.minimalPolynomial(E('-sqrt(2)/2'), x))).toBe('2*x**2 - 1');
-    expect(() => sj.minimalPolynomial(E('2**(1/3)'), x)).toThrow(sj.NotImplementedError);
+    expect(String(sj.minimalPolynomial(E('2**(1/3)'), x))).toBe('x**3 - 2');
   });
 });
 
@@ -137,9 +137,8 @@ describe('further cases', () => {
     expect(String(sj.minimalPolynomial(E('1 - sqrt(2)'), x))).toBe('x**2 - 2*x - 1');
     const s2 = [E('sqrt(2)')];
     expect(F('x**2 - a', { extension: s2 })).toBe('-a + x**2');
-    // SymPy factors over Q(2**(1/3)) and with sin(x) as a generator:
-    // (x - 2**(1/3))*(x**2 + 2**(1/3)*x + 2**(2/3)) and (sin(x) - sqrt(2))*(sin(x) + sqrt(2))
-    expect(F('x**3 - 2', { extension: [E('2**(1/3)')] })).toBe('x**3 - 2');
+    expect(F('x**3 - 2', { extension: [E('2**(1/3)')] })).toBe('(x - 2**(1/3))*(x**2 + 2**(1/3)*x + 2**(2/3))');
+    // SymPy factors with sin(x) as a generator: (sin(x) - sqrt(2))*(sin(x) + sqrt(2))
     expect(F('sin(x)**2 - 2', { extension: s2 })).toBe('sin(x)**2 - 2');
     // SymPy splits exp(x + y) into exp(x)*exp(y)
     expect(F('exp(x + y)*(x**2 - 1)', { deep: true })).toBe('(x - 1)*(x + 1)*exp(x + y)');

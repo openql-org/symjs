@@ -14,7 +14,7 @@ import { expandMul } from '../simplify/expand';
 import { mapBottomUp, xreplace as subs } from '../core/traverse';
 import { log, sin } from '../functions/elementary';
 import { Expander } from './puiseux';
-import { first, getOrThrow } from '../core/guard';
+import { at, first, getOrThrow } from '../core/guard';
 
 /** Array.isArray does not narrow a readonly array union. */
 const isSymList = (v: Sym | readonly Sym[] | undefined): v is readonly Sym[] => Array.isArray(v);
@@ -36,8 +36,9 @@ export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): E
     // leading behaviour at infinity: substitute x = 1/t, t -> 0+
     try {
       const t = new Sym('_o', { positive: true });
+      // (the coefficients of an expansion are free of t)
       const lead = new Expander(t).leading(subs(e, [[v, pow(t, -1)]]));
-      if (!lead.c.has(t)) return new Order([pow(v, neg(lead.e)), v, p]);
+      return new Order([pow(v, neg(lead.e)), v, p]);
     } catch {
       // keep the expression as given
     }
@@ -49,10 +50,7 @@ export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): E
   try {
     const t = new Sym('_o');
     const lead = new Expander(t).leading(subs(e, [[v, add(p, t)]]));
-    if (!lead.c.has(t)) {
-      const base = atZero ? v : add(v, mul(-1, p));
-      reduced = pow(base, lead.e);
-    }
+    reduced = pow(atZero ? v : add(v, mul(-1, p)), lead.e);
   } catch {
     // keep the expression as given
   }
@@ -60,33 +58,38 @@ export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): E
 }
 
 function sortSyms(xs: Sym[]): Sym[] {
-  return [...xs].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  return [...xs].sort((a, b) => Number(a.name > b.name) - Number(a.name < b.name));
 }
 
 /**
- * Order term in several variables at 0 or oo: the terms of lowest (at 0) or
- * highest (at oo) total degree, without their coefficients (SymPy Order).
+ * Order term in several variables at 0 or oo: the monomials that no other one
+ * dominates (has exponents at most, at 0, or at least, at oo, in every variable),
+ * without their coefficients (SymPy Order: O(x**3 + y, x, y), O(x*y + x**2*y**2, x, y) = O(x*y)).
  */
 function orderMulti(e: Expr, vars: readonly Sym[], p: Expr): Expr {
   const atZero = p instanceof Rational && p.isZero;
   const atOo = p instanceof Special && p.name === 'oo';
   let reduced = e;
   if (atZero || atOo) {
-    const terms = expandMul(e) instanceof Add ? expandMul(e).args : [expandMul(e)];
-    const deg = (t: Expr): number | undefined => {
-      let d = 0;
+    const ex = expandMul(e);
+    const terms = ex instanceof Add ? ex.args : [ex];
+    /** The exponents of the variables in a monomial (undefined if a variable is inside a function). */
+    const degs = (t: Expr): number[] | undefined => {
+      const d = vars.map(() => 0);
       for (const f of t instanceof Mul ? t.args : [t]) {
-        if (vars.some((v) => v.key === f.key)) d += 1;
-        else if (f instanceof Pow && vars.some((v) => v.key === f.base.key) && f.exp instanceof Rational) d += f.exp.value;
-        else if (f.freeSymbols().size && [...f.freeSymbols()].some((s) => vars.some((v) => v.key === s.key))) return undefined;
+        const [base, k] = f instanceof Pow && f.exp instanceof Rational ? [f.base, f.exp.value] : [f, 1];
+        const i = vars.findIndex((v) => v.key === base.key);
+        if (i >= 0) d[i] = at(d, i) + k;
+        else if ([...f.freeSymbols()].some((s) => vars.some((v) => v.key === s.key))) return undefined;
       }
       return d;
     };
-    const ds = terms.map(deg);
+    const ds = terms.map(degs);
     if (ds.every((d) => d !== undefined)) {
-      const target = atZero ? Math.min(...(ds)) : Math.max(...(ds));
-      const strip = (t: Expr) => mul(...(t instanceof Mul ? t.args : [t]).filter((f) => !(f instanceof Rational || f.freeSymbols().size === 0)));
-      reduced = add(...terms.filter((_, i) => ds[i] === target).map(strip));
+      // a dominates b near the point when a is larger there: smaller exponents at 0, larger at oo
+      const dominates = (a: number[], b: number[]) => a.some((u, i) => u !== at(b, i)) && a.every((u, i) => (atZero ? u <= at(b, i) : u >= at(b, i)));
+      const strip = (t: Expr) => mul(...(t instanceof Mul ? t.args : [t]).filter((f) => f.freeSymbols().size !== 0));
+      reduced = add(...terms.filter((_, i) => !ds.some((o) => dominates(o, at(ds, i)))).map(strip));
     }
   }
   return new Order([reduced, ...vars, p]);
@@ -109,9 +112,10 @@ function seriesAtInfinity(e: Expr, x: Sym, sign: 1 | -1, n: number): Expr {
   let order: Expr | undefined;
   for (const u of terms) {
     if (u instanceof Order) {
+      // the Order of a series in t is O(t**k) (O(t) or O(1) for k = 1 or 0); at -oo it is written in -1/x (SymPy)
       const lead = first(u.args);
-      const k = lead instanceof Pow && lead.base.key === t.key ? lead.exp : lead.key === t.key ? S.One : undefined;
-      order = k === undefined ? undefined : new Order([pow(x, neg(k)), x, sign === 1 ? S.Infinity : S.NegativeInfinity]);
+      const k = lead instanceof Pow ? lead.exp : lead.key === t.key ? S.One : S.Zero;
+      order = new Order([pow(mul(sign, pow(x, -1)), k), x, sign === 1 ? S.Infinity : S.NegativeInfinity]);
     } else out.push(back(u));
   }
   if (!order) return add(...out);
@@ -155,7 +159,9 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
   const ex0 = new Expander(t);
   // from the left: x = x0 - t with t -> 0+, written in powers of (x0 - x)
   const shifted = subs(e, [[x, dir === '-' ? add(x0, mul(-1, t)) : add(x0, t)]]);
-  const ps = ex0.ser(shifted, Rational.of(n));
+  if (n < 0) throw new RangeError('series: the order n must be nonnegative');
+  // (expanded to at least the order 1 and then truncated: series(sin(x), x, 0, 0) = O(1))
+  const ps = ex0.ser(shifted, Rational.of(Math.max(n, 1))).truncate(Rational.of(n));
   const base = dir === '-' ? add(x0, mul(-1, x)) : x0 instanceof Rational && x0.isZero ? x : add(x, mul(-1, x0));
   const back = (c: Expr) => subs(c, [[ex0.L, log(base)]]);
   const terms = ps.terms.map((term) => mul(back(term.c), pow(base, term.e)));
@@ -196,10 +202,18 @@ export function getn(ex: ExprLike): Expr | undefined {
   const e = sympify(ex);
   const o = (e instanceof Add ? e.args : [e]).find((a) => a instanceof Order);
   if (!o) return undefined;
+  // SymPy Order.getn: O(1) -> 0, O(x) -> 1, O(x**n) -> n, O(x**n*log(x)**m) -> |n|
   const b = first(o.args);
-  if (b instanceof Pow) return b.exp;
+  if (b instanceof Rational) return S.Zero;
   if (b instanceof Sym) return S.One;
-  return undefined;
+  if (b instanceof Pow) return b.exp;
+  if (b instanceof Mul) {
+    for (const f of b.args) {
+      if (f instanceof Sym) return S.One;
+      if (f instanceof Pow && f.base instanceof Sym && f.exp instanceof Rational) return f.exp.isNegative ? neg(f.exp) : f.exp;
+    }
+  }
+  throw new NotImplementedError(`not sure of order of ${b.toString()}`);
 }
 
 
@@ -209,7 +223,7 @@ export function extractLeadingOrder(ex: ExprLike, x: Sym): [Expr, Expr][] {
   const terms = e instanceof Add ? e.args : [e];
   const orders = terms.map((t) => leadtermExact(t, x)[1]);
   const minO = orders.reduce((m, o) => (o.value < m.value ? o : m));
-  return terms.filter((_, i) => orders[i]?.key === minO.key).map((t) => [t, new Order([t.has(x) ? t : S.One])]);
+  return terms.filter((_, i) => orders[i]?.key === minO.key).map((t) => [t, O(t, x)]);
 }
 
 /** SymPy Expr.taylor_term(n, x): the n-th term of the Maclaurin series, f^(n)(0)*x**n/n!. */
@@ -245,7 +259,8 @@ export function aseries(ex: ExprLike, x: Sym, n = 6, hir = false): Expr {
   walk(e);
   if (growing || other) return e;
   if (!rates.length) return series(e, x, S.Infinity, n);
-  const b = rates.reduce((m, r) => (Math.abs(r.toNumber()) < Math.abs(m.toNumber()) ? r : m));
+  // the slowest decay
+  const b = first([...rates].sort((r, u) => Math.abs(r.toNumber()) - Math.abs(u.toNumber())));
   const w = new Sym('_w_as', { positive: true });
   // exp(c*x) = w**(c/b)
   const replaced = mapBottomUp(e, (u) => (u instanceof Pow && u.base === S.E && u.exp.has(x) ? pow(w, mul(expandMul(mul(u.exp, pow(x, -1))), pow(b, -1))) : u));

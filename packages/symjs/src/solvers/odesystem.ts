@@ -13,6 +13,7 @@ import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Derivative, Dummy, I, Integral, Mul, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
 import { at, cast, defined, first } from '../core/guard';
+import { isReal } from '../core/assumptions';
 import { SymFunction } from '../core/undef';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
@@ -85,6 +86,9 @@ export function dsolveSystem(eqsIn: readonly ExprLike[], funcsIn?: readonly Unde
 function fundamentalSolutions(A: Matrix, t: Sym): Matrix[] {
   const n = A.rows;
   const [P, J] = jordanForm(A);
+  // a real A has its complex eigenvalues in conjugate pairs with the same Jordan
+  // structure, each pair giving two real solutions; a complex A keeps exp(lam*t)
+  const realA = A.data.every((e) => isReal(e) === true);
   const out: Matrix[] = [];
   let i = 0;
   while (i < n) {
@@ -93,7 +97,7 @@ function fundamentalSolutions(A: Matrix, t: Sym): Matrix[] {
     let k = 1;
     while (i + k < n && J.get(i + k - 1, i + k).key === S.One.key && J.get(i + k, i + k).key === lam.key) k++;
     const c = lam.toComplex();
-    const complexPair = Math.abs(c.im) > 1e-14;
+    const complexPair = realA && Math.abs(c.im) > 1e-14;
     for (let j = 0; j < k; j++) {
       // the j-th chain solution: e^(lam*t) * sum_{m<=j} t**(j-m)/(j-m)! * P_col(i+m)
       let v = Matrix.zeros(n, 1);
@@ -117,7 +121,6 @@ function fundamentalSolutions(A: Matrix, t: Sym): Matrix[] {
     }
     i += k;
   }
-  if (out.length !== n) throw new NotImplementedError('dsolve: could not build the fundamental solutions');
   return out;
 }
 

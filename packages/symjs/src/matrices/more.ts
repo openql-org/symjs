@@ -84,7 +84,8 @@ export function berkowitzMinors(M: Matrix): Expr[] {
 /** SymPy _householder_vector: v (v[0] = 1) and beta with (I - beta v v^H) x = multiple of e1. */
 function householderVector(x: Matrix): [Matrix, Expr] {
   const x0 = x.get(0, 0);
-  const q = mul(x0, pow(abs(x0), -1));
+  // x0 / |x0| (SymPy's NaN for x0 = 0 fails the comparison below: any unit q works, take 1)
+  const q = isZeroExpr(x0) ? S.One : mul(x0, pow(abs(x0), -1));
   const nx = norm(x);
   const vPlus = x.with(0, 0, add(x0, mul(q, nx)));
   const vMinus = x.with(0, 0, sub(x0, mul(q, nx)));
@@ -258,10 +259,8 @@ export function luDecompositionFF(M: Matrix): [Matrix, Matrix, Matrix, Matrix] {
 // ---------------------------------------------------------------------------
 
 type Q = [bigint, bigint];
-const qn = (pIn: bigint, qIn = 1n): Q => {
-  let p = pIn;
-  let q = qIn;
-  if (q < 0n) [p, q] = [-p, -q];
+/** p/q in lowest terms; q > 0 (the denominators are products of positive ones, and qdiv divides by squared norms only). */
+const qn = (p: bigint, q = 1n): Q => {
   const g = gcdBig(p < 0n ? -p : p, q);
   return g > 1n ? [p / g, q / g] : [p, q];
 };
@@ -269,7 +268,8 @@ function gcdBig(aIn: bigint, bIn: bigint): bigint {
   let a = aIn;
   let b = bIn;
   while (b) [a, b] = [b, a % b];
-  return a || 1n;
+  // b starts as a denominator (positive), so a >= 1
+  return a;
 }
 const qadd = (a: Q, b: Q): Q => qn(a[0] * b[1] + b[0] * a[1], a[1] * b[1]);
 const qsub = (a: Q, b: Q): Q => qn(a[0] * b[1] - b[0] * a[1], a[1] * b[1]);
@@ -405,11 +405,12 @@ function elementary(M: Matrix, o: ElementaryOp, onCols: boolean): Matrix {
   const A = onCols ? M.T : M;
   const op = o.op ?? 'n->kn';
   const len = A.rows;
+  const kind = onCols ? 'col' : 'row';
+  // SymPy accepts no negative indices: "This matrix does not have a row '-1'"
   const norm1 = (i: number | undefined, what: string): number => {
     if (i === undefined) throw new TypeError(`${what} must be given`);
-    const j = i < 0 ? i + len : i;
-    if (j < 0 || j >= len) throw new RangeError(`index ${i} out of range`);
-    return j;
+    if (i < 0 || i >= len) throw new RangeError(`This matrix does not have a ${kind} '${i}'`);
+    return i;
   };
   let R: Matrix;
   if (op === 'n->kn') {
@@ -419,10 +420,12 @@ function elementary(M: Matrix, o: ElementaryOp, onCols: boolean): Matrix {
   } else if (op === 'n<->m') {
     const r1 = norm1(o.index1 ?? o.index, 'index1');
     const r2 = norm1(o.index2, 'index2');
+    if (r1 === r2) throw new RangeError(`For a ${kind} operation 'n<->m' you must provide two different ${kind}s`);
     R = Matrix.fromFunction(A.rows, A.cols, (i, j) => A.get(i === r1 ? r2 : i === r2 ? r1 : i, j));
   } else {
     const r = norm1(o.index ?? o.index1, 'index');
     const r2 = norm1(o.index2, 'index2');
+    if (r === r2) throw new RangeError(`For a ${kind} operation 'n->n+km' \`${kind}\` and \`${kind}2\` must be different.`);
     const k = sympify(o.k ?? 1);
     R = Matrix.fromFunction(A.rows, A.cols, (i, j) => (i === r ? add(A.get(i, j), mul(k, A.get(r2, j))) : A.get(i, j)));
   }

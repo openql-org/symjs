@@ -9,14 +9,14 @@
 
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, Float, Mul, Pow, Rational, S, Special, impl } from '../core/nodes';
-import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
+import { add, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from '../core/ops';
+import { ordered } from '../core/match';
 import { argsCncSplit, asContentPrimitive, asIndependent, primitive } from '../core/methods';
 import { rebuild, xreplace } from '../core/traverse';
 import { Concrete } from '../concrete/node';
 import { Dummy } from '../core/nodes';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
-import { InvariantError } from '../core/errors';
-import { at, first, getOrThrow } from '../core/guard';
+import { at, cast, first, getOrThrow } from '../core/guard';
 
 const isNumber = (e: Expr): e is Rational | Float => e instanceof Rational || e instanceof Float;
 const isOneE = (e: Expr) => e instanceof Rational && e.isOne;
@@ -104,10 +104,8 @@ class Factors {
   static of(entries: [Expr, number][]): Factors {
     const m = new Map<string, [Expr, number]>();
     for (const [b, e] of entries) {
-      const cur = m.get(b.key);
-      const ne = (cur?.[1] ?? 0) + e;
-      if (ne) m.set(b.key, [b, ne]);
-      else m.delete(b.key);
+      // (the exponents are positive, so they never cancel)
+      m.set(b.key, [b, (m.get(b.key)?.[1] ?? 0) + e]);
     }
     return new Factors(m);
   }
@@ -277,8 +275,8 @@ export function gcdTermsOf(termsList: readonly Expr[], opts: { isprimitive?: boo
     const reps: [Expr, Expr][] = [];
     const masked = termsList.map((t) => {
       if (t.isCommutative) return t;
+      // (a noncommutative product has a noncommutative factor)
       const [c, nc] = argsCncSplit(t);
-      if (!nc.length) return t;
       const d = new Dummy();
       reps.push([d, mul(...nc)]);
       return mul(...c, d);
@@ -292,7 +290,8 @@ export function gcdTermsOf(termsList: readonly Expr[], opts: { isprimitive?: boo
         const n = Rational.of(c.p);
         const d = Rational.of(c.q);
         const _numer = mul(numer, pow(d, -1));
-        if ((_numer instanceof Add ? _numer.args : [_numer]).some((a) => { const k = splitCoeff(a)[0]; return k instanceof Rational && k.isInteger; })) {
+        // (a sum times a number stays a sum: the number is distributed over the terms)
+        if (cast(_numer, Add, 'the sum over the denominator').args.some((a) => { const k = splitCoeff(a)[0]; return k instanceof Rational && k.isInteger; })) {
           numer = _numer;
           coeff = mul(n, _coeff);
         }
@@ -363,10 +362,10 @@ function factorSum(s: Concrete, doit: (e: Expr) => Expr): Expr {
 function factorsOf(e: Expr): Map<string, [Expr, Expr]> {
   const out = new Map<string, [Expr, Expr]>();
   const put = (b: Expr, x: Expr) => {
+    // (exponents never cancel: a product has one factor per base, the rational coefficient p/q
+    // only adds p and q**-1, and q**1 next to a power of q would have been merged)
     const cur = out.get(b.key);
-    const nx = cur ? add(cur[1], x) : x;
-    if (nx instanceof Rational && nx.isZero) out.delete(b.key);
-    else out.set(b.key, [b, nx]);
+    out.set(b.key, [b, cur ? add(cur[1], x) : x]);
   };
   for (const f of e instanceof Mul ? e.args : [e]) {
     if (f instanceof Rational && !f.isInteger) {
@@ -429,7 +428,7 @@ export function collectConst(exprIn: ExprLike, varsIn: readonly Expr[] = [], opt
     vars = [...set.values()];
   } else vars = varsIn.map((v) => sympify(v));
   if (!numbers) vars = vars.filter((v) => !(v instanceof Rational || v instanceof Float));
-  vars = orderedExprs(vars);
+  vars = ordered(vars);
   for (let vi = 0; vi < vars.length && expr instanceof Add; vi++) {
     const v = at(vars, vi);
     const Fv = factorsOf(v);
@@ -478,14 +477,10 @@ export function collectConst(exprIn: ExprLike, varsIn: readonly Expr[] = [], opt
 }
 
 function orderedEntries(terms: Map<string, [Expr, Expr[]]>): [Expr, Expr[]][] {
-  const ks = orderedExprs([...terms.values()].map(([k]) => k));
+  const ks = ordered([...terms.values()].map(([k]) => k));
   return ks.map((k) => getOrThrow(terms, k.key));
 }
 
-/** SymPy ordered(): node count, then the default sort key. */
-function orderedExprs(xs: Expr[]): Expr[] {
-  return impl.ordered ? impl.ordered(xs) : xs;
-}
 
 /** SymPy _unevaluated_Add: flatten, collect numbers first, keep products unevaluated. */
 export function unevaluatedAdd(argsIn: Expr[]): Expr {
@@ -502,20 +497,15 @@ export function unevaluatedAdd(argsIn: Expr[]): Expr {
   return out.length === 1 ? first(out) : new Add(out);
 }
 
-const couldNeg = (e: Expr): boolean => {
-  if (impl.couldExtractMinusSign === undefined) throw new InvariantError('impl.couldExtractMinusSign is not registered');
-  return impl.couldExtractMinusSign(e);
-};
-
 /** SymPy signsimp: write sums with a leading minus sign as -(...). */
 export function signsimp(exprIn: ExprLike, evaluate = true): Expr {
   const expr = sympify(exprIn);
   if (expr.args.length === 0) return expr;
+  // (an atom left by subPre passes through reevaluate unchanged)
   let e = subPre(expr);
-  if (e.args.length === 0) return e;
   if (e instanceof Add) {
     const rv = add(...e.args.map((a) => signsimp(a)));
-    if (!evaluate && rv instanceof Add && couldNeg(rv)) return new Mul([S.NegOne, mul(-1, rv)]);
+    if (!evaluate && rv instanceof Add && couldExtractMinusSign(rv)) return new Mul([S.NegOne, mul(-1, rv)]);
     return rv;
   }
   if (evaluate) e = reevaluate(e);
@@ -528,10 +518,8 @@ export function signsimp(exprIn: ExprLike, evaluate = true): Expr {
  */
 function subPre(e: Expr): Expr {
   if (e.args.length === 0) return e;
-  if (e instanceof Add && couldNeg(e)) {
-    const na = mul(-1, e);
-    if (!(na instanceof Mul)) return new Mul([S.NegOne, na]);
-  }
+  // (SymPy skips a sum whose negation is not a sum, e.g. a matrix sum; -1 times an Add is always distributed here)
+  if (e instanceof Add && couldExtractMinusSign(e)) return new Mul([S.NegOne, mul(-1, e)]);
   const args = e.args.map(subPre);
   return args.every((a, i) => a === e.args[i]) ? e : rebuildKeep(e, args);
 }

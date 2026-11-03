@@ -9,12 +9,12 @@ import { piecewise, rel } from './logic';
 import { Concrete } from './concrete';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import type { Expr, ExprLike, Substitution } from './nodes';
-import { Add, Constant, Derivative, ExtensionExpr, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Sym, UndefFn, asRational, impl } from './nodes';
-import { add, mul, pow, sympify } from './ops';
+import { Add, Derivative, ExtensionExpr, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Sym, UndefFn, asRational, impl, isNum } from './nodes';
+import { add, mul, pow, splitCoeff, sympify } from './ops';
+import { isNonNegative, isPositive, isReal } from './assumptions';
 import { SubsNode } from './subsnode';
 import { BoolOp } from './boolalg';
-import { InvariantError } from './errors';
-import { at, first } from './guard';
+import { at, defined, first } from './guard';
 
 const isSubsMap = (s: Substitution): s is ReadonlyMap<Expr, ExprLike> => s instanceof Map;
 const isSubsPairs = (s: Substitution): s is readonly (readonly [Expr, ExprLike])[] => Array.isArray(s);
@@ -29,10 +29,7 @@ export function rebuild(e: Expr, args: readonly Expr[]): Expr {
   if (e instanceof Add) return add(...args);
   if (e instanceof Mul) return mul(...args);
   if (e instanceof Pow) return pow(at(args, 0), at(args, 1));
-  if (e instanceof Fn) {
-    if (impl.fn === undefined) throw new InvariantError('function constructors are not registered');
-    return impl.fn(e.name, args);
-  }
+  if (e instanceof Fn) return defined(impl.fn?.(e.name, args), 'function constructors');
   if (e instanceof Rel) return rel(e.op, at(args, 0), at(args, 1));
   if (e instanceof Piecewise) {
     const pairs: [Expr, Expr][] = [];
@@ -44,16 +41,9 @@ export function rebuild(e: Expr, args: readonly Expr[]): Expr {
   if (e instanceof Order) return new Order(args);
   if (e instanceof UndefFn) return new UndefFn(e.name, args);
   if (e instanceof Concrete) return new Concrete(e.kind2, args);
-  if (e instanceof Derivative) {
-    const expr = first(args);
-    // evaluate when the expression no longer contains undefined functions
-    const vc: [Expr, number][] = [];
-    for (let i = 1; i < args.length; i += 2) vc.push([at(args, i), Number(asRational(at(args, i + 1), 'derivative count').p)]);
-    if (vc.every(([v]) => v instanceof Sym) && !hasUndef(expr)) {
-      return vc.reduce((acc, [v, n]) => impl.diff(acc, v, n), expr);
-    }
-    return new Derivative(args);
-  }
+  // SymPy keeps a rebuilt derivative unevaluated: Derivative(f(x), x).subs(f(x), x**2) = Derivative(x**2, x)
+  if (e instanceof Derivative) return new Derivative(args);
+  // atoms (and nodes of higher layers without withArgs) are returned as they are
   return e;
 }
 
@@ -114,18 +104,35 @@ function toPairs(s: Substitution): [Expr, Expr][] {
   return out;
 }
 
+/**
+ * SymPy Pow._eval_subs _check for commutative objects: the power k with
+ * old**k equal to a power whose exponent splits into ct1 (old's exponent
+ * splits into ct2), when (b**e)**k == b**(e*k) holds.
+ */
+function powerOf(ct1: [Expr, Expr], ct2: [Expr, Expr], old: Pow): Expr | undefined {
+  if (ct1[1].key !== ct2[1].key) return undefined;
+  const k = mul(ct1[0], pow(ct2[0], -1));
+  if (k instanceof Rational && k.isInteger) return k;
+  const combines = (isPositive(old.base) === true && isReal(old.exp) === true) || (isNonNegative(old.base) === true && isNonNegative(old.exp) === true);
+  return combines ? k : undefined;
+}
+
+/** SymPy as_independent(Symbol, as_Add=False): the factors without symbols and the rest. */
+function splitSymbolFactors(e: Expr): [Expr, Expr] {
+  const hasSym = (t: Expr): boolean => t instanceof Sym || t.args.some(hasSym);
+  const factors = e instanceof Mul ? e.args : [e];
+  return [mul(...factors.filter((t) => !hasSym(t))), mul(...factors.filter(hasSym))];
+}
+
+/** SymPy as_coeff_Add of a sum: the numeric term and the rest. */
+function asCoeffAdd(e: Add): [Expr, Expr] {
+  const c = first(e.args);
+  if (isNum(c)) return [c, e.args.length === 2 ? at(e.args, 1) : new Add(e.args.slice(1))];
+  return [Rational.of(0n), e];
+}
+
 /** SymPy `_eval_subs` for Add, Mul and Pow (algebraic substitution). */
 function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
-  // exp(a + b).subs(exp(a), c) -> c*exp(b) (SymPy exp._eval_subs via Pow)
-  const isExpP = (t: Expr): t is Pow => t instanceof Pow && t.base instanceof Constant && t.base.name === 'E';
-  if (isExpP(e) && isExpP(old) && e.exp instanceof Add) {
-    const oldTerms = old.exp instanceof Add ? old.exp.args : [old.exp];
-    const keys = e.exp.args.map((a) => a.key);
-    if (oldTerms.every((t) => keys.includes(t.key))) {
-      const rest = e.exp.args.filter((a) => !oldTerms.some((t) => t.key === a.key));
-      return mul(nw, pow(e.base, add(...rest)));
-    }
-  }
   // Derivative(f, (x, 2)).subs(Derivative(f, x), y) -> Derivative(y, x) (SymPy Derivative._eval_subs)
   if (e instanceof Derivative && old instanceof Derivative && e.expr.key === old.expr.key) {
     const have = new Map(e.variableCount.map(([v, n]) => [v.key, [v, n] as [Expr, number]]));
@@ -140,12 +147,18 @@ function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
     return new Derivative([nw, ...vc.flatMap(([v, n]) => [v, Rational.of(n)])]);
   }
   if (e instanceof Add && old instanceof Add) {
-    const [cs, ts] = splitAddCoeff(e);
-    const [co, to] = splitAddCoeff(old);
-    if (cs instanceof Rational && co instanceof Rational) {
+    // SymPy Add._eval_subs
+    const [cs, ts] = asCoeffAdd(e);
+    const [co, to] = asCoeffAdd(old);
+    const rationals = cs instanceof Rational && co instanceof Rational;
+    const negTo = mul(-1, to);
+    if (rationals) {
+      // (2 + a).subs(3 + a, y) -> y - 1; (2 + a).subs(-3 - a, y) -> -y - 1
       if (ts.key === to.key) return add(nw, cs, mul(-1, co));
-      const negTo = mul(-1, to);
       if (ts.key === negTo.key) return add(mul(-1, nw), cs, co);
+    }
+    if (rationals || cs.key === co.key) {
+      // (a + b + c).subs(b + c, x) -> a + x; (a + b + c + d).subs(-b - c, x) -> a - x + d
       const selfArgs = ts instanceof Add ? ts.args : [ts];
       for (const [sign, oldTerms] of [
         [1, to instanceof Add ? to.args : [to]],
@@ -163,10 +176,24 @@ function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
     return undefined;
   }
   if (e instanceof Mul && old instanceof Mul) return subsMul(e, old, nw);
+  // SymPy Pow._eval_subs for powers of the same base (exp(a) is E**a)
   if (e instanceof Pow && old instanceof Pow && e.base.key === old.base.key) {
-    const l = mul(e.exp, pow(old.exp, -1));
-    if (l instanceof Rational && l.isInteger) return pow(nw, l);
-    return undefined;
+    if (!(e.exp instanceof Add)) {
+      // (x**(6*y)).subs(x**(3*y), z) -> z**2
+      const k = powerOf(splitSymbolFactors(e.exp), splitSymbolFactors(old.exp), old);
+      return k === undefined ? undefined : pow(nw, k);
+    }
+    // b**(6*x + a).subs(b**(3*x), y) -> y**2*b**a, term by term
+    const ct2 = splitCoeff(old.exp);
+    const powers: Expr[] = [];
+    const rest: Expr[] = [];
+    for (const t of e.exp.args) {
+      const nt = subsOne(t, old, nw);
+      const k = powerOf(splitCoeff(nt), ct2, old);
+      if (k === undefined) rest.push(nt);
+      else powers.push(pow(nw, k));
+    }
+    return powers.length ? mul(...powers, pow(e.base, add(...rest))) : undefined;
   }
   return undefined;
 }
@@ -187,7 +214,8 @@ function intMultiplicity(p: bigint, n0: bigint): number {
 
 /** SymPy multiplicity(p, n) of the rationals p > 0 (p != 1) and n != 0. */
 function ratMultiplicity(p: Rational, n: Rational): number {
-  const im = (a: bigint, b: bigint): number => (a === 1n ? 0 : intMultiplicity(a, b));
+  // p != 1, so the numerator of an integer p and the denominator of a fraction p are greater than 1
+  const im = intMultiplicity;
   if (p.q === 1n) return n.p === 1n || n.p === -1n ? -im(p.p, n.q) : im(p.p, n.p) - im(p.p, n.q);
   if (p.p === 1n) return im(p.q, n.q);
   return Math.min(im(p.p, n.p), im(p.q, n.q)) - Math.min(im(p.q, n.p), im(p.p, n.q));
@@ -212,9 +240,9 @@ function subsNcRun(e: Mul, old: Mul, nw: Expr): Expr | undefined {
 }
 
 /** The factors of a commutative product as base -> rational exponent (SymPy Mul._eval_subs breakup). */
-function breakup(e: Expr): Map<string, { base: Expr; exp: Rational }> {
+function breakup(e: Mul): Map<string, { base: Expr; exp: Rational }> {
   const out = new Map<string, { base: Expr; exp: Rational }>();
-  for (const a of e instanceof Mul ? e.args : [e]) {
+  for (const a of e.args) {
     let [b, x]: [Expr, Expr] = a instanceof Pow ? [a.base, a.exp] : [a, Rational.of(1n)];
     let co = ratOf(x);
     if (!co) {
@@ -233,7 +261,7 @@ function breakup(e: Expr): Map<string, { base: Expr; exp: Rational }> {
 /** SymPy Mul._eval_subs for commutative products: old replaced as often as it divides e. */
 function subsMul(e: Mul, old: Mul, nw: Expr): Expr | undefined {
   if (!e.isCommutative || !old.isCommutative) return subsNcRun(e, old, nw);
-  const lead = (m: Expr): Rational | undefined => (m instanceof Mul ? ratOf(first(m.args)) : ratOf(m));
+  const lead = (m: Mul): Rational | undefined => ratOf(first(m.args));
   const coOld0 = lead(old);
   if (coOld0?.isNegative) {
     const coSelf0 = lead(e);
@@ -275,14 +303,6 @@ function subsMul(e: Mul, old: Mul, nw: Expr): Expr | undefined {
   return mul(pow(nw, k), ...rest);
 }
 
-function splitAddCoeff(e: Expr): [Expr, Expr] {
-  if (e instanceof Add) {
-    const c = first(e.args);
-    if (c.isNumber) return [c, e.args.length === 2 ? at(e.args, 1) : new Add(e.args.slice(1))];
-  }
-  return [Rational.of(0n), e];
-}
-
 /** Variables bound by a definite Integral or a Sum/Product (SymPy bound_symbols). */
 export function boundSymbols(e: Expr): Expr[] {
   if (e instanceof Integral && e.args.length >= 3) return [e.variable];
@@ -304,8 +324,8 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
   const bound = boundSymbols(e);
   if (bound.length && bound.some((b) => old.key === b.key)) {
     if (e instanceof ExtensionExpr) {
-      const b = e.bindings();
-      if (b === undefined) throw new InvariantError('bound symbols without bindings');
+      // boundSymbols found the variables of an extension node through its bindings
+      const b = defined(e.bindings(), 'bindings');
       const fixed = new Set([...b.variables, ...b.scope]);
       const args = e.args.map((a, i) => (fixed.has(i) ? a : subsOne(a, old, nw)));
       return args.some((a, i) => a !== e.args[i]) ? e.withArgs(args) : e;
@@ -349,8 +369,6 @@ export function subs(e: Expr, s: Substitution, opts: { simultaneous?: boolean } 
   for (const [o, n] of pairs) r = subsOne(r, o, n);
   return r;
 }
-
-const hasUndef = (e: Expr): boolean => e instanceof UndefFn || e instanceof Derivative || e.args.some(hasUndef);
 
 export function freeSymbols(e: Expr): Set<Sym> {
   const out = new Map<string, Sym>();

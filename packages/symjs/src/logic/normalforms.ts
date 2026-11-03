@@ -113,8 +113,8 @@ function nnf(e: Expr, simplify: boolean): Expr {
   return e;
 }
 
+/** Not.to_nnf of a Not that is not a literal (nnf is only called on non-literals). */
 function notToNnf(e: BoolOp, simplify: boolean): Expr {
-  if (isLiteral(e)) return e;
   const x = at(e.args, 0);
   const args = x.args;
   if (isOp(x, 'And')) return latticeToNnf('Or', args.map(notFn), simplify);
@@ -126,7 +126,9 @@ function notToNnf(e: BoolOp, simplify: boolean): Expr {
     const [a, b, c] = [at(args, 0), at(args, 1), at(args, 2)];
     return latticeToNnf('And', [orFn(a, notFn(c)), orFn(notFn(a), notFn(b))], simplify);
   }
-  throw new TypeError(`Illegal operator ${'className' in x && typeof x.className === 'string' ? x.className : x.kind} in expression`);
+  // SymPy raises ValueError
+  // the class name, as SymPy (Nand, f), else the node kind (Add)
+  throw new RangeError(`Illegal operator ${'name' in x && typeof x.name === 'string' ? x.name : x.kind} in expression`);
 }
 
 /**

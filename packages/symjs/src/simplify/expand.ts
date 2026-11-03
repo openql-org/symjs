@@ -5,14 +5,14 @@
  * @file expand(): distribute products over sums and expand integer powers of sums.
  */
 
-import { isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../core/assumptions';
+import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, ExtensionExpr, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
-import { cos, cosh, im, log, re, sin, sinh, tan } from '../functions/elementary';
+import { cos, cosh, fn, im, log, re, sin, sinh, tan, tanh } from '../functions/elementary';
 import { rebuild } from '../core/traverse';
-import { InvariantError } from '../core/errors';
-import { first } from '../core/guard';
+import { at, defined, first } from '../core/guard';
+import { integerNthroot } from '../core/numberutils';
 
 const termsOf = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
 
@@ -49,10 +49,8 @@ function expandNode(e: Expr): Expr {
   }
   if (node instanceof Pow) {
     const [b, x] = node.args;
-    if (b instanceof Add && x instanceof Rational && x.isInteger) {
-      if (x.p > 0n) return expandPowInt(b, x.p);
-      if (x.p < 0n) return pow(expandPowInt(b, -x.p), -1);
-    }
+    // (x is not 0: b**0 evaluates to 1)
+    if (b instanceof Add && x instanceof Rational && x.isInteger) return x.p > 0n ? expandPowInt(b, x.p) : pow(expandPowInt(b, -x.p), -1);
     return node;
   }
   return node;
@@ -63,9 +61,14 @@ function expandNode(e: Expr): Expr {
  * (SymPy's `mul` and `multinomial` hints only), recursively.
  */
 export function expandMul(e: ExprLike): Expr {
+  return expandMulRounds(e, 8);
+}
+
+/** @internal expandMul with at most maxRounds passes (the result so far when no fixed point is reached). */
+export function expandMulRounds(e: ExprLike, maxRounds: number): Expr {
   let cur = sympify(e);
   // Iterate to a fixed point: re-canonicalization can expose new sums.
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < maxRounds; i++) {
     const next = expandNode(cur);
     if (next.key === cur.key) return next;
     cur = next;
@@ -103,6 +106,8 @@ const BUILTIN_HINTS = new Set(['deep', 'mul', 'multinomial', 'power_exp', 'power
 
 
 const isE = (e: Expr) => e instanceof Constant && e.name === 'E';
+/** exp_polar(c) or a polar symbol (split off powers and logarithms like a positive factor). */
+const isPolar = (f: Expr): boolean => (f instanceof Fn && f.name === 'exp_polar') || (f instanceof Sym && f.assumptions.polar === true);
 
 /** All terms of the sum are nonnegative, or all nonpositive (SymPy `_all_nonneg_or_nonppos`). */
 function allNonnegOrNonpos(e: Add): boolean {
@@ -120,93 +125,250 @@ function powerExp(e: Expr, force: boolean): Expr {
   return e;
 }
 
+/** b**x with exp_polar(c)**x written exp_polar(c*x). */
+const powPolar = (b: Expr, x: Expr): Expr => (b instanceof Fn && b.name === 'exp_polar' ? new Fn('exp_polar', [mul(first(b.args), x)]) : pow(b, x));
+
+/** SymPy Pow._eval_expand_power_base: (a*b)**x = a**x*b**x for the factors that allow it. */
 function powerBase(e: Expr, force: boolean): Expr {
   if (!(e instanceof Pow)) return e;
   const [b, x] = e.args;
   if (!(b instanceof Mul)) return e;
-  if (x instanceof Rational && x.isInteger) return mul(...b.args.map((f) => pow(f, x)));
-  if (force) return mul(...b.args.map((f) => pow(f, x)));
-  // factors known to be nonnegative or polar (SymPy polar=True, exp_polar) can be split off
-  const polar = (f: Expr) => (f instanceof Fn && f.name === 'exp_polar') || (f instanceof Sym && f.assumptions.polar === true);
+  const cargs = b.args.filter((f) => f.isCommutative);
+  let nc = b.args.filter((f) => !f.isCommutative).map((f) => powerBase(f, force));
+  if (nc.length) {
+    // noncommutative factors keep their order: (A*B)**2 = A*B*A*B
+    if (x instanceof Rational && x.isInteger) {
+      const k = Number(x.p < 0n ? -x.p : x.p);
+      const unit = x.p > 0n ? nc : nc.map((f) => pow(f, -1)).reverse();
+      const rv = mul(...Array.from({ length: k }, () => unit).flat());
+      return cargs.length ? mul(pow(mul(...cargs), x), rv) : rv;
+    }
+    if (!cargs.length) return e;
+    nc = [mul(...nc)];
+  }
+  // commutative factors: nonnegative (or polar) ones always come out
+  let other: Expr[] = [];
   const nonneg: Expr[] = [];
-  const other: Expr[] = [];
-  for (const f of b.args) {
-    if (isNonNegative(f) === true || polar(f)) nonneg.push(f);
+  const neg: Expr[] = [];
+  for (const f of cargs) {
+    const nn = isNonNegative(f);
+    if (isPolar(f)) nonneg.push(f);
+    else if (isReal(f) === false) other.push(f);
+    else if (nn === true) nonneg.push(f);
+    else if (nn === false) neg.push(f);
     else other.push(f);
   }
-  if (nonneg.length === 0) return e;
-  // exp_polar(c)**y = exp_polar(c*y)
-  const parts = nonneg.map((f) => (f instanceof Fn && f.name === 'exp_polar' ? new Fn('exp_polar', [mul(first(f.args), x)]) : pow(f, x)));
-  if (other.length === 1) parts.push(pow(first(other), x));
-  else if (other.length > 1) parts.push(new Pow(new Mul(other), x));
+  let out: Expr[];
+  if (force || isIntegerQ(x) === true) {
+    out = [...nonneg, ...neg, ...other];
+    other = nc;
+  } else {
+    // negative factors are made positive, the residual -1 stays with the others
+    if (neg.length > 1) {
+      let o: Expr = S.One;
+      if (!other.length && isNum(first(neg))) o = defined(neg.shift(), 'a negative number');
+      if (neg.length % 2) o = mul(-1, o);
+      nonneg.push(...neg.map((f) => mul(-1, f)));
+      if (!(o instanceof Rational && o.isOne)) other.push(o);
+    } else if (neg.length && other.length) {
+      const n0 = first(neg);
+      if (isNum(n0) && !(n0 instanceof Rational && n0.p === -1n && n0.q === 1n)) {
+        other.push(S.NegOne);
+        nonneg.push(mul(-1, n0));
+      } else other.push(n0);
+    } else other.push(...neg);
+    out = nonneg;
+    other.push(...nc);
+  }
+  const parts = out.map((f) => powPolar(f, x));
+  if (other.length) parts.push(pow(mul(...other), x));
   return mul(...parts);
 }
 
+/** (b, k) with b**k == n and k maximal (k >= 2), or undefined (SymPy perfect_power for n >= 2). */
+function perfectPower(n: bigint): [bigint, number] | undefined {
+  for (let k = n.toString(2).length - 1; k >= 2; k--) {
+    const [b, exact] = integerNthroot(n, k);
+    if (exact) return [b, k];
+  }
+  return undefined;
+}
+
+/** SymPy log._eval_expand_log. */
 function expandLogNode(e: Expr, force: boolean): Expr {
   if (!(e instanceof Fn && e.name === 'log')) return e;
   const a = first(e.args);
-  const ok = (f: Expr) => force || isPositive(f) === true;
+  if (a instanceof Rational) {
+    // perfect powers are removed (log(8) = 3*log(2)) and a fraction is split
+    if (!a.isInteger) return add(log(Rational.of(a.p)), mul(-1, log(Rational.of(a.q))));
+    const pp = perfectPower(a.p);
+    return pp ? mul(pp[1], log(Rational.of(pp[0]))) : e;
+  }
   if (a instanceof Mul) {
-    const factors = a.args;
-    // SymPy expands only if every factor is positive (or force)
-    if (factors.every((f) => ok(f instanceof Pow ? f.base : f) || (isNum(f) && f.isPositive))) {
-      return add(...factors.map((f) => expandLogNode(log(f), force)));
+    // positive (or polar) factors are split off, negative ones as log(-f) with -1 left inside
+    const terms: Expr[] = [];
+    const nonpos: Expr[] = [];
+    for (const f of a.args) {
+      if (force || isPositive(f) === true || isPolar(f)) terms.push(expandLogNode(log(f), force));
+      else if (isNegative(f) === true) {
+        // not expanded further here (log(-n) would split again); the next round of expand does it
+        terms.push(log(mul(-1, f)));
+        nonpos.push(S.NegOne);
+      } else nonpos.push(f);
     }
-    return e;
+    return terms.length ? add(...terms, log(mul(...nonpos))) : e;
   }
   if (a instanceof Pow) {
+    // log(b**x) = x*log(b) for real x when b > 0 or -1 < x <= 1
     const [b, x] = a.args;
-    if ((ok(b) && isReal(x) === true) || force) return mul(x, expandLogNode(log(b), force));
+    const unitExp = (): boolean => isPositive(add(x, 1)) === true && isNonPositive(add(x, -1));
+    if (force || (isReal(x) === true && (isPositive(b) === true || unitExp())) || isPolar(b)) return mul(x, expandLogNode(log(b), force));
   }
   return e;
 }
 
-/** Expand sin/cos/tan of sums and integer multiples (SymPy expand_trig). */
-function expandTrigNode(e: Expr): Expr {
-  if (!(e instanceof Fn) || !['sin', 'cos', 'tan'].includes(e.name)) return e;
-  const a = first(e.args);
-  if (a instanceof Add) {
-    const a1 = first(a.args);
-    const r = add(...a.args.slice(1));
-    const s1 = expandTrigNode(sin(a1));
-    const c1 = expandTrigNode(cos(a1));
-    const s2 = expandTrigNode(sin(r));
-    const c2 = expandTrigNode(cos(r));
-    if (e.name === 'sin') return expandMul(add(mul(s1, c2), mul(c1, s2)));
-    if (e.name === 'cos') return expandMul(add(mul(c1, c2), mul(-1, s1, s2)));
-    const t1 = expandTrigNode(tan(a1));
-    const t2 = expandTrigNode(tan(r));
-    return mul(add(t1, t2), pow(add(1, mul(-1, t1, t2)), -1));
+/** Binomial coefficient C(n, k) as a bigint. */
+function binom(n: number, k: number): bigint {
+  let r = 1n;
+  for (let i = 0; i < k; i++) r = (r * BigInt(n - i)) / BigInt(i + 1);
+  return r;
+}
+
+/** Sum of c_k*s**k for the coefficient list (lowest degree first). */
+const polyIn = (cs: readonly bigint[], s: Expr): Expr => add(...cs.map((c, k) => mul(Rational.of(c), pow(s, k))));
+
+/** Coefficients of the Chebyshev polynomial T_n (first kind) or U_n (second kind). */
+function chebyshev(n: number, second: boolean): bigint[] {
+  let prev: bigint[] = [1n];
+  let cur: bigint[] = second ? [0n, 2n] : [0n, 1n];
+  // (n >= 1 here)
+  for (let k = 1; k < n; k++) {
+    // P_{k+1} = 2*s*P_k - P_{k-1}
+    const next = [0n, ...cur.map((c) => 2n * c)];
+    prev.forEach((c, i) => (next[i] = at(next, i) - c));
+    prev = cur;
+    cur = next;
   }
+  return cur;
+}
+
+/** The elementary symmetric polynomials e_0, ..., e_n of the terms (as sums of products). */
+function symmetricPolys(ts: readonly Expr[]): Expr[] {
+  const out: Expr[][] = ts.map(() => []);
+  const rec = (start: number, chosen: Expr[]) => {
+    if (chosen.length) defined(out[chosen.length - 1], 'symmetric polynomial').push(mul(...chosen));
+    for (let i = start; i < ts.length; i++) rec(i + 1, [...chosen, at(ts, i)]);
+  };
+  rec(0, []);
+  return [S.One, ...out.map((ps) => add(...ps))];
+}
+
+/** a = first term + the rest (SymPy Add.as_two_terms). */
+const twoTerms = (a: Add): [Expr, Expr] => [first(a.args), add(...a.args.slice(1))];
+
+/** An integer coefficient n >= 2 of the argument and the rest (SymPy as_coeff_Mul), or undefined. */
+function intMultiple(a: Expr): [number, Expr] | undefined {
+  if (!(a instanceof Mul)) return undefined;
   const [c, rest] = splitCoeff(a);
-  if (c instanceof Rational && c.isInteger && c.p > 1n && !(rest instanceof Rational)) {
-    const n = Number(c.p);
-    const x = rest;
-    if (e.name === 'tan') {
-      return mul(expandTrigNode(sin(a)), pow(expandTrigNode(cos(a)), -1));
-    }
-    // sin(n x), cos(n x) via de Moivre: (cos x + I sin x)^n
-    const z = expandMul(pow(add(cos(x), mul(S.I, sin(x))), n));
-    const re_: Expr[] = [];
-    const im_: Expr[] = [];
-    for (const t of z instanceof Add ? z.args : [z]) {
-      const [k, r] = splitCoeffI(t);
-      if (k) im_.push(r);
-      else re_.push(r);
-    }
-    return e.name === 'cos' ? add(...re_) : add(...im_);
-  }
-  return e;
+  return c instanceof Rational && c.isInteger && c.p > 1n ? [Number(c.p), rest] : undefined;
 }
 
-/** Split t into (has factor I, t / I). */
-function splitCoeffI(t: Expr): [boolean, Expr] {
-  if (t instanceof Constant && t.name === 'I') return [true, S.One];
-  if (t instanceof Mul && t.args.some((f) => f instanceof Constant && f.name === 'I')) {
-    return [true, mul(...t.args.filter((f) => !(f instanceof Constant && f.name === 'I')))];
-  }
-  return [false, t];
+/** tan(n*x) or tanh(n*x): the odd and even parts of (1 + I*t)**n (or (1 + t)**n), t = tan(x) or tanh(x). */
+function multipleTan(n: number, t: Expr, hyperbolic: boolean): Expr {
+  const odd = Array<bigint>(n + 1).fill(0n);
+  const even = Array<bigint>(n + 1).fill(0n);
+  for (let k = 0; k <= n; k++) (k % 2 ? odd : even)[k] = (hyperbolic || k % 4 < 2 ? 1n : -1n) * binom(n, k);
+  return mul(polyIn(odd, t), pow(polyIn(even, t), -1));
 }
+
+/** tan or tanh of a sum: the ratio of the alternating sums of the symmetric polynomials of the terms. */
+function sumTan(ts: readonly Expr[], hyperbolic: boolean): Expr {
+  const e = symmetricPolys(ts);
+  const num: Expr[] = [];
+  const den: Expr[] = [];
+  e.forEach((ei, i) => (i % 2 ? num : den).push(hyperbolic || i % 4 < 2 ? ei : mul(-1, ei)));
+  return mul(add(...num), pow(add(...den), -1));
+}
+
+/** cot(n*x) or coth(n*x): the even and odd parts of (c + I)**n (or (c + 1)**n), c = cot(x) or coth(x). */
+function multipleCot(n: number, c: Expr, hyperbolic: boolean): Expr {
+  const num = Array<bigint>(n + 1).fill(0n);
+  const den = Array<bigint>(n + 1).fill(0n);
+  // the term C(n, k)*c**(n - k)*I**k
+  for (let k = 0; k <= n; k++) (k % 2 ? den : num)[n - k] = (hyperbolic || k % 4 < 2 ? 1n : -1n) * binom(n, k);
+  return mul(polyIn(num, c), pow(polyIn(den, c), -1));
+}
+
+/** cot or coth of a sum (SymPy cot._eval_expand_trig, coth._eval_expand_trig). */
+function sumCot(cs: readonly Expr[], hyperbolic: boolean): Expr {
+  const e = symmetricPolys(cs);
+  const n = cs.length;
+  const num: Expr[] = [];
+  const den: Expr[] = [];
+  for (let i = n; i >= 0; i--) {
+    const ei = at(e, i);
+    ((n - i) % 2 ? den : num).push(hyperbolic || (n - i) % 4 < 2 ? ei : mul(-1, ei));
+  }
+  return mul(add(...num), pow(add(...den), -1));
+}
+
+/** Expand trigonometric and hyperbolic functions of sums and integer multiples (SymPy expand_trig). */
+function expandTrigNode(e: Expr): Expr {
+  if (!(e instanceof Fn)) return e;
+  const a = first(e.args);
+  switch (e.name) {
+    case 'sin':
+    case 'cos': {
+      if (a instanceof Add) {
+        const [x, y] = twoTerms(a);
+        const [sx, sy, cx, cy] = [expandTrigNode(sin(x)), expandTrigNode(sin(y)), expandTrigNode(cos(x)), expandTrigNode(cos(y))];
+        return e.name === 'sin' ? add(mul(sx, cy), mul(sy, cx)) : add(mul(cx, cy), mul(-1, sx, sy));
+      }
+      const m = intMultiple(a);
+      if (!m) return e;
+      const [n, x] = m;
+      // multiple-angle formulas with Chebyshev polynomials (https://mathworld.wolfram.com/Multiple-AngleFormulas.html)
+      if (e.name === 'cos') return polyIn(chebyshev(n, false), cos(x));
+      if (n % 2) return mul(Rational.of(n % 4 === 1 ? 1n : -1n), polyIn(chebyshev(n, false), sin(x)));
+      return expandMul(mul(Rational.of(n % 4 === 2 ? 1n : -1n), cos(x), polyIn(chebyshev(n - 1, true), sin(x))));
+    }
+    case 'tan':
+    case 'tanh': {
+      const hyperbolic = e.name === 'tanh';
+      const f = hyperbolic ? tanh : tan;
+      if (a instanceof Add) return sumTan(a.args.map((t) => expandTrigNode(f(t))), hyperbolic);
+      const m = intMultiple(a);
+      return m ? multipleTan(m[0], f(m[1]), hyperbolic) : e;
+    }
+    case 'cot':
+    case 'coth': {
+      const hyperbolic = e.name === 'coth';
+      const f = (t: Expr) => fn(e.name === 'coth' ? 'coth' : 'cot', [t]);
+      if (a instanceof Add) return sumCot(a.args.map((t) => expandTrigNode(f(t))), hyperbolic);
+      const m = intMultiple(a);
+      return m ? multipleCot(m[0], f(m[1]), hyperbolic) : e;
+    }
+    case 'sinh':
+    case 'cosh': {
+      const m = intMultiple(a);
+      const xy: [Expr, Expr] | undefined = a instanceof Add ? twoTerms(a) : m ? [m[1], mul(m[0] - 1, m[1])] : undefined;
+      if (!xy) return e;
+      const [x, y] = xy;
+      const r = e.name === 'sinh' ? add(mul(sinh(x), cosh(y)), mul(sinh(y), cosh(x))) : add(mul(cosh(x), cosh(y)), mul(sinh(x), sinh(y)));
+      return expand(r, { trig: true });
+    }
+    case 'sec':
+    case 'csc':
+    case 'sech':
+    case 'csch':
+      // SymPy ReciprocalTrigonometricFunction: 1/(the expanded reciprocal function)
+      return pow(expandTrigNode(fn(RECIPROCAL_OF[e.name], [a])), -1);
+    default:
+      return e;
+  }
+}
+
+const RECIPROCAL_OF = { sec: 'cos', csc: 'sin', sech: 'cosh', csch: 'sinh' } as const;
 
 /** Split into real and imaginary parts (SymPy expand(complex=True)). */
 function expandComplexNode(e: Expr): Expr {
@@ -224,6 +386,11 @@ export function asRealImagExpand(e: Expr): [Expr, Expr] {
         return [mul(cos(ra), cosh(ia)), mul(-1, sin(ra), sinh(ia))];
       case 'sin':
         return [mul(sin(ra), cosh(ia)), mul(cos(ra), sinh(ia))];
+      case 'tan': {
+        if (ia instanceof Rational && ia.isZero) return [tan(ra), S.Zero];
+        const den = pow(add(cos(mul(2, ra)), cosh(mul(2, ia))), -1);
+        return [mul(sin(mul(2, ra)), den), mul(sinh(mul(2, ia)), den)];
+      }
       default:
         break;
     }
@@ -251,8 +418,7 @@ function applyBottomUp(e: Expr, f: (e: Expr) => Expr, deep: boolean): Expr {
 export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
   const { frac, numer, denom, ...rest } = hints;
   if (frac || numer || denom) {
-    if (impl.fraction === undefined) throw new InvariantError('impl.fraction is not registered');
-    const [n, d] = impl.fraction(sympify(ex));
+    const [n, d] = defined(impl.fraction?.(sympify(ex)), 'impl.fraction (simplify/rational)');
     const en = frac || numer ? expand(n, rest) : n;
     const ed = frac || denom ? expand(d, rest) : d;
     return mul(en, pow(ed, -1));
@@ -314,9 +480,9 @@ export const expand_log = (e: ExprLike, force = false): Expr =>
   expand(e, { power_exp: false, power_base: false, mul: false, multinomial: false, force });
 export const expand_trig = (e: ExprLike): Expr =>
   expand(e, { power_exp: false, power_base: false, log: false, mul: false, multinomial: false, trig: true });
-export const expand_complex = (e: ExprLike): Expr => expand(e, { complex: true });
+export const expand_complex = (e: ExprLike): Expr =>
+  expand(e, { complex: true, power_exp: false, power_base: false, log: false, mul: false, multinomial: false });
 
 impl.expand = (e) => expand(e);
 impl.expandMul = (e) => expandMul(e);
 impl.asRealImagExpand = (e) => asRealImagExpand(e);
-impl.expandComplex = (e) => expand(e, { complex: true });

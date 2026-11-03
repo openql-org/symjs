@@ -9,35 +9,63 @@ import type { Expr, ExprLike } from '../core/nodes';
 import { Dummy, Integral, Rational, S, Sym, impl } from '../core/nodes';
 import { Concrete, Sum, doitConcrete } from '../concrete/summations';
 import { at, cast, first } from '../core/guard';
-import { isNonNegative } from '../core/assumptions';
+import { isNonNegative, isPositive } from '../core/assumptions';
 import { FiniteSet as FiniteSetClass } from '../sets/sets';
 import { singularities } from '../solvers/inequalities';
 import { limit } from '../series/limits';
 import { integrate } from './integrate';
 import { add, mul, pow, sympify } from '../core/ops';
-import { some, subs } from '../core/traverse';
+import { freeSymbols, some, subs } from '../core/traverse';
+import { sign } from '../functions/special';
 import { diff } from '../calculus/diff';
 import { solve } from '../solvers/solve';
 
 /**
  * Substitute x = g(u) in the integral (SymPy Integral.transform(x, (g, u))).
- * Passing only a symbol u performs the plain renaming x = u. Limits are
- * mapped by solving g(u) = limit, which must have a unique solution.
+ * Passing only a symbol u performs the plain renaming x = u; without u the
+ * new variable is the only free symbol of g. Limits are mapped through the
+ * inverse u = G(x), solved like SymPy with u and x taken positive (the root
+ * of x = u**2 is sqrt(x)); a limit where G is infinite or undefined is
+ * reached by a limit. Reversed limits are swapped and the integrand negated.
  */
 export function transformIntegral(integral: Integral, x: Sym, gIn: ExprLike, uIn?: Sym): Integral {
   const g = sympify(gIn);
-  const u = uIn ?? (g instanceof Sym ? g : undefined);
-  if (!u) throw new TypeError('transform: the new variable must be given');
+  const free = [...freeSymbols(g)];
+  if (!uIn && free.length !== 1) throw new TypeError('transform: the new variable must be given');
+  const u = uIn ?? first(free);
   if (integral.variable.key !== x.key) throw new TypeError('transform: x is not the integration variable');
-  const f = mul(subs(integral.integrand, [[x, g]]), diff(g, u));
+  let f = mul(subs(integral.integrand, [[x, g]]), diff(g, u));
   const lim = integral.limits;
   if (!lim) return new Integral([f, u]);
-  const mapLimit = (a: Expr): Expr => {
-    const sols = solve(add(g, mul(-1, a)), u);
-    if (sols.length !== 1) throw new RangeError('transform: the substitution is not invertible on the limits');
-    return first(sols);
+  // the inverse G(d) of x = g(u), solved for positive u and x first
+  let d = new Dummy('d', { positive: true });
+  const pu = isPositive(u) === undefined ? new Dummy(u.name, { positive: true }) : u;
+  let inverse = solve(add(subs(g, [[u, pu]]), mul(-1, d)), pu);
+  if (inverse.length === 0) {
+    // x = -u has no positive root: solve without the assumption (SymPy raises here)
+    d = new Dummy('d');
+    inverse = solve(add(g, mul(-1, d)), u);
+  }
+  if (inverse.length === 0) throw new RangeError('transform: no solution of x = g(u) for u');
+  const infinite = new Set([S.NaN.key, S.ComplexInfinity.key, S.Infinity.key, S.NegativeInfinity.key]);
+  const atLimit = (a: Expr, b: Expr): Expr => {
+    const vals = new Map<string, Expr>();
+    for (const G of inverse) {
+      const v = subs(G, [[d, a]]);
+      // G is undefined or infinite at a finite limit: approach it from the side of the other limit
+      const w = some(v, (e) => infinite.has(e.key)) && !infinite.has(a.key) ? limit(mul(sign(b), G), d, a) : v;
+      vals.set(w.key, w);
+    }
+    if (vals.size !== 1) throw new RangeError('transform: the substitution does not give a unique limit');
+    return first([...vals.values()]);
   };
-  return new Integral([f, u, mapLimit(lim[0]), mapLimit(lim[1])]);
+  let a = atLimit(lim[0], lim[1]);
+  let b = atLimit(lim[1], lim[0]);
+  if (isPositive(add(a, mul(-1, b))) === true) {
+    [a, b] = [b, a];
+    f = mul(-1, f);
+  }
+  return new Integral([f, u, a, b]);
 }
 
 /** Cauchy principal value of a definite integral (SymPy Integral.principal_value). */
@@ -90,7 +118,7 @@ export function asSum(integral: Integral, n: ExprLike, method: 'left' | 'right' 
   let extra: Expr = S.Zero;
   let upper: Expr = N;
   // points written like SymPy: a + k*dx - dx/2 for the midpoint rule
-  if (method === 'left') body = atPoint(add(a, mul(k, dx), mul(-1, dx)));
+  if (method === 'left') body = atPoint(add(a, mul(add(k, -1), dx)));
   else if (method === 'right') body = atPoint(add(a, mul(k, dx)));
   else if (method === 'midpoint') body = atPoint(add(a, mul(k, dx), mul(S.NegHalf, dx)));
   else {

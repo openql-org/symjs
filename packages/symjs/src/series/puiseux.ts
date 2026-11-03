@@ -11,7 +11,7 @@
  */
 
 import { NotImplementedError } from '../core/errors';
-import type { Expr } from '../core/nodes';
+import type { Expr, FnName } from '../core/nodes';
 import { Add, Constant, Fn, Mul, Pow, Rational, S, Special, Sym } from '../core/nodes';
 import { numAdd, numCmp, numMul, numNeg } from '../core/num';
 import { add, exp, mul, pow } from '../core/ops';
@@ -19,7 +19,7 @@ import { xreplace as subs } from '../core/traverse';
 import { fn, log } from '../functions/elementary';
 import { expandMul as expand } from '../simplify/expand';
 import { first } from '../core/guard';
-import { isNegative, isPositive } from '../core/assumptions';
+import { isNegative, isPositive, isReal } from '../core/assumptions';
 
 /** A series that the expansion cannot compute (SymPy raises NotImplementedError or ValueError). */
 export class SeriesError extends NotImplementedError {}
@@ -35,15 +35,18 @@ export function isZeroCoeff(c: Expr): boolean {
   if (c instanceof Rational) return c.isZero;
   const x = expand(c);
   if (x instanceof Rational) return x.isZero;
-  if (x.freeSymbols().size === 0) {
-    try {
-      const v = x.toComplex();
-      return Math.hypot(v.re, v.im) < 1e-12;
-    } catch {
-      return false;
-    }
+  // a constant is evaluated; an expression with symbols is evaluated at two complex sample points
+  // (1 - cos(a)**2 - sin(a)**2 does not expand to 0, a + 1 - sqrt((a + 1)**2) is 0 only for some a)
+  const syms = [...x.freeSymbols()];
+  const samples: [number, number][] = syms.length === 0 ? [[0, 0]] : [[0.6180339887, -1.3247179572], [-2.2055694304, 0.7548776662]];
+  try {
+    return samples.every(([re, im]) => {
+      const val = subs(x, syms.map((y, j): [Expr, Expr] => [y, add(re + 0.1 * j, mul(im, S.I))])).toComplex();
+      return Math.hypot(val.re, val.im) < 1e-12;
+    });
+  } catch {
+    return false;
   }
-  return false;
 }
 
 export class PS {
@@ -120,9 +123,6 @@ export class PS {
     return new PS(normalize([...this.terms], o), o);
   }
 
-  toExpr(t: Expr): Expr {
-    return add(...this.terms.map((x) => mul(x.c, pow(t, x.e))));
-  }
 }
 
 function normalize(terms: Term[], order: Rational): Term[] {
@@ -134,6 +134,26 @@ function normalize(terms: Term[], order: Rational): Term[] {
     else m.set(t.e.key, { e: t.e, c: t.c });
   }
   return [...m.values()].filter((t) => !(t.c instanceof Rational && t.c.isZero)).sort((a, b) => numCmp(a.e, b.e));
+}
+
+/** Functions with poles written as quotients: name -> [numerator (undefined for 1), denominator]. */
+const QUOTIENTS: Readonly<Partial<Record<string, readonly [FnName | undefined, FnName]>>> = {
+  tan: ['sin', 'cos'],
+  cot: ['cos', 'sin'],
+  sec: [undefined, 'cos'],
+  csc: [undefined, 'sin'],
+  tanh: ['sinh', 'cosh'],
+  coth: ['cosh', 'sinh'],
+  sech: [undefined, 'cosh'],
+  csch: [undefined, 'sinh'],
+};
+
+/** Taylor coefficient of LambertW at 0: (-j)**(j-1)/j!. */
+function lambertWCoeff(j: number): Rational {
+  if (j === 0) return S.Zero;
+  let fact = 1n;
+  for (let i = 2n; i <= BigInt(j); i++) fact *= i;
+  return Rational.of(BigInt(-j) ** BigInt(j - 1), fact);
 }
 
 const isE = (e: Expr) => e instanceof Constant && e.name === 'E';
@@ -285,8 +305,17 @@ export class Expander {
       sg.terms.filter((x) => x.e.isPositive),
       sg.order,
     );
-    if (e.name === 'abs' || e.name === 're' || e.name === 'im' || e.name === 'arg' || e.name === 'conjugate') {
+    if (e.name === 'abs' || e.name === 're' || e.name === 'im' || e.name === 'arg' || e.name === 'conjugate' || e.name === 'sign') {
       if (h.terms.length === 0) return PS.constant(fn(e.name, [g0]));
+      // sign(c*t**e*(1 + o(1))) tends to sign(c); away from 0 a real argument keeps its sign
+      if (e.name === 'sign') {
+        if (!isZeroCoeff(g0)) {
+          if (isReal(g0) === true) return PS.constant(fn('sign', [g0]));
+        } else {
+          const lc = sg.lead()?.c;
+          if (lc !== undefined) return PS.constant(fn('sign', [lc]));
+        }
+      }
       // abs(g) with g -> 0 along t -> 0+: the sign of the leading coefficient decides
       if (e.name === 'abs' && isZeroCoeff(g0)) {
         const lc = sg.lead()?.c;
@@ -312,6 +341,18 @@ export class Expander {
     if (e.name === 'gamma' && g0 instanceof Rational && g0.isInteger && !g0.isPositive) {
       return this.ser(mul(fn('gamma', [add(g, 1)]), pow(g, -1)), n);
     }
+    // at a pole of a reciprocal or quotient function (cot(0), sec(pi/2)): expand the quotient
+    const quot = QUOTIENTS[e.name];
+    if (quot !== undefined && fn(e.name, [g0]).key === S.ComplexInfinity.key) {
+      const [num, den] = quot;
+      return this.ser(mul(num === undefined ? S.One : fn(num, [g]), pow(fn(den, [g]), -1)), n);
+    }
+    // acosh has infinite derivatives at its branch points 1 and -1: acosh(g) = log(g + sqrt(g - 1)*sqrt(g + 1))
+    if (e.name === 'acosh' && g0 instanceof Rational && g0.q === 1n && (g0.p === 1n || g0.p === -1n)) {
+      return this.ser(log(add(g, mul(pow(add(g, -1), S.Half), pow(add(g, 1), S.Half)))), n);
+    }
+    // the derivatives of LambertW at 0 are 0/0 forms: W(h) = sum_{j>=1} (-j)**(j-1)/j! h**j
+    if (e.name === 'LambertW' && g0 instanceof Rational && g0.isZero) return this.powerSeries(lambertWCoeff, h, n);
     return this.analytic((w) => fn(e.name, [w]), g0, h, n);
   }
 
@@ -319,24 +360,32 @@ export class Expander {
   private analytic(f: (w: Expr) => Expr, g0: Expr, h: PS, n: Rational): PS {
     const w = new Sym('_w');
     let deriv = f(w);
+    let fact = 1n;
     const value = (d: Expr) => {
       const v = expand(subs(d, [[w, g0]]));
       if (v instanceof Special || v.has(S.ComplexInfinity) || v.has(S.NaN)) throw new SeriesError('singular point');
       return v;
     };
-    let acc = PS.constant(value(deriv));
+    return this.powerSeries((j) => {
+      if (j === 0) return value(deriv);
+      deriv = deriv.diff(w);
+      fact *= BigInt(j);
+      return mul(value(deriv), Rational.of(1n, fact));
+    }, h, n);
+  }
+
+  /** sum_j coeff(j) h^j, h with positive exponents only; coeff is called for j = 0, 1, 2, ... in order. */
+  private powerSeries(coeff: (j: number) => Expr, h: PS, n: Rational): PS {
+    let acc = PS.constant(coeff(0));
     const d = h.lead()?.e;
     if (!n.isPositive) return acc;
     if (!d) return h.isExact ? acc : acc.cut(minR(n, h.order));
     const J = Math.ceil(n.value / d.value);
     let hp = PS.constant(S.One);
-    let fact = 1n;
     for (let j = 1; j <= J; j++) {
-      deriv = deriv.diff(w);
-      fact *= BigInt(j);
       hp = hp.mul(h).truncate(n);
-      const c = value(deriv);
-      if (!(c instanceof Rational && c.isZero)) acc = acc.add(hp.scale(mul(c, Rational.of(1n, fact))));
+      const c = coeff(j);
+      if (!(c instanceof Rational && c.isZero)) acc = acc.add(hp.scale(c));
     }
     return acc.cut(minR(n, h.order));
   }

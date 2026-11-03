@@ -7,7 +7,7 @@
  */
 
 import type { ExprLike } from './nodes';
-import { BoolAtom, Expr, Rational, Rel, S, Special, impl } from './nodes';
+import { BoolAtom, Expr, Rational, Rel, S, Special, impl, isNum } from './nodes';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { at } from './guard';
 
@@ -43,14 +43,14 @@ export class BoolOp extends Expr {
         return new BoolOp('ITE', args);
     }
   }
-  /** SymPy LatexPrinter: x \wedge y, x \vee y, x \veebar y, \neg x. */
+  /** SymPy LatexPrinter: x \wedge y, x \vee y, x \veebar y, \neg x, \operatorname{ITE}(c, a, b). */
   printLatex(p: (e: Expr) => string): string {
     const paren = (a: Expr) => (a instanceof BoolOp && a.op !== 'Not' ? `\\left(${p(a)}\\right)` : p(a));
     if (this.op === 'Not') {
       const a = at(this.args, 0);
       return a instanceof BoolOp ? `\\neg \\left(${p(a)}\\right)` : `\\neg ${p(a)}`;
     }
-    if (this.op === 'ITE') return `\\left(${p(at(this.args, 1))} \\text{ if } ${p(at(this.args, 0))} \\text{ else } ${p(at(this.args, 2))}\\right)`;
+    if (this.op === 'ITE') return `\\operatorname{ITE}\\left(${this.args.map(p).join(', ')}\\right)`;
     const sep = this.op === 'And' ? ' \\wedge ' : this.op === 'Or' ? ' \\vee ' : ' \\veebar ';
     return this.args.map(paren).join(sep);
   }
@@ -79,18 +79,20 @@ const sortArgs = (xs: readonly Expr[]): Expr[] =>
   impl.ordered ? impl.ordered(xs) : [...xs].sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
 
 const isNegOo = (e: Expr) => e instanceof Special && e.name === '-oo';
-const isOo = (e: Expr) => e instanceof Special && e.name === 'oo';
-/** Rel.canonical puts a symbol-like side on the left; is the right side -oo? */
-function canonicalRhsIsNegOo(r: Rel): boolean {
-  if (isNegOo(r.rhs)) return true;
-  if (isNegOo(r.lhs) && !isOo(r.rhs)) return true;
-  return false;
-}
-/** A boolean argument: the integers 1 and 0 are true and false (SymPy's boolean context). */
+/**
+ * Rel.canonical puts a symbol-like side on the left; is the right side -oo?
+ * (A relation between -oo and oo evaluates, so -oo on the left faces a finite side.)
+ */
+const canonicalRhsIsNegOo = (r: Rel): boolean => isNegOo(r.rhs) || isNegOo(r.lhs);
+/**
+ * A boolean argument: the integers 1 and 0 are true and false; any other number
+ * is not a boolean (SymPy as_Boolean: TypeError).
+ */
 const boolArg = (x0: ExprLike | boolean): Expr => {
   const x = typeof x0 === 'boolean' ? (x0 ? S.true : S.false) : impl.sympify(x0);
-  if (x instanceof Rational && x.q === 1n && (x.p === 1n || x.p === 0n)) return x.p === 1n ? S.true : S.false;
-  return x;
+  if (!isNum(x)) return x;
+  if (x instanceof Rational && x.isInteger && (x.p === 1n || x.p === 0n)) return x.p === 1n ? S.true : S.false;
+  throw new TypeError(`expecting bool or Boolean, not \`${impl.str(x)}\`.`);
 };
 const isTrue = (e: Expr) => e instanceof BoolAtom && e.value;
 const isFalse = (e: Expr) => e instanceof BoolAtom && !e.value;
@@ -117,7 +119,9 @@ function lattice(op: 'And' | 'Or', xs: readonly (ExprLike | boolean)[]): Expr {
 export const and = (...xs: (ExprLike | boolean)[]): Expr => lattice('And', xs);
 export const or = (...xs: (ExprLike | boolean)[]): Expr => lattice('Or', xs);
 export function not(x0: ExprLike | boolean): Expr {
-  const x = boolArg(x0);
+  // SymPy Not(n) for a number n is the negation of its truth value (Not(2) is False)
+  const x = typeof x0 === 'boolean' ? (x0 ? S.true : S.false) : impl.sympify(x0);
+  if (isNum(x)) return x.isZero ? S.true : S.false;
   if (isTrue(x)) return S.false;
   if (isFalse(x)) return S.true;
   if (x instanceof BoolOp && x.op === 'Not') return at(x.args, 0);

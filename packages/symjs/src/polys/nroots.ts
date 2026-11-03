@@ -58,17 +58,18 @@ function durandKerner(coeffs: C[]): C[] {
 /** Newton refinement of a root at the given binary precision. */
 function refine(coeffs: Expr[], z0: C, prec: number): Mpc {
   const wp = prec + 30;
-  const cf: Mpc[] = coeffs.map((c) => (c instanceof Rational ? [F.fromRational(c.p, c.q, wp), F.ZERO] : evalAdaptive(c, wp, () => undefined)));
+  const cf: Mpc[] = coeffs.map((c) => (c instanceof Rational ? [F.fromRational(c.p, c.q, wp), F.ZERO] : evalAdaptive(c, wp)));
   const dcf: Mpc[] = cf.slice(0, -1).map((c, i) => M.cmul(c, [F.fromInt(BigInt(cf.length - 1 - i)), F.ZERO], wp));
   const horner = (cs0: Mpc[], z: Mpc): Mpc => cs0.reduce<Mpc>((acc, c) => M.cadd(M.cmul(acc, z, wp), c, wp), M.C0);
   let z: Mpc = [F.fromNumber(z0.re), F.fromNumber(z0.im)];
-  for (let i = 0; i < 200; i++) {
-    const d = horner(dcf, z);
-    if (F.isZero(d[0]) && F.isZero(d[1])) break;
+  // Newton's iteration, stopped at a critical point (where it is undefined)
+  let d = horner(dcf, z);
+  for (let i = 0; i < 200 && !(F.isZero(d[0]) && F.isZero(d[1])); i++) {
     const step = M.cdiv(horner(cf, z), d, wp);
     z = M.csub(z, step, wp);
     const mag = Math.max(F.mag(step[0]), F.mag(step[1]));
     if (mag < Math.max(F.mag(z[0]), F.mag(z[1]), -wp) - wp) break;
+    d = horner(dcf, z);
   }
   return z;
 }
@@ -84,8 +85,16 @@ export function nroots(fIn: ExprLike | Poly, n = 15, x?: Sym): Expr[] {
     return c;
   });
   const prec = F.dpsToPrec(n);
-  const approx = durandKerner(coeffs.map((c) => (c instanceof Rational ? { re: c.value, im: 0 } : c.toComplex())));
-  const roots = approx.map((z) => refine(coeffs, z, prec));
+  // with rational coefficients the roots of each square-free factor, repeated
+  // by its multiplicity (Newton converges to simple roots only)
+  const parts: [Expr[], number][] = coeffs.every((c) => c instanceof Rational) ? p.sqfList()[1].map(([f, k]) => [f.allCoeffs(), k]) : [[coeffs, 1]];
+  const roots = parts.flatMap(([cs, k]) => {
+    const approx = durandKerner(cs.map((c) => (c instanceof Rational ? { re: c.value, im: 0 } : c.toComplex())));
+    return approx.flatMap((z) => {
+      const r = refine(cs, z, prec);
+      return Array.from({ length: k }, () => r);
+    });
+  });
   const tol = -prec + 4;
   const items = roots.map((r) => {
     const reMag = F.mag(r[0]);
@@ -96,7 +105,8 @@ export function nroots(fIn: ExprLike | Poly, n = 15, x?: Sym): Expr[] {
   items.sort((a, b) => (a.isReal ? 0 : 1) - (b.isReal ? 0 : 1) || a.re - b.re || Math.abs(a.im) - Math.abs(b.im) || Math.sign(a.im) - Math.sign(b.im));
   return items.map(({ r, isReal }) => {
     const re = F.isZero(r[0]) || F.mag(r[0]) < tol ? S.Zero : new Float(r[0], prec);
-    if (isReal) return re instanceof Float ? re : new Float(F.ZERO, prec);
+    // a zero root is the integer 0 (SymPy sympifies mpmath's cleaned-up zero)
+    if (isReal) return re;
     return add(re, mul(new Float(r[1], prec), S.I));
   });
 }

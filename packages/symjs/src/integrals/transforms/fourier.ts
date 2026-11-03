@@ -19,7 +19,8 @@ import type { Expr, ExprLike } from '../../core/nodes';
 import { Sym } from '../../core/nodes';
 import { Add, Constant, Dummy, Fn, Integral, Mul, Pow, Rational, S } from '../../core/nodes';
 import { add, exp, mul, neg, pow, sqrt, sub, sympify } from '../../core/ops';
-import { isNegative, isPositive } from '../../core/assumptions';
+import { isNonZero, isPositive, isReal } from '../../core/assumptions';
+import { solve } from '../../solvers/solve';
 
 import { mapBottomUp, subs, xreplace } from '../../core/traverse';
 import { abs, cos, re, sin } from '../../functions/elementary';
@@ -76,21 +77,21 @@ function powerKernel(mu: Expr, k: Expr, kernel: Kernel): Expr | undefined {
   const num = mu.isNumber ? mu.toNumber() : NaN;
   if (kernel.kind === 'sin') {
     if (!Number.isNaN(num) && !(num > -1 && num < 1)) return undefined;
-    return mul(pow(2, sub(mu, 1)), sqrt(S.Pi), gamma(mul(add(1, mu), S.Half)), pow(gamma(sub(1, mul(mu, S.Half))), -1), pow(k, neg(mu)));
+    return mul(pow(2, sub(mu, 1)), sqrt(S.Pi), gamma(mul(add(1, mu), S.Half)), pow(gamma(sub(1, mul(mu, S.Half))), -1), pow(k, expand(neg(mu))));
   }
   if (kernel.kind === 'cos') {
     if (!Number.isNaN(num) && !(num > 0 && num < 1)) return undefined;
-    return mul(pow(2, sub(mu, 1)), sqrt(S.Pi), gamma(mul(mu, S.Half)), pow(gamma(mul(sub(1, mu), S.Half)), -1), pow(k, neg(mu)));
+    return mul(pow(2, sub(mu, 1)), sqrt(S.Pi), gamma(mul(mu, S.Half)), pow(gamma(mul(sub(1, mu), S.Half)), -1), pow(k, expand(neg(mu))));
   }
   const nu = kernel.nu;
-  return mul(2, pow(2, sub(mu, 2)), gamma(mul(add(nu, mu), S.Half)), pow(gamma(add(mul(sub(nu, mu), S.Half), 1)), -1), pow(k, neg(mu)));
+  return mul(2, pow(2, sub(mu, 2)), gamma(mul(add(nu, mu), S.Half)), pow(gamma(add(mul(sub(nu, mu), S.Half), 1)), -1), pow(k, expand(neg(mu))));
 }
 
 /**
  * Write powers (A + k**2)**p with a non-integer p as k**(2*p)*(A/k**2 + 1)**p,
  * the form in which SymPy's hyperexpand returns Hankel transforms.
  */
-function hyperexpandForm(e: Expr, k: Expr): Expr {
+export function hyperexpandForm(e: Expr, k: Expr): Expr {
   const r = mapBottomUp(e, (t) => {
     if (!(t instanceof Pow) || !(t.base instanceof Add) || (isRat(t.exp) && t.exp.isInteger) || t.exp.has(k)) return t;
     const terms = t.base.args;
@@ -98,15 +99,19 @@ function hyperexpandForm(e: Expr, k: Expr): Expr {
     if (!terms.some((u) => u.key === k2.key) || terms.length !== 2) return t;
     const A = defined(terms.find((u) => u.key !== k2.key), 'the other term');
     if (A.has(k)) return t;
-    return mul(pow(k, mul(2, t.exp)), pow(add(mul(A, pow(k, -2)), 1), t.exp));
+    const p = expand(t.exp);
+    return mul(pow(k, mul(2, p)), pow(add(mul(A, pow(k, -2)), 1), p));
   });
-  // k**a*k**b = k**(a + b), which symjs keeps apart for symbolic exponents
+  // k**a*k**b = k**(a + b), which symjs keeps apart for symbolic exponents; k**(-(m + 2)) = k**(-m - 2)
   return mapBottomUp(r, (t) => {
+    if (t instanceof Pow && t.base.key === k.key) return pow(k, expand(t.exp));
     if (!(t instanceof Mul)) return t;
     let e: Expr = S.Zero;
     let n = 0;
     const rest: Expr[] = [];
-    for (const f of t.args) {
+    // (c*k)**p = c**p*k**p for positive c (k > 0)
+    const factors = t.args.flatMap((f) => (f instanceof Pow && f.base instanceof Mul && f.base.args.some((u) => u.key === k.key) && f.base.args.every((u) => u.key === k.key || (!u.has(k) && isPositive(u) === true)) ? f.base.args.map((u) => pow(u, expand(f.exp))) : [f]));
+    for (const f of factors) {
       if (f.key === k.key) {
         e = add(e, 1);
         n++;
@@ -115,7 +120,7 @@ function hyperexpandForm(e: Expr, k: Expr): Expr {
         n++;
       } else rest.push(f);
     }
-    return n > 1 ? mul(...rest, pow(k, e)) : t;
+    return n > 1 ? mul(...rest, pow(k, expand(e))) : t;
   });
 }
 
@@ -155,8 +160,10 @@ function halfLineIntegral(f0: Expr, x: Sym, k: Expr, kernel: Kernel): Expr | und
     const n = sub(mu, 1);
     if (isExpPow(g)) {
       const e = expOf(g);
-      const m1 = matchByName(e, mul(-1, alpha, x));
-      const m2 = m1 ? undefined : matchByName(e, mul(-1, alpha, pow(x, 2)));
+      // exp(-alpha*x) and exp(-alpha*x**2) with Re(alpha) <= 0 do not decay (SymPy leaves them unevaluated)
+      const decaying = (m: Map<string, Expr> | undefined) => (m && isPositive(re(mget(m, 'alpha'))) !== false ? m : undefined);
+      const m1 = decaying(matchByName(e, mul(-1, alpha, x)));
+      const m2 = m1 ? undefined : decaying(matchByName(e, mul(-1, alpha, pow(x, 2))));
       if (m1 && isNonNegInt(n)) {
         // exp(-a*x): k/(a**2 + k**2), a/(a**2 + k**2), the Hankel form for J_nu
         const a = new Dummy('a');
@@ -243,7 +250,8 @@ function realLineIntegral(f: Expr, x: Sym, Bk: Expr): Expr | undefined {
     const cs = p.allCoeffs();
     const [c2, c1, c0] = [at(cs, 0), at(cs, 1), at(cs, 2)];
     const a = neg(c2);
-    if (isPositive(a) === false) return undefined;
+    // the Gaussian integral converges for Re(a) > 0 (SymPy leaves it unevaluated otherwise)
+    if (isPositive(re(a)) !== true) return undefined;
     const b = new Dummy('b');
     const base = mul(sqrt(mul(S.Pi, pow(a, -1))), exp(mul(pow(add(b, iBk), 2), pow(mul(4, a), -1))));
     let r = base;
@@ -254,20 +262,27 @@ function realLineIntegral(f: Expr, x: Sym, Bk: Expr): Expr | undefined {
     // exp(-a*Abs(x))
     const alpha = wild('alpha', x);
     const m = matchByName(E, mul(-1, alpha, abs(x)));
-    if (m) {
+    // (convergent for Re(a) > 0, as SymPy requires)
+    if (m && isPositive(re(mget(m, 'alpha'))) === true) {
       const a = mget(m, 'alpha');
       return mul(C, 2, a, pow(sub(pow(a, 2), pow(iBk, 2)), -1));
     }
   }
-  if (rest.length === 1 && n === 0) {
+  if (rest.length === 1) {
     const g = at(rest, 0);
-    if (isDiracDelta(g) && g.args.length === 1 && isPolyIn(at(g.args, 0), x) && E.key === S.Zero.key) {
-      const p = Poly.from(at(g.args, 0), [x]);
+    if (isDiracDelta(g) && g.args.length === 1 && isPolyIn(at(g.args, 0), x)) {
+      // DiracDelta(p(x)) = Sum(DiracDelta(x - x0)/|p'(x0)|) over the simple real roots x0
+      const arg = at(g.args, 0);
+      const p = Poly.from(arg, [x]);
+      const value = (x0: Expr, scale: Expr): Expr => mul(C, pow(x0, n), exp(subs(E, [[x, x0]])), exp(mul(iBk, x0)), pow(abs(scale), -1));
       if (p.degree() === 1) {
         const [s1, s0] = pair(p.allCoeffs());
-        const x0 = mul(-1, s0, pow(s1, -1));
-        return mul(C, exp(mul(iBk, x0)), pow(abs(s1), -1));
+        return value(mul(-1, s0, pow(s1, -1)), s1);
       }
+      const dp = diff(arg, x);
+      const roots = solve(arg, x);
+      const slopes = roots.map((x0) => subs(dp, [[x, x0]]));
+      if (roots.length > 0 && roots.every((x0) => isReal(x0) === true) && slopes.every((d) => isNonZero(d) === true)) return add(...roots.map((x0, i) => value(x0, at(slopes, i))));
     }
   }
   if (rest.some((g) => isHeaviside(g) && g.args.length === 1 && at(g.args, 0).key === x.key)) {
@@ -292,7 +307,8 @@ function realLineIntegral(f: Expr, x: Sym, Bk: Expr): Expr | undefined {
       const cc = lin.length === 2 ? neg(at(lin, 0)) : S.Zero;
       if (lin.length === 2) c = mul(c, exp(at(lin, 1)));
       else c = mul(c, exp(at(lin, 0)));
-      if (cc.key === S.Zero.key || isNegative(re(cc)) === true) return undefined;
+      // the integral converges only for Re(c) > 0 (SymPy leaves it unevaluated otherwise)
+      if (isPositive(re(cc)) !== true) return undefined;
       let fact = 1;
       for (let i = 2; i <= k; i++) fact *= i;
       out.push(mul(c, fact, pow(sub(cc, iBk), -(k + 1))));
@@ -306,9 +322,18 @@ function realLineIntegral(f: Expr, x: Sym, Bk: Expr): Expr | undefined {
 function finish(F: Expr, simplify: boolean): Expr {
   if (!simplify) return F;
   // powdenest(polar=True) in SymPy: the symbols are treated as positive
-  const [P, back] = posify(F);
-  const s1 = simplifyExpr(powsimp(P));
-  const s2 = xreplace(s1, [...back].map(([d, v]) => [d, v] as [Expr, Expr]));
+  // (Abs is kept out of it: Abs(m) is not m for a symbol m of unknown sign)
+  const absParts: [Expr, Expr][] = [];
+  const masked = mapBottomUp(F, (t) => {
+    if (!(t instanceof Fn && t.name === 'abs')) return t;
+    const d = new Dummy('abs');
+    absParts.push([d, t]);
+    return d;
+  });
+  const [P, back] = posify(masked);
+  let s1 = xreplace(powsimp(P), [...back].map(([d, v]) => [d, v] as [Expr, Expr]));
+  for (const rep of absParts.reverse()) s1 = xreplace(s1, [rep]);
+  const s2 = simplifyExpr(s1);
   // SymPy's results keep the arguments of gamma functions expanded
   return mapBottomUp(s2, (t) => (t instanceof Fn && t.name === 'gamma' ? gamma(expand(at(t.args, 0))) : t));
 }

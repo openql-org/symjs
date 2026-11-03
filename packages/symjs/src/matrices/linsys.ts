@@ -34,17 +34,16 @@ export function linearEqToMatrix(eqs: readonly ExprLike[], syms: readonly Sym[])
   for (const e0 of eqs) {
     const e = expandMul(asEquation(e0));
     const row: Expr[] = [];
+    // the part without the unknowns: the constant term in each unknown in turn
     let rest = e;
     for (const s of syms) {
-      const pc = polyCoefficients(e, s);
+      const pc = polyCoefficients(rest, s);
       if (!pc || [...pc.keys()].some((k) => k > 1)) return undefined;
       const c = pc.get(1) ?? S.Zero;
       if (syms.some((t) => t !== s && c.has(t))) return undefined;
       row.push(c);
-      rest = add(rest, mul(-1, c, s));
+      rest = expandMul(pc.get(0) ?? S.Zero);
     }
-    rest = expandMul(rest);
-    if (syms.some((s) => rest.has(s))) return undefined;
     rows.push(row);
     rhs.push(mul(-1, rest));
   }

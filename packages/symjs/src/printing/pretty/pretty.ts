@@ -36,6 +36,7 @@ import {
   Pow,
   Rational,
   Rel,
+  S,
   Special,
   Sym,
   UndefFn,
@@ -43,11 +44,12 @@ import {
   isNum,
 } from '../../core/nodes';
 import { at, defined, getOrThrow, last } from '../../core/guard';
-import { couldExtractMinusSign } from '../../core/ops';
+import { couldExtractMinusSign, splitCoeff } from '../../core/ops';
 import { numNeg } from '../../core/num';
 import { BoolOp } from '../../core/boolalg';
 import { Concrete } from '../../core/concrete';
 import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey, sympyFunctionName } from '../sortkey';
+import type { Key } from '../sortkey';
 import { PREC, floatString, precedence, str } from '../str';
 import { setArgsOrdered, setClass } from '../sets';
 import type { PictLike } from './stringpict';
@@ -63,7 +65,6 @@ import {
   prettyUseUnicode,
   sub,
   vobj,
-  xobj,
   xsym,
 } from './symbology';
 
@@ -142,14 +143,34 @@ export const prettyHooks: {
 
 /** A one-character object of the current symbology (SymPy `xobj(symb, 1)`). */
 function xchar(symb: string): string {
-  const x = xobj(symb, 1);
-  return typeof x === 'string' ? x : x.join('');
+  return hobj(symb, 1);
 }
 
 const isExp = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
 const isRat = (e: Expr, p: bigint, q = 1n): boolean => e instanceof Rational && e.p === p && e.q === q;
 const isInfinity = (e: Expr): boolean => e instanceof Special && (e.name === 'oo' || e.name === '-oo');
 const byKey = (a: Expr, b: Expr): number => compareKeys(sortKey(a), sortKey(b));
+
+const ONE_KEY: Key = [[1, 0, 'Number'], [0, []], [], 1];
+
+/**
+ * SymPy default_sort_key of a dict key (an expression, number, boolean,
+ * string, tuple or list), or undefined for a key Python could not hash.
+ */
+function dictKeySortKey(k: Printable): Key | undefined {
+  if (k instanceof Expr) return sortKey(k);
+  if (typeof k === 'number' || typeof k === 'bigint') return sortKey(impl.sympify(k));
+  if (typeof k === 'boolean') return sortKey(k ? S.true : S.false);
+  if (typeof k === 'string') return [[0, 0, 'str'], [1, [k]], ONE_KEY, 1];
+  if (k instanceof PrettyTuple || Array.isArray(k)) {
+    const items: readonly Printable[] = k instanceof PrettyTuple ? k.items : k;
+    const keys = items.map(dictKeySortKey);
+    const defined = keys.filter((x): x is Key => x !== undefined);
+    if (defined.length !== keys.length) return undefined;
+    return [[10, 0, k instanceof PrettyTuple ? 'tuple' : 'list'], [defined.length, defined], ONE_KEY, 1];
+  }
+  return undefined;
+}
 
 /** SymPy `is_Boolean` (boolean functions and atoms; not relations or symbols). */
 function isBooleanNode(e: Expr): boolean {
@@ -166,9 +187,8 @@ function isMatrixLike(x: unknown): x is MatrixLike {
 
 /** SymPy `requires_partial`: more than one non-integer free symbol. */
 function requiresPartial(e: Expr): boolean {
-  const x = e instanceof Derivative ? e.expr : e;
   let n = 0;
-  for (const s of impl.freeSymbols(x)) if (s.assumptions.integer !== true) n++;
+  for (const s of impl.freeSymbols(e)) if (s.assumptions.integer !== true) n++;
   return n > 1;
 }
 
@@ -389,9 +409,16 @@ export class PrettyPrinter {
   }
 
   private printDict(d: ReadonlyMap<Printable, Printable>): PrettyForm {
-    const entries = [...d.entries()];
-    const isExprKey = (kv: readonly [Printable, Printable]): kv is [Expr, Printable] => kv[0] instanceof Expr;
-    if (entries.every(isExprKey)) entries.sort((p, q) => (isExprKey(p) && isExprKey(q) ? byKey(p[0], q[0]) : 0));
+    let entries = [...d.entries()];
+    // SymPy sorts the keys by default_sort_key (keys that are not numbers, strings or expressions keep their order)
+    const keys = entries.map(([k]) => dictKeySortKey(k));
+    const sortable = keys.filter((k): k is Key => k !== undefined);
+    if (sortable.length === keys.length) {
+      entries = sortable
+        .map((k, i) => [k, i] as const)
+        .sort((p, q) => compareKeys(p[0], q[0]))
+        .map(([, i]) => at(entries, i));
+    }
     const items = entries.map(([k, v]) => PrettyForm.of(StringPict.next(this.print(k), ': ', this.print(v))));
     return this.printSeq(items, '{', '}');
   }
@@ -593,8 +620,9 @@ export class PrettyPrinter {
 
     terms.forEach((term, i) => {
       if (term instanceof Mul && couldExtractMinusSign(term)) {
-        const c = at(term.args, 0);
-        const [coeff, other] = isNum(c) ? [c, term.args.slice(1)] : [Rational.of(1n), [...term.args]];
+        // the negative number in front (couldExtractMinusSign)
+        const coeff = splitCoeff(term)[0];
+        const other = term.args.slice(1);
         const negArgs = isRat(coeff, -1n) ? other : [numNeg(coeff), ...other];
         pforms.push(prettyNegative(this.printMulArgs(negArgs), i));
       } else if (term instanceof Rational && term.q > 1n) {
@@ -743,17 +771,17 @@ export class PrettyPrinter {
 
   private printBoolOp(e: BoolOp): PrettyForm {
     const name = e.className;
-    return this.printBooleanByName(name, e.args, e);
+    return this.printBooleanByName(name, e.args);
   }
 
-  private printBooleanByName(name: string, args: readonly Expr[], e: Expr, altchar?: string): PrettyForm {
+  private printBooleanByName(name: string, args: readonly Expr[], altchar?: string): PrettyForm {
     const u = this.useUnicode;
     switch (name) {
       case 'Not': {
         if (!u) return this.printFunction('Not', args);
         const arg = at(args, 0);
         if (arg instanceof BoolOp && (arg.className === 'Equivalent' || arg.className === 'Implies')) {
-          return this.printBooleanByName(arg.className, arg.args, arg, prettyAtom(arg.className === 'Equivalent' ? 'NotEquiv' : 'NotArrow'));
+          return this.printBooleanByName(arg.className, arg.args, prettyAtom(arg.className === 'Equivalent' ? 'NotEquiv' : 'NotArrow'));
         }
         let pform = this.print(arg);
         if (isBooleanNode(arg) && !isNotNode(arg)) pform = PrettyForm.of(pform.parens());
@@ -771,8 +799,14 @@ export class PrettyPrinter {
         if (!u) return this.printFunction(name, args);
         return this.printBoolean(args, altchar ?? defined(prettyAtom('Arrow')), false);
       default:
-        return e instanceof ExtensionExpr || e instanceof BoolOp ? this.printFunction(name, args) : this.emptyPrinter(e);
+        // ITE, the remaining core BoolOp
+        return this.printITE(args);
     }
+  }
+
+  /** SymPy `_print_ITE`: ITE(a, b, c) printed as Piecewise((b, a), (c, True)). */
+  private printITE(args: readonly Expr[]): PrettyForm {
+    return this.print(new Piecewise([at(args, 1), at(args, 0), at(args, 2), S.true]));
   }
 
   private printPiecewise(e: Piecewise): PrettyForm {
@@ -1026,7 +1060,7 @@ export class PrettyPrinter {
 
   private printSet(e: Expr, cls: string): PrettyForm {
     const u = this.useUnicode;
-    const isSet = (x: Printable, ...names: string[]): boolean => x instanceof Expr && names.includes(setClass(x) ?? '');
+    const isSet = (x: Printable, ...names: string[]): boolean => x instanceof Expr && names.some((n) => setClass(x) === n);
     switch (cls) {
       case 'Interval': {
         const [a, b, lo, ro] = [at(e.args, 0), at(e.args, 1), at(e.args, 2), at(e.args, 3)];
@@ -1157,9 +1191,9 @@ export class PrettyPrinter {
       }
       case 'Nand':
       case 'Nor':
-      case 'Implies':
-      case 'Equivalent':
-        return this.printBooleanByName(e.name, e.args, e);
+        return this.printBooleanByName(e.name, e.args);
+      case 'ITE':
+        return this.printITE(e.args);
       default: {
         // a function-like node (str form Name(args)) prints as a function; anything else as its str form
         const s = str(e);

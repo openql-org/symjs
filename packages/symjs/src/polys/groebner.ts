@@ -8,11 +8,12 @@
  */
 
 import { DomainError, PolynomialError } from '../core/errors';
-import { defined } from '../core/guard';
+import { at, defined } from '../core/guard';
 import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { Rational, S, impl } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
-import { Poly } from './sympoly';
+import { str } from '../printing/str';
+import { Poly, sortGens } from './sympoly';
 
 export type MonomialOrder = 'lex' | 'grlex' | 'grevlex';
 
@@ -23,24 +24,23 @@ type SP = Map<string, [Monom, Rational]>;
 const mkey = (m: Monom) => m.join(',');
 
 function cmpMonom(a: Monom, b: Monom, order: MonomialOrder): number {
+  // monomials of one polynomial ring have the same length
   const lex = (x: Monom, y: Monom) => {
-    for (let i = 0; i < x.length; i++) {
-      const d = (x[i] ?? 0) - (y[i] ?? 0);
+    for (let i = 0; i < x.length - 1; i++) {
+      const d = at(x, i) - at(y, i);
       if (d !== 0) return d;
     }
-    return 0;
+    return at(x, -1) - at(y, -1);
   };
   if (order === 'lex') return lex(a, b);
   const da = a.reduce((s, v) => s + v, 0);
   const db = b.reduce((s, v) => s + v, 0);
   if (da !== db) return da - db;
   if (order === 'grlex') return lex(a, b);
-  // grevlex: the smaller last exponent wins
-  for (let i = a.length - 1; i >= 0; i--) {
-    const d = (b[i] ?? 0) - (a[i] ?? 0);
-    if (d !== 0) return d;
-  }
-  return 0;
+  // grevlex: the smaller last differing exponent wins
+  let i = a.length - 1;
+  while (i > 0 && at(a, i) === at(b, i)) i--;
+  return at(b, i) - at(a, i);
 }
 
 const radd = (a: Rational, b: Rational): Rational => Rational.of(a.p * b.q + b.p * a.q, a.q * b.q);
@@ -67,11 +67,11 @@ function addTerm(p: SP, m: Monom, c: Rational): void {
 /** p - c * x^m * q */
 function subMul(p: SP, c: Rational, m: Monom, q: SP): SP {
   const out: SP = new Map(p);
-  for (const [qm, qc] of q.values()) addTerm(out, qm.map((e, i) => e + (m[i] ?? 0)), rmul(rmul(c, qc), Rational.of(-1n)));
+  for (const [qm, qc] of q.values()) addTerm(out, qm.map((e, i) => e + at(m, i)), rmul(rmul(c, qc), Rational.of(-1n)));
   return out;
 }
 
-const divides = (a: Monom, b: Monom) => a.every((e, i) => e <= (b[i] ?? 0));
+const divides = (a: Monom, b: Monom) => a.every((e, i) => e <= at(b, i));
 
 /** Full reduction of p by G: [quotients, remainder]. */
 function divide(p0: SP, G: SP[], order: MonomialOrder): [SP[], SP] {
@@ -84,7 +84,7 @@ function divide(p0: SP, G: SP[], order: MonomialOrder): [SP[], SP] {
     for (const [i, g] of G.entries()) {
       const [gm, gc] = lead(g, order);
       if (divides(gm, lm)) {
-        const m = lm.map((e, j) => e - (gm[j] ?? 0));
+        const m = lm.map((e, j) => e - at(gm, j));
         const c = rdiv(lc, gc);
         addTerm(defined(qs[i]), m, c);
         p = subMul(p, c, m, g);
@@ -103,11 +103,11 @@ function divide(p0: SP, G: SP[], order: MonomialOrder): [SP[], SP] {
 function spoly(f: SP, g: SP, order: MonomialOrder): SP {
   const [fm, fc] = lead(f, order);
   const [gm, gc] = lead(g, order);
-  const l = fm.map((e, i) => Math.max(e, gm[i] ?? 0));
-  const shift = l.map((e, i) => e - (fm[i] ?? 0));
+  const l = fm.map((e, i) => Math.max(e, at(gm, i)));
+  const shift = l.map((e, i) => e - at(fm, i));
   let out: SP = new Map();
-  for (const [m, c] of f.values()) addTerm(out, m.map((e, i) => e + (shift[i] ?? 0)), rdiv(c, fc));
-  out = subMul(out, rdiv(S.One, gc), l.map((e, i) => e - (gm[i] ?? 0)), g);
+  for (const [m, c] of f.values()) addTerm(out, m.map((e, i) => e + at(shift, i)), rdiv(c, fc));
+  out = subMul(out, rdiv(S.One, gc), l.map((e, i) => e - at(gm, i)), g);
   return out;
 }
 
@@ -184,8 +184,23 @@ export class GroebnerBasis {
     const [qs, r] = divide(fromExpr(sympify(f), this.gens), G, this.order);
     return [qs.map((q) => toExpr(q, this.gens)), toExpr(r, this.gens)];
   }
+  /**
+   * SymPy str: each polynomial printed with its terms in the monomial order
+   * of the basis, over the generators in their default (sorted) order.
+   */
   toString(): string {
-    return `GroebnerBasis([${this.exprs.map((e) => e.toString()).join(', ')}], ${this.gens.map((g) => g.toString()).join(', ')}, domain='${this.domain}', order='${this.order}')`;
+    const gens = sortGens(this.gens);
+    const printOrdered = (e: Expr): string => {
+      const terms = [...fromExpr(e, gens).values()].sort((a, b) => cmpMonom(b[0], a[0], this.order));
+      return terms
+        .map(([m, c], i) => {
+          const t = str(mul(c, ...gens.map((g, j) => pow(g, defined(m[j], 'exponent')))));
+          if (i === 0) return t;
+          return t.startsWith('-') ? ` - ${t.slice(1)}` : ` + ${t}`;
+        })
+        .join('');
+    };
+    return `GroebnerBasis([${this.exprs.map(printOrdered).join(', ')}], ${this.gens.map((g) => g.toString()).join(', ')}, domain='${this.domain}', order='${this.order}')`;
   }
 }
 

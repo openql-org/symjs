@@ -7,7 +7,7 @@
  * sin and cos also reach their extrema inside the interval.
  */
 
-import type { Expr } from '../core/nodes';
+import type { Expr, FnName } from '../core/nodes';
 import { S, impl } from '../core/nodes';
 import { defined } from '../core/guard';
 
@@ -15,7 +15,7 @@ const INCREASING = new Set(['exp', 'log', 'atan', 'asinh', 'sinh', 'tanh', 'erf'
 const DECREASING = new Set(['acos', 'acot']);
 
 /** f([a, b]) for a function of one AccumBounds argument; undefined when it is not handled. */
-export function accumBoundsFunction<N extends string>(name: N, iv: Expr, apply: (name: N, x: Expr) => Expr): Expr | undefined {
+export function accumBoundsFunction(name: FnName, iv: Expr, apply: (name: FnName, x: Expr) => Expr): Expr | undefined {
   const ab = defined(impl.accumBounds, 'AccumBounds support');
   const [lo, hi] = ab.bounds(iv);
   if (INCREASING.has(name)) return ab.make(apply(name, lo), apply(name, hi));
@@ -33,6 +33,9 @@ export function accumBoundsFunction<N extends string>(name: N, iv: Expr, apply: 
     const max = vals.reduce((m, v) => (num(v) > num(m) ? v : m));
     return ab.make(min, max);
   }
+  // SymPy: sec = 1/cos, csc = 1/sin, cot(x) = -tan(x + pi/2) for an interval
+  if (name === 'sec' || name === 'csc') return impl.pow(apply(name === 'sec' ? 'cos' : 'sin', iv), -1);
+  if (name === 'cot') return impl.mul(-1, apply('tan', impl.add(iv, impl.mul(S.Pi, S.Half))));
   if (name === 'tan') {
     const a = lo.toNumber();
     const b = hi.toNumber();

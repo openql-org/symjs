@@ -109,6 +109,8 @@ See [compat/REPORT.md](compat/REPORT.md) for the current numbers and the highest
 
 ## Development
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the rules every change follows (100% test coverage, expected values from SymPy, mathematical correctness over SymPy's output, branches and commits).
+
 ```sh
 pnpm install
 pnpm test        # vitest (all packages; extend modules use the base module from source)

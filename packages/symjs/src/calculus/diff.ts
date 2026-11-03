@@ -6,7 +6,7 @@
  */
 
 import { NotImplementedError } from '../core/errors';
-import { first } from '../core/guard';
+import { at, first } from '../core/guard';
 import { isReal } from '../core/assumptions';
 import { piecewise } from '../core/logic';
 import type { Expr, ExprLike } from '../core/nodes';
@@ -14,9 +14,10 @@ import { Add, ExtensionExpr, Constant, Derivative, Dummy, Fn, Integral, Mul, Pie
 import { derivative } from '../core/undef';
 import { SubsNode } from '../core/subsnode';
 import { Concrete } from '../core/concrete';
+import { Indexed } from '../core/indexed';
 import { add, mul, pow, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
-import { abs, conjugate, cos, cosh, im as fnIm, log, re as fnRe, sin, sinh, tan, tanh } from '../functions/elementary';
+import { abs, conjugate, cos, cosh, fn, im as fnIm, log, re as fnRe, sin, sinh, tan, tanh } from '../functions/elementary';
 
 /**
  * Partial derivatives of multi-argument functions: fnPartials[name](args, i)
@@ -130,7 +131,11 @@ function d(e: Expr, x: Expr): Expr {
   }
   if (e instanceof Derivative) {
     if (e.expr instanceof UndefFn && e.expr.args.some((a) => a.key === x.key)) return derivative(e, [[x, 1]], true);
-    return S.Zero;
+    // otherwise x enters through the expression: evaluate the inner derivative first, like SymPy
+    // (diff(Derivative(f(x*y), y), x) = x*y*Subs(Derivative(f(xi), (xi, 2)), xi, x*y) + Subs(Derivative(f(xi), xi), xi, x*y))
+    const inner = e.variableCount.reduce((acc, [v, k]) => diff(acc, v, k), e.expr);
+    // a derivative that stays unevaluated (Derivative(floor(x*y), y)) gets x appended
+    return inner.key === e.key ? derivative(e, [[x, 1]]) : d(inner, x);
   }
   if (e instanceof Concrete && e.kind2 === 'Sum') {
     // SymPy Sum._eval_derivative: the sum of the derivatives when the limits do not depend on x
@@ -140,7 +145,10 @@ function d(e: Expr, x: Expr): Expr {
   }
   if (e instanceof Piecewise) return piecewise(...e.pairs.map(([v, c]) => [d(v, x), c] as const));
   if (e instanceof Integral) return diffIntegral(e, x);
-  throw new NotImplementedError(`diff: unsupported expression ${e.toString()}`);
+  // SymPy Product._eval_derivative gives a Sum of products of the factors
+  if (e instanceof Concrete) throw new NotImplementedError('diff: derivative of a product is not supported');
+  // relations, limits and other objects without a derivative rule stay unevaluated (SymPy Derivative(x < 1, x))
+  return derivative(e, [[x, 1]]);
 }
 
 /**
@@ -175,18 +183,46 @@ function diffIntegral(e: Integral, x: Expr): Expr {
   return add(...terms);
 }
 
+/** The derivative with respect to a subexpression t, which is treated as a symbol. */
+function diffWrtTerm(e: Expr, t: Expr, n: number): Expr {
+  const xi = new Dummy('xi');
+  return xreplace(diff(xreplace(e, [[t, xi]]), xi, n), [[xi, t]]);
+}
+
+/** The distinct indexed objects with the given base in e. */
+function indexedTerms(e: Expr, base: Expr, out = new Map<string, Indexed>()): Map<string, Indexed> {
+  if (e instanceof Indexed && e.base.key === base.key) out.set(e.key, e);
+  for (const a of e.args) indexedTerms(a, base, out);
+  return out;
+}
+
+/**
+ * SymPy Indexed._eval_derivative: d A[i]/d A[j] = KroneckerDelta(i, j), so the
+ * derivative with respect to A[j] adds up d e/d A[k] * KroneckerDelta(k, j) over
+ * the A[k] in e.
+ */
+function diffIndexed(e: Expr, x: Indexed): Expr {
+  const terms: Expr[] = [];
+  for (const t of indexedTerms(e, x.base).values()) {
+    if (t.indices.length !== x.indices.length) throw new RangeError(`diff: different number of indices: d(${t.toString()})/d(${x.toString()})`);
+    const delta = mul(...t.indices.map((i, k) => fn('KroneckerDelta', [i, at(x.indices, k)])));
+    terms.push(mul(diffWrtTerm(e, t, 1), delta));
+  }
+  return add(...terms);
+}
+
 /** n-th derivative of e with respect to x. */
 export function diff(ex: ExprLike, x: Expr, n = 1): Expr {
   if (!Number.isInteger(n) || n < 0) throw new RangeError('diff: order must be a non-negative integer');
   let e = sympify(ex);
+  if (x instanceof Indexed) {
+    for (let i = 0; i < n; i++) e = diffIndexed(e, x);
+    return e;
+  }
   // SymPy: a variable that is not a scalar (is_scalar = False) keeps the derivative unevaluated
   if (x instanceof ExtensionExpr && !x.isScalar && n > 0 && e.has(x)) return derivative(e, [[x, n]]);
-  if (!(x instanceof Sym) && !isMatrixElement(x)) {
-    // differentiate with respect to an expression such as f(x): treat it as a symbol
-    const t = new Dummy('xi');
-    const r = diff(xreplace(e, [[x, t]]), t, n);
-    return xreplace(r, [[t, x]]);
-  }
+  // differentiate with respect to an expression such as f(x): treat it as a symbol
+  if (!(x instanceof Sym) && !isMatrixElement(x)) return diffWrtTerm(e, x, n);
   for (let i = 0; i < n; i++) e = d(e, x);
   return e;
 }
