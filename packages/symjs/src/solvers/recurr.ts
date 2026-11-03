@@ -6,7 +6,6 @@
  * sympy.solvers.recurr: rsolve_poly, rsolve_ratio, rsolve_hyper, rsolve).
  */
 
-import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Dummy, Mul, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
 import { at, defined, first, getOrThrow } from '../core/guard';
@@ -16,10 +15,12 @@ import { asNumerDenom } from '../core/methods';
 import { binomial } from '../functions/special';
 import { Matrix } from '../matrices/matrix';
 import { polyCoefficients, roots } from '../polys/poly';
-import { Poly, polyLcm } from '../polys/sympoly';
+import { Poly, factorListExpr, polyLcm } from '../polys/sympoly';
 import { product } from '../concrete/summations';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { expandMul as expand } from '../simplify/expand';
+import { cancel } from '../simplify/rational';
+import { hypersimilar, hypersimp } from '../simplify/gammasimp';
 import { simplify } from '../simplify/simplify';
 import { linsolve, solveUndeterminedCoeffs } from './solve';
 
@@ -49,10 +50,23 @@ function distinctRoots(e: Expr, x: Sym): Expr[] {
   return [...out.values()];
 }
 
-/** Largest non-negative integer root of e in x, or undefined. */
+/**
+ * Largest non-negative integer root of e in x, or undefined (SymPy roots with
+ * filter='Z'). When roots() cannot solve a factor of high degree, the integer
+ * roots are still those of the linear factors.
+ */
 function maxNniRoot(e: Expr, x: Sym): number | undefined {
-  const rs = distinctRoots(e, x).filter((r): r is Rational => isIntR(r) && !r.isNegative);
-  return rs.length ? Math.max(...rs.map((r) => Number(r.p))) : undefined;
+  let rs: Expr[];
+  try {
+    rs = roots(expand(e), x);
+  } catch {
+    rs = factorListExpr(expand(e))[1].flatMap(([f]) => {
+      const [d, c1] = lt(f, x);
+      return d === 1 ? [mul(-1, subs(f, x, 0), pow(c1, -1))] : [];
+    });
+  }
+  const ns = rs.filter((r): r is Rational => isIntR(r) && !r.isNegative).map((r) => Number(r.p));
+  return ns.length ? Math.max(...ns) : undefined;
 }
 
 let curN: Sym;
@@ -114,12 +128,8 @@ export function rsolvePoly(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym,
     }
     let E: Expr = S.Zero;
     for (let i = 0; i <= r; i++) E = add(E, mul(at(coeffs, i), subs(y, n, add(n, i))));
-    let sols: Expr[][];
-    try {
-      sols = solveUndeterminedCoeffs(add(E, mul(-1, f)), C, [n]);
-    } catch {
-      return undefined;
-    }
+    // the coefficients are polynomials (lt above), so E - f is a polynomial in n linear in the constants
+    const sols = solveUndeterminedCoeffs(add(E, mul(-1, f)), C, [n]);
     if (!sols.length) return undefined;
     const sol = at(sols, 0);
     _C = C;
@@ -179,8 +189,9 @@ export function rsolvePoly(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym,
     for (let i = N + 1; i < U; i++) E.push(homogeneous ? gf(i) : add(gf(i), delta(h, i)));
     let solved = new Map<string, Expr>();
     if (E.length) {
+      // a homogeneous system always has the zero solution
       const sol = linsolve(E, C);
-      if (!sol) return homogeneous ? [S.Zero, []] : undefined;
+      if (!sol) return undefined;
       solved = new Map(C.map((c, i) => [c.key, at(sol, i)] as [string, Expr]).filter(([k, v]) => v.key !== k));
     }
     result = h;
@@ -253,13 +264,6 @@ export function rsolveRatio(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
   return [simplify(mul(result[0], pow(C, -1))), result[1]];
 }
 
-/** f(n+1)/f(n) simplified (SymPy hypersimp), or undefined when not a rational function of n. */
-function hypersimp(f: Expr, n: Sym): Expr | undefined {
-  const q = simplify(mul(subs(f, n, add(n, 1)), pow(f, -1)));
-  const [num, den] = asNumerDenom(q);
-  return isPolyIn(num, n) && isPolyIn(den, n) ? q : undefined;
-}
-
 /** Casoratian determinant of the sequences (zero=False). */
 function casoratian(seqs: Expr[], n: Sym): Expr {
   const k = seqs.length;
@@ -280,11 +284,7 @@ export function rsolveHyper(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
       const similar: [Expr, Expr][] = [];
       for (const g of expand(f) instanceof Add ? expand(f).args : [expand(f)]) {
         if (!hypersimp(g, n)) return undefined;
-        const hit = similar.find(([h]) => {
-          const q = simplify(mul(g, pow(h, -1)));
-          const [a, b] = asNumerDenom(q);
-          return isPolyIn(a, n) && isPolyIn(b, n);
-        });
+        const hit = similar.find(([h]) => hypersimilar(g, h, n));
         if (hit) hit[1] = add(hit[1], g);
         else similar.push([g, S.Zero]);
       }
@@ -350,13 +350,13 @@ export function rsolveHyper(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
       let sol: Expr[];
       if (d === 0 && !isZeroE(expand(add(...recurr.map((c, j) => mul(c, j)))))) sol = [new Sym('C0')];
       else {
-        const rp = rsolvePoly(recurr, 0, n, 0);
-        if (!rp) continue;
-        const [s0, syms] = rp;
-        sol = syms.map((c) => polyCoefficients(expand(s0), c)?.get(1) ?? S.Zero);
+        // a homogeneous polynomial recurrence always has a polynomial solution (possibly 0), and each
+        // free constant C_i multiplies a nonzero polynomial Q_i
+        const [s0, syms] = defined(rsolvePoly(recurr, 0, n, 0), 'homogeneous polynomial solution');
+        const s0x = expand(s0);
+        sol = syms.map((c) => getOrThrow(defined(polyCoefficients(s0x, c), 'polynomial in the constants'), 1));
       }
       for (const Cn of sol) {
-        if (isZeroE(Cn)) continue;
         const ratio = simplify(mul(z, A, subs(Cn, n, add(n, 1)), pow(B, -1), pow(Cn, -1)));
         let n0: Expr = S.Zero;
         for (const nr of distinctRoots(asNumerDenom(ratio)[1], n)) {
@@ -364,7 +364,10 @@ export function rsolveHyper(coeffsIn: readonly ExprLike[], fIn: ExprLike, n: Sym
           const cand = add(nr, 1);
           if (cand instanceof Rational && n0 instanceof Rational && cand.value > n0.value) n0 = cand;
         }
-        let K = product(ratio, [n, n0, add(n, -1)]);
+        // product over a fresh index (n is also the upper limit) of the ratio in num/den form, which
+        // Product evaluates through rising factorials like SymPy's as_numer_denom step
+        const k = new Dummy('k');
+        let K = product(subs(cancel(ratio), n, k), [k, n0, add(n, -1)]);
         const hasComb = (e: Expr): boolean => ('name' in e && typeof e.name === 'string' && ['factorial', 'ff', 'rf'].includes(e.name)) || e.args.some(hasComb);
         if (hasComb(K)) K = simplify(K);
         if (!isZeroE(simplify(casoratian([...kernel, K], n)))) kernel.push(K);
@@ -396,19 +399,23 @@ export function rsolve(fIn: ExprLike, y: Expr, init?: [ExprLike, ExprLike][]): E
       iPart.push(g);
       continue;
     }
-    if (dep.length > 1) throw new NotImplementedError('rsolve: nonlinear recurrence');
     const k = add(first(first(dep).args), mul(-1, n));
-    if (!isIntR(k)) throw new TypeError(`rsolve: '${y.name}(${n.name} + k)' expected`);
+    // SymPy raises ValueError for a product of terms y(n + k) (nonlinear) or a shift that is not an integer
+    if (dep.length > 1 || !isIntR(k)) throw new TypeError(`rsolve: '${y.name}(${n.name} + k)' expected, got '${g.toString()}'`);
     const coeff = mul(...fs.filter((t) => t !== dep[0]));
     const key = Number(k.p);
     hPart.set(key, [...(hPart.get(key) ?? []), coeff]);
   }
   const H = new Map<number, Expr>([...hPart].map(([k, cs]) => [k, simplify(add(...cs))]));
   let ip = add(...iPart);
+  const ipTerms = expand(ip);
+  if (!isZeroE(ip) && hypersimp(ip, n) === undefined && !(ipTerms instanceof Add && ipTerms.args.every((t) => hypersimp(t, n) !== undefined))) {
+    throw new TypeError(`rsolve: the independent term should be a sum of hypergeometric functions, got '${ip.toString()}'`);
+  }
   let common: Expr = S.One;
   for (const c of H.values()) {
     const [num, den] = asNumerDenom(c);
-    if (!isPolyIn(num, n) || !isPolyIn(den, n)) throw new NotImplementedError('rsolve: polynomial or rational coefficients expected');
+    if (!isPolyIn(num, n) || !isPolyIn(den, n)) throw new TypeError(`rsolve: polynomial or rational function expected, got '${c.toString()}'`);
     if (!isPolyIn(c, n)) common = polyLcm(common, den);
   }
   const [iNum, iDen] = asNumerDenom(ip);

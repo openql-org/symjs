@@ -31,9 +31,12 @@ Object.assign(mpFns, {
   factorial: mpFn1((a, p) => SP.cgamma(M.cadd(a, one, p + 20), p)),
   polygamma: mpFn2((n, z, p) => SP.cpolygamma(toInt(n), z, p)),
   harmonic: (args, p) => {
-    if (args.length !== 1) throw new NotImplementedError('harmonic(n, m)');
     const wp = p + 20;
-    return M.cadd(SP.cpolygamma(0, M.cadd(at(args, 0), one, wp), wp), [M.mpEuler(wp), ZERO], p);
+    const n1 = M.cadd(at(args, 0), one, wp);
+    // H(n, m) = zeta(m) - zeta(m, n + 1)
+    const m = args[1];
+    if (m && !(M.isReal(m) && F.cmp(m[0], F.ONE) === 0)) return M.csub(SP.czeta(m, wp), SP.czeta(m, wp, n1), p);
+    return M.cadd(SP.cpolygamma(0, n1, wp), [M.mpEuler(wp), ZERO], p);
   },
   catalan: mpFn1((z, p) => {
     // 4^z Gamma(z + 1/2) / (sqrt(pi) Gamma(z + 2))
@@ -47,10 +50,19 @@ Object.assign(mpFns, {
     const wp = p + 30;
     return M.cdiv(M.cmul(SP.cgamma(a, wp), SP.cgamma(b, wp), wp), SP.cgamma(M.cadd(a, b, wp), wp), p);
   }),
-  zeta: (args, p) => {
-    if (args.length !== 1) throw new NotImplementedError('Hurwitz zeta');
-    return SP.czeta(at(args, 0), p);
-  },
+  binomial: mpFn2((n, k, p) => {
+    const wp = p + 30;
+    const [kp, kq] = F.toRational(k[0]);
+    if (M.isReal(k) && kq === 1n && kp >= 0n && kp <= 10000n) {
+      // n (n - 1) ... (n - k + 1) / k!, also at the poles of the Gamma form
+      let num = one;
+      for (let i = 0n; i < kp; i++) num = M.cdiv(M.cmul(num, M.csub(n, [F.fromInt(i), ZERO], wp), wp), [F.fromInt(i + 1n), ZERO], wp);
+      return [F.round(num[0], p), F.round(num[1], p)];
+    }
+    const g = (z: Mpc) => SP.cgamma(M.cadd(z, one, wp), wp);
+    return M.cdiv(g(n), M.cmul(g(k), g(M.csub(n, k, wp)), wp), p);
+  }),
+  zeta: (args, p) => SP.czeta(at(args, 0), p, args[1]),
   erf: mpFn1(SP.cerf),
   erfc: mpFn1(SP.cerfc),
   erfi: mpFn1(SP.cerfi),

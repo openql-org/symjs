@@ -10,7 +10,8 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, Mul, Pow, Rational, S, impl } from '../core/nodes';
+import { Add, Constant, Mul, Pow, Rational, S, Special, impl } from '../core/nodes';
+import { isPositive } from '../core/assumptions';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { countOps, ordered } from '../core/match';
 import { keepCoeff } from '../core/methods';
@@ -109,6 +110,10 @@ export function splitSurds(expr: Expr): [Expr, Expr, Expr] {
   return [g2, add(...a1v), add(...a2v)];
 }
 
+/** Does e contain 0, nan or zoo (SymPy d.has(S.Zero, nan, zoo))? */
+const hasZeroOrNaN = (e: Expr): boolean =>
+  (e instanceof Rational && e.isZero) || (e instanceof Special && (e.name === 'nan' || e.name === 'zoo')) || e.args.some(hasZeroOrNaN);
+
 /** SymPy rad_rationalize(num, den): rationalize den = a*sqrt(g) + b step by step. */
 export function radRationalize(numIn: Expr, den: Expr): [Expr, Expr] {
   if (!(den instanceof Add)) return [numIn, den];
@@ -187,7 +192,7 @@ export function radsimp(exIn: ExprLike, opts: { symbolic?: boolean; maxTerms?: n
     if (ispow2(d)) {
       const d2 = pow(sqrtdenest(sqrt(d.base)), fraction(d.exp)[0]);
       if (d2.key !== d.key) return handle(pow(d2, -1));
-    } else if (d instanceof Pow && (d.exp instanceof Rational && d.exp.isInteger)) {
+    } else if (d instanceof Pow && ((d.exp instanceof Rational && d.exp.isInteger) || isPositive(d.base))) {
       return pow(handle(pow(d.base, -1)), d.exp);
     }
     if (!(d instanceof Add || ispow2(d))) return pow(rebuild(d, d.args.map(handle)), -1);
@@ -230,6 +235,8 @@ export function radsimp(exIn: ExprLike, opts: { symbolic?: boolean; maxTerms?: n
       n = mul(n, nm);
       d = mul(d, nm);
       d = powdenest(mexpand(d), { force: symbolic });
+      // a vanishing denominator (1/(x + sqrt(x**2))): the squaring was invalid, keep the input
+      if (hasZeroOrNaN(d)) return expr;
       if (d.args.length === 0) break;
     }
     if (!keep) return expr;

@@ -59,6 +59,7 @@ export function className(e: Expr): string {
   if (isExp(e)) return 'exp';
   if (e instanceof Fn) return ({ abs: 'Abs', ff: 'FallingFactorial', rf: 'RisingFactorial' } as Record<string, string>)[e.name] ?? e.name;
   if (e instanceof UndefFn) return e.name;
+  if (e instanceof ExtensionExpr) return e.name;
   if (e instanceof Add) return 'Add';
   if (e instanceof Mul) return 'Mul';
   if (e instanceof Pow) return 'Pow';
@@ -127,7 +128,7 @@ const logArg = (a: Expr): Expr | undefined => (a instanceof Fn && a.name === 'lo
 
 reg1('sin', 'exp', (a) => {
   const x = expArg(a);
-  return div(add(exp(mul(x, I)), neg(exp(neg(mul(x, I))))), mul(2, I));
+  return div(add(exp(mul(x, I)), neg(exp(mul(neg(x), I)))), mul(2, I));
 });
 reg1('sin', 'cos', (a) => raw('cos', add(a, neg(div(pi, 2)))));
 reg1('sin', 'tan', (a) => {
@@ -142,7 +143,7 @@ reg1('sin', 'sincos', (a) => div(mul(sin(a), cos(a)), cos(a)));
 
 reg1('cos', 'exp', (a) => {
   const x = expArg(a);
-  return div(add(exp(mul(x, I)), exp(neg(mul(x, I)))), 2);
+  return div(add(exp(mul(x, I)), exp(mul(neg(x), I))), 2);
 });
 reg1('cos', 'sin', (a) => raw('sin', add(a, div(pi, 2))));
 reg1('cos', 'tan', (a) => {
@@ -157,7 +158,7 @@ reg1('cos', 'sincos', (a) => div(mul(sin(a), cos(a)), sin(a)));
 
 reg1('tan', 'exp', (a) => {
   const x = expArg(a);
-  const ne = exp(neg(mul(x, I)));
+  const ne = exp(mul(neg(x), I));
   const pe = exp(mul(x, I));
   return div(mul(I, add(ne, neg(pe))), add(ne, pe));
 });

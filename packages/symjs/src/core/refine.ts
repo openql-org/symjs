@@ -20,9 +20,9 @@ import { Add, BoolAtom, Constant, Expr, ExtensionExpr, Fn, Float, Mul, Pow, Rati
 import { add, mul, pow, sympify } from './ops';
 import { mapBottomUp, xreplace } from './traverse';
 import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from './assumptions';
-import { BoolOp, and, not, or } from './boolalg';
+import { BoolOp, and, not, or, xor } from './boolalg';
 import type { Truth } from './truth';
-import { at, getOrThrow } from './guard';
+import { at, getOrThrow, pair } from './guard';
 import { SympifyError } from './errors';
 
 /** Predicate names of Q (SymPy Q.<name>). */
@@ -101,7 +101,7 @@ export class AppliedPredicate extends ExtensionExpr {
     return at(this.args, 0);
   }
   override printLatex(print: (e: Expr) => string): string {
-    return `Q_{\\text{${this.predicate.replace(/_/g, '\\_')}}}\\left(${this.args.map(print).join(', ')}\\right)`;
+    return `\\operatorname{Q}_{\\text{${this.predicate.replace(/_/g, '\\_')}}}(${this.args.map(print).join(', ')})`;
   }
   /** Conjunction (SymPy &). */
   and(...others: (Expr | readonly Expr[])[]): Expr {
@@ -302,29 +302,61 @@ interface Branch {
   readonly forward: Map<string, Sym>;
 }
 
-class Inconsistent extends RangeError {}
-
-function addFact(facts: Facts, name: string, value: boolean): void {
+/** Adds a fact and its consequences; false when it contradicts the known facts. */
+function addFact(facts: Facts, name: string, value: boolean): boolean {
   const todo: Literal[] = [[name, value]];
   for (let lit = todo.pop(); lit !== undefined; lit = todo.pop()) {
     const [n, v] = lit;
     const cur = facts.get(n);
     if (cur === v) continue;
-    if (cur !== undefined) throw new Inconsistent('inconsistent assumptions');
+    if (cur !== undefined) return false;
     facts.set(n, v);
     todo.push(...(consequences.get(`${n}:${String(v)}`) ?? []));
   }
+  return true;
 }
 
 const asList = (a: Assumption): Expr[] => (typeof a === 'boolean' ? (a ? [] : [S.false]) : a instanceof Expr ? [a] : [...a]);
 
+/**
+ * Xor, ITE, Implies, Equivalent, Nand, Nor and Xnor (the core nodes and the
+ * gates of the logic module, told apart by name) in terms of And, Or and Not.
+ */
+function expandBool(e: Expr): Expr | undefined {
+  const name = e instanceof BoolOp ? e.className : e instanceof ExtensionExpr && !(e instanceof AppliedPredicate) ? e.name : '';
+  const a = e.args;
+  switch (name) {
+    case 'Xor': {
+      const h = at(a, 0);
+      const r = xor(...a.slice(1));
+      return or(and(h, not(r)), and(not(h), r));
+    }
+    case 'ITE':
+      return or(and(at(a, 0), at(a, 1)), and(not(at(a, 0)), at(a, 2)));
+    case 'Implies':
+      return or(not(at(a, 0)), at(a, 1));
+    case 'Equivalent':
+      return or(and(...a), and(...a.map((x) => not(x))));
+    case 'Nand':
+      return not(and(...a));
+    case 'Nor':
+      return not(or(...a));
+    case 'Xnor':
+      return not(xor(...a));
+    default:
+      return undefined;
+  }
+}
+
 /** The assumptions in disjunctive normal form: a list of conjunctions of literals. */
 function dnf(e: Expr, negated = false): (readonly [AppliedPredicate, boolean])[][] {
   if (e instanceof BoolAtom) return e.value !== negated ? [[]] : [];
+  const expanded = expandBool(e);
+  if (expanded) return dnf(expanded, negated);
   if (e instanceof BoolOp) {
     if (e.op === 'Not') return dnf(at(e.args, 0), !negated);
+    // only And and Or are left
     const isAnd = (e.op === 'And') !== negated;
-    if (e.op !== 'And' && e.op !== 'Or') return [[]];
     const parts = e.args.map((a) => dnf(a, negated));
     if (!isAnd) return parts.flat();
     let acc: (readonly [AppliedPredicate, boolean])[][] = [[]];
@@ -339,32 +371,28 @@ function dnf(e: Expr, negated = false): (readonly [AppliedPredicate, boolean])[]
   return [[]];
 }
 
-/** The branches of the assumptions with their facts closed under the implications. */
-function branches(assumptions: Assumption): Branch[] {
-  const all = and(...asList(assumptions), ...globalAssumptions);
+/** The branches of the assumptions with their facts closed under the implications (none when inconsistent). */
+function consistentBranches(all: Expr): Branch[] {
   const out: Branch[] = [];
   for (const conj of dnf(all)) {
     const facts = new Map<string, { expr: Expr; facts: Facts }>();
-    try {
-      for (const [ap, v] of conj) {
-        const rel = relationFact(ap, v);
-        if (rel) {
-          const entry = facts.get(rel[0].key) ?? { expr: rel[0], facts: new Map<string, boolean>() };
-          addFact(entry.facts, rel[1], rel[2]);
-          facts.set(rel[0].key, entry);
-          continue;
-        }
-        if (ap.args.length !== 1) continue;
-        const entry = facts.get(ap.arg.key) ?? { expr: ap.arg, facts: new Map<string, boolean>() };
-        addFact(entry.facts, ap.predicate, v);
-        facts.set(ap.arg.key, entry);
-      }
-    } catch (err) {
-      if (err instanceof Inconsistent) continue;
-      throw err;
-    }
-    out.push({ facts, forward: symbolsWithFacts(facts) });
+    const consistent = conj.every(([ap, v]) => {
+      // Q.gt(a, b) is a fact about a - b; other predicates of several arguments are not used
+      const fact = relationFact(ap, v) ?? (ap.args.length === 1 ? ([ap.arg, ap.predicate, v] as const) : undefined);
+      if (!fact) return true;
+      const [arg, name, value] = fact;
+      const entry = facts.get(arg.key) ?? { expr: arg, facts: new Map<string, boolean>() };
+      facts.set(arg.key, entry);
+      return addFact(entry.facts, name, value);
+    });
+    if (consistent) out.push({ facts, forward: symbolsWithFacts(facts) });
   }
+  return out;
+}
+
+/** The branches of the assumptions together with the global assumptions; throws when they are inconsistent. */
+function branches(assumptions: Assumption): Branch[] {
+  const out = consistentBranches(and(...asList(assumptions), ...globalAssumptions));
   if (!out.length) throw new RangeError('inconsistent assumptions');
   return out;
 }
@@ -434,7 +462,6 @@ function findByKey(e: Expr, key: string): Expr | undefined {
 // ---- deciding a predicate ----------------------------------------------------------------
 
 type Tri = boolean | undefined;
-const tri = (v: boolean | undefined | null): Tri => (v === null ? undefined : v);
 const notTri = (v: Tri): Tri => (v === undefined ? undefined : !v);
 const allTri = (xs: readonly Expr[], f: (e: Expr) => Tri): Tri => {
   let unknown = false;
@@ -515,21 +542,23 @@ class Decider {
     switch (name) {
       case 'real':
         if (e instanceof Special) return false;
+        // isReal counts oo and -oo as real (extended reals); Q.real does not
+        if (this.q('finite', e) === false) return false;
         if (isConst(e, 'I')) return false;
         if (this.q('imaginary', e) === true) return false;
-        return tri(isReal(this.re(e))) ?? (this.q('rational', e) === true ? true : undefined);
+        return isReal(this.re(e)) ?? (this.q('rational', e) === true ? true : undefined);
       case 'extended_real':
         if (e instanceof Special) return e.name === 'oo' || e.name === '-oo';
         return this.q('real', e) === true ? true : undefined;
       case 'positive':
         if (e instanceof Special) return false;
-        return this.ext(tri(isPositive(this.re(e))), e) ?? this.trichotomy(e, 'negative');
+        return this.ext(isPositive(this.re(e)), e) ?? (this.q('negative', e) === true ? false : this.trichotomy(e, 'negative'));
       case 'negative':
         if (e instanceof Special) return false;
-        return this.ext(tri(isNegative(this.re(e))), e) ?? this.trichotomy(e, 'positive');
+        return this.ext(isNegative(this.re(e)), e) ?? (this.q('positive', e) === true ? false : this.trichotomy(e, 'positive'));
       case 'nonnegative':
         if (e instanceof Special) return false;
-        return this.ext(tri(isNonNegative(this.re(e))), e);
+        return this.ext(isNonNegative(this.re(e)), e);
       case 'nonpositive': {
         if (e instanceof Special) return false;
         const p = this.q('positive', e);
@@ -539,15 +568,15 @@ class Decider {
       }
       case 'zero':
         if (e instanceof Special) return false;
-        return tri(isZero(this.re(e))) ?? (this.q('nonzero', e) === true || this.q('real', e) === false ? false : undefined);
+        return isZero(this.re(e)) ?? (this.q('nonzero', e) === true || this.q('real', e) === false ? false : undefined);
       case 'nonzero': {
         if (e instanceof Special) return false;
         if (this.q('real', e) === false) return false;
-        const z = tri(isNonZero(this.re(e)));
+        const z = isNonZero(this.re(e));
         return z !== undefined ? z && this.q('real', e) === true ? true : z ? undefined : false : this.q('positive', e) === true || this.q('negative', e) === true || this.q('odd', e) === true ? true : undefined;
       }
       case 'extended_positive':
-        return isConst(e) || !(e instanceof Special) ? this.q('positive', e) === true ? true : this.q('extended_real', e) === true && this.q('extended_nonpositive', e) === true ? false : undefined : e.name === 'oo';
+        return !(e instanceof Special) ? this.q('positive', e) === true ? true : this.q('extended_real', e) === true && this.q('extended_nonpositive', e) === true ? false : undefined : e.name === 'oo';
       case 'extended_negative':
         return e instanceof Special ? e.name === '-oo' : this.q('negative', e) === true ? true : undefined;
       case 'extended_nonnegative':
@@ -563,7 +592,7 @@ class Decider {
       case 'integer':
         if (e instanceof Special || isConst(e, 'pi', 'E', 'I', 'GoldenRatio', 'TribonacciConstant')) return false;
         if (e instanceof Rational) return e.q === 1n;
-        return tri(isIntegerQ(this.re(e))) ?? (this.q('rational', e) === false ? false : undefined);
+        return isIntegerQ(this.re(e)) ?? (this.q('rational', e) === false ? false : undefined);
       case 'noninteger': {
         const i = this.q('integer', e);
         return i === true ? false : i === false && this.q('real', e) === true ? true : undefined;
@@ -611,7 +640,7 @@ class Decider {
       case 'infinite':
         return notTri(this.q('finite', e));
       case 'commutative':
-        return this.re(e).isCommutative ? true : undefined;
+        return this.re(e).isCommutative;
       case 'is_true':
         return e instanceof BoolAtom ? e.value : undefined;
       default:
@@ -644,8 +673,7 @@ class Decider {
       if (rs.every((r) => r === true)) return true;
       const irr = rs.filter((r) => r === false).length;
       if (irr === 1 && rs.filter((r) => r === undefined).length === 0) {
-        const bad = at(e.args, rs.indexOf(false));
-        if (this.q('irrational', bad) !== true && this.q('real', bad) !== true) return undefined;
+        // a rational number plus (or a nonzero rational number times) a number that is not rational is not rational
         if (e instanceof Add) return false;
         return e.args.every((a, i) => i === rs.indexOf(false) || this.q('nonzero', a) === true) ? false : undefined;
       }
@@ -656,27 +684,27 @@ class Decider {
       const [b, x] = e.args;
       if (isConst(b, 'E')) return this.q('rational', x) === true && this.q('nonzero', x) === true ? false : undefined;
       if (this.q('integer', x) === true && this.q('rational', b) === true) return this.q('nonzero', b) === true || this.q('nonnegative', x) === true ? true : undefined;
-      if (b instanceof Rational && x instanceof Rational) return b.isNegative ? false : false; // an unevaluated rational power of a rational is irrational
-      if (this.q('rational', x) === true && this.q('algebraic', b) === true && this.q('rational', b) === false && this.q('positive', b) === true) {
-        return undefined;
-      }
+      // an unevaluated rational power of a rational number is irrational or not real
+      if (b instanceof Rational && x instanceof Rational) return false;
       return undefined;
     }
     if (e instanceof Fn) {
-      const a = e.args[0];
-      if (!a) return undefined;
+      // the functions named below take one argument
+      const a = (): Expr => at(e.args, 0);
       const transcendentalAtNonzeroRational = ['exp', 'sin', 'cos', 'tan', 'cot', 'asin', 'atan', 'acot', 'sinh', 'cosh', 'tanh', 'asinh', 'atanh'];
-      if (transcendentalAtNonzeroRational.includes(e.name) && this.q('rational', a) === true && this.q('nonzero', a) === true) return false;
-      if (e.name === 'log' && this.q('rational', a) === true && this.q('positive', a) === true) return false;
-      if (e.name === 'acos' && this.q('rational', a) === true) return false;
+      if (transcendentalAtNonzeroRational.includes(e.name) && this.q('rational', a()) === true && this.q('nonzero', a()) === true) return false;
+      // log(1) = acos(1) = 0
+      if (e.name === 'log' && this.q('rational', a()) === true && this.q('positive', a()) === true && this.q('nonzero', add(a(), -1)) === true) return false;
+      if (e.name === 'acos' && this.q('rational', a()) === true && this.q('nonzero', add(a(), -1)) === true) return false;
       return undefined;
     }
     return undefined;
   }
 
   private algebraic(e: Expr): Tri {
-    if (e instanceof Rational) return true;
-    if (e instanceof Float || e instanceof Special) return e instanceof Special ? false : undefined;
+    // a float is a finite binary fraction
+    if (e instanceof Rational || e instanceof Float) return true;
+    if (e instanceof Special) return false;
     if (e instanceof Constant) return e.name === 'I' || e.name === 'GoldenRatio' || e.name === 'TribonacciConstant' ? true : e.name === 'pi' || e.name === 'E' ? false : undefined;
     if (e instanceof Sym) return this.q('rational', e) === true ? true : undefined;
     if (e instanceof Add || e instanceof Mul) {
@@ -696,10 +724,11 @@ class Decider {
       return undefined;
     }
     if (e instanceof Fn) {
-      const a = e.args[0];
-      if (!a) return undefined;
-      if (['exp', 'sin', 'cos', 'tan', 'cot', 'asin', 'acos', 'atan', 'acot'].includes(e.name) && this.q('algebraic', a) === true && this.q('nonzero', a) === true) return false;
-      if (e.name === 'log' && this.q('algebraic', a) === true && this.q('nonzero', add(a, -1)) === true) return false;
+      // the functions named below take one argument
+      const a = (): Expr => at(e.args, 0);
+      if (['exp', 'sin', 'cos', 'tan', 'cot', 'asin', 'atan', 'acot'].includes(e.name) && this.q('algebraic', a()) === true && this.q('nonzero', a()) === true) return false;
+      // log(1) = acos(1) = 0
+      if ((e.name === 'log' || e.name === 'acos') && this.q('algebraic', a()) === true && this.q('nonzero', add(a(), -1)) === true) return false;
       return undefined;
     }
     return undefined;
@@ -711,10 +740,6 @@ class Decider {
     const integer = this.q('integer', e);
     if (integer === false) return false;
     const other = r === 0n ? 'odd' : 'even';
-    if (e instanceof Sym) {
-      const o = this.branch.facts.get(e.key)?.facts.get(other);
-      return o === true ? false : undefined;
-    }
     const par = (a: Expr): bigint | undefined => (this.q('even', a) === true ? 0n : this.q('odd', a) === true ? 1n : undefined);
     if (e instanceof Mul) {
       if (!e.args.every((a) => this.q('integer', a) === true)) return undefined;
@@ -813,17 +838,27 @@ class Decider {
   private finite(e: Expr): Tri {
     if (e instanceof Rational || e instanceof Float || e instanceof Constant) return true;
     if (e instanceof Special) return false;
-    if (e instanceof Sym) return this.q('real', e) === true || this.q('complex', e) === true ? true : undefined;
-    if (e instanceof Add || e instanceof Mul) return allTri(e.args, (a) => this.q('finite', a)) === true ? true : undefined;
+    // a real symbol is complex
+    if (e instanceof Sym) return this.q('complex', e) === true ? true : undefined;
+    if (e instanceof Add || e instanceof Mul) {
+      const fs = e.args.map((a) => this.q('finite', a));
+      if (fs.every((f) => f === true)) return true;
+      // one infinite term plus finite ones (times finite nonzero factors) is infinite
+      const k = fs.indexOf(false);
+      if (k < 0 || fs.lastIndexOf(false) !== k || fs.includes(undefined)) return undefined;
+      return e instanceof Add || e.args.every((a, i) => i === k || this.q('nonzero', a) === true) ? false : undefined;
+    }
     if (e instanceof Pow) {
       const [b, x] = e.args;
       if (this.q('finite', b) === true && this.q('finite', x) === true && (this.q('nonzero', b) === true || this.q('nonnegative', x) === true || isConst(b, 'E'))) return true;
       return undefined;
     }
     if (e instanceof Fn) {
-      const a = e.args[0];
-      if (a && ['sin', 'cos', 'atan', 'tanh'].includes(e.name) && this.q('real', a) === true) return true;
-      if (a && ['exp', 'sinh', 'cosh', 'abs', 're', 'im', 'conjugate'].includes(e.name) && this.q('finite', a) === true) return true;
+      // the functions named below take one argument
+      const a = (): Expr => at(e.args, 0);
+      if (['sin', 'cos', 'atan', 'tanh'].includes(e.name) && this.q('real', a()) === true) return true;
+      if (['exp', 'sinh', 'cosh', 'abs', 're', 'im', 'conjugate'].includes(e.name) && this.q('finite', a()) === true) return true;
+      if (e.name === 'log' && this.q('finite', a()) === true && this.q('nonzero', a()) === true) return true;
       return undefined;
     }
     return undefined;
@@ -833,20 +868,14 @@ class Decider {
 /** The value of a proposition in one branch. */
 function decide(prop: Expr, d: Decider): Tri {
   if (prop instanceof BoolAtom) return prop.value;
+  const expanded = expandBool(prop);
+  if (expanded) return decide(expanded, d);
   if (prop instanceof BoolOp) {
+    // only And, Or and Not are left
     const vs = prop.args.map((a) => decide(a, d));
-    switch (prop.op) {
-      case 'Not':
-        return notTri(vs[0]);
-      case 'And':
-        return vs.includes(false) ? false : vs.includes(undefined) ? undefined : true;
-      case 'Or':
-        return vs.includes(true) ? true : vs.includes(undefined) ? undefined : false;
-      case 'Xor':
-        return vs.includes(undefined) ? undefined : vs.filter(Boolean).length % 2 === 1;
-      case 'ITE':
-        return vs[0] === undefined ? undefined : vs[0] ? vs[1] : vs[2];
-    }
+    if (prop.op === 'Not') return notTri(at(vs, 0));
+    if (prop.op === 'And') return vs.includes(false) ? false : vs.includes(undefined) ? undefined : true;
+    return vs.includes(true) ? true : vs.includes(undefined) ? undefined : false;
   }
   if (prop instanceof Rel) {
     const names = { Gt: 'gt', Lt: 'lt', Ge: 'ge', Le: 'le', Eq: 'eq', Ne: 'ne' } as const;
@@ -879,6 +908,12 @@ function decide(prop: Expr, d: Decider): Tri {
 export function ask(proposition: ExprLike | boolean, assumptions: Assumption = true): Truth {
   const prop = typeof proposition === 'boolean' ? (proposition ? S.true : S.false) : sympify(proposition);
   const assumed = and(...asList(assumptions), ...globalAssumptions);
+  // Implies(a, b) holds when b follows from the assumptions and a (or a contradicts them)
+  if (prop instanceof BoolOp && prop.className === 'Implies') {
+    const [a, b] = pair(prop.args);
+    const withA = and(assumed, a);
+    if (!consistentBranches(withA).length || ask(b, withA) === true) return true;
+  }
   const vs = branches(assumed).map((b) => decide(prop, new Decider(b, assumed)));
   if (vs.every((v) => v === true)) return true;
   if (vs.every((v) => v === false)) return false;
@@ -935,13 +970,28 @@ export function refine(expr: unknown, assumptions: Assumption = true): unknown {
   }
   const assumed = and(...asList(assumptions), ...globalAssumptions);
   const bs = branches(assumed);
-  const results = bs.map((b) => {
+  const refineIn = (b: Branch): Expr => {
     const d = new Decider(b, assumed);
     const back = [...b.forward].map(([k, s]): [Expr, Expr] => [s, getOrThrow(b.facts, k).expr]);
     const r = reevaluate(e, b.forward);
     const restored = back.length ? xreplace(r, back) : r;
     return refineSignPowers(restored, d);
-  });
+  };
+  const results = bs.map(refineIn);
   const first = at(results, 0);
-  return results.every((r) => r.key === first.key) ? first : e;
+  if (results.every((r) => r.key === first.key)) return first;
+  // the branches disagree: refine with the facts common to all of them
+  // (refine(sqrt(x**2), Q.positive(x) | Q.negative(x)) uses Q.real(x) and gives Abs(x))
+  return refineIn(commonBranch(bs));
+}
+
+/** The facts that hold in every branch. */
+function commonBranch(bs: readonly Branch[]): Branch {
+  const rest = bs.slice(1);
+  const facts: Branch['facts'] = new Map();
+  for (const [k, { expr, facts: f0 }] of at(bs, 0).facts) {
+    const f = new Map([...f0].filter(([n, v]) => rest.every((b) => b.facts.get(k)?.facts.get(n) === v)));
+    if (f.size) facts.set(k, { expr, facts: f });
+  }
+  return { facts, forward: symbolsWithFacts(facts) };
 }

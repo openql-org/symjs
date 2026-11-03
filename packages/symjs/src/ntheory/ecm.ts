@@ -57,7 +57,8 @@ export function ecm(nIn: IntLike, opts: EcmOptions = {}): Set<bigint> {
     }
     queue.push(m);
   };
-  check(n);
+  // SymPy also runs the curves on n = 1 (all factors below TF_LIMIT) and raises ValueError
+  if (n > 1n) check(n);
   while (queue.length > 0) {
     const m = defined(queue.pop(), 'queued factor');
     const factor = ecmOneFactor(m, B1, B2, maxCurve, seed);
@@ -65,5 +66,6 @@ export function ecm(nIn: IntLike, opts: EcmOptions = {}): Set<bigint> {
     check(factor);
     check(m / factor);
   }
-  return new Set([...factors].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)));
+  // increasing (the sign of a - b; a huge difference becomes an infinity of that sign)
+  return new Set([...factors].sort((a, b) => Number(a - b)));
 }

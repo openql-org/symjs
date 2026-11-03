@@ -24,7 +24,8 @@ import { expand as expandFull, expandMul as expand } from '../simplify/expand';
 import { sqrtdenest } from '../simplify/sqrtdenest';
 import { cancel, together } from '../simplify/rational';
 import { decomposePower, keepCoeff } from '../simplify/exprtools';
-import { divExact, mfactorList, mgcd, mlcm, prem as mprem } from './mpoly';
+import { rationalFromFloat } from '../core/numberutils';
+import { divExact, mfactorList, mgcd, mlcm } from './mpoly';
 import { isolateRealRoots, refineRealRoot } from './rootisolation';
 import { UPoly, polyCoefficients, roots as rootsOf } from './poly';
 
@@ -421,9 +422,22 @@ export class Poly {
     if (!auto && this.domain === 'ZZ') return this.divAuto(o, false)[0];
     return this.toRingIfExact(this.div(o)[0], this.domain === 'ZZ' && o.domain === 'ZZ');
   }
-  /** Pseudo-remainder. */
+  /** Pseudo-remainder: the remainder of LC(g)**(deg f - deg g + 1)*f (SymPy dup_prem). */
   prem(o: Poly): Poly {
-    return Poly.from(mprem(this.asExpr(), o.asExpr(), this.univariate()), this.gens);
+    const x = this.univariate();
+    if (o.isZero) throw new RangeError('prem: division by zero polynomial');
+    const dg = o.degree();
+    let N = this.degree() - dg + 1;
+    if (N <= 0) return this;
+    const lg = o.LC();
+    const g = o.asExpr();
+    let r: Poly = this;
+    // each reduction step multiplies by LC(g); the remaining powers are applied at the end
+    while (!r.isZero && r.degree() >= dg) {
+      N--;
+      r = Poly.from(expand(add(mul(lg, r.asExpr()), mul(-1, r.LC(), pow(x, r.degree() - dg), g))), this.gens);
+    }
+    return Poly.from(expand(mul(pow(lg, N), r.asExpr())), this.gens);
   }
   /** Subresultant PRS (SymPy dup_inner_subresultants), univariate. */
   subresultants(o: Poly): Poly[] {
@@ -461,7 +475,7 @@ export class Poly {
     const k = this.degree() - o.degree() + 1;
     const scaled = mul(pow(o.LC(), Math.max(0, k)), this.asExpr());
     // the scaled dividend minus the pseudo-remainder is an exact multiple of o
-    return Poly.from(defined(divExact(expand(add(scaled, mul(-1, mprem(this.asExpr(), o.asExpr(), x)))), o.asExpr(), [x]), 'pseudo-quotient'), this.gens);
+    return Poly.from(defined(divExact(expand(add(scaled, mul(-1, this.prem(o).asExpr()))), o.asExpr(), [x]), 'pseudo-quotient'), this.gens);
   }
   exquo(o: Poly): Poly {
     const q = divExact(this.asExpr(), o.asExpr(), this.gens);
@@ -502,7 +516,7 @@ export class Poly {
     if (i < 0) {
       // not a generator: the coefficients are constants in v unless they contain it
       if (this.termList.some((t) => t.coeff.has(v))) throw new NotImplementedError('Poly.integrate: the variable occurs in the coefficients');
-      return Poly.from(mul(this.asExpr(), v), this.gens, { domain });
+      return Poly.from(mul(this.asExpr(), v), this.gens);
     }
     const terms = this.termList.map((t) => {
       const k = at(t.monom, i) + 1;
@@ -673,7 +687,7 @@ export class Poly {
   /** Remove generators that do not occur. */
   exclude(): Poly {
     const keep = this.gens.filter((_, i) => this.termList.some((t) => at(t.monom, i) > 0));
-    return Poly.from(this.asExpr(), keep.length ? keep : [first(this.gens)], { domain: this.domain });
+    return Poly.from(this.asExpr(), keep.length ? keep : this.gens, { domain: this.domain });
   }
   hasOnlyGens(...gens: Expr[]): boolean {
     return this.gens.every((g, i) => gens.some((h) => h.key === g.key) || this.termList.every((t) => t.monom[i] === 0));
@@ -726,7 +740,9 @@ export class Poly {
       return [h, k + 1];
     });
     const q = f.quo(g);
-    return q.degree() <= 0 ? out : [[q, 1], ...out];
+    const all: [Poly, number][] = q.degree() <= 0 ? out : [[q, 1], ...out];
+    // over ZZ the (monic) factors are integer polynomials
+    return all.map(([h, k]) => [this.domain === 'ZZ' ? h.retract() : h.toField(), k]);
   }
 
   shift(a: ExprLike): Poly {
@@ -767,7 +783,8 @@ export class Poly {
       this.asExpr(),
       this.termList.flatMap((t): [Expr, Expr][] => (t.coeff instanceof Float ? [[t.coeff, rationalOfFloat(t.coeff)]] : [])),
     );
-    return Poly.from(e, this.gens, { domain: 'QQ' });
+    // SymPy get_exact: RR -> QQ, exact domains unchanged
+    return Poly.from(e, this.gens, { domain: this.domain === 'RR' ? 'QQ' : this.domain });
   }
   /** q**n * f(p/q). */
   transform(p: Poly, q: Poly): Poly {
@@ -893,8 +910,6 @@ export class Poly {
     for (const [f, k] of fs) {
       if (f.degree() === 1) out.push([mul(-1, f.TC(), pow(f.LC(), -1)), k]);
     }
-    const [[m0 = 0]] = this.termsGcd();
-    if (m0 > 0 && !out.some(([r]) => r instanceof Rational && r.isZero)) out.push([S.Zero, m0]);
     return out;
   }
   /** Series reversion: g with f*g = 1 mod x**n. */
@@ -913,12 +928,8 @@ export class Poly {
   nthPowerRootsPoly(n: number): Poly {
     const x = this.univariate();
     const y = new Sym('_y_npr');
-    const r = resultant(xreplace(this.asExpr(), [[x, y]]), add(x, mul(-1, pow(y, n))), y);
-    const p = Poly.from(expand(r), [x]);
-    const lc = p.LC();
-    const sign = this.degree() % 2 === 1 && n % 2 === 0 ? -1 : 1;
-    void sign;
-    return this.like(expand(mul(r, pow(lc, -1), this.LC())));
+    // SymPy: the resultant in y of f(y) and y**n - x, (-1)**deg(f)*LC(f)**n*prod(x - r_i**n)
+    return this.like(expand(resultant(xreplace(this.asExpr(), [[x, y]]), add(pow(y, n), mul(-1, x)), y)));
   }
   /**
    * Roots of a polynomial with algebraic coefficients (I, square roots of
@@ -954,7 +965,7 @@ export class Poly {
    * are rational).
    */
   norm(): Poly {
-    return this.normOrSelf(false) ?? this;
+    return defined(this.normOrSelf(false), 'norm');
   }
   private normOrSelf(strict: boolean): Poly | undefined {
     const cs = this.allCoeffs();
@@ -971,7 +982,7 @@ export class Poly {
     const dm = /^(?:QQ|ZZ)<(.*)>$/.exec(this.domain);
     if (dm) {
       try {
-        findGens(parse(dm[1] ?? ''));
+        findGens(parse(defined(dm[1], 'domain generator')));
       } catch {
         // not an expression we can read
       }
@@ -1219,8 +1230,9 @@ function decomposeOnce(f: Poly, x: Sym): [Poly, Poly] | undefined {
     }
     if (!ok) continue;
     const g = add(...gCoeffs.map((c, i) => mul(c, pow(x, i))));
-    const dom = f.domain === 'ZZ' && [g, h].every((e) => Poly.from(e, [x]).domain === 'ZZ') ? 'ZZ' : undefined;
-    return [Poly.from(g, [x], dom ? { domain: dom } : {}), Poly.from(h, [x], dom ? { domain: dom } : {})];
+    // both components over the domain of f (QQ when a component has fractions)
+    const dom = f.domain === 'ZZ' && [g, h].every((e) => Poly.from(e, [x]).domain === 'ZZ') ? 'ZZ' : f.domain === 'ZZ' || f.domain === 'QQ' ? 'QQ' : f.domain;
+    return [Poly.from(g, [x], { domain: dom }), Poly.from(h, [x], { domain: dom })];
   }
   return undefined;
 }
@@ -1230,7 +1242,7 @@ function isRealConst(e: Expr): boolean {
 }
 
 function rationalOfFloat(f: Float): Rational {
-  return impl.rationalFromFloat ? impl.rationalFromFloat(f) : Rational.of(BigInt(Math.round(f.value)));
+  return rationalFromFloat(f.value);
 }
 
 /** Make a univariate rational polynomial primitive with integer coefficients and positive leading coefficient. */
@@ -1318,7 +1330,7 @@ function coeffStr(c: Expr): string {
 export function polyStr(p: Poly): string {
   const gens = p.gens.map((g) => {
     const s = str(g);
-    return g instanceof Sym || isNum(g) ? s : `(${s})`;
+    return g instanceof Sym || g instanceof Constant || isNum(g) ? s : `(${s})`;
   });
   const terms: string[] = [];
   for (const [monom, coeff] of p.terms()) {
@@ -1431,8 +1443,7 @@ export function termsGcd(f: ExprLike, ...rest: (Sym | TermsGcdOptions)[]): Expr 
     }
     terms.push([c, m]);
   }
-  const [t0] = terms;
-  if (t0 === undefined) throw new InvariantError('terms_gcd: no terms');
+  const t0 = first(terms);
   if (terms.length === 1 && t0[0].isZero) return S.Zero;
   // exponents common to all terms
   const J = new Map<string, [Expr, number]>();
@@ -1451,7 +1462,8 @@ export function termsGcd(f: ExprLike, ...rest: (Sym | TermsGcdOptions)[]): Expr 
     num = g2(num, c.p);
     den = (den / g2(den, c.q)) * c.q;
   }
-  const coeff = num === 0n ? S.One : Rational.of(num, den);
+  // num is nonzero: a single zero term was handled above
+  const coeff = Rational.of(num, den);
   const term = mul(...[...J.values()].map(([b, k]) => pow(b, k)));
   if (coeff.isOne && isOneExpr(term)) return orig;
   const fExpr = add(
@@ -1483,8 +1495,7 @@ export function horner(f: ExprLike, x?: Sym): Expr {
   if (e.isNumber) return e;
   let gens = Poly.from(e).gens;
   if (x) gens = [x, ...gens.filter((g) => g.key !== x.key)];
-  const v = gens[0];
-  if (!v) return e;
+  const v = first(gens);
   const p = Poly.from(e, [v]);
   const multi = gens.length > 1;
   let acc: Expr = S.Zero;
@@ -1504,25 +1515,39 @@ export function interpolate(data: readonly (readonly [ExprLike, ExprLike])[] | r
   return expand(add(...terms));
 }
 
-/** Resultant of two univariate polynomials (Sylvester determinant via Euclid). */
+/**
+ * Resultant of two univariate polynomials by pseudo-remainder sequences:
+ * Res(a, b) = (-1)**(da*db) * LC(b)**(da - dr) * Res(b, a mod b), with the
+ * powers of LC(b) introduced by the pseudo-division divided out at the end
+ * (no division by symbolic coefficients during the sequence).
+ */
 export function resultant(f: ExprLike, g: ExprLike, x: Sym): Expr {
-  // res(f, g) by recursion on pseudo-remainders over the field of fractions
   let a = Poly.from(f, [x]);
   let b = Poly.from(g, [x]);
-  let res: Expr = S.One;
-  for (let guard = 0; guard < 100; guard++) {
-    if (b.isZero) return S.Zero;
-    const db = b.degree();
-    if (db === 0) return expand(mul(res, pow(b.LC(), a.degree())));
+  if (a.isZero || b.isZero) return S.Zero;
+  let num: Expr = S.One;
+  let den: Expr = S.One;
+  for (;;) {
     const da = a.degree();
-    const r = a.rem(b);
+    const db = b.degree();
+    if (db === 0) {
+      num = mul(num, pow(b.LC(), da));
+      break;
+    }
+    if (da < db) {
+      if ((da * db) % 2 === 1) num = mul(-1, num);
+      [a, b] = [b, a];
+      continue;
+    }
+    // r = LC(b)**(da - db + 1) * (a mod b)
+    const r = a.prem(b);
     if (r.isZero) return S.Zero;
-    const dr = r.degree();
-    res = mul(res, pow(b.LC(), da - dr), (da * db) % 2 === 1 ? -1 : 1);
+    num = mul(num, pow(b.LC(), da - r.degree()), (da * db) % 2 === 1 ? -1 : 1);
+    den = mul(den, pow(b.LC(), (da - db + 1) * db));
     a = b;
     b = r;
   }
-  return res;
+  return expand(cancel(mul(num, pow(den, -1))));
 }
 
 export function discriminant(f: ExprLike, x: Sym): Expr {

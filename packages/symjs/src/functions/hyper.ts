@@ -9,9 +9,10 @@
 import { NotImplementedError } from '../core/errors';
 import { at, defined, first, pair } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
-import { ExtensionExpr, Fn, Mul, Rational, S } from '../core/nodes';
+import { ExtensionExpr, Fn, Mul, Pow, Rational, S, Special } from '../core/nodes';
 import { rebuild } from '../core/traverse';
-import { isPositive } from '../core/assumptions';
+import { isIntegerQ, isNonZero, isPositive, isZero } from '../core/assumptions';
+import { compareKeys, sortKey } from '../printing/sortkey';
 import { Gt, piecewise } from '../core/logic';
 import { add, mul, pow, sympify } from '../core/ops';
 import { fnPartials } from '../calculus/diff';
@@ -81,10 +82,8 @@ export class Hyper extends ExtensionExpr {
 
 /** SymPy hyper(ap, bq, z). */
 export function hyper(ap: readonly ExprLike[], bq: readonly ExprLike[], z: ExprLike): Expr {
-  const zz = sympify(z);
-  // hyper(..., 0) = 1
-  if (zz instanceof Rational && zz.isZero) return S.One;
-  return new Hyper([zz, ...ap.map(sympify), ...bq.map(sympify)], ap.length);
+  // unevaluated like SymPy, also at z = 0 (hyperexpand gives 1 there)
+  return new Hyper([sympify(z), ...ap.map(sympify), ...bq.map(sympify)], ap.length);
 }
 
 /** SymPy meijerg(((a_1..a_n), (a_n+1..a_p)), ((b_1..b_m), (b_m+1..b_q)), z): args are [z, ...an, ...ap, ...bm, ...bq]. */
@@ -141,7 +140,16 @@ export const jn = (n: ExprLike, z: ExprLike): Expr => fn('jn', [n, z]);
 /** SymPy yn(n, z): spherical Bessel function of the second kind. */
 export const yn = (n: ExprLike, z: ExprLike): Expr => fn('yn', [n, z]);
 
-evaluators.jn = (n, z) => (z instanceof Rational && z.isZero && n instanceof Rational && n.isInteger && n.p > 0n ? S.Zero : undefined);
+/** SymPy jn.eval: the values at 0 and at +-oo. */
+evaluators.jn = (n, z) => {
+  if (z instanceof Rational && z.isZero) {
+    if (n instanceof Rational && n.isZero) return S.One;
+    if (isIntegerQ(n) === true) return isPositive(n) === true ? S.Zero : S.ComplexInfinity;
+    return undefined;
+  }
+  if (z instanceof Special && (z.name === 'oo' || z.name === '-oo')) return S.Zero;
+  return undefined;
+};
 evaluators.yn = () => undefined;
 // d/dz jn(n, z) = jn(n - 1, z) - (n + 1)/z * jn(n, z) (SymPy fdiff)
 for (const name of ['jn', 'yn'] as const) {
@@ -175,10 +183,24 @@ export function expandJn(n: number, z: Expr, kind: 'jn' | 'yn' = 'jn'): Expr {
 
 /** SymPy KroneckerDelta(i, j): 1 when equal, 0 for distinct numbers, unevaluated otherwise. */
 export const KroneckerDelta = (i: ExprLike, j: ExprLike): Expr => fn('KroneckerDelta', [i, j]);
+/** Is d a number (no free symbols) whose value is clearly not 0? */
+function numericallyNonZero(d: Expr): boolean {
+  if (d.freeSymbols().size > 0) return false;
+  try {
+    const v = d.toComplex();
+    return Math.hypot(v.re, v.im) > 1e-10;
+  } catch {
+    return false;
+  }
+}
+
+/** SymPy KroneckerDelta.eval: 1 or 0 when i - j is known to be zero or not, else the arguments in canonical order. */
 evaluators.KroneckerDelta = (i, j) => {
   if (i.key === j.key) return S.One;
   const d = add(i, mul(-1, j));
-  if (d.isNumber && !(d instanceof Rational && d.isZero) && d.freeSymbols().size === 0) return S.Zero;
+  if (isZero(d) === true) return S.One;
+  if (isNonZero(d) === true || numericallyNonZero(d)) return S.Zero;
+  if (compareKeys(sortKey(j), sortKey(i)) < 0) return new Fn('KroneckerDelta', [j, i]);
   return undefined;
 };
 
@@ -191,6 +213,8 @@ export function kroneckersimp(eIn: ExprLike): Expr {
   const go = (x: Expr): Expr => {
     const args = x.args.map(go);
     const y = args.some((a, i) => a !== x.args[i]) ? rebuild(x, args) : x;
+    // KroneckerDelta(i, j)**n = KroneckerDelta(i, j) for a positive integer n
+    if (y instanceof Pow && y.base instanceof Fn && y.base.name === 'KroneckerDelta' && y.exp instanceof Rational && y.exp.isInteger && y.exp.isPositive) return y.base;
     if (!(y instanceof Mul)) return y;
     const deltas = y.args.filter((f): f is Fn => f instanceof Fn && f.name === 'KroneckerDelta');
     for (const [a, da] of deltas.entries()) {

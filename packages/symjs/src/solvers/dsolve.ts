@@ -509,29 +509,34 @@ function eulerMatch(p: OdeProblem): Map<number, Expr> | undefined {
   return r;
 }
 
-function eulerCharacteristicSols(p: OdeProblem, r: Map<number, Expr>): [Expr, Expr[]] {
+/**
+ * SymPy _get_euler_characteristic_eq_sols: the homogeneous solution. A pair
+ * of conjugate roots gives one sin and one cos term (SymPy writes both and
+ * constantsimp removes the repeated ones).
+ */
+function eulerCharacteristicSols(p: OdeProblem, r: Map<number, Expr>): Expr {
   const s = new Dummy('x');
   const x = p.x;
   const rs = sortRoots(roots(eulerChareq(r, x, s), s));
-  const cs = Array.from({ length: rs.length * 2 }, (_, i) => C(i + 1)).reverse();
+  const cs = Array.from({ length: rs.length }, (_, i) => C(i + 1)).reverse();
   const counts = new Map<string, [Expr, number]>();
   for (const v of rs) counts.set(v.key, [v, (counts.get(v.key)?.[1] ?? 0) + 1]);
+  const conj = new Set<string>();
   let gsol: Expr = S.Zero;
-  const gens: Expr[] = [];
   for (const [root, mult] of counts.values()) {
+    if (conj.has(root.key)) continue;
     for (let i = 0; i < mult; i++) {
       if (isReal(root) === true) {
         gsol = add(gsol, mul(pow(log(x), i), pow(x, root), defined(cs.pop(), 'constant')));
-        gens.push(mul(pow(log(x), i), pow(x, root)));
       } else {
         const rr = re(root);
         const ii = im(root);
+        conj.add(expand(add(rr, mul(-1, S.I, ii))).key);
         gsol = add(gsol, mul(pow(log(x), i), pow(x, rr), add(mul(defined(cs.pop(), 'constant'), sin(mul(abs(ii), log(x)))), mul(defined(cs.pop(), 'constant'), cos(mul(ii, log(x)))))));
-        gens.push(mul(pow(log(x), i), pow(x, rr), sin(mul(abs(ii), log(x)))));
       }
     }
   }
-  return [Eq(p.fx, gsol), gens];
+  return Eq(p.fx, gsol);
 }
 
 /** sum_k (r_k/x**k)*s*(s - 1)*...*(s - k + 1): x**(-s)*L[x**s] for the Euler operator. */
@@ -557,7 +562,7 @@ function sortRoots(rs: Expr[]): Expr[] {
 const eulerHomogeneous: Solver = (p) => {
   const r = eulerMatch(p);
   if (!r || !isZero(getOrThrow(r, -1))) return undefined;
-  return [eulerCharacteristicSols(p, r)[0]];
+  return [eulerCharacteristicSols(p, r)];
 };
 
 const eulerUndetermined: Solver = (p) => {

@@ -5,7 +5,6 @@
  * @file Immutable matrices with symbolic entries.
  */
 
-import { InvariantError } from '../core/errors';
 import { at, defined, first } from '../core/guard';
 import type { ComplexValue, EvalfOptions, ExprLike, NumericValues, Substitution } from '../core/nodes';
 import { Expr, Rational, S, Sym } from '../core/nodes';
@@ -36,24 +35,28 @@ export class Matrix {
 
   /** Build from nested arrays (row-major). */
   static of(rows: readonly (readonly (ExprLike | Matrix)[])[]): Matrix {
-    // SymPy Matrix([[A, B], [C, D]]) of matrices joins the blocks
-    if (rows.some((row) => row.some((x) => x instanceof Matrix))) {
-      const block = (x: ExprLike | Matrix): Matrix => (x instanceof Matrix ? x : new Matrix(1, 1, [sympify(x)]));
-      const bands = rows.map((row) => {
-        const [first, ...rest] = row.map(block);
-        return first ? first.hstack(...rest) : new Matrix(0, 0, []);
-      });
-      const [top, ...others] = bands;
-      return top ? top.vstack(...others) : new Matrix(0, 0, []);
+    const data: Expr[] = [];
+    for (const row of rows) {
+      for (const x of row) {
+        // SymPy Matrix([[A, B], [C, D]]) of matrices joins the blocks
+        if (x instanceof Matrix) return Matrix.ofBlocks(rows);
+        data.push(sympify(x));
+      }
     }
     const r = rows.length;
     const c = rows[0]?.length ?? 0;
     for (const row of rows) if (row.length !== c) throw new RangeError('Matrix.of: ragged rows');
-    const entry = (x: ExprLike | Matrix): Expr => {
-      if (x instanceof Matrix) throw new InvariantError('Matrix.of: unexpected block');
-      return sympify(x);
-    };
-    return new Matrix(r, c, rows.flatMap((row) => row.map(entry)));
+    return new Matrix(r, c, data);
+  }
+
+  /** Join rows of blocks (matrices, or scalars as 1x1 blocks); `rows` holds at least one matrix. */
+  private static ofBlocks(rows: readonly (readonly (ExprLike | Matrix)[])[]): Matrix {
+    const block = (x: ExprLike | Matrix): Matrix => (x instanceof Matrix ? x : new Matrix(1, 1, [sympify(x)]));
+    const bands = rows.map((row) => {
+      const [left, ...rest] = row.map(block);
+      return left ? left.hstack(...rest) : new Matrix(0, 0, []);
+    });
+    return first(bands).vstack(...bands.slice(1));
   }
 
   /** Build from a generator f(i, j). */
@@ -381,10 +384,13 @@ export class Matrix {
       .map((r) => `[${r.map(str).join(', ')}]`)
       .join(', ')}])`;
   }
+  /** LaTeX as SymPy latex(Matrix): a bracketed matrix environment, an array beyond 10 columns. */
   toLatex(): string {
-    return `\\begin{pmatrix}${this.toArray()
+    const [env, spec] = this.cols <= 10 ? ['matrix', ''] : ['array', `{${'c'.repeat(this.cols)}}`];
+    const body = this.toArray()
       .map((r) => r.map(latex).join(' & '))
-      .join(' \\\\ ')}\\end{pmatrix}`;
+      .join('\\\\');
+    return `\\left[\\begin{${env}}${spec}${body}\\end{${env}}\\right]`;
   }
   [Symbol.for('nodejs.util.inspect.custom')](): string {
     return this.toString();

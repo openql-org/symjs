@@ -33,7 +33,6 @@ function gcd(aIn: bigint, bIn: bigint): bigint {
   let a = aIn;
   let b = bIn;
   if (a < 0n) a = -a;
-  if (b < 0n) b = -b;
   while (b) [a, b] = [b, a % b];
   return a;
 }
@@ -57,7 +56,7 @@ function bernoulli(n: number): [bigint, bigint] {
     }
     p = -p;
     q = q * BigInt(m + 1);
-    const g = gcd(p, q) || 1n;
+    const g = gcd(p, q);
     bern.push(m === 1 ? [-1n, 2n] : [p / g, q / g]);
   }
   return at(bern, n);
@@ -179,14 +178,17 @@ export function cpolygamma(n: number, z: Mpc, prec: number): Mpc {
   return rnd(s, prec);
 }
 
-/** Riemann zeta by Euler-Maclaurin summation. */
-export function czeta(s: Mpc, prec: number): Mpc {
+/** Hurwitz zeta sum_n (n + a)^-s (Riemann zeta for a = 1) by Euler-Maclaurin summation. */
+export function czeta(s: Mpc, prec: number, a: Mpc = C1): Mpc {
+  // zeta(3) (Apery's constant, as mpmath does) and zeta(5) are summed by binary splitting
+  if (a === C1 && M.isReal(s) && F.cmp(s[0], F.fromInt(3n)) === 0) return [M.mpApery(prec), ZERO];
+  if (a === C1 && M.isReal(s) && F.cmp(s[0], F.fromInt(5n)) === 0) return [M.mpZeta5(prec), ZERO];
   const wp = prec + 30 + Math.max(0, Math.ceil(Math.log2(cabsD(s) + 2)) * 2);
-  const N = Math.ceil(wp / 3) + Math.ceil(cabsD(s)) + 10;
+  const M0 = Math.ceil(wp / 3) + Math.ceil(cabsD(s)) + 9;
   let sum: Mpc = C0;
   const negS = cneg(s);
-  for (let n = 1; n < N; n++) sum = cadd(sum, M.cpow(int(n), negS, wp), wp);
-  const Nc = int(N);
+  for (let n = 0; n < M0; n++) sum = cadd(sum, M.cpow(cadd(a, int(n), wp), negS, wp), wp);
+  const Nc = cadd(a, int(M0), wp);
   const Nms = M.cpow(Nc, negS, wp);
   sum = cadd(sum, cdiv(cmul(Nms, Nc, wp), csub(s, C1, wp), wp), wp);
   sum = cadd(sum, scale(Nms, -1), wp);
@@ -194,7 +196,7 @@ export function czeta(s: Mpc, prec: number): Mpc {
   let poch: Mpc = s; // s(s+1)...(s+2k-2)
   let npow = cdiv(Nms, Nc, wp); // N^(-s-1)
   let fact = 2n;
-  const N2 = int(N * N);
+  const N2 = cmul(Nc, Nc, wp);
   for (let k = 1; k < 1000; k++) {
     const [bp, bq] = bernoulli(2 * k);
     const t = cmul(cmul(ratC(bp, bq * fact, wp), poch, wp), npow, wp);
@@ -266,7 +268,8 @@ export function erfinv(x: Mpf, prec: number): Mpf {
   if (Math.abs(xv) >= 1) throw new RangeError('erfinv domain');
   let y = F.fromNumber(erfinvDouble(xv));
   let wp = 60;
-  const wp2 = prec + 20;
+  // erf(y) - x cancels about -log2(1 - |x|) bits near the ends of the domain
+  const wp2 = prec + 20 + Math.max(0, -F.mag(F.sub(F.ONE, F.abs(x))));
   for (let i = 0; i < 60; i++) {
     wp = Math.min(wp * 2, wp2);
     // y -= (erf(y) - x) * sqrt(pi)/2 * exp(y^2)

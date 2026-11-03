@@ -26,6 +26,7 @@ export {
   intersection as Intersection,
   complement as Complement,
   contains,
+  Contains,
   asRelational,
   inf,
   sup,

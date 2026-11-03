@@ -48,8 +48,8 @@ const asMat = (e: Expr): MatrixExpr => cast(e, MatrixExpr);
 
 /** M1 * M2 with SymPy's operator (MatMul(...).doit()). */
 function times(...xs: Expr[]): Expr {
-  const r = MatMulNode.create(xs);
-  return r instanceof MatrixExpr ? r.doit() : r;
+  // every caller passes at least one matrix, so the product is a matrix expression
+  return asMat(MatMulNode.create(xs)).doit();
 }
 
 /** M1 + M2 with SymPy's operator (MatAdd(...).doit()). */
@@ -572,22 +572,14 @@ function bcMatMul(e: Expr): Expr {
 }
 
 function bcTranspose(e: Expr): Expr {
-  const collapse = blockCollapse(at(e.args, 0));
-  return collapse instanceof MatrixExpr ? collapse.evalTranspose() : e;
+  return asMat(blockCollapse(at(e.args, 0))).evalTranspose();
 }
 
 function bcInverse(e: Expr): Expr {
   const inv = cast(e, InverseNode);
   if (inv.arg instanceof BlockDiagMatrixNode) return inv.arg.inverse();
-  const e2 = blockinverse1x1(inv);
-  if (!same(e2, inv)) return e2;
+  // SymPy's blockinverse_1x1 never applies: bottom_up unpacks a 1 x 1 block matrix before its inverse is visited
   return blockinverse2x2(new InverseNode(reblock2x2(inv.arg)));
-}
-
-function blockinverse1x1(e: InverseNode): Expr {
-  const a = e.arg;
-  if (a instanceof BlockMatrixNode && a.blockshape[0] === 1 && a.blockshape[1] === 1) return BlockMatrixNode.create([[a.block(0, 0).inverse()]]);
-  return e;
 }
 
 function blockinverse2x2(e: InverseNode): Expr {

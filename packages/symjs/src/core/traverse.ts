@@ -114,22 +114,6 @@ function toPairs(s: Substitution): [Expr, Expr][] {
   return out;
 }
 
-/** Base -> exponent map of a product (commutative), with numeric coefficient. */
-function powersOf(e: Expr): { coeff: Expr; pows: Map<string, { base: Expr; exp: Expr }> } {
-  const pows = new Map<string, { base: Expr; exp: Expr }>();
-  let coeff: Expr = Rational.of(1n);
-  for (const f of e instanceof Mul ? e.args : [e]) {
-    if (f.isNumber) {
-      coeff = mul(coeff, f);
-      continue;
-    }
-    const [b, x] = f instanceof Pow ? f.args : [f, Rational.of(1n)];
-    const cur = pows.get(b.key);
-    pows.set(b.key, { base: b, exp: cur ? add(cur.exp, x) : x });
-  }
-  return { coeff, pows };
-}
-
 /** SymPy `_eval_subs` for Add, Mul and Pow (algebraic substitution). */
 function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
   // exp(a + b).subs(exp(a), c) -> c*exp(b) (SymPy exp._eval_subs via Pow)
@@ -178,34 +162,117 @@ function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
     }
     return undefined;
   }
-  if (e instanceof Mul && old instanceof Mul) {
-    const se = powersOf(e);
-    const so = powersOf(old);
-    if (!(so.coeff instanceof Rational && so.coeff.isOne)) return undefined;
-    let k: number | undefined;
-    for (const [key, { exp }] of so.pows) {
-      const mine = se.pows.get(key);
-      if (!mine) return undefined;
-      const r = mul(mine.exp, pow(exp, -1));
-      if (!(r instanceof Rational)) return undefined;
-      const q = Math.floor(r.value);
-      if (q < 1) return undefined;
-      k = k === undefined ? q : Math.min(k, q);
-    }
-    if (!k) return undefined;
-    const rest: Expr[] = [se.coeff];
-    for (const [key, { base, exp }] of se.pows) {
-      const o = so.pows.get(key);
-      rest.push(pow(base, o ? add(exp, mul(-k, o.exp)) : exp));
-    }
-    return mul(pow(nw, k), ...rest.map((r) => subsOne(r, old, nw)));
-  }
+  if (e instanceof Mul && old instanceof Mul) return subsMul(e, old, nw);
   if (e instanceof Pow && old instanceof Pow && e.base.key === old.base.key) {
     const l = mul(e.exp, pow(old.exp, -1));
     if (l instanceof Rational && l.isInteger) return pow(nw, l);
     return undefined;
   }
   return undefined;
+}
+
+/** e as a Rational, or undefined. */
+const ratOf = (e: Expr): Rational | undefined => (e instanceof Rational ? e : undefined);
+
+/** Multiplicity of the integer p > 1 in the integer n != 0. */
+function intMultiplicity(p: bigint, n0: bigint): number {
+  let n = n0 < 0n ? -n0 : n0;
+  let m = 0;
+  while (n % p === 0n) {
+    n /= p;
+    m++;
+  }
+  return m;
+}
+
+/** SymPy multiplicity(p, n) of the rationals p > 0 (p != 1) and n != 0. */
+function ratMultiplicity(p: Rational, n: Rational): number {
+  const im = (a: bigint, b: bigint): number => (a === 1n ? 0 : intMultiplicity(a, b));
+  if (p.q === 1n) return n.p === 1n || n.p === -1n ? -im(p.p, n.q) : im(p.p, n.p) - im(p.p, n.q);
+  if (p.p === 1n) return im(p.q, n.q);
+  return Math.min(im(p.p, n.p), im(p.q, n.q)) - Math.min(im(p.q, n.p), im(p.p, n.q));
+}
+
+/** SymPy extract_multiplicatively for rationals: a / b unless that changes the sign of a positive a. */
+function extractRational(a: Rational, b: Rational): Rational | undefined {
+  // b > 0 here (a negative coefficient of old is handled before), so a / b has the sign of a
+  const qt = asRational(mul(a, pow(b, -1)));
+  return a.q === 1n && qt.q !== 1n ? undefined : qt;
+}
+
+/** A run of noncommutative factors replaced (SymPy Mul._eval_subs for noncommutative products, without powers). */
+function subsNcRun(e: Mul, old: Mul, nw: Expr): Expr | undefined {
+  // only a purely noncommutative old, matched factor by factor
+  if (old.args.some((a) => a.isCommutative)) return undefined;
+  const n = old.args.length;
+  for (let i = 0; i + n <= e.args.length; i++) {
+    if (old.args.every((a, j) => at(e.args, i + j).key === a.key)) return mul(...e.args.slice(0, i), nw, ...e.args.slice(i + n));
+  }
+  return undefined;
+}
+
+/** The factors of a commutative product as base -> rational exponent (SymPy Mul._eval_subs breakup). */
+function breakup(e: Expr): Map<string, { base: Expr; exp: Rational }> {
+  const out = new Map<string, { base: Expr; exp: Rational }>();
+  for (const a of e instanceof Mul ? e.args : [e]) {
+    let [b, x]: [Expr, Expr] = a instanceof Pow ? [a.base, a.exp] : [a, Rational.of(1n)];
+    let co = ratOf(x);
+    if (!co) {
+      // b**(2*y): base b**y, exponent 2
+      const c = x instanceof Mul ? ratOf(first(x.args)) : undefined;
+      co = c ?? Rational.of(1n);
+      b = pow(b, mul(x, pow(co, -1)));
+    }
+    x = co;
+    const cur = out.get(b.key);
+    out.set(b.key, { base: b, exp: cur ? asRational(add(cur.exp, x)) : co });
+  }
+  return out;
+}
+
+/** SymPy Mul._eval_subs for commutative products: old replaced as often as it divides e. */
+function subsMul(e: Mul, old: Mul, nw: Expr): Expr | undefined {
+  if (!e.isCommutative || !old.isCommutative) return subsNcRun(e, old, nw);
+  const lead = (m: Expr): Rational | undefined => (m instanceof Mul ? ratOf(first(m.args)) : ratOf(m));
+  const coOld0 = lead(old);
+  if (coOld0?.isNegative) {
+    const coSelf0 = lead(e);
+    // (-4*x).subs(-2*x, y) = (-4*x).subs(2*x, -y); a positive coefficient does not contain -2
+    if (coSelf0 === undefined) return undefined;
+    return coSelf0.isNegative ? subsOne(e, mul(-1, old), mul(-1, nw)) : undefined;
+  }
+  const coSelf = lead(e);
+  if (coOld0 && !coSelf) return undefined;
+  const c = breakup(e);
+  const oldC = breakup(old);
+  let residual: Expr = Rational.of(1n);
+  if (coOld0 && coSelf && coOld0.key !== coSelf.key && !coOld0.isOne) {
+    const xmul = extractRational(coSelf, coOld0);
+    if (xmul && !xmul.isZero) {
+      const m = ratMultiplicity(coOld0, coSelf);
+      c.delete(coSelf.key);
+      const cur = c.get(coOld0.key);
+      c.set(coOld0.key, { base: coOld0, exp: asRational(add(cur?.exp ?? 0, m)) });
+      residual = mul(coSelf, pow(coOld0, -m));
+    }
+  }
+  // old has a factor that is not a number, so k becomes finite
+  let k = Infinity;
+  for (const [key, { exp: oe }] of oldC) {
+    const mine = c.get(key);
+    if (!mine || mine.exp.isNegative !== oe.isNegative) return undefined;
+    // SymPy ndiv: the number of times oe divides mine.exp when one denominator divides the other
+    const a = mine.exp;
+    const r = a.q % oe.q === 0n || oe.q % a.q === 0n ? Math.trunc(a.value / oe.value) : 0;
+    if (!r) return undefined;
+    k = Math.min(k, r);
+  }
+  const rest: Expr[] = [residual];
+  for (const [key, { base, exp }] of c) {
+    const o = oldC.get(key);
+    rest.push(pow(base, o ? add(exp, mul(-k, o.exp)) : exp));
+  }
+  return mul(pow(nw, k), ...rest);
 }
 
 function splitAddCoeff(e: Expr): [Expr, Expr] {

@@ -39,8 +39,6 @@ export function divmod(a: bigint, b: bigint): [bigint, bigint] {
 }
 
 export const babs = (a: bigint): bigint => (a < 0n ? -a : a);
-export const bmin = (a: bigint, b: bigint): bigint => (a < b ? a : b);
-export const bmax = (a: bigint, b: bigint): bigint => (a > b ? a : b);
 
 /** int.bit_length(). */
 export function bitLength(nIn: bigint): number {
@@ -98,10 +96,9 @@ export function isqrt(n: bigint): bigint {
   if (n < 0n) throw new RangeError('isqrt of a negative number');
   if (n < 2n) return n;
   if (n < 1n << 52n) {
-    let r = BigInt(Math.floor(Math.sqrt(Number(n))));
-    while (r * r > n) r--;
-    while ((r + 1n) * (r + 1n) <= n) r++;
-    return r;
+    // Number(n) is exact and Math.sqrt correctly rounded; below 2**52 even
+    // sqrt(k**2 - 1) stays below k, so the floor is isqrt(n)
+    return BigInt(Math.floor(Math.sqrt(Number(n))));
   }
   // Newton iteration from above
   let x = 1n << BigInt(Math.ceil(bitLength(n) / 2));

@@ -56,7 +56,8 @@ export class HadamardProductNode extends MatrixExpr {
     return new HadamardProductNode(this.args.map(transposeOf));
   }
   override doit(hints: DoitHints = {}): Expr {
-    const args = hints.deep === false ? this.args : this.args.map((a) => doitArg(a, hints));
+    // SymPy evaluates the arguments also for deep=False (self.func(*(i.doit(**hints) for i in self.args)))
+    const args = this.args.map((a) => doitArg(a, hints));
     let expr: Expr = new HadamardProductNode(args);
     const explicit = args.filter((a): a is ImmutableMatrixNode => a instanceof ImmutableMatrixNode);
     if (explicit.length) {
@@ -83,8 +84,7 @@ export type HadamardProduct = HadamardProductNode;
 export function hadamardProduct(...matrices: MatArg[]): Expr {
   if (!matrices.length) throw new TypeError('Empty Hadamard product is undefined');
   if (matrices.length === 1) return toExpr(first(matrices));
-  const r = HadamardProductNode.create(matrices);
-  return r instanceof MatrixExpr ? r.doit() : r;
+  return cast(HadamardProductNode.create(matrices), MatrixExpr).doit();
 }
 
 /**

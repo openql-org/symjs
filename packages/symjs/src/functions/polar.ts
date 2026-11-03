@@ -74,17 +74,25 @@ export function extractBranchFactor(eIn: ExprLike, allowHalf = false): [Expr, Ex
     coeff = add(...terms.filter((t) => t.freeSymbols().size === 0));
     tail = terms.filter((t) => t.freeSymbols().size > 0);
   }
-  if (!(coeff instanceof Rational)) return [e, S.Zero];
-  // round down to the nearest multiple of 2
-  const v = Rational.of(coeff.p, coeff.q * 2n);
-  const half = Rational.of(2n * v.p - v.q, 2n * v.q); // v - 1/2
-  const ceil = half.p >= 0n ? (half.p + half.q - 1n) / half.q : -((-half.p) / half.q);
-  const branchfact = Rational.of(ceil * 2n);
-  let n: Expr = Rational.of(ceil);
-  let c = Rational.of(coeff.p - branchfact.p * coeff.q, coeff.q); // coeff - branchfact
-  if (allowHalf && c.p === c.q) {
-    n = add(n, Rational.of(1n, 2n));
-    c = S.Zero;
+  // round down to the nearest multiple of 2: n = ceiling(coeff/2 - 1/2)
+  let n: Expr;
+  let c: Expr;
+  if (coeff instanceof Rational) {
+    const half = Rational.of(coeff.p - coeff.q, 2n * coeff.q); // coeff/2 - 1/2
+    const ceil = half.p >= 0n ? (half.p + half.q - 1n) / half.q : -((-half.p) / half.q);
+    n = Rational.of(ceil);
+    c = Rational.of(coeff.p - 2n * ceil * coeff.q, coeff.q); // coeff - 2 n
+    if (allowHalf && c.key === S.One.key) {
+      n = add(n, Rational.of(1n, 2n));
+      c = S.Zero;
+    }
+  } else {
+    // an irrational real number: its ceiling numerically (a rational number would be exact)
+    const v = coeff.toComplex();
+    if (v.im !== 0 || !Number.isFinite(v.re)) return [e, S.Zero];
+    const ceil = Math.ceil(v.re / 2 - 0.5);
+    n = Rational.of(ceil);
+    c = add(coeff, -2 * ceil);
   }
   const newexp = add(mul(ipi(), add(c, ...tail)), ...extras);
   if (!(newexp instanceof Rational && newexp.isZero)) res = mul(res, expPolar(newexp));
@@ -125,8 +133,8 @@ const evalPeriodicArgument = (ar: Expr, period: Expr): Expr | undefined => {
     if (keep.length !== ar.args.length) return periodicArgument(mul(...keep), period);
   }
   const u = unbranched(ar);
-  if (u === undefined || u.has(new Sym('__never__'))) return undefined;
-  if ([...findFns(u)].some((n) => ['arg', 'atan', 'atan2', 'periodic_argument'].includes(n))) return undefined;
+  if (u === undefined) return undefined;
+  if ([...findFns(u)].some((n) => ['atan', 'atan2', 'periodic_argument'].includes(n))) return undefined;
   if (isOo(period)) return u;
   const q = mul(u, pow(period, -1));
   if (q.freeSymbols().size) return undefined;
@@ -157,7 +165,7 @@ const evalPrincipalBranch = (x: Expr, period: Expr): Expr | undefined => {
     else others.push(y);
   }
   const a = periodicArgument(c, period);
-  if (a.has(new Sym('__never__')) || isFnN(a, 'periodic_argument')) return undefined;
+  if (isFnN(a, 'periodic_argument')) return undefined;
   if (a.freeSymbols().size) return undefined;
   const ub = unbranchedArgument(c);
   const absC = abs(unpolarify(c));
@@ -172,6 +180,8 @@ const evalPrincipalBranch = (x: Expr, period: Expr): Expr | undefined => {
 };
 
 const evalPolarLift = (z: Expr): Expr | undefined => {
+  // oo*exp_polar(0) = oo and oo*exp_polar(I*pi) = -oo (SymPy's Mul absorbs the polar factor)
+  if (z instanceof Special && (z.name === 'oo' || z.name === '-oo')) return z;
   if (z.freeSymbols().size === 0 && !(z instanceof Special)) {
     const a = arg(z);
     const known = [S.Zero, mul(S.Pi, Rational.of(1n, 2n)), mul(S.Pi, Rational.of(-1n, 2n)), S.Pi];
@@ -263,7 +273,7 @@ trigIntegral('Shi', Shi, (z, s) => mul(S.I, Si(z), s), (z) => mul(-1, Shi(z)), t
 
 evaluators.expint = (nu, z) => {
   const r = base.expint(nu, z);
-  if (r !== undefined) return r;
+  if (r !== undefined) return unpolarify(r);
   const [nz, n] = extractBranchFactor(z);
   if (n instanceof Rational && n.isZero) return undefined;
   if (nu instanceof Rational && nu.isInteger) {
@@ -276,6 +286,18 @@ evaluators.expint = (nu, z) => {
   return add(mul(add(exp(mul(2, S.I, S.Pi, nu, n)), -1), pow(nz, add(nu, -1)), gamma(add(1, mul(-1, nu)))), expint(nu, nz));
 };
 
+
+// lowergamma(a, z) and uppergamma(a, z) are entire in z for a positive integer a (SymPy unpolarifies z)
+for (const name of ['lowergamma', 'uppergamma'] as const) {
+  const prev = defined(evaluators[name]);
+  evaluators[name] = (a, z) => {
+    if (a instanceof Rational && a.isInteger && a.isPositive) {
+      const nz = unpolarify(z);
+      if (nz.key !== z.key) return fn(name, [a, nz]);
+    }
+    return prev(a, z);
+  };
+}
 
 /** SymPy _polarify. */
 function polarifyInner(eq: Expr, lift: boolean, pause = false): Expr {

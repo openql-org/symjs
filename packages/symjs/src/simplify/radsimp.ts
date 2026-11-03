@@ -9,7 +9,7 @@ import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, Derivative, impl, Mul, Pow, Rational, S, UndefFn, Wild } from '../core/nodes';
 import { add, asBaseExp, mul, pow, sympify } from '../core/ops';
 import { rebuild } from '../core/traverse';
-import { first } from '../core/guard';
+import { at, defined, first } from '../core/guard';
 
 // radsimp is the port of SymPy's algorithm in sqrtdenest.ts (they call each other)
 export { radsimp } from './sqrtdenest';
@@ -23,9 +23,12 @@ function powerOf(f: Expr, p: Expr, exact: boolean): Rational | undefined {
   if (fb.key !== pb.key) return undefined;
   const r = mul(fe, pow(pe, -1));
   if (!(r instanceof Rational)) return undefined;
+  if (r.isInteger) return r;
   // exp(x) is not a power of exp(2*x) (SymPy collect parses exp(c*u) as exp(u)**c)
-  if (fb instanceof Constant && fb.name === 'E' && !r.isInteger) return undefined;
-  return r;
+  if (fb instanceof Constant && fb.name === 'E') return undefined;
+  // SymPy collect substitutes a dummy for the pattern, which replaces f only when
+  // p**r evaluates to f (x is not (x**2)**(1/2) unless x is positive)
+  return pow(p, r).key === f.key ? r : undefined;
 }
 
 /** Split term = (pattern**k) * rest; returns [k, rest] or undefined. */
@@ -49,28 +52,29 @@ function extractPattern(term: Expr, p: Expr, exact: boolean): [Expr, Expr] | und
     return undefined;
   }
   if (p instanceof Mul) {
-    // every factor of the pattern must occur in the term, possibly as a higher integer power
-    const pf = p.args;
+    // SymPy collects by a product through subs(pattern, Dummy): the term must contain
+    // pattern**k for an integer k (x**2*y = (x*y)*x); numbers in the pattern match
+    // anything (collect(x*y - x/8, -x) = x*(y - 1/8))
+    const qs = p.args.filter((q) => !(q instanceof Rational));
     const remaining = [...factors];
-    for (const q of pf) {
-      const i = remaining.findIndex((f) => f.key === q.key);
-      if (i >= 0) {
-        remaining.splice(i, 1);
-        continue;
-      }
-      if (exact) return undefined;
-      const found = remaining
-        .map((f, j) => [j, powerOf(f, q, false)] as const)
-        .find(([, k]) => k !== undefined && k.isInteger && k.p > 1n);
-      const k = found?.[1];
-      if (found === undefined || k === undefined) return undefined;
-      remaining[found[0]] = pow(q, Number(k.p) - 1);
+    const ratios: bigint[] = [];
+    const used: number[] = [];
+    for (const q of qs) {
+      const i = remaining.findIndex((f, j) => !used.includes(j) && powerOf(f, q, false)?.isInteger === true);
+      if (i < 0) return undefined;
+      used.push(i);
+      ratios.push(defined(powerOf(at(remaining, i), q, false), 'power of the pattern factor').p);
     }
-    return [p, mul(...remaining)];
+    const pos = ratios.every((r) => r > 0n);
+    if (!pos && !ratios.every((r) => r < 0n)) return undefined;
+    const k = ratios.reduce((m, r) => (pos ? (r < m ? r : m) : r > m ? r : m));
+    if (exact && k !== 1n) return undefined;
+    const key = pow(mul(...qs), Rational.of(k));
+    return [key, mul(term, pow(key, -1))];
   }
   for (const [i, f] of factors.entries()) {
-    const k = powerOf(f, p, exact);
-    if (k !== undefined) return [pow(p, k), mul(...factors.filter((_, j) => j !== i))];
+    // as in SymPy, the key is the matched factor itself (x for the pattern x**2, not sqrt(x**2))
+    if (powerOf(f, p, exact) !== undefined) return [f, mul(...factors.filter((_, j) => j !== i))];
     const b = f instanceof Pow ? f.base : f;
     if (!exact && derivativeOf(b, p)) return [f, mul(...factors.filter((_, j) => j !== i))];
   }

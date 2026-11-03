@@ -10,9 +10,10 @@ import type { Expr } from '../core/nodes';
 import { Add, Constant, Fn, Integral, Mul, Pow, Rational, Rel, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { add, couldExtractMinusSign, mul, pow } from '../core/ops';
-import { freeSymbols, subs, xreplace } from '../core/traverse';
+import { freeSymbols, rebuild, subs, xreplace } from '../core/traverse';
 import { asNumerDenom } from '../core/methods';
 import { at, cast, first } from '../core/guard';
+import { diff } from '../calculus/diff';
 import { doit } from '../calculus/doit';
 import { termsGcd } from '../polys/sympoly';
 import { compareKeys, sortKey } from '../printing/sortkey';
@@ -29,6 +30,7 @@ function count(e: Expr, c: Expr): number {
   return e.args.reduce((n, a) => n + count(a, c), 0);
 }
 
+const isZero = (e: Expr) => e instanceof Rational && e.isZero;
 const subset = (e: Expr, Cs: readonly Sym[]) => [...freeSymbols(e)].every((s) => Cs.some((c) => c.key === s.key));
 
 /** SymPy _get_constant_subexpressions. */
@@ -57,14 +59,31 @@ function constantSubexpressions(expr: Expr, Cs: readonly Sym[]): Expr[] {
   return out;
 }
 
-/** SymPy __remove_linear_redundancies (the Equality normalization). */
+/** SymPy __remove_linear_redundancies: C1*u + C2*u -> C1*u, then the Equality normalization. */
 function removeLinearRedundancies(expr: Expr, CsIn: readonly Sym[]): Expr {
   const cnts = new Map(CsIn.map((c) => [c.key, count(expr, c)]));
   const Cs = CsIn.filter((c) => (cnts.get(c.key) ?? 0) > 0);
   const isC = (e: Expr) => Cs.some((c) => c.key === e.key);
-  if (!(expr instanceof Rel && expr.op === 'Eq')) return expr;
-  let lhs = expr.lhs;
-  let rhs = expr.rhs;
+  // in a sum, constants that occur only there, linearly and with the same coefficient are one constant
+  const linear = (e0: Expr): Expr => {
+    if (!(e0 instanceof Add)) return e0;
+    let e: Expr = e0;
+    const byCoeff = new Map<string, Sym[]>();
+    for (const c of Cs) {
+      if (count(e0, c) !== cnts.get(c.key) || !isZero(diff(e0, c, 2))) continue;
+      const k = diff(e0, c).key;
+      byCoeff.set(k, [...(byCoeff.get(k) ?? []), c]);
+    }
+    for (const cs of byCoeff.values()) {
+      const sorted = [...cs].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+      for (const c of sorted.slice(1)) e = subs(e, [[c, Rational.of(0)]]);
+    }
+    return e;
+  };
+  const walk = (e: Expr): Expr => linear(e.args.length ? rebuild(e, e.args.map(walk)) : e);
+  if (!(expr instanceof Rel && expr.op === 'Eq')) return walk(expr);
+  let lhs = walk(expr.lhs);
+  let rhs = walk(expr.rhs);
   const f = (i: Expr) => i instanceof Rational || isC(i);
   if (lhs instanceof Sym && isC(lhs)) [lhs, rhs] = [rhs, lhs];
   const atomic = (e: Expr) => e.args.length === 0;

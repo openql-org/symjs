@@ -29,7 +29,6 @@ import {
   Sym,
   impl,
 } from '../core/nodes';
-import { InvariantError } from '../core/errors';
 import { at } from '../core/guard';
 import { mul, sympify } from '../core/ops';
 import { rebuild } from '../core/traverse';
@@ -226,18 +225,19 @@ export function evalf(ex: ExprLike, n?: number | NumericValues, opts: EvalfOptio
 /** evalf at a binary precision. */
 export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: boolean | number): Expr {
   const raw = makeRawLookup(values);
-  const lookup = (s: Sym): Mpc | undefined => {
+  // an exact value is evaluated at the working precision, not the target one
+  const lookup = (s: Sym, wp: number): Mpc | undefined => {
     const v = raw(s);
     if (v === undefined) return undefined;
     if (typeof v === 'number') return [F.fromNumber(v), F.ZERO];
-    if (v instanceof Expr) return evalAdaptive(v, prec, () => undefined);
+    if (v instanceof Expr) return evalAdaptive(v, wp);
     return [F.fromNumber(v.re), F.fromNumber(v.im)];
   };
   const go = (x: Expr): Expr => {
     let numeric = true as boolean; // set inside visit
     const visit = (y: Expr) => {
       if (y instanceof ExtensionExpr && y.numericValue(5) !== undefined) return;
-      if (y instanceof Sym && lookup(y) === undefined) numeric = false;
+      if (y instanceof Sym && lookup(y, prec) === undefined) numeric = false;
       else if (y instanceof Special || y instanceof Rel || y instanceof BoolAtom) numeric = false;
       else y.args.forEach(visit);
     };
@@ -262,11 +262,6 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
 
 const isVector = (a: number | C | readonly (number | C)[]): a is readonly (number | C)[] => Array.isArray(a);
 
-/** A lambdify environment slot that was not filled (the slots are filled from the arguments). */
-function missingSlot(i: number): never {
-  throw new InvariantError(`lambdify: environment slot ${i} is missing`);
-}
-
 /**
  * Compile an expression into a fast numeric function of the given symbols.
  *
@@ -288,12 +283,12 @@ export function lambdify(ex: ExprLike, params: readonly Sym[]): (...args: (numbe
       if (vi !== undefined) {
         const slot = params.length + slots.length;
         slots.push([vi, Number(k)]);
-        return (env) => env[slot] ?? missingSlot(slot);
+        return (env) => at(env, slot);
       }
     }
     const i = index.get(s.name);
     if (i === undefined) throw new TypeError(`lambdify: symbol '${s.name}' is not a parameter`);
-    return (env) => env[i] ?? missingSlot(i);
+    return (env) => at(env, i);
   });
   return (...args) => {
     if (args.length !== params.length) {

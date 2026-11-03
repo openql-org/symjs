@@ -3584,12 +3584,25 @@ export function runCase(c: Case): Outcome {
     // dsolve: a solution in another form that satisfies the equations with as many constants (SymPy checkodesol);
     // this also accepts a correct solution where SymPy's printed one is wrong
     if (c.fn === 'dsolve' && solvesDsolveCase(args[0], v) && constantCount(got) === constantCount(c.expected)) return { status: 'equivalent', got };
+    // a doctest whose printed output is mathematically wrong: the correct value counts as compatible
+    if (SYMPY_ERRATA[c.src] === got) return { status: 'equivalent', got };
     return { status: 'fail', got };
   } catch (e) {
     if (e instanceof Unsupported) return { status: 'unsupported', reason: e.message };
     return { status: 'error', reason: e instanceof Error ? e.message : String(e) };
   }
 }
+
+/**
+ * Doctests whose SymPy output is mathematically wrong, with the correct
+ * printed value symjs gives (keyed by the doctest source).
+ */
+const SYMPY_ERRATA: Readonly<Record<string, string>> = {
+  // d/dx (y - x**2) = -2*x > 0 on (-oo, 0) and vanishes only at the endpoint 0, so the function is strictly increasing
+  'is_strictly_increasing(-x**2 + y, Interval(-oo, 0), x)': 'True',
+  // n is a positive integer: mobius(1**2) = 1, so the value is not 0 for every n
+  'mobius(n**2)': 'mobius(n**2)',
+};
 
 /** The dsolve result v solves the equation (or system) eqArg. */
 function solvesDsolveCase(eqArg: unknown, v: unknown): boolean {

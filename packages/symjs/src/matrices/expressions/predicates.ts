@@ -209,7 +209,8 @@ export function askInvertible(m: Expr, assumptions: readonly MatrixPredicate[] =
   if (m instanceof ZeroMatrixNode) return false;
   if (m instanceof OneMatrixNode) return same(m.rows, S.One) && same(m.cols, S.One);
   if (m instanceof TransposeNode || m instanceof AdjointNode) return askInvertible(m.arg, assumptions);
-  if (m instanceof MatrixSliceNode) return m.onDiag ? askInvertible(m.parent, assumptions) : a;
+  // only the full slice is known to be invertible (SymPy also answers for a principal submatrix, which may be singular)
+  if (m instanceof MatrixSliceNode) return m.onDiag && same(m.rows, m.parent.rows) ? askInvertible(m.parent, assumptions) : a;
   // MatrixSymbol, explicit matrices and the other matrix expressions: not known to be square means singular
   if (m.isSquare !== true) return false;
   if (a !== 'unknown') return a;

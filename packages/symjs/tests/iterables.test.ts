@@ -5,8 +5,7 @@
 // table of further reference outputs computed with SymPy.
 
 import { describe, expect, it } from 'vitest';
-import { Add, Dummy, E, Sym, add, exp, isRational, mul, pi, pow, sqrt, sub } from '../src';
-import type { Expr } from '../src';
+import { Add, Dummy, E, Expr, Sym, add, exp, isRational, mul, pi, pow, sqrt, sub } from '../src';
 import * as I from '../src/utilities';
 import {
   GeneratorType,
@@ -70,8 +69,14 @@ import {
 } from '../src/utilities';
 
 const [w, x, y, z] = ['w', 'x', 'y', 'z'].map((n) => new Sym(n)) as [Sym, Sym, Sym, Sym];
-const str = (v: unknown): unknown => (Array.isArray(v) ? v.map(str) : v instanceof Map ? [...v].map(([k, u]) => [str(k), str(u)]) : v instanceof Set ? new Set([...v].map(str)) : v && typeof v === 'object' ? String(v) : v);
+const str = (v: unknown): unknown => (Array.isArray(v) ? v.map(str) : v instanceof Map ? [...v].map(([k, u]) => [str(k), str(u)]) : v instanceof Set ? new Set([...v].map(str)) : v instanceof Expr ? v.toString() : v);
 const list = <T>(g: Iterable<T>): T[] => [...g];
+/** Sort by JSON text (what the default sort does with the string form of arrays of numbers and strings). */
+const sorted = <T>(xs: T[]): T[] =>
+  xs.sort((a, b) => {
+    const [p, q] = [JSON.stringify(a), JSON.stringify(b)];
+    return p < q ? -1 : p > q ? 1 : 0;
+  });
 const join = (g: Iterable<readonly string[]>): string[] => [...g].map((p) => p.join(''));
 
 /** Python's itertools.permutations, for the comparisons in the doctests. */
@@ -152,7 +157,7 @@ describe('sequences', () => {
     expect(group('aabccc')).toEqual([['a', 'a'], ['b'], ['c', 'c', 'c']]);
   });
   it('iproduct', () => {
-    expect(list(iproduct([1, 2], [3, 4])).sort()).toEqual([[1, 3], [1, 4], [2, 3], [2, 4]]);
+    expect(sorted(list(iproduct([1, 2], [3, 4])))).toEqual([[1, 3], [1, 4], [2, 3], [2, 4]]);
     expect(list(iproduct([1, 2, 3], [4, 5]))).toEqual([[1, 4], [2, 4], [1, 5], [3, 4], [2, 5], [3, 5]]);
     expect(list(iproduct([1, 2], [3, 4], [5, 6]))).toEqual([[1, 3, 5], [2, 3, 5], [1, 4, 5], [2, 4, 5], [1, 3, 6], [2, 3, 6], [1, 4, 6], [2, 4, 6]]);
     expect(list(iproduct())).toEqual([[]]);
@@ -162,7 +167,7 @@ describe('sequences', () => {
     expect(includes(iproduct(integers(), integers()), [3, 4])).toBe(true);
   });
   it('multiset', () => {
-    expect([...multiset('mississippi')].sort()).toEqual([['i', 4], ['m', 1], ['p', 2], ['s', 4]]);
+    expect(sorted([...multiset('mississippi')])).toEqual([['i', 4], ['m', 1], ['p', 2], ['s', 4]]);
     expect([...multiset('mississippi')]).toEqual([['m', 1], ['i', 4], ['s', 4], ['p', 2]]);
     const m = multiset([x, 1, new Sym('x')]);
     expect(str(m)).toEqual([['x', 2], [1, 1]]);
@@ -335,7 +340,7 @@ describe('combinatorics', () => {
     expect(list(multisetPartitions([1, 2, 3, 4], 2))).toEqual([[[1, 2, 3], [4]], [[1, 2, 4], [3]], [[1, 2], [3, 4]], [[1, 3, 4], [2]], [[1, 3], [2, 4]], [[1, 4], [2, 3]], [[1], [2, 3, 4]]]);
     expect(list(multisetPartitions([1, 2, 3, 4], 1))).toEqual([[[1, 2, 3, 4]]]);
     const a = [1, 2, 2, 1];
-    expect(list(multisetPartitions(a, 2))).toEqual(list(multisetPartitions([...a].sort(), 2)));
+    expect(list(multisetPartitions(a, 2))).toEqual(list(multisetPartitions(sorted([...a]), 2)));
     expect(list(multisetPartitions([3, 2]))).toEqual(list(multisetPartitions([2, 3])));
     expect(list(multisetPartitions([1, 1, 2]))).toEqual([[[1, 1, 2]], [[1, 1], [2]], [[1, 2], [1]], [[1], [1], [2]]]);
     expect(list(multisetPartitions([1, 1, 1]))).toEqual([[[1, 1, 1]], [[1], [1, 1]], [[1], [1], [1]]]);
@@ -415,8 +420,9 @@ describe('combinatorics', () => {
     for (const s of ['abcd', 'aabbc', 'aabb', [1, 1, 2, 3]] as (string | number[])[]) {
       for (let seed = 0; seed < 20; seed++) {
         const r = randomDerangement<unknown>(s, seed);
-        expect(r.every((c, i) => c !== [...s][i])).toBe(true);
-        expect([...r].sort()).toEqual([...s].sort() as unknown[]);
+        const items: unknown[] = typeof s === 'string' ? Array.from(s) : s;
+        expect(r.every((c, i) => c !== items[i])).toBe(true);
+        expect(sorted([...r])).toEqual(sorted(items));
       }
     }
     expect(() => randomDerangement('aaab', 1)).toThrow('no derangement possible');

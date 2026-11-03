@@ -7,7 +7,7 @@
  * repeated indices summed over, Einstein convention).
  */
 
-import { at, getOrThrow } from '../core/guard';
+import { at } from '../core/guard';
 import type { Expr } from '../core/nodes';
 import { Add, Fn, Mul, Piecewise, Pow, UndefFn } from '../core/nodes';
 import { Indexed } from '../core/indexed';
@@ -142,14 +142,14 @@ function structure(e: Expr): ContractionStructure {
     for (const term of e.args) {
       for (const [k, v] of structure(term)) {
         const id = keyOf(k);
+        // Only the null and index-list keys (sets of terms) can repeat: an
+        // expression key is the term itself, and the terms are distinct.
         const existing = keys.get(id);
-        if (existing === undefined) {
+        const cur = existing === undefined ? undefined : result.get(existing);
+        if (cur instanceof Set && v instanceof Set) for (const x of v) cur.add(x);
+        else {
           keys.set(id, k);
-          result.set(k, v instanceof Set ? new Set(v) : [...v]);
-        } else {
-          const cur = getOrThrow(result, existing);
-          if (cur instanceof Set && v instanceof Set) for (const x of v) cur.add(x);
-          else if (Array.isArray(cur) && Array.isArray(v)) cur.push(...v);
+          result.set(k, v instanceof Set ? new Set(v) : v);
         }
       }
     }

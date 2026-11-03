@@ -9,9 +9,9 @@
 
 import { callableClass } from '../../core/callable';
 import type { ExprLike , Expr} from '../../core/nodes';
-import { ExtensionExpr, Float, S } from '../../core/nodes';
+import { Add, ExtensionExpr, Float, S } from '../../core/nodes';
 import { isIntegerQ, isNegative } from '../../core/assumptions';
-import { sympify } from '../../core/ops';
+import { pow, sympify } from '../../core/ops';
 import type { Truth } from '../../core/truth';
 import { Poly } from '../../polys/sympoly';
 import { SetExpr, containsQ } from '../../sets/sets';
@@ -22,6 +22,7 @@ import type { DoitHints, MatArg } from './matexpr';
 import { MatScalar, MatrixExpr, checkDim, doitArg, parenLatex, toExpr, toMatrix, transposeOf } from './matexpr';
 import { isInt, same } from './util';
 import { at, cast, defined, first, pair } from '../../core/guard';
+import { parse } from '../../parsing/parser';
 
 // ---------------------------------------------------------------------------
 // DotProduct
@@ -86,7 +87,7 @@ export class CompanionMatrixNode extends MatrixExpr {
   static create(poly: Poly): CompanionMatrixNode {
     if (!(poly instanceof Poly)) throw new RangeError(`${String(poly)} must be a Poly instance.`);
     if (poly.gens.length !== 1) throw new RangeError(`${String(poly)} must be a univariate polynomial.`);
-    if (!same(poly.allCoeffs()[0] ?? S.Zero, S.One)) throw new RangeError(`${String(poly)} must be a monic polynomial.`);
+    if (!same(first(poly.allCoeffs()), S.One)) throw new RangeError(`${String(poly)} must be a monic polynomial.`);
     if (poly.degree() < 1) throw new RangeError(`${String(poly)} must have degree not less than 1.`);
     return new CompanionMatrixNode(poly);
   }
@@ -118,10 +119,45 @@ export class CompanionMatrixNode extends MatrixExpr {
     return `CompanionMatrix(${String(this.poly)})`;
   }
   override printLatex(): string {
-    const dom = ({ ZZ: '\\mathbb{Z}', QQ: '\\mathbb{Q}', RR: '\\mathbb{R}', CC: '\\mathbb{C}' } as Record<string, string>)[this.poly.domain] ?? this.poly.domain;
+    const dom = domainLatex(this.poly.domain);
     const gens = this.poly.gens.map((g) => latex(g)).join(', ');
-    return `\\operatorname{CompanionMatrix}\\left(\\operatorname{Poly}{\\left( ${latex(this.poly.asExpr())}, ${gens}, domain=${dom} \\right)}\\right)`;
+    return `\\operatorname{CompanionMatrix}\\left(\\operatorname{Poly}{\\left( ${polyLatex(this.poly)}, ${gens}, domain=${dom} \\right)}\\right)`;
   }
+}
+
+/** SymPy's LaTeX of a polynomial domain: \\mathbb{Z}, \\mathbb{Q}\\left[k\\right], \\mathbb{Q}\\left(k\\right). */
+function domainLatex(dom: string): string {
+  const fields: Record<string, string> = { ZZ: '\\mathbb{Z}', QQ: '\\mathbb{Q}', RR: '\\mathbb{R}', CC: '\\mathbb{C}' };
+  const m = /^(ZZ|QQ|RR|CC)(?:([[(])(.*)[\])])?$/.exec(dom);
+  if (!m) return `\\mathtt{\\text{${dom.replaceAll('_', '\\_')}}}`;
+  const base = defined(fields[defined(m[1], 'ground domain')], 'ground domain');
+  if (m[2] === undefined) return base;
+  const gens = defined(m[3], 'generators')
+    .split(',')
+    .map((g) => latex(parse(g.trim())));
+  return m[2] === '[' ? `${base}\\left[${gens.join(', ')}\\right]` : `${base}\\left(${gens.join(', ')}\\right)`;
+}
+
+/** SymPy LatexPrinter._print_Poly terms of a monic univariate polynomial, from the leading term. */
+function polyLatex(poly: Poly): string {
+  const gen = first(poly.gens);
+  const cs = poly.allCoeffs();
+  const terms: string[] = [];
+  cs.forEach((c, k) => {
+    const e = cs.length - 1 - k;
+    if (same(c, S.Zero)) return;
+    const mon = e === 0 ? '' : latex(e === 1 ? gen : pow(gen, e));
+    let sc: string;
+    if (c instanceof Add) sc = mon ? `\\left(${latex(c)}\\right)` : latex(c);
+    else if (mon && same(c, S.One)) return void terms.push('+', mon);
+    else if (mon && same(c, S.NegOne)) return void terms.push('-', mon);
+    else sc = latex(c);
+    const st = mon ? `${sc} ${mon}` : sc;
+    if (st.startsWith('-')) terms.push('-', st.slice(1));
+    else terms.push('+', st);
+  });
+  // the leading coefficient is 1, so the first sign is '+'
+  return terms.slice(1).join(' ');
 }
 
 /** SymPy CompanionMatrix(poly). */

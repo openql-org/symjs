@@ -10,12 +10,14 @@
 
 import { NotImplementedError } from '../core/errors';
 import type { ExprLike } from '../core/nodes';
-import { Expr, Float, Rational, S, Special, impl } from '../core/nodes';
+import { Expr, ExtensionExpr, Float, Rational, S, Special, impl } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
-import { Eq, Le, Lt } from '../core/logic';
-import { and, or } from '../core/boolalg';
+import { Eq, Ge, Le, Lt } from '../core/logic';
+import { and, not, or } from '../core/boolalg';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { at, cast, first } from '../core/guard';
+import { Max, Min } from '../functions/special';
+import { fn } from '../functions/elementary';
 
 /** Base class of all sets. */
 export abstract class SetExpr extends Expr {
@@ -49,15 +51,17 @@ export function cmpReal(a: Expr, b: Expr): number | undefined {
   if (a.key === b.key) return 0;
   if (a instanceof Rational && b instanceof Rational) {
     const d = a.p * b.q - b.p * a.q;
-    return d < 0n ? -1 : d > 0n ? 1 : 0;
+    // equal rationals have equal keys
+    return d < 0n ? -1 : 1;
   }
   const x = realValue(a);
   const y = realValue(b);
   if (x === undefined || y === undefined) return undefined;
   if (x === y) {
+    // equal as floats: an exact difference decides, otherwise they are taken as equal
     const d = add(a, mul(-1, b));
-    if (d instanceof Rational) return d.isZero ? 0 : d.isNegative ? -1 : 1;
-    return Math.abs(x) === Infinity ? 0 : 0;
+    if (d instanceof Rational && !d.isZero) return d.isNegative ? -1 : 1;
+    return 0;
   }
   return x < y ? -1 : 1;
 }
@@ -289,7 +293,11 @@ export function containsQ(s: SetExpr, x: Expr): boolean | undefined {
     const v = realValue(x);
     return v === undefined ? (impl.isReal?.(x) ?? undefined) : true;
   }
-  if (s === Complexes) return !isInf(x);
+  if (s === Complexes) {
+    // oo, -oo, zoo and nan are not complex numbers; a symbol may be infinite unless it is real
+    if (x instanceof Special) return false;
+    return x.freeSymbols().size === 0 || impl.isReal?.(x) === true ? true : undefined;
+  }
   if (s === Integers || s === Naturals || s === Naturals0) {
     if (x instanceof Rational) return x.isInteger && (s === Integers || (s === Naturals ? x.p > 0n : x.p >= 0n));
     return undefined;
@@ -320,20 +328,46 @@ export function containsQ(s: SetExpr, x: Expr): boolean | undefined {
   return undefined;
 }
 
-/** SymPy Set.contains: True/False or an unevaluated condition. */
+/** SymPy Contains(x, S): x is an element of the set, when that is not decided. */
+export class Contains extends ExtensionExpr {
+  constructor(
+    readonly element: Expr,
+    readonly set: SetExpr,
+  ) {
+    super('Contains', [element, set]);
+  }
+  /** Rebuilding evaluates (Contains(x, Integers).subs(x, 2) is true). */
+  withArgs(args: readonly Expr[]): Expr {
+    return contains(cast(at(args, 1), SetExpr, 'Contains set'), at(args, 0));
+  }
+  /** SymPy LatexPrinter: x \in S. */
+  override printLatex(print: (e: Expr) => string): string {
+    return `${print(this.element)} \\in ${print(this.set)}`;
+  }
+}
+
+/**
+ * SymPy Set.contains: true or false, a condition on x (for intervals,
+ * finite sets and unions, intersections and complements of them), or an
+ * unevaluated Contains.
+ */
 export function contains(s: SetExpr, x: Expr): Expr {
   const v = containsQ(s, x);
   if (v !== undefined) return v ? S.true : S.false;
-  if (s instanceof Interval) {
-    return and(s.leftOpen ? Lt(s.start, x) : Le(s.start, x), s.rightOpen ? Lt(x, s.end) : Le(x, s.end));
+  if (s === Reals || s instanceof Interval) return asRelational(s, x);
+  if (s instanceof FiniteSet) return or(...s.args.map((a) => Eq(a, x)));
+  if (s instanceof SetOp) {
+    const parts = s.args.map((a) => contains(a, x));
+    if (s.op === 'Union') return or(...parts);
+    if (s.op === 'Intersection') return and(...parts);
+    return and(at(parts, 0), not(at(parts, 1)));
   }
-  return S.false;
+  return new Contains(x, s);
 }
 
 function intervalParts(s: SetExpr): Interval[] | undefined {
   if (s instanceof Interval) return [s];
   if (s === Reals) return [new Interval(S.NegativeInfinity, S.Infinity, true, true)];
-  if (s === EmptySet) return [];
   if (s instanceof SetOp && s.op === 'Union') {
     const ivs = s.args.filter((a) => a instanceof Interval);
     if (ivs.length === s.args.length) return ivs;
@@ -452,10 +486,8 @@ function intersectTwo(a: SetExpr, b: SetExpr): SetExpr {
       if (c === true) keep.push(x);
       else if (c === undefined) unknown.push(x);
     }
-    if (unknown.length) {
-      const known = keep.length ? [finiteSet(...keep)] : [];
-      return union(...known, new SetOp('Intersection', sortSets([finiteSet(...unknown), o])));
-    }
+    // like SymPy, the elements known to be in o stay in the unevaluated intersection
+    if (unknown.length) return new SetOp('Intersection', sortSets([finiteSet(...keep, ...unknown), o]));
     return finiteSet(...keep);
   }
   if (a === Reals && (b instanceof Interval || b === Reals)) return b;
@@ -493,14 +525,14 @@ export function complement(a: SetExpr, b: SetExpr): SetExpr {
       if (c === false) keep.push(x);
       else if (c === undefined) unknown.push(x);
     }
-    if (unknown.length) return new SetOp('Complement', [finiteSet(...keep, ...unknown), b]);
+    if (unknown.length) return union(finiteSet(...keep), new SetOp('Complement', [finiteSet(...unknown), b]));
     return finiteSet(...keep);
   }
   const pa = intervalParts(a);
-  if (pa && b instanceof FiniteSet && b.args.every((x) => realValue(x) !== undefined)) {
-    const pts = [...b.args].sort((x, y) => cmpReal(x, y) ?? 0);
+  const points = b instanceof FiniteSet ? b.args.map((x) => [x, realValue(x)] as const) : undefined;
+  if (pa && points?.every((pv): pv is readonly [Expr, number] => pv[1] !== undefined)) {
     let parts: SetExpr[] = pa;
-    for (const pt of pts) {
+    for (const [pt] of [...points].sort((p, q) => p[1] - q[1])) {
       parts = parts.flatMap((iv) => {
         if (!(iv instanceof Interval) || containsQ(iv, pt) !== true) return [iv];
         return [interval(iv.start, pt, iv.leftOpen, true), interval(pt, iv.end, true, iv.rightOpen)];
@@ -534,6 +566,8 @@ export function isSubset(a: SetExpr, b: SetExpr): boolean | undefined {
     const cs = a.args.map((x) => containsQ(b, x));
     return cs.every((c) => c === true) ? true : cs.some((c) => c === false) ? false : undefined;
   }
+  // an interval of more than one point is uncountable
+  if (a instanceof Interval && (b === Integers || b === Naturals || b === Naturals0) && cmpReal(a.start, a.end) === -1) return false;
   const c = complement(a, b);
   if (c === EmptySet) return true;
   if (c instanceof SetOp) return undefined;
@@ -544,6 +578,10 @@ export function isSubset(a: SetExpr, b: SetExpr): boolean | undefined {
 export function asRelational(s: SetExpr, x: Expr): Expr {
   if (s === EmptySet) return S.false;
   if (s === Reals) return and(Lt(S.NegativeInfinity, x), Lt(x, S.Infinity));
+  if (s === Integers || s === Naturals || s === Naturals0) {
+    const lower = s === Integers ? Lt(S.NegativeInfinity, x) : Ge(x, s === Naturals ? 1 : 0);
+    return and(lower, Lt(x, S.Infinity), Eq(fn('floor', [x]), x));
+  }
   if (s instanceof Interval) {
     const left = s.leftOpen ? Lt(s.start, x) : Le(s.start, x);
     const right = s.rightOpen ? Lt(x, s.end) : Le(x, s.end);
@@ -555,19 +593,34 @@ export function asRelational(s: SetExpr, x: Expr): Expr {
   throw new NotImplementedError('as_relational: unsupported set');
 }
 
-/** Infimum / supremum of a real set. */
+/** The least (sign 1) or greatest (sign -1) of xs, or Min / Max of them when they do not compare. */
+function extreme(xs: readonly Expr[], sign: 1 | -1): Expr {
+  let best = first(xs);
+  for (const x of xs.slice(1)) {
+    const c = cmpReal(x, best);
+    if (c === undefined) return sign === 1 ? Min(...xs) : Max(...xs);
+    if (c * sign < 0) best = x;
+  }
+  return best;
+}
+
+/** Infimum of a real set (SymPy Set.inf). */
 export function inf(s: SetExpr): Expr {
   if (s instanceof Interval) return s.start;
-  if (s === Reals) return S.NegativeInfinity;
-  if (s instanceof FiniteSet) return first([...s.args].sort((a, b) => cmpReal(a, b) ?? 0));
-  if (s instanceof SetOp && s.op === 'Union') return first(s.args.map(inf).sort((a, b) => cmpReal(a, b) ?? 0));
+  if (s === Reals || s === Integers) return S.NegativeInfinity;
+  if (s === Naturals) return S.One;
+  if (s === Naturals0) return S.Zero;
+  if (s instanceof FiniteSet) return extreme(s.args, 1);
+  if (s instanceof SetOp && s.op === 'Union') return extreme(s.args.map(inf), 1);
   throw new NotImplementedError('inf: unsupported set');
 }
+
+/** Supremum of a real set (SymPy Set.sup). */
 export function sup(s: SetExpr): Expr {
   if (s instanceof Interval) return s.end;
-  if (s === Reals) return S.Infinity;
-  if (s instanceof FiniteSet) return first([...s.args].sort((a, b) => cmpReal(b, a) ?? 0));
-  if (s instanceof SetOp && s.op === 'Union') return first(s.args.map(sup).sort((a, b) => cmpReal(b, a) ?? 0));
+  if (s === Reals || s === Integers || s === Naturals || s === Naturals0) return S.Infinity;
+  if (s instanceof FiniteSet) return extreme(s.args, -1);
+  if (s instanceof SetOp && s.op === 'Union') return extreme(s.args.map(sup), -1);
   throw new NotImplementedError('sup: unsupported set');
 }
 

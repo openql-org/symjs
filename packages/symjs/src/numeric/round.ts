@@ -44,7 +44,7 @@ export function round(xIn: ExprLike, n?: number): Expr {
   const x = sympify(xIn);
   if (x.freeSymbols().size) throw new TypeError('Cannot round symbolic expression');
   if (x instanceof Special) return x;
-  const v = evalAdaptive(x, 60, () => undefined);
+  const v = evalAdaptive(x, 60);
   if (!F.isZero(v[1])) {
     return add(round(re(x), n), mul(S.I, round(im(x), n)));
   }
@@ -53,7 +53,9 @@ export function round(xIn: ExprLike, n?: number): Expr {
   if (x instanceof Rational && x.isInteger) return Rational.of(roundInt(x.p, p));
   const digitsToDecimal = decimalMag(v[0]);
   let allow = digitsToDecimal + p;
-  const precs = atoms(x, (a) => a instanceof Float).flatMap((f) => (f instanceof Float ? [f.prec] : []));
+  const precs = atoms(x)
+    .filter((a): a is Float => a instanceof Float)
+    .map((f) => f.prec);
   let dps: number;
   if (precs.length) {
     dps = F.precToDps(Math.max(...precs));
@@ -62,7 +64,7 @@ export function round(xIn: ExprLike, n?: number): Expr {
   const shift = -digitsToDecimal + dps;
   const extra = 1;
   const P = F.dpsToPrec(dps + extra);
-  const xn = evalAdaptive(x, P, () => undefined)[0];
+  const xn = evalAdaptive(x, P)[0];
   const scaleF = shift >= 0 ? F.fromInt(10n ** BigInt(shift)) : F.fromRational(1n, 10n ** BigInt(-shift), P);
   const xf = F.mul(xn, scaleF, P);
   // Integer(xf) truncates toward zero
@@ -71,8 +73,8 @@ export function round(xIn: ExprLike, n?: number): Expr {
   const dif = F.round(F.mulInt(F.sub(xf, F.fromInt(xi)), sign), F.dpsToPrec(extra));
   const half = { man: 1n, exp: -1 };
   const c = F.cmp(dif, half);
-  if (c > 0) xi += sign;
-  else if (c === 0) xi += xi % 2n !== 0n ? sign : -sign;
+  // a tie goes to the even neighbour (SymPy: xi += sign if xi % 2 else -xi % 2)
+  if (c > 0 || (c === 0 && xi % 2n !== 0n)) xi += sign;
   const ip = p - shift;
   const xr = roundInt(xi, ip);
   const rv = shift >= 0 ? Rational.of(xr, 10n ** BigInt(shift)) : Rational.of(xr * 10n ** BigInt(-shift));

@@ -13,6 +13,7 @@ import { add, asBaseExp, mul, neg, pow, sub, sympify } from './ops';
 import { argsCncSplit, asPowersDict, extractAdditively } from './methods';
 import { str } from '../printing/str';
 import { getOrThrow } from './guard';
+import { ordered } from './match';
 
 const isNumber = (e: Expr): boolean => isNum(e);
 const isZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
@@ -180,10 +181,9 @@ export class Factors {
           e = neg(d);
         } else {
           const r = extractAdditively(q, e);
-          if (r !== undefined) {
-            if (!isZero(r)) quo.set(factor, r);
-            else quo.delete(factor);
-          } else {
+          // r = q - e is not a number, so it is not zero
+          if (r !== undefined) quo.set(factor, r);
+          else {
             let otherExp = e;
             const [sc, sa] = asCoeffAddTerm(q);
             if (!isZero(sc)) {
@@ -200,7 +200,8 @@ export class Factors {
                 otherExp = oa;
               }
             }
-            if (!isZero(otherExp)) rem.set(factor, otherExp);
+            // a numeric exponent of other would have been extracted above, so otherExp is not zero
+            rem.set(factor, otherExp);
           }
           continue;
         }
@@ -219,8 +220,9 @@ export class Factors {
     return this.div(other)[1];
   }
 
-  /** SymPy repr: Factors({x: 1, y: 2}). */
+  /** SymPy repr: Factors({x: 1, y: 2}), the bases in SymPy's order. */
   toString(): string {
-    return `Factors({${[...this.factors].map(([k, v]) => `${str(k)}: ${str(v)}`).join(', ')}})`;
+    const items = ordered([...this.factors.keys()]).map((k) => `${str(k)}: ${str(getOrThrow(this.factors, k))}`);
+    return `Factors({${items.join(', ')}})`;
   }
 }

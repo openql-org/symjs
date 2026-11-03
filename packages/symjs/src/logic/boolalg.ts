@@ -13,12 +13,13 @@ import { at, pair } from '../core/guard';
 import type { BoolOpName } from '../core/boolalg';
 import { BoolOp, and as coreAnd, not as coreNot, or as coreOr } from '../core/boolalg';
 import type { ExprLike, RelOp } from '../core/nodes';
-import { BoolAtom, Expr, ExtensionExpr, Rational, Rel, S, Sym, impl, isNum } from '../core/nodes';
+import { BoolAtom, Expr, ExtensionExpr, Float, Rational, Rel, S, Sym, impl, isNum } from '../core/nodes';
 import { isZero as triIsZero } from '../core/assumptions';
 import { ordered } from '../core/match';
 import { rebuild } from '../core/traverse';
 import { couldExtractMinusSign } from '../core/ops';
 import { NotImplementedError } from '../core/errors';
+import { AppliedPredicate } from '../core/refine';
 
 /** An argument of the boolean constructors: an expression or a JavaScript boolean. */
 export type BoolLike = ExprLike | boolean;
@@ -94,8 +95,8 @@ export class LogicGate extends ExtensionExpr {
 /** e is a SymPy BooleanFunction (And, Or, Not, Xor, ITE, Implies, Equivalent, Nand, Nor, Xnor). */
 export const isBooleanFunction = (e: Expr): boolean => e instanceof BoolOp || e instanceof LogicGate;
 
-/** e is a SymPy Boolean (a boolean function, true/false, a relation or a symbol). */
-export const isBoolean = (e: Expr): boolean => isBooleanFunction(e) || e instanceof BoolAtom || e instanceof Rel || e instanceof Sym;
+/** e is a SymPy Boolean (a boolean function, true/false, a relation, a symbol or an applied predicate such as Q.positive(x)). */
+export const isBoolean = (e: Expr): boolean => isBooleanFunction(e) || e instanceof BoolAtom || e instanceof Rel || e instanceof Sym || e instanceof AppliedPredicate;
 
 /** e is a BoolOp node of the given core operator (And, Or, Not, Xor, ITE). */
 export const isOp = (e: Expr, op: BoolOpName): e is BoolOp => e instanceof BoolOp && !(e instanceof LogicOp) && e.op === op;
@@ -149,24 +150,30 @@ export const relNegated = (r: Rel): Rel => new Rel(NEGATED[r.op], r.lhs, r.rhs);
 /** SymPy Relational.canonical: numbers on the right, ordered sides, no leading minus sign. */
 export function relCanonical(r0: Rel): Rel {
   let r = r0;
-  if (r.rhs.isNumber) {
-    if (isNum(r.lhs) && isNum(r.rhs) && isTrueAtom(impl.sympify(compareNum(r.lhs, r.rhs)))) r = reversedRel(r);
-  } else if (r.lhs.isNumber) r = reversedRel(r);
+  if (isNumberExpr(r.rhs)) {
+    // SymPy: only two Numbers (not sqrt(5) or pi) are put in increasing order
+    if (isNumber(r.lhs) && isNumber(r.rhs) && greater(r.lhs, r.rhs)) r = reversedRel(r);
+  } else if (isNumberExpr(r.lhs)) r = reversedRel(r);
   else if (at(ordered([r.lhs, r.rhs]), 0).key !== r.lhs.key) r = reversedRel(r);
   if (r.lhs instanceof BoolAtom || r.rhs instanceof BoolAtom) return r;
   if (couldExtractMinusSign(r.lhs)) return reversedSign(r);
-  if (!r.rhs.isNumber && couldExtractMinusSign(r.rhs)) {
+  if (!isNumberExpr(r.rhs) && couldExtractMinusSign(r.rhs)) {
     const e1 = at(ordered([r.lhs, impl.mul(-1, r.rhs)]), 0);
     if (e1.key !== r.lhs.key) return reversedSign(reversedRel(r));
   }
   return r;
 }
 
-/** lhs > rhs for two numbers, as true/false. */
-function compareNum(a: Expr, b: Expr): Expr {
+/** SymPy is_number: a numeric expression without symbols (2, sqrt(5), pi). */
+const isNumberExpr = (e: Expr): boolean => !(e instanceof BoolAtom) && (e.isNumber || impl.freeSymbols(e).size === 0);
+
+/** A SymPy Number: a rational or a float. */
+const isNumber = (e: Expr): e is Rational | Float => e instanceof Rational || e instanceof Float;
+
+/** a > b for two Numbers. */
+function greater(a: Rational | Float, b: Rational | Float): boolean {
   const d = impl.add(a, impl.mul(-1, b));
-  if (d instanceof Rational) return d.p > 0n ? S.true : S.false;
-  return d.toComplex().re > 0 ? S.true : S.false;
+  return d instanceof Rational ? d.p > 0n : d.toComplex().re > 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -308,11 +315,8 @@ export function Equivalent(...args: readonly BoolLike[]): Expr {
       }
     }
   }
-  for (const [a, b] of remove) {
-    argset.delete(a.key);
-    argset.delete(b.key);
-    argset.set(S.true.key, S.true);
-  }
+  // equal relations written differently (x > 1, 1 < x): one of them is enough
+  for (const [, b] of remove) argset.delete(b.key);
   if (argset.size <= 1) return S.true;
   if (argset.has(S.true.key)) {
     argset.delete(S.true.key);

@@ -19,6 +19,7 @@ import { xreplace as subs } from '../core/traverse';
 import { fn, log } from '../functions/elementary';
 import { expandMul as expand } from '../simplify/expand';
 import { first } from '../core/guard';
+import { isNegative, isPositive } from '../core/assumptions';
 
 /** A series that the expansion cannot compute (SymPy raises NotImplementedError or ValueError). */
 export class SeriesError extends NotImplementedError {}
@@ -292,6 +293,20 @@ export class Expander {
         if (lc instanceof Rational) return lc.isNegative ? sg.scale(S.NegOne) : sg;
       }
       throw new SeriesError(`cannot expand ${e.name}`);
+    }
+    // floor and ceiling are locally constant: at an integer the side is that of the leading term
+    if (e.name === 'floor' || e.name === 'ceiling') {
+      const lc = h.lead()?.c;
+      if (lc === undefined) return PS.constant(fn(e.name, [g0]));
+      if (!(g0 instanceof Rational && g0.isInteger)) {
+        // off the integers floor/ceiling is constant; a symbolic g0 could be an integer
+        if (g0.freeSymbols().size !== 0 || !(fn(e.name, [g0]) instanceof Rational)) throw new SeriesError(`cannot expand ${e.name}`);
+        return PS.constant(fn(e.name, [g0]));
+      }
+      const sign = isPositive(lc) ? 1 : isNegative(lc) ? -1 : 0;
+      if (sign === 0) throw new SeriesError(`cannot expand ${e.name}`);
+      const up = e.name === 'floor' ? (sign > 0 ? 0 : -1) : sign > 0 ? 1 : 0;
+      return PS.constant(add(g0, up));
     }
     // gamma has poles at 0, -1, -2, ...: gamma(u) = gamma(u + 1)/u
     if (e.name === 'gamma' && g0 instanceof Rational && g0.isInteger && !g0.isPositive) {

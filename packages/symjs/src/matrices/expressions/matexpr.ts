@@ -14,7 +14,8 @@
 
 import { callableClass } from '../../core/callable';
 import { Concrete, Sum } from '../../core/concrete';
-import { InvariantError, MatrixError, NonInvertibleMatrixError, NonSquareMatrixError, NotImplementedError } from '../../core/errors';
+import { MatrixError, NonInvertibleMatrixError, NonSquareMatrixError, NotImplementedError, ShapeError } from '../../core/errors';
+export { ShapeError } from '../../core/errors';
 import { at, cast, last } from '../../core/guard';
 import { LambdaNode } from '../../core/lambda';
 import type { ExprLike , Expr} from '../../core/nodes';
@@ -53,13 +54,6 @@ export interface DoitHints {
 /** A slice of a matrix dimension: SymPy `a:b:c` as `[a, b, c]` (null for an omitted bound), or one index. */
 export type SliceSpec = ExprLike | readonly [(ExprLike | null)?, (ExprLike | null)?, (ExprLike | null)?];
 
-/** SymPy ShapeError: the shapes of matrices do not match. */
-export class ShapeError extends MatrixError {
-  constructor(message = 'Matrices are not aligned') {
-    super(message);
-    this.name = 'ShapeError';
-  }
-}
 
 // ---------------------------------------------------------------------------
 // sympify for matrices
@@ -139,22 +133,11 @@ const ONE_KEY: Key = [[1, 0, 'Number'], [0, []], [], 1];
 export function matSortKey(e: Expr): Key {
   if (e instanceof Str) return [[2, 0, 'Str'], [1, [e.value]], ONE_KEY, 1];
   if (e instanceof MatMulNode) {
-    let args = [...e.args];
-    let coeff = 1;
-    const c = args[0];
-    if (c !== undefined && isNumber(c) && args.length > 1) {
-      coeff = c.value;
-      args = args.slice(1);
-    }
-    if (args.length === 1) {
-      const k = matSortKey(at(args, 0));
-      if (!Array.isArray(k)) throw new InvariantError('sort key of a matrix factor is not a tuple');
-      return [at(k, 0), at(k, 1), at(k, 2), coeff];
-    }
-    const cpart = args.filter((a) => !(a instanceof MatrixExpr) && a.isCommutative);
-    const ncpart = args.filter((a) => a instanceof MatrixExpr || !a.isCommutative);
+    // MatMul.as_coeff_Mul() is (1, self): the numeric factor is sorted with the other commutative factors
+    const cpart = e.args.filter((a) => !(a instanceof MatrixExpr) && a.isCommutative);
+    const ncpart = e.args.filter((a) => a instanceof MatrixExpr || !a.isCommutative);
     const ordered = [...cpart.map((a) => ({ a, k: matSortKey(a) })).sort((x, y) => compareKeys(x.k, y.k)).map((x) => x.k), ...ncpart.map(matSortKey)];
-    return [[3, 0, 'MatMul'], [ordered.length, ordered], ONE_KEY, coeff];
+    return [[3, 0, 'MatMul'], [ordered.length, ordered], ONE_KEY, 1];
   }
   if (e instanceof MatAddNode) {
     const ks = orderedTerms(e.args).map(matSortKey);
@@ -238,7 +221,8 @@ const doitable = (e: Expr): boolean => e instanceof MatrixExpr || e instanceof M
 export function doitArg(a: Expr, hints: DoitHints = {}): Expr {
   if (a instanceof MatrixExpr || a instanceof MatScalar) return a.doit(hints);
   if (!doitable(a)) return a;
-  const r = a.args.length ? rebuild(a, a.args.map((x) => doitArg(x, hints))) : a;
+  // a doitable node that is not a matrix node has arguments (a Concrete always has)
+  const r = rebuild(a, a.args.map((x) => doitArg(x, hints)));
   return r instanceof Concrete ? doitConcrete(r) : r;
 }
 
@@ -521,7 +505,7 @@ export abstract class MatrixExpr extends ExtensionExpr {
   override doitSelf(): Expr {
     return this.doit({ deep: false });
   }
-  /** SymPy canonicalize(). */
+  /** SymPy canonicalize() (the identity for matrix expressions, as in SymPy). */
   canonicalize(): Expr {
     return this;
   }
@@ -1054,7 +1038,8 @@ export class OneMatrixNode extends MatrixExpr {
 export function validateMatAdd(args: readonly MatrixExpr[]): void {
   const rows = args.map((a) => a.rows);
   const cols = args.map((a) => a.cols);
-  const fmt = (xs: Expr[]) => `(${xs.map(str).join(', ')}${xs.length === 1 ? ',' : ''})`;
+  // a mismatch needs at least two dimensions, so the tuple never has one element
+  const fmt = (xs: Expr[]) => `(${xs.map(str).join(', ')})`;
   if (new Set(rows.filter(isInt).map((r) => r.key)).size > 1) throw new ShapeError(`Matrices have mismatching shape: ${fmt(rows)}`);
   if (new Set(cols.filter(isInt).map((r) => r.key)).size > 1) throw new ShapeError(`Matrices have mismatching shape: ${fmt(cols)}`);
 }
@@ -1129,9 +1114,6 @@ export class MatAddNode extends MatrixExpr {
   override doit(hints: DoitHints = {}): Expr {
     const args = hints.deep === false ? this.args : this.args.map((a) => doitArg(a, hints));
     return canonicalizeMatAdd(MatAddNode.create(args));
-  }
-  override canonicalize(): Expr {
-    return canonicalizeMatAdd(this);
   }
   override expand(): Expr {
     return canonicalizeMatAdd(MatAddNode.create(this.args.map(expandArg)));
@@ -1345,9 +1327,6 @@ export class MatMulNode extends MatrixExpr {
     const args = hints.deep === false ? this.args : this.args.map((a) => doitArg(a, hints));
     return canonicalizeMatMul(MatMulNode.create(args));
   }
-  override canonicalize(): Expr {
-    return canonicalizeMatMul(this);
-  }
   override expand(): Expr {
     const factors = this.args.map(expandArg);
     let products: Expr[][] = [[]];
@@ -1406,8 +1385,8 @@ export class MatMulNode extends MatrixExpr {
 
 /** SymPy MatMul(*args).doit(): the evaluated product (a scalar when there is no matrix). */
 function matMul(...args: MatArg[]): Expr {
-  const r = MatMulNode.create(args);
-  return r instanceof MatrixExpr ? r.doit() : r;
+  // every caller passes at least one matrix, so the product is a matrix
+  return asMat(MatMulNode.create(args)).doit();
 }
 
 /** SymPy MatMul(*args): an unevaluated product of scalars and matrices. */
@@ -1530,8 +1509,6 @@ function combinePowers(e: Expr): Expr {
 
 const asMat = (e: Expr): MatrixExpr => cast(e, MatrixExpr);
 
-const rmOnes = (e: Expr): Expr => rmId(e, (a) => same(a, S.One), (args) => new MatMulNode(args));
-
 function mulExplicit(a: Expr, b: Expr): Expr {
   if (a instanceof ImmutableMatrixNode && b instanceof ImmutableMatrixNode) return new ImmutableMatrixNode(a.matrix.mul(b.matrix));
   if (a instanceof ImmutableMatrixNode) return new ImmutableMatrixNode(a.matrix.scale(b));
@@ -1571,7 +1548,6 @@ const isComposable = (e: Expr): e is MatrixExpr & Composable => e instanceof Mat
 
 function combinePermutations(e: Expr): Expr {
   const args = e.args;
-  if (args.length < 2) return e;
   const result: Expr[] = [at(args, 0)];
   for (const B of args.slice(1)) {
     const A = last(result);
@@ -1584,7 +1560,8 @@ function combinePermutations(e: Expr): Expr {
 /** SymPy matmul.canonicalize. */
 export const canonicalizeMatMul: Rule = exhaustWhile(
   (e) => e instanceof MatMulNode,
-  [distributeMonom, anyZeros, removeIds, combineOneMatrices, combinePowers, unpackRule, rmOnes, mergeExplicitMul, factorInFront, flattenMul, combinePermutations],
+  // SymPy's rm_id(lambda x: x == 1) is omitted: combineOneMatrices already drops the unit factor
+  [distributeMonom, anyZeros, removeIds, combineOneMatrices, combinePowers, unpackRule, mergeExplicitMul, factorInFront, flattenMul, combinePermutations],
 );
 
 /** SymPy matmul.merge_explicit: adjacent explicit matrices (and numbers) of a product multiplied. */
@@ -1631,7 +1608,8 @@ export class MatPowNode extends MatrixExpr {
         A = new MatMulNode(Array.from({ length: toInt(e) }, () => base));
       } else if (isInt(this.rows) && isInt(this.cols)) {
         const m = A.base.asExplicit();
-        const p = isInt(e) ? (toInt(e) >= 0 ? m.pow(toInt(e)) : m.inv().pow(-toInt(e))) : undefined;
+        // a positive exponent was expanded above and doit turns the exponent 0 into Identity
+        const p = isInt(e) ? m.inv().pow(-toInt(e)) : undefined;
         if (p) return p.get(toInt(i), toInt(j));
         return new MatrixElementNode(this, i, j);
       } else return new MatrixElementNode(this, i, j);
@@ -2182,8 +2160,7 @@ export class ElementwiseApplyFunctionNode extends MatrixExpr {
     if (expr instanceof ImmutableMatrixNode) return new ImmutableMatrixNode(expr.matrix.map((e) => f.call(e)));
     if (expr instanceof ElementwiseApplyFunctionNode) {
       const g = expr.function;
-      const r = ElementwiseApplyFunctionNode.create((x: Expr) => f.call(g.call(x)), expr.expr);
-      return r instanceof MatrixExpr ? r.doit(hints) : r;
+      return asMat(ElementwiseApplyFunctionNode.create((x: Expr) => f.call(g.call(x)), expr.expr)).doit(hints);
     }
     return expr === this.expr ? this : new ElementwiseApplyFunctionNode(f, expr);
   }

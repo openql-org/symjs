@@ -130,7 +130,8 @@ describe('boolean functions', () => {
     expect(L.Equivalent(x, And(x, true))).toBe(T);
     expect(s(L.Equivalent(x, And(y, z)))).toBe('Equivalent(x, y & z)');
     expect(L.Equivalent(sj.Lt(x, 1), sj.Ge(x, 1), A)).toBe(F);
-    expect(s(L.Equivalent(sj.Lt(x, 1), sj.Gt(1, x), A))).toBe('A');
+    // SymPy 1.14: Equivalent(A, x < 1) (x < 1 and 1 > x are one relation)
+    expect(s(L.Equivalent(sj.Lt(x, 1), sj.Gt(1, x), A))).toBe('Equivalent(A, x < 1)');
     expect(s(L.Equivalent(A, 1, B))).toBe('A & B');
     expect(s(L.Equivalent(B, A))).toBe('Equivalent(A, B)');
   });

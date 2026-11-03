@@ -15,9 +15,9 @@
 
 import { toGamma } from '../simplify/gammasimp';
 import { powsimp } from '../simplify/powsimp';
-import { isNegative, isPositive } from '../core/assumptions';
+import { isNegative, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Fn, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
+import { Add, Float, Fn, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { mapBottomUp, xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
@@ -29,6 +29,8 @@ import { Expander } from './puiseux';
 import { first, getOrThrow } from '../core/guard';
 
 const BOUNDED = Symbol('bounded');
+/** Undetermined, and no other method should be tried (a branch cut crossed at infinity). */
+const STOP = Symbol('stop');
 type LV = Expr | typeof BOUNDED | undefined;
 /** A determined limit value (neither undetermined nor merely bounded). */
 const isValue = (v: LV): v is Expr => v !== undefined && v !== BOUNDED;
@@ -36,6 +38,28 @@ const isValue = (v: LV): v is Expr => v !== undefined && v !== BOUNDED;
 const isInf = (e: LV): e is Special => e instanceof Special && e.name !== 'nan';
 const isNaN_ = (e: LV) => e instanceof Special && e.name === 'nan';
 const isZeroE = (e: LV) => e instanceof Rational && e.isZero;
+/** Numerically zero (for sample values of its symbols) without being 0 symbolically. */
+const nearlyZero = (e: Expr): boolean => {
+  if (e instanceof Rational) return false;
+  const syms = [...impl.freeSymbols(e)];
+  const samples = [0.6180339887, 1.3247179572];
+  try {
+    return samples.every((v, i) => {
+      const val = subs(e, syms.map((x, j) => [x, (v + 0.1 * j) * (i + 1)] as [Expr, number])).toComplex();
+      return Math.hypot(val.re, val.im) < 1e-12;
+    });
+  } catch {
+    return false;
+  }
+};
+const hasPolygamma = (e: Expr): boolean => (e instanceof Fn && e.name === 'polygamma') || e.args.some(hasPolygamma);
+/** A finite value: no special values (oo, zoo, nan) inside. */
+const isFinite_ = (e: Expr): boolean => !(e instanceof Special || hasSpecialInside(e));
+/** c*oo with a finite constant c. */
+const isDirectedInf = (e: Expr): boolean => e instanceof Mul && e.args.filter(isInf).length === 1 && e.args.every((a) => isInf(a) || isFinite_(a));
+/** A sum of directed infinities and finite terms (oo - I, oo + oo*I, ...): its modulus is infinite. */
+const isInfiniteSum = (e: Expr): boolean =>
+  e instanceof Add && e.args.some((a) => isInf(a) || isDirectedInf(a)) && e.args.every((a) => isInf(a) || isDirectedInf(a) || isFinite_(a));
 const hasSpecialInside = (e: Expr): boolean => e.args.some((a) => a instanceof Special || hasSpecialInside(a));
 
 class Limiter {
@@ -78,6 +102,64 @@ class Limiter {
     }
   }
 
+  /**
+   * Is the candidate value r the limit of f numerically (near the point, on the
+   * side of approach)? A function of z alone whose value jumps (a branch cut, a
+   * pole hidden in an unevaluated argument) fails the check.
+   */
+  private continuous(f: Expr, r: Expr): boolean {
+    if (impl.freeSymbols(f).size !== 1 || impl.freeSymbols(r).size !== 0) return true;
+    // exponentials of z (exp(1/x) near 0) are too costly to evaluate in arbitrary precision; they have no cut
+    const zExp = (e: Expr): boolean => (e instanceof Pow && e.exp.has(this.z)) || e.args.some(zExp);
+    if (zExp(f)) return true;
+    // branch cuts are crossed at finite points only, by functions that have one
+    if (this.z0 instanceof Special) return true;
+    const CUT = new Set(['log', 'asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch']);
+    const branchy = (e: Expr): boolean =>
+      (e instanceof Fn && CUT.has(e.name) && e.has(this.z)) ||
+      (e instanceof Pow && e.base.has(this.z) && !(e.exp instanceof Rational && e.exp.isInteger)) ||
+      e.args.some(branchy);
+    if (!branchy(f)) return true;
+    try {
+      const v = this.z0.toComplex();
+      if (v.im !== 0) return true;
+      const b = r.toComplex();
+      if (!Number.isFinite(b.re) || !Number.isFinite(b.im)) return true;
+      // the distance to r must shrink as the point comes closer (a jump across a cut does not)
+      const dist = (h: number): number => {
+        const a = subs(f, [[this.z, new Float(this.dir === '+' ? v.re + h : v.re - h, 200)]]).toComplex();
+        return Math.hypot(a.re - b.re, a.im - b.im);
+      };
+      const scale = Math.max(1, Math.hypot(b.re, b.im));
+      const d1 = dist(1e-6 * Math.max(1, Math.abs(v.re)));
+      const d2 = dist(1e-9 * Math.max(1, Math.abs(v.re)));
+      if (!Number.isFinite(d1) || !Number.isFinite(d2)) return true;
+      return d2 <= 1e-6 * scale || d2 < 0.9 * d1;
+    } catch {
+      return true;
+    }
+  }
+
+  /** Sign of e (tending to 0) near the point: from its leading term, else numerically. */
+  private sideOf(e: Expr): number | undefined {
+    if (e instanceof Rational) return e.isZero ? 0 : e.isPositive ? 1 : -1;
+    const { z, z0, t } = this;
+    let point: Expr | undefined;
+    if (z0 instanceof Special) point = z0.name === 'oo' ? pow(t, -1) : z0.name === '-oo' ? mul(-1, pow(t, -1)) : undefined;
+    else point = this.dir === '+' ? add(z0, t) : add(z0, mul(-1, t));
+    if (point !== undefined) {
+      try {
+        const c = new Expander(t).leading(subs(e, [[z, point]])).c;
+        if (isNum(c)) return c.isPositive ? 1 : -1;
+        if (isPositive(c)) return 1;
+        if (isNegative(c)) return -1;
+      } catch {
+        // no expansion: decide numerically
+      }
+    }
+    return this.probeSign(e);
+  }
+
   lim(f: Expr): LV {
     if (++this.depth > 60) {
       this.depth--;
@@ -85,14 +167,23 @@ class Limiter {
     }
     try {
       const r = this.structural(f);
-      if (r === undefined || isNaN_(r)) return this.fallback(f);
-      return r;
+      if (r === STOP) return undefined;
+      if (r !== undefined && !isNaN_(r)) return r;
+      // the expansions do not see branch cuts: check the value on the side of approach
+      const v = this.fallback(f);
+      return isValue(v) && !this.continuous(f, v) ? undefined : v;
     } finally {
       this.depth--;
     }
   }
 
-  private structural(f: Expr): LV {
+  /** structural, with STOP read as undetermined. */
+  private settled(f: Expr): LV {
+    const r = this.structural(f);
+    return r === STOP ? undefined : r;
+  }
+
+  private structural(f: Expr): LV | typeof STOP {
     const z = this.z;
     if (!f.has(z)) return f;
     if (f.key === z.key) return this.z0;
@@ -104,7 +195,17 @@ class Limiter {
         const infs = vals.filter(isInf);
         return infs.length ? add(...infs) : BOUNDED;
       }
-      return add(...vals.filter(isValue));
+      const r = add(...vals.filter(isValue));
+      if (isFinite_(r) || isInf(r) || isDirectedInf(r)) return r;
+      // oo plus real finite terms is oo; anything else with an infinite part (oo - sqrt(c + oo)) is undetermined
+      const infs = r.args.filter(isInf);
+      const [inf] = infs;
+      if (r instanceof Add && infs.length === 1 && inf !== undefined && (inf.name === 'oo' || inf.name === '-oo')) {
+        const rest = r.args.filter((a) => a !== inf);
+        if (rest.every((a) => isFinite_(a) && isReal(a) === true)) return inf;
+        if (rest.every(isFinite_)) return r;
+      }
+      return undefined;
     }
 
     if (f instanceof Mul) {
@@ -116,7 +217,22 @@ class Limiter {
         const p = mul(...others);
         return isZeroE(p) ? S.Zero : BOUNDED;
       }
-      return mul(...vals.filter(isValue));
+      // 0 times an infinite part is undetermined (mul would give 0 for a symbolic coefficient of oo)
+      if (vals.some(isZeroE) && vals.some((v) => isValue(v) && !isFinite_(v))) return undefined;
+      const p = mul(...vals.filter(isValue));
+      // c*oo with a real constant c (log(3)*oo, ...) is a signed infinity
+      if (p instanceof Mul) {
+        const infs = p.args.filter((a): a is Special => a instanceof Special);
+        const [inf] = infs;
+        if (infs.length === 1 && inf !== undefined && (inf.name === 'oo' || inf.name === '-oo')) {
+          const c = mul(...p.args.filter((a) => a !== inf));
+          if (impl.freeSymbols(c).size === 0 && !hasSpecialInside(c)) {
+            const r = this.infinity(inf.name === 'oo' ? c : mul(-1, c));
+            if (r instanceof Special) return r;
+          }
+        }
+      }
+      return p;
     }
 
     if (f instanceof Pow) {
@@ -141,10 +257,17 @@ class Limiter {
         if (isPositive(lh)) return S.Zero;
         return undefined;
       }
+      // a sum of directed infinities (oo + oo*I, ...) has infinite modulus
+      if (isInfiniteSum(lb) && lh instanceof Rational && lh.isNegative) return S.Zero;
+      if (!isFinite_(lb) && !isInf(lb) && !isDirectedInf(lb)) return undefined;
+      // a base tending to 0 that is not written as 0 (1 - cos(a)**2 - sin(a)**2): undetermined here
+      if (isNegative(lh) && isFinite_(lb) && nearlyZero(lb)) return undefined;
       if (lb instanceof Rational && lb.isOne && isInf(lh)) return expLog();
       if (isInf(lb) && isZeroE(lh)) return expLog();
       const r = pow(lb, lh);
-      return isNaN_(r) ? expLog() : r;
+      if (isNaN_(r)) return expLog();
+      // a fractional power on its branch cut (sqrt(-1 + I*x) from below)
+      return lh instanceof Rational && !lh.isInteger && !this.continuous(f, r) ? undefined : r;
     }
 
     if (f instanceof Fn && f.args.length > 1) {
@@ -158,6 +281,10 @@ class Limiter {
 
     if (f instanceof Fn) {
       const arg = first(f.args);
+      // |b**e| = |b|**e for a real exponent (z runs along the real axis): |(-x/(x + 1))**x| -> exp(-1)
+      if (f.name === 'abs' && arg instanceof Pow && arg.exp.has(z) && !arg.exp.has(S.I) && impl.freeSymbols(arg.exp).size === 1) {
+        return this.lim(pow(fn('abs', [arg.base]), arg.exp));
+      }
       const la = this.lim(arg);
       if (la === undefined || la === BOUNDED) return undefined;
       if (la instanceof Special) {
@@ -167,20 +294,42 @@ class Limiter {
         if (r instanceof Fn || hasSpecialInside(r) || isNaN_(r)) return undefined;
         return r;
       }
+      // an argument tending to oo - I (or another sum with an infinite part): the side decides
+      // (log(-x - I) -> oo - I*pi), which the expansions do not see
+      if (!isFinite_(la)) return STOP;
       if (f.name === 'log' && isZeroE(la)) {
         return this.probeSign(arg) === 1 ? S.NegativeInfinity : undefined;
+      }
+      // floor, ceiling and sign jump at integers (at 0): the side of approach decides
+      if ((f.name === 'floor' || f.name === 'ceiling') && la instanceof Rational && la.isInteger) {
+        const side = this.sideOf(add(arg, mul(-1, la)));
+        if (side === undefined) return undefined;
+        if (side === 0) return la;
+        return f.name === 'floor' ? (side > 0 ? la : add(la, -1)) : side > 0 ? add(la, 1) : la;
+      }
+      if (f.name === 'sign' && isZeroE(la)) {
+        const side = this.sideOf(arg);
+        return side === undefined ? undefined : Rational.of(side);
       }
       const r = fn(f.name, [la]);
       if (r instanceof Special && r.name === 'zoo') {
         const s = this.probeSign(f);
         return s === 1 ? S.Infinity : s === -1 ? S.NegativeInfinity : undefined;
       }
-      return r;
+      // on a branch cut (log(-1 + I*x) from below, asin(2 + I*x), ...) the value is that of the side
+      return this.continuous(f, r) ? r : undefined;
     }
     return undefined;
   }
 
   private fallback(f: Expr): LV {
+    // explicit infinities (-oo + 1/x, (1 + x)**oo) are not expanded or differentiated
+    if (hasSpecialInside(f)) return undefined;
+    // exponentials combine first: exp(1/sin(x))*exp(-cot(x)) = exp(1/sin(x) - cot(x))
+    if (f instanceof Mul && f.args.filter((a) => a instanceof Pow && a.base.key === S.E.key && a.exp.has(this.z)).length > 1) {
+      const g = powsimp(f, { combine: 'exp' });
+      if (g.key !== f.key) return this.lim(g);
+    }
     return this.bySeries(f) ?? this.byLHopital(f);
   }
 
@@ -237,14 +386,16 @@ class Limiter {
       const infs: Expr[] = [];
       const others: Expr[] = [];
       for (const a of f.args) {
-        const v = this.structural(a);
+        const v = this.settled(a);
         if (isZeroE(v)) zeros.push(a);
         else if (isInf(v)) infs.push(a);
         else others.push(a);
       }
       if (zeros.length && infs.length) {
-        const hasExp = infs.some((a) => a.has(S.E));
-        if (hasExp) {
+        // a decaying c**g (g depending on z) goes in the denominator of algebraic divergent factors
+        const zExp = (a: Expr): boolean => (a instanceof Pow && a.exp.has(this.z) && !a.base.has(this.z)) || a.args.some(zExp);
+        const algebraic = (a: Expr): boolean => !(a instanceof Fn) && !zExp(a) && a.args.every(algebraic);
+        if (infs.some((a) => a.has(S.E)) || (zeros.some(zExp) && infs.every(algebraic))) {
           N = mul(...infs);
           D = pow(mul(...zeros), -1);
         } else {
@@ -270,8 +421,8 @@ class Limiter {
     let N = N0;
     let D = D0;
     for (let i = 0; i < 12; i++) {
-      const ln = this.structural(N);
-      const ld = this.structural(D);
+      const ln = this.settled(N);
+      const ld = this.settled(D);
       const indeterminate = (isZeroE(ln) && isZeroE(ld)) || (isInf(ln) && isInf(ld));
       if (!indeterminate) {
         if (ln === undefined || ld === undefined || ln === BOUNDED || ld === BOUNDED) return undefined;
@@ -289,6 +440,8 @@ class Limiter {
       }
       N = diff(N, this.z);
       D = diff(D, this.z);
+      // derivatives of gamma functions (polygamma) never resolve the form and only grow
+      if (hasPolygamma(N) || hasPolygamma(D)) return undefined;
       // simplify the quotient when possible
       const q = mul(N, pow(D, -1));
       const [qn, qd] = fraction(q);
@@ -327,6 +480,12 @@ export function limit(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' | '+-'
       if (w !== undefined && w !== BOUNDED) return w;
     }
     return new Limit([e, z, z0], dir);
+  }
+  // oo plus finite (possibly complex) terms: SymPy gives oo (limit(x**2 - I, x, oo) = oo)
+  if (v instanceof Add && isInfiniteSum(v)) {
+    const infs = v.args.filter(isInf);
+    const [inf] = infs;
+    if (infs.length === 1 && inf !== undefined && (inf.name === 'oo' || inf.name === '-oo') && v.args.every((a) => a === inf || isFinite_(a))) return inf;
   }
   return v;
 }

@@ -6,14 +6,16 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Mul, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
-import { Lt, piecewise } from '../core/logic';
+import { Limit, Mul, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
+import { Eq, Lt, piecewise } from '../core/logic';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
 import { abs, log, sin, tan } from '../functions/elementary';
 import { bernoulliNumber, factorial, rf } from '../functions/special';
 import { polyCoefficients, roots } from '../polys/poly';
 import { expandMul as expand } from '../simplify/expand';
+import { combsimp } from '../simplify/gammasimp';
+import { powsimp } from '../simplify/powsimp';
 import { Concrete } from './node';
 
 export { Concrete };
@@ -45,7 +47,7 @@ function choose(n: number, k: number): Rational {
 /** Closed form of sum_{k=a}^{b} f, or undefined. */
 function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   if (!f.has(k)) {
-    if (isOo(b) || (a instanceof Special && a.name === '-oo')) return undefined;
+    if (isOo(b) || isNegOo(a)) return f instanceof Rational && f.isZero ? S.Zero : mul(f, S.Infinity);
     return expand(mul(f, add(b, mul(-1, a), 1)));
   }
   // Karr convention for reversed limits
@@ -60,7 +62,14 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
     for (let i = 0n; i <= diff_.p; i++) terms.push(xreplace(f, [[k, add(a, Rational.of(i))]]));
     return add(...terms);
   }
-  if (isOo(b) || isNegOo(a)) {
+  // Karr convention: sum_{k=a}^{-oo} f = -sum_{k=-oo}^{a-1} f
+  if (isNegOo(b) && !isNegOo(a)) {
+    const r = sumOne(f, k, b, add(a, -1));
+    return r === undefined ? undefined : mul(-1, r);
+  }
+  // k -> -k turns sum_{k=-oo}^{b} into a sum ending at oo
+  if (isNegOo(a) && !isOo(b)) return sumOne(xreplace(f, [[k, mul(-1, k)]]), k, mul(-1, b), S.Infinity);
+  if (isOo(b)) {
     const r = evalSumResidue(f, k, a, b);
     if (r) return r;
   }
@@ -77,7 +86,7 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   const factors = ef instanceof Mul ? ef.args : [ef];
   const dep = factors.filter((g) => g.has(k));
   const c = mul(...factors.filter((g) => !g.has(k)));
-  if (dep.length === 1 && dep[0] instanceof Pow && !dep[0].base.has(k)) {
+  if (!isNegOo(a) && dep.length === 1 && dep[0] instanceof Pow && !dep[0].base.has(k)) {
     const P = dep[0];
     const ePc = polyCoefficients(P.exp, k);
     if (ePc && Math.max(...ePc.keys()) === 1) {
@@ -86,10 +95,21 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
       if (isOo(b)) {
         const closed = mul(first, pow(add(1, mul(-1, r)), -1));
         const rv = numeric(r);
-        if (rv !== undefined) return Math.abs(rv) < 1 ? closed : undefined;
+        const fv = numeric(first);
+        if (rv !== undefined) {
+          if (Math.abs(rv) < 1) return closed;
+          // a real geometric series with ratio >= 1 diverges to oo or -oo
+          if (rv < 1 || fv === undefined || fv === 0) return undefined;
+          return fv > 0 ? S.Infinity : S.NegativeInfinity;
+        }
         return piecewise([closed, Lt(abs(r), 1)], [Sum(f, [k, a, b]), true]);
       }
-      return mul(c, add(pow(r, a), mul(-1, pow(r, add(b, 1)))), pow(add(1, mul(-1, r)), -1));
+      // c*base**(q + p*k) = c*base**q * r**k with r = base**p
+      const c0 = mul(c, pow(P.base, ePc.get(0) ?? S.Zero));
+      const closed = mul(add(pow(r, a), mul(-1, pow(r, add(b, 1)))), pow(add(1, mul(-1, r)), -1));
+      // the closed form needs r != 1 (SymPy's Piecewise for a symbolic ratio)
+      if (freeSymbols(r).size === 0) return mul(c0, closed);
+      return mul(c0, piecewise([add(b, mul(-1, a), 1), Eq(r, 1)], [closed, true]));
     }
   }
   // exponential series: x**k / k! from 0 to oo
@@ -108,7 +128,8 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
  */
 function evalSumResidue(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   if ([...freeSymbols(f)].some((s) => s.key !== k.key)) return undefined;
-  if (!(isInt(a) || isOo(a) || isNegOo(a)) || !(isInt(b) || isOo(b) || isNegOo(b))) return undefined;
+  // the callers pass b = oo (a sum from -oo to b is mirrored first)
+  if (!(isInt(a) || isNegOo(a))) return undefined;
   const ratCoeffs = (e: Expr): [Map<number, Expr>, Map<number, Expr>] | undefined => {
     const [n, d] = fractionOf(e);
     const pn = polyCoefficients(expand(n), k);
@@ -145,22 +166,32 @@ function evalSumResidue(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
   };
   const residues = (rs: Expr[]): Expr => {
     const N = toExpr(pn);
-    const dD = add(...[...pd].map(([i, c]) => mul(i, c, pow(k, i - 1))));
+    const dPoly = (p: Map<number, Expr>) => new Map([...p].filter(([i]) => i > 0).map(([i, c]): [number, Expr] => [i - 1, mul(i, c)]));
+    const dN = toExpr(dPoly(pn));
+    const dD = toExpr(dPoly(pd));
+    const d2D = toExpr(dPoly(dPoly(pd)));
     return add(
       ...rs.map((r) => {
-        const res = mul(xreplace(N, [[k, r]]), pow(xreplace(dD, [[k, r]]), -1));
+        const at = (e: Expr) => xreplace(e, [[k, r]]);
         const piR = mul(S.Pi, r);
-        if (isInt(r)) return alternating ? mul(res, pow(-1, r)) : res;
+        if (isInt(r)) {
+          // f = g/(z - r) has a double pole in f*cot(pi*z) (or f*csc(pi*z)) at the integer r:
+          // the residue is g'(r)/pi (times (-1)**r), g'(r) = (N'(r)*D'(r) - N(r)*D''(r)/2)/D'(r)**2
+          const g1 = mul(add(mul(at(dN), at(dD)), mul(Rational.of(-1, 2), at(N), at(d2D))), pow(at(dD), -2));
+          const res = mul(g1, pow(S.Pi, -1));
+          return alternating ? mul(res, pow(-1, r)) : res;
+        }
+        const res = mul(at(N), pow(at(dD), -1));
         return mul(res, pow(alternating ? sin(piR) : tan(piR), -1));
       }),
     );
   };
-  if (isNegOo(a) && isOo(b)) {
+  if (!isInt(a)) {
+    // a = -oo, b = oo: the sum over all integers
     const ps = poles();
     if (!ps || ps[0].length) return undefined;
     return mul(-1, S.Pi, residues(ps[1]));
   }
-  if (!(isInt(a) && isOo(b))) return undefined;
   if (!isEven()) {
     const n = deg(pd);
     const lead = getOrThrow(pd, n);
@@ -303,14 +334,11 @@ export function doitConcrete(c: Concrete): Expr {
 
 /** Reverse the order of the given limits (by index or variable), SymPy reverse_order. */
 export function reverseOrder(c: Concrete, ...which: (number | Sym)[]): Expr {
-  const lims = c.limits.map((l) => [...l] as [Expr, Expr, Expr]);
-  let f = c.function;
-  for (const w of which) {
-    const i = typeof w === 'number' ? w : lims.findIndex(([k]) => k.key === w.key);
-    const [k, a, b] = defined(lims[i], `limit ${String(w)}`);
-    lims[i] = [k, add(b, 1), add(a, -1)];
-    f = c.kind2 === 'Sum' ? mul(-1, f) : pow(f, -1);
-  }
+  // as in SymPy, each selected limit is reversed once however often it is named
+  const sel = new Set(which.map((w) => (typeof w === 'number' ? w : c.limits.findIndex(([k]) => k.key === w.key))));
+  const lims = c.limits.map(([k, a, b], i): [Expr, Expr, Expr] => (sel.has(i) ? [k, add(b, 1), add(a, -1)] : [k, a, b]));
+  const odd = c.limits.filter((_, i) => sel.has(i)).length % 2 === 1;
+  const f = !odd ? c.function : c.kind2 === 'Sum' ? mul(-1, c.function) : pow(c.function, -1);
   return new Concrete(c.kind2, [f, ...lims.flat()]);
 }
 
@@ -321,7 +349,8 @@ const isFiniteBound = (e: Expr) => !(e instanceof Special);
 /** Limit of f(k) as k -> oo, or undefined. */
 function limOo(f: Expr, k: Sym): Expr | undefined {
   try {
-    return impl.limit(f, k, S.Infinity);
+    const l = impl.limit(f, k, S.Infinity);
+    return l instanceof Limit ? undefined : l;
   } catch {
     return undefined;
   }
@@ -354,14 +383,30 @@ function fractionOf(f: Expr): [Expr, Expr] {
 /** SymPy Sum.is_convergent for common series tests (divergence, p-series, ratio, alternating). */
 export function sumIsConvergent(c: Concrete): boolean | undefined {
   const [kE, a, b] = first(c.limits);
-  const k = cast(kE, Sym, 'limit variable');
-  const f = c.function;
+  const k0 = cast(kE, Sym, 'limit variable');
   if (isFiniteBound(a) && isFiniteBound(b)) return true;
-  if (isNegOo(a) || isNegOo(b)) return undefined;
+  // as in SymPy, the summation variable is a positive integer
+  const k = new Sym(k0.name, { integer: true, positive: true });
+  const f0 = c.function;
+  if (isNegOo(a)) {
+    // k -> -k turns the range into one ending at oo
+    const g = xreplace(f0, [[k0, mul(-1, k0)]]);
+    if (!isOo(b)) return sumIsConvergent(new Concrete(c.kind2, [g, k0, mul(-1, b), S.Infinity]));
+    const left = sumIsConvergent(new Concrete(c.kind2, [g, k0, S.Zero, S.Infinity]));
+    const right = sumIsConvergent(new Concrete(c.kind2, [f0, k0, S.Zero, S.Infinity]));
+    return left === false || right === false ? false : left === true && right === true ? true : undefined;
+  }
+  // Karr convention: Sum(f, (k, a, -oo)) = -Sum(f, (k, -oo, a - 1))
+  if (isNegOo(b)) return sumIsConvergent(new Concrete(c.kind2, [f0, k0, b, add(a, -1)]));
+  if (!isOo(b)) return undefined;
+  // other symbols (Sum(x**k, ...)): the answer depends on them (SymPy raises NotImplementedError)
+  if ([...freeSymbols(f0)].some((v) => v.key !== k0.key)) return undefined;
+  const f = xreplace(f0, [[k0, k]]);
   if (c.kind2 === 'Product') {
     const l = limOo(f, k);
+    if (l === undefined) return undefined;
     if (!(l instanceof Rational && l.isOne)) return false;
-    return sumIsConvergent(new Concrete('Sum', [log(f), ...c.args.slice(1)]));
+    return sumIsConvergent(new Concrete('Sum', [log(f0), ...c.args.slice(1)]));
   }
   const l = limOo(f, k);
   if (l !== undefined && !(l instanceof Rational && l.isZero)) return false;
@@ -381,7 +426,8 @@ export function sumIsConvergent(c: Concrete): boolean | undefined {
     // no asymptotic expansion
   }
   // ratio test
-  const ratio = limOo(impl.abs(mul(xreplace(f, [[k, add(k, 1)]]), pow(f, -1))), k);
+  // SymPy simplifies the ratio with combsimp(powsimp(...)) first
+  const ratio = limOo(impl.abs(combsimp(powsimp(mul(xreplace(f, [[k, add(k, 1)]]), pow(f, -1))))), k);
   if (ratio?.freeSymbols().size === 0 && !(ratio instanceof Special)) {
     const v = ratio.toNumber();
     if (v < 1) return true;

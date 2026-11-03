@@ -17,7 +17,7 @@ import { Add, Mul, Pow, Rational, S, Sym, impl } from '../core/nodes';
 import { and, not, or, xor } from '../core/boolalg';
 import { add, div, exp, mul, neg, pow, sqrt, sub, sympify } from '../core/ops';
 import { fn } from '../functions/elementary';
-import { defined } from '../core/guard';
+import { at, defined } from '../core/guard';
 import { Eq, rel } from '../core/logic';
 import { SymFunction, derivative } from '../core/undef';
 
@@ -205,9 +205,8 @@ class Parser {
   private readonly localFns = new Map<string, (...args: Expr[]) => ExprLike>();
 
   private peek(): Token {
-    const t = this.tokens[this.i];
-    if (t === undefined) throw new SyntaxError('unexpected end of input');
-    return t;
+    // the end token stops every rule, so the parser never reads past it
+    return at(this.tokens, this.i);
   }
   private next(): Token {
     const t = this.peek();

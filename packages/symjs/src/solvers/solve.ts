@@ -8,7 +8,7 @@
 
 import { InvariantError, NotImplementedError, PolynomialError } from '../core/errors';
 import { solvePolySystem } from './polysys';
-import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
+import { isNegative, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
@@ -58,7 +58,6 @@ function denominators(e: Expr): Expr[] {
 function checkSolution(f: Expr, x: Sym, v: Expr): boolean {
   const a = x.assumptions;
   if (a.positive && isPositive(v) === false) return false;
-  if (a.positive && isNonNegative(v) === false) return false;
   if (a.nonnegative && isNegative(v) === true) return false;
   if (a.real && isReal(v) === false) return false;
   if (a.integer && v instanceof Rational && !v.isInteger) return false;
@@ -84,7 +83,7 @@ function checkSolution(f: Expr, x: Sym, v: Expr): boolean {
 const hasExtension = (e: Expr): boolean => e.kind === 'Extension' || e.args.some(hasExtension);
 
 /** Inverse images of y under a function application f(u) (principal branches like SymPy). */
-function invertFn(f: Fn | Pow, y: Expr): [Expr, Expr[]] | undefined {
+function invertFn(f: Fn | Pow, y: Expr, x: Sym): [Expr, Expr[]] | undefined {
   if (f instanceof Pow) {
     const [b, n] = f.args;
     if (b instanceof Constant && b.name === 'E') {
@@ -96,12 +95,13 @@ function invertFn(f: Fn | Pow, y: Expr): [Expr, Expr[]] | undefined {
       }
       return [n, [log(y)]];
     }
-    if (!(n instanceof Rational)) return undefined;
+    // b**n = y with n free of x  ->  b = y**(1/n) (SymPy solve(x**y - 2, x) = [2**(1/y)])
+    if (!(n instanceof Rational)) return n.has(x) ? undefined : [b, [pow(y, pow(n, -1))]];
     if (n.isInteger) return undefined; // handled as a polynomial
     return [b, [pow(y, Rational.of(n.q, n.p))]];
   }
-  const u = f.args[0];
-  if (u === undefined) return undefined;
+  // f has x, so it has an argument
+  const u = first(f.args);
   switch (f.name) {
     case 'log':
       return [u, [exp(y)]];
@@ -137,7 +137,7 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
       if (F.length === 1 && F[0] instanceof Pow && F[0].base instanceof Constant && F[0].base.name === 'E') {
         const a = mul(...fs.filter((g) => !g.has(x)));
         const y = mul(-1, add(...f.args.filter((u) => !u.has(x))), pow(a, -1));
-        const inv = defined(invertFn(F[0], y), 'inverse of exp');
+        const inv = defined(invertFn(F[0], y, x), 'inverse of exp');
         return inv[1].flatMap((yy) => solveRaw(add(inv[0], mul(-1, yy)), x, depth + 1));
       }
     }
@@ -183,7 +183,7 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
       const F = first(fdep);
       const y = mul(-1, b, pow(a, -1));
       if (F instanceof Fn || F instanceof Pow) {
-        const inv = invertFn(F, y);
+        const inv = invertFn(F, y, x);
         if (inv) {
           const [u, ys] = inv;
           return ys.flatMap((yy) => solveRaw(add(u, mul(-1, yy)), x, depth + 1));
@@ -209,16 +209,14 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
  * candidates are removed by the final check.
  */
 function singleRadical(num: Expr, x: Sym, depth: number): Expr[] | undefined {
-  const rads = new Map<string, Pow>();
+  const rads = new Map<string, [Pow, Rational]>();
   const find = (e: Expr) => {
-    if (e instanceof Pow && e.exp instanceof Rational && !e.exp.isInteger && e.base.has(x)) rads.set(e.key, e);
+    if (e instanceof Pow && e.exp instanceof Rational && !e.exp.isInteger && e.base.has(x)) rads.set(e.key, [e, e.exp]);
     e.args.forEach(find);
   };
   find(num);
   if (rads.size !== 1) return undefined;
-  const R = first([...rads.values()]);
-  const Rexp = R.exp;
-  if (!(Rexp instanceof Rational)) return undefined; // collected only with a rational exponent
+  const [R, Rexp] = first([...rads.values()]);
   const terms = num instanceof Add ? num.args : [num];
   const as: Expr[] = [];
   const bs: Expr[] = [];
@@ -421,9 +419,14 @@ function replaceTarget(e: Expr, target: Expr, t: Expr): Expr {
   const go = (x: Expr): Expr => {
     if (x.key === target.key) return t;
     if (x.kind === 'Derivative') return x;
-    if (target instanceof Add && x instanceof Add && target.args.every((a) => x.args.some((b) => b.key === a.key))) {
-      const rest = x.args.filter((b) => !target.args.some((a) => a.key === b.key));
-      return add(t, ...rest.map(go));
+    // a sum target matches the terms of a sum up to the numeric term (SymPy Add._eval_subs: (x - 1).subs(x + 1, t) = t - 2)
+    if (target instanceof Add && x instanceof Add) {
+      const tTerms = target.args.filter((a) => !(a instanceof Rational));
+      const tNum = add(...target.args.filter((a) => a instanceof Rational));
+      if (tTerms.every((a) => x.args.some((b) => b.key === a.key))) {
+        const rest = x.args.filter((b) => !tTerms.some((a) => a.key === b.key));
+        return add(t, mul(-1, tNum), ...rest.map(go));
+      }
     }
     if (x.args.length === 0) return x;
     const args = x.args.map(go);
@@ -547,16 +550,14 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
 /** a*R + b = 0 with one radical R = g**(p/q) in the unknowns: a**q*g**p - (-b)**q. */
 function unradOnce(num: Expr, syms: readonly Sym[]): Expr | undefined {
   const hasVar = (e: Expr) => syms.some((s) => e.has(s));
-  const rads = new Map<string, Pow>();
+  const rads = new Map<string, [Pow, Rational]>();
   const find = (e: Expr) => {
-    if (e instanceof Pow && e.exp instanceof Rational && !e.exp.isInteger && hasVar(e.base)) rads.set(e.key, e);
+    if (e instanceof Pow && e.exp instanceof Rational && !e.exp.isInteger && hasVar(e.base)) rads.set(e.key, [e, e.exp]);
     e.args.forEach(find);
   };
   find(num);
   if (rads.size !== 1) return undefined;
-  const R = first([...rads.values()]);
-  const Rexp = R.exp;
-  if (!(Rexp instanceof Rational)) return undefined; // collected only with a rational exponent
+  const [R, Rexp] = first([...rads.values()]);
   const terms = num instanceof Add ? num.args : [num];
   const as: Expr[] = [];
   const bs: Expr[] = [];
@@ -579,8 +580,8 @@ const numerOf = (e: Expr): Expr => expandMul(fraction(together(e))[0]);
 const simplifyBack = (e: Expr): Expr => {
   const c = cancel(e);
   if (c.freeSymbols().size > 0) return c;
-  const r = expandMul(radsimp(c));
-  return r.freeSymbols().size === 0 ? simplify(r) : r;
+  // a number: radsimp keeps it free of symbols
+  return simplify(expandMul(radsimp(c)));
 };
 
 /** SymPy solve_linear: (symbol, value) for an equation linear in one symbol, else (numer, denom). */
@@ -657,8 +658,8 @@ const isBracket = (v: ExprLike | readonly [ExprLike, ExprLike]): v is readonly [
 
 /** Numeric root of f near x0 by Newton's method (complex arithmetic). */
 export function nsolve(e: ExprLike, x: Sym, x0: ExprLike | readonly [ExprLike, ExprLike], opts: { prec?: number; solver?: 'newton' | 'bisect' } = {}): Expr {
-  if (isBracket(x0)) return nsolveBisect(e, x, x0);
-  const r = nsolveDouble(e, x, x0);
+  // a bracket is narrowed by bisection in double precision, then refined like a starting point
+  const r = isBracket(x0) ? nsolveBisect(e, x, x0) : nsolveDouble(e, x, x0);
   // refine with Newton steps in arbitrary precision so that the result is the
   // correctly rounded root (SymPy's mpmath findroot; nsolve(..., prec=n))
   const dps = opts.prec ?? 15;
@@ -675,6 +676,8 @@ export function nsolve(e: ExprLike, x: Sym, x0: ExprLike | readonly [ExprLike, E
   try {
     for (let i = 0; i < 60; i++) {
       const fv = impl.evalf(xreplace(f, [[x, z]]), wp);
+      // an exact root (a zero derivative there would give 0/0)
+      if (fv.toComplex().re === 0 && fv.toComplex().im === 0) break;
       const dv = impl.evalf(xreplace(df, [[x, z]]), wp);
       z = impl.evalf(add(z, mul(-1, fv, pow(dv, -1))), wp);
       const cur = impl.evalf(z, dps).toString();

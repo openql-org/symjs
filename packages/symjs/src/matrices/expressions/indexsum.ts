@@ -15,7 +15,7 @@ import { add, mul, sympify } from '../../core/ops';
 import { compareKeys, sortKey } from '../../printing/sortkey';
 import { MatAddNode, MatMulNode, MatrixElementNode, MatrixExpr, TraceNode, transposeOf } from './matexpr';
 import { same } from './util';
-import { at, pair } from '../../core/guard';
+import { at, cast, pair } from '../../core/guard';
 
 interface Edge {
   readonly mat: MatrixExpr;
@@ -35,10 +35,8 @@ function peel(e: Expr): [Expr, Limit[]] {
   return [body, limits];
 }
 
-const prod = (coeff: Expr, mats: readonly Expr[]): Expr => {
-  const r = MatMulNode.create([coeff, ...mats]);
-  return r instanceof MatrixExpr ? r.doit() : r;
-};
+// every product has at least one matrix factor
+const prod = (coeff: Expr, mats: readonly Expr[]): Expr => cast(MatMulNode.create([coeff, ...mats]), MatrixExpr).doit();
 
 function convertProduct(body: Expr, limits: readonly Limit[], first?: Expr, last?: Expr): Expr {
   const summed = new Map(limits.map((l) => [l[0].key, l]));
@@ -56,7 +54,7 @@ function convertProduct(body: Expr, limits: readonly Limit[], first?: Expr, last
   // the summation limits must cover the dimension of every contracted index
   const checkRange = (idx: Expr, dim: Expr): void => {
     const l = summed.get(idx.key);
-    if (l && (!same(l[1], S.Zero) || !same(l[2], add(dim, -1)))) throw new NotImplementedError('from_index_summation: the summation range does not match the dimension');
+    if (l && (!same(l[1], S.Zero) || !same(l[2], add(dim, -1)))) throw new RangeError(`summation index and array dimension mismatch: ${String(idx)}`);
   };
   for (const { mat, a, b } of edges) {
     checkRange(a, mat.rows);
@@ -67,7 +65,7 @@ function convertProduct(body: Expr, limits: readonly Limit[], first?: Expr, last
     for (const x of [a, b]) {
       if (summed.has(x.key)) continue;
       if (count.get(x.key) !== 1) throw new NotImplementedError('from_index_summation: an index appears twice without summation');
-      if (!free.some((y) => same(x, y))) free.push(x);
+      free.push(x);
     }
   }
   const used = new Set<number>();
@@ -76,7 +74,8 @@ function convertProduct(body: Expr, limits: readonly Limit[], first?: Expr, last
     let cur = start;
     for (;;) {
       const k = edges.findIndex((e, n) => !used.has(n) && (same(e.a, cur) || same(e.b, cur)));
-      if (k < 0) break;
+      // the chain of indices ends before closing (SymPy raises IndexError)
+      if (k < 0) throw new NotImplementedError('from_index_summation: unsupported index structure');
       used.add(k);
       const e = at(edges, k);
       if (same(e.a, cur)) {
@@ -124,7 +123,10 @@ export function fromIndexSummation(exprIn: ExprLike, firstIndex?: Expr, lastInde
   if (body instanceof Add) {
     const terms = body.args.map((t) => {
       const ls = limits.filter(([v]) => t.has(v));
-      return convertProduct(t, ls, firstIndex, lastIndex);
+      const r = convertProduct(t, ls, firstIndex, lastIndex);
+      // a term free of a summation index is summed upper - lower + 1 times (SymPy drops the factor)
+      const n = mul(...limits.filter(([v]) => !t.has(v)).map(([, lo, hi]) => add(hi, mul(-1, lo), 1)));
+      return r instanceof MatrixExpr ? prod(n, [r]) : mul(n, r);
     });
     if (terms.every((t) => t instanceof MatrixExpr)) return MatAddNode.create(terms).doit();
     return add(...terms);

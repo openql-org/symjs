@@ -45,11 +45,12 @@ export function symmetrize(fIn: ExprLike, gensIn: readonly Sym[] = []): [Expr, E
   const symmetric: Expr[] = [];
   for (let guard = 0; guard < 10000 && !f.isZero; guard++) {
     let best: [number[], Expr] | undefined;
-    let bestH = -1;
+    let bestH = -Infinity;
     for (const [m, c] of f.terms()) {
       if (m.every((v, i) => v >= (m[i + 1] ?? 0))) {
+        // a constant (no generators) has weight -Infinity and is still taken
         const h = Math.max(...m.map((v, i) => v * at(weights, i)));
-        if (h > bestH) {
+        if (best === undefined || h > bestH) {
           bestH = h;
           best = [m, c];
         }

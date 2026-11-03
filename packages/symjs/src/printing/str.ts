@@ -11,7 +11,8 @@ import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Float, Fn, Integral
 import { mul, pow, splitCoeff } from '../core/ops';
 import { numNeg } from '../core/num';
 import { floatToString } from '../numeric/mpf';
-import { asOrderedFactors, asOrderedTerms, sympyFunctionName } from './sortkey';
+import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey, sympyFunctionName } from './sortkey';
+import { setClass } from './sets';
 import { Concrete } from '../core/concrete';
 import { at } from '../core/guard';
 
@@ -27,14 +28,30 @@ export function startsNegative(e: Expr): boolean {
   if (isNum(e)) return e.isNegative;
   if (e instanceof Special) return e.name === '-oo';
   if (e instanceof Mul) {
+    // a negative number or -oo in front (SymPy -oo*x prints as - oo*x)
     const c = at(e.args, 0);
-    return isNum(c) && c.isNegative;
+    return (isNum(c) || c instanceof Special) && startsNegative(c);
   }
   return false;
 }
 
+/**
+ * The precedence an extension node declares for a printer through a
+ * `strPrecedence()` or `latexPrecedence()` method (matrix expressions do),
+ * or undefined when it declares none.
+ */
+export function declaredPrecedence(e: Expr, method: 'strPrecedence' | 'latexPrecedence'): number | undefined {
+  if (!(e instanceof ExtensionExpr)) return undefined;
+  const f: unknown = Reflect.get(e, method);
+  if (typeof f !== 'function') return undefined;
+  const p: unknown = Reflect.apply(f, e, []);
+  return typeof p === 'number' ? p : undefined;
+}
+
 /** SymPy `precedence()`. */
 export function precedence(e: Expr): number {
+  const declared = declaredPrecedence(e, 'strPrecedence');
+  if (declared !== undefined) return declared;
   if (e instanceof Rational) {
     if (e.isInteger) return e.p < 0n ? PREC.ADD : PREC.ATOM;
     return e.p < 0n ? PREC.ADD : PREC.MUL;
@@ -51,15 +68,13 @@ export function precedence(e: Expr): number {
 }
 
 /** Format a float like SymPy's StrPrinter (full precision at top level, trailing zeros stripped inside). */
-export function floatString(v: number | Float, stripZeros = false): string {
-  const f = typeof v === 'number' ? new Float(v) : v;
+export function floatString(f: Float, stripZeros = false): string {
   return floatToString(f.mpf, f.prec, stripZeros);
 }
 
 /** SymPy `_keep_coeff`: c*rest without re-evaluation (no distribution over sums). */
 export function keepCoeff(c: Rational | Float, rest: Expr): Expr {
   if (c instanceof Rational && c.isOne) return rest;
-  if (rest instanceof Rational && rest.isOne) return c;
   return new Mul([c, ...(rest instanceof Mul ? rest.args : [rest])]);
 }
 
@@ -134,16 +149,6 @@ export function str(e: Expr): string {
   }
 }
 
-/** Print as a sub-expression (e.g. a matrix entry): floats drop trailing zeros. */
-export function strNested(e: Expr): string {
-  printLevel++;
-  try {
-    return str(e);
-  } finally {
-    printLevel--;
-  }
-}
-
 function strInner(e: Expr): string {
   if (e instanceof Rational) return e.q === 1n ? `${e.p}` : `${e.p}/${e.q}`;
   if (e instanceof Float) return floatString(e, printLevel > 1);
@@ -154,7 +159,8 @@ function strInner(e: Expr): string {
   if (e instanceof Add) return printAdd(e);
   if (e instanceof Mul) {
     // an unevaluated product of several numbers (Mul(1, 2, evaluate=False)) prints as written
-    if (e.args.filter((a) => a instanceof Rational).length > 1) return e.args.map((a) => parenthesize(a, PREC.MUL)).join('*');
+    // (SymPy does not parenthesize a negative first factor: Mul(-2, 1) is -2*1)
+    if (e.args.filter((a) => isNum(a)).length > 1) return e.args.map((a, i) => (i === 0 && startsNegative(a) ? str(a) : parenthesize(a, PREC.MUL))).join('*');
     return printMul(e);
   }
   if (e instanceof Pow) return printPow(e);
@@ -189,6 +195,11 @@ function strInner(e: Expr): string {
     return `O(${str(e.expr)}, (${str(v)}, ${str(p)}))`;
   }
   if (e instanceof ExtensionExpr) return e.printStr(str);
+  const cls = setClass(e);
+  // SymPy StrPrinter._print_LatticeOp: a Union or Intersection lists its arguments in default_sort_key order
+  if (cls === 'Union' || cls === 'Intersection') return `${cls}(${[...e.args].sort((a, b) => compareKeys(sortKey(a), sortKey(b))).map(str).join(', ')})`;
+  // SymPy _print_ConditionSet leaves out the universal base set
+  if (cls === 'ConditionSet' && setClass(at(e.args, 2)) === 'UniversalSet') return `ConditionSet(${str(at(e.args, 0))}, ${str(at(e.args, 1))})`;
   if ('printStr' in e && typeof e.printStr === 'function') return String(e.printStr(str));
   if (e instanceof Integral) {
     // nested integrals print as one multiple integral, innermost limits first (SymPy)

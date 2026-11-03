@@ -10,9 +10,11 @@ import type { Expr } from '../core/nodes';
 import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { mul, pow, splitCoeff } from '../core/ops';
 import { numNeg } from '../core/num';
-import { asOrderedFactors, asOrderedTerms } from './sortkey';
-import { PREC, floatString, precedence, startsNegative, str } from './str';
+import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey } from './sortkey';
+import { PREC, declaredPrecedence, floatString, precedence as strPrecedence, startsNegative, str } from './str';
 import { BoolOp } from '../core/boolalg';
+import { Concrete } from '../core/concrete';
+import { setArgsOrdered, setClass } from './sets';
 import { at } from '../core/guard';
 
 // ---------------------------------------------------------------------------
@@ -97,7 +99,8 @@ export function splitSuperSub(text: string): [string, string[], string[]] {
     if (name === undefined) name = part;
     else if (part.startsWith('^')) supers.push(part.slice(1));
     else if (part.startsWith('__')) supers.push(part.slice(2));
-    else if (part.startsWith('_')) subs.push(part.slice(1));
+    // every later part starts at a '^' or '_'
+    else subs.push(part.slice(1));
   }
   name ??= '';
   const m = /^([^\W\d_]+)(\d+)$/u.exec(name);
@@ -121,6 +124,9 @@ function symbolLatex(text: string): string {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** SymPy `precedence_traditional`: the LaTeX precedence a node declares, else the str precedence. */
+const precedence = (e: Expr): number => declaredPrecedence(e, 'latexPrecedence') ?? strPrecedence(e);
+
 const isExp = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
 const addParens = (s: string) => `\\left(${s}\\right)`;
 
@@ -139,56 +145,147 @@ const ACCEPTED_FUNCTIONS = new Set([
   'sec', 'csc', 'cot', 'coth', 're', 'im', 'frac', 'root', 'arg',
 ]);
 
-function hprintFunction(name: string): string {
+/** SymPy `_hprint_Function`: the name with sub- and superscripts, in \operatorname unless LaTeX knows it. */
+function hprintFunction(name0: string): string {
+  const name = symbolLatex(name0);
   if (ACCEPTED_FUNCTIONS.has(name)) return `\\${name}`;
-  if (name.length === 1 || name.startsWith('\\')) return name;
-  return `\\operatorname{${name}}`;
+  const sup = name.indexOf('^');
+  const sub = name.indexOf('_');
+  if (name.length === 1 || name.startsWith('\\') || sub === 1 || sup === 1) return name;
+  const cut = Math.min(...[sup, sub].filter((i) => i > 0));
+  return Number.isFinite(cut) ? `\\operatorname{${name.slice(0, cut)}}${name.slice(cut)}` : `\\operatorname{${name}}`;
 }
 
-const parenthesizeSuper = (s: string) => (s.includes('^') ? `{${s}}` : s);
+/** SymPy `parenthesize_super` with the default parenthesize_super=True. */
+const parenthesizeSuper = (s: string) => (s.includes('^') ? addParens(s) : s);
+
+/** SymPy `_do_exponent`. */
+const doExponent = (tex: string, exp?: string): string => (exp !== undefined ? `\\left(${tex}\\right)^{${exp}}` : tex);
+/** `tex^{exp}` when raised to a power. */
+const withExponent = (tex: string, exp?: string): string => (exp !== undefined ? `${tex}^{${exp}}` : tex);
+/** `head^{exp}` followed by the arguments in parentheses (SymPy _hprint_one_arg_func and the like). */
+const headArgs = (head: string, args: readonly Expr[], exp?: string): string => `${withExponent(head, exp)}\\left(${args.map(latex).join(', ')}\\right)`;
+/** SymPy `__print_number_polynomial`: B_{n}, or B_{n}\left(x\right) for the polynomial. */
+function numberPolynomial(letter: string, args: readonly Expr[], exp?: string): string {
+  const head = withExponent(`${letter}_{${latex(at(args, 0))}}`, exp);
+  return args.length === 2 ? `${head}\\left(${latex(at(args, 1))}\\right)` : head;
+}
+
+const ONE_ARG_HEADS: Partial<Record<string, string>> = {
+  gamma: '\\Gamma',
+  zeta: '\\zeta',
+  Chi: '\\operatorname{Chi}',
+  fresnels: 'S',
+  fresnelc: 'C',
+  lowergamma: '\\gamma',
+  uppergamma: '\\Gamma',
+  mobius: '\\mu',
+};
+const NUMBER_POLYNOMIALS: Partial<Record<string, string>> = { bernoulli: 'B', genocchi: 'G', bell: 'B', fibonacci: 'F', tribonacci: 'T' };
+const PAREN_POWER_HEADS: Partial<Record<string, string>> = { totient: '\\phi', reduced_totient: '\\lambda', primenu: '\\nu', primeomega: '\\Omega' };
+const BESSEL_SYMBOLS: Partial<Record<string, string>> = { besselj: 'J', bessely: 'Y', besseli: 'I', besselk: 'K', jn: 'j', yn: 'y' };
 
 /** Print a function, optionally raised to a power (SymPy prints sin(x)**2 as \sin^{2}...). */
 function printFunction(e: Fn, exp?: string): string {
-  const a = latex(at(e.args, 0));
+  const args = e.args;
+  const x0 = at(args, 0);
+  const a = latex(x0);
+  const head = ONE_ARG_HEADS[e.name];
+  if (head !== undefined) return headArgs(head, args, exp);
+  const letter = NUMBER_POLYNOMIALS[e.name];
+  if (letter !== undefined) return numberPolynomial(letter, args, exp);
+  const parenHead = PAREN_POWER_HEADS[e.name];
+  if (parenHead !== undefined) return doExponent(`${parenHead}\\left(${a}\\right)`, exp);
+  const bessel = BESSEL_SYMBOLS[e.name];
+  if (bessel !== undefined) {
+    // SymPy _hprint_BesselBase: J^{exp}_{\nu}\left(z\right)
+    return `${withExponent(bessel, exp)}_{${a}}\\left(${latex(at(args, 1))}\\right)`;
+  }
   switch (e.name) {
-    case 'abs': {
-      const tex = `\\left|{${a}}\\right|`;
-      return exp !== undefined ? `${tex}^{${exp}}` : tex;
-    }
+    case 'abs':
+      return withExponent(`\\left|{${a}}\\right|`, exp);
     case 'adjoint': {
-      const base = `${parenthesize(at(e.args, 0), PREC.POW)}^{\\dagger}`;
-      return exp !== undefined ? `\\left(${base}\\right)^{${exp}}` : base;
+      const base = `${parenthesize(x0, PREC.POW)}^{\\dagger}`;
+      return doExponent(base, exp);
     }
-    case 'conjugate': {
-      const tex = `\\overline{${a}}`;
-      return exp !== undefined ? `${tex}^{${exp}}` : tex;
-    }
+    case 'conjugate':
+      return withExponent(`\\overline{${a}}`, exp);
     case 're':
-    case 'im': {
-      const tex = `\\operatorname{${e.name}}{\\left(${parenthesize(at(e.args, 0), PREC.ATOM)}\\right)}`;
-      return exp !== undefined ? `${tex}^{${exp}}` : tex;
+    case 'im':
+      // SymPy _print_re / _print_im: the argument parenthesized at atom level
+      return doExponent(`\\operatorname{${e.name}}{${parenthesize(x0, PREC.ATOM)}}`, exp);
+    case 'log':
+      return withExponent(`\\log{\\left(${a} \\right)}`, exp);
+    case 'floor':
+      return withExponent(`\\left\\lfloor{${a}}\\right\\rfloor`, exp);
+    case 'ceiling':
+      return withExponent(`\\left\\lceil{${a}}\\right\\rceil`, exp);
+    case 'frac':
+      return withExponent(`\\operatorname{frac}{\\left(${a}\\right)}`, exp);
+    case 'factorial':
+      return withExponent(`${parenthesize(x0, PREC.FUNC)}!`, exp);
+    case 'factorial2':
+      return withExponent(`${parenthesize(x0, PREC.FUNC)}!!`, exp);
+    case 'subfactorial':
+      return doExponent(`!${parenthesize(x0, PREC.FUNC)}`, exp);
+    case 'catalan':
+      return withExponent(`C_{${a}}`, exp);
+    case 'lucas':
+      return withExponent(`L_{${a}}`, exp);
+    case 'binomial':
+      return withExponent(`{\\binom{${a}}{${latex(at(args, 1))}}}`, exp);
+    case 'beta':
+      return headArgs('\\operatorname{B}', args.length === 1 ? [x0, x0] : args, exp);
+    case 'expint':
+      return `\\operatorname{E}_{${a}}${withExponent('', exp)}\\left(${latex(at(args, 1))}\\right)`;
+    case 'ff':
+      return doExponent(`{\\left(${a}\\right)}_{${parenthesize(at(args, 1), PREC.FUNC)}}`, exp);
+    case 'rf':
+      return doExponent(`{${parenthesize(x0, PREC.FUNC)}}^{\\left(${latex(at(args, 1))}\\right)}`, exp);
+    case 'LambertW': {
+      const k = args[1];
+      return `W${withExponent('', exp)}${k ? `_{${latex(k)}}` : ''}\\left(${a}\\right)`;
     }
-    case 'besselj':
-    case 'bessely':
-    case 'besseli':
-    case 'besselk': {
-      // SymPy: J_{\nu}\left(z\right)
-      const sym = { besselj: 'J', bessely: 'Y', besseli: 'I', besselk: 'K' }[e.name];
-      const tex = `${sym}_{${latex(at(e.args, 0))}}\\left(${latex(at(e.args, 1))}\\right)`;
-      return exp !== undefined ? `${sym}_{${latex(at(e.args, 0))}}^{${exp}}\\left(${latex(at(e.args, 1))}\\right)` : tex;
+    case 'euler': {
+      const tex = withExponent(`E_{${a}}`, exp);
+      const z = args[1];
+      return z ? `${tex}\\left(${latex(z)}\\right)` : tex;
     }
+    case 'divisor_sigma': {
+      const k = args[1];
+      return `\\sigma${withExponent('', exp)}${k ? `_${latex(k)}` : ''}\\left(${a}\\right)`;
+    }
+    case 'KroneckerDelta': {
+      const b = at(args, 1);
+      const atomic = (v: Expr) => v instanceof Sym || isNum(v) || v instanceof Constant || v instanceof Special;
+      const tex = atomic(x0) && atomic(b) ? `\\delta_{${a} ${latex(b)}}` : `\\delta_{${a}, ${latex(b)}}`;
+      return doExponent(tex, exp);
+    }
+    case 'Min':
+    case 'Max': {
+      // SymPy _hprint_variadic_function: the arguments in default_sort_key order
+      const sorted = [...args].sort((u, v) => compareKeys(sortKey(u), sortKey(v)));
+      return withExponent(`\\${e.name.toLowerCase()}\\left(${sorted.map(latex).join(', ')}\\right)`, exp);
+    }
+    case 'exp_polar':
+      // SymPy _print_ExpBase
+      return doExponent(`e^{${a}}`, exp);
+    case 'polar_lift':
+      return `\\operatorname{polar\\_lift}${withExponent('', exp)}{\\left(${a} \\right)}`;
     case 'airyai':
     case 'airybi':
     case 'airyaiprime':
     case 'airybiprime': {
       const base = e.name.startsWith('airyai') ? 'Ai' : 'Bi';
-      const prime = e.name.endsWith('prime') ? '^\\prime' : '';
-      const tex = `${base}${prime}\\left(${a}\\right)`;
-      return exp !== undefined ? `${base}${prime}^{${exp}}\\left(${a}\\right)` : tex;
+      const tex = `\\left(${a}\\right)`;
+      // SymPy _hprint_airy_prime braces the primed name before the exponent: {Ai^\prime}^{2}
+      if (!e.name.endsWith('prime')) return `${withExponent(base, exp)}${tex}`;
+      return exp !== undefined ? `{${base}^\\prime}^{${exp}}${tex}` : `${base}^\\prime${tex}`;
     }
     default: {
+      // SymPy _print_Function for functions without their own printer
       const name = exp !== undefined ? `${parenthesizeSuper(hprintFunction(e.name))}^{${exp}}` : hprintFunction(e.name);
-      return `${name}{\\left(${a} \\right)}`;
+      return `${name}{\\left(${args.map(latex).join(',')} \\right)}`;
     }
   }
 }
@@ -242,7 +339,9 @@ function printMulLike(e: Expr): string {
   if (startsNegative(expr)) {
     const [c, rest] = splitCoeff(expr);
     const pc = numNeg(c);
-    expr = pc instanceof Rational && pc.isOne ? rest : new Mul([pc, ...(rest instanceof Mul ? rest.args : [rest])]);
+    // a product led by -oo has no numeric coefficient: SymPy prints -(-oo*x) = oo*x
+    if (!c.isNegative) expr = mul(-1, expr);
+    else expr = pc instanceof Rational && pc.isOne ? rest : new Mul([pc, ...(rest instanceof Mul ? rest.args : [rest])]);
     tex = '- ';
     if (expr instanceof Add) {
       tex += '(';
@@ -350,16 +449,29 @@ export function latex(e: Expr): string {
     return `${head} ${body}`;
   }
   if (e instanceof Limit) {
+    // SymPy _print_Limit: no direction at an infinite point, a sum or product body in parentheses without a space
     const f = e.expr;
-    const d = e.dir === '+-' ? '' : `^${e.dir}`;
-    const body = precedence(f) < PREC.ADD ? addParens(latex(f)) : latex(f);
-    return `\\lim_{${latex(e.variable)} \\to ${latex(e.point)}${d}} ${body}`;
+    const p = e.point;
+    const d = e.dir === '+-' || (p instanceof Special && (p.name === 'oo' || p.name === '-oo')) ? '' : `^${e.dir}`;
+    const head = `\\lim_{${latex(e.variable)} \\to ${latex(p)}${d}}`;
+    return f instanceof Add || f instanceof Mul ? `${head}${addParens(latex(f))}` : `${head} ${latex(f)}`;
   }
   if (e instanceof Order) {
     const v = e.variable;
     const p = e.point;
     if (!v || !p || (p instanceof Rational && p.isZero)) return `O\\left(${latex(e.expr)}\\right)`;
     return `O\\left(${latex(e.expr)}; ${latex(v)}\\rightarrow ${latex(p)}\\right)`;
+  }
+  if (e instanceof Concrete) {
+    // SymPy _print_Sum / _print_Product
+    const op = e.kind2 === 'Sum' ? '\\sum' : '\\prod';
+    const lims = e.limits;
+    const one = lims.length === 1 ? lims[0] : undefined;
+    const head =
+      one
+        ? `${op}_{${latex(one[0])}=${latex(one[1])}}^{${latex(one[2])}} `
+        : `${op}_{\\substack{${lims.map(([k, a, b]) => `${latex(a)} \\leq ${latex(k)} \\leq ${latex(b)}`).join('\\\\')}}} `;
+    return head + (e.function instanceof Add ? addParens(latex(e.function)) : latex(e.function));
   }
   if (e instanceof Integral) {
     // nested integrals: outer signs first, differentials innermost first
@@ -375,7 +487,53 @@ export function latex(e: Expr): string {
     const body = precedence(cur) < PREC.MUL ? addParens(latex(cur)) : latex(cur);
     return `${heads.join('')} ${body}${ds.join('')}`;
   }
+  const cls = setClass(e);
+  if (cls !== undefined) return printSet(e, cls);
   return e.key;
+}
+
+const NAMED_SETS: Partial<Record<string, string>> = {
+  EmptySet: '\\emptyset',
+  UniversalSet: '\\mathbb{U}',
+  Reals: '\\mathbb{R}',
+  Integers: '\\mathbb{Z}',
+  Naturals: '\\mathbb{N}',
+  Naturals0: '\\mathbb{N}_0',
+  Complexes: '\\mathbb{C}',
+};
+const SET_OPERATORS: Partial<Record<string, string>> = { Union: ' \\cup ', Intersection: ' \\cap ', Complement: ' \\setminus ' };
+
+/** SymPy's set printers (_print_Interval, _print_FiniteSet, _print_Union, ...). */
+function printSet(e: Expr, cls: string): string {
+  const named = NAMED_SETS[cls];
+  if (named !== undefined) return named;
+  const op = SET_OPERATORS[cls];
+  if (op !== undefined) {
+    // set operations bind looser than any argument but another set operation
+    const args = cls === 'Complement' ? e.args : setArgsOrdered(e.args);
+    return args.map((a) => (SET_OPERATORS[String(setClass(a))] !== undefined ? addParens(latex(a)) : latex(a))).join(op);
+  }
+  switch (cls) {
+    case 'Interval': {
+      const [a, b, lo, ro] = [at(e.args, 0), at(e.args, 1), at(e.args, 2), at(e.args, 3)];
+      if (a.key === b.key) return `\\left\\{${latex(a)}\\right\\}`;
+      const open = (x: Expr) => x instanceof BoolAtom && x.value;
+      return `\\left${open(lo) ? '(' : '['}${latex(a)}, ${latex(b)}\\right${open(ro) ? ')' : ']'}`;
+    }
+    case 'FiniteSet':
+      return `\\left\\{${[...e.args].sort((u, v) => compareKeys(sortKey(u), sortKey(v))).map(latex).join(', ')}\\right\\}`;
+    case 'ImageSet': {
+      const [v, expr, base] = [at(e.args, 0), at(e.args, 1), at(e.args, 2)];
+      return `\\left\\{${latex(expr)}\\; \\middle|\\; ${latex(v)} \\in ${latex(base)}\\right\\}`;
+    }
+    case 'ConditionSet': {
+      const [v, cond, base] = [at(e.args, 0), at(e.args, 1), at(e.args, 2)];
+      if (setClass(base) === 'UniversalSet') return `\\left\\{${latex(v)}\\; \\middle|\\; ${latex(cond)} \\right\\}`;
+      return `\\left\\{${latex(v)}\\; \\middle|\\; ${latex(v)} \\in ${latex(base)} \\wedge ${latex(cond)} \\right\\}`;
+    }
+    default:
+      return e.key;
+  }
 }
 
 impl.latex = latex;

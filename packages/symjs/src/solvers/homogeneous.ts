@@ -6,12 +6,11 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Derivative, Dummy, Fn, Pow, Rational, S, UndefFn } from '../core/nodes';
-import { mul, pow, sympify } from '../core/ops';
+import { Derivative, Dummy, Fn, Mul, Rational, S, UndefFn } from '../core/nodes';
+import { asBaseExp, mul, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
 import { first } from '../core/guard';
-import { powsimp } from '../simplify/powsimp';
-import { simplify } from '../simplify/simplify';
+import { separatevars } from '../simplify/separatevars';
 
 /**
  * SymPy homogeneous_order(eq, *symbols): n such that eq(t*x, t*y, ...) = t**n * eq(x, y, ...),
@@ -34,11 +33,13 @@ export function homogeneousOrder(eqIn: ExprLike, ...symbols: Expr[]): Expr | und
   }
   if (![...freeSymbols(eq)].some((s) => syms.some((t) => t.key === s.key))) return undefined;
   if (eq instanceof Fn) return homogeneousOrder(first(eq.args), ...syms)?.key === S.Zero.key ? S.Zero : undefined;
+  // replace x by t*x and see whether a power of t can be factored out
   const t = new Dummy('t', { positive: true });
   const scaled = xreplace(eq, syms.map((s) => [s, mul(t, s)] as const));
-  const ratio = simplify(powsimp(mul(scaled, pow(eq, -1)), { force: false }));
-  if (ratio instanceof Rational && ratio.isOne) return S.Zero;
-  if (ratio.key === t.key) return S.One;
-  if (ratio instanceof Pow && ratio.base.key === t.key && !ratio.exp.has(t)) return ratio.exp;
+  const sep = separatevars(scaled, { symbols: [t], dict: true });
+  const eqs = (sep instanceof Map ? sep.get(t) : undefined) ?? S.One;
+  if (eqs instanceof Rational && eqs.isOne) return S.Zero;
+  const [b, e] = asBaseExp(mul(...(eqs instanceof Mul ? eqs.args : [eqs]).filter((a) => a.has(t))));
+  if (b.key === t.key) return e;
   return undefined;
 }

@@ -11,11 +11,11 @@ import type { Expr } from '../../core/nodes';
 import { BoolAtom, Derivative, Float, Integral, Limit, Rational, S } from '../../core/nodes';
 import { Concrete } from '../../core/concrete';
 import { rel } from '../../core/logic';
-import { isReal } from '../../core/assumptions';
+import { isNegative, isPositive, isReal } from '../../core/assumptions';
+import { add, mul } from '../../core/ops';
 import type { Truth } from '../../core/truth';
 import { precedence } from '../../printing/str';
-import { InvariantError } from '../../core/errors';
-import { at } from '../../core/guard';
+import { at, expectType } from '../../core/guard';
 
 /** SymPy precedence values (sympy.printing.precedence.PRECEDENCE). */
 export const PRECEDENCE = { Add: 40, Mul: 50, Pow: 60, Atom: 1000 } as const;
@@ -37,17 +37,19 @@ export function relTruth(op: 'Eq' | 'Ne' | 'Lt' | 'Le' | 'Gt' | 'Ge', a: Expr, b
   // SymPy leaves inequalities between expressions not known to be real unevaluated
   if (op !== 'Eq' && op !== 'Ne' && (isReal(a) !== true || isReal(b) !== true)) return 'unknown';
   const r = rel(op, a, b);
-  return r instanceof BoolAtom ? r.value : 'unknown';
+  if (r instanceof BoolAtom) return r.value;
+  if (op === 'Eq' || op === 'Ne') return 'unknown';
+  // the sign of the difference (SymPy is_lt: (n + i < n) is False for a nonnegative i)
+  const d = add(a, mul(-1, b));
+  const t = op === 'Lt' || op === 'Ge' ? isNegative(d) : isPositive(d);
+  if (t === undefined) return 'unknown';
+  return op === 'Lt' || op === 'Gt' ? t : !t;
 }
 
 /** A JavaScript integer from an explicit integer expression. */
 export function toInt(e: Expr): number {
-  if (!(e instanceof Rational)) throw new InvariantError('integer is not a Rational');
-  return Number(e.p);
+  return Number(expectType(e, (x): x is Rational => x instanceof Rational, 'integer').p);
 }
-
-/** The truth value of a BoolAtom result, 'unknown' otherwise. */
-export const truthOf = (e: Expr): Truth => (e instanceof BoolAtom ? e.value : 'unknown');
 
 /** SymPy precedence_traditional for scalar expressions (used by the LaTeX printer). */
 export function scalarPrecTraditional(e: Expr): number {

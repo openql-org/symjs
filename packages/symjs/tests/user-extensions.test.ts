@@ -171,7 +171,8 @@ describe('Factors', () => {
   it('builds from numbers, maps and products', () => {
     expect(String(new sj.Factors(0))).toBe('Factors({0: 1})');
     expect(String(new sj.Factors(sj.Rational.of(-3n, 4n)))).toBe('Factors({-1: 1, 3: 1, 4: -1})');
-    expect(String(new sj.Factors(sj.mul(2, sj.I, x)))).toBe('Factors({2: 1, x: 1, I: 1})');
+    // SymPy 1.14 prints the bases in sorted order: Factors({2: 1, I: 1, x: 1})
+    expect(String(new sj.Factors(sj.mul(2, sj.I, x)))).toBe('Factors({2: 1, I: 1, x: 1})');
     expect(String(new sj.Factors(new Map([[sj.S.NegOne, 1]])))).toBe('Factors({-1: 1})');
     expect(String(a.mul(new sj.Factors(sj.mul(x, sj.pow(y, -2)))))).toBe('Factors({x: 2})');
     expect(new sj.Factors().isOne).toBe(true);

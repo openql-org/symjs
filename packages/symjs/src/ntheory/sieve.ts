@@ -85,7 +85,7 @@ export class Sieve {
 
   /** Grow the sieve to cover all primes <= n (SymPy Sieve.extend). */
   extend(nIn: IntLike): void {
-    const n = Number(asInt(nIn));
+    const n = toNum(asInt(nIn));
     let num = last(this.primes) + 1;
     if (n < num) return;
     let num2 = num * num;
@@ -144,8 +144,9 @@ export class Sieve {
     }
     if (a >= b) return;
     this.extend(b);
-    const lo = bisectLeft(this.primes, toNum(a));
-    const hi = bisectLeft(this.primes, toNum(b));
+    // extend(b) checked that b fits the sieve
+    const lo = bisectLeft(this.primes, Number(a));
+    const hi = bisectLeft(this.primes, Number(b));
     const ps = this.primes.slice(lo, hi);
     for (const p of ps) yield BigInt(p);
   }
@@ -217,7 +218,7 @@ export class Sieve {
     const n = asInt(nIn);
     if (n < 2n) throw new RangeError(`n should be >= 2 but got: ${n}`);
     if (n > BigInt(last(this.primes))) this.extend(n);
-    const b = bisectRight(this.primes, toNum(n));
+    const b = bisectRight(this.primes, Number(n));
     if (BigInt(at(this.primes, b - 1)) === test) return [BigInt(b), BigInt(b)];
     return [BigInt(b), BigInt(b + 1)];
   }

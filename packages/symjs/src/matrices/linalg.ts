@@ -55,8 +55,7 @@ const rowsOf = (m: Matrix): Rows => m.toArray();
 const ent = (A: readonly (readonly Expr[])[], i: number, j: number): Expr => at(at(A, i), j);
 /** The zero test used for structural (exact zero) checks. */
 const isExactZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
-const fromRows = (r: Rows, cols?: number): Matrix =>
-  r.length === 0 ? Matrix.zeros(0, cols ?? 0) : Matrix.of(r);
+const fromRows = (r: Rows, cols: number): Matrix => (r.length === 0 ? Matrix.zeros(0, cols) : Matrix.of(r));
 
 // ---------------------------------------------------------------------------
 // row reduction
@@ -315,39 +314,49 @@ export function ldl(m: Matrix, hermitian = true): [Matrix, Matrix] {
   return [Matrix.of(L), Matrix.diag(...D)];
 }
 
-/** LU decomposition with row swaps: (L, U, perm) where perm lists the swaps [i, j]. */
+/**
+ * LU decomposition with row swaps: (L, U, perm) where perm lists the swaps [i, j]
+ * (SymPy LUdecomposition with rankcheck=False: a column without a pivot is
+ * skipped and the elimination goes on with the next column at the same row).
+ */
 export function luDecomposition(m: Matrix): [Matrix, Matrix, [number, number][]] {
   const n = m.rows;
-  const U = rowsOf(m);
-  const L: Expr[][] = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => (i === j ? S.One : S.Zero) as Expr));
+  // combined storage: U on and above the diagonal, the multipliers of L below
+  const lu = rowsOf(m);
   const perm: [number, number][] = [];
-  for (let c = 0; c < Math.min(n, m.cols); c++) {
-    let p = c;
-    while (p < n && isZeroE(ent(U, p, c))) p++;
-    if (p === n) continue;
-    if (p !== c) {
-      const Up = at(U, p);
-      U[p] = at(U, c);
-      U[c] = Up;
-      const Lp = at(L, p);
-      const Lc = at(L, c);
-      for (let k = 0; k < c; k++) {
-        const t = at(Lp, k);
-        Lp[k] = at(Lc, k);
-        Lc[k] = t;
-      }
-      perm.push([c, p]);
+  let pc = 0;
+  for (let pr = 0; pr < n - 1 && pc < m.cols; pr++, pc++) {
+    let p = -1;
+    while (pc < m.cols) {
+      for (let i = pr; i < n && p < 0; i++) if (!isZeroE(ent(lu, i, pc))) p = i;
+      if (p >= 0) break;
+      pc++;
     }
-    const Uc = at(U, c);
-    const pivInv = pow(at(Uc, c), -1);
-    for (let i = c + 1; i < n; i++) {
-      const Ui = at(U, i);
-      const f = tidy(mul(at(Ui, c), pivInv));
-      at(L, i)[c] = f;
-      U[i] = Ui.map((v, j) => tidy(add(v, mul(-1, f, at(Uc, j)))));
+    if (p < 0) break;
+    if (p !== pr) {
+      perm.push([pr, p]);
+      const rowR = at(lu, pr);
+      const rowP = at(lu, p);
+      for (let k = 0; k < m.cols; k++) {
+        if (k >= pr && k < pc) continue;
+        const tmp = at(rowR, k);
+        rowR[k] = at(rowP, k);
+        rowP[k] = tmp;
+      }
+    }
+    const Ur = at(lu, pr);
+    const pivInv = pow(at(Ur, pc), -1);
+    for (let i = pr + 1; i < n; i++) {
+      const Ui = at(lu, i);
+      const f = tidy(mul(at(Ui, pc), pivInv));
+      for (let j = pc + 1; j < m.cols; j++) Ui[j] = tidy(add(at(Ui, j), mul(-1, f, at(Ur, j))));
+      if (pr !== pc) Ui[pc] = S.Zero;
+      Ui[pr] = f;
     }
   }
-  return [Matrix.of(L), fromRows(U, m.cols), perm];
+  const Lm = Matrix.fromFunction(n, n, (i, j) => (i < j ? 0 : i === j ? 1 : j < m.cols ? ent(lu, i, j) : 0));
+  const Um = Matrix.fromFunction(n, m.cols, (i, j) => (i > j ? 0 : ent(lu, i, j)));
+  return [Lm, Um, perm];
 }
 
 /** QR decomposition by Gram-Schmidt: (Q, R). */
@@ -362,11 +371,12 @@ export function qrDecomposition(m: Matrix): [Matrix, Matrix] {
       rcol.push(r);
       v = v.sub(q.scale(r));
     }
+    // a dependent column keeps its projections on the earlier q's as its R column
+    R.push(rcol);
     const nv = sqrt(tidy(dot(v, v, true)));
     if (isZeroE(nv)) continue;
     rcol.push(nv);
     qs.push(v.map((e) => tidy(mul(e, pow(nv, -1)))));
-    R.push(rcol);
   }
   const k = qs.length;
   const Rm = Matrix.fromFunction(k, m.cols, (i, j) => R[j]?.[i] ?? 0);
@@ -405,8 +415,8 @@ function threeEntries(v: Matrix): [Expr, Expr, Expr] {
 }
 
 export function singularValues(m: Matrix): Expr[] {
+  // eigenvals of the cols x cols matrix A^H A gives all cols values (or throws)
   const vals = m.adjoint().mul(m).eigenvals().map((v) => sqrt(v));
-  while (vals.length < m.cols) vals.push(S.Zero);
   return vals.sort((a, b) => compareKeys(sortKey(b), sortKey(a)));
 }
 
@@ -517,7 +527,7 @@ export function isLower(m: Matrix): boolean {
   return m.data.every((e, k) => Math.floor(k / m.cols) >= k % m.cols || isZeroE(e));
 }
 export function isNilpotent(m: Matrix): boolean {
-  if (!m.isSquare) return false;
+  if (!m.isSquare) throw new NonSquareMatrixError('Nilpotency is valid only for square matrices');
   return m.pow(m.rows).data.every(isZeroE);
 }
 
@@ -756,11 +766,10 @@ export function jordanForm(A: Matrix): [Matrix, Matrix] {
     const cb = impl.toComplex(b[0]);
     return ca.re - cb.re || ca.im - cb.im;
   });
-  if (eig.reduce((s, [, m]) => s + m, 0) !== n) throw new NotImplementedError('jordan_form: could not compute all eigenvalues');
   const columns: Matrix[] = [];
   const blocks: [Expr, number][] = [];
   const simp = (m: Matrix) => m.map((e) => simplify(e));
-  const independent = (vs: readonly Matrix[]) => (vs.length ? rank(vs.reduce((acc, v) => acc.hstack(v))) === vs.length : true);
+  const independent = (vs: readonly Matrix[]) => rank(vs.reduce((acc, v) => acc.hstack(v))) === vs.length;
   for (const [lam, mult] of eig) {
     const N = simp(A.sub(Matrix.eye(n).scale(lam)));
     // null spaces of N**k until their dimension reaches the multiplicity

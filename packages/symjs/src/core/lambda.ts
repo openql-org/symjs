@@ -35,7 +35,7 @@ export class LambdaNode extends ExtensionExpr {
   }
   override printLatex(print: (e: Expr) => string): string {
     const vs = this.variables;
-    return `\\left( ${vs.length === 1 ? print(at(vs, 0)) : `\\left( ${vs.map(print).join(', ')}\\right)`} \\mapsto ${print(this.expr)} \\right)`;
+    return `\\left( ${vs.length === 1 ? print(at(vs, 0)) : `\\left( ${vs.map(print).join(', \\  ')}\\right)`} \\mapsto ${print(this.expr)} \\right)`;
   }
   /** Apply the function to arguments (SymPy Lambda.__call__). */
   call(...args: ExprLike[]): Expr {

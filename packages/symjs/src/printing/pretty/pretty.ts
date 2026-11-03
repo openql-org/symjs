@@ -43,12 +43,13 @@ import {
   isNum,
 } from '../../core/nodes';
 import { at, defined, getOrThrow, last } from '../../core/guard';
-import { couldExtractMinusSign, pow as powE } from '../../core/ops';
+import { couldExtractMinusSign } from '../../core/ops';
 import { numNeg } from '../../core/num';
 import { BoolOp } from '../../core/boolalg';
 import { Concrete } from '../../core/concrete';
 import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey, sympyFunctionName } from '../sortkey';
 import { PREC, floatString, precedence, str } from '../str';
+import { setArgsOrdered, setClass } from '../sets';
 import type { PictLike } from './stringpict';
 import { Binding, LINE, PrettyForm, StringPict } from './stringpict';
 import {
@@ -149,65 +150,6 @@ const isExp = (e: Expr): boolean => e instanceof Pow && e.base instanceof Consta
 const isRat = (e: Expr, p: bigint, q = 1n): boolean => e instanceof Rational && e.p === p && e.q === q;
 const isInfinity = (e: Expr): boolean => e instanceof Special && (e.name === 'oo' || e.name === '-oo');
 const byKey = (a: Expr, b: Expr): number => compareKeys(sortKey(a), sortKey(b));
-
-/** Shape of SymPy sets (sets/ is a higher layer): the class name and the arguments. */
-interface SetLike {
-  readonly kind: 'Set';
-  readonly className: string;
-  readonly args: readonly Expr[];
-}
-const isSetLike = (e: Expr): e is Expr & SetLike => e.kind === 'Set' && 'className' in e && typeof e.className === 'string';
-const setClass = (e: Expr): string | undefined => (isSetLike(e) ? e.className : undefined);
-
-/** A real number as a JS number, or undefined when it is not a comparable number. */
-function realNumber(e: Expr): number | undefined {
-  if (e instanceof Special) return e.name === 'oo' ? Infinity : e.name === '-oo' ? -Infinity : undefined;
-  if (isNum(e)) return e.value;
-  if (impl.freeSymbols(e).size > 0) return undefined;
-  try {
-    const v = impl.toComplex(e);
-    return v.im === 0 ? v.re : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-const allDefined = <T>(xs: readonly (T | undefined)[]): xs is T[] => xs.every((v) => v !== undefined);
-
-/** SymPy `Set.inf` of the sets the printer knows, or undefined when unknown. */
-function setInfimum(e: Expr): number | undefined {
-  switch (setClass(e)) {
-    case 'Interval':
-      return realNumber(at(e.args, 0));
-    case 'FiniteSet': {
-      const vs = e.args.map(realNumber);
-      return allDefined(vs) ? Math.min(...vs) : undefined;
-    }
-    case 'Union': {
-      const vs = e.args.map(setInfimum);
-      return allDefined(vs) ? Math.min(...vs) : undefined;
-    }
-    case 'Reals':
-    case 'Integers':
-      return -Infinity;
-    case 'Naturals':
-      return 1;
-    case 'Naturals0':
-      return 0;
-    default:
-      return undefined;
-  }
-}
-
-/**
- * The arguments of a Union or Intersection in SymPy's order: SymPy sorts
- * them by infimum (`ordered(args, Set._infimum_key)`; an unknown infimum
- * counts as oo), then by the default sort key.
- */
-function setArgsOrdered(args: readonly Expr[]): Expr[] {
-  const keyed = args.map((a) => [setInfimum(a) ?? Infinity, a] as const);
-  return keyed.sort((p, q) => (p[0] < q[0] ? -1 : p[0] > q[0] ? 1 : byKey(p[1], q[1]))).map(([, a]) => a);
-}
 
 /** SymPy `is_Boolean` (boolean functions and atoms; not relations or symbols). */
 function isBooleanNode(e: Expr): boolean {
@@ -545,8 +487,7 @@ export class PrettyPrinter {
         if (named !== undefined) return named;
         const nf = NUMBER_FUNCTIONS[e.name];
         if (nf !== undefined) return this.printNumberFunction(e.args, nf);
-        const renamed = RENAMED[e.name];
-        if (renamed !== undefined) return this.printFunction(u ? renamed[0] : renamed[1], e.args);
+        // (printNamedFunction already printed the RENAMED functions)
         return this.printFunction(sympyFunctionName(e.name), e.args);
       }
     }
@@ -642,7 +583,7 @@ export class PrettyPrinter {
   private printAdd(e: Add): PrettyForm {
     const terms = this.orderedTerms(e);
     const pforms: (PrettyForm | undefined)[] = [];
-    const indices: number[] = [];
+    const indices: [number, Rational][] = [];
 
     const prettyNegative = (pform: PrettyForm, index: number): PrettyForm => {
       const neg = index === 0 ? (pform.height() > 1 ? '- ' : '-') : ' - ';
@@ -658,7 +599,7 @@ export class PrettyPrinter {
         pforms.push(prettyNegative(this.printMulArgs(negArgs), i));
       } else if (term instanceof Rational && term.q > 1n) {
         pforms.push(undefined);
-        indices.push(i);
+        indices.push([i, term]);
       } else if ((isNum(term) && term.isNegative) || (term instanceof Special && term.name === '-oo')) {
         pforms.push(prettyNegative(this.print(isNum(term) ? numNeg(term) : impl.mul(-1, term)), i));
       } else if (term instanceof Rel) {
@@ -670,9 +611,7 @@ export class PrettyPrinter {
 
     if (indices.length > 0) {
       const large = pforms.some((p) => p !== undefined && p.height() > 1);
-      for (const i of indices) {
-        const t0 = terms[i];
-        if (!(t0 instanceof Rational)) continue;
+      for (const [i, t0] of indices) {
         let term = t0;
         let negative = false;
         if (term.p < 0n) {
@@ -741,8 +680,8 @@ export class PrettyPrinter {
     }
     const zZ = xchar('/');
     let rootsign = (xchar('\\')) + zZ;
+    // the index is an integer or a symbol, printed on one line
     const rpretty = this.print(root);
-    if (rpretty.height() !== 1) return this.print(base).pow(this.print(powE(root, -1)));
     const exp = isRat(root, 2n) ? '' : rpretty.toString().padEnd(2);
     const expLen = Array.from(exp).length;
     if (expLen > 2) rootsign = ' '.repeat(expLen - 2) + rootsign;

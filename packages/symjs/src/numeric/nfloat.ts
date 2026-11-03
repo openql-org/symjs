@@ -38,11 +38,13 @@ export function nfloat(exIn: ExprLike, n = 15, exponent = false): Expr {
   rv = evalf(rv, n);
   if (!exponent) rv = xreplace(rv, back);
   else {
+    // like SymPy's xreplace: a power with an integer exponent is replaced whole,
+    // so powers inside its base keep their exponents
     const fix = (x: Expr): Expr => {
+      if (x instanceof Pow && x.exp instanceof Rational && x.exp.isInteger) return new Pow(x.base, float(x.exp, n));
       const args = x.args.map(fix);
-      const y = args.some((a, i) => a !== x.args[i]) ? (x instanceof Pow ? pow(...pair(args)) : rebuild(x, args)) : x;
-      if (y instanceof Pow && y.exp instanceof Rational && y.exp.isInteger) return new Pow(y.base, float(y.exp, n));
-      return y;
+      if (!args.some((a, i) => a !== x.args[i])) return x;
+      return x instanceof Pow ? pow(...pair(args)) : rebuild(x, args);
     };
     rv = fix(rv);
   }
@@ -98,7 +100,8 @@ function simpleRational(v: number, rtol: number): Rational | undefined {
     [h0, h1] = [h1, A * h1 + h0];
     [k0, k1] = [k1, A * k1 + k0];
     const approx = Number(h1) / Number(k1);
-    if (Math.abs(approx - Math.abs(v)) <= rtol * Math.max(1, Math.abs(v))) return Rational.of(sign * h1, k1);
+    // a nonzero value never becomes 0
+    if (h1 !== 0n || v === 0) if (Math.abs(approx - Math.abs(v)) <= rtol * Math.max(1, Math.abs(v))) return Rational.of(sign * h1, k1);
     const frac = x - a;
     if (frac < 1e-300) break;
     x = 1 / frac;
@@ -133,7 +136,8 @@ export function nsimplify(
     const r = simpleRational(f.value, 1e-14);
     return r ?? f;
   };
-  if (e instanceof Float) return conv(e);
+  // a lone Float with a tolerance is identified like any number (SymPy mpmath.identify)
+  if (e instanceof Float && (opts.rational || opts.tolerance === undefined)) return conv(e);
   if (!opts.rational && e.freeSymbols().size === 0 && !(e instanceof Rational) && opts.tolerance !== undefined) {
     // rational approximation of a constant, e.g. nsimplify(pi, tolerance=0.01) = 22/7
     // the simplest fraction within the tolerance (continued-fraction convergents)

@@ -14,6 +14,7 @@ import { defined, first, pair } from '../core/guard';
 import { Add, Float, Fn, Mul, Rational, S, Special } from '../core/nodes';
 import { add, couldExtractMinusSign, mul, neg, pow, sqrt } from '../core/ops';
 import { asCoefficient } from '../core/methods';
+import { AccumBounds } from '../core/accumbounds';
 import { isReal } from '../core/assumptions';
 import { mapBottomUp } from '../core/traverse';
 import { fnPartials } from '../calculus/diff';
@@ -271,8 +272,28 @@ function halfAngle(pc: Rational, sgn: 1 | -1): Expr | undefined {
   return add(pow(sr, -1), mul(sgn, div(cr, sr)));
 }
 
+/** tan(n*pi/10) for n = 1..4 (SymPy table10: simplified values for multiples of pi/5 and pi/10). */
+const TAN_TABLE10 = (n: bigint): Expr =>
+  n === 1n
+    ? sqrt(add(1, mul(Rational.of(-2n, 5n), sqrt(5))))
+    : n === 2n
+      ? sqrt(add(5, mul(-2, sqrt(5))))
+      : n === 3n
+        ? sqrt(add(1, mul(Rational.of(2n, 5n), sqrt(5))))
+        : sqrt(add(5, mul(2, sqrt(5))));
+
+/** tan of a rational multiple of pi with denominator 5 or 10. */
+function tanTenth(pc: Rational): Expr | undefined {
+  if (pc.q !== 5n && pc.q !== 10n) return undefined;
+  const p = ((pc.p % pc.q) + pc.q) % pc.q;
+  const n = (10n * p) / pc.q;
+  return n > 5n ? neg(TAN_TABLE10(10n - n)) : TAN_TABLE10(n);
+}
+
 evaluators.tan = (x) => {
   const pc0 = piCoeffOnly(x);
+  const t10 = pc0 === undefined ? undefined : tanTenth(pc0);
+  if (t10 !== undefined) return t10;
   if (pc0 !== undefined && !pc0.isInteger && pc0.q % 2n === 0n) {
     if (pc0.isNegative) return neg(tan(neg(x)));
     const v = halfAngle(pc0, -1);
@@ -355,6 +376,7 @@ const evalCot: Evaluator = (x) => {
     if (pc.isInteger) return S.ComplexInfinity;
     // cot((k + 1/2)*pi) = 0
     if (pc.q === 2n) return S.Zero;
+    if (pc.q === 5n || pc.q === 10n) return tan(add(div(pi, 2), neg(x)));
     if (pc.q % 2n === 0n) {
       const v = halfAngle(pc, 1);
       if (v !== undefined) return v;
@@ -487,6 +509,9 @@ function lookup(table: () => [Expr, Expr][], x: Expr): Expr | undefined {
   return undefined;
 }
 
+/** I*AccumBounds(-pi/2, pi/2), the value of atanh and asech at zoo (an unevaluated product: the bounds are not real). */
+const iHalfPiBounds = (): Expr => new Mul([I, AccumBounds(neg(div(pi, 2)), div(pi, 2))]);
+
 const evalAsinh: Evaluator = (x) => {
   if (isNan(x)) return S.NaN;
   if (isOo(x) || isNegOo(x) || isZoo(x)) return x;
@@ -520,7 +545,7 @@ const evalAtanh: Evaluator = (x) => {
   if (isOo(x)) return neg(mul(I, div(pi, 2)));
   if (isNegOo(x)) return mul(I, div(pi, 2));
   if (isNegNumber(x)) return neg(atanh(neg(x)));
-  if (isZoo(x)) return mul(I, S.NaN);
+  if (isZoo(x)) return iHalfPiBounds();
   const c = iCoeff(x);
   if (c !== undefined) return mul(I, atan(c));
   if (couldExtractMinusSign(x)) return neg(atanh(neg(x)));
@@ -607,7 +632,7 @@ const evalAsech: Evaluator = (x) => {
   if (isOo(x) || isNegOo(x)) return mul(pi, I, half);
   const t = lookup(ASECH_TABLE, x);
   if (t !== undefined) return isRealConst(x) ? mul(t, I) : t;
-  if (isZoo(x)) return mul(pi, I, half);
+  if (isZoo(x)) return iHalfPiBounds();
   return undefined;
 };
 

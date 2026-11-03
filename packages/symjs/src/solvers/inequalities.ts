@@ -14,6 +14,7 @@ import { Add, BoolAtom, Constant, Dummy, Fn, Mul, Piecewise, Pow, Rational, Rel,
 import { at, cast, defined, first } from '../core/guard';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { expandMul } from '../simplify/expand';
+import { factorTerms } from '../simplify/exprtools';
 import { BoolOp, and, or as orB } from '../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne } from '../core/logic';
 import { some, xreplace } from '../core/traverse';
@@ -54,7 +55,7 @@ const isDefined = <T>(v: T | undefined): v is T => v !== undefined;
 const isExprList = (v: readonly ExprLike[] | ExprLike): v is readonly ExprLike[] => Array.isArray(v);
 const relFn: Record<RelOp, (a: ExprLike, b: ExprLike) => Expr> = { Eq, Ne, Lt, Le, Gt, Ge };
 
-function holds(op: RelOp, v: number): boolean {
+function holds(op: Exclude<RelOp, 'Eq'>, v: number): boolean {
   switch (op) {
     case 'Lt':
       return v < 0;
@@ -64,8 +65,6 @@ function holds(op: RelOp, v: number): boolean {
       return v > 0;
     case 'Ge':
       return v >= 0;
-    case 'Eq':
-      return v === 0;
     case 'Ne':
       return v !== 0;
   }
@@ -104,7 +103,8 @@ function lcim(ps: Expr[]): Expr | undefined {
     base = b;
     coeffs.push(c);
   }
-  const g = (a: bigint, b: bigint): bigint => (b === 0n ? (a < 0n ? -a : a) : g(b, a % b));
+  // periods are positive
+  const g = (a: bigint, b: bigint): bigint => (b === 0n ? a : g(b, a % b));
   // lcm of p/q = lcm(p)/gcd(q)
   let num = 1n;
   let den = 0n;
@@ -112,7 +112,7 @@ function lcim(ps: Expr[]): Expr | undefined {
     num = (num / g(num, c.p)) * c.p;
     den = g(den, c.q);
   }
-  return mul(Rational.of(num < 0n ? -num : num, den), base ?? S.One);
+  return mul(Rational.of(num, den), base ?? S.One);
 }
 
 /** Period of f in x, 0 when f does not depend on x, undefined when not periodic. */
@@ -129,9 +129,8 @@ export function periodicity(fIn: ExprLike, x: Sym): Expr | undefined {
         return undefined;
       }
     })();
-    if (p?.degree() !== 1) return undefined;
-    const c = p.LC();
-    return c.has(x) ? undefined : c;
+    // the leading coefficient of a polynomial in x does not contain x
+    return p?.degree() === 1 ? p.LC() : undefined;
   };
   if (f instanceof Fn) {
     const P = trigPeriod(f.name);
@@ -140,18 +139,34 @@ export function periodicity(fIn: ExprLike, x: Sym): Expr | undefined {
       if (a !== undefined) return mul(P, pow(impl.abs(a), -1));
     }
     if (f.name === 'abs') {
-      const p = periodicity(first(f.args), x);
+      // SymPy: Abs of sin, cos, sec or csc (recast as sin) may have half the period of its argument
+      const a0 = first(f.args);
+      const arg = a0 instanceof Fn && ['cos', 'sec', 'csc'].includes(a0.name) ? fn('sin', [first(a0.args)]) : a0;
+      const p = periodicity(arg, x);
+      if (p !== undefined && arg instanceof Fn && arg.name === 'sin') {
+        const absArg = fn('abs', [arg]);
+        const half = mul(p, Rational.of(1, 2));
+        if (simplify(xreplace(absArg, [[x, add(x, half)]])).key === simplify(absArg).key) return half;
+      }
       return p;
     }
-    if (f.args.length === 1 && !P) return periodicity(first(f.args), x);
+    // a function of a periodic argument (SymPy decompogen)
+    if (f.args.length === 1) return periodicity(first(f.args), x);
     return undefined;
   }
   if (f instanceof Pow) {
     const isE = f.base instanceof Constant && f.base.name === 'E';
     if (isE) {
-      const e = f.exp;
+      const e = expandMul(f.exp);
       if (!e.has(S.I)) return periodicity(e, x);
-      return undefined;
+      // exp(a + I*b) for real x: the common period of exp(a)*cos(b) and exp(a)*sin(b) (SymPy)
+      const terms = e instanceof Add ? e.args : [e];
+      const a = add(...terms.filter((t) => !t.has(S.I)));
+      const b = add(...terms.filter((t) => t.has(S.I)).map((t) => mul(-1, S.I, t)));
+      if (b.has(S.I)) return undefined;
+      const ps = [fn('cos', [b]), fn('sin', [b])].map((t) => periodicity(mul(pow(S.E, a), t), x));
+      if (!ps.every(isDefined)) return undefined;
+      return lcim(ps);
     }
     const bh = f.base.has(x);
     const eh = f.exp.has(x);
@@ -177,6 +192,12 @@ export function periodicity(fIn: ExprLike, x: Sym): Expr | undefined {
 /** Real zeros of e in [lo, hi] (sorted, distinct). */
 function realZeros(e: Expr, x: Sym, lo: Expr, hi: Expr): Expr[] {
   if (!e.has(x)) return [];
+  // a product vanishes where a factor does (exp(x)*(sin(x) + cos(x)) has the periodic zeros of its second factor)
+  const ft = factorTerms(e);
+  if (ft instanceof Mul) {
+    const zs = ft.args.filter((t) => t.has(x) && !(t instanceof Pow && t.base instanceof Constant && t.base.name === 'E')).flatMap((t) => realZeros(t instanceof Pow ? t.base : t, x, lo, hi));
+    return [...new Map(zs.map((z) => [z.key, z])).values()].sort((a, b) => cmpReal(a, b) ?? 0);
+  }
   let base: Expr[];
   try {
     const p = Poly.from(e, [x]);
@@ -192,8 +213,15 @@ function realZeros(e: Expr, x: Sym, lo: Expr, hi: Expr): Expr[] {
   // an undecidable bound or period gives NaN, which skips the periodic extension
   const loV = realValue(lo) ?? NaN;
   const hiV = realValue(hi) ?? NaN;
+  // a periodic expression has infinitely many zeros on an unbounded domain
+  if (P && !(P instanceof Rational && P.isZero)) {
+    if (!(Number.isFinite(loV) && Number.isFinite(hiV))) throw new NotImplementedError('inequalities: infinitely many zeros');
+    // zeros may also repeat at fractions of the period (sin(x) + cos(x) vanishes every pi)
+    const shifted = base.flatMap((r) => [1, 2, 3].map((q) => add(r, mul(q, P, Rational.of(1, 4)))));
+    base = [...base, ...shifted.filter((c) => Math.abs(numAt(e, x, c) ?? 1) < 1e-9)];
+  }
   for (const r of base) {
-    if (P && !(P instanceof Rational && P.isZero) && Number.isFinite(loV) && Number.isFinite(hiV)) {
+    if (P && !(P instanceof Rational && P.isZero)) {
       const pv = realValue(P) ?? NaN;
       const rv = realValue(r) ?? NaN;
       const kmin = Math.ceil((loV - rv) / pv - 1e-9);
@@ -240,6 +268,8 @@ function findAbs(e: Expr, x: Sym): Expr | undefined {
 }
 
 function solveSign(f0: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
+  // SymPy: solving an inequality with parameters is not implemented
+  if ([...f0.freeSymbols()].some((t) => t.key !== x.key)) throw new NotImplementedError('inequalities: the expression has parameters');
   // Abs(a): split into the cases a >= 0 and a < 0 (SymPy reduce_abs_inequality)
   const ab = findAbs(f0, x);
   if (ab) {
@@ -267,13 +297,12 @@ function solveSign(f0: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
     const v = numAt(f, x, sample(l, r));
     if (v !== undefined && holds(op, v)) parts.push(interval(l, r, true, true));
   }
-  if (op === 'Le' || op === 'Ge' || op === 'Ne') {
-    for (const z of edges) {
-      if (z instanceof Special) continue;
-      if (poles.some((p) => p.key === z.key)) continue;
-      const v = numAt(f, x, z);
-      if (v !== undefined && holds(op, Math.abs(v) < 1e-12 ? 0 : v)) parts.push(finiteSet(z));
-    }
+  // the zeros and the finite ends of the domain (a strict inequality may hold at a closed end)
+  for (const z of edges) {
+    if (z instanceof Special) continue;
+    if (poles.some((p) => p.key === z.key)) continue;
+    const v = numAt(f, x, z);
+    if (v !== undefined && holds(op, Math.abs(v) < 1e-12 ? 0 : v)) parts.push(finiteSet(z));
   }
   const res = union(...parts);
   return intersection(res, interval(lo, hi, lOpen, rOpen));
@@ -368,7 +397,7 @@ export function solveRationalInequalities(eqs: readonly (readonly [[Poly, Poly],
 /** SymPy reduce_inequalities: a relational description of the solutions. */
 export function reduceInequalities(ineqsIn: readonly ExprLike[] | ExprLike, symbols: readonly Sym[] = []): Expr {
   const ineqs = (isExprList(ineqsIn) ? ineqsIn : [ineqsIn]).map((e) => sympify(e));
-  const rels: Expr[] = ineqs.map((e) => (e instanceof Rel || e.kind === 'Bool' ? e : Eq(e, 0)));
+  const rels: Expr[] = ineqs.map((e) => (e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp ? e : Eq(e, 0)));
   const gens = symbols.length ? symbols : ([...new Map(rels.flatMap((r) => [...r.freeSymbols()]).map((s) => [s.key, s])).values()] as Sym[]);
   const parts: Expr[] = [];
   const byGen = new Map<string, Rel[]>();
@@ -421,20 +450,24 @@ function linearInequality(r: Rel, x: Sym): Expr {
   const b = p.TC();
   const sol = mul(-1, b, pow(a, -1));
   const av = realValue(a);
-  if (av === undefined) throw new NotImplementedError('reduce_inequalities: unknown sign of coefficient');
+  // SymPy leaves the inequality as it is when the sign of the coefficient is unknown
+  if (av === undefined) return r;
   const flip: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
   const op = av < 0 ? flip[r.op] : r.op;
   const main = relFn[op](x, sol);
-  if (op === 'Gt' || op === 'Ge') return and(main, Lt(x, S.Infinity));
-  if (op === 'Lt' || op === 'Le') return and(main, Lt(S.NegativeInfinity, x));
+  // like SymPy, only a non-strict inequality gets the infinite bound
+  if (op === 'Ge') return and(main, Lt(x, S.Infinity));
+  if (op === 'Le') return and(main, Lt(S.NegativeInfinity, x));
   return main;
 }
 
 /** SymPy solveset for equations and inequalities in one variable. */
 export function solveset(fIn: ExprLike, x: Sym, domain: SetExpr = Complexes): SetExpr {
   const f = sympify(fIn);
-  if (f instanceof Rel && f.op !== 'Eq' && f.op !== 'Ne') {
-    return solveSign(add(f.lhs, mul(-1, f.rhs)), f.op, x, domain === Complexes ? Reals : domain);
+  if (f instanceof Rel && f.op !== 'Eq') {
+    // SymPy keeps an inequality or x != a over the complex numbers as a ConditionSet
+    if (domain === Complexes) return new ConditionSet(x, f, domain);
+    return solveSign(add(f.lhs, mul(-1, f.rhs)), f.op, x, domain);
   }
   const g = f instanceof Rel ? add(f.lhs, mul(-1, f.rhs)) : f;
   if (!g.has(x)) return g instanceof Rational && g.isZero ? domain : EmptySet;
@@ -478,10 +511,12 @@ function periodicSolutions(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefine
   if (!some(g, (t) => t instanceof Fn && ['sin', 'cos', 'tan', 'cot', 'sec', 'csc'].includes(t.name))) return undefined;
   const P = periodicity(g, x);
   if (!P || P instanceof Rational) return undefined;
+  // a period with parameters (sin(a*x)) or parametric solutions (sin(x) = a) give a ConditionSet
   const pv = realValue(P);
-  if (pv === undefined || pv <= 0) return undefined;
+  if (pv === undefined) throw new NotImplementedError('solveset: period with parameters');
   const base = new Map<string, [Expr, number]>();
   const principal = solve(g, x);
+  if (principal.some((s0) => [...s0.freeSymbols()].some((t) => t.key !== x.key))) throw new NotImplementedError('solveset: parametric solutions');
   // shifts by fractions of the period may also solve the equation (e.g. tan-type solutions)
   const cands: Expr[] = [];
   for (const s0 of principal) for (const q of [0, 1, 2, 3]) cands.push(q === 0 ? s0 : add(s0, mul(q, P, Rational.of(1, 4))));
@@ -520,7 +555,8 @@ function complexExpSolutions(g: Expr, x: Sym): SetExpr | undefined {
   const e = fs.find((h): h is Pow => h instanceof Pow && h.base instanceof Constant && h.base.name === 'E' && h.has(x));
   if (!e || fs.filter((h) => h.has(x)).length !== 1) return undefined;
   const pc = Poly.from(e.exp, [x]);
-  if (pc.degree() !== 1) return undefined;
+  // exp of a nonlinear argument: infinitely many complex solutions (SymPy ConditionSet)
+  if (pc.degree() !== 1) throw new NotImplementedError('solveset: exp of a nonlinear argument');
   const a = mul(...fs.filter((h) => h !== e));
   const c = mul(-1, add(...terms.filter((u) => !u.has(x))), pow(a, -1));
   if (c instanceof Rational && c.isZero) return EmptySet;
@@ -570,8 +606,25 @@ function monotonic(f: Expr, op: RelOp, iv: SetExpr, x?: Sym): boolean | undefine
   const v = x ?? (free.length === 1 ? (free[0]) : undefined);
   if (!v) throw new TypeError('monotonicity: specify the symbol');
   const d = diff(f, v);
-  const s = solveSign(d, op, v, Reals);
-  return isSubset(iv, s);
+  // the sign of f' is decided on the interval, or on one period of a periodic f' over the reals
+  const dom = iv instanceof Interval ? iv : Reals;
+  let ref = iv;
+  if (iv === Reals) {
+    const P = periodicity(d, v);
+    if (P && !(P instanceof Rational && P.isZero)) ref = interval(0, P, false, true);
+  }
+  // a derivative with parameters has an unknown sign
+  if ([...d.freeSymbols()].some((t) => t.key !== v.key)) return undefined;
+  const strict = op === 'Gt' || op === 'Lt';
+  // strictly monotonic: monotonic with a derivative that vanishes only at isolated points
+  const s = solveSign(d, strict ? (op === 'Gt' ? 'Ge' : 'Le') : op, v, dom);
+  let weak = isSubset(ref, s);
+  // f' has the sign only at isolated points while the interval has interior points
+  if (weak === undefined && (s === EmptySet || s instanceof FiniteSet) && (ref === Reals || ref instanceof Interval)) weak = false;
+  if (!strict || weak !== true) return weak;
+  if (d instanceof Rational && d.isZero) return false;
+  const zeros = intersection(solveSign(d, 'Eq', v, dom), ref);
+  return zeros === EmptySet || zeros instanceof FiniteSet ? true : undefined;
 }
 
 export const isIncreasing = (f: ExprLike, iv: SetExpr = Reals, x?: Sym): boolean | undefined => monotonic(sympify(f), 'Ge', iv, x);
@@ -635,6 +688,11 @@ export function minimum(fIn: ExprLike, x: Sym, domain: SetExpr = Reals): Expr {
 
 
 
+/** a \ b, removing the members of a union one at a time. */
+function minus(a: SetExpr, b: SetExpr): SetExpr {
+  return b.className === 'Union' ? b.args.reduce<SetExpr>((acc, m) => minus(acc, cast(m, SetExpr, 'Union member')), a) : complement(a, b);
+}
+
 /** SymPy Piecewise.as_expr_set_pairs: disjoint real sets for each piece. */
 export function asExprSetPairs(p: Expr, domain: SetExpr = Reals): [Expr, SetExpr][] {
   const pairs = cast(p, Piecewise, 'Piecewise').pairs;
@@ -660,16 +718,15 @@ export function asExprSetPairs(p: Expr, domain: SetExpr = Reals): [Expr, SetExpr
     const s: SetExpr = condSet(c);
     const piece = intersection(remaining, s);
     if (piece !== EmptySet) out.push([e, piece]);
-    remaining = complement(remaining, s);
+    remaining = minus(remaining, s);
   }
   return out;
 }
 
 /** A relational for a set of reals in x, written like SymPy's simplified conditions. */
 function setToCondition(st: SetExpr, x: Sym): Expr {
-  if (st === EmptySet) return S.false;
   if (st === Reals) return S.true;
-  if (st instanceof FiniteSet && st.args.length === 1) return Eq(x, first(st.args));
+  if (st instanceof FiniteSet) return orB(...st.args.map((v) => Eq(x, v)));
   if (st instanceof Interval) {
     const lo = st.start instanceof Special ? undefined : st.leftOpen ? Gt(x, st.start) : Ge(x, st.start);
     const hi = st.end instanceof Special ? undefined : st.rightOpen ? Lt(x, st.end) : Le(x, st.end);
@@ -703,11 +760,15 @@ export function piecewiseExclusive(p: Expr, opts: { skipNan?: boolean } = {}): E
   const out: Expr[] = [];
   pairs.forEach(([e, c], i) => {
     const sc = condSet(c);
-    const own = complement(sc, covered);
-    out.push(e, i === 0 ? c : setToCondition(own, x));
+    const own = minus(sc, covered);
+    // like SymPy's Piecewise, a piece that can never apply is dropped
+    if (own !== EmptySet) out.push(e, i === 0 ? c : setToCondition(own, x));
     covered = union(covered, sc);
   });
-  if (!opts.skipNan && covered !== Reals) out.push(S.NaN, setToCondition(complement(Reals, covered), x));
+  // Piecewise((e, True)) is e
+  if (out.length === 2 && out[1] === S.true) return first(out);
+  const rest = minus(Reals, covered);
+  if (!opts.skipNan && rest !== EmptySet) out.push(S.NaN, setToCondition(rest, x));
   return new Piecewise(out);
 }
 

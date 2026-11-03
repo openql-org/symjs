@@ -113,8 +113,16 @@ export class MatrixError extends RangeError {
   }
 }
 
-/** A square matrix is required (SymPy NonSquareMatrixError). */
-export class NonSquareMatrixError extends MatrixError {
+/** The shapes of matrices do not match (SymPy ShapeError). */
+export class ShapeError extends MatrixError {
+  constructor(message = 'Matrices are not aligned') {
+    super(message);
+    this.name = 'ShapeError';
+  }
+}
+
+/** A square matrix is required (SymPy NonSquareMatrixError, a ShapeError). */
+export class NonSquareMatrixError extends ShapeError {
   constructor(message = 'Matrix must be square') {
     super(message);
     this.name = 'NonSquareMatrixError';
@@ -126,6 +134,14 @@ export class NonInvertibleMatrixError extends MatrixError {
   constructor(message = 'Matrix det == 0; not invertible.') {
     super(message);
     this.name = 'NonInvertibleMatrixError';
+  }
+}
+
+/** The matrix is not positive definite (SymPy NonPositiveDefiniteMatrixError). */
+export class NonPositiveDefiniteMatrixError extends MatrixError {
+  constructor(message = 'Matrix must be positive-definite') {
+    super(message);
+    this.name = 'NonPositiveDefiniteMatrixError';
   }
 }
 

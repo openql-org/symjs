@@ -8,7 +8,7 @@
 import { accumBoundsFunction } from './accumbounds';
 import { first } from '../core/guard';
 import { precToDps } from '../numeric/mpf';
-import { isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
+import { isIntegerQ, isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
 import type {
   Expr,
   ExprLike,
@@ -28,7 +28,7 @@ import {
   ExtensionExpr,
 } from '../core/nodes';
 import { numAbs, numNeg, ratMod } from '../core/num';
-import { add, couldExtractMinusSign, mul, neg, pow, splitCoeff, sqrt, sympify } from '../core/ops';
+import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt, sympify } from '../core/ops';
 
 export type Evaluator = (x: Expr, ...rest: Expr[]) => Expr | undefined;
 
@@ -235,8 +235,14 @@ const evalTanh: Evaluator = (x) => {
   return undefined;
 };
 
-const evalLog: Evaluator = (x) => {
-  if (x instanceof Special) return x.name === 'nan' ? S.NaN : S.Infinity;
+/** Does e contain a function call (an angle that did not evaluate to a multiple of pi)? */
+const hasFn = (e: Expr): boolean => e instanceof Fn || e.args.some(hasFn);
+
+const evalLog: Evaluator = (x, ...more) => {
+  // log(x, base) written as a call with two arguments (parsed SymPy source)
+  const base = more[0];
+  if (base !== undefined) return log(x, base);
+  if (x instanceof Special) return x.name === 'nan' ? S.NaN : x.name === 'zoo' ? S.ComplexInfinity : S.Infinity;
   if (x instanceof Rational) {
     if (x.isOne) return S.Zero;
     if (x.isZero) return S.ComplexInfinity;
@@ -244,11 +250,17 @@ const evalLog: Evaluator = (x) => {
     if (x.p === 1n && x.q !== 1n) return neg(log(Rational.of(x.q, 1n)));
   }
   if (x instanceof Constant && x.name === 'E') return S.One;
-  if (isI(x)) return mul(S.Half, S.I, S.Pi);
   if (x instanceof Pow && x.base instanceof Constant && x.base.name === 'E' && isReal(x.exp)) return x.exp;
+  // log(+-I*oo) = oo; log(c*I) = log(|c|) +- I*pi/2 for a rational c (SymPy log.eval)
+  if (x.key === mul(S.I, S.Infinity).key || x.key === mul(-1, S.I, S.Infinity).key) return S.Infinity;
+  const [c, rest] = splitCoeff(x);
+  if (isI(rest) && c instanceof Rational) {
+    return c.isNegative ? add(mul(S.NegHalf, S.I, S.Pi), log(numNeg(c))) : add(mul(S.Half, S.I, S.Pi), log(c));
+  }
+  // a + b*I whose argument is a rational multiple of pi
   if (x instanceof Add && x.freeSymbols().size === 0 && !isReal(x) && !x.args.some((a) => a instanceof Float)) {
     const t = arg(x);
-    if (!(t instanceof Fn)) return add(log(abs(x)), mul(S.I, t));
+    if (!hasFn(t)) return add(log(abs(x)), mul(S.I, t));
   }
   return undefined;
 };
@@ -264,6 +276,12 @@ function numericSign(x: Expr): 1 | -1 | undefined {
   } catch {
     return undefined;
   }
+}
+
+/** Is e known to be an even integer (an even integer times an integer)? */
+function isEven(e: Expr): boolean {
+  const [c, r] = splitCoeff(e);
+  return c instanceof Rational && c.isInteger && c.p % 2n === 0n && isIntegerQ(r) === true;
 }
 
 const evalAbs: Evaluator = (x) => {
@@ -290,9 +308,20 @@ const evalAbs: Evaluator = (x) => {
     return mul(...known, ...(unknown.length ? [new Fn('abs', [mul(...unknown)])] : []));
   }
   if (x instanceof Pow) {
+    // SymPy Abs.eval of a power
     const [b, e] = x.args;
     if (b instanceof Constant && b.name === 'E') return pow(b, re(e));
-    if (isReal(e)) return pow(abs(b), e);
+    if (isReal(b) === true) {
+      if (isIntegerQ(e) === true) {
+        if (isEven(e)) return x;
+        if (b instanceof Rational && b.p === -1n && b.q === 1n) return S.One;
+        return pow(abs(b), e);
+      }
+      if (isNonNegative(b) === true) return pow(b, re(e));
+      if (isNegative(b) === true) return mul(pow(neg(b), re(e)), exp(mul(-1, S.Pi, im(e))));
+    }
+    // a complex base: SymPy keeps Abs(x**2); symjs gives Abs(x)**2 (relied on by the transforms code)
+    if (isReal(e) === true) return pow(abs(b), e);
   }
   if (x instanceof Fn && (x.name === 'abs' || x.name === 'conjugate')) return abs(first(x.args));
   // a + b*I with real a, b
@@ -380,6 +409,7 @@ const evalIm: Evaluator = (x) => {
 };
 
 const evalArg: Evaluator = (x) => {
+  if (x instanceof Rational && x.isZero) return S.NaN;
   // SymPy: arg(arg(arg(...))) is nan, and so is arg(arg(r)) for real r
   {
     let a = x;
@@ -415,11 +445,13 @@ const evalArg: Evaluator = (x) => {
     }
   }
   if (isNegative(x)) return S.Pi;
-  if (isI(x)) return mul(S.Half, S.Pi);
   if (x instanceof Pow && x.base instanceof Constant && x.base.name === 'E') {
     const t = im(x.exp);
-    // only safe when the angle lies in (-pi, pi]; leave unevaluated otherwise
-    if (t instanceof Rational && Math.abs(t.value) < Math.PI) return t;
+    // a rational angle reduced into (-pi, pi]
+    if (t instanceof Rational) {
+      const n = Math.round(t.value / (2 * Math.PI));
+      return n === 0 ? t : add(t, mul(-2 * n, S.Pi));
+    }
   }
   return undefined;
 };
@@ -439,9 +471,10 @@ export function conjugate(xx: ExprLike): Expr {
   if (x instanceof Add) return add(...x.args.map(conjugate));
   if (x instanceof Mul) return mul(...x.args.map(conjugate));
   if (x instanceof Pow) {
+    // SymPy Pow._eval_conjugate
     const [b, e] = x.args;
-    if (isReal(e) && (isNonNegative(b) || (e instanceof Rational && e.isInteger))) return pow(conjugate(b), e);
-    if (b instanceof Constant && b.name === 'E') return pow(b, conjugate(e));
+    if (isIntegerQ(e) === true) return pow(conjugate(b), e);
+    if (isPositive(b) === true) return pow(b, conjugate(e));
   }
   if (x instanceof Fn) {
     switch (x.name) {
@@ -454,11 +487,6 @@ export function conjugate(xx: ExprLike): Expr {
       case 'cosh':
       case 'tanh':
         return fn(x.name, [conjugate(first(x.args))]);
-      case 're':
-      case 'im':
-      case 'abs':
-      case 'arg':
-        return x;
       default:
         if (conjugateCommutes.has(x.name)) return fn(x.name, x.args.map(conjugate));
         break;

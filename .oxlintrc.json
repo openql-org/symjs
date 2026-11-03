@@ -100,6 +100,7 @@
                   "../numeric/*",
                   "!../numeric/mpf",
                   "!../numeric/mpfun",
+                  "!../numeric/mpconst",
                   "!../numeric/complex",
                   "../polys/*",
                   "../matrices/*",
@@ -130,6 +131,7 @@
       "files": [
         "packages/symjs/src/numeric/mpf.ts",
         "packages/symjs/src/numeric/mpfun.ts",
+        "packages/symjs/src/numeric/mpconst.ts",
         "packages/symjs/src/numeric/complex.ts"
       ],
       "rules": {
@@ -152,6 +154,7 @@
                   "../numeric/*",
                   "!../numeric/mpf",
                   "!../numeric/mpfun",
+                  "!../numeric/mpconst",
                   "!../numeric/complex",
                   "../polys/*",
                   "../matrices/*",
@@ -172,6 +175,7 @@
                   "./*",
                   "!./mpf",
                   "!./mpfun",
+                  "!./mpconst",
                   "!./complex"
                 ],
                 "allowTypeImports": true,
@@ -273,6 +277,7 @@
       "files": [
         "packages/symjs/src/numeric/mpf.ts",
         "packages/symjs/src/numeric/mpfun.ts",
+        "packages/symjs/src/numeric/mpconst.ts",
         "packages/symjs/src/numeric/complex.ts"
       ],
       "rules": {
@@ -295,6 +300,7 @@
                   "../numeric/*",
                   "!../numeric/mpf",
                   "!../numeric/mpfun",
+                  "!../numeric/mpconst",
                   "!../numeric/complex",
                   "../polys/*",
                   "../matrices/*",
@@ -315,6 +321,7 @@
                   "./*",
                   "!./mpf",
                   "!./mpfun",
+                  "!./mpconst",
                   "!./complex"
                 ],
                 "allowTypeImports": true,

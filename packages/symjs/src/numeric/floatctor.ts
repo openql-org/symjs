@@ -85,7 +85,7 @@ export function float(num: number | bigint | string | Expr, dpsIn?: number | '',
   else if (n instanceof Rational) mpf = F.fromRational(n.p, n.q, prec);
   else if (n instanceof Float) mpf = F.round(n.mpf, prec);
   else {
-    const v = evalAdaptive(n, prec, () => undefined);
+    const v = evalAdaptive(n, prec);
     if (!F.isZero(v[1])) throw new TypeError('Float: the value is not real');
     mpf = v[0];
   }

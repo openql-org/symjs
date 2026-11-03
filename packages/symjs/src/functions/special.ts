@@ -9,7 +9,7 @@
 import { NotImplementedError } from '../core/errors';
 import { at, defined, first, pair } from '../core/guard';
 import '../numeric/mpspecialfns';
-import { isIntegerQ, isNegative, isPositive } from '../core/assumptions';
+import { isIntegerQ, isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
 import type {
   ComplexValue as C,
   Expr,
@@ -33,7 +33,8 @@ import { impl } from '../core/nodes';
 import { c as cx, cadd, cdiv, cexp, clog, cLambertW, cmul, cpow, csin } from '../numeric/complex';
 import { numericFns } from '../numeric/evalf';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { conjugateCommutes, cos, cosh, evaluators, fn, forEachEntry, log, sin, sinh } from './elementary';
+import { expandMul } from '../simplify/expand';
+import { conjugateCommutes, cos, cosh, evaluators, fn, forEachEntry, log, re, sin, sinh } from './elementary';
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -100,6 +101,11 @@ function evalFactorial2(n: Expr): Expr | undefined {
 }
 
 function evalBinomial(n: Expr, k: Expr): Expr | undefined {
+  // SymPy binomial.eval: binomial(n, n) = 1 and binomial(n, n - 1) = n unless n may be a negative integer
+  const d = add(n, neg(k));
+  const generic = isNonNegative(n) === true || isIntegerQ(n) === false;
+  if (generic && d instanceof Rational && d.isZero) return S.One;
+  if (generic && d instanceof Rational && d.isOne) return n;
   if (isInt(k)) {
     if (k.isNegative) return S.Zero;
     if (k.isZero) return S.One;
@@ -118,7 +124,8 @@ function evalBinomial(n: Expr, k: Expr): Expr | undefined {
     if (k.isOne) return n;
     return undefined;
   }
-  if (k.key === n.key && isIntegerQ(n) === true) return S.One;
+  if (isNonNegative(n) === false && isIntegerQ(n) === true) return S.ComplexInfinity;
+  if (k.freeSymbols().size === 0 && !(k instanceof Special)) return mul(fnN('gamma', add(n, 1)), pow(mul(fnN('gamma', add(k, 1)), fnN('gamma', add(d, 1))), -1));
   return undefined;
 }
 
@@ -128,7 +135,8 @@ function evalFF(x: Expr, k: Expr): Expr | undefined {
     if (k.isPositive) return mul(...Array.from({ length: Number(k.p) }, (_, i) => add(x, -i)));
     return mul(...Array.from({ length: Number(-k.p) }, (_, i) => pow(add(x, i + 1), -1)));
   }
-  if (k.key === x.key) return fnN('factorial', x);
+  // SymPy: ff(k, k) = k! for an integer k (both are zoo for a negative integer)
+  if (k.key === x.key && isIntegerQ(k) === true) return fnN('factorial', x);
   return undefined;
 }
 
@@ -193,6 +201,14 @@ function evalCatalan(n: Expr): Expr | undefined {
     const c = factorialBig(2n * n.p) / (factorialBig(n.p) * factorialBig(n.p + 1n));
     return R(c);
   }
+  // SymPy catalan.eval: the gamma formula for a negative non-integer, 0 or -1/2 for a negative integer
+  if (isIntegerQ(n) === false && isNegative(n) === true) {
+    return mul(pow(4, n), fnN('gamma', add(n, S.Half)), pow(mul(sqrt(S.Pi), fnN('gamma', add(n, 2))), -1));
+  }
+  if (isIntegerQ(n) === true && isNegative(n) === true) {
+    if (isNegative(add(n, 1)) === true) return S.Zero;
+    if (n instanceof Rational) return S.NegHalf;
+  }
   return undefined;
 }
 
@@ -219,7 +235,8 @@ function evalLoggamma(x: Expr): Expr | undefined {
     if (x.p <= 2n) return S.Zero;
     return log(R(factorialBig(x.p - 1n)));
   }
-  if (x instanceof Rational && x.q === 2n) return log(gammaHalf((x.p - 1n) / 2n));
+  // positive half-integers only (SymPy loggamma.eval): log(gamma(-5/2)) is not loggamma(-5/2)
+  if (x instanceof Rational && x.q === 2n && x.p > 0n) return log(gammaHalf((x.p - 1n) / 2n));
   // half of a positive integer symbol: log(sqrt(pi)*2**(1 - p)*gamma(p)/gamma((p + 1)/2))
   if (x instanceof Mul && x.args.length === 2 && x.args[0] instanceof Rational && x.args[0].p === 1n && x.args[0].q === 2n) {
     const p = at(x.args, 1);
@@ -231,21 +248,22 @@ function evalLoggamma(x: Expr): Expr | undefined {
   if (isNegOo(x)) return S.ComplexInfinity;
   if (isIntegerQ(x) === true) {
     if (isPositive(x) === true) return log(fnN('gamma', x));
-    if (isNegative(neg(x)) === true || isNegative(x) === true) return S.Infinity;
+    if (isPositive(x) === false) return S.Infinity;
   }
   return undefined;
 }
 
+/** SymPy polygamma.eval. */
 function evalPolygamma(n: Expr, x: Expr): Expr | undefined {
-  if (isOo(x) || isNegOo(x) || isIOo(x) || isNegIOo(x)) {
-    if (n instanceof Rational && n.isZero) return S.Infinity;
-    if (isInt(n) && n.isPositive) return S.Zero;
-  }
-  if (!isInt(n) || n.isNegative) return undefined;
+  const n0 = n instanceof Rational && n.isZero;
+  // polygamma(n, oo) is 0 for n != 0 (SymPy also returns 0 for an n that may be 0; keep that unevaluated)
+  if (isOo(x) && (n0 || isPositive(n) === true || isNegative(n) === true)) return n0 ? S.Infinity : S.Zero;
   if (isInt(x) && !x.isPositive) return S.ComplexInfinity;
+  if (n instanceof Rational && n.p === -1n && n.q === 1n) return add(fnN('loggamma', x), mul(S.NegHalf, log(mul(2, S.Pi))));
+  if (n0 && (isNegOo(x) || isIOo(x) || isNegIOo(x))) return S.Infinity;
+  if (!isInt(n) || n.isNegative) return undefined;
   if (n.isZero) {
     if (isInt(x)) {
-      if (!x.isPositive) return S.ComplexInfinity;
       const h = defined(evalHarmonic(R(x.p - 1n)), 'harmonic number');
       return add(h, mul(-1, S.EulerGamma));
     }
@@ -261,10 +279,15 @@ function evalPolygamma(n: Expr, x: Expr): Expr | undefined {
     const sign = n.p % 2n === 0n ? -1n : 1n;
     return mul(R(sign * factorialBig(n.p)), add(z, mul(-1, partial)));
   }
+  if (x instanceof Rational && x.p === 1n && x.q === 2n) {
+    // (-1)**(n + 1) n! (2**(n + 1) - 1) zeta(n + 1)
+    const sign = n.p % 2n === 0n ? -1n : 1n;
+    return mul(R(sign * factorialBig(n.p) * (2n ** (n.p + 1n) - 1n)), evalZeta(R(n.p + 1n)) ?? fnN('zeta', R(n.p + 1n)));
+  }
   return undefined;
 }
 
-/** digamma(p/q) by Gauss's theorem (SymPy polygamma._eval_expand_func, J. Choi 2007). */
+/** digamma(p/q) (a non-integer p/q) by Gauss's theorem (SymPy polygamma._eval_expand_func, J. Choi 2007). */
 function digammaRational(z: Rational): Expr {
   // the shift to z0 in (0, 1] by the recurrence digamma(x + 1) = digamma(x) + 1/x
   const terms: Expr[] = [];
@@ -278,7 +301,6 @@ function digammaRational(z: Rational): Expr {
     z0 = qAdd(z, R(n));
     for (let k = 0n; k < n; k++) terms.push(mul(-1, pow(numAdd(z0, R(-1n - k)), -1)));
   }
-  if (z0.q === 1n) return add(mul(-1, S.EulerGamma), ...terms);
   // Gauss's digamma theorem for 0 < p < q
   const p = z0.p;
   const q = Number(z0.q);
@@ -316,56 +338,83 @@ function sumSeries(x: Expr, s: number): Expr {
   return add(...terms);
 }
 
-function evalUppergamma(s: Expr, x: Expr): Expr | undefined {
-  if (x instanceof Rational && x.isZero) return evalGamma(s);
-  if (isInt(s)) {
-    if (s.isPositive) {
-      const f = R(factorialBig(s.p - 1n));
-      return mul(f, sumSeries(x, Number(s.p)), exp(neg(x)));
+/** SymPy Add(*[f(k) for k in range(lo, hi)]) for small integer bounds. */
+function sumRange(lo: number, hi: number, f: (k: number) => Expr): Expr {
+  const terms: Expr[] = [];
+  for (let k = lo; k < hi; k++) terms.push(f(k));
+  return add(...terms);
+}
+
+const isHalfInt = (a: Expr): a is Rational => a instanceof Rational && a.q === 2n;
+
+/** SymPy uppergamma.eval (without the branch-factor extraction). */
+function evalUppergamma(a: Expr, z: Expr): Expr | undefined {
+  if (isOo(z)) return S.Zero;
+  if (z instanceof Rational && z.isZero && isPositive(re(a)) === true) return fnN('gamma', a);
+  if (a instanceof Rational) {
+    if (a.isZero && isPositive(z) === true) return neg(fnN('Ei', neg(z)));
+    if (a.isOne) return exp(neg(z));
+    if (a.p === 1n && a.q === 2n) return mul(sqrt(S.Pi), fnN('erfc', sqrt(z)));
+    if (a.isInteger || isHalfInt(a)) {
+      const b = qAdd(a, R(-1));
+      if (b.isPositive) {
+        if (a.isInteger) return mul(exp(neg(z)), R(factorialBig(b.p)), sumSeries(z, Number(a.p)));
+        // gamma(a) erfc(sqrt(z)) + (-1)**(a - 3/2) e^-z sqrt(z) sum_k gamma(-1/2 - k) (-z)**k / gamma(1 - a)
+        const kmax = Number((a.p - 1n) / 2n);
+        return add(
+          mul(fnN('gamma', a), fnN('erfc', sqrt(z))),
+          mul(
+            pow(-1, qAdd(a, R(-3, 2))),
+            exp(neg(z)),
+            sqrt(z),
+            sumRange(0, kmax, (k) => mul(fnN('gamma', R(-1 - 2 * k, 2)), pow(neg(z), k), pow(fnN('gamma', qAdd(S.One, qMul(R(-1), a))), -1))),
+          ),
+        );
+      }
+      if (b.isInteger) return mul(fnN('expint', neg(b), z), pow(z, qAdd(b, S.One)));
+      // (-1)**(1/2 - a) pi erfc(sqrt(z)) / gamma(1 - a) - z**a e^-z sum_k z**k gamma(a) / gamma(a + k + 1)
+      const kmax = Number((1n - a.p) / 2n);
+      return add(
+        mul(pow(-1, qAdd(S.Half, qMul(R(-1), a))), S.Pi, fnN('erfc', sqrt(z)), pow(fnN('gamma', qAdd(S.One, qMul(R(-1), a))), -1)),
+        mul(-1, pow(z, a), exp(neg(z)), sumRange(0, kmax, (k) => mul(pow(z, k), fnN('gamma', a), pow(fnN('gamma', qAdd(a, R(k + 1))), -1)))),
+      );
     }
-    // uppergamma(s, x) = x**s * expint(1 - s, x)
-    return mul(pow(x, s), fnN('expint', R(1n - s.p), x));
-  }
-  if (s instanceof Rational && s.q === 2n) {
-    // start from uppergamma(1/2, x) = sqrt(pi) erfc(sqrt(x)) and use the recurrence
-    let k = R(1n, 2n);
-    let v: Expr = mul(sqrt(S.Pi), fnN('erfc', sqrt(x)));
-    while (numAdd(s, numMul(k, R(-1))).isPositive) {
-      // uppergamma(k + 1) = k uppergamma(k) + x^k e^-x
-      v = add(mul(k, v), mul(pow(x, k), exp(neg(x))));
-      k = qAdd(k, S.One);
-    }
-    while (numAdd(k, numMul(s, R(-1))).isPositive) {
-      // uppergamma(k - 1) = (uppergamma(k) - x^(k-1) e^-x)/(k - 1)
-      const km1 = qAdd(k, R(-1));
-      v = mul(add(v, mul(-1, pow(x, km1), exp(neg(x)))), pow(km1, -1));
-      k = km1;
-    }
-    return v;
   }
   return undefined;
 }
 
-function evalLowergamma(s: Expr, x: Expr): Expr | undefined {
+/** SymPy lowergamma.eval (without the branch-factor extraction). */
+function evalLowergamma(a: Expr, x: Expr): Expr | undefined {
   if (x instanceof Rational && x.isZero) return S.Zero;
-  if (isInt(s) && s.isPositive) {
-    const f = R(factorialBig(s.p - 1n));
-    return add(f, mul(neg(f), sumSeries(x, Number(s.p)), exp(neg(x))));
-  }
-  if (s instanceof Rational && s.q === 2n) {
-    let k = R(1n, 2n);
-    let v: Expr = mul(sqrt(S.Pi), fnN('erf', sqrt(x)));
-    while (numAdd(s, numMul(k, R(-1))).isPositive) {
-      // lowergamma(k + 1) = k lowergamma(k) - x^k e^-x
-      v = add(mul(k, v), mul(-1, pow(x, k), exp(neg(x))));
-      k = qAdd(k, S.One);
+  if (a instanceof Rational) {
+    if (a.isOne) return add(1, neg(exp(neg(x))));
+    if (a.p === 1n && a.q === 2n) return mul(sqrt(S.Pi), fnN('erf', sqrt(x)));
+    if (a.isInteger || isHalfInt(a)) {
+      const b = qAdd(a, R(-1));
+      if (b.isPositive) {
+        if (a.isInteger) {
+          const f = R(factorialBig(b.p));
+          return add(f, mul(-1, exp(neg(x)), f, sumSeries(x, Number(a.p))));
+        }
+        // gamma(a) (lowergamma(1/2, x)/sqrt(pi) - e^-x sum_k x**(k - 1/2) / gamma(1/2 + k))
+        const kmax = Number((a.p + 1n) / 2n);
+        return mul(
+          fnN('gamma', a),
+          add(
+            mul(fnN('lowergamma', S.Half, x), pow(sqrt(S.Pi), -1)),
+            mul(-1, exp(neg(x)), sumRange(1, kmax, (k) => mul(pow(x, R(2 * k - 1, 2)), pow(fnN('gamma', R(2 * k + 1, 2)), -1)))),
+          ),
+        );
+      }
+      if (!a.isInteger) {
+        // (-1)**(1/2 - a) pi erf(sqrt(x)) / gamma(1 - a) + e^-x sum_k x**(k + a - 1) gamma(a) / gamma(a + k)
+        const kmax = Number((3n - a.p) / 2n);
+        return add(
+          mul(pow(-1, qAdd(S.Half, qMul(R(-1), a))), S.Pi, fnN('erf', sqrt(x)), pow(fnN('gamma', qAdd(S.One, qMul(R(-1), a))), -1)),
+          mul(exp(neg(x)), sumRange(1, kmax, (k) => mul(pow(x, qAdd(a, R(k - 1))), fnN('gamma', a), pow(fnN('gamma', qAdd(a, R(k))), -1)))),
+        );
+      }
     }
-    while (numAdd(k, numMul(s, R(-1))).isPositive) {
-      const km1 = qAdd(k, R(-1));
-      v = mul(add(v, mul(pow(x, km1), exp(neg(x)))), pow(km1, -1));
-      k = km1;
-    }
-    return v;
   }
   return undefined;
 }
@@ -420,8 +469,11 @@ function evalErfinv(z: Expr): Expr | undefined {
     if (z.isOne) return S.Infinity;
     if (z.p === -1n && z.q === 1n) return S.NegativeInfinity;
   }
-  if (z instanceof Fn && z.name === 'erf' && z.args[0] !== undefined && isNum(z.args[0])) return z.args[0];
-  return odd('erfinv', z);
+  // erfinv(erf(x)) = x and erfinv(-erf(x)) = -x for real x (SymPy erfinv.eval)
+  if (z instanceof Fn && z.name === 'erf' && isReal(first(z.args)) === true) return first(z.args);
+  const nz = neg(z);
+  if (nz instanceof Fn && nz.name === 'erf' && isReal(first(nz.args)) === true) return neg(first(nz.args));
+  return undefined;
 }
 
 function evalErfcinv(z: Expr): Expr | undefined {
@@ -489,33 +541,24 @@ function evalShi(z: Expr): Expr | undefined {
   return odd('Shi', z);
 }
 
+/** SymPy Ci.eval: the values at 0 (a logarithmic branch point) and at +-oo. */
 function evalCi(z: Expr): Expr | undefined {
-  if (z instanceof Rational && z.isZero) return S.NegativeInfinity;
+  if (z instanceof Rational && z.isZero) return S.ComplexInfinity;
   if (isOo(z)) return S.Zero;
+  if (isNegOo(z)) return mul(S.I, S.Pi);
   return undefined;
 }
 
 function evalChi(z: Expr): Expr | undefined {
-  if (z instanceof Rational && z.isZero) return S.NegativeInfinity;
-  if (isOo(z)) return S.Infinity;
+  if (z instanceof Rational && z.isZero) return S.ComplexInfinity;
+  if (isOo(z) || isNegOo(z)) return S.Infinity;
   return undefined;
 }
 
+/** SymPy expint.eval: E_nu(z) = z**(nu - 1) uppergamma(1 - nu, z) for an integer nu <= 0 or a half-integer nu. */
 function evalExpint(nu: Expr, z: Expr): Expr | undefined {
-  if (isInt(nu)) {
-    if (nu.isZero) return mul(exp(neg(z)), pow(z, -1));
-    if (nu.isNegative) {
-      // E_n = (e^-z - n E_{n+1}) / z, starting from E_0
-      let v: Expr = mul(exp(neg(z)), pow(z, -1));
-      for (let n = -1n; n >= nu.p; n--) {
-        v = add(mul(exp(neg(z)), pow(z, -1)), mul(-n, v, pow(z, -1)));
-      }
-      return v;
-    }
-    return undefined;
-  }
-  if (nu instanceof Rational && nu.p === 1n && nu.q === 2n) {
-    return mul(sqrt(S.Pi), fnN('erfc', sqrt(z)), pow(sqrt(z), -1));
+  if (nu instanceof Rational && ((nu.isInteger && !nu.isPositive) || nu.q === 2n)) {
+    return expandMul(mul(pow(z, add(nu, -1)), fnN('uppergamma', add(1, neg(nu)), z)));
   }
   return undefined;
 }
@@ -546,22 +589,29 @@ function evalSign(x: Expr): Expr | undefined {
   return undefined;
 }
 
-function numericReal(x: Expr): number | undefined {
+function numericComplex(x: Expr): C | undefined {
   if (x.freeSymbols().size > 0) return undefined;
   try {
-    const v = x.toComplex();
-    return Math.abs(v.im) < 1e-300 ? v.re : undefined;
+    return x.toComplex();
   } catch {
     return undefined;
   }
 }
 
+function numericReal(x: Expr): number | undefined {
+  const v = numericComplex(x);
+  return v !== undefined && Math.abs(v.im) < 1e-300 ? v.re : undefined;
+}
+
 function evalFloorCeil(name: 'floor' | 'ceiling', x: Expr): Expr | undefined {
+  // an imaginary argument I*w gives I*floor(w) when floor(w) evaluates
   const w = imagFactor(x);
-  if (w !== undefined && w instanceof Rational) return mul(S.I, evalFloorCeil(name, w) ?? fnN(name, w));
+  const wv = w === undefined || isReal(w) !== true ? undefined : evalFloorCeil(name, w);
+  if (wv !== undefined) return mul(S.I, wv);
   if (x instanceof Add && x.args.length === 2 && x.args[0] instanceof Rational) {
     const iw = imagFactor(at(x.args, 1));
-    if (iw instanceof Rational) return add(defined(evalFloorCeil(name, x.args[0])), mul(S.I, defined(evalFloorCeil(name, iw))));
+    const iv = iw === undefined ? undefined : evalFloorCeil(name, iw);
+    if (iv !== undefined) return add(defined(evalFloorCeil(name, x.args[0])), mul(S.I, iv));
   }
   if (x instanceof Rational) {
     const f = x.p / x.q - (x.p % x.q !== 0n && x.p < 0n ? 1n : 0n);
@@ -575,11 +625,12 @@ function evalFloorCeil(name: 'floor' | 'ceiling', x: Expr): Expr | undefined {
       return add(...ints, fnN(name, add(...x.args.filter((a) => isIntegerQ(a) !== true))));
     }
   }
-  const v = numericReal(x);
-  if (v !== undefined && Number.isFinite(v)) {
-    const r = name === 'floor' ? Math.floor(v) : Math.ceil(v);
+  const v = numericComplex(x);
+  if (v !== undefined && Number.isFinite(v.re) && Number.isFinite(v.im)) {
+    const round = name === 'floor' ? Math.floor : Math.ceil;
     // guard against floating point at integer boundaries
-    if (Math.abs(v - Math.round(v)) > 1e-9) return R(BigInt(r));
+    const clear = (u: number) => Math.abs(u - Math.round(u)) > 1e-9;
+    if (clear(v.re) && (v.im === 0 || clear(v.im))) return add(R(BigInt(round(v.re))), mul(S.I, R(BigInt(round(v.im)))));
   }
   return undefined;
 }
@@ -600,7 +651,7 @@ function evalAtan2(y: Expr, x: Expr): Expr | undefined {
     if (xv > 0) return at;
     if (xv < 0) return yv >= 0 ? add(at, S.Pi) : add(at, neg(S.Pi));
   }
-  if (isPositive(x) === true) return fnN('atan', mul(y, pow(x, -1)));
+  if (isPositive(x) === true && isReal(y) === true) return fnN('atan', mul(y, pow(x, -1)));
   return undefined;
 }
 
@@ -655,7 +706,8 @@ function collapseMinMax(name: 'Min' | 'Max', argsIn: Expr[]): Expr[] {
   const isMM = (e: Expr): e is Fn => e instanceof Fn && (e.name === 'Min' || e.name === 'Max');
   if (!argsIn.some(isMM)) return argsIn;
   const args = [...argsIn];
-  const build = (n: FnName, xs: Expr[]) => new Fn(n, [...xs].sort((u, v) => compareKeys(sortKey(u), sortKey(v))));
+  const build = (n: FnName, xs: Expr[]): Expr =>
+    xs.length === 1 ? first(xs) : new Fn(n, [...xs].sort((u, v) => compareKeys(sortKey(u), sortKey(v))));
   const doIt = (ai: Expr, a: Expr): Expr => {
     if (!isMM(ai)) return ai;
     if (!ai.args.some((t) => t.key === a.key)) return build(ai.name, ai.args.map((t) => doIt(t, a)));
@@ -693,9 +745,30 @@ export function cgamma(z: C): C {
   return r;
 }
 
+/**
+ * loggamma(z), the analytic continuation of log(gamma(z)) to the plane cut
+ * along the negative real axis (mpmath loggamma): not the principal log of
+ * gamma(z). The recurrence loggamma(z) = loggamma(z + 1) - log(z) with
+ * principal logs shifts to Re(w) >= 8, where Stirling's series is used.
+ */
 export function cloggamma(z: C): C {
   if (z.im === 0 && z.re > 0) return cx(Math.log(Math.abs(cgamma(z).re)));
-  return clog(cgamma(z));
+  let acc = cx(0);
+  let w = z;
+  while (w.re < 8) {
+    acc = cadd(acc, clog(w));
+    w = cadd(w, cx(1));
+  }
+  const inv = cdiv(cx(1), w);
+  const inv2 = cmul(inv, inv);
+  // (w - 1/2) log w - w + log(2 pi)/2 + sum B_2k / (2k (2k - 1) w**(2k - 1))
+  let s = cadd(cadd(cmul(cadd(w, cx(-0.5)), clog(w)), cmul(cx(-1), w)), cx(0.5 * Math.log(2 * Math.PI)));
+  let p = inv;
+  for (const k of [1 / 12, -1 / 360, 1 / 1260, -1 / 1680, 1 / 1188, -691 / 360360, 1 / 156]) {
+    s = cadd(s, cmul(cx(k), p));
+    p = cmul(p, inv2);
+  }
+  return cadd(s, cmul(cx(-1), acc));
 }
 
 /** digamma via recurrence and asymptotic series. */
@@ -1127,10 +1200,8 @@ const SPECS: Partial<Record<FnName, Spec>> = {
   Chi: { eval: evalChi, partials: unary((z) => mul(cosh(z), pow(z, -1))), numeric: unary((z) => cSiCi('Chi', z)) },
   expint: {
     eval: evalExpint,
-    partials: binary((nu, z, i) => {
-      if (i === 1) return mul(-1, fnN('expint', add(nu, -1), z));
-      throw new NotImplementedError('diff: expint w.r.t. its order');
-    }),
+    // d/dz only: hyper.ts registers d/dnu (a meijerg expression) on top of this
+    partials: binary((nu, z) => mul(-1, fnN('expint', add(nu, -1), z))),
     numeric: binary((n, z) => cExpint(n.re, z)),
   },
   fresnels: {

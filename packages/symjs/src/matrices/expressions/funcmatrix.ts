@@ -16,6 +16,7 @@ import { parse } from '../../parsing/parser';
 import { latex } from '../../printing/latex';
 import { MatrixExpr, TraceNode, checkDim } from './matexpr';
 import { isInt } from './util';
+import { isIntegerQ } from '../../core/assumptions';
 import { sympify } from '../../core/ops';
 import { at, cast, defined, first, pair } from '../../core/guard';
 
@@ -87,6 +88,8 @@ function dftEntry(n: Expr, k: Expr): Expr {
     // angle -2*pi*r/n in (-pi, pi]
     return mul(exp(mul(Rational.of(-2n * r, N), S.Pi, S.I)), scale);
   }
+  // exp(z)**k = exp(z*k) for an integer k, as SymPy's power of exp evaluates
+  if (isIntegerQ(k) === true) return mul(exp(mul(-2, S.Pi, S.I, k, pow(n, -1))), scale);
   const w = exp(mul(-2, S.Pi, S.I, pow(n, -1)));
   return mul(pow(w, k), scale);
 }

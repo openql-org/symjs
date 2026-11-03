@@ -136,8 +136,7 @@ export class DiagMatrixNode extends MatrixExpr {
     if (vector instanceof MatMulNode) {
       const [c, ms] = vector.asCoeffMatrices();
       if (vector.args.some((a) => !(a instanceof MatrixExpr))) {
-        const inner = MatMulNode.create(ms);
-        const v = inner instanceof MatrixExpr ? inner.doit() : inner;
+        const v = cast(MatMulNode.create(ms), MatrixExpr).doit();
         return doitMul(c, new DiagMatrixNode(v).doit());
       }
     }
@@ -147,8 +146,7 @@ export class DiagMatrixNode extends MatrixExpr {
 }
 
 function doitMul(c: Expr, m: Expr): Expr {
-  const r = MatMulNode.create([c, m]);
-  return r instanceof MatrixExpr ? r.doit() : r;
+  return cast(MatMulNode.create([c, m]), MatrixExpr).doit();
 }
 
 /** SymPy DiagMatrix(vector). */

@@ -95,8 +95,10 @@ export {
   ExactQuotientFailed,
   NotInvertible,
   MatrixError,
+  ShapeError,
   NonSquareMatrixError,
   NonInvertibleMatrixError,
+  NonPositiveDefiniteMatrixError,
   seterr,
 } from './core/errors';
 export { Basic, BasicNode } from './core/basic';

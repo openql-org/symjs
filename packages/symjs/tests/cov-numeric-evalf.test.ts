@@ -1,0 +1,125 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
+
+// Expected values from SymPy 1.14 / mpmath 1.3 (evalf with subs, toComplex, lambdify).
+
+import { describe, expect, it } from 'vitest';
+import * as sj from '../src';
+import type { Expr } from '../src';
+
+const { parse, sstr, evalf } = sj;
+const p = (s: string) => parse(s);
+const x = new sj.Sym('x');
+const y = new sj.Sym('y');
+
+describe('evalf with substituted values (mpmath functions)', () => {
+  const z = p('2 + 3*I');
+  const cases: [string, string][] = [
+    ['Abs(x)', '3.6055512754639892931'],
+    ['re(x)', '2.0000000000000000000'],
+    ['im(x)', '3.0000000000000000000'],
+    ['arg(x)', '0.98279372324732906799'],
+    ['conjugate(x)', '2.0 - 3.0*I'],
+    ['sign(x)', '0.55470019622522912202 + 0.83205029433784368303*I'],
+    ['log(x, 2)', '1.8502198590705460802 + 1.4178716307457219966*I'],
+  ];
+  it('evaluates at a complex point', () => {
+    for (const [e, want] of cases) expect([e, sstr(evalf(p(e), 20, { subs: { x: z } }))]).toEqual([e, want]);
+  });
+  it('real arguments and constants', () => {
+    expect(sstr(evalf(p('sign(x)'), 20, { subs: { x: -3 } }))).toBe('-1.0000000000000000000');
+    expect(sstr(evalf(p('atan2(x, 2)'), 20, { subs: { x: 1 } }))).toBe('0.46364760900080611621');
+    expect(sstr(evalf(p('TribonacciConstant'), 20))).toBe('1.8392867552141611326');
+    expect(sstr(evalf(p('log(3, 2)'), 20))).toBe('1.5849625007211561815');
+    expect(sstr(evalf(p('x + pi'), 20, { subs: { x: p('sqrt(2)') } }))).toBe('4.5558062159628882873');
+    expect(sstr(evalf(p('x + pi'), { x: 0.5 }))).toBe('3.64159265358979');
+    expect(sstr(evalf(p('x + pi'), new Map<Expr | string, number>([[x, 0.5]])))).toBe('3.64159265358979');
+    expect(sstr(evalf(p('x + pi'), new Map<Expr | string, number>([['x', 0.5]])))).toBe('3.64159265358979');
+    expect(sstr(evalf(p('x*y'), new Map<Expr | string, number>([[p('x*y'), 0.5]])))).toBe('x*y');
+    expect(sstr(evalf(p('x + y'), { x: { re: 1, im: 2 }, y: 1 }))).toBe('2.0 + 2.0*I');
+  });
+  it('functions without a dedicated arbitrary-precision routine', () => {
+    const ev = (e: string, v: Expr) => sstr(evalf(p(e), 20, { subs: { x: v } }));
+    expect(ev('floor(x)', p('5/2'))).toBe('2.0000000000000000000');
+    expect(ev('ceiling(x)', p('5/2'))).toBe('3.0000000000000000000');
+    expect(ev('Max(x, 1)', p('5/2'))).toBe('2.5000000000000000000');
+    expect(ev('binomial(x, 2)', p('5/2'))).toBe('1.8750000000000000000');
+    expect(ev('binomial(x, 3)', p('2 + I'))).toBe('-0.5 + 0.16666666666666666667*I');
+    expect(sstr(evalf(p('binomial(x, y)'), 20, { subs: { x: p('5/2'), y: p('1/3') } }))).toBe('1.5870083613413584686');
+    expect(ev('factorial2(x)', p('5'))).toBe('15.000000000000000000');
+    // a pole stays unevaluated (SymPy returns yn(0, x) unchanged; symjs keeps the
+    // substituted argument, yn(0, 0))
+    expect(ev('yn(0, x)', p('0'))).toMatch(/^yn\(0, [x0]\)$/);
+    // the double-precision value is infinite: SymPy gives oo, symjs leaves the function unevaluated
+    expect(ev('expint(1, x)', p('0'))).toMatch(/^expint\(1(\.0)?, [x0]\)$/);
+    expect(ev('Min(x, 2)', p('1/2'))).toBe('0.50000000000000000000');
+    // SymPy leaves erf2inv(x, -1) and subfactorial(x) unevaluated; symjs keeps the
+    // substituted arguments (erf2inv is infinite there in double precision)
+    expect(sstr(evalf(p('erf2inv(x, y)'), 20, { subs: { x: p('-1'), y: p('-1') } }))).toMatch(/^erf2inv\(/);
+    expect(ev('subfactorial(x)', p('1/2'))).toMatch(/^subfactorial\(/);
+  });
+  it('chops small parts', () => {
+    // SymPy N(e, chop=...)
+    const ch = (e: string, chop: boolean | number) => sstr(evalf(p(e), 15, { chop }));
+    expect(ch('exp(-100)', true)).toBe('0');
+    expect(ch('exp(-100) + I', true)).toBe('1.0*I');
+    expect(ch('I*exp(-100) + 2', true)).toBe('2.00000000000000');
+    expect(ch('exp(-100)*(1 + I)', true)).toBe('0');
+    expect(ch('exp(-10)', 1e-3)).toBe('0');
+    expect(ch('exp(-10) + I*exp(-2)', 1e-3)).toBe('0.135335283236613*I');
+    expect(sstr(evalf(p('Catalan + EulerGamma'), 20))).toBe('1.4931812590787518757');
+    expect(sstr(evalf(p('x*GoldenRatio'), 30, { subs: { x: 1 } }))).toBe('1.61803398874989484820458683437');
+  });
+  it('keeps unevaluable parts symbolic', () => {
+    // SymPy: (-x**2 + pi).evalf() = 3.14159265358979 - x**2; (x**3).evalf() = x**3
+    expect(sstr(evalf(p('-x**2*y + pi')))).toBe('-x**2*y + 3.14159265358979');
+    expect(sstr(evalf(p('x**3')))).toBe('x**3');
+  });
+});
+
+describe('toComplex', () => {
+  it('evaluates in double precision', () => {
+    const v = sj.toComplex(p('x**2 + sin(y)'), { x: 2, y: 0 });
+    expect([v.re, v.im]).toEqual([4, 0]);
+    const w = sj.toComplex(p('Abs(x) + re(x) + im(x) + arg(1) + conjugate(x)'), { x: { re: 3, im: 4 } });
+    expect([w.re, w.im]).toEqual([5 + 3 + 4 + 3, -4]);
+    expect(sj.toComplex(p('E + EulerGamma')).re).toBeCloseTo(3.29549749336058, 14);
+    expect(sj.toComplex(p('arg(x)'), { x: { re: 0, im: 2 } }).re).toBeCloseTo(Math.PI / 2, 15);
+    expect(sj.toComplex(p('x**2'), { x: p('sqrt(2)') }).re).toBeCloseTo(2, 14);
+    expect(() => sj.toComplex(p('subfactorial(x)'), { x: 0.5 })).toThrow(TypeError);
+    expect(sj.toComplex(p('oo')).re).toBe(Infinity);
+    expect(() => sj.toComplex(p('x'))).toThrow(TypeError);
+    expect(() => sj.toComplex(p('x'), { y: 1 })).toThrow(TypeError);
+    expect(() => sj.toComplex(p('gamma(x)'), { x: 1 })).not.toThrow();
+    expect(() => sj.toComplex(p('f(x)'), { x: 1 })).toThrow(TypeError);
+    expect(() => sj.toComplex(sj.Eq(x, 1), { x: 1 })).toThrow(TypeError);
+  });
+  it('evaluates Piecewise conditions', () => {
+    const pw = (cond: Expr) => sj.Piecewise([1, cond], [2, true]);
+    const ev = (e: Expr, v: number) => sj.toComplex(e, { x: v }).re;
+    // SymPy: Piecewise((1, cond), (2, True)).subs(x, v)
+    expect([ev(pw(sj.Gt(x, 0)), 1), ev(pw(sj.Gt(x, 0)), 0)]).toEqual([1, 2]);
+    expect([ev(pw(sj.Ge(x, 0)), 0), ev(pw(sj.Ge(x, 0)), -1)]).toEqual([1, 2]);
+    expect([ev(pw(sj.Lt(x, 0)), -1), ev(pw(sj.Lt(x, 0)), 0)]).toEqual([1, 2]);
+    expect([ev(pw(sj.Le(x, 0)), 0), ev(pw(sj.Le(x, 0)), 1)]).toEqual([1, 2]);
+    expect([ev(pw(sj.Eq(x, 0)), 0), ev(pw(sj.Eq(x, 0)), 1)]).toEqual([1, 2]);
+    expect([ev(pw(sj.Ne(x, 0)), 1), ev(pw(sj.Ne(x, 0)), 0)]).toEqual([1, 2]);
+    expect(() => ev(sj.Piecewise([1, sj.Gt(x, 0)]), -1)).toThrow(RangeError);
+    expect(() => ev(sj.Piecewise([1, sj.And(sj.Gt(x, 0), sj.Lt(x, 2))], [2, true]), 1)).toThrow(TypeError);
+  });
+});
+
+describe('lambdify', () => {
+  it('checks its arguments', () => {
+    const f = sj.lambdify(p('x + y'), [x, y]);
+    expect(f(1, 2).re).toBe(3);
+    expect(() => f(1)).toThrow(RangeError);
+    expect(() => sj.lambdify(p('x + z'), [x, y])).toThrow(TypeError);
+    const X = new sj.DeferredVector('X');
+    const g = sj.lambdify(sj.add(X.at(1), x), [X, x]);
+    expect(() => g(1, 2)).toThrow(RangeError);
+    expect(g([5, 7], 1).re).toBe(8);
+    // a symbol named like an entry of a vector that is not a parameter
+    expect(() => sj.lambdify(new sj.Sym('Y[0]'), [x])).toThrow(TypeError);
+  });
+});

@@ -12,90 +12,11 @@ import { at } from '../core/guard';
 import * as F from './mpf';
 import type { Mpf } from './mpf';
 import { ONE, ZERO } from './mpf';
+import { aperyFixed, catalanFixed, eFixed, eulerFixed, gamma13Fixed, gamma14Fixed, ln10Fixed, ln2Fixed, lnIntFixed, phiFixed, piFixed, zeta5Fixed } from './mpconst';
 
 // ---------------------------------------------------------------------------
-// Constants (fixed point, cached)
+// Constants (fixed point by binary splitting in mpconst.ts, cached there)
 // ---------------------------------------------------------------------------
-
-/** Cache a fixed-point constant computed at the largest precision requested so far. */
-function cachedFixed(compute: (prec: number) => bigint): (prec: number) => bigint {
-  let bestPrec = -1;
-  let best = 0n;
-  return (prec) => {
-    if (prec > bestPrec) {
-      const p = Math.max(prec, Math.ceil(bestPrec * 1.5), 128) + 20;
-      best = compute(p);
-      bestPrec = p;
-    }
-    return best >> BigInt(bestPrec - prec);
-  };
-}
-
-/** atan(1/n) as fixed point. */
-function acotFixed(n: bigint, prec: number, hyperbolic = false): bigint {
-  const one = 1n << BigInt(prec);
-  let s = 0n;
-  let t = one / n;
-  const n2 = n * n;
-  let k = 1n;
-  let sgn = 1n;
-  while (t !== 0n) {
-    s += (sgn * t) / k;
-    t /= n2;
-    k += 2n;
-    if (!hyperbolic) sgn = -sgn;
-  }
-  return s;
-}
-
-export const piFixed = cachedFixed((p) => {
-  const wp = p + 10;
-  return (16n * acotFixed(5n, wp) - 4n * acotFixed(239n, wp)) >> 10n;
-});
-
-export const ln2Fixed = cachedFixed((p) => {
-  const wp = p + 10;
-  return (18n * acotFixed(26n, wp, true) - 2n * acotFixed(4801n, wp, true) + 8n * acotFixed(8749n, wp, true)) >> 10n;
-});
-
-export const eulerFixed = cachedFixed((p0) => {
-  const extra = 30;
-  const prec = p0 + extra;
-  const p = Math.floor(Math.log2((prec / 4) * Math.LN2)) + 1;
-  const n = 1n << BigInt(p);
-  const n2 = n * n;
-  let A = -BigInt(p) * ln2Fixed(prec);
-  let U = A;
-  let B = 1n << BigInt(prec);
-  let V = B;
-  let k = 1n;
-  for (;;) {
-    B = (B * n2) / (k * k);
-    A = ((A * n2) / k + B) / k;
-    U += A;
-    V += B;
-    const aa = A < 0n ? -A : A;
-    if (aa < 100n && B < 100n) break;
-    k += 1n;
-  }
-  return (U << BigInt(prec - extra)) / V;
-});
-
-export const catalanFixed = cachedFixed((p) => {
-  const prec = p + 20;
-  let a = 1n << BigInt(prec);
-  let s = 0n;
-  let t = 1n;
-  let n = 1n;
-  while (t !== 0n) {
-    a *= 32n * n ** 3n * (2n * n - 1n);
-    a /= (3n - 16n * n + 16n * n * n) ** 2n;
-    t = (a * (n % 2n === 1n ? 1n : -1n) * (40n * n * n - 24n * n + 3n)) / (n ** 3n * (2n * n - 1n));
-    s += t;
-    n += 1n;
-  }
-  return s >> 26n;
-});
 
 const fromFx = (x: bigint, wp: number, prec: number): Mpf => F.fromFixed(x, wp, prec);
 
@@ -112,12 +33,58 @@ export function mpCatalan(prec: number): Mpf {
   return fromFx(catalanFixed(prec + 10), prec + 10, prec);
 }
 export function mpE(prec: number): Mpf {
-  return exp(ONE, prec);
+  return fromFx(eFixed(prec + 10), prec + 10, prec);
 }
 export function mpPhi(prec: number): Mpf {
-  const wp = prec + 10;
-  return F.round(F.ldexp(F.add(ONE, F.sqrt(F.fromInt(5n), wp), wp), -1), prec);
+  return fromFx(phiFixed(prec + 10), prec + 10, prec);
 }
+export function mpLn10(prec: number): Mpf {
+  return fromFx(ln10Fixed(prec + 10), prec + 10, prec);
+}
+/** Apery's constant zeta(3). */
+export function mpApery(prec: number): Mpf {
+  return fromFx(aperyFixed(prec + 10), prec + 10, prec);
+}
+/** zeta(5). */
+export function mpZeta5(prec: number): Mpf {
+  return fromFx(zeta5Fixed(prec + 10), prec + 10, prec);
+}
+
+/**
+ * Gamma(p/q) for q = 3 or 4 from Gamma(1/3) or Gamma(1/4) (binary splitting
+ * in mpconst.ts), the reflection formula for 2/3 and 3/4
+ * (Gamma(2/3) = 2 pi / (sqrt 3 Gamma(1/3)), Gamma(3/4) = pi sqrt 2 / Gamma(1/4))
+ * and the exact product of the shifts Gamma(x + 1) = x Gamma(x), for
+ * |p/q| < 1000; undefined otherwise (other q, or p/q a non-positive integer).
+ */
+export function mpGammaRational(p: bigint, q: bigint, prec: number): Mpf | undefined {
+  if (q !== 3n && q !== 4n) return undefined;
+  const r = ((p % q) + q) % q;
+  if (r === 0n) return undefined;
+  const n = (p - r) / q;
+  if (n > 1000n || n < -1000n) return undefined;
+  const wp = prec + 20;
+  const base = q === 3n ? gamma13Fixed : gamma14Fixed;
+  let g = fromFx(base(wp + 10), wp + 10, wp);
+  if (2n * r > q) {
+    // reflection: Gamma(1 - x) = pi / (sin(pi x) Gamma(x)) with sin(pi/3) = sqrt 3 / 2, sin(pi/4) = 1/sqrt 2
+    const s = q === 3n ? F.div(F.sqrt(F.fromInt(3n), wp), F.fromInt(2n), wp) : F.div(ONE, F.sqrt(F.fromInt(2n), wp), wp);
+    g = F.div(mpPi(wp), F.mul(s, g, wp), wp);
+  }
+  // Gamma(r/q + n) = Gamma(r/q) prod_{i<n} (r + iq)/q, Gamma(r/q - n) = Gamma(r/q) / prod_{i=1}^{n} (r - iq)/q
+  let num = 1n;
+  let den = 1n;
+  for (let i = 0n; i < n; i++) {
+    num *= r + i * q;
+    den *= q;
+  }
+  for (let i = 1n; i <= -n; i++) {
+    num *= q;
+    den *= r - i * q;
+  }
+  return F.div(F.mul(g, F.fromInt(num)), F.fromInt(den), prec);
+}
+
 export function mpTribonacci(prec: number): Mpf {
   const wp = prec + 15;
   const s33 = F.mul(F.fromInt(3n), F.sqrt(F.fromInt(33n), wp), wp);
@@ -139,13 +106,17 @@ export function nthRoot(x: Mpf, n: bigint, prec: number): Mpf {
   let shift = Math.max(0, N * (prec + 4) - F.bitLength(x.man));
   while ((((x.exp - shift) % N) + N) % N !== 0) shift++;
   const m = x.man << BigInt(shift);
-  let r = iroot(m, n);
+  const r = iroot(m, n);
   const exact = r ** n === m;
   return F.normalize(r, (x.exp - shift) / N, prec, !exact);
 }
 
+/**
+ * floor(m**(1/n)) for m >= 1 by Newton's iteration from above: by the AM-GM
+ * inequality every iterate stays >= the root, and it decreases until it
+ * reaches it, so the result needs no correction.
+ */
 function iroot(m: bigint, n: bigint): bigint {
-  if (m < 2n) return m;
   const bl = F.bitLength(m);
   let x = 1n << BigInt(Math.ceil(bl / Number(n)) + 1);
   for (;;) {
@@ -153,8 +124,6 @@ function iroot(m: bigint, n: bigint): bigint {
     if (y >= x) break;
     x = y;
   }
-  while (x ** n > m) x--;
-  while ((x + 1n) ** n <= m) x++;
   return x;
 }
 
@@ -189,22 +158,6 @@ export function exp(x: Mpf, prec: number): Mpf {
   return F.normalize(sum, -wp2 + Number(n), prec);
 }
 
-/** exp(x) - 1 with relative accuracy for small x. */
-export function expm1(x: Mpf, prec: number): Mpf {
-  if (F.isZero(x)) return ZERO;
-  const mg = F.mag(x);
-  if (mg > -2) return F.sub(exp(x, prec + 10), ONE, prec);
-  const wp = prec + 10;
-  let term = x;
-  let sum = x;
-  for (let k = 2n; ; k++) {
-    term = F.div(F.mul(term, x, wp), F.fromInt(k), wp);
-    if (F.isZero(term) || F.mag(term) < F.mag(sum) - wp) break;
-    sum = F.add(sum, term, wp);
-  }
-  return F.round(sum, prec);
-}
-
 export function log(x: Mpf, prec: number): Mpf {
   if (x.man <= 0n) throw new RangeError('log of non-positive');
   // x = m * 2**k with m in [1/sqrt2, sqrt2)
@@ -215,6 +168,8 @@ export function log(x: Mpf, prec: number): Mpf {
     k += 1;
   }
   if (F.cmp(m, ONE) === 0) return k === 0 ? ZERO : F.round(F.mulInt(mpLn2(prec + 10), BigInt(k)), prec);
+  // a small integer: the logarithms of its prime factors by binary splitting (mpconst.ts)
+  if (x.exp >= 0 && F.bitLength(x.man) + x.exp <= 16) return fromFx(lnIntFixed(x.man << BigInt(x.exp), prec + 10), prec + 10, prec);
   const wp0 = prec + 20;
   const d = F.sub(m, ONE);
   const wp = wp0 + Math.max(0, -F.mag(d));

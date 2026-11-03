@@ -264,7 +264,7 @@ export function asCoeffMul(eIn: ExprLike, deps: readonly Expr[] = []): [Expr, Ex
   }
   if (isNum(e)) return [e, []];
   if (e instanceof Mul && at(e.args, 0).isNumber) return [at(e.args, 0), [...e.args.slice(1)]];
-  return [S.One, [e]];
+  return [S.One, e instanceof Mul ? [...e.args] : [e]];
 }
 
 /** SymPy `primitive()`: [content, primitive] with rational content. */
@@ -381,8 +381,8 @@ export function extractMultiplicatively(eIn: ExprLike, cIn: ExprLike): Expr | un
     if (!cc.isOne) c = new Mul([cc, pc]);
   }
   if (c instanceof Mul) {
-    const [a, ...rest] = c.args;
-    if (a === undefined) return undefined;
+    const a = at(c.args, 0);
+    const rest = c.args.slice(1);
     const b = rest.length === 1 ? at(rest, 0) : new Mul(rest);
     const x = extractMultiplicatively(e, a);
     return x === undefined ? undefined : extractMultiplicatively(x, b);
@@ -859,15 +859,35 @@ export function dummyEq(aIn: ExprLike, bIn: ExprLike, symbol?: Expr): boolean {
   return xreplaceM(a, [[d, target]]).key === b.key;
 }
 
-/** Singular points of one-argument functions (SymPy Function._singularities). */
-const SINGULARITIES: Record<string, string[]> = {
-  log: ['0', 'zoo'],
-  sin: ['zoo'],
-  cos: ['zoo'],
-  sinh: ['zoo'],
-  cosh: ['zoo'],
-  erf: ['zoo'],
+/**
+ * Singular points of one-argument functions (SymPy Function._singularities;
+ * 'zoo' stands for the point at infinity). sinh, cosh and erf are entire,
+ * which SymPy leaves undecided.
+ */
+const SINGULARITIES: Record<string, (() => Expr)[] | undefined> = {
+  log: [() => S.Zero, () => S.ComplexInfinity],
+  sin: [() => S.ComplexInfinity],
+  cos: [() => S.ComplexInfinity],
+  tan: [() => S.ComplexInfinity],
+  cot: [() => S.ComplexInfinity],
+  gamma: [() => S.ComplexInfinity],
+  atan: [() => S.I, () => mul(-1, S.I)],
+  sinh: [() => S.ComplexInfinity],
+  cosh: [() => S.ComplexInfinity],
+  erf: [() => S.ComplexInfinity],
 };
+
+const NOWHERE_HOLOMORPHIC = new Set(['abs', 're', 'im', 'arg', 'conjugate', 'sign']);
+
+/** Is e zero: exact for numbers, decided numerically for other constants (a nonzero value), else assumptions. */
+function isZeroValue(e: Expr): boolean | undefined {
+  if (isZeroE(e)) return true;
+  if (freeSymbols(e).size === 0 && !(e instanceof Special)) {
+    const c = e.toComplex();
+    if (c.re !== 0 || c.im !== 0) return false;
+  }
+  return isZeroQ(e);
+}
 
 /** SymPy is_meromorphic(x, a): true/false/undefined. */
 export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | undefined {
@@ -897,15 +917,22 @@ export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | un
       return !isZoo(subsAt(t.exp));
     }
     if (t instanceof Fn) {
-      if (t.args.slice(1).some((u) => u.has(x))) return undefined;
+      if (t.args.slice(1).some((u) => u.has(x))) return false;
       const arg0 = at(t.args, 0);
       if (!go(arg0)) return undefined;
+      // not holomorphic anywhere (SymPy _singularities = True)
+      if (NOWHERE_HOLOMORPHIC.has(t.name)) return false;
       const sing = SINGULARITIES[t.name];
       if (!sing) return undefined;
+      // SymPy is_singular: fuzzy_or over the singular points, negated
       const v = subsAt(arg0);
-      const k = v instanceof Special ? v.name === 'zoo' || v.name === 'oo' || v.name === '-oo' ? 'zoo' : v.name : v instanceof Rational ? v.toString() : undefined;
-      if (k === undefined) return undefined;
-      return !sing.includes(k);
+      let unknown = false;
+      for (const s of sing.map((p) => p())) {
+        const hit = s instanceof Special ? (isZoo(v) ? true : freeSymbols(v).size === 0 ? false : undefined) : isZeroValue(add(v, mul(-1, s)));
+        if (hit === true) return false;
+        if (hit !== false) unknown = true;
+      }
+      return unknown ? undefined : true;
     }
     return undefined;
   };

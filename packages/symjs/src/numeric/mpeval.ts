@@ -10,7 +10,7 @@
  * cancellation.
  */
 
-import type { Expr } from '../core/nodes';
+import type { ConstantName, Expr } from '../core/nodes';
 import { Add, Constant, ExtensionExpr, Float, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { add, mul } from '../core/ops';
 import { at } from '../core/guard';
@@ -73,34 +73,32 @@ export function setDoubleFallback(f: typeof doubleFallback): void {
   doubleFallback = f;
 }
 
-function constant(name: string, prec: number): Mpc {
-  switch (name) {
-    case 'pi':
-      return [M.mpPi(prec), ZERO];
-    case 'E':
-      return [M.mpE(prec), ZERO];
-    case 'I':
-      return M.CI;
-    case 'EulerGamma':
-      return [M.mpEuler(prec), ZERO];
-    case 'Catalan':
-      return [M.mpCatalan(prec), ZERO];
-    case 'GoldenRatio':
-      return [M.mpPhi(prec), ZERO];
-    case 'TribonacciConstant':
-      return [M.mpTribonacci(prec), ZERO];
-  }
-  throw new TypeError(`unknown constant ${name}`);
-}
+const CONSTANTS: Record<ConstantName, (prec: number) => Mpc> = {
+  pi: (prec) => [M.mpPi(prec), ZERO],
+  E: (prec) => [M.mpE(prec), ZERO],
+  I: () => M.CI,
+  EulerGamma: (prec) => [M.mpEuler(prec), ZERO],
+  Catalan: (prec) => [M.mpCatalan(prec), ZERO],
+  GoldenRatio: (prec) => [M.mpPhi(prec), ZERO],
+  TribonacciConstant: (prec) => [M.mpTribonacci(prec), ZERO],
+};
+
+/**
+ * The value of a symbol at working precision wp, or undefined; the default
+ * serves expressions without free symbols (no symbol has a value).
+ */
+export type SymbolLookup = (s: Sym, wp: number) => Mpc | undefined;
+
+const noValue = (): Mpc | undefined => undefined;
 
 /** Evaluate at working precision wp (each operation rounded to wp bits). */
-export function evalMp(e: Expr, wp: number, lookup: (s: Sym) => Mpc | undefined): Mpc {
+export function evalMp(e: Expr, wp: number, lookup: SymbolLookup = noValue): Mpc {
   const ev = (x: Expr): Mpc => {
     if (x instanceof Rational) return [x.q === 1n ? F.fromInt(x.p) : F.fromRational(x.p, x.q, wp), ZERO];
     if (x instanceof Float) return [x.mpf, ZERO];
-    if (x instanceof Constant) return constant(x.name, wp);
+    if (x instanceof Constant) return CONSTANTS[x.name](wp);
     if (x instanceof Sym) {
-      const v = lookup(x);
+      const v = lookup(x, wp);
       if (v === undefined) throw new TypeError(`no value for ${x.name}`);
       return v;
     }
@@ -125,6 +123,12 @@ export function evalMp(e: Expr, wp: number, lookup: (s: Sym) => Mpc | undefined)
       return M.cpow(b, ev(x.exp), wp);
     }
     if (x instanceof Fn) {
+      // Gamma at thirds and quarters from Gamma(1/3), Gamma(1/4) by binary splitting
+      const a0 = x.args[0];
+      if (x.name === 'gamma' && x.args.length === 1 && a0 instanceof Rational) {
+        const g = M.mpGammaRational(a0.p, a0.q, wp);
+        if (g !== undefined) return [g, ZERO];
+      }
       const args = x.args.map(ev);
       const f = mpFns[x.name];
       if (f) return f(args, wp);
@@ -157,7 +161,7 @@ function negligible(x: Mpf, ref: number, wp: number): boolean {
  * successive evaluations agree. Parts that vanish relative to the other
  * part (cancellation to zero) are returned as exact zeros.
  */
-export function evalAdaptive(e: Expr, prec: number, lookup: (s: Sym) => Mpc | undefined): Mpc {
+export function evalAdaptive(e: Expr, prec: number, lookup: SymbolLookup = noValue): Mpc {
   let wp = prec + 20;
   let prev = evalMp(e, wp, lookup);
   for (let i = 0; i < 8; i++) {

@@ -128,10 +128,10 @@ function genSieveArray(M: number, fb: readonly FactorBaseElem[]): Float64Array {
   const arr = new Float64Array(2 * M + 1);
   for (const f of fb) {
     if (f.soln1 === undefined) continue;
-    // idx < 2M < arr.length, so the elements exist (`?? 0` only satisfies the index type)
-    for (let idx = (M + f.soln1) % f.p; idx < 2 * M; idx += f.p) arr[idx] = (arr[idx] ?? 0) + f.logP;
+    // idx < 2M < arr.length, so the elements exist
+    for (let idx = (M + f.soln1) % f.p; idx < 2 * M; idx += f.p) arr[idx] = at(arr, idx) + f.logP;
     if (f.p === 2) continue;
-    for (let idx = (M + f.soln2) % f.p; idx < 2 * M; idx += f.p) arr[idx] = (arr[idx] ?? 0) + f.logP;
+    for (let idx = (M + f.soln2) % f.p; idx < 2 * M; idx += f.p) arr[idx] = at(arr, idx) + f.logP;
   }
   return arr;
 }
@@ -252,6 +252,8 @@ export function qsFactor(NIn: IntLike, primeBoundIn: IntLike, MIn: IntLike, opts
       e++;
     }
     factors.set(2n, e);
+    // a power of 2 is done (SymPy's qs_factor(4) never returns)
+    if (N === 1n) return factors;
   }
   if (isprime(N)) {
     factors.set(N, 1n);
@@ -297,5 +299,6 @@ export function qsFactor(NIn: IntLike, primeBoundIn: IntLike, MIn: IntLike, opts
  * in increasing order.
  */
 export function qs(N: IntLike, primeBound: IntLike, M: IntLike, opts: QsOptions = {}): Set<bigint> {
-  return new Set([...qsFactor(N, primeBound, M, opts).keys()].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)));
+  // increasing (the sign of a - b; a huge difference becomes an infinity of that sign)
+  return new Set([...qsFactor(N, primeBound, M, opts).keys()].sort((a, b) => Number(a - b)));
 }

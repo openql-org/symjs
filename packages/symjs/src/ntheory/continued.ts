@@ -10,7 +10,7 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Mul, Pow, Rational, S } from '../core/nodes';
+import { Add, Float, Mul, Pow, Rational, S } from '../core/nodes';
 import { add, div, mul, sqrt, sub, sympify } from '../core/ops';
 import { asNumerDenom } from '../core/methods';
 import { gcd, lcm } from '../core/numbers';
@@ -26,17 +26,15 @@ export type ContinuedFraction = (bigint | bigint[])[];
 
 const sgn = (x: bigint): bigint => (x < 0n ? -1n : x > 0n ? 1n : 0n);
 
-/** floor((P + S*sqrt(d)) / q) for a non-square d > 0 and q != 0. */
+/** floor((P + S*sqrt(d)) / q) for a non-square d > 0, S != 0 and q != 0. */
 function floorQuad(P: bigint, Sc: bigint, d: bigint, q: bigint): bigint {
-  if (Sc === 0n) return fdiv(P, q);
   const t = isqrt(Sc * Sc * d);
   const L = Sc > 0n ? P + t : P - t - 1n;
   return q > 0n ? fdiv(L, q) : fdiv(L + 1n, q);
 }
 
-/** The sign of P + S*sqrt(d) for d > 0 not a square. */
+/** The sign of P + S*sqrt(d) for d > 0 not a square and S != 0. */
 function signQuad(P: bigint, Sc: bigint, d: bigint): bigint {
-  if (Sc === 0n) return sgn(P);
   if (sgn(P) === sgn(Sc) || P === 0n) return sgn(Sc);
   return Sc * Sc * d > P * P ? sgn(Sc) : sgn(P);
 }
@@ -130,6 +128,15 @@ export function continuedFraction(a: ExprLike): ContinuedFraction {
   throw new RangeError(`expecting a rational or quadratic irrational, not ${e.toString()}`);
 }
 
+/** SymPy Integer(int(floor(x))): floor(x) as a bigint, also when floor leaves an integral Float. */
+function floorInt(x: Expr): bigint {
+  const i = floorFn(x);
+  if (isInt(i)) return i.p;
+  // an integral Float is normalized to an odd mantissa (or 0) with exp >= 0
+  if (i instanceof Float) return i.mpf.man << BigInt(i.mpf.exp);
+  throw new NotImplementedError(`cannot compute floor(${x.toString()})`);
+}
+
 /** The terms of the continued fraction of x (SymPy continued_fraction_iterator); infinite for irrational x. */
 export function* continuedFractionIterator(xIn: ExprLike): Generator<bigint, void, undefined> {
   const x0 = sympify(xIn);
@@ -146,11 +153,10 @@ export function* continuedFractionIterator(xIn: ExprLike): Generator<bigint, voi
   }
   let x: Expr = x0;
   for (;;) {
-    const i = floorFn(x);
-    if (!isInt(i)) throw new NotImplementedError(`cannot compute floor(${x.toString()})`);
-    yield i.p;
+    const i = floorInt(x);
+    yield i;
     x = sub(x, i);
-    if (x instanceof Rational && x.p === 0n) return;
+    if ((x instanceof Rational || x instanceof Float) && x.isZero) return;
     x = div(1, x);
   }
 }
@@ -243,6 +249,8 @@ export function continuedFractionReduce(cf: readonly (ExprLike | bigint | readon
   if (Q.p === 0n) throw new NotImplementedError('continued_fraction_reduce: degenerate period');
   const bq = radd(Q2, rneg(P));
   const disc = radd(rmul(bq, bq), rmul(R(4n), rmul(Q, P2)));
+  // complex roots: no real value (SymPy raises TypeError comparing them)
+  if (disc.p < 0n) throw new RangeError('continued_fraction_reduce: the periodic continued fraction has no real value');
   // sqrt(disc) = k/m * sqrt(D) with D squarefree
   const nm = disc.p * disc.q;
   let k = 1n;

@@ -10,43 +10,71 @@
 import { NotImplementedError } from '../core/errors';
 import { first, pair } from '../core/guard';
 import '../numeric/mpspecialfns';
-import { isIntegerQ, isPositive } from '../core/assumptions';
+import { isIntegerQ, isNegative, isPositive, isZero as isZeroQ } from '../core/assumptions';
 import type { ComplexValue as C, Expr, ExprLike } from '../core/nodes';
-import { Rational, S, Special } from '../core/nodes';
-import { add, couldExtractMinusSign, mul, neg, pow } from '../core/ops';
+import { Mul, Rational, S, Special } from '../core/nodes';
+import { add, couldExtractMinusSign, exp, mul, neg, pow } from '../core/ops';
 import { fnPartials } from '../calculus/diff';
 import { c as cx, cadd, cdiv, clog, cmul, cpow } from '../numeric/complex';
 import { numericFns } from '../numeric/evalf';
-import { conjugateCommutes, evaluators, fn } from './elementary';
+import { conjugateCommutes, evaluators, fn, re } from './elementary';
 import { cgamma } from './special';
 
 type BName = 'besselj' | 'bessely' | 'besseli' | 'besselk';
-const isInt = (e: Expr): e is Rational => e instanceof Rational && e.isInteger;
 const isZero = (e: Expr) => e instanceof Rational && e.isZero;
 const isOo = (e: Expr) => e instanceof Special && (e.name === 'oo' || e.name === '-oo');
 
+/** w with z = I*w, or undefined (SymPy z.extract_multiplicatively(I)). */
+function imagPart(z: Expr): Expr | undefined {
+  if (z.key === S.I.key) return S.One;
+  if (z instanceof Mul && z.args.some((a) => a.key === S.I.key)) return mul(...z.args.filter((a) => a.key !== S.I.key));
+  return undefined;
+}
+
+/** SymPy besselj/bessely/besseli/besselk.eval (without the branch handling of polar arguments). */
 function evalBessel(name: BName) {
+  const first = name === 'besselj' || name === 'besseli';
   return (nu: Expr, z: Expr): Expr | undefined => {
-    if (isZero(z)) {
-      if (name === 'besselj' || name === 'besseli') {
-        if (isZero(nu)) return S.One;
-        if ((nu instanceof Rational && nu.isPositive) || isPositive(nu) === true) return S.Zero;
+    if (isZeroQ(z) === true) {
+      const reNu = re(nu);
+      if (isZero(nu)) return first ? S.One : name === 'bessely' ? S.NegativeInfinity : S.Infinity;
+      if (first) {
+        if ((isIntegerQ(nu) === true && isZeroQ(nu) === false) || isPositive(reNu) === true) return S.Zero;
+        if (isNegative(reNu) === true && isIntegerQ(nu) !== true) return S.ComplexInfinity;
+        if (isZeroQ(reNu) === true && isZeroQ(nu) === false) return S.NaN;
         return undefined;
       }
-      if (name === 'bessely' && isZero(nu)) return S.NegativeInfinity;
-      if (name === 'besselk' && isZero(nu)) return S.Infinity;
+      if (isZeroQ(reNu) === false) return S.ComplexInfinity;
+      if (isZeroQ(reNu) === true) return S.NaN;
       return undefined;
     }
-    if ((name === 'besselj' || name === 'bessely') && isOo(z) && isInt(nu)) return S.Zero;
-    // negative integer order
-    if (couldExtractMinusSign(nu) && isIntegerQ(nu) === true) {
-      const m = neg(nu);
-      if (name === 'besseli' || name === 'besselk') return fn(name, [m, z]);
-      return mul(pow(-1, m), fn(name, [m, z]));
+    const iz = imagPart(z);
+    if (name === 'besselj' || name === 'bessely') {
+      if (isOo(z)) return S.Zero;
+      if (name === 'bessely' && iz !== undefined && isOo(iz)) {
+        const s = iz instanceof Special && iz.name === 'oo' ? 1 : -1;
+        return mul(exp(mul(s, S.I, S.Pi, add(nu, 1), S.Half)), S.Infinity);
+      }
+    } else if (name === 'besseli') {
+      if (iz !== undefined && isOo(iz)) return S.Zero;
+      if (z instanceof Special && z.name === 'oo') return S.Infinity;
+      if (z instanceof Special && z.name === '-oo') return mul(pow(-1, nu), S.Infinity);
+    } else if (isOo(z) || (iz !== undefined && isOo(iz))) {
+      if (!(z instanceof Special && z.name === '-oo')) return S.Zero;
     }
-    // integer order and negated argument: J_n(-z) = (-1)**n J_n(z), I_n(-z) = (-1)**n I_n(z)
-    if ((name === 'besselj' || name === 'besseli') && isInt(nu) && couldExtractMinusSign(z)) {
-      return mul(pow(-1, nu), fn(name, [nu, neg(z)]));
+    if (first && couldExtractMinusSign(z)) {
+      // J_nu(-z) = z**nu (-z)**(-nu) J_nu(z), likewise I_nu
+      return mul(pow(z, nu), pow(neg(z), neg(nu)), fn(name, [nu, neg(z)]));
+    }
+    if (isIntegerQ(nu) === true) {
+      if (couldExtractMinusSign(nu)) {
+        const m = neg(nu);
+        if (name === 'besseli' || name === 'besselk') return fn(name, [m, z]);
+        return mul(pow(-1, m), fn(name, [m, z]));
+      }
+      // J_n(I w) = I**n I_n(w) and I_n(I w) = I**(-n) J_n(-w)
+      if (name === 'besselj' && iz !== undefined) return mul(pow(S.I, nu), fn('besseli', [nu, iz]));
+      if (name === 'besseli' && iz !== undefined) return mul(pow(S.I, neg(nu)), fn('besselj', [nu, neg(iz)]));
     }
     return undefined;
   };
@@ -176,16 +204,26 @@ for (const name of ['besselj', 'bessely', 'besseli', 'besselk'] as const) {
 
 evaluators.airyai = (z) => {
   if (isZero(z)) return mul(pow(3, Rational.of(1, 3)), pow(mul(3, fn('gamma', [Rational.of(2, 3)])), -1));
-  if (z instanceof Special && z.name === 'oo') return S.Zero;
+  if (isOo(z)) return S.Zero;
   return undefined;
 };
 evaluators.airybi = (z) => {
   if (isZero(z)) return mul(pow(3, Rational.of(5, 6)), pow(mul(3, fn('gamma', [Rational.of(2, 3)])), -1));
   if (z instanceof Special && z.name === 'oo') return S.Infinity;
+  if (z instanceof Special && z.name === '-oo') return S.Zero;
   return undefined;
 };
-evaluators.airyaiprime = (z) => (isZero(z) ? mul(-1, pow(3, Rational.of(2, 3)), pow(mul(3, fn('gamma', [Rational.of(1, 3)])), -1)) : undefined);
-evaluators.airybiprime = (z) => (isZero(z) ? mul(pow(3, Rational.of(1, 6)), pow(fn('gamma', [Rational.of(1, 3)]), -1)) : undefined);
+evaluators.airyaiprime = (z) => {
+  if (isZero(z)) return mul(-1, pow(3, Rational.of(2, 3)), pow(mul(3, fn('gamma', [Rational.of(1, 3)])), -1));
+  if (z instanceof Special && z.name === 'oo') return S.Zero;
+  return undefined;
+};
+evaluators.airybiprime = (z) => {
+  if (isZero(z)) return mul(pow(3, Rational.of(1, 6)), pow(fn('gamma', [Rational.of(1, 3)]), -1));
+  if (z instanceof Special && z.name === 'oo') return S.Infinity;
+  if (z instanceof Special && z.name === '-oo') return S.Zero;
+  return undefined;
+};
 fnPartials.airyai = (args) => fn('airyaiprime', [first(args)]);
 fnPartials.airybi = (args) => fn('airybiprime', [first(args)]);
 fnPartials.airyaiprime = (args) => mul(first(args), fn('airyai', [first(args)]));

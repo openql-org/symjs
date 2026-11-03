@@ -13,7 +13,8 @@ import { NotInvertible } from '../core/errors';
 import { at, first, last } from '../core/guard';
 import { isIntegerQ, isNegative, isPositive, isReal as isRealQ } from '../core/assumptions';
 import type { Expr, ExprLike, FnName } from '../core/nodes';
-import { Dummy, Fn, Rational, S } from '../core/nodes';
+import { Dummy, Fn, Rational, S, Special } from '../core/nodes';
+import { AccumBounds } from '../core/accumbounds';
 import { Product } from '../core/concrete';
 import { add, mul, pow, sympify } from '../core/ops';
 import { factorInt } from '../core/numbers';
@@ -241,6 +242,10 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     return small(k) ? bernoulliPlus(Number(k)) : undefined;
   },
   euler: (n, x?: Expr) => {
+    // SymPy euler.eval: euler(-1) = pi/2 and euler(-1, x) = digamma((x + 1)/2) - digamma(x/2)
+    if (n instanceof Rational && n.p === -1n && n.q === 1n) {
+      return x === undefined ? mul(R(1, 2), S.Pi) : add(fn('polygamma', [0, mul(add(x, 1), R(1, 2))]), mul(-1, fn('polygamma', [0, mul(x, R(1, 2))])));
+    }
     const k = asInt(n);
     if (k === undefined || k < 0n) return undefined;
     if (x !== undefined) return small(k) ? eulerPoly(Number(k), x) : undefined;
@@ -283,7 +288,7 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
   },
   lucas: (n) => {
     const k = asInt(n);
-    if (k === undefined || k < 0n) return undefined;
+    if (k === undefined) return undefined;
     return R(fibNumber(k + 1n) + fibNumber(k - 1n));
   },
   tribonacci: (n, x?: Expr) => {
@@ -311,12 +316,14 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
   mobius: (n) => {
     const k = asInt(n);
     if (k === undefined) {
-      // a square factor makes mobius vanish (mobius(4*n) = mobius(n**2) = 0) for positive integers
-      if (isIntegerQ(n) !== true) return undefined;
+      // a square factor makes mobius of a positive integer vanish: mobius(4*n) = 0, and
+      // mobius(b**2) = 0 for an integer b > 1 (SymPy also returns 0 when b may be 1)
+      if (isIntegerQ(n) !== true || isPositive(n) !== true) return undefined;
       const fs = n.kind === 'Mul' ? n.args : [n];
       for (const f of fs) {
         if (f instanceof Rational && f.isInteger && [...factorInt(f.p < 0n ? -f.p : f.p).values()].some((e) => e > 1n)) return S.Zero;
-        if (f.kind === 'Pow' && f.args[1] instanceof Rational && (f.args[1]).isInteger && (f.args[1]).p > 1n) return S.Zero;
+        const [b, e] = f.kind === 'Pow' ? f.args : [];
+        if (b !== undefined && e instanceof Rational && e.isInteger && e.p > 1n && isIntegerQ(b) === true && isPositive(add(b, -1)) === true) return S.Zero;
       }
       return undefined;
     }
@@ -360,7 +367,7 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
   },
   multigamma: (x, p) => {
     const k = asInt(p);
-    if (k === undefined && isIntegerQ(p) === true && isPositive(p) === true) {
+    if (k === undefined && isIntegerQ(p) !== false && isPositive(p) !== false) {
       // pi**(p*(p - 1)/4)*Product(gamma(x + (1 - k)/2), (k, 1, p)) like SymPy
       const d = new Dummy('k');
       return mul(pow(S.Pi, mul(p, add(p, -1), R(1, 4))), Product(gamma(add(x, mul(add(1, mul(-1, d)), R(1, 2)))), [d, 1, p]));
@@ -377,9 +384,9 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
 function evalFrac(x: Expr): Expr | undefined {
   const one = (a: Expr): Expr => {
     if (a instanceof Rational && a.isZero) return S.Zero;
+    if (a instanceof Special) return a.name === 'oo' || a.name === '-oo' ? AccumBounds(0, 1) : S.NaN;
     if (isIntegerQ(a) === true) return S.Zero;
-    if (a instanceof Rational) return add(a, mul(-1, floorFn(a)));
-    if (a.freeSymbols().size === 0 && !(a.kind === 'Special')) return add(a, mul(-1, floorFn(a)));
+    if (a.freeSymbols().size === 0) return add(a, mul(-1, floorFn(a)));
     return new Fn('frac', [a]);
   };
   let real: Expr = S.Zero;
@@ -633,7 +640,7 @@ function toBig(n: ExprLike | bigint | number): bigint {
   if (typeof n === 'bigint') return n;
   if (typeof n === 'number') return BigInt(n);
   const v = sympify(n);
-  if (!(v instanceof Rational)) throw new TypeError(`expected an integer, got ${v.toString()}`);
+  if (!(v instanceof Rational && v.isInteger)) throw new TypeError(`expected an integer, got ${v.toString()}`);
   return v.p;
 }
 

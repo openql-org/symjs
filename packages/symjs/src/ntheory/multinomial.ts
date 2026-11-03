@@ -103,7 +103,8 @@ export function* multinomialCoefficientsIterator(mIn: IntLike, nIn: IntLike): Ge
     return;
   }
   const mc = new Map<string, bigint>();
-  for (const [k, v] of mcInternal(n, n).values()) mc.set(k.filter((x) => x).join(','), v);
+  // multinomial_coefficients(n, n) as in SymPy (mcInternal needs n >= 1: n = 0 gives {(): 1})
+  for (const [k, v] of multinomialCoefficients(n, n)) mc.set(k.filter((x) => x).join(','), v);
   const t = [n, ...new Array<number>(m - 1).fill(0)];
   const b = (x: number[]) => getOrThrow(mc, x.filter((y) => y).join(','));
   yield [t.map(BigInt), b(t)];

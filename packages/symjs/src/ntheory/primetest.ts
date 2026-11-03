@@ -100,7 +100,9 @@ function isStrongPrp(n: bigint, a: bigint): boolean {
 }
 
 function isStrongSelfridgePrp(n: bigint): boolean {
-  for (let d = 5n; d < 1000000n; d += 2n) {
+  // SymPy gives up at d = 10**6, never reached: a square n stops at D = 13
+  // and a non-square has (D/n) = -1 for some small D
+  for (let d = 5n; ; d += 2n) {
     const D = d & 2n ? -d : d;
     const j = jacobi(D, n);
     if (j === -1) {
@@ -120,7 +122,6 @@ function isStrongSelfridgePrp(n: bigint): boolean {
     if (j === 0 && D % n !== 0n) return false;
     if (D === 13n && isSquare(n)) return false;
   }
-  throw new RangeError('appropriate value for D cannot be found in is_strong_selfridge_prp()');
 }
 
 /** The strong Baillie-PSW probable prime test (gmpy is_strong_bpsw_prp). */
@@ -250,10 +251,10 @@ export class FactorCache {
   }
 
   private trim(max: number): void {
-    while (this.cache.size > max) {
-      const first = this.cache.keys().next();
-      if (first.done === true) break;
-      this.cache.delete(first.value);
+    // deleting the entry being visited does not disturb the iteration
+    for (const k of this.cache.keys()) {
+      if (this.cache.size <= max) break;
+      this.cache.delete(k);
     }
   }
 
@@ -268,7 +269,7 @@ export class FactorCache {
     const factor = asInt(factorIn);
     if (!(factor > 1n && factor <= n && n % factor === 0n && isprime(factor))) throw new RangeError(`${factor} is not a prime factor of ${n}`);
     const old = this.cache.get(n) ?? 0n;
-    this.cache.delete(n);
+    // an existing entry keeps its place, as in SymPy's OrderedDict
     this.cache.set(n, old > factor ? old : factor);
     if (this.maxsizeValue !== undefined) this.trim(this.maxsizeValue);
     return this;
@@ -308,8 +309,9 @@ export class FactorCache {
     const factors = this.getExternal(n);
     if (!isNoMatch(factors) && factors.length > 0) {
       this.add(n, factors);
-      const w = this.cache.get(n);
-      if (w !== undefined) return w;
+      // the largest factor, which add() cached for n unless a small maxsize
+      // already evicted it (where SymPy raises KeyError)
+      return factors.reduce((a, b) => (a > b ? a : b));
     }
     return NoMatch;
   }
@@ -324,7 +326,8 @@ export class FactorCache {
   /** Cache the prime factors of n (SymPy FactorCache.add). */
   add(nIn: IntLike, factors: readonly bigint[]): void {
     let n = asInt(nIn);
-    for (const p of [...factors].sort((x, y) => (x < y ? 1 : x > y ? -1 : 0))) {
+    // decreasing (the sign of y - x; a huge difference becomes an infinity of that sign)
+    for (const p of [...factors].sort((x, y) => Number(y - x))) {
       this.set(n, p);
       n = remove(n, p)[0];
     }

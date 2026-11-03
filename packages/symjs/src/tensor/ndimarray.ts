@@ -16,7 +16,6 @@
  * their structural key follows their current contents.
  */
 
-import { InvariantError } from '../core/errors';
 import { at, cast, expectType } from '../core/guard';
 import type { EvalfOptions, ExprLike, NumericValues, Substitution } from '../core/nodes';
 import { BoolAtom, Derivative, Expr, ExtensionExpr, Integral, Rational, Rel, S, UndefFn } from '../core/nodes';
@@ -574,8 +573,7 @@ function scalarOperand(o: unknown, message: string): Expr {
 }
 
 /** Whether a symbolic index is known to lie outside 0..dim-1 (SymPy (i < 0) == True or (i >= dim) == True). */
-function outOfRange(i: number | Expr, dim: number): boolean {
-  if (typeof i === 'number') return i < 0 || i >= dim;
+function outOfRange(i: Expr, dim: number): boolean {
   if (i instanceof IdxNode) {
     const lo = i.lower;
     const hi = i.upper;
@@ -600,7 +598,7 @@ export abstract class DenseNDimArray extends NDimArray {
     let flat: Expr[];
     if (p.sparse) {
       const sp = p.sparse;
-      flat = Array.from({ length: p.shape.length === 0 ? 1 : product(p.shape) }, (_, k) => sp.get(k) ?? S.Zero);
+      flat = Array.from({ length: product(p.shape) }, (_, k) => sp.get(k) ?? S.Zero);
     } else flat = p.flat;
     checkSpecialBounds(flat.length, p.shape);
     const size = p.shape.length === 0 ? 1 : product(p.shape);
@@ -823,8 +821,9 @@ function assignItems(a: NDimArray, args: readonly unknown[], store: (k: number, 
   const items = normItems(idxArgs);
   if (items.some(isSymbolicItem)) throw new TypeError('cannot assign to a symbolic index');
   if (items.some((i) => i instanceof Slice)) {
+    if (items.length > a.rank()) throw new RangeError('Dimension of index greater than rank of array');
     const v = value instanceof NDimArray ? value : a.newLike(expectType(value, isArrayInput, 'array value'));
-    const factors = items.map((i, d) => (i instanceof Slice ? i.expand(a.shape[d] ?? 0) : [intIndex(i)]));
+    const factors = items.map((i, d) => (i instanceof Slice ? i.expand(at(a.shape, d)) : [intIndex(i)]));
     // SymPy: the position in the value is the index minus the smallest index of each slice
     const offsets = items.flatMap((i, d) => (i instanceof Slice && at(factors, d).length > 0 ? [[d, Math.min(...at(factors, d))] as const] : []));
     for (const t of cartesian(factors)) store(a.parseIndex(t), v.get(offsets.map(([d, o]) => at(t, d) - o)));
@@ -846,15 +845,14 @@ function assignItems(a: NDimArray, args: readonly unknown[], store: (k: number, 
 class ArrayIndexed extends Indexed {
   override withArgs(args: readonly Expr[]): Expr {
     const [base, ...indices] = args;
-    if (base instanceof NDimArray && indices.every((i) => i.isNumber)) return base.get(...indices);
+    // A base substituted by something else than an array gives a plain Indexed.
+    if (!(base instanceof NDimArray)) return new Indexed(args);
+    if (indices.every((i) => i.isNumber)) return base.get(...indices);
     return new ArrayIndexed(args);
   }
-  /** SymPy: the derivative of the array, indexed the same way. */
-  override diffSelf(x: Expr): Expr | undefined {
-    if (x.key === this.key) return S.One;
-    const base = this.base;
-    if (base instanceof NDimArray) return new ArrayIndexed([base.diff(x), ...this.indices]);
-    return undefined;
+  /** SymPy: the derivative of the array, indexed the same way (diff itself handles x == this). */
+  override diffSelf(x: Expr): Expr {
+    return new ArrayIndexed([cast(this.base, NDimArray).diff(x), ...this.indices]);
   }
 }
 
@@ -918,35 +916,29 @@ const diffWrt = (e: Expr): boolean =>
  * dx.shape + expr.shape.
  */
 export function deriveByArray(expr: ExprLike | Matrix | readonly NestedArrayInput[], dx: ExprLike | Matrix | readonly NestedArrayInput[]): Expr {
-  const scalarDx = (): Expr => {
-    if (isArrayLike(dx)) throw new InvariantError('dx is an array');
-    return sympify(dx);
-  };
-  let dxa: NDimArray | undefined;
   if (isArrayLike(dx)) {
-    dxa = new ImmutableDenseNDimArray(dx);
+    const dxa = new ImmutableDenseNDimArray(dx);
     for (const i of dxa) if (!diffWrt(i)) throw new RangeError('cannot derive by this array');
-  }
-  if (isArrayLike(expr)) {
-    const ea = expr instanceof NDimArray ? expr.asImmutable() : new ImmutableDenseNDimArray(expr);
-    if (dxa) {
-      const vars = dxa.flatElements();
-      if (ea instanceof SparseNDimArray) {
-        const lp = ea.length;
-        const m = new Map<number, Expr>();
-        vars.forEach((x, i) => {
-          for (const [k, v] of cast(ea.diff(x), SparseNDimArray).sparseArray) m.set(k + i * lp, v);
-        });
-        return ea.newLike(m, [...dxa.shape, ...ea.shape]);
-      }
-      return ea.newLike(
-        vars.flatMap((x) => ea.flatElements().map((y) => diffExpr(y, x))),
-        [...dxa.shape, ...ea.shape],
-      );
+    const vars = dxa.flatElements();
+    if (!isArrayLike(expr)) {
+      const e = sympify(expr);
+      return new ImmutableDenseNDimArray(vars.map((v) => diffExpr(e, v)), dxa.shape);
     }
-    return ea.diff(scalarDx());
+    const ea = expr instanceof NDimArray ? expr.asImmutable() : new ImmutableDenseNDimArray(expr);
+    if (ea instanceof SparseNDimArray) {
+      const lp = ea.length;
+      const m = new Map<number, Expr>();
+      vars.forEach((x, i) => {
+        for (const [k, v] of cast(ea.diff(x), SparseNDimArray).sparseArray) m.set(k + i * lp, v);
+      });
+      return ea.newLike(m, [...dxa.shape, ...ea.shape]);
+    }
+    return ea.newLike(
+      vars.flatMap((x) => ea.flatElements().map((y) => diffExpr(y, x))),
+      [...dxa.shape, ...ea.shape],
+    );
   }
-  const e = sympify(expr);
-  if (dxa) return new ImmutableDenseNDimArray(dxa.flatElements().map((v) => diffExpr(e, v)), dxa.shape);
-  return diffExpr(e, scalarDx());
+  const x = sympify(dx);
+  if (isArrayLike(expr)) return (expr instanceof NDimArray ? expr.asImmutable() : new ImmutableDenseNDimArray(expr)).diff(x);
+  return diffExpr(sympify(expr), x);
 }

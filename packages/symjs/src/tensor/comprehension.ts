@@ -7,8 +7,7 @@
  * expression or a function of their indices over integer ranges.
  */
 
-import { InvariantError } from '../core/errors';
-import { at } from '../core/guard';
+import { at, defined, expectType } from '../core/guard';
 import type { ExprLike } from '../core/nodes';
 import { Expr, ExtensionExpr, Rational, Sym } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
@@ -93,9 +92,8 @@ export class ArrayComprehensionNode extends ExtensionExpr {
   rank(): number {
     return this.limits.length;
   }
-  /** The number of elements (SymPy len); a symbolic shape has no length. */
+  /** The number of elements (SymPy len; 1 for no limits, as for a rank-0 array); a symbolic shape has no length. */
   get length(): number {
-    if (this.limits.length === 0) return 0;
     const n = mul(...this.shape);
     if (!(n instanceof Rational)) throw new RangeError('Symbolic length is not supported');
     return Number(n.p);
@@ -174,8 +172,7 @@ export type ComprehensionLambda = (() => ExprLike) | ((n: number) => ExprLike);
 
 /** The value of an integer bound or dimension (numeric once the shape is). */
 function rationalInt(e: Expr): number {
-  if (!(e instanceof Rational)) throw new InvariantError(`${e.toString()} is not numeric`);
-  return Number(e.p);
+  return Number(expectType(e, (v): v is Rational => v instanceof Rational, 'a numeric bound').p);
 }
 
 /** A lambda declaring no parameter is called without arguments (SymPy checks its arity). */
@@ -229,6 +226,6 @@ export class ArrayComprehensionMapNode extends ArrayComprehensionNode {
     return `\\operatorname{ArrayComprehensionMap}\\left(${this.limitsLatex(print).join(', ')}\\right)`;
   }
   protected override computeKey(): string {
-    return `ArrayComprehensionMap#${lambdaIds.get(this.#fn) ?? 0}${super.computeKey()}`;
+    return `ArrayComprehensionMap#${defined(lambdaIds.get(this.#fn), 'lambda id')}${super.computeKey()}`;
   }
 }

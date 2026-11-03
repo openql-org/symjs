@@ -128,7 +128,8 @@ export class PermutationNode extends ExtensionExpr {
   resize(n: number): PermutationNode {
     const a = this.arrayForm;
     if (n >= a.length) return new PermutationNode([...a, ...Array.from({ length: n - a.length }, (_, k) => a.length + k)]);
-    if (this.cyclicForm.flat().some((x) => x >= n)) throw new RangeError('The permutation cannot be resized to the size because the cycle contains an element beyond the size.');
+    const broken = this.cyclicForm.find((c) => c.some((x) => x >= n));
+    if (broken) throw new RangeError(`The permutation cannot be resized to ${n} because the cycle (${broken.join(', ')}) may break.`);
     return new PermutationNode(a.slice(0, n));
   }
   override printStr(): string {

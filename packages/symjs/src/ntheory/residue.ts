@@ -11,22 +11,22 @@
 
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Mul, Pow, Rational, Sym } from '../core/nodes';
-import { InvariantError } from '../core/errors';
 import { at, defined, first } from '../core/guard';
 import { sympify } from '../core/ops';
 import { gcd, lcm } from '../core/numbers';
 import type { NoMatchResult } from '../core/truth';
-import { NoMatch, isNoMatch } from '../core/truth';
+import { NoMatch } from '../core/truth';
 import { factorintInt, perfectPowerInt } from './factor';
 import { primerange } from './generate';
 import type { IntLike } from './intutil';
 import { asInt, babs, bitLength, bitScan1, divmod, fdiv, gcdext, invert, isqrt, jacobi, pmod, powmod, product, pyLog, remove } from './intutil';
-import { crt, gfCrt, gfCrt1, gfCrt2 } from './modular';
+import { gfCrt, gfCrt1, gfCrt2 } from './modular';
 import { isprime } from './primetest';
 import type { RandInt } from './random';
 import { randintFrom, rng } from './random';
 
-const cmpBig = (a: bigint, b: bigint): number => (a < b ? -1 : a > b ? 1 : 0);
+// the sign of a - b (a huge difference becomes an infinity of the same sign)
+const cmpBig = (a: bigint, b: bigint): number => Number(a - b);
 const sortBig = (xs: Iterable<bigint>): bigint[] => [...xs].sort(cmpBig);
 const factorint = (n: bigint): Map<bigint, bigint> => factorintInt(n, {});
 
@@ -56,44 +56,35 @@ export function nOrder(aIn: IntLike, nIn: IntLike): bigint {
   return aOrder;
 }
 
-/** The first value of a generator that always yields at least once. */
-function firstYield<T>(it: Iterator<T>): T {
-  const r = it.next();
-  if (r.done === true) throw new InvariantError('generator yielded nothing');
-  return r.value;
-}
-
-function* primitiveRootPrimeIter(p: bigint): Generator<bigint, void, undefined> {
-  if (p === 3n) {
-    yield 2n;
-    return;
-  }
+/**
+ * The first primitive root of the prime p that SymPy's
+ * _primitive_root_prime_iter yields (the smallest one; only the first value
+ * of SymPy's generators is ever used).
+ */
+function primitiveRootPrime(p: bigint): bigint {
+  if (p === 3n) return 2n;
   const gMin = p % 8n === 1n || p % 8n === 7n ? 3n : 2n;
-  let g: bigint;
-  if (p < 41n) g = p === 23n ? 5n : gMin;
-  else {
-    const v = [...factorint(p - 1n).keys()].map((i) => (p - 1n) / i);
-    for (g = gMin; g < p; g++) if (v.every((pw) => powmod(g, pw, p) !== 1n)) break;
-  }
-  yield g;
-  for (let k = 3n; k < p; k += 2n) if (gcd(p - 1n, k) === 1n) yield powmod(g, k, p);
+  if (p < 41n) return p === 23n ? 5n : gMin;
+  const v = [...factorint(p - 1n).keys()].map((i) => (p - 1n) / i);
+  let g = gMin;
+  while (!v.every((pw) => powmod(g, pw, p) !== 1n)) g++;
+  return g;
 }
 
-function* primitiveRootPrimePowerIter(p: bigint, e: bigint): Generator<bigint, void, undefined> {
-  if (e === 1n) {
-    yield* primitiveRootPrimeIter(p);
-    return;
-  }
+/** The first primitive root of p**e that SymPy's _primitive_root_prime_power_iter yields. */
+function primitiveRootPrimePower(p: bigint, e: bigint): bigint {
+  const g = primitiveRootPrime(p);
+  if (e === 1n) return g;
   const p2 = p * p;
-  const pe = p ** e;
-  for (const g of primitiveRootPrimeIter(p)) {
-    const t = pmod(g - powmod(g, 2n - p, p2), p2);
-    for (let k = 0n; k < p2; k += p) if (k !== t) for (let m = 0n; m < pe; m += p2) yield g + k + m;
-  }
+  // the first k in 0, p, 2p, ... other than t
+  const t = pmod(g - powmod(g, 2n - p, p2), p2);
+  return t === 0n ? g + p : g;
 }
 
-function* primitiveRootPrimePower2Iter(p: bigint, e: bigint): Generator<bigint, void, undefined> {
-  for (const g of primitiveRootPrimePowerIter(p, e)) yield g % 2n === 1n ? g : g + p ** e;
+/** The first primitive root of 2*p**e that SymPy's _primitive_root_prime_power2_iter yields. */
+function primitiveRootPrimePower2(p: bigint, e: bigint): bigint {
+  const g = primitiveRootPrimePower(p, e);
+  return g % 2n === 1n ? g : g + p ** e;
 }
 
 /**
@@ -118,17 +109,17 @@ export function primitiveRoot(pIn: IntLike, opts: { smallest?: boolean } = {}): 
     if (!isprime(q)) return NoMatch;
   }
   if (!smallest) {
-    const it = pEven ? primitiveRootPrimePower2Iter(q, e) : primitiveRootPrimePowerIter(q, e);
-    const r = it.next();
-    return r.done === true ? NoMatch : r.value;
+    return pEven ? primitiveRootPrimePower2(q, e) : primitiveRootPrimePower(q, e);
   }
-  if (pEven) {
-    for (let i = 3n; i < p; i += 2n) if (i % q !== 0n && isPrimitiveRoot(i, p)) return i;
-  }
-  const g = firstYield(primitiveRootPrimeIter(q));
+  if (pEven) return smallestPrimitiveRoot(3n, 2n, p, q);
+  const g = primitiveRootPrime(q);
   if (e === 1n || powmod(g, q - 1n, q * q) !== 1n) return g;
-  for (let i = g + 1n; i < p; i++) if (i % q !== 0n && isPrimitiveRoot(i, p)) return i;
-  return NoMatch;
+  return smallestPrimitiveRoot(g + 1n, 1n, p, q);
+}
+
+/** The first i = start, start + step, ... prime to q that is a primitive root of p (one exists below p). */
+function smallestPrimitiveRoot(start: bigint, step: bigint, p: bigint, q: bigint): bigint {
+  for (let i = start; ; i += step) if (i % q !== 0n && isPrimitiveRoot(i, p)) return i;
 }
 
 /** a is a primitive root of p (SymPy is_primitive_root). */
@@ -261,22 +252,15 @@ function* iproduct2<A, B>(it1: Iterator<A>, it2: Iterator<B>): Generator<[A, B],
   }
 }
 
-/** SymPy iproduct: the Cartesian product in diagonal order. */
+/** The singletons [e] of the elements of xs. */
+function* singletons<T>(xs: readonly T[]): Generator<T[], void, undefined> {
+  for (const e of xs) yield [e];
+}
+
+/** SymPy iproduct for two or more lists: the Cartesian product in diagonal order. */
 function* iproduct<T>(lists: readonly (readonly T[])[]): Generator<T[], void, undefined> {
-  const [l0, l1, ...rest] = lists;
-  if (l0 === undefined) {
-    yield [];
-    return;
-  }
-  if (l1 === undefined) {
-    for (const e of l0) yield [e];
-    return;
-  }
-  if (rest.length === 0) {
-    for (const [a, b] of iproduct2(l0[Symbol.iterator](), l1[Symbol.iterator]())) yield [a, b];
-    return;
-  }
-  for (const [ef, eo] of iproduct2(l0[Symbol.iterator](), iproduct(lists.slice(1)))) yield [ef, ...eo];
+  const tail = lists.length === 2 ? singletons(at(lists, 1)) : iproduct(lists.slice(1));
+  for (const [ef, eo] of iproduct2(first(lists)[Symbol.iterator](), tail)) yield [ef, ...eo];
 }
 
 /** The square roots of a modulo p, in SymPy's order (SymPy sqrt_mod_iter). */
@@ -394,7 +378,7 @@ export function isNthpowResidue(aIn: IntLike, nIn: IntLike, mIn: IntLike): boole
 }
 
 function nthrootMod1(s: bigint, q: bigint, p: bigint): bigint[] {
-  const g = firstYield(primitiveRootPrimeIter(p));
+  const g = primitiveRootPrime(p);
   let r = s;
   for (const [qx, ex] of factorint(q)) {
     let f = (p - 1n) / qx ** ex;
@@ -500,7 +484,8 @@ export function nthrootMod(aIn: IntLike, nIn: IntLike, pIn: IntLike, allRoots = 
   const [P, E, S] = gfCrt1(primePower);
   const ret = sortBig(new Set([...product(base)].map((c) => gfCrt2(c, primePower, P, E, S))));
   if (allRoots) return ret;
-  return ret.length > 0 ? first(ret) : NoMatch;
+  // every prime power has a root, so the product is not empty
+  return first(ret);
 }
 
 /** The sorted list of quadratic residues modulo p (SymPy quadratic_residues). */
@@ -550,7 +535,8 @@ function dlogShanks(n: bigint, aIn: bigint, bIn: bigint, order: bigint): bigint 
   return noLog();
 }
 
-function dlogPollardRho(n: bigint, aIn: bigint, bIn: bigint, order: bigint, retries = 10, rseed?: bigint): bigint {
+/** @internal Pollard's rho discrete logarithm (SymPy _discrete_log_pollard_rho). */
+export function dlogPollardRho(n: bigint, aIn: bigint, bIn: bigint, order: bigint, retries = 10, rseed?: bigint): bigint {
   const a = pmod(aIn, n);
   const b = pmod(bIn, n);
   const randint: RandInt = randintFrom(rseed);
@@ -629,7 +615,8 @@ function dlogIsSmooth(nIn: bigint, factorbase: readonly bigint[]): bigint[] | un
   return n === 1n ? factors : undefined;
 }
 
-function dlogIndexCalculus(n: bigint, aIn: bigint, bIn: bigint, order: bigint, rseed?: bigint): bigint {
+/** @internal The index calculus discrete logarithm (SymPy _discrete_log_index_calculus). */
+export function dlogIndexCalculus(n: bigint, aIn: bigint, bIn: bigint, order: bigint, rseed?: bigint): bigint {
   const randint = randintFrom(rseed);
   const a = pmod(aIn, n);
   const b = pmod(bIn, n);
@@ -712,12 +699,11 @@ function dlogPohligHellman(n: bigint, aIn: bigint, bIn: bigint, order: bigint, o
     }
     l.push(li);
   }
-  const r = crt(
-    [...of].map(([pi, ri]) => pi ** ri),
+  // the moduli are coprime, so the remainders always combine
+  return gfCrt(
     l,
+    [...of].map(([pi, ri]) => pi ** ri),
   );
-  if (isNoMatch(r)) return noLog();
-  return r[0];
 }
 
 /**
@@ -836,7 +822,6 @@ function gfMul(f: readonly bigint[], g: readonly bigint[], p: bigint): bigint[] 
 }
 
 function gfDiv(f: readonly bigint[], g: readonly bigint[], p: bigint): [bigint[], bigint[]] {
-  if (g.length === 0) throw new RangeError('polynomial division by zero');
   if (f.length < g.length) return [[], [...f]];
   const inv = invert(at(g, 0), p);
   const r = [...f];
@@ -864,18 +849,16 @@ function gfPowMod(f: readonly bigint[], nIn: bigint, g: readonly bigint[], p: bi
 function gfGcd(fIn: readonly bigint[], gIn: readonly bigint[], p: bigint): bigint[] {
   let f = [...fIn];
   let g = [...gIn];
+  // f is not zero: the callers pass a nonzero first polynomial
   while (g.length > 0) [f, g] = [g, gfDiv(f, g, p)[1]];
-  if (f.length === 0) return f;
   const inv = invert(at(f, 0), p);
   return f.map((c) => pmod(c * inv, p));
 }
 
-function gfSubGround(f: readonly bigint[], a: bigint, p: bigint): bigint[] {
-  if (f.length === 0) {
-    const r = pmod(-a, p);
-    return r ? [r] : [];
-  }
-  const r = pmod(at(f, f.length - 1) - a, p);
+/** f - 1 over GF(p), p >= 2. */
+function gfSubOne(f: readonly bigint[], p: bigint): bigint[] {
+  if (f.length === 0) return [p - 1n];
+  const r = pmod(at(f, f.length - 1) - 1n, p);
   if (f.length > 1) return [...f.slice(0, -1), r];
   return r ? [r] : [];
 }
@@ -904,7 +887,7 @@ function gfDiff(f: readonly bigint[], p: bigint): bigint[] {
 function csolvePrimeLasVegas(fIn: readonly bigint[], p: bigint): bigint[] {
   const root = new Set<bigint>();
   let g = gfPowMod([1n, 0n], p - 1n, fIn, p);
-  g = gfSubGround(g, 1n, p);
+  g = gfSubOne(g, p);
   const factors = [gfGcd(fIn, g, p)];
   while (factors.length > 0) {
     const f = defined(factors.pop(), 'polynomial factor');
@@ -923,7 +906,7 @@ function csolvePrimeLasVegas(fIn: readonly bigint[], p: bigint): bigint[] {
     for (;;) {
       const a = rng.randint(0n, p - 1n);
       let h = gfPowMod([1n, a], (p - 1n) / 2n, f, p);
-      h = gfSubGround(h, 1n, p);
+      h = gfSubOne(h, p);
       h = gfGcd(f, h, p);
       if (1 < h.length && h.length < f.length) {
         factors.push(h);
@@ -1019,7 +1002,7 @@ function polyCoeffs(exprIn: ExprLike): bigint[] {
   }
   if (gen === undefined) throw new RangeError('The expression should be univariate');
   const degs = [...coeffs.keys()].filter((d) => coeffs.get(d) !== 0n);
-  const top = degs.length > 0 ? Math.max(...degs) : 0;
+  const top = Math.max(0, ...degs);
   const out: bigint[] = [];
   for (let d = top; d >= 0; d--) out.push(coeffs.get(d) ?? 0n);
   return out;

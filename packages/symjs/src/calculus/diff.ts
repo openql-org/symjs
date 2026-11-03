@@ -9,11 +9,13 @@ import { NotImplementedError } from '../core/errors';
 import { first } from '../core/guard';
 import { isReal } from '../core/assumptions';
 import { piecewise } from '../core/logic';
-import type { ExprLike } from '../core/nodes';
-import { Add, ExtensionExpr, Constant, Derivative, Dummy, Expr, Fn, Integral, Mul, Piecewise, Pow, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, ExtensionExpr, Constant, Derivative, Dummy, Fn, Integral, Mul, Piecewise, Pow, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { derivative } from '../core/undef';
+import { SubsNode } from '../core/subsnode';
+import { Concrete } from '../core/concrete';
 import { add, mul, pow, sympify } from '../core/ops';
-import { xreplace } from '../core/traverse';
+import { rebuild, xreplace } from '../core/traverse';
 import { abs, conjugate, cos, cosh, im as fnIm, log, re as fnRe, sin, sinh, tan, tanh } from '../functions/elementary';
 
 /**
@@ -36,15 +38,27 @@ const fnDerivative: Partial<Record<Fn['name'], (u: Expr) => Expr>> = {
   log: (u) => pow(u, -1),
 };
 
+/**
+ * A matrix element X[i, j] as the variable (told apart by name: the matrix
+ * module builds on this one). An expression depends on it through X, as
+ * Trace(X) does, so it is not replaced by a dummy.
+ */
+const isMatrixElement = (x: Expr): x is ExtensionExpr => x instanceof ExtensionExpr && x.name === 'MatrixElement';
+
+/** e may depend on x: it contains x, or the matrix of a matrix element x. */
+const dependsOn = (e: Expr, x: Expr): boolean => e.has(x) || (isMatrixElement(x) && e.has(first(x.args)));
+
 function d(e: Expr, x: Expr): Expr {
   if (e.key === x.key) return S.One;
   if (isNum(e) || e instanceof Constant || e instanceof Sym) return S.Zero;
-  if (!e.has(x)) return S.Zero;
+  if (!dependsOn(e, x)) return S.Zero;
 
   if (e instanceof Add) return add(...e.args.map((a) => d(a, x)));
   if (e instanceof ExtensionExpr) {
     const r = e.diffSelf(x, d);
     if (r !== undefined) return r;
+    // SymPy keeps Derivative(Determinant(X), X[0, 0]) unevaluated
+    if (isMatrixElement(x)) return derivative(e, [[x, 1]]);
     throw new NotImplementedError(`diff: ${e.name} does not define a derivative`);
   }
 
@@ -74,39 +88,55 @@ function d(e: Expr, x: Expr): Expr {
       const terms: Expr[] = [];
       e.args.forEach((a, i) => {
         const da = d(a, x);
-        if (!(da instanceof Expr && da.key === S.Zero.key)) terms.push(mul(partial(e.args, i), da));
+        if (da.key !== S.Zero.key) terms.push(mul(partial(e.args, i), da));
       });
       return add(...terms);
     }
     const u = first(e.args);
+    if (e.name === 'conjugate' || e.name === 're' || e.name === 'im') {
+      // linear, but not holomorphic: the derivative is taken inside only for a real variable (SymPy keeps Derivative(conjugate(x), x))
+      if (isReal(x) !== true) return derivative(e, [[x, 1]]);
+      const du = d(u, x);
+      return e.name === 'conjugate' ? conjugate(du) : e.name === 're' ? fnRe(du) : fnIm(du);
+    }
     const du = d(u, x);
-    if (e.name === 'conjugate') return conjugate(du);
-    // re/im are linear; valid for differentiation w.r.t. a real variable
-    if (e.name === 're') return fnRe(du);
-    if (e.name === 'im') return fnIm(du);
     if (e.name === 'abs') {
       if (isReal(u)) return mul(u, pow(abs(u), -1), du);
       throw new NotImplementedError('diff: derivative of abs() of a non-real argument is not supported');
     }
+    // arg(u)' = 0 for a real u
+    if (e.name === 'arg' && isReal(u)) return S.Zero;
     const f = fnDerivative[e.name];
-    if (!f) throw new NotImplementedError(`diff: unknown derivative for ${e.name}`);
+    // no derivative known (floor, ceiling, sign of a complex argument): SymPy keeps Derivative(floor(x), x)
+    if (!f) return derivative(e, [[x, 1]]);
     return mul(f(u), du);
   }
   if (e instanceof UndefFn) {
     // chain rule over the arguments; only direct dependence is represented
     const terms: Expr[] = [];
-    for (const a of e.args) {
+    for (const [i, a] of e.args.entries()) {
       if (!a.has(x)) continue;
       if (a.key === x.key) terms.push(derivative(e, [[x, 1]], true));
       // f(g(x)): Derivative(f(g(x)), g(x))*Derivative(g(x), x) like SymPy
       else if (a instanceof UndefFn) terms.push(mul(derivative(e, [[a, 1]]), d(a, x)));
-      else throw new NotImplementedError('diff: derivative of an undefined function of a composite argument is not supported');
+      else {
+        // f(x + 1): Subs(Derivative(f(xi), xi), xi, x + 1)*d(x + 1)/dx like SymPy
+        const xi = new Dummy(`xi_${i + 1}`);
+        const at = rebuild(e, e.args.map((b, j) => (j === i ? xi : b)));
+        terms.push(mul(new SubsNode([derivative(at, [[xi, 1]]), xi, a]), d(a, x)));
+      }
     }
     return add(...terms);
   }
   if (e instanceof Derivative) {
     if (e.expr instanceof UndefFn && e.expr.args.some((a) => a.key === x.key)) return derivative(e, [[x, 1]], true);
     return S.Zero;
+  }
+  if (e instanceof Concrete && e.kind2 === 'Sum') {
+    // SymPy Sum._eval_derivative: the sum of the derivatives when the limits do not depend on x
+    const limits = e.limits;
+    if (limits.every(([k, a, b]) => k.key !== x.key && !dependsOn(a, x) && !dependsOn(b, x))) return new Concrete('Sum', [d(e.function, x), ...e.args.slice(1)]);
+    throw new NotImplementedError('diff: derivative of a sum whose limits depend on the variable is not supported');
   }
   if (e instanceof Piecewise) return piecewise(...e.pairs.map(([v, c]) => [d(v, x), c] as const));
   if (e instanceof Integral) return diffIntegral(e, x);
@@ -151,7 +181,7 @@ export function diff(ex: ExprLike, x: Expr, n = 1): Expr {
   let e = sympify(ex);
   // SymPy: a variable that is not a scalar (is_scalar = False) keeps the derivative unevaluated
   if (x instanceof ExtensionExpr && !x.isScalar && n > 0 && e.has(x)) return derivative(e, [[x, n]]);
-  if (!(x instanceof Sym)) {
+  if (!(x instanceof Sym) && !isMatrixElement(x)) {
     // differentiate with respect to an expression such as f(x): treat it as a symbol
     const t = new Dummy('xi');
     const r = diff(xreplace(e, [[x, t]]), t, n);

@@ -83,7 +83,7 @@ function multiplicityInt(p: bigint, nIn: bigint): number {
 function multiplicity(p: Rational, n: Rational): number {
   if (p.q === 1n) {
     if (n.p === 1n) return -multiplicityInt(p.p, n.q);
-    return multiplicityInt(p.p, n.p);
+    return multiplicityInt(p.p, n.p) - multiplicityInt(p.p, n.q);
   }
   if (p.p === 1n) return multiplicityInt(p.q, n.q);
   const like = Math.min(multiplicityInt(p.p, n.p), multiplicityInt(p.q, n.q));
@@ -115,6 +115,8 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
 
   if (combine === 'exp' || combine === 'all') {
     const cPowers = new EMap<Expr[]>();
+    // non-commutative factors keep their order; adjacent equal bases combine (A**x*A**y = A**(x + y))
+    const ncPart: Expr[] = [];
     let coeff: Expr = S.One;
     for (let term of expr.args) {
       if (isRat(term)) {
@@ -122,6 +124,19 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
         continue;
       }
       if (term instanceof Pow && !isExpPow(term)) term = denestPow(term);
+      if (!term.isCommutative) {
+        const prev = ncPart.at(-1);
+        if (prev !== undefined) {
+          const [b1, e1] = asBaseExp(prev);
+          const [b2, e2] = asBaseExp(term);
+          if (b1.key === b2.key && e1.isCommutative && e2.isCommutative) {
+            ncPart[ncPart.length - 1] = pow(b1, add(e1, e2));
+            continue;
+          }
+        }
+        ncPart.push(term);
+        continue;
+      }
       let [b, e] = asBaseExp(term);
       if (deep) {
         b = recurse(b);
@@ -320,12 +335,14 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
       cList.push([b, e]);
     }
     const newexpr = mul(...cList.map(([b, e]) => pow(b, e)));
-    if (combine === 'exp') return newexpr;
-    return recurse(newexpr, { combine: 'base' });
+    if (combine === 'exp') return mul(newexpr, ...ncPart);
+    if (!ncPart.length) return recurse(newexpr, { combine: 'base' });
+    return mul(recurse(newexpr, { combine: 'base' }), recurse(mul(...ncPart), { combine: 'base' }));
   }
 
   // combine === 'base'
-  let cPowers: [Expr, Expr][] = expr.args.map((t) => asBaseExp(t));
+  const ncFactors = expr.args.filter((t) => !t.isCommutative);
+  let cPowers: [Expr, Expr][] = expr.args.filter((t) => t.isCommutative).map((t) => asBaseExp(t));
   cPowers = cPowers.map(([b, e]) => {
     const [n, d] = fraction(b);
     if (!((isNonNegative(n) === true && isNonNegative(d) === true) || isIntegerQ(e) === true || force)) return [b, e];
@@ -393,7 +410,7 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
     }
     push(newBase, e);
   }
-  return mul(...out.entries().flatMap(([b, es]) => es.map((ei) => pow(b, ei))));
+  return mul(...out.entries().flatMap(([b, es]) => es.map((ei) => pow(b, ei))), ...ncFactors);
 }
 
 const Y = new Dummy('y');
@@ -522,8 +539,17 @@ export function posify(eIn: ExprLike): [Expr, Map<Expr, Expr>] {
 export function logcombine(exprIn: ExprLike, opts: { force?: boolean } = {}): Expr {
   const force = opts.force ?? false;
   const isLog = (e: Expr): e is Fn => e instanceof Fn && e.name === 'log' && e.args.length === 1;
+  // a numeric coefficient with an imaginary part is not real even when the assumptions cannot tell
+  const nonReal = (a: Expr): boolean => {
+    if (a.freeSymbols().size !== 0) return false;
+    try {
+      return a.toComplex().im !== 0;
+    } catch {
+      return false;
+    }
+  };
   const gooda = (a: Expr) =>
-    !(a instanceof Rational && a.p === -1n && a.q === 1n) && (isReal(a) === true || (force && isReal(a) !== false));
+    !(a instanceof Rational && a.p === -1n && a.q === 1n) && (isReal(a) === true || (force && isReal(a) !== false && !nonReal(a)));
   const goodlog = (l: Fn) => {
     const a = first(l.args);
     return isPositive(a) === true || (force && !(isNegative(a) === true || (a instanceof Rational && a.isZero)));

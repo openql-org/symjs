@@ -39,18 +39,16 @@ export function multiplicityInFactorial(pIn: IntLike, nIn: IntLike): bigint {
   const n = asInt(nIn);
   if (p <= 0n) throw new RangeError(`expecting positive integer got ${p}`);
   if (n < 0n) throw new RangeError(`expecting non-negative integer got ${n}`);
+  // every power of 1 divides n! (SymPy raises ValueError: min() of an empty sequence)
+  if (p === 1n) throw new RangeError('the multiplicity of 1 in n! is not defined');
   const f = new Map<bigint, bigint>();
   for (const [k, v] of factorintInt(p, {})) {
     const prev = f.get(v);
     f.set(v, prev !== undefined && prev > k ? prev : k);
   }
-  let best: bigint | undefined;
-  for (const [v, k] of f) {
-    const s = digits(n, k).reduce((a, b) => a + b, 0n);
-    const r = fdiv(fdiv(n + k - s, k - 1n), v);
-    if (best === undefined || r < best) best = r;
-  }
-  return best ?? 0n;
+  return [...f]
+    .map(([v, k]) => fdiv(fdiv(n + k - digits(n, k).reduce((a, b) => a + b, 0n), k - 1n), v))
+    .reduce((a, b) => (a < b ? a : b));
 }
 
 /**
@@ -208,9 +206,10 @@ function perfectPowerBig(nIn: bigint, candidatesIn: readonly bigint[] | undefine
       b = b ** e2;
       e = e / e2;
       if (e <= 1n) return false;
-      if (big || isprime(e)) return [-b, e];
-      for (const p of primerange(3n, e + 1n)) if (e % p === 0n) return [-(b ** (e / p)), p];
-      return false;
+      if (big) return [-b, e];
+      // the smallest prime factor of the odd e > 1
+      const p = first(primefactors(e));
+      return [-(b ** (e / p)), p];
     }
     const odd = [...new Set(candidatesIn.filter((i) => i % 2n !== 0n))];
     if (odd.length === 0) return false;
@@ -311,9 +310,10 @@ export function perfectPower(nIn: IntLike, candidatesIn?: readonly (bigint | num
       const bb = Rational.of(b.p ** e2, b.q ** e2);
       const ee = pp[1] / e2;
       if (ee <= 1n) return false;
-      if (big || isprime(ee)) return [Rational.of(-bb.p, bb.q), ee];
-      for (const pr of primerange(3n, ee + 1n)) if (ee % pr === 0n) return [Rational.of(-(bb.p ** (ee / pr)), bb.q ** (ee / pr)), pr];
-      return false;
+      if (big) return [Rational.of(-bb.p, bb.q), ee];
+      // the smallest prime factor of the odd ee > 1
+      const pr = first(primefactors(ee));
+      return [Rational.of(-(bb.p ** (ee / pr)), bb.q ** (ee / pr)), pr];
     }
     const odd = candidates.filter((i) => i % 2n !== 0n);
     if (odd.length === 0) return false;
@@ -342,9 +342,7 @@ export function perfectPower(nIn: IntLike, candidatesIn?: readonly (bigint | num
   }
   const g = gcd(numExp, denExp);
   if (g === 1n) return false;
-  if (big) return tuple(g);
-  for (const pr of primerange(2n, g + 1n)) if (g % pr === 0n) return tuple(pr);
-  return false;
+  return tuple(big ? g : first(primefactors(g)));
 }
 
 // ---------------------------------------------------------------------------
@@ -736,8 +734,8 @@ export function factorintInt(nIn: bigint, o: Opts): Map<bigint, bigint> {
     factors.set(p, e);
   }
   if (limit !== undefined && nextP > limit) {
-    if (checkTermination(factors, n, limit, useTrial, useRho, usePm1, nextP)) return factors;
-    if (n > 1n) factors.set(n, 1n);
+    // n > 1 when checkTermination fails
+    if (!checkTermination(factors, n, limit, useTrial, useRho, usePm1, nextP)) factors.set(n, 1n);
     return factors;
   }
   if (checkTermination(factors, n, limit, useTrial, useRho, usePm1, nextP)) return factors;
@@ -772,7 +770,8 @@ export function factorintInt(nIn: bigint, o: Opts): Map<bigint, bigint> {
       if (foundTrial && checkTermination(factors, n, limit, useTrial, useRho, usePm1, nextP)) return factors;
     } else foundTrial = false;
     if (high > limitP1) {
-      if (n > 1n) factors.set(n, 1n);
+      // n > 1: a factorization that ends returns through checkTermination
+      factors.set(n, 1n);
       return factors;
     }
     if (!foundTrial) {
@@ -949,7 +948,6 @@ export function factorrat(ratIn: IntLike, opts: FactorintOptions = {}): Map<bigi
   const o = optsOf(opts);
   const f = new Map(factorintInt(r.p, o));
   for (const [p, e] of factorintInt(r.q, o)) f.set(p, (f.get(p) ?? 0n) - e);
-  if (f.size > 1 && f.has(1n)) f.delete(1n);
   if (opts.multiple === true) {
     const key = (p: bigint): number => (getOrThrow(f, p) > 0n ? Number(p) : 1 / Number(p));
     const out: (bigint | Rational)[] = [];
@@ -1041,10 +1039,10 @@ export function properDivisorCount(n: IntLike, modulus: IntLike = 1): bigint {
   return divisorCount(n, modulus, { proper: true });
 }
 
-/** @internal sigma_k(n) for an integer (SymPy _divisor_sigma). */
-export function divisorSigmaInt(n: bigint, k = 1n): bigint {
+/** @internal sigma(n), the sum of the divisors of an integer (SymPy _divisor_sigma with k = 1). */
+export function divisorSigmaInt(n: bigint): bigint {
   let r = 1n;
-  for (const [p, e] of factorintInt(n, {})) r *= k === 0n ? e + 1n : fdiv(p ** (k * (e + 1n)) - 1n, p ** k - 1n);
+  for (const [p, e] of factorintInt(n, {})) r *= fdiv(p ** (e + 1n) - 1n, p - 1n);
   return r;
 }
 

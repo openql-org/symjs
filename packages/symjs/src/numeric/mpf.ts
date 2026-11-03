@@ -32,9 +32,9 @@ export function bitLength(nIn: bigint): number {
   return (s.length - 1) * 4 + (32 - Math.clz32(top));
 }
 
+/** Number of trailing zero bits of n != 0. */
 function trailingZeros(nIn: bigint): number {
   let n = nIn;
-  if (n === 0n) return 0;
   let k = 0;
   while ((n & 0xffffffffn) === 0n) {
     n >>= 32n;
@@ -186,16 +186,45 @@ export function div(a: Mpf, b: Mpf, prec: number): Mpf {
   return (a.man < 0n) !== (b.man < 0n) ? neg(r) : r;
 }
 
+/**
+ * Integer square root with remainder: [s, n - s**2] where s = floor(sqrt(n)),
+ * by Zimmermann's divide-and-conquer SqrtRem (Brent & Zimmermann, Modern
+ * Computer Arithmetic, Algorithm 1.12) on binary digits: the square root of
+ * the top half gives the top half of the root, one division by twice it gives
+ * the next quarter of the bits, and a single correction step fixes the result.
+ * It costs a few multiplications of the size of n, so large roots (the
+ * constants at high precision) do not pay for a Newton iteration at full
+ * precision per step.
+ */
+export function sqrtrem(n: bigint): [bigint, bigint] {
+  if (n < 0n) throw new RangeError('isqrt of negative');
+  if (n < 0x1000000000000n) {
+    // n < 2**48: the double square root is within 2**-28 of the exact root,
+    // which is at least 2**-25 below the next integer, so the floor is exact
+    const s = BigInt(Math.floor(Math.sqrt(Number(n))));
+    return [s, n - s * s];
+  }
+  // n = a3 2**(3l) + a2 2**(2l) + a1 2**l + a0 with a3 >= 2**l
+  const l = (bitLength(n) - 1) >> 2;
+  const bl = BigInt(l);
+  const mask = (1n << bl) - 1n;
+  const [s1, r1] = sqrtrem(n >> (2n * bl));
+  const num = (r1 << bl) + ((n >> bl) & mask);
+  const den = s1 << 1n;
+  const q = num / den;
+  const u = num - q * den;
+  let s = (s1 << bl) + q;
+  let r = (u << bl) + (n & mask) - q * q;
+  if (r < 0n) {
+    r += 2n * s - 1n;
+    s -= 1n;
+  }
+  return [s, r];
+}
+
 /** Integer square root floor(sqrt(n)). */
 export function isqrt(n: bigint): bigint {
-  if (n < 0n) throw new RangeError('isqrt of negative');
-  if (n < 2n) return n;
-  let x = 1n << BigInt(Math.ceil(bitLength(n) / 2));
-  for (;;) {
-    const y = (x + n / x) >> 1n;
-    if (y >= x) return x;
-    x = y;
-  }
+  return sqrtrem(n)[0];
 }
 
 export function sqrt(a: Mpf, prec: number): Mpf {
@@ -205,8 +234,8 @@ export function sqrt(a: Mpf, prec: number): Mpf {
   let shift = Math.max(0, 2 * prec + 4 - bitLength(a.man));
   if ((a.exp - shift) % 2 !== 0) shift++;
   const n = a.man << BigInt(shift);
-  const r = isqrt(n);
-  return normalize(r, (a.exp - shift) / 2, prec, r * r !== n);
+  const [r, rem] = sqrtrem(n);
+  return normalize(r, (a.exp - shift) / 2, prec, rem !== 0n);
 }
 
 export function cmp(a: Mpf, b: Mpf): number {
@@ -306,7 +335,7 @@ export function fromStr(s0: string, prec: number): Mpf {
   return fromRational(man, 10n ** BigInt(-exp), prec);
 }
 
-/** mpmath to_digits_exp: (sign, digits, exponent), digits rounded toward zero. */
+/** mpmath to_digits_exp of a != 0: (sign, digits, exponent), digits rounded toward zero. */
 function toDigitsExp(aIn: Mpf, dps: number): [string, string, number] {
   let a = aIn;
   let sgn = '';
@@ -314,7 +343,6 @@ function toDigitsExp(aIn: Mpf, dps: number): [string, string, number] {
     sgn = '-';
     a = neg(a);
   }
-  if (a.man === 0n) return ['', '0', 0];
   const bitprec = Math.floor(dps * Math.log2(10)) + 10;
   let exponent = 0;
   const bc = bitLength(a.man);

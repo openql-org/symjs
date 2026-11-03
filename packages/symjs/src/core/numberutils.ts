@@ -27,7 +27,8 @@ export function rationalFromFloat(v: number): Rational {
     mant |= 1n << 52n;
     e = expBits - 1075;
   }
-  return e >= 0 ? Rational.of(sign * mant * (1n << BigInt(e))) : Rational.of(sign * mant, 1n << BigInt(-e));
+  // a non-integer double has a negative binary exponent
+  return Rational.of(sign * mant, 1n << BigInt(-e));
 }
 
 /** Exact rational from a decimal string, e.g. '1.23' -> 123/100, '1e-2' -> 1/100, '1e-2/3.2' -> 1/320. */
@@ -176,8 +177,7 @@ export function integerNthroot(y: bigint, n: number): [bigint, boolean] {
     if (z >= x) break;
     x = z;
   }
-  while (x ** N > y) x--;
-  while ((x + 1n) ** N <= y) x++;
+  // Newton's iteration from above stops at floor(y**(1/n))
   return [x, x ** N === y];
 }
 
@@ -202,6 +202,8 @@ export function numDigits(n: bigint, base = 10): number {
 /** Inverse of a modulo m (SymPy mod_inverse); for non-integers 1/a when m > 1. */
 export function modInverse(a: Rational, m: Rational): Rational {
   if (a.isInteger && m.isInteger) {
+    // no inverse modulo 1 or -1 (SymPy); the result has the sign of m (Python's x % m)
+    if (babs(m.p) === 1n) throw new RangeError('mod_inverse: inverse does not exist');
     let [r0, r1] = [a.p, m.p];
     let [s0, s1] = [1n, 0n];
     while (r1) {
@@ -210,9 +212,8 @@ export function modInverse(a: Rational, m: Rational): Rational {
       [s0, s1] = [s1, s0 - q * s1];
     }
     if (babs(r0) !== 1n) throw new RangeError('mod_inverse: inverse does not exist');
-    const mm = babs(m.p);
-    let c = (s0 * r0) % mm;
-    if (c < 0n) c += mm;
+    let c = (s0 * r0) % m.p;
+    if ((c < 0n) !== (m.p < 0n)) c += m.p;
     return Rational.of(c);
   }
   if (m.p > m.q) return Rational.of(a.q, a.p);

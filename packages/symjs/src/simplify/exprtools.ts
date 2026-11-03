@@ -27,14 +27,13 @@ const expExponent = (e: Expr): Expr | undefined => (e instanceof Pow && isExpPow
 
 /** An unevaluated product (SymPy Mul(..., evaluate=False) / Mul._from_args). */
 function rawMul(args: Expr[]): Expr {
+  // callers pass at least one factor
   const xs = args.flatMap((a) => (a instanceof Mul ? [...a.args] : [a]));
-  if (xs.length === 0) return S.One;
   if (xs.length === 1) return first(xs);
   return new Mul(xs);
 }
+/** An unevaluated sum of at least two terms. */
 function rawAdd(args: Expr[]): Expr {
-  if (args.length === 0) return S.Zero;
-  if (args.length === 1) return first(args);
   return new Add(args);
 }
 
@@ -70,9 +69,7 @@ export function keepCoeff(coeffIn: Expr, factorsIn: Expr, clear = true, sign = f
     } else margs.unshift(coeff);
     return rawMul(margs);
   }
-  const m = mul(coeff, factors);
-  if (isNumber(m) && !isNumber(factors)) return new Mul([coeff, factors]);
-  return m;
+  return mul(coeff, factors);
 }
 
 /** SymPy decompose_power: expr = base**e with integer e. */
@@ -433,11 +430,11 @@ export function collectConst(exprIn: ExprLike, varsIn: readonly Expr[] = [], opt
   } else vars = varsIn.map((v) => sympify(v));
   if (!numbers) vars = vars.filter((v) => !(v instanceof Rational || v instanceof Float));
   vars = orderedExprs(vars);
-  for (let vi = 0; vi < vars.length; vi++) {
+  for (let vi = 0; vi < vars.length && expr instanceof Add; vi++) {
     const v = at(vars, vi);
     const Fv = factorsOf(v);
     const terms = new Map<string, [Expr, Expr[]]>();
-    for (const m of expr instanceof Add ? expr.args : [expr]) {
+    for (const m of expr.args) {
       const f = factorsOf(m);
       const [q, r] = factorsDiv(f, Fv);
       if (r.size === 0) {
@@ -475,10 +472,7 @@ export function collectConst(exprIn: ExprLike, varsIn: readonly Expr[] = [], opt
         uneval = true;
       } else args.push(mul(k, w));
     }
-    if (hit) {
-      expr = uneval ? unevaluatedAdd(args) : add(...args);
-      if (!(expr instanceof Add)) break;
-    }
+    if (hit) expr = uneval ? unevaluatedAdd(args) : add(...args);
   }
   return expr;
 }
@@ -528,16 +522,18 @@ export function signsimp(exprIn: ExprLike, evaluate = true): Expr {
   return e;
 }
 
-/** Replace every Add that could extract a minus sign by Mul(-1, -a) (unevaluated), bottom-up. */
+/**
+ * Replace every Add that could extract a minus sign by Mul(-1, -a) (unevaluated),
+ * top-down: as with SymPy's xreplace, a replaced Add is not searched again.
+ */
 function subPre(e: Expr): Expr {
   if (e.args.length === 0) return e;
-  const args = e.args.map(subPre);
-  let out = args.every((a, i) => a === e.args[i]) ? e : rebuildKeep(e, args);
-  if (out instanceof Add && couldNeg(out)) {
-    const na = mul(-1, out);
-    if (!(na instanceof Mul)) out = new Mul([S.NegOne, na]);
+  if (e instanceof Add && couldNeg(e)) {
+    const na = mul(-1, e);
+    if (!(na instanceof Mul)) return new Mul([S.NegOne, na]);
   }
-  return out;
+  const args = e.args.map(subPre);
+  return args.every((a, i) => a === e.args[i]) ? e : rebuildKeep(e, args);
 }
 
 /** Rebuild a node; a Pow keeps an unevaluated exponent. */
@@ -550,6 +546,12 @@ function reevaluate(e: Expr): Expr {
   if (e.args.length === 0) return e;
   const args = e.args.map(reevaluate);
   if (e instanceof Mul) return mul(...args);
+  // (-a)**n with an integer n: the sign comes out as in SymPy's Pow
+  const [b, n] = e.args;
+  if (e instanceof Pow && b instanceof Mul && b.args[0] instanceof Rational && isNegOneE(b.args[0]) && n instanceof Rational && n.isInteger) {
+    const p = pow(mul(...b.args.slice(1).map(reevaluate)), n);
+    return n.p % 2n === 0n ? p : mul(-1, p);
+  }
   return rebuild(e, args);
 }
 impl.gcdTermsOf = (terms) => gcdTermsOf(terms);

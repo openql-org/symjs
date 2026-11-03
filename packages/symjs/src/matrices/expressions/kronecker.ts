@@ -7,11 +7,14 @@
  */
 
 import { callableClass } from '../../core/callable';
+import { ShapeError } from '../../core/errors';
 import type { Expr } from '../../core/nodes';
 import { ExtensionExpr, S } from '../../core/nodes';
 import { mul, pow } from '../../core/ops';
 import { rebuild } from '../../core/traverse';
 import { adjoint as adjointFn } from '../../functions/elementary';
+import { Mod } from '../../functions/mod';
+import { floor } from '../../functions/special';
 import { Matrix } from '../matrix';
 import type { DoitHints, MatArg } from './matexpr';
 import {
@@ -22,9 +25,7 @@ import {
   MatAddNode,
   MatMulNode,
   MatPowNode,
-  MatrixElementNode,
   MatrixExpr,
-  ShapeError,
   det,
   doitArg,
   hasNode,
@@ -34,7 +35,7 @@ import {
   trace,
   transposeOf,
 } from './matexpr';
-import { PRECEDENCE, isInt, same, sameList, toInt } from './util';
+import { PRECEDENCE, same, sameList } from './util';
 import { at, cast, first } from '../../core/guard';
 
 /** The factors of a Kronecker product (all matrix expressions). */
@@ -66,18 +67,15 @@ export class KroneckerProductNode extends MatrixExpr {
     return new KroneckerProductNode(args);
   }
   override entry(i0: Expr, j0: Expr): Expr {
-    const ms = factors(this);
-    if (!isInt(i0) || !isInt(j0) || !ms.every((m) => isInt(m.rows) && isInt(m.cols))) return new MatrixElementNode(this, i0, j0);
-    let i = toInt(i0);
-    let j = toInt(j0);
+    // SymPy: i, m = divmod(i, mat.rows) over the factors from the last one
+    let i = i0;
+    let j = j0;
     let result: Expr = S.One;
-    for (const m of [...ms].reverse()) {
-      const r = toInt(m.rows);
-      const c = toInt(m.cols);
-      const a = i % r;
-      const b = j % c;
-      i = Math.floor(i / r);
-      j = Math.floor(j / c);
+    for (const m of [...factors(this)].reverse()) {
+      const a = Mod(i, m.rows);
+      const b = Mod(j, m.cols);
+      i = floor(mul(i, pow(m.rows, -1)));
+      j = floor(mul(j, pow(m.cols, -1)));
       result = mul(result, m.at(a, b));
     }
     return result;
@@ -104,6 +102,7 @@ export class KroneckerProductNode extends MatrixExpr {
     try {
       return KroneckerProductNode.create(this.args.map((a) => cast(a, MatrixExpr).inverse()));
     } catch (e) {
+      // SymPy catches ShapeError (non-square factors)
       if (e instanceof ShapeError) return new InverseNode(this);
       throw e;
     }
@@ -161,14 +160,13 @@ export class KroneckerProductNode extends MatrixExpr {
   }
 }
 
+// both helpers receive at least one matrix, so the results are matrix expressions
 function times(...xs: Expr[]): Expr {
-  const r = MatMulNode.create(xs);
-  return r instanceof MatrixExpr ? r.doit() : r;
+  return cast(MatMulNode.create(xs), MatrixExpr).doit();
 }
 
 function doitKron(args: readonly Expr[]): Expr {
-  const r = KroneckerProductNode.create(args);
-  return r instanceof MatrixExpr ? r.doit() : r;
+  return cast(KroneckerProductNode.create(args), MatrixExpr).doit();
 }
 
 /** SymPy KroneckerProduct(*args). */
@@ -229,7 +227,7 @@ function kroneckerMatAdd(e: Expr): Expr {
     else groups.set(k, [...(groups.get(k) ?? []), a]);
   }
   if (!groups.size) return e;
-  const krons = [...groups.values()].map((g) => g.slice(1).reduce((x, y) => (isKron(x) ? x.kroneckerAdd(y) : MatAddNode.create([x, y]).doit()), first(g)));
+  const krons = [...groups.values()].map((g) => g.slice(1).reduce((x, y) => cast(x, KroneckerProductNode).kroneckerAdd(y), first(g)));
   if (!nonkrons.length) return MatAddNode.create(krons);
   return MatAddNode.create([...krons, ...nonkrons]).doit();
 }

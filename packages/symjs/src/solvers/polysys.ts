@@ -168,6 +168,8 @@ function solveReduced(system: Expr[], gens: readonly Sym[], entry: boolean, rati
       .filter((z) => others.every((o) => expand(xreplace(o, [[gen, z]])).equals(Rational.of(0))))
       .map((z) => [z]);
   }
+  // the Gröbner basis is computed over QQ: algebraic coefficients need a triangular system
+  if (system.some(hasIrrational)) return backSubstitute(system, gens, rationalOnly);
   const basis = [...groebner(system, [...gens], 'lex').exprs];
   if (basis.length === 1 && basis[0] instanceof Rational) return [];
   const others = new Set(gens.slice(0, -1).map((g) => g.key));
@@ -196,13 +198,22 @@ const hasIrrational = (e: Expr): boolean => {
   return e.args.some(hasIrrational);
 };
 
-/** Solutions of a triangular system with algebraic coefficients, last generator first. */
+/**
+ * Solutions of a triangular system with algebraic coefficients: a generator
+ * with an equation in it alone (the last such generator) is solved first and
+ * substituted into the others.
+ */
 function backSubstitute(system: Expr[], gens: readonly Sym[], rationalOnly: boolean): Expr[][] {
   if (!gens.length) return system.every((b) => Math.abs(b.toComplex().re) + Math.abs(b.toComplex().im) < 1e-9) ? [[]] : [];
-  const gen = at(gens, -1);
-  const others = new Set(gens.slice(0, -1).map((g) => g.key));
-  const uni = system.filter((b) => b.has(gen) && ![...freeSymbols(b)].some((s) => others.has(s.key)));
-  if (!uni.length) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
+  const alone = (i: number) => {
+    const others = new Set(gens.filter((_, j) => j !== i).map((g) => g.key));
+    return system.filter((b) => b.has(at(gens, i)) && ![...freeSymbols(b)].some((s) => others.has(s.key)));
+  };
+  let idx = gens.length - 1;
+  while (idx >= 0 && !alone(idx).length) idx--;
+  if (idx < 0) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
+  const gen = at(gens, idx);
+  const uni = alone(idx);
   const [first, ...rest] = [...uni].sort((a, b) => Poly.from(a, [gen]).degree() - Poly.from(b, [gen]).degree());
   const vanishes = (e: Expr) => {
     const c = e.toComplex();
@@ -215,10 +226,11 @@ function backSubstitute(system: Expr[], gens: readonly Sym[], rationalOnly: bool
     if (!rationalOnly || r instanceof Rational) seen.set(r.key, r);
   }
   const out: Expr[][] = [];
+  const otherGens = gens.filter((_, j) => j !== idx);
   for (const z of seen.values()) {
     if (!rest.every((o) => vanishes(xreplace(o, [[gen, z]])))) continue;
     const sub = system.filter((b) => !uni.includes(b)).map((b) => expand(xreplace(b, [[gen, z]])));
-    for (const s of backSubstitute(sub, gens.slice(0, -1), rationalOnly)) out.push([...s, z]);
+    for (const s of backSubstitute(sub, otherGens, rationalOnly)) out.push([...s.slice(0, idx), z, ...s.slice(idx)]);
   }
   return out;
 }
