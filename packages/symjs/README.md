@@ -11,3 +11,7 @@ diff(sin(x).pow(2), x).toString();    // '2*sin(x)*cos(x)'
 ```
 
 See the repository README for the feature list, the SymPy compatibility report and the extend modules.
+
+## License
+
+MIT. This package contains code ported from SymPy and mpmath, which is also subject to their BSD 3-Clause licenses; see [LICENSE](LICENSE) for the notices. Not affiliated with or endorsed by the SymPy or mpmath developers.

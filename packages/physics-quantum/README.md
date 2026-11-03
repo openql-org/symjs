@@ -10,3 +10,7 @@ gates.H().mul(gates.H()).equals(Matrix.eye(2)); // true
 ```
 
 The current `gates` module is provisional.
+
+## License
+
+MIT. This package contains code ported from SymPy (`sympy.physics.quantum`), which is also subject to SymPy's BSD 3-Clause license; see [LICENSE](LICENSE) for the notice. Not affiliated with or endorsed by the SymPy developers.
