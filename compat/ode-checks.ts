@@ -71,7 +71,7 @@ export function runOdeChecks(): OdeCheckResult[] {
       const eq = sj.parse(c.eq);
       const ics = c.ics?.map(([k, v]) => [icsKey(k, fx, x), sj.parse(v)] as [Expr, Expr]);
       const r = sj.dsolve(eq, fx, ics ? { ics } : {});
-      const sols = Array.isArray(r) ? r : [r];
+      const sols: Expr[] = Array.isArray(r) ? r.flat() : [r];
       got = Array.isArray(r) ? `[${r.map(String).join(', ')}]` : String(r);
       solves = !c.ics && solvesOde(eq, fx, x, sols) && constantCount(got) === constantCount(c.expected);
     } catch (e) {

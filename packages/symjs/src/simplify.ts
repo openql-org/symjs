@@ -42,7 +42,9 @@ export {
 export {
   trigsimp,
   exptrigsimp,
+  type TrigsimpOptions,
 } from './simplify/trigsimp';
+export { fu, FU } from './simplify/fu';
 export {
   together,
   cancel,
@@ -55,6 +57,25 @@ export { hypersimp, separatevars } from './simplify/public';
 export {
   sqrtdenest,
 } from './simplify/sqrtdenest';
+export { cse } from './simplify/cse';
+export type {
+  CseOptions,
+  CseResult,
+  CseReplacement,
+  CseSymbol,
+  CseItem,
+  CseReduced,
+  CseOptimization,
+  CseHomogeneousInput,
+  CseHomogeneous,
+} from './simplify/cse';
+export { epath, EPath } from './simplify/epath';
+export type { EPathFunction } from './simplify/epath';
+
+// the groebner method of trigsimp (registered here: a direct import would be an import cycle)
+import { ratsimpmodprime as _ratsimpmodprime_ } from './simplify/ratsimpmodprime';
+import { trigsimpHooks as _trigsimpHooks_ } from './simplify/trigsimp';
+_trigsimpHooks_.ratsimpmodprime = _ratsimpmodprime_;
 
 // ---- deprecated names (kept during 0.x, removed in 1.0; see docs/api-policy.md) ----
 

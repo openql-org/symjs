@@ -8,7 +8,7 @@
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Fn, Mul, Pow, Rational, impl } from '../core/nodes';
 import { splitCoeff, sympify } from '../core/ops';
-import { countOps, mapBottomUp, some } from '../core/traverse';
+import { countOps, mapBottomUp, rebuild, some } from '../core/traverse';
 import { combsimp } from './gammasimp';
 import { fn } from '../functions/elementary';
 import { expand_log, expandMul as expand } from './expand';
@@ -95,9 +95,17 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
     const combined = logcombine(r);
     r = size(combined) < size(expanded) ? combined : expanded;
   }
+  // SymPy's done(): doit() rebuilds the result evaluated, so unevaluated products such as the
+  // (phi + theta)/2 of factor become phi/2 + theta/2 again
+  r = reevaluate(r);
   // SymPy: a result longer than ratio times the input (by the measure) is rejected
   const ratio = opts.ratio ?? 1.7;
   return size(r) > ratio * size(original) ? original : r;
+}
+
+/** Every node rebuilt with evaluation, bottom-up (SymPy Basic.doit on expressions without unevaluated objects). */
+function reevaluate(e: Expr): Expr {
+  return e.args.length ? rebuild(e, e.args.map(reevaluate)) : e;
 }
 
 /** Options of simplify (SymPy ratio and measure). */

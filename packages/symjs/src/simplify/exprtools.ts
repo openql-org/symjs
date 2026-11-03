@@ -501,45 +501,63 @@ export function unevaluatedAdd(argsIn: Expr[]): Expr {
 export function signsimp(exprIn: ExprLike, evaluate = true): Expr {
   const expr = sympify(exprIn);
   if (expr.args.length === 0) return expr;
-  // (an atom left by subPre passes through reevaluate unchanged)
-  let e = subPre(expr);
+  // (SymPy first removes an unevaluated sign of the input; symjs input Muls are evaluated)
+  const e = subPost(subPre(expr));
   if (e instanceof Add) {
     const rv = add(...e.args.map((a) => signsimp(a)));
     if (!evaluate && rv instanceof Add && couldExtractMinusSign(rv)) return new Mul([S.NegOne, mul(-1, rv)]);
     return rv;
   }
-  if (evaluate) e = reevaluate(e);
-  return e;
+  return evaluate ? reevaluate(e) : e;
+}
+
+/** The sums in e (SymPy e.atoms(Add)). */
+function sumsOf(e: Expr, out = new Map<string, Add>()): Map<string, Add> {
+  if (e instanceof Add) out.set(e.key, e);
+  for (const a of e.args) sumsOf(a, out);
+  return out;
+}
+
+/** SymPy xreplace: top-down, a replaced node is not searched again; parents are rebuilt evaluated. */
+function replaceSums(e: Expr, reps: ReadonlyMap<string, Expr>): Expr {
+  const r = reps.get(e.key);
+  if (r !== undefined) return r;
+  if (e.args.length === 0) return e;
+  const args = e.args.map((a) => replaceSums(a, reps));
+  return args.every((a, i) => a === e.args[i]) ? e : rebuild(e, args);
 }
 
 /**
- * Replace every Add that could extract a minus sign by Mul(-1, -a) (unevaluated),
- * top-down: as with SymPy's xreplace, a replaced Add is not searched again.
+ * SymPy sub_pre: replace every sum that could extract a minus sign by Mul(-1, -a) (unevaluated);
+ * then mark the sums that still could extract one as Mul(1, -1, -a), which a product rebuilt
+ * around it absorbs as a factor -1 (subPost restores the marks left elsewhere).
  */
-function subPre(e: Expr): Expr {
-  if (e.args.length === 0) return e;
-  // (SymPy skips a sum whose negation is not a sum, e.g. a matrix sum; -1 times an Add is always distributed here)
-  if (e instanceof Add && couldExtractMinusSign(e)) return new Mul([S.NegOne, mul(-1, e)]);
-  const args = e.args.map(subPre);
-  return args.every((a, i) => a === e.args[i]) ? e : rebuildKeep(e, args);
+export function subPre(e: Expr): Expr {
+  const reps = new Map<string, Expr>();
+  // (SymPy skips a sum whose negation is a product, e.g. a matrix sum; -1 times an Add is always distributed here)
+  for (const [k, a] of sumsOf(e)) if (couldExtractMinusSign(a)) reps.set(k, new Mul([S.NegOne, mul(-1, a)]));
+  const e1 = replaceSums(e, reps);
+  const negs = new Map<string, Expr>();
+  for (const [k, a] of sumsOf(e1)) {
+    const r = reps.get(k);
+    if (r !== undefined) negs.set(k, r);
+    else if (couldExtractMinusSign(a)) negs.set(k, new Mul([S.One, S.NegOne, mul(-1, a)]));
+  }
+  return replaceSums(e1, negs);
 }
 
-/** Rebuild a node; a Pow keeps an unevaluated exponent. */
-function rebuildKeep(e: Expr, args: Expr[]): Expr {
-  if (e instanceof Pow) return new Pow(first(args), at(args, 1));
-  return rebuild(e, args);
+/** SymPy sub_post: replace the marks Mul(1, -1, x) by -x (x is a sum: the negation of a sum is one). */
+export function subPost(e: Expr): Expr {
+  if (e instanceof Mul && e.args.length === 3 && isOneE(at(e.args, 0)) && isNegOneE(at(e.args, 1))) return mul(-1, subPost(at(e.args, 2)));
+  if (e.args.length === 0) return e;
+  const args = e.args.map(subPost);
+  return args.every((a, i) => a === e.args[i]) ? e : rebuild(e, args);
 }
 
 function reevaluate(e: Expr): Expr {
   if (e.args.length === 0) return e;
   const args = e.args.map(reevaluate);
   if (e instanceof Mul) return mul(...args);
-  // (-a)**n with an integer n: the sign comes out as in SymPy's Pow
-  const [b, n] = e.args;
-  if (e instanceof Pow && b instanceof Mul && b.args[0] instanceof Rational && isNegOneE(b.args[0]) && n instanceof Rational && n.isInteger) {
-    const p = pow(mul(...b.args.slice(1).map(reevaluate)), n);
-    return n.p % 2n === 0n ? p : mul(-1, p);
-  }
   return rebuild(e, args);
 }
 impl.gcdTermsOf = (terms) => gcdTermsOf(terms);

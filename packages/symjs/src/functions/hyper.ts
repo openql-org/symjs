@@ -22,6 +22,8 @@ import { c as cx, cmul } from '../numeric/complex';
 import { besselj, bessely } from './bessel';
 import { registerRewrite } from '../simplify/rewrite';
 
+const gcdBig = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcdBig(b, a % b));
+
 const tuple = (print: (e: Expr) => string, xs: readonly Expr[]) => (xs.length === 1 ? `(${print(first(xs))},)` : `(${xs.map(print).join(', ')})`);
 
 /** SymPy hyper(ap, bq, z): args are [z, ...ap, ...bq]. */
@@ -100,6 +102,69 @@ export class MeijerG extends ExtensionExpr {
   }
   withArgs(args: readonly Expr[]): Expr {
     return new MeijerG(args, this.sizes);
+  }
+  /** The argument z. */
+  get argument(): Expr {
+    return first(this.args);
+  }
+  /** The first n upper parameters (SymPy meijerg.an). */
+  get an(): Expr[] {
+    return this.part(0);
+  }
+  /** The other upper parameters (SymPy meijerg.aother). */
+  get aother(): Expr[] {
+    return this.part(1);
+  }
+  /** All upper parameters (SymPy meijerg.ap). */
+  get ap(): Expr[] {
+    return [...this.part(0), ...this.part(1)];
+  }
+  /** The first m lower parameters (SymPy meijerg.bm). */
+  get bm(): Expr[] {
+    return this.part(2);
+  }
+  /** The other lower parameters (SymPy meijerg.bother). */
+  get bother(): Expr[] {
+    return this.part(3);
+  }
+  /** All lower parameters (SymPy meijerg.bq). */
+  get bq(): Expr[] {
+    return [...this.part(2), ...this.part(3)];
+  }
+  /** SymPy meijerg.nu: sum(bq) - sum(ap). */
+  get nu(): Expr {
+    return add(...this.bq, ...this.ap.map((a) => mul(-1, a)));
+  }
+  /** SymPy meijerg.delta: m + n - (p + q)/2. */
+  get delta(): Expr {
+    const [n, p, m, q] = this.sizes;
+    return Rational.of(BigInt(2 * (m + n) - (n + p) - (m + q)), 2n);
+  }
+  /**
+   * SymPy meijerg.get_period: a number P with G(z*exp_polar(I*P)) = G(z), oo
+   * when there is none (for parameters that are not rational or differ by
+   * integers).
+   */
+  getPeriod(): Expr {
+    const compute = (l: readonly Expr[]): bigint | undefined => {
+      let lcm = 1n;
+      for (const [i, b] of l.entries()) {
+        if (!(b instanceof Rational)) return undefined;
+        for (const c of l.slice(i + 1)) {
+          const d = add(b, mul(-1, c));
+          if (d instanceof Rational && d.isInteger) return undefined;
+        }
+        const g = gcdBig(lcm, b.q);
+        lcm = (lcm / g) * b.q;
+      }
+      return lcm;
+    };
+    const beta = compute(this.bm);
+    const alpha = compute(this.an);
+    const [n, p, m, q] = this.sizes;
+    const twoPi = (k: bigint | undefined): Expr => (k === undefined ? S.Infinity : mul(2, S.Pi, Rational.of(k)));
+    if (n + p === m + q) return alpha === undefined || beta === undefined ? S.Infinity : twoPi((alpha / gcdBig(alpha, beta)) * beta);
+    return n + p < m + q ? twoPi(beta) : twoPi(alpha);
   }
   override printStr(print: (e: Expr) => string): string {
     const t = (xs: Expr[]) => tuple(print, xs);

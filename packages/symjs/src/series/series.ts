@@ -15,6 +15,8 @@ import { mapBottomUp, xreplace as subs } from '../core/traverse';
 import { log, sin } from '../functions/elementary';
 import { Expander } from './puiseux';
 import { at, first, getOrThrow } from '../core/guard';
+import { parserHooks } from '../parsing/parser';
+import { diffHooks } from '../calculus/diff';
 
 /** Array.isArray does not narrow a readonly array union. */
 const isSymList = (v: Sym | readonly Sym[] | undefined): v is readonly Sym[] => Array.isArray(v);
@@ -289,3 +291,8 @@ export function aseries(ex: ExprLike, x: Sym, n = 6, hir = false): Expr {
   const parts = ks.filter((k) => k < n).sort((a, c) => c - a).map((k) => mul(add(...getOrThrow(byPower, k)), wx(k)));
   return new Add([...parts, new Order([wx(n), x, S.Infinity])]);
 }
+
+// the parser reduces O(...) to its leading term with this O (parse('O(x + x**2)') = O(x), as in SymPy)
+parserHooks.order = (e, vars, p) => O(e, vars.length ? vars : undefined, p);
+// and the derivative of an Order (diff(O(x**2), x) = O(x))
+diffHooks.order = parserHooks.order;

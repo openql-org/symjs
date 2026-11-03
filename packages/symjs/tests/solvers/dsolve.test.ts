@@ -13,12 +13,12 @@ const f = Fn('f');
 const fx = f(x) as UndefFn;
 const show = (r: unknown) => (Array.isArray(r) ? `[${r.map(String).join(', ')}]` : String(r));
 /** SymPy hints that classifyOde does not report (no matcher here). */
-const UNMATCHED = new Set(['1st_rational_riccati', 'separable_reduced', 'separable_reduced_Integral', '2nd_power_series_ordinary', '2nd_power_series_regular', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters_Integral', 'almost_linear', 'almost_linear_Integral', '2nd_nonlinear_autonomous_conserved', '2nd_nonlinear_autonomous_conserved_Integral']);
+const UNMATCHED = new Set(['1st_rational_riccati', 'separable_reduced', 'separable_reduced_Integral', '2nd_nonlinear_autonomous_conserved', '2nd_nonlinear_autonomous_conserved_Integral']);
 // expected values from SymPy 1.14 classify_ode, without the hints in UNMATCHED
 const CLASSIFY: [string, string[]][] = [
   ['Derivative(f(x),x,x)*f(x) + x', []],
   ['Derivative(f(x),x) - f(x)**2*sin(x) - f(x)*cos(x)', ['factorable', 'Bernoulli', '1st_power_series', 'lie_group', 'Bernoulli_Integral']],
-  ['Derivative(f(x),x,x) + Derivative(f(x),x)*x**2 + f(x)*x', ['factorable']],
+  ['Derivative(f(x),x,x) + Derivative(f(x),x)*x**2 + f(x)*x', ['factorable', '2nd_power_series_ordinary']],
   ['x*Derivative(f(x),x,x) + Derivative(f(x),x) + f(x)**2', []],
   ['Derivative(f(x),x) + f(x)**2*exp(x) - 2*f(x)', ['factorable', 'Bernoulli', '1st_power_series', 'lie_group', 'Bernoulli_Integral']],
   ['Derivative(f(x),x,x)+f(x)-exp(x)*log(x)', ['nth_linear_constant_coeff_variation_of_parameters', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
@@ -27,45 +27,45 @@ const CLASSIFY: [string, string[]][] = [
   ['Derivative(f(x),x) - f(x) - x*f(x)**2', ['factorable', 'Bernoulli', '1st_power_series', 'lie_group', 'Bernoulli_Integral']],
   ['Derivative(f(x),x) + f(x)**2 + 2/x**2', ['Riccati_special_minus2', 'lie_group']],
   ['Derivative(f(x),x) - a*f(x)**2 - b/x**2', ['Riccati_special_minus2', 'lie_group']],
-  ['Derivative(f(x),x,x) - x*f(x)', ['2nd_linear_airy']],
-  ['Derivative(f(x),x,x) + 4*x*f(x)', ['2nd_linear_airy']],
-  ['x**2*Derivative(f(x),x,x) + x*Derivative(f(x),x) + (x**2 - 4)*f(x)', ['factorable', '2nd_linear_bessel']],
-  ['x**2*Derivative(f(x),x,x) + x*Derivative(f(x),x) + (x**2 - 1/4)*f(x)', ['factorable', '2nd_linear_bessel']],
+  ['Derivative(f(x),x,x) - x*f(x)', ['2nd_linear_airy', '2nd_power_series_ordinary']],
+  ['Derivative(f(x),x,x) + 4*x*f(x)', ['2nd_linear_airy', '2nd_power_series_ordinary']],
+  ['x**2*Derivative(f(x),x,x) + x*Derivative(f(x),x) + (x**2 - 4)*f(x)', ['factorable', '2nd_linear_bessel', '2nd_power_series_regular']],
+  ['x**2*Derivative(f(x),x,x) + x*Derivative(f(x),x) + (x**2 - 1/4)*f(x)', ['factorable', '2nd_linear_bessel', '2nd_power_series_regular']],
   ['Derivative(f(x),x,x) + Derivative(f(x),x)**2/f(x) + Derivative(f(x),x)/x', ['factorable', 'Liouville', 'Liouville_Integral']],
   ['Derivative(f(x),x,x) + 2/f(x)*Derivative(f(x),x)**2', ['factorable', 'Liouville', 'Liouville_Integral']],
   ['Derivative(f(x),x,3) - Derivative(f(x),x,2)/x', ['nth_linear_euler_eq_homogeneous', 'nth_order_reducible']],
-  ['x**2*Derivative(f(x),x,x) - 2*f(x) - x**3', ['nth_linear_euler_eq_nonhomogeneous_undetermined_coefficients']],
+  ['x**2*Derivative(f(x),x,x) - 2*f(x) - x**3', ['nth_linear_euler_eq_nonhomogeneous_undetermined_coefficients', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters_Integral']],
   ['x**3*Derivative(f(x),x,3) + x*Derivative(f(x),x) - f(x)', ['factorable', 'nth_linear_euler_eq_homogeneous']],
   ['Derivative(f(x),x,x) + f(x) - tan(x)', ['nth_linear_constant_coeff_variation_of_parameters', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
   ['Derivative(f(x),x,x) - 2*Derivative(f(x),x) + f(x) - exp(x)/x', ['factorable', 'nth_linear_constant_coeff_variation_of_parameters', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
-  ['(x**2 + f(x)**2) - 2*x*f(x)*Derivative(f(x),x)', ['factorable', '1st_exact', 'Bernoulli', '1st_homogeneous_coeff_best', '1st_homogeneous_coeff_subs_indep_div_dep', '1st_homogeneous_coeff_subs_dep_div_indep', 'lie_group', '1st_exact_Integral', 'Bernoulli_Integral', '1st_homogeneous_coeff_subs_indep_div_dep_Integral', '1st_homogeneous_coeff_subs_dep_div_indep_Integral']],
+  ['(x**2 + f(x)**2) - 2*x*f(x)*Derivative(f(x),x)', ['factorable', '1st_exact', 'Bernoulli', '1st_homogeneous_coeff_best', '1st_homogeneous_coeff_subs_indep_div_dep', '1st_homogeneous_coeff_subs_dep_div_indep', 'almost_linear', 'lie_group', '1st_exact_Integral', 'Bernoulli_Integral', '1st_homogeneous_coeff_subs_indep_div_dep_Integral', '1st_homogeneous_coeff_subs_dep_div_indep_Integral', 'almost_linear_Integral']],
   ['2*x*f(x) + (x**2 + f(x)**2)*Derivative(f(x),x)', ['factorable', '1st_exact', '1st_homogeneous_coeff_best', '1st_homogeneous_coeff_subs_indep_div_dep', '1st_homogeneous_coeff_subs_dep_div_indep', '1st_power_series', 'lie_group', '1st_exact_Integral', '1st_homogeneous_coeff_subs_indep_div_dep_Integral', '1st_homogeneous_coeff_subs_dep_div_indep_Integral']],
-  ['cos(f(x)) - x*sin(f(x))*Derivative(f(x),x)', ['factorable', 'separable', '1st_exact', 'lie_group', 'separable_Integral', '1st_exact_Integral']],
+  ['cos(f(x)) - x*sin(f(x))*Derivative(f(x),x)', ['factorable', 'separable', '1st_exact', 'almost_linear', 'lie_group', 'separable_Integral', '1st_exact_Integral', 'almost_linear_Integral']],
   ['Derivative(f(x),x) - exp(f(x))*x', ['separable', '1st_exact', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral']],
   ['Derivative(f(x),x)*exp(-f(x)) - x', ['factorable', 'separable', '1st_exact', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral']],
   ['Derivative(f(x),x) - f(x)*log(f(x))/x', ['separable', '1st_exact', 'lie_group', 'separable_Integral', '1st_exact_Integral']],
   ['Derivative(f(x),x) - sin(x)*cos(f(x))', ['separable', '1st_exact', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral']],
   ['f(x)*Derivative(f(x),x) - x', ['factorable', 'separable', '1st_exact', 'Bernoulli', '1st_homogeneous_coeff_best', '1st_homogeneous_coeff_subs_indep_div_dep', '1st_homogeneous_coeff_subs_dep_div_indep', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral', 'Bernoulli_Integral', '1st_homogeneous_coeff_subs_indep_div_dep_Integral', '1st_homogeneous_coeff_subs_dep_div_indep_Integral']],
   ['Derivative(f(x),x,x)**2 - 1', ['factorable', 'nth_algebraic', 'nth_algebraic_Integral']],
-  ['Derivative(f(x),x,x) - exp(x)', ['nth_algebraic', 'nth_linear_constant_coeff_undetermined_coefficients', 'nth_linear_constant_coeff_variation_of_parameters', 'nth_algebraic_Integral', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
-  ['Derivative(f(x),x,3) - x', ['nth_algebraic', 'nth_linear_constant_coeff_undetermined_coefficients', 'nth_linear_euler_eq_nonhomogeneous_undetermined_coefficients', 'nth_linear_constant_coeff_variation_of_parameters', 'nth_algebraic_Integral', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
+  ['Derivative(f(x),x,x) - exp(x)', ['nth_algebraic', 'nth_linear_constant_coeff_undetermined_coefficients', 'nth_linear_constant_coeff_variation_of_parameters', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters', 'nth_algebraic_Integral', 'nth_linear_constant_coeff_variation_of_parameters_Integral', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters_Integral']],
+  ['Derivative(f(x),x,3) - x', ['nth_algebraic', 'nth_linear_constant_coeff_undetermined_coefficients', 'nth_linear_euler_eq_nonhomogeneous_undetermined_coefficients', 'nth_linear_constant_coeff_variation_of_parameters', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters', 'nth_algebraic_Integral', 'nth_linear_constant_coeff_variation_of_parameters_Integral', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters_Integral']],
   ['Derivative(f(x),x,x) + 3*Derivative(f(x),x) + 2*f(x) - sin(x)*exp(x)', ['factorable', 'nth_linear_constant_coeff_undetermined_coefficients', 'nth_linear_constant_coeff_variation_of_parameters', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
   ['Derivative(f(x),x,x) + f(x) - x*cos(x)', ['nth_linear_constant_coeff_undetermined_coefficients', 'nth_linear_constant_coeff_variation_of_parameters', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
   ['Derivative(f(x),x,4) + 2*Derivative(f(x),x,2) + f(x)', ['nth_linear_constant_coeff_homogeneous']],
-  ['Derivative(f(x),x,x) - 4*Derivative(f(x),x) + 13*f(x)', ['factorable', 'nth_linear_constant_coeff_homogeneous']],
-  ['Derivative(f(x),x,x) - a**2*f(x)', ['nth_linear_constant_coeff_homogeneous']],
-  ['Derivative(f(x),x,x) + I*f(x)', ['nth_linear_constant_coeff_homogeneous']],
-  ['Derivative(f(x),x) - a*f(x) - exp(b*x)', ['1st_exact', '1st_linear', 'Bernoulli', '1st_power_series', 'lie_group', 'nth_linear_constant_coeff_undetermined_coefficients', 'nth_linear_constant_coeff_variation_of_parameters', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
-  ['Derivative(f(x),x) + 2*x*f(x) - x', ['factorable', 'separable', '1st_exact', '1st_linear', 'Bernoulli', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral']],
-  ['Derivative(f(x),x) + f(x)*tan(x) - sin(2*x)', ['1st_exact', '1st_linear', 'Bernoulli', '1st_power_series', 'lie_group', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral']],
-  ['Derivative(f(x),x,x) + x*Derivative(f(x),x) + f(x)', ['factorable']],
+  ['Derivative(f(x),x,x) - 4*Derivative(f(x),x) + 13*f(x)', ['factorable', 'nth_linear_constant_coeff_homogeneous', '2nd_power_series_ordinary']],
+  ['Derivative(f(x),x,x) - a**2*f(x)', ['nth_linear_constant_coeff_homogeneous', '2nd_power_series_ordinary']],
+  ['Derivative(f(x),x,x) + I*f(x)', ['nth_linear_constant_coeff_homogeneous', '2nd_power_series_ordinary']],
+  ['Derivative(f(x),x) - a*f(x) - exp(b*x)', ['1st_exact', '1st_linear', 'Bernoulli', 'almost_linear', '1st_power_series', 'lie_group', 'nth_linear_constant_coeff_undetermined_coefficients', 'nth_linear_constant_coeff_variation_of_parameters', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral', 'almost_linear_Integral', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
+  ['Derivative(f(x),x) + 2*x*f(x) - x', ['factorable', 'separable', '1st_exact', '1st_linear', 'Bernoulli', 'almost_linear', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral', 'almost_linear_Integral']],
+  ['Derivative(f(x),x) + f(x)*tan(x) - sin(2*x)', ['1st_exact', '1st_linear', 'Bernoulli', 'almost_linear', '1st_power_series', 'lie_group', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral', 'almost_linear_Integral']],
+  ['Derivative(f(x),x,x) + x*Derivative(f(x),x) + f(x)', ['factorable', '2nd_power_series_ordinary']],
   ['Derivative(f(x),x,x) + Derivative(f(x),x)*f(x)', ['factorable']],
   ['Derivative(f(x),x) - x**2 - f(x)**2', ['1st_power_series', 'lie_group']],
   ['x*Derivative(f(x),x) + f(x) - f(x)**2*log(x)', ['factorable', 'Bernoulli', 'lie_group', 'Bernoulli_Integral']],
   ['Derivative(f(x),x) - 1/(x + f(x))', ['1st_power_series', 'lie_group']],
   ['Derivative(f(x),x) - sin(x + f(x))', ['1st_power_series', 'lie_group']],
   ['Derivative(f(x),x) - f(x)**3*sin(x)', ['separable', '1st_exact', 'Bernoulli', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral', 'Bernoulli_Integral']],
-  ['Derivative(f(x),x)*x*log(x) - f(x)', ['factorable', 'separable', '1st_exact', '1st_linear', 'Bernoulli', 'lie_group', 'separable_Integral', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral']],
+  ['Derivative(f(x),x)*x*log(x) - f(x)', ['factorable', 'separable', '1st_exact', '1st_linear', 'Bernoulli', 'almost_linear', 'lie_group', 'separable_Integral', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral', 'almost_linear_Integral']],
   ['x*Derivative(f(x),x) - f(x) - x*exp(f(x)/x)', ['factorable', '1st_homogeneous_coeff_best', '1st_homogeneous_coeff_subs_indep_div_dep', '1st_homogeneous_coeff_subs_dep_div_indep', 'lie_group', '1st_homogeneous_coeff_subs_indep_div_dep_Integral', '1st_homogeneous_coeff_subs_dep_div_indep_Integral']],
   ['Derivative(f(x),x) + sin(f(x))', ['separable', '1st_exact', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral']],
   ['Derivative(f(x),x) - 3*f(x)**(2/3)', ['separable', '1st_exact', 'Bernoulli', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral', 'Bernoulli_Integral']],
@@ -74,13 +74,13 @@ const CLASSIFY: [string, string[]][] = [
   ['f(x)*Derivative(f(x),x,x) - Derivative(f(x),x)**2', ['factorable', 'Liouville', 'Liouville_Integral']],
   ['Derivative(f(x),x,x) + exp(f(x))', []],
   ['Derivative(f(x),x,x,x)*Derivative(f(x),x,x) - 1', ['nth_order_reducible']],
-  ['Derivative(f(x),x) - cos(x)*f(x) - cos(x)', ['factorable', 'separable', '1st_exact', '1st_linear', 'Bernoulli', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral']],
-  ['x*Derivative(f(x),x) + f(x) - x*exp(x)', ['factorable', '1st_exact', '1st_linear', 'Bernoulli', 'lie_group', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral']],
+  ['Derivative(f(x),x) - cos(x)*f(x) - cos(x)', ['factorable', 'separable', '1st_exact', '1st_linear', 'Bernoulli', 'almost_linear', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral', 'almost_linear_Integral']],
+  ['x*Derivative(f(x),x) + f(x) - x*exp(x)', ['factorable', '1st_exact', '1st_linear', 'Bernoulli', 'almost_linear', 'lie_group', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral', 'almost_linear_Integral', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters_Integral']],
   ['Derivative(f(x),x) - x*exp(-f(x))', ['separable', '1st_exact', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral']],
-  ['Derivative(f(x),x,x) - x**2*f(x)', []],
-  ['x**2*Derivative(f(x),x,x) + f(x) - x', ['nth_linear_euler_eq_nonhomogeneous_undetermined_coefficients']],
+  ['Derivative(f(x),x,x) - x**2*f(x)', ['2nd_power_series_ordinary']],
+  ['x**2*Derivative(f(x),x,x) + f(x) - x', ['nth_linear_euler_eq_nonhomogeneous_undetermined_coefficients', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters_Integral']],
   ['x**3*Derivative(f(x),x,3) + 3*x**2*Derivative(f(x),x,2) + 2*x*Derivative(f(x),x)', ['factorable', 'nth_linear_euler_eq_homogeneous', 'nth_order_reducible']],
-  ['x**2*Derivative(f(x),x,x) - 3*x*Derivative(f(x),x) + 4*f(x) - x**2', ['factorable', 'nth_linear_euler_eq_nonhomogeneous_undetermined_coefficients']],
+  ['x**2*Derivative(f(x),x,x) - 3*x*Derivative(f(x),x) + 4*f(x) - x**2', ['factorable', 'nth_linear_euler_eq_nonhomogeneous_undetermined_coefficients', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters', 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters_Integral']],
   ['Derivative(f(x),x,x) + f(x) - sin(x)/x', ['nth_linear_constant_coeff_variation_of_parameters', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
   ['Derivative(f(x),x,x) + f(x) - exp(x**2)', ['nth_linear_constant_coeff_variation_of_parameters', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
   ['Derivative(f(x),x,x) - f(x) - 1/cosh(x)', ['nth_linear_constant_coeff_variation_of_parameters', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
@@ -90,20 +90,20 @@ const CLASSIFY: [string, string[]][] = [
   ['Derivative(f(x),x) + f(x)**2 - 1/x**2', ['Riccati_special_minus2', 'lie_group']],
   ['Derivative(f(x),x,x)*Derivative(f(x),x) - 1', ['factorable', 'nth_order_reducible']],
   ['Derivative(f(x),x,x) - Derivative(f(x),x)/x - x**2*Derivative(f(x),x)**2', ['factorable', 'nth_order_reducible']],
-  ['f(x)*Derivative(f(x),x) + x*f(x)**2 - x', ['factorable', 'separable', '1st_exact', 'Bernoulli', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral', 'Bernoulli_Integral']],
-  ['x*f(x)*Derivative(f(x),x) - f(x)**2 - x**2', ['factorable', '1st_exact', 'Bernoulli', '1st_homogeneous_coeff_best', '1st_homogeneous_coeff_subs_indep_div_dep', '1st_homogeneous_coeff_subs_dep_div_indep', 'lie_group', '1st_exact_Integral', 'Bernoulli_Integral', '1st_homogeneous_coeff_subs_indep_div_dep_Integral', '1st_homogeneous_coeff_subs_dep_div_indep_Integral']],
+  ['f(x)*Derivative(f(x),x) + x*f(x)**2 - x', ['factorable', 'separable', '1st_exact', 'Bernoulli', 'almost_linear', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral', 'Bernoulli_Integral', 'almost_linear_Integral']],
+  ['x*f(x)*Derivative(f(x),x) - f(x)**2 - x**2', ['factorable', '1st_exact', 'Bernoulli', '1st_homogeneous_coeff_best', '1st_homogeneous_coeff_subs_indep_div_dep', '1st_homogeneous_coeff_subs_dep_div_indep', 'almost_linear', 'lie_group', '1st_exact_Integral', 'Bernoulli_Integral', '1st_homogeneous_coeff_subs_indep_div_dep_Integral', '1st_homogeneous_coeff_subs_dep_div_indep_Integral', 'almost_linear_Integral']],
   ['(x + f(x))*Derivative(f(x),x) + f(x) - x', ['factorable', '1st_exact', '1st_homogeneous_coeff_best', '1st_homogeneous_coeff_subs_indep_div_dep', '1st_homogeneous_coeff_subs_dep_div_indep', '1st_power_series', 'lie_group', '1st_exact_Integral', '1st_homogeneous_coeff_subs_indep_div_dep_Integral', '1st_homogeneous_coeff_subs_dep_div_indep_Integral']],
   ['(2*x + 3*f(x) + 1)*Derivative(f(x),x) - (x - f(x) + 2)', ['factorable', 'linear_coefficients', '1st_power_series', 'lie_group', 'linear_coefficients_Integral']],
   ['(x + f(x) + 1)*Derivative(f(x),x) - (2*x + 2*f(x) - 1)', ['factorable', '1st_power_series', 'lie_group']],
   ['Derivative(f(x),x) - exp(x - f(x))', ['separable', '1st_exact', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral']],
   ['Derivative(f(x),x) - f(x)/(x + f(x)**2)', ['1st_power_series', 'lie_group']],
-  ['Derivative(f(x),x) - x**2*exp(-x**3)*f(x)', ['separable', '1st_exact', '1st_linear', 'Bernoulli', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral']],
-  ['sin(x)*Derivative(f(x),x) + cos(x)*f(x) - 1', ['factorable', '1st_exact', '1st_linear', 'Bernoulli', 'lie_group', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral']],
-  ['Derivative(f(x),x,x) + exp(x)*f(x)', []],
-  ['Derivative(f(x),x,x) + a*x*f(x)', ['2nd_linear_airy']],
-  ['Derivative(f(x),x,x) - (x**2 + 1)*f(x)', []],
-  ['x*Derivative(f(x),x,x) + 2*Derivative(f(x),x) + x*f(x)', ['factorable', '2nd_linear_bessel']],
-  ['x**2*Derivative(f(x),x,x) + x*Derivative(f(x),x) + (4*x**4 - 9)*f(x)', ['factorable', '2nd_linear_bessel']],
+  ['Derivative(f(x),x) - x**2*exp(-x**3)*f(x)', ['separable', '1st_exact', '1st_linear', 'Bernoulli', 'almost_linear', '1st_power_series', 'lie_group', 'separable_Integral', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral', 'almost_linear_Integral']],
+  ['sin(x)*Derivative(f(x),x) + cos(x)*f(x) - 1', ['factorable', '1st_exact', '1st_linear', 'Bernoulli', 'almost_linear', 'lie_group', '1st_exact_Integral', '1st_linear_Integral', 'Bernoulli_Integral', 'almost_linear_Integral']],
+  ['Derivative(f(x),x,x) + exp(x)*f(x)', ['2nd_power_series_ordinary']],
+  ['Derivative(f(x),x,x) + a*x*f(x)', ['2nd_linear_airy', '2nd_power_series_ordinary']],
+  ['Derivative(f(x),x,x) - (x**2 + 1)*f(x)', ['2nd_power_series_ordinary']],
+  ['x*Derivative(f(x),x,x) + 2*Derivative(f(x),x) + x*f(x)', ['factorable', '2nd_linear_bessel', '2nd_power_series_regular']],
+  ['x**2*Derivative(f(x),x,x) + x*Derivative(f(x),x) + (4*x**4 - 9)*f(x)', ['factorable', '2nd_linear_bessel', '2nd_power_series_regular']],
   ['Derivative(f(x),x,x) - 2*Derivative(f(x),x) + 2*f(x) - exp(x)*cos(x)', ['factorable', 'nth_linear_constant_coeff_undetermined_coefficients', 'nth_linear_constant_coeff_variation_of_parameters', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
   ['Derivative(f(x),x,x) + f(x) - sin(2*x)*cos(x)', ['nth_linear_constant_coeff_variation_of_parameters', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
   ['Derivative(f(x),x,x) + 4*f(x) - x**2*exp(x) - sin(x)', ['nth_linear_constant_coeff_undetermined_coefficients', 'nth_linear_constant_coeff_variation_of_parameters', 'nth_linear_constant_coeff_variation_of_parameters_Integral']],
@@ -291,9 +291,78 @@ describe('dsolve', () => {
     expect(String(r[0])).toBe('Eq(f(x), C1 - x**2/2)');
     expect(r.slice(1).map(String).sort()).toEqual(['Eq(f(x), C1 - x/2 + (1 - 4*x)**(3/2)/12)', 'Eq(f(x), C1 - x/2 - (1 - 4*x)**(3/2)/12)']);
   });
+  it('irreducible quintic characteristic polynomials: CRootOf (SymPy)', () => {
+    expect(ds('Derivative(f(x), x, 5) - Derivative(f(x), x) + f(x)')).toBe(
+      'Eq(f(x), C5*exp(x*CRootOf(_x**5 - _x + 1, 0)) + (C1*sin(x*im(CRootOf(_x**5 - _x + 1, 1))) + C2*cos(x*im(CRootOf(_x**5 - _x + 1, 1))))*exp(x*re(CRootOf(_x**5 - _x + 1, 1))) + (C3*sin(x*im(CRootOf(_x**5 - _x + 1, 3))) + C4*cos(x*im(CRootOf(_x**5 - _x + 1, 3))))*exp(x*re(CRootOf(_x**5 - _x + 1, 3))))',
+    );
+    expect(ds('Derivative(f(x), x, 5) - 3*Derivative(f(x), x) + f(x)')).toBe(
+      'Eq(f(x), C3*exp(x*CRootOf(_x**5 - 3*_x + 1, 0)) + C4*exp(x*CRootOf(_x**5 - 3*_x + 1, 1)) + C5*exp(x*CRootOf(_x**5 - 3*_x + 1, 2)) + (C1*sin(x*im(CRootOf(_x**5 - 3*_x + 1, 3))) + C2*cos(x*im(CRootOf(_x**5 - 3*_x + 1, 3))))*exp(x*re(CRootOf(_x**5 - 3*_x + 1, 3))))',
+    );
+  });
+  it('the factors of an equation in f\' are ordered like Basic.compare (One before NegativeOne)', () => {
+    expect(ds('Derivative(f(x), x)**2 - 1')).toBe('[Eq(f(x), C1 - x), Eq(f(x), C1 + x)]');
+    expect(ds('Derivative(f(x), x)**2 - 4')).toBe('[Eq(f(x), C1 + 2*x), Eq(f(x), C1 - 2*x)]');
+    expect(ds('Derivative(f(x), x)**2 - 2*Derivative(f(x), x) - 3')).toBe('[Eq(f(x), C1 - x), Eq(f(x), C1 + 3*x)]');
+    expect(ds('(Derivative(f(x), x) - 1/2)*(Derivative(f(x), x) - 1/3)')).toBe('[Eq(f(x), C1 + x/2), Eq(f(x), C1 + x/3)]');
+    expect(ds('(Derivative(f(x), x) - 1/2)*(Derivative(f(x), x) - 2)')).toBe('[Eq(f(x), C1 + x/2), Eq(f(x), C1 + 2*x)]');
+    expect(ds('(Derivative(f(x), x) + x - 1)*(Derivative(f(x), x) - 1)')).toBe('[Eq(f(x), C1 + x), Eq(f(x), C1 - x**2/2 + x)]');
+    expect(ds('(Derivative(f(x), x) + x - 1)*(Derivative(f(x), x) + x**2 - 1)')).toBe('[Eq(f(x), C1 - x**2/2 + x), Eq(f(x), C1 - x**3/3 + x)]');
+  });
+  it('power series hints (SymPy)', () => {
+    const h = (e: string, hint: string) => show(dsolve(parse(e), fx, { hint }));
+    expect(ds('Derivative(f(x), x, x) + x*Derivative(f(x), x) + f(x)')).toBe('Eq(f(x), C2*(x**4/8 - x**2/2 + 1) + C1*x*(1 - x**2/3) + O(x**6))');
+    expect(ds('(1 + x**2)*Derivative(f(x), x, x) + 2*x*Derivative(f(x), x) - 2*f(x)')).toBe('Eq(f(x), C2*(-x**4/3 + x**2 + 1) + C1*x + O(x**6))');
+    expect(h('Derivative(f(x), x, x) + f(x)', '2nd_power_series_ordinary')).toBe('Eq(f(x), C2*(x**4/24 - x**2/2 + 1) + C1*x*(1 - x**2/6) + O(x**6))');
+    expect(h('Derivative(f(x), x, x) - x*f(x)', '2nd_power_series_ordinary')).toBe('Eq(f(x), C2*(x**3/6 + 1) + C1*x*(x**3/12 + 1) + O(x**6))');
+    // a rational coefficient: the numerator is used
+    expect(h('Derivative(f(x), x, x) + f(x)/(x + 1)', '2nd_power_series_ordinary')).toBe('Eq(f(x), C2*(-x**4/24 + x**3/6 - x**2/2 + 1) + C1*x*(x**3/12 - x**2/6 + 1) + O(x**6))');
+    const reg = (e: string) => h(e, '2nd_power_series_regular');
+    expect(reg('x**2*Derivative(f(x), x, x) + x*Derivative(f(x), x) + (x**2 - 1)*f(x)')).toBe('Eq(f(x), C1*x*(x**4/192 - x**2/8 + 1) + O(x**6))');
+    expect(reg('2*x**2*Derivative(f(x), x, x) - x*Derivative(f(x), x) + (1 + x)*f(x)')).toBe('Eq(f(x), C2*x*(x**4/22680 - x**3/630 + x**2/30 - x/3 + 1) + C1*sqrt(x)*(x**4/2520 - x**3/90 + x**2/6 - x + 1) + O(x**6))');
+    expect(reg('x*Derivative(f(x), x, x) + Derivative(f(x), x) + x*f(x)')).toBe('Eq(f(x), C1*(x**4/64 - x**2/4 + 1) + O(x**6))');
+    expect(reg('4*x**2*Derivative(f(x), x, x) + (x**2 + 1)*f(x)')).toBe('Eq(f(x), C1*sqrt(x)*(x**4/1024 - x**2/16 + 1) + O(x**6))');
+    expect(reg('x**2*Derivative(f(x), x, x) - 6*f(x)')).toBe('Eq(f(x), C2*x**3 + C1/x**2 + O(x**6))');
+    // SymPy raises TypeError (Expected Expr or iterable but got None) for these two
+    expect(reg('x**2*Derivative(f(x), x, x) - 42*f(x)')).toBe('Eq(f(x), O(1))');
+    expect(() => reg('x**2*Derivative(f(x), x, x) + x*Derivative(f(x), x) + (x**2 + 1)*f(x)')).toThrow(NotImplementedError);
+    // an irregular singular point: neither hint (SymPy: ('2nd_linear_bessel',))
+    expect(classifyOde(parse('x**3*Derivative(f(x), x, x) + f(x)'), fx).filter((c) => c.includes('power_series'))).toEqual([]);
+    // 1st_power_series: f(0) = C1 (SymPy)
+    const ps = (e: string) => h(e, '1st_power_series');
+    expect(ps('Derivative(f(x), x) - x*f(x)**3 + sin(x)')).toBe('Eq(f(x), x**2*(C1**3 - 1)/2 + x**4*(9*C1**2*(C1**3 - 1) + 1)/24 + C1 + O(x**6))');
+    expect(ps('Derivative(f(x), x) - f(x)')).toBe('Eq(f(x), C1 + C1*x + C1*x**2/2 + C1*x**3/6 + C1*x**4/24 + C1*x**5/120 + O(x**6))');
+    expect(ps('Derivative(f(x), x)')).toBe('Eq(f(x), C1)');
+    // SymPy: Eq(f(x), oo) when a higher derivative is not finite at 0; no match when h or h' is not
+    expect(ps('Derivative(f(x), x) - x**(5/2)')).toBe('Eq(f(x), oo)');
+    expect(() => ps('Derivative(f(x), x) - 1/x')).toThrow(NotImplementedError);
+    expect(() => ps('Derivative(f(x), x) - x*log(x)')).toThrow(NotImplementedError);
+  });
+  it('nth_linear_euler_eq_nonhomogeneous_variation_of_parameters (SymPy)', () => {
+    const h = (e: string) => show(dsolve(parse(e), fx, { hint: 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters' }));
+    expect(h('x**2*Derivative(f(x), x, x) + x*Derivative(f(x), x) - f(x) - x**3')).toBe('Eq(f(x), C1/x + C2*x + x**3/8)');
+    // first order (an odd order); SymPy: Eq(f(x), (C1 + x**3/3)/x), the same expression
+    expect(h('x*Derivative(f(x), x) + f(x) - x**2')).toBe('Eq(f(x), C1/x + x**2/3)');
+    expect(ds('Derivative(f(x), x) + f(x) - x', 'nth_linear_constant_coeff_variation_of_parameters')).toBe('Eq(f(x), C1*exp(-x) + x - 1)');
+    expect(ds('x**2*Derivative(f(x), x, x) - 2*x*Derivative(f(x), x) + 2*f(x) - x**3*exp(x)')).toBe('Eq(f(x), x*(C1 + C2*x + exp(x)))');
+  });
+  it('almost_linear (SymPy)', () => {
+    const h = (e: string) => show(dsolve(parse(e), fx, { hint: 'almost_linear' }));
+    expect(h('x*exp(f(x))*Derivative(f(x), x) + exp(f(x)) - x')).toBe('Eq(f(x), log(C1/x + x/2))');
+    expect(h('Derivative(f(x), x)*cos(f(x)) + sin(f(x)) - x')).toBe('[Eq(f(x), pi - asin(C1*exp(-x) + x - 1)), Eq(f(x), asin(C1*exp(-x) + x - 1))]');
+    expect(h('2*f(x)*Derivative(f(x), x) + f(x)**2/x - x')).toBe('[Eq(f(x), -sqrt(3)*sqrt(C1/x + x**2)/3), Eq(f(x), sqrt(3)*sqrt(C1/x + x**2)/3)]');
+    // l(f)' / a is not free of f
+    expect(() => h('x*Derivative(f(x), x) + f(x)**2 - x')).toThrow(NotImplementedError);
+  });
   it('unsupported equations', () => {
-    // SymPy: a solution with CRootOf(_x**5 - _x + 1, k); roots() does not give CRootOf here
-    expect(() => ds('Derivative(f(x), x, 5) - Derivative(f(x), x) + f(x)')).toThrow(NotImplementedError);
+    // SymPy: [Eq(f(x), -acos((-C1 - exp(2*x))/(C1 - exp(2*x))) + 2*pi), Eq(f(x), acos(...))] from
+    // Integral(1/sin(y)) = log(cos(y) - 1)/2 - log(cos(y) + 1)/2, which integrate does not find here
+    expect(() => ds('Derivative(f(x), x) + sin(f(x))')).toThrow(NotImplementedError);
+    // SymPy (lie_group): Eq(f(x), -x - 2*atan((C1 + x + 2)/(C1 + x))) and Eq(f(x), -x - LambertW(C1*exp(-x - 1)) - 1)
+    expect(() => ds('Derivative(f(x), x) - sin(x + f(x))')).toThrow(NotImplementedError);
+    expect(() => ds('Derivative(f(x), x) - 1/(x + f(x))')).toThrow(NotImplementedError);
+    // SymPy: Eq(f(x), C1*x**CRootOf(_x**5 - 10*_x**4 + 35*_x**3 - 50*_x**2 + 24*_x + 1, 0) + ...); the Euler
+    // characteristic roots are not given as CRootOf here
+    expect(() => ds('x**5*Derivative(f(x), x, 5) + f(x)')).toThrow(NotImplementedError);
     // SymPy: Eq(Integral(1/LambertW(-_y), (_y, f(x))), C1 + x)
     expect(() => ds('Derivative(f(x), x)*exp(Derivative(f(x), x)) + f(x)')).toThrow(NotImplementedError);
     // SymPy: NotImplementedError as well

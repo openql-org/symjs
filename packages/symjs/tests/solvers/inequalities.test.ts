@@ -110,6 +110,8 @@ describe('solveRationalInequalities', () => {
 describe('reduceInequalities', () => {
   it('follows SymPy', () => {
     expect(show(Q.reduceInequalities(p('x**2 < 4')))).toBe('(-2 < x) & (x < 2)');
+    // x/Abs(x) is undefined at 0 (SymPy (0 <= x) & (x < oo) wrongly includes 0, where x/Abs(x) + 1 is nan)
+    expect(show(Q.reduceInequalities(p('x/Abs(x) + 1 > 0'), [x]))).toBe('(0 < x) & (x < oo)');
     expect(show(Q.reduceInequalities([p('x > 0'), p('x < 3')]))).toBe('(0 < x) & (x < 3)');
     expect(show(Q.reduceInequalities([p('x > 0').subs(x, xr)]))).toBe('0 < x');
     expect(show(Q.reduceInequalities([p('x**2 < 4').subs(x, xr)]))).toBe('(-2 < x) & (x < 2)');
@@ -265,8 +267,12 @@ describe('piecewiseExclusive', () => {
     expect(show(Q.piecewiseExclusive(pw('x', 'x<0', '1', 'Eq(x, 0)', '2', 'x>0')))).toBe('Piecewise((x, x < 0), (1, Eq(x, 0)), (2, x > 0))');
     // equivalent to SymPy (1, (x >= 0) & ((x > 2) | (x < -1)))
     expect(show(Q.piecewiseExclusive(pw('x', 'x<0', '1', '(x<-1)|(x>2)', '2', 'x>1')))).toBe('Piecewise((x, x < 0), (1, x > 2), (2, (x <= 2) & (x > 1)), (nan, (x >= 0) & (x <= 1)))');
-    // SymPy also handles several symbols; symjs supports univariate conditions only
-    expect(() => Q.piecewiseExclusive(pw('x', 'y<0', '1', 'x<0'))).toThrow(NotImplementedError);
+    // several symbols: the conditions And-ed with the negations of the earlier ones (SymPy)
+    expect(show(Q.piecewiseExclusive(pw('x', 'y<0', '1', 'x<0')))).toBe('Piecewise((x, y < 0), (1, (y >= 0) & (x < 0)), (nan, (x >= 0) & (y >= 0)))');
+    expect(show(Q.piecewiseExclusive(pw('x', 'x<y', 'y', 'True')))).toBe('Piecewise((x, x < y), (y, x >= y))');
+    expect(show(Q.piecewiseExclusive(pw('1', 'x<y', '2', 'x>2', '3', 'True')))).toBe('Piecewise((1, x < y), (2, (x >= y) & (x > 2)), (3, (x >= y) & (x <= 2)))');
+    expect(show(Q.piecewiseExclusive(pw('1', '(x<y)&(y>0)', '2', 'True')))).toBe('Piecewise((1, (y > 0) & (x < y)), (2, (x >= y) | (y <= 0)))');
+    expect(show(Q.piecewiseExclusive(pw('x', 'y<0', '1', 'x<0'), { skipNan: true }))).toBe('Piecewise((x, y < 0), (1, (y >= 0) & (x < 0)))');
     expect(show(Q.piecewiseExclusive(pw('x', '(x<0)&(x>1)', '1', 'True')))).toBe('1');
     // equivalent to SymPy (1, (x >= -5) & Eq(x**2, 1)), (nan, (x >= -5) & Ne(x**2, 1))
     expect(show(Q.piecewiseExclusive(pw('x', 'x<-5', '1', 'Eq(x**2, 1)')))).toBe('Piecewise((x, x < -5), (1, Eq(x, -1) | Eq(x, 1)), (nan, (x > 1) | ((x >= -5) & (x < -1)) | ((x > -1) & (x < 1))))');
@@ -377,8 +383,11 @@ describe('monotonicity', () => {
     expect(Q.isIncreasing(p('-x**3'), finiteSet(y))).toBe(undefined);
     // SymPy True: x*y is linear in x, increasing or decreasing depending on the sign of y
     expect(Q.isMonotonic(p('x*y'), Reals, x)).toBe(true);
-    // SymPy False (x**3 - x turns at x = +-sqrt(3)/3); not decided here as isDecreasing is undecided
-    expect(Q.isMonotonic(p('x**3 - x'))).toBe(undefined);
+    // SymPy False (x**3 - x turns at x = +-sqrt(3)/3)
+    expect(Q.isMonotonic(p('x**3 - x'))).toBe(false);
+    expect(Q.isDecreasing(p('x**3 - x'))).toBe(false);
+    // SymPy False; neither increasing nor decreasing is decided on a symbolic point here
+    expect(Q.isMonotonic(p('x**3 - x'), finiteSet(y))).toBe(undefined);
   });
   it('a derivative that vanishes on an interval (x + Abs(x) for real x)', () => {
     const e = add(xr, Abs(xr));

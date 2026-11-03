@@ -37,12 +37,19 @@ const isExprList = <T>(v: T | readonly T[] | undefined): v is readonly T[] => Ar
  * Solve an ordinary differential equation for f(x) with SymPy's hints
  * (solvers/dsolve.ts). Returns Eq(f(x), solution); like SymPy, a list of
  * equations is returned when the general solution has several branches.
+ * A system gives [Eq(f(t), ...), Eq(g(t), ...)], or a list of such lists when
+ * it has several solution families.
  * ics lists initial conditions, e.g. [[f(0), 1], [Subs(Derivative(f(x), x), x, 0), 0]].
  */
-export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts: { ics?: [Expr, ExprLike][]; hint?: string } = {}): Expr | Expr[] {
-  // a system of equations: linear first-order with constant coefficients
+export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts: { ics?: [Expr, ExprLike][]; hint?: string } = {}): Expr | Expr[] | Expr[][] {
+  // a system of equations: a list of solutions, or a list of solution lists (SymPy)
   if (isExprList(eqIn)) return dsolveSystem(eqIn, isExprList(fx) ? fx.map((f) => cast(f, UndefFn, 'unknown function')) : undefined);
   if (isExprList(fx) || fx === undefined) throw new TypeError('dsolve: the unknown function f(x) is required');
+  return dsolveSingle(eqIn, fx, opts);
+}
+
+/** dsolve of a single equation. */
+function dsolveSingle(eqIn: ExprLike, fx: Expr, opts: { ics?: [Expr, ExprLike][]; hint?: string }): Expr | Expr[] {
   if (!(fx instanceof UndefFn) || fx.args.length !== 1 || !(fx.args[0] instanceof Sym)) {
     throw new TypeError('dsolve: f(x) with a single symbol argument expected');
   }
@@ -100,4 +107,4 @@ function applyIcs(sol: Expr, fx: UndefFn, x: Sym, ics: [Expr, ExprLike][]): Expr
 
 export { homogeneousOrder } from './homogeneous';
 
-registerSingleOdeSolver((eq, fx) => dsolve(eq, fx));
+registerSingleOdeSolver((eq, fx) => dsolveSingle(eq, fx, {}));

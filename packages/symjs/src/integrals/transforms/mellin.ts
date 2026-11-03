@@ -14,18 +14,23 @@
  */
 
 import type { ExprLike, Sym } from '../../core/nodes';
-import { Add, Dummy, Expr, Fn, Integral, Mul, Pow, Rational, S, Constant } from '../../core/nodes';
+import { Add, Dummy, Expr, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, Constant } from '../../core/nodes';
+import { BoolOp } from '../../core/boolalg';
+import { meijerintDefinite } from '../meijerint';
+import { powdenestPolar } from '../hyperexpand';
+import { simplify as simplifyExpr } from '../../simplify/simplify';
 import { and, or } from '../../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne } from '../../core/logic';
 import { add, exp, mul, neg, pow, sqrt, sub, sympify } from '../../core/ops';
 import { isNegative, isPositive, isReal } from '../../core/assumptions';
 import { asCoeffAdd, asCoeffMul, asIndependent, asNumerDenom, asRealImag, isRationalFunction } from '../../core/methods';
-import { some, subs } from '../../core/traverse';
+import { mapBottomUp, some, subs } from '../../core/traverse';
 import { igcd, ilcm } from '../../core/numberutils';
-import { abs, arg, re, sin } from '../../functions/elementary';
+import { abs, arg, fn, re, sin } from '../../functions/elementary';
 import { Max, Min, ceiling, gamma } from '../../functions/special';
 import { besselj, besselk } from '../../functions/bessel';
 import { MeijerG, meijerg } from '../../functions/hyper';
+import { hyperexpand } from '../hyperexpand';
 import { diff } from '../../calculus/diff';
 import { Poly, factor } from '../../polys/sympoly';
 import { rootsDict } from '../../polys/poly';
@@ -33,6 +38,7 @@ import { compareKeys, sortKey } from '../../printing/sortkey';
 import { expand, expandMul, expand_power_exp as expandPowerExp } from '../../simplify/expand';
 import { cancel, together } from '../../simplify/rational';
 import { gammasimp } from '../../simplify/gammasimp';
+import { factorTerms } from '../../simplify/exprtools';
 import { rewrite } from '../../simplify/rewrite';
 import type { TransformHints, TransformResult } from './base';
 import type { IntegralTransform } from './base';
@@ -178,12 +184,88 @@ const decided = (c: Expr): Expr => {
   return v === undefined ? c : v ? S.true : S.false;
 };
 
+/** The terms of an And (SymPy conjuncts) and of an Or (disjuncts). */
+const boolArgs = (e: Expr, op: 'And' | 'Or'): readonly Expr[] => (e instanceof BoolOp && e.op === op ? e.args : [e]);
+
+/**
+ * The fundamental strip and the remaining condition from a convergence
+ * condition: the relations linear in re(s) bound the strip (SymPy
+ * _mellin_transform.process_conds).
+ */
+export function processConds(cond: Expr, s: Expr): [Expr, Expr, Expr] {
+  let a: Expr = S.NegativeInfinity;
+  let b: Expr = S.Infinity;
+  let aux: Expr = S.true;
+  const t = new Dummy('t', { real: true });
+  for (const c of boolArgs(cond, 'And')) {
+    let a_: Expr = S.Infinity;
+    let b_: Expr = S.NegativeInfinity;
+    const aux_: Expr[] = [];
+    for (const d of boolArgs(c, 'Or')) {
+      const lin = d instanceof Rel && d.op !== 'Eq' && d.op !== 'Ne' ? linearRe(sub(d.lhs, d.rhs), s, t) : undefined;
+      if (!(d instanceof Rel) || !lin) {
+        aux_.push(d);
+        continue;
+      }
+      // c1*t + c0 op 0: t > -c0/c1 is a lower bound
+      const [c1, c0] = lin;
+      const bound = neg(mul(c0, pow(c1, -1)));
+      const lower = (d.op === 'Gt' || d.op === 'Ge') === c1.isPositive;
+      if (lower) a_ = Min(bound, a_);
+      else b_ = Max(bound, b_);
+    }
+    if (a_.key !== S.Infinity.key && a_.key !== b.key) a = Max(a_, a);
+    else if (b_.key !== S.NegativeInfinity.key && b_.key !== a.key) b = Min(b_, b);
+    else aux = and(aux, or(...aux_));
+  }
+  return [a, b, aux];
+}
+/** [c1, c0] with e = c1*re(s) + c0, c1 a nonzero rational and c0 free of s, or undefined. */
+function linearRe(e: Expr, s: Expr, t: Dummy): [Rational, Expr] | undefined {
+  const u = expand(subs(e, [[re(s), t]]));
+  if (u.has(s) || !u.has(t)) return undefined;
+  const c1 = diff(u, t);
+  const c0 = subs(u, [[t, S.Zero]]);
+  // (u is linear in t when the derivative is a number)
+  return c1 instanceof Rational ? [c1, c0] : undefined;
+}
+
+/** n**e with n = b**k written as b**(k*e) for the smallest base b. */
+function perfectPower(n: bigint, e: Expr): Expr {
+  for (let k = 64; k > 1; k--) {
+    const b = BigInt(Math.round(Number(n) ** (1 / k)));
+    if (b > 1n && b ** BigInt(k) === n) return pow(b, mul(k, e));
+  }
+  return pow(n, e);
+}
+
+/** The Mellin transform by SymPy's Meijer G-function integrator: [F, a, b, cond], or undefined. */
+function mellinMeijer(f: Expr, x: Sym, s: Expr): [Expr, Expr, Expr, Expr] | undefined {
+  // (sums are transformed term by term, combining the strips)
+  if (f instanceof Add) return undefined;
+  const m = meijerintDefinite(mul(f, pow(x, sub(s, 1))), x, 0, S.Infinity);
+  if (!m) return undefined;
+  const conds = boolArgs(m[1], 'Or')
+    .map((c) => processConds(c, s))
+    .filter((c) => !isFalseExpr(c[2]));
+  if (!conds.length) return undefined;
+  const [a, b, aux] = first(conds);
+  // SymPy _simplify, with the powers of rationals over the smallest bases and the arguments of gamma expanded
+  const F = mapBottomUp(simplifyExpr(powdenestPolar(m[0])), (t) => {
+    if (t instanceof Pow && t.base instanceof Rational && t.base.isPositive && !(t.exp instanceof Rational)) return mul(perfectPower(t.base.p, t.exp), perfectPower(t.base.q, neg(t.exp)));
+    return t instanceof Fn && t.name === 'gamma' ? gamma(expand(first(t.args))) : t;
+  });
+  return [F, a, b, aux];
+}
+
 /** SymPy _mellin_transform: [F, [a, b], cond]. */
 export function mellinTransformImpl(f: Expr, x: Sym, s: Expr, simplify: boolean): MellinTriple {
-  const r = mellinTable(f, x, s);
+  const r = mellinTable(f, x, s) ?? mellinMeijer(f, x, s);
   if (!r) throw new IntegralTransformError('Mellin', f, 'could not compute integral');
   const [F, a, b, cond] = r;
-  const out = simplify ? gammasimp(F) : F;
+  // gammasimp, with the common factors of the arguments of sin and cos pulled out, as SymPy's
+  // simplify writes them (pi/sin(pi*(a + s)))
+  const out = simplify ? mapBottomUp(gammasimp(F), (t) => (t instanceof Fn && (t.name === 'sin' || t.name === 'cos') ? fn(t.name, [factorTerms(first(t.args))]) : t)) : F;
   return [out, [a, b], cond];
 }
 
@@ -641,7 +723,10 @@ function inverseMellinTransformImpl(F0: Expr, s: Sym, x_: Expr, strip: readonly 
     }
     const [[an, ap], [bm, bq], C, e, fac] = rg;
     const z = mul(C, pow(pow(x, e), -1));
-    const h = meijergClosedForm(an, ap, bm, bq, C, e, x) ?? meijerg(an, ap, bm, bq, z);
+    const G = meijerg(an, ap, bm, bq, z);
+    // the table of closed forms, then SymPy's hyperexpand where it leaves no G-function
+    const hx = hyperexpand(G);
+    const h = meijergClosedForm(an, ap, bm, bq, C, e, x) ?? (some(hx, (n) => n instanceof MeijerG || n instanceof Piecewise) ? G : hx);
     const delta = sub(add(bm.length, an.length), mul(ap.length + an.length + bm.length + bq.length, S.Half));
     const nu = sub(add(...bm, ...bq), add(...an, ...ap));
     const argz = abs(arg(z));

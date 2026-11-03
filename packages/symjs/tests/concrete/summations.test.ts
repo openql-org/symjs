@@ -404,6 +404,18 @@ describe('results equal SymPy 1.14', () => {
     ["sj.summation(P('x/k**2'), [k, 3, n])", () => sj.summation(P('x/k**2'), [k, 3, n]), "x*(harmonic(n, 2) - 5/4)"],
     ["sj.summation(P('1/k'), [k, 1, sj.oo])", () => sj.summation(P('1/k'), [k, 1, sj.oo]), "oo"],
     ["sj.summation(P('1/k**2'), [k, 0, n])", () => sj.summation(P('1/k**2'), [k, 0, n]), "Sum(k**(-2), (k, 0, n))"],
+    // SymPy's product() applies powsimp to the result
+    ["sj.product(P('x*k*2**k'), [k, 1, n])", () => sj.product(P('x*k*2**k'), [k, 1, n]), "2**(n*(n + 1)/2)*x**n*factorial(n)"],
+    ["sj.product(P('2**k'), [k, 1, n])", () => sj.product(P('2**k'), [k, 1, n]), "2**(n*(n + 1)/2)"],
+    // the terms tend to AccumBounds(-1, 1), not to 0 (or 1)
+    ["conv(sj.Product(P('sin(k)'), [k, 1, sj.oo]))", () => conv(sj.Product(P('sin(k)'), [k, 1, sj.oo])), "false"],
+    ["conv(sj.Sum(P('sin(k)'), [k, moo, sj.oo]))", () => conv(sj.Sum(P('sin(k)'), [k, moo, sj.oo])), "false"],
+    ["sj.summation(P('1/(k*(k + 1))'), [k, 1, n])", () => sj.summation(P('1/(k*(k + 1))'), [k, 1, n]), "1 - 1/(n + 1)"],
+    ["sj.summation(P('1/(k*(k + 2))'), [k, 1, n])", () => sj.summation(P('1/(k*(k + 2))'), [k, 1, n]), "3/4 - 1/(2*(n + 2)) - 1/(2*(n + 1))"],
+    ["sj.summation(P('log(k + 1) - log(k)'), [k, 1, n])", () => sj.summation(P('log(k + 1) - log(k)'), [k, 1, n]), "log(n + 1)"],
+    ["sj.summation(P('cos(k + 1) - cos(k)'), [k, 1, n])", () => sj.summation(P('cos(k + 1) - cos(k)'), [k, 1, n]), "cos(n + 1) - cos(1)"],
+    ["sj.summation(P('cos(k) - cos(k + 1)'), [k, 1, n])", () => sj.summation(P('cos(k) - cos(k + 1)'), [k, 1, n]), "-cos(n + 1) + cos(1)"],
+    ["sj.Product(P('2**k'), [k, 1, n]).doit()", () => sj.doit(sj.Product(P('2**k'), [k, 1, n])), "2**(n**2/2 + n/2)"],
   ];
   it.each(cases)('%s', (_label, f, expected) => {
     expect(run(f)).toBe(expected);
@@ -431,14 +443,6 @@ describe('results that differ from SymPy 1.14', () => {
     ["sj.summation(P('k*2**k'), [k, 0, n])", () => sj.summation(P('k*2**k'), [k, 0, n]), "Sum(2**k*k, (k, 0, n))", "2*(2**n*n - 2**n + 1)"],
     // the roots are not computed for an irreducible quartic
     ["sj.product(P('k**4+k**2+2'), [k, 1, n])", () => sj.product(P('k**4+k**2+2'), [k, 1, n]), "Product(k**4 + k**2 + 2, (k, 1, n))", "RisingFactorial(-2**(1/4)*sin(atan(sqrt(7))/2) + 1 - 2**(1/4)*I*cos(atan(sqrt(7))/2), n)*RisingFactorial(-2**(1/4)*sin(atan(sqrt(7))/2) + 1 + 2**(1/4)*I*cos(atan(sqrt(7))/2), n)*RisingFactorial(2**(1/4)*sin(atan(sqrt(7))/2) + 1 - 2**(1/4)*I*cos(atan(sqrt(7))/2), n)*RisingFactorial(2**(1/4)*sin(atan(sqrt(7))/2) + 1 + 2**(1/4)*I*cos(atan(sqrt(7))/2), n)"],
-    // the same value: SymPy's product() applies powsimp, which factors the exponent
-    ["sj.product(P('x*k*2**k'), [k, 1, n])", () => sj.product(P('x*k*2**k'), [k, 1, n]), "2**(n**2/2 + n/2)*x**n*factorial(n)", "2**(n*(n + 1)/2)*x**n*factorial(n)"],
-    // the same value: SymPy's product() applies powsimp, which factors the exponent
-    ["sj.product(P('2**k'), [k, 1, n])", () => sj.product(P('2**k'), [k, 1, n]), "2**(n**2/2 + n/2)", "2**(n*(n + 1)/2)"],
-    // AccumBounds limits are not implemented
-    ["conv(sj.Product(P('sin(k)'), [k, 1, sj.oo]))", () => conv(sj.Product(P('sin(k)'), [k, 1, sj.oo])), "unknown", "false"],
-    // AccumBounds limits are not implemented
-    ["conv(sj.Sum(P('sin(k)'), [k, moo, sj.oo]))", () => conv(sj.Sum(P('sin(k)'), [k, moo, sj.oo])), "unknown", "false"],
     // comparison with |sin(k)| <= 1 is not implemented
     ["conv(sj.Sum(P('sin(k)/k**3'), [k, moo, sj.oo]))", () => conv(sj.Sum(P('sin(k)/k**3'), [k, moo, sj.oo])), "unknown", "true"],
     // SymPy raises ValueError
@@ -450,5 +454,32 @@ describe('results that differ from SymPy 1.14', () => {
   ];
   it.each(cases)('%s', (_label, f, expected) => {
     expect(run(f)).toBe(expected);
+  });
+});
+
+describe('summations: telescoping sums and convergence tests (SymPy 1.14)', () => {
+  const [k, n] = sj.symbols('k n');
+  it('sums two terms that cancel after a shift', () => {
+    expect(String(sj.summation(sj.parse('sin(k) - sin(k + 2)'), [k, 1, n]))).toBe('-sin(n + 1) - sin(n + 2) + sin(1) + sin(2)');
+    expect(String(sj.summation(sj.parse('1/(k**2 - 1)'), [k, 2, n]))).toBe('3/4 - 1/(2*(n + 1)) - 1/(2*n)');
+    // no shift makes the terms cancel
+    expect(String(sj.summation(sj.parse('sin(k) + cos(k)'), [k, 1, n]))).toBe('Sum(sin(k) + cos(k), (k, 1, n))');
+  });
+  it('writes the exponent of a product as SymPy does', () => {
+    const [a] = sj.symbols('a');
+    expect(String(sj.product(sj.parse('2**k'), [k, a, n]))).toBe('2**(-a**2/2 + a/2 + n**2/2 + n/2)');
+    expect(String(sj.product(sj.parse('2**y'), [k, 1, n]))).toBe('(2**y)**n');
+    expect(String(sj.product(sj.parse('sqrt(2)'), [k, 1, n]))).toBe('2**(n/2)');
+  });
+  it('uses the ratio test when the terms have no limit', () => {
+    const conv = (s: string) => {
+      const sum = sj.Sum(sj.parse(s), [k, 1, sj.oo]);
+      expect(sum).toBeInstanceOf(Concrete);
+      return String(sj.isConvergent(sum as Concrete));
+    };
+    expect(conv('(-1)**k*binomial(2*k, k)/3**k')).toBe('false');
+    expect(conv('(-1)**k*factorial(k)/2**k')).toBe('false');
+    // SymPy raises NotImplementedError
+    expect(conv('(-1)**k/k + 1/k**2')).toBe('unknown');
   });
 });

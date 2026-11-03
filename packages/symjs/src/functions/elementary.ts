@@ -6,6 +6,7 @@
  */
 
 import { accumBoundsFunction } from './accumbounds';
+import { AccumBounds } from '../core/accumbounds';
 import { first } from '../core/guard';
 import { precToDps } from '../numeric/mpf';
 import { isIntegerQ, isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
@@ -134,7 +135,19 @@ function cosPi(c: Rational): Expr | undefined {
   return undefined;
 }
 
+/**
+ * SymPy sin/cos/tan.eval at an infinity: nan for nan and zoo, AccumBounds(-1, 1) for sin and
+ * cos at oo and -oo, AccumBounds(-oo, oo) for tan. Undefined for other arguments.
+ */
+function trigAtInfinity(x: Expr, bound: Expr): Expr | undefined {
+  if (!(x instanceof Special)) return undefined;
+  if (x.name === 'nan' || x.name === 'zoo') return S.NaN;
+  return AccumBounds(neg(bound), bound);
+}
+
 const evalSin: Evaluator = (x) => {
+  const inf = trigAtInfinity(x, S.One);
+  if (inf) return inf;
   if (x instanceof Rational && x.isZero) return S.Zero;
   const [rest, c] = splitPiTerm(x);
   if (rest instanceof Rational && rest.isZero) return sinPi(c);
@@ -151,6 +164,8 @@ const evalSin: Evaluator = (x) => {
 };
 
 const evalCos: Evaluator = (x) => {
+  const inf = trigAtInfinity(x, S.One);
+  if (inf) return inf;
   if (x instanceof Rational && x.isZero) return S.One;
   const [rest, c] = splitPiTerm(x);
   if (rest instanceof Rational && rest.isZero) return cosPi(c);
@@ -167,6 +182,8 @@ const evalCos: Evaluator = (x) => {
 };
 
 const evalTan: Evaluator = (x) => {
+  const inf = trigAtInfinity(x, S.Infinity);
+  if (inf) return inf;
   if (x instanceof Rational && x.isZero) return S.Zero;
   const [rest, c] = splitPiTerm(x);
   if (rest instanceof Rational && rest.isZero) {
@@ -354,14 +371,18 @@ function reIm(x: Expr): [Expr, Expr] {
   return [re(x), im(x)];
 }
 
-/** (-1)**r for rational r: [cos(pi r), sin(pi r)] when both evaluate. */
+/**
+ * b**r for rational r and b = I or a negative rational: [|b|**r*cos(pi r), |b|**r*sin(pi r)]
+ * ((-2)**(1/3) = 2**(1/3)*(-1)**(1/3), I**r = (-1)**(r/2)).
+ */
 function unitRoot(x: Expr): [Expr, Expr] | undefined {
   if (!(x instanceof Pow && x.exp instanceof Rational)) return undefined;
-  const negOne = x.base instanceof Rational && x.base.p === -1n && x.base.q === 1n;
-  if (!negOne && !isI(x.base)) return undefined;
-  // I**r = (-1)**(r/2)
-  const ang = mul(negOne ? x.exp : mul(x.exp, S.Half), S.Pi);
-  return [cos(ang), sin(ang)];
+  const b = x.base;
+  const negative = b instanceof Rational && b.isNegative;
+  if (!negative && !isI(b)) return undefined;
+  const ang = mul(negative ? x.exp : mul(x.exp, S.Half), S.Pi);
+  const scale = negative ? pow(neg(b), x.exp) : S.One;
+  return [mul(scale, cos(ang)), mul(scale, sin(ang))];
 }
 
 const evalRe: Evaluator = (x) => {
@@ -605,13 +626,8 @@ export function fn(name: FnName, args: readonly ExprLike[], opts: { evaluate?: b
   // (a call without arguments has max(-1) = -1)
   const precs = xs.map(shouldEvalf);
   const maxPrec = Math.max(-1, ...precs);
-  if (maxPrec > 0 && Math.min(...precs) > 0) {
-    try {
-      return impl.evalf(f, precToDps(maxPrec));
-    } catch {
-      return f;
-    }
-  }
+  // (evalf does not throw: a function it cannot evaluate is returned unchanged)
+  if (maxPrec > 0 && Math.min(...precs) > 0) return impl.evalf(f, precToDps(maxPrec));
   return f;
 }
 

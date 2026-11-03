@@ -131,6 +131,23 @@ function asCoeffAdd(e: Add): [Expr, Expr] {
   return [Rational.of(0n), e];
 }
 
+/**
+ * SymPy log(b, c) when it is a number: the integer k with b = c**k for a rational b and an
+ * integer c > 1 (log(1/4, 2) = -2); undefined otherwise (log(2, 4) and log(6, 2) stay symbolic).
+ */
+function intLog(b: Expr, c: Expr): number | undefined {
+  if (!(b instanceof Rational) || !(c instanceof Rational) || c.q !== 1n || c.p < 2n || !b.isPositive) return undefined;
+  const [num, sign] = b.p === 1n ? [b.q, -1] : b.q === 1n ? [b.p, 1] : [0n, 0];
+  if (num === 0n) return undefined;
+  let k = 0;
+  let v = num;
+  while (v % c.p === 0n) {
+    v /= c.p;
+    k++;
+  }
+  return v === 1n && k > 0 ? sign * k : undefined;
+}
+
 /** SymPy `_eval_subs` for Add, Mul and Pow (algebraic substitution). */
 function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
   // Derivative(f, (x, 2)).subs(Derivative(f, x), y) -> Derivative(y, x) (SymPy Derivative._eval_subs)
@@ -176,6 +193,11 @@ function evalSubs(e: Expr, old: Expr, nw: Expr): Expr | undefined {
     return undefined;
   }
   if (e instanceof Mul && old instanceof Mul) return subsMul(e, old, nw);
+  // SymPy issue 10829: (4**x).subs(2**x, y) -> y**2, for log(4, 2) a number
+  if (e instanceof Pow && old instanceof Pow && e.exp.key === old.exp.key) {
+    const k = intLog(e.base, old.base);
+    if (k !== undefined) return pow(nw, k);
+  }
   // SymPy Pow._eval_subs for powers of the same base (exp(a) is E**a)
   if (e instanceof Pow && old instanceof Pow && e.base.key === old.base.key) {
     if (!(e.exp instanceof Add)) {

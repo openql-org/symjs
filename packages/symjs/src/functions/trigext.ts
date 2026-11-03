@@ -367,6 +367,7 @@ evaluators.atan = (x) => {
 
 const evalCot: Evaluator = (x) => {
   if (isNan(x) || isZoo(x)) return S.NaN;
+  if (isOo(x) || isNegOo(x)) return AccumBounds(S.NegativeInfinity, S.Infinity);
   if (isZero(x)) return S.ComplexInfinity;
   if (couldExtractMinusSign(x)) return neg(cot(neg(x)));
   const c = iCoeff(x);
@@ -439,6 +440,7 @@ const evalCoth: Evaluator = (x) => {
 function reciprocalHyp(name: 'sech' | 'csch', recipOf: 'cosh' | 'sinh', inverse: string, even: boolean): Evaluator {
   const self = name === 'sech' ? sech : csch;
   return (x) => {
+    if (isNan(x)) return S.NaN;
     if (couldExtractMinusSign(x)) return even ? self(neg(x)) : neg(self(neg(x)));
     const t = defined(evaluators[recipOf], recipOf)(x);
     if (isFn(x, inverse)) return x.args[0];

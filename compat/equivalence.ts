@@ -239,6 +239,8 @@ export function equivalent(got: string, expected: string, symbols: readonly sj.S
   if ([...ug].some((n) => !ue.has(n))) return false;
   // printed object addresses and other non-values cannot be compared
   if (expected.includes(' object at 0x')) return false;
+  // reading back a factorial of a huge integer would evaluate it (Mod(factorial(10**9), p) stays unevaluated)
+  if (/\b(?:factorial2?|subfactorial|binomial)\(\d{7,}/.test(got)) return false;
   try {
     return valueEquivalent(parseValue(got), parseValue(expected), ['solve', 'roots', 'solve_poly_system'].includes(opts.fn ?? ''));
   } catch {

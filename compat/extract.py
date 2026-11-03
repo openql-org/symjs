@@ -130,6 +130,101 @@ MODULES = {
     "sympy.matrices.expressions.determinant": "matrices",
     "sympy.matrices.expressions.blockmatrix": "matrices",
     "sympy.matrices.expressions.transpose": "matrices",
+    # sets
+    "sympy.sets.sets": "sets",
+    "sympy.sets.fancysets": "sets",
+    "sympy.sets.conditionset": "sets",
+    "sympy.sets.contains": "sets",
+    # special
+    "sympy.functions.special.bessel": "special",
+    "sympy.functions.special.zeta_functions": "special",
+    "sympy.functions.special.hyper": "special",
+    "sympy.functions.special.polynomials": "special",
+    "sympy.functions.special.delta_functions": "special",
+    "sympy.functions.special.beta_functions": "special",
+    "sympy.functions.special.elliptic_integrals": "special",
+    "sympy.functions.special.spherical_harmonics": "special",
+    "sympy.functions.special.tensor_functions": "special",
+    "sympy.functions.special.singularity_functions": "special",
+    "sympy.functions.special.mathieu_functions": "special",
+    # printing
+    "sympy.printing.latex": "printing",
+    "sympy.printing.str": "printing",
+    # core
+    "sympy.core.mod": "core",
+    "sympy.core.containers": "core",
+    "sympy.core.traversal": "core",
+    "sympy.core.sorting": "core",
+    # simplify
+    "sympy.simplify.fu": "simplify",
+    "sympy.simplify.cse_main": "simplify",
+    "sympy.simplify.hyperexpand": "simplify",
+    "sympy.simplify.combsimp": "simplify",
+    "sympy.simplify.gammasimp": "simplify",
+    "sympy.simplify.epathtools": "simplify",
+    # polys
+    "sympy.polys.orthopolys": "polys",
+    "sympy.polys.specialpolys": "polys",
+    "sympy.polys.numberfields.minpoly": "polys",
+    "sympy.polys.polyutils": "polys",
+    # solvers
+    "sympy.solvers.diophantine.diophantine": "solvers",
+    # ode
+    "sympy.solvers.deutils": "ode",
+    "sympy.solvers.ode.systems": "ode",
+    # calculus
+    "sympy.series.formal": "calculus",
+    "sympy.series.fourier": "calculus",
+    "sympy.series.limitseq": "calculus",
+    "sympy.series.sequences": "calculus",
+    "sympy.series.residues": "calculus",
+    "sympy.concrete.gosper": "calculus",
+    "sympy.concrete.delta": "calculus",
+    "sympy.calculus.euler": "calculus",
+    "sympy.calculus.finite_diff": "calculus",
+    "sympy.integrals.manualintegrate": "calculus",
+    "sympy.integrals.meijerint": "calculus",
+    "sympy.integrals.heurisch": "calculus",
+    "sympy.integrals.risch": "calculus",
+    "sympy.integrals.rationaltools": "calculus",
+    "sympy.integrals.singularityfunctions": "calculus",
+    "sympy.integrals.trigonometry": "calculus",
+    "sympy.integrals.deltafunctions": "calculus",
+    # matrices
+    "sympy.matrices.expressions.hadamard": "matrices",
+    "sympy.matrices.expressions.kronecker": "matrices",
+    "sympy.matrices.expressions.matpow": "matrices",
+    "sympy.matrices.expressions.special": "matrices",
+    "sympy.matrices.expressions.diagonal": "matrices",
+    "sympy.matrices.expressions.funcmatrix": "matrices",
+    "sympy.matrices.expressions.fourier": "matrices",
+    "sympy.matrices.expressions.permutation": "matrices",
+    "sympy.matrices.expressions.dotproduct": "matrices",
+    "sympy.matrices.expressions.adjoint": "matrices",
+    "sympy.matrices.expressions.slice": "matrices",
+    "sympy.matrices.expressions.companion": "matrices",
+    "sympy.matrices.sparse": "matrices",
+    "sympy.matrices.immutable": "matrices",
+    "sympy.matrices.normalforms": "matrices",
+    # logic
+    "sympy.logic.algorithms.dpll2": "logic",
+    # combinatorics
+    "sympy.combinatorics.partitions": "combinatorics",
+    "sympy.combinatorics.subsets": "combinatorics",
+    "sympy.combinatorics.graycode": "combinatorics",
+    "sympy.combinatorics.prufer": "combinatorics",
+    # ntheory
+    "sympy.ntheory.qs": "ntheory",
+    "sympy.ntheory.ecm": "ntheory",
+    "sympy.ntheory.bbp_pi": "ntheory",
+    # utilities
+    "sympy.utilities.lambdify": "utilities",
+    "sympy.utilities.misc": "utilities",
+    "sympy.utilities.enumerative": "utilities",
+    # tensor
+    "sympy.tensor.array.mutable_ndim_array": "tensor",
+    "sympy.tensor.array.sparse_ndim_array": "tensor",
+    "sympy.tensor.index_methods": "tensor",
 }
 
 ASSUMPTION_KEYS = ["real", "positive", "negative", "nonnegative", "nonpositive", "integer", "commutative", "polar"]
@@ -140,6 +235,14 @@ DUMMY_IDS = {}
 
 class Unsupported(Exception):
     pass
+
+
+def _same_series(diff):
+    """The series rebuilt from its function has the same leading terms."""
+    try:
+        return diff().expand() == 0
+    except Exception:
+        return False
 
 
 def ser(o):
@@ -241,8 +344,29 @@ def ser(o):
     from sympy.polys.domains.domain import Domain as _Domain
     if isinstance(o, _Domain) and str(o) in ("ZZ", "QQ"):
         return {"t": "Domain", "name": str(o)}
+    from sympy.utilities.enumerative import MultisetPartitionTraverser as _MPT
+    if type(o) is _MPT:
+        # a stateless helper object: constructed anew
+        return {"t": "New", "cls": "MultisetPartitionTraverser"}
     if not isinstance(o, Basic):
         raise Unsupported(type(o).__name__)
+    from sympy.series.fourier import FourierSeries as _FS
+    from sympy.series.formal import FormalPowerSeries as _FPS
+    if type(o) is _FS:
+        # rebuilt by fourier_series(f, (x, a, b)), which a shifted or scaled series is not
+        x, a, b = o.args[1]
+        if not _same_series(lambda: sympy.fourier_series(o.function, o.args[1]).truncate(8) - o.truncate(8)):
+            raise Unsupported("FourierSeries")
+        return {"t": "FourierSeries", "f": ser(o.function), "x": ser(x), "a": ser(a), "b": ser(b)}
+    if type(o) is _FPS:
+        # rebuilt by fps(f, x, x0, dir)
+        if not _same_series(lambda: sympy.fps(o.function, o.x, o.x0, o.dir).polynomial(8) - o.polynomial(8)):
+            raise Unsupported("FormalPowerSeries")
+        return {"t": "FormalPowerSeries", "f": ser(o.function), "x": ser(o.x), "x0": ser(o.x0), "dir": "+" if o.dir == 1 else "-"}
+    if isinstance(o, sympy.ImageSet):
+        return {"t": "ImageSet", "lamda": ser(o.lamda), "sets": [ser(i) for i in o.base_sets]}
+    if isinstance(o, sympy.ConditionSet):
+        return {"t": "ConditionSet", "sym": ser(o.sym), "condition": ser(o.condition), "base": ser(o.base_set)}
     if isinstance(o, sympy.AlgebraicNumber):
         return {"t": "AlgebraicNumber", "root": ser(o.root), "coeffs": [ser(c) for c in o.coeffs()]}
     if isinstance(o, sympy.Interval):
@@ -252,7 +376,8 @@ def ser(o):
     if isinstance(o, (sympy.Union, sympy.Intersection, sympy.Complement)):
         return {"t": "SetOp", "op": type(o).__name__, "args": [ser(i) for i in o.args]}
     named_sets = {sympy.S.Reals: "Reals", sympy.S.Integers: "Integers", sympy.S.Naturals: "Naturals",
-                  sympy.S.Naturals0: "Naturals0", sympy.S.Complexes: "Complexes", sympy.S.EmptySet: "EmptySet"}
+                  sympy.S.Naturals0: "Naturals0", sympy.S.Complexes: "Complexes", sympy.S.EmptySet: "EmptySet",
+                  sympy.S.UniversalSet: "UniversalSet"}
     for k, v in named_sets.items():
         if o is k:
             return {"t": "NamedSet", "name": v}
@@ -280,7 +405,9 @@ def ser(o):
         a = {k: True for k in ASSUMPTION_KEYS if o._assumptions_orig.get(k) is True}
         # indices are renumbered per case so that the corpus is reproducible
         idx = DUMMY_IDS.setdefault(o.dummy_index, len(DUMMY_IDS))
-        return {"t": "Dummy", "name": o.name, "index": idx, "assume": a}
+        # a default name carries the global index, which depends on what ran before
+        name = f"Dummy_{idx}" if o.name == f"Dummy_{o.dummy_index}" else o.name
+        return {"t": "Dummy", "name": name, "index": idx, "assume": a}
     if o.is_Symbol and type(o) is Symbol:
         a = {k: True for k in ASSUMPTION_KEYS if o._assumptions_orig.get(k) is True}
         if o._assumptions_orig.get("zero") is False:
@@ -384,6 +511,10 @@ def ser_arg(node, globs):
     return ser(eval(compile(ast.Expression(node), "<a>", "eval"), globs))
 
 
+# per-example limit, generous so that the corpus does not depend on the machine load
+ALARM_SECONDS = 30
+
+
 def _alarm(signum, frame):
     raise Timeout()
 
@@ -414,7 +545,7 @@ def main(dst):
                 except SyntaxError:
                     # statements (assignments, imports): just execute
                     try:
-                        signal.alarm(10)
+                        signal.alarm(ALARM_SECONDS)
                         exec(compile(src, "<doctest>", "exec"), globs)
                     except (Exception, Timeout):
                         pass
@@ -431,7 +562,7 @@ def main(dst):
                 from sympy.assumptions import global_assumptions as _ga
                 assumed = list(_ga)
                 try:
-                    signal.alarm(10)
+                    signal.alarm(ALARM_SECONDS)
                     result = eval(compile(tree, "<doctest>", "eval"), globs)
                 except (Exception, Timeout):
                     continue

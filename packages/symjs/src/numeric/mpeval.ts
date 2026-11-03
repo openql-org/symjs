@@ -92,6 +92,9 @@ const CONSTANTS: Record<ConstantName, (prec: number) => Mpc> = {
  */
 export type SymbolLookup = (s: Sym, wp: number) => Mpc | undefined;
 
+/** Set by evalMp when a value came from a double-precision fallback. */
+let usedDouble = false;
+
 /** Evaluate at working precision wp (each operation rounded to wp bits). */
 export function evalMp(e: Expr, wp: number, lookup: SymbolLookup = noValue): Mpc {
   const ev = (x: Expr): Mpc => {
@@ -134,7 +137,10 @@ export function evalMp(e: Expr, wp: number, lookup: SymbolLookup = noValue): Mpc
       const f = mpFns[x.name];
       if (f) return f(args, wp);
       const d = doubleFallback(x.name, args);
-      if (d) return d;
+      if (d) {
+        usedDouble = true;
+        return d;
+      }
       throw new TypeError(`cannot evaluate ${x.name}`);
     }
     if (x instanceof ExtensionExpr) {
@@ -159,11 +165,16 @@ function negligible(x: Mpf, ref: number, wp: number): boolean {
 
 /**
  * Evaluate to `prec` correct bits, raising the working precision until two
- * successive evaluations agree. Parts that vanish relative to the other
- * part (cancellation to zero) are returned as exact zeros.
+ * successive evaluations agree. As in SymPy (which tracks the accuracy of the
+ * real and imaginary parts separately), a part far below the other one is
+ * kept when it is stable (1 + I*exp(-1000) = 1.0 + 5.07595889754946e-435*I),
+ * and returned as an exact zero when it is rounding noise that shrinks with
+ * the working precision (cancellation to zero) or when a part was computed
+ * in double precision only.
  */
 export function evalAdaptive(e: Expr, prec: number, lookup: SymbolLookup = noValue): Mpc {
   let wp = prec + 20;
+  usedDouble = false;
   let prev = evalMp(e, wp, lookup);
   for (let i = 0; i < 8; i++) {
     const wp2 = prec + 20 + 40 * 2 ** (i + 1);
@@ -172,11 +183,17 @@ export function evalAdaptive(e: Expr, prec: number, lookup: SymbolLookup = noVal
     const refPrev = Math.max(F.mag(prev[0]), F.mag(prev[1]));
     // The stable value of one component, or undefined when it has not settled.
     const settled = (k: 0 | 1): Mpf | undefined => {
-      const negPrev = negligible(prev[k], refPrev, wp);
-      const negCur = negligible(cur[k], ref, wp2);
-      if (negPrev && negCur) return ZERO;
-      if (!negPrev && !negCur && sameAt(prev[k], cur[k], prec)) return F.round(cur[k], prec);
-      return undefined;
+      const a = prev[k];
+      const b = cur[k];
+      const negPrev = negligible(a, refPrev, wp);
+      const negCur = negligible(b, ref, wp2);
+      if (negPrev !== negCur) return undefined;
+      if (!negCur) return sameAt(a, b, prec) ? F.round(b, prec) : undefined;
+      if (F.isZero(b) || usedDouble) return ZERO;
+      if (F.isZero(a)) return undefined;
+      if (sameAt(a, b, prec)) return F.round(b, prec);
+      // noise of a cancellation shrinks with the working precision
+      return F.mag(b) < F.mag(a) - (wp2 - wp) / 2 ? ZERO : undefined;
     };
     const re = settled(0);
     const im = settled(1);

@@ -20,6 +20,7 @@ const solves = (...ss: string[]) => {
 };
 const sys = (...eqs: string[]) => show(dsolve(eqs.map((e) => parse(e)), [f(t), g(t)]));
 const h = Fn('h');
+const first2 = (r: unknown) => (Array.isArray(r) ? (r[0] as unknown) : r);
 const sys2 = (eqs: string[], fs = [f(t), g(t)]) => show(dsolve(eqs.map((e) => parse(e)), fs));
 
 // expected values from SymPy 1.14 dsolve
@@ -56,12 +57,30 @@ describe('dsolve systems', () => {
     expect(sys2(['Derivative(f(t), t, 2)*f(t)', 'Derivative(g(t), t) - f(t)**2'])).toBe(
       '[Eq(f(t), C1 + C2*t), Eq(g(t), C1**2*t + C1*C2*t**2 + C2**2*t**3/3 + C3)]',
     );
-    // SymPy returns both solution sets [[Eq(f(t), C1 - t), Eq(g(t), C1*t + C2 - t**2/2)],
-    // [Eq(f(t), C1 + t), Eq(g(t), C1*t + C2 + t**2/2)]]; the system solver keeps the first
-    // solution of the first equation
-    expect(sys2(['Derivative(f(t), t)**2 - 1', 'Derivative(g(t), t) - f(t)'])).toBe('[Eq(f(t), C1 + t), Eq(g(t), C1*t + C2 + t**2/2)]');
+    // an equation with several solutions gives a solution list for each (SymPy)
+    const two = dsolve(['Derivative(f(t), t)**2 - 1', 'Derivative(g(t), t) - f(t)'].map((e) => parse(e)), [f(t), g(t)]) as Expr[][];
+    expect(two.map(show)).toEqual(['[Eq(f(t), C1 - t), Eq(g(t), C1*t + C2 - t**2/2)]', '[Eq(f(t), C1 + t), Eq(g(t), C1*t + C2 + t**2/2)]']);
+    // SymPy: [[Eq(f(t), C1 - sqrt(C2)*t), Eq(g(t), C2)], [Eq(f(t), C1 + sqrt(C2)*t), Eq(g(t), C2)]] (the constants named in another order)
+    const three = dsolve(['Derivative(f(t), t)**2 - g(t)', 'Derivative(g(t), t)'].map((e) => parse(e)), [f(t), g(t)]) as Expr[][];
+    expect(three.map(show)).toEqual(['[Eq(f(t), sqrt(C1)*t + C2), Eq(g(t), C1)]', '[Eq(f(t), -sqrt(C1)*t + C2), Eq(g(t), C1)]']);
     // SymPy: NotImplementedError as well
     expect(() => sys2(['Derivative(f(t), t) - g(t)**2', 'Derivative(g(t), t) - f(t)**2'])).toThrow(NotImplementedError);
+  });
+  it('A(t) = phi(t)*M with M constant', () => {
+    // SymPy: [Eq(f(t), -(C1/2 - C2/2)*exp(-t**2/2) + (C1/2 + C2/2)*exp(t**2/2)),
+    //         Eq(g(t), (C1/2 - C2/2)*exp(-t**2/2) + (C1/2 + C2/2)*exp(t**2/2))], the same family
+    expect(sys2(['Derivative(f(t), t) - t*g(t)', 'Derivative(g(t), t) - t*f(t)'])).toBe('[Eq(f(t), -C1*exp(-t**2/2) + C2*exp(t**2/2)), Eq(g(t), C1*exp(-t**2/2) + C2*exp(t**2/2))]');
+    // SymPy gives the same family with complex exponentials and constants
+    expect(sys2(['Derivative(f(t), t) - t*g(t)', 'Derivative(g(t), t) + t*f(t)'])).toBe('[Eq(f(t), C1*sin(t**2/2) + C2*cos(t**2/2)), Eq(g(t), C1*cos(t**2/2) - C2*sin(t**2/2))]');
+    expect(solves('Derivative(f(t), t) - t*g(t)', 'Derivative(g(t), t) - t*f(t)')).toBe(true);
+  });
+  it('variable coefficients that are not a multiple of a constant matrix', () => {
+    // SymPy's form in terms of a particular solution x0(t), y0(t)
+    expect(show(first2(dsolve(['Derivative(f(t), t) - 12*t*f(t) - 8*g(t)', 'Derivative(g(t), t) - 21*f(t) - 7*t*g(t)'].map((e) => parse(e)), [f(t), g(t)])))).toBe(
+      'Eq(f(t), C1*x0(t) + C2*x0(t)*Integral(8*exp(Integral(7*t, t))*exp(Integral(12*t, t))/x0(t)**2, t))',
+    );
+    // a single equation that is not a differential equation
+    expect(() => dsolve(['Derivative(f(t), t)**2 - g(t)', 'g(t)**2 - t'].map((e) => parse(e)), [f(t), g(t)])).toThrow(TypeError);
   });
   it('the unknown functions are those with derivatives', () => {
     // only f has a derivative, so one function for two equations

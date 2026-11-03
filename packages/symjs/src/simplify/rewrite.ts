@@ -227,6 +227,17 @@ reg1('atan', 'log', (x) => mul(div(I, 2), add(log(add(1, neg(mul(I, x)))), neg(l
 reg1('atan', 'asin', (x) => mul(div(sqrt(pow(x, 2)), x), add(div(pi, 2), neg(asin(div(1, sqrt(add(1, pow(x, 2)))))))));
 reg1('atan', 'acos', (x) => mul(div(sqrt(pow(x, 2)), x), acos(div(1, sqrt(add(1, pow(x, 2)))))));
 reg2('atan2', 'log', (y, x) => mul(neg(I), log(div(add(x, mul(I, y)), sqrt(add(pow(x, 2), pow(y, 2)))))));
+reg1('acot', 'log', (x) => mul(div(I, 2), add(log(add(1, neg(div(I, x)))), neg(log(add(1, div(I, x)))))));
+reg1('asec', 'log', (x) => add(div(pi, 2), mul(I, log(add(div(I, x), sqrt(add(1, neg(pow(x, -2)))))))));
+reg1('acsc', 'log', (x) => mul(neg(I), log(add(div(I, x), sqrt(add(1, neg(pow(x, -2))))))));
+
+// inverse hyperbolic (SymPy _eval_rewrite_as_log)
+reg1('asinh', 'log', (x) => log(add(x, sqrt(add(pow(x, 2), 1)))));
+reg1('acosh', 'log', (x) => log(add(x, mul(sqrt(add(x, 1)), sqrt(add(x, -1))))));
+reg1('atanh', 'log', (x) => div(add(log(add(1, x)), neg(log(add(1, neg(x))))), 2));
+reg1('acoth', 'log', (x) => div(add(log(add(1, div(1, x))), neg(log(add(1, neg(div(1, x)))))), 2));
+reg1('asech', 'log', (x) => log(add(div(1, x), mul(sqrt(add(div(1, x), -1)), sqrt(add(div(1, x), 1))))));
+reg1('acsch', 'log', (x) => log(add(div(1, x), sqrt(add(pow(x, -2), 1)))));
 reg2('atan2', 'atan', (y, x) =>
   piecewise([mul(2, atan(div(y, add(x, sqrt(add(pow(x, 2), pow(y, 2))))))), Ne(y, 0)], [pi, Lt(re(x), 0)], [0, Ne(x, 0)], [S.NaN, true]),
 );

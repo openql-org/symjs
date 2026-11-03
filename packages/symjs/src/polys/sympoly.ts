@@ -11,10 +11,11 @@ import { DomainError, ExactQuotientFailed, NotImplementedError, NotInvertible, P
 import { parse } from '../parsing/parser';
 import type { NoMatchResult } from '../core/truth';
 import { NoMatch } from '../core/truth';
-import { at, defined, expectType, first } from '../core/guard';
+import { at, defined, expectType, first, getOrThrow } from '../core/guard';
+import { isPositive } from '../core/assumptions';
 import { factorModP } from './zassenhaus';
 import type { ExprLike } from '../core/nodes';
-import { Add, Constant, Expr, Float, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
+import { Add, Constant, Dummy, Expr, Float, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { evalf as evalfExpr } from '../numeric/evalf';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, mapBottomUp, rebuild, xreplace } from '../core/traverse';
@@ -22,13 +23,13 @@ import { diff } from '../calculus/diff';
 import { str } from '../printing/str';
 import { expand as expandFull, expandMul as expand } from '../simplify/expand';
 import { sqrtdenest } from '../simplify/sqrtdenest';
-import { cancel, together } from '../simplify/rational';
+import { cancel, fraction, together } from '../simplify/rational';
 import { decomposePower, keepCoeff } from '../simplify/exprtools';
 import { rationalFromFloat } from '../core/numberutils';
 import { lcm as ilcm } from '../core/numbers';
 import { divExact, mfactorList, mgcd, mlcm } from './mpoly';
 import { isolateRealRoots, refineRealRoot } from './rootisolation';
-import { UPoly, polyCoefficients, roots as rootsOf } from './poly';
+import { UPoly, polyCoefficients, polyHooks, roots as rootsOf } from './poly';
 
 const isRational = (x: unknown): x is Rational => x instanceof Rational;
 /** x as a Rational; throws InvariantError when the algorithm's guarantee that it is one fails. */
@@ -536,7 +537,7 @@ export class Poly {
   }
 
   /** (content, [(factor, multiplicity)]) with primitive integer factors. */
-  factorList(): [Rational, [Poly, number][]] {
+  factorList(): [Expr, [Poly, number][]] {
     const [c, fs] = factorListExpr(this.asExpr(), this.gens);
     return [c, fs.map(([f, k]) => [Poly.from(f, this.gens), k] as [Poly, number])];
   }
@@ -881,6 +882,8 @@ export class Poly {
   }
   /** Number of real roots in [a, b] (Sturm's theorem). */
   countRoots(a?: ExprLike, b?: ExprLike): number {
+    // over RR the roots of the exact polynomial are counted (SymPy count_roots() over RR gives 2 for x**2 - 2.0)
+    if (this.domain === 'RR') return this.toExact().countRoots(a, b);
     const x = this.univariate();
     const seq = this.sqfPartQQ().sturm();
     const signChanges = (v: Expr | 'inf' | '-inf'): number => {
@@ -1278,41 +1281,207 @@ function rationalOfFloat(f: Float): Rational {
 /** The primitive integer polynomial of a monic univariate rational polynomial (positive leading coefficient). */
 const primitiveIntPoly = (e: Expr, x: Expr): Poly => Poly.from(e, [x]).primitive()[1];
 
-/** factor_list on expressions: (content, [(factor, multiplicity)]). */
-export function factorListExpr(e: Expr, gens?: readonly Expr[]): [Rational, [Expr, number][]] {
-  const vars: readonly Expr[] = gens ?? sortGens([...freeSymbols(e)]);
-  const [c, fs] = factorListRaw(e, vars);
-  return [c, sortFactors(fs, vars)];
+/**
+ * SymPy factor_list(f, *gens) on expressions: (content, [(factor, multiplicity)]).
+ * Without gens every non-rational part is a generator (sqrt(2), f(1), exp(y), ...);
+ * with gens the factors are polynomials in them over the ring of the other parts,
+ * and the factors free of the gens make up the content.
+ */
+export function factorListExpr(e: Expr, gens?: readonly Expr[]): [Expr, [Expr, number][]] {
+  const [numer, denom] = fraction(together(e));
+  const [cp, fp] = symbolicFactorList(numer, gens ?? []);
+  const [cq, fq] = symbolicFactorList(denom, gens ?? []);
+  if (fq.length) throw new PolynomialError(`a polynomial expected, got ${str(e)}`);
+  let content: Expr = mul(cp, pow(cq, -1));
+  const keyed: [Expr, number, FactorKey][] = [];
+  for (const [f, k, key] of fp) {
+    // factors free of the gens belong to the content
+    if (gens && !gens.some((g) => f.has(g))) {
+      content = mul(content, pow(f, k));
+      continue;
+    }
+    // SymPy _poly_from_expr(f, gens) fails on a part with a generator inside
+    if (gens && !key) throw new PolynomialError(`${str(f)} contains an element of the set of generators.`);
+    const [b, m] = k instanceof Rational && k.isInteger ? [f, Number(k.p)] : [pow(f, k), 1];
+    keyed.push([b, m, key ?? ownKey(m)]);
+  }
+  keyed.sort((a, b) => compareFactorKeys(a[2], b[2]));
+  return [content, keyed.map(([f, k]): [Expr, number] => [f, k])];
 }
 
-/** SymPy _sort_factors(multiple=True): by dense length in the main generator, multiplicity, then coefficients. */
-function sortFactors(fs: [Expr, number][], vars: readonly Expr[]): [Expr, number][] {
-  if (!vars.length) return fs;
-  const key = (f: Expr): [number, Expr[]] => {
-    const p = Poly.from(f, vars);
-    if (vars.length === 1) return [p.degree() + 1, p.allCoeffs()];
-    return [p.degree(0) + 1, []];
+/** SymPy _sorted_factors key (method='factor'): (len(rep), len(gens), exp, str(domain), rep). */
+type FactorKey = [number, number, number, string, DenseRep];
+type DenseRep = Rational | DenseRep[];
+
+/** The key of a factor that is not a polynomial (SymPy makes it a polynomial in itself). */
+const ownKey = (k: number): FactorKey => [2, 1, k, 'ZZ', [S.One, S.Zero]];
+
+function denseRep(e: Expr, gens: readonly Expr[]): DenseRep {
+  const [g, ...rest] = gens;
+  if (g === undefined) return asRational(e, 'polynomial coefficient');
+  const cs = defined(polyCoefficients(e, g), 'polynomial in its generators');
+  const n = Math.max(0, ...cs.keys());
+  return Array.from({ length: n + 1 }, (_, i) => denseRep(cs.get(n - i) ?? S.Zero, rest));
+}
+
+function compareRep(a: DenseRep, b: DenseRep): number {
+  if (!Array.isArray(a) || !Array.isArray(b)) {
+    const d = asRational(sub(expectType(a, isRational, 'dense coefficient'), expectType(b, isRational, 'dense coefficient')), 'difference');
+    return d.p < 0n ? -1 : d.p > 0n ? 1 : 0;
+  }
+  for (let i = 0; i < Math.min(a.length, b.length); i++) {
+    const c = compareRep(at(a, i), at(b, i));
+    if (c) return c;
+  }
+  return a.length - b.length;
+}
+
+function compareFactorKeys(a: FactorKey, b: FactorKey): number {
+  for (let i = 0; i < 3; i++) if (at(a, i) !== at(b, i)) return at(a, i) < at(b, i) ? -1 : 1;
+  if (a[3] !== b[3]) return a[3] < b[3] ? -1 : 1;
+  return compareRep(a[4], b[4]);
+}
+
+const sub = (a: Expr, b: Expr): Expr => add(a, mul(-1, b));
+
+/**
+ * An expression as a polynomial (SymPy _poly_from_expr with greedy generators):
+ * the expression in generator symbols, the generators (the given ones first,
+ * then the others in SymPy's order), the map back to the original parts and
+ * the domain name.
+ */
+interface Polified {
+  expr: Expr;
+  gens: Expr[];
+  back: [Expr, Expr][];
+  domain: string;
+}
+
+function polify(e: Expr, fixed: readonly Expr[]): Polified | undefined {
+  const ex = expandFull(e);
+  const found = new Map<string, [Expr, Expr]>(); // key of the original -> [original, generator]
+  const fixedKeys = new Set(fixed.map((g) => g.key));
+  const genOf = (b: Expr): Expr | undefined => {
+    if (fixedKeys.has(b.key)) return b;
+    // a coefficient cannot contain a generator (SymPy PolynomialError)
+    if (fixed.some((g) => b.has(g))) return undefined;
+    const cur = found.get(b.key);
+    if (cur) return cur[1];
+    const g = b instanceof Sym ? b : new Dummy('g');
+    found.set(b.key, [b, g]);
+    return g;
   };
-  // univariate factors of one degree and multiplicity are distinct primitive integer
-  // polynomials (factors with symbolic coefficients are not split, so there is one)
-  const cmpCoeffs = (a: Expr[], b: Expr[]): number => {
-    const i = a.findIndex((u, k) => u.key !== at(b, k).key);
-    const u = asRational(at(a, i), 'coefficient');
-    const v = asRational(at(b, i), 'coefficient');
-    return u.p * v.q < v.p * u.q ? -1 : 1;
-  };
-  return [...fs].sort(([f, n], [g, m]) => {
-    const [lf, cf] = key(f);
-    const [lg, cg] = key(g);
-    return lf - lg || n - m || (vars.length === 1 ? cmpCoeffs(cf, cg) : 0);
+  const terms: Expr[] = [];
+  for (const t of ex instanceof Add ? ex.args : [ex]) {
+    const fs: Expr[] = [];
+    for (const f of t instanceof Mul ? t.args : [t]) {
+      if (f instanceof Rational) {
+        fs.push(f);
+        continue;
+      }
+      if (f instanceof Float || !f.isCommutative) return undefined;
+      let [b, k] = decomposePower(f);
+      // a negative power is a generator of its own (1/x), not one of the gens (after together() only in exponents)
+      if (k < 0) [b, k] = [pow(b, -1), -k];
+      const g = genOf(b);
+      if (g === undefined) return undefined;
+      fs.push(pow(g, k));
+    }
+    terms.push(mul(...fs));
+  }
+  const others = sortGens([...found.values()].map(([o]) => o));
+  const gens = [...fixed, ...others.map((o) => getOrThrow(found, o.key)[1])];
+  const back = [...found.values()].filter(([o, g]) => o !== g).map(([o, g]): [Expr, Expr] => [g, o]);
+  // the numerators of together() have integer coefficients
+  const domain = fixed.length && others.length ? `ZZ[${others.map(str).join(',')}]` : 'ZZ';
+  return { expr: add(...terms), gens, back, domain };
+}
+
+/** A [factor, exponent] pair of symbolicFactorList with the sort key of polynomial factors. */
+type SymbolicFactor = [Expr, Expr, FactorKey | undefined];
+
+/**
+ * SymPy _symbolic_factor_list: the numeric content and the [factor, exponent]
+ * pairs of a product, each base factored as a polynomial in its generators.
+ */
+function symbolicFactorList(expr: Expr, fixed: readonly Expr[]): [Expr, SymbolicFactor[]] {
+  let coeff: Expr = S.One;
+  const factors: SymbolicFactor[] = [];
+  for (const arg of expr instanceof Mul ? expr.args : [expr]) {
+    if (isNum(arg) || isPureComplex(arg)) {
+      coeff = mul(coeff, arg);
+      continue;
+    }
+    let base: Expr = arg;
+    let exp: Expr = S.One;
+    if (arg instanceof Pow && !isE(arg.base)) {
+      if (isNum(arg.base) && isNum(arg.exp)) {
+        coeff = mul(coeff, arg);
+        continue;
+      }
+      if (isNum(arg.base)) {
+        factors.push([arg.base, arg.exp, undefined]);
+        continue;
+      }
+      [base, exp] = [arg.base, arg.exp];
+    }
+    const pf = polify(base, fixed);
+    if (!pf) {
+      factors.push([base, exp, undefined]);
+      continue;
+    }
+    const [c0, fs0] = factorListRaw(pf.expr, pf.gens);
+    const ngens = fixed.length || pf.gens.length;
+    const fs = fs0.map(([f, k]): [Expr, number, FactorKey] => {
+      const rep = expectType(denseRep(f, pf.gens), (r): r is DenseRep[] => Array.isArray(r), 'dense polynomial');
+      return [xreplace(f, pf.back), k, [rep.length, ngens, k, pf.domain, rep]];
+    });
+    if (exp instanceof Rational && exp.isInteger) {
+      coeff = mul(coeff, pow(c0, exp));
+      const n = Number(exp.p);
+      for (const [f, k, key] of fs) factors.push([f, Rational.of(k * n), [key[0], key[1], k * n, key[3], key[4]]]);
+      continue;
+    }
+    // a fractional or symbolic exponent: the positive factors get it one by one
+    const other: Expr[] = c0.isPositive ? [] : [c0];
+    if (c0.isPositive && !c0.isOne) factors.push([c0, exp, undefined]);
+    for (const [f, k] of fs) {
+      if (isPositive(f) === true) factors.push([f, mul(k, exp), undefined]);
+      else other.push(pow(f, k));
+    }
+    factors.push([mul(...other), exp, undefined]);
+  }
+  return [coeff, factors];
+}
+
+const isE = (b: Expr): boolean => b instanceof Constant && b.name === 'E';
+const isI = (e: Expr): boolean => e instanceof Constant && e.name === 'I';
+const isGaussTerm = (e: Expr): boolean => isI(e) || (e instanceof Mul && e.args.length === 2 && isNum(at(e.args, 0)) && isI(at(e.args, 1)));
+/** SymPy pure_complex: a + b*I with numbers a, b (I, 2*I, 1 + I, ...). */
+const isPureComplex = (e: Expr): boolean => isGaussTerm(e) || (e instanceof Add && e.args.length === 2 && isNum(at(e.args, 0)) && isGaussTerm(at(e.args, 1)));
+
+/** SymPy together(e, fraction=False): exp with a negative exponent is not a denominator. */
+function togetherNoFraction(e: Expr): Expr {
+  const reps: [Expr, Expr][] = [];
+  const hidden = mapBottomUp(e, (t) => {
+    if (!(t instanceof Pow && isE(t.base) && couldExtractMinusSign(t.exp))) return t;
+    const d = new Dummy('e');
+    reps.push([d, t]);
+    return d;
   });
+  return xreplace(together(hidden), reps);
+}
+
+/** SymPy factor on expressions (_symbolic_factor): the factors of the numerator and the denominator of together(e). */
+function symbolicFactor(e: Expr, frac: boolean): Expr {
+  const [c, fs] = symbolicFactorList(frac ? together(e) : togetherNoFraction(e), []);
+  return keepCoeff(c, mul(...fs.map(([f, k]) => pow(f, k))));
 }
 
 function factorListRaw(e: Expr, vars: readonly Expr[]): [Rational, [Expr, number][]] {
   return mfactorList(e, vars, (p, x) => {
-    const up = UPoly.fromExpr(p, x);
-    if (!up) return [S.One, [[p, 1]]];
-    const { content, factors } = up.factor();
+    // (polynomials in generator symbols with integer coefficients)
+    const { content, factors } = defined(UPoly.fromExpr(p, x), 'univariate polynomial').factor();
     let c: Rational = content;
     const out: [Expr, number][] = [];
     for (const [f, k] of factors) {
@@ -1606,115 +1775,20 @@ export function factor(ex: ExprLike, opts: { deep?: boolean; extension?: readonl
     if (r) return r;
   }
   if (opts.deep) {
-    // factor the arguments of functions and powers first (SymPy deep=True)
-    const inner = mapBottomUp(sympify(ex), (t) => (t instanceof Fn || (t instanceof Pow && !(t.exp instanceof Rational)) ? rebuild(t, t.args.map((a) => factor(a))) : t));
-    // exp(a - b) = exp(a)*exp(-b) (SymPy exp.as_numer_denom) ...
-    const isE = (b: Expr) => b instanceof Constant && b.name === 'E';
-    const negPart = (u: Expr) => couldExtractMinusSign(u);
-    const split = mapBottomUp(inner, (t) => {
-      if (!(t instanceof Pow && isE(t.base) && t.exp instanceof Add)) return t;
-      const neg = t.exp.args.filter(negPart);
-      if (!neg.length || neg.length === t.exp.args.length) return t;
-      return new Mul([pow(S.E, add(...t.exp.args.filter((u) => !negPart(u)))), pow(S.E, add(...neg))]);
-    });
-    if (opts.fraction === false) return split.key === inner.key ? factor(inner) : split;
-    // ... and exp with a negative exponent is a denominator (fraction=True)
-    const t = together(split);
-    const fs = t instanceof Mul ? t.args : [t];
-    const den = fs.filter((f) => f instanceof Pow && isE(f.base) && negPart(f.exp));
-    if (den.length && den.length < fs.length) {
-      const num = mul(...fs.filter((f) => !den.includes(f)));
-      return mul(factor(num), ...den);
-    }
-    return factor(inner);
+    // SymPy deep=True: factor bottom up (keeping the products and powers), then the sums and products inside
+    const sub = { ...opts, deep: false };
+    const tryFactor = (t: Expr): Expr => {
+      if (t.args.length === 0) return t;
+      const fac = factor(t, sub);
+      return fac instanceof Mul || fac instanceof Pow ? fac : t;
+    };
+    // (SymPy's second pass over the sums and products finds nothing the bottom-up pass has not tried)
+    return mapBottomUp(sympify(ex), tryFactor);
   }
   const e = sympify(ex);
-  const vars = sortGens([...freeSymbols(e)]);
-  if (vars.length === 0) return e;
-  // rational functions: factor numerator and denominator
-  const isDen = (f: Expr): f is Pow => f instanceof Pow && f.exp instanceof Rational && f.exp.isNegative;
-  const fsAll = e instanceof Mul ? e.args : [e];
-  const n = fsAll.filter((f) => !isDen(f));
-  const d = fsAll.filter(isDen);
-  if (d.length) {
-    // SymPy: the numerator and the denominator are factored with their constants collected
-    // into one coefficient (-x/(1 - y) -> x/(y - 1))
-    const [cn, fn_] = factorWithCoeff(mul(...n));
-    const [cd, fd] = factorWithCoeff(mul(...d.map((f) => pow(f.base, mul(-1, f.exp)))));
-    return mul(cn, pow(cd, -1), fn_, pow(fd, -1));
-  }
-  // powers of sums are factored base-wise (SymPy _symbolic_factor_list), which
-  // also avoids expanding large powers
-  const isSumPow = (f: Expr): f is Pow => f instanceof Pow && f.base instanceof Add && f.exp instanceof Rational && f.exp.isInteger && f.exp.p > 1n;
-  if (isSumPow(e)) return pow(factor(e.base), e.exp);
-  if (e instanceof Pow && e.base instanceof Add && e.exp instanceof Rational && !e.exp.isInteger) return pow(factor(e.base), e.exp);
-  if (e instanceof Mul && e.args.some(isSumPow)) return mul(...e.args.map((f) => factor(f)));
-  let poly: Expr;
-  try {
-    poly = expand(e);
-    Poly.from(poly, vars);
-  } catch {
-    // treat non-polynomial subexpressions (sin(y), exp(x), sqrt(x), ...) as generators
-    const reps: [Expr, Expr][] = [];
-    const back: [Expr, Expr][] = [];
-    const gen = (x: Expr): Expr => {
-      if (x instanceof Sym || x instanceof Rational || x.freeSymbols().size === 0) return x;
-      const polyLike = x instanceof Add || x instanceof Mul || (x instanceof Pow && x.exp instanceof Rational && x.exp.isInteger);
-      if (polyLike) {
-        const args = x.args.map(gen);
-        return args.every((a, i) => a === x.args[i]) ? x : rebuild(x, args);
-      }
-      const found = reps.find(([k]) => k.key === x.key);
-      if (found) return found[1];
-      const d = new Sym(`_fg${reps.length}`);
-      reps.push([x, d]);
-      back.push([d, x]);
-      return d;
-    };
-    const g = gen(e);
-    if (!reps.length || g.key === e.key) return e;
-    try {
-      Poly.from(expand(g), sortGens([...freeSymbols(g)]));
-    } catch {
-      return e;
-    }
-    return xreplace(factor(g), back);
-  }
-  const [c, fs] = factorListExpr(poly, vars);
-  const parts = fs.map(([f, k]) => pow(f, k));
-  const [p0] = parts;
-  if (p0 === undefined) return c;
-  if (parts.length === 1 && c.isOne) return p0;
-  // SymPy _keep_coeff: -1 times a single factor is evaluated (-(x + 1) -> -x - 1)
-  if (parts.length === 1 && c.p === -1n && c.q === 1n) return mul(-1, p0);
-  const sorted = [...parts].sort(byKey);
-  return c.isOne ? new Mul(sorted) : new Mul([c, ...sorted]);
-}
-
-
-/** Order of distinct factors by their keys. */
-const byKey = (a: Expr, b: Expr): number => (a.key < b.key ? -1 : 1);
-
-/** factor(e) split into its rational coefficient and the product of the factors (SymPy factor_list). */
-function factorWithCoeff(e: Expr): [Rational, Expr] {
-  const vars = sortGens([...freeSymbols(e)]);
-  if (vars.length) {
-    try {
-      const poly = expand(e);
-      Poly.from(poly, vars);
-      const [c, fs] = factorListExpr(poly, vars);
-      if (c instanceof Rational) {
-        const parts = fs.map(([f, k]) => pow(f, k)).sort(byKey);
-        return [c, parts.length === 0 ? S.One : parts.length === 1 ? at(parts, 0) : new Mul(parts)];
-      }
-    } catch {
-      // not a polynomial: factored as a whole below
-    }
-  }
-  const f = factor(e);
-  if (f instanceof Rational) return [f, S.One];
-  if (f instanceof Mul && f.args[0] instanceof Rational) return [f.args[0], mul(...f.args.slice(1))];
-  return [Rational.of(1n), f];
+  // SymPy: a PolynomialError for non-commutative expressions leads to factor_nc
+  if (!e.isCommutative) return factorNc(e);
+  return symbolicFactor(e, opts.fraction !== false);
 }
 
 /**
@@ -1829,3 +1903,4 @@ export function minimalPolynomial(vIn: ExprLike, x: Sym): Expr {
 }
 
 impl.factor = (e) => factor(e);
+polyHooks.factorList = (e) => factorListExpr(e);

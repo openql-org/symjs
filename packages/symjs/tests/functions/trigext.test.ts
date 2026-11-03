@@ -395,3 +395,28 @@ describe('trigext evaluation', () => {
     expect(String(tan(mul(S.I, parse('1 - x'))))).toBe('-I*tanh(x - 1)');
   });
 });
+
+describe('trigonometric functions at infinities (SymPy eval)', () => {
+  const { oo, zoo, nan } = sj;
+  const moo = mul(-1, oo);
+  it.each([
+    ['sin', sj.sin, 'AccumBounds(-1, 1)'],
+    ['cos', sj.cos, 'AccumBounds(-1, 1)'],
+    ['tan', sj.tan, 'AccumBounds(-oo, oo)'],
+    ['cot', sj.cot, 'AccumBounds(-oo, oo)'],
+    ['sec', sj.sec, 'AccumBounds(-oo, oo)'],
+    ['csc', sj.csc, 'AccumBounds(-oo, oo)'],
+  ] as const)('%s(oo) = %s, of zoo and nan nan', (_name, fn, want) => {
+    expect(sj.str(fn(oo))).toBe(want);
+    expect(sj.str(fn(moo))).toBe(want);
+    expect(fn(zoo)).toBe(nan);
+    expect(fn(nan)).toBe(nan);
+  });
+  it('sech and csch', () => {
+    // SymPy: sech(oo) = csch(oo) = 0, sech(nan) = csch(nan) = nan
+    for (const fn of [sj.sech, sj.csch]) {
+      expect(fn(oo)).toBe(S.Zero);
+      expect(fn(nan)).toBe(nan);
+    }
+  });
+});

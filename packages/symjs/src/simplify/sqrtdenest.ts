@@ -10,14 +10,14 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, Mul, Pow, Rational, S, Special, impl } from '../core/nodes';
+import { Add, Constant, Mul, Pow, Rational, S, Special, impl, isNum } from '../core/nodes';
 import { isPositive } from '../core/assumptions';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { countOps, ordered } from '../core/match';
-import { keepCoeff } from '../core/methods';
+import { asContentPrimitive, asNumerDenom } from '../core/methods';
 import { rebuild } from '../core/traverse';
-import { gcd as igcd } from '../core/numbers';
-import { expand } from './expand';
+import { mgcd } from '../polys/mpoly';
+import { expand, expandMulOnly } from './expand';
 import { fraction } from './rational';
 import { gcdTerms, signsimp } from './exprtools';
 import { powdenest, powsimp } from './powsimp';
@@ -36,12 +36,12 @@ const sortedArgs = (e: Expr) => [...e.args].sort((a, b) => compareKeys(sortKey(a
 /** SymPy _mexpand: expand_mul and expand_multinomial. */
 const mexpand = (e: Expr): Expr => expand(e, { power_exp: false, power_base: false, log: false });
 const num = (e: Expr): number => e.toComplex().re;
-const isRat = (e: Expr): e is Rational => e instanceof Rational;
 const termsOf = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
 const factorsOf = (e: Expr): readonly Expr[] => (e instanceof Mul ? e.args : [e]);
+/** SymPy as_coeff_Mul: the numeric (Rational or Float) coefficient and the rest. */
 const asCoeffMul = (e: Expr): [Expr, Expr] => {
-  if (e instanceof Mul && e.args[0] instanceof Rational) return [e.args[0], e.args.length === 2 ? at(e.args, 1) : new Mul(e.args.slice(1))];
-  if (e instanceof Rational) return [e, S.One];
+  if (e instanceof Mul && e.args[0] !== undefined && isNum(e.args[0])) return [e.args[0], e.args.length === 2 ? at(e.args, 1) : new Mul(e.args.slice(1))];
+  if (isNum(e)) return [e, S.One];
   return [S.One, e];
 };
 
@@ -72,12 +72,32 @@ function subsets(n: number): number[][] {
 
 // ---- radsimp helpers -------------------------------------------------------------
 
+/**
+ * The generators SymPy's gcd would build polynomials in: symbols, radicals (powers with a
+ * non-integer exponent) and other non-polynomial atoms, in their order of appearance.
+ */
+function gcdGens(es: readonly Expr[]): Expr[] {
+  const gens = new Map<string, Expr>();
+  const walk = (e: Expr): void => {
+    if (e instanceof Rational) return;
+    if (e instanceof Add || e instanceof Mul) e.args.forEach(walk);
+    else if (e instanceof Pow && e.exp instanceof Rational && e.exp.isInteger) walk(e.base);
+    else gens.set(e.key, e);
+  };
+  es.forEach(walk);
+  return [...gens.values()];
+}
+
+/** SymPy gcd(a, b) of expressions: the polynomial gcd in the radicals and symbols they contain. */
+const exprGcd = (a: Expr, b: Expr): Expr => mgcd(a, b, gcdGens([a, b]));
+
+/** SymPy _split_gcd. */
 function splitGcd(...a: Expr[]): [Expr, Expr[], Expr[]] {
   let g = first(a);
   const b1 = [g];
   const b2: Expr[] = [];
   for (const x of a.slice(1)) {
-    const g1 = isRat(g) && isRat(x) && g.isInteger && x.isInteger ? Rational.of(igcd(g.p, x.p)) : S.One;
+    const g1 = exprGcd(g, x);
     if (isOne(g1)) b2.push(x);
     else {
       g = g1;
@@ -184,10 +204,10 @@ export function radsimp(exIn: ExprLike, opts: { symbolic?: boolean; maxTerms?: n
     if (d.args.length === 0 && n.args.length === 0) return expr;
     if (n.args.length > 0) {
       n = rebuild(n, n.args.map(handle));
-      return mul(n, handle(pow(d, -1)));
+      return unevaluatedMul(n, handle(pow(d, -1)));
     }
-    if (!isOne(n)) return mul(n, handle(pow(d, -1)));
-    if (d instanceof Mul) return mul(...d.args.map((x) => handle(pow(x, -1))));
+    if (!isOne(n)) return unevaluatedMul(n, handle(pow(d, -1)));
+    if (d instanceof Mul) return unevaluatedMul(...d.args.map((x) => handle(pow(x, -1))));
     if (!symbolic && d.freeSymbols().size) return expr;
     if (ispow2(d)) {
       const d2 = pow(sqrtdenest(sqrt(d.base)), fraction(d.exp)[0]);
@@ -240,7 +260,7 @@ export function radsimp(exIn: ExprLike, opts: { symbolic?: boolean; maxTerms?: n
       if (d.args.length === 0) break;
     }
     if (!keep) return expr;
-    return mul(n, pow(d, -1));
+    return unevaluatedMul(n, pow(d, -1));
   };
   // coeff + rest
   let coeff: Expr = S.Zero;
@@ -252,19 +272,56 @@ export function radsimp(exIn: ExprLike, opts: { symbolic?: boolean; maxTerms?: n
   const old = fraction(expr);
   let [n, d] = fraction(handle(expr));
   if (n.key !== old[0].key || d.key !== old[1].key) {
-    // (SymPy goes back to the handled parts when its unevaluated sign simplification restores the
-    // input fraction; signsimp here evaluates, so the quotient is the canonical form of the handled
-    // value, whose fraction differs from the input's)
-    if (d.args.length > 0) [n, d] = fraction(mul(signsimp(n), pow(signsimp(d), -1)));
-    n = expand(n, { power_exp: false, power_base: false, log: false, multinomial: false });
+    if (d.args.length > 0) {
+      const was: [Expr, Expr] = [n, d];
+      n = signsimp(n, false);
+      d = signsimp(d, false);
+      [n, d] = fraction(unevaluatedMul(...powersOf(unevaluatedMul(n, pow(d, -1)))));
+      if (n.key === old[0].key && d.key === old[1].key) [n, d] = was;
+    }
+    n = expandMulOnly(n);
     if (d instanceof Rational || d instanceof Add) {
       const [n2, d2] = fraction(gcdTerms(mul(n, pow(d, -1))));
       if (d2 instanceof Rational || countOps(d2) <= countOps(d)) [n, d] = [signsimp(n2), signsimp(d2)];
     }
   }
-  // a rational denominator stays outside the sum, (2 - sqrt(2))/2 (SymPy _unevaluated_Mul)
-  const q = d instanceof Rational && n instanceof Add ? keepCoeff(pow(d, -1), n) : mul(n, pow(d, -1));
-  return add(coeff, q);
+  return add(coeff, unevaluatedMul(n, pow(d, -1)));
+}
+
+/**
+ * SymPy _unevaluated_Mul: the product with nested products flattened and the numbers combined
+ * into one leading coefficient, without evaluating anything else (sqrt(x)/x stays).
+ */
+function unevaluatedMul(...xs: Expr[]): Expr {
+  let c: Expr = S.One;
+  const rest: Expr[] = [];
+  const walk = (x: Expr): void => {
+    if (x instanceof Mul) x.args.forEach(walk);
+    else if (isNum(x)) c = mul(c, x);
+    else rest.push(x);
+  };
+  xs.forEach(walk);
+  const bases = new Set(rest.map((f) => (f instanceof Pow ? f.base : f).key));
+  // the evaluated product is the same unless powers of a base combine or a number distributes over a sum
+  if (bases.size === rest.length && !(rest.length === 1 && first(rest) instanceof Add && !(c instanceof Rational && c.p === -1n && c.q === 1n))) return mul(c, ...rest);
+  const args = [...(isOne(c) ? [] : [c]), ...rest.sort((a, b) => compareKeys(sortKey(a), sortKey(b)))];
+  return args.length === 1 ? first(args) : new Mul(args);
+}
+
+/** The factors k**v of SymPy Factors(e): numbers and equal bases combined. */
+function powersOf(e: Expr): Expr[] {
+  const m = new Map<string, [Expr, Expr]>();
+  let c: Expr = S.One;
+  for (const f of factorsOf(e)) {
+    if (isNum(f)) {
+      c = mul(c, f);
+      continue;
+    }
+    const [b, x] = f instanceof Pow ? [f.base, f.exp] : [f, S.One];
+    const cur = m.get(b.key);
+    m.set(b.key, [b, cur ? add(cur[1], x) : x]);
+  }
+  return [c, ...[...m.values()].map(([b, x]) => pow(b, x))];
 }
 
 // ---- sqrtdenest -------------------------------------------------------------------
@@ -327,7 +384,7 @@ function sqrtMatch(p0: Expr): [Expr, Expr, Expr] | undefined {
 
 function sqrtdenest0(expr: Expr): Expr {
   if (isSqrt(expr)) {
-    const [n, d] = fraction(expr);
+    const [n, d] = asNumerDenom(expr);
     if (isOne(d)) {
       let e: Expr = n;
       if (n instanceof Pow && n.base instanceof Add) {
@@ -440,12 +497,39 @@ function sqrtSymbolicDenest(a: Expr, b: Expr, r: Expr): Expr | undefined {
   if (terms.some(([, k]) => k < 0) || Math.max(...terms.map(([, k]) => k)) !== 2) return undefined;
   const coeff = (k: number) => add(...terms.filter(([, kt]) => kt === k).map(([t]) => mul(t, pow(y, -k))));
   const ca = coeff(2);
-  const cb = b;
+  const cb = add(coeff(1), b);
   const cc = coeff(0);
   if (!isZero(mexpand(add(pow(cb, 2), mul(-4, ca, cc))))) return undefined;
-  let z = sqrt(mul(ca, pow(add(sqrt(r), mul(cb, pow(mul(2, ca), -1))), 2)));
-  if (z.freeSymbols().size === 0) z = mexpand(z);
+  const w = add(sqrt(r), mul(cb, pow(mul(2, ca), -1)));
+  let z = sqrt(mul(ca, pow(w, 2)));
+  if (z.freeSymbols().size === 0) z = mexpand(mul(...asContentPrimitive(sqrtNumericSquare(ca, w) ?? z)));
   return z;
+}
+
+/**
+ * sqrt(ca*w**2) = sqrt(ca)*|w| for numbers ca > 0 and real w. SymPy's Pow gives this form because
+ * it decides the sign of a number by evaluating it; the core assumptions do not evaluate, so the
+ * number case is done here. undefined when ca or w is not such a number.
+ */
+function sqrtNumericSquare(ca: Expr, w: Expr): Expr | undefined {
+  const cv = ca.toComplex();
+  const wv = w.toComplex();
+  if (!(cv.re > 0 && cv.im === 0 && wv.im === 0)) return undefined;
+  const s = sqrtOfPositive(ca);
+  const sw = mul(s, w);
+  return num(sw) < 0 ? mul(-1, sw) : sw;
+}
+
+/** sqrt(c) for a number c > 0: the product of sqrt(|f|) over the factors f of c. */
+const sqrtOfPositive = (c: Expr): Expr => mul(...factorsOf(c).map(sqrtAbs));
+
+/** sqrt(|f|) for a real number f that is not a product; even powers come out of the root with their sign. */
+function sqrtAbs(f: Expr): Expr {
+  if (f instanceof Pow && f.exp instanceof Rational && f.exp.isInteger && f.exp.p % 2n === 0n) {
+    const h = pow(f.base, Rational.of(f.exp.p / 2n));
+    return num(h) < 0 ? mul(-1, h) : h;
+  }
+  return sqrt(num(f) < 0 ? mul(-1, f) : f);
 }
 
 // a positive symbol for the substitution in sqrtSymbolicDenest

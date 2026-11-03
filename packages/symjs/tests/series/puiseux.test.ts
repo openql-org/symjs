@@ -65,3 +65,34 @@ describe('the expansion in t (series/puiseux.ts)', () => {
     expect(() => E().ser(Q(e), Rational.of(1))).toThrow('recursion too deep');
   });
 });
+
+describe('expansions on branch cuts and at branch points (SymPy 1.14 series)', () => {
+  it.each([
+    ['acoth(x)', '-I*pi/2 + x + O(x**3)'],
+    ['acoth(-x)', 'I*pi/2 - x + O(x**3)'],
+    ['asech(x)', 'log(2) - log(x) - x**2/4 + O(x**3)'],
+    ['asech(-x)', 'I*pi + log(2) - log(x) - x**2/4 + O(x**3)'],
+    ['acsch(x)', 'log(2) - log(x) + x**2/4 + O(x**3)'],
+    ['acsch(-x)', '-log(2) + log(x) - x**2/4 + O(x**3)'],
+    ['sqrt(-1 + a*x)', 'I - I*a*x/2 - I*a**2*x**2/8 + O(x**3)'],
+    ['sqrt(-1 + f(1)*x)', 'I - I*x*f(1)/2 - I*x**2*f(1)**2/8 + O(x**3)'],
+    ['1/(f(a) + 1 + x)', '1/(f(a) + 1) - x/(f(a) + 1)**2 + x**2/(f(a) + 1)**3 + O(x**3)'],
+    ['loggamma(x + 1)', '-EulerGamma*x + pi**2*x**2/12 + O(x**3)'],
+    ['log(-1 - I*x)', '-I*pi + I*x + x**2/2 + O(x**3)'],
+    ['sqrt(-1 - I*x**2)', '-I + x**2/2 + O(x**3)'],
+  ])('series(%s, x, 0, 3) = %s', (e, expected) => {
+    const [x] = sj.symbols('x');
+    expect(String(sj.series(parse(e), x, 0, 3))).toBe(expected);
+  });
+  it('keeps acsch real for a small negative argument', () => {
+    // SymPy 1.14 gives I*pi + log(2) - log(x) + x + 3*x**2/4 + O(x**3), which is wrong: acsch(-1/1000) = -7.6009...
+    // is real (acsch is odd), and this series is -acsch(x - x**2)
+    const [x] = sj.symbols('x');
+    expect(String(sj.series(parse('acsch(x**2 - x)'), x, 0, 3))).toBe('-log(2) + log(x) - x - 3*x**2/4 + O(x**3)');
+  });
+  it('does not expand acoth at 0 along an unknown direction', () => {
+    // SymPy 1.14: log(1/a)/2 - log(-1/a)/2 + a*x + O(x**3)
+    const [x] = sj.symbols('x');
+    expect(() => sj.series(parse('acoth(a*x)'), x, 0, 3)).toThrow();
+  });
+});

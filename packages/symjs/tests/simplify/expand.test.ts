@@ -320,3 +320,11 @@ describe("powsimp, powdenest, logcombine, expand_log (cov2): SymPy 1.14 cases", 
     expect(showMap(run())).toBe(want);
   });
 });
+
+describe('expand_mul leaves integer powers of sums (SymPy 1.14)', () => {
+  it('distributes products only', async () => {
+    const { expand_mul: em, parse: p } = await import('../../src');
+    expect(String(em(p('(x + 1)**2*(y + 1)')))).toBe('y*(x + 1)**2 + (x + 1)**2');
+    expect(String(em(p('x*(x + (y + 1)**2*(x + 2))')))).toBe('x**2*(y + 1)**2 + x**2 + 2*x*(y + 1)**2');
+  });
+});

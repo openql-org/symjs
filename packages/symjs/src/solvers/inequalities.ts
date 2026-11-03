@@ -15,7 +15,7 @@ import { at, cast, defined, expectType, first } from '../core/guard';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { expandMul } from '../simplify/expand';
 import { factorTerms } from '../simplify/exprtools';
-import { BoolOp, and, or as orB } from '../core/boolalg';
+import { BoolOp, and, not as notB, or as orB } from '../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne } from '../core/logic';
 import { some, xreplace } from '../core/traverse';
 import { fn, log } from '../functions/elementary';
@@ -269,6 +269,17 @@ function findAbs(e: Expr, x: Sym): Expr | undefined {
   return undefined;
 }
 
+/** The zeros of the denominators of e (where e is undefined). */
+function denominatorZeros(e: Expr, x: Sym, domain: SetExpr): SetExpr {
+  const dens: Expr[] = [];
+  const walk = (u: Expr) => {
+    if (u instanceof Pow && u.exp instanceof Rational && u.exp.isNegative && u.base.has(x)) dens.push(u.base);
+    u.args.forEach(walk);
+  };
+  walk(e);
+  return union(...dens.map((d) => solveSign(d, 'Eq', x, domain)));
+}
+
 function solveSign(f0: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
   // SymPy: solving an inequality with parameters is not implemented
   if ([...f0.freeSymbols()].some((t) => t.key !== x.key)) throw new NotImplementedError('inequalities: the expression has parameters');
@@ -278,7 +289,8 @@ function solveSign(f0: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
     const a = first(ab.args);
     const pos = intersection(solveSign(a, 'Ge', x, domain), solveSign(xreplace(f0, [[ab, a]]), op, x, domain));
     const neg = intersection(solveSign(a, 'Lt', x, domain), solveSign(xreplace(f0, [[ab, mul(-1, a)]]), op, x, domain));
-    return union(pos, neg);
+    // the replacement may cancel a denominator (x/Abs(x) is 1 for x >= 0): its zeros stay excluded
+    return minus(union(pos, neg), denominatorZeros(f0, x, domain));
   }
   const f = cancel(f0);
   // a constant (a case of an Abs split, say): the whole domain or nothing
@@ -626,7 +638,9 @@ function monotonic(f: Expr, op: RelOp, iv: SetExpr, x?: Sym): boolean | undefine
   if ([...d.freeSymbols()].some((t) => t.key !== v.key)) return undefined;
   const strict = op === 'Gt' || op === 'Lt';
   // strictly monotonic: monotonic with a derivative that vanishes only at isolated points
-  const s = solveSign(d, strict ? (op === 'Gt' ? 'Ge' : 'Le') : op, v, dom);
+  // isolated points where f' is undefined but f is not (x + Abs(x) at 0) do not break monotonicity
+  const corners = minus(denominatorZeros(d, v, dom), denominatorZeros(f, v, dom));
+  const s = union(solveSign(d, strict ? (op === 'Gt' ? 'Ge' : 'Le') : op, v, dom), corners);
   let weak = isSubset(ref, s);
   // f' has the sign only at isolated points while the domain (not a finite set) has interior points
   if (weak === undefined && (s === EmptySet || s instanceof FiniteSet) && !(ref instanceof FiniteSet)) weak = false;
@@ -775,7 +789,7 @@ export function piecewiseExclusive(p: Expr, opts: { skipNan?: boolean } = {}): E
   const pairs = cast(p, Piecewise, 'Piecewise').pairs;
   const syms = new Map<string, Sym>();
   for (const [, c] of pairs) for (const t of c.freeSymbols()) syms.set(t.key, t);
-  if (syms.size !== 1) throw new NotImplementedError('piecewise_exclusive: univariate conditions expected');
+  if (syms.size !== 1) return piecewiseExclusiveLogic(pairs, opts.skipNan ?? false);
   const x = first([...syms.values()]);
   const condSet = (c: Expr): SetExpr => {
     if (c instanceof BoolAtom) return c.value ? Reals : EmptySet;
@@ -802,6 +816,28 @@ export function piecewiseExclusive(p: Expr, opts: { skipNan?: boolean } = {}): E
   if (out.length === 2 && out[1] === S.true) return first(out);
   const rest = minus(Reals, covered);
   if (!opts.skipNan && rest !== EmptySet) out.push(S.NaN, setToCondition(rest, x));
+  return new Piecewise(out);
+}
+
+/** Not(c) with the negation pushed into And and Or (De Morgan) and relations flipped. */
+function negate(c: Expr): Expr {
+  if (c instanceof BoolOp && c.op === 'And') return orB(...c.args.map(negate));
+  if (c instanceof BoolOp && c.op === 'Or') return and(...c.args.map(negate));
+  return notB(c);
+}
+
+/**
+ * SymPy piecewise_exclusive for conditions in several symbols: each condition
+ * And-ed with the negation of the earlier ones, NaN where none holds.
+ */
+function piecewiseExclusiveLogic(pairs: readonly (readonly [Expr, Expr])[], skipNan: boolean): Expr {
+  let cum: Expr = S.false;
+  const out: Expr[] = [];
+  for (const [e, c] of pairs) {
+    out.push(e, and(c, negate(cum)));
+    cum = orB(c, cum);
+  }
+  if (!skipNan && cum !== S.true) out.push(S.NaN, negate(cum));
   return new Piecewise(out);
 }
 

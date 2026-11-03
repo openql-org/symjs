@@ -30,7 +30,8 @@ import {
   latex,
   subs,
 } from '../../../src';
-import { rewriteGamma, rewriteSin, MellinTransformStripError } from '../../../src/integrals/transforms/mellin';
+import { processConds, rewriteGamma, rewriteSin, MellinTransformStripError } from '../../../src/integrals/transforms/mellin';
+import { Gt as GtR, Lt as LtR, and as andB, re as reF } from '../../../src';
 
 /** str of a result; tuples print like SymPy's. */
 const show = (v: unknown): string => (Array.isArray(v) ? `(${v.map(show).join(', ')})` : String(v));
@@ -164,6 +165,20 @@ const [r] = symbols('r');
 const Pm = (q: string) => parse(q, { symbols: [x, s, a, r, nu, p], locals: { Heaviside, DiracDelta } });
 
 const M = (f: string) => show(mellinTransform(Pm(f), x, s));
+/**
+ * A Mellin transform by the Meijer G-function integrator agrees with SymPy's (F, (a, b), cond): the strip and
+ * the condition as printed, F at s = 3/10 + I/7 (a = 13/10, nu = 1/3, p = 2).
+ */
+const MS = (f: string, F: string, strip: string, cond: string): void => {
+  const r = mellinTransform(Pm(f), x, s);
+  if (!Array.isArray(r)) throw new TypeError('a tuple expected');
+  const [F0, st, c] = r;
+  expect(`(${show(st)}, ${show(c)})`).toBe(`(${strip}, ${cond})`);
+  const vals: [Expr, Expr][] = [[s, Pm('3/10 + I/7')], [a, Pm('13/10')], [nu, Pm('1/3')], [p, Pm('2')]];
+  const u = (F0 as Expr).subs(vals).evalf(20).toComplex();
+  const v = Pm(F).subs(vals).evalf(20).toComplex();
+  expect(Math.hypot(u.re - v.re, u.im - v.im)).toBeLessThan(1e-10);
+};
 const strip = (lo: string | undefined, hi: string | undefined): [Expr | undefined, Expr | undefined] => [lo === undefined ? undefined : Pm(lo), hi === undefined ? undefined : Pm(hi)];
 const IM = (F: string, lo: string | undefined, hi: string | undefined) => show(inverseMellinTransform(Pm(F), s, x, strip(lo, hi)));
 const RG = (F: string, lo: string | undefined, hi: string | undefined) => show(rewriteGamma(Pm(F), s, lo === undefined ? undefined : Pm(lo), hi === undefined ? undefined : Pm(hi)));
@@ -175,8 +190,7 @@ describe('mellin_transform from the table', () => {
     expect(M('exp(-2*x**3)')).toBe('(gamma(s/3)/(3*2**(s/3)), (0, oo), True)');
     expect(M('exp(-2/x)')).toBe('(2**s*gamma(-s), (-oo, 0), True)');
     expect(M('exp(sin(x))')).toBe('MellinTransform(exp(sin(x)), x, s)');
-    // SymPy: (a*gamma(1 + s/a)/(s*Abs(a)), (-oo, oo), re(_s/a) > 0); symjs needs a rational power
-    expect(M('exp(-x**a)')).toBe('MellinTransform(exp(-x**a), x, s)');
+    MS('exp(-x**a)', 'a*gamma(1 + s/a)/(s*Abs(a))', '(-oo, oo)', 're(s/a) > 0');
     // SymPy: (exp(-I*pi*s)*lowergamma(s, -oo), (-oo, oo), True), but the integral diverges for every s
     expect(M('exp(x)')).toBe('MellinTransform(exp(x), x, s)');
   });
@@ -188,15 +202,13 @@ describe('mellin_transform from the table', () => {
     expect(M('x*Heaviside(2 - x)')).toBe('(2**(s + 1)/(s + 1), (-1, oo), True)');
     // SymPy: (-a**s/s, (-oo, 0), (a > 0) & (a < 0) & Ne(1/a, 0)), a contradictory condition
     expect(M('Heaviside(a - x)')).toBe('MellinTransform(Heaviside(a - x), x, s)');
-    // SymPy: (-1/(2**s*s), (-oo, 0), True)
-    expect(M('Heaviside(2*x - 1)')).toBe('MellinTransform(Heaviside(2*x - 1), x, s)');
+    MS('Heaviside(2*x - 1)', '-1/(2**s*s)', '(-oo, 0)', 'True');
     expect(M('Heaviside(x)')).toBe('MellinTransform(Heaviside(x), x, s)');
   });
   it('(1 + b*x)**(-r)', () => {
     // SymPy gives the condition Ne(a, 0), which is wrong for a < 0 (1/(1 - x) has no transform)
     expect(M('1/(1 + a*x)')).toBe('(pi/(a**s*sin(pi*s)), (0, 1), Abs(arg(a)) < pi)');
-    // SymPy: (pi/(2*sin(pi*s/2)), (0, 2), True)
-    expect(M('1/(x**2 + 1)')).toBe('MellinTransform(1/(x**2 + 1), x, s)');
+    expect(M('1/(x**2 + 1)')).toBe('(pi/(2*sin(pi*s/2)), (0, 2), True)');
   });
   it('sin, cos and besselj', () => {
     expect(M('sin(2*x)')).toBe('(sqrt(pi)*gamma(s/2 + 1/2)/(2*gamma(1 - s/2)), (-1, 1), True)');
@@ -206,21 +218,25 @@ describe('mellin_transform from the table', () => {
     expect(M('besselj(nu, p*x)')).toBe('(2**s*gamma(nu/2 + s/2)/(2*p**s*gamma(nu/2 - s/2 + 1)), (-re(nu), 3/2), True)');
     expect(M('besselj(nu, 2*x)')).toBe('(gamma(nu/2 + s/2)/(2*gamma(nu/2 - s/2 + 1)), (-re(nu), 3/2), True)');
     expect(M('besselj(1, x)')).toBe('(2**s*gamma(s/2 + 1/2)/(2*gamma(3/2 - s/2)), (-1, 3/2), True)');
-    // SymPy: (2**(s/2)*sqrt(pi)*gamma(s/4 + 1/2)/(4*gamma(1 - s/4)), (-2, 2), True)
-    expect(M('sin(x**2)')).toBe('MellinTransform(sin(x**2), x, s)');
-    // SymPy: (2**s*sqrt(pi)*gamma(s/2 + 1/2)/(2*a**s*gamma(1 - s/2)), (-1, 1), Eq(Abs(arg(a)), 0))
-    expect(M('sin(a*x)')).toBe('MellinTransform(sin(a*x), x, s)');
-    // SymPy: (pi/(s*sin(pi*s)), (-1, 0), True)
-    expect(M('log(x + 1)')).toBe('MellinTransform(log(x + 1), x, s)');
+    MS('sin(x**2)', '2**(s/2)*sqrt(pi)*gamma(s/4 + 1/2)/(4*gamma(1 - s/4))', '(-2, 2)', 'True');
+    MS('sin(a*x)', '2**s*sqrt(pi)*gamma(s/2 + 1/2)/(2*a**s*gamma(1 - s/2))', '(-1, 1)', 'Eq(Abs(arg(a)), 0)');
+    expect(M('log(x + 1)')).toBe('(pi/(s*sin(pi*s)), (-1, 0), True)');
+    // by the Meijer G-function integrator (MS: SymPy's results, compared numerically)
+    expect(M('log(x)*Heaviside(1 - x)')).toBe('(-1/s**2, (0, oo), True)');
+    expect(M('log(x)**2*Heaviside(1 - x)')).toBe('(2/s**3, (0, oo), True)');
+    expect(M('exp(-x)*log(x)')).toBe('(gamma(s)*polygamma(0, s), (0, oo), True)');
+    MS('besselk(0, x)', '2**(s - 2)*gamma(s/2)**2', '(0, oo)', 'True');
+    MS('besselk(nu, x)', '2**s*gamma(-nu/2 + s/2)*gamma(nu/2 + s/2)/4', '(Max(-re(nu), re(nu)), oo)', 'True');
+    MS('bessely(nu, x)', '-2**s*cos(pi*(nu/2 - s/2))*gamma(-nu/2 + s/2)*gamma(nu/2 + s/2)/(2*pi)', '(Max(-re(nu), re(nu)), 3/2)', 'True');
+    MS('besselj(nu, x)**2', 'gamma(1/2 - s/2)*gamma(nu + s/2)/(2*sqrt(pi)*gamma(1 - s/2)*gamma(nu - s/2 + 1))', '(-2*re(nu), 1)', 'True');
   });
   it('products with a Heaviside factor', () => {
     expect(M('(x - 1)**r*Heaviside(x - 1)')).toBe('(gamma(-r - s)*gamma(r + 1)/gamma(1 - s), (-oo, -re(r)), re(r) > -1)');
     expect(M('(x - 1)**(r + 2)*Heaviside(x - 1)')).toBe('(gamma(r + 3)*gamma(-r - s - 2)/gamma(1 - s), (-oo, -re(r) - 2), re(r) > -3)');
     expect(M('(1 - x)**r*Heaviside(1 - x)')).toBe('(gamma(s)*gamma(r + 1)/gamma(r + s + 1), (0, oo), re(r) > -1)');
     expect(M('(1 - x)**(a + r)*Heaviside(1 - x)')).toBe('(gamma(s)*gamma(a + r + 1)/gamma(a + r + s + 1), (0, oo), re(a) + re(r) > -1)');
-    // SymPy: (-lowergamma(s, 1) + gamma(s + 1)/s, (-oo, oo), True) and (lowergamma(s, 1), (0, oo), True)
-    expect(M('exp(-x)*Heaviside(x - 1)')).toBe('MellinTransform(exp(-x)*Heaviside(x - 1), x, s)');
-    expect(M('exp(-x)*Heaviside(1 - x)')).toBe('MellinTransform(exp(-x)*Heaviside(1 - x), x, s)');
+    MS('exp(-x)*Heaviside(x - 1)', '-lowergamma(s, 1) + gamma(s + 1)/s', '(-oo, oo)', 'True');
+    expect(M('exp(-x)*Heaviside(1 - x)')).toBe('(lowergamma(s, 1), (0, oo), True)');
     expect(M('x**2')).toBe('MellinTransform(x**2, x, s)');
   });
   it('sums combine the strips', () => {
@@ -252,6 +268,10 @@ describe('inverse_mellin_transform', () => {
     expect(IM('gamma(-s)/gamma(3/2 - s)', '-oo', '0')).toBe('2*sqrt(1 - 1/x)*Heaviside(x - 1)/sqrt(pi)');
     expect(IM('gamma(2*s)/gamma(s)', '0', 'oo')).toBe('sqrt(x)*exp(-x/4)/(4*sqrt(pi))');
     expect(IM('gamma(-2*s)', '-oo', '0')).toBe('exp(-1/sqrt(x))/2');
+    // by hyperexpand of the G-function (SymPy's results)
+    expect(IM('gamma(s)*gamma(1 - s)/gamma(s + 1/2)', '0', '1')).toBe('-I*exp(-1/x)*erf(I/sqrt(x))/sqrt(x)');
+    expect(IM('gamma(s)*gamma(s + 1/2)', '0', 'oo')).toBe('-sqrt(pi)*sinh(2*sqrt(x)) + sqrt(pi)*cosh(2*sqrt(x))');
+    expect(IM('gamma(s)*gamma(1/2 - s)', '0', '1/2')).toBe('sqrt(pi)/sqrt(x + 1)');
   });
   it('transforms that do not converge or are not recognised stay unevaluated', () => {
     expect(IM('1/gamma(s)', '0', 'oo')).toBe('InverseMellinTransform(1/gamma(s), s, x, 0, oo)');
@@ -339,5 +359,12 @@ describe('_rewrite_gamma', () => {
     for (const F of ['gamma(s)*gamma(sqrt(2)*s)', 'gamma(s)*gamma(I*s)', 'gamma(s)*gamma(a*s)', 'gamma(s)*2**(1/s)', 'gamma(s)*2**(s**2)', 'gamma(s)*s**s', 'gamma(s)*sqrt(s)', 'besselj(s, 1)']) {
       expect(() => rewriteGamma(Pm(F), s, 0, S.Infinity)).toThrow(IntegralTransformError);
     }
+  });
+});
+
+describe('the strip from a convergence condition (SymPy _mellin_transform.process_conds)', () => {
+  it('relations linear in re(s) bound the strip, the others stay in the condition', () => {
+    const c = andB(GtR(reF(s), -1), LtR(mul(2, reF(s)), 3), GtR(mul(a, reF(s)), 1), LtR(pow(reF(s), 2), 4));
+    expect(processConds(c, s).map((e) => String(e))).toEqual(['-1', '3/2', '(a*re(s) > 1) & (re(s)**2 < 4)']);
   });
 });

@@ -215,12 +215,11 @@ describe('irrational functions (Bateman 5.3)', () => {
   it('rules whose conditions fail (SymPy evaluates these with Meijer G functions)', () => {
     // SymPy: (2*sqrt(pi)*... t**(z - 1/2)*besseli(-z - 1/2, ...), re(z) <= -1/2)
     unevaluated('(s**2 + 1)**z');
-    // SymPy: I*(-2*I*sqrt(t)*exp(t)/sqrt(pi) + erf(I*sqrt(t)))*exp(-t)*Heaviside(t)
-    unevaluated('1/(s**(3/2)*(s + 1))');
+    // by the Meijer G-function integrator, as SymPy
+    same('1/(s**(3/2)*(s + 1))', 'I*(-2*I*sqrt(t)*exp(t)/sqrt(pi) + erf(I*sqrt(t)))*exp(-t)*Heaviside(t)');
     // SymPy: (-2*I*(-2*I*sqrt(t)*exp(t)/sqrt(pi) + erf(I*sqrt(t)))*exp(-t)/5 + exp(4*t)*erfc(2*sqrt(t))/5 + (t - t*exp(-t))/(5*t))*Heaviside(t)
     unevaluated('1/(sqrt(s)*(sqrt(s) + 2)*(s + 1))');
-    // SymPy: ((-pi*r**2*t*(-2*r*sqrt(t)*exp(-r**2*t)/sqrt(pi) + erf(r*sqrt(t)))*exp(r**2*t) + pi*(r**2*t*exp(r**2*t) - r**2*t))*Heaviside(t)/(pi*r**4*t)
-    unevaluated('1/(s**(3/2)*(r + sqrt(s)))');
+    same('1/(s**(3/2)*(r + sqrt(s)))', '(-pi*r**2*t*(-2*r*sqrt(t)*exp(-r**2*t)/sqrt(pi) + erf(r*sqrt(t)))*exp(r**2*t) + pi*(r**2*t*exp(r**2*t) - r**2*t))*Heaviside(t)/(pi*r**4*t)');
   });
 });
 
@@ -239,10 +238,10 @@ describe('corrections of SymPy rules', () => {
     unevaluated('1/(s*(s - 1)*sqrt(s + 2))');
     // with s*sqrt(s) combined into s**(3/2) (SymPy evaluates this with Meijer G functions)
     same('1/(s**(3/2)*(-a + s))', '-(2*sqrt(a)*sqrt(t)*exp(-a*t)/sqrt(pi) - erf(sqrt(a)*sqrt(t)))*exp(a*t)*Heaviside(t)/a**(3/2)');
-    // a negative pole (SymPy, with Meijer G functions:
-    // I*(-2*I*sqrt(a)*sqrt(t)*exp(a*t)/sqrt(pi) + erf(I*sqrt(a)*sqrt(t)))*exp(-a*t)*Heaviside(t)/(a**(3/2)*sqrt(k)))
-    unevaluated('1/(s*sqrt(k*s)*(a + s))');
-    unevaluated('1/(s**(3/2)*(a + s))');
+    // a negative pole, by the Meijer G-function integrator as in SymPy (checked against the Laplace
+    // transform at s = 3 for k = 2)
+    same('1/(s*sqrt(k*s)*(a + s))', 'I*(-2*I*sqrt(a)*sqrt(t)*exp(a*t)/sqrt(pi) + erf(I*sqrt(a)*sqrt(t)))*exp(-a*t)*Heaviside(t)/(a**(3/2)*sqrt(k))');
+    same('1/(s**(3/2)*(a + s))', 'I*(-2*I*sqrt(a)*sqrt(t)*exp(a*t)/sqrt(pi) + erf(I*sqrt(a)*sqrt(t)))*exp(-a*t)*Heaviside(t)/a**(3/2)');
   });
 });
 
@@ -255,7 +254,7 @@ describe('expansion and partial fractions', () => {
     // SymPy: t*log(2)*Heaviside(t) + (-t**2*log(t) - EulerGamma*t**2 + t**2)*Heaviside(t)/t,
     // the second term from its Meijer G integration
     const r = inverseLaplaceTransform(parse('log(2*s)/s**2', { symbols: [sp] }), sp, t);
-    expect(String(r)).toBe('t*log(2)*Heaviside(t) + InverseLaplaceTransform(log(s)/s**2, s, t, _None)');
+    expect(String(r)).toBe('t*log(2)*Heaviside(t) + (-t**2*log(t) - EulerGamma*t**2 + t**2)*Heaviside(t)/t');
   });
   it('a product with a sum that has no rule', () => {
     // SymPy 1.14 raises TypeError (_inverse_laplace_transform_integration()
@@ -277,8 +276,8 @@ describe('expansion and partial fractions', () => {
     );
   });
   it('repeated factors that SymPy inverts with Meijer G functions or not at all', () => {
-    // SymPy: 2*sqrt(3)*pi*t**5*Heaviside(t)*hyper((), (7/3, 8/3), -2*t**3/27)/(729*gamma(7/3)*gamma(8/3))
-    unevaluated('(s**3 + 2)**(-2)');
+    // by the Meijer G-function integrator, as SymPy
+    expect(String(ilt('(s**3 + 2)**(-2)')[0])).toBe('2*sqrt(3)*pi*t**5*Heaviside(t)*hyper((), (7/3, 8/3), -2*t**3/27)/(729*gamma(7/3)*gamma(8/3))');
     // SymPy 1.14 raises ValueError (too many values to unpack) on these
     unevaluated('(a*s + s**2 + 1)**(-2)');
     unevaluated('(a + s**2 + s)**(-3)');
@@ -312,8 +311,8 @@ describe('more SymPy 1.14 cases', () => {
     // SymPy 1.14 raises TypeError / AttributeError on these two
     unevaluated('s**z/(s + 1)');
     unevaluated('1/(s**a + 1)');
-    // SymPy (Meijer G): (-t*log(t) - EulerGamma*t)*Heaviside(t)/t
-    unevaluated('log(s)/s');
+    // by the Meijer G-function integrator, as SymPy
+    same('log(s)/s', '(-t*log(t) - EulerGamma*t)*Heaviside(t)/t');
   });
   it('irrational rules', () => {
     same('1/sqrt(s**2 + a**2)', 'Heaviside(t)*besselj(0, a*t)');
@@ -334,14 +333,23 @@ describe('more SymPy 1.14 cases', () => {
       '1/(s - b)/(sqrt(s) + sqrt(a))/sqrt(s)',
       '(sqrt(a)*exp(b*t)*erf(sqrt(b)*sqrt(t)) + sqrt(b)*exp(a*t)*erfc(sqrt(a)*sqrt(t)) - sqrt(b)*exp(b*t))*Heaviside(t)/(sqrt(b)*(a - b))',
     );
-    // the rules need a positive shift; SymPy evaluates the others with Meijer G functions
-    for (const e of ['1/(-a + sqrt(s))', '1/(r + sqrt(s))', '(r + sqrt(s))**(-2)', '(r + sqrt(s))**(-3)', '(r + sqrt(s))**(-4)', '1/(sqrt(s)*(a + s))', '1/(s*(r + sqrt(s)))', '1/(sqrt(s)*(r + sqrt(s)))', '1/(s*(r + sqrt(s))**2)', '1/(sqrt(s)*(r + sqrt(s))**2)'])
-      unevaluated(e);
+    // the rules need a positive shift; the others by the Meijer G-function integrator (the results are
+    // checked against the Laplace transforms at s = 3 for r = 7/10 and r = -7/10)
+    for (const e of ['1/(-a + sqrt(s))', '1/(r + sqrt(s))']) unevaluated(e);
+    same('(r + sqrt(s))**(-2)', '2*(sqrt(pi)*r**2*t*(-2*sqrt(pi)*erfc(r*sqrt(t)) + 2*exp(-r**2*t)/(r*sqrt(t)))*(-r**2*t - 1/2)*exp(r**2*t)/2 + sqrt(pi)*r*sqrt(t)/2)*Heaviside(t)/(pi*r**2*t)');
+    same('(r + sqrt(s))**(-3)', '2*(3*sqrt(pi)*r**4*t**2*(4*sqrt(pi)*erfc(r*sqrt(t))/3 - (4*r**2*t/3 - 2/3)*exp(-r**2*t)/(r**3*t**(3/2)))*(-r**2*t - 3/2)*exp(r**2*t)/4 + 3*sqrt(pi)*r*sqrt(t)/4)*Heaviside(t)/(pi*r**3*t)');
+    same('(r + sqrt(s))**(-4)', '4*(3*sqrt(pi)*r**4*t**2*(4*sqrt(pi)*erfc(r*sqrt(t))/3 - (4*r**2*t/3 - 2/3)*exp(-r**2*t)/(r**3*t**(3/2)))*(r**4*t**2 + 3*r**2*t + 3/4)*exp(r**2*t)/4 + 3*sqrt(pi)*r*sqrt(t)*(-r**2*t - 1/2)/4)*Heaviside(t)/(3*pi*r**4*t)');
+    same('1/(sqrt(s)*(a + s))', '-I*exp(-a*t)*erf(I*sqrt(a)*sqrt(t))*Heaviside(t)/sqrt(a)');
+    same('1/(s*(r + sqrt(s)))', '(pi*r**2*t*exp(r**2*t)*erf(r*sqrt(t)) - pi*(r**2*t*exp(r**2*t) - r**2*t))*Heaviside(t)/(pi*r**3*t)');
+    same('1/(sqrt(s)*(r + sqrt(s)))', 'exp(r**2*t)*erfc(r*sqrt(t))*Heaviside(t)');
+    same('1/(s*(r + sqrt(s))**2)', '2*(sqrt(pi)*r**5*t**(5/2)*(-2 - 2*sqrt(pi)*(3*r**2*t/2 - 3/4)*(-2*r*sqrt(t)*exp(-r**2*t)/sqrt(pi) + erf(r*sqrt(t)))*exp(r**2*t)/(3*r**3*t**(3/2))) + pi*(r**4*t**2*((2*r**2*t - 2)/(r**2*t) + 1/(r**2*t))*exp(r**2*t) + r**2*t)/2)*Heaviside(t)/(pi*r**4*t)');
+    same('1/(sqrt(s)*(r + sqrt(s))**2)', 'r*t*(-2*sqrt(pi)*erfc(r*sqrt(t)) + 2*exp(-r**2*t)/(r*sqrt(t)))*exp(r**2*t)*Heaviside(t)/sqrt(pi)');
   });
   it('numerators that do not cancel the poles', () => {
     // SymPy: -a*InverseLaplaceTransform(1/(r*s + s**(3/2)), s, t, _None) + InverseLaplaceTransform(sqrt(s)/(r*s + s**(3/2)), s, t, _None),
     // the same transforms with the denominators expanded
-    same('(sqrt(s) - a)/(s*(sqrt(s) + r))', '-a*InverseLaplaceTransform(1/(s*(r + sqrt(s))), s, t, _None) + InverseLaplaceTransform(1/(sqrt(s)*(r + sqrt(s))), s, t, _None)');
+    // (the terms by the Meijer G-function integrator)
+    same('(sqrt(s) - a)/(s*(sqrt(s) + r))', '-a*(pi*r**2*t*exp(r**2*t)*erf(r*sqrt(t)) - pi*(r**2*t*exp(r**2*t) - r**2*t))*Heaviside(t)/(pi*r**3*t) + exp(r**2*t)*erfc(r*sqrt(t))*Heaviside(t)');
     // SymPy: a**2*ILT(1/(r**2*s + 2*r*s**(3/2) + s**2)) - 2*a*ILT(sqrt(s)/(r**2*s + 2*r*s**(3/2) + s**2)) + Derivative(ILT(1/(r**2*s + 2*r*s**(3/2) + s**2)), t)
     same(
       '(sqrt(s) - a)**2/(s*(sqrt(s) + r)**2)',
@@ -364,8 +372,9 @@ describe('more SymPy 1.14 cases', () => {
     same('exp(-s)/(s*(s + 1)**3)', '(1 - t)*exp(1 - t)*Heaviside(t - 1) - (t - 1)**2*exp(1 - t)*Heaviside(t - 1)/2 - exp(1 - t)*Heaviside(t - 1) + Heaviside(t - 1)');
     same('1/(s + a)**3', 't**2*exp(-a*t)*Heaviside(t)/2');
     same('1/s**3', 't**2*Heaviside(t)/2');
-    // SymPy returns a sum of gamma-function quotients from its Meijer G integration
-    unevaluated('1/(a + s**3)');
-    unevaluated('1/(s**4 + 1)');
+    // SymPy returns a sum of gamma-function quotients from its Meijer G integration; symjs's hyperexpand
+    // leaves a hypergeometric function (the same function) and Bessel functions (checked at s = 3)
+    expect(String(ilt('1/(a + s**3)')[0])).toBe('2*sqrt(3)*pi*t**2*Heaviside(t)*hyper((), (4/3, 5/3), -a*t**3/27)/(27*gamma(4/3)*gamma(5/3))');
+    same('1/(s**4 + 1)', '4*sqrt(2)*pi*t**3*((-1)**(3/8)*sqrt(2)*sqrt(pi)*(-3*besseli(5/2, t*exp(I*pi/4))/2 - 3*besselj(5/2, t*exp(I*pi/4))/2)/(128*t**(5/2)) + (-1)**(1/8)*sqrt(2)*sqrt(pi)*(-9*besseli(3/2, t*exp(I*pi/4))/2 + 9*besselj(3/2, t*exp(I*pi/4))/2)/(128*t**(7/2)))*Heaviside(t)/(gamma(5/4)*gamma(7/4))');
   });
 });

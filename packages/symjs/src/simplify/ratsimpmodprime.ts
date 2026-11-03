@@ -19,21 +19,33 @@ import { Poly } from '../polys/sympoly';
 import { linsolve } from '../matrices/linsys';
 import { cancel, fraction } from './rational';
 import { at, defined, expectType, last } from '../core/guard';
+import { lcm as ilcm } from '../core/numbers';
 import { compareKeys, sortKey } from '../printing/sortkey';
 
 const isZero = (e: Expr) => e instanceof Rational && e.isZero;
 
-/** SymPy minsolve_linear_system(system, *symbols, quick=True) for linear equations. */
-function particularSolution(eqs: readonly Expr[], vars: readonly Sym[]): Map<string, Expr> {
+/** The pivot variables of the solution of a linear system, with their values (SymPy solve_linear_system). */
+function pivotSolution(eqs: readonly Expr[], vars: readonly Sym[]): Map<string, Expr> {
   // (the system is homogeneous, so it always has a solution)
   const sol0 = defined(linsolve(eqs, vars), 'a solution of the homogeneous system');
-  // pivot variables only (free variables are solved as themselves)
-  const s = new Map<string, [Sym, Expr]>();
+  const s = new Map<string, Expr>();
   vars.forEach((v, i) => {
     const si = at(sol0, i);
-    if (si.key !== v.key) s.set(v.key, [v, si]);
+    if (si.key !== v.key) s.set(v.key, si);
   });
-  if ([...s.values()].every(([, v]) => isZero(v)) && s.size === vars.length) return new Map([...s].map(([k, [, v]]) => [k, v]));
+  return s;
+}
+
+const allZero = (s: ReadonlyMap<string, Expr>) => [...s.values()].every(isZero);
+
+/** SymPy minsolve_linear_system(system, *symbols, quick=...) for homogeneous linear equations (internal). */
+export function particularSolution(eqs: readonly Expr[], vars: readonly Sym[], quick: boolean): Map<string, Expr> {
+  const s0 = pivotSolution(eqs, vars);
+  // only the trivial solution of the pivots: SymPy returns it as it is
+  if (allZero(s0)) return s0;
+  if (!quick) return minimalSolution(eqs, vars);
+  const s = new Map<string, [Sym, Expr]>();
+  for (const [k, e] of s0) s.set(k, [defined(vars.find((u) => u.key === k)), e]);
   const determined = new Map<string, Expr>();
   const update = () => {
     for (const [k, [v, e]] of [...s]) {
@@ -69,6 +81,99 @@ function particularSolution(eqs: readonly Expr[], vars: readonly Sym[]): Map<str
   return determined;
 }
 
+/** The index sets of size n of 0..N-1 in lexicographic order (Python itertools.combinations). */
+function combinations(N: number, n: number): number[][] {
+  const out: number[][] = [];
+  const rec = (start: number, cur: number[]) => {
+    if (cur.length === n) {
+      out.push(cur);
+      return;
+    }
+    for (let i = start; i < N; i++) rec(i + 1, [...cur, i]);
+  };
+  rec(0, []);
+  return out;
+}
+
+const PRIME = 1000003;
+const modp = (a: bigint): number => Number(((a % BigInt(PRIME)) + BigInt(PRIME)) % BigInt(PRIME));
+const invp = (a: number): number => {
+  // a**(p - 2) mod p
+  let r = 1;
+  let b = a;
+  for (let e = PRIME - 2; e > 0; e >>= 1) {
+    if (e & 1) r = (r * b) % PRIME;
+    b = (b * b) % PRIME;
+  }
+  return r;
+};
+
+/**
+ * A fast filter for the subset search: fullRank(cols) is true when the columns cols of the
+ * coefficient matrix (its rows scaled to integers) are independent modulo a prime, so that the
+ * subsystem has only the zero solution (a rank modulo p never exceeds the rank over Q).
+ */
+function fullRankTest(eqs: readonly Expr[], vars: readonly Sym[]): (cols: readonly number[]) => boolean {
+  const zeros: [Expr, Expr][] = vars.map((v) => [v, S.Zero]);
+  const rows: number[][] = eqs.map((e) => {
+    // (the coefficients are rational: groebner works over QQ) the row scaled to integers
+    const cs = vars.map((v) => expectType(xreplace(e, zeros.map(([u, z]): [Expr, Expr] => [u, u === v ? S.One : z])), (c): c is Rational => c instanceof Rational, 'a rational coefficient'));
+    const l = cs.reduce((m, c) => ilcm(m, c.q), 1n);
+    return cs.map((c) => modp((c.p * l) / c.q));
+  });
+  return (cols) => {
+    const m = rows.map((r) => cols.map((j) => at(r, j)));
+    let rank = 0;
+    for (let j = 0; j < cols.length && rank < m.length; j++) {
+      const piv = m.findIndex((r, i) => i >= rank && at(r, j) !== 0);
+      if (piv < 0) continue;
+      [m[rank], m[piv]] = [at(m, piv), at(m, rank)];
+      const pr = at(m, rank);
+      const inv = invp(at(pr, j));
+      for (let i = rank + 1; i < m.length; i++) {
+        const ri = at(m, i);
+        const f = (at(ri, j) * inv) % PRIME;
+        if (f) for (let k = j; k < cols.length; k++) ri[k] = (((at(ri, k) - f * at(pr, k)) % PRIME) + PRIME) % PRIME;
+      }
+      rank++;
+    }
+    return rank === cols.length;
+  };
+}
+
+/**
+ * SymPy minsolve_linear_system with quick=False: a solution with as few nonzero variables as
+ * possible, found by trying the subsets of n variables for decreasing n.
+ */
+function minimalSolution(eqs: readonly Expr[], vars: readonly Sym[]): Map<string, Expr> {
+  let bestsol = particularSolution(eqs, vars, true);
+  const n0 = [...bestsol.values()].filter((v) => !isZero(v)).length;
+  const fullRank = fullRankTest(eqs, vars);
+  for (let n = n0 - 1; n > 1; n--) {
+    let thissol: Map<string, Expr> | undefined;
+    for (const nonzeros of combinations(vars.length, n)) {
+      // a subsystem of full rank has only the zero solution
+      if (fullRank(nonzeros)) continue;
+      const nz = nonzeros.map((i) => at(vars, i));
+      const zeros: [Expr, Expr][] = vars.filter((_, i) => !nonzeros.includes(i)).map((v) => [v, S.Zero]);
+      const s = pivotSolution(eqs.map((e) => xreplace(e, zeros)), nz);
+      if (s.size && !allZero(s)) {
+        const ones: [Expr, Expr][] = nz.map((v) => [v, S.One]);
+        const sol = new Map<string, Expr>();
+        for (const v of vars) {
+          const e = s.get(v.key);
+          sol.set(v.key, e !== undefined ? xreplace(e, ones) : nz.includes(v) ? S.One : S.Zero);
+        }
+        thissol = sol;
+        break;
+      }
+    }
+    if (thissol === undefined) break;
+    bestsol = thissol;
+  }
+  return bestsol;
+}
+
 /** SymPy ratsimpmodprime(expr, G, *gens, order=...): a simpler fraction equal to expr modulo the ideal of G (G a Groebner basis of a prime ideal). */
 export function ratsimpmodprime(exprIn: ExprLike, G: readonly ExprLike[], gens: readonly Sym[], opts: { order?: MonomialOrder; quick?: boolean } = {}): Expr {
   const order = opts.order ?? 'grevlex';
@@ -96,10 +201,18 @@ export function ratsimpmodprime(exprIn: ExprLike, G: readonly ExprLike[], gens: 
     return [...out, ...staircase(n - 1)];
   };
   const totalDegree = (e: Expr) => Poly.from(e, gens).totalDegree();
-  const step = (a: Expr, b: Expr, NIn: number, DIn: number): [Expr, Expr] => {
+  /** c_hat and d_hat at the solution, the variables it leaves free set to 1. */
+  const substitute = (cHat: Expr, dHat: Expr, sol: ReadonlyMap<string, Expr>, ng: readonly Sym[]): [Expr, Expr] => {
+    const reps = [...sol].map(([k, v]): [Expr, Expr] => [defined(ng.find((u) => u.key === k)), v]);
+    const ones = ng.map((u) => [u, S.One] as [Expr, Expr]);
+    return [xreplace(xreplace(cHat, reps), ones), xreplace(xreplace(dHat, reps), ones)];
+  };
+  type Sol = { cHat: Expr; dHat: Expr; S: Expr[]; ng: Sym[] };
+  const step = (a: Expr, b: Expr, allsolIn: Sol[], NIn: number, DIn: number): [Expr, Expr, Sol[]] => {
     let N = NIn;
     let D = DIn;
     let [c, d] = [a, b];
+    let allsol = allsolIn;
     let steps = 0;
     const maxdeg = totalDegree(a) + totalDegree(b);
     const bound = quick ? maxdeg - 1 : maxdeg;
@@ -115,13 +228,12 @@ export function ratsimpmodprime(exprIn: ExprLike, G: readonly ExprLike[], gens: 
       const ng = [...Cs, ...Ds];
       const r = reduced(add(mul(a, dHat), mul(-1, b, cHat)), Gs, [...gens, ...ng], order)[1];
       const Seqs = Poly.from(r, gens).coeffs();
-      const sol = particularSolution(Seqs, ng);
-      if (![...sol.values()].every(isZero)) {
-        const reps = [...sol].map(([k, v]): [Expr, Expr] => [defined(ng.find((u) => u.key === k)), v]);
-        const ones = ng.map((u) => [u, S.One] as [Expr, Expr]);
-        c = xreplace(xreplace(cHat, reps), ones);
-        d = xreplace(xreplace(dHat, reps), ones);
+      const sol = particularSolution(Seqs, ng, true);
+      if (!allZero(sol)) {
+        [c, d] = substitute(cHat, dHat, sol, ng);
         if (isZero(d)) throw new RangeError('ratsimpmodprime: ideal not prime?');
+        allsol.push({ cHat, dHat, S: Seqs, ng });
+        if (N + D !== maxdeg) allsol = [last(allsol)];
         break;
       }
       steps++;
@@ -129,16 +241,23 @@ export function ratsimpmodprime(exprIn: ExprLike, G: readonly ExprLike[], gens: 
       D++;
     }
     if (steps > 0) {
-      [c, d] = step(c, d, N, D - steps);
-      [c, d] = step(c, d, N - steps, D);
+      [c, d, allsol] = step(c, d, allsol, N, D - steps);
+      [c, d, allsol] = step(c, d, allsol, N - steps, D);
     }
-    return [c, d];
+    return [c, d, allsol];
   };
   // over ZZ (integer coefficients in the input) the result is normalized like SymPy's clear_denoms
   const overZZ = [num, denom, ...Gs].every((p) => Poly.from(p, gens).coeffs().every((k) => k instanceof Rational && k.isInteger));
   num = reduced(num, Gs, [...gens], order)[1];
   denom = reduced(denom, Gs, [...gens], order)[1];
-  const [c, d] = step(num, denom, 0, 0);
+  let [c, d, allsol] = step(num, denom, [], 0, 0);
+  if (!quick && allsol.length) {
+    // the solution with the fewest terms among the minimal solutions of the systems met
+    const newsol = allsol.map(({ cHat, dHat, S: Seqs, ng }) => substitute(cHat, dHat, particularSolution(Seqs, ng, false), ng));
+    // (the first of the smallest, as Python's min)
+    const sizes = newsol.map(([cs, ds]) => Poly.from(cs, gens).terms().length + Poly.from(ds, gens).terms().length);
+    [c, d] = at(newsol, sizes.indexOf(Math.min(...sizes)));
+  }
   if (!overZZ) return mul(c, pow(d, -1));
   const [cn, cp] = Poly.from(c, gens).clearDenoms(true);
   const [dn, dp] = Poly.from(d, gens).clearDenoms(true);

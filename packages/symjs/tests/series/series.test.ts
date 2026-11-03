@@ -337,3 +337,11 @@ describe('series at infinity and aseries', () => {
     expect(sstr(aseries(parse('1/x'), x, 8))).toBe('1/x');
   });
 });
+
+describe('O(...) read by the parser', () => {
+  it('reduces to the leading term (SymPy 1.14)', () => {
+    expect(sstr(parse('O(x + x**2)'))).toBe('O(x)');
+    expect(sstr(parse('O(1/x, (x, oo))'))).toBe('O(1/x, (x, oo))');
+    expect(sstr(parse('O(1)'))).toBe('O(1)');
+  });
+});

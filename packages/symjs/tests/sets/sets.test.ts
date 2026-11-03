@@ -206,3 +206,67 @@ describe('sets (SymPy sympy.sets)', () => {
     expect(attempt(run)).toBe(expected);
   });
 });
+
+describe('Range, Integers in an interval and ImageSet membership', () => {
+  const n = (e: string) => sj.parse(e);
+  it('Intersection(Integers, Interval) is a Range (SymPy)', () => {
+    expect(String(Sets.intersection(Sets.Integers, I(0, 1)))).toBe('Range(0, 2, 1)');
+    expect(String(Sets.intersection(I(-2.5, 3), Sets.Integers))).toBe('Range(-2, 4, 1)');
+    expect(String(Sets.intersection(Sets.Naturals, I(0, 3)))).toBe('Range(1, 4, 1)');
+    expect(String(Sets.intersection(Sets.Naturals0, I(-5, 2)))).toBe('Range(0, 3, 1)');
+    expect(String(Sets.intersection(Sets.Integers, I(0, 3, true, true)))).toBe('Range(1, 3, 1)');
+    expect(String(Sets.intersection(Sets.Integers, I(n('-7/2'), n('-1/2'), true, true)))).toBe('Range(-3, 0, 1)');
+    expect(String(Sets.intersection(Sets.Integers, I(0, n('oo'))))).toBe('Range(0, oo, 1)');
+    expect(String(Sets.intersection(Sets.Integers, I(n('-oo'), n('sqrt(2)'))))).toBe('Range(-oo, 2, 1)');
+    expect(String(Sets.intersection(Sets.Integers, I(n('1/2'), n('2/3'))))).toBe('EmptySet');
+    expect(String(Sets.intersection(Sets.Integers, I(0, n('2.0'))))).toBe('Range(0, 3, 1)');
+    expect(String(Sets.intersection(Sets.Integers, I(0, n('2.5'))))).toBe('Range(0, 3, 1)');
+    // an end that is not a known real number, or a number too close to an integer to place, is left unevaluated
+    expect(String(Sets.intersection(Sets.Integers, I(0, y)))).toBe('Intersection(Integers, Interval(0, y))');
+    expect(String(Sets.intersection(Sets.Integers, I(0, n('2.0000000000001'))))).toBe('Intersection(Integers, Interval(0, 2.0000000000001))');
+    expect(Sets.intersection(Sets.Reals, Sets.Integers)).toBe(Sets.Integers);
+    expect(Sets.intersection(Sets.Naturals, Sets.Reals)).toBe(Sets.Naturals);
+  });
+  it('Range', () => {
+    expect(String(Sets.Range.of(0, 3))).toBe('Range(0, 3, 1)');
+    expect(String(Sets.range(0, 4, 2))).toBe('Range(0, 4, 2)');
+    expect(String(Sets.range(0, 5, 2))).toBe('Range(0, 6, 2)');
+    expect(String(Sets.range(5, 0, -2))).toBe('Range(5, -1, -2)');
+    // SymPy's empty Range
+    expect(String(Sets.range(1, 1))).toBe('Range(0, 0, 1)');
+    expect(String(Sets.range(3, 1))).toBe('Range(0, 0, 1)');
+    expect(() => Sets.range(0, n('1/2'))).toThrow(TypeError);
+    expect(() => Sets.range(0, 2, 0)).toThrow(TypeError);
+    const r3 = Sets.range(0, 6, 2);
+    expect([C(r3, 2), C(r3, 3), C(r3, 6), C(r3, -2), C(r3, n('1/2')), C(r3, n('sqrt(2)')), C(r3, x)].map(String)).toEqual(['True', 'False', 'False', 'False', 'False', 'False', 'Contains(x, Range(0, 6, 2))']);
+    expect(String(C(Sets.range(5, -1, -2), 1))).toBe('True');
+    expect(String(C(Sets.range(n('-oo'), 4), -10))).toBe('True');
+    expect(String(C(Sets.range(1, 1), 0))).toBe('False');
+    expect(Sets.range(0, 3).equals(Sets.Range.of(0, 3, 1))).toBe(true);
+    // a set without a membership test here (SymPy: True)
+    expect(String(C(new Sets.ConditionSet(x, sj.parse('x > 1'), Sets.Reals), 2))).toBe('Contains(2, ConditionSet(x, x > 1, Reals))');
+    expect([Sets.inf(r3), Sets.sup(r3), Sets.inf(Sets.range(5, -1, -2)), Sets.sup(Sets.range(5, -1, -2))].map(String)).toEqual(['0', '4', '1', '5']);
+  });
+  it('Integers contains', () => {
+    // SymPy: False for an irrational number
+    expect(String(C(Sets.Integers, n('sqrt(3)')))).toBe('False');
+    expect(String(C(Sets.Integers, n('pi')))).toBe('False');
+  });
+  it('ImageSet contains (SymPy ImageSet._contains)', () => {
+    const sq = Sets.imageSet(x, n('x**2'), Sets.Integers);
+    expect([C(sq, 4), C(sq, 3), C(sq, y)].map(String)).toEqual(['True', 'False', 'Contains(y, ImageSet(Lambda(x, x**2), Integers))']);
+    const odd = Sets.imageSet(x, n('2*x + 1'), Sets.Integers);
+    expect([C(odd, 3), C(odd, n('1/2'))].map(String)).toEqual(['True', 'False']);
+    // roots whose membership is not decided
+    expect(String(C(Sets.imageSet(x, n('x**2'), I(0, y)), 4))).toBe('Contains(4, ImageSet(Lambda(x, x**2), Interval(0, y)))');
+    // the roots of a quintic are not all known; a non-polynomial expression is not solved
+    expect(String(C(Sets.imageSet(x, n('x**5 + x'), Sets.Integers), 3))).toBe('Contains(3, ImageSet(Lambda(x, x**5 + x), Integers))');
+    expect(String(C(Sets.imageSet(x, n('sin(x)'), Sets.Integers), 0))).toBe('Contains(0, ImageSet(Lambda(x, sin(x)), Integers))');
+    expect(String(C(Sets.imageSet(n('2*x'), n('x'), Sets.Integers), 0))).toBe('Contains(0, ImageSet(Lambda(2*x, x), Integers))');
+  });
+  it('isSubset of an interval with a finite end', () => {
+    // SymPy: Reals.is_subset(Interval(0, 1)) is False
+    expect(Sets.isSubset(Sets.Reals, I(0, 1))).toBe(false);
+    expect(Sets.isSubset(Sets.Integers, I(n('-oo'), 1))).toBe(false);
+  });
+});

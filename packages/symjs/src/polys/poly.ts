@@ -6,21 +6,23 @@
  */
 
 import { NotImplementedError, PolynomialError } from '../core/errors';
-import { isNegative, isPositive, isReal } from '../core/assumptions';
+import { isNegative, isNonZero, isPositive, isReal } from '../core/assumptions';
+import { Eq, piecewise } from '../core/logic';
 import { ExprMap } from '../core/exprmap';
 import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Add, Mul, Pow, Rational, S, compareExpr, impl } from '../core/nodes';
+import { Add, Dummy, Mul, Pow, Rational, S, compareExpr, impl } from '../core/nodes';
 import { zassenhaus } from './zassenhaus';
 import { numCmp } from '../core/num';
 import { at, defined, first, getOrThrow, last } from '../core/guard';
-import { ordered } from '../core/match';
+import { countOps, ordered } from '../core/match';
 import { gcd as gcdBig, lcm } from '../core/numbers';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import { expand as expandHints, expandMul as expand } from '../simplify/expand';
+import { decomposePower, factorTerms } from '../simplify/exprtools';
 
 /** cancel, registered by simplify/rational (which imports this module). @internal */
-export const polyHooks: { cancel?: (e: Expr) => Expr } = {};
+export const polyHooks: { cancel?: (e: Expr) => Expr; factorList?: (e: Expr) => [Expr, [Expr, number][]] } = {};
 const cancel = (e: Expr): Expr => defined(polyHooks.cancel, 'cancel hook')(e);
 /** factor, registered by polys/sympoly (loaded with this module by every entry point). */
 const factorE = (e: Expr): Expr => defined(impl.factor?.(e), 'factor hook');
@@ -373,29 +375,202 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
   // factor out x^k for zero low-order coefficients
   let low = 0;
   while (!normalized.has(low)) low++;
+  // SymPy lists the roots at zero last
   const zeros: Expr[] = Array.from({ length: low }, () => S.Zero);
   const effDeg = deg - low;
+  // SymPy roots(): a polynomial that factors over its coefficient ring is solved factor by factor
+  if (coeffs.size > 2 && effDeg > 1) {
+    const split = splitFactors(add(...[...coeffs].map(([k, v]) => mul(v, pow(x, k - low)))), x);
+    if (split) return [...split.flatMap(([f, k]) => roots(f, x, opts).flatMap((r) => Array.from({ length: k }, () => r))), ...zeros];
+  }
   if (effDeg === 1) {
     // SymPy roots_linear: over a polynomial ring the root is factored (x/(y - 1), not -x/(1 - y))
     const r = expand(mul(-1, get(low), pow(get(low + 1), -1)));
-    // factor() returns an expression it cannot treat as a polynomial unchanged
-    return [...zeros, freeSymbols(r).size ? factorE(r) : r];
+    // factor() over a polynomial ring, simplify() over EX
+    if (!freeSymbols(r).size) return [r, ...zeros];
+    return [isCompositeDomain([...coeffs.values()]) ? factorE(r) : simplifyEX(r), ...zeros];
   }
   if (effDeg === 2) {
     const orig = (k: number) => coeffs.get(k) ?? S.Zero;
-    return [...zeros, ...symbolicQuadraticRoots(orig(low + 2), orig(low + 1), orig(low))];
+    return [...symbolicQuadraticRoots(orig(low + 2), orig(low + 1), orig(low)), ...zeros];
   }
   // SymPy roots(): a binomial a*x**n + b by roots_binomial
-  if (normalized.size === 2) return [...zeros, ...symbolicBinomialRoots(get(low), effDeg)];
-  if (effDeg === 3) return [...zeros, ...symbolicCubicRoots(get(low + 2), get(low + 1), get(low))];
+  if (normalized.size === 2) return [...symbolicBinomialRoots(get(low), effDeg), ...zeros];
+  if (effDeg === 3) return [...symbolicCubicRoots(get(low + 2), get(low + 1), get(low)), ...zeros];
   // a polynomial in x**2 (SymPy's decomposition f = g(x**2)): the square roots of the roots of g
   if ([...normalized.keys()].every((k) => (k - low) % 2 === 0)) {
     const g = add(...[...normalized].map(([k, v]) => mul(v, pow(x, (k - low) / 2))));
-    return [...zeros, ...roots(g, x, opts).flatMap((r) => [neg(sqrt(r)), sqrt(r)])];
+    return [...roots(g, x, opts).flatMap((r) => [neg(sqrt(r)), sqrt(r)]), ...zeros];
   }
+  if (effDeg === 4) return [...symbolicQuarticRoots(get(low + 3), get(low + 2), get(low + 1), get(low), opts), ...zeros];
   throw new NotImplementedError(`roots: symbolic polynomials of degree ${effDeg} are not supported`);
 }
 
+/** Eq(p, 0) in SymPy's canonical form inside Piecewise: Eq(-a**2/12 - 1, 0) -> Eq(a**2, -12). */
+function canonicalEq(p: Expr): Expr {
+  const terms = p instanceof Add ? p.args : [p];
+  const c0 = add(...terms.filter((t) => t instanceof Rational));
+  const rest = terms.filter((t) => !(t instanceof Rational));
+  const coeffOf = (t: Expr): Rational => (t instanceof Mul && t.args[0] instanceof Rational ? t.args[0] : S.One);
+  const lead = coeffOf(first(rest));
+  let g = 0n;
+  let l = 1n;
+  const gcd = (u: bigint, v: bigint): bigint => (v === 0n ? (u < 0n ? -u : u) : gcd(v, u % v));
+  for (const t of rest) {
+    const c = coeffOf(t);
+    g = gcd(g, c.p);
+    l = (l / gcd(l, c.q)) * c.q;
+  }
+  const k = Rational.of(lead.isNegative ? -g : g, l);
+  return Eq(expand(mul(add(...rest), pow(k, -1))), mul(-1, c0, pow(k, -1)));
+}
+
+/**
+ * SymPy roots_quartic for the monic x**4 + a*x**3 + b*x**2 + c*x + d with
+ * symbolic coefficients (d is nonzero: the roots at zero are split off before):
+ * the quasisymmetric case, the biquadratic and depressed-cubic cases, the
+ * Descartes-Euler method with a rational resolvent root, else Ferrari's method,
+ * with a Piecewise on p = 0 when its sign is not known.
+ */
+function symbolicQuarticRoots(a: Expr, b: Expr, c: Expr, d: Expr, opts: { skipQuintic?: boolean }): Expr[] {
+  const y = new Dummy('y');
+  const rootsOf = (cs: Expr[]): Expr[] => roots(add(...cs.map((k, i) => mul(k, pow(y, cs.length - 1 - i)))), y, opts);
+  if (!isZeroE(a) && expand(pow(mul(c, pow(a, -1)), 2)).key === expand(d).key) {
+    const m = mul(c, pow(a, -1));
+    const [z1, z2] = symbolicQuadraticRoots(S.One, a, add(b, mul(-2, m)));
+    return [...symbolicQuadraticRoots(S.One, neg(z1), m), ...symbolicQuadraticRoots(S.One, neg(z2), m)];
+  }
+  const a2 = pow(a, 2);
+  const e = add(b, mul(Rational.of(-3n, 8n), a2));
+  const f = expand(add(c, mul(a, add(mul(a2, Rational.of(1n, 8n)), mul(b, Rational.of(-1n, 2n))))));
+  const aon4 = mul(a, Rational.of(1n, 4n));
+  const g = expand(add(d, mul(-1, aon4, add(mul(a, add(mul(3, a2, Rational.of(1n, 64n)), mul(b, Rational.of(-1n, 4n)))), c))));
+  const shift = (rs: Expr[]): Expr[] => rs.map((t) => add(t, neg(aon4)));
+  if (isZeroE(f)) {
+    const [y1, y2] = rootsOf([S.One, e, g]).map((t) => sqrt(t));
+    return shift([neg(defined(y1, 'root')), neg(defined(y2, 'root')), defined(y1, 'root'), defined(y2, 'root')]);
+  }
+  if (isZeroE(g)) return shift([S.Zero, ...rootsOf([S.One, S.Zero, e, f])]);
+  // Descartes-Euler: a rational nonzero root R of 64*R**3 + 32*e*R**2 + (4*e**2 - 16*g)*R - f**2
+  const res = [Rational.of(64), mul(32, e), expand(add(mul(4, pow(e, 2)), mul(-16, g))), expand(neg(pow(f, 2)))];
+  if (res.every((k) => k instanceof Rational)) {
+    const up = UPoly.fromExpr(add(...res.map((k, i) => mul(k, pow(y, 3 - i)))), y);
+    const rs = defined(up, 'resolvent').rationalRoots().filter((r) => !r.isZero);
+    if (rs.length) {
+      const R = last(rs);
+      const c1 = sqrt(R);
+      const B = mul(-1, f, c1, pow(mul(4, R), -1));
+      const A = add(neg(R), mul(e, Rational.of(-1n, 2n)));
+      const c2 = sqrt(add(A, B));
+      const c3 = sqrt(add(A, neg(B)));
+      return [add(c1, neg(c2), neg(aon4)), add(neg(c1), neg(c3), neg(aon4)), add(neg(c1), c3, neg(aon4)), add(c1, c2, neg(aon4))];
+    }
+  }
+  // Ferrari
+  const p = expand(add(mul(Rational.of(-1n, 12n), pow(e, 2)), neg(g)));
+  const q = add(mul(Rational.of(-1n, 108n), pow(e, 3)), mul(e, g, Rational.of(1n, 3n)), mul(Rational.of(-1n, 8n), pow(f, 2)));
+  const third = Rational.of(1n, 3n);
+  const ans = (yy: Expr): Expr[] => {
+    const w = sqrt(add(e, mul(2, yy)));
+    const arg1 = add(mul(3, e), mul(2, yy));
+    const arg2 = mul(2, f, pow(w, -1));
+    const out: Expr[] = [];
+    for (const sg of [-1, 1]) {
+      const r = sqrt(neg(add(arg1, mul(sg, arg2))));
+      for (const t of [-1, 1]) out.push(add(mul(add(mul(sg, w), mul(-t, r)), Rational.of(1n, 2n)), neg(aon4)));
+    }
+    return out;
+  };
+  const y1 = add(mul(e, Rational.of(-5n, 6n)), neg(pow(q, third)));
+  if (isZeroE(p)) return ans(y1);
+  const u = pow(add(mul(-1, q, Rational.of(1n, 2n)), sqrt(add(mul(pow(q, 2), Rational.of(1n, 4n)), mul(pow(p, 3), Rational.of(1n, 27n))))), third);
+  const y2 = add(mul(e, Rational.of(-5n, 6n)), u, mul(-1, p, pow(mul(3, u), -1)));
+  if (isNonZero(p) === true) return ans(y2);
+  const a1s = ans(y1);
+  const cond = canonicalEq(p);
+  return ans(y2).map((r2, i) => piecewise([at(a1s, i), cond], [r2, true]));
+}
+
+
+/**
+ * SymPy simplify() of a root over EX, as far as it matters here: together()
+ * (which pulls out common factors) unless the simplified form is shorter.
+ */
+function simplifyEX(r: Expr): Expr {
+  const tog = r instanceof Add ? commonFactor(r) : combineExp(r);
+  const simp = impl.simplify(r);
+  // a rearrangement of the same terms (-(a + b) for -a - b) is not shorter for SymPy
+  const cands = expand(simp).key === expand(r).key ? [tog, r] : [tog, r, simp];
+  return cands.reduce((best, c) => (countOps(c) < countOps(best) ? c : best));
+}
+
+/** A product with the powers of E combined (SymPy powsimp(combine='exp')). */
+function combineExp(r: Expr): Expr {
+  if (!(r instanceof Mul)) return r;
+  const isExp = (t: Expr): t is Pow => t instanceof Pow && t.base.key === S.E.key;
+  const exps = r.args.filter(isExp);
+  if (exps.length < 2) return r;
+  return mul(...r.args.filter((t) => !isExp(t)), pow(S.E, add(...exps.map((t) => t.exp))));
+}
+
+/** A sum with the factors common to all its terms pulled out (SymPy gcd_terms). */
+function commonFactor(r: Add): Expr {
+  const powers = (t: Expr): Map<string, [Expr, number]> => {
+    const m = new Map<string, [Expr, number]>();
+    for (const f of t instanceof Mul ? t.args : [t]) {
+      if (f instanceof Rational) continue;
+      const [b, k] = f instanceof Pow && f.exp instanceof Rational && f.exp.isInteger ? [f.base, Number(f.exp.p)] : [f, 1];
+      m.set(b.key, [b, k]);
+    }
+    return m;
+  };
+  const maps = r.args.map(powers);
+  const common: Expr[] = [];
+  for (const [key, [b, k]] of first(maps)) {
+    const ks = maps.map((m) => m.get(key)?.[1]);
+    if (ks.some((v) => v === undefined)) continue;
+    common.push(pow(b, Math.min(k, ...ks.map((v) => defined(v, 'exponent')))));
+  }
+  if (!common.length) return r;
+  const c = mul(...common);
+  return mul(c, add(...r.args.map((t) => mul(t, pow(c, -1)))));
+}
+
+/**
+ * Whether SymPy's construct_domain gives a polynomial ring or a fraction field
+ * for the coefficients (not EX): no generator is an algebraic number and no two
+ * generators share a symbol.
+ */
+function isCompositeDomain(cs: readonly Expr[]): boolean {
+  const gens = new Map<string, Expr>();
+  const visit = (t: Expr): void => {
+    if (t instanceof Rational || t.key === S.I.key) return;
+    if (t instanceof Add || t instanceof Mul) return t.args.forEach(visit);
+    if (t instanceof Pow && t.exp instanceof Rational && t.exp.isInteger) return visit(t.base);
+    const [g] = decomposePower(t);
+    gens.set(g.key, g);
+  };
+  // the generators of the expanded coefficients (exp(x - y) -> exp(x), exp(-y))
+  cs.forEach((c) => visit(expandHints(c)));
+  const seen = new Set<string>();
+  for (const g of gens.values()) {
+    const syms = [...freeSymbols(g)].map((v) => v.key);
+    if (!syms.length && g instanceof Pow) return false;
+    if (syms.some((k) => seen.has(k))) return false;
+    for (const k of syms) seen.add(k);
+  }
+  return true;
+}
+
+/**
+ * The factors containing x of factor(e) with their multiplicities (SymPy
+ * Poly(f).factor_list() in roots), or undefined when e does not split.
+ */
+function splitFactors(e: Expr, x: Sym): [Expr, number][] | undefined {
+  // (registered by polys/sympoly, loaded with this module by every entry point)
+  const out = defined(polyHooks.factorList, 'factor_list hook')(e)[1].filter(([f]) => f.has(x));
+  return out.length > 1 || (out.length === 1 && at(out, 0)[1] > 1) ? out : undefined;
+}
 
 /** SymPy roots_binomial for x**n + c with a symbolic c (in SymPy's order). */
 function symbolicBinomialRoots(c: Expr, n: number): Expr[] {
@@ -408,11 +583,14 @@ function symbolicBinomialRoots(c: Expr, n: number): Expr[] {
 
 /** SymPy roots_quadratic over a polynomial ring (coefficients factored). */
 function symbolicQuadraticRoots(a: Expr, b: Expr, c: Expr): [Expr, Expr] {
+  const ex = !isCompositeDomain([a, b, c]);
   // c = 0 does not occur: the roots at zero are split off before
   if (isZeroE(b)) {
-    const r = sqrtRemoveSquares(factorE(mul(-1, c, pow(a, -1))));
+    const q = mul(-1, c, pow(a, -1));
+    const r = sqrtRemoveSquares(ex ? simplifyEX(q) : factorE(q));
     return [neg(r), r];
   }
+  if (ex) return quadraticRootsEX(a, b, c);
   const A = mul(2, a);
   const B = factorE(mul(-1, b, pow(A, -1)));
   const D = mul(sqrtRemoveSquares(factorE(expand(add(pow(b, 2), mul(-4, a, c))))), pow(A, -1));
@@ -421,11 +599,22 @@ function symbolicQuadraticRoots(a: Expr, b: Expr, c: Expr): [Expr, Expr] {
   return isNegative(a) === true ? [r1, r0] : [r0, r1];
 }
 
+/** SymPy roots_quadratic over EX: the discriminant and -b/(2a) simplified, the roots expanded. */
+function quadraticRootsEX(a: Expr, b: Expr, c: Expr): [Expr, Expr] {
+  const A = mul(2, a);
+  const B = simplifyEX(mul(-1, b, pow(A, -1)));
+  const D = factorTerms(mul(sqrtRemoveSquares(simplifyEX(add(pow(b, 2), mul(-4, a, c)))), pow(A, -1)));
+  const r0 = add(B, neg(D));
+  const r1 = add(B, D);
+  return isNegative(a) === true ? [r1, r0] : [expand(r0), expand(r1)];
+}
+
 /** SymPy roots_cubic (Cardano) for the monic x**3 + a*x**2 + b*x + c with symbolic coefficients. */
 function symbolicCubicRoots(a: Expr, b: Expr, c: Expr): Expr[] {
   const third = Rational.of(1n, 3n);
-  const p = add(b, mul(-1, pow(a, 2), third));
-  const q = add(c, mul(-1, a, b, third), mul(2, pow(a, 3), Rational.of(1n, 27n)));
+  // (expanded: a cubic with the root -a/3 that factor() does not split has q = 0)
+  const p = expand(add(b, mul(-1, pow(a, 2), third)));
+  const q = expand(add(c, mul(-1, a, b, third), mul(2, pow(a, 3), Rational.of(1n, 27n))));
   const coeff = mul(S.I, sqrt(3), Rational.of(1n, 2n));
   const uks = [S.One, add(Rational.of(-1n, 2n), coeff), add(Rational.of(-1n, 2n), neg(coeff))];
   if (isZeroE(p) || isZeroE(q) || (isReal(q) === true && isNegative(q) === true)) {

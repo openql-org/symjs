@@ -295,6 +295,9 @@ describe('powers with infinities and nan (SymPy Infinity/NegativeInfinity/Comple
     // a real exponent of unknown sign is decided numerically: oo**(pi - 3) = oo, oo**(3 - pi) = 0
     expect(pow(oo, add(pi, -3))).toBe(oo);
     expect(pow(oo, add(3, mul(-1, pi)))).toBe(S.Zero);
+    // SymPy: oo**sin(1) = oo, oo**sin(4) = 0
+    expect(pow(oo, sj.sin(1))).toBe(oo);
+    expect(pow(oo, sj.sin(4))).toBe(S.Zero);
     // SymPy: oo**(-1 + sin(pi/7)**2 + cos(pi/7)**2) stays (the exponent is 0 numerically)
     const tiny = add(-1, pow(sj.sin(mul(pi, R2(1, 7))), 2), pow(sj.cos(mul(pi, R2(1, 7))), 2));
     expect(pow(oo, tiny)).toBeInstanceOf(Pow);
@@ -332,8 +335,12 @@ describe('powers with infinities and nan (SymPy Infinity/NegativeInfinity/Comple
     expect(s(pow(negOo, x))).toBe('(-oo)**x');
     expect(s(pow(negOo, p))).toBe('(-oo)**p');
     expect(pow(negOo, n)).toBe(S.Zero);
-    // SymPy: (-oo)**Float(0.5) = oo*I; a Float exponent stays unevaluated here
-    expect(pow(negOo, 0.5)).toBeInstanceOf(Pow);
+    // SymPy: (-oo)**Float(0.5) = oo*I, (-oo)**2.0 = oo, (-oo)**3.0 = -oo, (-oo)**1.5 = -oo*I, (-oo)**-0.5 = 0
+    expect(s(pow(negOo, 0.5))).toBe('oo*I');
+    expect(pow(negOo, new Float(2))).toBe(oo);
+    expect(pow(negOo, new Float(3))).toBe(negOo);
+    expect(s(pow(negOo, 1.5))).toBe('-oo*I');
+    expect(pow(negOo, -0.5)).toBe(S.Zero);
   });
   it('raises a number to oo and -oo', () => {
     // SymPy: 0**oo = 0, 0**-oo = zoo, (1/2)**-oo = oo, (-1/2)**oo = 0, (-2)**oo = zoo, (-2)**-oo = 0
@@ -390,5 +397,166 @@ describe('non-commutative printing matches SymPy', () => {
     expect(mul(exp(A), exp(B)).toString()).toBe('exp(A)*exp(B)');
     expect(mul(pow(A, x), pow(A, new Sym('y'))).toString()).toBe('A**x*A**y');
     expect(mul(pow(A, 2), pow(A, 3)).toString()).toBe('A**5');
+  });
+});
+
+describe('SymPy Mul.flatten and Pow rules for numeric bases, I and infinite coefficients', () => {
+  const k = new sj.Sym('k', { negative: true });
+  const m = new sj.Sym('m', { negative: true });
+  const q = new sj.Sym('q', { nonnegative: true });
+  const zp = new sj.Sym('zp', { polar: true });
+  const ni = new sj.Sym('ni', { integer: true });
+  const P3 = (t: string): sj.Expr => sj.parse(t, { symbols: { x, y, k, m, q, r, p, ni } } as never);
+  it.each([
+    // _gather(num_exp): like exponent terms of the same numeric base add up; 2*2**x stays as in SymPy
+    ['2**x*2**(-x)*3**y', '3**y'],
+    ['2**(2*x)*2**x', '2**(3*x)'],
+    ['2**(2*x)*2**x*3**(3*x)', '6**(3*x)'],
+    ['2**x*2**y', '2**x*2**y'],
+    ['2**(x + 1)*2**(-x)', '2**(x + 1)/2**x'],
+    ['2**(x/2)*3**(x/2)', '6**(x/2)'],
+    ['2*2**x', '2*2**x'],
+    ['(-2)**ni*2**ni', '(-4)**ni'],
+    ['(-2)**ni*(-2)**ni', '2**(2*ni)'],
+    // I is (-1)**(1/2) for Mul.flatten, and a power of -1 joins a positive base with the same exponent
+    ['I*(-1)**(1/3)', '(-1)**(5/6)'],
+    ['I*(-1)**(2/3)', '-(-1)**(1/6)'],
+    ['I/(-1)**(1/3)', '(-1)**(1/6)'],
+    ['(-1)**(1/3)*2**(1/3)', '(-2)**(1/3)'],
+    ['I*(-2)**(1/3)', '(-1)**(5/6)*2**(1/3)'],
+    ['I*(-1)**(1/4)*2**(1/4)', '(-1)**(3/4)*2**(1/4)'],
+    ['(-1)**(1/3)*3**(1/6)', '(-1)**(1/3)*3**(1/6)'],
+    // x + oo*x = oo*x, as SymPy collects oo like any other coefficient
+    ['x + oo*x + y', 'oo*x + y'],
+    ['2*x - oo*x', '-oo*x'],
+    ['oo*x + oo*x', 'oo*x'],
+    ['oo*x - oo*x', 'nan'],
+    ['oo*x - oo*x + oo*x', 'nan'],
+    ['oo*x*y + x*y', 'oo*x*y'],
+    ['x + oo*I*x', 'x + oo*I*x'],
+    ['x + oo*x + oo', 'oo*x + oo'],
+    // Mul._eval_power: sqrt(c*I) for c/2 a rational square, then Pow._eval_expand_power_base
+    ['sqrt(2*I)', '1 + I'],
+    ['sqrt(-8*I)', '2*(1 - I)'],
+    ['sqrt(I/2)', '(1 + I)/2'],
+    ['(2*I)**(-1/2)', '(1 - I)/2'],
+    ['(2*I)**(3/2)', '(1 + I)**3'],
+    ['sqrt(3*I)', 'sqrt(3)*sqrt(I)'],
+    ['sqrt(k*m)', 'sqrt(-k)*sqrt(-m)'],
+    ['sqrt(4*k*m)', '2*sqrt(-k)*sqrt(-m)'],
+    ['sqrt(k*m*x)', 'sqrt(x)*sqrt(-k)*sqrt(-m)'],
+    ['sqrt(-2*k)', 'sqrt(2)*sqrt(-k)'],
+    ['(-2*k*m)**(1/2)', 'sqrt(2)*I*sqrt(-k)*sqrt(-m)'],
+    ['(k*m)**(1/3)', '(-k)**(1/3)*(-m)**(1/3)'],
+    ['sqrt(k*m*I)', 'sqrt(I)*sqrt(-k)*sqrt(-m)'],
+    ['sqrt(-I*k)', 'sqrt(I)*sqrt(-k)'],
+    ['sqrt(k*x)', 'sqrt(k*x)'],
+    ['sqrt(q*x)', 'sqrt(q)*sqrt(x)'],
+    ['sqrt(r**2*y)', 'sqrt(y)*Abs(r)'],
+    ['sqrt(-3*x*y)', 'sqrt(3)*sqrt(-x*y)'],
+    ['sqrt(-x*y)', 'sqrt(-x*y)'],
+    ['sqrt(-3*p*k)', 'sqrt(3)*sqrt(p)*sqrt(-k)'],
+    ['(k*m)**x', '(k*m)**x'],
+  ])('%s = %s', (e, want) => expect(s(P3(e))).toBe(want));
+  it('splits Float powers and polar factors', () => {
+    // SymPy: (k*m)**0.5 = (-k)**0.5*(-m)**0.5, (k*m*x)**2.0 = x**2.0*(-k)**2.0*(-m)**2.0
+    expect(s(pow(mul(k, m), 0.5))).toBe('(-k)**0.5*(-m)**0.5');
+    expect(s(pow(mul(k, m, x), new Float(2)))).toBe('x**2.0*(-k)**2.0*(-m)**2.0');
+    expect(s(pow(new Float(-2), mul(2, ni)))).toBe('2.0**(2*ni)');
+    // SymPy: sqrt(z*x) = sqrt(x)*sqrt(z) for a polar z, sqrt(exp_polar(I)*x) = sqrt(x)*exp_polar(I/2)
+    expect(s(sqrt(mul(zp, x)))).toBe('sqrt(x)*sqrt(zp)');
+    expect(s(sqrt(mul(sj.expPolar(I), x)))).toBe('sqrt(x)*exp_polar(I/2)');
+  });
+  it('keeps Float coefficients and exponents', () => {
+    // SymPy: 1.0*y, 1.0**x and p**2.0 stay
+    expect(s(mul(new Float(1), y))).toBe('1.0*y');
+    expect(s(pow(new Float(1), x))).toBe('1.0**x');
+    expect(s(pow(p, new Float(2)))).toBe('p**2.0');
+  });
+  it('rejects relationals like SymPy', () => {
+    const eq = sj.Eq(x, y);
+    expect(() => add(eq, 1)).toThrow(new TypeError('Relational cannot be used in Add'));
+    expect(() => mul(eq, 2)).toThrow(new TypeError('Relational cannot be used in Mul'));
+    expect(() => pow(eq, 2)).toThrow(new TypeError('Relational cannot be used in Pow'));
+    expect(() => pow(2, eq)).toThrow(new TypeError('Relational cannot be used in Pow'));
+  });
+  it('decides a tie of couldExtractMinusSign by sort_key', () => {
+    // SymPy could_extract_minus_sign: 1 - x, sqrt(2) - 3, y - x, I - 1, E - pi, x - x**2: true
+    const yes = ['1 - x', 'sqrt(2) - 3', 'y - x', 'I - 1', 'E - pi', 'x - x**2', 'cos(x) - sin(x)', 'x - y + 2 - a'];
+    const no = ['x - 1', '3 - sqrt(2)', 'x - y', '1 - I', 'pi - E', 'x**2 - x', 'sin(x) - cos(x)', '-x + y - 2 + a'];
+    for (const t of yes) expect(sj.couldExtractMinusSign(P(t))).toBe(true);
+    for (const t of no) expect(sj.couldExtractMinusSign(P(t))).toBe(false);
+  });
+});
+
+describe('powers of powers (SymPy Pow._eval_power)', () => {
+  const r = new sj.Sym('r', { real: true });
+  const ng = new sj.Sym('ng', { negative: true });
+  const m = new sj.Sym('m', { integer: true });
+  const zp = new sj.Sym('zp', { polar: true });
+  const P4 = (t: string): sj.Expr => sj.parse(t, { symbols: { x, y, r, p, ng, m, zp } } as never);
+  it.each([
+    ['sqrt(sqrt(x))', 'x**(1/4)'],
+    ['(x**(1/3))**(3/2)', 'sqrt(x)'],
+    ['sqrt(x**2)', 'sqrt(x**2)'],
+    ['(x**(-1/2))**3', 'x**(-3/2)'],
+    ['sqrt(x)**y', 'x**(y/2)'],
+    ['(x**y)**2', 'x**(2*y)'],
+    ['(x**y)**m', 'x**(m*y)'],
+    ['(zp**y)**(1/3)', 'zp**(y/3)'],
+    ['(r**2)**y', 'Abs(r)**(2*y)'],
+    ['(r**2)**(1/3)', 'Abs(r)**(2/3)'],
+    ['sqrt(r**2)', 'Abs(r)'],
+    ['(r**4)**(1/2)', 'r**2'],
+    ['(r**-2)**(1/2)', '1/Abs(r)'],
+    ['(x**2)**(1/3)', '(x**2)**(1/3)'],
+    ['(r**3)**(1/2)', 'sqrt(r**3)'],
+    ['(p**x)**y', '(p**x)**y'],
+    ['(x**-1)**(1/2)', 'sqrt(1/x)'],
+    ['(ng**-1)**(1/2)', 'I/sqrt(-ng)'],
+    ['(p**-1)**(1/2)', '1/sqrt(p)'],
+    ['(x**(3/2))**(1/2)', 'sqrt(x**(3/2))'],
+    ['(r**(4/3))**(3/2)', '(r**(4/3))**(3/2)'],
+    ['(3**(3/2))**(1/2)', '3**(3/4)'],
+    // the branch floor(1/2 - a*arg(x)/(2*pi)) for a number x
+    ['((1+I)**3)**(1/2)', '(1 + I)**(3/2)'],
+    ['((-1+I)**3)**(1/2)', '-(-1 + I)**(3/2)'],
+    ['((-1+I)**5)**(3/2)', '(-1 + I)**(15/2)'],
+    ['((1+I)**4)**(1/2)', '(1 + I)**2'],
+    ['((1+I)**3)**(m/2)', '(1 + I)**(3*m/2)'],
+    ['((-1+I)**3)**(m/2)', '((-1 + I)**3)**(m/2)'],
+    // a non-real exponent: floor(1/2 - im(a*log(x))/(2*pi))
+    ['(x**I)**2', 'x**(2*I)'],
+    ['(x**I)**(1/2)', 'sqrt(x**I)'],
+    ['exp(2*I)**y', 'exp(2*I*y)'],
+    ['exp(4*I)**(1/2)', '-exp(2*I)'],
+    ['exp(4*I)**(1/3)', 'exp(4*I)**(1/3)'],
+    ['exp(10*I)**(1/2)', 'exp(5*I)'],
+    ['exp(4*I)**y', 'exp(4*I)**y'],
+    ['exp(x)**y', 'exp(x)**y'],
+  ])('%s = %s', (e, want) => expect(s(P4(e))).toBe(want));
+  it('takes Float exponents', () => {
+    // SymPy: (x**1.5)**0.5 stays, (x**0.5)**3.5 = x**1.75, (x**1.0)**y stays
+    expect(s(pow(pow(x, 1.5), 0.5))).toBe('(x**1.5)**0.5');
+    expect(s(pow(pow(x, 0.5), 3.5))).toBe('x**1.75');
+    expect(s(pow(pow(x, new Float(1)), y))).toBe('(x**1.0)**y');
+  });
+  it('decides the sign of sums of radicals numerically', () => {
+    // SymPy: 55 - 10*sqrt(29) and 11 - 2*sqrt(29) are positive
+    expect(sj.isPositive(P4('55 - 10*sqrt(29)')).toString()).toBe('true');
+    expect(sj.isNegative(P4('55 - 10*sqrt(29)')).toString()).toBe('false');
+    expect(sj.isPositive(P4('11 - 2*sqrt(29)')).toString()).toBe('true');
+    expect(sj.isNegative(P4('2*sqrt(29) - 11')).toString()).toBe('true');
+  });
+});
+
+describe('non-commutative neighbours with equal bases', () => {
+  it('a power times its inverse cancels', () => {
+    // SymPy: A*A**-1 == 1, B*A*A**-1 == B, A**x*A**-x == 1, A*B*B**-1*A**-1 == 1, A**2*B*A**-1 stays
+    expect(s(mul(A, pow(A, -1)))).toBe('1');
+    expect(s(mul(B, A, pow(A, -1)))).toBe('B');
+    expect(s(mul(pow(A, x), pow(A, mul(-1, x))))).toBe('1');
+    expect(s(mul(A, B, pow(B, -1), pow(A, -1)))).toBe('1');
+    expect(s(mul(pow(A, 2), B, pow(A, -1)))).toBe('A**2*B*A**(-1)');
   });
 });

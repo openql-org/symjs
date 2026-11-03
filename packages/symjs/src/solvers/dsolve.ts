@@ -9,21 +9,23 @@
 
 import { isReal } from '../core/assumptions';
 import type { ExprLike } from '../core/nodes';
-import { Add, Derivative, Dummy, Expr, Fn, Integral, Mul, Pow, Rational, Rel, S, Special, Sym, UndefFn } from '../core/nodes';
+import { Add, Derivative, Dummy, Expr, Fn, Integral, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { at, cast, defined, expectType, first, getOrThrow } from '../core/guard';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols, some, subs, xreplace } from '../core/traverse';
 import { derivative } from '../core/undef';
 import { diff } from '../calculus/diff';
+import { evalf } from '../numeric/evalf';
 import { abs, cos, fn, im, log, re, sin, tan } from '../functions/elementary';
 import '../functions/bessel';
 import { integrate } from '../integrals/integrate';
 import { Matrix } from '../matrices/matrix';
 import { polyCoefficients, roots } from '../polys/poly';
-import { factor } from '../polys/sympoly';
+import { factor, Poly } from '../polys/sympoly';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { expand, expandMul } from '../simplify/expand';
+import { factorTerms } from '../simplify/exprtools';
 import { powsimp } from '../simplify/powsimp';
 import { collect } from '../simplify/radsimp';
 import { cancel, fraction, together } from '../simplify/rational';
@@ -129,6 +131,12 @@ function sepDict(e: Expr, x: Sym, y: Sym): Map<Sym | 'coeff', Expr> | undefined 
   return m instanceof Map ? m : undefined;
 }
 
+/** classify_ode is running the solvers: an unevaluated integral still matches the hint. */
+let matching = false;
+
+/** Does e contain an unevaluated integral with respect to y (outside classify_ode)? */
+const integralIn = (e: Expr, y: Expr): boolean => !matching && some(e, (u) => u instanceof Integral && u.args.slice(1).some((l) => l.has(y)));
+
 const separable: Solver = (p) => {
   if (p.order !== 1) return undefined;
   const parts = firstOrderParts(expand(p.eq), p);
@@ -140,7 +148,10 @@ const separable: Solver = (p) => {
   if (!m1 || !m2) return undefined;
   // the dict form has an entry for each symbol and the coefficient
   const g = (m: Map<Sym | 'coeff', Expr>, k: Sym | 'coeff') => getOrThrow(m, k);
-  const lhs = xreplace(integrate(mul(g(m2, 'coeff'), g(m2, y), pow(g(m1, y), -1)), y), [[y, p.fx]]);
+  const ly = integrate(mul(g(m2, 'coeff'), g(m2, y), pow(g(m1, y), -1)), y);
+  // an integral in y left unevaluated cannot have f(x) substituted for its variable
+  if (integralIn(ly, y)) return undefined;
+  const lhs = xreplace(ly, [[y, p.fx]]);
   const rhs = add(integrate(mul(-1, g(m1, 'coeff'), g(m1, p.x), pow(g(m2, p.x), -1)), p.x), C(1));
   return [Eq(lhs, rhs)];
 };
@@ -166,6 +177,7 @@ const firstExact: Solver = (p) => {
   }
   const Fx = integrate(m, p.x);
   const F = add(Fx, integrate(add(n, mul(-1, diff(Fx, y))), y));
+  if (integralIn(F, y)) return undefined;
   return [Eq(xreplace(F, [[y, p.fx]]), C(1))];
 };
 
@@ -298,13 +310,20 @@ type Term = [number, Expr, Expr];
 function constCharacteristicSols(r: Map<number, Expr>, p: OdeProblem): [Expr[], Term[]] {
   const s = new Dummy('x');
   const chareq = add(...[...r.entries()].filter(([k]) => k >= 0).map(([k, c]) => mul(c, pow(s, k))));
-  const rs = roots(chareq, s);
+  // an irreducible factor without a formula: its roots as CRootOf (SymPy Poly.all_roots)
+  let rs: Expr[];
+  try {
+    rs = roots(chareq, s);
+  } catch {
+    rs = Poly.from(chareq, [s]).allRoots();
+  }
   const x = p.x;
   const counts = new Map<string, [Expr, number]>();
   for (const v of rs) counts.set(v.key, [v, (counts.get(v.key)?.[1] ?? 0) + 1]);
   const gensols: Expr[] = [];
   let collectterms: Term[] = [];
   const conj: string[] = [];
+  const conjNum: { re: number; im: number }[] = [];
   const done = new Set<string>();
   // complex (or not known real) coefficients: plain exponentials
   const isComplex = [...r.entries()].some(([k, c]) => k >= 0 && isReal(c) !== true);
@@ -318,8 +337,21 @@ function constCharacteristicSols(r: Map<number, Expr>, p: OdeProblem): [Expr[], 
         collectterms = [[i, root, S.Zero], ...collectterms];
         continue;
       }
-      const reroot = re(root);
-      const imroot = im(root);
+      let reroot = re(root);
+      let imroot = im(root);
+      let absIm = abs(imroot);
+      // an indexed root (CRootOf): real or not, the sign of its imaginary part and its conjugate
+      // (another index) are found numerically
+      if (root.kind === 'Extension') {
+        const c = evalf(root, 20).toComplex();
+        if (Math.abs(c.im) < 1e-12) [reroot, imroot] = [root, S.Zero];
+        absIm = c.im < 0 ? mul(-1, imroot) : imroot;
+        if (conjNum.some((d) => Math.abs(d.re - c.re) + Math.abs(d.im + c.im) < 1e-9)) {
+          collectterms = [[i, reroot, imroot], ...collectterms];
+          continue;
+        }
+        conjNum.push(c);
+      }
       if (conj.includes(root.key)) {
         collectterms = [[i, reroot, imroot], ...collectterms];
         continue;
@@ -330,7 +362,7 @@ function constCharacteristicSols(r: Map<number, Expr>, p: OdeProblem): [Expr[], 
         continue;
       }
       conj.push(expand(add(reroot, mul(-1, S.I, imroot))).key);
-      gensols.push(mul(pow(x, i), exp(mul(reroot, x)), sin(mul(abs(imroot), x))));
+      gensols.push(mul(pow(x, i), exp(mul(reroot, x)), sin(mul(absIm, x))));
       gensols.push(mul(pow(x, i), exp(mul(reroot, x)), cos(mul(imroot, x))));
       collectterms = [[i, reroot, imroot], ...collectterms];
     }
@@ -594,6 +626,209 @@ const eulerUndetermined: Solver = (p) => {
   return [Eq(p.fx, expand(xreplace(s0.rhs, [[x, log(x)]])))];
 };
 
+/**
+ * SymPy nth_linear_euler_eq_nonhomogeneous_variation_of_parameters: the
+ * homogeneous solutions of the Euler equation and a particular solution by
+ * variation of parameters (SymPy _solve_variation_of_parameters).
+ */
+const eulerVariation: Solver = (p) => {
+  const r = eulerMatch(p);
+  if (!r || isZero(getOrThrow(r, -1))) return undefined;
+  const hom = eulerCharacteristicSols(p, r).args[1];
+  const gensols = Array.from({ length: p.order }, (_, i) => diff(defined(hom, 'homogeneous solution'), C(i + 1)));
+  const wr = simplify(wronskian(gensols, p.x));
+  // r is scaled so that f^(n) has the coefficient x**n
+  const lead = pow(p.x, p.order);
+  let psol: Expr = S.Zero;
+  let sign = p.order % 2 === 0 ? 1 : -1;
+  for (const g of gensols) {
+    const others = gensols.filter((h) => h !== g);
+    psol = add(psol, mul(sign, g, integrate(simplify(mul(wronskian(others, p.x), getOrThrow(r, -1), pow(mul(wr, lead), -1))), p.x)));
+    sign = -sign;
+  }
+  return [Eq(p.fx, add(defined(hom, 'homogeneous solution'), simplify(psol)))];
+};
+
+/**
+ * SymPy's classify_ode match of the power series hints: a homogeneous linear
+ * second-order equation a3*f'' + b3*f' + c3*f = 0, with x = 0 an ordinary point
+ * (b3/a3 and c3/a3 finite there) or a regular singular point (x*b3/a3 and
+ * x**2*c3/a3 finite there). The coefficients come from the numerator when they
+ * are not polynomials.
+ */
+function powerSeriesMatch(p: OdeProblem): { kind: 'ordinary' | 'regular'; r: Map<number, Expr> } | undefined {
+  if (p.order !== 2) return undefined;
+  let r = linearCoefficients(p.eq, p);
+  if (r && [...r.values()].some((c) => !polyCoefficients(c, p.x))) r = linearCoefficients(expand(fraction(together(p.eq))[0]), p);
+  if (!r || !isZero(getOrThrow(r, -1)) || [0, 1, 2].some((k) => getOrThrow(r, k).has(p.fx))) return undefined;
+  const a3 = getOrThrow(r, 2);
+  const finite = (e: Expr): boolean => {
+    const v = xreplace(e, [[p.x, S.Zero]]);
+    const bad = (u: Expr): boolean => u instanceof Special || u.args.some(bad);
+    return !bad(v);
+  };
+  const P = cancel(mul(getOrThrow(r, 1), pow(a3, -1)));
+  const Q = cancel(mul(getOrThrow(r, 0), pow(a3, -1)));
+  if (finite(P) && finite(Q)) return { kind: 'ordinary', r };
+  if (finite(cancel(mul(p.x, P))) && finite(cancel(mul(pow(p.x, 2), Q)))) return { kind: 'regular', r };
+  return undefined;
+}
+
+/**
+ * SymPy almost_linear: a(x)*l(y)' + b(x)*l(y) + c(x) = 0 with y = f(x), a linear
+ * equation in l(f(x)): l(f) = (C1 + Integral(cx/ax*exp(Integral(bx/ax)))) * exp(-Integral(bx/ax)).
+ */
+const almostLinear: Solver = (p) => {
+  const y = new Dummy('y');
+  const de = firstOrderDE(p, y);
+  if (!de) return undefined;
+  // f' occurs (the order is 1), so its coefficient a is not zero
+  const [d, a] = de;
+  const terms = addTerms(d);
+  const c = add(...terms.filter((t) => !t.has(y)));
+  const b = add(...terms.filter((t) => t.has(y)));
+  const db = diff(b, y);
+  if (isZero(db) || simplify(mul(db, pow(a, -1))).has(y)) return undefined;
+  const fb = factorTerms(b);
+  const ly = mul(...mulFactors(fb).filter((u) => u.has(y)));
+  const x = p.x;
+  const ax = mul(a, pow(diff(ly, y), -1));
+  const bx = mul(fb, pow(ly, -1));
+  const cx = mul(-1, c);
+  const ib = integrate(mul(bx, pow(ax, -1)), x);
+  const rhs = mul(add(C(1), integrate(mul(cx, pow(ax, -1), exp(ib)), x)), exp(mul(-1, ib)));
+  return [Eq(xreplace(ly, [[y, p.fx]]), rhs)];
+};
+
+/** The number of terms of the power series solutions (SymPy's default n = 6). */
+const SERIES_TERMS = 6;
+
+/**
+ * SymPy ode_1st_power_series: f' = h(x, f) expanded at x = 0 with f(0) = C1,
+ * the Taylor coefficients from the total derivatives of h; oo when h or a
+ * derivative is not finite there.
+ */
+const firstPowerSeries: Solver = (p) => {
+  const y = new Dummy('y');
+  const de = firstOrderDE(p, y);
+  if (!de || isZero(de[1])) return undefined;
+  const x = p.x;
+  const h = cancel(mul(-1, de[0], pow(de[1], -1)));
+  const C1 = C(1);
+  if (isZero(h)) return [Eq(p.fx, C1)];
+  const at0 = (e: Expr): Expr => xreplace(e, [[x, S.Zero], [y, C1]]);
+  const bad = (u: Expr): boolean => u instanceof Special || u.args.some(bad);
+  let series: Expr = C1;
+  let F = h;
+  let fact = 1n;
+  for (let k = 1; k < SERIES_TERMS; k++) {
+    if (k > 1) F = add(diff(F, x), mul(diff(F, y), h));
+    fact *= BigInt(k);
+    const c = at0(F);
+    // h or its first derivative not finite at x = 0: the hint does not match (SymPy classify_ode)
+    if (bad(c)) return k <= 2 ? undefined : [Eq(p.fx, S.Infinity)];
+    series = add(series, mul(c, pow(x, k), Rational.of(1n, fact)));
+  }
+  return [Eq(p.fx, add(series, new Order([pow(x, SERIES_TERMS)])))];
+};
+
+/**
+ * SymPy ode_2nd_power_series_ordinary: f = C0 + C1*x + a2*x**2 + ... with the
+ * coefficients a2, ..., a(terms - 2) from the recurrence, collected in C0, C1,
+ * plus O(x**terms).
+ */
+const secondPowerSeriesOrdinary: Solver = (p) => {
+  const m = powerSeriesMatch(p);
+  if (m?.kind !== 'ordinary') return undefined;
+  const x = p.x;
+  const [C0, C1] = [C(1), C(2)];
+  const coeffs: Expr[] = [C0, C1];
+  for (let k = 2; k < SERIES_TERMS - 1; k++) {
+    // the coefficient of x**(k - 2) in a3*f'' + b3*f' + c3*f with f = sum a_j*x**j, a_k unknown
+    const a = new Dummy('a');
+    const f = add(...[...coeffs, a].map((c, j) => mul(c, pow(x, j))));
+    const lhs = expand(add(...[0, 1, 2].map((d) => mul(getOrThrow(m.r, d), diff(f, x, d)))));
+    const pc = defined(polyCoefficients(lhs, x), 'polynomial in x');
+    // a_k occurs in this coefficient
+    const eq = getOrThrow(pc, k - 2);
+    const ca = diff(eq, a);
+    // x = 0 is an ordinary point, so a_k occurs
+    coeffs.push(expand(mul(-1, xreplace(eq, [[a, S.Zero]]), pow(ca, -1))));
+  }
+  const series = add(...coeffs.map((c, j) => mul(c, pow(x, j))));
+  return [Eq(p.fx, add(collect(expandMul(series), [C0, C1]), new Order([pow(x, SERIES_TERMS)])))];
+};
+
+/** The Taylor coefficients c_0, ..., c_n of e at x = 0. */
+function taylorCoeffs(e: Expr, x: Sym, n: number): Expr[] {
+  const out: Expr[] = [];
+  let d = e;
+  let fact = 1n;
+  for (let i = 0; i <= n; i++) {
+    if (i > 1) fact *= BigInt(i);
+    out.push(cancel(mul(xreplace(d, [[x, S.Zero]]), Rational.of(1n, fact))));
+    d = cancel(diff(d, x));
+  }
+  return out;
+}
+
+/**
+ * SymPy _frobenius: the coefficients c_1, ..., c_n of the series
+ * x**m*(c + c_1*x + ...), or undefined when (for the smaller root m of an
+ * integer-spaced pair, at index check - m) no second series exists.
+ */
+function frobenius(n: number, m: Expr, ps: Expr[], qs: Expr[], c: Expr, check?: Expr): Expr[] | undefined {
+  const [p0, q0] = [at(ps, 0), at(qs, 0)];
+  const indicial = (d: Expr): Expr => add(mul(d, add(d, -1)), mul(d, p0), q0);
+  const out: Expr[] = [];
+  for (let i = 1; i <= n; i++) {
+    let num = mul(c, add(mul(m, at(ps, i)), at(qs, i)));
+    for (let j = 1; j < i; j++) num = add(num, mul(at(out, j - 1), add(mul(add(m, j), at(ps, i - j)), at(qs, i - j))));
+    num = expand(num);
+    if (check !== undefined && add(check, mul(-1, m)).key === Rational.of(i).key) {
+      if (!isZero(num)) return undefined;
+      out.push(S.Zero);
+    } else out.push(mul(-1, num, pow(expand(indicial(add(m, i))), -1)));
+  }
+  return out;
+}
+
+/** SymPy ode_2nd_power_series_regular: Frobenius series at the regular singular point x = 0. */
+const secondPowerSeriesRegular: Solver = (p) => {
+  const mt = powerSeriesMatch(p);
+  if (mt?.kind !== 'regular') return undefined;
+  const x = p.x;
+  const a3 = getOrThrow(mt.r, 2);
+  const P = cancel(mul(x, getOrThrow(mt.r, 1), pow(a3, -1)));
+  const Q = cancel(mul(pow(x, 2), getOrThrow(mt.r, 0), pow(a3, -1)));
+  const [C0, C1] = [C(1), C(2)];
+  const terms = SERIES_TERMS;
+  const P0 = xreplace(P, [[x, S.Zero]]);
+  const Q0 = xreplace(Q, [[x, S.Zero]]);
+  const mm = new Dummy('m');
+  const ms = solve(add(mul(mm, add(mm, -1)), mul(mm, P0), Q0), mm);
+  // real rational exponents only (the number of terms depends on them)
+  if (!ms.length || !ms.every((v) => v instanceof Rational)) return undefined;
+  const rs = ms.filter((v): v is Rational => v instanceof Rational).sort((a, b) => b.value - a.value);
+  const m1 = first(rs);
+  const nTerms = (m: Rational) => Math.trunc(terms - m.value - 1);
+  const ser = (m: Rational, c: Expr, cs: Expr[]) => mul(pow(x, m), add(c, ...cs.map((v, i) => mul(v, pow(x, i + 1)))));
+  // SymPy: Eq(f(x), Order(terms)), which is O(1)
+  if (nTerms(m1) <= 0) return [Eq(p.fx, new Order([S.One]))];
+  const N = Math.max(...rs.map(nTerms));
+  const ps = taylorCoeffs(P, x, N);
+  const qs = taylorCoeffs(Q, x, N);
+  const s1 = ser(m1, C0, defined(frobenius(nTerms(m1), m1, ps, qs, C0), 'first Frobenius series'));
+  let s2: Expr = S.Zero;
+  if (rs.length === 2) {
+    const m2 = at(rs, 1);
+    const integer = (m1.p * m2.q - m2.p * m1.q) % (m1.q * m2.q) === 0n;
+    const c2 = frobenius(nTerms(m2), m2, ps, qs, C1, integer ? m1 : undefined);
+    if (c2) s2 = ser(m2, C1, c2);
+  }
+  return [Eq(p.fx, add(collect(add(s1, s2), [C0, C1]), new Order([pow(x, terms)])))];
+};
+
 // ---------------------------------------------------------------------------
 // second order and reducible equations
 // ---------------------------------------------------------------------------
@@ -661,6 +896,20 @@ const nthOrderReducible: Solver = (p) => {
   return out;
 };
 
+/**
+ * Basic.compare of two numbers: the singletons One and NegativeOne are classes
+ * of their own, ordered before Integer (ordering_of_classes); numbers of one
+ * class compare by value.
+ */
+function numberCompare(a: Rational, b: Rational): number {
+  // a term of a sum is never zero, and factor gives integer coefficients: One, NegativeOne or Integer
+  const rank = (r: Rational): number => (r.p === 1n ? 1 : r.p === -1n ? 5 : 7);
+  const d = rank(a) - rank(b);
+  if (d) return d;
+  const v = a.p * b.q - b.p * a.q;
+  return Number(v > 0n) - Number(v < 0n);
+}
+
 const factorable: Solver = (p) => {
   const eq0 = p.eq;
   // (a failure of factor is caught by the driver like any failing solver)
@@ -686,14 +935,17 @@ const factorable: Solver = (p) => {
   }
   // SymPy iterates the factors in Mul argument order
   const argCmp = (a: Expr, b: Expr): number => {
-    // like Basic.compare for sums: compare the (sorted) terms one by one
+    // like Basic.compare for sums: the number of terms first, then the (sorted) terms one by one
     const ta = [...addTerms(a)].sort((u, v) => compareKeys(sortKey(u), sortKey(v)));
     const tb = [...addTerms(b)].sort((u, v) => compareKeys(sortKey(u), sortKey(v)));
-    for (let i = 0; i < Math.min(ta.length, tb.length); i++) {
-      const c = compareKeys(sortKey(at(ta, i)), sortKey(at(tb, i)));
+    if (ta.length !== tb.length) return ta.length - tb.length;
+    const cmpTerm = (u: Expr, v: Expr): number => (u instanceof Rational && v instanceof Rational ? numberCompare(u, v) : compareKeys(sortKey(u), sortKey(v)));
+    // distinct factors differ in some term
+    for (let i = 0; i < ta.length - 1; i++) {
+      const c = cmpTerm(at(ta, i), at(tb, i));
       if (c) return c;
     }
-    return ta.length - tb.length;
+    return cmpTerm(at(ta, -1), at(tb, -1));
   };
   eqs = [...eqs].sort(argCmp);
   const sols: Expr[] = [];
@@ -898,27 +1150,55 @@ const HINTS: [string, Solver][] = [
   ['Bernoulli', bernoulli],
   ['Riccati_special_minus2', riccatiSpecial],
   ['1st_homogeneous_coeff_best', homogeneousCoeffBest],
+  ['almost_linear', almostLinear],
   ['linear_coefficients', linearCoefficientsSolver],
   ['nth_linear_constant_coeff_variation_of_parameters', variationOfParameters],
+  ['nth_linear_euler_eq_nonhomogeneous_variation_of_parameters', eulerVariation],
   // SymPy reaches f'' + f'**2 = 0 through factorable/nth_order_reducible before Liouville
   ['nth_order_reducible', nthOrderReducible],
   ['Liouville', liouville],
   ['2nd_linear_airy', airy],
   ['2nd_linear_bessel', bessel],
   ['nth_algebraic', nthAlgebraic],
+  ['2nd_power_series_ordinary', secondPowerSeriesOrdinary],
+  ['2nd_power_series_regular', secondPowerSeriesRegular],
+  // SymPy's default for a first-order equation is lie_group, which matches before: this one is used on request
+  ['1st_power_series', firstPowerSeries],
 ];
+
+/**
+ * Hints whose match is decided without solving (variation of parameters needs
+ * Wronskians and integrals, which can be expensive, e.g. with CRootOf roots).
+ */
+const MATCHERS = new Map<string, (p: OdeProblem) => boolean>([
+  ['nth_linear_constant_coeff_variation_of_parameters', (p) => {
+    const r = constantCoeffMatch(p);
+    return r !== undefined && !isZero(getOrThrow(r, -1));
+  }],
+  ['nth_linear_euler_eq_nonhomogeneous_variation_of_parameters', (p) => {
+    const r = eulerMatch(p);
+    return r !== undefined && !isZero(getOrThrow(r, -1));
+  }],
+]);
 
 /** The hints with a solver here that match the equation (solver order). */
 function solverHints(eqIn: ExprLike, fx: UndefFn): string[] {
   const eq = toZeroForm(sympify(eqIn));
   const p: OdeProblem = { eq, fx, x: independentVariable(fx), order: orderOf(eq, fx) };
-  return HINTS.filter(([, s]) => {
-    try {
-      return s(p) !== undefined;
-    } catch {
-      return false;
-    }
-  }).map(([h]) => h);
+  matching = true;
+  try {
+    return HINTS.filter(([h, s]) => {
+      try {
+        const m = MATCHERS.get(h);
+        if (m) return m(p);
+        return s(p) !== undefined;
+      } catch {
+        return false;
+      }
+    }).map(([h]) => h);
+  } finally {
+    matching = false;
+  }
 }
 
 function toZeroForm(e: Expr): Expr {
@@ -932,6 +1212,7 @@ export function dsolveRaw(eqIn: Expr, fx: UndefFn, hint?: string): Expr[] | unde
   if (p.order === 0) return undefined;
   for (const [h, s] of HINTS) {
     if (hint && hint !== 'default' && h !== hint) continue;
+    if ((!hint || hint === 'default') && h === '1st_power_series') continue;
     let raw: Expr[] | undefined;
     try {
       raw = s(p);
@@ -1009,6 +1290,8 @@ function classifyExtra(p: OdeProblem): Set<string> {
   } catch {
     // not decided
   }
+  const ps = powerSeriesMatch(p);
+  if (ps) out.add(`2nd_power_series_${ps.kind}`);
   const de = firstOrderDE(p, y);
   if (de) {
     const [d, e] = de;

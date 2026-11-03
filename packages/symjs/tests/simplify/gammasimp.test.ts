@@ -6,7 +6,7 @@
 // Expected values are the str() forms printed by SymPy 1.14 unless a comment says otherwise.
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Heaviside, Sym, combsimp, gammasimp, hypersimilar, hypersimp, parse, sstr, symbol, symbols } from '../../src';
+import { DiracDelta, Heaviside, Sym, combsimp, gammasimp, hypersimilar, hypersimp, isHypergeometric, parse, sstr, symbol, symbols } from '../../src';
 import type { Expr } from '../../src';
 
 const P = (s: string) => parse(s, { locals: { Heaviside, DiracDelta } });
@@ -99,5 +99,134 @@ describe('hypersimp and hypersimilar (cov2): a term index that is not a symbol',
   });
   it('hypersimilar(factorial(f(x)), factorial(f(x) + 1), f(x)) is true', () => {
     expect(hypersimilar(PA('factorial(f(x))'), PA('factorial(f(x) + 1)'), fx)).toBe(true);
+  });
+});
+
+describe('combsimp and gammasimp: the calls of SymPy 1.14 test_combsimp.py and test_gammasimp.py', () => {
+  const cases: ['combsimp' | 'gammasimp', string, Record<string, Assume>, string][] = [
+    ['combsimp', 'factorial(n)', {n: {integer: true}}, 'factorial(n)'],
+    ['combsimp', 'binomial(n, k)', {k: {integer: true}, n: {integer: true}}, 'binomial(n, k)'],
+    ['combsimp', 'factorial(n)/factorial(n - 3)', {n: {integer: true}}, 'n*(n - 2)*(n - 1)'],
+    ['combsimp', 'binomial(n + 1, k + 1)/binomial(n, k)', {k: {integer: true}, n: {integer: true}}, '(n + 1)/(k + 1)'],
+    ['combsimp', 'binomial(3*n + 4, n + 1)/binomial(3*n + 1, n)', {n: {integer: true}}, '3*(3*n + 2)*(3*n + 4)/(2*(n + 1)*(2*n + 3))'],
+    ['combsimp', 'factorial(n)**2/factorial(n - 3)', {n: {integer: true}}, 'n*(n - 2)*(n - 1)*factorial(n)'],
+    ['combsimp', 'binomial(n + 1, k + 1)*factorial(n)/binomial(n, k)', {k: {integer: true}, n: {integer: true}}, 'factorial(n + 1)/(k + 1)'],
+    ['combsimp', 'gamma(n + 3)', {n: {integer: true}}, 'factorial(n + 2)'],
+    ['combsimp', 'factorial(x)', {}, 'gamma(x + 1)'],
+    ['combsimp', '(n + 1)*factorial(n)', {n: {integer: true}}, 'factorial(n + 1)'],
+    ['combsimp', 'factorial(n)/n', {n: {integer: true}}, 'factorial(n - 1)'],
+    ['combsimp', 'binomial(n, -k + n)', {k: {integer: true}, n: {integer: true}}, 'binomial(n, k)'],
+    ['combsimp', 'factorial(n)/(factorial(k)*factorial(-k + n))', {k: {integer: true}, n: {integer: true}}, 'binomial(n, k)'],
+    ['combsimp', 'factorial(k)*factorial(-k + n)/factorial(n)', {k: {integer: true}, n: {integer: true}}, '1/binomial(n, k)'],
+    ['combsimp', 'factorial(2*n)/factorial(n)**2', {n: {integer: true}}, 'binomial(2*n, n)'],
+    ['combsimp', 'factorial(k)*factorial(2*n)*factorial(-k + n)/factorial(n)**3', {k: {integer: true}, n: {integer: true}}, 'binomial(2*n, n)/binomial(n, k)'],
+    ['combsimp', 'factorial(-n**2 + n*(n + 1) - n)', {n: {integer: true}}, '1'],
+    ['combsimp', '6*FallingFactorial(-4, n)/factorial(n)', {n: {integer: true}}, '(-1)**n*(n + 1)*(n + 2)*(n + 3)'],
+    ['combsimp', '6*FallingFactorial(-4, n - 1)/factorial(n - 1)', {n: {integer: true}}, '(-1)**(n - 1)*n*(n + 1)*(n + 2)'],
+    ['combsimp', '6*FallingFactorial(-4, n - 3)/factorial(n - 3)', {n: {integer: true}}, '(-1)**(n - 3)*n*(n - 2)*(n - 1)'],
+    ['combsimp', '6*FallingFactorial(-4, -n - 1)/factorial(-n - 1)', {n: {integer: true}}, '-(-1)**(-n - 1)*n*(n - 2)*(n - 1)'],
+    ['combsimp', '6*RisingFactorial(4, n)/factorial(n)', {n: {integer: true}}, '(n + 1)*(n + 2)*(n + 3)'],
+    ['combsimp', '6*RisingFactorial(4, n - 1)/factorial(n - 1)', {n: {integer: true}}, 'n*(n + 1)*(n + 2)'],
+    ['combsimp', '6*RisingFactorial(4, n - 3)/factorial(n - 3)', {n: {integer: true}}, 'n*(n - 2)*(n - 1)'],
+    ['combsimp', '6*RisingFactorial(4, -n - 1)/factorial(-n - 1)', {n: {integer: true}}, '-n*(n - 2)*(n - 1)'],
+    ['combsimp', 'binomial(1, p)', {p: {integer: true, positive: true}}, '1/(factorial(p)*factorial(1 - p))'],
+    ['combsimp', 'factorial(2 - p)', {p: {integer: true, positive: true}}, 'factorial(2 - p)'],
+    ['combsimp', 'RisingFactorial(-10, n)', {n: {integer: true}}, '3628800*(-1)**n/factorial(10 - n)'],
+    ['gammasimp', 'gamma(x)', {}, 'gamma(x)'],
+    ['gammasimp', 'gamma(x + 1)/x', {}, 'gamma(x)'],
+    ['gammasimp', 'gamma(x)/(x - 1)', {}, 'gamma(x - 1)'],
+    ['gammasimp', 'x*gamma(x)', {}, 'gamma(x + 1)'],
+    ['gammasimp', '(x + 1)*gamma(x + 1)', {}, 'gamma(x + 2)'],
+    ['gammasimp', '(x + y)*gamma(x + y)', {}, 'gamma(x + y + 1)'],
+    ['gammasimp', 'x/gamma(x + 1)', {}, '1/gamma(x)'],
+    ['gammasimp', '(x + 1)**2/gamma(x + 2)', {}, '(x + 1)/gamma(x + 1)'],
+    ['gammasimp', 'x*gamma(x) + gamma(x + 3)/(x + 2)', {}, '(x + 2)*gamma(x + 1)'],
+    ['gammasimp', 'x*gamma(2*x)', {}, 'gamma(2*x + 1)/2'],
+    ['gammasimp', 'gamma(2*x)/(x - 1/2)', {}, '2*gamma(2*x - 1)'],
+    ['gammasimp', 'gamma(x)*gamma(1 - x)', {}, 'pi/sin(pi*x)'],
+    ['gammasimp', 'gamma(-x)*gamma(x)', {}, '-pi/(x*sin(pi*x))'],
+    ['gammasimp', '1/(gamma(1 - x)*gamma(x + 3))', {}, 'sin(pi*x)/(pi*x*(x + 1)*(x + 2))'],
+    ['gammasimp', 'factorial(n + 2)', {}, 'gamma(n + 3)'],
+    ['gammasimp', 'binomial(n, k)', {}, 'gamma(n + 1)/(gamma(k + 1)*gamma(-k + n + 1))'],
+    ['gammasimp', 'gamma(x)*gamma(y)*gamma(x + 1/2)/gamma(x + y)', {}, '2*sqrt(2)*2**(-2*x - 1/2)*sqrt(pi)*gamma(2*x)*gamma(y)/gamma(x + y)'],
+    ['gammasimp', '1/(gamma(x)*gamma(x - 1/3)*gamma(x + 1/3))', {}, '3**(3*x - 3/2)/(2*pi*gamma(3*x - 1))'],
+    ['gammasimp', 'gamma(-3/4)*gamma(-1/4)', {}, '16*sqrt(2)*pi/3'],
+    ['gammasimp', 'gamma(2*x)/gamma(x)', {}, '2**(2*x + 1)*gamma(x + 1/2)/(4*sqrt(pi))'],
+    ['gammasimp', '(-gamma(k)*gamma(k + 2) + gamma(k + 1)**2)/gamma(k)**2', {}, '-k'],
+    ['gammasimp', 'gamma(k)**2/(-gamma(k)*gamma(k + 2) + gamma(k + 1)**2)', {}, '-1/k'],
+    ['gammasimp', '(gamma(x) + gamma(x + 1))/gamma(x)', {}, 'x + 1'],
+    ['gammasimp', 'gamma(x)/(gamma(x) + gamma(x + 1))', {}, '1/(x + 1)'],
+    ['gammasimp', '(gamma(x) + gamma(x - 1))*(gamma(x) + gamma(x + 2))/gamma(x)', {}, '(x**2 + x + 1)*gamma(x + 1)/(x - 1)'],
+    ['gammasimp', '(-gamma(k)*gamma(k + 2) + gamma(k + 1)**2)**2/gamma(k)**4', {}, 'k**2'],
+    ['gammasimp', '(-gamma(k)*gamma(k + 2) + gamma(k + 1)**2)**2/(gamma(k)**4*gamma(k + 1))', {}, 'k/gamma(k)'],
+    ['gammasimp', 'gamma(2*k)*gamma(k + 5/6)*gamma(k + 7/6)/gamma(k)', {}, '3*2**(2*k + 1)*3**(-3*k - 2)*sqrt(pi)*gamma(3*k + 3/2)/2'],
+    ['gammasimp', '(x + 1)*factorial(x)/gamma(y)', {}, 'gamma(x + 2)/gamma(y)'],
+    ['gammasimp', '(-gamma(k)*gamma(k + 2) + gamma(k + 1)**2)*B*A/gamma(k)**2', {A: {commutative: false}, B: {commutative: false}}, '-k*B*A'],
+    ['gammasimp', 'gamma(2*k)*gamma(-k - 1/2)/gamma(k)', {}, '-2**(2*k + 1)*sqrt(pi)/(2*(2*k + 1)*cos(pi*k))'],
+    ['gammasimp', 'gamma(k)*gamma(k + 1/3)*gamma(k + 2/3)/gamma(3*k/2)', {}, '3*2**(3*k + 1)*3**(-3*k - 1/2)*sqrt(pi)*gamma(3*k/2 + 1/2)/2'],
+    ['gammasimp', 'gamma(1/4)/gamma(5/4)', {}, '4'],
+    ['gammasimp', 'binomial(n + 2, k + 1/2)', {}, 'gamma(n + 3)/(gamma(k + 3/2)*gamma(-k + n + 5/2))'],
+    ['gammasimp', 'binomial(n + 2, k + 2.0)', {}, 'gamma(n + 3)/(gamma(k + 3.0)*gamma(-k + n + 1))'],
+    ['gammasimp', 'binomial(0, x)', {}, 'sin(pi*x)/(pi*x)'],
+    ['gammasimp', 'gamma(n + 1/3)*gamma(n + 2/3)', {}, 'gamma(n + 1/3)*gamma(n + 2/3)'],
+    ['gammasimp', 'gamma(4*n + 1/2)/gamma(2*n - 3/4)', {}, '2**(4*n - 5/2)*(8*n - 3)*gamma(2*n + 3/4)/sqrt(pi)'],
+    ['gammasimp', 'gamma(exp(i))', {i: {integer: true}}, 'gamma(exp(i))'],
+    ['gammasimp', 'gamma(m + 3)', {m: {integer: true}}, 'gamma(m + 3)'],
+    ['gammasimp', 'gamma(m + 1)/(gamma(i + 1)*gamma(-i + m + 1))', {i: {integer: true}, m: {integer: true}}, 'gamma(m + 1)/(gamma(i + 1)*gamma(-i + m + 1))'],
+    ['gammasimp', 'gamma(4 - p)', {p: {integer: true, positive: true}}, 'gamma(4 - p)'],
+    ['gammasimp', 'x + gamma(y)', {}, '(x*y + gamma(y + 1))/y'],
+    ['gammasimp', 'f(x) + gamma(y)', {}, '(y*f(x) + gamma(y + 1))/y'],
+    ['gammasimp', 'cos(x) + gamma(y)', {}, '(y*cos(x) + gamma(y + 1))/y'],
+    ['gammasimp', '1/(x + gamma(y))', {}, 'y/(x*y + gamma(y + 1))'],
+    ['gammasimp', 'f(x + gamma(y))', {}, 'f((x*y + gamma(y + 1))/y)'],
+  ];
+  it.each(cases)('%s(%s)', (f, src, a, want) => {
+    expect(sstr((f === 'combsimp' ? combsimp : gammasimp)(PA(src, a)))).toBe(want);
+  });
+  it('gammasimp(rf(n + x, k)*binomial(n, k)) keeps the Piecewise of rf', () => {
+    // SymPy prints the Piecewise factor first; the printed order of the factors differs, the expression is the same
+    const want = 'Piecewise((gamma(k + n + x)/gamma(n + x), n + x > 0), ((-1)**k*gamma(-n - x + 1)/gamma(-k - n - x + 1), True))*gamma(n + 1)/(gamma(k + 1)*gamma(-k + n + 1))';
+    expect(gammasimp(PA('RisingFactorial(n + x, k)*binomial(n, k)')).key).toBe(PA(want).key);
+  });
+});
+
+describe('combsimp and gammasimp: further SymPy 1.14 cases', () => {
+  const I = { n: { integer: true }, k: { integer: true }, m: { integer: true } };
+  const cases: ['combsimp' | 'gammasimp', string, string][] = [
+    ['gammasimp', 'beta(x, y)', 'gamma(x)*gamma(y)/gamma(x + y)'],
+    ['combsimp', 'ff(n, k)', 'factorial(n)/factorial(-k + n)'],
+    ['combsimp', 'Piecewise((factorial(n)/factorial(n - 1), n > 0), (1, True))', 'Piecewise((n, n > 0), (1, True))'],
+    // a repeated coefficient and a run of two among the coefficients 0, 1/3, 1/2
+    ['gammasimp', 'gamma(x)**2*gamma(x + 1/2)', '2*sqrt(2)*2**(-2*x - 1/2)*sqrt(pi)*gamma(x)*gamma(2*x)'],
+    ['gammasimp', 'gamma(x)*gamma(x + 1/2)*gamma(x + 1/3)', '2*sqrt(2)*2**(-2*x - 1/2)*sqrt(pi)*gamma(2*x)*gamma(x + 1/3)'],
+    // absorption of factors with equal functional components, and of factors without free symbols
+    ['gammasimp', 'sqrt(x)*gamma(sqrt(x))', 'gamma(sqrt(x) + 1)'],
+    ['gammasimp', 'x*gamma(pi)', 'x*gamma(1 + pi)/pi'],
+    ['gammasimp', 'pi*gamma(pi)', 'gamma(1 + pi)'],
+    // cos(t) has the bound symbol t, so it is not masked
+    ['gammasimp', 'Integral(cos(t)*gamma(t)*t, (t, 0, 1)) + cos(y)*gamma(y)', '(y*Integral(cos(t)*gamma(t + 1), (t, 0, 1)) + cos(y)*gamma(y + 1))/y'],
+    ['combsimp', 'factorial(n)/factorial(k)', 'factorial(n)/factorial(k)'],
+    ['combsimp', 'factorial(n)**2/(factorial(k)**2*factorial(n - k)**2)', 'binomial(n, k)**2'],
+    ['combsimp', 'factorial(n)/(factorial(k)*factorial(n - k)*factorial(m))', 'binomial(n, k)/factorial(m)'],
+    // runs: 1/3 is not a run (3/2 is not an integer multiple of 1/3) but 1/2 is; 1/3 and 4/3 give the same difference
+    ['gammasimp', 'gamma(x + 1)*gamma(x + 4/3)*gamma(x + 3/2)', 'sqrt(2)*2**(-2*x - 3/2)*sqrt(pi)*gamma(x + 4/3)*gamma(2*x + 2)'],
+    ['gammasimp', 'gamma(x + 1)*gamma(x + 4/3)*gamma(x + 7/3)', 'gamma(x + 1)*gamma(x + 4/3)*gamma(x + 7/3)'],
+    ['gammasimp', 'gamma(sqrt(x))/(sqrt(x) - 1)', 'gamma(sqrt(x) - 1)'],
+    ['combsimp', 'factorial(n)*factorial(m)/(factorial(k)*factorial(n - k))', 'binomial(n, k)*factorial(m)'],
+    // sums of gamma terms in the numerator and the denominator
+    ['gammasimp', '(gamma(x) + 1)*(gamma(x + 1) + 2)/(gamma(x)*gamma(y))', '(x*gamma(x) + 2)*(gamma(x) + 1)/(gamma(x)*gamma(y))'],
+    ['gammasimp', '(gamma(x) + x)*(gamma(y) + y)/(gamma(x + 1)*gamma(y + 1))', '(x + gamma(x))*(gamma(y)**2 + gamma(y + 1))/(gamma(y)*gamma(x + 1)*gamma(y + 1))'],
+    ['gammasimp', 'gamma(x + 2)*gamma(y) + gamma(x + 1)**2', '(x*gamma(y + 1) + y*gamma(x + 1) + gamma(y + 1))*gamma(x + 1)/y'],
+    // SymPy raises AttributeError ('Float' object has no attribute 'p') in the multiplication theorem;
+    // symjs keeps a Float shift in the argument, and the product is left as it is
+    ['gammasimp', 'gamma(x + 1.5)*gamma(x + 2)', 'gamma(x + 1.5)*gamma(x + 2)'],
+  ];
+  it.each(cases)('%s(%s)', (f, src, want) => {
+    expect(sstr((f === 'combsimp' ? combsimp : gammasimp)(PA(src, I)))).toBe(want);
+  });
+  it('hypersimp and isHypergeometric of factorial(n)', () => {
+    const n = PA('n', I);
+    expect(String(hypersimp(PA('factorial(n)', I), n))).toBe('n + 1');
+    expect(isHypergeometric(PA('factorial(n)', I), n)).toBe(true);
   });
 });

@@ -95,12 +95,44 @@ export function isNonZero(e: Expr): Tri {
   return undefined;
 }
 
+/**
+ * The sign of a sum without symbols, decided numerically as SymPy's
+ * Expr._eval_is_extended_positive_negative does: 1 or -1 for a real value clearly away
+ * from 0, 0 for a value that is clearly not real (neither positive nor negative), and
+ * undefined when the value is too close to 0 relative to its terms (or cannot be computed).
+ */
+function numberSign(e: Add): 1 | -1 | 0 | undefined {
+  if (impl.freeSymbols(e).size > 0) return undefined;
+  let re = 0;
+  let im = 0;
+  let scale = 1;
+  try {
+    for (const a of e.args) {
+      const v = impl.toComplex(a);
+      re += v.re;
+      im += v.im;
+      scale = Math.max(scale, Math.abs(v.re), Math.abs(v.im));
+    }
+  } catch {
+    return undefined;
+  }
+  if (!Number.isFinite(re) || !Number.isFinite(im)) return undefined;
+  const tol = 1e-10 * scale;
+  if (Math.abs(im) > tol) return 0;
+  if (Math.abs(im) > 0 || Math.abs(re) <= tol) return undefined;
+  return re > 0 ? 1 : -1;
+}
+
 export function isPositive(e: Expr): Tri {
   if (e instanceof Rational || e instanceof Float) return e.isPositive;
   if (e instanceof Special) return e.name === 'oo' ? true : e.name === '-oo' ? false : undefined;
   if (e instanceof Constant) return e.name === 'I' ? false : true;
   if (e instanceof Sym) return e.assumptions.positive ? true : e.assumptions.nonpositive ? false : undefined;
-  if (e instanceof Add) return all(e.args, isPositive) ? true : undefined;
+  if (e instanceof Add) {
+    if (all(e.args, isPositive)) return true;
+    const sg = numberSign(e);
+    return sg === undefined ? undefined : sg === 1;
+  }
   if (e instanceof Mul) {
     let neg = 0;
     for (const a of e.args) {
@@ -114,6 +146,8 @@ export function isPositive(e: Expr): Tri {
     const [b, x] = e.args;
     if (isPositive(b) && isReal(x)) return true;
     if (isReal(b) && isNonZero(b) && x instanceof Rational && x.isInteger && x.p % 2n === 0n) return true;
+    // SymPy Pow._eval_is_extended_positive: a negative base to an odd power is negative
+    if (isNegative(b) && x instanceof Rational && x.isInteger) return false;
     return undefined;
   }
   if (e instanceof Fn) {
@@ -127,7 +161,11 @@ export function isNegative(e: Expr): Tri {
   if (e instanceof Special) return e.name === '-oo' ? true : e.name === 'oo' ? false : undefined;
   if (e instanceof Constant) return false;
   if (e instanceof Sym) return e.assumptions.negative ? true : e.assumptions.nonnegative ? false : undefined;
-  if (e instanceof Add) return all(e.args, isNegative) ? true : undefined;
+  if (e instanceof Add) {
+    if (all(e.args, isNegative)) return true;
+    const sg = numberSign(e);
+    return sg === undefined ? undefined : sg === -1;
+  }
   if (e instanceof Mul) {
     let neg = 0;
     for (const a of e.args) {
@@ -136,6 +174,15 @@ export function isNegative(e: Expr): Tri {
       else return undefined;
     }
     return neg % 2 === 1;
+  }
+  if (e instanceof Pow) {
+    // SymPy Pow._eval_is_extended_negative: 1/q < 0 for q < 0, b**x >= 0 for b > 0 and real x
+    const [b, x] = e.args;
+    if (x instanceof Rational && x.p === 1n && x.q === 2n) return false;
+    if (isNegative(b) && x instanceof Rational && x.isInteger) return x.p % 2n !== 0n;
+    if (isPositive(b) && isReal(x)) return false;
+    if (isReal(b) && x instanceof Rational && x.isInteger && x.p % 2n === 0n) return false;
+    return undefined;
   }
   return undefined;
 }

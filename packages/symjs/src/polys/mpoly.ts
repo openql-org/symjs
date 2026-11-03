@@ -15,7 +15,8 @@ import { numMul } from '../core/num';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
 import { add, mul, pow } from '../core/ops';
 import { expandMul as expand } from '../simplify/expand';
-import { polyCoefficients } from './poly';
+import { UPoly, polyCoefficients } from './poly';
+import { xreplace } from '../core/traverse';
 
 const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
 
@@ -173,10 +174,10 @@ export function mfactorList(f0: Expr, vars: readonly Expr[], uniFactor: (e: Expr
   const live = vars.filter((v) => f.has(v));
   const out: [Expr, number][] = [];
   let content: Rational = S.One;
+  // the factors found on different branches are distinct: contents and primitive parts are
+  // coprime, and a square in any variable is split off by the square-free decomposition first
   const push = (g: Expr, k: number) => {
-    const e = out.find(([h]) => h.key === g.key);
-    if (e) e[1] += k;
-    else out.push([g, k]);
+    out.push([g, k]);
   };
   const rec = (pIn: Expr, k: number) => {
     // never a constant: contents and factors taken out keep a variable
@@ -210,6 +211,15 @@ export function mfactorList(f0: Expr, vars: readonly Expr[], uniFactor: (e: Expr
     if (!nc.isOne) {
       content = numMul(content, powRat(nc, k));
       rec(expand(mul(p, pow(nc, -1))), k);
+      return;
+    }
+    // square-free decomposition (Yun) in the first variable of p
+    const sqf = squareFreeParts(p, lv);
+    if (sqf.length > 1 || at(sqf, 0)[1] > 1) {
+      const prod = expand(mul(...sqf.map(([g, i]) => pow(g, i))));
+      const ratio = expectType(divExact(p, prod, lv), (r): r is Rational => r instanceof Rational, 'square-free ratio');
+      content = numMul(content, powRat(ratio, k));
+      for (const [g, i] of sqf) rec(g, k * i);
       return;
     }
     // quadratic in some variable with a square discriminant
@@ -247,6 +257,40 @@ export function mfactorList(f0: Expr, vars: readonly Expr[], uniFactor: (e: Expr
   };
   rec(f, 1);
   return [content, out];
+}
+
+/** Derivative of a polynomial in x. */
+function diffIn(e: Expr, x: Expr): Expr {
+  return add(...[...coeffsIn(e, x)].map(([k, c]) => mul(k, c, pow(x, k - 1))));
+}
+
+/**
+ * Square-free decomposition of a primitive polynomial without a monomial
+ * content (Yun's algorithm in the first variable): [(a_i, i)] with p equal
+ * to prod a_i**i up to a rational factor, each a_i of positive degree in it.
+ */
+function squareFreeParts(p: Expr, vars: readonly Expr[]): [Expr, number][] {
+  const x = defined(vars.find((v) => p.has(v)), 'main variable');
+  // an image at integer values of the other variables of the same degree that is square-free
+  // proves p square-free (a square factor keeps its degree in the image), without the gcd
+  const others = vars.filter((v) => v !== x);
+  const image = defined(UPoly.fromExpr(xreplace(p, others.map((v, i): [Expr, Expr] => [v, Rational.of(2 * i + 3)])), x), 'image');
+  const sqf = image.squareFree();
+  if (image.degree === degreeIn(p, x) && sqf.length === 1 && at(sqf, 0)[1] === 1) return [[p, 1]];
+  const dp = diffIn(p, x);
+  const c = mgcd(p, dp, vars);
+  if (degreeIn(c, x) <= 0) return [[p, 1]];
+  let w = defined(divExact(p, c, vars), 'p / gcd');
+  let y = defined(divExact(dp, c, vars), "p' / gcd");
+  const out: [Expr, number][] = [];
+  for (let i = 1; degreeIn(w, x) > 0; i++) {
+    const z = expand(add(y, mul(-1, diffIn(w, x))));
+    const g = mgcd(w, z, vars);
+    if (degreeIn(g, x) > 0) out.push([g, i]);
+    w = defined(divExact(w, g, vars), 'w / g');
+    y = defined(divExact(z, g, vars), 'z / g');
+  }
+  return out;
 }
 
 /** Square root of a polynomial if it is a perfect square. */

@@ -445,8 +445,31 @@ export function deserialize(tree: Tree): unknown {
       return sj.interval(deserialize(tree['a'] as Tree) as Expr, deserialize(tree['b'] as Tree) as Expr, tree['lo'] as boolean, tree['ro'] as boolean);
     case 'FiniteSet':
       return sj.finiteSet(...(tree['items'] as Tree[]).map((x) => deserialize(x) as Expr));
-    case 'NamedSet':
-      return ({ Reals: sj.Reals, Integers: sj.Integers, Naturals: sj.Naturals, Naturals0: sj.Naturals0, Complexes: sj.Complexes, EmptySet: sj.EmptySet } as Record<string, sj.SetExpr>)[tree['name'] as string];
+    case 'NamedSet': {
+      const named = (sj as unknown as Record<string, unknown>)[tree['name'] as string];
+      if (!(named instanceof sj.SetExpr)) throw new Unsupported(`set ${String(tree['name'])}`);
+      return named;
+    }
+    case 'ImageSet': {
+      const lam = deserialize(tree['lamda'] as Tree);
+      const sets = (tree['sets'] as Tree[]).map((x) => deserialize(x) as sj.SetExpr);
+      if (!(lam instanceof JsLambda) || lam.vars.length !== 1 || sets.length !== 1) throw new Unsupported('ImageSet over several sets');
+      return sj.imageset(lam.vars[0]!, lam.body, sets[0]!);
+    }
+    case 'ConditionSet':
+      return new sj.ConditionSet(deserialize(tree['sym'] as Tree) as Expr, asExpr(deserialize(tree['condition'] as Tree)), deserialize(tree['base'] as Tree) as sj.SetExpr);
+    case 'FourierSeries': {
+      const [f, x, a, b] = (['f', 'x', 'a', 'b'] as const).map((k) => deserialize(tree[k] as Tree) as Expr);
+      return sj.fourierSeries(f!, x as Sym, [a!, b!]);
+    }
+    case 'FormalPowerSeries':
+      return sj.fps(deserialize(tree['f'] as Tree) as Expr, deserialize(tree['x'] as Tree) as Sym, deserialize(tree['x0'] as Tree) as Expr, tree['dir'] as '+' | '-');
+    case 'New': {
+      // a helper object constructed without arguments (MultisetPartitionTraverser)
+      const cls = (sj as unknown as Record<string, unknown>)[tree['cls'] as string];
+      if (typeof cls !== 'function') throw new Unsupported(`class ${String(tree['cls'])}`);
+      return new (cls as new () => unknown)();
+    }
     case 'SetOp': {
       const xs = (tree['args'] as Tree[]).map((x) => deserialize(x) as sj.SetExpr);
       if (tree['op'] === 'Union') return sj.union(...xs);
@@ -490,7 +513,7 @@ export function deserialize(tree: Tree): unknown {
       }
       const f = lib[cls];
       if (typeof f !== 'function') throw new Unsupported(`matrix expression ${cls}`);
-      return f(...args);
+      return f(...args.map(lambdaAsNode));
     }
     case 'Sieve':
       return new sj.Sieve();
@@ -1156,7 +1179,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.mul(...args.map(asExpr));
   },
   Interval: (args, kw) => (noKw(kw), sj.interval(asExpr(args[0]), asExpr(args[1]), Boolean(args[2]), Boolean(args[3]))),
-  FiniteSet: (args, kw) => (noKw(kw), sj.finiteSet(...args.map(asExpr))),
+  // a Python set as an element is a FiniteSet (SymPy sympify)
+  FiniteSet: (args, kw) => (noKw(kw), sj.finiteSet(...args.map((a) => (a instanceof JsSet ? sj.finiteSet(...a.items.map(asExpr)) : asExpr(a))))),
   Union: (args, kw) => (noKw(kw), sj.union(...args.map(asSet))),
   Intersection: (args, kw) => (noKw(kw), sj.intersection(...args.map(asSet))),
   Complement: (args, kw) => (noKw(kw), sj.complement(asSet(args[0]), asSet(args[1]))),
@@ -1167,6 +1191,40 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.intersect': (args, kw, self) => (noKw(kw), sj.intersection(asSet(self), asSet(args[0]))),
   '.union': (args, kw, self) => (noKw(kw), sj.union(asSet(self), asSet(args[0]))),
   '.is_subset': (args, kw, self) => (noKw(kw), none(sj.isSubset(asSet(self), asSet(args[0])))),
+  // SymPy defines these by is_subset and intersect
+  '.is_superset': (args, kw, self) => (noKw(kw), none(sj.isSubset(asSet(args[0]), asSet(self)))),
+  '.is_proper_subset': (args, kw, self) => (noKw(kw), asSet(self).key === asSet(args[0]).key ? false : none(sj.isSubset(asSet(self), asSet(args[0])))),
+  '.is_proper_superset': (args, kw, self) => (noKw(kw), asSet(self).key === asSet(args[0]).key ? false : none(sj.isSubset(asSet(args[0]), asSet(self)))),
+  '.is_disjoint': (args, kw, self) => (noKw(kw), sj.intersection(asSet(self), asSet(args[0])) === sj.EmptySet),
+  // A.complement(U) is Complement(U, A)
+  '.complement': (args, kw, self) => (noKw(kw), sj.complement(asSet(args[0]), asSet(self))),
+  imageset: (args, kw) => {
+    noKw(kw);
+    if (args.length === 3) return sj.imageset(asExpr(args[0]), asExpr(args[1]), asSet(args[2]));
+    if (args.length !== 2) throw new Unsupported('imageset over several sets');
+    const [f, base] = args;
+    if (f instanceof FnClass) {
+      const x = sj.symbol('x');
+      return sj.imageset(x, applyFn(f.name, [x]), asSet(base));
+    }
+    if (!(f instanceof JsLambda) || f.vars.length !== 1) throw new Unsupported('imageset function');
+    // a Python lambda's parameter is a symbol of the same name
+    const v = f.vars[0]!;
+    const x = v instanceof sj.Dummy ? sj.symbol(v.name) : v;
+    return sj.imageset(x, f.call(x), asSet(base));
+  },
+  ConditionSet: (args, kw) => (noKw(kw), new sj.ConditionSet(asExpr(args[0]), asExpr(args[1]), args[2] === undefined ? sj.Complexes : asSet(args[2]))),
+  Contains: (args, kw) => {
+    noKw(kw);
+    // SymPy Contains evaluates to a truth value when membership is decided
+    const v = sj.containsQ(asSet(args[1]), asExpr(args[0]));
+    return typeof v === 'boolean' ? v : new sj.Contains(asExpr(args[0]), asSet(args[1]));
+  },
+  FunctionMatrix: (args, kw) => {
+    noKw(kw);
+    const f = args[2];
+    return sj.FunctionMatrix(asExpr(args[0]), asExpr(args[1]), typeof f === 'string' ? f : (lambdaAsNode(f) as sj.Lambda));
+  },
   '.as_relational': (args, kw, self) => (noKw(kw), sj.asRelational(asSet(self), asExpr(args[0]))),
   solveset: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
@@ -1658,7 +1716,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   cancel: exprFn(sj.cancel),
   trigsimp: (args, kw) => {
     for (const k of Object.keys(kw)) if (!["old", "deep", "method", "compare"].includes(k)) throw new Unsupported(`kwargs ${k}`);
-    return sj.trigsimp(asExpr(args[0]), { old: Boolean(kw["old"]), deep: Boolean(kw["deep"]), method: kw["method"] as string | undefined });
+    return sj.trigsimp(asExpr(args[0]), { old: Boolean(kw["old"]), deep: Boolean(kw["deep"]), method: kw["method"] as sj.TrigsimpOptions["method"] });
   },
   exptrigsimp: exprFn(sj.exptrigsimp),
   besselsimp: exprFn(sj.besselsimp),
@@ -1755,11 +1813,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     const fn = args[1] instanceof JsFunc ? args[1].name : undefined;
     // numbers are compared with the given function, everything else structurally
     const num = (x: Expr, y: Expr): boolean => {
-      if (fn === 'equal_valued') {
-        const rx = x instanceof sj.Float ? sj.nsimplify(x, { rational: true } as never) : x;
-        const ry = y instanceof sj.Float ? sj.nsimplify(y, { rational: true } as never) : y;
-        return rx.key === ry.key;
-      }
+      // SymPy equal_valued compares the exact (binary) values
+      if (fn === 'equal_valued') return sj.equalValued(x, y);
       if (fn === 'math.isclose') {
         const u = x.toComplex().re;
         const v = y.toComplex().re;
@@ -3373,6 +3428,9 @@ export interface Case {
   assume?: Tree[];
 }
 
+// SymPy minpoly is an alias of minimal_polynomial
+ADAPTERS['minpoly'] = ADAPTERS['minimal_polynomial']!;
+
 ADAPTERS['Indexed'] = (args, kw) => {
   noKw(kw);
   const [b, ...ix] = args;
@@ -3579,7 +3637,14 @@ export function runCase(c: Case): Outcome {
       else if (x instanceof Matrix) x.data.forEach(collect);
     };
     [...args, ...Object.values(kwargs), self].forEach(collect);
-    const input = self !== undefined ? fmt(self) : args.length ? fmt(args[0]) : undefined;
+    const fmtOrUndefined = (x: unknown): string | undefined => {
+      try {
+        return fmt(x);
+      } catch {
+        return undefined; // a Lambda or series object has no printed input
+      }
+    };
+    const input = self !== undefined ? fmtOrUndefined(self) : args.length ? fmtOrUndefined(args[0]) : undefined;
     if (equivalent(got, c.expected, [...syms.values()], { fn: c.fn, input })) return { status: 'equivalent', got };
     // dsolve: a solution in another form that satisfies the equations with as many constants (SymPy checkodesol);
     // this also accepts a correct solution where SymPy's printed one is wrong

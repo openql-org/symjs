@@ -12,13 +12,13 @@
 
 import { NotImplementedError } from '../core/errors';
 import type { Expr, FnName } from '../core/nodes';
-import { Add, Constant, Fn, Mul, Pow, Rational, S, Special, Sym } from '../core/nodes';
+import { Add, Constant, Fn, Mul, Pow, Rational, S, Special, Sym, isNum } from '../core/nodes';
 import { numAdd, numCmp, numMul, numNeg } from '../core/num';
 import { add, exp, mul, pow } from '../core/ops';
 import { xreplace as subs } from '../core/traverse';
 import { fn, log } from '../functions/elementary';
 import { expandMul as expand } from '../simplify/expand';
-import { first } from '../core/guard';
+import { first, last } from '../core/guard';
 import { isNegative, isPositive, isReal } from '../core/assumptions';
 
 /** A series that the expansion cannot compute (SymPy raises NotImplementedError or ValueError). */
@@ -33,6 +33,13 @@ const minR = (a: Rational, b: Rational) => (numCmp(a, b) <= 0 ? a : b);
 /** Is a coefficient zero? (exact check after expansion, numeric check for constants) */
 export function isZeroCoeff(c: Expr): boolean {
   if (c instanceof Rational) return c.isZero;
+  // a product is zero when a factor is, a power b**k with k > 0 when b is (without expanding (x + 1)**1000)
+  if (c instanceof Mul) return c.args.some(isZeroCoeff);
+  if (c instanceof Pow && isPositive(c.exp)) return isZeroCoeff(c.base);
+  // (a power with a negative exponent is not zero)
+  if (c instanceof Pow && isNegative(c.exp)) return false;
+  // a sum that is clearly nonzero at a sample point is not expanded
+  if (c instanceof Add && clearlyNonzero(c)) return false;
   const x = expand(c);
   if (x instanceof Rational) return x.isZero;
   // a constant is evaluated; an expression with symbols is evaluated at two complex sample points
@@ -44,6 +51,49 @@ export function isZeroCoeff(c: Expr): boolean {
       const val = subs(x, syms.map((y, j): [Expr, Expr] => [y, add(re + 0.1 * j, mul(im, S.I))])).toComplex();
       return Math.hypot(val.re, val.im) < 1e-12;
     });
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Does c*(1 + u) approach the negative real axis c < 0 from below (the side off the principal
+ * branch of log and of fractional powers)? The first term of u with a non-real coefficient decides.
+ */
+function belowCut(u: PS): boolean {
+  for (const t of u.terms) {
+    if (t.c.freeSymbols().size !== 0) return false;
+    let im: number;
+    try {
+      im = t.c.toComplex().im;
+    } catch {
+      return false;
+    }
+    if (im !== 0) return im > 0;
+  }
+  return false;
+}
+
+/** A constant with a zero imaginary part. */
+function isRealConst(c: Expr): boolean {
+  if (c.freeSymbols().size !== 0) return false;
+  try {
+    return c.toComplex().im === 0;
+  } catch {
+    return false;
+  }
+}
+
+/** Is the sum numerically far from 0 (relative to its terms) at a sample point? */
+function clearlyNonzero(c: Add): boolean {
+  const syms = [...c.freeSymbols()];
+  const point = syms.map((y, j): [Expr, Expr] => [y, add(0.6180339887 + 0.1 * j, mul(-1.3247179572, S.I))]);
+  try {
+    const vals = c.args.map((a) => subs(a, point).toComplex());
+    const sum = vals.reduce((acc, v) => ({ re: acc.re + v.re, im: acc.im + v.im }), { re: 0, im: 0 });
+    const scale = vals.reduce((acc, v) => acc + Math.hypot(v.re, v.im), 0);
+    const m = Math.hypot(sum.re, sum.im);
+    return Number.isFinite(scale) && m > 1e-8 * scale;
   } catch {
     return false;
   }
@@ -104,6 +154,11 @@ export class PS {
     const out: Term[] = [];
     for (const a of this.terms) for (const b of o.terms) out.push({ e: numAdd(a.e, b.e), c: mul(a.c, b.c) });
     return new PS(normalize(out, order), order);
+  }
+
+  /** The series without its terms below exponent e (known to be zero: those before the leading term). */
+  from(e: Rational): PS {
+    return new PS(this.terms.filter((t) => numCmp(t.e, e) >= 0), this.order);
   }
 
   get isExact(): boolean {
@@ -225,7 +280,7 @@ export class Expander {
       const need = numAdd(n, numMul(Rational.of(1n - k.p), e0));
       const s = numCmp(need, sb.order) > 0 ? this.ser(b, need) : sb;
       let r = PS.constant(S.One);
-      for (let i = 0n; i < k.p; i++) r = r.mul(s);
+      for (let i = 0n; i < k.p; i++) r = r.mul(s.from(e0));
       return r.truncate(n);
     }
     // b = c0 t^e0 (1 + u)
@@ -234,7 +289,8 @@ export class Expander {
     const rel = numAdd(n, numNeg(ke0)); // relative precision needed for (1+u)^k
     const need = numAdd(e0, rel);
     const s = numCmp(need, sb.order) > 0 ? this.ser(b, need) : sb;
-    const u = s.scale(pow(c0, -1)).shift(numNeg(e0)).add(PS.constant(S.NegOne)).truncate(rel);
+    // (the terms before the leading one have coefficients that are zero but not written as 0: 1 - cos(a)**2 - sin(a)**2)
+    const u = s.from(e0).scale(pow(c0, -1)).shift(numNeg(e0)).add(PS.constant(S.NegOne)).truncate(rel);
     const d = u.lead()?.e;
     let acc = PS.constant(S.One);
     const infinite = !!(d?.isPositive);
@@ -249,7 +305,9 @@ export class Expander {
       }
     }
     const body = infinite || !u.isExact ? acc.cut(rel) : acc;
-    return body.scale(pow(c0, k)).shift(ke0);
+    // below the cut of a negative base the power is that of the other branch: c0**k*exp(-2*I*pi*k)
+    const c0k = this.belowCutOf(b, c0, e0, u) ? mul(pow(c0, k), pow(S.NegOne, mul(-2, k))) : pow(c0, k);
+    return body.scale(c0k).shift(ke0);
   }
 
   private serExp(g: Expr, n: Rational): PS {
@@ -266,6 +324,8 @@ export class Expander {
   }
 
   private serFn(e: Fn, n: Rational): PS {
+    const asym = this.asymptotic(e, n);
+    if (asym !== undefined) return asym;
     if (e.args.length > 1) {
       // several arguments: expand in the only one that depends on the variable
       const dep = e.args.map((a, i) => [a, i] as const).filter(([a]) => a.has(this.t));
@@ -292,8 +352,10 @@ export class Expander {
         if (!lead) throw new SeriesError('cannot determine leading term');
       }
       const s = numCmp(numAdd(n, lead.e), sg.order) > 0 ? this.ser(g, numAdd(n, lead.e)) : sg;
-      const u = s.scale(pow(lead.c, -1)).shift(numNeg(lead.e)).add(PS.constant(S.NegOne));
-      const head = PS.constant(add(log(lead.c), mul(lead.e, this.L)));
+      const u = s.from(lead.e).scale(pow(lead.c, -1)).shift(numNeg(lead.e)).add(PS.constant(S.NegOne));
+      // below the cut of a negative argument: log(c) - 2*I*pi
+      const lc = this.belowCutOf(g, lead.c, lead.e, u) ? add(log(lead.c), mul(-2, S.Pi, S.I)) : log(lead.c);
+      const head = PS.constant(add(lc, mul(lead.e, this.L)));
       return head.add(this.analytic((w) => log(add(1, w)), S.Zero, u, n));
     }
     const sg = this.ser(g, n.isPositive ? n : S.One);
@@ -337,6 +399,20 @@ export class Expander {
       const up = e.name === 'floor' ? (sign > 0 ? 0 : -1) : sign > 0 ? 1 : 0;
       return PS.constant(add(g0, up));
     }
+    // acoth, asech and acsch at 0 (a branch point on their cut): the value on the side of approach,
+    // given by the sign of the real leading coefficient of the argument (SymPy _eval_nseries)
+    if ((e.name === 'acoth' || e.name === 'asech' || e.name === 'acsch') && isZeroCoeff(g0)) {
+      const lc = this.leading(g).c;
+      const side = isNum(lc) ? (lc.isPositive ? 1 : -1) : 0;
+      if (side === 0) throw new SeriesError(`cannot expand ${e.name}`);
+      const ipi = mul(S.I, S.Pi);
+      if (e.name === 'acoth') return this.ser(add(fn('atanh', [g]), mul(-side, S.Half, ipi)), n);
+      const sq = pow(add(1, mul(e.name === 'asech' ? -1 : 1, pow(g, 2))), S.Half);
+      const main = add(log(add(1, sq)), mul(-1, log(mul(side, g))));
+      // asech(g) = log(2) - log(-g) + I*pi for g < 0; acsch is odd
+      if (e.name === 'asech') return this.ser(side > 0 ? main : add(main, ipi), n);
+      return this.ser(side > 0 ? main : mul(-1, main), n);
+    }
     // gamma has poles at 0, -1, -2, ...: gamma(u) = gamma(u + 1)/u
     if (e.name === 'gamma' && g0 instanceof Rational && g0.isInteger && !g0.isPositive) {
       return this.ser(mul(fn('gamma', [add(g, 1)]), pow(g, -1)), n);
@@ -354,6 +430,36 @@ export class Expander {
     // the derivatives of LambertW at 0 are 0/0 forms: W(h) = sum_{j>=1} (-j)**(j-1)/j! h**j
     if (e.name === 'LambertW' && g0 instanceof Rational && g0.isZero) return this.powerSeries(lambertWCoeff, h, n);
     return this.analytic((w) => fn(e.name, [w]), g0, h, n);
+  }
+
+  /**
+   * Stirling's series of loggamma(g) and the asymptotic series of polygamma(0, g) for an argument
+   * g -> +oo (SymPy loggamma._eval_aseries, polygamma._eval_aseries); undefined for other functions.
+   */
+  private asymptotic(e: Fn, n: Rational): PS | undefined {
+    const digamma = e.name === 'polygamma' && e.args.length === 2 && e.args[0] instanceof Rational && e.args[0].isZero;
+    if (!(e.name === 'loggamma' || digamma)) return undefined;
+    // (the argument depends on t: the first argument of polygamma is 0)
+    const g = last(e.args);
+    const lead = this.leading(g);
+    if (!(lead.e.isNegative && isPositive(lead.c))) return undefined;
+    const d = -lead.e.value;
+    // terms up to z**(1 - 2K) (loggamma) or z**(-2K) (digamma); the rest is O(z**(-2K - 1))
+    const K = Math.max(1, Math.ceil((Math.max(n.value, 1) / d - 1) / 2) + 1);
+    const terms: Expr[] = digamma ? [log(g), mul(Rational.of(-1n, 2n), pow(g, -1))] : [mul(add(g, Rational.of(-1n, 2n)), log(g)), mul(-1, g), mul(S.Half, log(mul(2, S.Pi)))];
+    for (let k = 1; k <= K; k++) {
+      const b = fn('bernoulli', [Rational.of(2 * k)]);
+      terms.push(digamma ? mul(-1, b, pow(mul(2 * k, pow(g, 2 * k)), -1)) : mul(b, pow(mul(2 * k * (2 * k - 1), pow(g, 2 * k - 1)), -1)));
+    }
+    return this.ser(add(...terms), n).cut(Rational.of(BigInt(Math.round((2 * K + 1) * d * 1000)), 1000n));
+  }
+
+  /** belowCut for b = c*t**e*(1 + u), with more terms of u when those known do not decide it. */
+  private belowCutOf(b: Expr, c: Expr, e: Rational, u: PS): boolean {
+    if (!(isNum(c) && c.isNegative)) return false;
+    if (belowCut(u) || u.terms.some((t) => !isRealConst(t.c))) return belowCut(u);
+    const more = this.ser(b, numAdd(e, Rational.of(4n)));
+    return belowCut(more.from(e).scale(pow(c, -1)).shift(numNeg(e)).add(PS.constant(S.NegOne)));
   }
 
   /** f(g0 + h) = sum_j f^(j)(g0)/j! h^j, h with positive exponents only. */

@@ -6,11 +6,11 @@
  */
 
 import { NotImplementedError } from '../core/errors';
-import { at, first } from '../core/guard';
+import { at, first, last } from '../core/guard';
 import { isReal } from '../core/assumptions';
 import { piecewise } from '../core/logic';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, ExtensionExpr, Constant, Derivative, Dummy, Fn, Integral, Mul, Piecewise, Pow, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
+import { Add, ExtensionExpr, Constant, Derivative, Dummy, Fn, Integral, Mul, Order, Piecewise, Pow, S, Sym, UndefFn, impl, isNum } from '../core/nodes';
 import { derivative } from '../core/undef';
 import { SubsNode } from '../core/subsnode';
 import { Concrete } from '../core/concrete';
@@ -24,6 +24,14 @@ import { abs, conjugate, cos, cosh, fn, im as fnIm, log, re as fnRe, sin, sinh, 
  * is d f(args) / d args[i]. special.ts registers entries.
  */
 export const fnPartials: Partial<Record<Fn['name'], (args: readonly Expr[], i: number) => Expr>> = {};
+
+/** Late-bound pieces of higher layers: the reduction of an Order to its leading term (set by series/series.ts). */
+export const diffHooks: { order: (e: Expr, variables: readonly Sym[], point: Expr) => Expr } = { order: orderUnreduced };
+
+/** The Order of e without the reduction to its leading term (when series/series.ts is not loaded). */
+export function orderUnreduced(e: Expr, variables: readonly Sym[], point: Expr): Expr {
+  return new Order(variables.length ? [e, ...variables, point] : [e]);
+}
 
 /** Derivative of f(u) with respect to u, for each known function. */
 const fnDerivative: Partial<Record<Fn['name'], (u: Expr) => Expr>> = {
@@ -108,8 +116,15 @@ function d(e: Expr, x: Expr): Expr {
     // arg(u)' = 0 for a real u
     if (e.name === 'arg' && isReal(u)) return S.Zero;
     const f = fnDerivative[e.name];
-    // no derivative known (floor, ceiling, sign of a complex argument): SymPy keeps Derivative(floor(x), x)
-    if (!f) return derivative(e, [[x, 1]]);
+    // no derivative known (floor, ceiling, sign of a complex argument): SymPy keeps Derivative(floor(x), x);
+    // floor and ceiling of another argument follow the chain rule (x*Subs(Derivative(floor(xi), xi), xi, x*y))
+    if (!f) {
+      if ((e.name === 'floor' || e.name === 'ceiling') && u.key !== x.key) {
+        const xi = new Dummy('xi_1');
+        return mul(new SubsNode([derivative(fn(e.name, [xi]), [[xi, 1]]), xi, u]), du);
+      }
+      return derivative(e, [[x, 1]]);
+    }
     return mul(f(u), du);
   }
   if (e instanceof UndefFn) {
@@ -128,6 +143,14 @@ function d(e: Expr, x: Expr): Expr {
       }
     }
     return add(...terms);
+  }
+  if (e instanceof Order) {
+    // SymPy Order._eval_derivative: O(diff(expr, x), *variables, point), reduced to its leading term
+    const de = d(e.expr, x);
+    if (de.key === S.Zero.key) return S.Zero;
+    const vars = e.args.slice(1, -1).filter((v): v is Sym => v instanceof Sym);
+    const point = e.args.length > 1 ? last(e.args) : S.Zero;
+    return diffHooks.order(de, vars, point);
   }
   if (e instanceof Derivative) {
     if (e.expr instanceof UndefFn && e.expr.args.some((a) => a.key === x.key)) return derivative(e, [[x, 1]], true);

@@ -32,6 +32,7 @@ import type { TransformHints } from './base';
 import { IntegralTransform, addArgs, decide, diffTransforms, matchByName, mget, mulArgs, polyCoeffs, wild, transformArgs } from './base';
 import { at, cast, first, pair } from '../../core/guard';
 import { DiracDelta, Heaviside } from './delta';
+import { meijerintInversion } from '../meijerint';
 
 /** An inverse Laplace transform result: (f, condition). */
 export type InverseLaplacePair = [Expr, Expr];
@@ -606,6 +607,14 @@ function inverseLaplaceRational(fn: Expr, s: Sym, t: Expr, plane: Expr | undefin
  * SymPy _inverse_laplace_transform: the front end that applies the rules
  * recursively to every term.
  */
+/** The inversion integral by SymPy's Meijer G-function integrator (SymPy _inverse_laplace_transform_integration). */
+function inverseLaplaceMeijer(F: Expr, s: Sym, t: Expr): InverseLaplacePair | undefined {
+  const td = new Dummy('t', { real: true });
+  const r = meijerintInversion(F, s, td);
+  // only when the convergence condition is known to hold (the conditions on complex parameters are not decided)
+  return r && r[1].key === S.true.key ? [subs(r[0], [[td, t]]), S.true] : undefined;
+}
+
 export function inverseLaplaceTransformImpl(fn: Expr, s: Sym, t: Expr, plane: Expr | undefined, simplify: boolean, dorational: boolean): InverseLaplacePair {
   const termsT: Expr[] = [];
   const conditions: Expr[] = [];
@@ -617,10 +626,8 @@ export function inverseLaplaceTransformImpl(fn: Expr, s: Sym, t: Expr, plane: Ex
     if (dorational && isRationalFunction(term, [s])) r = inverseLaplaceRational(f, s, t, plane, simplify);
     r ??= inverseLaplaceApplySimpleRules(f, s, t) ?? inverseLaplaceIrrational(f, s, t) ?? inverseLaplaceExpand(f, s, t, plane) ?? inverseLaplaceApplyProgRules(f, s, t, plane);
     // SymPy finally evaluates the inversion integral with Meijer G functions
-    // (_inverse_laplace_transform_integration); symjs has no Meijer G
-    // integrator, so the term stays unevaluated. (A rational function whose
-    // partial fractions form a sum was already handled by the expansion rule.)
-    r ??= [new InverseLaplaceTransform(f, s, t, plane), S.true];
+    // (_inverse_laplace_transform_integration), else the term stays unevaluated
+    r ??= inverseLaplaceMeijer(f, s, t) ?? [new InverseLaplaceTransform(f, s, t, plane), S.true];
     termsT.push(mul(k, r[0]));
     conditions.push(r[1]);
   }

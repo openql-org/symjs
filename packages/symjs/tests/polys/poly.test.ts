@@ -29,8 +29,6 @@ describe('roots', () => {
     expect(roots2('x**2 - a')).toEqual(['-sqrt(a)', 'sqrt(a)']);
     expect(roots2('a*x + b')).toEqual(['-b/a']);
     expect(roots2('3*x**4 - x**2')).toEqual(['-sqrt(3)/3', '0', '0', 'sqrt(3)/3']);
-    // SymPy roots_quartic answers with a Piecewise; not supported here
-    expect(() => roots2('x**4 + a*x + b')).toThrow(sj.NotImplementedError);
     expect(() => sj.roots(E('sin(x)'), x)).toThrow(sj.PolynomialError);
   });
   it('quintics without radicals', () => {
@@ -155,6 +153,93 @@ describe('roots with symbolic coefficients (SymPy roots(f, x))', () => {
     ],
   ])('roots(%s) at a = 2', (f, expected) => {
     expect(show(keys(f).map((r) => sj.evalf(sj.subs(r, [[a, sj.Rational.of(2n)]]), 15)))).toBe(expected);
+  });
+});
+
+describe('roots of symbolic quartics (SymPy roots_quartic)', () => {
+  const items = (f: string) => `[${[...sj.roots(sj.expand(parse(f)), x).entries()].map(([r, k]) => `(${String(r)}, ${k})`).join(', ')}]`;
+  // SymPy roots(f, x).items()
+  it.each([
+    ["x**4 + a*x + 1", "[(-sqrt(2*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3) + 2/(3*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3)))/2 + sqrt(2*a/sqrt(2*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3) + 2/(3*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3))) - 2*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3) - 2/(3*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3)))/2, 1), (-sqrt(2*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3) + 2/(3*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3)))/2 - sqrt(2*a/sqrt(2*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3) + 2/(3*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3))) - 2*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3) - 2/(3*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3)))/2, 1), (sqrt(2*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3) + 2/(3*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3)))/2 + sqrt(-2*a/sqrt(2*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3) + 2/(3*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3))) - 2*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3) - 2/(3*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3)))/2, 1), (sqrt(2*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3) + 2/(3*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3)))/2 - sqrt(-2*a/sqrt(2*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3) + 2/(3*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3))) - 2*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3) - 2/(3*(a**2/16 + sqrt(a**4/256 - 1/27))**(1/3)))/2, 1)]"],
+    ["x**4 + a*x + b", "[(Piecewise((-sqrt(-(-a**2)**(1/3))/2 + sqrt(2*a/sqrt(-(-a**2)**(1/3)) + (-a**2)**(1/3))/2, Eq(b, 0)), (-sqrt(2*b/(3*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) + 2*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3))/2 + sqrt(2*a/sqrt(2*b/(3*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) + 2*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) - 2*b/(3*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) - 2*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3))/2, True)), 1), (Piecewise((-sqrt(-(-a**2)**(1/3))/2 - sqrt(2*a/sqrt(-(-a**2)**(1/3)) + (-a**2)**(1/3))/2, Eq(b, 0)), (-sqrt(2*b/(3*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) + 2*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3))/2 - sqrt(2*a/sqrt(2*b/(3*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) + 2*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) - 2*b/(3*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) - 2*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3))/2, True)), 1), (Piecewise((sqrt(-(-a**2)**(1/3))/2 + sqrt(-2*a/sqrt(-(-a**2)**(1/3)) + (-a**2)**(1/3))/2, Eq(b, 0)), (sqrt(2*b/(3*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) + 2*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3))/2 + sqrt(-2*a/sqrt(2*b/(3*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) + 2*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) - 2*b/(3*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) - 2*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3))/2, True)), 1), (Piecewise((sqrt(-(-a**2)**(1/3))/2 - sqrt(-2*a/sqrt(-(-a**2)**(1/3)) + (-a**2)**(1/3))/2, Eq(b, 0)), (sqrt(2*b/(3*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) + 2*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3))/2 - sqrt(-2*a/sqrt(2*b/(3*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) + 2*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) - 2*b/(3*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3)) - 2*(a**2/16 + sqrt(a**4/256 - b**3/27))**(1/3))/2, True)), 1)]"],
+    ["x**4 + 4*x**3 + (6+b)*x**2 + (5+2*b)*x + b + 2", "[(-1, 1), (b/(sqrt(108*b**3 + 729)/2 + 27/2)**(1/3) - (sqrt(108*b**3 + 729)/2 + 27/2)**(1/3)/3 - 1, 1), (b/((-1/2 + sqrt(3)*I/2)*(sqrt(108*b**3 + 729)/2 + 27/2)**(1/3)) - (-1/2 + sqrt(3)*I/2)*(sqrt(108*b**3 + 729)/2 + 27/2)**(1/3)/3 - 1, 1), (b/((-1/2 - sqrt(3)*I/2)*(sqrt(108*b**3 + 729)/2 + 27/2)**(1/3)) - (-1/2 - sqrt(3)*I/2)*(sqrt(108*b**3 + 729)/2 + 27/2)**(1/3)/3 - 1, 1)]"],
+    ["x**4 + 6*x**2 + a*x - 3", "[(-sqrt(-2*(-a**2/8 - 8)**(1/3) - 4)/2 + sqrt(2*a/sqrt(-2*(-a**2/8 - 8)**(1/3) - 4) + 2*(-a**2/8 - 8)**(1/3) - 8)/2, 1), (-sqrt(-2*(-a**2/8 - 8)**(1/3) - 4)/2 - sqrt(2*a/sqrt(-2*(-a**2/8 - 8)**(1/3) - 4) + 2*(-a**2/8 - 8)**(1/3) - 8)/2, 1), (sqrt(-2*(-a**2/8 - 8)**(1/3) - 4)/2 + sqrt(-2*a/sqrt(-2*(-a**2/8 - 8)**(1/3) - 4) + 2*(-a**2/8 - 8)**(1/3) - 8)/2, 1), (sqrt(-2*(-a**2/8 - 8)**(1/3) - 4)/2 - sqrt(-2*a/sqrt(-2*(-a**2/8 - 8)**(1/3) - 4) + 2*(-a**2/8 - 8)**(1/3) - 8)/2, 1)]"],
+    ["x**4 - 2*x**2 + a*x", "[(-(27*a/2 + sqrt(729*a**2 - 864)/2)**(1/3)/3 - 2/(27*a/2 + sqrt(729*a**2 - 864)/2)**(1/3), 1), (-(-1/2 + sqrt(3)*I/2)*(27*a/2 + sqrt(729*a**2 - 864)/2)**(1/3)/3 - 2/((-1/2 + sqrt(3)*I/2)*(27*a/2 + sqrt(729*a**2 - 864)/2)**(1/3)), 1), (-(-1/2 - sqrt(3)*I/2)*(27*a/2 + sqrt(729*a**2 - 864)/2)**(1/3)/3 - 2/((-1/2 - sqrt(3)*I/2)*(27*a/2 + sqrt(729*a**2 - 864)/2)**(1/3)), 1), (0, 1)]"],
+    ["x**4 + a*x**2 + x + 1", "[(Piecewise((-sqrt(-2*a/3 - 2*(-a**3/108 + a/3 - 1/8)**(1/3))/2 + sqrt(-4*a/3 + 2*(-a**3/108 + a/3 - 1/8)**(1/3) + 2/sqrt(-2*a/3 - 2*(-a**3/108 + a/3 - 1/8)**(1/3)))/2, Eq(a**2, -12)), (-sqrt(-2*a/3 - 2*(-a**2/12 - 1)/(3*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)) + 2*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3))/2 + sqrt(-4*a/3 + 2*(-a**2/12 - 1)/(3*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)) - 2*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3) + 2/sqrt(-2*a/3 - 2*(-a**2/12 - 1)/(3*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)) + 2*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)))/2, True)), 1), (Piecewise((-sqrt(-2*a/3 - 2*(-a**3/108 + a/3 - 1/8)**(1/3))/2 - sqrt(-4*a/3 + 2*(-a**3/108 + a/3 - 1/8)**(1/3) + 2/sqrt(-2*a/3 - 2*(-a**3/108 + a/3 - 1/8)**(1/3)))/2, Eq(a**2, -12)), (-sqrt(-2*a/3 - 2*(-a**2/12 - 1)/(3*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)) + 2*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3))/2 - sqrt(-4*a/3 + 2*(-a**2/12 - 1)/(3*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)) - 2*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3) + 2/sqrt(-2*a/3 - 2*(-a**2/12 - 1)/(3*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)) + 2*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)))/2, True)), 1), (Piecewise((sqrt(-2*a/3 - 2*(-a**3/108 + a/3 - 1/8)**(1/3))/2 + sqrt(-4*a/3 + 2*(-a**3/108 + a/3 - 1/8)**(1/3) - 2/sqrt(-2*a/3 - 2*(-a**3/108 + a/3 - 1/8)**(1/3)))/2, Eq(a**2, -12)), (sqrt(-2*a/3 - 2*(-a**2/12 - 1)/(3*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)) + 2*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3))/2 + sqrt(-4*a/3 + 2*(-a**2/12 - 1)/(3*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)) - 2*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3) - 2/sqrt(-2*a/3 - 2*(-a**2/12 - 1)/(3*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)) + 2*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)))/2, True)), 1), (Piecewise((sqrt(-2*a/3 - 2*(-a**3/108 + a/3 - 1/8)**(1/3))/2 - sqrt(-4*a/3 + 2*(-a**3/108 + a/3 - 1/8)**(1/3) - 2/sqrt(-2*a/3 - 2*(-a**3/108 + a/3 - 1/8)**(1/3)))/2, Eq(a**2, -12)), (sqrt(-2*a/3 - 2*(-a**2/12 - 1)/(3*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)) + 2*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3))/2 - sqrt(-4*a/3 + 2*(-a**2/12 - 1)/(3*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)) - 2*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3) - 2/sqrt(-2*a/3 - 2*(-a**2/12 - 1)/(3*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)) + 2*(a**3/216 - a/6 + sqrt((-a**2/12 - 1)**3/27 + (-a**3/108 + a/3 - 1/8)**2/4) + 1/16)**(1/3)))/2, True)), 1)]"],
+  ])('roots(%s)', (f, expected) => {
+    expect(items(f)).toBe(expected);
+  });
+  // the same roots as SymPy in another order or form (compared at a = 3/2, b = 5/7)
+  const at = (r: sj.Expr) => sj.evalf(sj.subs(r, [[new sj.Sym('a'), sj.Rational.of(3n, 2n)], [new sj.Sym('b'), sj.Rational.of(5n, 7n)]]), 12);
+  const numeric = (f: string) => [...sj.roots(sj.expand(parse(f)), x).keys()].map((r) => String(at(r))).sort();
+  it('the biquadratic shift, the quasisymmetric case and a rational resolvent root', () => {
+    // SymPy: -a - sqrt(-sqrt(-b)), -a + sqrt(-sqrt(-b)), -a - (-b)**(1/4), -a + (-b)**(1/4)
+    expect(numeric('x**4 + 4*a*x**3 + 6*a**2*x**2 + 4*a**3*x + a**4 + b')).toEqual(
+      ['-a - sqrt(-sqrt(-b))', '-a + sqrt(-sqrt(-b))', '-a - (-b)**(1/4)', '-a + (-b)**(1/4)'].map((r) => String(at(parse(r)))).sort(),
+    );
+    // SymPy: -a/4 -+ sqrt((a +- sqrt(a**2 - 4*b + 8))**2/4 - 4)/2 -+ sqrt(a**2 - 4*b + 8)/4
+    const s = 'sqrt(a**2 - 4*b + 8)';
+    expect(numeric('x**4 + a*x**3 + b*x**2 + a*x + 1')).toEqual(
+      [`-a/4 - sqrt((a + ${s})**2/4 - 4)/2 - ${s}/4`, `-a/4 + sqrt((a + ${s})**2/4 - 4)/2 - ${s}/4`, `-a/4 - sqrt((a - ${s})**2/4 - 4)/2 + ${s}/4`, `-a/4 + sqrt((a - ${s})**2/4 - 4)/2 + ${s}/4`]
+        .map((r) => String(at(parse(r))))
+        .sort(),
+    );
+    // SymPy: {1 - a: 1, -a - 1: 1, -a - I: 1, -a + I: 1} (it factors over ZZ[a]; symjs finds the roots by Descartes-Euler)
+    expect(numeric('x**4 + 4*a*x**3 + 6*a**2*x**2 + 4*a**3*x + a**4 - 1')).toEqual(['1 - a', '-a - 1', '-a - I', '-a + I'].map((r) => String(at(parse(r)))).sort());
+    // a rational resolvent root after the shift (SymPy _roots_quartic_euler)
+    expect(items('(x + a)**4 - 64*(x + a)**2/5 - 512*(x + a)/125 - 1024/3125')).toBe(
+      '[(-a - sqrt(32*sqrt(5)/125 + 16/5) + 4*sqrt(5)/5, 1), (-a - 4*sqrt(5)/5 - sqrt(16/5 - 32*sqrt(5)/125), 1), (-a - 4*sqrt(5)/5 + sqrt(16/5 - 32*sqrt(5)/125), 1), (-a + 4*sqrt(5)/5 + sqrt(32*sqrt(5)/125 + 16/5), 1)]',
+    );
+    // SymPy roots(x**4 + x - a, x): Piecewise((..., Eq(a, 0)), (..., True)) for every root
+    expect([...sj.roots(parse('x**4 + x - a'), x).keys()].map((r) => String(at(r)))).toHaveLength(4);
+    expect([...sj.roots(parse('x**4 + x - a'), x).keys()].every((r) => r instanceof sj.Piecewise && String(r.args[1]) === 'Eq(a, 0)')).toBe(true);
+    // roots at -a/4 (cubic) and -a/3 (quadratic) that factor() does not split off; SymPy factors them:
+    // {-a: 1, -a - sqrt(-a**3 + a**2 - 1): 1, -a + sqrt(-a**3 + a**2 - 1): 1}
+    expect(numeric('(t + a)*(t**2 + 2*a*t + a**3 + 1)'.replace(/t/g, 'x'))).toEqual(['-a', '-a - sqrt(-a**3 + a**2 - 1)', '-a + sqrt(-a**3 + a**2 - 1)'].map((r) => String(at(parse(r)))).sort());
+    expect(numeric('(x + a)*(x**3 + 3*a*x**2 + x + a**3 + 1)')).toContain(String(at(parse('-a'))));
+    // a rational resolvent without a rational root: Ferrari's method (SymPy: the same four roots)
+    const s687 = '(1/16 + sqrt(687)*I/144)**(1/3)';
+    const w = `sqrt(2/(3*${s687}) + 2*${s687})`;
+    expect(numeric('(x + a)**4 + (x + a) + 1')).toEqual(
+      [`-a + sqrt(-2*${s687} + 2/${w} - 2/(3*${s687}))/2 - ${w}/2`, `-a - ${w}/2 - sqrt(-2*${s687} + 2/${w} - 2/(3*${s687}))/2`, `-a + sqrt(-2*${s687} - 2/${w} - 2/(3*${s687}))/2 + ${w}/2`, `-a + ${w}/2 - sqrt(-2*${s687} - 2/${w} - 2/(3*${s687}))/2`]
+        .map((r) => String(at(parse(r))))
+        .sort(),
+    );
+    // SymPy roots(x**5 + a*x + 1, x) = {} (no formula)
+    expect(() => sj.roots(parse('x**5 + a*x + 1'), x)).toThrow(sj.NotImplementedError);
+  });
+});
+
+describe('roots over composite and EX coefficient domains (SymPy roots_linear, roots_quadratic)', () => {
+  const [t] = symbols('t');
+  const keys = (e: string, v = t) => show([...sj.roots(parse(e), v).keys()]);
+  it('a linear root is factored over a polynomial ring and simplified over EX', () => {
+    expect(keys('2.0*x*y - 1', x)).toBe('[0.5/y]');
+    expect(keys('x*(exp(y) + 1)**2 - 1', x)).toBe('[(exp(y) + 1)**(-2)]');
+    // gens x and f(x) are related: EX
+    expect(keys('x*t + f(x) - x**2*f(x)**3')).toBe('[x*f(x)**3 - f(x)/x]');
+    expect(keys('t - f(x) - x*f(x)**2')).toBe('[(x*f(x) + 1)*f(x)]');
+    expect(keys('t + 2*x*f(x) - x')).toBe('[x*(1 - 2*f(x))]');
+    expect(keys('t - exp(x - f(x))')).toBe('[exp(x - f(x))]');
+    expect(keys('x*t + Derivative(f(x), x) + f(x)**2')).toBe('[(-f(x)**2 - Derivative(f(x), x))/x]');
+    expect(keys('sqrt(2)*t - y')).toBe('[sqrt(2)*y/2]');
+    expect(keys('t*f(x) - f(x)*sin(x)**2 - f(x)*cos(x)**2')).toBe('[1]');
+    expect(keys('t - x*exp(f(x))')).toBe('[x*exp(f(x))]');
+    expect(keys('t - exp(x)*exp(f(x))')).toBe('[exp(x + f(x))]');
+  });
+  it('a quadratic over EX', () => {
+    // SymPy roots(t**2 - (1 + sqrt(2)), t): {-sqrt(1 + sqrt(2)): 1, sqrt(1 + sqrt(2)): 1}
+    expect(keys('t**2 - 1 - sqrt(2)')).toBe('[-sqrt(1 + sqrt(2)), sqrt(1 + sqrt(2))]');
+    expect(keys('t**2 - 2*f(x)*t + f(x)**2 - x')).toBe('[-sqrt(x) + f(x), sqrt(x) + f(x)]');
+    expect(keys('-t**2 + 2*f(x)*t - x*f(x)')).toBe('[-sqrt((-x + f(x))*f(x)) + f(x), sqrt((-x + f(x))*f(x)) + f(x)]');
+  });
+  it('polynomials that factor are solved factor by factor, the roots at zero last', () => {
+    // SymPy roots(t**2 - (f(1) + 2)*t + 2*f(1), t) = {2: 1, f(1): 1}
+    expect(keys('t**2 - (f(1) + 2)*t + 2*f(1)')).toBe('[2, f(1)]');
+    expect(keys('t**3 + a*t**2 + t')).toBe('[-a/2 - sqrt((a - 2)*(a + 2))/2, -a/2 + sqrt((a - 2)*(a + 2))/2, 0]');
+    expect(keys('t**2 + a*t')).toBe('[-a, 0]');
+    expect(keys('t**2 - a**2')).toBe('[-a, a]');
+    expect(show(sj.roots(sj.expand(parse('(t - a)*(t + a)**2')), t, { multiple: true }))).toBe('[a, -a, -a]');
   });
 });
 

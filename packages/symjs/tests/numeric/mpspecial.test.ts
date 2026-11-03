@@ -9,6 +9,8 @@ import type { Expr } from '../../src';
 import * as C from '../../src/numeric/mpconst';
 import * as F from '../../src/numeric/mpf';
 import { czeta } from '../../src/numeric/mpspecial';
+import type { Mpc } from '../../src/numeric/mpfun';
+import { mpFns } from '../../src/numeric/mpeval';
 import { REF, refForm } from './mpconst.ref';
 
 const ref = (c: string, p: number): [string, number] | undefined => REF[c]?.[p];
@@ -127,5 +129,31 @@ describe('arbitrary-precision special functions (evalf at 30 digits)', () => {
     expect(ev('erfinv(x)', { x: p('I/2') })).toMatch(/^erfinv\(/);
     expect(ev('erfcinv(x)', { x: p('I/2') })).toMatch(/^erfcinv\(/);
     expect(ev('polygamma(x, 2)', { x: p('1/2') })).toMatch(/^polygamma\(/);
+  });
+});
+
+describe('Fresnel integrals of large real arguments (asymptotic expansion) equal mpmath', () => {
+  // [mpmath call, registered name, arguments [re, im], [value at 15 digits, at 50 digits] as [re, im]]
+  const cases: [string, string, [string, string][], [string, string][]][] = [
+    ["fresnels(1000)", "fresnels", [["1000.0", "0.0"]], [["0.499681690113816", "0.0"], ["0.499681690113816306083065531728607342024925390579", "0.0"]]],
+    ["fresnelc(1000)", "fresnelc", [["1000.0", "0.0"]], [["0.499999999898679", "0.0"], ["0.49999999989867881635781621828993981886551740250616", "0.0"]]],
+    ["fresnels(-1000)", "fresnels", [["-1000.0", "0.0"]], [["-0.499681690113816", "0.0"], ["-0.499681690113816306083065531728607342024925390579", "0.0"]]],
+    ["fresnelc(-37.5)", "fresnelc", [["-37.5", "0.0"]], [["-0.496753457732383", "0.0"], ["-0.49675345773238294253053776446579596906780392102012", "0.0"]]],
+    ["fresnels(10**7)", "fresnels", [["10000000.0", "0.0"]], [["0.499999968169011", "0.0"], ["0.49999996816901138162093284622324732646467362610406", "0.0"]]],
+    ["fresnels(12)", "fresnels", [["12.0", "0.0"]], [["0.473474564919935", "0.0"], ["0.4734745649199354479324813182716547539302735073636", "0.0"]]],
+    ["fresnelc(13)", "fresnelc", [["13.0", "0.0"]], [["0.524485115304358", "0.0"], ["0.52448511530435840639837918170252500205066087348172", "0.0"]]],
+    ["fresnels(3)", "fresnels", [["3.0", "0.0"]], [["0.496312998967375", "0.0"], ["0.49631299896737503609761226529911210385646703458324", "0.0"]]],
+    // mpmath at mp.dps = 50 prints ...737971 here, ...738357 (as symjs) at mp.dps = 60 and 80
+    ['fresnelc(10**7+0.25)', 'fresnelc', [['10000000.25', '0.0']], [['0.500000003119982', '0.0'], ['0.50000000311998240023664653021895939682581369738357', '0.0']]],
+  ];
+  it.each(cases)('%s', (_, name, args, want) => {
+    const f = mpFns[name];
+    if (!f) throw new TypeError(name);
+    const got = [15, 50].map((d) => {
+      const p = F.dpsToPrec(d);
+      const r = f(args.map(([a, b]) => [F.fromStr(a, p), F.fromStr(b, p)] as Mpc), p);
+      return [F.toStr(r[0], d), F.toStr(r[1], d)];
+    });
+    expect(got).toEqual(want);
   });
 });

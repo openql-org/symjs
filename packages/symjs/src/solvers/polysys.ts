@@ -8,8 +8,8 @@
 
 import { NotImplementedError } from '../core/errors';
 import type { ExprLike, Sym } from '../core/nodes';
-import { Expr, Rational } from '../core/nodes';
-import { mul, sympify } from '../core/ops';
+import { Dummy, Expr, Pow, Rational, S } from '../core/nodes';
+import { add, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
 import { at, cast, defined, expectType, first, getOrThrow } from '../core/guard';
 import { groebner } from '../polys/groebner';
@@ -203,7 +203,15 @@ function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolea
       .map((z) => [z]);
   }
   // the Gröbner basis is computed over QQ: algebraic coefficients need a triangular system
-  if (system.some(hasIrrational)) return backSubstitute(system, gens, rationalOnly);
+  if (system.some(hasIrrational)) {
+    try {
+      return backSubstitute(system, gens, rationalOnly);
+    } catch (err) {
+      const ext = algebraicExtension(system, gens, rationalOnly);
+      if (!ext) throw err;
+      return ext;
+    }
+  }
   const basis = [...groebner(system, [...gens], 'lex').exprs];
   if (basis.length === 1 && basis[0] instanceof Rational) return [];
   const others = new Set(gens.slice(0, -1).map((g) => g.key));
@@ -225,6 +233,34 @@ function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolea
     for (const s of partial) out.push([...s, z]);
   }
   return out;
+}
+
+/**
+ * A system over QQ(sqrt(n1), ..., I) that is not triangular (SymPy computes its
+ * Gröbner basis over the algebraic field): each square root (and I) becomes a
+ * new last generator a with its minimal polynomial a**2 - n, and the solutions
+ * are those with a at its value. undefined when other irrational numbers occur.
+ */
+function algebraicExtension(system: Expr[], gens: readonly Sym[], rationalOnly: boolean): Expr[][] | undefined {
+  // each algebraic number with its minimal polynomial in a
+  const atoms = new Map<string, [Expr, (a: Expr) => Expr]>();
+  let other = false as boolean; // set inside walk
+  const walk = (e: Expr) => {
+    if (e instanceof Pow && e.base instanceof Rational && e.exp instanceof Rational && e.exp.p === 1n && e.exp.q === 2n) {
+      const n = e.base;
+      atoms.set(e.key, [e, (a) => add(pow(a, 2), mul(-1, n))]);
+    } else if (e.key === S.I.key) atoms.set(e.key, [e, (a) => add(pow(a, 2), 1)]);
+    else if (e.args.length === 0 && e.freeSymbols().size === 0 && !(e instanceof Rational)) other = true;
+    else e.args.forEach(walk);
+  };
+  system.forEach(walk);
+  // pi, E, ...: the Gröbner basis here is over QQ only, without parameters in the coefficients
+  if (other) return undefined;
+  const reps = [...atoms.values()].map(([v], i): [Expr, Dummy] => [v, new Dummy(`a${i}`)]);
+  const minimal = [...atoms.values()].map(([, m], i) => m(at(reps, i)[1]));
+  const ext = [...system.map((e) => expand(xreplace(e, reps))), ...minimal];
+  const sols = solveReduced(ext, [...gens, ...reps.map(([, d]) => d)], rationalOnly);
+  return sols.filter((s) => reps.every(([v], i) => at(s, gens.length + i).key === v.key)).map((s) => s.slice(0, gens.length));
 }
 
 /** Does a polynomial have a coefficient that is a number but not rational (sqrt(2), I, ...)? */

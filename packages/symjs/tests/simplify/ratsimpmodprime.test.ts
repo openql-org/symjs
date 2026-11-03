@@ -8,6 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { diff, parse, ratsimpmodprime, sstr, symbol, symbols } from '../../src';
 import type { Expr } from '../../src';
+import { particularSolution } from '../../src/simplify/ratsimpmodprime';
 
 type Assume = NonNullable<Parameters<typeof symbol>[1]>;
 const PA = (s: string, a: Record<string, Assume> = {}): Expr =>
@@ -69,5 +70,36 @@ describe('ratsimpmodprime (cov2): an ideal that is not prime', () => {
   // SymPy 1.14 raises ValueError('Ideal not prime?')
   it.each(['(x + y)/(x - y)', 'x/(x - y)'])('%s modulo x**2 - y**2', (src) => {
     expect(() => ratsimpmodprime(PA(src), [PA('x**2 - y**2')], [x, y])).toThrow(/ideal not prime/);
+  });
+});
+
+describe('ratsimpmodprime quick=False: the minimal solution search', () => {
+  it('finds the solution with the fewest terms (SymPy trigsimp_groebner test, sin/cos replaced by symbols)', () => {
+    const [a, b, c, d] = symbols('a b c d');
+    const P = (e: string) => parse(e, { symbols: { a, b, c, d } } as never);
+    const ex = P('(4*d*b + 12*d + 5*b**3 + 21*b**2 + 23*b + 15)/(-d*b**2 + 2*d*b + 15*d + 7*b**3 + 31*b**2 + 37*b + 21)');
+    const G = ['a**2 + c**2 - 1', '-d*c - d + a*b', 'd*a + b*c - b', '2*b**2 - c - 1', '2*d*b - a', '2*d**2 + c - 1'].map(P);
+    expect(sstr(ratsimpmodprime(ex, G, [a, b, c, d], { order: 'grlex', quick: false }))).toBe('(-5*b + 5*d + 1)/(-6*b + 8*d)');
+    expect(sstr(ratsimpmodprime(ex, G, [a, b, c, d], { order: 'grlex' }))).toBe('(12*b + 5*c + 8*d + 15)/(-a + 20*b + 7*c + 10*d + 21)');
+  });
+  it('agrees with the quick search where that is already minimal', () => {
+    const cases: [string, string][] = [
+      ['(x**4 + y**3 + x)/(x**2*y + x + y)', '(x + y**4 + y**3 - 2*y**2 + 1)/(x - y**3 + 2*y)'],
+      ['(x**3 + 2*x*y + 1)/(x**2 + y + 2)', '(-x*y**2 + 2*x*y + x + 1)/(-y**2 + y + 3)'],
+    ];
+    for (const [e, r] of cases) expect(sstr(ratsimpmodprime(PA(e), [PA('x**2 + y**2 - 1')], [x, y], { order: 'grlex', quick: false }))).toBe(r);
+  });
+});
+
+describe('minsolve_linear_system', () => {
+  it('quick=False tries the subsets of fewer nonzero variables (SymPy minsolve_linear_system)', () => {
+    const vs = symbols('a b c d e');
+    const P = (e: string) => parse(e, { symbols: Object.fromEntries(vs.map((v) => [v.name, v])) } as never);
+    const eqs = [P('-b + 2*c'), P('2*b - c + d - e')];
+    // SymPy: {e: 0, d: 1, b: -2/3, c: -1/3} and {d: 1, a: 0, b: 0, c: 0, e: 1}
+    // (the solution is keyed by the variables' keys)
+    const byName = (m: Map<string, Expr>) => new Map([...m].map(([k, v]) => [vs.find((u) => u.key === k)?.name, v]));
+    expect(showMap(byName(particularSolution(eqs, vs, true)))).toBe('{b: -2/3, c: -1/3, d: 1, e: 0}');
+    expect(showMap(byName(particularSolution(eqs, vs, false)))).toBe('{a: 0, b: 0, c: 0, d: 1, e: 1}');
   });
 });

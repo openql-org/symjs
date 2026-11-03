@@ -6,13 +6,18 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Dummy, Float, Pow, Rational, S } from '../core/nodes';
-import { add, exp, mul, pow, sympify } from '../core/ops';
+import { Add, Dummy, Float, Mul, Pow, Rational, S, Special } from '../core/nodes';
+import { add, mul, pow, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
 import { evalf } from './evalf';
 import { float } from './floatctor';
-import { pair } from '../core/guard';
+import { at, pair } from '../core/guard';
 import * as F from './mpf';
+import type { Mpf } from './mpf';
+import { ONE } from './mpf';
+import * as M from './mpfun';
+import { identify, pslq } from './identification';
+import { parse } from '../parsing/parser';
 import { limitDenominator } from '../core/numberutils';
 
 /** Make all rationals Floats, keeping exponents exact unless exponent=true. */
@@ -89,151 +94,134 @@ function floats(e: Expr): Float[] {
 
 
 /**
- * @internal Simplest rational within a relative tolerance of v (continued
- * fractions), or undefined when none of the first 40 convergents of the
- * double is within it.
+ * Find a simple closed form of a number (SymPy nsimplify): the value at 30
+ * digits is identified by mpmath's identify (PSLQ) with the given constants;
+ * with free symbols or `rational: true` the Floats are replaced by
+ * Rationals. Ported from SymPy 1.14 simplify/simplify.py.
  */
-export function simpleRational(v: number, rtol: number): Rational | undefined {
-  if (!Number.isFinite(v)) return undefined;
-  const sign = v < 0 ? -1n : 1n;
-  let x = Math.abs(v);
-  let [h0, h1, k0, k1] = [0n, 1n, 1n, 0n];
-  for (let i = 0; i < 40; i++) {
-    const a = Math.floor(x);
-    const A = BigInt(a);
-    [h0, h1] = [h1, A * h1 + h0];
-    [k0, k1] = [k1, A * k1 + k0];
-    const approx = Number(h1) / Number(k1);
-    // a nonzero value never becomes 0
-    if (h1 !== 0n || v === 0) if (Math.abs(approx - Math.abs(v)) <= rtol * Math.max(1, Math.abs(v))) return Rational.of(sign * h1, k1);
-    const frac = x - a;
-    if (frac < 1e-300) break;
-    x = 1 / frac;
+export function nsimplify(
+  exIn: ExprLike,
+  opts: {
+    /** Closed-form constants to try (SymPy `constants`), e.g. [pi, E]. */
+    constants?: readonly ExprLike[];
+    /** Accepted error; defaults to the least precision of the Floats (10**-15 for 15 digits). */
+    tolerance?: number;
+    /** A more extensive search (SymPy `full`). */
+    full?: boolean;
+    /** true: only replace Floats by Rationals; false: never fall back to Rationals; unset: SymPy None. */
+    rational?: boolean;
+    /** 'base10' (default): Floats from their decimal string; 'exact': their binary value. */
+    rationalConversion?: 'base10' | 'exact';
+  } = {},
+): Expr {
+  const e = sympify(exIn);
+  if (e instanceof Rational && e.isInteger) return e;
+  const conversion = opts.rationalConversion ?? 'base10';
+  const { rational, full = false } = opts;
+  if (rational === true || e.freeSymbols().size > 0) return realToRational(e, opts.tolerance, conversion);
+  // the least precision of the Floats sets the tolerance (Floats of 15 digits: 10**-15)
+  const tolerance = opts.tolerance ?? Number(`1e-${Math.min(15, ...floats(e).map((f) => F.precToDps(f.prec)))}`);
+  const prec = 30;
+  const wp = F.dpsToPrec(prec); // mpmath mp.dps = 30
+  const bprec = Math.trunc(prec * 3.33);
+  const constants: [Mpf, string][] = [];
+  for (const cIn of opts.constants ?? []) {
+    const c = sympify(cIn);
+    const v = evalf(c, prec);
+    if (!(v instanceof Float)) throw new TypeError('constants must be real-valued');
+    constants.push([F.round(v.mpf, bprec), c.toString()]);
+  }
+  constants.sort((a, b) => (a[1] < b[1] ? -1 : a[1] > b[1] ? 1 : 0));
+  const parts = realImag(evalf(e, prec, { chop: true }));
+  // not a number (an undefined function, ...)
+  if (parts === undefined) return e;
+  const simplifyReal = (x: Float): Expr | undefined => {
+    const xv = F.round(x.mpf, bprec);
+    if (tolerance === 0 && !full) {
+      // happy with a simple fraction at low precision
+      const rat = pslq([xv, ONE], 53);
+      if (rat) return Rational.of(-at(rat, 1), at(rat, 0));
+    }
+    const found = identify(xv, constants, wp, { tol: F.fromNumber(tolerance), full });
+    const s = found?.[0];
+    if (s === undefined) return undefined;
+    const r = parse(s);
+    // don't let x become 0 (or infinite, as 1/log(1) for a huge x)
+    if ((r instanceof Rational && r.isZero) || (r instanceof Special && r.isInfinite)) return undefined;
+    return r;
+  };
+  const [re, im] = parts.map((x) => (x instanceof Float ? simplifyReal(x) : x));
+  if (re === undefined || im === undefined) return rational === undefined ? realToRational(e, undefined, conversion) : e;
+  const rv = add(re, mul(im, S.I));
+  if (rv.key !== e.key || rational === false) return rv;
+  return realToRational(e, undefined, conversion);
+}
+
+/** [re, im] of an evaluated number as Floats or zeros, or undefined when it is not a finite number. */
+function realImag(v: Expr): [Float | Rational, Float | Rational] | undefined {
+  const num = (x: Expr | undefined): x is Float | Rational => x instanceof Float || x instanceof Rational;
+  const imag = (x: Expr): Float | Rational | undefined => {
+    const c = x.args[0];
+    if (!(x instanceof Mul) || x.args.length !== 2 || x.args[1] !== S.I || !num(c)) return undefined;
+    return c;
+  };
+  if (num(v)) return [v, S.Zero];
+  const iv = imag(v);
+  if (iv) return [S.Zero, iv];
+  if (v instanceof Add && v.args.length === 2) {
+    const [a, b] = pair(v.args);
+    const ib = imag(b);
+    if (num(a) && ib) return [a, ib];
   }
   return undefined;
 }
 
 /**
- * Replace Floats by simple rationals (the rational part of SymPy nsimplify):
- * `tolerance` bounds the error, `rational: true` with `rationalConversion:
- * 'exact'` uses the exact binary value.
+ * Replace the Floats of e by Rationals (SymPy _real_to_rational): within the
+ * tolerance, from the exact binary value, or from the decimal string.
  */
-export function nsimplify(
-  exIn: ExprLike,
-  opts: { tolerance?: number; rational?: boolean; rationalConversion?: 'base10' | 'exact'; constants?: readonly ExprLike[] } = {},
-): Expr {
-  const e = sympify(exIn);
-  if (!opts.rational && opts.tolerance === undefined && e.freeSymbols().size === 0 && !(e instanceof Rational) && !hasFloat(e)) {
-    // an exact number: identified from its value (SymPy uses mpmath.identify)
-    const r = identifyNumber(e, (opts.constants ?? []).map((c) => sympify(c)));
-    if (r) return r;
-  }
-  const conv = (f: Float): Expr => {
-    if (opts.rationalConversion === 'exact') {
-      const [p, q] = F.toRational(f.mpf);
-      return Rational.of(p, q);
+function realToRational(e: Expr, tolerance: number | undefined, conversion: 'base10' | 'exact'): Expr {
+  const reduceNum = tolerance !== undefined && tolerance < 1 ? BigInt(Math.ceil(1 / tolerance)) : undefined;
+  const reps: [Expr, Expr][] = [];
+  for (const fl of floats(e)) {
+    if (reps.some(([k]) => k.key === fl.key)) continue;
+    const exact = (): Rational => Rational.of(...F.toRational(fl.mpf));
+    let r: Expr;
+    if (reduceNum !== undefined) r = limitDenominator(exact(), reduceNum);
+    else if (tolerance !== undefined && tolerance >= 1 && !isIntegral(fl)) {
+      // tolerance*round(fl/tolerance), rounded half to even like SymPy Float.__round__
+      const q = F.div(fl.mpf, F.fromNumber(tolerance), fl.prec);
+      const k = roundHalfEven(q);
+      const v = Number.isInteger(tolerance) ? Rational.of(BigInt(tolerance) * k) : Rational.of(...F.toRational(F.mul(F.fromNumber(tolerance), F.fromInt(k), fl.prec)));
+      r = limitDenominator(v, BigInt(Math.trunc(tolerance)));
+    } else if (conversion === 'exact') r = exact();
+    else {
+      r = nsimplify(fl, { rational: false });
+      if (!fl.isZero && r instanceof Rational && r.isZero) r = exact();
+      else if (!(r instanceof Rational)) r = decimalRational(fl);
     }
-    if (opts.tolerance !== undefined && opts.tolerance < 1) {
-      const lim = BigInt(Math.ceil(1 / opts.tolerance));
-      return limitDenominatorR(f, lim);
-    }
-    return simpleRationalOr(f.value, 1e-14, f);
-  };
-  // a lone Float with a tolerance is identified like any number (SymPy mpmath.identify)
-  if (e instanceof Float && (opts.rational || opts.tolerance === undefined)) return conv(e);
-  if (!opts.rational && e.freeSymbols().size === 0 && !(e instanceof Rational) && opts.tolerance !== undefined) {
-    // rational approximation of a constant, e.g. nsimplify(pi, tolerance=0.01) = 22/7
-    // the simplest fraction within the tolerance (continued-fraction convergents)
-    return simpleRationalOr(e.toNumber(), opts.tolerance, e);
+    reps.push([fl, r]);
   }
-  const go = (x: Expr): Expr => {
-    if (x instanceof Float) return conv(x);
-    if (x.args.length === 0) return x;
-    const args = x.args.map(go);
-    return args.every((a, i) => a === x.args[i]) ? x : rebuild(x, args);
-  };
-  return go(e);
+  return reps.length ? xreplace(e, reps) : e;
 }
 
-/** simpleRational(v, rtol), or the expression otherwise when there is none. */
-const simpleRationalOr = (v: number, rtol: number, otherwise: Expr): Expr => simpleRational(v, rtol) ?? otherwise;
+const isIntegral = (f: Float): boolean => f.mpf.exp >= 0 || f.mpf.man === 0n;
 
-const hasFloat = (e: Expr): boolean => e instanceof Float || e.args.some(hasFloat);
+function roundHalfEven(x: Mpf): bigint {
+  const fl = F.floor(x);
+  const d = F.sub(x, F.fromInt(fl));
+  const c = F.cmp(d, { man: 1n, exp: -1 });
+  return c > 0 || (c === 0 && (fl & 1n) === 1n) ? fl + 1n : fl;
+}
 
-/** The value of an exact number as a closed form (real and imaginary parts identified separately). */
-function identifyNumber(e: Expr, constants: readonly Expr[]): Expr | undefined {
-  let v: { re: number; im: number };
-  try {
-    v = evalf(e, 30).toComplex();
-  } catch {
-    return undefined;
-  }
-  if (!Number.isFinite(v.re) || !Number.isFinite(v.im)) return undefined;
-  const cs = constants.map((c) => [c, c.toNumber()] as [Expr, number]);
-  const part = (x: number): Expr | undefined => (Math.abs(x) < 1e-14 ? Rational.of(0n) : identifyReal(x, cs));
-  const re = part(v.re);
-  const im = part(v.im);
-  if (!re || !im) return undefined;
-  const r = add(re, mul(im, S.I));
+/** Rational(str(fl/d))*d with d = 10**int(log10|fl|) (the base-10 branch of SymPy _real_to_rational). */
+function decimalRational(fl: Float): Rational {
+  const a = F.abs(fl.mpf);
+  const k = Math.trunc(F.toNumber(F.div(M.log(a, 53), M.log(F.fromInt(10n), 53), 53)));
+  const d = k >= 0 ? Rational.of(10n ** BigInt(k)) : Rational.of(1n, 10n ** BigInt(-k));
+  const scaled = F.div(a, F.fromRational(d.p, d.q, fl.prec), fl.prec);
+  const s = F.floatToString(scaled, fl.prec, false);
+  const [int = '', frac = ''] = s.split('.');
+  const r = Rational.of(BigInt(int + frac) * (fl.mpf.man < 0n ? -1n : 1n) * d.p, 10n ** BigInt(frac.length) * d.q);
   return r;
 }
-
-/** Closed form of a real number: rational, linear in a constant, or a quadratic irrational, also after x**2, 1/x and log(x). */
-function identifyReal(x: number, cs: readonly [Expr, number][]): Expr | undefined {
-  const tol = (t: number) => 1e-11 * Math.max(1, Math.abs(t));
-  const rational = (t: number): Expr | undefined => {
-    const r = simpleRational(t, 1e-13);
-    return r && r.q <= 10000n && Math.abs(Number(r.p)) <= 1e8 ? r : undefined;
-  };
-  const linear = (t: number): Expr | undefined => {
-    for (const [C, c] of cs) {
-      for (let d = 1; d <= 60; d++) {
-        for (let b = -60; b <= 60; b++) {
-          if (b === 0) continue;
-          const a = d * t - b * c;
-          if (Math.abs(a - Math.round(a)) < tol(d * t) && Math.abs(a) < 1e6) return mul(add(Math.round(a), mul(b, C)), Rational.of(1, d));
-        }
-      }
-    }
-    return undefined;
-  };
-  const quadratic = (t: number): Expr | undefined => {
-    for (let a = 1; a <= 100; a++) {
-      for (let b = -200; b <= 200; b++) {
-        const c = -(a * t * t + b * t);
-        const cr = Math.round(c);
-        if (Math.abs(c - cr) >= tol(a * t * t) || Math.abs(cr) > 10000) continue;
-        const disc = b * b - 4 * a * cr;
-        if (disc <= 0) continue;
-        const sq = Math.sqrt(disc);
-        const plus = (-b + sq) / (2 * a);
-        const sign = Math.abs(plus - t) < Math.abs((-b - sq) / (2 * a) - t) ? 1 : -1;
-        // a square discriminant: t is the rational root nearer to it (SymPy finds it too)
-        if (Number.isInteger(sq)) return Rational.of(BigInt(-b + sign * sq), BigInt(2 * a));
-        return mul(add(-b, mul(sign, pow(Rational.of(BigInt(disc)), S.Half))), Rational.of(1, 2 * a));
-      }
-    }
-    return undefined;
-  };
-  const direct = (t: number) => rational(t) ?? linear(t) ?? quadratic(t);
-  const d = direct(x);
-  if (d) return d;
-  // x**2
-  const sq = direct(x * x);
-  if (sq) return mul(Math.sign(x), pow(sq, S.Half));
-  // 1/x
-  const inv = direct(1 / x);
-  if (inv) return pow(inv, -1);
-  // log(x) in terms of the constants
-  if (x > 0 && cs.length) {
-    const l = linear(Math.log(x));
-    if (l) return exp(l);
-  }
-  return undefined;
-}
-
-function limitDenominatorR(f: Float, lim: bigint): Rational {
-  const [p, q] = F.toRational(f.mpf);
-  return limitDenominator(Rational.of(p, q), lim);
-}
-

@@ -7,7 +7,7 @@
 // values are SymPy 1.14 results.
 
 import { describe, expect, it } from 'vitest';
-import { type Expr, I, Matrix, mul, MutableMatrix, pi, Rational, sqrt, symbols } from '../../src';
+import { type Expr, I, Matrix, mul, MutableMatrix, NonInvertibleMatrixError, NonSquareMatrixError, pi, Rational, sqrt, symbols } from '../../src';
 import { inspect } from 'node:util';
 
 const [a, b, c, d] = symbols('a b c d');
@@ -29,7 +29,8 @@ describe('Matrix', () => {
     const m = Matrix.of([[2, 0, 1], [1, 3, 2], [1, 1, 2]]);
     expect(m.det().toString()).toBe('6');
     expect(Matrix.of([[a, b, 0], [c, d, 0], [0, 0, 1]]).det().toString()).toBe('a*d - b*c');
-    expect(() => Matrix.of([[1, 2], [2, 4]]).inv()).toThrow(/singular/);
+    // SymPy: NonInvertibleMatrixError('Matrix det == 0; not invertible.')
+    expect(() => Matrix.of([[1, 2], [2, 4]]).inv()).toThrow(NonInvertibleMatrixError);
     expect(m.mul(m.inv()).equals(Matrix.eye(3))).toBe(true);
   });
 
@@ -105,11 +106,11 @@ describe('linear algebra', () => {
   it('square-matrix errors', () => {
     const r = Matrix.row(1, 2, 3);
     // SymPy: NonSquareMatrixError for each
-    expect(() => r.trace()).toThrow(RangeError);
-    expect(() => r.det()).toThrow(RangeError);
-    expect(() => r.adjugate()).toThrow(RangeError);
-    expect(() => r.inv()).toThrow(RangeError);
-    expect(() => r.charpolyCoeffs()).toThrow(RangeError);
+    expect(() => r.trace()).toThrow(NonSquareMatrixError);
+    expect(() => r.det()).toThrow(NonSquareMatrixError);
+    expect(() => r.adjugate()).toThrow(NonSquareMatrixError);
+    expect(() => r.inv()).toThrow(NonSquareMatrixError);
+    expect(() => r.charpolyCoeffs()).toThrow(NonSquareMatrixError);
   });
 
   it('small and empty matrices', () => {

@@ -130,6 +130,15 @@ function abMul(abs: readonly Expr[], c: Expr): Expr {
 
 /** An interval raised to a number. */
 function abPow(a: AccumBoundsNode, e: Expr): Expr {
+  // SymPy AccumBounds.__pow__: [a, b]**-oo = (1/[a, b])**oo
+  if (e === S.NegativeInfinity) return pow(abPow(a, S.NegOne), S.Infinity);
+  if (e === S.Infinity) {
+    const [lo, hi] = [val(a.min), val(a.max)];
+    if (lo >= 0) return hi < 1 ? S.Zero : lo > 1 ? S.Infinity : accumBounds(S.Zero, S.Infinity);
+    if (hi < 0) return lo > -1 ? S.Zero : hi < -1 ? S.ComplexInfinity : S.NaN;
+    if (lo > -1) return hi < 1 ? S.Zero : accumBounds(S.Zero, S.Infinity);
+    return accumBounds(S.NegativeInfinity, S.Infinity);
+  }
   const v = val(e);
   if (e instanceof Rational && e.q === 1n) {
     const n = e.p;
@@ -141,7 +150,16 @@ function abPow(a: AccumBoundsNode, e: Expr): Expr {
       return accumBounds(S.Zero, maxOf([p(a.min), p(a.max)]));
     }
     // negative powers: 1/[a, b] (an interval, as 1/b < 1/a when 0 is outside, else (-oo, oo))
-    const inv = val(a.min) > 0 || val(a.max) < 0 ? accumBounds(pow(a.max, -1), pow(a.min, -1)) : accumBounds(S.NegativeInfinity, S.Infinity);
+    // with 0 as an end point: 1/[0, b] = [1/b, oo], 1/[a, 0] = [-oo, 1/a]
+    const [lo, hi] = [val(a.min), val(a.max)];
+    const inv =
+      lo > 0 || hi < 0
+        ? accumBounds(pow(a.max, -1), pow(a.min, -1))
+        : lo === 0 && hi > 0
+          ? accumBounds(pow(a.max, -1), S.Infinity)
+          : hi === 0 && lo < 0
+            ? accumBounds(S.NegativeInfinity, pow(a.min, -1))
+            : accumBounds(S.NegativeInfinity, S.Infinity);
     return n === -1n ? inv : abPow(asAB(inv), Rational.of(-n));
   }
   // a fractional power of a nonnegative interval is monotone; 0**e = oo for e < 0

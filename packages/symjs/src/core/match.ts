@@ -583,4 +583,5 @@ export function countOpsVisual(exprIn: ExprLike): Expr {
   return add(...terms);
 }
 impl.ordered = ordered;
+impl.compareSortKey = (a, b) => compareKeys(sortKey(a), sortKey(b));
 impl.match = (e, pattern) => match(e, pattern);

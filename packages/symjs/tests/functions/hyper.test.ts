@@ -239,3 +239,30 @@ describe('KroneckerDelta', () => {
     expect(String(KroneckerDelta(1, new Float(1)))).toBe('1');
   });
 });
+
+describe('meijerg accessors (SymPy an, aother, bm, bother, nu, delta, get_period)', () => {
+  it('parameters and invariants', () => {
+    const [a, b, zz] = [new Sym('a'), new Sym('b'), new Sym('z')];
+    const g = sj.meijerg([a], [1], [b, 2], [], zz);
+    if (!(g instanceof sj.MeijerG)) throw new TypeError('meijerg');
+    expect([g.an, g.aother, g.bm, g.bother, g.ap, g.bq].map((l) => l.map(String).join(','))).toEqual(['a', '1', 'b,2', '', 'a,1', 'b,2']);
+    expect(String(g.argument)).toBe('z');
+    expect(String(g.nu)).toBe('-a + b + 1');
+    expect(String(g.delta)).toBe('1');
+    // SymPy get_period: oo for parameters that are not rational
+    expect(String(g.getPeriod())).toBe('oo');
+  });
+  it('get_period', () => {
+    const G = (an: sj.ExprLike[], ap: sj.ExprLike[], bm: sj.ExprLike[], bq: sj.ExprLike[]) => {
+      const g = sj.meijerg(an, ap, bm, bq, x);
+      if (!(g instanceof sj.MeijerG)) throw new TypeError('meijerg');
+      return String(g.getPeriod());
+    };
+    expect(G([], [], [0], [])).toBe('2*pi');
+    expect(G([], [], [sj.Rational.of(1n, 2n)], [0])).toBe('4*pi');
+    expect(G([0], [], [1], [])).toBe('2*pi');
+    expect(G([1, 2], [], [], [])).toBe('oo');
+    expect(G([sj.Rational.of(1n, 3n)], [], [], [])).toBe('6*pi');
+    expect(G([], [], [0, 1], [])).toBe('oo');
+  });
+});

@@ -86,3 +86,14 @@ describe('results that differ from SymPy 1.14', () => {
     expect(run(f)).toBe(expected);
   });
 });
+
+describe('dir when the leading term of a derivative is not found', () => {
+  it('takes the limit of the derivative', () => {
+    // the derivative is zoo at 0 and gamma(1/x) has an essential singularity there, so the leading term
+    // is not found and the limit is taken. Deliberate difference: SymPy evaluates gamma(1/x) at x = 0 and
+    // returns zoo*gamma(zoo)*polygamma(0, zoo) + zoo*gamma(zoo) (and zoo*gamma(zoo)*polygamma(0, zoo) + zoo),
+    // which is not a direction; the derivatives tend to oo (and -oo) as x -> 0+
+    expect(sj.dir(P('log(x)*gamma(1/x)'), x, 1).toString()).toBe('oo');
+    expect(sj.dir(P('1/x + gamma(1/x)'), x, 1).toString()).toBe('-oo');
+  });
+});

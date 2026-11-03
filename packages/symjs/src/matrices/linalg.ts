@@ -8,11 +8,14 @@
  * values, pseudo-inverse, matrix exponential and structural helpers.
  */
 
-import { at, first, last } from '../core/guard';
-import { isReal } from '../core/assumptions';
-import { MatrixError, NonInvertibleMatrixError, NonSquareMatrixError, NotImplementedError } from '../core/errors';
+import { at, defined, expectType, first, last } from '../core/guard';
+import { UPoly } from '../polys/poly';
+import { isPositive, isReal } from '../core/assumptions';
+import { MatrixError, NonInvertibleMatrixError, NonPositiveDefiniteMatrixError, NonSquareMatrixError } from '../core/errors';
 import type { ExprLike } from '../core/nodes';
-import { Dummy, Expr, Rational, S, Special, Sym, impl } from '../core/nodes';
+import { Dummy, Expr, Float, Rational, S, Special, Sym, impl } from '../core/nodes';
+import { nsimplify } from '../numeric/nfloat';
+import { precToDps } from '../numeric/mpf';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { diff } from '../calculus/diff';
 import { abs, conjugate, cos, log, sin } from '../functions/elementary';
@@ -167,9 +170,90 @@ function eigenvalueMultiplicities(m: Matrix): [Expr, number][] {
 
 /** [(eigenvalue, algebraic multiplicity, basis of the eigenspace)] */
 export function eigenvects(m: Matrix): [Expr, number, Matrix[]][] {
+  const fields = rationalEigenspaces(m);
   return eigenvalueMultiplicities(m).map(([v, k]) => {
+    // an eigenvalue that is a root of an irreducible factor of degree >= 3 of the characteristic
+    // polynomial: the eigenspace over Q[t]/(f) at t = v (SymPy eigenvects over QQ<theta>)
+    const field = fields.find(([f]) => isRootOf(f, v));
+    if (field) return [v, k, field[1].map((vec) => Matrix.col(...vec.map((c) => expandMul(c.toExpr(v)))))];
     const shifted = m.sub(Matrix.eye(m.rows).scale(v));
     return [v, k, nullspace(shifted)];
+  });
+}
+
+const isRat = (e: unknown): e is Rational => e instanceof Rational;
+
+/** Whether v is (numerically) a root of f. */
+function isRootOf(f: UPoly, v: Expr): boolean {
+  // (the eigenvalues of a rational matrix are numbers)
+  const z = f.toExpr(v).toComplex();
+  return Math.hypot(z.re, z.im) < 1e-8;
+}
+
+/**
+ * For a rational matrix, the irreducible factors f of degree >= 3 of the
+ * characteristic polynomial with a basis of the null space of A - t*I over the
+ * field Q[t]/(f): exact elimination with the eigenvalue as an algebraic number,
+ * where the radical expressions of the roots of a cubic defeat the zero tests.
+ */
+function rationalEigenspaces(m: Matrix): [UPoly, UPoly[][]][] {
+  if (!m.isSquare || !m.data.every((e) => e instanceof Rational)) return [];
+  const cs = m.charpolyCoeffs().map((c) => expectType(c, isRat, 'characteristic polynomial coefficient')).reverse();
+  return new UPoly(cs).factor().factors.filter(([f]) => f.degree >= 3).map(([f]) => [f, fieldNullspace(m, f)]);
+}
+
+/** Q[t]/(f) for an irreducible f: reduction and inverses (extended Euclid). */
+function fieldOps(f: UPoly): { red: (a: UPoly) => UPoly; inv: (a: UPoly) => UPoly } {
+  const red = (a: UPoly): UPoly => a.divmod(f)[1];
+  const inv = (a: UPoly): UPoly => {
+    let [r0, r1] = [f, a];
+    let [s0, s1] = [new UPoly([]), new UPoly([S.One])];
+    while (!r1.isZero) {
+      const [q, r] = r0.divmod(r1);
+      [r0, r1] = [r1, r];
+      [s0, s1] = [s1, s0.sub(q.mul(s1))];
+    }
+    // r0 is a nonzero constant: f is irreducible and a is not a multiple of f
+    return red(s0.scale(Rational.of(r0.lc.q, r0.lc.p)));
+  };
+  return { red, inv };
+}
+
+/** Basis of the null space of A - t*I over Q[t]/(f), as coefficient polynomials in t. */
+function fieldNullspace(m: Matrix, f: UPoly): UPoly[][] {
+  const { red, inv } = fieldOps(f);
+  const n = m.rows;
+  const t = new UPoly([S.Zero, S.One]);
+  const A: UPoly[][] = Array.from({ length: n }, (_, i) =>
+    Array.from({ length: n }, (_, j) => {
+      const c = new UPoly([expectType(m.get(i, j), isRat, 'rational entry')]);
+      return i === j ? c.sub(t) : c;
+    }),
+  );
+  const pivots: number[] = [];
+  let r = 0;
+  for (let c = 0; c < n && r < n; c++) {
+    const p = A.findIndex((row, i) => i >= r && !at(row, c).isZero);
+    if (p < 0) continue;
+    [A[p], A[r]] = [at(A, r), at(A, p)];
+    const ip = inv(at(at(A, r), c));
+    A[r] = at(A, r).map((e) => red(e.mul(ip)));
+    const pr = at(A, r);
+    for (let i = 0; i < n; i++) {
+      const fac = at(at(A, i), c);
+      if (i === r || fac.isZero) continue;
+      A[i] = at(A, i).map((e, j) => red(e.sub(fac.mul(at(pr, j)))));
+    }
+    pivots.push(c);
+    r++;
+  }
+  const free = [...Array(n).keys()].filter((c) => !pivots.includes(c));
+  return free.map((fc) => {
+    const v: UPoly[] = Array.from({ length: n }, (_, i) => new UPoly(i === fc ? [S.One] : []));
+    pivots.forEach((pc, i) => {
+      v[pc] = at(at(A, i), fc).scale(Rational.of(-1n));
+    });
+    return v;
   });
 }
 
@@ -279,6 +363,9 @@ export function matrixLog(m: Matrix): Matrix {
 /** Cholesky: lower L with A = L L^H (hermitian) or A = L L^T. */
 export function cholesky(m: Matrix, hermitian = true): Matrix {
   if (!m.isSquare) throw new NonSquareMatrixError('Matrix must be square');
+  // SymPy raises ValueError for these two
+  if (hermitian && !m.isHermitian()) throw new MatrixError('Matrix must be Hermitian.');
+  if (!hermitian && !m.equalsSimplified(m.transpose())) throw new MatrixError('Matrix must be symmetric.');
   const n = m.rows;
   const L: Expr[][] = Array.from({ length: n }, () => Array.from({ length: n }, () => S.Zero as Expr));
   const cj = (e: Expr) => (hermitian ? conjugate(e) : e);
@@ -292,9 +379,24 @@ export function cholesky(m: Matrix, hermitian = true): Matrix {
     }
     let d: Expr = m.get(i, i);
     for (let k = 0; k < i; k++) d = add(d, mul(-1, at(Li, k), cj(at(Li, k))));
-    Li[i] = sqrt(tidy(d));
+    const d2 = tidy(d);
+    // SymPy: Lii2.is_positive is False (the Hermitian case only)
+    if (hermitian && isNotPositive(d2)) throw new NonPositiveDefiniteMatrixError('Matrix must be positive-definite');
+    Li[i] = sqrt(d2);
   }
   return Matrix.of(L);
+}
+
+/** SymPy e.is_positive is False for a real value (a pivot of a Hermitian matrix): a number by its value, anything else by the assumptions. */
+function isNotPositive(e: Expr): boolean {
+  if (e.freeSymbols().size === 0) {
+    try {
+      return e.toComplex().re <= 0;
+    } catch {
+      // not numerically evaluable: decided by the assumptions
+    }
+  }
+  return isPositive(e) === false;
 }
 
 /** LDL^H decomposition: (L, D). */
@@ -758,6 +860,13 @@ export function permuteCols(A: Matrix, perm: readonly number[]): Matrix {
  */
 export function jordanForm(A: Matrix): [Matrix, Matrix] {
   if (!A.isSquare) throw new NonSquareMatrixError('jordan_form: square matrix expected');
+  // SymPy: Floats are made Rationals (nsimplify), and the result is evaluated at their precision
+  const floats = A.data.flatMap((e) => (e instanceof Float ? [e] : []));
+  if (floats.length) {
+    const dps = Math.max(precToDps(Math.max(...floats.map((f) => f.prec))), 15);
+    const [P, J] = jordanForm(A.map((e) => nsimplify(e, { rational: true })));
+    return [P.evalf(dps), J.evalf(dps)];
+  }
   const n = A.rows;
   const counts = new Map<string, [Expr, number]>();
   for (const v of A.eigenvals()) {
@@ -772,18 +881,30 @@ export function jordanForm(A: Matrix): [Matrix, Matrix] {
   });
   const columns: Matrix[] = [];
   const blocks: [Expr, number][] = [];
+  // eigenvalues of an irreducible factor of degree >= 3 (simple roots): their eigenvectors over the number field
+  const fields = rationalEigenspaces(A);
   const simp = (m: Matrix) => m.map((e) => simplify(e));
   const independent = (vs: readonly Matrix[]) => rank(vs.reduce((acc, v) => acc.hstack(v))) === vs.length;
   for (const [lam, mult] of eig) {
+    // a root of an irreducible factor of degree >= 3 whose eigenspace has full dimension: no Jordan chains
+    const field = fields.find(([f, basis]) => basis.length === mult && isRootOf(f, lam));
+    if (field) {
+      for (const vec of field[1]) {
+        columns.push(Matrix.col(...vec.map((c) => expandMul(c.toExpr(lam)))));
+        blocks.push([lam, 1]);
+      }
+      continue;
+    }
     const N = simp(A.sub(Matrix.eye(n).scale(lam)));
     // null spaces of N**k until their dimension reaches the multiplicity
     const kernels: Matrix[][] = [[]];
     let Nk = Matrix.eye(n);
-    while (last(kernels).length < mult) {
+    for (let k = 1; k <= n && last(kernels).length < mult; k++) {
       Nk = simp(Nk.mul(N));
       kernels.push(nullspace(Nk));
-      if (kernels.length > n + 1) throw new NotImplementedError('jordan_form: generalized eigenvectors not found');
     }
+    // the generalized eigenspace has the dimension of the algebraic multiplicity (exact zero tests)
+    defined(kernels.find((kk) => kk.length >= mult), 'generalized eigenspace');
     // chains from the top level down: v, N*v, N**2*v, ...
     const chainsOf: Matrix[][] = [];
     for (let k = kernels.length - 1; k >= 1; k--) {

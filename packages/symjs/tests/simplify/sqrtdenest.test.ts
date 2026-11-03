@@ -6,7 +6,8 @@
 // Expected values are the str() forms printed by SymPy 1.14 unless a comment says otherwise.
 
 import { describe, expect, it } from 'vitest';
-import { parse, radsimp, sqrtdenest, sstr, symbol } from '../../src';
+import { Float, Integral, parse, radsimp, sqrtdenest, sstr, symbol } from '../../src';
+import { splitSurds } from '../../src/simplify/sqrtdenest';
 import type { Expr } from '../../src';
 
 const P = parse;
@@ -190,5 +191,110 @@ describe("radsimp, sqrtdenest (cov2): SymPy 1.14 cases", () => {
   ];
   it.each(cases)('%s', (_name, run, want) => {
     expect(showMap(run())).toBe(want);
+  });
+});
+
+describe('sqrtdenest: the remaining SymPy 1.14 test_sqrtdenest cases', () => {
+  const sd = (s: string) => sstr(sqrtdenest(P(s)));
+  it('splits sqrt(n/d) into sqrt(n)/sqrt(d) as as_numer_denom does', () => {
+    expect(sd('sqrt(1/(4*sqrt(3) + 7) + 1)')).toBe('(sqrt(2) + sqrt(6))/(sqrt(3) + 2)');
+    expect(sd('1 + sqrt(1/(4*sqrt(3) + 7) + 1)')).toBe('1 + (sqrt(2) + sqrt(6))/(sqrt(3) + 2)');
+    const x = symbol('x');
+    const i = new Integral([P('1 + sqrt(1/(4*sqrt(3) + 7) + 1)'), x, P('1'), P('2')]);
+    expect(sstr(sqrtdenest(i))).toBe('Integral(1 + (sqrt(2) + sqrt(6))/(sqrt(3) + 2), (x, 1, 2))');
+  });
+  it('symbolic denesting with the content of the radicand taken out', () => {
+    expect(sd('sqrt(16 - 2*sqrt(29) + 2*sqrt(55 - 10*sqrt(29)))')).toBe('sqrt(11 - 2*sqrt(29)) + sqrt(5)');
+    expect(sd('sqrt(5 + sqrt(2*sqrt(6) + 5)*sqrt(-2*sqrt(29) + 2*sqrt(55 - 10*sqrt(29)) + 16))')).toBe(
+      'sqrt(sqrt(2)*sqrt(11 - 2*sqrt(29)) + sqrt(3)*sqrt(11 - 2*sqrt(29)) + sqrt(10) + sqrt(15) + 5)');
+    expect(sd('sqrt(2*sqrt(6)/7 + 2*sqrt(7)/7 + 2*sqrt(42)/7 + 2)/sqrt(16 - 2*sqrt(29) + 2*sqrt(55 - 10*sqrt(29)))')).toBe(
+      'sqrt(7)*(1 + sqrt(6) + sqrt(7))/(7*(sqrt(11 - 2*sqrt(29)) + sqrt(5)))');
+    expect(sd('sqrt(6*sqrt(2)/11 + 2*sqrt(22)/11 + 6*sqrt(11)/11 + 2)')).toBe('sqrt(11)*(sqrt(2) + 3 + sqrt(11))/11');
+  });
+  it('sqrt(u**2) of a number u takes the sign of u', () => {
+    expect(sd('sqrt(sqrt(cos(1) + 2) + 4 + 2*sqrt(sqrt(cos(1) + 2) + 3))')).toBe('1 + sqrt(sqrt(cos(1) + 2) + 3)');
+    expect(sd('sqrt(2*sqrt(1 + sqrt(3))*cos(3) + cos(3)**2 + 1 + sqrt(3)*cos(3)**2)')).toBe('-1 - sqrt(1 + sqrt(3))*cos(3)');
+    // a coefficient that is a product, and one that is not real (no denesting)
+    expect(sd('sqrt(2*(2*sqrt(1 + sqrt(3))*cos(3) + cos(3)**2 + 1 + sqrt(3)*cos(3)**2))')).toBe('-sqrt(2) - sqrt(2)*sqrt(1 + sqrt(3))*cos(3)');
+    expect(sd('sqrt(-2*sqrt(1 + sqrt(3))*cos(3)*sin(3) + cos(3)**2*sin(3)**2 + sin(3)**2*cos(3)**2*sqrt(3) + 1)')).toBe('-sqrt(1 + sqrt(3))*sin(3)*cos(3) + 1');
+    expect(sd('sqrt(2*I*sqrt(1 + sqrt(3)) + I**2*(1 + sqrt(3)) + 1)')).toBe('sqrt(-sqrt(3) + 2*I*sqrt(1 + sqrt(3)))');
+  });
+  it('sqrt(u**2) with u < 0 and a coefficient with a negative factor', () => {
+    expect(sd('sqrt(sqrt(cos(1) + 2) + 12 - 6*sqrt(sqrt(cos(1) + 2) + 3))')).toBe('3 - sqrt(sqrt(cos(1) + 2) + 3)');
+    // SymPy: (1 - sqrt(1 + sqrt(3))*cos(3))/sqrt(-cos(3)), the same number (1/sqrt(-c) = -sqrt(-c)/c)
+    expect(sd('sqrt(-cos(3)*(1 + sqrt(3)) - 1/cos(3) + 2*sqrt(1 + sqrt(3)))')).toBe('-sqrt(-cos(3))/cos(3) + sqrt(-cos(3))*sqrt(1 + sqrt(3))');
+  });
+  it('radsimp: exponents and factors that are not radicals', () => {
+    expect(sstr(radsimp(P('1/(x**(y/z) + 1)')))).toBe('1/(x**(y/z) + 1)');
+    expect(sstr(radsimp(P('1/(pi*sqrt(2) + 1)')))).toBe('(-sqrt(2)*pi + 1)/(1 - 2*pi**2)');
+    expect(sstr(radsimp(P('1/(I*a + 1 - I)')))).toBe('(-I*a + 1 + I)/(a**2 - 2*a + 2)');
+  });
+  it('radsimp: a symbolic exponent with a power-of-two denominator', () => {
+    expect(sstr(radsimp(P('1/(x**(y/4) + 1)')))).toBe('(sqrt(x**(y/2))*sqrt(x**y) + sqrt(x**(y/2)) - sqrt(x**y) - 1)/(x**y - 1)');
+  });
+  it('Float coefficients are not denested', () => {
+    const f = (s: string) => P(s, { symbols: { F: new Float(5) } } as never);
+    expect(sstr(sqrtdenest(f('sqrt(2*sqrt(6) + F)')))).toBe('sqrt(2*sqrt(6) + 5.0)');
+    expect(sstr(sqrtdenest(f('sqrt(F + 4*sqrt(5 + 2*sqrt(6)))')))).toBe('sqrt(5.0 + 4*sqrt(2) + 4*sqrt(3))');
+  });
+  it('split_surds groups radicals by the gcd of their squares, as SymPy gcd does', () => {
+    const show3 = (t: [Expr, Expr, Expr]) => t.map(sstr).join(' | ');
+    expect(show3(splitSurds(P('2**(1/4) + 2**(3/4) + sqrt(3)')))).toBe('3 | 1 | 2**(1/4) + 2**(3/4)');
+    expect(show3(splitSurds(P('sqrt(x) + sqrt(2*x) + sqrt(3)')))).toBe('3 | 1 | sqrt(x) + sqrt(2)*sqrt(x)');
+    expect(show3(splitSurds(P('sqrt(2)*sqrt(x) + sqrt(6) + sqrt(3*x)')))).toBe('6 | 1 | sqrt(2)*sqrt(x) + sqrt(3)*sqrt(x)');
+    expect(show3(splitSurds(P('sqrt(x) + x**(3/2) + sqrt(3)')))).toBe('3 | 1 | x**(3/2) + sqrt(x)');
+  });
+});
+
+describe('radsimp: SymPy 1.14 test_radsimp calls', () => {
+  it('match SymPy', () => {
+    const cases: [string, Record<string, Assume>, Parameters<typeof radsimp>[1], string][] = [
+      ["1/(x + sqrt(x**2))", {}, {}, "1/(x + sqrt(x**2))"],
+      ["1/(x - sqrt(x**2))", {}, {}, "1/(x - sqrt(x**2))"],
+      ["0", {}, {}, "0"],
+      ["sqrt(2)/2", {}, {}, "sqrt(2)/2"],
+      ["1/(1 + sqrt(2))", {}, {}, "-1 + sqrt(2)"],
+      ["1/(sqrt(2) + sqrt(3))", {}, {}, "-sqrt(2) + sqrt(3)"],
+      ["1/(1 + sqrt(2) + sqrt(3))", {}, {}, "(-sqrt(6) + sqrt(2) + 2)/4"],
+      ["1/(sqrt(2) + sqrt(3) + sqrt(5))", {}, {}, "(-sqrt(30) + 2*sqrt(3) + 3*sqrt(2))/12"],
+      ["1/(1 + sqrt(2) + sqrt(3) + sqrt(5))", {}, {}, "(-34*sqrt(10) - 26*sqrt(15) - 55*sqrt(3) - 61*sqrt(2) + 14*sqrt(30) + 93 + 46*sqrt(6) + 53*sqrt(5))/71"],
+      ["1/(sqrt(2) + sqrt(3) + sqrt(5) + sqrt(7))", {}, {}, "(-50*sqrt(42) - 133*sqrt(5) - 34*sqrt(70) - 145*sqrt(3) + 22*sqrt(105) + 185*sqrt(2) + 62*sqrt(30) + 135*sqrt(7))/215"],
+      ["sqrt(2)/6", {}, {}, "sqrt(2)/6"],
+      ["1/(sqrt(2)*a + sqrt(2)*b + sqrt(2)*c + sqrt(2)*d)", {}, {}, "sqrt(2)/(2*a + 2*b + 2*c + 2*d)"],
+      ["1/(sqrt(2)*a + sqrt(2)*b + sqrt(2)*c + sqrt(2)*d + 1)", {}, {}, "(sqrt(2)*a + sqrt(2)*b + sqrt(2)*c + sqrt(2)*d - 1)/(2*a**2 + 4*a*b + 4*a*c + 4*a*d + 2*b**2 + 4*b*c + 4*b*d + 2*c**2 + 4*c*d + 2*d**2 - 1)"],
+      ["(-x + y**2)/(-sqrt(x) + y)", {}, {}, "sqrt(x) + y"],
+      ["(x - y**2)/(-sqrt(x) + y)", {}, {}, "-sqrt(x) - y"],
+      ["1/(I*a + 1 - I)", {}, {}, "(-I*a + 1 + I)/(a**2 - 2*a + 2)"],
+      ["1/((-x + y)*(x - sqrt(y)))", {}, {}, "(-x - sqrt(y))/((x - y)*(x**2 - y))"],
+      ["x*(3 + 3*sqrt(2))*(3*x - 3*sqrt(y))", {}, {}, "x*(3 + 3*sqrt(2))*(3*x - 3*sqrt(y))"],
+      ["1/(x*(3 + 3*sqrt(2))*(3*x - 3*sqrt(y)))", {}, {}, "(-9*x + 9*sqrt(2)*x - 9*sqrt(y) + 9*sqrt(2)*sqrt(y))/(9*x*(9*x**2 - 9*y))"],
+      ["1/(1 + sqrt(3)) + 1", {}, {}, "(-1 + sqrt(3))/2 + 1"],
+      ["x**2 + sqrt(2)*x**2 - sqrt(2)*x*A", {"A": {"commutative": false}}, {}, "x**2 + sqrt(2)*x**2 - sqrt(2)*x*A"],
+      ["1/sqrt(2*sqrt(6) + 5)", {}, {}, "-sqrt(2) + sqrt(3)"],
+      ["(2*sqrt(6) + 5)**(-3/2)", {}, {}, "-(-sqrt(3) + sqrt(2))**3"],
+      ["1/sqrt(x)", {}, {}, "sqrt(x)/x"],
+      ["1/sqrt(2*x + 3)", {}, {}, "sqrt(2*x + 3)/(2*x + 3)"],
+      ["1/sqrt(2*x + 6)", {}, {}, "sqrt(2*x + 6)/(2*x + 6)"],
+      ["(-4*2**(1/4) - 2*sqrt(2) - 2)/(1 + 2**(3/4) + 3*2**(1/4) + 3*sqrt(2))", {}, {}, "-2*2**(3/4) - 2*2**(1/4) + 2 + 2*sqrt(2)"],
+      ["1/(-sqrt(5)/2 - 1/2 + (-sqrt(5)/2 - 1/2)**2)", {}, {}, "1"],
+      ["(-sqrt(2) + sqrt(3))**(-3)", {}, {}, "(sqrt(2) + sqrt(3))**3"],
+      ["(-sqrt(3) + sqrt(2))**(-3)", {}, {}, "-(sqrt(2) + sqrt(3))**3"],
+      ["(-sqrt(3) + sqrt(2))**(-x)", {}, {}, "(-sqrt(3) + sqrt(2))**(-x)"],
+      ["(-sqrt(2) + sqrt(3))**(-x)", {}, {}, "(sqrt(2) + sqrt(3))**x"],
+      ["cos(1/(1 + sqrt(2)))", {}, {}, "cos(1 - sqrt(2))"],
+      ["cos(1/(1 + sqrt(2)))/2", {}, {}, "cos(1 - sqrt(2))/2"],
+      ["1/cos(1/(1 + sqrt(2)))", {}, {}, "1/cos(1 - sqrt(2))"],
+      ["2/cos(1/(1 + sqrt(2)))", {}, {}, "2/cos(1 - sqrt(2))"],
+      ["cos(1/(1 + sqrt(2)))/sqrt(x)", {}, {}, "sqrt(x)*cos(1 - sqrt(2))/x"],
+      ["x/(1 + sqrt(2))", {}, { symbolic: false }, "-x*(1 - sqrt(2))"],
+      ["x/(y + 1 + sqrt(2))", {}, { symbolic: false }, "x/(y + 1 + sqrt(2))"],
+      ["x/((1 + sqrt(2))*(y + 1 + sqrt(2)))", {}, { symbolic: false }, "-x*(1 - sqrt(2))/(y + 1 + sqrt(2))"],
+      ["sqrt(x)/sqrt(y)", {}, {}, "sqrt(x)*sqrt(y)/y"],
+      ["sqrt(x)/sqrt(y)", {}, { symbolic: false }, "sqrt(x)/sqrt(y)"],
+      ["sqrt(x)/y**(3/2)", {}, {}, "sqrt(x)*sqrt(y**3)/y**3"],
+      ["sqrt(x)/y**2", {}, {}, "sqrt(x)/y**2"],
+      ["(c + I*p - sqrt(c**2 - p**2))/(c + I*p + sqrt(c**2 - p**2))", {"c": {"positive": true}, "p": {"positive": true}}, {}, "-I*(c + I*p - sqrt(c**2 - p**2))**2/(2*c*p)"],
+    ];
+    for (const [e, a, o, r] of cases) expect(sstr(radsimp(PA(e, a), o))).toBe(r);
   });
 });

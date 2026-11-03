@@ -15,6 +15,7 @@ export {
   FiniteSet,
   ImageSet,
   ConditionSet,
+  Range,
   imageSet as imageset,
   EmptySet,
   Reals,

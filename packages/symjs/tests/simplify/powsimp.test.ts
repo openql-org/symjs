@@ -4,7 +4,7 @@
 // Tests of src/simplify/powsimp.ts.
 
 import { describe, expect, it } from 'vitest';
-import { Sym, SymFunction, float, logcombine, parse, powdenest, powsimp, sstr, symbol, symbols } from '../../src';
+import { Sym, SymFunction, add, float, logcombine, mul, parse, pow, powdenest, powsimp, sstr, symbol, symbols } from '../../src';
 import type { Expr } from '../../src';
 
 const P = (s: string) => parse(s);
@@ -286,8 +286,30 @@ describe('powsimp (cov2): an exponent that becomes symbolic while bases are comb
     // sqrt(s*sqrt(s**n*y))*s*(s**n*y)**(5/2) = y**2*s**(2*n)*(s*sqrt(s**n*y))**(3/2) for an integer n
     const e = PA('sqrt(sin(x)*sqrt(sin(x)**n*y))*sin(x)*(sin(x)**n*y)**(5/2)', { n: { integer: true } });
     const r = powsimp(e);
-    expect(String(r)).toBe('y**2*(sqrt(y*sin(x)**n)*sin(x))**(3/2)*(sin(x)**2)**n');
+    expect(String(r)).toBe('y**2*(sqrt(y*sin(x)**n)*sin(x))**(3/2)*sin(x)**(2*n)');
     const at = (v: Expr) => v.subs([[symbol('n', { integer: true }), 3], [symbol('x'), float(0.7)], [symbol('y'), float(1.3)]]).toNumber();
     expect(at(r)).toBeCloseTo(at(e), 12);
+  });
+});
+
+describe('powsimp: SymPy 1.14 test_powsimp cases', () => {
+  it('a negative exponent sum combines with the inverted base', () => {
+    expect(String(powsimp(PA('x**(i + 1)*y**(-i - 1)', { i: { integer: true } })))).toBe('(x/y)**(i + 1)');
+  });
+  it('powers of the float 1 are 1.0', () => {
+    const f = float(1);
+    const x = symbol('x', { nonnegative: true });
+    expect(String(powsimp(mul(pow(f, add(x, 1)), pow(pow(f, x), -1))))).toBe('1.00000000000000');
+  });
+});
+
+describe('powdenest with force and a base that is not positive', () => {
+  it('keeps the nested power', () => {
+    const n = new Sym('n', { negative: true });
+    const Qn = (s: string) => Qs(s, [n]);
+    // SymPy powdenest(..., force=True)
+    expect(sstr(powdenest(Qn('(n**a)**b'), { force: true }))).toBe('(n**a)**b');
+    expect(sstr(powdenest(P('((-2)**a)**b'), { force: true }))).toBe('((-2)**a)**b');
+    expect(sstr(powdenest(Qn('(n**a)**b*(x**a)**b'), { force: true }))).toBe('x**(a*b)*(n**a)**b');
   });
 });

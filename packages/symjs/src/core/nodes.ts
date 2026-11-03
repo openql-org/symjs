@@ -227,6 +227,8 @@ export interface Impl {
   isReal?(e: Expr): boolean | undefined;
   rationalFromFloat?(f: Float): Rational;
   couldExtractMinusSign?(e: Expr): boolean;
+  /** SymPy sort_key order (a.sort_key() < b.sort_key() gives a negative number). */
+  compareSortKey?(a: Expr, b: Expr): number;
   /** SymPy collect (registered by simplify/radsimp). */
   collect?(e: Expr, syms: readonly Expr[]): Expr;
   /** Leading term [c, e] of e ~ c*x**e as x -> 0+ (registered by series/series). */

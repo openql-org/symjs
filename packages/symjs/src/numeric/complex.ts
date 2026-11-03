@@ -77,18 +77,13 @@ export const catan = (z: C): C => {
   return cmul(c(0, 0.5), clog(cdiv(cadd(I1, z), cadd(I1, cneg(z)))));
 };
 
-/** Branch k of the Lambert W function by Halley iteration (double precision). */
+/** Branch k of the Lambert W function by Halley iteration (double precision; starts as in mpmath lambertw). */
 export function cLambertW(z: C, k: number): C {
-  // initial guess: asymptotic log expansion, or the branch-point series near -1/e
-  const twoPiIk = c(0, 2 * Math.PI * k);
   let w: C;
-  const nearBranch = Math.hypot(z.re + Math.exp(-1), z.im) < 0.3;
-  if (k === 0 && nearBranch) w = cadd(c(-1), csqrtC(cmul(c(2 * Math.E), cadd(z, c(Math.exp(-1))))));
-  else if (k === 0 && Math.hypot(z.re, z.im) <= 3) w = clog(cadd(c(1), z));
-  else if (k === -1 && nearBranch && Math.abs(z.im) < 1e-300 && z.re < 0) w = cadd(c(-1), cmul(c(-1), csqrtC(cmul(c(2 * Math.E), cadd(z, c(Math.exp(-1)))))));
+  if (k === 0 || k === -1) w = lambertwStart(z.re, z.im, k);
   else {
-    const L1 = cadd(clog(z), twoPiIk);
-    w = cadd(L1, cmul(c(-1), clog(L1)));
+    const L1 = cadd(clog(z), c(0, 2 * Math.PI * k));
+    w = asymptoticD(L1, clog(L1));
   }
   for (let i = 0; i < 100; i++) {
     const ew = cexp(w);
@@ -102,7 +97,58 @@ export function cLambertW(z: C, k: number): C {
   return w;
 }
 
-function csqrtC(z: C): C {
-  return cpow(z, c(0.5));
+const R0 = -0.367879441171442;
+
+/** L1 - L2 + L2/L1 + L2 (L2 - 2)/(2 L1**2) in double precision. */
+function asymptoticD(L1: C, L2: C): C {
+  const t3 = cdiv(cmul(L2, cadd(L2, c(-2))), cmul(c(2), cmul(L1, L1)));
+  return cadd(cadd(cadd(L1, cmul(c(-1), L2)), cdiv(L2, L1)), t3);
 }
+
+const sqrtD = (z: C): C => cpow(z, c(0.5));
+/** -1 +- 2.33164398159712 sqrt(z - r) - 1.81218788563936 (z - r): the start near the branch point. */
+const branchD = (z: C, sgn: 1 | -1): C => {
+  const d = cadd(z, c(-R0));
+  return cadd(cadd(c(-1), cmul(c(sgn * 2.33164398159712), sqrtD(d))), cmul(c(-1.81218788563936), d));
+};
+
+/**
+ * A double-precision start for W_0 and W_-1 at x + iy (mpmath
+ * _lambertw_approx_hybrid, ported from mpmath 1.3.0, BSD 3-Clause).
+ */
+export function lambertwStart(x: number, y: number, k: 0 | -1): C {
+  const imagSign = y === 0 ? 0 : y < 0 ? -1 : 1;
+  const z = c(x, y);
+  let L1: C;
+  if (k === 0) {
+    if (-4 < y && y < 4 && -1 < x && x < 2.5) {
+      if (imagSign !== 0) {
+        // Taylor series in the upper / lower half-plane
+        if (y > 1) return cadd(c(0.876, 0.645), cmul(c(0.118, -0.174), cadd(z, c(-0.75, -2.5))));
+        if (y > 0.25) return cadd(c(0.505, 0.204), cmul(c(0.375, -0.132), cadd(z, c(-0.75, -0.5))));
+        if (y < -1) return cadd(c(0.876, -0.645), cmul(c(0.118, 0.174), cadd(z, c(-0.75, 2.5))));
+        if (y < -0.25) return cadd(c(0.505, -0.204), cmul(c(0.375, 0.132), cadd(z, c(-0.75, 0.5))));
+      }
+      // Taylor series near -1
+      if (x < -0.5) {
+        if (imagSign >= 0) return cadd(c(-0.318, 1.34), cmul(c(-0.697, -0.593), cadd(z, c(1))));
+        return cadd(c(-0.318, -1.34), cmul(c(-0.697, 0.593), cadd(z, c(1))));
+      }
+      // the singularity near -1/e, the Taylor series near 0, a linear approximation
+      if (x < -0.2) return branchD(z, 1);
+      if (x < 0.5) return z;
+      return cadd(c(0.2), cmul(c(0.3), z));
+    }
+    L1 = imagSign === 0 && x > 0 ? c(Math.log(x)) : clog(z);
+  } else {
+    if (imagSign >= 0 && y < 0.1 && -0.6 < x && x < -0.2) return branchD(z, -1);
+    if (imagSign === 0 && -0.2 <= x && x < 0) {
+      const l = Math.log(-x);
+      return c(l - Math.log(-l));
+    }
+    L1 = cadd(clog(z), c(0, -2 * Math.PI));
+  }
+  return asymptoticD(L1, clog(L1));
+}
+
 

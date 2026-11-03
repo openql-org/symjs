@@ -69,6 +69,12 @@ pnpm test:package                              # built ESM/CJS, minification and
   `compat/harness.ts`.
 - Deliberate differences from SymPy are allowed when they are documented
   the same way.
+- SymPy doctests and API names that symjs does not support yet are listed in
+  `compat/known-gaps.json`. A change may only shrink that list: `pnpm compat`
+  fails when an unlisted case stops passing and when a listed case starts
+  passing. After fixing listed cases, rewrite the list with
+  `UPDATE_KNOWN_GAPS=1 npx vitest run --config compat/vitest.config.ts`
+  and check that it only lost entries.
 - Tests are self-contained: expected values are written in the test (or in
   a reference file in the repository). No file in the repository refers to
   local paths such as a home directory or a temporary directory, which can

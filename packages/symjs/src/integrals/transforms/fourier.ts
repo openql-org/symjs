@@ -33,9 +33,10 @@ import { posify, powdenest, powsimp } from '../../simplify/powsimp';
 import { simplify as simplifyExpr } from '../../simplify/simplify';
 import { rewrite } from '../../simplify/rewrite';
 import type { TransformHints, TransformResult } from './base';
-import { GenericIntegralTransform, IntegralTransform, IntegralTransformError, addArgs, asSymbolVariable, isPolyIn, matchByName, mget, mulArgs, polyCoeffs as polyCoeffsIn, wild, transformArgs } from './base';
+import { GenericIntegralTransform, IntegralTransform, IntegralTransformError, addArgs, isFalseExpr, asSymbolVariable, isPolyIn, matchByName, mget, mulArgs, polyCoeffs as polyCoeffsIn, wild, transformArgs } from './base';
 import { at, defined, pair } from '../../core/guard';
 import { isDiracDelta, isHeaviside } from './delta';
+import { meijerintDefinite } from '../meijerint';
 
 const isExpPow = (e: Expr): e is Pow => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
 const expOf = (e: Pow): Expr => e.exp;
@@ -225,8 +226,36 @@ function halfLineIntegral(f0: Expr, x: Sym, k: Expr, kernel: Kernel): Expr | und
       }
     }
   }
+  r ??= meijerHalfLine(f0, x, kp, kernel);
   if (r === undefined) return undefined;
   return xreplace(mul(C, r), [[kp, k]]);
+}
+
+/** The integral over (0, oo) of f(x)*K(k*x) by SymPy's Meijer G-function integrator, or undefined. */
+function meijerHalfLine(f: Expr, x: Sym, k: Expr, kernel: Kernel): Expr | undefined {
+  const K = kernel.kind === 'sin' ? sin(mul(k, x)) : kernel.kind === 'cos' ? cos(mul(k, x)) : besselj(kernel.nu, mul(k, x));
+  const m = meijerintDefinite(mul(f, K), x, 0, S.Infinity);
+  return m && !isFalseExpr(m[1]) ? m[0] : undefined;
+}
+
+/**
+ * The convergence condition of the integral over (0, oo) of f(x)*K(k*x),
+ * as SymPy's Meijer G-function integrator states it (True when it does not
+ * apply).
+ */
+function halfLineCondition(f: Expr, x: Sym, k: Expr, kernel: Kernel): Expr {
+  const K = kernel.kind === 'sin' ? sin(mul(k, x)) : kernel.kind === 'cos' ? cos(mul(k, x)) : besselj(kernel.nu, mul(k, x));
+  return meijerintDefinite(mul(f, K), x, 0, S.Infinity)?.[1] ?? S.true;
+}
+
+/** The integral over the real line of f(x)*exp(I*B*k*x) by SymPy's Meijer G-function integrator, or undefined. */
+function meijerRealLine(f: Expr, x: Sym, Bk: Expr): Expr | undefined {
+  // (sums are transformed term by term)
+  if (f instanceof Add) return undefined;
+  // only when the convergence condition is known to hold: the conditions on the
+  // complex exponents are not decided
+  const m = meijerintDefinite(mul(f, exp(mul(S.I, Bk, x))), x, S.NegativeInfinity, S.Infinity);
+  return m && m[1].key === S.true.key ? m[0] : undefined;
 }
 
 /** The integral over the real line of f(x)*exp(I*B*k*x), or undefined. */
@@ -359,7 +388,7 @@ export abstract class FourierTypeTransform extends GenericIntegralTransform {
     return new Integral([mul(this.a(), this.function, exp(mul(this.b(), S.I, x, this.transformVariable))), x, S.NegativeInfinity, S.Infinity]);
   }
   protected computeTransform(f: Expr, x: Sym, k: Sym, hints: TransformHints & { simplify: boolean }): TransformResult {
-    const r = realLineIntegral(f, x, mul(this.b(), k));
+    const r = realLineIntegral(f, x, mul(this.b(), k)) ?? meijerRealLine(f, x, mul(this.b(), k));
     if (r === undefined) throw new IntegralTransformError(this.transformName, f, 'could not compute integral');
     const F = finish(mul(this.a(), r), hints.simplify);
     return hints.noconds === false ? [F, S.true] : F;
@@ -473,7 +502,7 @@ export abstract class SineCosineTypeTransform extends GenericIntegralTransform {
     const r = halfLineIntegral(f, x, mul(this.b(), k), { kind: this.kernel });
     if (r === undefined) throw new IntegralTransformError(this.transformName, f, 'could not compute integral');
     const F = finish(mul(this.a(), r), hints.simplify);
-    return hints.noconds === false ? [F, S.true] : F;
+    return hints.noconds === false ? [F, halfLineCondition(f, x, mul(this.b(), k), { kind: this.kernel })] : F;
   }
 }
 
@@ -634,7 +663,7 @@ export abstract class HankelTypeTransform extends IntegralTransform {
     if (v === undefined) throw new IntegralTransformError(this.transformName, f, 'could not compute integral');
     const simplify = hints.simplify ?? true;
     const F = ks.back(hyperexpandForm(finish(v, simplify), k));
-    return hints.noconds === false ? [F, S.true] : F;
+    return hints.noconds === false ? [F, ks.back(halfLineCondition(mul(f, r), r, k, { kind: 'besselj', nu: this.nu }))] : F;
   }
 }
 

@@ -7,7 +7,7 @@
  */
 
 import type { Expr } from '../core/nodes';
-import { Add, Constant, Fn, Integral, Mul, Pow, Rational, Rel, Sym, UndefFn } from '../core/nodes';
+import { Add, Constant, Dummy, Fn, Integral, Mul, Pow, Rational, Rel, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { add, couldExtractMinusSign, mul, pow } from '../core/ops';
 import { freeSymbols, rebuild, subs, xreplace } from '../core/traverse';
@@ -185,7 +185,8 @@ export function odesimp(ode: Expr, solIn: Expr, fx: UndefFn, hint: string): Expr
   const odeSyms = [...freeSymbols(ode)];
   let sol = hint === 'nth_linear_constant_coeff_homogeneous' ? solIn : doit(solIn);
   if (hint.startsWith('nth_linear_euler_eq_nonhomogeneous') && sol instanceof Rel) sol = Eq(simplify(sol.lhs), simplify(sol.rhs));
-  const constants = [...freeSymbols(sol)].filter((s) => !odeSyms.some((o) => o.key === s.key));
+  // the bound variable of a CRootOf (a Dummy) is not a constant (SymPy CRootOf has no free symbols)
+  const constants = [...freeSymbols(sol)].filter((s) => !odeSyms.some((o) => o.key === s.key) && !(s instanceof Dummy));
   // the hint solvers return equations, which constantsimp keeps
   const s = cast(constantsimp(cast(sol, Rel, 'solution'), constants), Rel, 'solution');
   let eqs: Expr[];

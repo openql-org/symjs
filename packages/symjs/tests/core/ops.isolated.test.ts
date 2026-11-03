@@ -16,3 +16,13 @@ describe('realRoot without the elementary functions', () => {
     expect(() => realRoot(new Sym('r', { real: true }), 3)).toThrow("sign is not available: import '@symjs/symjs/core'");
   });
 });
+
+describe('couldExtractMinusSign without the sort keys', () => {
+  it('decides a tie by the structural key', async () => {
+    const { add, mul, couldExtractMinusSign } = await import('../../src/core/ops');
+    const a = new Sym('a');
+    const b = new Sym('b');
+    // exactly one of a - b and b - a has the minus sign extracted
+    expect(couldExtractMinusSign(add(a, mul(-1, b)))).toBe(!couldExtractMinusSign(add(b, mul(-1, a))));
+  });
+});

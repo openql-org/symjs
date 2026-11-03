@@ -10,13 +10,15 @@
 
 import { NotImplementedError } from '../core/errors';
 import type { ExprLike } from '../core/nodes';
-import { Expr, ExtensionExpr, Float, Rational, S, Special, impl } from '../core/nodes';
+import { Expr, ExtensionExpr, Float, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
 import { Eq, Ge, Le, Lt } from '../core/logic';
 import { and, not, or } from '../core/boolalg';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { at, cast, first } from '../core/guard';
+import { at, cast, expectType, first } from '../core/guard';
 import { Max, Min } from '../functions/special';
+import { isIntegerQ } from '../core/assumptions';
+import { polyCoefficients, rootsDict } from '../polys/poly';
 import { fn } from '../functions/elementary';
 
 /** Base class of all sets. */
@@ -208,6 +210,88 @@ export function finiteSet(...xs: ExprLike[]): SetExpr {
 }
 
 // ---------------------------------------------------------------------------
+// Range
+// ---------------------------------------------------------------------------
+
+/** The integers start, start + step, ... below stop (SymPy Range; start or stop may be infinite). */
+export class Range extends SetExpr {
+  readonly args: readonly Expr[];
+  /** SymPy `Range(start, stop, step)` (EmptySet when empty). */
+  static of(start: ExprLike, stop: ExprLike, step: ExprLike = 1): SetExpr {
+    return range(start, stop, step);
+  }
+  /** @internal use Range.of() */
+  constructor(
+    readonly start: Expr,
+    readonly stop: Expr,
+    readonly step: Rational,
+  ) {
+    super();
+    this.args = [start, stop, step];
+  }
+  get className(): string {
+    return 'Range';
+  }
+  protected computeKey(): string {
+    return `Range(${this.start.key},${this.stop.key},${this.step.key})`;
+  }
+  get isEmpty(): boolean {
+    return this.start.key === this.stop.key;
+  }
+  printStr(p: (e: Expr) => string): string {
+    return `Range(${p(this.start)}, ${p(this.stop)}, ${p(this.step)})`;
+  }
+}
+
+/** Range(start, stop, step) with integer (or infinite) start and stop and a nonzero integer step. */
+export function range(startIn: ExprLike, stopIn: ExprLike, stepIn: ExprLike = 1): SetExpr {
+  const [start, stop, step] = [sympify(startIn), sympify(stopIn), sympify(stepIn)];
+  const intOrInf = (e: Expr) => isInf(e) || (e instanceof Rational && e.isInteger);
+  if (!intOrInf(start) || !intOrInf(stop) || !(step instanceof Rational && step.isInteger && !step.isZero)) {
+    throw new TypeError('Range: integer start, stop and nonzero step expected');
+  }
+  const c = cmpReal(start, stop);
+  // SymPy's empty Range is Range(0, 0, 1)
+  if (c === 0 || c === (step.isNegative ? -1 : 1)) return new Range(S.Zero, S.Zero, Rational.of(1));
+  // the stop of a finite range is the first value not taken (SymPy canonical form)
+  if (start instanceof Rational && stop instanceof Rational) {
+    const n = (stop.p - start.p + step.p - (step.isNegative ? -1n : 1n)) / step.p;
+    return new Range(start, Rational.of(start.p + n * step.p), step);
+  }
+  return new Range(start, stop, step);
+}
+
+/**
+ * The integers of an interval as a Range (SymPy Intersection(Integers, Interval)),
+ * or undefined when an end is not a known real number.
+ */
+function integersIn(iv: Interval, low: Expr): SetExpr | undefined {
+  const end = (e0: Expr, open: boolean, up: boolean): Expr | undefined => {
+    if (isInf(e0)) return e0;
+    // a float with an integer value is that integer
+    const e = e0 instanceof Float && Number.isInteger(e0.value) ? Rational.of(BigInt(e0.value)) : e0;
+    let n: bigint;
+    if (e instanceof Rational) {
+      const fl = e.p >= 0n ? e.p / e.q : -((-e.p + e.q - 1n) / e.q);
+      n = up ? (e.isInteger ? fl : fl + 1n) : fl;
+      if (open && e.isInteger) n += up ? 1n : -1n;
+    } else {
+      const v = realValue(e);
+      // a float end at an integer could be off by one
+      if (v === undefined || Math.abs(v - Math.round(v)) < 1e-9) return undefined;
+      n = BigInt(up ? Math.ceil(v) : Math.floor(v));
+    }
+    return Rational.of(n);
+  };
+  const lo = end(iv.start, iv.leftOpen, true);
+  const hi = end(iv.end, iv.rightOpen, false);
+  if (!lo || !hi) return undefined;
+  const lo2 = cmpReal(lo, low) === -1 ? low : lo;
+  const r = range(lo2, hi instanceof Rational ? add(hi, 1) : hi);
+  return r.isEmpty ? EmptySet : r;
+}
+
+// ---------------------------------------------------------------------------
 // ImageSet / ConditionSet
 // ---------------------------------------------------------------------------
 
@@ -285,6 +369,13 @@ export { SetOp };
 
 const sortSets = (xs: SetExpr[]): SetExpr[] => [...xs].sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
 
+/** Is x known not to be an integer (by its assumptions, or as a real number away from the integers)? */
+function notInteger(x: Expr): boolean {
+  if (isIntegerQ(x) === false) return true;
+  const v = x.freeSymbols().size ? undefined : realValue(x);
+  return v !== undefined && Math.abs(v - Math.round(v)) > 1e-9;
+}
+
 /** Does the set contain x? true/false, or undefined when undecidable. */
 export function containsQ(s: SetExpr, x: Expr): boolean | undefined {
   if (s === EmptySet) return false;
@@ -300,8 +391,16 @@ export function containsQ(s: SetExpr, x: Expr): boolean | undefined {
   }
   if (s === Integers || s === Naturals || s === Naturals0) {
     if (x instanceof Rational) return x.isInteger && (s === Integers || (s === Naturals ? x.p > 0n : x.p >= 0n));
-    return undefined;
+    return notInteger(x) ? false : undefined;
   }
+  if (s instanceof Range) {
+    if (!(x instanceof Rational)) return notInteger(x) ? false : undefined;
+    if (s.isEmpty || !x.isInteger || cmpReal(inf(s), x) === 1 || cmpReal(x, sup(s)) === 1) return false;
+    // the distance to a finite end is a multiple of the step
+    const d = expectType(add(x, mul(-1, isInf(s.start) ? s.stop : s.start)), (v): v is Rational => v instanceof Rational, 'integer distance');
+    return d.p % s.step.p === 0n;
+  }
+  if (s instanceof ImageSet) return imageContains(s, x);
   if (s instanceof FiniteSet) {
     if (s.args.some((a) => a.key === x.key)) return true;
     const unknown = s.args.some((a) => cmpReal(a, x) === undefined);
@@ -326,6 +425,29 @@ export function containsQ(s: SetExpr, x: Expr): boolean | undefined {
     return undefined;
   }
   return undefined;
+}
+
+/**
+ * SymPy ImageSet._contains for a number x and a polynomial expression: x is in
+ * the image when a root of expr = x is in the base set.
+ */
+function imageContains(s: ImageSet, x: Expr): boolean | undefined {
+  const v = s.variable;
+  if (!(v instanceof Sym) || x.freeSymbols().size) return undefined;
+  const eq = add(s.expr, mul(-1, x));
+  const pc = polyCoefficients(eq, v);
+  if (!pc) return undefined;
+  let rs: Expr[];
+  try {
+    rs = rootsDict(eq, v, { multiple: true });
+  } catch {
+    // no formula for the roots
+    return undefined;
+  }
+  const inBase = rs.map((r) => containsQ(s.base, r));
+  if (inBase.some((c) => c === true)) return true;
+  // all the roots are known and none is in the base set
+  return rs.length === Math.max(...pc.keys()) && inBase.every((c) => c === false) ? false : undefined;
 }
 
 /** SymPy Contains(x, S): x is an element of the set, when that is not decided. */
@@ -490,6 +612,14 @@ function intersectTwo(a: SetExpr, b: SetExpr): SetExpr {
     if (unknown.length) return new SetOp('Intersection', sortSets([finiteSet(...keep, ...unknown), o]));
     return finiteSet(...keep);
   }
+  const intIv = (u: SetExpr, v: SetExpr) => (u === Integers || u === Naturals || u === Naturals0) && v instanceof Interval;
+  const ints: [SetExpr, Interval] | undefined = intIv(a, b) ? [a, cast(b, Interval)] : intIv(b, a) ? [b, cast(a, Interval)] : undefined;
+  if (ints) {
+    const [z, iv] = ints;
+    const r = integersIn(iv, z === Naturals ? S.One : z === Naturals0 ? S.Zero : S.NegativeInfinity);
+    if (r) return r;
+  }
+  if ((a === Reals && (b === Integers || b === Naturals || b === Naturals0)) || (b === Reals && (a === Integers || a === Naturals || a === Naturals0))) return a === Reals ? b : a;
   if (a === Reals && (b instanceof Interval || b === Reals)) return b;
   if (b === Reals && a instanceof Interval) return a;
   const pa = intervalParts(a);
@@ -561,6 +691,8 @@ export function complement(a: SetExpr, b: SetExpr): SetExpr {
 /** Is a a subset of b (true/false/undefined)? */
 export function isSubset(a: SetExpr, b: SetExpr): boolean | undefined {
   if (a === EmptySet) return true;
+  // an unbounded set is not in an interval with a finite end
+  if ((a === Reals || a === Integers) && b instanceof Interval && !(isNegOo(b.start) && isOo(b.end))) return false;
   if (b === Reals && (a instanceof Interval || (a instanceof FiniteSet && a.args.every((x) => containsQ(Reals, x) === true)))) return true;
   if (a instanceof FiniteSet) {
     const cs = a.args.map((x) => containsQ(b, x));
@@ -611,6 +743,7 @@ export function inf(s: SetExpr): Expr {
   if (s === Naturals) return S.One;
   if (s === Naturals0) return S.Zero;
   if (s instanceof FiniteSet) return extreme(s.args, 1);
+  if (s instanceof Range) return s.step.isNegative ? add(s.stop, mul(-1, s.step)) : s.start;
   if (s instanceof SetOp && s.op === 'Union') return extreme(s.args.map(inf), 1);
   throw new NotImplementedError('inf: unsupported set');
 }
@@ -620,6 +753,7 @@ export function sup(s: SetExpr): Expr {
   if (s instanceof Interval) return s.end;
   if (s === Reals || s === Integers || s === Naturals || s === Naturals0) return S.Infinity;
   if (s instanceof FiniteSet) return extreme(s.args, -1);
+  if (s instanceof Range) return s.step.isNegative ? s.start : add(s.stop, mul(-1, s.step));
   if (s instanceof SetOp && s.op === 'Union') return extreme(s.args.map(sup), -1);
   throw new NotImplementedError('sup: unsupported set');
 }

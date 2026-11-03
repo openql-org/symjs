@@ -125,3 +125,33 @@ describe('AccumBounds (SymPy test_accumulationbounds)', () => {
     expect(s2(A(1, 1))).toBe('1');
   });
 });
+
+describe('AccumBounds to an infinite power (SymPy AccumBounds.__pow__)', () => {
+  const moo = mul(-1, oo);
+  it.each([
+    [1, 3, oo, 'AccumBounds(0, oo)'],
+    [0, 3, oo, 'AccumBounds(0, oo)'],
+    [R(1, 4), R(1, 2), oo, '0'],
+    [2, 3, oo, 'oo'],
+    [-1, 2, oo, 'AccumBounds(-oo, oo)'],
+    [-2, -1, oo, 'nan'],
+    [R(-1, 2), R(-1, 4), oo, '0'],
+    [-3, -2, oo, 'zoo'],
+    [R(-1, 2), R(1, 2), oo, '0'],
+    [R(-1, 2), 2, oo, 'AccumBounds(0, oo)'],
+    [1, 3, moo, 'AccumBounds(0, oo)'],
+    [R(1, 4), R(1, 2), moo, 'oo'],
+    [2, 3, moo, '0'],
+    [0, R(1, 2), moo, 'oo'],
+    [-2, -1, moo, 'nan'],
+    [-1, 1, moo, 'AccumBounds(-oo, oo)'],
+  ] as const)('AccumBounds(%s, %s)**%s = %s', (a, b, e, want) => expect(s(pow(A(a, b), e))).toBe(want));
+  it('inverts an interval with 0 as an end point', () => {
+    // SymPy: 1/AccumBounds(0, 2) = AccumBounds(1/2, oo), AccumBounds(-2, 0)**-3 = AccumBounds(-oo, -1/8)
+    expect(s(pow(A(0, 2), -1))).toBe('AccumBounds(1/2, oo)');
+    expect(s(pow(A(-2, 0), -1))).toBe('AccumBounds(-oo, -1/2)');
+    expect(s(pow(A(0, 2), -2))).toBe('AccumBounds(1/4, oo)');
+    expect(s(pow(A(-2, 0), -3))).toBe('AccumBounds(-oo, -1/8)');
+    expect(s(pow(A(-1, 2), -1))).toBe('AccumBounds(-oo, oo)');
+  });
+});

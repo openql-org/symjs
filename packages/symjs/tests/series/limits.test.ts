@@ -176,6 +176,39 @@ const cases: [string, string, string, '+' | '-' | '+-', string][] = [
   ["(-2)**x", "x", "oo", "+", "zoo"],
   ["(-1/2)**x", "x", "oo", "+", "0"],
   ["x**(I*x)*(x + 1)**(-I*x)", "x", "oo", "+", "exp(-I)"],
+  ["sin(x) + 1/x", "x", "oo", "+", "AccumBounds(-1, 1)"],
+  ["sin(x)*cos(x)", "x", "oo", "+", "AccumBounds(-1, 1)"],
+  ["sin(x)", "x", "-oo", "+", "AccumBounds(-1, 1)"],
+  ["sin(1/x)", "x", "0", "+-", "AccumBounds(-1, 1)"],
+  ["atan(-x - I)", "x", "oo", "+", "-pi/2"],
+  ["atan(x + I)*exp(-x)", "x", "oo", "+", "0"],
+  ["sin(x)/x*log(-1 + I*x)", "x", "0", "-", "-I*pi"],
+  ["sqrt(I*x - 1)", "x", "0", "-", "-I"],
+  ["x**13*exp(-x)", "x", "oo", "+", "0"],
+  ["gamma(x**2)/gamma(x)", "x", "oo", "+", "oo"],
+  // the Gruntz algorithm, intervals and branch cuts (SymPy 1.14)
+  ["3**x", "x", "oo", "+", "oo"],
+  ["acoth(sin(x))", "x", "0", "+", "-I*pi/2"],
+  ["acoth(x)", "x", "0", "-", "I*pi/2"],
+  ["acsc(exp(x))", "x", "oo", "-", "0"],
+  ["asec(x)", "x", "0", "+", "oo*I"],
+  ["acsc(I*x)", "x", "0", "+", "-oo*I"],
+  ["acsc(I*x)", "x", "0", "-", "oo*I"],
+  ["x**x*sin(1/x)", "x", "0", "+", "AccumBounds(-1, 1)"],
+  ["sin(x)/(1 + 1/x)", "x", "oo", "+", "AccumBounds(-1, 1)"],
+  ["(1/x - 1/(x*(1 + x)))*sin(1/x)", "x", "0", "+", "AccumBounds(-1, 1)"],
+  ["(sin(x) - 2)**(1/x)", "x", "oo", "+", "Limit((sin(x) - 2)**(1/x), x, oo, dir='-')"],
+  ["log(sin(x) - 2)", "x", "oo", "+", "Limit(log(sin(x) - 2), x, oo, dir='-')"],
+  ["tan(x)/x", "x", "oo", "+", "Limit(tan(x)/x, x, oo, dir='-')"],
+  ["cot(I*x)", "x", "0", "+", "-oo*I"],
+  ["cot(-I*x)", "x", "0", "+", "oo*I"],
+  ["(-1)**(-I*x)", "x", "oo", "+", "oo"],
+  ["sin(1/x)*log(x) + factorial(1/x)", "x", "0", "+", "oo"],
+  ["cot(x*f(1))", "x", "0", "+", "oo*sign(1/f(1))"],
+  ["I/x - I/sin(x)", "x", "0", "+", "0"],
+  ["coth(I*x)", "x", "0", "+", "-oo*I"],
+  ["factorial(1/x) - 1/x", "x", "0", "+", "oo"],
+  ["x**2*sin(1/x) + 1/x - 1/sin(x)", "x", "0", "+", "0"],
 ];
 
 describe('limits: results equal SymPy 1.14', () => {
@@ -187,39 +220,45 @@ describe('limits: results equal SymPy 1.14', () => {
 describe('limits that symjs leaves unevaluated, or answers differently from SymPy 1.14', () => {
   // [expression, variable, point, direction, symjs result, SymPy 1.14 result]
   const unevaluated: [string, string, string, '+' | '-' | '+-', string, string][] = [
-    // AccumBounds results are not implemented: the bounded value stays a Limit
-    ['sin(x) + 1/x', 'x', 'oo', '+', "Limit(sin(x) + 1/x, x, oo, dir='-')", 'AccumBounds(-1, 1)'],
-    ['sin(x)*x', 'x', 'oo', '+', "Limit(x*sin(x), x, oo, dir='-')", 'oo*sign(AccumBounds(-1, 1))'],
-    ['sin(x)*cos(x)', 'x', 'oo', '+', "Limit(sin(x)*cos(x), x, oo, dir='-')", 'AccumBounds(-1, 1)'],
-    ['sin(x)', 'x', '-oo', '+', "Limit(sin(x), x, -oo, dir='+')", 'AccumBounds(-1, 1)'],
-    ['sin(1/x)', 'x', '0', '+-', "Limit(sin(1/x), x, 0, dir='+-')", 'AccumBounds(-1, 1)'],
-    ['sin(x)*factorial(x)/factorial(x - 1)', 'x', 'oo', '+', "Limit(sin(x)*factorial(x)/factorial(x - 1), x, oo, dir='-')", 'AccumBounds(-oo, oo)'],
-    // a function of an argument tending to an infinity off the real axis (other than log)
-    ['atan(-x - I)', 'x', 'oo', '+', "Limit(-atan(x + I), x, oo, dir='-')", '-pi/2'],
-    ['atan(x + I)*exp(-x)', 'x', 'oo', '+', "Limit(exp(-x)*atan(x + I), x, oo, dir='-')", '0'],
-    // on a branch cut from the side the expansion does not see (the principal values differ)
-    ['sin(x)/x*log(-1 + I*x)', 'x', '0', '-', "Limit(log(I*x - 1)*sin(x)/x, x, 0, dir='-')", '-I*pi'],
-    ['sqrt(I*x - 1)', 'x', '0', '-', "Limit(sqrt(I*x - 1), x, 0, dir='-')", '-I'],
+    // the exponential growth of besseli and Ei at infinity is not known to the Gruntz algorithm here
+    ["besseli(1, 1/x) - exp(1/x)", "x", "0", "+", "Limit(-exp(1/x) + besseli(1, 1/x), x, 0, dir='+')", "-oo"],
+    ["Ei(1/x) - exp(1/x)/x", "x", "0", "+", "Limit(Ei(1/x) - exp(1/x)/x, x, 0, dir='+')", "-oo"],
+    ["gamma(1/x)*sin(1/x) + 1/x", "x", "0", "+", "Limit(sin(1/x)*gamma(1/x) + 1/x, x, 0, dir='+')", "oo*sign(AccumBounds(-1, 1))"],
+    ["x*exp(I*x)", "x", "-oo", "+", "Limit(x*exp(I*x), x, -oo, dir='+')", "NotImplementedError"],
+    ["(cos(x) + 1)**(1/x)", "x", "oo", "+", "Limit((cos(x) + 1)**(1/x), x, oo, dir='-')", "AccumBounds(0, 1)"],
+    ["sin(1/x)*log(x)*x", "x", "0", "+", "Limit(x*log(x)*sin(1/x), x, 0, dir='+')", "0"],
+    ["1/(x*(1 + x)) - 1/x + sin(1/x)", "x", "0", "+", "Limit(sin(1/x) - 1/x + 1/(x*(x + 1)), x, 0, dir='+')", "AccumBounds(-2, 0)"],
+    // the argument-wise evaluation stops after 12 nested levels
+    ["sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(1/x)))))))))))))))", "x", "0", "+", "Limit(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(1/x))))))))))))))), x, 0, dir='+')", "AccumBounds(-sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(1)))))))))))))), sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(1)))))))))))))))"],
+    // undecided: the product of the side value with 0*oo, an interval times a vanishing factor,
+    // a direction that depends on the sign of y
+    ["sin(x)/x*asin(2 + I*x)", "x", "0", "+", "Limit(sin(x)*asin(I*x + 2)/x, x, 0, dir='+')", "pi - asin(2)"],
+    ["sin(x)*sin(1/x)/x", "x", "0", "+", "Limit(sin(1/x)*sin(x)/x, x, 0, dir='+')", "AccumBounds(-1, 1)"],
+    ["floor(x)*sin(x)", "x", "oo", "+", "Limit(sin(x)*floor(x), x, oo, dir='-')", "oo*sign(AccumBounds(-1, 1))"],
+    ["acoth(x*y)", "x", "0", "+", "Limit(acoth(x*y), x, 0, dir='+')", "-log(-1/y)/2 + log(1/y)/2"],
+    // the same interval: SymPy writes oo*AccumBounds(-1, 1) as oo*sign(AccumBounds(-1, 1))
+    ["sin(1/x)/(x**2 + x)", "x", "0", "+", "AccumBounds(-oo, oo)", "oo*sign(AccumBounds(-1, 1))"],
+    // an infinite value in the direction I
+    ["asec(exp(1/x))", "x", "0", "-", "Limit(asec(exp(1/x)), x, 0, dir='-')", "oo*I"],
+    // the same interval: SymPy writes oo*AccumBounds(-1, 1) as oo*sign(AccumBounds(-1, 1))
+    ["sin(x)*x", "x", "oo", "+", "AccumBounds(-oo, oo)", "oo*sign(AccumBounds(-1, 1))"],
+    ["sin(x)*factorial(x)/factorial(x - 1)", "x", "oo", "+", "Limit(sin(x)*factorial(x)/factorial(x - 1), x, oo, dir='-')", "AccumBounds(-oo, oo)"],
     // an exponent with a symbolic direction, or an imaginary one (SymPy gives nan or raises)
-    ['2**(x*y)', 'x', 'oo', '+', "Limit(2**(x*y), x, oo, dir='-')", 'exp(oo*sign(y))'],
-    ['2**(-I*x)', 'x', 'oo', '+', "Limit(2**(-I*x), x, oo, dir='-')", 'nan'],
-    ['(1/2)**(I*x)', 'x', 'oo', '+', "Limit((1/2)**(I*x), x, oo, dir='-')", 'nan'],
-    ['I**x', 'x', 'oo', '+', "Limit(I**x, x, oo, dir='-')", 'nan'],
-    ['y**x', 'x', 'oo', '+', "Limit(y**x, x, oo, dir='-')", 'exp(oo*sign(log(y)))'],
-    ['x*exp(I*x)', 'x', 'oo', '+', "Limit(x*exp(I*x), x, oo, dir='-')", 'NotImplementedError'],
-    ['x**(I*x)*(x + 1)**(I*x)', 'x', 'oo', '+', "Limit(x**(I*x)*(x + 1)**(I*x), x, oo, dir='-')", 'NotImplementedError'],
-    // more than 12 steps of L'Hopital's rule
-    ['x**13*exp(-x)', 'x', 'oo', '+', "Limit(x**13*exp(-x), x, oo, dir='-')", '0'],
+    ["2**(x*y)", "x", "oo", "+", "Limit(2**(x*y), x, oo, dir='-')", "exp(oo*sign(y))"],
+    ["2**(-I*x)", "x", "oo", "+", "Limit(2**(-I*x), x, oo, dir='-')", "nan"],
+    ["(1/2)**(I*x)", "x", "oo", "+", "Limit((1/2)**(I*x), x, oo, dir='-')", "nan"],
+    ["I**x", "x", "oo", "+", "Limit(I**x, x, oo, dir='-')", "nan"],
+    ["y**x", "x", "oo", "+", "Limit(y**x, x, oo, dir='-')", "exp(oo*sign(log(y)))"],
+    ["x*exp(I*x)", "x", "oo", "+", "Limit(x*exp(I*x), x, oo, dir='-')", "NotImplementedError"],
+    ["x**(I*x)*(x + 1)**(I*x)", "x", "oo", "+", "Limit(x**(I*x)*(x + 1)**(I*x), x, oo, dir='-')", "NotImplementedError"],
     // the quotient does not settle numerically at 10**7 (erfc underflows)
-    ['erfc(x)/(1 - erf(x))**2', 'x', 'oo', '+', "Limit(erfc(x)/(1 - erf(x))**2, x, oo, dir='-')", '0'],
-    // the Gamma functions do not cancel in the asymptotic form
-    ['gamma(x**2)/gamma(x)', 'x', 'oo', '+', "Limit(gamma(x**2)/gamma(x), x, oo, dir='-')", 'oo'],
+    ["erfc(x)/(1 - erf(x))**2", "x", "oo", "+", "Limit(erfc(x)/(1 - erf(x))**2, x, oo, dir='-')", "0"],
     // SymPy raises NotImplementedError for these
-    ['x**y', 'x', '0', '+', "Limit(x**y, x, 0, dir='+')", 'NotImplementedError'],
-    ['floor(y*x)', 'x', '0', '+', "Limit(floor(x*y), x, 0, dir='+')", 'NotImplementedError'],
-    ['floor(sin(pi*x)/x)', 'x', 'oo', '+', "Limit(floor(sin(pi*x)/x), x, oo, dir='-')", 'NotImplementedError'],
-    ['atan2(1/x, sin(x))', 'x', 'oo', '+', "Limit(atan2(1/x, sin(x)), x, oo, dir='-')", 'NotImplementedError'],
-    ['exp(x)', 'x', '-oo*I', '+', "Limit(exp(x), x, -oo*I, dir='+')", 'NotImplementedError'],
+    ["x**y", "x", "0", "+", "Limit(x**y, x, 0, dir='+')", "NotImplementedError"],
+    ["floor(y*x)", "x", "0", "+", "Limit(floor(x*y), x, 0, dir='+')", "NotImplementedError"],
+    ["floor(sin(pi*x)/x)", "x", "oo", "+", "Limit(floor(sin(pi*x)/x), x, oo, dir='-')", "NotImplementedError"],
+    ["atan2(1/x, sin(x))", "x", "oo", "+", "Limit(atan2(1/x, sin(x)), x, oo, dir='-')", "NotImplementedError"],
+    ["exp(x)", "x", "-oo*I", "+", "Limit(exp(x), x, -oo*I, dir='+')", "NotImplementedError"],
   ];
   it.each(unevaluated)('limit(%s, %s, %s, %s) = %s (SymPy: %s)', (e, v, p, d, expected) => {
     expect(lim(e, v, p, d)).toBe(expected);

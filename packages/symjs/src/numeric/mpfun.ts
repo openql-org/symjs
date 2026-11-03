@@ -134,7 +134,9 @@ function iroot(m: bigint, n: bigint): bigint {
 export function exp(x: Mpf, prec: number): Mpf {
   if (F.isZero(x)) return ONE;
   const mg = F.mag(x);
-  if (mg > 60) throw new RangeError('exp: argument too large');
+  // the binary exponent of the result, about x/log(2), must stay a safe integer (Mpf.exp is a
+  // number; mpmath's exponents are unbounded integers)
+  if (mg > 52) throw new RangeError('exp: argument too large');
   const wp = prec + 20 + Math.max(0, mg);
   // n = round(x / ln2)
   const ln2 = mpLn2(wp + 10);

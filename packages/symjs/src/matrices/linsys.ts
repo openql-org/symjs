@@ -12,9 +12,7 @@ import { at } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Mul, Pow, Rational, Rel, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
-import { freeSymbols } from '../core/traverse';
 import { polyCoefficients } from '../polys/poly';
-import { Poly, sortGens } from '../polys/sympoly';
 import { expandMul } from '../simplify/expand';
 import { cancel, fraction } from '../simplify/rational';
 import { Matrix } from './matrix';
@@ -78,16 +76,10 @@ function rationalFunctionDomain(entries: readonly Expr[], syms: readonly Sym[]):
 
 /** An element of QQ(params) as SymPy prints it: numerator/denominator, expanded over a constant denominator. */
 function fieldElement(v: Expr): Expr {
+  // (cancel gives the denominator a positive leading coefficient in lex order: 1 - y -> y - 1)
   const c = cancel(v);
-  let [num, den] = fraction(c);
+  const [num, den] = fraction(c);
   if (den.isNumber) return expandMul(c);
-  // the denominator with a positive leading coefficient in lex order (1 - y -> y - 1)
-  try {
-    const lc = Poly.from(den, sortGens([...freeSymbols(den)])).LC();
-    if (lc.isNumber && lc.toNumber() < 0) [num, den] = [mul(-1, num), expandMul(mul(-1, den))];
-  } catch {
-    // not a polynomial: keep the sign
-  }
   return mul(expandMul(num), pow(den, -1));
 }
 

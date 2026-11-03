@@ -15,7 +15,11 @@ import { ZERO } from './mpf';
 import * as M from './mpfun';
 import { type Mpc } from './mpfun';
 import * as SP from './mpspecial';
-import { cLambertW } from './complex';
+import * as EI from './mpexpint';
+import { clambertw } from './mplambertw';
+import { caltzeta, clerchphi, cpolylog } from './mppolylog';
+import * as OP from './mporthopoly';
+import { cellipe, cellipeInc, cellipf, cellipk, cellippi } from './mpelliptic';
 import { mpFn1, mpFn2, mpFns } from './mpeval';
 
 const toInt = (z: Mpc): number => {
@@ -63,6 +67,22 @@ Object.assign(mpFns, {
     return M.cdiv(g(n), M.cmul(g(k), g(M.csub(n, k, wp)), wp), p);
   }),
   zeta: (args, p) => SP.czeta(at(args, 0), p, args[1]),
+  dirichlet_eta: (args, p) => {
+    if (args.length > 1) throw new NotImplementedError('dirichlet_eta(s, a)');
+    return caltzeta(at(args, 0), p);
+  },
+  polylog: mpFn2(cpolylog),
+  lerchphi: (args, p) => clerchphi(at(args, 0), at(args, 1), at(args, 2), p),
+  legendre: mpFn2(OP.clegendre),
+  assoc_legendre: (args, p) => OP.clegenp(at(args, 0), at(args, 1), at(args, 2), p),
+  jacobi: (args, p) => OP.cjacobi(at(args, 0), at(args, 1), at(args, 2), at(args, 3), p),
+  gegenbauer: (args, p) => OP.cgegenbauer(at(args, 0), at(args, 1), at(args, 2), p),
+  chebyshevt: mpFn2(OP.cchebyt),
+  chebyshevu: mpFn2(OP.cchebyu),
+  elliptic_k: mpFn1(cellipk),
+  elliptic_e: (args, p) => (args.length > 1 ? cellipeInc(at(args, 0), at(args, 1), p) : cellipe(at(args, 0), p)),
+  elliptic_f: mpFn2(cellipf),
+  elliptic_pi: (args, p) => (args.length > 2 ? cellippi(at(args, 0), at(args, 1), at(args, 2), p) : cellippi(at(args, 0), undefined, at(args, 1), p)),
   erf: mpFn1(SP.cerf),
   erfc: mpFn1(SP.cerfc),
   erfi: mpFn1(SP.cerfi),
@@ -77,10 +97,11 @@ Object.assign(mpFns, {
   }),
   fresnels: mpFn1((a, p) => SP.cfresnel('S', a, p)),
   fresnelc: mpFn1((a, p) => SP.cfresnel('C', a, p)),
-  Ei: mpFn1(SP.cei),
+  Ei: mpFn1(EI.cei),
+  expint: mpFn2(EI.cexpint),
   LambertW: (args, p) => {
     const k = args[1];
-    return mpLambertW(at(args, 0), k ? toInt(k) : 0, p);
+    return clambertw(at(args, 0), k ? toInt(k) : 0, p);
   },
   besselj: mpFn2((nu, z, p) => mpBessel('J', nu, z, p)),
   bessely: mpFn2((nu, z, p) => mpBessel('Y', nu, z, p)),
@@ -90,49 +111,22 @@ Object.assign(mpFns, {
   airybi: mpFn1((z, p) => mpAiry('bi', z, p)),
   airyaiprime: mpFn1((z, p) => mpAiry('aip', z, p)),
   airybiprime: mpFn1((z, p) => mpAiry('bip', z, p)),
-  li: mpFn1(SP.cli),
-  Li: mpFn1((a, p) => M.csub(SP.cli(a, p + 20), SP.cli([F.fromInt(2n), ZERO], p + 20), p)),
-  Si: mpFn1((a, p) => SP.csi(a, p, false)),
-  Shi: mpFn1((a, p) => SP.csi(a, p, true)),
-  Ci: mpFn1((a, p) => SP.cci(a, p, false)),
-  Chi: mpFn1((a, p) => SP.cci(a, p, true)),
+  li: mpFn1(EI.cli),
+  Li: mpFn1((a, p) => M.csub(EI.cli(a, p + 20), EI.cli([F.fromInt(2n), ZERO], p + 20), p)),
+  Si: mpFn1(EI.csi),
+  Shi: mpFn1(EI.cshi),
+  Ci: mpFn1(EI.cci),
+  Chi: mpFn1(EI.cchi),
   lowergamma: mpFn2(SP.clowergamma),
   uppergamma: mpFn2(SP.cuppergamma),
 } satisfies typeof mpFns);
 
-/** Lambert W by Halley iteration from a double-precision start (branch k). */
-function mpLambertW(z: Mpc, k: number, p: number): Mpc {
-  const wp = p + 30;
-  const start = numericFnsForStart(z, k);
-  let w: Mpc = [F.fromNumber(start.re), F.fromNumber(start.im)];
-  const two: Mpc = [F.fromInt(2n), ZERO];
-  for (let i = 0; i < 200; i++) {
-    const ew = M.cexp(w, wp);
-    const f = M.csub(M.cmul(w, ew, wp), z, wp);
-    const wp1 = M.cadd(w, one, wp);
-    const denom = M.csub(M.cmul(ew, wp1, wp), M.cdiv(M.cmul(M.cadd(w, two, wp), f, wp), M.cmul(two, wp1, wp), wp), wp);
-    const dw = M.cdiv(f, denom, wp);
-    w = M.csub(w, dw, wp);
-    const small = F.mag(M.cabs(dw, wp));
-    const size = Math.max(0, F.mag(M.cabs(w, wp)));
-    if (F.toNumber(M.cabs(dw, wp)) === 0 || small < size - wp + 4) break;
-  }
-  return [F.round(w[0], p), F.round(w[1], p)];
-}
-
-function numericFnsForStart(z: Mpc, k: number): { re: number; im: number } {
-  return cLambertW({ re: F.toNumber(z[0]), im: F.toNumber(z[1]) }, k);
-}
-
-
 // ---- Bessel and Airy functions by power series in arbitrary precision -------------------
 
-const cr = (n: number | bigint, d: number | bigint = 1): Mpc => [F.fromRational(BigInt(n), BigInt(d), 200), ZERO];
-const small = (t: Mpc, sum: Mpc, wp: number) => {
-  const a = F.toNumber(M.cabs(t, 53));
-  const b = F.toNumber(M.cabs(sum, 53));
-  return a === 0 || (b > 0 && Math.log2(a / b) < -wp - 4);
-};
+/** n/d at wp bits (exact for an integer). */
+const cr = (n: number | bigint, d: number | bigint = 1, wp = 200): Mpc => [d === 1 ? F.fromInt(BigInt(n)) : F.fromRational(BigInt(n), BigInt(d), wp), ZERO];
+/** True when the term t is below 2**-wp relative to the sum (by exponents, so values beyond the range of doubles compare too). */
+const small = (t: Mpc, sum: Mpc, wp: number) => Math.max(F.mag(t[0]), F.mag(t[1])) < Math.max(F.mag(sum[0]), F.mag(sum[1])) - wp - 4;
 
 /** sum_k s**k (z/2)**(2k + nu) / (k! Gamma(k + nu + 1)). */
 function mpBesselSeries(nu: Mpc, z: Mpc, sign: 1 | -1, wp: number): Mpc {
@@ -181,13 +175,13 @@ function mpBessel(kind: 'J' | 'Y' | 'I' | 'K', nu: Mpc, z: Mpc, p: number): Mpc 
   };
   let s1 = M.C0;
   for (let k = 0; k < m; k++) {
-    const c = cr((kind === 'K' && k % 2 ? -1n : 1n) * fact(m - k - 1), fact(k));
+    const c = cr((kind === 'K' && k % 2 ? -1n : 1n) * fact(m - k - 1), fact(k), wp);
     s1 = M.cadd(s1, M.cmul(c, M.cpowInt(h, BigInt(2 * k - m), wp), wp), wp);
   }
   const euler: Mpc = [M.mpEuler(wp), ZERO];
   const psi = (k: number): Mpc => {
     let acc = M.cmul(cr(-1), euler, wp);
-    for (let j = 1; j < k; j++) acc = M.cadd(acc, cr(1, j), wp);
+    for (let j = 1; j < k; j++) acc = M.cadd(acc, cr(1, j, wp), wp);
     return acc;
   };
   let s2 = M.C0;
@@ -209,11 +203,14 @@ function mpBessel(kind: 'J' | 'Y' | 'I' | 'K', nu: Mpc, z: Mpc, p: number): Mpc 
 }
 
 function mpAiry(kind: 'ai' | 'bi' | 'aip' | 'bip', z: Mpc, p: number): Mpc {
-  const wp = p + 30 + Math.ceil(3 * Math.abs(F.toNumber(M.cabs(z, 53))));
-  const g23 = SP.cgamma(cr(2, 3), wp);
-  const g13 = SP.cgamma(cr(1, 3), wp);
-  const c1 = M.cdiv(one, M.cmul(M.cpow(cr(3), cr(2, 3), wp), g23, wp), wp);
-  const c2 = M.cdiv(one, M.cmul(M.cpow(cr(3), cr(1, 3), wp), g13, wp), wp);
+  // the terms grow to about exp(2/3 |z|^(3/2)) while Ai decays like exp(-2/3 z^(3/2))
+  const az = F.toNumber(M.cabs(z, 53));
+  const wp = p + 30 + Math.ceil(3 * az + 1.93 * az ** 1.5);
+  const q = (n: number, d: number): Mpc => [F.fromRational(BigInt(n), BigInt(d), wp), ZERO];
+  const g23 = SP.cgamma(q(2, 3), wp);
+  const g13 = SP.cgamma(q(1, 3), wp);
+  const c1 = M.cdiv(one, M.cmul(M.cpow(cr(3), q(2, 3), wp), g23, wp), wp);
+  const c2 = M.cdiv(one, M.cmul(M.cpow(cr(3), q(1, 3), wp), g13, wp), wp);
   const deriv = kind === 'aip' || kind === 'bip';
   const z3 = M.cmul(M.cmul(z, z, wp), z, wp);
   let f = M.C0;
@@ -228,8 +225,8 @@ function mpAiry(kind: 'ai' | 'bi' | 'aip' | 'bip', z: Mpc, p: number): Mpc {
       f = M.cadd(f, tf, wp);
       g = M.cadd(g, tg, wp);
     }
-    tf = M.cmul(tf, M.cmul(z3, cr(3 * k + 1, (3 * k + 1) * (3 * k + 2) * (3 * k + 3)), wp), wp);
-    tg = M.cmul(tg, M.cmul(z3, cr(3 * k + 2, (3 * k + 2) * (3 * k + 3) * (3 * k + 4)), wp), wp);
+    tf = M.cdiv(M.cmul(tf, z3, wp), cr((3 * k + 2) * (3 * k + 3)), wp);
+    tg = M.cdiv(M.cmul(tg, z3, wp), cr((3 * k + 3) * (3 * k + 4)), wp);
     if (k > 2 && small(M.cadd(tf, tg, wp), M.cadd(f, g, wp), wp)) break;
   }
   if (kind === 'ai' || kind === 'aip') return M.csub(M.cmul(c1, f, wp), M.cmul(c2, g, wp), p);

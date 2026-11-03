@@ -169,3 +169,60 @@ describe('evalf keeps the arguments of undefined functions', () => {
     expect(String(sj.evalf(P(src)))).toBe(expected);
   });
 });
+
+describe('evalf with values that do not give a number (SymPy evalf(subs=...))', () => {
+  // SymPy 1.14: the substituted expression is evaluated part by part when it is a sum, product
+  // or power; otherwise the expression is returned unchanged
+  const ev = (s: string, v: Record<string, number | Expr | { re: number; im: number }>) => sstr(evalf(p(s), v as never));
+  it('returns a function or symbol unchanged', () => {
+    expect(ev('yn(x, y)', { x: 0, y: 0 })).toBe('yn(x, y)');
+    expect(ev('yn(0, x)', { x: 0 })).toBe('yn(0, x)');
+    expect(ev('f(x)', { x: 1 })).toBe('f(x)');
+    expect(ev('besselj(x, y)', { x: 0.5 })).toBe('besselj(x, y)');
+    expect(ev('sin(x + y)', { x: 1 })).toBe('sin(x + y)');
+    expect(ev('Abs(x + y)', { x: 1 })).toBe('Abs(x + y)');
+    expect(ev('exp(x + y)', { x: 1 })).toBe('exp(x + y)');
+    expect(ev('x*y', { x: 1 })).toBe('x*y');
+    expect(ev('x', { y: 1 })).toBe('x');
+  });
+  it('evaluates the parts of a sum, product or power', () => {
+    expect(ev('x + yn(0, y)', { x: 1, y: 0 })).toBe('yn(0, 0) + 1.0');
+    expect(ev('f(x) + x', { x: 1 })).toBe('f(1) + 1.0');
+    expect(ev('f(x) + sin(x)', { x: 2 })).toBe('f(2) + 0.909297426825682');
+    expect(ev('sin(x)*yn(0, y)', { x: 1, y: 0 })).toBe('0.841470984807897*yn(0, 0)');
+    expect(ev('f(x)*y', { x: 1 })).toBe('y*f(1)');
+    expect(ev('yn(0, x)**2', { x: 0 })).toBe('yn(0, 0)**2');
+    expect(ev('x**2*y', { x: 2 })).toBe('4.0*y');
+    expect(ev('2*sin(x*y) + 1', { x: 1 })).toBe('2.0*sin(y) + 1.0');
+    expect(ev('x + y', { x: { re: 1, im: 2 } })).toBe('y + 1.0 + 2.0*I');
+  });
+  it('infinities', () => {
+    expect(ev('log(x)', { x: 0 })).toBe('-oo');
+    expect(ev('log(x) + 1', { x: 0 })).toBe('-oo');
+    expect(ev('log(x)', { x: sj.float('0.0') })).toBe('-oo');
+    expect(ev('1/x', { x: 0 })).toBe('zoo');
+    expect(ev('x/y', { x: 1, y: 0 })).toBe('zoo');
+    // a pole of a function: unchanged
+    expect(ev('gamma(x)', { x: 0 })).toBe('gamma(x)');
+    expect(ev('2*gamma(x)', { x: 0 })).toBe('2*gamma(x)');
+    expect(ev('gamma(x) + y', { x: -1, y: 1 })).toBe('y + gamma(x)');
+  });
+  it('a substituted expression that is a number', () => {
+    expect(ev('Piecewise((1, x > 0), (2, True))', { x: 1 })).toBe('1.00000000000000');
+  });
+  it('functions keep their arguments without values (SymPy Function._eval_evalf)', () => {
+    expect(sstr(evalf(p('sin(x + 1)')))).toBe('sin(x + 1)');
+    expect(sstr(evalf(p('exp(x + 1)')))).toBe('exp(x + 1)');
+    expect(sstr(evalf(p('2*sin(2*x + 1)')))).toBe('2.0*sin(2*x + 1)');
+    expect(sstr(evalf(p('besselj(1/2, x)')))).toBe('besselj(1/2, x)');
+  });
+});
+
+describe('evalf with values: log of zero', () => {
+  it('a two-argument log at 0', () => {
+    // SymPy log(x, 2).evalf(subs={x: 0}) = -oo (log(x)/log(2))
+    expect(sstr(evalf(p('log(x, 2)'), { x: 0 }))).toBe('-oo');
+    // an unevaluated two-argument log (SymPy has none) has a pole there: unchanged
+    expect(sstr(evalf(sj.fn('log', [x, 2], { evaluate: false }), { x: 0 }))).toBe('log(x, 2)');
+  });
+});

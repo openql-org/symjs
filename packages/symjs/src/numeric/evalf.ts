@@ -25,6 +25,7 @@ import {
   Pow,
   Rational,
   Rel,
+  S,
   Special,
   Sym,
   UndefFn,
@@ -223,6 +224,15 @@ export function evalf(ex: ExprLike, n?: number | NumericValues, opts: EvalfOptio
   return evalfPrec(e, dpsToPrec(dps), values, opts.chop);
 }
 
+/** A function application (exp is a power of E here, a function in SymPy). */
+const isFunction = (x: Expr): boolean => x instanceof Fn || x instanceof UndefFn || (x instanceof Pow && x.base instanceof Constant && x.base.name === 'E');
+
+/** A single argument that is the number zero. */
+const isZeroNumber = (args: readonly Expr[]): boolean => {
+  const a = args[0];
+  return args.length === 1 && (a instanceof Rational || a instanceof Float) && a.isZero;
+};
+
 /** evalf at a binary precision. */
 export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: boolean | number): Expr {
   const raw = makeRawLookup(values);
@@ -234,24 +244,32 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
     if (v instanceof Expr) return evalAdaptive(v, wp);
     return [F.fromNumber(v.re), F.fromNumber(v.im)];
   };
-  const go = (x: Expr): Expr => {
-    let numeric = true as boolean; // set inside visit
+  const noValue = (): Mpc | undefined => undefined;
+  /** The value of x when it is a number (every symbol having a value), or undefined. */
+  const numeric = (x: Expr, look: (s: Sym, wp: number) => Mpc | undefined): Expr | undefined => {
+    let ok = true as boolean; // set inside visit
     const visit = (y: Expr) => {
       if (y instanceof ExtensionExpr && y.numericValue(5) !== undefined) return;
-      if (y instanceof Sym && lookup(y, prec) === undefined) numeric = false;
-      else if (y instanceof Special || y instanceof Rel || y instanceof BoolAtom) numeric = false;
+      if (y instanceof Sym && look(y, prec) === undefined) ok = false;
+      else if (y instanceof Special || y instanceof Rel || y instanceof BoolAtom) ok = false;
       else y.args.forEach(visit);
     };
     visit(x);
-    if (numeric) {
-      try {
-        return fromMpc(evalAdaptive(x, prec, lookup), prec, chop);
-      } catch {
-        // not numerically evaluable: fall through to the arguments
-      }
+    if (!ok) return undefined;
+    try {
+      return fromMpc(evalAdaptive(x, prec, look), prec, chop);
+    } catch {
+      // not numerically evaluable
+      return undefined;
     }
-    // SymPy: an undefined function keeps its arguments exact (f(1).evalf() == f(1))
-    if (x.args.length === 0 || x instanceof UndefFn) return x;
+  };
+  /** SymPy _eval_evalf: the numeric parts evaluated, the others kept. */
+  const go = (x: Expr): Expr => {
+    const v = numeric(x, noValue);
+    if (v !== undefined) return v;
+    // SymPy Function._eval_evalf: a function that is not a number keeps its arguments
+    // (f(1).evalf() == f(1), sin(x + 1).evalf() == sin(x + 1), exp(x + 1).evalf() == exp(x + 1))
+    if (x.args.length === 0 || isFunction(x)) return x;
     // keep integer exponents exact (SymPy: (x**2).evalf() == x**2)
     if (x instanceof Pow && x.exp instanceof Rational && x.exp.isInteger) return rebuild(x, [go(x.base), x.exp]);
     if (x instanceof Mul && x.args[0] instanceof Rational && x.args[0].p === -1n && x.args[0].q === 1n) {
@@ -259,7 +277,31 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
     }
     return rebuild(x, x.args.map(go));
   };
-  return go(e);
+  if (values === undefined) return go(e);
+  const v = numeric(e, lookup);
+  if (v !== undefined) return v;
+  // SymPy evalf(subs=...) when the value is not a number: the expression with the values
+  // substituted is evaluated part by part when it is a sum, product or power; otherwise the
+  // expression is returned unchanged (yn(0, x).evalf(subs={x: 0}) == yn(0, x))
+  let pole = false as boolean; // set inside sub
+  const sub = (x: Expr): Expr => {
+    if (x instanceof Sym) {
+      const r = raw(x);
+      return r === undefined ? x : typeof r === 'number' || r instanceof Expr ? sympify(r) : sympify(r.re).add(sympify(r.im).mul(S.I));
+    }
+    if (x.args.length === 0) return x;
+    const args = x.args.map(sub);
+    if (args.every((a, i) => a === x.args[i])) return x;
+    // the mpmath value of log(0) is -oo (SymPy log(x).evalf(subs={x: 0}) == -oo)
+    if (x instanceof Fn && x.name === 'log' && isZeroNumber(args)) return S.NegativeInfinity;
+    const r = rebuild(x, args);
+    if (x instanceof Fn && r instanceof Special && !args.some((a) => a instanceof Special)) pole = true;
+    return r;
+  };
+  const e2 = sub(e);
+  if (e2 instanceof Special) return pole ? e : e2;
+  if (e2 instanceof Add || e2 instanceof Mul || (e2 instanceof Pow && !isFunction(e2))) return go(e2);
+  return numeric(e2, noValue) ?? e;
 }
 
 const isVector = (a: number | C | readonly (number | C)[]): a is readonly (number | C)[] => Array.isArray(a);

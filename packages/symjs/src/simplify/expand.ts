@@ -447,12 +447,13 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
     if (h.complex) e = applyBottomUp(e, expandComplexNode, false);
     if (h.log) e = applyBottomUp(e, (x) => expandLogNode(x, h.force), h.deep);
     // SymPy applies the hints in the order log, multinomial, mul, power_base, power_exp, trig
-    if (h.mul) e = h.deep ? expandMul(e) : expandMulShallow(e, h.mul, h.multinomial);
+    // (without multinomial, SymPy's mul hint leaves integer powers of sums as they are)
+    if (h.mul) e = h.deep ? (h.multinomial ? expandMul(e) : expandMulOnly(e)) : expandMulShallow(e, h.mul, h.multinomial);
     else if (h.multinomial) e = applyBottomUp(e, (x) => expandMulShallow(x, false, true), h.deep);
     if (h.power_base) e = applyBottomUp(e, (x) => powerBase(x, h.force), h.deep);
     if (h.power_exp) e = applyBottomUp(e, (x) => powerExp(x, h.force), h.deep);
     if (h.trig) e = applyBottomUp(e, expandTrigNode, h.deep);
-    if (h.mul && e.key !== was.key) e = h.deep ? expandMul(e) : expandMulShallow(e, h.mul, h.multinomial);
+    if (h.mul && e.key !== was.key) e = h.deep ? (h.multinomial ? expandMul(e) : expandMulOnly(e)) : expandMulShallow(e, h.mul, h.multinomial);
     if (e.key === was.key) break;
   }
   return e;
@@ -466,6 +467,19 @@ function expandMulShallow(e: Expr, doMul: boolean, doMulti: boolean): Expr {
     return expandPowInt(e.base, e.exp.p);
   }
   return e;
+}
+
+/**
+ * @internal SymPy expand_mul proper: distribute products over sums at every level, leaving
+ * integer powers of sums such as (a + b)**2 unexpanded.
+ */
+export function expandMulOnly(e: Expr): Expr {
+  let cur = e;
+  for (;;) {
+    const next = applyBottomUp(cur, (x) => expandMulShallow(x, true, false), true);
+    if (next.key === cur.key) return next;
+    cur = next;
+  }
 }
 
 export const expand_mul = (e: ExprLike): Expr =>

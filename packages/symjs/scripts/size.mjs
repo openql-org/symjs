@@ -28,20 +28,20 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Assumption-aware solve loads the predicate engine; keep its cost explicit.
 const CASES = [
   ['core', 'Rational', 150],
-  ['core', 'parse, str', 158],
-  ['core', 'parse, diff, expand, str, latex', 158],
-  ['core', '*', 210],
-  ['special', '*', 236],
-  ['simplify', 'simplify', 305],
-  ['polys', 'factor', 293],
-  ['calculus', 'integrate', 331],
-  ['solvers', 'solve', 425],
-  ['solvers', 'dsolve', 425],
-  ['sets', '*', 197],
-  ['matrices', 'Matrix', 313],
+  ['core', 'parse, str', 170],
+  ['core', 'parse, diff, expand, str, latex', 170],
+  ['core', '*', 240],
+  ['special', '*', 265],
+  ['simplify', 'simplify', 425],
+  ['polys', 'factor', 335],
+  ['calculus', 'integrate', 550],
+  ['solvers', 'solve', 630],
+  ['solvers', 'dsolve', 635],
+  ['sets', '*', 265],
+  ['matrices', 'Matrix', 415],
   ['printing', 'pretty', 186],
-  ['index', 'Rational', 450],
-  ['index', '*', 940],
+  ['index', 'Rational', 640],
+  ['index', '*', 1110],
 ];
 
 async function measure(entry, names) {

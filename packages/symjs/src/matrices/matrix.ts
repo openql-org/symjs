@@ -6,6 +6,7 @@
  */
 
 import { at, defined, first } from '../core/guard';
+import { NonInvertibleMatrixError, NonSquareMatrixError } from '../core/errors';
 import type { ComplexValue, EvalfOptions, ExprLike, NumericValues, Substitution } from '../core/nodes';
 import { Expr, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
@@ -187,7 +188,7 @@ export class Matrix {
 
   /** Integer power (negative powers use the inverse). */
   pow(n: number): Matrix {
-    if (!this.isSquare) throw new RangeError('Matrix pow: matrix must be square');
+    if (!this.isSquare) throw new NonSquareMatrixError('Matrix pow: matrix must be square');
     if (!Number.isInteger(n)) throw new RangeError('Matrix pow: exponent must be an integer');
     if (n < 0) return this.inv().pow(-n);
     let result = Matrix.eye(this.rows);
@@ -258,7 +259,7 @@ export class Matrix {
   }
 
   trace(): Expr {
-    if (!this.isSquare) throw new RangeError('trace: matrix must be square');
+    if (!this.isSquare) throw new NonSquareMatrixError('trace: matrix must be square');
     return add(...Array.from({ length: this.rows }, (_, i) => this.get(i, i)));
   }
 
@@ -267,7 +268,7 @@ export class Matrix {
    * computed with the division-free Berkowitz algorithm.
    */
   charpolyCoeffs(): Expr[] {
-    if (!this.isSquare) throw new RangeError('charpoly: matrix must be square');
+    if (!this.isSquare) throw new NonSquareMatrixError('charpoly: matrix must be square');
     return berkowitz(this);
   }
 
@@ -279,7 +280,7 @@ export class Matrix {
   }
 
   det(): Expr {
-    if (!this.isSquare) throw new RangeError('det: matrix must be square');
+    if (!this.isSquare) throw new NonSquareMatrixError('det: matrix must be square');
     const n = this.rows;
     if (n === 0) return S.One;
     if (n === 1) return this.get(0, 0);
@@ -298,16 +299,16 @@ export class Matrix {
 
   /** Adjugate (classical adjoint): transpose of the cofactor matrix. */
   adjugate(): Matrix {
-    if (!this.isSquare) throw new RangeError('adjugate: matrix must be square');
+    if (!this.isSquare) throw new NonSquareMatrixError('adjugate: matrix must be square');
     if (this.rows === 1) return Matrix.of([[1]]);
     return this.cofactorMatrix().transpose();
   }
 
   /** Inverse via adjugate / determinant. The determinant is simplified first. */
   inv(): Matrix {
-    if (!this.isSquare) throw new RangeError('inv: matrix must be square');
+    if (!this.isSquare) throw new NonSquareMatrixError('A Matrix must be square to invert.');
     const d = simplify(this.det());
-    if (d instanceof Rational && d.isZero) throw new RangeError('inv: matrix is singular');
+    if (d instanceof Rational && d.isZero) throw new NonInvertibleMatrixError('Matrix det == 0; not invertible.');
     const invDet = pow(d, -1);
     return this.adjugate().map((e) => expand(mul(e, invDet)));
   }

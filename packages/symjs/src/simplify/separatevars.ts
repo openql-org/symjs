@@ -7,9 +7,8 @@
  */
 
 import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Add, Constant, Mul, Pow } from '../core/nodes';
+import { Constant, Mul, Pow } from '../core/nodes';
 import { mul, pow, sympify } from '../core/ops';
-import { splitCoeff } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { factor } from '../polys/sympoly';
 import { expand } from './expand';
@@ -27,21 +26,10 @@ function sep(e0: Expr, force: boolean): Expr {
   e = expand(e, { mul: false, multinomial: false, force });
   const [pe, reps] = force ? posify(e) : [e, new Map<Expr, Expr>()];
   e = xreplace(factor(pe), [...reps]);
-  if (!(e instanceof Add)) return e;
-  const cSets = e.args.map((a) => new Map((a instanceof Mul ? a.args : [a]).map((f) => [f.key, f] as const)));
-  let common = [...first(cSets).values()].filter((f) => cSets.every((s) => s.has(f.key)));
-  let commonc = splitCoeff(mul(...common))[1];
-  common = commonc instanceof Mul ? [...commonc.args] : [commonc];
-  const commonKeys = new Set(common.map((f) => f.key));
-  let nonsepar: Expr = e.args.map((a) => mul(...(a instanceof Mul ? a.args : [a]).filter((f) => !commonKeys.has(f.key))))
-    .reduce((acc, t) => acc.add(t));
-  if (nonsepar.freeSymbols().size > 1) {
-    const [pn, r2] = force ? posify(nonsepar) : [nonsepar, new Map<Expr, Expr>()];
-    const fx = xreplace(factor(pn), [...r2]);
-    if (!(fx instanceof Add)) nonsepar = fx;
-  }
-  commonc = mul(...common);
-  return mul(commonc, nonsepar);
+  // SymPy then pulls out the factors common to the terms of a sum and factors the rest again; factor
+  // has already extracted them (the content and the common powers of the generators, also for
+  // non-commutative terms), so a sum that factor leaves has none and is returned as it is
+  return e;
 }
 
 /**

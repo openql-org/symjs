@@ -6,10 +6,12 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Limit, Mul, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
+import { Add, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
+import { apart } from '../polys/partfrac';
+import { fraction } from '../simplify/rational';
 import { Eq, Lt, piecewise } from '../core/logic';
 import { add, exp, mul, pow, sympify } from '../core/ops';
-import { freeSymbols, xreplace } from '../core/traverse';
+import { freeSymbols, mapBottomUp, xreplace } from '../core/traverse';
 import { abs, log, sin, tan } from '../functions/elementary';
 import { bernoulliNumber, factorial, harmonic, rf } from '../functions/special';
 import { polyCoefficients, roots } from '../polys/poly';
@@ -25,7 +27,7 @@ const isOo = (e: Expr) => e instanceof Special && e.name === 'oo';
 
 export { Sum, Product } from '../core/concrete';
 import { Sum, Product } from '../core/concrete';
-import { cast, defined, first, getOrThrow } from '../core/guard';
+import { at, cast, defined, first, getOrThrow } from '../core/guard';
 
 /** S_p(n) = sum_{k=1}^{n} k^p (Faulhaber, with B_1 = +1/2). */
 function powerSum(p: number, n: Expr): Expr {
@@ -117,9 +119,46 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
     const den = factors.find((g) => g instanceof Pow && g.exp instanceof Rational && g.exp.p === -1n && g.base.key === factorial(k).key);
     if (num && den && factors.length === 2) return exp(num.base);
   }
+  // two terms that cancel after a shift, also after a partial fraction decomposition (SymPy telescopic)
+  if (!isOo(b)) {
+    const t = telescopic(f, k, a, b) ?? (isRationalIn(f, k) ? telescopic(apart(f, k), k, a, b) : undefined);
+    if (t !== undefined) return t;
+  }
   // no closed form: a range with a known length is summed term by term (SymPy eval_sum_direct)
   return isInt(diff_) ? directSum(f, k, a, diff_.p) : undefined;
 }
+
+/** A rational function of k that is not a polynomial. */
+function isRationalIn(f: Expr, k: Sym): boolean {
+  const [n, d] = fraction(f);
+  return d.has(k) && polyCoefficients(expand(n), k) !== undefined && polyCoefficients(expand(d), k) !== undefined;
+}
+
+/**
+ * sum_{k=a}^{b} (L + R) for R = -L(k + s) with an integer shift s (SymPy telescopic): the first
+ * |s| terms of L (of R) and the last ones of R (of L) remain.
+ */
+function telescopic(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
+  if (!(f instanceof Add && f.args.length === 2)) return undefined;
+  // (the terms of a sum are not sums)
+  const [L, R] = [at(f.args, 0), at(f.args, 1)];
+  for (let s = 1; s <= 8; s++) {
+    for (const sh of [s, -s]) {
+      if (!isZeroExpanded(add(xreplace(L, [[k, add(k, sh)]]), R))) continue;
+      // telescopic_direct(L, R, s) for s > 0, telescopic_direct(R, L, |s|) for s < 0
+      const [P, Q] = sh > 0 ? [L, R] : [R, L];
+      const terms: Expr[] = [];
+      for (let m = 0; m < s; m++) terms.push(xreplace(P, [[k, add(a, m)]]), xreplace(Q, [[k, add(b, -m)]]));
+      return add(...terms);
+    }
+  }
+  return undefined;
+}
+
+const isZeroExpanded = (e: Expr): boolean => {
+  const x = expand(e);
+  return x instanceof Rational && x.isZero;
+};
 
 /** sum_{i=0}^{len} f(a + i). */
 function directSum(f: Expr, k: Sym, a: Expr, len: bigint): Expr {
@@ -331,7 +370,15 @@ export function summation(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): 
 }
 
 export function product(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Expr {
-  let e = sympify(f);
+  // SymPy product() is Product.doit(deep=False), which powsimps the result (2**(n*(n + 1)/2))
+  // (a number times a sum is distributed, as SymPy's Mul does: 2**(-a**2/2 + a/2 + n**2/2 + n/2))
+  const distribute = (e: Expr): Expr => (e instanceof Mul && e.args.length === 2 && isNum(at(e.args, 0)) && at(e.args, 1) instanceof Add ? expand(e) : e);
+  return mapBottomUp(powsimp(productDeep(sympify(f), limits)), distribute);
+}
+
+/** Product(...).doit(): the product without the final powsimp. */
+function productDeep(f: Expr, limits: readonly [Sym, ExprLike, ExprLike][]): Expr {
+  let e = f;
   for (const [k, a, b] of limits) {
     const r = productOne(e, k, sympify(a), sympify(b));
     if (r === undefined || r.key === S.NaN.key) return Product(e, [k, a, b]);
@@ -343,7 +390,7 @@ export function product(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Ex
 /** doit() for a Concrete node. */
 export function doitConcrete(c: Concrete): Expr {
   const lims = c.limits.map(([k, a, b]): [Sym, Expr, Expr] => [cast(k, Sym, 'limit variable'), a, b]);
-  return c.kind2 === 'Sum' ? summation(c.function, ...lims) : product(c.function, ...lims);
+  return c.kind2 === 'Sum' ? summation(c.function, ...lims) : productDeep(c.function, lims);
 }
 
 /** Reverse the order of the given limits (by index or variable), SymPy reverse_order. */

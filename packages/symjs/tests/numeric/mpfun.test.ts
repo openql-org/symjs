@@ -145,6 +145,10 @@ describe('mpfun real and complex elementary functions', () => {
   });
   it('special arguments', () => {
     expect(s30(M.exp(F.ZERO, P30))).toBe('1.0');
+    // mpmath exp(2**50) = 7.7155e+488972116717136; beyond 2**52 the binary exponent of
+    // the result is not a safe integer (mpmath has unbounded exponents)
+    expect(F.toStr(M.exp(F.fromInt(1n << 50n), 60), 5)).toBe('7.7155e+488972116717136');
+    expect(() => M.exp(F.fromInt(1n << 53n), 60)).toThrow(RangeError);
     // mpmath: +phi
     expect(s30(M.mpPhi(P30))).toBe('1.61803398874989484820458683437');
     expect(s30(M.cabs(c('-3', '0'), P30))).toBe('3.0');

@@ -11,7 +11,7 @@ import * as sj from '../../src';
 import { analyticFunc, I, log, Matrix, matrixLog, mul, oo, parse, parseExpr, Rational, S, simplify, sstr, symbols } from '../../src';
 import * as L from '../../src/matrices/linalg';
 import { isDiagonalizable, jordanForm } from '../../src/matrices/linalg';
-import { MatrixError, NonInvertibleMatrixError, NonSquareMatrixError } from '../../src/core/errors';
+import { MatrixError, NonInvertibleMatrixError, NonPositiveDefiniteMatrixError, NonSquareMatrixError } from '../../src/core/errors';
 
 const q = (n: number) => Rational.of(n, 4);
 const [x] = symbols('x');
@@ -124,6 +124,22 @@ describe('decompositions', () => {
     expect(s(L.cholesky(A3))).toBe('Matrix([[5, 0, 0], [3, 3, 0], [-1, 1, 3]])');
     expect(s(L.cholesky(H))).toBe('Matrix([[sqrt(2), 0], [-sqrt(2)*I/2, sqrt(6)/2]])');
     expect(() => L.cholesky(M([[1, 2, 3], [4, 5, 6]]))).toThrow(NonSquareMatrixError);
+  });
+
+  it('cholesky raises like SymPy', () => {
+    // SymPy: NonPositiveDefiniteMatrixError('Matrix must be positive-definite')
+    expect(() => L.cholesky(M([[1, 2], [2, 1]]))).toThrow(NonPositiveDefiniteMatrixError);
+    expect(() => L.cholesky(M([[0]]))).toThrow(NonPositiveDefiniteMatrixError);
+    expect(() => L.cholesky(M([[new sj.Sym('w', { negative: true })]]))).toThrow(NonPositiveDefiniteMatrixError);
+    // without the Hermitian requirement there is no positivity check
+    expect(s(L.cholesky(M([[1, 2], [2, 1]]), false))).toBe('Matrix([[1, 0], [2, sqrt(3)*I]])');
+    expect(s(L.cholesky(M([[-1]]), false))).toBe('Matrix([[I]])');
+    // SymPy raises ValueError for these
+    expect(() => L.cholesky(M([[1, 2], [3, 1]]))).toThrow('Matrix must be Hermitian.');
+    expect(() => L.cholesky(M([[1, 2], [3, 1]]), false)).toThrow('Matrix must be symmetric.');
+    expect(() => L.cholesky(M([[I]]))).toThrow('Matrix must be Hermitian.');
+    // a value that cannot be evaluated numerically is decided by the assumptions
+    expect(s(L.cholesky(M([[parse('Abs(f(1))')]])))).toBe('Matrix([[sqrt(Abs(f(1)))]])');
   });
 
   it('LDLdecomposition', () => {
@@ -411,8 +427,42 @@ describe('matrices/linalg, linsys, domainmatrix, mutable', () => {
   });
 
   it('jordan_form of a float matrix', () => {
-    // SymPy converts floats to rationals first and gives J = diag(-0.481379037105842, 6.48137903710584);
-    // symjs finds no eigenvectors of the float eigenvalues
-    expect(() => jordanForm(M([[new sj.Float(1.1), new sj.Float(2.3)], [new sj.Float(3.7), new sj.Float(4.9)]]))).toThrow(sj.NotImplementedError);
+    // SymPy converts the Floats to Rationals (nsimplify) and evaluates the result at their precision:
+    // P = Matrix([[-1.45442676678536, 0.427399739758336], [1.0, 1.0]]) (1.0 printed as 1.00000000000000 here)
+    const [P, J] = jordanForm(M([[new sj.Float(1.1), new sj.Float(2.3)], [new sj.Float(3.7), new sj.Float(4.9)]]));
+    expect(s(P)).toBe('Matrix([[-1.45442676678536, 0.427399739758336], [1.00000000000000, 1.00000000000000]])');
+    expect(s(J)).toBe('Matrix([[-0.481379037105842, 0], [0, 6.48137903710584]])');
+  });
+
+  it('companion matrices of irreducible cubics (eigenvectors over the number field)', () => {
+    const residual = (A: Matrix, P: Matrix, J: Matrix) => Math.max(...A.mul(P).sub(P.mul(J)).toComplex().flat().map((z) => Math.hypot(z.re, z.im)));
+    // x**3 - 3*x + 1 (casus irreducibilis) and x**3 - x - 1; SymPy: is_diagonalizable() is True
+    for (const A of [M([[0, 0, -1], [1, 0, 3], [0, 1, 0]]), M([[0, 0, 1], [1, 0, 1], [0, 1, 0]])]) {
+      expect(isDiagonalizable(A)).toBe(true);
+      const [P, J] = jordanForm(A);
+      expect(residual(A, P, J)).toBeLessThan(1e-12);
+      expect(Math.abs(P.det().toComplex().re) + Math.abs(P.det().toComplex().im)).toBeGreaterThan(1e-6);
+    }
+    // SymPy eigenvects: eigenvalues 0.347296355334, 1.53208888624, -1.87938524157 with the
+    // eigenvectors [-2.87938524157, 0.347296355334, 1], [-0.652703644666, 1.53208888624, 1], [0.532088886238, -1.87938524157, 1]
+    const ev = L.eigenvects(M([[0, 0, -1], [1, 0, 3], [0, 1, 0]])).map(([v, k, vs]) => `${s(sj.evalf(v, 12))} ${k} ${vs.map((u) => s(u.evalf(12))).join(' ')}`);
+    expect(ev).toEqual([
+      '0.347296355334 1 Matrix([[-2.87938524157], [0.347296355334], [1.00000000000]])',
+      '1.53208888624 1 Matrix([[-0.652703644666], [1.53208888624], [1.00000000000]])',
+      '-1.87938524157 1 Matrix([[0.532088886238], [-1.87938524157], [1.00000000000]])',
+    ]);
+    // a repeated irreducible cubic factor: the eigenspaces of the companion blocks over the number field
+    const C = M([[0, 0, -1], [1, 0, 3], [0, 1, 0]]);
+    const Z = Matrix.zeros(3);
+    const D = Matrix.of([[C, Z], [Z, C]]);
+    expect(isDiagonalizable(D)).toBe(true);
+    expect(L.eigenvects(D).map(([, k, vs]) => [k, vs.length])).toEqual([[2, 2], [2, 2], [2, 2]]);
+  });
+
+  it('eigenvalues of a triangular matrix with an applied function (SymPy is_diagonalizable: True)', () => {
+    const A = M([[parse('f(1)'), 1], [0, 2]]);
+    expect(isDiagonalizable(A)).toBe(true);
+    // SymPy: [(2, 1, [Matrix([[-1/(f(1) - 2)], [1]])]), (f(1), 1, [Matrix([[1], [0]])])]
+    expect(L.eigenvects(A).map(([v, k, vs]) => `${s(v)} ${k} ${vs.map(s).join(' ')}`)).toEqual(['2 1 Matrix([[-1/(f(1) - 2)], [1]])', 'f(1) 1 Matrix([[1], [0]])']);
   });
 });

@@ -10,15 +10,20 @@
  *   unary   := ('-' | '+') unary | power
  *   power   := atom (('^' | '**') unary)?       (right associative)
  *   atom    := number | name | name '(' args ')' | '(' sum ')' | interpolated value
+ *   arg     := sum | '(' sum (',' sum)* ')'       (a tuple, for the limits of Integral, Sum, ...)
  */
 
 import type { Assumptions, Expr, ExprLike, FnName, RelOp, SpecialFnName } from '../core/nodes';
-import { Add, Mul, Pow, Rational, S, Sym, impl } from '../core/nodes';
+import { Add, Float, Integral, Mul, Order, Pow, Rational, S, Sym, impl } from '../core/nodes';
+import { NotImplementedError } from '../core/errors';
+import { Product, Sum } from '../core/concrete';
+import { Subs } from '../core/subsnode';
+import { float } from '../numeric/floatctor';
 import { and, not, or, xor } from '../core/boolalg';
 import { add, div, exp, mul, neg, pow, sqrt, sub, sympify } from '../core/ops';
 import { fn } from '../functions/elementary';
 import { at, defined } from '../core/guard';
-import { Eq, rel } from '../core/logic';
+import { Eq, piecewise, rel } from '../core/logic';
 import { SymFunction, derivative } from '../core/undef';
 
 export interface ParseOptions {
@@ -153,24 +158,157 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   trigamma: (args) => fn('polygamma', [1, argAt(args, 0, 'trigamma')]),
   E1: (args) => fn('expint', [1, argAt(args, 0, 'E1')]),
   RisingFactorial: (args) => fn('rf', args),
-  Derivative: (args) => {
-    const e = argAt(args, 0, 'Derivative');
-    // Derivative(f, x, y, ...) with repeated variables, or Derivative(f, x, n) with an integer order
-    const vc: [Expr, number][] = [];
-    for (const a of args.slice(1)) {
-      const prev = vc.at(-1);
-      if (a instanceof Rational && a.isInteger && prev) prev[1] += Number(a.p) - 1;
-      else vc.push([a, 1]);
-    }
-    return derivative(e, vc);
-  },
-  diff: (args) => {
-    const n = args[2];
-    return impl.diff(argAt(args, 0, 'diff'), argAt(args, 1, 'diff'), n instanceof Rational ? Number(n.p) : 1);
-  },
   // SymPy 1.14 Eq requires both sides (Eq(x) is a TypeError)
   Eq: (args) => Eq(argAt(args, 0, 'Eq'), argAt(args, 1, 'Eq')),
   FallingFactorial: (args) => fn('ff', args),
+};
+
+/** A parsed call argument: an expression or a tuple (a, b, ...). */
+type Arg = Expr | readonly Expr[];
+
+const isTuple = (a: Arg): a is readonly Expr[] => Array.isArray(a);
+
+/** The arguments of a call that does not take tuples. */
+function plainArgs(args: readonly Arg[], name: string): Expr[] {
+  return args.map((a) => {
+    if (isTuple(a)) throw new SyntaxError(`${name}() does not take a tuple argument`);
+    return a;
+  });
+}
+
+/** The first argument (a call has at least one) and the others. */
+function splitArgs(args: readonly Arg[], name: string): [Expr, Arg[]] {
+  const e = at(args, 0);
+  if (isTuple(e)) throw new SyntaxError(`${name}() does not take a tuple as its first argument`);
+  return [e, args.slice(1)];
+}
+
+function asSym(e: Expr, name: string): Sym {
+  if (!(e instanceof Sym)) throw new SyntaxError(`${name}(): ${e.toString()} is not a symbol`);
+  return e;
+}
+
+/** The variable of a function of one free symbol (SymPy diff(x**2) is 2*x). */
+function onlySymbol(e: Expr, name: string): Sym {
+  const syms = [...e.freeSymbols()];
+  const [v] = syms;
+  if (v === undefined || syms.length > 1) throw new SyntaxError(`${name}() takes at least 2 arguments when the expression has not exactly one free symbol`);
+  return v;
+}
+
+const isCount = (n: Expr | undefined): n is Rational => n instanceof Rational && n.isInteger && n.p >= 0n;
+
+/**
+ * SymPy variable_count: Derivative(f, x, y, 2, (z, 3)) has the variables x, y
+ * (twice) and z (three times); a variable counted 0 times is dropped.
+ */
+function variableCounts(e: Expr, args: readonly Arg[], name: string): [Expr, number][] {
+  if (!args.length) return [[onlySymbol(e, name), 1]];
+  const vc: [Expr, number][] = [];
+  for (const a of args) {
+    const prev = vc.at(-1);
+    if (isTuple(a)) {
+      const [v, n] = a;
+      if (v === undefined || a.length !== 2 || !isCount(n)) throw new SyntaxError(`${name}(): expected (variable, count)`);
+      vc.push([v, Number(n.p)]);
+    } else if (a instanceof Rational && a.isInteger && prev) {
+      if (!isCount(a)) throw new SyntaxError(`${name}(): expected (variable, count)`);
+      prev[1] += Number(a.p) - 1;
+    } else vc.push([a, 1]);
+  }
+  return vc.filter(([, n]) => n > 0);
+}
+
+/** The limits (k, a, b) of Sum and Product. */
+function concreteLimits(args: readonly Arg[], name: string): [Sym, Expr, Expr][] {
+  if (!args.length) throw new SyntaxError(`${name}() needs limits (k, a, b)`);
+  return args.map((a) => {
+    const t = isTuple(a) ? a : [];
+    const [k, lo, hi] = t;
+    if (k === undefined || lo === undefined || hi === undefined || t.length !== 3) throw new SyntaxError(`${name}(): expected limits (k, a, b)`);
+    return [asSym(k, name), lo, hi];
+  });
+}
+
+/** Integral(f), Integral(f, x), Integral(f, (x,)), Integral(f, (x, a, b)), ...: the innermost first. */
+function integral(args: readonly Arg[]): Expr {
+  const [f, lims] = splitArgs(args, 'Integral');
+  let e = f;
+  for (const l of lims.length ? lims : [onlySymbol(f, 'Integral')]) {
+    const [v, a, b] = isTuple(l) ? l : [l];
+    const n = isTuple(l) ? l.length : 1;
+    if (v === undefined || (n !== 1 && n !== 3)) throw new SyntaxError('Integral(): expected x, (x,) or (x, a, b)');
+    const x = asSym(v, 'Integral');
+    e = a !== undefined && b !== undefined ? new Integral([e, x, a, b]) : new Integral([e, x]);
+  }
+  return e;
+}
+
+/**
+ * Constructors of higher layers that the parser uses when they are loaded
+ * (registered by those modules). @internal
+ */
+export const parserHooks: {
+  /** SymPy Order(e, *variables, point), the argument reduced to its leading term. */
+  order?: (e: Expr, variables: readonly Sym[], point: Expr) => Expr;
+} = {};
+
+/** O(e), O(e, x), O(e, x, y), O(e, (x, p)), O(e, (x, p), (y, p)). */
+function order(args: readonly Arg[]): Expr {
+  const [e, rest] = splitArgs(args, 'O');
+  const vars: Sym[] = [];
+  const points: Expr[] = [];
+  for (const a of rest) {
+    const [v, p] = isTuple(a) ? a : [a, S.Zero];
+    if (v === undefined || p === undefined || (isTuple(a) && a.length !== 2)) throw new SyntaxError('O(): expected x or (x, point)');
+    vars.push(asSym(v, 'O'));
+    points.push(p);
+  }
+  const point = points[0] ?? S.Zero;
+  // SymPy: NotImplementedError for points that differ
+  if (points.some((p) => p.key !== point.key)) throw new NotImplementedError('Order at different points for the variables is not supported');
+  if (parserHooks.order) return parserHooks.order(e, vars, point);
+  // unreduced (SymPy reduces O(x + x**2) to O(x))
+  const [v] = vars;
+  if (vars.length > 1) return new Order([e, ...vars, point]);
+  return v === undefined || (point instanceof Rational && point.isZero) ? new Order([e]) : new Order([e, v, point]);
+}
+
+/** Functions taking tuple arguments (the limits of SymPy's Integral, Sum, Derivative, ...). */
+const TUPLE_FUNCTIONS: Record<string, (args: readonly Arg[]) => Expr> = {
+  Derivative: (args) => {
+    const [e, vs] = splitArgs(args, 'Derivative');
+    const vc = variableCounts(e, vs, 'Derivative');
+    return vc.length ? derivative(e, vc) : e;
+  },
+  diff: (args) => {
+    const [e, vs] = splitArgs(args, 'diff');
+    return variableCounts(e, vs, 'diff').reduce((acc, [v, n]) => impl.diff(acc, v, n), e);
+  },
+  Integral: integral,
+  Sum: (args) => {
+    const [f, lims] = splitArgs(args, 'Sum');
+    return Sum(f, ...concreteLimits(lims, 'Sum'));
+  },
+  Product: (args) => {
+    const [f, lims] = splitArgs(args, 'Product');
+    return Product(f, ...concreteLimits(lims, 'Product'));
+  },
+  Subs: (args) => {
+    const [e, [vs, ps, ...more]] = splitArgs(args, 'Subs');
+    if (vs === undefined || ps === undefined || more.length) throw new SyntaxError('Subs() takes an expression, variables and points');
+    return Subs(e, vs, ps);
+  },
+  O: order,
+  Order: order,
+  Piecewise: (args) =>
+    piecewise(
+      ...args.map((a): [Expr, Expr] => {
+        const [e, cond, ...more] = isTuple(a) ? a : [];
+        if (e === undefined || cond === undefined || more.length) throw new SyntaxError('Piecewise(): expected (expression, condition) pairs');
+        return [e, cond];
+      }),
+    ),
 };
 
 const CONSTANTS: Record<string, Expr> = {
@@ -184,13 +322,16 @@ const CONSTANTS: Record<string, Expr> = {
   Catalan: S.Catalan,
   GoldenRatio: S.GoldenRatio,
   TribonacciConstant: S.TribonacciConstant,
+  True: S.true,
+  False: S.false,
 };
 
 const isSymbolList = (s: ParseOptions['symbols']): s is readonly Sym[] => Array.isArray(s);
 
 function parseNumber(s: string): Expr {
   if (/^\d+$/.test(s)) return Rational.of(BigInt(s));
-  return sympify(Number(s));
+  // SymPy auto_number: Float(s), with at least 15 digits or as many as written
+  return float(s);
 }
 
 class Parser {
@@ -341,7 +482,7 @@ class Parser {
     if (this.isOp('-')) {
       this.next();
       const u = this.unary();
-      if (this.raw) return u instanceof Rational ? Rational.of(-u.p, u.q) : new Mul([Rational.of(-1n), u]);
+      if (this.raw) return u instanceof Rational || u instanceof Float ? neg(u) : new Mul([Rational.of(-1n), u]);
       return neg(u);
     }
     if (this.isOp('+')) {
@@ -360,6 +501,29 @@ class Parser {
     return base;
   }
 
+  /** A call argument: an expression, or a tuple (a, b, ...) in parentheses. */
+  private arg(): Arg {
+    const start = this.i;
+    if (this.isOp('(')) {
+      this.next();
+      const first = this.boolOr();
+      if (this.isOp(',')) {
+        const items = [first];
+        while (this.isOp(',')) {
+          this.next();
+          // a trailing comma: (x,)
+          if (this.isOp(')')) break;
+          items.push(this.boolOr());
+        }
+        this.expect(')');
+        return items;
+      }
+      // a parenthesized expression: parse the whole argument again
+      this.i = start;
+    }
+    return this.sum();
+  }
+
   private atom(): Expr {
     const t = this.next();
     switch (t.t) {
@@ -372,19 +536,20 @@ class Parser {
         const knownFn = FUNCTIONS[t.v];
         if (this.implicit && knownFn && !this.isOp('(') && this.startsFactor()) return knownFn([this.power()]);
         // with implicit multiplication a known symbol before '(' multiplies (x(y + 1))
-        const asSymbol = this.implicit && !FUNCTIONS[t.v] && !this.localFns.has(t.v) && this.isOp('(');
+        const tupleFn = this.localFns.has(t.v) ? undefined : TUPLE_FUNCTIONS[t.v];
+        const asSymbol = this.implicit && !knownFn && !tupleFn && !this.localFns.has(t.v) && this.isOp('(');
         if (this.isOp('(') && !asSymbol) {
           // unknown names applied to arguments are undefined functions (like SymPy's parse_expr)
           const local = this.localFns.get(t.v);
-          const f = local ? (args: Expr[]) => sympify(local(...args)) : (FUNCTIONS[t.v] ?? ((args: Expr[]) => SymFunction(t.v)(...args)));
+          const f = local ? (args: Expr[]) => sympify(local(...args)) : (knownFn ?? ((args: Expr[]) => SymFunction(t.v)(...args)));
           this.next();
-          const args: Expr[] = [this.sum()];
+          const args: Arg[] = [this.arg()];
           while (this.isOp(',')) {
             this.next();
-            args.push(this.sum());
+            args.push(this.arg());
           }
           this.expect(')');
-          return f(args);
+          return tupleFn ? tupleFn(args) : f(plainArgs(args, t.v));
         }
         const known = this.symbols.get(t.v) ?? CONSTANTS[t.v];
         if (known) return known;

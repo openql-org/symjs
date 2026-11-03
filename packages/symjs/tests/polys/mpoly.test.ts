@@ -26,4 +26,12 @@ describe('multivariate gcd, exact division and factorization (polys/mpoly)', () 
     expect(String(sj.factor(parse('x**2*y + x*y**2 + x + y')))).toBe('(x + y)*(x*y + 1)');
     expect(show(sj.factorList(parse('2*x**2*y - 2*y**3')))).toBe('[2, [[y, 1], [x - y, 1], [x + y, 1]]]');
   });
+  it('square-free decomposition (SymPy factor)', () => {
+    expect(String(sj.factor(sj.expand(parse('(x - z)*(x + z)**2'))))).toBe('(x - z)*(x + z)**2');
+    expect(String(sj.factor(sj.expand(parse('(x + y)*(x**2 + y - 3)**2'))))).toBe('(x + y)*(x**2 + y - 3)**2');
+    // images at y = 3 that are not square-free or lose degree: the gcd decides
+    expect(String(sj.factor(parse('x**2 + y - 3')))).toBe('x**2 + y - 3');
+    expect(String(sj.factor(parse('x**3 + x**2*y - 4*x**2 + y - 3')))).toBe('x**3 + x**2*y - 4*x**2 + y - 3');
+    expect(String(sj.factor(parse('x**2*y - 3*x**2 + x + 1')))).toBe('x**2*y - 3*x**2 + x + 1');
+  });
 });

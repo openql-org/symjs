@@ -258,17 +258,10 @@ describe('sine and cosine transforms', () => {
     ['cosine exp(x**2)', () => cosineTransform(Pf('exp(x**2)'), x, k), 'CosineTransform(exp(x**2), x, k)'],
     ['cosine exp(-m*x**2)', () => cosineTransform(Pf('exp(-m*x**2)'), x, k), 'sqrt(2)*exp(-k**2/(4*m))/(2*sqrt(m))'],
     ['sine log(x)', () => sineTransform(Pf('log(x)'), x, k), 'SineTransform(log(x), x, k)'],
-    // SymPy's Meijer G integrator evaluates these; symjs's table does not have them:
-    // sqrt(2)*atan(k/a)/sqrt(pi)
-    ['sine exp(-a*x)/x', () => sineTransform(Pf('exp(-a*x)/x'), x, k), 'SineTransform(exp(-a*x)/x, x, k)'],
-    // sqrt(2)/(2*sqrt(pi)*a) + sqrt(2)*I*k*exp(-k**2/(4*a))*erf(I*k/(2*sqrt(a)))/(4*a**(3/2))
-    ['cosine x*exp(-a*x**2)', () => cosineTransform(Pf('x*exp(-a*x**2)'), x, k), 'CosineTransform(x*exp(-a*x**2), x, k)'],
-    // -sqrt(2)*I*exp(-k**2/(4*a))*erf(I*k/(2*sqrt(a)))/(2*sqrt(a))
-    ['sine exp(-a*x**2)', () => sineTransform(Pf('exp(-a*x**2)'), x, k), 'SineTransform(exp(-a*x**2), x, k)'],
-    // sqrt(2)*((pi - 2*Si(k))*sin(k)/2 - cos(k)*Ci(k))/sqrt(pi)
-    ['cosine 1/(x + 1)', () => cosineTransform(Pf('1/(x + 1)'), x, k), 'CosineTransform(1/(x + 1), x, k)'],
-    // -sqrt(2)*sqrt(pi)*(b*k*sinh(b*k) - b*k*cosh(b*k) + sinh(b*k) - cosh(b*k))/(4*b**3)
-    ['cosine 1/(x**2 + b**2)**2', () => cosineTransform(Pf('1/(x**2 + b**2)**2'), x, k), 'CosineTransform(1/(b**4 + 2*b**2*x**2 + x**4), x, k)'],
+    // by the Meijer G-function integrator (SymPy's results; the others are checked numerically below)
+    ['sine exp(-a*x)/x', () => sineTransform(Pf('exp(-a*x)/x'), x, k), 'sqrt(2)*atan(k/a)/sqrt(pi)'],
+    ['cosine x*exp(-a*x**2)', () => cosineTransform(Pf('x*exp(-a*x**2)'), x, k), 'sqrt(2)/(2*sqrt(pi)*a) + sqrt(2)*I*k*exp(-k**2/(4*a))*erf(I*k/(2*sqrt(a)))/(4*a**(3/2))'],
+    ['sine exp(-a*x**2)', () => sineTransform(Pf('exp(-a*x**2)'), x, k), '-sqrt(2)*I*exp(-k**2/(4*a))*erf(I*k/(2*sqrt(a)))/(2*sqrt(a))'],
     // (SymPy: a long expression in fresnels and fresnelc)
     ['cosine exp(-a*sqrt(x))*sin(a*sqrt(x))', () => cosineTransform(Pf('exp(-a*sqrt(x))*sin(a*sqrt(x))'), x, k), 'CosineTransform(exp(-a*sqrt(x))*sin(a*sqrt(x)), x, k)'],
     // (SymPy does not finish these within 20 s)
@@ -279,9 +272,12 @@ describe('sine and cosine transforms', () => {
   for (const [label, f, want] of cases) it(label, () => expect(showT(f())).toBe(want));
 
   it('noconds and simplify hints', () => {
-    // SymPy: (sqrt(2)*sqrt(pi)*exp(-b*k)/(2*b), Eq(Abs(arg(k)), 0)); the condition of the Meijer G
-    // integrator on arg(k) is not derived, k is taken positive
-    expect(showT(cosineTransform(Pf('1/(x**2 + b**2)'), x, k, { noconds: false }))).toBe('(sqrt(2)*sqrt(pi)*exp(-b*k)/(2*b), True)');
+    // the condition of the Meijer G-function integrator, as in SymPy (True where it does not apply)
+    expect(showT(sineTransform(Pf('x*exp(-a*x)'), x, k, { noconds: false }))).toBe('(2*sqrt(2)*a*k/(sqrt(pi)*(a**2 + k**2)**2), Eq(Abs(arg(k)), 0))');
+    // SymPy: (a*exp(-a**2/(2*k))/(2*k**(3/2)), Eq(Abs(arg(k)), 0)); symjs's Meijer G-function integrator does
+    // not do this integral (its table does), so no condition is derived
+    expect(showT(cosineTransform(Pf('exp(-a*sqrt(x))*cos(a*sqrt(x))'), x, k, { noconds: false }))).toBe('(a*exp(-a**2/(2*k))/(2*k**(3/2)), True)');
+    expect(showT(cosineTransform(Pf('1/(x**2 + b**2)'), x, k, { noconds: false }))).toBe('(sqrt(2)*sqrt(pi)*exp(-b*k)/(2*b), Eq(Abs(arg(k)), 0))');
     // SymPy: sqrt(2)/(sqrt(pi)*a*(1 + k**2/a**2)), the same function
     expect(showT(cosineTransform(Pf('exp(-a*x)'), x, k, { simplify: false }))).toBe('sqrt(2)*a/(sqrt(pi)*(a**2 + k**2))');
   });
@@ -312,12 +308,6 @@ describe('hankel_transform', () => {
   });
 
   it('raises like SymPy when the integral is not known', () => {
-    // SymPy: sqrt(pi)*k*(besseli(0, k**2/(8*a)) - besseli(1, k**2/(8*a)))*exp(-k**2/(8*a))/(8*a**(3/2))
-    expect(() => hankelTransform(Pf('exp(-a*r**2)'), r, k, 1)).toThrow('Hankel Transform could not be computed');
-    // SymPy: -pi*besseli(1, b*k)/2 + hyper((1,), (1/2, 3/2), b**2*k**2/4)
-    expect(() => hankelTransform(Pf('1/(r**2 + b**2)'), r, k, 1)).toThrow('Hankel Transform could not be computed');
-    // SymPy: b*sinh(b*k) - b*cosh(b*k) - sinh(b*k)/k + cosh(b*k)/k
-    expect(() => hankelTransform(Pf('r**2/(r**2 + b**2)**(3/2)'), r, k, 0)).toThrow('Hankel Transform could not be computed');
     // divergent
     expect(() => hankelTransform(Pf('exp(r)'), r, k, 0)).toThrow('Hankel Transform could not be computed');
     expect(() => inverseHankelTransform(Pf('log(k)'), k, r, 0)).toThrow('Inverse Hankel Transform could not be computed');
@@ -387,10 +377,45 @@ describe('Heaviside(x) factors over the half line', () => {
     expect(sstr(simplify(sub(F, Pf('1/((2*I*pi*k + 1)**2 + 1)'))))).toBe('0');
   });
   it('exponents that are not linear in x are not in the table', () => {
-    // SymPy: sqrt(pi)*exp(-pi**2*k**2)*erfc(I*pi*k)/2
-    expect(showT(fourierTransform(Pf('Heaviside(x)*exp(-x**2)'), x, k))).toBe('FourierTransform(exp(-x**2)*Heaviside(x), x, k)');
-    // SymPy: an expression in erf((-1)**(3/4)*sqrt(2)/(4*sqrt(pi)*sqrt(k)))
+    // by the Meijer G-function integrator, as in SymPy
+    expect(showT(fourierTransform(Pf('Heaviside(x)*exp(-x**2)'), x, k))).toBe('sqrt(pi)*exp(-pi**2*k**2)*erfc(I*pi*k)/2');
+    // SymPy: an expression in erf((-1)**(3/4)*sqrt(2)/(4*sqrt(pi)*sqrt(k))), which holds only for
+    // k > 0 (at k = -3/10 it is -0.4121 + 0.7261*I, the integral is 0.1320 + 0.3101*I); its convergence
+    // condition is not decided, so symjs leaves it
     expect(showT(fourierTransform(Pf('Heaviside(x)*exp(-sqrt(x))'), x, k))).toBe('FourierTransform(exp(-sqrt(x))*Heaviside(x), x, k)');
+  });
+});
+
+describe('transforms by the Meijer G-function integrator in another form than SymPy', () => {
+  // F agrees with SymPy's result G at a = 3/2, b = 7/10 and k = 13/10 (mpmath values of G)
+  const vals: [Expr, Expr][] = [
+    [ap, S.Half.add(1)],
+    [bp, parse('7/10')],
+    [k, parse('13/10')],
+  ];
+  const num = (e: Expr) => e.subs(vals).toComplex();
+  const close = (F: TransformResult, G: string) => {
+    const [u, v] = [num(F as Expr), num(Pf(G))];
+    expect(Math.hypot(u.re - v.re, u.im - v.im)).toBeLessThan(1e-12);
+  };
+  it('cosine 1/(x + 1)', () => {
+    const F = cosineTransform(Pf('1/(x + 1)'), x, k);
+    expect(showT(F)).toBe('sqrt(2)*((-Si(k) + pi/2)*sin(k) - cos(k)*Ci(k))/sqrt(pi)');
+    close(F, 'sqrt(2)*((pi - 2*Si(k))*sin(k)/2 - cos(k)*Ci(k))/sqrt(pi)');
+  });
+  it('cosine 1/(x**2 + b**2)**2', () => {
+    const F = cosineTransform(Pf('1/(x**2 + b**2)**2'), x, k);
+    expect(showT(F)).toBe('sqrt(2)*sqrt(pi)*(b*k*(cosh(b*k) - sinh(b*k)/(b*k)) - b*k*sinh(b*k) + cosh(b*k))/(4*b**3)');
+    close(F, '-sqrt(2)*sqrt(pi)*(b*k*sinh(b*k) - b*k*cosh(b*k) + sinh(b*k) - cosh(b*k))/(4*b**3)');
+  });
+  it('Hankel transforms', () => {
+    const F1 = hankelTransform(Pf('exp(-a*r**2)'), r, k, 1);
+    expect(showT(F1)).toBe('sqrt(pi)*k*(a*(16 - k**2/a)*besseli(1, k**2/(8*a))/k**2 + besseli(2, k**2/(8*a)))*exp(-k**2/(8*a))/(8*a**(3/2))');
+    close(F1, 'sqrt(pi)*k*(besseli(0, k**2/(8*a)) - besseli(1, k**2/(8*a)))*exp(-k**2/(8*a))/(8*a**(3/2))');
+    expect(showT(hankelTransform(Pf('1/(r**2 + b**2)'), r, k, 1))).toBe('-pi*besseli(1, b*k)/2 + hyper((1,), (1/2, 3/2), b**2*k**2/4)');
+    const F3 = hankelTransform(Pf('r**2/(r**2 + b**2)**(3/2)'), r, k, 0);
+    expect(showT(F3)).toBe('(b*k*sinh(b*k) - b*k*cosh(b*k) - sinh(b*k) + cosh(b*k))/k');
+    close(F3, 'b*sinh(b*k) - b*cosh(b*k) - sinh(b*k)/k + cosh(b*k)/k');
   });
 });
 

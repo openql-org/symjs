@@ -15,6 +15,7 @@ import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops'
 import { freeSymbols, xreplace, xreplace as xreplaceS } from '../core/traverse';
 import { at, defined, first, getOrThrow } from '../core/guard';
 import { evalf } from '../numeric/evalf';
+import { evalMp, fromMpc } from '../numeric/mpeval';
 import { diff } from '../calculus/diff';
 import { acos, asin, atan, log } from '../functions/elementary';
 import { polyCoefficients, roots } from '../polys/poly';
@@ -72,7 +73,8 @@ function checkSolution(f: Expr, x: Sym, v: Expr): boolean {
   // a numeric residual must vanish (SymPy checksol), e.g. sqrt(x) + 1 at x = 1
   if (freeSymbols(fv).size === 0 && !hasExtension(fv)) {
     try {
-      const c = evalf(fv, 30).toComplex();
+      // at a fixed working precision: the adaptive evalf of an exact zero raises the precision a long way
+      const c = fromMpc(evalMp(fv, 200), 200).toComplex();
       if (Number.isFinite(c.re) && Number.isFinite(c.im) && Math.hypot(c.re, c.im) > 1e-12) return false;
     } catch {
       // not evaluable: keep the candidate
@@ -122,9 +124,12 @@ function invertFn(f: Fn | Pow, y: Expr, x: Sym): [Expr, Expr[]] | undefined {
   }
 }
 
+/** The recursion limit of solveRaw (each nested exp or log is one level). */
+const MAX_DEPTH = 40;
+
 /** Solutions of f = 0 for x (without the final check). */
 function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
-  if (depth > 12) throw new NotImplementedError('solve: recursion too deep');
+  if (depth > MAX_DEPTH) throw new NotImplementedError('solve: recursion too deep');
   const f = f0;
   if (!f.has(x)) return [];
   // a single exponential term or 1/x: isolate it before clearing denominators
@@ -201,7 +206,7 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   if (rad) return rad;
   const multi = radicalsOfX(num, x);
   if (multi) return multi;
-  const lw = lambertSolve(num, x);
+  const lw = lambertSolve(num, x) ?? tsolveLambert(num, x, depth);
   if (lw) return lw;
   // a*sin(u) + b*cos(u) = 0  ->  tan(u) = -b/a
   const sc = sinCosLinear(num, x);
@@ -240,8 +245,26 @@ function singleRadical(num: Expr, x: Sym, depth: number): Expr[] | undefined {
   const b = add(...bs);
   const p = Rexp.p;
   const q = Rexp.q;
-  // num is a numerator, so p > 0
-  if (q > 6n) return undefined;
+  // num is a numerator, so p > 0; beyond degree 6 (SymPy unrad's limit for the
+  // polynomial in x) a linear radicand y = b*x + c is the variable instead
+  if (q > 6n) {
+    const pc = polyCoefficients(R.base, x);
+    if (!pc) return undefined;
+    if (Math.max(...pc.keys()) !== 1) {
+      // otherwise the polynomial a**q*g**p - (-b)**q, whose roots (CRootOf among them) are
+      // checked numerically against the principal branch
+      const cands = solveRaw(expandMul(add(mul(pow(a, Rational.of(q)), pow(R.base, Rational.of(p))), mul(-1, pow(mul(-1, b), Rational.of(q))))), x, depth + 1);
+      return cands.filter((c) => {
+        const v = evalf(xreplace(num, [[x, c]]), 30).toComplex();
+        return Math.hypot(v.re, v.im) < 1e-12;
+      });
+    }
+    const b1 = getOrThrow(pc, 1);
+    const c1 = pc.get(0) ?? S.Zero;
+    const y = new Dummy('y');
+    const inY = radicalsOfX(expandMul(xreplace(num, [[x, mul(add(y, mul(-1, c1)), pow(b1, -1))]])), y);
+    return inY?.map((r) => mul(add(r, mul(-1, c1)), pow(b1, -1)));
+  }
   const eq = add(mul(pow(a, Rational.of(q)), pow(R.base, Rational.of(p))), mul(-1, pow(mul(-1, b), Rational.of(q))));
   return solveRaw(expandMul(eq), x, depth + 1);
 }
@@ -324,6 +347,22 @@ function sinCosLinear(e: Expr, x: Sym): Expr[] | undefined {
  *   a*x + b + c*exp(d*x + e) = 0   ->  x = -W(c*d/a*exp(e - b*d/a))/d - b/a
  *   (a*x + b)*exp(d*x + e) + c = 0 ->  x = W(-c*d/a*exp(b*d/a - e))/d - b/a
  */
+/** LambertW(arg, k) (the implementation is registered by functions/special). */
+const lambertW = (arg: Expr, k?: number): Expr => defined(k === undefined ? impl.lambertW?.(arg) : impl.lambertW?.(arg, k), 'LambertW');
+
+/**
+ * The solutions sol(k) on the real branches of LambertW: k = 0, and k = -1
+ * when the argument is a number in (-1/e, 0) (SymPy bivariate._lambert).
+ */
+function lambertBranches(arg: Expr, sol: (k?: number) => Expr): Expr[] {
+  const out = [sol()];
+  if (arg.freeSymbols().size === 0) {
+    const v = arg.toComplex();
+    if (Math.abs(v.im) < 1e-300 && v.re < 0 && v.re > -Math.exp(-1)) out.push(sol(-1));
+  }
+  return out;
+}
+
 function lambertSolve(num: Expr, x: Sym): Expr[] | undefined {
   const terms = num instanceof Add ? num.args : [num];
   const isExp = (g: Expr): g is Pow => g instanceof Pow && g.base instanceof Constant && g.base.name === 'E';
@@ -352,16 +391,8 @@ function lambertSolve(num: Expr, x: Sym): Expr[] | undefined {
   if (deg(U) !== 1) return undefined;
   const d = getOrThrow(U, 1);
   const e = U.get(0) ?? S.Zero;
-  // the LambertW implementation is registered by functions/special
-  const W = (arg: Expr, k?: number) => defined(k === undefined ? impl.lambertW?.(arg) : impl.lambertW?.(arg, k), 'LambertW');
-  const branches = (arg: Expr, sol: (k?: number) => Expr): Expr[] => {
-    const out = [sol()];
-    if (arg.freeSymbols().size === 0) {
-      const v = arg.toComplex();
-      if (Math.abs(v.im) < 1e-300 && v.re < 0 && v.re > -Math.exp(-1)) out.push(sol(-1));
-    }
-    return out;
-  };
+  const W = lambertW;
+  const branches = lambertBranches;
   if (deg(P) === 0 && deg(Q) === 1) {
     const c = getOrThrow(P, 0);
     const a = getOrThrow(Q, 1);
@@ -376,6 +407,139 @@ function lambertSolve(num: Expr, x: Sym): Expr[] | undefined {
     const c = getOrThrow(Q, 0);
     const arg = mul(-1, c, d, pow(a, -1), exp(add(mul(d, ba), mul(-1, e))));
     return branches(arg, (k) => add(mul(W(arg, k), pow(d, -1)), mul(-1, ba)));
+  }
+  return undefined;
+}
+
+/**
+ * SymPy bivariate._lambert: a*log(b*x + c) + d*x + f = 0 (a..f free of x)
+ * has the solutions x = -c/b + (a/d)*W(d/(a*b)*exp((c*d - b*f)/(a*b)), k).
+ */
+function lambertLogForm(eq: Expr, x: Sym): Expr[] | undefined {
+  let L: Expr | undefined;
+  const as: Expr[] = [];
+  const others: Expr[] = [];
+  for (const t of eq instanceof Add ? eq.args : [eq]) {
+    const fs = t instanceof Mul ? t.args : [t];
+    const logs = fs.filter((g) => g instanceof Fn && g.name === 'log' && g.has(x));
+    if (logs.length === 0) {
+      others.push(t);
+      continue;
+    }
+    const lg = first(logs);
+    const coeff = mul(...fs.filter((g) => g !== lg));
+    if (logs.length > 1 || coeff.has(x) || (L && L.key !== first(lg.args).key)) return undefined;
+    L = first(lg.args);
+    as.push(coeff);
+  }
+  if (!L) return undefined;
+  const lin = (e: Expr): [Expr, Expr] | undefined => {
+    const pc = polyCoefficients(e, x);
+    if (!pc || Math.max(...pc.keys()) > 1) return undefined;
+    const c1 = pc.get(1) ?? S.Zero;
+    return isZeroE(c1) ? undefined : [c1, pc.get(0) ?? S.Zero];
+  };
+  const bc = lin(L);
+  const df = lin(add(...others));
+  if (!bc || !df) return undefined;
+  const [b, c] = bc;
+  const [d, f] = df;
+  const a = add(...as);
+  const ab = mul(a, b);
+  // exp(A) with A = num/(p*den) is taken as the p roots of t**p = exp(num/den) (SymPy)
+  const [nm, dn] = asNumerDenom(mul(add(mul(c, d), mul(-1, b, f)), pow(ab, -1)));
+  const p = dn instanceof Mul && first(dn.args) instanceof Rational ? first(dn.args) : dn instanceof Rational ? dn : S.One;
+  const e = simplify(exp(mul(nm, pow(mul(dn, pow(p, -1)), -1))));
+  const t = new Dummy('t');
+  const ts = p.key === S.One.key ? [e] : roots(add(pow(t, p), mul(-1, e)), t);
+  return ts.flatMap((tt) => {
+    const arg = mul(d, pow(ab, -1), tt);
+    return lambertBranches(arg, (k) => add(mul(-1, c, pow(b, -1)), mul(a, pow(d, -1), lambertW(arg, k))));
+  });
+}
+
+/**
+ * a*x*log(x) + d*x + f = 0 (a, d, f free of x): with X = log(x),
+ * (a*X + d)*exp(X) = -f, so x = exp(W(-f/a*exp(d/a)) - d/a) (SymPy 1a2 form,
+ * B*(b*log(B) + c)**a = R).
+ */
+function xLogForm(eq: Expr, x: Sym): Expr[] | undefined {
+  const L = new Dummy('L');
+  const e = expandMul(xreplace(eq, [[log(x), L]]));
+  const pc = polyCoefficients(e, x);
+  if (!pc || Math.max(...pc.keys()) !== 1) return undefined;
+  const c1 = polyCoefficients(getOrThrow(pc, 1), L);
+  const f = pc.get(0) ?? S.Zero;
+  if (!c1 || Math.max(...c1.keys()) !== 1 || f.has(L)) return undefined;
+  const a = getOrThrow(c1, 1);
+  const d = c1.get(0) ?? S.Zero;
+  const arg = mul(-1, f, pow(a, -1), exp(mul(d, pow(a, -1))));
+  return lambertBranches(arg, (k) => exp(add(lambertW(arg, k), mul(-1, d, pow(a, -1)))));
+}
+
+/**
+ * The Lambert forms SymPy reaches by taking logarithms (bivariate._solve_lambert)
+ * of lhs = rhs (rhs free of x and nonzero):
+ *   B**B = R                    ->  B = exp(W(log(R)))
+ *   a product                   ->  the sum of the logarithms of the factors, x**(2*n) giving
+ *                                   2*n*log(x) and 2*n*log(-x)
+ *   g*p**u + R(x) = rhs         ->  log(g) + u*log(p) - log(rhs - R(x)) = 0
+ * and a*log(b*x + c) + d*x + f = 0 itself.
+ */
+function tsolveLambert(num: Expr, x: Sym, depth: number): Expr[] | undefined {
+  const direct = lambertLogForm(num, x) ?? xLogForm(num, x);
+  if (direct) return direct;
+  const terms = num instanceof Add ? num.args : [num];
+  const rhs = mul(-1, add(...terms.filter((t) => !t.has(x))));
+  const lhs = add(...terms.filter((t) => t.has(x)));
+  if (isZeroE(rhs)) return undefined;
+  // lhs = k*B**B
+  const lfs = lhs instanceof Mul ? lhs.args : [lhs];
+  const BB = lfs.filter((g) => g.has(x));
+  const B0 = first(BB);
+  if (BB.length === 1 && B0 instanceof Pow && B0.base.key === B0.exp.key) {
+    const B = B0.base;
+    const lr = log(mul(rhs, pow(mul(...lfs.filter((g) => !g.has(x))), -1)));
+    return lambertBranches(lr, (k) => exp(lambertW(lr, k))).flatMap((v) => solveRaw(add(B, mul(-1, v)), x, depth + 1));
+  }
+  // the logarithm of a power factor: an exponent free of x times the log of the base, or the exponent times log(p)
+  const t = new Dummy('t');
+  let evenBase: Expr | undefined;
+  const logPow = (g: Expr): Expr => {
+    if (g instanceof Pow) {
+      const [bs, ex] = g.args;
+      if (bs instanceof Constant && bs.name === 'E') return ex;
+      if (!bs.has(x)) return mul(ex, log(bs));
+      if (!ex.has(x)) {
+        // an even power of B: log(B) and log(-B) (one such base is marked with t)
+        const even = ex instanceof Rational && ex.isInteger && ex.p % 2n === 0n && (!evenBase || evenBase.key === bs.key);
+        if (even) evenBase = bs;
+        return mul(ex, log(even ? t : bs));
+      }
+      return mul(ex, log(bs));
+    }
+    return log(g);
+  };
+  const fromLog = (eq: Expr): Expr[] | undefined => {
+    const sols: Expr[] = [];
+    const B = evenBase ?? x;
+    for (const sgn of eq.has(t) ? [-1, 1] : [1]) {
+      const e1 = expandMul(xreplace(eq, [[t, mul(sgn, B)]]));
+      const r = lambertLogForm(e1, x) ?? xLogForm(e1, x);
+      if (!r) return undefined;
+      sols.push(...r);
+    }
+    return sols;
+  };
+  if (lhs instanceof Mul) return fromLog(add(...lhs.args.map(logPow), mul(-1, log(rhs))));
+  if (lhs instanceof Add) {
+    const isPowX = (g: Expr) => g instanceof Pow && !g.base.has(x) && g.exp.has(x);
+    const exps = lhs.args.filter((u) => (u instanceof Mul ? u.args : [u]).some(isPowX));
+    if (exps.length !== 1) return undefined;
+    const E = first(exps);
+    const rest = add(...lhs.args.filter((u) => u !== E));
+    const fs = E instanceof Mul ? E.args : [E];
+    return fromLog(add(...fs.map(logPow), mul(-1, log(add(rhs, mul(-1, rest))))));
   }
   return undefined;
 }

@@ -149,7 +149,7 @@ describe('further cases', () => {
     // SymPy factors with sin(x) as a generator: (sin(x) - sqrt(2))*(sin(x) + sqrt(2))
     expect(F('sin(x)**2 - 2', { extension: s2 })).toBe('sin(x)**2 - 2');
     // SymPy splits exp(x + y) into exp(x)*exp(y)
-    expect(F('exp(x + y)*(x**2 - 1)', { deep: true })).toBe('(x - 1)*(x + 1)*exp(x + y)');
+    expect(F('exp(x + y)*(x**2 - 1)', { deep: true })).toBe('(x - 1)*(x + 1)*exp(x)*exp(y)');
   });
 });
 
@@ -474,8 +474,9 @@ describe('further Poly cases', () => {
     expect(() => P('x - pi', x).norm()).toThrow(sj.NotImplementedError);
     expect(() => P('x - pi*sqrt(2)', x).norm()).toThrow(sj.NotImplementedError);
     // SymPy gives the roots as CRootOf of the degree-8 norm; symjs keeps the radicals
+    // (the square root factored as SymPy's roots_quadratic does over EX: factor_terms(sqrt(2 - 4*I)/2) = sqrt(2)*sqrt(1 - 2*I)/2)
     expect(show(P('x**2 - sqrt(2)*x + I', x).allRoots({ extension: true }))).toBe(
-      '[-re(sqrt(2 - 4*I))/2 + sqrt(2)/2 - I*im(sqrt(2 - 4*I))/2, sqrt(2)/2 + re(sqrt(2 - 4*I))/2 + I*im(sqrt(2 - 4*I))/2]',
+      '[-sqrt(2)*re(sqrt(1 - 2*I))/2 + sqrt(2)/2 - sqrt(2)*I*im(sqrt(1 - 2*I))/2, sqrt(2)/2 + sqrt(2)*re(sqrt(1 - 2*I))/2 + sqrt(2)*I*im(sqrt(1 - 2*I))/2]',
     );
     const r = sj.rootof(parse('x**3 - x - 2'), 0);
     expect(show(P('x**3 - x - 1', x).whichAllRoots([r]))).toBe('[]');
@@ -524,8 +525,11 @@ describe('norms, denominators, ground roots and root counting', () => {
     expect(P('x**2 - 2', x).countRoots(-2, parse('3/2'))).toBe(2);
     // SymPy: CoercionFailed expected `Rational` object, got pi
     expect(() => P('x**2 - 2', x).countRoots(parse('pi'), 4)).toThrow('expected a Rational, got pi');
-    // SymPy raises TypeError over RR (mpf times PythonMPQ); the count is 2
+    // over RR: SymPy Poly(x**2 - 2.0, x).count_roots() = 2
     expect(P('x**2 - 2.0', x).countRoots()).toBe(2);
+    // SymPy raises TypeError with bounds over RR (mpf times PythonMPQ); the count of the exact polynomial is kept
+    expect(P('x**2 - 2.0', x).countRoots(1.0, 2.0)).toBe(1);
+    expect(P('x**2 - 2.0', x).countRoots(0, 3)).toBe(1);
   });
 });
 
@@ -650,5 +654,80 @@ describe('minimal polynomials, line integrals and ITE conditions', () => {
     expect(sstr(lineIntegrate(parse('x + y'), C, [x, y]))).toBe('3*sqrt(2)');
     const cond = Piecewise([Gt(y, 2), Lt(x, 0)], [Gt(y, 3), true]);
     expect(sstr(Piecewise([1, cond as never]))).toBe('Piecewise((1, ITE(x < 0, y > 2, y > 3)))');
+  });
+});
+
+describe('factor on expressions (SymPy _symbolic_factor) and factor_list', () => {
+  const p = new Sym('p', { positive: true });
+  const G = (e: string, opts: Parameters<typeof sj.factor>[1] = {}) => String(sj.factor(parse(e, { symbols: { p } }), opts));
+  it.each([
+    ['1/x + 1/y', '(x + y)/(x*y)'],
+    ['m + n*m', 'm*(n + 1)'],
+    ['sqrt(2)*(x*y + x + y + 1)', 'sqrt(2)*(x + 1)*(y + 1)'],
+    ['1/(x + 1) + 1/(x**2 - 1)', 'x/((x - 1)*(x + 1))'],
+    ['x**2*exp(2*y) - 1', '(x*exp(y) - 1)*(x*exp(y) + 1)'],
+    ['x**3 - x*exp(-2*y)', 'x*(x*exp(y) - 1)*(x*exp(y) + 1)*exp(-2*y)'],
+    ['l**2 - (f(1) + 2)*l + 2*f(1)', '(l - 2)*(l - f(1))'],
+    ['x**2 - 2*pi*x + pi**2', '(x - pi)**2'],
+    ['x**2 - 2*sqrt(2)*x + 2', 'x**2 - 2*sqrt(2)*x + 2'],
+    ['x*sqrt(2) + sqrt(2)*y + sqrt(3)*x + sqrt(3)*y', '(sqrt(2) + sqrt(3))*(x + y)'],
+    ['I*x + I', 'I*(x + 1)'],
+    ['sqrt(p**2*x + p**2)', 'p*sqrt(x + 1)'],
+    ['sqrt(p*x + p)', 'sqrt(p)*sqrt(x + 1)'],
+    ['x**2 + 2*x*y + y**2 - 2', 'x**2 + 2*x*y + y**2 - 2'],
+    ['x**2 + 2*x*y + y**2 - 1', '(x + y - 1)*(x + y + 1)'],
+    ['sqrt(-x - 1)', 'sqrt(-x - 1)'],
+    ['sqrt(2*x + 2)', 'sqrt(2)*sqrt(x + 1)'],
+    ['sqrt(-2*x - 2)', 'sqrt(2)*sqrt(-x - 1)'],
+    ['(x**2 - 1)**y', '((x - 1)*(x + 1))**y'],
+    ['(2*x + 2)**y', '2**y*(x + 1)**y'],
+    ['2**x*(x**2 - 1)', '2**x*(x - 1)*(x + 1)'],
+    ['-x**2*y - x*y', '-x*y*(x + 1)'],
+    ['x**3 - a*x**2 - a**2*x + a**3', '(-a + x)**2*(a + x)'],
+    ['sin(x)**2 - 2*sin(x) + 1', '(sin(x) - 1)**2'],
+    ['exp(x - y)', 'exp(x)*exp(-y)'],
+    ['sin((x + 1)**2)', 'sin(x**2 + 2*x + 1)'],
+    ['x + exp(-y)', '(x*exp(y) + 1)*exp(-y)'],
+  ])('factor(%s) = %s', (e, expected) => {
+    expect(G(e)).toBe(expected);
+  });
+  it('options', () => {
+    // SymPy factor(x + exp(-y), fraction=False)
+    expect(G('x + exp(-y)', { fraction: false })).toBe('x + exp(-y)');
+    expect(G('exp(x - y)*(x + 1)', { fraction: false })).toBe('(x + 1)*exp(x)*exp(-y)');
+    // SymPy factor(sin(x**2 + 2*x + 1) + x, deep=True)
+    expect(G('sin(x**2 + 2*x + 1) + x', { deep: true })).toBe('x + sin((x + 1)**2)');
+    // Floats: SymPy factors over RR (2.0*(x + 1)); symjs leaves them
+    expect(G('2.0*x + 2.0')).toBe('2.0*x + 2.0');
+  });
+  it('non-commutative expressions go to factor_nc', () => {
+    const A = new Sym('A', { commutative: false });
+    const B = new Sym('B', { commutative: false });
+    // SymPy factor(A*B - B*A + x*A) = x*A + A*B - B*A
+    expect(String(sj.factor(add(mul(A, B), mul(-1, B, A), mul(x!, A))))).toBe('x*A + A*B - B*A');
+  });
+  it('factor_list', () => {
+    const fl = (e: string, ...g: sj.Expr[]) => show(sj.factorList(parse(e), g.length ? g : undefined));
+    expect(fl('(x - sqrt(a))*(x - 1)', x!)).toBe('[1, [[x - 1, 1], [-sqrt(a) + x, 1]]]');
+    expect(fl('x**2 - 2*sqrt(2)*x + 2', x!)).toBe('[1, [[x**2 - 2*sqrt(2)*x + 2, 1]]]');
+    expect(fl('x**2 - 2*sqrt(2)*x + 2')).toBe('[1, [[x**2 - 2*sqrt(2)*x + 2, 1]]]');
+    expect(fl('2*x*y + 2*y', x!)).toBe('[2*y, [[x + 1, 1]]]');
+    expect(fl('y**2*(x - y)*(x + y)', x!)).toBe('[y**2, [[x - y, 1], [x + y, 1]]]');
+    expect(fl('x*y + x')).toBe('[1, [[x, 1], [y + 1, 1]]]');
+    // the domains ZZ, ZZ[sqrt(a)], ZZ[sqrt(b)] order the factors (SymPy _sorted_factors)
+    expect(fl('(x - 1)*(x - sqrt(a))*(x - sqrt(b))', x!)).toBe('[1, [[x - 1, 1], [-sqrt(a) + x, 1], [-sqrt(b) + x, 1]]]');
+    expect(fl('2*sqrt(2)*x - 2*sqrt(2)')).toBe('[2*sqrt(2), [[x - 1, 1]]]');
+    expect(fl('x/2 + y/3')).toBe('[1/6, [[3*x + 2*y, 1]]]');
+    expect(fl('(x**2 - 1)**3')).toBe('[1, [[x - 1, 3], [x + 1, 3]]]');
+    expect(fl('x**2 - a**2', x!)).toBe('[1, [[-a + x, 1], [a + x, 1]]]');
+    expect(fl('x**2 - a', x!)).toBe('[1, [[-a + x**2, 1]]]');
+    // SymPy keeps a symbolic or fractional exponent: (1, [(x + 1, y)]) and (sqrt(2), [(x + 1, 1/2)])
+    expect(fl('(x + 1)**y')).toBe('[1, [[(x + 1)**y, 1]]]');
+    expect(fl('sqrt(2*x + 2)')).toBe('[sqrt(2), [[sqrt(x + 1), 1]]]');
+    // SymPy raises PolificationFailed for 2**x*(x**2 - 1)
+    expect(fl('2**x*(x**2 - 1)')).toBe('[1, [[x - 1, 1], [2**x, 1], [x + 1, 1]]]');
+    expect(() => sj.factorList(parse('1/x'))).toThrow('a polynomial expected, got 1/x');
+    // SymPy: PolynomialError: sin(x) contains an element of the set of generators.
+    expect(() => sj.factorList(parse('sin(x) + x'), [x!])).toThrow(sj.PolynomialError);
   });
 });

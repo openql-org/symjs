@@ -9,7 +9,7 @@
  * Stirling / Euler-Maclaurin expansions after shifting the argument.
  */
 
-import { at } from '../core/guard';
+import { at, expectType } from '../core/guard';
 import * as F from './mpf';
 import type { Mpf } from './mpf';
 import { ONE, ZERO } from './mpf';
@@ -37,7 +37,7 @@ function gcd(aIn: bigint, bIn: bigint): bigint {
   return a;
 }
 /** B_n (with B_1 = -1/2) as [p, q]. */
-function bernoulli(n: number): [bigint, bigint] {
+export function bernoulli(n: number): [bigint, bigint] {
   while (bern.length <= n) {
     const m = bern.length;
     // B_m = -1/(m+1) sum_{k<m} C(m+1,k) B_k
@@ -299,6 +299,9 @@ function erfinvDouble(x: number): number {
 
 /** Fresnel S (which = 'S') or C. */
 export function cfresnel(which: 'S' | 'C', z: Mpc, prec: number): Mpc {
+  const x = z[0];
+  // a large real argument: the asymptotic expansion (the series would need ~|z|^2 extra bits)
+  if (F.isZero(z[1]) && (Math.PI / 2) * F.toNumber(F.mul(x, x, 53)) * 1.4427 > prec + 40) return real(fresnelAsymptotic(which, x, prec));
   const wp = prec + extraBits(z, Math.PI / 2) + 10;
   const pi2 = real(F.ldexp(M.mpPi(wp), -1));
   const z2 = cmul(z, z, wp);
@@ -314,43 +317,35 @@ export function cfresnel(which: 'S' | 'C', z: Mpc, prec: number): Mpc {
   return rnd(s, prec);
 }
 
-/** gamma + (log z - log(1/z))/2: log z with the real-axis convention of Ei/Ci. */
-function eulerLog(z: Mpc, wp: number): Mpc {
-  const l1 = clog(z, wp);
-  const l2 = clog(cdiv(C1, z, wp), wp);
-  return cadd(real(M.mpEuler(wp)), scale(csub(l1, l2, wp), -1), wp);
-}
-
-/** Ei(z) = gamma + log z + sum z^k/(k k!). */
-export function cei(z: Mpc, prec: number): Mpc {
-  const wp = prec + Math.ceil(cabsD(z) * 1.4427) + 20;
-  const s = series(z, (k) => cdiv(z, int(k + 2), wp), wp, (k) => invInt(k + 1, wp));
-  return rnd(cadd(eulerLog(z, wp), s, wp), prec);
-}
-
-export function cli(z: Mpc, prec: number): Mpc {
+/**
+ * S(x) = 1/2 - f cos(u) - g sin(u), C(x) = 1/2 + f sin(u) - g cos(u) with
+ * u = pi x^2/2 and f + i g ~ 1/(pi x) sum_k (1/2)_k (i/u)^k (DLMF 7.5.3, 7.5.4,
+ * 7.12.2, 7.12.3), for real x with u log2(e) > prec + 40.
+ */
+function fresnelAsymptotic(which: 'S' | 'C', xIn: Mpf, prec: number): Mpf {
+  const neg = xIn.man < 0n;
+  const x = F.abs(xIn);
   const wp = prec + 20;
-  return cei(clog(z, wp), prec);
-}
-
-/** Si / Shi (hyperbolic) via sum (+-1)^k z^(2k+1)/((2k+1)(2k+1)!). */
-export function csi(z: Mpc, prec: number, hyperbolic: boolean): Mpc {
-  const wp = prec + Math.ceil(cabsD(z) * 1.4427) + 20;
-  const z2 = cmul(z, z, wp);
-  const m = hyperbolic ? z2 : cneg(z2);
-  const s = series(z, (k) => cdiv(m, int((2 * k + 2) * (2 * k + 3)), wp), wp, (k) => invInt(2 * k + 1, wp));
-  return rnd(s, prec);
-}
-
-/** Ci / Chi via gamma + log z + sum (+-1)^k z^(2k)/(2k (2k)!). */
-export function cci(z: Mpc, prec: number, hyperbolic: boolean): Mpc {
-  const wp = prec + Math.ceil(cabsD(z) * 1.4427) + 20;
-  const z2 = cmul(z, z, wp);
-  const m = hyperbolic ? z2 : cneg(z2);
-  const t0 = scale(m, -1); // k = 1 term before weighting: z^2/2!
-  const s = series(t0, (k) => cdiv(m, int((2 * k + 3) * (2 * k + 4)), wp), wp, (k) => invInt(2 * k + 2, wp));
-  const base = cadd(real(M.mpEuler(wp)), clog(z, wp), wp);
-  return rnd(cadd(base, s, wp), prec);
+  const pi = M.mpPi(wp + 2 * Math.max(0, F.mag(x)) + 10);
+  const u = F.ldexp(F.mul(pi, F.mul(x, x), wp + 2 * Math.max(0, F.mag(x))), -1);
+  let t = F.ONE;
+  let f = F.ONE;
+  let g = F.ZERO;
+  for (let k = 1; ; k++) {
+    t = F.div(F.mul(t, F.fromRational(BigInt(2 * k - 1), 2n, wp), wp), u, wp);
+    if (F.mag(t) < -wp - 4) break;
+    // (-1)^floor(k/2): k = 1, 2, 3, 4, ... adds +g, -f, -g, +f, ...
+    const sgn = k % 4 === 1 || k % 4 === 0 ? t : F.neg(t);
+    if (k % 2) g = F.add(g, sgn, wp);
+    else f = F.add(f, sgn, wp);
+  }
+  const px = F.mul(M.mpPi(wp), x, wp);
+  f = F.div(f, px, wp);
+  g = F.div(g, px, wp);
+  const [sn, cs] = M.sinCos(u, wp);
+  const half: Mpf = { man: 1n, exp: -1 };
+  const v = which === 'S' ? F.sub(F.sub(half, F.mul(f, cs, wp), wp), F.mul(g, sn, wp), wp) : F.sub(F.add(half, F.mul(f, sn, wp), wp), F.mul(g, cs, wp), wp);
+  return F.round(neg ? F.neg(v) : v, prec);
 }
 
 /** Lower incomplete gamma: z^s e^-z sum z^k / (s (s+1) ... (s+k)). */
@@ -363,8 +358,36 @@ export function clowergamma(s: Mpc, z: Mpc, prec: number): Mpc {
 }
 
 export function cuppergamma(s: Mpc, z: Mpc, prec: number): Mpc {
+  const asym = F.sign(z[0]) > 0 ? upperGammaAsymptotic(s, z, prec) : undefined;
+  if (asym) return asym;
   const wp = prec + 2 * Math.ceil(cabsD(z) * 1.4427) + 30;
   return rnd(csub(cgamma(s, wp), clowergamma(s, z, wp), wp), prec);
+}
+
+/**
+ * Gamma(s, z) ~ z^(s-1) e^-z sum_k (s-1)(s-2)...(s-k)/z^k for large z with
+ * Re z > 0 (the expansion mpmath sums through hyp2f0), or undefined when |z|
+ * is too small for it.
+ */
+function upperGammaAsymptotic(s: Mpc, z: Mpc, prec: number): Mpc | undefined {
+  if (cabsD(z) < 0.7 * prec + 2 * cabsD(s) + 20) return undefined;
+  const wp = prec + 20;
+  const sm1 = csub(s, C1, wp);
+  let t: Mpc = C1;
+  let sum: Mpc = C1;
+  let prevMag = 0;
+  for (let k = 1; ; k++) {
+    t = cdiv(cmul(t, csub(sm1, int(k - 1), wp), wp), z, wp);
+    if (isZeroC(t)) break;
+    // for |z| >= 0.7 prec + 2|s| + 20 the terms decrease below 2**-wp before the
+    // expansion diverges (its smallest term is about exp(-|z|))
+    const mg = expectType(cmag(t), (v): v is number => typeof v === 'number' && v <= prevMag, 'asymptotic term of uppergamma');
+    if (mg < cmag(sum) - wp - 4) break;
+    prevMag = mg;
+    sum = cadd(sum, t, wp);
+  }
+  const pre = cmul(M.cpow(z, sm1, wp), cexp(cneg(z), wp), wp);
+  return rnd(cmul(pre, sum, wp), prec);
 }
 
 export { ONE };

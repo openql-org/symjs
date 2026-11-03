@@ -202,3 +202,24 @@ describe('subs of bound variables', () => {
     expect(sb(Lambda(x, add(x, y)), y, 2)).toBe('Lambda(x, x + 2)');
   });
 });
+
+describe('subs of powers with related numeric bases (SymPy issue 10829)', () => {
+  const [u, v] = sj.symbols('u v');
+  const P = (t: string): sj.Expr => sj.parse(t, { symbols: { u, v } } as never);
+  it.each([
+    ['4**u', '2**u', 'v**2'],
+    ['8**u', '2**u', 'v**3'],
+    ['(1/4)**u', '2**u', 'v**(-2)'],
+    ['9**u', '3**u', 'v**2'],
+    ['4**u - 3*v + 2', '2**u', 'v**2 - 3*v + 2'],
+    // log(4, 2) needs the same exponent, log(2, 4), log(6, 2) and log(4, 1/2) are not numbers in SymPy
+    ['4**u', '2**(2*u)', '4**u'],
+    ['2**u', '4**u', '2**u'],
+    ['6**u', '2**u', '6**u'],
+    ['4**u', '(1/2)**u', '4**u'],
+    ['(2/3)**u', '2**u', '(2/3)**u'],
+    ['4**(u + 1)', '2**u', '4**(u + 1)'],
+    ['4**(2*u)', '2**u', '4**(2*u)'],
+    ['4**u', '2**(-u)', '4**u'],
+  ])('(%s).subs(%s, v) = %s', (e, o, want) => expect(sj.str(P(e).subs(P(o), v))).toBe(want));
+});

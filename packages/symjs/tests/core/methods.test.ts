@@ -371,6 +371,13 @@ describe('equal_valued, is_same, dummy_eq, as_terms', () => {
     expect(sj.equalValued(x, x)).toBe(true);
     expect(sj.equalValued(new sj.Float(0.1), E('1/10'))).toBe(false);
     expect(sj.equalValued(new sj.Float(4), 2)).toBe(false);
+    // SymPy: Float(0.1, 9) and Float(0.1, 10) round 0.1 to different binary values, so
+    // equal_valued and is_same(..., equal_valued) are False
+    const f9 = new sj.Float(0.1, 33);
+    const f10 = new sj.Float(0.1, 37);
+    expect(sj.equalValued(f9, f10)).toBe(false);
+    expect(sj.isSame(f9, f10, sj.equalValued)).toBe(false);
+    expect(sj.isSame(f9, new sj.Float(0.1, 33), sj.equalValued)).toBe(true);
     const fx = M(new sj.Float(2), x);
     expect(sj.isSame(fx, E('2*x'))).toBe(false);
     expect(sj.isSame(fx, E('2*x'), sj.equalValued)).toBe(true);
@@ -546,6 +553,10 @@ describe('other methods', () => {
     expect(isMeromorphic(f(x), x, 0)).toBe('unknown');
     // log(4) - 2*log(2) is zero, but its is_zero is None in SymPy
     expect(isMeromorphic(log(x), x, add(log(4), mul(-2, log(2))))).toBe('unknown');
+  });
+  it('isMeromorphic of a power whose base is undecided is unknown', () => {
+    // SymPy (floor(x)**y).is_meromorphic(x, 0) is None
+    expect(isMeromorphic(sj.parse('floor(x)**y'), x, 0)).toBe('unknown');
   });
 });
 

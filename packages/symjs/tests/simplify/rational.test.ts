@@ -109,3 +109,34 @@ describe('ratsimp and cancel (cov2): a Dummy and a Symbol with the same name', (
     expect(at(cancel(e))).toBeCloseTo(9 / 7, 12);
   });
 });
+
+describe('cancel and ratsimp over all the generators (SymPy 1.14)', () => {
+  it('cancel makes the leading coefficient of the denominator positive', () => {
+    const cases: [string, string][] = [
+      ['1/(x2 - x1*x10)', '-1/(x1*x10 - x2)'],
+      ['(x + y)/(2 - x*y)', '(-x - y)/(x*y - 2)'],
+      ['1/(I - x*sin(y))', '-1/(x*sin(y) - I)'],
+      ['x/(1 - sin(x)*x)', '-x/(x*sin(x) - 1)'],
+      ['1/(2 - sin(x))', '-1/(sin(x) - 2)'],
+      ['2/(8 - 8*erf(x))', '-1/(4*erf(x) - 4)'],
+      // a Gaussian leading coefficient is moved into the first quadrant
+      ['1/(-I*x*y - 1)', 'I/(x*y - I)'],
+      ['1/(I*x*y - 1)', '-I/(x*y + I)'],
+      ['1/(-I*sin(x) + 2)', 'I/(sin(x) + 2*I)'],
+      // SymPy prints the coefficient collected: I/(x*y*(1 + I) + I) and -I/(x*y*(1 + I) - I)
+      ['1/((1 - I)*x*y + 1)', 'I/(x*y + I*x*y + I)'],
+      ['1/((-1 + I)*x*y + 1)', '-I/(x*y + I*x*y - I)'],
+    ];
+    for (const [e, r] of cases) expect(String(cancel(parse(e)))).toBe(r);
+  });
+  it('ratsimp divides in functions and radicals as generators', () => {
+    const cases: [string, string][] = [
+      ['-sqrt(pi)*log(erf(x) - 1)*erf(x)/(8 - 8*erf(x)) + sqrt(pi)*log(erf(x) - 1)/(8 - 8*erf(x)) + sqrt(pi)*log(erf(x) + 1)*erf(x)/(8 - 8*erf(x)) - sqrt(pi)*log(erf(x) + 1)/(8 - 8*erf(x)) + 2*sqrt(pi)/(8 - 8*erf(x))',
+        'sqrt(pi)*log(erf(x) - 1)/8 - sqrt(pi)*log(erf(x) + 1)/8 - sqrt(pi)/(4*erf(x) - 4)'],
+      ['(x*exp(x) + exp(2*x))/(exp(x) + 1)', 'x + (1 - x)/(exp(x) + 1) + exp(x) - 1'],
+      ['sin(x)/(sin(x)*cos(x) + sin(x))', '1/(cos(x) + 1)'],
+      ['(a*x + a**2)/(x - a)', '2*a**2/(-a + x) + a'],
+    ];
+    for (const [e, r] of cases) expect(String(ratsimp(parse(e)))).toBe(r);
+  });
+});

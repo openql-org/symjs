@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { isNegative, isPositive, isReal } from '../../src/core/assumptions';
 import { Pow, S } from '../../src/core/nodes';
-import { mul } from '../../src/core/ops';
+import { add, mul } from '../../src/core/ops';
 
 const [x] = sj.symbols('x');
 
@@ -36,5 +36,39 @@ describe('assumption queries (SymPy test_assumptions)', () => {
     const p = new sj.Sym('p', { positive: true });
     expect(isReal(mul(I, p))).toBe(false);
     expect(isReal(mul(I, x))).toBe(undefined);
+  });
+});
+
+describe('signs of numbers and powers (SymPy Expr._eval_is_extended_positive_negative, Pow)', () => {
+  const q = new sj.Sym('q', { negative: true });
+  const p = new sj.Sym('p', { positive: true });
+  const r = new sj.Sym('r', { real: true });
+  const P = (t: string): sj.Expr => sj.parse(t, { symbols: { q, p, r, x } } as never);
+  it.each([
+    // [expr, isPositive, isNegative]; SymPy decides a sum without symbols numerically
+    ['pi - 3', true, false],
+    ['3 - pi', false, true],
+    ['1 + I', false, false],
+    ['sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6))', undefined, undefined],
+    ['-1 + sin(pi/7)**2 + cos(pi/7)**2', undefined, undefined],
+    ['x + 1', undefined, undefined],
+    ['1/q', false, true],
+    ['q**3', false, true],
+    ['q**2', true, false],
+    ['q**(-2)', true, false],
+    ['sqrt(q)', undefined, false],
+    ['p**x', undefined, undefined],
+    ['p**r', true, false],
+    ['r**2', undefined, false],
+    ['sqrt(x)', undefined, false],
+  ])('%s', (t, pos, negv) => {
+    const e = P(t);
+    expect(isPositive(e)).toBe(pos);
+    expect(isNegative(e)).toBe(negv);
+  });
+  it('gives up on sums whose value cannot be computed', () => {
+    // a term without a numeric value (an undefined function of a number)
+    const f = sj.SymFunction('f');
+    expect(isPositive(add(f(1), 1))).toBeUndefined();
   });
 });

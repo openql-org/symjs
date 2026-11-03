@@ -66,7 +66,7 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 | `@symjs/symjs/sets` | Intervals, finite sets, image and condition sets |
 | `@symjs/symjs/matrices` | `Matrix` and linear algebra |
 
-Every entry point includes the core. The core does not depend on the other areas: methods such as `expr.simplify()` or `expr.integrate(x)` work once the area that implements them has been imported (from its entry point or from the root), and otherwise throw an error naming the entry point to import. The modules that register implementations on load are listed in the `sideEffects` field of `package.json` (kept up to date by `node scripts/side-effects.mjs`, checked by the tests). `node scripts/size.mjs --check` (after `pnpm build`) measures the minified bundle of typical imports against size budgets; for example `import { parse, diff, str } from '@symjs/symjs/core'` is about 110 KiB minified (35 KiB gzip), and the whole base module about 390 KiB (130 KiB gzip).
+Every entry point includes the core. The core does not depend on the other areas: methods such as `expr.simplify()` or `expr.integrate(x)` work once the area that implements them has been imported (from its entry point or from the root), and otherwise throw an error naming the entry point to import. The modules that register implementations on load are listed in the `sideEffects` field of `package.json` (kept up to date by `node scripts/side-effects.mjs`, checked by the tests). `node scripts/size.mjs --check` (after `pnpm build`) measures the minified bundle of typical imports against size budgets; for example `import { parse, diff, str } from '@symjs/symjs/core'` is about 160 KiB minified (53 KiB gzip), and the whole base module about 1050 KiB (360 KiB gzip).
 
 ### Repository layout
 
@@ -88,11 +88,14 @@ To add an extend module, create `packages/<name>/` with its own `package.json` (
 
 Compatibility is measured against SymPy's own doctests (`compat/`):
 
-- **Behavior compatibility**: share of doctest examples of the in-scope public API (core, elementary functions, simplification, polynomials, solvers, ODEs, calculus, matrices, combinatorial/special functions) that symjs reproduces with identical `str()` output.
-- **API coverage**: share of in-scope public SymPy names (including `Expr` and `Matrix` methods) with a symjs counterpart.
+- **Behavior compatibility**: share of doctest examples of the in-scope public API (core, elementary and special functions, simplification, polynomials, solvers, ODEs, calculus, series, sets, matrices, number theory, logic, combinatorics, utilities) that symjs reproduces with the same `str()` output, or with a mathematically equal value in another form: 87.3% (2936 of 3363 examples; 2925 identical).
+- **API coverage**: share of in-scope public SymPy names (including `Expr` and `Matrix` methods) with a symjs counterpart: 92.6% (1095 of 1182).
+- The examples and names not supported yet are listed in `compat/known-gaps.json`. `pnpm compat` fails when a case outside that list stops passing, and when a listed case starts passing (so that the list only shrinks).
+- Test coverage of the source files is 100% (statements, branches, functions and lines; 13114 tests).
 
 ```sh
-pnpm compat           # run the corpus and write compat/REPORT.md
+pnpm compat           # run the tests with coverage and the corpus, write compat/REPORT.md
+UPDATE_KNOWN_GAPS=1 npx vitest run --config compat/vitest.config.ts   # rewrite compat/known-gaps.json
 pnpm compat:extract   # regenerate compat/corpus.json from the installed SymPy
 ```
 

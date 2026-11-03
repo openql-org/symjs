@@ -194,12 +194,10 @@ describe('results that differ from SymPy 1.14', () => {
     ["sj.integrate(sj.Piecewise([P('1'), P('y*x < 0')], [P('2'), true]), x, [a, 1])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x < 0')], [P('2'), true]), x, [a, 1]), "Integral(Piecewise((1, x*y < 0), (2, True)), (x, a, 1))", "Piecewise((Integral(Piecewise((1, x*y < 0), (2, True)), (x, a, 1)), a < 1), (-Integral(Piecewise((1, x*y < 0), (2, True)), (x, 1, a)), True))"],
     // the limit at oo is left for a symbolic y (SymPy uses the Mellin transform)
     ["sj.integrate(P('x*exp(-y*x)'), x, [0, sj.oo])", () => sj.integrate(P('x*exp(-y*x)'), x, [0, sj.oo]), "Limit(Piecewise(((-x/y - 1/y**2)*exp(-x*y), Ne(y, 0)), (x**2/2, True)), x, oo, dir='-') - Piecewise((-1/y**2, Ne(y, 0)), (0, True))", "Piecewise((y**(-2), Abs(arg(y)) < pi/2), (Integral(x*exp(-x*y), (x, 0, oo)), True))"],
-    // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('x*x**y*exp(-x)'), x, [0, sj.oo])", () => sj.integrate(P('x*x**y*exp(-x)'), x, [0, sj.oo]), "Integral(x*x**y*exp(-x), (x, 0, oo))", "Piecewise((gamma(y + 2), re(y) > -2), (Integral(x*x**y*exp(-x), (x, 0, oo)), True))"],
-    // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('exp(-x*x**2)'), x, [0, sj.oo])", () => sj.integrate(P('exp(-x*x**2)'), x, [0, sj.oo]), "Integral(exp(-x**3), (x, 0, oo))", "gamma(1/3)/3"],
-    // the oscillating antiderivative has no limit at oo
-    ["sj.integrate(P('x**2*sin(x)'), x, [0, sj.oo])", () => sj.integrate(P('x**2*sin(x)'), x, [0, sj.oo]), "Limit(-x**2*cos(x) + 2*x*sin(x) + 2*cos(x), x, oo, dir='-') - 2", "oo*sign(AccumBounds(-1, 1)) - 2"],
+    // the integral diverges: the antiderivative -x**2*cos(x) + 2*x*sin(x) + 2*cos(x) oscillates with unbounded
+    // amplitude, so its values at oo fill AccumBounds(-oo, oo) (SymPy's oo*sign(AccumBounds(-1, 1)) - 2 is the
+    // same set written unevaluated)
+    ["sj.integrate(P('x**2*sin(x)'), x, [0, sj.oo])", () => sj.integrate(P('x**2*sin(x)'), x, [0, sj.oo]), "AccumBounds(-oo, oo)", "oo*sign(AccumBounds(-1, 1)) - 2"],
     // the same value with the fraction expanded
     ["sj.integrate(P('sin(y*x)**2'), x)", () => sj.integrate(P('sin(y*x)**2'), x), "Piecewise((x/2 - sin(x*y)*cos(x*y)/(2*y), Ne(y, 0)), (0, True))", "Piecewise(((x*y/2 - sin(x*y)*cos(x*y)/2)/y, Ne(y, 0)), (0, True))"],
     // not implemented in symjs (SymPy's result shown)
@@ -228,8 +226,6 @@ describe('results that differ from SymPy 1.14', () => {
     ["sj.integrate(P('x*sin(x**3)'), x)", () => sj.integrate(P('x*sin(x**3)'), x), "Integral(x*sin(x**3), x)", "x**5*gamma(5/6)*hyper((5/6,), (3/2, 11/6), -x**6/4)/(6*gamma(11/6))"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.Piecewise([P('1'), P('y*x < 0')], [P('2'), true]), x, [-2, a])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x < 0')], [P('2'), true]), x, [-2, a]), "Integral(Piecewise((1, x*y < 0), (2, True)), (x, -2, a))", "Piecewise((-Integral(Piecewise((1, x*y < 0), (2, True)), (x, a, -2)), a < -2), (Integral(Piecewise((1, x*y < 0), (2, True)), (x, -2, a)), True))"],
-    // the Gamma function form needs y > 0
-    ["sj.integrate(P('x**z*exp(-y*x)'), x, [0, sj.oo])", () => sj.integrate(P('x**z*exp(-y*x)'), x, [0, sj.oo]), "Integral(x**z*exp(-x*y), (x, 0, oo))", "Piecewise((gamma(z + 1)/(y*y**z), ((re(z) > -1) & (Abs(arg(y)) < pi/2)) | ((re(z) > -1) & (re(z) < 0) & Eq(Abs(arg(y)), pi/2))), (Integral(x**z*exp(-x*y), (x, 0, oo)), True))"],
     // the same value with the power of the denominator not expanded
     ["sj.integrate(P('x*(x**2 + 1)**(-3)'), x)", () => sj.integrate(P('x*(x**2 + 1)**(-3)'), x), "-1/(4*(x**2 + 1)**2)", "-1/(4*x**4 + 8*x**2 + 4)"],
   ];
@@ -238,6 +234,22 @@ describe('results that differ from SymPy 1.14', () => {
   });
 });
 
+
+describe('definite integrals by Meijer G-functions (SymPy meijerint_definite)', () => {
+  const cases: [string, string][] = [
+    ['x*x**y*exp(-x)', 'Piecewise((gamma(y + 2), re(y) > -2), (Integral(x*x**y*exp(-x), (x, 0, oo)), True))'],
+    ['exp(-x*x**2)', 'gamma(1/3)/3'],
+    ['x**z*exp(-y*x)', 'Piecewise((gamma(z + 1)/(y*y**z), ((re(z) > -1) & (Abs(arg(y)) < pi/2)) | ((re(z) > -1) & (re(z) < 0) & Eq(Abs(arg(y)), pi/2))), (Integral(x**z*exp(-x*y), (x, 0, oo)), True))'],
+    ['sin(x)/x', 'pi/2'],
+    ['besselj(0, x)*exp(-x)', 'sqrt(2)/2'],
+    ['x**2*exp(-x**2)', 'sqrt(pi)/4'],
+    ['exp(-x**2)*cos(x)', 'sqrt(pi)*exp(-1/4)/2'],
+  ];
+  it.each(cases)('%s', (f, expected) => expect(String(sj.integrate(P(f), x, [0, sj.oo]))).toBe(expected));
+  it('without the conditions (SymPy conds="none")', () => {
+    expect(String(sj.integrate(P('x**z*exp(-y*x)'), x, [0, sj.oo], { conds: 'none' }))).toBe('gamma(z + 1)/(y*y**z)');
+  });
+});
 
 // expected values from SymPy 1.14 dsolve
 describe('dsolve hints (SymPy solver_map order and odesimp)', () => {

@@ -19,15 +19,19 @@ import { isNegative, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Float, Fn, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { add, exp, mul, pow, sympify } from '../core/ops';
-import { mapBottomUp, xreplace as subs } from '../core/traverse';
+import { mapBottomUp, rebuild, xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { fn, log } from '../functions/elementary';
 import { polyCoefficients } from '../polys/poly';
 import { expandMul as expand } from '../simplify/expand';
-import { fraction, together } from '../simplify/rational';
+import { fraction, ratsimp, together } from '../simplify/rational';
+import { factorTerms } from '../simplify/exprtools';
+import { AccumBoundsNode } from '../core/accumbounds';
 import { Expander, isZeroCoeff } from './puiseux';
-import { first, getOrThrow } from '../core/guard';
+import { gruntz } from './gruntz';
+import { defined, first, getOrThrow } from '../core/guard';
 import { NotImplementedError } from '../core/errors';
+import { nsimplify } from '../numeric/nfloat';
 
 const BOUNDED = Symbol('bounded');
 /** Undetermined, and no other method should be tried (a branch cut crossed at infinity). */
@@ -66,6 +70,7 @@ const dropZeros = (e: Expr): Expr => {
 };
 /** The infinite term of a sum with one (oo - I -> oo). */
 const infinitePart = (e: Expr): Expr => first(e.args.filter((a) => isInf(a) || isDirectedInf(a)));
+const hasFloat = (e: Expr): boolean => e instanceof Float || e.args.some(hasFloat);
 const hasSpecialInside = (e: Expr): boolean => e.args.some((a) => a instanceof Special || hasSpecialInside(a));
 
 /** Most nested limit computations one limit may spend (the recursion of L'Hopital's rule can grow exponentially). */
@@ -121,7 +126,7 @@ class Limiter {
    * side of approach)? A function of z alone whose value jumps (a branch cut, a
    * pole hidden in an unevaluated argument) fails the check.
    */
-  private continuous(f: Expr, r: Expr): boolean {
+  continuous(f: Expr, r: Expr): boolean {
     if (impl.freeSymbols(f).size !== 1 || impl.freeSymbols(r).size !== 0) return true;
     // exponentials of z (exp(1/x) near 0) are too costly to evaluate in arbitrary precision; they have no cut
     const zExp = (e: Expr): boolean => (e instanceof Pow && e.exp.has(this.z)) || e.args.some(zExp);
@@ -154,6 +159,42 @@ class Limiter {
     }
   }
 
+  /** Numeric value of f (a function of z alone) very near the point on the side of approach. */
+  private nearValue(f: Expr): { re: number; im: number } | undefined {
+    // (exponentials of z near the point are too costly in arbitrary precision)
+    const zExp = (e: Expr): boolean => (e instanceof Pow && e.exp.has(this.z)) || e.args.some(zExp);
+    if (impl.freeSymbols(f).size !== 1 || zExp(f)) return undefined;
+    try {
+      const v = this.z0.toComplex();
+      const h = 1e-12 * Math.max(1, Math.abs(v.re));
+      const a = subs(f, [[this.z, new Float(this.dir === '+' ? v.re + h : v.re - h, 200)]]).toComplex();
+      return a;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * The value of a function on a branch cut from the side of approach, when it is not the
+   * principal value r: r on another branch (pi - asin(c), -acos(c), atan(c) - pi, ...), chosen numerically.
+   */
+  private otherBranch(f: Expr, r: Expr): LV {
+    // (continuous() evaluated f near the point: so can nearValue)
+    const v = defined(this.nearValue(f), 'the value near the point');
+    const pi = S.Pi;
+    const ipi = mul(S.I, S.Pi);
+    const cands = [mul(-1, r), add(pi, mul(-1, r)), add(mul(-1, pi), mul(-1, r)), add(mul(2, pi), mul(-1, r)), add(r, mul(-1, pi)), add(r, pi), add(r, mul(-1, ipi)), add(r, ipi), add(r, mul(-2, ipi)), add(r, mul(2, ipi))];
+    for (const c of cands) {
+      try {
+        const w = c.toComplex();
+        if (Math.hypot(w.re - v.re, w.im - v.im) < 1e-6 * Math.max(1, Math.hypot(w.re, w.im))) return c;
+      } catch {
+        // not numeric
+      }
+    }
+    return undefined;
+  }
+
   /** The point in terms of the expansion variable t -> 0+ (z0 + t, z0 - t, 1/t or -1/t). */
   private point(): Expr {
     const { z0, t } = this;
@@ -174,6 +215,11 @@ class Limiter {
     // a sample that is exactly 0 (sin(pi*z)/z at z = 10**7) says nothing about the side
     const s = this.probeSign(e);
     return s === 0 ? undefined : s;
+  }
+
+  /** Has the computation spent its budget? */
+  get exhausted(): boolean {
+    return this.calls > this.budget;
   }
 
   lim(f: Expr): LV {
@@ -215,9 +261,11 @@ class Limiter {
         return infs.length ? add(...infs) : BOUNDED;
       }
       // a sum that expands to 0 (a + a**2 - a*(a + 1)) is 0: a quotient with it is a 0/0 form
-      const r = add(...vals.filter(isValue));
-      // infinities that cancel (oo*I - oo*I) are an indeterminate form
-      if (isFinite_(r)) return vals.some((v) => isValue(v) && !isFinite_(v)) ? undefined : dropZeros(r);
+      const vs = vals.filter(isValue);
+      const r = add(...vs);
+      // infinities that cancel are an indeterminate form (left to the undetermined case below; add itself
+      // makes oo*I - oo*I nan)
+      if (isFinite_(r) && vs.every(isFinite_)) return dropZeros(r);
       if (isInf(r) || isDirectedInf(r)) return r;
       // an infinity (oo, -oo, c*oo) plus real finite terms is that infinity, plus other finite terms it is kept
       // (oo - I); anything else with an infinite part (oo - sqrt(c + oo)) is undetermined
@@ -285,14 +333,14 @@ class Limiter {
       if (isInf(lb) && isZeroE(lh)) return expLog();
       // an infinite base off the positive axis to the power oo: the modulus grows, the direction turns (SymPy: zoo)
       if (isInf(lh) && lh.name === 'oo' && (isDirectedInf(lb) || (isInf(lb) && lb.name !== 'oo'))) return S.ComplexInfinity;
-      // a constant base to an infinite power (a positive one to c*oo, another one to oo or -oo)
-      if (isFinite_(lb) && ((isDirectedInf(lh) && isPositive(lb) === true) || (isInf(lh) && lh.name !== 'zoo' && isPositive(lb) !== true))) {
+      // a constant base to an infinite power (to c*oo, or a base that is not positive to oo or -oo)
+      if (isFinite_(lb) && (isDirectedInf(lh) || (isInf(lh) && lh.name !== 'zoo' && isPositive(lb) !== true))) {
         return this.expInf(lh, lb);
       }
       const r = pow(lb, lh);
       if (isNaN_(r)) return expLog();
       // a fractional power on its branch cut (sqrt(-1 + I*x) from below)
-      return lh instanceof Rational && !lh.isInteger && !this.continuous(f, r) ? undefined : r;
+      return lh instanceof Rational && !lh.isInteger && !this.continuous(f, r) ? this.otherBranch(f, r) : r;
     }
 
     if (f instanceof Fn && f.args.length > 1) {
@@ -332,6 +380,11 @@ class Limiter {
         if (side === undefined) return undefined;
         return f.name === 'floor' ? (side > 0 ? la : add(la, -1)) : side > 0 ? add(la, 1) : la;
       }
+      // acoth at 0, on its cut: -I*pi/2 from the right, I*pi/2 from the left (SymPy)
+      if (f.name === 'acoth' && isZeroE(la)) {
+        const side = this.sideOf(arg);
+        return side === undefined ? undefined : mul(-side, S.Half, S.I, S.Pi);
+      }
       if (f.name === 'sign' && isZeroE(la)) {
         const side = this.sideOf(arg);
         return side === undefined ? undefined : Rational.of(side);
@@ -339,10 +392,16 @@ class Limiter {
       const r = fn(f.name, [la]);
       if (r instanceof Special && r.name === 'zoo') {
         const s = this.probeSign(f);
-        return s === 1 ? S.Infinity : s === -1 ? S.NegativeInfinity : undefined;
+        if (s !== undefined) return s === 1 ? S.Infinity : S.NegativeInfinity;
+        // an imaginary direction (asec(exp(1/x)) at 0-: oo*I)
+        const v = this.nearValue(f);
+        // (a value that is not finite fails the comparison)
+        if (v === undefined || !(Math.abs(v.re) <= 1e-3 * Math.abs(v.im))) return undefined;
+        return mul(v.im > 0 ? 1 : -1, S.Infinity, S.I);
       }
-      // on a branch cut (log(-1 + I*x) from below, asin(2 + I*x), ...) the value is that of the side
-      return this.continuous(f, r) ? r : undefined;
+      // on a branch cut (asin(2 + I*x), ...) the value is that of the side: the value of the other branch
+      if (this.continuous(f, r)) return r;
+      return this.otherBranch(f, r);
     }
     return undefined;
   }
@@ -444,6 +503,8 @@ class Limiter {
             : zeroOverInf() ?? infOverZero();
         const rest = others.length ? this.lim(mul(...others)) : S.One;
         if (rest === undefined || rest === BOUNDED || q === undefined || q === BOUNDED) return undefined;
+        // (0 times an infinite quotient is another indeterminate form)
+        if (isZeroE(rest) && !isFinite_(q)) return undefined;
         // a signed infinity times a finite factor: the sign of the factor is the direction
         if (q instanceof Special && isFinite_(rest)) return this.infinity(q.name === 'oo' ? rest : mul(-1, rest));
         return mul(rest, q);
@@ -510,13 +571,15 @@ export function limit(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' | '+-'
 
 /** limit() with at most `budget` nested limit computations per one-sided limit (internal; for tests). */
 export function limitWithin(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' | '+-', budget: number): Expr {
-  const e = sympify(ex);
+  // Floats are converted to exact numbers first, as in SymPy (limit(x**0.5, x, 16) = 4)
+  const given = sympify(ex);
+  const e = hasFloat(given) ? nsimplify(given) : given;
   const z0 = sympify(z0x);
   if (dir === '+-' && !(z0 instanceof Special)) {
     const l = limitWithin(e, z, z0, '-', budget);
     const r = limitWithin(e, z, z0, '+', budget);
     // neither one-sided limit is known: the two-sided one is not either
-    if (l instanceof Limit && r instanceof Limit) return new Limit([e, z, z0], dir);
+    if (l instanceof Limit && r instanceof Limit) return new Limit([given, z, z0], dir);
     if (l.key !== r.key) {
       if (l instanceof Special && r instanceof Special && l.name !== 'nan' && r.name !== 'nan') return S.ComplexInfinity;
       throw new RangeError(
@@ -534,23 +597,108 @@ export function limitWithin(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' 
     // (a product keeps -oo as -1*oo, so the infinity in it is oo)
     const c = mul(...z0.args.filter((a) => !isInf(a)));
     const v = limitWithin(subs(e, [[z, mul(c, pow(fn('abs', [c]), -1), z)]]), z, S.Infinity, '+', budget);
-    return v instanceof Limit ? new Limit([e, z, z0], dir) : v;
+    return v instanceof Limit ? new Limit([given, z, z0], dir) : v;
   }
   const d = dir === '-' ? '-' : '+';
-  const v = new Limiter(z, z0, d, budget).lim(e);
+  // SymPy's Limit approaches oo from below and -oo from above
+  const unevaluated = (): Expr => new Limit([given, z, z0], z0 instanceof Special ? (z0.name === 'oo' ? '-' : '+') : dir);
+  const limiter = new Limiter(z, z0, d, budget);
+  const v = limiter.lim(e);
   if (v === undefined || v === BOUNDED) {
     const g = z0 instanceof Special && z0.name === 'oo' ? gammaAsymptotic(e, z) : undefined;
     if (g !== undefined) {
       const w = new Limiter(z, z0, d, budget).lim(g);
       if (w !== undefined && w !== BOUNDED) return w;
     }
-    // SymPy's Limit approaches oo from below and -oo from above
-    return new Limit([e, z, z0], z0 instanceof Special ? (z0.name === 'oo' ? '-' : '+') : dir);
+    // explicit infinities ((x + 1)**oo, x - oo) are left to the other methods (SymPy returns the Limit)
+    if (hasSpecialInside(e)) return unevaluated();
+    // the Gruntz algorithm; it does not see branch cuts
+    try {
+      const r = gruntz(e, z, z0, d, 3 * budget);
+      if (limiter.continuous(e, r)) return r;
+    } catch {
+      // undecided by the algorithm (GruntzError)
+    }
+    // (the heuristics do not see branch cuts either; they are not tried when the budget is spent)
+    const h = limiter.exhausted ? undefined : heuristics(e, z, z0, d, budget);
+    return h !== undefined && limiter.continuous(e, h) ? h : unevaluated();
   }
   // an infinity plus finite (possibly complex) terms: SymPy gives the infinity (limit(x**2 - I, x, oo) = oo);
   // the structural sums keep a single infinite term
   if (v instanceof Add && isInfiniteSum(v)) return infinitePart(v);
   return v;
+}
+
+/** Functions with jumps. */
+const JUMPS = new Set(['floor', 'ceiling', 'frac', 'sign', 'Heaviside']);
+
+/** A limit value whose finiteness is unknown (an interval reaching oo, oo*sign(y)). */
+function unsureFinite(l: Expr): boolean {
+  if (l instanceof AccumBoundsNode) return isInf(l.min) || isInf(l.max);
+  return l.has(S.Infinity) && !isInf(l);
+}
+
+/** Nesting of the heuristics (each level splits an expression into its arguments). */
+let heuristicsDepth = 0;
+
+/**
+ * The limit computed argument by argument (SymPy heuristics), for the forms the other methods
+ * leave undecided; its results may be intervals (limit(sin(x), x, oo) = AccumBounds(-1, 1)).
+ */
+function heuristics(e: Expr, z: Sym, z0: Expr, dir: '+' | '-', budget: number): Expr | undefined {
+  if (heuristicsDepth > 12) return undefined;
+  heuristicsDepth++;
+  try {
+    // functions that jump decide their side numerically, which an oscillation (floor(sin(pi*x)/x) at oo) defeats
+    const jumps = (x: Expr): boolean => (x instanceof Fn && JUMPS.has(x.name)) || x.args.some(jumps);
+    if (z0 instanceof Special && !jumps(e)) {
+      // at oo (-oo): the limit at 0+ of e(1/z) (of e(-1/z))
+      const rv = limitWithin(subs(e, [[z, mul(z0.name === 'oo' ? 1 : -1, pow(z, -1))]]), z, S.Zero, '+', budget);
+      return rv instanceof Limit ? undefined : rv;
+    }
+    if (z0 instanceof Special || !(e instanceof Mul || e instanceof Add || e instanceof Pow || e instanceof Fn)) return undefined;
+    // functions that jump (floor(x*y) at 0 depends on the sign of y) are not continuous at the limits of their arguments
+    if (e instanceof Fn && JUMPS.has(e.name)) return undefined;
+    const r: Expr[] = [];
+    for (const a of e.args) {
+      const l = limitWithin(a, z, z0, dir, budget);
+      if (unsureFinite(l)) {
+        if (!(e instanceof Add)) return undefined;
+        let m = factorTerms(e);
+        if (!(m instanceof Mul)) m = together(m);
+        return m instanceof Mul ? heuristics(m, z, z0, dir, budget) : undefined;
+      }
+      if (l instanceof Limit || isNaN_(l)) return undefined;
+      r.push(l);
+    }
+    // a function of finite limits was evaluated by the structural rules, which see the branch cuts
+    // (acoth(x*y) at 0 depends on the sign of y)
+    if (e instanceof Fn && !r.some((a) => isInf(a) || a instanceof AccumBoundsNode)) return undefined;
+    // a power or logarithm of an interval with negative values (sin(x)**(1/x) at oo): SymPy finds nan
+    const negativeIv = (x: Expr | undefined): boolean => x instanceof AccumBoundsNode && isNegative(x.min) === true;
+    if ((e instanceof Pow || (e instanceof Fn && e.name === 'log')) && negativeIv(r[0])) return undefined;
+    // an interval reaching 0 to a power tending to 0 ((cos(x) + 1)**(1/x) at oo) is not decided
+    if (e instanceof Pow && r[0] instanceof AccumBoundsNode && isZeroE(r[0].min) && isZeroE(r[1])) return undefined;
+    // (the trigonometric functions evaluate themselves at an infinity: sin(oo) = AccumBounds(-1, 1))
+    const rv = rebuild(e, r);
+    // (a product with an interval is not nan: AccumBounds(-1, 1)*oo*0 is 0)
+    // functions left unevaluated at infinity (besselk(1, -oo)) and nan inside an interval are not limits
+    // and a function of an interval or a power of an infinity left unevaluated (atan2(0, AccumBounds(-1, 1)), y**oo)
+    const unevaluatedAt = (x: Expr): boolean =>
+      ((x instanceof Fn || x instanceof Pow) && x.args.some((a) => isInf(a) || isDirectedInf(a) || a instanceof AccumBoundsNode)) ||
+      (x instanceof Pow && isZeroE(x.base)) ||
+      (!(x instanceof AccumBoundsNode) && x.args.some(unevaluatedAt));
+    if (unevaluatedAt(rv) || (!isNaN_(rv) && rv.has(S.NaN))) return undefined;
+    if (isNaN_(rv)) {
+      const re = ratsimp(e);
+      if (re.key === e.key) return undefined;
+      const l = limitWithin(re, z, z0, dir, budget);
+      return l instanceof Limit ? undefined : l;
+    }
+    return rv;
+  } finally {
+    heuristicsDepth--;
+  }
 }
 
 /**

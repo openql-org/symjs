@@ -43,7 +43,7 @@ import { numAdd, numInv, numMul, numNeg } from '../core/num';
 import { at, defined, expectType, getOrThrow, pair } from '../core/guard';
 import { gcd, lcm } from '../core/numbers';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
-import { mapBottomUp as mapBottomUpI, xreplace as subs } from '../core/traverse';
+import { mapBottomUp as mapBottomUpI, some, xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { asin, atan, cos, cosh, log, sin, sinh } from '../functions/elementary';
 import { UPoly, polyCoefficients, roots } from '../polys/poly';
@@ -51,6 +51,7 @@ import { fn as fnErf } from '../functions/elementary';
 import { expand as expandFull, expandMul as expand } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { expsimp, hasTrigFunctions } from '../simplify/trigsimp';
+import { meijerintDefinite } from './meijerint';
 
 type R = Expr | undefined;
 
@@ -765,6 +766,13 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
         if (cond === true || opts.conds === 'none') return val;
         return piecewise([val, cond], [unevaluated, true]);
       }
+    }
+    // SymPy's Meijer G-function integrator (not for piecewise integrands)
+    const m = some(f, (e) => e instanceof Piecewise) ? undefined : meijerintDefinite(f, x, a, b);
+    if (m && !some(m[0], (e) => e instanceof Integral)) {
+      const [val, cond] = m;
+      if (opts.conds === 'none') return val;
+      return piecewise([val, cond], [unevaluated, true]);
     }
     return unevaluated;
   }

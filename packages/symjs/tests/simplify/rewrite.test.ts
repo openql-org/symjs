@@ -161,3 +161,35 @@ describe('rewrite: user-defined functions and the method form', () => {
     expect(P('exp(sin(x))').rewrite('exp').toString()).toBe('exp(-I*(exp(I*x) - exp(-I*x))/2)');
   });
 });
+
+describe('rewrite(..., log) of the inverse trigonometric and hyperbolic functions (SymPy _eval_rewrite_as_log)', () => {
+  it('matches SymPy', () => {
+    const cases: [string, string][] = [
+      ['asinh(x)', 'log(x + sqrt(x**2 + 1))'],
+      ['asinh(2*y + 1)', 'log(2*y + sqrt((2*y + 1)**2 + 1) + 1)'],
+      ['acosh(x)', 'log(x + sqrt(x - 1)*sqrt(x + 1))'],
+      ['acosh(2*y + 1)', 'log(sqrt(2)*sqrt(y)*sqrt(2*y + 2) + 2*y + 1)'],
+      ['atanh(x)', '-log(1 - x)/2 + log(x + 1)/2'],
+      ['atanh(2*y + 1)', '-log(-2*y)/2 + log(2*y + 2)/2'],
+      ['acoth(x)', '-log(1 - 1/x)/2 + log(1 + 1/x)/2'],
+      ['acoth(2*y + 1)', '-log(1 - 1/(2*y + 1))/2 + log(1 + 1/(2*y + 1))/2'],
+      ['asech(x)', 'log(sqrt(-1 + 1/x)*sqrt(1 + 1/x) + 1/x)'],
+      ['asech(2*y + 1)', 'log(sqrt(-1 + 1/(2*y + 1))*sqrt(1 + 1/(2*y + 1)) + 1/(2*y + 1))'],
+      ['acsch(x)', 'log(sqrt(1 + x**(-2)) + 1/x)'],
+      ['acsch(2*y + 1)', 'log(sqrt(1 + (2*y + 1)**(-2)) + 1/(2*y + 1))'],
+      ['asin(x)', '-I*log(I*x + sqrt(1 - x**2))'],
+      ['asin(2*y + 1)', '-I*log(sqrt(1 - (2*y + 1)**2) + I*(2*y + 1))'],
+      ['acos(x)', 'I*log(I*x + sqrt(1 - x**2)) + pi/2'],
+      ['acos(2*y + 1)', 'I*log(sqrt(1 - (2*y + 1)**2) + I*(2*y + 1)) + pi/2'],
+      ['atan(x)', 'I*(log(-I*x + 1) - log(I*x + 1))/2'],
+      ['atan(2*y + 1)', 'I*(log(-I*(2*y + 1) + 1) - log(I*(2*y + 1) + 1))/2'],
+      ['acot(x)', 'I*(log(1 - I/x) - log(1 + I/x))/2'],
+      ['acot(2*y + 1)', 'I*(log(1 - I/(2*y + 1)) - log(1 + I/(2*y + 1)))/2'],
+      ['asec(x)', 'I*log(sqrt(1 - 1/x**2) + I/x) + pi/2'],
+      ['asec(2*y + 1)', 'I*log(sqrt(1 - 1/(2*y + 1)**2) + I/(2*y + 1)) + pi/2'],
+      ['acsc(x)', '-I*log(sqrt(1 - 1/x**2) + I/x)'],
+      ['acsc(2*y + 1)', '-I*log(sqrt(1 - 1/(2*y + 1)**2) + I/(2*y + 1))'],
+    ];
+    for (const [e, r] of cases) expect(String(rewrite(parse(e), 'log'))).toBe(r);
+  });
+});

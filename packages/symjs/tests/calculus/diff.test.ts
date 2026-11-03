@@ -25,8 +25,9 @@ import {
   symbols,
 } from '../../src';
 import { NotImplementedError } from '../../src/core/errors';
+import { orderUnreduced } from '../../src/calculus/diff';
 import { cast } from '../../src/core/guard';
-import { Integral } from '../../src/core/nodes';
+import { Integral, Order } from '../../src/core/nodes';
 
 const [x, y, k, n, h] = symbols('x y k n h');
 
@@ -101,7 +102,8 @@ describe('diff (SymPy diff)', () => {
     expect(s(sj.diff(sj.parse('floor(x)', { symbols: [x] }), x))).toBe('Derivative(floor(x), x)');
     expect(s(sj.diff(sj.parse('ceiling(x)', { symbols: [x] }), x))).toBe('Derivative(ceiling(x), x)');
     expect(s(sj.diff(sj.parse('sign(x)', { symbols: [x] }), x))).toBe('Derivative(sign(x), x)');
-    expect(s(sj.diff(sj.parse('floor(x**2)', { symbols: [x] }), x))).toBe('Derivative(floor(x**2), x)');
+    // floor and ceiling of another argument follow the chain rule (SymPy 1.14)
+    expect(s(sj.diff(sj.parse('floor(x**2)', { symbols: [x] }), x))).toBe('2*x*Subs(Derivative(floor(_xi_1), _xi_1), _xi_1, x**2)');
     // SymPy 1.14: 2*DiracDelta(r); DiracDelta is defined above the calculus module (integrals), so it stays unevaluated
     expect(s(sj.diff(sj.parse('sign(r)', { symbols: [r] }), r))).toBe('Derivative(sign(r), r)');
     expect(s(sj.diff(sj.parse('arg(r)', { symbols: [r] }), r))).toBe('0');
@@ -149,8 +151,9 @@ describe('diff', () => {
     expect(s2(diff(Derivative(f(y), y), x))).toBe('0');
     expect(s2(diff(Derivative(f(mul(x, y)), y), x))).toBe('x*y*Subs(Derivative(f(_xi_1), (_xi_1, 2)), _xi_1, x*y) + Subs(Derivative(f(_xi_1), _xi_1), _xi_1, x*y)');
     expect(s2(diff(Derivative(mul(x, f(x)), x), x))).toBe('x*Derivative(f(x), (x, 2)) + 2*Derivative(f(x), x)');
-    // SymPy evaluates Derivative(floor(x*y), y) through Subs; symjs keeps it and appends x
-    expect(s2(diff(Derivative(floor(mul(x, y)), y), x))).toBe('Derivative(floor(x*y), y, x)');
+    // Derivative(floor(x*y), y) is evaluated through Subs, as in SymPy; one that stays unevaluated gets x appended
+    expect(s2(diff(Derivative(floor(mul(x, y)), y), x))).toBe('x*y*Subs(Derivative(floor(_xi_1), (_xi_1, 2)), _xi_1, x*y) + Subs(Derivative(floor(_xi_1), _xi_1), _xi_1, x*y)');
+    expect(s2(diff(Derivative(sj.sign(mul(x, y)), x), y))).toBe('Derivative(sign(x*y), x, y)');
     expect(s2(diff(new Integral([f(x), x]), x))).toBe('f(x)');
     expect(s2(diff(new Integral([pow(x, 2), x, rational(0), x]), x))).toBe('x**2');
     expect(s2(diff(new Integral([mul(x, y), y, rational(0), rational(1)]), x))).toBe('Integral(y, (y, 0, 1))');
@@ -169,5 +172,33 @@ describe('diff', () => {
     // two symbols named x (one real): sorted by name, so the order is kept
     const [xr] = symbols('x', { real: true });
     expect(s2(diff(diff(f(x, xr as Expr), x), xr as Expr))).toBe('Derivative(f(x, x), x, x)');
+  });
+});
+
+describe('diff of an Order (SymPy Order._eval_derivative)', () => {
+  it('differentiates the expression and reduces it to its leading term', () => {
+    const [x, y] = sj.symbols('x y');
+    expect(String(sj.diff(sj.O(x), x))).toBe('O(1)');
+    expect(String(sj.diff(sj.O(sj.parse('x**2')), x))).toBe('O(x)');
+    expect(String(sj.diff(sj.parse('O(x*y, x, y)'), x))).toBe('O(y, x, y)');
+    expect(String(sj.diff(sj.parse('O(1/x, (x, oo))'), x))).toBe('O(x**(-2), (x, oo))');
+    expect(String(sj.diff(sj.O(y), x))).toBe('0');
+  });
+});
+
+describe('diff of an Order with a constant expression', () => {
+  it('is 0, and an Order without variables keeps them implicit', () => {
+    const [x] = sj.symbols('x');
+    // SymPy 1.14 prints O(0, (x, oo)), which is 0
+    expect(String(sj.diff(sj.parse('O(1, (x, oo))'), x))).toBe('0');
+    expect(String(sj.diff(new Order([sj.parse('x**2')]), x))).toBe('O(x)');
+  });
+});
+
+describe('diff of an Order without the series module', () => {
+  it('keeps the Order unreduced', () => {
+    const [x] = sj.symbols('x');
+    expect(String(orderUnreduced(sj.parse('2*x'), [x], sj.S.Zero))).toBe(String(new Order([sj.parse('2*x'), x, sj.S.Zero])));
+    expect(new Order([x]).key).toBe(orderUnreduced(x, [], sj.S.Zero).key);
   });
 });

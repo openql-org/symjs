@@ -131,17 +131,17 @@ describe('rsolve_hyper', () => {
     // SymPy: C0 + n**3 - n (simplify keeps the expanded form)
     sameValues(rsolveHyper([-1, 1], P('3*(n + n**2)'), n)?.[0], 'C0 + n**3 - n');
     // SymPy writes sqrt(a)**n as a**(n/2) for integer n
-    sameValues(rsolveHyper([P('-a'), 0, 1], 0, n)?.[0], 'C0*(-sqrt(a))**n + C1*a**(n/2)');
+    sameValues(rsolveHyper([P('-a'), 0, 1], 0, n)?.[0], 'C0*a**(n/2) + C1*(-sqrt(a))**n');
     // SymPy: 2**n*C0 + 2**(n - 1)*n + 3**n
     sameValues(rsolveHyper([-2, 1], P('2**n + 3**n'), n)?.[0], '2**n*C0 + 2**(n - 1)*n + 3**n');
-    // SymPy: C0/factorial(-n); both are C0 at n = 0 and 0 for n >= 1
-    expect(hyper(['n', '1'], '0')).toBe('(-1)**n*C0*RisingFactorial(0, n)');
+    // SymPy: C0/factorial(-n) (C0 at n = 0 and 0 for n >= 1)
+    expect(hyper(['n', '1'], '0')).toBe('C0/factorial(-n)');
     sameValues(rsolveHyper([n, 1], 0, n)?.[0], 'C0*(-1)**n*RisingFactorial(0, n)');
   });
   it('solves where SymPy fails', () => {
     // SymPy raises AttributeError: the similar terms 3**n and n*3**n are grouped into a sum it cannot simplify
     const s = rsolveHyper([-2, 1], P('2**n*n + 3**n + n*3**n'), n);
-    expect(show(s)).toBe('2**n*C0 + 2**n*n*(n - 1)/4 + 3**n*(n - 3) + 3**n');
+    expect(show(s)).toBe('2**n*C0 + 2**n*n*(n - 1)/4 + 3**n*(n - 2)');
     solves(['-2', '1'], '2**n*n + 3**n + n*3**n', (s as [sj.Expr, sj.Sym[]])[0]);
     // SymPy raises UnboundLocalError: the sum expands to the single term 1
     const t = rsolveHyper([-1, 1], P('(n + 1)**2 - n**2 - 2*n'), n);

@@ -267,29 +267,88 @@ describe('solve', () => {
     expect(sol('x**(1/61) - 2')).toBe('[2305843009213693952]');
     expect(sol('1/sqrt(x) - 2')).toBe('[1/4]');
     expect(sol('sqrt(x) + x**(-1/3)')).toBe('[]');
-    // SymPy: [0]; a seventh root beside other terms is not squared away (degree limit)
-    expect(() => sol('(x + 1)**(1/7) + x - 1')).toThrow(NotImplementedError);
     // the lcm 122 of the root indices is beyond the substitution limit (SymPy does not finish)
     expect(() => sol('x**(1/61) + sqrt(x) - 2')).toThrow(NotImplementedError);
+  });
+  it('radicals of index above 6', () => {
+    // SymPy: [0]; beyond SymPy unrad's degree limit the linear radicand x + 1 = y is the variable
+    expect(sol('(x + 1)**(1/7) + x - 1')).toBe('[0]');
+    // SymPy: [-1/2]
+    expect(sol('(2*x + 1)**(1/7) + 2*x + 1')).toBe('[-1/2]');
+    // SymPy: [1/y]
+    expect(show(solve(parse('(x*y)**(1/7) + x*y - 2'), x))).toBe('[1/y]');
+    // a radicand that is not a polynomial (SymPy: NotImplementedError)
+    expect(() => sol('(exp(x) + 1)**(1/7) + x - 1')).toThrow(NotImplementedError);
+  });
+  it('a seventh root of a quadratic', () => {
+    // a radicand of degree 2: the polynomial (x**2 + 1) - (1 - x)**7, its roots checked numerically (SymPy: [0])
+    expect(sol('(x**2 + 1)**(1/7) + x - 1')).toBe('[0]');
   });
   it('Lambert W forms', () => {
     expect(sol('x*exp(x) - 1')).toBe('[LambertW(1)]');
     // the constant term vanishes: (x + 1)*exp(x) = 0
     expect(sol('x*exp(x) + exp(x)')).toBe('[-1]');
-    // SymPy: [2*LambertW(-1/2), 2*LambertW(1/2)] (a square root of both sides first)
-    expect(() => sol('x**2*exp(x) - 1')).toThrow(NotImplementedError);
+    // the logarithm of both sides, x**2 giving 2*log(x) and 2*log(-x) (SymPy bivariate._solve_lambert)
+    expect(sol('x**2*exp(x) - 1')).toBe('[2*LambertW(-1/2), 2*LambertW(1/2)]');
     // SymPy: NotImplementedError as well
     expect(() => sol('x + exp(x**2)')).toThrow(NotImplementedError);
   });
   it('equations out of reach', () => {
-    // SymPy: [exp(LambertW(log(2)))]
-    expect(() => sol('x**x - 2')).toThrow(NotImplementedError);
     // SymPy: [] (no formula for a symbolic quintic)
     expect(() => sol('x**5 + y*x + 1')).toThrow(NotImplementedError);
-    // 13 nested exponentials exceed the recursion depth (SymPy: a tower of 13 logarithms of -log(log(2)))
-    let e = 'x';
-    for (let i = 0; i < 13; i++) e = `exp(${e})`;
-    expect(() => sol(`${e} - 2`)).toThrow(NotImplementedError);
+    // 42 nested exponentials exceed the recursion depth
+    const tower = (n: number, f: string, x0: string) => Array.from({ length: n }).reduce<string>((e) => `${f}(${e})`, x0);
+    expect(() => sol(`${tower(42, 'exp', 'x')} - 2`)).toThrow(NotImplementedError);
+  });
+  it('nested exponentials', () => {
+    // 13 levels (SymPy does not finish within a minute; exp applied 13 times to the result gives 2)
+    const tower = (n: number, f: string, x0: string) => Array.from({ length: n }).reduce<string>((e) => `${f}(${e})`, x0);
+    expect(sol(`${tower(13, 'exp', 'x')} - 2`)).toBe(`[${tower(13, 'log', '2')}]`);
+  });
+  it('Lambert W forms through logarithms (SymPy bivariate._solve_lambert)', () => {
+    // B**B = R
+    expect(sol('x**x - 2')).toBe('[exp(LambertW(log(2)))]');
+    expect(sol('x**x - 1/2')).toBe('[exp(LambertW(-log(2)))]');
+    expect(sol('(2*x)**(2*x) - 3')).toBe('[exp(LambertW(log(3)))/2]');
+    // a*log(b*x + c) + d*x + f = 0
+    expect(sol('log(x) + x')).toBe('[LambertW(1)]');
+    expect(sol('x - 2*log(x) - 3')).toBe('[-2*LambertW(-exp(-3/2)/2), -2*LambertW(-exp(-3/2)/2, -1)]');
+    expect(sol('3*log(x) - x')).toBe('[-3*LambertW(-1/3), -3*LambertW(-1/3, -1)]');
+    // the p-th roots of exp(A) give p arguments (SymPy: 3*LambertW(2**(1/3)/3),
+    // 3*LambertW(2**(1/3)*(-1 - sqrt(3)*I)/6), 3*LambertW(2**(1/3)*(-1 + sqrt(3)*I)/6))
+    expect(sol('x**3*exp(x) - 2')).toBe('[3*LambertW(2**(1/3)/3), 3*LambertW(-2**(1/3)/6 - 2**(1/3)*sqrt(3)*I/6), 3*LambertW(-2**(1/3)/6 + 2**(1/3)*sqrt(3)*I/6)]');
+    expect(sol('x**2*2**x - 3')).toBe('[2*LambertW(-sqrt(3)*log(2)/2)/log(2), 2*LambertW(sqrt(3)*log(2)/2)/log(2)]');
+    // g*p**u + R(x) = c. SymPy omits the k = -1 branch, whose argument -log(2)/8 is in (-1/e, 0):
+    // that branch is the second real solution (2**x = x + 3 at x = 2.44...)
+    expect(sol('2**x - x - 3')).toBe('[-3 - LambertW(-log(2)/8)/log(2), -3 - LambertW(-log(2)/8, -1)/log(2)]');
+    // SymPy: [-1/2 - LambertW(-sqrt(3)*log(3)/6)/log(3)], which is 0; the k = -1 branch gives the other real solution 1
+    expect(sol('3**x - 2*x - 1')).toBe('[-1/2 - LambertW(-sqrt(3)*log(3)/6)/log(3), -1/2 - LambertW(-sqrt(3)*log(3)/6, -1)/log(3)]');
+    expect(sol('x**y*exp(x) - 2')).toBe('[y*LambertW(exp(log(2)/y)/y)]');
+    expect(sol('sqrt(x)*exp(x) - 1')).toBe('[LambertW(2)/2]');
+    // SymPy: [(-log(8) - LambertW(-log(2**(3/8))))/log(2)], the same number; the k = -1 branch is the other real solution
+    expect(sol('3*2**x - x - 3')).toBe('[-3 - LambertW(-3*log(2)/8)/log(2), -3 - LambertW(-3*log(2)/8, -1)/log(2)]');
+    // SymPy: [1] for both; the LambertW forms equal 1 (W(z*exp(z)) = z for z = 1/(2*log(2)) and 1/log(2))
+    expect(sol('2*log(2)*log(x) + x - 1')).toBe('[2*log(2)*LambertW(exp(1/(2*log(2)))/(2*log(2)))]');
+    expect(sol('log(2)*log(x) + x - 1')).toBe('[log(2)*LambertW(exp(1/log(2))/log(2))]');
+    // SymPy: [0, -1 + 2*LambertW(-exp(1/2)/2)]; -1 + 2*LambertW(exp(1/2)/2) is 0 (W(exp(1/2)/2) = 1/2)
+    expect(sol('(x + 1)**2*exp(x) - 1')).toBe('[-1 + 2*LambertW(-exp(1/2)/2), -1 + 2*LambertW(exp(1/2)/2)]');
+    // two even powers of different bases (SymPy: NotImplementedError)
+    expect(() => sol('x**2*(x + 1)**2*exp(x) - 1')).toThrow(NotImplementedError);
+    // a*x*log(x) + d*x + f = 0 through X = log(x) (SymPy: [1], [exp(LambertW(2))], [exp(-1 + LambertW(E*log(2)))])
+    expect(sol('x*log(x) + x - 1')).toBe('[1]');
+    expect(sol('x*log(x) - 2')).toBe('[exp(LambertW(2))]');
+    expect(sol('x*log(x) + x')).toBe('[exp(-1)]');
+    // after the logarithm, x*log(x) + x = 0; SymPy also gives 0, with its convention 0**0 = 1
+    expect(sol('x**x*exp(x) - 1')).toBe('[exp(-1)]');
+    expect(sol('x**x*exp(x) - 2')).toBe('[exp(-1 + LambertW(E*log(2)))]');
+    // SymPy: NotImplementedError (x*log(x) with another log(x) term)
+    expect(() => sol('x*log(x) + x - log(x)')).toThrow(NotImplementedError);
+    // forms out of reach (SymPy: [] for x**x + x, NotImplementedError for the others)
+    expect(() => sol('x**x + x')).toThrow(NotImplementedError);
+    expect(() => sol('x**2*sin(x) - 1')).toThrow(NotImplementedError);
+    expect(() => sol('2**x + 3**x - x - 3')).toThrow(NotImplementedError);
+    expect(() => sol('log(x**2 + 1) + x')).toThrow(NotImplementedError);
+    expect(() => sol('log(x) + log(x + 1) + x')).toThrow(NotImplementedError);
   });
 });
 

@@ -18,6 +18,10 @@ describe('factor_system', () => {
     expect(show(factorSystemCond(P(['x*(x - 1)', '(x - 1)*y'])))).toBe('[[x, y], [x - 1]]');
     expect(show(factorSystemCond(P(['0', 'x - 1'])))).toBe('[[x - 1]]');
     expect(show(factorSystemCond(P(['0'])))).toBe('[[]]');
+    // factors with equal leading coefficients are ordered by the next ones
+    expect(show(factorSystem(P(['(x - 1)*(x - 2)'])))).toBe('[[x - 1], [x - 2]]');
+    expect(show(factorSystem(P(['(x - 1)*(x - 2)*(x - 3)*(x + 5)'])))).toBe('[[x + 5], [x - 1], [x - 2], [x - 3]]');
+    expect(show(factorSystem(P(['(x - 1)*(x + 2)', '(y - 1)*(y - 3)'])))).toBe('[[x + 2, y - 1], [x + 2, y - 3], [x - 1, y - 1], [x - 1, y - 3]]');
     expect(show(factorSystemCond(P(['1'])))).toBe('[]');
     expect(show(factorSystemCond(P(['a'])))).toBe('[[a]]');
     expect(show(factorSystemCond(P(['x*y', 'x']), [x]))).toBe('[[x]]');
@@ -111,11 +115,16 @@ describe('solve_poly_system', () => {
     expect(show(solvePolySystem(P(['x-sqrt(2)', 'y-sqrt(2)']), [x, y]))).toBe('[[sqrt(2), sqrt(2)]]');
     // inconsistent: y = sqrt(3) turns the last equation into 1 = 0 (SymPy: None, no solution)
     expect(show(solvePolySystem(P(['y - sqrt(3)', 'x - sqrt(2)', '(y-sqrt(3))*x + 1']), [x, y]))).toBe('[]');
-    // SymPy: [(0, 0)] from a Groebner basis over QQ<sqrt(2)>; the back substitution here needs an
-    // equation in one generator alone
-    expect(() => solvePolySystem(P(['x-sqrt(2)*y', 'x*y']), [x, y])).toThrow(NotImplementedError);
-    // SymPy: None (no solution, sqrt(2)*x*y = sqrt(3)*x*y = 1 is inconsistent); not decided here
-    expect(() => solvePolySystem(P(['sqrt(2)*x*y-1', 'sqrt(3)*x*y-1']), [x, y])).toThrow(NotImplementedError);
+    // not triangular: sqrt(2) becomes a generator a with a**2 - 2 (SymPy: a Groebner basis over QQ<sqrt(2)>)
+    expect(show(solvePolySystem(P(['x-sqrt(2)*y', 'x*y']), [x, y]))).toBe('[[0, 0]]');
+    expect(show(solvePolySystem(P(['sqrt(2)*x+y', 'x*y']), [x, y]))).toBe('[[0, 0]]');
+    expect(show(solvePolySystem(P(['x*y-sqrt(2)', 'x+y-3']), [x, y]))).toBe('[[3/2 - sqrt(9 - 4*sqrt(2))/2, sqrt(9 - 4*sqrt(2))/2 + 3/2], [sqrt(9 - 4*sqrt(2))/2 + 3/2, 3/2 - sqrt(9 - 4*sqrt(2))/2]]');
+    // SymPy: None (no solution, sqrt(2)*x*y = sqrt(3)*x*y = 1 is inconsistent)
+    expect(show(solvePolySystem(P(['sqrt(2)*x*y-1', 'sqrt(3)*x*y-1']), [x, y]))).toBe('[]');
+    // SymPy: None (x = I*y gives 0 = 1)
+    expect(show(solvePolySystem(P(['x**2+y**2-1', 'x-I*y']), [x, y]))).toBe('[]');
+    // other irrational numbers are not adjoined: the Gröbner basis is over QQ, without parameters (SymPy: [(0, 0)])
+    expect(() => solvePolySystem(P(['x-pi*y', 'x*y']), [x, y])).toThrow(NotImplementedError);
   });
   it('rationalOnly keeps rational roots only', () => {
     expect(show(solvePolySystem(P(['x**2-2', 'y**2-3']), [x, y], { rationalOnly: true }))).toBe('[]');
@@ -146,5 +155,13 @@ describe('solvePolySystem (SymPy solve_poly_system)', () => {
     const [a, b, c] = symbols('a b c');
     const F = [parse('a**2 + b + c - 1'), parse('a + b**2 + c - 1'), parse('a + b + c**2 - 1')];
     expect(show2(solvePolySystem(F, [a, b, c], { rationalOnly: true }))).toBe('(0, 0, 1), (0, 1, 0), (1, 0, 0)');
+  });
+});
+
+describe('factor_system ordering', () => {
+  it('orders polynomials whose leading coefficients are equal by the next ones', () => {
+    // SymPy factor_system
+    expect(show(factorSystem(P(['x**2 + y', 'x**2 - y'])))).toBe('[[x**2 + y, x**2 - y]]');
+    expect(show(factorSystem(P(['x**2 - y', 'x**2 + y'])))).toBe('[[x**2 + y, x**2 - y]]');
   });
 });

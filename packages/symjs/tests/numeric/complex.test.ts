@@ -45,6 +45,9 @@ describe('double-precision complex functions', () => {
     close(X.cLambertW(X.c(-0.3), -1), -1.7813370234216277, 0);
     close(X.cLambertW(X.c(1, 1), 0), 0.6569660692304364, 0.32545033941341506);
     close(X.cLambertW(X.c(10), 0), 1.7455280027406994, 0);
+    // mpmath lambertw(1.5) and lambertw(-exp(1/2)/2) (below -1/e: complex)
+    close(X.cLambertW(X.c(1.5), 0), 0.7258613577662263, 0);
+    close(X.cLambertW(X.c(-Math.exp(0.5) / 2), 0), -0.452241436945604, 1.214273906049182);
     close(X.cLambertW(X.c(2, 3), 1), -0.4462717121285748, 5.615883357759838);
   });
 });

@@ -195,3 +195,21 @@ describe("ratsimpmodprime, gammasimp, signsimp, cancel, ratsimp (cov2): SymPy 1.
     expect(showMap(run())).toBe(want);
   });
 });
+
+describe('signsimp: the second sub_pre pass', () => {
+  it('extracts the sign of a sum that appears after the first replacement', () => {
+    const P = (s: string) => parse(s);
+    const cases: [string, string, string][] = [
+      ['x*(-y - z) - w', '-w - x*(y + z)', '-(w + x*(y + z))'],
+      ['-w - x*(-y - z)', '-w + x*(y + z)', '-(w - x*(y + z))'],
+      ['y - x', '-x + y', '-(x - y)'],
+      ['(-x - y)**3', '-(x + y)**3', '-(x + y)**3'],
+      ['(-x - y)**y', '(-x - y)**y', '(-(x + y))**y'],
+    ];
+    cases.push(['f(x*(-y - z) + 1)', 'f(-x*(y + z) + 1)', 'f(-x*(y + z) + 1)'], ['f(x*(-y - z) + 1)*(x*(-y - z) + 1)', '-(x*(y + z) - 1)*f(-x*(y + z) + 1)', '-(x*(y + z) - 1)*f(-x*(y + z) + 1)']);
+    for (const [e, ev, unev] of cases) {
+      expect(String(signsimp(P(e)))).toBe(ev);
+      expect(String(signsimp(P(e), false))).toBe(unev);
+    }
+  });
+});

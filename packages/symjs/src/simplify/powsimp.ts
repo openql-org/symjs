@@ -172,6 +172,11 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
     const skip = new Set<string>();
     for (const [b, e0] of summed.entries()) {
       if (skip.has(b.key) || !summed.has(b)) continue;
+      // SymPy's special case for the float 1: 1.0**e = 1.0
+      if (b instanceof Float && b.value === 1) {
+        summed.set(b, S.One);
+        continue;
+      }
       if (isPositive(b)) {
         const binv = pow(b, -1);
         if (b.key !== binv.key && summed.has(binv)) {
@@ -355,8 +360,10 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
     if (deep) e = recurse(e);
     if (e instanceof Add && (isPositive(b) === true || isIntegerQ(e) === true)) {
       e = factorTerms(e);
-      if (couldExtractMinusSign(e) && splitCoeff(e)[0].isNegative) {
-        e = mul(-1, e);
+      const [c, t] = splitCoeff(e);
+      if (couldExtractMinusSign(e) && c.isNegative) {
+        // -e from the coefficient (-1 times the unevaluated -(i + 1) of factor_terms would stay a product 1*(i + 1))
+        e = keepCoeff(mul(-1, c), t);
         b = pow(b, -1);
       }
     }
