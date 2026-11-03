@@ -10,11 +10,12 @@ export default defineConfig({
     ],
   },
   test: {
-    include: ['packages/*/tests/**/*.test.ts'],
+    include: ['packages/*/tests/**/*.test.ts', 'compat/equivalence.test.ts'],
     // coverage instrumentation slows the heavy cases (factorint of a large number, logic minimization) past the 5 s default
     testTimeout: 30_000,
     coverage: {
       provider: 'v8',
+      thresholds: { perFile: true, statements: 100, branches: 100, functions: 100, lines: 100 },
       include: ['packages/*/src/**/*.ts'],
       reporter: ['text-summary', 'json-summary'],
       reportsDirectory: 'coverage',

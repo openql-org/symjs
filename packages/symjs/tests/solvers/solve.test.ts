@@ -4,12 +4,12 @@
 // Tests of src/solvers/solve.ts: solve, solveLinear, invertEquation, nonlinsolve, nsolve and solveUndeterminedCoeffs; expected values from SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
+import type { Assumptions } from '../../src/core/nodes';
 import { diff, type Expr, nonlinsolve, NotImplementedError, nsolve, parse, solve, solveLinear, solveUndeterminedCoeffs, sstr, Sym, symbols, SymFunction } from '../../src';
 import { xreplace } from '../../src/core/traverse';
 import { invertEquation } from '../../src/solvers/solve';
 
 const [x, y] = symbols('x y');
-type Assumptions = { positive?: boolean; nonnegative?: boolean; real?: boolean; integer?: boolean };
 const show = (r: readonly Expr[]): string => `[${r.map(String).join(', ')}]`;
 const pair = (r: readonly [Expr, Expr]): string => `(${String(r[0])}, ${String(r[1])})`;
 /** Parse a bracketed list "[a, b]" split at the top-level commas. */
@@ -36,6 +36,13 @@ const SOLVE: [string, Assumptions, string][] = [
   ['(x - 1)/(x + sin(y)**2 + cos(y)**2)', {}, '[1]'],
   ['Eq(x**2, 4)', {}, '[-2, 2]'],
   ['x**2 - 4', { positive: true }, '[2]'],
+  ['x**2 - 1', { negative: true }, '[-1]'],
+  ['x**2 - 1', { nonpositive: true }, '[-1]'],
+  ['x**2 - 2', { integer: true }, '[]'],
+  ['x**2 - 4', { integer: true }, '[-2, 2]'],
+  ['x*(x - 1)', { zero: false }, '[1]'],
+  ['x*(x + 1)', { nonpositive: true }, '[-1, 0]'],
+  ['x - y', { integer: true }, '[y]'],
   ['x**2 - 4', { nonnegative: true }, '[2]'],
   ['x**2 + 1', { real: true }, '[]'],
   ['2*x - 1', { integer: true }, '[]'],

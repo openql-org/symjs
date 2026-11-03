@@ -116,7 +116,8 @@ pnpm install
 pnpm test        # vitest (all packages; extend modules use the base module from source)
 pnpm typecheck   # tsc --noEmit
 pnpm lint        # oxlint with type-aware rules (see docs/api-policy.md)
-pnpm build       # every package: tsup (ESM/CJS, one file per module) + tsc (declarations)
+pnpm build       # every package: ESM/CJS and matching .d.ts/.d.cts declaration graphs
+pnpm test:package # built packages, all entry points, minification, NodeNext/Bundler consumers
 node packages/symjs/scripts/size.mjs --check   # bundle sizes of typical imports against budgets
 pnpm golden      # regenerate the SymPy expectations of the golden tests
 ```
@@ -162,6 +163,7 @@ See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable
 
 - `simplify` is a lighter heuristic than SymPy's; results can differ in form
 - `factor` over general algebraic extensions (only `gaussian=` and simple `extension=` cases); algebraic numbers in `minimal_polynomial` and norms are limited to square roots and I
+- Definite integration splits at polynomial singularities using one-sided limits; when their locations cannot be resolved, the integral is left unevaluated.
 - Integration beyond the implemented heuristics (no Risch or Meijer G algorithms yet); `hyper` and `meijerg` are available as functions but are not used to integrate or to evaluate in closed form
 - ODE solving follows SymPy's single-equation hints (separable, exact, linear, Bernoulli, Riccati special, homogeneous coefficients, linear coefficients, constant and Euler linear equations, undetermined coefficients, variation of parameters, Liouville, reducible order, Airy, Bessel); systems are solved when linear and first order (constant coefficients in closed form, 2x2 variable coefficients in terms of a particular solution like SymPy) or triangular (solved one function at a time); `classify_ode` reports SymPy's hints, but power series and Lie group solvers, nonlinear systems, PDEs and Diophantine equations are not ported yet (see the ODE checks in the report)
 - Symbolic `Mod` (only integers and binomial coefficients modulo prime powers) and asymptotic series of nested exponentials are not implemented

@@ -262,3 +262,44 @@ describe('multiple integrals', () => {
     expect(sstr(subs(new Integral([pow(x, 2), x]), [[x, Rational.of(1)]]))).toBe('Integral(x**2, (x, 1))');
   });
 });
+
+// SymPy 1.14: integrate(f, (x, a, b)); interior poles must not be crossed by F(b)-F(a).
+describe('improper definite integrals', () => {
+  it.each([
+    ['1/x**2', '-1', '1', 'oo'],
+    ['1/(x-1)**2', '0', '2', 'oo'],
+    ['-1/x**2', '-1', '1', '-oo'],
+    ['1/x', '-1', '1', 'nan'],
+    ['1/x**3', '-1', '1', 'nan'],
+    ['1/(x**2-1)', '-2', '2', 'nan'],
+    ['1/x**2', '1', '-1', '-oo'],
+    ['1/x**2', '-oo', 'oo', 'oo'],
+    ['1/x**2', '1', '2', '1/2'],
+    ['1/x**2', '0', '1', 'oo'],
+    ['1/sqrt(x)', '0', '1', '2'],
+    ['1/(x**2+1)', '-1', '1', 'pi/2'],
+    ['log(x)', '-1', '1', '-2 + I*pi'],
+    ['x', '2', '2', '0'],
+  ])('%s on [%s, %s]', (f, lo, hi, expected) => {
+    expect(String(integrate(P(f), x, [P(lo), P(hi)]))).toBe(expected);
+  });
+});
+
+describe('unresolved singularities stay unevaluated', () => {
+  // SymPy 1.14 computes these with stronger domain/root analysis. Until that
+  // analysis is available, do not cross a possible pole with an endpoint subtraction.
+  it.each([
+    ['tan(x)', '0', 'pi'], // nan (the interior pole cannot be crossed)
+    ['cos(x)/sin(x)', '1', '2'], // log(sin(2)) - log(sin(1))
+    ['1/(x-y)**2', '0', '1'], // depends on whether y lies in the interval
+    ['(4*x**3+1)/(x**4+x+1)', '0', '1'], // log(3)
+    ['1/x**2', '1', 'a'], // depends on a (a > 0 gives 1 - 1/a)
+    ['1/x**2', 'a', '1'],
+  ])('%s on [%s, %s]', (f, lo, hi) => {
+    expect(integrate(P(f), x, [P(lo), P(hi)])).toBeInstanceOf(sj.Integral);
+  });
+  it('keeps symbolic endpoints when the primitive extends continuously', () => {
+    // SymPy: integrate(log(x), (x, 1, a))
+    expect(String(integrate(P('log(x)'), x, [1, a]))).toBe('a*log(a) - a + 1');
+  });
+});

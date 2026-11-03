@@ -12,10 +12,12 @@ pnpm test                                       # every test passes
 pnpm coverage                                   # 100% coverage (see below)
 pnpm compat                                     # SymPy doctest compatibility, writes compat/REPORT.md
 pnpm build && node packages/symjs/scripts/size.mjs --check   # bundle sizes within budget
+pnpm test:package                              # built ESM/CJS, minification and consumer type resolution
 ```
 
 ## Test coverage: 100%, no exclusions
 
+- Vitest enforces these thresholds per file; a coverage regression fails the command.
 - Every source file in `packages/*/src` must reach **100% statements,
   branches, functions and lines** in the full test run (`pnpm coverage`).
 - Coverage-ignore comments (`/* v8 ignore */`, `c8 ignore`,
@@ -71,6 +73,10 @@ pnpm build && node packages/symjs/scripts/size.mjs --check   # bundle sizes with
   a reference file in the repository). No file in the repository refers to
   local paths such as a home directory or a temporary directory, which can
   contain personal information.
+
+The compatibility command fails on behavior, API, base-scope or ODE regressions.
+Its numerical equivalence checks use independent deterministic samples for each
+symbol; ordered lists retain their order except for solution-list APIs.
 
 ## Code
 

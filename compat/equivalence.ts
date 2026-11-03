@@ -5,9 +5,9 @@
  * Mathematical equivalence of a symjs result and SymPy's printed result.
  *
  * Both strings are read back as values (expressions, lists, tuples, sets,
- * dicts, matrices). Expressions are equivalent when they agree at random
+ * dicts, matrices). Expressions are equivalent when they agree at independently sampled
  * points (or simplify(a - b) == 0); collections are compared element-wise
- * (lists and sets without regard to order). A result that is still
+ * (sets and solution lists without regard to order). A result that is still
  * unevaluated (Integral, Limit, Sum, ...) where SymPy computed a value is
  * never equivalent: "cannot compute" is not the same capability.
  */
@@ -100,25 +100,28 @@ function hasUnevaluated(s: string): Set<string> {
  * otherwise (so that e.g. Abs(x) and x are told apart).
  */
 function trialValue(s: sj.Sym, k: number): Expr {
+  // Each symbol has an independent deterministic stream. Name length alone
+  // correlated x and y and incorrectly certified x-y == 0.
+  let seed = 2166136261;
+  for (const ch of `${s.key}:${k}`) seed = Math.imul(seed ^ ch.charCodeAt(0), 16777619) >>> 0;
   const a = s.assumptions;
-  const pick = <T>(xs: T[]) => xs[(k + s.name.length) % xs.length]!;
+  const magnitude = 1 + seed % 97;
+  const sign = (seed & 256) === 0 ? -1 : 1;
   if (a.integer) {
-    if (a.positive) return sj.Rational.of(pick([2, 3, 5, 7]));
-    if (a.negative) return sj.Rational.of(pick([-2, -3, -5, -7]));
-    if (a.nonnegative) return sj.Rational.of(pick([0, 2, 3, 5]));
-    return sj.Rational.of(pick([2, -3, 5, -1]));
+    if (a.positive || a.nonnegative) return sj.Rational.of(magnitude);
+    if (a.negative || a.nonpositive) return sj.Rational.of(-magnitude);
+    return sj.Rational.of(sign * magnitude);
   }
-  if (a.positive || a.nonnegative) return sj.float(pick([0.71, 1.93, 0.37, 2.41]));
-  if (a.negative || a.nonpositive) return sj.float(pick([-0.71, -1.93, -0.37, -2.41]));
-  if (a.real) return sj.float(pick([0.71, -1.29, 2.17, -0.43]));
-  const [re, im] = pick([[0.71, 0.33], [-1.29, 0.47], [0.53, -0.81], [-0.37, -0.29]]);
-  return sj.add(sj.float(re), sj.mul(sj.float(im), sj.I));
+  const real = sj.Rational.of(magnitude, 37);
+  if (a.positive || a.nonnegative) return real;
+  if (a.negative || a.nonpositive) return sj.mul(-1, real);
+  if (a.real) return sj.mul(sign, real);
+  return sj.add(sj.mul(sign, real), sj.mul(sj.Rational.of(1 + (seed >>> 16) % 89, 41), sj.I));
 }
 
-function numericValue(e: Expr, k: number): sj.ComplexValue | undefined {
+function numericValue(e: Expr, replacements: [Expr, Expr][]): sj.ComplexValue | undefined {
   try {
-    const rep = [...sj.freeSymbols(e)].map((s) => [s, trialValue(s, k)] as [Expr, Expr]);
-    const v = sj.evalf(sj.xreplace(e, rep), 20);
+    const v = sj.evalf(sj.xreplace(e, replacements), 20);
     const c = v.toComplex();
     if (!Number.isFinite(c.re) || !Number.isFinite(c.im)) return undefined;
     return c;
@@ -129,10 +132,12 @@ function numericValue(e: Expr, k: number): sj.ComplexValue | undefined {
 
 function exprEquivalent(a: Expr, b: Expr): boolean {
   if (a.key === b.key) return true;
+  const symbols = new Map([...sj.freeSymbols(a), ...sj.freeSymbols(b)].map((s) => [s.key, s]));
   let agree = 0;
   for (let k = 0; k < 4; k++) {
-    const x = numericValue(a, k);
-    const y = numericValue(b, k);
+    const replacements: [Expr, Expr][] = [...symbols.values()].map((s) => [s, trialValue(s, k)]);
+    const x = numericValue(a, replacements);
+    const y = numericValue(b, replacements);
     if (!x || !y) continue;
     const scale = Math.max(1, Math.hypot(x.re, x.im), Math.hypot(y.re, y.im));
     if (Math.hypot(x.re - y.re, x.im - y.im) > 1e-9 * scale) return false;
@@ -147,7 +152,7 @@ function exprEquivalent(a: Expr, b: Expr): boolean {
   }
 }
 
-function valueEquivalent(a: V, b: V): boolean {
+function valueEquivalent(a: V, b: V, unorderedLists = false): boolean {
   if (a.t === 'raw' || b.t === 'raw') return a.t === 'raw' && b.t === 'raw' && a.s === b.s;
   if (a.t === 'expr' && b.t === 'expr') {
     if (a.e instanceof sj.Rel && b.e instanceof sj.Rel) {
@@ -163,7 +168,10 @@ function valueEquivalent(a: V, b: V): boolean {
     return a.rows.length === b.rows.length && a.rows.every((r, i) => r.length === b.rows[i]!.length && r.every((v, j) => valueEquivalent(v, b.rows[i]![j]!)));
   }
   if (a.t === 'tuple' && b.t === 'tuple') return a.items.length === b.items.length && a.items.every((v, i) => valueEquivalent(v, b.items[i]!));
-  if ((a.t === 'list' || a.t === 'set') && a.t === b.t) return unorderedEquivalent(a.items, b.items);
+  if (a.t === 'list' && b.t === 'list') {
+    return unorderedLists ? unorderedEquivalent(a.items, b.items) : a.items.length === b.items.length && a.items.every((v, i) => valueEquivalent(v, b.items[i]!));
+  }
+  if (a.t === 'set' && b.t === 'set') return unorderedEquivalent(a.items, b.items);
   if (a.t === 'dict' && b.t === 'dict') {
     if (a.entries.length !== b.entries.length) return false;
     return a.entries.every(([k, v]) => b.entries.some(([k2, v2]) => valueEquivalent(k, k2) && valueEquivalent(v, v2)));
@@ -232,7 +240,7 @@ export function equivalent(got: string, expected: string, symbols: readonly sj.S
   // printed object addresses and other non-values cannot be compared
   if (expected.includes(' object at 0x')) return false;
   try {
-    return valueEquivalent(parseValue(got), parseValue(expected));
+    return valueEquivalent(parseValue(got), parseValue(expected), ['solve', 'roots', 'solve_poly_system'].includes(opts.fn ?? ''));
   } catch {
     return false;
   }

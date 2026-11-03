@@ -8,7 +8,7 @@
  */
 
 import type { ExprLike } from './nodes';
-import { Add, Constant, Derivative, Expr, ExtensionExpr, Float, Fn, Integral, Mul, Pow, Rational, S, Special, Sym, UndefFn, Wild, WildFunction, impl } from './nodes';
+import { Add, Constant, Dummy, Derivative, Expr, ExtensionExpr, Float, Fn, Integral, Mul, Pow, Rational, S, Special, Sym, UndefFn, Wild, WildFunction, impl } from './nodes';
 import { Concrete } from './concrete';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { rebuild, xreplace } from './traverse';
@@ -306,7 +306,7 @@ export function isInstance(e: Expr, type: string): boolean {
     case 'Wild':
       return e instanceof Wild;
     case 'Dummy':
-      return e.constructor.name === 'Dummy';
+      return e instanceof Dummy;
     case 'Number':
       return e instanceof Rational || e instanceof Float || e instanceof Special;
     case 'Integer':

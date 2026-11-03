@@ -38,6 +38,7 @@ import {
   impl,
   isNum,
 } from '../core/nodes';
+import { cmpReal } from '../sets/sets';
 import { numAdd, numInv, numMul, numNeg } from '../core/num';
 import { at, defined, expectType, getOrThrow, pair } from '../core/guard';
 import { gcd, lcm } from '../core/numbers';
@@ -45,7 +46,7 @@ import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { mapBottomUp as mapBottomUpI, xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { asin, atan, cos, cosh, log, sin, sinh } from '../functions/elementary';
-import { UPoly, polyCoefficients } from '../polys/poly';
+import { UPoly, polyCoefficients, roots } from '../polys/poly';
 import { fn as fnErf } from '../functions/elementary';
 import { expand as expandFull, expandMul as expand } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
@@ -702,6 +703,37 @@ function simplifyConditionsOnInterval(f: Expr, x: Sym, a: Expr, b: Expr): Expr {
   return mapBottomUpI(f, (e: Expr) => (e instanceof Piecewise ? piecewise(...e.pairs.map(([v, c]) => [v, cond(c)] as const)) : e));
 }
 
+/** Polynomial singularities of an integrand; undefined means their location is unresolved. */
+function singularPoints(f: Expr, x: Sym): Expr[] | undefined {
+  const bases = new Map<string, Expr>();
+  const visit = (e: Expr): void => {
+    if (e instanceof Pow && e.exp instanceof Rational && e.exp.isNegative && e.base.has(x)) bases.set(e.base.key, e.base);
+    if (e instanceof Fn && e.name === 'tan' && e.has(x)) {
+      const denominator = cos(at(e.args, 0));
+      bases.set(denominator.key, denominator);
+    }
+    if (e instanceof Fn && e.name === 'log' && at(e.args, 0).has(x)) bases.set(at(e.args, 0).key, at(e.args, 0));
+    e.args.forEach(visit);
+  };
+  visit(f);
+  const points = new Map<string, Expr>();
+  for (const base of bases.values()) {
+    if (!polyCoefficients(base, x)) return undefined;
+    try {
+      for (const r of roots(base, x)) {
+        // Numerical ordering is used only for constant real roots, never for parameters.
+        const real = cmpReal(r, S.Zero);
+        if (real !== undefined) points.set(r.key, r);
+        else if (r.freeSymbols().size !== 0) return undefined;
+      }
+    } catch {
+      // Root isolation failed: do not assert that the interval is regular.
+      return undefined;
+    }
+  }
+  return [...points.values()];
+}
+
 export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, ExprLike], opts: { conds?: 'piecewise' | 'none' } = {}): Expr {
   let f = sympify(ex);
   if (limits) f = simplifyConditionsOnInterval(f, x, sympify(limits[0]), sympify(limits[1]));
@@ -736,13 +768,40 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
     }
     return unevaluated;
   }
-  // endpoint values: substitute, or take a one-sided limit at infinities / indeterminate points
-  const at = (p: Expr, dir: '+' | '-'): Expr => {
+  // An antiderivative's endpoint difference is valid only between singularities.
+  // Evaluate the two sides independently: this is an improper integral, not a principal value.
+  if (a.key === b.key) return S.Zero;
+  const points = singularPoints(f, x);
+  const unevaluated = new Integral([f, x, a, b]);
+  if (points === undefined) return unevaluated;
+  const order = cmpReal(a, b);
+  if (order !== undefined && order > 0) return mul(-1, integrate(f, x, [b, a], opts));
+  const interior: Expr[] = [];
+  const bad = (e: Expr): boolean => e instanceof Special || e.args.some(bad);
+  for (const p of points) {
+    const left = cmpReal(p, a);
+    const right = cmpReal(p, b);
+    if (left === undefined || right === undefined) {
+      // An integrable singularity with a continuous primitive needs no split,
+      // even when a symbolic endpoint prevents ordering (e.g. integral of log(x)).
+      const l = impl.limit(F, x, p, '-');
+      const r = impl.limit(F, x, p, '+');
+      if (l.key === r.key && !bad(l) && !l.has(x)) continue;
+      return unevaluated;
+    }
+    if (left > 0 && right < 0) interior.push(p);
+  }
+  interior.sort((p, q) => defined(cmpReal(p, q), 'constant real singularities'));
+  const endpoint = (p: Expr, dir: '+' | '-'): Expr => {
     const v = subs(F, [[x, p]]);
-    const bad = (e: Expr): boolean => e instanceof Special || e.args.some(bad);
     return bad(v) ? impl.limit(F, x, p, dir) : v;
   };
-  return add(at(b, '-'), mul(-1, at(a, '+')));
+  const bounds = [a, ...interior, b];
+  const parts: Expr[] = [];
+  for (let i = 1; i < bounds.length; i++) {
+    parts.push(add(endpoint(at(bounds, i), '-'), mul(-1, endpoint(at(bounds, i - 1), '+'))));
+  }
+  return add(...parts);
 }
 
 impl.integrate = (e, x, limits) => integrate(e, x, limits);

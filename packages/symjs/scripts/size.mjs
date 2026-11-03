@@ -25,6 +25,7 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
  * The budgets are the sizes measured when they were set plus about 10%:
  * raise one only together with the change that needs it.
  */
+// Assumption-aware solve loads the predicate engine; keep its cost explicit.
 const CASES = [
   ['core', 'Rational', 150],
   ['core', 'parse, str', 158],
@@ -34,12 +35,12 @@ const CASES = [
   ['simplify', 'simplify', 305],
   ['polys', 'factor', 293],
   ['calculus', 'integrate', 331],
-  ['solvers', 'solve', 396],
-  ['solvers', 'dsolve', 396],
+  ['solvers', 'solve', 425],
+  ['solvers', 'dsolve', 425],
   ['sets', '*', 197],
   ['matrices', 'Matrix', 313],
   ['printing', 'pretty', 186],
-  ['index', 'Rational', 415],
+  ['index', 'Rational', 450],
   ['index', '*', 940],
 ];
 

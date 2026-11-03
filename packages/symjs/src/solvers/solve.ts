@@ -8,7 +8,7 @@
 
 import { NotImplementedError } from '../core/errors';
 import { solvePolySystem } from './polysys';
-import { isNegative, isPositive, isReal } from '../core/assumptions';
+import { ask, Q } from '../core/refine';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
@@ -57,10 +57,11 @@ function denominators(e: Expr): Expr[] {
 /** Does the candidate solution satisfy the assumptions of x and keep denominators nonzero? */
 function checkSolution(f: Expr, x: Sym, v: Expr): boolean {
   const a = x.assumptions;
-  if (a.positive && isPositive(v) === false) return false;
-  if (a.nonnegative && isNegative(v) === true) return false;
-  if (a.real && isReal(v) === false) return false;
-  if (a.integer && v instanceof Rational && !v.isInteger) return false;
+  // Reject only a proven contradiction; symbolic candidates may remain undecidable.
+  for (const name of ['positive', 'negative', 'nonnegative', 'nonpositive', 'real', 'integer', 'zero'] as const) {
+    const expected = a[name];
+    if (expected !== undefined && ask(Q[name](v)) === !expected) return false;
+  }
   for (const d of denominators(f)) {
     const dv = xreplace(d, [[x, v]]);
     if (isZeroE(dv)) return false;

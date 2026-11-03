@@ -8,7 +8,7 @@
 
 import { isIntegerQ, isNegative as isNegativeQ, isPositive, isReal, isZero as isZeroQ } from './assumptions';
 import type { ExprLike, FnName } from './nodes';
-import { Add, Constant, Expr, Float, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, asRational, impl, isNum } from './nodes';
+import { Add, Constant, Dummy, Expr, Float, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, asRational, impl, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
 import { numAdd, numNeg } from './num';
 import { add, asBaseExp, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
@@ -842,7 +842,7 @@ export function isAlgebraicExpr(eIn: ExprLike, syms: readonly Expr[] = []): bool
 export function dummyEq(aIn: ExprLike, bIn: ExprLike, symbol?: Expr): boolean {
   const a = sympify(aIn);
   const b = sympify(bIn);
-  const dummies = [...freeSymbols(a)].filter((s) => s.constructor.name === 'Dummy');
+  const dummies = [...freeSymbols(a)].filter((s) => s instanceof Dummy);
   if (dummies.length === 0) return a.key === b.key;
   if (dummies.length > 1) return false;
   const d = at(dummies, 0);

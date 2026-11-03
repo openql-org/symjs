@@ -12,79 +12,154 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./core": {
-      "types": "./dist/core.d.ts",
-      "import": "./dist/core.js",
-      "require": "./dist/core.cjs"
+      "import": {
+        "types": "./dist/core.d.ts",
+        "default": "./dist/core.js"
+      },
+      "require": {
+        "types": "./dist/core.d.cts",
+        "default": "./dist/core.cjs"
+      }
     },
     "./special": {
-      "types": "./dist/special.d.ts",
-      "import": "./dist/special.js",
-      "require": "./dist/special.cjs"
+      "import": {
+        "types": "./dist/special.d.ts",
+        "default": "./dist/special.js"
+      },
+      "require": {
+        "types": "./dist/special.d.cts",
+        "default": "./dist/special.cjs"
+      }
     },
     "./simplify": {
-      "types": "./dist/simplify.d.ts",
-      "import": "./dist/simplify.js",
-      "require": "./dist/simplify.cjs"
+      "import": {
+        "types": "./dist/simplify.d.ts",
+        "default": "./dist/simplify.js"
+      },
+      "require": {
+        "types": "./dist/simplify.d.cts",
+        "default": "./dist/simplify.cjs"
+      }
     },
     "./polys": {
-      "types": "./dist/polys.d.ts",
-      "import": "./dist/polys.js",
-      "require": "./dist/polys.cjs"
+      "import": {
+        "types": "./dist/polys.d.ts",
+        "default": "./dist/polys.js"
+      },
+      "require": {
+        "types": "./dist/polys.d.cts",
+        "default": "./dist/polys.cjs"
+      }
     },
     "./calculus": {
-      "types": "./dist/calculus.d.ts",
-      "import": "./dist/calculus.js",
-      "require": "./dist/calculus.cjs"
+      "import": {
+        "types": "./dist/calculus.d.ts",
+        "default": "./dist/calculus.js"
+      },
+      "require": {
+        "types": "./dist/calculus.d.cts",
+        "default": "./dist/calculus.cjs"
+      }
     },
     "./solvers": {
-      "types": "./dist/solvers.d.ts",
-      "import": "./dist/solvers.js",
-      "require": "./dist/solvers.cjs"
+      "import": {
+        "types": "./dist/solvers.d.ts",
+        "default": "./dist/solvers.js"
+      },
+      "require": {
+        "types": "./dist/solvers.d.cts",
+        "default": "./dist/solvers.cjs"
+      }
     },
     "./sets": {
-      "types": "./dist/sets.d.ts",
-      "import": "./dist/sets.js",
-      "require": "./dist/sets.cjs"
+      "import": {
+        "types": "./dist/sets.d.ts",
+        "default": "./dist/sets.js"
+      },
+      "require": {
+        "types": "./dist/sets.d.cts",
+        "default": "./dist/sets.cjs"
+      }
     },
     "./ntheory": {
-      "types": "./dist/ntheory.d.ts",
-      "import": "./dist/ntheory.js",
-      "require": "./dist/ntheory.cjs"
+      "import": {
+        "types": "./dist/ntheory.d.ts",
+        "default": "./dist/ntheory.js"
+      },
+      "require": {
+        "types": "./dist/ntheory.d.cts",
+        "default": "./dist/ntheory.cjs"
+      }
     },
     "./printing": {
-      "types": "./dist/printing.d.ts",
-      "import": "./dist/printing.js",
-      "require": "./dist/printing.cjs"
+      "import": {
+        "types": "./dist/printing.d.ts",
+        "default": "./dist/printing.js"
+      },
+      "require": {
+        "types": "./dist/printing.d.cts",
+        "default": "./dist/printing.cjs"
+      }
     },
     "./logic": {
-      "types": "./dist/logic.d.ts",
-      "import": "./dist/logic.js",
-      "require": "./dist/logic.cjs"
+      "import": {
+        "types": "./dist/logic.d.ts",
+        "default": "./dist/logic.js"
+      },
+      "require": {
+        "types": "./dist/logic.d.cts",
+        "default": "./dist/logic.cjs"
+      }
     },
     "./combinatorics": {
-      "types": "./dist/combinatorics.d.ts",
-      "import": "./dist/combinatorics.js",
-      "require": "./dist/combinatorics.cjs"
+      "import": {
+        "types": "./dist/combinatorics.d.ts",
+        "default": "./dist/combinatorics.js"
+      },
+      "require": {
+        "types": "./dist/combinatorics.d.cts",
+        "default": "./dist/combinatorics.cjs"
+      }
     },
     "./utilities": {
-      "types": "./dist/utilities.d.ts",
-      "import": "./dist/utilities.js",
-      "require": "./dist/utilities.cjs"
+      "import": {
+        "types": "./dist/utilities.d.ts",
+        "default": "./dist/utilities.js"
+      },
+      "require": {
+        "types": "./dist/utilities.d.cts",
+        "default": "./dist/utilities.cjs"
+      }
     },
     "./tensor": {
-      "types": "./dist/tensor.d.ts",
-      "import": "./dist/tensor.js",
-      "require": "./dist/tensor.cjs"
+      "import": {
+        "types": "./dist/tensor.d.ts",
+        "default": "./dist/tensor.js"
+      },
+      "require": {
+        "types": "./dist/tensor.d.cts",
+        "default": "./dist/tensor.cjs"
+      }
     },
     "./matrices": {
-      "types": "./dist/matrices.d.ts",
-      "import": "./dist/matrices.js",
-      "require": "./dist/matrices.cjs"
+      "import": {
+        "types": "./dist/matrices.d.ts",
+        "default": "./dist/matrices.js"
+      },
+      "require": {
+        "types": "./dist/matrices.d.cts",
+        "default": "./dist/matrices.cjs"
+      }
     },
     "./package.json": "./package.json"
   },
@@ -94,7 +169,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup && tsc -p tsconfig.build.json",
+    "build": "tsup && tsc -p tsconfig.build.json && node ../../scripts/declarations.mjs dist",
     "side-effects": "node scripts/side-effects.mjs"
   },
   "engines": {
