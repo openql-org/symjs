@@ -1,0 +1,83 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
+
+// Tests of src/core/logic.ts.
+// Relations and Piecewise. Expected values are SymPy 1.14's (sympy.core.tests.test_relational).
+
+import { describe, expect, it } from 'vitest';
+import * as sj from '../../src';
+import { and } from '../../src/core/boolalg';
+import { Eq, Ge, Gt, Le, Lt, Ne, piecewise, rel } from '../../src/core/logic';
+import { Expr, Rational, S } from '../../src/core/nodes';
+import { add, mul, pow } from '../../src/core/ops';
+
+const [x, y, z] = sj.symbols('x y z');
+
+const { oo, zoo, nan, pi } = sj;
+
+const s = (e: Expr): string => e.toString();
+const R = (p: number, q = 1) => Rational.of(p, q);
+const negOo = mul(-1, oo);
+
+describe('relations (SymPy test_relational)', () => {
+  it('compares with nan', () => {
+    // SymPy: Eq(nan, nan) = False, Ne(nan, 1) = True, Lt(nan, 1) raises TypeError
+    expect(Eq(nan, nan)).toBe(S.false);
+    expect(Ne(nan, 1)).toBe(S.true);
+    expect(Eq(nan, x)).toBe(S.false);
+    expect(() => Lt(nan, 1)).toThrow('Invalid NaN comparison');
+    expect(() => Lt(x, nan)).toThrow(TypeError);
+  });
+  it('compares infinities', () => {
+    // SymPy: Eq(oo, oo) = True, Ne(oo, oo) = False, Le(oo, oo) = True, Lt(oo, oo) = False
+    expect(Eq(oo, oo)).toBe(S.true);
+    expect(Ne(oo, oo)).toBe(S.false);
+    expect(Le(oo, oo)).toBe(S.true);
+    expect(Lt(oo, oo)).toBe(S.false);
+    // SymPy: Lt(-oo, oo) = True, Gt(oo, 1) = True, Eq(oo, 1) = False, Ne(-oo, 2) = True
+    expect(Lt(negOo, oo)).toBe(S.true);
+    expect(Gt(oo, 1)).toBe(S.true);
+    expect(Ge(negOo, 1)).toBe(S.false);
+    expect(Eq(oo, 1)).toBe(S.false);
+    expect(Ne(negOo, 2)).toBe(S.true);
+  });
+  it('compares with zoo', () => {
+    // SymPy: Eq(zoo, 1) = False, Ne(zoo, 1) = True, Eq(zoo, zoo) = True, Eq(zoo, oo) = False
+    expect(Eq(zoo, 1)).toBe(S.false);
+    expect(Ne(zoo, 1)).toBe(S.true);
+    expect(Eq(zoo, zoo)).toBe(S.true);
+    expect(Eq(zoo, oo)).toBe(S.false);
+    // SymPy: Lt(zoo, 1) and Le(zoo, zoo) raise TypeError
+    expect(() => Lt(zoo, 1)).toThrow('Invalid comparison of non-real zoo');
+    expect(() => Le(zoo, zoo)).toThrow(TypeError);
+  });
+  it('compares numbers', () => {
+    // SymPy: Lt(Float(1.5), 2) = True, Ne(pi, 3) = True
+    expect(Lt(1.5, 2)).toBe(S.true);
+    expect(Ne(pi, 3)).toBe(S.true);
+    expect(Eq(pi, 3)).toBe(S.false);
+    // SymPy: Eq(sin(pi/7)**2 + cos(pi/7)**2, 1) stays (the difference is 0 only numerically)
+    const t = mul(pi, R(1, 7));
+    expect(s(Eq(add(pow(sj.sin(t), 2), pow(sj.cos(t), 2)), 1))).toBe('Eq(sin(pi/7)**2 + cos(pi/7)**2, 1)');
+    expect(s(rel('Le', x, y))).toBe('x <= y');
+  });
+});
+
+describe('Piecewise (SymPy Piecewise.eval)', () => {
+  it('drops False conditions and gives nan when none is left', () => {
+    // SymPy: Piecewise((x, False), (1, True)) = 1; Piecewise((x, False)) = nan
+    expect(s(piecewise([x, false], [1, true]))).toBe('1');
+    expect(piecewise([x, false])).toBe(nan);
+    expect(piecewise([x, S.false], [y, false])).toBe(nan);
+  });
+  it('turns a boolean Piecewise condition into ITE', () => {
+    // SymPy: Piecewise((1, Piecewise((True, x > 0), (And(y > 0, z > 0), True))), (0, True))
+    //   = Piecewise((1, ITE(x > 0, True, (y > 0) & (z > 0))), (0, True))
+    const inner = piecewise([S.true, Gt(x, 0)], [and(Gt(y, 0), Gt(z, 0)), true]);
+    expect(s(piecewise([1, inner], [0, true]))).toBe('Piecewise((1, ITE(x > 0, True, (y > 0) & (z > 0))), (0, True))');
+    // SymPy: Piecewise((1, Piecewise((Lt(2, y), x > 0), (Lt(3, z), True))), (0, True))
+    //   = Piecewise((1, ITE(x > 0, y > 2, z > 3)), (0, True))
+    const inner2 = piecewise([Lt(2, y), Gt(x, 0)], [Lt(3, z), true]);
+    expect(s(piecewise([1, inner2], [0, true]))).toBe('Piecewise((1, ITE(x > 0, y > 2, z > 3)), (0, True))');
+  });
+});

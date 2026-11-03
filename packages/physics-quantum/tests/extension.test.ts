@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
+
+// Cross-cutting test: an extension node defined, as in an extend package, through the public API
+// of @symjs/symjs only (ExtensionExpr in packages/symjs/src/core/nodes.ts).
+
 import { describe, expect, it } from 'vitest';
 import { Expr, ExtensionExpr, Sym, adjoint, diff, latex, mul, subs, xreplace } from '@symjs/symjs';
 

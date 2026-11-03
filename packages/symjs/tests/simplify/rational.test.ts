@@ -1,0 +1,111 @@
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
+
+// Tests of src/simplify/rational.ts.
+
+// Expected values are the str() forms printed by SymPy 1.14 unless a comment says otherwise.
+
+import { describe, expect, it } from 'vitest';
+import { DiracDelta, Dummy, Heaviside, Sym, add, cancel, fraction, mul, parse, pow, ratsimp, symbol, together } from '../../src';
+import type { Expr } from '../../src';
+
+const P = (s: string) => parse(s, { locals: { Heaviside, DiracDelta } });
+const Qs = (s: string, syms: Sym[]) => parse(s, { symbols: syms, locals: { Heaviside, DiracDelta } });
+const show = (v: unknown): string => (Array.isArray(v) ? `[${v.map(String).join(', ')}]` : String(v));
+type Assume = NonNullable<Parameters<typeof symbol>[1]>;
+const PA = (s: string, a: Record<string, Assume> = {}): Expr =>
+  parse(s, { symbols: Object.entries(a).map(([k, v]) => symbol(k, v)) });
+const showMap = (v: unknown): string => {
+  if (Array.isArray(v)) return `[${v.map(showMap).join(', ')}]`;
+  if (v instanceof Map) return `{${[...v].map(([k, w]) => `${showMap(k)}: ${showMap(w)}`).sort().join(', ')}}`;
+  return String(v);
+};
+const [x] = [symbol('x'), symbol('y')];
+
+describe("simplify functions: SymPy 1.14 test cases", () => {
+  const cases: [string, () => unknown, string][] = [
+    ["ratsimp(P(\"1/y + 1/x\"))", () => ratsimp(P("1/y + 1/x")), "(x + y)/(x*y)"],
+    ["ratsimp(P(\"1/(1 + 1/x)\"))", () => ratsimp(P("1/(1 + 1/x)")), "1 - 1/(x + 1)"],
+    ["ratsimp(P(\"x/(x + y) + y/(x + y)\"))", () => ratsimp(P("x/(x + y) + y/(x + y)")), "1"],
+    ["ratsimp(P(\"x**2/(x + y) - x - y**2/(x + y) - y\"))", () => ratsimp(P("x**2/(x + y) - x - y**2/(x + y) - y")), "-2*y"],
+    ["ratsimp(P(\"(a*c*x*y + a*c*z - b*d*x*y - b*d*z - b*t*x*y - b*t*x - b*t*z + e*x)/(x*y + z)\"))", () => ratsimp(P("(a*c*x*y + a*c*z - b*d*x*y - b*d*z - b*t*x*y - b*t*x - b*t*z + e*x)/(x*y + z)")), "a*c - b*d - b*t + (-b*t*x + e*x)/(x*y + z)"],
+    ["together(0)", () => together(0), "0"],
+    ["together(1)", () => together(1), "1"],
+    ["together(P(\"x*y*z\"))", () => together(P("x*y*z")), "x*y*z"],
+    ["together(P(\"x + y\"))", () => together(P("x + y")), "x + y"],
+    ["together(P(\"1/x\"))", () => together(P("1/x")), "1/x"],
+    ["together(P(\"1 + 1/x\"))", () => together(P("1 + 1/x")), "(x + 1)/x"],
+    ["together(P(\"3 + 1/x\"))", () => together(P("3 + 1/x")), "(3*x + 1)/x"],
+    ["together(P(\"x + 1/x\"))", () => together(P("x + 1/x")), "(x**2 + 1)/x"],
+    ["together(P(\"1/2 + 1/x\"))", () => together(P("1/2 + 1/x")), "(x + 2)/(2*x)"],
+    ["together(P(\"x/2 + 1/2\"))", () => together(P("x/2 + 1/2")), "(x + 1)/2"],
+    ["together(P(\"2/y + 1/x\"))", () => together(P("2/y + 1/x")), "(2*x + y)/(x*y)"],
+    ["together(P(\"1/(1 + 1/x)\"))", () => together(P("1/(1 + 1/x)")), "x/(x + 1)"],
+    ["together(P(\"x/(1 + 1/x)\"))", () => together(P("x/(1 + 1/x)")), "x**2/(x + 1)"],
+    ["together(P(\"1/z + 1/y + 1/x\"))", () => together(P("1/z + 1/y + 1/x")), "(x*y + x*z + y*z)/(x*y*z)"],
+    ["together(P(\"1/(x + 1 + 1/z + 1/y)\"))", () => together(P("1/(x + 1 + 1/z + 1/y)")), "y*z/(x*y*z + y*z + y + z)"],
+    ["together(P(\"1/(x*y) + 1/(x**2*y**2)\"))", () => together(P("1/(x*y) + 1/(x**2*y**2)")), "(x*y + 1)/(x**2*y**2)"],
+    ["together(P(\"1/(x*y) + 1/(x**4*y**4)\"))", () => together(P("1/(x*y) + 1/(x**4*y**4)")), "(x**3*y**3 + 1)/(x**4*y**4)"],
+    ["together(P(\"1/(x**4*y**4) + 1/(x**7*y)\"))", () => together(P("1/(x**4*y**4) + 1/(x**7*y)")), "(x**3 + y**3)/(x**7*y**4)"],
+    ["together(P(\"5/(2 + 6/(3 + 7/(4 + 8/(5 + 9/x))))\"))", () => together(P("5/(2 + 6/(3 + 7/(4 + 8/(5 + 9/x))))")), "5*(119*x + 171)/(2*(203*x + 279))"],
+    ["together(P(\"1 + (x + 1)**(-2)\"))", () => together(P("1 + (x + 1)**(-2)")), "((x + 1)**2 + 1)/(x + 1)**2"],
+    ["together(P(\"1 + 1/(x*(x + 1))\"))", () => together(P("1 + 1/(x*(x + 1))")), "(x*(x + 1) + 1)/(x*(x + 1))"],
+    ["together(P(\"1/(x*(x + 2)) + 1/(x*(x + 1))\"))", () => together(P("1/(x*(x + 2)) + 1/(x*(x + 1))")), "(2*x + 3)/(x*(x + 1)*(x + 2))"],
+    ["together(P(\"1 + (2*x + 2)**(-2)\"))", () => together(P("1 + (2*x + 2)**(-2)")), "(4*(x + 1)**2 + 1)/(4*(x + 1)**2)"],
+    ["together(P(\"sin(1/y + 1/x)\"))", () => together(P("sin(1/y + 1/x)")), "sin(1/y + 1/x)"],
+    ["together(P(\"exp(-x) + exp(-x)/x\"))", () => together(P("exp(-x) + exp(-x)/x")), "(x + 1)*exp(-x)/x"],
+    ["together(P(\"exp(-2*x) + exp(-3*x)/x\"))", () => together(P("exp(-2*x) + exp(-3*x)/x")), "(x*exp(x) + 1)*exp(-3*x)/x"],
+    ["together(P(\"Eq(1/y + 1/x, 1 + 1/z)\"))", () => together(P("Eq(1/y + 1/x, 1 + 1/z)")), "Eq((x + y)/(x*y), (z + 1)/z)"],
+    ["together(Qs(\"(A*B)**(-1) + (B*A)**(-1)\", [symbol(\"A\", { commutative: false }), symbol(\"B\", { commutative: false })]))", () => together(Qs("(A*B)**(-1) + (B*A)**(-1)", [symbol("A", { commutative: false }), symbol("B", { commutative: false })])), "(A*B)**(-1) + (B*A)**(-1)"],
+  ];
+  it.each(cases)('%s', (_name, run, want) => {
+    expect(show(run())).toBe(want);
+  });
+});
+
+describe("simplify (cov2): SymPy 1.14 cases", () => {
+  const cases: [string, () => unknown, string][] = [
+    ["fraction(P('2*x**-2*y/3', {y: {positive: true}}), { exact: true })", () => fraction(PA('2*x**-2*y/3', {y: {positive: true}}), { exact: true }), "[2*y, 3*x**2]"],
+    ["fraction(P('x**-y', {y: {positive: true}}), { exact: true })", () => fraction(PA('x**-y', {y: {positive: true}}), { exact: true }), "[x**(-y), 1]"],
+    ["fraction(P('x**-y', {y: {positive: true}}))", () => fraction(PA('x**-y', {y: {positive: true}})), "[1, x**y]"],
+    ["fraction(P('x**(-sqrt(2))*y'), { exact: true })", () => fraction(PA('x**(-sqrt(2))*y'), { exact: true }), "[y, x**(sqrt(2))]"],
+    ["fraction(P('x'), { exact: true })", () => fraction(PA('x'), { exact: true }), "[x, 1]"],
+    ["fraction(P('1/x'), { exact: true })", () => fraction(PA('1/x'), { exact: true }), "[1, x]"],
+    ["fraction(P('x/3'), { exact: true })", () => fraction(PA('x/3'), { exact: true }), "[x, 3]"],
+    ["fraction(P('exp(-x)*x'), { exact: true })", () => fraction(PA('exp(-x)*x'), { exact: true }), "[x*exp(-x), 1]"],
+    ["fraction(P('3/(x*y)'), { exact: true })", () => fraction(PA('3/(x*y)'), { exact: true }), "[3, x*y]"],
+    ["fraction(P('x**(-1/2)'), { exact: true })", () => fraction(PA('x**(-1/2)'), { exact: true }), "[1, sqrt(x)]"],
+    ["together(P('(1/x + 1/y)**(1/z + 1)'), { deep: true })", () => together(PA('(1/x + 1/y)**(1/z + 1)'), { deep: true }), "((x + y)/(x*y))**((z + 1)/z)"],
+    ["together(P('exp(1/x + 1/y)'), { deep: true })", () => together(PA('exp(1/x + 1/y)'), { deep: true }), "exp((x + y)/(x*y))"],
+  ];
+  it.each(cases)('%s', (_name, run, want) => {
+    expect(showMap(run())).toBe(want);
+  });
+});
+
+describe("ratsimpmodprime, gammasimp, signsimp, cancel, ratsimp (cov2): SymPy 1.14 cases", () => {
+  const cases: [string, () => unknown, string][] = [
+    ["cancel(P('(sqrt(2) + sqrt(3)*x)/(x + 1)'))", () => cancel(PA('(sqrt(2) + sqrt(3)*x)/(x + 1)')), "(sqrt(3)*x + sqrt(2))/(x + 1)"],
+    ["cancel(P('(sqrt(3) + sqrt(15)*x)/(sqrt(2) + sqrt(10)*x)'))", () => cancel(PA('(sqrt(3) + sqrt(15)*x)/(sqrt(2) + sqrt(10)*x)')), "sqrt(6)/2"],
+    ["cancel(P('(sqrt(2)*x + sqrt(6))/(sqrt(3)*x + 3)'))", () => cancel(PA('(sqrt(2)*x + sqrt(6))/(sqrt(3)*x + 3)')), "(sqrt(2)*x + sqrt(6))/(sqrt(3)*x + 3)"],
+    ["ratsimp(P('(x**2 + y)/(x + y)'))", () => ratsimp(PA('(x**2 + y)/(x + y)')), "x - y + (y**2 + y)/(x + y)"],
+    ["ratsimp(P('(x**3 + 2*x*y + y**2)/(x - y)'))", () => ratsimp(PA('(x**3 + 2*x*y + y**2)/(x - y)')), "x**2 + x*y + y**2 + 2*y + (y**3 + 3*y**2)/(x - y)"],
+    ["ratsimp(P('(x**2 + 1)/2'))", () => ratsimp(PA('(x**2 + 1)/2')), "x**2/2 + 1/2"],
+    ["ratsimp(P('x/(x*y + y)'))", () => ratsimp(PA('x/(x*y + y)')), "x/(x*y + y)"],
+  ];
+  it.each(cases)('%s', (_name, run, want) => {
+    expect(showMap(run())).toBe(want);
+  });
+});
+
+describe('ratsimp and cancel (cov2): a Dummy and a Symbol with the same name', () => {
+  it('orders the generators by name and divides', () => {
+    const d = new Dummy('x');
+    // the value is that of (x**2 + d)/(x + d) for two different symbols named x
+    const e = mul(add(pow(x, 2), d), pow(add(x, d), -1));
+    const r = ratsimp(e);
+    const at = (v: Expr) => v.subs([[x, 2], [d, 5]]).toNumber();
+    expect(at(r)).toBeCloseTo(9 / 7, 12);
+    expect(at(cancel(e))).toBeCloseTo(9 / 7, 12);
+  });
+});

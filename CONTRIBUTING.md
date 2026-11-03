@@ -36,6 +36,19 @@ pnpm build && node packages/symjs/scripts/size.mjs --check   # bundle sizes with
   the documented current behaviour (left unevaluated, or
   `NotImplementedError`) and gives SymPy's result in a comment.
 
+## Test files
+
+- Tests mirror the source tree: the tests of `packages/<pkg>/src/<path>/<name>.ts` are in
+  `packages/<pkg>/tests/<path>/<name>.test.ts`. A new test goes into the file of the source it
+  exercises; names that describe how a test came about (such as `cov-*`) are not used.
+- Aspect suffixes are used only when one file would be too large or must stay separate:
+  `<name>.sympy.test.ts` for tables replayed from SymPy's test suites, `<name>.isolated.test.ts` for
+  tests that must import only some modules.
+- Tests that check the public API as a whole stay at the top of `tests/`: `golden`, `fuzz`,
+  `exports`, `entries`, `api-report`, `api`, `api-results`, `results`, `regressions`,
+  `sympy-extras`, `misc-compat` and `user-extensions` (and `extension.test.ts` in the extend
+  package that builds on the base module).
+
 ## Expected values come from SymPy
 
 - The reference is SymPy 1.14.0 (and mpmath 1.3.0 for `numeric/`).
