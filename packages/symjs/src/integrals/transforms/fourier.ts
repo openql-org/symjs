@@ -15,7 +15,8 @@
  * x**2 + b**2.
  */
 
-import type { Expr, ExprLike, Sym } from '../../core/nodes';
+import type { Expr, ExprLike } from '../../core/nodes';
+import { Sym } from '../../core/nodes';
 import { Add, Constant, Dummy, Fn, Integral, Mul, Pow, Rational, S } from '../../core/nodes';
 import { add, exp, mul, neg, pow, sqrt, sub, sympify } from '../../core/ops';
 import { isNegative, isPositive } from '../../core/assumptions';
@@ -31,7 +32,7 @@ import { posify, powdenest, powsimp } from '../../simplify/powsimp';
 import { simplify as simplifyExpr } from '../../simplify/simplify';
 import { rewrite } from '../../simplify/rewrite';
 import type { TransformHints, TransformResult } from './base';
-import { GenericIntegralTransform, IntegralTransform, IntegralTransformError, addArgs, isPolyIn, matchByName, mget, mulArgs, polyCoeffs as polyCoeffsIn, wild, transformArgs } from './base';
+import { GenericIntegralTransform, IntegralTransform, IntegralTransformError, addArgs, asSymbolVariable, isPolyIn, matchByName, mget, mulArgs, polyCoeffs as polyCoeffsIn, wild, transformArgs } from './base';
 import { at, defined, pair } from '../../core/guard';
 import { isDiracDelta, isHeaviside } from './delta';
 
@@ -342,8 +343,8 @@ export abstract class FourierTypeTransform extends GenericIntegralTransform {
 
 /** The unevaluated Fourier transform (SymPy FourierTransform). */
 export class FourierTransform extends FourierTypeTransform {
-  constructor(f: ExprLike, x: Sym, k: Sym) {
-    super('FourierTransform', [sympify(f), x, k]);
+  constructor(f: ExprLike, x: ExprLike, k: ExprLike) {
+    super('FourierTransform', [sympify(f), sympify(x), sympify(k)]);
   }
   /** SymPy FourierTransform._name. */
   static readonly transformName = 'Fourier';
@@ -369,8 +370,8 @@ export class FourierTransform extends FourierTypeTransform {
 
 /** The unevaluated inverse Fourier transform (SymPy InverseFourierTransform). */
 export class InverseFourierTransform extends FourierTypeTransform {
-  constructor(F: ExprLike, k: Sym, x: Sym) {
-    super('InverseFourierTransform', [sympify(F), k, x]);
+  constructor(F: ExprLike, k: ExprLike, x: ExprLike) {
+    super('InverseFourierTransform', [sympify(F), sympify(k), sympify(x)]);
   }
   /** SymPy InverseFourierTransform._name. */
   static readonly transformName = 'Inverse Fourier';
@@ -403,7 +404,7 @@ export class InverseFourierTransform extends FourierTypeTransform {
  * @example
  * fourierTransform(exp(-x**2), x, k)  // sqrt(pi)*exp(-pi**2*k**2)
  */
-export function fourierTransform(f: ExprLike, x: Sym, k: Sym, hints: TransformHints = {}): TransformResult {
+export function fourierTransform(f: ExprLike, x: Sym, k: ExprLike, hints: TransformHints = {}): TransformResult {
   return new FourierTransform(f, x, k).doit(hints);
 }
 
@@ -412,7 +413,7 @@ export function fourierTransform(f: ExprLike, x: Sym, k: Sym, hints: TransformHi
  * integral of F(k)*exp(2*pi*I*x*k) over the real line (SymPy
  * inverse_fourier_transform).
  */
-export function inverseFourierTransform(F: ExprLike, k: Sym, x: Sym, hints: TransformHints = {}): TransformResult {
+export function inverseFourierTransform(F: ExprLike, k: Sym, x: ExprLike, hints: TransformHints = {}): TransformResult {
   return new InverseFourierTransform(F, k, x).doit(hints);
 }
 
@@ -453,8 +454,8 @@ export abstract class SineCosineTypeTransform extends GenericIntegralTransform {
 
 /** The unevaluated sine transform (SymPy SineTransform). */
 export class SineTransform extends SineCosineTypeTransform {
-  constructor(f: ExprLike, x: Sym, k: Sym) {
-    super('SineTransform', [sympify(f), x, k]);
+  constructor(f: ExprLike, x: ExprLike, k: ExprLike) {
+    super('SineTransform', [sympify(f), sympify(x), sympify(k)]);
   }
   /** SymPy SineTransform._name. */
   static readonly transformName = 'Sine';
@@ -477,8 +478,8 @@ export class SineTransform extends SineCosineTypeTransform {
 
 /** The unevaluated inverse sine transform (SymPy InverseSineTransform). */
 export class InverseSineTransform extends SineCosineTypeTransform {
-  constructor(F: ExprLike, k: Sym, x: Sym) {
-    super('InverseSineTransform', [sympify(F), k, x]);
+  constructor(F: ExprLike, k: ExprLike, x: ExprLike) {
+    super('InverseSineTransform', [sympify(F), sympify(k), sympify(x)]);
   }
   /** SymPy InverseSineTransform._name. */
   static readonly transformName = 'Inverse Sine';
@@ -501,8 +502,8 @@ export class InverseSineTransform extends SineCosineTypeTransform {
 
 /** The unevaluated cosine transform (SymPy CosineTransform). */
 export class CosineTransform extends SineCosineTypeTransform {
-  constructor(f: ExprLike, x: Sym, k: Sym) {
-    super('CosineTransform', [sympify(f), x, k]);
+  constructor(f: ExprLike, x: ExprLike, k: ExprLike) {
+    super('CosineTransform', [sympify(f), sympify(x), sympify(k)]);
   }
   /** SymPy CosineTransform._name. */
   static readonly transformName = 'Cosine';
@@ -525,8 +526,8 @@ export class CosineTransform extends SineCosineTypeTransform {
 
 /** The unevaluated inverse cosine transform (SymPy InverseCosineTransform). */
 export class InverseCosineTransform extends SineCosineTypeTransform {
-  constructor(F: ExprLike, k: Sym, x: Sym) {
-    super('InverseCosineTransform', [sympify(F), k, x]);
+  constructor(F: ExprLike, k: ExprLike, x: ExprLike) {
+    super('InverseCosineTransform', [sympify(F), sympify(k), sympify(x)]);
   }
   /** SymPy InverseCosineTransform._name. */
   static readonly transformName = 'Inverse Cosine';
@@ -554,12 +555,12 @@ export class InverseCosineTransform extends SineCosineTypeTransform {
  * @example
  * sineTransform(x*exp(-a*x**2), x, k)  // sqrt(2)*k*exp(-k**2/(4*a))/(4*a**(3/2))
  */
-export function sineTransform(f: ExprLike, x: Sym, k: Sym, hints: TransformHints = {}): TransformResult {
+export function sineTransform(f: ExprLike, x: Sym, k: ExprLike, hints: TransformHints = {}): TransformResult {
   return new SineTransform(f, x, k).doit(hints);
 }
 
 /** The inverse sine transform sqrt(2/pi)*Integral(F(k)*sin(x*k), (k, 0, oo)) (SymPy inverse_sine_transform). */
-export function inverseSineTransform(F: ExprLike, k: Sym, x: Sym, hints: TransformHints = {}): TransformResult {
+export function inverseSineTransform(F: ExprLike, k: Sym, x: ExprLike, hints: TransformHints = {}): TransformResult {
   return new InverseSineTransform(F, k, x).doit(hints);
 }
 
@@ -570,12 +571,12 @@ export function inverseSineTransform(F: ExprLike, k: Sym, x: Sym, hints: Transfo
  * @example
  * cosineTransform(exp(-a*x), x, k)  // sqrt(2)*a/(sqrt(pi)*(a**2 + k**2))
  */
-export function cosineTransform(f: ExprLike, x: Sym, k: Sym, hints: TransformHints = {}): TransformResult {
+export function cosineTransform(f: ExprLike, x: Sym, k: ExprLike, hints: TransformHints = {}): TransformResult {
   return new CosineTransform(f, x, k).doit(hints);
 }
 
 /** The inverse cosine transform sqrt(2/pi)*Integral(F(k)*cos(x*k), (k, 0, oo)) (SymPy inverse_cosine_transform). */
-export function inverseCosineTransform(F: ExprLike, k: Sym, x: Sym, hints: TransformHints = {}): TransformResult {
+export function inverseCosineTransform(F: ExprLike, k: Sym, x: ExprLike, hints: TransformHints = {}): TransformResult {
   return new InverseCosineTransform(F, k, x).doit(hints);
 }
 
@@ -601,19 +602,21 @@ export abstract class HankelTypeTransform extends IntegralTransform {
   doit(hints: TransformHints = {}): TransformResult {
     const f = this.function;
     const r = this.functionVariable;
-    const k = this.transformVariable;
+    if (!(r instanceof Sym)) return this;
+    const ks = asSymbolVariable(this.transformVariable);
+    const k = ks.sym;
     const v = halfLineIntegral(mul(f, r), r, k, { kind: 'besselj', nu: this.nu });
     if (v === undefined) throw new IntegralTransformError(this.transformName, f, 'could not compute integral');
     const simplify = hints.simplify ?? true;
-    const F = hyperexpandForm(finish(v, simplify), k);
+    const F = ks.back(hyperexpandForm(finish(v, simplify), k));
     return hints.noconds === false ? [F, S.true] : F;
   }
 }
 
 /** The unevaluated Hankel transform (SymPy HankelTransform). */
 export class HankelTransform extends HankelTypeTransform {
-  constructor(f: ExprLike, r: Sym, k: Sym, nu: ExprLike) {
-    super('HankelTransform', [sympify(f), r, k, sympify(nu)]);
+  constructor(f: ExprLike, r: ExprLike, k: ExprLike, nu: ExprLike) {
+    super('HankelTransform', [sympify(f), sympify(r), sympify(k), sympify(nu)]);
   }
   /** SymPy HankelTransform._name. */
   static readonly transformName = 'Hankel';
@@ -627,8 +630,8 @@ export class HankelTransform extends HankelTypeTransform {
 
 /** The unevaluated inverse Hankel transform (SymPy InverseHankelTransform). */
 export class InverseHankelTransform extends HankelTypeTransform {
-  constructor(F: ExprLike, k: Sym, r: Sym, nu: ExprLike) {
-    super('InverseHankelTransform', [sympify(F), k, r, sympify(nu)]);
+  constructor(F: ExprLike, k: ExprLike, r: ExprLike, nu: ExprLike) {
+    super('InverseHankelTransform', [sympify(F), sympify(k), sympify(r), sympify(nu)]);
   }
   /** SymPy InverseHankelTransform._name. */
   static readonly transformName = 'Inverse Hankel';
@@ -648,12 +651,12 @@ export class InverseHankelTransform extends HankelTypeTransform {
  * @example
  * hankelTransform(exp(-a*r), r, k, 0)  // a/(k**3*(a**2/k**2 + 1)**(3/2))
  */
-export function hankelTransform(f: ExprLike, r: Sym, k: Sym, nu: ExprLike, hints: TransformHints = {}): TransformResult {
+export function hankelTransform(f: ExprLike, r: Sym, k: ExprLike, nu: ExprLike, hints: TransformHints = {}): TransformResult {
   return new HankelTransform(f, r, k, nu).doit(hints);
 }
 
 /** The inverse Hankel transform Integral(F(k)*besselj(nu, k*r)*k, (k, 0, oo)) (SymPy inverse_hankel_transform). */
-export function inverseHankelTransform(F: ExprLike, k: Sym, r: Sym, nu: ExprLike, hints: TransformHints = {}): TransformResult {
+export function inverseHankelTransform(F: ExprLike, k: Sym, r: ExprLike, nu: ExprLike, hints: TransformHints = {}): TransformResult {
   return new InverseHankelTransform(F, k, r, nu).doit(hints);
 }
 

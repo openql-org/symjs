@@ -3,6 +3,8 @@
 
 import { describe, expect, it } from 'vitest';
 import type { Expr } from '../src';
+import * as sj from '../src';
+import { subs } from '../src';
 import { Eq, SymFunction, Ge, Gt, Le, Lt, Matrix, Ne, Piecewise, S, Sym, UndefFn, abs, add, and, cos, diff, doit, exp, gamma, latex, mapBottomUp, mul, oo, parse, pi, pow, sin, solve, sqrt, sub, symbols } from '../src';
 import {
   CosineTransform,
@@ -580,5 +582,26 @@ describe("SymPy's test suites (exact matches)", () => {
     if (fn === 'ILT' && vals.length === 3) vals.push(undefined);
     const r = (FNS[fn] as (...a: unknown[]) => unknown)(...vals, hints);
     expect(show(r)).toBe(want);
+  });
+});
+
+describe('transform variables that are expressions (values from SymPy 1.14)', () => {
+  const t = new Sym('t');
+  const s = new Sym('s');
+  const a = new Sym('a');
+  it('the variables are typed Expr and keep a substituted value', () => {
+    const L = subs(new sj.LaplaceTransform(exp(mul(-1, t)), t, s), [[s, 2]]);
+    expect(String(L)).toBe('LaplaceTransform(exp(-t), t, 2)');
+    expect(L).toBeInstanceOf(sj.LaplaceTransform);
+    const v: Expr = L instanceof sj.LaplaceTransform ? L.transformVariable : S.Zero;
+    expect(String(v)).toBe('2');
+    expect(String(doit(L))).toBe('1/3');
+  });
+  it('evaluates at an expression', () => {
+    expect(String(doit(subs(new sj.LaplaceTransform(exp(mul(-1, t)), t, s), [[s, add(a, 1)]])))).toBe('1/(a + 2)');
+    expect(String(sj.laplaceTransform(sin(t), t, add(s, 1), { noconds: true }))).toBe('1/((s + 1)**2 + 1)');
+    expect(String(doit(subs(new sj.LaplaceTransform(SymFunction('f')(t), t, s), [[s, 3]])))).toBe('LaplaceTransform(f(t), t, 3)');
+    expect(String(doit(subs(new sj.InverseLaplaceTransform(pow(add(s, 1), -1), s, t), [[t, 2]])))).toBe('exp(-2)');
+    expect(String(doit(subs(new sj.FourierTransform(exp(mul(-1, pow(t, 2))), t, s), [[s, 1]])))).toBe('sqrt(pi)*exp(-pi**2)');
   });
 });

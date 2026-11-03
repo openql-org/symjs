@@ -21,21 +21,21 @@ import { polyCoefficients } from './poly';
 const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
 
 /** Degree of e in x (polynomial assumed), -1 for zero. */
-export function degreeIn(e: Expr, x: Sym): number {
+export function degreeIn(e: Expr, x: Expr): number {
   if (isZeroE(e)) return -1;
   const pc = polyCoefficients(e, x);
   if (!pc) throw new PolynomialError('degreeIn: not a polynomial');
   return Math.max(...pc.keys());
 }
 
-function coeffsIn(e: Expr, x: Sym): Map<number, Expr> {
+function coeffsIn(e: Expr, x: Expr): Map<number, Expr> {
   const pc = polyCoefficients(e, x);
   if (!pc) throw new PolynomialError('not a polynomial');
   return pc;
 }
 
 /** Leading coefficient in x. */
-export function lcIn(e: Expr, x: Sym): Expr {
+export function lcIn(e: Expr, x: Expr): Expr {
   const pc = coeffsIn(e, x);
   return pc.get(Math.max(...pc.keys())) ?? S.Zero;
 }
@@ -65,7 +65,7 @@ function powRat(b: Rational, k: number): Rational {
 }
 
 /** Exact quotient f/g in Q[vars], or undefined when g does not divide f. */
-export function divExact(f0: Expr, g0: Expr, vars: readonly Sym[]): Expr | undefined {
+export function divExact(f0: Expr, g0: Expr, vars: readonly Expr[]): Expr | undefined {
   const f = expand(f0);
   const g = expand(g0);
   if (isZeroE(g)) throw new RangeError('division by zero polynomial');
@@ -100,7 +100,7 @@ export function divExact(f0: Expr, g0: Expr, vars: readonly Sym[]): Expr | undef
 }
 
 /** Pseudo-remainder of a by b in x. */
-export function prem(a0: Expr, b: Expr, x: Sym): Expr {
+export function prem(a0: Expr, b: Expr, x: Expr): Expr {
   let r = expand(a0);
   const db = degreeIn(b, x);
   const lb = lcIn(b, x);
@@ -113,14 +113,14 @@ export function prem(a0: Expr, b: Expr, x: Sym): Expr {
 }
 
 /** Content of f with respect to x: gcd of its coefficients (polynomials in the other variables). */
-export function contentIn(f: Expr, x: Sym, rest: readonly Sym[]): Expr {
+export function contentIn(f: Expr, x: Expr, rest: readonly Expr[]): Expr {
   let g: Expr = S.Zero;
   for (const c of coeffsIn(f, x).values()) g = mgcd(g, c, rest);
   return g;
 }
 
 /** Sign normalization: make the leading coefficient (lex order in vars) positive. */
-function normalizeSign(e: Expr, vars: readonly Sym[]): Expr {
+function normalizeSign(e: Expr, vars: readonly Expr[]): Expr {
   let c = e;
   for (const v of vars) {
     if (!c.has(v)) continue;
@@ -132,7 +132,7 @@ function normalizeSign(e: Expr, vars: readonly Sym[]): Expr {
 }
 
 /** GCD of two polynomials in Q[vars] (with integer content), normalized with a positive leading coefficient. */
-export function mgcd(f0: Expr, g0: Expr, vars: readonly Sym[]): Expr {
+export function mgcd(f0: Expr, g0: Expr, vars: readonly Expr[]): Expr {
   const f = expand(f0);
   const g = expand(g0);
   if (isZeroE(f)) return normalizeSign(g, vars);
@@ -165,7 +165,7 @@ export function mgcd(f0: Expr, g0: Expr, vars: readonly Sym[]): Expr {
 }
 
 /** lcm of two polynomials. */
-export function mlcm(f: Expr, g: Expr, vars: readonly Sym[]): Expr {
+export function mlcm(f: Expr, g: Expr, vars: readonly Expr[]): Expr {
   const d = mgcd(f, g, vars);
   return normalizeSign(expand(mul(defined(divExact(f, d, vars), 'f / gcd'), g)), vars);
 }
@@ -182,7 +182,7 @@ export function varsOf(...es: Expr[]): Sym[] {
  * each variable, univariate factors and quadratics with a perfect-square
  * discriminant. Returns [content, [factor, multiplicity][]].
  */
-export function mfactorList(f0: Expr, vars: readonly Sym[], uniFactor: (e: Expr, x: Sym) => [Rational, [Expr, number][]]): [Rational, [Expr, number][]] {
+export function mfactorList(f0: Expr, vars: readonly Expr[], uniFactor: (e: Expr, x: Expr) => [Rational, [Expr, number][]]): [Rational, [Expr, number][]] {
   const f = expand(f0);
   if (f instanceof Rational) return [f, []];
   const live = vars.filter((v) => f.has(v));
@@ -268,7 +268,7 @@ export function mfactorList(f0: Expr, vars: readonly Sym[], uniFactor: (e: Expr,
 }
 
 /** Square root of a polynomial if it is a perfect square. */
-function polySqrt(e: Expr, vars: readonly Sym[], uniFactor: (e: Expr, x: Sym) => [Rational, [Expr, number][]]): Expr | undefined {
+function polySqrt(e: Expr, vars: readonly Expr[], uniFactor: (e: Expr, x: Expr) => [Rational, [Expr, number][]]): Expr | undefined {
   if (e instanceof Rational) {
     const r = pow(e, S.Half);
     return r instanceof Rational ? r : undefined;

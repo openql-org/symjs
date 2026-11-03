@@ -7,8 +7,8 @@
  * _simplify and the helpers used by every transform).
  */
 
-import type { ExprLike, Sym } from '../../core/nodes';
-import { Add, BoolAtom, Expr, Derivative, ExtensionExpr, Integral, Mul, Pow, Rational, Rel, S, UndefFn, Wild } from '../../core/nodes';
+import type { ExprLike } from '../../core/nodes';
+import { Add, BoolAtom, Dummy, Expr, Derivative, Sym, ExtensionExpr, Integral, Mul, Pow, Rational, Rel, S, UndefFn, Wild } from '../../core/nodes';
 import { Max } from '../../functions/special';
 import { diff } from '../../calculus/diff';
 import { BoolOp } from '../../core/boolalg';
@@ -237,12 +237,12 @@ export abstract class IntegralTransform extends ExtensionExpr {
     return at(this.args, 0);
   }
   /** The dependent variable of the function to be transformed. */
-  get functionVariable(): Sym {
-    return symArg(at(this.args, 1));
+  get functionVariable(): Expr {
+    return at(this.args, 1);
   }
   /** The independent transform variable. */
-  get transformVariable(): Sym {
-    return symArg(at(this.args, 2));
+  get transformVariable(): Expr {
+    return at(this.args, 2);
   }
   /** The descriptive name of the transform (SymPy _name, e.g. 'Laplace'). */
   abstract get transformName(): string;
@@ -302,10 +302,13 @@ export abstract class GenericIntegralTransform extends IntegralTransform {
     const noconds = hints.noconds ?? this.defaultNoconds;
     const f = this.function;
     const x = this.functionVariable;
+    // a bound variable that is not a symbol: nothing to integrate over
+    if (!(x instanceof Sym)) return this;
     let T: TransformResult | undefined;
     if (!hasUndefOf(f, x)) {
       try {
-        T = this.computeTransform(f, x, this.transformVariable, { ...hints, simplify, noconds });
+        const s = asSymbolVariable(this.transformVariable);
+        T = mapTransformResult(this.computeTransform(f, x, s.sym, { ...hints, simplify, noconds }), s.back);
       } catch (e) {
         if (!(e instanceof IntegralTransformError)) throw e;
       }
@@ -344,20 +347,27 @@ export abstract class GenericIntegralTransform extends IntegralTransform {
 }
 
 /** The (function, function variable, transform variable) arguments of a transform rebuilt from its args. */
-export function transformArgs(args: readonly Expr[]): [Expr, Sym, Sym] {
-  return [at(args, 0), symArg(at(args, 1)), symArg(at(args, 2))];
+export function transformArgs(args: readonly Expr[]): [Expr, Expr, Expr] {
+  return [at(args, 0), at(args, 1), at(args, 2)];
 }
 
 /**
- * An argument in a variable position of a transform, typed as Sym. Like
- * SymPy, any expression is accepted there at run time (substituting s = 2
- * gives LaplaceTransform(f, t, 2), and the rules transform at s/a), while
- * the public API types the variables as Sym; this is the single place
- * where that gap is bridged.
+ * A transform variable as a symbol. SymPy accepts any expression in that
+ * position (substituting s = 2 gives LaplaceTransform(f, t, 2)); such an
+ * expression is replaced by a Dummy for the computation, and `back` puts it
+ * back into the results.
  */
-export function symArg(e: Expr): Sym {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- SymPy allows any expression as the transform variable (e.g. after subs(s, 2)); the public constructors and getters type it as Sym
-  return e as Sym;
+export function asSymbolVariable(e: Expr): { sym: Sym; back: (r: Expr) => Expr } {
+  if (e instanceof Sym) return { sym: e, back: (r) => r };
+  const d = new Dummy('s');
+  return { sym: d, back: (r) => xreplace(r, [[d, e]]) };
+}
+
+/** Apply f to every expression of a transform result. */
+export function mapTransformResult(r: TransformResult, f: (e: Expr) => Expr): TransformResult {
+  if (r instanceof Expr) return f(r);
+  const [head, ...rest] = r;
+  return [f(head), ...rest.map((x): Expr | readonly [Expr, Expr] => (x instanceof Expr ? f(x) : [f(x[0]), f(x[1])]))];
 }
 
 /** sympify for transform arguments. */

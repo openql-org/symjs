@@ -192,16 +192,6 @@ function sympifyLeaf(x: unknown): Expr {
   throw new SympifyError(`Cannot convert ${String(x)} to an expression`, x);
 }
 
-/**
- * The generators as the Sym list the mpoly routines are typed with: those
- * routines only compare generators structurally (key and has), so any
- * generator expression works there.
- */
-function mpolyVars(gens: readonly Expr[]): readonly Sym[] {
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- mpoly is typed with Sym but treats variables structurally; Poly generators may be any expression
-  return gens as readonly Sym[];
-}
-
 export class Poly {
   readonly gens: readonly Expr[];
   /** terms in lex order, highest first; coefficients are nonzero */
@@ -474,16 +464,16 @@ export class Poly {
     return Poly.from(defined(divExact(expand(add(scaled, mul(-1, mprem(this.asExpr(), o.asExpr(), x)))), o.asExpr(), [x]), 'pseudo-quotient'), this.gens);
   }
   exquo(o: Poly): Poly {
-    const q = divExact(this.asExpr(), o.asExpr(), mpolyVars(this.gens));
+    const q = divExact(this.asExpr(), o.asExpr(), this.gens);
     if (q === undefined) throw new ExactQuotientFailed('exquo: inexact division');
     return Poly.from(q, this.gens);
   }
 
   gcd(o: Poly): Poly {
-    return Poly.from(mgcd(this.asExpr(), o.asExpr(), mpolyVars(this.gens)), this.gens);
+    return Poly.from(mgcd(this.asExpr(), o.asExpr(), this.gens), this.gens);
   }
   lcm(o: Poly): Poly {
-    return Poly.from(mlcm(this.asExpr(), o.asExpr(), mpolyVars(this.gens)), this.gens);
+    return Poly.from(mlcm(this.asExpr(), o.asExpr(), this.gens), this.gens);
   }
   monic(): Poly {
     const lc = this.LC();
@@ -530,7 +520,7 @@ export class Poly {
 
   /** (content, [(factor, multiplicity)]) with primitive integer factors. */
   factorList(): [Rational, [Poly, number][]] {
-    const [c, fs] = factorListExpr(this.asExpr(), mpolyVars(this.gens));
+    const [c, fs] = factorListExpr(this.asExpr(), this.gens);
     return [c, fs.map(([f, k]) => [Poly.from(f, this.gens), k] as [Poly, number])];
   }
   sqfList(): [Rational, [Poly, number][]] {
@@ -1244,7 +1234,7 @@ function rationalOfFloat(f: Float): Rational {
 }
 
 /** Make a univariate rational polynomial primitive with integer coefficients and positive leading coefficient. */
-function primitiveIntPoly(e: Expr, x: Sym): Poly {
+function primitiveIntPoly(e: Expr, x: Expr): Poly {
   const p = Poly.from(e, [x]);
   const [, prim] = p.primitive();
   const lc = prim.LC();
@@ -1258,14 +1248,14 @@ function bigGcd(a: bigint, b: bigint): bigint {
 }
 
 /** factor_list on expressions: (content, [(factor, multiplicity)]). */
-export function factorListExpr(e: Expr, gens?: readonly Sym[]): [Rational, [Expr, number][]] {
-  const vars = gens ?? sortGens([...freeSymbols(e)]);
+export function factorListExpr(e: Expr, gens?: readonly Expr[]): [Rational, [Expr, number][]] {
+  const vars: readonly Expr[] = gens ?? sortGens([...freeSymbols(e)]);
   const [c, fs] = factorListRaw(e, vars);
   return [c, sortFactors(fs, vars)];
 }
 
 /** SymPy _sort_factors(multiple=True): by dense length in the main generator, multiplicity, then coefficients. */
-function sortFactors(fs: [Expr, number][], vars: readonly Sym[]): [Expr, number][] {
+function sortFactors(fs: [Expr, number][], vars: readonly Expr[]): [Expr, number][] {
   if (!vars.length) return fs;
   const key = (f: Expr): [number, Expr[]] => {
     const p = Poly.from(f, vars);
@@ -1291,7 +1281,7 @@ function sortFactors(fs: [Expr, number][], vars: readonly Sym[]): [Expr, number]
   });
 }
 
-function factorListRaw(e: Expr, vars: readonly Sym[]): [Rational, [Expr, number][]] {
+function factorListRaw(e: Expr, vars: readonly Expr[]): [Rational, [Expr, number][]] {
   return mfactorList(e, vars, (p, x) => {
     const up = UPoly.fromExpr(p, x);
     if (!up) return [S.One, [[p, 1]]];

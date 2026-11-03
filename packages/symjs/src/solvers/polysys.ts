@@ -47,8 +47,7 @@ function factorSystemRaw(eqsIn: readonly ExprLike[], gensIn: readonly Expr[]): F
   for (const e of eqs) for (const s of freeSymbols(e)) all.set(s.key, s);
   // sortGens returns the same Sym instances, looked up again by key to keep their type
   const sortSyms = (xs: Sym[]): Sym[] => sortGens(xs).map((g) => getOrThrow(all, g.key));
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- user generators are passed through as is (factorListExpr types its generators as Sym but treats them as Poly generators)
-  const gens: readonly Sym[] = gensIn.length ? (gensIn as readonly Sym[]) : sortSyms([...all.values()]);
+  const gens: readonly Expr[] = gensIn.length ? gensIn : sortSyms([...all.values()]);
   const genKeys = new Set(gens.map((g) => g.key));
   if (!gens.length) return eqs.every((e) => e instanceof Rational && e.isZero) ? [[]] : [];
   const vars = [...gens, ...sortSyms([...all.values()].filter((s) => !genKeys.has(s.key)))];
@@ -96,7 +95,7 @@ function combineFactorSets(sets: Factor[][]): Factor[][] {
 type Key = (number | Expr)[][];
 
 /** SymPy _poly_sort_key: (degree_list, dense representation). */
-function polyKey(f: Factor, gens: readonly Sym[]): Key {
+function polyKey(f: Factor, gens: readonly Expr[]): Key {
   const p = Poly.from(f.expr, gens);
   const rep: (number | Expr)[] = [];
   for (const [m, c] of p.terms()) rep.push(...m.map((k) => -k), c);

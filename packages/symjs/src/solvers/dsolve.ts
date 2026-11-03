@@ -169,8 +169,7 @@ function linearFirst(p: OdeProblem): [Expr, Expr] | undefined {
   const [A, B] = parts;
   if (B.has(p.fx)) return undefined;
   const a = expand(mul(A, pow(B, -1)));
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- polyCoefficients only compares its generator by key and has(), so f(x) works as one (its parameter is typed Sym)
-  const pc = polyCoefficients(a, p.fx as unknown as Sym);
+  const pc = polyCoefficients(a, p.fx);
   if (!pc || Math.max(...pc.keys()) > 1) return undefined;
   const P = cancel(pc.get(1) ?? S.Zero);
   const Q = cancel(mul(-1, pc.get(0) ?? S.Zero));

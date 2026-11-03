@@ -9,7 +9,8 @@
  * impulses), laplace_correspondence and laplace_initial_conds.
  */
 
-import type { Expr, ExprLike, Sym } from '../../core/nodes';
+import type { Expr, ExprLike } from '../../core/nodes';
+import { Sym } from '../../core/nodes';
 import { Add, BoolAtom, Constant, Derivative, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, UndefFn, Wild } from '../../core/nodes';
 import { BoolOp, and, or } from '../../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt } from '../../core/logic';
@@ -37,7 +38,7 @@ import { rewrite } from '../../simplify/rewrite';
 import { simplify as simplifyExpr } from '../../simplify/simplify';
 import { piecewiseExclusive } from '../../solvers/inequalities';
 import type { TransformHints } from './base';
-import { IntegralTransform, addArgs, diffTransforms, holds, isPolyIn, maxPlane, planeAdd, matchByName, polyCoeffs, mget, mulArgs, wild, symArg, transformArgs } from './base';
+import { IntegralTransform, addArgs, diffTransforms, holds, isPolyIn, maxPlane, planeAdd, matchByName, polyCoeffs, mget, mulArgs, wild, transformArgs, asSymbolVariable } from './base';
 import { at, cast, defined, last, pair } from '../../core/guard';
 import { DiracDelta, Heaviside, isDiracDelta, isHeaviside } from './delta';
 import { InverseLaplaceTransform } from './inverse-laplace';
@@ -828,8 +829,8 @@ function laplaceTransformIntegration(f: Expr, t: Sym, s: Expr): LaplaceTriple | 
  * SymPy _laplace_transform: the front end that applies the rules
  * recursively to every term.
  */
-export function laplaceTransformImpl(fn: Expr, t: Sym, s: Sym | Expr, simplify: boolean): LaplaceTriple {
-  const sv = symArg(s);
+export function laplaceTransformImpl(fn: Expr, t: Sym, s: Expr, simplify: boolean): LaplaceTriple {
+  const { sym: sv, back } = asSymbolVariable(s);
   const terms: [Expr, Expr][] = [];
   for (const ff of addArgs(fn)) {
     const [k, ft] = asIndependent(ff, [t], { asAdd: false });
@@ -858,7 +859,7 @@ export function laplaceTransformImpl(fn: Expr, t: Sym, s: Sym | Expr, simplify: 
   }
   let result = add(...termsS);
   if (simplify) result = simplifyExpr(result);
-  return [result, maxPlane(planes), and(...conditions)];
+  return [back(result), back(maxPlane(planes)), back(and(...conditions))];
 }
 
 /** Options of laplaceTransform (SymPy keyword arguments). */
@@ -877,11 +878,12 @@ export interface LaplaceOptions extends TransformHints {
  * @example
  * laplaceTransform(t**4, t, s)  // [24/s**5, 0, True]
  */
-export function laplaceTransform(f: ExprLike, t: Sym, s: Sym, opts: LaplaceOptions & { noconds: true }): Expr;
-export function laplaceTransform(f: ExprLike, t: Sym, s: Sym, opts?: LaplaceOptions): LaplaceTriple;
-export function laplaceTransform(f: Matrix, t: Sym, s: Sym, opts: LaplaceOptions & { noconds: true }): Matrix;
-export function laplaceTransform(f: Matrix, t: Sym, s: Sym, opts?: LaplaceOptions): [Matrix, Expr, Expr];
-export function laplaceTransform(f: ExprLike | Matrix, t: Sym, s: Sym, opts: LaplaceOptions = {}): Expr | LaplaceTriple | Matrix | [Matrix, Expr, Expr] {
+export function laplaceTransform(f: ExprLike, t: Sym, s: ExprLike, opts: LaplaceOptions & { noconds: true }): Expr;
+export function laplaceTransform(f: ExprLike, t: Sym, s: ExprLike, opts?: LaplaceOptions): LaplaceTriple;
+export function laplaceTransform(f: Matrix, t: Sym, s: ExprLike, opts: LaplaceOptions & { noconds: true }): Matrix;
+export function laplaceTransform(f: Matrix, t: Sym, s: ExprLike, opts?: LaplaceOptions): [Matrix, Expr, Expr];
+export function laplaceTransform(f: ExprLike | Matrix, t: Sym, sIn: ExprLike, opts: LaplaceOptions = {}): Expr | LaplaceTriple | Matrix | [Matrix, Expr, Expr] {
+  const s = sympify(sIn);
   const simplify = opts.simplify ?? false;
   if (f instanceof Matrix) {
     // SymPy legacy_matrix=False: the transformed matrix with the combined plane and conditions
@@ -940,8 +942,8 @@ export function laplaceInitialConds(f: ExprLike, t: Sym, fdict: ReadonlyMap<Unde
  * doit() evaluates it with laplaceTransform.
  */
 export class LaplaceTransform extends IntegralTransform {
-  constructor(f: ExprLike, t: Sym, s: Sym) {
-    super('LaplaceTransform', [sympify(f), t, s]);
+  constructor(f: ExprLike, t: ExprLike, s: ExprLike) {
+    super('LaplaceTransform', [sympify(f), sympify(t), sympify(s)]);
   }
   /** SymPy LaplaceTransform._name. */
   static readonly transformName = 'Laplace';
@@ -959,7 +961,8 @@ export class LaplaceTransform extends IntegralTransform {
   }
   /** Evaluate (SymPy doit): F, or [F, plane, cond] with `noconds: false`. */
   doit(hints: TransformHints = {}): Expr | LaplaceTriple {
-    const r = laplaceTransformImpl(this.function, this.functionVariable, this.transformVariable, hints.simplify ?? false);
+    const t = this.functionVariable;
+    const r: LaplaceTriple = t instanceof Sym ? laplaceTransformImpl(this.function, t, this.transformVariable, hints.simplify ?? false) : [this, S.NegativeInfinity, S.true];
     return hints.noconds === false ? r : r[0];
   }
 }

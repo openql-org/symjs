@@ -170,8 +170,8 @@ export function mellinTransformImpl(f: Expr, x: Sym, s: Expr, simplify: boolean)
  * The unevaluated Mellin transform of f(x) (SymPy MellinTransform).
  */
 export class MellinTransform extends GenericIntegralTransform {
-  constructor(f: ExprLike, x: Sym, s: Sym) {
-    super('MellinTransform', [sympify(f), x, s]);
+  constructor(f: ExprLike, x: ExprLike, s: ExprLike) {
+    super('MellinTransform', [sympify(f), sympify(x), sympify(s)]);
   }
   /** SymPy MellinTransform._name. */
   static readonly transformName = 'Mellin';
@@ -223,7 +223,7 @@ export class MellinTransform extends GenericIntegralTransform {
  * @example
  * mellinTransform(exp(-x), x, s)  // [gamma(s), [0, oo], True]
  */
-export function mellinTransform(f: ExprLike, x: Sym, s: Sym, hints: TransformHints = {}): TransformResult {
+export function mellinTransform(f: ExprLike, x: Sym, s: ExprLike, hints: TransformHints = {}): TransformResult {
   return new MellinTransform(f, x, s).doit(hints);
 }
 
@@ -651,8 +651,8 @@ const NONE_SENTINEL = new Dummy('None');
  * (SymPy InverseMellinTransform).
  */
 export class InverseMellinTransform extends GenericIntegralTransform {
-  constructor(F: ExprLike, s: Sym, x: Sym, a?: ExprLike, b?: ExprLike) {
-    super('InverseMellinTransform', [sympify(F), s, x, a === undefined ? NONE_SENTINEL : sympify(a), b === undefined ? NONE_SENTINEL : sympify(b)]);
+  constructor(F: ExprLike, s: ExprLike, x: ExprLike, a?: ExprLike, b?: ExprLike) {
+    super('InverseMellinTransform', [sympify(F), sympify(s), sympify(x), a === undefined ? NONE_SENTINEL : sympify(a), b === undefined ? NONE_SENTINEL : sympify(b)]);
   }
   /** SymPy InverseMellinTransform._name. */
   static readonly transformName = 'Inverse Mellin';
@@ -700,6 +700,6 @@ export class InverseMellinTransform extends GenericIntegralTransform {
  * @example
  * inverseMellinTransform(gamma(s), s, x, [0, oo])  // exp(-x)
  */
-export function inverseMellinTransform(F: ExprLike, s: Sym, x: Sym, strip: readonly [ExprLike | undefined, ExprLike | undefined], hints: TransformHints = {}): TransformResult {
+export function inverseMellinTransform(F: ExprLike, s: Sym, x: ExprLike, strip: readonly [ExprLike | undefined, ExprLike | undefined], hints: TransformHints = {}): TransformResult {
   return new InverseMellinTransform(F, s, x, strip[0], strip[1]).doit(hints);
 }

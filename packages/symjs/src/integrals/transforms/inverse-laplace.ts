@@ -8,7 +8,8 @@
  * irrational rules of Bateman's tables (5.3).
  */
 
-import type { Expr, ExprLike, Sym } from '../../core/nodes';
+import type { Expr, ExprLike } from '../../core/nodes';
+import { Sym } from '../../core/nodes';
 import { Add, Constant, Derivative, Dummy, Fn, Integral, Mul, Pow, Rational, Rel, S, UndefFn } from '../../core/nodes';
 import { and } from '../../core/boolalg';
 import { add, exp, mul, neg, pow, splitCoeff, sqrt, sub, sympify } from '../../core/ops';
@@ -28,7 +29,7 @@ import { expand, expandMul } from '../../simplify/expand';
 import { cancel, together } from '../../simplify/rational';
 import { simplify as simplifyExpr } from '../../simplify/simplify';
 import type { TransformHints } from './base';
-import { IntegralTransform, addArgs, decide, diffTransforms, matchByName, mget, mulArgs, polyCoeffs, wild, symArg, transformArgs } from './base';
+import { IntegralTransform, addArgs, decide, diffTransforms, matchByName, mget, mulArgs, polyCoeffs, wild, transformArgs } from './base';
 import { at, cast, first, pair } from '../../core/guard';
 import { DiracDelta, Heaviside } from './delta';
 
@@ -50,8 +51,8 @@ const isOneE = (e: Expr): boolean => e.key === S.One.key;
  * convergence (printed as _None when not given).
  */
 export class InverseLaplaceTransform extends IntegralTransform {
-  constructor(F: ExprLike, s: Sym, t: Sym, plane?: ExprLike) {
-    super('InverseLaplaceTransform', [sympify(F), s, t, plane === undefined ? NONE_SENTINEL : sympify(plane)]);
+  constructor(F: ExprLike, s: ExprLike, t: ExprLike, plane?: ExprLike) {
+    super('InverseLaplaceTransform', [sympify(F), sympify(s), sympify(t), plane === undefined ? NONE_SENTINEL : sympify(plane)]);
   }
   /** SymPy InverseLaplaceTransform._name. */
   static readonly transformName = 'Inverse Laplace';
@@ -78,7 +79,8 @@ export class InverseLaplaceTransform extends IntegralTransform {
   }
   /** Evaluate (SymPy doit): f, or [f, cond] with `noconds: false`. */
   doit(hints: TransformHints = {}): Expr | InverseLaplacePair {
-    const r = inverseLaplaceTransformImpl(this.function, this.functionVariable, this.transformVariable, this.fundamentalPlane, hints.simplify ?? false, true);
+    const s = this.functionVariable;
+    const r: InverseLaplacePair = s instanceof Sym ? inverseLaplaceTransformImpl(this.function, s, this.transformVariable, this.fundamentalPlane, hints.simplify ?? false, true) : [this, S.true];
     return hints.noconds === false ? r : r[0];
   }
 }
@@ -163,7 +165,7 @@ function inverseLaplaceTimeShift(F: Expr, s: Sym, t: Expr, plane: Expr | undefin
     if (m) {
       const A = mget(m, 'a');
       if (isNegative(A) === true) return [DiracDelta(add(t, A)), S.true];
-      return [new InverseLaplaceTransform(F, s, symArg(t), plane), S.true];
+      return [new InverseLaplaceTransform(F, s, t, plane), S.true];
     }
   }
   const facs = mulArgs(F);
@@ -174,7 +176,7 @@ function inverseLaplaceTimeShift(F: Expr, s: Sym, t: Expr, plane: Expr | undefin
     const A = mget(m, 'a');
     const g = mul(...facs.filter((_, j) => j !== i));
     if (isNegative(A) === true) return inverseLaplaceTransformImpl(g, s, add(t, A), plane, false, true);
-    return [new InverseLaplaceTransform(F, s, symArg(t), plane), S.true];
+    return [new InverseLaplaceTransform(F, s, t, plane), S.true];
   }
   return undefined;
 }
@@ -187,7 +189,7 @@ function inverseLaplaceFreqShift(F: Expr, s: Sym, t: Expr, plane: Expr | undefin
     const m = matchByName(at(F.args, 0), sub(s, a));
     if (m && isPositive(re(mget(m, 'a'))) === true) {
       const A = mget(m, 'a');
-      return [mul(exp(mul(-1, A, t)), new InverseLaplaceTransform(rebuild(F, [s]), s, symArg(t), plane)), S.true];
+      return [mul(exp(mul(-1, A, t)), new InverseLaplaceTransform(rebuild(F, [s]), s, t, plane)), S.true];
     }
   }
   return undefined;
@@ -663,8 +665,8 @@ export function inverseLaplaceTransformImpl(fn: Expr, s: Sym, t: Expr, plane: Ex
     if (dorational && isRationalFunction(term, [s])) r = inverseLaplaceRational(f, s, t, plane, simplify);
     r ??= inverseLaplaceApplySimpleRules(f, s, t) ?? inverseLaplaceIrrational(f, s, t) ?? inverseLaplaceExpand(f, s, t, plane) ?? inverseLaplaceApplyProgRules(f, s, t, plane);
     if (!r) {
-      if (some(f, (u) => u instanceof UndefFn && u.has(s))) r = [new InverseLaplaceTransform(f, s, symArg(t), plane), S.true];
-      else r = inverseLaplaceTransformIntegration(f, s, t, plane, simplify) ?? [new InverseLaplaceTransform(f, s, symArg(t), plane), S.true];
+      if (some(f, (u) => u instanceof UndefFn && u.has(s))) r = [new InverseLaplaceTransform(f, s, t, plane), S.true];
+      else r = inverseLaplaceTransformIntegration(f, s, t, plane, simplify) ?? [new InverseLaplaceTransform(f, s, t, plane), S.true];
     }
     termsT.push(mul(k, r[0]));
     conditions.push(r[1]);
@@ -689,10 +691,11 @@ export interface InverseLaplaceOptions extends TransformHints {
  * @example
  * inverseLaplaceTransform(exp(-a*s)/s, s, t)  // Heaviside(-a + t) for positive a
  */
-export function inverseLaplaceTransform(F: ExprLike, s: Sym, t: Sym, plane: ExprLike | undefined, opts: InverseLaplaceOptions & { noconds: false }): InverseLaplacePair;
-export function inverseLaplaceTransform(F: ExprLike, s: Sym, t: Sym, plane?: ExprLike, opts?: InverseLaplaceOptions): Expr;
-export function inverseLaplaceTransform(F: Matrix, s: Sym, t: Sym, plane?: ExprLike, opts?: InverseLaplaceOptions): Matrix;
-export function inverseLaplaceTransform(F: ExprLike | Matrix, s: Sym, t: Sym, plane?: ExprLike, opts: InverseLaplaceOptions = {}): Expr | InverseLaplacePair | Matrix {
+export function inverseLaplaceTransform(F: ExprLike, s: Sym, t: ExprLike, plane: ExprLike | undefined, opts: InverseLaplaceOptions & { noconds: false }): InverseLaplacePair;
+export function inverseLaplaceTransform(F: ExprLike, s: Sym, t: ExprLike, plane?: ExprLike, opts?: InverseLaplaceOptions): Expr;
+export function inverseLaplaceTransform(F: Matrix, s: Sym, t: ExprLike, plane?: ExprLike, opts?: InverseLaplaceOptions): Matrix;
+export function inverseLaplaceTransform(F: ExprLike | Matrix, s: Sym, tIn: ExprLike, plane?: ExprLike, opts: InverseLaplaceOptions = {}): Expr | InverseLaplacePair | Matrix {
+  const t = sympify(tIn);
   if (F instanceof Matrix) return F.map((e) => inverseLaplaceTransformImpl(e, s, t, plane === undefined ? undefined : sympify(plane), opts.simplify ?? false, true)[0]);
   const r = inverseLaplaceTransformImpl(sympify(F), s, t, plane === undefined ? undefined : sympify(plane), opts.simplify ?? false, true);
   return opts.noconds === false ? r : r[0];

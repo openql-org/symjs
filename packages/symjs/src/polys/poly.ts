@@ -25,7 +25,7 @@ import { expandMul as expand } from '../simplify/expand';
 export const polyHooks: { cancel: (e: Expr) => Expr } = { cancel: (e) => e };
 const cancel = (e: Expr): Expr => polyHooks.cancel(e);
 
-export function polyCoefficients(ex: ExprLike, x: Sym): Map<number, Expr> | undefined {
+export function polyCoefficients(ex: ExprLike, x: Expr): Map<number, Expr> | undefined {
   const e = expand(sympify(ex));
   const out = new Map<number, Expr>();
   const terms = e instanceof Add ? e.args : [e];
@@ -72,7 +72,7 @@ export class UPoly {
     this.coeffs = c;
   }
 
-  static fromExpr(e: ExprLike, x: Sym): UPoly | undefined {
+  static fromExpr(e: ExprLike, x: Expr): UPoly | undefined {
     const m = polyCoefficients(e, x);
     if (!m) return undefined;
     const deg = Math.max(-1, ...m.keys());
