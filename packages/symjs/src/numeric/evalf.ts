@@ -318,6 +318,9 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
   const e2 = sub(e);
   if (e2 instanceof Special) return pole ? e : e2;
   if (e2 instanceof Add || e2 instanceof Mul || (e2 instanceof Pow && !isFunction(e2))) return go(e2);
+  // a node that evaluates its parts itself (SymPy _eval_evalf: vectors evaluate their components)
+  const own = e2 instanceof ExtensionExpr ? e2.evalfSelf(go, F.precToDps(prec)) : undefined;
+  if (own !== undefined) return own;
   return numeric(e2, noValue) ?? e;
 }
 

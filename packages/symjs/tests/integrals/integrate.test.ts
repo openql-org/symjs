@@ -373,9 +373,18 @@ describe('square roots of quadratics (SymPy manualintegrate)', () => {
     expect(I('sqrt(x**2 + x + 1)')).toBe('(2*x + 1)*sqrt(x**2 + x + 1)/4 + 3*asinh(sqrt(3)*(2*x + 1)/3)/8');
     const t = new Sym('t', { real: true });
     expect(sstr(integrate(parse('sqrt(4*t**2 + 1)').subs(new Sym('t'), t), t, [2, 5]))).toBe('-sqrt(17) - asinh(4)/4 + asinh(10)/4 + 5*sqrt(101)/2');
-    // a perfect square and symbolic coefficients are not handled by this rule
-    // (SymPy: (x/2 + 1/2)*sqrt(x**2 + 2*x + 1) and sqrt(a)*x*sqrt(1 + x**2/a)/2 + a*asinh(x/sqrt(a))/2)
-    expect(I('sqrt(x**2 + 2*x + 1)')).toBe('Integral(sqrt(x**2 + 2*x + 1), x)');
+    // a perfect square (SymPy SqrtQuadraticDenomRule)
+    expect(I('sqrt(x**2 + 2*x + 1)')).toBe('(x/2 + 1/2)*sqrt(x**2 + 2*x + 1)');
+    expect(I('sqrt(x**2)')).toBe('x*sqrt(x**2)/2');
+    expect(I('sqrt(4*x**2 - 4*x + 1)')).toBe('(x/2 - 1/4)*sqrt(4*x**2 - 4*x + 1)');
+    expect(I('x**2*sqrt(x**2)')).toBe('x**3*sqrt(x**2)/4');
+    // SymPy (heurisch): sqrt(x**2)*exp(x) - sqrt(x**2)*exp(x)/x
+    expect(I('sqrt(x**2)*exp(x)')).toBe('Integral(sqrt(x**2)*exp(x), x)');
+    expect(I('sqrt(x**2 + 1)*x**2')).toBe(I('x**2*sqrt(x**2 + 1)'));
+    // SymPy: x**3*sqrt(a + x**2)/4 + a*x*sqrt(a + x**2)/8 - a**2*asinh(x/sqrt(a))/8 (with symbolic a)
+    expect(I('x**2*sqrt(x**2 + a)')).toBe('Integral(x**2*sqrt(a + x**2), x)');
+    // symbolic coefficients are not handled by this rule
+    // (SymPy: sqrt(a)*x*sqrt(1 + x**2/a)/2 + a*asinh(x/sqrt(a))/2)
     expect(I('sqrt(x**2 + a)')).toBe('Integral(sqrt(a + x**2), x)');
     expect(I('sqrt(x**3 + 1)')).toBe('Integral(sqrt(x**3 + 1), x)');
   });

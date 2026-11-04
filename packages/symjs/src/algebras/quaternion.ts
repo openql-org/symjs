@@ -19,7 +19,7 @@ import { isNegative, isNonZero, isPositive, isReal, isZero as isZeroQ } from '..
 import { callableClass } from '../core/callable';
 import { at, cast } from '../core/guard';
 import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Add, Derivative, ExtensionExpr, Integral, Limit, Mul, Pow, Rational, S, Special, UndefFn, impl } from '../core/nodes';
+import { Add, Derivative, ExtensionExpr, Integral, Limit, Mul, Pow, Rational, S, Special, UndefFn, impl, registerArithmetic } from '../core/nodes';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import type { Truth } from '../core/truth';
@@ -607,7 +607,7 @@ function rsub(a: Expr, q: QuaternionNode): Expr {
 }
 
 // SymPy _op_priority: add, sub, mul and pow with a quaternion operand use the quaternion's operators
-impl.arithmetic = (op, args) => {
+registerArithmetic((op, args) => {
   if (!args.some((x) => x instanceof QuaternionNode)) return undefined;
   switch (op) {
     case 'add':
@@ -625,7 +625,7 @@ impl.arithmetic = (op, args) => {
       return b instanceof QuaternionNode ? b.pow(e) : new Pow(b, e);
     }
   }
-};
+});
 
 /**
  * SymPy Quaternion(a, b, c, d, real_field=True, norm=None), callable and

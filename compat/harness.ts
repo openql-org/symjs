@@ -411,6 +411,8 @@ export function deserialize(tree: Tree): unknown {
       if (/^Point/.test(cls)) return lib[cls]!(...args, { evaluate: false });
       return lib[cls]!(...args);
     }
+    case 'Vec':
+      return deserializeVector(tree);
     case 'Indexed':
       return new sj.Indexed([deserialize(tree['base'] as Tree) as Expr, ...(tree['indices'] as Tree[]).map((t) => deserialize(t) as Expr)]);
     case 'IndexedBase':
@@ -659,6 +661,51 @@ export function deserialize(tree: Tree): unknown {
 // ---------------------------------------------------------------------------
 // Adapters: SymPy API name -> symjs
 // ---------------------------------------------------------------------------
+
+/** A sympy.vector object rebuilt by its class constructor from its arguments. */
+function deserializeVector(tree: Tree): unknown {
+  const cls = tree['cls'] as string;
+  if (cls === 'CoordSys3D') {
+    const tr = tree['transformation'] as Tree;
+    const parent = tree['parent'] === null ? undefined : (deserialize(tree['parent'] as Tree) as sj.CoordSys3D);
+    const names = { vectorNames: tree['vectorNames'] as string[], variableNames: tree['variableNames'] as string[], parent };
+    if (tr.t === 'Str') return sj.CoordSys3D(tree['name'] as string, { ...names, transformation: tr['v'] as string });
+    const t = deserialize(tr);
+    if (t instanceof JsTuple && t.items[0] instanceof Matrix) {
+      return sj.CoordSys3D(tree['name'] as string, { ...names, rotationMatrix: t.items[0], location: parent ? (t.items[1] as Expr) : undefined });
+    }
+    return sj.CoordSys3D(tree['name'] as string, { ...names, transformation: t as sj.Lambda });
+  }
+  const args = (tree['args'] as Tree[]).map((a) => deserialize(a));
+  const items = (v: unknown): unknown[] => (v instanceof JsTuple ? [...v.items] : [v]);
+  const e = (i: number): Expr => args[i] as Expr;
+  switch (cls) {
+    case 'BaseVector':
+      return (args[1] as sj.CoordSys3D).baseVectors()[Number((args[0] as sj.Rational).p)];
+    case 'BaseScalar':
+      return (args[1] as sj.CoordSys3D).baseScalars()[Number((args[0] as sj.Rational).p)];
+    case 'VectorZero':
+      return sj.Vector.zero;
+    case 'DyadicZero':
+      return sj.Dyadic.zero;
+    case 'Point':
+      return sj.VectorPoint(args[0] as string, e(1), args[2] as sj.VectorPoint | undefined);
+    case 'BodyOrienter':
+    case 'SpaceOrienter':
+      return (sj[cls] as (a: Expr, b: Expr, c: Expr, o: string) => Expr)(e(0), e(1), e(2), args[3] as string);
+    case 'ImplicitRegion':
+      return sj.ImplicitRegion(items(args[0]) as Expr[], e(1));
+    case 'ParametricRegion':
+      return sj.ParametricRegion(items(args[0]) as Expr[], ...args.slice(1).map((b) => (b instanceof JsTuple ? (b.items as [Expr, Expr, Expr]) : (b as Expr))));
+    case 'Cross':
+    case 'Dot':
+    case 'ParametricIntegral':
+      // the stored (canonical) form, unevaluated
+      return new (sj[cls] as unknown as new (a: Expr, b: Expr) => Expr)(e(0), e(1));
+    default:
+      return (sj as unknown as Record<string, (...a: unknown[]) => unknown>)[cls]!(...args);
+  }
+}
 
 export type Adapter = (args: unknown[], kwargs: Record<string, unknown>, self?: unknown) => unknown;
 
@@ -2564,6 +2611,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (self instanceof Matrix) return (self as Matrix).equals(args[0] as Matrix);
     // SymPy GeometryEntity.equals: the same entity, whatever its representation
     if (self instanceof sj.GeometryEntity) return self.equals(args[0] as Expr);
+    // SymPy Vector.equals: equal for all values of the symbols, in any coordinate system
+    if (self instanceof sj.Vector) return self.equals(args[0] as Expr);
     if (self instanceof sj.BoolOp || self instanceof sj.AppliedPredicate || self instanceof sj.BoolAtom) return none(sj.booleanEquals(self, asExpr(args[0])));
     if (self instanceof sj.MatrixExpr) return none(self.equalsExplicit(args[0] instanceof Matrix ? sj.ImmutableMatrix(args[0]) : asExpr(args[0])));
     const d = sj.simplify(sj.sub(asExpr(self), asExpr(args[0])));
@@ -3622,6 +3671,9 @@ const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'dis
 
 /** SymPy names that are JavaScript globals, and the symjs names that do not shadow them. */
 const JS_GLOBAL_RENAMES: Record<string, string> = { Symbol: 'Sym', Number: 'SymNumber', Function: 'SymFunction', Array: 'SymArray', Set: 'SetExpr' };
+/** sympy.vector names that symjs exports under another name (SymPy's top-level Point is the geometric one). */
+const VECTOR_RENAMES: Record<string, string> = { Point: 'VectorPoint' };
+const camelIn = (n: string, category: string | undefined): string => (category === 'vector' ? VECTOR_RENAMES[n] : undefined) ?? camel(n);
 const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? (/^[A-Z]/.test(n) ? n : n.replace(/_([a-z0-9])/g, (_m, ch: string) => ch.toUpperCase()));
 
 /** A deserialized argument as the JS value the API takes. */
@@ -3717,7 +3769,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       return fromJs(m);
     };
   }
-  const f = (sj as unknown as Record<string, unknown>)[camel(c.fn)] ?? (sj as unknown as Record<string, unknown>)[c.fn];
+  const f = (sj as unknown as Record<string, unknown>)[camelIn(c.fn, c.category)] ?? (sj as unknown as Record<string, unknown>)[c.fn];
   if (typeof f !== 'function') return undefined;
   const isClass = /^class[\s{]/.test(Function.prototype.toString.call(f));
   return (args, kw) => {
@@ -3727,9 +3779,10 @@ function autoAdapter(c: Case): Adapter | undefined {
 }
 
 /** The SymPy API name has a symjs counterpart: an adapter, a camelCase export, or a method or property of the owner class. */
-export function hasCounterpart(a: { name: string; owner?: string }): boolean {
-  if (ADAPTERS[a.name]) return true;
+export function hasCounterpart(a: { name: string; owner?: string; category?: string }): boolean {
+  if (ADAPTERS[a.name] && a.category !== 'vector') return true;
   const lib = sj as unknown as Record<string, unknown>;
+  if (a.category === 'vector') return lib[camelIn(a.name, a.category)] !== undefined;
   // SymPy's true and false are S.true and S.false (reserved words in JavaScript)
   if (a.name === 'true' || a.name === 'false') return true;
   if (!a.name.startsWith('.')) return lib[camel(a.name)] !== undefined || (!(a.name in JS_GLOBAL_RENAMES) && lib[a.name] !== undefined);

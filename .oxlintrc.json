@@ -164,7 +164,9 @@
                   "../../series/formal",
                   "../../series/fourier",
                   "../geometry/**",
-                  "../../geometry/**"
+                  "../../geometry/**",
+                  "../vector/**",
+                  "../../vector/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -270,7 +272,9 @@
                   "../../series/formal",
                   "../../series/fourier",
                   "../geometry/**",
-                  "../../geometry/**"
+                  "../../geometry/**",
+                  "../vector/**",
+                  "../../vector/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -348,7 +352,9 @@
                   "../../series/formal",
                   "../../series/fourier",
                   "../geometry/**",
-                  "../../geometry/**"
+                  "../../geometry/**",
+                  "../vector/**",
+                  "../../vector/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -412,7 +418,9 @@
                   "../../series/formal",
                   "../../series/fourier",
                   "../geometry/**",
-                  "../../geometry/**"
+                  "../../geometry/**",
+                  "../vector/**",
+                  "../../vector/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -518,7 +526,9 @@
                   "../../series/formal",
                   "../../series/fourier",
                   "../geometry/**",
-                  "../../geometry/**"
+                  "../../geometry/**",
+                  "../vector/**",
+                  "../../vector/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -586,7 +596,9 @@
                   "../../series/formal",
                   "../../series/fourier",
                   "../geometry/**",
-                  "../../geometry/**"
+                  "../../geometry/**",
+                  "../vector/**",
+                  "../../vector/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -654,7 +666,9 @@
                   "../../series/formal",
                   "../../series/fourier",
                   "../geometry/**",
-                  "../../geometry/**"
+                  "../../geometry/**",
+                  "../vector/**",
+                  "../../vector/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -700,7 +714,9 @@
                   "../../series/formal",
                   "../../series/fourier",
                   "../geometry/**",
-                  "../../geometry/**"
+                  "../../geometry/**",
+                  "../vector/**",
+                  "../../vector/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -768,7 +784,9 @@
                   "../../series/formal",
                   "../../series/fourier",
                   "../geometry/**",
-                  "../../geometry/**"
+                  "../../geometry/**",
+                  "../vector/**",
+                  "../../vector/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -836,7 +854,9 @@
                   "../../series/formal",
                   "../../series/fourier",
                   "../geometry/**",
-                  "../../geometry/**"
+                  "../../geometry/**",
+                  "../vector/**",
+                  "../../vector/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -863,7 +883,31 @@
               {
                 "group": [
                   "../geometry/**",
-                  "../../geometry/**"
+                  "../../geometry/**",
+                  "../vector/**",
+                  "../../vector/**"
+                ],
+                "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)",
+                "allowTypeImports": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/symjs/src/geometry/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../vector/**",
+                  "../../vector/**"
                 ],
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)",
                 "allowTypeImports": true

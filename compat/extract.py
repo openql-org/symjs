@@ -253,6 +253,20 @@ MODULES = {
     "sympy.geometry.parabola": "geometry",
     "sympy.geometry.util": "geometry",
     "sympy.geometry.exceptions": "geometry",
+    "sympy.vector.basisdependent": "vector",
+    "sympy.vector.coordsysrect": "vector",
+    "sympy.vector.deloperator": "vector",
+    "sympy.vector.dyadic": "vector",
+    "sympy.vector.functions": "vector",
+    "sympy.vector.implicitregion": "vector",
+    "sympy.vector.integrals": "vector",
+    "sympy.vector.kind": "vector",
+    "sympy.vector.operators": "vector",
+    "sympy.vector.orienters": "vector",
+    "sympy.vector.parametricregion": "vector",
+    "sympy.vector.point": "vector",
+    "sympy.vector.scalar": "vector",
+    "sympy.vector.vector": "vector",
 }
 
 # subpackages whose public names are not top-level sympy names (sympy.discrete.linrec,
@@ -263,6 +277,8 @@ SUBPACKAGE_PUBLIC = {
     "sympy.strategies.branch.": ("sympy.strategies.branch",),
     "sympy.strategies.": ("sympy.strategies",),
     "sympy.unify.": ("sympy.unify",),
+    # sympy.vector exports orthogonalize only from sympy.vector.functions
+    "sympy.vector.": ("sympy.vector", "sympy.vector.functions"),
 }
 
 
@@ -347,6 +363,8 @@ def ser(o):
     from sympy.calculus.accumulationbounds import AccumulationBounds as _AB
     if isinstance(o, _AB):
         return {"t": "AccumBounds", "min": ser(o.min), "max": ser(o.max)}
+    if (type(o).__module__ or "").startswith("sympy.vector."):
+        return ser_vector(o)
     from sympy.geometry.entity import GeometryEntity as _GE
     if isinstance(o, _GE):
         # rebuilt by the class constructor from its arguments
@@ -523,6 +541,21 @@ def ser(o):
     raise Unsupported(name)
 
 
+def ser_vector(o):
+    """Serialize a sympy.vector object: rebuilt by its class constructor from its arguments."""
+    from sympy.core.symbol import Str
+    name = type(o).__name__
+    if name == "CoordSys3D":
+        tr = o._transformation
+        tr = {"t": "Str", "v": tr.name} if isinstance(tr, Str) else ser(tr)
+        return {"t": "Vec", "cls": name, "name": o._name, "transformation": tr,
+                "parent": None if o._parent is None else ser(o._parent),
+                "vectorNames": list(o._vector_names), "variableNames": list(o._variable_names)}
+    if name == "Del":
+        return {"t": "Vec", "cls": name, "args": []}
+    return {"t": "Vec", "cls": name, "args": [{"t": "Str", "v": a.name} if isinstance(a, Str) else ser(a) for a in o.args]}
+
+
 import sympy.combinatorics as _combinatorics
 PUBLIC = set(sympy.__all__) | {"Permutation", "Cycle"}
 setattr(sympy, "Permutation", _combinatorics.Permutation)
@@ -543,6 +576,10 @@ def api_inventory():
                     cat = c
         if cat:
             out.append({"name": name, "category": cat})
+    import sympy.vector as _vector
+    for name in sorted(_vector.__all__):
+        # sympy.vector is a subpackage whose names are not top-level sympy names
+        out.append({"name": name, "category": "vector"})
     owners = ((sympy.Expr, "core"), (sympy.Matrix, "matrices"), (sympy.ImmutableDenseNDimArray, "tensor"),
               (_combinatorics.Permutation, "combinatorics"), (sympy.MatrixExpr, "matrices"))
     for cls, cat in owners:

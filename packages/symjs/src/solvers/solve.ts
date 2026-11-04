@@ -676,7 +676,9 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
         if (pc && Math.max(...pc.keys()) === 1) {
           const c1 = getOrThrow(pc, 1);
           const c0 = pc.get(0) ?? S.Zero;
-          // c0 and c1 are free of u, and so is the value
+          // c0 and c1 are free of u, and so is the value; the solutions where a coefficient c1 in the
+          // other unknowns vanishes are those of c1 = c0 = 0
+          if (unknowns.some((w) => c1.has(w))) go([c1, c0, ...pending.filter((p) => p !== e)], assigned);
           const val = cancel(mul(-1, c0, pow(c1, -1)));
           const next = new Map(assigned);
           next.set(u.key, val);
@@ -731,6 +733,10 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
   // equations with one radical are squared away (SymPy unrad); spurious solutions are removed below
   const prepared = original.map((e) => unradOnce(e, syms) ?? e);
   go(prepared, new Map());
+  // the branches of a vanishing coefficient may meet the others: a solution that is a special case of a family of
+  // solutions is dropped
+  const unique = [...new Map(results.map((r) => [r.map((x) => x.key).join(','), r])).values()];
+  results.splice(0, results.length, ...unique.filter((r) => !unique.some((g) => g !== r && specializes(r, g, syms))));
   if (prepared.every((e, i) => e === original[i])) return results;
   return results.filter((sol) =>
     original.every((e) => {
@@ -744,6 +750,17 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
       }
     }),
   );
+}
+
+/**
+ * The solution r is the family g with values given to its free unknowns
+ * (the unknowns that are their own value in g).
+ */
+function specializes(r: readonly Expr[], g: readonly Expr[], syms: readonly Sym[]): boolean {
+  const free = syms.filter((s, i) => at(g, i).key === s.key);
+  if (free.length === 0) return false;
+  const values = free.map((s): [Expr, Expr] => [s, at(r, syms.indexOf(s))]);
+  return g.every((v, i) => xreplace(v, values).key === at(r, i).key);
 }
 
 /** a*R + b = 0 with one radical R = g**(p/q) in the unknowns: a**q*g**p - (-b)**q. */

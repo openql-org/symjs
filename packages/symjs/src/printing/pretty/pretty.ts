@@ -334,7 +334,7 @@ export class PrettyPrinter {
       const full = fp === 'auto' ? this.level === 1 : fp;
       return new PrettyForm(floatString(e, !full));
     }
-    if (e instanceof Sym) return new PrettyForm(prettySymbol(e.name));
+    if (e instanceof Sym) return new PrettyForm(e.prettyForm ?? prettySymbol(e.name));
     if (e instanceof Constant) return this.printConstant(e);
     if (e instanceof Special) return this.printSpecial(e);
     if (e instanceof BoolAtom) return new PrettyForm(e.value ? 'True' : 'False');

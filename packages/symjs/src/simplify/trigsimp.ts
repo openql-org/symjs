@@ -12,7 +12,7 @@
  */
 
 import type { Expr, ExprLike, FnName } from '../core/nodes';
-import { Add, Constant, Derivative, Dummy, Fn, Mul, Piecewise, Pow, Rational, S, Sym, Wild } from '../core/nodes';
+import { Add, Constant, Derivative, Dummy, ExtensionExpr, Fn, Mul, Piecewise, Pow, Rational, S, Sym, Wild } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, sub, sympify } from '../core/ops';
 import { mapBottomUp, rebuild, some, subs, xreplace } from '../core/traverse';
 import { countOps, match, ordered } from '../core/match';
@@ -92,6 +92,9 @@ export function trigsimp(ex: ExprLike, opts: TrigsimpOptions = {}): Expr {
   const expr = sympify(ex);
   // (SymPy Relational._eval_trigsimp: both sides)
   if (expr.kind === 'Rel') return rebuild(expr, expr.args.map((a) => trigsimp(a, opts)));
+  // SymPy _eval_trigsimp (vectors and dyadics: each component)
+  const own = expr instanceof ExtensionExpr ? expr.trigsimpSelf((e) => trigsimp(e, opts)) : undefined;
+  if (own !== undefined) return own;
   const method = opts.old ? 'old' : (opts.method ?? 'matching');
   let r: Expr;
   switch (method) {

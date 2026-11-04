@@ -11,7 +11,7 @@
 import { at, defined, expectType, first, last } from '../core/guard';
 import { UPoly } from '../polys/poly';
 import { isPositive, isReal } from '../core/assumptions';
-import { MatrixError, NonInvertibleMatrixError, NonPositiveDefiniteMatrixError, NonSquareMatrixError } from '../core/errors';
+import { MatrixError, NonInvertibleMatrixError, NonPositiveDefiniteMatrixError, NonSquareMatrixError, NotLoadedError } from '../core/errors';
 import type { ExprLike } from '../core/nodes';
 import { Dummy, Expr, Float, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { nsimplify } from '../numeric/nfloat';
@@ -493,8 +493,23 @@ export function qrDecomposition(m: Matrix): [Matrix, Matrix] {
 // vector operations and norms
 // ---------------------------------------------------------------------------
 
-/** Dot product; with hermitian, the first argument is conjugated ('maths') or the second ('physics'). */
-export function dot(a: Matrix, b: Matrix, hermitian = false, convention: 'maths' | 'physics' = 'maths'): Expr {
+/**
+ * The dot and cross products of vectors of `@symjs/symjs/vector` (SymPy
+ * sympy.vector.dot and cross), registered by vector/vector.ts: dot and
+ * cross take matrices or vectors.
+ */
+export const vectorProducts: {
+  dot?: (a: Expr, b: Expr) => Expr;
+  cross?: (a: Expr, b: Expr) => Expr;
+} = {};
+
+/**
+ * Dot product of two matrices (SymPy Matrix.dot); with hermitian, the first
+ * argument is conjugated ('maths') or the second ('physics'). Of two
+ * vectors of `@symjs/symjs/vector`, SymPy sympy.vector.dot.
+ */
+export function dot(a: Matrix | Expr, b: Matrix | Expr, hermitian = false, convention: 'maths' | 'physics' = 'maths'): Expr {
+  if (!(a instanceof Matrix) || !(b instanceof Matrix)) return vectorProduct('dot', a, b);
   if (a.data.length !== b.data.length) throw new RangeError('dot: dimension mismatch');
   let x = a.data;
   let y = b.data;
@@ -503,7 +518,22 @@ export function dot(a: Matrix, b: Matrix, hermitian = false, convention: 'maths'
   return add(...x.map((e, i) => mul(e, at(y, i))));
 }
 
-export function cross(a: Matrix, b: Matrix): Matrix {
+/** The vector product registered by vector/vector.ts. */
+function vectorProduct(name: 'dot' | 'cross', a: Matrix | Expr, b: Matrix | Expr): Expr {
+  const f = vectorProducts[name];
+  if (f === undefined) throw new NotLoadedError(`${name} of vectors is not available: import '@symjs/symjs/vector' (or '@symjs/symjs')`);
+  if (a instanceof Matrix || b instanceof Matrix) throw new TypeError(`${name}: a matrix and a vector`);
+  return f(a, b);
+}
+
+/**
+ * Cross product of two 3-vectors as matrices (SymPy Matrix.cross); of two
+ * vectors of `@symjs/symjs/vector`, SymPy sympy.vector.cross.
+ */
+export function cross(a: Matrix, b: Matrix): Matrix;
+export function cross(a: Expr, b: Expr): Expr;
+export function cross(a: Matrix | Expr, b: Matrix | Expr): Matrix | Expr {
+  if (!(a instanceof Matrix) || !(b instanceof Matrix)) return vectorProduct('cross', a, b);
   const [a1, a2, a3] = threeEntries(a);
   const [b1, b2, b3] = threeEntries(b);
   const v = [

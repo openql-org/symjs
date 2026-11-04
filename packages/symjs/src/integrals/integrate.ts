@@ -143,8 +143,30 @@ class Integrator {
       this.expImaginary(f) ??
       this.rational(f) ??
       this.expanded(f) ??
-      this.sqrtQuadratic(f)
+      this.sqrtQuadratic(f) ??
+      this.polyTimesSqrtSquare(f)
     );
+  }
+
+  // ---- p(x)*sqrt(a*(x + h)**2): sqrt(Q)/(x + h) is constant where it is defined (SymPy SqrtQuadraticDenomRule) ----
+
+  private polyTimesSqrtSquare(f: Expr): R {
+    const x = this.x;
+    if (!(f instanceof Mul)) return undefined;
+    const root = f.args.find((t) => t instanceof Pow && t.exp instanceof Rational && t.exp.p === 1n && t.exp.q === 2n);
+    if (!(root instanceof Pow)) return undefined;
+    const pc = polyCoefficients(root.base, x);
+    if (!pc || Math.max(...pc.keys()) !== 2) return undefined;
+    const [a, b, c] = [getOrThrow(pc, 2), pc.get(1) ?? S.Zero, pc.get(0) ?? S.Zero];
+    if (!(a instanceof Rational && b instanceof Rational && c instanceof Rational)) return undefined;
+    if (!numAdd(numMul(b, b), numNeg(numMul(Rational.of(4n), numMul(a, c)))).isZero) return undefined;
+    const p = mul(...f.args.filter((t) => t !== root));
+    if (!polyCoefficients(p, x)) return undefined;
+    // x + h with h = b/(2*a): the root of Q
+    const shift = add(x, mul(b, pow(mul(2, a), -1)));
+    const r = this.integrate(expand(mul(p, shift)));
+    // (a polynomial times x + h is a polynomial)
+    return mul(root, pow(shift, -1), defined(r, 'integral of a polynomial'));
   }
 
   // ---- sqrt(a*x**2 + b*x + c) with rational coefficients (SymPy manualintegrate) ----
@@ -156,12 +178,13 @@ class Integrator {
     if (!pc || Math.max(...pc.keys()) !== 2) return undefined;
     const [a, b, c] = [getOrThrow(pc, 2), pc.get(1) ?? S.Zero, pc.get(0) ?? S.Zero];
     if (!(a instanceof Rational && b instanceof Rational && c instanceof Rational)) return undefined;
-    // the discriminant b**2 - 4*a*c; zero is a perfect square (not handled here)
+    // the discriminant b**2 - 4*a*c
     const disc = numAdd(numMul(b, b), numNeg(numMul(Rational.of(4n), numMul(a, c))));
-    if (disc.isZero) return undefined;
     const u = add(mul(2, a, x), b);
     // integral of sqrt(Q) = (2*a*x + b)/(4*a)*sqrt(Q) - (b**2 - 4*a*c)/(8*a)*integral of 1/sqrt(Q)
     const first = mul(u, pow(mul(4, a), -1), f);
+    // a perfect square: (x - x0)*sqrt(Q)/2 (SymPy SqrtQuadraticDenomRule, integrate(sqrt(x**2), x) = x*sqrt(x**2)/2)
+    if (disc.isZero) return mul(expand(mul(u, pow(mul(4, a), -1))), f);
     let inv: Expr;
     if (a.isNegative) inv = mul(-1, pow(sqrt(mul(-1, a)), -1), asin(mul(u, pow(sqrt(disc), -1))));
     else if (disc.isNegative) inv = mul(pow(sqrt(a), -1), fnErf('asinh', [mul(u, pow(sqrt(mul(-1, disc)), -1))]));

@@ -18,6 +18,7 @@ without the higher ones.
 | L2 algebra | polynomials, simplification, matrices (including linear systems), series and limits, sets, sums and products, permutations, N-dimensional arrays, quaternions | `polys/`, `combinatorics/`, `tensor/`, `algebras/`, `simplify/`, `matrices/`, `series/`, `sets/`, `calculus/` (other files), `concrete/summations.ts` |
 | L3 solvers and integration | equation solving, ODEs, recurrences, inequalities, integration, `doit`, Fourier and formal power series, holonomic functions | `solvers/`, `integrals/`, `holonomic/`, `calculus/doit.ts`, `series/formal.ts`, `series/fourier.ts` |
 | L4 geometry | points, lines, planes, polygons, ellipses, curves and parabolas, which intersect by solving equations | `geometry/` |
+| L5 vector | coordinate systems, vectors and dyadics, vector differential operators, integrals over parametric, implicit and geometric regions | `vector/` |
 
 The entry points (`src/*.ts`) may import every layer.
 
@@ -166,3 +167,22 @@ SymPy modules correspond to it as follows.
 | `geometry/parabola.py` | `geometry/parabola.ts` | |
 | `geometry/util.py` | `geometry/util.ts` | `convex_hull`, `centroid` and `are_coplanar` build segments, polygons and planes through constructors those modules register (they import `util.ts`) |
 | (none: SymPy `solve` of the coordinate equations) | `geometry/solvehelp.ts` | the systems the geometry solves (`solve([...], [x, y], dict=True)`), with SymPy's checks of assumptions and denominators |
+
+### `vector/`
+
+| SymPy module | symjs | Note |
+|---|---|---|
+| `vector/basisdependent.py` | `vector/basisdependent.ts` | also the arithmetic of vectors and dyadics (`add`/`mul` build VectorAdd/VectorMul, SymPy `_op_priority`), `CoordSysBase` and `DelBase` (what the lower modules know of CoordSys3D and Del) and `vectorHooks`, through which `express`, `laplacian`, `directional_derivative` and BaseDyadic reach the modules below them |
+| `vector/kind.py` | `vector/kind.ts` | `kindOf(v)` of `@symjs/symjs/tensor` gives VectorKind through `ExtensionExpr.kindSelf` |
+| `vector/scalar.py` | `vector/scalar.ts` | a BaseScalar is a symbol (`Sym`) named `C.x` that equals only the scalar of the same index and system |
+| `vector/vector.py` | `vector/vector.ts` | also the unicode pretty form of vectors and dyadics (SymPy `PrettyPrinter._print_BasisDependent`) and of Cross and Dot; `dot` and `cross` are the functions of `matrices/linalg.ts`, which call the ones registered here for vectors |
+| `vector/dyadic.py` | `vector/dyadic.ts` | |
+| `vector/orienters.py` | `vector/orienters.ts` | |
+| `vector/point.py` | `vector/point.ts` | also `_path` of `vector/functions.py` (the path between two points or systems of a tree) |
+| `vector/coordsysrect.py` | `vector/coordsysrect.ts` | |
+| `vector/operators.py` | `vector/operators.ts` | |
+| `vector/deloperator.py` | `vector/deloperator.ts` | |
+| `vector/functions.py` | `vector/functions.ts` | |
+| `vector/implicitregion.py` | `vector/implicitregion.ts` | |
+| `vector/parametricregion.py` | `vector/parametricregion.ts` | |
+| `vector/integrals.py` | `vector/integrals.ts` | |

@@ -46,6 +46,7 @@ const CASES = [
   ['algebras', 'Quaternion', 460],
   ['holonomic', 'exprToHolonomic', 815],
   ['geometry', '*', 790],
+  ['vector', '*', 900],
   ['index', 'Rational', 900],
   ['index', '*', 1545],
 ];

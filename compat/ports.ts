@@ -142,6 +142,13 @@ function myMeasure(e: Expr): Expr {
 }
 
 /** A port, or one port per occurrence of a doctest source that occurs after different setup lines. */
+/** The simplify docstring example with a custom measure that penalizes powers. */
+function simplifyWithMeasure(): unknown {
+  const [a, b] = sym('a b', { positive: true });
+  const g = sj.add(sj.log(a!), sj.log(b!), sj.mul(sj.log(a!), sj.log(sj.pow(b!, -1))));
+  return sj.simplify(g, { measure: myMeasure });
+}
+
 export const PORTS: Record<string, (() => unknown) | readonly (() => unknown)[]> = {
   'sympy.core.expr:MyScalar().diff(MyScalar())': () => sj.diff(new MyScalar(), new MyScalar()),
 
@@ -251,11 +258,9 @@ export const PORTS: Record<string, (() => unknown) | readonly (() => unknown)[]>
   'sympy.functions.elementary.miscellaneous:(x + 1/sqrt(x)).find(lambda i: i.is_Pow and abs(i.exp) is S.Half)': () =>
     new JsSet(sj.find(sj.add(x, sj.pow(sj.sqrt(x), -1)), (e) => e instanceof sj.Pow && sj.abs(e.exp).key === half.key)),
 
-  'sympy.simplify.simplify:simplify(g, measure=my_measure)': () => {
-    const [a, b] = sym('a b', { positive: true });
-    const g = sj.add(sj.log(a!), sj.log(b!), sj.mul(sj.log(a!), sj.log(sj.pow(b!, -1))));
-    return sj.simplify(g, { measure: myMeasure });
-  },
+  'sympy.simplify.simplify:simplify(g, measure=my_measure)': () => simplifyWithMeasure(),
+  // the docstring of simplify, repeated in BasisDependent.simplify
+  'sympy.vector.basisdependent:simplify(g, measure=my_measure)': () => simplifyWithMeasure(),
 
   // DMP([ZZ(1), ZZ(1)], ZZ) is the dense representation [1, 1]
   'sympy.polys.polytools:a.per(DMP([ZZ(1), ZZ(1)], ZZ), gens=[y])': () => sj.Poly.from(sj.add(sj.pow(x, 2), 1)).per([1, 1], { gens: [y] }),

@@ -559,7 +559,7 @@ export function latex(e: Expr): string {
     return e.p < 0n ? `- \\frac{${-e.p}}{${e.q}}` : `\\frac{${e.p}}{${e.q}}`;
   }
   if (e instanceof Float) return floatLatex(e);
-  if (e instanceof Sym) return symbolLatex(e.name);
+  if (e instanceof Sym) return e.latexForm ?? symbolLatex(e.name);
   if (e instanceof Constant) {
     return { pi: '\\pi', E: 'e', I: 'i', EulerGamma: '\\gamma', Catalan: 'G', GoldenRatio: '\\phi', TribonacciConstant: '\\text{TribonacciConstant}' }[e.name];
   }

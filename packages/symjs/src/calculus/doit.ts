@@ -19,7 +19,7 @@ import { diff } from './diff';
 /** Evaluate all unevaluated Integral, Limit, Sum, Product and Derivative objects. */
 export function doit(ex: ExprLike): Expr {
   const go = (x: Expr): Expr => {
-    const y = x.args.length ? rebuild(x, x.args.map(go)) : x;
+    const y = x.args.length && !(x instanceof ExtensionExpr && !x.doitDeep) ? rebuild(x, x.args.map(go)) : x;
     if (y instanceof Integral) {
       const [, , a, b] = y.args;
       const f = y.integrand;

@@ -14,6 +14,7 @@
  */
 
 import { InvariantError, NotLoadedError } from './errors';
+import type { Kind } from './kind';
 import { at } from './guard';
 import { gcd } from './numbers';
 import { type Mpf, fromNumber as mpfFromNumber, normalize as mpfNormalize, toNumber as mpfToNumber } from '../numeric/mpf';
@@ -287,7 +288,7 @@ export interface Impl {
   asRealImagExpand?(e: Expr): [Expr, Expr];
   /**
    * Arithmetic of nodes that define their own operators (SymPy _op_priority,
-   * as Quaternion does; registered by algebras/quaternion): add, mul or pow
+   * as Quaternion does; installed by registerArithmetic): add, mul or pow
    * of the sympified arguments, or sub of the two operands of a - b, or
    * undefined for the generic rules.
    */
@@ -324,6 +325,27 @@ export interface Impl {
 /** An implementation provided by a feature area that has not been imported. */
 function notLoaded(name: string, entry: string): never {
   throw new NotLoadedError(`${name} is not available: import '@symjs/symjs/${entry}' (or '@symjs/symjs')`);
+}
+
+/** The arithmetic of nodes that define their own operators, in the order the modules registered it. */
+type ArithmeticHandler = (op: 'add' | 'sub' | 'mul' | 'pow', args: readonly Expr[]) => Expr | undefined;
+const arithmeticHandlers: ArithmeticHandler[] = [];
+
+/**
+ * Registers the arithmetic of nodes that define their own operators (SymPy
+ * _op_priority: quaternions, vectors and dyadics). A handler returns
+ * undefined for operands it does not own; the handlers are tried in the
+ * order of registration.
+ */
+export function registerArithmetic(handler: ArithmeticHandler): void {
+  arithmeticHandlers.push(handler);
+  impl.arithmetic = (op, args) => {
+    for (const h of arithmeticHandlers) {
+      const r = h(op, args);
+      if (r !== undefined) return r;
+    }
+    return undefined;
+  };
 }
 
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- registry: the remaining entries are installed by the feature modules at import time
@@ -632,6 +654,21 @@ export class Sym extends Expr {
   /** The name as printed (Wild adds a trailing underscore, Dummy a leading one). */
   get printName(): string {
     return this.name;
+  }
+
+  /** SymPy class name in the sort key (a coordinate symbol, SymPy BaseScalar, sorts as its own class). */
+  get sortClass(): string {
+    return 'Symbol';
+  }
+
+  /** LaTeX form when it is not derived from the name (SymPy BaseScalar._latex_form); undefined for a plain symbol. */
+  get latexForm(): string | undefined {
+    return undefined;
+  }
+
+  /** Pretty form when it is not derived from the name (SymPy BaseScalar._pretty_form); undefined for a plain symbol. */
+  get prettyForm(): string | undefined {
+    return undefined;
   }
 
   protected computeKey(): string {
@@ -1028,6 +1065,18 @@ export abstract class ExtensionExpr extends Expr {
   evalfSelf(_evalfArg: (e: Expr) => Expr, _dps: number): Expr | undefined {
     return undefined;
   }
+  /**
+   * SymPy _eval_trigsimp: trigsimp of this node, given `trigsimp` for a
+   * subexpression (vectors simplify their components); undefined for the
+   * generic rule.
+   */
+  trigsimpSelf(_trigsimp: (e: Expr) => Expr): Expr | undefined {
+    return undefined;
+  }
+  /** SymPy kind of this node (VectorKind of a vector, ...); undefined for the generic rule. */
+  kindSelf(): Kind | undefined {
+    return undefined;
+  }
   /** Hermitian adjoint, conjugate and transpose; undefined keeps the generic unevaluated form. */
   adjointSelf(): Expr | undefined {
     return undefined;
@@ -1047,7 +1096,14 @@ export abstract class ExtensionExpr extends Expr {
   bindings(): { variables: readonly number[]; scope: readonly number[] } | undefined {
     return undefined;
   }
-  /** SymPy doit for this node, given its arguments already evaluated; undefined keeps it. */
+  /**
+   * doit evaluates the arguments before the node (SymPy Basic.doit); false
+   * for a node whose doit is not deep (SymPy Cross, Dot, Gradient, ...).
+   */
+  get doitDeep(): boolean {
+    return true;
+  }
+  /** SymPy doit for this node, given its arguments already evaluated (unless doitDeep is false); undefined keeps it. */
   doitSelf(): Expr | undefined {
     return undefined;
   }

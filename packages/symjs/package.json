@@ -221,6 +221,16 @@
         "default": "./dist/geometry.cjs"
       }
     },
+    "./vector": {
+      "import": {
+        "types": "./dist/vector.d.ts",
+        "default": "./dist/vector.js"
+      },
+      "require": {
+        "types": "./dist/vector.d.cts",
+        "default": "./dist/vector.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -448,6 +458,24 @@
     "./dist/unify.cjs",
     "./src/utilities.ts",
     "./dist/utilities.js",
-    "./dist/utilities.cjs"
+    "./dist/utilities.cjs",
+    "./src/vector.ts",
+    "./dist/vector.js",
+    "./dist/vector.cjs",
+    "./src/vector/basisdependent.ts",
+    "./dist/vector/basisdependent.js",
+    "./dist/vector/basisdependent.cjs",
+    "./src/vector/dyadic.ts",
+    "./dist/vector/dyadic.js",
+    "./dist/vector/dyadic.cjs",
+    "./src/vector/functions.ts",
+    "./dist/vector/functions.js",
+    "./dist/vector/functions.cjs",
+    "./src/vector/operators.ts",
+    "./dist/vector/operators.js",
+    "./dist/vector/operators.cjs",
+    "./src/vector/vector.ts",
+    "./dist/vector/vector.js",
+    "./dist/vector/vector.cjs"
   ]
 }

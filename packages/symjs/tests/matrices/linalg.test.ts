@@ -11,7 +11,7 @@ import * as sj from '../../src';
 import { analyticFunc, I, log, Matrix, matrixLog, mul, oo, parse, parseExpr, Rational, S, simplify, sstr, symbols } from '../../src';
 import * as L from '../../src/matrices/linalg';
 import { isDiagonalizable, jordanForm } from '../../src/matrices/linalg';
-import { MatrixError, NonInvertibleMatrixError, NonPositiveDefiniteMatrixError, NonSquareMatrixError } from '../../src/core/errors';
+import { MatrixError, NonInvertibleMatrixError, NonPositiveDefiniteMatrixError, NonSquareMatrixError, NotLoadedError } from '../../src/core/errors';
 
 const q = (n: number) => Rational.of(n, 4);
 const [x] = symbols('x');
@@ -209,6 +209,18 @@ describe('vector operations and norms', () => {
     expect(s(L.cross(Matrix.row(1, 2, 3), Matrix.row(4, 5, 6)))).toBe('Matrix([[-3, 6, -3]])');
     expect(s(L.cross(Matrix.col(1, 2, 3), Matrix.col(4, 5, 6)))).toBe('Matrix([[-3], [6], [-3]])');
     expect(() => L.cross(Matrix.col(1, 2), Matrix.col(1, 2))).toThrow(RangeError);
+    // with vectors of @symjs/symjs/vector: sympy.vector.cross and dot
+    const C = sj.CoordSys3D('C');
+    expect(s(L.cross(C.i, C.j))).toBe('C.k');
+    expect(s(L.dot(C.i, C.i))).toBe('1');
+    expect(() => L.dot(Matrix.col(1, 2, 3), C.i)).toThrow('dot: a matrix and a vector');
+    const saved = L.vectorProducts.cross;
+    delete L.vectorProducts.cross;
+    try {
+      expect(() => L.cross(C.i, C.j)).toThrow(NotLoadedError);
+    } finally {
+      L.vectorProducts.cross = saved;
+    }
   });
 
   it('singular_values', () => {

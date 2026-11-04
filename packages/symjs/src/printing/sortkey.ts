@@ -79,7 +79,7 @@ const isExp = (e: Expr): e is Pow => e instanceof Pow && e.base instanceof Const
 const REL_CLASS: Record<RelOp, string> = { Eq: 'Equality', Ne: 'Unequality', Lt: 'StrictLessThan', Le: 'LessThan', Gt: 'StrictGreaterThan', Ge: 'GreaterThan' };
 
 // a WildFunction is a Function in SymPy (class key (4, 0, 'WildFunction'))
-const symClass = (e: Sym): Key => (e instanceof WildFunction ? [4, 0, 'WildFunction'] : [2, 0, e instanceof Wild ? 'Wild' : e instanceof Dummy ? 'Dummy' : 'Symbol']);
+const symClass = (e: Sym): Key => (e instanceof WildFunction ? [4, 0, 'WildFunction'] : [2, 0, e instanceof Wild ? 'Wild' : e instanceof Dummy ? 'Dummy' : e.sortClass]);
 
 /** SymPy class_key: (priority, sub-priority, class name) used to order expressions. */
 export function classKey(e: Expr): Key {

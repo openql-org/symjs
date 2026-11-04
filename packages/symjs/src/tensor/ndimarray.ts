@@ -877,6 +877,8 @@ export function kindOf(e: Expr): Kind {
   if (e instanceof NDimArray) return ArrayKindNode.union(e.flatElements().map(kindOf));
   if (e instanceof BoolAtom || e instanceof Rel || e instanceof BoolOp) return BooleanKind;
   if (e instanceof Integral || e instanceof Derivative) return kindOf(at(e.args, 0));
+  const own = e instanceof ExtensionExpr ? e.kindSelf() : undefined;
+  if (own !== undefined) return own;
   if (e instanceof ExtensionExpr && !(e instanceof Indexed) && e.isScalar === false) return UndefinedKind;
   return e.isCommutative ? NumberKind : UndefinedKind;
 }
