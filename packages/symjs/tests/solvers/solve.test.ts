@@ -429,3 +429,40 @@ describe('solve with several logarithms of the unknown', () => {
     expect(() => solve(parse('log(y) + sin(y)'), y)).toThrow(NotImplementedError);
   });
 });
+
+describe('solve: polynomials in a single generator (SymPy _solve)', () => {
+  const sv = (s: string): string => show(solve(parse(s), y));
+  it('a function application', () => {
+    expect(sv('cos(y)**2 + cos(y) - 1')).toBe('[2*pi - acos(-sqrt(5)/2 - 1/2), -acos(-1/2 + sqrt(5)/2) + 2*pi, acos(-1/2 + sqrt(5)/2), acos(-sqrt(5)/2 - 1/2)]');
+    expect(sv('tan(y/2)**2 - 1')).toBe('[-pi/2, pi/2]');
+    expect(sv('sin(y)**2 + sin(y)')).toBe('[0, -pi/2, pi, 3*pi/2]');
+    expect(sv('log(y)**2 - 1')).toBe('[E, exp(-1)]');
+    expect(sv('C1 + x + 1/tan((x - y)/2)')).toBe('[x + 2*atan(1/(C1 + x))]');
+    // SymPy: [-acos(-(exp(2*C1) + exp(2*x))/(exp(2*C1) - exp(2*x))) + 2*pi, acos((-exp(2*C1) - exp(2*x))/(exp(2*C1) - exp(2*x)))]
+    expect(sv('x + log(cos(y) - 1)/2 - log(cos(y) + 1)/2 - C1')).toBe(
+      '[-acos((-exp(2*C1) - exp(2*x))/(exp(2*C1) - exp(2*x))) + 2*pi, acos((-exp(2*C1) - exp(2*x))/(exp(2*C1) - exp(2*x)))]',
+    );
+    // SymPy: NotImplementedError as well
+    expect(() => solve(parse('gamma(y)**2 - 1'), y)).toThrow(NotImplementedError);
+  });
+  it('exponentials with rational multiples of one exponent', () => {
+    expect(sv('exp(2*y) + exp(y) - 2')).toBe('[0, log(2) + I*pi]');
+    expect(sv('exp(y) - 2*exp(-y)')).toBe('[log(2)/2 + I*pi, log(2)/2]');
+    expect(sv('exp(2*y) - 2')).toBe('[log(2)/2 + I*pi, log(2)/2]');
+    expect(sv('exp(3*y) - 1')).toBe('[0, -2*I*pi/3, 2*I*pi/3]');
+    expect(sv('exp(-2*y) - 3')).toBe('[-log(3)/2 + I*pi, -log(3)/2]');
+    // SymPy: [(log(3)/2 + I*pi)/a, log(3)/(2*a)]
+    expect(sv('exp(2*a*y) - 3')).toBe('[(log(3) + 2*I*pi)/(2*a), log(3)/(2*a)]');
+    expect(sv('exp(y/2) - 3')).toBe('[log(9)]');
+    expect(sv('exp(2*y) - exp(x)*exp(y)')).toBe('[log(exp(x))]');
+    // SymPy: [0, log(-1/2 + sqrt(5)/2) + I*pi, log(1/2 + sqrt(5)/2)] (the same values)
+    expect(sv('exp(-2*y) + exp(y) - 2')).toBe('[0, log(1/2 - sqrt(5)/2), log(1/2 + sqrt(5)/2)]');
+    // SymPy: multiple generators
+    expect(() => solve(parse('cos(y) + exp(y)'), y)).toThrow(NotImplementedError);
+    expect(() => solve(parse('exp(y) + exp(x*y) - 1'), y)).toThrow(NotImplementedError);
+  });
+  it('sums of logarithms with a common factor', () => {
+    expect(sv('2*log(y) - 2')).toBe('[E]');
+    expect(sv('2*log(y) - 2*log(x + 1) - 2')).toBe('[E*(x + 1)]');
+  });
+});

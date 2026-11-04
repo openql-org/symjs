@@ -269,3 +269,66 @@ describe('parse: tuple arguments (SymPy parse_expr)', () => {
     expect(() => parse('(x, 1)')).toThrow("Expected ')'");
   });
 });
+
+describe('parse: relational, boolean and number constructors (SymPy parse_expr)', () => {
+  it('relationals by function and class name', () => {
+    expect(s('Ne(x, 1)')).toBe('Ne(x, 1)');
+    expect(s('Unequality(x, 1)')).toBe('Ne(x, 1)');
+    expect(s('Lt(x, 1)')).toBe('x < 1');
+    expect(s('StrictLessThan(x, 1)')).toBe('x < 1');
+    expect(s('Le(x, 1)')).toBe('x <= 1');
+    expect(s('LessThan(x, 1)')).toBe('x <= 1');
+    expect(s('Gt(x, 1)')).toBe('x > 1');
+    expect(s('StrictGreaterThan(x, 1)')).toBe('x > 1');
+    expect(s('Ge(x, 1)')).toBe('x >= 1');
+    expect(s('GreaterThan(x, 1)')).toBe('x >= 1');
+    expect(s('Eq(x, 1)')).toBe('Eq(x, 1)');
+    expect(s('Equality(x, 1)')).toBe('Eq(x, 1)');
+    // SymPy: TypeError (missing rhs)
+    expect(() => parse('Ne(x)')).toThrow('Ne() takes at least 2 arguments');
+  });
+  it('boolean functions', () => {
+    expect(s('And(x, y)')).toBe('x & y');
+    expect(s('Or(x, y)')).toBe('x | y');
+    expect(s('Not(x)')).toBe('~x');
+    expect(s('Xor(x, y)')).toBe('x ^ y');
+    expect(s('Implies(x, y)')).toBe('Implies(x, y)');
+    expect(s('Equivalent(x, y)')).toBe('Equivalent(x, y)');
+    expect(s('Nand(x, y)')).toBe('~(x & y)');
+    expect(s('Nor(x, y)')).toBe('~(x | y)');
+    // Xnor is not in SymPy's namespace: an undefined function
+    expect(s('Xnor(x, y)')).toBe('Xnor(x, y)');
+    expect(s('ITE(x, y, z)')).toBe('ITE(x, y, z)');
+    expect(() => parse('ITE(x, y)')).toThrow('ITE() takes at least 3 arguments');
+  });
+  it('Float, Rational, Integer and frac', () => {
+    expect(s('Float(2)')).toBe('2.00000000000000');
+    expect(s('Float(2)**(2**60)')).toBe('5.85492786017126e+347063955532709820');
+    expect(s('Float(1, 30)')).toBe('1.00000000000000000000000000000');
+    expect(s('Float(1/3)')).toBe('0.333333333333333');
+    expect(s('Float(pi, 20)')).toBe('3.1415926535897932385');
+    expect(s('Float(oo)')).toBe('oo');
+    expect(() => parse('Float(x)')).toThrow('cannot create mpf from x');
+    expect(() => parse('Float(2, x)')).toThrow('the precision x is not an integer');
+    expect(s('Rational(1, 3)')).toBe('1/3');
+    expect(s('Rational(2, 4)')).toBe('1/2');
+    expect(s('Rational(3)')).toBe('3');
+    expect(s('Rational(0.5)')).toBe('1/2');
+    expect(s('Rational(0.1)')).toBe('3602879701896397/36028797018963968');
+    expect(s('Rational(0.5, 3)')).toBe('1/6');
+    expect(s('Rational(1.5, 0.5)')).toBe('3');
+    expect(s('Rational(1, 0)')).toBe('zoo');
+    expect(() => parse('Rational(x)')).toThrow('invalid input: x');
+    expect(() => parse('Rational(oo)')).toThrow('invalid input: oo');
+    expect(s('Integer(5)')).toBe('5');
+    expect(s('Integer(2.0)')).toBe('2');
+    expect(s('Integer(2.5)')).toBe('2');
+    expect(s('Integer(-2.5)')).toBe('-2');
+    expect(s('Integer(1/2)')).toBe('0');
+    expect(s('Integer(1e20)')).toBe('100000000000000000000');
+    expect(() => parse('Integer(x)')).toThrow('Argument of Integer should be of numeric type, got x.');
+    expect(s('frac(x)')).toBe('frac(x)');
+    expect(s('frac(5/2)')).toBe('1/2');
+    expect(s('frac(-5/2)')).toBe('1/2');
+  });
+});

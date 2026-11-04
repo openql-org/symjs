@@ -96,7 +96,7 @@ Compatibility is measured against SymPy's own doctests (`compat/`):
 - **Behavior compatibility**: share of doctest examples of the in-scope public API (core, elementary and special functions, simplification, polynomials, solvers, ODEs, calculus, series, sets, matrices, number theory, logic, combinatorics, utilities, geometry, vector, stats) that symjs reproduces with the same `str()` output, or with a mathematically equal value in another form: 100% (4143 of 4143 examples; 4122 identical).
 - **API coverage**: share of in-scope public SymPy names (including `Expr` and `Matrix` methods) with a symjs counterpart: 100% (1420 of 1420).
 - The examples and names not supported yet are listed in `compat/known-gaps.json`. `pnpm compat` fails when a case outside that list stops passing, and when a listed case starts passing (so that the list only shrinks).
-- Test coverage of the source files is 100% (statements, branches, functions and lines; 16020 tests).
+- Test coverage of the source files is 100% (statements, branches, functions and lines; 16029 tests).
 
 ```sh
 pnpm compat           # run the tests with coverage and the corpus, write compat/REPORT.md

@@ -210,8 +210,8 @@ describe('solveset', () => {
     expect(show(Q.solveset(p('sin(a*x)'), x, Reals))).toBe('ConditionSet(x, Eq(sin(a*x), 0), Reals)');
     // SymPy: ConditionSet(x, (-1 <= a) & (a <= 1), Union(ImageSet(...asin(a)), ImageSet(...))); symjs keeps the equation
     expect(show(Q.solveset(p('sin(x)-a'), x, Reals))).toBe('ConditionSet(x, Eq(-a + sin(x), 0), Reals)');
-    // SymPy finds Union(ImageSet(Lambda(_n, 2*_n*I*pi), Integers), ImageSet(Lambda(_n, I*(2*_n*pi + pi) + log(2)), Integers)); symjs leaves the equation unsolved
-    expect(show(Q.solveset(p('exp(x)+exp(2*x)-2'), x))).toBe('ConditionSet(x, Eq(exp(2*x) + exp(x) - 2, 0), Complexes)');
+    expect(show(Q.solveset(p('exp(2*x) - 2*exp(x) + 1'), x))).toBe('ImageSet(Lambda(_n, 2*_n*I*pi), Integers)');
+    expect(show(Q.solveset(p('exp(x)+exp(2*x)-2'), x))).toBe('Union(ImageSet(Lambda(_n, 2*_n*I*pi), Integers), ImageSet(Lambda(_n, I*(2*_n*pi + pi) + log(2)), Integers))');
     expect(show(Q.solveset(p('exp(x**2)-1'), x))).toBe('ConditionSet(x, Eq(exp(x**2) - 1, 0), Complexes)');
     expect(show(Q.solveset(p('exp(-x)-3'), x))).toBe('ImageSet(Lambda(_n, 2*_n*I*pi - log(3)), Integers)');
     expect(show(Q.solveset(p('x**2+x*sin(x)-1'), x, Reals))).toBe('ConditionSet(x, Eq(x**2 + x*sin(x) - 1, 0), Reals)');
@@ -471,5 +471,41 @@ describe('solveset with ImageSet and ConditionSet', () => {
     expect(String(solveset(parse('exp(x) + 1'), x))).toBe('ImageSet(Lambda(_n, I*(2*_n*pi + pi)), Integers)');
     expect(String(solveset(parse('cos(x) - 2'), x, Reals))).toBe('EmptySet');
     expect(String(solveset(parse('x**2 + x*sin(x) - 1'), x, Reals))).toBe('ConditionSet(x, Eq(x**2 + x*sin(x) - 1, 0), Reals)');
+  });
+});
+
+describe('solveset over the reals with a parameter (SymPy _invert_real)', () => {
+  const R = (s: string, locals: Record<string, Expr> = {}) => show(Q.solveset(parse(s, { locals }), x, Reals));
+  it('even roots: an ImageSet over the nonnegative values of the parameter', () => {
+    expect(R('x**2 - p')).toBe('Intersection({-sqrt(p), sqrt(p)}, Reals)');
+    expect(R('sqrt(x) - y')).toBe('ImageSet(Lambda(x, x**2), Intersection({y}, Interval(0, oo)))');
+    expect(R('sqrt(x) + y')).toBe('ImageSet(Lambda(x, x**2), Intersection({-y}, Interval(0, oo)))');
+    expect(R('2*sqrt(x) + y - 1')).toBe('ImageSet(Lambda(x, x**2), Intersection({1/2 - y/2}, Interval(0, oo)))');
+    expect(R('x**(3/2) - y')).toBe('ImageSet(Lambda(x, x**(2/3)), Intersection({y}, Interval(0, oo)))');
+    expect(R('x**(1/4) - y')).toBe('ImageSet(Lambda(x, x**4), Intersection({y}, Interval(0, oo)))');
+    expect(R('sqrt(x + 1) - y')).toBe('ImageSet(Lambda(x, x**2 - 1), Intersection({y}, Interval(0, oo)))');
+    expect(R('sqrt(x**2 + 1) - y')).toBe(
+      'Union(ImageSet(Lambda(x, -sqrt(x**2 - 1)), Intersection({y}, Interval(0, oo))), ImageSet(Lambda(x, sqrt(x**2 - 1)), Intersection({y}, Interval(0, oo))))',
+    );
+    const yp = new Sym('yp', { positive: true });
+    expect(R('sqrt(x) - yp', { yp })).toBe('{yp**2}');
+    expect(R('sqrt(x) + yp', { yp })).toBe('EmptySet');
+    expect(R('sqrt(x) - 2')).toBe('{4}');
+    expect(R('sqrt(2*x + 1) - y')).toBe('ImageSet(Lambda(x, x**2/2 - 1/2), Intersection({y}, Interval(0, oo)))');
+    expect(R('sqrt(x**3 + 1) - y')).toBe('ImageSet(Lambda(x, Abs(x**2 - 1)**(1/3)*sign(x**2 - 1)), Intersection({y}, Interval(0, oo)))');
+    expect(R('sqrt(x**2 + x) - y')).toBe('ConditionSet(x, Eq(-y + sqrt(x**2 + x), 0), Reals)');
+    // SymPy: ConditionSet(x, Contains(y, Interval(0, oo)), {-y, y})
+    expect(R('sqrt(x**2) - y')).toBe('Intersection({-y, y}, Reals)');
+  });
+  it('odd roots: real_root', () => {
+    expect(R('x**3 - p')).toBe('Intersection({Abs(p)**(1/3)*sign(p)}, Reals)');
+    expect(R('x**3 + p')).toBe('Intersection({-Abs(p)**(1/3)*sign(p)}, Reals)');
+    expect(R('x**5 - p')).toBe('Intersection({Abs(p)**(1/5)*sign(p)}, Reals)');
+    expect(R('2*x**3 - p')).toBe('Intersection({2**(2/3)*Abs(p)**(1/3)*sign(p)/2}, Reals)');
+    expect(R('(x - 1)**3 - p')).toBe('Intersection({Abs(p)**(1/3)*sign(p) + 1}, Reals)');
+    expect(R('x**3 - yr', { yr: new Sym('yr', { real: true }) })).toBe('{Abs(yr)**(1/3)*sign(yr)}');
+    expect(R('x**4 - p')).toBe('Intersection({-p**(1/4), p**(1/4)}, Reals)');
+    expect(R('x**(1/3) - y')).toBe('Intersection({y**3}, Reals)');
+    expect(R('x**3 - 8')).toBe('{2}');
   });
 });

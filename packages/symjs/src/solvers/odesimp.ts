@@ -6,8 +6,7 @@
  * odesimp, constantsimp and constant_renumber).
  */
 
-import type { Expr } from '../core/nodes';
-import { Add, Constant, Dummy, Fn, Integral, Mul, Pow, Rational, Rel, Sym, UndefFn } from '../core/nodes';
+import { Expr, Add, Constant, Dummy, Fn, Integral, Mul, Pow, Rational, Rel, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { add, couldExtractMinusSign, mul, pow } from '../core/ops';
 import { freeSymbols, rebuild, subs, xreplace } from '../core/traverse';
@@ -16,6 +15,7 @@ import { at, cast, first, getOrThrow } from '../core/guard';
 import { diff } from '../calculus/diff';
 import { doit } from '../calculus/doit';
 import { termsGcd } from '../polys/sympoly';
+import { cse } from '../simplify/csemain';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { expand } from '../simplify/expand';
 import { logcombine, powsimp } from '../simplify/powsimp';
@@ -125,6 +125,28 @@ function conditionalTermFactoring(expr: Expr): Expr {
   return ne;
 }
 
+/**
+ * The common subexpression elimination step of SymPy constantsimp: a common
+ * subexpression in a single constant that does not occur elsewhere becomes
+ * that constant (exp(2*C1) occurring twice -> C1).
+ */
+function constantCse(expr: Expr, Cs: readonly Sym[]): Expr {
+  const [commons, reduced] = cse(expr);
+  // a single expression is reduced to a single expression
+  let rexpr = cast(first(reduced), Expr, 'reduced expression');
+  const rev = [...commons].reverse();
+  for (const s of rev) {
+    const [sym, value] = s;
+    const cs = [...freeSymbols(value)];
+    const [c] = cs;
+    const single = c !== undefined && cs.length === 1 && Cs.some((k) => k.key === c.key) && ![...freeSymbols(rexpr)].some((k) => k.key === c.key);
+    // SymPy tests `c in (symbol, value)` for the other replacements: equality with either
+    const elsewhere = single && rev.some((o) => o !== s && (o[0].key === c.key || o[1].key === c.key));
+    rexpr = subs(rexpr, [[sym, single && !elsewhere ? c : value]]);
+  }
+  return rexpr;
+}
+
 /** Absorb constant subexpressions into the constants (SymPy constantsimp). */
 export function constantsimp(exprIn: Expr, Cs: readonly Sym[]): Expr {
   let expr = exprIn;
@@ -135,6 +157,7 @@ export function constantsimp(exprIn: Expr, Cs: readonly Sym[]): Expr {
       if (!xes.length) continue;
       if (xes.every((c) => count(expr, c) === count(xe, c))) expr = subs(expr, [[xe, first(xes)]]);
     }
+    expr = constantCse(expr, Cs);
     expr = removeLinearRedundancies(expr, Cs);
     expr = conditionalTermFactoring(expr);
     if (expr.key === orig.key) return expr;

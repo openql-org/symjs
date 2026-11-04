@@ -20,6 +20,7 @@ import { rebuild } from '../core/traverse';
 import { couldExtractMinusSign } from '../core/ops';
 import { NotImplementedError } from '../core/errors';
 import { AppliedPredicate } from '../core/refine';
+import { parserHooks } from '../parsing/parser';
 
 /** An argument of the boolean constructors: an expression or a JavaScript boolean. */
 export type BoolLike = ExprLike | boolean;
@@ -559,3 +560,13 @@ export function evalBool(e: Expr, env: ReadonlyMap<string, boolean>): boolean {
   }
   throw new NotImplementedError(`cannot determine the truth value of ${impl.str(e)}`);
 }
+
+// SymPy's parse_expr knows these by name; the parser is in a lower layer, so they are registered here
+parserHooks.constructors.set('Implies', (args) => Implies(...args));
+parserHooks.constructors.set('Equivalent', (args) => Equivalent(...args));
+parserHooks.constructors.set('Nand', (args) => Nand(...args));
+parserHooks.constructors.set('Nor', (args) => Nor(...args));
+parserHooks.constructors.set('ITE', (args) => {
+  if (args.length < 3) throw new SyntaxError('ITE() takes at least 3 arguments');
+  return ITE(at(args, 0), at(args, 1), at(args, 2));
+});

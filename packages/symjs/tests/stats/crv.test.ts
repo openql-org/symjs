@@ -77,9 +77,8 @@ describe('continuous probability spaces (SymPy crv) 3', () => {
   // SymPy: Piecewise((Integral(exp(-sqrt(_x))/Abs(sqrt(_x)), (_x, 0, z))/2 + Integral(exp(sqrt(_x))/Abs(sqrt(_x)), (_x, 0, z))/2, z >= 0), (0, True));
   // symjs leaves the same integral, behind the conditions of a Meijer G-function result that cannot hold
   it("cdf X**2", () => expect(show(ap(cdf(pow(Exponential('e', 1), 2)), z))).toMatch(/\(Integral\(exp\(sqrt\(_x\)\)\/\(2\*sqrt\(Abs\(_x\)\)\) \+ exp\(-sqrt\(_x\)\)\/\(2\*sqrt\(Abs\(_x\)\)\), \(_x, 0, z\)\), True\)\), z >= 0\), \(0, True\)\)$/));
-  // SymPy raises ValueError (Can not solve sqrt(e) for e); symjs's solveset gives {y**2}, so the density is right for z >= 0
-  // (the density of sqrt(e) is 2*z*exp(-z**2) there and 0 for z < 0)
-  it("density sqrt", () => expect(show(ap(density(sqrt(Exponential('e', 1))), z))).toBe('2*exp(-z**2)*Abs(z)'));
+  // SymPy raises ValueError (Can not solve sqrt(e) for e): solveset gives an ImageSet with the condition y >= 0
+  it("density sqrt", () => expect(() => density(sqrt(Exponential('e', 1)))).toThrow('Can not solve sqrt(e) for e'));
   // SymPy: sqrt(2)*exp(-z/2)/(2*sqrt(pi)*Abs(sqrt(z))) (the same for a real z)
   it("density X**2", () => expect(show(ap(density(pow(Xn, 2)), z))).toBe('sqrt(2)*exp(-z/2)/(2*sqrt(pi)*sqrt(Abs(z)))'));
   it("density sin", () => expect(() => density(sin(Xn))).toThrow(RangeError));

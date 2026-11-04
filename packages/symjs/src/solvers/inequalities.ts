@@ -12,7 +12,7 @@ import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike, FnName, RelOp, Sym } from '../core/nodes';
 import { Add, BoolAtom, Constant, Dummy, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Special, impl } from '../core/nodes';
 import { at, cast, defined, expectType, first } from '../core/guard';
-import { isReal } from '../core/assumptions';
+import { isNegative, isNonNegative, isReal } from '../core/assumptions';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { expandMul } from '../simplify/expand';
 import { factorTerms } from '../simplify/exprtools';
@@ -26,7 +26,7 @@ import { limit } from '../series/limits';
 import { Poly } from '../polys/sympoly';
 import { cancel, fraction } from '../simplify/rational';
 import { simplify } from '../simplify/simplify';
-import { solve } from './solve';
+import { polynomialInGenerator, solve } from './solve';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import {
   SetExpr,
@@ -498,7 +498,7 @@ export function solveset(fIn: ExprLike, x: Sym, domain: SetExpr = Complexes): Se
     const periodic = periodicSolutions(g, x, domain);
     if (periodic) return periodic;
     if (domain === Complexes) {
-      const ex = complexExpSolutions(g, x);
+      const ex = complexExpSolutions(g, x) ?? complexExpPolynomial(g, x);
       if (ex) return ex;
     }
     return solvesetAlgebraic(g, x, domain);
@@ -555,10 +555,79 @@ function parametricRealRoots(num: Expr, den: Expr, x: Sym): SetExpr {
   return den.has(x) ? complement(roots, realPart(solve(den, x))) : roots;
 }
 
+/**
+ * SymPy _invert_real for a*B**e + b = 0 with a parameter in c = -b/a and a
+ * rational e = p/q:
+ *   q even, p odd: B = t**(1/e) for t in {c} & [0, oo), an ImageSet over
+ *                  that intersection (sqrt(x) = y gives x = y**2 for y >= 0);
+ *   e an odd integer: B = real_root(c, e) = Abs(c)**(1/e)*sign(c).
+ * B is then inverted for x; undefined for the other equations.
+ */
+function invertRealPower(g: Expr, x: Sym): SetExpr | undefined {
+  const terms = g instanceof Add ? g.args : [g];
+  const dep = terms.filter((t) => t.has(x));
+  if (dep.length !== 1) return undefined;
+  const t0 = first(dep);
+  const fs = t0 instanceof Mul ? t0.args : [t0];
+  const F = fs.find((h) => h.has(x));
+  if (!(F instanceof Pow) || !(F.exp instanceof Rational) || fs.filter((h) => h.has(x)).length !== 1) return undefined;
+  const e = F.exp;
+  const c = mul(-1, add(...terms.filter((u) => !u.has(x))), pow(mul(...fs.filter((h) => h !== F)), -1));
+  if (c.freeSymbols().size === 0) return undefined;
+  const B = F.base;
+  if (e.q % 2n === 0n && e.p % 2n !== 0n) {
+    // {c} & [0, oo) is {c} or empty when the sign of c is known
+    // (B**k)**e: SymPy gives a ConditionSet with Abs-type solutions, not handled here
+    if (B instanceof Pow) return undefined;
+    const base = isNonNegative(c) === true ? finiteSet(c) : isNegative(c) === true ? EmptySet : new SetOp('Intersection', [finiteSet(c), interval(0, S.Infinity, false, true)]);
+    const t = new Dummy('t');
+    const sets = invertTo(B, pow(t, pow(e, -1)), x).map((r) => imageSet(x, xreplace(r, [[t, x]]), base));
+    return sets.length === 1 ? first(sets) : new SetOp('Union', sets.sort((u, v) => compareKeys(sortKey(u), sortKey(v))));
+  }
+  if (!e.isInteger || e.p % 2n === 0n) return undefined;
+  const sols = invertTo(B, realRoot(c, e.p), x);
+  // real_root of a real c is real
+  const realC = isReal(c) === true;
+  const known = sols.filter((r) => isReal(r) === true || (realC && !r.has(S.I) && [...r.freeSymbols()].every((u) => isReal(u) === true)));
+  const unknown = sols.filter((r) => !known.includes(r));
+  return union(finiteSet(...known), unknown.length ? new SetOp('Intersection', [finiteSet(...unknown), Reals]) : EmptySet);
+}
+
+/**
+ * The solutions of B(x) = r by inverting B one operation at a time (SymPy
+ * _invert_real for sums, products and powers of x), like x + 1 = r -> r - 1
+ * and x**2 + 1 = r -> -sqrt(r - 1), sqrt(r - 1); NotImplementedError for the
+ * others (SymPy's ConditionSet).
+ */
+function invertTo(B: Expr, r: Expr, x: Sym): Expr[] {
+  if (B.key === x.key) return [r];
+  if (B instanceof Add || B instanceof Mul) {
+    const dep = B.args.filter((a) => a.has(x));
+    const rest = B.args.filter((a) => !a.has(x));
+    if (dep.length === 1 && rest.length) {
+      const inner = first(dep);
+      return invertTo(inner, B instanceof Add ? add(r, mul(-1, ...rest)) : mul(r, pow(mul(...rest), -1)), x);
+    }
+  }
+  if (B instanceof Pow && B.exp instanceof Rational && B.exp.isInteger && B.exp.p > 1n) {
+    const k = B.exp;
+    if (k.p % 2n !== 0n) return invertTo(B.base, realRoot(r, k.p), x);
+    const rt = pow(r, Rational.of(1n, k.p));
+    return [...invertTo(B.base, rt, x), ...invertTo(B.base, mul(-1, rt), x)];
+  }
+  // SymPy: a ConditionSet
+  throw new NotImplementedError('solveset: the equation is not inverted');
+}
+
+/** SymPy real_root(c, n) for an odd n: Abs(c)**(1/n)*sign(c). */
+const realRoot = (c: Expr, n: bigint): Expr => mul(pow(fn('abs', [c]), Rational.of(1n, n)), fn('sign', [c]));
+
 function solvesetAlgebraic(gIn: Expr, x: Sym, domain: SetExpr): SetExpr {
   if (domain === Reals || domain instanceof Interval) {
     const inv = invertReal(gIn, x);
     if (inv !== undefined) return solveset(inv, x, domain);
+    const pw = domain === Reals ? invertRealPower(gIn, x) : undefined;
+    if (pw) return pw;
     const g = gIn;
     const [lo, hi] = bounds(domain);
     const [num, den] = fraction(cancel(g));
@@ -624,8 +693,26 @@ function periodicSolutions(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefine
   return sets.length === 1 ? first(sets) : new SetOp('Union', sets);
 }
 
+/**
+ * A polynomial in exp(u) over the complex numbers: the union of the
+ * solutions of exp(u) = r for its roots r (SymPy _solve_exponential via
+ * _invert_complex).
+ */
+function complexExpPolynomial(g: Expr, x: Sym): SetExpr | undefined {
+  const [num, den] = fraction(cancel(g));
+  const pg = den.has(x) ? undefined : polynomialInGenerator(num, x);
+  if (!pg || !(pg[0] instanceof Pow)) return undefined;
+  const e = pg[0];
+  // complexExpSolutions solves exp(u) - r, or raises for a nonlinear u
+  // one integer variable for all the image sets (like SymPy's, which compare by their expressions)
+  const n = new Dummy('n');
+  const sets = pg[1].map((r) => defined(complexExpSolutions(add(e, mul(-1, r)), x, n), 'exp(u) = r'));
+  // Union orders its arguments by sort_key
+  return sets.length === 1 ? first(sets) : new SetOp('Union', sets.sort((a, b) => compareKeys(sortKey(a), sortKey(b))));
+}
+
 /** a*exp(u) + b = 0 with u linear in x over the complex numbers. */
-function complexExpSolutions(g: Expr, x: Sym): SetExpr | undefined {
+function complexExpSolutions(g: Expr, x: Sym, n: Dummy = new Dummy('n')): SetExpr | undefined {
   const terms = g instanceof Add ? g.args : [g];
   const dep = terms.filter((t) => t.has(x));
   if (dep.length !== 1) return undefined;
@@ -641,7 +728,6 @@ function complexExpSolutions(g: Expr, x: Sym): SetExpr | undefined {
   if (c instanceof Rational && c.isZero) return EmptySet;
   const k = pc.LC();
   const rest = add(e.exp, mul(-1, k, x));
-  const n = new Dummy('n');
   // u = log|c| + I*(2*n*pi + arg(c))
   const u = add(mul(S.I, add(mul(2, n, S.Pi), fn('arg', [c]))), log(fn('abs', [c])));
   let sol = mul(add(u, mul(-1, rest)), pow(k, -1));

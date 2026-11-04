@@ -13,7 +13,7 @@ import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, xreplace, xreplace as xreplaceS } from '../core/traverse';
-import { at, defined, first, getOrThrow } from '../core/guard';
+import { at, cast, defined, first, getOrThrow } from '../core/guard';
 import { evalf } from '../numeric/evalf';
 import { evalMp, fromMpc } from '../numeric/mpeval';
 import { diff } from '../calculus/diff';
@@ -22,7 +22,7 @@ import { polyCoefficients, roots } from '../polys/poly';
 import { Poly } from '../polys/sympoly';
 import { linearEqToMatrix, solveAugmented } from '../matrices/linsys';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { expandMul } from '../simplify/expand';
+import { expand, expandMul } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { radsimp } from '../simplify/radsimp';
 import { simplify } from '../simplify/simplify';
@@ -130,7 +130,8 @@ const MAX_DEPTH = 40;
 /** Solutions of f = 0 for x (without the final check). */
 /**
  * Terms sum_i c_i*log(g_i) + b with logarithms of x (c*x counts as c*log(exp(x))) and rational
- * c_i: [prod_i g_i**(L*c_i), L*b] with L the least common denominator of the c_i.
+ * c_i: [prod_i g_i**(L*c_i), L*b] with L the least common denominator of the c_i divided by the
+ * gcd of the integers L*c_i.
  */
 function logSum(terms: readonly Expr[], x: Sym): [Expr, Expr] | undefined {
   const logs: [Rational, Expr][] = [];
@@ -147,7 +148,9 @@ function logSum(terms: readonly Expr[], x: Sym): [Expr, Expr] | undefined {
     else return undefined;
   }
   const L = logs.reduce((m, [c]) => (m * c.q) / gcdBig(m, c.q), 1n);
-  const scale = Rational.of(L);
+  // the integer coefficients L*c_i divided by their gcd: 2*log(u) - 2*log(v) gives u/v, not (u/v)**2
+  const G = logs.reduce((m, [c]) => gcdBig(m, ((c.p < 0n ? -c.p : c.p) * L) / c.q), 0n);
+  const scale = Rational.of(L, G);
   return [mul(...logs.map(([c, g]) => pow(g, mul(c, scale)))), mul(scale, add(...terms.filter((u) => !u.has(x))))];
 }
 
@@ -170,7 +173,7 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
         const y = mul(-1, add(...f.args.filter((u) => !u.has(x))), pow(a, -1));
         return isZeroE(y) ? [] : [pow(y, -1)];
       }
-      if (F.length === 1 && F[0] instanceof Pow && F[0].base instanceof Constant && F[0].base.name === 'E') {
+      if (F.length === 1 && F[0] instanceof Pow && F[0].base instanceof Constant && F[0].base.name === 'E' && !isExpPower(F[0])) {
         const a = mul(...fs.filter((g) => !g.has(x)));
         const y = mul(-1, add(...f.args.filter((u) => !u.has(x))), pow(a, -1));
         const inv = defined(invertFn(F[0], y, x), 'inverse of exp');
@@ -218,7 +221,7 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
       const a = mul(...factors.filter((g) => !g.has(x)));
       const F = first(fdep);
       const y = mul(-1, b, pow(a, -1));
-      if (F instanceof Fn || F instanceof Pow) {
+      if (F instanceof Fn || (F instanceof Pow && !isExpPower(F))) {
         const inv = invertFn(F, y, x);
         if (inv) {
           const [u, ys] = inv;
@@ -239,7 +242,92 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   // sum_i c_i*log(g_i) + b = 0 with rational c_i: prod_i g_i**(L*c_i) = exp(-L*b) (SymPy logcombine with force)
   const lg = logSum(terms, x);
   if (lg) return solveRaw(expandMul(add(lg[0], mul(-1, exp(mul(-1, lg[1]))))), x, depth + 1);
+  const gen = singleGenerator(num, x, depth);
+  if (gen) return gen;
   throw new NotImplementedError(`solve: cannot solve ${f.toString()} for ${x.name}`);
+}
+
+/**
+ * SymPy _solve for an equation that is a polynomial in a single generator
+ * g(x) (a function application or an exponential, such as cos(x) or
+ * tan(x/2)): the polynomial is solved for g, whose inverse images give the
+ * solutions. The roots are written over a common denominator with the
+ * exponentials expanded, like the rational functions of SymPy's polynomial
+ * domains.
+ */
+function singleGenerator(num: Expr, x: Sym, depth: number): Expr[] | undefined {
+  const pg = polynomialInGenerator(num, x);
+  if (!pg) return undefined;
+  const [g, rs] = pg;
+  const t = new Dummy('t');
+  // the generators are function applications and exponentials, which invertFn inverts or rejects
+  const inv = invertFn(g, t, x);
+  if (!inv) return undefined;
+  return rs.flatMap((r) => {
+    const ys = inv[1].map((yy) => xreplace(yy, [[t, r]]));
+    // g(x) itself: the inverse images are the solutions (solving x - y again would expand them)
+    return inv[0].key === x.key ? ys : ys.flatMap((yy) => solveRaw(add(inv[0], mul(-1, yy)), x, depth + 1));
+  });
+}
+
+/**
+ * An equation num = 0 that is a polynomial in a single generator g(x): g
+ * and the roots of the polynomial (written over a common denominator with
+ * the exponentials expanded), or undefined. @internal
+ */
+export function polynomialInGenerator(num: Expr, x: Sym): [Fn | Pow, Expr[]] | undefined {
+  const e = expand(num);
+  const gens = new Map<string, Fn | Pow>();
+  let ok = true as boolean; // set inside a callback
+  const isExpOfX = (u: Expr): u is Pow => u instanceof Pow && u.base instanceof Constant && u.base.name === 'E';
+  const walk = (u: Expr) => {
+    if (!u.has(x)) return;
+    if (u instanceof Add || u instanceof Mul) u.args.forEach(walk);
+    else if (u instanceof Pow && u.exp instanceof Rational && u.exp.isInteger) walk(u.base);
+    else if (u instanceof Fn || isExpOfX(u)) gens.set(u.key, u);
+    else ok = false;
+  };
+  walk(e);
+  if (!ok) return undefined;
+  const t = new Dummy('t');
+  const reps = expGenerator([...gens.values()], t);
+  if (!reps) return undefined;
+  const [g, rep] = reps;
+  // every occurrence of x is in a power of the generator: the numerator is a polynomial in t
+  const [p] = fraction(together(xreplace(e, rep)));
+  return [g, uniqueKeys(roots(expandMul(p), t).map((r) => cancel(expand(r))))];
+}
+
+/** The rational coefficient of the exponent of exp(c*u) (1 for an exponent without one). */
+const expCoeff = (g: Pow): Rational => {
+  const c = g.exp instanceof Mul ? first(g.exp.args) : undefined;
+  return c instanceof Rational ? c : S.One;
+};
+
+/** exp(c*u) with an integer |numerator of c| > 1: a power of exp(u/q), solved as a polynomial (SymPy decompose_power). */
+const isExpPower = (g: Pow): boolean => g.base instanceof Constant && g.base.name === 'E' && Math.abs(Number(expCoeff(g).p)) > 1;
+
+/**
+ * The generator of single-generator solving and the replacements by powers
+ * of t: one function application, or exponentials exp(c_i*u) with rational
+ * c_i, which are powers of exp(u/q) with q the lcm of the denominators of the
+ * c_i (exp(2*x) and exp(x) are t**2 and t, like SymPy's polynomial generators).
+ */
+function expGenerator(gens: readonly (Fn | Pow)[], t: Dummy): [Fn | Pow, [Expr, Expr][]] | undefined {
+  // x occurs in the equation, so there is a generator
+  const g0 = first(gens);
+  if (gens.length === 1 && !(g0 instanceof Pow)) return [g0, [[g0, t]]];
+  const parts: [Expr, Rational, Expr][] = [];
+  for (const g of gens) {
+    if (!(g instanceof Pow)) return undefined;
+    const c = expCoeff(g);
+    parts.push([g, c, mul(g.exp, pow(c, -1))]);
+  }
+  const u = first(parts)[2];
+  if (parts.some(([, , r]) => r.key !== u.key)) return undefined;
+  const q = Rational.of(1n, parts.reduce((m, [, c]) => (m * c.q) / gcdBig(m, c.q), 1n));
+  const g = cast(exp(mul(q, u)), Pow, 'exponential generator');
+  return [g, parts.map(([e, c]) => [e, pow(t, mul(c, pow(q, -1)))])];
 }
 
 /**

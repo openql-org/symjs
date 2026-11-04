@@ -149,11 +149,14 @@ function sepDict(e: Expr, x: Sym, y: Sym): Map<Sym | 'coeff', Expr> | undefined 
   return m instanceof Map ? m : undefined;
 }
 
-/** classify_ode is running the solvers: an unevaluated integral still matches the hint. */
+/** classify_ode is running the solvers (the Lie group method is not tried). */
 let matching = false;
 
-/** Does e contain an unevaluated integral with respect to y (outside classify_ode)? */
-const integralIn = (e: Expr, y: Expr): boolean => !matching && some(e, (u) => u instanceof Integral && u.args.slice(1).some((l) => l.has(y)));
+/**
+ * e with f(x) for y; an integral in y left unevaluated gets f(x) as its upper
+ * limit (SymPy's Integral(g(_y), (_y, f(x)))).
+ */
+const atFunction = (e: Expr, y: Sym, fx: UndefFn): Expr => (some(e, (u) => u instanceof Integral && u.variable.key === y.key) ? subs(e, [[y, fx]]) : xreplace(e, [[y, fx]]));
 
 const separable: Solver = (p) => {
   if (p.order !== 1) return undefined;
@@ -167,9 +170,7 @@ const separable: Solver = (p) => {
   // the dict form has an entry for each symbol and the coefficient
   const g = (m: Map<Sym | 'coeff', Expr>, k: Sym | 'coeff') => getOrThrow(m, k);
   const ly = integrate(mul(g(m2, 'coeff'), g(m2, y), pow(g(m1, y), -1)), y);
-  // an integral in y left unevaluated cannot have f(x) substituted for its variable
-  if (integralIn(ly, y)) return undefined;
-  const lhs = xreplace(ly, [[y, p.fx]]);
+  const lhs = atFunction(ly, y, p.fx);
   const rhs = add(integrate(mul(-1, g(m1, 'coeff'), g(m1, p.x), pow(g(m2, p.x), -1)), p.x), C(1));
   return [Eq(lhs, rhs)];
 };
@@ -195,8 +196,7 @@ const firstExact: Solver = (p) => {
   }
   const Fx = integrate(m, p.x);
   const F = add(Fx, integrate(add(n, mul(-1, diff(Fx, y))), y));
-  if (integralIn(F, y)) return undefined;
-  return [Eq(xreplace(F, [[y, p.fx]]), C(1))];
+  return [Eq(atFunction(F, y, p.fx), C(1))];
 };
 
 /** f' + P f = Q normalized from the expanded equation. */

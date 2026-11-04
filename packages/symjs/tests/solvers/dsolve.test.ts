@@ -353,11 +353,14 @@ describe('dsolve', () => {
     expect(() => ps('Derivative(f(x), x) - 1/x')).toThrow(NotImplementedError);
     expect(() => ps('Derivative(f(x), x) - x*log(x)')).toThrow(NotImplementedError);
   });
-  it('separable and 1st_exact do not match when the integral in f(x) is left unevaluated', () => {
-    // SymPy: Eq(Integral(gamma(_y), (_y, f(x))), C1 + x); f(x) is not substituted into an unevaluated integral here
-    expect(() => dsolve(parse('Derivative(f(x), x) - 1/gamma(f(x))'), fx, { hint: 'separable' })).toThrow('unsupported equation');
-    // SymPy: Eq(x**2 + Piecewise((gamma(f(x)), ...), ..., (f(x)*meijerg(...)*gamma(f(x)) + ..., True)), C1)
-    expect(() => dsolve(parse('Derivative(f(x), x)*gamma(f(x)) + 2*x'), fx, { hint: '1st_exact' })).toThrow('unsupported equation');
+  it('separable and 1st_exact keep an integral in f(x) left unevaluated (SymPy)', () => {
+    expect(ds('Derivative(f(x), x) - 1/gamma(f(x))', 'separable')).toBe('Eq(Integral(gamma(_y), (_y, f(x))), C1 + x)');
+    expect(ds('Derivative(f(x), x) - 1/gamma(f(x))')).toBe('Eq(Integral(gamma(_y), (_y, f(x))), C1 + x)');
+    expect(ds('Derivative(f(x), x)*gamma(f(x)) + 2*x')).toBe('Eq(Integral(gamma(_y), (_y, f(x))), C1 - x**2)');
+    // SymPy: Eq(x**2 + Piecewise((gamma(f(x)), (Abs(f(x)) < 1) & (1/Abs(f(x)) < 1)), (f(x)*gamma(f(x)), (Abs(f(x)) < 1) |
+    // (1/Abs(f(x)) < 1)), (f(x)*meijerg(...)*gamma(f(x)) + ..., True)), C1), which is wrong: its x-derivative on the
+    // f(x)*gamma(f(x)) branch is 2*x + (gamma(f) + f*polygamma(0, f)*gamma(f))*f' and not the equation
+    expect(ds('Derivative(f(x), x)*gamma(f(x)) + 2*x', '1st_exact')).toBe('Eq(x**2 + Integral(gamma(_y), (_y, f(x))), C1)');
   });
   it('nth_linear_euler_eq_nonhomogeneous_variation_of_parameters (SymPy)', () => {
     const h = (e: string) => show(dsolve(parse(e), fx, { hint: 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters' }));
@@ -376,10 +379,8 @@ describe('dsolve', () => {
     expect(() => h('x*Derivative(f(x), x) + f(x)**2 - x')).toThrow(NotImplementedError);
   });
   it('unsupported equations', () => {
-    // SymPy: [Eq(f(x), -acos((-C1 - exp(2*x))/(C1 - exp(2*x))) + 2*pi), Eq(f(x), acos(...))] from
-    // Integral(1/sin(y)) = log(cos(y) - 1)/2 - log(cos(y) + 1)/2; separable gives that implicit
-    // solution here, which solve does not invert to the acos forms
-    expect(ds('Derivative(f(x), x) + sin(f(x))')).toBe('Eq(x + log(cos(f(x)) - 1)/2 - log(cos(f(x)) + 1)/2, C1)');
+    // SymPy: Integral(1/sin(y)) = log(cos(y) - 1)/2 - log(cos(y) + 1)/2, inverted for f(x)
+    expect(ds('Derivative(f(x), x) + sin(f(x))')).toBe('[Eq(f(x), -acos((-C1 - exp(2*x))/(C1 - exp(2*x))) + 2*pi), Eq(f(x), acos((-C1 - exp(2*x))/(C1 - exp(2*x))))]');
     // lie_group (SymPy): Eq(f(x), -x - LambertW(C1*exp(-x - 1)) - 1)
     expect(ds('Derivative(f(x), x) - 1/(x + f(x))')).toBe('Eq(f(x), -x - LambertW(C1*exp(-x - 1)) - 1)');
     // SymPy (nth_algebraic): Eq(Integral(1/LambertW(-_y), (_y, f(x))), C1 + x); lie_group gives the same

@@ -23,7 +23,7 @@ import { and, not, or, xor } from '../core/boolalg';
 import { add, div, exp, mul, neg, pow, sqrt, sub, sympify } from '../core/ops';
 import { fn } from '../functions/elementary/elementary';
 import { at, defined } from '../core/guard';
-import { Eq, piecewise, rel } from '../core/logic';
+import { piecewise, rel } from '../core/logic';
 import { SymFunction, derivative } from '../core/undef';
 
 export interface ParseOptions {
@@ -176,6 +176,53 @@ function argAt(args: readonly Expr[], i: number, name: string): Expr {
   return a;
 }
 
+/** The exact value of a number argument of Rational() and Integer() (a Float by its binary value, as SymPy's Python floats). */
+function exactNumber(e: Expr, name: string): Rational {
+  if (e instanceof Rational) return e;
+  if (e instanceof Float) {
+    const { man, exp } = e.mpf;
+    return exp >= 0 ? Rational.of(man << BigInt(exp)) : Rational.of(man, 1n << BigInt(-exp));
+  }
+  throw new TypeError(name === 'Integer' ? `Argument of Integer should be of numeric type, got ${e.toString()}.` : `invalid input: ${e.toString()}`);
+}
+
+/** SymPy Float(num, dps): the precision is a nonnegative integer. */
+function floatArgs(args: readonly Expr[]): Expr {
+  const [num, dps] = [argAt(args, 0, 'Float'), args[1]];
+  if (dps === undefined) return float(num);
+  if (!(dps instanceof Rational && dps.isInteger)) throw new TypeError(`Float(): the precision ${dps.toString()} is not an integer`);
+  return float(num, Number(dps.p));
+}
+
+/** SymPy Integer(x): x truncated toward zero. */
+function integerArg(args: readonly Expr[]): Expr {
+  const r = exactNumber(argAt(args, 0, 'Integer'), 'Integer');
+  return Rational.of(r.p / r.q);
+}
+
+/** SymPy Rational(p, q) of numbers (Floats are taken exactly). */
+function rationalArgs(args: readonly Expr[]): Expr {
+  const p = exactNumber(argAt(args, 0, 'Rational'), 'Rational');
+  const q = args[1];
+  return q === undefined ? p : div(p, exactNumber(q, 'Rational'));
+}
+
+/** Relationals by SymPy's function and class names. */
+const RELATIONS: Record<string, RelOp> = {
+  Eq: 'Eq',
+  Equality: 'Eq',
+  Ne: 'Ne',
+  Unequality: 'Ne',
+  Lt: 'Lt',
+  StrictLessThan: 'Lt',
+  Le: 'Le',
+  LessThan: 'Le',
+  Gt: 'Gt',
+  StrictGreaterThan: 'Gt',
+  Ge: 'Ge',
+  GreaterThan: 'Ge',
+};
+
 const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   sqrt: (args) => sqrt(argAt(args, 0, 'sqrt')),
   exp: (args) => exp(argAt(args, 0, 'exp')),
@@ -191,8 +238,16 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   trigamma: (args) => fn('polygamma', [1, argAt(args, 0, 'trigamma')]),
   E1: (args) => fn('expint', [1, argAt(args, 0, 'E1')]),
   RisingFactorial: (args) => fn('rf', args),
-  // SymPy 1.14 Eq requires both sides (Eq(x) is a TypeError)
-  Eq: (args) => Eq(argAt(args, 0, 'Eq'), argAt(args, 1, 'Eq')),
+  // SymPy 1.14 relationals require both sides (Eq(x) is a TypeError)
+  ...Object.fromEntries(Object.entries(RELATIONS).map(([n, op]) => [n, (args: Expr[]) => rel(op, argAt(args, 0, n), argAt(args, 1, n))])),
+  And: (args) => and(...args),
+  Or: (args) => or(...args),
+  Not: (args) => not(argAt(args, 0, 'Not')),
+  Xor: (args) => xor(...args),
+  Float: floatArgs,
+  Integer: integerArg,
+  Rational: rationalArgs,
+  frac: (args) => fn('frac', [argAt(args, 0, 'frac')]),
   FallingFactorial: (args) => fn('ff', args),
 };
 
