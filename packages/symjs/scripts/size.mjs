@@ -45,8 +45,9 @@ const CASES = [
   ['unify', '*', 210],
   ['algebras', 'Quaternion', 460],
   ['holonomic', 'exprToHolonomic', 815],
-  ['index', 'Rational', 790],
-  ['index', '*', 1425],
+  ['geometry', '*', 790],
+  ['index', 'Rational', 900],
+  ['index', '*', 1545],
 ];
 
 async function measure(entry, names) {

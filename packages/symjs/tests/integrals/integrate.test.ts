@@ -356,3 +356,27 @@ describe('DiracDelta, SingularityFunction and the Risch algorithm (SymPy Integra
     expect(String(integrate(P('log(x/exp(x) + 1)'), x))).toBe('x*log(x*exp(-x) + 1) + Integral((x**2 - x)/(x + exp(x)), x)');
   });
 });
+
+describe('square roots of quadratics (SymPy manualintegrate)', () => {
+  it('match SymPy', () => {
+    const x = new Sym('x');
+    const I = (t: string): string => sstr(integrate(parse(t), x));
+    expect(I('sqrt(x**2 + 1)')).toBe('x*sqrt(x**2 + 1)/2 + asinh(x)/2');
+    expect(I('sqrt(4*x**2 + 1)')).toBe('x*sqrt(4*x**2 + 1)/2 + asinh(2*x)/4');
+    expect(I('sqrt(x**2 + 4)')).toBe('x*sqrt(x**2 + 4)/2 + 2*asinh(x/2)');
+    expect(I('sqrt(1 - x**2)')).toBe('x*sqrt(1 - x**2)/2 + asin(x)/2');
+    // SymPy: (x/2 + 1/4)*sqrt(x**2 + x) - log(2*x + 2*sqrt(x**2 + x) + 1)/8
+    // (the logarithm differs from SymPy's by the constant log(2)/8)
+    expect(I('sqrt(x**2 + x)')).toBe('(2*x + 1)*sqrt(x**2 + x)/4 - log(x + sqrt(x**2 + x) + 1/2)/8');
+    expect(I('sqrt(x**2 - 1)')).toBe('x*sqrt(x**2 - 1)/2 - log(x + sqrt(x**2 - 1))/2');
+    // SymPy: (x/2 + 1/4)*sqrt(x**2 + x + 1) + 3*asinh(2*sqrt(3)*(x + 1/2)/3)/8
+    expect(I('sqrt(x**2 + x + 1)')).toBe('(2*x + 1)*sqrt(x**2 + x + 1)/4 + 3*asinh(sqrt(3)*(2*x + 1)/3)/8');
+    const t = new Sym('t', { real: true });
+    expect(sstr(integrate(parse('sqrt(4*t**2 + 1)').subs(new Sym('t'), t), t, [2, 5]))).toBe('-sqrt(17) - asinh(4)/4 + asinh(10)/4 + 5*sqrt(101)/2');
+    // a perfect square and symbolic coefficients are not handled by this rule
+    // (SymPy: (x/2 + 1/2)*sqrt(x**2 + 2*x + 1) and sqrt(a)*x*sqrt(1 + x**2/a)/2 + a*asinh(x/sqrt(a))/2)
+    expect(I('sqrt(x**2 + 2*x + 1)')).toBe('Integral(sqrt(x**2 + 2*x + 1), x)');
+    expect(I('sqrt(x**2 + a)')).toBe('Integral(sqrt(a + x**2), x)');
+    expect(I('sqrt(x**3 + 1)')).toBe('Integral(sqrt(x**3 + 1), x)');
+  });
+});

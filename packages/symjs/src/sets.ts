@@ -56,7 +56,6 @@ import { Lopen as _Lopen_ } from './sets/sets';
 import { Ropen as _Ropen_ } from './sets/sets';
 import { finiteSet as _finiteSet_ } from './sets/sets';
 import { union as _union_ } from './sets/sets';
-import { intersection as _intersection_ } from './sets/sets';
 import { complement as _complement_ } from './sets/sets';
 import { containsQ as _containsQ_, isSubset as _isSubset_, type SetExpr as _SetExpr_ } from './sets/sets';
 import { type Truth, toTruth as _toTruth_ } from './core/truth';
@@ -88,9 +87,6 @@ export const finiteSet = _finiteSet_;
 
 /** @deprecated Use `Union`. */
 export const union = _union_;
-
-/** @deprecated Use `Intersection`. */
-export const intersection = _intersection_;
 
 /** @deprecated Use `Complement`. */
 export const complement = _complement_;

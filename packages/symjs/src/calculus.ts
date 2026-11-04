@@ -20,9 +20,9 @@ export {
   transformIntegral,
   principalValue,
   asSum,
-  Curve,
   lineIntegrate,
 } from './integrals/transform';
+export type { ParametricCurve } from './integrals/transform';
 // integral transforms (SymPy sympy.integrals.transforms and laplace)
 export * from './integrals/transforms/index';
 export { singularityintegrate } from './integrals/singularityfunctions';

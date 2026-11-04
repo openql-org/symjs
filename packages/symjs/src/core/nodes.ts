@@ -1020,6 +1020,14 @@ export abstract class ExtensionExpr extends Expr {
   diffSelf(_x: Expr, _d: (e: Expr, x: Expr) => Expr): Expr | undefined {
     return undefined;
   }
+  /**
+   * SymPy _eval_evalf: this node evaluated to `dps` digits, given `evalfArg`
+   * that evaluates a subexpression; undefined for the generic rule (the
+   * arguments evaluated, then withArgs).
+   */
+  evalfSelf(_evalfArg: (e: Expr) => Expr, _dps: number): Expr | undefined {
+    return undefined;
+  }
   /** Hermitian adjoint, conjugate and transpose; undefined keeps the generic unevaluated form. */
   adjointSelf(): Expr | undefined {
     return undefined;

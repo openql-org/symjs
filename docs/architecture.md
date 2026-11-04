@@ -17,6 +17,7 @@ without the higher ones.
 | L1 functions | elementary and special functions, numeric evaluation (evalf, lambdify), parsing, differentiation, expansion and rewriting, propositional logic, number theory, discrete transforms and convolutions, iterable utilities, rewrite strategies and unification | `functions/`, `logic/`, `ntheory/`, `discrete/`, `utilities/`, `strategies/`, `unify/`, `numeric/` (other files), `parsing/`, `concrete/node.ts`, `calculus/diff.ts`, `calculus/finitediff.ts`, `simplify/expand.ts`, `simplify/rewrite.ts` |
 | L2 algebra | polynomials, simplification, matrices (including linear systems), series and limits, sets, sums and products, permutations, N-dimensional arrays, quaternions | `polys/`, `combinatorics/`, `tensor/`, `algebras/`, `simplify/`, `matrices/`, `series/`, `sets/`, `calculus/` (other files), `concrete/summations.ts` |
 | L3 solvers and integration | equation solving, ODEs, recurrences, inequalities, integration, `doit`, Fourier and formal power series, holonomic functions | `solvers/`, `integrals/`, `holonomic/`, `calculus/doit.ts`, `series/formal.ts`, `series/fourier.ts` |
+| L4 geometry | points, lines, planes, polygons, ellipses, curves and parabolas, which intersect by solving equations | `geometry/` |
 
 The entry points (`src/*.ts`) may import every layer.
 
@@ -149,3 +150,19 @@ SymPy modules correspond to it as follows.
 | `series/fourier.py` | `series/fourier.ts` | |
 | `core/expr.py` (`Expr.lseries`, `Expr.dir`) | `series/lseries.ts` | no SymPy module of its own; built on `series` and `limit` |
 | (none: `Expr.nseries` and the `_eval_nseries` methods) | `series/puiseux.ts` | the truncated Puiseux series engine of `series` and `limit`; SymPy's `polys/puiseux.py` is the unrelated ring used by `ring_series` |
+
+### `geometry/`
+
+| SymPy module | symjs | Note |
+|---|---|---|
+| `geometry/entity.py` | `geometry/entity.ts` | also the constructor registry through which the lower geometry modules build points |
+| `geometry/exceptions.py` | `geometry/exceptions.ts` | also `Undecidable` (SymPy `utilities/misc.py`), which the geometry raises |
+| `geometry/point.py` | `geometry/point.ts` | |
+| `geometry/line.py` | `geometry/line.ts` | |
+| `geometry/plane.py` | `geometry/plane.ts` | |
+| `geometry/ellipse.py` | `geometry/ellipse.ts` | |
+| `geometry/polygon.py` | `geometry/polygon.ts` | |
+| `geometry/curve.py` | `geometry/curve.ts` | |
+| `geometry/parabola.py` | `geometry/parabola.ts` | |
+| `geometry/util.py` | `geometry/util.ts` | `convex_hull`, `centroid` and `are_coplanar` build segments, polygons and planes through constructors those modules register (they import `util.ts`) |
+| (none: SymPy `solve` of the coordinate equations) | `geometry/solvehelp.ts` | the systems the geometry solves (`solve([...], [x, y], dict=True)`), with SymPy's checks of assumptions and denominators |

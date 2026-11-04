@@ -17,6 +17,7 @@ import os
 os.environ.setdefault("MPLBACKEND", "Agg")  # doctests that plot must not open windows
 
 import ast
+import re
 import doctest
 import signal
 import importlib
@@ -242,6 +243,16 @@ MODULES = {
     "sympy.unify.core": "unify",
     "sympy.unify.rewrite": "unify",
     "sympy.unify.usympy": "unify",
+    "sympy.geometry.entity": "geometry",
+    "sympy.geometry.point": "geometry",
+    "sympy.geometry.line": "geometry",
+    "sympy.geometry.plane": "geometry",
+    "sympy.geometry.polygon": "geometry",
+    "sympy.geometry.ellipse": "geometry",
+    "sympy.geometry.curve": "geometry",
+    "sympy.geometry.parabola": "geometry",
+    "sympy.geometry.util": "geometry",
+    "sympy.geometry.exceptions": "geometry",
 }
 
 # subpackages whose public names are not top-level sympy names (sympy.discrete.linrec,
@@ -336,9 +347,10 @@ def ser(o):
     from sympy.calculus.accumulationbounds import AccumulationBounds as _AB
     if isinstance(o, _AB):
         return {"t": "AccumBounds", "min": ser(o.min), "max": ser(o.max)}
-    from sympy.geometry import Curve as _Curve
-    if isinstance(o, _Curve):
-        return {"t": "Curve", "functions": [ser(f) for f in o.functions], "limits": [ser(l) for l in o.limits]}
+    from sympy.geometry.entity import GeometryEntity as _GE
+    if isinstance(o, _GE):
+        # rebuilt by the class constructor from its arguments
+        return {"t": "Geom", "cls": type(o).__name__, "args": [ser(a) for a in o.args]}
     if isinstance(o, sympy.Indexed):
         return {"t": "Indexed", "base": ser(o.base.label), "indices": [ser(i) for i in o.indices]}
     if isinstance(o, sympy.IndexedBase):
@@ -599,6 +611,9 @@ def main(dst):
                 src = ex.source.strip()
                 if ex.options.get(doctest.SKIP):
                     # SymPy does not run these either (random or illustrative output)
+                    continue
+                if re.fullmatch(r"[\w.]+\(\.\.\.\)", ex.want.strip()):
+                    # only the class of the result is shown (random output elided with ELLIPSIS)
                     continue
                 try:
                     tree = ast.parse(src, mode="eval")

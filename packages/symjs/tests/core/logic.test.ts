@@ -81,3 +81,31 @@ describe('Piecewise (SymPy Piecewise.eval)', () => {
     expect(s(piecewise([1, inner2], [0, true]))).toBe('Piecewise((1, ITE(x > 0, y > 2, z > 3)), (0, True))');
   });
 });
+
+describe('ordering relations decided like SymPy (is_lt, is_le, is_gt, is_ge)', () => {
+  const s = (e: Expr): string => String(e);
+  it('by the assumptions of the difference', () => {
+    const p = new sj.Sym('p', { positive: true });
+    const n = new sj.Sym('n', { nonnegative: true });
+    const q = new sj.Sym('q', { negative: true });
+    const x = new sj.Sym('x');
+    expect([Gt(p, 0), Ge(p, 0), Lt(p, 0), Le(p, 0)].map(s)).toEqual(['True', 'True', 'False', 'False']);
+    expect([Gt(q, 0), Ge(q, 0), Lt(q, 0), Le(q, 0)].map(s)).toEqual(['False', 'False', 'True', 'True']);
+    expect([Ge(n, 0), Lt(n, 0)].map(s)).toEqual(['True', 'False']);
+    expect([Le(mul(-1, n), 0), Gt(mul(-1, n), 0)].map(s)).toEqual(['True', 'False']);
+    expect([Gt(x, 0), Le(x, 0)].map(s)).toEqual(['x > 0', 'x <= 0']);
+  });
+  it('numerically for real numbers', () => {
+    const r = (t: string): Expr => sj.parse(t);
+    expect([Lt(r('sqrt(2)'), 2), Le(r('sqrt(2)'), 1), Gt(r('pi'), 3), Ge(r('E'), 3)].map(s)).toEqual(['True', 'False', 'True', 'False']);
+    const e1 = r('sqrt(2) + sqrt(3)');
+    expect([Ge(e1, r('pi')), Gt(e1, r('pi')), Le(e1, r('pi')), Lt(e1, r('pi'))].map(s)).toEqual(['True', 'True', 'False', 'False']);
+    const c1 = r('cos(1)');
+    expect([Ge(c1, S.Half), Gt(c1, S.Half), Le(c1, S.Half), Lt(c1, S.Half)].map(s)).toEqual(['True', 'True', 'False', 'False']);
+    // undecided: complex, near zero, not evaluable
+    expect(s(Lt(r('I + 1'), 2))).toBe('1 + I < 2');
+    expect(s(Lt(r('sqrt(2) + sqrt(3)'), r('sqrt(5 + 2*sqrt(6))')))).toBe('sqrt(2) + sqrt(3) < sqrt(2*sqrt(6) + 5)');
+    expect(s(Lt(r('f(1)'), 2))).toBe('f(1) < 2');
+    expect(s(Lt(r('oo'), 2))).toBe('False');
+  });
+});

@@ -11,8 +11,7 @@ import type { Expr } from '../../core/nodes';
 import { BoolAtom, Derivative, Float, Integral, Limit, Rational, S } from '../../core/nodes';
 import { Concrete } from '../../core/concrete';
 import { rel } from '../../core/logic';
-import { isNegative, isPositive, isReal } from '../../core/assumptions';
-import { add, mul } from '../../core/ops';
+import { isReal } from '../../core/assumptions';
 import type { Truth } from '../../core/truth';
 import { precedence } from '../../printing/str';
 import { at, expectType } from '../../core/guard';
@@ -36,14 +35,9 @@ export const sameList = (a: readonly Expr[], b: readonly Expr[]): boolean => a.l
 export function relTruth(op: 'Eq' | 'Ne' | 'Lt' | 'Le' | 'Gt' | 'Ge', a: Expr, b: Expr): Truth {
   // SymPy leaves inequalities between expressions not known to be real unevaluated
   if (op !== 'Eq' && op !== 'Ne' && (isReal(a) !== true || isReal(b) !== true)) return 'unknown';
+  // (rel decides the order by the sign of the difference, SymPy is_lt: (n + i < n) is False for a nonnegative i)
   const r = rel(op, a, b);
-  if (r instanceof BoolAtom) return r.value;
-  if (op === 'Eq' || op === 'Ne') return 'unknown';
-  // the sign of the difference (SymPy is_lt: (n + i < n) is False for a nonnegative i)
-  const d = add(a, mul(-1, b));
-  const t = op === 'Lt' || op === 'Ge' ? isNegative(d) : isPositive(d);
-  if (t === undefined) return 'unknown';
-  return op === 'Lt' || op === 'Gt' ? t : !t;
+  return r instanceof BoolAtom ? r.value : 'unknown';
 }
 
 /** A JavaScript integer from an explicit integer expression. */

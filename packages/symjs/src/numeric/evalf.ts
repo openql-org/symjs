@@ -288,6 +288,10 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
     if (x instanceof Mul && x.args[0] instanceof Rational && x.args[0].p === -1n && x.args[0].q === 1n) {
       return mul(-1, go(mul(...x.args.slice(1))));
     }
+    if (x instanceof ExtensionExpr) {
+      const own = x.evalfSelf(go, F.precToDps(prec));
+      if (own !== undefined) return own;
+    }
     return rebuild(x, x.args.map(go));
   };
   if (values === undefined) return go(e);

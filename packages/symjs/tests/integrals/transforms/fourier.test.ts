@@ -414,7 +414,8 @@ describe('transforms by the Meijer G-function integrator in another form than Sy
   });
   it('cosine 1/(x**2 + b**2)**2', () => {
     const F = cosineTransform(Pf('1/(x**2 + b**2)**2'), x, k);
-    expect(showT(F)).toBe('sqrt(2)*sqrt(pi)*(b*k*(cosh(b*k) - sinh(b*k)/(b*k)) - b*k*sinh(b*k) + cosh(b*k))/(4*b**3)');
+    // simplify puts the inner fraction over the denominator (SymPy's form is given below)
+    expect(showT(F)).toBe('sqrt(2)*sqrt(pi)*(-b*k*sinh(b*k) + b*k*cosh(b*k) - sinh(b*k) + cosh(b*k))/(4*b**3)');
     close(F, '-sqrt(2)*sqrt(pi)*(b*k*sinh(b*k) - b*k*cosh(b*k) + sinh(b*k) - cosh(b*k))/(4*b**3)');
   });
   it('Hankel transforms', () => {

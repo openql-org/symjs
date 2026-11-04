@@ -56,6 +56,8 @@ Notes on the implementation:
 - Results that are dicts in SymPy are `ExprMap`s: `Map`s whose expression keys compare structurally. `roots(f, x)` returns root -> multiplicity; `roots(f, x, { multiple: true })` returns the list.
 - `div` is SymPy's polynomial division; the former arithmetic helper `div(a, b)` is `a.div(b)` (or `mul(a, pow(b, -1))`).
 - `expandMul` is SymPy's `expand_mul`.
+- `intersection` is SymPy's top-level `intersection` of geometric entities (`sympy.geometry.util`), exported by `@symjs/symjs/geometry`; given only sets it returns their `Intersection` (one function for both forms). The former deprecated set alias `intersection` of `@symjs/symjs/sets` is removed: SymPy's name for it is the class `Intersection`.
+- `Curve` is SymPy's geometric `Curve` (`@symjs/symjs/geometry`), an expression node; `lineIntegrate` takes any curve with `functions` and `limits` (the `ParametricCurve` type of `@symjs/symjs/calculus`), so the calculus entry no longer exports a `Curve` class of its own.
 
 ## Entry points and tree-shaking
 
@@ -215,7 +217,7 @@ Notes on the implementation:
 | `Ropen` | deprecated | `Interval.Ropen` | SymPy Interval.Ropen |
 | `finiteSet` | deprecated | `FiniteSet.of` |  |
 | `union` | stable | `Union` | SymPy class name |
-| `intersection` | stable | `Intersection` | SymPy class name |
+| `intersection` | stable |  | SymPy geometry `intersection` (`@symjs/symjs/geometry`); sets are intersected with `Intersection` |
 | `complement` | stable | `Complement` | SymPy class name |
 | `contains` | stable |  | Set.contains |
 | `containsQ` | internal |  |  |

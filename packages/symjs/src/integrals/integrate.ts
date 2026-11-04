@@ -142,8 +142,31 @@ class Integrator {
       this.byParts(f) ??
       this.expImaginary(f) ??
       this.rational(f) ??
-      this.expanded(f)
+      this.expanded(f) ??
+      this.sqrtQuadratic(f)
     );
+  }
+
+  // ---- sqrt(a*x**2 + b*x + c) with rational coefficients (SymPy manualintegrate) ----
+
+  private sqrtQuadratic(f: Expr): R {
+    const x = this.x;
+    if (!(f instanceof Pow && f.exp instanceof Rational && f.exp.p === 1n && f.exp.q === 2n)) return undefined;
+    const pc = polyCoefficients(f.base, x);
+    if (!pc || Math.max(...pc.keys()) !== 2) return undefined;
+    const [a, b, c] = [getOrThrow(pc, 2), pc.get(1) ?? S.Zero, pc.get(0) ?? S.Zero];
+    if (!(a instanceof Rational && b instanceof Rational && c instanceof Rational)) return undefined;
+    // the discriminant b**2 - 4*a*c; zero is a perfect square (not handled here)
+    const disc = numAdd(numMul(b, b), numNeg(numMul(Rational.of(4n), numMul(a, c))));
+    if (disc.isZero) return undefined;
+    const u = add(mul(2, a, x), b);
+    // integral of sqrt(Q) = (2*a*x + b)/(4*a)*sqrt(Q) - (b**2 - 4*a*c)/(8*a)*integral of 1/sqrt(Q)
+    const first = mul(u, pow(mul(4, a), -1), f);
+    let inv: Expr;
+    if (a.isNegative) inv = mul(-1, pow(sqrt(mul(-1, a)), -1), asin(mul(u, pow(sqrt(disc), -1))));
+    else if (disc.isNegative) inv = mul(pow(sqrt(a), -1), fnErf('asinh', [mul(u, pow(sqrt(mul(-1, disc)), -1))]));
+    else inv = mul(pow(sqrt(a), -1), log(add(f, mul(u, pow(mul(2, sqrt(a)), -1)))));
+    return add(first, mul(-1, disc, pow(mul(8, a), -1), inv));
   }
 
   // ---- Gaussian: exp(A*x**2 + B*x + C) -> erf / erfi ------------------------

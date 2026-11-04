@@ -46,3 +46,16 @@ describe('ntheory egyptian, modular, digits, multinomial and random: results equ
     expect(() => r.randrange(5n, 5n)).toThrow(RangeError);
   });
 });
+
+describe('Python floats (random, gauss)', () => {
+  it('match CPython', () => {
+    const r = new Random(42);
+    expect([r.random(), r.random()]).toEqual([0.6394267984578837, 0.025010755222666936]);
+    const g = new Random(7);
+    const v = [g.gauss(0, 1), g.gauss(0, 1), g.gauss(0, 1), g.gauss(1, 2)];
+    [-0.2558802884476004, 0.511431512516514, -0.2260961647831047, 0.36986315533762915].forEach((w, i) => expect(v[i]).toBeCloseTo(w, 14));
+    // reseeding drops the kept second value
+    g.seed(7);
+    expect(g.gauss()).toBeCloseTo(-0.2558802884476004, 14);
+  });
+});

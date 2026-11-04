@@ -137,27 +137,25 @@ export function asSum(integral: Integral, n: ExprLike, method: 'left' | 'right' 
   return mul(dx, add(extra, evaluate ? doitConcrete(cast(s, Concrete, 'Sum')) : s));
 }
 
-/** SymPy Curve(functions, (t, a, b)): a parametric curve. */
-export class Curve {
-  readonly functions: Expr[];
-  constructor(
-    functions: readonly ExprLike[],
-    readonly limits: readonly [Sym, Expr, Expr],
-  ) {
-    this.functions = functions.map(sympify);
-  }
-  toString(): string {
-    return `Curve((${this.functions.map(String).join(', ')}), (${this.limits.map(String).join(', ')}))`;
-  }
+/**
+ * A parametric curve as line_integrate takes it: the coordinate functions
+ * and the limits (t, a, b) (SymPy Curve, see '@symjs/symjs/geometry').
+ */
+export interface ParametricCurve {
+  readonly functions: Iterable<Expr>;
+  readonly limits: Iterable<Expr>;
 }
 
 /** SymPy line_integrate(field, curve, vars): the integral of field along the curve with respect to arc length. */
-export function lineIntegrate(field: ExprLike, curve: Curve, vars: readonly Sym[]): Expr {
-  const [t0, a, b] = curve.limits;
-  if (vars.length !== curve.functions.length) throw new RangeError('line_integrate: the curve and the variables differ in dimension');
+export function lineIntegrate(field: ExprLike, curve: ParametricCurve, vars: readonly Sym[]): Expr {
+  const limits = [...curve.limits];
+  const functions = [...curve.functions];
+  const t0 = cast(at(limits, 0), Sym, 'the curve parameter');
+  const [a, b] = [at(limits, 1), at(limits, 2)];
+  if (vars.length !== functions.length) throw new RangeError('line_integrate: the curve and the variables differ in dimension');
   // the parameter is real
   const t = new Dummy(t0.name, { real: true });
-  const fs = curve.functions.map((g) => subs(g, [[t0, t]]));
+  const fs = functions.map((g) => subs(g, [[t0, t]]));
   const f = subs(
     sympify(field),
     vars.map((v, i): [Expr, Expr] => [v, at(fs, i)]),

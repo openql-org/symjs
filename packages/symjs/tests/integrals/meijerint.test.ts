@@ -172,6 +172,9 @@ describe('helpers', () => {
   });
   it('condsimp evaluates numeric relations and simplifies arguments', () => {
     expect(sstr(condsimp(Lt(sqrt(2), pi)))).toBe('True');
+    // a numeric relation the assumptions do not decide: re(exp(I*pi/4)) = sqrt(2)/2
+    expect(sstr(condsimp(Lt(parse('re(exp(I*pi/4))'), 0)))).toBe('False');
+    expect(sstr(condsimp(Gt(parse('re(exp(I*pi/4))'), 0)))).toBe('True');
     // complex and unevaluable numbers stay
     expect(sstr(condsimp(Lt(add(1, I), 2)))).toBe('I < 1');
     expect(sstr(condsimp(Gt(hyper([1, 2, 3], [4], 2), 0)))).toBe('hyper((1, 2, 3), (4,), 2) > 0');

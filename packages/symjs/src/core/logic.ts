@@ -12,6 +12,7 @@ import { numCmp } from './num';
 import { add, mul, sympify } from './ops';
 import { BoolOp } from './boolalg';
 import { at } from './guard';
+import { isNegative, isNonNegative, isPositive } from './assumptions';
 
 const isBoolean = (e: Expr): boolean => e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp;
 const isSpecial = (name: string) => (x: Expr): boolean => x instanceof Special && x.name === name;
@@ -46,7 +47,26 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
       // not numerically evaluable
     }
   }
+  if (!equality) {
+    const decided = orderTruth(op, d);
+    if (decided !== undefined) return decided ? S.true : S.false;
+  }
   return new Rel(op, lhs, rhs);
+}
+
+/**
+ * SymPy is_lt/is_le/is_gt/is_ge of lhs - rhs = d: decided by the sign the
+ * assumptions give d (which evaluate real numbers numerically); undefined
+ * when it cannot be decided.
+ */
+function orderTruth(op: 'Lt' | 'Le' | 'Gt' | 'Ge', d: Expr): boolean | undefined {
+  const lower = op === 'Lt' || op === 'Le';
+  // Lt and Le ask about -d > 0 and -d >= 0
+  const v = lower ? mul(-1, d) : d;
+  const strict = op === 'Lt' || op === 'Gt';
+  if ((strict ? isPositive(v) : isNonNegative(v)) === true) return true;
+  if ((strict ? isNonNegative(mul(-1, v)) : isNegative(v)) === true) return false;
+  return undefined;
 }
 
 export const Eq = (a: ExprLike, b: ExprLike): Expr => rel('Eq', a, b);

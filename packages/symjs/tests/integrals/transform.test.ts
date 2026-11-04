@@ -5,6 +5,7 @@
 // IntegralTransform and the unevaluated transform classes. Expected values are those of SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
+import { Curve } from '../../src/geometry/curve';
 import {
   Integral,
   S,
@@ -14,7 +15,6 @@ import {
   principalValue,
   symbols,
   transformIntegral,
-  Curve,
   Sym,
   mul,
   simplify,
@@ -115,10 +115,10 @@ describe('Integral.as_sum (SymPy 1.14)', () => {
 
 describe('Curve and line_integrate (SymPy 1.14)', () => {
   it('prints and checks the dimension', () => {
-    const C = new Curve([parse('exp(t) + 1'), parse('exp(t) - 1')], [t, S.Zero, parse('log(2)')]);
+    const C = Curve([parse('exp(t) + 1'), parse('exp(t) - 1')], [t, S.Zero, parse('log(2)')]);
     expect(String(C)).toBe('Curve((exp(t) + 1, exp(t) - 1), (t, 0, log(2)))');
     // ValueError: Field variable size does not match curve dimension.
-    expect(() => lineIntegrate(parse('x + y'), new Curve([t, t], [t, S.Zero, S.One]), [x])).toThrow(RangeError);
+    expect(() => lineIntegrate(parse('x + y'), Curve([t, t], [t, S.Zero, S.One]), [x])).toThrow(RangeError);
     expect(y).toBeDefined();
   });
 });

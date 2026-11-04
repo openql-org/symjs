@@ -272,8 +272,7 @@ function condRel(t0: Rel): Expr {
   const f = t1.lhs instanceof Mul && t1.rhs.freeSymbols().size === 0 ? t1.lhs.args.find(isRat) : undefined;
   const t = f?.isPositive === true ? new Rel(t1.op, div(t1.lhs, f), div(t1.rhs, f)) : t1;
   const [lhs, rhs] = [t.lhs, t.rhs];
-  // an absolute value is not negative
-  if (t.op === 'Lt' && isFnN(lhs, 'abs') && isRat(rhs) && rhs.isZero) return S.false;
+  // (Abs(p) < 0 is decided False when the relation is built)
   if (t.op === 'Eq' && isRat(rhs) && rhs.isZero && isFnN(lhs, 'arg') && !isPolarish(first(lhs.args))) return Gt(first(lhs.args), 0);
   return t;
 }

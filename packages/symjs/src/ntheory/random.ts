@@ -30,6 +30,7 @@ export class Random {
 
   /** Python Random.seed(a) for an integer a (None: a seed from Math.random). */
   seed(a?: bigint | number): void {
+    this.#gaussNext = undefined;
     let n: bigint;
     if (a === undefined) n = BigInt(Math.floor(Math.random() * 2 ** 32)) * (1n << 32n) + BigInt(Math.floor(Math.random() * 2 ** 32));
     else n = BigInt(a);
@@ -123,6 +124,28 @@ export class Random {
       shift += 32n;
     }
     return r;
+  }
+
+  /** Python Random.random(): a float in [0, 1) with 53 random bits (genrand_res53). */
+  random(): number {
+    const a = this.genrandUint32() >>> 5;
+    const b = this.genrandUint32() >>> 6;
+    return (a * 67108864 + b) * (1 / 9007199254740992);
+  }
+
+  #gaussNext: number | undefined;
+
+  /** Python Random.gauss(mu, sigma): a normally distributed float (Box-Muller, the second value kept for the next call). */
+  gauss(mu = 0, sigma = 1): number {
+    let z = this.#gaussNext;
+    this.#gaussNext = undefined;
+    if (z === undefined) {
+      const x2pi = this.random() * 2 * Math.PI;
+      const g2rad = Math.sqrt(-2 * Math.log(1 - this.random()));
+      z = Math.cos(x2pi) * g2rad;
+      this.#gaussNext = Math.sin(x2pi) * g2rad;
+    }
+    return mu + z * sigma;
   }
 
   /** Python Random._randbelow(n): an integer in [0, n). */

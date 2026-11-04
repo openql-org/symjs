@@ -162,7 +162,9 @@
                   "../../holonomic/**",
                   "../../calculus/doit",
                   "../../series/formal",
-                  "../../series/fourier"
+                  "../../series/fourier",
+                  "../geometry/**",
+                  "../../geometry/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -266,7 +268,9 @@
                   "../../holonomic/**",
                   "../../calculus/doit",
                   "../../series/formal",
-                  "../../series/fourier"
+                  "../../series/fourier",
+                  "../geometry/**",
+                  "../../geometry/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -342,7 +346,9 @@
                   "../../holonomic/**",
                   "../../calculus/doit",
                   "../../series/formal",
-                  "../../series/fourier"
+                  "../../series/fourier",
+                  "../geometry/**",
+                  "../../geometry/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -404,7 +410,9 @@
                   "../../holonomic/**",
                   "../../calculus/doit",
                   "../../series/formal",
-                  "../../series/fourier"
+                  "../../series/fourier",
+                  "../geometry/**",
+                  "../../geometry/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -508,7 +516,9 @@
                   "../../holonomic/**",
                   "../../calculus/doit",
                   "../../series/formal",
-                  "../../series/fourier"
+                  "../../series/fourier",
+                  "../geometry/**",
+                  "../../geometry/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -574,7 +584,9 @@
                   "../../holonomic/**",
                   "../../calculus/doit",
                   "../../series/formal",
-                  "../../series/fourier"
+                  "../../series/fourier",
+                  "../geometry/**",
+                  "../../geometry/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -640,7 +652,9 @@
                   "../../holonomic/**",
                   "../../calculus/doit",
                   "../../series/formal",
-                  "../../series/fourier"
+                  "../../series/fourier",
+                  "../geometry/**",
+                  "../../geometry/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -684,7 +698,9 @@
                   "../../holonomic/**",
                   "../../calculus/doit",
                   "../../series/formal",
-                  "../../series/fourier"
+                  "../../series/fourier",
+                  "../geometry/**",
+                  "../../geometry/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -750,7 +766,9 @@
                   "../../holonomic/**",
                   "../../calculus/doit",
                   "../../series/formal",
-                  "../../series/fourier"
+                  "../../series/fourier",
+                  "../geometry/**",
+                  "../../geometry/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -816,7 +834,9 @@
                   "../../holonomic/**",
                   "../../calculus/doit",
                   "../../series/formal",
-                  "../../series/fourier"
+                  "../../series/fourier",
+                  "../geometry/**",
+                  "../../geometry/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -836,7 +856,21 @@
         "packages/symjs/src/holonomic/**"
       ],
       "rules": {
-        "no-restricted-imports": "off"
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../geometry/**",
+                  "../../geometry/**"
+                ],
+                "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)",
+                "allowTypeImports": true
+              }
+            ]
+          }
+        ]
       }
     },
     {

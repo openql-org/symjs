@@ -74,14 +74,24 @@ const close = (a: C, b: C) => {
   return Math.abs(a.re - b.re) <= tol && Math.abs(a.im - b.im) <= tol;
 };
 
+// The same 2000 random expressions as one seeded sequence, checked in chunks so that each test
+// stays short under the full coverage run.
+const r = rng(2024);
+const cases: [Expr, C][] = [];
+for (let i = 0; i < 2000; i++) {
+  const [e, ref] = gen(r, 3);
+  if (Number.isFinite(ref.re) && Number.isFinite(ref.im) && Math.hypot(ref.re, ref.im) <= 1e6) cases.push([e, ref]);
+}
+const CHUNK = 100;
+const chunks = Array.from({ length: Math.ceil(cases.length / CHUNK) }, (_, k) => [k, cases.slice(k * CHUNK, (k + 1) * CHUNK)] as const);
+
 describe('fuzz: automatic simplification preserves values', () => {
-  it('canonical form, expand and simplify agree with the reference value', () => {
-    const r = rng(2024);
+  it('generates enough finite cases', () => {
+    expect(cases.length).toBeGreaterThan(1500);
+  });
+  it.each(chunks)('canonical form, expand and simplify agree with the reference value (chunk %i)', (_k, chunk) => {
     const values = { x: VX, y: VY };
-    let checked = 0;
-    for (let i = 0; i < 2000; i++) {
-      const [e, ref] = gen(r, 3);
-      if (!Number.isFinite(ref.re) || !Number.isFinite(ref.im) || Math.hypot(ref.re, ref.im) > 1e6) continue;
+    for (const [e, ref] of chunk) {
       for (const [name, f] of [
         ['canonical', (z: Expr) => z],
         ['expand', expand],
@@ -92,8 +102,6 @@ describe('fuzz: automatic simplification preserves values', () => {
           throw new Error(`${name} mismatch for ${e.toString()}: got ${v.re}+${v.im}i, expected ${ref.re}+${ref.im}i`);
         }
       }
-      checked++;
     }
-    expect(checked).toBeGreaterThan(1500);
   });
 });

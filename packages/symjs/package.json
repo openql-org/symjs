@@ -211,6 +211,16 @@
         "default": "./dist/holonomic.cjs"
       }
     },
+    "./geometry": {
+      "import": {
+        "types": "./dist/geometry.d.ts",
+        "default": "./dist/geometry.js"
+      },
+      "require": {
+        "types": "./dist/geometry.d.cts",
+        "default": "./dist/geometry.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -304,6 +314,18 @@
     "./src/functions/special/zetafunctions.ts",
     "./dist/functions/special/zetafunctions.js",
     "./dist/functions/special/zetafunctions.cjs",
+    "./src/geometry.ts",
+    "./dist/geometry.js",
+    "./dist/geometry.cjs",
+    "./src/geometry/plane.ts",
+    "./dist/geometry/plane.js",
+    "./dist/geometry/plane.cjs",
+    "./src/geometry/point.ts",
+    "./dist/geometry/point.js",
+    "./dist/geometry/point.cjs",
+    "./src/geometry/polygon.ts",
+    "./dist/geometry/polygon.js",
+    "./dist/geometry/polygon.cjs",
     "./src/holonomic.ts",
     "./dist/holonomic.js",
     "./dist/holonomic.cjs",

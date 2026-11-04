@@ -399,9 +399,17 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'AccumBounds':
       return sj.AccumBounds(deserialize(tree['min'] as Tree) as Expr, deserialize(tree['max'] as Tree) as Expr);
-    case 'Curve': {
-      const [t, a, b] = (tree['limits'] as Tree[]).map((l) => deserialize(l) as Expr);
-      return new sj.Curve((tree['functions'] as Tree[]).map((f) => deserialize(f) as Expr), [t as Sym, a!, b!]);
+    case 'Geom': {
+      // a geometric entity rebuilt by its class constructor from its arguments (Tuples as arrays)
+      const cls = tree['cls'] as string;
+      const args = (tree['args'] as Tree[]).map((a) => {
+        const v = deserialize(a);
+        return v instanceof JsTuple ? v.items : v;
+      });
+      const lib = sj as unknown as Record<string, (...a: unknown[]) => unknown>;
+      if (cls === 'Plane') return sj.Plane(args[0] as Expr, { normalVector: args[1] as Expr[] });
+      if (/^Point/.test(cls)) return lib[cls]!(...args, { evaluate: false });
+      return lib[cls]!(...args);
     }
     case 'Indexed':
       return new sj.Indexed([deserialize(tree['base'] as Tree) as Expr, ...(tree['indices'] as Tree[]).map((t) => deserialize(t) as Expr)]);
@@ -2554,6 +2562,8 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.equals': (args, kw, self) => {
     noKw(kw);
     if (self instanceof Matrix) return (self as Matrix).equals(args[0] as Matrix);
+    // SymPy GeometryEntity.equals: the same entity, whatever its representation
+    if (self instanceof sj.GeometryEntity) return self.equals(args[0] as Expr);
     if (self instanceof sj.BoolOp || self instanceof sj.AppliedPredicate || self instanceof sj.BoolAtom) return none(sj.booleanEquals(self, asExpr(args[0])));
     if (self instanceof sj.MatrixExpr) return none(self.equalsExplicit(args[0] instanceof Matrix ? sj.ImmutableMatrix(args[0]) : asExpr(args[0])));
     const d = sj.simplify(sj.sub(asExpr(self), asExpr(args[0])));
@@ -3608,7 +3618,7 @@ for (const name of Object.keys(sj.Q)) {
 // ---------------------------------------------------------------------------
 
 /** Categories whose integer arguments are JS numbers (indices, sizes, sequences). */
-const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'discrete']);
+const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'discrete', 'geometry']);
 
 /** SymPy names that are JavaScript globals, and the symjs names that do not shadow them. */
 const JS_GLOBAL_RENAMES: Record<string, string> = { Symbol: 'Sym', Number: 'SymNumber', Function: 'SymFunction', Array: 'SymArray', Set: 'SetExpr' };

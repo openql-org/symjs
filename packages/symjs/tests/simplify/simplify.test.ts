@@ -109,3 +109,15 @@ describe('simplify of holonomic to_expr results (SymPy holonomic tests)', () => 
     expect(String(simplify(parse('(-x**2*(Si(2*x)/x + cos(2*x)/(2*x**2) - 1/(2*x**2)) - 1)/x')))).toBe('-Si(2*x) - cos(x)**2/x');
   });
 });
+
+describe('fractions in sums, opposite bases of even powers and rationalized denominators (SymPy simplify)', () => {
+  it('match SymPy', () => {
+    // SymPy: (-x**2 - y**2)/y**3
+    expect(String(simplify(parse('-(x**2/y**2 + 1)/y')))).toBe('-(x**2 + y**2)/y**3');
+    expect(String(simplify(parse('sqrt((-u + v)**2) - sqrt((u - v)**2)')))).toBe('0');
+    expect(String(simplify(parse('sqrt((-2*u/3 + 2*v/3)**2 + (-2*w/3 + 2*z/3)**2) + sqrt((u/3 - v/3)**2 + (w/3 - z/3)**2) - sqrt((u - v)**2 + (w - z)**2)')))).toBe('0');
+    expect(String(simplify(parse('1/(1 + sqrt(2))')))).toBe('-1 + sqrt(2)');
+    expect(String(simplify(parse('1/(2 + sqrt(2))')))).toBe('1 - sqrt(2)/2');
+    expect(String(simplify(parse('1/(x + 1)')))).toBe('1/(x + 1)');
+  });
+});
