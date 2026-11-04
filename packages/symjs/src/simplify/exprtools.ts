@@ -76,8 +76,9 @@ export function keepCoeff(coeffIn: Expr, factorsIn: Expr, clear = true, sign = f
 export function decomposePower(e: Expr): [Expr, number] {
   const ex = expExponent(e);
   if (ex !== undefined) {
+    // exp(-x**2/2) = exp(x**2/2)**-1 (SymPy: exp.as_base_exp() is (E, -x**2/2))
     const [c, tail] = splitCoeff(ex);
-    if (c instanceof Rational && c.q === 1n && !isOneE(c)) return [pow(S.E, tail), Number(c.p)];
+    if (c instanceof Rational && !isOneE(c)) return [pow(S.E, keepCoeff(Rational.of(1n, c.q), tail)), Number(c.p)];
     return [e, 1];
   }
   if (!(e instanceof Pow)) return [e, 1];
@@ -335,8 +336,8 @@ export function factorTerms(
         }
         return a;
       });
-      p = add(...listArgs);
-      p = gcdTerms(p, { isprimitive: true, clear, fraction });
+      // SymPy Add._from_args: the terms are not combined before gcd_terms
+      p = gcdTermsOf(listArgs, { isprimitive: true, clear, fraction });
       if (special.length) p = xreplace(p, special);
     } else if (p.args.length) {
       p = rebuild(p, p.args.map(doit));

@@ -324,12 +324,14 @@ const evalAbs: Evaluator = (x) => {
   if (isNonNegative(x)) return x;
   if (isNegative(x)) return neg(x);
   if (x instanceof Mul) {
-    // SymPy: factors whose Abs evaluates come out, the rest stay inside a single Abs
+    // SymPy Abs.eval: factors whose Abs evaluates to something other than an Abs come out, the rest
+    // stay inside a single Abs (each factor by the registered Abs rules, such as those of polar
+    // numbers: |exp_polar(z)| = exp(re(z)) comes out, |polar_lift(z)| = Abs(z) stays inside)
     const known: Expr[] = [];
     const unknown: Expr[] = [];
     for (const t of x.args) {
-      const v = evalAbs(t);
-      if (v === undefined) unknown.push(t);
+      const v = abs(t);
+      if (v instanceof Fn && v.name === 'abs') unknown.push(t);
       else known.push(v);
     }
     if (known.length === 0) return undefined;
@@ -610,6 +612,140 @@ export const evaluators: Partial<Record<FnName, Evaluator>> = {
   },
 };
 
+/** The sign of a finite part, undefined when it is not decided. */
+type Sign = -1 | 0 | 1 | undefined;
+
+/**
+ * A number with an infinite part, as the signs of its parts: R is s*oo plus a finite imaginary part
+ * of sign c (oo + I), I a finite real part of sign a plus t*oo*I (1 - oo*I), D both infinite
+ * (oo - oo*I), zoo the complex infinity.
+ */
+export type InfiniteForm =
+  | { readonly kind: 'R'; readonly s: 1 | -1; readonly c: Sign }
+  | { readonly kind: 'I'; readonly a: Sign; readonly t: 1 | -1 }
+  | { readonly kind: 'D'; readonly s: 1 | -1; readonly t: 1 | -1 }
+  | { readonly kind: 'zoo' };
+
+/** The sign of a real number without free symbols, or undefined. */
+function signOfReal(e: Expr): -1 | 0 | 1 | undefined {
+  if (isNum(e)) return e.isZero ? 0 : e.isPositive ? 1 : -1;
+  if (isPositive(e) === true) return 1;
+  if (isNegative(e) === true) return -1;
+  return numericSign(e);
+}
+
+/** The real coefficient of I in t (I, 2*I, I*pi), or undefined. */
+function imagCoeff(t: Expr): Expr | undefined {
+  if (isI(t)) return S.One;
+  if (!(t instanceof Mul) || t.args.filter(isI).length !== 1) return undefined;
+  const r = mul(...t.args.filter((a) => !isI(a)));
+  return isReal(r) === true ? r : undefined;
+}
+
+/** The form of a number with an infinite part (oo + I, 1 - oo*I, oo + oo*I, zoo, oo), else undefined. */
+export function infiniteForm(z: Expr): InfiniteForm | undefined {
+  if (z instanceof Special) {
+    if (z.name === 'zoo') return { kind: 'zoo' };
+    return z.name === 'nan' ? undefined : { kind: 'R', s: z.name === 'oo' ? 1 : -1, c: 0 };
+  }
+  if (!(z instanceof Add || z instanceof Mul) || z.freeSymbols().size > 0) return undefined;
+  let s: -1 | 0 | 1 = 0;
+  let t: -1 | 0 | 1 = 0;
+  const re: Expr[] = [];
+  const im: Expr[] = [];
+  for (const u of z instanceof Add ? z.args : [z]) {
+    if (u instanceof Special) {
+      // (zoo and nan absorb finite terms, and oo - oo is nan: an Add has at most one of oo, -oo)
+      s = u.name === 'oo' ? 1 : -1;
+      continue;
+    }
+    // (the coefficient of oo*I is oo or -oo: c*oo is oo or -oo for a real number c)
+    const w = imagCoeff(u);
+    if (w instanceof Special) t = w.name === 'oo' ? 1 : -1;
+    else if (w !== undefined) im.push(w);
+    else if (isReal(u) === true) re.push(u);
+    else return undefined;
+  }
+  if (s !== 0 && t !== 0) return { kind: 'D', s, t };
+  if (s !== 0) return { kind: 'R', s, c: signOfReal(add(...im)) };
+  return t === 0 ? undefined : { kind: 'I', a: signOfReal(add(...re)), t };
+}
+
+const halfPi = (k: number): Expr => mul(Rational.of(k, 2), S.Pi);
+const iHalfPi = (k: number): Expr => mul(Rational.of(k, 2), S.I, S.Pi);
+const ooI = (k: number): Expr => mul(k, S.I, S.Infinity);
+const signedOo = (k: number): Expr => (k > 0 ? S.Infinity : S.NegativeInfinity);
+/** zoo where the modulus grows without bound (the limit on the Riemann sphere). */
+const zooUnless = (f: InfiniteForm, kinds: readonly string[]): Expr | undefined => (kinds.includes(f.kind) ? S.ComplexInfinity : undefined);
+
+/**
+ * The values of functions at a number with an infinite part, where SymPy leaves them
+ * unevaluated: the limit when it exists (zoo when the modulus grows without bound in no fixed
+ * direction), with SymPy's own values (asin(oo) = -oo*I, asinh(oo*I) = oo, atanh(oo) = -I*pi/2)
+ * left to the evaluators. A case that depends on the sign of a finite part needs it decided
+ * (erf(oo + I*c) = 1 whatever c is, asin(oo + I*c) depends on it).
+ */
+const INFINITE_LIMITS: Partial<Record<FnName, (f: InfiniteForm) => Expr | undefined>> = {
+  // gamma(-x + I*c), gamma(a + I*y), gamma(-x + I*y) -> 0; |gamma(x + I*c)| grows with a turning phase
+  gamma: (f) => (f.kind === 'R' ? (!f.c ? undefined : f.s > 0 ? S.ComplexInfinity : S.Zero) : f.kind === 'I' || (f.kind === 'D' && f.s < 0) ? S.Zero : undefined),
+  loggamma: (f) => (f.kind === 'R' && !f.c ? undefined : S.ComplexInfinity),
+  erf: (f) => (f.kind === 'R' && f.c !== 0 ? Rational.of(f.s) : f.kind === 'I' && f.a ? S.ComplexInfinity : undefined),
+  erfc: (f) => (f.kind === 'R' && f.c !== 0 ? (f.s > 0 ? S.Zero : S.Two) : f.kind === 'I' && f.a ? S.ComplexInfinity : undefined),
+  erfi: (f) => (f.kind === 'R' && f.c ? S.ComplexInfinity : f.kind === 'I' && f.a !== 0 ? mul(f.t, S.I) : undefined),
+  // Ei(z) = -E1(-z) + I*pi*sign(im(z)) and E1(w) -> 0 for re(w) -> oo or |im(w)| -> oo
+  Ei: (f) => {
+    if (f.kind === 'R') return !f.c ? undefined : f.s > 0 ? S.ComplexInfinity : mul(f.c, S.I, S.Pi);
+    if (f.kind === 'I' || (f.kind === 'D' && f.s < 0)) return mul(f.t, S.I, S.Pi);
+    return undefined;
+  },
+  // |li(z)| ~ |z/log(z)| grows in every direction
+  li: (f) => (f.kind === 'R' && !f.c && f.s > 0 ? undefined : S.ComplexInfinity),
+  asin: (f) => {
+    if (f.kind === 'R') return !f.c ? undefined : add(halfPi(f.s), ooI(f.c));
+    return f.kind === 'I' ? ooI(f.t) : S.ComplexInfinity;
+  },
+  acos: (f) => {
+    if (f.kind === 'R') return !f.c ? undefined : f.s > 0 ? ooI(-f.c) : add(S.Pi, ooI(-f.c));
+    return f.kind === 'I' ? add(halfPi(1), ooI(-f.t)) : S.ComplexInfinity;
+  },
+  asinh: (f) => {
+    if (f.kind === 'R') return !f.c ? undefined : signedOo(f.s);
+    if (f.kind === 'I') return !f.a ? undefined : add(signedOo(f.a), iHalfPi(f.t));
+    return zooUnless(f, ['D']);
+  },
+  acosh: (f) => {
+    if (f.kind === 'R') return !f.c ? undefined : f.s > 0 ? S.Infinity : add(S.Infinity, mul(f.c, S.I, S.Pi));
+    if (f.kind === 'I') return add(S.Infinity, iHalfPi(f.t));
+    return zooUnless(f, ['D']);
+  },
+  atanh: (f) => (f.kind === 'R' ? (!f.c ? undefined : iHalfPi(f.c)) : f.kind === 'zoo' ? undefined : iHalfPi(f.t)),
+  acoth: (f) => (f.kind === 'zoo' || (f.kind === 'R' && f.c === 0) ? undefined : S.Zero),
+  // asech(z) = acosh(1/z) with 1/z -> 0 from the side opposite to z
+  asech: (f) => (f.kind === 'R' ? (!f.c ? undefined : iHalfPi(-f.c)) : f.kind === 'zoo' ? undefined : iHalfPi(-f.t)),
+  acsch: (f) => (f.kind === 'zoo' || (f.kind === 'R' && f.c === 0) ? undefined : S.Zero),
+  atan: (f) => {
+    if (f.kind === 'R') return !f.c ? undefined : halfPi(f.s);
+    if (f.kind === 'I') return !f.a ? undefined : halfPi(f.a);
+    return f.kind === 'D' ? halfPi(f.s) : undefined;
+  },
+  acot: (f) => (f.kind === 'zoo' || (f.kind === 'R' && f.c === 0) ? undefined : S.Zero),
+  asec: (f) => (f.kind === 'zoo' ? undefined : halfPi(1)),
+  acsc: (f) => (f.kind === 'zoo' || (f.kind === 'R' && f.c === 0) ? undefined : S.Zero),
+  // arg and sign of a direction; arg of a D form has no limit: SymPy's values, arg(oo + oo*I) = pi/4,
+  // arg(oo - oo*I) = -pi/4, arg(-oo + oo*I) = pi, arg(-oo - oo*I) = -3*pi/4 (SymPy arg(-1 + oo*I) = nan,
+  // its limit pi/2 here)
+  arg: (f) => {
+    if (f.kind === 'zoo') return S.NaN;
+    if (f.kind === 'D') return f.s > 0 ? mul(Rational.of(f.t, 4), S.Pi) : f.t > 0 ? S.Pi : mul(Rational.of(-3, 4), S.Pi);
+    return f.kind === 'I' ? halfPi(f.t) : undefined;
+  },
+  sign: (f) => (f.kind === 'R' && f.c !== 0 ? Rational.of(f.s) : f.kind === 'I' ? mul(f.t, S.I) : undefined),
+  // log(oo + oo*I): the modulus grows, the argument has no limit (SymPy keeps it, evalf gives nan)
+  log: (f) => (f.kind === 'D' ? S.ComplexInfinity : undefined),
+  re: (f) => (f.kind === 'zoo' ? S.NaN : undefined),
+  im: (f) => (f.kind === 'zoo' ? S.NaN : undefined),
+};
+
 /**
  * Apply a named function with automatic evaluation; `{ evaluate: false }`
  * keeps the call as written (SymPy cos(pi/2 - x, evaluate=False)).
@@ -624,6 +760,12 @@ export function fn(name: FnName, args: readonly ExprLike[], opts: { evaluate?: b
     const r = accumBoundsFunction(name, x0, (n, x) => fn(n, [x]));
     if (r !== undefined) return r;
   }
+  // a number with an infinite part: the limit (or SymPy's value) before the evaluator, which may
+  // rewrite it into a form without one (arg(oo + oo*I) = atan(nan))
+  const lim = x0 !== undefined && rest.length === 0 ? INFINITE_LIMITS[name] : undefined;
+  const form = lim && x0 !== undefined ? infiniteForm(x0) : undefined;
+  const l = lim && form ? lim(form) : undefined;
+  if (l !== undefined) return l;
   const ev = evaluators[name];
   const v = ev && x0 !== undefined ? ev(x0, ...rest) : undefined;
   if (v !== undefined) return v;

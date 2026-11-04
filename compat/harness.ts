@@ -2944,9 +2944,15 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   quo: (args, kw) => (noKw(kw), args[0] instanceof sj.Poly ? args[0].quo(args[1] as sj.Poly) : sj.polyDiv(asExpr(args[0]), asExpr(args[1]))[0]),
   factor_list: (args, kw) => {
-    noKw(kw);
-    const [c, fs] = sj.factorList(asExprOrPoly(args[0]));
-    return new JsTuple([c, new JsList(fs.map(([f, k]) => new JsTuple([f, k])))]);
+    for (const k of Object.keys(kw)) if (k !== 'frac') throw new Unsupported(`kwargs ${k}`);
+    const gens = args.slice(1).map(asExpr);
+    const pairs = (fs: [sj.Expr, sj.Expr][]): JsList => new JsList(fs.map(([f, k]) => new JsTuple([f, k])));
+    if (kw['frac'] === true) {
+      const [c, fp, fq] = sj.factorList(asExprOrPoly(args[0]), gens, { frac: true });
+      return new JsTuple([c, pairs(fp), pairs(fq)]);
+    }
+    const [c, fs] = sj.factorList(asExprOrPoly(args[0]), gens);
+    return new JsTuple([c, pairs(fs)]);
   },
   terms_gcd: (args, kw) => {
     const opts: { expand?: boolean; deep?: boolean; clear?: boolean } = {};

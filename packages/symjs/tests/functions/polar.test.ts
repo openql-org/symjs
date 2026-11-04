@@ -170,6 +170,22 @@ const POLAR_CASES: Case[] = [
   ["UP", "principal_branch(x, pi)", "principal_branch(x, pi)"],
   ["UP", "x + 1", "x + 1"],
   ["UP", "sin(polar_lift(x))", "sin(x)"],
+  // the arguments of functions that are not unbranched stay polar (SymPy _unpolarify)
+  ["UP", "besselj(y, polar_lift(x))", "besselj(y, polar_lift(x))"],
+  ["UP", "besselj(y, polar_lift(x))**2 + exp_polar(I*pi)", "besselj(y, polar_lift(x))**2 - 1"],
+  ["UP", "log(polar_lift(x))", "log(polar_lift(x))"],
+  ["UP", "polar_lift(x)**y", "polar_lift(x)**y"],
+  ["UP", "Piecewise((polar_lift(x), y > 0), (1, True))", "Piecewise((polar_lift(x), y > 0), (1, True))"],
+  ["UP", "Integral(polar_lift(x), x)", "Integral(polar_lift(x), x)"],
+  ["UP", "gamma(polar_lift(x))", "gamma(x)"],
+  ["UP", "erf(exp_polar(I*pi)*x)", "-erf(x)"],
+  ["UP", "Abs(polar_lift(x)*y)", "Abs(x*y)"],
+  ["UP", "sqrt(polar_lift(x)**2)", "x"],
+  // relations: Eq and Ne only against 0, the others always; the boolean connectives
+  ["UP", "Eq(polar_lift(x), 1)", "Eq(polar_lift(x), 1)"],
+  ["UP", "Eq(polar_lift(x), 0)", "Eq(x, 0)"],
+  ["UP", "polar_lift(x) > 1", "x > 1"],
+  ["UP", "(polar_lift(x) > 0) & Eq(polar_lift(y), 2)", "(x > 0) & Eq(polar_lift(y), 2)"],
   ["PL", "x", "x"],
   ["PL", "2*x + 1", "2*x + 1"],
   ["PL", "exp(x + 1)", "exp(x + 1)"],
@@ -283,6 +299,25 @@ describe('polar: cases outside the table', () => {
     // SymPy leaves Derivative(exp_polar(x), x) unevaluated (exp_polar has no fdiff)
     expect(String(diff(expPolar(x), x))).toBe('Derivative(exp_polar(x), x)');
   });
+  it('the parser builds the polar functions (SymPy sympify)', () => {
+    // SymPy log(exp_polar(I*pi/2)) = I*pi/2, expand_log(log(2*x*exp_polar(I*pi/2))) = log(x) + log(2) + I*pi/2
+    expect(String(sj.parse('log(exp_polar(I*pi/2))'))).toBe('I*pi/2');
+    expect(String(sj.expandLog(sj.parse('log(2*x*exp_polar(I*pi/2))')))).toBe('log(x) + log(2) + I*pi/2');
+    // SymPy log(exp_polar(x)) = x, unpolarify(polar_lift(x)**2) = x**2, periodic_argument(exp_polar(3*I*pi), 2*pi) = pi
+    expect(String(sj.parse('log(exp_polar(x))'))).toBe('x');
+    expect(String(sj.unpolarify(sj.parse('polar_lift(x)**2')))).toBe('x**2');
+    expect(String(sj.parse('periodic_argument(exp_polar(3*I*pi), 2*pi)'))).toBe('pi');
+    expect(String(sj.parse('principal_branch(exp_polar(3*I*pi), 2*pi)'))).toBe('exp_polar(I*pi)');
+    expect(String(sj.parse('unbranched_argument(exp_polar(3*I*pi))'))).toBe('3*pi');
+    expect(() => sj.parse('exp_polar(1, 2)')).toThrow(TypeError);
+    expect(() => sj.parse('periodic_argument(x)')).toThrow('periodic_argument takes 2 arguments (1 given)');
+    expect(() => sj.parse('polar_lift(x, y)')).toThrow('polar_lift takes 1 argument (2 given)');
+  });
+  it('unpolarify of Ne against 0', () => {
+    // SymPy unpolarify(Ne(polar_lift(x), 0)) and unpolarify(Ne(polar_lift(x), 1))
+    expect(String(sj.unpolarify(sj.Ne(polarLift(x), 0)))).toBe('Ne(x, 0)');
+    expect(String(sj.unpolarify(sj.Ne(polarLift(x), 1)))).toBe('Ne(polar_lift(x), 1)');
+  });
   it('unpolarify with a substitution', () => {
     // SymPy unpolarify(polar_lift(x)**2, {x: exp_polar(y)})
     expect(String(sj.unpolarify(pow(polarLift(x), 2), { subs: [[x, expPolar(y)]] }))).toBe('exp(2*y)');
@@ -328,6 +363,16 @@ describe('polar numbers', () => {
     const p = new Sym('p', { polar: true });
     expect(String(periodicArgument(p, mul(2, pi)))).toBe('periodic_argument(p, 2*pi)');
     expect(String(principalBranch(add(1, mul(2, I)), mul(2, pi)))).toBe('principal_branch(1 + 2*I, 2*pi)');
+  });
+  it('numeric value of exp_polar near the negative axis (SymPy exp_polar._eval_evalf)', () => {
+    // SymPy N(log(3*exp_polar(I*pi)/10), 20) = -1.2039728043259359926 + 3.1415926535897932385*I:
+    // exp_polar(I*pi) is -1 approached from above, so the logarithm has the imaginary part +pi
+    const e = sj.log(mul(sj.Rational.of(3n, 10n), expPolar(mul(S.I, S.Pi))));
+    const c = e.toComplex();
+    expect(c.re).toBeCloseTo(-1.2039728043259361, 14);
+    expect(c.im).toBeCloseTo(Math.PI, 14);
+    const v = e.evalf(20).toComplex();
+    expect(v.im).toBeCloseTo(Math.PI, 14);
   });
   it('numeric value of polar_lift', () => {
     // SymPy N(polar_lift(1 + I))

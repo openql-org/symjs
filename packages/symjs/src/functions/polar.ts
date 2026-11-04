@@ -11,15 +11,18 @@
 import { isIntegerQ, isPositive } from '../core/assumptions';
 import { defined, first, pair } from '../core/guard';
 import type { Expr, ExprLike, Substitution } from '../core/nodes';
-import { Add, Constant, Dummy, Fn, Mul, Pow, Rational, S, Special, Sym } from '../core/nodes';
+import { Add, Constant, Dummy, Fn, Mul, Pow, Rational, Rel, S, Special, Sym } from '../core/nodes';
+import { BoolOp } from '../core/boolalg';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { asCoefficient } from '../core/methods';
 import { rebuild, subs, xreplace } from '../core/traverse';
 import { mpFns } from '../numeric/mpeval';
 import { numericFns } from '../numeric/evalf';
 import * as M from '../numeric/mpfun';
+import * as F from '../numeric/mpf';
 import { abs, arg, conjugateCommutes, evaluators, fn, im, log, re } from './elementary';
 import { Chi, Ci, Ei, Shi, Si, expint, factorial, gamma } from './special';
+import { parserHooks } from '../parsing/parser';
 
 export const expPolar = (z: ExprLike): Expr => fn('exp_polar', [z]);
 export const polarLift = (z: ExprLike): Expr => fn('polar_lift', [z]);
@@ -97,56 +100,60 @@ export function extractBranchFactor(eIn: ExprLike, allowHalf = false): [Expr, Ex
   return [res, n];
 }
 
-/** SymPy _unpolarify(eq, exponents_only=True, pause). */
-function unpolarifyStep(eq: Expr, pause: boolean): Expr {
+/**
+ * The functions SymPy marks `unbranched` (they work on the projection to the complex plane, so
+ * unpolarify descends into their arguments): ExpBase, the trigonometric and hyperbolic functions,
+ * re, im, Abs, gamma, multigamma, beta, betainc, erf, erfc, erfi, the Fresnel integrals, the Airy
+ * functions and the Mathieu functions.
+ */
+const UNBRANCHED = new Set<string>([
+  'exp', 'exp_polar', 'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch',
+  're', 'im', 'abs', 'gamma', 'multigamma', 'beta', 'betainc', 'betainc_regularized', 'erf', 'erfc', 'erfi',
+  'fresnels', 'fresnelc', 'airyai', 'airybi', 'airyaiprime', 'airybiprime', 'mathieus', 'mathieuc',
+  'mathieusprime', 'mathieucprime',
+]);
+
+/** SymPy _unpolarify(eq, exponents_only, pause). */
+function unpolarifyStep(eq: Expr, exponentsOnly: boolean, pause: boolean): Expr {
   if (eq.args.length === 0) return eq;
-  const go = unpolarifyStep;
+  const go = (x: Expr, p: boolean) => unpolarifyStep(x, exponentsOnly, p);
   if (!pause) {
     if (isFnN(eq, 'exp_polar')) return exp(go(first(eq.args), false));
     if (isFnN(eq, 'principal_branch') && pair(eq.args)[1].key === mul(2, S.Pi).key) return go(first(eq.args), false);
-    // (SymPy also descends into booleans and relations here; with exponentsOnly, the only mode
-    // that uses this function, an unpaused node is part of an exponent and is never one)
-    if (eq instanceof Add || eq instanceof Mul) return rebuild(eq, eq.args.map((a) => go(a, false)));
+    // Add, Mul, the boolean connectives and the relations other than Eq/Ne (Eq/Ne only against 0)
+    const relDescends = eq instanceof Rel && ((eq.op !== 'Eq' && eq.op !== 'Ne') || eq.args.some((a) => a instanceof Rational && a.isZero));
+    if (eq instanceof Add || eq instanceof Mul || eq instanceof BoolOp || relDescends) return rebuildIfChanged(eq, eq.args.map((a) => go(a, false)));
     if (isFnN(eq, 'polar_lift')) return go(first(eq.args), false);
   }
+  // (x**a)**e = x**(a*e) for a polar x (SymPy Pow._eval_power; core's pow applies it to polar
+  // symbols only)
+  if (eq instanceof Pow && eq.base instanceof Pow && isPolar(eq.base.base)) return go(pow(eq.base.base, mul(eq.base.exp, eq.exp)), pause);
   if (eq instanceof Pow) {
     const expo = go(eq.exp, false);
-    return pow(go(eq.base, !(isIntegerQ(expo) === true && !pause)), expo);
+    return rebuildIfChanged(eq, [go(eq.base, !(isIntegerQ(expo) === true && !pause)), expo]);
   }
-  // the arguments of every other node, unbranched functions included, are paused
-  const args = eq.args.map((a) => go(a, true));
-  return args.every((a, i) => a === eq.args[i]) ? eq : rebuild(eq, args);
+  // the arguments of an unbranched function are unpolarified (paused with exponentsOnly), those
+  // of every other node are paused
+  const argPause = eq instanceof Fn && UNBRANCHED.has(eq.name) ? exponentsOnly : true;
+  return rebuildIfChanged(eq, eq.args.map((a) => go(a, argPause)));
 }
 
-/**
- * Every polar construct replaced by its projection, inside any function: what SymPy's
- * unpolarify gives for the unbranched functions, applied to all of them (the integration
- * algorithms ported from SymPy rely on it).
- */
-function unpolarifyAll(e: Expr): Expr {
-  if (e.args.length === 0) return e;
-  const args = e.args.map(unpolarifyAll);
-  if (isFnN(e, 'exp_polar')) return exp(first(args));
-  if (isFnN(e, 'polar_lift')) return first(args);
-  if (isFnN(e, 'principal_branch') && args[1]?.key === mul(2, S.Pi).key) return first(args);
-  return args.every((a, i) => a === e.args[i]) ? e : rebuild(e, args);
-}
+/** eq with new arguments, eq itself when they are the same. */
+const rebuildIfChanged = (eq: Expr, args: readonly Expr[]): Expr => (args.every((a, i) => a === eq.args[i]) ? eq : rebuild(eq, args));
 
 /**
  * Replace polar constructs by ordinary numbers (SymPy unpolarify): the result has the same
  * projection to the complex plane. `subs` is applied first (and then, as in SymPy, the default mode
- * is used). With `exponentsOnly`, only the exponents of powers are unpolarified, as in SymPy.
- *
- * Without `exponentsOnly`, the arguments of every function are unpolarified, where SymPy keeps
- * them in the functions that are not unbranched (SymPy: unpolarify(besselj(a, polar_lift(x))) is
- * besselj(a, polar_lift(x)), here besselj(a, x)).
+ * is used). With `exponentsOnly`, only the exponents of powers are unpolarified. As in SymPy, polar
+ * arguments of the functions that are not unbranched are kept: unpolarify(besselj(a, polar_lift(x)))
+ * is besselj(a, polar_lift(x)), while unpolarify(sin(polar_lift(x))) is sin(x).
  */
 export function unpolarify(eIn: ExprLike, opts: { subs?: Substitution; exponentsOnly?: boolean } = {}): Expr {
   const eq = sympify(eIn);
   if (opts.subs !== undefined) return unpolarify(subs(eq, opts.subs));
-  if (opts.exponentsOnly !== true) return unpolarifyAll(eq);
+  const exponentsOnly = opts.exponentsOnly === true;
   let res = eq;
-  for (let next = unpolarifyStep(res, true); next.key !== res.key; next = unpolarifyStep(res, true)) res = next;
+  for (let next = unpolarifyStep(res, exponentsOnly, exponentsOnly); next.key !== res.key; next = unpolarifyStep(res, exponentsOnly, exponentsOnly)) res = next;
   // replacing exp_polar(0) by 1 and polar_lift(0) by 0 is always correct
   return xreplace(res, [
     [expPolar(0), S.One],
@@ -283,13 +290,31 @@ evaluators.exp_polar = () => undefined;
 evaluators.polar_lift = evalPolarLift;
 evaluators.periodic_argument = evalPeriodicArgument;
 evaluators.principal_branch = evalPrincipalBranch;
+// the parser builds these functions by name (sympify('log(exp_polar(I*pi/2))') is I*pi/2), so
+// that their rules apply to parsed expressions too
+const arity = (name: string, n: number, f: (...a: Expr[]) => Expr) => (args: readonly Expr[]): Expr => {
+  if (args.length !== n) throw new TypeError(`${name} takes ${n} argument${n === 1 ? '' : 's'} (${args.length} given)`);
+  return f(...args);
+};
+parserHooks.constructors.set('exp_polar', arity('exp_polar', 1, expPolar));
+parserHooks.constructors.set('polar_lift', arity('polar_lift', 1, polarLift));
+parserHooks.constructors.set('periodic_argument', arity('periodic_argument', 2, periodicArgument));
+parserHooks.constructors.set('principal_branch', arity('principal_branch', 2, principalBranch));
+parserHooks.constructors.set('unbranched_argument', arity('unbranched_argument', 1, unbranchedArgument));
 // (no derivative: SymPy's exp_polar has no fdiff, diff(exp_polar(x), x) stays Derivative(exp_polar(x), x))
-mpFns.exp_polar = (args, p) => M.cexp(first(args), p);
+// SymPy exp_polar._eval_evalf: exp of the argument, made real when an argument just below pi*I
+// gives an imaginary part of the wrong sign (exp_polar(I*pi) is -1, approached from above)
+mpFns.exp_polar = (args, p) => {
+  const z = first(args);
+  const r = M.cexp(z, p);
+  return F.sign(z[1]) > 0 && F.sign(r[1]) < 0 ? [r[0], F.ZERO] : r;
+};
 mpFns.polar_lift = (args) => first(args);
 numericFns.exp_polar = (args) => {
   const z = first(args);
   const m = Math.exp(z.re);
-  return { re: m * Math.cos(z.im), im: m * Math.sin(z.im) };
+  const im = m * Math.sin(z.im);
+  return { re: m * Math.cos(z.im), im: z.im > 0 && im < 0 ? 0 : im };
 };
 numericFns.polar_lift = (args) => first(args);
 

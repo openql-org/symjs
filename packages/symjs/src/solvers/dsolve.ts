@@ -13,7 +13,7 @@ import { Add, Derivative, Dummy, Expr, Fn, Integral, Mul, Order, Pow, Rational, 
 import { Eq } from '../core/logic';
 import { at, cast, defined, expectType, first, getOrThrow } from '../core/guard';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
-import { freeSymbols, some, subs, xreplace } from '../core/traverse';
+import { freeSymbols, mapBottomUp, some, subs, xreplace } from '../core/traverse';
 import { derivative } from '../core/undef';
 import { diff } from '../calculus/diff';
 import { evalf } from '../numeric/evalf';
@@ -23,6 +23,8 @@ import { integrate } from '../integrals/integrate';
 import { Matrix } from '../matrices/matrix';
 import { polyCoefficients, roots } from '../polys/poly';
 import { factor, Poly } from '../polys/sympoly';
+import { nroots } from '../polys/nroots';
+import { CRootOf } from '../polys/rootof';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { expand, expandMul } from '../simplify/expand';
 import { factorTerms } from '../simplify/exprtools';
@@ -35,6 +37,7 @@ import { trigsimp } from '../simplify/trigsimp';
 import { odesimp } from './odesimp';
 import { linsolve, solve } from './solve';
 import { homogeneousOrder } from './homogeneous';
+import { odeLieGroup } from './liegroup';
 
 const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
 
@@ -45,11 +48,26 @@ const addTerms = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e])
 const mulFactors = (e: Expr): readonly Expr[] => (e instanceof Mul ? e.args : [e]);
 const C = (i: number) => new Sym(`C${i}`);
 
+/** Numerical values of the roots of each polynomial with indexed roots (one nroots per polynomial). */
+const indexedRootValues = new Map<string, { re: number; im: number }[]>();
+/** The value of an indexed root (CRootOf), computed once for all the roots of its polynomial. */
+function indexedRootValue(root: CRootOf): { re: number; im: number } {
+  const key = root.poly.key;
+  let vs = indexedRootValues.get(key);
+  if (!vs) {
+    vs = nroots(Poly.from(root.poly, [root.gen]), 15).map((v) => evalf(v, 15).toComplex());
+    indexedRootValues.set(key, vs);
+  }
+  return at(vs, root.index);
+}
+
 export interface OdeProblem {
   eq: Expr;
   fx: UndefFn;
   x: Sym;
   order: number;
+  /** User-given infinitesimals for the lie_group hint (dsolve's xi and eta). */
+  infs?: { xi: ExprLike; eta: ExprLike };
 }
 
 /** d^k f/dx^k (f itself for k = 0). */
@@ -342,8 +360,8 @@ function constCharacteristicSols(r: Map<number, Expr>, p: OdeProblem): [Expr[], 
       let absIm = abs(imroot);
       // an indexed root (CRootOf): real or not, the sign of its imaginary part and its conjugate
       // (another index) are found numerically
-      if (root.kind === 'Extension') {
-        const c = evalf(root, 20).toComplex();
+      if (root instanceof CRootOf) {
+        const c = indexedRootValue(root);
         if (Math.abs(c.im) < 1e-12) [reroot, imroot] = [root, S.Zero];
         absIm = c.im < 0 ? mul(-1, imroot) : imroot;
         if (conjNum.some((d) => Math.abs(d.re - c.re) + Math.abs(d.im + c.im) < 1e-9)) {
@@ -556,7 +574,14 @@ function eulerMatch(p: OdeProblem): Map<number, Expr> | undefined {
 function eulerCharacteristicSols(p: OdeProblem, r: Map<number, Expr>): Expr {
   const s = new Dummy('x');
   const x = p.x;
-  const rs = sortRoots(roots(eulerChareq(r, x, s), s));
+  const chareq = eulerChareq(r, x, s);
+  // an irreducible factor without a formula: its roots as CRootOf (SymPy rootof(chareq, k))
+  let rs: Expr[];
+  try {
+    rs = sortRoots(roots(chareq, s));
+  } catch {
+    rs = Poly.from(chareq, [s]).allRoots();
+  }
   const cs = Array.from({ length: rs.length }, (_, i) => C(i + 1)).reverse();
   const counts = new Map<string, [Expr, number]>();
   for (const v of rs) counts.set(v.key, [v, (counts.get(v.key)?.[1] ?? 0) + 1]);
@@ -565,7 +590,8 @@ function eulerCharacteristicSols(p: OdeProblem, r: Map<number, Expr>): Expr {
   for (const [root, mult] of counts.values()) {
     if (conj.has(root.key)) continue;
     for (let i = 0; i < mult; i++) {
-      if (isReal(root) === true) {
+      // SymPy keeps x**CRootOf(...) for every indexed root, real or not
+      if (root.kind === 'Extension' || isReal(root) === true) {
         gsol = add(gsol, mul(pow(log(x), i), pow(x, root), defined(cs.pop(), 'constant')));
       } else {
         const rr = re(root);
@@ -623,7 +649,15 @@ const eulerUndetermined: Solver = (p) => {
   // the transformed equation has constant coefficients and the right-hand side passed the trial test
   const sols = defined(undeterminedCoefficients(sub), 'undetermined coefficients solution');
   const s0 = cast(first(sols), Rel, 'solution');
-  return [Eq(p.fx, expand(xreplace(s0.rhs, [[x, log(x)]])))];
+  // exp(r*log(x)) -> x**r for a real indexed root r or its real part (SymPy's exp.eval: r is comparable)
+  const lx = log(x);
+  const realRootPow = (e: Expr): Expr => {
+    if (!(e instanceof Pow) || e.base.key !== S.E.key || !(e.exp instanceof Mul) || e.exp.args.length !== 2 || !e.exp.args.some((u) => u.key === lx.key)) return e;
+    // a CRootOf in an exponential is a real root (complex ones come as re(...) and im(...))
+    const r0 = at(e.exp.args.filter((u) => u.key !== lx.key), 0);
+    return r0 instanceof CRootOf || (r0 instanceof Fn && r0.name === 're') ? pow(x, r0) : e;
+  };
+  return [Eq(p.fx, expand(mapBottomUp(xreplace(s0.rhs, [[x, lx]]), realRootPow)))];
 };
 
 /**
@@ -882,7 +916,7 @@ const nthOrderReducible: Solver = (p) => {
   let geq = p.eq;
   for (const k of [...ords].sort((a, b) => b - a)) geq = xreplace(geq, [[D(p, k), k === n ? g : derivative(g, [[p.x, k - n]], true)]]);
   const gsol = dsolveRaw(geq, g);
-  if (!gsol) return undefined;
+  if (!gsol.length) return undefined;
   const out: Expr[] = [];
   for (const gs of gsol) {
     const gr = cast(gs, Rel, 'solution');
@@ -950,8 +984,7 @@ const factorable: Solver = (p) => {
   eqs = [...eqs].sort(argCmp);
   const sols: Expr[] = [];
   for (const e of eqs) {
-    const s = dsolveRaw(e, p.fx);
-    if (s) sols.push(...s);
+    sols.push(...dsolveRaw(e, p.fx));
   }
   return sols.length ? sols : undefined;
 };
@@ -1130,6 +1163,13 @@ const linearCoefficientsSolver: Solver = (p) => {
   return homogeneousBest(p, sm, xarg, yarg);
 };
 
+/** SymPy LieGroup: the Lie group method for first-order equations (solvers/liegroup.ts). */
+const lieGroup: Solver = (p) => {
+  // classify_ode decides the other hints without the (slow) Lie group method, which matches every first-order equation
+  if (p.order !== 1 || matching) return undefined;
+  return odeLieGroup(p.eq, p.fx, (eq, fx) => dsolveRaw(eq, fx), p.infs);
+};
+
 /** Hints whose solvers return solutions already simplified by odesimp. */
 const PRESIMPLIFIED = new Set(['1st_homogeneous_coeff_best', 'linear_coefficients']);
 
@@ -1162,6 +1202,8 @@ const HINTS: [string, Solver][] = [
   ['nth_algebraic', nthAlgebraic],
   ['2nd_power_series_ordinary', secondPowerSeriesOrdinary],
   ['2nd_power_series_regular', secondPowerSeriesRegular],
+  // SymPy's solver_map ends with lie_group, which matches every first-order equation
+  ['lie_group', lieGroup],
   // SymPy's default for a first-order equation is lie_group, which matches before: this one is used on request
   ['1st_power_series', firstPowerSeries],
 ];
@@ -1171,6 +1213,7 @@ const HINTS: [string, Solver][] = [
  * Wronskians and integrals, which can be expensive, e.g. with CRootOf roots).
  */
 const MATCHERS = new Map<string, (p: OdeProblem) => boolean>([
+  ['lie_group', (p) => p.order === 1],
   ['nth_linear_constant_coeff_variation_of_parameters', (p) => {
     const r = constantCoeffMatch(p);
     return r !== undefined && !isZero(getOrThrow(r, -1));
@@ -1205,11 +1248,11 @@ function toZeroForm(e: Expr): Expr {
   return e instanceof Rel && e.op === 'Eq' ? add(e.lhs, mul(-1, e.rhs)) : e;
 }
 
-/** Solve with the first matching hint; the solutions are post-processed with odesimp. */
-export function dsolveRaw(eqIn: Expr, fx: UndefFn, hint?: string): Expr[] | undefined {
+/** Solve with the first matching hint (no solution: []); the solutions are post-processed with odesimp. */
+export function dsolveRaw(eqIn: Expr, fx: UndefFn, hint?: string, infs?: { xi: ExprLike; eta: ExprLike }): Expr[] {
   const eq = toZeroForm(eqIn);
-  const p: OdeProblem = { eq, fx, x: independentVariable(fx), order: orderOf(eq, fx) };
-  if (p.order === 0) return undefined;
+  const p: OdeProblem = { eq, fx, x: independentVariable(fx), order: orderOf(eq, fx), ...(infs ? { infs } : {}) };
+  if (p.order === 0) return [];
   for (const [h, s] of HINTS) {
     if (hint && hint !== 'default' && h !== hint) continue;
     if ((!hint || hint === 'default') && h === '1st_power_series') continue;
@@ -1226,7 +1269,7 @@ export function dsolveRaw(eqIn: Expr, fx: UndefFn, hint?: string): Expr[] | unde
     else for (const r of raw) out.push(...odesimp(eq, r, fx, h));
     return out;
   }
-  return undefined;
+  return [];
 }
 
 

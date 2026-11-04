@@ -649,3 +649,185 @@ describe('ConditionSet and imageset evaluation', () => {
     expect([sj.xreplace(R(0, 5), [[sj.S.Zero, sj.S.One]]), sj.xreplace(sj.ConditionSet.of(x, p('x < y'), Sets.Integers), [[yy, 2]])].map(String)).toEqual(['Range(1, 5, 1)', 'ConditionSet(x, x < 2, Integers)']);
   });
 });
+describe('Range with symbolic bounds (SymPy 1.14 Range)', () => {
+  const nn = new sj.Sym('n');
+  const [a, b, c] = [new sj.Sym('a'), new sj.Sym('b'), new sj.Sym('c')];
+  const i = new sj.Sym('i', { integer: true });
+  const k = new sj.Sym('k', { integer: true, positive: true });
+  const x = new sj.Sym('x');
+  const R = (start: sj.ExprLike, stop?: sj.ExprLike, step?: sj.ExprLike): Sets.Range => {
+    const r = Sets.Range.of(start, stop, step);
+    if (!(r instanceof Sets.Range)) throw new TypeError('not a Range');
+    return r;
+  };
+  const S = (f: () => unknown): string => {
+    try {
+      return String(f());
+    } catch (e) {
+      return `${(e as Error).constructor.name}: ${(e as Error).message}`;
+    }
+  };
+  const L = (s: Sets.SetExpr): string => sj.latex(s);
+
+  it('construction', () => {
+    // SymPy Range(n), Range(0, n), Range(a, b, 2), Range(a, b, c)
+    expect([R(nn), R(0, nn), R(a, b, 2), R(a, b, c)].map(String)).toEqual(['Range(0, n, 1)', 'Range(0, n, 1)', 'Range(a, b, 2)', 'Range(a, b, c)']);
+    // a rational count: the stop is canonical (SymPy Range(i, i + 5, 2), Range(i, i + 5, -2), Range(i, i - 5, -2))
+    expect(String(R(i, sj.add(i, 5), 2))).toBe('Range(i, i + 6, 2)');
+    expect(String(R(i, sj.add(i, 5), -2))).toBe('Range(i, i + 6, -2)');
+    expect(String(R(i, sj.add(i, -5), -2))).toBe('Range(i, i - 4, -2)');
+    expect(String(R(i, sj.add(i, -3)))).toBe('Range(i, i - 3, 1)');
+    // a symbolic rational count: SymPy Range(i, 3*i, i), Range(k, 3*k, k), Range(2*k, k, -k)
+    expect(String(R(i, sj.mul(3, i), i))).toBe('Range(i, 3*i, i)');
+    expect(String(R(k, sj.mul(3, k), k))).toBe('Range(k, 3*k, k)');
+    expect(String(R(sj.mul(2, k), k, sj.neg(k)))).toBe('Range(2*k, k, -k)');
+    // empty: SymPy Range(i, i), Range(k, 0)
+    expect(String(R(i, i))).toBe('Range(0, 0, 1)');
+    expect(String(R(k, 0))).toBe('Range(0, 0, 1)');
+    // SymPy Range(k, 4*k, 2*k) = Range(k, 5*k, 2*k); Range(i, -oo) and Range(-oo, i, -1) are empty
+    expect(String(R(k, sj.mul(4, k), sj.mul(2, k)))).toBe('Range(k, 5*k, 2*k)');
+    expect([R(i, sj.neg(sj.oo)), R(sj.neg(sj.oo), i, -1)].map(String)).toEqual(['Range(0, 0, 1)', 'Range(0, 0, 1)']);
+    expect(String(R(i, sj.neg(sj.oo), -1).size)).toBe('oo');
+    // a symbol that is not an integer (SymPy ValueError)
+    expect(() => R(new sj.Sym('y', { integer: false }))).toThrow(TypeError);
+  });
+
+  it('construction with infinite ends and steps (SymPy)', () => {
+    // SymPy Range(-oo, 5, -1), Range(oo, 1): empty; Range(-oo, oo, 2): ValueError
+    expect(String(R(sj.neg(sj.oo), 5, -1))).toBe('Range(0, 0, 1)');
+    expect(String(R(sj.oo, 1))).toBe('Range(0, 0, 1)');
+    expect(() => R(sj.neg(sj.oo), sj.oo, 2)).toThrow('step size must be 1 in this case');
+    expect(() => R(sj.oo, sj.neg(sj.oo), -2)).toThrow('step size must be -1 in this case');
+    // an infinite step: SymPy Range(0, 10, oo) = Range(0, -10, -oo) = Range(0, 1, 1); Range(10, 0, oo) is empty
+    expect([R(0, 10, sj.oo), R(0, -10, sj.neg(sj.oo)), R(10, 0, sj.oo)].map(String)).toEqual(['Range(0, 1, 1)', 'Range(0, 1, 1)', 'Range(0, 0, 1)']);
+  });
+
+  it('size, inf, sup, is_empty and is_finite_set', () => {
+    // SymPy Range(k): size k, inf 0, sup k - 1, is_empty False
+    const rk = R(k);
+    expect([rk.size, Sets.inf(rk), Sets.sup(rk)].map(String)).toEqual(['k', '0', 'k - 1']);
+    expect([rk.isEmptyQ, rk.isFiniteSet]).toEqual([false, true]);
+    // SymPy Range(1, k): size k - 1, inf raises (it may be empty)
+    expect(String(R(1, k).size)).toBe('k - 1');
+    expect(S(() => Sets.inf(R(1, k)))).toBe('RangeError: cannot tell if Range is null or not');
+    expect(R(1, k).isEmptyQ).toBe('unknown');
+    // SymPy Range(n): size, inf and sup raise, is_empty None
+    expect(S(() => R(nn).size)).toBe('RangeError: Invalid method for symbolic Range');
+    expect(S(() => Sets.sup(R(nn)))).toBe('RangeError: cannot tell if Range is null or not');
+    expect(R(nn).isEmptyQ).toBe('unknown');
+    expect(S(() => R(nn).isFiniteSet)).toBe('RangeError: Invalid method for symbolic Range');
+    expect(R(i).isFiniteSet).toBe(true);
+    // SymPy Range(i, i + 6, 2): size 3, inf i, sup i + 4; Range(i, 3*i, i): size 2, inf raises
+    const r6 = R(i, sj.add(i, 5), 2);
+    expect([r6.size, Sets.inf(r6), Sets.sup(r6)].map(String)).toEqual(['3', 'i', 'i + 4']);
+    expect(String(R(i, sj.mul(3, i), i).size)).toBe('2');
+    expect(S(() => Sets.inf(R(i, sj.mul(3, i), i)))).toBe('RangeError: cannot tell if Range is null or not');
+    // a negative step: SymPy Range(i + 4, i - 2, -2) has inf i - 2 + 2 = i... (sup i + 4, inf i)
+    const neg = R(sj.add(i, 4), sj.add(i, -2), -2);
+    expect([Sets.inf(neg), Sets.sup(neg)].map(String)).toEqual(['i', 'i + 4']);
+    // SymPy Range(n, n + 3).inf: invalid method (n may not be an integer)
+    expect(S(() => Sets.inf(R(nn, sj.add(nn, 3))))).toBe('RangeError: invalid method for symbolic range');
+    // SymPy Range(i, i - 3): inf raises (invalid method)
+    expect(S(() => Sets.inf(R(i, sj.add(i, -3))))).toBe('RangeError: invalid method for symbolic range');
+    // infinite: SymPy Range(i, oo).size = Range(-oo, i).size = oo, is_finite_set False
+    expect([R(i, sj.oo).size, R(sj.neg(sj.oo), i).size].map(String)).toEqual(['oo', 'oo']);
+    expect([R(i, sj.oo).isFiniteSet, R(i, sj.oo).isEmptyQ]).toEqual([false, false]);
+    // SymPy Range(0).inf: NotImplementedError
+    expect(S(() => Sets.inf(R(0)))).toBe('NotImplementedError: (EmptySet)._inf');
+    expect(S(() => Sets.sup(R(0)))).toBe('NotImplementedError: (EmptySet)._sup');
+    expect(String(R(0).size)).toBe('0');
+    expect(R(0).isEmptyQ).toBe(true);
+    // a numeric Range with a negative step
+    expect([Sets.inf(R(5, 0, -2)), Sets.sup(R(5, 0, -2))].map(String)).toEqual(['1', '5']);
+  });
+
+  it('elements and reversed', () => {
+    const r6 = R(i, sj.add(i, 5), 2);
+    // SymPy r[1], r[2], r[-2], r[-4] (IndexError); SymPy gives i + 6 for r[3], which is not an
+    // element (the size is 3), so here it is an IndexError too
+    expect([r6.at(0), r6.at(1), r6.at(2), r6.at(-1), r6.at(-2)].map(String)).toEqual(['i', 'i + 2', 'i + 4', 'i + 4', 'i + 2']);
+    expect(S(() => r6.at(3))).toBe('RangeError: Range index out of range');
+    expect(S(() => r6.at(-4))).toBe('RangeError: Range index out of range');
+    expect(S(() => R(nn).at(0))).toBe('RangeError: Invalid method for symbolic Range');
+    expect(S(() => R(0).at(0))).toBe('RangeError: Range index out of range');
+    expect(S(() => R(sj.neg(sj.oo), i).at(0))).toBe('RangeError: cannot slice from the end with an infinite value');
+    expect(S(() => R(i, sj.oo).at(-1))).toBe('RangeError: cannot slice from the end with an infinite value');
+    // SymPy Range(-oo, i)[-3] = i - 3
+    expect(String(R(sj.neg(sj.oo), i).at(-3))).toBe('i - 3');
+    expect(S(() => R(0, sj.oo).at(-2))).toBe('RangeError: cannot slice from the end with an infinite value');
+    // SymPy raises an IndexError for Range(i, oo)[2], although i + 2 is the element of index 2
+    expect(String(R(i, sj.oo).at(2))).toBe('i + 2');
+    // an index that depends on the unknown size: SymPy Range(k)[1] = 1 (k > 1 is not known: it raises)
+    expect(S(() => R(k).at(1))).toBe('RangeError: Invalid method for symbolic Range');
+    // SymPy Range(i, i + 6, 2).reversed, Range(k).reversed, Range(-oo, i).reversed, Range(n).reversed (raises)
+    expect([r6.reversed, R(k).reversed, R(sj.neg(sj.oo), i).reversed].map(String)).toEqual(['Range(i + 4, i - 2, -2)', 'Range(k - 1, -1, -1)', 'Range(i - 1, -oo, -1)']);
+    expect(S(() => R(nn).reversed)).toBe('RangeError: invalid method for symbolic range');
+    expect(R(0).reversed.isEmpty).toBe(true);
+    expect(String(R(3).reversed)).toBe('Range(2, -1, -1)');
+  });
+
+  it('contains (SymPy Range._contains)', () => {
+    const vals = [i, sj.Rational.of(1n, 2n), 3, x, -1];
+    const row = (r: Sets.SetExpr): string[] => vals.map((v) => String(C(r, v)));
+    expect(row(R(nn))).toEqual(['Contains(i, Range(0, n, 1))', 'False', 'Contains(3, Range(0, n, 1))', 'Contains(x, Range(0, n, 1))', 'Contains(-1, Range(0, n, 1))']);
+    expect(row(R(k))).toEqual(['(i >= 0) & (i <= k - 1)', 'False', '3 <= k - 1', 'Contains(x, Range(0, k, 1))', 'False']);
+    expect(row(R(i, sj.add(i, 5), 2))).toEqual(['True', 'False', 'Contains(3, Range(i, i + 6, 2))', 'Contains(x, Range(i, i + 6, 2))', 'Contains(-1, Range(i, i + 6, 2))']);
+    expect(String(C(R(i, sj.mul(3, i), i), i))).toBe('((i >= 1) & (i <= 2*i)) | ((i <= -1) & (i >= 2*i))');
+    expect(row(R(i, sj.oo))).toEqual(['True', 'False', '3 >= i', 'Contains(x, Range(i, oo, 1))', '-1 >= i']);
+    expect(row(R(sj.neg(sj.oo), i))).toEqual(['False', 'False', '3 <= i - 1', 'Contains(x, Range(-oo, i, 1))', '-1 <= i - 1']);
+    // SymPy Range(i, i + 2, 2).contains(3) = Eq(3, i); Range(i, i + 6, 2).contains(i + 1) = False; oo is not an element
+    expect(String(C(R(i, sj.add(i, 2), 2), 3))).toBe('Eq(3, i)');
+    expect(String(C(R(i, sj.add(i, 6), 2), sj.add(i, 1)))).toBe('False');
+    expect(String(C(R(i, sj.add(i, 6), 2), sj.oo))).toBe('False');
+    // SymPy Range(-oo, oo).contains(i) = True, Range(0, 10, 3).contains(4) = False
+    expect(String(C(R(sj.neg(sj.oo), sj.oo), i))).toBe('True');
+    expect(String(C(R(0, 10, 3), 4))).toBe('False');
+    expect(Sets.containsQ(R(k), sj.sympify(-1))).toBe(false);
+  });
+
+  it('as_relational (SymPy)', () => {
+    expect(String(Sets.asRelational(R(k), x))).toBe('(x >= 0) & Eq(Mod(x, 1), 0) & (x <= k - 1)');
+    expect(String(Sets.asRelational(R(i, sj.add(i, 6), 2), x))).toBe('(x >= i) & (x <= i + 4) & Eq(Mod(-i + x, 2), 0)');
+    // SymPy (x > -oo) & Eq(Mod(x, 1), 0) & (x <= i - 1): Mod(x - i + 1, 1) is not reduced to Mod(x, 1) here
+    expect(String(Sets.asRelational(R(sj.neg(sj.oo), i), x))).toBe('(x > -oo) & (x <= i - 1) & Eq(Mod(-i + x + 1, 1), 0)');
+    // SymPy Eq(Mod(x, i), 0) & ...: Mod(x - i, i) is not reduced here
+    expect(String(Sets.asRelational(R(i, sj.mul(3, i), i), x))).toBe('Eq(Mod(-i + x, i), 0) & (((i >= 1) & (x >= i) & (x <= 2*i)) | ((i <= -1) & (x <= i) & (x >= 2*i)))');
+    expect(String(Sets.asRelational(R(i, sj.add(i, 2), 2), x))).toBe('Eq(x, i)');
+    expect(String(Sets.asRelational(R(0), x))).toBe('False');
+    // SymPy Range(0, oo).as_relational(x) = (x >= 0) & (x < oo) & Eq(Mod(x, 1), 0)
+    expect(String(Sets.asRelational(R(0, sj.oo), x))).toBe('(x >= 0) & (x < oo) & Eq(Mod(x, 1), 0)');
+  });
+
+  it('intersections stay unevaluated (SymPy)', () => {
+    expect(String(Sets.intersection(R(nn), I(0, 5)))).toBe('Intersection(Interval(0, 5), Range(0, n, 1))');
+    expect(String(Sets.intersection(R(nn), R(3)))).toBe('Intersection(Range(0, 3, 1), Range(0, n, 1))');
+    expect(String(Sets.intersection(R(3), R(nn)))).toBe('Intersection(Range(0, 3, 1), Range(0, n, 1))');
+    expect(String(Sets.intersection(R(nn), Sets.Integers))).toBe('Range(0, n, 1)');
+  });
+
+  it('printing (SymPy str, latex and pretty)', () => {
+    expect(L(R(nn))).toBe('\\text{Range}\\left(n\\right)');
+    expect(L(R(a, b, 2))).toBe('\\text{Range}\\left(a, b, 2\\right)');
+    expect(L(R(1, nn, 2))).toBe('\\text{Range}\\left(1, n, 2\\right)');
+    expect(L(R(0, nn, 2))).toBe('\\text{Range}\\left(0, n, 2\\right)');
+    expect(L(R(1, k))).toBe('\\text{Range}\\left(1, k\\right)');
+    expect(L(R(k))).toBe('\\text{Range}\\left(k\\right)');
+    expect(L(R(i, sj.add(i, -3)))).toBe('\\text{Range}\\left(i, i - 3\\right)');
+    expect(L(R(i, sj.add(i, 5), 2))).toBe('\\left\\{i, i + 2, i + 4\\right\\}');
+    expect(L(R(i, sj.mul(3, i), i))).toBe('\\left\\{i, 2 i\\right\\}');
+    expect(L(R(i, sj.add(i, 8), 2))).toBe('\\left\\{i, i + 2, \\ldots, i + 6\\right\\}');
+    expect(L(R(i, sj.oo))).toBe('\\left\\{i, i + 1, \\ldots\\right\\}');
+    expect(L(R(sj.neg(sj.oo), i))).toBe('\\left\\{\\ldots, i - 2, i - 1\\right\\}');
+    expect(sj.pretty(R(i, sj.add(i, 8), 2))).toBe('{i, i + 2, i + 4, i + 6}');
+    expect(sj.pretty(R(i, sj.add(i, 10), 2))).toBe('{i, i + 2, …, i + 8}');
+    expect(sj.pretty(R(i, sj.mul(3, i), i), { useUnicode: false })).toBe('{i, 2*i}');
+    expect(sj.pretty(R(sj.neg(sj.oo), i), { useUnicode: false })).toBe('{..., i - 2, i - 1}');
+    // SymPy's pretty printer and its LaTeX printer for Range(-oo, n) and Range(n, oo) raise; the
+    // function form of the LaTeX printer is shown
+    expect(sj.pretty(R(nn))).toBe('Range(n)');
+    expect(sj.pretty(R(a, b, 2))).toBe('Range(a, b, 2)');
+    expect(L(R(sj.neg(sj.oo), nn))).toBe('\\text{Range}\\left(-\\infty, n\\right)');
+    expect(L(R(nn, sj.oo))).toBe('\\text{Range}\\left(n, \\infty\\right)');
+    expect(String(R(nn))).toBe('Range(0, n, 1)');
+  });
+});

@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { Dummy, oo, parse, symbols, sstr } from '../../src';
-import { Gruntz, GruntzError, gruntz, monomialLead } from '../../src/series/gruntz';
+import { Gruntz, GruntzError, SignUnknownError, gruntz, monomialLead } from '../../src/series/gruntz';
 import type { Expr } from '../../src/core/nodes';
 import { add, exp, mul, pow } from '../../src/core/ops';
 
@@ -27,6 +27,18 @@ describe('gruntz: limits as in SymPy 1.14', () => {
     ['(3**(1/x) + 5**(1/x))**x', '0', '5'],
     ['I*exp(x)', 'oo', 'oo*I'],
     ['-x*exp(x)', 'oo', '-oo'],
+    // hyperbolic functions and Bessel functions of a growing argument are rewritten with exponentials
+    ['(tanh(x) - 1)*exp(2*x)', 'oo', '-2'],
+    ['sinh(x)*exp(-x)', 'oo', '1/2'],
+    ['cosh(x)*exp(-x)', 'oo', '1/2'],
+    ['(coth(x) - 1)*exp(2*x)', 'oo', '2'],
+    ['x*sech(x)', 'oo', '0'],
+    ['x*csch(x)', '-oo', '0'],
+    ['sinh(x)/cosh(x)', '-oo', '-1'],
+    ['besselk(1, x)*exp(x)*sqrt(x)', 'oo', 'sqrt(2)*sqrt(pi)/2'],
+    ['besselk(0, x)*besseli(0, x)*x', 'oo', '1/2'],
+    ['besseli(0, x + 1)/besseli(0, x)', 'oo', 'E'],
+    ['(x**(-x - 1)*(x**(x + 1) + (x + 1)**x))**x', 'oo', 'exp(E)'],
   ])('gruntz(%s, x, %s) = %s', (e, z0, expected) => {
     expect(G(e, z0)).toBe(expected);
   });
@@ -38,10 +50,13 @@ describe('gruntz: limits as in SymPy 1.14', () => {
 
   it('raises GruntzError for what it cannot decide', () => {
     // several arguments depending on x, an unknown growth, a symbolic sign, no nonzero term
-    for (const e of ['polygamma(x, x)', 'uppergamma(x, 1)/gamma(x)', 'exp(x*y)', 'x**y + x', 'x**I + x', 'x*(1 - cos(1/x)**2 - sin(1/x)**2)', 'f(x)']) {
+    // (and a Bessel function whose argument has no limit by the algorithm: SymPy returns the Limit)
+    for (const e of ['polygamma(x, x)', 'uppergamma(x, 1)/gamma(x)', 'exp(x*y)', 'x**y + x', 'x**I + x', 'x*(1 - cos(1/x)**2 - sin(1/x)**2)', 'f(x)', 'besseli(0, x*sin(x) + 2*x)*exp(-2*x)']) {
       expect(() => gruntz(P(e), x, oo, '+')).toThrow(GruntzError);
     }
     expect(() => new Gruntz(3).limitinf(P('exp(exp(x))/exp(x)'), x)).toThrow('too many steps');
+    // SymPy: NotImplementedError (Result depends on the sign of sign(y))
+    expect(() => gruntz(P('exp(x*y)'), x, oo, '+')).toThrow(SignUnknownError);
   });
 });
 

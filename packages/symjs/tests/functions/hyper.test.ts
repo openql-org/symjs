@@ -214,8 +214,35 @@ describe('hyper: cases outside the table', () => {
     const w = toComplex(evalf(hyper([1], [3], sj.add(sj.Rational.of(1, 2), sj.mul(sj.Rational.of(1, 3), sj.I)))));
     expect(w.re).toBeCloseTo(1.17725852093618, 12);
     expect(w.im).toBeCloseTo(0.142700680013728, 12);
-    // SymPy continues analytically (-1 - pi*I/2 here); outside the unit disk the series is not used
-    expect(String(evalf(hyper([1, 2], [3], 2)))).toBe('hyper((1.0, 2.0), (3.0,), 2.0)');
+    // SymPy hyper((1, 2), (3,), 2).evalf() = -1.0 - 1.5707963267949*I (mpmath hyp2f1, the 1/z transformation)
+    expect(String(evalf(hyper([1, 2], [3], 2)))).toBe('-1.0 - 1.5707963267949*I');
+  });
+  it('2F1 at any precision, with the analytic continuation of mpmath hyp2f1', () => {
+    // hyper((a, b), (c,), z) of SymPy, the parameters and the argument as SymPy sources
+    const ev = (a: string, b: string, c: string, z: string, n?: number) => String(evalf(hyper([sj.parse(a), sj.parse(b)], [sj.parse(c)], sj.parse(z)), n));
+    // SymPy 1.14 evalf; exp(+-I*pi/3) is reached by Gosper's recurrence
+    expect(ev('1', '2', '3', 'exp(I*pi/3)')).toBe('0.813799364234218 + 0.68485325637228*I');
+    expect(ev('1', '2', '3', 'exp(-I*pi/3)')).toBe('0.813799364234218 - 0.68485325637228*I');
+    expect(ev('1/2', '1', '3/2', 'exp(I*pi/3)')).toBe('0.962958578924434 + 0.350935287356627*I');
+    expect(ev('1', '2', '3', 'exp(I*pi/3)', 30)).toBe('0.813799364234217850594078257642 + 0.684853256372279547373231880413*I');
+    expect(ev('1', '2', '3', '2.5')).toBe('-0.929748834594613 - 1.00530964914873*I');
+    expect(ev('1', '2', '3', '2*I')).toBe('0.402359478108525 + 0.446425641102955*I');
+    // z = 1: Gauss's theorem where the series converges, the infinity approached from below otherwise
+    expect(ev('1/2', '1/3', '2', '1', 30)).toBe('1.15959526696392836576999205157');
+    expect(ev('1', '2', '3', '1')).toBe('oo');
+    expect(ev('1', '2', '-1/2', '1')).toBe('-oo');
+    // SymPy gives -oo + oo*I for hyper((I, 2), (1,), 1), whose value at 1 - eps is not real; symjs keeps it
+    expect(ev('I', '2', '1', '1')).toBe('hyper((2.0, 1.0*I), (1.0,), 1.0)');
+    // c a nonpositive integer: a pole of the series unless it terminates first (SymPy: oo, 1.91666666666667, oo)
+    expect(ev('1', '2', '-3', '1/2')).toBe('oo');
+    expect(ev('-2', '2', '-3', '1/2')).toBe('1.91666666666667');
+    expect(ev('-4', '2', '-3', '1/2')).toBe('oo');
+    // 2F2 by the power series (SymPy hyper((1, 2), (3, 4), 1/2).evalf())
+    expect(String(evalf(hyper([1, 2], [3, 4], sj.Rational.of(1, 2))))).toBe('1.09002619782383');
+    // outside the unit disk other functions are not evaluated (SymPy hyper((1, 2), (3, 4), 2).evalf() = 1.46803038322526)
+    expect(String(evalf(hyper([1, 2], [3, 4], 2)))).toBe('hyper((1.0, 2.0), (3.0, 4.0), 2.0)');
+    // a symbol stays (SymPy hyper((1, 2), (3,), x).evalf())
+    expect(ev('1', '2', '3', 'x')).toBe('hyper((1.0, 2.0), (3.0,), x)');
   });
   it('derivatives with respect to a parameter are not implemented', () => {
     // SymPy: Derivative(hyper((b, x), (c,), z), x)

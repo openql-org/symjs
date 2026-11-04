@@ -30,10 +30,11 @@ export {
 
 export { rootsDict as roots } from './polys/poly';
 export { sqfNorm } from './polys/sympoly';
+export type { FactorList, FactorListFrac, FactorListOptions } from './polys/sympoly';
 export { minimalPolynomial } from './polys/numberfields';
 export type { MinimalPolynomialOptions } from './polys/numberfields';
 export { Monomial } from './polys/monomial';
-export { ZZ, QQ, RR, Domain, PolynomialRing, FractionField, GlobalPolynomialRing, OldFractionField, DMP, DMF, CoercionFailed } from './polys/domains';
+export { ZZ, QQ, RR, EX, Domain, PolynomialRing, FractionField, GlobalPolynomialRing, OldFractionField, DMP, DMF, CoercionFailed } from './polys/domains';
 export { polyFromExpr, parallelPolyFromExpr, gff, type PolyOptions } from './polys/fromexpr';
 export { RootSum, RootSumNode, apartList, assemblePartfracList } from './polys/rootsum';
 export type { PartfracTerm } from './polys/rootsum';

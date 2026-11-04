@@ -67,11 +67,37 @@ describe('the cases needing analytic continuation or limits', () => {
     if (!f) throw new TypeError(name);
     return () => f(args.map((a) => [F.fromNumber(a), F.ZERO] as Mpc), 53);
   };
-  it('raises NotImplementedError where mpmath continues 2F1 or takes a limit', () => {
-    // mpmath hyp2f1(0.5, 1.5, 3, exp(i pi/3)) by Gosper's recurrence: |z|, |1 - z| and |z/(z - 1)| are all 1
-    const z: Mpc = [F.fromStr('0.5', 53), F.fromStr('0.8660254037844386', 53)];
-    const r = (x: string): Mpc => [F.fromStr(x, 53), F.ZERO];
-    expect(() => OP.chyp2f1(r('0.5'), r('1.5'), r('3'), z, 53)).toThrow('2F1 near |z| = 1 away from z = 1');
+  it('continues 2F1 near |z| = 1 away from z = 1 by Gosper\'s recurrence', () => {
+    // mpmath hyp2f1(0.5, 1.5, 3, mpc('0.5', '0.8660254037844386')) at mp.dps = 15 and 50: |z|, |1 - z| and
+    // |z/(z - 1)| are all 1
+    const show = (v: Mpc, dps: number) => [F.toStr(v[0], dps), F.toStr(v[1], dps)];
+    for (const [prec, dps, want] of [
+      [53, 15, ['1.00889580523877', '0.270332816260875']],
+      [169, 50, ['1.0088958052387687373517025964592196849494963709642', '0.27033281626087533033160168823642718366944838012456']],
+    ] as const) {
+      const z: Mpc = [F.fromStr('0.5', prec), F.fromStr('0.8660254037844386', prec)];
+      const r = (x: string): Mpc => [F.fromStr(x, prec), F.ZERO];
+      expect(show(OP.chyp2f1(r('0.5'), r('1.5'), r('3'), z, prec), dps)).toEqual(want);
+    }
+    // mpmath hyp2f1(2+1j, 0.5, -0.5+0.25j, exp(-1j*pi/3)) at mp.dps = 50 (cancellation raises the precision)
+    const zc: Mpc = [{ man: 1n, exp: -1n }, F.neg(F.sqrt(F.fromRational(3n, 4n, 200), 200))];
+    const v = OP.chyp2f1([F.fromInt(2n), F.ONE], [{ man: 1n, exp: -1n }, F.ZERO], [{ man: -1n, exp: -1n }, { man: 1n, exp: -2n }], zc, 169);
+    expect(show(v, 50)).toEqual(['3.6333138670986387346584404975910428673619801087591', '-5.4496597667979989244776957820770412184280045415086']);
+    // mpmath hyp2f1(10, 20, 3, mpc('0.5', '0.8660254037844386')) at mp.dps = 15 and 50: the sum loses 23 bits
+    for (const [prec, dps, want] of [
+      [53, 15, ['-1084.27777777777', '9253.8663396162']],
+      [169, 50, ['-1084.2777777777714442060649428756368422452946926131', '9253.866339616196200297383309694745939522181402391']],
+    ] as const) {
+      const z: Mpc = [F.fromStr('0.5', prec), F.fromStr('0.8660254037844386', prec)];
+      expect(show(OP.chyp2f1([F.fromInt(10n), F.ZERO], [F.fromInt(20n), F.ZERO], [F.fromInt(3n), F.ZERO], z, prec), dps)).toEqual(want);
+    }
+  });
+  it('2F1 at z = 1 by Gauss\'s theorem', () => {
+    // mpmath hyp2f1(0.5, 1/3, 2, 1) = gamma(2)*gamma(7/6)/(gamma(3/2)*gamma(5/3))
+    const v = OP.chyp2f1([{ man: 1n, exp: -1n }, F.ZERO], [F.fromRational(1n, 3n, 73), F.ZERO], [F.fromInt(2n), F.ZERO], [F.ONE, F.ZERO], 53);
+    expect([F.toStr(v[0], 15), F.toStr(v[1], 15)]).toEqual(['1.15959526696393', '0.0']);
+  });
+  it('raises NotImplementedError where mpmath takes a limit', () => {
     // mpmath jacobi(1.5, -2, 3, 0.3), gegenbauer(1.5, -0.5, 0.3), jacobi(-2.5, 0.5, 1, 0.3): limits of hypercomb
     expect(at('jacobi', [1.5, -2, 3, 0.3])).toThrow(/limit/);
     expect(at('gegenbauer', [1.5, -0.5, 0.3])).toThrow(/limit/);

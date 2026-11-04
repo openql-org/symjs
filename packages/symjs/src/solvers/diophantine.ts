@@ -1012,7 +1012,7 @@ export function diophantine(eqIn: ExprLike, opts: DiophantineOptions = {}): Expr
   let doPermuteSigns = false;
   let doPermuteSignsVar = false;
   let permuteFewSigns = false;
-  let terms: [Expr, number][];
+  let terms: [Expr, Expr][];
   let t: DiophantineEquationType | undefined;
   try {
     t = classify(eq);
@@ -1040,7 +1040,7 @@ export function diophantine(eqIn: ExprLike, opts: DiophantineOptions = {}): Expr
   }
   if (t?.name === 'general_sum_of_squares') {
     // factoring such expressions sometimes hangs
-    terms = [[eq, 1]];
+    terms = [[eq, S.One]];
   } else {
     const fl = factorListExpr(eq);
     const [content] = fl;

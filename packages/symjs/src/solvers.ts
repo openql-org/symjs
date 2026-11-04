@@ -85,6 +85,8 @@ export {
   dsolve,
   odeOrder,
 } from './solvers/ode';
+export type { DsolveOptions } from './solvers/ode';
+export { infinitesimals, checkinfsol } from './solvers/liegroup';
 export {
   solveset,
   solveUnivariateInequality,

@@ -8,13 +8,13 @@
  * integer partitions (IntegerPartition) and restricted growth strings.
  */
 
-import { at, first, getOrThrow, last } from '../core/guard';
+import { at, cast, first, getOrThrow, last } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
+import { ExtensionExpr } from '../core/nodes';
 import { sympify } from '../core/ops';
 import { Matrix } from '../matrices/matrix';
 import { parse } from '../parsing/parser';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { str } from '../printing/str';
 import { FiniteSet, SetExpr } from '../sets/sets';
 
 /** An element of a set partition (a string is parsed, as SymPy sympifies it). */
@@ -52,14 +52,31 @@ function blockElements(arg: PartitionBlock): { elems: Expr[]; dups: boolean } {
   return { elems: sortExprs([...new Map(items.map((e) => [e.key, e])).values()]), dups: keys.size < items.length };
 }
 
+/** The blocks of a partition as sets in SymPy's FiniteSet order, checked for duplicate elements. */
+function partitionBlocks(partition: readonly PartitionBlock[]): FiniteSet[] {
+  const blocks: Expr[][] = [];
+  let dups = false;
+  for (const arg of partition) {
+    const b = blockElements(arg);
+    dups ||= b.dups;
+    blocks.push(b.elems);
+  }
+  const all = new Set<string>();
+  for (const b of blocks) for (const e of b) all.add(e.key);
+  if (dups || all.size < blocks.reduce((n, b) => n + b.length, 0)) throw new RangeError('Partition contained duplicate elements.');
+  return blocks.map((b) => new FiniteSet(b)).sort(cmpExpr);
+}
+
 /**
  * SymPy Partition(*blocks): a partition of a set into disjoint blocks (each a
- * list, a JavaScript Set or a FiniteSet). It prints like SymPy:
- * `Partition({3}, {1, 2})`.
+ * list, a JavaScript Set or a FiniteSet). As SymPy's Partition (a FiniteSet
+ * of its blocks), it is an expression node: it prints like SymPy,
+ * `Partition({3}, {1, 2})`, and its LaTeX and pretty forms are those of the
+ * set of its blocks.
  */
-export class Partition {
+export class Partition extends ExtensionExpr {
   /** The blocks as sets. */
-  readonly args: readonly FiniteSet[];
+  declare readonly args: readonly FiniteSet[];
   /** SymPy members: the elements of all blocks, in the order of their union. */
   readonly members: readonly Expr[];
   /** SymPy size: the number of elements. */
@@ -68,19 +85,26 @@ export class Partition {
   #partition: Expr[][] | undefined;
 
   constructor(...partition: PartitionBlock[]) {
-    const blocks: Expr[][] = [];
-    let dups = false;
-    for (const arg of partition) {
-      const b = blockElements(arg);
-      dups ||= b.dups;
-      blocks.push(b.elems);
-    }
+    super('Partition', partitionBlocks(partition));
     const all = new Map<string, Expr>();
-    for (const b of blocks) for (const e of b) all.set(e.key, e);
-    if (dups || all.size < blocks.reduce((n, b) => n + b.length, 0)) throw new RangeError('Partition contained duplicate elements.');
-    this.args = blocks.map((b) => new FiniteSet(b));
+    for (const b of this.args) for (const e of b.args) all.set(e.key, e);
     this.members = sortExprs([...all.values()]);
     this.size = all.size;
+  }
+
+  /** A partition of the new blocks (SymPy Partition(*args)). */
+  withArgs(args: readonly Expr[]): Expr {
+    return new Partition(...args.map((a) => cast(a, FiniteSet)));
+  }
+
+  /** SymPy str: Partition({3}, {1, 2}) (the blocks in sort-key order). */
+  override printStr(print: (e: Expr) => string): string {
+    return `Partition(${this.args.map(print).join(', ')})`;
+  }
+
+  /** SymPy latex: the LaTeX form of the set of the blocks (SymPy _print_FiniteSet). */
+  override printLatex(print: (e: Expr) => string): string {
+    return print(new FiniteSet(this.args));
   }
 
   /** SymPy sort_key(): the size, the members and the rank. */
@@ -143,12 +167,6 @@ export class Partition {
     rgs.forEach((i, j) => at(partition, Number(i)).push(at(elements, j)));
     if (!partition.every((p) => p.length)) throw new RangeError('some blocks of the partition were empty.');
     return new Partition(...partition);
-  }
-
-  /** SymPy str: Partition({3}, {1, 2}) (the blocks in sort-key order). */
-  toString(): string {
-    const items = [...this.args].sort(cmpExpr);
-    return `Partition(${items.map((s) => str(s)).join(', ')})`;
   }
 }
 

@@ -411,8 +411,14 @@ const isFiniteBound = (e: Expr) => !(e instanceof Special);
 
 /** Limit of f(k) as k -> oo, or undefined. */
 function limOo(f: Expr, k: Sym): Expr | undefined {
-  // (a limit at oo does not raise: an undetermined one is an unevaluated Limit)
-  const l = impl.limit(f, k, S.Infinity);
+  // an undetermined limit is an unevaluated Limit, or NotImplementedError (SymPy limit_seq catches it)
+  let l: Expr;
+  try {
+    l = impl.limit(f, k, S.Infinity);
+  } catch (err) {
+    if (err instanceof NotImplementedError) return undefined;
+    throw err;
+  }
   return l instanceof Limit ? undefined : l;
 }
 

@@ -98,3 +98,14 @@ describe('simplify keeps the numeric content of a quotient in front (SymPy facto
     expect(String(simplify(e))).toBe('3*(5 - 21*x)/((x - 1)*(5*x - 1))');
   });
 });
+
+describe('simplify of holonomic to_expr results (SymPy holonomic tests)', () => {
+  it('exp(-x**2/2) goes to the denominator of together and cancel', () => {
+    const e = parse('-x**2*(2/x**2 - 2*exp(-x**2/2)/x**2)/2 + 1 - sqrt(2)*I*sqrt(pi)*exp(-x**2/2)*erf(sqrt(2)*I*x/2)/2');
+    expect(String(together(e, { deep: true }))).toBe('(-sqrt(2)*I*sqrt(pi)*erf(sqrt(2)*I*x/2) + 2)*exp(-x**2/2)/2');
+    expect(String(simplify(e))).toBe('(-sqrt(2)*I*sqrt(pi)*erf(sqrt(2)*I*x/2) + 2)*exp(-x**2/2)/2');
+  });
+  it('the product after trigsimp is expanded when that is shorter (SymPy expand_power_exp(expand_mul(short)))', () => {
+    expect(String(simplify(parse('(-x**2*(Si(2*x)/x + cos(2*x)/(2*x**2) - 1/(2*x**2)) - 1)/x')))).toBe('-Si(2*x) - cos(x)**2/x');
+  });
+});

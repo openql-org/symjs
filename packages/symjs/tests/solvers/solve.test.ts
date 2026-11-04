@@ -413,3 +413,19 @@ describe('nonlinsolve and undetermined coefficients', () => {
     expect(show(solveUndeterminedCoeffs(eq, [a, b, c], [u, v]))).toBe('(1, 2, 3)');
   });
 });
+
+describe('solve with several logarithms of the unknown', () => {
+  it('combines c_i*log(g_i) with rational c_i (SymPy)', () => {
+    // SymPy: [(-x**2 - exp(2*C1))/(x**2 - exp(2*C1))]
+    expect(show(solve(parse('C1 - log(x) + log(y - 1)/2 - log(y + 1)/2'), y))).toBe('[-(x**2 + exp(2*C1))/((x - exp(C1))*(x + exp(C1)))]');
+    expect(show(solve(parse('log(y) + log(y + 1) - 1'), y))).toBe('[-1/2 + sqrt(1 + 4*E)/2]');
+  });
+  it('counts c*y as c*log(exp(y))', () => {
+    // SymPy raises NotImplementedError; exp(y) = 2 - 2*exp(-2*C1)/(2*x + 1) solves it
+    expect(show(solve(parse('C1 + y/2 + log(exp(-y) - 1/2)/2 + log(2*x + 1)/2'), y))).toBe('[log(2 - 2*exp(-2*C1)/(2*x + 1))]');
+  });
+  it('needs rational coefficients (SymPy NotImplementedError as well)', () => {
+    expect(() => solve(parse('log(y) + x*log(y + 1) - 1'), y)).toThrow(NotImplementedError);
+    expect(() => solve(parse('log(y) + sin(y)'), y)).toThrow(NotImplementedError);
+  });
+});

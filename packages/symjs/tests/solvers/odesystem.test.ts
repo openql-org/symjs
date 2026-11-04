@@ -155,3 +155,54 @@ describe('checkodesol', () => {
     expect(() => checkodesol(diff(fx, x!) as never, [Eq(fx, C1!)] as never)).toThrow(TypeError);
   });
 });
+
+// SymPy test_systems.py test_nonlinear_2eq_order1 (SymPy's flat list of the solution pairs)
+describe('nonlinear systems of two first-order equations', () => {
+  const X = Fn('x');
+  const Y = Fn('y');
+  const nl = (a: string, b: string) => show(dsolve([parse(a), parse(b)], [X(t), Y(t)]));
+  const q = '(-1/(4*C2 + 4*t))';
+  it('type 1: x\' = x**n*f, y\' = g*f', () => {
+    expect(nl('Derivative(x(t), t) - x(t)*y(t)**3', 'Derivative(y(t), t) - y(t)**5')).toBe(
+      `[Eq(x(t), C1*exp(${q}**(-1/4))), Eq(y(t), -${q}**(1/4)), Eq(x(t), C1*exp(-1/${q}**(1/4))), Eq(y(t), ${q}**(1/4)), Eq(x(t), C1*exp(-I/${q}**(1/4))), Eq(y(t), -I*${q}**(1/4)), Eq(x(t), C1*exp(I/${q}**(1/4))), Eq(y(t), I*${q}**(1/4))]`,
+    );
+    expect(nl('Derivative(x(t), t) - x(t)**2*y(t)**3', 'Derivative(y(t), t) - y(t)**5')).toBe(
+      `[Eq(x(t), 1/(C1 - 1/${q}**(1/4))), Eq(y(t), -${q}**(1/4)), Eq(x(t), 1/(C1 + ${q}**(-1/4))), Eq(y(t), ${q}**(1/4)), Eq(x(t), 1/(C1 + I/${q}**(1/4))), Eq(y(t), -I*${q}**(1/4)), Eq(x(t), 1/(C1 - I/${q}**(1/4))), Eq(y(t), I*${q}**(1/4))]`,
+    );
+  });
+  it('type 2: x\' = exp(n*x)*f, y\' = g*f', () => {
+    expect(nl('Derivative(x(t), t) - exp(3*x(t))*y(t)**3', 'Derivative(y(t), t) - y(t)**5')).toBe(
+      `[Eq(x(t), -log(C1 - 3/${q}**(1/4))/3), Eq(y(t), -${q}**(1/4)), Eq(x(t), -log(C1 + 3/${q}**(1/4))/3), Eq(y(t), ${q}**(1/4)), Eq(x(t), -log(C1 + 3*I/${q}**(1/4))/3), Eq(y(t), -I*${q}**(1/4)), Eq(x(t), -log(C1 - 3*I/${q}**(1/4))/3), Eq(y(t), I*${q}**(1/4))]`,
+    );
+  });
+  it('type 4: separable f/g', () => {
+    // SymPy: {Eq(x(t), -2*exp(C1)/(C2*exp(C1) + t - sin(2*t)/2)), Eq(y(t), -2/(C1 + t - sin(2*t)/2))}, which does
+    // not satisfy the system (x/y must be constant): x comes from the first integral x = exp(C1)*y here
+    expect(nl('Derivative(x(t), t) - x(t)*y(t)*sin(t)**2', 'Derivative(y(t), t) - y(t)**2*sin(t)**2')).toBe(
+      '[Eq(x(t), exp(C1)/(C2 - t/2 + sin(t)*cos(t)/2)), Eq(y(t), 1/(C2 - t/2 + sin(t)*cos(t)/2))]',
+    );
+    const eqs = ['Derivative(x(t), t) - x(t)*y(t)*sin(t)**2', 'Derivative(y(t), t) - y(t)**2*sin(t)**2'].map((e) => parse(e));
+    expect(solvesOdeSystem(eqs, t, dsolve(eqs, [X(t), Y(t)]) as Expr[])).toBe(true);
+  });
+  it('type 5: Clairaut systems', () => {
+    // SymPy: {Eq(x(t), C1*C2 + C1*t), Eq(y(t), C2**2 + C2*t)}
+    expect(nl('x(t) - t*Derivative(x(t), t) - Derivative(x(t), t)*Derivative(y(t), t)', 'y(t) - t*Derivative(y(t), t) - Derivative(y(t), t)**2')).toBe(
+      '[Eq(x(t), C1*C2 + C1*t), Eq(y(t), C2**2 + C2*t)]',
+    );
+    // the other sign (SymPy does not finish on this system, whose functions it orders otherwise)
+    expect(nl('-x(t) + t*Derivative(x(t), t) + Derivative(y(t), t)**2', '-y(t) + t*Derivative(y(t), t) + Derivative(x(t), t)**2')).toBe(
+      '[Eq(x(t), C1*t + C2**2), Eq(y(t), C1**2 + C2*t)]',
+    );
+  });
+  it('other systems', () => {
+    // SymPy: NotImplementedError; x' + y' is not of the form x' = f(x, y, t)
+    expect(nl('Derivative(x(t), t) + Derivative(y(t), t) - y(t)**2', 'Derivative(y(t), t) - y(t)**2')).toBe('[Eq(x(t), C2), Eq(y(t), -1/(C1 + t))]');
+    // SymPy: Eq(Integral(...), C3 + ...) for each function (type 1 of three equations); not supported here
+    const Z = Fn('z');
+    expect(() => dsolve(['4*Derivative(x(t), t) + 2*y(t)*z(t)', '3*Derivative(y(t), t) - z(t)*x(t)', '5*Derivative(z(t), t) - x(t)*y(t)'].map((e) => parse(e)), [X(t), Y(t), Z(t)])).toThrow(NotImplementedError);
+  });
+  it('type 3 needs integrals that are not evaluated (SymPy NotImplementedError as well)', () => {
+    expect(() => nl('Derivative(x(t), t) - y(t)*x(t)', 'Derivative(y(t), t) - x(t)**3')).toThrow(NotImplementedError);
+  });
+});
+

@@ -41,10 +41,10 @@ const CASES = [
   ['matrices', 'Matrix', 450],
   ['printing', 'pretty', 210],
   ['discrete', '*', 265],
-  ['strategies', '*', 172],
-  ['unify', '*', 198],
+  ['strategies', '*', 185],
+  ['unify', '*', 210],
   ['algebras', 'Quaternion', 460],
-  ['holonomic', 'exprToHolonomic', 775],
+  ['holonomic', 'exprToHolonomic', 815],
   ['index', 'Rational', 790],
   ['index', '*', 1425],
 ];

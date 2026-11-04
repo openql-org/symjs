@@ -375,6 +375,7 @@ describe('more SymPy 1.14 cases', () => {
     // SymPy returns a sum of gamma-function quotients from its Meijer G integration; symjs's hyperexpand
     // leaves a hypergeometric function (the same function) and Bessel functions (checked at s = 3)
     expect(String(ilt('1/(a + s**3)')[0])).toBe('2*sqrt(3)*pi*t**2*Heaviside(t)*hyper((), (4/3, 5/3), -a*t**3/27)/(27*gamma(4/3)*gamma(5/3))');
-    same('1/(s**4 + 1)', '4*sqrt(2)*pi*t**3*((-1)**(3/8)*sqrt(2)*sqrt(pi)*(-3*besseli(5/2, t*exp(I*pi/4))/2 - 3*besselj(5/2, t*exp(I*pi/4))/2)/(128*t**(5/2)) + (-1)**(1/8)*sqrt(2)*sqrt(pi)*(-9*besseli(3/2, t*exp(I*pi/4))/2 + 9*besselj(3/2, t*exp(I*pi/4))/2)/(128*t**(7/2)))*Heaviside(t)/(gamma(5/4)*gamma(7/4))');
+    // (as in SymPy's hyperexpand, the arguments of the Bessel functions, which are branched, stay polar)
+    same('1/(s**4 + 1)', '4*sqrt(2)*pi*t**3*((-1)**(3/8)*sqrt(2)*sqrt(pi)*(-3*besseli(5/2, t*exp_polar(I*pi/4))/2 - 3*besselj(5/2, t*exp_polar(I*pi/4))/2)/(128*t**(5/2)) + (-1)**(1/8)*sqrt(2)*sqrt(pi)*(-9*besseli(3/2, t*exp_polar(I*pi/4))/2 + 9*besselj(3/2, t*exp_polar(I*pi/4))/2)/(128*t**(7/2)))*Heaviside(t)/(gamma(5/4)*gamma(7/4))');
   });
 });

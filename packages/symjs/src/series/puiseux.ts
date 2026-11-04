@@ -12,7 +12,7 @@
 
 import { NotImplementedError } from '../core/errors';
 import type { Expr, FnName } from '../core/nodes';
-import { Add, Constant, Fn, Mul, Pow, Rational, S, Special, Sym, isNum } from '../core/nodes';
+import { Add, Constant, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, isNum } from '../core/nodes';
 import { numAdd, numCmp, numMul, numNeg } from '../core/num';
 import { add, exp, mul, pow } from '../core/ops';
 import { xreplace as subs } from '../core/traverse';
@@ -222,6 +222,21 @@ function lambertWCoeff(j: number): Rational {
 export const isE = (e: Expr): boolean => e instanceof Constant && e.name === 'E';
 
 /** Expansion of an expression in t (log(t) is replaced by the dummy L). */
+/** The sign of a real constant evaluated numerically (-log(2) < 0), 0 when it is not a real number. */
+function numericSign(c: Expr): number {
+  if (c.freeSymbols().size !== 0) return 0;
+  try {
+    const v = c.toComplex();
+    return v.im === 0 ? Math.sign(v.re) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** The Gruntz helpers exp(-g)*besseli(nu, g) and exp(g)*besselk(nu, g) (SymPy _besseli, _besselk). */
+export const SCALED_BESSELI = '_besseli';
+export const SCALED_BESSELK = '_besselk';
+
 export class Expander {
   readonly L = new Sym('_L');
   private depth = 0;
@@ -254,6 +269,7 @@ export class Expander {
       return this.serPow(b, k, n);
     }
     if (e instanceof Fn) return this.serFn(e, n);
+    if (e instanceof UndefFn && (e.name === SCALED_BESSELI || e.name === SCALED_BESSELK)) return this.scaledBessel(e, n);
     throw new SeriesError(`cannot expand ${e.toString()}`);
   }
 
@@ -325,7 +341,7 @@ export class Expander {
       // (the terms are in increasing order of the exponent: the first is the leading one)
       const pole = first(poles);
       // g -> -oo: exp(g) is smaller than every power of t (SymPy exp._eval_nseries gives O(x**n))
-      if (isNegative(pole.c) === true) return new PS([], n);
+      if (isNegative(pole.c) === true || numericSign(pole.c) < 0) return new PS([], n);
       throw new EssentialSingularity(pole.c);
     }
     const g0 = sg.coeff(S.Zero);
@@ -416,6 +432,34 @@ export class Expander {
       const up = e.name === 'floor' ? (sign > 0 ? 0 : -1) : sign > 0 ? 1 : 0;
       return PS.constant(add(g0, up));
     }
+    // Ei(g) = EulerGamma + log(g) + sum_k g**k/(k*k!) for g -> 0, with log(-g) on the negative real axis,
+    // where Ei is real (SymPy Ei._eval_nseries: series(Ei(-x), x) = EulerGamma + log(x) - x + ...,
+    // series(Ei(I*x), x) = I*pi/2 + EulerGamma + log(x) + I*x + ...)
+    if (e.name === 'Ei' && isZeroCoeff(g0)) {
+      const lc = this.leading(g).c;
+      const side = isNegative(lc) === true || numericSign(lc) < 0 ? -1 : 1;
+      let fact = 1n;
+      const sum = this.powerSeries((k) => {
+        if (k === 0) return S.Zero;
+        fact *= BigInt(k);
+        return Rational.of(1n, BigInt(k) * fact);
+      }, h, n);
+      return PS.constant(S.EulerGamma).add(this.ser(log(mul(side, g)), n)).add(sum);
+    }
+    // frac(g) = g - floor(g): h plus frac(g0), or plus 1 below an integer (SymPy: series(frac(x), x) = x)
+    if (e.name === 'frac') {
+      const lc = h.lead()?.c;
+      const sign = lc === undefined ? 0 : isPositive(lc) ? 1 : isNegative(lc) ? -1 : 0;
+      if (g0 instanceof Rational && g0.isInteger) {
+        if (sign === 0) throw new SeriesError('cannot expand frac');
+        return sign > 0 ? h : PS.constant(S.One).add(h);
+      }
+      // (a symbolic g0 could be an integer: frac is continuous from the right; SymPy also gives
+      // frac(y) - x for frac(y - x), which is wrong for an integer y)
+      const f0 = fn('frac', [g0]);
+      if (f0 instanceof Rational || sign > 0) return PS.constant(f0).add(h);
+      throw new SeriesError('cannot expand frac');
+    }
     // acoth, asech and acsch at 0 (a branch point on their cut): the value on the side of approach,
     // given by the sign of the real leading coefficient of the argument (SymPy _eval_nseries)
     if ((e.name === 'acoth' || e.name === 'asech' || e.name === 'acsch') && isZeroCoeff(g0)) {
@@ -471,6 +515,34 @@ export class Expander {
       terms.push(digamma ? mul(-1, b, pow(mul(2 * k, pow(g, 2 * k)), -1)) : mul(b, pow(mul(2 * k * (2 * k - 1), pow(g, 2 * k - 1)), -1)));
     }
     return this.ser(add(...terms), n).cut(Rational.of(BigInt(Math.round((2 * K + 1) * d * 1000)), 1000n));
+  }
+
+  /**
+   * The asymptotic series of exp(-g)*besseli(nu, g) and exp(g)*besselk(nu, g) (the helpers of the
+   * Gruntz algorithm, SymPy _besseli and _besselk) for g -> +oo: (2*pi*g)**(-1/2) and (pi/(2*g))**(1/2)
+   * times sum_k (+-1)**k*a_k(nu)/g**k, a_k(nu) = (4*nu**2 - 1)*...*(4*nu**2 - (2*k - 1)**2)/(k!*8**k)
+   * (Abramowitz and Stegun 9.7.1 and 9.7.2).
+   */
+  private scaledBessel(e: UndefFn, n: Rational): PS {
+    const [nu, g] = [first(e.args), last(e.args)];
+    const lead = this.leading(g);
+    if (!(lead.e.isNegative && isPositive(lead.c))) throw new SeriesError(`cannot expand ${e.name}`);
+    const d = -lead.e.value;
+    // terms up to g**(-K); the rest is O(g**(-K - 3/2))
+    const K = Math.max(1, Math.ceil(Math.max(n.value, 1) / d));
+    const besseli = e.name === SCALED_BESSELI;
+    const terms: Expr[] = [];
+    let c: Expr = S.One;
+    for (let k = 0; k <= K; k++) {
+      if (k > 0) {
+        // (-1)**k*a_k(nu) = rf(1/2 - nu, k)*rf(1/2 + nu, k)/(k!*2**k)
+        const j = Rational.of(2 * k - 1, 2);
+        c = mul(c, add(j, mul(-1, nu)), add(j, nu), Rational.of(besseli ? 1n : -1n, BigInt(2 * k)));
+      }
+      terms.push(mul(c, pow(g, -k)));
+    }
+    const front = besseli ? pow(mul(2, S.Pi, g), Rational.of(-1n, 2n)) : pow(mul(S.Pi, pow(mul(2, g), -1)), S.Half);
+    return this.ser(mul(front, add(...terms)), n).cut(Rational.of(BigInt(Math.round((2 * K + 3) * d * 1000)), 2000n));
   }
 
   /** belowCut for b = c*t**e*(1 + u), with more terms of u when those known do not decide it. */

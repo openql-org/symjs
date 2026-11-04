@@ -8,7 +8,7 @@
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, Dummy, Float, Fn, impl, Mul, Pow, Rational, S, Sym, isNum } from '../core/nodes';
 import { fromRational } from '../numeric/mpf';
-import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
+import { add, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
 import { str } from '../printing/str';
 import { divExact, mgcd } from '../polys/mpoly';
@@ -18,6 +18,7 @@ import { expandMul as expand } from './expand';
 import { isNegative, isPositive } from '../core/assumptions';
 import { at, defined, first } from '../core/guard';
 import { decomposePower } from './exprtools';
+import { asNumerDenom } from '../core/methods';
 
 const negExponent = (x: Expr): boolean => {
   // SymPy fraction: exponents known to be negative go to the denominator
@@ -120,13 +121,20 @@ function radicalContentRatio(n: Expr, d: Expr): Expr | undefined {
 export function cancel(ex: ExprLike): Expr {
   const e = together(sympify(ex));
   let [n, d] = fraction(e);
+  // SymPy as_numer_denom of sums (also inside products): the terms' denominators, also those of exp(-x) = 1/exp(x)
+  if (n instanceof Add || n instanceof Mul) {
+    const [n1, d1] = asNumerDenom(n);
+    [n, d] = [n1, mul(d, d1)];
+  }
   n = expand(n);
   d = expand(d);
-  if (d instanceof Rational && d.isOne) return n;
+  // (with Float coefficients SymPy works over RR or CC: 1.0*x + 1 = 1.0*x + 1.0, (1.0*x + 1)/3 = 0.333333333333333*x + 0.333333333333333)
+  const exact = !(d instanceof Float) && floatsToRationals(n)[1] === 0;
+  if (d instanceof Rational && d.isOne && exact) return n;
   // a common square root content: (sqrt(3) + sqrt(15)*A)/(sqrt(2) + sqrt(10)*A) = sqrt(6)/2
   const rc = radicalContentRatio(n, d);
   if (rc) return rc;
-  if (isNum(d)) return expand(mul(n, pow(d, -1)));
+  if (isNum(d) && exact) return expand(mul(n, pow(d, -1)));
   // the generators in SymPy's order; those that are not symbols are replaced by dummies
   const gens = ratsimpGens([n, d]);
   const vars = gens.map((x) => (x instanceof Sym ? x : new Dummy('g')));
@@ -135,22 +143,21 @@ export function cancel(ex: ExprLike): Expr {
   let q = inGens(d, gens, vars);
   const tn = coeffTable(p, vars);
   const td = coeffTable(q, vars);
-  // (a polynomial with rational or Gaussian rational coefficients: SymPy's domains ZZ, QQ, ZZ_I, QQ_I)
-  if (tn && td) {
-    const [n1, d1] = gcdCancel(p, q, vars);
-    const s = cancelScale(tn, td, defined(coeffTable(d1, vars), 'the coefficients of d / gcd'));
-    [p, q] = [expand(mul(s, n1)), expand(mul(s, d1))];
-  } else {
-    // Float coefficients: SymPy's domain RR, see floatCancel
-    const rr = floatCancel(p, q, vars);
-    if (rr) return mul(xreplace(rr[0], back), pow(xreplace(rr[1], back), -1));
+  // (p and q are polynomials in the generators: their coefficients are rational or Gaussian
+  // rational, SymPy's domains ZZ, QQ, ZZ_I, QQ_I, unless there are Floats, SymPy's RR or CC)
+  if (!tn || !td) {
+    const [fp, fq] = floatCancel(p, q, vars);
+    return mul(xreplace(fp, back), pow(xreplace(fq, back), -1));
   }
+  const [n1, d1] = gcdCancel(p, q, vars);
+  const s = cancelScale(tn, td, defined(coeffTable(d1, vars), 'the coefficients of d / gcd'));
+  [p, q] = [expand(mul(s, n1)), expand(mul(s, d1))];
   // SymPy canonical_unit: the leading coefficient of the denominator positive, or for a Gaussian
   // coefficient in the first quadrant
   const u = leadingUnit(q, vars);
   if (u !== undefined) [p, q] = [expand(mul(u, p)), expand(mul(u, q))];
   // SymPy as_expr: each Gaussian coefficient times its monomial, (1 + I)*x unexpanded
-  if (tn && td) [p, q] = [fromTable(defined(coeffTable(p, vars), 'p'), vars), fromTable(defined(coeffTable(q, vars), 'q'), vars)];
+  [p, q] = [fromTable(defined(coeffTable(p, vars), 'p'), vars), fromTable(defined(coeffTable(q, vars), 'q'), vars)];
   [p, q] = [xreplace(p, back), xreplace(q, back)];
   return q instanceof Rational && q.isOne ? p : mul(p, pow(q, -1));
 }
@@ -197,28 +204,33 @@ function floatsToRationals(e: Expr): [Expr, number] {
 }
 
 /**
- * SymPy cancel over RR: the Floats are converted to rationals (RR.get_exact), p and q are the
- * cofactors of the monic gcd over QQ, the leading coefficient of q is made positive and every
- * coefficient becomes a Float again: (2.0*x + 1)/(4*x + 2.0) = 2.0/4.0 = 0.5. Undefined when n or
- * d is not a polynomial with real Float or rational coefficients.
+ * SymPy cancel over RR and CC: the Floats are converted to rationals (RR.get_exact, CC.get_exact =
+ * QQ_I), p and q are the cofactors of the monic gcd over QQ or QQ_I, and every coefficient becomes
+ * a Float (a + b*I) again: (2.0*x + 1)/(4*x + 2.0) = 2.0/4.0 = 0.5. Over RR the leading coefficient
+ * of q is made positive (RR.canonical_unit); CC has no canonical unit, and SymPy's signsimp before
+ * cancel negates p and q when q could extract a minus sign.
  */
-function floatCancel(n: Expr, d: Expr, vars: readonly Expr[]): [Expr, Expr] | undefined {
+function floatCancel(n: Expr, d: Expr, vars: readonly Expr[]): [Expr, Expr] {
   const [nq, pn] = floatsToRationals(n);
   const [dq, pd] = floatsToRationals(d);
-  const tn = coeffTable(nq, vars);
-  const td = coeffTable(dq, vars);
-  if (!tn || !td || [...tn.values(), ...td.values()].some(([, c]) => c[1] !== 0n)) return undefined;
+  // (the Floats are the only factors of the terms that are not generators or rationals)
+  const tn = defined(coeffTable(nq, vars), 'the coefficients of n');
+  const td = defined(coeffTable(dq, vars), 'the coefficients of d');
+  const complex = [...tn.values(), ...td.values()].some(([, c]) => c[1] !== 0n);
   const prec = Math.max(pn, pd);
   let g = gcdOf(nq, dq, vars);
   let [p, q] = [nq, dq];
   if (g !== undefined) {
-    const [a, , den] = lexLeading(defined(coeffTable(g, vars), 'the coefficients of the gcd'));
-    g = expand(mul(Rational.of(den, a), g));
+    const [a, b, den] = lexLeading(defined(coeffTable(g, vars), 'the coefficients of the gcd'));
+    g = expand(mul(gqExpr([den * a, -den * b, a * a + b * b]), g));
     [p, q] = [defined(divExact(nq, g, vars), 'n / gcd'), defined(divExact(dq, g, vars), 'd / gcd')];
   }
-  if (lexLeading(defined(coeffTable(q, vars), 'q'))[0] < 0n) [p, q] = [expand(mul(-1, p)), expand(mul(-1, q))];
-  const asFloats = (e: Expr): Expr =>
-    add(...[...defined(coeffTable(e, vars), 'the coefficients').values()].map(([m, [a, , den]]) => mul(new Float(fromRational(a, den, prec), prec), ...m.map((k, i) => pow(at(vars, i), k)))));
+  const flip = complex ? couldExtractMinusSign(d) : lexLeading(defined(coeffTable(q, vars), 'q'))[0] < 0n;
+  if (flip) [p, q] = [expand(mul(-1, p)), expand(mul(-1, q))];
+  const toFloat = (a: bigint, den: bigint): Float => new Float(fromRational(a, den, prec), prec);
+  // SymPy CC.to_sympy: Float(re) + I*Float(im), the zero parts left out
+  const coeff = ([a, b, den]: GQ): Expr => (b === 0n ? toFloat(a, den) : a === 0n ? mul(toFloat(b, den), S.I) : add(toFloat(a, den), mul(toFloat(b, den), S.I)));
+  const asFloats = (e: Expr): Expr => add(...[...defined(coeffTable(e, vars), 'the coefficients').values()].map(([m, c]) => mul(coeff(c), ...m.map((k, i) => pow(at(vars, i), k)))));
   return [asFloats(p), asFloats(q)];
 }
 

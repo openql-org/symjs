@@ -23,7 +23,7 @@ import { besselj, bessely } from './bessel';
 import { registerRewrite } from '../simplify/rewrite';
 import { unpolarify } from './polar';
 import { derivative } from '../core/undef';
-import { mpFns } from '../numeric/mpeval';
+import { evalMp, fromMpc, mpFns } from '../numeric/mpeval';
 import * as F from '../numeric/mpf';
 import * as M from '../numeric/mpfun';
 import type { Mpc } from '../numeric/mpfun';
@@ -67,8 +67,12 @@ export class Hyper extends ExtensionExpr {
     const c = mul(mul(...this.ap), pow(mul(...this.bq), -1));
     return mul(c, hyper(this.ap.map((a) => add(a, 1)), this.bq.map((b) => add(b, 1)), this.argument), dz);
   }
-  /** The value by the power series (|z| < 1 or terminating). */
+  /**
+   * The value: 2F1 at dps digits (mpmath hyp2f1, with its analytic continuation), other
+   * functions by the power series (|z| < 1 or terminating).
+   */
   override numericValue(dps: number): Expr | undefined {
+    if (this.p === 2 && this.args.length === 4) return this.value2f1(dps);
     const z = this.argument.toComplex();
     if (Math.hypot(z.re, z.im) >= 1) return undefined;
     const as = this.ap.map((a) => a.toNumber());
@@ -86,6 +90,26 @@ export class Hyper extends ExtensionExpr {
     }
     void dps;
     return add(acc.re, mul(acc.im, S.I));
+  }
+  /**
+   * 2F1(a, b; c; z) at dps digits (mpmath _hyp2f1): oo at a pole of the series (c a nonpositive
+   * integer, the series not terminating first) and at z = 1 where the series diverges with a
+   * real limit from below.
+   */
+  private value2f1(dps: number): Expr | undefined {
+    if (this.freeSymbols().size > 0) return undefined;
+    const prec = F.dpsToPrec(dps);
+    const v = this.args.map((e) => evalMp(e, prec + 10));
+    const [z, a, b, c] = [at(v, 0), at(v, 1), at(v, 2), at(v, 3)];
+    const terminates = [a, b].some((t) => mpNpInt(t) && (!mpNpInt(c) || F.cmp(c[0], t[0]) <= 0));
+    if (mpNpInt(c) && !terminates) return S.Infinity;
+    const one = F.isZero(z[1]) && F.cmp(z[0], F.ONE) === 0;
+    if (one && !terminates && F.sign(M.csub(M.csub(c, a, prec), b, prec)[0]) <= 0) {
+      // mpmath: hyp2f1(a, b, c, 1 - 2*eps)*inf
+      const below = chyp2f1(a, b, c, [F.sub(F.ONE, { man: 1n, exp: BigInt(-prec) }), F.ZERO], prec);
+      return F.isZero(below[1]) ? (F.sign(below[0]) > 0 ? S.Infinity : S.NegativeInfinity) : undefined;
+    }
+    return fromMpc(chyp2f1(a, b, c, z, prec), prec);
   }
 }
 

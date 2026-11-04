@@ -143,8 +143,6 @@ describe('results that differ from SymPy 1.14', () => {
     ["sj.series(P('log(x)'), x, 0, 4, '+', { logx: y })", () => sj.series(P('log(x)'), x, 0, 4, '+', { logx: y }), "y", "ERR TypeError"],
     // x**a = exp(a*log(x)) with log(x) = logx
     ["sj.series(P('x**a'), x, 0, 4, '+', { logx: y })", () => sj.series(P('x**a'), x, 0, 4, '+', { logx: y }), "exp(a*y)", "ERR TypeError"],
-    // expansions at complex infinity are not implemented
-    ["sj.series(x, x, P('zoo'))", () => sj.series(x, x, P('zoo')), "ERR NotImplementedError: series: expansion at this point is not supported", "x"],
     // sign(I + x) = (I + x)/sqrt(1 + x**2) is not constant near 0 (SymPy gives its value I)
     ["sj.series(P('sign(I + x)'), x, 0, 3)", () => sj.series(P('sign(I + x)'), x, 0, 3), "ERR SeriesError: cannot expand sign", "I"],
     // the expansion variable is positive, as in SymPy: |y*x| = x*|y|
@@ -165,8 +163,6 @@ describe('results that differ from SymPy 1.14', () => {
     ["sj.series(P('exp(-1/x) + sin(x)'), x, 0, 3)", () => sj.series(P('exp(-1/x) + sin(x)'), x, 0, 3), "x + O(x**3)", "x + O(x**3)"],
     // SymPy raises PoleError
     ["sj.series(P('exp(I/x)'), x, 0, 2)", () => sj.series(P('exp(I/x)'), x, 0, 2), "ERR EssentialSingularity: essential singularity", "ERR PoleError"],
-    // not implemented: an essential singularity inside a product (SymPy gives x*exp(1/x))
-    ["sj.series(P('x*exp(1/x)'), x, 0, 2)", () => sj.series(P('x*exp(1/x)'), x, 0, 2), "ERR EssentialSingularity: essential singularity", "x*exp(1/x)"],
     // SymPy raises ValueError
     ["sj.series(P('cos(x)'), x, 0, -1)", () => sj.series(P('cos(x)'), x, 0, -1), "ERR RangeError: series: the order n must be nonnegative", "ERR ValueError"],
     // SymPy raises TypeError (None - 0) for an infinite factor that stays
@@ -366,5 +362,43 @@ describe('O(...) read by the parser', () => {
     expect(sstr(parse('O(x + x**2)'))).toBe('O(x)');
     expect(sstr(parse('O(1/x, (x, oo))'))).toBe('O(1/x, (x, oo))');
     expect(sstr(parse('O(1)'))).toBe('O(1)');
+  });
+});
+
+describe('essential singularities, complex infinity and irrational exponents (SymPy 1.14)', () => {
+  const S = (e: string, d: '+' | '-' = '+', n = 6) => show(sj.series(P(e), x, 0, n, d));
+  it('keeps the factors exp(g) with g -> oo and drops those with g -> -oo', () => {
+    expect(show(sj.series(P('x*exp(1/x)'), x, 0, 2))).toBe('x*exp(1/x)');
+    expect(S('x*exp(1/x)', '-')).toBe('O(x**6)');
+    expect(S('x + exp(1/x)')).toBe('x + exp(1/x)');
+    expect(S('x + exp(1/x)', '-')).toBe('x + O(x**6)');
+    expect(S('exp(1/x)*sin(x)')).toBe('x*exp(1/x) - x**3*exp(1/x)/6 + x**5*exp(1/x)/120 + O(x**6*exp(1/x))');
+    expect(S('exp(1/x)/(1 + x)')).toBe('exp(1/x) - x*exp(1/x) + x**2*exp(1/x) - x**3*exp(1/x) + x**4*exp(1/x) - x**5*exp(1/x) + O(x**6*exp(1/x))');
+    expect(S('exp(1/x)*(1 + x)')).toBe('x*exp(1/x) + exp(1/x)');
+    expect(S('exp(-1/x)*x', '-')).toBe('x*exp(-1/x)');
+    expect(S('exp(1/x) + exp(-1/x)')).toBe('exp(1/x) + O(x**6)');
+    expect(S('exp(y/x)*x')).toBe('x*exp(y/x)');
+    expect(S('exp(y/x)*x', '-')).toBe('x*exp(y/x)');
+    expect(S('2**(1/x)*x')).toBe('x*exp(log(2)/x)');
+    expect(S('2**(1/x)*x', '-')).toBe('O(x**6)');
+    expect(S('2**(-1/x)', '-')).toBe('exp(-log(2)/x)');
+    // SymPy raises PoleError: exp(I/x) oscillates
+    expect(() => sj.series(P('exp(I/x)*x'), x)).toThrow('essential singularity');
+  });
+
+  it('expands a Laurent polynomial at zoo as itself', () => {
+    expect(show(sj.series(x, x, P('zoo')))).toBe('x');
+    expect(show(sj.series(P('x**2 + 1/x'), x, P('zoo')))).toBe('x**2 + 1/x');
+    expect(show(sj.series(y, x, P('zoo')))).toBe('y');
+    expect(show(sj.series(P('x*y + x**(-3)'), x, P('zoo')))).toBe('x*y + x**(-3)');
+    // (SymPy returns expressions in sign(zoo) for the others)
+    expect(() => sj.series(P('sin(x)'), x, P('zoo'))).toThrow('expansion at this point is not supported');
+  });
+
+  it('finds leading terms with irrational exponents', () => {
+    expect(show(sj.leadterm(P('x**(-sqrt(2))'), x))).toBe('[1, -sqrt(2)]');
+    expect(show(sj.leadterm(P('x**(1 - sqrt(2))*(1 + x)'), x))).toBe('[1, 1 - sqrt(2)]');
+    expect(show(sj.dir(P('x**(-sqrt(2))'), x, 1))).toBe('-sqrt(2)');
+    expect(show(sj.dir(P('x**(1 - sqrt(2))'), x, 1))).toBe('1 - sqrt(2)');
   });
 });

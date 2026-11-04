@@ -532,3 +532,160 @@ describe('elementary evaluation', () => {
     expect(String(adjoint(fn('lucas', [A])))).toBe('adjoint(lucas(A))');
   });
 });
+
+describe('functions at a number with an infinite part', () => {
+  // [source, value]: the limit where it exists (zoo where the modulus grows without bound in no fixed
+  // direction), SymPy's value where SymPy evaluates. SymPy 1.14 leaves the cases marked "limit"
+  // unevaluated (or rewrites them, erf(-oo + I) = -erf(oo - I)); their values are the limits along
+  // x + I*c, a + I*y and x + I*y (checked with mpmath at |x|, |y| = 1e6, 1e12, 1e24)
+  const cases: [string, string][] = [
+    // limit: gamma(-x + I) and gamma(a + I*y) -> 0, |gamma(x + I)| -> oo with a turning phase
+    ['gamma(oo + I)', 'zoo'],
+    ['gamma(-oo - I)', '0'],
+    ['gamma(oo*I)', '0'],
+    ['gamma(1 - oo*I)', '0'],
+    ['gamma(-oo + oo*I)', '0'],
+    // no limit (gamma(x + I*x**2) -> 0, gamma(x**2 + I*x) -> oo) and SymPy's own values
+    ['gamma(oo + oo*I)', 'gamma(oo + oo*I)'],
+    ['gamma(-oo)', 'gamma(-oo)'],
+    ['gamma(zoo)', 'gamma(zoo)'],
+    ['gamma(oo)', 'oo'],
+    // SymPy: loggamma is zoo at all of these
+    ['loggamma(oo*I)', 'zoo'],
+    ['loggamma(1 + oo*I)', 'zoo'],
+    ['loggamma(oo + oo*I)', 'zoo'],
+    ['loggamma(zoo)', 'zoo'],
+    ['loggamma(oo)', 'oo'],
+    // limit: erf(x + I) -> 1, erf(-x + I) -> -1, |erf(1 + I*y)| -> oo (exp(y**2)); erfc = 1 - erf
+    ['erf(oo + I)', '1'],
+    ['erf(-oo - I)', '-1'],
+    ['erf(1 + oo*I)', 'zoo'],
+    ['erf(oo*I)', 'oo*I'],
+    ['erf(oo + oo*I)', 'erf(oo + oo*I)'],
+    ['erfc(oo - I)', '0'],
+    ['erfc(-oo + I)', '2'],
+    ['erfc(1 - oo*I)', 'zoo'],
+    ['erfc(oo*I)', '-oo*I'],
+    // limit: erfi(z) = -I*erf(I*z)
+    ['erfi(oo + I)', 'zoo'],
+    ['erfi(1 + oo*I)', 'I'],
+    ['erfi(-1 - oo*I)', '-I'],
+    ['erfi(oo + oo*I)', 'erfi(oo + oo*I)'],
+    // limit: Ei(z) = -E1(-z) + I*pi*sign(im(z)), E1(w) -> 0 as re(w) -> oo or |im(w)| -> oo
+    ['Ei(oo + I)', 'zoo'],
+    ['Ei(-oo + I)', 'I*pi'],
+    ['Ei(-oo - 2*I)', '-I*pi'],
+    ['Ei(-oo + I*pi)', 'I*pi'],
+    ['Ei(-oo - I*pi)', '-I*pi'],
+    ['Ei(oo*I)', 'I*pi'],
+    ['Ei(1 - oo*I)', '-I*pi'],
+    ['Ei(-oo + oo*I)', 'I*pi'],
+    ['Ei(oo + oo*I)', 'Ei(oo + oo*I)'],
+    ['Ei(oo)', 'oo'],
+    // limit: |li(z)| ~ |z/log(z)| -> oo
+    ['li(-oo)', 'zoo'],
+    ['li(zoo)', 'zoo'],
+    ['li(oo + I)', 'zoo'],
+    ['li(oo*I)', 'zoo'],
+    ['li(-oo - oo*I)', 'zoo'],
+    ['li(oo)', 'oo'],
+    // limit: asin(x + I) -> pi/2 + oo*I, asin(1 + I*y) -> oo*I (SymPy asin(oo*I) = oo*I, asin(zoo) = zoo)
+    ['asin(oo + I)', 'pi/2 + oo*I'],
+    ['asin(-oo - I)', '-pi/2 - oo*I'],
+    ['asin(1 - oo*I)', '-oo*I'],
+    ['asin(oo + oo*I)', 'zoo'],
+    ['asin(zoo)', 'zoo'],
+    ['asin(oo)', '-oo*I'],
+    // limit: acos = pi/2 - asin (SymPy acos(oo*I) = pi/2 - oo*I, acos(zoo) = zoo)
+    ['acos(oo + I)', '-oo*I'],
+    ['acos(-oo + I)', 'pi - oo*I'],
+    ['acos(1 + oo*I)', 'pi/2 - oo*I'],
+    ['acos(oo*I)', 'pi/2 - oo*I'],
+    ['acos(-oo - oo*I)', 'zoo'],
+    ['acos(zoo)', 'zoo'],
+    // limit: asinh(z) = -I*asin(I*z); SymPy asinh(oo*I) = oo is kept
+    ['asinh(oo + I)', 'oo'],
+    ['asinh(-oo - I)', '-oo'],
+    ['asinh(1 + oo*I)', 'oo + I*pi/2'],
+    ['asinh(-1 - oo*I)', '-oo - I*pi/2'],
+    ['asinh(oo*I)', 'oo'],
+    ['asinh(oo - oo*I)', 'zoo'],
+    // limit: acosh(-x + I) -> oo + I*pi (SymPy acosh(oo*I) = oo + I*pi/2)
+    ['acosh(oo - I)', 'oo'],
+    ['acosh(-oo + I)', 'oo + I*pi'],
+    ['acosh(-oo - I)', 'oo - I*pi'],
+    ['acosh(1 - oo*I)', 'oo - I*pi/2'],
+    ['acosh(oo*I)', 'oo + I*pi/2'],
+    ['acosh(-oo + oo*I)', 'zoo'],
+    ['acosh(zoo)', 'zoo'],
+    // limit: atanh -> I*pi/2 times the sign of the imaginary part (SymPy atanh(oo) = -I*pi/2)
+    ['atanh(oo + I)', 'I*pi/2'],
+    ['atanh(-oo - I)', '-I*pi/2'],
+    ['atanh(1 - oo*I)', '-I*pi/2'],
+    ['atanh(-oo + oo*I)', 'I*pi/2'],
+    ['atanh(oo)', '-I*pi/2'],
+    ['atanh(zoo)', 'I*AccumBounds(-pi/2, pi/2)'],
+    ['acoth(oo + I)', '0'],
+    ['acoth(-1 + oo*I)', '0'],
+    ['acoth(oo - oo*I)', '0'],
+    ['acoth(zoo)', '0'],
+    // limit: asech(z) = acosh(1/z), 1/z -> 0 from the side opposite to z (SymPy asech(oo*I) = -I*pi/2)
+    ['asech(oo + I)', '-I*pi/2'],
+    ['asech(-oo - I)', 'I*pi/2'],
+    ['asech(1 + oo*I)', '-I*pi/2'],
+    ['asech(oo - oo*I)', 'I*pi/2'],
+    ['asech(oo)', 'I*pi/2'],
+    ['acsch(1 + oo*I)', '0'],
+    ['acsch(-oo + oo*I)', '0'],
+    ['acsch(oo + I)', '0'],
+    // limit: atan -> pi/2 times the sign of the real part; acot, asec, acsc -> 0, pi/2, 0
+    ['atan(oo - I)', 'pi/2'],
+    ['atan(-1 + oo*I)', '-pi/2'],
+    ['atan(-oo + oo*I)', '-pi/2'],
+    ['atan(oo*I)', 'pi/2'],
+    ['atan(oo)', 'pi/2'],
+    ['acot(-oo + I)', '0'],
+    ['acot(oo + oo*I)', '0'],
+    ['asec(1 + oo*I)', 'pi/2'],
+    ['asec(-oo - oo*I)', 'pi/2'],
+    ['acsc(1 - oo*I)', '0'],
+    ['acsc(oo + oo*I)', '0'],
+    // limit: log(oo + oo*I) (the modulus grows, the argument has no limit; SymPy keeps it)
+    ['log(oo + oo*I)', 'zoo'],
+    // arg and sign: the limits, SymPy's arg(oo + oo*I) = pi/4, arg(-oo + oo*I) = pi and
+    // arg(-oo - oo*I) = -3*pi/4 where there is none; SymPy gives arg(-1 + oo*I) = nan, sign(oo + I)
+    // stays (limits pi/2 and 1)
+    ['arg(oo + oo*I)', 'pi/4'],
+    ['arg(oo - oo*I)', '-pi/4'],
+    ['arg(-oo + oo*I)', 'pi'],
+    ['arg(-oo - oo*I)', '-3*pi/4'],
+    ['arg(-1 + oo*I)', 'pi/2'],
+    ['arg(1 - oo*I)', '-pi/2'],
+    ['arg(zoo)', 'nan'],
+    ['arg(oo + I)', '0'],
+    ['sign(oo*I)', 'I'],
+    ['sign(1 - oo*I)', '-I'],
+    ['sign(-oo + I)', '-1'],
+    ['sign(oo + oo*I)', 'sign(oo + oo*I)'],
+    ['re(zoo)', 'nan'],
+    ['im(zoo)', 'nan'],
+    ['re(oo + I)', 'oo'],
+    // forms that are not decided: a symbol, a finite part of undecided sign where the value depends on
+    // it, a non-real finite term. The imaginary part sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6)) is 0, which
+    // symjs does not decide: SymPy gives erf(...) = 1 (the value for any sign) and asin(...) = -oo*I
+    // (the value at oo), symjs keeps the asin
+    ['asin(x + oo*I)', 'asin(x + oo*I)'],
+    ['erf(oo + I*(sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6))))', '1'],
+    ['asin(oo + I*(sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6))))', 'asin(oo + I*(-sqrt(2*sqrt(6) + 5) + sqrt(2) + sqrt(3)))'],
+    ['erf(sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6)) + oo*I)', 'erf(-sqrt(2*sqrt(6) + 5) + sqrt(2) + sqrt(3) + oo*I)'],
+    ['erf(sqrt(I) + oo*I)', 'erf(sqrt(I) + oo*I)'],
+    ['acoth(nan)', 'nan'],
+  ];
+  it.each(cases)('%s = %s', (src, want) => {
+    expect(String(parse(src))).toBe(want);
+  });
+  it('atan(zoo) stays unevaluated', () => {
+    // SymPy atan(zoo) = AccumBounds(-pi/2, pi/2)
+    expect(String(parse('atan(zoo)'))).toBe('atan(zoo)');
+  });
+});

@@ -81,7 +81,7 @@ describe('meijerint_definite: the same values in other forms than SymPy', () => 
     // SymPy: log(-exp_polar(I*pi)) - Ei(exp_polar(I*pi)) + I*pi
     ["log(x)*Heaviside(x-1)*exp(-x)", "0", "oo", ["-Ei(-1)", "True"], 0.21938393439552],
     // SymPy: (2*sqrt(3)*sqrt(pi)*gamma(-1/3)*gamma(1/3)*hyper((1/2, 1), (2/3, 4/3), -4/27)/9 + 2**(1/3)*sqrt(3)*exp(-2/27 + I*pi/3)*besseli(-1/3, 2*exp_polar(I*pi)/27)*gamma(1/6)*gamma(1/3)*gamma(2/3)**3/9 + 2*2**(2/3)*sqrt(3)*exp(-2/27 - I*pi/3)*besseli(1/3, 2*exp_polar(I*pi)/27)*gamma(-2/3)*gamma(-1/3)*gamma(5/6)*gamma(4/3)**2/9)/(4*pi**(3/2))
-    ["exp(-x**2)*exp(-x**3)", "0", "oo", ["(2*sqrt(3)*sqrt(pi)*gamma(-1/3)*gamma(1/3)*hyper((1/2, 1), (2/3, 4/3), -4/27)/9 + 2*2**(2/3)*sqrt(3)*exp(-2/27)*besseli(1/3, 2/27)*gamma(-2/3)*gamma(-1/3)*gamma(5/6)*gamma(4/3)**2/9 + 2**(1/3)*sqrt(3)*exp(-2/27)*besseli(-1/3, 2/27)*gamma(1/6)*gamma(1/3)*gamma(2/3)**3/9)/(4*pi**(3/2))", "True"], 0.663710570501134],
+    ["exp(-x**2)*exp(-x**3)", "0", "oo", ["(2*sqrt(3)*sqrt(pi)*gamma(-1/3)*gamma(1/3)*hyper((1/2, 1), (2/3, 4/3), -4/27)/9 + 2**(1/3)*sqrt(3)*exp(-2/27)*exp(I*pi/3)*besseli(-1/3, 2*exp_polar(I*pi)/27)*gamma(1/6)*gamma(1/3)*gamma(2/3)**3/9 + 2*2**(2/3)*sqrt(3)*exp(-2/27)*exp(-I*pi/3)*besseli(1/3, 2*exp_polar(I*pi)/27)*gamma(-2/3)*gamma(-1/3)*gamma(5/6)*gamma(4/3)**2/9)/(4*pi**(3/2))", "True"], 0.663710570501134],
     // SymPy: E*expint(1, 1)
     ["exp(-x)/(x+1)", "0", "oo", ["meijerg(((0, 0), ()), ((0,), ()), 1)", "True"], null],
   ];
@@ -94,7 +94,7 @@ describe('meijerint_definite: the same values in other forms than SymPy', () => 
     // (SymPy's result)
     ["exp(-a*x)*sin(k*x)/x", "0", "oo", ["k*atan(sqrt(k**2/a**2))/(a*sqrt(k**2/a**2))", "(Eq(Abs(arg(k)), 0) & (Abs(arg(a)) < pi/2)) | (Eq(Abs(arg(k)), 0) & Eq(Abs(arg(a)), pi/2) & Ne(k**2/a**2, -1))"]],
     // SymPy: pi/(2*a) with (Abs(arg(a)) < pi/2) | (Ne(a**(-2), 0) & (Abs(arg(a)) < pi/2) & Ne(Abs(arg(a)), pi/2)), the same
-    ["1/(x**2+a**2)", "0", "oo", ["pi*sqrt(a**(-2))/2", "(Abs(arg(a)) < pi/2) | (Ne(a**(-2), 0) & (Abs(arg(a)) < pi/2) & Ne(Abs(arg(a)), -pi/2) & Ne(Abs(arg(a)), pi/2))"]],
+    ["1/(x**2+a**2)", "0", "oo", ["pi/(2*a)", "(Abs(arg(a)) < pi/2) | (Ne(a**(-2), 0) & (Abs(arg(a)) < pi/2) & Ne(Abs(arg(a)), -pi/2) & Ne(Abs(arg(a)), pi/2))"]],
   ];
   it.each(symbolic)('%s over (%s, %s)', (f, lo, hi, want) => expect(run(f, lo, hi)).toEqual(want));
 });
@@ -136,7 +136,8 @@ describe('meijerint_definite: more cases of the lookup table and the intervals',
     // SymPy: ERR TypeError (SymPy raises TypeError)
     ["exp(x)", "oo", "0", "None"],
     // SymPy: E*(-log(2) + log(-2*exp_polar(I*pi)) - Ei(2*exp_polar(I*pi)) + I*pi) (the same value: Ei(2*exp_polar(I*pi)) = Ei(-2) + I*pi)
-    ["exp(-x)/(x+1)", "1", "oo", ["-E*Ei(-2)", "True"]],
+    // SymPy: E*(-log(2) + log(-2*exp_polar(I*pi)) - Ei(2*exp_polar(I*pi)) + I*pi) (Ei on the other sheet is lifted)
+    ["exp(-x)/(x+1)", "1", "oo", ["E*(-log(2) - Ei(-2) - I*pi + log(2*exp_polar(I*pi)))", "True"]],
     // SymPy: 4*2**(y - 2)*gamma(y/4 + 7/4)*gamma(y/2 + 1)*gamma(y/2 + 3/2)/(gamma(3/4 - y/4)*gamma(y/2 + 5/2)) (the same function)
     ["exp(-x)*x**y*sin(x)", "0", "oo", ["2*(1/2)**(1 - y)*gamma(y/4 + 7/4)*gamma(y/2 + 1)*gamma(y/2 + 3/2)/(gamma(3/4 - y/4)*gamma(y/2 + 5/2))", "(re(y) > -3) & (re(y) > -2)"]],
   ];

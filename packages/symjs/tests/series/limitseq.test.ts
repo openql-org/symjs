@@ -72,8 +72,8 @@ describe('limit_seq', () => {
       ['gamma(n)', 'oo'],
       ['exp(n)*(-1)**n', 'AccumBounds(-oo, oo)'],
       ['n**(-1)**n', 'AccumBounds(0, oo)'],
-      // SymPy finds AccumBounds(0, 1), exp(-1), 1 and 0 (symjs does not decide them yet)
-      ['sin(pi*n/2)**2', 'None'],
+      ['sin(pi*n/2)**2', 'AccumBounds(0, 1)'],
+      // SymPy finds exp(-1), 1 and 0 (symjs does not decide them yet)
       ['subfactorial(n)/factorial(n)', 'None'],
       ['harmonic(n)/log(n)', 'None'],
       ['Abs(sin(n))/n', 'None'],
@@ -106,9 +106,10 @@ describe('limit_seq', () => {
     expect(show(sj.limitSeq(n, n, 0))).toBe('None');
     // the limit of |e| when the oscillation of a power is not resolved: SymPy 0
     expect(show(sj.limitSeq(P('(-2)**(n/2)/3**n'), n))).toBe('0');
-    // a limit computation that fails is no result. Deliberate difference: SymPy raises
-    // ValueError (Error: n should be an integer.) from laguerre(oo, 1)
-    expect(show(sj.limitSeq(P('laguerre(n, 1)'), n))).toBe('None');
+    // a limit computation that raises ValueError raises, like in SymPy (laguerre(oo, 1)); the other
+    // failures of the computation are no result
+    expect(() => sj.limitSeq(P('laguerre(n, 1)'), n)).toThrow(RangeError);
+    expect(() => sj.limitSeq(P('laguerre(n, 1)'), n)).toThrow('Error: n should be an integer.');
   });
 
   it('finds dominant terms like SymPy', () => {

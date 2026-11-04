@@ -47,7 +47,7 @@ import { powsimp } from '../simplify/powsimp';
 import { factor } from '../polys/sympoly';
 import { multisetPartitions } from '../utilities/iterables';
 import { relCanonical } from '../logic/boolalg';
-import { hyperexpand, liftBranches, powdenestPolar } from './hyperexpand';
+import { hyperexpand, liftBranches, powdenestPolar, unpolarifyEval } from './hyperexpand';
 import { Heaviside, isDiracDelta, isHeaviside } from './transforms/delta';
 
 const pi = S.Pi;
@@ -76,11 +76,8 @@ const Gu = (an: readonly ExprLike[], ap: readonly ExprLike[], bm: readonly ExprL
 
 // ---- polar helpers ----------------------------------------------------------------------
 
-/** unpolarify(e, exponents_only=True): the exponents are made non-polar, and exp_polar(0) is 1. */
-export function unpolarifyExponents(e: Expr): Expr {
-  const r = mapBottomUp(e, (t) => (t instanceof Pow ? pow(t.base, unpolarify(t.exp)) : t));
-  return xreplace(r, [[expPolar(0), S.One]]);
-}
+/** SymPy unpolarify(e, exponents_only=True). */
+export const unpolarifyExponents = (e: Expr): Expr => unpolarify(e, { exponentsOnly: true });
 /** The expression of a polarify result (without substitutions, it is an expression). */
 const polarExpr = (r: Expr | [Expr, [Expr, Expr][]]): Expr => expectType(r, (v): v is Expr => !Array.isArray(v), 'polarify');
 /** unpolarify(polarify(e, lift=True), exponents_only=True): the polar number lying over e. */
@@ -295,7 +292,8 @@ const rel0 = (op: string, v: number): Expr => {
   return r === true ? S.true : S.false;
 };
 const isPolarish = (e: Expr): boolean => some(e, (n) => isFnN(n, 'exp_polar') || isFnN(n, 'polar_lift'));
-const myUnpolarify = (e: Expr): Expr => condsimp(unpolarify(liftBranches(e)));
+/** SymPy _my_unpolarify: _eval_cond(unpolarify(f)), with Ei on other sheets lifted as in powdenestPolar. */
+const myUnpolarify = (e: Expr): Expr => condsimp(unpolarifyEval(liftBranches(e)));
 /** unbranched_argument(e), additively over the factors and powers of polar numbers. */
 function uarg(e: Expr): Expr {
   if (e instanceof Mul) return add(...e.args.map(uarg));

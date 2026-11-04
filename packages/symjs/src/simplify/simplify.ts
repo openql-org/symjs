@@ -12,7 +12,7 @@ import { countOps as opCount } from '../core/match';
 import { countOps, mapBottomUp, rebuild, some } from '../core/traverse';
 import { combsimp } from './gammasimp';
 import { fn } from '../functions/elementary';
-import { expand_log, expandMul as expand } from './expand';
+import { expand_log, expand_power_exp, expandMul as expand } from './expand';
 import { logcombine, powsimp } from './powsimp';
 import { factorTerms } from './exprtools';
 import { radsimp } from './radsimp';
@@ -77,7 +77,12 @@ function simplifyCore(e: Expr): Expr {
     const ft = factorTerms(best, { sign: false });
     if (opCount(ft) <= opCount(best)) best = ft;
   }
-  const r = hasTrig(best) ? trigsimp(best) : best;
+  let r = hasTrig(best) ? trigsimp(best) : best;
+  // SymPy: short = shorter(short, factor_terms(short), expand_power_exp(expand_mul(short)))
+  if (r !== best) {
+    const em = expand_power_exp(expand(r));
+    if (opCount(em) < opCount(r)) r = em;
+  }
   // SymPy simplify ends with exptrigsimp, which pairs exp(I*x) + exp(-I*x) into 2*cos(x) also inside products
   if (some(r, (x) => x instanceof Pow && x.base.key === S.E.key && x.exp.has(S.I))) {
     const t = exptrigsimp(r);

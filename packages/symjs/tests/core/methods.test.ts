@@ -548,6 +548,15 @@ describe('other methods', () => {
   it('asNumerDenom of a sum', () => {
     expect(pairStr(asNumerDenom(add(mul(x, rational(1, 2)), mul(y, rational(1, 3)))))).toBe('(3*x + 2*y, 6)');
   });
+  it('asNumerDenom of exp (SymPy ExpBase.as_numer_denom)', () => {
+    // SymPy 1.14: exp(-x - 1) -> (1, exp(x + 1)), exp(1 - x) -> (1, exp(x - 1)), exp(x - 1) -> (exp(x - 1), 1),
+    // exp(-x - I) -> (1, exp(x + I)), exp(-n) -> (exp(-n), 1) and exp(-n - 1) -> (1, exp(n + 1)) for a negative n
+    const n = new sj.Sym('n', { negative: true });
+    const P = (src: string) => sj.parse(src, { locals: { n } });
+    expect(['exp(-x - 1)', 'exp(1 - x)', 'exp(x - 1)', 'exp(-x - I)', 'exp(-n)', 'exp(-n - 1)', 'exp(-pi)'].map((e) => pairStr(asNumerDenom(P(e))))).toEqual([
+      '(1, exp(x + 1))', '(1, exp(x - 1))', '(exp(x - 1), 1)', '(1, exp(x + I))', '(exp(-n), 1)', '(1, exp(n + 1))', '(1, exp(pi))',
+    ]);
+  });
   it('asCoefficientsDict of a sum', () => {
     const d = asCoefficientsDict(add(mul(2, x), mul(3, y), 4));
     expect([...d].map(([k, v]) => `${s(k)}: ${s(v)}`).sort()).toEqual(['1: 4', 'x: 2', 'y: 3']);

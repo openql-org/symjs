@@ -196,8 +196,45 @@ describe('cancel: SymPy PolyElement.cancel normalisation', () => {
     const v = new Float(0.8474337369372327);
     expect(String(cancel(mul(add(mul(v, x), v), pow(add(x, 1), -1))))).toBe('0.847433736937233');
   });
-  it('Float and I coefficients (SymPy CC) are left as they are', () => {
-    // SymPy cancels over CC: (1.0*I*x + 1.0)/(1.0*x + 2.0)
-    expect(String(cancel(P('(1.0*I*x+1)/(x+2)')))).toBe('(1.0*I*x + 1)/(x + 2)');
+  // SymPy as_numer_denom of a sum: exp(-x) = 1/exp(x) goes to the denominator
+  it.each([
+    ['x + exp(-x)', '(x*exp(x) + 1)*exp(-x)'],
+    ['(1 + exp(-x))/(x + 1)', '(exp(x) + 1)/(x*exp(x) + exp(x))'],
+    ['exp(-x)*y + x*exp(-x)', '(x + y)*exp(-x)'],
+    ['-sqrt(2)*I*sqrt(pi)*exp(-x**2/2)*erf(sqrt(2)*I*x/2)/2 + exp(-x**2/2)', '(-sqrt(2)*I*sqrt(pi)*erf(sqrt(2)*I*x/2) + 2)*exp(-x**2/2)/2'],
+  ])('cancel(%s) with exponentials of negative arguments', (src, want) => {
+    expect(String(cancel(P(src)))).toBe(want);
+  });
+  // Floats over a numeric denominator and without one are converted too; zoo and oo stay as they are
+  it.each([
+    ['(1.0*x+1)/3', '0.333333333333333*x + 0.333333333333333'],
+    ['(1.0*x**2 + x)/x', '1.0*x + 1.0'],
+    ['(1.0*pi*x+1)/(x+2)', '(1.0*pi*x + 1.0)/(1.0*x + 2.0)'],
+    ['(1.0*x+zoo)/(x+1)', '(1.0*x + zoo)/(1.0*x + 1.0)'],
+    ['(1.0*x+oo)/(x+1)', '(1.0*x + oo)/(1.0*x + 1.0)'],
+  ])('cancel(%s) over RR (constant denominators, generators that are not symbols)', (src, want) => {
+    expect(String(cancel(P(src)))).toBe(want);
+  });
+  // SymPy's domain CC: the Floats and I as Gaussian rationals (CC.get_exact = QQ_I), the cofactors
+  // of the monic gcd over QQ_I, every coefficient a Float (re + im*I) again; CC has no canonical
+  // unit, the signs come from SymPy's signsimp (q could extract a minus sign)
+  it.each([
+    ['(1.0*I*x + 1)/(x + 2)', '(1.0*I*x + 1.0)/(1.0*x + 2.0)'],
+    ['(2.0*I*x + 2)/(4*x + 4.0*I)', '(2.0*I*x + 2.0)/(4.0*x + 4.0*I)'],
+    ['(x**2+1.0)/(x+I)', '1.0*x - 1.0*I'],
+    ['(I*x-2.0)/(-x+1)', '(-1.0*I*x + 2.0)/(1.0*x - 1.0)'],
+    ['(-2.0*I*x + 1)/(-I*x+3)', '(2.0*I*x - 1.0)/(1.0*I*x - 3.0)'],
+    ['(1.5*I*x**2 + 3.0*x)/(x*y+0.5*I)', '(1.5*I*x**2 + 3.0*x)/(1.0*x*y + 0.5*I)'],
+    ['(x**2-1.0*I)/(2*x)', '0.5*(1.0*x**2 - 1.0*I)/x'],
+    ['(1.0*I*x+1)/(2*I*x+2)', '0.500000000000000'],
+    ['(1.0*I*x+1)/(2*I)', '0.5*x - 0.5*I'],
+    ['((1+2.0*I)*x + 1)/(x+3)', '(x*(1.0 + 2.0*I) + 1.0)/(1.0*x + 3.0)'],
+    ['(x**2+1)/(1.0*I*x**2+1.0*I)', '-1.0*I'],
+    ['(I*x/3+1.0)/(x+1)', '(1.0*I*x + 3.0)/(3.0*x + 3.0)'],
+    ['((1.0+I)*x**2 - (1.0+I))/(x-1)', '1.0*x*(1.0 + 1.0*I) + 1.0 + 1.0*I'],
+    ['x/(1.0*I*x+x**2)', '1.0/(1.0*x + 1.0*I)'],
+    ['(1.0*I*x**2 + x)/x', '1.0*I*x + 1.0'],
+  ])('cancel(%s) over CC', (src, want) => {
+    expect(String(cancel(P(src)))).toBe(want);
   });
 });

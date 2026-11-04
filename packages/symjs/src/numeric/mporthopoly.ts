@@ -12,7 +12,7 @@
  * the 1 - z transformation for |1 - z| < 0.9 (its limit at an integer
  * c - a - b) and the 1/z transformation for |z| > 1.12 (its limit at an
  * integer a - b); the other arguments (|z| about 1 away from z = 1, such as exp(+-i pi/3))
- * need mpmath's Gosper continuation (NotImplementedError).
+ * by mpmath's Gosper recurrence.
  */
 
 import { NotImplementedError } from '../core/errors';
@@ -65,6 +65,11 @@ function sum2f1(a: Mpc, b: Mpc, c: Mpc, z: Mpc, wp: number): Mpc {
 export function chyp2f1(a: Mpc, b: Mpc, c: Mpc, z: Mpc, prec: number): Mpc {
   const wp = prec + 20;
   if (isNpInt(a) || isNpInt(b) || absD(z) < 0.9) return rnd(sum2f1(a, b, c, z, wp), prec);
+  // Gauss's theorem at z = 1 (where the series converges, Re(c - a - b) > 0)
+  if (F.isZero(z[1]) && F.cmp(z[0], F.ONE) === 0) {
+    const g = cmul(cmul(cgamma(c, wp), cgamma(csub(csub(c, a, wp), b, wp), wp), wp), cmul(rgamma(csub(c, a, wp), wp), rgamma(csub(c, b, wp), wp), wp), wp);
+    return rnd(g, prec);
+  }
   // Pfaff: (1 - z)^-a 2F1(a, c - b; c; z/(z - 1))
   const w = cdiv(z, csub(z, M.C1, wp), wp);
   if (absD(w) < 0.9) return cmul(M.cpow(csub(M.C1, z, wp), M.cneg(a), wp), sum2f1(a, csub(c, b, wp), c, w, wp), prec);
@@ -73,7 +78,56 @@ export function chyp2f1(a: Mpc, b: Mpc, c: Mpc, z: Mpc, prec: number): Mpc {
   if (absD(omz) < 0.9) return rnd(hyp2f1OneMinusZ(a, b, c, omz, wp), prec);
   // |z| > 1: the 1/z transformation (DLMF 15.8.2)
   if (absD(z) > 1.12) return rnd(hyp2f1InvZ(a, b, c, z, wp), prec);
-  throw new NotImplementedError('2F1 near |z| = 1 away from z = 1 (mpmath analytic continuation)');
+  // the rest of the unit circle: Gosper's recurrence
+  return rnd(hyp2f1Gosper(a, b, c, z, prec), prec);
+}
+
+/**
+ * 2F1(a, b; c; z) by Gosper's recurrence (mpmath _hyp2f1_gosper), which converges on the
+ * part of the unit circle that none of the transformations reaches; the precision grows with
+ * the cancellation until it is below the extra bits.
+ */
+function hyp2f1Gosper(a: Mpc, b: Mpc, c: Mpc, z: Mpc, prec: number): Mpc {
+  for (let extra = 10; ; ) {
+    const wp = prec + extra;
+    const [f, cancellation] = gosperSum(a, b, c, z, wp);
+    if (cancellation < extra) return f;
+    extra += cancellation;
+  }
+}
+
+/** The sum of Gosper's recurrence at wp bits and the bits it lost to cancellation. */
+function gosperSum(a: Mpc, b: Mpc, c: Mpc, z: Mpc, wp: number): [Mpc, number] {
+  const q = (u: Mpc, v: Mpc): Mpc => cmul(u, v, wp);
+  let d: Mpc = M.C0;
+  let e: Mpc = M.C1;
+  let f: Mpc = M.C0;
+  const abz = q(q(a, b), z);
+  const ch = q(c, half);
+  const c1h = q(cadd(c, M.C1, wp), half);
+  const nz = csub(M.C1, z, wp);
+  const g = cdiv(z, nz, wp);
+  const abg = q(q(a, b), g);
+  const cba = csub(csub(c, b, wp), a, wp);
+  const z2 = csub(z, int(2), wp);
+  const tol = -wp - 10;
+  let maxmag = -Infinity;
+  for (let k = 0; ; k++) {
+    const kk = int(k);
+    const kch = cadd(kk, ch, wp);
+    const kakbz = cdiv(q(q(cadd(kk, a, wp), cadd(kk, b, wp)), z), q(q(int(4 * (k + 1)), kch), cadd(kk, c1h, wp)), wp);
+    const d1 = q(kakbz, csub(e, q(q(cadd(kk, cba, wp), d), g), wp));
+    const e1 = q(kakbz, cadd(q(d, abg), q(cadd(kk, c, wp), e), wp));
+    const inner = csub(q(kk, cadd(q(cba, z), csub(q(kk, z2), c, wp), wp)), abz, wp);
+    const ft = cdiv(q(d, inner), q(q(int(2), kch), nz), wp);
+    const f1 = csub(cadd(f, e, wp), ft, wp);
+    maxmag = Math.max(maxmag, cmagO(f1));
+    const df = csub(f1, f, wp);
+    if (czero(df) || cmagO(df) < tol) return [f1, maxmag - cmagO(f1)];
+    d = d1;
+    e = e1;
+    f = f1;
+  }
 }
 
 /**

@@ -5,7 +5,7 @@
 // Expected values are those of SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { IntegerPartition, Partition, RGSEnum, RGSGeneralized, RGSRank, RGSUnrank, finiteSet, randomIntegerPartition, str, symbols, interval } from '../../src';
+import { IntegerPartition, Partition, RGSEnum, RGSGeneralized, RGSRank, RGSUnrank, finiteSet, latex, pretty, randomIntegerPartition, str, symbols, interval } from '../../src';
 
 const [x] = symbols('x');
 
@@ -19,6 +19,23 @@ describe('Partition', () => {
     expect(a.size).toBe(3);
     expect(String(new Partition(new Set([1, 2, 3]), new Set([4, 5])))).toBe('Partition({4, 5}, {1, 2, 3})');
     expect(String(new Partition(finiteSet(1, 2, 3), finiteSet(4, 5)))).toBe('Partition({4, 5}, {1, 2, 3})');
+  });
+
+  it('is an expression node printed like the set of its blocks (SymPy Partition is a FiniteSet)', () => {
+    const [y] = symbols('y');
+    const a = new Partition([1, 2], [3]);
+    // SymPy latex(Partition([1, 2], [3])), pretty(...) with and without unicode
+    expect(latex(a)).toBe('\\left\\{\\left\\{3\\right\\}, \\left\\{1, 2\\right\\}\\right\\}');
+    expect(pretty(a)).toBe('{{3}, {1, 2}}');
+    expect(pretty(a, { useUnicode: false })).toBe('{{3}, {1, 2}}');
+    expect(latex(new Partition([x, y], [3]))).toBe('\\left\\{\\left\\{3\\right\\}, \\left\\{x, y\\right\\}\\right\\}');
+    // SymPy latex(Partition([1, 2], [3]) + 1)
+    expect(latex(a.add(1))).toBe('\\left\\{\\left\\{2\\right\\}, \\left\\{1, 3\\right\\}\\right\\}');
+    // the blocks are in SymPy's order whatever the order of the arguments: Partition([3], [1, 2]) == Partition([1, 2], [3])
+    expect(new Partition([3], [1, 2]).equals(a)).toBe(true);
+    expect(a.args.map(str)).toEqual(['{3}', '{1, 2}']);
+    // substitution rebuilds the partition (SymPy Partition([x, y], [3]).subs(x, 1))
+    expect(String(new Partition([x, y], [3]).subs(x, 1))).toBe('Partition({3}, {1, y})');
   });
 
   it('ranks and orders partitions', () => {

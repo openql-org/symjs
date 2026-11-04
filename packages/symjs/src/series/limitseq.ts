@@ -120,7 +120,10 @@ const asLimit = (r: Expr): Expr | undefined => (r instanceof Limit || (r instanc
 function limitInf(e: Expr, n: Sym): Expr | undefined {
   try {
     return asLimit(limit(e, n, S.Infinity));
-  } catch {
+  } catch (ex) {
+    // SymPy catches NotImplementedError and PoleError only: a ValueError (RangeError here) propagates
+    // (limit_seq(laguerre(n, 1), n) raises "n should be an integer." from laguerre(oo, 1))
+    if (ex instanceof RangeError) throw ex;
     return undefined;
   }
 }

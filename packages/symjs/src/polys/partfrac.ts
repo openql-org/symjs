@@ -16,7 +16,7 @@ import { linsolve } from '../matrices/linsys';
 import { rebuild as impl_rebuild } from '../core/traverse';
 import { expandMul } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
-import { Poly, factor, factorListExpr, sortGens } from './sympoly';
+import { Poly, factor, factorListInt, sortGens } from './sympoly';
 
 /** Partial fraction decomposition of a rational function in x. */
 export function apart(fIn: ExprLike, xIn?: Sym, opts: { full?: boolean } = {}): Expr {
@@ -40,7 +40,7 @@ export function apart(fIn: ExprLike, xIn?: Sym, opts: { full?: boolean } = {}): 
   const quotient = qPoly.asExpr();
   const r = rPoly.asExpr();
   const gens = sortGens([...Q.freeSymbols()]);
-  const [content, factors0] = factorListExpr(expandMul(Q), gens);
+  const [content, factors0] = factorListInt(expandMul(Q), gens);
   let c: Expr = content;
   const factors: [Expr, number][] = [];
   for (const [g, k] of factors0) {

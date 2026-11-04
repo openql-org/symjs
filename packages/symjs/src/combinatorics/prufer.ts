@@ -9,6 +9,8 @@
  */
 
 import { at, defined } from '../core/guard';
+import type { Expr } from '../core/nodes';
+import { ExtensionExpr } from '../core/nodes';
 
 /** An edge of a labelled tree: the labels of its two nodes. */
 export type PruferEdge = readonly [number, number] | readonly number[];
@@ -23,6 +25,24 @@ function missingMessage(missing: readonly number[]): string {
   return sorted.length === 1 ? `Node ${at(sorted, 0)} is missing.` : `Nodes [${sorted.join(', ')}] are missing.`;
 }
 
+/**
+ * SymPy's LaTeX of the array of a Prufer sequence or of the edges (_print_NDimArray with the
+ * default settings): a 'matrix' environment in brackets ('array' when a row has more than 10
+ * entries), a two-dimensional array of one row in extra brackets; an empty sequence is the
+ * empty tuple.
+ */
+function arrayLatex(input: readonly (readonly number[])[] | readonly number[]): string {
+  if (!input.length) return '\\left( \\right)';
+  const rows = input.map((v) => (typeof v === 'number' ? [v] : [...v]));
+  const twoDim = typeof input[0] !== 'number';
+  const cols = twoDim ? at(rows, 0).length : rows.length;
+  const block = (body: string, nRows: number): string =>
+    cols <= 10 ? `\\left[\\begin{matrix}${body}\\end{matrix}\\right]` : `\\left[\\begin{array}{${'c'.repeat(nRows)}}${body}\\end{array}\\right]`;
+  if (!twoDim) return block(rows.map((r) => at(r, 0)).join(' & '), rows.length);
+  const m = block(rows.map((r) => r.join(' & ')).join('\\\\'), rows.length);
+  return rows.length === 1 ? `\\left[${m}\\right]` : m;
+}
+
 /** The argument is a list of edges (not a Prufer sequence). */
 const isEdgeList = (arg: readonly PruferEdge[] | readonly number[]): arg is readonly PruferEdge[] => arg[0] !== undefined && typeof arg[0] !== 'number';
 
@@ -33,7 +53,7 @@ const isEdgeList = (arg: readonly PruferEdge[] | readonly number[]): arg is read
  * (`new Prufer([1, 3])`, a tree with two more nodes than the sequence has
  * entries).
  */
-export class Prufer {
+export class Prufer extends ExtensionExpr {
   #prufer: number[] | undefined;
   #tree: number[][] | undefined;
   readonly #nodes: number;
@@ -42,6 +62,7 @@ export class Prufer {
   readonly #nInput: number | undefined;
 
   constructor(arg: readonly PruferEdge[] | readonly number[], n?: number) {
+    super('Prufer', []);
     this.#input = arg;
     this.#nInput = n;
     if (isEdgeList(arg)) {
@@ -206,11 +227,29 @@ export class Prufer {
     return Prufer.unrank(this.rank - toBig(delta), this.#nodes);
   }
 
+  /** The node itself (a Prufer object has no expression arguments). */
+  withArgs(_args: readonly Expr[]): Expr {
+    return this;
+  }
+
+  protected override computeKey(): string {
+    return this.printStr();
+  }
+
   /** SymPy str: Prufer([0, 0]), Prufer([[0, 1], [0, 2]], 3). */
-  toString(): string {
+  override printStr(): string {
     const items: readonly (number | readonly number[])[] = this.#input;
     const show = (v: number | readonly number[]): string => (typeof v === 'number' ? String(v) : `[${v.join(', ')}]`);
     const arg = items.length ? `[${items.map(show).join(', ')}]` : '()';
     return `Prufer(${arg}${this.#nInput === undefined ? '' : `, ${this.#nInput}`})`;
+  }
+
+  /**
+   * SymPy latex: \operatorname{Prufer} of its arguments, the sequence or the edges being an
+   * array (SymPy _print_NDimArray) and the empty sequence a tuple.
+   */
+  override printLatex(): string {
+    const n = this.#nInput === undefined ? '' : `, ${this.#nInput}`;
+    return `\\operatorname{Prufer}\\left(${arrayLatex(this.#input)}${n}\\right)`;
   }
 }

@@ -118,6 +118,21 @@ describe("mpmath's inf and nan (MpSpecialValue)", () => {
     // a function of a special value is evaluated with mpmath's inf (SymPy: sin(f(2)).evalf() = nan)
     expect(E(fn('sin', [f(2)]))).toBe('nan');
   });
+  it('functions with a special-value rule (SymPy: exp(f(4)), atan(f(4)), sign(f(6)) evalf)', () => {
+    expect(E(pow(S.E, f(4)))).toBe('oo');
+    expect(E(pow(S.E, f(6)))).toBe('0');
+    expect(E(fn('atan', [f(4)]))).toBe('1.57079632679490');
+    expect(E(fn('atan', [f(6)]))).toBe('-1.57079632679490');
+    expect(E(fn('sign', [f(4)]))).toBe('1.00000000000000');
+    expect(E(fn('sign', [f(6)]))).toBe('-1.00000000000000');
+    // no special-value rule: left unevaluated (SymPy: mathieus(f(4), 1, 1).evalf() is unevaluated)
+    expect(E(fn('mathieus', [f(4), 1, 1]))).toBe('mathieus(mathieuc(4, 1, 1), 1, 1)');
+  });
+  it('-1*oo is the atom -oo of SymPy (SymPy: (-oo*f(k)).evalf(); finite factors are dropped)', () => {
+    expect(E(new Mul([Rational.of(-1), S.Infinity, f(5)]))).toBe('-oo');
+    expect(E(new Mul([Rational.of(-2), S.Infinity, f(4)]))).toBe('-oo');
+    expect(E(new Mul([Rational.of(-1), S.Infinity, f(1)]))).toBe('oo');
+  });
 });
 
 describe('functions of arguments with an infinite or undefined part (mpmath inf/nan arithmetic)', () => {
@@ -143,7 +158,6 @@ describe('functions of arguments with an infinite or undefined part (mpmath inf/
       ['tan(oo+I)', 'nan'],
       ['tanh(1+oo*I)', 'nan'],
       ['csc(oo+I)', 'nan'],
-      ['log(oo+oo*I)', 'nan'],
       ['sin(nan+I)', 'nan'],
       ['2+oo*I', '2.0 + oo*I'],
       ['-oo*I', '-oo*I'],
@@ -175,9 +189,12 @@ describe('functions of arguments with an infinite or undefined part (mpmath inf/
     ];
     for (const [x, want] of cases) expect([x, n(x)]).toEqual([x, want]);
   });
-  it('keeps a function without a rule for special values', () => {
-    // SymPy gamma(1 + oo*I).evalf() = nan (mpmath gamma(1 + inf j) = nan; the limit is 0)
-    expect(n('gamma(1+oo*I)')).toBe('gamma(1 + oo*I)');
+  it('gives the limits of gamma and log at a number with an infinite part', () => {
+    // SymPy gamma(1 + oo*I).evalf() = nan (mpmath gamma(1 + inf j) = nan); the limit is 0
+    // (|gamma(1 + I*y)|**2 = pi*y/sinh(pi*y)). SymPy log(oo + oo*I).evalf() = nan; the modulus
+    // grows without bound, so the limit is zoo
+    expect(n('gamma(1+oo*I)')).toBe('0');
+    expect(n('log(oo+oo*I)')).toBe('zoo');
   });
   it('evaluates the kernels at mpmath special parts', () => {
     const one = F.ONE;
@@ -193,6 +210,8 @@ describe('functions of arguments with an infinite or undefined part (mpmath inf/
     expect(k('exp', ['inf', F.ZERO])).toEqual(['inf', '0.0']);
     expect(k('exp', ['-inf', one])).toEqual(['0.0', '0.0']);
     expect(k('exp', ['nan', one])).toEqual(['nan', 'nan']);
+    // mpmath exp(mpc(1, inf)) = (nan + nanj): exp(1) times cos and sin of inf
+    expect(k('exp', [one, 'inf'])).toEqual(['nan', 'nan']);
     // mpmath sin(mpc(0, inf)) = (0 + inf j), cos(mpc(0, -inf)) = (inf + 0j), sin(mpc(inf, 0)) = nan
     expect(k('sin', [F.ZERO, 'inf'])).toEqual(['0.0', 'inf']);
     expect(k('cos', [F.ZERO, '-inf'])).toEqual(['inf', '0.0']);
@@ -228,6 +247,8 @@ describe('functions of arguments with an infinite or undefined part (mpmath inf/
     expect(k('conjugate', ['inf', F.neg(one)])).toEqual(['inf', '1.0']);
     expect(k('sign', ['-inf', F.ZERO])).toEqual(['-1.0', '0.0']);
     expect(k('sign', ['nan', F.ZERO])).toEqual(['nan', 'nan']);
+    // the direction I of 1 + oo*I (SymPy sign(1 + oo*I) = I)
+    expect(k('sign', [one, 'inf'])).toEqual(['0.0', '1.0']);
   });
   it('evaluates oo, -oo and nan as mpmath values; zoo has none', () => {
     expect(() => evalMp(S.Infinity, 53)).toThrow(MpSpecialValue);

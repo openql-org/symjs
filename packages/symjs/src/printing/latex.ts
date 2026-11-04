@@ -14,7 +14,7 @@ import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey } from './sortke
 import { PREC, declaredPrecedence, floatString, precedence as strPrecedence, startsNegative, str } from './str';
 import { BoolOp } from '../core/boolalg';
 import { Concrete } from '../core/concrete';
-import { DOTS, rangePrintset, setArgsOrdered, setClass } from './sets';
+import { DOTS, rangePrintForm, setArgsOrdered, setClass } from './sets';
 import { hasSymbolicBounds, isSequence, sequencePrintset } from './sequences';
 import { at } from '../core/guard';
 
@@ -671,8 +671,12 @@ function printSet(e: Expr, cls: string): string {
       const open = (x: Expr) => x instanceof BoolAtom && x.value;
       return `\\left${open(lo) ? '(' : '['}${latex(a)}, ${latex(b)}\\right${open(ro) ? ')' : ']'}`;
     }
-    case 'Range':
-      return `\\left\\{${rangePrintset(e, 3).map((t) => (t === DOTS ? '\\ldots' : latex(t))).join(', ')}\\right\\}`;
+    case 'Range': {
+      const shown = rangePrintForm(e, 3);
+      // SymPy _print_symbolic_range: a Range whose elements are unknown
+      if ('symbolic' in shown) return `\\text{Range}\\left(${shown.symbolic.map(latex).join(', ')}\\right)`;
+      return `\\left\\{${shown.elements.map((t) => (t === DOTS ? '\\ldots' : latex(t))).join(', ')}\\right\\}`;
+    }
     case 'FiniteSet':
       return `\\left\\{${[...e.args].sort((u, v) => compareKeys(sortKey(u), sortKey(v))).map(latex).join(', ')}\\right\\}`;
     case 'ImageSet': {

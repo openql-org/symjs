@@ -5,10 +5,12 @@
 // Limits replayed from SymPy 1.14 test_limits.py and test_demidovich.py. Expected values are those of SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { limit, parse, symbols, type Sym } from '../../src';
+import { frac, limit, parse, symbols, type Sym } from '../../src';
+import { NotImplementedError } from '../../src/core/errors';
 
 // The limits of SymPy 1.14's test_limits.py and test_demidovich.py (with plain symbols) that
-// symjs evaluates as SymPy does. Expected values are the str() forms printed by SymPy 1.14.
+// symjs evaluates as SymPy does. Expected values are the str() forms printed by SymPy 1.14, or ERR:<class>
+// for the errors it raises.
 
 const sym = (name: string): Sym => {
   const [s] = symbols(name);
@@ -531,10 +533,65 @@ const cases: [string, string, string, '+' | '-' | '+-', string][] = [
   ["(sqrt(x) - 1)/(x**(1/3) - 1)", "x", "1", "+", "3/2"],
   ["x - (x**3 - 1)**(1/3)", "x", "oo", "+", "0"],
   ["(-cos(x)**(1/3) + sqrt(cos(x)))/sin(x)**2", "x", "0", "+", "-1/12"],
+  ["x*floor(3/x)/2", "x", "0", "+", "3/2"],
+  ["-floor(x) + floor(x + 0.5)", "x", "oo", "+", "AccumBounds(-1/2, 3/2)"],
+  ["x*ceiling(3/x)/2", "x", "0", "+", "3/2"],
+  ["-ceiling(x) + ceiling(x + 0.5)", "x", "oo", "+", "AccumBounds(-1/2, 3/2)"],
+  ["frac(x)", "x", "oo", "+", "AccumBounds(0, 1)"],
+  ["frac(x)**(1/x)", "x", "oo", "+", "AccumBounds(0, 1)"],
+  ["frac(x)**(1/x)", "x", "-oo", "+", "AccumBounds(1, oo)"],
+  ["frac(x)**x", "x", "oo", "+", "AccumBounds(0, oo)"],
+  ["frac(sin(x))", "x", "0", "+", "0"],
+  ["frac(sin(x))", "x", "0", "-", "1"],
+  ["frac(cos(x))", "x", "0", "+-", "1"],
+  ["frac(x**2)", "x", "0", "+-", "0"],
+  ["frac(x)", "x", "0", "+-", "ERR:ValueError"],
+  ["x*(Abs(log(x)/x**3)/Abs(log(x + 1)/(x + 1)**3) - 1)", "x", "oo", "+", "3"],
+  ["(sin(x)/2 + 1/2)**x", "x", "oo", "+", "AccumBounds(0, oo)"],
+  ["(sin(x) + 1)**x/2**x", "x", "oo", "+", "AccumBounds(0, oo)"],
+  ["exp(x*y)", "x", "oo", "+", "ERR:NotImplementedError"],
+  ["-(x/(y*(x + y)) + 1/(x + y))/z + 1/y", "x", "oo", "+", "(z - 1)/(y*z)"],
+  ["-(x/(y*(x + y)) + 1/(x + y))/z + 1/y", "x", "-oo", "+", "(z - 1)/(y*z)"],
+  ["exp(2*Ei(-x))/x**2", "x", "0", "+", "exp(2*EulerGamma)"],
+  ["subfactorial(x)", "x", "oo", "+", "oo"],
+  ["log(x) + asech(x)", "x", "0", "+-", "ERR:ValueError"],
+  ["3*sec(-4*pi*x + x/3)", "x", "3*pi/(-2 + 24*pi)", "+", "-oo"],
+  ["sin(x)**2 - cos(x) + tan(x)*csc(x)", "x", "oo", "+", "AccumBounds(-oo, oo)"],
+  ["sin(x)**2 + sin(x)*cot(x) - cos(x)", "x", "oo", "+", "AccumBounds(-oo, oo)"],
+  ["-tan(x)**2 + cot(x)", "x", "oo", "+", "AccumBounds(-oo, oo)"],
+  ["cos(x) - tan(x)**2", "x", "oo", "+", "AccumBounds(-oo, 1)"],
+  ["sin(x) - tan(x)**2", "x", "oo", "+", "AccumBounds(-oo, 1)"],
+  ["cos(x)**2 - tan(x)**2", "x", "oo", "+", "AccumBounds(-oo, 1)"],
+  ["sin(x)**2 - cos(x) + tan(x)**2", "x", "oo", "+", "AccumBounds(-1, oo)"],
+  ["sqrt(x)*cos(x**2 - x)/(x + 1)", "x", "oo", "+", "0"],
+  ["exp(I*x)*sin(pi*x)", "x", "oo", "+", "ERR:NotImplementedError"],
+  ["(x**b - y**b)/(x**a - y**a)", "x", "y", "+", "b*y**(-a + b)/a"],
+  ["(x**(-x - 1)*(x**(x + 1) + (x + 1)**x))**x", "x", "oo", "+", "exp(E)"],
+  ["Ei(-log(x)) - log(log(x))/x", "x", "1", "+", "EulerGamma"],
+  ["(cos(x) + 1)**(1/x)", "x", "oo", "+", "AccumBounds(0, 1)"],
+  ["(tan(x)**2)**(2/x)", "x", "oo", "+", "AccumBounds(0, oo)"],
+  ["(sin(x)**2)**(1/x)", "x", "oo", "+", "AccumBounds(0, 1)"],
+  ["(cos(x) + 1)**(1/x)", "x", "-oo", "+", "AccumBounds(1, oo)"],
+  ["(sin(x)**2)**(1/x)", "x", "-oo", "+", "AccumBounds(1, oo)"],
+  ["(tan(x)**2)**(2/x)", "x", "-oo", "+", "AccumBounds(0, oo)"],
+  ["besseli(1, 3*x)/(x*besseli(1, x)**3)", "x", "oo", "+", "2*sqrt(3)*pi/3"],
+  ["besseli(1, 3*x)/(x*besseli(1, x)**3)", "x", "-oo", "+", "-2*sqrt(3)*pi/3"],
+  ["asec(exp(1/x))", "x", "0", "-", "oo*I"],
+  ["acsc(exp(1/x))", "x", "0", "-", "-oo*I"],
+  ["besseli(0, x + 1)/besseli(0, x)", "x", "oo", "+", "E"],
+  ["((1 - 3*x**2)*elliptic_e(4*x/(x**2 + 2*x + 1))**2/2 - (x**2 - 2*x + 1)*elliptic_e(4*x/(x**2 + 2*x + 1))*elliptic_k(4*x/(x**2 + 2*x + 1))/2)/(pi**2*(x**8 - 2*x**7 - x**6 + 4*x**5 - x**4 - 2*x**3 + x**2))", "x", "0", "+", "-1/8"],
+  ["(-x/(x + 1))**x", "x", "oo", "+", "ERR:NotImplementedError"],
+  ["x/((x - 6)*sinh(tanh(0.03*x)) + tanh(x) - 0.5)", "x", "oo", "+", "1/sinh(1)"],
 ];
+
+// the errors SymPy raises, as symjs raises them (ValueError is a RangeError)
+const ERRORS: Record<string, typeof RangeError | typeof NotImplementedError> = { ValueError: RangeError, NotImplementedError };
 
 describe('limits of the SymPy test suites', () => {
   it.each(cases)('limit(%s, %s, %s, %s) = %s', (e, v, p, d, expected) => {
-    expect(String(limit(parse(e), sym(v), parse(p), d))).toBe(expected);
+    const run = () => String(limit(parse(e, { locals: { frac } }), sym(v), parse(p), d));
+    const error = expected.startsWith('ERR:') ? ERRORS[expected.slice(4)] : undefined;
+    if (error) expect(run).toThrow(error);
+    else expect(run()).toBe(expected);
   });
 });

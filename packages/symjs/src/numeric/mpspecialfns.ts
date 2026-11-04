@@ -29,6 +29,12 @@ const toInt = (z: Mpc): number => {
 };
 const one: Mpc = M.C1;
 
+/** erfinv(x) for real |x| <= 1: mpmath's inf and -inf at 1 and -1 (SymPy erfinv(1.0) = oo). */
+function erfinvOrInf(x: F.Mpf, p: number): F.Mpf {
+  if (F.cmp(F.abs(x), F.ONE) === 0) throw new MpSpecialValue(F.sign(x) > 0 ? 'inf' : '-inf');
+  return SP.erfinv(x, p);
+}
+
 Object.assign(mpFns, {
   gamma: mpFn1(SP.cgamma),
   loggamma: mpFn1(SP.cloggamma),
@@ -90,11 +96,11 @@ Object.assign(mpFns, {
   erfinv: mpFn1((a, p) => {
     // mpmath erfinv: a real argument in [-1, 1] only (SymPy raises its ValueError)
     if (!M.isReal(a) || F.cmp(F.abs(a[0]), F.ONE) > 0) throw new EvalfValueError('erfinv(x) is defined only for -1 <= x <= 1');
-    return [SP.erfinv(a[0], p), ZERO];
+    return [erfinvOrInf(a[0], p), ZERO];
   }),
   erfcinv: mpFn1((a, p) => {
     if (!M.isReal(a)) throw new NotImplementedError('complex erfcinv');
-    return [SP.erfinv(F.sub(F.ONE, a[0], p + 20), p), ZERO];
+    return [erfinvOrInf(F.sub(F.ONE, a[0], p + 20), p), ZERO];
   }),
   fresnels: mpFn1((a, p) => SP.cfresnel('S', a, p)),
   fresnelc: mpFn1((a, p) => SP.cfresnel('C', a, p)),
@@ -130,8 +136,8 @@ Object.assign(mpFns, {
     // erf2inv and returns the call unchanged)
     const wp = p + 20;
     const v = F.add(SP.cerf(x, wp)[0], y[0], wp);
-    if (F.cmp(F.abs(v), F.ONE) >= 0) throw new RangeError('erf2inv: erf(x) + y outside (-1, 1)');
-    return [SP.erfinv(v, p), ZERO];
+    if (F.cmp(F.abs(v), F.ONE) > 0) throw new RangeError('erf2inv: erf(x) + y outside [-1, 1]');
+    return [erfinvOrInf(v, p), ZERO];
   }),
   // SymPy SphericalBesselBase._eval_evalf: an integer order by rewrite(besselj),
   // jn(n, z) = sqrt(pi/(2 z)) J(n + 1/2, z), yn(n, z) = (-1)**(n + 1) sqrt(pi/(2 z)) J(-n - 1/2, z)

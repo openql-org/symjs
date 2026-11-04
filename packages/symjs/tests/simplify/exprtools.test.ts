@@ -157,6 +157,9 @@ describe('decomposePower: results equal SymPy 1.14 decompose_power', () => {
     ['exp(2*x)', '[exp(x), 2]'],
     ['exp(x)', '[exp(x), 1]'],
     ['exp(x/2)', '[exp(x/2), 1]'],
+    ['exp(-x**2/2)', '[exp(x**2/2), -1]'],
+    ['exp(3*x/2)', '[exp(x/2), 3]'],
+    ['exp(-x)', '[exp(x), -1]'],
     ['x', '[x, 1]'],
   ];
   it.each(cases)('%s', (src, want) => {
@@ -211,5 +214,23 @@ describe('signsimp: the second sub_pre pass', () => {
       expect(String(signsimp(P(e)))).toBe(ev);
       expect(String(signsimp(P(e), false))).toBe(unev);
     }
+  });
+});
+
+describe('exp(-a) is 1/exp(a) in gcd_terms and factor_terms (SymPy Factors)', () => {
+  it.each([
+    ['exp(-x**2/2)*y/2 + exp(-x**2/2)', '(y + 2)*exp(-x**2/2)/2'],
+    ['x*exp(-y/2) + exp(-y/2)/3', '(3*x + 1)*exp(-y/2)/3'],
+  ])('gcdTerms(%s)', (src, want) => {
+    expect(String(gcdTerms(P(src)))).toBe(want);
+  });
+  it('a rational content distributed over a sum with a product term', () => {
+    expect(String(factorTerms(P('(4*x*y + z)/2')))).toBe('2*x*y + z/2');
+    // SymPy: _keep_coeff(S.Half, 4*x*y + z, clear=False) = 2*(x*y) + z/2, with x*y as an unevaluated factor
+    expect(String(keepCoeffSympy(P('1/2'), P('4*x*y + z'), false))).toBe('2*x*y + z/2');
+  });
+  it('factor_terms takes the gcd of the terms before they are combined', () => {
+    const e = parse('-x**2*(2/x**2 - 2*exp(-x**2/2)/x**2)/2 + 1 - sqrt(2)*I*sqrt(pi)*exp(-x**2/2)*erf(sqrt(2)*I*x/2)/2');
+    expect(String(factorTerms(e))).toBe('-sqrt(2)*I*sqrt(pi)*exp(-x**2/2)*erf(sqrt(2)*I*x/2)/2 + exp(-x**2/2)');
   });
 });

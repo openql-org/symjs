@@ -484,5 +484,10 @@ describe('summations: telescoping sums and convergence tests (SymPy 1.14)', () =
     expect(conv('(-1)**k*factorial(k)/2**k')).toBe('false');
     // SymPy raises NotImplementedError
     expect(conv('(-1)**k/k + 1/k**2')).toBe('unknown');
+    // terms whose limits are not found: the ratio tends to 8 and to oo
+    expect(conv('2**k*catalan(k)')).toBe('false');
+    expect(conv('rf(2, k)/2**k')).toBe('false');
+    // a limit of the terms that raises ValueError raises, like in SymPy (laguerre(oo, 1))
+    expect(() => conv('laguerre(k, 1)')).toThrow('Error: n should be an integer.');
   });
 });

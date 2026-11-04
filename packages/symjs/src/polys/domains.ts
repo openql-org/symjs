@@ -25,16 +25,16 @@ import { limitDenominator } from '../core/numberutils';
 import { isqrt, div as mpfDiv, fromRational as mpfFromRational, toRational as mpfToRational } from '../numeric/mpf';
 import { evalf } from '../numeric/evalf';
 import { str } from '../printing/str';
-import { expandMul } from '../simplify/expand';
+import { expand, expandMul } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { polyCoefficients } from './poly';
 
 /** A value cannot be converted to an element of a domain (SymPy CoercionFailed). */
 export class CoercionFailed extends TypeError {}
 
-type Ground = 'ZZ' | 'QQ' | 'RR';
+type Ground = 'ZZ' | 'QQ' | 'RR' | 'EX';
 
-const GROUND_RANK: Record<Ground, number> = { ZZ: 0, QQ: 1, RR: 2 };
+const GROUND_RANK: Record<Ground, number> = { ZZ: 0, QQ: 1, RR: 2, EX: 3 };
 
 /** RR.to_rational: the float as a rational with a bounded denominator (mpmath max_denom at 53 bits). */
 const RR_MAX_DENOM = 45035996273704n;
@@ -125,6 +125,7 @@ export abstract class Domain {
   /** The smallest domain containing this one and o (SymPy unify). */
   unify(o: Domain): Domain {
     if (this.equals(o)) return this;
+    if (this === EX || o === EX) return EX;
     const ground: Ground = GROUND_RANK[this.ground] >= GROUND_RANK[o.ground] ? this.ground : o.ground;
     const symbols = [...this.symbols];
     for (const s of o.symbols) if (!symbols.some((t) => t.key === s.key)) symbols.push(s);
@@ -208,6 +209,28 @@ class RealField extends Domain {
   }
 }
 
+/**
+ * SymPy EX: arbitrary expressions (for algebraic or symbolic coefficients
+ * such as sqrt(2)*I). Elements are canonicalized as SymPy does
+ * (cancel, then expand), so a zero is recognized when it cancels.
+ */
+class ExpressionDomain extends Domain {
+  readonly ground = 'EX' as const;
+  readonly isField = true;
+  toString(): string {
+    return 'EX';
+  }
+  canon(e: Expr): Expr {
+    return e instanceof Rational ? e : expand(cancel(e));
+  }
+  fromSympy(eIn: ExprLike): Expr {
+    return this.canon(sympify(eIn));
+  }
+  getField(): Domain {
+    return this;
+  }
+}
+
 /** Shared parts of K[a, ...] and K(a, ...). */
 abstract class SymbolicDomain extends Domain {
   constructor(
@@ -264,8 +287,10 @@ export const ZZ: Domain = new IntegerRing();
 export const QQ: Domain = new RationalField();
 /** SymPy RR (53-bit floats). */
 export const RR: Domain = new RealField();
+/** SymPy EX (expressions). */
+export const EX: Domain = new ExpressionDomain();
 
-const GROUNDS: Record<Ground, Domain> = { ZZ, QQ, RR };
+const GROUNDS: Record<Ground, Domain> = { ZZ, QQ, RR, EX };
 
 // ---------------------------------------------------------------------------
 // dense univariate polynomials (SymPy DMP) and fractions of them (DMF)

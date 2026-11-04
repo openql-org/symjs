@@ -327,8 +327,7 @@ describe('SymPy test_holonomic.py', () => {
     expect(fmt(e2h(P('erf(x) + x')).toExpr())).toBe('3*C_3*x - 3*sqrt(pi)*C_3*erf(x)/2 + x + 2*x/sqrt(pi)');
   });
   it('te7', () => {
-    // SymPy: sqrt(x)
-    expectSame(e2h(P('sqrt(x)'), { x0: 1 }).toExpr(), P('sqrt(x)'));
+    expect(fmt(e2h(P('sqrt(x)'), { x0: 1 }).toExpr())).toBe('sqrt(x)');
   });
   it('te8', () => {
     expect(fmt(e2h(P('sqrt(x)')).toExpr())).toBe('sqrt(x)');
@@ -340,12 +339,10 @@ describe('SymPy test_holonomic.py', () => {
     expect(fmt(e2h(P('(2*x**2 + 1)**(2/3)')).toExpr())).toBe('(2*x**2 + 1)**(2/3)');
   });
   it('te11', () => {
-    // SymPy: sqrt(x)*sqrt(2 - x)
-    expectSame(e2h(P('sqrt(-x**2+2*x)')).toExpr(), P('sqrt(x)*sqrt(2 - x)'));
+    expect(fmt(e2h(P('sqrt(-x**2+2*x)')).toExpr())).toBe('sqrt(x)*sqrt(2 - x)');
   });
   it('te12', () => {
-    // SymPy: x**(2/3)*(7 - 2*x**2)**(2/3)
-    expectSame(e2h(P('(-2*x**3+7*x)**(2/3)')).toExpr(), P('x**(2/3)*(7 - 2*x**2)**(2/3)'));
+    expect(fmt(e2h(P('(-2*x**3+7*x)**(2/3)')).toExpr())).toBe('x**(2/3)*(7 - 2*x**2)**(2/3)');
   });
   it('te13', () => {
     expect(fmt(fromHyper(hyper([-2, -3], [P('1/2')], x)))).toBe('HolonomicFunction((6) + (-4*x - 1/2)*Dx + (x**2 - x)*Dx**2, x, 0, [1, 12])');
@@ -399,16 +396,14 @@ describe('SymPy test_holonomic.py', () => {
     expectSame(e2h(P('sin(x)**2/x')).integrate([x, 0, 1]), P('-Ci(2)/2 + EulerGamma/2 + log(2)/2'));
   });
   it('int10', () => {
-    // SymPy: log(x)
-    expectSame((e2h(P('1/x'), { x0: 1 }).integrate(x) as HF).toExpr(), P('log(x)'));
+    expect(fmt((e2h(P('1/x'), { x0: 1 }).integrate(x) as HF).toExpr())).toBe('log(x)');
   });
   it('int11', () => {
     // SymPy: (-x**3 - 6*x**2 - 15*x + 6*exp(x + 1) - 16)*exp(-x)
     expectSame((e2h(P('(x + 1)**3*exp(-x)'), { x0: -1 }).integrate(x) as HF).toExpr(), P('(-x**3 - 6*x**2 - 15*x + 6*exp(x + 1) - 16)*exp(-x)'));
   });
   it('int12', () => {
-    // SymPy: -Si(2*x) - cos(x)**2/x
-    expectSame((e2h(P('cos(x)**2/x**2'), { y0: new Map([[-2, [1, 0, -1]]]) }).integrate(x) as HF).toExpr(), P('-Si(2*x) - cos(x)**2/x'));
+    expect(fmt((e2h(P('cos(x)**2/x**2'), { y0: new Map([[-2, [1, 0, -1]]]) }).integrate(x) as HF).toExpr())).toBe('-Si(2*x) - cos(x)**2/x');
   });
   it('int13', () => {
     // SymPy: (x**(3/2)*(2*x**2 + 3*x + 1) - x*sqrt(x + 1)*asinh(sqrt(x)))/(4*x*sqrt(x + 1))
@@ -425,8 +420,7 @@ describe('SymPy test_holonomic.py', () => {
     expect(fmt(e2h(P('1/x**2'), { lenics: 3 }))).toBe('HolonomicFunction((2) + (x)*Dx, x, 0, {-2: [1, 0, 0]})');
   });
   it('int17', () => {
-    // SymPy: -Si(2*x) - cos(x)**2/x
-    expectSame((e2h(P('1/x**2'), { lenics: 3 }).mul(e2h(P('cos(x)**2'))).integrate(x) as HF).toExpr(), P('-Si(2*x) - cos(x)**2/x'));
+    expect(fmt((e2h(P('1/x**2'), { lenics: 3 }).mul(e2h(P('cos(x)**2'))).integrate(x) as HF).toExpr())).toBe('-Si(2*x) - cos(x)**2/x');
   });
   it('d1', () => {
     expect(fmt((new HF(L([1, 0, 'x']), x, 0, [0, 1]).diff() as HF).toExpr())).toBe('besselj(0, 2*sqrt(x))');
@@ -702,9 +696,15 @@ describe('the API beyond the SymPy test suite', () => {
   });
   it('change_ics', () => {
     expect(e(0, [1, 1, 1]).changeIcs(1).toString()).toBe('HolonomicFunction((-1) + (1)*Dx, x, 1, [E, E, E])');
-    // SymPy: HolonomicFunction((1) + (x)*Dx + (1)*Dx**2, x, 1, [(2 - sqrt(2)*I*sqrt(pi)*erf(sqrt(2)*I/2))*exp(-1/2)/2, ...]);
-    // the expression here has coefficients outside QQ (CoercionFailed), which SymPy does not catch either
-    expect(() => new HF(LQ([1, 'x', 1]), x, 0, [1, 1]).changeIcs(1)).toThrow(CoercionFailed);
+    // SymPy: HolonomicFunction((1) + (x)*Dx + (1)*Dx**2, x, 1, [(2 - sqrt(2)*I*sqrt(pi)*erf(sqrt(2)*I/2))*exp(-1/2)/2,
+    // -(2 - sqrt(2)*I*sqrt(pi)*erf(sqrt(2)*I/2))*exp(-1/2)/2 + 1]); the composition with sqrt(2)*I*x/2 is computed in EX(x)
+    expect(new HF(LQ([1, 'x', 1]), x, 0, [1, 1]).changeIcs(1).toString()).toBe(
+      'HolonomicFunction((1) + (x)*Dx + (1)*Dx**2, x, 1, [(2 - sqrt(2)*I*sqrt(pi)*erf(sqrt(2)*I/2))*exp(-1/2)/2, -(2 - sqrt(2)*I*sqrt(pi)*erf(sqrt(2)*I/2))*exp(-1/2)/2 + 1])',
+    );
+    expect(fmt(new HF(LQ([1, 'x', 1]), x, 0, [1, 1]).toExpr())).toBe('(-sqrt(2)*I*sqrt(pi)*erf(sqrt(2)*I*x/2) + 2)*exp(-x**2/2)/2');
+    expect(new HF(LQ(['x', 1]), x).composition(P('sqrt(2)*x')).toString()).toBe('HolonomicFunction((2*x) + (1)*Dx, x)');
+    // algebraic coefficients that do not cancel stay outside QQ (SymPy _normalize: CoercionFailed, expected Rational, got -sqrt(2))
+    expect(() => new HF(LQ([-1, 1]), x).composition(P('sqrt(2)*x'))).toThrow(CoercionFailed);
     // the series is not hypergeometric: the values come from the numerical integration (as in SymPy)
     expect(new HF(LQ([1, 1, 1]), x, 0, [1, 1]).changeIcs(1).x0.toString()).toBe('1');
   });
@@ -768,6 +768,7 @@ describe('the API beyond the SymPy test suite', () => {
     // the complex roots of the indicial equation fail in to_expr; SymPy raises the CoercionFailed too
     expect(() => new HF(LQ(['-1/2', '3*x/2', '5*x**2/2', 'x**3']), x, 0, [1, 0, 0]).integrate([x, 2, 3])).toThrow(CoercionFailed);
     // complex roots of the indicial equation: SymPy fails as well (CoercionFailed: expected Rational, got -2 + I)
+    expect(() => new HF(LQ(['-1/2', '3*x/2', '5*x**2/2', 'x**3']), x, 0, [1, 0, 0]).changeIcs(1)).toThrow(CoercionFailed);
     expect(() => new HF(LQ(['-1/2', '3*x/2', '5*x**2/2', 'x**3']), x).toSequence()).toThrow(CoercionFailed);
     expect(e2h(P('sin(x)/x + cos(x)/x**2')).toString()).toBe(
       'HolonomicFunction((x**2 + 4) + (8*x)*Dx + (2*x**2 + 12)*Dx**2 + (8*x)*Dx**3 + (x**2)*Dx**4, x, 1, [cos(1) + sin(1), -2*sin(1) - cos(1), 3*cos(1) + 5*sin(1), -20*sin(1) - 13*cos(1)])',

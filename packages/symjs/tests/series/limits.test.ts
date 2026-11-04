@@ -10,6 +10,7 @@ import { Sym, limit, parse, DiracDelta, Heaviside, symbol, oo } from '../../src'
 import { limitWithin } from '../../src/series/limits';
 import { Expr } from '../../src/core/nodes';
 import { NoMatchResult } from '../../src/core/truth';
+import { NotImplementedError } from '../../src/core/errors';
 
 // Limits that reach the branches of series/limits.ts. Expected values are the str() forms
 // printed by SymPy 1.14 (p is a positive, q a negative and r a real symbol; f and g are functions).
@@ -224,12 +225,8 @@ describe('limits that symjs leaves unevaluated, or answers differently from SymP
   // [expression, variable, point, direction, symjs result, SymPy 1.14 result]
   const unevaluated: [string, string, string, '+' | '-' | '+-', string, string][] = [
     // the exponential growth of besseli and Ei at infinity is not known to the Gruntz algorithm here
-    ["besseli(1, 1/x) - exp(1/x)", "x", "0", "+", "Limit(-exp(1/x) + besseli(1, 1/x), x, 0, dir='+')", "-oo"],
     ["Ei(1/x) - exp(1/x)/x", "x", "0", "+", "Limit(Ei(1/x) - exp(1/x)/x, x, 0, dir='+')", "-oo"],
     ["gamma(1/x)*sin(1/x) + 1/x", "x", "0", "+", "Limit(sin(1/x)*gamma(1/x) + 1/x, x, 0, dir='+')", "oo*sign(AccumBounds(-1, 1))"],
-    ["x*exp(I*x)", "x", "-oo", "+", "Limit(x*exp(I*x), x, -oo, dir='+')", "NotImplementedError"],
-    ["(cos(x) + 1)**(1/x)", "x", "oo", "+", "Limit((cos(x) + 1)**(1/x), x, oo, dir='-')", "AccumBounds(0, 1)"],
-    ["sin(1/x)*log(x)*x", "x", "0", "+", "Limit(x*log(x)*sin(1/x), x, 0, dir='+')", "0"],
     ["1/(x*(1 + x)) - 1/x + sin(1/x)", "x", "0", "+", "Limit(sin(1/x) - 1/x + 1/(x*(x + 1)), x, 0, dir='+')", "AccumBounds(-2, 0)"],
     // the argument-wise evaluation stops after 12 nested levels
     ["sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(1/x)))))))))))))))", "x", "0", "+", "Limit(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(1/x))))))))))))))), x, 0, dir='+')", "AccumBounds(-sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(1)))))))))))))), sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(sin(1)))))))))))))))"],
@@ -237,14 +234,12 @@ describe('limits that symjs leaves unevaluated, or answers differently from SymP
     // a direction that depends on the sign of y
     ["sin(x)/x*asin(2 + I*x)", "x", "0", "+", "Limit(sin(x)*asin(I*x + 2)/x, x, 0, dir='+')", "pi - asin(2)"],
     ["sin(x)*sin(1/x)/x", "x", "0", "+", "Limit(sin(1/x)*sin(x)/x, x, 0, dir='+')", "AccumBounds(-1, 1)"],
-    ["floor(x)*sin(x)", "x", "oo", "+", "Limit(sin(x)*floor(x), x, oo, dir='-')", "oo*sign(AccumBounds(-1, 1))"],
     ["acoth(x*y)", "x", "0", "+", "Limit(acoth(x*y), x, 0, dir='+')", "-log(-1/y)/2 + log(1/y)/2"],
     // the same interval: SymPy writes oo*AccumBounds(-1, 1) as oo*sign(AccumBounds(-1, 1))
     ["sin(1/x)/(x**2 + x)", "x", "0", "+", "AccumBounds(-oo, oo)", "oo*sign(AccumBounds(-1, 1))"],
-    // an infinite value in the direction I
-    ["asec(exp(1/x))", "x", "0", "-", "Limit(asec(exp(1/x)), x, 0, dir='-')", "oo*I"],
     // the same interval: SymPy writes oo*AccumBounds(-1, 1) as oo*sign(AccumBounds(-1, 1))
     ["sin(x)*x", "x", "oo", "+", "AccumBounds(-oo, oo)", "oo*sign(AccumBounds(-1, 1))"],
+    ["floor(x)*sin(x)", "x", "oo", "+", "AccumBounds(-oo, oo)", "oo*sign(AccumBounds(-1, 1))"],
     ["sin(x)*factorial(x)/factorial(x - 1)", "x", "oo", "+", "Limit(sin(x)*factorial(x)/factorial(x - 1), x, oo, dir='-')", "AccumBounds(-oo, oo)"],
     // an exponent with a symbolic direction, or an imaginary one (SymPy gives nan or raises)
     ["2**(x*y)", "x", "oo", "+", "Limit(2**(x*y), x, oo, dir='-')", "exp(oo*sign(y))"],
@@ -252,8 +247,6 @@ describe('limits that symjs leaves unevaluated, or answers differently from SymP
     ["(1/2)**(I*x)", "x", "oo", "+", "Limit((1/2)**(I*x), x, oo, dir='-')", "nan"],
     ["I**x", "x", "oo", "+", "Limit(I**x, x, oo, dir='-')", "nan"],
     ["y**x", "x", "oo", "+", "Limit(y**x, x, oo, dir='-')", "exp(oo*sign(log(y)))"],
-    ["x*exp(I*x)", "x", "oo", "+", "Limit(x*exp(I*x), x, oo, dir='-')", "NotImplementedError"],
-    ["x**(I*x)*(x + 1)**(I*x)", "x", "oo", "+", "Limit(x**(I*x)*(x + 1)**(I*x), x, oo, dir='-')", "NotImplementedError"],
     // the quotient does not settle numerically at 10**7 (erfc underflows)
     ["erfc(x)/(1 - erf(x))**2", "x", "oo", "+", "Limit(erfc(x)/(1 - erf(x))**2, x, oo, dir='-')", "0"],
     // SymPy raises NotImplementedError for these
@@ -261,7 +254,6 @@ describe('limits that symjs leaves unevaluated, or answers differently from SymP
     ["floor(y*x)", "x", "0", "+", "Limit(floor(x*y), x, 0, dir='+')", "NotImplementedError"],
     ["floor(sin(pi*x)/x)", "x", "oo", "+", "Limit(floor(sin(pi*x)/x), x, oo, dir='-')", "NotImplementedError"],
     ["atan2(1/x, sin(x))", "x", "oo", "+", "Limit(atan2(1/x, sin(x)), x, oo, dir='-')", "NotImplementedError"],
-    ["exp(x)", "x", "-oo*I", "+", "Limit(exp(x), x, -oo*I, dir='+')", "NotImplementedError"],
     // L'Hopital's rule needs the derivative of besselj with respect to its order, which is not implemented
     ["(besselj(x, 1) - besselj(0, 1))/x", "x", "0", "+", "Limit((besselj(x, 1) - besselj(0, 1))/x, x, 0, dir='+')", "Subs(Derivative(besselj(xi, 1), xi), xi, 0)"],
   ];
@@ -271,6 +263,15 @@ describe('limits that symjs leaves unevaluated, or answers differently from SymP
 
   // [expression, variable, point, direction, symjs result (the mathematically correct one), SymPy 1.14 result]
   const correct: [string, string, string, '+' | '-' | '+-', string, string][] = [
+    // a power of [1, 3] to a power in [1, 3] lies in [1, 27], and of [0, 1] to a power in [1, 3] in [0, 1]:
+    // SymPy's lower bound 1/3 and upper bound oo are not accumulation points
+    ['(cos(x) + 2)**(cos(x) + 2)', 'x', 'oo', '+', 'AccumBounds(1, 27)', 'AccumBounds(1/3, 27)'],
+    ['(sin(x)**2)**(cos(x) + 2)', 'x', 'oo', '+', 'AccumBounds(0, 1)', 'AccumBounds(0, oo)'],
+    // sign(x**2 + I*x) -> sign(I*x) = I, and sign((1 + I)*x + x**2) -> sign(1 + I), not 1
+    ['sign(I*x + x**2)', 'x', '0', '+', 'I', '1'],
+    ['sign((1 + I)*x + x**2)', 'x', '0', '+', 'sign(1 + I)', '1'],
+    // the same value: sign(1/2 - I/2) = sign(1 - I)
+    ['cot((1 + I)*exp(-1/x))', 'x', '0', '+', 'oo*sign(1/2 - I/2)', 'oo*sign(1 - I)'],
     // coth(x) = 1/x + x/3 + O(x**3) and csch(x) = 1/x - x/6 + O(x**3)
     ['coth(x) - 1/x', 'x', '0', '+', '0', '-oo'],
     ['csch(x) - 1/x', 'x', '0', '+', '0', '-oo'],
@@ -296,12 +297,79 @@ describe('limits that symjs leaves unevaluated, or answers differently from SymP
     expect(lim(e, v, p, d)).toBe(expected);
   });
 
+  it('computes these like SymPy now', () => {
+    // a bounded factor times factors that vanish together
+    expect(lim('sin(1/x)*log(x)*x', 'x', '0')).toBe('0');
+    expect(lim('sqrt(x)*cos(x**2 - x)/(x + 1)', 'x', 'oo')).toBe('0');
+    expect(lim('besseli(1, 1/x) - exp(1/x)', 'x', '0')).toBe('-oo');
+  });
+
+  it('computes interval limits like SymPy', () => {
+    const L = (e: string, p: string, d: '+' | '-' = '+') => String(limit(parse(e, { symbols: [V('x'), V('y')], locals: { frac: sj.frac } }), V('x'), P(p), d));
+    // floor(g) = g + AccumBounds(-1, 0) and ceiling(g) = g + AccumBounds(0, 1) for g -> oo
+    expect(L('x*floor(1/x)', '0', '-')).toBe('1');
+    expect(L('ceiling(x) - x', 'oo')).toBe('AccumBounds(0, 1)');
+    expect(L('frac(x)*2', '-oo')).toBe('AccumBounds(0, 2)');
+    expect(L('frac(cos(x))', '0')).toBe('1');
+    // intervals to interval powers, and to a power whose sign oscillates
+    expect(L('(cos(x) + 2)**sin(x)', 'oo')).toBe('AccumBounds(1/3, 3)');
+    expect(L('(cos(x) + 1)**sin(x)', 'oo')).toBe('AccumBounds(0, oo)');
+    expect(L('(tan(x)**2)**sin(x)', 'oo')).toBe('AccumBounds(0, oo)');
+    // SymPy: AccumBounds(0, oo) (the side of the exponent is not known)
+    expect(L('(cos(x) + 1)**(sin(pi*x)/x)', 'oo')).toBe("Limit((cos(x) + 1)**(sin(pi*x)/x), x, oo, dir='-')");
+    expect(L('(cos(x) + 2)**(sin(x) + 1/besseli(0, x))', 'oo')).toBe('AccumBounds(1/3, 3)');
+    expect(L('(cos(x) + 2)**(sin(pi*x)/x)', 'oo')).toBe('1');
+    expect(L('(cos(x) + 2)**(-1/2)', 'oo')).toBe('AccumBounds(sqrt(3)/3, 1)');
+    // SymPy: exp(I*AccumBounds(-log(3), log(3)))
+    expect(L('(cos(x) + 2)**(I*sin(x))', 'oo')).toBe("Limit((cos(x) + 2)**(I*sin(x)), x, oo, dir='-')");
+    // SymPy: AccumBounds(1, 3)**y
+    expect(L('(cos(x) + 2)**y', 'oo')).toBe("Limit((cos(x) + 2)**y, x, oo, dir='-')");
+  });
+
+  it('replaces abs, sign and arg of arguments of known sign like SymPy', () => {
+    expect(lim('arg(x)', 'x', 'oo')).toBe('0');
+    expect(lim('arg(-x)', 'x', 'oo')).toBe('pi');
+    expect(lim('sign(x**2 - 4)*x', 'x', 'oo')).toBe('oo');
+    expect(lim('sign(sin(x))', 'x', '0', '-')).toBe('-1');
+    expect(lim('Abs(-x)/x', 'x', 'oo')).toBe('1');
+    expect(lim('sign(I*x)', 'x', '0')).toBe('I');
+    expect(lim('sign((1 + I)*x)', 'x', '0')).toBe('sign(1 + I)');
+    expect(lim('cot(I*exp(-1/x))', 'x', '0')).toBe('-oo*I');
+    // SymPy: NotImplementedError (from the limit of exp(x*y)) and ValueError (from laguerre(oo, 1))
+    expect(() => lim('Abs(exp(x*y))', 'x', 'oo')).toThrow('Result depends on the sign of sign(re(y))');
+    expect(() => lim('Abs(laguerre(x, 1))', 'x', 'oo')).toThrow(RangeError);
+  });
+
+  it('evaluates functions at the special points of their arguments like SymPy', () => {
+    expect(lim('asec(x)', 'x', '0')).toBe('oo*I');
+    expect(lim('acsc(x)', 'x', '0', '-')).toBe('oo*I');
+    expect(lim('subfactorial(x)', 'x', 'oo')).toBe('oo');
+    expect(lim('3*sec(-4*pi*x + x/3)', 'x', '3*pi/(-2 + 24*pi)')).toBe('-oo');
+    // the direction of SymPy's unevaluated Limit at a directed infinity
+    expect(lim('f(x)', 'x', 'oo*I')).toBe("Limit(f(x), x, oo*I, dir='-')");
+    expect(lim('f(x)', 'x', '-oo*I')).toBe("Limit(f(x), x, -oo*I, dir='+')");
+    expect(lim('f(x)', 'x', 'oo*(1 + I)')).toBe("Limit(f(x), x, oo*(1 + I), dir='+')");
+    expect(lim('f(x)', 'x', '-oo')).toBe("Limit(f(x), x, -oo, dir='+')");
+  });
+
   it('raises where SymPy raises', () => {
     // SymPy: ValueError (the one-sided limits differ)
     expect(() => lim('sign(x)', 'x', '0', '+-')).toThrow(RangeError);
     // SymPy: NotImplementedError (limits at complex infinity)
     expect(() => lim('5', 'x', 'zoo')).toThrow('complex infinity');
     expect(() => lim('x**2', 'x', 'zoo')).toThrow('complex infinity');
+    // SymPy: NotImplementedError (the Gruntz algorithm meets an exponent of unknown sign)
+    for (const [e, p, s] of [
+      ['x*exp(I*x)', '-oo', '-I'],
+      ['x*exp(I*x)', 'oo', 'I'],
+      ['x**(I*x)*(x + 1)**(I*x)', 'oo', 'I'],
+      ['x**(I*x)', 'oo', 'I'],
+      ['exp(x)', '-oo*I', '-I'],
+      ['exp(x*y)', 'oo', 'sign(y)'],
+    ] as const) {
+      expect(() => lim(e, 'x', p), e).toThrow(NotImplementedError);
+      expect(() => lim(e, 'x', p), e).toThrow(`Result depends on the sign of ${s}`);
+    }
   });
 
   it('nests deeper than 60 levels (the structural recursion stops, the expansion goes on)', () => {
@@ -343,8 +411,6 @@ describe('results that differ from SymPy 1.14', () => {
   const cases: [string, () => unknown, string, string][] = [
     // |x**(I*x)| = 1: x plus a bounded term (SymPy raises NotImplementedError)
     ["sj.limit(P('x + x**(I*x)'), x, sj.oo)", () => sj.limit(P('x + x**(I*x)'), x, sj.oo), "oo", "ERR NotImplementedError"],
-    // a bounded oscillation (SymPy raises NotImplementedError)
-    ["sj.limit(P('x**(I*x)'), x, sj.oo)", () => sj.limit(P('x**(I*x)'), x, sj.oo), "Limit(x**(I*x), x, oo, dir='-')", "ERR NotImplementedError"],
   ];
   it.each(cases)('%s', (_label, f, expected) => {
     expect(run(f)).toBe(expected);
@@ -358,10 +424,10 @@ describe('limits with a small budget of nested limit computations', () => {
   });
 
   it("does not apply L'Hopital's rule deeper than 30 nested limits (SymPy 1.14: 0)", () => {
-    let e = 'x*Ei(x)';
+    let e = 'x*Ci(x)';
     for (let i = 0; i < 31; i++) e = `sin(${e})`;
     expect(String(sj.limit(P(e), x, 0))).toBe(`Limit(${P(e).toString()}, x, 0, dir='+')`);
-    expect(String(sj.limit(P('x*Ei(x)'), x, 0))).toBe('0');
+    expect(String(sj.limit(P('x*Ci(x)'), x, 0))).toBe('0');
   });
 });
 

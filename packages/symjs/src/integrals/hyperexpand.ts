@@ -15,8 +15,8 @@
  * theorem into hypergeometric functions at zero or at infinity.
  */
 
-import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Dummy, ExtensionExpr, Fn, Order, Pow, Rational, S, Special, asRational } from '../core/nodes';
+import type { Expr, ExprLike, Substitution } from '../core/nodes';
+import { Add, Dummy, ExtensionExpr, Fn, Mul, Order, Pow, Rational, S, Special, asRational } from '../core/nodes';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { at, cast, defined, expectType, first, pair } from '../core/guard';
 import { Lt, Gt, piecewise } from '../core/logic';
@@ -33,10 +33,10 @@ import { abs, asin, atan, cos, cosh, fn, log, re, sin, sinh } from '../functions
 import { Ci, Chi, Ei, Shi, Si, erf, expandFuncRules, expint, factorial, fresnelc, fresnels, gamma, lowergamma, rf, uppergamma } from '../functions/special';
 import { besseli, besselj } from '../functions/bessel';
 import { Hyper, MeijerG, gaussAtOne, hyper, meijerg } from '../functions/hyper';
-import { expPolar, extractBranchFactor, polarify, polarLift, unpolarify } from '../functions/polar';
+import { expPolar, extractBranchFactor, isPolar, polarify, polarLift, unpolarify } from '../functions/polar';
 import { expand } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
-import { posify, powdenest } from '../simplify/powsimp';
+import { powdenest } from '../simplify/powsimp';
 import { simplify } from '../simplify/simplify';
 import { series } from '../series/series';
 
@@ -1074,20 +1074,34 @@ export function liftBranches(e: Expr): Expr {
   });
 }
 
-/** SymPy powdenest(e, polar=True): denest powers treating every symbol as positive, then unpolarify. */
+/**
+ * SymPy unpolarify: it rebuilds every node, so hyper.eval drops the polar factors of an argument
+ * at which the function is not branched (Hyper nodes are rebuilt here for that).
+ */
+export function unpolarifyEval(e: Expr, opts: { subs?: Substitution } = {}): Expr {
+  return mapBottomUp(unpolarify(e, opts), (t) => (t instanceof Hyper ? hyper(t.ap, t.bq, t.argument) : t));
+}
+
+/**
+ * The polar factors of a power's base are split off as in SymPy's _denest_pow:
+ * (p*q*x)**e = p**e*q**e*x**e for polar p, q (a polar number has no branch cut).
+ */
+function denestPolarPow(t: Expr): Expr {
+  if (!(t instanceof Pow)) return t;
+  const factors = t.base instanceof Mul ? t.base.args : [t.base];
+  const polars = factors.filter(isPolar);
+  if (polars.length === 0) return t;
+  const rest = mul(...factors.filter((f) => !isPolar(f)));
+  return mul(...polars.map((f) => (f instanceof Pow ? pow(f.base, mul(f.exp, t.exp)) : pow(f, t.exp))), pow(rest, t.exp));
+}
+
+/**
+ * SymPy powdenest(e, polar=True): polarify (the symbols replaced by polar dummies), unpolarify the
+ * exponents, denest, then substitute the symbols back and unpolarify.
+ */
 export function powdenestPolar(e: Expr): Expr {
-  // Abs is kept, and the arguments of the HyperRep functions stay polar (they are not unbranched, SymPy unpolarify)
-  const absParts: [Expr, Expr][] = [];
-  const masked = mapBottomUp(liftBranches(e), (t) => {
-    if (!((t instanceof Fn && t.name === 'abs') || t instanceof HyperRep)) return t;
-    const d = new Dummy('abs');
-    // (the exponents are unpolarified in them too)
-    absParts.push([d, mapBottomUp(t, (u) => (u instanceof Pow ? pow(u.base, unpolarify(u.exp)) : u))]);
-    return d;
-  });
-  // (unpolarify(eq, exponents_only=True): x**(2*exp_polar(0)) is x**2)
-  const [p, back] = posify(mapBottomUp(masked, (t) => (t instanceof Pow ? pow(t.base, unpolarify(t.exp)) : t)));
-  return xreplace(unpolarify(xreplace(powdenest(p), [...back])), absParts);
+  const [eq, rep] = expectType(polarify(e), (r): r is [Expr, [Expr, Expr][]] => Array.isArray(r), 'polarify');
+  return unpolarifyEval(mapBottomUp(powdenest(unpolarify(eq, { exponentsOnly: true })), denestPolarPow), { subs: rep });
 }
 
 const z0Default = new Dummy('z0');
@@ -1118,7 +1132,7 @@ function hyperexpandFunc(func0: HyperFunc, zIn: Expr, ops0: readonly OpPoly[] = 
   if (poly !== undefined) {
     let p = first(applyOperators([poly], ops, zDeriv(z0)));
     p = first(applyOperators([mul(p, premult)], ops0, zDeriv(z0)));
-    return unpolarify(xreplace(simplify(p), [[z0, z]]));
+    return unpolarifyEval(xreplace(simplify(p), [[z0, z]]));
   }
   let p: Expr = S.Zero;
   const shifted = tryShiftedSum(func, z0);
@@ -1289,11 +1303,16 @@ export interface HyperexpandOptions {
 export function hyperexpand(fIn: ExprLike, opts: HyperexpandOptions = {}): Expr {
   const f = sympify(fIn);
   const r1 = mapBottomUp(f, (t) => (t instanceof Hyper ? hyperexpandFunc(hyperFunc(t.ap, t.bq), t.argument) : t));
-  return mapBottomUp(r1, (t) => {
-    if (!(t instanceof MeijerG)) return t;
-    const r = meijergExpand(gFunc(t.an, t.aother, t.bm, t.bother), t.argument, opts.allowHyper ?? false, opts.place);
-    return isBad(r) ? t : r;
-  });
+  // Deliberate difference: Ei on another sheet is written with Ei on the principal one
+  // (liftBranches), because the numeric evaluation of Ei(z*exp_polar(I*pi)) does not add the
+  // I*pi of SymPy's Ei._eval_evalf yet
+  return liftBranches(
+    mapBottomUp(r1, (t) => {
+      if (!(t instanceof MeijerG)) return t;
+      const r = meijergExpand(gFunc(t.an, t.aother, t.bm, t.bother), t.argument, opts.allowHyper ?? false, opts.place);
+      return isBad(r) ? t : r;
+    }),
+  );
 }
 
 

@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { add, expand, factorNc, mul, parse, pow, sstr, str, Sym, symbols } from '../../src';
+import { factorListInt } from '../../src/polys/sympoly';
 
 const { Poly } = sj;
 const [x, y, z] = symbols('x y z');
@@ -731,13 +732,102 @@ describe('factor on expressions (SymPy _symbolic_factor) and factor_list', () =>
     expect(fl('(x**2 - 1)**3')).toBe('[1, [[x - 1, 3], [x + 1, 3]]]');
     expect(fl('x**2 - a**2', x!)).toBe('[1, [[-a + x, 1], [a + x, 1]]]');
     expect(fl('x**2 - a', x!)).toBe('[1, [[-a + x**2, 1]]]');
-    // SymPy keeps a symbolic or fractional exponent: (1, [(x + 1, y)]) and (sqrt(2), [(x + 1, 1/2)])
-    expect(fl('(x + 1)**y')).toBe('[1, [[(x + 1)**y, 1]]]');
-    expect(fl('sqrt(2*x + 2)')).toBe('[sqrt(2), [[sqrt(x + 1), 1]]]');
-    // SymPy raises PolificationFailed for 2**x*(x**2 - 1)
-    expect(fl('2**x*(x**2 - 1)')).toBe('[1, [[x - 1, 1], [2**x, 1], [x + 1, 1]]]');
     expect(() => sj.factorList(parse('1/x'))).toThrow('a polynomial expected, got 1/x');
     // SymPy: PolynomialError: sin(x) contains an element of the set of generators.
-    expect(() => sj.factorList(parse('sin(x) + x'), [x!])).toThrow(sj.PolynomialError);
+    expect(() => sj.factorList(parse('sin(x) + x'), [x!])).toThrow('sin(x) contains an element of the set of generators.');
+    expect(() => sj.factorList(parse('sin(x)*(x + 1)'), [x!])).toThrow('sin(x) contains an element of the set of generators.');
+    expect(() => sj.factorList(parse('x*sin(x) + 1'), [x!])).toThrow('sin(x) contains an element of the set of generators.');
+    // SymPy raises TypeError (a PolyElement product) for x + 2.5 with the generator x
+    expect(() => sj.factorList(parse('x + 2.5'), [x!])).toThrow('x + 2.5 contains an element of the set of generators.');
+  });
+  it('factor_list with symbolic and fractional multiplicities (SymPy 1.14)', () => {
+    const p = new Sym('p', { positive: true });
+    const n = new Sym('n', { integer: true });
+    const syms = { x: x!, y: y!, z: z!, p, n };
+    const fl = (e: string, ...g: sj.Expr[]) => show(sj.factorList(parse(e, { symbols: syms }), g));
+    expect(fl('(x + 1)**y')).toBe('[1, [[x + 1, y]]]');
+    expect(fl('sqrt(x + 1)*(x - 2)**3')).toBe('[1, [[x + 1, 1/2], [x - 2, 3]]]');
+    expect(fl('2*(x**2 - 1)**y')).toBe('[2, [[x**2 - 1, y]]]');
+    expect(fl('(x + 1)**2*(x + 3)')).toBe('[1, [[x + 3, 1], [x + 1, 2]]]');
+    expect(fl('exp(x)*(x + 1)')).toBe('[1, [[exp(x), 1], [x + 1, 1]]]');
+    expect(fl('exp(2*x) - 1')).toBe('[1, [[exp(x) - 1, 1], [exp(x) + 1, 1]]]');
+    expect(fl('(x**2 - 1)**(1/3)')).toBe('[1, [[x**2 - 1, 1/3]]]');
+    expect(fl('(x*y)**z')).toBe('[1, [[x*y, z]]]');
+    expect(fl('sqrt(2*x + 2)')).toBe('[sqrt(2), [[x + 1, 1/2]]]');
+    expect(fl('(x + 1)**(2*y)')).toBe('[1, [[x + 1, 2*y]]]');
+    expect(fl('(-x - 1)**y')).toBe('[1, [[-x - 1, y]]]');
+    expect(fl('-(x + 1)**y')).toBe('[-1, [[x + 1, y]]]');
+    expect(fl('(x - 1)**y*(x + 1)**y')).toBe('[1, [[x - 1, y], [x + 1, y]]]');
+    expect(fl('4*(x**2 + 2*x + 1)**(1/2)')).toBe('[4, [[x**2 + 2*x + 1, 1/2]]]');
+    expect(fl('(x*(x + 1))**(5/2)')).toBe('[1, [[x**2 + x, 5/2]]]');
+    expect(fl('(exp(x) + 1)**y')).toBe('[1, [[exp(x) + 1, y]]]');
+    expect(fl('(sin(x)**2 - 1)**y')).toBe('[1, [[sin(x)**2 - 1, y]]]');
+    expect(fl('x**2*sqrt(y)')).toBe('[1, [[y, 1/2], [x, 2]]]');
+    expect(fl('x**(1/3)*y')).toBe('[1, [[x, 1/3], [y, 1]]]');
+    expect(fl('(x**2 - 1)**y*(x**3 + 1)**y')).toBe('[1, [[x**2 - 1, y], [x**3 + 1, y]]]');
+    expect(fl('(x + 1)*(x**2 + x)**y')).toBe('[1, [[x + 1, 1], [x**2 + x, y]]]');
+    expect(fl('sqrt(-2*x - 2)')).toBe('[sqrt(2), [[-x - 1, 1/2]]]');
+    expect(fl('I*(x + 1)')).toBe('[I, [[x + 1, 1]]]');
+    // positive factors get the exponent one by one; an integer symbol goes to every factor
+    expect(fl('((p + 1)*(x + 1))**y')).toBe('[1, [[p + 1, y], [x + 1, y]]]');
+    expect(fl('(p*(x + 1))**y')).toBe('[1, [[p, y], [x + 1, y]]]');
+    expect(fl('(p*(x + 1))**y*(p*(x + 2))**y')).toBe('[1, [[p, 2*y], [x + 1, y], [x + 2, y]]]');
+    expect(fl('(x**2 - 4)**n')).toBe('[1, [[x - 2, n], [x + 2, n]]]');
+    expect(fl('(x**2 - 1)**(2*n)')).toBe('[1, [[x - 1, 2*n], [x + 1, 2*n]]]');
+    // with gens: the parts free of them with an integer exponent are the content
+    expect(fl('(x + 1)**y*(z + 1)', x!)).toBe('[z + 1, [[x + 1, y]]]');
+    expect(fl('(z + 1)**y*(x + 1)', x!)).toBe('[1, [[z + 1, y], [x + 1, 1]]]');
+    expect(fl('(2*z + 2)**y*(x + 1)', x!)).toBe('[1, [[2*z + 2, y], [x + 1, 1]]]');
+    expect(fl('sqrt(z)*x', x!)).toBe('[1, [[z, 1/2], [x, 1]]]');
+    expect(fl('exp(y)*(x + 1)/(y + 1)', x!)).toBe('[exp(y)/(y + 1), [[x + 1, 1]]]');
+    expect(fl('((z + 1)*(x + 1))**y', x!)).toBe('[1, [[x*(z + 1) + z + 1, y]]]');
+    expect(fl('((z + 1)*(x + 1)*(x - 1))**y', x!)).toBe('[1, [[x**2*(z + 1) - z - 1, y]]]');
+    expect(fl('2**y*(x + 1)*(x - 1)*(x**2 + 1)**3', x!)).toBe('[1, [[2, y], [x - 1, 1], [x + 1, 1], [x**2 + 1, 3]]]');
+    expect(fl('(x + 1)*(x*z + x + 1)', x!)).toBe('[1, [[x + 1, 1], [x*(z + 1) + 1, 1]]]');
+    expect(fl('(x + 1)**y*(z + 1)**y', x!, z!)).toBe('[1, [[z + 1, y], [x + 1, y]]]');
+    expect(fl('(z + 1)**n*(x + 1)', x!)).toBe('[1, [[z + 1, n], [x + 1, 1]]]');
+  });
+  it('factor_list where SymPy fails', () => {
+    const p = new Sym('p', { positive: true });
+    const n = new Sym('n', { integer: true });
+    const fl = (e: string) => show(sj.factorList(parse(e, { symbols: { x: x!, y: y!, z: z!, p, n } })));
+    // SymPy raises PolificationFailed (Cannot construct a polynomial from 2) for a number base
+    expect(fl('2**x*(x**2 - 1)')).toBe('[1, [[2, x], [x - 1, 1], [x + 1, 1]]]');
+    expect(fl('(2*x + 2)**n')).toBe('[1, [[2, n], [x + 1, n]]]');
+    expect(fl('(-2*x - 2)**n')).toBe('[1, [[-2, n], [x + 1, n]]]');
+    expect(fl('(2*p + 2)**y')).toBe('[1, [[2, y], [p + 1, y]]]');
+    // SymPy appends the factor (1, y) when every factor is positive and fails on it
+    expect(fl('(p + 1)**y*(x + 1)')).toBe('[1, [[x + 1, 1], [p + 1, y]]]');
+    expect(fl('(p**2 + p)**y*p')).toBe('[1, [[p + 1, y], [p, y + 1]]]');
+    // SymPy raises TypeError comparing the exponents (cannot determine truth value of Relational: y > 1)
+    expect(fl('x**y*(x + 1)')).toBe('[1, [[x + 1, 1], [x, y]]]');
+    expect(fl('(x - 1)**y*(x + 1)**y*(x + 2)**2')).toBe('[1, [[x + 2, 2], [x - 1, y], [x + 1, y]]]');
+    expect(fl('(x + 1)**y*(x + 2)**z')).toBe('[1, [[x + 1, y], [x + 2, z]]]');
+    expect(fl('exp(x)**y*exp(z)')).toBe('[1, [[exp(z), 1], [exp(x), y]]]');
+    // SymPy raises PolificationFailed (Cannot construct a polynomial from 2.50000000000000)
+    expect(fl('(x + 2.5)**y')).toBe('[1, [[x + 2.5, y]]]');
+  });
+  it('factor_list(frac=True)', () => {
+    const fl = (e: string, ...g: sj.Expr[]) => show(sj.factorList(parse(e), g, { frac: true }));
+    expect(fl('1/(x + 1)')).toBe('[1, [], [[x + 1, 1]]]');
+    expect(fl('(x + 1)/(x - 1)**2')).toBe('[1, [[x + 1, 1]], [[x - 1, 2]]]');
+    expect(fl('x/(2*y)')).toBe('[1/2, [[x, 1]], [[y, 1]]]');
+    expect(fl('(x + 1)**y*exp(-x)/(x - 1)**2/2')).toBe('[1/2, [[x + 1, y]], [[exp(x), 1], [x - 1, 2]]]');
+    expect(fl('sqrt(x)/(x + 1)**(3/2)')).toBe('[1, [[x, 1/2]], [[x + 1, 3/2]]]');
+    expect(fl('1/(x + 1)**y')).toBe('[1, [], [[x + 1, y]]]');
+    expect(fl('6/5')).toBe('[6/5, [], []]');
+    expect(fl('(x + 1)**y/(z + 1)', x!)).toBe('[1/(z + 1), [[x + 1, y]], []]');
+    // SymPy: PolynomialError: a polynomial expected, got (x + 1)**y/(x - 1)
+    expect(() => sj.factorList(parse('(x + 1)**y/(x - 1)'), [], { frac: false })).toThrow('a polynomial expected, got (x + 1)**y/(x - 1)');
+  });
+  it('factorListInt keeps other exponents in the factor', () => {
+    expect(show(factorListInt(parse('(x + 1)**y*(x - 1)**2')))).toBe('[1, [[x - 1, 2], [(x + 1)**y, 1]]]');
+  });
+  it('factor with an integer symbol exponent (SymPy 1.14)', () => {
+    const n = new Sym('n', { integer: true });
+    const Fn = (e: string) => String(sj.factor(parse(e, { symbols: { x: x!, n } })));
+    expect(Fn('(x**2 - 4)**n')).toBe('(x - 2)**n*(x + 2)**n');
+    expect(Fn('(2*x + 2)**n')).toBe('2**n*(x + 1)**n');
+    expect(Fn('(-2*x - 2)**n')).toBe('(-2)**n*(x + 1)**n');
   });
 });

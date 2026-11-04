@@ -5,7 +5,7 @@
 // Expected values are those of SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { Prufer } from '../../src';
+import { Prufer, latex, pretty } from '../../src';
 
 describe('Prufer', () => {
   it('converts between trees and Prufer sequences', () => {
@@ -133,5 +133,26 @@ describe('Prufer', () => {
     expect(() => Prufer.edges([0, 1], [3, 4], [6, 7])).toThrow('Nodes [2, 5] are missing.');
     // SymPy raises a TypeError (min of None)
     expect(() => Prufer.edges([1])).toThrow(RangeError);
+  });
+
+  it('prints like SymPy (an expression node: str, LaTeX of the array argument, pretty)', () => {
+    // SymPy latex(Prufer(...)): the argument is an Array, printed by _print_NDimArray
+    expect(latex(new Prufer([1, 0, 0]))).toBe('\\operatorname{Prufer}\\left(\\left[\\begin{matrix}1 & 0 & 0\\end{matrix}\\right]\\right)');
+    expect(latex(new Prufer([[0, 1], [0, 2], [0, 3]]))).toBe('\\operatorname{Prufer}\\left(\\left[\\begin{matrix}0 & 1\\\\0 & 2\\\\0 & 3\\end{matrix}\\right]\\right)');
+    expect(latex(new Prufer([[0, 1], [1, 2]], 3))).toBe('\\operatorname{Prufer}\\left(\\left[\\begin{matrix}0 & 1\\\\1 & 2\\end{matrix}\\right], 3\\right)');
+    expect(latex(new Prufer([[0, 1]]))).toBe('\\operatorname{Prufer}\\left(\\left[\\left[\\begin{matrix}0 & 1\\end{matrix}\\right]\\right]\\right)');
+    expect(latex(new Prufer([2], 4))).toBe('\\operatorname{Prufer}\\left(\\left[\\begin{matrix}2\\end{matrix}\\right], 4\\right)');
+    expect(latex(new Prufer([]))).toBe('\\operatorname{Prufer}\\left(\\left( \\right)\\right)');
+    // more than 10 entries: an array environment
+    expect(latex(new Prufer([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]))).toBe('\\operatorname{Prufer}\\left(\\left[\\begin{array}{ccccccccccc}1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11\\end{array}\\right]\\right)');
+    // SymPy pretty(Prufer(...)) is its str form
+    expect(pretty(new Prufer([[0, 1], [1, 2]], 3))).toBe('Prufer([[0, 1], [1, 2]], 3)');
+    expect(pretty(new Prufer([1, 0, 0]), { useUnicode: false })).toBe('Prufer([1, 0, 0])');
+    // nodes with the same arguments are equal, and a substitution keeps the node
+    expect(new Prufer([1, 0, 0]).equals(new Prufer([1, 0, 0]))).toBe(true);
+    expect(new Prufer([1, 0, 0]).equals(new Prufer([1, 0, 0], 5))).toBe(false);
+    const p = new Prufer([1, 0, 0]);
+    expect(p.subs(p, p)).toBe(p);
+    expect(p.withArgs([])).toBe(p);
   });
 });

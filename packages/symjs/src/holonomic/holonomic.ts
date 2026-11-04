@@ -30,7 +30,7 @@ import { floatString, str } from '../printing/str';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { binomial, factorial, gamma } from '../functions/special';
 import { Hyper, MeijerG, hyper, meijerg } from '../functions/hyper';
-import { DMP, QQ, RR } from '../polys/domains';
+import { DMP, EX, QQ, RR } from '../polys/domains';
 import type { DMF, Domain, GlobalPolynomialRing, OldFractionField } from '../polys/domains';
 import { polyCoefficients, rootsDict } from '../polys/poly';
 import { divisors } from '../ntheory/factor';
@@ -1030,13 +1030,22 @@ export class HolonomicFunction {
     const expr = sympify(exprIn);
     const R = this.annihilator.parent;
     const a = this.annihilator.order;
-    const K = R.base.getField();
-    const e = K.fromSympy(expr);
+    const base = R.base.getField();
+    // SymPy composes with expressions: algebraic coefficients (sqrt(2)*I*x) are computed in EX(x)
+    let K = base;
+    let e: DMF;
+    try {
+      e = K.fromSympy(expr);
+    } catch {
+      // (CoercionFailed: the only error of the conversion)
+      K = EX.oldPolyRing(this.x).getField();
+      e = K.fromSympy(expr);
+    }
     const de = K.fromSympy(diffExpr(expr, this.x));
     // p(expr) for each coefficient
     const atExpr = (p: DMP): DMF => {
       let s = K.zero;
-      for (const c of p.rep) s = s.mul(e).add(K.new([c]));
+      for (const c of p.rep) s = s.mul(e).add(K.new([K.dom.fromSympy(p.dom.toSympy(c))]));
       return s;
     };
     const listofpoly = this.annihilator.listofpoly;
@@ -1060,7 +1069,8 @@ export class HolonomicFunction {
         break;
       }
     }
-    const ann = normalize(sol, R, false);
+    // (SymPy _normalize converts the coefficients to the base field and fails with CoercionFailed outside it)
+    const ann = normalize(K === base ? sol : sol.map((c) => base.fromSympy(c.toSympy())), R, false);
     if (x0 !== undefined) return new HolonomicFunction(ann, this.x, x0, y0);
     return new HolonomicFunction(ann, this.x);
   }

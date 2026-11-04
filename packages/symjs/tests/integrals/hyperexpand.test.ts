@@ -121,46 +121,40 @@ describe('hyperexpand: the results of SymPy', () => {
     [["G", [[], ["1"], ["0"], ["1"]], "z"], "0"],
     [["G", [["0"], [], ["1"], []], "z"], "z/(z + 1)**2"],
     [["G", [["1", "1"], [], ["1"], ["1"]], "z"], "z/(z + 1)"],
+    [["H", [["a"], ["a + 1"]], "z"], "a*exp(-I*pi*a)*lowergamma(a, z*exp_polar(I*pi))/z**a"],
+    [["H", [["1"], ["3/4", "5/4"]], "z"], "sqrt(pi)*(I*sinh(2*sqrt(z))*fresnels(2*z**(1/4)*exp(I*pi/4)/sqrt(pi)) + cosh(2*sqrt(z))*fresnelc(2*z**(1/4)*exp(I*pi/4)/sqrt(pi)))*exp(-I*pi/4)/(2*z**(1/4))"],
+    [["H", [["1/2", "a"], ["3/2", "a + 1"]], "z"], "-a*exp(-I*pi*a)*lowergamma(a, z*exp_polar(I*pi))/(z**a*(2*a - 1)) - I*sqrt(pi)*a*erf(I*sqrt(z))/(sqrt(z)*(2*a - 1))"],
+    [["H", [[], ["a", "2*a", "a + 1/2"]], "z"], "2**(1 - 2*a)*z**(1/2 - a)*exp(I*pi*(1 - 2*a)/2)*besseli(2*a - 1, 2*sqrt(2)*z**(1/4)*exp_polar(I*pi/4))*besselj(2*a - 1, 2*sqrt(2)*z**(1/4)*exp_polar(I*pi/4))*gamma(2*a)**2"],
+    [["H", [["3/4"], ["3/2", "7/4"]], "z"], "3*sqrt(pi)*exp(-3*I*pi/4)*fresnels(2*z**(1/4)*exp(I*pi/4)/sqrt(pi))/(4*z**(3/4))"],
+    [["H", [["1/4"], ["1/2", "5/4"]], "z"], "sqrt(pi)*exp(-I*pi/4)*fresnelc(2*z**(1/4)*exp(I*pi/4)/sqrt(pi))/(2*z**(1/4))"],
+    [["H", [["1", "1", "a"], ["2", "2", "a + 1"]], "z"], "a*(1 - a)*(log(z*exp_polar(I*pi)) + expint(1, z*exp_polar(I*pi)) + EulerGamma)/(z*(a**2 - 2*a + 1)) - a*exp(z)/(z*(a**2 - 2*a + 1)) + a/(z*(a**2 - 2*a + 1)) + a*(gamma(a) - uppergamma(a, z*exp_polar(I*pi)))/((-1)**a*z**a*(a - 1)**2)"],
+    [["G", [[], [], ["a"], ["b"]], "z"], "z**(a/2 + b/2)*exp(I*pi*(-a/2 + b/2))*besseli(a - b, 2*sqrt(z)*exp_polar(I*pi/2))"],
+    [["H", [["1/3", "1"], ["4/3", "3"]], "z"], "(z + 2/5)/z**2 + 2*exp(-I*pi/3)*lowergamma(5*exp_polar(I*pi)/3, z*exp_polar(I*pi))/(3*z**(1/3))"],
+    [["H", [["1/3", "2"], ["4/3", "4"]], "z"], "(-6*z/5 - 3/2)/z**3 + 2*exp(z)/z**3 + 4*exp(2*I*pi/3)*lowergamma(8*exp_polar(I*pi)/3, z*exp_polar(I*pi))/(3*z**(1/3))"],
   ];
   it.each(same)('%j', (spec, want) => expect(sstr(hyperexpand(build(spec)))).toBe(want));
 });
 
 describe('hyperexpand: the same functions in other forms than SymPy', () => {
   const other: [Spec, string, [number, number]][] = [
-    // SymPy: a*exp(-I*pi*a)*lowergamma(a, z*exp_polar(I*pi))/z**a
-    [["H", [["a"], ["a + 1"]], "z"], "a*lowergamma(a, -z)/(-z)**a", [1.0885713113775257, 0.0]],
-    // SymPy: sqrt(pi)*(I*sinh(2*sqrt(z))*fresnels(2*z**(1/4)*exp(I*pi/4)/sqrt(pi)) + cosh(2*sqrt(z))*fresnelc(2*z**(1/4)*exp(I*pi/4)/sqrt(pi)))*exp(-I*pi/4)/(2*z**(1/4))
-    [["H", [["1"], ["3/4", "5/4"]], "z"], "(-1)**(3/4)*sqrt(pi)*(-I*sinh(2*sqrt(z))*fresnels(2*z**(1/4)*exp(I*pi/4)/sqrt(pi))/2 - cosh(2*sqrt(z))*fresnelc(2*z**(1/4)*exp(I*pi/4)/sqrt(pi))/2)/z**(1/4)", [1.3452149257076245, 0.0]],
-    // SymPy: -a*exp(-I*pi*a)*lowergamma(a, z*exp_polar(I*pi))/(z**a*(2*a - 1)) - I*sqrt(pi)*a*erf(I*sqrt(z))/(sqrt(z)*(2*a - 1))
-    [["H", [["1/2", "a"], ["3/2", "a + 1"]], "z"], "-a*lowergamma(a, -z)/((-z)**a*(2*a - 1)) - I*sqrt(pi)*a*erf(I*sqrt(z))/(sqrt(z)*(2*a - 1))", [1.0284862498875023, 0.0]],
     // SymPy: z**(1/4 - a/2)*(besseli(2*a - 1, 4*z**(1/4)) + besselj(2*a - 1, 4*z**(1/4)))*gamma(2*a)/2**(2*a)
     [["H", [[], ["1/2", "a", "a + 1/2"]], "z"], "(1/4)**a*z**(1/4 - a/2)*(besseli(2*a - 1, 4*z**(1/4)) + besselj(2*a - 1, 4*z**(1/4)))*gamma(2*a)", [2.937117338405986, 0.0]],
-    // SymPy: 2**(1 - 2*a)*z**(1/2 - a)*exp(I*pi*(1 - 2*a)/2)*besseli(2*a - 1, 2*sqrt(2)*z**(1/4)*exp_polar(I*pi/4))*besselj(2*a - 1, 2*sqrt(2)*z**(1/4)*exp_polar(I*pi/4))*gamma(2*a)**2
-    [["H", [[], ["a", "2*a", "a + 1/2"]], "z"], "(2*I*sqrt(z))**(1 - 2*a)*besseli(2*a - 1, 2*sqrt(2)*z**(1/4)*exp(I*pi/4))*besselj(2*a - 1, 2*sqrt(2)*z**(1/4)*exp(I*pi/4))*gamma(2*a)**2", [2.302020633082282, 0.0]],
-    // SymPy: 3*sqrt(pi)*exp(-3*I*pi/4)*fresnels(2*z**(1/4)*exp(I*pi/4)/sqrt(pi))/(4*z**(3/4))
-    [["H", [["3/4"], ["3/2", "7/4"]], "z"], "-3*(-1)**(1/4)*sqrt(pi)*fresnels(2*z**(1/4)*exp(I*pi/4)/sqrt(pi))/(4*z**(3/4))", [1.0890564948557693, 0.0]],
-    // SymPy: sqrt(pi)*exp(-I*pi/4)*fresnelc(2*z**(1/4)*exp(I*pi/4)/sqrt(pi))/(2*z**(1/4))
-    [["H", [["1/4"], ["1/2", "5/4"]], "z"], "-(-1)**(3/4)*sqrt(pi)*fresnelc(2*z**(1/4)*exp(I*pi/4)/sqrt(pi))/(2*z**(1/4))", [1.1268543401652016, 0.0]],
     // SymPy: 2**(2*a - 1)*z**(1/2 - a)*besseli(2*a - b, sqrt(z))*besseli(b - 1, sqrt(z))*gamma(b)*gamma(2*a - b + 1)
-    [["H", [["a", "a + 1/2"], ["b", "2*a", "2*a - b + 1"]], "z"], "(sqrt(z)/2)**(1 - 2*a)*besseli(2*a - b, sqrt(z))*besseli(b - 1, sqrt(z))*gamma(b)*gamma(2*a - b + 1)", [1.627423567343385, 0.0]],
-    // SymPy: a*(1 - a)*(log(z*exp_polar(I*pi)) + expint(1, z*exp_polar(I*pi)) + EulerGamma)/(z*(a**2 - 2*a + 1)) - a*exp(z)/(z*(a**2 - 2*a + 1)) + a/(z*(a**2 - 2*a + 1)) + a*(gamma(a) - uppergamma(a, z*exp_polar(I*pi)))/((-1)**a*z**a*(a - 1)**2)
-    [["H", [["1", "1", "a"], ["2", "2", "a + 1"]], "z"], "a*(gamma(a) - uppergamma(a, -z))/((-z)**a*(a - 1)**2) + a*(1 - a)*(log(-z) + expint(1, -z) + EulerGamma)/(z*(a**2 - 2*a + 1)) - a*exp(z)/(z*(a**2 - 2*a + 1)) + a/(z*(a**2 - 2*a + 1))", [1.021068127262721, 0.0]],
+    [["H", [["a", "a + 1/2"], ["b", "2*a", "2*a - b + 1"]], "z"], "(1/2)**(1 - 2*a)*z**(1/2 - a)*besseli(2*a - b, sqrt(z))*besseli(b - 1, sqrt(z))*gamma(b)*gamma(2*a - b + 1)", [1.627423567343385, 0.0]],
     // SymPy: (2*z + 1)/(z - 1)**4
     [["H", [["2", "3"], ["1"]], "z"], "(2*z + 1)/(1 - z)**4", [6.663890045814244, 0.0]],
     // SymPy: (3/4 - 3*z/4)/(z*sqrt(1 - z)) + (6*z - 3)*asin(sqrt(z))/(4*z**(3/2))
     [["H", [["1/2", "1/2"], ["5/2"]], "z"], "(3/4 - 3*z/4)/(z*sqrt(1 - z)) + (6*z - 3)*asin(sqrt(z))/(4*z**(3/2))", [1.033377529589727, 0.0]],
     // SymPy: -sqrt(pi)*(2*(Si(2*sqrt(z)) - pi/2)*sin(2*sqrt(z)) + 2*cos(2*sqrt(z))*Ci(2*sqrt(z)))
-    [["G", [["0", "1/2"], [], ["0", "0", "1/2"], ["1/2"]], "z"], "sqrt(pi)*(-2*(Si(2*sqrt(z)) - pi/2)*sin(2*sqrt(z)) - 2*cos(2*sqrt(z))*Ci(2*sqrt(z)))", [1.0989928362906576, 0.0]],
+    [["G", [["0", "1/2"], [], ["0", "0", "1/2"], ["1/2"]], "z"], "-2*sqrt(pi)*((Si(2*sqrt(z)) - pi/2)*sin(2*sqrt(z)) + cos(2*sqrt(z))*Ci(2*sqrt(z)))", [1.0989928362906576, 0.0]],
     // SymPy: -sqrt(pi)*z**(a - 1/2)*(2*(Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) - 2*sin(2*sqrt(z))*Ci(2*sqrt(z)))
-    [["G", [["a"], [], ["a", "a", "a - 1/2"], []], "z"], "sqrt(pi)*z**(a - 1/2)*(-2*(Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) + 2*sin(2*sqrt(z))*Ci(2*sqrt(z)))", [2.447143820283287, 0.0]],
+    [["G", [["a"], [], ["a", "a", "a - 1/2"], []], "z"], "-2*sqrt(pi)*z**(a - 1/2)*((Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) - sin(2*sqrt(z))*Ci(2*sqrt(z)))", [2.447143820283287, 0.0]],
     // SymPy: -sqrt(pi)*sqrt(z)*(2*(Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) - 2*sin(2*sqrt(z))*Ci(2*sqrt(z)))
-    [["G", [["1"], [], ["1/2", "1", "1"], []], "z"], "sqrt(pi)*sqrt(z)*(-2*(Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) + 2*sin(2*sqrt(z))*Ci(2*sqrt(z)))", [1.1461616797329164, 0.0]],
+    [["G", [["1"], [], ["1/2", "1", "1"], []], "z"], "-2*sqrt(pi)*sqrt(z)*((Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) - sin(2*sqrt(z))*Ci(2*sqrt(z)))", [1.1461616797329164, 0.0]],
     // SymPy: z*((log(z*exp_polar(I*pi)) - Ei(z*exp_polar(I*pi)))/z + EulerGamma/z) - log(z) - EulerGamma
-    [["G", [[], ["1"], ["0", "0"], []], "z"], "z*((log(-z) - Ei(-z) - I*pi)/z + EulerGamma/z) - log(z) - EulerGamma", [0.9056766516758468, 0.0]],
-    // SymPy: z**(a/2 + b/2)*exp(I*pi*(-a/2 + b/2))*besseli(a - b, 2*sqrt(z)*exp_polar(I*pi/2))
-    [["G", [[], [], ["a"], ["b"]], "z"], "(-1)**(-a/2 + b/2)*z**(a/2 + b/2)*besseli(a - b, 2*I*sqrt(z))", [-0.25348384051785056, 0.0]],
+    [["G", [[], ["1"], ["0", "0"], []], "z"], "z*((log(z*exp_polar(I*pi)) - Ei(-z) - I*pi)/z + EulerGamma/z) - log(z) - EulerGamma", [0.9056766516758468, 0.0]],
     // SymPy: z**2*(-((-2*z - 4)/z**2 + (2*z + 2)/z**2)*exp(-z)/2 - ((-2*z - 2)/z**2 + 2/z**2)*(-log(z*exp_polar(I*pi)) + Ei(z*exp_polar(I*pi)))/2 - EulerGamma*((2*z + 2)/z**2 - 2/z**2)/2 - (-2*z - 2)/(2*z**2) - 2/z**2) + z*log(z) - z + EulerGamma*z + 1
-    [["G", [[], ["2"], ["0", "1"], []], "z"], "z**2*(-((-2 - 2/z)/z + 2/z**2)*(-log(-z) + Ei(-z) + I*pi)/2 - EulerGamma*((2 + 2/z)/z - 2/z**2)/2 - ((2 + 2/z)/z + (-2*z - 4)/z**2)*exp(-z)/2 - (-2 - 2/z)/(2*z) - 2/z**2) + z*log(z) - z + EulerGamma*z + 1", [0.46911522517896387, 0.0]],
+    [["G", [[], ["2"], ["0", "1"], []], "z"], "z**2*(-((-2 - 2/z)/z + 2/z**2)*(-log(z*exp_polar(I*pi)) + Ei(-z) + I*pi)/2 - EulerGamma*((2 + 2/z)/z - 2/z**2)/2 - ((2 + 2/z)/z + (-2*z - 4)/z**2)*exp(-z)/2 - (-2 - 2/z)/(2*z) - 2/z**2) + z*log(z) - z + EulerGamma*z + 1", [0.46911522517896387, 0.0]],
     // SymPy: 3/(2*z) + (3*z - 3)*atanh(sqrt(z))/(2*z**(3/2))
     [["H", [["1/2", "1"], ["5/2"]], "z"], "3/(2*z) + (3*z - 3)*atanh(sqrt(z))/(2*z**(3/2))", [1.0693110283741394, 0.0]],
     // SymPy: (z + 1)/(z - 1)**2
@@ -174,17 +168,13 @@ describe('hyperexpand: the same functions in other forms than SymPy', () => {
     // SymPy: 2*elliptic_k(z)/pi
     [["H", [["1/2", "1/2"], ["1"]], "z"], "hyper((1/2, 1/2), (1,), z)", [1.0910959103627815, 0.0]],
     // SymPy: -sqrt(pi)*z**(a - 1/2)*(2*(Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) - 2*sin(2*sqrt(z))*Ci(2*sqrt(z)))
-    [["G", [["a"], [], ["a", "a", "a - 1/2"], []], "z"], "sqrt(pi)*z**(a - 1/2)*(-2*(Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) + 2*sin(2*sqrt(z))*Ci(2*sqrt(z)))", [2.447143820283287, 0.0]],
+    [["G", [["a"], [], ["a", "a", "a - 1/2"], []], "z"], "-2*sqrt(pi)*z**(a - 1/2)*((Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) - sin(2*sqrt(z))*Ci(2*sqrt(z)))", [2.447143820283287, 0.0]],
     // SymPy: -sqrt(pi)*sqrt(z)*(2*(Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) - 2*sin(2*sqrt(z))*Ci(2*sqrt(z)))
-    [["G", [["1"], [], ["1/2", "1", "1"], []], "z"], "sqrt(pi)*sqrt(z)*(-2*(Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) + 2*sin(2*sqrt(z))*Ci(2*sqrt(z)))", [1.1461616797329164, 0.0]],
+    [["G", [["1"], [], ["1/2", "1", "1"], []], "z"], "-2*sqrt(pi)*sqrt(z)*((Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) - sin(2*sqrt(z))*Ci(2*sqrt(z)))", [1.1461616797329164, 0.0]],
     // SymPy: Piecewise((0, (Abs(z) < 1) | (1/Abs(z) < 1)), (meijerg(((), (1,)), ((), (0,)), z), True))
     [["G", [[], ["1"], [], ["0"]], "z"], "Piecewise((0, Abs(z) < 1), (0, 1/Abs(z) < 1), (meijerg(((), (1,)), ((), (0,)), z), True))", [0.0, 0.0]],
     // SymPy: -sqrt(pi)*z**a*(2*(Si(2*sqrt(z)) - pi/2)*sin(2*sqrt(z)) + 2*cos(2*sqrt(z))*Ci(2*sqrt(z)))
-    [["G", [["a"], [], ["a", "a", "a + 1/2"], []], "z"], "sqrt(pi)*z**a*(-2*(Si(2*sqrt(z)) - pi/2)*sin(2*sqrt(z)) - 2*cos(2*sqrt(z))*Ci(2*sqrt(z)))", [0.7039304075732961, 0.0]],
-    // SymPy: (z + 2/5)/z**2 + 2*exp(-I*pi/3)*lowergamma(5*exp_polar(I*pi)/3, z*exp_polar(I*pi))/(3*z**(1/3))
-    [["H", [["1/3", "1"], ["4/3", "3"]], "z"], "(z + 2/5)/z**2 + 2*exp(-I*pi/3)*lowergamma(-5/3, -z)/(3*z**(1/3))", [1.0261182215679834, 0.0]],
-    // SymPy: (-6*z/5 - 3/2)/z**3 + 2*exp(z)/z**3 + 4*exp(2*I*pi/3)*lowergamma(8*exp_polar(I*pi)/3, z*exp_polar(I*pi))/(3*z**(1/3))
-    [["H", [["1/3", "2"], ["4/3", "4"]], "z"], "(-6*z/5 - 3/2)/z**3 + 2*exp(z)/z**3 + 4*exp(2*I*pi/3)*lowergamma(-8/3, -z)/(3*z**(1/3))", [1.0395224203983822, 0.0]],
+    [["G", [["a"], [], ["a", "a", "a + 1/2"], []], "z"], "-2*sqrt(pi)*z**a*((Si(2*sqrt(z)) - pi/2)*sin(2*sqrt(z)) + cos(2*sqrt(z))*Ci(2*sqrt(z)))", [0.7039304075732961, 0.0]],
     // SymPy: 2/(5*z) + 2*log(1 - z)/(5*z**2) - 2*log(1 - z**(1/3))/(5*z**(1/3)) - 2*exp(-2*I*pi/3)*log(-z**(1/3)*exp_polar(2*I*pi/3) + 1)/(5*z**(1/3)) - 2*exp(2*I*pi/3)*log(-z**(1/3)*exp_polar(4*I*pi/3) + 1)/(5*z**(1/3))
     [["H", [["1/3", "1", "2"], ["4/3", "3"]], "z"], "hyper((1/3, 1, 2), (4/3, 3), z)", [1.0577721530161595, 0.0]],
     // SymPy: Piecewise((0, (Abs(z) < 1) | (1/Abs(z) < 1)), (meijerg(((), (0,)), ((1,), ()), z), True))

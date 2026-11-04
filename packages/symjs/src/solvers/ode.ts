@@ -31,6 +31,17 @@ export function odeOrder(e: Expr, f: UndefFn): number {
   return n;
 }
 
+/**
+ * Options of dsolve: initial conditions, the hint, and for the lie_group
+ * hint the infinitesimals xi(x, f(x)) and eta(x, f(x)) of a known symmetry.
+ */
+export interface DsolveOptions {
+  ics?: [Expr, ExprLike][];
+  hint?: string;
+  xi?: ExprLike;
+  eta?: ExprLike;
+}
+
 const isExprList = <T>(v: T | readonly T[] | undefined): v is readonly T[] => Array.isArray(v);
 
 /**
@@ -41,7 +52,7 @@ const isExprList = <T>(v: T | readonly T[] | undefined): v is readonly T[] => Ar
  * it has several solution families.
  * ics lists initial conditions, e.g. [[f(0), 1], [Subs(Derivative(f(x), x), x, 0), 0]].
  */
-export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts: { ics?: [Expr, ExprLike][]; hint?: string } = {}): Expr | Expr[] | Expr[][] {
+export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts: DsolveOptions = {}): Expr | Expr[] | Expr[][] {
   // a system of equations: a list of solutions, or a list of solution lists (SymPy)
   if (isExprList(eqIn)) return dsolveSystem(eqIn, isExprList(fx) ? fx.map((f) => cast(f, UndefFn, 'unknown function')) : undefined);
   if (isExprList(fx) || fx === undefined) throw new TypeError('dsolve: the unknown function f(x) is required');
@@ -49,7 +60,7 @@ export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonl
 }
 
 /** dsolve of a single equation. */
-function dsolveSingle(eqIn: ExprLike, fx: Expr, opts: { ics?: [Expr, ExprLike][]; hint?: string }): Expr | Expr[] {
+function dsolveSingle(eqIn: ExprLike, fx: Expr, opts: DsolveOptions): Expr | Expr[] {
   if (!(fx instanceof UndefFn) || fx.args.length !== 1 || !(fx.args[0] instanceof Sym)) {
     throw new TypeError('dsolve: f(x) with a single symbol argument expected');
   }
@@ -57,9 +68,9 @@ function dsolveSingle(eqIn: ExprLike, fx: Expr, opts: { ics?: [Expr, ExprLike][]
   const eq = asEquation(eqIn);
   const n = odeOrder(eq, fx);
   if (n === 0) throw new TypeError('dsolve: not a differential equation');
-  const viaHints = dsolveRaw(eq, fx, opts.hint);
+  const viaHints = dsolveRaw(eq, fx, opts.hint, opts.xi !== undefined && opts.eta !== undefined ? { xi: opts.xi, eta: opts.eta } : undefined);
   // SymPy raises NotImplementedError when no hint matches
-  if (!viaHints?.length) throw new NotImplementedError('dsolve: unsupported equation');
+  if (!viaHints.length) throw new NotImplementedError('dsolve: unsupported equation');
   const ics = opts.ics;
   const out = ics?.length ? viaHints.map((s) => Eq(fx, applyIcs(cast(s, Rel, 'dsolve solution').rhs, fx, x, ics))) : viaHints;
   return out.length === 1 ? first(out) : out;

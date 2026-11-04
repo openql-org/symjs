@@ -128,12 +128,10 @@ export function continuedFraction(a: ExprLike): ContinuedFraction {
   throw new RangeError(`expecting a rational or quadratic irrational, not ${e.toString()}`);
 }
 
-/** SymPy Integer(int(floor(x))): floor(x) as a bigint, also when floor leaves an integral Float. */
+/** SymPy Integer(int(floor(x))): floor(x) as a bigint (floor of a Float is an Integer, as in SymPy). */
 function floorInt(x: Expr): bigint {
   const i = floorFn(x);
   if (isInt(i)) return i.p;
-  // an integral Float is normalized to an odd mantissa (or 0) with exp >= 0
-  if (i instanceof Float) return i.mpf.man << BigInt(i.mpf.exp);
   throw new NotImplementedError(`cannot compute floor(${x.toString()})`);
 }
 

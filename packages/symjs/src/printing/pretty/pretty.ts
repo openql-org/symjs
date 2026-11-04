@@ -52,7 +52,7 @@ import { Concrete } from '../../core/concrete';
 import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey, sympyFunctionName } from '../sortkey';
 import type { Key } from '../sortkey';
 import { PREC, floatString, precedence, str } from '../str';
-import { DOTS, rangePrintset, setArgsOrdered, setClass } from '../sets';
+import { DOTS, rangePrintForm, setArgsOrdered, setClass } from '../sets';
 import { hasSymbolicBounds, isSequence, sequencePrintset } from '../sequences';
 import type { PictLike } from './stringpict';
 import { Binding, LINE, PrettyForm, StringPict } from './stringpict';
@@ -1100,8 +1100,13 @@ export class PrettyPrinter {
       }
       case 'FiniteSet':
         return this.printSeq([...e.args].sort(byKey), '{', '}', ', ');
-      case 'Range':
-        return this.printSeq(rangePrintset(e, 4).map((t) => (t === DOTS ? (u ? defined(prettyAtom('Dots')) : '...') : t)), '{', '}', ', ');
+      case 'Range': {
+        const shown = rangePrintForm(e, 4);
+        // a Range whose elements are unknown (SymPy's pretty printer raises an error; the
+        // function form of SymPy's LaTeX printer is shown)
+        if ('symbolic' in shown) return this.printFunction('Range', shown.symbolic);
+        return this.printSeq(shown.elements.map((t) => (t === DOTS ? (u ? defined(prettyAtom('Dots')) : '...') : t)), '{', '}', ', ');
+      }
       case 'ProductSet': {
         // SymPy _print_ProductSet: a power when every factor is the same set
         const sets = e.args;
@@ -1294,6 +1299,9 @@ export class PrettyPrinter {
     if (isHyperLike(e)) return this.printHyper(e);
     if (isMeijerLike(e)) return this.printMeijer(e);
     switch (e.name) {
+      // SymPy Partition is a FiniteSet of its blocks (stored in SymPy's order): _print_FiniteSet
+      case 'Partition':
+        return this.printSeq(e.args, '{', '}', ', ');
       case 'Contains': {
         // SymPy _print_Contains: x ∈ S in unicode, the str form in ASCII
         if (!u) return this.emptyPrinter(e);

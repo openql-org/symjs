@@ -618,9 +618,16 @@ describe('special functions: derivatives and expand_func', () => check(DIFF_CASE
 
 describe('special functions: cases outside the tables', () => {
   const y = new Sym('y');
-  it('factorial2 of a negative even integer is a pole', () => {
-    // SymPy raises ValueError; symjs returns the pole zoo of the gamma-based continuation
-    expect(String(factorial2(-2))).toBe('zoo');
+  it('factorial2 of a number other than a nonnegative or negative odd integer is a ValueError', () => {
+    // SymPy factorial2(-2), factorial2(1/3), factorial2(2.5): ValueError("argument must be nonnegative
+    // integer or negative odd integer")
+    for (const a of [-2, -4, Rational.of(1, 3), Rational.of(-1, 2), 2.5, new Float(3), S.Infinity, S.NegativeInfinity, S.NaN]) {
+      expect(() => factorial2(a)).toThrow(new RangeError('argument must be nonnegative integer or negative odd integer'));
+    }
+    expect(() => P('factorial2(1/3)')).toThrow(RangeError);
+    expect(String(factorial2(new Sym('n', { integer: true })))).toBe('factorial2(n)');
+    expect(String(factorial2(S.I))).toBe('factorial2(I)');
+    expect(String(factorial2(S.ComplexInfinity))).toBe('factorial2(zoo)');
   });
   it('polygamma(n, oo) stays unevaluated for an order that may be 0', () => {
     // SymPy returns 0, which is wrong when n = 0 (polygamma(0, oo) = oo)
@@ -719,6 +726,79 @@ describe('special functions', () => {
     // the imaginary part is 1 (sqrt(5 + 2*sqrt(6)) = sqrt(2) + sqrt(3)); SymPy gives
     // 1 + I*(-sqrt(2*sqrt(6) + 5) + 1 + sqrt(2) + sqrt(3)), symjs keeps floor unevaluated
     expect(String(parse('floor(sqrt(2) + I*(1 + sqrt(2)+sqrt(3)-sqrt(5+2*sqrt(6))))'))).toBe('floor(sqrt(2) + I*(-sqrt(2*sqrt(6) + 5) + 1 + sqrt(2) + sqrt(3)))');
+    // SymPy floor(sin(1)**2 + cos(1)**2) = 1 (decided by equals(0)); symjs keeps a part within the
+    // error of an integer at every precision unevaluated
+    expect(String(parse('floor(sin(1)**2 + cos(1)**2)'))).toBe('floor(cos(1)**2 + sin(1)**2)');
+    // SymPy ceiling(sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6))) = 0: a value that cancels to 0 is not decided
+    // (its rounding noise is not a sign), while 1/10**30 above it is
+    expect(String(parse('ceiling(sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6)))'))).toBe('ceiling(-sqrt(2*sqrt(6) + 5) + sqrt(2) + sqrt(3))');
+    expect(String(parse('floor(sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6)) + 1/10**30)'))).toBe('0');
+    // SymPy floor(exp(I)) = 0, floor(10*sqrt(1 + I)) = 10 + 4*I, floor(I*exp(100) + I/3) stays
+    expect(String(parse('floor(exp(I))'))).toBe('0');
+    expect(String(parse('floor((1 + I)**(1/2)*10)'))).toBe('10 + 4*I');
+    expect(String(parse('floor(I*exp(100) + I/3)'))).toBe('floor(I/3 + I*exp(100))');
+  });
+  it('floor and ceiling of large exact numbers (SymPy get_integer_part)', () => {
+    // SymPy 1.14
+    expect(String(parse('floor(exp(100) + 1/3)'))).toBe('26881171418161354484126255515800135873611119');
+    expect(String(parse('ceiling(exp(100) + 1/3)'))).toBe('26881171418161354484126255515800135873611120');
+    expect(String(parse('floor(exp(100))'))).toBe('26881171418161354484126255515800135873611118');
+    expect(String(parse('floor(-exp(100))'))).toBe('-26881171418161354484126255515800135873611119');
+    expect(String(parse('floor(pi*10**30)'))).toBe('3141592653589793238462643383279');
+    expect(String(parse('ceiling(exp(50))'))).toBe('5184705528587072464088');
+    expect(String(parse('floor(sqrt(2)*10**40)'))).toBe('14142135623730950488016887242096980785696');
+    expect(String(parse('floor(E**100/3)'))).toBe('8960390472720451494708751838600045291203706');
+    expect(String(parse('floor(exp(pi*sqrt(163)))'))).toBe('262537412640768743');
+    expect(String(parse('ceiling(exp(100)*I + pi)'))).toBe('4 + 26881171418161354484126255515800135873611119*I');
+    expect(String(parse('floor(exp(100) - exp(100) + 1/3)'))).toBe('0');
+    expect(String(parse('floor(gamma(1/3)*10**20)'))).toBe('267893853470774763365');
+    // the 8686 digits of floor(exp(20000)); beyond 100000 bits floor stays unevaluated (SymPy computes it)
+    expect(String(parse('floor(exp(20000))'))).toHaveLength(8686);
+    expect(String(parse('floor(exp(80000))'))).toBe('floor(exp(80000))');
+    expect(String(parse('floor(x + exp(100))'))).toBe('floor(x + exp(100))');
+  });
+  it('erf2inv: SymPy erf2inv.eval, and numerics only inside [-1, 1]', () => {
+    // SymPy 1.14: erf2inv(0.0, 0.0) = 0, erf2inv(0.0, 1.0) = oo, erf2inv(1, 0.0) = 1, erf2inv(1.0, 0.0) = 1.0,
+    // erf2inv(x, oo) = erfinv(x), erf2inv(nan, x) = nan, erf2inv(0.0, 1.5) raises ValueError
+    expect(['erf2inv(0.0, 0.0)', 'erf2inv(0.0, 1.0)', 'erf2inv(1, 0.0)', 'erf2inv(1.0, 0.0)', 'erf2inv(x, oo)', 'erf2inv(nan, x)', 'erf2inv(x, nan)', 'erf2inv(0, 1)'].map((e) => String(P(e)))).toEqual([
+      '0', 'oo', '1', '1.00000000000000', 'erfinv(x)', 'nan', 'nan', 'oo',
+    ]);
+    expect(() => P('erf2inv(0.0, 1.5)')).toThrow('erfinv(x) is defined only for -1 <= x <= 1');
+    // SymPy has no numeric erf2inv (it keeps erf2inv(0.5, 0.3)); symjs evaluates erfinv(erf(x) + y) where
+    // erf(x) + y is in [-1, 1] (mpmath erfinv(erf(0.5) + 0.3) = 0.949146424383584) and keeps the call
+    // outside, where there is no real value
+    expect(String(P('erf2inv(0.5, 0.3)'))).toBe('0.949146424383584');
+    expect(String(P('erf2inv(0.5, 0.5)'))).toBe('erf2inv(0.5, 0.5)');
+    expect(String(evalf(P('erf2inv(1/2, 1)')))).toBe('erf2inv(1/2, 1)');
+    expect(() => toComplex(erf2inv(x, y), { x: 0.1, y: 0.95 })).toThrow(RangeError);
+    expect(() => toComplex(erf2inv(x, y), { x: 0.5, y: -1.6 })).toThrow(RangeError);
+    // mpmath erfinv(1) = inf, erfinv(-1) = -inf: SymPy erfinv(1.0) = oo, erfinv(-1.0) = -oo, erfcinv(0.0) = oo.
+    // SymPy keeps erfcinv(2.0), whose value is the limit -oo (erfcinv(2) = -oo in SymPy)
+    expect(['erfinv(1.0)', 'erfinv(-1.0)', 'erfcinv(0.0)', 'erfcinv(2.0)'].map((e) => String(P(e)))).toEqual(['oo', '-oo', 'oo', '-oo']);
+  });
+  it('floor and ceiling of sums with Float terms and of numbers without an arbitrary-precision value', () => {
+    // SymPy 1.14: floor(x + 3.0) = floor(x) + 3, floor(x + 2.0*I) = floor(x) + 2*I, floor(x + 2.5*I) stays;
+    // SymPy floor(stieltjes(1)) = -1, which symjs keeps (no numeric stieltjes)
+    expect(['floor(x + 3.0)', 'floor(x + 2.0*I)', 'floor(x + 2.5*I)'].map((e) => String(P(e)))).toEqual(['floor(x) + 3', 'floor(x) + 2*I', 'floor(x + 2.5*I)']);
+    expect(String(sj.floor(sj.stieltjes(1)))).toBe('floor(stieltjes(1))');
+    // SymPy Max(stieltjes(1), 1) = 1 (stieltjes(1) = -0.0728...); symjs keeps it
+    expect(String(Max(sj.stieltjes(1), 1))).toBe('Max(1, stieltjes(1))');
+  });
+  it('floor and ceiling of Floats and infinities', () => {
+    // SymPy floor(3.0) = 3, ceiling(2.0*I + 1/2) = 1 + 2*I, floor(2.5) = 2, ceiling(-2.5) = -2,
+    // floor(oo + I) = oo + I, floor(oo*I) = oo*I, floor(zoo) = zoo, ceiling(nan) = nan, ceiling(-oo) = -oo
+    expect(String(sj.floor(new Float(3)))).toBe('3');
+    expect(String(parse('ceiling(2.0*I + 1/2)'))).toBe('1 + 2*I');
+    expect(String(parse('floor(2.5)'))).toBe('2');
+    expect(String(parse('ceiling(-2.5)'))).toBe('-2');
+    expect(String(parse('floor(oo + I)'))).toBe('oo + I');
+    expect(String(parse('floor(oo*I)'))).toBe('oo*I');
+    expect(String(parse('floor(zoo)'))).toBe('zoo');
+    expect(String(parse('ceiling(nan)'))).toBe('nan');
+    expect(String(parse('ceiling(-oo)'))).toBe('-oo');
+    // SymPy floor(oo + I/2) = oo + I/2, ceiling(-oo + 3*I/2) = -oo + 3*I/2 (an infinite argument is its own floor)
+    expect(String(parse('floor(oo + I/2)'))).toBe('oo + I/2');
+    expect(String(parse('ceiling(-oo + 3*I/2)'))).toBe('-oo + 3*I/2');
   });
   it('erfc for large arguments (continued fraction)', () => {
     // mpmath erfc(3), erfc(6)

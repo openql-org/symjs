@@ -8,8 +8,8 @@
  */
 
 import type { Expr } from '../core/nodes';
-import { Rational, Special, impl, isNum } from '../core/nodes';
-import { at } from '../core/guard';
+import { Special, impl, isNum } from '../core/nodes';
+import { at, expectType } from '../core/guard';
 import { ordered } from '../core/match';
 
 /** Shape of SymPy sets (sets/ is a higher layer): the class name and the arguments. */
@@ -76,22 +76,18 @@ export function setArgsOrdered(args: readonly Expr[]): Expr[] {
 /** The ellipsis in the elements a printer shows for a set or a sequence. */
 export const DOTS = 'dots';
 
+/** Shape of a Range (sets/ is a higher layer): what its printers show. */
+interface RangeLike {
+  printForm(most: number): { elements: (Expr | typeof DOTS)[] } | { symbolic: Expr[] };
+}
+const isRangeLike = (e: unknown): e is Expr & RangeLike => typeof e === 'object' && e !== null && 'printForm' in e;
+
 /**
- * The elements SymPy's printers show for a Range (`_print_Range` of the
- * LaTeX and pretty printers): all of them up to `most` elements (3 in
- * LaTeX, 4 in the pretty form), else the first two, an ellipsis and the
- * last one; an infinite end becomes an ellipsis. (A Range here has integer
- * or infinite start and stop and a stop that is the first value not taken.)
+ * What SymPy's printers show for a Range (`_print_Range` of the LaTeX and pretty printers): the
+ * elements, all of them up to `most` (3 in LaTeX, 4 in the pretty form), else the first two, an
+ * ellipsis and the last one, an infinite end being an ellipsis; or the arguments of the
+ * Range(...) form of a symbolic Range whose elements are unknown.
  */
-export function rangePrintset(e: Expr, most: number): (Expr | typeof DOTS)[] {
-  const [start, stop, step] = [at(e.args, 0), at(e.args, 1), at(e.args, 2)];
-  const int = (x: Expr): bigint => (x instanceof Rational ? x.p : 0n);
-  const [a, b, d] = [int(start), int(stop), int(step)];
-  const num = (v: bigint) => Rational.of(v);
-  if (start instanceof Special && stop instanceof Special) return d > 0n ? [DOTS, num(-1n), num(0n), num(1n), DOTS] : [DOTS, num(1n), num(0n), num(-1n), DOTS];
-  if (start instanceof Special) return [DOTS, num(b - 2n * d), num(b - d)];
-  if (stop instanceof Special) return [start, num(a + d), DOTS];
-  const size = (b - a) / d;
-  if (size <= BigInt(most)) return Array.from({ length: Number(size) }, (_, k) => num(a + BigInt(k) * d));
-  return [start, num(a + d), DOTS, num(b - d)];
+export function rangePrintForm(e: Expr, most: number): { elements: (Expr | typeof DOTS)[] } | { symbolic: Expr[] } {
+  return expectType(e, isRangeLike, 'Range').printForm(most);
 }

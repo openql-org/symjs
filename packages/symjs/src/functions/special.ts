@@ -20,6 +20,7 @@ import {
   Constant,
   Dummy,
   ExtensionExpr,
+  Float,
   Fn,
   Mul,
   Rational,
@@ -31,7 +32,7 @@ import {
 import { numAdd, numMul } from '../core/num';
 import { derivative } from '../core/undef';
 import { SubsNode } from '../core/subsnode';
-import { mpFns } from '../numeric/mpeval';
+import { evalMp, MpSpecialValue, mpFns } from '../numeric/mpeval';
 import * as F from '../numeric/mpf';
 import * as M from '../numeric/mpfun';
 import type { Mpc } from '../numeric/mpfun';
@@ -116,14 +117,18 @@ function evalFactorial(n: Expr): Expr | undefined {
   return undefined;
 }
 
+const FACTORIAL2_DOMAIN = 'argument must be nonnegative integer or negative odd integer';
+
 function evalFactorial2(n: Expr): Expr | undefined {
+  // SymPy factorial2.eval: a number that is not a nonnegative or negative odd integer is a ValueError
+  if ((isNum(n) && !isInt(n)) || (n instanceof Special && n.name !== 'zoo')) throw new RangeError(FACTORIAL2_DOMAIN);
   if (!isInt(n)) return undefined;
   if (n.p >= 0n) {
     let r = 1n;
     for (let i = n.p; i > 1n; i -= 2n) r *= i;
     return R(r);
   }
-  if (n.p % 2n === 0n) return S.ComplexInfinity;
+  if (n.p % 2n === 0n) throw new RangeError(FACTORIAL2_DOMAIN);
   // negative odd: n!! = (n + 2)!! / (n + 2)
   let v: Rational = S.One;
   for (let k = -1n; k > n.p; k -= 2n) v = qMul(v, R(1n, k));
@@ -567,9 +572,17 @@ function evalErf2(x: Expr, y: Expr): Expr | undefined {
 }
 
 function evalErf2inv(x: Expr, y: Expr): Expr | undefined {
-  if (y instanceof Rational && y.isZero) return x;
-  if (x instanceof Rational && x.isZero) return fnN('erfinv', y);
+  // SymPy erf2inv.eval (is_zero holds for 0.0 too)
+  if (isSpecial(x, 'nan') || isSpecial(y, 'nan')) return S.NaN;
+  const x0 = isZero(x) === true;
+  const y0 = isZero(y) === true;
+  if (x0 && y0) return S.Zero;
+  if (x0 && y instanceof Rational && y.isOne) return S.Infinity;
+  if (x instanceof Rational && x.isOne && y0) return S.One;
+  if (x0) return fnN('erfinv', y);
   if (isOo(x)) return fnN('erfcinv', neg(y));
+  if (y0) return x;
+  if (isOo(y)) return fnN('erfinv', x);
   return undefined;
 }
 
@@ -687,23 +700,81 @@ function evalFloorCeil(name: 'floor' | 'ceiling', x: Expr): Expr | undefined {
     if (name === 'floor' || x.isInteger) return R(f);
     return R(f + 1n);
   }
+  if (x instanceof Special) return x;
+  // SymPy Float.floor / Float.ceiling: the exact integer of the binary value
+  if (x instanceof Float) return R(name === 'floor' ? F.floor(x.mpf) : -F.floor(F.neg(x.mpf)));
   if (isIntegerQ(x) === true) return x;
   if (x instanceof Add) {
-    // SymPy floor/ceiling.eval: integer terms and imaginary terms with an integer imaginary part come out
-    const isIntPart = (a: Expr): boolean => isIntegerQ(a) === true || (isReal(a) === false && isIntegerQ(mul(-1, S.I, a)) === true);
-    const ints = x.args.filter(isIntPart);
-    if (ints.length && ints.length < x.args.length) {
-      return add(...ints, fnN(name, add(...x.args.filter((a) => !isIntPart(a)))));
+    // SymPy floor/ceiling.eval: integer terms and imaginary terms with an integer imaginary part
+    // (an integer-valued Float counts as its integer) come out
+    const ints = x.args.map(intTerm);
+    if (ints.some((t) => t !== undefined) && ints.some((t) => t === undefined)) {
+      return add(...ints.filter((t) => t !== undefined), fnN(name, add(...x.args.filter((_, k) => ints[k] === undefined))));
     }
   }
-  const v = numericComplex(x);
-  if (v !== undefined && Number.isFinite(v.re) && Number.isFinite(v.im)) {
-    const round = name === 'floor' ? Math.floor : Math.ceil;
-    // guard against floating point at integer boundaries
-    const clear = (u: number) => Math.abs(u - Math.round(u)) > 1e-9;
-    if (clear(v.re) && (v.im === 0 || clear(v.im))) return add(R(BigInt(round(v.re))), mul(S.I, R(BigInt(round(v.im)))));
+  return x.freeSymbols().size === 0 ? integerPart(x, name) : undefined;
+}
+
+/** An integer-valued Float as its Integer. */
+const intValued = (a: Expr): Expr | undefined =>
+  isIntegerQ(a) === true ? a : a instanceof Float && F.sub(a.mpf, F.fromInt(F.floor(a.mpf))).man === 0n ? R(F.floor(a.mpf)) : undefined;
+
+/** A term with an integer value, or I times an integer (SymPy RoundFunction.eval intof), else undefined. */
+function intTerm(a: Expr): Expr | undefined {
+  const i = intValued(a);
+  if (i !== undefined) return i;
+  if (isReal(a) !== false) return undefined;
+  const w = intValued(mul(-1, S.I, a));
+  return w === undefined ? undefined : mul(S.I, w);
+}
+
+/** The largest magnitude (in bits) of a number whose integer part is computed. */
+const INTEGER_PART_MAX_BITS = 100000;
+
+/**
+ * The floor or ceiling of the real and imaginary parts of a number without
+ * free symbols, or undefined when it cannot be evaluated (SymPy
+ * get_integer_part): evaluated with enough bits for the integer part plus a
+ * margin, the margin doubling until two successive evaluations agree and the
+ * distance of each part to its nearest integer is resolved. A part that stays
+ * within the error of an integer up to the largest margin is left unevaluated
+ * (SymPy decides it with equals(0): floor(sin(1)**2 + cos(1)**2) = 1).
+ */
+function integerPart(x: Expr, name: 'floor' | 'ceiling'): Expr | undefined {
+  try {
+    const v0 = evalMp(x, 30);
+    const size = Math.max(F.mag(v0[0]), F.mag(v0[1]), 0);
+    if (size > INTEGER_PART_MAX_BITS) return undefined;
+    let prev = v0;
+    for (let margin = 32; margin <= 1024; margin *= 2) {
+      const wp = size + margin;
+      const v = evalMp(x, wp);
+      // an imaginary part that is exactly zero (real arithmetic) is 0; a real part that cancels to an
+      // integer is not decided (SymPy decides it with equals(0))
+      const re = partOf(v[0], prev[0], wp, name);
+      const im = F.isZero(v[1]) && F.isZero(prev[1]) ? 0n : partOf(v[1], prev[1], wp, name);
+      if (re !== undefined && im !== undefined) return add(R(re), mul(S.I, R(im)));
+      prev = v;
+    }
+    return undefined;
+  } catch (err) {
+    // SymPy RoundFunction.eval: an infinite argument is its own floor and ceiling
+    // (else a function without an arbitrary-precision evaluation)
+    return err instanceof MpSpecialValue ? x : undefined;
   }
-  return undefined;
+}
+
+/**
+ * floor/ceiling of one part p evaluated at wp bits, or undefined when it is within the error of an
+ * integer: the error is estimated by the change from the value q at the previous precision (a sum
+ * that cancels loses bits that the magnitude of p does not show).
+ */
+function partOf(p: F.Mpf, q: F.Mpf, wp: number, name: 'floor' | 'ceiling'): bigint | undefined {
+  const n = F.floor(F.add(p, { man: 1n, exp: -1n }));
+  const r = F.sub(p, F.fromInt(n));
+  const err = Math.max(F.mag(F.sub(p, q)) + 4, F.mag(p) - wp + 8);
+  if (F.isZero(r) || F.mag(r) < err) return undefined;
+  return name === 'floor' ? (F.sign(r) < 0 ? n - 1n : n) : F.sign(r) > 0 ? n + 1n : n;
 }
 
 function evalAtan2(y: Expr, x: Expr): Expr | undefined {
@@ -1292,7 +1363,12 @@ const SPECS: Partial<Record<FnName, Spec>> = {
         ? exp(add(neg(pow(x, 2)), pow(fnN('erf2inv', x, y), 2)))
         : mul(S.Half, sqrt(S.Pi), exp(pow(fnN('erf2inv', x, y), 2))),
     ),
-    numeric: binary((x, y) => cx(erfinvReal(erfReal(x.re) + y.re))),
+    numeric: binary((x, y) => {
+      // erf(x) + y outside [-1, 1] has no value (SymPy keeps erf2inv unevaluated)
+      const v = erfReal(x.re) + y.re;
+      if (Math.abs(v) > 1) throw new RangeError('erf2inv: erf(x) + y outside [-1, 1]');
+      return cx(erfinvReal(v));
+    }),
   },
   LambertW: {
     eval: evalLambertW,

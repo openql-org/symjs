@@ -11,7 +11,8 @@
 
 import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Derivative, Dummy, I, Integral, Mul, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
+import { Derivative, Dummy, I, Integral, Mul, Pow, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
+import { asNumerDenom } from '../core/methods';
 import { at, cast, defined, first, getOrThrow } from '../core/guard';
 import { isReal } from '../core/assumptions';
 import { SymFunction } from '../core/undef';
@@ -20,13 +21,16 @@ import { xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { doit } from '../calculus/doit';
 import { Eq } from '../core/logic';
-import { cos, im, re, sin } from '../functions/elementary';
+import { cos, im, log, re, sin } from '../functions/elementary';
+import { factor } from '../polys/sympoly';
+import { cancel } from '../simplify/rational';
+import { separatevars } from '../simplify/separatevars';
 import { expand } from '../simplify/expand';
 import { simplify } from '../simplify/simplify';
 import { integrate } from '../integrals/integrate';
 import { Matrix } from '../matrices/matrix';
 import { jordanForm } from '../matrices/linalg';
-import { linearEqToMatrix } from './solve';
+import { linearEqToMatrix, solve } from './solve';
 
 /** The single-equation dsolve, registered by solvers/ode.ts (which imports this module). */
 let dsolveOne: (eq: Expr, f: Expr) => Expr | Expr[] = () => {
@@ -38,6 +42,7 @@ export function registerSingleOdeSolver(f: (eq: Expr, fx: Expr) => Expr | Expr[]
 }
 
 const isZero = (e: Expr) => e instanceof Rational && e.isZero;
+const isOne = (e: Expr) => e instanceof Rational && e.p === 1n && e.q === 1n;
 
 /**
  * SymPy dsolve([eq1, eq2, ...], [f(t), g(t), ...]): a list of solutions
@@ -68,7 +73,10 @@ function dsolveSystemAll(eqsIn: readonly ExprLike[], funcsIn?: readonly UndefFn[
   ];
   const sub = eqs.map((e) => xreplace(e, reps));
   const lin = linearEqToMatrix(sub, [...ds, ...us]);
-  if (!lin) return triangularSystem(eqs, funcs);
+  if (!lin) {
+    const nl = n === 2 ? nonlinear2(eqs, [first(funcs), at(funcs, 1)], t) : undefined;
+    return nl ?? triangularSystem(eqs, funcs);
+  }
   const [M, rhs] = lin;
   const Md = Matrix.fromFunction(n, n, (i, j) => M.get(i, j));
   const Mu = Matrix.fromFunction(n, n, (i, j) => M.get(i, n + j));
@@ -192,6 +200,119 @@ function linear2VariableCoefficients(A: Matrix, funcs: readonly UndefFn[], t: Sy
     Eq(at(funcs, 0), add(mul(C1, x0), mul(C2, x0, Ig))),
     Eq(at(funcs, 1), add(mul(C1, y0), mul(C2, add(mul(y0, Ig), mul(Fraw, pow(x0, -1)))))),
   ];
+}
+
+// ---------------------------------------------------------------------------
+// nonlinear systems of two first-order equations (port of SymPy
+// solvers/ode/ode.py check_nonlinear_2eq_order1 and _nonlinear_2eq_order1_type1..5)
+// ---------------------------------------------------------------------------
+
+const C = (i: number): Sym => new Sym(`C${i}`);
+
+/** The factor x**n of a product (n free of x and y): [n, the other factors]. */
+function powerFactor(r: Expr, x: Expr, y: Expr, isPow: (g: Expr) => Expr | undefined): [Expr, Expr] {
+  const fs = r instanceof Mul ? r.args : [r];
+  let n: Expr = S.Zero;
+  const rest: Expr[] = [];
+  for (const g of fs) {
+    const k = isPow(g);
+    if (k !== undefined && !k.has(x) && !k.has(y)) n = add(n, k);
+    else rest.push(g);
+  }
+  return [n, mul(...rest)];
+}
+
+/** dsolve of eq for f, the solution's own constant named C2 (C1 is the first integral's). */
+function solveWithC1(eq: Expr, f: UndefFn): Expr {
+  const d = new Dummy('C1');
+  const r = dsolveOne(xreplace(eq, [[C(1), d]]), f);
+  const rhs = cast(first([r].flat()), Rel, 'solution').rhs;
+  return xreplace(xreplace(rhs, [[C(1), C(2)]]), [[d, C(1)]]);
+}
+
+/**
+ * SymPy's types of x' = f(x, y, t), y' = g(x, y, t) and the Clairaut type 5;
+ * undefined when none matches or the type's integrals or equations are not solved.
+ */
+function nonlinear2(eqs: readonly Expr[], [X, Y]: [UndefFn, UndefFn], t: Sym): Expr[][] | undefined {
+  const dX = new Derivative([X, t, S.One]);
+  const dY = new Derivative([Y, t, S.One]);
+  const u = new Dummy('u');
+  const v = new Dummy('v');
+  const uv = (e: Expr): Expr => xreplace(e, [[X, u], [Y, v]]);
+  const free = (e: Expr): boolean => !e.has(t) && !e.has(X) && !e.has(Y);
+  try {
+    // type 5 (Clairaut): x = t*x' + F(x', y'), y = t*y' + G(x', y')
+    const e0 = expand(at(eqs, 0));
+    const e1 = expand(at(eqs, 1));
+    for (const sign of [1, -1]) {
+      const F = add(mul(sign, e0), mul(-1, t, dX), X);
+      const G = add(mul(sign, e1), mul(-1, t, dY), Y);
+      const c = [C(1), C(2)];
+      const at0 = (e: Expr): Expr => xreplace(e, [[dX, at(c, 0)], [dY, at(c, 1)]]);
+      if (free(at0(F)) && free(at0(G))) return [[Eq(X, add(mul(at(c, 0), t), at0(F))), Eq(Y, add(mul(at(c, 1), t), at0(G)))]];
+    }
+    // x' = R0, y' = R1
+    const rhs = (e: Expr, d: Expr, other: Expr): Expr | undefined => {
+      const c = diff(e, d);
+      if (c.has(d) || isZero(c)) return undefined;
+      const r = expand(mul(-1, add(e, mul(-1, c, d)), pow(c, -1)));
+      return r.has(other) ? undefined : r;
+    };
+    const R0 = rhs(e0, dX, dY);
+    const R1 = rhs(e1, dY, dX);
+    if (!R0 || !R1) return undefined;
+    const C1 = C(1);
+    const C2 = C(2);
+    // the solutions for y (an invariant error, caught below, when solve finds none)
+    const pairs = (xs: Expr[], phi: (s: Expr) => Expr): Expr[][] => [[defined(xs[0], 'solution'), ...xs.slice(1)].flatMap((s0) => [Eq(X, phi(s0)), Eq(Y, s0)])];
+    // type 1: x' = x**n*f, y' = g*f with g free of x
+    const [n1, f1] = powerFactor(factor(R0), X, Y, (g) => (g.key === X.key ? S.One : g instanceof Pow && g.base.key === X.key ? g.exp : undefined));
+    const g1 = mul(R1, pow(f1, -1));
+    if (!g1.has(X) && !uv(g1).has(t) && !uv(f1).has(t)) {
+      const gv = uv(g1);
+      const ig = integrate(pow(gv, -1), v);
+      const phi = isOne(n1) ? mul(C1, exp(ig)) : pow(add(C1, mul(add(1, mul(-1, n1)), ig)), pow(add(1, mul(-1, n1)), -1));
+      const sols = solve(add(integrate(pow(mul(gv, xreplace(uv(f1), [[u, phi]])), -1), v), mul(-1, t), mul(-1, C2)), v);
+      return pairs(sols, (s0) => xreplace(phi, [[v, s0]]));
+    }
+    // type 2: x' = exp(n*x)*f, y' = g*f with g free of x
+    const [n2, f2] = powerFactor(factor(R0), X, Y, (g) => (g instanceof Pow && g.base.key === S.E.key && g.exp.has(X) ? cancel(mul(g.exp, pow(X, -1))) : undefined));
+    const g2 = mul(R1, pow(f2, -1));
+    // (SymPy's matcher needs the factor exp(n*x), n != 0; without it the system is of type 3)
+    if (!isZero(n2) && !g2.has(X) && !uv(g2).has(t) && !uv(f2).has(t)) {
+      const gv = uv(g2);
+      const ig = integrate(pow(gv, -1), v);
+      const phi = mul(-1, pow(n2, -1), log(add(C1, mul(-1, n2, ig))));
+      const sols = solve(add(integrate(pow(mul(gv, xreplace(uv(f2), [[u, phi]])), -1), v), mul(-1, t), mul(-1, C2)), v);
+      return pairs(sols, (s0) => xreplace(phi, [[v, s0]]));
+    }
+    const F = uv(R0);
+    const G = uv(R1);
+    // type 4: F/G = f1(u)*g1(v)/(f2(u)*g2(v)), for t-dependent equations
+    const [num, den] = asNumerDenom(cancel(mul(F, pow(G, -1))));
+    const sn = separatevars(num, { dict: true, symbols: [u, v] });
+    const sd = separatevars(den, { dict: true, symbols: [u, v] });
+    if (F.has(t) && sn instanceof Map && sd instanceof Map && ![num, den].some((e) => e.has(t))) {
+      const F1 = mul(getOrThrow(sn, u), getOrThrow(sn, 'coeff'));
+      const G1 = getOrThrow(sn, v);
+      const F2 = mul(getOrThrow(sd, u), getOrThrow(sd, 'coeff'));
+      const G2 = getOrThrow(sd, v);
+      const phi = mul(F, pow(num, -1));
+      const first0 = add(integrate(mul(F2, pow(F1, -1)), u), mul(-1, integrate(mul(G1, pow(G2, -1)), v)), mul(-1, C1));
+      // y from y' = f2(u)*g2(y)*phi with u from the first integral, and x from the first integral at that y
+      // (SymPy solves for x by its own equation too, with a constant of its own, which does not satisfy the
+      // system: x/y is not constant then)
+      const us = solve(first0, u);
+      return [defined(us[0], 'solution'), ...us.slice(1)].map((s0) => {
+        const ysol = solveWithC1(add(diff(Y, t), mul(-1, xreplace(xreplace(mul(F2, G2, phi), [[u, s0]]), [[v, Y]]))), Y);
+        return [Eq(X, xreplace(s0, [[v, ysol]])), Eq(Y, ysol)];
+      });
+    }
+  } catch {
+    // an integral or an equation the type needs is not solved
+  }
+  return undefined;
 }
 
 /**

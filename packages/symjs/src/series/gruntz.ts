@@ -14,17 +14,17 @@
 
 import { isNegative, isPositive } from '../core/assumptions';
 import { NotImplementedError } from '../core/errors';
-import { at, cast, defined, first } from '../core/guard';
+import { at, cast, defined, first, last } from '../core/guard';
 import type { Expr, Sym } from '../core/nodes';
-import { Add, Constant, Dummy, Fn, Mul, Pow, Rational, S, Special, impl } from '../core/nodes';
+import { Add, Constant, Dummy, Fn, Mul, Pow, Rational, S, Special, UndefFn, impl } from '../core/nodes';
 import { add, exp, mul, pow } from '../core/ops';
 import { mapBottomUp, xreplace } from '../core/traverse';
 import { fn, log } from '../functions/elementary';
 import { powdenest, powsimp } from '../simplify/powsimp';
 import { together } from '../simplify/rational';
-import { expandMul } from '../simplify/expand';
+import { expand, expandMul } from '../simplify/expand';
 import { coeff } from '../core/methods';
-import { Expander, isZeroCoeff } from './puiseux';
+import { Expander, SCALED_BESSELI, SCALED_BESSELK, isZeroCoeff } from './puiseux';
 
 /** Functions whose expansion at an infinite argument is known (or that the expansion rejects). */
 const TAME = new Set(['sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch', 'asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'loggamma', 'polygamma', 'abs', 're', 'im', 'arg']);
@@ -34,6 +34,8 @@ const AT_ZERO = new Set(['sin', 'cos', 'tan', 'sinh', 'cosh', 'tanh', 'asin', 'a
 
 /** The algorithm cannot decide the limit (SymPy raises PoleError, ValueError or NotImplementedError). */
 export class GruntzError extends NotImplementedError {}
+/** The sign of an mrv element's exponent is not known: SymPy raises NotImplementedError from limit(). */
+export class SignUnknownError extends GruntzError {}
 
 const isExp = (e: Expr): e is Pow => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
 /** A power that is not exp(...). */
@@ -100,6 +102,7 @@ class SubsSet {
 /** Limits at infinity by the Gruntz algorithm; one instance per limit (it bounds the work). */
 export class Gruntz {
   private calls = 0;
+  private readonly limits = new Map<string, Expr>();
 
   constructor(private readonly budget = 3000) {}
 
@@ -194,6 +197,11 @@ export class Gruntz {
       if (l2.length !== 1) throw new GruntzError('mrv of a function of several arguments in x');
       return [first(l2)[0], fn(e.name, l.map(([, a]) => a))];
     }
+    if (e instanceof UndefFn && (e.name === SCALED_BESSELI || e.name === SCALED_BESSELK)) {
+      // (the Bessel helpers of rewriteTractable: their order nu is free of x)
+      const [s, expr] = this.mrv(last(e.args), x);
+      return [s, new UndefFn(e.name, [first(e.args), expr])];
+    }
     throw new GruntzError(`cannot compute the mrv set of ${e.toString()}`);
   }
 
@@ -223,7 +231,26 @@ export class Gruntz {
   limitinf(eIn: Expr, x: Sym): Expr {
     this.tick();
     if (!eIn.has(x)) return eIn;
-    const e = powdenest(rewriteTractable(eIn, x));
+    // (the limits are cached like in SymPy: comparisons of mrv elements ask for the same limits again)
+    const key = `${eIn.key}|${x.key}`;
+    const known = this.limits.get(key);
+    if (known !== undefined) return known;
+    const r = this.limitinfUncached(eIn, x);
+    this.limits.set(key, r);
+    return r;
+  }
+
+  /** limitinf, or undefined when the algorithm cannot decide it. */
+  private tryLimitinf(e: Expr, x: Sym): Expr | undefined {
+    try {
+      return this.limitinf(e, x);
+    } catch {
+      return undefined;
+    }
+  }
+
+  private limitinfUncached(eIn: Expr, x: Sym): Expr {
+    const e = powdenest(rewriteTractable(eIn, x, (g) => this.tryLimitinf(g, x)));
     const [c0, e0] = this.mrvLeadterm(e, x);
     const sig = this.sign(e0, x);
     if (sig instanceof Rational && sig.isOne) return S.Zero;
@@ -289,7 +316,7 @@ export class Gruntz {
     let sig: Expr = S.Zero;
     for (const [g] of omega) {
       sig = this.sign(expectExp(g).exp, x);
-      if (!(sig instanceof Rational && (sig.isOne || (sig.p === -1n && sig.q === 1n)))) throw new GruntzError('the result depends on a sign');
+      if (!(sig instanceof Rational && (sig.isOne || (sig.p === -1n && sig.q === 1n)))) throw new SignUnknownError(`Result depends on the sign of ${sig.toString()}`);
     }
     const g = expectExp(first(omega.slice(-1))[0]);
     const up = sig instanceof Rational && sig.isOne;
@@ -302,7 +329,8 @@ export class Gruntz {
       if (c instanceof Rational) denom = lcm(denom, c.q);
       const rw = rewrites.get(v.key);
       const arg = rw === undefined ? fe : expectExp(rw).exp;
-      o2.push([v, mul(exp(add(arg, mul(-1, c, g.exp))), pow(wsym, c))]);
+      // (expanded like in SymPy: the parts of the same class cancel, x*log(x + 1) - (x + 1)*log(x))
+      o2.push([v, mul(exp(expand(add(arg, mul(-1, c, g.exp)))), pow(wsym, c))]);
     }
     let f = powsimp(e, { deep: true, combine: 'exp' });
     for (const s of o2) f = xreplace(f, [s]);
@@ -424,9 +452,37 @@ function constSign(e: Expr): Expr {
  * Functions written with tractable ones for the expansion at infinity (SymPy rewrite('tractable')):
  * gamma(z) = exp(loggamma(z)), whose argument tends to oo.
  */
-function rewriteTractable(e: Expr, x: Sym): Expr {
+/** The hyperbolic functions in terms of sinh and cosh. */
+const HYPERBOLIC: Partial<Record<string, (sh: Expr, ch: Expr) => Expr>> = {
+  sinh: (sh) => sh,
+  cosh: (_sh, ch) => ch,
+  tanh: (sh, ch) => mul(sh, pow(ch, -1)),
+  coth: (sh, ch) => mul(ch, pow(sh, -1)),
+  sech: (_sh, ch) => pow(ch, -1),
+  csch: (sh) => pow(sh, -1),
+};
+
+function rewriteTractable(e: Expr, x: Sym, limitinf: (g: Expr) => Expr | undefined): Expr {
   return mapBottomUp(e, (a) => {
     if (a instanceof Fn && a.has(x)) {
+      // besseli(nu, g) = exp(g)*_besseli(nu, g) and besselk(nu, g) = exp(-g)*_besselk(nu, g) for g -> oo
+      // (SymPy _eval_rewrite_as_tractable)
+      // hyperbolic functions of an argument tending to oo or -oo are exponentials (SymPy _eval_rewrite_as_tractable)
+      const hyp = HYPERBOLIC[a.name];
+      if (hyp !== undefined) {
+        const g = first(a.args);
+        const l = limitinf(g);
+        if (l === S.Infinity || l === S.NegativeInfinity) {
+          const [ep, em] = [exp(g), exp(mul(-1, g))];
+          const [sh, ch] = [mul(S.Half, add(ep, mul(-1, em))), mul(S.Half, add(ep, em))];
+          return hyp(sh, ch);
+        }
+      }
+      if ((a.name === 'besseli' || a.name === 'besselk') && !first(a.args).has(x) && limitinf(last(a.args)) === S.Infinity) {
+        const g = last(a.args);
+        const i = a.name === 'besseli';
+        return mul(exp(i ? g : mul(-1, g)), new UndefFn(i ? SCALED_BESSELI : SCALED_BESSELK, a.args));
+      }
       if (a.name === 'factorial') return exp(fn('loggamma', [add(first(a.args), 1)]));
       if (a.name === 'gamma') return exp(fn('loggamma', [first(a.args)]));
       // binomial(n, k) = gamma(n + 1)/(gamma(k + 1)*gamma(n - k + 1))

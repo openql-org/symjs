@@ -128,6 +128,31 @@ function invertFn(f: Fn | Pow, y: Expr, x: Sym): [Expr, Expr[]] | undefined {
 const MAX_DEPTH = 40;
 
 /** Solutions of f = 0 for x (without the final check). */
+/**
+ * Terms sum_i c_i*log(g_i) + b with logarithms of x (c*x counts as c*log(exp(x))) and rational
+ * c_i: [prod_i g_i**(L*c_i), L*b] with L the least common denominator of the c_i.
+ */
+function logSum(terms: readonly Expr[], x: Sym): [Expr, Expr] | undefined {
+  const logs: [Rational, Expr][] = [];
+  for (const t of terms.filter((u) => u.has(x))) {
+    const fs = t instanceof Mul ? t.args : [t];
+    const c = fs.filter((g) => !g.has(x));
+    const lf = fs.filter((g) => g.has(x));
+    const coeff = mul(...c);
+    const g = lf[0];
+    if (lf.length !== 1 || !(coeff instanceof Rational)) return undefined;
+    // c*x is c*log(exp(x))
+    if (g?.key === x.key) logs.push([coeff, exp(x)]);
+    else if (g instanceof Fn && g.name === 'log' && g.args.length === 1) logs.push([coeff, first(g.args)]);
+    else return undefined;
+  }
+  const L = logs.reduce((m, [c]) => (m * c.q) / gcdBig(m, c.q), 1n);
+  const scale = Rational.of(L);
+  return [mul(...logs.map(([c, g]) => pow(g, mul(c, scale)))), mul(scale, add(...terms.filter((u) => !u.has(x))))];
+}
+
+const gcdBig = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcdBig(b, a % b));
+
 function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   if (depth > MAX_DEPTH) throw new NotImplementedError('solve: recursion too deep');
   const f = f0;
@@ -211,6 +236,9 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   // a*sin(u) + b*cos(u) = 0  ->  tan(u) = -b/a
   const sc = sinCosLinear(num, x);
   if (sc) return sc;
+  // sum_i c_i*log(g_i) + b = 0 with rational c_i: prod_i g_i**(L*c_i) = exp(-L*b) (SymPy logcombine with force)
+  const lg = logSum(terms, x);
+  if (lg) return solveRaw(expandMul(add(lg[0], mul(-1, exp(mul(-1, lg[1]))))), x, depth + 1);
   throw new NotImplementedError(`solve: cannot solve ${f.toString()} for ${x.name}`);
 }
 

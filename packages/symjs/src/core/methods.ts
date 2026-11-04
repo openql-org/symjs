@@ -638,8 +638,9 @@ export function asNumerDenom(eIn: ExprLike): [Expr, Expr] {
     let ex = e.exp;
     const base = e.base;
     if (base instanceof Constant && base.name === 'E') {
-      // exp(x).as_numer_denom(): a negative exponent goes to the denominator
-      const neg = isNegativeQ(ex) === true || (ex instanceof Mul && isNegativeQ(ex) === undefined && isPositive(ex) === undefined && couldExtractMinusSign(ex));
+      // SymPy ExpBase.as_numer_denom: a negative exponent goes to the denominator, as does one that
+      // could extract a minus sign unless -ex is known negative (exp(-x - 1) = 1/exp(x + 1))
+      const neg = isNegativeQ(ex) === true || (isNegativeQ(mul(-1, ex)) !== true && couldExtractMinusSign(ex));
       return neg ? [S.One, pow(base, mul(-1, ex))] : [e, S.One];
     }
     let [n, d] = asNumerDenom(base);

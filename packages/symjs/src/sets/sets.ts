@@ -17,13 +17,13 @@ import { NotImplementedError } from '../core/errors';
 import type { Truth } from '../core/truth';
 import type { ExprLike } from '../core/nodes';
 import { Add, Constant, Expr, ExtensionExpr, Float, Mul, Rational, S, Special, Sym, impl } from '../core/nodes';
-import { add, mul, pow, sympify } from '../core/ops';
-import { Eq, Ge, Le, Lt } from '../core/logic';
+import { add, div, mul, neg, pow, sympify } from '../core/ops';
+import { Eq, Ge, Gt, Le, Lt } from '../core/logic';
 import { and, not, or } from '../core/boolalg';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { at, cast, expectType, first, getOrThrow } from '../core/guard';
 import { Max, Min } from '../functions/special';
-import { isIntegerQ, isReal } from '../core/assumptions';
+import { isIntegerQ, isNegative, isNonNegative, isPositive, isReal, isZero } from '../core/assumptions';
 import { polyCoefficients, rootsDict } from '../polys/poly';
 import { fn } from '../functions/elementary';
 import { couldExtractMinusSign } from '../core/ops';
@@ -246,18 +246,39 @@ export function finiteSet(...xs: ExprLike[]): SetExpr {
 // Range
 // ---------------------------------------------------------------------------
 
-/** The integers start, start + step, ... below stop (SymPy Range; start or stop may be infinite). */
+const INVALID_SYMBOLIC = 'Invalid method for symbolic Range';
+const hasSymbol = (e: Expr): boolean => e.freeSymbols().size > 0;
+const integerOrInf = (e: Expr): boolean => isInf(e) || isIntegerQ(e) === true;
+/**
+ * The sign of an infinite count (stop - start)/step: oo or -oo, or oo plus finite (integer)
+ * terms as SymPy's oo - i; undefined when the count is not known to be infinite.
+ */
+function infSign(e: Expr): 1 | -1 | undefined {
+  const terms = e instanceof Add ? e.args : [e];
+  const infs = terms.filter(isInf);
+  if (infs.length !== 1 || !terms.every((a) => isInf(a) || isIntegerQ(a) === true)) return undefined;
+  return isOo(first(infs)) ? 1 : -1;
+}
+/** SymPy is_extended_positive of a count. */
+const extPositive = (n: Expr): boolean => isPositive(n) === true || infSign(n) === 1;
+
+/**
+ * The integers start, start + step, ... below stop (SymPy Range). start or stop may be infinite,
+ * and start, stop and step may be symbolic (integer-valued) expressions, as in SymPy:
+ * Range(0, n, 1) prints as \text{Range}\left(n\right) and its size, inf and sup are only
+ * known when the assumptions tell.
+ */
 export class Range extends SetExpr {
   readonly args: readonly Expr[];
-  /** SymPy `Range(start, stop, step)` (EmptySet when empty). */
-  static of(start: ExprLike, stop: ExprLike, step: ExprLike = 1): SetExpr {
+  /** SymPy `Range(stop)` or `Range(start, stop, step)` (canonical, with Range(0, 0, 1) when empty). */
+  static of(start: ExprLike, stop?: ExprLike, step: ExprLike = 1): SetExpr {
     return range(start, stop, step);
   }
   /** @internal use Range.of() */
   constructor(
     readonly start: Expr,
     readonly stop: Expr,
-    readonly step: Rational,
+    readonly step: Expr,
   ) {
     super();
     this.args = [start, stop, step];
@@ -268,30 +289,215 @@ export class Range extends SetExpr {
   protected computeKey(): string {
     return `Range(${this.start.key},${this.stop.key},${this.step.key})`;
   }
+  /** Known to be empty (the canonical empty Range(0, 0, 1)). */
   get isEmpty(): boolean {
     return this.start.key === this.stop.key;
+  }
+  /** SymPy is_empty: true, false, or 'unknown' when the assumptions do not tell. */
+  get isEmptyQ(): Truth {
+    try {
+      return isZero(this.size) ?? 'unknown';
+    } catch {
+      return 'unknown';
+    }
+  }
+  /** SymPy size: the number of elements (oo for an infinite Range); a RangeError when unknown. */
+  get size(): Expr {
+    if (this.isEmpty) return S.Zero;
+    const n = this.count();
+    if (infSign(n) !== undefined) return S.Infinity;
+    if (isNonNegative(n) === true && this.args.every((a) => isIntegerQ(a) === true)) return impl.abs(fn('floor', [n]));
+    throw new RangeError(INVALID_SYMBOLIC);
+  }
+  /** SymPy is_finite_set. */
+  get isFiniteSet(): boolean {
+    if (isIntegerQ(this.start) === true && isIntegerQ(this.stop) === true) return true;
+    return !(this.size instanceof Special);
+  }
+  /** SymPy reversed: the same elements in the opposite order. */
+  get reversed(): Range {
+    if (hasSymbol(this) && !(extPositive(this.count()) && this.args.every(integerOrInf))) throw new RangeError('invalid method for symbolic range');
+    if (this.isEmpty) return this;
+    return new Range(add(this.stop, neg(this.step)), add(this.start, neg(this.step)), neg(this.step));
+  }
+  /**
+   * SymPy r[i] for an integer index (0 and -1 are the ends; another index needs a known size).
+   * A RangeError when the Range is symbolic and the element unknown, or the index out of range.
+   */
+  at(i: number): Expr {
+    if (this.isEmpty) throw new RangeError('Range index out of range');
+    if (!(this.args.every(integerOrInf) && extPositive(this.count()))) throw new RangeError(INVALID_SYMBOLIC);
+    const ooslice = 'cannot slice from the end with an infinite value';
+    if (i === 0) {
+      if (isInf(this.start)) throw new RangeError(ooslice);
+      return this.start;
+    }
+    if (i === -1) {
+      if (isInf(this.stop)) throw new RangeError(ooslice);
+      return add(this.stop, neg(this.step));
+    }
+    const n = this.size;
+    const rv = add(i < 0 ? this.stop : this.start, mul(i, this.step));
+    if (rv instanceof Special) throw new RangeError(ooslice);
+    const val = div(add(rv, neg(this.start)), this.step);
+    // (SymPy tests n - val >= 0, which takes r[n] for an element: Range(i, i + 6, 2)[3] is i + 6
+    // there; the index must be below the size)
+    const rel = infSign(val) !== undefined || (isNonNegative(val) === true && isPositive(add(n, neg(val))) === true);
+    if (rel) return rv;
+    if (isNonNegative(val) === false || isPositive(add(n, neg(val))) === false) throw new RangeError('Range index out of range');
+    throw new RangeError(INVALID_SYMBOLIC);
+  }
+  /** (stop - start)/step. */
+  count(): Expr {
+    return div(add(this.stop, neg(this.start)), this.step);
   }
   printStr(p: (e: Expr) => string): string {
     return `Range(${p(this.start)}, ${p(this.stop)}, ${p(this.step)})`;
   }
+  /**
+   * What SymPy's LaTeX (most = 3) and pretty (most = 4) printers show: the elements, all of them
+   * up to `most`, else the first two, an ellipsis and the last one (an infinite end is an
+   * ellipsis); or, when the elements are unknown, the arguments of SymPy's
+   * \text{Range}(...) form: Range(stop), Range(start, stop) when the step is 1, else all three.
+   */
+  printForm(most: number): { elements: (Expr | 'dots')[] } | { symbolic: Expr[] } {
+    const D = 'dots' as const;
+    try {
+      if (isInf(this.start) && isInf(this.stop)) return { elements: isPositive(this.step) === true ? [D, S.NegOne, S.Zero, S.One, D] : [D, S.One, S.Zero, S.NegOne, D] };
+      if (isInf(this.start)) {
+        const last = this.at(-1);
+        return { elements: [D, add(last, neg(this.step)), last] };
+      }
+      const n = this.size;
+      if (isInf(this.stop)) return { elements: [this.start, add(this.start, this.step), D] };
+      if (n instanceof Rational) {
+        if (n.p <= BigInt(most)) return { elements: Array.from({ length: Number(n.p) }, (_, k) => add(this.start, mul(k, this.step))) };
+        return { elements: [this.start, add(this.start, this.step), D, this.at(-1)] };
+      }
+    } catch {
+      // the elements are unknown
+    }
+    const one = this.step.key === S.One.key;
+    if (this.start.key === S.Zero.key) return { symbolic: one ? [this.stop] : [...this.args] };
+    return { symbolic: one ? [this.start, this.stop] : [...this.args] };
+  }
 }
 
-/** Range(start, stop, step) with integer (or infinite) start and stop and a nonzero integer step. */
-export function range(startIn: ExprLike, stopIn: ExprLike, stepIn: ExprLike = 1): SetExpr {
-  const [start, stop, step] = [sympify(startIn), sympify(stopIn), sympify(stepIn)];
-  const intOrInf = (e: Expr) => isInf(e) || (e instanceof Rational && e.isInteger);
-  if (!intOrInf(start) || !intOrInf(stop) || !(step instanceof Rational && step.isInteger && !step.isZero)) {
-    throw new TypeError('Range: integer start, stop and nonzero step expected');
+/** SymPy bool(Range): false when known empty, true when known not empty, a RangeError when unknown. */
+function rangeNonEmpty(r: Range): boolean {
+  const z = isZero(add(r.stop, neg(r.start)));
+  if (z === undefined) throw new RangeError('cannot tell if Range is null or not');
+  return !z;
+}
+
+/** SymPy Range._inf / _sup (sign 1 / -1) of a nonempty Range. */
+function rangeEnd(r: Range, sign: 1 | -1): Expr {
+  if (!rangeNonEmpty(r)) throw new NotImplementedError(`(EmptySet)._${sign === 1 ? 'inf' : 'sup'}`);
+  const low = (): Expr => (sign === 1 ? r.start : add(r.stop, neg(r.step)));
+  const high = (): Expr => (sign === 1 ? add(r.stop, neg(r.step)) : r.start);
+  if (hasSymbol(r)) {
+    if (r.args.every(integerOrInf)) {
+      const dif = add(r.stop, neg(r.start));
+      if (isPositive(r.step) === true && isPositive(dif) === true) return low();
+      if (isNegative(r.step) === true && isNegative(dif) === true) return high();
+    }
+    throw new RangeError('invalid method for symbolic range');
   }
-  const c = cmpReal(start, stop);
-  // SymPy's empty Range is Range(0, 0, 1)
-  if (c === 0 || c === (step.isNegative ? -1 : 1)) return new Range(S.Zero, S.Zero, Rational.of(1));
-  // the stop of a finite range is the first value not taken (SymPy canonical form)
-  if (start instanceof Rational && stop instanceof Rational) {
-    const n = (stop.p - start.p + step.p - (step.isNegative ? -1n : 1n)) / step.p;
-    return new Range(start, Rational.of(start.p + n * step.p), step);
+  return isPositive(r.step) === true ? low() : high();
+}
+
+/** SymPy Range.as_relational(x). */
+function rangeAsRelational(r: Range, x: Expr): Expr {
+  const a0 = isInf(r.start) ? r.reversed.start : r.start;
+  const step = r.step;
+  const inSeq = Eq(Mod(add(x, neg(a0)), step), 0);
+  const ints = and(Eq(Mod(a0, 1), 0), Eq(Mod(step, 1), 0));
+  const n = r.count();
+  if (n instanceof Rational && n.isZero) return S.false;
+  if (n instanceof Rational && n.isOne) return and(Eq(x, a0), ints);
+  // (an integer is finite: -oo < x < oo holds, as SymPy's Lt evaluates for a finite x)
+  const finite = isIntegerQ(x) === true;
+  const lower = (lo: Expr): Expr => (isInf(lo) ? (finite ? S.true : Gt(x, lo)) : Ge(x, lo));
+  const upper = (hi: Expr): Expr => (isInf(hi) ? (finite ? S.true : Lt(x, hi)) : Le(x, hi));
+  let cond: Expr;
+  try {
+    cond = and(lower(inf(r)), upper(sup(r)));
+  } catch {
+    const [a, b] = [r.start, add(r.stop, neg(r.step))];
+    cond = or(and(Ge(step, 1), lower(a), upper(b)), and(Le(step, -1), isInf(a) ? Lt(x, a) : Le(x, a), isInf(b) ? Lt(b, x) : Ge(x, b)));
   }
-  return new Range(start, stop, step);
+  return and(inSeq, ints, cond);
+}
+
+/** SymPy Range._contains: true, false, a condition, or undefined (an unevaluated Contains). */
+function rangeContains(r: Range, x: Expr): Expr | undefined {
+  if (r.isEmpty) return S.false;
+  if (isInf(x)) return S.false;
+  if (isIntegerQ(x) !== true) return notInteger(x) ? S.false : undefined;
+  let n: Expr;
+  if (hasSymbol(r)) {
+    n = r.count();
+    if (!extPositive(n) || !r.args.every(integerOrInf)) return undefined;
+  } else n = r.size;
+  let ref: Expr;
+  if (!isInf(r.start)) ref = r.start;
+  else if (!isInf(r.stop)) ref = r.stop;
+  else return S.true;
+  if (n instanceof Rational && n.isOne) return Eq(x, r.at(0));
+  const res = Mod(add(ref, neg(x)), r.step);
+  if (res instanceof Rational && res.isZero) {
+    if (hasSymbol(r)) return rangeAsRelational(r, x);
+    return and(Ge(x, inf(r)), Le(x, sup(r)));
+  }
+  if (res instanceof Rational && res.isInteger) return S.false;
+  return undefined;
+}
+
+/**
+ * SymPy Range(stop) or Range(start, stop, step): integer (or infinite) start and stop and a nonzero
+ * integer (or infinite) step, or symbolic expressions that may be integers. The Range is made
+ * canonical as in SymPy: the stop of a numeric Range is the first value not taken, an empty
+ * Range is Range(0, 0, 1).
+ */
+export function range(startIn: ExprLike, stopIn?: ExprLike, stepIn: ExprLike = 1): SetExpr {
+  let [start, stop, step] = stopIn === undefined ? [S.Zero, sympify(startIn), sympify(stepIn)] : [sympify(startIn), sympify(stopIn), sympify(stepIn)];
+  if (step instanceof Rational && step.isZero) throw new TypeError('Range: step cannot be 0');
+  for (const w of [start, stop, step]) {
+    if (isInf(w) || (hasSymbol(w) && isIntegerQ(w) !== false)) continue;
+    if (!(w instanceof Rational && w.isInteger)) throw new TypeError('Range: finite arguments to Range must be integers');
+  }
+  let end: Expr = stop;
+  let nul = false;
+  if ([start, stop, step].some(hasSymbol)) {
+    const dif = add(stop, neg(start));
+    const n = div(dif, step);
+    if (n instanceof Rational) {
+      if (dif instanceof Rational && dif.isZero) nul = true;
+      else {
+        end = add(start, mul(fn('floor', [n]), step));
+        if (dif instanceof Rational) {
+          if (isNegative(add(end, neg(stop))) === true) end = add(end, step);
+        } else if (isNegative(add(div(end, stop), -1)) === true) end = add(end, step);
+      }
+    } else if (isNegative(n) === true || infSign(n) === -1) nul = true;
+  } else if (isInf(start)) {
+    const span = mul(step, add(stop, neg(start)));
+    if ((span instanceof Special && span.name === 'nan') || cmpReal(span, S.Zero) !== 1) nul = true;
+    else if (step instanceof Rational && isInf(stop) && step.p !== 1n && step.p !== -1n) {
+      throw new TypeError(`Range: step size must be ${step.isNegative ? -1 : 1} in this case`);
+    }
+  } else {
+    const oostep = isInf(step);
+    if (oostep) step = isOo(step) ? S.One : S.NegOne;
+    const n = fn('ceiling', [div(add(stop, neg(start)), step)]);
+    if (cmpReal(n, S.Zero) !== 1) nul = true;
+    else if (oostep) {
+      step = S.One;
+      end = add(start, step);
+    } else end = add(start, mul(n, step));
+  }
+  if (nul) return new Range(S.Zero, S.Zero, S.One);
+  return new Range(start, end, step);
 }
 
 /**
@@ -804,11 +1010,8 @@ export function containsQ(s: SetExpr, x: Expr): boolean | undefined {
     return notInteger(x) ? false : undefined;
   }
   if (s instanceof Range) {
-    if (!(x instanceof Rational)) return notInteger(x) ? false : undefined;
-    if (s.isEmpty || !x.isInteger || cmpReal(inf(s), x) === 1 || cmpReal(x, sup(s)) === 1) return false;
-    // the distance to a finite end is a multiple of the step
-    const d = expectType(add(x, mul(-1, isInf(s.start) ? s.stop : s.start)), (v): v is Rational => v instanceof Rational, 'integer distance');
-    return d.p % s.step.p === 0n;
+    const v = rangeContains(s, x);
+    return v === S.true ? true : v === S.false ? false : undefined;
   }
   if (s instanceof ImageSet) return imageContains(s, x);
   if (s instanceof FiniteSet) {
@@ -892,6 +1095,11 @@ export function contains(s: SetExpr, x: Expr): Expr {
   if (v !== undefined) return v ? S.true : S.false;
   if (s === Reals || s instanceof Interval) return asRelational(s, x);
   if (s instanceof FiniteSet) return or(...s.args.map((a) => Eq(a, x)));
+  if (s instanceof Range) {
+    // a condition on the symbols of the Range (SymPy Range._contains)
+    const c = rangeContains(s, x);
+    if (c !== undefined) return c;
+  }
   if (s instanceof SetOp) {
     const parts = s.args.map((a) => contains(a, x));
     if (s.op === 'Union') return or(...parts);
@@ -1109,6 +1317,8 @@ function roundInt(e: Expr, up: boolean): Expr | undefined {
 /** SymPy intersection_sets(Range, Integers / Reals / Naturals / Interval / Range). */
 function intersectRange(r: Range, o: SetExpr): SetExpr | undefined {
   if (o === Integers || o === Reals || o === Rationals) return r;
+  // (SymPy does not intersect a symbolic Range with an interval or a Range)
+  if (hasSymbol(r)) return undefined;
   if (o === Naturals || o === Naturals0) return intersectRange(r, new Interval(o === Naturals ? S.One : S.Zero, S.Infinity, false, true));
   // the ends of a Range are integers or infinite
   if (r.isEmpty) return EmptySet;
@@ -1125,7 +1335,7 @@ function intersectRange(r: Range, o: SetExpr): SetExpr | undefined {
     if (cmpReal(lo, hi) === 1) return EmptySet;
     return intersectRanges(r, cast(range(lo, isInf(hi) ? hi : add(hi, 1)), Range));
   }
-  if (o instanceof Range) return intersectRanges(r, o);
+  if (o instanceof Range && !hasSymbol(o)) return intersectRanges(r, o);
   return undefined;
 }
 
@@ -1146,7 +1356,8 @@ function intersectRanges(a: Range, b: Range): SetExpr {
   const ends = (r: Range): { lo: Expr; hi: Expr; m: bigint; res: bigint } => {
     const lo = inf(r);
     const hi = sup(r);
-    const m = r.step.p < 0n ? -r.step.p : r.step.p;
+    const st = asRat(r.step).p;
+    const m = st < 0n ? -st : st;
     const fin = asRat(isInf(lo) ? hi : lo);
     return { lo, hi, m, res: floorMod(fin.p, m) };
   };
@@ -1223,7 +1434,7 @@ function rangeElements(r: Range): Expr[] {
   const out: Expr[] = [];
   const [start, stop] = [asRat(r.start).p, asRat(r.stop).p];
   // the ranges of an intersection have a positive step
-  for (let k = start; k < stop; k += r.step.p) out.push(Rational.of(k));
+  for (let k = start; k < stop; k += asRat(r.step).p) out.push(Rational.of(k));
   return out;
 }
 
@@ -1326,6 +1537,7 @@ export function asRelational(s: SetExpr, x: Expr): Expr {
   if (s instanceof FiniteSet) return or(...s.args.map((a) => Eq(x, a)));
   if (s instanceof SetOp && s.op === 'Union') return or(...s.args.map((a) => asRelational(a, x)));
   if (s instanceof SetOp && s.op === 'Intersection') return and(...s.args.map((a) => asRelational(a, x)));
+  if (s instanceof Range) return rangeAsRelational(s, x);
   throw new NotImplementedError('as_relational: unsupported set');
 }
 
@@ -1347,7 +1559,7 @@ export function inf(s: SetExpr): Expr {
   if (s === Naturals) return S.One;
   if (s === Naturals0) return S.Zero;
   if (s instanceof FiniteSet) return extreme(s.args, 1);
-  if (s instanceof Range) return s.step.isNegative ? add(s.stop, mul(-1, s.step)) : s.start;
+  if (s instanceof Range) return rangeEnd(s, 1);
   if (s instanceof SetOp && s.op === 'Union') return extreme(s.args.map(inf), 1);
   throw new NotImplementedError('inf: unsupported set');
 }
@@ -1357,7 +1569,7 @@ export function sup(s: SetExpr): Expr {
   if (s instanceof Interval) return s.end;
   if (s === Reals || s === Integers || s === Naturals || s === Naturals0) return S.Infinity;
   if (s instanceof FiniteSet) return extreme(s.args, -1);
-  if (s instanceof Range) return s.step.isNegative ? s.start : add(s.stop, mul(-1, s.step));
+  if (s instanceof Range) return rangeEnd(s, -1);
   if (s instanceof SetOp && s.op === 'Union') return extreme(s.args.map(sup), -1);
   throw new NotImplementedError('sup: unsupported set');
 }

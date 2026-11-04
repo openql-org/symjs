@@ -261,8 +261,9 @@ describe('dsolve', () => {
 describe('classify_ode reports hints SymPy reports', () => {
   it.each(CLASSIFY2)('classify_ode(%s)', (src, expected) => {
     const got = classifyOde(parse(src), fx);
-    // SymPy raises for these: no hint matches here
-    if (typeof expected === 'string') expect(got).toEqual([]);
+    // SymPy raises for these (in the factorable matcher, before LieGroup, which matches every first-order
+    // equation): only lie_group matches here
+    if (typeof expected === 'string') expect(got).toEqual(['lie_group']);
     // SymPy reports factorable when solve(eq, f') gives f' - root in another form than eq, which
     // depends on the form of the root (here the root of these two keeps another form)
     else if (FORM.includes(src)) expect(subsequence(got, ['factorable', ...expected])).toBe(true);
@@ -290,6 +291,21 @@ describe('dsolve', () => {
     const r = dsolve(parse('(x + Derivative(f(x), x))*(x + Derivative(f(x), x)**2 + Derivative(f(x), x))'), fx) as unknown[];
     expect(String(r[0])).toBe('Eq(f(x), C1 - x**2/2)');
     expect(r.slice(1).map(String).sort()).toEqual(['Eq(f(x), C1 - x/2 + (1 - 4*x)**(3/2)/12)', 'Eq(f(x), C1 - x/2 - (1 - 4*x)**(3/2)/12)']);
+  });
+  it('Euler equations with an irreducible quintic: x**CRootOf (SymPy)', () => {
+    const q = (k: number) => `x**CRootOf(_x**5 - 10*_x**4 + 35*_x**3 - 50*_x**2 + 24*_x + 1, ${k})`;
+    const hom = [0, 1, 2, 3, 4].map((k) => `C${k + 1}*${q(k)}`).join(' + ');
+    expect(ds('x**5*Derivative(f(x), x, 5) + f(x)')).toBe(`Eq(f(x), ${hom})`);
+    expect(ds('x**5*Derivative(f(x), x, 5) + f(x) - x')).toBe(`Eq(f(x), ${hom} + x)`);
+    // complex roots: x**re(r)*sin(log(x)*im(r)) and x**re(r)*cos(log(x)*im(r)) (SymPy)
+    const p = '_x**5 - 10*_x**4 + 35*_x**3 - 50*_x**2 + 24*_x + 100';
+    const pair = (k: number, c: number) =>
+      `C${c}*x**re(CRootOf(${p}, ${k}))*sin(log(x)*im(CRootOf(${p}, ${k}))) + C${c + 1}*x**re(CRootOf(${p}, ${k}))*cos(log(x)*im(CRootOf(${p}, ${k})))`;
+    expect(ds('x**5*Derivative(f(x), x, 5) + 100*f(x) - x')).toBe(`Eq(f(x), C1*x**CRootOf(${p}, 0) + ${pair(1, 2)} + ${pair(3, 4)} + x/100)`);
+    // SymPy: NotImplementedError (CRootOf is not supported over ZZ[a]) as well
+    expect(() => ds('x**5*Derivative(f(x), x, 5) + a*f(x)')).toThrow(NotImplementedError);
+    // a symbolic root keeps exp(a*log(x)) (SymPy)
+    expect(ds('x**2*Derivative(f(x), x, 2) + x*Derivative(f(x), x) - a**2*f(x) - x')).toBe('Eq(f(x), C1*exp(-a*log(x)) + C2*exp(a*log(x)) - x/(a**2 - 1))');
   });
   it('irreducible quintic characteristic polynomials: CRootOf (SymPy)', () => {
     expect(ds('Derivative(f(x), x, 5) - Derivative(f(x), x) + f(x)')).toBe(
@@ -356,15 +372,13 @@ describe('dsolve', () => {
   it('unsupported equations', () => {
     // SymPy: [Eq(f(x), -acos((-C1 - exp(2*x))/(C1 - exp(2*x))) + 2*pi), Eq(f(x), acos(...))] from
     // Integral(1/sin(y)) = log(cos(y) - 1)/2 - log(cos(y) + 1)/2, which integrate does not find here
-    expect(() => ds('Derivative(f(x), x) + sin(f(x))')).toThrow(NotImplementedError);
-    // SymPy (lie_group): Eq(f(x), -x - 2*atan((C1 + x + 2)/(C1 + x))) and Eq(f(x), -x - LambertW(C1*exp(-x - 1)) - 1)
-    expect(() => ds('Derivative(f(x), x) - sin(x + f(x))')).toThrow(NotImplementedError);
-    expect(() => ds('Derivative(f(x), x) - 1/(x + f(x))')).toThrow(NotImplementedError);
-    // SymPy: Eq(f(x), C1*x**CRootOf(_x**5 - 10*_x**4 + 35*_x**3 - 50*_x**2 + 24*_x + 1, 0) + ...); the Euler
-    // characteristic roots are not given as CRootOf here
-    expect(() => ds('x**5*Derivative(f(x), x, 5) + f(x)')).toThrow(NotImplementedError);
-    // SymPy: Eq(Integral(1/LambertW(-_y), (_y, f(x))), C1 + x)
-    expect(() => ds('Derivative(f(x), x)*exp(Derivative(f(x), x)) + f(x)')).toThrow(NotImplementedError);
+    // separable fails, and lie_group gives the implicit solution with that integral unevaluated
+    expect(ds('Derivative(f(x), x) + sin(f(x))')).toBe('Eq(C1 + x - Integral(-1/sin(_r), (_r, -f(x))), 0)');
+    // lie_group (SymPy): Eq(f(x), -x - LambertW(C1*exp(-x - 1)) - 1)
+    expect(ds('Derivative(f(x), x) - 1/(x + f(x))')).toBe('Eq(f(x), -x - LambertW(C1*exp(-x - 1)) - 1)');
+    // SymPy (nth_algebraic): Eq(Integral(1/LambertW(-_y), (_y, f(x))), C1 + x); lie_group gives the same
+    // implicit solution with _r = -_y
+    expect(ds('Derivative(f(x), x)*exp(Derivative(f(x), x)) + f(x)')).toBe('Eq(C1 + x - Integral(-1/LambertW(_r), (_r, -f(x))), 0)');
     // SymPy: NotImplementedError as well
     expect(() => ds('Derivative(f(x), x, 2)*Derivative(f(x), x) + f(x)')).toThrow(NotImplementedError);
   });

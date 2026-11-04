@@ -668,12 +668,29 @@ export function mul(...xs: ExprLike[]): Expr {
   if (m >= 2n) coeff = numNeg(coeff);
   if (m % 2n === 1n) factors.push(S.I);
 
-  // exp_polar(a)*exp_polar(b) = exp_polar(a + b)
-  const eps = factors.filter((f) => f instanceof Fn && f.name === 'exp_polar');
-  if (eps.length > 1) {
-    const merged = new Fn('exp_polar', [add(...eps.map((f) => at(f.args, 0)))]);
-    for (const f of eps) factors.splice(factors.indexOf(f), 1);
-    factors.push(merged);
+  // exp_polar(c1*t)*exp_polar(c2*t) = exp_polar((c1 + c2)*t) for numbers c1, c2, as in SymPy's
+  // Mul.flatten: ExpBase.as_base_exp is (exp_polar(1), arg) and exponents of a common base are
+  // gathered by their as_coeff_Mul term, so exp_polar(x)*exp_polar(y) stays as it is.
+  const epGroups = new Map<string, { term: Expr; coeffs: Expr[]; members: Expr[] }>();
+  for (const f of factors) {
+    if (!(f instanceof Fn) || f.name !== 'exp_polar') continue;
+    const a = at(f.args, 0);
+    const lead = a instanceof Mul ? at(a.args, 0) : a;
+    const split = a instanceof Mul && (lead instanceof Rational || lead instanceof Float);
+    const term = split ? mul(...a.args.slice(1)) : a instanceof Rational || a instanceof Float ? S.One : a;
+    const c = split ? lead : a instanceof Rational || a instanceof Float ? a : S.One;
+    const key = term.toString();
+    const g = epGroups.get(key) ?? { term, coeffs: [], members: [] };
+    g.coeffs.push(c);
+    g.members.push(f);
+    epGroups.set(key, g);
+  }
+  for (const g of epGroups.values()) {
+    if (g.members.length < 2) continue;
+    for (const f of g.members) factors.splice(factors.indexOf(f), 1);
+    const total = add(...g.coeffs);
+    // exp_polar(1)**0 is 1, so exp_polar(x)*exp_polar(-x) = 1
+    if (!(total instanceof Rational && total.isZero)) factors.push(new Fn('exp_polar', [mul(total, g.term)]));
   }
   if (ncPart.length) {
     factors.sort(compareExpr);
@@ -755,6 +772,12 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
     return at([S.One, S.I, S.NegOne, mul(-1, S.I)], Number(m));
   }
 
+  // a number with an infinite part off the real axis (oo + I, 1 - oo*I): its powers are zoo, 0 for a
+  // negative exponent (SymPy (oo + I)**(1/2) = zoo, (oo + I)**-1 = 0)
+  if (b instanceof Add && (e instanceof Rational || e instanceof Float) && b.args.some(hasInfinity) && b.freeSymbols().size === 0) {
+    return e.isNegative ? S.Zero : S.ComplexInfinity;
+  }
+
   if (b instanceof Add && e instanceof Rational && e.p === -1n && e.q === 1n) {
     const pc = pureComplex(b);
     if (pc) {
@@ -786,6 +809,8 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   }
 
   if (isE(b)) {
+    const ei = expImaginaryInfinity(e);
+    if (ei !== undefined) return ei;
     if (e instanceof Fn && e.name === 'log') return at(e.args, 0);
     const terms = e instanceof Add ? e.args : [e];
     let m = 0n;
@@ -860,6 +885,24 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   }
 
   return new Pow(b, e);
+}
+
+/** A term oo, -oo or a product with oo (oo*I). */
+const hasInfinity = (t: Expr): boolean => t instanceof Special || (t instanceof Mul && t.args.includes(S.Infinity));
+
+/**
+ * exp of a sum with an imaginary part +-oo: SymPy exp(oo*I) = nan, exp(x + oo*I) = nan, and the
+ * limits exp(-oo + oo*I) = 0 (the modulus exp(-oo) vanishes; SymPy gives nan) and exp(oo + oo*I) =
+ * zoo (the modulus grows without bound; SymPy gives nan); undefined for other exponents.
+ */
+function expImaginaryInfinity(e: Expr): Expr | undefined {
+  const terms = e instanceof Add ? e.args : [e];
+  // (c*oo*I with a real constant c: -oo*I, oo*I*pi)
+  const isImInf = (t: Expr): boolean =>
+    t instanceof Mul && t.args.includes(S.Infinity) && t.args.includes(S.I) && t.args.every((a) => a === S.Infinity || a === S.I || (a.freeSymbols().size === 0 && isReal(a) === true));
+  if (!terms.some(isImInf)) return undefined;
+  if (terms.includes(S.NegativeInfinity)) return S.Zero;
+  return terms.includes(S.Infinity) ? S.ComplexInfinity : S.NaN;
 }
 
 /**

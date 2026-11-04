@@ -589,3 +589,22 @@ describe('non-commutative neighbours with equal bases', () => {
     expect(s(mul(pow(A, 2), B, pow(A, -1)))).toBe('A**2*B*A**(-1)');
   });
 });
+
+describe('powers and exp of numbers with an infinite part', () => {
+  const P = (src: string): string => String(sj.parse(src));
+  it('a power of oo + I, 1 + oo*I or oo + oo*I is zoo, 0 for a negative exponent', () => {
+    // SymPy 1.14: (oo + I)**(1/2) = zoo, (1 + oo*I)**2 = zoo, (oo + oo*I)**-1 = 0, (-oo + I)**0.5 = zoo,
+    // (oo + I)**(-1/2) = 0; (oo + I)**I stays, (oo*I)**(1/2) = oo*sqrt(I) (a product, not a sum)
+    expect(['(oo + I)**(1/2)', '(1 + oo*I)**2', '(oo + oo*I)**-1', '(-oo + I)**0.5', '(oo + I)**(-1/2)', '(oo + I)**I', '(oo*I)**(1/2)', '(x + oo)**(1/2)'].map(P)).toEqual([
+      'zoo', 'zoo', '0', 'zoo', '0', '(oo + I)**I', 'oo*sqrt(I)', 'sqrt(x + oo)',
+    ]);
+  });
+  it('exp of an imaginary infinity', () => {
+    // SymPy 1.14: exp(oo*I) = exp(-oo*I) = exp(1 + oo*I) = exp(x + oo*I) = exp(oo*I*pi) = nan,
+    // exp(oo + I) = oo*exp(I), exp(oo*I*x) stays. SymPy gives nan for exp(-oo + oo*I) and
+    // exp(oo + oo*I) too; their limits are 0 (|exp(z)| = exp(re(z)) -> 0) and zoo (|exp(z)| -> oo)
+    expect(['exp(oo*I)', 'exp(-oo*I)', 'exp(1 + oo*I)', 'exp(x + oo*I)', 'exp(oo*I*pi)', 'exp(oo + I)', 'exp(oo*I*x)', 'exp(-oo + oo*I)', 'exp(-oo - oo*I)', 'exp(oo + oo*I)'].map(P)).toEqual([
+      'nan', 'nan', 'nan', 'nan', 'nan', 'oo*exp(I)', 'exp(oo*I*x)', '0', '0', 'zoo',
+    ]);
+  });
+});

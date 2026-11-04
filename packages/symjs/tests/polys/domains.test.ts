@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { Float, Rational, Sym, parseExpr as P, sstr } from '../../src/index';
 import { ExactQuotientFailed, NotImplementedError } from '../../src/core/errors';
-import { CoercionFailed, DMF, DMP, FractionField, PolynomialRing, QQ, RR, ZZ, gcdSettings } from '../../src/polys/domains';
+import { CoercionFailed, DMF, DMP, EX, FractionField, PolynomialRing, QQ, RR, ZZ, gcdSettings } from '../../src/polys/domains';
 
 const x = new Sym('x');
 const a = new Sym('a');
@@ -67,6 +67,17 @@ describe('ground domains', () => {
     expect(QQ.isNegative(Rational.of(-1n))).toBe(true);
     expect(RR.isNegative(new Float(-1))).toBe(true);
     expect(QQ.fracField(a).isZero(a)).toBe(false);
+  });
+  it('EX: expressions (SymPy ExpressionDomain)', () => {
+    expect([String(EX), EX.isField]).toEqual(['EX', true]);
+    expect(EX.getField()).toBe(EX);
+    expect(EX.unify(QQ)).toBe(EX);
+    expect(QQ.fracField(a).unify(EX)).toBe(EX);
+    // SymPy keeps EX(sqrt(2)*(x + sqrt(2))) until an operation, which simplifies with cancel and expand
+    expect(s(EX.fromSympy(P('sqrt(2)*(sqrt(2) + x)')))).toBe('sqrt(2)*x + 2');
+    expect(s(EX.fromSympy(P('(x**2 - 1)/(x + 1)')))).toBe('x - 1');
+    expect(s(EX.mul(P('sqrt(2)*I'), P('sqrt(2)*I')))).toBe('-2');
+    expect(EX.isZero(EX.sub(P('(sqrt(2) + 1)*(sqrt(2) - 1)'), Rational.of(1n)))).toBe(true);
   });
 });
 
@@ -168,5 +179,22 @@ describe('old polynomial rings (DMP) and their fraction fields (DMF)', () => {
     expect(s(KR.fromSympy(P('(2.0*x + 2.0)/(x**2 - 1)')).toSympy())).toBe('2.0/(1.0*x - 1.0)');
     expect(f).toBeInstanceOf(DMF);
     expect(f.numer()).toBeInstanceOf(DMP);
+  });
+  it('polynomials and fractions over EX', () => {
+    const RE = EX.oldPolyRing(x);
+    const KE = RE.getField();
+    expect(String(KE)).toBe('EX(x)');
+    // SymPy: DMF(([EX(sqrt(2)*I), EX(0)], [EX(2)]), EX) and its square DMF(([EX(-2), EX(0), EX(0)], [EX(4)]), EX)
+    const f = KE.fromSympy(P('sqrt(2)*I*x/2'));
+    expect(s(f.toSympy())).toBe('sqrt(2)*I*x/2');
+    expect(s(f.mul(f).toSympy())).toBe('-x**2/2');
+    // SymPy: DMF(([EX(1), EX(-sqrt(2))], [EX(sqrt(2))]), EX) = (x - sqrt(2))/sqrt(2)
+    expect(s(KE.fromSympy(P('(x**2 - 2)/(sqrt(2)*x + 2)')).toSympy())).toBe('sqrt(2)*x/2 - 1');
+    const p = RE.fromSympy(P('x**2 - 2'));
+    const q = RE.fromSympy(P('sqrt(2)*x + 2'));
+    expect(s(p.gcd(q).toSympy())).toBe('x + sqrt(2)');
+    expect(s(p.lcm(q).toSympy())).toBe('x**2 - 2');
+    expect(s(p.exquo(RE.fromSympy(P('x - sqrt(2)'))).toSympy())).toBe('x + sqrt(2)');
+    expect(() => p.exquo(RE.fromSympy(P('x - 1')))).toThrow(ExactQuotientFailed);
   });
 });

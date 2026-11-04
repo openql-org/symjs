@@ -14,7 +14,7 @@ import { expandMul } from '../simplify/expand';
 import { mapBottomUp, xreplace as subs } from '../core/traverse';
 import { log, sin } from '../functions/elementary';
 import { EssentialSingularity, Expander, type PS, isE } from './puiseux';
-import { isReal } from '../core/assumptions';
+import { isPositive, isReal } from '../core/assumptions';
 import { at, first, getOrThrow } from '../core/guard';
 import { parserHooks } from '../parsing/parser';
 import { diffHooks } from '../calculus/diff';
@@ -156,6 +156,9 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
   if (atZero && e instanceof Pow && e.base.key === x.key && !(e.exp instanceof Rational) && !e.exp.has(x)) return e;
   const x0 = sympify(x0x);
   if (x0 instanceof Special && (x0.name === 'oo' || x0.name === '-oo')) return seriesAtInfinity(e, x, x0.name === 'oo' ? 1 : -1, n);
+  // at zoo SymPy substitutes x = sign(zoo)/x: only a Laurent polynomial in x comes back as it is
+  // (series(x, x, zoo) = x); other expansions there are not defined
+  if (x0 instanceof Special && x0.name === 'zoo' && isLaurentPolynomial(e, x)) return e;
   if (x0 instanceof Special) throw new NotImplementedError('series: expansion at this point is not supported');
   if (!e.has(x)) return e;
   const t = new Sym('_s', { positive: true });
@@ -173,6 +176,7 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
     // exp(g) with g -> oo (or of unknown sign) has no expansion: SymPy returns it unchanged, but
     // raises PoleError for a complex g (exp(I/x))
     if (err instanceof EssentialSingularity && e instanceof Pow && isE(e.base) && isReal(err.coeff) !== false) return e;
+    if (err instanceof EssentialSingularity) return essentialSeries(e, x, x0, n, dir, err);
     throw err;
   }
   const base = dir === '-' ? add(x0, mul(-1, x)) : x0 instanceof Rational && x0.isZero ? x : add(x, mul(-1, x0));
@@ -185,12 +189,61 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
   return add(body, ord);
 }
 
+/** A sum of terms c*x**k with c free of x and integers k. */
+function isLaurentPolynomial(e: Expr, x: Sym): boolean {
+  const monomial = (f: Expr): boolean => !f.has(x) || f.key === x.key || (f instanceof Pow && f.base.key === x.key && f.exp instanceof Rational && f.exp.isInteger);
+  return (e instanceof Add ? e.args : [e]).every((t) => (t instanceof Mul ? t.args : [t]).every(monomial));
+}
+
+/**
+ * The series of a sum of terms with factors exp(g) (or b**g) where g -> +oo on the side of approach:
+ * like SymPy, those factors are kept as they are and multiply the series of the rest
+ * (series(x*exp(1/x), x) = x*exp(1/x); series(exp(1/x)*sin(x), x) = x*exp(1/x) - x**3*exp(1/x)/6 + ... +
+ * O(x**6*exp(1/x))). The error of the expansion is raised again when no term has such a factor.
+ */
+function essentialSeries(e: Expr, x: Sym, x0: Expr, n: number, dir: '+' | '-', err: EssentialSingularity): Expr {
+  // the exponent of exp(g), or g*log(b) for b**g (in SymPy b**g is exp(g*log(b)): 2**(1/x) -> exp(log(2)/x))
+  const exponent = (f: Expr): Expr | undefined => {
+    if (!(f instanceof Pow && f.exp.has(x) && (isE(f.base) || (f.base.freeSymbols().size === 0 && isPositive(f.base))))) return undefined;
+    const g = isE(f.base) ? f.exp : mul(f.exp, log(f.base));
+    // (g -> oo, or to an infinity of unknown real direction (y/x -> oo*sign(y)), which SymPy keeps too)
+    const l = impl.limit(g, x, x0, dir);
+    const kept = (l instanceof Special && l.name === 'oo') || (l instanceof Mul && l.has(S.Infinity) && isReal(g) !== false && l.args.some((a) => a instanceof Fn && a.name === 'sign'));
+    return kept ? g : undefined;
+  };
+  const ex = expandMul(e);
+  const terms = (ex instanceof Add ? ex.args : [ex]).map((term) => {
+    const factors = term instanceof Mul ? term.args : [term];
+    return { term, factors, gs: factors.map(exponent) };
+  });
+  if (terms.every(({ gs }) => gs.every((g) => g === undefined))) throw err;
+  const out: Expr[] = [];
+  for (const { term, factors, gs } of terms) {
+    if (gs.every((g) => g === undefined)) {
+      out.push(series(term, x, x0, n, dir));
+      continue;
+    }
+    const E = exp(add(...gs.filter((g) => g !== undefined)));
+    const rest = series(mul(...factors.filter((_, i) => gs[i] === undefined)), x, x0, n, dir);
+    for (const u of rest instanceof Add ? rest.args : [rest]) out.push(u instanceof Order ? new Order([mul(first(u.args), E), ...u.args.slice(1)]) : mul(u, E));
+  }
+  return add(...out);
+}
+
 impl.series = series;
 impl.leadterm = (e, x) => leadterm(e, x);
 
 /** Leading term c*x**e of e as x -> 0 (SymPy leadterm): [c, e]. */
 export function leadterm(ex: ExprLike, x: Sym): [Expr, Expr] {
-  return leadtermExact(ex, x);
+  const e = sympify(ex);
+  // powers of x to constant exponents that are not rational (x**(-sqrt(2))) are factored out: the
+  // expansion of the rest is a Puiseux series (SymPy: leadterm(x**(1 - sqrt(2))) = (1, 1 - sqrt(2)))
+  const factors = e instanceof Mul ? e.args : [e];
+  const irrational = (f: Expr): f is Pow => f instanceof Pow && f.base.key === x.key && !(f.exp instanceof Rational) && !f.exp.has(x);
+  const powers = factors.filter(irrational);
+  if (powers.length === 0) return leadtermExact(e, x);
+  const [c, p] = leadtermExact(mul(...factors.filter((f) => !irrational(f))), x);
+  return [c, add(p, ...powers.map((f) => f.exp))];
 }
 
 /** leadterm with the exponent typed as the Rational it always is. */

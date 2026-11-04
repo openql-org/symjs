@@ -64,14 +64,23 @@ describe('sympy.integrals.transforms doctests', () => {
     expect(show(fourierTransform(exp(mul(-1, pow(x, 2))), x, k, { noconds: false }))).toBe('(sqrt(pi)*exp(-pi**2*k**2), True)');
   });
 
-  it('hankel_transform and inverse_hankel_transform', () => {
-    const [r, k, m, nu, a] = symbols('r k m nu a');
+  it('hankel_transform and inverse_hankel_transform of r**(-m)', () => {
+    const [r, k, m, nu] = symbols('r k m nu');
     const ht = hankelTransform(pow(r, mul(-1, m)), r, k, nu) as Expr;
     expect(String(ht)).toBe('2*k**(m - 2)*gamma(-m/2 + nu/2 + 1)/(2**m*gamma(m/2 + nu/2))');
     expect(String(inverseHankelTransform(ht, k, r, nu))).toBe('r**(-m)');
-    const ht2 = hankelTransform(exp(mul(-1, a, r)), r, k, 0) as Expr;
-    expect(String(ht2)).toBe('a/(k**3*(a**2/k**2 + 1)**(3/2))');
-    expect(String(inverseHankelTransform(ht2, k, r, 0))).toBe('exp(-a*r)');
+  });
+
+  it('hankel_transform of exp(-a*r)', () => {
+    const [r, k, a] = symbols('r k a');
+    expect(String(hankelTransform(exp(mul(-1, a, r)), r, k, 0))).toBe('a/(k**3*(a**2/k**2 + 1)**(3/2))');
+  });
+
+  it('inverse_hankel_transform back to exp(-a*r)', () => {
+    const [r, k, a] = symbols('r k a');
+    // a/(k**3*(a**2/k**2 + 1)**(3/2)), the transform above
+    const F = mul(a, pow(k, -3), pow(add(mul(pow(a, 2), pow(k, -2)), 1), mul(-3, half)));
+    expect(String(inverseHankelTransform(F, k, r, 0))).toBe('exp(-a*r)');
   });
 
   it('inverse_cosine_transform', () => {
