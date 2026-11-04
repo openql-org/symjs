@@ -19,7 +19,7 @@ import { countOps, match, ordered } from '../core/match';
 import { argsCncSplit, asCoeffMul as asCoeffMulDeps, asIndependent, asNumerDenom, asPowersDict } from '../core/methods';
 import { ExprMap } from '../core/exprmap';
 import { isIntegerQ } from '../core/assumptions';
-import { cos, fn, sin } from '../functions/elementary';
+import { cos, fn, sin } from '../functions/elementary/elementary';
 import { gcd as igcd } from '../core/numbers';
 import { factor } from '../polys/sympoly';
 import { groebner, reduced, type MonomialOrder } from '../polys/groebner';

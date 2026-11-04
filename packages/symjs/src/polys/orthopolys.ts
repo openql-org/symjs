@@ -25,7 +25,7 @@ import {
   jacobiCoeffs,
   laguerreCoeffs,
   legendreCoeffs,
-} from '../functions/polynomials';
+} from '../functions/special/polynomials';
 import { Poly } from './sympoly';
 
 /** Options of the polynomial generators. */

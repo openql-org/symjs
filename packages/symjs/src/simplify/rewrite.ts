@@ -13,8 +13,8 @@ import { isIntegerQ, isNegative, isPositive, isReal } from '../core/assumptions'
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { isFunctionOf } from '../core/match';
 import { rebuild } from '../core/traverse';
-import { abs, acos, asin, atan, conjugate, cos, cosh, fn, log, re, sin, sinh, tan, tanh } from '../functions/elementary';
-import { Chi, Ci, Ei, Li, Shi, Si, binomial, factorial, ff, gamma, harmonic, li, polygamma, sign, uppergamma, zeta } from '../functions/special';
+import { abs, acos, asin, atan, conjugate, cos, cosh, fn, log, re, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
+import { Chi, Ci, Ei, Li, Shi, Si, binomial, factorial, ff, gamma, harmonic, li, polygamma, sign, uppergamma, zeta } from '../functions/special/special';
 import { Sum } from '../core/concrete';
 import { first, pair } from '../core/guard';
 

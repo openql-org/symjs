@@ -58,7 +58,7 @@ export {
   Min,
   Max,
   expandFunc,
-} from './functions/special';
+} from './functions/special/special';
 export {
   besselj,
   bessely,
@@ -71,10 +71,10 @@ export {
   hankel1,
   hankel2,
   marcumq,
-} from './functions/bessel';
-export { hn1, hn2, jnZeros, sphericalBesselFn } from './functions/sphericalbessel';
-export { Ynm, YnmC, Znm } from './functions/sphericalharmonics';
-export { mathieus, mathieuc, mathieusprime, mathieucprime } from './functions/mathieu';
+} from './functions/special/bessel';
+export { hn1, hn2, jnZeros, sphericalBesselFn } from './functions/special/sphericalbessel';
+export { Ynm, YnmC, Znm } from './functions/special/sphericalharmonics';
+export { mathieus, mathieuc, mathieusprime, mathieucprime } from './functions/special/mathieufunctions';
 export {
   bernoulli,
   euler,
@@ -107,7 +107,7 @@ export {
   legendreSymbol,
   motzkin,
   andre,
-} from './functions/combinatorial';
+} from './functions/combinatorial/numbers';
 export {
   polarify,
   expPolar,
@@ -117,11 +117,11 @@ export {
   unbranchedArgument,
   unpolarify,
   extractBranchFactor,
-} from './functions/polar';
-export { Hyper, MeijerG, hyper, meijerg, appellf1, jn, yn, expandJn, KroneckerDelta, kroneckersimp } from './functions/hyper';
-export { lerchphi, polylog, dirichletEta, riemannXi, stieltjes } from './functions/zeta';
-export { ellipticK, ellipticF, ellipticE, ellipticPi } from './functions/elliptic';
-export { LeviCivita, Eijk } from './functions/tensorfns';
+} from './functions/elementary/complexes';
+export { Hyper, MeijerG, hyper, meijerg, appellf1, jn, yn, expandJn, KroneckerDelta, kroneckersimp } from './functions/special/hyper';
+export { lerchphi, polylog, dirichletEta, riemannXi, stieltjes } from './functions/special/zetafunctions';
+export { ellipticK, ellipticF, ellipticE, ellipticPi } from './functions/special/ellipticintegrals';
+export { LeviCivita, Eijk } from './functions/special/tensorfunctions';
 export {
   jacobi,
   jacobiNormalized,
@@ -136,4 +136,4 @@ export {
   hermiteProb,
   laguerre,
   assocLaguerre,
-} from './functions/polynomials';
+} from './functions/special/polynomials';

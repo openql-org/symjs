@@ -23,8 +23,8 @@ import { parse } from '../parsing/parser';
 import { expand, expandMul } from '../simplify/expand';
 import { collect } from '../simplify/radsimp';
 import { divisors, factorint } from '../ntheory/factor';
-import { cos } from '../functions/elementary';
-import { chebyshevtCoeffs } from '../functions/polynomials';
+import { cos } from '../functions/elementary/elementary';
+import { chebyshevtCoeffs } from '../functions/special/polynomials';
 import { CRootOf } from './rootof';
 import { Poly, factor, factorListExpr, resultant } from './sympoly';
 

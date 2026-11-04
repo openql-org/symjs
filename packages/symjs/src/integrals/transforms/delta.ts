@@ -22,8 +22,8 @@ import { piecewise, rel } from '../../core/logic';
 import { freeSymbols, subs } from '../../core/traverse';
 import { derivative } from '../../core/undef';
 import { SubsNode } from '../../core/subsnode';
-import { abs } from '../../functions/elementary';
-import { sign } from '../../functions/special';
+import { abs } from '../../functions/elementary/elementary';
+import { sign } from '../../functions/special/special';
 import { diff } from '../../calculus/diff';
 import { polyCoefficients, rootsDict } from '../../polys/poly';
 

@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { Expr } from '../../src/core/nodes';
 import { NoMatch, Unsolved } from '../../src/core/truth';
-import { fn } from '../../src/functions/elementary';
+import { fn } from '../../src/functions/elementary/elementary';
 import { countDigits, digits, isPalindromic } from '../../src/ntheory/index';
 
 /** Python's printed form of a result. */

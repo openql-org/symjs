@@ -8,7 +8,7 @@
  */
 
 import type { Expr } from '../core/nodes';
-import { partition } from '../functions/combinatorial';
+import { partition } from '../functions/combinatorial/numbers';
 import type { IntLike } from './intutil';
 import { asInt } from './intutil';
 

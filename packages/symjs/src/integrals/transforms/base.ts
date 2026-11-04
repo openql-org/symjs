@@ -8,7 +8,7 @@
  */
 
 import { Add, BoolAtom, Dummy, Expr, Sym, ExtensionExpr, Mul, Pow, Rel, S, UndefFn, Wild } from '../../core/nodes';
-import { Max } from '../../functions/special';
+import { Max } from '../../functions/special/special';
 import { diff } from '../../calculus/diff';
 import { BoolOp } from '../../core/boolalg';
 import { isNegative, isNonNegative, isNonZero, isPositive, isZero } from '../../core/assumptions';

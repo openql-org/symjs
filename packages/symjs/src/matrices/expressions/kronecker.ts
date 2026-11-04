@@ -12,9 +12,9 @@ import type { Expr } from '../../core/nodes';
 import { ExtensionExpr, S } from '../../core/nodes';
 import { mul, pow } from '../../core/ops';
 import { rebuild } from '../../core/traverse';
-import { adjoint as adjointFn } from '../../functions/elementary';
+import { adjoint as adjointFn } from '../../functions/elementary/elementary';
 import { Mod } from '../../functions/mod';
-import { floor } from '../../functions/special';
+import { floor } from '../../functions/special/special';
 import { Matrix } from '../matrix';
 import type { DoitHints, MatArg } from './matexpr';
 import {

@@ -71,7 +71,7 @@ describe('the cases mpmath evaluates otherwise', () => {
   };
   it('raises at the poles', () => {
     expect(at('polylog', [[1, 0], [1, 0]])).toThrow(RangeError);
-    // the Hurwitz form dirichlet_eta(s, a) is registered by functions/zeta.ts
+    // the Hurwitz form dirichlet_eta(s, a) is registered by functions/special/zetafunctions.ts
     expect(at('dirichlet_eta', [[2, 0], [1, 0]])).toThrow('dirichlet_eta(s, a)');
     expect(at('lerchphi', [[0.5, 0], [2, 0], [-2, 0]])).toThrow(RangeError);
   });

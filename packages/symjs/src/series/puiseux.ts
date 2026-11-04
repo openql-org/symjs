@@ -16,7 +16,7 @@ import { Add, Constant, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, isNum 
 import { numAdd, numCmp, numMul, numNeg } from '../core/num';
 import { add, exp, mul, pow } from '../core/ops';
 import { xreplace as subs } from '../core/traverse';
-import { fn, log } from '../functions/elementary';
+import { fn, log } from '../functions/elementary/elementary';
 import { fnTaylorAtZero } from '../calculus/diff';
 import { expandMul as expand } from '../simplify/expand';
 import { first, last } from '../core/guard';

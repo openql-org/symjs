@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { Expr, Mul, Pow, Rational } from '../../src/core/nodes';
 import { NoMatch, Unsolved } from '../../src/core/truth';
-import { fn } from '../../src/functions/elementary';
+import { fn } from '../../src/functions/elementary/elementary';
 import { ecmOneFactor, factorintInt } from '../../src/ntheory/factor';
 import { abundance, divisorCount, divisors, dra, drm, factorint, factorrat, isAbundant, isAmicable, isDeficient, isPerfect, mersennePrimeExponent, multiplicity, multiplicityInFactorial, perfectPower, pollardPm1, pollardRho, primefactors, primorial, properDivisorCount, properDivisors, smoothness, smoothnessP } from '../../src/ntheory/index';
 import { factorCache, isprime } from '../../src/ntheory/primetest';

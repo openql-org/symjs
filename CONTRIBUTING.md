@@ -38,6 +38,14 @@ pnpm test:package                              # built ESM/CJS, minification and
   the documented current behaviour (left unevaluated, or
   `NotImplementedError`) and gives SymPy's result in a comment.
 
+## Source files
+
+- Outside `core/`, a module ports the SymPy module of the same path: `sympy/<package>/<module>.py`
+  is ported in `packages/symjs/src/<package>/<module>.ts`, with the underscores of the module name
+  removed (`zeta_functions.py` -> `functions/special/zetafunctions.ts`). New code goes into the file
+  of the SymPy module it ports; the mapping, including the files that combine several SymPy modules,
+  is in `docs/architecture.md`.
+
 ## Test files
 
 - Tests mirror the source tree: the tests of `packages/<pkg>/src/<path>/<name>.ts` are in

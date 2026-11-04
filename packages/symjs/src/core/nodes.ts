@@ -130,7 +130,7 @@ export type FnName =
   | 'principal_branch'
   | SpecialFnName;
 
-/** Special and combinatorial functions (see functions/special.ts). */
+/** Special and combinatorial functions (see functions/special/special.ts). */
 export type SpecialFnName =
   | 'factorial'
   | 'factorial2'
@@ -213,7 +213,7 @@ export type SpecialFnName =
   | 'mathieusprime'
   | 'mathieucprime'
   | 'KroneckerDelta'
-  // zeta functions (functions/zeta.ts), incomplete beta (functions/special.ts), elliptic integrals (functions/elliptic.ts), Appell F1 (functions/hyper.ts)
+  // zeta functions (functions/special/zetafunctions.ts), incomplete beta (functions/special/special.ts), elliptic integrals (functions/special/ellipticintegrals.ts), Appell F1 (functions/special/hyper.ts)
   | 'polylog'
   | 'lerchphi'
   | 'dirichlet_eta'
@@ -226,7 +226,7 @@ export type SpecialFnName =
   | 'elliptic_f'
   | 'elliptic_pi'
   | 'appellf1'
-  // orthogonal polynomials (functions/polynomials.ts)
+  // orthogonal polynomials (functions/special/polynomials.ts)
   | 'jacobi'
   | 'gegenbauer'
   | 'chebyshevt'

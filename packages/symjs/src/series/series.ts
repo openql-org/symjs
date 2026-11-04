@@ -12,7 +12,7 @@ import { add, exp, mul, neg, pow, sympify } from '../core/ops';
 import { Mul } from '../core/nodes';
 import { expandMul } from '../simplify/expand';
 import { mapBottomUp, xreplace as subs } from '../core/traverse';
-import { log, sin } from '../functions/elementary';
+import { log, sin } from '../functions/elementary/elementary';
 import { EssentialSingularity, Expander, type PS, isE } from './puiseux';
 import { isPositive, isReal } from '../core/assumptions';
 import { at, first, getOrThrow } from '../core/guard';

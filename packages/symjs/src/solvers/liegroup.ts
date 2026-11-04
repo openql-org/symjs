@@ -27,7 +27,7 @@ import { countOps, freeSymbols, mapBottomUp, some, subs, xreplace } from '../cor
 import { diff } from '../calculus/diff';
 import { SubsNode } from '../core/subsnode';
 import { doit } from '../calculus/doit';
-import { log } from '../functions/elementary';
+import { log } from '../functions/elementary/elementary';
 import { integrate } from '../integrals/integrate';
 import { reduced } from '../polys/groebner';
 import { Poly } from '../polys/sympoly';

@@ -18,7 +18,7 @@ import { I, Rational, S, Sym, pi } from '../core/nodes';
 import { at, expectType } from '../core/guard';
 import { atoms } from '../core/methods';
 import { add, div, mul, sub, sympify } from '../core/ops';
-import { cos, sin } from '../functions/elementary';
+import { cos, sin } from '../functions/elementary/elementary';
 import { evalf } from '../numeric/evalf';
 import type { IntLike } from '../ntheory/intutil';
 import { pmod, powmod } from '../ntheory/intutil';

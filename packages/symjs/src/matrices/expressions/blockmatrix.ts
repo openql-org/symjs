@@ -16,7 +16,7 @@ import { ExtensionExpr, S } from '../../core/nodes';
 import { add, mul, sympify } from '../../core/ops';
 import { rebuild } from '../../core/traverse';
 import type { Truth } from '../../core/truth';
-import { adjoint as adjointFn } from '../../functions/elementary';
+import { adjoint as adjointFn } from '../../functions/elementary/elementary';
 import { Matrix } from '../matrix';
 import type { MatArg } from './matexpr';
 import {

@@ -107,7 +107,7 @@ const FN_NUMERIC1: Partial<Record<Fn['name'], (a: C) => C>> = {
   conjugate: cconj,
 };
 
-/** Numeric implementations of functions (multi-argument); special.ts registers more. */
+/** Numeric implementations of functions (multi-argument); functions/special/special.ts registers more. */
 export const numericFns: Partial<Record<Fn['name'], (args: C[]) => C>> = Object.fromEntries(
   Object.entries(FN_NUMERIC1).map(([k, f]) => [k, (args: C[]) => f(at(args, 0))]),
 );

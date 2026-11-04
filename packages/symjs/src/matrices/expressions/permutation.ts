@@ -11,7 +11,7 @@ import { callableClass } from '../../core/callable';
 import type { ExprLike , Expr} from '../../core/nodes';
 import { ExtensionExpr, Rational, S } from '../../core/nodes';
 import { sympify } from '../../core/ops';
-import { KroneckerDelta } from '../../functions/hyper';
+import { KroneckerDelta } from '../../functions/special/hyper';
 import type { DoitHints, MatArg } from './matexpr';
 import { IdentityNode, MatMulNode, MatrixElementNode, MatrixExpr, OneMatrixNode, ZeroMatrixNode, doitArg, toMatrix } from './matexpr';
 import { BlockDiagMatrixNode } from './blockmatrix';

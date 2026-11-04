@@ -21,7 +21,7 @@ import { Add, Float, Fn, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { mapBottomUp, rebuild, xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
-import { fn, log } from '../functions/elementary';
+import { fn, log } from '../functions/elementary/elementary';
 import { polyCoefficients } from '../polys/poly';
 import { expandMul as expand } from '../simplify/expand';
 import { cancel, fraction, ratsimp, together } from '../simplify/rational';

@@ -25,7 +25,7 @@ import { BoolOp } from '../core/boolalg';
 import { Indexed } from '../core/indexed';
 import { isNoMatch } from '../core/truth';
 import { diff as diffExpr } from '../calculus/diff';
-import { conjugate as conjugateExpr } from '../functions/elementary';
+import { conjugate as conjugateExpr } from '../functions/elementary/elementary';
 import { Matrix } from '../matrices/matrix';
 import { evalf as evalfExpr } from '../numeric/evalf';
 import { expand as expandExpr } from '../simplify/expand';

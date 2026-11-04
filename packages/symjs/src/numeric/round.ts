@@ -9,7 +9,7 @@ import type { Expr, ExprLike } from '../core/nodes';
 import { Float, Rational, S, Special } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
 import { atoms } from '../core/methods';
-import { im, re } from '../functions/elementary';
+import { im, re } from '../functions/elementary/elementary';
 import * as F from './mpf';
 import { evalAdaptive } from './mpeval';
 import { float } from './floatctor';

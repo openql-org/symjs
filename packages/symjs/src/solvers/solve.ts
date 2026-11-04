@@ -17,7 +17,7 @@ import { at, defined, first, getOrThrow } from '../core/guard';
 import { evalf } from '../numeric/evalf';
 import { evalMp, fromMpc } from '../numeric/mpeval';
 import { diff } from '../calculus/diff';
-import { acos, asin, atan, log } from '../functions/elementary';
+import { acos, asin, atan, log } from '../functions/elementary/elementary';
 import { polyCoefficients, roots } from '../polys/poly';
 import { Poly } from '../polys/sympoly';
 import { linearEqToMatrix, solveAugmented } from '../matrices/linsys';

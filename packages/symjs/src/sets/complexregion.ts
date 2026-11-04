@@ -18,7 +18,7 @@ import { add, mul, pow } from '../core/ops';
 import { callableClass } from '../core/callable';
 import { at, cast, first } from '../core/guard';
 import { TupleNode } from '../core/containers';
-import { fn } from '../functions/elementary';
+import { fn } from '../functions/elementary/elementary';
 import { isReal } from '../core/assumptions';
 import { Mod } from '../functions/mod';
 import { ratMod } from '../core/num';

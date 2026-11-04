@@ -11,7 +11,7 @@ import { splitCoeff, sympify } from '../core/ops';
 import { countOps as opCount } from '../core/match';
 import { countOps, mapBottomUp, rebuild, some } from '../core/traverse';
 import { combsimp } from './gammasimp';
-import { fn } from '../functions/elementary';
+import { fn } from '../functions/elementary/elementary';
 import { expand_log, expand_power_exp, expandMul as expand } from './expand';
 import { logcombine, powsimp } from './powsimp';
 import { factorTerms } from './exprtools';

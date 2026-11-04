@@ -18,11 +18,11 @@ import { DefinedFunctionCall } from '../core/defun';
 import { Indexed } from '../core/indexed';
 import { add, mul, pow, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
-import { conjugate, cos, cosh, fn, im as fnIm, log, re as fnRe, sin, sinh, tan, tanh } from '../functions/elementary';
+import { conjugate, cos, cosh, fn, im as fnIm, log, re as fnRe, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
 
 /**
  * Partial derivatives of multi-argument functions: fnPartials[name](args, i)
- * is d f(args) / d args[i]. special.ts registers entries.
+ * is d f(args) / d args[i]. functions/special/special.ts registers entries.
  */
 export const fnPartials: Partial<Record<Fn['name'], (args: readonly Expr[], i: number) => Expr>> = {};
 

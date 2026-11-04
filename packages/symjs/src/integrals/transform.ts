@@ -16,7 +16,7 @@ import { limit } from '../series/limits';
 import { integrate } from './integrate';
 import { add, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, some, subs } from '../core/traverse';
-import { sign } from '../functions/special';
+import { sign } from '../functions/special/special';
 import { diff } from '../calculus/diff';
 import { solve } from '../solvers/solve';
 

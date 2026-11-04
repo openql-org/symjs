@@ -21,7 +21,7 @@ import { Subs } from '../core/subsnode';
 import { float } from '../numeric/floatctor';
 import { and, not, or, xor } from '../core/boolalg';
 import { add, div, exp, mul, neg, pow, sqrt, sub, sympify } from '../core/ops';
-import { fn } from '../functions/elementary';
+import { fn } from '../functions/elementary/elementary';
 import { at, defined } from '../core/guard';
 import { Eq, piecewise, rel } from '../core/logic';
 import { SymFunction, derivative } from '../core/undef';

@@ -27,7 +27,7 @@ import { lcm as ilcm } from '../core/numbers';
 import { subs, xreplace } from '../core/traverse';
 import { Lambda } from '../core/lambda';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { log } from '../functions/elementary';
+import { log } from '../functions/elementary/elementary';
 import { rewrite } from '../simplify/rewrite';
 import { cancel } from '../simplify/rational';
 import { rischDEOrNone } from './rde';

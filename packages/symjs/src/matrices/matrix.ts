@@ -12,7 +12,7 @@ import { Expr, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { subs } from '../core/traverse';
 import { sympifyMethod } from '../core/sympify';
-import { conjugate } from '../functions/elementary';
+import { conjugate } from '../functions/elementary/elementary';
 import { evalf, lambdify, toComplex } from '../numeric/evalf';
 import { roots } from '../polys/poly';
 import { latex } from '../printing/latex';

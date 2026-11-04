@@ -15,7 +15,7 @@ import type { Expr, ExprLike } from '../core/nodes';
 import { Fn, Rational } from '../core/nodes';
 import { sympify } from '../core/ops';
 import { gcd } from '../core/numbers';
-import { ceiling as ceilingFn, floor as floorFn } from '../functions/special';
+import { ceiling as ceilingFn, floor as floorFn } from '../functions/special/special';
 
 /** An integer input: an expression, a JavaScript integer or a bigint. */
 export type IntLike = ExprLike | bigint | number;

@@ -17,7 +17,7 @@
 import type { ExprLike, Substitution } from '../core/nodes';
 import { Add, Expr, Mul, Pow, Rational, Rel, S, Sym } from '../core/nodes';
 import { Lt } from '../core/logic';
-import { abs } from '../functions/elementary';
+import { abs } from '../functions/elementary/elementary';
 import { at, defined, expectType, first, getOrThrow, pair } from '../core/guard';
 import { add, couldExtractMinusSign, mul, neg, pow, sqrt, sub, sympify } from '../core/ops';
 import { NotImplementedError } from '../core/errors';

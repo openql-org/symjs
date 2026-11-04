@@ -12,8 +12,8 @@ export {
   simplify,
   type SimplifyOptions,
 } from './simplify/simplify';
-export { hyperexpand, Hyper_Function, G_Function, Operator, type HyperexpandOptions } from './integrals/hyperexpand';
-export { ratsimpmodprime } from './simplify/ratsimpmodprime';
+export { hyperexpand, Hyper_Function, G_Function, Operator, type HyperexpandOptions } from './simplify/hyperexpand';
+export { ratsimpmodprime } from './simplify/ratsimp';
 export { gammasimp, combsimp, hypersimilar, isHypergeometric } from './simplify/gammasimp';
 export {
   besselsimp,
@@ -58,7 +58,7 @@ export { hypersimp, separatevars } from './simplify/public';
 export {
   sqrtdenest,
 } from './simplify/sqrtdenest';
-export { cse } from './simplify/cse';
+export { cse } from './simplify/csemain';
 export type {
   CseOptions,
   CseResult,
@@ -69,12 +69,12 @@ export type {
   CseOptimization,
   CseHomogeneousInput,
   CseHomogeneous,
-} from './simplify/cse';
-export { epath, EPath } from './simplify/epath';
-export type { EPathFunction } from './simplify/epath';
+} from './simplify/csemain';
+export { epath, EPath } from './simplify/epathtools';
+export type { EPathFunction } from './simplify/epathtools';
 
 // the groebner method of trigsimp (registered here: a direct import would be an import cycle)
-import { ratsimpmodprime as _ratsimpmodprime_ } from './simplify/ratsimpmodprime';
+import { ratsimpmodprime as _ratsimpmodprime_ } from './simplify/ratsimp';
 import { trigsimpHooks as _trigsimpHooks_ } from './simplify/trigsimp';
 _trigsimpHooks_.ratsimpmodprime = _ratsimpmodprime_;
 

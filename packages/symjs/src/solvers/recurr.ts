@@ -12,7 +12,7 @@ import { at, defined, first, getOrThrow } from '../core/guard';
 import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { asNumerDenom } from '../core/methods';
-import { binomial } from '../functions/special';
+import { binomial } from '../functions/special/special';
 import { Matrix } from '../matrices/matrix';
 import { polyCoefficients, roots } from '../polys/poly';
 import { Poly, factorListExpr, polyLcm } from '../polys/sympoly';

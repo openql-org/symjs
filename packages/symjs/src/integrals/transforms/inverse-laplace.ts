@@ -16,9 +16,9 @@ import { add, exp, mul, neg, pow, splitCoeff, sqrt, sub, sympify } from '../../c
 import { isNegative, isPositive } from '../../core/assumptions';
 import { asIndependent, asNumerDenom, extractMultiplicatively, isRationalFunction } from '../../core/methods';
 import { mapBottomUp, rebuild, some, subs } from '../../core/traverse';
-import { cos, cosh, re, sin, sinh } from '../../functions/elementary';
-import { erf, erfc, gamma, lowergamma } from '../../functions/special';
-import { besseli, besselj } from '../../functions/bessel';
+import { cos, cosh, re, sin, sinh } from '../../functions/elementary/elementary';
+import { erf, erfc, gamma, lowergamma } from '../../functions/special/special';
+import { besseli, besselj } from '../../functions/special/bessel';
 import { diff } from '../../calculus/diff';
 import { Matrix } from '../../matrices/matrix';
 import { Poly, factor } from '../../polys/sympoly';

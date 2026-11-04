@@ -13,7 +13,7 @@ import { add, couldExtractMinusSign, exp, mul, pow, splitCoeff, sympify } from '
 import { countOps, ordered } from '../core/match';
 import { keepCoeff } from '../core/methods';
 import { rebuild, subs, xreplace } from '../core/traverse';
-import { log } from '../functions/elementary';
+import { log } from '../functions/elementary/elementary';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { expand_log, expandMul } from './expand';
 import { factorTerms } from './exprtools';

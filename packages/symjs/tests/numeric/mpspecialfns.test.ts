@@ -59,7 +59,7 @@ describe('evaluators registered for functions symjs does not define yet', () => 
     expect(call('elliptic_k', [half], 15)).toEqual(['1.85407467730137', '0.0']);
     expect(call('elliptic_e', [half], 15)).toEqual(['1.35064388104768', '0.0']);
     // mpmath ellipe(0.5, 0.5); dirichlet_eta(s, a) = zeta(s, a) - 2**(1 - s)*zeta(s, (a + 1)/2) as SymPy
-    // evaluates it (functions/zeta.ts): mpmath zeta(0.5, 0.5) - sqrt(2)*zeta(0.5, 0.75) = 0.9442583142382
+    // evaluates it (functions/special/zetafunctions.ts): mpmath zeta(0.5, 0.5) - sqrt(2)*zeta(0.5, 0.75) = 0.9442583142382
     expect(call('elliptic_e', [half, half], 15)).toEqual(['0.489910959792517', '0.0']);
     expect(call('dirichlet_eta', [half, half], 13)).toEqual(['0.9442583142382', '0.0']);
   });

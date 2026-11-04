@@ -75,6 +75,7 @@ packages/
   symjs/                @symjs/symjs (base module)
     src/                core/ numeric/ printing/ parsing/ functions/ simplify/ polys/
                         calculus/ series/ integrals/ solvers/ matrices/ concrete/ sets/
+                        (outside core/, the paths follow SymPy's module tree, see docs/architecture.md)
     tests/              unit tests mirroring src/ (tests/<path>/<name>.test.ts for src/<path>/<name>.ts), cross-cutting tests and SymPy golden tests at the top
   physics-quantum/      @symjs/physics-quantum (extend module)
     src/  tests/

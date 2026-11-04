@@ -11,7 +11,7 @@ import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Fn, Mul, Rational, S } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { mapBottomUp, xreplace } from '../core/traverse';
-import { cos, cosh, fn, sin, sinh } from '../functions/elementary';
+import { cos, cosh, fn, sin, sinh } from '../functions/elementary/elementary';
 import { Poly, factor } from '../polys/sympoly';
 import { expandMul as expand } from './expand';
 import { fraction, together } from './rational';

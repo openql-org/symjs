@@ -16,7 +16,7 @@ import { asNumerDenom } from '../core/methods';
 import { gcd, lcm } from '../core/numbers';
 import { NotImplementedError } from '../core/errors';
 import { expectType, getOrThrow, pair } from '../core/guard';
-import { floor as floorFn } from '../functions/special';
+import { floor as floorFn } from '../functions/special/special';
 import { factorintInt } from './factor';
 import type { IntLike } from './intutil';
 import { asInt, fdiv, isqrt, sqrtrem } from './intutil';

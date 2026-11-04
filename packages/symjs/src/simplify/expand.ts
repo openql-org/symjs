@@ -9,7 +9,7 @@ import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPositive, isReal } 
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, ExtensionExpr, Fn, Mul, Pow, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
-import { cos, cosh, fn, im, log, re, sin, sinh, tan, tanh } from '../functions/elementary';
+import { cos, cosh, fn, im, log, re, sin, sinh, tan, tanh } from '../functions/elementary/elementary';
 import { rebuild } from '../core/traverse';
 import { at, defined, first } from '../core/guard';
 import { integerNthroot } from '../core/numberutils';

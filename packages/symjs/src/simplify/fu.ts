@@ -23,7 +23,7 @@ import { ExprMap } from '../core/exprmap';
 import { Factors } from '../core/factors';
 import { isIntegerQ, isNegative, isPositive, isReal } from '../core/assumptions';
 import { rebuild, some, xreplace } from '../core/traverse';
-import { fn } from '../functions/elementary';
+import { fn } from '../functions/elementary/elementary';
 import { perfectPower } from '../ntheory/factor';
 import { factor } from '../polys/sympoly';
 import { expand } from './expand';

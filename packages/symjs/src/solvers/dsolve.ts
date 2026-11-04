@@ -17,8 +17,8 @@ import { freeSymbols, mapBottomUp, some, subs, xreplace } from '../core/traverse
 import { derivative } from '../core/undef';
 import { diff } from '../calculus/diff';
 import { evalf } from '../numeric/evalf';
-import { abs, cos, fn, im, log, re, sin, tan } from '../functions/elementary';
-import '../functions/bessel';
+import { abs, cos, fn, im, log, re, sin, tan } from '../functions/elementary/elementary';
+import '../functions/special/bessel';
 import { integrate } from '../integrals/integrate';
 import { Matrix } from '../matrices/matrix';
 import { polyCoefficients, roots } from '../polys/poly';

@@ -23,9 +23,9 @@ import { isNonZero, isPositive, isReal } from '../../core/assumptions';
 import { solve } from '../../solvers/solve';
 
 import { mapBottomUp, subs, xreplace } from '../../core/traverse';
-import { abs, cos, re, sin } from '../../functions/elementary';
-import { gamma } from '../../functions/special';
-import { besselj, besselk } from '../../functions/bessel';
+import { abs, cos, re, sin } from '../../functions/elementary/elementary';
+import { gamma } from '../../functions/special/special';
+import { besselj, besselk } from '../../functions/special/bessel';
 import { diff } from '../../calculus/diff';
 import { Poly } from '../../polys/sympoly';
 import { expand } from '../../simplify/expand';

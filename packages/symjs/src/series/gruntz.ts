@@ -19,7 +19,7 @@ import type { Expr, Sym } from '../core/nodes';
 import { Add, Constant, Dummy, Fn, Mul, Pow, Rational, S, Special, UndefFn, impl } from '../core/nodes';
 import { add, exp, mul, pow } from '../core/ops';
 import { mapBottomUp, xreplace } from '../core/traverse';
-import { fn, log } from '../functions/elementary';
+import { fn, log } from '../functions/elementary/elementary';
 import { powdenest, powsimp } from '../simplify/powsimp';
 import { together } from '../simplify/rational';
 import { expand, expandMul } from '../simplify/expand';

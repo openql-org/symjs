@@ -203,7 +203,7 @@ export {
   dagger,
   adjoint,
   transpose,
-} from './functions/elementary';
+} from './functions/elementary/elementary';
 export {
   cot,
   sec,
@@ -221,7 +221,7 @@ export {
   asech,
   acsch,
   sinc,
-} from './functions/trigext';
+} from './functions/elementary/trigext';
 export {
   diff,
   fdiff,

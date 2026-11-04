@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { Expr, pi, Rational } from '../../src/core/nodes';
 import { sqrt } from '../../src/core/ops';
 import { NoMatch, Unsolved } from '../../src/core/truth';
-import { fn } from '../../src/functions/elementary';
+import { fn } from '../../src/functions/elementary/elementary';
 import { parseExpr } from '../../src/index';
 import { abundance, binomialCoefficients, binomialCoefficientsList, composite, continuedFraction, continuedFractionConvergents, continuedFractionIterator, continuedFractionPeriodic, continuedFractionReduce, countDigits, digits, discreteLog, divisorCount, dra, drm, ecm, egyptianFraction, factorint, isAmicable, isNthpowResidue, isPalindromic, isPrimitiveRoot, isQuadResidue, mersennePrimeExponent, multinomialCoefficients, multinomialCoefficientsIterator, multiplicity, multiplicityInFactorial, nextprime, nOrder, npartitions, nthrootMod, perfectPower, pollardPm1, pollardRho, polynomialCongruence, prevprime, prime, primitiveRoot, primorial, qsFactor, quadraticCongruence, quadraticResidues, Random, sqrtMod, sqrtModIter } from '../../src/ntheory/index';
 

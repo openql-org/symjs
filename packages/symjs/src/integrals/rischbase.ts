@@ -24,7 +24,7 @@ import { add, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import type { LambdaNode } from '../core/lambda';
 import { Lambda } from '../core/lambda';
-import { log } from '../functions/elementary';
+import { log } from '../functions/elementary/elementary';
 import { mgcd } from '../polys/mpoly';
 import { RootSum } from '../polys/rootsum';
 import { cancel, fraction } from '../simplify/rational';

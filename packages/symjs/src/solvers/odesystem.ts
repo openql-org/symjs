@@ -21,7 +21,7 @@ import { xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { doit } from '../calculus/doit';
 import { Eq } from '../core/logic';
-import { cos, im, log, re, sin } from '../functions/elementary';
+import { cos, im, log, re, sin } from '../functions/elementary/elementary';
 import { factor } from '../polys/sympoly';
 import { cancel } from '../simplify/rational';
 import { separatevars } from '../simplify/separatevars';

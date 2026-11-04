@@ -113,4 +113,6 @@ export function getn(e: _ExprLike_): _Expr_ | NoMatchResult {
 
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const extractLeadingOrder = _extractLeadingOrder_;
-export { lseries, dir, fps, fourierSeries, FormalPowerSeries, FourierSeries } from './series/more';
+export { lseries, dir } from './series/lseries';
+export { fps, FormalPowerSeries } from './series/formal';
+export { fourierSeries, FourierSeries } from './series/fourier';
