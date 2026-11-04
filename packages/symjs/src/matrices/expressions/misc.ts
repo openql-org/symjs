@@ -9,7 +9,7 @@
 
 import { callableClass } from '../../core/callable';
 import type { ExprLike , Expr} from '../../core/nodes';
-import { Add, ExtensionExpr, Float, S } from '../../core/nodes';
+import { Add, Float, S } from '../../core/nodes';
 import { isIntegerQ, isNegative } from '../../core/assumptions';
 import { pow, sympify } from '../../core/ops';
 import type { Truth } from '../../core/truth';
@@ -168,10 +168,18 @@ export type CompanionMatrix = CompanionMatrixNode;
 // MatrixSet
 // ---------------------------------------------------------------------------
 
-/** SymPy MatrixSet(n, m, set): the set of n x m matrices with entries in a set. */
-export class MatrixSetNode extends ExtensionExpr {
+/** SymPy MatrixSet(n, m, set): the set of n x m matrices with entries in a set (a set, as in SymPy). */
+export class MatrixSetNode extends SetExpr {
+  readonly args: readonly Expr[];
   constructor(n: Expr, m: Expr, set: SetExpr) {
-    super('MatrixSet', [n, m, set]);
+    super();
+    this.args = [n, m, set];
+  }
+  get className(): string {
+    return 'MatrixSet';
+  }
+  protected computeKey(): string {
+    return `MatrixSet(${this.args.map((a) => a.key).join(',')})`;
   }
   /** SymPy MatrixSet(n, m, set). */
   static create(n: ExprLike, m: ExprLike, set: SetExpr): MatrixSetNode {
@@ -190,8 +198,12 @@ export class MatrixSetNode extends ExtensionExpr {
   get set(): SetExpr {
     return cast(at(this.args, 2), SetExpr);
   }
-  withArgs(args: readonly Expr[]): Expr {
+  override withArgs(args: readonly Expr[]): Expr {
     return new MatrixSetNode(at(args, 0), at(args, 1), cast(at(args, 2), SetExpr));
+  }
+  /** SymPy MatrixSet._contains (a TypeError for a value that is not a matrix expression). */
+  override elementOf(x: Expr): Truth {
+    return this.contains(x);
   }
   /** SymPy X in M: true, false or 'unknown'. */
   contains(other: MatArg): Truth {
@@ -210,7 +222,10 @@ export class MatrixSetNode extends ExtensionExpr {
     }
     return result;
   }
-  override printLatex(print: (e: Expr) => string): string {
+  printStr(print: (e: Expr) => string): string {
+    return `MatrixSet(${this.args.map(print).join(', ')})`;
+  }
+  printLatex(print: (e: Expr) => string): string {
     return `\\operatorname{MatrixSet}\\left(${this.args.map(print).join(', ')}\\right)`;
   }
 }

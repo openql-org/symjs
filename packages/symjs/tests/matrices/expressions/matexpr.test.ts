@@ -764,7 +764,8 @@ describe('defaults and remaining paths', () => {
     const bs = new BareScalar(Trace(MatAdd(X, X)));
     expect(bs.doit({ deep: false })).toBe(bs);
     expect(s(bs.doit())).toBe('BareScalar(2*Trace(X))');
-    expect(s(doit(bs))).toBe('BareScalar(Trace(2*X))');
+    // SymPy: doit is deep, so the trace of 2*X is 2*Trace(X) (f(Trace(2*X)).doit() = f(2*Trace(X)))
+    expect(s(doit(bs))).toBe('BareScalar(2*Trace(X))');
     const bx = new BareScalar(x);
     expect(bx.doit()).toBe(bx);
     expect(M(X.applyfunc(sin)).diffSelf(x, diff)).toBe(undefined);
@@ -939,5 +940,15 @@ describe('matrix expressions', () => {
     const p = P.args[0];
     if (p === undefined) throw new Error('no argument');
     expect(rebuild(p, p.args).key).toBe(p.key);
+  });
+});
+
+describe('evalf of a matrix element', () => {
+  it('evaluates the element of an explicit matrix expression (SymPy MatPow(M, 2)[0, 1].evalf() = 10.0)', () => {
+    const M = ImmutableMatrix([[1, 2], [3, 4]]);
+    expect(String(sj.evalf(MatrixElement(MatPow(M, 2), 0, 1)))).toBe('10.0000000000000');
+    const [i] = symbols('i', { integer: true });
+    // an element with a symbolic index stays an element (SymPy keeps the integer entries: Matrix([[1, 2], [3, 4]])[i, 0])
+    expect(String(sj.evalf(MatrixElement(M, i as sj.Expr, 0)))).toBe('Matrix([[1.0, 2.0], [3.0, 4.0]])[i, 0]');
   });
 });

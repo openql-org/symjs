@@ -29,7 +29,7 @@ import type { ProbabilityOptions } from './rv';
 import { ContinuousPSpace } from './crv';
 import { DiscretePSpace } from './drv';
 import { FinitePSpace, ProductFinitePSpace } from './frv';
-import { CentralMomentNode, Covariance, MomentNode, VarianceNode, interfaceHooks } from './symbolicprobability';
+import { CentralMomentNode, Covariance, MomentNode, Variance, interfaceHooks } from './symbolicprobability';
 
 /** The probability space is SymPy's PSpace() of a random symbol without a space. */
 const isEmptySpace = (x: Expr): boolean => isRandom(x) && pspace(x).key === new PSpace().key;
@@ -46,7 +46,7 @@ export function moment(X: ExprLike, n: ExprLike, c: ExprLike = 0, condition?: Ex
 /** The variance of a random expression, optionally given a condition (SymPy variance). */
 export function variance(X: ExprLike, condition?: ExprLike, opts: ProbabilityOptions = {}): Expr {
   const x = sympify(X);
-  if (isEmptySpace(x)) return new VarianceNode(cond([x], condition));
+  if (isEmptySpace(x)) return Variance(x, condition);
   return cmoment(x, 2, condition, opts);
 }
 

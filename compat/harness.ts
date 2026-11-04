@@ -481,6 +481,10 @@ export function deserialize(tree: Tree): unknown {
       return sj.interval(deserialize(tree['a'] as Tree) as Expr, deserialize(tree['b'] as Tree) as Expr, tree['lo'] as boolean, tree['ro'] as boolean);
     case 'FiniteSet':
       return sj.finiteSet(...(tree['items'] as Tree[]).map((x) => deserialize(x) as Expr));
+    case 'Range':
+      return sj.Range.of(deserialize(tree['start'] as Tree) as Expr, deserialize(tree['stop'] as Tree) as Expr, deserialize(tree['step'] as Tree) as Expr);
+    case 'Contains':
+      return new sj.Contains(deserialize(tree['x'] as Tree) as Expr, deserialize(tree['set'] as Tree) as sj.SetExpr);
     case 'NamedSet': {
       const named = (sj as unknown as Record<string, unknown>)[tree['name'] as string];
       if (!(named instanceof sj.SetExpr)) throw new Unsupported(`set ${String(tree['name'])}`);
@@ -717,11 +721,19 @@ function deserializeStats(tree: Tree): unknown {
     if (v instanceof JsDict) return sj.Dict(v.entries.map(([k, x]) => [toArg(k), toArg(x)] as const));
     if (v instanceof JsSet) return sj.FiniteSet.of(...v.items.map(toArg)) as Expr;
     if (v instanceof JsLambda) return sj.Lambda(v.vars, v.body);
+    // a sympy Tuple (the state space of a Markov chain) and an explicit matrix argument
+    if (v instanceof JsTuple) return new sj.TupleNode(v.items.map(toArg));
+    if (v instanceof Matrix) return sj.ImmutableMatrix(v);
     return v as Expr;
   };
   const args = (tree['args'] as Tree[]).map((a) => toArg(deserialize(a)));
   const lib = sj as unknown as Record<string, new (...a: unknown[]) => unknown>;
   if (cls === 'RandomSymbol') return new sj.RandomSymbol(args[0] as Sym, args[1] as sj.PSpace);
+  if (cls === 'JointRandomSymbol') return new sj.JointRandomSymbol(args[0] as Sym, args[1] as sj.PSpace);
+  if (cls === 'RandomIndexedSymbol') return new sj.RandomIndexedSymbol(args[0] as Expr, args[1] as sj.PSpace);
+  if (cls === 'RandomMatrixSymbol') return new sj.RandomMatrixSymbol(args[0] as Sym, args[1] as Expr, args[2] as Expr, args[3] as sj.PSpace);
+  // SymPy's Distribution() of a stochastic process without a distribution
+  if (cls === 'Distribution') return new sj.UnspecifiedDistribution();
   // the symbolic probability nodes are classes ExpectationNode, ...; the spaces, domains and distributions take their arguments
   const C = lib[`${cls}Node`] ?? lib[cls];
   if (!C) throw new Unsupported(`stats class ${cls}`);

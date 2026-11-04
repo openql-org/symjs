@@ -323,6 +323,8 @@ const evalAbs: Evaluator = (x) => {
   if (isI(x)) return S.One;
   if (isNonNegative(x)) return x;
   if (isNegative(x)) return neg(x);
+  // SymPy Abs.eval: signsimp(arg) takes the minus sign out of a sum (Abs(1 - x) = Abs(x - 1))
+  if (x instanceof Add && couldExtractMinusSign(x)) return abs(neg(x));
   if (x instanceof Mul) {
     // SymPy Abs.eval: factors whose Abs evaluates to something other than an Abs come out, the rest
     // stay inside a single Abs (each factor by the registered Abs rules, such as those of polar

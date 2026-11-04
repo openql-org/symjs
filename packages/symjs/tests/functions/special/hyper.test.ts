@@ -394,3 +394,12 @@ describe('hyper radius_of_convergence, eta and convergence_statement (SymPy)', (
     }
   });
 });
+
+describe('hyper convergence_statement with complementary relations (SymPy Or._new_args_filter)', () => {
+  it('is true when a relation and its negation are present', () => {
+    const a = new Sym('a', { positive: true });
+    const ar = new Sym('a', { real: true });
+    expect(str((hyper([a], [], sj.Rational.of(1n, 10n)) as Hyper).convergenceStatement)).toBe('True');
+    expect(str((hyper([ar], [], sj.Rational.of(1n, 10n)) as Hyper).convergenceStatement)).toBe('(a >= 1) | (a < 0) | ((a >= 0) & (a < 1))');
+  });
+});

@@ -7,14 +7,14 @@
  */
 
 import { NotImplementedError } from '../../core/errors';
-import { at, defined, first, pair } from '../../core/guard';
+import { at, cast, defined, first, pair } from '../../core/guard';
 import type { Expr, ExprLike } from '../../core/nodes';
-import { ExtensionExpr, Fn, Mul, Pow, Rational, S, Special, asRational } from '../../core/nodes';
+import { ExtensionExpr, Fn, Mul, Pow, Rational, Rel, S, Special, asRational } from '../../core/nodes';
 import { rebuild } from '../../core/traverse';
 import { isIntegerQ, isNonZero, isPositive, isZero } from '../../core/assumptions';
 import { compareKeys, sortKey } from '../../printing/sortkey';
-import { Ge, Gt, Le, Lt, Ne, piecewise } from '../../core/logic';
-import { and, or } from '../../core/boolalg';
+import { Ge, Gt, Le, Lt, Ne, canonicalRelation, piecewise, rel } from '../../core/logic';
+import { BoolOp, and, or } from '../../core/boolalg';
 import { add, mul, pow, sympify } from '../../core/ops';
 import { fnPartials } from '../../calculus/diff';
 import { abs, cos, evaluators, fn, re, sin } from '../elementary/elementary';
@@ -33,6 +33,20 @@ import { chyp2f1 } from '../../numeric/mporthopoly';
 const gcdBig = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcdBig(b, a % b));
 
 const tuple = (print: (e: Expr) => string, xs: readonly Expr[]) => (xs.length === 1 ? `(${print(first(xs))},)` : `(${xs.map(print).join(', ')})`);
+
+/** The negation of a relational operator (SymPy Relational.negated). */
+const NEGATED_OP = { Lt: 'Ge', Le: 'Gt', Gt: 'Le', Ge: 'Lt', Eq: 'Ne', Ne: 'Eq' } as const;
+
+/**
+ * An Or that contains a relation and its negation is true (SymPy
+ * Or._new_args_filter: c.negated.canonical among the arguments).
+ */
+function orWithComplements(c: Expr): Expr {
+  if (!(c instanceof BoolOp) || c.op !== 'Or') return c;
+  const rels = c.args.filter((a): a is Rel => a instanceof Rel);
+  const keys = new Set(rels.map((r) => canonicalRelation(r).key));
+  return rels.some((r) => keys.has(canonicalRelation(cast(rel(NEGATED_OP[r.op], r.lhs, r.rhs), Rel, 'relation')).key)) ? S.true : c;
+}
 
 /** SymPy hyper(ap, bq, z): args are [z, ...ap, ...bq]. */
 export class Hyper extends ExtensionExpr {
@@ -99,7 +113,7 @@ export class Hyper extends ExtensionExpr {
     const c1 = and(Lt(e, 0), Le(abs(z), 1));
     const c2 = and(Ge(e, 0), Lt(e, 1), Le(abs(z), 1), Ne(z, 1));
     const c3 = and(Ge(e, 1), Lt(abs(z), 1));
-    return or(c1, c2, c3);
+    return orWithComplements(or(c1, c2, c3));
   }
   override printStr(print: (e: Expr) => string): string {
     return `hyper(${tuple(print, this.ap)}, ${tuple(print, this.bq)}, ${print(this.argument)})`;

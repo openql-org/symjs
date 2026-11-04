@@ -586,3 +586,42 @@ describe('the registry and checks', () => {
     expect(str(Bernoulli('B', half))).toBe('B');
   });
 });
+
+describe('random indexed and random matrix symbols, matrix domains (SymPy sympy/stats/rv.py, part 2)', async () => {
+  const sj = await import('../../src');
+  const t = new sj.Sym('t');
+  it('RandomIndexedSymbol', () => {
+    const r = new sj.RandomIndexedSymbol(sj.SymFunction('X')(t));
+    expect(sj.str(r)).toBe('X(t)');
+    expect(sj.str(r.indexKey)).toBe('t');
+    expect([...sj.freeSymbols(r)].map(sj.str).sort()).toEqual(['X(t)', 't']);
+    expect(r.has(t)).toBe(true);
+    expect(r.has(new sj.Sym('u'))).toBe(false);
+    expect(sj.str(sj.subs(r, [[t, 2]]))).toBe('X(2)');
+    expect(sj.subs(r, [[new sj.Sym('u'), 2]]).key).toBe(r.key);
+    expect(r.sortClass).toBe('RandomIndexedSymbol');
+    // SymPy: TypeError An Function or Indexed object is expected not t
+    expect(() => new sj.RandomIndexedSymbol(t)).toThrow('An Function or Indexed object is expected not t');
+  });
+  it('RandomMatrixSymbol', () => {
+    const X = new sj.RandomMatrixSymbol('X', 2, 1);
+    expect(X.has(new sj.Sym('z'))).toBe(false);
+    expect(sj.isRandom(X)).toBe(true);
+    expect(sj.pspace(X).key).toBe(new sj.PSpace().key);
+    expect(sj.str(new sj.MatrixDomain([new sj.Sym('M'), sj.Reals]).symbols[0] as Expr)).toBe('M');
+  });
+  it('the hooks of the spaces of part 2 are not implemented by the generic space', () => {
+    const ps = new sj.PSpace();
+    expect(ps.hasValueDensity).toBe(false);
+    expect(() => ps.valueDensity).toThrow(sj.NotImplementedError);
+    expect(() => ps.probabilityGiven(S.true, undefined)).toThrow(sj.NotImplementedError);
+    expect(() => ps.expectationGiven(S.One, undefined)).toThrow(sj.NotImplementedError);
+  });
+  it('the matrix forms of Expectation and Covariance with a condition', () => {
+    const X = new sj.RandomMatrixSymbol('X', 2, 1);
+    const Y = new sj.RandomMatrixSymbol('Y', 2, 1);
+    const c = Gt(new sj.Sym('x'), 0);
+    expect(sj.str(sj.Expectation(X, c))).toBe('ExpectationMatrix(X, x > 0)');
+    expect(sj.str(sj.Covariance(X, Y, c))).toBe('CrossCovarianceMatrix(X, Y, x > 0)');
+  });
+});

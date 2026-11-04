@@ -151,3 +151,15 @@ describe('series of hyper and beta (sympy.stats moments from moment generating f
     expect(sr(beta(add(1, mul(-1, t)), add(1, t)), 3)).toBe('1 + pi**2*t**2/6 + O(t**3)');
   });
 });
+
+describe('abs of a term with a negative leading coefficient', () => {
+  it('Expander: abs(t**2 - t) = t - t**2 for t -> 0+', () => {
+    const t = new Sym('_t', { positive: true });
+    const ps = new Expander(t).ser(parse('Abs(_t**2 - _t)', { symbols: [t] }), Rational.of(3));
+    expect(ps.terms.map((u) => `${u.c.toString()}*t**${u.e.toString()}`).join(' + ')).toBe('1*t**1 + -1*t**2');
+    const qs = new Expander(t).ser(parse('Abs(_t + b*_t**2)', { symbols: [t] }), Rational.of(3));
+    expect(qs.terms.map((u) => `${u.c.toString()}*t**${u.e.toString()}`).join(' + ')).toBe('1*t**1 + b*t**2');
+    // a symbolic leading coefficient: its sign is not known
+    expect(() => new Expander(t).ser(parse('Abs(b*_t + _t**2)', { symbols: [t] }), Rational.of(3))).toThrow(SeriesError);
+  });
+});

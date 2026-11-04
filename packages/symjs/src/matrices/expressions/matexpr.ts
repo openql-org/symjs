@@ -782,6 +782,11 @@ export class MatrixElementNode extends MatScalar {
     if (p instanceof MatrixExpr) return p.at(at(args, 1), at(args, 2));
     return this;
   }
+  /** evalf: the entry of the evaluated matrix ((M**5)[1, 2] of an explicit M is a number); undefined when it stays an element. */
+  override numericValue(): Expr | undefined {
+    const v = this.doit();
+    return v instanceof MatrixElementNode ? undefined : v;
+  }
   override printStr(print: (e: Expr) => string): string {
     return `${parenStr(this.parent, PRECEDENCE.Atom, true)}[${print(this.i)}, ${print(this.j)}]`;
   }
@@ -1995,6 +2000,10 @@ export class TraceNode extends MatScalar {
       return asMat(doitArg(this.arg, hints)).evalTrace();
     }
     return this.arg instanceof ImmutableMatrixNode ? trace(this.arg) : this;
+  }
+  /** The generic doit (SymPy Basic.doit is deep): the argument is evaluated already, the trace is taken (Trace(c*A) = c*Trace(A)). */
+  override doitSelf(): Expr {
+    return this.arg.evalTrace();
   }
   /** SymPy Trace.as_explicit: the trace of the explicit matrix. */
   asExplicit(): Expr {

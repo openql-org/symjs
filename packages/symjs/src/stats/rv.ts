@@ -22,7 +22,7 @@
  * avoid import cycles).
  */
 
-import { BoolAtom, Dummy, Expr, ExtensionExpr, Rel, S, Sym } from '../core/nodes';
+import { BoolAtom, Dummy, Expr, ExtensionExpr, Rel, S, Sym, UndefFn } from '../core/nodes';
 import type { Assumptions, ExprLike } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
 import { Eq, rel } from '../core/logic';
@@ -31,6 +31,7 @@ import { xreplace } from '../core/traverse';
 import { ordered } from '../core/match';
 import { Lambda } from '../core/lambda';
 import { TupleNode } from '../core/containers';
+import { Indexed } from '../core/indexed';
 import { NotImplementedError } from '../core/errors';
 import { at, cast, defined, first } from '../core/guard';
 import type { Truth } from '../core/truth';
@@ -39,15 +40,17 @@ import { solveset } from '../solvers/inequalities';
 import { DiracDelta } from '../integrals/transforms/delta';
 import { KroneckerDelta } from '../functions/special/hyper';
 import { doit } from '../calculus/doit';
+import { MatrixExpr, MatrixSymbolNode, hasNode } from '../matrices/expressions/matexpr';
+import { Matrix } from '../matrices/matrix';
 
 /** The global symbol x of sympy/stats/rv.py (the variable of the density of a constant). */
 const xGlobal = new Sym('x');
 
 /** A random symbol, an expression of random symbols or any value is random (SymPy is_random). */
 export function isRandom(x: unknown): boolean {
-  if (x instanceof RandomSymbol) return true;
+  if (x instanceof RandomSymbol || x instanceof RandomMatrixSymbol) return true;
   if (!(x instanceof Expr)) return false;
-  return [...x.freeSymbols()].some((s) => s instanceof RandomSymbol);
+  return [...x.freeSymbols()].some((s) => s instanceof RandomSymbol) || hasNode(x, (e) => e instanceof RandomMatrixSymbol);
 }
 
 /** A dict of the probability spaces of a probability computation (SymPy FiniteDensity and the dicts of finite spaces). */
@@ -79,6 +82,16 @@ export class FiniteDensity extends Map<Expr, Expr> {
     return new FiniteDensity(this);
   }
 }
+
+/**
+ * A vector or matrix parameter of a joint or matrix distribution: an
+ * explicit matrix, a matrix expression, nested arrays (the rows) or a flat
+ * array (a column vector), as SymPy's lists and matrices.
+ */
+export type MatrixParam = Matrix | MatrixExpr | readonly ExprLike[] | readonly (readonly ExprLike[])[];
+
+/** The value is a vector or matrix parameter (SymPy isinstance(v, list) or v.is_Matrix). */
+export const isMatrixParam = (v: unknown): v is MatrixParam => Array.isArray(v) || v instanceof Matrix || v instanceof MatrixExpr;
 
 /** A density: a distribution (callable through `call`), a Lambda, a dict of a finite space, or an unevaluated Density. */
 export type DensityResult = Expr | FiniteDensity;
@@ -119,6 +132,13 @@ export const statsClasses: {
   expectation?: (expr: Expr, condition: Expr | undefined, evaluate: boolean) => Expr;
   /** sympy.stats.symbolic_probability.Probability(condition, given).doit(evaluate=...). */
   probability?: (condition: Expr, given: Expr | undefined, evaluate: boolean) => Expr;
+  /** ExpectationMatrix, VarianceMatrix and CrossCovarianceMatrix (sympy.stats.symbolic_multivariate_probability). */
+  expectationMatrix?: (expr: Expr, condition: Expr | undefined) => Expr;
+  varianceMatrix?: (arg: Expr, condition: Expr | undefined) => Expr;
+  crossCovarianceMatrix?: (arg1: Expr, arg2: Expr, condition: Expr | undefined) => Expr;
+  /** MultivariateNormal and MultivariateLaplace (sympy.stats.joint_rv_types), for Normal and Laplace with matrix parameters. */
+  multivariateNormal?: (name: string | Sym, mu: MatrixParam, sigma: MatrixParam) => RandomSymbol;
+  multivariateLaplace?: (name: string | Sym, mu: MatrixParam, sigma: MatrixParam) => RandomSymbol;
 } = {};
 
 // ---------------------------------------------------------------------------
@@ -161,7 +181,13 @@ export abstract class RandomDomain extends ExtensionExpr {
   }
   /** SymPy StrPrinter._print_RandomDomain. */
   override printStr(print: (e: Expr) => string): string {
-    return `Domain: ${print(this.asBoolean())}`;
+    // SymPy _print_RandomDomain: the condition, or the variables and their set
+    if (this.hasBoolean) return `Domain: ${print(this.asBoolean())}`;
+    return `Domain: {${this.symbols.map(print).join(', ')}} in ${print(this.set)}`;
+  }
+  /** The domain has a condition form (SymPy hasattr(d, 'as_boolean')). */
+  get hasBoolean(): boolean {
+    return true;
   }
   withArgs(args: readonly Expr[]): Expr {
     return cast(Reflect.construct(this.constructor, [args]), Expr);
@@ -183,6 +209,30 @@ export class SingleDomain extends RandomDomain {
   }
   get set(): SetExpr {
     return cast(at(this.args, 1), SetExpr);
+  }
+  /** SymPy's plain SingleDomain has no as_boolean (the continuous, discrete and finite ones do). */
+  override get hasBoolean(): boolean {
+    return this.name !== 'SingleDomain';
+  }
+}
+
+/** SymPy MatrixDomain(symbol, set): a random matrix variable and its domain. */
+export class MatrixDomain extends RandomDomain {
+  constructor(args: readonly Expr[]) {
+    super('MatrixDomain', [symbolConverter(at(args, 0)), at(args, 1)]);
+  }
+  get symbol(): Sym {
+    return cast(at(this.args, 0), Sym);
+  }
+  get symbols(): Sym[] {
+    return [this.symbol];
+  }
+  get set(): SetExpr {
+    return cast(at(this.args, 1), SetExpr, 'domain set');
+  }
+  /** SymPy StrPrinter._print_RandomDomain of a domain without as_boolean: its symbols and set. */
+  override printStr(print: (e: Expr) => string): string {
+    return `Domain: {${print(this.symbol)}} in ${print(this.set)}`;
   }
 }
 
@@ -291,6 +341,31 @@ export class PSpace extends ExtensionExpr {
   get isCompound(): boolean {
     return false;
   }
+  /** The space is a SymPy StochasticPSpace (of a random indexed symbol of a stochastic process). */
+  get isStochastic(): boolean {
+    return false;
+  }
+  /**
+   * The space is not counted in the check of overlapping random variables of
+   * a product space (SymPy: a space whose distribution is a
+   * CompoundDistribution or a MarginalDistribution).
+   */
+  get sharesSymbols(): boolean {
+    return this.isCompound;
+  }
+  /**
+   * The density of the value of the space is its distribution (SymPy
+   * Density.doit of a random symbol of a SinglePSpace, JointPSpace or
+   * MatrixPSpace) or its model (RandomMatrixPSpace): `valueDensity`.
+   */
+  get hasValueDensity(): boolean {
+    return this.isSingle && !this.isCompound;
+  }
+  /** The density of the value of the space (see `hasValueDensity`): the distribution of a single space. */
+  get valueDensity(): Expr {
+    if (isSingleSpace(this)) return this.distribution;
+    throw new NotImplementedError(`the density of the value of ${this.name} is computed`);
+  }
   get domain(): RandomDomain {
     return cast(at(this.args, 0), RandomDomain, 'domain');
   }
@@ -334,6 +409,22 @@ export class PSpace extends ExtensionExpr {
   }
   conditionalSpace(_condition: Expr, _opts?: ComputeOptions): PSpace {
     throw new NotImplementedError(`conditional_space is not implemented for ${this.name}`);
+  }
+  /**
+   * The probability of a condition on random indexed symbols given another
+   * condition (SymPy StochasticPSpace.probability(condition,
+   * given_condition, evaluate)), which Probability.doit calls for them.
+   */
+  probabilityGiven(_condition: Expr, _givenCondition: Expr | undefined, _opts?: ComputeOptions): Expr {
+    throw new NotImplementedError(`probability given a condition is not implemented for ${this.name}`);
+  }
+  /**
+   * The expectation of an expression of random indexed symbols given a
+   * condition (SymPy StochasticPSpace.compute_expectation(expr, condition,
+   * evaluate)), which Expectation.doit calls for them.
+   */
+  expectationGiven(_expr: Expr, _condition: Expr | undefined, _opts?: ComputeOptions): Expr {
+    throw new NotImplementedError(`expectation given a condition is not implemented for ${this.name}`);
   }
   withArgs(args: readonly Expr[]): Expr {
     return cast(Reflect.construct(this.constructor, [args]), Expr);
@@ -429,6 +520,87 @@ export class RandomSymbol extends Sym {
   protected override computeKey(): string {
     return `RandomSymbol(${this.symbol.key};${this.pspace.key})`;
   }
+}
+
+/**
+ * SymPy RandomIndexedSymbol(idx_obj, pspace): a random symbol that is an
+ * indexed object X[n] (a discrete-time stochastic process) or the
+ * application X(t) of a function (a continuous-time one). It prints as the
+ * indexed object; `symbol` is the plain symbol of that name, and
+ * `indexedSymbol` is SymPy's symbol (the Indexed or the applied function).
+ */
+export class RandomIndexedSymbol extends RandomSymbol {
+  /** SymPy symbol: the Indexed X[n] or the applied function X(t). */
+  readonly indexedSymbol: Expr;
+  constructor(idxObj: Expr, pspace: PSpace = new PSpace()) {
+    if (!(idxObj instanceof Indexed || idxObj instanceof UndefFn)) throw new TypeError(`An Function or Indexed object is expected not ${idxObj.toString()}`);
+    super(idxObj.toString(), pspace);
+    this.indexedSymbol = idxObj;
+  }
+  override get sortClass(): string {
+    return 'RandomIndexedSymbol';
+  }
+  /** The index of the symbol (SymPy key: n of X[n], t of X(t)). */
+  get indexKey(): Expr {
+    const i = this.indexedSymbol;
+    return i instanceof Indexed ? at(i.args, 1) : at(i.args, 0);
+  }
+  /** SymPy free_symbols: the free symbols of the index too. */
+  override innerFreeSymbols(): readonly Sym[] {
+    return [...this.indexKey.freeSymbols()];
+  }
+  override substituteInner(f: (e: Expr) => Expr): Expr | undefined {
+    const [i, ps] = [f(this.indexedSymbol), f(this.pspace)];
+    return i === this.indexedSymbol && ps === this.pspace ? undefined : new RandomIndexedSymbol(i, cast(ps, PSpace, 'probability space'));
+  }
+  override has(sub: Expr): boolean {
+    return super.has(sub) || this.indexedSymbol.has(sub);
+  }
+  protected override computeKey(): string {
+    return `RandomIndexedSymbol(${this.indexedSymbol.key};${this.pspace.key})`;
+  }
+}
+
+/**
+ * SymPy RandomMatrixSymbol(symbol, n, m, pspace): a matrix symbol whose
+ * values are distributed as its probability space says. It is a matrix
+ * symbol (SymPy derives from RandomSymbol and MatrixSymbol), so it takes
+ * part in matrix expressions; `isRandom` and `pspace` recognize it.
+ */
+export class RandomMatrixSymbol extends MatrixSymbolNode {
+  readonly symbol: Sym;
+  readonly pspace: PSpace;
+  constructor(symbol: string | Sym, n: ExprLike, m: ExprLike, pspace: PSpace = new PSpace()) {
+    const s = symbolConverter(symbol);
+    super(s.name, n, m);
+    this.symbol = s;
+    this.pspace = pspace;
+  }
+  override withArgs(args: readonly Expr[]): Expr {
+    return new RandomMatrixSymbol(this.symbol, at(args, 1), at(args, 2), this.pspace);
+  }
+  override has(sub: Expr): boolean {
+    return super.has(sub) || this.pspace.has(sub);
+  }
+  protected override computeKey(): string {
+    return `RandomMatrixSymbol(${super.computeKey()};${this.pspace.key})`;
+  }
+}
+
+/** The expression contains a random indexed symbol (SymPy expr.has(RandomIndexedSymbol)). */
+export function hasRandomIndexedSymbol(e: Expr): boolean {
+  return e instanceof RandomIndexedSymbol || e.args.some(hasRandomIndexedSymbol);
+}
+
+/** The random matrix symbols of an expression (SymPy expr.atoms(RandomMatrixSymbol)). */
+export function randomMatrixSymbols(expr: Expr): RandomMatrixSymbol[] {
+  const out = new Map<string, RandomMatrixSymbol>();
+  const go = (e: Expr): void => {
+    if (e instanceof RandomMatrixSymbol) out.set(e.key, e);
+    else e.args.forEach(go);
+  };
+  go(expr);
+  return [...out.values()];
 }
 
 /** SymPy ProductPSpace: a probability space with several random variables. */
@@ -554,7 +726,7 @@ export class IndependentProductPSpace extends ProductPSpace {
 export function independentProductPSpace(spacesIn: readonly PSpace[]): PSpace {
   const spaces = ordered([...new Map(spacesIn.map((s) => [s.key, s] as const)).values()]).map((s) => cast(s, PSpace));
   const symbols = new Set(spaces.flatMap((s) => s.values.map((v) => v.symbol.key)));
-  const counted = spaces.filter((s) => !s.isCompound).reduce((n, s) => n + s.symbols.length, 0);
+  const counted = spaces.filter((s) => !s.sharesSymbols).reduce((n, s) => n + s.symbols.length, 0);
   if (symbols.size < counted) throw new RangeError('Overlapping Random Variables');
   if (spaces.every((s) => s.isFinite)) return defined(statsClasses.productFinitePSpace, 'frv')(spaces);
   return new IndependentProductPSpace(spaces);
@@ -624,13 +796,15 @@ const isExprArray = (x: ExprLike | readonly Expr[]): x is readonly Expr[] => Arr
 /** The probability space of a random expression (SymPy pspace). */
 export function pspace(exprIn: ExprLike | readonly Expr[]): PSpace {
   const expr = isExprArray(exprIn) ? new TupleNode(exprIn) : sympify(exprIn);
-  if (expr instanceof RandomSymbol) return expr.pspace;
+  if (expr instanceof RandomSymbol || expr instanceof RandomMatrixSymbol) return expr.pspace;
+  const rm = randomMatrixSymbols(expr);
+  if (rm.length) return first(rm).pspace;
   const rvs = randomSymbols(expr);
   if (!rvs.length) throw new RangeError(`Expression containing Random Variable expected, not ${expr.toString()}`);
   const p0 = first(rvs).pspace;
   // if only one space present
   if (rvs.every((rv) => rv.pspace.key === p0.key)) return p0;
-  const compound = rvs.find((rv) => rv.pspace.isCompound);
+  const compound = rvs.find((rv) => rv.pspace.isCompound || rv.pspace.isStochastic);
   if (compound) return compound.pspace;
   // otherwise make a product space
   return independentProductPSpace(rvs.map((rv) => rv.pspace));
@@ -728,8 +902,8 @@ export class Density extends ExtensionExpr {
     const condition = this.condition;
     if (expr instanceof Distribution && expr.isFinite) return expr.dict;
     if (condition !== undefined) expr = given(expr, condition, opts);
-    if (!randomSymbols(expr).length) return Lambda(xGlobal, DiracDelta(add(xGlobal, mul(-1, expr))));
-    if (expr instanceof RandomSymbol && isSingleSpace(expr.pspace) && !expr.pspace.isCompound) return expr.pspace.distribution;
+    if (!randomSymbols(expr).length && !randomMatrixSymbols(expr).length) return Lambda(xGlobal, DiracDelta(add(xGlobal, mul(-1, expr))));
+    if ((expr instanceof RandomSymbol || expr instanceof RandomMatrixSymbol) && expr.pspace.hasValueDensity) return expr.pspace.valueDensity;
     const ps = pspace(expr);
     const result = ps.computeDensity(expr, ps.isCompound ? { ...opts, compoundEvaluate: opts.evaluate ?? true } : opts);
     return (opts.evaluate ?? true) && result instanceof Expr ? doit(result) : result;

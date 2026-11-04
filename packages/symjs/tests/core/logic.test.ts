@@ -82,6 +82,14 @@ describe('Piecewise (SymPy Piecewise.eval)', () => {
   });
 });
 
+describe('a nonpositive value is not positive (SymPy is_gt)', () => {
+  it('decides v > 0', () => {
+    const v = new sj.Sym('v', { nonpositive: true });
+    expect(sj.str(Gt(v, 0))).toBe('False');
+    expect(sj.str(Gt(new sj.Sym('w'), 0))).toBe('w > 0');
+  });
+});
+
 describe('ordering relations decided like SymPy (is_lt, is_le, is_gt, is_ge)', () => {
   const s = (e: Expr): string => String(e);
   it('by the assumptions of the difference', () => {

@@ -10,7 +10,7 @@ It is intended as a general-purpose symbolic engine (in the spirit of Mathematic
 - **Calculus**: `diff`, `integrate` (indefinite and definite, including infinite limits), `limit`, `series`/`O`, `Sum`/`Product`/`summation`
 - **Equations**: `solve`, `linsolve`, `nonlinsolve`, `solve_linear`, `solve_undetermined_coeffs`, `nsolve`, `dsolve` (first-order linear/separable, constant-coefficient linear ODEs of any order, undetermined coefficients, initial conditions, systems of linear first-order ODEs with constant coefficients)
 - **Polynomials**: `Poly` with SymPy's generators/domains/printing, multivariate `gcd`/`lcm`/division, `roots`, `resultant`, `discriminant`, `interpolate`, `horner`
-- **Statistics**: random symbols of continuous, discrete and finite distributions (SymPy `sympy.stats`), probabilities, expectations, densities, cumulative distribution and characteristic functions, moments, conditional distributions
+- **Statistics**: random symbols of continuous, discrete and finite distributions (SymPy `sympy.stats`), probabilities, expectations, densities, cumulative distribution and characteristic functions, moments, conditional distributions; joint distributions and marginals, matrix distributions, random matrix ensembles, stochastic processes (Markov chains, Bernoulli, Poisson, Wiener and gamma processes) and the expectation, variance and cross-covariance of random vectors
 - **Linear algebra**: symbolic `Matrix` with determinant, inverse, `rref`, rank, null/column/row spaces, eigenvalues/eigenvectors, diagonalization, LU/QR/Cholesky/LDL, norms, singular values, pseudo-inverse, Kronecker product
 - Numeric evaluation (`toComplex` / `evalf` / `lambdify`), a parser and the `ex` tagged template
 
@@ -68,7 +68,7 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 | `@symjs/symjs/matrices` | `Matrix` and linear algebra |
 | `@symjs/symjs/geometry` | Points, lines, planes, polygons, ellipses, curves and parabolas, `intersection`, `convexHull`, ... |
 | `@symjs/symjs/vector` | `CoordSys3D`, vectors and dyadics, `Del`, `gradient`, `divergence`, `curl`, `express`, parametric and implicit regions, `vectorIntegrate`, ... |
-| `@symjs/symjs/stats` | Random symbols (`Normal`, `Exponential`, `Poisson`, `Die`, `Binomial`, ... and handmade distributions), `P`, `expectation` (SymPy `E`), `density`, `given`, `where`, `cdf`, `variance`, `moment`, `covariance`, `median`, the `Probability`/`Expectation`/`Variance`/`Covariance` nodes, ... |
+| `@symjs/symjs/stats` | Random symbols (`Normal`, `Exponential`, `Poisson`, `Die`, `Binomial`, ... and handmade distributions), `P`, `expectation` (SymPy `E`), `density`, `given`, `where`, `cdf`, `variance`, `moment`, `covariance`, `median`, the `Probability`/`Expectation`/`Variance`/`Covariance` nodes, joint distributions (`MultivariateNormal`, `Dirichlet`, `Multinomial`, `JointRV`, `marginalDistribution`, ...), matrix distributions (`Wishart`, `MatrixNormal`, ...), random matrices (`GaussianUnitaryEnsemble`, `CircularEnsemble`, ...), stochastic processes (`DiscreteMarkovChain`, `ContinuousMarkovChain`, `PoissonProcess`, `WienerProcess`, ...), `ExpectationMatrix`, `VarianceMatrix`, `CrossCovarianceMatrix`, ... |
 
 Every entry point includes the core. The core does not depend on the other areas: methods such as `expr.simplify()` or `expr.integrate(x)` work once the area that implements them has been imported (from its entry point or from the root), and otherwise throw an error naming the entry point to import. The modules that register implementations on load are listed in the `sideEffects` field of `package.json` (kept up to date by `node scripts/side-effects.mjs`, checked by the tests). `node scripts/size.mjs --check` (after `pnpm build`) measures the minified bundle of typical imports against size budgets; for example `import { parse, diff, str } from '@symjs/symjs/core'` is about 175 KiB minified (57 KiB gzip), and the whole base module about 1630 KiB (540 KiB gzip).
 
@@ -93,10 +93,10 @@ To add an extend module, create `packages/<name>/` with its own `package.json` (
 
 Compatibility is measured against SymPy's own doctests (`compat/`):
 
-- **Behavior compatibility**: share of doctest examples of the in-scope public API (core, elementary and special functions, simplification, polynomials, solvers, ODEs, calculus, series, sets, matrices, number theory, logic, combinatorics, utilities, geometry, vector, stats) that symjs reproduces with the same `str()` output, or with a mathematically equal value in another form: 100% (4066 of 4066 examples; 4046 identical).
-- **API coverage**: share of in-scope public SymPy names (including `Expr` and `Matrix` methods) with a symjs counterpart: 100% (1378 of 1378).
+- **Behavior compatibility**: share of doctest examples of the in-scope public API (core, elementary and special functions, simplification, polynomials, solvers, ODEs, calculus, series, sets, matrices, number theory, logic, combinatorics, utilities, geometry, vector, stats) that symjs reproduces with the same `str()` output, or with a mathematically equal value in another form: 100% (4143 of 4143 examples; 4122 identical).
+- **API coverage**: share of in-scope public SymPy names (including `Expr` and `Matrix` methods) with a symjs counterpart: 100% (1420 of 1420).
 - The examples and names not supported yet are listed in `compat/known-gaps.json`. `pnpm compat` fails when a case outside that list stops passing, and when a listed case starts passing (so that the list only shrinks).
-- Test coverage of the source files is 100% (statements, branches, functions and lines; 15750 tests).
+- Test coverage of the source files is 100% (statements, branches, functions and lines; 15883 tests).
 
 ```sh
 pnpm compat           # run the tests with coverage and the corpus, write compat/REPORT.md
@@ -174,7 +174,7 @@ See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable
 - Definite integration splits at polynomial singularities using one-sided limits; when their locations cannot be resolved, the integral is left unevaluated.
 - Integration beyond the implemented heuristics (no Risch or Meijer G algorithms yet); `hyper` and `meijerg` are available as functions but are not used to integrate or to evaluate in closed form
 - ODE solving follows SymPy's single-equation hints (separable, exact, linear, Bernoulli, Riccati special, homogeneous coefficients, linear coefficients, constant and Euler linear equations, undetermined coefficients, variation of parameters, Liouville, reducible order, Airy, Bessel); systems are solved when linear and first order (constant coefficients in closed form, 2x2 variable coefficients in terms of a particular solution like SymPy) or triangular (solved one function at a time); `classify_ode` reports SymPy's hints, but power series and Lie group solvers, nonlinear systems, PDEs and Diophantine equations are not ported yet (see the ODE checks in the report)
-- `sympy.stats`: the single-variable distributions are ported; joint, matrix and random-matrix distributions and stochastic processes are not ported yet
+- `sympy.stats`: `JointDistribution.cdf` (which fails for every input in SymPy) is not ported
 - Symbolic `Mod` (only integers and binomial coefficients modulo prime powers) and asymptotic series of nested exponentials are not implemented
 - Intentional differences: where SymPy's result is mathematically wrong symjs returns the correct one, e.g. `dsolve([x' = x*y*sin(t), y' = y**2*sin(t)])` (SymPy's solution fails `checkodesol`); `rsolve` returns `Unsolved` instead of an incomplete solution when the hypergeometric solutions found do not span the solution space and no initial values fix it (SymPy returns e.g. `0` for `y(n+2) - n*y(n+1) - y(n)`)
 
@@ -182,7 +182,7 @@ See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable
 
 These parts of SymPy depend on external Python libraries or target other languages and are deliberately not ported:
 
-- Sampling of random variables in `sympy.stats` (`sample`, `sample_iter`, `sampling_density`, `numsamples=`; `sympy/stats/sampling/`), which draws samples with numpy, scipy or pymc
+- Sampling of random variables in `sympy.stats` (`sample`, `sample_iter`, `sampling_density`, `sample_stochastic_process`, `numsamples=`, the `sample` methods of distributions, spaces and processes; `sympy/stats/sampling/`), which draws samples with numpy, scipy or pymc
 - Plotting (`sympy.plotting`, the `plot`/`show` methods)
 - `lambdify` for TensorFlow (the other numeric back ends are ported)
 - JavaScript code printing (`jscode`): symjs itself runs in JavaScript

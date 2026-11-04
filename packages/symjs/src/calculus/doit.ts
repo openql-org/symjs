@@ -7,7 +7,7 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Derivative, ExtensionExpr, Integral, Limit, Sym } from '../core/nodes';
+import { Derivative, ExtensionExpr, Integral, Limit, Rational, Sym, impl } from '../core/nodes';
 import { at, cast } from '../core/guard';
 import { sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
@@ -40,3 +40,16 @@ export function doit(ex: ExprLike): Expr {
   };
   return go(sympify(ex));
 }
+
+/** The most terms of a sum or product that evalf adds up one by one. */
+const EVALF_TERMS = 1000n;
+
+/** A sum or product with finite integer limits evaluated to a number (SymPy Sum.evalf), or undefined. */
+export function evalConcreteValue(c: Concrete): Expr | undefined {
+  const finite = c.limits.every(([, a, b]) => a instanceof Rational && b instanceof Rational && a.isInteger && b.isInteger && b.p - a.p < EVALF_TERMS);
+  if (!finite) return undefined;
+  const v = doitConcrete(c);
+  return v instanceof Concrete || v.freeSymbols().size ? undefined : v;
+}
+
+impl.evalConcrete = (c) => evalConcreteValue(cast(c, Concrete));

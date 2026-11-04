@@ -831,3 +831,10 @@ describe('Range with symbolic bounds (SymPy 1.14 Range)', () => {
     expect(String(R(nn))).toBe('Range(0, n, 1)');
   });
 });
+
+describe('isSubset of the natural numbers', () => {
+  it('Naturals and Naturals0 are subsets of Integers (SymPy Naturals0.is_subset(Integers) is True)', () => {
+    expect(Sets.isSubset(Sets.Naturals0, Sets.Integers)).toBe(true);
+    expect(Sets.isSubset(Sets.Naturals, Sets.Integers)).toBe(true);
+  });
+});

@@ -412,8 +412,10 @@ export function freeSymbols(e: Expr): Set<Sym> {
   const out = new Map<string, Sym>();
   const go = (x: Expr) => {
     const b = x instanceof ExtensionExpr ? x.bindings() : undefined;
-    if (x instanceof Sym) out.set(x.key, x);
-    else if (b) {
+    if (x instanceof Sym) {
+      out.set(x.key, x);
+      for (const s of x.innerFreeSymbols()) out.set(s.key, s);
+    } else if (b) {
       const bound = new Set(b.variables.map((i) => at(x.args, i).key));
       x.args.forEach((a, i) => {
         if (b.variables.includes(i)) return;

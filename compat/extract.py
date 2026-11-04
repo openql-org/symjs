@@ -267,8 +267,7 @@ MODULES = {
     "sympy.vector.point": "vector",
     "sympy.vector.scalar": "vector",
     "sympy.vector.vector": "vector",
-    # sympy.stats, part 1: random symbols and the single-variable distributions (the joint, matrix and
-    # random-matrix distributions and the stochastic processes are not ported yet)
+    # sympy.stats, part 1: random symbols and the single-variable distributions
     "sympy.stats.rv": "stats",
     "sympy.stats.rv_interface": "stats",
     "sympy.stats.crv": "stats",
@@ -280,6 +279,16 @@ MODULES = {
     "sympy.stats.compound_rv": "stats",
     "sympy.stats.error_prop": "stats",
     "sympy.stats.symbolic_probability": "stats",
+    # sympy.stats, part 2: joint, matrix and random-matrix distributions, stochastic processes and the
+    # symbolic multivariate probability nodes
+    "sympy.stats.joint_rv": "stats",
+    "sympy.stats.joint_rv_types": "stats",
+    "sympy.stats.matrix_distributions": "stats",
+    "sympy.stats.random_matrix": "stats",
+    "sympy.stats.random_matrix_models": "stats",
+    "sympy.stats.stochastic_process": "stats",
+    "sympy.stats.stochastic_process_types": "stats",
+    "sympy.stats.symbolic_multivariate_probability": "stats",
 }
 
 # names of sympy.stats that need an external sampling library (numpy, scipy, pymc): out of scope
@@ -288,9 +297,7 @@ STATS_SAMPLING = {"sample", "sample_iter", "sampling_density", "sample_stochasti
 
 def stats_public():
     """The public names of sympy.stats defined in the in-scope stats modules (MODULES), without the
-    sampling functions. The names of the other stats modules (joint_rv_types, stochastic_process_types,
-    random_matrix_models, matrix_distributions, symbolic_multivariate_probability) are left out, so that
-    they count neither as cases nor as API gaps until those modules are ported."""
+    sampling functions."""
     import sympy.stats as _stats
     return {n for n in _stats.__all__ if getattr(getattr(_stats, n), "__module__", "") in MODULES and n not in STATS_SAMPLING}
 
@@ -493,6 +500,11 @@ def ser(o):
         return {"t": "Interval", "a": ser(o.start), "b": ser(o.end), "lo": bool(o.left_open), "ro": bool(o.right_open)}
     if isinstance(o, sympy.FiniteSet):
         return {"t": "FiniteSet", "items": [ser(i) for i in o.args]}
+    if isinstance(o, sympy.Range):
+        return {"t": "Range", "start": ser(o.start), "stop": ser(o.stop), "step": ser(o.step)}
+    if isinstance(o, sympy.Contains):
+        # an unevaluated Contains(x, set) (a condition of sympy.stats stochastic processes)
+        return {"t": "Contains", "x": ser(o.args[0]), "set": ser(o.args[1])}
     if isinstance(o, (sympy.Union, sympy.Intersection, sympy.Complement)):
         return {"t": "SetOp", "op": type(o).__name__, "args": [ser(i) for i in o.args]}
     named_sets = {sympy.S.Reals: "Reals", sympy.S.Integers: "Integers", sympy.S.Naturals: "Naturals",

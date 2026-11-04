@@ -3138,6 +3138,10 @@
    "category": "stats"
   },
   {
+   "name": "BernoulliProcess",
+   "category": "stats"
+  },
+  {
    "name": "Beta",
    "category": "stats"
   },
@@ -3182,6 +3186,22 @@
    "category": "stats"
   },
   {
+   "name": "CircularEnsemble",
+   "category": "stats"
+  },
+  {
+   "name": "CircularOrthogonalEnsemble",
+   "category": "stats"
+  },
+  {
+   "name": "CircularSymplecticEnsemble",
+   "category": "stats"
+  },
+  {
+   "name": "CircularUnitaryEnsemble",
+   "category": "stats"
+  },
+  {
    "name": "Coin",
    "category": "stats"
   },
@@ -3190,11 +3210,19 @@
    "category": "stats"
   },
   {
+   "name": "ContinuousMarkovChain",
+   "category": "stats"
+  },
+  {
    "name": "ContinuousRV",
    "category": "stats"
   },
   {
    "name": "Covariance",
+   "category": "stats"
+  },
+  {
+   "name": "CrossCovarianceMatrix",
    "category": "stats"
   },
   {
@@ -3210,11 +3238,23 @@
    "category": "stats"
   },
   {
+   "name": "Dirichlet",
+   "category": "stats"
+  },
+  {
    "name": "DiscreteDistributionHandmade",
    "category": "stats"
   },
   {
+   "name": "DiscreteMarkovChain",
+   "category": "stats"
+  },
+  {
    "name": "DiscreteRV",
+   "category": "stats"
+  },
+  {
+   "name": "DiscreteTimeStochasticProcess",
    "category": "stats"
   },
   {
@@ -3235,6 +3275,10 @@
   },
   {
    "name": "Expectation",
+   "category": "stats"
+  },
+  {
+   "name": "ExpectationMatrix",
    "category": "stats"
   },
   {
@@ -3278,7 +3322,39 @@
    "category": "stats"
   },
   {
+   "name": "GammaProcess",
+   "category": "stats"
+  },
+  {
+   "name": "GaussianEnsemble",
+   "category": "stats"
+  },
+  {
    "name": "GaussianInverse",
+   "category": "stats"
+  },
+  {
+   "name": "GaussianOrthogonalEnsemble",
+   "category": "stats"
+  },
+  {
+   "name": "GaussianSymplecticEnsemble",
+   "category": "stats"
+  },
+  {
+   "name": "GaussianUnitaryEnsemble",
+   "category": "stats"
+  },
+  {
+   "name": "GeneralizedMultivariateLogGamma",
+   "category": "stats"
+  },
+  {
+   "name": "GeneralizedMultivariateLogGammaOmega",
+   "category": "stats"
+  },
+  {
+   "name": "GeneratorMatrixOf",
    "category": "stats"
   },
   {
@@ -3307,6 +3383,14 @@
   },
   {
    "name": "IdealSoliton",
+   "category": "stats"
+  },
+  {
+   "name": "JointEigenDistribution",
+   "category": "stats"
+  },
+  {
+   "name": "JointRV",
    "category": "stats"
   },
   {
@@ -3350,6 +3434,18 @@
    "category": "stats"
   },
   {
+   "name": "MatrixGamma",
+   "category": "stats"
+  },
+  {
+   "name": "MatrixNormal",
+   "category": "stats"
+  },
+  {
+   "name": "MatrixStudentT",
+   "category": "stats"
+  },
+  {
    "name": "Maxwell",
    "category": "stats"
   },
@@ -3362,6 +3458,30 @@
    "category": "stats"
   },
   {
+   "name": "Multinomial",
+   "category": "stats"
+  },
+  {
+   "name": "MultivariateBeta",
+   "category": "stats"
+  },
+  {
+   "name": "MultivariateEwens",
+   "category": "stats"
+  },
+  {
+   "name": "MultivariateLaplace",
+   "category": "stats"
+  },
+  {
+   "name": "MultivariateNormal",
+   "category": "stats"
+  },
+  {
+   "name": "MultivariateT",
+   "category": "stats"
+  },
+  {
    "name": "Nakagami",
    "category": "stats"
   },
@@ -3370,7 +3490,15 @@
    "category": "stats"
   },
   {
+   "name": "NegativeMultinomial",
+   "category": "stats"
+  },
+  {
    "name": "Normal",
+   "category": "stats"
+  },
+  {
+   "name": "NormalGamma",
    "category": "stats"
   },
   {
@@ -3383,6 +3511,10 @@
   },
   {
    "name": "Poisson",
+   "category": "stats"
+  },
+  {
+   "name": "PoissonProcess",
    "category": "stats"
   },
   {
@@ -3426,7 +3558,19 @@
    "category": "stats"
   },
   {
+   "name": "StochasticProcess",
+   "category": "stats"
+  },
+  {
+   "name": "StochasticStateSpaceOf",
+   "category": "stats"
+  },
+  {
    "name": "StudentT",
+   "category": "stats"
+  },
+  {
+   "name": "TransitionMatrixOf",
    "category": "stats"
   },
   {
@@ -3450,6 +3594,10 @@
    "category": "stats"
   },
   {
+   "name": "VarianceMatrix",
+   "category": "stats"
+  },
+  {
    "name": "VonMises",
    "category": "stats"
   },
@@ -3462,7 +3610,15 @@
    "category": "stats"
   },
   {
+   "name": "WienerProcess",
+   "category": "stats"
+  },
+  {
    "name": "WignerSemicircle",
+   "category": "stats"
+  },
+  {
+   "name": "Wishart",
    "category": "stats"
   },
   {
@@ -3522,7 +3678,19 @@
    "category": "stats"
   },
   {
+   "name": "joint_eigen_distribution",
+   "category": "stats"
+  },
+  {
    "name": "kurtosis",
+   "category": "stats"
+  },
+  {
+   "name": "level_spacing_distribution",
+   "category": "stats"
+  },
+  {
+   "name": "marginal_distribution",
    "category": "stats"
   },
   {
@@ -270493,6 +270661,9050 @@
    "module": "sympy.stats.symbolic_probability",
    "src": "Variance(X + Y).expand()",
    "expected": "2*Covariance(X, Y) + Variance(X) + Variance(Y)"
+  },
+  {
+   "fn": ".subs",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Fn",
+      "name": "Piecewise",
+      "args": [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "6",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p1",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Symbol",
+              "name": "x1",
+              "assume": {
+               "nonnegative": true,
+               "integer": true
+              }
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Fn",
+              "name": "factorial",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "x1",
+                "assume": {
+                 "nonnegative": true,
+                 "integer": true
+                }
+               }
+              ]
+             },
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rel",
+          "op": "Equality",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x1",
+            "assume": {
+             "nonnegative": true,
+             "integer": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Js",
+          "v": true
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "Piecewise",
+      "args": [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p1",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Symbol",
+              "name": "x1",
+              "assume": {
+               "nonnegative": true,
+               "integer": true
+              }
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p2",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Fn",
+              "name": "factorial",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "x1",
+                "assume": {
+                 "nonnegative": true,
+                 "integer": true
+                }
+               }
+              ]
+             },
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rel",
+          "op": "Equality",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x1",
+            "assume": {
+             "nonnegative": true,
+             "integer": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Js",
+          "v": true
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "Piecewise",
+      "args": [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p1",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Symbol",
+              "name": "x1",
+              "assume": {
+               "nonnegative": true,
+               "integer": true
+              }
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p3",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Fn",
+              "name": "factorial",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "x1",
+                "assume": {
+                 "nonnegative": true,
+                 "integer": true
+                }
+               }
+              ]
+             },
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rel",
+          "op": "Equality",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x1",
+            "assume": {
+             "nonnegative": true,
+             "integer": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Js",
+          "v": true
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "Piecewise",
+      "args": [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p1",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Symbol",
+              "name": "x1",
+              "assume": {
+               "nonnegative": true,
+               "integer": true
+              }
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p2",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Fn",
+              "name": "factorial",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "x1",
+                "assume": {
+                 "nonnegative": true,
+                 "integer": true
+                }
+               }
+              ]
+             },
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rel",
+          "op": "Equality",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x1",
+            "assume": {
+             "nonnegative": true,
+             "integer": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Js",
+          "v": true
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "Piecewise",
+      "args": [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p1",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Symbol",
+              "name": "x1",
+              "assume": {
+               "nonnegative": true,
+               "integer": true
+              }
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p3",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Fn",
+              "name": "factorial",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "x1",
+                "assume": {
+                 "nonnegative": true,
+                 "integer": true
+                }
+               }
+              ]
+             },
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rel",
+          "op": "Equality",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x1",
+            "assume": {
+             "nonnegative": true,
+             "integer": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Js",
+          "v": true
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "Piecewise",
+      "args": [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "6",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "p2",
+            "assume": {
+             "positive": true
+            }
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p1",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Symbol",
+              "name": "x1",
+              "assume": {
+               "nonnegative": true,
+               "integer": true
+              }
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Fn",
+              "name": "factorial",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "x1",
+                "assume": {
+                 "nonnegative": true,
+                 "integer": true
+                }
+               }
+              ]
+             },
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rel",
+          "op": "Equality",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x1",
+            "assume": {
+             "nonnegative": true,
+             "integer": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Js",
+          "v": true
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "Piecewise",
+      "args": [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "6",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "p3",
+            "assume": {
+             "positive": true
+            }
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p1",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Symbol",
+              "name": "x1",
+              "assume": {
+               "nonnegative": true,
+               "integer": true
+              }
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Fn",
+              "name": "factorial",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "x1",
+                "assume": {
+                 "nonnegative": true,
+                 "integer": true
+                }
+               }
+              ]
+             },
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rel",
+          "op": "Equality",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x1",
+            "assume": {
+             "nonnegative": true,
+             "integer": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Js",
+          "v": true
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "Piecewise",
+      "args": [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "p2",
+            "assume": {
+             "positive": true
+            }
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p1",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Symbol",
+              "name": "x1",
+              "assume": {
+               "nonnegative": true,
+               "integer": true
+              }
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p3",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Fn",
+              "name": "factorial",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "x1",
+                "assume": {
+                 "nonnegative": true,
+                 "integer": true
+                }
+               }
+              ]
+             },
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rel",
+          "op": "Equality",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x1",
+            "assume": {
+             "nonnegative": true,
+             "integer": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Js",
+          "v": true
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "Piecewise",
+      "args": [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "p3",
+            "assume": {
+             "positive": true
+            }
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p1",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Symbol",
+              "name": "x1",
+              "assume": {
+               "nonnegative": true,
+               "integer": true
+              }
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p2",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Fn",
+              "name": "factorial",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "x1",
+                "assume": {
+                 "nonnegative": true,
+                 "integer": true
+                }
+               }
+              ]
+             },
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rel",
+          "op": "Equality",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x1",
+            "assume": {
+             "nonnegative": true,
+             "integer": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Js",
+          "v": true
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "Piecewise",
+      "args": [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "6",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "p2",
+            "assume": {
+             "positive": true
+            }
+           },
+           {
+            "t": "Symbol",
+            "name": "p3",
+            "assume": {
+             "positive": true
+            }
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "p1",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Symbol",
+              "name": "x1",
+              "assume": {
+               "nonnegative": true,
+               "integer": true
+              }
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Fn",
+              "name": "factorial",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "x1",
+                "assume": {
+                 "nonnegative": true,
+                 "integer": true
+                }
+               }
+              ]
+             },
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rel",
+          "op": "Equality",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x1",
+            "assume": {
+             "nonnegative": true,
+             "integer": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Js",
+          "v": true
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x1",
+     "assume": {
+      "nonnegative": true,
+      "integer": true
+     }
+    },
+    {
+     "t": "Rational",
+     "p": "1",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.joint_rv_types",
+   "src": "marginal_distribution(M, M[0])(x1).subs(x1, 1)",
+   "expected": "3*p1*p2**2 + 6*p1*p2*p3 + 3*p1*p3**2"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.25122070312499994,
+    "man": "4525589859926015",
+    "exp": -54,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.joint_rv_types",
+   "src": "marginal_distribution(N_c, N_c[0])(1).evalf().round(2)",
+   "expected": "0.25"
+  },
+  {
+   "fn": ".doit",
+   "self": {
+    "t": "Mul",
+    "args": [
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Const",
+        "name": "pi"
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "2"
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "b",
+        "assume": {
+         "positive": true
+        }
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-2",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "a",
+          "assume": {
+           "positive": true
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "MatExpr",
+        "cls": "Determinant",
+        "args": [
+         {
+          "t": "Matrix",
+          "rows": [
+           [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            }
+           ],
+           [
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            }
+           ]
+          ],
+          "shape": [
+           2,
+           2
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-3",
+          "q": "2"
+         },
+         {
+          "t": "Symbol",
+          "name": "a",
+          "assume": {
+           "positive": true
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "MatExpr",
+        "cls": "Determinant",
+        "args": [
+         {
+          "t": "Matrix",
+          "rows": [
+           [
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            }
+           ],
+           [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          ],
+          "shape": [
+           2,
+           2
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "a",
+          "assume": {
+           "positive": true
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Fn",
+        "name": "gamma",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "a",
+          "assume": {
+           "positive": true
+          }
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Fn",
+        "name": "gamma",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "2"
+           },
+           {
+            "t": "Symbol",
+            "name": "a",
+            "assume": {
+             "positive": true
+            }
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "exp",
+      "args": [
+       {
+        "t": "MatExpr",
+        "cls": "Trace",
+        "args": [
+         {
+          "t": "Matrix",
+          "rows": [
+           [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-2",
+               "q": "3"
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Symbol",
+                 "name": "b",
+                 "assume": {
+                  "positive": true
+                 }
+                },
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "3"
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Symbol",
+                 "name": "b",
+                 "assume": {
+                  "positive": true
+                 }
+                },
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ],
+           [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "3"
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Symbol",
+                 "name": "b",
+                 "assume": {
+                  "positive": true
+                 }
+                },
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-2",
+               "q": "3"
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Symbol",
+                 "name": "b",
+                 "assume": {
+                  "positive": true
+                 }
+                },
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          ],
+          "shape": [
+           2,
+           2
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.matrix_distributions",
+   "src": "density(M)([[1, 0], [0, 1]]).doit()",
+   "expected": "exp(-4/(3*b))/(3**a*sqrt(pi)*b**(2*a)*gamma(a)*gamma(a - 1/2))"
+  },
+  {
+   "fn": ".doit",
+   "self": {
+    "t": "Mul",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "2"
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Const",
+        "name": "pi"
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "MatExpr",
+        "cls": "Determinant",
+        "args": [
+         {
+          "t": "Matrix",
+          "rows": [
+           [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            }
+           ]
+          ],
+          "shape": [
+           1,
+           1
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "MatExpr",
+        "cls": "Determinant",
+        "args": [
+         {
+          "t": "Matrix",
+          "rows": [
+           [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            }
+           ],
+           [
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            }
+           ]
+          ],
+          "shape": [
+           2,
+           2
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "2"
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "exp",
+      "args": [
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "2"
+         },
+         {
+          "t": "MatExpr",
+          "cls": "Trace",
+          "args": [
+           {
+            "t": "Matrix",
+            "rows": [
+             [
+              {
+               "t": "Rational",
+               "p": "4",
+               "q": "1"
+              },
+              {
+               "t": "Rational",
+               "p": "4",
+               "q": "1"
+              }
+             ],
+             [
+              {
+               "t": "Rational",
+               "p": "4",
+               "q": "1"
+              },
+              {
+               "t": "Rational",
+               "p": "4",
+               "q": "1"
+              }
+             ]
+            ],
+            "shape": [
+             2,
+             2
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.matrix_distributions",
+   "src": "density(M)([[3, 4]]).doit()",
+   "expected": "exp(-4)/(2*pi)"
+  },
+  {
+   "fn": ".doit",
+   "self": {
+    "t": "Mul",
+    "args": [
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {
+           "positive": true
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Const",
+        "name": "pi"
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "2"
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "MatExpr",
+        "cls": "Determinant",
+        "args": [
+         {
+          "t": "Matrix",
+          "rows": [
+           [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            }
+           ],
+           [
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            }
+           ]
+          ],
+          "shape": [
+           2,
+           2
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-3",
+          "q": "2"
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "2"
+           },
+           {
+            "t": "Symbol",
+            "name": "n",
+            "assume": {
+             "positive": true
+            }
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "MatExpr",
+        "cls": "Determinant",
+        "args": [
+         {
+          "t": "Matrix",
+          "rows": [
+           [
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            }
+           ],
+           [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          ],
+          "shape": [
+           2,
+           2
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "2"
+         },
+         {
+          "t": "Symbol",
+          "name": "n",
+          "assume": {
+           "positive": true
+          }
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Fn",
+        "name": "gamma",
+        "args": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "2"
+           },
+           {
+            "t": "Symbol",
+            "name": "n",
+            "assume": {
+             "positive": true
+            }
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Fn",
+        "name": "gamma",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "2"
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "2"
+             },
+             {
+              "t": "Symbol",
+              "name": "n",
+              "assume": {
+               "positive": true
+              }
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "exp",
+      "args": [
+       {
+        "t": "MatExpr",
+        "cls": "Trace",
+        "args": [
+         {
+          "t": "Matrix",
+          "rows": [
+           [
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "3"
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "6"
+            }
+           ],
+           [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "6"
+            },
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "3"
+            }
+           ]
+          ],
+          "shape": [
+           2,
+           2
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.matrix_distributions",
+   "src": "density(W)([[1, 0], [0, 1]]).doit()",
+   "expected": "exp(-2/3)/(2**n*3**(n/2)*sqrt(pi)*gamma(n/2)*gamma(n/2 - 1/2))"
+  },
+  {
+   "fn": "joint_eigen_distribution",
+   "args": [
+    {
+     "t": "Stats",
+     "cls": "RandomMatrixSymbol",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "O",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Stats",
+       "cls": "RandomMatrixPSpace",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "O",
+         "assume": {}
+        },
+        {
+         "t": "Stats",
+         "cls": "CircularOrthogonalEnsembleModel",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "O",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.random_matrix_models",
+   "src": "joint_eigen_distribution(C)",
+   "expected": "Lambda(t[1], Product(Abs(exp(I*t[_j]) - exp(I*t[_k])), (_j, _k + 1, 1), (_k, 1, 0))/(2*pi))"
+  },
+  {
+   "fn": "joint_eigen_distribution",
+   "args": [
+    {
+     "t": "Stats",
+     "cls": "RandomMatrixSymbol",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "S",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Stats",
+       "cls": "RandomMatrixPSpace",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "S",
+         "assume": {}
+        },
+        {
+         "t": "Stats",
+         "cls": "CircularSymplecticEnsembleModel",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "S",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.random_matrix_models",
+   "src": "joint_eigen_distribution(C)",
+   "expected": "Lambda(t[1], Product(Abs(exp(I*t[_j]) - exp(I*t[_k]))**4, (_j, _k + 1, 1), (_k, 1, 0))/(2*pi))"
+  },
+  {
+   "fn": "joint_eigen_distribution",
+   "args": [
+    {
+     "t": "Stats",
+     "cls": "RandomMatrixSymbol",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "U",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Stats",
+       "cls": "RandomMatrixPSpace",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "U",
+         "assume": {}
+        },
+        {
+         "t": "Stats",
+         "cls": "CircularUnitaryEnsembleModel",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "U",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.random_matrix_models",
+   "src": "joint_eigen_distribution(C)",
+   "expected": "Lambda(t[1], Product(Abs(exp(I*t[_j]) - exp(I*t[_k]))**2, (_j, _k + 1, 1), (_k, 1, 0))/(2*pi))"
+  },
+  {
+   "fn": "JointEigenDistribution",
+   "args": [
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Stats",
+        "cls": "RandomSymbol",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "A00",
+          "assume": {}
+         },
+         {
+          "t": "Stats",
+          "cls": "SingleContinuousPSpace",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "A00",
+            "assume": {}
+           },
+           {
+            "t": "Stats",
+            "cls": "NormalDistribution",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "0",
+              "q": "1"
+             },
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Stats",
+        "cls": "RandomSymbol",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "A01",
+          "assume": {}
+         },
+         {
+          "t": "Stats",
+          "cls": "SingleContinuousPSpace",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "A01",
+            "assume": {}
+           },
+           {
+            "t": "Stats",
+            "cls": "NormalDistribution",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "0",
+              "q": "1"
+             },
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ],
+      [
+       {
+        "t": "Stats",
+        "cls": "RandomSymbol",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "A10",
+          "assume": {}
+         },
+         {
+          "t": "Stats",
+          "cls": "SingleContinuousPSpace",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "A10",
+            "assume": {}
+           },
+           {
+            "t": "Stats",
+            "cls": "NormalDistribution",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "0",
+              "q": "1"
+             },
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Stats",
+        "cls": "RandomSymbol",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "A11",
+          "assume": {}
+         },
+         {
+          "t": "Stats",
+          "cls": "SingleContinuousPSpace",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "A11",
+            "assume": {}
+           },
+           {
+            "t": "Stats",
+            "cls": "NormalDistribution",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "0",
+              "q": "1"
+             },
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     ],
+     "shape": [
+      2,
+      2
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.random_matrix_models",
+   "src": "JointEigenDistribution(Matrix(A))",
+   "expected": "JointDistributionHandmade(-sqrt(A00**2 - 2*A00*A11 + 4*A01*A10 + A11**2)/2 + A00/2 + A11/2, sqrt(A00**2 - 2*A00*A11 + 4*A01*A10 + A11**2)/2 + A00/2 + A11/2)"
+  },
+  {
+   "fn": "joint_eigen_distribution",
+   "args": [
+    {
+     "t": "Stats",
+     "cls": "RandomMatrixSymbol",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "U",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Stats",
+       "cls": "RandomMatrixPSpace",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "U",
+         "assume": {}
+        },
+        {
+         "t": "Stats",
+         "cls": "GaussianUnitaryEnsembleModel",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "U",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.random_matrix_models",
+   "src": "joint_eigen_distribution(U)",
+   "expected": "Lambda((l[1], l[2]), exp(-l[1]**2 - l[2]**2)*Product(Abs(l[_i] - l[_j])**2, (_j, _i + 1, 2), (_i, 1, 1))/pi)"
+  },
+  {
+   "fn": "level_spacing_distribution",
+   "args": [
+    {
+     "t": "Stats",
+     "cls": "RandomMatrixSymbol",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "U",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Stats",
+       "cls": "RandomMatrixPSpace",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "U",
+         "assume": {}
+        },
+        {
+         "t": "Stats",
+         "cls": "GaussianUnitaryEnsembleModel",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "U",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.random_matrix_models",
+   "src": "level_spacing_distribution(U)",
+   "expected": "Lambda(_s, 32*_s**2*exp(-4*_s**2/pi)/pi**2)"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.7,
+    "man": "3152519739159347",
+    "exp": -52,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "B.p.round(2)",
+   "expected": "0.70"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.02700000000000001,
+    "man": "1945555039024055",
+    "exp": -56,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(X, 0)).round(2)",
+   "expected": "0.03"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.44099999999999995,
+    "man": "3972174871340777",
+    "exp": -53,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(X, 2)).round(2)",
+   "expected": "0.44"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Rational",
+    "p": "0",
+    "q": "1"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(X, 4)).round(2)",
+   "expected": "0"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.7839999999999998,
+    "man": "882705526964617",
+    "exp": -50,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Gt(X, 1)).round(2)",
+   "expected": "0.78"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.04410000000000001,
+    "man": "6355479794145245",
+    "exp": -57,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(B[1], 0) & Eq(B[2], 1) & Eq(B[3], 0) & Eq(B[4], 1)).round(2)",
+   "expected": "0.04"
+  },
+  {
+   "fn": ".joint_distribution",
+   "self": {
+    "t": "Stats",
+    "cls": "BernoulliProcess",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "B",
+      "assume": {}
+     },
+     {
+      "t": "Float",
+      "v": 0.7,
+      "man": "3152519739159347",
+      "exp": -52,
+      "prec": 53
+     },
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Stats",
+     "cls": "RandomIndexedSymbol",
+     "args": [
+      {
+       "t": "Indexed",
+       "base": {
+        "t": "Symbol",
+        "name": "B",
+        "assume": {}
+       },
+       "indices": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Stats",
+       "cls": "StochasticPSpace",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "B",
+         "assume": {}
+        },
+        {
+         "t": "Stats",
+         "cls": "BernoulliProcess",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "B",
+           "assume": {}
+          },
+          {
+           "t": "Float",
+           "v": 0.7,
+           "man": "3152519739159347",
+           "exp": -52,
+           "prec": 53
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "BernoulliDistribution",
+         "args": [
+          {
+           "t": "Float",
+           "v": 0.7,
+           "man": "3152519739159347",
+           "exp": -52,
+           "prec": 53
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Stats",
+     "cls": "RandomIndexedSymbol",
+     "args": [
+      {
+       "t": "Indexed",
+       "base": {
+        "t": "Symbol",
+        "name": "B",
+        "assume": {}
+       },
+       "indices": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Stats",
+       "cls": "StochasticPSpace",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "B",
+         "assume": {}
+        },
+        {
+         "t": "Stats",
+         "cls": "BernoulliProcess",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "B",
+           "assume": {}
+          },
+          {
+           "t": "Float",
+           "v": 0.7,
+           "man": "3152519739159347",
+           "exp": -52,
+           "prec": 53
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "BernoulliDistribution",
+         "args": [
+          {
+           "t": "Float",
+           "v": 0.7,
+           "man": "3152519739159347",
+           "exp": -52,
+           "prec": 53
+          },
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "B.joint_distribution(B[1], B[2])",
+   "expected": "JointDistributionHandmade(Lambda((B[1], B[2]), Piecewise((0.7, Eq(B[1], 1)), (0.3, Eq(B[1], 0)), (0, True))*Piecewise((0.7, Eq(B[2], 1)), (0.3, Eq(B[2], 0)), (0, True))))"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 2.0999999999999996,
+    "man": "1182194902184755",
+    "exp": -49,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "E(2*B[1] + B[2]).round(2)",
+   "expected": "2.10"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.30000000000000004,
+    "man": "1351079888211149",
+    "exp": -52,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(B[1] < 1).round(2)",
+   "expected": "0.30"
+  },
+  {
+   "fn": ".limiting_distribution",
+   "self": {
+    "t": "Stats",
+    "cls": "ContinuousMarkovChain",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "C",
+      "assume": {}
+     },
+     {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Matrix",
+      "rows": [
+       [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        }
+       ]
+      ],
+      "shape": [
+       2,
+       2
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "C.limiting_distribution()",
+   "expected": "Matrix([[1/2, 1/2]])"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.4527898884018488,
+    "man": "8156737490734779",
+    "exp": -54,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "5",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(C(1.96), 0), Eq(C(0.78), 1)).round(5)",
+   "expected": "0.45279"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.5860224319115253,
+    "man": "2639210405987497",
+    "exp": -52,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "5",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Gt(C(1.7), 0), Eq(C(0.82), 1)).round(5)",
+   "expected": "0.58602"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.379332680991288,
+    "man": "6833450083047263",
+    "exp": -54,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "5",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(C(3.92), C(1.75)), Eq(C(0.46), 0)).round(5)",
+   "expected": "0.37933"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.3421095347112487,
+    "man": "3081448746090947",
+    "exp": -53,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "5",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Gt(C(3.92), C(1.75)), Eq(C(0.46), 0)).round(5)",
+   "expected": "0.34211"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.7142971147061692,
+    "man": "804227054905631",
+    "exp": -50,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Le(C(1.57), C(3.14)), Eq(C(1.22), 1)).round(4)",
+   "expected": "0.7143"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.4002723174575626,
+    "man": "7210665038994415",
+    "exp": -54,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "10",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "query.subs({a:3.65, b:2, c:1.78, d:1}).evalf().round(10)",
+   "expected": "0.4002723175"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.4002723174575626,
+    "man": "7210665038994415",
+    "exp": -54,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "10",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(C(3.65), 2), Eq(C(1.78), 1)).round(10)",
+   "expected": "0.4002723175"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.6832579185520362,
+    "man": "3077120107388891",
+    "exp": -52,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "10",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "query_gt.subs({a:43.2, b:0, c:3.29, d:2}).evalf().round(10)",
+   "expected": "0.6832579186"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.6832579185520362,
+    "man": "3077120107388891",
+    "exp": -52,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "10",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Gt(C(43.2), 0), Eq(C(3.29), 2)).round(10)",
+   "expected": "0.6832579186"
+  },
+  {
+   "fn": "P",
+   "args": [
+    {
+     "t": "Rel",
+     "op": "Equality",
+     "args": [
+      {
+       "t": "Stats",
+       "cls": "RandomIndexedSymbol",
+       "args": [
+        {
+         "t": "Indexed",
+         "base": {
+          "t": "Symbol",
+          "name": "Y",
+          "assume": {}
+         },
+         "indices": [
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "StochasticPSpace",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "Y",
+           "assume": {}
+          },
+          {
+           "t": "Stats",
+           "cls": "DiscreteMarkovChain",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "Y",
+             "assume": {}
+            },
+            {
+             "t": "Range",
+             "start": {
+              "t": "Rational",
+              "p": "0",
+              "q": "1"
+             },
+             "stop": {
+              "t": "Dummy",
+              "name": "n",
+              "index": 0,
+              "assume": {
+               "nonnegative": true,
+               "integer": true
+              }
+             },
+             "step": {
+              "t": "Rational",
+              "p": "1",
+              "q": "1"
+             }
+            },
+            {
+             "t": "MatrixSymbol",
+             "name": "_T",
+             "rows": {
+              "t": "Dummy",
+              "name": "n",
+              "index": 0,
+              "assume": {
+               "nonnegative": true,
+               "integer": true
+              }
+             },
+             "cols": {
+              "t": "Dummy",
+              "name": "n",
+              "index": 0,
+              "assume": {
+               "nonnegative": true,
+               "integer": true
+              }
+             }
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "Distribution",
+           "args": []
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "BoolOp",
+     "op": "And",
+     "args": [
+      {
+       "t": "Stats",
+       "cls": "TransitionMatrixOf",
+       "args": [
+        {
+         "t": "Stats",
+         "cls": "DiscreteMarkovChain",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "Y",
+           "assume": {}
+          },
+          {
+           "t": "Range",
+           "start": {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           },
+           "stop": {
+            "t": "Dummy",
+            "name": "n",
+            "index": 0,
+            "assume": {
+             "nonnegative": true,
+             "integer": true
+            }
+           },
+           "step": {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           }
+          },
+          {
+           "t": "MatrixSymbol",
+           "name": "_T",
+           "rows": {
+            "t": "Dummy",
+            "name": "n",
+            "index": 0,
+            "assume": {
+             "nonnegative": true,
+             "integer": true
+            }
+           },
+           "cols": {
+            "t": "Dummy",
+            "name": "n",
+            "index": 0,
+            "assume": {
+             "nonnegative": true,
+             "integer": true
+            }
+           }
+          }
+         ]
+        },
+        {
+         "t": "MatrixSymbol",
+         "name": "T",
+         "rows": {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         "cols": {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        }
+       ]
+      },
+      {
+       "t": "Rel",
+       "op": "Equality",
+       "args": [
+        {
+         "t": "Stats",
+         "cls": "RandomIndexedSymbol",
+         "args": [
+          {
+           "t": "Indexed",
+           "base": {
+            "t": "Symbol",
+            "name": "Y",
+            "assume": {}
+           },
+           "indices": [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "StochasticPSpace",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "Y",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "DiscreteMarkovChain",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "Y",
+               "assume": {}
+              },
+              {
+               "t": "Range",
+               "start": {
+                "t": "Rational",
+                "p": "0",
+                "q": "1"
+               },
+               "stop": {
+                "t": "Dummy",
+                "name": "n",
+                "index": 0,
+                "assume": {
+                 "nonnegative": true,
+                 "integer": true
+                }
+               },
+               "step": {
+                "t": "Rational",
+                "p": "1",
+                "q": "1"
+               }
+              },
+              {
+               "t": "MatrixSymbol",
+               "name": "_T",
+               "rows": {
+                "t": "Dummy",
+                "name": "n",
+                "index": 0,
+                "assume": {
+                 "nonnegative": true,
+                 "integer": true
+                }
+               },
+               "cols": {
+                "t": "Dummy",
+                "name": "n",
+                "index": 0,
+                "assume": {
+                 "nonnegative": true,
+                 "integer": true
+                }
+               }
+              }
+             ]
+            },
+            {
+             "t": "Stats",
+             "cls": "Distribution",
+             "args": []
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(YS[3], 2), Eq(YS[1], 1) & TransitionMatrixOf(YS, TS))",
+   "expected": "T[0, 2]*T[1, 0] + T[1, 1]*T[1, 2] + T[1, 2]*T[2, 2]"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.36,
+    "man": "3242591731706757",
+    "exp": -53,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(Y[3], 2), Eq(Y[1], 1)).round(2)",
+   "expected": "0.36"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.36,
+    "man": "3242591731706757",
+    "exp": -53,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(Y[3], 2), Eq(Y[1], 1)).round(2)",
+   "expected": "0.36"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.36,
+    "man": "3242591731706757",
+    "exp": -53,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(Str('Rainy'), Y[3]), Eq(Y[1], Str('Cloudy'))).round(2)",
+   "expected": "0.36"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.36,
+    "man": "3242591731706757",
+    "exp": -53,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(Y[3], rainy), Eq(Y[1], cloudy)).round(2)",
+   "expected": "0.36"
+  },
+  {
+   "fn": "E",
+   "args": [
+    {
+     "t": "Stats",
+     "cls": "RandomIndexedSymbol",
+     "args": [
+      {
+       "t": "Indexed",
+       "base": {
+        "t": "Symbol",
+        "name": "Y",
+        "assume": {}
+       },
+       "indices": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Stats",
+       "cls": "StochasticPSpace",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "Y",
+         "assume": {}
+        },
+        {
+         "t": "Stats",
+         "cls": "DiscreteMarkovChain",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "Y",
+           "assume": {}
+          },
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Symbol",
+             "name": "Sunny",
+             "assume": {}
+            },
+            {
+             "t": "Symbol",
+             "name": "Cloudy",
+             "assume": {}
+            },
+            {
+             "t": "Symbol",
+             "name": "Rainy",
+             "assume": {}
+            }
+           ]
+          },
+          {
+           "t": "Matrix",
+           "rows": [
+            [
+             {
+              "t": "Float",
+              "v": 0.5,
+              "man": "1",
+              "exp": -1,
+              "prec": 53
+             },
+             {
+              "t": "Float",
+              "v": 0.2,
+              "man": "3602879701896397",
+              "exp": -54,
+              "prec": 53
+             },
+             {
+              "t": "Float",
+              "v": 0.3,
+              "man": "5404319552844595",
+              "exp": -54,
+              "prec": 53
+             }
+            ],
+            [
+             {
+              "t": "Float",
+              "v": 0.2,
+              "man": "3602879701896397",
+              "exp": -54,
+              "prec": 53
+             },
+             {
+              "t": "Float",
+              "v": 0.5,
+              "man": "1",
+              "exp": -1,
+              "prec": 53
+             },
+             {
+              "t": "Float",
+              "v": 0.3,
+              "man": "5404319552844595",
+              "exp": -54,
+              "prec": 53
+             }
+            ],
+            [
+             {
+              "t": "Float",
+              "v": 0.2,
+              "man": "3602879701896397",
+              "exp": -54,
+              "prec": 53
+             },
+             {
+              "t": "Float",
+              "v": 0.3,
+              "man": "5404319552844595",
+              "exp": -54,
+              "prec": 53
+             },
+             {
+              "t": "Float",
+              "v": 0.5,
+              "man": "1",
+              "exp": -1,
+              "prec": 53
+             }
+            ]
+           ],
+           "shape": [
+            3,
+            3
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "Distribution",
+         "args": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Rel",
+     "op": "Equality",
+     "args": [
+      {
+       "t": "Stats",
+       "cls": "RandomIndexedSymbol",
+       "args": [
+        {
+         "t": "Indexed",
+         "base": {
+          "t": "Symbol",
+          "name": "Y",
+          "assume": {}
+         },
+         "indices": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "StochasticPSpace",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "Y",
+           "assume": {}
+          },
+          {
+           "t": "Stats",
+           "cls": "DiscreteMarkovChain",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "Y",
+             "assume": {}
+            },
+            {
+             "t": "Tuple",
+             "items": [
+              {
+               "t": "Symbol",
+               "name": "Sunny",
+               "assume": {}
+              },
+              {
+               "t": "Symbol",
+               "name": "Cloudy",
+               "assume": {}
+              },
+              {
+               "t": "Symbol",
+               "name": "Rainy",
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Matrix",
+             "rows": [
+              [
+               {
+                "t": "Float",
+                "v": 0.5,
+                "man": "1",
+                "exp": -1,
+                "prec": 53
+               },
+               {
+                "t": "Float",
+                "v": 0.2,
+                "man": "3602879701896397",
+                "exp": -54,
+                "prec": 53
+               },
+               {
+                "t": "Float",
+                "v": 0.3,
+                "man": "5404319552844595",
+                "exp": -54,
+                "prec": 53
+               }
+              ],
+              [
+               {
+                "t": "Float",
+                "v": 0.2,
+                "man": "3602879701896397",
+                "exp": -54,
+                "prec": 53
+               },
+               {
+                "t": "Float",
+                "v": 0.5,
+                "man": "1",
+                "exp": -1,
+                "prec": 53
+               },
+               {
+                "t": "Float",
+                "v": 0.3,
+                "man": "5404319552844595",
+                "exp": -54,
+                "prec": 53
+               }
+              ],
+              [
+               {
+                "t": "Float",
+                "v": 0.2,
+                "man": "3602879701896397",
+                "exp": -54,
+                "prec": 53
+               },
+               {
+                "t": "Float",
+                "v": 0.3,
+                "man": "5404319552844595",
+                "exp": -54,
+                "prec": 53
+               },
+               {
+                "t": "Float",
+                "v": 0.5,
+                "man": "1",
+                "exp": -1,
+                "prec": 53
+               }
+              ]
+             ],
+             "shape": [
+              3,
+              3
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "Distribution",
+           "args": []
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Symbol",
+       "name": "Cloudy",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "E(Y[3], Eq(Y[1], cloudy))",
+   "expected": "0.38*Cloudy + 0.36*Rainy + 0.26*Sunny"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Rational",
+    "p": "409",
+    "q": "1000"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "3",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(Y[3], Y[1]), Eq(Y[0], 0)).round(3)",
+   "expected": "0.409"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Rational",
+    "p": "9",
+    "q": "25"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Gt(Y[3], Y[1]), Eq(Y[0], 0)).round(2)",
+   "expected": "0.36"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Rational",
+    "p": "54401",
+    "q": "78125"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "7",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Le(Y[15], Y[10]), Eq(Y[8], 2)).round(7)",
+   "expected": "0.6963328"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "21",
+      "q": "68"
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-154632",
+            "q": "1"
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "108800",
+              "q": "1"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               },
+               {
+                "t": "Rational",
+                "p": "1",
+                "q": "2"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "7",
+            "q": "1"
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "9",
+              "q": "1"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               },
+               {
+                "t": "Rational",
+                "p": "1",
+                "q": "2"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "5"
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "5"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               },
+               {
+                "t": "Rational",
+                "p": "1",
+                "q": "2"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rational",
+          "p": "5",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-34239",
+          "q": "1"
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "23956",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             },
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "2"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-3",
+          "q": "1"
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             },
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "2"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-2424",
+            "q": "1"
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1696",
+              "q": "1"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               },
+               {
+                "t": "Rational",
+                "p": "1",
+                "q": "2"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-7",
+            "q": "1"
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "9",
+              "q": "1"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               },
+               {
+                "t": "Rational",
+                "p": "1",
+                "q": "2"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "5"
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "5"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               },
+               {
+                "t": "Rational",
+                "p": "1",
+                "q": "2"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Rational",
+          "p": "5",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1137",
+          "q": "1"
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "800",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             },
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "2"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             },
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "2"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "query.subs({a:10, b:2, c:5, d:1}).round(4)",
+   "expected": "0.3096"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.3096,
+    "man": "2788628889267811",
+    "exp": -53,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(Y[10], 2), Eq(Y[5], 1)).evalf().round(4)",
+   "expected": "0.3096"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Float",
+    "v": 0.6470540940804096,
+    "man": "5828145153978173",
+    "exp": -53,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "5",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "query_gt.subs({a:21, b:0, c:5, d:0}).evalf().round(5)",
+   "expected": "0.64705"
+  },
+  {
+   "fn": ".round",
+   "self": {
+    "t": "Rational",
+    "p": "98732619336",
+    "q": "152587890625"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "5",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Gt(Y[21], 0), Eq(Y[5], 0)).round(5)",
+   "expected": "0.64705"
+  },
+  {
+   "fn": ".subs",
+   "self": {
+    "t": "Fn",
+    "name": "Piecewise",
+    "args": [
+     {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "MatExpr",
+        "cls": "MatrixElement",
+        "args": [
+         {
+          "t": "MatExpr",
+          "cls": "MatPow",
+          "args": [
+           {
+            "t": "MatrixSymbol",
+            "name": "T",
+            "rows": {
+             "t": "Symbol",
+             "name": "n",
+             "assume": {
+              "nonnegative": true,
+              "integer": true
+             }
+            },
+            "cols": {
+             "t": "Symbol",
+             "name": "n",
+             "assume": {
+              "nonnegative": true,
+              "integer": true
+             }
+            }
+           },
+           {
+            "t": "Add",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "a",
+              "assume": {}
+             },
+             {
+              "t": "Mul",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "-1",
+                "q": "1"
+               },
+               {
+                "t": "Symbol",
+                "name": "c",
+                "assume": {}
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Symbol",
+          "name": "d",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "b",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rel",
+        "op": "StrictGreaterThan",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "a",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "c",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Stats",
+        "cls": "Probability",
+        "args": [
+         {
+          "t": "Rel",
+          "op": "Equality",
+          "args": [
+           {
+            "t": "Stats",
+            "cls": "RandomIndexedSymbol",
+            "args": [
+             {
+              "t": "Indexed",
+              "base": {
+               "t": "Symbol",
+               "name": "Y",
+               "assume": {}
+              },
+              "indices": [
+               {
+                "t": "Symbol",
+                "name": "a",
+                "assume": {}
+               }
+              ]
+             },
+             {
+              "t": "Stats",
+              "cls": "StochasticPSpace",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "Y",
+                "assume": {}
+               },
+               {
+                "t": "Stats",
+                "cls": "DiscreteMarkovChain",
+                "args": [
+                 {
+                  "t": "Symbol",
+                  "name": "Y",
+                  "assume": {}
+                 },
+                 {
+                  "t": "Range",
+                  "start": {
+                   "t": "Rational",
+                   "p": "0",
+                   "q": "1"
+                  },
+                  "stop": {
+                   "t": "Symbol",
+                   "name": "n",
+                   "assume": {
+                    "nonnegative": true,
+                    "integer": true
+                   }
+                  },
+                  "step": {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "1"
+                  }
+                 },
+                 {
+                  "t": "MatrixSymbol",
+                  "name": "T",
+                  "rows": {
+                   "t": "Symbol",
+                   "name": "n",
+                   "assume": {
+                    "nonnegative": true,
+                    "integer": true
+                   }
+                  },
+                  "cols": {
+                   "t": "Symbol",
+                   "name": "n",
+                   "assume": {
+                    "nonnegative": true,
+                    "integer": true
+                   }
+                  }
+                 }
+                ]
+               },
+               {
+                "t": "Stats",
+                "cls": "Distribution",
+                "args": []
+               }
+              ]
+             }
+            ]
+           },
+           {
+            "t": "Symbol",
+            "name": "b",
+            "assume": {}
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Js",
+        "v": true
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Symbol",
+        "name": "a",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "10",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Symbol",
+        "name": "b",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Symbol",
+        "name": "c",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "5",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Symbol",
+        "name": "d",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "query.subs({a:10, b:2, c:5, d:1})",
+   "expected": "(T**5)[1, 2]"
+  },
+  {
+   "fn": ".stationary_distribution",
+   "self": {
+    "t": "Stats",
+    "cls": "DiscreteMarkovChain",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "X",
+      "assume": {}
+     },
+     {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Matrix",
+      "rows": [
+       [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "5"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "5"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ]
+      ],
+      "shape": [
+       3,
+       3
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "X.stationary_distribution()",
+   "expected": "Matrix([[8/13, 5/13, 0]])"
+  },
+  {
+   "fn": ".stationary_distribution",
+   "self": {
+    "t": "Stats",
+    "cls": "DiscreteMarkovChain",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "X",
+      "assume": {}
+     },
+     {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Matrix",
+      "rows": [
+       [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "5"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "5"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ]
+      ],
+      "shape": [
+       3,
+       3
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "X.stationary_distribution()",
+   "expected": "Matrix([[8/13 - 8*tau0/13, 5/13 - 5*tau0/13, tau0]])"
+  },
+  {
+   "fn": ".stationary_distribution",
+   "self": {
+    "t": "Stats",
+    "cls": "DiscreteMarkovChain",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "Y",
+      "assume": {}
+     },
+     {
+      "t": "Range",
+      "start": {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      "stop": {
+       "t": "Dummy",
+       "name": "n",
+       "index": 0,
+       "assume": {
+        "nonnegative": true,
+        "integer": true
+       }
+      },
+      "step": {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      }
+     },
+     {
+      "t": "MatrixSymbol",
+      "name": "_T",
+      "rows": {
+       "t": "Dummy",
+       "name": "n",
+       "index": 0,
+       "assume": {
+        "nonnegative": true,
+        "integer": true
+       }
+      },
+      "cols": {
+       "t": "Dummy",
+       "name": "n",
+       "index": 0,
+       "assume": {
+        "nonnegative": true,
+        "integer": true
+       }
+      }
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "Y.stationary_distribution()",
+   "expected": "Lambda((wm, _T), Eq(wm*_T, wm))"
+  },
+  {
+   "fn": ".stationary_distribution",
+   "self": {
+    "t": "Stats",
+    "cls": "DiscreteMarkovChain",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "Y",
+      "assume": {}
+     },
+     {
+      "t": "Range",
+      "start": {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      "stop": {
+       "t": "Dummy",
+       "name": "n",
+       "index": 0,
+       "assume": {
+        "nonnegative": true,
+        "integer": true
+       }
+      },
+      "step": {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      }
+     },
+     {
+      "t": "MatrixSymbol",
+      "name": "_T",
+      "rows": {
+       "t": "Dummy",
+       "name": "n",
+       "index": 0,
+       "assume": {
+        "nonnegative": true,
+        "integer": true
+       }
+      },
+      "cols": {
+       "t": "Dummy",
+       "name": "n",
+       "index": 0,
+       "assume": {
+        "nonnegative": true,
+        "integer": true
+       }
+      }
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {
+    "condition_set": {
+     "t": "Js",
+     "v": true
+    }
+   },
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "Y.stationary_distribution(condition_set=True)",
+   "expected": "ConditionSet(wm, Eq(wm*_T, wm))"
+  },
+  {
+   "fn": "E",
+   "args": [
+    {
+     "t": "Stats",
+     "cls": "RandomIndexedSymbol",
+     "args": [
+      {
+       "t": "UFn",
+       "name": "X",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "t",
+         "assume": {
+          "positive": true
+         }
+        }
+       ]
+      },
+      {
+       "t": "Stats",
+       "cls": "StochasticPSpace",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "X",
+         "assume": {}
+        },
+        {
+         "t": "Stats",
+         "cls": "GammaProcess",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "X",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "l",
+           "assume": {
+            "positive": true
+           }
+          },
+          {
+           "t": "Symbol",
+           "name": "g",
+           "assume": {
+            "positive": true
+           }
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "GammaDistribution",
+         "args": [
+          {
+           "t": "Mul",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "g",
+             "assume": {
+              "positive": true
+             }
+            },
+            {
+             "t": "Symbol",
+             "name": "t",
+             "assume": {
+              "positive": true
+             }
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "l",
+             "assume": {
+              "positive": true
+             }
+            },
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "E(X(t))",
+   "expected": "g*t/l"
+  },
+  {
+   "fn": ".simplify",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "l",
+          "assume": {
+           "positive": true
+          }
+         },
+         {
+          "t": "Rational",
+          "p": "-2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "g",
+            "assume": {
+             "positive": true
+            }
+           },
+           {
+            "t": "Symbol",
+            "name": "t",
+            "assume": {
+             "positive": true
+            }
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "g",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "t",
+              "assume": {
+               "positive": true
+              }
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "g",
+          "assume": {
+           "positive": true
+          }
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "l",
+          "assume": {
+           "positive": true
+          }
+         },
+         {
+          "t": "Rational",
+          "p": "-2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "t",
+          "assume": {
+           "positive": true
+          }
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "variance(X(t)).simplify()",
+   "expected": "g*t/l**2"
+  },
+  {
+   "fn": ".simplify",
+   "self": {
+    "t": "Mul",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Symbol",
+      "name": "t",
+      "assume": {
+       "positive": true
+      }
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Fn",
+        "name": "gamma",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             },
+             {
+              "t": "Symbol",
+              "name": "t",
+              "assume": {
+               "positive": true
+              }
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "lowergamma",
+      "args": [
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "t",
+          "assume": {
+           "positive": true
+          }
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(X(t) < 1).simplify()",
+   "expected": "lowergamma(2*t, 1)/gamma(2*t)"
+  },
+  {
+   "fn": ".simplify",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-4",
+        "q": "1"
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-118",
+            "q": "3"
+           },
+           {
+            "t": "Fn",
+            "name": "exp",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-5",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Fn",
+        "name": "exp",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-3",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Not((X(t) < 5) & (X(d) > 3)), Contains(t, Interval.Ropen(2, 4)) &\nContains(d, Interval.Lopen(7, 8))).simplify()",
+   "expected": "-4*exp(-3) + 472*exp(-8)/3 + 1"
+  },
+  {
+   "fn": "E",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "10",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {
+          "positive": true
+         }
+        }
+       ]
+      },
+      {
+       "t": "Stats",
+       "cls": "RandomIndexedSymbol",
+       "args": [
+        {
+         "t": "UFn",
+         "name": "X",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "StochasticPSpace",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "X",
+           "assume": {}
+          },
+          {
+           "t": "Stats",
+           "cls": "GammaProcess",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "GammaDistribution",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "E(X(2) + x*E(X(5)))",
+   "expected": "10*x + 4"
+  },
+  {
+   "fn": "P",
+   "args": [
+    {
+     "t": "Rel",
+     "op": "StrictLessThan",
+     "args": [
+      {
+       "t": "Stats",
+       "cls": "RandomIndexedSymbol",
+       "args": [
+        {
+         "t": "UFn",
+         "name": "X",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "t1",
+           "assume": {
+            "positive": true
+           }
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "StochasticPSpace",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "X",
+           "assume": {}
+          },
+          {
+           "t": "Stats",
+           "cls": "PoissonProcess",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "PoissonDistribution",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "3",
+               "q": "1"
+              },
+              {
+               "t": "Symbol",
+               "name": "t1",
+               "assume": {
+                "positive": true
+               }
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(X(t1) < 4)",
+   "expected": "(9*t1**3/2 + 9*t1**2/2 + 3*t1 + 1)*exp(-3*t1)"
+  },
+  {
+   "fn": "P",
+   "args": [
+    {
+     "t": "BoolOp",
+     "op": "Or",
+     "args": [
+      {
+       "t": "Rel",
+       "op": "Equality",
+       "args": [
+        {
+         "t": "Stats",
+         "cls": "RandomIndexedSymbol",
+         "args": [
+          {
+           "t": "UFn",
+           "name": "X",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "t1",
+             "assume": {
+              "positive": true
+             }
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "StochasticPSpace",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "PoissonProcess",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "X",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "3",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Stats",
+             "cls": "PoissonDistribution",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "3",
+                 "q": "1"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "t1",
+                 "assume": {
+                  "positive": true
+                 }
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Rel",
+       "op": "Unequality",
+       "args": [
+        {
+         "t": "Stats",
+         "cls": "RandomIndexedSymbol",
+         "args": [
+          {
+           "t": "UFn",
+           "name": "X",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "t1",
+             "assume": {
+              "positive": true
+             }
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "StochasticPSpace",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "PoissonProcess",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "X",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "3",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Stats",
+             "cls": "PoissonDistribution",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "3",
+                 "q": "1"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "t1",
+                 "assume": {
+                  "positive": true
+                 }
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Contains",
+     "x": {
+      "t": "Symbol",
+      "name": "t1",
+      "assume": {
+       "positive": true
+      }
+     },
+     "set": {
+      "t": "Interval",
+      "a": {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      "b": {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      "lo": false,
+      "ro": true
+     }
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(X(t1), 2) | Ne(X(t1), 4), Contains(t1, Interval.Ropen(2, 4)))",
+   "expected": "1 - 36*exp(-6)"
+  },
+  {
+   "fn": "P",
+   "args": [
+    {
+     "t": "BoolOp",
+     "op": "And",
+     "args": [
+      {
+       "t": "Rel",
+       "op": "Equality",
+       "args": [
+        {
+         "t": "Stats",
+         "cls": "RandomIndexedSymbol",
+         "args": [
+          {
+           "t": "UFn",
+           "name": "X",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "t1",
+             "assume": {
+              "positive": true
+             }
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "StochasticPSpace",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "PoissonProcess",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "X",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "3",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Stats",
+             "cls": "PoissonDistribution",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "3",
+                 "q": "1"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "t1",
+                 "assume": {
+                  "positive": true
+                 }
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Rel",
+       "op": "Equality",
+       "args": [
+        {
+         "t": "Stats",
+         "cls": "RandomIndexedSymbol",
+         "args": [
+          {
+           "t": "UFn",
+           "name": "X",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "t2",
+             "assume": {
+              "positive": true
+             }
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "StochasticPSpace",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "PoissonProcess",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "X",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "3",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Stats",
+             "cls": "PoissonDistribution",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "3",
+                 "q": "1"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "t2",
+                 "assume": {
+                  "positive": true
+                 }
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "BoolOp",
+     "op": "And",
+     "args": [
+      {
+       "t": "Contains",
+       "x": {
+        "t": "Symbol",
+        "name": "t1",
+        "assume": {
+         "positive": true
+        }
+       },
+       "set": {
+        "t": "Interval",
+        "a": {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        "b": {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        "lo": true,
+        "ro": false
+       }
+      },
+      {
+       "t": "Contains",
+       "x": {
+        "t": "Symbol",
+        "name": "t2",
+        "assume": {
+         "positive": true
+        }
+       },
+       "set": {
+        "t": "Interval",
+        "a": {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        "b": {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        },
+        "lo": true,
+        "ro": false
+       }
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(X(t1), 2) & Eq(X(t2), 3), Contains(t1, Interval.Lopen(0, 2))\n& Contains(t2, Interval.Lopen(2, 4)))",
+   "expected": "648*exp(-12)"
+  },
+  {
+   "fn": "E",
+   "args": [
+    {
+     "t": "Stats",
+     "cls": "RandomIndexedSymbol",
+     "args": [
+      {
+       "t": "UFn",
+       "name": "X",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "t1",
+         "assume": {
+          "positive": true
+         }
+        }
+       ]
+      },
+      {
+       "t": "Stats",
+       "cls": "StochasticPSpace",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "X",
+         "assume": {}
+        },
+        {
+         "t": "Stats",
+         "cls": "PoissonProcess",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "X",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "PoissonDistribution",
+         "args": [
+          {
+           "t": "Mul",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            },
+            {
+             "t": "Symbol",
+             "name": "t1",
+             "assume": {
+              "positive": true
+             }
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "E(X(t1))",
+   "expected": "3*t1"
+  },
+  {
+   "fn": "E",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Stats",
+         "cls": "RandomIndexedSymbol",
+         "args": [
+          {
+           "t": "UFn",
+           "name": "X",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "t1",
+             "assume": {
+              "positive": true
+             }
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "StochasticPSpace",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "PoissonProcess",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "X",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "3",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Stats",
+             "cls": "PoissonDistribution",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "3",
+                 "q": "1"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "t1",
+                 "assume": {
+                  "positive": true
+                 }
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Stats",
+         "cls": "RandomIndexedSymbol",
+         "args": [
+          {
+           "t": "UFn",
+           "name": "X",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "t2",
+             "assume": {
+              "positive": true
+             }
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "StochasticPSpace",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "PoissonProcess",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "X",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "3",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Stats",
+             "cls": "PoissonDistribution",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "3",
+                 "q": "1"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "t2",
+                 "assume": {
+                  "positive": true
+                 }
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "BoolOp",
+     "op": "And",
+     "args": [
+      {
+       "t": "Contains",
+       "x": {
+        "t": "Symbol",
+        "name": "t1",
+        "assume": {
+         "positive": true
+        }
+       },
+       "set": {
+        "t": "Interval",
+        "a": {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        "b": {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        "lo": true,
+        "ro": false
+       }
+      },
+      {
+       "t": "Contains",
+       "x": {
+        "t": "Symbol",
+        "name": "t2",
+        "assume": {
+         "positive": true
+        }
+       },
+       "set": {
+        "t": "Interval",
+        "a": {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        "b": {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        "lo": true,
+        "ro": false
+       }
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "E(X(t1)**2 + 2*X(t2),  Contains(t1, Interval.Lopen(0, 1))\n& Contains(t2, Interval.Lopen(1, 2)))",
+   "expected": "18"
+  },
+  {
+   "fn": "P",
+   "args": [
+    {
+     "t": "Rel",
+     "op": "StrictLessThan",
+     "args": [
+      {
+       "t": "Stats",
+       "cls": "RandomIndexedSymbol",
+       "args": [
+        {
+         "t": "UFn",
+         "name": "X",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "StochasticPSpace",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "X",
+           "assume": {}
+          },
+          {
+           "t": "Stats",
+           "cls": "PoissonProcess",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "PoissonDistribution",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "9",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Rel",
+     "op": "Equality",
+     "args": [
+      {
+       "t": "Stats",
+       "cls": "RandomIndexedSymbol",
+       "args": [
+        {
+         "t": "UFn",
+         "name": "X",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "StochasticPSpace",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "X",
+           "assume": {}
+          },
+          {
+           "t": "Stats",
+           "cls": "PoissonProcess",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "PoissonDistribution",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(X(3) < 1, Eq(X(1), 0))",
+   "expected": "exp(-6)"
+  },
+  {
+   "fn": "P",
+   "args": [
+    {
+     "t": "Rel",
+     "op": "Equality",
+     "args": [
+      {
+       "t": "Stats",
+       "cls": "RandomIndexedSymbol",
+       "args": [
+        {
+         "t": "UFn",
+         "name": "X",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "4",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "StochasticPSpace",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "X",
+           "assume": {}
+          },
+          {
+           "t": "Stats",
+           "cls": "PoissonProcess",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "PoissonDistribution",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "12",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Rel",
+     "op": "Equality",
+     "args": [
+      {
+       "t": "Stats",
+       "cls": "RandomIndexedSymbol",
+       "args": [
+        {
+         "t": "UFn",
+         "name": "X",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "StochasticPSpace",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "X",
+           "assume": {}
+          },
+          {
+           "t": "Stats",
+           "cls": "PoissonProcess",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "PoissonDistribution",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "6",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(Eq(X(4), 3), Eq(X(2), 3))",
+   "expected": "exp(-6)"
+  },
+  {
+   "fn": "P",
+   "args": [
+    {
+     "t": "Rel",
+     "op": "LessThan",
+     "args": [
+      {
+       "t": "Stats",
+       "cls": "RandomIndexedSymbol",
+       "args": [
+        {
+         "t": "UFn",
+         "name": "X",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "StochasticPSpace",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "X",
+           "assume": {}
+          },
+          {
+           "t": "Stats",
+           "cls": "PoissonProcess",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "PoissonDistribution",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "6",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Rel",
+     "op": "StrictGreaterThan",
+     "args": [
+      {
+       "t": "Stats",
+       "cls": "RandomIndexedSymbol",
+       "args": [
+        {
+         "t": "UFn",
+         "name": "X",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "StochasticPSpace",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "X",
+           "assume": {}
+          },
+          {
+           "t": "Stats",
+           "cls": "PoissonProcess",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "PoissonDistribution",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(X(2) <= 3, X(1) > 1)",
+   "expected": "5*exp(-3)"
+  },
+  {
+   "fn": ".simplify",
+   "self": {
+    "t": "Mul",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "-1",
+      "q": "14"
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "2"
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Const",
+        "name": "pi"
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "t1",
+        "assume": {
+         "positive": true
+        }
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "2"
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-7",
+          "q": "2"
+         },
+         {
+          "t": "Const",
+          "name": "pi"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "2"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "t1",
+            "assume": {
+             "positive": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "2"
+           }
+          ]
+         },
+         {
+          "t": "Fn",
+          "name": "exp",
+          "args": [
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "49",
+              "q": "2"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "t1",
+                "assume": {
+                 "positive": true
+                }
+               },
+               {
+                "t": "Rational",
+                "p": "-1",
+                "q": "1"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-7",
+          "q": "2"
+         },
+         {
+          "t": "Const",
+          "name": "pi"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "2"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "t1",
+            "assume": {
+             "positive": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "2"
+           }
+          ]
+         },
+         {
+          "t": "Fn",
+          "name": "erf",
+          "args": [
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "7",
+              "q": "2"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               },
+               {
+                "t": "Rational",
+                "p": "1",
+                "q": "2"
+               }
+              ]
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "t1",
+                "assume": {
+                 "positive": true
+                }
+               },
+               {
+                "t": "Rational",
+                "p": "-1",
+                "q": "2"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Fn",
+          "name": "exp",
+          "args": [
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "49",
+              "q": "2"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "t1",
+                "assume": {
+                 "positive": true
+                }
+               },
+               {
+                "t": "Rational",
+                "p": "-1",
+                "q": "1"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "exp",
+      "args": [
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-49",
+          "q": "2"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "t1",
+            "assume": {
+             "positive": true
+            }
+           },
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P(X(t1) < 7).simplify()",
+   "expected": "erf(7*sqrt(2)/(2*sqrt(t1)))/2 + 1/2"
+  },
+  {
+   "fn": ".simplify",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "2"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Const",
+          "name": "pi"
+         },
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "2"
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Const",
+            "name": "pi"
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "2"
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Const",
+              "name": "pi"
+             },
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "2"
+             }
+            ]
+           },
+           {
+            "t": "Fn",
+            "name": "erf",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "4"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Const",
+          "name": "pi"
+         },
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-2",
+            "q": "1"
+           },
+           {
+            "t": "Const",
+            "name": "pi"
+           },
+           {
+            "t": "Fn",
+            "name": "exp",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "4",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-2",
+            "q": "1"
+           },
+           {
+            "t": "Const",
+            "name": "pi"
+           },
+           {
+            "t": "Fn",
+            "name": "erf",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Fn",
+            "name": "exp",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "4",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Fn",
+        "name": "exp",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-4",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "P((X(t1) > 2) | (X(t1) < 4), Contains(t1, Interval.Ropen(2, 4))).simplify()",
+   "expected": "-erf(1)/2 + erf(2)/2 + 1"
+  },
+  {
+   "fn": "E",
+   "args": [
+    {
+     "t": "Stats",
+     "cls": "RandomIndexedSymbol",
+     "args": [
+      {
+       "t": "UFn",
+       "name": "X",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "t1",
+         "assume": {
+          "positive": true
+         }
+        }
+       ]
+      },
+      {
+       "t": "Stats",
+       "cls": "StochasticPSpace",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "X",
+         "assume": {}
+        },
+        {
+         "t": "Stats",
+         "cls": "WienerProcess",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "X",
+           "assume": {}
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "NormalDistribution",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "t1",
+             "assume": {
+              "positive": true
+             }
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "2"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "E(X(t1))",
+   "expected": "0"
+  },
+  {
+   "fn": "E",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Stats",
+         "cls": "RandomIndexedSymbol",
+         "args": [
+          {
+           "t": "UFn",
+           "name": "X",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "t2",
+             "assume": {
+              "positive": true
+             }
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "StochasticPSpace",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "WienerProcess",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "X",
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Stats",
+             "cls": "NormalDistribution",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "0",
+               "q": "1"
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Symbol",
+                 "name": "t2",
+                 "assume": {
+                  "positive": true
+                 }
+                },
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Stats",
+       "cls": "RandomIndexedSymbol",
+       "args": [
+        {
+         "t": "UFn",
+         "name": "X",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "t1",
+           "assume": {
+            "positive": true
+           }
+          }
+         ]
+        },
+        {
+         "t": "Stats",
+         "cls": "StochasticPSpace",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "X",
+           "assume": {}
+          },
+          {
+           "t": "Stats",
+           "cls": "WienerProcess",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "X",
+             "assume": {}
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "NormalDistribution",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "t1",
+               "assume": {
+                "positive": true
+               }
+              },
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "2"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "BoolOp",
+     "op": "And",
+     "args": [
+      {
+       "t": "Contains",
+       "x": {
+        "t": "Symbol",
+        "name": "t1",
+        "assume": {
+         "positive": true
+        }
+       },
+       "set": {
+        "t": "Interval",
+        "a": {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        "b": {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        "lo": true,
+        "ro": false
+       }
+      },
+      {
+       "t": "Contains",
+       "x": {
+        "t": "Symbol",
+        "name": "t2",
+        "assume": {
+         "positive": true
+        }
+       },
+       "set": {
+        "t": "Interval",
+        "a": {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        "b": {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        "lo": true,
+        "ro": false
+       }
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.stochastic_process_types",
+   "src": "E(X(t1) + 2*X(t2),  Contains(t1, Interval.Lopen(0, 1))\n& Contains(t2, Interval.Lopen(1, 2)))",
+   "expected": "0"
+  },
+  {
+   "fn": "CrossCovarianceMatrix",
+   "args": [
+    {
+     "t": "Stats",
+     "cls": "RandomMatrixSymbol",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "X",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "k",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Stats",
+       "cls": "PSpace",
+       "args": []
+      }
+     ]
+    },
+    {
+     "t": "Stats",
+     "cls": "RandomMatrixSymbol",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "Y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "k",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Stats",
+       "cls": "PSpace",
+       "args": []
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.symbolic_multivariate_probability",
+   "src": "CrossCovarianceMatrix(X, Y)",
+   "expected": "CrossCovarianceMatrix(X, Y)"
+  },
+  {
+   "fn": ".expand",
+   "self": {
+    "t": "Stats",
+    "cls": "CrossCovarianceMatrix",
+    "args": [
+     {
+      "t": "MatExpr",
+      "cls": "MatAdd",
+      "args": [
+       {
+        "t": "Stats",
+        "cls": "RandomMatrixSymbol",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "X",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "k",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Stats",
+          "cls": "PSpace",
+          "args": []
+         }
+        ]
+       },
+       {
+        "t": "Stats",
+        "cls": "RandomMatrixSymbol",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "Y",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "k",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Stats",
+          "cls": "PSpace",
+          "args": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Stats",
+      "cls": "RandomMatrixSymbol",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "Z",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "k",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Stats",
+        "cls": "PSpace",
+        "args": []
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.symbolic_multivariate_probability",
+   "src": "CrossCovarianceMatrix(X + Y, Z).expand()",
+   "expected": "CrossCovarianceMatrix(X, Z) + CrossCovarianceMatrix(Y, Z)"
+  },
+  {
+   "fn": ".expand",
+   "self": {
+    "t": "Stats",
+    "cls": "CrossCovarianceMatrix",
+    "args": [
+     {
+      "t": "MatExpr",
+      "cls": "MatMul",
+      "args": [
+       {
+        "t": "MatrixSymbol",
+        "name": "A",
+        "rows": {
+         "t": "Symbol",
+         "name": "k",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "k",
+         "assume": {}
+        }
+       },
+       {
+        "t": "Stats",
+        "cls": "RandomMatrixSymbol",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "X",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "k",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Stats",
+          "cls": "PSpace",
+          "args": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Stats",
+      "cls": "RandomMatrixSymbol",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "Y",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "k",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Stats",
+        "cls": "PSpace",
+        "args": []
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.symbolic_multivariate_probability",
+   "src": "CrossCovarianceMatrix(A*X, Y).expand()",
+   "expected": "A*CrossCovarianceMatrix(X, Y)"
+  },
+  {
+   "fn": ".expand",
+   "self": {
+    "t": "Stats",
+    "cls": "CrossCovarianceMatrix",
+    "args": [
+     {
+      "t": "MatExpr",
+      "cls": "MatMul",
+      "args": [
+       {
+        "t": "MatrixSymbol",
+        "name": "A",
+        "rows": {
+         "t": "Symbol",
+         "name": "k",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "k",
+         "assume": {}
+        }
+       },
+       {
+        "t": "Stats",
+        "cls": "RandomMatrixSymbol",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "X",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "k",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Stats",
+          "cls": "PSpace",
+          "args": []
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "MatExpr",
+      "cls": "MatMul",
+      "args": [
+       {
+        "t": "MatExpr",
+        "cls": "Transpose",
+        "args": [
+         {
+          "t": "MatrixSymbol",
+          "name": "B",
+          "rows": {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          },
+          "cols": {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          }
+         }
+        ]
+       },
+       {
+        "t": "Stats",
+        "cls": "RandomMatrixSymbol",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "Y",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "k",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Stats",
+          "cls": "PSpace",
+          "args": []
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.symbolic_multivariate_probability",
+   "src": "CrossCovarianceMatrix(A*X, B.T*Y).expand()",
+   "expected": "A*CrossCovarianceMatrix(X, Y)*B"
+  },
+  {
+   "fn": ".expand",
+   "self": {
+    "t": "Stats",
+    "cls": "CrossCovarianceMatrix",
+    "args": [
+     {
+      "t": "MatExpr",
+      "cls": "MatAdd",
+      "args": [
+       {
+        "t": "MatExpr",
+        "cls": "MatMul",
+        "args": [
+         {
+          "t": "MatrixSymbol",
+          "name": "A",
+          "rows": {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          },
+          "cols": {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          }
+         },
+         {
+          "t": "Stats",
+          "cls": "RandomMatrixSymbol",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "X",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "k",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Stats",
+            "cls": "PSpace",
+            "args": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "MatExpr",
+        "cls": "MatMul",
+        "args": [
+         {
+          "t": "MatrixSymbol",
+          "name": "B",
+          "rows": {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          },
+          "cols": {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          }
+         },
+         {
+          "t": "Stats",
+          "cls": "RandomMatrixSymbol",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "Y",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "k",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Stats",
+            "cls": "PSpace",
+            "args": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "MatExpr",
+      "cls": "MatAdd",
+      "args": [
+       {
+        "t": "MatExpr",
+        "cls": "MatMul",
+        "args": [
+         {
+          "t": "MatExpr",
+          "cls": "Transpose",
+          "args": [
+           {
+            "t": "MatrixSymbol",
+            "name": "C",
+            "rows": {
+             "t": "Symbol",
+             "name": "k",
+             "assume": {}
+            },
+            "cols": {
+             "t": "Symbol",
+             "name": "k",
+             "assume": {}
+            }
+           }
+          ]
+         },
+         {
+          "t": "Stats",
+          "cls": "RandomMatrixSymbol",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "Z",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "k",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Stats",
+            "cls": "PSpace",
+            "args": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "MatExpr",
+        "cls": "MatMul",
+        "args": [
+         {
+          "t": "MatExpr",
+          "cls": "Transpose",
+          "args": [
+           {
+            "t": "MatrixSymbol",
+            "name": "D",
+            "rows": {
+             "t": "Symbol",
+             "name": "k",
+             "assume": {}
+            },
+            "cols": {
+             "t": "Symbol",
+             "name": "k",
+             "assume": {}
+            }
+           }
+          ]
+         },
+         {
+          "t": "Stats",
+          "cls": "RandomMatrixSymbol",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "W",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "k",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Stats",
+            "cls": "PSpace",
+            "args": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.symbolic_multivariate_probability",
+   "src": "CrossCovarianceMatrix(A*X + B*Y, C.T*Z + D.T*W).expand()",
+   "expected": "A*CrossCovarianceMatrix(X, W)*D + A*CrossCovarianceMatrix(X, Z)*C + B*CrossCovarianceMatrix(Y, W)*D + B*CrossCovarianceMatrix(Y, Z)*C"
+  },
+  {
+   "fn": "ExpectationMatrix",
+   "args": [
+    {
+     "t": "Stats",
+     "cls": "RandomMatrixSymbol",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "X",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "k",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Stats",
+       "cls": "PSpace",
+       "args": []
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.symbolic_multivariate_probability",
+   "src": "ExpectationMatrix(X)",
+   "expected": "ExpectationMatrix(X)"
+  },
+  {
+   "fn": ".expand",
+   "self": {
+    "t": "Stats",
+    "cls": "ExpectationMatrix",
+    "args": [
+     {
+      "t": "MatExpr",
+      "cls": "MatAdd",
+      "args": [
+       {
+        "t": "MatExpr",
+        "cls": "MatMul",
+        "args": [
+         {
+          "t": "MatrixSymbol",
+          "name": "A",
+          "rows": {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          },
+          "cols": {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          }
+         },
+         {
+          "t": "Stats",
+          "cls": "RandomMatrixSymbol",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "X",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "k",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Stats",
+            "cls": "PSpace",
+            "args": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "MatExpr",
+        "cls": "MatMul",
+        "args": [
+         {
+          "t": "MatrixSymbol",
+          "name": "B",
+          "rows": {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          },
+          "cols": {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          }
+         },
+         {
+          "t": "Stats",
+          "cls": "RandomMatrixSymbol",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "Y",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "k",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Stats",
+            "cls": "PSpace",
+            "args": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.symbolic_multivariate_probability",
+   "src": "ExpectationMatrix(A*X + B*Y).expand()",
+   "expected": "A*ExpectationMatrix(X) + B*ExpectationMatrix(Y)"
+  },
+  {
+   "fn": ".expand",
+   "self": {
+    "t": "Stats",
+    "cls": "ExpectationMatrix",
+    "args": [
+     {
+      "t": "MatExpr",
+      "cls": "MatMul",
+      "args": [
+       {
+        "t": "MatExpr",
+        "cls": "MatAdd",
+        "args": [
+         {
+          "t": "Stats",
+          "cls": "RandomMatrixSymbol",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "X",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "k",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Stats",
+            "cls": "PSpace",
+            "args": []
+           }
+          ]
+         },
+         {
+          "t": "Stats",
+          "cls": "RandomMatrixSymbol",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "Y",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "k",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Stats",
+            "cls": "PSpace",
+            "args": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "MatExpr",
+        "cls": "MatAdd",
+        "args": [
+         {
+          "t": "MatExpr",
+          "cls": "MatMul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "MatExpr",
+            "cls": "Transpose",
+            "args": [
+             {
+              "t": "Stats",
+              "cls": "RandomMatrixSymbol",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "Y",
+                "assume": {}
+               },
+               {
+                "t": "Symbol",
+                "name": "k",
+                "assume": {}
+               },
+               {
+                "t": "Rational",
+                "p": "1",
+                "q": "1"
+               },
+               {
+                "t": "Stats",
+                "cls": "PSpace",
+                "args": []
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "MatExpr",
+          "cls": "Transpose",
+          "args": [
+           {
+            "t": "Stats",
+            "cls": "RandomMatrixSymbol",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "X",
+              "assume": {}
+             },
+             {
+              "t": "Symbol",
+              "name": "k",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "1"
+             },
+             {
+              "t": "Stats",
+              "cls": "PSpace",
+              "args": []
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.symbolic_multivariate_probability",
+   "src": "ExpectationMatrix((X + Y)*(X - Y).T).expand()",
+   "expected": "ExpectationMatrix(X*X.T) - ExpectationMatrix(X*Y.T) + ExpectationMatrix(Y*X.T) - ExpectationMatrix(Y*Y.T)"
+  },
+  {
+   "fn": ".doit",
+   "self": {
+    "t": "Stats",
+    "cls": "ExpectationMatrix",
+    "args": [
+     {
+      "t": "Matrix",
+      "rows": [
+       [
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Stats",
+           "cls": "RandomSymbol",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "M11",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "SingleContinuousPSpace",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "M11",
+               "assume": {}
+              },
+              {
+               "t": "Stats",
+               "cls": "NormalDistribution",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "1"
+                },
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "RandomSymbol",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "N11",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "SingleContinuousPSpace",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "N11",
+               "assume": {}
+              },
+              {
+               "t": "Stats",
+               "cls": "NormalDistribution",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "11",
+                 "q": "1"
+                },
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Stats",
+           "cls": "RandomSymbol",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "M12",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "SingleContinuousPSpace",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "M12",
+               "assume": {}
+              },
+              {
+               "t": "Stats",
+               "cls": "NormalDistribution",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "2",
+                 "q": "1"
+                },
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "RandomSymbol",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "N12",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "SingleContinuousPSpace",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "N12",
+               "assume": {}
+              },
+              {
+               "t": "Stats",
+               "cls": "NormalDistribution",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "12",
+                 "q": "1"
+                },
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ],
+       [
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Stats",
+           "cls": "RandomSymbol",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "M21",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "SingleContinuousPSpace",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "M21",
+               "assume": {}
+              },
+              {
+               "t": "Stats",
+               "cls": "NormalDistribution",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "3",
+                 "q": "1"
+                },
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "RandomSymbol",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "N21",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "SingleContinuousPSpace",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "N21",
+               "assume": {}
+              },
+              {
+               "t": "Stats",
+               "cls": "NormalDistribution",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "21",
+                 "q": "1"
+                },
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Stats",
+           "cls": "RandomSymbol",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "M22",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "SingleContinuousPSpace",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "M22",
+               "assume": {}
+              },
+              {
+               "t": "Stats",
+               "cls": "NormalDistribution",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "4",
+                 "q": "1"
+                },
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Stats",
+           "cls": "RandomSymbol",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "N22",
+             "assume": {}
+            },
+            {
+             "t": "Stats",
+             "cls": "SingleContinuousPSpace",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "N22",
+               "assume": {}
+              },
+              {
+               "t": "Stats",
+               "cls": "NormalDistribution",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "22",
+                 "q": "1"
+                },
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      ],
+      "shape": [
+       2,
+       2
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.symbolic_multivariate_probability",
+   "src": "ExpectationMatrix(x1 + x2).doit()",
+   "expected": "Matrix([[12, 14], [24, 26]])"
+  },
+  {
+   "fn": "VarianceMatrix",
+   "args": [
+    {
+     "t": "Stats",
+     "cls": "RandomMatrixSymbol",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "X",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "k",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Stats",
+       "cls": "PSpace",
+       "args": []
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.symbolic_multivariate_probability",
+   "src": "VarianceMatrix(X)",
+   "expected": "VarianceMatrix(X)"
+  },
+  {
+   "fn": ".expand",
+   "self": {
+    "t": "Stats",
+    "cls": "VarianceMatrix",
+    "args": [
+     {
+      "t": "MatExpr",
+      "cls": "MatMul",
+      "args": [
+       {
+        "t": "MatrixSymbol",
+        "name": "A",
+        "rows": {
+         "t": "Symbol",
+         "name": "k",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "k",
+         "assume": {}
+        }
+       },
+       {
+        "t": "Stats",
+        "cls": "RandomMatrixSymbol",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "X",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "k",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Stats",
+          "cls": "PSpace",
+          "args": []
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.symbolic_multivariate_probability",
+   "src": "VarianceMatrix(A*X).expand()",
+   "expected": "A*VarianceMatrix(X)*A.T"
+  },
+  {
+   "fn": ".expand",
+   "self": {
+    "t": "Stats",
+    "cls": "VarianceMatrix",
+    "args": [
+     {
+      "t": "MatExpr",
+      "cls": "MatAdd",
+      "args": [
+       {
+        "t": "MatExpr",
+        "cls": "MatMul",
+        "args": [
+         {
+          "t": "MatrixSymbol",
+          "name": "A",
+          "rows": {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          },
+          "cols": {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          }
+         },
+         {
+          "t": "Stats",
+          "cls": "RandomMatrixSymbol",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "X",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "k",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Stats",
+            "cls": "PSpace",
+            "args": []
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "MatExpr",
+        "cls": "MatMul",
+        "args": [
+         {
+          "t": "MatrixSymbol",
+          "name": "B",
+          "rows": {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          },
+          "cols": {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          }
+         },
+         {
+          "t": "Stats",
+          "cls": "RandomMatrixSymbol",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "Y",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "k",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Stats",
+            "cls": "PSpace",
+            "args": []
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "stats",
+   "module": "sympy.stats.symbolic_multivariate_probability",
+   "src": "VarianceMatrix(A*X + B*Y).expand()",
+   "expected": "2*A*CrossCovarianceMatrix(X, Y)*B.T + A*VarianceMatrix(X)*A.T + B*VarianceMatrix(Y)*B.T"
   }
  ]
 }

@@ -27,7 +27,8 @@ import { expand } from '../simplify/expand';
 import { rewrite } from '../simplify/rewrite';
 import { doit } from '../calculus/doit';
 import { makeIntegral } from './crv';
-import { PSpace, RandomSymbol, dependent, given, isRandom, pspace, randomSymbols, statsClasses } from './rv';
+import { PSpace, RandomSymbol, dependent, given, hasRandomIndexedSymbol, isRandom, pspace, randomSymbols, statsClasses } from './rv';
+import { MatrixExpr } from '../matrices/expressions/matexpr';
 import { BernoulliDistribution } from './frvtypes';
 
 /** Hints of doit (SymPy keyword arguments). */
@@ -95,6 +96,7 @@ export class ProbabilityNode extends StatsNode {
     if (condition instanceof BoolOp && condition.op === 'Not') {
       return sub(1, new ProbabilityNode(withCondition([at(condition.args, 0)], givenCondition)).doit(hints));
     }
+    if (hasRandomIndexedSymbol(condition)) return pspace(condition).probabilityGiven(condition, givenCondition, { evaluate: hints.evaluate ?? true });
     if (givenCondition instanceof RandomSymbol) {
       const condrv = randomSymbols(condition);
       if (condrv.length === 1 && first(condrv).key === givenCondition.key) {
@@ -175,6 +177,7 @@ export class ExpectationNode extends StatsNode {
     let e = at(this.args, 0);
     if (deep) e = doit(e);
     if (!isRandom(e) || e instanceof ExpectationNode) return e;
+    if (hasRandomIndexedSymbol(e)) return pspace(e).expectationGiven(e, condition, { evaluate });
     if (condition !== undefined) return doitExpectation(makeExpectation(given(e, condition)), hints);
     if (e instanceof Add) {
       return add(...e.args.map((a) => (a instanceof ExpectationNode ? makeExpectation(a, condition) : doitExpectation(makeExpectation(a, condition), hints))));
@@ -220,6 +223,7 @@ const hasExpectation = (e: Expr): boolean => e instanceof ExpectationNode || e.a
 /** SymPy Expectation(expr, condition=None): a value that is not random is its own expectation. */
 export function makeExpectation(exprIn: ExprLike, conditionIn?: ExprLike): Expr {
   const e = sympify(exprIn);
+  if (e instanceof MatrixExpr) return defined(statsClasses.expectationMatrix, 'stats symbolic_multivariate_probability')(e, conditionIn === undefined ? undefined : sympify(conditionIn));
   if (conditionIn === undefined) return isRandom(e) ? new ExpectationNode([e]) : e;
   return new ExpectationNode([e, sympify(conditionIn)]);
 }
@@ -293,7 +297,11 @@ export class VarianceNode extends StatsNode {
 /** SymPy Variance(arg, condition=None). */
 export const Variance = /* @__PURE__ */ callableClass(
   VarianceNode,
-  (arg: ExprLike, condition?: ExprLike): VarianceNode => new VarianceNode(withCondition([sympify(arg)], condition === undefined ? undefined : sympify(condition))),
+  (argIn: ExprLike, conditionIn?: ExprLike): Expr => {
+    const [arg, condition] = [sympify(argIn), conditionIn === undefined ? undefined : sympify(conditionIn)];
+    if (arg instanceof MatrixExpr) return defined(statsClasses.varianceMatrix, 'stats symbolic_multivariate_probability')(arg, condition);
+    return new VarianceNode(withCondition([arg], condition));
+  },
 );
 export type Variance = VarianceNode;
 
@@ -372,8 +380,9 @@ function mulNonrvRv(m: Mul): [Expr, Expr] {
 /** SymPy Covariance(arg1, arg2, condition=None, evaluate=True): the arguments are sorted unless evaluate is false. */
 export const Covariance = /* @__PURE__ */ callableClass(
   CovarianceNode,
-  (arg1: ExprLike, arg2: ExprLike, condition?: ExprLike, opts: { evaluate?: boolean } = {}): CovarianceNode => {
+  (arg1: ExprLike, arg2: ExprLike, condition?: ExprLike, opts: { evaluate?: boolean } = {}): Expr => {
     const [a, b] = [sympify(arg1), sympify(arg2)];
+    if (a instanceof MatrixExpr || b instanceof MatrixExpr) return defined(statsClasses.crossCovarianceMatrix, 'stats symbolic_multivariate_probability')(a, b, condition === undefined ? undefined : sympify(condition));
     const args = opts.evaluate ?? true ? sorted2(a, b) : [a, b];
     return new CovarianceNode(withCondition(args, condition === undefined ? undefined : sympify(condition)));
   },

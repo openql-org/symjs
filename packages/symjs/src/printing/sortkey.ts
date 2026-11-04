@@ -11,6 +11,7 @@
 import type { ComplexValue, ConstantName, Expr, RelOp, SpecialName } from '../core/nodes';
 import { Add, BoolAtom, Constant, Derivative, Dummy, ExtensionExpr, Float, Fn, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, impl, isNum } from '../core/nodes';
 import { pow, splitCoeff } from '../core/ops';
+import { Concrete } from '../core/concrete';
 import { at, pair } from '../core/guard';
 
 /** A SymPy-style sort key: nested tuples of numbers and strings. */
@@ -98,7 +99,10 @@ export function classKey(e: Expr): Key {
   if (e instanceof UndefFn) return [4, 0, e.name];
   if (e instanceof Derivative) return [5, 0, 'Derivative'];
   if (e instanceof Rel) return [5, 0, REL_CLASS[e.op]];
-  if (e instanceof ExtensionExpr) return [5, 0, e.name];
+  // SymPy MatAdd and MatMul sort like Add and Mul
+  if (e instanceof ExtensionExpr) return e.name === 'MatAdd' ? [3, 1, 'MatAdd'] : e.name === 'MatMul' ? [3, 0, 'MatMul'] : [5, 0, e.name];
+  // a Sum or Product sorts by its class name
+  if (e instanceof Concrete) return [5, 0, e.kind2];
   if ('className' in e && typeof e.className === 'string' && e.className) return [5, 0, e.className];
   return [5, 0, e.kind];
 }

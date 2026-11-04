@@ -117,3 +117,16 @@ describe('class keys of the functions whose nargs is Naturals0 in SymPy', () => 
     expect(JSON.stringify(sortKey(sj.expPolar(x)))).toContain('[4,0,"exp_polar"]');
   });
 });
+
+describe('class keys of matrix sums and products, sums and products', () => {
+  it('as in SymPy', () => {
+    const d = new sj.Sym('d');
+    const k = new sj.Sym('k');
+    const X = sj.MatrixSymbol('X', 2, 2);
+    expect(JSON.stringify(sortKey(sj.MatAdd(X, sj.MatrixSymbol('Y', 2, 2))))).toContain('[3,1,"MatAdd"]');
+    expect(JSON.stringify(sortKey(sj.MatMul(X, sj.MatrixSymbol('Y', 2, 2))))).toContain('[3,0,"MatMul"]');
+    expect(JSON.stringify(sortKey(sj.Product(k, [k, 1, d])))).toContain('[5,0,"Product"]');
+    // SymPy: Determinant(SM)**a*Product(gamma(k), (k, 1, d))
+    expect(str(sj.mul(sj.Product(sj.gamma(k), [k, 1, d]), sj.pow(sj.Determinant(sj.MatrixSymbol('SM', d, d)), new sj.Sym('a'))))).toBe('Determinant(SM)**a*Product(gamma(k), (k, 1, d))');
+  });
+});

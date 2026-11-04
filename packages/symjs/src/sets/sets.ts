@@ -1499,6 +1499,7 @@ export function isSubset(a: SetExpr, b: SetExpr): boolean | undefined {
   if (a === UniversalSet) return false;
   if ((a === Integers || a === Naturals || a === Naturals0) && (b === Rationals || b === Reals || b === Complexes)) return true;
   if (a === Rationals && (b === Reals || b === Complexes)) return true;
+  if ((a === Naturals || a === Naturals0) && b === Integers) return true;
   if (a instanceof ProductSetNode && b instanceof ProductSetNode) {
     if (a.args.length !== b.args.length) return false;
     const cs = a.args.map((x, i) => isSubset(x, at(b.args, i)));

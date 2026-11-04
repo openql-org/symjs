@@ -55,6 +55,11 @@ describe('sets', () => {
     expect(s(Ms)).toBe('MatrixSet(2, 2, Reals)');
     expect(MatrixSet(symbol('n'), 2, Reals).contains(Matrix.of([[1, 2]]))).toBe('unknown');
     expect(Ms.contains(MatrixSymbol('Y', 2, 2))).toBe('unknown');
+    // a set (SymPy MatrixSet is a Set): elementOf is SymPy _contains, substitution rebuilds it
+    expect(Ms.elementOf(MatrixSymbol('Y', 2, 3))).toBe(false);
+    expect(() => Ms.elementOf(S.One)).toThrow('1 should be an instance of MatrixExpr.');
+    expect(s(MatrixSet(symbol('n'), 2, Reals).subs(symbol('n'), 3))).toBe('MatrixSet(3, 2, Reals)');
+    expect(latex(Ms)).toBe('\\operatorname{MatrixSet}\\left(2, 2, \\mathbb{R}\\right)');
   });
 });
 

@@ -31,13 +31,19 @@ import { Max, Min, beta as betaFn, binomial, erf, erfc, erfi, erfinv, expint, fa
 import { besseli, besselj, besselk } from '../functions/special/bessel';
 import { hyper } from '../functions/special/hyper';
 import { integrate } from '../integrals/integrate';
-import { isRandom, statsClasses, valueCheck } from './rv';
+import { isMatrixParam, isRandom, statsClasses, valueCheck } from './rv';
 import { SingleContinuousDistribution, SingleContinuousPSpace, limitOver, realLine } from './crv';
 import type { ClosedForm } from './crv';
-import type { ComputeOptions , RandomSymbol} from './rv';
+import type { ComputeOptions, MatrixParam, RandomSymbol } from './rv';
 import { cdf } from './rv';
 
 const half = S.Half;
+
+/** A scalar parameter (SymPy sympifies a parameter that is not a list or a matrix). */
+const scalarParam = (v: ExprLike | MatrixParam): ExprLike => {
+  if (isMatrixParam(v)) throw new TypeError('a scalar parameter is expected, not a vector or matrix');
+  return v;
+};
 const neg = (e: ExprLike): Expr => mul(-1, e);
 const div = (a: ExprLike, b: ExprLike): Expr => mul(a, pow(b, -1));
 
@@ -866,8 +872,10 @@ export class LaplaceDistribution extends SingleContinuousDistribution {
 }
 
 /** Laplace distribution (SymPy Laplace(name, mu, b)). */
-export function Laplace(name: string | Sym, mu: ExprLike, b: ExprLike): RandomSymbol {
-  return rv(name, LaplaceDistribution, [mu, b]);
+export function Laplace(name: string | Sym, mu: ExprLike | MatrixParam, b: ExprLike | MatrixParam): RandomSymbol {
+  // vector and matrix parameters give the multivariate distribution
+  if (isMatrixParam(mu) && isMatrixParam(b)) return defined(statsClasses.multivariateLaplace, 'joint_rv_types')(name, mu, b);
+  return rv(name, LaplaceDistribution, [scalarParam(mu), scalarParam(b)]);
 }
 
 /** SymPy LevyDistribution(mu, c). */
@@ -1233,8 +1241,12 @@ export class NormalDistribution extends SingleContinuousDistribution {
 }
 
 /** Normal (Gaussian) distribution (SymPy Normal(name, mean, std)). */
-export function Normal(name: string | Sym, mean: ExprLike, std: ExprLike): RandomSymbol {
-  return rv(name, NormalDistribution, [mean, std]);
+export function Normal(name: string | Sym, mean: ExprLike | MatrixParam, std: ExprLike | MatrixParam): RandomSymbol {
+  // vector and matrix parameters give the multivariate distribution (SymPy: a list mean, or a matrix mean and a list std, or a matrix std)
+  if ((Array.isArray(mean) || (isMatrixParam(mean) && Array.isArray(std)) || isMatrixParam(std)) && isMatrixParam(mean) && isMatrixParam(std)) {
+    return defined(statsClasses.multivariateNormal, 'joint_rv_types')(name, mean, std);
+  }
+  return rv(name, NormalDistribution, [scalarParam(mean), scalarParam(std)]);
 }
 
 /** SymPy GaussianInverseDistribution(mean, shape). */

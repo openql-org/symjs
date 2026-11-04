@@ -689,3 +689,12 @@ describe('functions at a number with an infinite part', () => {
     expect(String(parse('atan(zoo)'))).toBe('atan(zoo)');
   });
 });
+
+describe('Abs of a sum', () => {
+  it('takes out the minus sign (SymPy signsimp in Abs.eval)', () => {
+    const [x, y] = [symbol('x'), symbol('y')];
+    expect(String(abs(add(1, mul(-1, x))))).toBe('Abs(x - 1)');
+    expect(String(abs(add(y, mul(-1, x))))).toBe('Abs(x - y)');
+    expect(String(abs(add(x, mul(-1, y))))).toBe('Abs(x - y)');
+  });
+});

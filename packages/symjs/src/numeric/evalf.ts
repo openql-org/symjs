@@ -32,6 +32,7 @@ import {
   impl,
 } from '../core/nodes';
 import { at } from '../core/guard';
+import { Concrete } from '../core/concrete';
 import { EvalfValueError } from '../core/errors';
 import { add, mul, sympify } from '../core/ops';
 import { rebuild } from '../core/traverse';
@@ -291,6 +292,11 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
     if (x instanceof ExtensionExpr) {
       const own = x.evalfSelf(go, F.precToDps(prec));
       if (own !== undefined) return own;
+    }
+    // SymPy Sum._eval_evalf and Product._eval_evalf: a sum with finite limits is evaluated term by term
+    if (x instanceof Concrete) {
+      const v = impl.evalConcrete?.(x);
+      if (v !== undefined) return go(v);
     }
     return rebuild(x, x.args.map(go));
   };

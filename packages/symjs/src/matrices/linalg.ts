@@ -10,7 +10,9 @@
 
 import { at, defined, expectType, first, last } from '../core/guard';
 import { UPoly } from '../polys/poly';
-import { isPositive, isReal } from '../core/assumptions';
+import { isNegative, isPositive, isReal, isZero } from '../core/assumptions';
+import { toTruth } from '../core/truth';
+import type { Truth } from '../core/truth';
 import { MatrixError, NonInvertibleMatrixError, NonPositiveDefiniteMatrixError, NonSquareMatrixError, NotLoadedError } from '../core/errors';
 import type { ExprLike } from '../core/nodes';
 import { Dummy, Expr, Float, Rational, S, Special, Sym, impl } from '../core/nodes';
@@ -359,6 +361,134 @@ export function matrixLog(m: Matrix): Matrix {
 // ---------------------------------------------------------------------------
 // decompositions
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Definiteness (SymPy sympy/matrices/eigen.py)
+// ---------------------------------------------------------------------------
+
+/** SymPy is_nonnegative: real and not negative. */
+function isNonnegativeTri(e: Expr): boolean | undefined {
+  const neg = isNegative(e);
+  if (neg === true) return false;
+  return neg === false && isReal(e) === true ? true : undefined;
+}
+
+/** SymPy fuzzy_and of three-valued answers. */
+function fuzzyAnd(ts: readonly (boolean | undefined)[]): boolean | undefined {
+  if (ts.includes(false)) return false;
+  return ts.every((t) => t === true) ? true : undefined;
+}
+
+/** The diagonal entries satisfy a three-valued predicate (SymPy _has_positive_diagonals, _has_nonnegative_diagonals). */
+const diagonalsAre = (m: Matrix, p: (e: Expr) => boolean | undefined): boolean | undefined => fuzzyAnd(Array.from({ length: m.rows }, (_, i) => p(m.get(i, i))));
+
+/**
+ * The matrix is row strictly (strong) or weakly diagonally dominant (SymPy
+ * is_strongly_diagonally_dominant, is_weakly_diagonally_dominant).
+ */
+function diagonallyDominant(m: Matrix, strong: boolean): boolean | undefined {
+  return fuzzyAnd(
+    Array.from({ length: m.rows }, (_, i) => {
+      const others = add(...Array.from({ length: m.cols }, (_, j) => (i === j ? S.Zero : abs(m.get(i, j)))));
+      const d = add(abs(m.get(i, i)), mul(-1, others));
+      return strong ? isPositive(d) : isNonnegativeTri(d);
+    }),
+  );
+}
+
+/** The hermitian part M + M^H of a square matrix that is not hermitian (SymPy _is_positive_definite). */
+const hermitianPart = (m: Matrix): Matrix => (m.isHermitian() ? m : m.add(m.adjoint()));
+
+/** SymPy _is_positive_definite_GE: division-free Gaussian elimination. */
+function positiveDefiniteGE(m0: Matrix): boolean | undefined {
+  const a = m0.toArray();
+  const n = m0.rows;
+  for (let i = 0; i < n; i++) {
+    const row = at(a, i);
+    const pos = isPositive(at(row, i));
+    if (pos !== true) return pos;
+    for (let j = i + 1; j < n; j++) {
+      const rj = at(a, j);
+      for (let c = i + 1; c < n; c++) rj[c] = add(mul(at(row, i), at(rj, c)), mul(-1, at(rj, i), at(row, c)));
+    }
+  }
+  return true;
+}
+
+/** SymPy _is_positive_semidefinite_cholesky: Cholesky factorization with complete pivoting. */
+function positiveSemidefiniteCholesky(m0: Matrix): boolean | undefined {
+  const a = m0.toArray();
+  const n = m0.rows;
+  const isZeroE = (e: Expr): boolean | undefined => (isZero(e) === undefined ? isZero(simplify(e)) : isZero(e));
+  for (let k = 0; k < n; k++) {
+    // the first diagonal entry that is not zero (SymPy _find_reasonable_pivot without assumptions)
+    let pivot = -1;
+    let undecided = false;
+    for (let i = k; i < n; i++) {
+      const z = isZeroE(at(at(a, i), i));
+      if (z === false) {
+        pivot = i - k;
+        break;
+      }
+      if (z === undefined) undecided = true;
+    }
+    if (pivot < 0 && undecided) return undefined;
+    if (pivot < 0) {
+      for (let i = k + 1; i < n; i++) {
+        for (let j = k; j < n; j++) {
+          const z = isZero(at(at(a, i), j));
+          if (z !== true) return z === undefined ? undefined : false;
+        }
+      }
+      return true;
+    }
+    const pivotVal = at(at(a, k + pivot), k + pivot);
+    if (isNegative(at(at(a, k), k)) === true || isNegative(pivotVal) === true) return false;
+    if (!(isNonnegativeTri(at(at(a, k), k)) === true && isNonnegativeTri(pivotVal) === true)) return undefined;
+    if (pivot > 0) {
+      const p = k + pivot;
+      for (const row of a) [row[k], row[p]] = [at(row, p), at(row, k)];
+      [a[k], a[p]] = [at(a, p), at(a, k)];
+    }
+    const rk = at(a, k);
+    rk[k] = sqrt(at(rk, k));
+    for (let j = k + 1; j < n; j++) rk[j] = mul(at(rk, j), pow(at(rk, k), -1));
+    for (let i = k + 1; i < n; i++) {
+      for (let j = k + 1; j < n; j++) at(a, i)[j] = add(at(at(a, i), j), mul(-1, conjugate(at(rk, i)), at(rk, j)));
+    }
+  }
+  return isNonnegativeTri(at(at(a, n - 1), n - 1));
+}
+
+/** The matrix is positive definite (SymPy is_positive_definite): x^H M x > 0 for all nonzero x. */
+export function isPositiveDefinite(m0: Matrix): Truth {
+  if (!m0.isSquare) return false;
+  const m = hermitianPart(m0);
+  const pd = diagonalsAre(m, isPositive);
+  if (pd === false) return false;
+  if (pd === true && diagonallyDominant(m, true) === true) return true;
+  return toTruth(positiveDefiniteGE(m));
+}
+
+/** The matrix is positive semidefinite (SymPy is_positive_semidefinite): x^H M x >= 0 for all x. */
+export function isPositiveSemidefinite(m0: Matrix): Truth {
+  if (!m0.isSquare) return false;
+  const m = hermitianPart(m0);
+  const nd = diagonalsAre(m, isNonnegativeTri);
+  if (nd === false) return false;
+  if (nd === true && diagonallyDominant(m, false) === true) return true;
+  return toTruth(positiveSemidefiniteCholesky(m));
+}
+
+/** The matrix is negative definite (SymPy is_negative_definite). */
+export function isNegativeDefinite(m: Matrix): Truth {
+  return isPositiveDefinite(m.neg());
+}
+
+/** The matrix is negative semidefinite (SymPy is_negative_semidefinite). */
+export function isNegativeSemidefinite(m: Matrix): Truth {
+  return isPositiveSemidefinite(m.neg());
+}
 
 /** Cholesky: lower L with A = L L^H (hermitian) or A = L L^T. */
 export function cholesky(m: Matrix, hermitian = true): Matrix {

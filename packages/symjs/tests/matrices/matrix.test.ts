@@ -171,3 +171,10 @@ describe('predicates and printing', () => {
     expect(inspect(M)).toBe('Matrix([[1, 2], [3, 4]])');
   });
 });
+
+describe('eigenvals of a triangular matrix', () => {
+  it('are the diagonal entries in order (SymPy eigenvals(multiple=True))', () => {
+    expect(Matrix.of([[3, 1], [0, 1]]).eigenvals().map(String)).toEqual(['3', '1']);
+    expect(Matrix.of([[1, 0], [2, 3]]).eigenvals().map(String)).toEqual(['1', '3']);
+  });
+});

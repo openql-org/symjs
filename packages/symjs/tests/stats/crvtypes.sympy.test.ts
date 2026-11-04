@@ -96,15 +96,6 @@ function closed(expected: string | null, f: () => Expr): void {
   expect(str(f())).toBe(expected);
 }
 
-// SymPy's Abs extracts the minus sign of its argument (Abs(-r + x) is Abs(r - x)); symjs's Abs keeps it
-const SYMJS_PDF: Record<string, string> = {
-  "ExponentialPower('X', r, a, b)": 'b*exp(-(Abs(-r + x)/a)**b)/(2*a*gamma(1/b))',
-  "Laplace('X', r, b)": 'exp(-Abs(-r + x)/b)/(2*b)',
-};
-const SYMJS_CDF: Record<string, string> = {
-  "ExponentialPower('X', r, a, b)": '1/2 + lowergamma(1/b, (Abs(-r + x)/a)**b)*sign(-r + x)/(2*gamma(1/b))',
-};
-
 // QuadraticU: SymPy's closed forms are wrong (the mean they give for QuadraticU(1, 3) is -11, not 2); see crvtypes.test.ts
 const SYMPY_WRONG = new Set(["QuadraticU('X', 1, 3)"]);
 
@@ -115,9 +106,9 @@ for (let i = 0; i < TABLE.length; i += 10) {
       it(src, () => {
         const d = distOf(make());
         expect(str(d)).toBe(row.dist);
-        expect(str(d.pdf(x))).toBe(SYMJS_PDF[src] ?? row.pdf);
+        expect(str(d.pdf(x))).toBe(row.pdf);
         expect(str(d.set)).toBe(row.set);
-        closed(SYMJS_CDF[src] ?? row.cdf, () => d.cdf(x));
+        closed(row.cdf, () => d.cdf(x));
         closed(row.quantile, () => d.quantile(p));
         if (SYMPY_WRONG.has(src)) return;
         closed(row.cf, () => d.characteristicFunction(t));

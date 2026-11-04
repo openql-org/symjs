@@ -136,7 +136,7 @@ describe('Variance and Covariance (SymPy test_literal_probability)', () => {
   it('Variance', () => {
     expect(Variance(w).args.map(str)).toEqual(['w']);
     expect(str(expand(Variance(w)))).toBe('0');
-    expect(str(Variance(X).evaluateIntegral())).toBe('9');
+    expect(str((Variance(X) as VarianceNode).evaluateIntegral())).toBe('9');
     expect(str(doit(rewrite(Variance(X), 'Integral')))).toBe(str(variance(X)));
     expect(str(Variance(add(X, z)))).toBe('Variance(z + X)');
     expect(str(expand(Variance(add(X, z))))).toBe('Variance(X)');
@@ -152,7 +152,7 @@ describe('Variance and Covariance (SymPy test_literal_probability)', () => {
     expect(str(expand(Variance(mul(xr, sin(X)))))).toBe('x**2*Variance(sin(X))');
     expect(str(doit(Variance(X, Gt(X, 0))))).toBe('Variance(X, X > 0)');
     expect((Variance(X) as VarianceNode).condition).toBeUndefined();
-    expect(str(Variance(X).withArgs([Y]))).toBe('Variance(Y)');
+    expect(str((Variance(X) as VarianceNode).withArgs([Y]))).toBe('Variance(Y)');
     expect(Variance(X).isCommutative).toBe(true);
     expect(str(expand(new VarianceNode([mul(y, z, X).subs(X, y)])))).toBe('0');
   });
@@ -177,13 +177,13 @@ describe('Variance and Covariance (SymPy test_literal_probability)', () => {
     expect(str(expand(Covariance(X, pow(X, 2))))).toBe('Covariance(X, X**2)');
     expect(str(expand(Covariance(X, sin(X))))).toBe('Covariance(sin(X), X)');
     expect(str(expand(Covariance(pow(X, 2), mul(sin(X), Y))))).toBe('Covariance(sin(X)*Y, X**2)');
-    expect(str(Covariance(w, X).evaluateIntegral())).toBe('0');
+    expect(str((Covariance(w, X) as CovarianceNode).evaluateIntegral())).toBe('0');
     // evaluate=False keeps the order of the arguments
     expect(str(Covariance(Y, X, undefined, { evaluate: false }))).toBe('Covariance(Y, X)');
     expect(str(Covariance(X, Y, Gt(X, 0)))).toBe('Covariance(X, Y, X > 0)');
     expect(String((Covariance(X, Y, Gt(X, 0)) as CovarianceNode).condition)).toBe('X > 0');
     expect(str(doit(Covariance(X, Y)))).toBe('Covariance(X, Y)');
-    expect(str(Covariance(X, Y).withArgs([X, Z]))).toBe('Covariance(X, Z)');
+    expect(str((Covariance(X, Y) as CovarianceNode).withArgs([X, Z]))).toBe('Covariance(X, Z)');
     expect(Covariance(X, Y).isCommutative).toBe(true);
     // a constant term of a sum is dropped
     expect(str(expand(Covariance(add(X, Y, 1), Z)))).toBe('Covariance(X, Z) + Covariance(Y, Z)');

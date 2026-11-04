@@ -17,8 +17,8 @@
 // every entry point brings the core with its registrations
 import './core';
 
-export { isRandom, FiniteDensity, RandomDomain, SingleDomain, ConditionalDomain, ProductDomain, PSpace, SinglePSpace, RandomSymbol, ProductPSpace, IndependentProductPSpace, Distribution, randomSymbols, pspace, given, expectation, P, Density, density, cdf, characteristicFunction, momentGeneratingFunction, where, quantile, dependent, independent } from './stats/rv';
-export type { DensityResult, ComputeOptions, SingleSpace, ProbabilityOptions } from './stats/rv';
+export { isRandom, FiniteDensity, RandomDomain, SingleDomain, MatrixDomain, ConditionalDomain, ProductDomain, PSpace, SinglePSpace, RandomSymbol, ProductPSpace, IndependentProductPSpace, RandomIndexedSymbol, RandomMatrixSymbol, Distribution, randomSymbols, pspace, given, expectation, P, Density, density, cdf, characteristicFunction, momentGeneratingFunction, where, quantile, dependent, independent } from './stats/rv';
+export type { DensityResult, ComputeOptions, SingleSpace, ProbabilityOptions, MatrixParam } from './stats/rv';
 export { moment, variance, std, entropy, H, covariance, correlation, cmoment, smoment, skewness, kurtosis, factorialMoment, median, coskewness } from './stats/rvinterface';
 export type { EntropyOptions } from './stats/rvinterface';
 export { SingleContinuousDomain, ProductContinuousDomain, ConditionalContinuousDomain, ContinuousDistribution, SingleContinuousDistribution, ContinuousPSpace, SingleContinuousPSpace } from './stats/crv';
@@ -34,3 +34,15 @@ export { ProbabilityNode, Probability, ExpectationNode, Expectation, VarianceNod
 export type { ProbabilityDoitHints } from './stats/symbolicprobability';
 export { varianceProp } from './stats/errorprop';
 export type { VariancePropOptions } from './stats/errorprop';
+export { JointDistribution, JointPSpace, JointRandomSymbol, MarginalDistribution } from './stats/jointrv';
+export { marginalDistribution, JointDistributionHandmade, JointRV, MultivariateNormalDistribution, MultivariateNormal, MultivariateLaplaceDistribution, MultivariateLaplace, MultivariateTDistribution, MultivariateT, NormalGammaDistribution, NormalGamma, MultivariateBetaDistribution, MultivariateBeta, Dirichlet, MultivariateEwensDistribution, MultivariateEwens, GeneralizedMultivariateLogGammaDistribution, GeneralizedMultivariateLogGamma, GeneralizedMultivariateLogGammaOmega, MultinomialDistribution, Multinomial, NegativeMultinomialDistribution, NegativeMultinomial } from './stats/jointrvtypes';
+export { ExpectationMatrixNode, ExpectationMatrix, VarianceMatrixNode, VarianceMatrix, CrossCovarianceMatrixNode, CrossCovarianceMatrix } from './stats/symbolicmultivariateprobability';
+export { MatrixPSpace, MatrixDistribution, MatrixGammaDistribution, MatrixGamma, WishartDistribution, Wishart, MatrixNormalDistribution, MatrixNormal, MatrixStudentTDistribution, MatrixStudentT } from './stats/matrixdistributions';
+export type { MatrixInput } from './stats/matrixdistributions';
+export { RandomMatrixPSpace } from './stats/randommatrix';
+export type { RandomMatrixModel } from './stats/randommatrix';
+export { RandomMatrixEnsembleModel, GaussianEnsembleModel, GaussianUnitaryEnsembleModel, GaussianOrthogonalEnsembleModel, GaussianSymplecticEnsembleModel, CircularEnsembleModel, CircularUnitaryEnsembleModel, CircularOrthogonalEnsembleModel, CircularSymplecticEnsembleModel, GaussianEnsemble, GaussianUnitaryEnsemble, GaussianOrthogonalEnsemble, GaussianSymplecticEnsemble, CircularEnsemble, CircularUnitaryEnsemble, CircularOrthogonalEnsemble, CircularSymplecticEnsemble, jointEigenDistribution, JointEigenDistribution, levelSpacingDistribution } from './stats/randommatrixmodels';
+export { StochasticPSpace, UnspecifiedDistribution } from './stats/stochasticprocess';
+export type { ProcessLike } from './stats/stochasticprocess';
+export { StochasticProcess, DiscreteTimeStochasticProcess, ContinuousTimeStochasticProcess, TransitionMatrixOfNode, TransitionMatrixOf, GeneratorMatrixOfNode, GeneratorMatrixOf, StochasticStateSpaceOfNode, StochasticStateSpaceOf, MarkovProcess, DiscreteMarkovChainNode, DiscreteMarkovChain, ContinuousMarkovChainNode, ContinuousMarkovChain, BernoulliProcessNode, BernoulliProcess, CountingProcess, PoissonProcessNode, PoissonProcess, WienerProcessNode, WienerProcess, GammaProcessNode, GammaProcess } from './stats/stochasticprocesstypes';
+export type { StateSpaceInput, TransitionMatrixInput } from './stats/stochasticprocesstypes';

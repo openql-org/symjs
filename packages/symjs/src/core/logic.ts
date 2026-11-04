@@ -86,6 +86,8 @@ function orderTruth(op: 'Lt' | 'Le' | 'Gt' | 'Ge', d: Expr): boolean | undefined
   const strict = op === 'Lt' || op === 'Gt';
   if ((strict ? isPositive(v) : isNonNegative(v)) === true) return true;
   if ((strict ? isNonNegative(mul(-1, v)) : isNegative(v)) === true) return false;
+  // a real value known not to be positive (a nonpositive symbol) is not > 0
+  if (strict && isPositive(v) === false && isReal(v) === true) return false;
   return undefined;
 }
 

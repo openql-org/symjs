@@ -128,3 +128,12 @@ describe('ExtensionExpr.expandTop', () => {
     expect(sj.Tuple(1, 2).expandTop({})).toBeUndefined();
   });
 });
+
+describe('Integral over a matrix symbol', () => {
+  it('is commutative when its integrand is (SymPy is_commutative of the function)', () => {
+    const H = sj.MatrixSymbol('_H', 2, 2);
+    const I = new sj.Integral([sj.exp(sj.mul(-1, sj.Trace(H.pow(2)))), H]);
+    expect(I.isCommutative).toBe(true);
+    expect(sj.str(sj.pow(I, -1))).toBe('1/Integral(exp(-Trace(_H**2)), _H)');
+  });
+});

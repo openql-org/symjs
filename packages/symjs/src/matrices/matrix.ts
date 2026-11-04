@@ -315,6 +315,12 @@ export class Matrix {
 
   /** Eigenvalues (with multiplicity) as roots of the characteristic polynomial. */
   eigenvals(): Expr[] {
+    // SymPy _eigenvals: a triangular matrix has its diagonal entries as eigenvalues, in order
+    const n = this.rows;
+    const isZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
+    const below = this.data.filter((_, k) => Math.floor(k / this.cols) > k % this.cols);
+    const above = this.data.filter((_, k) => Math.floor(k / this.cols) < k % this.cols);
+    if (this.isSquare && (below.every(isZero) || above.every(isZero))) return Array.from({ length: n }, (_, i) => this.get(i, i));
     const lam = new Sym('lambda_');
     return roots(this.charpoly(lam), lam).map((r) => simplify(r));
   }

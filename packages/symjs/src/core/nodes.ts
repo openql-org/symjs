@@ -274,6 +274,8 @@ export interface Impl {
   collect?(e: Expr, syms: readonly Expr[]): Expr;
   /** Leading term [c, e] of e ~ c*x**e as x -> 0+ (registered by series/series). */
   leadterm?(e: Expr, x: Sym): [Expr, Expr];
+  /** The value of a sum or product with finite integer limits, for evalf (registered by calculus/doit); undefined when it is not a number. */
+  evalConcrete?(c: Expr): Expr | undefined;
   /** Lambert W function (registered by functions/special). */
   lambertW?(x: Expr, k?: number): Expr;
   /** Pattern matching (registered by core/match). */
@@ -676,6 +678,14 @@ export class Sym extends Expr {
     return undefined;
   }
 
+  /**
+   * Free symbols of a symbol-like node besides itself (SymPy
+   * RandomIndexedSymbol X(t) also has t free); none for a plain symbol.
+   */
+  innerFreeSymbols(): readonly Sym[] {
+    return [];
+  }
+
   /** LaTeX form when it is not derived from the name (SymPy BaseScalar._latex_form); undefined for a plain symbol. */
   get latexForm(): string | undefined {
     return undefined;
@@ -894,6 +904,10 @@ export class Integral extends Expr {
   }
   get limits(): [Expr, Expr] | undefined {
     return this.args.length === 4 ? [at(this.args, 2), at(this.args, 3)] : undefined;
+  }
+  /** SymPy: an integral is commutative when its integrand is (the variable may be a matrix symbol). */
+  protected override computeCommutative(): boolean {
+    return this.integrand.isCommutative;
   }
   protected computeKey(): string {
     return `Integral(${this.args.map((a) => a.key).join(',')})`;

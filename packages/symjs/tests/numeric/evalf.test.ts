@@ -225,3 +225,13 @@ describe('evalf with values: log of zero', () => {
     expect(sstr(evalf(sj.fn('log', [x, 2], { evaluate: false }), { x: 0 }))).toBe('log(x, 2)');
   });
 });
+
+describe('evalf of sums and products with finite limits (SymPy Sum._eval_evalf)', () => {
+  it('adds the terms up', () => {
+    const [k, n] = symbols('k n', { integer: true }) as [sj.Sym, sj.Sym];
+    expect(String(sj.evalf(sj.Sum(sj.pow(k, -2), [k, 1, 3])))).toBe('1.36111111111111');
+    expect(String(sj.evalf(sj.Product(k, [k, 1, 4])))).toBe('24.0000000000000');
+    // a symbolic limit keeps the sum
+    expect(String(sj.evalf(sj.Sum(sj.pow(k, -2), [k, 1, n])))).toContain('Sum(');
+  });
+});

@@ -34,7 +34,7 @@ const CASES = [
   ['special', '*', 330],
   ['simplify', 'simplify', 520],
   ['polys', 'factor', 380],
-  ['calculus', 'integrate', 660],
+  ['calculus', 'integrate', 710],
   ['solvers', 'solve', 780],
   ['solvers', 'dsolve', 790],
   ['sets', '*', 315],
@@ -47,7 +47,7 @@ const CASES = [
   ['holonomic', 'exprToHolonomic', 815],
   ['geometry', '*', 790],
   ['vector', '*', 900],
-  ['stats', '*', 855],
+  ['stats', '*', 1005],
   ['index', 'Rational', 1005],
   ['index', '*', 1710],
 ];

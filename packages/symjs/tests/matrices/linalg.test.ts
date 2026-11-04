@@ -478,3 +478,39 @@ describe('matrices/linalg, linsys, domainmatrix, mutable', () => {
     expect(L.eigenvects(A).map(([v, k, vs]) => `${s(v)} ${k} ${vs.map(s).join(' ')}`)).toEqual(['2 1 Matrix([[-1/(f(1) - 2)], [1]])', 'f(1) 1 Matrix([[1], [0]])']);
   });
 });
+
+describe('definiteness (SymPy is_positive_definite, is_positive_semidefinite, is_negative_definite, is_negative_semidefinite)', () => {
+  const x = new sj.Sym('x');
+  const p = new sj.Sym('p', { positive: true });
+  const r = new sj.Sym('r', { real: true });
+  // [matrix, positive definite, positive semidefinite, negative definite, negative semidefinite] from SymPy 1.14
+  const cases: [string, sj.Matrix, sj.Truth, sj.Truth, sj.Truth, sj.Truth][] = [
+    ['identity', Matrix.of([[1, 0], [0, 1]]), true, true, false, false],
+    ['indefinite', Matrix.of([[1, 1], [1, -1]]), false, false, false, false],
+    ['dominated', Matrix.of([[1, 2], [2, 1]]), false, false, false, false],
+    ['tridiagonal', Matrix.of([[2, -1, 0], [-1, 2, -1], [0, -1, 2]]), true, true, false, false],
+    ['zero', Matrix.of([[0, 0], [0, 0]]), false, true, false, true],
+    ['symbolic', Matrix.of([[x, 0], [0, 1]]), 'unknown', 'unknown', false, false],
+    ['not square', Matrix.of([[1, 2, 3], [4, 5, 6]]), false, false, false, false],
+    ['not hermitian', Matrix.of([[1, 2], [0, 3]]), true, true, false, false],
+    ['singular', Matrix.of([[0, 0], [0, 1]]), false, true, false, false],
+    ['antidiagonal', Matrix.of([[0, 1], [1, 0]]), false, false, false, false],
+    ['positive corner', Matrix.of([[p, 0], [0, 0]]), false, true, false, false],
+    ['ones', Matrix.of([[1, 1], [1, 1]]), false, true, false, false],
+    ['positive', Matrix.of([[2, 3], [3, 5]]), true, true, false, false],
+    ['real corner', Matrix.of([[r, 0], [0, 0]]), false, 'unknown', false, 'unknown'],
+    ['symbolic corner', Matrix.of([[0, 0], [0, x]]), false, 'unknown', false, 'unknown'],
+    ['symbolic below', Matrix.of([[0, 0], [x, 0]]), false, 'unknown', false, 'unknown'],
+    ['negative', Matrix.of([[-1, 0], [0, -2]]), false, false, true, true],
+    ['signs', Matrix.of([[1, 0, 0], [0, 0, 0], [0, 0, -1]]), false, false, false, false],
+    ['positive symbol', Matrix.of([[p, 1], [1, p]]), 'unknown', 'unknown', false, false],
+    ['pivoting', Matrix.of([[4, 2, 2], [2, 1, 1], [2, 1, 3]]), false, true, false, false],
+    ['rank one block', Matrix.of([[1, 2, 0], [2, 4, 0], [0, 0, 0]]), false, true, false, false],
+  ];
+  it.each(cases)('%s', (_name, m, pd, psd, nd, nsd) => {
+    expect(L.isPositiveDefinite(m)).toBe(pd);
+    expect(L.isPositiveSemidefinite(m)).toBe(psd);
+    expect(L.isNegativeDefinite(m)).toBe(nd);
+    expect(L.isNegativeSemidefinite(m)).toBe(nsd);
+  });
+});
