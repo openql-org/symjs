@@ -101,3 +101,12 @@ describe('enumerative', () => {
     expect(part.map(String)).toEqual(['c:0 u:2 v:1']);
   });
 });
+
+describe('MultisetPartitionTraverser.countPartitions (SymPy count_partitions)', () => {
+  it('counts with the memoized subtrees', () => {
+    const m = new MultisetPartitionTraverser();
+    expect([[2, 2], [3, 3, 3], [4, 4, 4, 2], [9, 8, 2], [1], [3, 1], [5]].map((ms) => m.countPartitions(ms))).toEqual([9n, 686n, 127750n, 288716n, 1n, 7n, 7n]);
+    // a fresh traverser counts the same
+    expect(new MultisetPartitionTraverser().countPartitions([3, 3, 3])).toBe(686n);
+  });
+});

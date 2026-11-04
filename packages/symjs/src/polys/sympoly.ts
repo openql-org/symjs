@@ -338,11 +338,16 @@ export class Poly {
     const t = this.termList[0];
     return t ? [t.monom, t.coeff] : [this.gens.map(() => 0), S.Zero];
   }
+  /** The index of a generator (SymPy _gen_to_level): PolynomialError for an expression that is not one. */
+  private genIndex(gen: Expr): number {
+    const i = this.gens.findIndex((g) => g.key === gen.key);
+    if (i < 0) throw new PolynomialError(`a valid generator expected, got ${gen.toString()}`);
+    return i;
+  }
   /** Degree in the given generator (first generator by default); -oo for zero. */
   degree(gen?: Expr | number): number {
-    const i = gen === undefined ? 0 : typeof gen === 'number' ? gen : this.gens.findIndex((g) => g.key === gen.key);
+    const i = gen === undefined ? 0 : typeof gen === 'number' ? gen : this.genIndex(gen);
     if (this.isZero) return -Infinity;
-    if (i < 0) return 0;
     return Math.max(...this.termList.map((t) => at(t.monom, i)));
   }
   degreeList(): number[] {
@@ -514,14 +519,8 @@ export class Poly {
   }
   /** The antiderivative in a generator (SymPy Poly.integrate), term by term. */
   integrate(x?: Expr): Poly {
-    const v = x ?? first(this.gens);
-    const i = this.gens.findIndex((g) => g.key === v.key);
+    const i = x === undefined ? 0 : this.genIndex(x);
     const domain = this.domain === 'ZZ' ? 'QQ' : this.domain;
-    if (i < 0) {
-      // not a generator: the coefficients are constants in v unless they contain it
-      if (this.termList.some((t) => t.coeff.has(v))) throw new NotImplementedError('Poly.integrate: the variable occurs in the coefficients');
-      return Poly.from(mul(this.asExpr(), v), this.gens);
-    }
     const terms = this.termList.map((t) => {
       const k = at(t.monom, i) + 1;
       return mul(t.coeff, Rational.of(1n, BigInt(k)), ...t.monom.map((e, j) => pow(at(this.gens, j), j === i ? k : e)));
@@ -990,20 +989,24 @@ export class Poly {
    * over QQ. Undefined when the coefficients are rational.
    */
   private normPoly(): Poly | undefined {
-    return this.normOrSelf(true);
+    const cs = this.allCoeffs();
+    if (cs.every((c) => c instanceof Rational) && !/^(?:QQ|ZZ)<.*>$/.test(this.domain)) return undefined;
+    return this.algebraicNorm();
   }
   /**
    * SymPy Poly.norm: the product of the conjugates of a polynomial over an
-   * algebraic extension, a polynomial over QQ (itself when the coefficients
-   * are rational).
+   * algebraic field QQ<a>, a polynomial over QQ. Like SymPy, other ground
+   * domains (ZZ, QQ, ZZ_I, EX) raise DomainError.
    */
   norm(): Poly {
-    return defined(this.normOrSelf(false), 'norm');
+    if (!/^(?:QQ|ZZ)<.*>$/.test(this.domain)) throw new DomainError('ground domain must be algebraic');
+    const N = this.algebraicNorm();
+    if (!N) throw new NotImplementedError('norm: unsupported coefficient field');
+    return N;
   }
-  private normOrSelf(strict: boolean): Poly | undefined {
+  /** The product of the conjugates over I and square roots of integers; undefined when they do not give a rational polynomial. */
+  private algebraicNorm(): Poly | undefined {
     const cs = this.allCoeffs();
-    const algebraicDomain = /^(?:QQ|ZZ)<.*>$/.test(this.domain);
-    if (cs.every((c) => c instanceof Rational) && !algebraicDomain) return strict ? undefined : this;
     const gens = new Map<string, Expr>();
     const findGens = (e: Expr) => {
       if (e instanceof Constant && e.name === 'I') gens.set(e.key, e);
@@ -1021,19 +1024,14 @@ export class Poly {
       }
     }
     const gl = [...gens.values()];
-    if (!gl.length || gl.length > 3) {
-      if (strict) return undefined;
-      throw new NotImplementedError('norm: unsupported coefficient field');
-    }
+    if (!gl.length || gl.length > 3) return undefined;
     const f = this.asExpr();
     let norm: Expr = S.One;
     for (let mask = 0; mask < 1 << gl.length; mask++) {
       norm = mul(norm, xreplace(f, gl.map((g, i) => [g, mask & (1 << i) ? mul(-1, g) : g] as [Expr, Expr])));
     }
     const N = Poly.from(expand(norm), [this.univariate()], { domain: 'QQ' });
-    if (N.allCoeffs().every((c) => c instanceof Rational)) return N;
-    if (strict) return undefined;
-    throw new NotImplementedError('norm: unsupported coefficient field');
+    return N.allCoeffs().every((c) => c instanceof Rational) ? N : undefined;
   }
   /** SymPy Poly.make_monic_over_integers_by_scaling_roots: [monic integer polynomial g, s] with g(x) = f(x/s)*s**n/LC(f). */
   makeMonicOverIntegersByScalingRoots(): [Poly, Expr] {
@@ -1075,7 +1073,11 @@ export class Poly {
     if (this.domain.includes('[')) throw new DomainError(`Cannot eject generators over ${this.domain}`);
     const keys = new Set(gens.map((g) => g.key));
     const rest = this.gens.filter((g) => !keys.has(g.key));
-    if (rest.length === this.gens.length) return this;
+    if (gens.length === 0) return this;
+    // SymPy ejects the leading or the trailing generators, in their order
+    const k = gens.length;
+    const same = (part: readonly Expr[]) => part.length === k && part.every((g, j) => g.key === at(gens, j).key);
+    if (!same(this.gens.slice(0, k)) && !same(this.gens.slice(-k))) throw new NotImplementedError('can only eject front or back generators');
     const names = this.gens.filter((g) => keys.has(g.key)).map((g) => str(g)).join(',');
     return Poly.from(this.asExpr(), rest, { domain: `${this.domain}[${names}]` });
   }
@@ -1092,8 +1094,9 @@ export class Poly {
   }
   /** SymPy Poly.lift: the norm over the ground field of an algebraic extension (ZZ_I -> ZZ, QQ<a> -> QQ). */
   lift(): Poly {
-    const N = this.normPoly();
-    if (!N) return this;
+    // SymPy lifts over ZZ_I, QQ_I and QQ<a> only
+    if (!/^(?:ZZ_I|QQ_I|(?:QQ|ZZ)<.*>)$/.test(this.domain)) throw new DomainError('computation can be done only in an algebraic domain');
+    const N = defined(this.normPoly(), 'lift');
     return Poly.from(N.asExpr(), this.gens, { domain: this.domain.startsWith('ZZ') ? 'ZZ' : 'QQ' });
   }
   /** Real roots (rational and quadratic surds), sorted, with multiplicity. */
@@ -1858,6 +1861,8 @@ export function factorNc(ex: ExprLike): Expr {
   const e = sympify(ex);
   if (e.isCommutative) return factor(e);
   const nc = [...freeSymbols(e)].filter((s) => !s.isCommutative);
+  // a non-commutative node without non-commutative symbols (a Quaternion): its arguments are factored (SymPy factor_nc)
+  if (!nc.length) return rebuild(e, e.args.map(factorNc));
   const reps = nc.map((s) => [s, new Sym(`_nc_${s.name}`)] as [Expr, Expr]);
   const f = factor(xreplace(e, reps));
   const back = xreplace(f, reps.map(([a, b]) => [b, a] as [Expr, Expr]));
@@ -1879,27 +1884,6 @@ export function sqfNorm(fIn: ExprLike, x: Sym, extension: readonly Expr[]): [num
     if (r.gcd(r.diff(x)).degree() <= 0) return [extension.map(() => s), g, r.asExpr()];
   }
   throw new NotImplementedError('sqf_norm: no square-free norm found');
-}
-
-/**
- * SymPy minimal_polynomial(v, x) for rational radicals r**(p/q) and algebraic
- * numbers built from rationals, I and square roots of rationals: the
- * irreducible factor of x**q - r**p or of the norm of x - v that vanishes at v
- * (primitive, positive leading coefficient).
- */
-export function minimalPolynomial(vIn: ExprLike, x: Sym): Expr {
-  const v = sympify(vIn);
-  if (v instanceof Rational) return add(mul(v.q, x), -v.p);
-  // a polynomial vanishing at v: x**q - r**p for v = r**(p/q), else the norm of x - v
-  const N = v instanceof Pow && v.base instanceof Rational && v.exp instanceof Rational
-    ? Poly.from(add(pow(x, Rational.of(v.exp.q)), mul(-1, pow(v.base, Rational.of(v.exp.p)))), [x])
-    : Poly.from(add(x, mul(-1, v)), [x]).norm();
-  // v is a root of N, so of one of its (primitive, positive) irreducible factors
-  const vanishes = (f: Poly): boolean => {
-    const z = evalfExpr(xreplace(f.asExpr(), [[x, v]]), 30).toComplex();
-    return Math.hypot(z.re, z.im) < 1e-12;
-  };
-  return defined(N.factorList()[1].find(([f]) => vanishes(f)), 'vanishing factor')[0].asExpr();
 }
 
 impl.factor = (e) => factor(e);

@@ -32,6 +32,8 @@ function categoryOf(fullPath: string): string {
   if (/^src\/(calculus|series|integrals)\//.test(path)) return 'calculus';
   if (path.startsWith('src/matrices/')) return 'matrices';
   if (path.startsWith('src/quantum/')) return 'quantum';
+  const sub = /^src\/(discrete|algebras|strategies|unify)[/.]/.exec(path);
+  if (sub) return sub[1]!;
   return 'core';
 }
 
@@ -62,7 +64,7 @@ interface Corpus {
   cases: Case[];
 }
 
-const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'ode', 'calculus', 'matrices', 'special', 'logic', 'tensor', 'ntheory', 'assumptions', 'utilities', 'combinatorics', 'sets', 'printing'];
+const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'ode', 'calculus', 'matrices', 'special', 'logic', 'tensor', 'ntheory', 'assumptions', 'utilities', 'combinatorics', 'sets', 'printing', 'discrete', 'algebras', 'strategies', 'unify'];
 
 // a rate below 100% never prints as 100.0%
 const pct = (a: number, b: number) => (b === 0 ? '-' : `${(a < b ? Math.min((100 * a) / b, 99.9) : 100).toFixed(1)}%`);
@@ -73,10 +75,24 @@ interface KnownGaps {
   api: string[];
 }
 const caseKey = (c: Case): string => `${c.module}: ${c.src}`;
+
+/**
+ * Doctests outside the scope of symjs, by case key, with the reason. They are not run or counted:
+ * they exercise no symjs functionality, so a "pass" would say nothing.
+ */
+const OUT_OF_SCOPE: Readonly<Record<string, string>> = {
+  // plotting is not ported (FourierSeries plot objects)
+  'sympy.series.fourier: p.show()': 'plotting',
+  // a TensorFlow setting from the lambdify docstring; lambdify for TensorFlow is not ported
+  'sympy.utilities.lambdify: tf.compat.v1.enable_eager_execution()': 'TensorFlow',
+  // Python's in-place list.sort() from a docstring setup line, no SymPy call
+  'sympy.utilities.iterables: a.sort()': 'Python list method',
+};
 const apiKey = (a: { name: string; category: string }): string => `${a.category}: ${a.name}`;
 
 it('computes SymPy compatibility metrics', () => {
   const corpus: Corpus = JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url), 'utf8'));
+  corpus.cases = corpus.cases.filter((c) => OUT_OF_SCOPE[caseKey(c)] === undefined);
   const results = corpus.cases.map((c) => ({ c, o: runCase(c) as Outcome }));
   const ported = corpus.cases.filter((c) => PORTS[`${c.module}:${c.src}`]).length;
 

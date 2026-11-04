@@ -8,8 +8,9 @@
 import { piecewise, rel } from './logic';
 import { Concrete } from './concrete';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import type { Expr, ExprLike, Substitution } from './nodes';
-import { Add, Derivative, ExtensionExpr, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Sym, UndefFn, asRational, impl, isNum } from './nodes';
+import type { Key } from '../printing/sortkey';
+import type { ExprLike, Substitution } from './nodes';
+import { Add, Derivative, Expr, ExtensionExpr, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Sym, UndefFn, asRational, impl, isNum } from './nodes';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { isNonNegative, isPositive, isReal } from './assumptions';
 import { SubsNode } from './subsnode';
@@ -21,10 +22,14 @@ const isSubsPairs = (s: Substitution): s is readonly (readonly [Expr, ExprLike])
 
 /**
  * Rebuild a node of the same type with new arguments (re-canonicalizing).
+ * Without `args`, the whole tree is rebuilt bottom-up (SymPy
+ * `sympy.strategies.rl.rebuild` and `sympy.unify.rebuild`), which
+ * canonicalizes nodes built unevaluated.
  *
  * @experimental May change in a minor release.
  */
-export function rebuild(e: Expr, args: readonly Expr[]): Expr {
+export function rebuild(e: Expr, args?: readonly Expr[]): Expr {
+  if (args === undefined) return e.isAtom ? e : rebuild(e, e.args.map((a) => rebuild(a)));
   if (e instanceof ExtensionExpr || e instanceof BoolOp) return e.withArgs(args);
   if (e instanceof Add) return add(...args);
   if (e instanceof Mul) return mul(...args);
@@ -43,6 +48,8 @@ export function rebuild(e: Expr, args: readonly Expr[]): Expr {
   if (e instanceof Concrete) return new Concrete(e.kind2, args);
   // SymPy keeps a rebuilt derivative unevaluated: Derivative(f(x), x).subs(f(x), x**2) = Derivative(x**2, x)
   if (e instanceof Derivative) return new Derivative(args);
+  // a set node (sets/ is a higher layer, which registers its constructors)
+  if (e.kind === 'Set') return defined(impl.rebuildSet, 'sets')(e, args);
   // atoms (and nodes of higher layers without withArgs) are returned as they are
   return e;
 }
@@ -361,6 +368,15 @@ function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
     const args = e.args.map((a, i) => (i === 0 || (i - 1) % 3 === 0 ? a : subsOne(a, old, nw)));
     return args.some((a, i) => a !== e.args[i]) ? rebuild(e, args) : e;
   }
+  if (e.kind === 'Set') {
+    // a set binding a variable substitutes like SymPy's _eval_subs
+    const rs = defined(impl.subsSet, 'sets')(e, old, nw, (x) => subsOne(x, old, nw));
+    if (rs !== undefined) return rs;
+  }
+  if (e instanceof ExtensionExpr) {
+    const own = e.subsSelf(old, nw, (x) => subsOne(x, old, nw));
+    if (own !== undefined) return own;
+  }
   const r = evalSubs(e, old, nw);
   if (r !== undefined) return r;
   const args = e.args.map((a) => subsOne(a, old, nw));
@@ -439,3 +455,64 @@ export function some(e: Expr, pred: (e: Expr) => boolean): boolean {
 
 impl.subs = (e, s) => subs(e, s);
 impl.freeSymbols = freeSymbols;
+
+/**
+ * SymPy use(expr, func, level): func applied to the subexpressions at depth
+ * `level` (0 is the expression itself); atoms above that depth are kept.
+ */
+export function use(e: ExprLike, func: (x: Expr) => Expr, level = 0): Expr {
+  const go = (x: Expr, k: number): Expr => {
+    if (k === 0) return func(x);
+    if (x.args.length === 0) return x;
+    return rebuild(
+      x,
+      x.args.map((a) => go(a, k - 1)),
+    );
+  };
+  return go(sympify(e), level);
+}
+
+/** A pre-order traversal of an expression tree (SymPy preorder_traversal), with skip() to leave out the subtree of the last node. */
+export class PreorderTraversal implements Iterable<Expr> {
+  private skipped = false;
+  constructor(
+    readonly node: Expr,
+    readonly keys: boolean | ((e: Expr) => unknown) = false,
+  ) {}
+  /** Do not visit the arguments of the node yielded last. */
+  skip(): void {
+    this.skipped = true;
+  }
+  *[Symbol.iterator](): Iterator<Expr> {
+    yield* this.walk(this.node);
+  }
+  private *walk(x: Expr): Generator<Expr> {
+    yield x;
+    if (this.skipped) {
+      this.skipped = false;
+      return;
+    }
+    for (const a of this.orderedArgs(x)) yield* this.walk(a);
+  }
+  private orderedArgs(x: Expr): readonly Expr[] {
+    const keys = this.keys;
+    if (keys === true) return [...x.args].sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
+    if (keys === false) return x.args;
+    return x.args
+      .map((a) => [a, toKey(keys(a))] as const)
+      .sort((p, q) => compareKeys(p[1], q[1]))
+      .map(([a]) => a);
+  }
+}
+
+/** A key function's value as a sort key (an expression by its sort key, a number or string as it is). */
+const toKey = (v: unknown): Key => (v instanceof Expr ? sortKey(v) : typeof v === 'number' || typeof v === 'string' ? v : String(v));
+
+/**
+ * SymPy preorder_traversal(node, keys): the nodes of the tree, each before
+ * its arguments; with keys (true for the default sort key, or a key
+ * function) the arguments of each node are visited in sorted order.
+ */
+export function preorderTraversal(node: ExprLike, keys: boolean | ((e: Expr) => unknown) = false): PreorderTraversal {
+  return new PreorderTraversal(sympify(node), keys);
+}

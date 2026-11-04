@@ -85,6 +85,8 @@ function run(kind: string, src: string): string | [number, number] {
       return String(sj.expandFunc(e));
     case 'UP':
       return String(sj.unpolarify(e));
+    case 'UPE':
+      return String(sj.unpolarify(e, { exponentsOnly: true }));
     case 'PL':
       return String(sj.polarify(e, { subs: false }));
     case 'C':
@@ -226,6 +228,47 @@ const POLAR_CASES: Case[] = [
   ["EB", "exp_polar(2*I*pi)", "(1, 1)"],
   ["EB", "exp_polar(-sqrt(2)*I*pi)*x", "(x*exp_polar(I*pi*(2 - sqrt(2))), -1)"],
   ["EB", "exp_polar(I*I*pi)", "(exp_polar(-pi), 0)"],
+  // unpolarify(e, exponents_only=True)
+  ["UPE", "exp_polar(2*I*pi)*x**exp_polar(I*pi)", "exp_polar(2*I*pi)/x"],
+  ["UPE", "polar_lift(x)**polar_lift(2)", "polar_lift(x)**2"],
+  ["UPE", "polar_lift(x)**2", "polar_lift(x)**2"],
+  ["UPE", "exp_polar(I*pi)*polar_lift(x)**polar_lift(2)*sin(polar_lift(y))**exp_polar(0)", "exp_polar(I*pi)*sin(polar_lift(y))*polar_lift(x)**2"],
+  ["UPE", "polar_lift(x)**(2*exp_polar(0)) + polar_lift(y)", "polar_lift(x)**2 + polar_lift(y)"],
+  ["UPE", "exp_polar(polar_lift(2))*x", "x*exp_polar(2)"],
+  ["UPE", "principal_branch(polar_lift(x), 2*pi)**polar_lift(3)", "principal_branch(x, 2*pi)**3"],
+  ["UPE", "gamma(polar_lift(x))**polar_lift(2)", "gamma(polar_lift(x))**2"],
+  ["UPE", "(polar_lift(x)**polar_lift(y))**polar_lift(2)", "polar_lift(x)**(2*y)"],
+  ["UPE", "polar_lift(0)**polar_lift(2) + x**exp_polar(I*pi)", "1/x"],
+  ["UPE", "besselj(polar_lift(a), x)**polar_lift(2)", "besselj(a, x)**2"],
+  ["UPE", "sin(polar_lift(x))", "sin(polar_lift(x))"],
+  ["UPE", "x**principal_branch(y, 2*pi)", "x**y"],
+  ["UPE", "x**principal_branch(y, pi)", "x**principal_branch(y, pi)"],
+  // periodic_argument of powers of polar numbers (_getunbranched)
+  ["s", "periodic_argument(polar_lift(x)**2, oo)", "2*arg(x)"],
+  ["s", "periodic_argument(polar_lift(x)**2, 2*pi)", "periodic_argument(polar_lift(x)**2, 2*pi)"],
+  ["s", "periodic_argument(polar_lift(2 + I)**2, 2*pi)", "periodic_argument(polar_lift(2 + I)**2, 2*pi)"],
+  ["s", "periodic_argument(polar_lift(2)**I, oo)", "log(2)"],
+  ["s", "periodic_argument(exp_polar(3*I)**2*polar_lift(y), 2*pi)", "periodic_argument(exp_polar(6*I)*polar_lift(y), 2*pi)"],
+  // log, Abs, arg and conjugate of polar numbers
+  ["s", "log(exp_polar(x))", "x"],
+  ["s", "log(exp_polar(2*I*pi))", "2*I*pi"],
+  ["s", "log(exp_polar(polar_lift(x)))", "x"],
+  ["s", "log(exp_polar(3)*x)", "log(x*exp_polar(3))"],
+  ["s", "log(8, 2)", "3"],
+  ["s", "Abs(exp_polar(0))", "1"],
+  ["s", "Abs(exp_polar(2 + I))", "exp(2)"],
+  ["s", "Abs(2*exp_polar(x))", "2*exp(re(x))"],
+  ["s", "Abs(x*polar_lift(y))", "Abs(x*polar_lift(y))"],
+  ["s", "Abs(2*polar_lift(y))", "2*Abs(polar_lift(y))"],
+  ["s", "Abs(2*x*polar_lift(y))", "2*Abs(x*polar_lift(y))"],
+  ["s", "Abs(x*exp_polar(y))", "exp(re(y))*Abs(x)"],
+  ["s", "Abs(polar_lift(x)*exp_polar(y))", "exp(re(y))*Abs(polar_lift(x))"],
+  ["s", "Abs(polar_lift(x))", "Abs(x)"],
+  ["s", "Abs(principal_branch(x, 2*pi))", "Abs(principal_branch(x, 2*pi))"],
+  ["s", "arg(exp_polar(I))", "1"],
+  ["s", "arg(exp_polar(x))", "im(x)"],
+  ["C", "exp_polar(I)", "exp_polar(-I)"],
+  ["C", "exp_polar(x)", "exp_polar(conjugate(x))"],
 ];
 const y = new Sym('y');
 const I = S.I;
@@ -237,15 +280,23 @@ describe('polar numbers and branches (SymPy eval)', () => check(POLAR_CASES));
 describe('polar: cases outside the table', () => {
   const y = new Sym('y');
   it('the derivative of exp_polar', () => {
-    // SymPy leaves Derivative(exp_polar(x), x) unevaluated; exp_polar(x) is its own derivative
-    expect(String(diff(expPolar(x), x))).toBe('exp_polar(x)');
+    // SymPy leaves Derivative(exp_polar(x), x) unevaluated (exp_polar has no fdiff)
+    expect(String(diff(expPolar(x), x))).toBe('Derivative(exp_polar(x), x)');
+  });
+  it('unpolarify with a substitution', () => {
+    // SymPy unpolarify(polar_lift(x)**2, {x: exp_polar(y)})
+    expect(String(sj.unpolarify(pow(polarLift(x), 2), { subs: [[x, expPolar(y)]] }))).toBe('exp(2*y)');
   });
   it('isPolar', () => {
     expect(isPolar(polarLift(x))).toBe(true);
     expect(isPolar(new Sym('w', { polar: true }))).toBe(true);
     expect(isPolar(sj.mul(2, polarLift(x)))).toBe(true);
     expect(isPolar(pow(polarLift(x), 2))).toBe(true);
-    expect(isPolar(pow(polarLift(x), y))).toBe(false);
+    // SymPy (polar_lift(x)**y).is_polar is True (Pow.is_polar = base.is_polar), and a product is
+    // polar when its other factors are positive: (q*polar_lift(x)).is_polar, but not x*polar_lift(x)
+    expect(isPolar(pow(polarLift(x), y))).toBe(true);
+    expect(isPolar(sj.mul(new Sym('q', { positive: true }), polarLift(x)))).toBe(true);
+    expect(isPolar(sj.mul(x, polarLift(x)))).toBe(false);
     expect(isPolar(x)).toBe(false);
     expect(String(unbranchedArgument(expPolar(sj.mul(3, sj.I))))).toBe('3');
   });

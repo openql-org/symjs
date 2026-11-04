@@ -59,6 +59,12 @@ const FUNCTION_PRIORITY: Record<string, number> = {
   re: 41,
   im: 42,
   arg: 43,
+  // functions whose nargs is Naturals0 in SymPy (class_key (4, 0, name))
+  exp_polar: 0,
+  lerchphi: 0,
+  meijerg: 0,
+  LeviCivita: 0,
+  carmichael: 0,
 };
 
 /** SymPy class name of a function node (e.g. abs -> Abs). */
@@ -139,7 +145,8 @@ export function sortKey(e: Expr): Key {
       expr = expr.base;
     }
     ck = classKey(expr);
-    if (expr.isAtom) args = [impl.str(expr)];
+    // an Indexed is an Atom in SymPy (is_Atom = True): it sorts by its printed form
+    if (expr.isAtom || (expr instanceof ExtensionExpr && expr.name === 'Indexed')) args = [impl.str(expr)];
     else if (expr instanceof Add) args = asOrderedTerms(expr).map(sortKey);
     else if (expr instanceof Mul) args = asOrderedFactors(expr).map(sortKey);
     else args = expr.args.map(sortKey);
@@ -180,8 +187,45 @@ function decomposePower(f: Expr): [Expr, number] {
   return [f, 1];
 }
 
-/** SymPy `Expr.as_ordered_terms()` with the default (lex) ordering. */
-export function asOrderedTerms(e: Expr): Expr[] {
+/** A monomial ordering for SymPy `as_ordered_terms(order)`: lex, grlex, grevlex, ilex, igrlex or igrevlex, optionally prefixed by 'rev-'. */
+export type TermOrder = 'lex' | 'grlex' | 'grevlex' | 'ilex' | 'igrlex' | 'igrevlex' | `rev-${'lex' | 'grlex' | 'grevlex' | 'ilex' | 'igrlex' | 'igrevlex'}`;
+
+/** A monomial key: nested tuples of numbers. */
+type NumKey = number | NumKey[];
+
+/** -key, elementwise and recursively (SymPy InverseOrder and _parse_order's neg). */
+const negKey = (k: NumKey): NumKey => (typeof k === 'number' ? -k : k.map(negKey));
+
+/** SymPy monomial_key(order) for an exponent vector. */
+function monomialKey(order: string, m: number[]): NumKey {
+  const sum = m.reduce((a, b) => a + b, 0);
+  switch (order) {
+    case 'lex':
+      return m;
+    case 'grlex':
+      return [sum, m];
+    case 'grevlex':
+      return [sum, [...m].reverse().map((v) => -v)];
+    case 'ilex':
+    case 'igrlex':
+    case 'igrevlex':
+      return negKey(monomialKey(order.slice(1), m));
+    default:
+      throw new RangeError(`supported monomial orderings are 'lex', 'grlex' and 'grevlex' (or i-, rev- prefixed), got ${order}`);
+  }
+}
+
+/**
+ * SymPy `Expr.as_ordered_terms(order)`: without an order the printers'
+ * default (lex, with SymPy's special case 1 - x**2); with a monomial
+ * ordering the terms sorted by it (reversed for a 'rev-' prefix).
+ */
+export function asOrderedTerms(e: Expr, order?: TermOrder): Expr[] {
+  if (order !== undefined) {
+    const reverse = order.startsWith('rev-');
+    const sorted = lexOrder(e instanceof Add ? e.args : [e], reverse ? order.slice(4) : order);
+    return reverse ? sorted.reverse() : sorted;
+  }
   const all = e instanceof Add ? e.args : [e];
   const orders = all.filter((t) => t instanceof Order);
   if (orders.length > 0) {
@@ -204,8 +248,8 @@ export function asOrderedTerms(e: Expr): Expr[] {
   return lexOrder(terms);
 }
 
-/** Sort terms by SymPy's lex key on the monomials of the generators. */
-function lexOrder(terms: readonly Expr[]): Expr[] {
+/** Sort terms by SymPy's key on the monomials of the generators (lex by default). */
+function lexOrder(terms: readonly Expr[], order = 'lex'): Expr[] {
   const gens = new Map<string, Expr>();
   const parsed = terms.map((term) => {
     const [c, rest] = splitCoeff(term);
@@ -240,12 +284,12 @@ function lexOrder(terms: readonly Expr[]): Expr[] {
   });
   const genList = [...gens.values()].map((g) => ({ g, k: sortKey(g) })).sort((a, b) => compareKeys(a.k, b.k));
   const keyed = parsed.map(({ term, coeff, cpart, ncpart }) => {
-    const monom: Key[] = genList.map(({ g }) => -(cpart.get(g.key) ?? 0));
+    const monom = negKey(monomialKey(order, genList.map(({ g }) => cpart.get(g.key) ?? 0)));
     const ck: Key = [
       [coeff.im !== 0 ? 1 : 0, coeff.im],
       [coeff.re, coeff.im],
     ];
-    return { term, k: [monom, ncpart.map(sortKey), ck] as Key };
+    return { term, k: [monom, ncpart.map(sortKey), ck] };
   });
   return keyed.sort((a, b) => compareKeys(a.k, b.k)).map((x) => x.term);
 }

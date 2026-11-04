@@ -11,15 +11,15 @@ import type { Expr, FnName } from '../core/nodes';
 import { S, impl } from '../core/nodes';
 import { defined } from '../core/guard';
 
-const INCREASING = new Set(['exp', 'log', 'atan', 'asinh', 'sinh', 'tanh', 'erf', 'asin', 'acosh', 'atanh']);
-const DECREASING = new Set(['acos', 'acot']);
+// SymPy evaluates exp and log of an interval only: asin, atan, sinh, erf, acos, acot, ... of an
+// AccumBounds stay unevaluated (atan(AccumBounds(0, 1)) is kept as it is)
+const INCREASING = new Set(['exp', 'log']);
 
 /** f([a, b]) for a function of one AccumBounds argument; undefined when it is not handled. */
 export function accumBoundsFunction(name: FnName, iv: Expr, apply: (name: FnName, x: Expr) => Expr): Expr | undefined {
   const ab = defined(impl.accumBounds, 'AccumBounds support');
   const [lo, hi] = ab.bounds(iv);
   if (INCREASING.has(name)) return ab.make(apply(name, lo), apply(name, hi));
-  if (DECREASING.has(name)) return ab.make(apply(name, hi), apply(name, lo));
   if (name === 'sin' || name === 'cos') {
     const a = lo.toNumber();
     const b = hi.toNumber();

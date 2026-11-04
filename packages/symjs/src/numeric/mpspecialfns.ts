@@ -8,7 +8,7 @@
  * modules defining these functions so that the core does not carry them.
  */
 
-import { NotImplementedError } from '../core/errors';
+import { EvalfValueError, NotImplementedError } from '../core/errors';
 import { at } from '../core/guard';
 import * as F from './mpf';
 import { ZERO } from './mpf';
@@ -20,7 +20,7 @@ import { clambertw } from './mplambertw';
 import { caltzeta, clerchphi, cpolylog } from './mppolylog';
 import * as OP from './mporthopoly';
 import { cellipe, cellipeInc, cellipf, cellipk, cellippi } from './mpelliptic';
-import { mpFn1, mpFn2, mpFns } from './mpeval';
+import { MpSpecialValue, mpFn1, mpFn2, mpFns } from './mpeval';
 
 const toInt = (z: Mpc): number => {
   const [p, q] = F.toRational(z[0]);
@@ -45,7 +45,7 @@ Object.assign(mpFns, {
   catalan: mpFn1((z, p) => {
     // 4^z Gamma(z + 1/2) / (sqrt(pi) Gamma(z + 2))
     const wp = p + 30;
-    const half: Mpc = [{ man: 1n, exp: -1 }, ZERO];
+    const half: Mpc = [{ man: 1n, exp: -1n }, ZERO];
     const num = M.cmul(M.cpow([F.fromInt(4n), ZERO], z, wp), SP.cgamma(M.cadd(z, half, wp), wp), wp);
     const den = M.cmul([F.sqrt(M.mpPi(wp), wp), ZERO], SP.cgamma(M.cadd(z, [F.fromInt(2n), ZERO], wp), wp), wp);
     return M.cdiv(num, den, p);
@@ -88,7 +88,8 @@ Object.assign(mpFns, {
   erfi: mpFn1(SP.cerfi),
   erf2: mpFn2((x, y, p) => M.csub(SP.cerf(y, p + 20), SP.cerf(x, p + 20), p)),
   erfinv: mpFn1((a, p) => {
-    if (!M.isReal(a)) throw new NotImplementedError('complex erfinv');
+    // mpmath erfinv: a real argument in [-1, 1] only (SymPy raises its ValueError)
+    if (!M.isReal(a) || F.cmp(F.abs(a[0]), F.ONE) > 0) throw new EvalfValueError('erfinv(x) is defined only for -1 <= x <= 1');
     return [SP.erfinv(a[0], p), ZERO];
   }),
   erfcinv: mpFn1((a, p) => {
@@ -119,7 +120,89 @@ Object.assign(mpFns, {
   Chi: mpFn1(EI.cchi),
   lowergamma: mpFn2(SP.clowergamma),
   uppergamma: mpFn2(SP.cuppergamma),
+  // mpmath rf(x, n) = gammaprod([x + n], [x]), ff(x, n) = gammaprod([x + 1], [x - n + 1])
+  rf: mpFn2((x, n, p) => gammaprod([M.cadd(x, n, p + 20)], [x], p)),
+  ff: mpFn2((x, n, p) => gammaprod([M.cadd(x, one, p + 20)], [M.cadd(M.csub(x, n, p + 20), one, p + 20)], p)),
+  factorial2: mpFn1(fac2),
+  erf2inv: mpFn2((x, y, p) => {
+    if (!M.isReal(x) || !M.isReal(y)) throw new NotImplementedError('complex erf2inv');
+    // erfinv(erf(x) + y); outside the domain of erfinv there is no value (SymPy has no numeric
+    // erf2inv and returns the call unchanged)
+    const wp = p + 20;
+    const v = F.add(SP.cerf(x, wp)[0], y[0], wp);
+    if (F.cmp(F.abs(v), F.ONE) >= 0) throw new RangeError('erf2inv: erf(x) + y outside (-1, 1)');
+    return [SP.erfinv(v, p), ZERO];
+  }),
+  // SymPy SphericalBesselBase._eval_evalf: an integer order by rewrite(besselj),
+  // jn(n, z) = sqrt(pi/(2 z)) J(n + 1/2, z), yn(n, z) = (-1)**(n + 1) sqrt(pi/(2 z)) J(-n - 1/2, z)
+  jn: mpFn2((n, z, p) => sphericalBessel(n, z, false, p)),
+  yn: mpFn2((n, z, p) => sphericalBessel(n, z, true, p)),
+  // mpmath floor and ceil of each part
+  floor: mpFn1((z) => [F.fromInt(F.floor(z[0])), F.fromInt(F.floor(z[1]))]),
+  ceiling: mpFn1((z) => [F.fromInt(-F.floor(F.neg(z[0]))), F.fromInt(-F.floor(F.neg(z[1])))]),
+  Min: (args, p) => minMax(args, -1, p),
+  Max: (args, p) => minMax(args, 1, p),
 } satisfies typeof mpFns);
+
+/** The real arguments of Min (dir -1) or Max (dir 1); a complex argument has no value. */
+function minMax(args: Mpc[], dir: 1 | -1, p: number): Mpc {
+  if (!args.every(M.isReal)) throw new TypeError('Min/Max of a complex number');
+  const best = args.map((a) => a[0]).reduce((acc, v) => (F.cmp(v, acc) * dir > 0 ? v : acc));
+  return [F.round(best, p), ZERO];
+}
+
+/** A non-positive integer (a pole of Gamma), as a bigint. */
+function npint(z: Mpc): bigint | undefined {
+  if (!M.isReal(z)) return undefined;
+  const [num, den] = F.toRational(z[0]);
+  return den === 1n && num <= 0n ? num : undefined;
+}
+
+/**
+ * mpmath gammaprod: prod Gamma(a) / prod Gamma(b), 0 with more poles below than above and
+ * inf with more above; equal numbers of poles cancel in pairs by
+ * lim Gamma(i)/Gamma(j) = (-1)**(i + j) Gamma(1 - j) / Gamma(1 - i).
+ */
+function gammaprod(a: Mpc[], b: Mpc[], p: number): Mpc {
+  const wp = p + 15;
+  const polesNum = a.map(npint).filter((v) => v !== undefined);
+  const polesDen = b.map(npint).filter((v) => v !== undefined);
+  if (polesNum.length < polesDen.length) return M.C0;
+  if (polesNum.length > polesDen.length) throw new MpSpecialValue('inf');
+  let r: Mpc = one;
+  polesNum.forEach((i, k) => {
+    const j = at(polesDen, k);
+    const ratio = M.cdiv(SP.cgamma([F.fromInt(1n - j), ZERO], wp), SP.cgamma([F.fromInt(1n - i), ZERO], wp), wp);
+    r = M.cmul(r, (i + j) % 2n === 0n ? ratio : M.cneg(ratio), wp);
+  });
+  for (const x of a) if (npint(x) === undefined) r = M.cmul(r, SP.cgamma(x, wp), wp);
+  for (const x of b) if (npint(x) === undefined) r = M.cdiv(r, SP.cgamma(x, wp), wp);
+  return [F.round(r[0], p), F.round(r[1], p)];
+}
+
+/** mpmath fac2(x) = 2**(x/2) (pi/2)**((cospi(x) - 1)/4) Gamma(x/2 + 1). */
+function fac2(x: Mpc, p: number): Mpc {
+  const wp = p + 20;
+  const half = M.cmul(x, [{ man: 1n, exp: -1n }, ZERO], wp);
+  const pi = M.mpPi(wp);
+  const cospi = M.ccos(M.cmul(x, [pi, ZERO], wp), wp);
+  const e = M.cmul(M.csub(cospi, one, wp), [{ man: 1n, exp: -2n }, ZERO], wp);
+  const t1 = M.cpow([F.fromInt(2n), ZERO], half, wp);
+  const t2 = M.cpow([F.ldexp(pi, -1), ZERO], e, wp);
+  return M.cmul(M.cmul(t1, t2, wp), SP.cgamma(M.cadd(half, one, wp), wp), p);
+}
+
+/** jn or yn of an integer order by the Bessel function of order n + 1/2 or -n - 1/2. */
+function sphericalBessel(n: Mpc, z: Mpc, y: boolean, p: number): Mpc {
+  const [num, den] = F.toRational(n[0]);
+  if (!M.isReal(n) || den !== 1n) throw new NotImplementedError('spherical Bessel function of a non-integer order');
+  const wp = p + 20;
+  const halfOrder: Mpc = [F.add(F.fromInt(num), { man: 1n, exp: -1n }), ZERO];
+  const factor = M.csqrt(M.cdiv([M.mpPi(wp), ZERO], M.cmul([F.fromInt(2n), ZERO], z, wp), wp), wp);
+  if (!y) return M.cmul(factor, mpBessel('J', halfOrder, z, wp), p);
+  const j = M.cmul(factor, mpBessel('J', M.cneg(halfOrder), z, wp), wp);
+  return num % 2n === 0n ? [F.round(F.neg(j[0]), p), F.round(F.neg(j[1]), p)] : [F.round(j[0], p), F.round(j[1], p)];
+}
 
 // ---- Bessel and Airy functions by power series in arbitrary precision -------------------
 

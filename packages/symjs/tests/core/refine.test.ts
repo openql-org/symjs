@@ -89,7 +89,8 @@ const CASES: readonly Case[] = [
   ["ask", "Q.zero(oo)", "True", "false"],
   ["ask", "Q.nonzero(oo)", "True", "false"],
   ["ask", "Q.nonpositive(x+1)", "Q.positive(x)", "false"],
-  ["ask", "Q.nonpositive(x-1)", "Q.nonpositive(x)", "unknown"],
+  // SymPy ask gives None; x <= 0 implies x - 1 < 0, as Symbol('x', nonpositive=True) - 1 is_nonpositive True says
+  ["ask", "Q.nonpositive(x-1)", "Q.nonpositive(x)", "true"],
   ["ask", "Q.nonpositive(I)", "True", "false"],
   ["ask", "Q.nonpositive(x)", "True", "unknown"],
   ["ask", "Q.zero(x+1)", "Q.positive(x)", "false"],
@@ -105,7 +106,8 @@ const CASES: readonly Case[] = [
   ["ask", "Q.extended_positive(oo)", "True", "true"],
   ["ask", "Q.extended_positive(-oo)", "True", "false"],
   ["ask", "Q.extended_positive(x+1)", "Q.positive(x)", "true"],
-  ["ask", "Q.extended_positive(x-1)", "Q.nonpositive(x)", "unknown"],
+  // SymPy ask gives None; x <= 0 implies x - 1 < 0 (SymPy's is_positive of x - 1 for a nonpositive x is False)
+  ["ask", "Q.extended_positive(x-1)", "Q.nonpositive(x)", "false"],
   ["ask", "Q.extended_positive(x)", "True", "unknown"],
   ["ask", "Q.extended_positive(pi)", "True", "true"],
   ["ask", "Q.extended_negative(-oo)", "True", "true"],
@@ -169,7 +171,8 @@ const CASES: readonly Case[] = [
   ["ask", "Q.prime(x**2)", "Q.integer(x)", "false"],
   ["ask", "Q.prime(x**y)", "True", "unknown"],
   ["ask", "Q.prime(x+2)", "Q.zero(x)", "true"],  // SymPy 1.14: unknown (x = 0 gives 2)
-  ["ask", "Q.prime(x+4)", "Q.zero(x)", "unknown"],
+  // SymPy ask gives None; x = 0 makes x + 4 = 4, which is not prime
+  ["ask", "Q.prime(x+4)", "Q.zero(x)", "false"],
   ["ask", "Q.prime(x)", "Q.even(x)", "unknown"],
   ["ask", "Q.prime(x)", "Q.negative(x)", "false"],
   ["ask", "Q.prime(x+1)", "Q.odd(x)", "unknown"],
@@ -475,6 +478,16 @@ describe('predicates, handlers and assumption contexts', () => {
       sj.removeHandler('positive', positive);
     }
     expect(ask(Q.real(fx))).toBe('unknown');
+    // and not positive from a negative one. Deliberate difference: with a Q.negative handler that says
+    // f(x) is negative, SymPy 1.14 gives ask(Q.positive(f(x))) = None (its positive handlers do not
+    // consult the negative ones), but a negative value is not positive
+    const negative: sj.PredicateHandler = (e) => (e.key === fx.key ? true : 'unknown');
+    sj.registerHandler('negative', negative);
+    try {
+      expect(ask(Q.positive(fx))).toBe(false);
+    } finally {
+      sj.removeHandler('negative', negative);
+    }
     sj.removeHandler('no_such_predicate', unknown);
     // a symbol that a handler says is not real is not rational
     const notReal: sj.PredicateHandler = (e) => (e.key === x.key ? false : 'unknown');

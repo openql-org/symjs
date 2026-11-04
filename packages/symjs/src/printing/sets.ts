@@ -8,7 +8,7 @@
  */
 
 import type { Expr } from '../core/nodes';
-import { Special, impl, isNum } from '../core/nodes';
+import { Rational, Special, impl, isNum } from '../core/nodes';
 import { at } from '../core/guard';
 import { ordered } from '../core/match';
 
@@ -71,4 +71,27 @@ export function setArgsOrdered(args: readonly Expr[]): Expr[] {
   // a stable sort by infimum of the ordered arguments
   const keyed = ordered(args).map((a) => [setInfimum(a) ?? Infinity, a] as const);
   return keyed.sort((p, q) => (p[0] < q[0] ? -1 : p[0] > q[0] ? 1 : 0)).map(([, a]) => a);
+}
+
+/** The ellipsis in the elements a printer shows for a set or a sequence. */
+export const DOTS = 'dots';
+
+/**
+ * The elements SymPy's printers show for a Range (`_print_Range` of the
+ * LaTeX and pretty printers): all of them up to `most` elements (3 in
+ * LaTeX, 4 in the pretty form), else the first two, an ellipsis and the
+ * last one; an infinite end becomes an ellipsis. (A Range here has integer
+ * or infinite start and stop and a stop that is the first value not taken.)
+ */
+export function rangePrintset(e: Expr, most: number): (Expr | typeof DOTS)[] {
+  const [start, stop, step] = [at(e.args, 0), at(e.args, 1), at(e.args, 2)];
+  const int = (x: Expr): bigint => (x instanceof Rational ? x.p : 0n);
+  const [a, b, d] = [int(start), int(stop), int(step)];
+  const num = (v: bigint) => Rational.of(v);
+  if (start instanceof Special && stop instanceof Special) return d > 0n ? [DOTS, num(-1n), num(0n), num(1n), DOTS] : [DOTS, num(1n), num(0n), num(-1n), DOTS];
+  if (start instanceof Special) return [DOTS, num(b - 2n * d), num(b - d)];
+  if (stop instanceof Special) return [start, num(a + d), DOTS];
+  const size = (b - a) / d;
+  if (size <= BigInt(most)) return Array.from({ length: Number(size) }, (_, k) => num(a + BigInt(k) * d));
+  return [start, num(a + d), DOTS, num(b - d)];
 }

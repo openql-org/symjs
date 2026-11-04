@@ -73,19 +73,19 @@ describe('mpf primitives', () => {
     expect(F.bitLength(-5n)).toBe(3);
     expect(F.bitLength(0n)).toBe(0);
     expect(F.fromInt(0n)).toEqual(F.ZERO);
-    expect(F.fromInt(12n)).toEqual({ man: 3n, exp: 2 });
+    expect(F.fromInt(12n)).toEqual({ man: 3n, exp: 2n });
     // mpmath from_int(13, 2) = (0, 3, 2, 2)
-    expect(F.fromInt(13n, 2)).toEqual({ man: 3n, exp: 2 });
+    expect(F.fromInt(13n, 2)).toEqual({ man: 3n, exp: 2n });
     expect(() => F.fromNumber(Infinity)).toThrow(RangeError);
     expect(F.toStr(F.fromNumber(5e-324), 20)).toBe('4.9406564584124654418e-324');
-    expect(F.fromNumber(-0.75)).toEqual({ man: -3n, exp: -2 });
-    expect(F.fromRational(1n, -4n, P)).toEqual({ man: -1n, exp: -2 });
+    expect(F.fromNumber(-0.75)).toEqual({ man: -3n, exp: -2n });
+    expect(F.fromRational(1n, -4n, P)).toEqual({ man: -1n, exp: -2n });
     expect(F.fromRational(0n, 3n, P)).toEqual(F.ZERO);
   });
   it('division, roots and powers', () => {
     expect(() => F.div(F.ONE, F.ZERO, P)).toThrow(RangeError);
     expect(F.div(F.ZERO, F.ONE, P)).toEqual(F.ZERO);
-    expect(F.div(F.fromInt(-3n), F.fromInt(4n), P)).toEqual({ man: -3n, exp: -2 });
+    expect(F.div(F.fromInt(-3n), F.fromInt(4n), P)).toEqual({ man: -3n, exp: -2n });
     expect(() => F.isqrt(-1n)).toThrow(RangeError);
     expect([F.isqrt(0n), F.isqrt(1n), F.isqrt(99n)]).toEqual([0n, 1n, 9n]);
     expect(() => F.sqrt(F.fromInt(-1n), P)).toThrow(RangeError);
@@ -93,10 +93,10 @@ describe('mpf primitives', () => {
     expect(F.powInt(r('1.5'), 0n, P)).toEqual(F.ONE);
     expect(F.toStr(F.powInt(r('1.5'), -3n, P), 30)).toBe('0.296296296296296296296296296296');
     expect(F.toStr(F.powInt(r('1.1'), 10000n, P), 30)).toBe('8.44990025120034795728149042687e+413');
-    expect(F.toFixed({ man: 5n, exp: -4 }, 2)).toBe(1n);
-    expect(F.toFixed({ man: 5n, exp: 1 }, 2)).toBe(40n);
-    expect(F.fromFixed(12n, 2)).toEqual({ man: 3n, exp: 0 });
-    expect(F.fromFixed(13n, 2, 2)).toEqual({ man: 3n, exp: 0 });
+    expect(F.toFixed({ man: 5n, exp: -4n }, 2)).toBe(1n);
+    expect(F.toFixed({ man: 5n, exp: 1n }, 2)).toBe(40n);
+    expect(F.fromFixed(12n, 2)).toEqual({ man: 3n, exp: 0n });
+    expect(F.fromFixed(13n, 2, 2)).toEqual({ man: 3n, exp: 0n });
   });
   it('parses literals', () => {
     expect(F.toStr(F.fromStr('1/3', P), 30)).toBe('0.333333333333333333333333333333');
@@ -140,5 +140,50 @@ describe('mpf toStr (mpmath to_str)', () => {
       ['0.6', '0.e+0'],
     ];
     for (const [x, want] of cases) expect([x, F.floatToString(F.fromStr(x, 3), 3, true)]).toEqual([x, want]);
+  });
+});
+
+describe('unbounded exponents (bigint, as mpmath)', () => {
+  it('parses and prints huge and tiny magnitudes like mpmath from_str and to_str', () => {
+    // mpmath from_str(s, prec): (man, exp) and to_str(., prec // 3)
+    const cases: [string, number, bigint, bigint, string][] = [
+      ['1e100000000000000000000', 53, 4604426664818577n, 332192809488736234735n, '1.0e+100000000000000000000'],
+      ['1e100000000000000000000', 170, 765041603426927717286857441142517843754449216400305n, 332192809488736234618n, '1.0000000000000000000000000000000000000000000000000000274e+100000000000000000000'],
+      ['1.5e-100000000000000000000', 53, 3303735363833431n, -332192809488736234838n, '1.5e-100000000000000000000'],
+      ['3e401', 53, 7206042333600959n, 1281n, '2.9999999999999999e+401'],
+      ['7e-401', 170, 1227613173865191356166965578609830029773340555811579n, -1499n, '6.9999999999999999999999999999999999999999999999999999496e-401'],
+      ['123.456e-500', 53, 8906658483011729n, -1707n, '1.2345599999999999e-498'],
+    ];
+    for (const [s, p, man, exp, str] of cases) {
+      const v = F.fromStr(s, p);
+      expect([v.man, v.exp, F.toStr(v, Math.floor(p / 3))]).toEqual([man, exp, str]);
+    }
+    expect(F.toStr(F.fromStr('3e1000', 53), 15)).toBe('3.0e+1000');
+    expect(F.toStr(F.fromStr('3e-1000', 53), 15)).toBe('3.0e-1000');
+    expect(F.toStr(F.fromStr('-7e-400000000000000000001', 53), 15)).toBe('-7.0e-400000000000000000001');
+  });
+  it('compares, multiplies and converts without shifting by the exponent', () => {
+    const x = F.fromStr('1e100000000000000000000', 53);
+    const y = F.fromStr('2e100000000000000000000', 53);
+    // mpmath mpf_cmp: -1, 1, 0; mpf_mul(x, y) = 2.0e+200000000000000000000
+    expect([F.cmp(x, y), F.cmp(y, x), F.cmp(x, x), F.cmp(F.neg(x), y), F.cmp(F.ZERO, y), F.cmp(F.neg(y), F.neg(x))]).toEqual([-1, 1, 0, -1, -1, -1]);
+    expect(F.toStr(F.mul(x, y, 53), 15)).toBe('2.0e+200000000000000000000');
+    expect(F.magExact(x)).toBe(332192809488736234788n);
+    expect(F.mag(F.ldexp(F.ONE, 10n ** 30n))).toBe(1e30 + 1);
+    // mpmath to_float: inf and -0.0
+    expect(F.toNumber(x)).toBe(Infinity);
+    expect(F.toNumber(F.neg(x))).toBe(-Infinity);
+    expect(Object.is(F.toNumber(F.neg(F.fromStr('1e-100000000000000000000', 53))), -0)).toBe(true);
+    // the sum with a far smaller term keeps the larger one (no shift by 2**66 bits)
+    expect(F.add(x, F.ONE, 53)).toEqual(x);
+  });
+  it('bit lengths of small, medium and beyond-double integers', () => {
+    const ref = (n: bigint): number => (n === 0n ? 0 : (n < 0n ? -n : n).toString(2).length);
+    for (const k of [0, 1, 31, 32, 33, 52, 53, 54, 63, 64, 65, 100, 1023, 1024, 1025, 3000]) {
+      for (const d of [-1n, 0n, 1n]) {
+        const n = (1n << BigInt(k)) + d;
+        expect([k, d, F.bitLength(n), F.bitLength(-n)]).toEqual([k, d, ref(n), ref(n)]);
+      }
+    }
   });
 });

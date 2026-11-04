@@ -323,6 +323,16 @@ const ATOMS: Readonly<Record<string, string>> = {
 };
 
 /**
+ * SymPy `annotated(letter)`: the picture of the F of hyper or the G of
+ * meijerg, as (size, top, bottom, add, picture). The picture has `size`
+ * lines; `top` and `bottom` lines of it belong above and below.
+ */
+export function annotated(letter: 'F' | 'G'): [number, number, number, number, string] {
+  if (state.useUnicode) return letter === 'F' ? [2, 0, 2, 0, '┌─\n├─\n╵'] : [3, 0, 3, 1, '╭─╮\n│╶┐\n╰─╯'];
+  return letter === 'F' ? [3, 0, 3, 0, ' _\n|_\n|\n'] : [3, 0, 3, 1, ' __\n/__\n\\_|'];
+}
+
+/**
  * SymPy `pretty_atom(atom_name, default)`: the unicode form of an atom, or
  * `fallback` in ASCII mode. Undefined when there is no form (SymPy raises
  * KeyError and the printer falls back to the str form).

@@ -33,6 +33,17 @@ export class PrecisionExhausted extends Error {
   }
 }
 
+/**
+ * A numerical evaluation that SymPy reports with a ValueError from mpmath (hypercomb() not
+ * converging at a pole of its Gamma factors, ...). Unlike other failures, evalf passes it on.
+ */
+export class EvalfValueError extends RangeError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValueError';
+  }
+}
+
 /** @internal Global error settings (SymPy _errdict). */
 export const errorSettings = { divide: false };
 

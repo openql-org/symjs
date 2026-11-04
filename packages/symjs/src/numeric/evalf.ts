@@ -32,7 +32,8 @@ import {
   impl,
 } from '../core/nodes';
 import { at } from '../core/guard';
-import { mul, sympify } from '../core/ops';
+import { EvalfValueError } from '../core/errors';
+import { add, mul, sympify } from '../core/ops';
 import { rebuild } from '../core/traverse';
 import {
   c,
@@ -56,7 +57,7 @@ import {
 } from './complex';
 import * as F from './mpf';
 import { dpsToPrec } from './mpf';
-import { type Mpc, evalAdaptive, fromMpc, setDoubleFallback } from './mpeval';
+import { type Mpc, type MpPart, MpSpecialValue, evalAdaptive, fromMpc } from './mpeval';
 
 type Compiled = (env: readonly C[]) => C;
 
@@ -233,6 +234,14 @@ const isZeroNumber = (args: readonly Expr[]): boolean => {
   return args.length === 1 && (a instanceof Rational || a instanceof Float) && a.isZero;
 };
 
+/** SymPy Float._new of an mpmath component: finf -> oo, fninf -> -oo, fnan -> nan, zero -> 0. */
+function specialPart(p: MpPart, prec: number): Expr {
+  if (p === 'inf') return S.Infinity;
+  if (p === '-inf') return S.NegativeInfinity;
+  if (p === 'nan') return S.NaN;
+  return F.isZero(p) ? S.Zero : new Float(p, prec);
+}
+
 /** evalf at a binary precision. */
 export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: boolean | number): Expr {
   const raw = makeRawLookup(values);
@@ -251,14 +260,18 @@ export function evalfPrec(e: Expr, prec: number, values?: NumericValues, chop?: 
     const visit = (y: Expr) => {
       if (y instanceof ExtensionExpr && y.numericValue(5) !== undefined) return;
       if (y instanceof Sym && look(y, prec) === undefined) ok = false;
-      else if (y instanceof Special || y instanceof Rel || y instanceof BoolAtom) ok = false;
+      else if ((y instanceof Special && y.name === 'zoo') || y instanceof Rel || y instanceof BoolAtom) ok = false;
       else y.args.forEach(visit);
     };
     visit(x);
     if (!ok) return undefined;
     try {
       return fromMpc(evalAdaptive(x, prec, look), prec, chop);
-    } catch {
+    } catch (err) {
+      // (SymPy raises the ValueError of mpmath)
+      if (err instanceof EvalfValueError) throw err;
+      // mpmath's inf and nan (SymPy _from_mpmath: Float._new(re) + Float._new(im)*I)
+      if (err instanceof MpSpecialValue) return add(specialPart(err.re, prec), mul(specialPart(err.im, prec), S.I));
       // not numerically evaluable
       return undefined;
     }
@@ -349,14 +362,5 @@ export function lambdify(ex: ExprLike, params: readonly Sym[]): (...args: (numbe
 }
 
 impl.evalf = evalf;
-
-setDoubleFallback((name, args) => {
-  const fns: Partial<Record<string, (args: C[]) => C>> = numericFns;
-  const f = fns[name];
-  if (!f) return undefined;
-  const r = f(args.map((a) => c(F.toNumber(a[0]), F.toNumber(a[1]))));
-  if (!Number.isFinite(r.re) || !Number.isFinite(r.im)) throw new RangeError('non-finite');
-  return [F.fromNumber(r.re), F.fromNumber(r.im)];
-});
 
 impl.toComplex = toComplex;

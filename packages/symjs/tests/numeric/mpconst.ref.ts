@@ -253,5 +253,5 @@ export const sha256 = (s: string): string => createHash('sha256').update(s).dige
 /** [hex mantissa (or its SHA-256 above 2029 bits), exponent] of an mpf, as in REF. */
 export function refForm(v: F.Mpf, prec: number): [string, number] {
   const h = v.man.toString(16);
-  return [prec > 2029 ? sha256(h) : h, v.exp];
+  return [prec > 2029 ? sha256(h) : h, Number(v.exp)];
 }

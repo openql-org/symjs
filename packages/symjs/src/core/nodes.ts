@@ -73,6 +73,7 @@ export interface Assumptions {
   readonly real?: boolean;
   readonly positive?: boolean;
   readonly nonnegative?: boolean;
+  /** true for an integer symbol; false for a symbol known not to be an integer (SymPy integer=False). */
   readonly integer?: boolean;
   readonly negative?: boolean;
   readonly nonpositive?: boolean;
@@ -80,7 +81,11 @@ export interface Assumptions {
   readonly commutative?: boolean;
   /** a point on the Riemann surface of the logarithm (SymPy polar=True). */
   readonly polar?: boolean;
-  /** false for a symbol known to be nonzero (SymPy zero=False); implied by positive and negative. */
+  /**
+   * false for a symbol known to be nonzero (SymPy zero=False), implied by positive, negative and
+   * integer=false; true for a symbol known to be zero (SymPy zero=True), which implies integer,
+   * nonnegative and nonpositive.
+   */
   readonly zero?: boolean;
 }
 
@@ -196,7 +201,42 @@ export type SpecialFnName =
   | 'Rem'
   | 'jn'
   | 'yn'
-  | 'KroneckerDelta';
+  | 'hankel1'
+  | 'hankel2'
+  | 'hn1'
+  | 'hn2'
+  | 'marcumq'
+  | 'Ynm'
+  | 'Znm'
+  | 'mathieus'
+  | 'mathieuc'
+  | 'mathieusprime'
+  | 'mathieucprime'
+  | 'KroneckerDelta'
+  // zeta functions (functions/zeta.ts), incomplete beta (functions/special.ts), elliptic integrals (functions/elliptic.ts), Appell F1 (functions/hyper.ts)
+  | 'polylog'
+  | 'lerchphi'
+  | 'dirichlet_eta'
+  | 'riemann_xi'
+  | 'stieltjes'
+  | 'betainc'
+  | 'betainc_regularized'
+  | 'elliptic_k'
+  | 'elliptic_e'
+  | 'elliptic_f'
+  | 'elliptic_pi'
+  | 'appellf1'
+  // orthogonal polynomials (functions/polynomials.ts)
+  | 'jacobi'
+  | 'gegenbauer'
+  | 'chebyshevt'
+  | 'chebyshevu'
+  | 'legendre'
+  | 'assoc_legendre'
+  | 'hermite'
+  | 'hermite_prob'
+  | 'laguerre'
+  | 'assoc_laguerre';
 
 /**
  * Late-bound implementations. Filled in by the modules that implement them.
@@ -245,6 +285,13 @@ export interface Impl {
   expandMul?(e: Expr): Expr;
   /** as_real_imag of exp and functions (registered by simplify/expand). */
   asRealImagExpand?(e: Expr): [Expr, Expr];
+  /**
+   * Arithmetic of nodes that define their own operators (SymPy _op_priority,
+   * as Quaternion does; registered by algebras/quaternion): add, mul or pow
+   * of the sympified arguments, or sub of the two operands of a - b, or
+   * undefined for the generic rules.
+   */
+  arithmetic?(op: 'add' | 'sub' | 'mul' | 'pow', args: readonly Expr[]): Expr | undefined;
   /** AccumBounds interval arithmetic (registered by core/accumbounds). */
   accumBounds?: {
     is(e: Expr): boolean;
@@ -258,6 +305,10 @@ export interface Impl {
   emptySet?(): Expr;
   interval?(a: Expr, b: Expr): Expr;
   setIntersection?(a: Expr, b: Expr): Expr;
+  /** A set node rebuilt from new arguments, evaluated (registered by sets/sets). */
+  rebuildSet?: (e: Expr, args: readonly Expr[]) => Expr;
+  /** SymPy Set._eval_subs: a set that binds a variable (ImageSet, ConditionSet) substituted, or undefined for the generic rule. */
+  subsSet?: (e: Expr, old: Expr, nw: Expr, subs: (x: Expr) => Expr) => Expr | undefined;
   /** SymPy factor (set by the polys module). */
   factor?(e: Expr): Expr;
   /** SymPy fraction (registered by simplify/rational). */
@@ -323,7 +374,7 @@ export abstract class Expr {
     return impl.add(this, o);
   }
   sub(o: ExprLike): Expr {
-    return impl.add(this, impl.mul(-1, o));
+    return impl.arithmetic?.('sub', [this, impl.sympify(o)]) ?? impl.add(this, impl.mul(-1, o));
   }
   mul(o: ExprLike): Expr {
     return impl.mul(this, o);
@@ -552,9 +603,11 @@ export class Sym extends Expr {
     }
     const positive = assumptions.positive === true;
     const negative = assumptions.negative === true;
-    const integer = assumptions.integer === true;
-    const nonnegative = positive || assumptions.nonnegative === true;
-    const nonpositive = negative || assumptions.nonpositive === true;
+    // SymPy: zero implies integer, real, nonnegative and nonpositive
+    const zero = assumptions.zero === true && !positive && !negative;
+    const integer = zero || assumptions.integer === true;
+    const nonnegative = zero || positive || assumptions.nonnegative === true;
+    const nonpositive = zero || negative || assumptions.nonpositive === true;
     const real = positive || negative || nonnegative || nonpositive || integer || assumptions.real === true;
     const a: { -readonly [K in keyof Assumptions]: Assumptions[K] } = {};
     if (real) a.real = true;
@@ -563,9 +616,12 @@ export class Sym extends Expr {
     if (negative) a.negative = true;
     if (nonpositive) a.nonpositive = true;
     if (integer) a.integer = true;
+    // SymPy integer=False: is_integer is False, and so is is_zero (zero implies integer)
+    else if (assumptions.integer === false) a.integer = false;
     if (assumptions.commutative === false) a.commutative = false;
     if (assumptions.polar === true) a.polar = true;
-    if (positive || negative || assumptions.zero === false) a.zero = false;
+    if (zero) a.zero = true;
+    else if (positive || negative || a.integer === false || assumptions.zero === false) a.zero = false;
     this.assumptions = Object.freeze(a);
   }
 
@@ -580,7 +636,7 @@ export class Sym extends Expr {
 
   protected computeKey(): string {
     const a = this.assumptions;
-    const flags = `${a.real ? 'r' : ''}${a.nonnegative ? 'n' : ''}${a.positive ? 'p' : ''}${a.integer ? 'i' : ''}${a.negative ? 'N' : ''}${a.nonpositive ? 'P' : ''}${a.commutative === false ? 'c' : ''}${a.polar ? 'o' : ''}${a.zero === false && !a.positive && !a.negative ? 'z' : ''}`;
+    const flags = `${a.real ? 'r' : ''}${a.nonnegative ? 'n' : ''}${a.positive ? 'p' : ''}${a.integer ? 'i' : ''}${a.negative ? 'N' : ''}${a.nonpositive ? 'P' : ''}${a.commutative === false ? 'c' : ''}${a.polar ? 'o' : ''}${a.zero === false && !a.positive && !a.negative && a.integer !== false ? 'z' : ''}${a.zero === true ? 'Z' : ''}${a.integer === false ? 'I' : ''}`;
     return flags ? `$${this.name}[${flags}]` : `$${this.name}`;
   }
 }
@@ -985,6 +1041,30 @@ export abstract class ExtensionExpr extends Expr {
   }
   /** SymPy doit for this node, given its arguments already evaluated; undefined keeps it. */
   doitSelf(): Expr | undefined {
+    return undefined;
+  }
+  /**
+   * SymPy _eval_subs: this node with old replaced by nw, given `subs` that
+   * substitutes in a subexpression; undefined for the generic rule
+   * (substitution in the arguments, then withArgs).
+   */
+  subsSelf(_old: Expr, _nw: Expr, _subs: (e: Expr) => Expr): Expr | undefined {
+    return undefined;
+  }
+  /**
+   * SymPy _eval_Integral: the integral of this node over x (between the
+   * limits when given), given `integrate` for a subexpression; undefined for
+   * the generic integrator.
+   */
+  integrateSelf(_x: Sym, _limits: readonly [Expr, Expr] | undefined, _integrate: (e: Expr) => Expr): Expr | undefined {
+    return undefined;
+  }
+  /**
+   * SymPy simplify of this node, given `simplify` for a subexpression
+   * (SymPy simplifies the arguments of a node that is not an Add, Mul or
+   * Pow); undefined for the generic simplification.
+   */
+  simplifySelf(_simplify: (e: Expr) => Expr): Expr | undefined {
     return undefined;
   }
   /**

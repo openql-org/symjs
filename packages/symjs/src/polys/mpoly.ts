@@ -17,6 +17,8 @@ import { add, mul, pow } from '../core/ops';
 import { expandMul as expand } from '../simplify/expand';
 import { UPoly, polyCoefficients } from './poly';
 import { xreplace } from '../core/traverse';
+import type { ZPoly } from './wang';
+import { wangFactor, zpoly } from './wang';
 
 const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
 
@@ -189,22 +191,29 @@ export function mfactorList(f0: Expr, vars: readonly Expr[], uniFactor: (e: Expr
       for (const [g, m] of fs) push(g, m * k);
       return;
     }
-    // monomial factors and contents
+    // monomial factors
     for (const v of lv) {
-      const cv = contentIn(p, v, lv.filter((u) => u !== v));
-      if (!(cv instanceof Rational) && cv.freeSymbols().size > 0) {
-        rec(cv, k);
-        rec(defined(divExact(p, cv, lv), 'p / content'), k);
-        return;
-      }
       // powers of v dividing every term
-      const pc = coeffsIn(p, v);
-      const low = Math.min(...pc.keys());
+      const low = Math.min(...coeffsIn(p, v).keys());
       if (low > 0) {
         push(v, low * k);
         rec(defined(divExact(p, pow(v, low), lv), 'p / monomial'), k);
         return;
       }
+    }
+    // the content in the main variable (SymPy dmp_primitive): Wang's algorithm needs a primitive polynomial
+    const [x0, ...others] = lv;
+    // (the gcd of the coefficients, the shortest first, stopping at a constant)
+    const cs = [...coeffsIn(p, defined(x0, 'main variable')).values()].sort((u, w) => termCount(u) - termCount(w));
+    let cv: Expr = S.Zero;
+    for (const c of cs) {
+      cv = mgcd(cv, c, others);
+      if (cv instanceof Rational) break;
+    }
+    if (!(cv instanceof Rational)) {
+      rec(cv, k);
+      rec(defined(divExact(p, cv, lv), 'p / content'), k);
+      return;
     }
     // numeric content
     const nc = numericContent(p);
@@ -222,42 +231,22 @@ export function mfactorList(f0: Expr, vars: readonly Expr[], uniFactor: (e: Expr
       for (const [g, i] of sqf) rec(g, k * i);
       return;
     }
-    // quadratic in some variable with a square discriminant
-    for (const v of lv) {
-      if (degreeIn(p, v) !== 2) continue;
-      const pc = coeffsIn(p, v);
-      // the constant term is nonzero: no variable divides p after the loop above
-      const a = getOrThrow(pc, 2);
-      const b = pc.get(1) ?? S.Zero;
-      const c = getOrThrow(pc, 0);
-      const disc = expand(add(pow(b, 2), mul(-4, a, c)));
-      const s = polySqrt(disc, lv, uniFactor);
-      if (s === undefined) continue;
-      // p = (2a v + b - s)(2a v + b + s) / (4a); make both factors primitive
-      const prim = (h: Expr): Expr => {
-        let g = expand(h);
-        const cv = contentIn(g, v, lv.filter((u) => u !== v));
-        g = defined(divExact(g, cv, lv), 'primitive part');
-        const nc = numericContent(g);
-        return expand(mul(g, pow(nc, -1)));
-      };
-      const g1 = prim(add(mul(2, a, v), b, mul(-1, s)));
-      const g2 = prim(add(mul(2, a, v), b, s));
-      // p and g1*g2 are primitive, so (Gauss) they differ by a rational factor
-      const ratio = expectType(divExact(p, expand(mul(g1, g2)), lv), (r): r is Rational => r instanceof Rational, 'quadratic factor ratio');
-      content = numMul(content, powRat(ratio, k));
-      rec(g1, k);
-      rec(g2, k);
-      return;
-    }
-    const q = normalizeSign(p, lv);
-    // keep the sign removed by the normalization in the content
-    if (q.key !== p.key && k % 2 === 1) content = numMul(content, S.NegOne);
-    push(q, k);
+    // irreducible factors over ZZ (Wang's EEZ algorithm) of the primitive square-free p
+    const lcFactor = (lc: ZPoly): [bigint, ZPoly[]] => {
+      const [c, fs] = mfactorList(fromZPoly(lc, lv), lv, uniFactor);
+      return [c.p, fs.map(([g]) => toZPoly(g, lv))];
+    };
+    const gs = wangFactor(toZPoly(p, lv), lv.length, lcFactor).map((g) => normalizeSign(fromZPoly(g, lv), lv));
+    // p and the product of its primitive factors differ by a sign
+    const ratio = expectType(divExact(p, expand(mul(...gs)), lv), (r): r is Rational => r instanceof Rational, 'factor ratio');
+    content = numMul(content, powRat(ratio, k));
+    for (const g of gs) push(g, k);
   };
   rec(f, 1);
   return [content, out];
 }
+
+const termCount = (e: Expr): number => (e instanceof Add ? e.args.length : 1);
 
 /** Derivative of a polynomial in x. */
 function diffIn(e: Expr, x: Expr): Expr {
@@ -293,16 +282,18 @@ function squareFreeParts(p: Expr, vars: readonly Expr[]): [Expr, number][] {
   return out;
 }
 
-/** Square root of a polynomial if it is a perfect square. */
-function polySqrt(e: Expr, vars: readonly Expr[], uniFactor: (e: Expr, x: Expr) => [Rational, [Expr, number][]]): Expr | undefined {
-  if (e instanceof Rational) {
-    const r = pow(e, S.Half);
-    return r instanceof Rational ? r : undefined;
-  }
-  const [c, fs] = mfactorList(e, vars, uniFactor);
-  if (fs.some(([, k]) => k % 2 !== 0)) return undefined;
-  const sc = pow(c, S.Half);
-  if (!(sc instanceof Rational)) return undefined;
-  return expand(mul(sc, ...fs.map(([g, k]) => pow(g, k / 2))));
+/** An expanded polynomial with integer coefficients as a sparse polynomial in vars. */
+function toZPoly(e: Expr, vars: readonly Expr[]): ZPoly {
+  const out: [number[], bigint][] = [];
+  const walk = (c: Expr, i: number, exps: number[]): void => {
+    if (i === vars.length) {
+      out.push([exps, expectType(c, (r): r is Rational => r instanceof Rational && r.q === 1n, 'integer coefficient').p]);
+      return;
+    }
+    for (const [k, ci] of coeffsIn(c, at(vars, i))) walk(ci, i + 1, [...exps, k]);
+  };
+  walk(e, 0, []);
+  return zpoly(out);
 }
 
+const fromZPoly = (f: ZPoly, vars: readonly Expr[]): Expr => add(...[...f.values()].map((t) => mul(Rational.of(t.c), ...vars.map((v, i) => pow(v, at(t.e, i))))));

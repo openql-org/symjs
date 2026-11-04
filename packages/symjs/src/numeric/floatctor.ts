@@ -7,7 +7,7 @@
  */
 
 import type { Expr } from '../core/nodes';
-import { Float, Rational, S, Special } from '../core/nodes';
+import { Constant, Float, Rational, S, Special } from '../core/nodes';
 import { defined, first } from '../core/guard';
 import * as F from './mpf';
 import { evalAdaptive } from './mpeval';
@@ -57,7 +57,11 @@ export function float(num: number | bigint | string | Expr, dpsIn?: number | '',
     if (n === -Infinity) return S.NegativeInfinity;
     if (n === 0) n = '0';
   } else if (n instanceof Special) {
+    if (n.name === 'zoo') throw new TypeError('cannot create mpf from zoo');
     return n;
+  } else if (!(n instanceof Rational || n instanceof Float || (n instanceof Constant && n.name !== 'I'))) {
+    // SymPy Float takes numbers and number symbols (pi, E, ...), not expressions such as sqrt(2) or 2*pi
+    throw new TypeError(`cannot create mpf from ${n.toString()}`);
   }
   if (dps === undefined && precision === undefined) {
     dps = 15;
@@ -84,10 +88,6 @@ export function float(num: number | bigint | string | Expr, dpsIn?: number | '',
   else if (typeof n === 'string') mpf = F.fromStr(n, prec);
   else if (n instanceof Rational) mpf = F.fromRational(n.p, n.q, prec);
   else if (n instanceof Float) mpf = F.round(n.mpf, prec);
-  else {
-    const v = evalAdaptive(n, prec);
-    if (!F.isZero(v[1])) throw new TypeError('Float: the value is not real');
-    mpf = v[0];
-  }
+  else mpf = evalAdaptive(n, prec)[0];
   return new Float(mpf, prec);
 }

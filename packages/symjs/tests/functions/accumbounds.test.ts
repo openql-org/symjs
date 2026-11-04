@@ -51,11 +51,12 @@ describe('functions of an AccumBounds argument', () => {
     expect(toStr(sj.csc(A(1, 2)))).toBe('AccumBounds(1, 1/sin(1))');
     expect(toStr(sj.cot(A(1, 2)))).toBe('AccumBounds(cot(2), cot(1))');
   });
-  it('maps decreasing functions', () => {
-    // SymPy leaves acos(AccumBounds(0, 1)) and acot(AccumBounds(1, 2)) unevaluated; both functions are
-    // decreasing, so the images AccumBounds(acos(1), acos(0)) and AccumBounds(acot(2), acot(1)) are given here
-    expect(toStr(sj.acos(A(0, 1)))).toBe('AccumBounds(0, pi/2)');
-    expect(toStr(sj.acot(A(1, 2)))).toBe('AccumBounds(acot(2), pi/4)');
+  it('leaves the other monotone functions unevaluated, as SymPy', () => {
+    expect(toStr(sj.acos(A(0, 1)))).toBe('acos(AccumBounds(0, 1))');
+    expect(toStr(sj.acot(A(1, 2)))).toBe('acot(AccumBounds(1, 2))');
+    expect(toStr(sj.atan(A(0, 1)))).toBe('atan(AccumBounds(0, 1))');
+    expect(toStr(sj.sinh(A(0, 1)))).toBe('sinh(AccumBounds(0, 1))');
+    expect(toStr(sj.erf(A(0, 1)))).toBe('erf(AccumBounds(0, 1))');
   });
   it('leaves other functions unevaluated', () => {
     // SymPy: cosh(AccumBounds(1, 2)) stays

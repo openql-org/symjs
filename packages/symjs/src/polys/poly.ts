@@ -9,13 +9,14 @@ import { NotImplementedError, PolynomialError } from '../core/errors';
 import { isNegative, isNonZero, isPositive, isReal } from '../core/assumptions';
 import { Eq, piecewise } from '../core/logic';
 import { ExprMap } from '../core/exprmap';
-import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Add, Dummy, Mul, Pow, Rational, S, compareExpr, impl } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Add, Dummy, Mul, Pow, Rational, S, Sym, compareExpr, impl } from '../core/nodes';
 import { zassenhaus } from './zassenhaus';
 import { numCmp } from '../core/num';
-import { at, defined, first, getOrThrow, last } from '../core/guard';
+import { at, defined, expectType, first, getOrThrow, last } from '../core/guard';
 import { countOps, ordered } from '../core/match';
-import { gcd as gcdBig, lcm } from '../core/numbers';
+import { gcd as gcdBig, iroot, lcm } from '../core/numbers';
+import { divisors } from '../ntheory/factor';
 import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import { expand as expandHints, expandMul as expand } from '../simplify/expand';
@@ -378,6 +379,12 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
   // SymPy lists the roots at zero last
   const zeros: Expr[] = Array.from({ length: low }, () => S.Zero);
   const effDeg = deg - low;
+  // SymPy preprocess_roots: x -> c*x removes symbols from the coefficients (x**3 - a**3 -> a*roots(x**3 - 1))
+  const pre = preprocessRoots(new Map([...coeffs].map(([k, v]) => [k - low, v] as const)));
+  if (pre) {
+    const [c, q] = pre;
+    return [...roots(add(...[...q].map(([k, v]) => mul(v, pow(x, k)))), x, opts).map((r) => mul(c, r)), ...zeros];
+  }
   // SymPy roots(): a polynomial that factors over its coefficient ring is solved factor by factor
   if (coeffs.size > 2 && effDeg > 1) {
     const split = splitFactors(add(...[...coeffs].map(([k, v]) => mul(v, pow(x, k - low)))), x);
@@ -450,7 +457,7 @@ function symbolicQuarticRoots(a: Expr, b: Expr, c: Expr, d: Expr, opts: { skipQu
     const [y1, y2] = rootsOf([S.One, e, g]).map((t) => sqrt(t));
     return shift([neg(defined(y1, 'root')), neg(defined(y2, 'root')), defined(y1, 'root'), defined(y2, 'root')]);
   }
-  if (isZeroE(g)) return shift([S.Zero, ...rootsOf([S.One, S.Zero, e, f])]);
+  // (g = 0 gives the root -a/4, which factor() splits off before)
   // Descartes-Euler: a rational nonzero root R of 64*R**3 + 32*e*R**2 + (4*e**2 - 16*g)*R - f**2
   const res = [Rational.of(64), mul(32, e), expand(add(mul(4, pow(e, 2)), mul(-16, g))), expand(neg(pow(f, 2)))];
   if (res.every((k) => k instanceof Rational)) {
@@ -572,6 +579,82 @@ function splitFactors(e: Expr, x: Sym): [Expr, number][] | undefined {
   return out.length > 1 || (out.length === 1 && at(out, 0)[1] > 1) ? out : undefined;
 }
 
+/**
+ * SymPy preprocess_roots for coefficients that are monomials in symbols: each symbol a whose
+ * exponents are a fixed multiple r of the degrees in x (reversed when they grow towards the
+ * constant term) is set to 1, and the roots are scaled by a**(-r). [scale, new coefficients] or
+ * undefined when no symbol is removed.
+ */
+function preprocessRoots(coeffs: ReadonlyMap<number, Expr>): [Expr, Map<number, Expr>] | undefined {
+  // the terms by decreasing degree in x, each as [numeric coefficient, symbol -> exponent]
+  const terms: [number, Map<Sym, number>][] = [];
+  for (const [k, c] of [...coeffs].sort((u, v) => v[0] - u[0])) {
+    const exps = new Map<Sym, number>();
+    for (const f of c instanceof Mul ? c.args : [c]) {
+      if (f instanceof Rational) continue;
+      const [b, e] = f instanceof Pow ? [f.base, f.exp] : [f, S.One];
+      if (!(b instanceof Sym && e instanceof Rational && e.isInteger && e.isPositive)) return undefined;
+      exps.set(b, Number(e.p));
+    }
+    terms.push([k, exps]);
+  }
+  const gens = new Set(terms.flatMap(([, m]) => [...m.keys()]));
+  let scale: Expr = S.One;
+  const removed: Sym[] = [];
+  for (const g of gens) {
+    let strip = terms.map(([, m]) => m.get(g) ?? 0);
+    const reverse = first(strip) < last(strip);
+    if (reverse) strip = strip.reverse();
+    let ratio: number | undefined;
+    let ok = true;
+    for (const [i, [a]] of terms.entries()) {
+      const b = at(strip, i);
+      if (!a && !b) continue;
+      if (!a || !b || b % a !== 0 || (ratio !== undefined && ratio !== b / a)) {
+        ok = false;
+        break;
+      }
+      ratio = b / a;
+    }
+    if (!ok || ratio === undefined) continue;
+    scale = mul(scale, pow(g, reverse ? ratio : -ratio));
+    removed.push(g);
+  }
+  if (!removed.length) return undefined;
+  const rest = new Map([...coeffs].map(([k, c]) => [k, xreplaceOnes(c, removed)] as const));
+  if (![...rest.values()].every((c) => c instanceof Rational && c.isInteger)) return [scale, rest];
+  // SymPy _integer_basis on the primitive integer polynomial: x -> div*x makes the coefficients smaller
+  const ints = new Map([...rest].map(([k, c]) => [k, expectRational(c).p] as const));
+  const g = [...ints.values()].reduce((u, v) => gcdBig(u, v), 0n);
+  const prim = new Map([...ints].map(([k, c]) => [k, c / g] as const));
+  const div = integerBasis(prim);
+  if (div === undefined) return [scale, rest];
+  const n = Math.max(...prim.keys());
+  return [mul(scale, Rational.of(div)), new Map([...prim].map(([k, c]) => [k, Rational.of(c / div ** BigInt(n - k))] as const))];
+}
+
+const expectRational = (c: Expr): Rational => expectType(c, (r): r is Rational => r instanceof Rational, 'integer coefficient');
+
+/** SymPy _integer_basis: div with p(div*y) = m*q(y) and smaller coefficients in q, for a primitive integer polynomial. */
+function integerBasis(cs: ReadonlyMap<number, bigint>): bigint | undefined {
+  const terms = [...cs].sort((u, v) => v[0] - u[0]);
+  const babs = (c: bigint): bigint => (c < 0n ? -c : c);
+  if (babs(first(terms)[1]) >= babs(last(terms)[1])) return undefined;
+  const n = first(terms)[0];
+  // from the constant term up, without the leading term: [n - degree, |coefficient|]
+  const rev = terms.reverse().slice(0, -1).map(([k, c]): [number, bigint] => [n - k, babs(c)]);
+  if (rev.length === 1) {
+    const [m, c] = first(rev);
+    const r = iroot(c, BigInt(m));
+    return r ** BigInt(m) === c ? r : undefined;
+  }
+  const divs = divisors(rev.reduce((u, [, c]) => gcdBig(u, c), 0n)).slice(1).reverse();
+  return divs.find((d) => rev.every(([m, c]) => c % d ** BigInt(m) === 0n));
+}
+
+/** c with the given symbols set to 1. */
+const xreplaceOnes = (c: Expr, syms: readonly Sym[]): Expr => syms.reduce((e, s) => e.subs(s, S.One), c);
+
 /** SymPy roots_binomial for x**n + c with a symbolic c (in SymPy's order). */
 function symbolicBinomialRoots(c: Expr, n: number): Expr[] {
   const base = neg(c);
@@ -612,19 +695,15 @@ function quadraticRootsEX(a: Expr, b: Expr, c: Expr): [Expr, Expr] {
 /** SymPy roots_cubic (Cardano) for the monic x**3 + a*x**2 + b*x + c with symbolic coefficients. */
 function symbolicCubicRoots(a: Expr, b: Expr, c: Expr): Expr[] {
   const third = Rational.of(1n, 3n);
-  // (expanded: a cubic with the root -a/3 that factor() does not split has q = 0)
+  // (expanded; q = 0 gives the root -a/3, which factor() splits off before)
   const p = expand(add(b, mul(-1, pow(a, 2), third)));
   const q = expand(add(c, mul(-1, a, b, third), mul(2, pow(a, 3), Rational.of(1n, 27n))));
   const coeff = mul(S.I, sqrt(3), Rational.of(1n, 2n));
   const uks = [S.One, add(Rational.of(-1n, 2n), coeff), add(Rational.of(-1n, 2n), neg(coeff))];
-  if (isZeroE(p) || isZeroE(q) || (isReal(q) === true && isNegative(q) === true)) {
-    // the cases with u1 (SymPy): x**3 + a*x**2 + ... with p = 0, q = 0 or q < 0
+  if (isZeroE(p) || (isReal(q) === true && isNegative(q) === true)) {
+    // the cases with u1 (SymPy): x**3 + a*x**2 + ... with p = 0 or q < 0
     const pon3 = mul(p, third);
     const aon3 = mul(a, third);
-    if (isZeroE(q)) {
-      const r = sqrtRemoveSquares(neg(p));
-      return [neg(r), S.Zero, r].map((t) => add(t, neg(aon3)));
-    }
     const u1 = isZeroE(p)
       ? isPositive(q) === true
         ? neg(pow(q, third))

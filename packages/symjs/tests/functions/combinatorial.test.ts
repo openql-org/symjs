@@ -250,9 +250,10 @@ describe('combinatorial: cases outside the table', () => {
     expect(String(P('mobius(m**2)'))).toBe('mobius(m**2)');
     expect(String(P('mobius(3*m)'))).toBe('mobius(3*m)');
   });
-  it('fibonacci(0, x) is the zero polynomial', () => {
-    // SymPy raises ValueError for the index 0 of the Fibonacci polynomials
-    expect(String(P('fibonacci(0, x)'))).toBe('0');
+  it('fibonacci(0, x) is an error', () => {
+    // SymPy raises ValueError for the index 0 of the Fibonacci polynomials (the number fibonacci(0) is 0)
+    expect(() => P('fibonacci(0, x)')).toThrow('Fibonacci polynomials are defined only for positive integer indices.');
+    expect(String(P('fibonacci(0)'))).toBe('0');
   });
   it('Jacobi, Kronecker and Legendre symbols', () => {
     // SymPy jacobi_symbol / kronecker_symbol / legendre_symbol
@@ -317,11 +318,13 @@ describe('combinatorial numbers and polynomials', () => {
     expect(() => multigamma(x, S.Half)).toThrow(RangeError);
     expect(() => multigamma(x, -1)).toThrow(RangeError);
   });
-  it('mobius of a product with a negative integer factor', () => {
-    // SymPy leaves mobius(-4*n) unevaluated for a negative integer n; -4*n = 4*|n| has the
-    // square factor 4, so 0 is the correct value
+  it('mobius of a product with a factor that is not a positive integer', () => {
+    // SymPy leaves mobius(-4*n) unevaluated for a negative integer n (the factor -4 is negative)
     const n = new Sym('n', { integer: true, negative: true });
-    expect(String(mobius(mul(-4, n)))).toBe('0');
+    expect(String(mobius(mul(-4, n)))).toBe('mobius(-4*n)');
+    // 4*x is a positive integer for x = 1/2, where mobius(2) = -1: unevaluated (SymPy too)
+    const xp = new Sym('x', { positive: true });
+    expect(String(mobius(mul(4, xp)))).toBe('mobius(4*x)');
   });
   it('indices beyond the evaluation limit stay unevaluated', () => {
     // SymPy computes these (a degree-5001 polynomial and 5000-digit numbers); symjs keeps

@@ -5,7 +5,7 @@
 // SymPy 1.14 (str(e.evalf(15)), str(e.evalf(50))).
 
 import { describe, expect, it } from 'vitest';
-import { evalf, parse, sstr } from '../../src';
+import { Rational, add, evalf, I, jn, parse, sstr, yn } from '../../src';
 import * as F from '../../src/numeric/mpf';
 import type { Mpc } from '../../src/numeric/mpfun';
 import { mpFns } from '../../src/numeric/mpeval';
@@ -58,8 +58,70 @@ describe('evaluators registered for functions symjs does not define yet', () => 
     // mpmath ellipk(0.5), ellipe(0.5)
     expect(call('elliptic_k', [half], 15)).toEqual(['1.85407467730137', '0.0']);
     expect(call('elliptic_e', [half], 15)).toEqual(['1.35064388104768', '0.0']);
-    // mpmath ellipe(0.5, 0.5); SymPy evaluates dirichlet_eta(s, a), not implemented here
+    // mpmath ellipe(0.5, 0.5); dirichlet_eta(s, a) = zeta(s, a) - 2**(1 - s)*zeta(s, (a + 1)/2) as SymPy
+    // evaluates it (functions/zeta.ts): mpmath zeta(0.5, 0.5) - sqrt(2)*zeta(0.5, 0.75) = 0.9442583142382
     expect(call('elliptic_e', [half, half], 15)).toEqual(['0.489910959792517', '0.0']);
-    expect(() => call('dirichlet_eta', [half, half], 15)).toThrow('dirichlet_eta(s, a)');
+    expect(call('dirichlet_eta', [half, half], 13)).toEqual(['0.9442583142382', '0.0']);
+  });
+});
+
+describe('arbitrary-precision kernels of functions that had double-precision values only', () => {
+  const ev = (e: string, d = 15, subs?: Record<string, string>) =>
+    sstr(evalf(parse(e), d, subs ? { subs: Object.fromEntries(Object.entries(subs).map(([k, v]) => [k, parse(v)])) } : undefined));
+  it('ff, rf and floor/ceiling equal SymPy at 15 and 50 digits', () => {
+    // SymPy N(ff(1/3, 1/7)), N(rf(1/3, 1/7)), N(rf(1 + 2*I, 1/3), 50); poles: rf(1/2, -1/2) = oo, rf(-2, 1/2) = 0
+    expect([ev('ff(1/3,1/7)'), ev('ff(1/3,1/7)', 50)]).toEqual(['0.969836281200561', '0.96983628120056115868800462041223595166465318989283']);
+    expect([ev('rf(1/3,1/7)'), ev('rf(1/3,1/7)', 50)]).toEqual(['0.694288639004937', '0.69428863900493693903220918313837119649232477350338']);
+    expect(ev('rf(1+2*I,1/3)', 50)).toBe('1.1709915795383513625101243998512965184443524695337 + 0.515324519075601473115623769077319168260837934663*I');
+    expect([ev('rf(1/2,-1/2)'), ev('rf(-2,1/2)'), ev('ff(5/2,7/2)'), ev('ff(-3,5/2)')]).toEqual(['oo', '0', '0', 'oo']);
+    // SymPy floor(x).evalf(subs={x: exp(100) + 1/3}) and N(floor(exp(100) + 1/3), 50) (an integer there)
+    expect(ev('floor(x)', 50, { x: 'exp(100) + 1/3' })).toBe('26881171418161354484126255515800135873611119.000000');
+    expect(ev('ceiling(x)', 50, { x: 'exp(100) + 1/3' })).toBe('26881171418161354484126255515800135873611120.000000');
+    expect(ev('ceiling(x)', 50, { x: '-pi' })).toBe('-3.0000000000000000000000000000000000000000000000000');
+  });
+  it('Min and Max of real numbers at full precision', () => {
+    // SymPy Max(x, exp(-200)).evalf(subs={x: 1/3}), Max(x, 1).evalf(50, subs={x: pi}), Min(x, sqrt(2)).evalf(30, subs={x: 7/5})
+    expect(ev('Max(x, exp(-200))', 15, { x: '1/3' })).toBe('0.333333333333333');
+    expect(ev('Max(x, 1)', 50, { x: 'pi' })).toBe('3.1415926535897932384626433832795028841971693993751');
+    expect(ev('Min(x, sqrt(2))', 30, { x: '7/5' })).toBe('1.40000000000000000000000000000');
+    const f = mpFns['Max'];
+    if (!f) throw new TypeError('Max');
+    expect(() => f([[F.ONE, F.ONE], [F.ONE, F.ZERO]], 53)).toThrow(TypeError);
+  });
+  it('the kernels of rf (poles cancelling), factorial2 and erf2inv equal mpmath', () => {
+    const k = (name: string, args: [string, string][], d: number): string[] => {
+      const f = mpFns[name];
+      if (!f) throw new TypeError(name);
+      const p = F.dpsToPrec(d);
+      const r = f(args.map(([a, b]) => [F.fromStr(a, p), F.fromStr(b, p)] as Mpc), p);
+      return [F.toStr(r[0], d), F.toStr(r[1], d)];
+    };
+    // mpmath rf(-3, -2) = 0.05, rf(-3, -1) = -0.25 (gammaprod: the poles cancel in pairs)
+    expect(k('rf', [['-3', '0'], ['-2', '0']], 15)).toEqual(['0.05', '0.0']);
+    expect(k('rf', [['-3', '0'], ['-1', '0']], 15)).toEqual(['-0.25', '0.0']);
+    // mpmath fac2(1/3), fac2(2.5 + 1j), fac2(7)
+    expect(k('factorial2', [['0.333333333333333333333333333333333333333333333333333333333333', '0']], 50)).toEqual(['0.98417717502560779229558551308467488520764943993939', '0.0']);
+    expect(k('factorial2', [['2.5', '1']], 50)).toEqual(['1.7684872940073224591553381746441104604250567971844', '-1.386061903492397069215928277193751635778688198088']);
+    expect(k('factorial2', [['7', '0']], 15)).toEqual(['105.0', '0.0']);
+    // mpmath erfinv(erf(1/3) + 1/2); SymPy leaves erf2inv unevaluated (it has no mpmath function)
+    expect(ev('erf2inv(1/3, 1/2)', 50)).toBe('1.0505661875336908676385301100272178163792888904188');
+    expect(() => k('erf2inv', [['0', '1'], ['0', '0']], 15)).toThrow('complex erf2inv');
+    expect(() => k('erf2inv', [['0', '0'], ['1', '0']], 15)).toThrow(RangeError);
+    // erfcinv(3): 1 - 3 is outside the domain of erfinv
+    expect(() => k('erfcinv', [['3', '0']], 15)).toThrow('erfinv domain');
+  });
+});
+
+describe('jn and yn of an integer order (SymPy rewrite(besselj)._eval_evalf)', () => {
+  it('equal SymPy at 15 and 50 digits', () => {
+    const third = Rational.of(1, 3);
+    // SymPy N(jn(2, 1/3)), N(yn(2, 1/3), 50), N(yn(3, 2 + I), 50), N(yn(-2, 5/2))
+    expect(sstr(evalf(jn(2, third)))).toBe('0.00734879960195811');
+    expect(sstr(evalf(jn(2, third), 50))).toBe('0.0073487996019581070371704436256308611774868494544638');
+    expect(sstr(evalf(yn(2, third), 50))).toBe('-82.540898626045648414966442900944443775712648552212');
+    expect(sstr(evalf(yn(3, add(2, I)), 50))).toBe('-0.20833069433259320268765232865836907234824655659444 + 0.79090604895293097174587374576544199439598102848762*I');
+    expect(sstr(evalf(yn(-2, Rational.of(5, 2))))).toBe('-0.416212989275407');
+    // a non-integer order is not evaluated (SymPy returns jn(1/2, 2))
+    expect(sstr(evalf(jn(Rational.of(1, 2), 2)))).toBe('jn(1/2, 2)');
   });
 });

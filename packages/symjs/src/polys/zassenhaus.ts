@@ -41,16 +41,16 @@ function modInv(a: bigint, m: bigint): bigint {
 
 // ---- arithmetic modulo m ----------------------------------------------------
 
-const pmod = (f: P, m: bigint): P => trim(f.map((c) => mod(c, m)));
+export const pmod = (f: P, m: bigint): P => trim(f.map((c) => mod(c, m)));
 
 /** f + s*g modulo m (s = 1 or -1). */
 function paddScaled(f: P, g: P, s: bigint, m: bigint): P {
   const n = Math.max(f.length, g.length);
   return pmod(Array.from({ length: n }, (_, i) => (f[i] ?? 0n) + s * (g[i] ?? 0n)), m);
 }
-const padd = (f: P, g: P, m: bigint): P => paddScaled(f, g, 1n, m);
+export const padd = (f: P, g: P, m: bigint): P => paddScaled(f, g, 1n, m);
 const psub = (f: P, g: P, m: bigint): P => paddScaled(f, g, -1n, m);
-function pmul(f: P, g: P, m: bigint): P {
+export function pmul(f: P, g: P, m: bigint): P {
   if (!f.length || !g.length) return [];
   const r: bigint[] = Array(f.length + g.length - 1).fill(0n);
   for (let i = 0; i < f.length; i++) {
@@ -65,7 +65,7 @@ function pmul(f: P, g: P, m: bigint): P {
   return pmod(r, m);
 }
 /** Division modulo a prime power m by a nonzero divisor with an invertible leading coefficient. */
-function pdivmod(f: P, g: P, m: bigint): [P, P] {
+export function pdivmod(f: P, g: P, m: bigint): [P, P] {
   const gg = trim(g);
   let r = pmod(f, m);
   const dg = gg.length - 1;
@@ -93,7 +93,7 @@ function monic(f: P, m: bigint): P {
   return pmod(t.map((c) => c * inv), m);
 }
 
-function pgcd(a0: P, b0: P, p: bigint): P {
+export function pgcd(a0: P, b0: P, p: bigint): P {
   let a = pmod(a0, p);
   let b = pmod(b0, p);
   while (b.length) [a, b] = [b, prem(a, b, p)];
@@ -101,7 +101,7 @@ function pgcd(a0: P, b0: P, p: bigint): P {
 }
 
 /** s, t with s*a + t*b = 1 modulo p (a, b coprime). */
-function pgcdex(a0: P, b0: P, p: bigint): [P, P] {
+export function pgcdex(a0: P, b0: P, p: bigint): [P, P] {
   let [r0, r1] = [pmod(a0, p), pmod(b0, p)];
   let [s0, s1]: [P, P] = [[1n], []];
   let [t0, t1]: [P, P] = [[], [1n]];
@@ -127,7 +127,7 @@ function ppowmod(f: P, e: bigint, g: P, p: bigint): P {
   return result;
 }
 
-const derivative = (f: P): P => trim(f.slice(1).map((c, i) => c * BigInt(i + 1)));
+export const derivative = (f: P): P => trim(f.slice(1).map((c, i) => c * BigInt(i + 1)));
 
 // ---- factorization modulo p ------------------------------------------------------
 

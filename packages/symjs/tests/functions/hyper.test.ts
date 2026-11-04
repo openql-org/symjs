@@ -266,3 +266,70 @@ describe('meijerg accessors (SymPy an, aother, bm, bother, nu, delta, get_period
     expect(G([], [], [0, 1], [])).toBe('oo');
   });
 });
+
+/** str() of the SymPy operation named by kind applied to src (the tables of the hyper parameters, expand_func and appellf1 (SymPy hyper) block below). */
+function runAppell(kind: string, src: string): string {
+  // (H(p, q, a1..ap, b1..bq, z) is hyper((a1..ap), (b1..bq), z) and G the meijerg of the locals above)
+  const e = sj.parse(src, { locals: { ...locals, exp_polar: sj.expPolar } });
+  if (kind === 'E') return String(e);
+  if (kind === 'F') return String(sj.expandFunc(e));
+  if (kind === 'D') return String(sj.diff(e, new sj.Sym('x')));
+  if (kind.startsWith('D:')) return String(sj.diff(e, new sj.Sym(kind.slice(2))));
+  return String(sj.evalf(e, kind.length > 1 ? Number(kind.slice(1)) : 15));
+}
+
+describe('hyper parameters, expand_func and appellf1 (SymPy hyper)', () => {
+  const cases: [string, string, string][] = [
+    ['E', 'H(3, 2, 3, 1, 2, 3, 4, x)', 'hyper((1, 2), (4,), x)'],
+    ['E', 'H(2, 1, n, a, n**2, x)', 'hyper((a, n), (n**2,), x)'],
+    ['E', 'H(2, 1, 1, 1, 2, x)', 'hyper((1, 1), (2,), x)'],
+    ['E', 'H(2, 2, 2, 1, 1, 2, x)', 'hyper((), (), x)'],
+    ['E', 'H(1, 0, 1, exp_polar(I*pi)/2)', 'hyper((1,), (), -1/2)'],
+    ['E', 'H(2, 1, 1, 2, 3, exp_polar(I*pi)/2)', 'hyper((1, 2), (3,), -1/2)'],
+    ['E', 'H(2, 1, 1, 2, 3, 2*exp_polar(I*pi))', 'hyper((1, 2), (3,), 2*exp_polar(I*pi))'],
+    ['E', 'H(1, 1, 1, 2, exp_polar(I*pi)*x)', 'hyper((1,), (2,), -x)'],
+    ['F', 'H(2, 1, a, b, c, 1)', 'gamma(c)*gamma(-a - b + c)/(gamma(-a + c)*gamma(-b + c))'],
+    ['F', 'x*H(2, 1, 1, 1, 2, -x)', 'log(x + 1)'],
+    ['F', 'G(0, 0, 1, 0, 0, -x)', 'exp(x)'],
+    ['F', 'H(1, 0, a, x)', '(1 - x)**(-a)'],
+    ['E', 'appellf1(a, b1, b2, c, x, y)', 'appellf1(a, b1, b2, c, x, y)'],
+    ['E', 'appellf1(a, b2, b1, c, x, y)', 'appellf1(a, b1, b2, c, y, x)'],
+    ['E', 'appellf1(a, b, b, c, y, x)', 'appellf1(a, b, b, c, x, y)'],
+    ['E', 'appellf1(a, b1, b2, c, 0, 0)', '1'],
+    ['E', 'appellf1(40, 2, 6, 4, 15, 60)', 'appellf1(40, 2, 6, 4, 15, 60)'],
+    ['E', 'appellf1(2., 1., 6., 4., 5., 6.)', '0.00633394262926730'],
+    ['E', 'appellf1(12., 12., 6., 4., 0.5, 0.12)', '172870711.659936'],
+    ['E', 'appellf1(20., 12., 10., 3., 0.5, 0.12)', '15605338197184.4'],
+    ['D', 'appellf1(a, b1, b2, c, x, y)', 'a*b1*appellf1(a + 1, b2, b1 + 1, c + 1, y, x)/c'],
+    ['D:y', 'appellf1(a, b1, b2, c, x, y)', 'a*b2*appellf1(a + 1, b1, b2 + 1, c + 1, x, y)/c'],
+    ['D:a', 'appellf1(a, b1, b2, c, x, y)', 'Derivative(appellf1(a, b1, b2, c, x, y), a)'],
+    ['N', 'appellf1(1, -2, 1, 4, 3, 1/2)', '0.472077083991796'],
+    ['N', 'appellf1(-2, 1, 2, 4, 5, 6)', '11.8000000000000'],
+    ['N', 'appellf1(1, -2, 1, 4, 1/4, 1/2)', '1.00847077083992'],
+  ];
+  it.each(cases)('%s %s', (kind, src, expected) => {
+    expect(runAppell(kind, src)).toBe(expected);
+  });
+  it('builds appellf1 with the public constructor and evaluates it in double precision', () => {
+    const s = sj.symbols('a b1 b2 c x y') as sj.Sym[];
+    expect(String(sj.appellf1(...(s as [sj.Sym, sj.Sym, sj.Sym, sj.Sym, sj.Sym, sj.Sym])))).toBe('appellf1(a, b1, b2, c, x, y)');
+    const v = sj.toComplex(new sj.Fn('appellf1', [1, -2, 1, 4, sj.Rational.of(1n, 4n), sj.Rational.of(1n, 2n)].map((k) => sj.sympify(k))));
+    expect(v.re).toBeCloseTo(1.0084707708399179, 13);
+  });
+  it('keeps duplicate parameters with evaluate false (sorted)', () => {
+    expect(String(sj.hyper([3, 1, 2], [3, 4], new sj.Sym('x'), { evaluate: false }))).toBe('hyper((1, 2, 3), (3, 4), x)');
+  });
+});
+
+describe('hyper and appellf1 at arguments without a value or a continuation', () => {
+  it('keeps an argument whose modulus is unknown', () => {
+    // SymPy: hyper((1,), (), stieltjes(1)) stays
+    expect(String(sj.hyper([1], [], sj.stieltjes(1)))).toBe('hyper((1,), (), stieltjes(1))');
+  });
+  it('raises where mpmath has no analytic continuation of F1', () => {
+    // mpmath appellf1(1/2, 1/3, 1/5, 1/7, 2, 10) raises ValueError (analytic continuation not implemented)
+    const r = (p: bigint, q: bigint) => sj.Rational.of(p, q);
+    const e = new sj.Fn('appellf1', [r(1n, 2n), r(1n, 3n), r(1n, 5n), r(1n, 7n), sj.sympify(2), sj.sympify(10)]);
+    expect(() => sj.toComplex(e)).toThrow(NotImplementedError);
+  });
+});

@@ -145,10 +145,18 @@ describe('mpfun real and complex elementary functions', () => {
   });
   it('special arguments', () => {
     expect(s30(M.exp(F.ZERO, P30))).toBe('1.0');
-    // mpmath exp(2**50) = 7.7155e+488972116717136; beyond 2**52 the binary exponent of
-    // the result is not a safe integer (mpmath has unbounded exponents)
+    // mpmath exp(2**50) = 7.7155e+488972116717136; the exponents are unbounded as in mpmath:
+    // exp(2**53) = 1.2558e+3911776933737095, exp(1e30) = 4.02793352347120658744677525247e+434294481903251827651128918916
     expect(F.toStr(M.exp(F.fromInt(1n << 50n), 60), 5)).toBe('7.7155e+488972116717136');
-    expect(() => M.exp(F.fromInt(1n << 53n), 60)).toThrow(RangeError);
+    expect(F.toStr(M.exp(F.fromInt(1n << 53n), 60), 5)).toBe('1.2558e+3911776933737095');
+    expect(s30(M.exp(r('1e30'), P30))).toBe('4.02793352347120658744677525247e+434294481903251827651128918916');
+    // mpmath exp(+-2**200), log(mpf('1e100000000000000000000')), log(2**(2**70)), log(exp(2**200)) at 30 digits
+    const big = F.fromInt(1n << 200n);
+    expect(s30(M.exp(big, P30))).toBe('1.32859389695975606575066940118e+697884325382082936699607079697809990657056068469105515102493');
+    expect(s30(M.exp(F.neg(big), P30))).toBe('7.52675443029143028676994299822e-697884325382082936699607079697809990657056068469105515102494');
+    expect(s30(M.log(r('1e100000000000000000000'), P30))).toBe('230258509299404568401.799145468');
+    expect(s30(M.log(F.ldexp(F.ONE, 1n << 70n), P30))).toBe('818323753292969962226.472364784');
+    expect(s30(M.log(M.exp(big, P30 + 220), P30))).toBe('1.60693804425899027554196209234e+60');
     // mpmath: +phi
     expect(s30(M.mpPhi(P30))).toBe('1.61803398874989484820458683437');
     expect(s30(M.cabs(c('-3', '0'), P30))).toBe('3.0');
@@ -164,7 +172,8 @@ describe('mpfun real and complex elementary functions', () => {
     expect(s30(M.nthRoot(F.fromInt(3n ** 40n), 8n, P30))).toBe('243.0');
   });
   it('errors', () => {
-    expect(() => M.exp(r('1e30'), P30)).toThrow(RangeError);
+    // beyond |x| = 2**4096 the result would need a working precision of more than 4096 bits
+    expect(() => M.exp(F.fromInt(1n << 4097n), P30)).toThrow(RangeError);
     expect(() => M.log(r('-1'), P30)).toThrow(RangeError);
     expect(() => M.cpow(c('0', '0'), c('-1', '0'), P30)).toThrow(RangeError);
   });

@@ -31,7 +31,20 @@ export {
   asRelational,
   inf,
   sup,
+  Rationals,
+  UniversalSet,
+  ProductSet,
+  ProductSetNode,
+  PowerSet,
+  PowerSetNode,
+  powerset,
+  DisjointUnion,
+  DisjointUnionNode,
+  SymmetricDifference,
+  SymmetricDifferenceNode,
+  symmetricDifference,
 } from './sets/sets';
+export { ComplexRegion, ComplexRegionNode, CartesianComplexRegion, PolarComplexRegion, normalizeThetaSet } from './sets/complexregion';
 
 // ---- deprecated names (kept during 0.x, removed in 1.0; see docs/api-policy.md) ----
 

@@ -117,7 +117,8 @@ function addSpecial(args: Expr[]): Expr {
   if (names.has('nan')) return S.NaN;
   let inf: Special;
   if (names.has('zoo')) {
-    if (names.has('oo') || names.has('-oo')) return S.NaN;
+    // zoo + zoo is nan in SymPy (the sum of two complex infinities is undetermined)
+    if (names.has('oo') || names.has('-oo') || specials.filter((e) => e.name === 'zoo').length > 1) return S.NaN;
     inf = S.ComplexInfinity;
   } else if (names.has('oo') && names.has('-oo')) return S.NaN;
   else inf = names.has('oo') ? S.Infinity : S.NegativeInfinity;
@@ -221,6 +222,8 @@ function infTerm(e: Expr): [Special, Expr] | undefined {
 export function add(...xs: ExprLike[]): Expr {
   const sx = xs.map(sympify);
   rejectRel(sx, 'Add');
+  const own = impl.arithmetic?.('add', sx);
+  if (own !== undefined) return own;
   const ab = impl.accumBounds;
   if (ab && sx.some((e) => ab.is(e) || (e instanceof Add && e.args.some((a) => ab.is(a))))) {
     // interval arithmetic: the intervals absorb a numeric remainder, symbolic terms stay beside them
@@ -508,6 +511,8 @@ function mulSpecial(args: Expr[]): Expr {
 export function mul(...xs: ExprLike[]): Expr {
   const args = xs.map(sympify);
   rejectRel(args, 'Mul');
+  const own = impl.arithmetic?.('mul', args);
+  if (own !== undefined) return own;
   const ab = impl.accumBounds;
   if (ab && args.some((e) => ab.is(e))) {
     const abs = args.filter((e) => ab.is(e));
@@ -704,6 +709,8 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   const b = sympify(bx);
   const e = sympify(ex);
   rejectRel([b, e], 'Pow');
+  const own = impl.arithmetic?.('pow', [b, e]);
+  if (own !== undefined) return own;
   if (impl.accumBounds?.is(b) && e.freeSymbols().size === 0) return impl.accumBounds.pow(b, e);
   if (impl.accumBounds?.is(e) && b.freeSymbols().size === 0 && b.toNumber() > 0) {
     // a positive base: b**x is monotone in x (exp(AccumBounds(0, 1)) = AccumBounds(1, E))
@@ -800,6 +807,17 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
       const k = ((m % 4n) + 4n) % 4n;
       const f = at([S.One, S.I, S.NegOne, mul(-1, S.I)], Number(k));
       return mul(f, pow(b, add(...remaining)));
+    }
+    // exp(c*I*pi) for a rational c (not a half-integer, handled above): c is reduced into (-1, 1]
+    // (SymPy exp.eval: exp(4*I*pi/3) = exp(-2*I*pi/3))
+    if (e instanceof Mul) {
+      const [c, rest] = splitCoeff(e);
+      if (c instanceof Rational && rest.key === iPi().key) {
+        const period = 2n * c.q;
+        let r = ((c.p % period) + period) % period;
+        if (r > c.q) r -= period;
+        if (r !== c.p) return pow(b, mul(Rational.of(r, c.q), iPi()));
+      }
     }
     // exp(c*log(x)) -> x**c when the other factors are numbers (SymPy exp.eval)
     if (e instanceof Mul) {
@@ -1055,7 +1073,7 @@ export function neg(x: ExprLike): Expr {
 }
 
 export function sub(a: ExprLike, b: ExprLike): Expr {
-  return add(a, mul(S.NegOne, b));
+  return impl.arithmetic?.('sub', [sympify(a), sympify(b)]) ?? add(a, mul(S.NegOne, b));
 }
 
 export function div(a: ExprLike, b: ExprLike): Expr {

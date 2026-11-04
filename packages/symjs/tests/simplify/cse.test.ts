@@ -258,7 +258,7 @@ describe('cse (test_cse.py)', () => {
     const D = MatrixSymbol('D', 3, 3);
     expect(show(cse([MatAdd(A, B, C), MatAdd(A, B, D)]))).toBe('([(x0, A + B)], [x0 + C, x0 + D])');
     expect(show(cse([mul(-2, A, B), mul(-2, A, B)]))).toBe('([(x0, -2*A*B)], [x0, x0])');
-    // SymPy: cse(MatMul(1, A, B)) == ([], [MatMul(1, A, B)]) (SymPy prints it A*B, symjs 1*A*B)
+    // SymPy: cse(MatMul(1, A, B)) == ([], [MatMul(1, A, B)]), printed 1*A*B
     const m1 = new MatMulNode([Rational.of(1), A, B]);
     const [rm1, [em1]] = cse(m1);
     expect(rm1).toEqual([]);

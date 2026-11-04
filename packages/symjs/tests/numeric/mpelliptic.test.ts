@@ -94,12 +94,16 @@ describe('the incomplete integrals mpmath evaluates otherwise', () => {
     if (!f) throw new TypeError(name);
     return () => f(args.map((a) => [F.fromNumber(a), F.ZERO] as Mpc), 53);
   };
-  it('raises at the infinities and where RJ needs mpmath numerical integration', () => {
+  it('raises at the infinities', () => {
     expect(at('elliptic_f', [2, 1])).toThrow(RangeError);
     expect(at('elliptic_pi', [1, 0])).toThrow(RangeError);
     expect(at('elliptic_pi', [0.5, 1])).toThrow(RangeError);
-    // mpmath ellippi(2, 0.5) = -0.313544683465184 - 1.81379936423422j
-    expect(at('elliptic_pi', [2, 0.5])).toThrow('integral correction of RJ');
+  });
+  it('evaluates where RJ needs the initial numerical integration of mpmath', () => {
+    // mpmath ellippi(2, 0.5) = -0.313544683465184041472307030514 - 1.81379936423421785059407821189j (30 digits)
+    const r = at('elliptic_pi', [2, 0.5])();
+    expect(F.toStr(r[0], 15)).toBe('-0.313544683465184');
+    expect(F.toStr(r[1], 15)).toBe('-1.81379936423422');
   });
 });
 
@@ -135,11 +139,21 @@ describe('Carlson integrals equal mpmath (elliprc, elliprf, elliprj)', () => {
     });
     expect(got).toEqual(want);
   });
-  it('raises where RJ is infinite or needs mpmath numerical integration', () => {
+  it('raises where RJ is infinite, integrates first where mpmath does', () => {
     const r = (v: number): Mpc => [F.fromNumber(v), F.ZERO];
     expect(() => RJ(r(1), r(2), r(3), r(0), 53)).toThrow(RangeError);
     expect(() => RJ(r(0), r(0), r(3), r(1), 53)).toThrow(RangeError);
-    // mpmath elliprj(0.5, 2, 3, -1.5) = -0.30435257604862 - 0.839625954181357j
-    expect(() => RJ(r(0.5), r(2), r(3), r(-1.5), 53)).toThrow('integral correction of RJ');
+    // mpmath elliprj(0.5, 2, 3, -1.5) at 40 digits = -0.3043525760486195726490870795729278897115 - 0.839625954181356989726115673568515740848j
+    const v = RJ(r(0.5), r(2), r(3), r(-1.5), 110);
+    expect([F.toStr(v[0], 30), F.toStr(v[1], 30)]).toEqual(['-0.304352576048619572649087079573', '-0.839625954181356989726115673569']);
+    // the path of integration below the real axis (every argument in the lower half plane or right of 0)
+    // and through the upper half plane but below the lowest argument there: mpmath
+    // elliprj(1-1j, 2, 3, -1-0.5j) = -0.0533781279680589 + 0.660979822299681j,
+    // elliprj(1+1j, -1-1j, 3, 1j) = 0.9118828083025799243811315 - 0.3095617145179745018120172j (25 digits)
+    const c = (a: number, b: number): Mpc => [F.fromNumber(a), F.fromNumber(b)];
+    const w = RJ(c(1, -1), c(2, 0), c(3, 0), c(-1, -0.5), 53);
+    expect([F.toStr(w[0], 15), F.toStr(w[1], 15)]).toEqual(['-0.0533781279680589', '0.660979822299681']);
+    const u = RJ(c(1, 1), c(-1, -1), c(3, 0), c(0, 1), 53);
+    expect([F.toStr(u[0], 15), F.toStr(u[1], 15)]).toEqual(['0.91188280830258', '-0.309561714517975']);
   });
 });

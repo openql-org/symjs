@@ -24,6 +24,9 @@ const V = (s: string): Sym => {
 const lim = (e: string, v: string, p: string, d: '+' | '-' | '+-' = '+') => String(limit(P(e), V(v), P(p), d));
 
 const cases: [string, string, string, '+' | '-' | '+-', string][] = [
+  // powers with a common exponent are combined first (SymPy Limit.doit powsimp): ((1 + I)/2)**n
+  ["(1 + I)**n/2**n", "n", "oo", "+", "0"],
+  ["(1 - I)**n/3**n", "n", "oo", "+", "0"],
   ["1/(f(y) + x)", "x", "0", "+", "1/f(y)"],
   ["1/(x - I)", "x", "I", "+", "oo"],
   ["1/(x - a)", "x", "a", "+", "oo"],
@@ -259,6 +262,8 @@ describe('limits that symjs leaves unevaluated, or answers differently from SymP
     ["floor(sin(pi*x)/x)", "x", "oo", "+", "Limit(floor(sin(pi*x)/x), x, oo, dir='-')", "NotImplementedError"],
     ["atan2(1/x, sin(x))", "x", "oo", "+", "Limit(atan2(1/x, sin(x)), x, oo, dir='-')", "NotImplementedError"],
     ["exp(x)", "x", "-oo*I", "+", "Limit(exp(x), x, -oo*I, dir='+')", "NotImplementedError"],
+    // L'Hopital's rule needs the derivative of besselj with respect to its order, which is not implemented
+    ["(besselj(x, 1) - besselj(0, 1))/x", "x", "0", "+", "Limit((besselj(x, 1) - besselj(0, 1))/x, x, 0, dir='+')", "Subs(Derivative(besselj(xi, 1), xi), xi, 0)"],
   ];
   it.each(unevaluated)('limit(%s, %s, %s, %s) = %s (SymPy: %s)', (e, v, p, d, expected) => {
     expect(lim(e, v, p, d)).toBe(expected);

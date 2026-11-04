@@ -18,6 +18,7 @@ import { ONE, ZERO } from './mpf';
 import * as M from './mpfun';
 import { type Mpc, cadd, cdiv, cexp, clog, cmul, cneg, csub } from './mpfun';
 import { cuppergamma } from './mpspecial';
+import { MpSpecialValue } from './mpeval';
 
 const rnd = (z: Mpc, p: number): Mpc => [F.round(z[0], p), F.round(z[1], p)];
 const real = (x: Mpf): Mpc => [x, ZERO];
@@ -31,8 +32,8 @@ function fdiv(a: bigint, b: bigint): bigint {
 
 /** mpmath to_int: truncation toward zero. */
 function trunc(x: Mpf): bigint {
-  if (x.exp >= 0) return x.man << BigInt(x.exp);
-  return x.man < 0n ? -(-x.man >> BigInt(-x.exp)) : x.man >> BigInt(-x.exp);
+  if (x.exp >= 0n) return x.man << x.exp;
+  return x.man < 0n ? -(-x.man >> -x.exp) : x.man >> -x.exp;
 }
 
 const eulerFixed = (wp: number): bigint => F.toFixed(M.mpEuler(wp + 10), wp);
@@ -223,7 +224,8 @@ function asymptoticExpint(n: number, x: Mpf, wp: number): boolean {
 export function cexpint(nu: Mpc, z: Mpc, prec: number): Mpc {
   if (F.isZero(z[0]) && F.isZero(z[1])) {
     // the integral from 1 to infinity of t**-nu
-    if (F.cmp(nu[0], ONE) <= 0) throw new RangeError('expint(nu, 0) is infinite for re(nu) <= 1');
+    // mpmath gives +inf for re(nu) <= 1 (SymPy expint(1, 0).evalf() == oo)
+    if (F.cmp(nu[0], ONE) <= 0) throw new MpSpecialValue('inf');
     return cdiv(M.C1, csub(nu, M.C1, prec + 10), prec);
   }
   const [np, nq] = F.toRational(nu[0]);

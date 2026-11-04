@@ -147,18 +147,41 @@ describe('results that differ from SymPy 1.14', () => {
     ["sj.series(x, x, P('zoo'))", () => sj.series(x, x, P('zoo')), "ERR NotImplementedError: series: expansion at this point is not supported", "x"],
     // sign(I + x) = (I + x)/sqrt(1 + x**2) is not constant near 0 (SymPy gives its value I)
     ["sj.series(P('sign(I + x)'), x, 0, 3)", () => sj.series(P('sign(I + x)'), x, 0, 3), "ERR SeriesError: cannot expand sign", "I"],
-    // |y*x| is not analytic in x for a complex y
-    ["sj.series(P('abs(y*x)'), x, 0, 3)", () => sj.series(P('abs(y*x)'), x, 0, 3), "ERR SeriesError: cannot expand abs", "x*Abs(y)"],
-    // floor(x + y) jumps at x = 0 when y is an integer
-    ["sj.series(P('floor(x + y)'), x, 0, 3)", () => sj.series(P('floor(x + y)'), x, 0, 3), "ERR SeriesError: cannot expand floor", "floor(y)"],
+    // the expansion variable is positive, as in SymPy: |y*x| = x*|y|
+    ["sj.series(P('abs(y*x)'), x, 0, 3)", () => sj.series(P('abs(y*x)'), x, 0, 3), "x*Abs(y)", "x*Abs(y)"],
+    // floor is continuous from the right, also at an integer y
+    ["sj.series(P('floor(x + y)'), x, 0, 3)", () => sj.series(P('floor(x + y)'), x, 0, 3), "floor(y)", "floor(y)"],
+    ["sj.series(P('ceiling(x + y)'), x, 0, 3, '-')", () => sj.series(P('ceiling(x + y)'), x, 0, 3, '-'), "ceiling(y)", "ceiling(y)"],
+    // SymPy gives floor(y) and ceiling(y), which is wrong for an integer y (floor(-x) = -1 for x -> 0+)
+    ["sj.series(P('floor(x + y)'), x, 0, 3, '-')", () => sj.series(P('floor(x + y)'), x, 0, 3, '-'), "ERR SeriesError: cannot expand floor", "floor(y)"],
+    ["sj.series(P('ceiling(x + y)'), x, 0, 3)", () => sj.series(P('ceiling(x + y)'), x, 0, 3), "ERR SeriesError: cannot expand ceiling", "ceiling(y)"],
     // SymPy raises NotImplementedError
     ["sj.series(P('ceiling(y*x)'), x, 0, 3)", () => sj.series(P('ceiling(y*x)'), x, 0, 3), "ERR SeriesError: cannot expand ceiling", "ERR NotImplementedError"],
-    // an essential singularity (SymPy returns the expression)
-    ["sj.series(P('exp(1/x)'), x, 0, 2)", () => sj.series(P('exp(1/x)'), x, 0, 2), "ERR SeriesError: essential singularity", "exp(1/x)"],
+    // exp(g) with g -> oo is returned unchanged; with g -> -oo it is smaller than every power (SymPy exp._eval_nseries)
+    ["sj.series(P('exp(1/x)'), x, 0, 2)", () => sj.series(P('exp(1/x)'), x, 0, 2), "exp(1/x)", "exp(1/x)"],
+    ["sj.series(P('exp(y/x)'), x, 0, 2)", () => sj.series(P('exp(y/x)'), x, 0, 2), "exp(y/x)", "exp(y/x)"],
+    ["sj.series(P('exp(1/x)'), x, 0, 3, '-')", () => sj.series(P('exp(1/x)'), x, 0, 3, '-'), "O(x**3)", "O(x**3)"],
+    ["sj.series(P('exp(-1/x)/x**5'), x, 0, 3)", () => sj.series(P('exp(-1/x)/x**5'), x, 0, 3), "O(x**3)", "O(x**3)"],
+    ["sj.series(P('exp(-1/x) + sin(x)'), x, 0, 3)", () => sj.series(P('exp(-1/x) + sin(x)'), x, 0, 3), "x + O(x**3)", "x + O(x**3)"],
+    // SymPy raises PoleError
+    ["sj.series(P('exp(I/x)'), x, 0, 2)", () => sj.series(P('exp(I/x)'), x, 0, 2), "ERR EssentialSingularity: essential singularity", "ERR PoleError"],
+    // not implemented: an essential singularity inside a product (SymPy gives x*exp(1/x))
+    ["sj.series(P('x*exp(1/x)'), x, 0, 2)", () => sj.series(P('x*exp(1/x)'), x, 0, 2), "ERR EssentialSingularity: essential singularity", "x*exp(1/x)"],
     // SymPy raises ValueError
     ["sj.series(P('cos(x)'), x, 0, -1)", () => sj.series(P('cos(x)'), x, 0, -1), "ERR RangeError: series: the order n must be nonnegative", "ERR ValueError"],
-    // an infinite coefficient
-    ["sj.series(P('oo*x'), x, 0, 2)", () => sj.series(P('oo*x'), x, 0, 2), "ERR SeriesError: infinite coefficient", "oo"],
+    // SymPy raises TypeError (None - 0) for an infinite factor that stays
+    ["sj.series(P('oo*sin(x)'), x, 0, 3)", () => sj.series(P('oo*sin(x)'), x, 0, 3), "ERR SeriesError: infinite coefficient", "ERR TypeError"],
+    // the leading term of the exponent decides
+    ["sj.series(P('exp(1/x**2 - 1/x)'), x, 0, 3)", () => sj.series(P('exp(1/x**2 - 1/x)'), x, 0, 3), "exp(-1/x + x**(-2))", "exp(-1/x + x**(-2))"],
+    ["sj.series(P('exp(-1/x**2 + 1/x)'), x, 0, 3)", () => sj.series(P('exp(-1/x**2 + 1/x)'), x, 0, 3), "O(x**3)", "O(x**3)"],
+    ["sj.series(P('sign(r + x)'), x, 0, 3)", () => sj.series(P('sign(r + x)'), x, 0, 3), "sign(r)", "sign(r)"],
+    // SymPy gives sign(y)*(x*y + x**2), which is wrong for y = I: x*I*sign(I) = -x is negative
+    ["sj.series(P('abs(y*x + x**2)'), x, 0, 3)", () => sj.series(P('abs(y*x + x**2)'), x, 0, 3), "ERR SeriesError: cannot expand abs", "x**2*sign(y) + x*y*sign(y)"],
+    ["sj.series(P('abs(x - x**2)'), x, 0, 3)", () => sj.series(P('abs(x - x**2)'), x, 0, 3), "-x**2 + x", "-x**2 + x"],
+    ["sj.series(P('abs(x**2 - x)'), x, 0, 3)", () => sj.series(P('abs(x**2 - x)'), x, 0, 3), "-x**2 + x", "-x**2 + x"],
+    // oo*x is oo for the positive expansion variable
+    ["sj.series(P('oo*x'), x, 0, 2)", () => sj.series(P('oo*x'), x, 0, 2), "oo", "oo"],
+    ["sj.series(P('oo*x'), x, 0, 2, '-')", () => sj.series(P('oo*x'), x, 0, 2, '-'), "-oo", "-oo"],
     // SymPy raises PoleError
     ["sj.series(P('sin(1/x)'), x, 0, 3)", () => sj.series(P('sin(1/x)'), x, 0, 3), "ERR SeriesError: essential singularity", "ERR PoleError"],
     // an expression that is 0 (SymPy does not finish)

@@ -28,6 +28,8 @@ export {
   lowergamma,
   uppergamma,
   beta,
+  betainc,
+  betaincRegularized,
   zeta,
   erf,
   erfc,
@@ -66,7 +68,13 @@ export {
   airybi,
   airyaiprime,
   airybiprime,
+  hankel1,
+  hankel2,
+  marcumq,
 } from './functions/bessel';
+export { hn1, hn2, jnZeros, sphericalBesselFn } from './functions/sphericalbessel';
+export { Ynm, YnmC, Znm } from './functions/sphericalharmonics';
+export { mathieus, mathieuc, mathieusprime, mathieucprime } from './functions/mathieu';
 export {
   bernoulli,
   euler,
@@ -110,4 +118,22 @@ export {
   unpolarify,
   extractBranchFactor,
 } from './functions/polar';
-export { Hyper, MeijerG, hyper, meijerg, jn, yn, expandJn, KroneckerDelta, kroneckersimp } from './functions/hyper';
+export { Hyper, MeijerG, hyper, meijerg, appellf1, jn, yn, expandJn, KroneckerDelta, kroneckersimp } from './functions/hyper';
+export { lerchphi, polylog, dirichletEta, riemannXi, stieltjes } from './functions/zeta';
+export { ellipticK, ellipticF, ellipticE, ellipticPi } from './functions/elliptic';
+export { LeviCivita, Eijk } from './functions/tensorfns';
+export {
+  jacobi,
+  jacobiNormalized,
+  gegenbauer,
+  chebyshevt,
+  chebyshevu,
+  chebyshevtRoot,
+  chebyshevuRoot,
+  legendre,
+  assocLegendre,
+  hermite,
+  hermiteProb,
+  laguerre,
+  assocLaguerre,
+} from './functions/polynomials';

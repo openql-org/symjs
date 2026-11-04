@@ -10,7 +10,6 @@
  * numeric evaluation.
  */
 
-import { NotImplementedError } from '../core/errors';
 import * as F from './mpf';
 import type { Mpf } from './mpf';
 import { ONE, ZERO } from './mpf';
@@ -52,7 +51,7 @@ export function cellipe(m: Mpc, prec: number): Mpc {
   const mag = real ? F.mag(m[0]) : F.mag(M.cabs(m, 1));
   if (real && mag < -wp) return [F.ldexp(M.mpPi(prec), -1), ZERO];
   const p = Math.max(mag, 0) - wp;
-  const h: Mpc = [{ man: 1n, exp: p }, ZERO];
+  const h: Mpc = [{ man: 1n, exp: BigInt(p) }, ZERO];
   const K = cellipk(m, 2 * wp);
   // the real case steps to m - h, away from the branch cut m > 1
   const Kh = cellipk(real ? csub(m, h, 2 * wp) : cadd(m, h, 2 * wp), 2 * wp);
@@ -149,7 +148,78 @@ function carlsonRJ(x: Mpc, y: Mpc, z: Mpc, p: Mpc, r: Mpf, wp: number): Mpc {
     ];
     ok = triples.some(([r0, a0, b0]) => realConj(r0, a0, b0));
   }
-  if (!ok) throw new NotImplementedError('elliptic integral needing the integral correction of RJ');
+  if (ok) return carlsonRJCore(x, y, z, p, r, wp);
+  // mpmath RJ_calc with integration = 1: integrate from 0 to N (around the singularities),
+  // then Carlson's algorithm at the arguments shifted by N
+  const ts = [x, y, z, p];
+  const minRe = Math.min(...ts.map((t) => F.toNumber(t[0])));
+  const n0 = Math.ceil(-minRe) + 1;
+  const upper = (t: Mpc) => t[1].man >= 0n || t[0].man > 0n;
+  const lower = (t: Mpc) => t[1].man < 0n || t[0].man > 0n;
+  let margin: number;
+  if (ts.every(upper)) margin = 1;
+  else if (ts.every(lower)) margin = -1;
+  else margin = Math.min(1, ...ts.filter((t) => !upper(t)).map((t) => Math.abs(F.toNumber(t[1])) * 0.5));
+  const N: Mpc = [F.fromInt(BigInt(n0)), F.fromNumber(margin)];
+  // (the integrand is evaluated with the guard bits of the quadrature)
+  const fp = wp + 20;
+  const f = (t: Mpc): Mpc =>
+    cdiv(M.C1, cmul(cmul(cmul(M.csqrt(cadd(t, x, fp), fp), M.csqrt(cadd(t, y, fp), fp), fp), M.csqrt(cadd(t, z, fp), fp), fp), cadd(t, p, fp), fp), fp);
+  const initial = cmul(rc(3n, 2n, wp), quadLine(f, M.C0, N, wp), wp);
+  return cadd(initial, carlsonRJCore(cadd(x, N, wp), cadd(y, N, wp), cadd(z, N, wp), cadd(p, N, wp), r, wp), wp);
+}
+
+/**
+ * The integral of f along the segment from a to b by tanh-sinh quadrature at
+ * working precision wp (in place of mpmath quadsubdiv on a smooth integrand).
+ */
+export function quadLine(f: (t: Mpc) => Mpc, a: Mpc, b: Mpc, prec: number): Mpc {
+  // (summed with guard bits: the rounding errors of the many terms stay below 2**-prec)
+  const wp = prec + 20;
+  const ba = csub(b, a, wp);
+  const pi = M.mpPi(wp);
+  const halfPi = F.ldexp(pi, -1);
+  const quarterPi = F.ldexp(pi, -2);
+  // the terms beyond v = pi/2*sinh(umax) are dropped: below 2**-wp also at an endpoint singularity
+  // like t**(-3/4), where the terms decay as exp(-v/2) only
+  const umax = Math.asinh((2 * wp * Math.LN2) / (Math.PI / 2));
+  const two = F.fromInt(2n);
+  const term = (u: Mpf): Mpc => {
+    const eu = M.exp(u, wp);
+    const emu = F.div(F.ONE, eu, wp);
+    const v = F.mul(halfPi, F.ldexp(F.sub(eu, emu, wp), -1), wp);
+    const e2v = M.exp(F.ldexp(v, 1), wp);
+    // (1 + tanh(v))/2 = e2v/(1 + e2v), cosh(v)**2 = (e2v + 2 + 1/e2v)/4
+    const s = F.div(e2v, F.add(F.ONE, e2v, wp), wp);
+    const ch2 = F.ldexp(F.add(F.add(e2v, two, wp), F.div(F.ONE, e2v, wp), wp), -2);
+    const w = F.div(F.mul(quarterPi, F.ldexp(F.add(eu, emu, wp), -1), wp), ch2, wp);
+    return cmul(f(cadd(a, cmul(ba, [s, ZERO], wp), wp)), [w, ZERO], wp);
+  };
+  const sumOver = (level: number, odd: boolean): Mpc => {
+    const kmax = Math.ceil(umax * 2 ** level);
+    let acc: Mpc = M.C0;
+    for (let k = -kmax; k <= kmax; k++) {
+      if (odd && k % 2 === 0) continue;
+      acc = cadd(acc, term({ man: BigInt(k), exp: BigInt(-level) }), wp);
+    }
+    return acc;
+  };
+  // S(h) = h * sum_k term(k h), halving h until two levels agree
+  // (or until the difference stops shrinking: the rounding errors of the integrand are reached)
+  let est = sumOver(0, false);
+  let prev = Infinity;
+  for (let level = 1; level <= 12; level++) {
+    const next: Mpc = cadd([F.ldexp(est[0], -1), F.ldexp(est[1], -1)], cmul(sumOver(level, true), [{ man: 1n, exp: BigInt(-level) }, ZERO], wp), wp);
+    const diff = cmagE(csub(next, est, wp));
+    est = next;
+    if (level > 3 && (diff < cmagE(est) - prec || diff > prev - 4)) break;
+    prev = diff;
+  }
+  return cmul(ba, est, wp);
+}
+
+/** Carlson's algorithm for RJ (mpmath RJ_calc after its argument checks). */
+function carlsonRJCore(x: Mpc, y: Mpc, z: Mpc, p: Mpc, r: Mpf, wp: number): Mpc {
   const two = rc(2n, 1n, wp);
   const A0 = cdiv(cadd(cadd(cadd(x, y, wp), z, wp), cmul(two, p, wp), wp), rc(5n, 1n, wp), wp);
   const delta = cmul(cmul(csub(p, x, wp), csub(p, y, wp), wp), csub(p, z, wp), wp);
@@ -194,7 +264,7 @@ function carlsonRJ(x: Mpc, y: Mpc, z: Mpc, p: Mpc, r: Mpf, wp: number): Mpc {
 }
 
 /** The Carlson integrals at working precision prec + 20 with mpmath's tolerance eps 2**10. */
-const carlsonTol = (wp: number): Mpf => ({ man: 1n, exp: 11 - wp });
+const carlsonTol = (wp: number): Mpf => ({ man: 1n, exp: BigInt(11 - wp) });
 /** mpmath elliprc. */
 export const RC = (x: Mpc, y: Mpc, prec: number): Mpc => carlsonRC(x, y, carlsonTol(prec + 20), prec + 20);
 /** mpmath elliprf. */
@@ -219,7 +289,7 @@ function reducePhi(phi: Mpc, wp: number): [Mpc, bigint] {
   const x = phi[0];
   if (F.cmp(F.abs(x), F.ldexp(pi, -1)) <= 0) return [phi, 0n];
   const q = F.div(x, pi, wp);
-  const d = F.floor(F.add(q, { man: 1n, exp: -1 }));
+  const d = F.floor(F.add(q, { man: 1n, exp: -1n }));
   return [[F.sub(x, F.mulInt(pi, d), wp), phi[1]], d];
 }
 

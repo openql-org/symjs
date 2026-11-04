@@ -274,23 +274,24 @@ describe('summations: ranges ending at -oo', () => {
     expect(summation(Pplain('2**k'), [k, 0, Pplain('-oo')]).toString()).toBe('-1');
   });
   it('mirrors a sum from -oo', () => {
-    // SymPy leaves Sum(1/(k**2 + 1), (k, -oo, 0)) unevaluated; it equals SymPy's
-    // summation(1/(k**2 + 1), (k, 0, oo)) = 1/2 + pi/(2*tanh(pi))
-    expect(summation(Pplain('1/(k**2+1)'), [k, Pplain('-oo'), 0]).toString()).toBe('1/2 + pi/(2*tanh(pi))');
+    // as SymPy: no summation by residues for a sum from -oo to a finite b
+    expect(summation(Pplain('1/(k**2+1)'), [k, Pplain('-oo'), 0]).toString()).toBe('Sum(1/(k**2 + 1), (k, -oo, 0))');
+    expect(summation(Pplain('2**k'), [k, Pplain('-oo'), 0]).toString()).toBe('2');
+    expect(summation(Pplain('1/k**2'), [k, Pplain('-oo'), -1]).toString()).toBe('pi**2/6');
   });
 });
 
 describe('summations: convergence where SymPy 1.14 raises', () => {
   it('decides series SymPy cannot handle', () => {
-    // SymPy raises NotImplementedError (I counts as a second symbol); |f| ~ 1/k**2
+    // |f| ~ 1/k**2 (SymPy 1.14 gives True)
     expect(String(isConvergent(concExpr(Sum(Pplain('1/(k**2-I)'), [k, 1, oo]))))).toBe('true');
     expect(String(isConvergent(concExpr(Sum(Pplain('1/(k**2+I*k)'), [k, 1, oo]))))).toBe('true');
-    // SymPy raises ValueError; absolutely convergent (|f| <= 1/k**2)
+    // SymPy raises ValueError (base must be 2 or more, an internal failure); absolutely convergent (|f| <= 1/k**2)
     expect(String(isConvergent(concExpr(Sum(Pplain('(-1)**k*sin(k)/k**2'), [k, 1, oo]))))).toBe('true');
     // SymPy raises ValueError; alternating with sin(1/k) decreasing to 0
     expect(String(isConvergent(concExpr(Sum(Pplain('(-1)**k*sin(1/k)'), [k, 1, oo]))))).toBe('true');
     // SymPy raises NotImplementedError: the answer depends on x
-    expect(String(isConvergent(concExpr(Sum(Pplain('x**k'), [k, 1, oo]))))).toBe('unknown');
+    expect(() => isConvergent(concExpr(Sum(Pplain('x**k'), [k, 1, oo])))).toThrow('convergence checking for more than one symbol containing series is not handled');
   });
 });
 
@@ -437,8 +438,8 @@ describe('results that differ from SymPy 1.14', () => {
     ["sj.summation(P('1/(k**4+k**2+2)'), [k, 0, sj.oo])", () => sj.summation(P('1/(k**4+k**2+2)'), [k, 0, sj.oo]), "Sum(1/(k**4 + k**2 + 2), (k, 0, oo))", "1/4"],
     // the term at k = 0 is zoo
     ["sj.summation(P('1/k**2'), [k, moo, sj.oo])", () => sj.summation(P('1/k**2'), [k, moo, sj.oo]), "Sum(k**(-2), (k, -oo, oo))", "zoo"],
-    // k -> -k gives the sum from -3 to oo (SymPy leaves it unevaluated)
-    ["sj.summation(P('1/(k**2+1)'), [k, moo, 3])", () => sj.summation(P('1/(k**2+1)'), [k, moo, 3]), "13/10 + pi/(2*tanh(pi))", "Sum(1/(k**2 + 1), (k, -oo, 3))"],
+    // no summation by residues from -oo (as SymPy)
+    ["sj.summation(P('1/(k**2+1)'), [k, moo, 3])", () => sj.summation(P('1/(k**2+1)'), [k, moo, 3]), "Sum(1/(k**2 + 1), (k, -oo, 3))", "Sum(1/(k**2 + 1), (k, -oo, 3))"],
     // arithmetic-geometric sums are not implemented
     ["sj.summation(P('k*2**k'), [k, 0, n])", () => sj.summation(P('k*2**k'), [k, 0, n]), "Sum(2**k*k, (k, 0, n))", "2*(2**n*n - 2**n + 1)"],
     // the roots are not computed for an irreducible quartic
@@ -446,9 +447,11 @@ describe('results that differ from SymPy 1.14', () => {
     // comparison with |sin(k)| <= 1 is not implemented
     ["conv(sj.Sum(P('sin(k)/k**3'), [k, moo, sj.oo]))", () => conv(sj.Sum(P('sin(k)/k**3'), [k, moo, sj.oo])), "unknown", "true"],
     // SymPy raises ValueError
-    ["conv(sj.Sum(P('1/k**2'), [k, 1, P('zoo')]))", () => conv(sj.Sum(P('1/k**2'), [k, 1, P('zoo')])), "unknown", "ERR ValueError"],
+    ["conv(sj.Sum(P('1/k**2'), [k, 1, P('zoo')]))", () => conv(sj.Sum(P('1/k**2'), [k, 1, P('zoo')])), "ERR RangeError: Non-real intervals are not supported", "ERR ValueError"],
     // SymPy raises NotImplementedError
-    ["conv(sj.Sum(P('x**k'), [k, 1, sj.oo]))", () => conv(sj.Sum(P('x**k'), [k, 1, sj.oo])), "unknown", "ERR NotImplementedError"],
+    ["conv(sj.Sum(P('x**k'), [k, 1, sj.oo]))", () => conv(sj.Sum(P('x**k'), [k, 1, sj.oo])), "ERR NotImplementedError: convergence checking for more than one symbol containing series is not handled", "ERR NotImplementedError"],
+    // SymPy gives True for a nan limit, which is not a range of integers
+    ["conv(sj.Sum(P('1/k**2'), [k, 1, P('nan')]))", () => conv(sj.Sum(P('1/k**2'), [k, 1, P('nan')])), "unknown", "True"],
     // the series converges (Dirichlet's test), SymPy's False is wrong
     ["conv(sj.Sum(P('sin(k)/k'), [k, 1, sj.oo]))", () => conv(sj.Sum(P('sin(k)/k'), [k, 1, sj.oo])), "unknown", "false"],
   ];

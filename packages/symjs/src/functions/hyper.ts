@@ -21,6 +21,13 @@ import { numericFns } from '../numeric/evalf';
 import { c as cx, cmul } from '../numeric/complex';
 import { besselj, bessely } from './bessel';
 import { registerRewrite } from '../simplify/rewrite';
+import { unpolarify } from './polar';
+import { derivative } from '../core/undef';
+import { mpFns } from '../numeric/mpeval';
+import * as F from '../numeric/mpf';
+import * as M from '../numeric/mpfun';
+import type { Mpc } from '../numeric/mpfun';
+import { chyp2f1 } from '../numeric/mporthopoly';
 
 const gcdBig = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcdBig(b, a % b));
 
@@ -82,10 +89,52 @@ export class Hyper extends ExtensionExpr {
   }
 }
 
-/** SymPy hyper(ap, bq, z). */
-export function hyper(ap: readonly ExprLike[], bq: readonly ExprLike[], z: ExprLike): Expr {
+/** The parameters in SymPy's canonical order (ordered). */
+const orderedParams = (xs: readonly Expr[]): Expr[] => [...xs].sort((u, v) => compareKeys(sortKey(u), sortKey(v)));
+
+/**
+ * SymPy hyper(ap, bq, z): the parameters are sorted, and those common to ap
+ * and bq cancel unless `evaluate` is false. The argument of a function that
+ * is not branched at it loses its polar factors (SymPy hyper.eval).
+ */
+export function hyper(ap: readonly ExprLike[], bq: readonly ExprLike[], zIn: ExprLike, opts: { evaluate?: boolean } = {}): Expr {
+  let as = ap.map(sympify);
+  let bs = bq.map(sympify);
+  if (opts.evaluate !== false) {
+    // remove the parameters common to ap and bq (with multiplicity)
+    const rest = [...bs];
+    as = as.filter((a) => {
+      const k = rest.findIndex((b) => b.key === a.key);
+      if (k < 0) return true;
+      rest.splice(k, 1);
+      return false;
+    });
+    bs = rest;
+  }
+  const z = sympify(zIn);
+  const evaluated = opts.evaluate !== false && (as.length <= bs.length || (as.length === bs.length + 1 && absAtMostOne(z))) ? unpolarify(z) : z;
   // unevaluated like SymPy, also at z = 0 (hyperexpand gives 1 there)
-  return new Hyper([sympify(z), ...ap.map(sympify), ...bq.map(sympify)], ap.length);
+  return new Hyper([evaluated, ...orderedParams(as), ...orderedParams(bs)], as.length);
+}
+
+/** (Abs(z) <= 1) == True, decided numerically for a number. */
+function absAtMostOne(z: Expr): boolean {
+  if (z.freeSymbols().size > 0) return false;
+  try {
+    const v = z.toComplex();
+    return Math.hypot(v.re, v.im) <= 1;
+  } catch {
+    return false;
+  }
+}
+
+/** Gauss's theorem 2F1(a, b; c; 1) = gamma(c)*gamma(c - a - b)/(gamma(c - a)*gamma(c - b)) (SymPy hyper._eval_expand_func), else undefined. */
+export function gaussAtOne(h: Hyper): Expr | undefined {
+  if (!(h.ap.length === 2 && h.bq.length === 1 && h.argument instanceof Rational && h.argument.isOne)) return undefined;
+  const [a, b] = pair(h.ap);
+  const c = first(h.bq);
+  const g = (e: Expr) => fn('gamma', [e]);
+  return mul(g(c), g(add(c, mul(-1, a), mul(-1, b))), pow(mul(g(add(c, mul(-1, a))), g(add(c, mul(-1, b)))), -1));
 }
 
 /** SymPy meijerg(((a_1..a_n), (a_n+1..a_p)), ((b_1..b_m), (b_m+1..b_q)), z): args are [z, ...an, ...ap, ...bm, ...bq]. */
@@ -309,3 +358,80 @@ registerRewrite('RisingFactorial', 'gamma', (args) => {
   if (p === false) return neg;
   return piecewise([pos, Gt(x, 0)], [neg, true]);
 });
+
+// ---- incomplete beta functions in terms of hyper ------------------------------------
+
+// betainc(a, b, x1, x2) = (x2**a*hyper((a, 1 - b), (a + 1,), x2) - x1**a*hyper((a, 1 - b), (a + 1,), x1))/a
+const betaincHyper = (args: readonly Expr[]): Expr => {
+  const [a, b, x1, x2] = [at(args, 0), at(args, 1), at(args, 2), at(args, 3)];
+  const h = (x: Expr) => mul(pow(x, a), hyper([a, add(1, mul(-1, b))], [add(a, 1)], x));
+  return mul(add(h(x2), mul(-1, h(x1))), pow(a, -1));
+};
+registerRewrite('betainc', 'hyper', betaincHyper);
+registerRewrite('betainc_regularized', 'hyper', (args) => mul(betaincHyper(args), pow(fn('beta', [at(args, 0), at(args, 1)]), -1)));
+
+// ---- Appell F1 ---------------------------------------------------------------------------
+
+/** SymPy appellf1(a, b1, b2, c, x, y): the Appell hypergeometric function of two variables F1. */
+export const appellf1 = (a: ExprLike, b1: ExprLike, b2: ExprLike, c: ExprLike, x: ExprLike, y: ExprLike): Expr => fn('appellf1', [a, b1, b2, c, x, y]);
+
+/** SymPy appellf1.eval: b1 <= b2 (and x <= y when b1 = b2) in sort-key order; 1 at x = y = 0. */
+evaluators.appellf1 = (a, ...rest) => {
+  const [b1, b2, c, x, y] = [at(rest, 0), at(rest, 1), at(rest, 2), at(rest, 3), at(rest, 4)];
+  const cmp = compareKeys(sortKey(b1), sortKey(b2));
+  if (cmp > 0) return fn('appellf1', [a, b2, b1, c, y, x]);
+  if (b1.key === b2.key && compareKeys(sortKey(x), sortKey(y)) > 0) return fn('appellf1', [a, b1, b2, c, y, x]);
+  if (isZero(x) === true && isZero(y) === true) return S.One;
+  return undefined;
+};
+// d/dx F1 = a*b1/c*F1(a + 1, b1 + 1, b2, c + 1, x, y), d/dy likewise with b2
+fnPartials.appellf1 = (args, i) => {
+  const [a, b1, b2, c, x, y] = [at(args, 0), at(args, 1), at(args, 2), at(args, 3), at(args, 4), at(args, 5)];
+  if (i === 4) return mul(a, b1, pow(c, -1), appellf1(add(a, 1), add(b1, 1), b2, add(c, 1), x, y));
+  if (i === 5) return mul(a, b2, pow(c, -1), appellf1(add(a, 1), b1, add(b2, 1), add(c, 1), x, y));
+  return derivative(new Fn('appellf1', args), [[at(args, i), 1]]);
+};
+
+const mpAbs = (z: Mpc): number => F.toNumber(M.cabs(z, 53));
+const mpNpInt = (z: Mpc): boolean => F.isZero(z[1]) && z[0].man <= 0n && F.toRational(z[0])[1] === 1n;
+const mpInt = (k: number): Mpc => [F.fromInt(BigInt(k)), F.ZERO];
+
+/**
+ * F1(a, b1, b2, c; x, y) = sum_m (a)_m (b1)_m/((c)_m m!) x**m 2F1(a + m, b2; c + m; y)
+ * (mpmath appellf1 and hyper2d), after the transformation of mpmath for |x| >= 0.99.
+ */
+export function mpAppellF1(args: readonly Mpc[], prec: number): Mpc {
+  let [a, b1, b2, c, x, y] = [at(args, 0), at(args, 1), at(args, 2), at(args, 3), at(args, 4), at(args, 5)];
+  const wp = prec + 30;
+  if (mpAbs(x) > mpAbs(y)) [x, y, b1, b2] = [y, x, b2, b1];
+  const ok = (z: Mpc) => mpAbs(z) < 0.99;
+  if (!mpNpInt(a) && !mpNpInt(b1)) {
+    if (mpNpInt(b2)) [x, y, b1, b2] = [y, x, b2, b1];
+    else if (!ok(x)) {
+      const u1 = M.cdiv(M.csub(x, y, wp), M.csub(x, M.C1, wp), wp);
+      if (!ok(u1)) throw new NotImplementedError('appellf1: analytic continuation');
+      const f = M.cmul(M.cpow(M.csub(M.C1, x, wp), M.cneg(b1), wp), M.cpow(M.csub(M.C1, y, wp), M.csub(M.csub(c, a, wp), b2, wp), wp), wp);
+      const v = mpAppellF1([M.csub(c, a, wp), b1, M.csub(M.csub(c, b1, wp), b2, wp), c, u1, y], wp);
+      return M.cmul(f, v, prec);
+    }
+  }
+  let coef: Mpc = M.C1;
+  let sum: Mpc = M.C0;
+  let small = 0;
+  for (let m = 0; m < 100000; m++) {
+    const term = M.cmul(coef, chyp2f1(M.cadd(a, mpInt(m), wp), b2, M.cadd(c, mpInt(m), wp), y, wp), wp);
+    sum = M.cadd(sum, term, wp);
+    const mk = mpInt(m);
+    coef = M.cdiv(M.cmul(M.cmul(coef, M.cmul(M.cadd(a, mk, wp), M.cadd(b1, mk, wp), wp), wp), x, wp), M.cmul(M.cadd(c, mk, wp), mpInt(m + 1), wp), wp);
+    if (F.isZero(coef[0]) && F.isZero(coef[1])) break;
+    const mag = Math.max(F.mag(term[0]), F.mag(term[1]));
+    small = mag < Math.max(F.mag(sum[0]), F.mag(sum[1])) - wp ? small + 1 : 0;
+    if (small >= 3) break;
+  }
+  return [F.round(sum[0], prec), F.round(sum[1], prec)];
+}
+mpFns['appellf1'] = mpAppellF1;
+numericFns.appellf1 = (args) => {
+  const v = mpAppellF1(args.map((z) => [F.fromNumber(z.re), F.fromNumber(z.im)]), 53);
+  return cx(F.toNumber(v[0]), F.toNumber(v[1]));
+};

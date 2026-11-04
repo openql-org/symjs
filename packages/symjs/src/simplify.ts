@@ -12,6 +12,7 @@ export {
   simplify,
   type SimplifyOptions,
 } from './simplify/simplify';
+export { hyperexpand, Hyper_Function, G_Function, Operator, type HyperexpandOptions } from './integrals/hyperexpand';
 export { ratsimpmodprime } from './simplify/ratsimpmodprime';
 export { gammasimp, combsimp, hypersimilar, isHypergeometric } from './simplify/gammasimp';
 export {

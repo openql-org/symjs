@@ -270,3 +270,382 @@ describe('Range, Integers in an interval and ImageSet membership', () => {
     expect(Sets.isSubset(Sets.Integers, I(n('-oo'), 1))).toBe(false);
   });
 });
+
+// SymPy 1.14 str() of each expression; where symjs differs, the comment gives SymPy's answer and why.
+describe('Rationals, UniversalSet, ProductSet, PowerSet, DisjointUnion and SymmetricDifference', () => {
+  const p = (e: string) => sj.parse(e);
+  const A = F(1, 2, 3);
+  const B = I(0, 5);
+  const Cs = F(x, sj.symbol('y'), sj.symbol('z'));
+  const T = (...a: sj.ExprLike[]) => sj.Tuple(...a);
+  const k = sj.symbol('k', { integer: true });
+  it('Rationals and UniversalSet', () => {
+    expect([C(Sets.Rationals, p('1/2')), C(Sets.Rationals, sj.pi), C(Sets.Rationals, sj.I), C(Sets.Rationals, sj.oo), C(Sets.Rationals, x), C(Sets.Rationals, k), C(Sets.Rationals, sj.S.Catalan)].map(String)).toEqual([
+      'True',
+      'False',
+      'False',
+      'False',
+      'Contains(x, Rationals)',
+      'True',
+      'Contains(Catalan, Rationals)',
+    ]);
+    expect(String(C(Sets.UniversalSet, x))).toBe('True');
+    expect(String(U(I(0, 1), Sets.UniversalSet))).toBe('UniversalSet');
+    expect(String(U(Sets.Rationals, Sets.Integers))).toBe('Rationals');
+    expect(String(Sets.intersection(Sets.Rationals, Sets.Integers))).toBe('Integers');
+    expect(String(Sets.intersection(Sets.Rationals, Sets.Reals))).toBe('Rationals');
+    expect(String(Sets.intersection(Sets.Rationals, I(0, 1)))).toBe('Intersection(Interval(0, 1), Rationals)');
+    expect(String(Sets.intersection(Sets.UniversalSet, I(0, 1)))).toBe('Interval(0, 1)');
+    expect(String(Sets.complement(I(0, 1), Sets.UniversalSet))).toBe('EmptySet');
+    // SymPy: None for UniversalSet.is_subset(Interval(0, 1)); the universal set has elements outside [0, 1]
+    expect([Sets.isSubset(I(0, 1), Sets.UniversalSet), Sets.isSubset(Sets.UniversalSet, I(0, 1)), Sets.isSubset(Sets.Integers, Sets.Rationals), Sets.isSubset(Sets.Rationals, Sets.Reals)]).toEqual([true, false, true, true]);
+  });
+  it('ProductSet', () => {
+    expect([sj.ProductSet(), sj.ProductSet(A, Sets.EmptySet), sj.ProductSet(B, A)].map(String)).toEqual(['{()}', 'EmptySet', 'ProductSet(Interval(0, 5), {1, 2, 3})']);
+    const ps = sj.ProductSet(A, B) as sj.ProductSetNode;
+    expect(String((sj.ProductSet(ps, Cs) as sj.ProductSetNode).flatten())).toBe('ProductSet({1, 2, 3}, Interval(0, 5), {x, y, z})');
+    expect(ps.sets.map(String)).toEqual(['{1, 2, 3}', 'Interval(0, 5)']);
+    expect([C(ps, T(1, 2)), C(ps, T(4, 2)), C(ps, T(1, 2, 3)), C(ps, T(x, 2)), C(ps, x), C(ps, 1)].map(String)).toEqual([
+      'True',
+      'False',
+      'False',
+      'Contains((x, 2), ProductSet({1, 2, 3}, Interval(0, 5)))',
+      'Contains(x, ProductSet({1, 2, 3}, Interval(0, 5)))',
+      'False',
+    ]);
+    expect(String(Sets.intersection(sj.ProductSet(B, B), sj.ProductSet(I(1, 7), I(2, 3))))).toBe('ProductSet(Interval(1, 5), Interval(2, 3))');
+    expect(String(Sets.intersection(sj.ProductSet(B, B), sj.ProductSet(B, B, B)))).toBe('EmptySet');
+    // SymPy: None for the last two; [1, 7] is not in [0, 5], and pairs are not triples
+    expect([
+      Sets.isSubset(sj.ProductSet(I(1, 2), I(1, 2)), sj.ProductSet(B, B)),
+      Sets.isSubset(sj.ProductSet(I(1, 7), I(1, 2)), sj.ProductSet(B, B)),
+      Sets.isSubset(sj.ProductSet(B, B), sj.ProductSet(B, B, B)),
+      Sets.isSubset(sj.ProductSet(B, I(0, x)), sj.ProductSet(B, B)),
+    ]).toEqual([true, false, false, undefined]);
+    expect(Sets.isSubset(I(0, x), B)).toBe(undefined);
+    expect(String(U(sj.ProductSet(B, B), sj.ProductSet(I(1, 2), I(1, 2))))).toBe('ProductSet(Interval(0, 5), Interval(0, 5))');
+    expect(String(U(sj.ProductSet(A, B), sj.ProductSet(Cs, B)))).toBe('ProductSet({1, 2, 3, x, y, z}, Interval(0, 5))');
+    expect(String(U(sj.ProductSet(A, B), sj.ProductSet(Cs, A)))).toBe('Union(ProductSet({1, 2, 3}, Interval(0, 5)), ProductSet({x, y, z}, {1, 2, 3}))');
+    expect(String(U(sj.ProductSet(A, B, B), sj.ProductSet(Cs, A, A)))).toBe('Union(ProductSet({1, 2, 3}, Interval(0, 5), Interval(0, 5)), ProductSet({x, y, z}, {1, 2, 3}, {1, 2, 3}))');
+    expect(sj.latex(ps)).toBe('\\left\\{1, 2, 3\\right\\} \\times \\left[0, 5\\right]');
+    expect(sj.latex(sj.ProductSet(B, B))).toBe('\\left[0, 5\\right]^{2}');
+    expect(sj.latex(sj.ProductSet(U(I(0, 1), I(2, 3)), A))).toBe('\\left(\\left[0, 1\\right] \\cup \\left[2, 3\\right]\\right) \\times \\left\\{1, 2, 3\\right\\}');
+  });
+  it('PowerSet and powerset', () => {
+    expect([Sets.powerset(Sets.EmptySet), Sets.powerset(B), Sets.powerset(A)].map(String)).toEqual(['{EmptySet}', 'PowerSet(Interval(0, 5))', 'FiniteSet(EmptySet, {1}, {2}, {3}, {1, 2}, {1, 3}, {2, 3}, {1, 2, 3})']);
+    const pw = sj.PowerSet(B);
+    expect([C(pw, I(1, 2)), C(pw, x)].map(String)).toEqual(['True', 'Contains(x, PowerSet(Interval(0, 5)))']);
+    expect([sj.PowerSet(F(1, 2)).rewriteAsFiniteSet(), sj.PowerSet(Sets.EmptySet).rewriteAsFiniteSet(), pw.rewriteAsFiniteSet()].map(String)).toEqual(['FiniteSet(EmptySet, {1}, {2}, {1, 2})', '{EmptySet}', 'PowerSet(Interval(0, 5))']);
+    expect(sj.latex(pw)).toBe('\\mathcal{P}\\left(\\left[0, 5\\right]\\right)');
+    expect(String(F(T(F(1), 2)))).toBe('FiniteSet(({1}, 2))');
+  });
+  it('DisjointUnion', () => {
+    const du = sj.DisjointUnion(A, B);
+    expect(String(du)).toBe('DisjointUnion({1, 2, 3}, Interval(0, 5))');
+    expect(du.sets.map(String)).toEqual(['{1, 2, 3}', 'Interval(0, 5)']);
+    expect([du.isEmpty, sj.DisjointUnion(Sets.EmptySet, Sets.EmptySet).isEmpty]).toEqual([false, true]);
+    expect([C(du, T(2, 0)), C(du, T(2, 5)), C(du, T(2, p('1/2'))), C(du, 2), C(du, T(7, 1)), C(du, T(7, -1)), C(du, T(x, 1))].map(String)).toEqual([
+      'True',
+      'False',
+      'False',
+      'False',
+      'False',
+      'False',
+      'Contains((x, 1), DisjointUnion({1, 2, 3}, Interval(0, 5)))',
+    ]);
+    expect(String(du.rewriteAsUnion())).toBe('Union(ProductSet({1, 2, 3}, {0}), ProductSet(Interval(0, 5), {1}))');
+    expect(sj.latex(du)).toBe('\\operatorname{DisjointUnion}\\left(\\left\\{1, 2, 3\\right\\}, \\left[0, 5\\right]\\right)');
+  });
+  it('SymmetricDifference', () => {
+    expect([sj.SymmetricDifference(A, F(3, 4, 5)), sj.SymmetricDifference(Sets.EmptySet, A), sj.SymmetricDifference(Sets.Reals, Sets.EmptySet), Sets.symmetricDifference(I(1, 3), Sets.Reals)].map(String)).toEqual([
+      '{1, 2, 4, 5}',
+      '{1, 2, 3}',
+      'Reals',
+      'Union(Interval.open(-oo, 1), Interval.open(3, oo))',
+    ]);
+    // SymPy: UniversalSet.symmetric_difference(B) is B; U ^ B is the complement of B
+    expect(String(Sets.symmetricDifference(Sets.UniversalSet, B))).toBe('Complement(UniversalSet, Interval(0, 5))');
+    const sd = Sets.symmetricDifference(A, B, { evaluate: false });
+    expect(String(sd)).toBe('SymmetricDifference({1, 2, 3}, Interval(0, 5))');
+    // SymPy: NotImplementedError (SymmetricDifference._contains)
+    expect([C(sd, p('1/2')), C(sd, 2), C(sd, 7), C(sd, x)].map(String)).toEqual(['True', 'False', 'False', 'Contains(x, SymmetricDifference({1, 2, 3}, Interval(0, 5)))']);
+    expect(sj.latex(sd)).toBe('\\left\\{1, 2, 3\\right\\} \\triangle \\left[0, 5\\right]');
+    expect(sj.latex(Sets.Rationals)).toBe('\\mathbb{Q}');
+  });
+  it('substitution in sets (SymPy _eval_subs)', () => {
+    const [yy, z] = [sj.symbol('y'), sj.symbol('z')];
+    const cs = (v: sj.Expr, c: string, b: Sets.SetExpr) => sj.ConditionSet.of(v, p(c), b);
+    expect([
+      sj.subs(cs(x, 'x < y', Sets.Integers), [[x, z]]),
+      sj.subs(cs(x, 'x < y', Sets.Integers), [[yy, z]]),
+      // SymPy keeps x < y for a number: _diff_wrt is False
+      sj.subs(cs(x, 'x < y', Sets.Integers), [[yy, 2]]),
+      sj.subs(cs(x, 'x < y', I(0, yy)), [[yy, 3]]),
+      sj.subs(cs(x, 'x < y', F(x, z)), [[z, 1]]),
+      sj.subs(cs(x, 'x < 1', F(x, z)), [[x, yy]]),
+      sj.subs(Sets.imageSet(x, p('x**2 + y'), I(0, yy)), [[yy, 2]]),
+      sj.subs(Sets.imageSet(x, p('x**2'), I(0, yy)), [[x, 2]]),
+      // SymPy: BadSignatureError; the x of the base set is free and is replaced
+      sj.subs(Sets.imageSet(x, p('x**2'), I(0, x)), [[x, 2]]),
+      sj.subs(I(0, yy), [[yy, 2]]),
+      sj.subs(U(I(0, yy), F(z)), new Map<sj.Expr, sj.ExprLike>([[yy, 2], [z, 3]])),
+      sj.subs(sj.ProductSet(I(0, yy), A), [[yy, 1]]),
+      sj.subs(sj.PowerSet(I(0, yy)), [[yy, 1]]),
+      sj.subs(sj.DisjointUnion(I(0, yy)), [[yy, 1]]),
+      sj.subs(Sets.symmetricDifference(I(0, yy), A, { evaluate: false }), [[yy, 1]]),
+      sj.subs(Sets.intersection(I(0, yy), I(z, 1)), [[yy, 2]]),
+      sj.subs(Sets.complement(I(0, yy), F(z)), [[z, 1]]),
+      sj.subs(Sets.range(0, sj.oo, 2), [[yy, 1]]),
+    ].map(String)).toEqual([
+      'ConditionSet(x, x < y, Integers)',
+      'ConditionSet(x, x < z, Integers)',
+      'ConditionSet(x, x < y, Integers)',
+      'ConditionSet(x, x < 3, Interval(0, 3))',
+      'ConditionSet(x, x < y, {1, x})',
+      'ConditionSet(x, x < 1, {y, z})',
+      'ImageSet(Lambda(x, x**2 + 2), Interval(0, 2))',
+      'ImageSet(Lambda(x, x**2), Interval(0, y))',
+      'ImageSet(Lambda(x, x**2), Interval(0, 2))',
+      'Interval(0, 2)',
+      'Union({3}, Interval(0, 2))',
+      'ProductSet(Interval(0, 1), {1, 2, 3})',
+      'PowerSet(Interval(0, 1))',
+      'DisjointUnion(Interval(0, 1))',
+      'SymmetricDifference(Interval(0, 1), {1, 2, 3})',
+      'Intersection(Interval(0, 2), Interval(z, 1))',
+      // SymPy: Union(Intersection(Interval.open(-oo, 1), Interval(0, y)), Intersection(Interval(0, y), Interval.open(1, oo)))
+      'Complement(Interval(0, y), {1})',
+      'Range(0, oo, 2)',
+    ]);
+    // a set of another class rebuilds itself through withArgs
+    expect(Sets.EmptySet.withArgs([])).toBe(Sets.EmptySet);
+  });
+});
+
+describe('ConditionSet and imageset evaluation', () => {
+  const p = (e: string) => sj.parse(e);
+  const [yy, z, nn] = [sj.symbol('y'), sj.symbol('z'), sj.symbol('n')];
+  const cs = (v: sj.Expr, c: string | boolean, b?: Sets.SetExpr) => sj.ConditionSet.of(v, typeof c === 'string' ? p(c) : c, b);
+  const img = (e: string, b: Sets.SetExpr, v: sj.Expr = x) => sj.imageset(v, p(e), b);
+  it('ConditionSet (SymPy ConditionSet.__new__)', () => {
+    expect([
+      cs(x, true, B()),
+      cs(nn, false, Sets.Integers),
+      cs(x, 'x > 1', Sets.EmptySet),
+      cs(x, 'x > 1', F(0, 1, 2, 3)),
+      cs(x, 'x > y', F(0, 3, z)),
+      cs(x, 'x > 1', F(2, z)),
+      cs(x, 'x < 1', cs(x, 'x > y', Sets.Integers)),
+      cs(x, 'x < y', cs(z, 'z + y < 2', Sets.Integers)),
+      cs(x, 'x < z', cs(z, 'z + x < 2', Sets.Integers)),
+      cs(x, 'x < y + z', cs(z, 'z + x < 2', Sets.Integers)),
+      sj.ConditionSet.of(x, new sj.Contains(x, I(0, 2)), I(1, 3)),
+      sj.ConditionSet.of(x, p('x > 1')),
+    ].map(String)).toEqual([
+      'Interval(0, 5)',
+      'EmptySet',
+      'EmptySet',
+      '{2, 3}',
+      'ConditionSet(x, x > y, {0, 3, z})',
+      'Union(ConditionSet(x, x > 1, {z}), {2})',
+      'ConditionSet(x, (x > y) & (x < 1), Integers)',
+      'ConditionSet(x, (x < y) & (x + y < 2), Integers)',
+      'ConditionSet(x, x < z, ConditionSet(z, x + z < 2, Integers))',
+      'ConditionSet(x, x < y + z, ConditionSet(z, x + z < 2, Integers))',
+      'Interval(1, 2)',
+      'ConditionSet(x, x > 1)',
+    ]);
+    // the merged inner variable is renamed when the outer condition is free of it
+    expect(String(sj.ConditionSet.of(x, p('y < 1'), cs(z, 'z + x < 2', Sets.Integers)))).toBe('ConditionSet(z, (y < 1) & (x + z < 2), Integers)');
+    const c = new sj.ConditionSet(x, p('x < 1'), Sets.Reals);
+    expect([c.sym, c.baseSet].map(String)).toEqual(['x', 'Reals']);
+  });
+  it('imageset of finite sets, unions, intervals and compositions', () => {
+    expect([
+      img('x**2', F(-1, 1, 2)),
+      img('x**2', Sets.EmptySet),
+      img('2*x', U(I(0, 1), I(2, 3))),
+      img('x', I(0, 1)),
+      sj.imageset(yy, p('y + 1'), img('x**2', Sets.Naturals)),
+      img('-3*x + 1', Sets.openInterval(0, 2)),
+      img('x**2', I(1, sj.oo)),
+      img('-x**3', I(sj.S.NegativeInfinity, 1)),
+      img('x**2 - 2*x', Sets.Reals),
+      img('x**2', Sets.openInterval(-1, 1)),
+      img('x**3 - 3*x', I(-2, 3)),
+      img('x**3 - 2*x', I(-1, 2)),
+      img('x*y', I(0, 1)),
+      img('3', I(0, 1)),
+      img('sin(x)', I(0, 1)),
+      img('x**2 + y', I(0, 1)),
+      img('x**2', I(0, yy)),
+      img('x**3 + x', I(0, 1)),
+      img('x**6 + x**2 + x', I(0, 1)),
+      img('y', I(0, yy)),
+      img('3', Sets.Integers),
+      img('x**2', Sets.Naturals),
+      sj.imageset(p('2*x'), p('x'), I(0, 1)),
+    ].map(String)).toEqual([
+      '{1, 4}',
+      'EmptySet',
+      'Union(Interval(0, 2), Interval(4, 6))',
+      'Interval(0, 1)',
+      'ImageSet(Lambda(x, x**2 + 1), Naturals)',
+      'Interval.open(-5, 1)',
+      'Interval(1, oo)',
+      'Interval(-1, oo)',
+      'Interval(-1, oo)',
+      'Interval.Ropen(0, 1)',
+      'Interval(-2, 18)',
+      'Interval(-4*sqrt(6)/9, 4)',
+      'ImageSet(Lambda(x, x*y), Interval(0, 1))',
+      '{3}',
+      'ImageSet(Lambda(x, sin(x)), Interval(0, 1))',
+      'ImageSet(Lambda(x, x**2 + y), Interval(0, 1))',
+      'ImageSet(Lambda(x, x**2), Interval(0, y))',
+      'Interval(0, 2)',
+      // SymPy: Interval(0, 3); the critical points (roots of a quintic) are not known here
+      'ImageSet(Lambda(x, x**6 + x**2 + x), Interval(0, 1))',
+      'ImageSet(Lambda(x, y), Interval(0, y))',
+      '{3}',
+      'ImageSet(Lambda(x, x**2), Naturals)',
+      'ImageSet(Lambda(2*x, x), Interval(0, 1))',
+    ]);
+  });
+  it('imageset of the integers in canonical form (SymPy _set_function(Lambda, Integers))', () => {
+    const z2 = (e: string) => img(e, Sets.Integers, nn);
+    expect(['Abs(n)', 'n + 3', '-n + 1/2 + 2', '3*n + 7 + y', '2*n + 3*I', '2*I*n + 3 + 5*I', 'n**2', '2.0*n + 1', 'pi*n - pi/3', '-2*n + 5', 'n*y + 2', '2*n + I*y'].map((e) => String(z2(e)))).toEqual([
+      'Naturals0',
+      'Integers',
+      'ImageSet(Lambda(n, n + 1/2), Integers)',
+      'ImageSet(Lambda(n, 3*n + y + 7), Integers)',
+      'ImageSet(Lambda(n, 2*n + 3*I), Integers)',
+      'ImageSet(Lambda(n, 2*I*n + 3 + I), Integers)',
+      'ImageSet(Lambda(n, n**2), Integers)',
+      'ImageSet(Lambda(n, 2.0*n + 1), Integers)',
+      'ImageSet(Lambda(n, pi*n + 2*pi/3), Integers)',
+      'ImageSet(Lambda(n, 2*n + 1), Integers)',
+      'ImageSet(Lambda(n, n*y + 2), Integers)',
+      'ImageSet(Lambda(n, 2*n + I*y), Integers)',
+    ]);
+    expect(String((img('x**2', Sets.Naturals) as sj.ImageSet).lamda.call(2))).toBe('4');
+    expect((img('x**2', Sets.Naturals) as sj.ImageSet).baseSets.map(String)).toEqual(['Naturals']);
+  });
+  it('intersections of ranges, image sets and intervals (SymPy intersection_sets)', () => {
+    const R = (a: sj.ExprLike, b: sj.ExprLike, s: sj.ExprLike = 1) => Sets.range(a, b, s);
+    const ninf = sj.S.NegativeInfinity;
+    const X = Sets.intersection;
+    expect([
+      X(R(0, 10), Sets.Integers),
+      X(R(-5, 5), Sets.Naturals),
+      X(R(-5, 5), Sets.Naturals0),
+      X(R(0, 20, 3), Sets.openInterval(3, 12)),
+      X(R(0, 20), I(sj.pi, sj.mul(2, sj.pi))),
+      X(R(0, sj.oo, 2), I(3, sj.oo)),
+      X(R(ninf, 0), I(ninf, -3)),
+      X(R(0, 3), I(4, sj.oo)),
+      X(R(0, 10, 2), I(3, 7)),
+      X(R(0, 30, 4), R(1, 40, 3)),
+      X(R(0, sj.oo, 4), R(1, sj.oo, 3)),
+      X(R(ninf, 0), R(ninf, 10, 3)),
+      X(R(10, ninf, -2), R(0, sj.oo, 3)),
+      X(R(0, 10, 2), R(1, 10, 2)),
+      X(R(ninf, sj.oo), R(0, 10, 3)),
+      X(R(0, 10, 3), R(ninf, sj.oo)),
+      X(R(0, 10, 3), R(0, 0)),
+      X(R(0, 30, 6), R(29, 0, -4)),
+      X(R(0, 30, 6), R(25, 100, 10)),
+      X(R(0, 3), R(4, sj.oo)),
+      X(R(0, 5), Sets.Rationals),
+      X(R(0, 5), I(0, x)),
+      X(R(0, 5), I(0, sj.sqrt(2))),
+      X(R(0, 5), F(x).isEmpty ? Sets.EmptySet : Sets.imageSet(x, p('x**2'), Sets.Integers)),
+    ].map(String)).toEqual([
+      'Range(0, 10, 1)',
+      'Range(1, 5, 1)',
+      'Range(0, 5, 1)',
+      'Range(6, 12, 3)',
+      'Range(4, 7, 1)',
+      'Range(4, oo, 2)',
+      'Range(-oo, -2, 1)',
+      'EmptySet',
+      'Range(4, 8, 2)',
+      'Range(4, 40, 12)',
+      'Range(4, oo, 12)',
+      'Range(-oo, 1, 3)',
+      'Range(0, 12, 6)',
+      'EmptySet',
+      'Range(0, 12, 3)',
+      'Range(0, 12, 3)',
+      'EmptySet',
+      'EmptySet',
+      'EmptySet',
+      'EmptySet',
+      'Range(0, 5, 1)',
+      'Intersection(Interval(0, x), Range(0, 5, 1))',
+      'Range(0, 2, 1)',
+      'Intersection(ImageSet(Lambda(x, x**2), Integers), Range(0, 5, 1))',
+    ]);
+    const im = (e: string, b: Sets.SetExpr = Sets.Integers, v: sj.Expr = nn) => Sets.imageSet(v, p(e), b);
+    const m = sj.symbol('m');
+    expect([
+      X(im('2*n'), im('3*m + 1', Sets.Integers, m)),
+      X(im('n/2'), im('m/3', Sets.Integers, m)),
+      X(im('2*n'), im('pi*m', Sets.Integers, m)),
+      X(im('4*n + 2'), Sets.Integers),
+      X(im('n/2 + 1/4'), Sets.Integers),
+      X(im('-2*n + 1'), I(0, 10)),
+      X(im('2*n'), Sets.Lopen(0, 3)),
+      X(im('2*n', Sets.Naturals), I(0, 20)),
+      X(im('2*n'), I(p('1/3'), p('1/2'))),
+      X(im('n**2'), I(0, 10)),
+      X(im('n*y'), I(0, 10)),
+      X(im('2*n'), I(0, sj.oo)),
+      X(im('2*n', I(0, 10)), I(0, 1)),
+      X(im('n*y'), im('2*m', Sets.Integers, m)),
+      X(im('2*n', Sets.Naturals), im('2*m', Sets.Integers, m)),
+    ].map(String)).toEqual([
+      'ImageSet(Lambda(n, 6*n + 4), Integers)',
+      'Integers',
+      'Intersection(ImageSet(Lambda(m, pi*m), Integers), ImageSet(Lambda(n, 2*n), Integers))',
+      'ImageSet(Lambda(n, 4*n + 2), Integers)',
+      'EmptySet',
+      '{1, 3, 5, 7, 9}',
+      '{2}',
+      '{2, 4, 6, 8, 10, 12, 14, 16, 18, 20}',
+      'EmptySet',
+      'Intersection(ImageSet(Lambda(n, n**2), Integers), Interval(0, 10))',
+      // SymPy: {0}, which holds only for y = 0 or |y| > 10
+      'Intersection(ImageSet(Lambda(n, n*y), Integers), Interval(0, 10))',
+      // SymPy: {0}; the even numbers 0, 2, 4, ... are all in [0, oo)
+      'ImageSet(Lambda(n, 2*n), Range(0, oo, 1))',
+      'Interval(0, 1)',
+      'Intersection(ImageSet(Lambda(m, 2*m), Integers), ImageSet(Lambda(n, n*y), Integers))',
+      'Intersection(ImageSet(Lambda(m, 2*m), Integers), ImageSet(Lambda(n, 2*n), Naturals))',
+    ]);
+    expect(String(X(I(-1, 1), im('pi*n')))).toBe('{0}');
+  });
+  function B(): Sets.SetExpr {
+    return I(0, 5);
+  }
+  it('more branches of the handlers', () => {
+    const z2 = (e: string) => String(img(e, Sets.Integers, nn));
+    expect([z2('2*n + sqrt(1 + I)'), z2('n + y + 3'), z2('2*I*n + 3')]).toEqual(['ImageSet(Lambda(n, 2*n + sqrt(1 + I)), Integers)', 'ImageSet(Lambda(n, n + y), Integers)', 'ImageSet(Lambda(n, 2*I*n + 3), Integers)']);
+    expect([img('3', I(0, yy)), img('x**3', Sets.Reals)].map(String)).toEqual(['ImageSet(Lambda(x, 3), Interval(0, y))', 'Reals']);
+    expect(String(U(Sets.Rationals, I(0, 1)))).toBe('Union(Interval(0, 1), Rationals)');
+    expect(String(U(sj.ProductSet(F(1, 2, 3), I(0, 5)), sj.ProductSet(F(1, 2, 3), I(7, 8))))).toBe('ProductSet({1, 2, 3}, Union(Interval(0, 5), Interval(7, 8)))');
+    expect(String(Sets.intersection(I(0, 1), Sets.UniversalSet))).toBe('Interval(0, 1)');
+    const R = (a: sj.ExprLike, b: sj.ExprLike, st: sj.ExprLike = 1) => Sets.range(a, b, st);
+    const X = Sets.intersection;
+    expect([X(R(1, 1), I(0, 1)), X(R(5, 20), R(0, 30, 3)), X(R(0, 10, 4), R(5, 7))].map(String)).toEqual(['EmptySet', 'Range(6, 21, 3)', 'EmptySet']);
+    // SymPy: Range(0, 4, 1); the floor of a number equal to 0 that symjs does not evaluate
+    expect(String(X(R(-5, 5), I(p('sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6))'), 3)))).toBe('Intersection(Interval(-sqrt(2*sqrt(6) + 5) + sqrt(2) + sqrt(3), 3), Range(-5, 5, 1))');
+    const im = (e: string, v: sj.Expr = nn) => Sets.imageSet(v, p(e), Sets.Integers);
+    // SymPy: {0} for both, which leaves out 2, 4, ... and -2, -4, ... (the image of -2*n is that of 2*n)
+    expect([X(im('-2*n'), I(0, sj.oo)), X(im('2*n'), I(sj.S.NegativeInfinity, 0))].map(String)).toEqual(['ImageSet(Lambda(n, 2*n), Range(0, oo, 1))', 'ImageSet(Lambda(n, 2*n), Range(-oo, 1, 1))']);
+    expect(String(X(new Sets.ImageSet(nn, p('-2*n'), Sets.Integers), I(0, sj.oo)))).toBe('ImageSet(Lambda(n, -2*n), Range(-oo, 1, 1))');
+    expect(String(X(Sets.imageSet(p('2*x'), x, Sets.Integers), I(0, 1)))).toBe('Intersection(ImageSet(Lambda(2*x, x), Integers), Interval(0, 1))');
+    expect([Sets.isSubset(Sets.Rationals, Sets.Complexes), Sets.isSubset(Sets.Rationals, Sets.Integers)]).toEqual([true, undefined]);
+    expect([sj.xreplace(R(0, 5), [[sj.S.Zero, sj.S.One]]), sj.xreplace(sj.ConditionSet.of(x, p('x < y'), Sets.Integers), [[yy, 2]])].map(String)).toEqual(['Range(1, 5, 1)', 'ConditionSet(x, x < 2, Integers)']);
+  });
+});

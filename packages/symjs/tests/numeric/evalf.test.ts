@@ -80,16 +80,15 @@ describe('evalf with substituted values (mpmath functions)', () => {
     expect(ev('binomial(x, 3)', p('2 + I'))).toBe('-0.5 + 0.16666666666666666667*I');
     expect(sstr(evalf(p('binomial(x, y)'), 20, { subs: { x: p('5/2'), y: p('1/3') } }))).toBe('1.5870083613413584686');
     expect(ev('factorial2(x)', p('5'))).toBe('15.000000000000000000');
-    // a pole stays unevaluated (SymPy returns yn(0, x) unchanged; symjs keeps the
-    // substituted argument, yn(0, 0))
-    expect(ev('yn(0, x)', p('0'))).toMatch(/^yn\(0, [x0]\)$/);
-    // the double-precision value is infinite: SymPy gives oo, symjs leaves the function unevaluated
-    expect(ev('expint(1, x)', p('0'))).toMatch(/^expint\(1(\.0)?, [x0]\)$/);
+    // a pole: the expression is returned unchanged (SymPy yn(0, x).evalf(subs={x: 0}) == yn(0, x))
+    expect(ev('yn(0, x)', p('0'))).toBe('yn(0, x)');
+    // mpmath's expint(1, 0) is +inf (SymPy oo)
+    expect(ev('expint(1, x)', p('0'))).toBe('oo');
     expect(ev('Min(x, 2)', p('1/2'))).toBe('0.50000000000000000000');
     // SymPy leaves erf2inv(x, -1) and subfactorial(x) unevaluated; symjs keeps the
-    // substituted arguments (erf2inv is infinite there in double precision)
+    // substituted arguments (erf(-1) - 1 is outside the domain of erfinv)
     expect(sstr(evalf(p('erf2inv(x, y)'), 20, { subs: { x: p('-1'), y: p('-1') } }))).toMatch(/^erf2inv\(/);
-    expect(ev('subfactorial(x)', p('1/2'))).toMatch(/^subfactorial\(/);
+    expect(ev('subfactorial(x)', p('1/2'))).toBe('subfactorial(x)');
   });
   it('chops small parts', () => {
     // SymPy N(e, chop=...)

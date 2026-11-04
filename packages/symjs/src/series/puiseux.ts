@@ -17,12 +17,20 @@ import { numAdd, numCmp, numMul, numNeg } from '../core/num';
 import { add, exp, mul, pow } from '../core/ops';
 import { xreplace as subs } from '../core/traverse';
 import { fn, log } from '../functions/elementary';
+import { fnTaylorAtZero } from '../calculus/diff';
 import { expandMul as expand } from '../simplify/expand';
 import { first, last } from '../core/guard';
 import { isNegative, isPositive, isReal } from '../core/assumptions';
 
 /** A series that the expansion cannot compute (SymPy raises NotImplementedError or ValueError). */
 export class SeriesError extends NotImplementedError {}
+
+/** exp(g) with g -> oo along t -> 0+ (g has a term c*t**e, e < 0, with c not negative): no power series. */
+export class EssentialSingularity extends SeriesError {
+  constructor(readonly coeff: Expr) {
+    super('essential singularity');
+  }
+}
 
 const INF = Rational.of(1000000n);
 
@@ -211,7 +219,7 @@ function lambertWCoeff(j: number): Rational {
   return Rational.of(BigInt(-j) ** BigInt(j - 1), fact);
 }
 
-const isE = (e: Expr) => e instanceof Constant && e.name === 'E';
+export const isE = (e: Expr): boolean => e instanceof Constant && e.name === 'E';
 
 /** Expansion of an expression in t (log(t) is replaced by the dummy L). */
 export class Expander {
@@ -312,8 +320,13 @@ export class Expander {
 
   private serExp(g: Expr, n: Rational): PS {
     const sg = this.ser(g, n.isPositive ? n : S.One);
-    for (const term of sg.terms) {
-      if (term.e.isNegative && !isZeroCoeff(term.c)) throw new SeriesError('essential singularity');
+    const poles = sg.terms.filter((term) => term.e.isNegative && !isZeroCoeff(term.c));
+    if (poles.length > 0) {
+      // (the terms are in increasing order of the exponent: the first is the leading one)
+      const pole = first(poles);
+      // g -> -oo: exp(g) is smaller than every power of t (SymPy exp._eval_nseries gives O(x**n))
+      if (isNegative(pole.c) === true) return new PS([], n);
+      throw new EssentialSingularity(pole.c);
     }
     const g0 = sg.coeff(S.Zero);
     const h = new PS(
@@ -389,12 +402,16 @@ export class Expander {
     if (e.name === 'floor' || e.name === 'ceiling') {
       const lc = h.lead()?.c;
       if (lc === undefined) return PS.constant(fn(e.name, [g0]));
-      if (!(g0 instanceof Rational && g0.isInteger)) {
-        // off the integers floor/ceiling is constant; a symbolic g0 could be an integer
-        if (g0.freeSymbols().size !== 0 || !(fn(e.name, [g0]) instanceof Rational)) throw new SeriesError(`cannot expand ${e.name}`);
-        return PS.constant(fn(e.name, [g0]));
-      }
       const sign = isPositive(lc) ? 1 : isNegative(lc) ? -1 : 0;
+      if (!(g0 instanceof Rational && g0.isInteger)) {
+        // off the integers floor/ceiling is constant. A symbolic g0 could be an integer: floor is
+        // continuous from the right and ceiling from the left, so floor(g0) and ceiling(g0) are the
+        // values on those sides (SymPy floor._eval_nseries). On the other side SymPy also gives
+        // floor(y) for floor(y - x) and ceiling(y) for ceiling(y + x), which is wrong for an integer y.
+        const r = fn(e.name, [g0]);
+        if (r instanceof Rational || (e.name === 'floor' ? sign > 0 : sign < 0)) return PS.constant(r);
+        throw new SeriesError(`cannot expand ${e.name}`);
+      }
       if (sign === 0) throw new SeriesError(`cannot expand ${e.name}`);
       const up = e.name === 'floor' ? (sign > 0 ? 0 : -1) : sign > 0 ? 1 : 0;
       return PS.constant(add(g0, up));
@@ -429,6 +446,8 @@ export class Expander {
     }
     // the derivatives of LambertW at 0 are 0/0 forms: W(h) = sum_{j>=1} (-j)**(j-1)/j! h**j
     if (e.name === 'LambertW' && g0 instanceof Rational && g0.isZero) return this.powerSeries(lambertWCoeff, h, n);
+    const taylor = fnTaylorAtZero[e.name];
+    if (taylor && g0 instanceof Rational && g0.isZero) return this.powerSeries(taylor, h, n);
     return this.analytic((w) => fn(e.name, [w]), g0, h, n);
   }
 

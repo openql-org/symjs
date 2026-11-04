@@ -3,24 +3,32 @@
 
 /**
  * @file Bessel and Airy functions (SymPy functions/special/bessel.py):
- * besselj, bessely, besseli, besselk, airyai, airybi, airyaiprime and
- * airybiprime with SymPy's evaluation rules, derivatives and numerics.
+ * besselj, bessely, besseli, besselk, hankel1, hankel2, airyai, airybi,
+ * airyaiprime, airybiprime and marcumq with SymPy's evaluation rules,
+ * derivatives, rewrites and numerics.
+ *
+ * Ported from SymPy 1.14 (BSD 3-Clause, see LICENSE).
  */
 
 import { NotImplementedError } from '../core/errors';
-import { first, pair } from '../core/guard';
+import { at, defined, first, pair } from '../core/guard';
 import '../numeric/mpspecialfns';
-import { isIntegerQ, isNegative, isPositive, isZero as isZeroQ } from '../core/assumptions';
+import { isIntegerQ, isNegative, isPositive, isReal, isZero as isZeroQ } from '../core/assumptions';
 import type { ComplexValue as C, Expr, ExprLike } from '../core/nodes';
-import { Mul, Rational, S, Special } from '../core/nodes';
-import { add, couldExtractMinusSign, exp, mul, neg, pow } from '../core/ops';
-import { fnPartials } from '../calculus/diff';
+import { Fn, Mul, Rational, S, Special } from '../core/nodes';
+import { add, couldExtractMinusSign, exp, mul, neg, pow, sqrt } from '../core/ops';
+import { fnPartials, fnTaylorAtZero } from '../calculus/diff';
 import { c as cx, cadd, cdiv, clog, cmul, cpow } from '../numeric/complex';
 import { numericFns } from '../numeric/evalf';
-import { conjugateCommutes, evaluators, fn, re } from './elementary';
-import { cgamma } from './special';
+import { mpFns } from '../numeric/mpeval';
+import * as M from '../numeric/mpfun';
+import { registerRewrite } from '../simplify/rewrite';
+import { abs, conjugate, conjugateCommutes, conjugateRules, evaluators, fn, re } from './elementary';
+import { extractBranchFactor, unpolarify } from './polar';
+import { cgamma, funcExpanders } from './special';
 
 type BName = 'besselj' | 'bessely' | 'besseli' | 'besselk';
+type HName = 'hankel1' | 'hankel2';
 const isZero = (e: Expr) => e instanceof Rational && e.isZero;
 const isOo = (e: Expr) => e instanceof Special && (e.name === 'oo' || e.name === '-oo');
 
@@ -31,7 +39,7 @@ function imagPart(z: Expr): Expr | undefined {
   return undefined;
 }
 
-/** SymPy besselj/bessely/besseli/besselk.eval (without the branch handling of polar arguments). */
+/** SymPy besselj/bessely/besseli/besselk.eval. */
 function evalBessel(name: BName) {
   const first = name === 'besselj' || name === 'besseli';
   return (nu: Expr, z: Expr): Expr | undefined => {
@@ -76,7 +84,17 @@ function evalBessel(name: BName) {
       if (name === 'besselj' && iz !== undefined) return mul(pow(S.I, nu), fn('besseli', [nu, iz]));
       if (name === 'besseli' && iz !== undefined) return mul(pow(S.I, neg(nu)), fn('besselj', [nu, neg(iz)]));
     }
-    return undefined;
+    if (!first) return undefined;
+    // branch handling of polar arguments: J_nu(exp_polar(2*pi*I*n) z) = exp(2*pi*I*n*nu) J_nu(z), likewise I_nu
+    if (isIntegerQ(nu) === true) {
+      const nz = unpolarify(z);
+      if (nz.key !== z.key) return fn(name, [nu, nz]);
+    } else {
+      const [nz, n] = extractBranchFactor(z);
+      if (!isZero(n)) return mul(exp(mul(2, n, S.Pi, nu, S.I)), fn(name, [nu, nz]));
+    }
+    const nnu = unpolarify(nu);
+    return nnu.key === nu.key ? undefined : fn(name, [nnu, z]);
   };
 }
 
@@ -233,7 +251,130 @@ numericFns.airybi = (args) => airyNumeric('bi', first(args));
 numericFns.airyaiprime = (args) => airyNumeric('aip', first(args));
 numericFns.airybiprime = (args) => airyNumeric('bip', first(args));
 for (const n of ['airyai', 'airybi', 'airyaiprime', 'airybiprime'] as const) conjugateCommutes.add(n);
+// Maclaurin coefficients (SymPy airyai.taylor_term and airybi.taylor_term without previous terms):
+// Ai: 3**(n/3)/(3**(2/3)*pi) * gamma((n + 1)/3) * sin(2*pi*(n + 1)/3)/n!, Bi: 3**(n/3)/(3**(1/6)*pi) * gamma((n + 1)/3) * |sin(2*pi*(n + 1)/3)|/n!
+const airyTaylor = (kind: 'ai' | 'bi') => (n: number): Expr => {
+  const s = fn('sin', [mul(Rational.of(2 * (n + 1), 3), S.Pi)]);
+  const pre = kind === 'ai' ? pow(mul(pow(3, Rational.of(2, 3)), S.Pi), -1) : pow(mul(pow(3, Rational.of(1, 6)), S.Pi), -1);
+  return mul(pre, fn('gamma', [Rational.of(n + 1, 3)]), kind === 'ai' ? s : abs(s), pow(fn('factorial', [n]), -1), pow(pow(3, Rational.of(1, 3)), n));
+};
+fnTaylorAtZero.airyai = airyTaylor('ai');
+fnTaylorAtZero.airybi = airyTaylor('bi');
 
+// ---- Hankel functions ----------------------------------------------------------------
+
+for (const name of ['hankel1', 'hankel2'] as const) {
+  // d/dz H(nu, z) = H(nu - 1, z)/2 - H(nu + 1, z)/2 (SymPy BesselBase.fdiff with _a = _b = 1)
+  fnPartials[name] = (args, i) => {
+    if (i === 0) throw new NotImplementedError(`diff: ${name} w.r.t. its order`);
+    const [nu, z] = pair(args);
+    return add(mul(S.Half, fn(name, [add(nu, -1), z])), mul(S.NegHalf, fn(name, [add(nu, 1), z])));
+  };
+  const sign = name === 'hankel1' ? 1 : -1;
+  // H(1,2)(nu, z) = J(nu, z) +- I*Y(nu, z)
+  numericFns[name] = (args) => {
+    const [nu, z] = pair(args);
+    return cadd(besselNumeric('besselj', nu, z), cmul(cx(0, sign), besselNumeric('bessely', nu, z)));
+  };
+  mpFns[name] = (args, p) => {
+    const wp = p + 10;
+    const j = defined(mpFns['besselj'], 'mp besselj')(args, wp);
+    const y = defined(mpFns['bessely'], 'mp bessely')(args, wp);
+    return M.cadd(j, M.cmul(sign === 1 ? M.CI : M.cneg(M.CI), y, wp), p);
+  };
+}
+
+/** SymPy BesselBase._eval_conjugate: f(conjugate(nu), conjugate(z)) unless z may be negative (hankel1 and hankel2 swap). */
+const besselConjugate = (name: BName | HName, target: BName | HName) => (args: readonly Expr[]): Expr => {
+  const [nu, z] = pair(args);
+  if (isNegative(z) === false) return fn(target, [conjugate(nu), conjugate(z)]);
+  return new Fn('conjugate', [new Fn(name, args)]);
+};
+for (const name of ['besselj', 'bessely', 'besseli', 'besselk'] as const) conjugateRules[name] = besselConjugate(name, name);
+conjugateRules.hankel1 = besselConjugate('hankel1', 'hankel2');
+conjugateRules.hankel2 = besselConjugate('hankel2', 'hankel1');
+
+// ---- rewrites ----------------------------------------------------------------------
+
+/** sqrt(2*z/pi) * f(nu - 1/2, z): besselj and bessely in terms of jn and yn. */
+const asSpherical = (target: 'jn' | 'yn') => (args: readonly Expr[]): Expr => {
+  const [nu, z] = pair(args);
+  return mul(sqrt(mul(2, z, pow(S.Pi, -1))), fn(target, [add(nu, S.NegHalf), z]));
+};
+registerRewrite('besselj', 'jn', asSpherical('jn'));
+registerRewrite('bessely', 'yn', asSpherical('yn'));
+// besselj(nu, z) = csc(pi*nu)*bessely(-nu, z) - cot(pi*nu)*bessely(nu, z) and bessely in terms of besselj (nu not an integer)
+registerRewrite('besselj', 'bessely', (args) => {
+  const [nu, z] = pair(args);
+  if (isIntegerQ(nu) !== false) return undefined;
+  const t = mul(S.Pi, nu);
+  return add(mul(fn('csc', [t]), fn('bessely', [neg(nu), z])), mul(-1, fn('cot', [t]), fn('bessely', [nu, z])));
+});
+registerRewrite('bessely', 'besselj', (args) => {
+  const [nu, z] = pair(args);
+  if (isIntegerQ(nu) !== false) return undefined;
+  const t = mul(S.Pi, nu);
+  return mul(fn('csc', [t]), add(mul(fn('cos', [t]), fn('besselj', [nu, z])), mul(-1, fn('besselj', [neg(nu), z]))));
+});
+// besselk(nu, z) = pi*csc(pi*nu)*(besseli(-nu, z) - besseli(nu, z))/2 (nu not an integer)
+registerRewrite('besselk', 'besseli', (args) => {
+  const [nu, z] = pair(args);
+  if (isIntegerQ(nu) !== false) return undefined;
+  return mul(S.Pi, S.Half, fn('csc', [mul(S.Pi, nu)]), add(fn('besseli', [neg(nu), z]), mul(-1, fn('besseli', [nu, z]))));
+});
+
+// ---- expand_func ----------------------------------------------------------------------
+
+/** The recurrence coefficients (_a, _b) of SymPy's Bessel classes. */
+const RECURRENCE: Record<BName | HName, [number, number]> = { besselj: [1, 1], bessely: [1, 1], besseli: [-1, 1], besselk: [1, -1], hankel1: [1, 1], hankel2: [1, 1] };
+
+/** SymPy BesselBase._eval_expand_func: reduce a real order to (-1, 1] by the recurrence. */
+function expandBessel(name: BName | HName, nu: Expr, z: Expr): Expr {
+  const [a, b] = RECURRENCE[name];
+  const f = (k: number) => expandBessel(name, add(nu, k), z);
+  if (isReal(nu) === true) {
+    if (isPositive(add(nu, -1)) === true) return add(mul(-a * b, f(-2)), mul(mul(2 * a, add(nu, -1), f(-1)), pow(z, -1)));
+    if (isNegative(add(nu, 1)) === true) return add(mul(mul(2 * b, add(nu, 1), f(1)), pow(z, -1)), mul(-a * b, f(2)));
+  }
+  return fn(name, [nu, z]);
+}
+for (const name of ['besselj', 'bessely', 'besseli', 'besselk', 'hankel1', 'hankel2'] as const) funcExpanders[name] = (args) => expandBessel(name, ...pair(args));
+
+// ---- Marcum Q-function -----------------------------------------------------------------
+
+/** SymPy marcumq.eval. */
+evaluators.marcumq = (m, ...ab) => {
+  const [a, b] = pair(ab);
+  const bothZero = isZeroQ(m) === true && isZeroQ(b) === true;
+  if (isZeroQ(a) === true) {
+    if (bothZero) return S.Zero;
+    return mul(fn('uppergamma', [m, mul(pow(b, 2), S.Half)]), pow(fn('gamma', [m]), -1));
+  }
+  if (bothZero) return add(1, mul(-1, pow(exp(mul(pow(a, 2), S.Half)), -1)));
+  if (a.key === b.key) {
+    const a2 = pow(a, 2);
+    const e = exp(neg(a2));
+    if (m.key === S.One.key) return mul(S.Half, add(1, mul(e, fn('besseli', [0, a2]))));
+    if (m.key === Rational.of(2).key) return add(S.Half, mul(S.Half, e, fn('besseli', [0, a2])), mul(e, fn('besseli', [1, a2])));
+  }
+  return undefined;
+};
+fnPartials.marcumq = (args, i) => {
+  const [m, a, b] = [at(args, 0), at(args, 1), at(args, 2)];
+  // d/da Q = a*(Q(m + 1) - Q(m)), d/db Q = -b**m/a**(m - 1)*exp(-(a**2 + b**2)/2)*besseli(m - 1, a*b)
+  if (i === 1) return mul(a, add(mul(-1, fn('marcumq', [m, a, b])), fn('marcumq', [add(1, m), a, b])));
+  if (i === 2) return mul(-1, pow(b, m), pow(pow(a, add(m, -1)), -1), exp(mul(-1, add(pow(a, 2), pow(b, 2)), S.Half)), fn('besseli', [add(m, -1), mul(a, b)]));
+  throw new NotImplementedError('diff: marcumq w.r.t. its order');
+};
+// marcumq(m, a, a) = 1/2 + exp(-a**2)*besseli(0, a**2)/2 + exp(-a**2)*sum(besseli(i, a**2), (i, 1, m - 1)) for an integer m >= 1
+registerRewrite('marcumq', 'besseli', (args) => {
+  const [m, a, b] = [at(args, 0), at(args, 1), at(args, 2)];
+  if (a.key !== b.key || !(m instanceof Rational && m.isInteger && m.p >= 1n)) return undefined;
+  const a2 = pow(a, 2);
+  const e = exp(neg(a2));
+  const terms = Array.from({ length: Number(m.p) - 1 }, (_, k) => fn('besseli', [k + 1, a2]));
+  return add(S.Half, mul(S.Half, e, fn('besseli', [0, a2])), mul(e, add(...terms)));
+});
 
 export const besselj = (nu: ExprLike, z: ExprLike): Expr => fn('besselj', [nu, z]);
 export const bessely = (nu: ExprLike, z: ExprLike): Expr => fn('bessely', [nu, z]);
@@ -243,3 +384,9 @@ export const airyai = (z: ExprLike): Expr => fn('airyai', [z]);
 export const airybi = (z: ExprLike): Expr => fn('airybi', [z]);
 export const airyaiprime = (z: ExprLike): Expr => fn('airyaiprime', [z]);
 export const airybiprime = (z: ExprLike): Expr => fn('airybiprime', [z]);
+/** SymPy hankel1(nu, z) = besselj(nu, z) + I*bessely(nu, z): Hankel function of the first kind. */
+export const hankel1 = (nu: ExprLike, z: ExprLike): Expr => fn('hankel1', [nu, z]);
+/** SymPy hankel2(nu, z) = besselj(nu, z) - I*bessely(nu, z): Hankel function of the second kind. */
+export const hankel2 = (nu: ExprLike, z: ExprLike): Expr => fn('hankel2', [nu, z]);
+/** SymPy marcumq(m, a, b): the generalized Marcum Q-function. */
+export const marcumq = (m: ExprLike, a: ExprLike, b: ExprLike): Expr => fn('marcumq', [m, a, b]);

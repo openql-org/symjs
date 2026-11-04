@@ -25,6 +25,7 @@ import {
   Add,
   BoolAtom,
   Constant,
+  ExtensionExpr,
   Fn,
   Integral,
   Mul,
@@ -52,6 +53,10 @@ import { expand as expandFull, expandMul as expand } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { expsimp, hasTrigFunctions } from '../simplify/trigsimp';
 import { meijerintDefinite } from './meijerint';
+import { NonElementaryIntegral, rischHooks, rischIntegrate } from './risch';
+import { isDiracDelta, isSingularityFunction } from './transforms/delta';
+import { deltaIntegral } from './deltafunctions';
+import { singularityIntegral } from './singularityfunctions';
 
 type R = Expr | undefined;
 
@@ -735,8 +740,63 @@ function singularPoints(f: Expr, x: Sym): Expr[] | undefined {
   return [...points.values()];
 }
 
+/**
+ * The methods SymPy's Integral._eval_integral tries besides the table and
+ * heuristics: deltaintegrate, singularityintegrate and the Risch algorithm
+ * for elementary transcendental integrands. Undefined when none applies.
+ */
+function otherMethods(f: Expr, x: Sym): Expr | undefined {
+  // deltaintegrate integrates the parts it does not handle with integrate: not again by these methods
+  const key = `${f.key}|${x.key}`;
+  if (activeMethods.has(key)) return undefined;
+  activeMethods.add(key);
+  try {
+    if (f instanceof Add) {
+      // term by term, each term by the table or by these methods (SymPy integrates the terms separately)
+      const parts = f.args.map((g) => new Integrator(x).integrate(g) ?? otherMethods(g, x));
+      if (parts.every((p): p is Expr => p !== undefined)) return add(...parts);
+    }
+    const r = some(f, isDiracDelta) ? deltaIntegral(f, x) : undefined;
+    if (r !== undefined) return r;
+    const s = some(f, isSingularityFunction) ? singularityIntegral(f, x) : undefined;
+    return s ?? risch(f, x);
+  } finally {
+    activeMethods.delete(key);
+  }
+}
+const activeMethods = new Set<string>();
+
+/**
+ * risch_integrate as SymPy's integrate uses it: the elementary part, plus
+ * the nonelementary integral when the elementary part is not zero (SymPy
+ * then tries the other methods on it; here it is kept unevaluated).
+ */
+function risch(f: Expr, x: Sym): Expr | undefined {
+  let result: Expr;
+  let i: Expr;
+  try {
+    [result, i] = rischIntegrate(f, x, { separateIntegral: true });
+  } catch {
+    // integrands outside the transcendental elementary cases (trigonometric, algebraic, ...) raise
+    // NotImplementedError; like SymPy, integrate then goes on with the other methods
+    return undefined;
+  }
+  // the base case of rational functions in x may be left unevaluated
+  if (some(result, (e) => e instanceof Integral)) return undefined;
+  if (!(i instanceof NonElementaryIntegral)) return result;
+  if (isZeroR(result)) return undefined;
+  const rest = new Integrator(x).integrate(i.integrand);
+  return add(result, rest ?? new Integral([i.integrand, x]));
+}
+
+rischHooks.integrate = (f, x) => new Integrator(x).integrate(f) ?? new Integral([f, x]);
+
 export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, ExprLike], opts: { conds?: 'piecewise' | 'none' } = {}): Expr {
   let f = sympify(ex);
+  if (f instanceof ExtensionExpr) {
+    const own = f.integrateSelf(x, limits && [sympify(limits[0]), sympify(limits[1])], (g) => integrate(g, x, limits, opts));
+    if (own !== undefined) return own;
+  }
   if (limits) f = simplifyConditionsOnInterval(f, x, sympify(limits[0]), sympify(limits[1]));
   // sums and constant multiples containing a Piecewise: term by term
   const hasPw = (e: Expr): boolean => e instanceof Piecewise || e.args.some(hasPw);
@@ -753,7 +813,7 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
     const r = integratePiecewise(f, x);
     if (r) return r;
   }
-  const F = f instanceof Piecewise ? integratePiecewise(f, x) : new Integrator(x).integrate(f);
+  const F = f instanceof Piecewise ? integratePiecewise(f, x) : (new Integrator(x).integrate(f) ?? otherMethods(f, x));
   if (!limits) return F ?? new Integral([f, x]);
   const a = sympify(limits[0]);
   const b = sympify(limits[1]);

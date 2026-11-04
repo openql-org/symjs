@@ -242,9 +242,9 @@ describe('calculus, evaluation and substitution', () => {
     expect(String(P('3*x**2 + 2*x*y', x, y).integrate(x))).toBe("Poly(x**3 + x**2*y, x, y, domain='QQ')");
     expect(String(P('3*x**2 + 2*x*y', x, y).integrate(y))).toBe("Poly(3*x**2*y + x*y**2, x, y, domain='QQ')");
     expect(String(P('4*x**3 + 1', x).integrate())).toBe("Poly(x**4 + x, x, domain='QQ')");
-    // SymPy raises PolynomialError (y is not a generator); symjs integrates the coefficients
-    expect(String(P('x**2 + 1', x).integrate(y))).toBe("Poly(y*x**2 + y, x, domain='ZZ[y]')");
-    expect(() => P('y*x**2 + 1', x).integrate(y)).toThrow(sj.NotImplementedError);
+    // y is not a generator (SymPy PolynomialError)
+    expect(() => P('x**2 + 1', x).integrate(y)).toThrow('a valid generator expected, got y');
+    expect(() => P('y*x**2 + 1', x).integrate(y)).toThrow(sj.PolynomialError);
     expect(String(P('x**2*y + y + 1', x, y).eval(2))).toBe("Poly(5*y + 1, y, domain='ZZ')");
     expect(String(P('x**2*y + y + 1', x, y).eval(3, y))).toBe("Poly(3*x**2 + 4, x, domain='ZZ')");
     expect(String(P('x**2 + 1', x).eval(3))).toBe('10');
@@ -311,13 +311,23 @@ describe('generators and domains', () => {
     expect(String(e.inject())).toBe("Poly(x**2*y + x*y**3 + x*y + 1, x, y, domain='ZZ')");
     expect(String(e.inject({ front: true }))).toBe("Poly(y**3*x + y*x**2 + y*x + 1, y, x, domain='ZZ')");
     expect(String(P('x + 1', x).inject())).toBe("Poly(x + 1, x, domain='ZZ')");
-    expect(String(P('x**2 - sqrt(2)*x + 1', x).norm())).toBe("Poly(x**4 + 1, x, domain='QQ')");
+    // the norm needs an algebraic field QQ<a>: over EX and ZZ_I SymPy raises DomainError
+    expect(() => P('x**2 - sqrt(2)*x + 1', x).norm()).toThrow('ground domain must be algebraic');
+    expect(() => P('x - I', x).norm()).toThrow(sj.DomainError);
     expect(String(P('x - I', x).lift())).toBe("Poly(x**2 + 1, x, domain='ZZ')");
     expect(String(P('x - I/2', x).lift())).toBe("Poly(x**2 + 1/4, x, domain='QQ')");
-    // SymPy raises NotImplementedError / DomainError here; symjs returns the polynomial unchanged
-    expect(String(P('x*y', x, y).eject(z))).toBe("Poly(x*y, x, y, domain='ZZ')");
-    expect(String(P('x - 1', x).lift())).toBe("Poly(x - 1, x, domain='ZZ')");
-    expect(String(P('x - 1', x).norm())).toBe("Poly(x - 1, x, domain='ZZ')");
+    // SymPy raises NotImplementedError (z is neither a leading nor a trailing generator) and DomainError
+    expect(() => P('x*y', x, y).eject(z)).toThrow('can only eject front or back generators');
+    expect(() => P('x*y*z', x, y, z).eject(y)).toThrow(sj.NotImplementedError);
+    expect(() => P('x*y*z', x, y, z).eject(z, y)).toThrow(sj.NotImplementedError);
+    expect(String(P('x*y*z', x, y, z).eject(y, z))).toBe("Poly(y*z*x, x, domain='ZZ[y,z]')");
+    expect(String(P('x*y', x, y).eject())).toBe("Poly(x*y, x, y, domain='ZZ')");
+    expect(() => P('x - 1', x).lift()).toThrow('computation can be done only in an algebraic domain');
+    expect(() => P('x - sqrt(2)', x).lift()).toThrow(sj.DomainError);
+    expect(() => P('x - 1', x).norm()).toThrow(sj.DomainError);
+    // not implemented: more than three square roots (SymPy gives (x - 1)**16 expanded)
+    expect(() => Poly.from(parse('x - 1'), [x], { domain: 'QQ<sqrt(2) + sqrt(3) + sqrt(5) + sqrt(7)>' }).norm()).toThrow('norm: unsupported coefficient field');
+    expect(String(P('x/2', x).integrate())).toBe("Poly(1/4*x**2, x, domain='QQ')");
     expect(show(P('2*x**2 + 3*x + 1/2', x).makeMonicOverIntegersByScalingRoots())).toBe("[Poly(x**2 + 6*x + 4, x, domain='ZZ'), 4]");
     expect(() => P('a*x**2 + 1', x).makeMonicOverIntegersByScalingRoots()).toThrow(sj.DomainError);
   });
@@ -434,8 +444,8 @@ describe('further Poly cases', () => {
     expect(show(P('0', x).coeffs())).toBe('[0]');
     expect(String(P('0', x).LC())).toBe('0');
     expect(P('x**2*y', x, y).degree(1)).toBe(1);
-    // SymPy raises PolynomialError for a non-generator; symjs gives degree 0
-    expect(P('x**2', x).degree(y)).toBe(0);
+    // y is not a generator (SymPy PolynomialError; the function degree(x**2, y) is 0)
+    expect(() => P('x**2', x).degree(y)).toThrow('a valid generator expected, got y');
     // SymPy total_degree() of zero is 0; symjs keeps -oo like degree()
     expect(P('0', x, y).totalDegree()).toBe(-Infinity);
     expect(String(P('x + 1', x).sub(P('x', x)))).toBe("Poly(1, x, domain='ZZ')");
@@ -471,8 +481,8 @@ describe('further Poly cases', () => {
     expect(show(P('x - pi', x).allRoots())).toBe('[pi]');
     expect(show(P('x - pi*sqrt(2)', x).allRoots())).toBe('[sqrt(2)*pi]');
     // SymPy raises DomainError (the ground domain is not algebraic)
-    expect(() => P('x - pi', x).norm()).toThrow(sj.NotImplementedError);
-    expect(() => P('x - pi*sqrt(2)', x).norm()).toThrow(sj.NotImplementedError);
+    expect(() => P('x - pi', x).norm()).toThrow(sj.DomainError);
+    expect(() => P('x - pi*sqrt(2)', x).norm()).toThrow(sj.DomainError);
     // SymPy gives the roots as CRootOf of the degree-8 norm; symjs keeps the radicals
     // (the square root factored as SymPy's roots_quadratic does over EX: factor_terms(sqrt(2 - 4*I)/2) = sqrt(2)*sqrt(1 - 2*I)/2)
     expect(show(P('x**2 - sqrt(2)*x + I', x).allRoots({ extension: true }))).toBe(

@@ -71,7 +71,7 @@ export function round(xIn: ExprLike, n?: number): Expr {
   let xi = xf.man < 0n ? -F.floor(F.neg(xf)) : F.floor(xf);
   const sign = F.sign(xn) > 0 ? 1n : -1n;
   const dif = F.round(F.mulInt(F.sub(xf, F.fromInt(xi)), sign), F.dpsToPrec(extra));
-  const half = { man: 1n, exp: -1 };
+  const half = { man: 1n, exp: -1n };
   const c = F.cmp(dif, half);
   // a tie goes to the even neighbour (SymPy: xi += sign if xi % 2 else -xi % 2)
   if (c > 0 || (c === 0 && xi % 2n !== 0n)) xi += sign;

@@ -80,7 +80,7 @@ function shiftCount(z: Mpc, wp: number): number {
 /** Stirling series for log Gamma(w), Re w large. */
 function stirling(w: Mpc, wp: number): Mpc {
   const logw = clog(w, wp);
-  let s = csub(cmul(csub(w, real({ man: 1n, exp: -1 }), wp), logw, wp), w, wp);
+  let s = csub(cmul(csub(w, real({ man: 1n, exp: -1n }), wp), logw, wp), w, wp);
   s = cadd(s, real(F.ldexp(M.log(F.ldexp(M.mpPi(wp), 1), wp), -1)), wp);
   const w2 = cmul(w, w, wp);
   let wpow = w; // w^(2k-1)
@@ -302,6 +302,7 @@ export function cfresnel(which: 'S' | 'C', z: Mpc, prec: number): Mpc {
   const x = z[0];
   // a large real argument: the asymptotic expansion (the series would need ~|z|^2 extra bits)
   if (F.isZero(z[1]) && (Math.PI / 2) * F.toNumber(F.mul(x, x, 53)) * 1.4427 > prec + 40) return real(fresnelAsymptotic(which, x, prec));
+  if ((Math.PI / 2) * cabsD(z) ** 2 * 1.4427 > prec + 40) return cfresnelAsymptotic(which, z, prec);
   const wp = prec + extraBits(z, Math.PI / 2) + 10;
   const pi2 = real(F.ldexp(M.mpPi(wp), -1));
   const z2 = cmul(z, z, wp);
@@ -343,9 +344,47 @@ function fresnelAsymptotic(which: 'S' | 'C', xIn: Mpf, prec: number): Mpf {
   f = F.div(f, px, wp);
   g = F.div(g, px, wp);
   const [sn, cs] = M.sinCos(u, wp);
-  const half: Mpf = { man: 1n, exp: -1 };
+  const half: Mpf = { man: 1n, exp: -1n };
   const v = which === 'S' ? F.sub(F.sub(half, F.mul(f, cs, wp), wp), F.mul(g, sn, wp), wp) : F.sub(F.add(half, F.mul(f, sn, wp), wp), F.mul(g, cs, wp), wp);
   return F.round(neg ? F.neg(v) : v, prec);
+}
+
+/**
+ * S(z) and C(z) for a large complex z by the expansion of fresnelAsymptotic, valid for
+ * |ph z| <= pi/4 after the symmetries S(-z) = -S(z), C(-z) = -C(z), S(iz) = -i S(z),
+ * C(iz) = i C(z) (DLMF 7.4.7, 7.4.8; 7.12.2, 7.12.3 hold for |ph z| < pi/2); mpmath evaluates
+ * the 1F2 series of S and C with its asymptotic expansion there.
+ */
+function cfresnelAsymptotic(which: 'S' | 'C', z: Mpc, prec: number): Mpc {
+  const [a, b] = z;
+  if (F.cmp(F.abs(b), F.abs(a)) > 0) {
+    // z = i w with w = -i z: S(z) = -i S(w), C(z) = i C(w)
+    const v = cfresnelAsymptotic(which, [b, F.neg(a)], prec);
+    return which === 'S' ? [v[1], F.neg(v[0])] : [F.neg(v[1]), v[0]];
+  }
+  if (a.man < 0n) return cneg(cfresnelAsymptotic(which, cneg(z), prec));
+  const wp = prec + 20;
+  const wpu = wp + 2 * Math.max(0, Math.max(F.mag(a), F.mag(b))) + 10;
+  const u = cmul(real(F.ldexp(M.mpPi(wpu), -1)), cmul(z, z, wpu), wpu);
+  let t: Mpc = C1;
+  let f: Mpc = C1;
+  let g: Mpc = C0;
+  for (let k = 1; ; k++) {
+    t = cdiv(cmul(t, real(F.fromRational(BigInt(2 * k - 1), 2n, wp)), wp), u, wp);
+    if (Math.max(F.mag(t[0]), F.mag(t[1])) < -wp - 4) break;
+    // (-1)^floor(k/2): k = 1, 2, 3, 4, ... adds +g, -f, -g, +f, ...
+    const sgn = k % 4 === 1 || k % 4 === 0 ? t : cneg(t);
+    if (k % 2) g = cadd(g, sgn, wp);
+    else f = cadd(f, sgn, wp);
+  }
+  const pz = cmul(real(M.mpPi(wp)), z, wp);
+  f = cdiv(f, pz, wp);
+  g = cdiv(g, pz, wp);
+  const sn = M.csin(u, wp);
+  const cs = M.ccos(u, wp);
+  const half = real({ man: 1n, exp: -1n });
+  const v = which === 'S' ? csub(csub(half, cmul(f, cs, wp), wp), cmul(g, sn, wp), wp) : csub(cadd(half, cmul(f, sn, wp), wp), cmul(g, cs, wp), wp);
+  return rnd(v, prec);
 }
 
 /** Lower incomplete gamma: z^s e^-z sum z^k / (s (s+1) ... (s+k)). */

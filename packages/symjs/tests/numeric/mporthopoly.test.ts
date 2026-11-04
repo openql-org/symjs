@@ -10,6 +10,7 @@ import * as F from '../../src/numeric/mpf';
 import type { Mpc } from '../../src/numeric/mpfun';
 import { mpFns } from '../../src/numeric/mpeval';
 import '../../src/numeric/mpspecialfns';
+import * as OP from '../../src/numeric/mporthopoly';
 
 describe('Legendre, Jacobi, Gegenbauer and Chebyshev functions equal mpmath', () => {
   // [mpmath call, registered name, arguments [re, im], [value at 15 digits, at 50 digits] as [re, im]]
@@ -37,6 +38,15 @@ describe('Legendre, Jacobi, Gegenbauer and Chebyshev functions equal mpmath', ()
     ["chebyu(0.5,0.5)", "chebyshevu", [["0.5", "0.0"], ["0.5", "0.0"]], [["1.15470053837925", "0.0"], ["1.1547005383792515290182975610039149112952035025403", "0.0"]]],
     ["chebyu(1.5,0.2+0.1*I)", "chebyshevu", [["1.5", "0.0"], ["0.200000000000000011102230246251565404236316680908203125", "0.1000000000000000055511151231257827021181583404541015625"]], [["-0.299395196341731", "0.244631110336008"], ["-0.29939519634173138764368529369817268733682897618956", "0.24463111033600785511925447653017306880303447526697"]]],
     ["chebyt(0.5,3)", "chebyshevt", [["0.5", "0.0"], ["3.0", "0.0"]], [["1.4142135623731", "0.0"], ["1.4142135623730950488016887242096980785696718753769", "0.0"]]],
+    // near z = 1 (the 1 - z transformation; its limit at the integer c - a - b = 0 of legendre)
+    ["legendre(1.5,-0.95)", "legendre", [["1.5", "0.0"], ["-0.9499999999999999555910790149937383830547332763671875", "0.0"]], [["0.25979368662758", "0.0"], ["0.25979368662757989359137462827055704506113067525846", "0.0"]]],
+    ["legendre(1/3.,-0.99)", "legendre", [["0.333333333333333314829616256247390992939472198486328125", "0.0"], ["-0.9899999999999999911182158029987476766109466552734375", "0.0"]], [["-0.710916382089143", "0.0"], ["-0.71091638208914331422493185583643454592790804286895", "0.0"]]],
+    ["legenp(2.5,0.5,-0.97)", "assoc_legendre", [["2.5", "0.0"], ["0.5", "0.0"], ["-0.9699999999999999733546474089962430298328399658203125", "0.0"]], [["-1.19861813776067", "0.0"], ["-1.1986181377606669809173472729920196312301263627223", "0.0"]]],
+    ["chebyt(1/3.,-0.93)", "chebyshevt", [["0.333333333333333314829616256247390992939472198486328125", "0.0"], ["-0.93000000000000004884981308350688777863979339599609375", "0.0"]], [["0.60443776901398", "0.0"], ["0.60443776901398005650386141024952406615313241379205", "0.0"]]],
+    // |z| > 1 with an integer a - b (the limit of the 1/z transformation)
+    ["legendre(0.5,-3)", "legendre", [["0.5", "0.0"], ["-3.0", "0.0"]], [["-0.07186707817226", "1.59738660517589"], ["-0.071867078172259998219103751835431015701363776142274", "1.5973866051758863743437557137626626022866222508384"]]],
+    // |z| > 1 with a complex a - b (the 1/z transformation)
+    ["legendre(0.5+1j,-3)", "legendre", [["0.5", "1.0"], ["-3.0", "0.0"]], [["0.319268982927828", "0.658884484668917"], ["0.31926898292782801227183169190946087558538519518997", "0.65888448466891663979429151538366595690081013205299"]]],
     ["legenp(1,2,0.3)", "assoc_legendre", [["1.0", "0.0"], ["2.0", "0.0"], ["0.299999999999999988897769753748434595763683319091796875", "0.0"]], [["0.0", "0.0"], ["0.0", "0.0"]]],
   ];
   it.each(cases)('%s', (_, name, args, want) => {
@@ -58,11 +68,33 @@ describe('the cases needing analytic continuation or limits', () => {
     return () => f(args.map((a) => [F.fromNumber(a), F.ZERO] as Mpc), 53);
   };
   it('raises NotImplementedError where mpmath continues 2F1 or takes a limit', () => {
-    // mpmath legendre(1.5, -0.95) = 0.25979368662758 (2F1 at z = 0.975)
-    expect(at('legendre', [1.5, -0.95])).toThrow('2F1 near z = 1');
+    // mpmath hyp2f1(0.5, 1.5, 3, exp(i pi/3)) by Gosper's recurrence: |z|, |1 - z| and |z/(z - 1)| are all 1
+    const z: Mpc = [F.fromStr('0.5', 53), F.fromStr('0.8660254037844386', 53)];
+    const r = (x: string): Mpc => [F.fromStr(x, 53), F.ZERO];
+    expect(() => OP.chyp2f1(r('0.5'), r('1.5'), r('3'), z, 53)).toThrow('2F1 near |z| = 1 away from z = 1');
     // mpmath jacobi(1.5, -2, 3, 0.3), gegenbauer(1.5, -0.5, 0.3), jacobi(-2.5, 0.5, 1, 0.3): limits of hypercomb
     expect(at('jacobi', [1.5, -2, 3, 0.3])).toThrow(/limit/);
     expect(at('gegenbauer', [1.5, -0.5, 0.3])).toThrow(/limit/);
     expect(at('jacobi', [-2.5, 0.5, 1, 0.3])).toThrow(/limit/);
+  });
+});
+
+describe('Hermite and Laguerre functions and the regularized 1F1 equal mpmath', () => {
+  const mp = (args: string[], p: number): Mpc[] => args.map((a) => [F.fromStr(a, p), F.ZERO] as Mpc);
+  // [mpmath call, kernel, arguments, [value at 15 digits, at 50 digits]]
+  const cases: [string, (a: Mpc[], p: number) => Mpc, string[], [string, string]][] = [
+    ['hermite(2, 0.3) (a terminating series)', (a, p) => OP.chermite(a[0] as Mpc, a[1] as Mpc, p), ['2', '0.3'], ['-1.64', '-1.64']],
+    ['hermite(2.5, 6) (cancellation)', (a, p) => OP.chermite(a[0] as Mpc, a[1] as Mpc, p), ['2.5', '6'], ['485.829070483212', '485.8290704832116804141349053239544903677920505154']],
+    ['laguerre(10.5, 0, 30) (cancellation)', (a, p) => OP.claguerre(a[0] as Mpc, a[1] as Mpc, a[2] as Mpc, p), ['10.5', '0', '30'], ['485855.116665089', '485855.11666508879295858714793589243474918724090575']],
+    // 1F1(a; c; z)/Gamma(c) at c = -1: (1)_2 z^2/2! 1F1(3; 3; z) = z^2 exp(z)/2 ... times 2!/2! = z^2 exp(z)
+    ['hyp1f1(1, -1, 0.5)/gamma(-1)', (a, p) => OP.chyp1f1r(a[0] as Mpc, a[1] as Mpc, a[2] as Mpc, p), ['1', '-1', '0.5'], ['0.412180317675032', '0.41218031767503203671216269695354089291344402517754']],
+    ['hyp1f1(0, -1, 0.5)/gamma(-1)', (a, p) => OP.chyp1f1r(a[0] as Mpc, a[1] as Mpc, a[2] as Mpc, p), ['0', '-1', '0.5'], ['0.0', '0.0']],
+  ];
+  it.each(cases)('%s', (_, f, args, want) => {
+    const got = [15, 50].map((d) => {
+      const p = F.dpsToPrec(d);
+      return F.toStr(f(mp(args, p), p)[0], d);
+    });
+    expect(got).toEqual(want);
   });
 });

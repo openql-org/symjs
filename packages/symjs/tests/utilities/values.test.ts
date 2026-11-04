@@ -175,3 +175,15 @@ describe('values', () => {
     expect(() => orderedValues([3, 1, 2], null, false)).toThrow(RangeError);
   });
 });
+
+describe('defaultSortKey (SymPy default_sort_key)', () => {
+  it('keys numbers, strings and undefined function classes', () => {
+    const one = [[1, 0, 'Number'], [0, []], [], 1];
+    expect(sj.defaultSortKey(sj.SymFunction('f'))).toEqual([[0, 0, 'UndefinedFunction'], [1, ['f']], one, 1]);
+    expect(sj.defaultSortKey('1')).toEqual([[0, 0, 'str'], [1, ['1']], one, 1]);
+    expect(sj.defaultSortKey(sj.S.One)).toEqual(one);
+    expect(sj.defaultSortKey(2)).toEqual([[1, 0, 'Number'], [0, []], [], 2]);
+    // a function that is not an undefined function class is keyed by its type
+    expect(sj.defaultSortKey(Math.max)).toEqual([[0, 0, 'function'], [1, [String(Math.max)]], one, 1]);
+  });
+});

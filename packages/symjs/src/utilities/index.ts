@@ -7,7 +7,8 @@
  */
 
 export * from './iterables';
-export { ValueMap, compareValues, defaultSortKeyOf, orderedValues, valueEquals, valueKey } from './values';
+export { ValueMap, compareValues, defaultSortKeyOf, defaultSortKeyOf as defaultSortKey, orderedValues, valueEquals, valueKey } from './values';
 export type { KeyFunction } from './values';
 export { MultisetPartitionTraverser, PartComponent, listVisitor, multisetPartitionsTaocp } from './enumerative';
 export type { PartitionState } from './enumerative';
+export { filldedent } from './misc';

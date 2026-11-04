@@ -107,6 +107,12 @@ describe('ExtensionExpr hooks', () => {
     expect(s(sj.expand(new Twice(1, 2, 3), { double: true, force: true }))).toBe('Twice(1, 2, 3, 1, 2, 3)');
   });
 
+  it('substitutes, integrates and simplifies generically without their own hooks', () => {
+    expect(s(sj.subs(new Twice(x, y), [[x, 2]]))).toBe('Twice(2, y)');
+    expect(s(sj.integrate(new Twice(x), x))).toBe('Integral(Twice(x), x)');
+    expect(s(sj.simplify(new Twice(sj.add(sj.pow(sj.sin(x), 2), sj.pow(sj.cos(x), 2)))))).toBe('Twice(1)');
+  });
+
   it('rewrites by target name, also inside other expressions', () => {
     expect(s(sj.rewrite(sj.sin(new Twice(x, y)), 'Add'))).toBe('sin(x + y)');
     expect(s(sj.rewrite(new Twice(x, y), 'Add', { pattern: ['Other'] }))).toBe('Twice(x, y)');

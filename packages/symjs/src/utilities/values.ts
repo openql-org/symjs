@@ -178,6 +178,8 @@ export function defaultSortKeyOf(item: unknown): Key {
     }
     return [[10, 0, name], [args.length, args], ONE_KEY, 1];
   }
+  // an undefined function class (SymPy UndefinedFunction('f')) is keyed by its name
+  if (typeof item === 'function' && 'functionName' in item && typeof item.functionName === 'string') return [[0, 0, 'UndefinedFunction'], [1, [item.functionName]], ONE_KEY, 1];
   const name = typeof item === 'string' ? 'str' : typeof item === 'boolean' ? 'bool' : typeName(item);
   return [[0, 0, name], [1, [String(item)]], ONE_KEY, 1];
 }

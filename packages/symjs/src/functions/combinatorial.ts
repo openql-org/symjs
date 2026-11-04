@@ -12,7 +12,7 @@
 import { at, first, last } from '../core/guard';
 import { isIntegerQ, isNegative, isPositive, isReal as isRealQ } from '../core/assumptions';
 import type { Expr, ExprLike, FnName } from '../core/nodes';
-import { Dummy, Fn, Rational, S, Special } from '../core/nodes';
+import { Dummy, Fn, Pow, Rational, S, Special } from '../core/nodes';
 import { AccumBounds } from '../core/accumbounds';
 import { Product } from '../core/concrete';
 import { add, mul, pow, sympify } from '../core/ops';
@@ -119,7 +119,7 @@ function incompleteBell(n: number, k: number, xs: readonly Expr[]): Expr {
 function fibPoly(n: number, x: Expr): Expr {
   let [a, b]: [Expr, Expr] = [S.Zero, S.One];
   for (let i = 1; i < n; i++) [a, b] = [b, expandMul(add(mul(x, b), a))];
-  return n === 0 ? S.Zero : b;
+  return b;
 }
 
 function fibNumber(n: bigint): bigint {
@@ -286,8 +286,8 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     const k = asInt(n);
     if (k === undefined) return undefined;
     if (x !== undefined) {
-      // SymPy raises ValueError for indices below 1; fibonacci(0, x) = 0 is kept (see the cov-functions tests)
-      if (k < 0n) throw new RangeError('Fibonacci polynomials are defined only for positive integer indices.');
+      // SymPy raises ValueError for indices below 1 (fibonacci(0) = 0 is the number)
+      if (k < 1n) throw new RangeError('Fibonacci polynomials are defined only for positive integer indices.');
       return fibPoly(Number(k), x);
     }
     return R(fibNumber(k));
@@ -324,14 +324,18 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     if (k === undefined) {
       // a square factor makes mobius of a positive integer vanish: mobius(4*n) = 0, and
       // mobius(b**2) = 0 for an integer b > 1 (SymPy also returns 0 when b may be 1)
+      // (SymPy mobius.eval: every factor b**e is a positive integer b to a positive integer power e,
+      // otherwise mobius(-4*n) stays unevaluated)
       if (isIntegerQ(n) !== true || isPositive(n) !== true) return undefined;
       const fs = n.kind === 'Mul' ? n.args : [n];
+      let zero = false;
       for (const f of fs) {
-        if (f instanceof Rational && f.isInteger && [...factorInt(f.p < 0n ? -f.p : f.p).values()].some((e) => e > 1n)) return S.Zero;
-        const [b, e] = f.kind === 'Pow' ? f.args : [];
-        if (b !== undefined && e instanceof Rational && e.isInteger && e.p > 1n && isIntegerQ(b) === true && isPositive(add(b, -1)) === true) return S.Zero;
+        const [b, e]: [Expr, Expr] = f instanceof Pow ? [f.base, f.exp] : [f, S.One];
+        if (isIntegerQ(b) !== true || isPositive(b) !== true || !(e instanceof Rational && e.isInteger && e.p > 0n)) return undefined;
+        if (b instanceof Rational && [...factorInt(b.p).values()].some((m) => m > 1n)) zero = true;
+        if (e.p > 1n && isPositive(add(b, -1)) === true) zero = true;
       }
-      return undefined;
+      return zero ? S.Zero : undefined;
     }
     if (k <= 0n) throw new RangeError('mobius: n should be a positive integer');
     let r = 1n;

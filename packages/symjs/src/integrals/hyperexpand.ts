@@ -25,11 +25,14 @@ import { coeff, asNumerDenom } from '../core/methods';
 import { countOps } from '../core/match';
 import { isPositive } from '../core/assumptions';
 import { compareKeys, sortKey } from '../printing/sortkey';
+import { ExprMap } from '../core/exprmap';
 import { diff } from '../calculus/diff';
+import { PolynomialError } from '../core/errors';
+import { polyCoefficients } from '../polys/poly';
 import { abs, asin, atan, cos, cosh, fn, log, re, sin, sinh } from '../functions/elementary';
-import { Ci, Chi, Ei, Shi, Si, erf, expint, factorial, fresnelc, fresnels, gamma, lowergamma, rf, uppergamma } from '../functions/special';
+import { Ci, Chi, Ei, Shi, Si, erf, expandFuncRules, expint, factorial, fresnelc, fresnels, gamma, lowergamma, rf, uppergamma } from '../functions/special';
 import { besseli, besselj } from '../functions/bessel';
-import { Hyper, MeijerG, hyper, meijerg } from '../functions/hyper';
+import { Hyper, MeijerG, gaussAtOne, hyper, meijerg } from '../functions/hyper';
 import { expPolar, extractBranchFactor, polarify, polarLift, unpolarify } from '../functions/polar';
 import { expand } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
@@ -118,13 +121,13 @@ function pcompose(p: XPoly, q: XPoly): XPoly {
 // ---- operators -----------------------------------------------------------------------
 
 /** A differential operator: a polynomial in D = z*d/dz acting to the right of its coefficients. */
-export interface Operator {
+interface OpPoly {
   poly: XPoly;
 }
 type Vec = Expr[];
 
 /** Apply an operator to obj, where op applies D. */
-function applyOp(o: Operator, obj: Vec, op: (v: Vec) => Vec): Vec {
+function applyOp(o: OpPoly, obj: Vec, op: (v: Vec) => Vec): Vec {
   let d = obj;
   let r = obj.map((e) => mul(first(o.poly), e));
   for (const c of o.poly.slice(1)) {
@@ -134,7 +137,7 @@ function applyOp(o: Operator, obj: Vec, op: (v: Vec) => Vec): Vec {
   return r;
 }
 /** Apply the operators, the last one first (SymPy apply_operators). */
-function applyOperators(obj: Vec, ops: readonly Operator[], op: (v: Vec) => Vec): Vec {
+function applyOperators(obj: Vec, ops: readonly OpPoly[], op: (v: Vec) => Vec): Vec {
   let res = obj;
   for (const o of [...ops].reverse()) res = applyOp(o, res, op);
   return res;
@@ -155,12 +158,12 @@ const derivativeOperator =
   (C: Vec): Vec =>
     C.map((c, j) => simp(add(mul(z, diff(c, z)), ...C.map((ci, i) => mul(ci, at(at(M, i), j))))));
 
-const shiftA = (ai: Expr): Operator => ({ poly: lin(1, pow(ai, -1)) });
-const shiftB = (bi: Expr): Operator => ({ poly: lin(1, pow(sub(bi, 1), -1)) });
-const multOperator = (p: Expr): Operator => ({ poly: [p] });
+const shiftA = (ai: Expr): OpPoly => ({ poly: lin(1, pow(ai, -1)) });
+const shiftB = (bi: Expr): OpPoly => ({ poly: lin(1, pow(sub(bi, 1), -1)) });
+const multOperator = (p: Expr): OpPoly => ({ poly: [p] });
 
 /** Decrement an upper index (SymPy UnShiftA). */
-function unShiftA(ap0: readonly Expr[], bq: readonly Expr[], i: number, z: Expr): Operator {
+function unShiftA(ap0: readonly Expr[], bq: readonly Expr[], i: number, z: Expr): OpPoly {
   const ap = [...ap0];
   const ai = sub(at(ap.splice(i, 1), 0), 1);
   const m = pprod([[mul(z, ai)], ...ap.map((a) => lin(a, 1))]);
@@ -170,7 +173,7 @@ function unShiftA(ap0: readonly Expr[], bq: readonly Expr[], i: number, z: Expr)
   return { poly: pscale(padd(pcompose(n.slice(1), lin(1, pow(ai, -1))), pscale(m, S.NegOne)), pow(b0, -1)) };
 }
 /** Increment a lower index (SymPy UnShiftB). */
-function unShiftB(ap: readonly Expr[], bq0: readonly Expr[], i: number, z: Expr): Operator {
+function unShiftB(ap: readonly Expr[], bq0: readonly Expr[], i: number, z: Expr): OpPoly {
   const bq = [...bq0];
   const bi = add(at(bq.splice(i, 1), 0), 1);
   const m = pprod([lin(0, sub(bi, 1)), ...bq.map((b) => lin(sub(b, 1), 1))]);
@@ -180,10 +183,10 @@ function unShiftB(ap: readonly Expr[], bq0: readonly Expr[], i: number, z: Expr)
   return { poly: pscale(padd(m, pscale(pcompose(n.slice(1), lin(1, pow(sub(bi, 1), -1))), S.NegOne)), pow(b0, -1)) };
 }
 /** (m - n(sub))/n(0), the common form of the Meijer G un-shift operators. */
-const meijerUnshift = (m: XPoly, n: XPoly, s: XPoly): Operator => ({ poly: pscale(padd(m, pscale(pcompose(n.slice(1), s), S.NegOne)), pow(first(n), -1)) });
+const meijerUnshift = (m: XPoly, n: XPoly, s: XPoly): OpPoly => ({ poly: pscale(padd(m, pscale(pcompose(n.slice(1), s), S.NegOne)), pow(first(n), -1)) });
 type GParams = [Expr[], Expr[], Expr[], Expr[]];
 /** Decrement an upper b index (SymPy MeijerUnShiftA; the G-functions of the Meijer formulas have no ap and bq). */
-function meijerUnShiftA([an, , bm0]: GParams, i: number, z: Expr): Operator {
+function meijerUnShiftA([an, , bm0]: GParams, i: number, z: Expr): OpPoly {
   const bm = [...bm0];
   const bi = sub(at(bm.splice(i, 1), 0), 1);
   const m = pprod(bm.map((b) => lin(b, -1)));
@@ -193,7 +196,7 @@ function meijerUnShiftA([an, , bm0]: GParams, i: number, z: Expr): Operator {
 }
 
 /** Cancel an upper index ai with a lower index bj (SymPy ReduceOrder), or undefined. */
-function reduceOrderOp(ai: Expr, bj: Expr): Operator | undefined {
+function reduceOrderOp(ai: Expr, bj: Expr): OpPoly | undefined {
   const n = expand(sub(ai, bj));
   if (!isInt(n) || n.isNegative) return undefined;
   if (isInt(bj) && !bj.isPositive) return undefined;
@@ -201,17 +204,17 @@ function reduceOrderOp(ai: Expr, bj: Expr): Operator | undefined {
   return { poly: pprod(ps) };
 }
 /** Cancel b + sign*s and a + sign*s of a G-function (SymPy ReduceOrder._meijer). */
-function reduceOrderMeijer(b: Expr, a: Expr, sign: 1 | -1): Operator | undefined {
+function reduceOrderMeijer(b: Expr, a: Expr, sign: 1 | -1): OpPoly | undefined {
   const n = expand(sub(b, a));
   if (!isInt(n) || n.isNegative) return undefined;
   return { poly: pprod(Array.from({ length: Number(n.p) }, (_, k) => lin(add(a, k), sign))) };
 }
 
-function reduceOrderLists(ap0: readonly Expr[], bq0: readonly Expr[], gen: (a: Expr, b: Expr) => Operator | undefined, reverse: boolean): [Expr[], Expr[], Operator[]] {
+function reduceOrderLists(ap0: readonly Expr[], bq0: readonly Expr[], gen: (a: Expr, b: Expr) => OpPoly | undefined, reverse: boolean): [Expr[], Expr[], OpPoly[]] {
   const ap = sorted(ap0, reverse);
   const bq = sorted(bq0, reverse);
   const nap: Expr[] = [];
-  const ops: Operator[] = [];
+  const ops: OpPoly[] = [];
   for (const a of ap) {
     const i = bq.findIndex((b) => gen(a, b) !== undefined);
     if (i < 0) nap.push(a);
@@ -405,7 +408,7 @@ export class HyperRep extends ExtensionExpr {
     args: readonly Expr[],
   ) {
     // the parameters are not polar (SymPy HyperRep.eval)
-    super(`HyperRep_${rep}`, [...args.slice(0, -1).map(unpolarify), at(args, -1)]);
+    super(`HyperRep_${rep}`, [...args.slice(0, -1).map((a) => unpolarify(a)), at(args, -1)]);
   }
   withArgs(args: readonly Expr[]): Expr {
     return new HyperRep(this.rep, args);
@@ -855,16 +858,16 @@ function lookupMeijer(func: GFunc): MeijerFormula | undefined {
 // ---- plans -------------------------------------------------------------------------------
 
 /** Shift and un-shift operators taking origin to target (SymPy devise_plan). */
-function devisePlan(target: HyperFunc, origin: HyperFunc, z: Expr): Operator[] {
+function devisePlan(target: HyperFunc, origin: HyperFunc, z: Expr): OpPoly[] {
   const ab = buckets(target.ap);
   const bb = buckets(target.bq);
   const A = defined2(ab);
   const B = defined2(bb);
   const NA = defined2(buckets(origin.ap));
   const NB = defined2(buckets(origin.bq));
-  const ops: Operator[] = [];
-  const doShifts = (fro: Expr[], to: readonly Expr[], inc: (p: Expr[], i: number) => Operator, dec: (p: Expr[], i: number) => Operator): Operator[] => {
-    const out: Operator[] = [];
+  const ops: OpPoly[] = [];
+  const doShifts = (fro: Expr[], to: readonly Expr[], inc: (p: Expr[], i: number) => OpPoly, dec: (p: Expr[], i: number) => OpPoly): OpPoly[] => {
+    const out: OpPoly[] = [];
     for (const [i, t] of to.entries()) {
       const up = asRational(expand(sub(t, at(fro, i)))).isPositive;
       while (expand(sub(t, at(fro, i))).key !== S.Zero.key) {
@@ -918,11 +921,11 @@ const defined2 = (b: Map<string, { mod: Expr; items: Expr[] }>): Map<string, Exp
  * Meijer G formulas of the table differ from the functions they match only in
  * the parameters bm, so only those are shifted.
  */
-function devisePlanMeijer(fro: GFunc, to: GFunc, z: Expr): Operator[] {
+function devisePlanMeijer(fro: GFunc, to: GFunc, z: Expr): OpPoly[] {
   const f: GParams = [[...fro.an], [...fro.ap], [...fro.bm], [...fro.bq]];
   const fbm = f[2];
-  const ops: Operator[] = [];
-  const step = (): Operator | undefined => {
+  const ops: OpPoly[] = [];
+  const step = (): OpPoly | undefined => {
     // a decrease first (MeijerUnShiftA, unless the parameter meets an upper one), then an increase (MeijerShiftA)
     for (const [idx, b] of fbm.entries()) {
       if (asRational(expand(sub(at(to.bm, idx), b))).isNegative && [...f[0], ...f[1]].every((x) => x.key !== b.key)) {
@@ -946,7 +949,7 @@ function devisePlanMeijer(fro: GFunc, to: GFunc, z: Expr): Operator[] {
 // ---- special cases ------------------------------------------------------------------------
 
 /** A hypergeometric sum starting at k > 0 (SymPy try_shifted_sum). */
-function tryShiftedSum(func: HyperFunc, z: Expr): [HyperFunc, Operator[], Expr] | undefined {
+function tryShiftedSum(func: HyperFunc, z: Expr): [HyperFunc, OpPoly[], Expr] | undefined {
   const ab = buckets(func.ap);
   const bb = buckets(func.bq);
   const a0 = bucket(ab, S.Zero);
@@ -963,7 +966,7 @@ function tryShiftedSum(func: HyperFunc, z: Expr): [HyperFunc, Operator[], Expr] 
   const k = Number(k0.p) - 1;
   const nap = nap0.map((x) => sub(x, k));
   const nbq = nbq0.map((x) => sub(x, k));
-  const ops: Operator[] = Array.from({ length: Number(r.p) - 1 }, (_, n) => shiftA(R(n + 1))).reverse();
+  const ops: OpPoly[] = Array.from({ length: Number(r.p) - 1 }, (_, n) => shiftA(R(n + 1))).reverse();
   ops.push(multOperator(div(mul(factorial(k), pow(z, -k), prod(nbq.map((b) => rf(b, k)))), prod(nap.map((a) => rf(a, k))))));
   const p = sum(Array.from({ length: k }, (_, n) => div(mul(pow(z, n), prod(nap.map((a) => rf(a, n)))), mul(factorial(n), prod(nbq.map((b) => rf(b, n)))))));
   return [hyperFunc(nap, nbq), ops, neg(p)];
@@ -1082,7 +1085,8 @@ export function powdenestPolar(e: Expr): Expr {
     absParts.push([d, mapBottomUp(t, (u) => (u instanceof Pow ? pow(u.base, unpolarify(u.exp)) : u))]);
     return d;
   });
-  const [p, back] = posify(masked);
+  // (unpolarify(eq, exponents_only=True): x**(2*exp_polar(0)) is x**2)
+  const [p, back] = posify(mapBottomUp(masked, (t) => (t instanceof Pow ? pow(t.base, unpolarify(t.exp)) : t)));
   return xreplace(unpolarify(xreplace(powdenest(p), [...back])), absParts);
 }
 
@@ -1094,10 +1098,10 @@ const polarifyNoSubs = (e: Expr): Expr => expectType(polarify(e, { subs: false }
  * The closed form of the hypergeometric function func at z, multiplied by
  * premult = a*z0**prem and with ops0 applied (SymPy _hyperexpand).
  */
-function hyperexpandFunc(func0: HyperFunc, zIn: Expr, ops0: readonly Operator[] = [], z0: Expr = z0Default, premult: Expr = S.One, prem: Expr = S.Zero, rewrite: 'nonrepsmall' | 'none' = 'nonrepsmall'): Expr {
+function hyperexpandFunc(func0: HyperFunc, zIn: Expr, ops0: readonly OpPoly[] = [], z0: Expr = z0Default, premult: Expr = S.One, prem: Expr = S.Zero, rewrite: 'nonrepsmall' | 'none' = 'nonrepsmall'): Expr {
   if (zIn instanceof Rational && zIn.isZero) return S.One;
   const z = polarifyNoSubs(zIn);
-  const carryout = (f: Formula, ops: readonly Operator[]): Expr => {
+  const carryout = (f: Formula, ops: readonly OpPoly[]): Expr => {
     const s0 = (e: Expr) => xreplace(e, [[f.z, z0]]);
     const M = mapMat(f.M, s0);
     let C = applyOperators(f.C.map(s0), ops, derivativeOperator(M, z0));
@@ -1138,11 +1142,11 @@ function hyperexpandFunc(func0: HyperFunc, zIn: Expr, ops0: readonly Operator[] 
   return replaceHyperSpecial(powdenestPolar(r));
 }
 
-function reduceOrderHyper(func: HyperFunc): [HyperFunc, Operator[]] {
+function reduceOrderHyper(func: HyperFunc): [HyperFunc, OpPoly[]] {
   const [nap, nbq, ops] = reduceOrderLists(func.ap, func.bq, reduceOrderOp, false);
   return [hyperFunc(nap, nbq), ops];
 }
-function reduceOrderG(func: GFunc): [GFunc, Operator[]] {
+function reduceOrderG(func: GFunc): [GFunc, OpPoly[]] {
   const [nan, nbq, ops1] = reduceOrderLists(func.an, func.bq, (a, b) => reduceOrderMeijer(sub(1, a), sub(1, b), 1), true);
   const [nbm, nap, ops2] = reduceOrderLists(func.bm, func.ap, (b, a) => reduceOrderMeijer(b, a, -1), false);
   return [gFunc(nan, nap, nbm, nbq), [...ops1, ...ops2]];
@@ -1160,7 +1164,7 @@ type Cond = Expr | boolean;
  * The expansion of a G-function by Slater's theorem: a sum of
  * hypergeometric functions at zero, and the condition under which it holds.
  */
-function doSlater(an: readonly Expr[], bm: readonly Expr[], ap: readonly Expr[], bq: readonly Expr[], z: Expr, zfinal: Expr, ops: readonly Operator[], t: Dummy): [Expr, Cond] {
+function doSlater(an: readonly Expr[], bm: readonly Expr[], ap: readonly Expr[], bq: readonly Expr[], z: Expr, zfinal: Expr, ops: readonly OpPoly[], t: Dummy): [Expr, Cond] {
   const [, pbm, pap] = computeBuckets(gFunc(an, bm, ap, bq));
   for (const v of pbm.values()) {
     if (v.items.length > 1 && (pap.get(v.mod.key)?.items.length ?? 0) + 1 < v.items.length) return [S.Zero, false];
@@ -1292,3 +1296,100 @@ export function hyperexpand(fIn: ExprLike, opts: HyperexpandOptions = {}): Expr 
   });
 }
 
+
+// SymPy hyper._eval_expand_func and meijerg._eval_expand_func: Gauss's theorem at 1, else hyperexpand
+expandFuncRules.hyper = (e) => {
+  const h = cast(e, Hyper);
+  return gaussAtOne(h) ?? hyperexpand(h);
+};
+expandFuncRules.meijerg = (e) => hyperexpand(e);
+
+// ---- the parameter objects of SymPy's hyperexpand --------------------------------------
+
+/**
+ * SymPy Operator: a differential operator, a polynomial whose generator (by convention
+ * D = z*d/dz) acts to the right of all coefficients. `new Operator(x**2 + z*x + y, x)` is SymPy's
+ * `op._poly = Poly(x**2 + z*x + y, x)`; without a generator the polynomial is constant.
+ * @experimental May change in a minor release.
+ */
+export class Operator {
+  /** The coefficients of the polynomial, the constant one first. */
+  readonly poly: readonly Expr[];
+  constructor(poly: ExprLike = 0, gen?: Expr) {
+    const p = sympify(poly);
+    if (gen === undefined) this.poly = [p];
+    else {
+      const cs = polyCoefficients(p, gen);
+      if (!cs) throw new PolynomialError(`${String(p)} is not a polynomial in ${String(gen)}`);
+      this.poly = Array.from({ length: Math.max(0, ...cs.keys()) + 1 }, (_, k) => cs.get(k) ?? S.Zero);
+    }
+  }
+  /** SymPy apply: the operator applied to obj, where op applies the generator. */
+  apply(obj: ExprLike, op: (e: Expr) => Expr): Expr {
+    let d = sympify(obj);
+    let r = mul(first(this.poly), d);
+    for (const c of this.poly.slice(1)) {
+      d = op(d);
+      r = add(r, mul(c, d));
+    }
+    return r;
+  }
+}
+
+/**
+ * SymPy Hyper_Function(ap, bq): the parameters of a generalized hypergeometric
+ * function, as hyperexpand classifies them.
+ * @experimental May change in a minor release.
+ */
+export class Hyper_Function {
+  /** The numerator parameters. */
+  readonly ap: readonly Expr[];
+  /** The denominator parameters. */
+  readonly bq: readonly Expr[];
+  constructor(ap: readonly ExprLike[], bq: readonly ExprLike[]) {
+    const f = hyperFunc(ap, bq);
+    this.ap = f.ap;
+    this.bq = f.bq;
+  }
+  /** The number of negative integer numerator parameters. */
+  get gamma(): number {
+    return hfGamma({ ap: [...this.ap], bq: [...this.bq] });
+  }
+  /**
+   * SymPy build_invariants: [gamma, ((mod, count), ...) of ap, ((mod, count), ...) of bq], the
+   * parameters grouped by their residue mod 1 (sorted), which shift operators leave unchanged.
+   */
+  buildInvariants(): [number, [Expr, number][], [Expr, number][]] {
+    const tr = (xs: readonly Expr[]): [Expr, number][] =>
+      [...buckets(xs).values()].sort((u, v) => compareKeys(sortKey(u.mod), sortKey(v.mod))).map((v): [Expr, number] => [v.mod, v.items.length]);
+    return [this.gamma, tr(this.ap), tr(this.bq)];
+  }
+}
+
+/**
+ * SymPy G_Function(an, ap, bm, bq): the parameters of a Meijer G-function, as
+ * hyperexpand classifies them.
+ * @experimental May change in a minor release.
+ */
+export class G_Function {
+  readonly an: readonly Expr[];
+  readonly ap: readonly Expr[];
+  readonly bm: readonly Expr[];
+  readonly bq: readonly Expr[];
+  constructor(an: readonly ExprLike[], ap: readonly ExprLike[], bm: readonly ExprLike[], bq: readonly ExprLike[]) {
+    const g = gFunc(an.map(sympify), ap.map(sympify), bm.map(sympify), bq.map(sympify));
+    this.an = g.an;
+    this.ap = g.ap;
+    this.bm = g.bm;
+    this.bq = g.bq;
+  }
+  /**
+   * SymPy compute_buckets: the parameters of an, ap, bm and bq grouped by their
+   * residue mod 1, each group sorted by real part (an and bq descending, ap and bm ascending).
+   */
+  computeBuckets(): [ExprMap<Expr[]>, ExprMap<Expr[]>, ExprMap<Expr[]>, ExprMap<Expr[]>] {
+    const toMap = (b: Buckets): ExprMap<Expr[]> => new ExprMap([...b.values()].map((v) => [v.mod, v.items] as const));
+    const [an, ap, bm, bq] = computeBuckets({ an: [...this.an], ap: [...this.ap], bm: [...this.bm], bq: [...this.bq] });
+    return [toMap(an), toMap(ap), toMap(bm), toMap(bq)];
+  }
+}

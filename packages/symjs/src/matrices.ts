@@ -12,6 +12,10 @@ export {
   Matrix,
 } from './matrices/matrix';
 export { MutableDenseMatrix, MutableMatrix } from './matrices/mutable';
+export { ImmutableSparseMatrix, MutableSparseMatrix, SparseMatrix } from './matrices/sparse';
+export type { MatrixPosition, SparseData, SparseMatrixArgs, SparseValue } from './matrices/sparse';
+// SymPy ImmutableDenseMatrix is ImmutableMatrix
+export { ImmutableMatrix as ImmutableDenseMatrix } from './matrices/expressions/matexpr';
 export { DomainMatrix, toDM } from './matrices/domainmatrix';
 export { Matrix as MatrixBase } from './matrices/matrix';
 export { MatrixTranspose, MatrixAdjoint } from './matrices/matexpr';

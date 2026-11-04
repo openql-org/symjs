@@ -66,7 +66,7 @@ const mulArgs = (e: Expr): readonly Expr[] => (e instanceof Mul ? e.args : [e]);
 const addArgs = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
 
 /** A G-function term C*x**s*G of a rewritten integrand. */
-type GTerm = [Expr, Expr, MeijerG];
+export type GTerm = [Expr, Expr, MeijerG];
 const G = (an: readonly ExprLike[], ap: readonly ExprLike[], bm: readonly ExprLike[], bq: readonly ExprLike[], z: ExprLike): MeijerG => cast(meijerg(an, ap, bm, bq, z), MeijerG);
 /** The G-function with its parameters unpolarified (the parameters of SymPy's meijerg are not polar). */
 const Gu = (an: readonly ExprLike[], ap: readonly ExprLike[], bm: readonly ExprLike[], bq: readonly ExprLike[], z: Expr): MeijerG => {
@@ -760,7 +760,7 @@ export function rewriteSingle(f: Expr, x: Sym): Rewritten | undefined {
 }
 
 /** f = fac*po*g with g a sum of single G-functions (SymPy _rewrite1). */
-function rewrite1(f: Expr, x: Sym): [Expr, Expr, GTerm[], Expr] | undefined {
+export function rewrite1(f: Expr, x: Sym): [Expr, Expr, GTerm[], Expr] | undefined {
   const [fac, po, g] = splitMul(f, x);
   const r = rewriteSingle(g, x);
   return r ? [fac, po, r[0], r[1]] : undefined;

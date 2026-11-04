@@ -75,9 +75,13 @@ describe('diff (SymPy diff)', () => {
     // conjugate is not holomorphic: Derivative(conjugate(x), x) stays unevaluated for a variable that may be complex
     expect(s(sj.diff(sj.conjugate(sj.sin(x)), x))).toBe('cos(conjugate(x))*Derivative(conjugate(x), x)');
     expect(s(sj.diff(sj.re(x), x))).toBe('Derivative(re(x), x)');
-    expect(() => sj.diff(sj.Abs(sj.sin(x)), x)).toThrow(sj.NotImplementedError);
-    // SymPy 1.14: cos(r)*sign(sin(r)), equal where sin(r) != 0
-    expect(s(sj.diff(sj.Abs(sj.sin(r)), r))).toBe('sin(r)*cos(r)/Abs(sin(r))');
+    // SymPy Abs._eval_derivative: (re(u)*re(u)' + im(u)*im(u)')*sign(u)/u; SymPy also expands re(sin(x)) and
+    // im(sin(x)) (sin(re(x))*cosh(im(x)) and cos(re(x))*sinh(im(x))), the same value
+    expect(s(sj.diff(sj.Abs(x), x))).toBe('(re(x)*Derivative(re(x), x) + im(x)*Derivative(im(x), x))*sign(x)/x');
+    expect(s(sj.diff(sj.Abs(sj.sin(x)), x))).toBe('(re(sin(x))*Derivative(re(sin(x)), x) + im(sin(x))*Derivative(im(sin(x)), x))*sign(sin(x))/sin(x)');
+    // a real or imaginary argument: u'*sign(conjugate(u))
+    expect(s(sj.diff(sj.Abs(sj.sin(r)), r))).toBe('cos(r)*sign(sin(r))');
+    expect(s(sj.diff(sj.Abs(sj.mul(sj.I, r)), r))).toBe('sign(r)');
     expect(s(sj.diff(sj.conjugate(f(r)), r))).toBe('conjugate(Derivative(f(r), r))');
     expect(s(sj.diff(sj.re(f(r)), r))).toBe('re(Derivative(f(r), r))');
     expect(s(sj.diff(sj.im(f(r)), r))).toBe('im(Derivative(f(r), r))');
@@ -200,5 +204,31 @@ describe('diff of an Order without the series module', () => {
     const [x] = sj.symbols('x');
     expect(String(orderUnreduced(sj.parse('2*x'), [x], sj.S.Zero))).toBe(String(new Order([sj.parse('2*x'), x, sj.S.Zero])));
     expect(new Order([x]).key).toBe(orderUnreduced(x, [], sj.S.Zero).key);
+  });
+});
+
+describe('fdiff', () => {
+  // SymPy Function.fdiff(argindex)
+  const [x, y] = sj.symbols('x y');
+  const f = sj.SymFunction('f');
+  const P = (s: string) => sj.parse(s, { locals: { DiracDelta: sj.DiracDelta, Heaviside: sj.Heaviside, f } as never });
+  it('differentiates with respect to an argument', () => {
+    expect(String(sj.fdiff(P('DiracDelta(x)')))).toBe('DiracDelta(x, 1)');
+    expect(String(sj.fdiff(P('DiracDelta(x**2 - 1)')))).toBe('DiracDelta(x**2 - 1, 1)');
+    expect(String(sj.fdiff(P('Heaviside(x)')))).toBe('DiracDelta(x)');
+    expect(String(sj.fdiff(P('sin(x**2)')))).toBe('cos(x**2)');
+  });
+  it('keeps derivatives without a closed form unevaluated', () => {
+    expect(String(sj.fdiff(f(x)))).toBe('Derivative(f(x), x)');
+    expect(String(sj.fdiff(f(x, y), 2))).toBe('Derivative(f(x, y), y)');
+    expect(String(sj.fdiff(f(P('x**2'))))).toBe('Subs(Derivative(f(_xi_1), _xi_1), _xi_1, x**2)');
+    expect(String(sj.fdiff(f(x, x), 1))).toBe('Subs(Derivative(f(_xi_1, x), _xi_1), _xi_1, x)');
+  });
+  it('rejects other expressions and invalid argument indices', () => {
+    // SymPy: ArgumentIndexError
+    expect(() => sj.fdiff(P('sin(x)'), 2)).toThrow(RangeError);
+    expect(() => sj.fdiff(P('sin(x)'), 0)).toThrow(RangeError);
+    expect(() => sj.fdiff(P('sin(x)'), 1.5)).toThrow(RangeError);
+    expect(() => sj.fdiff(P('x + 1'))).toThrow(TypeError);
   });
 });

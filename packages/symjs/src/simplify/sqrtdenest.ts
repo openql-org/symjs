@@ -269,6 +269,9 @@ export function radsimp(exIn: ExprLike, opts: { symbolic?: boolean; maxTerms?: n
     coeff = expr.args[0];
     expr = add(...expr.args.slice(1));
   }
+  // SymPy expr.normal(): the expression as one fraction
+  const [en, ed] = asNumerDenom(expr);
+  if (!isOne(ed)) expr = isNum(ed) ? unevaluatedMul(en, pow(ed, -1)) : mul(en, pow(ed, -1));
   const old = fraction(expr);
   let [n, d] = fraction(handle(expr));
   if (n.key !== old[0].key || d.key !== old[1].key) {

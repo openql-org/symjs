@@ -10,7 +10,7 @@ import type { Expr } from '../../../src/core/nodes';
 import { Implies, ITE } from '../../../src/logic';
 import { pagerPrint, pprint, pretty, PrettyForm, prettyHooks, prettyPrint, PrettyPrinter, PrettyTuple, prettyUseUnicode } from '../../../src/printing/pretty';
 import type { PrettyOptions, Printable } from '../../../src/printing/pretty';
-import { Interval, SetExpr, SetOp, UniversalSet } from '../../../src/sets/sets';
+import { Contains, FiniteSet, Interval, Range, SetExpr, SetOp, UniversalSet } from '../../../src/sets/sets';
 
 const sym = (name: string, assumptions: sj.Assumptions = {}): sj.Sym => sj.symbol(name, assumptions);
 const def = (name: string): sj.DefinedFunction => sj.defineFunction(name, {});
@@ -904,5 +904,91 @@ describe('pretty', () => {
   it('prints an unknown extension node as a function or by its str form', () => {
     expect(uni(new Ext('Foo', [x, y], 0))).toBe('Foo(x, y)');
     expect(uni(new Tagged('Tag', [x, y]))).toBe('<x y>');
+  });
+});
+
+describe('pretty of sequences, Range, products of sets, regions and special functions (SymPy 1.14 pretty())', () => {
+  const v = { a: sj.symbol('a'), b: sj.symbol('b'), n: sj.symbol('n'), x: sj.symbol('x'), y: sj.symbol('y'), z: sj.symbol('z') };
+  /** [SymPy source, builder, ASCII output, unicode output]. */
+  const cases: [string, () => Printable, string, string][] = [
+    ["SingularityFunction(x, a, n)", () => sj.SingularityFunction(v.x, v.a, v.n), "        n\n<-a + x> ", "        n\n<-a + x> "],
+    ["SingularityFunction(x, 4, 5) + SingularityFunction(x, -3, 4)", () => sj.add(sj.SingularityFunction(v.x, 4, 5), sj.SingularityFunction(v.x, -3, 4)), "       4          5\n<x + 3>  + <x - 4> ", "       4          5\n<x + 3>  + <x - 4> "],
+    ["SingularityFunction(x, a, n)**3", () => sj.pow(sj.SingularityFunction(v.x, v.a, v.n), 3), "           3\n/        n\\ \n\\<-a + x> / ", "           3\n⎛        n⎞ \n⎝<-a + x> ⎠ "],
+    ["SingularityFunction(x, 0, -1)", () => sj.SingularityFunction(v.x, 0, -1), "   -1\n<x>  ", "   -1\n<x>  "],
+    ["SingularityFunction(x, a, 2)*x", () => sj.mul(sj.SingularityFunction(v.x, v.a, 2), v.x), "          2\nx*<-a + x> ", "          2\nx⋅<-a + x> "],
+    ["Range(1, 10)", () => Range.of(1, 10), "{1, 2, ..., 9}", "{1, 2, …, 9}"],
+    ["Range(1, 10, 2)", () => Range.of(1, 10, 2), "{1, 3, ..., 9}", "{1, 3, …, 9}"],
+    ["Range(0, oo, 2)", () => Range.of(0, S.Infinity, 2), "{0, 2, ...}", "{0, 2, …}"],
+    ["Range(-oo, 0)", () => Range.of(S.NegativeInfinity, 0), "{..., -2, -1}", "{…, -2, -1}"],
+    ["Range(-oo, oo)", () => Range.of(S.NegativeInfinity, S.Infinity), "{..., -1, 0, 1, ...}", "{…, -1, 0, 1, …}"],
+    ["Range(10, 1, -1)", () => Range.of(10, 1, -1), "{10, 9, ..., 2}", "{10, 9, …, 2}"],
+    ["Range(5, 6)", () => Range.of(5, 6), "{5}", "{5}"],
+    ["Range(0, 0)", () => Range.of(0, 0), "{}", "{}"],
+    ["Range(0, -10, -3)", () => Range.of(0, -10, -3), "{0, -3, -6, -9}", "{0, -3, -6, -9}"],
+    ["SeqFormula(n**2, (n, 0, oo))", () => sj.SeqFormula(sj.pow(v.n, 2), [v.n, 0, S.Infinity]), "[0, 1, 4, 9, ...]", "[0, 1, 4, 9, …]"],
+    ["SeqFormula(n**2, (n, 0, 5))", () => sj.SeqFormula(sj.pow(v.n, 2), [v.n, 0, 5]), "[0, 1, 4, 9, ...]", "[0, 1, 4, 9, …]"],
+    ["SeqFormula(n**2, (n, 0, 3))", () => sj.SeqFormula(sj.pow(v.n, 2), [v.n, 0, 3]), "[0, 1, 4, 9]", "[0, 1, 4, 9]"],
+    ["SeqFormula(n**2, (n, -oo, 0))", () => sj.SeqFormula(sj.pow(v.n, 2), [v.n, S.NegativeInfinity, 0]), "[..., 9, 4, 1, 0]", "[…, 9, 4, 1, 0]"],
+    ["SeqPer((1, 2, 3), (n, 0, oo))", () => sj.SeqPer([1, 2, 3], [v.n, 0, S.Infinity]), "[1, 2, 3, 1, ...]", "[1, 2, 3, 1, …]"],
+    ["SeqPer((1, 2), (n, 0, 3))", () => sj.SeqPer([1, 2], [v.n, 0, 3]), "[1, 2, 1, 2]", "[1, 2, 1, 2]"],
+    ["SeqAdd(SeqFormula(n**2, (n, 0, oo)), SeqPer((1, 2), (n, 0, oo)))", () => sj.SeqAdd(sj.SeqFormula(sj.pow(v.n, 2), [v.n, 0, S.Infinity]), sj.SeqPer([1, 2], [v.n, 0, S.Infinity])), "[1, 3, 5, 11, ...]", "[1, 3, 5, 11, …]"],
+    ["SeqMul(SeqFormula(n**2, (n, 0, oo)), SeqPer((1, 2), (n, 0, oo)))", () => sj.SeqMul(sj.SeqFormula(sj.pow(v.n, 2), [v.n, 0, S.Infinity]), sj.SeqPer([1, 2], [v.n, 0, S.Infinity])), "[0, 2, 4, 18, ...]", "[0, 2, 4, 18, …]"],
+    ["S.EmptySequence", () => sj.EmptySequence, "EmptySequence", "EmptySequence"],
+    ["polylog(x, y)", () => sj.polylog(v.x, v.y), "polylog(x, y)", "Liₓ(y)"],
+    ["polylog(2, x)**3", () => sj.pow(sj.polylog(2, v.x), 3), "       3      \npolylog (2, x)", "   3   \nLi₂ (x)"],
+    ["lerchphi(x, y, n)", () => sj.lerchphi(v.x, v.y, v.n), "lerchphi(x, y, n)", "Φ(x, y, n)"],
+    ["lerchphi(x, y, n)**2", () => sj.pow(sj.lerchphi(v.x, v.y, v.n), 2), "        2         \nlerchphi (x, y, n)", " 2         \nΦ (x, y, n)"],
+    ["elliptic_k(x)**2", () => sj.pow(sj.ellipticK(v.x), 2), "    2\nK(x) ", "    2\nK(x) "],
+    ["elliptic_f(x, y)", () => sj.ellipticF(v.x, v.y), "F(x|y)", "F(x│y)"],
+    ["elliptic_e(x)", () => sj.ellipticE(v.x), "E(x)", "E(x)"],
+    ["elliptic_e(x, y)", () => sj.ellipticE(v.x, v.y), "E(x|y)", "E(x│y)"],
+    ["elliptic_e(x)**2", () => sj.pow(sj.ellipticE(v.x), 2), "    2\nE(x) ", "    2\nE(x) "],
+    ["elliptic_pi(x, y)", () => sj.ellipticPi(v.x, v.y), "Pi(x|y)", "Π(x│y)"],
+    ["elliptic_pi(x, y, z)**2", () => sj.pow(sj.ellipticPi(v.x, v.y, v.z), 2), "          2\nPi(x; y|z) ", "         2\nΠ(x; y│z) "],
+    ["betainc(a, b, x, y)", () => sj.betainc(v.a, v.b, v.x, v.y), "B'(a, b, x, y)", "B'(a, b, x, y)"],
+    ["betainc_regularized(a, b, x, y)**2", () => sj.pow(sj.betaincRegularized(v.a, v.b, v.x, v.y), 2), " 2            \nI (a, b, x, y)", " 2            \nI (a, b, x, y)"],
+    ["dirichlet_eta(x)**2", () => sj.pow(sj.dirichletEta(v.x), 2), "             2   \ndirichlet_eta (x)", " 2   \nη (x)"],
+    ["stieltjes(n)", () => sj.stieltjes(v.n), "stieltjes \n         n", "γ \n n"],
+    ["stieltjes(n)**2", () => sj.pow(sj.stieltjes(v.n), 2), "          2\nstieltjes  \n         n ", "  2\nγ  \n n "],
+    ["stieltjes(n, x)**2", () => sj.pow(sj.stieltjes(v.n, v.x), 2), "          2   \nstieltjes  (x)\n         n    ", "  2   \nγ  (x)\n n    "],
+    ["meijerg(((a,), ()), ((), (b,)), z)", () => sj.meijerg([v.a], [], [], [v.b], v.z), " __0, 1 /a    |  \\\n/__     |     | z|\n\\_|1, 1 \\   b |  /", "╭─╮0, 1 ⎛a    │  ⎞\n│╶┐     ⎜     │ z⎟\n╰─╯1, 1 ⎝   b │  ⎠"],
+    ["meijerg(((a,), ()), ((), (b,)), z)**2", () => sj.pow(sj.meijerg([v.a], [], [], [v.b], v.z), 2), "                  2\n __0, 1 /a    |  \\ \n/__     |     | z| \n\\_|1, 1 \\   b |  / ", "                  2\n╭─╮0, 1 ⎛a    │  ⎞ \n│╶┐     ⎜     │ z⎟ \n╰─╯1, 1 ⎝   b │  ⎠ "],
+    ["hyper((a, b), (x,), z)", () => sj.hyper([v.a, v.b], [v.x], v.z), "  _            \n |_  /a, b |  \\\n |   |     | z|\n2  1 \\ x   |  /", " ┌─  ⎛a, b │  ⎞\n ├─  ⎜     │ z⎟\n2╵ 1 ⎝ x   │  ⎠"],
+    ["hyper((a, b), (x,), z)**2", () => sj.pow(sj.hyper([v.a, v.b], [v.x], v.z), 2), "               2\n  _             \n |_  /a, b |  \\ \n |   |     | z| \n2  1 \\ x   |  / ", "               2\n ┌─  ⎛a, b │  ⎞ \n ├─  ⎜     │ z⎟ \n2╵ 1 ⎝ x   │  ⎠ "],
+    ["Heaviside(x, 0)", () => sj.Heaviside(v.x, 0), "Heaviside(x, 0)", "θ(x, 0)"],
+    ["Heaviside(x, S.Half)", () => sj.Heaviside(v.x, S.Half), "Heaviside(x)", "θ(x)"],
+    ["Heaviside(x)**2", () => sj.pow(sj.Heaviside(v.x), 2), "            2\nHeaviside(x) ", "    2\nθ(x) "],
+    ["DiracDelta(x)**2", () => sj.pow(sj.DiracDelta(v.x), 2), "          2   \nDiracDelta (x)", "    2\nδ(x) "],
+    ["DiracDelta(x, 2)**2", () => sj.pow(sj.DiracDelta(v.x, 2), 2), "          2      \nDiracDelta (x, 2)", "        2\n (2)     \nδ    (x) "],
+    ["ProductSet(Interval(0, 1), FiniteSet(1, 2))", () => sj.ProductSet(Interval.of(0, 1), FiniteSet.of(1, 2)), "[0, 1] x {1, 2}", "[0, 1] × {1, 2}"],
+    ["ProductSet(Interval(0, 1), Interval(0, 1), Interval(0, 1))", () => sj.ProductSet(Interval.of(0, 1), Interval.of(0, 1), Interval.of(0, 1)), "      3\n[0, 1] ", "      3\n[0, 1] "],
+    ["ProductSet(Union(Interval(0, 1), Interval(2, 3)), FiniteSet(1))", () => sj.ProductSet(sj.union(Interval.of(0, 1), Interval.of(2, 3)), FiniteSet.of(1)), "([0, 1] U [2, 3]) x {1}", "([0, 1] ∪ [2, 3]) × {1}"],
+    ["ComplexRegion(Interval(0, 1)*Interval(0, 2))", () => sj.ComplexRegion(sj.ProductSet(Interval.of(0, 1), Interval.of(0, 2))), "{x + y*I | x, y in [0, 1] x [0, 2]}", "{x + y⋅ⅈ │ x, y ∊ [0, 1] × [0, 2]}"],
+    ["ComplexRegion(Interval(0, 1)*Interval(0, 2*pi), polar=True)", () => sj.ComplexRegion(sj.ProductSet(Interval.of(0, 1), Interval.of(0, sj.mul(2, S.Pi))), true), "{r*(I*sin(theta) + cos(theta)) | r, theta in [0, 1] x [0, 2*pi)}", "{r⋅(ⅈ⋅sin(θ) + cos(θ)) │ r, θ ∊ [0, 1] × [0, 2⋅π)}"],
+    ["Contains(x, Interval(0, 1))", () => new Contains(v.x, Interval.of(0, 1)), "Contains(x, Interval(0, 1))", "x ∈ [0, 1]"],
+    ["Permutation([1, 0, 2])", () => new sj.Permutation([1, 0, 2]), "(0 1)", "(0 1)"],
+  ];
+  it.each(cases)('%s', (_src, build, ascii, unicode) => {
+    expect(pretty(build(), { useUnicode: false })).toBe(ascii);
+    expect(pretty(build(), { useUnicode: true })).toBe(unicode);
+  });
+  it('a sequence with a symbolic bound prints as its str form', () => {
+    // SymPy raises NotImplementedError("Pretty printing of sequences with symbolic bound not implemented")
+    expect(pretty(sj.SeqFormula(sj.pow(v.n, 2), [v.n, v.a, S.Infinity]))).toBe('SeqFormula(n**2, (n, a, oo))');
+  });
+  it('meijerg with parameter counts of different widths', () => {
+    // SymPy pretty(meijerg([list(range(1, 11)), []], [[], [0]], z))
+    const g = sj.meijerg([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [], [], [0], v.z);
+    expect(pretty(g, { useUnicode: false })).toBe(" __ 0, 10 /1, 2, 3, 4, 5, 6, 7, 8, 9, 10    |  \\\n/__       |                                 | z|\n\\_|10,  1 \\                               0 |  /");
+    expect(pretty(g, { useUnicode: true })).toBe("╭─╮ 0, 10 ⎛1, 2, 3, 4, 5, 6, 7, 8, 9, 10    │  ⎞\n│╶┐       ⎜                                 │ z⎟\n╰─╯10,  1 ⎝                               0 │  ⎠");
+  });
+  it('a Range over all the integers downwards', () => {
+    // SymPy pretty(Range(oo, -oo, -1))
+    expect(pretty(Range.of(S.Infinity, S.NegativeInfinity, -1), { useUnicode: true })).toBe('{…, 1, 0, -1, …}');
+  });
+  it('the identity permutation', () => {
+    // SymPy pretty(Permutation(3)) and pretty(Permutation([]))
+    expect(pretty(new sj.Permutation(3))).toBe('()');
+    expect(pretty(new sj.Permutation([[0, 1], [2, 3]]))).toBe('(0 1)(2 3)');
   });
 });

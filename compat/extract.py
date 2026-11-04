@@ -225,7 +225,47 @@ MODULES = {
     "sympy.tensor.array.mutable_ndim_array": "tensor",
     "sympy.tensor.array.sparse_ndim_array": "tensor",
     "sympy.tensor.index_methods": "tensor",
+    # packages ported to the base module later
+    "sympy.discrete.transforms": "discrete",
+    "sympy.discrete.convolutions": "discrete",
+    "sympy.discrete.recurrences": "discrete",
+    "sympy.algebras.quaternion": "algebras",
+    "sympy.strategies.core": "strategies",
+    "sympy.strategies.rl": "strategies",
+    "sympy.strategies.tools": "strategies",
+    "sympy.strategies.traverse": "strategies",
+    "sympy.strategies.tree": "strategies",
+    "sympy.strategies.util": "strategies",
+    "sympy.strategies.branch.core": "strategies",
+    "sympy.strategies.branch.tools": "strategies",
+    "sympy.strategies.branch.traverse": "strategies",
+    "sympy.unify.core": "unify",
+    "sympy.unify.rewrite": "unify",
+    "sympy.unify.usympy": "unify",
 }
+
+# subpackages whose public names are not top-level sympy names (sympy.discrete.linrec,
+# sympy.strategies.rm_id, sympy.unify.unify, ...): calls of them count as public API calls in
+# the modules of that subpackage
+SUBPACKAGE_PUBLIC = {
+    "sympy.discrete.": ("sympy.discrete", "sympy.discrete.recurrences"),
+    "sympy.strategies.branch.": ("sympy.strategies.branch",),
+    "sympy.strategies.": ("sympy.strategies",),
+    "sympy.unify.": ("sympy.unify",),
+}
+
+
+def subpackage_public(modname):
+    """The public names of the subpackage of modname."""
+    for prefix, pkgs in SUBPACKAGE_PUBLIC.items():
+        if modname.startswith(prefix):
+            names = set()
+            for pkg in pkgs:
+                m = importlib.import_module(pkg)
+                # a package's __all__, or the public functions a module defines
+                names |= set(getattr(m, "__all__", None) or [n for n in dir(m) if not n.startswith("_") and getattr(getattr(m, n), "__module__", None) == pkg])
+            return names
+    return set()
 
 ASSUMPTION_KEYS = ["real", "positive", "negative", "nonnegative", "nonpositive", "integer", "commutative", "polar"]
 
@@ -350,6 +390,13 @@ def ser(o):
         return {"t": "New", "cls": "MultisetPartitionTraverser"}
     if not isinstance(o, Basic):
         raise Unsupported(type(o).__name__)
+    from sympy.algebras.quaternion import Quaternion as _Q
+    if isinstance(o, _Q):
+        return {"t": "Quaternion", "args": [ser(a) for a in o.args], "realField": bool(o.real_field),
+                "norm": None if o._norm is None else ser(o._norm)}
+    if type(o) is Basic:
+        # a bare Basic node (the strategies and unify doctests build trees of them)
+        return {"t": "Basic", "args": [ser(a) for a in o.args]}
     from sympy.series.fourier import FourierSeries as _FS
     from sympy.series.formal import FormalPowerSeries as _FPS
     if type(o) is _FS:
@@ -363,6 +410,18 @@ def ser(o):
         if not _same_series(lambda: sympy.fps(o.function, o.x, o.x0, o.dir).polynomial(8) - o.polynomial(8)):
             raise Unsupported("FormalPowerSeries")
         return {"t": "FormalPowerSeries", "f": ser(o.function), "x": ser(o.x), "x0": ser(o.x0), "dir": "+" if o.dir == 1 else "-"}
+    from sympy.series import sequences as _seqs
+    if o is sympy.S.EmptySequence:
+        return {"t": "EmptySequence"}
+    if type(o) in (_seqs.SeqFormula, _seqs.SeqPer):
+        x, start, stop = o.args[1]
+        items = [ser(i) for i in o.periodical] if type(o) is _seqs.SeqPer else [ser(o.formula)]
+        return {"t": type(o).__name__, "items": items, "x": ser(x), "start": ser(start), "stop": ser(stop)}
+    if type(o) in (_seqs.SeqAdd, _seqs.SeqMul):
+        return {"t": "SeqOp", "op": type(o).__name__, "args": [ser(a) for a in o.args]}
+    if type(o) is _seqs.RecursiveSeq:
+        return {"t": "RecursiveSeq", "recurrence": ser(o.args[0]), "yn": ser(o.yn), "n": ser(o.n),
+                "initial": [ser(i) for i in o.initial], "start": ser(o.start)}
     if isinstance(o, sympy.ImageSet):
         return {"t": "ImageSet", "lamda": ser(o.lamda), "sets": [ser(i) for i in o.base_sets]}
     if isinstance(o, sympy.ConditionSet):
@@ -532,6 +591,7 @@ def main(dst):
             mod = importlib.import_module(modname)
         except Exception:
             continue
+        extra_public = subpackage_public(modname)
         for test in finder.find(mod):
             globs = {}
             exec("from sympy import *", globs)
@@ -575,7 +635,7 @@ def main(dst):
                 if fn.startswith("."):
                     if fn[1:].startswith("_"):
                         continue
-                elif fn not in PUBLIC or fn in globs and getattr(globs[fn], "__module__", "").startswith("__"):
+                elif (fn not in PUBLIC and fn not in extra_public) or fn in globs and getattr(globs[fn], "__module__", "").startswith("__"):
                     continue
                 DUMMY_IDS.clear()
                 try:

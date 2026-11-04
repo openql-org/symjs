@@ -64,3 +64,37 @@ describe("simplify (cov2): SymPy 1.14 cases", () => {
     expect(showMap(run())).toBe(want);
   });
 });
+
+describe('simplify ends with exptrigsimp (SymPy)', () => {
+  // SymPy 1.14: simplify(Znm(1, 1, theta, phi).expand(func=True)), simplify(Znm(2, 1, theta, phi).expand(func=True))
+  it('exp(I*phi) + exp(-I*phi) inside a product becomes 2*cos(phi)', () => {
+    const [ph, th] = symbols('phi theta');
+    const c1 = parse('-sqrt(3)/(4*sqrt(pi))');
+    const e1 = add(mul(c1, exp(mul(I, ph)), sin(th)), mul(c1, exp(mul(-1, I, ph)), sin(th)));
+    expect(String(simplify(e1))).toBe('-sqrt(3)*sin(theta)*cos(phi)/(2*sqrt(pi))');
+    const c2 = parse('-sqrt(15)/(4*sqrt(pi))');
+    const e2 = add(mul(c2, exp(mul(I, ph)), sin(th), cos(th)), mul(c2, exp(mul(-1, I, ph)), sin(th), cos(th)));
+    expect(String(simplify(e2))).toBe('-sqrt(15)*sin(2*theta)*cos(phi)/(4*sqrt(pi))');
+    // an exponential that exptrigsimp does not shorten is kept: simplify(exp(I*x)*y) = y*exp(I*x)
+    expect(String(simplify(mul(exp(mul(I, ph)), th)))).toBe('theta*exp(I*phi)');
+  });
+});
+
+describe('simplify keeps the numeric content of a quotient in front (SymPy factor_terms(expr, sign=False))', () => {
+  it.each([
+    ['(15 - 63*x)/((x - 1)*(5*x - 1))', '3*(5 - 21*x)/((x - 1)*(5*x - 1))'],
+    ['(2*x + 2)/y', '2*(x + 1)/y'],
+    ['2*x/(4*y + 6)', 'x/(2*y + 3)'],
+    ['(x/2 + 1/2)/y', '(x + 1)/(2*y)'],
+    // sums are not factored
+    ['2*x + 2', '2*x + 2'],
+    ['6*x + 4*y', '6*x + 4*y'],
+  ])('simplify(%s)', (src, want) => {
+    expect(String(simplify(parse(src)))).toBe(want);
+  });
+  it('the generating function of sequence(3*5**n + 12)', () => {
+    // SymPy: sequence(3*5**n + 12).find_linear_recurrence(20, gfvar=x)[1]
+    const e = mul(parse('-3*(21*x - 5)'), pow(parse('(x - 1)*(5*x - 1)'), -1));
+    expect(String(simplify(e))).toBe('3*(5 - 21*x)/((x - 1)*(5*x - 1))');
+  });
+});

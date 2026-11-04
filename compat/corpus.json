@@ -610,6 +610,10 @@
    "category": "assumptions"
   },
   {
+   "name": "Quaternion",
+   "category": "algebras"
+  },
+  {
    "name": "Range",
    "category": "sets"
   },
@@ -1102,6 +1106,10 @@
    "category": "ntheory"
   },
   {
+   "name": "convolution",
+   "category": "discrete"
+  },
+  {
    "name": "cos",
    "category": "functions"
   },
@@ -1128,6 +1136,10 @@
   {
    "name": "count_roots",
    "category": "polys"
+  },
+  {
+   "name": "covering_product",
+   "category": "discrete"
   },
   {
    "name": "csc",
@@ -1414,6 +1426,10 @@
    "category": "special"
   },
   {
+   "name": "fft",
+   "category": "discrete"
+  },
+  {
    "name": "fibonacci",
    "category": "special"
   },
@@ -1464,6 +1480,10 @@
   {
    "name": "fu",
    "category": "simplify"
+  },
+  {
+   "name": "fwht",
+   "category": "discrete"
   },
   {
    "name": "gamma",
@@ -1610,6 +1630,14 @@
    "category": "simplify"
   },
   {
+   "name": "ifft",
+   "category": "discrete"
+  },
+  {
+   "name": "ifwht",
+   "category": "discrete"
+  },
+  {
    "name": "igcd",
    "category": "core"
   },
@@ -1646,8 +1674,16 @@
    "category": "polys"
   },
   {
+   "name": "intersecting_product",
+   "category": "discrete"
+  },
+  {
    "name": "intervals",
    "category": "polys"
+  },
+  {
+   "name": "intt",
+   "category": "discrete"
   },
   {
    "name": "inv_quick",
@@ -1672,6 +1708,10 @@
   {
    "name": "inverse_mellin_transform",
    "category": "calculus"
+  },
+  {
+   "name": "inverse_mobius_transform",
+   "category": "discrete"
   },
   {
    "name": "inverse_sine_transform",
@@ -1958,6 +1998,10 @@
    "category": "special"
   },
   {
+   "name": "mobius_transform",
+   "category": "discrete"
+  },
+  {
    "name": "mod_inverse",
    "category": "core"
   },
@@ -2032,6 +2076,10 @@
   {
    "name": "nthroot_mod",
    "category": "ntheory"
+  },
+  {
+   "name": "ntt",
+   "category": "discrete"
   },
   {
    "name": "num_digits",
@@ -18889,7 +18937,78 @@
   },
   {
    "fn": ".matches",
-   "unsupportedArg": "Basic",
+   "self": {
+    "t": "Basic",
+    "args": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "a",
+        "assume": {}
+       },
+       {
+        "t": "Wild",
+        "name": "x",
+        "exclude": [],
+        "assume": {},
+        "props": []
+       }
+      ]
+     },
+     {
+      "t": "Wild",
+      "name": "x",
+      "exclude": [],
+      "assume": {},
+      "props": []
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Basic",
+     "args": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "a",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "b",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "c",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "b",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "c",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "core",
    "module": "sympy.core.basic",
    "src": "Basic(a + x, x).matches(Basic(a + b + c, b + c))",
@@ -32028,18 +32147,6 @@
       ],
       [
        {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       },
-       {
-        "t": "Symbol",
-        "name": "x_1",
-        "assume": {}
-       }
-      ],
-      [
-       {
         "t": "Dummy",
         "name": "x",
         "index": 0,
@@ -32048,6 +32155,18 @@
        {
         "t": "Symbol",
         "name": "x",
+        "assume": {}
+       }
+      ],
+      [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "x_1",
         "assume": {}
        }
       ]
@@ -36468,7 +36587,7 @@
        "args": [
         {
          "t": "Dummy",
-         "name": "Dummy_881",
+         "name": "Dummy_873",
          "index": 0,
          "assume": {
           "real": true
@@ -167841,7 +167960,7 @@
             },
             {
              "t": "Dummy",
-             "name": "Dummy_15667",
+             "name": "Dummy_15637",
              "index": 0,
              "assume": {}
             }
@@ -168150,7 +168269,7 @@
             },
             {
              "t": "Dummy",
-             "name": "Dummy_15668",
+             "name": "Dummy_15638",
              "index": 1,
              "assume": {}
             },
@@ -168354,7 +168473,7 @@
               },
               {
                "t": "Dummy",
-               "name": "Dummy_15667",
+               "name": "Dummy_15637",
                "index": 0,
                "assume": {}
               }
@@ -168601,7 +168720,7 @@
            "args": [
             {
              "t": "Dummy",
-             "name": "Dummy_15668",
+             "name": "Dummy_15638",
              "index": 1,
              "assume": {}
             },
@@ -168857,7 +168976,7 @@
                 },
                 {
                  "t": "Dummy",
-                 "name": "Dummy_15855",
+                 "name": "Dummy_15825",
                  "index": 0,
                  "assume": {}
                 }
@@ -168877,7 +168996,7 @@
                 },
                 {
                  "t": "Dummy",
-                 "name": "Dummy_15856",
+                 "name": "Dummy_15826",
                  "index": 1,
                  "assume": {}
                 }
@@ -168948,7 +169067,7 @@
                 },
                 {
                  "t": "Dummy",
-                 "name": "Dummy_15855",
+                 "name": "Dummy_15825",
                  "index": 0,
                  "assume": {}
                 }
@@ -168968,7 +169087,7 @@
                 },
                 {
                  "t": "Dummy",
-                 "name": "Dummy_15856",
+                 "name": "Dummy_15826",
                  "index": 1,
                  "assume": {}
                 }
@@ -169061,7 +169180,7 @@
                 },
                 {
                  "t": "Dummy",
-                 "name": "Dummy_15856",
+                 "name": "Dummy_15826",
                  "index": 1,
                  "assume": {}
                 }
@@ -169081,7 +169200,7 @@
                 },
                 {
                  "t": "Dummy",
-                 "name": "Dummy_15855",
+                 "name": "Dummy_15825",
                  "index": 0,
                  "assume": {}
                 }
@@ -169152,7 +169271,7 @@
                 },
                 {
                  "t": "Dummy",
-                 "name": "Dummy_15856",
+                 "name": "Dummy_15826",
                  "index": 1,
                  "assume": {}
                 }
@@ -169172,7 +169291,7 @@
                 },
                 {
                  "t": "Dummy",
-                 "name": "Dummy_15855",
+                 "name": "Dummy_15825",
                  "index": 0,
                  "assume": {}
                 }
@@ -170325,7 +170444,17 @@
   },
   {
    "fn": ".coeff_mul",
-   "unsupportedArg": "EmptySequence",
+   "self": {
+    "t": "EmptySequence"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "-1",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "EmptySequence.coeff_mul(-1)",
@@ -170333,7 +170462,97 @@
   },
   {
    "fn": ".coeff",
-   "unsupportedArg": "RecursiveSeq",
+   "self": {
+    "t": "RecursiveSeq",
+    "recurrence": {
+     "t": "Add",
+     "args": [
+      {
+       "t": "UFn",
+       "name": "y",
+       "args": [
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "n",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "UFn",
+       "name": "y",
+       "args": [
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-2",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "n",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    "yn": {
+     "t": "UFn",
+     "name": "y",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {}
+      }
+     ]
+    },
+    "n": {
+     "t": "Symbol",
+     "name": "n",
+     "assume": {}
+    },
+    "initial": [
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     }
+    ],
+    "start": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    }
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "3",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "fib.coeff(3) # Value at a particular point",
@@ -170341,7 +170560,41 @@
   },
   {
    "fn": "SeqAdd",
-   "unsupportedArg": "SeqPer",
+   "args": [
+    {
+     "t": "SeqPer",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     "x": {
+      "t": "Symbol",
+      "name": "n",
+      "assume": {}
+     },
+     "start": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "stop": {
+      "t": "Const",
+      "name": "oo"
+     }
+    },
+    {
+     "t": "EmptySequence"
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "SeqAdd(SeqPer((1, 2), (n, 0, oo)), EmptySequence)",
@@ -170349,7 +170602,69 @@
   },
   {
    "fn": "SeqAdd",
-   "unsupportedArg": "SeqPer",
+   "args": [
+    {
+     "t": "SeqPer",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     "x": {
+      "t": "Symbol",
+      "name": "n",
+      "assume": {}
+     },
+     "start": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "stop": {
+      "t": "Rational",
+      "p": "5",
+      "q": "1"
+     }
+    },
+    {
+     "t": "SeqPer",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     "x": {
+      "t": "Symbol",
+      "name": "n",
+      "assume": {}
+     },
+     "start": {
+      "t": "Rational",
+      "p": "6",
+      "q": "1"
+     },
+     "stop": {
+      "t": "Rational",
+      "p": "10",
+      "q": "1"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "SeqAdd(SeqPer((1, 2), (n, 0, 5)), SeqPer((1, 2), (n, 6, 10)))",
@@ -170357,7 +170672,72 @@
   },
   {
    "fn": "SeqAdd",
-   "unsupportedArg": "SeqPer",
+   "args": [
+    {
+     "t": "SeqPer",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     "x": {
+      "t": "Symbol",
+      "name": "n",
+      "assume": {}
+     },
+     "start": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "stop": {
+      "t": "Const",
+      "name": "oo"
+     }
+    },
+    {
+     "t": "SeqFormula",
+     "items": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "n",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ],
+     "x": {
+      "t": "Symbol",
+      "name": "n",
+      "assume": {}
+     },
+     "start": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "stop": {
+      "t": "Const",
+      "name": "oo"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "SeqAdd(SeqPer((1, 2), (n, 0, oo)), SeqFormula(n**2, (n, 0, oo)))",
@@ -170365,7 +170745,77 @@
   },
   {
    "fn": "SeqAdd",
-   "unsupportedArg": "SeqFormula",
+   "args": [
+    {
+     "t": "SeqFormula",
+     "items": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "n",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       ]
+      }
+     ],
+     "x": {
+      "t": "Symbol",
+      "name": "n",
+      "assume": {}
+     },
+     "start": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "stop": {
+      "t": "Const",
+      "name": "oo"
+     }
+    },
+    {
+     "t": "SeqFormula",
+     "items": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "n",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ],
+     "x": {
+      "t": "Symbol",
+      "name": "n",
+      "assume": {}
+     },
+     "start": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "stop": {
+      "t": "Const",
+      "name": "oo"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "SeqAdd(SeqFormula(n**3), SeqFormula(n**2))",
@@ -170373,7 +170823,48 @@
   },
   {
    "fn": ".coeff_mul",
-   "unsupportedArg": "SeqFormula",
+   "self": {
+    "t": "SeqFormula",
+    "items": [
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "n",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     }
+    ],
+    "x": {
+     "t": "Symbol",
+     "name": "n",
+     "assume": {}
+    },
+    "start": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "stop": {
+     "t": "Const",
+     "name": "oo"
+    }
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "SeqFormula(n**2).coeff_mul(2)",
@@ -170381,7 +170872,53 @@
   },
   {
    "fn": ".find_linear_recurrence",
-   "unsupportedArg": "SeqFormula",
+   "self": {
+    "t": "SeqFormula",
+    "items": [
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "n",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     }
+    ],
+    "x": {
+     "t": "Symbol",
+     "name": "n",
+     "assume": {}
+    },
+    "start": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "stop": {
+     "t": "Const",
+     "name": "oo"
+    }
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "10",
+     "q": "1"
+    },
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "sequence(n**2).find_linear_recurrence(10, 2)",
@@ -170389,7 +170926,48 @@
   },
   {
    "fn": ".find_linear_recurrence",
-   "unsupportedArg": "SeqFormula",
+   "self": {
+    "t": "SeqFormula",
+    "items": [
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "n",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     }
+    ],
+    "x": {
+     "t": "Symbol",
+     "name": "n",
+     "assume": {}
+    },
+    "start": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "stop": {
+     "t": "Const",
+     "name": "oo"
+    }
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "10",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "sequence(n**2).find_linear_recurrence(10)",
@@ -170397,7 +170975,48 @@
   },
   {
    "fn": ".find_linear_recurrence",
-   "unsupportedArg": "SeqFormula",
+   "self": {
+    "t": "SeqFormula",
+    "items": [
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "n",
+        "assume": {}
+       }
+      ]
+     }
+    ],
+    "x": {
+     "t": "Symbol",
+     "name": "n",
+     "assume": {}
+    },
+    "start": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "stop": {
+     "t": "Const",
+     "name": "oo"
+    }
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "10",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "sequence(2**n).find_linear_recurrence(10)",
@@ -170405,7 +171024,88 @@
   },
   {
    "fn": ".find_linear_recurrence",
-   "unsupportedArg": "SeqFormula",
+   "self": {
+    "t": "SeqFormula",
+    "items": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "23",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "n",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "91",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "n",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "x": {
+     "t": "Symbol",
+     "name": "n",
+     "assume": {}
+    },
+    "start": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "stop": {
+     "t": "Const",
+     "name": "oo"
+    }
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "10",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "sequence(23*n**4+91*n**2).find_linear_recurrence(10)",
@@ -170413,7 +171113,173 @@
   },
   {
    "fn": ".find_linear_recurrence",
-   "unsupportedArg": "SeqFormula",
+   "self": {
+    "t": "SeqFormula",
+    "items": [
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "5"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "5",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "2"
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Add",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "2"
+             },
+             {
+              "t": "Mul",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "1",
+                "q": "2"
+               },
+               {
+                "t": "Pow",
+                "args": [
+                 {
+                  "t": "Rational",
+                  "p": "5",
+                  "q": "1"
+                 },
+                 {
+                  "t": "Rational",
+                  "p": "1",
+                  "q": "2"
+                 }
+                ]
+               }
+              ]
+             }
+            ]
+           },
+           {
+            "t": "Symbol",
+            "name": "n",
+            "assume": {}
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Add",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "-1",
+                "q": "2"
+               },
+               {
+                "t": "Mul",
+                "args": [
+                 {
+                  "t": "Rational",
+                  "p": "-1",
+                  "q": "2"
+                 },
+                 {
+                  "t": "Pow",
+                  "args": [
+                   {
+                    "t": "Rational",
+                    "p": "5",
+                    "q": "1"
+                   },
+                   {
+                    "t": "Rational",
+                    "p": "1",
+                    "q": "2"
+                   }
+                  ]
+                 }
+                ]
+               }
+              ]
+             },
+             {
+              "t": "Mul",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "-1",
+                "q": "1"
+               },
+               {
+                "t": "Symbol",
+                "name": "n",
+                "assume": {}
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "x": {
+     "t": "Symbol",
+     "name": "n",
+     "assume": {}
+    },
+    "start": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "stop": {
+     "t": "Const",
+     "name": "oo"
+    }
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "10",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "sequence(sqrt(5)*(((1 + sqrt(5))/2)**n - (-(1 + sqrt(5))/2)**(-n))/5).find_linear_recurrence(10)",
@@ -170421,7 +171287,78 @@
   },
   {
    "fn": ".find_linear_recurrence",
-   "unsupportedArg": "SeqFormula",
+   "self": {
+    "t": "SeqFormula",
+    "items": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-2",
+            "q": "1"
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             },
+             {
+              "t": "Symbol",
+              "name": "n",
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "x": {
+     "t": "Symbol",
+     "name": "n",
+     "assume": {}
+    },
+    "start": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "stop": {
+     "t": "Const",
+     "name": "oo"
+    }
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "30",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "sequence(x+y*(-2)**(-n), (n, 0, oo)).find_linear_recurrence(30)",
@@ -170429,7 +171366,74 @@
   },
   {
    "fn": ".find_linear_recurrence",
-   "unsupportedArg": "SeqFormula",
+   "self": {
+    "t": "SeqFormula",
+    "items": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "12",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "5",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "n",
+            "assume": {}
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "x": {
+     "t": "Symbol",
+     "name": "n",
+     "assume": {}
+    },
+    "start": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "stop": {
+     "t": "Const",
+     "name": "oo"
+    }
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "20",
+     "q": "1"
+    }
+   ],
+   "kwargs": {
+    "gfvar": {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   },
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "sequence(3*5**n + 12).find_linear_recurrence(20,gfvar=x)",
@@ -170437,7 +171441,50 @@
   },
   {
    "fn": ".find_linear_recurrence",
-   "unsupportedArg": "SeqFormula",
+   "self": {
+    "t": "SeqFormula",
+    "items": [
+     {
+      "t": "Fn",
+      "name": "lucas",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "n",
+        "assume": {}
+       }
+      ]
+     }
+    ],
+    "x": {
+     "t": "Symbol",
+     "name": "n",
+     "assume": {}
+    },
+    "start": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "stop": {
+     "t": "Const",
+     "name": "oo"
+    }
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "15",
+     "q": "1"
+    }
+   ],
+   "kwargs": {
+    "gfvar": {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   },
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "sequence(lucas(n)).find_linear_recurrence(15,gfvar=x)",
@@ -170445,7 +171492,49 @@
   },
   {
    "fn": ".coeff",
-   "unsupportedArg": "SeqFormula",
+   "self": {
+    "t": "SeqFormula",
+    "items": [
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "n",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     }
+    ],
+    "x": {
+     "t": "Symbol",
+     "name": "n",
+     "assume": {}
+    },
+    "start": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "stop": {
+     "t": "Rational",
+     "p": "5",
+     "q": "1"
+    }
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "3",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "s.coeff(3)",
@@ -170453,7 +171542,41 @@
   },
   {
    "fn": "SeqMul",
-   "unsupportedArg": "SeqPer",
+   "args": [
+    {
+     "t": "SeqPer",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     "x": {
+      "t": "Symbol",
+      "name": "n",
+      "assume": {}
+     },
+     "start": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "stop": {
+      "t": "Const",
+      "name": "oo"
+     }
+    },
+    {
+     "t": "EmptySequence"
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "SeqMul(SeqPer((1, 2), (n, 0, oo)), EmptySequence)",
@@ -170461,7 +171584,69 @@
   },
   {
    "fn": "SeqMul",
-   "unsupportedArg": "SeqPer",
+   "args": [
+    {
+     "t": "SeqPer",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     "x": {
+      "t": "Symbol",
+      "name": "n",
+      "assume": {}
+     },
+     "start": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "stop": {
+      "t": "Rational",
+      "p": "5",
+      "q": "1"
+     }
+    },
+    {
+     "t": "SeqPer",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     "x": {
+      "t": "Symbol",
+      "name": "n",
+      "assume": {}
+     },
+     "start": {
+      "t": "Rational",
+      "p": "6",
+      "q": "1"
+     },
+     "stop": {
+      "t": "Rational",
+      "p": "10",
+      "q": "1"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "SeqMul(SeqPer((1, 2), (n, 0, 5)), SeqPer((1, 2), (n, 6, 10)))",
@@ -170469,7 +171654,72 @@
   },
   {
    "fn": "SeqMul",
-   "unsupportedArg": "SeqPer",
+   "args": [
+    {
+     "t": "SeqPer",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     "x": {
+      "t": "Symbol",
+      "name": "n",
+      "assume": {}
+     },
+     "start": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "stop": {
+      "t": "Const",
+      "name": "oo"
+     }
+    },
+    {
+     "t": "SeqFormula",
+     "items": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "n",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ],
+     "x": {
+      "t": "Symbol",
+      "name": "n",
+      "assume": {}
+     },
+     "start": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "stop": {
+      "t": "Const",
+      "name": "oo"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "SeqMul(SeqPer((1, 2), (n, 0, oo)), SeqFormula(n**2))",
@@ -170477,7 +171727,77 @@
   },
   {
    "fn": "SeqMul",
-   "unsupportedArg": "SeqFormula",
+   "args": [
+    {
+     "t": "SeqFormula",
+     "items": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "n",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       ]
+      }
+     ],
+     "x": {
+      "t": "Symbol",
+      "name": "n",
+      "assume": {}
+     },
+     "start": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "stop": {
+      "t": "Const",
+      "name": "oo"
+     }
+    },
+    {
+     "t": "SeqFormula",
+     "items": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "n",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ],
+     "x": {
+      "t": "Symbol",
+      "name": "n",
+      "assume": {}
+     },
+     "start": {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     "stop": {
+      "t": "Const",
+      "name": "oo"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "SeqMul(SeqFormula(n**3), SeqFormula(n**2))",
@@ -170485,7 +171805,50 @@
   },
   {
    "fn": ".coeff",
-   "unsupportedArg": "SeqPer",
+   "self": {
+    "t": "SeqPer",
+    "items": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     }
+    ],
+    "x": {
+     "t": "Dummy",
+     "name": "k",
+     "index": 0,
+     "assume": {}
+    },
+    "start": {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    },
+    "stop": {
+     "t": "Rational",
+     "p": "5",
+     "q": "1"
+    }
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "3",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "calculus",
    "module": "sympy.series.sequences",
    "src": "s.coeff(3)",
@@ -175757,6 +177120,6400 @@
    "module": "sympy.tensor.index_methods",
    "src": "get_indices((x[i] + A[i, j]*y[j])*x[j])",
    "expected": "({j, i}, {})"
+  },
+  {
+   "fn": "fft",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "fft([1, 2, 3, 4])",
+   "expected": "[10, -2 - 2*I, -2, -2 + 2*I]"
+  },
+  {
+   "fn": "ifft",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "ifft([1, 2, 3, 4])",
+   "expected": "[5/2, -1/2 + I/2, -1/2, -1/2 - I/2]"
+  },
+  {
+   "fn": "ifft",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "dps": {
+     "t": "Rational",
+     "p": "15",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "ifft([1, 7, 3, 4], dps=15)",
+   "expected": "[3.75000000000000, -0.5 - 0.75*I, -1.75000000000000, -0.5 + 0.75*I]"
+  },
+  {
+   "fn": "fwht",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "-2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "fwht([4, 2, 2, 0, 0, 2, -2, 0])",
+   "expected": "[8, 0, 8, 0, 8, 8, 0, 0]"
+  },
+  {
+   "fn": "ifwht",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "19",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "11",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "-9",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "-7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "13",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "-15",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "ifwht([19, -1, 11, -9, -7, 13, -15, 5])",
+   "expected": "[2, 0, 4, 0, 3, 10, 0, 0]"
+  },
+  {
+   "fn": "fft",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "fft([1, 2, 3, 4])",
+   "expected": "[10, -2 - 2*I, -2, -2 + 2*I]"
+  },
+  {
+   "fn": "ifft",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "ifft([1, 2, 3, 4])",
+   "expected": "[5/2, -1/2 + I/2, -1/2, -1/2 - I/2]"
+  },
+  {
+   "fn": "ifft",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "dps": {
+     "t": "Rational",
+     "p": "15",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "ifft([1, 7, 3, 4], dps=15)",
+   "expected": "[3.75000000000000, -0.5 - 0.75*I, -1.75000000000000, -0.5 + 0.75*I]"
+  },
+  {
+   "fn": "fwht",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "-2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "fwht([4, 2, 2, 0, 0, 2, -2, 0])",
+   "expected": "[8, 0, 8, 0, 8, 8, 0, 0]"
+  },
+  {
+   "fn": "ifwht",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "19",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "-1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "11",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "-9",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "-7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "13",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "-15",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "ifwht([19, -1, 11, -9, -7, 13, -15, 5])",
+   "expected": "[2, 0, 4, 0, 3, 10, 0, 0]"
+  },
+  {
+   "fn": "ntt",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "prime": {
+     "t": "Rational",
+     "p": "769",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "ntt([1, 2, 3, 4], prime=3*2**8 + 1)",
+   "expected": "[10, 643, 767, 122]"
+  },
+  {
+   "fn": "intt",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "prime": {
+     "t": "Rational",
+     "p": "769",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "intt([1, 2, 3, 4], prime=3*2**8 + 1)",
+   "expected": "[387, 415, 384, 353]"
+  },
+  {
+   "fn": "mobius_transform",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "z",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "mobius_transform([x, y, z])",
+   "expected": "[x, x + y, x + z, x + y + z]"
+  },
+  {
+   "fn": "mobius_transform",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "z",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "subset": {
+     "t": "Js",
+     "v": false
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "mobius_transform([x, y, z], subset=False)",
+   "expected": "[x + y + z, y, z, 0]"
+  },
+  {
+   "fn": "mobius_transform",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "mobius_transform([1, 2, 3, 4])",
+   "expected": "[1, 3, 4, 10]"
+  },
+  {
+   "fn": "mobius_transform",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "subset": {
+     "t": "Js",
+     "v": false
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "mobius_transform([1, 2, 3, 4], subset=False)",
+   "expected": "[10, 6, 7, 4]"
+  },
+  {
+   "fn": "mobius_transform",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "z",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "mobius_transform([x, y, z])",
+   "expected": "[x, x + y, x + z, x + y + z]"
+  },
+  {
+   "fn": "mobius_transform",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "z",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "subset": {
+     "t": "Js",
+     "v": false
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "mobius_transform([x, y, z], subset=False)",
+   "expected": "[x + y + z, y, z, 0]"
+  },
+  {
+   "fn": "mobius_transform",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "mobius_transform([1, 2, 3, 4])",
+   "expected": "[1, 3, 4, 10]"
+  },
+  {
+   "fn": "mobius_transform",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "subset": {
+     "t": "Js",
+     "v": false
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "mobius_transform([1, 2, 3, 4], subset=False)",
+   "expected": "[10, 6, 7, 4]"
+  },
+  {
+   "fn": "ntt",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "prime": {
+     "t": "Rational",
+     "p": "769",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "ntt([1, 2, 3, 4], prime=3*2**8 + 1)",
+   "expected": "[10, 643, 767, 122]"
+  },
+  {
+   "fn": "intt",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "prime": {
+     "t": "Rational",
+     "p": "769",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.transforms",
+   "src": "intt([1, 2, 3, 4], prime=3*2**8 + 1)",
+   "expected": "[387, 415, 384, 353]"
+  },
+  {
+   "fn": "convolution",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          },
+          {
+           "t": "Const",
+           "name": "I"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          },
+          {
+           "t": "Const",
+           "name": "I"
+          }
+         ]
+        }
+       ]
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "4"
+      },
+      {
+       "t": "Rational",
+       "p": "6",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "dps": {
+     "t": "Rational",
+     "p": "3",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "convolution([1 + 2*I, 4 + 3*I], [S(5)/4, 6], dps=3)",
+   "expected": "[1.25 + 2.5*I, 11.0 + 15.8*I, 24.0 + 18.0*I]"
+  },
+  {
+   "fn": "convolution",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "6",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "cycle": {
+     "t": "Rational",
+     "p": "3",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "convolution([1, 2, 3], [4, 5, 6], cycle=3)",
+   "expected": "[31, 31, 28]"
+  },
+  {
+   "fn": "convolution",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "111",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "777",
+       "q": "1"
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "888",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "444",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "prime": {
+     "t": "Rational",
+     "p": "19457",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "convolution([111, 777], [888, 444], prime=19*2**10 + 1)",
+   "expected": "[1283, 19351, 14219]"
+  },
+  {
+   "fn": "convolution",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "111",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "777",
+       "q": "1"
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "888",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "444",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "prime": {
+     "t": "Rational",
+     "p": "19457",
+     "q": "1"
+    },
+    "cycle": {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "convolution([111, 777], [888, 444], prime=19*2**10 + 1, cycle=2)",
+   "expected": "[15502, 19351]"
+  },
+  {
+   "fn": "convolution",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "u",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "v",
+       "assume": {}
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "z",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "dyadic": {
+     "t": "Js",
+     "v": true
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "convolution([u, v], [x, y, z], dyadic=True)",
+   "expected": "[u*x + v*y, u*y + v*x, u*z, v*z]"
+  },
+  {
+   "fn": "convolution",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "u",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "v",
+       "assume": {}
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "z",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "dyadic": {
+     "t": "Js",
+     "v": true
+    },
+    "cycle": {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "convolution([u, v], [x, y, z], dyadic=True, cycle=2)",
+   "expected": "[u*x + u*z + v*y, u*y + v*x + v*z]"
+  },
+  {
+   "fn": "convolution",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "u",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "v",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "w",
+       "assume": {}
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "z",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "subset": {
+     "t": "Js",
+     "v": true
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "convolution([u, v, w], [x, y, z], subset=True)",
+   "expected": "[u*x, u*y + v*x, u*z + w*x, v*z + w*y]"
+  },
+  {
+   "fn": "convolution",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "u",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "v",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "w",
+       "assume": {}
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "z",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {
+    "subset": {
+     "t": "Js",
+     "v": true
+    },
+    "cycle": {
+     "t": "Rational",
+     "p": "3",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "convolution([u, v, w], [x, y, z], subset=True, cycle=3)",
+   "expected": "[u*x + v*z + w*y, u*y + v*x, u*z + w*x]"
+  },
+  {
+   "fn": "covering_product",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "u",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "v",
+       "assume": {}
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "covering_product([u, v], [x, y])",
+   "expected": "[u*x, u*y + v*x + v*y]"
+  },
+  {
+   "fn": "covering_product",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "u",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "v",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "z",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "covering_product([u, v, x], [y, z])",
+   "expected": "[u*y, u*z + v*y + v*z, x*y, x*z]"
+  },
+  {
+   "fn": "covering_product",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "3"
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "5",
+           "q": "1"
+          },
+          {
+           "t": "Const",
+           "name": "I"
+          }
+         ]
+        }
+       ]
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "covering_product([1, S(2)/3], [3, 4 + 5*I])",
+   "expected": "[3, 26/3 + 25*I/3]"
+  },
+  {
+   "fn": "covering_product",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "7"
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "covering_product([1, 3, S(5)/7], [7, 8])",
+   "expected": "[7, 53, 5, 40/7]"
+  },
+  {
+   "fn": "intersecting_product",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "u",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "v",
+       "assume": {}
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "intersecting_product([u, v], [x, y])",
+   "expected": "[u*x + u*y + v*x, v*y]"
+  },
+  {
+   "fn": "intersecting_product",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "u",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "v",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "z",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "intersecting_product([u, v, x], [y, z])",
+   "expected": "[u*y + u*z + v*y + x*y + x*z, v*z, 0, 0]"
+  },
+  {
+   "fn": "intersecting_product",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "3"
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "5",
+           "q": "1"
+          },
+          {
+           "t": "Const",
+           "name": "I"
+          }
+         ]
+        }
+       ]
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "intersecting_product([1, S(2)/3], [3, 4 + 5*I])",
+   "expected": "[9 + 5*I, 8/3 + 10*I/3]"
+  },
+  {
+   "fn": "intersecting_product",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "7"
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "discrete",
+   "module": "sympy.discrete.convolutions",
+   "src": "intersecting_product([1, 3, S(5)/7], [7, 8])",
+   "expected": "[327/7, 24, 0, 0]"
+  },
+  {
+   "fn": "linrec",
+   "args": [],
+   "kwargs": {
+    "coeffs": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      }
+     ],
+     "list": true
+    },
+    "init": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      }
+     ],
+     "list": true
+    },
+    "n": {
+     "t": "Rational",
+     "p": "10",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.recurrences",
+   "src": "linrec(coeffs=[1, 1], init=[0, 1], n=10)",
+   "expected": "55"
+  },
+  {
+   "fn": "linrec",
+   "args": [],
+   "kwargs": {
+    "coeffs": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      }
+     ],
+     "list": true
+    },
+    "init": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "list": true
+    },
+    "n": {
+     "t": "Rational",
+     "p": "10",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.recurrences",
+   "src": "linrec(coeffs=[1, 1], init=[x, y], n=10)",
+   "expected": "34*x + 55*y"
+  },
+  {
+   "fn": "linrec",
+   "args": [],
+   "kwargs": {
+    "coeffs": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "list": true
+    },
+    "init": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      }
+     ],
+     "list": true
+    },
+    "n": {
+     "t": "Rational",
+     "p": "5",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.recurrences",
+   "src": "linrec(coeffs=[x, y], init=[0, 1], n=5)",
+   "expected": "x**2*y + x*(x**3 + 2*x*y) + y**2"
+  },
+  {
+   "fn": "linrec",
+   "args": [],
+   "kwargs": {
+    "coeffs": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    },
+    "init": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "z",
+       "assume": {}
+      }
+     ],
+     "list": true
+    },
+    "n": {
+     "t": "Rational",
+     "p": "16",
+     "q": "1"
+    }
+   },
+   "category": "discrete",
+   "module": "sympy.discrete.recurrences",
+   "src": "linrec(coeffs=[1, 2, 3, 0, 0, 4], init=[x, y, z], n=16)",
+   "expected": "13576*x + 5676*y + 2356*z"
+  },
+  {
+   "fn": ".norm",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "w",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "z",
+      "assume": {}
+     }
+    ],
+    "realField": true,
+    "norm": {
+     "t": "Rational",
+     "p": "1",
+     "q": "1"
+    }
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.norm()",
+   "expected": "1"
+  },
+  {
+   "fn": ".evalf",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "2"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "2"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "3"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "2"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "2"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.evalf()",
+   "expected": "1.0 + 0.707106781186548*i + 0.577350269189626*j + 0.5*k"
+  },
+  {
+   "fn": ".add",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "6",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q1.add(q2)",
+   "expected": "6 + 8*i + 10*j + 12*k"
+  },
+  {
+   "fn": ".add",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {
+      "real": true
+     }
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q1.add(x)",
+   "expected": "(x + 1) + 2*i + 3*j + 4*k"
+  },
+  {
+   "fn": ".add",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         },
+         {
+          "t": "Const",
+          "name": "I"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "5",
+          "q": "1"
+         },
+         {
+          "t": "Const",
+          "name": "I"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "7",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "8",
+          "q": "1"
+         },
+         {
+          "t": "Const",
+          "name": "I"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "realField": false,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        {
+         "t": "Const",
+         "name": "I"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q3.add(2 + 3*I)",
+   "expected": "(5 + 7*I) + (2 + 5*I)*i + 0*j + (7 + 8*I)*k"
+  },
+  {
+   "fn": ".angle",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.angle()",
+   "expected": "2*atan(4*sqrt(3))"
+  },
+  {
+   "fn": ".arc_coplanar",
+   "self": {
+    "t": "Type",
+    "name": "Quaternion"
+   },
+   "args": [
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    },
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "Quaternion.arc_coplanar(q1, q2)",
+   "expected": "True"
+  },
+  {
+   "fn": ".arc_coplanar",
+   "self": {
+    "t": "Type",
+    "name": "Quaternion"
+   },
+   "args": [
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "13",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "12",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    },
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "Quaternion.arc_coplanar(q1, q2)",
+   "expected": "False"
+  },
+  {
+   "fn": ".axis",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.axis()",
+   "expected": "0 + sqrt(3)/3*i + sqrt(3)/3*j + sqrt(3)/3*k"
+  },
+  {
+   "fn": ".exp",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.exp()",
+   "expected": "E*cos(sqrt(29)) + 2*sqrt(29)*E*sin(sqrt(29))/29*i + 3*sqrt(29)*E*sin(sqrt(29))/29*j + 4*sqrt(29)*E*sin(sqrt(29))/29*k"
+  },
+  {
+   "fn": ".index_vector",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.index_vector()",
+   "expected": "0 + 4*sqrt(10)/3*i + 2*sqrt(10)/3*j + 4*sqrt(10)/3*k"
+  },
+  {
+   "fn": ".integrate",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.integrate(x)",
+   "expected": "x + 2*x*i + 3*x*j + 4*x*k"
+  },
+  {
+   "fn": ".integrate",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.integrate((x, 1, 5))",
+   "expected": "4 + 8*i + 12*j + 16*k"
+  },
+  {
+   "fn": ".is_pure",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "8",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "13",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "12",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.is_pure()",
+   "expected": "True"
+  },
+  {
+   "fn": ".is_zero_quaternion",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.is_zero_quaternion()",
+   "expected": "False"
+  },
+  {
+   "fn": ".is_zero_quaternion",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.is_zero_quaternion()",
+   "expected": "True"
+  },
+  {
+   "fn": ".log",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.log()",
+   "expected": "log(sqrt(30)) + 2*sqrt(29)*acos(sqrt(30)/30)/29*i + 3*sqrt(29)*acos(sqrt(30)/30)/29*j + 4*sqrt(29)*acos(sqrt(30)/30)/29*k"
+  },
+  {
+   "fn": ".mensor",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.mensor()",
+   "expected": "log(2*sqrt(10))"
+  },
+  {
+   "fn": ".norm",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.norm()",
+   "expected": "2*sqrt(10)"
+  },
+  {
+   "fn": ".mul",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "6",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "7",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q1.mul(q2)",
+   "expected": "(-60) + 12*i + 30*j + 24*k"
+  },
+  {
+   "fn": ".mul",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q1.mul(2)",
+   "expected": "2 + 4*i + 6*j + 8*k"
+  },
+  {
+   "fn": ".mul",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {
+      "real": true
+     }
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q1.mul(x)",
+   "expected": "x + 2*x*i + 3*x*j + 4*x*k"
+  },
+  {
+   "fn": ".mul",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         },
+         {
+          "t": "Const",
+          "name": "I"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "5",
+          "q": "1"
+         },
+         {
+          "t": "Const",
+          "name": "I"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "7",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "8",
+          "q": "1"
+         },
+         {
+          "t": "Const",
+          "name": "I"
+         }
+        ]
+       }
+      ]
+     }
+    ],
+    "realField": false,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        {
+         "t": "Const",
+         "name": "I"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q3.mul(2 + 3*I)",
+   "expected": "(2 + 3*I)*(3 + 4*I) + (2 + 3*I)*(2 + 5*I)*i + 0*j + (2 + 3*I)*(7 + 8*I)*k"
+  },
+  {
+   "fn": ".orthogonal",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.orthogonal(q1)",
+   "expected": "False"
+  },
+  {
+   "fn": ".orthogonal",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "-2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.orthogonal(q1)",
+   "expected": "True"
+  },
+  {
+   "fn": ".parallel",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.parallel(q1)",
+   "expected": "True"
+  },
+  {
+   "fn": ".parallel",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "13",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "12",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.parallel(q1)",
+   "expected": "False"
+  },
+  {
+   "fn": ".pow",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.pow(4)",
+   "expected": "668 + (-224)*i + (-336)*j + (-448)*k"
+  },
+  {
+   "fn": ".pow_cos_sin",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.pow_cos_sin(4)",
+   "expected": "900*cos(4*acos(sqrt(30)/30)) + 1800*sqrt(29)*sin(4*acos(sqrt(30)/30))/29*i + 2700*sqrt(29)*sin(4*acos(sqrt(30)/30))/29*j + 3600*sqrt(29)*sin(4*acos(sqrt(30)/30))/29*k"
+  },
+  {
+   "fn": ".to_Matrix",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "a",
+        "assume": {}
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "d",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "b",
+        "assume": {}
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "c",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "b",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "c",
+        "assume": {}
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "a",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "d",
+        "assume": {}
+       }
+      ]
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "(q1 * q2).to_Matrix()",
+   "expected": "Matrix([[a - d], [b - c], [b + c], [a + d]])"
+  },
+  {
+   "fn": ".to_Matrix",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "a",
+        "assume": {}
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "d",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "b",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "c",
+        "assume": {}
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "c",
+        "assume": {}
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "b",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "a",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "d",
+        "assume": {}
+       }
+      ]
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "(q1 * q2).to_Matrix()",
+   "expected": "Matrix([[a - d], [b + c], [-b + c], [a + d]])"
+  },
+  {
+   "fn": "trigsimp",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-1",
+               "q": "1"
+              },
+              {
+               "t": "Fn",
+               "name": "sin",
+               "args": [
+                {
+                 "t": "Mul",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "2"
+                  },
+                  {
+                   "t": "Symbol",
+                   "name": "x",
+                   "assume": {}
+                  }
+                 ]
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Fn",
+             "name": "cos",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "x",
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "cos",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "2"
+              },
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Fn",
+             "name": "cos",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "x",
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Fn",
+             "name": "sin",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "x",
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "sin",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "2"
+              },
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Fn",
+             "name": "cos",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "x",
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Fn",
+             "name": "sin",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "x",
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "cos",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "2"
+              },
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-1",
+               "q": "1"
+              },
+              {
+               "t": "Fn",
+               "name": "cos",
+               "args": [
+                {
+                 "t": "Mul",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "2"
+                  },
+                  {
+                   "t": "Symbol",
+                   "name": "x",
+                   "assume": {}
+                  }
+                 ]
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Fn",
+             "name": "sin",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "x",
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "sin",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "2"
+              },
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Fn",
+           "name": "cos",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "2"
+              },
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Fn",
+           "name": "sin",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "2"
+              },
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "trigsimp(Quaternion.rotate_point((1, 1, 1), q))",
+   "expected": "(sqrt(2)*cos(x + pi/4), sqrt(2)*sin(x + pi/4), 1)"
+  },
+  {
+   "fn": "trigsimp",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-1",
+               "q": "1"
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Pow",
+                 "args": [
+                  {
+                   "t": "Fn",
+                   "name": "sin",
+                   "args": [
+                    {
+                     "t": "Mul",
+                     "args": [
+                      {
+                       "t": "Rational",
+                       "p": "1",
+                       "q": "2"
+                      },
+                      {
+                       "t": "Symbol",
+                       "name": "x",
+                       "assume": {}
+                      }
+                     ]
+                    }
+                   ]
+                  },
+                  {
+                   "t": "Rational",
+                   "p": "2",
+                   "q": "1"
+                  }
+                 ]
+                },
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "2"
+                }
+               ]
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Add",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "1"
+                  },
+                  {
+                   "t": "Mul",
+                   "args": [
+                    {
+                     "t": "Rational",
+                     "p": "-1",
+                     "q": "1"
+                    },
+                    {
+                     "t": "Pow",
+                     "args": [
+                      {
+                       "t": "Fn",
+                       "name": "cos",
+                       "args": [
+                        {
+                         "t": "Mul",
+                         "args": [
+                          {
+                           "t": "Rational",
+                           "p": "1",
+                           "q": "2"
+                          },
+                          {
+                           "t": "Symbol",
+                           "name": "x",
+                           "assume": {}
+                          }
+                         ]
+                        }
+                       ]
+                      },
+                      {
+                       "t": "Rational",
+                       "p": "2",
+                       "q": "1"
+                      }
+                     ]
+                    }
+                   ]
+                  }
+                 ]
+                },
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                }
+               ]
+              },
+              {
+               "t": "Fn",
+               "name": "sin",
+               "args": [
+                {
+                 "t": "Mul",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "2"
+                  },
+                  {
+                   "t": "Symbol",
+                   "name": "x",
+                   "assume": {}
+                  }
+                 ]
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Fn",
+             "name": "cos",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "x",
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "cos",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "2"
+              },
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Fn",
+               "name": "sin",
+               "args": [
+                {
+                 "t": "Mul",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "2"
+                  },
+                  {
+                   "t": "Symbol",
+                   "name": "x",
+                   "assume": {}
+                  }
+                 ]
+                }
+               ]
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "2"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "1"
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Pow",
+                 "args": [
+                  {
+                   "t": "Fn",
+                   "name": "cos",
+                   "args": [
+                    {
+                     "t": "Mul",
+                     "args": [
+                      {
+                       "t": "Rational",
+                       "p": "1",
+                       "q": "2"
+                      },
+                      {
+                       "t": "Symbol",
+                       "name": "x",
+                       "assume": {}
+                      }
+                     ]
+                    }
+                   ]
+                  },
+                  {
+                   "t": "Rational",
+                   "p": "2",
+                   "q": "1"
+                  }
+                 ]
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "2"
+            }
+           ]
+          },
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Pow",
+                 "args": [
+                  {
+                   "t": "Fn",
+                   "name": "sin",
+                   "args": [
+                    {
+                     "t": "Mul",
+                     "args": [
+                      {
+                       "t": "Rational",
+                       "p": "1",
+                       "q": "2"
+                      },
+                      {
+                       "t": "Symbol",
+                       "name": "x",
+                       "assume": {}
+                      }
+                     ]
+                    }
+                   ]
+                  },
+                  {
+                   "t": "Rational",
+                   "p": "2",
+                   "q": "1"
+                  }
+                 ]
+                },
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "2"
+                }
+               ]
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Add",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "1"
+                  },
+                  {
+                   "t": "Mul",
+                   "args": [
+                    {
+                     "t": "Rational",
+                     "p": "-1",
+                     "q": "1"
+                    },
+                    {
+                     "t": "Pow",
+                     "args": [
+                      {
+                       "t": "Fn",
+                       "name": "cos",
+                       "args": [
+                        {
+                         "t": "Mul",
+                         "args": [
+                          {
+                           "t": "Rational",
+                           "p": "1",
+                           "q": "2"
+                          },
+                          {
+                           "t": "Symbol",
+                           "name": "x",
+                           "assume": {}
+                          }
+                         ]
+                        }
+                       ]
+                      },
+                      {
+                       "t": "Rational",
+                       "p": "2",
+                       "q": "1"
+                      }
+                     ]
+                    }
+                   ]
+                  }
+                 ]
+                },
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                }
+               ]
+              },
+              {
+               "t": "Fn",
+               "name": "sin",
+               "args": [
+                {
+                 "t": "Mul",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "2"
+                  },
+                  {
+                   "t": "Symbol",
+                   "name": "x",
+                   "assume": {}
+                  }
+                 ]
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Fn",
+             "name": "cos",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "x",
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "sin",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "2"
+              },
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Pow",
+                 "args": [
+                  {
+                   "t": "Fn",
+                   "name": "sin",
+                   "args": [
+                    {
+                     "t": "Mul",
+                     "args": [
+                      {
+                       "t": "Rational",
+                       "p": "1",
+                       "q": "2"
+                      },
+                      {
+                       "t": "Symbol",
+                       "name": "x",
+                       "assume": {}
+                      }
+                     ]
+                    }
+                   ]
+                  },
+                  {
+                   "t": "Rational",
+                   "p": "2",
+                   "q": "1"
+                  }
+                 ]
+                },
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "2"
+                }
+               ]
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Add",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "1"
+                  },
+                  {
+                   "t": "Mul",
+                   "args": [
+                    {
+                     "t": "Rational",
+                     "p": "-1",
+                     "q": "1"
+                    },
+                    {
+                     "t": "Pow",
+                     "args": [
+                      {
+                       "t": "Fn",
+                       "name": "cos",
+                       "args": [
+                        {
+                         "t": "Mul",
+                         "args": [
+                          {
+                           "t": "Rational",
+                           "p": "1",
+                           "q": "2"
+                          },
+                          {
+                           "t": "Symbol",
+                           "name": "x",
+                           "assume": {}
+                          }
+                         ]
+                        }
+                       ]
+                      },
+                      {
+                       "t": "Rational",
+                       "p": "2",
+                       "q": "1"
+                      }
+                     ]
+                    }
+                   ]
+                  }
+                 ]
+                },
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                }
+               ]
+              },
+              {
+               "t": "Fn",
+               "name": "sin",
+               "args": [
+                {
+                 "t": "Mul",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "2"
+                  },
+                  {
+                   "t": "Symbol",
+                   "name": "x",
+                   "assume": {}
+                  }
+                 ]
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Fn",
+             "name": "cos",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "x",
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "cos",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "2"
+              },
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Fn",
+               "name": "sin",
+               "args": [
+                {
+                 "t": "Mul",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "2"
+                  },
+                  {
+                   "t": "Symbol",
+                   "name": "x",
+                   "assume": {}
+                  }
+                 ]
+                }
+               ]
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "2"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Add",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "1"
+              },
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "1"
+                },
+                {
+                 "t": "Pow",
+                 "args": [
+                  {
+                   "t": "Fn",
+                   "name": "cos",
+                   "args": [
+                    {
+                     "t": "Mul",
+                     "args": [
+                      {
+                       "t": "Rational",
+                       "p": "1",
+                       "q": "2"
+                      },
+                      {
+                       "t": "Symbol",
+                       "name": "x",
+                       "assume": {}
+                      }
+                     ]
+                    }
+                   ]
+                  },
+                  {
+                   "t": "Rational",
+                   "p": "2",
+                   "q": "1"
+                  }
+                 ]
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "2"
+            }
+           ]
+          },
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-1",
+               "q": "1"
+              },
+              {
+               "t": "Fn",
+               "name": "cos",
+               "args": [
+                {
+                 "t": "Mul",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "2"
+                  },
+                  {
+                   "t": "Symbol",
+                   "name": "x",
+                   "assume": {}
+                  }
+                 ]
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Pow",
+                 "args": [
+                  {
+                   "t": "Fn",
+                   "name": "sin",
+                   "args": [
+                    {
+                     "t": "Mul",
+                     "args": [
+                      {
+                       "t": "Rational",
+                       "p": "1",
+                       "q": "2"
+                      },
+                      {
+                       "t": "Symbol",
+                       "name": "x",
+                       "assume": {}
+                      }
+                     ]
+                    }
+                   ]
+                  },
+                  {
+                   "t": "Rational",
+                   "p": "2",
+                   "q": "1"
+                  }
+                 ]
+                },
+                {
+                 "t": "Rational",
+                 "p": "-1",
+                 "q": "2"
+                }
+               ]
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Add",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "1"
+                  },
+                  {
+                   "t": "Mul",
+                   "args": [
+                    {
+                     "t": "Rational",
+                     "p": "-1",
+                     "q": "1"
+                    },
+                    {
+                     "t": "Pow",
+                     "args": [
+                      {
+                       "t": "Fn",
+                       "name": "cos",
+                       "args": [
+                        {
+                         "t": "Mul",
+                         "args": [
+                          {
+                           "t": "Rational",
+                           "p": "1",
+                           "q": "2"
+                          },
+                          {
+                           "t": "Symbol",
+                           "name": "x",
+                           "assume": {}
+                          }
+                         ]
+                        }
+                       ]
+                      },
+                      {
+                       "t": "Rational",
+                       "p": "2",
+                       "q": "1"
+                      }
+                     ]
+                    }
+                   ]
+                  }
+                 ]
+                },
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                }
+               ]
+              },
+              {
+               "t": "Fn",
+               "name": "sin",
+               "args": [
+                {
+                 "t": "Mul",
+                 "args": [
+                  {
+                   "t": "Rational",
+                   "p": "1",
+                   "q": "2"
+                  },
+                  {
+                   "t": "Symbol",
+                   "name": "x",
+                   "assume": {}
+                  }
+                 ]
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Fn",
+           "name": "sin",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "2"
+              },
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Fn",
+           "name": "cos",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "1",
+               "q": "2"
+              },
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Fn",
+             "name": "sin",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "x",
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "-2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Fn",
+             "name": "sin",
+             "args": [
+              {
+               "t": "Mul",
+               "args": [
+                {
+                 "t": "Rational",
+                 "p": "1",
+                 "q": "2"
+                },
+                {
+                 "t": "Symbol",
+                 "name": "x",
+                 "assume": {}
+                }
+               ]
+              }
+             ]
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-1",
+               "q": "1"
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Fn",
+                 "name": "cos",
+                 "args": [
+                  {
+                   "t": "Mul",
+                   "args": [
+                    {
+                     "t": "Rational",
+                     "p": "1",
+                     "q": "2"
+                    },
+                    {
+                     "t": "Symbol",
+                     "name": "x",
+                     "assume": {}
+                    }
+                   ]
+                  }
+                 ]
+                },
+                {
+                 "t": "Rational",
+                 "p": "2",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "trigsimp(Quaternion.rotate_point((1, 1, 1), (axis, angle)))",
+   "expected": "(sqrt(2)*cos(x + pi/4), sqrt(2)*sin(x + pi/4), 1)"
+  },
+  {
+   "fn": ".scalar_part",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "8",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "13",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "12",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.scalar_part()",
+   "expected": "4"
+  },
+  {
+   "fn": ".norm",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "a",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "b",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "c",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "d",
+      "assume": {}
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.norm()",
+   "expected": "sqrt(a**2 + b**2 + c**2 + d**2)"
+  },
+  {
+   "fn": ".set_norm",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "a",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "b",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "c",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "d",
+      "assume": {}
+     }
+    ],
+    "realField": true,
+    "norm": {
+     "t": "Rational",
+     "p": "1",
+     "q": "1"
+    }
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "1",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.set_norm(1)",
+   "expected": "None"
+  },
+  {
+   "fn": ".norm",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "a",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "b",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "c",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "d",
+      "assume": {}
+     }
+    ],
+    "realField": true,
+    "norm": {
+     "t": "Rational",
+     "p": "1",
+     "q": "1"
+    }
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.norm()",
+   "expected": "1"
+  },
+  {
+   "fn": ".set_norm",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "a",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "b",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "c",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "d",
+      "assume": {}
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [
+    {
+     "t": "Js",
+     "v": null
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.set_norm(None)",
+   "expected": "None"
+  },
+  {
+   "fn": ".norm",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "a",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "b",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "c",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "d",
+      "assume": {}
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.norm()",
+   "expected": "sqrt(a**2 + b**2 + c**2 + d**2)"
+  },
+  {
+   "fn": ".to_Matrix",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "a",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "b",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "c",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "d",
+      "assume": {}
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.to_Matrix()",
+   "expected": "Matrix([[a], [b], [c], [d]])"
+  },
+  {
+   "fn": ".to_Matrix",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "a",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "b",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "c",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "d",
+      "assume": {}
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {
+    "vector_only": {
+     "t": "Js",
+     "v": true
+    }
+   },
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.to_Matrix(vector_only=True)",
+   "expected": "Matrix([[b], [c], [d]])"
+  },
+  {
+   "fn": "trigsimp",
+   "args": [
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Fn",
+            "name": "cos",
+            "args": [
+             {
+              "t": "Mul",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "1",
+                "q": "2"
+               },
+               {
+                "t": "Symbol",
+                "name": "x",
+                "assume": {}
+               }
+              ]
+             }
+            ]
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Fn",
+              "name": "sin",
+              "args": [
+               {
+                "t": "Mul",
+                "args": [
+                 {
+                  "t": "Rational",
+                  "p": "1",
+                  "q": "2"
+                 },
+                 {
+                  "t": "Symbol",
+                  "name": "x",
+                  "assume": {}
+                 }
+                ]
+               }
+              ]
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-2",
+          "q": "1"
+         },
+         {
+          "t": "Fn",
+          "name": "cos",
+          "args": [
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "2"
+             },
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Fn",
+          "name": "sin",
+          "args": [
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "2"
+             },
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         },
+         {
+          "t": "Fn",
+          "name": "cos",
+          "args": [
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "2"
+             },
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Fn",
+          "name": "sin",
+          "args": [
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "2"
+             },
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Fn",
+            "name": "cos",
+            "args": [
+             {
+              "t": "Mul",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "1",
+                "q": "2"
+               },
+               {
+                "t": "Symbol",
+                "name": "x",
+                "assume": {}
+               }
+              ]
+             }
+            ]
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Fn",
+              "name": "sin",
+              "args": [
+               {
+                "t": "Mul",
+                "args": [
+                 {
+                  "t": "Rational",
+                  "p": "1",
+                  "q": "2"
+                 },
+                 {
+                  "t": "Symbol",
+                  "name": "x",
+                  "assume": {}
+                 }
+                ]
+               }
+              ]
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Fn",
+            "name": "cos",
+            "args": [
+             {
+              "t": "Mul",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "1",
+                "q": "2"
+               },
+               {
+                "t": "Symbol",
+                "name": "x",
+                "assume": {}
+               }
+              ]
+             }
+            ]
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Fn",
+            "name": "sin",
+            "args": [
+             {
+              "t": "Mul",
+              "args": [
+               {
+                "t": "Rational",
+                "p": "1",
+                "q": "2"
+               },
+               {
+                "t": "Symbol",
+                "name": "x",
+                "assume": {}
+               }
+              ]
+             }
+            ]
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     ],
+     "shape": [
+      3,
+      3
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "trigsimp(q.to_rotation_matrix())",
+   "expected": "Matrix([[cos(x), -sin(x), 0], [sin(x), cos(x), 0], [0, 0, 1]])"
+  },
+  {
+   "fn": ".vector_coplanar",
+   "self": {
+    "t": "Type",
+    "name": "Quaternion"
+   },
+   "args": [
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    },
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    },
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "24",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "24",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "24",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "Quaternion.vector_coplanar(q1, q2, q3)",
+   "expected": "True"
+  },
+  {
+   "fn": ".vector_coplanar",
+   "self": {
+    "t": "Type",
+    "name": "Quaternion"
+   },
+   "args": [
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "16",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    },
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "8",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "12",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    },
+    {
+     "t": "Quaternion",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "24",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "24",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "24",
+       "q": "1"
+      }
+     ],
+     "realField": true,
+     "norm": null
+    }
+   ],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "Quaternion.vector_coplanar(q1, q2, q3)",
+   "expected": "False"
+  },
+  {
+   "fn": ".vector_part",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.vector_part()",
+   "expected": "0 + 1*i + 1*j + 1*k"
+  },
+  {
+   "fn": ".vector_part",
+   "self": {
+    "t": "Quaternion",
+    "args": [
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "8",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "13",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "12",
+      "q": "1"
+     }
+    ],
+    "realField": true,
+    "norm": null
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "algebras",
+   "module": "sympy.algebras.quaternion",
+   "src": "q.vector_part()",
+   "expected": "0 + 8*i + 13*j + 12*k"
+  },
+  {
+   "fn": "rl",
+   "args": [
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "strategies",
+   "module": "sympy.strategies.core",
+   "src": "rl(4)",
+   "expected": "3"
+  },
+  {
+   "fn": "rl",
+   "args": [
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "strategies",
+   "module": "sympy.strategies.core",
+   "src": "rl(4)",
+   "expected": "5"
+  },
+  {
+   "fn": "rl",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "strategies",
+   "module": "sympy.strategies.rl",
+   "src": "rl(Add(x, -x, 3*x, 2, 3, evaluate=False))",
+   "expected": "3*x + 5"
+  },
+  {
+   "fn": "unpack",
+   "args": [
+    {
+     "t": "Basic",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "strategies",
+   "module": "sympy.strategies.rl",
+   "src": "unpack(Basic(S(2)))",
+   "expected": "2"
+  },
+  {
+   "fn": "partition",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "10",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "20",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "30",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "40",
+       "q": "1"
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ],
+       "list": true
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       ],
+       "list": true
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "unify",
+   "module": "sympy.unify.core",
+   "src": "partition((10, 20, 30, 40), [[0, 1, 2], [3]])",
+   "expected": "((10, 20, 30), (40,))"
   }
  ]
 }

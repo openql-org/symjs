@@ -116,6 +116,17 @@ const SPECIAL_NAMES: SpecialFnName[] = [
   'airybi',
   'airyaiprime',
   'airybiprime',
+  'hankel1',
+  'hankel2',
+  'hn1',
+  'hn2',
+  'marcumq',
+  'Ynm',
+  'Znm',
+  'mathieus',
+  'mathieuc',
+  'mathieusprime',
+  'mathieucprime',
   'li',
   'Li',
   'Si',
@@ -131,6 +142,28 @@ const SPECIAL_NAMES: SpecialFnName[] = [
   'atan2',
   'Min',
   'Max',
+  'jacobi',
+  'gegenbauer',
+  'chebyshevt',
+  'chebyshevu',
+  'legendre',
+  'assoc_legendre',
+  'hermite',
+  'hermite_prob',
+  'laguerre',
+  'assoc_laguerre',
+  'polylog',
+  'lerchphi',
+  'dirichlet_eta',
+  'riemann_xi',
+  'stieltjes',
+  'betainc',
+  'betainc_regularized',
+  'elliptic_k',
+  'elliptic_e',
+  'elliptic_f',
+  'elliptic_pi',
+  'appellf1',
 ];
 
 /**
@@ -251,7 +284,9 @@ function integral(args: readonly Arg[]): Expr {
 export const parserHooks: {
   /** SymPy Order(e, *variables, point), the argument reduced to its leading term. */
   order?: (e: Expr, variables: readonly Sym[], point: Expr) => Expr;
-} = {};
+  /** Classes of higher layers called by name, e.g. Quaternion(1, 2, 3, 4) (SymPy sympify of the class name). */
+  readonly constructors: Map<string, (args: readonly Expr[]) => Expr>;
+} = { constructors: new Map() };
 
 /** O(e), O(e, x), O(e, x, y), O(e, (x, p)), O(e, (x, p), (y, p)). */
 function order(args: readonly Arg[]): Expr {
@@ -533,7 +568,7 @@ class Parser {
         return t.v;
       case 'name': {
         // implicit application: sin x
-        const knownFn = FUNCTIONS[t.v];
+        const knownFn = FUNCTIONS[t.v] ?? parserHooks.constructors.get(t.v);
         if (this.implicit && knownFn && !this.isOp('(') && this.startsFactor()) return knownFn([this.power()]);
         // with implicit multiplication a known symbol before '(' multiplies (x(y + 1))
         const tupleFn = this.localFns.has(t.v) ? undefined : TUPLE_FUNCTIONS[t.v];

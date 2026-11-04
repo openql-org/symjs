@@ -14,16 +14,24 @@ import { Add, ExtensionExpr, Constant, Derivative, Dummy, Fn, Integral, Mul, Ord
 import { derivative } from '../core/undef';
 import { SubsNode } from '../core/subsnode';
 import { Concrete } from '../core/concrete';
+import { DefinedFunctionCall } from '../core/defun';
 import { Indexed } from '../core/indexed';
 import { add, mul, pow, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
-import { abs, conjugate, cos, cosh, fn, im as fnIm, log, re as fnRe, sin, sinh, tan, tanh } from '../functions/elementary';
+import { conjugate, cos, cosh, fn, im as fnIm, log, re as fnRe, sin, sinh, tan, tanh } from '../functions/elementary';
 
 /**
  * Partial derivatives of multi-argument functions: fnPartials[name](args, i)
  * is d f(args) / d args[i]. special.ts registers entries.
  */
 export const fnPartials: Partial<Record<Fn['name'], (args: readonly Expr[], i: number) => Expr>> = {};
+
+/**
+ * Taylor coefficients at 0 of one-argument functions whose derivatives at 0
+ * are 0/0 forms (elliptic_k, elliptic_e): fnTaylorAtZero[name](j) is the
+ * coefficient of u**j in f(u); used by the series expansion.
+ */
+export const fnTaylorAtZero: Partial<Record<Fn['name'], (j: number) => Expr>> = {};
 
 /** Late-bound pieces of higher layers: the reduction of an Order to its leading term (set by series/series.ts). */
 export const diffHooks: { order: (e: Expr, variables: readonly Sym[], point: Expr) => Expr } = { order: orderUnreduced };
@@ -109,9 +117,12 @@ function d(e: Expr, x: Expr): Expr {
       return e.name === 'conjugate' ? conjugate(du) : e.name === 're' ? fnRe(du) : fnIm(du);
     }
     const du = d(u, x);
+    // SymPy Abs._eval_derivative: sign(conjugate(u))*u' for a real or imaginary u, otherwise
+    // (re(u)*re(u)' + im(u)*im(u)')/Abs(u) rewritten with sign
     if (e.name === 'abs') {
-      if (isReal(u)) return mul(u, pow(abs(u), -1), du);
-      throw new NotImplementedError('diff: derivative of abs() of a non-real argument is not supported');
+      if (isReal(u) === true || isReal(mul(S.I, u)) === true) return mul(du, fn('sign', [conjugate(u)]));
+      const [ru, iu] = [fnRe(u), fnIm(u)];
+      return mul(add(mul(ru, d(ru, x)), mul(iu, d(iu, x))), fn('sign', [u]), pow(u, -1));
     }
     // arg(u)' = 0 for a real u
     if (e.name === 'arg' && isReal(u)) return S.Zero;
@@ -251,3 +262,24 @@ export function diff(ex: ExprLike, x: Expr, n = 1): Expr {
 }
 
 impl.diff = diff;
+
+/**
+ * SymPy Function.fdiff(argindex): the derivative of the function application
+ * `f` with respect to its argindex-th argument (1-based), at the arguments:
+ * fdiff(DiracDelta(x**2 - 1)) = DiracDelta(x**2 - 1, 1). Where the derivative
+ * has no closed form it is Derivative(f(x), x), or
+ * Subs(Derivative(f(xi), xi), xi, a) for an argument a that is not a symbol.
+ */
+export function fdiff(f: ExprLike, argindex = 1): Expr {
+  const e = sympify(f);
+  if (!(e instanceof Fn || e instanceof UndefFn || e instanceof DefinedFunctionCall)) throw new TypeError(`fdiff: ${e.toString()} is not a function application`);
+  if (!Number.isInteger(argindex) || argindex < 1 || argindex > e.args.length) throw new RangeError(`fdiff: invalid argument index ${argindex} of ${e.toString()}`);
+  const i = argindex - 1;
+  const a = at(e.args, i);
+  const xi = new Dummy(`xi_${argindex}`);
+  const dg = diff(rebuild(e, e.args.map((b, j) => (j === i ? xi : b))), xi);
+  const unevaluated = (x: Expr): boolean => ((x instanceof Derivative || x instanceof SubsNode) && x.has(xi)) || x.args.some(unevaluated);
+  if (!unevaluated(dg)) return xreplace(dg, [[xi, a]]);
+  if (a instanceof Sym && !e.args.some((v, j) => j !== i && v.has(a))) return derivative(e, [[a, 1]]);
+  return new SubsNode([dg, xi, a]);
+}

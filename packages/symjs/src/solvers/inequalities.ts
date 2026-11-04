@@ -17,7 +17,7 @@ import { expandMul } from '../simplify/expand';
 import { factorTerms } from '../simplify/exprtools';
 import { BoolOp, and, not as notB, or as orB } from '../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne } from '../core/logic';
-import { some, xreplace } from '../core/traverse';
+import { mapBottomUp, some, xreplace } from '../core/traverse';
 import { fn, log } from '../functions/elementary';
 import { Max, Min } from '../functions/special';
 import { diff } from '../calculus/diff';
@@ -624,9 +624,11 @@ export function stationaryPoints(fIn: ExprLike, x: Sym, domain: SetExpr = Reals)
 
 function monotonic(f: Expr, op: RelOp, iv: SetExpr, x?: Sym): boolean | undefined {
   const free = [...f.freeSymbols()];
-  const v = x ?? (free.length === 1 ? (free[0]) : undefined);
-  if (!v) throw new TypeError('monotonicity: specify the symbol');
-  const d = diff(f, v);
+  // SymPy: a constant has a dummy variable; several symbols need the symbol to be given
+  if (x === undefined && free.length > 1) throw new NotImplementedError('The function has not yet been implemented for all multivariate expressions.');
+  const v = x ?? free[0] ?? new Dummy('x');
+  // sign(u) = u/Abs(u) away from u = 0 (the derivative of Abs): its zeros and poles are those of a quotient
+  const d = mapBottomUp(diff(f, v), (t) => (t instanceof Fn && t.name === 'sign' ? mul(first(t.args), pow(fn('abs', [first(t.args)]), -1)) : t));
   // the sign of f' is decided on the interval, or on one period of a periodic f' over the reals
   const dom = iv instanceof Interval ? iv : Reals;
   let ref = iv;

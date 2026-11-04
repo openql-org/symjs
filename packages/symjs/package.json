@@ -161,6 +161,56 @@
         "default": "./dist/matrices.cjs"
       }
     },
+    "./discrete": {
+      "import": {
+        "types": "./dist/discrete.d.ts",
+        "default": "./dist/discrete.js"
+      },
+      "require": {
+        "types": "./dist/discrete.d.cts",
+        "default": "./dist/discrete.cjs"
+      }
+    },
+    "./algebras": {
+      "import": {
+        "types": "./dist/algebras.d.ts",
+        "default": "./dist/algebras.js"
+      },
+      "require": {
+        "types": "./dist/algebras.d.cts",
+        "default": "./dist/algebras.cjs"
+      }
+    },
+    "./strategies": {
+      "import": {
+        "types": "./dist/strategies.d.ts",
+        "default": "./dist/strategies.js"
+      },
+      "require": {
+        "types": "./dist/strategies.d.cts",
+        "default": "./dist/strategies.cjs"
+      }
+    },
+    "./unify": {
+      "import": {
+        "types": "./dist/unify.d.ts",
+        "default": "./dist/unify.js"
+      },
+      "require": {
+        "types": "./dist/unify.d.cts",
+        "default": "./dist/unify.cjs"
+      }
+    },
+    "./holonomic": {
+      "import": {
+        "types": "./dist/holonomic.d.ts",
+        "default": "./dist/holonomic.js"
+      },
+      "require": {
+        "types": "./dist/holonomic.d.cts",
+        "default": "./dist/holonomic.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -176,6 +226,12 @@
     "node": ">=18"
   },
   "sideEffects": [
+    "./src/algebras.ts",
+    "./dist/algebras.js",
+    "./dist/algebras.cjs",
+    "./src/algebras/quaternion.ts",
+    "./dist/algebras/quaternion.js",
+    "./dist/algebras/quaternion.cjs",
     "./src/calculus.ts",
     "./dist/calculus.js",
     "./dist/calculus.cjs",
@@ -206,6 +262,9 @@
     "./src/core/traverse.ts",
     "./dist/core/traverse.js",
     "./dist/core/traverse.cjs",
+    "./src/discrete.ts",
+    "./dist/discrete.js",
+    "./dist/discrete.cjs",
     "./src/functions/bessel.ts",
     "./dist/functions/bessel.js",
     "./dist/functions/bessel.cjs",
@@ -215,24 +274,51 @@
     "./src/functions/elementary.ts",
     "./dist/functions/elementary.js",
     "./dist/functions/elementary.cjs",
+    "./src/functions/elliptic.ts",
+    "./dist/functions/elliptic.js",
+    "./dist/functions/elliptic.cjs",
     "./src/functions/hyper.ts",
     "./dist/functions/hyper.js",
     "./dist/functions/hyper.cjs",
+    "./src/functions/mathieu.ts",
+    "./dist/functions/mathieu.js",
+    "./dist/functions/mathieu.cjs",
     "./src/functions/polar.ts",
     "./dist/functions/polar.js",
     "./dist/functions/polar.cjs",
+    "./src/functions/polynomials.ts",
+    "./dist/functions/polynomials.js",
+    "./dist/functions/polynomials.cjs",
     "./src/functions/special.ts",
     "./dist/functions/special.js",
     "./dist/functions/special.cjs",
+    "./src/functions/sphericalbessel.ts",
+    "./dist/functions/sphericalbessel.js",
+    "./dist/functions/sphericalbessel.cjs",
+    "./src/functions/sphericalharmonics.ts",
+    "./dist/functions/sphericalharmonics.js",
+    "./dist/functions/sphericalharmonics.cjs",
     "./src/functions/trigext.ts",
     "./dist/functions/trigext.js",
     "./dist/functions/trigext.cjs",
+    "./src/functions/zeta.ts",
+    "./dist/functions/zeta.js",
+    "./dist/functions/zeta.cjs",
+    "./src/holonomic.ts",
+    "./dist/holonomic.js",
+    "./dist/holonomic.cjs",
     "./src/index.ts",
     "./dist/index.js",
     "./dist/index.cjs",
+    "./src/integrals/hyperexpand.ts",
+    "./dist/integrals/hyperexpand.js",
+    "./dist/integrals/hyperexpand.cjs",
     "./src/integrals/integrate.ts",
     "./dist/integrals/integrate.js",
     "./dist/integrals/integrate.cjs",
+    "./src/integrals/prde.ts",
+    "./dist/integrals/prde.js",
+    "./dist/integrals/prde.cjs",
     "./src/logic.ts",
     "./dist/logic.js",
     "./dist/logic.cjs",
@@ -320,15 +406,24 @@
     "./src/solvers.ts",
     "./dist/solvers.js",
     "./dist/solvers.cjs",
+    "./src/solvers/diophantine.ts",
+    "./dist/solvers/diophantine.js",
+    "./dist/solvers/diophantine.cjs",
     "./src/solvers/ode.ts",
     "./dist/solvers/ode.js",
     "./dist/solvers/ode.cjs",
     "./src/special.ts",
     "./dist/special.js",
     "./dist/special.cjs",
+    "./src/strategies.ts",
+    "./dist/strategies.js",
+    "./dist/strategies.cjs",
     "./src/tensor.ts",
     "./dist/tensor.js",
     "./dist/tensor.cjs",
+    "./src/unify.ts",
+    "./dist/unify.js",
+    "./dist/unify.cjs",
     "./src/utilities.ts",
     "./dist/utilities.js",
     "./dist/utilities.cjs"

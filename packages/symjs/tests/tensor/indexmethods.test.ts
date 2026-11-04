@@ -5,7 +5,7 @@
 // get_indices and get_contraction_structure. Expected values are those of SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { Eq, IndexedBase, Piecewise, SymFunction, Sym, Gt, exp, sin, sympify, type Expr } from '../../src';
+import { Eq, IndexedBase, NotImplementedError, Piecewise, SymFunction, Sym, Gt, exp, sin, sympify, type Expr } from '../../src';
 import { Idx, IndexConformanceException, getContractionStructure, getIndices } from '../../src/tensor';
 import type { ContractionStructure } from '../../src/tensor/indexmethods';
 
@@ -70,7 +70,7 @@ describe('get_indices', () => {
   it('inconsistent sums and unhandled types raise', () => {
     expect(() => getIndices(X.at(i).add(Y.at(j)))).toThrow(IndexConformanceException);
     // SymPy raises NotImplementedError for an Equality containing Indexed objects.
-    expect(() => getIndices(Eq(X.at(i), Y.at(i)))).toThrow(TypeError);
+    expect(() => getIndices(Eq(X.at(i), Y.at(i)))).toThrow(NotImplementedError);
   });
 });
 
@@ -131,7 +131,7 @@ describe('get_contraction_structure', () => {
       show(M([null, [t1, t2]], [t1, [M([null, [f(xy)]], [f(xy), [M([[j], [xy]])]])]], [t2, [M([null, [g(xy)]], [g(xy), [M([[j], [xy]])]])]])),
     );
   });
-  it('unhandled types raise', () => {
-    expect(() => getContractionStructure(Eq(X.at(i), Y.at(i)))).toThrow(TypeError);
+  it('unhandled types raise (SymPy NotImplementedError)', () => {
+    expect(() => getContractionStructure(Eq(X.at(i), Y.at(i)))).toThrow(NotImplementedError);
   });
 });

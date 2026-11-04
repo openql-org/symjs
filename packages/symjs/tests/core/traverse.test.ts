@@ -121,6 +121,12 @@ describe('xreplace and rebuild', () => {
   });
   it('returns an atom as it is', () => {
     expect(rebuild(x, [])).toBe(x);
+    expect(rebuild(x)).toBe(x);
+  });
+  it('rebuilds the whole tree without args (SymPy strategies.rl.rebuild)', () => {
+    // SymPy: rebuild(Basic.__new__(Add, S(1), S(2))) == 3; rebuild(Basic.__new__(Mul, x, Basic.__new__(Add, x, x))) == 2*x**2
+    expect(s2(rebuild(new sj.Add([sj.Rational.of(1), sj.Rational.of(2)])))).toBe('3');
+    expect(s2(rebuild(new sj.Mul([x, new sj.Add([x, x])])))).toBe('2*x**2');
   });
 });
 
@@ -222,4 +228,36 @@ describe('subs of powers with related numeric bases (SymPy issue 10829)', () => 
     ['4**(2*u)', '2**u', '4**(2*u)'],
     ['4**u', '2**(-u)', '4**u'],
   ])('(%s).subs(%s, v) = %s', (e, o, want) => expect(sj.str(P(e).subs(P(o), v))).toBe(want));
+});
+
+describe('use and preorderTraversal (SymPy sympy.core.traversal)', () => {
+  const [x, y] = [sj.symbol('x'), sj.symbol('y')];
+  const P = (e: string) => sj.parse(e);
+  it('use', () => {
+    expect(String(sj.use(P('x*(x + y)**2 + 1'), sj.expand, 2))).toBe('x*(x**2 + 2*x*y + y**2) + 1');
+    expect(String(sj.use(P('x*(x + y)**2 + 1'), sj.expand))).toBe('x**3 + 2*x**2*y + x*y**2 + 1');
+    expect(String(sj.use(P('sin(x + y)*(x + 1)**2'), sj.expand, 1))).toBe('(x**2 + 2*x + 1)*sin(x + y)');
+    // atoms above the level are kept
+    expect(String(sj.use(P('x**2*(1 + x)**2'), sj.expand, 5))).toBe('x**2*(x + 1)**2');
+  });
+  it('preorderTraversal', () => {
+    const e = P('(x + y)*z');
+    expect([...sj.preorderTraversal(e)].map(String)).toEqual(['z*(x + y)', 'z', 'x + y', 'x', 'y']);
+    expect([...sj.preorderTraversal(P('x*y + 1'), true)].map(String)).toEqual(['x*y + 1', '1', 'x*y', 'x', 'y']);
+    expect([...sj.preorderTraversal(e, true)].map(String)).toEqual(['z*(x + y)', 'z', 'x + y', 'x', 'y']);
+    // a key function (SymPy ordered(args, keys, default=False)): equal keys keep their order
+    expect([...sj.preorderTraversal(P('x + y + z'), (a) => -String(a).length)].map(String)).toEqual(['x + y + z', 'x', 'y', 'z']);
+    expect([...sj.preorderTraversal(sj.add(x, y), (a) => (a === x ? sj.sympify(2) : sj.sympify(1)))].map(String)).toEqual(['x + y', 'y', 'x']);
+    expect([...sj.preorderTraversal(sj.add(x, y), (a) => String(a))].map(String)).toEqual(['x + y', 'x', 'y']);
+    expect([...sj.preorderTraversal(sj.add(x, y), (a) => [a])].map(String)).toEqual(['x + y', 'x', 'y']);
+    // skip(): the arguments of the last node are not visited
+    const pt = sj.preorderTraversal(P('(x + y*z)*z'));
+    const out: string[] = [];
+    for (const n of pt) {
+      out.push(String(n));
+      if (String(n) === 'x + y*z') pt.skip();
+    }
+    expect(out.sort()).toEqual(['x + y*z', 'z', 'z*(x + y*z)'].sort());
+    expect(sj.preorderTraversal(1).node.equals(sj.sympify(1))).toBe(true);
+  });
 });

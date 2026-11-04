@@ -13,7 +13,9 @@
 
 import * as sj from '../packages/symjs/src';
 import { Expr } from '../packages/symjs/src';
-import { JsDict, JsSet } from './harness';
+import { JsDict, JsList, JsSet, JsTuple } from './harness';
+import { DifferentialExtension } from '../packages/symjs/src/integrals/risch';
+import { partition as unifyPartition } from '../packages/symjs/src/unify/core';
 
 const sym = (names: string, assumptions?: sj.Assumptions) => sj.symbols(names, assumptions) as sj.Sym[];
 const [x, y, z] = sym('x y z') as [sj.Sym, sj.Sym, sj.Sym];
@@ -139,8 +141,45 @@ function myMeasure(e: Expr): Expr {
   return sj.replace(count, (u) => u instanceof sj.Sym, () => sj.S.One) as Expr;
 }
 
-export const PORTS: Record<string, () => unknown> = {
+/** A port, or one port per occurrence of a doctest source that occurs after different setup lines. */
+export const PORTS: Record<string, (() => unknown) | readonly (() => unknown)[]> = {
   'sympy.core.expr:MyScalar().diff(MyScalar())': () => sj.diff(new MyScalar(), new MyScalar()),
+
+  // DE = DifferentialExtension(log(x) + exp(x), x, handle_first='exp')
+  "sympy.integrals.risch:DE.indices('log')": () => new JsList(new DifferentialExtension(sj.add(sj.log(x), sj.exp(x)), x, { handleFirst: 'exp' }).indices('log').map((i) => sj.Rational.of(i))),
+  "sympy.integrals.risch:DE.indices('exp')": () => new JsList(new DifferentialExtension(sj.add(sj.log(x), sj.exp(x)), x, { handleFirst: 'exp' }).indices('exp').map((i) => sj.Rational.of(i))),
+
+  // the parameter objects of hyperexpand (SymPy-internal classes, ported as experimental ones)
+  'sympy.simplify.hyperexpand:Hyper_Function(ap, bq).build_invariants()': () => {
+    const [g, a, b] = new sj.Hyper_Function([half, sj.Rational.of(1n, 3n), sj.Rational.of(-1n, 2n), -2], [1, 2]).buildInvariants();
+    const tr = (l: [Expr, number][]) => new JsTuple(l.map(([m, n]) => new JsTuple([m, sj.Rational.of(n)])));
+    return new JsTuple([sj.Rational.of(g), tr(a), tr(b)]);
+  },
+  'sympy.simplify.hyperexpand:G_Function(a, b, [2], [y]).compute_buckets()': () => {
+    const t = sj.Rational.of(3n, 2n);
+    const bs = new sj.G_Function([1, 3, 2, t], [sj.add(1, y), y, 2, sj.add(y, 3)], [2], [y]).computeBuckets();
+    return new JsTuple(bs.map((m) => new JsDict([...m].map(([k, v]) => [k, new JsList(v)] as const))));
+  },
+  // op = Operator(); op._poly = Poly(x**2 + z*x + y, x)
+  'sympy.simplify.hyperexpand:op.apply(z**7, lambda f: f.diff(z))': () =>
+    new sj.Operator(sj.add(sj.pow(x, 2), sj.mul(z, x), y), x).apply(sj.pow(z, 7), (f) => sj.diff(f, z)),
+  // inc = lambda x: x + 1; dec = lambda x: x - 1
+  // rl = minimize(inc, dec); rl(4) and rl = minimize(inc, dec, objective=lambda x: -x); rl(4)
+  'sympy.strategies.core:rl(4)': [
+    () => sj.minimize((v: Expr) => sj.add(v, 1), (v: Expr) => sj.sub(v, 1))(sj.Rational.of(4)),
+    () => sj.minimize((v: Expr) => sj.add(v, 1), (v: Expr) => sj.sub(v, 1), { objective: (v: Expr) => sj.mul(-1, v) })(sj.Rational.of(4)),
+  ],
+  // key = lambda x: x.as_coeff_Mul()[1]; count = lambda x: x.as_coeff_Mul()[0]
+  // combine = lambda cnt, arg: cnt * arg; rl = glom(key, count, combine)
+  'sympy.strategies.rl:rl(Add(x, -x, 3*x, 2, 3, evaluate=False))': () =>
+    sj.glom(
+      (v) => sj.splitCoeff(v)[1],
+      (v) => sj.splitCoeff(v)[0],
+      (cnt, arg) => sj.mul(cnt, arg),
+    )(new sj.Add([x, sj.mul(-1, x), sj.mul(3, x), sj.Rational.of(2), sj.Rational.of(3)])),
+  // from sympy.unify.core import partition (an internal helper of the unification algorithm)
+  'sympy.unify.core:partition((10, 20, 30, 40), [[0, 1, 2], [3]])': () =>
+    new JsTuple(unifyPartition([10, 20, 30, 40].map((i) => sj.Rational.of(i)), [[0, 1, 2], [3]]).map((p) => new JsTuple(p))),
   'sympy.core.expr:MySymbol().diff(MySymbol())': () => sj.diff(new MySymbol(), new MySymbol()),
 
   // eye(1) is a mutable matrix, S(eye(1)) its immutable copy
@@ -171,6 +210,16 @@ export const PORTS: Record<string, () => unknown> = {
       (e) => sj.asFiniteDifference(e as sj.Derivative),
     );
   },
+  // the combined series objects of sympy.series.formal (FormalPowerSeriesProduct, ...Compose, ...Inverse)
+  'sympy.series.formal:f1.product(f2, x).truncate(4)': () => sj.fps(sj.sin(x), x).product(sj.fps(sj.exp(x), x), x).truncate(4),
+  'sympy.series.formal:f1.compose(f2, x).truncate()': () => sj.fps(sj.exp(x), x).compose(sj.fps(sj.sin(x), x), x).truncate(),
+  'sympy.series.formal:f1.compose(f2, x).truncate(8)': () => sj.fps(sj.exp(x), x).compose(sj.fps(sj.sin(x), x), x).truncate(8),
+  'sympy.series.formal:f1.inverse(x).truncate()': () => sj.fps(sj.exp(x), x).inverse().truncate(),
+  'sympy.series.formal:f2.inverse(x).truncate(8)': () => sj.fps(sj.cos(x), x).inverse().truncate(8),
+  // s = fourier_series(x**2, (x, -pi, pi)): a series with the argument shifted or scaled is not one of a function
+  'sympy.series.fourier:s.shiftx(1).truncate()': () => sj.fourierSeries(sj.pow(x, 2), x).shiftx(1).truncate(),
+  'sympy.series.fourier:s.scalex(2).truncate()': () => sj.fourierSeries(sj.pow(x, 2), x).scalex(2).truncate(),
+
   'sympy.core.function:a.expand(double=True)': () => sj.expand(myA(), { double: true }),
   'sympy.core.function:a.expand(double=True, deep=False)': () => sj.expand(myA(), { double: true, deep: false }),
   'sympy.core.function:b.expand(double=True)': () => sj.expand(myB(), { double: true }),
@@ -265,4 +314,105 @@ export const PORTS: Record<string, () => unknown> = {
     // strict=False: the permutation is resized to the degree of the group
     return seen.has(key(new sj.Permutation(new sj.Cycle(1, 2, 3))));
   },
+
+  // ---- combinatorics: objects the extractor cannot serialize ----
+  'sympy.combinatorics.partitions:IntegerPartition([1]*3 + [2] + [3]*4).as_dict()': () => new sj.IntegerPartition([1, 1, 1, 2, 3, 3, 3, 3]).asDict(),
+  // superset = [1, 3, 2, 5, 4]
+  'sympy.combinatorics.subsets:Subset.subset_indices([3, 2, 1], superset)': () => sj.Subset.subsetIndices([3, 2, 1], [1, 3, 2, 5, 4]),
+  'sympy.combinatorics.subsets:Subset.subset_indices([1, 6], superset)': () => sj.Subset.subsetIndices([1, 6], [1, 3, 2, 5, 4]),
+  'sympy.combinatorics.subsets:Subset.subset_indices([], superset)': () => sj.Subset.subsetIndices([], [1, 3, 2, 5, 4]),
+  // a = Prufer([[0, 1], [0, 2], [0, 3]])
+  'sympy.combinatorics.prufer:a.prufer_rank()': () =>
+    new sj.Prufer([
+      [0, 1],
+      [0, 2],
+      [0, 3],
+    ]).pruferRank(),
+
+  // ---- sympy.simplify.epathtools: EPath methods ----
+  // path = EPath("/*/[0]/Symbol"); expr = [((x, 1), 2), ((3, y), z)]
+  'sympy.simplify.epathtools:path.apply(expr, lambda expr: expr**2)': () =>
+    sj.epath('/*/[0]/Symbol').apply(
+      [
+        [[x, 1], 2],
+        [[3, y], z],
+      ],
+      (e: Expr) => sj.pow(e, 2),
+    ),
+  // path = EPath("/*/*/Symbol"); expr = t + sin(x + 1) + cos(x + y + E)
+  'sympy.simplify.epathtools:path.apply(expr, lambda expr: 2*expr)': () =>
+    sj.epath('/*/*/Symbol').apply(sj.add(new sj.Sym('t'), sj.sin(sj.add(x, 1)), sj.cos(sj.add(x, y, sj.E))), (e: Expr) => sj.mul(2, e)),
+  // the two occurrences follow the two setups above
+  'sympy.simplify.epathtools:path.select(expr)': [
+    () =>
+      sj.epath('/*/[0]/Symbol').select([
+        [[x, 1], 2],
+        [[3, y], z],
+      ]),
+    () => sj.epath('/*/*/Symbol').select(sj.add(new sj.Sym('t'), sj.sin(sj.add(x, 1)), sj.cos(sj.add(x, y, sj.E)))),
+  ],
+
+  // ---- sympy.polys.numberfields.minpoly: the domain QQ.algebraic_field(sqrt(2)) ----
+  'sympy.polys.numberfields.minpoly:minimal_polynomial(sqrt(2), x, domain=QQ.algebraic_field(sqrt(2)))': () => sj.minimalPolynomial(sj.sqrt(2), x, { domain: 'QQ<sqrt(2)>' }),
+
+  // ---- sympy.simplify.fu: a measure given as a lambda ----
+  'sympy.simplify.fu:fu(sin(x)/cos(x), measure=lambda x: -x.count_ops()) # maximize op count': () =>
+    sj.fu(sj.mul(sj.sin(x), sj.pow(sj.cos(x), -1)), { measure: (e: Expr) => -sj.countOps(e) }),
+
+  // ---- sympy.sets: Range and DisjointUnion objects (the extractor does not serialize them) ----
+  'sympy.sets.fancysets:Range(0, 10, 2).intersect(Interval(3, 7))': () => sj.Intersection(sj.Range.of(0, 10, 2), sj.Interval.of(3, 7)),
+  'sympy.sets.fancysets:Range(3).intersect(Interval(4, oo))': () => sj.Intersection(sj.Range.of(0, 3), sj.Interval.of(4, sj.oo)),
+  'sympy.sets.fancysets:Range(3).intersect(Range(4, oo))': () => sj.Intersection(sj.Range.of(0, 3), sj.Range.of(4, sj.oo)),
+  // A = FiniteSet(1, 2, 3); B = Interval(0, 5); C = FiniteSet(x, y, z)
+  'sympy.sets.sets:DisjointUnion(A, B).rewrite(Union)': () => sj.DisjointUnion(sj.FiniteSet.of(1, 2, 3), sj.Interval.of(0, 5)).rewriteAsUnion(),
+  'sympy.sets.sets:DisjointUnion(C, C).rewrite(Union)': () => sj.DisjointUnion(sj.FiniteSet.of(x, y, z), sj.FiniteSet.of(x, y, z)).rewriteAsUnion(),
+
+  // ---- sympy.core.containers: D = Dict({1: 'one', 2: 'two'}) (strings are sympified to symbols) ----
+  "sympy.core.containers:D.has(Symbol('one')) # searches keys and values": () =>
+    sj.Dict(new Map<sj.ExprLike, sj.ExprLike>([[1, sj.symbol('one')], [2, sj.symbol('two')]])).has(sj.symbol('one')),
+
+  // ---- sympy.solvers.diophantine.diophantine: equation-type objects and DiophantineSolutionSet ----
+  ...diophantinePorts(),
 };
+
+/** The doctests of the Diophantine equation classes, with the objects their setup lines create. */
+function diophantinePorts(): Record<string, () => unknown> {
+  const m = 'sympy.solvers.diophantine.diophantine:';
+  const P = (s: string) => sj.parse(s);
+  const [t, u] = sym('t u');
+  const pq = (a: sj.ExprLike, b: sj.ExprLike) => [a, b];
+  // s1 = DiophantineSolutionSet([x, y], [t, u]) and so on
+  const dss = () => new sj.DiophantineSolutionSet([x, y], [t!, u!]);
+  const s3 = () => {
+    const s = dss();
+    s.add([sj.pow(t!, 2), sj.add(t!, u!)]);
+    return s;
+  };
+  return Object.fromEntries(
+    Object.entries({
+      'b1.matches()': () => new sj.BinaryQuadratic(P('x**3 + y**2 + 1')).matches(),
+      'b2.matches()': () => new sj.BinaryQuadratic(P('x**2 + y**2 + 2*x + 2*y + 2')).matches(),
+      'b2.solve()': () => new sj.BinaryQuadratic(P('x**2 + y**2 + 2*x + 2*y + 2')).solve(),
+      'c1.matches()': () => new sj.CubicThue(P('x**3 + y**2 + 1')).matches(),
+      's1.add((2, 3))': () => dss().add(pq(2, 3)),
+      's1.add((-1, u))': () => dss().add(pq(-1, u!)),
+      's2.add((3, 4))': () => dss().add(pq(3, 4)),
+      's3.add((t**2, t + u))': () => s3().add([sj.pow(t!, 2), sj.add(t!, u!)]),
+      's3.subs({t: 2, u: 3})': () => s3().subs(new Map([[t!, 2], [u!, 3]])),
+      's3.subs(t, -1)': () => s3().subs(t!, -1),
+      's3.subs(t, 3)': () => s3().subs(t!, 3),
+      'GeneralPythagorean(a**2 + b**2 + c**2 - d**2).solve()': () => new sj.GeneralPythagorean(P('a**2 + b**2 + c**2 - d**2')).solve(),
+      'GeneralPythagorean(9*a**2 - 4*b**2 + 16*c**2 + 25*d**2 + e**2).solve(parameters=[x, y, z, t])': () =>
+        new sj.GeneralPythagorean(P('9*a**2 - 4*b**2 + 16*c**2 + 25*d**2 + e**2')).solve({ parameters: [x, y, z, t!] }),
+      'GeneralSumOfEvenPowers(a**4 + b**4 - (2**4 + 3**4)).solve()': () => new sj.GeneralSumOfEvenPowers(P('a**4 + b**4 - (2**4 + 3**4)')).solve(),
+      'GeneralSumOfSquares(a**2 + b**2 + c**2 + d**2 + e**2 - 2345).solve()': () => new sj.GeneralSumOfSquares(P('a**2 + b**2 + c**2 + d**2 + e**2 - 2345')).solve(),
+      'HomogeneousTernaryQuadratic(x**2 + y**2 - 3*z**2 + x*y).solve()': () => new sj.HomogeneousTernaryQuadratic(P('x**2 + y**2 - 3*z**2 + x*y')).solve(),
+      'HomogeneousTernaryQuadratic(3*x**2 + y**2 - 3*z**2 + 5*x*y + y*z).solve()': () => new sj.HomogeneousTernaryQuadratic(P('3*x**2 + y**2 - 3*z**2 + 5*x*y + y*z')).solve(),
+      'HomogeneousTernaryQuadraticNormal(4*x**2 - 5*y**2 + z**2).solve()': () => new sj.HomogeneousTernaryQuadraticNormal(P('4*x**2 - 5*y**2 + z**2')).solve(),
+      'l1.matches() # is this equation linear': () => new sj.Linear(P('2*x - 3*y - 5')).matches(),
+      'l1.solve() # solves equation 2*x - 3*y - 5 == 0': () => new sj.Linear(P('2*x - 3*y - 5')).solve(),
+      'Linear(2*x - 3*y - 4*z -3).solve()': () => new sj.Linear(P('2*x - 3*y - 4*z -3')).solve(),
+      'Univariate((x - 2)*(x - 3)**2).solve() # solves equation (x - 2)*(x - 3)**2 == 0': () => new sj.Univariate(P('(x - 2)*(x - 3)**2')).solve(),
+    }).map(([k, f]) => [m + k, f]),
+  );
+}

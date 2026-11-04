@@ -33,9 +33,7 @@ describe('Groebner bases', () => {
     expect(String(sj.groebner([parse('2*x + 4'), parse('6*y')], [x, y]))).toBe("GroebnerBasis([x + 2, y], x, y, domain='ZZ', order='lex')");
   });
   it('coefficients outside QQ and leading monomials', () => {
-    // SymPy computes over ZZ[a]: GroebnerBasis([1], x, domain='ZZ[a]', order='lex');
-    // symjs supports rational coefficients only
-    expect(() => sj.groebner([parse('a*x - 1'), parse('x**2')], [x])).toThrow(sj.DomainError);
+    expect(String(sj.groebner([parse('a*x - 1'), parse('x**2')], [x]))).toBe("GroebnerBasis([1], x, domain='ZZ[a]', order='lex')");
     expect(leadingMonomial(parse('x**2*y + y**3'), [x, y], 'grevlex')).toEqual([2, 1]);
     expect(leadingMonomial(parse('x**2*y + y**3'), [y, x], 'grevlex')).toEqual([3, 0]);
     expect(leadingMonomial(parse('x*y**2 + x**2*y'), [x, y], 'grevlex')).toEqual([2, 1]);
@@ -53,5 +51,21 @@ describe('Groebner bases', () => {
     expect(show(G.reduce(parse('x**3 + y')))).toBe('[[x**2 + x*y + y**2, y/2], 3*y/2]');
     expect(show(sj.reduced(parse('x**2*y + x*y**2'), [parse('x*y - 1'), parse('y**2 - 1')], [x, y]))).toBe('[[x + y, 0], x + y]');
     expect(show(sj.reduced(parse('x**2*y + x*y**2'), [parse('x*y - 1'), parse('y**2 - 1')], [x, y], 'grevlex'))).toBe('[[x + y, 0], x + y]');
+  });
+  it('non-rational coefficients: the basis over the fraction field of the coefficient ring (SymPy construct_domain)', () => {
+    expect(String(sj.groebner([parse('x - sqrt(2)*y'), parse('x*y')], [x, y]))).toBe("GroebnerBasis([x - sqrt(2)*y, y**2], x, y, domain='EX', order='lex')");
+    expect(String(sj.groebner([parse('a*x - y'), parse('x*y - b')], [x, y]))).toBe("GroebnerBasis([a*x - y, -a*b + y**2], x, y, domain='ZZ[a,b]', order='lex')");
+    expect(String(sj.groebner([parse('x**2 - a'), parse('x*y - 1'), parse('y - b*x')], [x, y]))).toBe("GroebnerBasis([1], x, y, domain='ZZ[a,b]', order='lex')");
+    expect(String(sj.groebner([parse('x/a - y'), parse('x*y')], [x, y]))).toBe("GroebnerBasis([-a*y + x, y**2], x, y, domain='ZZ(a)', order='lex')");
+    expect(String(sj.groebner([parse('x - pi*y'), parse('x*y')], [x, y], 'grevlex'))).toBe("GroebnerBasis([y**2, x - pi*y], x, y, domain='ZZ[pi]', order='grevlex')");
+    expect(String(sj.groebner([parse('2*x - pi*y'), parse('x*y')], [x, y]))).toBe("GroebnerBasis([2*x - pi*y, y**2], x, y, domain='ZZ[pi]', order='lex')");
+    expect(String(sj.groebner([parse('x - pi*y/2'), parse('x*y')], [x, y]))).toBe("GroebnerBasis([x - pi*y/2, y**2], x, y, domain='QQ[pi]', order='lex')");
+    expect(String(sj.groebner([parse('x - E*y'), parse('x*y - pi')], [x, y]))).toBe("GroebnerBasis([x - E*y, E*y**2 - pi], x, y, domain='ZZ[E,pi]', order='lex')");
+    expect(String(sj.groebner([parse('x - exp(a)*y'), parse('y**2 - 1')], [x, y]))).toBe("GroebnerBasis([x - y*exp(a), y**2 - 1], x, y, domain='ZZ[exp(a)]', order='lex')");
+    expect(String(sj.groebner([parse('x - pi*y'), parse('x*y')], [x, y]))).toBe("GroebnerBasis([x - pi*y, y**2], x, y, domain='ZZ[pi]', order='lex')");
+    expect(String(sj.groebner([parse('x**2 - pi*y'), parse('x*y - 1')], [x, y]))).toBe("GroebnerBasis([x - pi*y**2, pi*y**3 - 1], x, y, domain='ZZ[pi]', order='lex')");
+    const G = sj.groebner([parse('x - pi*y'), parse('x*y')], [x, y]);
+    expect(show(G.reduce(parse('x**2')))).toBe('[[x + pi*y, pi**2], 0]');
+    expect(G.contains(parse('y**3 + x*y'))).toBe(true);
   });
 });

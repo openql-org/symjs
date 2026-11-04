@@ -455,3 +455,103 @@ describe('latex of negative infinity terms', () => {
   it('-oo*x + y', () => expect(latex(sj.add(sj.mul(S.NegativeInfinity, x), y))).toBe('- \\infty x + y'));
   it('Mul(-oo, x, evaluate=False)', () => expect(latex(new Mul([S.NegativeInfinity, x]))).toBe('- \\infty x'));
 });
+
+describe('latex of sequences, Range, singularity and special functions (SymPy 1.14 latex())', () => {
+  const v = { a: new Sym('a'), b: new Sym('b'), n: new Sym('n'), x: new Sym('x'), y: new Sym('y'), z: new Sym('z') };
+  const cases: [string, () => unknown, string][] = [
+    ["SingularityFunction(x, a, n)", () => sj.SingularityFunction(v.x, v.a, v.n), "{\\left\\langle - a + x \\right\\rangle}^{n}"],
+    ["SingularityFunction(x, 4, 5) + SingularityFunction(x, -3, 4)", () => sj.add(sj.SingularityFunction(v.x, 4, 5), sj.SingularityFunction(v.x, -3, 4)), "{\\left\\langle x + 3 \\right\\rangle}^{4} + {\\left\\langle x - 4 \\right\\rangle}^{5}"],
+    ["SingularityFunction(x, a, n)**3", () => sj.pow(sj.SingularityFunction(v.x, v.a, v.n), 3), "{\\left({\\langle - a + x \\rangle}^{n}\\right)}^{3}"],
+    ["SingularityFunction(x, 0, -1)", () => sj.SingularityFunction(v.x, 0, -1), "{\\left\\langle x \\right\\rangle}^{-1}"],
+    ["SingularityFunction(x, a, 2)*x", () => sj.mul(sj.SingularityFunction(v.x, v.a, 2), v.x), "x {\\left\\langle - a + x \\right\\rangle}^{2}"],
+    ["Range(1, 10)", () => Sets.Range.of(1, 10), "\\left\\{1, 2, \\ldots, 9\\right\\}"],
+    ["Range(1, 10, 2)", () => Sets.Range.of(1, 10, 2), "\\left\\{1, 3, \\ldots, 9\\right\\}"],
+    ["Range(0, oo, 2)", () => Sets.Range.of(0, S.Infinity, 2), "\\left\\{0, 2, \\ldots\\right\\}"],
+    ["Range(-oo, 0)", () => Sets.Range.of(S.NegativeInfinity, 0), "\\left\\{\\ldots, -2, -1\\right\\}"],
+    ["Range(-oo, oo)", () => Sets.Range.of(S.NegativeInfinity, S.Infinity), "\\left\\{\\ldots, -1, 0, 1, \\ldots\\right\\}"],
+    ["Range(10, 1, -1)", () => Sets.Range.of(10, 1, -1), "\\left\\{10, 9, \\ldots, 2\\right\\}"],
+    ["Range(5, 6)", () => Sets.Range.of(5, 6), "\\left\\{5\\right\\}"],
+    ["Range(0, 0)", () => Sets.Range.of(0, 0), "\\left\\{\\right\\}"],
+    ["Range(0, -10, -3)", () => Sets.Range.of(0, -10, -3), "\\left\\{0, -3, \\ldots, -9\\right\\}"],
+    ["SeqFormula(n**2, (n, 0, oo))", () => sj.SeqFormula(sj.pow(v.n, 2), [v.n, 0, S.Infinity]), "\\left[0, 1, 4, 9, \\ldots\\right]"],
+    ["SeqFormula(n**2, (n, 0, 5))", () => sj.SeqFormula(sj.pow(v.n, 2), [v.n, 0, 5]), "\\left[0, 1, 4, 9, \\ldots\\right]"],
+    ["SeqFormula(n**2, (n, 0, 3))", () => sj.SeqFormula(sj.pow(v.n, 2), [v.n, 0, 3]), "\\left[0, 1, 4, 9\\right]"],
+    ["SeqFormula(n**2, (n, -oo, 0))", () => sj.SeqFormula(sj.pow(v.n, 2), [v.n, S.NegativeInfinity, 0]), "\\left[\\ldots, 9, 4, 1, 0\\right]"],
+    ["SeqFormula(n**2, (n, a, oo))", () => sj.SeqFormula(sj.pow(v.n, 2), [v.n, v.a, S.Infinity]), "\\left\\{n^{2}\\right\\}_{n=a}^{\\infty}"],
+    ["SeqPer((1, 2, 3), (n, 0, oo))", () => sj.SeqPer([1, 2, 3], [v.n, 0, S.Infinity]), "\\left[1, 2, 3, 1, \\ldots\\right]"],
+    ["SeqPer((1, 2), (n, 0, 3))", () => sj.SeqPer([1, 2], [v.n, 0, 3]), "\\left[1, 2, 1, 2\\right]"],
+    ["SeqAdd(SeqFormula(n**2, (n, 0, oo)), SeqPer((1, 2), (n, 0, oo)))", () => sj.SeqAdd(sj.SeqFormula(sj.pow(v.n, 2), [v.n, 0, S.Infinity]), sj.SeqPer([1, 2], [v.n, 0, S.Infinity])), "\\left[1, 3, 5, 11, \\ldots\\right]"],
+    ["SeqMul(SeqFormula(n**2, (n, 0, oo)), SeqPer((1, 2), (n, 0, oo)))", () => sj.SeqMul(sj.SeqFormula(sj.pow(v.n, 2), [v.n, 0, S.Infinity]), sj.SeqPer([1, 2], [v.n, 0, S.Infinity])), "\\left[0, 2, 4, 18, \\ldots\\right]"],
+    ["S.EmptySequence", () => sj.EmptySequence, "\\text{EmptySequence}"],
+    ["polylog(x, y)", () => sj.polylog(v.x, v.y), "\\operatorname{Li}_{x}\\left(y\\right)"],
+    ["polylog(2, x)**3", () => sj.pow(sj.polylog(2, v.x), 3), "\\operatorname{Li}_{2}^{3}\\left(x\\right)"],
+    ["lerchphi(x, y, n)", () => sj.lerchphi(v.x, v.y, v.n), "\\Phi\\left(x, y, n\\right)"],
+    ["lerchphi(x, y, n)**2", () => sj.pow(sj.lerchphi(v.x, v.y, v.n), 2), "\\Phi^{2}\\left(x, y, n\\right)"],
+    ["elliptic_k(x)**2", () => sj.pow(sj.ellipticK(v.x), 2), "K^{2}\\left(x\\right)"],
+    ["elliptic_f(x, y)", () => sj.ellipticF(v.x, v.y), "F\\left(x\\middle| y\\right)"],
+    ["elliptic_e(x)", () => sj.ellipticE(v.x), "E\\left(x\\right)"],
+    ["elliptic_e(x, y)", () => sj.ellipticE(v.x, v.y), "E\\left(x\\middle| y\\right)"],
+    ["elliptic_e(x)**2", () => sj.pow(sj.ellipticE(v.x), 2), "E^{2}\\left(x\\right)"],
+    ["elliptic_pi(x, y)", () => sj.ellipticPi(v.x, v.y), "\\Pi\\left(x\\middle| y\\right)"],
+    ["elliptic_pi(x, y, z)**2", () => sj.pow(sj.ellipticPi(v.x, v.y, v.z), 2), "\\Pi^{2}\\left(x; y\\middle| z\\right)"],
+    ["betainc(a, b, x, y)", () => sj.betainc(v.a, v.b, v.x, v.y), "\\operatorname{B}_{(x, y)}\\left(a, b\\right)"],
+    ["betainc_regularized(a, b, x, y)**2", () => sj.pow(sj.betaincRegularized(v.a, v.b, v.x, v.y), 2), "\\operatorname{I}_{(x, y)}^{2}\\left(a, b\\right)"],
+    ["dirichlet_eta(x)**2", () => sj.pow(sj.dirichletEta(v.x), 2), "\\eta^{2}\\left(x\\right)"],
+    ["stieltjes(n)", () => sj.stieltjes(v.n), "\\gamma_{n}"],
+    ["stieltjes(n)**2", () => sj.pow(sj.stieltjes(v.n), 2), "\\gamma_{n}^{2}"],
+    ["stieltjes(n, x)**2", () => sj.pow(sj.stieltjes(v.n, v.x), 2), "\\gamma_{n}\\left(x\\right)^{2}"],
+    ["meijerg(((a,), ()), ((), (b,)), z)", () => sj.meijerg([v.a], [], [], [v.b], v.z), "{G_{1, 1}^{0, 1}\\left(\\begin{matrix} a &  \\\\ & b \\end{matrix} \\middle| {z} \\right)}"],
+    ["meijerg(((a,), ()), ((), (b,)), z)**2", () => sj.pow(sj.meijerg([v.a], [], [], [v.b], v.z), 2), "{{G_{1, 1}^{0, 1}\\left(\\begin{matrix} a &  \\\\ & b \\end{matrix} \\middle| {z} \\right)}}^{2}"],
+    ["hyper((a, b), (x,), z)", () => sj.hyper([v.a, v.b], [v.x], v.z), "{{}_{2}F_{1}\\left(\\begin{matrix} a, b \\\\ x \\end{matrix}\\middle| {z} \\right)}"],
+    ["hyper((a, b), (x,), z)**2", () => sj.pow(sj.hyper([v.a, v.b], [v.x], v.z), 2), "{{{}_{2}F_{1}\\left(\\begin{matrix} a, b \\\\ x \\end{matrix}\\middle| {z} \\right)}}^{2}"],
+    ["Heaviside(x, 0)", () => sj.Heaviside(v.x, 0), "\\theta\\left(x, 0\\right)"],
+    ["Heaviside(x, S.Half)", () => sj.Heaviside(v.x, S.Half), "\\theta\\left(x\\right)"],
+    ["Heaviside(x)**2", () => sj.pow(sj.Heaviside(v.x), 2), "\\left(\\theta\\left(x\\right)\\right)^{2}"],
+    ["DiracDelta(x)**2", () => sj.pow(sj.DiracDelta(v.x), 2), "\\left(\\delta\\left(x\\right)\\right)^{2}"],
+    ["DiracDelta(x, 2)**2", () => sj.pow(sj.DiracDelta(v.x, 2), 2), "\\left(\\delta^{\\left( 2 \\right)}\\left( x \\right)\\right)^{2}"],
+    ["ProductSet(Interval(0, 1), FiniteSet(1, 2))", () => sj.ProductSet(Sets.Interval.of(0, 1), Sets.FiniteSet.of(1, 2)), "\\left[0, 1\\right] \\times \\left\\{1, 2\\right\\}"],
+    ["ProductSet(Interval(0, 1), Interval(0, 1), Interval(0, 1))", () => sj.ProductSet(Sets.Interval.of(0, 1), Sets.Interval.of(0, 1), Sets.Interval.of(0, 1)), "\\left[0, 1\\right]^{3}"],
+    ["ProductSet(Union(Interval(0, 1), Interval(2, 3)), FiniteSet(1))", () => sj.ProductSet(sj.union(Sets.Interval.of(0, 1), Sets.Interval.of(2, 3)), Sets.FiniteSet.of(1)), "\\left(\\left[0, 1\\right] \\cup \\left[2, 3\\right]\\right) \\times \\left\\{1\\right\\}"],
+    ["ComplexRegion(Interval(0, 1)*Interval(0, 2))", () => sj.ComplexRegion(sj.ProductSet(Sets.Interval.of(0, 1), Sets.Interval.of(0, 2))), "\\left\\{x + y i\\; \\middle|\\; x, y \\in \\left[0, 1\\right] \\times \\left[0, 2\\right] \\right\\}"],
+    ["ComplexRegion(Interval(0, 1)*Interval(0, 2*pi), polar=True)", () => sj.ComplexRegion(sj.ProductSet(Sets.Interval.of(0, 1), Sets.Interval.of(0, sj.mul(2, S.Pi))), true), "\\left\\{r \\left(i \\sin{\\left(\\theta \\right)} + \\cos{\\left(\\theta \\right)}\\right)\\; \\middle|\\; r, \\theta \\in \\left[0, 1\\right] \\times \\left[0, 2 \\pi\\right) \\right\\}"],
+    ["Contains(x, Interval(0, 1))", () => new Sets.Contains(v.x, Sets.Interval.of(0, 1)), "x \\in \\left[0, 1\\right]"],
+    ["Permutation([1, 0, 2])", () => new sj.Permutation([1, 0, 2]), "\\left( 0\\; 1\\right)\\left( 2\\right)"],
+  ];
+  it.each(cases)('%s', (_src, build, expected) => expect(latex(build() as sj.Expr)).toBe(expected));
+  it('a Range over all the integers downwards', () => {
+    // SymPy latex(Range(oo, -oo, -1))
+    expect(latex(Sets.Range.of(S.Infinity, S.NegativeInfinity, -1))).toBe('\\left\\{\\ldots, 1, 0, -1, \\ldots\\right\\}');
+  });
+  it('dirichlet_eta with two arguments keeps both', () => {
+    // SymPy latex(dirichlet_eta(x, y)) is \eta\left(x\right), which drops a, although
+    // dirichlet_eta(s, a) differs from dirichlet_eta(s)
+    expect(latex(sj.dirichletEta(v.x, v.y))).toBe('\\eta\\left(x, y\\right)');
+  });
+  it('the functions as function nodes', () => {
+    // the same printers for a function node and for a defined function of the same name
+    expect(latex(new Fn('SingularityFunction' as FnName, [v.x, v.a, v.n]))).toBe('{\\left\\langle - a + x \\right\\rangle}^{n}');
+    expect(latex(new Fn('Heaviside' as FnName, [v.x]))).toBe('\\theta\\left(x\\right)');
+    expect(latex(new Fn('Heaviside' as FnName, [v.x, R(1, 2)]))).toBe('\\theta\\left(x\\right)');
+    // SymPy latex(mathieuc(a, x, y))
+    expect(latex(sj.mathieuc(v.a, v.x, v.y))).toBe('C\\left(a, x, y\\right)');
+    // SymPy latex(Heaviside(x, 1)) and latex(Heaviside(x, S(1)/3))
+    expect(latex(sj.Heaviside(v.x, 1))).toBe('\\theta\\left(x, 1\\right)');
+    expect(latex(sj.Heaviside(v.x, R(1, 3)))).toBe('\\theta\\left(x, \\frac{1}{3}\\right)');
+    expect(latex(new Fn('DiracDelta' as FnName, [v.x, R(0)]))).toBe('\\delta\\left(x\\right)');
+    expect(latex(new Fn('DiracDelta' as FnName, [v.x, R(1)]))).toBe('\\delta^{\\left( 1 \\right)}\\left( x \\right)');
+    // SymPy latex(stieltjes(n, x)), latex(elliptic_k(x))
+    expect(latex(sj.stieltjes(v.n, v.x))).toBe('\\gamma_{n}\\left(x\\right)');
+    expect(latex(sj.ellipticK(v.x))).toBe('K\\left(x\\right)');
+    expect(latex(sj.pow(sj.ellipticF(v.x, v.y), 2))).toBe('F^{2}\\left(x\\middle| y\\right)');
+    expect(latex(sj.ellipticPi(v.x, v.y, v.z))).toBe('\\Pi\\left(x; y\\middle| z\\right)');
+    expect(latex(sj.pow(sj.ellipticE(v.x, v.y), 2))).toBe('E^{2}\\left(x\\middle| y\\right)');
+    expect(latex(sj.pow(sj.ellipticPi(v.x, v.y), 2))).toBe('\\Pi^{2}\\left(x\\middle| y\\right)');
+    expect(latex(sj.pow(sj.betainc(v.a, v.b, v.x, v.y), 2))).toBe('\\operatorname{B}_{(x, y)}^{2}\\left(a, b\\right)');
+    expect(latex(sj.betaincRegularized(v.a, v.b, v.x, v.y))).toBe('\\operatorname{I}_{(x, y)}\\left(a, b\\right)');
+  });
+  it('a sequence with a symbolic bound that is not a SeqFormula prints itself', () => {
+    // SymPy fails (SeqPer has no formula)
+    const s = sj.SeqPer([1, 2], [v.n, v.a, S.Infinity]);
+    expect(latex(s)).toBe(s.printLatex(latex));
+  });
+});

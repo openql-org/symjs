@@ -297,4 +297,9 @@ describe('radsimp: SymPy 1.14 test_radsimp calls', () => {
     ];
     for (const [e, a, o, r] of cases) expect(sstr(radsimp(PA(e, a), o))).toBe(r);
   });
+  it('combines the denominator into one fraction first (SymPy expr.normal())', () => {
+    expect(sstr(radsimp(parse('1/(n + sqrt(3)/(sqrt(3) + 3*I) + 7*I/(sqrt(3) + 3*I))')))).toBe('(3*n + 6 - sqrt(3)*I)/(3*n**2 + 12*n + 13)');
+    expect(sstr(radsimp(parse('1/(n + 1/(sqrt(3) + 3*I))')))).toBe('(144*n**3 - 12*sqrt(3)*n**2 + 36*I*n**2 + 6*n - 6*sqrt(3)*I*n + sqrt(3) + 3*I)/(144*n**4 + 12*n**2 + 1)');
+    expect(sstr(radsimp(parse('(n + 1 + sqrt(3)/(sqrt(3) + 3*I))/(n + sqrt(3)/(sqrt(3) + 3*I))')))).toBe('(4*n**2 + 6*n + 2 + sqrt(3)*I)/(4*n**2 + 2*n + 1)');
+  });
 });

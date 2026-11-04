@@ -123,8 +123,10 @@ describe('solve_poly_system', () => {
     expect(show(solvePolySystem(P(['sqrt(2)*x*y-1', 'sqrt(3)*x*y-1']), [x, y]))).toBe('[]');
     // SymPy: None (x = I*y gives 0 = 1)
     expect(show(solvePolySystem(P(['x**2+y**2-1', 'x-I*y']), [x, y]))).toBe('[]');
-    // other irrational numbers are not adjoined: the Gröbner basis is over QQ, without parameters (SymPy: [(0, 0)])
-    expect(() => solvePolySystem(P(['x-pi*y', 'x*y']), [x, y])).toThrow(NotImplementedError);
+    // other irrational numbers: the Gröbner basis over ZZ[pi] (SymPy: [(0, 0)])
+    expect(show(solvePolySystem(P(['x-pi*y', 'x*y']), [x, y]))).toBe('[[0, 0]]');
+    expect(show(solvePolySystem(P(['x-pi*y', 'x*y-1']), [x, y]))).toBe('[[-sqrt(pi), -1/sqrt(pi)], [sqrt(pi), 1/sqrt(pi)]]');
+    expect(show(solvePolySystem(P(['x**2-E', 'y-pi*x']), [x, y]))).toBe('[[-exp(1/2), -pi*exp(1/2)], [exp(1/2), pi*exp(1/2)]]');
   });
   it('rationalOnly keeps rational roots only', () => {
     expect(show(solvePolySystem(P(['x**2-2', 'y**2-3']), [x, y], { rationalOnly: true }))).toBe('[]');

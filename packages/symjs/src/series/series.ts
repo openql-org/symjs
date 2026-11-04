@@ -13,7 +13,8 @@ import { Mul } from '../core/nodes';
 import { expandMul } from '../simplify/expand';
 import { mapBottomUp, xreplace as subs } from '../core/traverse';
 import { log, sin } from '../functions/elementary';
-import { Expander } from './puiseux';
+import { EssentialSingularity, Expander, type PS, isE } from './puiseux';
+import { isReal } from '../core/assumptions';
 import { at, first, getOrThrow } from '../core/guard';
 import { parserHooks } from '../parsing/parser';
 import { diffHooks } from '../calculus/diff';
@@ -157,13 +158,23 @@ export function series(ex: ExprLike, x: Sym, x0x: ExprLike = 0, n = 6, dir: '+' 
   if (x0 instanceof Special && (x0.name === 'oo' || x0.name === '-oo')) return seriesAtInfinity(e, x, x0.name === 'oo' ? 1 : -1, n);
   if (x0 instanceof Special) throw new NotImplementedError('series: expansion at this point is not supported');
   if (!e.has(x)) return e;
-  const t = new Sym('_s');
+  const t = new Sym('_s', { positive: true });
   const ex0 = new Expander(t);
   // from the left: x = x0 - t with t -> 0+, written in powers of (x0 - x)
   const shifted = subs(e, [[x, dir === '-' ? add(x0, mul(-1, t)) : add(x0, t)]]);
   if (n < 0) throw new RangeError('series: the order n must be nonnegative');
+  // the expansion variable is positive (SymPy series): oo*x is oo there
+  if (!shifted.has(t)) return shifted;
   // (expanded to at least the order 1 and then truncated: series(sin(x), x, 0, 0) = O(1))
-  const ps = ex0.ser(shifted, Rational.of(Math.max(n, 1))).truncate(Rational.of(n));
+  let ps: PS;
+  try {
+    ps = ex0.ser(shifted, Rational.of(Math.max(n, 1))).truncate(Rational.of(n));
+  } catch (err) {
+    // exp(g) with g -> oo (or of unknown sign) has no expansion: SymPy returns it unchanged, but
+    // raises PoleError for a complex g (exp(I/x))
+    if (err instanceof EssentialSingularity && e instanceof Pow && isE(e.base) && isReal(err.coeff) !== false) return e;
+    throw err;
+  }
   const base = dir === '-' ? add(x0, mul(-1, x)) : x0 instanceof Rational && x0.isZero ? x : add(x, mul(-1, x0));
   const back = (c: Expr) => subs(c, [[ex0.L, log(base)]]);
   const terms = ps.terms.map((term) => mul(back(term.c), pow(base, term.e)));

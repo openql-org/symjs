@@ -7,7 +7,7 @@
 
 import type { Expr } from './nodes';
 import { Add, Constant, Fn, Float, Mul, Pow, Rational, Special, Sym, impl } from './nodes';
-import { at } from './guard';
+import { at, pair } from './guard';
 
 export type Tri = boolean | undefined;
 
@@ -25,8 +25,12 @@ export function isZero(e: Expr): Tri {
   if (e instanceof Rational || e instanceof Float) return e.isZero;
   if (e instanceof Special) return e.name === 'nan' ? undefined : false;
   if (e instanceof Constant) return false;
-  if (e instanceof Sym) return e.assumptions.zero === false ? false : undefined;
+  if (e instanceof Sym) return e.assumptions.zero;
   if (e instanceof Pow && e.base instanceof Constant && e.base.name === 'E') return false;
+  // SymPy Add._eval_is_zero: a sum of symbols known to be positive, negative or not an integer
+  if (e instanceof Add && impl.freeSymbols(e).size > 0) {
+    if (isIntegerQ(e) === false || isPositive(e) === true || isNegative(e) === true) return false;
+  }
   return undefined;
 }
 
@@ -123,6 +127,50 @@ function numberSign(e: Add): 1 | -1 | 0 | undefined {
   return re > 0 ? 1 : -1;
 }
 
+/**
+ * SymPy _monotonic_sign for a symbol s or its negation -s, as [v, eps, nonneg, nonpos]: the
+ * value is at least v (or more than v when eps is 1) when it is nonnegative, at most v (or less
+ * than v when eps is -1) when it is nonpositive; 1 for a positive integer, -1 for a negative
+ * integer, an infinitesimal for other signed symbols and 0 for nonnegative or nonpositive ones.
+ */
+type Bound = [v: Rational, eps: -1 | 0 | 1, nonneg: boolean, nonpos: boolean];
+function monotonicSign(e: Expr): Bound | undefined {
+  if (e instanceof Mul && e.args.length === 2) {
+    const [c, s] = e.args;
+    if (c instanceof Rational && c.p === -1n && c.q === 1n && s instanceof Sym) {
+      const b = monotonicSign(s);
+      return b && [Rational.of(-b[0].p, b[0].q), b[1] === 0 ? 0 : b[1] === 1 ? -1 : 1, b[3], b[2]];
+    }
+  }
+  if (!(e instanceof Sym) || e.assumptions.commutative === false) return undefined;
+  const a = e.assumptions;
+  if (a.positive) return a.integer ? [Rational.of(1n), 0, true, false] : [Rational.of(0n), 1, true, false];
+  if (a.negative) return a.integer ? [Rational.of(-1n), 0, false, true] : [Rational.of(0n), -1, false, true];
+  if (a.nonnegative || a.nonpositive) return [Rational.of(0n), 0, a.nonnegative === true, a.nonpositive === true];
+  return undefined;
+}
+
+/**
+ * SymPy Add._eval_is_extended_positive (negative, nonnegative, nonpositive) for c + a with a
+ * rational c and a signed symbol a: the sign of c + _monotonic_sign(a). 1 when the sum is
+ * positive, -1 when negative, 0.5 when nonnegative, -0.5 when nonpositive, undefined otherwise.
+ */
+function addBoundSign(e: Add): 1 | -1 | 0.5 | -0.5 | undefined {
+  if (e.args.length !== 2) return undefined;
+  const [c, a] = pair(e.args);
+  if (!(c instanceof Rational)) return undefined;
+  const b = monotonicSign(a);
+  if (b === undefined) return undefined;
+  const [v, eps, nonneg, nonpos] = b;
+  // the sign of v + c + eps (c is nonzero in a canonical Add)
+  const num = v.p * c.q + c.p * v.q;
+  const sg = num > 0n ? 1 : num < 0n ? -1 : eps;
+  if (nonneg && sg > 0) return 1;
+  if (nonpos && sg < 0) return -1;
+  if (sg === 0) return nonneg ? 0.5 : -0.5;
+  return undefined;
+}
+
 export function isPositive(e: Expr): Tri {
   if (e instanceof Rational || e instanceof Float) return e.isPositive;
   if (e instanceof Special) return e.name === 'oo' ? true : e.name === '-oo' ? false : undefined;
@@ -130,6 +178,8 @@ export function isPositive(e: Expr): Tri {
   if (e instanceof Sym) return e.assumptions.positive ? true : e.assumptions.nonpositive ? false : undefined;
   if (e instanceof Add) {
     if (all(e.args, isPositive)) return true;
+    const bs = addBoundSign(e);
+    if (bs !== undefined) return bs === 1 ? true : bs < 0 ? false : undefined;
     const sg = numberSign(e);
     return sg === undefined ? undefined : sg === 1;
   }
@@ -163,6 +213,8 @@ export function isNegative(e: Expr): Tri {
   if (e instanceof Sym) return e.assumptions.negative ? true : e.assumptions.nonnegative ? false : undefined;
   if (e instanceof Add) {
     if (all(e.args, isNegative)) return true;
+    const bs = addBoundSign(e);
+    if (bs !== undefined) return bs === -1 ? true : bs > 0 ? false : undefined;
     const sg = numberSign(e);
     return sg === undefined ? undefined : sg === -1;
   }
@@ -192,7 +244,7 @@ export function isNonNegative(e: Expr): Tri {
   if (e instanceof Sym && e.assumptions.nonnegative) return true;
   if (e instanceof Sym && e.assumptions.negative) return false;
   if (e instanceof Fn && e.name === 'abs') return true;
-  if (e instanceof Add) return all(e.args, isNonNegative) ? true : undefined;
+  if (e instanceof Add && (all(e.args, isNonNegative) || addBoundSign(e) === 0.5)) return true;
   if (e instanceof Mul) return all(e.args, isNonNegative) ? true : undefined;
   if (e instanceof Pow && isNonNegative(e.base) && isReal(e.exp)) return true;
   if (e instanceof Pow && isReal(e.base) && e.exp instanceof Rational && e.exp.isInteger && e.exp.p % 2n === 0n) {
@@ -207,8 +259,14 @@ export function isIntegerQ(e: Expr): Tri {
   if (e instanceof Special) return false;
   if (e instanceof Float) return false;
   if (e instanceof Constant) return false;
-  if (e instanceof Sym) return e.assumptions.integer ? true : undefined;
-  if (e instanceof Add || e instanceof Mul) return all(e.args, isIntegerQ) ? true : undefined;
+  if (e instanceof Sym) return e.assumptions.integer;
+  if (e instanceof Add) {
+    // SymPy Add._eval_is_integer: integers plus exactly one non-integer is not an integer
+    const known = e.args.map(isIntegerQ);
+    if (known.every((k) => k === true)) return true;
+    return known.filter((k) => k === false).length === 1 && known.every((k) => k !== undefined) ? false : undefined;
+  }
+  if (e instanceof Mul) return all(e.args, isIntegerQ) ? true : undefined;
   if (e instanceof Pow) {
     if (isIntegerQ(e.base) && isIntegerQ(e.exp) && isNonNegative(e.exp)) return true;
   }

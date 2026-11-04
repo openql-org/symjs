@@ -108,3 +108,17 @@ describe('node classes', () => {
     expect(mul(x, y)).toBeInstanceOf(Mul);
   });
 });
+
+describe('symbol assumptions zero and integer', () => {
+  it('derives the facts SymPy derives from zero=True and integer=False', () => {
+    // SymPy: Symbol('z', zero=True) is an integer, nonnegative and nonpositive; integer=False implies zero=False
+    const z = new sj.Sym('z', { zero: true });
+    expect(z.assumptions).toEqual({ real: true, nonnegative: true, nonpositive: true, integer: true, zero: true });
+    const w = new sj.Sym('w', { integer: false });
+    expect(w.assumptions).toEqual({ integer: false, zero: false });
+    // the assumptions are part of the identity of a symbol
+    expect(new Set([z.key, w.key, new sj.Sym('z').key, new sj.Sym('w').key]).size).toBe(4);
+    // zero together with a sign is ignored (SymPy raises InconsistentAssumptions)
+    expect(new sj.Sym('p', { zero: true, positive: true }).assumptions.zero).toBe(false);
+  });
+});

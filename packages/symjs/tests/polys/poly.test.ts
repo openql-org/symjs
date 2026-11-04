@@ -267,4 +267,31 @@ describe('polynomials', () => {
     expect(p.gcd(q).toExpr(x).toString()).toBe('x + 1');
     expect(factorPoly(add(pow(x, 3), mul(-1, x)), x).toString()).toBe('x*(x - 1)*(x + 1)');
   });
+  it('symbolic coefficients removed by scaling x (SymPy preprocess_roots and _integer_basis)', () => {
+    // the roots as a set (SymPy returns a dict)
+    const keys = (s: string): string[] => [...(sj.roots(E(s), x) as unknown as Map<sj.Expr, number>).keys()].map(String).sort();
+    const cases: [string, string[]][] = [
+      ['x**3 - a**3', ['a', 'a*(-1/2 + sqrt(3)*I/2)', 'a*(-1/2 - sqrt(3)*I/2)']],
+      ['x**2 - a**2', ['-a', 'a']],
+      ['x**4 - a**4', ['-I*a', '-a', 'I*a', 'a']],
+      ['x**3 + 8*a**3', ['-2*a', '2*a*(1/2 + sqrt(3)*I/2)', '2*a*(1/2 - sqrt(3)*I/2)']],
+      ['x**2 - a', ['-sqrt(a)', 'sqrt(a)']],
+      ['x**3 - a', ['-a**(1/3)/2 + sqrt(3)*I*a**(1/3)/2', '-a**(1/3)/2 - sqrt(3)*I*a**(1/3)/2', 'a**(1/3)']],
+      ['x**4 - a**2*b**2', ['(a**2*b**2)**(1/4)', '-(a**2*b**2)**(1/4)', '-I*(a**2*b**2)**(1/4)', 'I*(a**2*b**2)**(1/4)']],
+      ['x**6 - a**6', ['-a', 'a', 'a*(-1/2 + sqrt(3)*I/2)', 'a*(-1/2 - sqrt(3)*I/2)', 'a*(1/2 + sqrt(3)*I/2)', 'a*(1/2 - sqrt(3)*I/2)']],
+      ['x**2 + a*x + a**2', ['a*(-1/2 + sqrt(3)*I/2)', 'a*(-1/2 - sqrt(3)*I/2)']],
+      ['x**3 + a*x**2 + a**2*x + a**3', ['-I*a', '-a', 'I*a']],
+      ['a*x**2 + b', ['-sqrt(-b/a)', 'sqrt(-b/a)']],
+      ['x**2 - a**2*b**4', ['-a*b**2', 'a*b**2']],
+      ['x**3 - a**6', ['a**2', 'a**2*(-1/2 + sqrt(3)*I/2)', 'a**2*(-1/2 - sqrt(3)*I/2)']],
+      ['2*x**3 - 16*a**3', ['2*a', '2*a*(-1/2 + sqrt(3)*I/2)', '2*a*(-1/2 - sqrt(3)*I/2)']],
+      ['x**4 + a**4', ['a*(-sqrt(2)/2 + sqrt(2)*I/2)', 'a*(-sqrt(2)/2 - sqrt(2)*I/2)', 'a*(sqrt(2)/2 + sqrt(2)*I/2)', 'a*(sqrt(2)/2 - sqrt(2)*I/2)']],
+      ['x**3 - a**3*x', ['-sqrt(a**3)', '0', 'sqrt(a**3)']],
+      ['x**2 + 2*a*x - 3*a**2', ['-3*a', 'a']],
+      ['x**3 + 2*a*x**2 + 4*a**2*x + 8*a**3', ['-2*I*a', '-2*a', '2*I*a']],
+      ['x**3 + 2*a**3', ['-2**(1/3)*a', 'a*(2**(1/3)/2 + 2**(1/3)*sqrt(3)*I/2)', 'a*(2**(1/3)/2 - 2**(1/3)*sqrt(3)*I/2)']],
+      ['x**3 + 3*a*x**2 + 3*a**2*x + x + a**3 + a', ['-a', '-a + I', '-a - I']],
+    ];
+    for (const [s, r] of cases) expect(keys(s)).toEqual(r);
+  });
 });

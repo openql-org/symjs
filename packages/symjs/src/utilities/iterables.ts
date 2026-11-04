@@ -19,8 +19,9 @@
 
 import { at, defined, expectType, first, getOrThrow, last, pair } from '../core/guard';
 import type { Assumptions } from '../core/nodes';
-import { BoolAtom, Expr, Rational, Sym, isNum } from '../core/nodes';
+import { Expr, Rational, Sym, isNum } from '../core/nodes';
 import { neg } from '../core/ops';
+import { basicNew, funcName } from '../strategies/util';
 import { MultisetPartitionTraverser, listVisitor, multisetPartitionsTaocp } from './enumerative';
 import { combinations, combinationsWithReplacement, permutations, product } from './itertools';
 import { ValueMap, compareValues, orderedValues, valueEquals, valueKey } from './values';
@@ -163,8 +164,25 @@ function isPalindromeSequence<T>(s: IntArg | Sequence<T>): s is Sequence<T> {
  * SymPy `flatten(iterable, levels=None, cls=None)`: recursively denest
  * arrays and sets (or, with `cls`, expressions of that class through their
  * arguments), at most `levels` levels deep.
+ *
+ * Given an expression, it is SymPy `sympy.strategies.rl.flatten(expr,
+ * new=new)`: the arguments of the same class as `expr` are spliced in
+ * (`T(a, T(b, c), U(d)) -> T(a, b, c, U(d))`), and the node is rebuilt with
+ * `newFn` (without evaluation by default).
  */
-export function flatten(iter: Iterable<unknown>, opts: { levels?: number | null; cls?: TypeSpec | null } = {}): unknown[] {
+export function flatten(expr: Expr, newFn?: (op: Expr, args: readonly Expr[]) => Expr): Expr;
+export function flatten(iter: Iterable<unknown>, opts?: { levels?: number | null; cls?: TypeSpec | null }): unknown[];
+export function flatten(
+  iter: Expr | Iterable<unknown>,
+  optsIn: { levels?: number | null; cls?: TypeSpec | null } | ((op: Expr, args: readonly Expr[]) => Expr) = {},
+): Expr | unknown[] {
+  if (iter instanceof Expr) {
+    const cls = funcName(iter);
+    const args = iter.args.flatMap((arg) => (arg.constructor === iter.constructor && funcName(arg) === cls ? arg.args : [arg]));
+    return (typeof optsIn === 'function' ? optsIn : basicNew)(iter, args);
+  }
+  if (typeof optsIn === 'function') throw new TypeError('flatten: a constructor is given only with an expression');
+  const opts = optsIn;
   let levels = opts.levels ?? null;
   const cls = opts.cls ?? null;
   if (levels !== null) {
@@ -430,7 +448,7 @@ export function capture(func: (print: PrintFunction) => void): string {
   return out;
 }
 
-/** A truth-like key for the binary form of {@link sift} (an Integer 0/1 or S.true/S.false also counts). */
+/** A truth-like key for the binary form of {@link sift} (an Integer 0/1 also counts). */
 type BinaryKey = boolean | number | 'unknown' | Expr;
 
 /**
@@ -456,8 +474,9 @@ export function sift<T, K>(seq: Iterable<T>, keyfunc: (x: T) => K, opts: { binar
   const F: T[] = [];
   for (const x of seq) {
     const k0 = keyfunc(x) as unknown;
-    // Python's 1 and 0 (also as SymPy Integers and S.true/S.false) equal True and False
-    const k = k0 instanceof Rational && k0.q === 1n && (k0.p === 0n || k0.p === 1n) ? k0.p === 1n : k0 instanceof BoolAtom ? k0.value : k0;
+    // Python's 1 and 0 (also as SymPy Integers) equal True and False; S.true and S.false do not
+    // (SymPy raises ValueError for them: they are not keys of {True: T, False: F})
+    const k = k0 instanceof Rational && k0.q === 1n && (k0.p === 0n || k0.p === 1n) ? k0.p === 1n : k0;
     if (k === true || k === 1) T.push(x);
     else if (k === false || k === 0) F.push(x);
     else throw new RangeError('keyfunc gave non-binary output');

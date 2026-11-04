@@ -610,6 +610,13 @@ export function limitWithin(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' 
       const w = new Limiter(z, z0, d, budget).lim(g);
       if (w !== undefined && w !== BOUNDED) return w;
     }
+    // a product of powers with a common exponent becomes one power (SymPy Limit.doit: powsimp when the
+    // leading term fails; (1 + I)**n/2**n = (1/2 + I/2)**n, which tends to 0)
+    const p = e instanceof Mul ? powsimp(e) : e;
+    if (p instanceof Pow) {
+      const w = new Limiter(z, z0, d, budget).lim(p);
+      if (w !== undefined && w !== BOUNDED) return w;
+    }
     // explicit infinities ((x + 1)**oo, x - oo) are left to the other methods (SymPy returns the Limit)
     if (hasSpecialInside(e)) return unevaluated();
     // the Gruntz algorithm; it does not see branch cuts

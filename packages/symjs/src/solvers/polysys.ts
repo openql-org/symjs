@@ -206,10 +206,10 @@ function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolea
   if (system.some(hasIrrational)) {
     try {
       return backSubstitute(system, gens, rationalOnly);
-    } catch (err) {
+    } catch {
       const ext = algebraicExtension(system, gens, rationalOnly);
-      if (!ext) throw err;
-      return ext;
+      if (ext) return ext;
+      // pi, E, ... in the coefficients: the Gröbner basis over their polynomial ring (SymPy ZZ[pi])
     }
   }
   const basis = [...groebner(system, [...gens], 'lex').exprs];

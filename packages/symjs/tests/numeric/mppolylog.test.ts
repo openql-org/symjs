@@ -69,10 +69,32 @@ describe('the cases mpmath evaluates otherwise', () => {
     if (!f) throw new TypeError(name);
     return () => f(args.map(([a, b]) => [F.fromNumber(a), F.fromNumber(b)] as Mpc), 53);
   };
-  it('raises at the poles and where mpmath integrates numerically', () => {
+  it('raises at the poles', () => {
     expect(at('polylog', [[1, 0], [1, 0]])).toThrow(RangeError);
+    // the Hurwitz form dirichlet_eta(s, a) is registered by functions/zeta.ts
+    expect(at('dirichlet_eta', [[2, 0], [1, 0]])).toThrow('dirichlet_eta(s, a)');
     expect(at('lerchphi', [[0.5, 0], [2, 0], [-2, 0]])).toThrow(RangeError);
-    // mpmath lerchphi(2, 2, 3) uses numerical integration
-    expect(at('lerchphi', [[2, 0], [2, 0], [3, 0]])).toThrow('lerchphi for |z| >= 0.9');
+  });
+});
+
+describe('lerchphi for |z| >= 0.9 by mpmath\'s integral representation', () => {
+  // [mpmath call, arguments [re, im], [value at 15 digits, at 50 digits] as [re, im]]
+  const cases: [string, [string, string][], [string, string][]][] = [
+    ['lerchphi(2,1,3)', [['2', '0'], ['1', '0'], ['3', '0']], [['-0.5', '-0.392699081698724'], ['-0.5', '-0.39269908169872415480783042290993786052464617492189']]],
+    ['lerchphi(0.95,1,3)', [['0.9499999999999999555910790149937383830547332763671875', '0'], ['1', '0'], ['3', '0']], [['1.85972564345122', '0.0'], ['1.8597256434512207790783701189497380641283249234748', '0.0']]],
+    ['lerchphi(2,2,3)', [['2', '0'], ['2', '0'], ['3', '0']], [['-0.0665748624659575', '-0.27219826128795'], ['-0.066574862465957543161422156253870277021446893523725', '-0.27219826128795026631258611227970174341732296254616']]],
+    ['lerchphi(2,1+1j,3)', [['2', '0'], ['1', '1'], ['3', '0']], [['-0.368345532627136', '0.0069279617556613'], ['-0.3683455326271360898985268683139832967399983687262', '0.0069279617556612963065176317152549504976851202687844']]],
+    ['lerchphi(2,1,3+1j)', [['2', '0'], ['1', '0'], ['3', '1']], [['-0.274349335854203', '0.388626842233316'], ['-0.27434933585420287805814532138607945665797101674932', '0.38862684223331580987210560283969518828705965988793']]],
+    ['lerchphi(0.5+1j,1/3.,2)', [['0.5', '1'], ['0.333333333333333314829616256247390992939472198486328125', '0'], ['2', '0']], [['0.416569080393767', '0.613970490405094'], ['0.41656908039376690644082590684703002246962990739758', '0.61397049040509411153519840269945404275462146974538']]],
+  ];
+  it.each(cases)('%s', (_, args, want) => {
+    const f = mpFns['lerchphi'];
+    if (!f) throw new TypeError('lerchphi');
+    const got = [15, 50].map((d) => {
+      const p = F.dpsToPrec(d);
+      const r = f(args.map(([a, b]) => [F.fromStr(a, p), F.fromStr(b, p)] as Mpc), p);
+      return [F.toStr(r[0], d), F.toStr(r[1], d)];
+    });
+    expect(got).toEqual(want);
   });
 });

@@ -6,7 +6,7 @@
 // Expected values are the str() forms printed by SymPy 1.14 unless a comment says otherwise.
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Dummy, Heaviside, Sym, add, cancel, fraction, mul, parse, pow, ratsimp, symbol, together } from '../../src';
+import { DiracDelta, Dummy, Float, Heaviside, Sym, add, cancel, fraction, mul, parse, pow, ratsimp, symbol, together } from '../../src';
 import type { Expr } from '../../src';
 
 const P = (s: string) => parse(s, { locals: { Heaviside, DiracDelta } });
@@ -123,9 +123,9 @@ describe('cancel and ratsimp over all the generators (SymPy 1.14)', () => {
       ['1/(-I*x*y - 1)', 'I/(x*y - I)'],
       ['1/(I*x*y - 1)', '-I/(x*y + I)'],
       ['1/(-I*sin(x) + 2)', 'I/(sin(x) + 2*I)'],
-      // SymPy prints the coefficient collected: I/(x*y*(1 + I) + I) and -I/(x*y*(1 + I) - I)
-      ['1/((1 - I)*x*y + 1)', 'I/(x*y + I*x*y + I)'],
-      ['1/((-1 + I)*x*y + 1)', '-I/(x*y + I*x*y - I)'],
+      // the Gaussian coefficient is kept collected, as SymPy's as_expr prints it
+      ['1/((1 - I)*x*y + 1)', 'I/(x*y*(1 + I) + I)'],
+      ['1/((-1 + I)*x*y + 1)', '-I/(x*y*(1 + I) - I)'],
     ];
     for (const [e, r] of cases) expect(String(cancel(parse(e)))).toBe(r);
   });
@@ -138,5 +138,66 @@ describe('cancel and ratsimp over all the generators (SymPy 1.14)', () => {
       ['(a*x + a**2)/(x - a)', '2*a**2/(-a + x) + a'],
     ];
     for (const [e, r] of cases) expect(String(ratsimp(parse(e)))).toBe(r);
+  });
+});
+
+describe('cancel: SymPy PolyElement.cancel normalisation', () => {
+  // integer (Gaussian) coefficients with the denominators cleared, the gcd of the contents
+  // cancelled, and the lex-leading coefficient of the denominator canonical (positive, or in the
+  // first quadrant); generators that are not symbols (sin(x), exp(x), sqrt(2), pi) are polynomial variables
+  const cases: [string, string][] = [
+    ['(-63*x + 15)/(5*x**2 - 6*x + 1)', '(15 - 63*x)/(5*x**2 - 6*x + 1)'],
+    ['(x/2 + 1)/(x/3 - 1)', '(3*x + 6)/(2*x - 6)'],
+    ['(2*x + 4)/(6*x**2)', '(x + 2)/(3*x**2)'],
+    ['(x + I/2)/(3*x + I)', '(2*x + I)/(6*x + 2*I)'],
+    ['(sin(x)**2 - 1)/(2*sin(x) - 2)', 'sin(x)/2 + 1/2'],
+    ['(exp(x)**2 - 1)/(exp(x) + 1)', 'exp(x) - 1'],
+    ['(x**2 + 1)/(x - I)', 'x + I'],
+    ['(x**2 + 2*x + 1)/(2*I*x + 2*I)', '-I*x/2 - I/2'],
+    ['(x**2 + y**2)/((1 + I)*x + (1 - I)*y)', '(1 - I)*(x + I*y)/2'],
+    ['(x + 1)/(1 - I*x)', '(I*x + I)/(x + I)'],
+    ['(x**2 - 1)/(x**2/2 + x + 1/2)', '(2*x - 2)/(x + 1)'],
+    ['(6*x**2*y + 4*x*y**2)/(9*x*y/2)', '4*x/3 + 8*y/9'],
+    ['(x + y)/(-2*x - 2*y + 4)', '(-x - y)/(2*x + 2*y - 4)'],
+    ['(x**2 - 2)/(x - sqrt(2))', '(x**2 - 2)/(x - sqrt(2))'],
+    ['(pi*x + pi)/(x + 1)', 'pi'],
+  ];
+  it.each(cases)('cancel(%s)', (src, want) => {
+    expect(String(cancel(P(src)))).toBe(want);
+  });
+  it('the generating function of 3*5**n + 12', () => {
+    // SymPy: cancel(3*(5 - 21*x)/((x - 1)*(5*x - 1)))
+    expect(String(cancel(P('3*(5 - 21*x)/((x - 1)*(5*x - 1))')))).toBe('(15 - 63*x)/(5*x**2 - 6*x + 1)');
+  });
+  it('a unit I for a leading coefficient in the fourth quadrant', () => {
+    expect(String(cancel(P('(x + 1)/((1 - I)*x + 1)')))).toBe('(I*x + I)/(x*(1 + I) + I)');
+  });
+  // SymPy's domain RR: the Floats as rationals (mpmath to_rational with limit), the cofactors of
+  // the monic gcd over QQ, and every coefficient a Float again
+  it.each([
+    ['(2.0*x + 1)/(4*x + 2.0)', '0.500000000000000'],
+    ['(0.5*x+1)/(x+2)', '0.500000000000000'],
+    ['(0.1*x+0.2)/(x+2)', '0.100000000000000'],
+    ['(-0.1*x - 0.2)/(x + 2)', '-0.100000000000000'],
+    ['(x**2-1.0)/(x-1)', '1.0*x + 1.0'],
+    ['(1.5*x*y+3*y)/(x+2)', '1.5*y'],
+    ['x/(2.5*x+1)', '1.0*x/(2.5*x + 1.0)'],
+    ['(-x+0.5)/(-2*x+1)', '0.500000000000000'],
+    ['(x+0.3)/(x**2 + 0.6*x + 0.09)', '1.0/(1.0*x + 0.3)'],
+    ['(x-0.1)/(x**2-0.2*x+0.01)', '1.0/(1.0*x - 0.1)'],
+    ['(x**2+0.5)/(2*x)', '0.5*(1.0*x**2 + 0.5)/x'],
+    ['(0.1*x+0.3)/(0.2*x)', '1.0*(0.5*x + 1.5)/x'],
+    ['(0.8474337369372327*x+0.8474337369372327)/(x+1)', '0.8474337369372327'],
+  ])('cancel(%s) over RR', (src, want) => {
+    expect(String(cancel(P(src)))).toBe(want);
+  });
+  it('a 53-bit Float whose nearer continued-fraction bound is the larger-denominator one', () => {
+    // SymPy: v = Float(0.8474337369372327); cancel((v*x + v)/(x + 1)) = 0.847433736937233
+    const v = new Float(0.8474337369372327);
+    expect(String(cancel(mul(add(mul(v, x), v), pow(add(x, 1), -1))))).toBe('0.847433736937233');
+  });
+  it('Float and I coefficients (SymPy CC) are left as they are', () => {
+    // SymPy cancels over CC: (1.0*I*x + 1.0)/(1.0*x + 2.0)
+    expect(String(cancel(P('(1.0*I*x+1)/(x+2)')))).toBe('(1.0*I*x + 1)/(x + 2)');
   });
 });

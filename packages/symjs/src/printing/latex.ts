@@ -14,7 +14,8 @@ import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey } from './sortke
 import { PREC, declaredPrecedence, floatString, precedence as strPrecedence, startsNegative, str } from './str';
 import { BoolOp } from '../core/boolalg';
 import { Concrete } from '../core/concrete';
-import { setArgsOrdered, setClass } from './sets';
+import { DOTS, rangePrintset, setArgsOrdered, setClass } from './sets';
+import { hasSymbolicBounds, isSequence, sequencePrintset } from './sequences';
 import { at } from '../core/guard';
 
 // ---------------------------------------------------------------------------
@@ -183,7 +184,103 @@ const ONE_ARG_HEADS: Partial<Record<string, string>> = {
 };
 const NUMBER_POLYNOMIALS: Partial<Record<string, string>> = { bernoulli: 'B', genocchi: 'G', bell: 'B', fibonacci: 'F', tribonacci: 'T' };
 const PAREN_POWER_HEADS: Partial<Record<string, string>> = { totient: '\\phi', reduced_totient: '\\lambda', primenu: '\\nu', primeomega: '\\Omega' };
+const ORTHOPOLY_LETTERS: Record<'jacobi' | 'gegenbauer' | 'chebyshevt' | 'chebyshevu' | 'legendre' | 'assoc_legendre' | 'hermite' | 'laguerre' | 'assoc_laguerre', string> = {
+  jacobi: 'P',
+  gegenbauer: 'C',
+  chebyshevt: 'T',
+  chebyshevu: 'U',
+  legendre: 'P',
+  assoc_legendre: 'P',
+  hermite: 'H',
+  laguerre: 'L',
+  assoc_laguerre: 'L',
+};
 const BESSEL_SYMBOLS: Partial<Record<string, string>> = { besselj: 'J', bessely: 'Y', besseli: 'I', besselk: 'K', jn: 'j', yn: 'y' };
+
+/** SymPy `_hprint_vec` of the LaTeX printer. */
+const hprintVec = (v: readonly Expr[]): string => v.map(latex).join(', ');
+
+/** The members of a meijerg node the printers use (functions/ is a higher layer). */
+interface MeijerLike {
+  readonly argument: Expr;
+  readonly an: readonly Expr[];
+  readonly aother: readonly Expr[];
+  readonly bm: readonly Expr[];
+  readonly bother: readonly Expr[];
+}
+const isMeijer = (e: Expr): e is ExtensionExpr & MeijerLike => e instanceof ExtensionExpr && e.name === 'meijerg' && 'an' in e && 'bother' in e;
+
+/**
+ * SymPy's printers of the functions that are function nodes here and
+ * defined functions or extension nodes elsewhere (_print_SingularityFunction,
+ * _print_Heaviside, _print_DiracDelta, _print_polylog, _print_lerchphi,
+ * _print_elliptic_*, _print_betainc, _print_dirichlet_eta, _print_stieltjes),
+ * optionally raised to a power; undefined for the other names.
+ */
+function printNamedFunction(name: string, args: readonly Expr[], exp?: string): string | undefined {
+  const sup = exp !== undefined ? `^{${exp}}` : '';
+  const l = args.map(latex);
+  const [a, b, c] = [l[0] ?? '', l[1] ?? '', l[2] ?? ''];
+  switch (name) {
+    case 'SingularityFunction': {
+      const shift = latex(impl.add(at(args, 0), impl.mul(-1, at(args, 1))));
+      const power = latex(at(args, 2));
+      return exp === undefined ? `{\\left\\langle ${shift} \\right\\rangle}^{${power}}` : `{\\left({\\langle ${shift} \\rangle}^{${power}}\\right)}^{${exp}}`;
+    }
+    case 'Heaviside': {
+      // SymPy Heaviside.pargs: the arguments without the default value 1/2 at 0
+      const h0 = args[1];
+      const pargs = h0 instanceof Rational && h0.p === 1n && h0.q === 2n ? [a] : l;
+      return doExponent(`\\theta\\left(${pargs.join(', ')}\\right)`, exp);
+    }
+    case 'DiracDelta': {
+      const k = args[1];
+      const tex = k === undefined || (k instanceof Rational && k.isZero) ? `\\delta\\left(${a}\\right)` : `\\delta^{\\left( ${b} \\right)}\\left( ${a} \\right)`;
+      return doExponent(tex, exp);
+    }
+    case 'polylog':
+      return `\\operatorname{Li}_{${a}}${sup}\\left(${b}\\right)`;
+    case 'lerchphi':
+      return `\\Phi${sup}\\left(${a}, ${b}, ${c}\\right)`;
+    case 'elliptic_k':
+      return `K${sup}\\left(${a}\\right)`;
+    case 'elliptic_f':
+      return `F${sup}\\left(${a}\\middle| ${b}\\right)`;
+    case 'elliptic_e':
+      return `E${sup}${args.length === 2 ? `\\left(${a}\\middle| ${b}\\right)` : `\\left(${a}\\right)`}`;
+    case 'elliptic_pi':
+      return `\\Pi${sup}${args.length === 3 ? `\\left(${a}; ${b}\\middle| ${c}\\right)` : `\\left(${a}\\middle| ${b}\\right)`}`;
+    case 'betainc':
+    case 'betainc_regularized':
+      return `\\operatorname{${name === 'betainc' ? 'B' : 'I'}}_{(${c}, ${latex(at(args, 3))})}${sup}\\left(${a}, ${b}\\right)`;
+    case 'dirichlet_eta':
+      // SymPy prints only the first argument, \eta\left(s\right) also for dirichlet_eta(s, a): the
+      // second one is kept here, as the two functions differ
+      return `\\eta${sup}\\left(${l.join(', ')}\\right)`;
+    case 'stieltjes': {
+      const tex = args.length === 2 ? `_{${a}}\\left(${b}\\right)` : `_{${a}}`;
+      return `\\gamma${tex}${sup}`;
+    }
+    default:
+      return undefined;
+  }
+}
+
+/** SymPy `_print_meijerg`. */
+function printMeijer(e: MeijerLike, exp?: string): string {
+  const tex = `{G_{${e.an.length + e.aother.length}, ${e.bm.length + e.bother.length}}^{${e.bm.length}, ${e.an.length}}\\left(\\begin{matrix} ${hprintVec(e.an)} & ${hprintVec(e.aother)} \\\\${hprintVec(e.bm)} & ${hprintVec(e.bother)} \\end{matrix} \\middle| {${latex(e.argument)}} \\right)}`;
+  return exp !== undefined ? `{${tex}}^{${exp}}` : tex;
+}
+
+/** SymPy `_print_SeqFormula` (and SeqPer, SeqAdd, SeqMul). */
+function printSequence(e: ExtensionExpr & Parameters<typeof sequencePrintset>[0]): string {
+  if (hasSymbolicBounds(e)) {
+    // only a SeqFormula has a formula to print (SymPy fails for the others)
+    if (e.name !== 'SeqFormula') return e.printLatex(latex);
+    return `\\left\\{${latex(at(e.args, 3))}\\right\\}_{${latex(at(e.args, 0))}=${latex(e.start)}}^{${latex(e.stop)}}`;
+  }
+  return `\\left[${sequencePrintset(e).map((t) => (t === DOTS ? '\\ldots' : latex(t))).join(', ')}\\right]`;
+}
 
 /** Print a function, optionally raised to a power (SymPy prints sin(x)**2 as \sin^{2}...). */
 function printFunction(e: Fn, exp?: string): string {
@@ -201,6 +298,8 @@ function printFunction(e: Fn, exp?: string): string {
     // SymPy _hprint_BesselBase: J^{exp}_{\nu}\left(z\right)
     return `${withExponent(bessel, exp)}_{${a}}\\left(${latex(at(args, 1))}\\right)`;
   }
+  const named = printNamedFunction(e.name, args, exp);
+  if (named !== undefined) return named;
   switch (e.name) {
     case 'abs':
       return withExponent(`\\left|{${a}}\\right|`, exp);
@@ -272,6 +371,43 @@ function printFunction(e: Fn, exp?: string): string {
       return doExponent(`e^{${a}}`, exp);
     case 'polar_lift':
       return `\\operatorname{polar\\_lift}${withExponent('', exp)}{\\left(${a} \\right)}`;
+    case 'jacobi':
+    case 'gegenbauer':
+    case 'chebyshevt':
+    case 'chebyshevu':
+    case 'legendre':
+    case 'assoc_legendre':
+    case 'hermite':
+    case 'laguerre':
+    case 'assoc_laguerre': {
+      // SymPy _print_jacobi, _print_gegenbauer, ...: the letter, the degree, the parameters
+      const letter = ORTHOPOLY_LETTERS[e.name];
+      const params = args.slice(1, -1).map(latex);
+      const sup = params.length ? `^{\\left(${params.join(',')}\\right)}` : '';
+      const tex = `${letter}_{${a}}${sup}\\left(${latex(at(args, args.length - 1))}\\right)`;
+      return exp !== undefined ? `\\left(${tex}\\right)^{${exp}}` : tex;
+    }
+    case 'hankel1':
+    case 'hankel2':
+    case 'hn1':
+    case 'hn2': {
+      // SymPy _hprint_BesselBase with a symbol that has a superscript: the power wraps the call
+      const tex = `${e.name.startsWith('hankel') ? 'H' : 'h'}^{(${e.name.slice(-1)})}_{${a}}\\left(${latex(at(args, 1))}\\right)`;
+      return exp !== undefined ? `\\left(${tex}\\right)^{${exp}}` : tex;
+    }
+    case 'Ynm':
+    case 'Znm': {
+      const tex = `${e.name.charAt(0)}_{${a}}^{${latex(at(args, 1))}}\\left(${latex(at(args, 2))},${latex(at(args, 3))}\\right)`;
+      return exp !== undefined ? `\\left(${tex}\\right)^{${exp}}` : tex;
+    }
+    case 'mathieuc':
+    case 'mathieus':
+    case 'mathieucprime':
+    case 'mathieusprime': {
+      // SymPy __print_mathieu_functions: the exponent follows the arguments
+      const sup = e.name.endsWith('prime') ? '^{\\prime}' : '';
+      return `${e.name.charAt(7).toUpperCase()}${sup}\\left(${args.map(latex).join(', ')}\\right)${exp !== undefined ? `^{${exp}}` : ''}`;
+    }
     case 'airyai':
     case 'airybi':
     case 'airyaiprime':
@@ -371,6 +507,13 @@ function printPow(e: Pow): string {
     if (x.p < 0n && b.isCommutative) return printMulLike(e);
   }
   if (b instanceof Fn) return printFunction(b, latex(x));
+  if (b instanceof ExtensionExpr) {
+    const named = printNamedFunction(b.name, b.args, latex(x));
+    if (named !== undefined) return named;
+    if (isMeijer(b)) return printMeijer(b, latex(x));
+    // SymPy _print_hyper: the braced form raised to the power
+    if (b.name === 'hyper') return `{${latex(b)}}^{${latex(x)}}`;
+  }
   if (b instanceof UndefFn) return `${parenthesizeSuper(hprintFunction(b.name))}^{${latex(x)}}{\\left(${b.args.map(latex).join(',')} \\right)}`;
   let base = parenthesize(b, PREC.POW);
   if (b instanceof Sym) base = parenthesizeSuper(base);
@@ -403,6 +546,13 @@ function floatLatex(f: Float): string {
 }
 
 export function latex(e: Expr): string {
+  if (e instanceof ExtensionExpr) {
+    const named = printNamedFunction(e.name, e.args);
+    if (named !== undefined) return named;
+    if (isMeijer(e)) return printMeijer(e);
+    if (isSequence(e)) return printSequence(e);
+    if (e.name === 'EmptySequence') return '\\text{EmptySequence}';
+  }
   if (e instanceof ExtensionExpr || e instanceof BoolOp) return e.printLatex(latex);
   if (e instanceof Rational) {
     if (e.q === 1n) return `${e.p}`;
@@ -496,12 +646,13 @@ const NAMED_SETS: Partial<Record<string, string>> = {
   EmptySet: '\\emptyset',
   UniversalSet: '\\mathbb{U}',
   Reals: '\\mathbb{R}',
+  Rationals: '\\mathbb{Q}',
   Integers: '\\mathbb{Z}',
   Naturals: '\\mathbb{N}',
   Naturals0: '\\mathbb{N}_0',
   Complexes: '\\mathbb{C}',
 };
-const SET_OPERATORS: Partial<Record<string, string>> = { Union: ' \\cup ', Intersection: ' \\cap ', Complement: ' \\setminus ' };
+const SET_OPERATORS: Partial<Record<string, string>> = { Union: ' \\cup ', Intersection: ' \\cap ', Complement: ' \\setminus ', SymmetricDifference: ' \\triangle ' };
 
 /** SymPy's set printers (_print_Interval, _print_FiniteSet, _print_Union, ...). */
 function printSet(e: Expr, cls: string): string {
@@ -510,7 +661,7 @@ function printSet(e: Expr, cls: string): string {
   const op = SET_OPERATORS[cls];
   if (op !== undefined) {
     // set operations bind looser than any argument but another set operation
-    const args = cls === 'Complement' ? e.args : setArgsOrdered(e.args);
+    const args = cls === 'Complement' || cls === 'SymmetricDifference' ? e.args : setArgsOrdered(e.args);
     return args.map((a) => (SET_OPERATORS[String(setClass(a))] !== undefined ? addParens(latex(a)) : latex(a))).join(op);
   }
   switch (cls) {
@@ -520,6 +671,8 @@ function printSet(e: Expr, cls: string): string {
       const open = (x: Expr) => x instanceof BoolAtom && x.value;
       return `\\left${open(lo) ? '(' : '['}${latex(a)}, ${latex(b)}\\right${open(ro) ? ')' : ']'}`;
     }
+    case 'Range':
+      return `\\left\\{${rangePrintset(e, 3).map((t) => (t === DOTS ? '\\ldots' : latex(t))).join(', ')}\\right\\}`;
     case 'FiniteSet':
       return `\\left\\{${[...e.args].sort((u, v) => compareKeys(sortKey(u), sortKey(v))).map(latex).join(', ')}\\right\\}`;
     case 'ImageSet': {
@@ -532,7 +685,8 @@ function printSet(e: Expr, cls: string): string {
       return `\\left\\{${latex(v)}\\; \\middle|\\; ${latex(v)} \\in ${latex(base)} \\wedge ${latex(cond)} \\right\\}`;
     }
     default:
-      return e.key;
+      // the other sets print themselves (ProductSet, PowerSet, ComplexRegion, ...)
+      return 'printLatex' in e && typeof e.printLatex === 'function' ? String(e.printLatex(latex)) : e.key;
   }
 }
 

@@ -81,6 +81,27 @@ describe('canonicalization', () => {
     expect(pow(E, add(x, mul(I, pi))).toString()).toBe('-exp(x)');
   });
 
+  it('reduces exp(c*I*pi) for a rational c into (-pi, pi] (SymPy exp.eval)', () => {
+    const e = (p: number, q: number) => exp(mul(rational(p, q), I, pi)).toString();
+    expect(e(4, 3)).toBe('exp(-2*I*pi/3)');
+    expect(e(10, 3)).toBe('exp(-2*I*pi/3)');
+    expect(e(-7, 6)).toBe('exp(5*I*pi/6)');
+    expect(e(5, 4)).toBe('exp(-3*I*pi/4)');
+    expect(e(-4, 3)).toBe('exp(2*I*pi/3)');
+    expect(e(1, 3)).toBe('exp(I*pi/3)');
+    // the reduction applies to each term of a sum, and to products of such exponentials
+    expect(exp(add(x, mul(rational(4, 3), I, pi))).toString()).toBe('exp(x - 2*I*pi/3)');
+    expect(mul(exp(mul(rational(4, 3), I, pi)), exp(mul(rational(2, 3), I, pi))).toString()).toBe('1');
+    expect(pow(exp(mul(rational(4, 3), I, pi)), 3).toString()).toBe('1');
+    // SymPy: x**8*x**n, x**2/x**n and (1/2)**s stay as they are (Mul.flatten gathers exponents by their
+    // non-numeric part; Rational._eval_power keeps a symbolic power of 1/2)
+    const n = new Sym('n');
+    expect(mul(pow(x, 8), pow(x, n)).toString()).toBe('x**8*x**n');
+    expect(mul(pow(x, 2), pow(x, mul(-1, n))).toString()).toBe('x**2/x**n');
+    expect(mul(pow(x, mul(2, n)), pow(x, n)).toString()).toBe('x**(3*n)');
+    expect(pow(rational(1, 2), n).toString()).toBe('(1/2)**n');
+  });
+
   it('distributes numeric coefficients', () => {
     expect(mul(2, add(x, 1)).toString()).toBe('2*x + 2');
   });
@@ -138,6 +159,14 @@ describe('numeric radicals (SymPy Integer._eval_power, Mul.flatten)', () => {
 describe('sympify', () => {
   it('rejects a value that is not a number', () => {
     expect(() => sympify('x' as unknown as number)).toThrow(SympifyError);
+  });
+});
+
+describe('sums of complex infinities', () => {
+  it('zoo + zoo is nan (SymPy)', () => {
+    expect(add(zoo, zoo)).toBe(nan);
+    expect(add(zoo, mul(-1, zoo), symbol('x'))).toBe(nan);
+    expect(add(zoo, 1)).toBe(zoo);
   });
 });
 

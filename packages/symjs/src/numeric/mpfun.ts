@@ -102,13 +102,12 @@ export function cbrt(x: Mpf, prec: number): Mpf {
 
 /** x**(1/n) for x > 0 via an integer root. */
 export function nthRoot(x: Mpf, n: bigint, prec: number): Mpf {
-  const N = Number(n);
-  let shift = Math.max(0, N * (prec + 4) - F.bitLength(x.man));
-  while ((((x.exp - shift) % N) + N) % N !== 0) shift++;
-  const m = x.man << BigInt(shift);
+  let shift = BigInt(Math.max(0, Number(n) * (prec + 4) - F.bitLength(x.man)));
+  while ((((x.exp - shift) % n) + n) % n !== 0n) shift++;
+  const m = x.man << shift;
   const r = iroot(m, n);
   const exact = r ** n === m;
-  return F.normalize(r, (x.exp - shift) / N, prec, !exact);
+  return F.normalize(r, (x.exp - shift) / n, prec, !exact);
 }
 
 /**
@@ -131,16 +130,19 @@ function iroot(m: bigint, n: bigint): bigint {
 // Real elementary functions
 // ---------------------------------------------------------------------------
 
+/** The largest mag(x) for which exp(x) is computed (|x| < 2**4096). */
+const MAX_EXP_MAG = 4096;
+
 export function exp(x: Mpf, prec: number): Mpf {
   if (F.isZero(x)) return ONE;
   const mg = F.mag(x);
-  // the binary exponent of the result, about x/log(2), must stay a safe integer (Mpf.exp is a
-  // number; mpmath's exponents are unbounded integers)
-  if (mg > 52) throw new RangeError('exp: argument too large');
+  // the working precision grows with mag(x) as in mpmath (the result's exponent is a bigint);
+  // beyond 2**MAX_EXP_MAG the result has more exponent digits than can be computed in reasonable time
+  if (mg > MAX_EXP_MAG) throw new RangeError('exp: argument too large');
   const wp = prec + 20 + Math.max(0, mg);
   // n = round(x / ln2)
   const ln2 = mpLn2(wp + 10);
-  const n = F.floor(F.add(F.div(x, ln2, 64 + Math.max(0, mg)), { man: 1n, exp: -1 }));
+  const n = F.floor(F.add(F.div(x, ln2, 64 + Math.max(0, mg)), { man: 1n, exp: -1n }));
   let r = F.sub(x, F.mulInt(ln2, n), wp);
   // further reduce by 2**-s
   const s = Math.max(0, Math.floor(Math.sqrt(wp)) + 4 + Math.min(0, F.mag(r)) * 0);
@@ -157,21 +159,21 @@ export function exp(x: Mpf, prec: number): Mpf {
     sum += term;
   }
   for (let i = 0; i < s; i++) sum = (sum * sum) >> BigInt(wp2);
-  return F.normalize(sum, -wp2 + Number(n), prec);
+  return F.normalize(sum, n - BigInt(wp2), prec);
 }
 
 export function log(x: Mpf, prec: number): Mpf {
   if (x.man <= 0n) throw new RangeError('log of non-positive');
   // x = m * 2**k with m in [1/sqrt2, sqrt2)
-  let k = F.mag(x) - 1;
+  let k = F.magExact(x) - 1n;
   let m = F.ldexp(x, -k);
   if (F.toNumber(m) > Math.SQRT2) {
     m = F.ldexp(m, -1);
-    k += 1;
+    k += 1n;
   }
-  if (F.cmp(m, ONE) === 0) return k === 0 ? ZERO : F.round(F.mulInt(mpLn2(prec + 10), BigInt(k)), prec);
+  if (F.cmp(m, ONE) === 0) return k === 0n ? ZERO : F.round(F.mulInt(mpLn2(prec + 10), k), prec);
   // a small integer: the logarithms of its prime factors by binary splitting (mpconst.ts)
-  if (x.exp >= 0 && F.bitLength(x.man) + x.exp <= 16) return fromFx(lnIntFixed(x.man << BigInt(x.exp), prec + 10), prec + 10, prec);
+  if (x.exp >= 0n && F.mag(x) <= 16) return fromFx(lnIntFixed(x.man << x.exp, prec + 10), prec + 10, prec);
   const wp0 = prec + 20;
   const d = F.sub(m, ONE);
   const wp = wp0 + Math.max(0, -F.mag(d));
@@ -186,8 +188,8 @@ export function log(x: Mpf, prec: number): Mpf {
     sum = F.add(sum, t, wp);
   }
   const lm = F.ldexp(sum, 1);
-  if (k === 0) return F.round(lm, prec);
-  return F.add(F.mulInt(mpLn2(wp + 10), BigInt(k)), lm, prec);
+  if (k === 0n) return F.round(lm, prec);
+  return F.add(F.mulInt(mpLn2(wp + 10), k), lm, prec);
 }
 
 /** Reduce x modulo pi/2: returns [r, n mod 4] with x = r + n*pi/2. */
@@ -195,9 +197,9 @@ function reduceHalfPi(x: Mpf, wp: number): [Mpf, number] {
   const mg = Math.max(0, F.mag(x));
   const p = wp + mg + 10;
   const halfPi = F.ldexp(mpPi(p), -1);
-  if (mg <= 0 && F.cmp(F.abs(x), { man: 3n, exp: -2 }) <= 0) return [F.round(x, wp), 0];
+  if (mg <= 0 && F.cmp(F.abs(x), { man: 3n, exp: -2n }) <= 0) return [F.round(x, wp), 0];
   const q = F.div(x, halfPi, mg + 20);
-  const n = F.floor(F.add(q, { man: 1n, exp: -1 }));
+  const n = F.floor(F.add(q, { man: 1n, exp: -1n }));
   const r = F.sub(x, F.mulInt(halfPi, n), p);
   return [F.round(r, wp), Number(((n % 4n) + 4n) % 4n)];
 }

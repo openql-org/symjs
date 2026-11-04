@@ -541,6 +541,10 @@ describe('other methods', () => {
   it('isConstant is false when the derivative is not known', () => {
     expect(isConstant(abs(x))).toBe(false);
   });
+  it('isConstant is false when the derivative cannot be taken', () => {
+    // diff of a product whose limits depend on x is not implemented; SymPy: Product(k, (k, 1, x)).is_constant() = False
+    expect(isConstant(E('Product(k, (k, 1, x))'))).toBe(false);
+  });
   it('asNumerDenom of a sum', () => {
     expect(pairStr(asNumerDenom(add(mul(x, rational(1, 2)), mul(y, rational(1, 3)))))).toBe('(3*x + 2*y, 6)');
   });

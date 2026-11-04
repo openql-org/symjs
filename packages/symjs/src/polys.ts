@@ -29,8 +29,11 @@ export {
 } from './polys/sympoly';
 
 export { rootsDict as roots } from './polys/poly';
-export { sqfNorm, minimalPolynomial } from './polys/sympoly';
+export { sqfNorm } from './polys/sympoly';
+export { minimalPolynomial } from './polys/numberfields';
+export type { MinimalPolynomialOptions } from './polys/numberfields';
 export { Monomial } from './polys/monomial';
+export { ZZ, QQ, RR, Domain, PolynomialRing, FractionField, GlobalPolynomialRing, OldFractionField, DMP, DMF, CoercionFailed } from './polys/domains';
 export { polyFromExpr, parallelPolyFromExpr, gff, type PolyOptions } from './polys/fromexpr';
 export { RootSum, RootSumNode, apartList, assemblePartfracList } from './polys/rootsum';
 export type { PartfracTerm } from './polys/rootsum';
@@ -57,6 +60,25 @@ export {
   reduced,
 } from './polys/groebner';
 export type { MonomialOrder } from './polys/groebner';
+export {
+  jacobiPoly,
+  gegenbauerPoly,
+  chebyshevtPoly,
+  chebyshevuPoly,
+  hermitePoly,
+  hermiteProbPoly,
+  legendrePoly,
+  laguerrePoly,
+} from './polys/orthopolys';
+export type { NamedPolyOptions, NamedPolyResult } from './polys/orthopolys';
+export {
+  swinnertonDyerPoly,
+  cyclotomicPoly,
+  symmetricPoly,
+  randomPoly,
+  interpolatingPoly,
+} from './polys/specialpolys';
+export type { RandomPolyOptions } from './polys/specialpolys';
 
 // ---- deprecated names (kept during 0.x, removed in 1.0; see docs/api-policy.md) ----
 

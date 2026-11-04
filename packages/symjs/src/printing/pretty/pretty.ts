@@ -25,6 +25,7 @@ import {
   BoolAtom,
   Constant,
   Derivative,
+  Dummy,
   ExtensionExpr,
   Float,
   Fn,
@@ -51,10 +52,12 @@ import { Concrete } from '../../core/concrete';
 import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey, sympyFunctionName } from '../sortkey';
 import type { Key } from '../sortkey';
 import { PREC, floatString, precedence, str } from '../str';
-import { setArgsOrdered, setClass } from '../sets';
+import { DOTS, rangePrintset, setArgsOrdered, setClass } from '../sets';
+import { hasSymbolicBounds, isSequence, sequencePrintset } from '../sequences';
 import type { PictLike } from './stringpict';
 import { Binding, LINE, PrettyForm, StringPict } from './stringpict';
 import {
+  annotated,
   centerPad,
   greekUnicode,
   hobj,
@@ -178,6 +181,26 @@ function isBooleanNode(e: Expr): boolean {
   return e instanceof ExtensionExpr && ['Nand', 'Nor', 'Xnor', 'ITE', 'Implies', 'Equivalent'].includes(e.name);
 }
 const isNotNode = (e: Expr): boolean => e instanceof BoolOp && e.className === 'Not';
+
+/** The members of hyper and meijerg the printer uses (functions/ is a higher layer). */
+interface HyperLike {
+  readonly argument: Expr;
+  readonly ap: readonly Expr[];
+  readonly bq: readonly Expr[];
+}
+interface MeijerLike {
+  readonly argument: Expr;
+  readonly an: readonly Expr[];
+  readonly aother: readonly Expr[];
+  readonly bm: readonly Expr[];
+  readonly bother: readonly Expr[];
+}
+interface PermutationLike {
+  readonly cyclicForm: readonly (readonly number[])[];
+}
+const isPermutationLike = (e: ExtensionExpr): e is ExtensionExpr & PermutationLike => e.name === 'Permutation' && 'cyclicForm' in e;
+const isHyperLike = (e: ExtensionExpr): e is ExtensionExpr & HyperLike => e.name === 'hyper' && 'ap' in e && 'bq' in e;
+const isMeijerLike = (e: ExtensionExpr): e is ExtensionExpr & MeijerLike => e.name === 'meijerg' && 'an' in e && 'bother' in e;
 
 function isMatrixLike(x: unknown): x is MatrixLike {
   if (typeof x !== 'object' || x === null) return false;
@@ -528,6 +551,13 @@ export class PrettyPrinter {
   private printNamedFunction(name0: string, args: readonly Expr[]): PrettyForm | undefined {
     const u = this.useUnicode;
     switch (name0) {
+      case 'SingularityFunction': {
+        // SymPy _print_SingularityFunction: <x - a> raised to the exponent
+        const shift = this.print(impl.add(at(args, 0), impl.mul(-1, at(args, 1))));
+        const n = this.print(at(args, 2));
+        const base = u ? PrettyForm.of(PrettyForm.of(new PrettyForm('<').right(shift)).right('>')) : this.printSeq([shift], '<', '>', ' ');
+        return base.pow(n);
+      }
       case 'Heaviside': {
         const name = u ? getOrThrow(greekUnicode, 'theta') : 'Heaviside';
         if (args.length === 1 || isRat(at(args, 1), 1n, 2n)) {
@@ -1070,6 +1100,24 @@ export class PrettyPrinter {
       }
       case 'FiniteSet':
         return this.printSeq([...e.args].sort(byKey), '{', '}', ', ');
+      case 'Range':
+        return this.printSeq(rangePrintset(e, 4).map((t) => (t === DOTS ? (u ? defined(prettyAtom('Dots')) : '...') : t)), '{', '}', ', ');
+      case 'ProductSet': {
+        // SymPy _print_ProductSet: a power when every factor is the same set
+        const sets = e.args;
+        if (sets.every((x) => x.key === at(sets, 0).key)) return this.print(at(sets, 0)).pow(this.print(impl.sympify(sets.length)));
+        return this.printSeq(sets, undefined, undefined, ` ${u ? defined(prettyAtom('Multiplication')) : 'x'} `, (x) => isSet(x, 'Union', 'Intersection', 'ProductSet'));
+      }
+      case 'CartesianComplexRegion':
+      case 'PolarComplexRegion': {
+        // SymPy _print_ComplexRegion: {x + y*I | x, y in sets} or {r*(I*sin(theta) + cos(theta)) | r, theta in sets}
+        const polar = cls === 'PolarComplexRegion';
+        const [a, b] = polar ? [new Dummy('r'), new Dummy('theta')] : [new Dummy('x'), new Dummy('y')];
+        const expr = polar ? impl.mul(a, impl.add(impl.mul(S.I, new Fn('sin', [b])), new Fn('cos', [b]))) : impl.add(a, impl.mul(b, S.I));
+        const inn = u ? defined(prettyAtom('SmallElementOf')) : 'in';
+        const C = this.printSeq([this.printSeq([a, b]), inn, this.print(at(e.args, 0))], undefined, undefined, ' ');
+        return this.hprintVseparator(this.print(expr), C, '{', '}', ' ', true);
+      }
       case 'Union':
         return this.printSeq(setArgsOrdered(e.args), undefined, undefined, ` ${defined(prettyAtom('Union', 'U'))} `, (s) => isSet(s, 'ProductSet', 'Intersection', 'Complement'));
       case 'Intersection':
@@ -1150,13 +1198,107 @@ export class PrettyPrinter {
     return D ?? new PrettyForm('');
   }
 
+  /**
+   * SymPy `_print_Permutation` with perm_cyclic=True (`_print_Cycle` of
+   * Cycle(p)): the cycles without the singletons, () for an identity.
+   */
+  private printPermutation(e: PermutationLike): PrettyForm {
+    if (e.cyclicForm.length === 0) return PrettyForm.of(new StringPict('').parens());
+    return new PrettyForm(e.cyclicForm.map((c) => `(${c.join(' ')})`).join(''));
+  }
+
+  /** SymPy `_hprint_vec`. */
+  private hprintVec(v: readonly Expr[]): PrettyForm {
+    let D: PrettyForm | undefined;
+    for (const a of v) D = D === undefined ? this.print(a) : PrettyForm.of(PrettyForm.of(D.right(', ')).right(this.print(a)));
+    return D ?? new PrettyForm(' ');
+  }
+
+  /** The parameter table of hyper or meijerg next to |z, in parentheses (SymPy _print_hyper, _print_meijerg). */
+  private parameterTable(D0: PrettyForm, z: Expr): PrettyForm {
+    let D = D0;
+    let P = this.print(z);
+    P.baseline = Math.floor(P.height() / 2);
+    D.baseline = Math.floor(D.height() / 2);
+    P = PrettyForm.of(P.left(' '));
+    D = PrettyForm.of(D.right(' '));
+    D = this.hprintVseparator(D, P, '', '', '', false);
+    return PrettyForm.of(D.parens('(', ')'));
+  }
+
+  /** The F or G of hyper or meijerg, as tall as the table D. */
+  private annotatedLetter(letter: 'F' | 'G', D: PrettyForm): [PrettyForm, number, number, number] {
+    const above = Math.floor(D.height() / 2) - 1;
+    const below = D.height() - above - 1;
+    const [sz, t, b, add, img] = annotated(letter);
+    const F = new PrettyForm('\n'.repeat(Math.max(0, above - t)) + img + '\n'.repeat(Math.max(0, below - b)), above + sz);
+    return [F, above, sz, add];
+  }
+
+  /** SymPy `_print_hyper`. */
+  private printHyper(e: HyperLike): PrettyForm {
+    let D = PrettyForm.of(PrettyForm.of(this.hprintVec(e.ap).below(' ')).below(this.hprintVec(e.bq)));
+    D = this.parameterTable(D, e.argument);
+    const [F0, above, sz] = this.annotatedLetter('F', D);
+    let F = PrettyForm.of(F0.left(this.print(impl.sympify(e.ap.length))));
+    F = PrettyForm.of(F.right(this.print(impl.sympify(e.bq.length))));
+    F.baseline = above + Math.floor((sz + 1) / 2);
+    return PrettyForm.of(F.right(' ', D));
+  }
+
+  /** SymPy `_print_meijerg`. */
+  private printMeijer(e: MeijerLike): PrettyForm {
+    const cells = [[e.an, e.aother].map((v) => this.hprintVec(v)), [e.bm, e.bother].map((v) => this.hprintVec(v))];
+    for (let i = 0; i < 2; i++) {
+      const maxw = Math.max(at(at(cells, 0), i).width(), at(at(cells, 1), i).width());
+      for (let j = 0; j < 2; j++) {
+        const s = at(at(cells, j), i);
+        const left = Math.floor((maxw - s.width()) / 2);
+        const right = maxw - left - s.width();
+        at(cells, j)[i] = PrettyForm.of(PrettyForm.of(s.left(' '.repeat(left))).right(' '.repeat(right)));
+      }
+    }
+    const row = (j: number) => PrettyForm.of(at(at(cells, j), 0).right('  ', at(at(cells, j), 1)));
+    let D = PrettyForm.of(PrettyForm.of(row(0).below(' ')).below(row(1)));
+    D = this.parameterTable(D, e.argument);
+    const [F0, above, , add] = this.annotatedLetter('G', D);
+    const adjust = (p1: PrettyForm, p2: PrettyForm): [PrettyForm, PrettyForm] => {
+      const diff = p1.width() - p2.width();
+      if (diff === 0) return [p1, p2];
+      return diff > 0 ? [p1, PrettyForm.of(p2.left(' '.repeat(diff)))] : [PrettyForm.of(p1.left(' '.repeat(-diff))), p2];
+    };
+    const size = (v: readonly Expr[]) => this.print(impl.sympify(v.length));
+    const [pp, pm] = adjust(size([...e.an, ...e.aother]), size(e.bm));
+    const [pq, pn] = adjust(size([...e.bm, ...e.bother]), size(e.an));
+    // SymPy pads the upper counts with F.baseline - above - 2 lines, one for the three lines of G
+    const pu = PrettyForm.of(PrettyForm.of(pm.right(', ', pn)).below('\n'));
+    const pl = PrettyForm.of(pp.right(', ', pq));
+    const p = PrettyForm.of(pu.below(pl));
+    F0.baseline = above;
+    const F = PrettyForm.of(F0.right(p));
+    F.baseline = above + add;
+    return PrettyForm.of(F.right(' ', D));
+  }
+
   private printExtension(e: ExtensionExpr): PrettyForm {
     const hook = prettyHooks.extension.get(e.name);
     if (hook) return hook(e, this);
     const named = this.printNamedFunction(e.name, e.args);
     if (named !== undefined) return named;
     const u = this.useUnicode;
+    if (isSequence(e) && !hasSymbolicBounds(e)) {
+      // SymPy _print_SeqFormula (and SeqPer, SeqAdd, SeqMul): the first terms as a list
+      return this.printSeq(sequencePrintset(e).map((t) => (t === DOTS ? (u ? defined(prettyAtom('Dots')) : '...') : t)), '[', ']');
+    }
+    if (isPermutationLike(e)) return this.printPermutation(e);
+    if (isHyperLike(e)) return this.printHyper(e);
+    if (isMeijerLike(e)) return this.printMeijer(e);
     switch (e.name) {
+      case 'Contains': {
+        // SymPy _print_Contains: x ∈ S in unicode, the str form in ASCII
+        if (!u) return this.emptyPrinter(e);
+        return PrettyForm.of(StringPict.next(this.print(at(e.args, 0)), ` ${defined(prettyAtom('ElementOf'))} `, this.print(at(e.args, 1))), Binding.OPEN);
+      }
       case 'Mod': {
         let pform = this.print(at(e.args, 0));
         if (pform.binding > Binding.MUL) pform = PrettyForm.of(pform.parens());

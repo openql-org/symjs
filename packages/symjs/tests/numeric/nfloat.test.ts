@@ -42,7 +42,8 @@ describe('comp', () => {
     expect(comp(float(1.0), float('1.0000000000000001'))).toBe(true);
     expect(comp(float('3.14', 3), f('pi'))).toBe(true);
     expect(comp(float(f('pi'), 5), float('3.1416', 5))).toBe(true);
-    expect(comp(float(f('sqrt(2)'), 3), float(1.41))).toBe(true);
+    // (SymPy Float(sqrt(2), 3) raises TypeError: sqrt(2).n(3) is the Float of sqrt(2))
+    expect(comp(evalf(f('sqrt(2)'), 3), float(1.41))).toBe(true);
     expect(comp(float('2.0'), 2)).toBe(true);
     expect(comp(2, float('2.0'))).toBe(true);
   });

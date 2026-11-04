@@ -17,6 +17,8 @@ import { isReal } from '../core/assumptions';
 import { SymFunction } from '../core/undef';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
+import { diff } from '../calculus/diff';
+import { doit } from '../calculus/doit';
 import { Eq } from '../core/logic';
 import { cos, im, re, sin } from '../functions/elementary';
 import { expand } from '../simplify/expand';
@@ -226,4 +228,92 @@ function triangularSystem(eqs: readonly Expr[], funcs: readonly UndefFn[]): Expr
   };
   step(eqs, new Map(), 1);
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// checkodesol (port of SymPy sympy.solvers.ode.subscheck, BSD 3-Clause,
+// Copyright (c) SymPy Development Team): substitution of explicit solutions
+// ---------------------------------------------------------------------------
+
+const isList = (v: unknown): v is readonly ExprLike[] => Array.isArray(v);
+
+/** The subexpressions of e that satisfy pred. */
+function subexprs(e: Expr, pred: (x: Expr) => boolean): Expr[] {
+  const out = new Map<string, Expr>();
+  const go = (x: Expr) => {
+    if (pred(x)) out.set(x.key, x);
+    x.args.forEach(go);
+  };
+  go(e);
+  return [...out.values()];
+}
+
+/** func replaced by new in eq, with the derivatives of func evaluated (SymPy sub_func_doit). */
+function subFuncDoit(eq: Expr, func: Expr, value: Expr): Expr {
+  const reps: [Expr, Expr][] = [[func, value]];
+  for (const d of subexprs(eq, (x) => x instanceof Derivative)) {
+    const dv = cast(d, Derivative, 'derivative');
+    let r: Expr;
+    if (dv.expr.key === func.key) {
+      r = value;
+      for (const [v, n] of dv.variableCount) r = diff(r, v, n);
+    } else r = doit(xreplace(dv, [[func, value]]));
+    reps.push([d, r]);
+  }
+  return xreplace(eq, reps);
+}
+
+/** The residual eq made zero when possible (SymPy checksysodesol; sqrtdenest is not applied). */
+function reduceResidual(eq: Expr): Expr {
+  const ss = simplify(eq);
+  return isZero(ss) ? S.Zero : simplify(expand(ss, { force: true }));
+}
+
+/** The solution solved for its function: [func, rhs]. */
+function solvedFor(solIn: Expr, func?: Expr): [Expr, Expr] {
+  const fs = func ? [func] : subexprs(solIn, (x) => x instanceof UndefFn);
+  if (fs.length !== 1) throw new RangeError('solutions should have one function only');
+  const f = first(fs);
+  const [l, r] = solIn instanceof Rel && solIn.op === 'Eq' ? [solIn.lhs, solIn.rhs] : [f, solIn];
+  const [lhs, rhs] = r.key === f.key ? [r, l] : [l, r];
+  if (lhs.key !== f.key || rhs.has(f)) throw new NotImplementedError('checkodesol: only solutions solved for the function are supported');
+  return [f, rhs];
+}
+
+/**
+ * SymPy `checkodesol(ode, sol)`: substitutes the solution into the ODE and
+ * checks that the result is 0. For a system (arrays of equations and of
+ * solutions, one per function) the result is `[true, [0, 0, ...]]` when every
+ * equation vanishes, else `[false, residuals]`; for one equation
+ * `[true, 0]` or `[false, residual]`. Solutions must be explicit (solved for
+ * the function); SymPy's further methods for implicit solutions are not
+ * ported.
+ */
+export function checkodesol(ode: readonly ExprLike[], sol: ExprLike | readonly ExprLike[]): [boolean, Expr[]];
+export function checkodesol(ode: ExprLike, sol: ExprLike, func?: Expr): [boolean, Expr];
+export function checkodesol(ode: ExprLike | readonly ExprLike[], sol: ExprLike | readonly ExprLike[], func?: Expr): [boolean, Expr] | [boolean, Expr[]] {
+  const residual = (e: Expr): Expr => (e instanceof Rel && e.op === 'Eq' ? add(e.lhs, mul(-1, e.rhs)) : e);
+  if (isList(ode)) {
+    const eqs = ode.map((e) => residual(sympify(e)));
+    const sols = (isList(sol) ? sol : [sol]).map((s) => solvedFor(sympify(s)));
+    const funcs = new Map<string, Expr>();
+    for (const e of eqs) for (const d of subexprs(e, (x) => x instanceof Derivative)) for (const f of subexprs(d, (x) => x instanceof UndefFn)) funcs.set(f.key, f);
+    if (funcs.size !== new Set(sols.map(([f]) => f.key)).size) throw new RangeError('number of solutions provided does not match the number of equations');
+    const dict = new Map(sols.map(([f, r]) => [f.key, r]));
+    const checks = eqs.map((e) => {
+      let r = e;
+      for (const f of funcs.values()) r = subFuncDoit(r, f, getOrThrow(dict, f.key));
+      return reduceResidual(r);
+    });
+    return [checks.every(isZero), checks];
+  }
+  if (isList(sol)) throw new TypeError('checkodesol: one solution is expected for one equation');
+  const eq = residual(sympify(ode));
+  const s0 = sympify(sol);
+  // the function: the one differentiated in the equation, else the one in the solution
+  const inEq = new Map<string, Expr>();
+  for (const d of subexprs(eq, (e) => e instanceof Derivative)) for (const g of subexprs(d, (e) => e instanceof UndefFn)) inEq.set(g.key, g);
+  const [f, rhs] = solvedFor(s0, func ?? (inEq.size === 1 ? first([...inEq.values()]) : undefined));
+  const r = reduceResidual(subFuncDoit(eq, f, rhs));
+  return [isZero(r), r];
 }

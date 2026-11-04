@@ -6,6 +6,7 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
+import { NotImplementedError } from '../core/errors';
 import { Add, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { apart } from '../polys/partfrac';
 import { fraction } from '../simplify/rational';
@@ -46,7 +47,7 @@ function choose(n: number, k: number): Rational {
 }
 
 /** Closed form of sum_{k=a}^{b} f, or undefined. */
-function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
+function sumOne(f: Expr, k: Sym, a: Expr, b: Expr, mirrored = false): Expr | undefined {
   if (!f.has(k)) {
     if (isOo(b) || isNegOo(a)) return f instanceof Rational && f.isZero ? S.Zero : mul(f, S.Infinity);
     return expand(mul(f, add(b, mul(-1, a), 1)));
@@ -61,9 +62,10 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
     const r = sumOne(f, k, b, add(a, -1));
     return r === undefined ? undefined : mul(-1, r);
   }
-  // k -> -k turns sum_{k=-oo}^{b} into a sum ending at oo
-  if (isNegOo(a) && !isOo(b)) return sumOne(xreplace(f, [[k, mul(-1, k)]]), k, mul(-1, b), S.Infinity);
-  if (isOo(b)) {
+  // k -> -k turns sum_{k=-oo}^{b} into a sum ending at oo. SymPy's summation by residues takes only
+  // sums from a finite a to oo and over all integers, so it leaves Sum(1/(k**2 + 1), (k, -oo, 0)) unevaluated
+  if (isNegOo(a) && !isOo(b)) return sumOne(xreplace(f, [[k, mul(-1, k)]]), k, mul(-1, b), S.Infinity, true);
+  if (isOo(b) && !mirrored) {
     const r = evalSumResidue(f, k, a, b);
     if (r) return r;
   }
@@ -457,10 +459,11 @@ export function sumIsConvergent(c: Concrete): boolean | undefined {
   // Karr convention: Sum(f, (k, a, -oo)) = -Sum(f, (k, -oo, a - 1)) and Sum(f, (k, oo, b)) = -Sum(f, (k, b + 1, oo))
   if (isNegOo(b)) return sumIsConvergent(new Concrete(c.kind2, [f0, k0, b, add(a, -1)]));
   if (isOo(a) && !isOo(b)) return sumIsConvergent(new Concrete(c.kind2, [f0, k0, add(b, 1), S.Infinity]));
-  // a complex infinity or nan as a limit
+  // a complex infinity as a limit (SymPy ValueError); SymPy gives True for a nan limit, which is no sum
+  if (b instanceof Special && b.name === 'zoo') throw new RangeError('Non-real intervals are not supported');
   if (!isOo(b)) return undefined;
   // other symbols (Sum(x**k, ...)): the answer depends on them (SymPy raises NotImplementedError)
-  if ([...freeSymbols(f0)].some((v) => v.key !== k0.key)) return undefined;
+  if ([...freeSymbols(f0)].some((v) => v.key !== k0.key)) throw new NotImplementedError('convergence checking for more than one symbol containing series is not handled');
   const f = xreplace(f0, [[k0, k]]);
   // a product converges with the sum of the logarithms of its factors (SymPy), which needs factors -> 1
   if (c.kind2 === 'Product') {

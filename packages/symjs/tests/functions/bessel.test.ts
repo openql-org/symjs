@@ -23,6 +23,8 @@ const locals = {
   r: new sj.Sym('r', { real: true }),
   ng: new sj.Sym('ng', { negative: true }),
   nn: new sj.Sym('nn', { nonnegative: true }),
+  exp_polar: sj.expPolar,
+  polar_lift: sj.polarLift,
   // functions the parser does not know by name
   bernoulli: sj.bernoulli,
   euler: sj.euler,
@@ -185,6 +187,17 @@ const BESSEL_CASES: Case[] = [
   ["s", "airyaiprime(-oo)", "airyaiprime(-oo)"],
   ["s", "besselj(-x, 0)", "besselj(-x, 0)"],
   ["s", "besselj(n, 0)", "besselj(n, 0)"],
+  // branch handling of polar arguments (SymPy besselj/besseli.eval; bessely and besselk have none)
+  ["s", "besselj(a, exp_polar(2*I*pi)*z)", "exp(2*I*pi*a)*besselj(a, z)"],
+  ["s", "besseli(a, exp_polar(2*I*pi)*z)", "exp(2*I*pi*a)*besseli(a, z)"],
+  ["s", "bessely(a, exp_polar(2*I*pi)*z)", "bessely(a, z*exp_polar(2*I*pi))"],
+  ["s", "besselk(a, exp_polar(2*I*pi)*z)", "besselk(a, z*exp_polar(2*I*pi))"],
+  ["s", "besselj(a, exp_polar(-4*I*pi)*z)", "exp(-4*I*pi*a)*besselj(a, z)"],
+  ["s", "besselj(1/3, exp_polar(2*I*pi)*z)", "exp(2*I*pi/3)*besselj(1/3, z)"],
+  ["s", "besselj(2, polar_lift(x))", "besselj(2, x)"],
+  ["s", "besseli(n, exp_polar(2*I*pi)*z)", "besseli(n, z)"],
+  ["s", "besselj(polar_lift(a), z)", "besselj(a, z)"],
+  ["s", "besseli(a, exp_polar(I*pi/2)*z)", "besseli(a, z*exp_polar(I*pi/2))"],
 ];
 
 // expected values from SymPy 1.14
@@ -222,5 +235,78 @@ describe('Bessel: cases outside the table', () => {
   it('the derivative with respect to the order is not implemented', () => {
     // SymPy: Derivative(besselj(x, 1), x)
     expect(() => diff(besselj(x, 1), x)).toThrow(NotImplementedError);
+  });
+});
+
+// expected values from SymPy 1.14 (mpmath 1.3 for the numbers)
+describe('Hankel functions, Marcum Q and the Bessel rewrites', () => {
+  const S = (e: sj.Expr) => String(e);
+  const [n, a, b, m] = symbols('n a b m');
+  const p = new Sym('p', { positive: true });
+  const k = new Sym('nu', { integer: true });
+  const third = Rational.of(1, 3);
+  it('hankel1 and hankel2: derivative, conjugate and values', () => {
+    expect(S(diff(sj.hankel1(n, z), z))).toBe('hankel1(n - 1, z)/2 - hankel1(n + 1, z)/2');
+    expect(S(diff(sj.hankel2(n, z), z))).toBe('hankel2(n - 1, z)/2 - hankel2(n + 1, z)/2');
+    expect(() => diff(sj.hankel1(x, 1), x)).toThrow(NotImplementedError);
+    expect(S(sj.conjugate(sj.hankel1(n, p)))).toBe('hankel2(conjugate(n), p)');
+    expect(S(sj.conjugate(sj.hankel2(n, p)))).toBe('hankel1(conjugate(n), p)');
+    expect(S(sj.conjugate(sj.hankel1(n, z)))).toBe('conjugate(hankel1(n, z))');
+    expect(S(sj.conjugate(besselj(n, p)))).toBe('besselj(conjugate(n), p)');
+    expect(S(sj.conjugate(besselk(n, z)))).toBe('conjugate(besselk(n, z))');
+    expect(S(evalf(sj.hankel1(1, 2), 20))).toBe('0.5767248077568733872 - 0.10703243154093754689*I');
+    expect(S(evalf(sj.hankel2(third, sj.add(2, I)), 20))).toBe('0.91787359234135788653 - 1.1373269003769764133*I');
+    // hankel2(1, 2) = 0.576724807756873 + 0.107032431540938*I (double precision)
+    const v = sj.toComplex(sj.hankel2(1, 2));
+    expect(v.re).toBeCloseTo(0.576724807756873, 12);
+    expect(v.im).toBeCloseTo(0.107032431540938, 12);
+    expect(sj.toComplex(sj.hankel1(1, 2)).im).toBeCloseTo(-0.107032431540938, 12);
+    expect(sj.latex(sj.pow(sj.hankel1(n, z), 2))).toBe('\\left(H^{(1)}_{n}\\left(z\\right)\\right)^{2}');
+  });
+  it('expand_func by the recurrence in the order', () => {
+    const EF = (e: sj.Expr) => S(sj.expandFunc(e));
+    expect(EF(besselj(3, z))).toBe('-besselj(1, z) + (-4*besselj(0, z) + 8*besselj(1, z)/z)/z');
+    expect(EF(besseli(3, z))).toBe('besseli(1, z) + (-4*besseli(0, z) + 8*besseli(1, z)/z)/z');
+    expect(EF(besselk(3, z))).toBe('besselk(1, z) + (4*besselk(0, z) + 8*besselk(1, z)/z)/z');
+    expect(EF(bessely(-3, z))).toBe('bessely(1, z) - (-4*bessely(0, z) + 8*bessely(1, z)/z)/z');
+    expect(EF(sj.hankel1(-3, z))).toBe('-hankel1(-1, z) + (4*hankel1(0, z) + 8*hankel1(-1, z)/z)/z');
+    expect(EF(sj.hankel2(2, z))).toBe('-hankel2(0, z) + 2*hankel2(1, z)/z');
+    expect(EF(besselj(Rational.of(5, 2), z))).toBe('-besselj(1/2, z) + (-3*besselj(-1/2, z) + 3*besselj(1/2, z)/z)/z');
+    expect(EF(besselj(n, z))).toBe('besselj(n, z)');
+    expect(EF(besselj(Rational.of(1, 2), z))).toBe('besselj(1/2, z)');
+  });
+  it('rewrites between the Bessel functions', () => {
+    const RW = (e: sj.Expr, t: string) => S(sj.rewrite(e, t));
+    expect(RW(besselj(n, z), 'jn')).toBe('sqrt(2)*sqrt(z)*jn(n - 1/2, z)/sqrt(pi)');
+    expect(RW(bessely(n, z), 'yn')).toBe('sqrt(2)*sqrt(z)*yn(n - 1/2, z)/sqrt(pi)');
+    expect(RW(besselj(third, z), 'bessely')).toBe('2*sqrt(3)*bessely(-1/3, z)/3 - sqrt(3)*bessely(1/3, z)/3');
+    expect(RW(besselj(n, z), 'bessely')).toBe('besselj(n, z)');
+    expect(RW(bessely(third, z), 'besselj')).toBe('2*sqrt(3)*(-besselj(-1/3, z) + besselj(1/3, z)/2)/3');
+    expect(RW(bessely(k, z), 'besselj')).toBe('bessely(nu, z)');
+    expect(RW(besselk(third, z), 'besseli')).toBe('sqrt(3)*pi*(besseli(-1/3, z) - besseli(1/3, z))/3');
+    expect(RW(besselk(k, z), 'besseli')).toBe('besselk(nu, z)');
+  });
+  it('marcumq: evaluation, derivatives and rewrite', () => {
+    expect(S(sj.marcumq(m, a, b))).toBe('marcumq(m, a, b)');
+    expect(S(sj.marcumq(m, 0, b))).toBe('uppergamma(m, b**2/2)/gamma(m)');
+    expect(S(sj.marcumq(0, 0, 0))).toBe('0');
+    expect(S(sj.marcumq(0, a, 0))).toBe('1 - exp(-a**2/2)');
+    expect(S(sj.marcumq(1, a, a))).toBe('1/2 + exp(-a**2)*besseli(0, a**2)/2');
+    expect(S(sj.marcumq(2, a, a))).toBe('1/2 + exp(-a**2)*besseli(0, a**2)/2 + exp(-a**2)*besseli(1, a**2)');
+    expect(S(sj.marcumq(m, a, a))).toBe('marcumq(m, a, a)');
+    expect(S(sj.marcumq(3, a, a))).toBe('marcumq(3, a, a)');
+    expect(S(diff(sj.marcumq(m, a, b), a))).toBe('a*(-marcumq(m, a, b) + marcumq(m + 1, a, b))');
+    expect(S(diff(sj.marcumq(m, a, b), b))).toBe('-a**(1 - m)*b**m*exp(-a**2/2 - b**2/2)*besseli(m - 1, a*b)');
+    expect(() => diff(sj.marcumq(m, a, b), m)).toThrow(NotImplementedError);
+    expect(S(sj.rewrite(sj.marcumq(3, a, a), 'besseli'))).toBe('(besseli(1, a**2) + besseli(2, a**2))*exp(-a**2) + 1/2 + exp(-a**2)*besseli(0, a**2)/2');
+    expect(S(sj.rewrite(sj.marcumq(m, a, a), 'besseli'))).toBe('marcumq(m, a, a)');
+    expect(S(sj.rewrite(sj.marcumq(3, a, b), 'besseli'))).toBe('marcumq(3, a, b)');
+  });
+  it('Maclaurin series of airyai and airybi (SymPy taylor_term)', () => {
+    expect(S(sj.series(airyai(z), z, 0, 3))).toBe('3**(5/6)*gamma(1/3)/(6*pi) - 3**(1/6)*z*gamma(2/3)/(2*pi) + O(z**3)');
+    expect(S(sj.series(airyai(z), z, 0, 7))).toBe(
+      '3**(5/6)*gamma(1/3)/(6*pi) - 3**(1/6)*z*gamma(2/3)/(2*pi) + 3**(5/6)*z**3*gamma(4/3)/(12*pi) - 3**(1/6)*z**4*gamma(5/3)/(16*pi) + 3**(5/6)*z**6*gamma(7/3)/(480*pi) + O(z**7)',
+    );
+    expect(S(sj.series(airybi(z), z, 0, 6))).toBe('3**(1/3)*gamma(1/3)/(2*pi) + 3**(2/3)*z*gamma(2/3)/(2*pi) + 3**(1/3)*z**3*gamma(4/3)/(4*pi) + 3**(2/3)*z**4*gamma(5/3)/(16*pi) + O(z**6)');
   });
 });

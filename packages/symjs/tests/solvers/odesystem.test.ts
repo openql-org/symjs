@@ -4,7 +4,7 @@
 // Tests of src/solvers/odesystem.ts: systems of ODEs; expected values from SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { dsolve, NotImplementedError, parse, sstr, symbols, SymFunction as Fn } from '../../src';
+import { add, checkodesol, diff, Dummy, dsolve, Eq, Integral, neg, NotImplementedError, parse, sstr, symbols, SymFunction as Fn } from '../../src';
 import type { Expr } from '../../src/core/nodes';
 import { constantCount, solvesOdeSystem } from '../../../../compat/ode-checks';
 
@@ -102,5 +102,56 @@ describe('systems of linear ODEs', () => {
     const [ex, ey] = dsolve([P('Eq(Derivative(x(t), t), y(t) + exp(t))'), P('Eq(Derivative(y(t), t), x(t))')]) as never as { rhs: never }[];
     const { diff: d, simplify: simp, sub } = await import('../../src');
     expect(sstr(simp(sub(d(ex!.rhs, t), sub(ey!.rhs, P('-exp(t)')))))).toBe('0');
+  });
+});
+
+describe('checkodesol', () => {
+  // expected values from SymPy 1.14 (checkodesol doctests of sympy.solvers.ode.subscheck)
+  const [x, t, C1, C2] = symbols('x t C1 C2');
+  const f = Fn('f');
+  const g = Fn('g');
+  const X = Fn('x');
+  const Y = Fn('y');
+  const L = { f, g } as never;
+  const P = (s: string): Expr => parse(s, { locals: L });
+  const show = ([ok, r]: [boolean, Expr | Expr[]]) => `(${ok ? 'True' : 'False'}, ${Array.isArray(r) ? `[${r.map(sstr).join(', ')}]` : sstr(r)})`;
+
+  it('checks one equation', () => {
+    const fx = f(x!);
+    expect(show(checkodesol(diff(fx, x!), Eq(fx, C1!)))).toBe('(True, 0)');
+    expect(show(checkodesol(diff(fx, x!), C1!))).toBe('(True, 0)');
+    expect(show(checkodesol(diff(fx, x!), x!))).toBe('(False, 1)');
+    expect(show(checkodesol(diff(fx, x!, 2), P('x**2')))).toBe('(False, 2)');
+    expect(show(checkodesol(P('Derivative(f(x), x) - f(x)'), Eq(P('C1*exp(x)'), fx)))).toBe('(True, 0)');
+    expect(show(checkodesol(Eq(diff(fx, x!), fx), Eq(fx, P('C1*exp(x)'))))).toBe('(True, 0)');
+    // SymPy: (False, Derivative(g(x), x)), the residual of the last of its methods; the residual of the substitution
+    // (SymPy's first method, the only one ported) is its negative
+    expect(show(checkodesol(P('Derivative(f(x), x) - Derivative(g(x), x)'), Eq(fx, C1!), fx))).toBe('(False, -Derivative(g(x), x))');
+  });
+
+  it('checks systems', () => {
+    const eqs = [Eq(diff(f(x!), x!), f(x!)), Eq(diff(g(x!), x!), g(x!))];
+    expect(show(checkodesol(eqs, [Eq(f(x!), P('C1*exp(x)')), Eq(g(x!), P('C2*exp(x)'))]))).toBe('(True, [0, 0])');
+    expect(show(checkodesol([Eq(diff(f(x!), x!), 0)], Eq(f(x!), C1!)))).toBe('(True, [0])');
+    expect(show(checkodesol(eqs, [Eq(f(x!), P('C1*exp(x)')), Eq(g(x!), P('C2*exp(2*x)'))]))).toBe('(False, [0, C2*exp(2*x)])');
+    expect(show(checkodesol([Eq(diff(f(x!), x!), g(x!)), Eq(diff(g(x!), x!), neg(f(x!)))], [Eq(f(x!), P('sin(x)')), Eq(g(x!), P('cos(x)'))]))).toBe('(True, [0, 0])');
+    const tt = { locals: { x: X, y: Y, C1, C2 }, symbols: { t } } as never;
+    const eq2 = [parse('Eq(Derivative(x(t), t), x(t) + y(t) + 17)', tt), parse('Eq(Derivative(y(t), t), -2*x(t) + y(t) + 12)', tt)];
+    const sol2 = [parse('Eq(x(t), (C1*sin(sqrt(2)*t) + C2*cos(sqrt(2)*t))*exp(t) - 5/3)', tt), parse('Eq(y(t), (sqrt(2)*C1*cos(sqrt(2)*t) - sqrt(2)*C2*sin(sqrt(2)*t))*exp(t) - 46/3)', tt)];
+    expect(show(checkodesol(eq2, sol2))).toBe('(True, [0, 0])');
+    // a solution that is a derivative of an unevaluated integral (SymPy's linodesolve output)
+    const d = new Dummy('C1');
+    expect(show(checkodesol([Eq(diff(f(x!), x!), P('exp(x)*f(x)/f(x) + 0*g(x)')), Eq(diff(g(x!), x!), g(x!))], [Eq(f(x!), add(new Integral([P('exp(x)'), x!]), d)), Eq(g(x!), P('C2*exp(x)'))]))).toBe('(True, [0, 0])');
+  });
+
+  it('rejects solutions it cannot use', () => {
+    const fx = f(x!);
+    expect(() => checkodesol(P('f(x) - g(x)'), Eq(fx, g(x!)))).toThrow('solutions should have one function only');
+    expect(() => checkodesol([Eq(diff(fx, x!), fx)], [Eq(fx, g(x!))])).toThrow('solutions should have one function only');
+    expect(() => checkodesol(diff(fx, x!), P('f(x) + g(x)'))).toThrow(NotImplementedError);
+    // SymPy solves Eq(f(x) + x, C1) for f(x); here only explicit solutions are supported
+    expect(() => checkodesol(diff(fx, x!), Eq(add(fx, x!), C1!))).toThrow(NotImplementedError);
+    expect(() => checkodesol([Eq(diff(fx, x!), fx), Eq(diff(g(x!), x!), g(x!))], [Eq(fx, C1!)])).toThrow('number of solutions provided does not match the number of equations');
+    expect(() => checkodesol(diff(fx, x!) as never, [Eq(fx, C1!)] as never)).toThrow(TypeError);
   });
 });

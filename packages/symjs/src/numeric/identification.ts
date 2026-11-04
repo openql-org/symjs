@@ -45,7 +45,7 @@ export function pslq(xs: readonly Mpf[], prec: number, tolIn?: Mpf, maxcoeff = 1
   if (n < 2) throw new RangeError('n cannot be less than 2');
   if (prec < 53) throw new RangeError('prec cannot be less than 53');
   const target = Math.trunc(prec * 0.75);
-  const tolMpf = tolIn ?? { man: 1n, exp: -target };
+  const tolMpf = tolIn ?? { man: 1n, exp: BigInt(-target) };
   const wp = prec + 60;
   const P = BigInt(wp);
   const tol = F.toFixed(tolMpf, wp);
@@ -285,7 +285,7 @@ export function identify(
   if (x.man < 0n) return identify(F.neg(x), constantsIn, prec, opts)?.map((s) => `-(${s})`);
   const full = opts.full ?? false;
   // tol defaults to eps**0.7
-  const tol = opts.tol !== undefined && !F.isZero(opts.tol) ? opts.tol : M.powReal({ man: 1n, exp: 1 - prec }, F.fromRational(7n, 10n, prec), prec);
+  const tol = opts.tol !== undefined && !F.isZero(opts.tol) ? opts.tol : M.powReal({ man: 1n, exp: BigInt(1 - prec) }, F.fromRational(7n, 10n, prec), prec);
   const mc = opts.maxcoeff ?? 1000;
   const M2 = F.fromInt(BigInt(mc * mc));
   let constants = constantsIn.map(([v, name]) => [F.round(v, prec), name] as Named);

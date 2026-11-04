@@ -9,7 +9,7 @@
 import { NotImplementedError } from '../core/errors';
 import { at, defined, first, pair } from '../core/guard';
 import '../numeric/mpspecialfns';
-import { isIntegerQ, isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
+import { isIntegerQ, isNegative, isNonNegative, isPositive, isReal, isZero } from '../core/assumptions';
 import type {
   ComplexValue as C,
   Expr,
@@ -18,14 +18,25 @@ import type {
 import {
   Add,
   Constant,
+  Dummy,
+  ExtensionExpr,
   Fn,
   Mul,
   Rational,
   S,
   Special,
+  Sym,
   isNum,
 } from '../core/nodes';
 import { numAdd, numMul } from '../core/num';
+import { derivative } from '../core/undef';
+import { SubsNode } from '../core/subsnode';
+import { mpFns } from '../numeric/mpeval';
+import * as F from '../numeric/mpf';
+import * as M from '../numeric/mpfun';
+import type { Mpc } from '../numeric/mpfun';
+import * as SP from '../numeric/mpspecial';
+import { chyp2f1 } from '../numeric/mporthopoly';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt, sympify } from '../core/ops';
 import { fnPartials } from '../calculus/diff';
 import { rebuild } from '../core/traverse';
@@ -46,6 +57,25 @@ const R = (p: bigint | number, q: bigint | number = 1) => Rational.of(p, q);
 const qAdd = (a: Rational, b: Rational): Rational => (a.q === b.q ? Rational.of(a.p + b.p, a.q) : Rational.of(a.p * b.q + b.p * a.q, a.q * b.q));
 const qMul = (a: Rational, b: Rational): Rational => Rational.of(a.p * b.p, a.q * b.q);
 const isOo = (e: Expr) => e instanceof Special && e.name === 'oo';
+const isSpecial = (e: Expr, name: string) => e instanceof Special && e.name === name;
+
+/**
+ * The partial derivative of name(args) in an argument it has no formula for
+ * (SymPy Function.fdiff after ArgumentIndexError): Derivative(f, a) for a
+ * symbol a, Subs(Derivative(f(.., xi, ..), xi), xi, a) otherwise.
+ */
+export function noPartial(name: FnName, args: readonly Expr[], i: number): Expr {
+  const a = at(args, i);
+  if (a instanceof Sym) return derivative(new Fn(name, args), [[a, 1]]);
+  const xi = new Dummy(`xi_${i + 1}`);
+  return new SubsNode([derivative(new Fn(name, args.map((b, j) => (j === i ? xi : b))), [[xi, 1]]), xi, a]);
+}
+
+/** A double-precision value through the arbitrary-precision evaluator of name (53 bits). */
+export function mpNumeric(name: string, args: readonly C[]): C {
+  const v = defined(mpFns[name], name)(args.map((z) => [F.fromNumber(z.re), F.fromNumber(z.im)]), 53);
+  return cx(F.toNumber(v[0]), F.toNumber(v[1]));
+}
 const isNegOo = (e: Expr) => e instanceof Special && e.name === '-oo';
 const iOo = () => mul(S.I, S.Infinity);
 const isIOo = (e: Expr) => e.key === iOo().key;
@@ -186,7 +216,24 @@ function evalZeta(s: Expr): Expr | undefined {
   return undefined;
 }
 
+/** SymPy zeta.eval: zeta(s) and the Hurwitz zeta function zeta(s, a). */
+function evalZetaHurwitz(s: Expr, a?: Expr): Expr | undefined {
+  if (isSpecial(s, 'nan') || (a !== undefined && isSpecial(a, 'nan'))) return S.NaN;
+  if (isOo(s)) return S.One;
+  if (a === undefined) return evalZeta(s);
+  if (a instanceof Rational && a.isOne) return fnN('zeta', s);
+  if (s instanceof Rational && s.isOne) return S.ComplexInfinity;
+  if (isOo(a)) return S.Zero;
+  if (isInt(s) && !s.isPositive) return mul(fnN('bernoulli', add(1, neg(s)), a), pow(add(s, -1), -1));
+  if (isInt(s) && isInt(a) && a.isPositive) return add(fnN('zeta', s), neg(fnN('harmonic', add(a, -1), s)));
+  if (isInt(a) && !a.isPositive && (isIntegerQ(s) === false || isPositive(s) === true)) return S.NaN;
+  return undefined;
+}
+
+/** SymPy harmonic.eval: harmonic(n, m) = sum(k**-m, (k, 1, n)). */
 function evalHarmonic(n: Expr, m: Expr = S.One): Expr | undefined {
+  if (isZero(n) === true) return S.Zero;
+  if (isZero(m) === true) return n;
   if (isOo(n)) {
     if (m instanceof Rational && m.isOne) return S.Infinity;
     if (isInt(m) && m.p > 1n) return fnN('zeta', m);
@@ -196,14 +243,26 @@ function evalHarmonic(n: Expr, m: Expr = S.One): Expr | undefined {
     if (isPositive(add(m, -1)) === false) return S.Infinity;
     return undefined;
   }
-  if (isInt(n) && !n.isNegative && isInt(m)) {
+  // a nonpositive integer m: the Faulhaber sum (bernoulli(1 - m, n + 1) - bernoulli(1 - m))/(1 - m)
+  if (isInt(m) && m.isNegative) {
+    const k = add(1, neg(m));
+    return mul(add(fnN('bernoulli', k, add(n, 1)), neg(fnN('bernoulli', k))), pow(k, -1));
+  }
+  if (!isInt(n)) return undefined;
+  if (n.isNegative) {
+    // SymPy (m not an integer or not nonpositive): a pole of the analytic continuation (zoo for m = 1, nan otherwise)
+    if (isIntegerQ(m) === false || isPositive(m) === true || isReal(m) === false) return m instanceof Rational && m.isOne ? S.ComplexInfinity : S.NaN;
+    return undefined;
+  }
+  if (isInt(m)) {
     let s: Rational = S.Zero;
-    // k**-m for m >= 0, k**|m| for a negative m (SymPy harmonic(3, -2) = 14)
-    for (let k = 1n; k <= n.p; k++) s = qAdd(s, m.p >= 0n ? R(1n, k ** m.p) : R(k ** -m.p));
+    for (let k = 1n; k <= n.p; k++) s = qAdd(s, R(1n, k ** m.p));
     return s;
   }
-  if (isInt(n) && n.isZero) return S.Zero;
-  return undefined;
+  // a symbolic exponent: 1 + 2**(-m) + ... + n**(-m)
+  const terms: Expr[] = [];
+  for (let k = 1n; k <= n.p; k++) terms.push(pow(R(k), neg(m)));
+  return add(...terms);
 }
 
 function evalCatalan(n: Expr): Expr | undefined {
@@ -1032,6 +1091,34 @@ function lowergammaNum(s: C, x: C): C {
 // registration
 // ---------------------------------------------------------------------------
 
+/** The integrand t**(a - 1)*(1 - t)**(b - 1) of betainc at its limit x1 (i = 2, with a minus sign) or x2 (i = 3). */
+function betaincIntegrand(args: readonly Expr[], i: number): Expr {
+  const [a, b, x] = [at(args, 0), at(args, 1), at(args, i)];
+  return mul(i === 2 ? -1 : 1, pow(add(1, neg(x)), add(b, -1)), pow(x, add(a, -1)));
+}
+
+/** B(a, b) = Gamma(a)*Gamma(b)/Gamma(a + b). */
+const mpBeta = (a: Mpc, b: Mpc, wp: number): Mpc => M.cdiv(M.cmul(SP.cgamma(a, wp), SP.cgamma(b, wp), wp), SP.cgamma(M.cadd(a, b, wp), wp), wp);
+const mpIsZero = (z: Mpc): boolean => F.isZero(z[0]) && F.isZero(z[1]);
+const mpEq = (u: Mpc, v: Mpc): boolean => F.cmp(u[0], v[0]) === 0 && F.cmp(u[1], v[1]) === 0;
+
+/**
+ * The incomplete beta function B(a, b; x1, x2) = (x2**a 2F1(a, 1 - b; a + 1; x2)
+ * - x1**a 2F1(a, 1 - b; a + 1; x1))/a, divided by B(a, b) when regularized
+ * (mpmath betainc, with SymPy's betainc_mpmath_fix for x1 = x2).
+ */
+function mpBetainc(args: Mpc[], prec: number, regularized: boolean): Mpc {
+  const [a, b, x1, x2] = [at(args, 0), at(args, 1), at(args, 2), at(args, 3)];
+  const wp = prec + 30;
+  if (mpEq(x1, x2)) return M.C0;
+  const term = (x: Mpc): Mpc => (mpIsZero(x) ? M.C0 : M.cmul(M.cpow(x, a, wp), chyp2f1(a, M.csub(M.C1, b, wp), M.cadd(a, M.C1, wp), x, wp), wp));
+  const v = mpIsZero(x1) && mpEq(x2, M.C1) ? mpBeta(a, b, wp) : M.cdiv(M.csub(term(x2), term(x1), wp), a, wp);
+  const r = regularized ? M.cdiv(v, mpBeta(a, b, wp), wp) : v;
+  return [F.round(r[0], prec), F.round(r[1], prec)];
+}
+mpFns['betainc'] = (args, prec) => mpBetainc(args, prec, false);
+mpFns['betainc_regularized'] = (args, prec) => mpBetainc(args, prec, true);
+
 type Spec = {
   eval?: (...args: Expr[]) => Expr | undefined;
   partials?: (args: readonly Expr[], i: number) => Expr;
@@ -1084,7 +1171,8 @@ const SPECS: Partial<Record<FnName, Spec>> = {
   rf: { eval: evalRF, numeric: binary((x, k) => cdiv(cgamma(cadd(x, k)), cgamma(x))) },
   subfactorial: { eval: evalSubfactorial },
   harmonic: {
-    eval: (n, m?: Expr) => evalHarmonic(n, m ?? S.One),
+    // SymPy: harmonic(n, 1) is harmonic(n)
+    eval: (n, m?: Expr) => (m instanceof Rational && m.isOne ? fnN('harmonic', n) : evalHarmonic(n, m)),
     numeric: (args) => {
       const n = first(args);
       const m = args[1];
@@ -1150,7 +1238,27 @@ const SPECS: Partial<Record<FnName, Spec>> = {
     numeric: binary((a, b) => cdiv(cmul(cgamma(a), cgamma(b)), cgamma(cadd(a, b)))),
     conjugate: true,
   },
-  zeta: { eval: evalZeta, numeric: realC(zetaReal) },
+  betainc: {
+    // d/dx1 = -(1 - x1)**(b - 1)*x1**(a - 1), d/dx2 = (1 - x2)**(b - 1)*x2**(a - 1)
+    partials: (args, i) => (i < 2 ? noPartial('betainc', args, i) : betaincIntegrand(args, i)),
+    numeric: (args) => mpNumeric('betainc', args),
+    conjugate: true,
+  },
+  betainc_regularized: {
+    partials: (args, i) => (i < 2 ? noPartial('betainc_regularized', args, i) : mul(betaincIntegrand(args, i), pow(fnN('beta', at(args, 0), at(args, 1)), -1))),
+    numeric: (args) => mpNumeric('betainc_regularized', args),
+    conjugate: true,
+  },
+  zeta: {
+    eval: evalZetaHurwitz,
+    // d/da zeta(s, a) = -s*zeta(s + 1, a); no derivative in s (SymPy ArgumentIndexError)
+    partials: (args, i) => {
+      const [s, a] = args;
+      if (i === 1 && s !== undefined && a !== undefined) return mul(-1, s, fnN('zeta', add(s, 1), a));
+      return noPartial('zeta', args, i);
+    },
+    numeric: (args) => (args.length > 1 ? mpNumeric('zeta', args) : realC(zetaReal)(args)),
+  },
   erf: { eval: evalErf, partials: unary((z) => mul(twoOverSqrtPi(), exp(neg(pow(z, 2))))), numeric: unary(cerf), conjugate: true },
   erfc: {
     eval: evalErfc,
@@ -1274,7 +1382,12 @@ export const trigamma = (x: ExprLike, opts: { evaluate?: boolean } = {}): Expr =
 export const lowergamma = (s: ExprLike, x: ExprLike): Expr => fn('lowergamma', [s, x]);
 export const uppergamma = (s: ExprLike, x: ExprLike): Expr => fn('uppergamma', [s, x]);
 export const beta = (a: ExprLike, b: ExprLike): Expr => fn('beta', [a, b]);
-export const zeta = (s: ExprLike): Expr => fn('zeta', [s]);
+/** SymPy betainc(a, b, x1, x2): the generalized incomplete beta function, the integral of t**(a - 1)*(1 - t)**(b - 1) from x1 to x2. */
+export const betainc = (a: ExprLike, b: ExprLike, x1: ExprLike, x2: ExprLike): Expr => fn('betainc', [a, b, x1, x2]);
+/** SymPy betainc_regularized(a, b, x1, x2): betainc(a, b, x1, x2)/beta(a, b). */
+export const betaincRegularized = (a: ExprLike, b: ExprLike, x1: ExprLike, x2: ExprLike): Expr => fn('betainc_regularized', [a, b, x1, x2]);
+/** SymPy zeta(s) (Riemann) and zeta(s, a) (Hurwitz). */
+export const zeta = (s: ExprLike, a?: ExprLike): Expr => fn('zeta', a === undefined ? [s] : [s, a]);
 export const erf = (z: ExprLike): Expr => fn('erf', [z]);
 export const erfc = (z: ExprLike): Expr => fn('erfc', [z]);
 export const erfi = (z: ExprLike): Expr => fn('erfi', [z]);
@@ -1310,6 +1423,20 @@ export const atan2 = (y: ExprLike, x: ExprLike): Expr => fn('atan2', [y, x]);
 export const Min = (...xs: ExprLike[]): Expr => fn('Min', xs);
 export const Max = (...xs: ExprLike[]): Expr => fn('Max', xs);
 
+/**
+ * Per-function rules of expand_func (SymPy _eval_expand_func), registered by
+ * the modules defining the functions; undefined leaves the call unchanged.
+ * @internal
+ */
+export const funcExpanders: Partial<Record<FnName, (args: readonly Expr[]) => Expr | undefined>> = {};
+
+/**
+ * SymPy _eval_expand_func of the functions defined in other modules, by
+ * function (or extension node) name: the expanded form, or undefined when
+ * the function stays.
+ */
+export const expandFuncRules: Partial<Record<string, (e: Expr) => Expr | undefined>> = {};
+
 /** SymPy expand_func: rewrite special functions into elementary terms where possible. */
 export function expandFunc(e: Expr): Expr {
   const go = (x: Expr): Expr => {
@@ -1321,6 +1448,12 @@ export function expandFunc(e: Expr): Expr {
     const args = x.args.map(go);
     const changed = args.some((a, i) => a !== x.args[i]);
     const y = !changed ? x : x instanceof Fn ? fn(x.name, args) : rebuild(x, args);
+    const rule = y instanceof Fn || y instanceof ExtensionExpr ? expandFuncRules[y.name] : undefined;
+    const r = rule?.(y);
+    if (r !== undefined) return r;
+    const expander = y instanceof Fn ? funcExpanders[y.name] : undefined;
+    const expanded = expander?.(y.args);
+    if (expanded !== undefined) return expanded;
     if (y instanceof Fn && y.name === 'gamma') {
       const a = first(y.args);
       if (a instanceof Rational && (a.p < 0n ? -a.p : a.p) > a.q) {

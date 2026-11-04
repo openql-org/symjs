@@ -8,7 +8,7 @@
  * and `list_visitor`.
  */
 
-import { at } from '../core/guard';
+import { at, defined, last } from '../core/guard';
 
 /** One component of one part of the current partition (SymPy PartComponent). */
 export class PartComponent {
@@ -233,6 +233,44 @@ export class MultisetPartitionTraverser {
       return true;
     }
     return false;
+  }
+
+  /** Counts of the subtrees of the enumeration by part key, kept between calls (SymPy dp_map). */
+  private readonly dpMap = new Map<string, bigint>();
+
+  /**
+   * SymPy count_partitions(multiplicities): the number of partitions of the
+   * multiset, counted by the enumeration with the counts of repeated
+   * subtrees memoized (by the key of the part at their root).
+   */
+  countPartitions(multiplicities: readonly number[]): bigint {
+    const partKey = (part: readonly PartComponent[]): string => part.map((ps) => `${ps.u},${ps.v}`).join(';');
+    let pcount = 0n;
+    const dpStack: [string, bigint][][] = [];
+    this.initializeEnumeration(multiplicities);
+    dpStack.push([[partKey(this.topPart()), 0n]]);
+    for (;;) {
+      while (this.spreadPartMultiplicity()) {
+        const pkey = partKey(this.topPart());
+        const cached = this.dpMap.get(pkey);
+        if (cached !== undefined) {
+          // the subtree is already counted (less the leaf counted below)
+          pcount += cached - 1n;
+          this.lpart--;
+          break;
+        }
+        dpStack.push([[pkey, pcount]]);
+      }
+      // a leaf partition
+      pcount++;
+      while (!this.decrementPart(this.topPart())) {
+        // backtrack: the subtrees just finished are counted
+        for (const [key, old] of defined(dpStack.pop(), 'enumeration stack')) this.dpMap.set(key, pcount - old);
+        if (this.lpart === 0) return pcount;
+        this.lpart--;
+      }
+      last(dpStack).push([partKey(this.topPart()), pcount]);
+    }
   }
 
   /** The current top part on the stack. */

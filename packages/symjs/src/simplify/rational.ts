@@ -6,11 +6,13 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, Dummy, Fn, impl, Mul, Pow, Rational, S, Sym, isNum } from '../core/nodes';
+import { Add, Constant, Dummy, Float, Fn, impl, Mul, Pow, Rational, S, Sym, isNum } from '../core/nodes';
+import { fromRational } from '../numeric/mpf';
 import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
-import { freeSymbols, rebuild, xreplace } from '../core/traverse';
+import { rebuild, xreplace } from '../core/traverse';
 import { str } from '../printing/str';
 import { divExact, mgcd } from '../polys/mpoly';
+import { gcd as igcd, lcm as ilcm } from '../core/numbers';
 import { UPoly, polyHooks } from '../polys/poly';
 import { expandMul as expand } from './expand';
 import { isNegative, isPositive } from '../core/assumptions';
@@ -109,9 +111,12 @@ function radicalContentRatio(n: Expr, d: Expr): Expr | undefined {
   return defined(impl.radsimp?.(mul(a[0], pow(b[0], -1))), 'impl.radsimp (simplify/sqrtdenest)');
 }
 
-/** Symbols ordered by name (a Dummy and a Symbol may share one). */
-const byName = (a: Sym, b: Sym): number => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
-
+/**
+ * SymPy cancel: p/q with expanded p and q, their gcd cancelled in the polynomial ring over the
+ * generators of p and q (symbols, functions, radicals, ...), normalised as SymPy's
+ * PolyElement.cancel does: denominators cleared, p and q with integer (Gaussian) coefficients and
+ * the leading coefficient of q (lex order of the generators) canonical.
+ */
 export function cancel(ex: ExprLike): Expr {
   const e = together(sympify(ex));
   let [n, d] = fraction(e);
@@ -121,46 +126,220 @@ export function cancel(ex: ExprLike): Expr {
   // a common square root content: (sqrt(3) + sqrt(15)*A)/(sqrt(2) + sqrt(10)*A) = sqrt(6)/2
   const rc = radicalContentRatio(n, d);
   if (rc) return rc;
-  const syms = new Map<string, Sym>();
-  for (const s of [...freeSymbols(n), ...freeSymbols(d)]) syms.set(s.key, s);
-  if (syms.size === 1) {
-    const x = first([...syms.values()]);
+  if (isNum(d)) return expand(mul(n, pow(d, -1)));
+  // the generators in SymPy's order; those that are not symbols are replaced by dummies
+  const gens = ratsimpGens([n, d]);
+  const vars = gens.map((x) => (x instanceof Sym ? x : new Dummy('g')));
+  const back = gens.map((x, i): [Expr, Expr] => [at(vars, i), x]).filter(([v, x]) => x !== v);
+  let p = inGens(n, gens, vars);
+  let q = inGens(d, gens, vars);
+  const tn = coeffTable(p, vars);
+  const td = coeffTable(q, vars);
+  // (a polynomial with rational or Gaussian rational coefficients: SymPy's domains ZZ, QQ, ZZ_I, QQ_I)
+  if (tn && td) {
+    const [n1, d1] = gcdCancel(p, q, vars);
+    const s = cancelScale(tn, td, defined(coeffTable(d1, vars), 'the coefficients of d / gcd'));
+    [p, q] = [expand(mul(s, n1)), expand(mul(s, d1))];
+  } else {
+    // Float coefficients: SymPy's domain RR, see floatCancel
+    const rr = floatCancel(p, q, vars);
+    if (rr) return mul(xreplace(rr[0], back), pow(xreplace(rr[1], back), -1));
+  }
+  // SymPy canonical_unit: the leading coefficient of the denominator positive, or for a Gaussian
+  // coefficient in the first quadrant
+  const u = leadingUnit(q, vars);
+  if (u !== undefined) [p, q] = [expand(mul(u, p)), expand(mul(u, q))];
+  // SymPy as_expr: each Gaussian coefficient times its monomial, (1 + I)*x unexpanded
+  if (tn && td) [p, q] = [fromTable(defined(coeffTable(p, vars), 'p'), vars), fromTable(defined(coeffTable(q, vars), 'q'), vars)];
+  [p, q] = [xreplace(p, back), xreplace(q, back)];
+  return q instanceof Rational && q.isOne ? p : mul(p, pow(q, -1));
+}
+
+/**
+ * SymPy mpmath MPContext.to_rational(x, limit=True) for a Float of precision prec: its exact
+ * value, or the best rational approximation with a denominator up to 1/tolerance (tolerance =
+ * 100*2**(1 - prec)).
+ */
+function floatToRational(f: Float, prec: number): Rational {
+  const { man, exp } = f.mpf;
+  const [p, q] = exp >= 0n ? [man << exp, 1n] : [man, 1n << -exp];
+  const maxDenom = 2n ** BigInt(prec - 1) / 100n;
+  if (q <= maxDenom) return Rational.of(p, q);
+  let [p0, q0, p1, q1] = [0n, 1n, 1n, 0n];
+  let [nn, dd] = [p, q];
+  for (;;) {
+    // floor division (the convergents of the continued fraction)
+    const a = nn >= 0n ? nn / dd : -((-nn + dd - 1n) / dd);
+    const q2 = q0 + a * q1;
+    if (q2 > maxDenom) break;
+    [p0, q0, p1, q1] = [p1, q1, p0 + a * p1, q2];
+    [nn, dd] = [dd, nn - a * dd];
+  }
+  const k = (maxDenom - q0) / q1;
+  const x = Rational.of(p, q);
+  const b1 = Rational.of(p0 + k * p1, q0 + k * q1);
+  const b2 = Rational.of(p1, q1);
+  const dist = (b: Rational): Rational => {
+    const t = Rational.of(b.p * x.q - x.p * b.q, b.q * x.q);
+    return t.isNegative ? Rational.of(-t.p, t.q) : t;
+  };
+  const [e1, e2] = [dist(b1), dist(b2)];
+  return e2.p * e1.q <= e1.p * e2.q ? b2 : b1;
+}
+
+/** e with its Float factors replaced by rationals, and the largest Float precision (0 without a Float). */
+function floatsToRationals(e: Expr): [Expr, number] {
+  const terms = e instanceof Add ? e.args : [e];
+  let prec = 0;
+  for (const f of terms.flatMap((t) => (t instanceof Mul ? t.args : [t]))) if (f instanceof Float) prec = Math.max(prec, f.prec);
+  const conv = (f: Expr): Expr => (f instanceof Float ? floatToRational(f, prec) : f);
+  return [add(...terms.map((t) => (t instanceof Mul ? mul(...t.args.map(conv)) : conv(t)))), prec];
+}
+
+/**
+ * SymPy cancel over RR: the Floats are converted to rationals (RR.get_exact), p and q are the
+ * cofactors of the monic gcd over QQ, the leading coefficient of q is made positive and every
+ * coefficient becomes a Float again: (2.0*x + 1)/(4*x + 2.0) = 2.0/4.0 = 0.5. Undefined when n or
+ * d is not a polynomial with real Float or rational coefficients.
+ */
+function floatCancel(n: Expr, d: Expr, vars: readonly Expr[]): [Expr, Expr] | undefined {
+  const [nq, pn] = floatsToRationals(n);
+  const [dq, pd] = floatsToRationals(d);
+  const tn = coeffTable(nq, vars);
+  const td = coeffTable(dq, vars);
+  if (!tn || !td || [...tn.values(), ...td.values()].some(([, c]) => c[1] !== 0n)) return undefined;
+  const prec = Math.max(pn, pd);
+  let g = gcdOf(nq, dq, vars);
+  let [p, q] = [nq, dq];
+  if (g !== undefined) {
+    const [a, , den] = lexLeading(defined(coeffTable(g, vars), 'the coefficients of the gcd'));
+    g = expand(mul(Rational.of(den, a), g));
+    [p, q] = [defined(divExact(nq, g, vars), 'n / gcd'), defined(divExact(dq, g, vars), 'd / gcd')];
+  }
+  if (lexLeading(defined(coeffTable(q, vars), 'q'))[0] < 0n) [p, q] = [expand(mul(-1, p)), expand(mul(-1, q))];
+  const asFloats = (e: Expr): Expr =>
+    add(...[...defined(coeffTable(e, vars), 'the coefficients').values()].map(([m, [a, , den]]) => mul(new Float(fromRational(a, den, prec), prec), ...m.map((k, i) => pow(at(vars, i), k)))));
+  return [asFloats(p), asFloats(q)];
+}
+
+/** The gcd (up to a constant factor) of the polynomials n and d in vars over Q(i), undefined when it is constant. */
+function gcdOf(n: Expr, d: Expr, vars: readonly Expr[]): Expr | undefined {
+  if (vars.length === 1) {
+    const x = first(vars);
     const pn = UPoly.fromExpr(n, x);
     const pd = UPoly.fromExpr(d, x);
     if (pn && pd) {
       const g = pn.gcd(pd);
-      let qn = g.degree > 0 ? pn.divmod(g)[0] : pn;
-      let qd = g.degree > 0 ? pd.divmod(g)[0] : pd;
-      // normalize: monic denominator
-      const lc = qd.lc;
-      qn = qn.scale(Rational.of(lc.q, lc.p));
-      qd = qd.scale(Rational.of(lc.q, lc.p));
-      if (qd.degree === 0) return qn.toExpr(x);
-      return mul(qn.toExpr(x), pow(qd.toExpr(x), -1));
+      return g.degree > 0 ? g.toExpr(x) : undefined;
     }
   }
-  if (isNum(d)) return expand(mul(n, pow(d, -1)));
-  if (syms.size > 1) {
-    const vars = [...syms.values()].sort(byName);
-    try {
-      const g = mgcd(n, d, vars);
-      if (!(g instanceof Rational)) {
-        // g divides both (a failure is caught below and leaves the fraction as it is)
-        const nn = defined(divExact(n, g, vars), 'exact quotient');
-        const dd = defined(divExact(d, g, vars), 'exact quotient');
-        n = nn;
-        d = dd;
+  const g = mgcd(n, d, vars);
+  return vars.some((v) => g.has(v)) ? g : undefined;
+}
+
+/** n/g and d/g for the polynomial gcd g of the polynomials n and d in vars. */
+function gcdCancel(n: Expr, d: Expr, vars: readonly Expr[]): [Expr, Expr] {
+  let g = gcdOf(n, d, vars);
+  if (g === undefined) return [n, d];
+  // a rational leading coefficient, so that the exact division stays in Q(i)[vars]
+  const [a, b] = lexLeading(defined(coeffTable(g, vars), 'the coefficients of the gcd'));
+  if (b !== 0n) g = expand(mul(gqExpr([a, -b, 1n]), g));
+  return [defined(divExact(n, g, vars), 'n / gcd'), defined(divExact(d, g, vars), 'd / gcd')];
+}
+
+/** A Gaussian rational (a + b*I)/den with den > 0. */
+type GQ = readonly [bigint, bigint, bigint];
+/** A Gaussian integer a + b*I. */
+type GI = readonly [bigint, bigint];
+
+const babs = (a: bigint): bigint => (a < 0n ? -a : a);
+const gqExpr = ([a, b, den]: GQ): Expr => add(Rational.of(a, den), mul(Rational.of(b, den), S.I));
+const giMul = ([a, b]: GI, [c, d]: GI): GI => [a * c - b * d, a * d + b * c];
+/** round(n/d) for d > 0. */
+const roundDiv = (n: bigint, d: bigint): bigint => {
+  const q = (2n * n + d) / (2n * d);
+  return 2n * n + d < 0n && (2n * n + d) % (2n * d) !== 0n ? q - 1n : q;
+};
+/** gcd of Gaussian integers, in the first quadrant (re > 0, im >= 0) unless it is 0. */
+function giGcd(x: GI, y: GI): GI {
+  const [a, b] = giGcdAny(x, y);
+  if (a > 0n && b >= 0n) return [a, b];
+  if (a <= 0n && b > 0n) return [b, -a];
+  if (a < 0n && b <= 0n) return [-a, -b];
+  return [-b, a];
+}
+function giGcdAny(x: GI, y: GI): GI {
+  let [u, v] = [x, y];
+  while (v[0] !== 0n || v[1] !== 0n) {
+    const nv = v[0] * v[0] + v[1] * v[1];
+    const [re, im] = giMul(u, [v[0], -v[1]]);
+    const qv = giMul([roundDiv(re, nv), roundDiv(im, nv)], v);
+    [u, v] = [v, [u[0] - qv[0], u[1] - qv[1]]];
+  }
+  return u;
+}
+
+/** The coefficients of the monomials of a polynomial in vars (undefined when e is not one over Q(i)). */
+function coeffTable(e: Expr, vars: readonly Expr[]): Map<string, [number[], GQ]> | undefined {
+  const out = new Map<string, [number[], GQ]>();
+  for (const t of e instanceof Add ? e.args : [e]) {
+    const m = vars.map(() => 0);
+    let c: GQ = [1n, 0n, 1n];
+    for (const f of t instanceof Mul ? t.args : [t]) {
+      if (f instanceof Rational) c = [c[0] * f.p, c[1] * f.p, c[2] * f.q];
+      else if (f instanceof Constant && f.name === 'I') c = [-c[1], c[0], c[2]];
+      else {
+        const [b, k] = decomposePower(f);
+        const i = vars.findIndex((v) => v.key === b.key);
+        if (i < 0 || k < 0) return undefined;
+        m[i] = at(m, i) + k;
       }
-    } catch {
-      // not polynomial: keep as is
     }
-    if (d instanceof Rational) return expand(mul(n, pow(d, -1)));
+    const key = m.join(',');
+    const cur = out.get(key)?.[1];
+    out.set(key, [m, cur ? [cur[0] * c[2] + c[0] * cur[2], cur[1] * c[2] + c[1] * cur[2], cur[2] * c[2]] : c]);
   }
-  // SymPy's cancel normalizes the leading coefficient of the denominator (lex order of the
-  // generators): positive, or for a Gaussian coefficient in the first quadrant
-  const u = leadingUnit(d, ratsimpGens([n, d]));
-  if (u !== undefined) [n, d] = [expand(mul(u, n)), expand(mul(u, d))];
-  return mul(n, pow(d, -1));
+  return out;
+}
+
+/** The polynomial of a coefficient table. */
+const fromTable = (t: Map<string, [number[], GQ]>, vars: readonly Expr[]): Expr =>
+  add(...[...t.values()].map(([m, c]) => mul(gqExpr(c), ...m.map((k, i) => pow(at(vars, i), k)))));
+
+/** The coefficient of the lex-leading monomial, as a Gaussian integer times a positive rational. */
+function lexLeading(t: Map<string, [number[], GQ]>): GQ {
+  let best: [number[], GQ] | undefined;
+  for (const mc of t.values()) if (best === undefined || lexGreater(mc[0], best[0])) best = mc;
+  return defined(best, 'a term of the polynomial')[1];
+}
+
+/** [lcm of the denominators, content of the cleared integer polynomial] of a nonzero polynomial. */
+function clearDenoms(t: Map<string, [number[], GQ]>): [bigint, GI] {
+  let den = 1n;
+  for (const [, [a, b, q]] of t.values()) {
+    const g = igcd(igcd(babs(a), babs(b)), q);
+    den = ilcm(den, q / g);
+  }
+  let cont: GI = [0n, 0n];
+  for (const [, [a, b, q]] of t.values()) cont = giGcd(cont, [(a * den) / q, (b * den) / q]);
+  return [den, cont];
+}
+
+/**
+ * The factor s that turns n1/d1 (n/d with their gcd cancelled) into SymPy's pair p/q: SymPy clears
+ * the denominators (cq*n, cp*d), takes the cofactors of the integer polynomials (whose gcd holds the
+ * gcd of their contents), and multiplies them by cp and cq without their common factor. So
+ * q = cont(cp*d)/gcd(cont(cq*n), cont(cp*d)) * cq/gcd(cp, cq) * d1/cont(d1), up to a unit.
+ */
+function cancelScale(tn: Map<string, [number[], GQ]>, td: Map<string, [number[], GQ]>, t1: Map<string, [number[], GQ]>): Expr {
+  const [cq, contN] = clearDenoms(tn);
+  const [cp, contD] = clearDenoms(td);
+  const [den1, cont1] = clearDenoms(t1);
+  const k = (cq / igcd(cq, cp)) * den1;
+  const num: GI = [contD[0] * k, contD[1] * k];
+  const den = giMul(giGcd(contN, contD), cont1);
+  const [re, im] = giMul(num, [den[0], -den[1]]);
+  return gqExpr([re, im, den[0] * den[0] + den[1] * den[1]]);
 }
 
 /** The expanded polynomial e with each generator power gens[i]**k written as dummies[i]**k. */

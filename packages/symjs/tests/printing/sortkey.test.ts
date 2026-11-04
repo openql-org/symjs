@@ -72,3 +72,48 @@ describe('sort keys', () => {
     expect(asOrderedTerms(x)).toEqual([x]);
   });
 });
+
+describe('as_ordered_terms with a monomial ordering (SymPy Expr.as_ordered_terms(order))', () => {
+  const f = sj.parse('x**2*y + x*y**3 + 1 + x');
+  it.each([
+    ['lex', ['x**2*y', 'x*y**3', 'x', '1']],
+    ['rev-lex', ['1', 'x', 'x*y**3', 'x**2*y']],
+    ['grlex', ['x*y**3', 'x**2*y', 'x', '1']],
+    ['grevlex', ['x*y**3', 'x**2*y', 'x', '1']],
+    ['rev-grlex', ['1', 'x', 'x**2*y', 'x*y**3']],
+    ['ilex', ['1', 'x', 'x*y**3', 'x**2*y']],
+    ['igrlex', ['1', 'x', 'x**2*y', 'x*y**3']],
+    ['igrevlex', ['1', 'x', 'x**2*y', 'x*y**3']],
+    ['rev-ilex', ['x**2*y', 'x*y**3', 'x', '1']],
+    ['rev-grevlex', ['1', 'x', 'x**2*y', 'x*y**3']],
+  ] as const)('%s', (order, want) => expect(asOrderedTerms(f, order).map(str)).toEqual(want));
+  it('other expressions and an unknown ordering', () => {
+    expect(asOrderedTerms(sj.add(x, sj.pow(x, -1)), 'rev-lex').map(str)).toEqual(['1/x', 'x']);
+    expect(asOrderedTerms(sj.parse('2 + 3*I + x'), 'rev-lex').map(str)).toEqual(['3*I', '2', 'x']);
+    expect(asOrderedTerms(x, 'lex').map(str)).toEqual(['x']);
+    expect(() => asOrderedTerms(f, 'bogus' as 'lex')).toThrow(RangeError);
+  });
+});
+
+describe('sort keys of Indexed', () => {
+  it('sort by the printed form, an Atom in SymPy', () => {
+    const X = new sj.Sym('x');
+    const i = sj.Idx(new sj.Sym('i', { integer: true }));
+    const at = (j: number): sj.Expr => new sj.Indexed([X, sj.add(i, j)]);
+    // SymPy: sorted([x[i], x[i+1], x[i-1]], key=default_sort_key) == [x[i + 1], x[i - 1], x[i]]
+    expect(String([at(0), at(1), at(-1)].sort((a, b) => compareKeys(sortKey(a), sortKey(b))))).toBe('x[i + 1],x[i - 1],x[i]');
+    expect(str(sj.sub(at(1), at(0)))).toBe('x[i + 1] - x[i]');
+    expect(str(sj.sub(at(0), at(-1)))).toBe('-x[i - 1] + x[i]');
+  });
+});
+
+describe('class keys of the functions whose nargs is Naturals0 in SymPy', () => {
+  it('order before the other functions', () => {
+    // SymPy str(exp_polar(1)*sin(y)), str(lerchphi(x, y, 2)*sin(y)), str(LeviCivita(x, y)*sin(y));
+    // their class_key is (4, 0, name)
+    expect(str(sj.mul(sj.sin(y), sj.expPolar(1)))).toBe('exp_polar(1)*sin(y)');
+    expect(str(sj.mul(sj.cos(y), sj.expPolar(x)))).toBe('exp_polar(x)*cos(y)');
+    expect(str(sj.mul(sj.sin(y), sj.lerchphi(x, y, 2)))).toBe('lerchphi(x, y, 2)*sin(y)');
+    expect(JSON.stringify(sortKey(sj.expPolar(x)))).toContain('[4,0,"exp_polar"]');
+  });
+});

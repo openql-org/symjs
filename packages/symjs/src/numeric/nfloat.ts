@@ -205,12 +205,12 @@ function realToRational(e: Expr, tolerance: number | undefined, conversion: 'bas
   return reps.length ? xreplace(e, reps) : e;
 }
 
-const isIntegral = (f: Float): boolean => f.mpf.exp >= 0 || f.mpf.man === 0n;
+const isIntegral = (f: Float): boolean => f.mpf.exp >= 0n || f.mpf.man === 0n;
 
 function roundHalfEven(x: Mpf): bigint {
   const fl = F.floor(x);
   const d = F.sub(x, F.fromInt(fl));
-  const c = F.cmp(d, { man: 1n, exp: -1 });
+  const c = F.cmp(d, { man: 1n, exp: -1n });
   return c > 0 || (c === 0 && (fl & 1n) === 1n) ? fl + 1n : fl;
 }
 

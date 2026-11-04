@@ -6,7 +6,7 @@
  * sympy.integrals.laplace).
  */
 
-export { Heaviside, DiracDelta, isHeaviside, isDiracDelta } from './delta';
+export { Heaviside, DiracDelta, SingularityFunction, isHeaviside, isDiracDelta, isSingularityFunction, isSimple } from './delta';
 export { IntegralTransform, IntegralTransformError } from './base';
 export type { TransformHints, TransformResult, TransformTuple } from './base';
 export { LaplaceTransform, laplaceTransform, laplaceCorrespondence, laplaceInitialConds } from './laplace';

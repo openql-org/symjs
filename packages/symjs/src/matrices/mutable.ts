@@ -16,7 +16,7 @@ import { Matrix } from './matrix';
 export class MutableDenseMatrix extends Matrix {
   readonly #cells: Expr[];
 
-  private constructor(rows: number, cols: number, cells: Expr[]) {
+  protected constructor(rows: number, cols: number, cells: Expr[]) {
     super(rows, cols, cells);
     this.#cells = cells;
   }

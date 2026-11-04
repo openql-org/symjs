@@ -6,8 +6,9 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Fn, Mul, Pow, Rational, impl } from '../core/nodes';
+import { Add, ExtensionExpr, Fn, Mul, Pow, Rational, S, impl } from '../core/nodes';
 import { splitCoeff, sympify } from '../core/ops';
+import { countOps as opCount } from '../core/match';
 import { countOps, mapBottomUp, rebuild, some } from '../core/traverse';
 import { combsimp } from './gammasimp';
 import { fn } from '../functions/elementary';
@@ -16,7 +17,7 @@ import { logcombine, powsimp } from './powsimp';
 import { factorTerms } from './exprtools';
 import { radsimp } from './radsimp';
 import { cancel } from './rational';
-import { exptotrig, expsimp, hasTrig, trigsimp } from './trigsimp';
+import { exptotrig, expsimp, exptrigsimp, hasTrig, trigsimp } from './trigsimp';
 import { first } from '../core/guard';
 
 const hasDenominator = (e: Expr): boolean =>
@@ -70,7 +71,19 @@ function simplifyCore(e: Expr): Expr {
       // keep best
     }
   }
-  return hasTrig(best) ? trigsimp(best) : best;
+  // SymPy: expr = factor_terms(expr, sign=False) after the rational candidates, so the numeric
+  // content of a quotient stays in front: 3*(5 - 21*x)/((x - 1)*(5*x - 1)), not (15 - 63*x)/...
+  if (best instanceof Mul && hasDenominator(best)) {
+    const ft = factorTerms(best, { sign: false });
+    if (opCount(ft) <= opCount(best)) best = ft;
+  }
+  const r = hasTrig(best) ? trigsimp(best) : best;
+  // SymPy simplify ends with exptrigsimp, which pairs exp(I*x) + exp(-I*x) into 2*cos(x) also inside products
+  if (some(r, (x) => x instanceof Pow && x.base.key === S.E.key && x.exp.has(S.I))) {
+    const t = exptrigsimp(r);
+    if (countOps(t) < countOps(r)) return t;
+  }
+  return r;
 }
 
 /**
@@ -80,6 +93,10 @@ function simplifyCore(e: Expr): Expr {
  */
 export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
   const original = sympify(ex);
+  if (original instanceof ExtensionExpr) {
+    const own = original.simplifySelf((x) => simplify(x, opts));
+    if (own !== undefined) return own;
+  }
   const e = mapBottomUp(original, (x) =>
     x instanceof Fn ? fn(x.name, x.args.map(simplifyCore)) : x,
   );

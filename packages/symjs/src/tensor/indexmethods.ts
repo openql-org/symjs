@@ -7,6 +7,7 @@
  * repeated indices summed over, Einstein convention).
  */
 
+import { NotImplementedError } from '../core/errors';
 import { at } from '../core/guard';
 import type { Expr } from '../core/nodes';
 import { Add, Fn, Mul, Piecewise, Pow, UndefFn } from '../core/nodes';
@@ -87,7 +88,7 @@ function indicesOf(e: Expr): ExprSet {
     return out;
   }
   if (!hasIndexed(e)) return new ExprSet();
-  throw new TypeError(`get_indices: no handling of ${e.toString()}`);
+  throw new NotImplementedError(`FIXME: No specialized handling of ${e.toString()}`);
 }
 
 /**
@@ -163,7 +164,7 @@ function structure(e: Expr): ContractionStructure {
     return d;
   }
   if (!hasIndexed(e)) return new Map([[null, new Set([e])]]);
-  throw new TypeError(`get_contraction_structure: no handling of ${e.toString()}`);
+  throw new NotImplementedError(`FIXME: No specialized handling of ${e.toString()}`);
 }
 
 /**

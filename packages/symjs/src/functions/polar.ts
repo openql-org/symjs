@@ -8,18 +8,17 @@
  * branch rules of the exponential integrals that use them.
  */
 
-import { isPositive } from '../core/assumptions';
+import { isIntegerQ, isPositive } from '../core/assumptions';
 import { defined, first, pair } from '../core/guard';
-import type { Expr, ExprLike } from '../core/nodes';
+import type { Expr, ExprLike, Substitution } from '../core/nodes';
 import { Add, Constant, Dummy, Fn, Mul, Pow, Rational, S, Special, Sym } from '../core/nodes';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { asCoefficient } from '../core/methods';
-import { rebuild, xreplace } from '../core/traverse';
-import { fnPartials } from '../calculus/diff';
+import { rebuild, subs, xreplace } from '../core/traverse';
 import { mpFns } from '../numeric/mpeval';
 import { numericFns } from '../numeric/evalf';
 import * as M from '../numeric/mpfun';
-import { abs, arg, evaluators, fn, im } from './elementary';
+import { abs, arg, conjugateCommutes, evaluators, fn, im, log, re } from './elementary';
 import { Chi, Ci, Ei, Shi, Si, expint, factorial, gamma } from './special';
 
 export const expPolar = (z: ExprLike): Expr => fn('exp_polar', [z]);
@@ -36,8 +35,8 @@ export const isPolar = (e: Expr): boolean =>
   isFnN(e, 'polar_lift') ||
   isFnN(e, 'principal_branch') ||
   (e instanceof Sym && e.assumptions.polar === true) ||
-  (e instanceof Mul && e.args.every((a) => isPolar(a) || (a instanceof Rational && a.isPositive))) ||
-  (e instanceof Pow && isPolar(e.base) && e.exp.freeSymbols().size === 0);
+  (e instanceof Mul && e.args.some(isPolar) && e.args.every((a) => isPolar(a) || isPositive(a) === true)) ||
+  (e instanceof Pow && isPolar(e.base));
 
 /** SymPy Expr.extract_branch_factor: (rest, n) with the exp_polar argument reduced by 2*pi*I*n. */
 export function extractBranchFactor(eIn: ExprLike, allowHalf = false): [Expr, Expr] {
@@ -98,26 +97,71 @@ export function extractBranchFactor(eIn: ExprLike, allowHalf = false): [Expr, Ex
   return [res, n];
 }
 
-/** Replace polar constructs by ordinary numbers (SymPy unpolarify). */
-export function unpolarify(eIn: ExprLike): Expr {
-  const go = (x: Expr): Expr => {
-    if (x.args.length === 0) return x;
-    const args = x.args.map(go);
-    if (isFnN(x, 'exp_polar')) return exp(first(args));
-    if (isFnN(x, 'polar_lift')) return first(args);
-    if (isFnN(x, 'principal_branch') && args[1]?.key === mul(2, S.Pi).key) return first(args);
-    return args.every((a, i) => a === x.args[i]) ? x : rebuild(x, args);
-  };
-  return go(sympify(eIn));
+/** SymPy _unpolarify(eq, exponents_only=True, pause). */
+function unpolarifyStep(eq: Expr, pause: boolean): Expr {
+  if (eq.args.length === 0) return eq;
+  const go = unpolarifyStep;
+  if (!pause) {
+    if (isFnN(eq, 'exp_polar')) return exp(go(first(eq.args), false));
+    if (isFnN(eq, 'principal_branch') && pair(eq.args)[1].key === mul(2, S.Pi).key) return go(first(eq.args), false);
+    // (SymPy also descends into booleans and relations here; with exponentsOnly, the only mode
+    // that uses this function, an unpaused node is part of an exponent and is never one)
+    if (eq instanceof Add || eq instanceof Mul) return rebuild(eq, eq.args.map((a) => go(a, false)));
+    if (isFnN(eq, 'polar_lift')) return go(first(eq.args), false);
+  }
+  if (eq instanceof Pow) {
+    const expo = go(eq.exp, false);
+    return pow(go(eq.base, !(isIntegerQ(expo) === true && !pause)), expo);
+  }
+  // the arguments of every other node, unbranched functions included, are paused
+  const args = eq.args.map((a) => go(a, true));
+  return args.every((a, i) => a === eq.args[i]) ? eq : rebuild(eq, args);
 }
 
+/**
+ * Every polar construct replaced by its projection, inside any function: what SymPy's
+ * unpolarify gives for the unbranched functions, applied to all of them (the integration
+ * algorithms ported from SymPy rely on it).
+ */
+function unpolarifyAll(e: Expr): Expr {
+  if (e.args.length === 0) return e;
+  const args = e.args.map(unpolarifyAll);
+  if (isFnN(e, 'exp_polar')) return exp(first(args));
+  if (isFnN(e, 'polar_lift')) return first(args);
+  if (isFnN(e, 'principal_branch') && args[1]?.key === mul(2, S.Pi).key) return first(args);
+  return args.every((a, i) => a === e.args[i]) ? e : rebuild(e, args);
+}
+
+/**
+ * Replace polar constructs by ordinary numbers (SymPy unpolarify): the result has the same
+ * projection to the complex plane. `subs` is applied first (and then, as in SymPy, the default mode
+ * is used). With `exponentsOnly`, only the exponents of powers are unpolarified, as in SymPy.
+ *
+ * Without `exponentsOnly`, the arguments of every function are unpolarified, where SymPy keeps
+ * them in the functions that are not unbranched (SymPy: unpolarify(besselj(a, polar_lift(x))) is
+ * besselj(a, polar_lift(x)), here besselj(a, x)).
+ */
+export function unpolarify(eIn: ExprLike, opts: { subs?: Substitution; exponentsOnly?: boolean } = {}): Expr {
+  const eq = sympify(eIn);
+  if (opts.subs !== undefined) return unpolarify(subs(eq, opts.subs));
+  if (opts.exponentsOnly !== true) return unpolarifyAll(eq);
+  let res = eq;
+  for (let next = unpolarifyStep(res, true); next.key !== res.key; next = unpolarifyStep(res, true)) res = next;
+  // replacing exp_polar(0) by 1 and polar_lift(0) by 0 is always correct
+  return xreplace(res, [
+    [expPolar(0), S.One],
+    [polarLift(0), S.Zero],
+  ]);
+}
+
+/** SymPy periodic_argument._getunbranched: the argument of a polar number on the Riemann surface. */
 function unbranched(ar: Expr): Expr | undefined {
   let u: Expr = S.Zero;
   for (const a of ar instanceof Mul ? ar.args : [ar]) {
-    if (isFnN(a, 'exp_polar')) u = add(u, im(first(a.args)));
+    if (!isPolar(a)) u = add(u, arg(a));
+    else if (isFnN(a, 'exp_polar')) u = add(u, im(first(a.args)));
+    else if (a instanceof Pow) u = add(u, mul(re(a.exp), unbranchedArgument(a.base)), mul(im(a.exp), log(abs(a.base))));
     else if (isFnN(a, 'polar_lift')) u = add(u, arg(first(a.args)));
-    else if (a instanceof Pow && isPolar(a.base)) return undefined;
-    else if (!isPolar(a)) u = add(u, arg(a));
     else return undefined;
   }
   return u;
@@ -204,11 +248,42 @@ const evalPolarLift = (z: Expr): Expr | undefined => {
   return undefined;
 };
 
+// the rules of exp, log, Abs, arg and conjugate for polar numbers: log(exp_polar(z)) =
+// unpolarify(z) (log.eval), |exp_polar(z)| = exp(re(z)) and |polar_lift(z)| = |z| (_eval_Abs),
+// arg(exp_polar(z)) = periodic_argument(exp_polar(z), oo) (arg.eval) and
+// conjugate(exp_polar(z)) = exp_polar(conjugate(z)) (ExpBase._eval_conjugate)
+const elementaryBase = { log: defined(evaluators.log), abs: defined(evaluators.abs), arg: defined(evaluators.arg) };
+evaluators.log = (z, ...rest) => (rest.length === 0 && isFnN(z, 'exp_polar') ? unpolarify(first(z.args)) : elementaryBase.log(z, ...rest));
+evaluators.abs = (z) => {
+  if (isFnN(z, 'exp_polar')) return exp(re(first(z.args)));
+  if (isFnN(z, 'polar_lift')) return abs(first(z.args));
+  // the Abs of a product evaluates its factors without this evaluator; as in SymPy, the factors
+  // whose Abs does not evaluate stay together in one Abs
+  const isLift = (t: Expr) => isFnN(t, 'exp_polar') || isFnN(t, 'polar_lift');
+  if (!(z instanceof Mul) || !z.args.some(isLift)) return elementaryBase.abs(z);
+  const known: Expr[] = [];
+  const inside: Expr[] = [];
+  for (const t of z.args.filter(isLift)) {
+    const v = abs(t);
+    if (isFnN(v, 'abs')) inside.push(t);
+    else known.push(v);
+  }
+  const rest = abs(mul(...z.args.filter((t) => !isLift(t))));
+  if (inside.length === 0) return mul(...known, rest);
+  const restFactors = rest instanceof Mul ? rest.args : [rest];
+  for (const t of restFactors) {
+    if (isFnN(t, 'abs')) inside.push(first(t.args));
+    else known.push(t);
+  }
+  return mul(...known, new Fn('abs', [mul(...inside)]));
+};
+evaluators.arg = (z) => (isFnN(z, 'exp_polar') ? unbranchedArgument(z) : elementaryBase.arg(z));
+conjugateCommutes.add('exp_polar');
 evaluators.exp_polar = () => undefined;
 evaluators.polar_lift = evalPolarLift;
 evaluators.periodic_argument = evalPeriodicArgument;
 evaluators.principal_branch = evalPrincipalBranch;
-fnPartials.exp_polar = (args) => expPolar(first(args));
+// (no derivative: SymPy's exp_polar has no fdiff, diff(exp_polar(x), x) stays Derivative(exp_polar(x), x))
 mpFns.exp_polar = (args, p) => M.cexp(first(args), p);
 mpFns.polar_lift = (args) => first(args);
 numericFns.exp_polar = (args) => {

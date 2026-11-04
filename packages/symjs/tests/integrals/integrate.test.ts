@@ -141,8 +141,6 @@ describe('results that differ from SymPy 1.14', () => {
     // log(cosh(x)) differs from SymPy's x - log(tanh(x) + 1) by a constant
     ["sj.integrate(P('tanh(x)'), x)", () => sj.integrate(P('tanh(x)'), x), "log(cosh(x))", "x - log(tanh(x) + 1)"],
     // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('log(2*x)'), x)", () => sj.integrate(P('log(2*x)'), x), "Integral(log(2*x), x)", "x*log(2*x) - x"],
-    // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('asec(x)'), x)", () => sj.integrate(P('asec(x)'), x), "Integral(asec(x), x)", "x*asec(x) - Piecewise((acosh(x), Abs(x**2) > 1), (-I*asin(x), True))"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('sin(x)*cos(2*x)'), x)", () => sj.integrate(P('sin(x)*cos(2*x)'), x), "Integral(sin(x)*cos(2*x), x)", "2*sin(x)*sin(2*x)/3 + cos(x)*cos(2*x)/3"],
@@ -214,8 +212,6 @@ describe('results that differ from SymPy 1.14', () => {
     ["sj.integrate(P('sin(log(x))'), x)", () => sj.integrate(P('sin(log(x))'), x), "Integral(sin(log(x)), x)", "x*sin(log(x))/2 - x*cos(log(x))/2"],
     // differs from SymPy's log(cos(x)) + 1/(2*cos(x)**2) by a constant
     ["sj.integrate(P('tan(x)**3'), x)", () => sj.integrate(P('tan(x)**3'), x), "-log(tan(x)**2 + 1)/2 + tan(x)**2/2", "log(cos(x)) + 1/(2*cos(x)**2)"],
-    // integration by parts stops at a nesting depth of 24
-    ["sj.integrate(P('log(x)**30'), x).toString().slice(0, 40)", () => sj.integrate(P('log(x)**30'), x).toString().slice(0, 40), "Integral(log(x)**30, x)", "x*log(x)**30 - 30*x*log(x)**29 + 870*x*l"],
     // the same value for q < 0, written with sqrt(-q)
     ["sj.integrate(P('cos(q*x**2)'), x)", () => sj.integrate(P('cos(q*x**2)'), x), "sqrt(2)*sqrt(pi)*fresnelc(sqrt(2)*x*sqrt(-q)/sqrt(pi))*gamma(1/4)/(8*sqrt(-q)*gamma(5/4))", "sqrt(2)*sqrt(pi)*fresnelc(sqrt(2)*sqrt(q)*x/sqrt(pi))*gamma(1/4)/(8*sqrt(q)*gamma(5/4))"],
     // a factor whose derivative is 0 is not recognized as a constant
@@ -313,5 +309,50 @@ describe('unresolved singularities stay unevaluated', () => {
   it('keeps symbolic endpoints when the primitive extends continuously', () => {
     // SymPy: integrate(log(x), (x, 1, a))
     expect(String(integrate(P('log(x)'), x, [1, a]))).toBe('a*log(a) - a + 1');
+  });
+});
+
+describe('DiracDelta, SingularityFunction and the Risch algorithm (SymPy Integral._eval_integral)', () => {
+  const D = sj.DiracDelta;
+  const SF = sj.SingularityFunction;
+  const f = sj.Function('f');
+  const oo = sj.S.Infinity;
+  it('integrates DiracDelta by deltaintegrate', () => {
+    expect(String(integrate(D(x), x))).toBe('Heaviside(x)');
+    expect(String(integrate(sj.mul(D(sj.sub(x, 1)), sj.pow(x, 2)), x))).toBe('Heaviside(x - 1)');
+    expect(String(integrate(D(x, 1), x))).toBe('DiracDelta(x)');
+    expect(String(integrate(sj.add(D(x), x), x))).toBe('x**2/2 + Heaviside(x)');
+    expect(String(integrate(sj.mul(D(sj.sub(x, 1)), f(x)), x, [sj.mul(-1, oo), oo]))).toBe('f(1)');
+    expect(String(integrate(sj.mul(D(sj.sub(x, 1)), sj.exp(x)), x, [sj.mul(-1, oo), oo]))).toBe('E');
+    expect(String(integrate(sj.mul(D(sj.sub(sj.pow(x, 2), 1)), f(x), f(sj.pow(x, 2))), x))).toBe('f(-1)*f(1)*Heaviside(x + 1)/2 + f(1)**2*Heaviside(x - 1)/2');
+    // deltaintegrate does not apply
+    expect(String(integrate(D(sj.sin(x)), x))).toBe('Integral(DiracDelta(sin(x)), x)');
+  });
+  it('integrates SingularityFunction by singularityintegrate', () => {
+    expect(String(integrate(SF(x, a, 3), x))).toBe('SingularityFunction(x, a, 4)/4');
+    expect(String(integrate(sj.mul(5, SF(x, 5, -2)), x))).toBe('5*SingularityFunction(x, 5, -1)');
+    expect(String(integrate(sj.mul(6, SF(x, 5, -1)), x))).toBe('6*SingularityFunction(x, 5, 0)');
+    expect(String(integrate(sj.mul(SF(x, 1, -1), f(x)), x))).toBe('f(1)*SingularityFunction(x, 1, 0)');
+    expect(String(integrate(sj.mul(x, SF(x, 0, -1)), x))).toBe('0');
+    // term by term (SymPy prints SingularityFunction(x, 1, 3)/3 + sqrt(pi)*erfi(x)/2: the same sum)
+    expect(String(integrate(sj.add(SF(x, 1, 2), sj.exp(sj.pow(x, 2))), x))).toBe('sqrt(pi)*erfi(x)/2 + SingularityFunction(x, 1, 3)/3');
+    // singularityintegrate does not apply. SymPy returns SingularityFunction(sin(x), 1, 3)/3, which is
+    // wrong: its derivative has the factor cos(x)
+    expect(String(integrate(SF(sj.sin(x), 1, 2), x))).toBe('Integral(SingularityFunction(sin(x), 1, 2), x)');
+  });
+  it('integrates elementary transcendental functions by the Risch algorithm', () => {
+    expect(String(integrate(P('exp(x)/(1 + exp(2*x))'), x))).toBe('RootSum(4*_z**2 + 1, Lambda(_i, _i*log(2*_i + exp(x))))');
+    expect(String(integrate(P('log(x)/x**3'), x))).toBe('-log(x)/(2*x**2) - 1/(4*x**2)');
+    expect(String(integrate(P('log(2*x)'), x))).toBe('x*log(2*x) - x');
+    expect(integrate(P('log(x)**30'), x).toString().slice(0, 40)).toBe('x*log(x)**30 - 30*x*log(x)**29 + 870*x*l');
+    // proven nonelementary: left unevaluated (SymPy then finds Ei(exp(x)) for exp(exp(x)) with other methods)
+    expect(String(integrate(P('x**x'), x))).toBe('Integral(x**x, x)');
+    // trigonometric (SymPy heurisch: log(tan(y/2))) and algebraic integrands are not for the Risch algorithm
+    expect(String(integrate(P('1/sin(y)'), y))).toBe('Integral(1/sin(y), y)');
+    expect(String(integrate(P('sqrt(exp(x) + 1)/x'), x))).toBe('Integral(sqrt(exp(x) + 1)/x, x)');
+  });
+  it('keeps the nonelementary part of a Risch result', () => {
+    // SymPy: x*log(x*exp(-x) + 1) + Integral((x**2 - x)/(x + exp(x)), x)
+    expect(String(integrate(P('log(x/exp(x) + 1)'), x))).toBe('x*log(x*exp(-x) + 1) + Integral((x**2 - x)/(x + exp(x)), x)');
   });
 });

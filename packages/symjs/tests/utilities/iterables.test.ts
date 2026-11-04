@@ -123,6 +123,12 @@ describe('sequences', () => {
     expect(isPalindromic('abcbb', -4, -1)).toBe(true);
     expect(isPalindromic([x, add(x, 1), x])).toBe(true);
   });
+  it('flatten of an expression (SymPy strategies.rl.flatten)', () => {
+    // SymPy: flatten(Basic(S(1), S(2), Basic(S(3), S(4)))) == Basic(1, 2, 3, 4)
+    expect(sj.str(flatten(sj.Basic(1, 2, sj.Basic(3, 4))))).toBe('Basic(1, 2, 3, 4)');
+    expect(flatten(new Add([x, new Add([y, sj.Rational.of(2)])])).args).toEqual([x, y, sj.Rational.of(2)]);
+    expect(sj.str(flatten(new Add([x, new Add([x, sj.Rational.of(2)])]), (op, args) => sj.rebuild(op, args)))).toBe('2*x + 2');
+  });
   it('flatten', () => {
     expect(flatten([1, 2, 3])).toEqual([1, 2, 3]);
     expect(flatten([1, 2, [3]])).toEqual([1, 2, 3]);
@@ -599,8 +605,8 @@ describe('iterables', () => {
 
   it('sift with binary keys given as Integers and booleans', () => {
     expect(I.sift([1, 2, 3], (v) => sj.sympify(v % 2), { binary: true })).toEqual([[1, 3], [2]]);
-    // SymPy raises ValueError for S.true/S.false keys (not tuple indices); symjs reads them as True/False
-    expect(I.sift([1, 2, 3], (v) => (v > 1 ? sj.S.true : sj.S.false), { binary: true })).toEqual([[2, 3], [1]]);
+    // SymPy raises ValueError for S.true/S.false keys (they are not the keys True/False)
+    expect(() => I.sift([1, 2, 3], (v) => (v > 1 ? sj.S.true : sj.S.false), { binary: true })).toThrow('keyfunc gave non-binary output');
   });
 
   it('common_prefix, rotations of empty sequences', () => {

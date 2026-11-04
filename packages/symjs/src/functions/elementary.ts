@@ -493,6 +493,9 @@ const evalArg: Evaluator = (x) => {
 /** Functions with f(conjugate(z)) = conjugate(f(z)) (real on the real axis); filled by special.ts. */
 export const conjugateCommutes = new Set<string>();
 
+/** Functions with their own conjugate (SymPy _eval_conjugate), by name; filled by the modules that define them. */
+export const conjugateRules: Partial<Record<string, (args: readonly Expr[]) => Expr>> = {};
+
 /** Complex conjugate, pushed through the expression tree. */
 export function conjugate(xx: ExprLike): Expr {
   const x = sympify(xx);
@@ -521,9 +524,12 @@ export function conjugate(xx: ExprLike): Expr {
       case 'cosh':
       case 'tanh':
         return fn(x.name, [conjugate(first(x.args))]);
-      default:
+      default: {
         if (conjugateCommutes.has(x.name)) return fn(x.name, x.args.map(conjugate));
+        const rule = conjugateRules[x.name];
+        if (rule) return rule(x.args);
         break;
+      }
     }
   }
   return new Fn('conjugate', [x]);
@@ -636,7 +642,8 @@ function shouldEvalf(a: Expr): number {
   if (a instanceof Float) return a.prec;
   if (!(a instanceof Add) || a.args.length !== 2) return -1;
   const [r, t] = a.args;
-  const im = t instanceof Mul && t.args.length === 2 && t.args[1] === S.I ? t.args[0] : undefined;
+  // (pure_complex(1.0 + I) is (1.0, 1))
+  const im = t === S.I ? S.One : t instanceof Mul && t.args.length === 2 && t.args[1] === S.I ? t.args[0] : undefined;
   if (r === undefined || !isNum(r) || im === undefined || !isNum(im)) return -1;
   return Math.max(r instanceof Float ? r.prec : -1, im instanceof Float ? im.prec : -1);
 }

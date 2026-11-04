@@ -156,6 +156,20 @@ const EVAL_CASES: Case[] = [
   ["s", "harmonic(3)", "11/6"],
   ["s", "harmonic(3, 2)", "49/36"],
   ["s", "harmonic(x)", "harmonic(x)"],
+  ["s", "harmonic(2, x)", "1 + 2**(-x)"],
+  ["s", "harmonic(3, x)", "1 + 3**(-x) + 2**(-x)"],
+  ["s", "harmonic(2, x + 1)", "2**(-x - 1) + 1"],
+  ["s", "harmonic(3, 1/2)", "sqrt(3)/3 + sqrt(2)/2 + 1"],
+  ["s", "harmonic(x, 0)", "x"],
+  ["s", "harmonic(x, 1)", "harmonic(x)"],
+  ["s", "harmonic(-1)", "zoo"],
+  ["s", "harmonic(-3, 2)", "nan"],
+  ["s", "harmonic(-2, p)", "nan"],
+  ["s", "harmonic(-2, I)", "nan"],
+  ["s", "harmonic(-2, ng)", "harmonic(-2, ng)"],
+  ["s", "harmonic(-2, nn)", "harmonic(-2, nn)"],
+  ["s", "harmonic(-2, x)", "harmonic(-2, x)"],
+  ["s", "harmonic(-2, -1)", "1"],
   ["s", "catalan(3)", "5"],
   ["s", "catalan(-1)", "-1/2"],
   ["s", "catalan(x)", "catalan(x)"],
@@ -669,6 +683,8 @@ describe('special functions', () => {
     expect(String(catalan(new Sym('m', { integer: true, negative: true })))).toBe('catalan(m)');
     // harmonic numbers of a negative order are power sums: SymPy harmonic(3, -2) = 14
     expect(String(harmonic(3, -2))).toBe('14');
+    // SymPy harmonic(x, -2) = x/6 + (x + 1)**3/3 - (x + 1)**2/2 + 1/6 (bernoulli(3, x + 1) is printed expanded here)
+    expect(String(sj.expand(harmonic(x, -2)))).toBe('x**3/3 + x**2/2 + x/6');
   });
   it('binomial with a very large k', () => {
     // SymPy binomial(-5, 100001), binomial(-5, 100002), binomial(100010, 100005)
@@ -708,5 +724,63 @@ describe('special functions', () => {
     // mpmath erfc(3), erfc(6)
     expect(toComplex(erfc(x), { x: 3 }).re).toBeCloseTo(2.20904969985854e-5, 15);
     expect(toComplex(erfc(x), { x: 6 }).re / 2.15197367124989e-17).toBeCloseTo(1, 10);
+  });
+});
+
+/** str() of the SymPy operation named by kind applied to src (the tables of the incomplete beta functions (SymPy beta_functions) block below). */
+function runBeta(kind: string, src: string): string {
+  const e = sj.parse(src, { locals: { exp_polar: sj.expPolar } });
+  if (kind === 'E') return String(e);
+  if (kind === 'F') return String(sj.expandFunc(e));
+  if (kind === 'C') return String(sj.conjugate(e));
+  if (kind === 'D') return String(sj.diff(e, new sj.Sym('x')));
+  if (kind.startsWith('D:')) return String(sj.diff(e, new sj.Sym(kind.slice(2))));
+  if (kind.startsWith('RW:')) return String(sj.rewrite(e, kind.slice(3)));
+  return String(sj.evalf(e, kind.length > 1 ? Number(kind.slice(1)) : 15));
+}
+
+describe('incomplete beta functions (SymPy beta_functions)', () => {
+  const cases: [string, string, string][] = [
+    ['E', 'betainc(a, b, x1, x2)', 'betainc(a, b, x1, x2)'],
+    ['E', 'betainc(a, b, 0, x)', 'betainc(a, b, 0, x)'],
+    ['C', 'betainc(a, b, x1, x2)', 'betainc(conjugate(a), conjugate(b), conjugate(x1), conjugate(x2))'],
+    ['C', 'betainc_regularized(a, b, x1, x2)', 'betainc_regularized(conjugate(a), conjugate(b), conjugate(x1), conjugate(x2))'],
+    ['D:x2', 'betainc(a, b, x1, x2)', 'x2**(a - 1)*(1 - x2)**(b - 1)'],
+    ['D:x1', 'betainc(a, b, x1, x2)', '-x1**(a - 1)*(1 - x1)**(b - 1)'],
+    ['D:a', 'betainc(a, b, x1, x2)', 'Derivative(betainc(a, b, x1, x2), a)'],
+    ['D', 'betainc(x**2, b, x1, x2)', '2*x*Subs(Derivative(betainc(_xi_1, b, x1, x2), _xi_1), _xi_1, x**2)'],
+    ['D:x2', 'betainc_regularized(a, b, x1, x2)', 'x2**(a - 1)*(1 - x2)**(b - 1)/beta(a, b)'],
+    ['D:x1', 'betainc_regularized(a, b, x1, x2)', '-x1**(a - 1)*(1 - x1)**(b - 1)/beta(a, b)'],
+    ['D:b', 'betainc_regularized(a, b, x1, x2)', 'Derivative(betainc_regularized(a, b, x1, x2), b)'],
+    ['RW:hyper', 'betainc(a, b, x1, x2)', '(-x1**a*hyper((a, 1 - b), (a + 1,), x1) + x2**a*hyper((a, 1 - b), (a + 1,), x2))/a'],
+    ['RW:hyper', 'betainc_regularized(a, b, x1, x2)', '(-x1**a*hyper((a, 1 - b), (a + 1,), x1) + x2**a*hyper((a, 1 - b), (a + 1,), x2))/(a*beta(a, b))'],
+    ['N10', 'betainc(2, 3, 4, 5)', '56.08333333'],
+    ['N25', 'betainc(3/4, 1 - 4*I, 0, 2 + 3*I)', '0.2241657956955709603655887 + 0.3619619242700451992411724*I'],
+    ['N10', 'betainc_regularized(1, 2, 0, 1/4)', '0.4375000000'],
+    ['N5', 'betainc_regularized(pi, E, 0, 1)', '1.0000'],
+    ['N', 'betainc(2, 3, 1/2, 1/2)', '0'],
+    ['N', 'betainc(1/2, 3/2, 1/5, 7/10)', '0.585766546925970'],
+    ['N', 'betainc_regularized(1/2, 3/2, 1/5, 7/10)', '0.372910565764555'],
+    ['D:a', 'zeta(s, a)', '-s*zeta(s + 1, a)'],
+    ['E', 'zeta(s, 3)', 'zeta(s, 3)'],
+  ];
+  it.each(cases)('%s %s', (kind, src, expected) => {
+    expect(runBeta(kind, src)).toBe(expected);
+  });
+  it('builds betainc with the public constructors and evaluates it in double precision', () => {
+    const [a, b, x1, x2] = sj.symbols('a b x1 x2') as [sj.Sym, sj.Sym, sj.Sym, sj.Sym];
+    expect(String(sj.betainc(a, b, x1, x2))).toBe('betainc(a, b, x1, x2)');
+    expect(String(sj.betaincRegularized(a, b, x1, x2))).toBe('betainc_regularized(a, b, x1, x2)');
+    const r = (p: bigint, q: bigint) => sj.Rational.of(p, q);
+    expect(sj.toComplex(sj.betainc(r(1n, 2n), r(3n, 2n), r(1n, 5n), r(7n, 10n))).re).toBeCloseTo(0.58576654692597, 13);
+    expect(sj.toComplex(sj.betaincRegularized(r(1n, 2n), r(3n, 2n), r(1n, 5n), r(7n, 10n))).re).toBeCloseTo(0.372910565764555, 13);
+    expect(String(sj.zeta(new sj.Sym('s'), 3))).toBe('zeta(s, 3)');
+  });
+});
+
+describe('the Hurwitz zeta function in double precision', () => {
+  it('evaluates zeta(s, a) by mpmath', () => {
+    // mpmath zeta(2, 1/3) = 10.095597125427096
+    expect(toComplex(new sj.Fn('zeta', [sj.sympify(2), Rational.of(1n, 3n)])).re).toBeCloseTo(10.095597125427096, 12);
   });
 });

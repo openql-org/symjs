@@ -204,7 +204,9 @@ describe('monotonicity', () => {
     // SymPy returns False; the sign of the derivative y depends on y, so the answer is unknown
     expect(Q.isIncreasing(p('x*y'), Reals, x)).toBeUndefined();
     // SymPy raises NotImplementedError
-    expect(() => Q.isIncreasing(p('x*y'), Reals)).toThrow(TypeError);
+    expect(() => Q.isIncreasing(p('x*y'), Reals)).toThrow('The function has not yet been implemented for all multivariate expressions.');
+    // a constant (SymPy True)
+    expect(Q.isIncreasing(p('2*pi'), Reals)).toBe(true);
     expect(Q.isDecreasing(p('x**3'))).toBe(false);
     // SymPy returns False, but x**2 is strictly increasing on [0, oo) (the derivative vanishes only at 0)
     expect(Q.isStrictlyIncreasing(p('x**2'), interval(0, p('oo')))).toBe(true);

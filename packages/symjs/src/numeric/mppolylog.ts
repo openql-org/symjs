@@ -11,13 +11,14 @@
  * lerchphi for numeric evaluation.
  */
 
-import { NotImplementedError } from '../core/errors';
 import * as F from './mpf';
 import type { Mpf } from './mpf';
 import { ZERO } from './mpf';
 import * as M from './mpfun';
 import { type Mpc, cadd, cdiv, cmul, csub } from './mpfun';
 import { bernoulli, cgamma, czeta } from './mpspecial';
+import { cexpint } from './mpexpint';
+import { quadZeroInf } from './mpquad';
 
 const real = (x: Mpf): Mpc => [x, ZERO];
 const int = (n: bigint | number): Mpc => [F.fromInt(BigInt(n)), ZERO];
@@ -53,7 +54,7 @@ function zetaAt(s: Mpc, wp: number): Mpc {
     const pi = real(M.mpPi(w));
     const s1 = csub(M.C1, s, w);
     const f = cmul(M.cpow(int(2), s, w), M.cpow(pi, csub(s, M.C1, w), w), w);
-    const sn = M.csin(cmul(pi, cmul(real({ man: 1n, exp: -1 }), s, w), w), w);
+    const sn = M.csin(cmul(pi, cmul(real({ man: 1n, exp: -1n }), s, w), w), w);
     return cmul(cmul(f, sn, w), cmul(cgamma(s1, w), czeta(s1, w), w), wp);
   }
   return czeta(s, wp);
@@ -140,7 +141,7 @@ function polylogGeneral(s: Mpc, z: Mpc, wp: number): Mpc {
     const v = csub(M.C1, s, wp);
     const twopi = F.ldexp(M.mpPi(wp), 1);
     const y = cdiv(M.clog(M.cneg(z), wp), [ZERO, twopi], wp);
-    const half = real({ man: 1n, exp: -1 });
+    const half = real({ man: 1n, exp: -1n });
     const jv = M.cpow(M.CI, v, wp);
     const jmv = M.cpow(M.CI, M.cneg(v), wp);
     const sum = cadd(cmul(jv, czeta(v, wp, cadd(half, y, wp)), wp), cmul(jmv, czeta(v, wp, csub(half, y, wp)), wp), wp);
@@ -215,7 +216,7 @@ export function clerchphi(z: Mpc, s: Mpc, a: Mpc, prec: number): Mpc {
     }
     return cadd(cmul(zpow, clerchphi(z, s, cadd(a, int(m), wp), wp), wp), v, prec);
   }
-  if (absD(z) >= 0.9) throw new NotImplementedError('lerchphi for |z| >= 0.9 (mpmath integrates numerically)');
+  if (absD(z) >= 0.9) return lerchphiIntegral(z, s, a, prec);
   let sum: Mpc = M.C0;
   let zk: Mpc = M.C1;
   const ms = M.cneg(s);
@@ -225,4 +226,37 @@ export function clerchphi(z: Mpc, s: Mpc, a: Mpc, prec: number): Mpc {
     if (tiny(term, wp + Math.max(0, F.mag(M.cabs(sum, 53))))) return [F.round(sum[0], prec), F.round(sum[1], prec)];
     zk = cmul(zk, z, wp);
   }
+}
+
+/**
+ * mpmath lerchphi for Re a >= 1 (used here for |z| >= 0.9, where the series converges slowly or
+ * diverges): with g = log z,
+ * Phi = 1/(2 a^s) + Gamma(1 - s, -a g) (-g)^(s-1) / z^a
+ *       + 2 int_0^oo sin(s atan(t/a) - t g) / ((a^2 + t^2)^(s/2) (exp(2 pi t) - 1)) dt,
+ * the incomplete Gamma function as w^(1-s) E_s(w). (mpmath chops parts below 100 eps |Phi| for
+ * real arguments with z > 1; evalf drops such rounding noise as it shrinks with the precision.)
+ */
+function lerchphiIntegral(z: Mpc, s: Mpc, a: Mpc, prec: number): Mpc {
+  const wp = prec + 30;
+  const g = M.clog(z, wp);
+  const w = M.cneg(cmul(a, g, wp));
+  const upper = cmul(M.cpow(w, csub(M.C1, s, wp), wp), cexpint(s, w, wp), wp);
+  let v = cdiv(M.C1, cmul(int(2), M.cpow(a, s, wp), wp), wp);
+  v = cadd(v, cdiv(cmul(upper, M.cpow(M.cneg(g), csub(s, M.C1, wp), wp), wp), M.cpow(z, a, wp), wp), wp);
+  const h = cmul(real({ man: 1n, exp: -1n }), s, wp);
+  const a2 = cmul(a, a, wp);
+  const integrand = (t: Mpf, p: number): Mpc => {
+    const tc = real(t);
+    const num = M.csin(csub(cmul(s, M.catan(cdiv(tc, a, p), p), p), cmul(tc, g, p), p), p);
+    const den = cmul(M.cpow(cadd(a2, real(F.mul(t, t, p)), p), h, p), real(expm1(F.mul(F.ldexp(M.mpPi(p), 1), t, p), p)), p);
+    return cdiv(num, den, p);
+  };
+  const q = quadZeroInf(integrand, wp);
+  v = cadd(v, cmul(int(2), q, wp), wp);
+  return [F.round(v[0], prec), F.round(v[1], prec)];
+}
+
+/** exp(x) - 1 for x > 0, with the bits the subtraction cancels for a small x. */
+function expm1(x: Mpf, wp: number): Mpf {
+  return F.sub(M.exp(x, wp + Math.max(0, -F.mag(x)) + 10), F.ONE, wp);
 }

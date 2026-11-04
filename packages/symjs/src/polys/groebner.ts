@@ -7,19 +7,22 @@
  * ideal membership (SymPy groebner / GroebnerBasis).
  */
 
-import { DomainError, PolynomialError } from '../core/errors';
+import { PolynomialError } from '../core/errors';
 import { at, defined } from '../core/guard';
 import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Rational, S, impl } from '../core/nodes';
+import { Add, Constant, Dummy, Mul, Pow, Rational, S, impl } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
+import { xreplace } from '../core/traverse';
 import { str } from '../printing/str';
+import { cancel, fraction } from '../simplify/rational';
+import { mlcm } from './mpoly';
 import { Poly, sortGens } from './sympoly';
 
 export type MonomialOrder = 'lex' | 'grlex' | 'grevlex';
 
 type Monom = number[];
-/** Sparse polynomial: monomial key -> [monomial, coefficient]. */
-type SP = Map<string, [Monom, Rational]>;
+/** Sparse polynomial: monomial key -> [monomial, coefficient (a rational or a rational function of parameters)]. */
+type SP = Map<string, [Monom, Expr]>;
 
 const mkey = (m: Monom) => m.join(',');
 
@@ -46,28 +49,33 @@ function cmpMonom(a: Monom, b: Monom, order: MonomialOrder): number {
 const radd = (a: Rational, b: Rational): Rational => Rational.of(a.p * b.q + b.p * a.q, a.q * b.q);
 const rmul = (a: Rational, b: Rational): Rational => Rational.of(a.p * b.p, a.q * b.q);
 const rdiv = (a: Rational, b: Rational): Rational => Rational.of(a.p * b.q, a.q * b.p);
+// coefficients of the fraction field: rationals directly, other ones normalized by cancel
+const cadd = (a: Expr, b: Expr): Expr => (a instanceof Rational && b instanceof Rational ? radd(a, b) : cancel(add(a, b)));
+const cmul = (a: Expr, b: Expr): Expr => (a instanceof Rational && b instanceof Rational ? rmul(a, b) : cancel(mul(a, b)));
+const cdiv = (a: Expr, b: Expr): Expr => (a instanceof Rational && b instanceof Rational ? rdiv(a, b) : cancel(mul(a, pow(b, -1))));
+const isZeroC = (c: Expr): boolean => c instanceof Rational && c.isZero;
 
-function leadOrUndefined(p: SP, order: MonomialOrder): [Monom, Rational] | undefined {
-  let best: [Monom, Rational] | undefined;
+function leadOrUndefined(p: SP, order: MonomialOrder): [Monom, Expr] | undefined {
+  let best: [Monom, Expr] | undefined;
   for (const t of p.values()) if (!best || cmpMonom(t[0], best[0], order) > 0) best = t;
   return best;
 }
 
 /** The leading term of a nonzero polynomial. */
-const lead = (p: SP, order: MonomialOrder): [Monom, Rational] => defined(leadOrUndefined(p, order), 'leading term');
+const lead = (p: SP, order: MonomialOrder): [Monom, Expr] => defined(leadOrUndefined(p, order), 'leading term');
 
-function addTerm(p: SP, m: Monom, c: Rational): void {
+function addTerm(p: SP, m: Monom, c: Expr): void {
   const k = mkey(m);
   const cur = p.get(k);
-  const v = cur ? radd(cur[1], c) : c;
-  if (v.isZero) p.delete(k);
+  const v = cur ? cadd(cur[1], c) : c;
+  if (isZeroC(v)) p.delete(k);
   else p.set(k, [m, v]);
 }
 
 /** p - c * x^m * q */
-function subMul(p: SP, c: Rational, m: Monom, q: SP): SP {
+function subMul(p: SP, c: Expr, m: Monom, q: SP): SP {
   const out: SP = new Map(p);
-  for (const [qm, qc] of q.values()) addTerm(out, qm.map((e, i) => e + at(m, i)), rmul(rmul(c, qc), Rational.of(-1n)));
+  for (const [qm, qc] of q.values()) addTerm(out, qm.map((e, i) => e + at(m, i)), cmul(cmul(c, qc), S.NegOne));
   return out;
 }
 
@@ -85,7 +93,7 @@ function divide(p0: SP, G: SP[], order: MonomialOrder): [SP[], SP] {
       const [gm, gc] = lead(g, order);
       if (divides(gm, lm)) {
         const m = lm.map((e, j) => e - at(gm, j));
-        const c = rdiv(lc, gc);
+        const c = cdiv(lc, gc);
         addTerm(defined(qs[i]), m, c);
         p = subMul(p, c, m, g);
         done = true;
@@ -106,25 +114,22 @@ function spoly(f: SP, g: SP, order: MonomialOrder): SP {
   const l = fm.map((e, i) => Math.max(e, at(gm, i)));
   const shift = l.map((e, i) => e - at(fm, i));
   let out: SP = new Map();
-  for (const [m, c] of f.values()) addTerm(out, m.map((e, i) => e + at(shift, i)), rdiv(c, fc));
-  out = subMul(out, rdiv(S.One, gc), l.map((e, i) => e - at(gm, i)), g);
+  for (const [m, c] of f.values()) addTerm(out, m.map((e, i) => e + at(shift, i)), cdiv(c, fc));
+  out = subMul(out, cdiv(S.One, gc), l.map((e, i) => e - at(gm, i)), g);
   return out;
 }
 
 function monic(p: SP, order: MonomialOrder): SP {
   const [, lc] = lead(p, order);
   const out: SP = new Map();
-  for (const [m, c] of p.values()) out.set(mkey(m), [m, rdiv(c, lc)]);
+  for (const [m, c] of p.values()) out.set(mkey(m), [m, cdiv(c, lc)]);
   return out;
 }
 
 function fromExpr(e: Expr, gens: readonly Expr[]): SP {
   const p = Poly.from(e, gens);
   const out: SP = new Map();
-  for (const [m, c] of p.terms()) {
-    if (!(c instanceof Rational)) throw new DomainError('groebner: rational coefficients expected');
-    if (!c.isZero) out.set(mkey(m), [m, c]);
-  }
+  for (const [m, c] of p.terms()) if (!isZeroC(c)) out.set(mkey(m), [m, c]);
   return out;
 }
 
@@ -189,6 +194,8 @@ export class GroebnerBasis {
    * of the basis, over the generators in their default (sorted) order.
    */
   toString(): string {
+    // the Expr printing of polynomials with non-rational coefficients
+    if (!['ZZ', 'QQ'].includes(this.domain)) return `GroebnerBasis([${this.exprs.map(str).join(', ')}], ${this.gens.map((g) => g.toString()).join(', ')}, domain='${this.domain}', order='${this.order}')`;
     const gens = sortGens(this.gens);
     const printOrdered = (e: Expr): string => {
       const terms = [...fromExpr(e, gens).values()].sort((a, b) => cmpMonom(b[0], a[0], this.order));
@@ -204,10 +211,73 @@ export class GroebnerBasis {
   }
 }
 
+/** The coefficient domain of non-rational coefficients (SymPy construct_domain without extension). */
+interface ParamDomain {
+  /** The generators of the domain (symbols, pi, E, exp(a), ...); none for EX. */
+  atoms: Expr[];
+  name: string;
+  /** A field (the fraction field ZZ(a) or EX): the basis stays monic. */
+  field: boolean;
+}
+
+function paramDomain(cs: readonly Expr[]): ParamDomain {
+  const atoms = new Map<string, Expr>();
+  let rational = false as boolean; // set inside walk
+  let frac = false as boolean;
+  let ex = false as boolean;
+  const walk = (e: Expr): void => {
+    if (e instanceof Rational) rational ||= !e.isInteger;
+    else if (e instanceof Add || e instanceof Mul) e.args.forEach(walk);
+    else if (e instanceof Pow && e.exp instanceof Rational && e.exp.isInteger) {
+      frac ||= e.exp.isNegative;
+      walk(e.base);
+    } else if ((e instanceof Constant && e.name === 'I') || (e instanceof Pow && e.base instanceof Rational && e.exp instanceof Rational)) {
+      // I and algebraic numbers: SymPy uses EX
+      ex = true;
+    } else atoms.set(e.key, e);
+  };
+  cs.forEach(walk);
+  if (ex) return { atoms: [], name: 'EX', field: true };
+  const gens = sortGens([...atoms.values()]);
+  const names = gens.map(str).join(',');
+  const ring = rational ? 'QQ' : 'ZZ';
+  return { atoms: gens, name: frac ? `${ring}(${names})` : `${ring}[${names}]`, field: frac };
+}
+
+/** SymPy clear_denoms over a polynomial ring K[a, ...]: g times the lcm of its denominators (monic over QQ). */
+function clearDenoms(g: SP, vars: readonly Expr[], overQQ: boolean): SP {
+  let common: Expr = S.One;
+  for (const [, c] of g.values()) common = mlcm(common, fraction(c)[1], vars);
+  if (overQQ) common = cancel(mul(common, pow(defined(Poly.from(common, vars).terms()[0], 'leading term')[1], -1)));
+  const out: SP = new Map();
+  for (const [m, c] of g.values()) out.set(mkey(m), [m, cmul(c, common)]);
+  return out;
+}
+
 /** Reduced Groebner basis of polynomials (SymPy groebner). */
 export function groebner(F: readonly ExprLike[], gens: readonly Sym[], order: MonomialOrder = 'lex'): GroebnerBasis {
-  const polys = F.map((f) => fromExpr(sympify(f), gens));
-  const domainQQ = F.some((f) => Poly.from(sympify(f), gens).domain === 'QQ');
+  const exprs0 = F.map((f) => sympify(f));
+  const coeffs = exprs0.flatMap((f) => Poly.from(f, gens).terms().map(([, c]) => c));
+  if (coeffs.some((c) => !(c instanceof Rational))) {
+    // SymPy: the basis over the fraction field of the coefficient ring, with the denominators cleared
+    const dom = paramDomain(coeffs);
+    const reps = dom.atoms.map((a): [Expr, Expr] => [a, new Dummy('c')]);
+    const back = reps.map(([a, d]): [Expr, Expr] => [d, a]);
+    const vars = reps.map(([, d]) => d);
+    let G = buchberger(
+      exprs0.map((f) => fromExpr(xreplace(f, reps), gens)),
+      order,
+    );
+    if (!dom.field) G = G.map((g) => clearDenoms(g, vars, dom.name.startsWith('QQ')));
+    return new GroebnerBasis(
+      G.map((g) => xreplace(toExpr(g, gens), back)),
+      gens,
+      dom.name,
+      order,
+    );
+  }
+  const polys = exprs0.map((f) => fromExpr(f, gens));
+  const domainQQ = exprs0.some((f) => Poly.from(f, gens).domain === 'QQ');
   const G = buchberger(polys, order);
   const exprs = G.map((g) => {
     if (domainQQ) return toExpr(g, gens);

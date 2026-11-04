@@ -68,11 +68,11 @@ describe('Float constructor (SymPy Float)', () => {
     expect(float(f)).toBe(f);
     expect(st(float(1.5, undefined, 100))).toBe('1.5000000000000000000000000000');
   });
-  it('evaluates exact expressions', () => {
-    // SymPy raises TypeError (cannot create mpf from 1 + sqrt(2)); symjs evaluates
-    // the real number, mpmath gives 2.414213562
-    expect(st(float(p('sqrt(2) + 1'), 10))).toBe('2.414213562');
-    expect(() => float(p('1 + I'), 10)).toThrow(TypeError);
-    expect(() => float(p('x'), 10)).toThrow();
+  it('takes numbers and number symbols only, as SymPy', () => {
+    expect(st(float(p('GoldenRatio')))).toBe('1.61803398874989');
+    expect(st(float(p('-oo')))).toBe('-oo');
+    for (const src of ['1 + sqrt(2)', '2*pi', '1 + I', 'I', 'x', 'zoo']) {
+      expect(() => float(p(src), 10), src).toThrow(`cannot create mpf from ${src}`);
+    }
   });
 });

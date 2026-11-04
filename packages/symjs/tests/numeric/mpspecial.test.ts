@@ -4,7 +4,7 @@
 // Tests of src/numeric/mpspecial.ts.
 
 import { afterEach, describe, expect, it } from 'vitest';
-import { evalf, parse, sstr } from '../../src';
+import { EvalfValueError, evalf, parse, sstr } from '../../src';
 import type { Expr } from '../../src';
 import * as C from '../../src/numeric/mpconst';
 import * as F from '../../src/numeric/mpf';
@@ -120,14 +120,15 @@ describe('arbitrary-precision special functions (evalf at 30 digits)', () => {
     });
     expect(got).toEqual(cases.map(([, , want]) => want));
   });
-  it('leaves values outside the implemented domain unevaluated', () => {
-    // SymPy raises ValueError (mpmath erfinv domain) for erfinv(2); SymPy
-    // evaluates complex erfinv/erfcinv arguments and polygamma of a non-integer
-    // order, which symjs leaves unevaluated
+  it('raises or leaves values outside the domain unevaluated as SymPy does', () => {
     const ev = (e: string, subs: Record<string, Expr>) => sstr(evalf(p(e), 15, { subs }));
-    expect(ev('erfinv(x)', { x: p('2') })).toMatch(/^erfinv\(/);
-    expect(ev('erfinv(x)', { x: p('I/2') })).toMatch(/^erfinv\(/);
-    expect(ev('erfcinv(x)', { x: p('I/2') })).toMatch(/^erfcinv\(/);
+    // mpmath erfinv takes a real argument in [-1, 1] (SymPy raises its ValueError)
+    expect(() => ev('erfinv(x)', { x: p('2') })).toThrow('erfinv(x) is defined only for -1 <= x <= 1');
+    expect(() => ev('erfinv(x)', { x: p('I/2') })).toThrow(EvalfValueError);
+    expect(() => evalf(p('erf2inv(0, 2)'))).toThrow(EvalfValueError);
+    // SymPy returns erfcinv(x) unchanged
+    expect(ev('erfcinv(x)', { x: p('I/2') })).toBe('erfcinv(x)');
+    // not implemented: polygamma of a non-integer order (SymPy 0.830124827353940)
     expect(ev('polygamma(x, 2)', { x: p('1/2') })).toMatch(/^polygamma\(/);
   });
 });
@@ -155,5 +156,20 @@ describe('Fresnel integrals of large real arguments (asymptotic expansion) equal
       return [F.toStr(r[0], d), F.toStr(r[1], d)];
     });
     expect(got).toEqual(want);
+  });
+});
+
+describe('Fresnel integrals of a large complex argument (asymptotic expansion)', () => {
+  // SymPy 1.14 N(fresnels(z)), N(fresnelc(z), 50)
+  const cases: [string, string, string][] = [
+    ['fresnels(100+100*I)', '-4.61674052632627e+13640 + 4.61674052632627e+13640*I', '-4.6167405263262735185759462351318504624668950412543e+13640 + 4.6167405263262735185759462351318504624668950412543e+13640*I'],
+    ['fresnelc(3+80*I)', '2.09847443493831e+323 - 5.60334274227762e+324*I', '2.0984744349383115181259805953807782080903907244315e+323 - 5.6033427422776221107801885094499423191320916307999e+324*I'],
+    ['fresnels(3+80*I)', '5.60334274227762e+324 + 2.09847443493831e+323*I', '5.6033427422776221107801885094499423191320916307999e+324 + 2.0984744349383115181259805953807782080903907244315e+323*I'],
+    ['fresnelc(-60+5*I)', '5.41475686380721e+406 + 4.50757541881403e+405*I', '5.4147568638072133922977343384585152297210862956791e+406 + 4.5075754188140280235484234199545796514761713232011e+405*I'],
+    ['fresnels(20-30*I)', '-1.03456042128889e+816 - 1.55215768018498e+816*I', '-1.0345604212888914228318179959635330331361763247035e+816 - 1.5521576801849831671188238263525513052063296139156e+816*I'],
+    ['fresnelc(1/3+12*I)', '3760.00125497969 - 563.803671637015*I', '3760.0012549796904854718410269184990241142093598905 - 563.80367163701449045127924337623105016258616473239*I'],
+  ];
+  it.each(cases)('%s', (e, v15, v50) => {
+    expect([sstr(evalf(p(e))), sstr(evalf(p(e), 50))]).toEqual([v15, v50]);
   });
 });

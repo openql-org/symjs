@@ -25,6 +25,7 @@ export {
 } from './integrals/transform';
 // integral transforms (SymPy sympy.integrals.transforms and laplace)
 export * from './integrals/transforms/index';
+export { singularityintegrate } from './integrals/singularityfunctions';
 export {
   limit,
 } from './series/limits';
@@ -52,7 +53,29 @@ export {
 export {
   finiteDiffWeights,
   asFiniteDifference,
+  applyFiniteDiff,
+  differentiateFinite,
 } from './calculus/finitediff';
+export { eulerEquations } from './calculus/euler';
+export { residue } from './series/residues';
+export { differenceDelta, limitSeq } from './series/limitseq';
+export {
+  SeqBase,
+  EmptySequenceNode,
+  EmptySequence,
+  SeqFormulaNode,
+  SeqFormula,
+  SeqPerNode,
+  SeqPer,
+  RecursiveSeqNode,
+  RecursiveSeq,
+  SeqAddNode,
+  SeqAdd,
+  SeqMulNode,
+  SeqMul,
+  sequence,
+  type SeqLimits,
+} from './series/sequences';
 
 // ---- deprecated names (kept during 0.x, removed in 1.0; see docs/api-policy.md) ----
 

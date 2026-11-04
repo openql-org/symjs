@@ -87,6 +87,7 @@ export {
   SympifyError,
   PoleError,
   PrecisionExhausted,
+  EvalfValueError,
   NonlinearError,
   NotImplementedError,
   NotLoadedError,
@@ -168,7 +169,11 @@ export {
   freeSymbols,
   mapBottomUp as bottomUp,
   rebuild,
+  use,
+  preorderTraversal,
+  PreorderTraversal,
 } from './core/traverse';
+export { Tuple, TupleNode, Dict, DictNode } from './core/containers';
 export {
   replace,
   find,
@@ -219,6 +224,7 @@ export {
 } from './functions/trigext';
 export {
   diff,
+  fdiff,
 } from './calculus/diff';
 export {
   SymFunction,
@@ -267,12 +273,15 @@ export {
   asOrderedFactors,
   sortKey,
 } from './printing/sortkey';
+export type { TermOrder } from './printing/sortkey';
 export {
   couldExtractMinusSign,
 } from './core/ops';
 export {
   latex,
 } from './printing/latex';
+export { StrPrinter, sstrrepr, printLatex, multilineLatex } from './printing/printers';
+export type { StrPrintable, MultilineLatexOptions } from './printing/printers';
 export {
   parse,
   parse as parseExpr,
