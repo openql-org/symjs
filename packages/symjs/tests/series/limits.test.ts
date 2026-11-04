@@ -352,6 +352,13 @@ describe('limits that symjs leaves unevaluated, or answers differently from SymP
     expect(lim('f(x)', 'x', '-oo')).toBe("Limit(f(x), x, -oo, dir='+')");
   });
 
+  it('takes the direction from the numerical value of a coefficient whose sign is not known', () => {
+    // SymPy: oo*sign(-2 - (-1)**(2/3) + (-1)**(1/3)), which is -oo: the coefficient is -1
+    expect(lim('((-1)**(1/3) + (-1)**(5/3) - 2)*x', 'x', 'oo')).toBe('-oo');
+    // SymPy: oo*I*sign(acos(2)), which is -oo: acos(2) = I*acosh(2)
+    expect(lim('I*acos(2)*x', 'x', 'oo')).toBe('-oo');
+  });
+
   it('raises where SymPy raises', () => {
     // SymPy: ValueError (the one-sided limits differ)
     expect(() => lim('sign(x)', 'x', '0', '+-')).toThrow(RangeError);

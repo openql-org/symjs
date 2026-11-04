@@ -25,6 +25,7 @@ import {
   Add,
   BoolAtom,
   Constant,
+  Dummy,
   ExtensionExpr,
   Fn,
   Integral,
@@ -57,6 +58,16 @@ import { NonElementaryIntegral, rischHooks, rischIntegrate } from './risch';
 import { isDiracDelta, isHeaviside, isSingularityFunction } from './transforms/delta';
 import { deltaIntegral } from './deltafunctions';
 import { singularityIntegral } from './singularityfunctions';
+import { cancelFraction, isRationalIn, ratint } from './rationaltools';
+import { trigintegrate } from './trigonometry';
+import { heurischTrig } from './heurisch';
+import { sqrtQuadraticRule } from './manualintegrate';
+import { floor, sign } from '../functions/special/special';
+import { and, or } from '../core/boolalg';
+import { ordered } from '../core/match';
+import { reduceInequalities } from '../solvers/inequalities';
+import { RootSumNode } from '../polys/rootsum';
+import { asIndependent, asNumerDenom } from '../core/methods';
 
 type R = Expr | undefined;
 
@@ -119,6 +130,10 @@ class Integrator {
       return add(...[...pc].map(([k, c]) => mul(c, pow(x, k + 1), Rational.of(1, k + 1))));
     }
 
+    // a rational function as one fraction (SymPy: risch_integrate's base case calls ratint)
+    const rat = this.ratint(f);
+    if (rat !== undefined) return rat;
+
     if (f instanceof Add) {
       const parts = f.args.map((t) => this.integrate(t));
       if (parts.every((p): p is Expr => p !== undefined)) return add(...parts);
@@ -138,10 +153,13 @@ class Integrator {
       this.fresnel(f) ??
       this.derivativeDivides(f) ??
       this.trigPowers(f) ??
+      this.trigOtherPowers(f) ??
       this.substitution(f) ??
       this.byParts(f) ??
       this.expImaginary(f) ??
       this.rational(f) ??
+      heurischTrig(f, x, (g, t) => new Integrator(t).integrate(g)) ??
+      sqrtQuadraticRule(f, x) ??
       this.expanded(f) ??
       this.sqrtQuadratic(f) ??
       this.polyTimesSqrtSquare(f)
@@ -390,7 +408,12 @@ class Integrator {
       if (isZeroR(db)) continue;
       const q = cancel(mul(rest, pow(db, -1)));
       if (!this.free(q)) continue;
-      if (n.p === -1n && n.q === 1n) return mul(q, log(base));
+      if (n.p === -1n && n.q === 1n) {
+        // SymPy integrates exponential integrands by the Risch algorithm first: its logarithms are of
+        // monic polynomials in the exponential (-exp(r)/(2*exp(r) - 4) -> -log(exp(r) - 2)/2)
+        const r = some(base, (e) => isExp(e) && e.exp.has(x)) ? risch(f, x) : undefined;
+        return r ?? mul(q, log(base));
+      }
       const n1 = expectType(numAdd(n, S.One), isRational, 'n + 1');
       if (!n1.isInteger && n1.p > n1.q) {
         // SymPy form: g**(k + r) -> expanded g**k * g**r (e.g. (x**2 + 1)**(3/2) -> x**2*sqrt(x**2 + 1) + sqrt(x**2 + 1))
@@ -450,6 +473,11 @@ class Integrator {
       return undefined;
     }
     return this.nonzero(a, f, () => expand(mul(F, pow(a, -1))));
+  }
+
+  /** sin(a*x)**n*cos(a*x)**m for the other integer powers (SymPy trigintegrate). */
+  private trigOtherPowers(f: Expr): R {
+    return trigintegrate(f, this.x);
   }
 
   /** Reduction formula for sin^k(u) or cos^k(u) (k even), integrated w.r.t. u. */
@@ -566,6 +594,28 @@ class Integrator {
 
   // ---- rational functions ------------------------------------------------------
 
+  /**
+   * SymPy's path for a rational function f: the numerator and denominator
+   * are expanded and cancelled, the constant factor is taken out, a power of
+   * a linear polynomial is integrated by the table and the rest by ratint.
+   * Undefined when f is not a rational function (or a polynomial) of x, or
+   * when ratint cannot write the logarithmic part.
+   */
+  private ratint(f: Expr): R {
+    const x = this.x;
+    if (!isRationalIn(f, x)) return undefined;
+    // (a polynomial was integrated before)
+    const [n, d] = asNumerDenom(f);
+    const [coeff, g] = asIndependent(cancelFraction(n, d, x), [x], { asAdd: false });
+    if (g instanceof Pow && this.linear(g.base)) return undefined;
+    const r = ratint(g, x);
+    if (r === undefined) return undefined;
+    // a RootSum where the roots are not found: the partial fractions over the rationals may do better
+    if (some(r, (e) => e instanceof RootSumNode)) return undefined;
+    return mul(coeff, r);
+  }
+
+
   private rational(f: Expr): R {
     const x = this.x;
     const [N, D] = fraction(together(f));
@@ -578,8 +628,7 @@ class Integrator {
       // (the quotient is a polynomial)
       terms.push(defined(this.integrate(q.toExpr(x)), 'integral of a polynomial'));
     }
-    if (r.isZero) return add(...terms);
-
+    // (a zero remainder, a polynomial, was integrated by ratint before)
     const { factors } = pd.factor();
     // basis: for each factor f_i^m_i, j = 1..m_i and k < deg f_i: x^k * D / f_i^j
     const unknowns: { f: UPoly; j: number; k: number }[] = [];
@@ -704,6 +753,51 @@ function piecewiseBreaks(f: Piecewise, x: Sym): [Expr, Expr | undefined][] | und
   return out;
 }
 
+/**
+ * SymPy Piecewise._handle_irel: the relations of the conditions that do not
+ * contain x are replaced by each combination of truth values (all true
+ * first), the handler is applied to the resulting expression, and the
+ * results are paired with the combinations, with the relations of a single
+ * symbol reduced (reduce_inequalities). Undefined when there are no such
+ * relations.
+ */
+function handleIrel(f: Piecewise, x: Sym, handler: (e: Expr) => Expr): Expr | undefined {
+  const rels = new Map<string, Expr>();
+  const visit = (e: Expr): void => {
+    if (e instanceof Rel && !e.has(x)) rels.set(e.key, e);
+    e.args.forEach(visit);
+  };
+  f.pairs.forEach(([, c]) => visit(c));
+  const irel = ordered([...rels.values()]);
+  if (irel.length === 0) return undefined;
+  const conds = new Map<string, [Expr, Expr[]]>();
+  const order: Expr[] = [];
+  let expr: Expr = S.Zero;
+  for (let mask = (1 << irel.length) - 1; mask >= 0; mask--) {
+    const truth = irel.map((_, i) => (mask >> (irel.length - 1 - i)) & 1);
+    const reps = irel.map((r, i): [Expr, Expr] => [r, truth[i] ? S.true : S.false]);
+    let cond: Expr | undefined;
+    if (mask !== 0) {
+      const andargs = irel.filter((_, i) => truth[i]);
+      const free = [...new Set(andargs.flatMap((r) => [...r.freeSymbols()].map((s) => s.key)))];
+      const sym = andargs.flatMap((r) => [...r.freeSymbols()]).find((s): s is Sym => s instanceof Sym);
+      const c = free.length === 1 && sym ? reduceInequalities(andargs, [sym]) : and(...andargs);
+      if (c instanceof BoolAtom && !c.value) continue;
+      cond = c;
+    }
+    // (SymPy also merges a result Piecewise((e, c)) of a single pair into the condition; integrate does not
+    // return one)
+    expr = handler(subs(f, reps));
+    if (cond !== undefined) {
+      const entry = conds.get(expr.key);
+      if (entry) entry[1].push(cond);
+      else conds.set(expr.key, [expr, [cond]]);
+      if (!order.some((e) => e.key === expr.key)) order.push(expr);
+    }
+  }
+  return piecewise(...order.map((e) => [e, or(...getOrThrow(conds, e.key)[1])] as const), [expr, true]);
+}
+
 /** Integrate each piece separately (SymPy piecewise_integrate). */
 export function piecewiseIntegrate(f: Piecewise, x: Sym): Expr {
   return piecewise(...f.pairs.map(([e, c]) => [integrate(e, x), c] as const));
@@ -824,7 +918,12 @@ function singularPoints(f: Expr, x: Sym): Expr[] | undefined {
       const denominator = cos(at(e.args, 0));
       bases.set(denominator.key, denominator);
     }
-    if (e instanceof Fn && e.name === 'log' && at(e.args, 0).has(x)) bases.set(at(e.args, 0).key, at(e.args, 0));
+    if (e instanceof Fn && e.name === 'log' && at(e.args, 0).has(x)) {
+      // exponential factors (and constants) of the argument do not vanish
+      const arg = at(e.args, 0);
+      const rest = mul(...(arg instanceof Mul ? arg.args : [arg]).filter((g) => g.has(x) && !isExp(g)));
+      if (rest.has(x)) bases.set(rest.key, rest);
+    }
     e.args.forEach(visit);
   };
   visit(f);
@@ -903,6 +1002,11 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
     const own = f.integrateSelf(x, limits && [sympify(limits[0]), sympify(limits[1])], (g) => integrate(g, x, limits, opts));
     if (own !== undefined) return own;
   }
+  // a Piecewise whose conditions contain relations free of x: one integral for each of their truth values
+  if (f instanceof Piecewise) {
+    const r = handleIrel(f, x, (g) => integrate(g, x, limits, opts));
+    if (r !== undefined) return r;
+  }
   if (limits && some(f, (e) => e instanceof Piecewise)) {
     const [a, b] = [sympify(limits[0]), sympify(limits[1])];
     f = simplifyConditionsOnInterval(decideConditionsOnInterval(f, x, a, b), x, a, b);
@@ -913,48 +1017,28 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
     const parts = f.args.map((t) => integrate(t, x, limits, opts));
     if (!parts.some((r) => r instanceof Integral)) return add(...parts);
   }
-  if (f instanceof Mul && f.args.filter((t) => t instanceof Piecewise).length === 1 && f.args.every((t) => t instanceof Piecewise || !t.has(x))) {
-    const pw = defined(f.args.find((t) => t instanceof Piecewise), 'Piecewise factor');
-    const r = integrate(pw, x, limits, opts);
-    if (!(r instanceof Integral)) return mul(...f.args.filter((t) => t !== pw), r);
-  }
-  // a product with a Piecewise factor that depends on x: one Piecewise (SymPy piecewise_fold)
-  if (f instanceof Mul && f.args.some((t) => t instanceof Piecewise) && f.args.some((t) => !(t instanceof Piecewise) && t.has(x))) {
+  // a product with a Piecewise factor: one Piecewise (SymPy piecewise_fold)
+  if (f instanceof Mul && f.args.some((t) => t instanceof Piecewise)) {
     return integrate(piecewiseFold(f), x, limits, opts);
   }
   if (f instanceof Piecewise && !limits) {
     const r = integratePiecewise(f, x);
     if (r) return r;
   }
-  const F = f instanceof Piecewise ? integratePiecewise(f, x) : (new Integrator(x).integrate(f) ?? otherMethods(f, x));
+  const F0 = f instanceof Piecewise ? integratePiecewise(f, x) : (new Integrator(x).integrate(f) ?? otherMethods(f, x));
+  const F = F0 && continuousAtan(F0);
   if (!limits) return F ?? new Integral([f, x]);
   const a = sympify(limits[0]);
   const b = sympify(limits[1]);
-  if (F === undefined) {
-    const unevaluated = new Integral([f, x, a, b]);
-    if (a instanceof Rational && a.isZero && b instanceof Special && b.name === 'oo') {
-      const g = gammaIntegral(f, x);
-      if (g) {
-        const [val, cond] = g;
-        if (cond === true || opts.conds === 'none') return val;
-        return piecewise([val, cond], [unevaluated, true]);
-      }
-    }
-    // SymPy's Meijer G-function integrator (not for piecewise integrands)
-    const m = some(f, (e) => e instanceof Piecewise) ? undefined : meijerintDefinite(f, x, a, b);
-    if (m && !some(m[0], (e) => e instanceof Integral)) {
-      const [val, cond] = m;
-      if (opts.conds === 'none') return val;
-      return piecewise([val, cond], [unevaluated, true]);
-    }
-    return unevaluated;
-  }
+  if (F === undefined) return definiteWithoutAntiderivative(f, x, a, b, opts);
   // An antiderivative's endpoint difference is valid only between singularities.
   // Evaluate the two sides independently: this is an improper integral, not a principal value.
   if (a.key === b.key) return S.Zero;
   const points = singularPoints(f, x);
   const unevaluated = new Integral([f, x, a, b]);
-  if (points === undefined) return unevaluated;
+  // unresolved singularities: unevaluated, or for an infinite limit as without an antiderivative (SymPy tries the
+  // Meijer G-functions first for those)
+  if (points === undefined) return [a, b].some((e) => e instanceof Special) ? definiteWithoutAntiderivative(f, x, a, b, opts) : unevaluated;
   const order = cmpReal(a, b);
   if (order !== undefined && order > 0) return mul(-1, integrate(f, x, [b, a], opts));
   const interior: Expr[] = [];
@@ -985,7 +1069,63 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
   return add(...parts);
 }
 
+
+/** A definite integral by the Gamma function rule or the Meijer G-function integrator, else unevaluated. */
+function definiteWithoutAntiderivative(f: Expr, x: Sym, a: Expr, b: Expr, opts: { conds?: 'piecewise' | 'none' }): Expr {
+  const unevaluated = new Integral([f, x, a, b]);
+  if (a instanceof Rational && a.isZero && b instanceof Special && b.name === 'oo') {
+    const g = gammaIntegral(f, x);
+    if (g) {
+      const [val, cond] = g;
+      if (cond === true || opts.conds === 'none') return val;
+      return piecewise([val, cond], [unevaluated, true]);
+    }
+  }
+  // SymPy's Meijer G-function integrator (not for piecewise integrands)
+  const m = some(f, (e) => e instanceof Piecewise) ? undefined : meijerintDefinite(f, x, a, b);
+  if (m && !some(m[0], (e) => e instanceof Integral)) {
+    const [val, cond] = m;
+    if (opts.conds === 'none') return val;
+    return piecewise([val, cond], [unevaluated, true]);
+  }
+  return unevaluated;
+}
+
 impl.integrate = (e, x, limits) => integrate(e, x, limits);
+
+/**
+ * atan(c*tan(a) + d) jumps where tan(a) has a pole: SymPy's Integral.doit adds
+ * sign(c)*pi*floor((a - pi/2)/pi) so that the antiderivative is continuous
+ * (and sign(c)*pi*floor(a/pi) for cot(a), which the antiderivatives here
+ * do not contain).
+ */
+function continuousAtan(F: Expr): Expr {
+  let G = F;
+  const atans = new Map<string, Expr>();
+  const visit = (e: Expr): void => {
+    if (e instanceof Fn && e.name === 'atan') atans.set(e.key, e);
+    e.args.forEach(visit);
+  };
+  visit(F);
+  for (const term of atans.values()) {
+    const arg = at(term.args, 0);
+    const parts = new Map<string, Fn>();
+    const find = (e: Expr): void => {
+      if (e instanceof Fn && e.name === 'tan') parts.set(e.key, e);
+      e.args.forEach(find);
+    };
+    find(arg);
+    for (const part of parts.values()) {
+      const x1 = new Dummy('x1');
+      const coeff = diff(subs(arg, [[part, x1]]), x1);
+      if (coeff.has(x1)) continue;
+      const a = at(part.args, 0);
+      const shift = floor(mul(add(a, mul(-1, S.Pi, S.Half)), pow(S.Pi, -1)));
+      G = subs(G, [[term, add(term, mul(sign(coeff), S.Pi, shift))]]);
+    }
+  }
+  return G;
+}
 
 
 

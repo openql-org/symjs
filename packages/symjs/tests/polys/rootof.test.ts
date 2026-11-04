@@ -30,6 +30,11 @@ describe('CRootOf', () => {
     expect(new sj.CRootOf(f, 0).isRealRoot).toBe(true);
     // the root 0 of x**3 - x: CRootOf(x**3 - x, 1).is_real -> True
     expect(new sj.CRootOf(parse('x**3 - x'), 1).isRealRoot).toBe(true);
+    // SymPy CRootOf.is_real, and exp(c*log(y)) = y**c for a real root c (exp.eval: c is comparable)
+    expect([new sj.CRootOf(f, 0).isRealSelf(), c.isRealSelf(), sj.isReal(new sj.CRootOf(f, 0))]).toEqual([true, false, true]);
+    const y = sj.symbols('y')[0] as sj.Sym;
+    expect(String(sj.exp(sj.mul(new sj.CRootOf(f, 0), sj.log(y))))).toBe('y**CRootOf(x**3 - x - 1, 0)');
+    expect(String(sj.exp(sj.mul(c, sj.log(y))))).toBe('exp(log(y)*CRootOf(x**3 - x - 1, 1))');
     expect(String(c.gen)).toBe('x');
     expect(String(c.poly)).toBe('x**3 - x - 1');
     expect(String(c.withArgs([f, sj.Rational.of(2n)]))).toBe('CRootOf(x**3 - x - 1, 2)');

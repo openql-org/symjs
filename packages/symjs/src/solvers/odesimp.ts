@@ -10,7 +10,7 @@ import type { Expr } from '../core/nodes';
 import { Add, Constant, Dummy, Fn, Integral, Mul, Pow, Rational, Rel, Sym, UndefFn } from '../core/nodes';
 import { Eq } from '../core/logic';
 import { add, couldExtractMinusSign, mul, pow } from '../core/ops';
-import { freeSymbols, mapBottomUp, rebuild, subs, xreplace } from '../core/traverse';
+import { freeSymbols, rebuild, subs, xreplace } from '../core/traverse';
 import { asNumerDenom } from '../core/methods';
 import { at, cast, first, getOrThrow } from '../core/guard';
 import { diff } from '../calculus/diff';
@@ -180,26 +180,10 @@ export function constantRenumber(expr: Expr, variables: readonly Expr[]): Expr {
  * SymPy odesimp: evaluate integrals, simplify constants, solve for f(x) when
  * possible and renumber the constants.
  */
-/**
- * doit, except for an antiderivative at a point, Integral(f, (x, a)), which
- * comes from an integral that integrate could not evaluate and stays as it
- * is (doit would put a into the unevaluated integral).
- */
-function doitKeepingAntiderivatives(e: Expr): Expr {
-  const held: [Expr, Expr][] = [];
-  const hold = (u: Expr): Expr => {
-    if (!(u instanceof Integral) || u.args.length !== 3) return u;
-    const d = new Dummy('held');
-    held.push([d, u]);
-    return d;
-  };
-  return xreplace(doit(mapBottomUp(e, hold)), held);
-}
-
 export function odesimp(ode: Expr, solIn: Expr, fx: UndefFn, hint: string): Expr[] {
   const x = cast(first(fx.args), Sym);
   const odeSyms = [...freeSymbols(ode)];
-  let sol = hint === 'nth_linear_constant_coeff_homogeneous' ? solIn : doitKeepingAntiderivatives(solIn);
+  let sol = hint === 'nth_linear_constant_coeff_homogeneous' ? solIn : doit(solIn);
   if (hint.startsWith('nth_linear_euler_eq_nonhomogeneous') && sol instanceof Rel) sol = Eq(simplify(sol.lhs), simplify(sol.rhs));
   // the bound variable of a CRootOf (a Dummy) is not a constant (SymPy CRootOf has no free symbols)
   const constants = [...freeSymbols(sol)].filter((s) => !odeSyms.some((o) => o.key === s.key) && !(s instanceof Dummy));

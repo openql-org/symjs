@@ -280,6 +280,12 @@ export interface Impl {
   lambertW?(x: Expr, k?: number): Expr;
   /** Pattern matching (registered by core/match). */
   match?(e: Expr, pattern: Expr): Map<Sym, Expr> | undefined;
+  /**
+   * SymPy Expr.equals(0) for a number: true when simplify gives 0 or the
+   * minimal polynomial of an algebraic number is x, else undefined
+   * (registered by simplify/simplify).
+   */
+  equalsZero?(e: Expr): true | undefined;
   /** SymPy radsimp (registered by simplify/sqrtdenest). */
   radsimp?(e: Expr): Expr;
   /** A named function applied with automatic evaluation (registered by functions/elementary). */
@@ -1166,6 +1172,10 @@ export abstract class ExtensionExpr extends Expr {
    */
   get isScalar(): boolean {
     return true;
+  }
+  /** SymPy is_extended_real of this node: true, false, or undefined when unknown. */
+  isRealSelf(): boolean | undefined {
+    return undefined;
   }
   /**
    * SymPy _eval_rewrite(rule, args): this node rewritten in terms of

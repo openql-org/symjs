@@ -7,14 +7,27 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Derivative, ExtensionExpr, Integral, Limit, Rational, Sym, impl } from '../core/nodes';
+import { Add, Derivative, ExtensionExpr, Integral, Limit, Mul, Rational, Sym, impl } from '../core/nodes';
 import { at, cast } from '../core/guard';
-import { sympify } from '../core/ops';
+import { add, mul, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
 import { Concrete, doitConcrete } from '../concrete/summations';
 import { integrate } from '../integrals/integrate';
 import { limit } from '../series/limits';
 import { diff } from './diff';
+
+/**
+ * The antiderivative F of an integral with only an upper limit, (x, b), at b
+ * (SymPy Integral.doit with eval_factored): an indefinite Integral(g, x) left
+ * in F becomes Integral(g, (x, b)) instead of having b put into its
+ * integration variable.
+ */
+export function antiderivativeAt(F: Expr, v: Sym, b: Expr): Expr {
+  const isIndefinite = (g: Expr): g is Integral => g instanceof Integral && g.args.length === 2 && g.variable.key === v.key;
+  const factorAt = (g: Expr): Expr => (isIndefinite(g) ? new Integral([g.integrand, v, b]) : xreplace(g, [[v, b]]));
+  const termAt = (t: Expr): Expr => (t instanceof Mul ? mul(...t.args.map(factorAt)) : factorAt(t));
+  return F instanceof Add ? add(...F.args.map(termAt)) : termAt(F);
+}
 
 /** Evaluate all unevaluated Integral, Limit, Sum, Product and Derivative objects. */
 export function doit(ex: ExprLike): Expr {
@@ -24,8 +37,7 @@ export function doit(ex: ExprLike): Expr {
       const [, , a, b] = y.args;
       const f = y.integrand;
       const v = cast(y.variable, Sym, 'integration variable');
-      // (x, b): the antiderivative at b
-      if (a && !b) return xreplace(integrate(f, v), [[v, a]]);
+      if (a && !b) return antiderivativeAt(integrate(f, v), v, a);
       return a && b ? integrate(f, v, [a, b]) : integrate(f, v);
     }
     if (y instanceof Limit) return limit(at(y.args, 0), cast(y.args[1], Sym, 'limit variable'), at(y.args, 2), y.dir);

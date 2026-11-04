@@ -132,3 +132,48 @@ describe('signs of a signed symbol plus a rational (SymPy Add._eval_is_extended_
     expect([sj.isZero(z), sj.isIntegerValued(zi)]).toEqual([true, false]);
   });
 });
+
+describe('LambertW and log (SymPy LambertW._eval_is_extended_real, log._eval_is_extended_positive)', () => {
+  const P = sj.parse;
+  const xp = new sj.Sym('x', { positive: true });
+  const r = new sj.Sym('r', { real: true });
+  const n = new sj.Sym('n', { negative: true });
+  const k = new sj.Sym('k', { integer: true });
+  const q = (e: sj.Expr) => [isReal(e), isPositive(e), isNegative(e), isZero(e)];
+  it('LambertW', () => {
+    // SymPy (is_real, is_positive, is_negative, is_zero); None is undefined
+    expect(q(sj.LambertW(xp))).toEqual([true, undefined, undefined, false]);
+    expect(q(P('LambertW(1)'))).toEqual([true, true, false, false]);
+    expect(q(P('LambertW(-1/4)'))).toEqual([true, false, true, false]);
+    expect(q(P('LambertW(-1)'))).toEqual([false, false, false, false]);
+    expect(q(P('LambertW(-1/4, -1)'))).toEqual([true, false, true, false]);
+    expect(q(P('LambertW(2, 1)'))).toEqual([false, false, false, false]);
+    expect(q(sj.LambertW(xp, -1))).toEqual([false, false, false, false]);
+    expect(q(sj.LambertW(mul(-1, xp), -1))).toEqual([false, false, false, false]);
+    expect(q(sj.LambertW(r))).toEqual([undefined, undefined, undefined, undefined]);
+    expect(q(sj.LambertW(add(xp, mul(-1, sj.exp(-1)))))).toEqual([true, undefined, undefined, undefined]);
+    // SymPy None, None, None, False
+    expect(q(sj.LambertW(n))).toEqual([undefined, undefined, undefined, false]);
+    expect(q(sj.LambertW(r, -1))).toEqual([undefined, undefined, undefined, false]);
+    expect(q(sj.LambertW(xp, k))).toEqual([undefined, undefined, undefined, false]);
+    // SymPy fuzzy_and([x.is_zero, k.is_zero]): False and None
+    expect([isZero(sj.LambertW(r, 1)), isZero(sj.LambertW(r, k))]).toEqual([false, undefined]);
+    // SymPy False: is_zero of -x for a positive x (not decided here)
+    expect(isZero(sj.LambertW(mul(-1, xp)))).toBeUndefined();
+  });
+  it('log', () => {
+    // SymPy (is_real, is_positive, is_negative)
+    const l = (e: sj.Expr) => [isReal(e), isPositive(e), isNegative(e)];
+    expect(l(P('-log(2)'))).toEqual([true, false, true]);
+    expect(l(P('log(2)'))).toEqual([true, true, false]);
+    expect(l(sj.log(xp))).toEqual([true, undefined, undefined]);
+    expect(l(sj.log(add(xp, 1)))).toEqual([true, true, false]);
+    // log(x) for a real x: SymPy None
+    expect(l(sj.log(r))).toEqual([undefined, undefined, undefined]);
+    expect(isNegative(sj.log(add(r, 2)))).toBeUndefined();
+    // SymPy log(Abs(y) + 1).is_negative = False
+    expect(isNegative(sj.log(add(sj.abs(x), 1)))).toBe(false);
+    // an extension node that does not say whether it is real
+    expect(isReal(sj.defineFunction('g', {})(1))).toBeUndefined();
+  });
+});

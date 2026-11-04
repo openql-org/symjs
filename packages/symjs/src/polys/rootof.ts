@@ -48,10 +48,18 @@ export class CRootOf extends ExtensionExpr {
     const rs = nroots(Poly.from(this.poly, [this.gen]), dps);
     return rs[this.index];
   }
+  private realRoot?: boolean;
   /** Is this root real? (nroots gives a Float, or 0, for each real root) */
   get isRealRoot(): boolean {
-    const v = this.numericValue(15);
-    return v instanceof Float || v === S.Zero;
+    if (this.realRoot === undefined) {
+      const v = this.numericValue(15);
+      this.realRoot = v instanceof Float || v === S.Zero;
+    }
+    return this.realRoot;
+  }
+  /** SymPy CRootOf.is_real: the real roots come first. */
+  override isRealSelf(): boolean {
+    return this.isRealRoot;
   }
 }
 

@@ -726,12 +726,13 @@ describe('special functions', () => {
     // the imaginary part is 1 (sqrt(5 + 2*sqrt(6)) = sqrt(2) + sqrt(3)); SymPy gives
     // 1 + I*(-sqrt(2*sqrt(6) + 5) + 1 + sqrt(2) + sqrt(3)), symjs keeps floor unevaluated
     expect(String(parse('floor(sqrt(2) + I*(1 + sqrt(2)+sqrt(3)-sqrt(5+2*sqrt(6))))'))).toBe('floor(sqrt(2) + I*(-sqrt(2*sqrt(6) + 5) + 1 + sqrt(2) + sqrt(3)))');
-    // SymPy floor(sin(1)**2 + cos(1)**2) = 1 (decided by equals(0)); symjs keeps a part within the
-    // error of an integer at every precision unevaluated
-    expect(String(parse('floor(sin(1)**2 + cos(1)**2)'))).toBe('floor(cos(1)**2 + sin(1)**2)');
-    // SymPy ceiling(sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6))) = 0: a value that cancels to 0 is not decided
-    // (its rounding noise is not a sign), while 1/10**30 above it is
-    expect(String(parse('ceiling(sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6)))'))).toBe('ceiling(-sqrt(2*sqrt(6) + 5) + sqrt(2) + sqrt(3))');
+    // a real part within the error of an integer n at every precision is n when it is n exactly
+    // (SymPy equals(0)), by simplify or by the minimal polynomial of an algebraic number
+    expect(['floor(sin(1)**2 + cos(1)**2)', 'ceiling(sin(1)**2 + cos(1)**2)', 'ceiling(sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6)))', 'floor(-sqrt(2) - sqrt(3) + sqrt(5 + 2*sqrt(6)))'].map((e) => String(parse(e)))).toEqual(['1', '1', '0', '0']);
+    // SymPy -sqrt(2*sqrt(6) + 5) + sqrt(2) + sqrt(3) + 3, the same value
+    expect(String(parse('floor(3 + sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6)))'))).toBe('3');
+    // SymPy 0 (equals(0) also accepts a difference that evaluates to 0 numerically); not proved here
+    expect(String(parse('floor(gamma(1/3)*gamma(2/3) - 2*pi/sqrt(3))'))).toBe('floor(-2*sqrt(3)*pi/3 + gamma(1/3)*gamma(2/3))');
     expect(String(parse('floor(sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6)) + 1/10**30)'))).toBe('0');
     // SymPy floor(exp(I)) = 0, floor(10*sqrt(1 + I)) = 10 + 4*I, floor(I*exp(100) + I/3) stays
     expect(String(parse('floor(exp(I))'))).toBe('0');

@@ -737,8 +737,9 @@ const INTEGER_PART_MAX_BITS = 100000;
  * get_integer_part): evaluated with enough bits for the integer part plus a
  * margin, the margin doubling until two successive evaluations agree and the
  * distance of each part to its nearest integer is resolved. A part that stays
- * within the error of an integer up to the largest margin is left unevaluated
- * (SymPy decides it with equals(0): floor(sin(1)**2 + cos(1)**2) = 1).
+ * within the error of an integer n up to the largest margin is n when x - n
+ * is zero (SymPy equals(0): floor(sin(1)**2 + cos(1)**2) = 1), else it is
+ * left unevaluated.
  */
 function integerPart(x: Expr, name: 'floor' | 'ceiling'): Expr | undefined {
   try {
@@ -750,13 +751,16 @@ function integerPart(x: Expr, name: 'floor' | 'ceiling'): Expr | undefined {
       const wp = size + margin;
       const v = evalMp(x, wp);
       // an imaginary part that is exactly zero (real arithmetic) is 0; a real part that cancels to an
-      // integer is not decided (SymPy decides it with equals(0))
+      // integer is decided after the loop
       const re = partOf(v[0], prev[0], wp, name);
       const im = F.isZero(v[1]) && F.isZero(prev[1]) ? 0n : partOf(v[1], prev[1], wp, name);
       if (re !== undefined && im !== undefined) return add(R(re), mul(S.I, R(im)));
       prev = v;
     }
-    return undefined;
+    // SymPy: a real part within the error of an integer n is n when (x - n).equals(0)
+    if (!F.isZero(prev[1])) return undefined;
+    const n = R(F.floor(F.add(prev[0], { man: 1n, exp: -1n })));
+    return impl.equalsZero?.(add(x, neg(n))) ? n : undefined;
   } catch (err) {
     // SymPy RoundFunction.eval: an infinite argument is its own floor and ceiling
     // (else a function without an arbitrary-precision evaluation)

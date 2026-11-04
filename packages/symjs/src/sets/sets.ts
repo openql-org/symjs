@@ -81,13 +81,15 @@ export function cmpReal(a: Expr, b: Expr): number | undefined {
   const x = realValue(a);
   const y = realValue(b);
   if (x === undefined || y === undefined) return undefined;
-  if (x === y) {
-    // equal as floats: an exact difference decides, otherwise they are taken as equal
-    const d = add(a, mul(-1, b));
-    if (d instanceof Rational && !d.isZero) return d.isNegative ? -1 : 1;
-    return 0;
-  }
-  return x < y ? -1 : 1;
+  const near = x === y || (Number.isFinite(x) && Number.isFinite(y) && Math.abs(x - y) <= 1e-10 * Math.max(1, Math.abs(x), Math.abs(y)));
+  if (!near) return x < y ? -1 : 1;
+  // equal within rounding (or both too large for a double): the floor and ceiling of the exact
+  // difference d decide its sign, else it is not known
+  const d = add(a, mul(-1, b));
+  const lo = fn('floor', [d]);
+  const hi = fn('ceiling', [d]);
+  if (lo instanceof Rational && hi instanceof Rational) return lo.p < 0n ? -1 : hi.p > 0n ? 1 : 0;
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -1330,8 +1332,12 @@ function intersectRange(r: Range, o: SetExpr): SetExpr | undefined {
     const lo1 = roundInt(lo0, true);
     const hi1 = roundInt(hi0, false);
     if (!lo1 || !hi1) return undefined;
-    const lo = containsQ(o, lo1) === true || isInf(lo1) ? lo1 : add(lo1, 1);
-    const hi = containsQ(o, hi1) === true || isInf(hi1) ? hi1 : add(hi1, -1);
+    // (SymPy: n in o raises TypeError when membership is not decided)
+    const loIn = isInf(lo1) || containsQ(o, lo1);
+    const hiIn = isInf(hi1) || containsQ(o, hi1);
+    if (loIn === undefined || hiIn === undefined) return undefined;
+    const lo = loIn ? lo1 : add(lo1, 1);
+    const hi = hiIn ? hi1 : add(hi1, -1);
     if (cmpReal(lo, hi) === 1) return EmptySet;
     return intersectRanges(r, cast(range(lo, isInf(hi) ? hi : add(hi, 1)), Range));
   }

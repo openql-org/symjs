@@ -18,6 +18,7 @@ import {
   Add,
   Constant,
   Expr,
+  ExtensionExpr,
   Float,
   Fn,
   Mul,
@@ -844,7 +845,8 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
         if (r !== c.p) return pow(b, mul(Rational.of(r, c.q), iPi()));
       }
     }
-    // exp(c*log(x)) -> x**c when the other factors are numbers (SymPy exp.eval)
+    // exp(c*log(x)) -> x**c when the other factors are real numbers (SymPy exp.eval: comparable
+    // terms; a node such as a real CRootOf says itself whether it is real)
     if (e instanceof Mul) {
       let logTerm: Expr | undefined;
       const coeffs: Expr[] = [];
@@ -856,7 +858,7 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
             break;
           }
           logTerm = at(t.args, 0);
-        } else if (impl.freeSymbols(t).size === 0 && isReal(t) === true) coeffs.push(t);
+        } else if ((impl.freeSymbols(t).size === 0 || t instanceof ExtensionExpr) && isReal(t) === true) coeffs.push(t);
         else {
           ok = false;
           break;

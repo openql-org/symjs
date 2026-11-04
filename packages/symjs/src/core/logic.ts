@@ -12,7 +12,7 @@ import { numCmp } from './num';
 import { add, couldExtractMinusSign, mul, sympify } from './ops';
 import { BoolOp, and, or } from './boolalg';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { at, cast, expectType } from './guard';
+import { at, cast } from './guard';
 import { isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from './assumptions';
 
 const isBoolean = (e: Expr): boolean => e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp;
@@ -121,9 +121,6 @@ export function canonicalRelation(r: Rel): Expr {
   return rel(op, lhs, rhs);
 }
 
-/** A positive Rational. */
-const isPositiveRational = (x: unknown): x is Rational => x instanceof Rational && x.isPositive;
-
 /** SymPy _canonical_coeff: the canonical relation with the rational term and coefficient of the left side moved right (-2*x + 1 < 0 is x > 1/2). */
 function canonicalCoeff(r0: Rel): Expr {
   // reordering or negating the sides keeps a relation undecided
@@ -132,11 +129,12 @@ function canonicalCoeff(r0: Rel): Expr {
   const b = terms.find((t): t is Rational => t instanceof Rational) ?? S.Zero;
   const l = add(r.lhs, mul(-1, b));
   const [m0, rest] = l instanceof Mul ? [at(l.args, 0), l] : [S.One, l];
-  // (a negative coefficient was moved by canonicalRelation: the left side does not extract a minus sign)
-  const m = expectType(m0 instanceof Rational ? m0 : S.One, isPositiveRational, 'coefficient');
+  const m = m0 instanceof Rational ? m0 : S.One;
   const lhs = mul(rest, m.pow(-1));
   const rhs = mul(add(r.rhs, mul(-1, b)), m.pow(-1));
-  return rel(r.op, lhs, rhs);
+  // a negative coefficient left after the rational term is taken out reverses the relation
+  // (Ne(1 - 1/(4*a), 0) is Ne(1/a, 4))
+  return rel(m.isNegative ? REVERSED[r.op] : r.op, lhs, rhs);
 }
 
 const NEGATED: Record<RelOp, RelOp> = { Lt: 'Ge', Le: 'Gt', Gt: 'Le', Ge: 'Lt', Eq: 'Ne', Ne: 'Eq' };

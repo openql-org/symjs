@@ -9,7 +9,7 @@ import * as sj from '../../src';
 import { and } from '../../src/core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne, piecewise, rel } from '../../src/core/logic';
 import { Expr, Rational, S } from '../../src/core/nodes';
-import { add, mul, pow } from '../../src/core/ops';
+import { add, mul, pow, sub } from '../../src/core/ops';
 
 const [x, y, z] = sj.symbols('x y z');
 
@@ -145,6 +145,11 @@ describe('Piecewise conditions made canonical and collapsed (SymPy Piecewise.eva
     expect(s(piecewise([0, Eq(z, neg(x))], [1, true]))).toBe('Piecewise((0, Eq(x, -z)), (1, True))');
     expect(s(piecewise([0, Lt(z, neg(x))], [1, true]))).toBe('Piecewise((0, x < -z), (1, True))');
     expect(s(piecewise([0, Lt(add(1, mul(-2, x)), 0)], [1, true]))).toBe('Piecewise((0, x > 1/2), (1, True))');
+    // a negative coefficient that remains after the rational term is taken out reverses the relation
+    const q = sub(1, mul(R(1, 4), pow(x, -1)));
+    expect(s(piecewise([1, Ne(q, 0)], [2, true]))).toBe('Piecewise((1, Ne(1/x, 4)), (2, True))');
+    expect(s(piecewise([1, Lt(q, 0)], [2, true]))).toBe('Piecewise((1, 1/x > 4), (2, True))');
+    expect(s(piecewise([1, Gt(sub(2, mul(3, x, pow(y, -1))), 0)], [2, true]))).toBe('Piecewise((1, x/y < 2/3), (2, True))');
     expect(s(piecewise([0, and(Gt(x, 1), Lt(y, 2))], [1, true]))).toBe('Piecewise((0, (x > 1) & (y < 2)), (1, True))');
     expect(s(piecewise([0, Lt(add(3, mul(-2, x)), y)], [1, true]))).toBe('Piecewise((0, y > 3 - 2*x), (1, True))');
     expect(s(piecewise([0, Gt(add(1, mul(-2, x)), y)], [1, true]))).toBe('Piecewise((0, y < 1 - 2*x), (1, True))');

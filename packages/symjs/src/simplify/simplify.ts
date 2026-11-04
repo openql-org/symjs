@@ -6,7 +6,8 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, ExtensionExpr, Fn, Mul, Pow, Rational, S, impl } from '../core/nodes';
+import { Add, Dummy, ExtensionExpr, Fn, Mul, Pow, Rational, S, impl } from '../core/nodes';
+import { minimalPolynomial } from '../polys/numberfields';
 import { mul, pow, splitCoeff, sympify } from '../core/ops';
 import { asNumerDenom } from '../core/methods';
 import { countOps as opCount } from '../core/match';
@@ -164,11 +165,12 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
     const m = measure(x);
     return typeof m === 'number' ? m : m.toNumber();
   };
-  // SymPy: with a custom measure, logarithms are expanded or combined, whichever is shorter
-  if (opts.measure && some(r, (x) => x instanceof Fn && x.name === 'log')) {
+  // SymPy: logarithms are expanded or combined, whichever is shorter by the measure (count_ops)
+  if (some(r, (x) => x instanceof Fn && x.name === 'log')) {
     const expanded = expand_log(r, true);
     const combined = logcombine(r);
-    r = size(combined) < size(expanded) ? combined : expanded;
+    const logSize = opts.measure ? size : opCount;
+    r = logSize(combined) < logSize(expanded) ? combined : expanded;
   }
   // SymPy: a sum in the denominator is rationalized when one radical term goes away
   // (1/(sqrt(2) + 2) = 1 - sqrt(2)/2)
@@ -208,3 +210,13 @@ export interface SimplifyOptions {
 }
 
 impl.simplify = simplify;
+
+/** An algebraic number: rationals and I under sums, products and rational powers. */
+const isAlgebraicNumber = (e: Expr): boolean =>
+  e instanceof Rational || e === S.I || ((e instanceof Add || e instanceof Mul) && e.args.every(isAlgebraicNumber)) || (e instanceof Pow && e.exp instanceof Rational && isAlgebraicNumber(e.base));
+
+impl.equalsZero = (e) => {
+  if (simplify(e).key === S.Zero.key) return true;
+  const x = new Dummy('x');
+  return isAlgebraicNumber(e) && minimalPolynomial(e, x).key === x.key ? true : undefined;
+};

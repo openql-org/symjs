@@ -104,10 +104,12 @@ describe('dsolve with the lie_group hint (SymPy)', () => {
   it('is the default for first-order equations no other hint solves', () => {
     expect(String(dsolve(parse('Derivative(f(x), x) - 1/(x + f(x))'), fx))).toBe('Eq(f(x), -x - LambertW(C1*exp(-x - 1)) - 1)');
   });
-  it('keeps integrals that integrate cannot evaluate', () => {
-    // SymPy: Eq(f(x), -x - 2*atan((C1 + x + 2)/(C1 + x))) from Integral((sin(r) + 1)/(2*(sin(r) - 1)), r), which
-    // integrate does not evaluate here: the implicit solution is kept
-    expect(lie('-sin(x + f(x)) + Derivative(f(x), x)')).toBe('Eq(C1 + x/2 - f(x)/2 - Integral((sin(_r) + 1)/(2*(sin(_r) - 1)), (_r, -x - f(x))), 0)');
+  it('keeps implicit solutions that solve does not invert', () => {
+    // SymPy: Eq(f(x), -x - 2*atan((C1 + x + 2)/(C1 + x))); the integral of (sin(r) + 1)/(2*(sin(r) - 1)) is SymPy's
+    // (heurisch in tan(r/2)), but solve does not invert the implicit solution for f(x) here
+    expect(lie('-sin(x + f(x)) + Derivative(f(x), x)')).toBe('Eq(C1 + x/2 + (-x - f(x))*tan((x + f(x))/2)/(2*(-tan((x + f(x))/2) - 1)) + (-x - f(x))/(2*(-tan((x + f(x))/2) - 1)) - f(x)/2 - 2/(-tan((x + f(x))/2) - 1), 0)');
+    // SymPy: Eq(f(x), x + 2*atan(1/(C1 + x)))
+    expect(lie('Derivative(f(x), x) - cos(x - f(x))')).toBe('Eq(C1 + x + 1/tan((x - f(x))/2), 0)');
     // SymPy: Eq(f(x), 1/(C1 - Integral(1/(_r**2 - sin(_r)), (_r, C2 - x)))), which treats the integral's limit,
     // which depends on f(x), as a constant: the implicit solution is kept
     expect(lie('Derivative(f(x), x) - f(x)**2/(-x**2 + 2*x*f(x) - sin(x - f(x)))')).toBe('Eq(C1 - Integral(1/(_r**2 - sin(_r)), (_r, -x + f(x))) - 1/f(x), 0)');

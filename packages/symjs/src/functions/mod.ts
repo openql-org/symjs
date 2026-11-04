@@ -14,7 +14,7 @@
  */
 
 import type { Expr } from '../core/nodes';
-import { Fn, Float, Pow, Rational, S, impl } from '../core/nodes';
+import { Add, Fn, Float, Pow, Rational, S, impl } from '../core/nodes';
 import { add, mul, pow } from '../core/ops';
 import { isqrt, powmod } from '../ntheory/intutil';
 import { at } from '../core/guard';
@@ -41,7 +41,25 @@ function evalMod(p: Expr, q: Expr): Expr | undefined {
     if (p instanceof Pow && isInt(p.base) && isInt(p.exp) && p.exp.p > 0n) return Rational.of(powmod(p.base.p, p.exp.p, q.p));
     if (p instanceof Fn && p.name === 'factorial' && p.args[0] instanceof Rational && p.args[0].isInteger && p.args[0].p >= 0n) return factorialMod(p.args[0].p, q.p);
   }
-  return byRatio(p, q);
+  // a rational ratio k = p/q: Mod(p, q) = q*Mod(k, 1) (SymPy extracts gcd(p, q))
+  const k = mul(p, pow(q, -1));
+  if (k instanceof Rational) return mul(q, ratMod(k, S.One));
+  return byRatio(p, q) ?? reduceTerms(p, q);
+}
+
+/**
+ * SymPy Mod.eval for a sum: Mod terms with the same q are denested, and
+ * ("simplify terms") each term of a sum whose remainder
+ * evaluates is replaced by it, (x + y + 2) % x -> Mod(y + 2, x).
+ */
+function reduceTerms(p: Expr, q: Expr): Expr | undefined {
+  if (!(p instanceof Add)) return undefined;
+  // denest: Mod(Mod(x, q) + y, q) -> Mod(x + y, q)
+  const inner = p.args.filter((t) => Mod.isApplied(t));
+  if (inner.length && inner.every((t) => at(t.args, 1).key === q.key)) return Mod(add(...p.args.map((t) => (Mod.isApplied(t) ? at(t.args, 0) : t))), q);
+  const terms = p.args.map((t) => evalMod(t, q) ?? t);
+  const r = add(...terms);
+  return r.key === p.key ? undefined : Mod(r, q);
 }
 
 /** Python's a % m (the sign of m). */
@@ -67,9 +85,6 @@ function byRatio(p: Expr, q: Expr): Expr | undefined {
   const r = realNumber(p);
   const s = realNumber(q);
   if (r === undefined || s === undefined) return undefined;
-  // an integer ratio: q divides p
-  const k = mul(p, pow(q, -1));
-  if (k instanceof Rational && k.isInteger) return S.Zero;
   const ratio = r / s;
   if (Math.abs(ratio - Math.round(ratio)) < 1e-9 * Math.max(1, Math.abs(ratio)) || Math.abs(ratio) > 2 ** 52) return undefined;
   const d = Math.trunc(ratio);

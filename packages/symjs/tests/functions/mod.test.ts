@@ -31,6 +31,34 @@ describe('Mod', () => {
     expect(String(Mod(x, y))).toBe('Mod(x, y)');
     expect(latex(Mod(x, y))).toBe('x \\bmod y');
   });
+  it('terms of a sum and rational ratios (SymPy Mod.eval)', () => {
+    const i = new Sym('i', { integer: true });
+    const j = new Sym('j', { integer: true });
+    const cases: [ReturnType<typeof Mod>, string][] = [
+      [Mod(add(x, mul(-1, i), 1), 1), 'Mod(x, 1)'],
+      [Mod(add(x, mul(-1, i)), i), 'Mod(x, i)'],
+      [Mod(add(x, 5), 2), 'Mod(x + 1, 2)'],
+      [Mod(add(x, mul(-1, i), 1), i), 'Mod(x + 1, i)'],
+      [Mod(add(x, mul(2, i)), i), 'Mod(x, i)'],
+      [Mod(add(x, i, j), i), 'Mod(j + x, i)'],
+      [Mod(add(x, mul(3, i)), mul(2, i)), 'Mod(i + x, 2*i)'],
+      [Mod(add(mul(2, x), 3), 2), 'Mod(2*x + 1, 2)'],
+      [Mod(add(x, y, 2), x), 'Mod(y + 2, x)'],
+      [Mod(add(x, Rational.of(1n, 2n)), 1), 'Mod(x + 1/2, 1)'],
+      [Mod(add(x, 3), i), 'Mod(x + 3, i)'],
+      [Mod(add(x, i), 3), 'Mod(i + x, 3)'],
+      [Mod(add(Mod(x, 2), 3), 2), 'Mod(x + 1, 2)'],
+      [Mod(add(Mod(x, 2), Mod(y, 3)), 2), 'Mod(Mod(x, 2) + Mod(y, 3), 2)'],
+      [Mod(mul(3, x), mul(2, x)), 'x'],
+      [Mod(pi, mul(2, pi)), 'pi'],
+    ];
+    expect(cases.map(([e]) => String(e))).toEqual(cases.map(([, r]) => r));
+    // SymPy gives -x and x, which fail at x = 1: Mod(-3, 2) = 1 and Mod(3, -2) = -1
+    expect(String(Mod(mul(-3, x), mul(2, x)))).toBe('x');
+    expect(String(Mod(mul(3, x), mul(-2, x)))).toBe('-x');
+    // SymPy i*(Mod(x, 1)) (gcd extraction), the same value
+    expect(String(Mod(add(mul(i, x), i), i))).toBe('Mod(i*x, i)');
+  });
   it('real numbers by the ratio (SymPy Mod by ratio)', () => {
     expect([Mod(pi, 2), Mod(mul(-1, pi, Rational.of(1n, 2n)), mul(2, pi)), Mod(sqrt(2), 1), Mod(mul(-1, sqrt(2)), 3), Mod(pi, -2), Mod(1, pi), Mod(I, 2), Mod(x, pi), Mod(mul(2, pi), pi), Mod(E, mul(E, Rational.of(1n, 2n)))].map(String)).toEqual([
       '-2 + pi',

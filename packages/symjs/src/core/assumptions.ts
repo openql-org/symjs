@@ -6,7 +6,7 @@
  */
 
 import type { Expr } from './nodes';
-import { Add, Constant, Fn, Float, Mul, Pow, Rational, Special, Sym, impl } from './nodes';
+import { Add, Constant, ExtensionExpr, Fn, Float, Mul, Pow, Rational, S, Special, Sym, impl } from './nodes';
 import { at, pair } from './guard';
 
 export type Tri = boolean | undefined;
@@ -27,6 +27,13 @@ export function isZero(e: Expr): Tri {
   if (e instanceof Constant) return false;
   if (e instanceof Sym) return e.assumptions.zero;
   if (e instanceof Pow && e.base instanceof Constant && e.base.name === 'E') return false;
+  // SymPy LambertW._eval_is_zero: W_k(x) = 0 only for x = 0 on the principal branch
+  if (e instanceof Fn && e.name === 'LambertW') {
+    const z = isZero(at(e.args, 0));
+    const k = e.args[1];
+    if (k === undefined) return z;
+    return z === false || isZero(k) === false ? false : undefined;
+  }
   // SymPy Add._eval_is_zero: a sum of symbols known to be positive, negative or not an integer
   if (e instanceof Add && impl.freeSymbols(e).size > 0) {
     if (isIntegerQ(e) === false || isPositive(e) === true || isNegative(e) === true) return false;
@@ -60,6 +67,7 @@ export function isReal(e: Expr): Tri {
     if (isNonNegative(b) && isPositive(x)) return true;
     return undefined;
   }
+  if (e instanceof ExtensionExpr) return e.isRealSelf();
   if (e instanceof Fn) {
     const a = at(e.args, 0);
     switch (e.name) {
@@ -83,9 +91,53 @@ export function isReal(e: Expr): Tri {
         return isReal(a) ? true : undefined;
       case 'log':
         return isPositive(a) ? true : undefined;
+      case 'LambertW':
+        return lambertWReal(a, e.args[1]);
       default:
         return undefined;
     }
+  }
+  return undefined;
+}
+
+/** x <= 0 is known. */
+const isNonPositive = (x: Expr): Tri => (isNegative(x) || isZero(x) ? true : isPositive(x) === true ? false : undefined);
+
+/** SymPy LambertW._eval_is_extended_real for the branch k (undefined: the principal branch). */
+function lambertWReal(x: Expr, k: Expr | undefined): Tri {
+  // x + 1/e
+  const shifted = impl.add(x, impl.pow(S.E, -1));
+  if (k === undefined || isZero(k) === true) {
+    if (isPositive(shifted) === true) return true;
+    return isNonPositive(shifted) === true ? false : undefined;
+  }
+  if (k instanceof Rational && k.p === -1n && k.q === 1n) {
+    if (isNegative(x) === true && isPositive(shifted) === true) return true;
+    return isNonPositive(x) === true || isNonNegative(shifted) === true ? false : undefined;
+  }
+  return isNonZero(k) === true && isNonZero(impl.add(k, 1)) === true && isReal(x) === true ? false : undefined;
+}
+
+/**
+ * The sign of log(a) and LambertW for isPositive (1) and isNegative (-1):
+ * SymPy log._eval_is_extended_positive (a - 1 > 0) and log is real for a > 0;
+ * a LambertW that is not real is neither positive nor negative, a real one
+ * of numbers has the sign of its value (SymPy
+ * Expr._eval_is_extended_positive_negative).
+ */
+function fnSign(e: Fn, sign: 1 | -1): Tri {
+  if (e.name === 'log' && e.args.length === 1) {
+    const a = at(e.args, 0);
+    const d = impl.add(a, -1);
+    if (sign === 1) return isPositive(d);
+    return isPositive(a) === true ? isNegative(d) : isNonNegative(d) === true ? false : undefined;
+  }
+  if (e.name === 'LambertW') {
+    // (a real LambertW of numbers is not 0: W(0) evaluates to 0)
+    const real = isReal(e);
+    if (real !== true || impl.freeSymbols(e).size > 0) return real === false ? false : undefined;
+    const v = impl.toComplex(e).re;
+    return sign === 1 ? v > 0 : v < 0;
   }
   return undefined;
 }
@@ -202,6 +254,7 @@ export function isPositive(e: Expr): Tri {
   }
   if (e instanceof Fn) {
     if (e.name === 'abs') return isNonZero(at(e.args, 0)) ? true : undefined;
+    return fnSign(e, 1);
   }
   return undefined;
 }
@@ -236,6 +289,7 @@ export function isNegative(e: Expr): Tri {
     if (isReal(b) && x instanceof Rational && x.isInteger && x.p % 2n === 0n) return false;
     return undefined;
   }
+  if (e instanceof Fn) return fnSign(e, -1);
   return undefined;
 }
 

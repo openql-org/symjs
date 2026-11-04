@@ -140,3 +140,18 @@ describe('simplify of the moments of sympy.stats distributions (SymPy 1.14)', ()
     expect(S2('mu**mu*omega*(mu/omega)**(1/2 - mu)*gamma(mu + 1/2)/(mu*omega**mu*gamma(mu))')).toBe('sqrt(mu)*sqrt(omega)*gamma(mu + 1/2)/gamma(mu + 1)');
   });
 });
+
+describe('logarithms expanded or combined, whichever is shorter by count_ops (SymPy simplify)', () => {
+  it('SymPy 1.14', () => {
+    const [x, y] = symbols('x y', { positive: true });
+    const cases: [Expr, string][] = [
+      [parse('log(8)/log(2)'), '3'],
+      [parse('log(6) - log(2) - log(3)'), '0'],
+      [add(parse('log(x)'), parse('log(y)')).subs(parse('x'), x).subs(parse('y'), y), 'log(x*y)'],
+      [parse('2*log(x) - log(y)').subs(parse('x'), x).subs(parse('y'), y), 'log(x**2/y)'],
+      [parse('log(x**2)').subs(parse('x'), x), '2*log(x)'],
+      [parse('log(x)/2 + log(2)').subs(parse('x'), x), 'log(x)/2 + log(2)'],
+    ];
+    expect(cases.map(([e]) => String(simplify(e)))).toEqual(cases.map(([, r]) => r));
+  });
+});

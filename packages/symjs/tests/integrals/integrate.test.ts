@@ -110,6 +110,12 @@ describe('results equal SymPy 1.14', () => {
     ["sj.integrate(P('y*x**z*exp(-x)'), x, [0, sj.oo])", () => sj.integrate(P('y*x**z*exp(-x)'), x, [0, sj.oo]), "Piecewise((y*gamma(z + 1), re(z) > -1), (Integral(x**z*y*exp(-x), (x, 0, oo)), True))"],
     ["sj.integrate(P('x*(x**2 + 1)**(-1/2)'), x)", () => sj.integrate(P('x*(x**2 + 1)**(-1/2)'), x), "sqrt(x**2 + 1)"],
     ["sj.integrate(P('x*(x**2 + 1)**(1/3)'), x)", () => sj.integrate(P('x*(x**2 + 1)**(1/3)'), x), "3*x**2*(x**2 + 1)**(1/3)/8 + 3*(x**2 + 1)**(1/3)/8"],
+    ["sj.integrate(P('1/(x**3 + 1)'), x)", () => sj.integrate(P('1/(x**3 + 1)'), x), "log(x + 1)/3 - log(x**2 - x + 1)/6 + sqrt(3)*atan(2*sqrt(3)*x/3 - sqrt(3)/3)/3"],
+    ["sj.integrate(P('1/(x**2 + 1)**2'), x)", () => sj.integrate(P('1/(x**2 + 1)**2'), x), "x/(2*x**2 + 2) + atan(x)/2"],
+    ["sj.integrate(P('1/(x**2 - y)'), x)", () => sj.integrate(P('1/(x**2 - y)'), x), "sqrt(1/y)*log(x - y*sqrt(1/y))/2 - sqrt(1/y)*log(x + y*sqrt(1/y))/2"],
+    ["sj.integrate(P('x*(x**2 + 1)**(-3)'), x)", () => sj.integrate(P('x*(x**2 + 1)**(-3)'), x), "-1/(4*x**4 + 8*x**2 + 4)"],
+    ["sj.integrate(P('sin(x)**2*cos(x)**2'), x)", () => sj.integrate(P('sin(x)**2*cos(x)**2'), x), "x/8 - sin(2*x)*cos(2*x)/16"],
+    ["sj.integrate(sj.Piecewise([P('x'), P('y < 1')], [P('1'), true]), x)", () => sj.integrate(sj.Piecewise([P('x'), P('y < 1')], [P('1'), true]), x), "Piecewise((x**2/2, (y > -oo) & (y < 1)), (x, True))"],
   ];
   it.each(cases)('%s', (_label, f, expected) => {
     expect(run(f)).toBe(expected);
@@ -146,7 +152,6 @@ describe('results that differ from SymPy 1.14', () => {
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('sin(x)*cos(2*x)'), x)", () => sj.integrate(P('sin(x)*cos(2*x)'), x), "Integral(sin(x)*cos(2*x), x)", "2*sin(x)*sin(2*x)/3 + cos(x)*cos(2*x)/3"],
     // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('sin(x)**2*cos(x)**2'), x)", () => sj.integrate(P('sin(x)**2*cos(x)**2'), x), "Integral(sin(x)**2*cos(x)**2, x)", "x/8 - sin(2*x)*cos(2*x)/16"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('sin(x**2)**2'), x)", () => sj.integrate(P('sin(x**2)**2'), x), "Integral(sin(x**2)**2, x)", "-5*x*gamma(-5/4)/(8*gamma(-1/4)) + 5*sqrt(pi)*fresnelc(2*x/sqrt(pi))*gamma(-5/4)/(16*gamma(-1/4))"],
     // not implemented in symjs (SymPy's result shown)
@@ -160,13 +165,10 @@ describe('results that differ from SymPy 1.14', () => {
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('exp(x)*sinh(x)'), x)", () => sj.integrate(P('exp(x)*sinh(x)'), x), "Integral(exp(x)*sinh(x), x)", "x*exp(x)*sinh(x)/2 - x*exp(x)*cosh(x)/2 + exp(x)*sinh(x)/2"],
     // the same value with the atan argument factored
-    ["sj.integrate(P('1/(x**3 + 1)'), x)", () => sj.integrate(P('1/(x**3 + 1)'), x), "log(x + 1)/3 - log(x**2 - x + 1)/6 + sqrt(3)*atan(sqrt(3)*(2*x - 1)/3)/3", "log(x + 1)/3 - log(x**2 - x + 1)/6 + sqrt(3)*atan(2*sqrt(3)*x/3 - sqrt(3)/3)/3"],
     // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('1/(x**2 + 1)**2'), x)", () => sj.integrate(P('1/(x**2 + 1)**2'), x), "Integral((x**2 + 1)**(-2), x)", "x/(2*x**2 + 2) + atan(x)/2"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('1/(x**4 + 1)'), x)", () => sj.integrate(P('1/(x**4 + 1)'), x), "Integral(1/(x**4 + 1), x)", "-sqrt(2)*log(x**2 - sqrt(2)*x + 1)/8 + sqrt(2)*log(x**2 + sqrt(2)*x + 1)/8 + sqrt(2)*atan(sqrt(2)*x - 1)/4 + sqrt(2)*atan(sqrt(2)*x + 1)/4"],
     // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('1/(x**2 - y)'), x)", () => sj.integrate(P('1/(x**2 - y)'), x), "Integral(1/(x**2 - y), x)", "sqrt(1/y)*log(x - y*sqrt(1/y))/2 - sqrt(1/y)*log(x + y*sqrt(1/y))/2"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('Heaviside(x)'), x)", () => sj.integrate(P('Heaviside(x)'), x), "Integral(Heaviside(x), x)", "x*Heaviside(x)"],
     // not implemented in symjs (SymPy's result shown)
@@ -174,9 +176,8 @@ describe('results that differ from SymPy 1.14', () => {
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.Piecewise([P('x'), P('x > 1')], [P('1'), true]), x)", () => sj.integrate(sj.Piecewise([P('x'), P('x > 1')], [P('1'), true]), x), "Integral(Piecewise((x, x > 1), (1, True)), x)", "Piecewise((x, x <= 1), (x**2/2 + 1/2, True))"],
     // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(sj.Piecewise([P('x'), P('y < 1')], [P('1'), true]), x)", () => sj.integrate(sj.Piecewise([P('x'), P('y < 1')], [P('1'), true]), x), "Integral(Piecewise((x, y < 1), (1, True)), x)", "Piecewise((x**2/2, (y > -oo) & (y < 1)), (x, True))"],
     // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(sj.mul(P('2'), sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true])), x)", () => sj.integrate(sj.mul(P('2'), sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true])), x), "Integral(2*Piecewise((x, x < 1), (gamma(x), True)), x)", "Piecewise((x**2, x < 1), (2*Integral(gamma(x), x) - 2*Integral(gamma(x), (x, 1)) + 1, True))"],
+    ["sj.integrate(sj.mul(P('2'), sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true])), x)", () => sj.integrate(sj.mul(P('2'), sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true])), x), "Integral(Piecewise((2*x, x < 1), (2*gamma(x), True)), x)", "Piecewise((x**2, x < 1), (2*Integral(gamma(x), x) - 2*Integral(gamma(x), (x, 1)) + 1, True))"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.add(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), P('x')), x)", () => sj.integrate(sj.add(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), P('x')), x), "Integral(x + Piecewise((x, x < 1), (gamma(x), True)), x)", "Piecewise((x**2, x < 1), (Integral(x + gamma(x), (x, 1, x)) + 1, True))"],
     // the condition is rewritten for x < 0, the piecewise integral is not done
@@ -222,7 +223,6 @@ describe('results that differ from SymPy 1.14', () => {
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.Piecewise([P('1'), P('y*x < 0')], [P('2'), true]), x, [-2, a])", () => sj.integrate(sj.Piecewise([P('1'), P('y*x < 0')], [P('2'), true]), x, [-2, a]), "Integral(Piecewise((1, x*y < 0), (2, True)), (x, -2, a))", "Piecewise((-Integral(Piecewise((1, x*y < 0), (2, True)), (x, a, -2)), a < -2), (Integral(Piecewise((1, x*y < 0), (2, True)), (x, -2, a)), True))"],
     // the same value with the power of the denominator not expanded
-    ["sj.integrate(P('x*(x**2 + 1)**(-3)'), x)", () => sj.integrate(P('x*(x**2 + 1)**(-3)'), x), "-1/(4*(x**2 + 1)**2)", "-1/(4*x**4 + 8*x**2 + 4)"],
   ];
   it.each(cases)('%s', (_label, f, expected) => {
     expect(run(f)).toBe(expected);
@@ -346,8 +346,8 @@ describe('DiracDelta, SingularityFunction and the Risch algorithm (SymPy Integra
     expect(integrate(P('log(x)**30'), x).toString().slice(0, 40)).toBe('x*log(x)**30 - 30*x*log(x)**29 + 870*x*l');
     // proven nonelementary: left unevaluated (SymPy then finds Ei(exp(x)) for exp(exp(x)) with other methods)
     expect(String(integrate(P('x**x'), x))).toBe('Integral(x**x, x)');
-    // trigonometric (SymPy heurisch: log(tan(y/2))) and algebraic integrands are not for the Risch algorithm
-    expect(String(integrate(P('1/sin(y)'), y))).toBe('Integral(1/sin(y), y)');
+    // trigonometric (SymPy trigintegrate) and algebraic integrands are not for the Risch algorithm
+    expect(String(integrate(P('1/sin(y)'), y))).toBe('log(cos(y) - 1)/2 - log(cos(y) + 1)/2');
     expect(String(integrate(P('sqrt(exp(x) + 1)/x'), x))).toBe('Integral(sqrt(exp(x) + 1)/x, x)');
   });
   it('keeps the nonelementary part of a Risch result', () => {
@@ -442,5 +442,78 @@ describe('Heaviside at the infinite ends of an integral (internal)', () => {
     expect(at(H(sj.pow(x, 2)), sj.S.Infinity)).toBe('Heaviside(x**2)');
     expect(at(H(sj.sin(x)), sj.S.Infinity)).toBe('Heaviside(sin(x))');
     expect(at(H(x), sj.S.One)).toBe('Heaviside(x)');
+  });
+});
+
+describe('rational, trigonometric and Piecewise integrands as SymPy integrates them', () => {
+  const lam = new Sym('lambda', { positive: true });
+  const Q = (s: string) => parse(s, { symbols: [rr, lam] });
+  it.each([
+    // ratint on the whole fraction (risch_integrate's base case)
+    ['1/(x**2+2*a*x+a**2)', 'x', '-1/(a + x)'],
+    ['x/(x**2+2*a*x+a**2)', 'x', 'a/(a + x) + log(a + x)'],
+    ['1/(x+a)**3', 'x', '-1/(2*a**2 + 4*a*x + 2*x**2)'],
+    ['1/x+1/(x+1)', 'x', 'log(x**2 + x)'],
+    // the Risch algorithm before the heuristics for exponentials
+    ['-exp(r)/(2*exp(r)-4)', 'r', '-log(exp(r) - 2)/2'],
+    ['exp(r)/(3*exp(r)+1)', 'r', 'log(exp(r) + 1/3)/3'],
+    // trigintegrate and heurisch in tan(u/2), with the floor term of a continuous arctangent
+    ['1/(sin(x)*cos(x))', 'x', '-log(sin(x)**2 - 1)/2 + log(sin(x))'],
+    ['sin(x)**2*cos(x)**2', 'x', 'x/8 - sin(2*x)*cos(2*x)/16'],
+    ['(sin(r)+1)/(2*(sin(r)-1))', 'r', 'r*tan(r/2)/(2*tan(r/2) - 2) - r/(2*tan(r/2) - 2) + 4/(2*tan(r/2) - 2)'],
+    ['1/(1+sin(y))', 'y', '-2/(tan(y/2) + 1)'],
+    ['1/(2+cos(x))', 'x', '2*sqrt(3)*(atan(sqrt(3)*tan(x/2)/3) + pi*floor((x/2 - pi/2)/pi))/3'],
+    ['cos(y)/(2+cos(y))', 'y', 'y - 4*sqrt(3)*(atan(sqrt(3)*tan(y/2)/3) + pi*floor((y/2 - pi/2)/pi))/3'],
+    // sqrt_quadratic_rule
+    ['x*sqrt(x**2+a*x+b)', 'x', '(-a*b/12 - a*(-a**2/8 + b/3)/2)*Piecewise((log(a + 2*x + 2*sqrt(a*x + b + x**2)), Ne(a**2/4 - b, 0)), ((a/2 + x)*log(a/2 + x)/sqrt((a/2 + x)**2), True)) + sqrt(a*x + b + x**2)*(-a**2/8 + a*x/12 + b/3 + x**2/3)'],
+    ['(x**2+1)*sqrt(a*x**2+b*x+c)', 'x', 'Piecewise(((c - b*(b - b*c/(12*a) - 3*b*(a + c/4 - 5*b**2/(48*a))/(4*a))/(2*a) - c*(a + c/4 - 5*b**2/(48*a))/(2*a))*Piecewise((log(2*sqrt(a)*sqrt(a*x**2 + b*x + c) + 2*a*x + b)/sqrt(a), Ne(c - b**2/(4*a), 0)), ((x + b/(2*a))*log(x + b/(2*a))/sqrt(a*(x + b/(2*a))**2), True)) + sqrt(a*x**2 + b*x + c)*(x**3/4 + b*x**2/(24*a) + x*(a + c/4 - 5*b**2/(48*a))/(2*a) + (b - b*c/(12*a) - 3*b*(a + c/4 - 5*b**2/(48*a))/(4*a))/a), Ne(a, 0)), (2*(-2*c*(b*x + c)**(5/2)/(5*b**2) + (b**2 + c**2)*(b*x + c)**(3/2)/(3*b**2) + (b*x + c)**(7/2)/(7*b**2))/b, Ne(b, 0)), (sqrt(c)*(x**3/3 + x), True))'],
+    ['log(x)/x**3', 'x', '-log(x)/(2*x**2) - 1/(4*x**2)'],
+    // the condition Ne(1 - 1/(4*a), 0) is made canonical as Ne(1/a, 4)
+    ['sqrt(a*x**2 + x + 1)', 'x', 'Piecewise(((1/2 - 1/(8*a))*Piecewise((log(2*sqrt(a)*sqrt(a*x**2 + x + 1) + 2*a*x + 1)/sqrt(a), Ne(1/a, 4)), ((x + 1/(2*a))*log(x + 1/(2*a))/sqrt(a*(x + 1/(2*a))**2), True)) + (x/2 + 1/(4*a))*sqrt(a*x**2 + x + 1), Ne(a, 0)), (2*(x + 1)**(3/2)/3, True))'],
+    // a constant times a Piecewise is folded into one Piecewise (SymPy piecewise_fold)
+    ['2*Piecewise((x, x < 1), (0, True))', 'x', 'Piecewise((x**2, x < 1), (1, True))'],
+    ['a*Piecewise((x, x < 1), (0, True))', 'x', 'Piecewise((a*x**2/2, x < 1), (a/2, True))'],
+    // conditions free of the integration variable (SymPy Piecewise._handle_irel)
+    ['Piecewise((x,(y>0)&(z>0)),(1,True))', 'x', 'Piecewise((x**2/2, (y > 0) & (z > 0)), (x, True))'],
+    ['Piecewise((x,y>0),(x**2,y<-1),(1,True))', 'x', 'Piecewise((x**2/2, (y > 0) & (y < oo)), (x**3/3, (y > -oo) & (y < -1)), (x, True))'],
+    ['Piecewise((x,(y>0)&(y<-1)),(1,True))', 'x', 'x'],
+    ['Piecewise((x,y>z),(1,True))', 'x', 'Piecewise((x**2/2, y > z), (x, True))'],
+    ['Piecewise((exp(-x), y > 0), (0, True))', 'x', 'Piecewise((-exp(-x), (y > 0) & (y < oo)), (0, True))'],
+    ['Piecewise((x, y > 0))', 'x', 'Piecewise((x**2/2, (y > 0) & (y < oo)), (nan, True))'],
+    // a linear power by the table, a logarithmic part of degree 5 or more by partial fractions
+    ['(2*x+1)**(3/2)', 'x', '(2*x + 1)**(5/2)/5'],
+    ['(a*x+1)**(-2)', 'x', '-1/(a**2*x + a)'],
+    ['(x**6 + x)/((x-1)**2*(x+1)*(x+2)*(x**2+2))', 'x', 'x + 2*log(x - 1)/9 - 31*log(x + 2)/27 - log(x**2 + 2)/27 - 17*sqrt(2)*atan(sqrt(2)*x/2)/54 - 1/(9*x - 9)'],
+    ['x**6/((x+1)*(x+2)*(x+3)*(x+4)*(x+5))', 'x', 'x**2/2 - 15*x + log(x + 1)/24 - 32*log(x + 2)/3 + 729*log(x + 3)/4 - 2048*log(x + 4)/3 + 15625*log(x + 5)/24'],
+  ])('%s d%s', (f, v, want) => expect(sstr(integrate(Q(f), V(v)))).toBe(want));
+
+  it('differs from SymPy', () => {
+    // SymPy: Piecewise((2*(a*x + 1)**(5/2)/(5*a), ...)) without the case a = 0: 2*(a*x + 1)**(5/2)/(5*a) and log(a*x + 1)/a
+    expect(sstr(integrate(Q('(a*x+1)**(3/2)'), x))).toBe('Piecewise((2*(a*x + 1)**(5/2)/(5*a), Ne(a, 0)), (x, True))');
+    expect(sstr(integrate(Q('1/(a*x+1)'), x))).toBe('Piecewise((log(a*x + 1)/a, Ne(a, 0)), (x, True))');
+    // SymPy (ratint, whose Lazard-Rioboo-Trager logarithms combine the factors with the same residue):
+    // -log(x + 3) + log(x**4 + 6*x**3 + 10*x**2 + 12*x + 16)/2 - 1/(x - 1); here a logarithmic part of degree 5 or
+    // more goes to partial fractions
+    expect(sstr(integrate(sj.together(Q('1/(x-1)**2 + x/(x**2+2) + 1/((x+2)*(x+3)*(x+4))')), x))).toBe('log(x + 2)/2 - log(x + 3) + log(x + 4)/2 + log(x**2 + 2)/2 - 1/(x - 1)');
+    // SymPy: sqrt(2)*log(x - sqrt(2))/16 - sqrt(2)*log(x + sqrt(2))/16 - sqrt(2)*atan(sqrt(2)*x/2)/8 (the roots of the
+    // quartic resultant are not found here; partial fractions give the same function)
+    // SymPy (heurisch over the complex roots of 1 + t**4): atan(sqrt(2)*tan(x/2) - 1) - atan(sqrt(2)*tan(x/2) + 1),
+    // which differs by a constant on each interval of continuity; no floor term for an argument not linear in tan
+    expect(sstr(integrate(Q('sin(x)/(2 - sin(x)**2)'), x))).toBe('atan(tan(x/2)**2)');
+    // an antiderivative with symbolic logarithms over an infinite interval: the Meijer G-function integrator
+    // (SymPy: sqrt(2)*pi*(y**2/2 + 1)/(2*polar_lift(y**2/2 + 1)**(5/2)), the same value)
+    expect(sstr(integrate(Q('1/(x**2/2 + y**2/2 + 1)**2'), x, [sj.S.NegativeInfinity, sj.S.Infinity]))).toBe('Piecewise((sqrt(2)*pi/(2*(y**2/2 + 1)*sqrt(polar_lift(y**2/2 + 1))), (Abs(arg(y**2/2 + 1)) < pi) | ((Abs(arg(y**2/2 + 1)) < pi) & Ne(1/(y**2/2 + 1), 0) & Ne(Abs(arg(y**2/2 + 1)), pi) & Ne(Abs(arg(y**2/2 + 1)), -pi))), (Integral((x**2/2 + y**2/2 + 1)**(-2), (x, -oo, oo)), True))');
+    expect(sstr(integrate(Q('1/(x**4-4)'), x))).toBe('-sqrt(2)*atan(sqrt(2)*x/2)/8 - sqrt(2)*atanh(sqrt(2)*x/2)/8');
+  });
+
+  it('definite', () => {
+    const oo = sj.S.Infinity;
+    expect(sstr(integrate(Q('Piecewise((exp(-x), y > 0), (0, True))'), x, [0, oo]))).toBe('Piecewise((1, (y > 0) & (y < oo)), (0, True))');
+    expect(sstr(integrate(Q('Piecewise((x, y > 0), (x**2, True))'), x, [0, oo]))).toBe('oo');
+    expect(sstr(integrate(Q('Piecewise((x, (y >= 0) & (y <= 1)), (0, True))'), x, [0, 1]))).toBe('Piecewise((1/2, (y >= 0) & (y <= 1)), (0, True))');
+    // the entropy of an exponential distribution: exponential factors of a logarithm do not vanish
+    expect(sstr(integrate(Q('-lambda*exp(-lambda*x)*log(lambda*exp(-lambda*x))'), x, [0, oo]))).toBe('1 - log(lambda)');
+    // SymPy: 2*sqrt(3)*pi/3 (the singularities of 1/(cos(x) + 2) are not located here)
+    expect(sstr(integrate(Q('1/(2+cos(x))'), x, [0, Q('2*pi')]))).toBe('Integral(1/(cos(x) + 2), (x, 0, 2*pi))');
   });
 });

@@ -638,8 +638,28 @@ describe('ConditionSet and imageset evaluation', () => {
     const R = (a: sj.ExprLike, b: sj.ExprLike, st: sj.ExprLike = 1) => Sets.range(a, b, st);
     const X = Sets.intersection;
     expect([X(R(1, 1), I(0, 1)), X(R(5, 20), R(0, 30, 3)), X(R(0, 10, 4), R(5, 7))].map(String)).toEqual(['EmptySet', 'Range(6, 21, 3)', 'EmptySet']);
-    // SymPy: Range(0, 4, 1); the floor of a number equal to 0 that symjs does not evaluate
-    expect(String(X(R(-5, 5), I(p('sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6))'), 3)))).toBe('Intersection(Interval(-sqrt(2*sqrt(6) + 5) + sqrt(2) + sqrt(3), 3), Range(-5, 5, 1))');
+    // an end that is 0 exactly, which floats do not show (SymPy)
+    const z = p('sqrt(2) + sqrt(3) - sqrt(5 + 2*sqrt(6))');
+    expect([X(R(-5, 5), I(z, 3)), X(R(-5, 5), I(z, 3, true)), X(R(-5, 5), I(-3, sj.add(z, 2), false, true)), X(R(-5, 5), I(-3, sj.add(z, 2))), X(R(0, 5), I(z, 3))].map(String)).toEqual([
+      'Range(0, 4, 1)',
+      'Range(1, 4, 1)',
+      'Range(-3, 2, 1)',
+      'Range(-3, 3, 1)',
+      'Range(0, 4, 1)',
+    ]);
+    // a membership that is not decided leaves the intersection unevaluated (SymPy raises TypeError:
+    // cannot determine truth value of Relational)
+    const g = p('gamma(1/3)*gamma(2/3) - 2*pi/sqrt(3)');
+    expect([X(R(0, 5), I(g, 3)), X(R(-5, 5), I(g, 3))].map(String)).toEqual([
+      'Intersection(Interval(-2*sqrt(3)*pi/3 + gamma(1/3)*gamma(2/3), 3), Range(0, 5, 1))',
+      'Intersection(Interval(-2*sqrt(3)*pi/3 + gamma(1/3)*gamma(2/3), 3), Range(-5, 5, 1))',
+    ]);
+    // SymPy Interval(z, 1, True).contains(0) = False; Interval(g, 1).contains(0) = g <= 0 (not decided)
+    expect([Sets.containsQ(I(z, 1, true), sj.S.Zero), Sets.containsQ(I(g, 1), sj.S.Zero)]).toEqual([false, undefined]);
+    // SymPy log(6) - log(2) - log(3) <= 0 (not decided); 0 here, by simplify
+    expect(Sets.containsQ(I(p('log(6) - log(2) - log(3)'), 1), sj.S.Zero)).toBe(true);
+    // numbers too large for a double compare by their exact difference
+    expect([Sets.containsQ(I(p('exp(1000)'), p('exp(1001)')), p('exp(1000) + 1')), Sets.containsQ(I(0, p('exp(1000)')), p('exp(1001)'))]).toEqual([true, false]);
     const im = (e: string, v: sj.Expr = nn) => Sets.imageSet(v, p(e), Sets.Integers);
     // SymPy: {0} for both, which leaves out 2, 4, ... and -2, -4, ... (the image of -2*n is that of 2*n)
     expect([X(im('-2*n'), I(0, sj.oo)), X(im('2*n'), I(sj.S.NegativeInfinity, 0))].map(String)).toEqual(['ImageSet(Lambda(n, 2*n), Range(0, oo, 1))', 'ImageSet(Lambda(n, 2*n), Range(-oo, 1, 1))']);
@@ -788,10 +808,8 @@ describe('Range with symbolic bounds (SymPy 1.14 Range)', () => {
   it('as_relational (SymPy)', () => {
     expect(String(Sets.asRelational(R(k), x))).toBe('(x >= 0) & Eq(Mod(x, 1), 0) & (x <= k - 1)');
     expect(String(Sets.asRelational(R(i, sj.add(i, 6), 2), x))).toBe('(x >= i) & (x <= i + 4) & Eq(Mod(-i + x, 2), 0)');
-    // SymPy (x > -oo) & Eq(Mod(x, 1), 0) & (x <= i - 1): Mod(x - i + 1, 1) is not reduced to Mod(x, 1) here
-    expect(String(Sets.asRelational(R(sj.neg(sj.oo), i), x))).toBe('(x > -oo) & (x <= i - 1) & Eq(Mod(-i + x + 1, 1), 0)');
-    // SymPy Eq(Mod(x, i), 0) & ...: Mod(x - i, i) is not reduced here
-    expect(String(Sets.asRelational(R(i, sj.mul(3, i), i), x))).toBe('Eq(Mod(-i + x, i), 0) & (((i >= 1) & (x >= i) & (x <= 2*i)) | ((i <= -1) & (x <= i) & (x >= 2*i)))');
+    expect(String(Sets.asRelational(R(sj.neg(sj.oo), i), x))).toBe('(x > -oo) & Eq(Mod(x, 1), 0) & (x <= i - 1)');
+    expect(String(Sets.asRelational(R(i, sj.mul(3, i), i), x))).toBe('Eq(Mod(x, i), 0) & (((i >= 1) & (x >= i) & (x <= 2*i)) | ((i <= -1) & (x <= i) & (x >= 2*i)))');
     expect(String(Sets.asRelational(R(i, sj.add(i, 2), 2), x))).toBe('Eq(x, i)');
     expect(String(Sets.asRelational(R(0), x))).toBe('False');
     // SymPy Range(0, oo).as_relational(x) = (x >= 0) & (x < oo) & Eq(Mod(x, 1), 0)
