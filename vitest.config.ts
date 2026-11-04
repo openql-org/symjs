@@ -10,7 +10,7 @@ export default defineConfig({
     ],
   },
   test: {
-    include: ['packages/*/tests/**/*.test.ts', 'compat/equivalence.test.ts'],
+    include: ['packages/*/tests/**/*.test.ts', 'compat/equivalence.test.ts', 'compat/scope.test.ts'],
     // coverage instrumentation slows the heavy cases (factorint of a large number, logic minimization) past the 5 s default
     testTimeout: 30_000,
     coverage: {

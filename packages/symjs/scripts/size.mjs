@@ -48,6 +48,7 @@ const CASES = [
   ['geometry', '*', 790],
   ['vector', '*', 900],
   ['stats', '*', 855],
+  ['categories', '*', 345],
   ['index', 'Rational', 1005],
   ['index', '*', 1710],
 ];

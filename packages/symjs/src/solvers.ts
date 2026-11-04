@@ -11,6 +11,8 @@ import './core';
 
 export {
   linsolve,
+  linsolveAugmented,
+  solveLinearSystem,
   linearEqToMatrix,
   homogeneousOrder,
   periodicity,
@@ -27,11 +29,12 @@ export {
 
 export {
   solve,
-  nonlinsolve,
+  checksol,
   solveLinear,
   solveUndeterminedCoeffs,
   nsolve,
 } from './solvers/solve';
+export { nonlinsolve, substitution } from './solvers/solveset';
 export { dsolveSystem, checkodesol } from './solvers/odesystem';
 export {
   diophantine,
@@ -121,3 +124,4 @@ export const asEquation = _asEquation_;
 
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const invertEquation = _invertEquation_;
+export { pdsolve, classifyPde, checkpdesol, pdeSeparate, pdeSeparateAdd, pdeSeparateMul } from './solvers/pde';

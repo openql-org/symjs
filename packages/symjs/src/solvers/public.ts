@@ -9,6 +9,7 @@
  */
 
 import type { Expr, ExprLike, Sym } from '../core/nodes';
+import { at } from '../core/guard';
 import { sympify } from '../core/ops';
 import { NonlinearError } from '../core/errors';
 import type { NoMatchResult, Truth, UnsolvedResult } from '../core/truth';
@@ -34,6 +35,18 @@ export function linearEqToMatrix(eqs: readonly ExprLike[], syms: readonly Sym[])
 export function linsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Expr[] | typeof EmptySet {
   const [A, b] = linearEqToMatrix(eqs, syms);
   return S.solveAugmented(A.hstack(b), syms) ?? EmptySet;
+}
+
+/** Solve an augmented linear system [A | b], preserving free parameters. */
+export function linsolveAugmented(augmented: Matrix, syms: readonly Sym[]): Expr[] | typeof EmptySet {
+  if (augmented.cols !== syms.length + 1) throw new RangeError('Augmented matrix must have one more column than the number of unknowns');
+  return S.solveAugmented(augmented, syms) ?? EmptySet;
+}
+
+/** SymPy solve_linear_system: solved variables only, or EmptySet if inconsistent. */
+export function solveLinearSystem(augmented: Matrix, syms: readonly Sym[]): Map<Sym, Expr> | typeof EmptySet {
+  const result = linsolveAugmented(augmented, syms);
+  return Array.isArray(result) ? new Map(syms.flatMap((s, i): [Sym, Expr][] => at(result, i).equals(s) ? [] : [[s, at(result, i)]])) : result;
 }
 
 /** SymPy homogeneous_order: the order of a homogeneous function, or NoMatch. */

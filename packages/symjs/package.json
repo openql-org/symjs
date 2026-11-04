@@ -241,7 +241,17 @@
         "default": "./dist/stats.cjs"
       }
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./categories": {
+      "import": {
+        "types": "./dist/categories.d.ts",
+        "default": "./dist/categories.js"
+      },
+      "require": {
+        "types": "./dist/categories.d.cts",
+        "default": "./dist/categories.cjs"
+      }
+    }
   },
   "files": [
     "dist",
@@ -268,9 +278,15 @@
     "./src/calculus/diff.ts",
     "./dist/calculus/diff.js",
     "./dist/calculus/diff.cjs",
+    "./src/categories.ts",
+    "./dist/categories.js",
+    "./dist/categories.cjs",
     "./src/combinatorics.ts",
     "./dist/combinatorics.js",
     "./dist/combinatorics.cjs",
+    "./src/combinatorics/permgroups.ts",
+    "./dist/combinatorics/permgroups.js",
+    "./dist/combinatorics/permgroups.cjs",
     "./src/core.ts",
     "./dist/core.js",
     "./dist/core.cjs",
@@ -490,6 +506,9 @@
     "./src/tensor.ts",
     "./dist/tensor.js",
     "./dist/tensor.cjs",
+    "./src/tensor/tensor.ts",
+    "./dist/tensor/tensor.js",
+    "./dist/tensor/tensor.cjs",
     "./src/unify.ts",
     "./dist/unify.js",
     "./dist/unify.cjs",

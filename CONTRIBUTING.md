@@ -83,6 +83,15 @@ pnpm test:package                              # built ESM/CJS, minification and
   passing. After fixing listed cases, rewrite the list with
   `UPDATE_KNOWN_GAPS=1 npx vitest run --config compat/vitest.config.ts`
   and check that it only lost entries.
+  Expanding the pinned reference scope or correcting an invalid measurement
+  can establish a new baseline, as recorded in `compat/baseline-migration.json`.
+  Such a migration must distinguish new examples and corrected API-presence
+  checks from behavior regressions, and replay the previous corpus without
+  losing previously passing results. Ordinary implementation changes still
+  only shrink the gap list. An adapter is not evidence of a public API:
+  review its execution route in `compat/adapter-inventory.json`, and keep
+  mathematical work in the library. Unreviewed adapters and translations are
+  excluded from the report's verified public-call count.
 - Tests are self-contained: expected values are written in the test (or in
   a reference file in the repository). No file in the repository refers to
   local paths such as a home directory or a temporary directory, which can
@@ -97,7 +106,7 @@ symbol; ordered lists retain their order except for solution-list APIs.
 - The public API uses camelCase names converted from SymPy's
   (`expand_log` -> `expandLog`); classes keep SymPy's names, except SymPy
   names that are JavaScript globals (`Symbol` -> `Sym`, `Number` ->
-  `SymNumber`, `Function` -> `SymFunction`, `Array` -> `SymArray`).
+  `SymNumber`, `Function` -> `SymFunction`, `Array` -> `SymArray`, `Object` -> `SymObject`).
   Each exported name has one definition. See
   [docs/api-policy.md](docs/api-policy.md).
 - Public results are never `undefined` or `null`

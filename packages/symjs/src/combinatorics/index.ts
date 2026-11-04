@@ -28,3 +28,5 @@ export type { IntegerPartitionInput, PartitionBlock, PartitionElement } from './
 export { Prufer } from './prufer';
 export type { PruferEdge } from './prufer';
 export { Subset, ksubsets } from './subsets';
+export { PermutationGroup } from './permgroups';
+export { SymmetricGroup, AlternatingGroup, CyclicGroup, DihedralGroup } from './namedgroups';

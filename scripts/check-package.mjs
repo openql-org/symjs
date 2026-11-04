@@ -38,22 +38,36 @@ try {
     assert.deepEqual(sj.solve(n.pow(2).sub(2), n), []);
     assert.equal(gates.H().mul(gates.H()).equals(sj.Matrix.eye(2)), true);
     assert.equal(String(fromMathjsValue(3)), '3');
+    const object = new sj.SymObject('A');
+    assert.equal(sj.IdentityMorphism(object).compose(sj.IdentityMorphism(object)).domain.equals(object), true);
+    assert.equal(sj.SymmetricGroup(8).order(), 40320n);
+    const field = sj.toNumberField(sj.sqrt(2), sj.add(sj.sqrt(2), sj.sqrt(3)));
+    assert.equal(String(field.coeffs()), '1/2,0,-9/2,0');
+    const L = sj.TensorIndexType('L', { dim: 4 }), i = sj.TensorIndex('i', L);
+    assert.equal(String(sj.contractMetric(L.metric.at(i, i.neg()), L.metric)), '4');
+    const [y] = sj.symbols('y'), f = sj.SymFunction('f')(x, y);
+    const pde = sj.add(sj.diff(f, x), sj.diff(f, y));
+    assert.equal(sj.checkpdesol(pde, sj.pdsolve(pde), f)[0], true);
   `;
   const esm = `import assert from 'node:assert/strict';
     import * as sj from '@symjs/symjs';
     import { Sym } from '@symjs/symjs/core';
+    import { Diagram } from '@symjs/symjs/categories';
     import { gates } from '@symjs/physics-quantum';
     import { fromMathjsValue } from '@symjs/mathjs';
     assert.equal(sj.Sym, Sym);
+    assert.equal(sj.Diagram, Diagram);
     ${assertions}
     ${entries.map((e) => `await import(${JSON.stringify(e)});`).join('\n')}
   `;
   const cjs = `const assert = require('node:assert/strict');
     const sj = require('@symjs/symjs');
     const { Sym } = require('@symjs/symjs/core');
+    const { Diagram } = require('@symjs/symjs/categories');
     const { gates } = require('@symjs/physics-quantum');
     const { fromMathjsValue } = require('@symjs/mathjs');
     assert.equal(sj.Sym, Sym);
+    assert.equal(sj.Diagram, Diagram);
     ${assertions}
     ${entries.map((e) => `require(${JSON.stringify(e)});`).join('\n')}
   `;
@@ -70,6 +84,9 @@ try {
   const types = `import { symbols, diff, Dummy, dummyEq } from '@symjs/symjs';
     import { gates } from '@symjs/physics-quantum';
     import { fromMathjsValue } from '@symjs/mathjs';
+    import { SymObject, NamedMorphism, Diagram } from '@symjs/symjs/categories';
+    const a = new SymObject('A'); const diagram = Diagram([NamedMorphism(a, a, 'f')]);
+    void diagram.objects;
     const [x] = symbols('x');
     const answer: string = diff(x.pow(2), x).toString();
     const equal: boolean = dummyEq(new Dummy('u'), x);
