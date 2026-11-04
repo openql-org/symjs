@@ -413,6 +413,8 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'Vec':
       return deserializeVector(tree);
+    case 'Stats':
+      return deserializeStats(tree);
     case 'Indexed':
       return new sj.Indexed([deserialize(tree['base'] as Tree) as Expr, ...(tree['indices'] as Tree[]).map((t) => deserialize(t) as Expr)]);
     case 'IndexedBase':
@@ -705,6 +707,25 @@ function deserializeVector(tree: Tree): unknown {
     default:
       return (sj as unknown as Record<string, (...a: unknown[]) => unknown>)[cls]!(...args);
   }
+}
+
+/** A sympy.stats object rebuilt by its class constructor from its arguments. */
+function deserializeStats(tree: Tree): unknown {
+  const cls = tree['cls'] as string;
+  const toArg = (v: unknown): Expr => {
+    if (typeof v === 'boolean') return v ? S.true : S.false;
+    if (v instanceof JsDict) return sj.Dict(v.entries.map(([k, x]) => [toArg(k), toArg(x)] as const));
+    if (v instanceof JsSet) return sj.FiniteSet.of(...v.items.map(toArg)) as Expr;
+    if (v instanceof JsLambda) return sj.Lambda(v.vars, v.body);
+    return v as Expr;
+  };
+  const args = (tree['args'] as Tree[]).map((a) => toArg(deserialize(a)));
+  const lib = sj as unknown as Record<string, new (...a: unknown[]) => unknown>;
+  if (cls === 'RandomSymbol') return new sj.RandomSymbol(args[0] as Sym, args[1] as sj.PSpace);
+  // the symbolic probability nodes are classes ExpectationNode, ...; the spaces, domains and distributions take their arguments
+  const C = lib[`${cls}Node`] ?? lib[cls];
+  if (!C) throw new Unsupported(`stats class ${cls}`);
+  return new C(args);
 }
 
 export type Adapter = (args: unknown[], kwargs: Record<string, unknown>, self?: unknown) => unknown;
@@ -2708,6 +2729,9 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.doit': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
     if (args.length) throw new Unsupported('doit args');
+    // the stats nodes evaluate with their own hints (SymPy Expectation.doit(deep=False)); a Density of a finite distribution is a dict
+    if (self instanceof sj.Density) return fromJs(self.compute());
+    if (self instanceof sj.ExpectationNode || self instanceof sj.ProbabilityNode) return self.doit({ deep: kw['deep'] === undefined ? true : Boolean(kw['deep']) });
     const e = asExpr(self);
     // deep=False: only the top-level object is evaluated
     if (kw['deep'] === false && !(e instanceof sj.Integral || e instanceof sj.Derivative || e instanceof sj.Limit || e instanceof sj.Concrete || e instanceof sj.Subs)) return e;
@@ -3673,7 +3697,10 @@ const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'dis
 const JS_GLOBAL_RENAMES: Record<string, string> = { Symbol: 'Sym', Number: 'SymNumber', Function: 'SymFunction', Array: 'SymArray', Set: 'SetExpr' };
 /** sympy.vector names that symjs exports under another name (SymPy's top-level Point is the geometric one). */
 const VECTOR_RENAMES: Record<string, string> = { Point: 'VectorPoint' };
-const camelIn = (n: string, category: string | undefined): string => (category === 'vector' ? VECTOR_RENAMES[n] : undefined) ?? camel(n);
+/** sympy.stats names that symjs exports under another name: E is Euler's number and Chi the hyperbolic cosine integral. */
+const STATS_RENAMES: Record<string, string> = { E: 'expectation', Chi: 'ChiRV' };
+const camelIn = (n: string, category: string | undefined): string =>
+  (category === 'vector' ? VECTOR_RENAMES[n] : category === 'stats' ? STATS_RENAMES[n] : undefined) ?? camel(n);
 const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? (/^[A-Z]/.test(n) ? n : n.replace(/_([a-z0-9])/g, (_m, ch: string) => ch.toUpperCase()));
 
 /** A deserialized argument as the JS value the API takes. */
@@ -3780,9 +3807,9 @@ function autoAdapter(c: Case): Adapter | undefined {
 
 /** The SymPy API name has a symjs counterpart: an adapter, a camelCase export, or a method or property of the owner class. */
 export function hasCounterpart(a: { name: string; owner?: string; category?: string }): boolean {
-  if (ADAPTERS[a.name] && a.category !== 'vector') return true;
+  if (ADAPTERS[a.name] && a.category !== 'vector' && a.category !== 'stats') return true;
   const lib = sj as unknown as Record<string, unknown>;
-  if (a.category === 'vector') return lib[camelIn(a.name, a.category)] !== undefined;
+  if (a.category === 'vector' || a.category === 'stats') return lib[camelIn(a.name, a.category)] !== undefined;
   // SymPy's true and false are S.true and S.false (reserved words in JavaScript)
   if (a.name === 'true' || a.name === 'false') return true;
   if (!a.name.startsWith('.')) return lib[camel(a.name)] !== undefined || (!(a.name in JS_GLOBAL_RENAMES) && lib[a.name] !== undefined);
@@ -3824,7 +3851,8 @@ export function runCase(c: Case): Outcome {
     }
   }
   if (c.unsupportedArg) return { status: 'unsupported', reason: `argument type ${c.unsupportedArg}` };
-  const adapter = ADAPTERS[c.fn] ?? autoAdapter(c);
+  // a sympy.stats name that symjs exports under another name (stats E is the expectation, not the constant)
+  const adapter = (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
   if (!adapter) return { status: 'unsupported', reason: `no adapter for ${c.fn}` };
   try {
     const args = (c.args ?? []).map(deserialize);

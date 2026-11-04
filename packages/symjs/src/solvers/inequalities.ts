@@ -9,9 +9,10 @@
  */
 
 import { NotImplementedError } from '../core/errors';
-import type { Expr, ExprLike, RelOp, Sym } from '../core/nodes';
+import type { Expr, ExprLike, FnName, RelOp, Sym } from '../core/nodes';
 import { Add, BoolAtom, Constant, Dummy, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Special, impl } from '../core/nodes';
 import { at, cast, defined, expectType, first } from '../core/guard';
+import { isReal } from '../core/assumptions';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { expandMul } from '../simplify/expand';
 import { factorTerms } from '../simplify/exprtools';
@@ -283,6 +284,13 @@ function denominatorZeros(e: Expr, x: Sym, domain: SetExpr): SetExpr {
 function solveSign(f0: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
   // SymPy: solving an inequality with parameters is not implemented
   if ([...f0.freeSymbols()].some((t) => t.key !== x.key)) throw new NotImplementedError('inequalities: the expression has parameters');
+  // a finite real expression plus oo or -oo has the sign of the infinity (SymPy: x < oo is True for a real x)
+  if (f0 instanceof Add) {
+    const inf = f0.args.find((a) => a instanceof Special);
+    if (inf instanceof Special && (inf.name === 'oo' || inf.name === '-oo') && !f0.args.some((a) => a !== inf && some(a, (t) => t instanceof Special))) {
+      return op !== 'Eq' && holds(op, inf.name === 'oo' ? Infinity : -Infinity) ? domain : EmptySet;
+    }
+  }
   // Abs(a): split into the cases a >= 0 and a < 0 (SymPy reduce_abs_inequality)
   const ab = findAbs(f0, x);
   if (ab) {
@@ -442,24 +450,13 @@ export function reduceInequalities(ineqsIn: readonly ExprLike[] | ExprLike, symb
     }
     let set: SetExpr = Reals;
     for (const r of rs) set = intersection(set, solveSign(add(r.lhs, mul(-1, r.rhs)), r.op, g, Reals_()));
-    parts.push(g.assumptions.real ? dropInfiniteBounds(asRelational(set, g)) : asRelational(set, g));
+    // (for a real symbol, -oo < x and x < oo are True already, so SymPy's form needs no clean-up)
+    parts.push(asRelational(set, g));
   }
   return and(...parts);
 }
 
 const Reals_ = (): SetExpr => Reals;
-
-/** For a real symbol, -oo < x and x < oo are always true (SymPy omits them). */
-function dropInfiniteBounds(e: Expr): Expr {
-  // as_relational writes the infinite ends as -oo < x and x < oo, combined with And and Or only
-  const isInfBound = (r: Expr) => r instanceof Rel && r.op === 'Lt' && (r.lhs instanceof Special || r.rhs instanceof Special);
-  if (isInfBound(e)) return S.true;
-  if (e instanceof BoolOp) {
-    const args = e.args.map(dropInfiniteBounds);
-    return e.op === 'And' ? and(...args) : orB(...args);
-  }
-  return e;
-}
 
 /** a*x + b op 0 with symbolic b: x op' -b/a, plus the infinite bound. */
 function linearInequality(r: Rel, x: Sym): Expr {
@@ -484,6 +481,8 @@ function linearInequality(r: Rel, x: Sym): Expr {
 /** SymPy solveset for equations and inequalities in one variable. */
 export function solveset(fIn: ExprLike, x: Sym, domain: SetExpr = Complexes): SetExpr {
   const f = sympify(fIn);
+  // a decided condition holds everywhere or nowhere (SymPy solveset(True, x) is the domain)
+  if (f instanceof BoolAtom) return f.value ? domain : EmptySet;
   if (f instanceof Rel && f.op !== 'Eq') {
     // SymPy keeps an inequality or x != a over the complex numbers as a ConditionSet
     // and so does an inequality with parameters
@@ -493,6 +492,8 @@ export function solveset(fIn: ExprLike, x: Sym, domain: SetExpr = Complexes): Se
   const g = f instanceof Rel ? add(f.lhs, mul(-1, f.rhs)) : f;
   if (!g.has(x)) return g instanceof Rational && g.isZero ? domain : EmptySet;
   try {
+    // a Piecewise: each piece on the part of the domain where its condition holds first (SymPy _solveset)
+    if (g instanceof Piecewise && domain !== Complexes) return solvePiecewise(g, x, domain);
     // periodic equations: the solutions in one period plus multiples of the period (SymPy ImageSet)
     const periodic = periodicSolutions(g, x, domain);
     if (periodic) return periodic;
@@ -507,13 +508,70 @@ export function solveset(fIn: ExprLike, x: Sym, domain: SetExpr = Complexes): Se
   }
 }
 
-function solvesetAlgebraic(g: Expr, x: Sym, domain: SetExpr): SetExpr {
+/** The set where a condition on x holds. */
+function conditionSet(c: Expr, x: Sym, domain: SetExpr): SetExpr {
+  if (c instanceof BoolOp && (c.op === 'And' || c.op === 'Or')) {
+    const parts = c.args.map((a) => conditionSet(a, x, domain));
+    return c.op === 'And' ? intersection(...parts) : union(...parts);
+  }
+  return solveset(c, x, domain);
+}
+
+/** The zeros of a Piecewise: those of each piece where its condition holds and no earlier one does. */
+function solvePiecewise(g: Piecewise, x: Sym, domain: SetExpr): SetExpr {
+  let remaining = domain;
+  const parts: SetExpr[] = [];
+  for (const [e, c] of g.pairs) {
+    const where = c === S.true ? remaining : intersection(remaining, conditionSet(c, x, domain));
+    if (where !== EmptySet) parts.push(solveset(e, x, where));
+    remaining = complement(remaining, where);
+  }
+  return union(...parts);
+}
+
+/** SymPy _invert_real for a function with an inverse (erf -> erfinv): a*f(u) + b = 0 becomes u = f^-1(-b/a), or undefined. */
+const INVERSES: Readonly<Record<string, FnName>> = { erf: 'erfinv', erfc: 'erfcinv', erfinv: 'erf', erfcinv: 'erfc' };
+function invertReal(g: Expr, x: Sym): Expr | undefined {
+  const terms = g instanceof Add ? g.args : [g];
+  const dep = terms.filter((t) => t.has(x));
+  if (dep.length !== 1) return undefined;
+  const t = first(dep);
+  const fs = t instanceof Mul ? t.args : [t];
+  const f = fs.find((h): h is Fn => h instanceof Fn && h.name in INVERSES && h.has(x));
+  if (!f || fs.filter((h) => h.has(x)).length !== 1) return undefined;
+  const a = mul(...fs.filter((h) => h !== f));
+  const c = mul(-1, add(...terms.filter((u) => !u.has(x))), pow(a, -1));
+  return add(first(f.args), mul(-1, fn(defined(INVERSES[f.name]), [c])));
+}
+
+/** The real roots of a polynomial with parameters: SymPy keeps those known to be real and intersects the others with the Reals. */
+function parametricRealRoots(num: Expr, den: Expr, x: Sym): SetExpr {
+  const realPart = (xs: readonly Expr[]): SetExpr => {
+    const reals = xs.filter(isRealSym);
+    const unknown = reals.filter((r) => isReal(r) !== true);
+    return union(finiteSet(...reals.filter((r) => isReal(r) === true)), unknown.length ? new SetOp('Intersection', [finiteSet(...unknown), Reals]) : EmptySet);
+  };
+  const roots = realPart(solve(num, x));
+  return den.has(x) ? complement(roots, realPart(solve(den, x))) : roots;
+}
+
+function solvesetAlgebraic(gIn: Expr, x: Sym, domain: SetExpr): SetExpr {
   if (domain === Reals || domain instanceof Interval) {
+    const inv = invertReal(gIn, x);
+    if (inv !== undefined) return solveset(inv, x, domain);
+    const g = gIn;
     const [lo, hi] = bounds(domain);
     const [num, den] = fraction(cancel(g));
-    const zs = realZeros(num, x, lo, hi).filter((z) => !realZeros(den, x, lo, hi).some((p) => p.key === z.key));
-    return intersection(finiteSet(...zs), domain);
+    try {
+      const zs = realZeros(num, x, lo, hi).filter((z) => !realZeros(den, x, lo, hi).some((p) => p.key === z.key));
+      return intersection(finiteSet(...zs), domain);
+    } catch (e) {
+      // zeros with parameters (2*x - y = 0): over the whole real line they need not be placed
+      if (!(e instanceof NotImplementedError) || domain !== Reals) throw e;
+      return parametricRealRoots(num, den, x);
+    }
   }
+  const g = gIn;
   const [num, den] = fraction(cancel(g));
   let sols: Expr[];
   try {

@@ -13,7 +13,7 @@ import { countOps as opCount } from '../core/match';
 import { countOps, mapBottomUp, rebuild, some } from '../core/traverse';
 import { combsimp } from './gammasimp';
 import { fn } from '../functions/elementary/elementary';
-import { expand_log, expand_power_exp, expandMul as expand } from './expand';
+import { expand as expandAll, expand_log, expand_power_exp, expandMul as expand } from './expand';
 import { logcombine, powsimp } from './powsimp';
 import { factorTerms } from './exprtools';
 import { radsimp } from './radsimp';
@@ -36,6 +36,13 @@ function hasFractionInsideSum(e: Expr): boolean {
     (t instanceof Pow && t.exp instanceof Rational && t.exp.isNegative && !(t.base instanceof Rational)) || (t instanceof Mul && t.args.some(isFraction));
   if (e instanceof Add && e.args.some(isFraction)) return true;
   return e.args.some(hasFractionInsideSum);
+}
+
+/** A product of two powers of the same symbolic base (lambda**k*lambda**(1 - k)). */
+function hasSameBasePowers(e: Expr): boolean {
+  if (!(e instanceof Mul)) return false;
+  const bases = e.args.flatMap((a) => (a instanceof Pow && !a.base.isNumber ? [a.base.key] : []));
+  return new Set(bases).size < bases.length;
 }
 
 /** An even integer power of a sum ((u - v)**2), whose base may appear with either sign. */
@@ -70,7 +77,11 @@ function simplifyCore(e: Expr): Expr {
   tryPush(() => expand(radsimp(e)));
 
   // combinatorial functions: Gamma ratios combined (SymPy combsimp in simplify)
-  if (some(e, (x) => x instanceof Fn && ['factorial', 'binomial', 'gamma', 'rf', 'ff'].includes(x.name))) tryPush(() => combsimp(expand(e)));
+  if (some(e, (x) => x instanceof Fn && ['factorial', 'binomial', 'gamma', 'rf', 'ff'].includes(x.name))) {
+    tryPush(() => combsimp(expand(e)));
+    // also with the powers of products and quotients of positive bases expanded (SymPy gammasimp splits them)
+    tryPush(() => combsimp(powsimp(expandAll(e, { power_exp: false }), { combine: 'exp' })));
+  }
   if (hasDenominator(e)) {
     tryPush(() => cancel(e));
     if (hasTrig(e)) tryPush(() => cancel(exptotrig(e)));
@@ -137,6 +148,17 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
     x instanceof Fn ? fn(x.name, x.args.map(simplifyCore)) : x,
   );
   let r = simplifyCore(e);
+  // the exponents simplified by a strategy may let powers of the same base combine (SymPy's final powsimp)
+  if (r.key !== e.key && some(r, hasSameBasePowers)) r = simplifyCore(powsimp(r));
+  // -c*(u - v) as c*(v - u) when that is shorter (SymPy's final could_extract_minus_sign/signsimp step)
+  if (r instanceof Mul && first(r.args).key === S.NegOne.key) {
+    const sums = r.args.filter((a) => a instanceof Add);
+    if (sums.length === 1) {
+      const sum = first(sums);
+      const flipped = mul(...r.args.slice(1).map((a) => (a === sum ? mul(-1, a) : a)));
+      if (countOps(flipped) < countOps(r)) r = flipped;
+    }
+  }
   const measure = opts.measure ?? countOps;
   const size = (x: Expr): number => {
     const m = measure(x);

@@ -436,6 +436,11 @@ export function expand(ex: ExprLike, hints: ExpandHints = {}): Expr {
     ...hints,
   };
   let e = sympify(ex);
+  // a node class with its own expand (SymPy Expectation.expand)
+  if (e instanceof ExtensionExpr) {
+    const own = e.expandTop(hints);
+    if (own !== undefined) return own;
+  }
   // hints of extension nodes (SymPy _eval_expand_<hint>), applied first like SymPy's unknown hints
   for (const [hint, on] of Object.entries(hints)) {
     if (!on || BUILTIN_HINTS.has(hint)) continue;

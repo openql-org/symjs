@@ -4,7 +4,8 @@
 // Tests of src/solvers/inequalities.ts: inequality solving, solveset helpers, singularities, monotonicity and extrema; expected values from SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { Abs, Eq, Gt, Ne, NotImplementedError, parse, Poly, Reals, S as SS, sin, solveset, symbols } from '../../src';
+import { Abs, And, Eq, Ge, Gt, Lt, Ne, Or, exp, NotImplementedError, Rational, erf, erfc, erfcinv, erfinv, parse, Poly, Reals, S as SS, sin, solveset, symbols } from '../../src';
+import type { Expr } from '../../src';
 import { BoolOp, xor } from '../../src/core/boolalg';
 import { Piecewise as PW, Sym } from '../../src/core/nodes';
 import { add, mul, pow } from '../../src/core/ops';
@@ -130,6 +131,55 @@ describe('reduceInequalities', () => {
     expect(show(Q.reduceInequalities(p('x + a >= 1'), [x]))).toBe('(x < oo) & (x >= 1 - a)');
     expect(show(Q.reduceInequalities(p('x + a < 1'), [x]))).toBe('x < 1 - a');
     expect(show(Q.reduceInequalities(Ne(p('2*x+a'), 1), [x]))).toBe('Ne(x, 1/2 - a/2)');
+  });
+});
+
+describe('solveset with parameters and inverse functions (sympy.stats needs both)', () => {
+  const z = new Sym('z', { real: true });
+  const w = new Sym('w');
+  const zp = new Sym('zp', { positive: true });
+  const div = (a: Expr, b: Expr): Expr => mul(a, pow(b, -1));
+  it('solves for x when the zeros have parameters', () => {
+    // SymPy prints z/2 + 1/2
+    expect(String(Q.solveset(add(mul(2, xr), mul(-1, z), -1), xr, Reals))).toBe('{(z + 1)/2}');
+    expect(String(Q.solveset(add(mul(2, xr), mul(-1, w)), xr, Reals))).toBe('Intersection({w/2}, Reals)');
+    expect(String(Q.solveset(add(pow(xr, 2), mul(-1, zp)), xr, Reals))).toBe('{-sqrt(zp), sqrt(zp)}');
+    expect(String(Q.solveset(add(pow(xr, 2), zp), xr, Reals))).toBe('EmptySet');
+    expect(String(Q.solveset(div(add(xr, mul(-1, z)), add(xr, mul(-1, w))), xr, Reals))).toBe('Complement({z}, Intersection({w}, Reals))');
+    // SymPy: Intersection({z/2}, Interval(0, 1)); the zeros cannot be placed in a bounded interval here
+    expect(String(Q.solveset(add(mul(2, xr), mul(-1, z)), xr, interval(0, 1)))).toBe('ConditionSet(x, Eq(2*x - z, 0), Interval(0, 1))');
+  });
+  it('decided conditions and comparisons with oo', () => {
+    const x0 = new Sym('x');
+    expect(String(Q.solveset(SS.true, xr, Reals))).toBe('Reals');
+    expect(String(Q.solveset(SS.false, xr, Reals))).toBe('EmptySet');
+    expect(String(Q.solveset(Lt(xr, SS.Infinity), xr, Reals))).toBe('Reals');
+    // x is not known to be real (SymPy decides x < oo only for a real x): the inequality over the reals
+    expect(String(Q.solveset(Lt(x0, SS.Infinity), x0, Reals))).toBe('Reals');
+    expect(String(Q.solveset(Gt(x0, SS.Infinity), x0, Reals))).toBe('EmptySet');
+    expect(String(Q.solveset(Ge(add(x0, 1), SS.NegativeInfinity), x0, Reals))).toBe('Reals');
+    expect(String(Q.solveset(Eq(add(x0, SS.Infinity), 0), x0, Reals))).toBe('EmptySet');
+  });
+  it('solves each piece of a Piecewise where its condition holds first (SymPy _solveset)', () => {
+    const half = Rational.of(1, 2);
+    expect(String(Q.solveset(new PW([add(half, mul(-1, exp(mul(-2, xr)))), Ge(xr, 0), mul(-1, half), SS.true]), xr, interval(0, SS.Infinity)))).toBe('{log(2)/2}');
+    expect(String(Q.solveset(new PW([add(xr, -1), Gt(xr, 0), add(xr, 1), SS.true]), xr, Reals))).toBe('{-1, 1}');
+    expect(String(Q.solveset(new PW([add(xr, -1), And(Gt(xr, 0), Lt(xr, 5)), add(xr, 1), Or(Lt(xr, -3), Gt(xr, 7)), SS.Zero, SS.true]), xr, Reals))).toBe(
+      'Union({1}, Interval(-3, 0), Interval(5, 7))',
+    );
+    expect(String(Q.solveset(new PW([add(xr, -1), Gt(xr, 0)]), xr, Reals))).toBe('{1}');
+    // SymPy raises a ValueError over the complex numbers
+    expect(String(Q.solveset(new PW([add(xr, -1), Gt(xr, 0), add(xr, 1), SS.true]), xr))).toBe('ConditionSet(x, Eq(Piecewise((x - 1, x > 0), (x + 1, True)), 0), Complexes)');
+  });
+  it('inverts erf, erfc, erfinv and erfcinv (SymPy _invert_real)', () => {
+    expect(String(Q.solveset(add(mul(Rational.of(1, 3), erf(add(xr, -2))), Rational.of(1, 6)), xr, Reals))).toBe('{erfinv(-1/2) + 2}');
+    expect(String(Q.solveset(erfc(xr), xr, Reals))).toBe('EmptySet');
+    expect(String(Q.solveset(add(erfinv(xr), -1), xr, Reals))).toBe('{erf(1)}');
+    expect(String(Q.solveset(erf(xr), xr, interval(0, 1)))).toBe('{0}');
+    expect(String(Q.solveset(add(erfcinv(xr), -1), xr, Reals))).toBe('{erfc(1)}');
+    // two terms with x, or x outside the function: not inverted (SymPy solves x*erf(x) = 0 to {0})
+    expect(String(Q.solveset(add(erf(xr), erf(mul(2, xr))), xr, Reals))).toBe('ConditionSet(x, Eq(erf(x) + erf(2*x), 0), Reals)');
+    expect(String(Q.solveset(mul(xr, erf(xr)), xr, Reals))).toBe('ConditionSet(x, Eq(x*erf(x), 0), Reals)');
   });
 });
 

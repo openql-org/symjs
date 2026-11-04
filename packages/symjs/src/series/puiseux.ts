@@ -21,6 +21,7 @@ import { fnTaylorAtZero } from '../calculus/diff';
 import { expandMul as expand } from '../simplify/expand';
 import { first, last } from '../core/guard';
 import { isNegative, isPositive, isReal } from '../core/assumptions';
+import { Hyper } from '../functions/special/hyper';
 
 /** A series that the expansion cannot compute (SymPy raises NotImplementedError or ValueError). */
 export class SeriesError extends NotImplementedError {}
@@ -270,7 +271,23 @@ export class Expander {
     }
     if (e instanceof Fn) return this.serFn(e, n);
     if (e instanceof UndefFn && (e.name === SCALED_BESSELI || e.name === SCALED_BESSELK)) return this.scaledBessel(e, n);
+    if (e instanceof Hyper) return this.serHyper(e, n);
     throw new SeriesError(`cannot expand ${e.toString()}`);
+  }
+
+  /** hyper(ap, bq, z) with z -> 0: the partial sum of its series in z (SymPy hyper._eval_nseries). */
+  private serHyper(e: Hyper, n: Rational): PS {
+    const z = e.argument;
+    const ez = this.ser(z, Rational.of(Math.max(Math.ceil(n.value), 1))).leadExp();
+    if (!ez.isPositive) throw new SeriesError(`cannot expand ${e.toString()}`);
+    const K = Math.ceil(n.value / ez.value);
+    const terms: Expr[] = [S.One];
+    let c: Expr = S.One;
+    for (let k = 1; k <= K; k++) {
+      c = mul(c, ...e.ap.map((a) => add(a, k - 1)), ...e.bq.map((b) => pow(add(b, k - 1), -1)), Rational.of(1, k));
+      terms.push(mul(c, pow(z, k)));
+    }
+    return this.ser(add(...terms), n);
   }
 
   private serMul(factors: readonly Expr[], n: Rational): PS {
@@ -355,6 +372,10 @@ export class Expander {
   private serFn(e: Fn, n: Rational): PS {
     const asym = this.asymptotic(e, n);
     if (asym !== undefined) return asym;
+    // beta(a, b) = gamma(a)*gamma(b)/gamma(a + b)
+    if (e.name === 'beta') {
+      return this.ser(mul(fn('gamma', [first(e.args)]), fn('gamma', [last(e.args)]), pow(fn('gamma', [add(...e.args)]), -1)), n);
+    }
     if (e.args.length > 1) {
       // several arguments: expand in the only one that depends on the variable
       const dep = e.args.map((a, i) => [a, i] as const).filter(([a]) => a.has(this.t));

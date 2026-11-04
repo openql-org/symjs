@@ -7,16 +7,21 @@
 
 import type { Expr, ExprLike } from '../core/nodes';
 import { NotImplementedError } from '../core/errors';
-import { Add, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
+import { Add, Dummy, Fn, Limit, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, asRational, impl, isNum } from '../core/nodes';
 import { apart } from '../polys/partfrac';
-import { fraction } from '../simplify/rational';
-import { Eq, Lt, piecewise } from '../core/logic';
+import { cancel, fraction } from '../simplify/rational';
+import { factor } from '../polys/sympoly';
+import { hyperexpand } from '../simplify/hyperexpand';
+import { Hyper, hyper } from '../functions/special/hyper';
+import { BoolOp, and } from '../core/boolalg';
+import { isIntegerQ, isNegative, isNonNegative, isPositive, isZero as isZeroQ } from '../core/assumptions';
+import { Eq, Le, Lt, piecewise } from '../core/logic';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, mapBottomUp, xreplace } from '../core/traverse';
-import { abs, log, sin, tan } from '../functions/elementary/elementary';
+import { abs, fn, log, sin, tan } from '../functions/elementary/elementary';
 import { bernoulliNumber, factorial, harmonic, rf } from '../functions/special/special';
 import { polyCoefficients, roots } from '../polys/poly';
-import { expandMul as expand } from '../simplify/expand';
+import { expand as expandFull, expandMul as expand } from '../simplify/expand';
 import { combsimp } from '../simplify/gammasimp';
 import { powsimp } from '../simplify/powsimp';
 import { Concrete } from './node';
@@ -55,6 +60,19 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr, mirrored = false): Expr | und
   // Karr convention for reversed limits (a range with a known length always has a sum)
   const diff_ = add(b, mul(-1, a));
   if (isInt(diff_) && diff_.p < -1n) return mul(-1, defined(sumOne(f, k, add(b, 1), add(a, -1)), 'sum over a finite range'));
+  // a Kronecker delta in k picks one term (SymPy deltasummation)
+  if (hasDelta(f, k)) {
+    const d = deltaSum(f, k, a, b);
+    if (d !== undefined) return d;
+  }
+  // a Piecewise whose conditions do not contain k: the Piecewise of the sums (SymPy eval_sum)
+  if (f instanceof Piecewise && !f.pairs.some(([, c]) => c.has(k))) {
+    const sums = f.pairs.map(([e, c]) => [sumOne(e, k, a, b), c] as const);
+    if (sums.every(([e]) => e !== undefined)) return piecewise(...sums.map(([e, c]) => [defined(e), c] as const));
+  }
+  // a Piecewise term whose condition bounds k: the sum over the range where it holds
+  const pw = piecewiseRange(f, k, a, b);
+  if (pw !== undefined) return pw;
   // explicit evaluation for short finite ranges (SymPy: fewer than 100 terms)
   if (isInt(diff_) && diff_.p < 100n) return directSum(f, k, a, diff_.p);
   // Karr convention: sum_{k=a}^{-oo} f = -sum_{k=-oo}^{a-1} f
@@ -126,8 +144,194 @@ function sumOne(f: Expr, k: Sym, a: Expr, b: Expr, mirrored = false): Expr | und
     const t = telescopic(f, k, a, b) ?? (isRationalIn(f, k) ? telescopic(apart(f, k), k, a, b) : undefined);
     if (t !== undefined) return t;
   }
+  // a hypergeometric term: the hypergeometric series, expanded (SymPy eval_sum_hyper)
+  if (!isInt(diff_) && !isNegOo(a)) {
+    // term by term (SymPy eval_sum_symbolic of an Add)
+    if (ef instanceof Add) {
+      const parts = ef.args.map((term) => sumOne(term, k, a, b));
+      if (parts.every((x) => x !== undefined)) return add(...parts);
+    }
+    const h = evalSumHyper(f, k, a, b);
+    if (h !== undefined) return h;
+  }
   // no closed form: a range with a known length is summed term by term (SymPy eval_sum_direct)
   return isInt(diff_) ? directSum(f, k, a, diff_.p) : undefined;
+}
+
+/** The expression contains KroneckerDelta(i, j) with k in i - j. */
+const hasDelta = (e: Expr, k: Sym): boolean => (e instanceof Fn && e.name === 'KroneckerDelta' && e.has(k)) || e.args.some((a) => hasDelta(a, k));
+
+/** The value of k where the linear expression d vanishes, or undefined when d is not linear in k. */
+function linearRoot(d: Expr, k: Sym): Expr | undefined {
+  const pc = polyCoefficients(d, k);
+  if (pc === undefined || Math.max(...pc.keys()) !== 1) return undefined;
+  return mul(-1, pc.get(0) ?? S.Zero, pow(getOrThrow(pc, 1), -1));
+}
+
+/**
+ * SymPy deltasummation: the sum of f*KroneckerDelta(i, j), with i - j
+ * linear in k, is f at the root k0 when a <= k0 <= b (a Piecewise of that
+ * condition); sums are taken term by term. Undefined for other deltas.
+ */
+function deltaSum(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
+  const g = expand(f);
+  if (g instanceof Add) {
+    const parts = g.args.map((t) => (hasDelta(t, k) ? deltaSum(t, k, a, b) : sumOne(t, k, a, b)));
+    return parts.every((x) => x !== undefined) ? add(...parts) : undefined;
+  }
+  const factors = g instanceof Mul ? g.args : [g];
+  const delta = factors.find((t): t is Fn => t instanceof Fn && t.name === 'KroneckerDelta' && t.has(k));
+  if (delta === undefined) return undefined;
+  const value = linearRoot(add(at(delta.args, 0), mul(-1, at(delta.args, 1))), k);
+  if (value === undefined) return undefined;
+  const rest = mul(...factors.filter((t) => t !== delta));
+  // (SymPy's value < oo for an infinite range holds: the value is finite)
+  const cond = isOo(b) ? Le(a, value) : and(Le(a, value), Le(value, b));
+  return piecewise([xreplace(rest, [[k, value]]), cond], [S.Zero, true]);
+}
+
+/**
+ * The sum of c*Piecewise((g, cond), (0, True)) where cond is a conjunction
+ * of relations linear in k: the sum of c*g over the part of [a, b] where
+ * cond holds; undefined for other terms.
+ */
+function piecewiseRange(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
+  const factors = f instanceof Mul ? f.args : [f];
+  const pw = factors.find((t): t is Piecewise => t instanceof Piecewise);
+  const zero = (e: Expr): boolean => e instanceof Rational && e.isZero;
+  if (pw?.args.length !== 4 || at(pw.args, 3) !== S.true || !zero(at(pw.args, 2))) return undefined;
+  const cond = at(pw.args, 1);
+  const rels = cond instanceof BoolOp && cond.op === 'And' ? cond.args : [cond];
+  let lo = a;
+  let hi = b;
+  for (const r of rels) {
+    if (!(r instanceof Rel) || r.op === 'Eq' || r.op === 'Ne') return undefined;
+    const d = add(r.lhs, mul(-1, r.rhs));
+    const pc = polyCoefficients(d, k);
+    if (pc === undefined || Math.max(...pc.keys()) !== 1) return undefined;
+    const c1 = getOrThrow(pc, 1);
+    if (!(c1 instanceof Rational)) return undefined;
+    const root = mul(-1, pc.get(0) ?? S.Zero, pow(c1, -1));
+    // k < oo and k > -oo hold for a finite k
+    if (root instanceof Special) continue;
+    // (a bound with parameters may give an empty range, which SymPy's formulas would not see)
+    if (freeSymbols(root).size > 0) return undefined;
+    // k < root (or k > root for a negative coefficient), as a bound on the integer k
+    const upper = (r.op === 'Lt' || r.op === 'Le') === c1.isPositive;
+    const strict = r.op === 'Lt' || r.op === 'Gt';
+    if (upper) {
+      const bound = strict ? add(fn('ceiling', [root]), -1) : fn('floor', [root]);
+      hi = isOo(hi) ? bound : fn('Min', [hi, bound]);
+    } else {
+      const bound = strict ? add(fn('floor', [root]), 1) : fn('ceiling', [root]);
+      lo = fn('Max', [lo, bound]);
+    }
+  }
+  const rest = mul(...factors.filter((t) => t !== pw), at(pw.args, 0));
+  const len = add(hi, mul(-1, lo));
+  // an empty range
+  if (len instanceof Rational && len.isNegative) return S.Zero;
+  // (a sum that is not evaluated keeps its Piecewise, as in SymPy)
+  return sumOne(rest, k, lo, hi);
+}
+
+/** The term ratio f(k + 1)/f(k) as a rational function of k (SymPy hypersimp), or undefined. */
+function termRatio(f: Expr, k: Sym): Expr | undefined {
+  // b**(k + 1) is written b*b**k first, so that the powers of b cancel
+  const shifted = expandFull(xreplace(f, [[k, add(k, 1)]]), { mul: false, multinomial: false, power_base: false, log: false });
+  const r = factor(cancel(powsimp(combsimp(mul(shifted, pow(f, -1))))));
+  const [n, d] = fraction(r);
+  return polyCoefficients(expand(n), k) !== undefined && polyCoefficients(expand(d), k) !== undefined ? r : undefined;
+}
+
+/** The factors of a product that contain k and the product of the others (SymPy as_coeff_mul(k)). */
+function splitFactors(e: Expr, k: Sym): [Expr, Expr[]] {
+  const fs = e instanceof Mul ? e.args : [e];
+  return [mul(...fs.filter((t) => !t.has(k))), fs.filter((t) => t.has(k))];
+}
+
+/**
+ * SymPy _eval_sum_hyper: the sum of f from a to oo as [value, condition
+ * of convergence], f a hypergeometric term whose term ratio has linear
+ * factors; undefined otherwise.
+ */
+function sumHyperFrom(fIn: Expr, k: Sym, a: Expr, zeros = 0): [Expr, Expr] | undefined {
+  if (!(a instanceof Rational && a.isZero)) return sumHyperFrom(xreplace(fIn, [[k, add(k, a)]]), k, S.Zero);
+  const f = fIn;
+  const f0 = xreplace(f, [[k, S.Zero]]);
+  // a pole of the term at the start (SymPy leaves such sums to the other methods)
+  if (hasNonFinite(f0)) return undefined;
+  if (f0 instanceof Rational && f0.isZero) {
+    const d = new Dummy('i', { integer: true, positive: true });
+    // (SymPy simplifies the term at a positive integer; the automatic evaluation suffices for the terms met here)
+    const z = xreplace(f, [[k, d]]);
+    if (z instanceof Rational && z.isZero) return [S.Zero, S.true];
+    // terms that vanish for every k from some point on (binomial(x, -k - 1)) would be skipped forever
+    if (zeros >= 6) return undefined;
+    return sumHyperFrom(xreplace(f, [[k, add(k, 1)]]), k, S.Zero, zeros + 1);
+  }
+  const hs = termRatio(f, k);
+  if (hs === undefined) return undefined;
+  const [numer, denom] = fraction(hs);
+  const ab: Expr[] = [];
+  const params: Expr[][] = [[], []];
+  for (const [i, part] of [numer, denom].entries()) {
+    const [c, deps] = splitFactors(part, k);
+    let coeff = c;
+    for (const fac0 of deps) {
+      let fac = fac0;
+      let m = 1;
+      // (the factors of a polynomial have positive integer powers)
+      if (fac instanceof Pow) {
+        m = Number(asRational(fac.exp, 'power of a factor').p);
+        fac = fac.base;
+      }
+      const pc = polyCoefficients(expand(fac), k);
+      if (pc === undefined || Math.max(...pc.keys()) !== 1) return undefined;
+      const lead = getOrThrow(pc, 1);
+      coeff = mul(coeff, pow(lead, m));
+      for (let j = 0; j < m; j++) at(params, i).push(mul(pc.get(0) ?? S.Zero, pow(lead, -1)));
+    }
+    ab.push(coeff);
+  }
+  // 1 among the numerator parameters accounts for the implicit k! of the hypergeometric series
+  const h = cast(hyper([...at(params, 0), 1], at(params, 1), mul(at(ab, 0), pow(at(ab, 1), -1))), Hyper);
+  // series beyond 2F1 with symbolic parameters are not expanded here (hyperexpand takes seconds and seldom closes)
+  if (h.ap.length > 2 && h.freeSymbols().size > 0) return undefined;
+  const value = mul(xreplace(combsimp(f), [[k, S.Zero]]), hyperexpand(h));
+  // an expansion at a branch point that does not reduce (SymPy divides by 105 - 105*exp_polar(0) = 0)
+  if (hasNonFinite(value) || value.has(expPolarZero)) return undefined;
+  return [value, h.convergenceStatement];
+}
+
+/** exp_polar(0), left by expansions at a branch point. */
+const expPolarZero = /* @__PURE__ */ fn('exp_polar', [S.Zero]);
+
+/** The expression contains oo, -oo, zoo or nan. */
+const hasNonFinite = (e: Expr): boolean => e instanceof Special || e.args.some(hasNonFinite);
+
+/** SymPy eval_sum_hyper: sum_{k=a}^{b} f of a hypergeometric term f over an infinite or symbolic range, or undefined. */
+function evalSumHyper(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
+  const oldSum = Sum(f, [k, a, b]);
+  if (!isOo(b)) {
+    const res1 = sumHyperFrom(f, k, a);
+    const res2 = sumHyperFrom(f, k, add(b, 1));
+    if (res1 === undefined || res2 === undefined) return undefined;
+    const cond = and(res1[1], res2[1]);
+    if (cond === S.false) return undefined;
+    return piecewise([add(res1[0], mul(-1, res2[0])), cond], [oldSum, true]);
+  }
+  const res = sumHyperFrom(f, k, a);
+  if (res === undefined) return undefined;
+  const [r, c] = res;
+  if (c === S.false) {
+    // a divergent series of terms of one sign
+    if (freeSymbols(r).size !== 0) return undefined;
+    const t = xreplace(f, [[k, add(new Dummy('i', { integer: true, positive: true }), a)]]);
+    if (isPositive(t) === true || isZeroQ(t) === true) return S.Infinity;
+    return isNegative(t) === true ? S.NegativeInfinity : undefined;
+  }
+  return piecewise([r, c], [oldSum, true]);
 }
 
 /** A rational function of k that is not a polynomial. */
@@ -363,12 +567,33 @@ function evalProduct(term: Expr, k: Sym, a: Expr, n: Expr): Expr | undefined {
 /** Evaluate sums and products (SymPy summation / doit). */
 export function summation(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Expr {
   let e = sympify(f);
-  for (const [k, a, b] of limits) {
-    const r = sumOne(e, k, sympify(a), sympify(b));
-    if (r === undefined) return Sum(e, [k, a, b]);
-    e = r;
+  for (const [i, [k, a0, b0]] of limits.entries()) {
+    const [a, b] = [sympify(a0), sympify(b0)];
+    // the summation variable has the signs of its limits (SymPy _dummy_with_inherited_properties_concrete)
+    const d = inheritedDummy(k, a, b);
+    const r = d === undefined ? sumOne(e, k, a, b) : sumOne(xreplace(e, [[k, d]]), d, a, b);
+    if (r === undefined) return Sum(e, [k, a, b], ...limits.slice(i + 1));
+    e = d === undefined ? r : xreplace(r, [[d, k]]);
   }
   return e;
+}
+
+/**
+ * A dummy for the summation variable with the signs that both limits have
+ * (oo counts as positive, -oo as negative) and integer when both are
+ * integers; undefined when it would add nothing.
+ */
+function inheritedDummy(k: Sym, a: Expr, b: Expr): Dummy | undefined {
+  const have = k.assumptions;
+  const add_: Record<string, boolean> = {};
+  const both = (test: (e: Expr) => boolean | undefined, inf: Expr): boolean => [a, b].every((e) => e === inf || test(e) === true);
+  if (!have.positive && both(isPositive, S.Infinity)) add_['positive'] = true;
+  else if (!have.nonnegative && both(isNonNegative, S.Infinity)) add_['nonnegative'] = true;
+  if (!have.negative && both(isNegative, S.NegativeInfinity)) add_['negative'] = true;
+  else if (!have.nonpositive && both((e) => isNonNegative(mul(-1, e)), S.NegativeInfinity)) add_['nonpositive'] = true;
+  if (!have.integer && [a, b].every((e) => isIntegerQ(e) === true)) add_['integer'] = true;
+  if (Object.keys(add_).length === 0) return undefined;
+  return new Dummy('d', { ...have, ...add_ });
 }
 
 export function product(f: ExprLike, ...limits: [Sym, ExprLike, ExprLike][]): Expr {

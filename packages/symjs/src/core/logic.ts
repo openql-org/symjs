@@ -7,15 +7,23 @@
 
 import { Special } from './nodes';
 import type { Expr, ExprLike, RelOp } from './nodes';
-import { BoolAtom, Float, Piecewise, Rational, Rel, S, isNum } from './nodes';
+import { Add, BoolAtom, Float, Mul, Piecewise, Pow, Rational, Rel, S, isNum } from './nodes';
 import { numCmp } from './num';
-import { add, mul, sympify } from './ops';
-import { BoolOp } from './boolalg';
-import { at } from './guard';
-import { isNegative, isNonNegative, isPositive } from './assumptions';
+import { add, couldExtractMinusSign, mul, sympify } from './ops';
+import { BoolOp, and, or } from './boolalg';
+import { compareKeys, sortKey } from '../printing/sortkey';
+import { at, cast, expectType } from './guard';
+import { isNegative, isNonNegative, isNonZero, isPositive, isReal, isZero } from './assumptions';
 
 const isBoolean = (e: Expr): boolean => e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp;
 const isSpecial = (name: string) => (x: Expr): boolean => x instanceof Special && x.name === name;
+
+/** A real value that is finite: a real polynomial in real symbols (a real symbol is finite in SymPy; 1/x may be infinite). */
+function isFiniteReal(e: Expr): boolean {
+  const finite = (x: Expr): boolean =>
+    !(x instanceof Special) && !(x instanceof Pow && !(x.exp instanceof Rational && x.exp.isInteger && !x.exp.isNegative)) && x.args.every(finite);
+  return finite(e) && isReal(e) === true;
+}
 
 /** Create a relation, evaluating it to True/False when the difference is a number. */
 export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
@@ -29,6 +37,13 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   }
   if (!equality && [lhs, rhs].some(isSpecial('zoo'))) throw new TypeError('Invalid comparison of non-real zoo');
   const byCmp = (c: number): Expr => ({ Eq: c === 0, Ne: c !== 0, Lt: c < 0, Le: c <= 0, Gt: c > 0, Ge: c >= 0 }[op] ? S.true : S.false);
+  // a real (finite) value against oo or -oo (SymPy: a real symbol is finite)
+  for (const [inf, other, sgn] of [[rhs, lhs, -1], [lhs, rhs, 1]] as const) {
+    if (inf instanceof Special && (inf.name === 'oo' || inf.name === '-oo') && isFiniteReal(other)) {
+      // the sign of lhs - rhs
+      return byCmp((inf.name === 'oo' ? 1 : -1) * sgn);
+    }
+  }
   // equal sides (such as oo and oo, whose difference is nan)
   if (lhs.key === rhs.key) return byCmp(0);
   const d = add(lhs, mul(-1, rhs));
@@ -46,6 +61,11 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
     } catch {
       // not numerically evaluable
     }
+  }
+  // SymPy is_eq: a difference whose is_zero is known decides the equality (Eq(a, 0) is False for a positive a)
+  if (equality) {
+    const z = isZero(d) ?? (isNonZero(d) === true ? false : undefined);
+    if (z === true || (z === false && d.isCommutative)) return (op === 'Eq') === z ? S.true : S.false;
   }
   if (!equality) {
     const decided = orderTruth(op, d);
@@ -76,6 +96,64 @@ export const Le = (a: ExprLike, b: ExprLike): Expr => rel('Le', a, b);
 export const Gt = (a: ExprLike, b: ExprLike): Expr => rel('Gt', a, b);
 export const Ge = (a: ExprLike, b: ExprLike): Expr => rel('Ge', a, b);
 
+/** SymPy is_number: an expression without symbols (pi/2, sqrt(2)). */
+const isNumber = (e: Expr): boolean => e.freeSymbols().size === 0;
+
+const REVERSED: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
+
+/**
+ * SymPy Relational.canonical: a number on the right, otherwise the sides in
+ * default_sort_key order, and no minus sign that can be extracted on the
+ * left (-x < y is y > -x).
+ */
+export function canonicalRelation(r: Rel): Expr {
+  let [op, lhs, rhs] = [r.op, r.lhs, r.rhs];
+  const reversed = (): void => {
+    [op, lhs, rhs] = [REVERSED[op], rhs, lhs];
+  };
+  // (two numbers are compared by rel: an unevaluated relation has a side with symbols)
+  if (!isNumber(rhs) && (isNumber(lhs) || compareKeys(sortKey(lhs), sortKey(rhs)) > 0)) reversed();
+  if (couldExtractMinusSign(lhs)) return rel(REVERSED[op], mul(-1, lhs), mul(-1, rhs));
+  // (SymPy also negates both sides when -rhs sorts before lhs; the sort key ignores the sign of the
+  // coefficient, so with lhs sorted before rhs that cannot happen: Eq(x, -y) and Eq(-x, y) are Eq(x, -y))
+  return rel(op, lhs, rhs);
+}
+
+/** A positive Rational. */
+const isPositiveRational = (x: unknown): x is Rational => x instanceof Rational && x.isPositive;
+
+/** SymPy _canonical_coeff: the canonical relation with the rational term and coefficient of the left side moved right (-2*x + 1 < 0 is x > 1/2). */
+function canonicalCoeff(r0: Rel): Expr {
+  // reordering or negating the sides keeps a relation undecided
+  const r = cast(canonicalRelation(r0), Rel, 'canonical relation');
+  const terms = r.lhs instanceof Add ? r.lhs.args : [r.lhs];
+  const b = terms.find((t): t is Rational => t instanceof Rational) ?? S.Zero;
+  const l = add(r.lhs, mul(-1, b));
+  const [m0, rest] = l instanceof Mul ? [at(l.args, 0), l] : [S.One, l];
+  // (a negative coefficient was moved by canonicalRelation: the left side does not extract a minus sign)
+  const m = expectType(m0 instanceof Rational ? m0 : S.One, isPositiveRational, 'coefficient');
+  const lhs = mul(rest, m.pow(-1));
+  const rhs = mul(add(r.rhs, mul(-1, b)), m.pow(-1));
+  return rel(r.op, lhs, rhs);
+}
+
+const NEGATED: Record<RelOp, RelOp> = { Lt: 'Ge', Le: 'Gt', Gt: 'Le', Ge: 'Lt', Eq: 'Ne', Ne: 'Eq' };
+
+/** The key of the canonical negation of a relation (SymPy c.negated.canonical). */
+function negatedKey(r: Rel): string {
+  return canonicalRelation(cast(rel(NEGATED[r.op], r.lhs, r.rhs), Rel, 'negated relation')).key;
+}
+
+/** The relations of a condition made canonical (SymPy Piecewise.eval: cond.replace(is_Relational, _canonical_coeff)). */
+function canonicalCondition(c: Expr): Expr {
+  if (c instanceof Rel) return canonicalCoeff(c);
+  if (c instanceof BoolOp && (c.op === 'And' || c.op === 'Or')) {
+    const args = c.args.map(canonicalCondition);
+    return args.every((a, i) => a.key === at(c.args, i).key) ? c : c.op === 'And' ? and(...args) : or(...args);
+  }
+  return c;
+}
+
 const isTrue = (c: Expr) => c instanceof BoolAtom && c.value;
 const isFalse = (c: Expr) => c instanceof BoolAtom && !c.value;
 
@@ -85,6 +163,7 @@ const isFalse = (c: Expr) => c instanceof BoolAtom && !c.value;
  */
 export function piecewise(...pairs: readonly (readonly [ExprLike, ExprLike | boolean])[]): Expr {
   const out: Expr[] = [];
+  const seen = new Set<string>();
   for (const [e, c0] of pairs) {
     let c = typeof c0 === 'boolean' ? (c0 ? S.true : S.false) : sympify(c0);
     // a boolean Piecewise as a condition is the if-then-else ITE(c1, a, b) (SymPy rewrite(ITE))
@@ -94,9 +173,32 @@ export function piecewise(...pairs: readonly (readonly [ExprLike, ExprLike | boo
       const canon = (r: Expr): Expr => (r instanceof Rel && isNum(r.lhs) && !isNum(r.rhs) ? new Rel(flip[r.op], r.rhs, r.lhs) : r);
       c = new BoolOp('ITE', [canon(at(c.args, 1)), canon(at(c.args, 0)), canon(at(c.args, 2))]);
     }
+    c = canonicalCondition(c);
+    // SymPy _piecewise_collapse_arguments: repeated and redundant conditions
+    const parts = c instanceof BoolOp && c.op === 'And' ? [c, ...c.args] : [c];
+    if (parts.some((p) => seen.has(p.key))) continue;
+    if (c instanceof BoolOp && c.op === 'And') {
+      const kept: Expr[] = [];
+      let none = false;
+      for (const a of c.args) {
+        if (a instanceof Rel) {
+          if (seen.has(negatedKey(a))) continue;
+          // a strict inequality after the non-strict one cannot hold
+          if ((a.op === 'Lt' || a.op === 'Gt') && seen.has(rel(a.op === 'Lt' ? 'Le' : 'Ge', a.lhs, a.rhs).key)) none = true;
+        }
+        kept.push(a);
+      }
+      c = none ? S.false : and(...kept);
+    } else if (c instanceof Rel && seen.has(negatedKey(c))) c = S.true;
+    seen.add(c.key);
     if (isFalse(c)) continue;
-    out.push(sympify(e), c);
-    if (isTrue(c)) break;
+    const ex = sympify(e);
+    if (out.length && at(out, -2).key === ex.key) {
+      // successive pairs with the same expression: one pair with the conditions or-ed
+      out[out.length - 1] = or(c, at(out, -1));
+    } else if (out.length && at(out, -1).key === c.key) continue;
+    else out.push(ex, c);
+    if (isTrue(at(out, -1))) break;
   }
   // SymPy: no condition can hold, so the value is undefined (nan)
   if (out.length === 0) return S.NaN;

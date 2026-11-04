@@ -113,15 +113,14 @@ describe('construction', () => {
     // SymPy Point3D((1, 2, 3, 4)) raises ValueError, then the tuple is not a supported entity
     expect(() => Line3D([0, 0, 0], [1, 0, 0]).distance([1, 2, 3, 4])).toThrow('which is unsupported');
     expect(s(Line([0, 0], [1, 0]).bisectors(Line3D([0, 0, 0], [0, 0, 1])))).toBe('[Line3D(Point3D(0, 0, 0), Point3D(1, 0, 1)), Line3D(Point3D(0, 0, 0), Point3D(-1, 0, 1))]');
-    // SymPy Ray((0, 0), angle=pi*x) simplifies the conditions to x > 1/2, x < 3/2, Eq(x, 1/2), Eq(x, 3/2)
-    // (Relational._eval_simplify), which symjs's simplify keeps as 1 < 2*x, ...
-    expect(s(Ray([0, 0], { angle: pi.mul(x) }))).toBe('Ray2D(Point2D(0, 0), Point2D(Piecewise((-1, (1 < 2*x) & (2*x < 3)), (Piecewise((0, Eq(Mod(2*x, 1), 0)), (1, True)), True)), Piecewise((-tan(pi*x), (1 < 2*x) & (2*x < 3)), (Piecewise((1, Eq(2*x, 1)), (-1, Eq(2*x, 3)), (tan(pi*x), True)), True))))');
+    // SymPy Ray((0, 0), angle=pi*x): the Piecewise conditions are canonical (x > 1/2, x < 3/2, Eq(x, 1/2), Eq(x, 3/2))
+    expect(s(Ray([0, 0], { angle: pi.mul(x) }))).toBe('Ray2D(Point2D(0, 0), Point2D(Piecewise((-1, (x > 1/2) & (x < 3/2)), (Piecewise((0, Eq(Mod(2*x, 1), 0)), (1, True)), True)), Piecewise((-tan(pi*x), (x > 1/2) & (x < 3/2)), (Piecewise((1, Eq(x, 1/2)), (-1, Eq(x, 3/2)), (tan(pi*x), True)), True))))');
     expect(s(Ray([1, 1], { angle: pi.mul(new Float(3)) }))).toBe(s(Ray([1, 1], [0, 1])));
     expect(s(Ray([1, 1], { angle: pi.mul(3).div(2) }))).toBe(s(Ray([1, 1], [1, 0])));
     // SymPy: Ray2D(Point2D(1, 1), Point2D(Piecewise((0, (n > 1/2) & (n < 3/2)), (1, True)), 1)); symjs keeps tan(pi*n)
-    // (0 for an integer n) and the unsimplified conditions
+    // (0 for an integer n)
     const rn = Ray([1, 1], { angle: pi.mul(new Sym('n', { integer: true })) });
-    expect(s(rn.p2.coordinate(0))).toBe('Piecewise((-1, (1 < 2*n) & (2*n < 3)), (0, True)) + 1');
+    expect(s(rn.p2.coordinate(0))).toBe('Piecewise((-1, (n > 1/2) & (n < 3/2)), (0, True)) + 1');
   });
 
   it('raises like SymPy (test_raises)', () => {

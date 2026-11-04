@@ -80,6 +80,9 @@ describe('hyperexpand: the results of SymPy', () => {
     [["G", [[], [], ["0"], []], "z"], "exp(-z)"],
     [["G", [["1"], [], [], ["0"]], "z"], "Piecewise((0, Abs(z) < 1), (1, 1/Abs(z) < 1), (meijerg(((1,), ()), ((), (0,)), z), True))"],
     [["G", [[], ["1"], ["0"], []], "z"], "Piecewise((1, Abs(z) < 1), (0, 1/Abs(z) < 1), (meijerg(((), (1,)), ((0,), ()), z), True))"],
+    [["G", [[], ["1"], [], ["0"]], "z"], "Piecewise((0, (Abs(z) < 1) | (1/Abs(z) < 1)), (meijerg(((), (1,)), ((), (0,)), z), True))"],
+    [["G", [[], ["0"], ["1"], []], "z"], "Piecewise((0, (Abs(z) < 1) | (1/Abs(z) < 1)), (meijerg(((), (0,)), ((1,), ()), z), True))"],
+    [["G", [["0"], ["1"], ["0"], ["1"]], "z"], "Piecewise((0, (Abs(z) < 1) | (1/Abs(z) < 1)), (meijerg(((0,), (1,)), ((0,), (1,)), z), True))"],
     [["G", [["1", "1"], [], [], ["0", "0"]], "z"], "Piecewise((0, Abs(z) < 1), (-log(1/z), 1/Abs(z) < 1), (meijerg(((1, 1), ()), ((), (0, 0)), z), True))"],
     [["G", [[], ["1", "1"], ["0", "0"], []], "z"], "Piecewise((-log(z), Abs(z) < 1), (0, 1/Abs(z) < 1), (meijerg(((), (1, 1)), ((0, 0), ()), z), True))"],
     [["G", [["1"], [], ["1/2"], ["0"]], "z"], "sqrt(pi)*erf(sqrt(z))"],
@@ -171,16 +174,10 @@ describe('hyperexpand: the same functions in other forms than SymPy', () => {
     [["G", [["a"], [], ["a", "a", "a - 1/2"], []], "z"], "-2*sqrt(pi)*z**(a - 1/2)*((Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) - sin(2*sqrt(z))*Ci(2*sqrt(z)))", [2.447143820283287, 0.0]],
     // SymPy: -sqrt(pi)*sqrt(z)*(2*(Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) - 2*sin(2*sqrt(z))*Ci(2*sqrt(z)))
     [["G", [["1"], [], ["1/2", "1", "1"], []], "z"], "-2*sqrt(pi)*sqrt(z)*((Si(2*sqrt(z)) - pi/2)*cos(2*sqrt(z)) - sin(2*sqrt(z))*Ci(2*sqrt(z)))", [1.1461616797329164, 0.0]],
-    // SymPy: Piecewise((0, (Abs(z) < 1) | (1/Abs(z) < 1)), (meijerg(((), (1,)), ((), (0,)), z), True))
-    [["G", [[], ["1"], [], ["0"]], "z"], "Piecewise((0, Abs(z) < 1), (0, 1/Abs(z) < 1), (meijerg(((), (1,)), ((), (0,)), z), True))", [0.0, 0.0]],
     // SymPy: -sqrt(pi)*z**a*(2*(Si(2*sqrt(z)) - pi/2)*sin(2*sqrt(z)) + 2*cos(2*sqrt(z))*Ci(2*sqrt(z)))
     [["G", [["a"], [], ["a", "a", "a + 1/2"], []], "z"], "-2*sqrt(pi)*z**a*((Si(2*sqrt(z)) - pi/2)*sin(2*sqrt(z)) + cos(2*sqrt(z))*Ci(2*sqrt(z)))", [0.7039304075732961, 0.0]],
     // SymPy: 2/(5*z) + 2*log(1 - z)/(5*z**2) - 2*log(1 - z**(1/3))/(5*z**(1/3)) - 2*exp(-2*I*pi/3)*log(-z**(1/3)*exp_polar(2*I*pi/3) + 1)/(5*z**(1/3)) - 2*exp(2*I*pi/3)*log(-z**(1/3)*exp_polar(4*I*pi/3) + 1)/(5*z**(1/3))
     [["H", [["1/3", "1", "2"], ["4/3", "3"]], "z"], "hyper((1/3, 1, 2), (4/3, 3), z)", [1.0577721530161595, 0.0]],
-    // SymPy: Piecewise((0, (Abs(z) < 1) | (1/Abs(z) < 1)), (meijerg(((), (0,)), ((1,), ()), z), True))
-    [["G", [[], ["0"], ["1"], []], "z"], "Piecewise((0, Abs(z) < 1), (0, 1/Abs(z) < 1), (meijerg(((), (0,)), ((1,), ()), z), True))", [0.0, 0.0]],
-    // SymPy: Piecewise((0, (Abs(z) < 1) | (1/Abs(z) < 1)), (meijerg(((0,), (1,)), ((0,), (1,)), z), True))
-    [["G", [["0"], ["1"], ["0"], ["1"]], "z"], "Piecewise((0, Abs(z) < 1), (0, 1/Abs(z) < 1), (meijerg(((0,), (1,)), ((0,), (1,)), z), True))", [0.0, 0.0]],
   ];
   it.each(other)('%j', (spec, want, [re, im]) => {
     const r = hyperexpand(build(spec));

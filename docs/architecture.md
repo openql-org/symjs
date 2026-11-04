@@ -19,6 +19,7 @@ without the higher ones.
 | L3 solvers and integration | equation solving, ODEs, recurrences, inequalities, integration, `doit`, Fourier and formal power series, holonomic functions | `solvers/`, `integrals/`, `holonomic/`, `calculus/doit.ts`, `series/formal.ts`, `series/fourier.ts` |
 | L4 geometry | points, lines, planes, polygons, ellipses, curves and parabolas, which intersect by solving equations | `geometry/` |
 | L5 vector | coordinate systems, vectors and dyadics, vector differential operators, integrals over parametric, implicit and geometric regions | `vector/` |
+| L6 stats | random symbols, probability spaces and distributions (continuous, discrete, finite, compound), probabilities, expectations, densities and moments, which are integrals, sums and solutions of equations | `stats/` |
 
 The entry points (`src/*.ts`) may import every layer.
 
@@ -186,3 +187,21 @@ SymPy modules correspond to it as follows.
 | `vector/implicitregion.py` | `vector/implicitregion.ts` | |
 | `vector/parametricregion.py` | `vector/parametricregion.ts` | |
 | `vector/integrals.py` | `vector/integrals.ts` | |
+
+### `stats/`
+
+| SymPy module | symjs | Note |
+|---|---|---|
+| `stats/rv.py` | `stats/rv.ts` | a RandomSymbol is a symbol (`Sym`) that carries its probability space (subs reaches the space through `Sym.substituteInner`); spaces, domains and distributions are expression nodes; `statsClasses` holds the constructors of the modules below that rv.py imports locally (product and conditional spaces of each kind, handmade distributions, compound spaces, the Expectation and Probability nodes) |
+| `stats/rv_interface.py` | `stats/rvinterface.ts` | |
+| `stats/crv.py` | `stats/crv.ts` | also the multiple integrals of the domains (SymPy Integral with several limits: nested Integrals) |
+| `stats/crv_types.py` | `stats/crvtypes.ts` | |
+| `stats/drv.py` | `stats/drv.ts` | |
+| `stats/drv_types.py` | `stats/drvtypes.ts` | |
+| `stats/frv.py` | `stats/frv.ts` | an element of a finite domain (SymPy frozenset of (symbol, value) pairs) is an array of pairs, and as a key of a density the FiniteSet of the (symbol, value) Tuples |
+| `stats/frv_types.py` | `stats/frvtypes.ts` | |
+| `stats/compound_rv.py` | `stats/compoundrv.ts` | |
+| `stats/error_prop.py` | `stats/errorprop.ts` | |
+| `stats/symbolic_probability.py` | `stats/symbolicprobability.ts` | |
+| `stats/joint_rv.py`, `joint_rv_types.py`, `matrix_distributions.py`, `random_matrix.py`, `random_matrix_models.py`, `stochastic_process.py`, `stochastic_process_types.py`, `symbolic_multivariate_probability.py` | (not ported yet) | the spaces they define plug into `pspace`, `Density` and the probability functions of `stats/rv.ts` like the single spaces (`PSpace.isSingle`, `isCompound`) |
+| `stats/sampling/sample_numpy.py`, `sample_scipy.py`, `sample_pymc.py` (and `sample`, `sample_iter`, `sampling_density`, `numsamples=` of `stats/rv.py`) | not ported (out of scope) | they draw samples with the external Python libraries numpy, scipy and pymc, which have no JavaScript counterpart in symjs; their doctests are listed in `OUT_OF_SCOPE` of `compat/compat.test.ts` |

@@ -9,7 +9,9 @@
 
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../../src';
-import { diff, evalf, expand, expandJn, Float, hyper, jn, KroneckerDelta, NotImplementedError, parse, sstr, Sym, symbols, toComplex } from '../../../src';
+import { diff, evalf, expand, expandJn, Float, hyper, jn, KroneckerDelta, NotImplementedError, parse, sstr, str, Sym, symbols, toComplex } from '../../../src';
+import type { ExprLike } from '../../../src';
+import { Hyper } from '../../../src/functions/special/hyper';
 
 // ---- table harness: each case is [kind, SymPy source, str() of the SymPy 1.14 result or [re, im]] ----
 type Case = [kind: string, src: string, expected: string | [number, number]];
@@ -358,5 +360,37 @@ describe('hyper and appellf1 at arguments without a value or a continuation', ()
     const r = (p: bigint, q: bigint) => sj.Rational.of(p, q);
     const e = new sj.Fn('appellf1', [r(1n, 2n), r(1n, 3n), r(1n, 5n), r(1n, 7n), sj.sympify(2), sj.sympify(10)]);
     expect(() => sj.toComplex(e)).toThrow(NotImplementedError);
+  });
+});
+
+describe('hyper radius_of_convergence, eta and convergence_statement (SymPy)', () => {
+  it('match SymPy', () => {
+    const z = new Sym('z');
+    const a = new Sym('a');
+    const h = (ap: ExprLike[], bq: ExprLike[]): Hyper => hyper(ap, bq, z) as Hyper;
+    const cases: [ExprLike[], ExprLike[], string, string, string][] = [
+      [[1, 2], [3], '1', '0', 'Ne(z, 1) & (Abs(z) <= 1)'],
+      [[1], [], '1', '1', 'Abs(z) < 1'],
+      [[], [], 'oo', '0', 'True'],
+      [[1, 2], [], '0', '3', 'False'],
+      [[-1], [2], 'oo', '-3', 'True'],
+      [[1], [-1], '0', '2', 'False'],
+      [[-3], [-2], '0', '-1', 'False'],
+      [[-1], [-2], 'oo', '1', 'True'],
+      [[-2, -1], [-2], 'oo', '-1', 'True'],
+      [
+        [a, 1],
+        [2],
+        '1',
+        'a - 1',
+        '((Abs(z) <= 1) & (re(a) - 1 < 0)) | ((Abs(z) < 1) & (re(a) - 1 >= 1)) | (Ne(z, 1) & (Abs(z) <= 1) & (re(a) - 1 >= 0) & (re(a) - 1 < 1))',
+      ],
+    ];
+    for (const [ap, bq, R, eta, cond] of cases) {
+      const e = h(ap, bq);
+      expect(str(e.radiusOfConvergence)).toBe(R);
+      expect(str(e.eta)).toBe(eta);
+      expect(str(e.convergenceStatement)).toBe(cond);
+    }
   });
 });

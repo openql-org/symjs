@@ -121,3 +121,22 @@ describe('fractions in sums, opposite bases of even powers and rationalized deno
     expect(String(simplify(parse('1/(x + 1)')))).toBe('1/(x + 1)');
   });
 });
+
+describe('simplify of the moments of sympy.stats distributions (SymPy 1.14)', () => {
+  const l = symbol('lambda', { positive: true });
+  const k = symbol('k', { positive: true });
+  const [mu, om] = [symbol('mu', { positive: true }), symbol('omega', { positive: true })];
+  const S2 = (e: string): string => String(simplify(parse(e, { symbols: [l, k, mu, om] })));
+  it('powers of the same base combine after their exponents are simplified (Weibull)', () => {
+    expect(S2('lambda**k*lambda**(k*(-1 + (k + 1)/k))*lambda**(1 - k)*gamma(1 + 1/k)/lambda')).toBe('lambda*gamma(1 + 1/k)');
+    expect(S2('2**x*2**(1-x)*y')).toBe('2*y');
+  });
+  it('the minus sign of a product goes into its sum when that is shorter', () => {
+    expect(S2('-lambda**2*(gamma(1+1/k)**2-gamma(1+2/k))')).toBe('lambda**2*(-gamma(1 + 1/k)**2 + gamma(1 + 2/k))');
+    expect(S2('-x*(x+1)')).toBe('-x*(x + 1)');
+    expect(S2('-(x+1)*(y-1)')).toBe('-(x + 1)*(y - 1)');
+  });
+  it('gamma functions with powers of quotients of positive bases (Nakagami)', () => {
+    expect(S2('mu**mu*omega*(mu/omega)**(1/2 - mu)*gamma(mu + 1/2)/(mu*omega**mu*gamma(mu))')).toBe('sqrt(mu)*sqrt(omega)*gamma(mu + 1/2)/gamma(mu + 1)');
+  });
+});

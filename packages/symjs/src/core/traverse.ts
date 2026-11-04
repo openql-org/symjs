@@ -14,8 +14,8 @@ import { Add, Derivative, Expr, ExtensionExpr, Fn, Integral, Limit, Mul, Order, 
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { isNonNegative, isPositive, isReal } from './assumptions';
 import { SubsNode } from './subsnode';
-import { BoolOp } from './boolalg';
-import { at, defined, first } from './guard';
+import { BoolOp, and } from './boolalg';
+import { at, cast, defined, first } from './guard';
 
 const isSubsMap = (s: Substitution): s is ReadonlyMap<Expr, ExprLike> => s instanceof Map;
 const isSubsPairs = (s: Substitution): s is readonly (readonly [Expr, ExprLike])[] => Array.isArray(s);
@@ -95,7 +95,7 @@ export function xreplace(e: Expr, s: Substitution): Expr {
   if (rules.length === 0) return e;
   const go = (x: Expr): Expr => {
     for (const r of rules) if (r.match(x)) return r.to;
-    if (x.args.length === 0) return x;
+    if (x.args.length === 0) return x instanceof Sym ? (x.substituteInner(go) ?? x) : x;
     const args = x.args.map(go);
     return args.some((a, i) => a !== x.args[i]) ? rebuild(x, args) : x;
   };
@@ -342,7 +342,7 @@ export function boundSymbols(e: Expr): Expr[] {
 
 function subsOne(e: Expr, old: Expr, nw: Expr): Expr {
   if (e.key === old.key) return nw;
-  if (e.args.length === 0) return e;
+  if (e.args.length === 0) return e instanceof Sym ? (e.substituteInner((x) => subsOne(x, old, nw)) ?? e) : e;
   // a differentiation variable replaced by a non-symbol: the derivative at a point (SymPy Subs)
   if (e instanceof Derivative && old instanceof Sym && !(nw instanceof Sym) && e.variableCount.some(([v]) => v.key === old.key)) {
     return new SubsNode([e, old, nw]);
@@ -515,4 +515,25 @@ const toKey = (v: unknown): Key => (v instanceof Expr ? sortKey(v) : typeof v ==
  */
 export function preorderTraversal(node: ExprLike, keys: boolean | ((e: Expr) => unknown) = false): PreorderTraversal {
   return new PreorderTraversal(sympify(node), keys);
+}
+
+/**
+ * SymPy piecewise_fold (sympy/functions/elementary/piecewise.py): an
+ * expression with Piecewise arguments as one Piecewise whose branches are
+ * the expression at each branch of the arguments. Extension nodes and
+ * boolean connectives are not folded (their arguments are).
+ */
+export function piecewiseFold(e: Expr): Expr {
+  if (e.isAtom || e instanceof Piecewise) return e;
+  const args = e.args.map(piecewiseFold);
+  const i = args.findIndex((a) => a instanceof Piecewise);
+  if (i < 0 || e instanceof ExtensionExpr || e instanceof BoolOp) return args.some((a, j) => a !== e.args[j]) ? rebuild(e, args) : e;
+  const pairs: (readonly [Expr, Expr])[] = [];
+  for (const [ei, ci] of cast(at(args, i), Piecewise).pairs) {
+    const v = piecewiseFold(rebuild(e, args.map((a, j) => (j === i ? ei : a))));
+    // a branch that is a Piecewise itself (another argument was one) is flattened into the conditions
+    if (v instanceof Piecewise) for (const [ej, cj] of v.pairs) pairs.push([ej, and(ci, cj)]);
+    else pairs.push([v, ci]);
+  }
+  return piecewise(...pairs);
 }

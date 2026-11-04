@@ -661,6 +661,21 @@ export class Sym extends Expr {
     return 'Symbol';
   }
 
+  /** SymPy class_key priority in the sort key: 2 for an Atom, 5 for a Basic such as SymPy RandomSymbol. */
+  get sortPriority(): number {
+    return 2;
+  }
+
+  /**
+   * subs and xreplace inside a symbol-like node that carries arguments
+   * (SymPy RandomSymbol(symbol, pspace) substitutes in its probability
+   * space), given the substitution of a subexpression; undefined for a plain
+   * symbol, which has nothing inside.
+   */
+  substituteInner(_f: (e: Expr) => Expr): Expr | undefined {
+    return undefined;
+  }
+
   /** LaTeX form when it is not derived from the name (SymPy BaseScalar._latex_form); undefined for a plain symbol. */
   get latexForm(): string | undefined {
     return undefined;
@@ -1144,6 +1159,14 @@ export abstract class ExtensionExpr extends Expr {
    * already rewritten; undefined keeps the node.
    */
   rewriteSelf(_target: string, _args: readonly Expr[]): Expr | undefined {
+    return undefined;
+  }
+  /**
+   * SymPy expand overridden by the node's class (Expectation.expand,
+   * Variance.expand): the expansion of this node when it is the expression
+   * being expanded; undefined for the generic expansion.
+   */
+  expandTop(_hints: Readonly<Record<string, unknown>>): Expr | undefined {
     return undefined;
   }
   /**

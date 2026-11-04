@@ -44,7 +44,7 @@ import { numAdd, numInv, numMul, numNeg } from '../core/num';
 import { at, defined, expectType, getOrThrow, pair } from '../core/guard';
 import { gcd, lcm } from '../core/numbers';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
-import { mapBottomUp as mapBottomUpI, some, xreplace as subs } from '../core/traverse';
+import { mapBottomUp as mapBottomUpI, piecewiseFold, some, xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { asin, atan, cos, cosh, log, sin, sinh } from '../functions/elementary/elementary';
 import { UPoly, polyCoefficients, roots } from '../polys/poly';
@@ -54,7 +54,7 @@ import { cancel, fraction, together } from '../simplify/rational';
 import { expsimp, hasTrigFunctions } from '../simplify/trigsimp';
 import { meijerintDefinite } from './meijerint';
 import { NonElementaryIntegral, rischHooks, rischIntegrate } from './risch';
-import { isDiracDelta, isSingularityFunction } from './transforms/delta';
+import { isDiracDelta, isHeaviside, isSingularityFunction } from './transforms/delta';
 import { deltaIntegral } from './deltafunctions';
 import { singularityIntegral } from './singularityfunctions';
 
@@ -755,6 +755,66 @@ function simplifyConditionsOnInterval(f: Expr, x: Sym, a: Expr, b: Expr): Expr {
   return mapBottomUpI(f, (e: Expr) => (e instanceof Piecewise ? piecewise(...e.pairs.map(([v, c]) => [v, cond(c)] as const)) : e));
 }
 
+/**
+ * Piecewise conditions x < c, x > c, ... decided on (a, b): a relation of the
+ * integration variable and an infinity always has the same value (x is
+ * finite), and one with a constant that is at or beyond an end of the
+ * interval holds everywhere or nowhere inside it (an end is a single point,
+ * as in SymPy's piecewise integration).
+ */
+function decideConditionsOnInterval(f: Expr, x: Sym, a0: Expr, b0: Expr): Expr {
+  // the interval between the limits, whichever comes first
+  const [a, b] = (cmpReal(a0, b0) ?? -1) > 0 ? [b0, a0] : [a0, b0];
+  const flip: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le', Eq: 'Eq', Ne: 'Ne' };
+  const decide = (r: Rel): boolean | undefined => {
+    const side: [RelOp, Expr] | undefined = r.lhs.key === x.key && !r.rhs.has(x) ? [r.op, r.rhs] : r.rhs.key === x.key && !r.lhs.has(x) ? [flip[r.op], r.lhs] : undefined;
+    if (side === undefined) return undefined;
+    const [op, c] = side;
+    // x = c holds at a single point at most: nowhere for the integral
+    if (op === 'Eq' || op === 'Ne') return op === 'Ne';
+    const below = op === 'Lt' || op === 'Le';
+    // c is at or below the interval (x > c holds inside) or at or above it (x < c holds inside)
+    const atOrBelow = c.key === S.NegativeInfinity.key || (cmpReal(c, a) ?? 1) <= 0;
+    const atOrAbove = c.key === S.Infinity.key || (cmpReal(c, b) ?? -1) >= 0;
+    if (atOrBelow) return !below;
+    if (atOrAbove) return below;
+    return undefined;
+  };
+  const cond = (c: Expr): Expr =>
+    mapBottomUpI(c, (e) => {
+      if (!(e instanceof Rel)) return e;
+      const d = decide(e);
+      return d === undefined ? e : d ? S.true : S.false;
+    });
+  return mapBottomUpI(f, (e: Expr) => (e instanceof Piecewise ? piecewise(...e.pairs.map(([v, c]) => [v, cond(c)] as const)) : e));
+}
+
+/** The order of two real values, numerically or by the sign the assumptions give their difference. */
+function cmpSign(p: Expr, q: Expr): number | undefined {
+  const c = cmpReal(p, q);
+  if (c !== undefined) return c;
+  const d = add(p, mul(-1, q));
+  return isPositiveQ(d) === true ? 1 : isNegativeQ(d) === true ? -1 : undefined;
+}
+
+/**
+ * Heaviside(a*x + b) at x = oo or -oo: 1 or 0 by the sign of a (SymPy's limit
+ * of the antiderivative of a DiracDelta at an infinite end).
+ * @internal
+ */
+export function heavisideAtInfinity(F: Expr, x: Sym, p: Expr): Expr {
+  if (!(p instanceof Special) || (p.name !== 'oo' && p.name !== '-oo')) return F;
+  return mapBottomUpI(F, (e) => {
+    if (!isHeaviside(e)) return e;
+    const c = polyCoefficients(at(e.args, 0), x);
+    // only a linear argument a*x + b
+    const a = c !== undefined && Math.max(0, ...c.keys()) <= 1 ? c.get(1) : undefined;
+    const sign = a === undefined ? 0 : isPositiveQ(a) === true ? 1 : isNegativeQ(a) === true ? -1 : 0;
+    if (sign === 0) return e;
+    return sign * (p.name === 'oo' ? 1 : -1) > 0 ? S.One : S.Zero;
+  });
+}
+
 /** Polynomial singularities of an integrand; undefined means their location is unresolved. */
 function singularPoints(f: Expr, x: Sym): Expr[] | undefined {
   const bases = new Map<string, Expr>();
@@ -843,7 +903,10 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
     const own = f.integrateSelf(x, limits && [sympify(limits[0]), sympify(limits[1])], (g) => integrate(g, x, limits, opts));
     if (own !== undefined) return own;
   }
-  if (limits) f = simplifyConditionsOnInterval(f, x, sympify(limits[0]), sympify(limits[1]));
+  if (limits && some(f, (e) => e instanceof Piecewise)) {
+    const [a, b] = [sympify(limits[0]), sympify(limits[1])];
+    f = simplifyConditionsOnInterval(decideConditionsOnInterval(f, x, a, b), x, a, b);
+  }
   // sums and constant multiples containing a Piecewise: term by term
   const hasPw = (e: Expr): boolean => e instanceof Piecewise || e.args.some(hasPw);
   if (f instanceof Add && f.args.some(hasPw)) {
@@ -854,6 +917,10 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
     const pw = defined(f.args.find((t) => t instanceof Piecewise), 'Piecewise factor');
     const r = integrate(pw, x, limits, opts);
     if (!(r instanceof Integral)) return mul(...f.args.filter((t) => t !== pw), r);
+  }
+  // a product with a Piecewise factor that depends on x: one Piecewise (SymPy piecewise_fold)
+  if (f instanceof Mul && f.args.some((t) => t instanceof Piecewise) && f.args.some((t) => !(t instanceof Piecewise) && t.has(x))) {
+    return integrate(piecewiseFold(f), x, limits, opts);
   }
   if (f instanceof Piecewise && !limits) {
     const r = integratePiecewise(f, x);
@@ -893,8 +960,8 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
   const interior: Expr[] = [];
   const bad = (e: Expr): boolean => e instanceof Special || e.args.some(bad);
   for (const p of points) {
-    const left = cmpReal(p, a);
-    const right = cmpReal(p, b);
+    const left = cmpSign(p, a);
+    const right = cmpSign(p, b);
     if (left === undefined || right === undefined) {
       // An integrable singularity with a continuous primitive needs no split,
       // even when a symbolic endpoint prevents ordering (e.g. integral of log(x)).
@@ -907,7 +974,7 @@ export function integrate(ex: ExprLike, x: Sym, limits?: readonly [ExprLike, Exp
   }
   interior.sort((p, q) => defined(cmpReal(p, q), 'constant real singularities'));
   const endpoint = (p: Expr, dir: '+' | '-'): Expr => {
-    const v = subs(F, [[x, p]]);
+    const v = subs(heavisideAtInfinity(F, x, p), [[x, p]]);
     return bad(v) ? impl.limit(F, x, p, dir) : v;
   };
   const bounds = [a, ...interior, b];

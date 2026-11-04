@@ -166,7 +166,9 @@
                   "../geometry/**",
                   "../../geometry/**",
                   "../vector/**",
-                  "../../vector/**"
+                  "../../vector/**",
+                  "../stats/**",
+                  "../../stats/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -274,7 +276,9 @@
                   "../geometry/**",
                   "../../geometry/**",
                   "../vector/**",
-                  "../../vector/**"
+                  "../../vector/**",
+                  "../stats/**",
+                  "../../stats/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -354,7 +358,9 @@
                   "../geometry/**",
                   "../../geometry/**",
                   "../vector/**",
-                  "../../vector/**"
+                  "../../vector/**",
+                  "../stats/**",
+                  "../../stats/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -420,7 +426,9 @@
                   "../geometry/**",
                   "../../geometry/**",
                   "../vector/**",
-                  "../../vector/**"
+                  "../../vector/**",
+                  "../stats/**",
+                  "../../stats/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -528,7 +536,9 @@
                   "../geometry/**",
                   "../../geometry/**",
                   "../vector/**",
-                  "../../vector/**"
+                  "../../vector/**",
+                  "../stats/**",
+                  "../../stats/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -598,7 +608,9 @@
                   "../geometry/**",
                   "../../geometry/**",
                   "../vector/**",
-                  "../../vector/**"
+                  "../../vector/**",
+                  "../stats/**",
+                  "../../stats/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -668,7 +680,9 @@
                   "../geometry/**",
                   "../../geometry/**",
                   "../vector/**",
-                  "../../vector/**"
+                  "../../vector/**",
+                  "../stats/**",
+                  "../../stats/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -716,7 +730,9 @@
                   "../geometry/**",
                   "../../geometry/**",
                   "../vector/**",
-                  "../../vector/**"
+                  "../../vector/**",
+                  "../stats/**",
+                  "../../stats/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -786,7 +802,9 @@
                   "../geometry/**",
                   "../../geometry/**",
                   "../vector/**",
-                  "../../vector/**"
+                  "../../vector/**",
+                  "../stats/**",
+                  "../../stats/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -856,7 +874,9 @@
                   "../geometry/**",
                   "../../geometry/**",
                   "../vector/**",
-                  "../../vector/**"
+                  "../../vector/**",
+                  "../stats/**",
+                  "../../stats/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -885,7 +905,9 @@
                   "../geometry/**",
                   "../../geometry/**",
                   "../vector/**",
-                  "../../vector/**"
+                  "../../vector/**",
+                  "../stats/**",
+                  "../../stats/**"
                 ],
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)",
                 "allowTypeImports": true
@@ -907,7 +929,31 @@
               {
                 "group": [
                   "../vector/**",
-                  "../../vector/**"
+                  "../../vector/**",
+                  "../stats/**",
+                  "../../stats/**"
+                ],
+                "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)",
+                "allowTypeImports": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "packages/symjs/src/vector/**"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "../stats/**",
+                  "../../stats/**"
                 ],
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)",
                 "allowTypeImports": true

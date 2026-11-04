@@ -29,6 +29,7 @@ import {
   symbols,
   xreplace,
 } from '../../src';
+import { piecewiseFold } from '../../src/core/traverse';
 
 const [x, y, C1, C2, z, w, n] = symbols('x y C1 C2 z w n');
 
@@ -259,5 +260,35 @@ describe('use and preorderTraversal (SymPy sympy.core.traversal)', () => {
     }
     expect(out.sort()).toEqual(['x + y*z', 'z', 'z*(x + y*z)'].sort());
     expect(sj.preorderTraversal(1).node.equals(sj.sympify(1))).toBe(true);
+  });
+});
+
+describe('piecewiseFold (SymPy piecewise_fold)', () => {
+  const P = sj.Piecewise([x, sj.Gt(x, 0)], [mul(-1, x), true]);
+  const Q = sj.Piecewise([1, sj.Gt(y, 0)], [2, true]);
+  it('folds the Piecewise arguments of an expression', () => {
+    expect(str(piecewiseFold(add(P, 1)))).toBe('Piecewise((x + 1, x > 0), (1 - x, True))');
+    expect(str(piecewiseFold(mul(P, Q)))).toBe('Piecewise((x, (x > 0) & (y > 0)), (2*x, x > 0), (-x, y > 0), (-2*x, True))');
+    expect(str(piecewiseFold(sin(P)))).toBe('Piecewise((sin(x), x > 0), (-sin(x), True))');
+    const plain = add(x, 1);
+    expect(piecewiseFold(plain)).toBe(plain);
+    expect(piecewiseFold(P)).toBe(P);
+    expect(piecewiseFold(x)).toBe(x);
+  });
+  it('rebuilds extension nodes and connectives without folding them', () => {
+    // SymPy folds a Tuple too: Piecewise(((x, 1), x > 0), ((-x, 1), True))
+    expect(str(piecewiseFold(sj.Tuple(add(P, 1), 1)))).toBe('(Piecewise((x + 1, x > 0), (1 - x, True)), 1)');
+    const t = sj.Tuple(P, 1);
+    expect(piecewiseFold(t)).toBe(t);
+    // SymPy folds the connective too: Piecewise(((y > 0) & (x + 1 > 0), x > 0), ((y > 0) & (1 - x > 0), True))
+    expect(str(piecewiseFold(sj.And(sj.Gt(add(P, 1), 0), sj.Gt(y, 0))))).toBe('(y > 0) & Piecewise((x + 1 > 0, x > 0), (1 - x > 0, True))');
+  });
+});
+
+describe('symbol-like nodes with arguments (Sym.substituteInner)', () => {
+  it('a plain symbol has nothing inside', () => {
+    expect(new sj.Sym('x').substituteInner((e) => e)).toBeUndefined();
+    expect(new sj.Sym('x').sortPriority).toBe(2);
+    expect(xreplace(x, [[y, 1]])).toBe(x);
   });
 });

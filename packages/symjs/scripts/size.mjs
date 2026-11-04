@@ -35,8 +35,8 @@ const CASES = [
   ['simplify', 'simplify', 520],
   ['polys', 'factor', 380],
   ['calculus', 'integrate', 660],
-  ['solvers', 'solve', 735],
-  ['solvers', 'dsolve', 745],
+  ['solvers', 'solve', 780],
+  ['solvers', 'dsolve', 790],
   ['sets', '*', 315],
   ['matrices', 'Matrix', 450],
   ['printing', 'pretty', 210],
@@ -47,8 +47,9 @@ const CASES = [
   ['holonomic', 'exprToHolonomic', 815],
   ['geometry', '*', 790],
   ['vector', '*', 900],
-  ['index', 'Rational', 900],
-  ['index', '*', 1545],
+  ['stats', '*', 855],
+  ['index', 'Rational', 1005],
+  ['index', '*', 1710],
 ];
 
 async function measure(entry, names) {

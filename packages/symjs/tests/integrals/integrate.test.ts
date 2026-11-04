@@ -9,6 +9,7 @@ import * as sj from '../../src';
 import { Sym, parse, integrate, symbols, diff, doit, latex, sstr } from '../../src';
 import { Expr } from '../../src/core/nodes';
 import { NoMatchResult } from '../../src/core/truth';
+import { heavisideAtInfinity } from '../../src/integrals/integrate';
 
 // Integrals (integrals/integrate.ts). Expected values are the str() forms printed by SymPy 1.14
 // (p is a positive, q a negative and r a real symbol).
@@ -178,8 +179,6 @@ describe('results that differ from SymPy 1.14', () => {
     ["sj.integrate(sj.mul(P('2'), sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true])), x)", () => sj.integrate(sj.mul(P('2'), sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true])), x), "Integral(2*Piecewise((x, x < 1), (gamma(x), True)), x)", "Piecewise((x**2, x < 1), (2*Integral(gamma(x), x) - 2*Integral(gamma(x), (x, 1)) + 1, True))"],
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(sj.add(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), P('x')), x)", () => sj.integrate(sj.add(sj.Piecewise([P('x'), P('x < 1')], [P('gamma(x)'), true]), P('x')), x), "Integral(x + Piecewise((x, x < 1), (gamma(x), True)), x)", "Piecewise((x**2, x < 1), (Integral(x + gamma(x), (x, 1, x)) + 1, True))"],
-    // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(sj.Piecewise([P('1/x'), P('x > 0')], [P('0'), true]), x, [1, 2])", () => sj.integrate(sj.Piecewise([P('1/x'), P('x > 0')], [P('0'), true]), x, [1, 2]), "Integral(Piecewise((1/x, x > 0), (0, True)), (x, 1, 2))", "log(2)"],
     // the condition is rewritten for x < 0, the piecewise integral is not done
     ["sj.integrate(sj.Piecewise([P('1'), P('y/x < 0')], [P('2'), true]), x, [-2, -1])", () => sj.integrate(sj.Piecewise([P('1'), P('y/x < 0')], [P('2'), true]), x, [-2, -1]), "Integral(Piecewise((1, y > 0), (2, True)), (x, -2, -1))", "Integral(Piecewise((1, y/x < 0), (2, True)), (x, -2, -1))"],
     // the condition is rewritten for x < 0, the piecewise integral is not done
@@ -387,5 +386,61 @@ describe('square roots of quadratics (SymPy manualintegrate)', () => {
     // (SymPy: sqrt(a)*x*sqrt(1 + x**2/a)/2 + a*asinh(x/sqrt(a))/2)
     expect(I('sqrt(x**2 + a)')).toBe('Integral(sqrt(a + x**2), x)');
     expect(I('sqrt(x**3 + 1)')).toBe('Integral(sqrt(x**3 + 1), x)');
+  });
+});
+
+describe('definite integrals of Piecewise conditions and delta functions (sympy.stats needs them)', () => {
+  const w = new Sym('w', { positive: true });
+  const oo = sj.S.Infinity;
+  const noo = sj.S.NegativeInfinity;
+  const PW = (...p: [Expr, Expr | boolean][]): Expr => sj.piecewise(...p);
+  it('conditions decided on the interval', () => {
+    expect(sstr(integrate(PW([sj.S.One, sj.Gt(x, 0)], [sj.S.Zero, true]), x, [2, 1]))).toBe('-1');
+    expect(sstr(integrate(PW([x, sj.Gt(x, -1)], [sj.S.Zero, true]), x, [0, 1]))).toBe('1/2');
+    expect(sstr(integrate(PW([x, sj.Lt(x, 2)], [sj.S.Zero, true]), x, [0, 1]))).toBe('1/2');
+    expect(sstr(integrate(PW([x, sj.Lt(x, 1)], [sj.S.Zero, true]), x, [0, 2]))).toBe('1/2');
+    // x = 1/2 is a single point
+    expect(sstr(integrate(PW([x, sj.Eq(x, sj.S.Half)], [sj.S.One, true]), x, [0, 1]))).toBe('1');
+    const real = new Sym('x', { real: true });
+    expect(sstr(integrate(PW([sj.mul(real, sj.exp(sj.mul(-1, sj.pow(real, 2)))), sj.and(sj.Gt(real, noo), sj.Lt(real, oo))], [sj.S.Zero, true]), real, [noo, oo]))).toBe('0');
+    // SymPy: 1 - Min(1, Max(0, a))
+    expect(sstr(integrate(PW([sj.S.One, sj.Lt(a, x)], [sj.S.Zero, true]), x, [0, 1]))).toBe('Integral(Piecewise((1, a < x), (0, True)), (x, 0, 1))');
+  });
+  it('a product with a Piecewise factor', () => {
+    expect(sstr(integrate(sj.mul(x, PW([sj.S.One, sj.Lt(x, sj.S.Half)], [sj.Rational.of(2), true])), x, [0, 1]))).toBe('7/8');
+  });
+  it('a singularity left or right of an interval with a symbolic end', () => {
+    expect(sstr(integrate(sj.pow(x, -1), x, [1, sj.add(1, w)]))).toBe('log(w + 1)');
+    expect(sstr(integrate(sj.pow(x, -1), x, [sj.sub(-1, w), -1]))).toBe('-log(-w - 1) + I*pi');
+  });
+  it('DiracDelta over the real line (Heaviside at the infinite ends)', () => {
+    const e = sj.exp(sj.mul(-1, sj.pow(x, 2)));
+    expect(sstr(integrate(sj.mul(sj.DiracDelta(sj.sub(x, y)), e), x, [noo, oo]))).toBe('exp(-y**2)');
+    expect(sstr(integrate(sj.mul(sj.DiracDelta(sj.sub(y, x)), e), x, [noo, oo]))).toBe('exp(-y**2)');
+    expect(sstr(integrate(sj.mul(sj.DiracDelta(sj.sub(sj.mul(c, x), 1)), e), x, [noo, oo]))).toBe('exp(-1/c**2)/Abs(c)');
+    expect(sstr(integrate(sj.mul(sj.DiracDelta(x), e), x, [noo, oo]))).toBe('1');
+    expect(sstr(integrate(sj.mul(sj.DiracDelta(sj.mul(c, x)), e), x, [noo, oo]))).toBe('1/Abs(c)');
+    expect(sstr(integrate(sj.mul(sj.Heaviside(sj.sin(y)), sj.DiracDelta(x), e), x, [noo, oo]))).toBe('Heaviside(sin(y))');
+    expect(sstr(integrate(sj.mul(sj.DiracDelta(x), sj.Heaviside(sj.sub(sj.pow(x, 2), 1)), e), x, [noo, oo]))).toBe('0');
+    // SymPy: 1 (sin(1) > 0)
+    expect(sstr(integrate(sj.mul(sj.Heaviside(sj.sin(x)), sj.DiracDelta(sj.sub(x, 1))), x, [noo, oo]))).toBe('Heaviside(sin(1))');
+  });
+});
+
+describe('Heaviside at the infinite ends of an integral (internal)', () => {
+  const H = sj.Heaviside;
+  const at = (e: Expr, p: Expr): string => sstr(heavisideAtInfinity(e, x, p));
+  it('a linear argument with a known sign of the coefficient', () => {
+    expect(at(H(sj.add(x, y)), sj.S.Infinity)).toBe('1');
+    expect(at(H(sj.add(x, y)), sj.S.NegativeInfinity)).toBe('0');
+    expect(at(H(sj.sub(y, x)), sj.S.Infinity)).toBe('0');
+    expect(at(H(sj.sub(y, x)), sj.S.NegativeInfinity)).toBe('1');
+  });
+  it('other arguments are kept', () => {
+    expect(at(H(sj.mul(c, x)), sj.S.Infinity)).toBe('Heaviside(c*x)');
+    expect(at(H(y), sj.S.Infinity)).toBe('Heaviside(y)');
+    expect(at(H(sj.pow(x, 2)), sj.S.Infinity)).toBe('Heaviside(x**2)');
+    expect(at(H(sj.sin(x)), sj.S.Infinity)).toBe('Heaviside(sin(x))');
+    expect(at(H(x), sj.S.One)).toBe('Heaviside(x)');
   });
 });

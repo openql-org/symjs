@@ -405,6 +405,8 @@ describe('results equal SymPy 1.14', () => {
     ["sj.summation(P('x/k**2'), [k, 3, n])", () => sj.summation(P('x/k**2'), [k, 3, n]), "x*(harmonic(n, 2) - 5/4)"],
     ["sj.summation(P('1/k'), [k, 1, sj.oo])", () => sj.summation(P('1/k'), [k, 1, sj.oo]), "oo"],
     ["sj.summation(P('1/k**2'), [k, 0, n])", () => sj.summation(P('1/k**2'), [k, 0, n]), "Sum(k**(-2), (k, 0, n))"],
+    // the hypergeometric series 2F1(1, 1; 3; 1)/3 (SymPy eval_sum_hyper)
+    ["sj.summation(P('1/(k**2-1)'), [k, 2, sj.oo])", () => sj.summation(P('1/(k**2-1)'), [k, 2, sj.oo]), '3/4'],
     // SymPy's product() applies powsimp to the result
     ["sj.product(P('x*k*2**k'), [k, 1, n])", () => sj.product(P('x*k*2**k'), [k, 1, n]), "2**(n*(n + 1)/2)*x**n*factorial(n)"],
     ["sj.product(P('2**k'), [k, 1, n])", () => sj.product(P('2**k'), [k, 1, n]), "2**(n*(n + 1)/2)"],
@@ -432,8 +434,6 @@ describe('results that differ from SymPy 1.14', () => {
     ["sj.summation(P('1/((k**2-1)*(k**2-9))'), [k, 5, sj.oo])", () => sj.summation(P('1/((k**2-1)*(k**2-9))'), [k, 5, sj.oo]), "Sum(1/((k**2 - 9)*(k**2 - 1)), (k, 5, oo))", "(90 - 118*exp_polar(0))/(288*(105 - 105*exp_polar(0))) + 7*(5*exp_polar(0) + 15)/(1440*(105 - 105*exp_polar(0)))"],
     // a pole inside the range (the term at k = 1 is zoo)
     ["sj.summation(P('1/(k**2-1)'), [k, 0, sj.oo])", () => sj.summation(P('1/(k**2-1)'), [k, 0, sj.oo]), "Sum(1/(k**2 - 1), (k, 0, oo))", "zoo"],
-    // telescoping sums are not implemented
-    ["sj.summation(P('1/(k**2-1)'), [k, 2, sj.oo])", () => sj.summation(P('1/(k**2-1)'), [k, 2, sj.oo]), "Sum(1/(k**2 - 1), (k, 2, oo))", "3/4"],
     // the denominator has no roots in radicals here; SymPy's 1/4 is wrong (the terms for k = 0, 1 already give 3/4)
     ["sj.summation(P('1/(k**4+k**2+2)'), [k, 0, sj.oo])", () => sj.summation(P('1/(k**4+k**2+2)'), [k, 0, sj.oo]), "Sum(1/(k**4 + k**2 + 2), (k, 0, oo))", "1/4"],
     // the term at k = 0 is zoo
@@ -490,4 +490,72 @@ describe('summations: telescoping sums and convergence tests (SymPy 1.14)', () =
     // a limit of the terms that raises ValueError raises, like in SymPy (laguerre(oo, 1))
     expect(() => conv('laguerre(k, 1)')).toThrow('Error: n should be an integer.');
   });
+});
+
+describe('Kronecker deltas, Piecewise terms and hypergeometric series (SymPy deltasummation, eval_sum_hyper)', () => {
+  const KD = sj.KroneckerDelta;
+  const xk = sj.pow(x, k);
+  const half = sj.pow(2, sj.mul(-1, k));
+  const kInt = new Sym('k', { integer: true });
+  const cases: [string, () => unknown, string][] = [
+    ['KroneckerDelta(k, 3)*x**k, (k, 0, oo)', () => summation(sj.mul(KD(k, 3), xk), [k, 0, oo]), 'x**3'],
+    ['KroneckerDelta(k, 3)*x**k + 2**(-k), (k, 0, oo)', () => summation(sj.add(sj.mul(KD(k, 3), xk), half), [k, 0, oo]), 'x**3 + 2'],
+    ['KroneckerDelta(k, n)*x**k, (k, 0, 5)', () => summation(sj.mul(KD(k, n), xk), [k, 0, 5]), 'Piecewise((x**n, (n >= 0) & (n <= 5)), (0, True))'],
+    ['KroneckerDelta(k**2, 4)*x**k, (k, 0, oo)', () => summation(sj.mul(KD(sj.pow(k, 2), 4), xk), [k, 0, oo]), 'Sum(x**k*KroneckerDelta(4, k**2), (k, 0, oo))'],
+    ['KroneckerDelta(k, 1) + KroneckerDelta(k**2, 4), (k, 0, oo)', () => summation(sj.add(KD(k, 1), KD(sj.pow(k, 2), 4)), [k, 0, oo]), 'Sum(KroneckerDelta(1, k) + KroneckerDelta(4, k**2), (k, 0, oo))'],
+    // SymPy leaves the sum unevaluated: Sum(sin(KroneckerDelta(3, k))/2**k, (k, 0, oo))
+    ['sin(KroneckerDelta(k, 3))*2**(-k), (k, 0, oo)', () => summation(sj.mul(sj.sin(KD(k, 3)), half), [k, 0, oo]), 'sin(1)/8'],
+    // SymPy leaves the next two sums of Piecewise terms unevaluated
+    ['Piecewise((x**k, k <= 2), (0, True)), (k, 0, oo)', () => summation(P('Piecewise((x**k, k <= 2), (0, True))'), [k, 0, oo]), 'x**2 + x + 1'],
+    ['Piecewise((x**k, k < 3), (0, True)), (k, 1, oo)', () => summation(P('Piecewise((x**k, k < 3), (0, True))'), [k, 1, oo]), 'x**2 + x'],
+    ['Piecewise((x**k, -k > -3), (0, True)), (k, 1, oo)', () => summation(P('Piecewise((x**k, -k > -3), (0, True))'), [k, 1, oo]), 'x**2 + x'],
+    ['Piecewise((x**k, k > 2), (0, True)), (k, 0, 5)', () => summation(P('Piecewise((x**k, k > 2), (0, True))'), [k, 0, 5]), 'x**5 + x**4 + x**3'],
+    ['Piecewise((x**k, k >= 3), (0, True)), (k, 0, 5)', () => summation(P('Piecewise((x**k, k >= 3), (0, True))'), [k, 0, 5]), 'x**5 + x**4 + x**3'],
+    ['Piecewise((x**k, 2*k > 3), (0, True)), (k, 0, 5)', () => summation(P('Piecewise((x**k, 2*k > 3), (0, True))'), [k, 0, 5]), 'x**5 + x**4 + x**3 + x**2'],
+    ['Piecewise((x**k, k > 7), (0, True)), (k, 0, 5)', () => summation(P('Piecewise((x**k, k > 7), (0, True))'), [k, 0, 5]), '0'],
+    ['Piecewise((x**k, Eq(k, 2)), (0, True)), (k, 0, 5)', () => summation(P('Piecewise((x**k, Eq(k, 2)), (0, True))'), [k, 0, 5]), 'x**2'],
+    ['Piecewise((x**k, k**2 > 2), (0, True)), (k, 0, 5)', () => summation(P('Piecewise((x**k, k**2 > 2), (0, True))'), [k, 0, 5]), 'x**5 + x**4 + x**3 + x**2'],
+    ['Piecewise((x**k, (k < 1) | (k > 3)), (0, True)), (k, 0, 5)', () => summation(P('Piecewise((x**k, (k < 1) | (k > 3)), (0, True))'), [k, 0, 5]), 'x**5 + x**4 + 1'],
+    [
+      'Piecewise((x**k, y*k > 2), (0, True)), (k, 0, 5)',
+      () => summation(P('Piecewise((x**k, y*k > 2), (0, True))'), [k, 0, 5]),
+      'Piecewise((x, y > 2), (0, True)) + Piecewise((x**2, y > 1), (0, True)) + Piecewise((x**3, y > 2/3), (0, True)) + Piecewise((x**4, y > 1/2), (0, True)) + Piecewise((x**5, y > 2/5), (0, True))',
+    ],
+    ['Piecewise((x**k, k > y), (0, True)), (k, 0, n)', () => summation(P('Piecewise((x**k, k > y), (0, True))'), [k, 0, n]), 'Sum(Piecewise((x**k, k > y), (0, True)), (k, 0, n))'],
+    ['Piecewise((x**k, k < 3), (1, True)), (k, 0, 5)', () => summation(P('Piecewise((x**k, k < 3), (1, True))'), [k, 0, 5]), 'x**2 + x + 4'],
+    ['Piecewise((x**k, (k > 1) & (k < oo)), (0, True)), (k, 0, 5)', () => summation(P('Piecewise((x**k, (k > 1) & (k < oo)), (0, True))'), [k, 0, 5]), 'x**5 + x**4 + x**3 + x**2'],
+    ['Piecewise((x**k, x > 1), (0, True)), (k, 0, 5)', () => summation(P('Piecewise((x**k, x > 1), (0, True))'), [k, 0, 5]), 'Piecewise((x**5 + x**4 + x**3 + x**2 + x + 1, x > 1), (0, True))'],
+    ['Piecewise((x**k/k, x > 1), (1, True)), (k, 1, oo)', () => summation(P('Piecewise((sqrt(k)/2**k, x > 1), (1, True))'), [k, 1, oo]), 'Sum(Piecewise((sqrt(k)/2**k, x > 1), (1, True)), (k, 1, oo))'],
+    ['(k + 1)/factorial(k), (k, 0, oo)', () => summation(P('(k + 1)/factorial(k)'), [k, 0, oo]), '2*E'],
+    ['KroneckerDelta(k, 0)*x**k, (k, 0, oo)', () => summation(sj.mul(KD(k, 0), xk), [k, 0, oo]), '1'],
+    ['Piecewise((x**k, (k > 1) & (k < 4)), (0, True)), (k, 0, 5)', () => summation(P('Piecewise((x**k, (k > 1) & (k < 4)), (0, True))'), [k, 0, 5]), 'x**3 + x**2'],
+    ['Piecewise((x**k, k > 0), (0, True)), (k, 0, 2)', () => summation(P('Piecewise((x**k, k > 0), (0, True))'), [k, 0, 2]), 'x**2 + x'],
+    ['Piecewise((x**k, k < 3), (0, True)), (k, 0, 5)', () => summation(P('Piecewise((x**k, k < 3), (0, True))'), [k, 0, 5]), 'x**2 + x + 1'],
+    ['Piecewise((2**k, (k < oo) & (k < 3)), (0, True)), (k, -oo, 5)', () => summation(sj.Piecewise([sj.pow(2, k), sj.and(sj.Lt(k, oo), sj.Lt(k, 3))], [0, true]), [k, sj.mul(-1, oo), 5]), '8'],
+    ['(floor(k) - k)*2**(-k), (k, 0, oo)', () => summation(P('(floor(k) - k)*2**(-k)'), [k, 0, oo]), '0'],
+    ['k/factorial(k), (k, 0, oo)', () => summation(P('k/factorial(k)'), [k, 0, oo]), 'E'],
+    ['2**k/factorial(k), (k, 3, oo)', () => summation(P('2**k/factorial(k)'), [k, 3, oo]), '-5 + exp(2)'],
+    ['k*2**(-k), (k, 0, oo)', () => summation(sj.mul(k, half), [k, 0, oo]), '2'],
+    ['2**(-k)*k**2, (k, 0, oo)', () => summation(sj.mul(sj.pow(k, 2), half), [k, 0, oo]), '6'],
+    ['binomial(k, 6)*3**(-k), (k, 0, oo)', () => summation(P('binomial(k, 6)*3**(-k)'), [k, 0, oo]), '3/128'],
+    // the first terms vanish too often to be skipped (SymPy: 2**8/... a closed form)
+    ['binomial(k, 7)*2**(-k), (k, 0, oo)', () => summation(P('binomial(k, 7)*2**(-k)'), [k, 0, oo]), 'Sum(binomial(k, 7)/2**k, (k, 0, oo))'],
+    ['sin(pi*k)*2**(-k), (k, 0, oo)', () => summation(P('sin(pi*k)*2**(-k)'), [k, 0, oo]), 'Sum(sin(pi*k)/2**k, (k, 0, oo))'],
+    ['((-1)**(2*k) - 1)*2**(-k), (k, 0, oo)', () => summation(sj.mul(sj.sub(sj.pow(-1, sj.mul(2, kInt)), 1), sj.pow(2, sj.mul(-1, kInt))), [kInt, 0, oo]), '0'],
+    ['sqrt(k)*2**(-k), (k, 1, oo)', () => summation(P('sqrt(k)*2**(-k)'), [k, 1, oo]), 'Sum(sqrt(k)/2**k, (k, 1, oo))'],
+    ['sqrt(k)*2**(-k) + 2**(-k), (k, 1, oo)', () => summation(P('sqrt(k)*2**(-k) + 2**(-k)'), [k, 1, oo]), 'Sum(sqrt(k)/2**k + 2**(-k), (k, 1, oo))'],
+    ['2**(-k)/(k**2 + 1), (k, 0, oo)', () => summation(P('2**(-k)/(k**2 + 1)'), [k, 0, oo]), 'Sum(1/(2**k*(k**2 + 1)), (k, 0, oo))'],
+    ['factorial(k), (k, 0, n)', () => summation(P('factorial(k)'), [k, 0, n]), 'Sum(factorial(k), (k, 0, n))'],
+    ['2**k*k, (k, 0, oo)', () => summation(P('2**k*k'), [k, 0, oo]), 'oo'],
+    ['-2**k*k, (k, 0, oo)', () => summation(P('-2**k*k'), [k, 0, oo]), '-oo'],
+    ['(-2)**k*k, (k, 0, oo)', () => summation(P('(-2)**k*k'), [k, 0, oo]), 'Sum((-2)**k*k, (k, 0, oo))'],
+    // SymPy: oo*x
+    ['x*2**k*k, (k, 0, oo)', () => summation(P('x*2**k*k'), [k, 0, oo]), 'Sum(2**k*k*x, (k, 0, oo))'],
+    ['2**k/factorial(k), (k, 0, n)', () => summation(P('2**k/factorial(k)'), [k, 0, n]), '-(n + 1)*exp(2)*lowergamma(n + 1, 2)/gamma(n + 2) + exp(2)'],
+    ['x**k, (k, -5, -1)', () => summation(xk, [k, -5, -1]), '1/x + x**(-2) + x**(-3) + x**(-4) + x**(-5)'],
+    ['x**k, (k, -3, 0)', () => summation(xk, [k, -3, 0]), '1 + 1/x + x**(-2) + x**(-3)'],
+    ['x**k for a positive k, (k, 1, 3)', () => summation(sj.pow(x, pp), [pp, 1, 3]), 'x**3 + x**2 + x'],
+    ['sqrt(k)*2**(-k), (k, 1, oo), (n, 1, 2)', () => summation(P('sqrt(k)*2**(-k)'), [k, 1, oo], [n, 1, 2]), 'Sum(sqrt(k)/2**k, (k, 1, oo), (n, 1, 2))'],
+  ];
+  for (const [name, f, expected] of cases) it(name, () => expect(run(f)).toBe(expected));
 });

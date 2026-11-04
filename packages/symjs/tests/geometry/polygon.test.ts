@@ -404,7 +404,7 @@ describe('Polygon (SymPy test_polygon)', () => {
 
   it('more cases 2', () => {
     const a = new Sym('a', { positive: true });
-    expect(s(P([0, 0], [1, 0], [1, 1], [0, 1]).arbitraryPoint(null))).toBe('Piecewise((Point2D(4*t, 0), (0 <= t) & (t < 1/4)), (Point2D(1, 4*t - 1), (1/4 <= t) & (t < 1/2)), (Point2D(3 - 4*t, 1), (1/2 <= t) & (t < 3/4)), (Point2D(0, 4 - 4*t), (3/4 <= t) & (t < 1)))');
+    expect(s(P([0, 0], [1, 0], [1, 1], [0, 1]).arbitraryPoint(null))).toBe('Piecewise((Point2D(4*t, 0), (t >= 0) & (t < 1/4)), (Point2D(1, 4*t - 1), (t >= 1/4) & (t < 1/2)), (Point2D(3 - 4*t, 1), (t >= 1/2) & (t < 3/4)), (Point2D(0, 4 - 4*t), (t >= 3/4) & (t < 1)))');
     expect(s(P([0, 0], [1, 0], [1, 1], [0, 1]).plotInterval(new Sym('u')))).toBe('[u, 0, 1]');
     expect(P(Point(0, 0), Point(a, 0), Point(a, a), Point(0, a)).isConvex()).toBe(true);
     const tt = real('t');

@@ -9,14 +9,15 @@
 import { NotImplementedError } from '../../core/errors';
 import { at, defined, first, pair } from '../../core/guard';
 import type { Expr, ExprLike } from '../../core/nodes';
-import { ExtensionExpr, Fn, Mul, Pow, Rational, S, Special } from '../../core/nodes';
+import { ExtensionExpr, Fn, Mul, Pow, Rational, S, Special, asRational } from '../../core/nodes';
 import { rebuild } from '../../core/traverse';
 import { isIntegerQ, isNonZero, isPositive, isZero } from '../../core/assumptions';
 import { compareKeys, sortKey } from '../../printing/sortkey';
-import { Gt, piecewise } from '../../core/logic';
+import { Ge, Gt, Le, Lt, Ne, piecewise } from '../../core/logic';
+import { and, or } from '../../core/boolalg';
 import { add, mul, pow, sympify } from '../../core/ops';
 import { fnPartials } from '../../calculus/diff';
-import { cos, evaluators, fn, sin } from '../elementary/elementary';
+import { abs, cos, evaluators, fn, re, sin } from '../elementary/elementary';
 import { numericFns } from '../../numeric/evalf';
 import { c as cx, cmul } from '../../numeric/complex';
 import { besselj, bessely } from './bessel';
@@ -52,6 +53,53 @@ export class Hyper extends ExtensionExpr {
   }
   withArgs(args: readonly Expr[]): Expr {
     return new Hyper(args, this.p);
+  }
+  /**
+   * SymPy hyper.radius_of_convergence: 0, 1 or oo (oo for a polynomial,
+   * whose nonpositive integer numerator parameters end the series before
+   * those of the denominator).
+   */
+  get radiusOfConvergence(): Expr {
+    const npInt = (a: Expr): boolean => a instanceof Rational && a.isInteger && a.p <= 0n;
+    if ([...this.ap, ...this.bq].some(npInt)) {
+      const aints = this.ap.filter(npInt).map((a) => asRational(a));
+      const bints = this.bq.filter(npInt).map((b) => asRational(b));
+      if (aints.length < bints.length) return S.Zero;
+      let popped = false;
+      for (const b of bints) {
+        let cancelled = false;
+        while (aints.length) {
+          const a = defined(aints.pop());
+          if (a.p >= b.p) {
+            cancelled = true;
+            break;
+          }
+          popped = true;
+        }
+        if (!cancelled) return S.Zero;
+      }
+      // there are still nonpositive numerator parameters: a polynomial
+      if (aints.length || popped) return S.Infinity;
+    }
+    if (this.ap.length === this.bq.length + 1) return S.One;
+    return this.ap.length <= this.bq.length ? S.Infinity : S.Zero;
+  }
+  /** SymPy hyper.eta: sum(ap) - sum(bq). */
+  get eta(): Expr {
+    return add(...this.ap, mul(-1, add(...this.bq)));
+  }
+  /** SymPy hyper.convergence_statement: a condition on the argument under which the series converges. */
+  get convergenceStatement(): Expr {
+    const R = this.radiusOfConvergence;
+    if (R === S.Zero) return S.false;
+    if (R === S.Infinity) return S.true;
+    // The special functions and their approximations, page 44
+    const e = re(this.eta);
+    const z = this.argument;
+    const c1 = and(Lt(e, 0), Le(abs(z), 1));
+    const c2 = and(Ge(e, 0), Lt(e, 1), Le(abs(z), 1), Ne(z, 1));
+    const c3 = and(Ge(e, 1), Lt(abs(z), 1));
+    return or(c1, c2, c3);
   }
   override printStr(print: (e: Expr) => string): string {
     return `hyper(${tuple(print, this.ap)}, ${tuple(print, this.bq)}, ${print(this.argument)})`;

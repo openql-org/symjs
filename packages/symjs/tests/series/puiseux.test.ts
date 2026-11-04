@@ -6,7 +6,8 @@
 
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
-import { Rational, Sym, parse } from '../../src';
+import { Rational, Sym, add, beta, hyper, mul, parse, pow, series, str } from '../../src';
+import type { Expr } from '../../src';
 import { Expander, SCALED_BESSELI, SeriesError } from '../../src/series/puiseux';
 import { UndefFn } from '../../src/core/nodes';
 
@@ -132,5 +133,21 @@ describe('Ei, frac and the Gruntz Bessel helpers (SymPy 1.14)', () => {
   it('expands the scaled Bessel functions only at an argument tending to oo', () => {
     const t = new Sym('t', { positive: true });
     expect(() => new Expander(t).ser(new UndefFn(SCALED_BESSELI, [Rational.of(0), t]), Rational.of(1))).toThrow(SeriesError);
+  });
+});
+
+describe('series of hyper and beta (sympy.stats moments from moment generating functions)', () => {
+  const [t, a, b] = [new Sym('t'), new Sym('a'), new Sym('b')];
+  const sr = (e: Expr, n: number): string => str(series(e, t, 0, n));
+  it('hyper with an argument that vanishes at 0', () => {
+    expect(sr(hyper([a], [b], t), 3)).toBe('1 + a*t/b + a*t**2*(a + 1)/(2*b*(b + 1)) + O(t**3)');
+    expect(sr(hyper([1], [Rational.of(3, 2)], mul(Rational.of(1, 2), pow(t, 2))), 5)).toBe('1 + t**2/3 + t**4/15 + O(t**5)');
+  });
+  it('hyper with an argument that does not vanish at 0', () => {
+    // SymPy: E - 1 + t + O(t**2) (by hyperexpand); symjs expands only about a vanishing argument
+    expect(() => series(hyper([1], [2], add(1, t)), t, 0, 2)).toThrow('cannot expand');
+  });
+  it('beta as a quotient of gamma functions', () => {
+    expect(sr(beta(add(1, mul(-1, t)), add(1, t)), 3)).toBe('1 + pi**2*t**2/6 + O(t**3)');
   });
 });

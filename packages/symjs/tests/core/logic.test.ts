@@ -109,3 +109,75 @@ describe('ordering relations decided like SymPy (is_lt, is_le, is_gt, is_ge)', (
     expect(s(Lt(r('oo'), 2))).toBe('False');
   });
 });
+
+describe('Piecewise conditions made canonical and collapsed (SymPy Piecewise.eval, _piecewise_collapse_arguments)', () => {
+  const [x, y] = [new sj.Sym('x'), new sj.Sym('y')];
+  const a = new sj.Sym('a', { positive: true });
+  const s = (e: Expr): string => sj.str(e);
+  const neg = (e: Expr): Expr => mul(-1, e);
+  it('canonical relations', () => {
+    expect(s(piecewise([0, Lt(x, a)], [1, true]))).toBe('Piecewise((0, a > x), (1, True))');
+    expect(s(piecewise([0, sj.or(Lt(neg(x), -1), Gt(y, 2))], [1, true]))).toBe('Piecewise((0, (x > 1) | (y > 2)), (1, True))');
+    expect(s(piecewise([0, Lt(neg(x), y)], [1, true]))).toBe('Piecewise((0, x > -y), (1, True))');
+    expect(s(piecewise([0, Eq(neg(x), y)], [1, true]))).toBe('Piecewise((0, Eq(x, -y)), (1, True))');
+    expect(s(piecewise([0, Gt(add(mul(2, x), 1), 3)], [1, true]))).toBe('Piecewise((0, x > 1), (1, True))');
+    expect(s(piecewise([0, Gt(add(mul(-2, x), 1), 3)], [1, true]))).toBe('Piecewise((0, x < -1), (1, True))');
+  });
+  it('repeated and redundant conditions', () => {
+    expect(s(piecewise([0, Lt(x, 1)], [1, Lt(x, 1)], [2, true]))).toBe('Piecewise((0, x < 1), (2, True))');
+    expect(s(piecewise([0, Lt(x, 1)], [1, and(Lt(x, 1), Gt(y, 0))], [2, true]))).toBe('Piecewise((0, x < 1), (2, True))');
+    expect(s(piecewise([0, Lt(x, 1)], [1, and(Ge(x, 1), Gt(y, 0))], [2, true]))).toBe('Piecewise((0, x < 1), (1, y > 0), (2, True))');
+    expect(s(piecewise([0, Le(x, 1)], [1, and(Lt(x, 1), Gt(y, 0))], [2, true]))).toBe('Piecewise((0, x <= 1), (2, True))');
+    expect(s(piecewise([0, Lt(x, 1)], [1, Ge(x, 1)]))).toBe('Piecewise((0, x < 1), (1, True))');
+    expect(s(piecewise([0, Eq(x, 1)], [1, Ne(x, 1)]))).toBe('Piecewise((0, Eq(x, 1)), (1, True))');
+  });
+  it('more canonical forms (SymPy)', () => {
+    expect(s(piecewise([0, Eq(y, neg(x))], [1, true]))).toBe('Piecewise((0, Eq(x, -y)), (1, True))');
+    const z = new sj.Sym('z');
+    expect(s(piecewise([0, Eq(z, neg(x))], [1, true]))).toBe('Piecewise((0, Eq(x, -z)), (1, True))');
+    expect(s(piecewise([0, Lt(z, neg(x))], [1, true]))).toBe('Piecewise((0, x < -z), (1, True))');
+    expect(s(piecewise([0, Lt(add(1, mul(-2, x)), 0)], [1, true]))).toBe('Piecewise((0, x > 1/2), (1, True))');
+    expect(s(piecewise([0, and(Gt(x, 1), Lt(y, 2))], [1, true]))).toBe('Piecewise((0, (x > 1) & (y < 2)), (1, True))');
+    expect(s(piecewise([0, Lt(add(3, mul(-2, x)), y)], [1, true]))).toBe('Piecewise((0, y > 3 - 2*x), (1, True))');
+    expect(s(piecewise([0, Gt(add(1, mul(-2, x)), y)], [1, true]))).toBe('Piecewise((0, y < 1 - 2*x), (1, True))');
+    expect(s(piecewise([0, Lt(add(mul(-2, x), y), 1)], [1, true]))).toBe('Piecewise((0, 2*x - y > -1), (1, True))');
+    expect(s(piecewise([0, Gt(add(mul(-2, x), y), 3)], [1, true]))).toBe('Piecewise((0, 2*x - y < -3), (1, True))');
+    expect(s(piecewise([0, Lt(x, 1)], [1, and(Gt(x, 1), sj.or(Lt(y, 0), Gt(y, 2)))], [2, true]))).toBe('Piecewise((0, x < 1), (1, (x > 1) & ((y > 2) | (y < 0))), (2, True))');
+  });
+  it('successive pairs with the same expression or condition', () => {
+    expect(s(piecewise([0, Lt(x, 1)], [0, Gt(x, 2)], [1, sj.or(Gt(x, 2), Lt(x, 1))], [2, true]))).toBe('Piecewise((0, (x > 2) | (x < 1)), (2, True))');
+    expect(s(piecewise([0, Lt(x, 1)], [0, Gt(x, 2)], [1, true]))).toBe('Piecewise((0, (x > 2) | (x < 1)), (1, True))');
+    expect(s(piecewise([0, Lt(x, 1)], [1, Gt(x, 2)], [1, Gt(x, 3)], [2, true]))).toBe('Piecewise((0, x < 1), (1, (x > 2) | (x > 3)), (2, True))');
+  });
+});
+
+describe('relations decided by the assumptions (SymPy is_eq, real values are finite)', () => {
+  const a = new sj.Sym('a', { positive: true });
+  const r = new sj.Sym('r', { real: true });
+  const x = new sj.Sym('x');
+  const s = (e: Expr): string => sj.str(e);
+  it('equality by is_zero of the difference', () => {
+    expect(s(Eq(a, 0))).toBe('False');
+    expect(s(Ne(a, mul(-1, a)))).toBe('True');
+    expect(s(Eq(a, 1))).toBe('Eq(a, 1)');
+    expect(s(Ne(mul(sj.sqrt(sj.pi), a), 0))).toBe('True');
+  });
+  it('a real value against oo and -oo', () => {
+    expect(s(Ge(r, S.NegativeInfinity))).toBe('True');
+    expect(s(Lt(r, S.Infinity))).toBe('True');
+    expect(s(Gt(r, S.Infinity))).toBe('False');
+    expect(s(Le(S.NegativeInfinity, r))).toBe('True');
+    expect(s(Eq(r, S.Infinity))).toBe('False');
+    // 1/r may be infinite, x may be complex (SymPy keeps both)
+    expect(s(Ge(pow(r, -1), S.NegativeInfinity))).toBe('1/r >= -oo');
+    expect(s(Ge(x, S.NegativeInfinity))).toBe('x >= -oo');
+  });
+});
+
+describe('relations between oo and -oo (SymPy)', () => {
+  it('the difference is infinite', () => {
+    expect(Lt(S.NegativeInfinity, S.Infinity)).toBe(S.true);
+    expect(Gt(S.Infinity, S.NegativeInfinity)).toBe(S.true);
+    expect(Ge(S.NegativeInfinity, S.Infinity)).toBe(S.false);
+  });
+});

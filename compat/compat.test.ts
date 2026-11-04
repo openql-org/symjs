@@ -32,7 +32,7 @@ function categoryOf(fullPath: string): string {
   if (/^src\/(calculus|series|integrals)\//.test(path)) return 'calculus';
   if (path.startsWith('src/matrices/')) return 'matrices';
   if (path.startsWith('src/quantum/')) return 'quantum';
-  const sub = /^src\/(discrete|algebras|strategies|unify|geometry|vector)[/.]/.exec(path);
+  const sub = /^src\/(discrete|algebras|strategies|unify|geometry|vector|stats)[/.]/.exec(path);
   if (sub) return sub[1]!;
   return 'core';
 }
@@ -64,7 +64,7 @@ interface Corpus {
   cases: Case[];
 }
 
-const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'ode', 'calculus', 'matrices', 'special', 'logic', 'tensor', 'ntheory', 'assumptions', 'utilities', 'combinatorics', 'sets', 'printing', 'discrete', 'algebras', 'strategies', 'unify', 'geometry', 'vector'];
+const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'ode', 'calculus', 'matrices', 'special', 'logic', 'tensor', 'ntheory', 'assumptions', 'utilities', 'combinatorics', 'sets', 'printing', 'discrete', 'algebras', 'strategies', 'unify', 'geometry', 'vector', 'stats'];
 
 // a rate below 100% never prints as 100.0%
 const pct = (a: number, b: number) => (b === 0 ? '-' : `${(a < b ? Math.min((100 * a) / b, 99.9) : 100).toFixed(1)}%`);
@@ -85,6 +85,9 @@ const OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   'sympy.series.fourier: p.show()': 'plotting',
   // a TensorFlow setting from the lambdify docstring; lambdify for TensorFlow is not ported
   'sympy.utilities.lambdify: tf.compat.v1.enable_eager_execution()': 'TensorFlow',
+  // sympy.stats sampling (sample, sample_iter, sampling_density, numsamples=) needs an external sampling library
+  // (numpy/scipy/pymc) and is out of scope; its doctests print random values or are marked +SKIP, so the
+  // extractor (compat/extract.py) keeps none of them and no entry is needed here
   // Python's in-place list.sort() from a docstring setup line, no SymPy call
   'sympy.utilities.iterables: a.sort()': 'Python list method',
 };

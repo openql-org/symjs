@@ -122,3 +122,9 @@ describe('symbol assumptions zero and integer', () => {
     expect(new sj.Sym('p', { zero: true, positive: true }).assumptions.zero).toBe(false);
   });
 });
+
+describe('ExtensionExpr.expandTop', () => {
+  it('is no override by default', () => {
+    expect(sj.Tuple(1, 2).expandTop({})).toBeUndefined();
+  });
+});

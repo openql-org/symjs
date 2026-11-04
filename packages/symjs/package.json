@@ -231,6 +231,16 @@
         "default": "./dist/vector.cjs"
       }
     },
+    "./stats": {
+      "import": {
+        "types": "./dist/stats.d.ts",
+        "default": "./dist/stats.js"
+      },
+      "require": {
+        "types": "./dist/stats.d.cts",
+        "default": "./dist/stats.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -447,6 +457,33 @@
     "./src/special.ts",
     "./dist/special.js",
     "./dist/special.cjs",
+    "./src/stats.ts",
+    "./dist/stats.js",
+    "./dist/stats.cjs",
+    "./src/stats/compoundrv.ts",
+    "./dist/stats/compoundrv.js",
+    "./dist/stats/compoundrv.cjs",
+    "./src/stats/crv.ts",
+    "./dist/stats/crv.js",
+    "./dist/stats/crv.cjs",
+    "./src/stats/crvtypes.ts",
+    "./dist/stats/crvtypes.js",
+    "./dist/stats/crvtypes.cjs",
+    "./src/stats/drv.ts",
+    "./dist/stats/drv.js",
+    "./dist/stats/drv.cjs",
+    "./src/stats/drvtypes.ts",
+    "./dist/stats/drvtypes.js",
+    "./dist/stats/drvtypes.cjs",
+    "./src/stats/frv.ts",
+    "./dist/stats/frv.js",
+    "./dist/stats/frv.cjs",
+    "./src/stats/rvinterface.ts",
+    "./dist/stats/rvinterface.js",
+    "./dist/stats/rvinterface.cjs",
+    "./src/stats/symbolicprobability.ts",
+    "./dist/stats/symbolicprobability.js",
+    "./dist/stats/symbolicprobability.cjs",
     "./src/strategies.ts",
     "./dist/strategies.js",
     "./dist/strategies.cjs",

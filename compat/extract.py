@@ -267,7 +267,32 @@ MODULES = {
     "sympy.vector.point": "vector",
     "sympy.vector.scalar": "vector",
     "sympy.vector.vector": "vector",
+    # sympy.stats, part 1: random symbols and the single-variable distributions (the joint, matrix and
+    # random-matrix distributions and the stochastic processes are not ported yet)
+    "sympy.stats.rv": "stats",
+    "sympy.stats.rv_interface": "stats",
+    "sympy.stats.crv": "stats",
+    "sympy.stats.crv_types": "stats",
+    "sympy.stats.drv": "stats",
+    "sympy.stats.drv_types": "stats",
+    "sympy.stats.frv": "stats",
+    "sympy.stats.frv_types": "stats",
+    "sympy.stats.compound_rv": "stats",
+    "sympy.stats.error_prop": "stats",
+    "sympy.stats.symbolic_probability": "stats",
 }
+
+# names of sympy.stats that need an external sampling library (numpy, scipy, pymc): out of scope
+STATS_SAMPLING = {"sample", "sample_iter", "sampling_density", "sample_stochastic_process"}
+
+
+def stats_public():
+    """The public names of sympy.stats defined in the in-scope stats modules (MODULES), without the
+    sampling functions. The names of the other stats modules (joint_rv_types, stochastic_process_types,
+    random_matrix_models, matrix_distributions, symbolic_multivariate_probability) are left out, so that
+    they count neither as cases nor as API gaps until those modules are ported."""
+    import sympy.stats as _stats
+    return {n for n in _stats.__all__ if getattr(getattr(_stats, n), "__module__", "") in MODULES and n not in STATS_SAMPLING}
 
 # subpackages whose public names are not top-level sympy names (sympy.discrete.linrec,
 # sympy.strategies.rm_id, sympy.unify.unify, ...): calls of them count as public API calls in
@@ -284,6 +309,8 @@ SUBPACKAGE_PUBLIC = {
 
 def subpackage_public(modname):
     """The public names of the subpackage of modname."""
+    if modname.startswith("sympy.stats."):
+        return stats_public()
     for prefix, pkgs in SUBPACKAGE_PUBLIC.items():
         if modname.startswith(prefix):
             names = set()
@@ -365,6 +392,10 @@ def ser(o):
         return {"t": "AccumBounds", "min": ser(o.min), "max": ser(o.max)}
     if (type(o).__module__ or "").startswith("sympy.vector."):
         return ser_vector(o)
+    if (type(o).__module__ or "").startswith("sympy.stats.") and isinstance(o, Basic):
+        # rebuilt by the class constructor from its arguments
+        # (a sympy Dict argument, the density of a finite distribution, as a dict)
+        return {"t": "Stats", "cls": type(o).__name__, "args": [ser(dict(a) if isinstance(a, sympy.Dict) else a) for a in o.args]}
     from sympy.geometry.entity import GeometryEntity as _GE
     if isinstance(o, _GE):
         # rebuilt by the class constructor from its arguments
@@ -580,6 +611,9 @@ def api_inventory():
     for name in sorted(_vector.__all__):
         # sympy.vector is a subpackage whose names are not top-level sympy names
         out.append({"name": name, "category": "vector"})
+    for name in sorted(stats_public()):
+        # sympy.stats is a subpackage too (only the names of the in-scope modules, see stats_public)
+        out.append({"name": name, "category": "stats"})
     owners = ((sympy.Expr, "core"), (sympy.Matrix, "matrices"), (sympy.ImmutableDenseNDimArray, "tensor"),
               (_combinatorics.Permutation, "combinatorics"), (sympy.MatrixExpr, "matrices"))
     for cls, cat in owners:
