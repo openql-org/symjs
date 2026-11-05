@@ -44,6 +44,10 @@ export class CRootOf extends ExtensionExpr {
   get gen(): Sym {
     return first([...freeSymbols(this.poly)]);
   }
+  override subsSelf(old: Expr): Expr | undefined {
+    // The polynomial generator is bound, not an unknown in the root's value.
+    return old.key === this.gen.key ? this : undefined;
+  }
   /**
    * The numerical roots of each polynomial, per precision: one nroots call serves all the indexed
    * roots of a polynomial (SymPy caches the isolating intervals of a polynomial at class level).

@@ -15,7 +15,9 @@ import { at, defined, first, pair } from '../../core/guard';
 import '../../numeric/mpspecialfns';
 import { isIntegerQ, isNegative, isPositive, isReal, isZero as isZeroQ } from '../../core/assumptions';
 import type { ComplexValue as C, Expr, ExprLike } from '../../core/nodes';
-import { Fn, Mul, Rational, S, Special } from '../../core/nodes';
+import { Fn, Mul, Rational, S, Special, Sym, Dummy } from '../../core/nodes';
+import { derivative } from '../../core/undef';
+import { SubsNode } from '../../core/subsnode';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, sqrt } from '../../core/ops';
 import { fnPartials, fnTaylorAtZero } from '../../calculus/diff';
 import { c as cx, cadd, cdiv, clog, cmul, cpow } from '../../numeric/complex';
@@ -210,8 +212,12 @@ for (const name of ['besselj', 'bessely', 'besseli', 'besselk'] as const) {
   evaluators[name] = evalBessel(name);
   numericFns[name] = (args) => besselNumeric(name, ...pair(args));
   fnPartials[name] = (args, i) => {
-    if (i === 0) throw new NotImplementedError(`diff: ${name} w.r.t. its order`);
     const [nu, z] = pair(args);
+    if (i === 0) {
+      if (nu instanceof Sym) return derivative(fn(name, [nu, z]), [[nu, 1]], true);
+      const v = new Dummy('xi_1');
+      return new SubsNode([derivative(fn(name, [v, z]), [[v, 1]], true), v, nu]);
+    }
     const lo = fn(name, [add(nu, -1), z]);
     const hi = fn(name, [add(nu, 1), z]);
     if (name === 'besseli') return add(mul(S.Half, lo), mul(S.Half, hi));

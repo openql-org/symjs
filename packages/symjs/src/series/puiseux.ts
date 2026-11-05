@@ -237,6 +237,8 @@ function numericSign(c: Expr): number {
 /** The Gruntz helpers exp(-g)*besseli(nu, g) and exp(g)*besselk(nu, g) (SymPy _besseli, _besselk). */
 export const SCALED_BESSELI = '_besseli';
 export const SCALED_BESSELK = '_besselk';
+export const SCALED_EI = '_eis';
+export const SCALED_ERFC = '_erfcs';
 
 export class Expander {
   readonly L = new Sym('_L');
@@ -271,6 +273,7 @@ export class Expander {
     }
     if (e instanceof Fn) return this.serFn(e, n);
     if (e instanceof UndefFn && (e.name === SCALED_BESSELI || e.name === SCALED_BESSELK)) return this.scaledBessel(e, n);
+    if (e instanceof UndefFn && (e.name === SCALED_EI || e.name === SCALED_ERFC)) return this.scaledExponentialIntegral(e, n);
     if (e instanceof Hyper) return this.serHyper(e, n);
     throw new SeriesError(`cannot expand ${e.toString()}`);
   }
@@ -544,6 +547,23 @@ export class Expander {
    * times sum_k (+-1)**k*a_k(nu)/g**k, a_k(nu) = (4*nu**2 - 1)*...*(4*nu**2 - (2*k - 1)**2)/(k!*8**k)
    * (Abramowitz and Stegun 9.7.1 and 9.7.2).
    */
+  private scaledExponentialIntegral(e: UndefFn, n: Rational): PS {
+    const g = first(e.args);
+    const lead = this.leading(g);
+    if (!(lead.e.isNegative && isPositive(lead.c))) throw new SeriesError(`cannot expand ${e.name}`);
+    // e^-g Ei(g) ~ sum k!/g^(k+1), e^(g^2) erfc(g) ~ sum (-1)^k (1/2)_k/(sqrt(pi)*g^(2k+1)).
+    const step = e.name === SCALED_EI ? 1 : 2;
+    const K = Math.max(1, Math.ceil(Math.max(n.value, 1) / (-step * lead.e.value)));
+    const terms: Expr[] = [];
+    let c: Expr = step === 1 ? S.One : pow(S.Pi, Rational.of(-1, 2));
+    for (let k = 0; k <= K; k++) {
+      terms.push(mul(c, pow(g, -step * k - 1)));
+      c = mul(c, step === 1 ? Rational.of(k + 1) : Rational.of(-2 * k - 1, 2));
+    }
+    const cut = numMul(numNeg(lead.e), Rational.of(step * (K + 1) + 1));
+    return this.ser(add(...terms), n).cut(cut);
+  }
+
   private scaledBessel(e: UndefFn, n: Rational): PS {
     const [nu, g] = [first(e.args), last(e.args)];
     const lead = this.leading(g);
@@ -580,7 +600,8 @@ export class Expander {
     let deriv = f(w);
     let fact = 1n;
     const value = (d: Expr) => {
-      const v = expand(subs(d, [[w, g0]]));
+      // Substituting a derivative's bound variable must retain Subs(Derivative(...), ...).
+      const v = expand(d.subs([[w, g0]]));
       if (v instanceof Special || v.has(S.ComplexInfinity) || v.has(S.NaN)) throw new SeriesError('singular point');
       return v;
     };

@@ -3,14 +3,40 @@
 
 // Tests of src/solvers/solve.ts: solve, solveLinear, invertEquation, nonlinsolve, nsolve and solveUndeterminedCoeffs; expected values from SymPy 1.14.
 
+
 import { describe, expect, it } from 'vitest';
 import type { Assumptions } from '../../src/core/nodes';
 import { detQuick, diff, type Expr, invQuick, Matrix, nonlinsolve, solveLinearSystemLU, NotImplementedError, nsolve, parse, solve, solveLinear, solveUndeterminedCoeffs, sstr, Sym, symbols, SymFunction } from '../../src';
 import { xreplace } from '../../src/core/traverse';
-import { invertEquation } from '../../src/solvers/solve';
+import { invertEquation, nonlinsolve as nonlinsolveCoordinates } from '../../src/solvers/solve';
+import { at } from '../../src/core/guard';
 
 const [x, y] = symbols('x y');
 const show = (r: readonly Expr[]): string => `[${r.map(String).join(', ')}]`;
+it('inverts shifted exponentials and hyperbolic functions (SymPy 1.14)', () => {
+  for (const [source, expected] of [
+    ['exp(2*x+1)-3', '[-1/2 + log(3)/2, -1/2 + log(3)/2 + I*pi]'],
+    ['log(cosh(x))-1', '[log(E - sqrt(-1 + exp(2))), log(sqrt(-1 + exp(2)) + E)]'],
+    ['log(cosh(x))', '[0]'],
+    ['asinh(x)-2', '[sinh(2)]'], ['acosh(x)-2', '[cosh(2)]'], ['atanh(x)-2', '[tanh(2)]'],
+    ['sinh(x)-2', '[log(-2 + sqrt(5)) + I*pi, log(2 + sqrt(5))]'],
+    ['asinh(x)-2*I', '[]'],
+  ] as const) expect(show(solve(parse(source), x))).toBe(expected);
+});
+it.each([
+  ['z-x-y', 'x*y-1', 'x**2+y**2-5'],
+  ['z-x-y', 'x**2+y**2-1', 'x**2-y**2'],
+])('back-substitutes a nonlinear eliminant into a previously eliminated coordinate: %s', (...sources) => {
+  const z = new Sym('z');
+  const equations = sources.map((e) => parse(e));
+  const variables = [z, x, y];
+  const solutions = nonlinsolveCoordinates(equations, variables);
+  // Both plane systems have four real solutions, with z determined by x+y.
+  expect(solutions).toHaveLength(4);
+  for (const values of solutions) for (const equation of equations) {
+    expect(equation.subs(variables.map((v, i): [Expr, Expr] => [v, at(values, i)])).evalf(25).toNumber()).toBeCloseTo(0, 12);
+  }
+});
 const pair = (r: readonly [Expr, Expr]): string => `(${String(r[0])}, ${String(r[1])})`;
 /** Parse a bracketed list "[a, b]" split at the top-level commas. */
 const parseList = (src: string): Expr[] => {
@@ -303,7 +329,7 @@ describe('solve', () => {
   it('nested exponentials', () => {
     // 13 levels (SymPy does not finish within a minute; exp applied 13 times to the result gives 2)
     const tower = (n: number, f: string, x0: string) => Array.from({ length: n }).reduce<string>((e) => `${f}(${e})`, x0);
-    expect(sol(`${tower(13, 'exp', 'x')} - 2`)).toBe(`[${tower(13, 'log', '2')}]`);
+    expect(sol(`${tower(13, 'exp', 'x')} - 2`)).toBe(`[${String(parse(tower(13, 'log', '2')))}]`);
   });
   it('Lambert W forms through logarithms (SymPy bivariate._solve_lambert)', () => {
     // B**B = R
@@ -456,7 +482,7 @@ describe('solve: polynomials in a single generator (SymPy _solve)', () => {
     expect(sv('exp(y/2) - 3')).toBe('[log(9)]');
     expect(sv('exp(2*y) - exp(x)*exp(y)')).toBe('[log(exp(x))]');
     // SymPy: [0, log(-1/2 + sqrt(5)/2) + I*pi, log(1/2 + sqrt(5)/2)] (the same values)
-    expect(sv('exp(-2*y) + exp(y) - 2')).toBe('[0, log(1/2 - sqrt(5)/2), log(1/2 + sqrt(5)/2)]');
+    expect(sv('exp(-2*y) + exp(y) - 2')).toBe('[0, log(-1/2 + sqrt(5)/2) + I*pi, log(1/2 + sqrt(5)/2)]');
     // SymPy: multiple generators
     expect(() => solve(parse('cos(y) + exp(y)'), y)).toThrow(NotImplementedError);
     expect(() => solve(parse('exp(y) + exp(x*y) - 1'), y)).toThrow(NotImplementedError);

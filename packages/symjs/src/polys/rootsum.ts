@@ -20,6 +20,7 @@ import { cancel, fraction, together } from '../simplify/rational';
 import { expandMul } from '../simplify/expand';
 import { roots } from './poly';
 import { Poly, factor, factorListExpr } from './sympoly';
+import { NotImplementedError } from '../core/errors';
 
 /** RootSum(poly, Lambda): args are [poly expression, Lambda, polynomial variable]. */
 export class RootSumNode extends ExtensionExpr {
@@ -54,7 +55,16 @@ export class RootSumNode extends ExtensionExpr {
   }
   /** The sum over the roots (in radicals). */
   override doitSelf(): Expr {
-    return add(...roots(this.poly, cast(this.variable, Sym, 'RootSum variable')).map((r) => this.fun.call(r)));
+    try {
+      return add(...roots(this.poly, cast(this.variable, Sym, 'RootSum variable')).map((r) => this.fun.call(r)));
+    } catch (error) {
+      if (error instanceof NotImplementedError) return this;
+      throw error;
+    }
+  }
+  override diffSelf(x: Expr, d: (e: Expr, x: Expr) => Expr): Expr | undefined {
+    if (this.poly.has(x)) return undefined;
+    return RootSum(this.poly, cast(this.variable, Sym), Lambda(first(this.fun.variables), d(this.fun.expr, x)));
   }
 }
 

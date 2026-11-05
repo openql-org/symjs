@@ -232,9 +232,10 @@ describe('Bessel: cases outside the table', () => {
     expect(String(airyaiprime(x))).toBe('airyaiprime(x)');
     expect(String(airybiprime(0))).toBe('3**(1/6)/gamma(1/3)');
   });
-  it('the derivative with respect to the order is not implemented', () => {
+  it('keeps the derivative with respect to the order unevaluated', () => {
     // SymPy: Derivative(besselj(x, 1), x)
-    expect(() => diff(besselj(x, 1), x)).toThrow(NotImplementedError);
+    expect(String(diff(besselj(x, 1), x))).toBe('Derivative(besselj(x, 1), x)');
+    expect(String(diff(besselj(sj.mul(2, x), 1), x))).toBe('2*Subs(Derivative(besselj(_xi_1, 1), _xi_1), _xi_1, 2*x)');
   });
 });
 

@@ -112,7 +112,7 @@ export function pdsolve(equation: ExprLike, func?: Expr, hint = 'default'): Expr
       : xreplace(integrate(integrand, t), [[eta0, eta], [t, coordinate]]);
     solution = add(solution, primitive);
   }
-  return Eq(f, simplify(mul(exp(mul(-1, rate, coordinate)), solution)));
+  return Eq(f, simplify(mul(exp(mul(-1, rate, coordinate)), solution), { doit: !hint.endsWith('_Integral') }));
 }
 /** The one solution of a first-order ODE (the first branch of several, as SymPy takes). */
 function odeSolution(eq: Expr, fx: UndefFn, hint?: string): Rel {

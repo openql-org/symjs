@@ -6,10 +6,11 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Dummy, ExtensionExpr, Fn, Mul, Pow, Rational, S, impl, isNum } from '../core/nodes';
+import { Add, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Pow, Rational, S, impl, isNum } from '../core/nodes';
+import { Concrete } from '../core/concrete';
 import { minimalPolynomial } from '../polys/numberfields';
-import { couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
-import { asContentPrimitive, asNumerDenom } from '../core/methods';
+import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
+import { asContentPrimitive, asIndependent, asNumerDenom } from '../core/methods';
 import { countOps as opCount } from '../core/match';
 import { mapBottomUp, rebuild, some, xreplace } from '../core/traverse';
 import { combsimp } from './gammasimp';
@@ -21,7 +22,8 @@ import { factorTerms, signsimp } from './exprtools';
 import { collectAbs, radsimp } from './radsimp';
 import { cancel, fraction, together } from './rational';
 import { exptrigsimp, trigsimp } from './trigsimp';
-import { first } from '../core/guard';
+import { at, first } from '../core/guard';
+import { nsimplify, nfloat } from '../numeric/nfloat';
 
 /** The names of SymPy's TrigonometricFunction and HyperbolicFunction classes. */
 const TRIG_HYP = new Set(['sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinc', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch']);
@@ -47,7 +49,9 @@ export const simplifyHooks: { hyperexpand?: (e: Expr) => Expr } = {};
  * times the input is rejected.
  */
 export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
-  const sympified = sympify(ex);
+  const input = sympify(ex);
+  const rationalized = opts.rational !== undefined && opts.rational !== false && some(input, (e) => e instanceof Float);
+  const sympified = rationalized ? nsimplify(input, { rational: true }) : input;
   if (sympified instanceof ExtensionExpr) {
     const own = sympified.simplifySelf((x) => simplify(x, opts));
     if (own !== undefined) return own;
@@ -72,12 +76,23 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
   };
   /** SymPy done: doit, and the Abs factors collected when that is shorter. */
   const done = (e: Expr): Expr => {
-    const rv = reevaluate(e);
-    return shorter(rv, collectAbs(rv));
+    const rv = opts.doit !== false && impl.doit ? impl.doit(e) : reevaluate(e);
+    const result = shorter(rv, collectAbs(rv));
+    return rationalized && opts.rational === null ? nfloat(result) : result;
   };
   // (SymPy first returns 0 for an expression known to be zero; the assumptions here decide that only
   // for expressions that evaluate to 0)
-  if (sympified.isAtom) return sympified;
+  if (sympified.isAtom) return done(sympified);
+  // Integral and Sum have their own _eval_simplify in SymPy: simplify the
+  // bound expression without forcing evaluation of the outer operator.
+  if (sympified instanceof Integral) {
+    const [c, f] = asIndependent(factorTerms(sympified.integrand), [sympified.variable], { asAdd: false });
+    if (c.key !== S.One.key) return simplify(mul(c, new Integral([f, ...sympified.args.slice(1)])), opts);
+    return rebuild(sympified, sympified.args.map((a) => simplify(a, opts)));
+  }
+  if (sympified instanceof Concrete && sympified.kind2 === 'Sum') {
+    return factorTerms(combineConcrete(rebuild(sympified, sympified.args.map((a) => simplify(a, opts)))));
+  }
   // SymPy _eval_simplify of hyper, the Bessel functions and the combinatorial functions
   const hyperexpand = simplifyHooks.hyperexpand;
   if (sympified instanceof Hyper && hyperexpand) return hyperexpand(sympified);
@@ -88,7 +103,7 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
   }
   const original = collectAbs(signsimp(sympified));
   // deep simplification: the arguments of the nodes other than sums, products and powers
-  let expr = mapTopDownUnhandled(original, (x) => simplify(x, opts));
+  let expr = absorbSign(mapTopDownUnhandled(original, (x) => simplify(x, opts)));
   if (!(expr instanceof Add || expr instanceof Mul || expr instanceof Pow)) {
     // SymPy log._eval_simplify: the logarithm expanded when that is not longer
     if (expr instanceof Fn && expr.name === 'log') expr = shorter(expand_log(expr), expr);
@@ -103,6 +118,7 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
   const expr2 = shorter(together(expr, { deep: true }), together(expr1, { deep: true }));
   expr = ratio === Infinity ? expr2 : shorter(expr2, expr1, expr);
   expr = factorTerms(expr, { sign: false });
+  expr = combineConcrete(expr);
   // the functions it contains
   if (hyperexpand && some(expr, (x) => x instanceof Hyper || x instanceof MeijerG)) expr = hyperexpand(expr);
   if (hasFn(expr, KRONECKER)) expr = kroneckersimp(expr);
@@ -131,6 +147,71 @@ export function simplify(ex: ExprLike, opts: SimplifyOptions = {}): Expr {
 
 const LOG = new Set(['log']);
 const KRONECKER = new Set(['KroneckerDelta']);
+
+/** Combine sums/products over the same or adjacent ranges (SymPy sum_simplify/product_simplify). */
+function combineConcrete(e: Expr): Expr {
+  return mapBottomUp(e, (node) => {
+    if (!(node instanceof Add || node instanceof Mul)) return node;
+    const sum = node instanceof Add;
+    const kind = sum ? 'Sum' : 'Product';
+    const terms = node.args.map((a): Expr => {
+      if (!sum || !(a instanceof Mul)) return a;
+      const sums = a.args.filter((b): b is Concrete => b instanceof Concrete && b.kind2 === 'Sum');
+      if (sums.length !== 1) return a;
+      const s = first(sums);
+      const c = mul(...a.args.filter((b) => b !== s));
+      return s.limits.some(([v]) => c.has(v)) ? a : new Concrete('Sum', [mul(c, s.function), ...s.args.slice(1)]);
+    });
+    const candidates: Concrete[] = [];
+    const others: Expr[] = [];
+    for (const term of terms) {
+      if (term instanceof Concrete && term.kind2 === kind) candidates.push(term);
+      else others.push(term);
+    }
+    for (let i = 0; i < candidates.length; i++) {
+      let a = at(candidates, i);
+      for (let j = i + 1; j < candidates.length; j++) {
+        const b = at(candidates, j);
+        let combined: Concrete | undefined;
+        if (a.args.slice(1).map((v) => v.key).join(';') === b.args.slice(1).map((v) => v.key).join(';')) {
+          combined = new Concrete(kind, [sum ? add(a.function, b.function) : mul(a.function, b.function), ...a.args.slice(1)]);
+        } else if (a.limits.length === 1 && b.limits.length === 1 && a.function.key === b.function.key) {
+          for (const [left, right] of [[a, b], [b, a]] as const) {
+            const [v, lo, hi] = first(left.limits);
+            const [w, bl, bh] = first(right.limits);
+            if (v.key === w.key && add(hi, 1).key === bl.key) {
+              combined = new Concrete(kind, [a.function, v, lo, bh]);
+              break;
+            }
+          }
+        }
+        if (combined !== undefined) {
+          a = combined;
+          candidates[i] = a;
+          candidates.splice(j--, 1);
+        }
+      }
+    }
+    return sum ? add(...others, ...candidates.map((a) => factorTerms(a))) : mul(...others, ...candidates);
+  });
+}
+
+/** sign(z)*Abs(z) = z, including z = 0 and nonreal z. */
+function absorbSign(e: Expr): Expr {
+  return mapBottomUp(e, (t) => {
+    if (!(t instanceof Mul)) return t;
+    const factors = [...t.args];
+    let changed = false;
+    for (let i = 0; i < factors.length; i++) {
+      const f = factors[i];
+      if (!(f instanceof Fn && f.name === 'sign')) continue;
+      const z = first(f.args);
+      const j = factors.findIndex((a) => a instanceof Fn && a.name === 'abs' && first(a.args).key === z.key);
+      if (j >= 0) { factors[i] = z; factors[j] = S.One; changed = true; }
+    }
+    return changed ? mul(...factors) : t;
+  });
+}
 
 /**
  * SymPy as_content_primitive, where exp(x) is not a power: its argument keeps its content
@@ -193,6 +274,10 @@ function reevaluate(e: Expr): Expr {
 
 /** Options of simplify (SymPy ratio and measure). */
 export interface SimplifyOptions {
+  /** Evaluate Integral, Sum, Product, Derivative and Limit nodes; default true. */
+  doit?: boolean;
+  /** Rationalize Floats; null restores Floats after simplification. Default false. */
+  rational?: boolean | null;
   /** The largest accepted measure(result)/measure(input); default 1.7. */
   ratio?: number;
   /** The size of an expression; default countOps. A number or a numeric expression. */

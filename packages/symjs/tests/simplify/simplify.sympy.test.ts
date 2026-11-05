@@ -53,8 +53,8 @@ const cases: [string, string][] = [
 
 describe('simplify: SymPy 1.14 test_simplify.py cases', () => {
   it.each(cases)('simplify(%s)', (e, want) => expect(String(simplify(parse(e)))).toBe(want));
-  it('sign is not rewritten in terms of Abs', () => {
+  it('sign and Abs cancel exactly', () => {
     // SymPy: x (simplify rewrites sign(x) as Piecewise((0, Eq(x, 0)), (x/Abs(x), True)) and folds the Piecewise)
-    expect(String(simplify(parse('sign(x)*Abs(x)')))).toBe('Abs(x)*sign(x)');
+    expect(String(simplify(parse('sign(x)*Abs(x)')))).toBe('x');
   });
 });

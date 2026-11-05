@@ -103,7 +103,7 @@ export function solveEquations(eqs: readonly Expr[], syms: readonly Sym[]): Expr
     try {
       sols = solvePolySystem(system, syms);
     } catch {
-      // NotImplementedError: roots of an irreducible quartic or above (SymPy gives radicals): there is nothing to give
+      // NotImplementedError: an eliminant without supported radical roots: there is nothing to give
       // when the eliminant has no real root; else a system with infinitely many solutions
       if (syms.every((x) => x.assumptions.real === true) && noRealSolution(system, syms)) return [];
       sols = nonlinsolve(system, syms);

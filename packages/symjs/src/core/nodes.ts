@@ -326,6 +326,8 @@ export interface Impl {
   abs(e: Expr): Expr;
   freeSymbols(e: Expr): Set<Sym>;
   integrate(e: Expr, x: Sym, limits?: [ExprLike, ExprLike]): Expr;
+  /** Evaluate unevaluated objects when the calculus entry point is loaded. */
+  doit?(e: Expr): Expr;
   limit(e: Expr, z: Sym, z0: ExprLike, dir?: '+' | '-' | '+-'): Expr;
   series(e: Expr, x: Sym, x0?: ExprLike, n?: number): Expr;
 }

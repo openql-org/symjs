@@ -13,6 +13,15 @@ import { mul, parse, S, tan } from '../../../src';
 // ---- table harness: each case is [kind, SymPy source, str() of the SymPy 1.14 result or [re, im]] ----
 type Case = [kind: string, src: string, expected: string | [number, number]];
 const x = new sj.Sym('x');
+it('evaluates acos on imaginary arguments and logs of negative constants', () => {
+  for (const [source, expected] of [
+    ['acos(I)', 'pi/2 - I*log(1 + sqrt(2))'],
+    ['acos(-I)', 'pi/2 + I*log(1 + sqrt(2))'],
+    ['acos(2*I)', 'pi/2 - I*asinh(2)'],
+    ['log(-1-sqrt(2))', 'log(1 + sqrt(2)) + I*pi'],
+    ['log(-x-1)', 'log(-x - 1)'],
+  ] as const) expect(String(sj.parse(source))).toBe(expected);
+});
 const locals = {
   p: new sj.Sym('p', { positive: true }),
   q: new sj.Sym('q', { positive: true }),

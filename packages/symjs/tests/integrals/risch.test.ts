@@ -6,7 +6,7 @@
 // sympy.integrals.risch. Expected values are SymPy 1.14's.
 
 import { describe, expect, it } from 'vitest';
-import { Lambda, S, Sym, log, mul, parse, str, symbols } from '../../src';
+import { Lambda, S, Sym, log, mul, parse, str, symbols, diff } from '../../src';
 import type { Expr } from '../../src/core/nodes';
 import { Integral, Pow, Rational } from '../../src/core/nodes';
 import { NotImplementedError } from '../../src/core/errors';
@@ -225,8 +225,15 @@ describe('risch_integrate', () => {
     tan.fd = P('1');
     expect(() => rischIntegrate(parse('tan(x)'), x, { extension: tan })).toThrow(NotImplementedError);
   });
-  it('keeps unevaluated rational functions of the base case', () => {
-    expect(R('1/(x**3 + x + 1)')).toBe('Integral(1/(x**3 + x + 1), x)');
+  it('integrates the rational base case using cubic radicals', () => {
+    const f = parse('1/(x**3 + x + 1)');
+    const result = rischIntegrate(f, x);
+    expect(result).not.toBeInstanceOf(Integral);
+    for (const value of [0, 1, 3]) {
+      const got = diff(result, x).subs([[x, value]]).evalf(25).toComplex();
+      expect(got.re).toBeCloseTo(f.subs([[x, value]]).toNumber(), 12);
+      expect(got.im).toBeCloseTo(0, 12);
+    }
   });
 });
 

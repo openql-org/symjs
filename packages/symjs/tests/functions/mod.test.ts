@@ -22,6 +22,9 @@ describe('Mod', () => {
     expect(() => Mod(x, 0)).toThrow('Modulo by zero');
   });
   it('symbolic rules', () => {
+    expect(String(Mod(mul(n, x), x))).toBe('0');
+    expect(String(Mod(add(mul(n, x), n), n))).toBe('n*Mod(x, 1)');
+    expect(String(Mod(add(mul(n, x), n), mul(2, n)))).toBe('n*Mod(x + 1, 2)');
     expect(String(Mod(0, y))).toBe('0');
     expect(String(Mod(x, x))).toBe('0');
     expect(String(Mod(x, mul(-1, x)))).toBe('0');
@@ -57,7 +60,7 @@ describe('Mod', () => {
     expect(String(Mod(mul(-3, x), mul(2, x)))).toBe('x');
     expect(String(Mod(mul(3, x), mul(-2, x)))).toBe('-x');
     // SymPy i*(Mod(x, 1)) (gcd extraction), the same value
-    expect(String(Mod(add(mul(i, x), i), i))).toBe('Mod(i*x, i)');
+    expect(String(Mod(add(mul(i, x), i), i))).toBe('i*Mod(x, 1)');
   });
   it('real numbers by the ratio (SymPy Mod by ratio)', () => {
     expect([Mod(pi, 2), Mod(mul(-1, pi, Rational.of(1n, 2n)), mul(2, pi)), Mod(sqrt(2), 1), Mod(mul(-1, sqrt(2)), 3), Mod(pi, -2), Mod(1, pi), Mod(I, 2), Mod(x, pi), Mod(mul(2, pi), pi), Mod(E, mul(E, Rational.of(1n, 2n)))].map(String)).toEqual([

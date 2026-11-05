@@ -22,13 +22,13 @@ import { xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { atan, log } from '../functions/elementary/elementary';
 import { linsolve } from '../matrices/linsys';
-import { roots } from '../polys/poly';
+import { roots, UPoly } from '../polys/poly';
 import { RootSum } from '../polys/rootsum';
 import { Poly, factorListExpr, resultant, sortGens } from '../polys/sympoly';
 import { expand } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
 
-/** The largest degree of the denominator of the logarithmic part that is integrated. */
+/** Above this degree, use the residue RootSum instead of a coefficient resultant. */
 const MAX_LOG_DEGREE = 4;
 
 /** Poly in one generator. */
@@ -93,6 +93,10 @@ function polyCancel(f: Poly, g: Poly): [Expr, Poly, Poly] {
  * ratintRatpart(Poly.from(1, [x]), Poly.from('x**2 + 2*x + 1', [x]), x)  // [-1/(x + 1), 0]
  */
 export function ratintRatpart(f: Poly, g: Poly, x: Sym): [Expr, Expr] {
+  // A square-free denominator has no rational part. Avoid constructing and
+  // solving an identity linear system, especially for high-degree inputs.
+  const gu = UPoly.fromExpr(g.asExpr(), x);
+  if (gu?.gcd(gu.derivative()).degree === 0) return [S.Zero, mul(f.asExpr(), pow(g.asExpr(), -1))];
   // u = gcd(g, g') taken monic, v = g/u (by cancel: exact division of polynomials with parameters is slow here)
   const u = P(cancel(g.gcd(g.diff(x)).monic().asExpr()), x);
   const v = P(cancel(mul(g.asExpr(), pow(u.asExpr(), -1))), x);
@@ -299,9 +303,17 @@ export function ratint(f: Expr, x: Sym): Expr | undefined {
   const [q2, r] = P(Pe, x).div(Q);
   result = add(result, g, q2.integrate(x).asExpr());
   if (!r.isZero) {
-    // the resultant in t is computed by pseudo-remainders of polynomials in t, whose size explodes
-    // for large denominators: those are left (SymPy computes them over QQ[t])
-    if (Q.degree() > MAX_LOG_DEGREE) return undefined;
+    // Avoid the coefficient swell of resultants over rational functions in t.
+    if (Q.degree() > MAX_LOG_DEGREE) {
+      // For square-free Q, the residue at a root a is r(a)/Q'(a).
+      // This exact logarithmic RootSum avoids coefficient swell in a
+      // resultant over rational functions of an auxiliary variable.
+      const t = new Dummy('t');
+      const qt = xreplace(Q.asExpr(), [[x, t]]);
+      const residue = mul(xreplace(r.asExpr(), [[x, t]]), pow(xreplace(Q.diff(x).asExpr(), [[x, t]]), -1));
+      const logarithms = RootSum(qt, t, Lambda(t, mul(residue, log(add(x, mul(-1, t))))));
+      return mul(coeff, add(result, logarithms));
+    }
     const t = new Dummy('t');
     const L = ratintLogpart(r, Q, x, t);
     const real = atoms(f).every((e) => e.key === x.key || isReal(e) === true);
@@ -309,7 +321,7 @@ export function ratint(f: Expr, x: Sym): Expr | undefined {
     for (const [h0, q1] of L) {
       // the content over the coefficients: a rational number, or 1 for coefficients in t or in parameters
       const hh = h0.asExpr().has(t) ? h0 : P(primitive(h0.asExpr())[1], x);
-      const R = real ? logToReal(hh, q1, x, t) : rootSumQuadratic(q1, t, hh);
+      const R = (real ? logToReal(hh, q1, x, t) : undefined) ?? rootSumRadicals(q1, t, hh);
       eps.push(R ?? RootSum(q1.asExpr(), t, Lambda(t, mul(t, log(hh.asExpr())))));
     }
     result = add(result, ...eps);
@@ -351,16 +363,17 @@ function preprocessRoots(q: Poly, t: Sym): [Expr, Poly] {
 
 /**
  * SymPy RootSum(q, Lambda(t, t*log(h)), quadratic=True) for q with
- * linear and quadratic factors: the sum of r*log(h(r)) over the roots r of
- * q, with the scale of the roots taken out; undefined for factors of higher
- * degree.
+ * factors of degree at most four: the sum of r*log(h(r)) over the roots r
+ * of q, with the scale of the roots taken out. Cubic and quartic radicals
+ * are used for rational coefficients; larger factors stay as RootSum.
  */
-function rootSumQuadratic(q: Poly, t: Sym, h: Poly): Expr | undefined {
+function rootSumRadicals(q: Poly, t: Sym, h: Poly): Expr | undefined {
   const [scale, q1] = preprocessRoots(q, t);
   const he = h.asExpr();
   const terms: Expr[] = [];
   for (const [ge, k] of factorListExpr(q1.asExpr())[1]) {
-    if (P(ge, t).degree() > 2) return undefined;
+    const p = P(ge, t);
+    if (p.degree() > 4 || p.degree() > 2 && !rationalPoly(p)) return undefined;
     terms.push(mul(k, add(...roots(ge, t).map((r) => mul(r, log(xreplace(he, [[t, mul(scale, r)]])))))));
   }
   return mul(scale, add(...terms));

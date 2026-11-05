@@ -278,6 +278,9 @@ const evalLog: Evaluator = (x, ...more) => {
     if (x.p === 1n && x.q !== 1n) return neg(log(Rational.of(x.q, 1n)));
   }
   if (x instanceof Constant && x.name === 'E') return S.One;
+  // SymPy log.eval splits the principal argument of negative numeric
+  // expressions, including sums of radicals. Symbolic signs stay unevaluated.
+  if (x.freeSymbols().size === 0 && isNegative(x) === true) return add(log(neg(x)), mul(S.I, S.Pi));
   if (x instanceof Pow && x.base instanceof Constant && x.base.name === 'E' && isReal(x.exp)) return x.exp;
   // log(+-I*oo) = oo; log(c*I) = log(|c|) +- I*pi/2 for a rational c (SymPy log.eval)
   if (x.key === mul(S.I, S.Infinity).key || x.key === mul(-1, S.I, S.Infinity).key) return S.Infinity;

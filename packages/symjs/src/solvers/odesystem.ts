@@ -14,14 +14,14 @@ import type { Expr, ExprLike } from '../core/nodes';
 import { Derivative, Dummy, I, Integral, Mul, Pow, Rational, Rel, S, Sym, UndefFn } from '../core/nodes';
 import { asNumerDenom } from '../core/methods';
 import { at, cast, defined, first, getOrThrow } from '../core/guard';
-import { isReal } from '../core/assumptions';
+import { isIntegerQ, isReal } from '../core/assumptions';
 import { SymFunction } from '../core/undef';
 import { add, exp, mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { doit } from '../calculus/doit';
 import { Eq } from '../core/logic';
-import { cos, im, log, re, sin } from '../functions/elementary/elementary';
+import { cos, im, log, re, sin, sinh, fn } from '../functions/elementary/elementary';
 import { factor } from '../polys/sympoly';
 import { cancel } from '../simplify/rational';
 import { separatevars } from '../simplify/separatevars';
@@ -74,7 +74,21 @@ function dsolveSystemAll(eqsIn: readonly ExprLike[], funcsIn?: readonly UndefFn[
   const sub = eqs.map((e) => xreplace(e, reps));
   const lin = linearEqToMatrix(sub, [...ds, ...us]);
   if (!lin) {
-    const nl = n === 2 ? nonlinear2(eqs, [first(funcs), at(funcs, 1)], t) : undefined;
+    // Protect parameters named C1, C2, ... while a nonlinear solver allocates integration constants.
+    const parameters = [...new Map(eqs.flatMap((e) => [...e.freeSymbols()]).filter((s) => s.key !== t.key && /^C\d+$/.test(s.name)).map((s) => [s.key, s])).values()];
+    const protect = parameters.map((s): [Expr, Expr] => [s, new Dummy(s.name)]);
+    const protectedEqs = eqs.map((e) => xreplace(e, protect));
+    let nl = n === 2 ? nonlinear2(protectedEqs, [first(funcs), at(funcs, 1)], t) : n === 3 ? nonlinear3(protectedEqs, funcs, t) : undefined;
+    if (nl !== undefined && parameters.length) {
+      const used = new Set(parameters.map((s) => s.name));
+      const constants = [...new Map(nl.flat().flatMap((e) => [...e.freeSymbols()]).filter((s) => !(s instanceof Dummy) && /^C\d+$/.test(s.name)).map((s) => [s.key, s])).values()].sort((a, b) => a.name.localeCompare(b.name));
+      let next = 1;
+      const rename = constants.map((s): [Expr, Expr] => {
+        while (used.has(`C${next}`)) next++;
+        return [s, C(next++)];
+      });
+      nl = nl.map((family) => family.map((e) => xreplace(xreplace(e, rename), protect.map(([s, d]) => [d, s]))));
+    }
     return nl ?? triangularSystem(eqs, funcs);
   }
   const [M, rhs] = lin;
@@ -226,7 +240,9 @@ function powerFactor(r: Expr, x: Expr, y: Expr, isPow: (g: Expr) => Expr | undef
 function solveWithC1(eq: Expr, f: UndefFn): Expr {
   const d = new Dummy('C1');
   const r = dsolveOne(xreplace(eq, [[C(1), d]]), f);
-  const rhs = cast(first([r].flat()), Rel, 'solution').rhs;
+  const solution = cast(first([r].flat()), Rel, 'solution');
+  if (solution.lhs.key !== f.key || solution.rhs.has(f)) throw new NotImplementedError('the time equation has only an implicit solution');
+  const rhs = solution.rhs;
   return xreplace(xreplace(rhs, [[C(1), C(2)]]), [[d, C(1)]]);
 }
 
@@ -289,6 +305,60 @@ function nonlinear2(eqs: readonly Expr[], [X, Y]: [UndefFn, UndefFn], t: Sym): E
     }
     const F = uv(R0);
     const G = uv(R1);
+    // x'=a*x*y, y'=b*x^m: y^2 - 2*b*x^m/(a*m) is constant.
+    // The time equation for y is Riccati; keep its zero-invariant family too.
+    const a = cancel(mul(F, pow(mul(u, v), -1)));
+    const [m, b] = powerFactor(factor(G), u, v, (g) => g.key === u.key ? S.One : g instanceof Pow && g.base.key === u.key ? g.exp : undefined);
+    // For an integer m, taking the m-th power of the chosen radical recovers
+    // its radicand. Other exponents use the orbit quadrature below, preserving branches.
+    if (![a, b, m].some((g) => g.has(u) || g.has(v) || g.has(t)) && isIntegerQ(m) === true && !isZero(m) && !isZero(a) && !isZero(b)) {
+      const tau = add(t, C2);
+      const am = mul(a, m);
+      const r = pow(C1, S.Half);
+      const angle = mul(S.Half, am, r, tau);
+      return [
+        [Eq(X, pow(mul(am, C1, pow(mul(2, b, pow(sinh(angle), 2)), -1)), pow(m, -1))), Eq(Y, mul(-1, r, fn('coth', [angle])))],
+        [Eq(X, pow(mul(2, pow(mul(a, b, m, pow(tau, 2)), -1)), pow(m, -1))), Eq(Y, mul(-2, pow(mul(am, tau), -1)))],
+      ];
+    }
+    // type 3: solve an orbit dv/du = G/F, then the scalar time equation on that orbit.
+    // Either coordinate can be used as u; the second often turns an algebraic quadrature into a Riccati equation.
+    if (!F.has(t) && !G.has(t)) {
+      let quadratures: Expr[][] | undefined;
+      for (const [A, H, K] of [[X, F, G], [Y, xreplace(G, [[u, v], [v, u]]), xreplace(F, [[u, v], [v, u]])]] as const) {
+        try {
+          const orbit = SymFunction('v')(u);
+          const orbitEquation = add(diff(orbit, u), mul(-1, xreplace(cancel(mul(K, pow(H, -1))), [[v, orbit]])));
+          const curves = [dsolveOne(orbitEquation, orbit)].flat();
+          const solutions: Expr[][] = [];
+          const implicit: Expr[][] = [];
+          for (const curve of curves) {
+            const relation = cast(curve, Rel, 'orbit');
+            if (relation.lhs.key !== orbit.key || relation.rhs.has(orbit)) throw new NotImplementedError('the orbit is implicit');
+            const phi = relation.rhs;
+            const velocity = simplify(xreplace(H, [[v, phi]]));
+            const q = Eq(new Integral([pow(velocity, -1), u, A]), add(t, C2));
+            // subs preserves the integration variable of an unevaluated orbit
+            // integral and records the dependent coordinate as its upper limit.
+            const dependent = Eq(A === X ? Y : X, phi.subs([[u, A]]));
+            implicit.push(A === X ? [q, dependent] : [dependent, q]);
+            try {
+              const timed = solveWithC1(add(diff(A, t), mul(-1, velocity.subs([[u, A]]))), A);
+              const other = simplify(phi.subs([[u, timed]]));
+              const solution = A === X ? [Eq(X, timed), Eq(Y, other)] : [Eq(X, other), Eq(Y, timed)];
+              if (checkodesol(eqs, solution)[0]) solutions.push(solution);
+            } catch {
+              // A valid orbit still supplies a quadrature when time cannot be inverted.
+            }
+          }
+          if (solutions.length) return solutions;
+          quadratures ??= implicit;
+        } catch {
+          // The other coordinate may have a solvable orbit or time equation.
+        }
+      }
+      if (quadratures?.length) return quadratures;
+    }
     // type 4: F/G = f1(u)*g1(v)/(f2(u)*g2(v)), for t-dependent equations
     const [num, den] = asNumerDenom(cancel(mul(F, pow(G, -1))));
     const sn = separatevars(num, { dict: true, symbols: [u, v] });
@@ -313,6 +383,40 @@ function nonlinear2(eqs: readonly Expr[], [X, Y]: [UndefFn, UndefFn], t: Sym): E
     // an integral or an equation the type needs is not solved
   }
   return undefined;
+}
+
+/** Euler systems X'=a*Y*Z*h, Y'=b*Z*X*h, Z'=c*X*Y*h, with a common separable time factor. */
+function nonlinear3(eqs: readonly Expr[], funcs: readonly UndefFn[], t: Sym): Expr[][] | undefined {
+  const derivatives = funcs.map((f) => new Derivative([f, t, S.One]));
+  const ds = derivatives.map((_, i) => new Dummy(`d${i}`));
+  const linear = linearEqToMatrix(eqs.map((e) => xreplace(e, derivatives.map((d, i) => [d, at(ds, i)]))), ds);
+  if (!linear) return undefined;
+  const [M, r] = linear;
+  if (isZero(M.det())) return undefined;
+  const rhs = M.inv().mul(r).data;
+  const [X, Y, Z] = [at(funcs, 0), at(funcs, 1), at(funcs, 2)];
+  const products = [mul(Y, Z), mul(Z, X), mul(X, Y)];
+  const coefficients = rhs.map((g, i) => cancel(mul(g, pow(at(products, i), -1))));
+  if (coefficients.some((g) => funcs.some((f) => g.has(f)) || isZero(g))) return undefined;
+  const b = cancel(mul(at(coefficients, 1), pow(first(coefficients), -1)));
+  const c = cancel(mul(at(coefficients, 2), pow(first(coefficients), -1)));
+  if ([b, c].some((g) => g.has(t))) return undefined;
+  const used = new Set(eqs.flatMap((e) => [...e.freeSymbols()].map((s) => s.name)));
+  const constants: Sym[] = [];
+  for (let i = 1; constants.length < 3; i++) if (!used.has(`C${i}`)) constants.push(C(i));
+  const [C1, C2, C3] = [at(constants, 0), at(constants, 1), at(constants, 2)];
+  const u = new Dummy('u');
+  const time = add(integrate(first(coefficients), t), C3);
+  const solutions: Expr[][] = [];
+  for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
+    const y = mul(sy, pow(add(mul(b, pow(u, 2)), C1), S.Half));
+    const z = mul(sz, pow(add(mul(c, pow(u, 2)), C2), S.Half));
+    // One quadrature and two algebraic relations share the same constants and signs.
+    // Independent quadratures for X,Y,Z would introduce inconsistent phase constants.
+    const quadrature = new Integral([pow(mul(y, z), -1), u, X]);
+    solutions.push([Eq(quadrature, time), Eq(Y, xreplace(y, [[u, X]])), Eq(Z, xreplace(z, [[u, X]]))]);
+  }
+  return solutions;
 }
 
 /**

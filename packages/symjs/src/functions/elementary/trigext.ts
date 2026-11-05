@@ -244,6 +244,7 @@ const base = {
   cosh: defined(evaluators.cosh),
   tanh: defined(evaluators.tanh),
   asin: defined(evaluators.asin),
+  acos: defined(evaluators.acos),
   atan: defined(evaluators.atan),
 };
 
@@ -352,6 +353,10 @@ evaluators.asin = (x) => {
   const c = iCoeff(x);
   if (c !== undefined) return mul(I, asinh(c));
   return undefined;
+};
+evaluators.acos = (x) => {
+  const c = iCoeff(x);
+  return c === undefined ? base.acos(x) : add(mul(half, pi), neg(asin(x)));
 };
 evaluators.atan = (x) => {
   const r = base.atan(x);

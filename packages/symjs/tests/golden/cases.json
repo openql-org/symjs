@@ -672,7 +672,8 @@
     {
       "expr": "x**x",
       "ops": [
-        "diff_x"
+        "diff_x",
+        "fps_x"
       ]
     },
     {
@@ -758,7 +759,8 @@
     {
       "expr": "x",
       "ops": [
-        "integrate:x"
+        "integrate:x",
+        "fps_x"
       ]
     },
     {
@@ -800,7 +802,8 @@
     {
       "expr": "exp(x)",
       "ops": [
-        "integrate:x"
+        "integrate:x",
+        "fps_x"
       ]
     },
     {
@@ -836,13 +839,15 @@
     {
       "expr": "sin(x)",
       "ops": [
-        "integrate:x"
+        "integrate:x",
+        "fps_x"
       ]
     },
     {
       "expr": "cos(x)",
       "ops": [
-        "integrate:x"
+        "integrate:x",
+        "fps_x"
       ]
     },
     {
@@ -878,7 +883,8 @@
     {
       "expr": "log(x)",
       "ops": [
-        "integrate:x"
+        "integrate:x",
+        "fps_x"
       ]
     },
     {
@@ -2623,7 +2629,8 @@
     {
       "expr": "exp(x**2)",
       "ops": [
-        "integrate:x"
+        "integrate:x",
+        "fps_x"
       ]
     },
     {
@@ -2642,6 +2649,114 @@
       "expr": "x**2*exp(x**3)",
       "ops": [
         "integrate:x"
+      ]
+    },
+    {
+      "expr": "sign(x)*Abs(x)",
+      "ops": [
+        "simplify"
+      ]
+    },
+    {
+      "expr": "acos(I)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "acos(-I)",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "log(-1-sqrt(2))",
+      "ops": [
+        "str"
+      ]
+    },
+    {
+      "expr": "exp(2*x+1)-3",
+      "ops": [
+        "solve_x"
+      ]
+    },
+    {
+      "expr": "log(cosh(x))-1",
+      "ops": [
+        "solve_x"
+      ]
+    },
+    {
+      "expr": "asinh(x)-2",
+      "ops": [
+        "solve_x"
+      ]
+    },
+    {
+      "expr": "sinh(x)-2",
+      "ops": [
+        "solve_x"
+      ]
+    },
+    {
+      "expr": "asinh(x)-2*I",
+      "ops": [
+        "solve_x"
+      ]
+    },
+    {
+      "expr": "1/(2+cos(x))",
+      "ops": [
+        "integrate:x,0,2*pi"
+      ]
+    },
+    {
+      "expr": "1/(x**4+1)",
+      "ops": [
+        "integrate:x"
+      ]
+    },
+    {
+      "expr": "1/(x**4-4)",
+      "ops": [
+        "integrate:x"
+      ]
+    },
+    {
+      "expr": "Integral(sin(x)**2+cos(x)**2,x)",
+      "ops": [
+        "simplify"
+      ]
+    },
+    {
+      "expr": "Sum(k,(k,1,n))",
+      "ops": [
+        "simplify"
+      ]
+    },
+    {
+      "expr": "Product(k,(k,1,n))",
+      "ops": [
+        "simplify"
+      ]
+    },
+    {
+      "expr": "Derivative(sin(x),x)",
+      "ops": [
+        "simplify"
+      ]
+    },
+    {
+      "expr": "(4*x**3+1)/(x**4+x+1)",
+      "ops": [
+        "integrate:x,0,1"
+      ]
+    },
+    {
+      "expr": "(5*x**4+1)/(x**5+x+1)",
+      "ops": [
+        "integrate:x,0,1"
       ]
     }
   ]

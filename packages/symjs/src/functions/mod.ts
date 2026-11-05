@@ -14,7 +14,8 @@
  */
 
 import type { Expr } from '../core/nodes';
-import { Add, Fn, Float, Pow, Rational, S, impl } from '../core/nodes';
+import { Add, Fn, Float, Mul, Pow, Rational, S, impl } from '../core/nodes';
+import { extractMultiplicatively } from '../core/methods';
 import { add, mul, pow } from '../core/ops';
 import { isqrt, powmod } from '../ntheory/intutil';
 import { at } from '../core/guard';
@@ -44,6 +45,14 @@ function evalMod(p: Expr, q: Expr): Expr | undefined {
   // a rational ratio k = p/q: Mod(p, q) = q*Mod(k, 1) (SymPy extracts gcd(p, q))
   const k = mul(p, pow(q, -1));
   if (k instanceof Rational) return mul(q, ratMod(k, S.One));
+  if (isIntegerQ(k) === true) return S.Zero;
+  // Extract common symbolic factors before reducing the additive terms.
+  // The quotient is structural, so no assumptions about floating signs enter.
+  for (const g of q instanceof Mul ? q.args : [q]) {
+    if (g instanceof Rational) continue;
+    const quotient = extractMultiplicatively(p, g);
+    if (quotient !== undefined) return mul(g, Mod(quotient, mul(q, pow(g, -1))));
+  }
   return byRatio(p, q) ?? reduceTerms(p, q);
 }
 

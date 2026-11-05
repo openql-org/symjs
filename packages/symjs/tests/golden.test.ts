@@ -18,6 +18,8 @@ import {
   latex,
   parse,
   roots,
+  solve,
+  fps,
   simplify,
   str,
   together,
@@ -55,6 +57,8 @@ const OPS: Record<string, (e: Expr) => string | string[]> = {
   cancel: (e) => str(cancel(e)),
   conjugate: (e) => str(conjugate(e)),
   diff_x: (e) => str(diff(e, x)),
+  solve_x: (e) => solve(e, x).map(str),
+  fps_x: (e) => String(fps(e, x)),
   roots_x: (e) => roots(e, x, { multiple: true }).map(str).sort(),
 };
 

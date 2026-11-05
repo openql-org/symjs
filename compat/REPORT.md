@@ -76,7 +76,7 @@ Direct regression-test paths are maintained in `capabilities.json`. Tensor diffe
 
 **ODE checks: 100.0% (41/41; exact 40, equivalent 1)**
 
-**Fully covered (100% test coverage): 100.0% of source files (308/308), 100.0% of statements (77773/77773)**
+**Fully covered (100% test coverage): 100.0% of source files (308/308), 100.0% of statements (78282/78282)**
 
 | Category | Behavior | Exact | Exact rate | Equivalent | Fail | Unsupported | Error | Cases | API coverage | Fully covered files |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|

@@ -7,12 +7,36 @@
 import { describe, expect, it } from 'vitest';
 import * as F from '../../src/numeric/mpf';
 import type { Mpc } from '../../src/numeric/mpfun';
-import { HyperInfinity, HyperPoleError, NoConvergence, hyper, hypercomb, nintDistance, nsum, pyRandomBits10, richardson, shanks } from '../../src/numeric/mphyper';
-import { NotImplementedError } from '../../src/core/errors';
+import { HyperInfinity, HyperPoleError, NoConvergence, hyper, hypercomb, hyperEulerMaclaurin, nintDistance, nsum, pyRandomBits10, richardson, shanks } from '../../src/numeric/mphyper';
 
 type C = [string, string];
 const mpc = ([re, im]: C): Mpc => [F.fromStr(re, 4000), F.fromStr(im, 4000)];
 const show = (v: Mpc, prec: number): C => [F.toStr(v[0], F.precToDps(prec)), F.toStr(v[1], F.precToDps(prec))];
+
+describe('Euler-Maclaurin hypergeometric tails', () => {
+  const half = mpc(['0.5', '0']);
+  const threeHalves = mpc(['1.5', '0']);
+  const a = [half, half, half];
+  const b = [threeHalves, threeHalves];
+  it('agrees with pi*log(2)/2 at 80 bits', () => {
+    expect(show(hyperEulerMaclaurin(a, b, mpc(['1', '0']), 80), 80)).toEqual(['1.0887930451518010652503', '0.0']);
+  });
+  it('handles complex parameters (mpmath 1.3.0, 45 digits)', () => {
+    const result = hyperEulerMaclaurin([mpc(['0.5', '0.25']), half, half], b, mpc(['0.9', '0']), 80);
+    expect(show(result, 80)).toEqual(['1.0691629383890378055857', '0.041558146325670679701849']);
+  });
+  it('bounds work and rejects an insufficient asymptotic truncation', () => {
+    expect(() => hyperEulerMaclaurin(a, b, mpc(['1', '0']), 53, 0)).toThrow(NoConvergence);
+    expect(() => hyperEulerMaclaurin(a, b, mpc(['1', '0']), 53, 1, 1)).toThrow(NoConvergence);
+    expect(() => hyperEulerMaclaurin(a, b, mpc(['-1', '0']), 20, 1, 1)).toThrow(NoConvergence);
+  });
+  it('uses analytic continuation outside the unit disk after acceleration fails', () => {
+    // mpmath 1.3.0 at 40 digits: 0.9533706849404444515314301465612671893855.
+    // Euler-Maclaurin cannot integrate a gamma-ratio tail that grows like |z|**n.
+    const result = hyper(a, b, mpc(['-1.05', '0']), 53, { maxNsumTerms: 0 });
+    expect(show(result, 53)).toEqual(['0.953370684940444', '0.0']);
+  });
+});
 
 describe('hyper equals mpmath', () => {
   // [case, as, bs, z, prec, value [re, im] or the outcome: "inf" (mpmath's inf: HyperInfinity),
@@ -50,8 +74,8 @@ describe('hyper equals mpmath', () => {
     ["3F2 polynomial", [["-3.0", "0.0"], ["0.333333333333333314829616256247390992939472198486328125", "0.0"], ["0.25", "0.0"]], [["2.333333333333333481363069950020872056484222412109375", "0.0"], ["2.5", "0.0"]], ["5.0", "0.0"], 53, ["0.870094191522763", "0.0"]],
     ["3F2 divergent at 1", [["1.0", "0.0"], ["2.0", "0.0"], ["3.0", "0.0"]], [["4.0", "0.0"], ["1.0", "0.0"]], ["1.0", "0.0"], 53, "inf"],
     ["3F2 at 1", [["1.0", "0.0"], ["2.0", "0.0"], ["3.0", "0.0"]], [["5.0", "0.0"], ["6.0", "0.0"]], ["1.0", "0.0"], 53, ["1.29494373855393", "0.0"]],
-    // mpmath 1.00818229394803 by Euler-Maclaurin summation after nsum fails (not ported)
-    ["3F2 at 1 noninteger", [["0.5", "0.0"], ["0.333333333333333314829616256247390992939472198486328125", "0.0"], ["0.25", "0.0"]], [["2.333333333333333481363069950020872056484222412109375", "0.0"], ["2.5", "0.0"]], ["1.0", "0.0"], 53, "NotImplementedError"],
+    // mpmath 1.00818229394803 by Euler-Maclaurin summation after nsum fails
+    ["3F2 at 1 noninteger", [["0.5", "0.0"], ["0.333333333333333314829616256247390992939472198486328125", "0.0"], ["0.25", "0.0"]], [["2.333333333333333481363069950020872056484222412109375", "0.0"], ["2.5", "0.0"]], ["1.0", "0.0"], 53, ["1.00818229394803", "0.0"]],
     ["3F2 nsum", [["1.0", "0.0"], ["2.0", "0.0"], ["3.0", "0.0"]], [["5.0", "0.0"], ["6.0", "0.0"]], ["0.540302305868139765010482733487151563167572021484375", "0.8414709848078965048756572286947630345821380615234375"], 53, ["1.06188965247415", "0.213572585687906"]],
     ["3F2 nsum at -1", [["1.0", "0.0"], ["1.0", "0.0"], ["1.0", "0.0"]], [["2.0", "0.0"], ["2.0", "0.0"]], ["-1.0", "0.0"], 53, ["0.822467033424113", "0.0"]],
     ["3F2 nsum complex", [["0.5", "0.0"], ["1.0", "0.0"], ["1.0", "0.0"]], [["2.0", "0.0"], ["3.0", "0.0"]], ["0.0", "1.0"], 53, ["0.981989213342801", "0.0769694102179501"]],
@@ -93,8 +117,8 @@ describe('hyper equals mpmath', () => {
     ["3F2 at 1 zero by gammaprod", [["-0.6999999999999999555910790149937383830547332763671875", "0.0"], ["-0.8000000000000000444089209850062616169452667236328125", "0.0"], ["0.5", "0.0"]], [["0.25", "0.0"], ["-0.75", "0.0"]], ["1.0", "0.0"], 53, "pole"],
     ["3F2 at 1 pole", [["0.5", "0.0"], ["0.333333333333333314829616256247390992939472198486328125", "0.0"], ["0.25", "0.0"]], [["-2.0", "0.0"], ["5.0", "0.0"]], ["1.0", "0.0"], 53, "pole"],
     ["3F2 at 1 cancelling poles", [["1.0", "0.0"], ["2.0", "0.0"], ["0.5", "0.0"]], [["5.0", "0.0"], ["-0.5", "0.0"]], ["1.0", "0.0"], 53, ["-6.0", "0.0"]],
-    // mpmath 1.08856221958527 by Euler-Maclaurin summation (not ported)
-    ["3F2 series fails near 1", [["0.5", "0.0"], ["0.5", "0.0"], ["0.5", "0.0"]], [["1.5", "0.0"], ["1.5", "0.0"]], ["0.99899999999999999911182158029987476766109466552734375", "0.0"], 53, "NotImplementedError"],
+    // mpmath 1.08856221958527 by Euler-Maclaurin summation
+    ["3F2 series fails near 1", [["0.5", "0.0"], ["0.5", "0.0"], ["0.5", "0.0"]], [["1.5", "0.0"], ["1.5", "0.0"]], ["0.99899999999999999911182158029987476766109466552734375", "0.0"], 53, ["1.08856221958527", "0.0"]],
     ["3F2 series pole", [["0.5", "0.0"], ["0.333333333333333314829616256247390992939472198486328125", "0.0"], ["0.25", "0.0"]], [["-2.0", "0.0"], ["2.5", "0.0"]], ["0.5", "0.0"], 53, "pole"],
     ["3F2 nsum pole", [["0.5", "0.0"], ["0.333333333333333314829616256247390992939472198486328125", "0.0"], ["0.25", "0.0"]], [["-2.0", "0.0"], ["2.5", "0.0"]], ["-1.0500000000000000444089209850062616169452667236328125", "0.0"], 53, "pole"],
     ["3F1 Borel pole", [["0.5", "0.0"], ["0.333333333333333314829616256247390992939472198486328125", "0.0"], ["0.25", "0.0"]], [["-2.0", "0.0"]], ["-0.5", "0.0"], 53, "pole"],
@@ -118,7 +142,6 @@ describe('hyper equals mpmath', () => {
     else if (want === 'ValueError') expect(f).toThrow('failed to converge');
     else if (want === 'nan') expect(f).toThrow('indeterminate');
     else if (want === 'NoConvergence') expect(f).toThrow(NoConvergence);
-    else if (want === 'NotImplementedError') expect(f).toThrow(NotImplementedError);
     else expect(show(f(), prec)).toEqual(want);
   });
 });

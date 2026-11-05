@@ -15,7 +15,8 @@
  * Unsupported integrands are returned as an unevaluated `Integral`.
  */
 
-import { isNegative as isNegativeQ, isNonZero, isPositive as isPositiveQ } from '../core/assumptions';
+import { isNegative as isNegativeQ, isNonZero, isPositive as isPositiveQ, isReal } from '../core/assumptions';
+import { AccumBounds } from '../core/accumbounds';
 import { Gt, Ne, piecewise } from '../core/logic';
 import type {
   Expr,
@@ -608,10 +609,16 @@ class Integrator {
     const [n, d] = asNumerDenom(f);
     const [coeff, g] = asIndependent(cancelFraction(n, d, x), [x], { asAdd: false });
     if (g instanceof Pow && this.linear(g.base)) return undefined;
-    const r = ratint(g, x);
-    if (r === undefined) return undefined;
+    // isRationalIn above guarantees that the rational integrator accepts g.
+    const r = defined(ratint(g, x), 'integral of a rational function');
     // a RootSum where the roots are not found: the partial fractions over the rationals may do better
     if (some(r, (e) => e instanceof RootSumNode)) return undefined;
+    // A real quadratic partial-fraction primitive retains arctangent branch corrections
+    // in a subsequent tangent substitution. Complex logarithms would lose those corrections.
+    if (!g.has(S.I) && r.has(S.I)) {
+      const realPrimitive = this.rational(g);
+      if (realPrimitive !== undefined) return mul(coeff, realPrimitive);
+    }
     return mul(coeff, r);
   }
 
@@ -929,7 +936,14 @@ function singularPoints(f: Expr, x: Sym): Expr[] | undefined {
   visit(f);
   const points = new Map<string, Expr>();
   for (const base of bases.values()) {
-    if (!polyCoefficients(base, x)) return undefined;
+    if (!polyCoefficients(base, x)) {
+      // Bound real sine/cosine factors before declaring the poles unresolved:
+      // e.g. 2 + cos(x) lies in [1, 3] and never vanishes on the real axis.
+      const realX = new Dummy('x', { real: true });
+      const bounded = mapBottomUpI(base, (e) => e instanceof Fn && (e.name === 'sin' || e.name === 'cos') && isReal(subs(at(e.args, 0), [[x, realX]])) === true ? AccumBounds(-1, 1) : e);
+      if (bounded instanceof AccumBounds && (isPositiveQ(bounded.min) === true || isNegativeQ(bounded.max) === true)) continue;
+      return undefined;
+    }
     try {
       for (const r of roots(base, x)) {
         // Numerical ordering is used only for constant real roots, never for parameters.

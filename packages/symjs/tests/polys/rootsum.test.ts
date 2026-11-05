@@ -5,12 +5,21 @@
 
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
+import { RootSumNode } from '../../src/polys/rootsum';
 
 const { parse } = sj;
 const [x, y, t, b] = sj.symbols('x y t b') as [sj.Sym, sj.Sym, sj.Sym, sj.Sym];
 const lam = (v: sj.Sym, e: string) => sj.Lambda(v, parse(e));
 
 describe('RootSum', () => {
+  it('distinguishes an invalid polynomial from an unsupported parameter derivative', () => {
+    const invalid = new RootSumNode([parse('sin(x)'), lam(b, 'exp(b)'), x]);
+    expect(() => sj.doit(invalid)).toThrow(sj.PolynomialError);
+    const movingRoots = sj.RootSum(parse('x**5+x+y'), x, lam(b, 'exp(b)'));
+    // The implemented derivative holds the polynomial fixed. Parameter-dependent
+    // roots need implicit differentiation, so this remains explicitly unsupported.
+    expect(() => sj.diff(movingRoots, y)).toThrow(sj.NotImplementedError);
+  });
   const P = parse('x**3 + x + 1');
   it.each([
     ['2', '6'],

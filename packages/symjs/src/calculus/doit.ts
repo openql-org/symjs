@@ -72,3 +72,4 @@ export function evalConcreteValue(c: Concrete): Expr | undefined {
 }
 
 impl.evalConcrete = (c) => evalConcreteValue(cast(c, Concrete));
+impl.doit = doit;

@@ -73,4 +73,10 @@ describe('CRootOf', () => {
     expect(solve(parse('x**5 - x - 1'), x).map(String)).toEqual([0, 1, 2, 3, 4].map((i) => `CRootOf(x**5 - x - 1, ${i})`));
     expect(solve(parse('x**3 - x + 1'), x, { cubics: false }).map(String)).toEqual([0, 1, 2].map((i) => `CRootOf(x**3 - x + 1, ${i})`));
   });
+  it('keeps the defining polynomial intact when substituting a bound generator', () => {
+    const r = rootOf(parse('x**5 - x - 1'), 0);
+    expect(r.subs(x, 2)).toBe(r);
+    expect(r.subs(new sj.Sym('y'), 2)).toBe(r);
+    expect(String(r.subs(r, 2))).toBe('2');
+  });
 });
