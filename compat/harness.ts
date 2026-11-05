@@ -133,7 +133,14 @@ export class TypeRef {
 }
 
 /** An item of a Python list, tuple, set or dict prints as its repr: Permutation(0, 1, 2) for a Permutation. */
-const fmtItem = (v: unknown): string => (v instanceof sj.Permutation ? sj.permutationRepr(v) : fmt(v));
+const fmtItem = (v: unknown): string => {
+  if (v instanceof sj.Permutation) return sj.permutationRepr(v);
+  // domain elements (PythonMPQ, Gaussian elements, ModularInteger, ANP) print their repr inside containers
+  if (v instanceof sj.PythonMPQ || v instanceof sj.GaussianElement || v instanceof sj.ModularInteger || v instanceof sj.ANP) return v.repr();
+  // DDM and SDM print their repr inside containers
+  if (v instanceof sj.DDM || v instanceof sj.SDM) return v.repr();
+  return fmt(v);
+};
 
 export function fmt(v: unknown): string {
   if (v instanceof Expr) return sj.str(v);
@@ -158,6 +165,8 @@ export function fmt(v: unknown): string {
   if (v instanceof JsDict) return `{${v.entries.map(([k, x]) => `${fmtItem(k)}: ${fmtItem(x)}`).join(', ')}}`;
   if (v instanceof JsSet) return v.items.length === 0 ? 'set()' : `{${v.items.map(fmtItem).join(', ')}}`;
   if (v instanceof UFnClass || v instanceof FnClass) return v.name;
+  // an unapplied predicate (Q.even)
+  if (typeof v === 'function' && typeof (v as { predicateName?: unknown }).predicateName === 'string') return String(v);
   if (v instanceof TypeRef) return `<class 'sympy.${v.name}'>`;
   // library objects with their own SymPy-like str (Cycle, PropKB, ...)
   if (typeof v === 'object' && (v as { toString: unknown }).toString !== Object.prototype.toString) return String(v);
@@ -217,8 +226,15 @@ function normalizeSets(s: string): string {
 /** Compare with Python's str(); dict and set item order is ignored. */
 /** SymPy results printed in a non-canonical form that symjs prints canonically (the same object). */
 const PRINT_ALIASES: Readonly<Record<string, string>> = { 'Interval(-oo, oo)': 'Reals' };
-export function matches(v: unknown, expected: string): boolean {
+/** QQ elements of SymPy's pure Python ground types print as MPQ(p,q): the rational p/q. */
+const MPQ_RE = /MPQ\((-?\d+),(\d+)\)/g;
+const unMPQ = (s: string): string => s.replace(MPQ_RE, (_m, p: string, q: string) => (q === '1' ? p : `${p}/${q}`));
+export function matches(v: unknown, expectedIn: string): boolean {
   const got = fmt(v);
+  if (expectedIn.includes('MPQ(') && got !== expectedIn) return matches0(v, unMPQ(expectedIn), unMPQ(got));
+  return matches0(v, expectedIn, got);
+}
+function matches0(v: unknown, expected: string, got: string): boolean {
   if (got === expected || PRINT_ALIASES[expected] === got) return true;
   if (got.includes('{') && normalizeSets(got) === normalizeSets(expected)) return true;
   const listPrefix = "defaultdict(<class 'list'>, ";
@@ -257,6 +273,25 @@ const REL_OPS: Record<string, sj.RelOp> = {
 const SPECIAL_NAMES = ['bernoulli', 'euler', 'genocchi', 'bell', 'fibonacci', 'lucas', 'tribonacci', 'partition', 'totient', 'reduced_totient', 'mobius', 'divisor_sigma', 'primenu', 'primeomega', 'primepi', 'multigamma', 'factorial', 'factorial2', 'binomial', 'ff', 'rf', 'subfactorial', 'harmonic', 'catalan', 'gamma', 'loggamma', 'polygamma', 'lowergamma', 'uppergamma', 'beta', 'zeta', 'erf', 'erfc', 'erfi', 'erf2', 'erfinv', 'erfcinv', 'erf2inv', 'Ei', 'li', 'Li', 'Si', 'Ci', 'Shi', 'Chi', 'expint', 'fresnels', 'fresnelc', 'sign', 'floor', 'ceiling', 'atan2', 'Min', 'Max'] as const;
 /** Functions of the zeta, beta, elliptic and Appell families (functions/special/zetafunctions.ts, special.ts, ellipticintegrals.ts, hyper.ts). */
 const ZETA_FAMILY_NAMES = ['polylog', 'lerchphi', 'dirichlet_eta', 'riemann_xi', 'stieltjes', 'betainc', 'betainc_regularized', 'elliptic_k', 'elliptic_e', 'elliptic_f', 'elliptic_pi', 'appellf1'] as const;
+const definedOr = <T>(v: T | undefined, what: string): T => {
+  if (v === undefined) throw new Unsupported(what);
+  return v;
+};
+
+/** A serialized SymPy domain as the symjs domain (undefined when symjs has no counterpart). */
+function deserializeDomain(tree: Tree): sj.Domain | undefined {
+  const name = tree['name'] as string;
+  const known: Record<string, sj.Domain> = { ZZ: sj.ZZ, QQ: sj.QQ, RR: sj.RR, CC: sj.CC, EX: sj.EX, EXRAW: sj.EXRAW, ZZ_I: sj.ZZ_I, QQ_I: sj.QQ_I };
+  if (tree['mod'] !== undefined) return sj.GF(tree['mod'] as number, tree['symmetric'] as boolean);
+  if (tree['prec'] !== undefined) return (tree['prec'] as number) === 53 ? known[name] : undefined;
+  if (tree['base'] === undefined) return known[name];
+  const base = deserializeDomain(tree['base'] as Tree);
+  if (base === undefined) return undefined;
+  if (tree['ext'] !== undefined) return base.algebraicField(...(tree['gens'] as Tree[]).map((t) => deserialize(t) as Expr));
+  const symbols = (tree['symbols'] as Tree[]).map((t) => deserialize(t) as Sym);
+  return name.endsWith(']') ? base.polyRing(...symbols) : base.fracField(...symbols);
+}
+
 /** The parameter tuples of a serialized hyper or meijerg. */
 const tupleItems = (t: unknown): Expr[] => (t as JsTuple).items.map((x) => x as Expr);
 
@@ -384,7 +419,16 @@ export function deserialize(tree: Tree): unknown {
     case 'Str':
       return tree['v'];
     case 'Rational':
+      if (tree['mpq']) return new sj.PythonMPQ(BigInt(tree['p'] as string), BigInt(tree['q'] as string));
       return sj.Rational.of(BigInt(tree['p'] as string), BigInt(tree['q'] as string));
+    case 'GaussianElement': {
+      // an element x + y*I of ZZ_I or QQ_I
+      const dom = tree['domain'] === 'ZZ_I' ? sj.ZZ_I : sj.QQ_I;
+      return dom.new(deserialize(tree['x'] as Tree), deserialize(tree['y'] as Tree));
+    }
+    case 'ANP':
+      // an element of an algebraic number field (coefficients in the primitive element, its minimal polynomial)
+      return new sj.ANP((tree['rep'] as Tree[]).map(deserialize), (tree['mod'] as Tree[]).map(deserialize), deserializeDomain(tree['dom'] as Tree));
     case 'Float':
       if (tree['man'] !== undefined) {
         return new sj.Float({ man: BigInt(tree['man'] as string), exp: BigInt(tree['exp'] as number) }, tree['prec'] as number);
@@ -433,6 +477,10 @@ export function deserialize(tree: Tree): unknown {
       const args = (tree['args'] as Tree[]).map((a) => lambdaAsNode(deserialize(a)) as Expr);
       // SymPy distributes a number over a sum (2*(x + 1) -> 2*x + 2): a Mul(number, Add) was built with evaluate=False
       if (tree['t'] === 'Mul' && args.length === 2 && args[0] instanceof sj.Rational && args[1] instanceof sj.Add) return new sj.Mul(args);
+      // a product of numbers and powers of numbers that SymPy kept as a Mul was built with evaluate=False
+      // (factorint(n, visual=True))
+      const numeric = (a: Expr): boolean => a instanceof sj.Rational || (a instanceof sj.Pow && a.base instanceof sj.Rational && a.exp instanceof sj.Rational && a.exp.isInteger);
+      if (tree['t'] === 'Mul' && args.length > 1 && args.every(numeric) && args.some((a) => a instanceof sj.Pow)) return new sj.Mul(args);
       return sj.mul(...args);
     }
     case 'AccumBounds':
@@ -490,22 +538,41 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'AlgebraicNumber':
       return new sj.AlgebraicNumber(deserialize(tree['root'] as Tree) as Expr, (tree['coeffs'] as Tree[]).map((t) => deserialize(t) as Expr));
-    case 'Domain': {
-      // the domain objects symjs has; ZZ/QQ also stay recognizable as JsDomain where an adapter compares the name
-      const name = tree['name'] as string;
-      const known: Record<string, unknown> = { ZZ: sj.ZZ, QQ: sj.QQ, RR: sj.RR, EX: sj.EX };
-      return known[name] !== undefined && tree['base'] === undefined ? new JsDomain(name, known[name]) : new JsDomain(name);
-    }
+    case 'Domain':
+      // the domain object rebuilt from its parameters; ZZ/QQ also stay recognizable as JsDomain where an adapter compares the name
+      return new JsDomain(tree['name'] as string, deserializeDomain(tree));
     case 'MonomialOrder':
       return (sj as Record<string, unknown>)[tree['name'] as string];
     case 'PolyRing':
-    case 'FracField':
+    case 'FracField': {
+      // a polynomial ring or field of fractions: generators, domain (or its name) and order
+      const d = deserialize(tree['domain'] as Tree);
+      const K = d instanceof JsDomain ? (d.domain ?? d.name) : d;
+      const cls = tree.t === 'PolyRing' ? sj.PolyRing : (sj as Record<string, unknown>)['FracField'];
+      if (typeof cls !== 'function') throw new Unsupported(`argument type ${tree.t}`);
+      return new (cls as new (...a: unknown[]) => unknown)((tree['symbols'] as Tree[]).map((s) => deserialize(s)), K, tree['order'] as string);
+    }
     case 'PolyElement':
+      // an element of a ring, rebuilt from its expression
+      return (deserialize(tree['ring'] as Tree) as { fromExpr(e: Expr): unknown }).fromExpr(deserialize(tree['expr'] as Tree) as Expr);
     case 'FracElement':
-    case 'DomainMatrix':
-    case 'DomainScalar':
-      // no symjs counterparts of PolyRing/FracField/DomainMatrix values yet
+    case 'PuiseuxRing':
+    case 'PuiseuxPoly':
+      // FracField and PuiseuxRing are not ported yet
       throw new Unsupported(`argument type ${tree.t}`);
+    case 'DomainMatrix': {
+      // DomainMatrix, DDM or SDM of rows of elements (as expressions) over a domain
+      const K = definedOr(deserializeDomain(tree['domain'] as Tree), 'domain');
+      const shape = tree['shape'] as [number, number];
+      const rows = (tree['rows'] as Tree[][]).map((r) => r.map((e) => K.fromSympy(deserialize(e) as Expr)));
+      if (tree['cls'] === 'DDM') return new sj.DDM(rows, shape, K);
+      if (tree['cls'] === 'SDM') return sj.SDM.fromList(rows, shape, K);
+      return new sj.DomainMatrix(rows, shape, K, { fmt: tree['fmt'] as 'dense' | 'sparse' });
+    }
+    case 'DomainScalar': {
+      const K = definedOr(deserializeDomain(tree['domain'] as Tree), 'domain');
+      return new sj.DomainScalar(K.fromSympy(deserialize(tree['element'] as Tree) as Expr), K);
+    }
     case 'JsPred':
       return new JsPred(tree['attr'] as string);
     case 'RootSum': {
@@ -628,8 +695,42 @@ export function deserialize(tree: Tree): unknown {
       if (typeof f !== 'function') throw new Unsupported(`matrix expression ${cls}`);
       return f(...args.map(lambdaAsNode));
     }
+    case 'EllipticCurve': {
+      const [a4, a6, a1, a2, a3] = (tree['coeffs'] as Tree[]).map((t) => deserialize(t) as sj.Rational);
+      return new sj.EllipticCurve(a4!, a6!, a1, a2, a3, Number(tree['modulus']));
+    }
+    case 'EllipticCurvePoint': {
+      const [x, y, z] = (tree['coords'] as Tree[]).map((t) => deserialize(t) as sj.Rational);
+      return new sj.EllipticCurvePoint(x!, y!, z!, deserialize(tree['curve'] as Tree) as sj.EllipticCurve);
+    }
+    case 'Ordinal':
+      return sj.Ordinal(...(tree['terms'] as Tree[]).map((t) => deserialize(t) as sj.OmegaPowerNode));
+    case 'OmegaPower':
+      return sj.OmegaPower(deserialize(tree['exp'] as Tree) as sj.OrdinalNode, BigInt(String(tree['mult'])));
+    case 'PowerSet':
+      return sj.PowerSet(deserialize(tree['set'] as Tree) as sj.SetExpr);
     case 'Sieve':
       return new sj.Sieve();
+    case 'SingleODEProblem':
+      return new sj.SingleODEProblem(deserialize(tree['eq'] as Tree) as Expr, deserialize(tree['func'] as Tree) as sj.UndefFn, deserialize(tree['sym'] as Tree) as Sym);
+    case 'SingleODESolver': {
+      const problem = deserialize(tree['problem'] as Tree) as sj.SingleODEProblem;
+      if (tree['cls'] === 'NthAlgebraic') return new sj.NthAlgebraic(problem);
+      throw new Unsupported(`ODE solver ${String(tree['cls'])}`);
+    }
+    case 'CNFLiteral':
+      return new sj.Literal(deserialize(tree['lit'] as Tree) as Expr, tree['isNot'] as boolean);
+    case 'CNF':
+      return new sj.CNF((tree['clauses'] as Tree[][]).map((c) => c.map((l) => deserialize(l) as InstanceType<typeof sj.Literal>)));
+    case 'EncodedCNF':
+      return new sj.EncodedCNF(tree['data'] as number[][], (tree['encoding'] as [Tree, number][]).map(([k, v]) => [deserialize(k) as Expr, v] as const));
+    case 'ArrayComprehension':
+    case 'ArrayComprehensionMap': {
+      const limits = (tree['limits'] as Tree[]).map((l) => (deserialize(l) as JsTuple).items as [Expr, Expr, Expr]);
+      if (tree.t === 'ArrayComprehension') return sj.ArrayComprehension(deserialize(tree['function'] as Tree) as Expr, ...limits);
+      const lam = deserialize(tree['function'] as Tree) as JsLambda;
+      return sj.ArrayComprehensionMap(lam.vars.length === 0 ? () => lam.body : (x: number) => lam.call(sj.sympify(x)), ...limits);
+    }
     case 'Permutation':
       return new sj.Permutation(tree['array'] as number[]);
     case 'PermutationGroup':
@@ -1214,6 +1315,15 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   ...Object.fromEntries(
     (['pi', 'E', 'I', 'oo', 'nan', 'zoo', 'Catalan', 'EulerGamma', 'GoldenRatio', 'TribonacciConstant'] as const).map((n) => [n, () => sj.parse(n)] as [string, Adapter]),
+  ),
+  // the values are Python tuples (implied, rejected) of predicate sets
+  generate_known_facts_dict: (args, kw) => (
+    noKw(kw),
+    new JsDict(
+      [...sj.generateKnownFactsDict((args[0] as JsList).items.map(asExpr), asExpr(args[1]))].map(
+        ([k, [i, r]]) => [k, new JsTuple([new JsSet([...i]), new JsSet([...r])])] as const,
+      ),
+    )
   ),
   hypersimp: (args, kw) => (noKw(kw), none(sj.hypersimp(asExpr(args[0]), asExpr(args[1])))),
   hypersimilar: (args, kw) => (noKw(kw), sj.hypersimilar(asExpr(args[0]), asExpr(args[1]), asExpr(args[2]))),
@@ -1940,7 +2050,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     noKw(kw);
     let e = asExpr(self);
     if (e instanceof sj.Rel && e.op === 'Eq') e = sj.add(e.lhs, sj.mul(-1, e.rhs));
-    return sj.Poly.from(e, args.map(asExpr));
+    // SymPy None (NoMatch) for an expression that is not a polynomial in the generators
+    return none(sj.asPoly(e, ...args.map(asExpr)));
   },
   '.permute': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (!['orientation', 'direction'].includes(k)) throw new Unsupported(`kwargs ${k}`);
@@ -2026,6 +2137,12 @@ export const ADAPTERS: Record<string, Adapter> = {
     return go(asExpr(self));
   },
   '.fromiter': (args, kw) => (noKw(kw), new JsTuple((args[0] as JsTuple).items)),
+  sstr: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== 'full_prec') throw new Unsupported(`kwargs ${k}`);
+    // a Python tuple prints as a SymPy Tuple
+    const v = args[0] instanceof JsTuple && !args[0].isList ? sj.Tuple(...args[0].items.map(asExpr)) : asExpr(args[0]);
+    return sj.sstr(v, kw['full_prec'] === undefined ? {} : { fullPrec: kw['full_prec'] as boolean });
+  },
   rational_interpolate: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'X') throw new Unsupported(`kwargs ${k}`);
     const data = (args[0] as JsTuple | JsList).items.map((t) => (t as JsTuple).items.map(asExpr) as [Expr, Expr]);
@@ -2735,6 +2852,8 @@ export const ADAPTERS: Record<string, Adapter> = {
       return self.diff(args[0] === undefined ? undefined : asExpr(args[0]));
     }
     if (self instanceof Matrix) {
+      // SymPy MatrixBase.diff by a matrix or an array: ArrayDerivative, evaluated by derive_by_array
+      if (args.length === 1 && (args[0] instanceof Matrix || args[0] instanceof sj.NDimArray)) return sj.deriveByArray(self, args[0]);
       return self.map((e) => diffArgs(e, args));
     }
     return diffArgs(asExpr(self), args);
@@ -2984,27 +3103,14 @@ export const ADAPTERS: Record<string, Adapter> = {
   homogeneous_order: (args, kw) => (noKw(kw), none(sj.homogeneousOrder(asExpr(args[0]), ...args.slice(1).map(asExpr)))),
   dsolve: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'ics' && k !== 'hint') throw new Unsupported(`kwargs ${k}`);
-    if (kw['hint'] !== undefined && !['1st_exact', 'almost_linear', 'default'].includes(String(kw['hint']))) throw new Unsupported('dsolve hint');
     const ics = kw['ics'] instanceof JsDict ? (kw['ics'] as JsDict).entries.map(([k, v]) => [asExpr(k), asExpr(v)] as [Expr, Expr]) : undefined;
     if (args[0] instanceof JsTuple || args[0] instanceof JsList) {
       // a system of ODEs
       const fs = args[1] instanceof JsTuple || args[1] instanceof JsList ? args[1].items.map(asExpr) : undefined;
       return new JsList(sj.dsolve(args[0].items.map(asExpr), fs) as Expr[]);
     }
-    const eq = asExpr(args[0]);
-    let fx: Expr | undefined = args[1] === undefined ? undefined : asExpr(args[1]);
-    if (fx === undefined) {
-      // the single applied undefined function in the equation
-      const found = new Map<string, Expr>();
-      const walk = (e: Expr) => {
-        if (e.kind === 'Undef') found.set(e.key, e);
-        e.args.forEach(walk);
-      };
-      walk(eq);
-      if (found.size !== 1) throw new Unsupported('dsolve function');
-      fx = [...found.values()][0]!;
-    }
-    const r = sj.dsolve(eq, fx, ics ? { ics } : {});
+    const hint = kw['hint'] === undefined ? undefined : String(kw['hint']);
+    const r = sj.dsolve(asExpr(args[0]), args[1] === undefined ? undefined : asExpr(args[1]), { ...(ics ? { ics } : {}), ...(hint ? { hint } : {}) });
     return Array.isArray(r) ? new JsList(r) : r;
   },
 
@@ -3745,6 +3851,16 @@ function printable(v: unknown): unknown {
   if (v instanceof JsSet) return new Set(v.items.map(printable));
   return v;
 }
+/** A pretty-printable argument: SymPy tuples are PrettyTuples (printed with parentheses), lists arrays. */
+function prettyArg(v: unknown): unknown {
+  if (v instanceof JsTuple && !v.isList) return new sj.PrettyTuple(...(v.items.map(prettyArg) as sj.Printable[]));
+  if (v instanceof JsTuple) return v.items.map(prettyArg);
+  if (v instanceof JsList) return v.items.map(prettyArg);
+  if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [prettyArg(k), prettyArg(x)]));
+  if (v instanceof JsSet) return new Set(v.items.map(prettyArg));
+  return v;
+}
+for (const name of ['pretty', 'pprint'] as const) ADAPTERS[name] = (args, kw) => sj[name](prettyArg(args[0]) as sj.Printable, printOptions(kw));
 ADAPTERS['latex'] = (args, kw) => sj.latex(printable(args[0]) as sj.LatexPrintable, printOptions(kw));
 ADAPTERS['print_latex'] = (args, kw) => sj.printLatex(printable(args[0]) as sj.LatexPrintable, printOptions(kw));
 ADAPTERS['multiline_latex'] = (args, kw) => {
@@ -3807,6 +3923,8 @@ for (const name of Object.keys(sj.Q)) {
 const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'discrete', 'geometry', 'crypto', 'liealgebras']);
 /** Functions of other categories whose integer arguments are JS numbers (variable numbers of the integer representation of clauses). */
 const NUMERIC_FUNCTIONS = new Set(['unit_propagate_int_repr', '.reorder_limit']);
+/** DomainMatrix functions whose integer arguments are sizes, exponents or indices. */
+const DOMAIN_MATRIX_INT_FUNCTIONS = new Set(['.eye', '.zeros', '.ones', '.pow', '.getitem', 'sdm_berk']);
 
 /** SymPy names that are JavaScript globals, and the symjs names that do not shadow them. */
 const JS_GLOBAL_RENAMES: Record<string, string> = { Symbol: 'Sym', Number: 'SymNumber', Function: 'SymFunction', Array: 'SymArray', Set: 'SetExpr', Object: 'SymObject' };
@@ -3881,14 +3999,26 @@ function placeArgs(f: (...a: unknown[]) => unknown, args: unknown[], kw: Record<
   return out;
 }
 
+/**
+ * The helpers of sympy.integrals.intpoly (decompose, intersection, norm, ...) share names with other
+ * SymPy functions: they are reached through the `intpoly` namespace, with integers as JS numbers
+ * (indices, degrees and coordinates).
+ */
+function intpolyAdapter(c: Case): Adapter | undefined {
+  const f = (sj.intpoly as unknown as Record<string, unknown>)[camel(c.fn)];
+  if (typeof f !== 'function') return undefined;
+  const g = f as (...a: unknown[]) => unknown;
+  return (args, kw) => fromJs(g(...placeArgs(g, args, kw, (x) => toJs(x, true))));
+}
+
 function autoAdapter(c: Case): Adapter | undefined {
-  const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn);
+  const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn) || (c.module.startsWith('sympy.polys.matrices.') && DOMAIN_MATRIX_INT_FUNCTIONS.has(c.fn));
   const conv = (x: unknown): unknown => toJs(x, numbers);
   if (c.fn.startsWith('.')) {
     const name = camel(c.fn.slice(1));
     return (args, kw, self0) => {
       // a static method called on the class (Permutation.unrank_lex, ...)
-      const self = self0 instanceof TypeRef ? (sj as unknown as Record<string, unknown>)[self0.name] : self0;
+      const self = self0 instanceof TypeRef ? (sj as unknown as Record<string, unknown>)[self0.name] : self0 instanceof JsDomain ? (self0.domain ?? self0) : self0;
       if (self === null || (typeof self !== 'object' && typeof self !== 'function')) throw new Unsupported(`no adapter for ${c.fn}`);
       // SymPy names with an uppercase word (to_Matrix -> toMatrix)
       const upper = name.replace(/_([A-Z])/g, (_m, ch: string) => ch);
@@ -3916,6 +4046,7 @@ function autoAdapter(c: Case): Adapter | undefined {
     };
   }
   const f = (sj as unknown as Record<string, unknown>)[camelIn(c.fn, c.category)] ?? (sj as unknown as Record<string, unknown>)[c.fn];
+  if (f instanceof sj.Domain) return (args) => fromJs(f.new(...args.map(conv)));
   if (typeof f !== 'function') return undefined;
   const isClass = /^class[\s{]/.test(Function.prototype.toString.call(f));
   return (args, kw) => {
@@ -4017,7 +4148,7 @@ function runCase0(c: Case): Outcome {
   }
   if (c.unsupportedArg) return { status: 'unsupported', reason: `argument type ${c.unsupportedArg}` };
   // a sympy.stats name that symjs exports under another name (stats E is the expectation, not the constant)
-  const adapter = (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
+  const adapter = (c.module === 'sympy.integrals.intpoly' ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
   if (!adapter) return { status: 'unsupported', reason: `no adapter for ${c.fn}` };
   try {
     const args = (c.args ?? []).map(deserialize);
@@ -4027,7 +4158,9 @@ function runCase0(c: Case): Outcome {
     let v: unknown;
     // matrix expressions (MatMul, Trace, BlockMatrix, ...) use their own methods and constructors
     const isMatExpr = (x: unknown) => x instanceof sj.MatrixExpr || x instanceof sj.MatScalar;
-    const auto0 = isMatExpr(self) || args.some(isMatExpr) ? autoAdapter(c) : undefined;
+    // DomainMatrix, DDM and SDM methods (and their classes' static methods) share names with Matrix and Poly adapters
+    const isDomainMatrix = (x: unknown) => x instanceof sj.DomainMatrix || x instanceof sj.DDM || x instanceof sj.SDM || (x instanceof TypeRef && ['DomainMatrix', 'DDM', 'SDM'].includes(x.name));
+    const auto0 = isMatExpr(self) || args.some(isMatExpr) || isDomainMatrix(self) ? autoAdapter(c) : undefined;
     try {
       v = call(auto0 ?? adapter);
     } catch (e) {
@@ -4075,6 +4208,10 @@ function runCase0(c: Case): Outcome {
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string>> = {
+  // SymPy's pdiv with a non-first generator starts the quotient at the generator index (rings.py: `q, r, dr = x, f, df`),
+  // so its printed quotient is wrong: m*f != g*q + r for f = x**2 + x*y, g = 2*x + 2, m = (2*x + 2)**2
+  'f.pdiv(g, y) # generator is given': '[2*x**3 + 2*x**2*y + 2*x**2 + 2*x*y, 0]',
+  'f.pdiv(g, 1) # generator index is given': '[2*x**3 + 2*x**2*y + 2*x**2 + 2*x*y, 0]',
   // d/dx (y - x**2) = -2*x > 0 on (-oo, 0) and vanishes only at the endpoint 0, so the function is strictly increasing
   'is_strictly_increasing(-x**2 + y, Interval(-oo, 0), x)': 'True',
   // n is a positive integer: mobius(1**2) = 1, so the value is not 0 for every n
@@ -4092,3 +4229,53 @@ function solvesDsolveCase(eqArg: unknown, v: unknown): boolean {
   if (!eqs.length || !(x instanceof Sym)) return false;
   return solvesOdeSystem(eqs, x, sols);
 }
+
+// ---- solvers.simplex
+const lpMatrix = (v: unknown): sj.LPMatrixLike => {
+  if (v instanceof Matrix) return v;
+  if (v instanceof JsList || v instanceof JsTuple) return v.items.map((r) => (r instanceof JsList || r instanceof JsTuple ? r.items.map(asExpr) : asExpr(r))) as sj.LPMatrixLike;
+  throw new Unsupported('linprog matrix');
+};
+const lpBound = (v: unknown): sj.LPBound => {
+  if (!(v instanceof JsTuple) || v.items.length !== 2) throw new Unsupported('linprog bound');
+  return [v.items[0] === null ? null : asExpr(v.items[0]), v.items[1] === null ? null : asExpr(v.items[1])];
+};
+const lpBounds = (v: unknown): sj.LPBounds | undefined => {
+  if (v === undefined || v === null) return undefined;
+  if (v instanceof JsDict) return new Map(v.entries.map(([k, b]) => [Number((k as sj.Rational).p), lpBound(b)]));
+  if (v instanceof JsTuple && !v.isList && v.items.length === 2 && !(v.items[0] instanceof JsTuple)) return lpBound(v);
+  if (v instanceof JsList || v instanceof JsTuple) return v.items.map(lpBound);
+  throw new Unsupported('linprog bounds');
+};
+const lpConstraints = (v: unknown): Expr[] => (v instanceof JsList || v instanceof JsTuple ? v.items.map(asExpr) : [asExpr(v)]);
+Object.assign(ADAPTERS, {
+  lpmin: (args, kw) => (noKw(kw), new JsTuple(sj.lpmin(asExpr(args[0]), lpConstraints(args[1])))),
+  lpmax: (args, kw) => (noKw(kw), new JsTuple(sj.lpmax(asExpr(args[0]), lpConstraints(args[1])))),
+  linprog: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['A', 'b', 'A_eq', 'b_eq', 'bounds'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    const pick = (i: number, k: string): sj.LPMatrixLike | undefined => {
+      const v = args[i] ?? kw[k];
+      return v === undefined || v === null ? undefined : lpMatrix(v);
+    };
+    const [o, p] = sj.linprog(lpMatrix(args[0]), pick(1, 'A'), pick(2, 'b'), pick(3, 'A_eq'), pick(4, 'b_eq'), lpBounds(args[5] ?? kw['bounds']));
+    return new JsTuple([o, new JsList(p)]);
+  },
+} satisfies Record<string, Adapter>);
+ADAPTERS['bivariate_type'] = (args, kw) => {
+  noKw(kw);
+  const r = sj.bivariateType(asExpr(args[0]), args[1] as Sym, args[2] as Sym);
+  return sj.isNoMatch(r) ? null : new JsTuple(r);
+};
+
+// ---- solvers.ode.single
+ADAPTERS['.get_linear_coefficients'] = (args, kw, self) => {
+  noKw(kw);
+  if (!(self instanceof sj.SingleODEProblem)) throw new Unsupported('get_linear_coefficients');
+  const r = self.getLinearCoefficients(asExpr(args[0]), args[1] as sj.UndefFn, Number((args[2] as sj.Rational).p));
+  return sj.isNoMatch(r) ? null : new JsDict([...r].map(([k, v]) => [sj.Rational.of(k), v] as const));
+};
+ADAPTERS['.get_general_solution'] = (_args, kw, self) => {
+  for (const k of Object.keys(kw)) if (k !== 'simplify') throw new Unsupported(`kwargs ${k}`);
+  if (!(self instanceof sj.SingleODESolver)) throw new Unsupported('get_general_solution');
+  return new JsList(self.getGeneralSolution(kw['simplify'] === undefined ? {} : { simplify: Boolean(kw['simplify']) }));
+};

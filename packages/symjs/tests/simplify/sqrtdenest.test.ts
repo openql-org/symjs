@@ -243,7 +243,7 @@ describe('sqrtdenest: the remaining SymPy 1.14 test_sqrtdenest cases', () => {
     expect(sstr(sqrtdenest(f('sqrt(F + 4*sqrt(5 + 2*sqrt(6)))')))).toBe('sqrt(5.0 + 4*sqrt(2) + 4*sqrt(3))');
   });
   it('split_surds groups radicals by the gcd of their squares, as SymPy gcd does', () => {
-    const show3 = (t: [Expr, Expr, Expr]) => t.map(sstr).join(' | ');
+    const show3 = (t: [Expr, Expr, Expr]) => t.map((e) => sstr(e)).join(' | ');
     expect(show3(splitSurds(P('2**(1/4) + 2**(3/4) + sqrt(3)')))).toBe('3 | 1 | 2**(1/4) + 2**(3/4)');
     expect(show3(splitSurds(P('sqrt(x) + sqrt(2*x) + sqrt(3)')))).toBe('3 | 1 | sqrt(x) + sqrt(2)*sqrt(x)');
     expect(show3(splitSurds(P('sqrt(2)*sqrt(x) + sqrt(6) + sqrt(3*x)')))).toBe('6 | 1 | sqrt(2)*sqrt(x) + sqrt(3)*sqrt(x)');

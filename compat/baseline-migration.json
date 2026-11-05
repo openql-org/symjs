@@ -268,6 +268,2190 @@
     "cases": 856,
     "api": 32
    }
+  },
+  {
+   "reason": "Serialize the polynomial-ring, domain and DomainMatrix values that the newly ported modules accept (PolyElement and FracElement with their ring before the dict branch, DDM and SDM before the list and dict branches, QQ elements as PythonMPQ, Gaussian and algebraic-field elements, Puiseux rings and polynomials, mpmath reals, SymPy Dict, ordinals, power sets, elliptic curves and points, CNF literals and encodings, SingleODEProblem and SingleODESolver, ArrayComprehension and ArrayComprehensionMap), and the arguments of the in-place ddm_i* functions before the call. No case is added or removed; only the argument trees of the records below change, which changes their keys. This corrects the measurement of these records; it is not permission to accept behavior regressions.",
+   "reference": "SymPy 1.14.0",
+   "previousRevision": "19bde15",
+   "previousCorpusSha256": "1f7bcae049c646b38ea2beb6746a2f7735927ad791ea7aa0ff0b4f27d8a8d362",
+   "previousCorpusReplay": {
+    "cases": 6087,
+    "pass": 5514,
+    "failures": [],
+    "note": "The previous corpus replayed with the current library and harness: no case listed as passing in the previous known-gaps.json fails (5481 exact, 33 equivalent); the previous corpus's known gaps that pass are not counted as regressions."
+   },
+   "unchangedRecordsKept": "Records of the previous corpus are kept byte for byte, except the changed records below (a fresh extraction also differs in nondeterministic receivers of sympy.functions.elementary.complexes arg and sympy.solvers.ode.systems checkodesol, which were not taken over).",
+   "apiNames": "Unchanged: every API name of the previous corpus is kept (the three sympy.categories.diagram_drawing names stay excluded by OUT_OF_SCOPE_API).",
+   "changedRecords": [
+    {
+     "previousKey": "sympy.categories.baseclasses: pprint(d.premises, use_unicode=False) #bd6c5122d6953c9f",
+     "currentKey": "sympy.categories.baseclasses: pprint(d.premises, use_unicode=False) #8e004ae081364f92",
+     "previous": "unsupported argument: Dict",
+     "current": "serialized with CategoryObject, Dict, Js, Morphism, NamedSet, Str, Tuple"
+    },
+    {
+     "previousKey": "sympy.categories.baseclasses: pprint(d.conclusions,use_unicode=False) #8fe008af57ffdf45",
+     "currentKey": "sympy.categories.baseclasses: pprint(d.conclusions,use_unicode=False) #6ba8a9df287d8452",
+     "previous": "unsupported argument: Dict",
+     "current": "serialized with CategoryObject, Dict, FiniteSet, Js, Morphism, Str, Symbol, Tuple"
+    },
+    {
+     "previousKey": "sympy.categories.baseclasses: print(pretty(d.premises, use_unicode=False)) #75892f5e721dc4f8",
+     "currentKey": "sympy.categories.baseclasses: print(pretty(d.premises, use_unicode=False)) #3070c56180f4d443",
+     "previous": "unsupported argument: Dict",
+     "current": "serialized with CategoryObject, Dict, Js, Morphism, NamedSet, Str"
+    },
+    {
+     "previousKey": "sympy.solvers.solvers: TableForm(t, headings=h, alignments=\"<\") #9b45ba8d0e1c82bd",
+     "currentKey": "sympy.solvers.solvers: TableForm(t, headings=h, alignments=\"<\") #5d0341001307423a",
+     "previous": "unsupported argument: Dict",
+     "current": "serialized with Add, Dict, FiniteSet, Js, Mul, Pow, Rational, Str, Symbol, Tuple"
+    },
+    {
+     "previousKey": "sympy.core.containers: D.has(Symbol('one')) # searches keys and values #98b96f4ae04cd3e8",
+     "currentKey": "sympy.core.containers: D.has(Symbol('one')) # searches keys and values #fa0679887387e8e4",
+     "previous": "unsupported argument: Dict",
+     "current": "serialized with Dict, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.groebnertools: Polyn(f).rem([Polyn(g)]) #c7f9227edd145440",
+     "currentKey": "sympy.polys.groebnertools: Polyn(f).rem([Polyn(g)]) #c5140a0965ff10df",
+     "previous": "serialized with Dict, Rational",
+     "current": "serialized with Domain, PolyElement, PolyRing, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.groebnertools: f5_reduce(f, [g]) #36451209e06a71ce",
+     "currentKey": "sympy.polys.groebnertools: f5_reduce(f, [g]) #c28411be57d99d0f",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, PolyElement, PolyRing, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.puiseux: p.as_expr() #89e173db6631a00b",
+     "currentKey": "sympy.polys.puiseux: p.as_expr() #adcb4b9a2fde549c",
+     "previous": "unsupported argument: PuiseuxPoly",
+     "current": "serialized with Domain, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.puiseux: p.diff(x) #d07aa6e3da041a3c",
+     "currentKey": "sympy.polys.puiseux: p.diff(x) #8f3fe59d92246951",
+     "previous": "unsupported argument: PuiseuxPoly",
+     "current": "serialized with Domain, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.puiseux: p.diff(y) #3bb5f7e6c3cb967c",
+     "currentKey": "sympy.polys.puiseux: p.diff(y) #fced7c7431fd3cf9",
+     "previous": "unsupported argument: PuiseuxPoly",
+     "current": "serialized with Domain, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.puiseux: PuiseuxPoly.from_dict({(QQ(1,2),): QQ(3)}, R) #81c0307c2e9620ee",
+     "currentKey": "sympy.polys.puiseux: PuiseuxPoly.from_dict({(QQ(1,2),): QQ(3)}, R) #fdaf3d5f2413c1a5",
+     "previous": "unsupported argument: type",
+     "current": "serialized with Dict, Domain, PuiseuxRing, Rational, Symbol, Tuple, Type, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.puiseux: R.from_dict({(QQ(1,2),): QQ(3)}) #81c0307c2e9620ee",
+     "currentKey": "sympy.polys.puiseux: R.from_dict({(QQ(1,2),): QQ(3)}) #b5005d7c8e0940b5",
+     "previous": "unsupported argument: PuiseuxRing",
+     "current": "serialized with Dict, Domain, PuiseuxRing, Rational, Symbol, Tuple, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.puiseux: f.diff(x) #8c20a370bddddf8c",
+     "currentKey": "sympy.polys.puiseux: f.diff(x) #88505516bf39dfbf",
+     "previous": "unsupported argument: PuiseuxPoly",
+     "current": "serialized with Domain, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.puiseux: f.diff(x) #9e429853c0ada3e1",
+     "currentKey": "sympy.polys.puiseux: f.diff(x) #a079efbcffd4de5b",
+     "previous": "unsupported argument: PuiseuxPoly",
+     "current": "serialized with Domain, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.puiseux: R.domain_new(3) #aeb8ad371e6cce8b",
+     "currentKey": "sympy.polys.puiseux: R.domain_new(3) #6bfb1c5024158b1e",
+     "previous": "unsupported argument: PuiseuxRing",
+     "current": "serialized with Domain, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.puiseux: R.from_dict({(QQ(1,2),): QQ(3)}) #81c0307c2e9620ee",
+     "currentKey": "sympy.polys.puiseux: R.from_dict({(QQ(1,2),): QQ(3)}) #b5005d7c8e0940b5",
+     "previous": "unsupported argument: PuiseuxRing",
+     "current": "serialized with Dict, Domain, PuiseuxRing, Rational, Symbol, Tuple, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.puiseux: R.from_int(3) #aeb8ad371e6cce8b",
+     "currentKey": "sympy.polys.puiseux: R.from_int(3) #6bfb1c5024158b1e",
+     "previous": "unsupported argument: PuiseuxRing",
+     "current": "serialized with Domain, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.puiseux: R2.from_poly(x1**2) #62aa26794660b83a",
+     "currentKey": "sympy.polys.puiseux: R2.from_poly(x1**2) #d99ccdb733a13238",
+     "previous": "unsupported argument: PuiseuxRing",
+     "current": "serialized with Domain, PolyElement, PolyRing, Pow, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.puiseux: R.ground_new(3) #aeb8ad371e6cce8b",
+     "currentKey": "sympy.polys.puiseux: R.ground_new(3) #6bfb1c5024158b1e",
+     "previous": "unsupported argument: PuiseuxRing",
+     "current": "serialized with Domain, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.puiseux: R.index(x) #d71eb72a99ee9752",
+     "currentKey": "sympy.polys.puiseux: R.index(x) #4ae01ba44af16f94",
+     "previous": "unsupported argument: PuiseuxRing",
+     "current": "serialized with Domain, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.puiseux: R.index(y) #8f5a06dca748e40f",
+     "currentKey": "sympy.polys.puiseux: R.index(y) #794ff8641a3aca57",
+     "previous": "unsupported argument: PuiseuxRing",
+     "current": "serialized with Domain, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: pow_xin(p, index, 15) #d2e211fd1cb4d611",
+     "currentKey": "sympy.polys.ring_series: pow_xin(p, index, 15) #1e1872c4ca254472",
+     "previous": "unsupported argument: PuiseuxPoly",
+     "current": "serialized with Domain, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_LambertW(x + x*y, x, 3) #2abf1c3abdbda2de",
+     "currentKey": "sympy.polys.ring_series: rs_LambertW(x + x*y, x, 3) #8772202de5c4ba01",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_asin(x, x, 8) #6609e9414d35446b",
+     "currentKey": "sympy.polys.ring_series: rs_asin(x, x, 8) #52d702396f5a47e6",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Domain, PolyElement, PolyRing, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_asinh(x, x, 9) #e3d0738db4325436",
+     "currentKey": "sympy.polys.ring_series: rs_asinh(x, x, 9) #b9c0a5be74947a4a",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Domain, PolyElement, PolyRing, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_atan(x + x*y, x, 4) #d10cb5fb254ea2c5",
+     "currentKey": "sympy.polys.ring_series: rs_atan(x + x*y, x, 4) #b08494c0005c3875",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_atanh(x + x*y, x, 4) #c6d7a36f109d4c81",
+     "currentKey": "sympy.polys.ring_series: rs_atanh(x + x*y, x, 4) #bac496ec9eefb02f",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_compose_add(f, g) #2eba1d7087e080ff",
+     "currentKey": "sympy.polys.ring_series: rs_compose_add(f, g) #8a671246c695e92d",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_cos(x + x*y, x, 4) #02090092251e979e",
+     "currentKey": "sympy.polys.ring_series: rs_cos(x + x*y, x, 4) #da41f9354d379735",
+     "previous": "unsupported argument: PuiseuxPoly",
+     "current": "serialized with Domain, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_cosh(x + x*y, x, 4) #39b6f5e2983d20e4",
+     "currentKey": "sympy.polys.ring_series: rs_cosh(x + x*y, x, 4) #cf497fdb554d879c",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_cot(x, x, 6) #f59e62bfb6979d7d",
+     "currentKey": "sympy.polys.ring_series: rs_cot(x, x, 6) #052811ddcdbd26f5",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Domain, PolyElement, PolyRing, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_diff(p, x) #0389eaa9d9c53138",
+     "currentKey": "sympy.polys.ring_series: rs_diff(p, x) #dda05a44c8962dfa",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_exp(x**2, x, 7) #b708697d6ab3a458",
+     "currentKey": "sympy.polys.ring_series: rs_exp(x**2, x, 7) #46b9c5364ecfd1dd",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Domain, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_fun(p, _tan1, x, 4) #c72d4495dc62014c",
+     "currentKey": "sympy.polys.ring_series: rs_fun(p, _tan1, x, 4) #5ff9d425710ba343",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_hadamard_exp(p) #19af4faece0855c7",
+     "currentKey": "sympy.polys.ring_series: rs_hadamard_exp(p) #d10d8486c7c5c314",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_integrate(p, x) #9a7587bc1b6f1ffc",
+     "currentKey": "sympy.polys.ring_series: rs_integrate(p, x) #5d7be33cd6052ad1",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_is_puiseux(p, x) #98b96f4ae04cd3e8",
+     "currentKey": "sympy.polys.ring_series: rs_is_puiseux(p, x) #27b879631de77d4a",
+     "previous": "unsupported argument: PuiseuxPoly",
+     "current": "serialized with Domain, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_log(1 + x, x, 8) #322a67c2c1cb42ea",
+     "currentKey": "sympy.polys.ring_series: rs_log(1 + x, x, 8) #63f8731144ec05bc",
+     "previous": "unsupported argument: PuiseuxPoly",
+     "current": "serialized with Domain, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_log(x**QQ(3, 2) + 1, x, 5) #0f8c2029adad7865",
+     "currentKey": "sympy.polys.ring_series: rs_log(x**QQ(3, 2) + 1, x, 5) #7e9ccf78d819dc1a",
+     "previous": "unsupported argument: PuiseuxPoly",
+     "current": "serialized with Domain, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_mul(p1, p2, x, 3) #6ab9ac9e34176749",
+     "currentKey": "sympy.polys.ring_series: rs_mul(p1, p2, x, 3) #f5e06319ed2526af",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_newton(p, x, 5) #ee07c39673f1cbbe",
+     "currentKey": "sympy.polys.ring_series: rs_newton(p, x, 5) #d704181a55971492",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_nth_root(1 + x + x*y, -3, x, 3) #ae6cf0d3bd25b61d",
+     "currentKey": "sympy.polys.ring_series: rs_nth_root(1 + x + x*y, -3, x, 3) #979111cc6ee3037a",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_nth_root(3 + x + x*y, 3, x, 2) #14523ebb131760a1",
+     "currentKey": "sympy.polys.ring_series: rs_nth_root(3 + x + x*y, 3, x, 2) #06936bfe8fa1d8d7",
+     "previous": "unsupported argument: mpf",
+     "current": "serialized with Add, Domain, Float, Mul, PolyElement, PolyRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_pow(p, 4, x, 3) #4c17f693e3cfa2e6",
+     "currentKey": "sympy.polys.ring_series: rs_pow(p, 4, x, 3) #3473200c5aba9734",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, PolyElement, PolyRing, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_puiseux(rs_exp,p, x, 1) #bf6e297f86a95998",
+     "currentKey": "sympy.polys.ring_series: rs_puiseux(rs_exp,p, x, 1) #800d8acdbe0b402e",
+     "previous": "unsupported argument: PuiseuxPoly",
+     "current": "serialized with Domain, JsFunc, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: series.as_expr() #f89e64cfc1bbb820",
+     "currentKey": "sympy.polys.ring_series: series.as_expr() #8d3227fa74a9388b",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Fn, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: series.as_expr() #bee7bab7d9e19068",
+     "currentKey": "sympy.polys.ring_series: series.as_expr() #5978099dcf3c0cfb",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Fn, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_series_from_list(p, c, x, 4) #8d560c55366af4a2",
+     "currentKey": "sympy.polys.ring_series: rs_series_from_list(p, c, x, 4) #dfbd8f450c818458",
+     "previous": "serialized with Dict",
+     "current": "serialized with Add, Domain, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_trunc(1 + 2*p + 3*p**2, x, 4) #fff0598fc0ba4d8f",
+     "currentKey": "sympy.polys.ring_series: rs_trunc(1 + 2*p + 3*p**2, x, 4) #6db7aed1ec16d5a8",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_trunc(pc.compose(x, p), x, 4) #4199712a457a4071",
+     "currentKey": "sympy.polys.ring_series: rs_trunc(pc.compose(x, p), x, 4) #6db7aed1ec16d5a8",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_series_inversion(1 + x*y**2, x, 4) #a43af511bfacb477",
+     "currentKey": "sympy.polys.ring_series: rs_series_inversion(1 + x*y**2, x, 4) #6deb474f8f2f0f10",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_series_inversion(1 + x*y**2, y, 4) #a1e56d60d2e220e0",
+     "currentKey": "sympy.polys.ring_series: rs_series_inversion(1 + x*y**2, y, 4) #6f4e2ff66451f1be",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_series_inversion(x + x**2, x, 4) #f31a69b21a5dcf12",
+     "currentKey": "sympy.polys.ring_series: rs_series_inversion(x + x**2, x, 4) #e6a8d06bbc190972",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_trunc(p.compose(x, p1), y, 3) #501845dafe7dc19d",
+     "currentKey": "sympy.polys.ring_series: rs_trunc(p.compose(x, p1), y, 3) #e33da235df631536",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_sin(x + x*y, x, 4) #64ca58214aae84cd",
+     "currentKey": "sympy.polys.ring_series: rs_sin(x + x*y, x, 4) #9bb7aa9bf6a83409",
+     "previous": "unsupported argument: PuiseuxPoly",
+     "current": "serialized with Domain, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_sin(x**QQ(3, 2) + x*y**QQ(7, 5), x, 4) #65c2d0d0ab11c933",
+     "currentKey": "sympy.polys.ring_series: rs_sin(x**QQ(3, 2) + x*y**QQ(7, 5), x, 4) #1358c7f80a75e2e1",
+     "previous": "unsupported argument: PuiseuxPoly",
+     "current": "serialized with Domain, PuiseuxPoly, PuiseuxRing, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_sinh(x + x*y, x, 4) #91e1d5892451b3ae",
+     "currentKey": "sympy.polys.ring_series: rs_sinh(x + x*y, x, 4) #e0dad0fe42da7632",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_square(p, x, 3) #c6ed63450d41439b",
+     "currentKey": "sympy.polys.ring_series: rs_square(p, x, 3) #bdcd03a4023b0122",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_subs(p, {x: x+ y, y: x+ 2*y}, x, 3) #63997cfe2a7e1936",
+     "currentKey": "sympy.polys.ring_series: rs_subs(p, {x: x+ y, y: x+ 2*y}, x, 3) #92ed5c390f251997",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_subs(rs_subs(p, {x: x+ y}, x, 3), {y: x+ 2*y}, x, 3) #b5fd4bb7f450b9fe",
+     "currentKey": "sympy.polys.ring_series: rs_subs(rs_subs(p, {x: x+ y}, x, 3), {y: x+ 2*y}, x, 3) #c096cd23113f0dc9",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_subs(x**2+y**2, {y: (x+y)**2}, x, 3) #57e99460d1e15d60",
+     "currentKey": "sympy.polys.ring_series: rs_subs(x**2+y**2, {y: (x+y)**2}, x, 3) #ed7c98085aaeb0da",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_tan(x + x*y, x, 4) #c6d7a36f109d4c81",
+     "currentKey": "sympy.polys.ring_series: rs_tan(x + x*y, x, 4) #bac496ec9eefb02f",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_tanh(x + x*y, x, 4) #d10cb5fb254ea2c5",
+     "currentKey": "sympy.polys.ring_series: rs_tanh(x + x*y, x, 4) #b08494c0005c3875",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_trunc(p, x, 12) #2ac2bc0c029ccc1c",
+     "currentKey": "sympy.polys.ring_series: rs_trunc(p, x, 12) #d3869e2c6badf867",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.ring_series: rs_trunc(p, x, 10) #dea26dbffebd680e",
+     "currentKey": "sympy.polys.ring_series: rs_trunc(p, x, 10) #a281740a8d6fb6f7",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: (2*x**2 - 2).cancel(x**2 - 2*x + 1) #425ab04fc32c80b1",
+     "currentKey": "sympy.polys.rings: (2*x**2 - 2).cancel(x**2 - 2*x + 1) #4d5c971191511134",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.coeff(x**2*y) #916815a7716f797d",
+     "currentKey": "sympy.polys.rings: f.coeff(x**2*y) #d13151df3a47b1da",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.coeff(x*y) #0ad004ec424e8a76",
+     "currentKey": "sympy.polys.rings: f.coeff(x*y) #f75560879a9b07c4",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.coeff(1) #83dd6d8ac5cfd61b",
+     "currentKey": "sympy.polys.rings: f.coeff(1) #c333c292fc59f737",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: p.coeff_wrt(2, deg) # Using the generator index #40a095c5fec4fb68",
+     "currentKey": "sympy.polys.rings: p.coeff_wrt(2, deg) # Using the generator index #1a4dd219b71fa396",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: p.coeff_wrt(z, deg) # Using the generator #c4b5e5093e336516",
+     "currentKey": "sympy.polys.rings: p.coeff_wrt(z, deg) # Using the generator #de5f9ba7913d9749",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: p.coeff(z**2) # shows the difference between coeff and coeff_wrt #42d8b59d4c5202f2",
+     "currentKey": "sympy.polys.rings: p.coeff(z**2) # shows the difference between coeff and coeff_wrt #59c54227cacdf8b6",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.coeffs() #7bcbbc2d62ca5fc7",
+     "currentKey": "sympy.polys.rings: f.coeffs() #0c8865061af65658",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.coeffs(grlex) #a55447b3e709fb84",
+     "currentKey": "sympy.polys.rings: f.coeffs(grlex) #2a76deeebb2483bc",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: p.diff(x) #5ba4aa74e5a9de97",
+     "currentKey": "sympy.polys.rings: p.diff(x) #3bf7969d9d185b95",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: p.leading_expv() #3bf6e4c676f7931c",
+     "currentKey": "sympy.polys.rings: p.leading_expv() #57e0dbfe784b3c47",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: (3*x*y + y**2).leading_monom() #61471681c51bb2ca",
+     "currentKey": "sympy.polys.rings: (3*x*y + y**2).leading_monom() #9e01d2d1503ee625",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: (3*x*y + y**2).leading_term() #6630cf253d37b8da",
+     "currentKey": "sympy.polys.rings: (3*x*y + y**2).leading_term() #ba4ed218d2b65afc",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.monoms() #e72dc4526524db25",
+     "currentKey": "sympy.polys.rings: f.monoms() #b9b8796855e85683",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.monoms(grlex) #e6b99f83f66b7335",
+     "currentKey": "sympy.polys.rings: f.monoms(grlex) #ceb96ad8b88abf5f",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.pdiv(g) # first generator is chosen by default if it is not given #a903342b109b8187",
+     "currentKey": "sympy.polys.rings: f.pdiv(g) # first generator is chosen by default if it is not given #004c516ad18e645c",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.div(g) # shows the difference between pdiv and div #bb2296ed3987d60d",
+     "currentKey": "sympy.polys.rings: f.div(g) # shows the difference between pdiv and div #9b8715ac19395591",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.pdiv(g, y) # generator is given #bb59c0fda23086aa",
+     "currentKey": "sympy.polys.rings: f.pdiv(g, y) # generator is given #eed51b73b72d3647",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.pdiv(g, 1) # generator index is given #21b75eb82bf6fc8e",
+     "currentKey": "sympy.polys.rings: f.pdiv(g, 1) # generator index is given #5034fb4b7a17dab9",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.pexquo(g) #50f8c93783e133b4",
+     "currentKey": "sympy.polys.rings: f.pexquo(g) #c997bef9c8b25864",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.pquo(g) #50f8c93783e133b4",
+     "currentKey": "sympy.polys.rings: f.pquo(g) #c997bef9c8b25864",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.quo(g) # shows the difference between pquo and quo #29d7ca04325095ea",
+     "currentKey": "sympy.polys.rings: f.quo(g) # shows the difference between pquo and quo #9395a9080523732e",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.pquo(h) #e8a66ee03c4f5ed1",
+     "currentKey": "sympy.polys.rings: f.pquo(h) #1be0d62ee67fe818",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.quo(h) # shows the difference between pquo and quo #b86b06ffb4e07aa5",
+     "currentKey": "sympy.polys.rings: f.quo(h) # shows the difference between pquo and quo #ff440c660acffcd4",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.prem(g) # first generator is chosen by default if it is not given #2af1d6be2c0e42ef",
+     "currentKey": "sympy.polys.rings: f.prem(g) # first generator is chosen by default if it is not given #238e8075d84ee112",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.rem(g) # shows the difference between prem and rem #972a2d8456c8a14b",
+     "currentKey": "sympy.polys.rings: f.rem(g) # shows the difference between prem and rem #48509a7a583099c7",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.prem(g, y) # generator is given #5705d83aab4f060f",
+     "currentKey": "sympy.polys.rings: f.prem(g, y) # generator is given #f9af48ae1beb77ca",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.prem(g, 1) # generator index is given #338a24ed7323b2fc",
+     "currentKey": "sympy.polys.rings: f.prem(g, 1) # generator index is given #e8d3ba45506093e5",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: p.square() #cf0f5a8ce24e0b41",
+     "currentKey": "sympy.polys.rings: p.square() #cea95eb971dc99dd",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.subresultants(g) # first generator is chosen by default if not given #8b656d94be6a25fb",
+     "currentKey": "sympy.polys.rings: f.subresultants(g) # first generator is chosen by default if not given #dffcf07ba25ac505",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.subresultants(g, 0) # generator index is given #5f76faf16c53aa4f",
+     "currentKey": "sympy.polys.rings: f.subresultants(g, 0) # generator index is given #3435ead349bdc947",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.subresultants(g, y) # generator is given #164be5b7c8b42be6",
+     "currentKey": "sympy.polys.rings: f.subresultants(g, y) # generator is given #422b890240bc105a",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.symmetrize() #f5e45353a789df49",
+     "currentKey": "sympy.polys.rings: f.symmetrize() #c159fc14f3003aad",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.symmetrize() #c3ae294b5e25a167",
+     "currentKey": "sympy.polys.rings: f.symmetrize() #5cb308f06314f8c8",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.terms() #6826b0dd12b7cadd",
+     "currentKey": "sympy.polys.rings: f.terms() #fdc819f47a20ef08",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: f.terms(grlex) #a7e9934776b8a98f",
+     "currentKey": "sympy.polys.rings: f.terms(grlex) #60abe779e42e2dcf",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, Mul, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.rings: R.add([ x**2 + 2*i + 3 for i in range(4) ]) #27e5cfb89486ffbc",
+     "currentKey": "sympy.polys.rings: R.add([ x**2 + 2*i + 3 for i in range(4) ]) #a6eddbee6b16a57a",
+     "previous": "serialized with Dict",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.rings: R.mul([ x**2 + 2*i + 3 for i in range(4) ]) #9540039edbf0b114",
+     "currentKey": "sympy.polys.rings: R.mul([ x**2 + 2*i + 3 for i in range(4) ]) #8131f4f9f07299fe",
+     "previous": "serialized with Dict",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.solvers: solve_lin_sys(eqs_ring, ring) #0c20c4314c8316aa",
+     "currentKey": "sympy.polys.solvers: solve_lin_sys(eqs_ring, ring) #d2e7f3d4281853a3",
+     "previous": "serialized with Dict",
+     "current": "serialized with Add, Mul, PolyElement, PolyRing"
+    },
+    {
+     "previousKey": "sympy.polys.solvers: solve_lin_sys(eqs_ring, ring, _raw=False) #aacee5a14a6d9690",
+     "currentKey": "sympy.polys.solvers: solve_lin_sys(eqs_ring, ring, _raw=False) #4e983745bcef31f4",
+     "previous": "serialized with Dict",
+     "current": "serialized with Add, Mul, PolyElement, PolyRing"
+    },
+    {
+     "previousKey": "sympy.polys.solvers: solve_lin_sys(eqs_ring, ring) #1c876ada2b6a1b64",
+     "currentKey": "sympy.polys.solvers: solve_lin_sys(eqs_ring, ring) #43570551173dde14",
+     "previous": "serialized with Dict, FracElement, FracField",
+     "current": "serialized with Add, Mul, PolyElement, PolyRing"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_abs(x**2*y - x) #cf4520028b746073",
+     "currentKey": "sympy.polys.densearith: R.dmp_abs(x**2*y - x) #43ea89d2bffd5fbb",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_add(x**2 + y, x**2*y + x) #f687efdc6c018ba6",
+     "currentKey": "sympy.polys.densearith: R.dmp_add(x**2 + y, x**2*y + x) #e2c4d4a6253ba862",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_add_ground(x**3 + 2*x**2 + 3*x + 4, ZZ(4)) #863f7496a0832b33",
+     "currentKey": "sympy.polys.densearith: R.dmp_add_ground(x**3 + 2*x**2 + 3*x + 4, ZZ(4)) #da2f58b46524ffb9",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_add_mul(x**2 + y, x, x + 2) #5928205114c577f9",
+     "currentKey": "sympy.polys.densearith: R.dmp_add_mul(x**2 + y, x, x + 2) #8b32cdceee8b7ce7",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_add_term(x*y + 1, 2, 2) #37899bd6ac03b5d5",
+     "currentKey": "sympy.polys.densearith: R.dmp_add_term(x*y + 1, 2, 2) #c4fecb6ddfbd37d4",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_div(x**2 + x*y, 2*x + 2) #469382769c4f799b",
+     "currentKey": "sympy.polys.densearith: R.dmp_div(x**2 + x*y, 2*x + 2) #080dfe9c0c9b0d86",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_div(x**2 + x*y, 2*x + 2) #9456245b777625b4",
+     "currentKey": "sympy.polys.densearith: R.dmp_div(x**2 + x*y, 2*x + 2) #d21c92a234c00c34",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_expand([x**2 + y**2, x + 1]) #ebc0eae6178ff652",
+     "currentKey": "sympy.polys.densearith: R.dmp_expand([x**2 + y**2, x + 1]) #bae98f5361d01606",
+     "previous": "serialized with Dict",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_exquo(f, g) #c06ed941584e2e5b",
+     "currentKey": "sympy.polys.densearith: R.dmp_exquo(f, g) #82c251b551a85ae8",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_exquo_ground(x**2*y + 2*x, QQ(2)) #d1b390d2c7a49485",
+     "currentKey": "sympy.polys.densearith: R.dmp_exquo_ground(x**2*y + 2*x, QQ(2)) #dbbf9ea96474d6f1",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_ff_div(x**2 + x*y, 2*x + 2) #9456245b777625b4",
+     "currentKey": "sympy.polys.densearith: R.dmp_ff_div(x**2 + x*y, 2*x + 2) #d21c92a234c00c34",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_l1_norm(2*x*y - x - 3) #7f5c5b0acb017268",
+     "currentKey": "sympy.polys.densearith: R.dmp_l1_norm(2*x*y - x - 3) #677388d9c7f0eea7",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_l2_norm_squared(2*x*y - x - 3) #6e21dd103b3ba277",
+     "currentKey": "sympy.polys.densearith: R.dmp_l2_norm_squared(2*x*y - x - 3) #3e8e17c00b96e08e",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_max_norm(2*x*y - x - 3) #566e8f056cf1c17a",
+     "currentKey": "sympy.polys.densearith: R.dmp_max_norm(2*x*y - x - 3) #95eb2c69631585af",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_mul(x*y + 1, x) #ea294151b6e44600",
+     "currentKey": "sympy.polys.densearith: R.dmp_mul(x*y + 1, x) #88280b775d352b5d",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_mul_ground(2*x + 2*y, ZZ(3)) #da847ad86f520b55",
+     "currentKey": "sympy.polys.densearith: R.dmp_mul_ground(2*x + 2*y, ZZ(3)) #54c45d62f640aa94",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_mul_term(x**2*y + x, 3*y, 2) #dc829b40b913810b",
+     "currentKey": "sympy.polys.densearith: R.dmp_mul_term(x**2*y + x, 3*y, 2) #4e72efc082a65cb5",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_neg(x**2*y - x) #47bd82ef0335fbcb",
+     "currentKey": "sympy.polys.densearith: R.dmp_neg(x**2*y - x) #c2a336d54e2224da",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_pdiv(x**2 + x*y, 2*x + 2) #b36d0a27d6efe487",
+     "currentKey": "sympy.polys.densearith: R.dmp_pdiv(x**2 + x*y, 2*x + 2) #bd7dd6133809a071",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_pexquo(f, g) #a29b173e6218954a",
+     "currentKey": "sympy.polys.densearith: R.dmp_pexquo(f, g) #89dffd4527bdba2f",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_pow(x*y + 1, 3) #c04ae4d11c94af1f",
+     "currentKey": "sympy.polys.densearith: R.dmp_pow(x*y + 1, 3) #3efa854d11a87ff0",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_pquo(f, g) #a29b173e6218954a",
+     "currentKey": "sympy.polys.densearith: R.dmp_pquo(f, g) #89dffd4527bdba2f",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_pquo(f, h) #e0bc665940274b64",
+     "currentKey": "sympy.polys.densearith: R.dmp_pquo(f, h) #41763d5542c56d40",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_prem(x**2 + x*y, 2*x + 2) #7155772d9c59acc9",
+     "currentKey": "sympy.polys.densearith: R.dmp_prem(x**2 + x*y, 2*x + 2) #a77ad05bb300e56e",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_quo(x**2 + x*y, 2*x + 2) #50e5764e9c4477dc",
+     "currentKey": "sympy.polys.densearith: R.dmp_quo(x**2 + x*y, 2*x + 2) #cc8b2f649caf6d8e",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_quo(x**2 + x*y, 2*x + 2) #eb16ba40847cdaa1",
+     "currentKey": "sympy.polys.densearith: R.dmp_quo(x**2 + x*y, 2*x + 2) #c4ec7b0eafec0302",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_quo_ground(2*x**2*y + 3*x, ZZ(2)) #cf1daed5e1cb1412",
+     "currentKey": "sympy.polys.densearith: R.dmp_quo_ground(2*x**2*y + 3*x, ZZ(2)) #175823f9cfc07401",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_quo_ground(2*x**2*y + 3*x, QQ(2)) #1bb0718cda79ba9b",
+     "currentKey": "sympy.polys.densearith: R.dmp_quo_ground(2*x**2*y + 3*x, QQ(2)) #5f56fed880ab4dbf",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_rem(x**2 + x*y, 2*x + 2) #dee5bec9052f3197",
+     "currentKey": "sympy.polys.densearith: R.dmp_rem(x**2 + x*y, 2*x + 2) #89ed47dfcc3fe363",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_rem(x**2 + x*y, 2*x + 2) #207f4513cea38274",
+     "currentKey": "sympy.polys.densearith: R.dmp_rem(x**2 + x*y, 2*x + 2) #e92664f8544d852c",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_rr_div(x**2 + x*y, 2*x + 2) #469382769c4f799b",
+     "currentKey": "sympy.polys.densearith: R.dmp_rr_div(x**2 + x*y, 2*x + 2) #080dfe9c0c9b0d86",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_sqr(x**2 + x*y + y**2) #10fcc14c2b217828",
+     "currentKey": "sympy.polys.densearith: R.dmp_sqr(x**2 + x*y + y**2) #a71f5b5cfd0a7fd6",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_sub(x**2 + y, x**2*y + x) #556ba3b32b48be14",
+     "currentKey": "sympy.polys.densearith: R.dmp_sub(x**2 + y, x**2*y + x) #6aafe2a4a98ad23d",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_sub_ground(x**3 + 2*x**2 + 3*x + 4, ZZ(4)) #90eb209a70dab0c5",
+     "currentKey": "sympy.polys.densearith: R.dmp_sub_ground(x**3 + 2*x**2 + 3*x + 4, ZZ(4)) #b7c3f2a675db2273",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_sub_mul(x**2 + y, x, x + 2) #054e42ffe2edd493",
+     "currentKey": "sympy.polys.densearith: R.dmp_sub_mul(x**2 + y, x, x + 2) #d4fa9666e169ab12",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dmp_sub_term(2*x**2 + x*y + 1, 2, 2) #04efe7e9092401ef",
+     "currentKey": "sympy.polys.densearith: R.dmp_sub_term(2*x**2 + x*y + 1, 2, 2) #a436fce193f606df",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_abs(x**2 - 1) #282100a9ad7285f0",
+     "currentKey": "sympy.polys.densearith: R.dup_abs(x**2 - 1) #75723ac3cc393d79",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_add(x**2 - 1, x - 2) #f754baf3d8999377",
+     "currentKey": "sympy.polys.densearith: R.dup_add(x**2 - 1, x - 2) #291f209a1847a5dd",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_add_ground(x**3 + 2*x**2 + 3*x + 4, ZZ(4)) #0d444da0f6508d68",
+     "currentKey": "sympy.polys.densearith: R.dup_add_ground(x**3 + 2*x**2 + 3*x + 4, ZZ(4)) #0af29643f2e6d0c9",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_add_mul(x**2 - 1, x - 2, x + 2) #e7ac50a98c993486",
+     "currentKey": "sympy.polys.densearith: R.dup_add_mul(x**2 - 1, x - 2, x + 2) #007925515394938b",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_add_term(x**2 - 1, ZZ(2), 4) #5264a9e7b340ed20",
+     "currentKey": "sympy.polys.densearith: R.dup_add_term(x**2 - 1, ZZ(2), 4) #171ebd7609834c79",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_div(x**2 + 1, 2*x - 4) #b9297c4baa3edbfb",
+     "currentKey": "sympy.polys.densearith: R.dup_div(x**2 + 1, 2*x - 4) #1e768eefde3350da",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_div(x**2 + 1, 2*x - 4) #c46721091fe61118",
+     "currentKey": "sympy.polys.densearith: R.dup_div(x**2 + 1, 2*x - 4) #7d985f3dc777282f",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_expand([x**2 - 1, x, 2]) #3428b320051cc82c",
+     "currentKey": "sympy.polys.densearith: R.dup_expand([x**2 - 1, x, 2]) #92c4e8ed630582f5",
+     "previous": "serialized with Dict",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_exquo(x**2 - 1, x - 1) #d2994b7dcbea241d",
+     "currentKey": "sympy.polys.densearith: R.dup_exquo(x**2 - 1, x - 1) #828c769b87422adb",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_exquo_ground(x**2 + 2, QQ(2)) #4f61b0c64af3fb43",
+     "currentKey": "sympy.polys.densearith: R.dup_exquo_ground(x**2 + 2, QQ(2)) #e29b1d0d0d35c1dd",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_ff_div(x**2 + 1, 2*x - 4) #c46721091fe61118",
+     "currentKey": "sympy.polys.densearith: R.dup_ff_div(x**2 + 1, 2*x - 4) #7d985f3dc777282f",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_l1_norm(2*x**3 - 3*x**2 + 1) #db02f228b42f356e",
+     "currentKey": "sympy.polys.densearith: R.dup_l1_norm(2*x**3 - 3*x**2 + 1) #24c437175a802344",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_l2_norm_squared(2*x**3 - 3*x**2 + 1) #ef5c9014daaa49a0",
+     "currentKey": "sympy.polys.densearith: R.dup_l2_norm_squared(2*x**3 - 3*x**2 + 1) #ef89b74087a7fa20",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_lshift(x**2 + 1, 2) #8140fe1e3e396938",
+     "currentKey": "sympy.polys.densearith: R.dup_lshift(x**2 + 1, 2) #83c0656f5a89c172",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_max_norm(-x**2 + 2*x - 3) #8d90ef1e0e24ff2d",
+     "currentKey": "sympy.polys.densearith: R.dup_max_norm(-x**2 + 2*x - 3) #2dd84f3fc9d102bc",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_mul(x - 2, x + 2) #0d3c8c4404a77305",
+     "currentKey": "sympy.polys.densearith: R.dup_mul(x - 2, x + 2) #9109f6ce9546888d",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_mul_ground(x**2 + 2*x - 1, ZZ(3)) #afcf694d64a73afc",
+     "currentKey": "sympy.polys.densearith: R.dup_mul_ground(x**2 + 2*x - 1, ZZ(3)) #1ded4b22925a0bad",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_mul_term(x**2 - 1, ZZ(3), 2) #3a29f5be082921dd",
+     "currentKey": "sympy.polys.densearith: R.dup_mul_term(x**2 - 1, ZZ(3), 2) #71a21fcd981716b7",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_neg(x**2 - 1) #ffb87cc3110aa829",
+     "currentKey": "sympy.polys.densearith: R.dup_neg(x**2 - 1) #59b5223086d19633",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_pdiv(x**2 + 1, 2*x - 4) #9fccd5594fff702b",
+     "currentKey": "sympy.polys.densearith: R.dup_pdiv(x**2 + 1, 2*x - 4) #2ac32a7d60626552",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_pexquo(x**2 - 1, 2*x - 2) #96f4a7dfaab3785a",
+     "currentKey": "sympy.polys.densearith: R.dup_pexquo(x**2 - 1, 2*x - 2) #dbfc2dd736ddb7c3",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_pow(x - 2, 3) #6377f351e34217d1",
+     "currentKey": "sympy.polys.densearith: R.dup_pow(x - 2, 3) #670c84cb3d95ad3d",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_pquo(x**2 - 1, 2*x - 2) #96f4a7dfaab3785a",
+     "currentKey": "sympy.polys.densearith: R.dup_pquo(x**2 - 1, 2*x - 2) #dbfc2dd736ddb7c3",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_pquo(x**2 + 1, 2*x - 4) #905399828a6eb43a",
+     "currentKey": "sympy.polys.densearith: R.dup_pquo(x**2 + 1, 2*x - 4) #5574e4423577237b",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_prem(x**2 + 1, 2*x - 4) #ba1f2be1daa8cf10",
+     "currentKey": "sympy.polys.densearith: R.dup_prem(x**2 + 1, 2*x - 4) #6c73f91e49643244",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_quo(x**2 + 1, 2*x - 4) #614065e2d67593b0",
+     "currentKey": "sympy.polys.densearith: R.dup_quo(x**2 + 1, 2*x - 4) #196f53a4aa8784a1",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_quo(x**2 + 1, 2*x - 4) #61a15e3c6b9cb59b",
+     "currentKey": "sympy.polys.densearith: R.dup_quo(x**2 + 1, 2*x - 4) #d3cb94552eaac6e6",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_quo_ground(3*x**2 + 2, ZZ(2)) #01de18bb81710abb",
+     "currentKey": "sympy.polys.densearith: R.dup_quo_ground(3*x**2 + 2, ZZ(2)) #804be05b7df51c8f",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_quo_ground(3*x**2 + 2, QQ(2)) #1a5ff6cc128ec84f",
+     "currentKey": "sympy.polys.densearith: R.dup_quo_ground(3*x**2 + 2, QQ(2)) #8ad9dfd9d120276a",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_rem(x**2 + 1, 2*x - 4) #146f04491e10cc09",
+     "currentKey": "sympy.polys.densearith: R.dup_rem(x**2 + 1, 2*x - 4) #72eb4fe69a8d4819",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_rem(x**2 + 1, 2*x - 4) #12d8350f658bf03f",
+     "currentKey": "sympy.polys.densearith: R.dup_rem(x**2 + 1, 2*x - 4) #5f08a9d35d3ae8a1",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_rr_div(x**2 + 1, 2*x - 4) #b9297c4baa3edbfb",
+     "currentKey": "sympy.polys.densearith: R.dup_rr_div(x**2 + 1, 2*x - 4) #1e768eefde3350da",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_rshift(x**4 + x**2, 2) #cc1467e4995fcb8b",
+     "currentKey": "sympy.polys.densearith: R.dup_rshift(x**4 + x**2, 2) #57d978e85c82aaa6",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_rshift(x**4 + x**2 + 2, 2) #3b788771f800a70a",
+     "currentKey": "sympy.polys.densearith: R.dup_rshift(x**4 + x**2 + 2, 2) #b9b49daa7541c2d3",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_sqr(x**2 + 1) #8114038ebed9b6be",
+     "currentKey": "sympy.polys.densearith: R.dup_sqr(x**2 + 1) #7baa77f33018bc30",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_sub(x**2 - 1, x - 2) #a7dbe8e39da461ee",
+     "currentKey": "sympy.polys.densearith: R.dup_sub(x**2 - 1, x - 2) #8739f6de944fff0e",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_sub_ground(x**3 + 2*x**2 + 3*x + 4, ZZ(4)) #d756f3de08c8dc84",
+     "currentKey": "sympy.polys.densearith: R.dup_sub_ground(x**3 + 2*x**2 + 3*x + 4, ZZ(4)) #529ca75168e65ce3",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_sub_mul(x**2 - 1, x - 2, x + 2) #a74cff6aef5ce59d",
+     "currentKey": "sympy.polys.densearith: R.dup_sub_mul(x**2 - 1, x - 2, x + 2) #f4015853b04b4331",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densearith: R.dup_sub_term(2*x**4 + x**2 - 1, ZZ(2), 4) #d7e6983c800e5d58",
+     "currentKey": "sympy.polys.densearith: R.dup_sub_term(2*x**4 + x**2 - 1, ZZ(2), 4) #a408afcdeb83e23c",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densebasic: dmp_convert([[R(1)], [R(2)]], 1, R.to_domain(), ZZ) #2b8b11c4e0cb5f34",
+     "currentKey": "sympy.polys.densebasic: dmp_convert([[R(1)], [R(2)]], 1, R.to_domain(), ZZ) #be951305217b5225",
+     "previous": "serialized with Dict",
+     "current": "serialized with PolyElement, PolyRing"
+    },
+    {
+     "previousKey": "sympy.polys.densebasic: dmp_inject([R(1), x + 2], 0, R.to_domain()) #b2ddf2e85d6ddcec",
+     "currentKey": "sympy.polys.densebasic: dmp_inject([R(1), x + 2], 0, R.to_domain()) #6b2ee059bbcb7d10",
+     "previous": "serialized with Dict",
+     "current": "serialized with Add, PolyElement, PolyRing"
+    },
+    {
+     "previousKey": "sympy.polys.densebasic: dmp_inject([R(1), x + 2], 0, R.to_domain(), front=True) #db1e35c3fbdc2960",
+     "currentKey": "sympy.polys.densebasic: dmp_inject([R(1), x + 2], 0, R.to_domain(), front=True) #4abf8e5ad318fe80",
+     "previous": "serialized with Dict",
+     "current": "serialized with Add, PolyElement, PolyRing"
+    },
+    {
+     "previousKey": "sympy.polys.densebasic: dup_convert([R(1), R(2)], R.to_domain(), ZZ) #e0be4a39ad8278bb",
+     "currentKey": "sympy.polys.densebasic: dup_convert([R(1), R(2)], R.to_domain(), ZZ) #33bf574a9c67d7ca",
+     "previous": "serialized with Dict",
+     "current": "serialized with PolyElement, PolyRing"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_clear_denoms(f, convert=False) #d10407b63c481f1f",
+     "currentKey": "sympy.polys.densetools: R.dmp_clear_denoms(f, convert=False) #ac25246eca754840",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_clear_denoms(f, convert=True) #591ad55f84d36986",
+     "currentKey": "sympy.polys.densetools: R.dmp_clear_denoms(f, convert=True) #56a4ca433a8cf64a",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_compose(x*y + 2*x + y, y) #a50338bc738b705d",
+     "currentKey": "sympy.polys.densetools: R.dmp_compose(x*y + 2*x + y, y) #dcabbc7afa029f79",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_diff(f, 1) #99071300afbc7fff",
+     "currentKey": "sympy.polys.densetools: R.dmp_diff(f, 1) #10f4d65bd71d129c",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_diff(f, 2) #17200505518f3173",
+     "currentKey": "sympy.polys.densetools: R.dmp_diff(f, 2) #55d4f05a077f2cb7",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_diff_eval_in(f, 1, 2, 0) #94edac485e46a6cd",
+     "currentKey": "sympy.polys.densetools: R.dmp_diff_eval_in(f, 1, 2, 0) #bb530ad2d4086cd4",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_diff_eval_in(f, 1, 2, 1) #b31414615250e8b6",
+     "currentKey": "sympy.polys.densetools: R.dmp_diff_eval_in(f, 1, 2, 1) #aed13b4d70f6f741",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_diff_in(f, 1, 0) #cfaac7838f3df7d0",
+     "currentKey": "sympy.polys.densetools: R.dmp_diff_in(f, 1, 0) #a7ab81f0df6e7ac5",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_diff_in(f, 1, 1) #67e9ac568b729201",
+     "currentKey": "sympy.polys.densetools: R.dmp_diff_in(f, 1, 1) #cbb7fb54f5bf588f",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_eval(2*x*y + 3*x + y + 2, 2) #d40106c900be1afa",
+     "currentKey": "sympy.polys.densetools: R.dmp_eval(2*x*y + 3*x + y + 2, 2) #7be59c196c3bd59e",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_eval_in(f, 2, 0) #55edb18eefa18039",
+     "currentKey": "sympy.polys.densetools: R.dmp_eval_in(f, 2, 0) #096bcc1c7f5b3f2d",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_eval_in(f, 2, 1) #7251670f8999cd15",
+     "currentKey": "sympy.polys.densetools: R.dmp_eval_in(f, 2, 1) #7270096faf2a3727",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_eval_tail(f, [2]) #4f85125aef256862",
+     "currentKey": "sympy.polys.densetools: R.dmp_eval_tail(f, [2]) #be076690a45c379b",
+     "previous": "serialized with Dict",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_eval_tail(f, [2, 2]) #17e4c45b178b5576",
+     "currentKey": "sympy.polys.densetools: R.dmp_eval_tail(f, [2, 2]) #89393360016ab6a9",
+     "previous": "serialized with Dict",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_ground_content(f) #ced23476db48246f",
+     "currentKey": "sympy.polys.densetools: R.dmp_ground_content(f) #297d3d1fae39808d",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_ground_content(f) #eaedbd2a29a69fba",
+     "currentKey": "sympy.polys.densetools: R.dmp_ground_content(f) #ebbe9afc1a259a52",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_ground_extract(6*x*y + 12*x + 18, 4*x*y + 8*x + 12) #eb61a26d0decf12d",
+     "currentKey": "sympy.polys.densetools: R.dmp_ground_extract(6*x*y + 12*x + 18, 4*x*y + 8*x + 12) #344ca4ea57533210",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_ground_monic(f) #f85c2d041b3f0d2a",
+     "currentKey": "sympy.polys.densetools: R.dmp_ground_monic(f) #ecea79bf00a362ab",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_ground_monic(f) #ee5d04db76742ca8",
+     "currentKey": "sympy.polys.densetools: R.dmp_ground_monic(f) #47de678b15c710b5",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_ground_primitive(f) #f121a7743daade9a",
+     "currentKey": "sympy.polys.densetools: R.dmp_ground_primitive(f) #34560e85d8a3ed63",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_ground_primitive(f) #9b9bea4d19881998",
+     "currentKey": "sympy.polys.densetools: R.dmp_ground_primitive(f) #86edc8dde367e3d5",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_ground_trunc(f, ZZ(3)) #aa168b6863d1f843",
+     "currentKey": "sympy.polys.densetools: R.dmp_ground_trunc(f, ZZ(3)) #a6921b340fa81b53",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_integrate(x + 2*y, 1) #3e8f261112be8231",
+     "currentKey": "sympy.polys.densetools: R.dmp_integrate(x + 2*y, 1) #150a0b05fd513228",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_integrate(x + 2*y, 2) #bb71b2a9ebfc6434",
+     "currentKey": "sympy.polys.densetools: R.dmp_integrate(x + 2*y, 2) #d6d472d6adcf75e3",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_integrate_in(x + 2*y, 1, 0) #192c5e86a41efeac",
+     "currentKey": "sympy.polys.densetools: R.dmp_integrate_in(x + 2*y, 1, 0) #f3fb94ad0e8cff3b",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_integrate_in(x + 2*y, 1, 1) #cc3c98adfebfc418",
+     "currentKey": "sympy.polys.densetools: R.dmp_integrate_in(x + 2*y, 1, 1) #5b5f4790300fb251",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_lift(f) #98dbe084ef49d7ff",
+     "currentKey": "sympy.polys.densetools: R.dmp_lift(f) #f124004205963ea6",
+     "previous": "unsupported argument: ANP",
+     "current": "serialized with Add, Mul, PolyElement, Pow, Rational"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_shift(R(p), [ZZ(1), ZZ(2)]) #bd88124ea56805cd",
+     "currentKey": "sympy.polys.densetools: R.dmp_shift(R(p), [ZZ(1), ZZ(2)]) #8ccb79841a8acf5f",
+     "previous": "serialized with Dict",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dmp_trunc(f, g) #ca44d78806ddfcab",
+     "currentKey": "sympy.polys.densetools: R.dmp_trunc(f, g) #7ab89c95af9f1275",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_clear_denoms(f, convert=False) #a7720c5efd9f3d19",
+     "currentKey": "sympy.polys.densetools: R.dup_clear_denoms(f, convert=False) #4619e9b35d5d584f",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_clear_denoms(f, convert=True) #f89c94394cc07db6",
+     "currentKey": "sympy.polys.densetools: R.dup_clear_denoms(f, convert=True) #82e72dd2ad5a1e46",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_compose(x**2 + x, x - 1) #988a232ba67165b5",
+     "currentKey": "sympy.polys.densetools: R.dup_compose(x**2 + x, x - 1) #d05b46fed232cedf",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_content(f) #52d73f950d54e510",
+     "currentKey": "sympy.polys.densetools: R.dup_content(f) #d1d9756c227badfd",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_content(f) #ac616f52962631b1",
+     "currentKey": "sympy.polys.densetools: R.dup_content(f) #28d3599c3fe3640b",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_decompose(x**4 - 2*x**3 + x**2) #595cec1ca29ea039",
+     "currentKey": "sympy.polys.densetools: R.dup_decompose(x**4 - 2*x**3 + x**2) #8a2a3a0dbff2f1d9",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_diff(x**3 + 2*x**2 + 3*x + 4, 1) #bfd68a08fa02c186",
+     "currentKey": "sympy.polys.densetools: R.dup_diff(x**3 + 2*x**2 + 3*x + 4, 1) #edff6f7f35bd3e3a",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_diff(x**3 + 2*x**2 + 3*x + 4, 2) #221c63816d255c6d",
+     "currentKey": "sympy.polys.densetools: R.dup_diff(x**3 + 2*x**2 + 3*x + 4, 2) #c93bb5c5db9b654f",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_eval(x**2 + 2*x + 3, 2) #4c59b011a0445200",
+     "currentKey": "sympy.polys.densetools: R.dup_eval(x**2 + 2*x + 3, 2) #78a417b1275debf3",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_extract(6*x**2 + 12*x + 18, 4*x**2 + 8*x + 12) #2713c26edae286dc",
+     "currentKey": "sympy.polys.densetools: R.dup_extract(6*x**2 + 12*x + 18, 4*x**2 + 8*x + 12) #b56d9721397fa14d",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_integrate(x**2 + 2*x, 1) #ad9aaa84e1d6e6a1",
+     "currentKey": "sympy.polys.densetools: R.dup_integrate(x**2 + 2*x, 1) #6df918b44a54e095",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_integrate(x**2 + 2*x, 2) #ef3fcd3b928c196a",
+     "currentKey": "sympy.polys.densetools: R.dup_integrate(x**2 + 2*x, 2) #ab41f4be44a3060f",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_mirror(x**3 + 2*x**2 - 4*x + 2) #a870b3b33993b446",
+     "currentKey": "sympy.polys.densetools: R.dup_mirror(x**3 + 2*x**2 - 4*x + 2) #62c729b4b3192bfe",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_monic(3*x**2 + 6*x + 9) #ae258979737bf429",
+     "currentKey": "sympy.polys.densetools: R.dup_monic(3*x**2 + 6*x + 9) #e086758a3220555b",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_monic(3*x**2 + 4*x + 2) #8c3ea010deb72fe7",
+     "currentKey": "sympy.polys.densetools: R.dup_monic(3*x**2 + 4*x + 2) #08c059d810ac88f3",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_primitive(f) #31048bc657e548ef",
+     "currentKey": "sympy.polys.densetools: R.dup_primitive(f) #1c40cf6854e95c69",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_primitive(f) #7dc98639a92fb1b3",
+     "currentKey": "sympy.polys.densetools: R.dup_primitive(f) #83fcda2a1804c5ae",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_real_imag(x**3 + x**2 + x + 1) #a783a864a88f2e24",
+     "currentKey": "sympy.polys.densetools: R.dup_real_imag(x**3 + x**2 + x + 1) #8ba492f8345b936c",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_revert(f, 8) #46106b11cf780ec7",
+     "currentKey": "sympy.polys.densetools: R.dup_revert(f, 8) #3764fb8ac1947502",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_scale(x**2 - 2*x + 1, ZZ(2)) #8b7bff0de1110845",
+     "currentKey": "sympy.polys.densetools: R.dup_scale(x**2 - 2*x + 1, ZZ(2)) #b9a9e47bbcb9e12e",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_shift(x**2 - 2*x + 1, ZZ(2)) #b1994d66bbdfa590",
+     "currentKey": "sympy.polys.densetools: R.dup_shift(x**2 - 2*x + 1, ZZ(2)) #07b6cd51bf3a939f",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_sign_variations(x**4 - x**2 - x + 1) #736278b2c70cd3f5",
+     "currentKey": "sympy.polys.densetools: R.dup_sign_variations(x**4 - x**2 - x + 1) #0bba3df1a3ea5ec2",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_transform(x**2 - 2*x + 1, x**2 + 1, x - 1) #07ca0f6f94b0e627",
+     "currentKey": "sympy.polys.densetools: R.dup_transform(x**2 - 2*x + 1, x**2 + 1, x - 1) #fbe3018af62b90b3",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.densetools: R.dup_trunc(2*x**3 + 3*x**2 + 5*x + 7, ZZ(3)) #f6bb472253dd4a12",
+     "currentKey": "sympy.polys.densetools: R.dup_trunc(2*x**3 + 3*x**2 + 5*x + 7, ZZ(3)) #5685068b2a550345",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dmp_sqf_list(f) #1a2226b4bb811655",
+     "currentKey": "sympy.polys.sqfreetools: R.dmp_sqf_list(f) #8679882074e0d77d",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dmp_sqf_list(f, all=True) #a41ad44045b418c5",
+     "currentKey": "sympy.polys.sqfreetools: R.dmp_sqf_list(f, all=True) #d68ec1268b4a1823",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dmp_sqf_list_include(f) #f37f35585de1c7c8",
+     "currentKey": "sympy.polys.sqfreetools: R.dmp_sqf_list_include(f) #4b750e620c6fee1a",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dmp_sqf_list_include(f, all=True) #cdd5b37f094ac897",
+     "currentKey": "sympy.polys.sqfreetools: R.dmp_sqf_list_include(f, all=True) #26f491c216fcfe25",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dmp_sqf_p(x**2 + 2*x*y + y**2) #f4757a1f8b589721",
+     "currentKey": "sympy.polys.sqfreetools: R.dmp_sqf_p(x**2 + 2*x*y + y**2) #23159fcd28a19fcc",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dmp_sqf_p(x**2 + y**2) #b6edabae01738523",
+     "currentKey": "sympy.polys.sqfreetools: R.dmp_sqf_p(x**2 + y**2) #ab4c8e02707ebec4",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dmp_sqf_part(x**3 + 2*x**2*y + x*y**2) #09a271a20041050c",
+     "currentKey": "sympy.polys.sqfreetools: R.dmp_sqf_part(x**3 + 2*x**2*y + x*y**2) #471586a7465cf693",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dup_gff_list(x**5 + 2*x**4 - x**3 - 2*x**2) #bdc65c3c8397242d",
+     "currentKey": "sympy.polys.sqfreetools: R.dup_gff_list(x**5 + 2*x**4 - x**3 - 2*x**2) #b62845150fc5f8b4",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dup_sqf_list(f) #f005608eb8e21596",
+     "currentKey": "sympy.polys.sqfreetools: R.dup_sqf_list(f) #3d50d8442cddc9d5",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dup_sqf_list(f, all=True) #686d39c07ba73c46",
+     "currentKey": "sympy.polys.sqfreetools: R.dup_sqf_list(f, all=True) #0d0d36d798dd0462",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dup_sqf_list_include(f) #b0d00e6fb7e488da",
+     "currentKey": "sympy.polys.sqfreetools: R.dup_sqf_list_include(f) #2b89eae2b79077f3",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dup_sqf_list_include(f, all=True) #d650d6765aa1a08b",
+     "currentKey": "sympy.polys.sqfreetools: R.dup_sqf_list_include(f, all=True) #530d14030d7bd18d",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dup_sqf_p(x**2 - 2*x + 1) #113d8517dec7f475",
+     "currentKey": "sympy.polys.sqfreetools: R.dup_sqf_p(x**2 - 2*x + 1) #f2f5e0a82af28b03",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dup_sqf_p(x**2 - 1) #1af35c67418d7cfd",
+     "currentKey": "sympy.polys.sqfreetools: R.dup_sqf_p(x**2 - 1) #78baa2f05b950d5f",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.sqfreetools: R.dup_sqf_part(x**3 - 3*x - 2) #b35b834b470e6ef8",
+     "currentKey": "sympy.polys.sqfreetools: R.dup_sqf_part(x**3 - 3*x - 2) #132cc78218b93398",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.factortools: R.dmp_zz_factor(2*x**2 - 2*y**2) #e2128468c85ce5de",
+     "currentKey": "sympy.polys.factortools: R.dmp_zz_factor(2*x**2 - 2*y**2) #2aa62169ba91fbb1",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.factortools: R.dup_cyclotomic_p(f) #1066e5734a82b71b",
+     "currentKey": "sympy.polys.factortools: R.dup_cyclotomic_p(f) #a34d03830f5cee48",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.factortools: R.dup_cyclotomic_p(g) #b9e326e4a9edb2a3",
+     "currentKey": "sympy.polys.factortools: R.dup_cyclotomic_p(g) #a4f05c1d61566187",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.factortools: R.dup_zz_factor(2*x**4 - 2) #5e76ce357a16ce27",
+     "currentKey": "sympy.polys.factortools: R.dup_zz_factor(2*x**4 - 2) #4b8575327d0f3bd8",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.factortools: R.dup_zz_mignotte_bound(f) #8f8b49eb76e9b8c5",
+     "currentKey": "sympy.polys.factortools: R.dup_zz_mignotte_bound(f) #f0d27983da8137f8",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.factortools: R.dup_zz_mignotte_bound(f) #378691522bf70f23",
+     "currentKey": "sympy.polys.factortools: R.dup_zz_mignotte_bound(f) #e2d70a8426db5de4",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.factortools: R.dup_zz_mignotte_bound(f) #972f95bac1dc418d",
+     "currentKey": "sympy.polys.factortools: R.dup_zz_mignotte_bound(f) #354bfdda8b939f45",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Mul, PolyElement, Pow"
+    },
+    {
+     "previousKey": "sympy.polys.distributedmodules: sdm_LM(sdm_from_dict(dic, lex)) #34469d0dadc036ab",
+     "currentKey": "sympy.polys.distributedmodules: sdm_LM(sdm_from_dict(dic, lex)) #68b7457c812013a9",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.distributedmodules: sdm_LT(sdm_from_dict(dic, lex)) #90b749e724026ed0",
+     "currentKey": "sympy.polys.distributedmodules: sdm_LT(sdm_from_dict(dic, lex)) #49a54a3141f2f3e5",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.distributedmodules: sdm_add([((1, 1, 1), QQ(1))], [((2, 0, 0), QQ(1))], lex, QQ) #5b55e04e8aea116d",
+     "currentKey": "sympy.polys.distributedmodules: sdm_add([((1, 1, 1), QQ(1))], [((2, 0, 0), QQ(1))], lex, QQ) #a97df86eed6be3b1",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.distributedmodules: sdm_add([((1, 1, 1), QQ(1))], [((1, 1, 1), QQ(-1))], lex, QQ) #197a561c9975a277",
+     "currentKey": "sympy.polys.distributedmodules: sdm_add([((1, 1, 1), QQ(1))], [((1, 1, 1), QQ(-1))], lex, QQ) #3a0d5be2e1ed47a4",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.distributedmodules: sdm_add([((1, 0, 0), QQ(1))], [((1, 0, 0), QQ(2))], lex, QQ) #e7858a2a713a5e03",
+     "currentKey": "sympy.polys.distributedmodules: sdm_add([((1, 0, 0), QQ(1))], [((1, 0, 0), QQ(2))], lex, QQ) #739d4f3b6490fbe3",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.distributedmodules: sdm_add([((1, 0, 1), QQ(1))], [((1, 1, 0), QQ(1))], lex, QQ) #9dc6e10d25078ab5",
+     "currentKey": "sympy.polys.distributedmodules: sdm_add([((1, 0, 1), QQ(1))], [((1, 1, 0), QQ(1))], lex, QQ) #477e4e1ccee6167b",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.distributedmodules: sdm_from_dict(dic, lex) #b56a1fb978cda62b",
+     "currentKey": "sympy.polys.distributedmodules: sdm_from_dict(dic, lex) #d8458e85e617bf6c",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.distributedmodules: sdm_mul_term([((1, 0, 0), QQ(1))], ((0, 0), QQ(0)), lex, QQ) #add815b7da1633e1",
+     "currentKey": "sympy.polys.distributedmodules: sdm_mul_term([((1, 0, 0), QQ(1))], ((0, 0), QQ(0)), lex, QQ) #cff15a8f5a8871f6",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.distributedmodules: sdm_mul_term([], ((1, 0), QQ(1)), lex, QQ) #d325c2e134afa6d2",
+     "currentKey": "sympy.polys.distributedmodules: sdm_mul_term([], ((1, 0), QQ(1)), lex, QQ) #a8153474ee6c2c4e",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.distributedmodules: sdm_mul_term([((1, 0, 0), QQ(1))], ((1, 0), QQ(1)), lex, QQ) #a92c597d4368442e",
+     "currentKey": "sympy.polys.distributedmodules: sdm_mul_term([((1, 0, 0), QQ(1))], ((1, 0), QQ(1)), lex, QQ) #25a58c43f6750d78",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.distributedmodules: sdm_mul_term(f, ((1, 1), QQ(2)), lex, QQ) #cda566f50dc8448d",
+     "currentKey": "sympy.polys.distributedmodules: sdm_mul_term(f, ((1, 1), QQ(2)), lex, QQ) #d90eb6a78c430610",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.distributedmodules: sdm_spoly(f, h, lex, QQ) #d2f464187fbbc452",
+     "currentKey": "sympy.polys.distributedmodules: sdm_spoly(f, h, lex, QQ) #bec4c4f147debeb9",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.distributedmodules: sdm_spoly(f, g, lex, QQ) #c3c0c0915ae3307b",
+     "currentKey": "sympy.polys.distributedmodules: sdm_spoly(f, g, lex, QQ) #99b9c8846f7e7844",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.distributedmodules: sdm_to_vector(f, [x, y, z], QQ) #448684375dea2f2f",
+     "currentKey": "sympy.polys.distributedmodules: sdm_to_vector(f, [x, y, z], QQ) #6c99c3856b815895",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.domains.domain: QQ.gcd(QQ(2,7), QQ(5,3)) #7decc6f3d8ac610d",
+     "currentKey": "sympy.polys.domains.domain: QQ.gcd(QQ(2,7), QQ(5,3)) #d52eaa1c3b486069",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.domains.domain: L.to_sympy(L([1, 1, 1])) #dc262d5b98fe3c0e",
+     "currentKey": "sympy.polys.domains.domain: L.to_sympy(L([1, 1, 1])) #d8a0ea4eb9432809",
+     "previous": "unsupported argument: ANP",
+     "current": "serialized with ANP, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.domains.domain: K.to_sympy(K([-1, 1])) #883c064f63d05439",
+     "currentKey": "sympy.polys.domains.domain: K.to_sympy(K([-1, 1])) #3657c49112807574",
+     "previous": "unsupported argument: ANP",
+     "current": "serialized with ANP, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.domains.domain: QQ.div(QQ(5), QQ(2)) #1c49fce8e9fba16f",
+     "currentKey": "sympy.polys.domains.domain: QQ.div(QQ(5), QQ(2)) #152d743fa6e7b4c8",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.domains.domain: QQ.exquo(QQ(5), QQ(2)) #a3403926a655eedd",
+     "currentKey": "sympy.polys.domains.domain: QQ.exquo(QQ(5), QQ(2)) #13fc9993024b1158",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.domains.domainelement: p.parent() #cc125375cc3a8bd9",
+     "currentKey": "sympy.polys.domains.domainelement: p.parent() #2db21a5084c72f7b",
+     "previous": "serialized with Dict, Tuple",
+     "current": "serialized with Add, Domain, PolyElement, PolyRing, Pow, Symbol"
+    },
+    {
+     "previousKey": "sympy.polys.domains.field: QQ.gcd(QQ(2, 3), QQ(4, 9)) #dece58fac0c7c549",
+     "currentKey": "sympy.polys.domains.field: QQ.gcd(QQ(2, 3), QQ(4, 9)) #a741a2bfb0363b95",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.domains.field: QQ.lcm(QQ(2, 3), QQ(4, 9)) #6ce1213339ac8045",
+     "currentKey": "sympy.polys.domains.field: QQ.lcm(QQ(2, 3), QQ(4, 9)) #b44f1e0370224405",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.domains.algebraicfield: K.to_sympy(xk * yk) #a225fbcb0d279a0b",
+     "currentKey": "sympy.polys.domains.algebraicfield: K.to_sympy(xk * yk) #cdd2ee85ed77bc72",
+     "previous": "unsupported argument: ANP",
+     "current": "serialized with ANP, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.domains.algebraicfield: K.to_sympy(xk + yk) #b057a9a3e52c7f43",
+     "currentKey": "sympy.polys.domains.algebraicfield: K.to_sympy(xk + yk) #681c96f2bc8f7911",
+     "previous": "unsupported argument: ANP",
+     "current": "serialized with ANP, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.domains.algebraicfield: K.to_sympy(xk ** 2) #8024522961286608",
+     "currentKey": "sympy.polys.domains.algebraicfield: K.to_sympy(xk ** 2) #3df070397f175f7a",
+     "previous": "unsupported argument: ANP",
+     "current": "serialized with ANP, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.domains.algebraicfield: K.to_sympy(xk / yk) #f14769225f8b396e",
+     "currentKey": "sympy.polys.domains.algebraicfield: K.to_sympy(xk / yk) #e1febdc45fdb6c1f",
+     "previous": "unsupported argument: ANP",
+     "current": "serialized with ANP, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.domains.gaussiandomains: ZZ_I.exquo(z1, z2) #78ef64a7e502d1dc",
+     "currentKey": "sympy.polys.domains.gaussiandomains: ZZ_I.exquo(z1, z2) #b86505143510d8b2",
+     "previous": "unsupported argument: GaussianInteger",
+     "current": "serialized with GaussianElement, Rational"
+    },
+    {
+     "previousKey": "sympy.polys.domains.gaussiandomains: ZZ_I.gcd(ZZ_I(10), ZZ_I(2)) #d3d107f1e930a405",
+     "currentKey": "sympy.polys.domains.gaussiandomains: ZZ_I.gcd(ZZ_I(10), ZZ_I(2)) #eaccb470aea828ab",
+     "previous": "unsupported argument: GaussianInteger",
+     "current": "serialized with GaussianElement, Rational"
+    },
+    {
+     "previousKey": "sympy.polys.domains.gaussiandomains: ZZ_I.gcd(ZZ_I(5), ZZ_I(2, 1)) #2a1d79d317be79c6",
+     "currentKey": "sympy.polys.domains.gaussiandomains: ZZ_I.gcd(ZZ_I(5), ZZ_I(2, 1)) #3f95dc8dc46e7161",
+     "previous": "unsupported argument: GaussianInteger",
+     "current": "serialized with GaussianElement, Rational"
+    },
+    {
+     "previousKey": "sympy.polys.domains.gaussiandomains: QQ_I(QQ(2, 3), QQ(4, 5)) #0630b198c081d32d",
+     "currentKey": "sympy.polys.domains.gaussiandomains: QQ_I(QQ(2, 3), QQ(4, 5)) #0a38797c216c7157",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.domains.gaussiandomains: QQ_I.exquo(z1, z2) #bb15dc3cbcf19a1f",
+     "currentKey": "sympy.polys.domains.gaussiandomains: QQ_I.exquo(z1, z2) #3b30e478d1337b9c",
+     "previous": "unsupported argument: GaussianRational",
+     "current": "serialized with GaussianElement, Rational, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.domains.gaussiandomains: QQ_I.div(z1, z2) #27dcfc82cf65df06",
+     "currentKey": "sympy.polys.domains.gaussiandomains: QQ_I.div(z1, z2) #ea20a81364315abb",
+     "previous": "unsupported argument: GaussianRational",
+     "current": "serialized with GaussianElement, Rational, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.domainmatrix: DomainMatrix.diag([ZZ(5), ZZ(6)], ZZ) #20544d179da05317",
+     "currentKey": "sympy.polys.matrices.domainmatrix: DomainMatrix.diag([ZZ(5), ZZ(6)], ZZ) #7d163c000456ba43",
+     "previous": "unsupported argument: type",
+     "current": "serialized with Domain, Rational, Tuple, Type"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.domainmatrix: DomainMatrix.eye(3, QQ) #968d5b46e29e5622",
+     "currentKey": "sympy.polys.matrices.domainmatrix: DomainMatrix.eye(3, QQ) #381ad316672d4c65",
+     "previous": "unsupported argument: type",
+     "current": "serialized with Domain, Rational, Type"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.domainmatrix: DomainMatrix.ones((2,3), QQ) #9f5a0ba0fc7a36da",
+     "currentKey": "sympy.polys.matrices.domainmatrix: DomainMatrix.ones((2,3), QQ) #08ff012de1ca15d6",
+     "previous": "unsupported argument: type",
+     "current": "serialized with Domain, Rational, Tuple, Type"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.domainmatrix: DomainMatrix.zeros((2, 3), QQ) #e6cb4306f29908e0",
+     "currentKey": "sympy.polys.matrices.domainmatrix: DomainMatrix.zeros((2, 3), QQ) #43b5a55bc6d00226",
+     "previous": "unsupported argument: type",
+     "current": "serialized with Domain, Rational, Tuple, Type"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.ddm: B.det() #3ce7279d12bb01b6",
+     "currentKey": "sympy.polys.matrices.ddm: B.det() #7c44d61529bf3f7b",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.ddm: DDM.diag([ZZ(1), ZZ(2), ZZ(3)], ZZ) #e1c3558ed2f06142",
+     "currentKey": "sympy.polys.matrices.ddm: DDM.diag([ZZ(1), ZZ(2), ZZ(3)], ZZ) #4f788fb729e98383",
+     "previous": "unsupported argument: type",
+     "current": "serialized with Domain, Rational, Tuple, Type"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.ddm: A.hstack(B) #412bc8d2e1ef2a13",
+     "currentKey": "sympy.polys.matrices.ddm: A.hstack(B) #87eea55b9a3b4a05",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.ddm: A.hstack(B, C) #7d96d47cd41eb64f",
+     "currentKey": "sympy.polys.matrices.ddm: A.hstack(B, C) #9db89500c7ab2c7b",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.ddm: A.scc() #3def0f7fa21e89cf",
+     "currentKey": "sympy.polys.matrices.ddm: A.scc() #d0701dd978f86d36",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.ddm: A.to_dfm_or_ddm() #c6668fcf881b5ac9",
+     "currentKey": "sympy.polys.matrices.ddm: A.to_dfm_or_ddm() #641bbd3d3295993e",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.ddm: A.to_dod() #e115fb64069a905c",
+     "currentKey": "sympy.polys.matrices.ddm: A.to_dod() #b12ba06521f02886",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.ddm: A.to_dok() #48e17d5b3ef965a1",
+     "currentKey": "sympy.polys.matrices.ddm: A.to_dok() #9a30c5d0b06b8c76",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.ddm: A.to_list() #c6668fcf881b5ac9",
+     "currentKey": "sympy.polys.matrices.ddm: A.to_list() #641bbd3d3295993e",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.ddm: A.to_list_flat() #45c8725bd6121783",
+     "currentKey": "sympy.polys.matrices.ddm: A.to_list_flat() #9b8d1e75982a019f",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.ddm: A.to_sdm() #e115fb64069a905c",
+     "currentKey": "sympy.polys.matrices.ddm: A.to_sdm() #b12ba06521f02886",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.ddm: A.vstack(B) #e35f76888c8f03b2",
+     "currentKey": "sympy.polys.matrices.ddm: A.vstack(B) #a71c364d96a0e95f",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.ddm: A.vstack(B, C) #c788238f9375d271",
+     "currentKey": "sympy.polys.matrices.ddm: A.vstack(B, C) #c58f229d9b5f5736",
+     "previous": "serialized with Tuple",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.add(B) #3b9a833bf8adb184",
+     "currentKey": "sympy.polys.matrices.sdm: A.add(B) #f6a16d910048a89f",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.charpoly() #dde621e24c03292c",
+     "currentKey": "sympy.polys.matrices.sdm: A.charpoly() #0df6a7dd3eac642f",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.convert_to(QQ) #a4a09221cb5f9234",
+     "currentKey": "sympy.polys.matrices.sdm: A.convert_to(QQ) #4395c4ee89f7b1c8",
+     "previous": "serialized with Dict",
+     "current": "serialized with DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.det() #f352c19002746ff2",
+     "currentKey": "sympy.polys.matrices.sdm: A.det() #a2909032b5c45f47",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.hstack(B) #3b5b730e3322ba63",
+     "currentKey": "sympy.polys.matrices.sdm: A.hstack(B) #005efb281bdaca6a",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.hstack(B, C) #6bbbbeed02cf6310",
+     "currentKey": "sympy.polys.matrices.sdm: A.hstack(B, C) #fa106389298cdb11",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.inv() #e3a0da920874d1c0",
+     "currentKey": "sympy.polys.matrices.sdm: A.inv() #ae3992609de58f7d",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.lu() #645be5c1ed2ea528",
+     "currentKey": "sympy.polys.matrices.sdm: A.lu() #ae4e7ca40b80c123",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.lu_solve(b) #02aee972488eb157",
+     "currentKey": "sympy.polys.matrices.sdm: A.lu_solve(b) #731482cb2e1c01f3",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.matmul(B) #4654d1d551f9ccb3",
+     "currentKey": "sympy.polys.matrices.sdm: A.matmul(B) #761f3b919e967402",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.mul(ZZ(3)) #37f194db689d3e34",
+     "currentKey": "sympy.polys.matrices.sdm: A.mul(ZZ(3)) #0c80c587dba9e0dd",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.neg() #4df7378ed49a6726",
+     "currentKey": "sympy.polys.matrices.sdm: A.neg() #7b10e211e79a89e8",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.nnz() #889a659f182e0678",
+     "currentKey": "sympy.polys.matrices.sdm: A.nnz() #db5d46bb1c3e958c",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.nullspace() #06ccf165d5886d2d",
+     "currentKey": "sympy.polys.matrices.sdm: A.nullspace() #c5cad812dc9f7f12",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.rref() #1aba458904dc3d4a",
+     "currentKey": "sympy.polys.matrices.sdm: A.rref() #36eb73262cf6dc68",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.rref_den() #6d00e1d31adeab4d",
+     "currentKey": "sympy.polys.matrices.sdm: A.rref_den() #03e8a998987bc6cd",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.scc() #9e0e9d11662a42d4",
+     "currentKey": "sympy.polys.matrices.sdm: A.scc() #7f1e5780065882a1",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.sub(B) #c2df2703e877b3f8",
+     "currentKey": "sympy.polys.matrices.sdm: A.sub(B) #55e1ad655bede557",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.to_ddm() #683fa15aac2dbb0f",
+     "currentKey": "sympy.polys.matrices.sdm: A.to_ddm() #d6e1258c697999e7",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.to_dfm_or_ddm() #683fa15aac2dbb0f",
+     "currentKey": "sympy.polys.matrices.sdm: A.to_dfm_or_ddm() #d6e1258c697999e7",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.to_dod() #ae801fb2d40cca3a",
+     "currentKey": "sympy.polys.matrices.sdm: A.to_dod() #9abb45860d206f63",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.to_dok() #db7d9bec052b447d",
+     "currentKey": "sympy.polys.matrices.sdm: A.to_dok() #da8a2883764dd8a1",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.to_list() #9ae8aacf50af1b06",
+     "currentKey": "sympy.polys.matrices.sdm: A.to_list() #316eae377edfa9e7",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.to_list_flat() #0145ad2d93159d67",
+     "currentKey": "sympy.polys.matrices.sdm: A.to_list_flat() #71ce873ac3f8fa67",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.transpose() #d513243fe3537e57",
+     "currentKey": "sympy.polys.matrices.sdm: A.transpose() #b5f118c797353469",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.vstack(B) #79b4a0ba4e12f56d",
+     "currentKey": "sympy.polys.matrices.sdm: A.vstack(B) #f6a79ca4b04d8dce",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.sdm: A.vstack(B, C) #fcaeb14e9eccc91e",
+     "currentKey": "sympy.polys.matrices.sdm: A.vstack(B, C) #5dde11958b445897",
+     "previous": "serialized with Dict",
+     "current": "serialized with Domain, DomainMatrix"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.dense: ddm_idet(a, ZZ) #02d3296cb415aace",
+     "currentKey": "sympy.polys.matrices.dense: ddm_idet(a, ZZ) #af0c3f937ad9a2ed",
+     "previous": "serialized with the same types",
+     "current": "serialized with the same types"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.dense: ddm_iinv(ainv, a, QQ) #0f70247445546d6b",
+     "currentKey": "sympy.polys.matrices.dense: ddm_iinv(ainv, a, QQ) #aa2b38b680f5cf6d",
+     "previous": "serialized with the same types",
+     "current": "serialized with Js, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.dense: ddm_imatmul(result, a, ainv) #e8fc3bf9c3068956",
+     "currentKey": "sympy.polys.matrices.dense: ddm_imatmul(result, a, ainv) #7ecba4ada0e5b245",
+     "previous": "serialized with the same types",
+     "current": "serialized with QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.polys.matrices.dense: ddm_ilu_solve(x, L, U, swaps, b) #73a373b524db636c",
+     "currentKey": "sympy.polys.matrices.dense: ddm_ilu_solve(x, L, U, swaps, b) #1631e7d12aface44",
+     "previous": "serialized with the same types",
+     "current": "serialized with Js, QQ elements marked as PythonMPQ"
+    },
+    {
+     "previousKey": "sympy.assumptions.satask: extract_predargs(props, assump) #be5b7bfa19d45b67",
+     "currentKey": "sympy.assumptions.satask: extract_predargs(props, assump) #7ddbc44d7b5d1785",
+     "previous": "unsupported argument: CNF",
+     "current": "serialized with CNF, CNFLiteral, Fn, Mul, Pred, Symbol"
+    },
+    {
+     "previousKey": "sympy.concrete.guess: rationalize(cos(pi/3)) #b801cda28b63067f",
+     "currentKey": "sympy.concrete.guess: rationalize(cos(pi/3)) #832a842c4bbd2b04",
+     "previous": "unsupported argument: mpf",
+     "current": "serialized with Float"
+    },
+    {
+     "previousKey": "sympy.concrete.guess: rationalize(mpf(\"0.333333333333333\")) #919564ec844f244b",
+     "currentKey": "sympy.concrete.guess: rationalize(mpf(\"0.333333333333333\")) #72a6ab3a26e22536",
+     "previous": "unsupported argument: mpf",
+     "current": "serialized with Float"
+    },
+    {
+     "previousKey": "sympy.concrete.guess: rationalize(pi, maxcoeff = 250) #06d50c1ff226d6b5",
+     "currentKey": "sympy.concrete.guess: rationalize(pi, maxcoeff = 250) #81b863835cd3bcda",
+     "previous": "unsupported argument: constant",
+     "current": "serialized with Float, Rational"
+    },
+    {
+     "previousKey": "sympy.logic.algorithms.lra_theory: enc.add_from_cnf(cnf) #ff947a040108c220",
+     "currentKey": "sympy.logic.algorithms.lra_theory: enc.add_from_cnf(cnf) #ac60181e8fad27e7",
+     "previous": "unsupported argument: EncodedCNF",
+     "current": "serialized with CNF, CNFLiteral, EncodedCNF, Pred, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.logic.algorithms.lra_theory: enc.from_cnf(cnf) #ff947a040108c220",
+     "currentKey": "sympy.logic.algorithms.lra_theory: enc.from_cnf(cnf) #70adf91bd9304394",
+     "previous": "unsupported argument: EncodedCNF",
+     "current": "serialized with Add, CNF, CNFLiteral, EncodedCNF, Mul, Pred, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.ntheory.elliptic_curve: e2.points() #5a04271becc6cac8",
+     "currentKey": "sympy.ntheory.elliptic_curve: e2.points() #f915a422a55d9703",
+     "previous": "unsupported argument: EllipticCurve",
+     "current": "serialized with EllipticCurve, Rational"
+    },
+    {
+     "previousKey": "sympy.ntheory.elliptic_curve: (e3(1, -3) * 3).order() #08389d1916e583be",
+     "currentKey": "sympy.ntheory.elliptic_curve: (e3(1, -3) * 3).order() #7acdef9b70a443fd",
+     "previous": "unsupported argument: EllipticCurvePoint",
+     "current": "serialized with EllipticCurve, EllipticCurvePoint, Rational"
+    },
+    {
+     "previousKey": "sympy.sets.ordinals: Ordinal(OmegaPower(w + 1, 1), OmegaPower(3, 2)) #af79be17c29252a9",
+     "currentKey": "sympy.sets.ordinals: Ordinal(OmegaPower(w + 1, 1), OmegaPower(3, 2)) #b274e5a008764095",
+     "previous": "unsupported argument: OmegaPower",
+     "current": "serialized with OmegaPower, Ordinal"
+    },
+    {
+     "previousKey": "sympy.sets.powerset: PowerSet(PowerSet(S.EmptySet)) #1574b54ad0caef12",
+     "currentKey": "sympy.sets.powerset: PowerSet(PowerSet(S.EmptySet)) #f89fa2d14cd726bd",
+     "previous": "unsupported argument: PowerSet",
+     "current": "serialized with NamedSet, PowerSet"
+    },
+    {
+     "previousKey": "sympy.sets.powerset: PowerSet(FiniteSet(1, 2, 3)).rewrite(FiniteSet) #a249c9fa6fd6bb4a",
+     "currentKey": "sympy.sets.powerset: PowerSet(FiniteSet(1, 2, 3)).rewrite(FiniteSet) #6a419e6fa8ed9df2",
+     "previous": "unsupported argument: PowerSet",
+     "current": "serialized with FiniteSet, PowerSet, Rational, Type"
+    },
+    {
+     "previousKey": "sympy.solvers.ode.single: obj.get_linear_coefficients(eq, f(x), 3) #40c00898091443dd",
+     "currentKey": "sympy.solvers.ode.single: obj.get_linear_coefficients(eq, f(x), 3) #9d185cb0c0a1127e",
+     "previous": "unsupported argument: SingleODEProblem",
+     "current": "serialized with Add, Derivative, Fn, Mul, Rational, SingleODEProblem, Symbol, UFn"
+    },
+    {
+     "previousKey": "sympy.solvers.ode.single: solver.get_general_solution() #08ae36abf611d6d0",
+     "currentKey": "sympy.solvers.ode.single: solver.get_general_solution() #7a009e2657b39eef",
+     "previous": "unsupported argument: NthAlgebraic",
+     "current": "serialized with Derivative, SingleODEProblem, SingleODESolver, Symbol, UFn"
+    },
+    {
+     "previousKey": "sympy.tensor.array.array_comprehension: a.doit() #88ce21f818527b03",
+     "currentKey": "sympy.tensor.array.array_comprehension: a.doit() #8a7a43f37baa4fd3",
+     "previous": "unsupported argument: ArrayComprehension",
+     "current": "serialized with Add, ArrayComprehension, Mul, Rational, Symbol, Tuple"
+    },
+    {
+     "previousKey": "sympy.tensor.array.array_comprehension: b.doit() #498aae15b574c8b2",
+     "currentKey": "sympy.tensor.array.array_comprehension: b.doit() #3a1790f09b7108b5",
+     "previous": "unsupported argument: ArrayComprehension",
+     "current": "serialized with Add, ArrayComprehension, Mul, Rational, Symbol, Tuple"
+    },
+    {
+     "previousKey": "sympy.tensor.array.array_comprehension: a.rank() #bf88688801be32f4",
+     "currentKey": "sympy.tensor.array.array_comprehension: a.rank() #2563326907469490",
+     "previous": "unsupported argument: ArrayComprehension",
+     "current": "serialized with Add, ArrayComprehension, Mul, Rational, Symbol, Tuple"
+    },
+    {
+     "previousKey": "sympy.tensor.array.array_comprehension: a.tolist() #88ce21f818527b03",
+     "currentKey": "sympy.tensor.array.array_comprehension: a.tolist() #8a7a43f37baa4fd3",
+     "previous": "unsupported argument: ArrayComprehension",
+     "current": "serialized with Add, ArrayComprehension, Mul, Rational, Symbol, Tuple"
+    },
+    {
+     "previousKey": "sympy.tensor.array.array_comprehension: a.tomatrix() #de2e3916505d578c",
+     "currentKey": "sympy.tensor.array.array_comprehension: a.tomatrix() #47bf2fb0345f983b",
+     "previous": "unsupported argument: ArrayComprehension",
+     "current": "serialized with Add, ArrayComprehension, Mul, Rational, Symbol, Tuple"
+    },
+    {
+     "previousKey": "sympy.tensor.array.array_comprehension: a.doit() #ab532e949565784c",
+     "currentKey": "sympy.tensor.array.array_comprehension: a.doit() #b527692427e56f56",
+     "previous": "unsupported argument: ArrayComprehensionMap",
+     "current": "serialized with ArrayComprehensionMap, JsLambda, Rational, Symbol, Tuple"
+    },
+    {
+     "previousKey": "sympy.tensor.array.array_comprehension: b.doit() #b0c6477e720db414",
+     "currentKey": "sympy.tensor.array.array_comprehension: b.doit() #dcfd6a35b74eeb6f",
+     "previous": "unsupported argument: ArrayComprehensionMap",
+     "current": "serialized with Add, ArrayComprehensionMap, Dummy, JsLambda, Rational, Symbol, Tuple"
+    }
+   ],
+   "currentCorpus": {
+    "cases": 6094,
+    "api": 1621
+   },
+   "knownGaps": {
+    "cases": 318,
+    "api": 12
+   }
   }
  ]
 }

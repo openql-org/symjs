@@ -16,6 +16,10 @@ const [x] = sj.symbols('x y');
 describe('matrices', () => {
   it('DomainMatrix leaves out a zero row', () => {
     expect(String(toDM(sj.Matrix.of([[0, 0], [1, 2]])))).toBe('DomainMatrix({1: {0: 1, 1: 2}}, (2, 2), ZZ)');
+    // SymPy: Matrix([[sqrt(2)]]).to_DM().domain is EXRAW
+    expect(String(toDM(sj.Matrix.of([[sj.sqrt(2)]])).domain)).toBe('EXRAW');
+    // SymPy: Matrix([[1, 2]]).to_DM(domain=QQ)
+    expect(String(toDM(sj.Matrix.of([[1, 2]]), { domain: sj.QQ }))).toBe('DomainMatrix({0: {0: 1, 1: 2}}, (1, 2), QQ)');
   });
 });
 
@@ -29,6 +33,6 @@ describe('matrices/linalg, linsys, domainmatrix, mutable', () => {
       [M([[x, new sj.Float(1.5)]]), 'RR(x)', 'RR[x]'],
       [M([[x, 2]]), 'ZZ(x)', 'ZZ[x]'],
     ];
-    for (const [A, f, d] of cases) expect([toDM(A, { field: true }).domain, toDM(A).domain]).toEqual([f, d]);
+    for (const [A, f, d] of cases) expect([String(toDM(A, { field: true }).domain), String(toDM(A).domain)]).toEqual([f, d]);
   });
 });

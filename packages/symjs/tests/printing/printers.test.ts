@@ -5,6 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
+import { sstr } from '../../src/printing/printers';
 
 const x = sj.symbol('x');
 
@@ -35,5 +36,17 @@ describe('StrPrinter, sstrrepr, printLatex and multilineLatex', () => {
     expect(sj.multilineLatex(x, sj.parse('-x - y'))).toBe('\\begin{align*}\nx = &- x \\\\\n& - y \n\\end{align*}');
     expect(sj.multilineLatex(x, x)).toBe('\\begin{align*}\nx = & x \n\\end{align*}');
     expect(sj.multilineLatex(x, sj.parse('x + y + 1'), { termsPerLine: 3 })).toBe('\\begin{align*}\nx = & x + y + 1 \n\\end{align*}');
+  });
+  it('sstr with the full_prec setting', () => {
+    const f = sj.float('0.0175');
+    expect(sstr(f)).toBe('0.0175000000000000');
+    expect(sstr(f, { fullPrec: false })).toBe('0.0175');
+    expect(sstr(sj.Tuple(f, 1))).toBe('(0.0175, 1)');
+    expect(sstr(sj.Tuple(f, 1), { fullPrec: true })).toBe('(0.0175000000000000, 1)');
+    expect(sstr(sj.mul(sj.float('1.5'), x), { fullPrec: true })).toBe('1.50000000000000*x');
+    expect(sstr(sj.mul(sj.float('1.5'), x))).toBe('1.5*x');
+    expect(sstr(['a', null])).toBe('[a, None]');
+    // the setting applies to this call only
+    expect(sj.str(sj.Tuple(f, 1))).toBe('(0.0175, 1)');
   });
 });

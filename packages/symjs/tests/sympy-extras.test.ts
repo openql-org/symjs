@@ -135,11 +135,11 @@ describe('matrix methods', () => {
     expect(sj.toDM(A).toMatrix().equals(A)).toBe(true);
     expect(sj.toDM(A).shape).toEqual([2, 2]);
     const P = M([[x, 1], [1, x]]);
-    expect(sj.toDM(P).domain).toBe('ZZ[x]');
-    expect(sj.toDM(P, { field: true }).domain).toBe('ZZ(x)');
-    expect(sj.toDM(A, { field: true }).domain).toBe('QQ');
-    expect(sj.toDM(M([[sj.sqrt(2)]])).domain).toBe('EXRAW');
-    expect(sj.toDM(M([[new sj.Float(1.5), x]])).domain).toBe('RR[x]');
+    expect(String(sj.toDM(P).domain)).toBe('ZZ[x]');
+    expect(String(sj.toDM(P, { field: true }).domain)).toBe('ZZ(x)');
+    expect(String(sj.toDM(A, { field: true }).domain)).toBe('QQ');
+    expect(String(sj.toDM(M([[sj.sqrt(2)]])).domain)).toBe('EXRAW');
+    expect(String(sj.toDM(M([[new sj.Float(1.5), x]])).domain)).toBe('RR[x]');
     expect(String(sj.toDM(M([[0, sj.Rational.of(1n, 2n)]])))).toBe('DomainMatrix({0: {1: 1/2}}, (1, 2), QQ)');
   });
 

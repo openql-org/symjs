@@ -528,6 +528,8 @@ class Decider {
   q(name: string, e: Expr): Tri {
     const known = this.branch.facts.get(e.key)?.facts.get(name);
     if (known !== undefined) return known;
+    // nan has no handler in SymPy: every predicate but commutative is undecided on it
+    if (e === S.NaN && name !== 'commutative') return undefined;
     for (const h of handlers.get(name) ?? []) {
       const r = h(e, this.assumptions, [e]);
       if (r !== 'unknown') return r;

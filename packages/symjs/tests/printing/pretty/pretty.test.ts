@@ -1007,3 +1007,10 @@ describe('pretty of sequences, Range, products of sets, regions and special func
     expect(pretty(new sj.Permutation([[0, 1], [2, 3]]))).toBe('(0 1)(2 3)');
   });
 });
+
+describe('pretty of a SymPy Dict', () => {
+  it('prints like a dict (SymPy _print_Dict)', () => {
+    const x = sj.symbol('x');
+    expect(sj.pretty(sj.Dict([[x, 1], [2, sj.Rational.of(1n, 2n)]]), { useUnicode: false })).toBe('{2: 1/2, x: 1}');
+  });
+});

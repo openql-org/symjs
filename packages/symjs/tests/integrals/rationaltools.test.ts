@@ -76,8 +76,8 @@ describe('ratint', () => {
 
 describe('the parts of ratint', () => {
   it('ratint_ratpart', () => {
-    expect(ratintRatpart(P('1'), P('x**2+2*x+1'), x).map(sstr)).toEqual(['-1/(x + 1)', '0']);
-    expect(ratintRatpart(P('x**5'), P('(x**2+1)**3'), x).map(sstr)).toEqual(['(4*x**2 + 3)/(4*x**4 + 8*x**2 + 4)', 'x/(x**2 + 1)']);
+    expect(ratintRatpart(P('1'), P('x**2+2*x+1'), x).map((e) => sstr(e))).toEqual(['-1/(x + 1)', '0']);
+    expect(ratintRatpart(P('x**5'), P('(x**2+1)**3'), x).map((e) => sstr(e))).toEqual(['(4*x**2 + 3)/(4*x**4 + 8*x**2 + 4)', 'x/(x**2 + 1)']);
   });
   it('ratint_logpart', () => {
     const show = (L: [Poly, Poly][]) => L.map(([h, q]) => [sstr(h.asExpr()), sstr(q.asExpr())]);

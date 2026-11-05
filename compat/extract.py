@@ -631,6 +631,14 @@ def ser(o):
 
     if o is None or isinstance(o, bool):
         return {"t": "Js", "v": o}
+    from sympy.polys.matrices.ddm import DDM as _DDM0
+    from sympy.polys.matrices.sdm import SDM as _SDM0
+    if isinstance(o, (_DDM0, _SDM0)):
+        # DDM is a list and SDM a dict: serialized as matrices before the containers
+        K = o.domain
+        return {"t": "DomainMatrix", "cls": type(o).__name__, "domain": ser(K), "shape": list(o.shape),
+                "rows": [[ser(K.to_sympy(e)) for e in r] for r in o.to_list()],
+                "fmt": "dense" if isinstance(o, _DDM0) else "sparse"}
     from sympy.assumptions.assume import AssumptionsContext as _AC
     from sympy.assumptions.ask import AssumptionKeys as _AK
     if isinstance(o, _AC):
@@ -640,6 +648,11 @@ def ser(o):
     from sympy.ntheory.generate import Sieve as _Sieve
     if isinstance(o, _Sieve):
         return {"t": "Sieve"}
+    from sympy.solvers.ode.single import SingleODEProblem as _SODEP, SingleODESolver as _SODES
+    if isinstance(o, _SODEP):
+        return {"t": "SingleODEProblem", "eq": ser(o.eq), "func": ser(o.func), "sym": ser(o.sym)}
+    if isinstance(o, _SODES):
+        return {"t": "SingleODESolver", "cls": type(o).__name__, "problem": ser(o.ode_problem)}
     from sympy.combinatorics import Permutation as _Perm
     from sympy.combinatorics.perm_groups import PermutationGroup as _PermGroup
     from sympy.combinatorics.permutations import Cycle as _Cycle
@@ -705,6 +718,15 @@ def ser(o):
         return {"t": "Tensor", "head": ser(o.component), "indices": [ser(i) for i in o.get_indices()]}
     if isinstance(o, _TensMul):
         return {"t": "TensMul", "args": [ser(a) for a in o.args]}
+    from sympy.tensor.array.array_comprehension import ArrayComprehension as _ACo, ArrayComprehensionMap as _ACM
+    if isinstance(o, _ACM):
+        # the lambda of the map (with no or one argument) applied to a dummy
+        f = o._lambda
+        ds = [sympy.Dummy("x") for _ in range(f.__code__.co_argcount)]
+        return {"t": "ArrayComprehensionMap", "function": {"t": "JsLambda", "params": [ser(d) for d in ds], "body": ser(sympy.sympify(f(*ds)))},
+                "limits": [ser(tuple(l)) for l in o.limits]}
+    if isinstance(o, _ACo):
+        return {"t": "ArrayComprehension", "function": ser(o.function), "limits": [ser(tuple(l)) for l in o.limits]}
     if isinstance(o, _NDA):
         return {"t": "NDimArray", "cls": type(o).__name__, "shape": [int(k) for k in o.shape], "flat": [ser(i) for i in o._array] if hasattr(o, "_array") else [ser(o[i]) for i in __import__("itertools").product(*[range(k) for k in o.shape])]}
     if isinstance(o, sympy.Idx):
@@ -770,6 +792,25 @@ def ser(o):
             sl = lambda t: [ser(t[0]), ser(t[1]), ser(t[2])]
             return {"t": "MatExpr", "cls": name, "args": [ser(o.args[0])], "slices": [sl(o.args[1]), sl(o.args[2])]}
         return {"t": "MatExpr", "cls": name, "args": [ser(a) for a in o.args]}
+    # polynomial-ring elements are dicts: serialized with their ring before the dict branch
+    from sympy.polys.rings import PolyElement as _PolyEl0
+    from sympy.polys.fields import FracElement as _FracEl0
+    from sympy.polys.puiseux import PuiseuxRing as _PuiR, PuiseuxPoly as _PuiP
+    from sympy.polys.domains.mpelements import RealElement as _RealEl
+    if isinstance(o, _PolyEl0):
+        return {"t": "PolyElement", "ring": ser(o.ring), "expr": ser(o.as_expr())}
+    if isinstance(o, _FracEl0):
+        return {"t": "FracElement", "field": ser(o.field), "numer": ser(o.numer.as_expr()), "denom": ser(o.denom.as_expr())}
+    if o is _PuiP:
+        return {"t": "Type", "name": "PuiseuxPoly"}
+    if isinstance(o, _PuiR):
+        return {"t": "PuiseuxRing", "symbols": [ser(s) for s in o.symbols], "domain": ser(o.domain)}
+    if isinstance(o, _PuiP):
+        K = o.ring.domain
+        return {"t": "PuiseuxPoly", "ring": ser(o.ring),
+                "terms": [[[ser(sympy.Rational(int(e.numerator), int(e.denominator))) for e in m], ser(K.to_sympy(c))] for m, c in o.terms()]}
+    if isinstance(o, _RealEl):
+        return ser(sympy.Float(o))
     if isinstance(o, (set, frozenset)):
         return {"t": "JsSet", "items": [ser(i) for i in o]}
     if isinstance(o, list):
@@ -779,6 +820,9 @@ def ser(o):
     if isinstance(o, (tuple, Tuple)):
         return {"t": "Tuple", "items": [ser(i) for i in o]}
     if isinstance(o, dict):
+        return {"t": "Dict", "items": [[ser(k), ser(v)] for k, v in o.items()]}
+    if isinstance(o, sympy.Dict):
+        # a SymPy Dict (Diagram.premises, ...): printed like a dict
         return {"t": "Dict", "items": [[ser(k), ser(v)] for k, v in o.items()]}
     if isinstance(o, MatrixBase):
         return {"t": "Matrix", "rows": [[ser(o[i, j]) for j in range(o.cols)] for i in range(o.rows)], "shape": [o.rows, o.cols]}
@@ -793,6 +837,9 @@ def ser(o):
         return {"t": "Type", "name": o.__name__}
     if isinstance(o, type) and o.__name__ in ("Matrix", "MutableDenseMatrix", "ImmutableMatrix", "ImmutableDenseMatrix"):
         return {"t": "Type", "name": "Matrix"}
+    if isinstance(o, type) and o.__module__ in ("sympy.polys.matrices.domainmatrix", "sympy.polys.matrices.ddm", "sympy.polys.matrices.sdm") and o.__name__ in ("DomainMatrix", "DDM", "SDM"):
+        # the DomainMatrix classes, whose classmethods (eye, diag, zeros, ...) the doctests call
+        return {"t": "Type", "name": o.__name__}
     from sympy.core.function import WildFunction as _WF
     if isinstance(o, sympy.FunctionClass) and not isinstance(o, _UF):
         return {"t": "FnClass", "name": o.__name__}
@@ -806,7 +853,15 @@ def ser(o):
     from sympy.polys.orderings import MonomialOrder as _MO
     if type(o).__name__ in ("PythonMPQ", "mpq"):
         # a QQ element (the ground type of QQ)
-        return {"t": "Rational", "p": str(o.numerator), "q": str(o.denominator)}
+        return {"t": "Rational", "p": str(o.numerator), "q": str(o.denominator), "mpq": True}
+    from sympy.polys.domains.gaussiandomains import GaussianElement as _GE
+    from sympy.polys.polyclasses import ANP as _ANP
+    if isinstance(o, _GE):
+        # an element x + y*I of ZZ_I or QQ_I
+        return {"t": "GaussianElement", "domain": str(o.parent()), "x": ser(o.x), "y": ser(o.y)}
+    if isinstance(o, _ANP):
+        # an element of an algebraic number field: coefficients in the primitive element, its minimal polynomial
+        return {"t": "ANP", "rep": [ser(c) for c in o.to_list()], "mod": [ser(c) for c in o.mod_to_list()], "dom": ser(o.dom)}
     if isinstance(o, _Domain):
         d = {"t": "Domain", "name": str(o)}
         if o.is_FiniteField:
@@ -835,16 +890,43 @@ def ser(o):
                 "fmt": o.rep.fmt if isinstance(o, _DM) else ("dense" if isinstance(o, _DDM) else "sparse")}
     if isinstance(o, _DS):
         return {"t": "DomainScalar", "domain": ser(o.domain), "element": ser(o.domain.to_sympy(o.element))}
+    from sympy.assumptions.cnf import CNF as _CNF, EncodedCNF as _ECNF, Literal as _Lit
+    if isinstance(o, _Lit):
+        return {"t": "CNFLiteral", "lit": ser(o.lit), "isNot": bool(o.is_Not)}
+    if isinstance(o, _CNF):
+        # clauses and literals in a deterministic order (they are sets)
+        return {"t": "CNF", "clauses": sorted([sorted([ser(l) for l in c], key=json.dumps) for c in o.clauses], key=json.dumps)}
+    if isinstance(o, _ECNF):
+        return {"t": "EncodedCNF", "data": [sorted(int(i) for i in c) for c in o.data],
+                "encoding": [[ser(k), int(v)] for k, v in o.encoding.items()]}
     from sympy.utilities.enumerative import MultisetPartitionTraverser as _MPT
     if type(o) is _MPT:
         # a stateless helper object: constructed anew
         return {"t": "New", "cls": "MultisetPartitionTraverser"}
+    from sympy.ntheory.elliptic_curve import EllipticCurve as _EC, EllipticCurvePoint as _ECP
+    if isinstance(o, _EC):
+        to = o._domain.to_sympy
+        return {"t": "EllipticCurve", "coeffs": [ser(to(a)) for a in (o._a4, o._a6, o._a1, o._a2, o._a3)], "modulus": int(o.modulus)}
+    if isinstance(o, _ECP):
+        to = o._domain.to_sympy
+        return {"t": "EllipticCurvePoint", "coords": [ser(to(a)) for a in (o.x, o.y, o.z)], "curve": ser(o._curve)}
+    import mpmath as _mpmath
+    if isinstance(o, (_mpmath.mpf, _mpmath.ctx_mp_python._constant)):
+        # an mpmath real (mpf, or a constant such as mpmath.pi): the Float of its value at the working precision
+        return ser(sympy.Float(o))
     if not isinstance(o, Basic):
         raise Unsupported(type(o).__name__)
     from sympy.algebras.quaternion import Quaternion as _Q
     if isinstance(o, _Q):
         return {"t": "Quaternion", "args": [ser(a) for a in o.args], "realField": bool(o.real_field),
                 "norm": None if o._norm is None else ser(o._norm)}
+    from sympy.sets.ordinals import Ordinal as _Ordinal, OmegaPower as _OmegaPower
+    if isinstance(o, _Ordinal):
+        return {"t": "Ordinal", "terms": [ser(t) for t in o.terms]}
+    if isinstance(o, _OmegaPower):
+        return {"t": "OmegaPower", "exp": ser(o.exp), "mult": str(o.mult)}
+    if isinstance(o, sympy.PowerSet):
+        return {"t": "PowerSet", "set": ser(o.args[0])}
     if type(o) is Basic:
         # a bare Basic node (the strategies and unify doctests build trees of them)
         return {"t": "Basic", "args": [ser(a) for a in o.args]}
@@ -1147,6 +1229,14 @@ def main(dst):
                         record = {"fn": "." + call.func.attr, "selfSrc": ast.unparse(call.func.value)}
                 from sympy.assumptions import global_assumptions as _ga
                 assumed = list(_ga)
+                # the in-place functions of sympy.polys.matrices.dense (ddm_iadd, ddm_idet, ...) mutate their
+                # arguments: these are serialized as they are before the call
+                pre_args = None
+                if record is not None and record["fn"].startswith("ddm_i"):
+                    try:
+                        pre_args = [ser_arg(a, globs) for a in call.args]
+                    except Exception:
+                        pre_args = None
                 try:
                     signal.alarm(ALARM_SECONDS)
                     _out = io.StringIO()
@@ -1189,7 +1279,7 @@ def main(dst):
                             # the printed output of a function of a Python module (inspect.getsource): not SymPy API
                             raise PythonRuntime()
                         record["self"] = ser(_self)
-                    record["args"] = [ser_arg(a, globs) for a in call.args]
+                    record["args"] = pre_args if pre_args is not None else [ser_arg(a, globs) for a in call.args]
                     record["kwargs"] = {k.arg: ser_arg(k.value, globs) for k in call.keywords}
                     if assumed:
                         # the global assumptions in force (SymPy global_assumptions)

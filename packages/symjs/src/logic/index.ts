@@ -59,3 +59,4 @@ export {
   findUnitClauseIntRepr,
 } from './algorithms/dpll';
 export { load } from './utilities/dimacs';
+export { UnhandledInput } from './algorithms/lratheory';

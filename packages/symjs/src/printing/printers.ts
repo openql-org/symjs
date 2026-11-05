@@ -4,14 +4,14 @@
 
 /**
  * @file The printer entry points of SymPy around `str` and `latex`: the
- * `StrPrinter` class, `sstrrepr`, `print_latex` and `multiline_latex`.
+ * `StrPrinter` class, `sstr`, `sstrrepr`, `print_latex` and `multiline_latex`.
  */
 
 import type { ExprLike } from '../core/nodes';
 import { Expr, isNum } from '../core/nodes';
 import { mul, sympify } from '../core/ops';
 import { first } from '../core/guard';
-import { str } from './str';
+import { str, withFullPrec } from './str';
 import { latex } from './latex';
 import type { LatexOptions, LatexPrintable } from './latex';
 import { asOrderedFactors, asOrderedTerms } from './sortkey';
@@ -51,6 +51,25 @@ export class StrPrinter {
   doprint(expr: StrPrintable): string {
     return printValue(expr, (s) => s);
   }
+}
+
+/** The settings of {@link sstr}. */
+export interface SstrOptions {
+  /**
+   * Print floats with their full precision (true), with trailing zeros
+   * removed (false), or with the full precision only at the top level
+   * ('auto', the default; SymPy full_prec).
+   */
+  fullPrec?: boolean | 'auto';
+}
+
+/**
+ * SymPy sstr: the str form of an expression or a container of them
+ * (lists, sets, dicts, strings and None print as Python prints them inside
+ * a container).
+ */
+export function sstr(expr: StrPrintable, opts: SstrOptions = {}): string {
+  return withFullPrec(opts.fullPrec ?? 'auto', () => printValue(expr, (s) => s));
 }
 
 /** SymPy sstrrepr: like sstr, but strings are printed with their quotes (Python repr). */

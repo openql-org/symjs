@@ -159,16 +159,16 @@ describe('meijerint_definite: integrals symjs does not do', () => {
 
 describe('helpers', () => {
   it('getCoeffExp and its error', () => {
-    expect(getCoeffExp(P('3*x**2'), x).map(sstr)).toEqual(['3', '2']);
+    expect(getCoeffExp(P('3*x**2'), x).map((e) => sstr(e))).toEqual(['3', '2']);
     expect(() => getCoeffExp(P('x + 1'), x)).toThrow(CoeffExpError);
   });
   it('findSplittingPoints', () => {
-    expect(findSplittingPoints(P('sin(x + 3)*x'), x).map(sstr).sort()).toEqual(['-3', '0']);
+    expect(findSplittingPoints(P('sin(x + 3)*x'), x).map((e) => sstr(e)).sort()).toEqual(['-3', '0']);
     // a sum whose terms in x cancel in the expansion is not linear; its terms give the points
-    expect(findSplittingPoints(add(pow(add(x, 1), 2), mul(-1, pow(x, 2)), mul(-2, x)), x).map(sstr).sort()).toEqual(['-1', '0']);
+    expect(findSplittingPoints(add(pow(add(x, 1), 2), mul(-1, pow(x, 2)), mul(-2, x)), x).map((e) => sstr(e)).sort()).toEqual(['-1', '0']);
   });
   it('splitMul', () => {
-    expect(splitMul(P('(3*x)**s*sin(x**2)*x'), x).map(sstr)).toEqual(['3**s', 'x*x**s', 'sin(x**2)']);
+    expect(splitMul(P('(3*x)**s*sin(x**2)*x'), x).map((e) => sstr(e))).toEqual(['3**s', 'x*x**s', 'sin(x**2)']);
   });
   it('condsimp evaluates numeric relations and simplifies arguments', () => {
     expect(sstr(condsimp(Lt(sqrt(2), pi)))).toBe('True');
@@ -187,7 +187,7 @@ describe('helpers', () => {
   });
   it('rewriteSingle of G-functions', () => {
     const r = rewriteSingle(meijerg([], [], [0], [], mul(2, x)), x);
-    expect(r?.[0].map((t) => t.map(sstr).join(' '))).toEqual(['1 0 meijerg(((), ()), ((0,), ()), 2*x)']);
+    expect(r?.[0].map((t) => t.map((e) => sstr(e)).join(' '))).toEqual(['1 0 meijerg(((), ()), ((0,), ()), 2*x)']);
     expect(rewriteSingle(meijerg([], [], [0], [], add(x, 1)), x)).toBeUndefined();
     expect(rewriteSingle(meijerg([], [], [0], [], 2), x)).toBeUndefined();
     expect(rewriteSingle(meijerg([], [], [0], [], pow(x, y)), x)).toBeUndefined();
@@ -225,6 +225,6 @@ describe('meijerint_inversion', () => {
   });
   it('a delay', () => {
     const r = meijerintInversion(mul(exp(mul(-2, s)), pow(s, R(-3, 2))), s, t);
-    expect(r?.map(sstr)).toEqual(['2*sqrt(t - 2)*Heaviside(t - 2)/sqrt(pi)', 'True']);
+    expect(r?.map((e) => sstr(e))).toEqual(['2*sqrt(t - 2)*Heaviside(t - 2)/sqrt(pi)', 'True']);
   });
 });

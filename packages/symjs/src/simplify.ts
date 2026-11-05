@@ -82,6 +82,14 @@ export type { EPathFunction } from './simplify/epathtools';
 import { ratsimpmodprime as _ratsimpmodprime_ } from './simplify/ratsimp';
 import { trigsimpHooks as _trigsimpHooks_ } from './simplify/trigsimp';
 _trigsimpHooks_.ratsimpmodprime = _ratsimpmodprime_;
+// the Mathematica parser (SymPy sympy.parsing.mathematica): exported here, since it needs the special functions and cancel
+export { parseMathematica, MathematicaParser } from './parsing/mathematica';
+export type { FullForm } from './parsing/mathematica';
+// cancel(...) in parsed strings (parse("cancel(x)"), Mathematica Cancel[...]): parsing may not import simplify
+import { parserHooks as _parserHooks_ } from './parsing/parser';
+import { cancel as _cancelForParser_ } from './simplify/rational';
+import { first as _first_ } from './core/guard';
+_parserHooks_.constructors.set('cancel', (args) => _cancelForParser_(_first_(args)));
 
 // ---- deprecated names (kept during 0.x, removed in 1.0; see docs/api-policy.md) ----
 

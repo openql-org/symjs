@@ -16,8 +16,8 @@
 
 import { ExactQuotientFailed, NotImplementedError } from '../core/errors';
 import { at, defined, expectType, first } from '../core/guard';
-import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Float, Mul, Pow, Rational, S, Sym } from '../core/nodes';
+import type { ExprLike } from '../core/nodes';
+import { Add, Expr, Float, Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { add, mul, neg, pow, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
@@ -28,6 +28,7 @@ import { str } from '../printing/str';
 import { expand, expandMul } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { polyCoefficients } from './poly';
+import { PythonMPQ } from './domains/pythonrational';
 
 /** A value cannot be converted to an element of a domain (SymPy CoercionFailed). */
 export class CoercionFailed extends TypeError {}
@@ -42,6 +43,74 @@ function floatToRational(f: Float): Rational {
   const [p, q] = mpfToRational(f.mpf);
   return limitDenominator(Rational.of(p, q), RR_MAX_DENOM);
 }
+
+/**
+ * A SymPy ground value (a JavaScript number or bigint, a PythonMPQ or a
+ * rational/float expression) as an expression; other values are returned
+ * unchanged for the caller to reject.
+ */
+export function groundToSympy(a: unknown): unknown {
+  if (typeof a === 'bigint') return Rational.of(a);
+  if (typeof a === 'number') return Number.isInteger(a) ? Rational.of(BigInt(a)) : sympify(a);
+  if (a instanceof PythonMPQ) return Rational.of(a.numerator, a.denominator);
+  return a;
+}
+
+/** A rational ground value as [p, q] (numbers, bigints, PythonMPQ, Rational, finite Float); undefined otherwise. */
+export function groundRational(a: unknown): [bigint, bigint] | undefined {
+  const e = groundToSympy(a);
+  if (e instanceof Rational) return [e.p, e.q];
+  if (e instanceof Float) return mpfToRational(e.mpf);
+  return undefined;
+}
+
+/** The sign of a rational ground value (numbers, bigints, PythonMPQ, Rational, Float); undefined for other values. */
+function groundSign(a: unknown): number | undefined {
+  const r = groundRational(a);
+  return r === undefined ? undefined : r[0] === 0n ? 0 : r[0] < 0n ? -1 : 1;
+}
+
+/** Python floor division and modulo of bigints. */
+function floorDivmod(a: bigint, b: bigint): [bigint, bigint] {
+  if (b === 0n) throw new RangeError('integer division or modulo by zero');
+  let q = a / b;
+  if (a % b !== 0n && a < 0n !== b < 0n) q -= 1n;
+  return [q, a - q * b];
+}
+
+/** A domain element object with arithmetic methods (PythonMPQ, Gaussian elements, ModularInteger, ANP, Expression). */
+export interface DomainElement {
+  add(o: unknown): unknown;
+  sub(o: unknown): unknown;
+  mul(o: unknown): unknown;
+  div(o: unknown): unknown;
+  neg(): unknown;
+  equals(o: unknown): boolean;
+  readonly isZero: boolean;
+}
+/** Is x a domain element object (not an expression)? @internal */
+export const isDomainElement = (x: unknown): x is DomainElement => typeof x === 'object' && x !== null && !(x instanceof Expr) && typeof (x as { mul?: unknown }).mul === 'function';
+
+/**
+ * a op b for elements of K of any representation (SymPy's operators on
+ * domain elements): integers as bigints, element objects by their methods,
+ * expressions by K's canonical arithmetic. @internal
+ */
+export function domainArith(K: Domain, op: 'add' | 'sub' | 'mul' | 'quo', aIn: unknown, bIn: unknown): unknown {
+  const [a, b] = [K.convert(aIn), K.convert(bIn)];
+  if (typeof a === 'bigint' && typeof b === 'bigint') return op === 'add' ? a + b : op === 'sub' ? a - b : op === 'mul' ? a * b : floorDivmod(a, b)[0];
+  if (isDomainElement(a)) return op === 'quo' ? a.div(b) : a[op](b);
+  const [x, y] = [K.toSympy(a), K.toSympy(b)];
+  return K.convert(op === 'add' ? K.add(x, y) : op === 'sub' ? K.sub(x, y) : op === 'mul' ? K.mul(x, y) : K.quo(x, y));
+}
+
+/** -a for an element of K of any representation. @internal */
+export function domainNeg(K: Domain, a: unknown): unknown {
+  return domainArith(K, 'sub', 0, a);
+}
+
+/** Hooks set by the modules of the domains that depend on heavier machinery (algebraic fields). @internal */
+export const domainHooks: { algebraicField?: (K: Domain, exts: readonly ExprLike[]) => Domain } = {};
 
 /** e is built from the generators, numbers of the ground domain, +, * and integer powers (nonnegative ones only for a ring). */
 function isRationalIn(e: Expr, gens: readonly Sym[], ground: Ground, ring: boolean): boolean {
@@ -74,9 +143,82 @@ export abstract class Domain {
   abstract canon(e: Expr): Expr;
   /** Convert an expression to an element (SymPy from_sympy); throws CoercionFailed. */
   abstract fromSympy(e: ExprLike): Expr;
-  /** The element as an expression (SymPy to_sympy). */
-  toSympy(a: Expr): Expr {
-    return a;
+  /** The element as an expression (SymPy to_sympy); ground numbers (bigint, PythonMPQ) become rationals. */
+  toSympy(a: unknown): Expr {
+    const e = groundToSympy(a);
+    if (e instanceof Expr) return e;
+    throw new CoercionFailed(`${String(a)} is not an element of ${this.toString()}`);
+  }
+  /** SymPy K(a) or K(p, q): an element of the domain (SymPy Domain.new / __call__). */
+  new(...args: unknown[]): unknown {
+    return this.convert(first(args));
+  }
+  /**
+   * Convert a value to an element of the domain (SymPy convert): an
+   * expression, a number, or an element of the domain `base`. ZZ elements
+   * are bigints and QQ elements PythonMPQ (SymPy's ground types); the
+   * other domains keep expressions.
+   */
+  convert(a: unknown, base?: Domain): unknown {
+    const e = base !== undefined && !base.equals(this) ? base.toSympy(a) : groundToSympy(a);
+    if (!(e instanceof Expr)) throw new CoercionFailed(`cannot convert ${String(a)} to ${this.toString()}`);
+    return this.fromSympy(e);
+  }
+  /** Is a an element of the domain's type (SymPy of_type)? */
+  ofType(a: unknown): boolean {
+    return a instanceof Expr;
+  }
+  /** The number of generators of a polynomial ring or fraction field (SymPy ngens). */
+  get ngens(): number {
+    return this.symbols.length;
+  }
+  /** The ground domain of a polynomial ring or fraction field, the domain itself otherwise (SymPy dom). */
+  get dom(): Domain {
+    return GROUNDS[this.ground];
+  }
+  /** The ring of a field (SymPy get_ring): QQ -> ZZ, K(x) -> K[x]; a ring is its own ring. */
+  getRing(): Domain {
+    return this;
+  }
+  /** a > 0 (SymPy is_positive of a ground element). */
+  isPositive(a: unknown): boolean {
+    return (groundSign(a) ?? 0) > 0;
+  }
+  /** a >= 0 (SymPy is_nonnegative). */
+  isNonnegative(a: unknown): boolean {
+    return (groundSign(a) ?? -1) >= 0;
+  }
+  /** a <= 0 (SymPy is_nonpositive). */
+  isNonpositive(a: unknown): boolean {
+    return (groundSign(a) ?? 1) <= 0;
+  }
+  /** The greatest common divisor of two elements (SymPy gcd). */
+  gcd(_a: unknown, _b: unknown): unknown {
+    throw new NotImplementedError(`gcd is not implemented for ${this.toString()}`);
+  }
+  /** The least common multiple of two elements (SymPy lcm). */
+  lcm(_a: unknown, _b: unknown): unknown {
+    throw new NotImplementedError(`lcm is not implemented for ${this.toString()}`);
+  }
+  /** [quotient, remainder] of two elements (SymPy div). */
+  div(_a: unknown, _b: unknown): [unknown, unknown] {
+    throw new NotImplementedError(`div is not implemented for ${this.toString()}`);
+  }
+  /** The exact quotient of two elements (SymPy exquo); throws ExactQuotientFailed. */
+  exquo(_a: unknown, _b: unknown): unknown {
+    throw new NotImplementedError(`exquo is not implemented for ${this.toString()}`);
+  }
+  /** The remainder of two elements (SymPy rem). */
+  rem(_a: unknown, _b: unknown): unknown {
+    throw new NotImplementedError(`rem is not implemented for ${this.toString()}`);
+  }
+  /** The terms {monomial: coefficient} of a polynomial-ring element (SymPy PolyElement.to_dict). */
+  toDict(a: unknown): Map<number[], unknown> {
+    throw new NotImplementedError(`${String(a)} is not a polynomial-ring element of ${this.toString()}`);
+  }
+  /** The algebraic number field QQ<a, ...> over this domain (SymPy algebraic_field). */
+  algebraicField(...exts: ExprLike[]): Domain {
+    return defined(domainHooks.algebraicField, 'algebraic field module')(this, exts);
   }
   add(a: Expr, b: Expr): Expr {
     return this.canon(add(a, b));
@@ -94,15 +236,16 @@ export abstract class Domain {
   quo(a: Expr, b: Expr): Expr {
     return this.getField().canon(mul(a, pow(b, -1)));
   }
-  isZero(a: Expr): boolean {
-    return (a instanceof Rational || a instanceof Float) && a.isZero;
+  isZero(a: unknown): boolean {
+    return groundSign(a) === 0;
   }
-  isOne(a: Expr): boolean {
-    return a instanceof Rational && a.isOne;
+  isOne(a: unknown): boolean {
+    const e = groundToSympy(a);
+    return e instanceof Rational && e.isOne;
   }
   /** a < 0 for a number (SymPy is_negative of the leading ground coefficient). */
-  isNegative(a: Expr): boolean {
-    return (a instanceof Rational && a.p < 0n) || (a instanceof Float && a.mpf.man < 0n);
+  isNegative(a: unknown): boolean {
+    return (groundSign(a) ?? 0) < 0;
   }
   equals(o: Domain): boolean {
     return this.toString() === o.toString();
@@ -157,6 +300,37 @@ export class IntegerRing extends Domain {
   getField(): Domain {
     return QQ;
   }
+  /** An integer element as a bigint (SymPy ZZ.convert); throws CoercionFailed. */
+  override convert(a: unknown, base?: Domain): bigint {
+    const r = groundRational(base !== undefined && !base.equals(this) ? base.toSympy(a) : a);
+    if (r !== undefined && r[0] % r[1] === 0n) return r[0] / r[1];
+    throw new CoercionFailed(`expected an integer, got ${String(a)}`);
+  }
+  override ofType(a: unknown): boolean {
+    return typeof a === 'bigint';
+  }
+  override gcd(a: unknown, b: unknown): bigint {
+    return igcd(this.convert(a), this.convert(b));
+  }
+  override lcm(a: unknown, b: unknown): bigint {
+    return ilcm(this.convert(a), this.convert(b));
+  }
+  /** Python divmod (the quotient rounds toward -infinity). */
+  override div(a: unknown, b: unknown): [bigint, bigint] {
+    return floorDivmod(this.convert(a), this.convert(b));
+  }
+  override exquo(a: unknown, b: unknown): bigint {
+    const [q, r] = floorDivmod(this.convert(a), this.convert(b));
+    if (r !== 0n) throw new ExactQuotientFailed(`${String(a)} does not divide ${String(b)} in ZZ`);
+    return q;
+  }
+  override rem(a: unknown, b: unknown): bigint {
+    return floorDivmod(this.convert(a), this.convert(b))[1];
+  }
+  /** floor(log(a, b)) computed in floating point like SymPy's math.log (SymPy ZZ.log). */
+  log(a: unknown, b: unknown): bigint {
+    return BigInt(Math.trunc(Math.log(Number(this.convert(a))) / Math.log(Number(this.convert(b)))));
+  }
 }
 
 /** SymPy QQ: the rationals. */
@@ -177,6 +351,42 @@ export class RationalField extends Domain {
   }
   getField(): Domain {
     return this;
+  }
+  override getRing(): Domain {
+    return ZZ;
+  }
+  /** SymPy QQ(p, q): the PythonMPQ p/q. */
+  override new(...args: unknown[]): PythonMPQ {
+    const [p, q] = [this.convert(first(args)), args.length > 1 ? this.convert(args[1]) : new PythonMPQ(1n)];
+    return p.div(q);
+  }
+  /** A rational element as a PythonMPQ (SymPy QQ.convert); throws CoercionFailed. */
+  override convert(a: unknown, base?: Domain): PythonMPQ {
+    const r = groundRational(base !== undefined && !base.equals(this) ? base.toSympy(a) : a);
+    if (r === undefined) throw new CoercionFailed(`expected a rational number, got ${String(a)}`);
+    return new PythonMPQ(r[0], r[1]);
+  }
+  override ofType(a: unknown): boolean {
+    return a instanceof PythonMPQ;
+  }
+  /** gcd of the numerators over the lcm of the denominators (SymPy Field.gcd). */
+  override gcd(a: unknown, b: unknown): PythonMPQ {
+    const [x, y] = [this.convert(a), this.convert(b)];
+    return new PythonMPQ(igcd(x.numerator, y.numerator), ilcm(x.denominator, y.denominator));
+  }
+  /** lcm of the numerators over the gcd of the denominators (SymPy Field.lcm). */
+  override lcm(a: unknown, b: unknown): PythonMPQ {
+    const [x, y] = [this.convert(a), this.convert(b)];
+    return new PythonMPQ(ilcm(x.numerator, y.numerator), igcd(x.denominator, y.denominator));
+  }
+  override div(a: unknown, b: unknown): [PythonMPQ, PythonMPQ] {
+    return [this.exquo(a, b), new PythonMPQ(0n)];
+  }
+  override exquo(a: unknown, b: unknown): PythonMPQ {
+    return this.convert(a).div(this.convert(b));
+  }
+  override rem(_a: unknown, _b: unknown): PythonMPQ {
+    return new PythonMPQ(0n);
   }
 }
 
@@ -209,6 +419,48 @@ export class RealField extends Domain {
   }
 }
 
+/** An element of EX (SymPy ExpressionDomain.Expression): a simplified expression, printed `EX(sqrt(2))`. */
+export class Expression {
+  readonly ex: Expr;
+  constructor(ex: ExprLike) {
+    this.ex = EX.canon(sympify(ex));
+  }
+  private static of(o: unknown): Expr {
+    return o instanceof Expression ? o.ex : EX.toSympy(o);
+  }
+  get isZero(): boolean {
+    return this.ex instanceof Rational && this.ex.isZero;
+  }
+  add(o: unknown): Expression {
+    return new Expression(add(this.ex, Expression.of(o)));
+  }
+  sub(o: unknown): Expression {
+    return new Expression(add(this.ex, neg(Expression.of(o))));
+  }
+  mul(o: unknown): Expression {
+    return new Expression(mul(this.ex, Expression.of(o)));
+  }
+  div(o: unknown): Expression {
+    return new Expression(mul(this.ex, pow(Expression.of(o), -1)));
+  }
+  neg(): Expression {
+    return new Expression(neg(this.ex));
+  }
+  pow(n: ExprLike): Expression {
+    return new Expression(pow(this.ex, n));
+  }
+  equals(o: unknown): boolean {
+    return this.ex.key === Expression.of(o).key;
+  }
+  /** SymPy str and repr: `EX(sqrt(2))`. */
+  toString(): string {
+    return `EX(${str(this.ex)})`;
+  }
+  repr(): string {
+    return this.toString();
+  }
+}
+
 /**
  * SymPy EX: arbitrary expressions (for algebraic or symbolic coefficients
  * such as sqrt(2)*I). Elements are canonicalized as SymPy does
@@ -228,6 +480,19 @@ export class ExpressionDomain extends Domain {
   }
   getField(): Domain {
     return this;
+  }
+  override toSympy(a: unknown): Expr {
+    return a instanceof Expression ? a.ex : super.toSympy(a);
+  }
+  /** An element (SymPy EX.convert): the expression wrapped as an Expression. */
+  override convert(a: unknown, base?: Domain): Expression {
+    return new Expression(a instanceof Expression ? a.ex : (base ?? this).toSympy(a));
+  }
+  override ofType(a: unknown): boolean {
+    return a instanceof Expression;
+  }
+  override isZero(a: unknown): boolean {
+    return a instanceof Expression ? a.isZero : super.isZero(a);
   }
 }
 
@@ -257,12 +522,48 @@ abstract class SymbolicDomain extends Domain {
   }
 }
 
+const isTermMap = (x: unknown): x is ReadonlyMap<unknown, unknown> => x instanceof Map;
+
 /** SymPy K[a, ...]: polynomials in symbols (elements are expanded). */
 export class PolynomialRing extends SymbolicDomain {
   readonly isField = false;
   protected readonly ring = true;
   canon(e: Expr): Expr {
     return expandMul(e);
+  }
+  /** SymPy K[x](a): an element from an expression, a number or a dict {monomial: coefficient}. */
+  override new(...args: unknown[]): unknown {
+    return this.convert(first(args));
+  }
+  /** The element as an expression; a dict {monomial: coefficient} (SymPy's PolyElement is a dict) is summed. */
+  override toSympy(a: unknown): Expr {
+    if (!isTermMap(a)) return super.toSympy(a);
+    const terms = [...a].map(([m, c]) => {
+      const monom: unknown[] = Array.isArray(m) ? m : [m];
+      return mul(this.dom.toSympy(c), ...monom.map((k, i) => pow(at(this.symbols, i), Number(k))));
+    });
+    return this.canon(add(...terms));
+  }
+  override convert(a: unknown, base?: Domain): unknown {
+    return isTermMap(a) ? this.toSympy(a) : super.convert(a, base);
+  }
+  /** The terms {monomial: coefficient} of an element; coefficients are elements of the ground domain. */
+  override toDict(aIn: unknown): Map<number[], unknown> {
+    const a = this.canon(this.toSympy(aIn));
+    const out = new Map<string, [number[], Expr]>();
+    for (const t of a instanceof Add ? a.args : [a]) {
+      const monom = this.symbols.map(() => 0);
+      const rest: Expr[] = [];
+      for (const f of t instanceof Mul ? t.args : [t]) {
+        const [b, k] = f instanceof Pow && f.exp instanceof Rational ? [f.base, Number(f.exp.p)] : [f, 1];
+        const i = this.symbols.findIndex((s) => s.key === b.key);
+        if (i >= 0) monom[i] = at(monom, i) + k;
+        else rest.push(f);
+      }
+      // the canonical (expanded) element has one term per monomial
+      out.set(monom.join(','), [monom, mul(...rest)]);
+    }
+    return new Map([...out.values()].filter(([, c]) => !(c instanceof Rational && c.isZero)).map(([m, c]) => [m, this.dom.convert(c)]));
   }
   getField(): Domain {
     return new FractionField(this.ground, this.symbols);
@@ -279,16 +580,19 @@ export class FractionField extends SymbolicDomain {
   getField(): Domain {
     return this;
   }
+  override getRing(): Domain {
+    return new PolynomialRing(this.ground, this.symbols);
+  }
 }
 
 /** SymPy ZZ. */
-export const ZZ: Domain = new IntegerRing();
+export const ZZ: IntegerRing = new IntegerRing();
 /** SymPy QQ. */
-export const QQ: Domain = new RationalField();
+export const QQ: RationalField = new RationalField();
 /** SymPy RR (53-bit floats). */
 export const RR: Domain = new RealField();
 /** SymPy EX (expressions). */
-export const EX: Domain = new ExpressionDomain();
+export const EX: ExpressionDomain = new ExpressionDomain();
 
 const GROUNDS: Record<Ground, Domain> = { ZZ, QQ, RR, EX };
 

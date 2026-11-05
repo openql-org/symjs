@@ -34,6 +34,7 @@ import { Mod } from '../functions/mod';
 import { xreplace } from '../core/traverse';
 import { gcdext } from '../ntheory/intutil';
 import { gcd } from '../core/numbers';
+import { registerRewrite } from '../simplify/rewrite';
 
 /** Base class of all sets. */
 export abstract class SetExpr extends Expr {
@@ -1627,3 +1628,8 @@ impl.subsSet = subsSet;
 impl.emptySet = () => EmptySet;
 impl.interval = (a, b) => interval(a, b);
 impl.setIntersection = (a, b) => intersection(cast(a, SetExpr, 'intersection operand'), cast(b, SetExpr, 'intersection operand'));
+
+// SymPy PowerSet.rewrite(FiniteSet) and DisjointUnion.rewrite(Union) through rewrite(e, target); sets are
+// classified by their kind ('Set') in the rewrite rules
+registerRewrite('Set', 'FiniteSet', (_args, e) => (e instanceof PowerSetNode ? e.rewriteAsFiniteSet() : undefined));
+registerRewrite('Set', 'Union', (_args, e) => (e instanceof DisjointUnionNode ? e.rewriteAsUnion() : undefined));

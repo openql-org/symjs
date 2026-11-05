@@ -5,7 +5,9 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { Float, Rational, Sym, parseExpr as P, sstr } from '../../src/index';
 import { ExactQuotientFailed, NotImplementedError } from '../../src/core/errors';
-import { CoercionFailed, DMF, DMP, EX, ExpressionDomain, FractionField, IntegerRing, PolynomialRing, QQ, RR, RationalField, RealField, ZZ, gcdSettings } from '../../src/polys/domains';
+import { CoercionFailed, DMF, DMP, EX, Expression, ExpressionDomain, FractionField, IntegerRing, PolynomialRing, QQ, RR, RationalField, RealField, ZZ, domainArith, domainNeg, gcdSettings, groundRational, groundToSympy, isDomainElement } from '../../src/polys/domains';
+import { PythonMPQ } from '../../src/polys/domains/pythonrational';
+import '../../src/polys/domains/algebraicfield';
 
 const x = new Sym('x');
 const a = new Sym('a');
@@ -205,5 +207,55 @@ describe('domain classes', () => {
     expect(QQ).toBeInstanceOf(RationalField);
     expect(RR).toBeInstanceOf(RealField);
     expect(EX).toBeInstanceOf(ExpressionDomain);
+  });
+});
+
+describe('SymPy ground elements (bigint ZZ, PythonMPQ QQ)', () => {
+  it('ZZ', () => {
+    expect([ZZ.new(2), ZZ.convert(Rational.of(4n)), ZZ.convert(new PythonMPQ(6n, 3n)), ZZ.convert(3, QQ), ZZ.convert(new Float(2))]).toEqual([2n, 4n, 2n, 3n, 2n]);
+    expect(() => ZZ.convert(Rational.of(1n, 2n))).toThrow(CoercionFailed);
+    expect(() => ZZ.convert('a')).toThrow(CoercionFailed);
+    expect([ZZ.ofType(1n), ZZ.ofType(1), ZZ.gcd(4, 6), ZZ.lcm(4, 6), ZZ.div(-7, 2), ZZ.rem(-7, 2), ZZ.exquo(-6, 3), ZZ.log(8, 2), ZZ.log(9, 2), ZZ.log(1000, 10)]).toEqual([true, false, 2n, 12n, [-4n, 1n], 1n, -2n, 3n, 3n, 2n]);
+    expect(() => ZZ.exquo(5, 2)).toThrow(ExactQuotientFailed);
+    expect(() => ZZ.div(5, 0)).toThrow(RangeError);
+    expect([ZZ.getRing(), ZZ.dom, ZZ.ngens]).toEqual([ZZ, ZZ, 0]);
+    expect([ZZ.isPositive(2n), ZZ.isPositive(x), ZZ.isNegative(-1), ZZ.isNegative(x), ZZ.isNonnegative(0), ZZ.isNonnegative(x), ZZ.isNonpositive(0), ZZ.isNonpositive(x), ZZ.isOne(1n), ZZ.isZero(0)]).toEqual([true, false, true, false, true, false, true, false, true, true]);
+    expect([ZZ.toSympy(3n), ZZ.toSympy(1.5), ZZ.toSympy(new PythonMPQ(1n, 2n))].map(s)).toEqual(['3', '1.50000000000000', '1/2']);
+    expect(() => ZZ.toSympy('a')).toThrow(CoercionFailed);
+    expect(() => ZZ.toDict(1)).toThrow(NotImplementedError);
+  });
+  it('QQ', () => {
+    expect([QQ.new(1, 2), QQ.new(3), QQ.convert(new Float(0.5)), QQ.convert(2n, ZZ)].map(String)).toEqual(['1/2', '3', '1/2', '2']);
+    expect(() => QQ.convert('a')).toThrow(CoercionFailed);
+    expect([QQ.ofType(QQ.new(1)), QQ.ofType(1), QQ.getRing() === ZZ].map(String)).toEqual(['true', 'false', 'true']);
+    expect([QQ.gcd(Rational.of(2n, 3n), Rational.of(4n, 9n)), QQ.lcm(Rational.of(2n, 3n), Rational.of(4n, 9n)), QQ.exquo(5, 2), QQ.rem(5, 2)].map(String)).toEqual(['2/9', '4/3', '5/2', '0']);
+    expect(QQ.div(5, 2).map((e) => e.repr())).toEqual(['MPQ(5,2)', 'MPQ(0,1)']);
+    expect(String(QQ.algebraicField(P('sqrt(2)')))).toBe('QQ<sqrt(2)>');
+  });
+  it('base domain defaults', () => {
+    for (const f of ['gcd', 'lcm', 'div', 'exquo', 'rem'] as const) expect(() => RR[f](1, 2)).toThrow(NotImplementedError);
+    expect([RR.ofType(new Float(1)), String(RR.new(2)), RR.getRing()]).toEqual([true, '2.00000000000000', RR]);
+    expect(() => RR.convert({})).toThrow(CoercionFailed);
+    expect(String(QQ.fracField(a).getRing())).toBe('QQ[a]');
+  });
+  it('arithmetic on elements of any representation', () => {
+    expect([domainArith(ZZ, 'add', 2, 3), domainArith(ZZ, 'sub', 2, 3), domainArith(ZZ, 'mul', 2, 3), domainArith(ZZ, 'quo', -7, 2), domainNeg(ZZ, 2)]).toEqual([5n, -1n, 6n, -4n, -2n]);
+    expect([domainArith(QQ, 'add', 1, 2), domainArith(QQ, 'quo', 1, 2)].map(String)).toEqual(['3', '1/2']);
+    expect([domainArith(RR, 'add', 1, 2), domainArith(RR, 'sub', 1, 2), domainArith(RR, 'mul', 2, 3), domainArith(RR, 'quo', 1, 4)].map(String)).toEqual(['3.00000000000000', '-1.00000000000000', '6.00000000000000', '0.250000000000000']);
+    expect([isDomainElement(QQ.new(1)), isDomainElement(x), isDomainElement(null), groundToSympy('a')]).toEqual([true, false, false, 'a']);
+    expect(groundRational(x)).toBeUndefined();
+  });
+  it('EX elements (SymPy ExpressionDomain.Expression)', () => {
+    const e = EX.convert(P('sqrt(2)'));
+    expect([e.add(1), e.mul(e), e.div(2), e.neg(), e.pow(2), e.sub(1), EX.convert(3), EX.convert(e), EX.convert(QQ.new(1, 2), QQ), new Expression(P('x*(x + 1)'))].map(String)).toEqual(['EX(1 + sqrt(2))', 'EX(2)', 'EX(sqrt(2)/2)', 'EX(-sqrt(2))', 'EX(2)', 'EX(-1 + sqrt(2))', 'EX(3)', 'EX(sqrt(2))', 'EX(1/2)', 'EX(x**2 + x)']);
+    expect([e.repr(), e.equals(P('sqrt(2)')), e.equals(e), e.isZero, EX.convert(0).isZero]).toEqual(['EX(sqrt(2))', true, true, false, true]);
+    expect([s(EX.toSympy(e)), s(EX.toSympy(2)), EX.ofType(e), EX.ofType(x), EX.isZero(EX.convert(0)), EX.isZero(0)]).toEqual(['sqrt(2)', '2', true, false, true, true]);
+  });
+  it('polynomial-ring elements from dicts (SymPy PolyElement is a dict)', () => {
+    const R = ZZ.polyRing(a, b);
+    expect([R.new(new Map([[[1, 0], 2n], [[0, 2], 3n]])), R.new(a), R.convert(new Map([[1, 1]])), R.toSympy(new Map([[[0, 1], 2]]))].map(String)).toEqual(['2*a + 3*b**2', 'a', 'a', '2*b']);
+    expect([...R.toDict(P('2*a*b + 3*a*b + a**2 + 0*b'))].map(([m, c]) => `${m.join(',')}:${String(c)}`)).toEqual(['1,1:5', '2,0:1']);
+    expect([...R.toDict(new Map([[[1, 0], 2]]))].map(([m, c]) => `${m.join(',')}:${String(c)}`)).toEqual(['1,0:2']);
+    expect([R.ngens, R.dom]).toEqual([2, ZZ]);
   });
 });

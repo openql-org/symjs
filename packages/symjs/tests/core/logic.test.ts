@@ -194,3 +194,12 @@ describe('relations between oo and -oo (SymPy)', () => {
     expect(Ge(S.NegativeInfinity, S.Infinity)).toBe(S.false);
   });
 });
+
+describe('a relation as a side of an equality (SymPy)', () => {
+  it('stays unevaluated', () => {
+    const [x, y, z] = sj.symbols('x y z');
+    expect(String(Eq(Eq(x, y), z))).toBe('Eq(Eq(x, y), z)');
+    expect(String(Ne(Eq(x, y), z))).toBe('Ne(Eq(x, y), z)');
+    expect(String(Eq(z, Eq(x, y)))).toBe('Eq(z, Eq(x, y))');
+  });
+});

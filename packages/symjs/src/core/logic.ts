@@ -46,6 +46,8 @@ export function rel(op: RelOp, a: ExprLike, b: ExprLike): Expr {
   }
   // equal sides (such as oo and oo, whose difference is nan)
   if (lhs.key === rhs.key) return byCmp(0);
+  // a relation is not a number: Eq(Eq(F, G), C1) of the exact ODE solution stays unevaluated (SymPy)
+  if (equality && (lhs instanceof Rel || rhs instanceof Rel)) return new Rel(op, lhs, rhs);
   const d = add(lhs, mul(-1, rhs));
   if (d instanceof Rational) return byCmp(numCmp(d, S.Zero));
   if (d instanceof Float) return byCmp(Math.sign(d.value));

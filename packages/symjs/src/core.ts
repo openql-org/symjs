@@ -109,6 +109,8 @@ export {
 export { Basic, BasicNode } from './core/basic';
 export { Kind, NumberKind, BooleanKind, UndefinedKind } from './core/kind';
 export { SymNumber, RealNumber, Atom, AtomicExpr, FunctionClass, UnevaluatedExpr, DeferredVector, genericExpr } from './core/classes';
+export { evaluate, globalParameters } from './core/parameters';
+export { Transform } from './core/rules';
 export { defineFunction, implementedFunction, DefinedFunctionCall, arity } from './core/defun';
 export type { DefinedFunction, FunctionDefinition } from './core/defun';
 export type {
@@ -279,7 +281,6 @@ export {
 } from './numeric/mpf';
 export {
   str,
-  str as sstr,
 } from './printing/str';
 export {
   asOrderedTerms,
@@ -294,8 +295,8 @@ export {
   latex,
 } from './printing/latex';
 export type { LatexOptions, LatexPrintable, LatexMatrix } from './printing/latex';
-export { StrPrinter, sstrrepr, printLatex, multilineLatex } from './printing/printers';
-export type { StrPrintable, MultilineLatexOptions } from './printing/printers';
+export { StrPrinter, sstr, sstrrepr, printLatex, multilineLatex } from './printing/printers';
+export type { StrPrintable, MultilineLatexOptions, SstrOptions } from './printing/printers';
 export {
   parse,
   parse as parseExpr,

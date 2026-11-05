@@ -61,7 +61,7 @@ const r = (p: number, q: number): Rational => Rational.of(BigInt(p), BigInt(q));
 
 /** Structural equality, like SymPy ==. */
 const same = (u: Expr, v: Expr): boolean => u.key === v.key;
-const strs = (xs: readonly Expr[]): string[] => xs.map(sstr);
+const strs = (xs: readonly Expr[]): string[] => xs.map((e) => sstr(e));
 const mat = (m: Matrix): string => m.toString();
 const qmul = (...xs: ExprLike[]): QuaternionNode => mul(...xs) as QuaternionNode;
 

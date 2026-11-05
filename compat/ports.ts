@@ -199,7 +199,31 @@ function memoFactorial(): sj.RecurrenceMemo<number> {
   return factorial;
 }
 
+// ---- sympy.assumptions.relation.binrel: class MyRel(BinaryRelation): name = "R"; is_reflexive = False; Q.R = MyRel()
+// with @Q.R.register(Number, Number) def _(n1, n2, assumptions): return ask(Q.zero(n1 - n2 - 1), assumptions)
+const myRel = (): sj.Predicate =>
+  sj.Q['R'] ?? sj.BinaryRelation('R', (n1, n2, assumptions) => (sj.isNum(n1) && sj.isNum(n2) ? sj.ask(sj.Q.zero(sj.sub(sj.sub(n1, n2), 1)), assumptions) : 'unknown'), { isReflexive: false });
+
 export const PORTS: Record<string, (() => unknown) | readonly (() => unknown)[]> = {
+  'sympy.assumptions.relation.binrel:Q.R(2, 1)': () => myRel()(2, 1),
+  'sympy.assumptions.relation.binrel:ask(Q.R(2, 1))': () => sj.ask(myRel()(2, 1)),
+  'sympy.assumptions.relation.binrel:ask(Q.R(1, 2))': () => sj.ask(myRel()(1, 2)),
+  'sympy.assumptions.relation.binrel:ask(Q.R(x, x))': () => sj.ask(myRel()(x, x)),
+  // ---- sympy.assumptions.wrapper: class MyAbs(Function) whose eval uses AssumptionsWrapper(x, assumptions) and
+  // whose _eval_refine calls eval with the assumptions; refine re-evaluates with the assumed facts
+  'sympy.assumptions.wrapper:MyAbs(x).refine(Q.positive(x))': () => {
+    const MyAbs = sj.defineFunction('MyAbs', {
+      nargs: 1,
+      eval: (a) => (sj.isNonNegative(a) === true ? a : sj.isNegative(a) === true ? sj.neg(a) : undefined),
+    });
+    return sj.refine(MyAbs(x), sj.Q.positive(x));
+  },
+  // ---- sympy.core.rules: add1_odd = Transform(lambda x: x + 1, lambda x: x%2 == 1), Python lambdas over ints
+  'sympy.core.rules:add1_odd.get(2, 0)': () => new sj.Transform((k: number) => sj.add(k, 1), (k: number) => k % 2 === 1).get(2, 0),
+  'sympy.core.rules:add1_odd.get(3, 0)': () => new sj.Transform((k: number) => sj.add(k, 1), (k: number) => k % 2 === 1).get(3, 0),
+  // e = parse_mathematica("F[7,5,3]")
+  'sympy.parsing.mathematica:e.replace(Function("F"), lambda *x: Max(*x)*Min(*x))': () =>
+    sj.replace(sj.parseMathematica('F[7,5,3]'), { fn: 'F' }, (...args: Expr[]) => sj.mul(sj.Max(...args), sj.Min(...args))),
   // ---- sympy.matrices.sparsetools: s = lambda d: (1 + d)**2, a function of the position on the diagonal
   'sympy.matrices.sparsetools:banded(5, {0: s, 2: s, -2: 2})': () => {
     const s = (d: number) => sj.pow(sj.add(1, d), 2);

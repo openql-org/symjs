@@ -570,3 +570,12 @@ describe('extended predicates, imaginary sums, zero products and Q.is_true (SymP
     expect(String(Q.is_true(x!))).toBe('Q.is_true(x)');
   });
 });
+
+describe('predicates on nan', () => {
+  it('leaves every predicate but commutative undecided (SymPy: ask(Q.finite(nan)) is None)', () => {
+    expect(ask(Q.finite(sj.S.NaN))).toBe('unknown');
+    expect(ask(Q.zero(sj.mul(0, sj.oo)))).toBe('unknown');
+    expect(ask(Q.positive(sj.S.NaN))).toBe('unknown');
+    expect(ask(Q.commutative(sj.S.NaN))).toBe(true);
+  });
+});

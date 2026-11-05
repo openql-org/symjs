@@ -53,5 +53,7 @@ describe('Gray code helpers', () => {
     expect(() => getSubsetFromBitstring([1], '10')).toThrow('The sizes of the lists are not equal');
     expect([...graycodeSubsets(['a', 'b', 'c'])]).toEqual([[], ['c'], ['b', 'c'], ['b'], ['a', 'b'], ['a', 'b', 'c'], ['a', 'c'], ['a']]);
     expect(randomBitstring(5)).toMatch(/^[01]{5}$/);
+    // both digits occur (64 random bits are all equal with probability 2**-63)
+    expect(randomBitstring(64)).toMatch(/^(?=.*0)(?=.*1)[01]{64}$/);
   });
 });

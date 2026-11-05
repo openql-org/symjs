@@ -115,7 +115,7 @@ describe('checkodesol', () => {
   const Y = Fn('y');
   const L = { f, g } as never;
   const P = (s: string): Expr => parse(s, { locals: L });
-  const show = ([ok, r]: [boolean, Expr | Expr[]]) => `(${ok ? 'True' : 'False'}, ${Array.isArray(r) ? `[${r.map(sstr).join(', ')}]` : sstr(r)})`;
+  const show = ([ok, r]: [boolean, Expr | Expr[]]) => `(${ok ? 'True' : 'False'}, ${Array.isArray(r) ? `[${r.map((e) => sstr(e)).join(', ')}]` : sstr(r)})`;
 
   it('checks one equation', () => {
     const fx = f(x!);

@@ -38,6 +38,7 @@ import { odesimp } from './odesimp';
 import { linsolve, solve } from './solve';
 import { homogeneousOrder } from './homogeneous';
 import { odeLieGroup } from './liegroup';
+import { nthAlgebraicSolutions } from './ode/single';
 
 const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
 
@@ -296,7 +297,7 @@ const riccatiSpecial: Solver = (p) => {
   return [Eq(p.fx, mul(add(a, mul(-1, c), mul(-1, mu, tan(add(mul(mu, pow(mul(2, a), -1), log(x)), C(1))))), pow(mul(2, b, x), -1)))];
 };
 
-const nthAlgebraic: Solver = (p) => {
+const nthAlgebraicOneOrder: Solver = (p) => {
   // the equation involves only derivatives of a single order n and x: f = n-fold integral of the roots
   // (order 0, an algebraic equation, as in SymPy's classify_ode)
   const n = p.order;
@@ -317,6 +318,9 @@ const nthAlgebraic: Solver = (p) => {
     return Eq(p.fx, g);
   });
 };
+
+/** SymPy NthAlgebraic: one order of derivatives directly, otherwise differentiation as an invertible function. */
+const nthAlgebraic: Solver = (p) => nthAlgebraicOneOrder(p) ?? nthAlgebraicSolutions(p.eq, p.fx, p.x);
 
 // ---------------------------------------------------------------------------
 // linear equations with constant coefficients

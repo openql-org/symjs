@@ -49,6 +49,7 @@ import { couldExtractMinusSign, splitCoeff } from '../../core/ops';
 import { numNeg } from '../../core/num';
 import { BoolOp } from '../../core/boolalg';
 import { Concrete } from '../../core/concrete';
+import { DictNode } from '../../core/containers';
 import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey, sympyFunctionName } from '../sortkey';
 import type { Key } from '../sortkey';
 import { PREC, floatString, precedence, str } from '../str';
@@ -138,8 +139,13 @@ export type Printable =
  */
 export const prettyHooks: {
   readonly extension: Map<string, (e: Expr, printer: PrettyPrinter) => PrettyForm>;
+  /**
+   * Printers for families of nodes whose names vary (the named morphisms of sympy.categories): each is
+   * tried in turn on a node without a printer by name and gives undefined for a node it does not print.
+   */
+  readonly extensionFallbacks: ((e: Expr, printer: PrettyPrinter) => PrettyForm | undefined)[];
   matrix: ((m: MatrixLike, printer: PrettyPrinter) => PrettyForm) | undefined;
-} = { extension: new Map(), matrix: undefined };
+} = { extension: new Map(), extensionFallbacks: [], matrix: undefined };
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -1290,6 +1296,10 @@ export class PrettyPrinter {
   private printExtension(e: ExtensionExpr): PrettyForm {
     const hook = prettyHooks.extension.get(e.name);
     if (hook) return hook(e, this);
+    for (const f of prettyHooks.extensionFallbacks) {
+      const r = f(e, this);
+      if (r) return r;
+    }
     const named = this.printNamedFunction(e.name, e.args);
     if (named !== undefined) return named;
     const u = this.useUnicode;
@@ -1300,6 +1310,8 @@ export class PrettyPrinter {
     if (isPermutationLike(e)) return this.printPermutation(e);
     if (isHyperLike(e)) return this.printHyper(e);
     if (isMeijerLike(e)) return this.printMeijer(e);
+    // SymPy _print_Dict: a SymPy Dict prints like a dict
+    if (e instanceof DictNode) return this.print(new Map(e.items()));
     switch (e.name) {
       // SymPy Partition is a FiniteSet of its blocks (stored in SymPy's order): _print_FiniteSet
       case 'Partition':

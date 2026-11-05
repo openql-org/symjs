@@ -55,8 +55,20 @@ const isExprList = <T>(v: T | readonly T[] | undefined): v is readonly T[] => Ar
 export function dsolve(eqIn: ExprLike | readonly ExprLike[], fx?: Expr | readonly Expr[], opts: DsolveOptions = {}): Expr | Expr[] | Expr[][] {
   // a system of equations: a list of solutions, or a list of solution lists (SymPy)
   if (isExprList(eqIn)) return dsolveSystem(eqIn, isExprList(fx) ? fx.map((f) => cast(f, UndefFn, 'unknown function')) : undefined);
-  if (isExprList(fx) || fx === undefined) throw new TypeError('dsolve: the unknown function f(x) is required');
-  return dsolveSingle(eqIn, fx, opts);
+  if (isExprList(fx)) throw new TypeError('dsolve: the unknown function f(x) is required');
+  return dsolveSingle(eqIn, fx ?? unknownFunction(asEquation(eqIn)), opts);
+}
+
+/** SymPy _preprocess: the one function whose derivatives the equation contains. */
+function unknownFunction(eq: Expr): Expr {
+  const fs = new Map<string, Expr>();
+  const go = (e: Expr): void => {
+    if (e instanceof Derivative && e.expr instanceof UndefFn) fs.set(e.expr.key, e.expr);
+    e.args.forEach(go);
+  };
+  go(eq);
+  if (fs.size !== 1) throw new TypeError('dsolve: the unknown function f(x) is required');
+  return first([...fs.values()]);
 }
 
 /** dsolve of a single equation. */

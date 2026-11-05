@@ -856,3 +856,13 @@ describe('isSubset of the natural numbers', () => {
     expect(Sets.isSubset(Sets.Naturals, Sets.Integers)).toBe(true);
   });
 });
+
+describe('rewrite of sets', () => {
+  it('rewrites PowerSet as FiniteSet and DisjointUnion as Union (SymPy .rewrite)', () => {
+    const F = (...xs: number[]) => sj.FiniteSet.of(...xs.map((x) => sj.sympify(x)));
+    expect(String(sj.rewrite(sj.PowerSet(F(1, 2)), 'FiniteSet'))).toBe('FiniteSet(EmptySet, {1}, {2}, {1, 2})');
+    expect(String(sj.rewrite(sj.PowerSet(sj.Reals), 'FiniteSet'))).toBe('PowerSet(Reals)');
+    expect(String(sj.rewrite(sj.DisjointUnion(F(1), F(2)), 'Union'))).toBe('Union(ProductSet({1}, {0}), ProductSet({2}, {1}))');
+    expect(String(sj.rewrite(F(1), 'Union'))).toBe('{1}');
+  });
+});

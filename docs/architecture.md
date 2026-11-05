@@ -244,6 +244,22 @@ Modules not listed here follow the path rule (`sympy/crypto/crypto.py` ->
 | `combinatorics/tensor_can.py` | `tensor/tensorcan.ts` | the Butler-Portugal canonicalization of tensors under slot and dummy symmetries (`canonicalize`, `double_coset_can_rep`, `canonical_free`, `riemann_bsgs`) |
 | `solvers/pde.py` | `solvers/pde.ts` | first-order linear PDEs with constant and variable coefficients, explicit solution checking and variable separation |
 | `solvers/solveset.py` | `solvers/solveset.ts` | nonlinear-system substitution, including dependent exponential ImageSet components |
+| `polys/rings.py`, `polys/compatibility.py` | `polys/rings.ts`, `polys/compatibility.ts` | sparse polynomial rings (`PolyRing`, `PolyElement`, `ring`, `xring`, `vring`, `sring`) and the `IPolys` methods; `fields.py` (`FracField`) is not ported yet |
+| `polys/densebasic.py`, `polys/distributedmodules.py`, `polys/polyoptions.py`, `polys/constructor.py` | `polys/densebasic.ts`, `polys/distributedmodules.ts`, `polys/polyoptions.ts`, `polys/constructor.ts` | |
+| `polys/domains/*.py` | `polys/domains.ts` (ZZ, QQ, RR, EX and the polynomial rings and fraction fields), `polys/domains/*.ts` (finite fields, Gaussian domains, algebraic fields, CC, EXRAW) | `ANP` of `polys/polyclasses.py` is in `polys/domains/algebraicfield.ts`; `PythonMPQ` of `sympy/external/pythonmpq.py` in `polys/domains/pythonrational.ts` |
+| `polys/matrices/ddm.py`, `sdm.py`, `dense.py`, `domainmatrix.py`, `domainscalar.py`, `exceptions.py`, `rref.py`, `normalforms.py` | `polys/matrices/<same name>.ts` | `polys/matrices/domainops.ts` holds the ring operations of the domains on the expression form of the matrix elements; `lll.py`, `linsolve.py`, `eigen.py` and the `dfm` modules are not ported |
+| `matrices/normalforms.py` | `matrices/normalforms.ts` | also SymPy's `polys/matrices/normalforms.py` for DomainMatrix input (one function per SymPy name); `matrices/domainmatrix.ts` holds `to_DM` of `repmatrix.py` |
+| `sets/ordinals.py` | `sets/ordinals.ts` | |
+| `core/parameters.py`, `core/rules.py` | `core/parameters.ts`, `core/rules.ts` | `with evaluate(False)` is `evaluate(false, () => ...)` |
+| `ntheory/elliptic_curve.py`, `ntheory/bbp_pi.py` | `ntheory/ellipticcurve.ts`, `ntheory/bbppi.ts` | |
+| `assumptions/relation/binrel.py` | `assumptions/relation/binrel.ts` | `BinaryRelation` |
+| `assumptions/satask.py`, `lra_satask.py`, `cnf.py`, `facts.py`, `ask_generated.py`, `logic/algorithms/lra_theory.py` | `assumptions/satask.ts`, `lrasatask.ts`, `cnf.ts`, `facts.ts`, `askgenerated.ts`, `logic/algorithms/lratheory.ts` | |
+| `printing/pretty/pretty.py` (morphisms, categories and diagrams) | `categories/pretty.ts` | registered by the categories entry |
+| `integrals/intpoly.py` | `integrals/intpoly.ts` | the helpers are members of the namespace `intpoly`; Polygon, Segment and Point are accepted by their structure (the integrals layer does not import geometry) |
+| `concrete/guess.py`, `series/approximants.py` | `concrete/guess.ts`, `series/approximants.ts` | L2 modules |
+| `parsing/mathematica.py` | `parsing/mathematica.ts` | `parse_mathematica`, `MathematicaParser`; exported by the simplify entry, which also registers `cancel` for `Cancel` through the parser hook; the deprecated `mathematica()` parser is not ported |
+| `solvers/simplex.py`, `solvers/bivariate.py` | `solvers/simplex.ts`, `solvers/bivariate.ts` | `lpmin`, `lpmax`, `linprog`, `show_linprog`; `bivariate_type` (the Lambert W helpers stay in `solvers/solve.ts`) |
+| `solvers/ode/single.py` | `solvers/ode/single.ts` (`SingleODEProblem`, `SingleODESolver`, `NthAlgebraic`), `solvers/dsolve.ts` (the hint solvers) | |
 
 ## Scope decisions
 

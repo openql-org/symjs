@@ -364,10 +364,10 @@ describe('Operator (SymPy sympy.simplify.hyperexpand.Operator)', () => {
     // op = Operator(); op._poly = Poly(x**2 + z*x + y, x); op.apply(z**7, lambda f: f.diff(z))
     const op = new sj.Operator(parse('x**2 + z*x + y'), x);
     expect(sstr(op.apply(parse('z**7'), (f) => sj.diff(f, z)))).toBe('y*z**7 + 7*z**7 + 42*z**5');
-    expect(op.poly.map(sstr)).toEqual(['y', 'z', '1']);
+    expect(op.poly.map((e) => sstr(e))).toEqual(['y', 'z', '1']);
     // a missing power of the generator has the coefficient 0: (D**2 + y)(z**3) = 6*z + y*z**3
     const op2 = new sj.Operator(parse('x**2 + y'), x);
-    expect(op2.poly.map(sstr)).toEqual(['y', '0', '1']);
+    expect(op2.poly.map((e) => sstr(e))).toEqual(['y', '0', '1']);
     expect(sstr(op2.apply(parse('z**3'), (f) => sj.diff(f, z)))).toBe('y*z**3 + 6*z');
   });
   it('a constant operator without a generator, and the zero operator', () => {

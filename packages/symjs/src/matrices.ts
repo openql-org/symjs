@@ -26,6 +26,7 @@ export type { MatrixPosition, SparseData, SparseMatrixArgs, SparseValue } from '
 // SymPy ImmutableDenseMatrix is ImmutableMatrix
 export { ImmutableMatrix as ImmutableDenseMatrix } from './matrices/expressions/matexpr';
 export { DomainMatrix, toDM } from './matrices/domainmatrix';
+export { smithNormalForm, isSmithNormalForm, smithNormalDecomp, invariantFactors, hermiteNormalForm } from './matrices/normalforms';
 export { Matrix as MatrixBase } from './matrices/matrix';
 export { MatrixTranspose, MatrixAdjoint } from './matrices/matexpr';
 // matrix expressions (SymPy sympy.matrices.expressions)

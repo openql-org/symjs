@@ -133,3 +133,7 @@ export const invertEquation = _invertEquation_;
 export { pdsolve, classifyPde, checkpdesol, pdeSeparate, pdeSeparateAdd, pdeSeparateMul } from './solvers/pde';
 export { decompogen, compogen } from './solvers/decompogen';
 export { continuousDomain, functionRange, lcim } from './solvers/calculusutil';
+export { lpmin, lpmax, linprog, showLinprog, UnboundedLPError, InfeasibleLPError } from './solvers/simplex';
+export type { LPMatrixLike, LPBound, LPBounds } from './solvers/simplex';
+export { bivariateType } from './solvers/bivariate';
+export { SingleODEProblem, SingleODESolver, NthAlgebraic, ODEMatchError } from './solvers/ode/single';

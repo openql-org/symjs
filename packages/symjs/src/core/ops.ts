@@ -42,6 +42,7 @@ import { cpow as mpCpow, powReal as mpPowReal } from '../numeric/mpfun';
 import { factorInt, gcd, iroot, ipow } from './numbers';
 import { NotLoadedError, SympifyError, errorSettings } from './errors';
 import { at, cast, pair } from './guard';
+import { globalParameters } from './parameters';
 
 export function sympify(x: ExprLike): Expr {
   if (x instanceof Expr) return x;
@@ -226,6 +227,8 @@ function infTerm(e: Expr): [Special, Expr] | undefined {
 export function add(...xs: ExprLike[]): Expr {
   const sx = xs.map(sympify);
   rejectRel(sx, 'Add');
+  // evaluate(false, ...): the sum as given (SymPy Add(*args, evaluate=False))
+  if (!globalParameters.evaluate) return sx.length === 1 ? at(sx, 0) : sx.length === 0 ? S.Zero : new Add(sx);
   const own = impl.arithmetic?.('add', sx);
   if (own !== undefined) return own;
   const ab = impl.accumBounds;
@@ -515,6 +518,8 @@ function mulSpecial(args: Expr[]): Expr {
 export function mul(...xs: ExprLike[]): Expr {
   const args = xs.map(sympify);
   rejectRel(args, 'Mul');
+  // evaluate(false, ...): the product as given (SymPy Mul(*args, evaluate=False))
+  if (!globalParameters.evaluate) return args.length === 1 ? at(args, 0) : args.length === 0 ? S.One : new Mul(args);
   const own = impl.arithmetic?.('mul', args);
   if (own !== undefined) return own;
   const ab = impl.accumBounds;
@@ -736,6 +741,8 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   const b = sympify(bx);
   const e = sympify(ex);
   rejectRel([b, e], 'Pow');
+  // evaluate(false, ...): the power as given (SymPy Pow(b, e, evaluate=False))
+  if (!globalParameters.evaluate) return new Pow(b, e);
   const own = impl.arithmetic?.('pow', [b, e]);
   if (own !== undefined) return own;
   if (impl.accumBounds?.is(b) && e.freeSymbols().size === 0) return impl.accumBounds.pow(b, e);

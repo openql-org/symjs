@@ -82,7 +82,7 @@ export {
   OptionError,
   FlagError,
 } from './polys/polyerrors';
-export { ZZ, QQ, RR, EX, Domain, IntegerRing, RationalField, RealField, ExpressionDomain, PolynomialRing, FractionField, GlobalPolynomialRing, OldFractionField, DMP, DMF, CoercionFailed } from './polys/domains';
+export { ZZ, QQ, RR, EX, Domain, IntegerRing, RationalField, RealField, ExpressionDomain, Expression, PolynomialRing, FractionField, GlobalPolynomialRing, OldFractionField, DMP, DMF, CoercionFailed } from './polys/domains';
 export { polyFromExpr, parallelPolyFromExpr, gff, type PolyOptions } from './polys/fromexpr';
 export { RootSum, RootSumNode, apartList, assemblePartfracList } from './polys/rootsum';
 export type { PartfracTerm } from './polys/rootsum';
@@ -187,3 +187,31 @@ export {
   gfFactor, gfValue,
 } from './polys/galoistools';
 export type { GFPoly, GFFactorization, GFFactorMethod } from './polys/galoistools';
+
+// sparse polynomial rings (SymPy sympy.polys.rings) and the IPolys methods (sympy.polys.compatibility)
+export { PolyRing, PolyElement, ring, xring, vring, sring } from './polys/rings';
+export type { RingSymbols, DomainLike, OrderLike, GenLike, SringOptions, Monom } from './polys/rings';
+export { IPolys } from './polys/compatibility';
+// dense polynomial representation and distributed modules (SymPy densebasic, distributedmodules)
+export * from './polys/densebasic';
+export * from './polys/distributedmodules';
+export { Options, buildOptions, allowedFlags, preprocessDomain } from './polys/polyoptions';
+export type { OptionArgs } from './polys/polyoptions';
+export { constructDomain } from './polys/constructor';
+export type { ConstructDomainOptions } from './polys/constructor';
+// the domains of sympy.polys.domains beyond ZZ, QQ, RR and EX
+export { PythonMPQ, PythonMPQ as MPQ } from './polys/domains/pythonrational';
+export { FiniteField, ModularInteger, GF, FF } from './polys/domains/finitefield';
+export { GaussianIntegerRing, GaussianRationalField, GaussianElement, GaussianInteger, GaussianRational, ZZ_I, QQ_I } from './polys/domains/gaussiandomains';
+export { AlgebraicField, ANP } from './polys/domains/algebraicfield';
+export { ComplexField, CC } from './polys/domains/complexfield';
+export { ExpressionRawDomain, EXRAW } from './polys/domains/expressionrawdomain';
+// matrices over domains (SymPy sympy.polys.matrices)
+export { DM } from './polys/matrices/domainmatrix';
+export type { DomainMatrixRows, DomainFactor } from './polys/matrices/domainmatrix';
+export { DDM } from './polys/matrices/ddm';
+export type { Shape } from './polys/matrices/ddm';
+export { SDM, sdmBerk, sdmIrref, sdmRrefDen, sdmMatmul, sdmTranspose, sdmDotvec, sdmMatvecmul, sdmNullspaceFromRref, sdmParticularFromRref, binopDict, unopDict } from './polys/matrices/sdm';
+export { DomainScalar } from './polys/matrices/domainscalar';
+export { ddmTranspose, ddmIadd, ddmIsub, ddmIneg, ddmImul, ddmIrmul, ddmImatmul, ddmIrref, ddmIrrefDen, ddmIdet, ddmIinv, ddmIluSplit, ddmIlu, ddmIluSolve, ddmBerk } from './polys/matrices/dense';
+export { DMError, DMBadInputError, DMDomainError, DMNotAField, DMFormatError, DMNonInvertibleMatrixError, DMRankError, DMShapeError, DMNonSquareMatrixError, DMValueError } from './polys/matrices/exceptions';

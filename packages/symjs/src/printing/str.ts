@@ -140,6 +140,19 @@ function printAdd(e: Add): string {
 }
 
 let printLevel = 0;
+/** The StrPrinter setting full_prec: true or false, or 'auto' for the full precision at the top level only. */
+let fullPrec: boolean | 'auto' = 'auto';
+
+/** f() printed with the StrPrinter setting full_prec (SymPy sstr(expr, full_prec=...)). @internal */
+export function withFullPrec<T>(setting: boolean | 'auto', f: () => T): T {
+  const saved = fullPrec;
+  fullPrec = setting;
+  try {
+    return f();
+  } finally {
+    fullPrec = saved;
+  }
+}
 
 export function str(e: Expr): string {
   printLevel++;
@@ -152,7 +165,7 @@ export function str(e: Expr): string {
 
 function strInner(e: Expr): string {
   if (e instanceof Rational) return e.q === 1n ? `${e.p}` : `${e.p}/${e.q}`;
-  if (e instanceof Float) return floatString(e, printLevel > 1);
+  if (e instanceof Float) return floatString(e, fullPrec === 'auto' ? printLevel > 1 : !fullPrec);
   if (e instanceof Sym) return e.printName;
   if (e instanceof Constant) return e.name;
   if (e instanceof Special) return e.name;

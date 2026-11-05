@@ -40,7 +40,8 @@ describe('dsolve entry point', () => {
     const expected = '[Eq(f(x), C1*sin(x) + C2*cos(x)), Eq(g(x), C1*cos(x) - C2*sin(x))]';
     expect(show(dsolve(sys, [f(x), g(x)]))).toBe(expected);
     expect(show(dsolve(sys))).toBe(expected);
-    expect(() => dsolve(parse('Derivative(f(x), x)'))).toThrow(TypeError);
+    // SymPy finds the function: dsolve(f(x).diff(x)) is Eq(f(x), C1)
+    expect(show(dsolve(parse('Derivative(f(x), x)')))).toBe('Eq(f(x), C1)');
     expect(() => dsolve(parse('Derivative(f(x), x)'), [f(x)])).toThrow(TypeError);
     // SymPy: dsolve() and classify_ode() only work with functions of one variable
     expect(() => dsolve(parse('Derivative(f(x, y), x) - f(x, y)'), parse('f(x, y)'))).toThrow(TypeError);
@@ -48,5 +49,14 @@ describe('dsolve entry point', () => {
     expect(() => dsolve(parse('Derivative(f(2*x), x)'), f(parse('2*x')))).toThrow(TypeError);
     // no hint matches (SymPy: NotImplementedError)
     expect(() => dsolve(parse('Derivative(f(x), x, 3) + x*f(x)'), f(x))).toThrow(NotImplementedError);
+  });
+});
+
+describe('dsolve without the unknown function (SymPy _preprocess)', () => {
+  it('takes the function whose derivatives the equation contains', () => {
+    // SymPy: dsolve(f(x).diff(x, 2)) is Eq(f(x), C1 + C2*x)
+    expect(show(dsolve(parse('Derivative(f(x), (x, 2))')))).toBe('Eq(f(x), C1 + C2*x)');
+    expect(() => dsolve(parse('Derivative(f(x), x) + Derivative(g(x), x)'))).toThrow('the unknown function f(x) is required');
+    expect(() => dsolve(parse('f(x) - 1'))).toThrow('the unknown function f(x) is required');
   });
 });
