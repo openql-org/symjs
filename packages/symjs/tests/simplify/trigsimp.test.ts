@@ -6,7 +6,7 @@
 // Expected values are the str() forms printed by SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Heaviside, Sym, countOps, exptrigsimp, fn, parse, symbol, trigsimp } from '../../src';
+import { DiracDelta, Heaviside, Sym, countOps, exptotrig, exptrigsimp, fn, parse, rewriteExp, rewriteTrig, simplify, sub, symbol, trigsimp } from '../../src';
 import type { Expr, TrigsimpOptions } from '../../src';
 import { futrig, trigsimpGroebner, trigsimpInverse } from '../../src/simplify/trigsimp';
 
@@ -291,8 +291,8 @@ const TEST_TRIGSIMP: [string, string, TrigsimpOptions, Record<string, Assume>, s
   ["trigsimp", "cos(x)/sin(x)**3", {}, {}, "cos(x)/sin(x)**3"],
   ["trigsimp", "sin(x)/cos(x)**3", {}, {}, "sin(x)/cos(x)**3"],
   ["trigsimp", "sin(x)**y/cos(x)**y", {}, {}, "sin(x)**y/cos(x)**y"],
-  // SymPy: tan(1)**y (its Pow combines (1/tan(1))**(-y) because tan(1) > 0; the symjs core does not know the sign of tan(1))
-  ["trigsimp", "sin(1)**y/cos(1)**y", {}, {}, "(1/tan(1))**(-y)"],
+  // SymPy: tan(1)**y (its Pow combines (1/tan(1))**(-y) because tan(1) > 0)
+  ["trigsimp", "sin(1)**y/cos(1)**y", {}, {}, "tan(1)**y"],
   ["trigsimp", "cos(x)**2*cos(y)**2/(sin(x)**2*sin(y)**2)", {}, {}, "1/(tan(x)**2*tan(y)**2)"],
   ["trigsimp", "cos(x)*cos(x + y)/(sin(x)*sin(x + y))", {}, {}, "1/(tan(x)*tan(x + y))"],
   ["trigsimp", "(cos(3) + 1)**2*cos(2)/(-1 + cos(3))**2", {}, {}, "(cos(3) + 1)**2*cos(2)/(-1 + cos(3))**2"],
@@ -547,5 +547,17 @@ describe('trigsimp_groebner and trigsimp_old: SymPy 1.14 cases', () => {
   });
   it('futrig leaves atoms', () => {
     expect(String(futrig(P('x')))).toBe('x');
+  });
+});
+
+describe('exponential-form helpers', () => {
+  it('rewriteExp and rewriteTrig as SymPy rewrite(exp) and rewrite(cos)', () => {
+    // SymPy tan(x).rewrite(exp) = I*(-exp(I*x) + exp(-I*x))/(exp(I*x) + exp(-I*x))
+    expect(String(simplify(sub(rewriteExp(parse('tan(x)')), parse('I*(-exp(I*x) + exp(-I*x))/(exp(I*x) + exp(-I*x))'))))).toBe('0');
+    // SymPy exp(-I*x).rewrite(cos) = -I*sin(x) + cos(x), exp(-2*I*x).rewrite(cos) = -I*sin(2*x) + cos(2*x)
+    expect(String(rewriteTrig(parse('exp(-I*x)')))).toBe('-I*sin(x) + cos(x)');
+    expect(String(exptotrig(parse('exp(-2*I*x)')))).toBe('-I*sin(2*x) + cos(2*x)');
+    // an exponent that is not imaginary stays (SymPy rewrite(cos) gives -I*sin(I*(x + I*y)) + cos(I*(x + I*y)))
+    expect(String(rewriteTrig(parse('exp(x + I*y)')))).toBe('exp(x + I*y)');
   });
 });

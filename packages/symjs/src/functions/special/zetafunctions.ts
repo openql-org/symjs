@@ -105,23 +105,25 @@ evaluators.polylog = (s, z) => {
     }
   }
   if (isZero(z) === true) return S.Zero;
-  // z.equals(1) is False for an expression with symbols and for a number other than 1
-  if (equalsOne(z)) return zeta(s);
-  if (isRat(s, 0n) || isZero(s) === true) return mul(z, pow(add(1, neg(z)), -1));
-  if (isRat(s, -1n)) return mul(z, pow(add(1, neg(z)), -2));
+  // z.equals(1) is False for an expression with symbols and for a number other than 1, None for a
+  // number without a value (the explicit forms need False)
+  const zone = equalsOne(z);
+  if (zone === true) return zeta(s);
+  if (zone === false && (isRat(s, 0n) || isZero(s) === true)) return mul(z, pow(add(1, neg(z)), -1));
+  if (zone === false && isRat(s, -1n)) return mul(z, pow(add(1, neg(z)), -2));
   // polylog is branched, but not over the unit disk
   if (isNumber && hasPolar(z) && abs(unpolarify(z)).toNumber() <= 1) return polylog(s, unpolarify(z));
   return undefined;
 };
 
-/** SymPy z.equals(1): false for an expression with symbols, a number that is not 1 or one that cannot be evaluated. */
-function equalsOne(z: Expr): boolean {
+/** SymPy z.equals(1): false for an expression with symbols or a number that is not 1, undefined for one that cannot be evaluated. */
+function equalsOne(z: Expr): boolean | undefined {
   if (z.freeSymbols().size > 0) return false;
   try {
     const v = unpolarify(z).toComplex();
     return Math.abs(v.re - 1) < 1e-14 && Math.abs(v.im) < 1e-14;
   } catch {
-    return false;
+    return undefined;
   }
 }
 
@@ -340,4 +342,4 @@ evaluators.stieltjes = (n, ...rest) => {
   return undefined;
 };
 
-for (const name of ['polylog', 'lerchphi', 'dirichlet_eta'] as const) numericFns[name] = (args) => mpNumeric(name, args);
+for (const name of ['polylog', 'lerchphi', 'dirichlet_eta', 'stieltjes'] as const) numericFns[name] = (args) => mpNumeric(name, args);

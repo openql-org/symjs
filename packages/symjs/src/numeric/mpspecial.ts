@@ -77,19 +77,60 @@ function shiftCount(z: Mpc, wp: number): number {
   return Math.max(0, Math.ceil(target - re));
 }
 
+const halfLog2Pi = new Map<number, Mpf>();
+const stirlingCoeffs = new Map<number, Mpf[]>();
+/** B_2k/(2k (2k - 1)) at wp bits (k = 1, 2, ... at index k - 1), extended as needed. */
+function stirlingCoeff(k: number, wp: number): Mpf {
+  let cs = stirlingCoeffs.get(wp);
+  if (cs === undefined) {
+    cs = [];
+    stirlingCoeffs.set(wp, cs);
+  }
+  while (cs.length < k) {
+    const j = cs.length + 1;
+    const [bp, bq] = bernoulli(2 * j);
+    cs.push(F.fromRational(bp, bq * BigInt(2 * j * (2 * j - 1)), wp));
+  }
+  return at(cs, k - 1);
+}
+/** log(2 pi)/2 at wp bits. */
+function halfLogTwoPi(wp: number): Mpf {
+  let c = halfLog2Pi.get(wp);
+  if (c === undefined) {
+    c = F.ldexp(M.log(F.ldexp(M.mpPi(wp), 1), wp), -1);
+    halfLog2Pi.set(wp, c);
+  }
+  return c;
+}
+
 /** Stirling series for log Gamma(w), Re w large. */
 function stirling(w: Mpc, wp: number): Mpc {
+  if (F.isZero(w[1])) return [stirlingReal(w[0], wp), ZERO];
   const logw = clog(w, wp);
   let s = csub(cmul(csub(w, real({ man: 1n, exp: -1n }), wp), logw, wp), w, wp);
-  s = cadd(s, real(F.ldexp(M.log(F.ldexp(M.mpPi(wp), 1), wp), -1)), wp);
+  s = cadd(s, real(halfLogTwoPi(wp)), wp);
   const w2 = cmul(w, w, wp);
   let wpow = w; // w^(2k-1)
   for (let k = 1; k < 500; k++) {
-    const [bp, bq] = bernoulli(2 * k);
-    const t = cdiv(ratC(bp, bq * BigInt(2 * k * (2 * k - 1)), wp), wpow, wp);
+    const t = cdiv(real(stirlingCoeff(k, wp)), wpow, wp);
     if (isZeroC(t) || cmag(t) < cmag(s) - wp - 4) break;
     s = cadd(s, t, wp);
     wpow = cmul(wpow, w2, wp);
+  }
+  return s;
+}
+
+/** The Stirling series of a real w > 0 in real arithmetic. */
+function stirlingReal(w: Mpf, wp: number): Mpf {
+  let s = F.sub(F.mul(F.sub(w, { man: 1n, exp: -1n }, wp), M.log(w, wp), wp), w, wp);
+  s = F.add(s, halfLogTwoPi(wp), wp);
+  const w2 = F.mul(w, w, wp);
+  let wpow = w;
+  for (let k = 1; k < 500; k++) {
+    const t = F.div(stirlingCoeff(k, wp), wpow, wp);
+    if (F.isZero(t) || F.mag(t) < F.mag(s) - wp - 4) break;
+    s = F.add(s, t, wp);
+    wpow = F.mul(wpow, w2, wp);
   }
   return s;
 }
@@ -116,10 +157,36 @@ export function cloggamma(z: Mpc, prec: number): Mpc {
   return rnd(s, prec);
 }
 
+/** factorial(n - 1) for the positive integers n < 1024 (exact, as mpmath's gamma of a small integer). */
+function gammaInt(z: Mpc): bigint | undefined {
+  if (!F.isZero(z[1]) || F.sign(z[0]) <= 0 || F.mag(z[0]) > 10) return undefined;
+  const [n, d] = F.toRational(z[0]);
+  if (d !== 1n) return undefined;
+  let r = 1n;
+  for (let k = 2n; k < n; k++) r *= k;
+  return r;
+}
+
+// the values of the gamma function computed last (the gamma factors of hypercomb repeat for
+// every argument of a hypergeometric function, for instance at the nodes of a quadrature)
+const gammaCache = new Map<string, Mpc>();
 export function cgamma(z: Mpc, prec: number): Mpc {
+  const g0 = gammaInt(z);
+  if (g0 !== undefined) return [F.fromInt(g0, prec), ZERO];
+  const key = `${z[0].man.toString(16)},${z[0].exp},${z[1].man.toString(16)},${z[1].exp},${prec}`;
+  const hit = gammaCache.get(key);
+  if (hit) return hit;
+  if (gammaCache.size >= 4096) gammaCache.clear();
+  const g = gammaUncached(z, prec);
+  gammaCache.set(key, g);
+  return g;
+}
+
+function gammaUncached(z: Mpc, prec: number): Mpc {
   const wp = prec + 30 + Math.max(0, Math.ceil(Math.log2(cabsD(z) + 2)) * 2);
   const N = shiftCount(z, wp);
-  const lg = stirling(cadd(z, int(N), wp), wp);
+  // (the magnitude of log Gamma at low precision gives the bits lost in exp)
+  const lg = stirling(cadd(z, int(N), 64), 64);
   const wp2 = wp + Math.max(0, cmag(lg));
   let g = cexp(stirling(cadd(z, int(N), wp2), wp2), wp2);
   if (N > 0) {

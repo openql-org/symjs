@@ -12,7 +12,7 @@
  * - distribution of a numeric coefficient over a sum (2*(x+1) -> 2*x+2)
  */
 
-import { isIntegerQ, isNegative, isNonNegative, isPositive, isReal } from './assumptions';
+import { isIntegerQ, isNegative, isNonNegative, isPolar, isPositive, isReal } from './assumptions';
 import type { ComplexValue, ExprLike, Num } from './nodes';
 import {
   Add,
@@ -987,8 +987,7 @@ function powOfPow(b: Pow, e: Expr): Expr | undefined {
   let [x, a] = b.args;
   const done = (sg: Expr): Expr => mul(sg, pow(x, mul(a, e)));
   if (isIntegerQ(e) === true) return done(S.One);
-  // (a power of exp_polar is exp_polar again, so only polar symbols are left)
-  if (x instanceof Sym && x.assumptions.polar === true) return done(S.One);
+  if (isPolar(x)) return done(S.One);
   const realA = isReal(a);
   if (realA === true) {
     const half = halfExp(e);

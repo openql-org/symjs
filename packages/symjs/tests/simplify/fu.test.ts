@@ -529,6 +529,10 @@ describe('fu.ts: helpers and options', () => {
     expect(FU.positive(P('sin(1)**2 + cos(1)**2 - 1'))).toBe(undefined);
     expect(FU.positive(P('f(1)'))).toBe(undefined);
     expect(FU.positive(P('sin(1)'))).toBe(true);
+    // SymPy: besselj(0, 1).is_positive and besselj(0, 3).is_positive are None; symjs decides them
+    // numerically (besselj(0, 1) = 0.765..., besselj(0, 3) = -0.260...)
+    expect(FU.positive(P('besselj(0, 1)'))).toBe(true);
+    expect(FU.positive(P('besselj(0, 3)'))).toBe(false);
   });
   it('nodeCount of a derivative (SymPy _nodes)', () => {
     expect(FU.nodeCount(P('Derivative(f(x), x)'))).toBe(3);

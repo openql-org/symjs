@@ -6,13 +6,44 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, Derivative, impl, Mul, Pow, Rational, S, UndefFn, Wild } from '../core/nodes';
+import { Add, Constant, Derivative, Fn, impl, Mul, Pow, Rational, S, UndefFn, Wild } from '../core/nodes';
 import { add, asBaseExp, mul, pow, sympify } from '../core/ops';
-import { rebuild } from '../core/traverse';
+import { isNegative, isReal } from '../core/assumptions';
+import { mapBottomUp, rebuild } from '../core/traverse';
 import { at, defined, first } from '../core/guard';
+import { abs } from '../functions/elementary/elementary';
 
 // radsimp is the port of SymPy's algorithm in sqrtdenest.ts (they call each other)
 export { radsimp } from './sqrtdenest';
+
+const isAbs = (e: Expr): e is Fn => e instanceof Fn && e.name === 'abs';
+
+/**
+ * SymPy collect_abs: the arguments of several Abs factors of a product (or of one Abs with a
+ * negative real power) collected under a single Abs, which stays unevaluated when evaluating it
+ * would split it again: Abs(x + 1)/Abs(x**2 - 1) -> Abs((x + 1)/(x**2 - 1)).
+ */
+export function collectAbs(e: Expr): Expr {
+  const collect1 = (m: Expr, factors: readonly Expr[], nc: readonly Expr[] = []): Expr => {
+    const a: Expr[] = [];
+    const o: Expr[] = [];
+    for (const f of factors) {
+      if (isAbs(f)) a.push(first(f.args));
+      else if (f instanceof Pow && isAbs(f.base) && isReal(f.exp) === true) a.push(pow(first(f.base.args), f.exp));
+      else o.push(f);
+    }
+    if (a.length < 2 && !a.some((i) => i instanceof Pow && isNegative(i.exp) === true)) return m;
+    const absarg = mul(...a);
+    // (SymPy also returns an Abs that evaluates away; Abs splits the products of Abs arguments again)
+    const A = abs(absarg);
+    return mul(isAbs(A) ? A : new Fn('abs', [absarg]), ...o, ...nc);
+  };
+  // the products first, then the powers (as SymPy's two replace calls)
+  const muls = mapBottomUp(e, (m) =>
+    m instanceof Mul ? collect1(m, m.args.filter((f) => f.isCommutative), m.args.filter((f) => !f.isCommutative)) : m,
+  );
+  return mapBottomUp(muls, (m) => (m instanceof Pow ? collect1(m, [m]) : m));
+}
 
 /** Power of pattern p in term factor f: f = p**k with rational k, or undefined. */
 function powerOf(f: Expr, p: Expr, exact: boolean): Rational | undefined {

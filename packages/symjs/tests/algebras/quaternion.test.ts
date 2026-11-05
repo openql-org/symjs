@@ -416,6 +416,8 @@ describe('Quaternion functions', () => {
     expect(Quaternion(0, 0, 0, 3).isPure()).toBe(true);
     expect(Quaternion(0, 8, 13, 12).isPure()).toBe(true);
     expect(Quaternion(w, 2, 10, 3).isPure()).toBe('unknown');
+    // SymPy: Quaternion(1 + sqrt(2), 1, 1, 1).is_pure() = False
+    expect(Quaternion(add(1, sqrt(2)), 1, 1, 1).isPure()).toBe(false);
     expect(q0.isZeroQuaternion()).toBe(true);
     expect(q1.isZeroQuaternion()).toBe(false);
     expect(Quaternion(1, 0, 0, 0).isZeroQuaternion()).toBe(false);

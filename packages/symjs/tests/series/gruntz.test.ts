@@ -75,6 +75,9 @@ describe('gruntz: the sign at infinity', () => {
     expect(S('(log(2)/log(2/3) - log(4/3)/log(2/3) + 1)*(x - 2)')).toBe('0');
     expect(S('y')).toBe('sign(y)');
     expect(S('sin(1)')).toBe('1');
+    // constants whose sign the assumptions leave open (SymPy: 1 and -1)
+    expect(S('besselj(0, 1)')).toBe('1');
+    expect(S('besselj(0, 3)')).toBe('-1');
   });
 });
 

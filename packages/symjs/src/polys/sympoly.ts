@@ -27,7 +27,7 @@ import { cancel, fraction, together } from '../simplify/rational';
 import { decomposePower, keepCoeff } from '../simplify/exprtools';
 import { rationalFromFloat } from '../core/numberutils';
 import { lcm as ilcm } from '../core/numbers';
-import { divExact, mfactorList, mgcd, mlcm } from './mpoly';
+import { divExact, ffDiv, mfactorList, mgcd, mlcm } from './mpoly';
 import { isolateRealRoots, refineRealRoot } from './rootisolation';
 import { UPoly, polyCoefficients, polyHooks, roots as rootsOf } from './poly';
 
@@ -382,6 +382,7 @@ export class Poly {
 
   /** Division with remainder (univariate over the field of fractions). */
   div(o: Poly): [Poly, Poly] {
+    if (this.gens.length > 1) return this.divMulti(o);
     const x = this.univariate();
     let r = this.asExpr();
     const g = o.asExpr();
@@ -402,6 +403,12 @@ export class Poly {
     const rp = Poly.from(r, [x]);
     const dom = field(this.domain === o.domain ? this.domain : 'QQ');
     return [Poly.from(qp.asExpr(), [x], { domain: dom }), Poly.from(rp.asExpr(), [x], { domain: dom })];
+  }
+  /** Multivariate division over the field of fractions (SymPy dmp_ff_div). */
+  private divMulti(o: Poly): [Poly, Poly] {
+    const [q, r] = ffDiv(this.asExpr(), o.asExpr(), this.gens);
+    const dom = this.domain === o.domain && this.domain !== 'ZZ' ? this.domain : 'QQ';
+    return [Poly.from(q, this.gens, { domain: dom }), Poly.from(r, this.gens, { domain: dom })];
   }
   /** SymPy div with auto=True: computed over the field, converted back to the ring when exact. */
   private toRingIfExact(p: Poly, ring: boolean): Poly {
@@ -1679,12 +1686,15 @@ export function degree(f: Poly | ExprLike, gen?: Expr): number {
   return Poly.from(e, [gen]).degree();
 }
 
-/** Univariate division q, r with f = q*g + r. */
-export function polyDiv(f: Poly | ExprLike, g: Poly | ExprLike): [Expr, Expr] {
+/**
+ * Division q, r with f = q*g + r (SymPy div), in the given generators or the free symbols;
+ * multivariate polynomials are divided recursively in the first generator (SymPy dmp_div).
+ */
+export function polyDiv(f: Poly | ExprLike, g: Poly | ExprLike, gens?: readonly Expr[]): [Expr, Expr] {
   const a = toExpr(f);
   const b = toExpr(g);
-  const v = varsFor(a, b);
-  if (v.length !== 1) throw new PolynomialError('div: univariate polynomials expected');
+  const v = gens ?? varsFor(a, b);
+  if (v.length === 0) throw new PolynomialError('div: polynomials in some generator expected');
   const [q, r] = Poly.from(a, v).div(Poly.from(b, v));
   return [q.asExpr(), r.asExpr()];
 }

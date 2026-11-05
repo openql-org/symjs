@@ -313,3 +313,26 @@ describe('powdenest with force and a base that is not positive', () => {
     expect(sstr(powdenest(Qn('(n**a)**b*(x**a)**b'), { force: true }))).toBe('x**(a*b)*(n**a)**b');
   });
 });
+
+describe('powsimp and powdenest with polar bases (SymPy test_powsimp_polar, test_powdenest_polar)', () => {
+  const pol = ['x', 'y', 'z', 'p', 'q'].map((n) => symbol(n, { polar: true }));
+  const Pp = (s: string) => parse(s, { symbols: pol });
+  const cases: [string, () => Expr, string][] = [
+    ['powdenest((x*y*z)**a)', () => powdenest(Pp('(x*y*z)**a')), 'x**a*y**a*z**a'],
+    ['powdenest((x**a*y**b)**c)', () => powdenest(Pp('(x**a*y**b)**c')), 'x**(a*c)*y**(b*c)'],
+    ['powdenest(((x**a)**b*y**c)**c)', () => powdenest(Pp('((x**a)**b*y**c)**c')), 'x**(a*b*c)*y**(c**2)'],
+    ['powsimp(p**a*q**a)', () => powsimp(Pp('p**a*q**a')), '(p*q)**a'],
+    ['p**a*(1/p)**a', () => Pp('p**a*(1/p)**a'), '1'],
+    ['powsimp(exp_polar(a)*exp_polar(b))', () => powsimp(P('exp_polar(a)*exp_polar(b)')), 'exp_polar(a + b)'],
+    ['powsimp(exp_polar(a)*exp_polar(b)*p**a*p**b)', () => powsimp(Pp('exp_polar(a)*exp_polar(b)*p**a*p**b')), '(p*exp_polar(1))**(a + b)'],
+    ["combine='exp'", () => powsimp(Pp('exp_polar(a)*exp_polar(b)*p**a*p**b'), { combine: 'exp' }), 'p**(a + b)*exp_polar(a + b)'],
+    ['a sum', () => powsimp(Pp('exp_polar(a)*exp_polar(b)*exp_polar(2)*sin(a) + sin(b) + p**a*p**b')), 'p**(a + b) + exp_polar(a + b + 2)*sin(a) + sin(b)'],
+    ['deep', () => powsimp(P('sin(exp_polar(a)*exp_polar(b))'), { deep: true }), 'sin(exp_polar(a + b))'],
+    // a polar factor of a product base: SymPy _denest_pow splits it off
+    ['powdenest((p*w)**a)', () => powdenest(parse('(polar_lift(w)*w)**a')), 'w**a*polar_lift(w)**a'],
+    ['powdenest((p*q*w)**a)', () => powdenest(parse('(polar_lift(w)*exp_polar(v)*w)**a')), 'w**a*exp_polar(a*v)*polar_lift(w)**a'],
+  ];
+  it.each(cases)('%s', (_name, run, want) => {
+    expect(String(run())).toBe(want);
+  });
+});

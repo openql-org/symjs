@@ -84,7 +84,7 @@ describe('rsolve_ratio', () => {
   it('finds the rational solutions SymPy misses', () => {
     // SymPy test_rsolve_ratio_missed (XFAIL) expects a solution here; SymPy 1.14 returns None
     const s1 = rsolveRatio([P('-n'), P('n + 2')], n, n);
-    expect(show(s1)).toBe('(C0 + n**3/3 - n/3)/(n*(n + 1))');
+    expect(show(s1)).toBe('(3*C0 + n**3 - n)/(3*n*(n + 1))');
     solves(['-n', 'n + 2'], 'n', (s1 as [sj.Expr, sj.Sym[]])[0]);
     // SymPy returns 0 (only the trivial solution), but C0*n*(n + 1)/2 solves -(n + 2)*y(n) + n*y(n + 1) = 0
     const s2 = rsolveRatio([P('-(n+2)'), P('n')], 0, n);
@@ -92,7 +92,7 @@ describe('rsolve_ratio', () => {
     solves(['-(n+2)', 'n'], '0', (s2 as [sj.Expr, sj.Sym[]])[0]);
     // SymPy returns None
     const s3 = rsolveRatio([P('n+1'), P('-(n+3)')], 1, n);
-    expect(show(s3)).toBe('(C0 - n**2/2 - 3*n/2)/((n + 1)*(n + 2))');
+    expect(show(s3)).toBe('(2*C0 - n**2 - 3*n)/(2*(n + 1)*(n + 2))');
     solves(['n+1', '-(n+3)'], '1', (s3 as [sj.Expr, sj.Sym[]])[0]);
   });
 });
@@ -141,7 +141,7 @@ describe('rsolve_hyper', () => {
   it('solves where SymPy fails', () => {
     // SymPy raises AttributeError: the similar terms 3**n and n*3**n are grouped into a sum it cannot simplify
     const s = rsolveHyper([-2, 1], P('2**n*n + 3**n + n*3**n'), n);
-    expect(show(s)).toBe('2**n*C0 + 2**n*n*(n - 1)/4 + 3**n*(n - 2)');
+    expect(show(s)).toBe('2**n*C0 + 2**(n - 2)*n*(n - 1) + 3**n*(n - 2)');
     solves(['-2', '1'], '2**n*n + 3**n + n*3**n', (s as [sj.Expr, sj.Sym[]])[0]);
     // SymPy raises UnboundLocalError: the sum expands to the single term 1
     const t = rsolveHyper([-1, 1], P('(n + 1)**2 - n**2 - 2*n'), n);

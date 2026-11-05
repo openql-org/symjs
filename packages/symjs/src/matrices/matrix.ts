@@ -169,8 +169,16 @@ export class Matrix {
     return this.map((e) => mul(s, e));
   }
 
-  /** Matrix product (or scalar multiplication when given a scalar). */
+  /**
+   * Matrix product (or scalar multiplication when given a scalar). As in SymPy, each entry is
+   * Add(*[a*b ...]) without expansion: Matrix([[x + 1]])*Matrix([[x - 1]]) is (x - 1)*(x + 1).
+   */
   mul(o: Matrix | ExprLike): Matrix {
+    return this.product(o, (e) => e);
+  }
+
+  /** The product with each entry passed through `simp`. */
+  private product(o: Matrix | ExprLike, simp: (e: Expr) => Expr): Matrix {
     if (!(o instanceof Matrix)) return this.scale(o);
     if (this.cols !== o.rows) throw new RangeError(`Matrix mul: shape mismatch ${this.rows}x${this.cols} * ${o.rows}x${o.cols}`);
     return Matrix.fromFunction(this.rows, o.cols, (i, j) => {
@@ -182,7 +190,7 @@ export class Matrix {
         if (b instanceof Rational && b.isZero) continue;
         terms.push(mul(a, b));
       }
-      return expand(add(...terms));
+      return simp(add(...terms));
     });
   }
 
@@ -191,13 +199,18 @@ export class Matrix {
     if (!this.isSquare) throw new NonSquareMatrixError('Matrix pow: matrix must be square');
     if (!Number.isInteger(n)) throw new RangeError('Matrix pow: exponent must be an integer');
     if (n < 0) return this.inv().pow(-n);
+    // SymPy MatrixBase.pow: a diagonal or 1x1 matrix is raised entrywise; otherwise the products
+    // are simplified as they go (dotprodsimp), here by expanding each entry
+    if (n === 0) return Matrix.eye(this.rows);
+    const diagonal = this.data.every((e, idx) => Math.floor(idx / this.cols) === idx % this.cols || (e instanceof Rational && e.isZero));
+    if (diagonal) return this.map((e) => pow(e, n));
     let result = Matrix.eye(this.rows);
     let base: Matrix = this;
     let k = n;
     while (k > 0) {
-      if (k & 1) result = result.mul(base);
+      if (k & 1) result = result.product(base, expand);
       k >>= 1;
-      if (k > 0) base = base.mul(base);
+      if (k > 0) base = base.product(base, expand);
     }
     return result;
   }

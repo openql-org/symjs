@@ -69,3 +69,18 @@ describe('multivariate gcd, exact division and factorization (polys/mpoly)', () 
     expect(show(sj.factorList(parse('4*x**6*y**4*z**2 + 4*x**6*y**3*z**3 - 4*x**6*y**2*z**4 - 4*x**6*y*z**5 + x**5*y**4*z**3 + 12*x**5*y**3*z - x**5*y**2*z**5 + 12*x**5*y**2*z**2 - 12*x**5*y*z**3 - 12*x**5*z**4 + 8*x**4*y**4 + 6*x**4*y**3*z**2 + 8*x**4*y**3*z - 4*x**4*y**2*z**4 + 4*x**4*y**2*z**3 - 8*x**4*y**2*z**2 - 4*x**4*y*z**5 - 2*x**4*y*z**4 - 8*x**4*y*z**3 + 2*x**3*y**4*z + x**3*y**3*z**3 - x**3*y**2*z**5 - 2*x**3*y**2*z**3 + 9*x**3*y**2*z - 12*x**3*y*z**3 + 12*x**3*y*z**2 - 12*x**3*z**4 + 3*x**3*z**3 + 6*x**2*y**3 - 6*x**2*y**2*z**2 + 8*x**2*y**2*z - 2*x**2*y*z**4 - 8*x**2*y*z**3 + 2*x**2*y*z**2 + 2*x*y**3*z - 2*x*y**2*z**3 - 3*x*y*z + 3*x*z**3 - 2*y**2 + 2*y*z**2')))).toBe('[1, [[x**2*y**2 - x**2*z**2 + y - z**2, 1], [x**2*y*z**2 + 3*x*z + 2*y, 1], [4*x**2*y + 4*x**2*z + x*y*z - 1, 1]]]');
   });
 });
+
+describe('heuGcdCofactors (SymPy dmp_zz_heu_gcd over QQ)', () => {
+  it('the gcd as mgcd normalizes it, with the cofactors', async () => {
+    const { heuGcdCofactors } = await import('../../src/polys/mpoly');
+    // SymPy: gcd(x**2/2 - y**2/2, 3*x + 3*y) -> x + y; cancel gives (x - y)/6
+    expect(show(heuGcdCofactors(parse('x**2/2 - y**2/2'), parse('3*x + 3*y'), [x, y]))).toBe('[x/2 + y/2, x - y, 6]');
+    expect(String(sj.mgcd(parse('x**2/2 - y**2/2'), parse('3*x + 3*y'), [x, y]))).toBe('x/2 + y/2');
+    expect(show(heuGcdCofactors(parse('2*x*y**2 + 2*y'), parse('4*y'), [x, y]))).toBe('[2*y, x*y + 1, 2]');
+    // Gaussian or symbolic coefficients are left to the remainder sequence
+    expect(heuGcdCofactors(parse('I*x*y + y'), parse('y'), [x, y])).toBeUndefined();
+    expect(heuGcdCofactors(parse('y'), parse('x*y*z + y'), [x, y])).toBeUndefined();
+    // the heuristic gives up (a small first evaluation point)
+    expect(heuGcdCofactors(parse('5762*x**3 + 50145*x**2 + 75378*x - 83080'), parse('-4386*x**2 - 36108*x - 54672'), [x], 3n)).toBeUndefined();
+  });
+});

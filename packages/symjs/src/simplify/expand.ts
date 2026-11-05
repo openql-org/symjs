@@ -38,6 +38,23 @@ function expandPowInt(base: Expr, n: bigint): Expr {
   return result;
 }
 
+/**
+ * SymPy Pow._eval_expand_multinomial for a sum raised to a rational power: (a + b)**n expanded
+ * for an integer n, (a + b)**(n + r) as the expanded (a + b)**n times (a + b)**r for 0 < r < 1,
+ * and 1/(a + b)**k expanded the same way for k > 1; undefined otherwise.
+ */
+function multinomialPow(b: Add, x: Rational): Expr | undefined {
+  if (x.p < 0n) {
+    if (-x.p <= x.q) return undefined;
+    const inv = multinomialPow(b, Rational.of(-x.p, x.q));
+    return pow(defined(inv, 'the expanded power'), -1);
+  }
+  const n = x.p / x.q;
+  if (x.isInteger) return expandPowInt(b, n);
+  if (n === 0n) return undefined;
+  return distribute(expandPowInt(b, n), pow(b, Rational.of(x.p - n * x.q, x.q)));
+}
+
 function expandNode(e: Expr): Expr {
   if (e.args.length === 0) return e;
   const args = e.args.map(expandNode);
@@ -50,8 +67,7 @@ function expandNode(e: Expr): Expr {
   if (node instanceof Pow) {
     const [b, x] = node.args;
     // (x is not 0: b**0 evaluates to 1)
-    if (b instanceof Add && x instanceof Rational && x.isInteger) return x.p > 0n ? expandPowInt(b, x.p) : pow(expandPowInt(b, -x.p), -1);
-    return node;
+    return b instanceof Add && x instanceof Rational ? (multinomialPow(b, x) ?? node) : node;
   }
   return node;
 }
@@ -468,9 +484,7 @@ function expandMulShallow(e: Expr, doMul: boolean, doMulti: boolean): Expr {
   if (doMul && e instanceof Mul && e.args.some((a) => a instanceof Add)) {
     return e.args.reduce<Expr>((acc, f) => distribute(acc, f), Rational.of(1n));
   }
-  if (doMulti && e instanceof Pow && e.base instanceof Add && e.exp instanceof Rational && e.exp.isInteger && e.exp.p > 0n) {
-    return expandPowInt(e.base, e.exp.p);
-  }
+  if (doMulti && e instanceof Pow && e.base instanceof Add && e.exp instanceof Rational) return multinomialPow(e.base, e.exp) ?? e;
   return e;
 }
 

@@ -6,7 +6,7 @@
  * simplify.powsimp and the corresponding parts of simplify.simplify).
  */
 
-import { isIntegerQ, isNegative, isNonNegative, isPositive, isReal } from '../core/assumptions';
+import { isIntegerQ, isNegative, isNonNegative, isPolar, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, splitCoeff, sympify } from '../core/ops';
@@ -34,7 +34,12 @@ const isRat = (e: Expr): e is Rational => e instanceof Rational;
 const isInt = (e: Expr): e is Rational => e instanceof Rational && e.isInteger;
 const isOneE = (e: Expr) => e instanceof Rational && e.isOne;
 const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
-const asBaseExp = (e: Expr): [Expr, Expr] => (e instanceof Pow ? [e.base, e.exp] : [e, S.One]);
+/** SymPy as_base_exp; exp_polar(t) is (exp_polar(1), t) (ExpBase.as_base_exp). */
+const asBaseExp = (e: Expr): [Expr, Expr] => {
+  if (e instanceof Pow) return [e.base, e.exp];
+  if (e instanceof Fn && e.name === 'exp_polar') return [new Fn('exp_polar', [S.One]), first(e.args)];
+  return [e, S.One];
+};
 const mulArgs = (e: Expr): readonly Expr[] => (e instanceof Mul ? e.args : [e]);
 const addArgs = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
 
@@ -177,7 +182,8 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
         summed.set(b, S.One);
         continue;
       }
-      if (isPositive(b)) {
+      // SymPy: bpos = b.is_positive or b.is_polar
+      if (isPositive(b) === true || isPolar(b)) {
         const binv = pow(b, -1);
         if (b.key !== binv.key && summed.has(binv)) {
           if (isOneE(fraction(b)[0])) {
@@ -350,7 +356,7 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
   let cPowers: [Expr, Expr][] = expr.args.filter((t) => t.isCommutative).map((t) => asBaseExp(t));
   cPowers = cPowers.map(([b, e]) => {
     const [n, d] = fraction(b);
-    if (!((isNonNegative(n) === true && isNonNegative(d) === true) || isIntegerQ(e) === true || force)) return [b, e];
+    if (!((isNonNegative(n) === true && isNonNegative(d) === true) || isIntegerQ(e) === true || force || isPolar(b))) return [b, e];
     const [c, t] = splitCoeff(e);
     if (isRat(c) && !c.isOne && !isOneE(t)) return [pow(b, c), t];
     return [b, e];
@@ -388,6 +394,8 @@ export function powsimp(exIn: ExprLike, opts: PowsimpOptions = {}): Expr {
       for (const bi of bases) {
         if (isNegative(bi) === true) neg.push(bi);
         else if (isNonNegative(bi) === true) nonneg.push(bi);
+        // a polar base can be treated like a nonnegative one
+        else if (isPolar(bi)) nonneg.push(bi);
         else unk.push(bi);
       }
       if ((unk.length === 1 && !neg.length) || (neg.length === 1 && !unk.length)) {
@@ -442,6 +450,19 @@ function denestPow(eq: Pow): Expr {
   }
   const [, be] = asBaseExp(b);
   if (isOneE(be) && !(b instanceof Mul || (isRat(b) && b.q !== 1n) || isPositive(b) === true)) return eq;
+  // polar factors are denested on their own
+  const polars: [Expr, Expr][] = [];
+  const nonpolars: Expr[] = [];
+  for (const bb of mulArgs(b)) {
+    if (isPolar(bb)) polars.push(asBaseExp(bb));
+    else nonpolars.push(bb);
+  }
+  if (polars.length) {
+    const rest = powdenest(pow(mul(...nonpolars), e));
+    const [pb, pe] = first(polars);
+    if (polars.length === 1 && !(pb instanceof Mul)) return mul(pow(pb, mul(pe, e)), rest);
+    return mul(...polars.map(([bb, ee]) => powdenest(pow(bb, mul(ee, e)))), rest);
+  }
   if (isInt(b)) {
     const logb = expand_log(log(b));
     // a perfect power: expand_log gives k*log(root)

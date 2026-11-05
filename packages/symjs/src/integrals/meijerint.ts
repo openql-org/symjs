@@ -47,7 +47,7 @@ import { powsimp } from '../simplify/powsimp';
 import { factor } from '../polys/sympoly';
 import { multisetPartitions } from '../utilities/iterables';
 import { relCanonical } from '../logic/boolalg';
-import { hyperexpand, liftBranches, powdenestPolar, unpolarifyEval } from '../simplify/hyperexpand';
+import { hyperexpand, powdenestPolar, unpolarifyEval } from '../simplify/hyperexpand';
 import { Heaviside, isDiracDelta, isHeaviside } from './transforms/delta';
 
 const pi = S.Pi;
@@ -291,8 +291,8 @@ const rel0 = (op: string, v: number): Expr => {
   return r === true ? S.true : S.false;
 };
 const isPolarish = (e: Expr): boolean => some(e, (n) => isFnN(n, 'exp_polar') || isFnN(n, 'polar_lift'));
-/** SymPy _my_unpolarify: _eval_cond(unpolarify(f)), with Ei on other sheets lifted as in powdenestPolar. */
-const myUnpolarify = (e: Expr): Expr => condsimp(unpolarifyEval(liftBranches(e)));
+/** SymPy _my_unpolarify: _eval_cond(unpolarify(f)). */
+const myUnpolarify = (e: Expr): Expr => condsimp(unpolarifyEval(e));
 /** unbranched_argument(e), additively over the factors and powers of polar numbers. */
 function uarg(e: Expr): Expr {
   if (e instanceof Mul) return add(...e.args.map(uarg));

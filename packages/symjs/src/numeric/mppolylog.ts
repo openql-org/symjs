@@ -260,3 +260,30 @@ function lerchphiIntegral(z: Mpc, s: Mpc, a: Mpc, prec: number): Mpc {
 function expm1(x: Mpf, wp: number): Mpf {
   return F.sub(M.exp(x, wp + Math.max(0, -F.mag(x)) + 10), F.ONE, wp);
 }
+
+/**
+ * mpmath stieltjes(n, a): the generalized Stieltjes constant gamma_n(a) for an integer n >= 0 and a
+ * real a > 0, by the integral
+ * gamma_n(a) = log(a)**n/(2 a) - log(a)**(n + 1)/(n + 1)
+ *   + 2/a int_0^oo Re[(x/a - i) log(a - i x)**n]/((1 + (x/a)**2) (exp(2 pi x) - 1)) dx.
+ */
+export function stieltjes(n: number, a: Mpf, prec: number): Mpf {
+  const wp = prec + 10 + Math.floor(Math.sqrt(n));
+  const nn = BigInt(n);
+  const integrand = (x: Mpf, p: number): Mpc => {
+    // a small x cancels in exp(2 pi x) - 1 and in the numerator: x/a log(a)**n - n log(a)**(n - 1) x/a + ...
+    const q = p + Math.max(0, -F.mag(x)) + 10;
+    const xa = F.div(x, a, q);
+    const pw = M.cpowInt(M.clog([a, F.neg(x)], q), nn, q);
+    const num = F.add(F.mul(xa, pw[0], q), pw[1], q);
+    const den = F.mul(F.add(F.ONE, F.mul(xa, xa, q), q), expm1(F.mul(F.ldexp(M.mpPi(q), 1), x, q), q), q);
+    return [F.div(num, den, p), ZERO];
+  };
+  const s = quadZeroInf(integrand, wp)[0];
+  const la = M.log(a, wp);
+  const lan = M.cpowInt([la, ZERO], nn, wp)[0];
+  let v = F.div(lan, F.ldexp(a, 1), wp);
+  v = F.sub(v, F.div(F.mul(lan, la, wp), F.fromInt(nn + 1n), wp), wp);
+  v = F.add(v, F.div(F.ldexp(s, 1), a, wp), wp);
+  return F.round(v, prec);
+}

@@ -238,3 +238,18 @@ describe('cancel: SymPy PolyElement.cancel normalisation', () => {
     expect(String(cancel(P(src)))).toBe(want);
   });
 });
+
+describe('cancel with many generators (the heuristic GCD)', () => {
+  it('cancels h_y/h_yy of h = y**2/(sin(y - x) - x**2 + 2*x*y) quickly', async () => {
+    const sj = await import('../../src');
+    const [, y] = sj.symbols('x y');
+    const h = sj.parse('y**2/(sin(y - x) - x**2 + 2*x*y)');
+    const q = sj.mul(sj.diff(h, y), sj.pow(sj.diff(h, y, 2), -1));
+    const t = Date.now();
+    // SymPy 1.14 (0.1 s)
+    expect(String(sj.cancel(q))).toBe(
+      '(2*x**4*y - 6*x**3*y**2 + 4*x**2*y**3 + x**2*y**2*cos(x - y) + 4*x**2*y*sin(x - y) - 2*x*y**3*cos(x - y) - 6*x*y**2*sin(x - y) + y**2*sin(x - y)*cos(x - y) + 2*y*sin(x - y)**2)/(2*x**4 + x**2*y**2*sin(x - y) + 4*x**2*y*cos(x - y) + 4*x**2*sin(x - y) - 2*x*y**3*sin(x - y) + y**2*sin(x - y)**2 + 2*y**2*cos(x - y)**2 + 4*y*sin(x - y)*cos(x - y) + 2*sin(x - y)**2)',
+    );
+    expect(Date.now() - t).toBeLessThan(1000);
+  });
+});

@@ -357,6 +357,9 @@ describe('limits that symjs leaves unevaluated, or answers differently from SymP
     expect(lim('((-1)**(1/3) + (-1)**(5/3) - 2)*x', 'x', 'oo')).toBe('-oo');
     // SymPy: oo*I*sign(acos(2)), which is -oo: acos(2) = I*acosh(2)
     expect(lim('I*acos(2)*x', 'x', 'oo')).toBe('-oo');
+    // SymPy: oo and -oo (besselj(0, 1) > 0 > besselj(0, 3) numerically)
+    expect(lim('besselj(0, 1)*x', 'x', 'oo')).toBe('oo');
+    expect(lim('besselj(0, 3)*x', 'x', 'oo')).toBe('-oo');
   });
 
   it('raises where SymPy raises', () => {

@@ -12,6 +12,18 @@ const P = (s: string) => Poly.from(parse(s), [x]);
 
 describe('CRootOf', () => {
   const f = parse('x**3 - x - 1');
+  it('caches the root values of a polynomial and drops the oldest beyond the limit', () => {
+    const g = parse('x**5 - x - 7');
+    const v = new sj.CRootOf(g, 0).numericValue(15);
+    // the same nroots result serves every index of the polynomial
+    expect(new sj.CRootOf(g, 0).numericValue(15)).toBe(v);
+    expect(String(new sj.CRootOf(g, 4).numericValue(15))).toBe('0.407853675209471 + 1.44155543108039*I');
+    for (let k = 0; k <= sj.CRootOf.rootValuesLimit; k++) new sj.CRootOf(parse(`x - ${k}`), 0).numericValue(15);
+    // recomputed after eviction: equal, not the same object
+    const w = new sj.CRootOf(g, 0).numericValue(15);
+    expect(w).not.toBe(v);
+    expect(String(w)).toBe(String(v));
+  });
   it('indices, printing and values', () => {
     const r = sj.rootof(f, 0);
     expect(String(r)).toBe('CRootOf(x**3 - x - 1, 0)');

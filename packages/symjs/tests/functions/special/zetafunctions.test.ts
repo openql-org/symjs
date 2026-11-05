@@ -144,10 +144,27 @@ const CASES: Case[] = [
     ['E', 'stieltjes(0, 2)', 'stieltjes(0, 2)'],
     ['E', 'stieltjes(nn)', 'zoo'],
     ['E', 'stieltjes(1)', 'stieltjes(1)'],
+    // mpmath stieltjes (the integral of Hermite's formula). SymPy does not return (within 8 s) for
+    // stieltjes(1, -1/2) and stieltjes(1, 1 + I) and raises ZeroDivisionError for stieltjes(1, I);
+    // symjs leaves a complex a and a < 0 unevaluated
+    ['N', 'stieltjes(1)', '-0.0728158454836767'],
+    ['N20', 'stieltjes(5)', '0.00079332381730106270175'],
+    ['N', 'stieltjes(60)', '98543.2545901460'],
+    ['N', 'stieltjes(2, 3)', '-0.249916870151973'],
+    ['N', 'stieltjes(0, 3)', '-0.922784335098467'],
+    ['N30', 'stieltjes(1, 1/2)', '-1.35345968080494151770868716918'],
+    ['N', 'stieltjes(1, 0.5)', '-1.35345968080494'],
+    ['N', 'stieltjes(1, 2.5)', '-0.237475391757160'],
+    ['N', 'stieltjes(1, -1/2)', 'stieltjes(1, -1/2)'],
+    ['N', 'stieltjes(1, 1 + I)', 'stieltjes(1, 1 + I)'],
+    ['N', 'stieltjes(1, I)', 'stieltjes(1, I)'],
     ['F', 'zeta(s, p)', 'zeta(s, p)'],
     ['F', 'zeta(s, ip)', '-harmonic(ip - 1, s) + zeta(s)'],
     ['E', 'polylog(-1, z)', 'z/(1 - z)**2'],
     ['E', 'polylog(0, stieltjes(1))', 'stieltjes(1)/(1 - stieltjes(1))'],
+    // riemann_xi(3).equals(1) is None (no numeric value): SymPy leaves the polylog
+    ['E', 'polylog(0, riemann_xi(3))', 'polylog(0, riemann_xi(3))'],
+    ['E', 'polylog(-1, riemann_xi(3))', 'polylog(-1, riemann_xi(3))'],
     ['E', 'polylog(0.0, z)', 'z/(1 - z)'],
     ['E', 'polylog(s, 0.0)', '0'],
     ['E', 'stieltjes(I)', 'zoo'],
@@ -182,6 +199,14 @@ describe('constructors and numeric values', () => {
     expect(String(sj.stieltjes(s, a))).toBe('stieltjes(s, a)');
     expect(String(sj.zeta(s, a))).toBe('zeta(s, a)');
   });
+  it('evaluates stieltjes(n) with the value of n given by subs (SymPy evalf(subs=...))', () => {
+    const n = new sj.Sym('n');
+    const at = (v: number) => String(sj.evalf(sj.stieltjes(n), 15, { subs: new Map([[n, sj.sympify(v)]]) }));
+    expect(at(2)).toBe('-0.00969036319287232');
+    // mpmath raises for n < 0 and for a non-integer n the kernel has no value: SymPy leaves the call
+    expect(at(-1)).toBe('stieltjes(n)');
+    expect(at(1.5)).toBe('stieltjes(n)');
+  });
   it('evaluates dirichlet_eta(1, a) = log(2) - digamma(a) + digamma((a + 1)/2) numerically', () => {
     // (dirichlet_eta(1, a) evaluates symbolically; the numeric rule is reached by an unevaluated node)
     expect(String(sj.evalf(new sj.Fn('dirichlet_eta', [sj.S.One, sj.Rational.of(1n, 3n)])))).toBe('2.50694654479416');
@@ -191,6 +216,7 @@ describe('constructors and numeric values', () => {
     expect(v(sj.polylog(2, sj.Rational.of(1n, 3n)))).toBeCloseTo(0.3662132299770635, 14);
     expect(v(sj.lerchphi(sj.Rational.of(1n, 2n), 2, 3))).toBeCloseTo(0.15792421172010004, 14);
     expect(v(new sj.Fn('dirichlet_eta', [sj.Rational.of(3n)]))).toBeCloseTo(0.9015426773696957, 14);
+    expect(v(sj.stieltjes(1))).toBeCloseTo(-0.07281584548367671, 14);
     // no numeric riemann_xi (SymPy's lambdify raises NameError: mpmath has none)
     expect(() => v(new sj.Fn('riemann_xi', [sj.Rational.of(3n)]))).toThrow('Cannot evaluate riemann_xi numerically');
   });

@@ -779,11 +779,15 @@ describe('special functions', () => {
   });
   it('floor and ceiling of sums with Float terms and of numbers without an arbitrary-precision value', () => {
     // SymPy 1.14: floor(x + 3.0) = floor(x) + 3, floor(x + 2.0*I) = floor(x) + 2*I, floor(x + 2.5*I) stays;
-    // SymPy floor(stieltjes(1)) = -1, which symjs keeps (no numeric stieltjes)
+    // floor(stieltjes(1)) = -1 and ceiling(stieltjes(1)) = 0 from the value -0.0728...
     expect(['floor(x + 3.0)', 'floor(x + 2.0*I)', 'floor(x + 2.5*I)'].map((e) => String(P(e)))).toEqual(['floor(x) + 3', 'floor(x) + 2*I', 'floor(x + 2.5*I)']);
-    expect(String(sj.floor(sj.stieltjes(1)))).toBe('floor(stieltjes(1))');
-    // SymPy Max(stieltjes(1), 1) = 1 (stieltjes(1) = -0.0728...); symjs keeps it
-    expect(String(Max(sj.stieltjes(1), 1))).toBe('Max(1, stieltjes(1))');
+    expect(String(sj.floor(sj.stieltjes(1)))).toBe('-1');
+    expect(String(sj.ceiling(sj.stieltjes(1)))).toBe('0');
+    expect(String(Max(sj.stieltjes(1), 1))).toBe('1');
+    // a number without a numeric value stays (SymPy floor(riemann_xi(3)), ceiling(riemann_xi(3)))
+    expect([String(sj.floor(sj.riemannXi(3))), String(sj.ceiling(sj.riemannXi(3)))]).toEqual(['floor(riemann_xi(3))', 'ceiling(riemann_xi(3))']);
+    // (SymPy raises ValueError: the argument 'riemann_xi(3)' is not comparable)
+    expect(String(Max(sj.riemannXi(3), 1))).toBe('Max(1, riemann_xi(3))');
   });
   it('floor and ceiling of Floats and infinities', () => {
     // SymPy floor(3.0) = 3, ceiling(2.0*I + 1/2) = 1 + 2*I, floor(2.5) = 2, ceiling(-2.5) = -2,
@@ -819,6 +823,32 @@ function runBeta(kind: string, src: string): string {
   if (kind.startsWith('RW:')) return String(sj.rewrite(e, kind.slice(3)));
   return String(sj.evalf(e, kind.length > 1 ? Number(kind.slice(1)) : 15));
 }
+
+describe('beta.eval (SymPy beta_functions)', () => {
+  const cases: [string, string][] = [
+    ['beta(1, 2)', '1/2'],
+    ['beta(3, 4)', '1/60'],
+    ['beta(1, 1)', '1'],
+    ['beta(1/2, 3/2)', '4/(3*catalan(1/2))'],
+    ['beta(0, 2)', 'zoo'],
+    ['beta(0.0, 2)', 'zoo'],
+    ['beta(-2, -1)', 'zoo'],
+    ['beta(0.5, 1)', '2.00000000000000'],
+    ['beta(1, 2.0)', '0.500000000000000'],
+    ['beta(-1/2, -1/2)', '0'],
+    ['beta(1/2, -5/2)', '0'],
+    ['beta(3)', 'beta(3, 3)'],
+    ['beta(1/2, 2)', 'beta(1/2, 2)'],
+    ['beta(-1, 2)', 'beta(-1, 2)'],
+    ['beta(2.0, 3)', 'beta(2.0, 3)'],
+    ['beta(-1/2, -1.5)', 'beta(-1/2, -1.5)'],
+    ['beta(I, 1 + I)', 'beta(I, 1 + I)'],
+    ['beta(x, 1)', 'beta(x, 1)'],
+  ];
+  it.each(cases)('%s', (src, expected) => {
+    expect(runBeta('E', src)).toBe(expected);
+  });
+});
 
 describe('incomplete beta functions (SymPy beta_functions)', () => {
   const cases: [string, string, string][] = [

@@ -170,3 +170,25 @@ describe("ratsimpmodprime, gammasimp, signsimp, cancel, ratsimp (cov2): SymPy 1.
     expect(showMap(run())).toBe(want);
   });
 });
+
+describe('collectAbs (SymPy collect_abs)', () => {
+  it('collects the arguments of several Abs factors under one Abs', async () => {
+    const { collectAbs } = await import('../../src/simplify/radsimp');
+    const cases: [string, string][] = [
+      // SymPy 1.14
+      ['Abs(x + 1)/Abs(x**2 - 1)', 'Abs((x + 1)/(x**2 - 1))'],
+      ['1/Abs(x)', 'Abs(1/x)'],
+      ['Abs(x)*Abs(y)', 'Abs(x*y)'],
+      ['Abs(x)**2*Abs(y)', 'Abs(x**2*y)'],
+      ['y*Abs(x)', 'y*Abs(x)'],
+      ['2*Abs(x)**2', '2*Abs(x)**2'],
+      ['Abs(x)*Abs(x)**y', 'Abs(x)*Abs(x)**y'],
+      ['Abs(x)*Abs(y) + 1', 'Abs(x*y) + 1'],
+    ];
+    for (const [e, want] of cases) expect(String(collectAbs(parse(e)))).toBe(want);
+    expect(String(collectAbs(parse('1/(Abs(x)*Abs(y))')))).toBe('Abs(1/(x*y))');
+    // noncommutative factors stay last, in their order
+    const [A, B] = [symbol('A', { commutative: false }), symbol('B', { commutative: false })];
+    expect(String(collectAbs(parse('Abs(x)*Abs(y)*B*A', { symbols: [A, B] })))).toBe('Abs(x*y)*B*A');
+  });
+});

@@ -435,8 +435,8 @@ describe('WienerProcess and GammaProcess', () => {
     expect(s(X.jointDistribution(5, X.call(3)))).toBe('JointDistributionHandmade(Lambda((X(5), X(3)), l**(8*g)*exp(-l*X(3))*exp(-l*X(5))*X(3)**(3*g - 1)*X(5)**(5*g - 1)/(gamma(3*g)*gamma(5*g))))');
     const c3 = and(new Contains(t, Lopen(0, 1)), new Contains(d, Lopen(1, 2)), new Contains(y, Ropen(3, 4)));
     expect(s(E(X.call(t).pow(2).add(X.call(d).mul(2)).add(X.call(y).pow(3)), c3))).toBe('2*g/l + (g**2 + g)/l**2 + (g**3 + 3*g**2 + 2*g)/l**3');
-    // SymPy: 1 - lowergamma(g, 3*l)/gamma(g), the same value (simplify combines the fraction)
-    expect(s(simplify(P(Gt(X.call(t), 3), new Contains(t, Lopen(3, 4)))))).toBe('(gamma(g) - lowergamma(g, 3*l))/gamma(g)');
+    // SymPy 1.14
+    expect(s(simplify(P(Gt(X.call(t), 3), new Contains(t, Lopen(3, 4)))))).toBe('1 - lowergamma(g, 3*l)/gamma(g)');
     const X2 = GammaProcess('X', 1, 2);
     expect(s(X2.lamda)).toBe('1');
     expect(s(X2.gamma)).toBe('2');

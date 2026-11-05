@@ -8,7 +8,7 @@ import { EvalfValueError, evalf, parse, sstr } from '../../src';
 import type { Expr } from '../../src';
 import * as C from '../../src/numeric/mpconst';
 import * as F from '../../src/numeric/mpf';
-import { czeta } from '../../src/numeric/mpspecial';
+import { cgamma, czeta } from '../../src/numeric/mpspecial';
 import type { Mpc } from '../../src/numeric/mpfun';
 import { mpFns } from '../../src/numeric/mpeval';
 import { REF, refForm } from './mpconst.ref';
@@ -171,5 +171,18 @@ describe('Fresnel integrals of a large complex argument (asymptotic expansion)',
   ];
   it.each(cases)('%s', (e, v15, v50) => {
     expect([sstr(evalf(p(e))), sstr(evalf(p(e), 50))]).toEqual([v15, v50]);
+  });
+});
+
+describe('cgamma (exact at small integers, cached)', () => {
+  const g = (re: string, prec = 53): string => F.toStr(cgamma([F.fromStr(re, prec), F.ZERO], prec)[0], 15);
+  it('equals mpmath', () => {
+    // mpmath gamma(1000), gamma(1023) (factorials), gamma(1024) and gamma(1/3)
+    expect([g('1000'), g('1023'), g('1024'), g('0.333333333333333333333')]).toEqual(['4.02387260077094e+2564', '5.17256307663854e+2633', '5.29153202740123e+2636', '2.67893853470775']);
+  });
+  it('keeps the computed values until 4096 are stored', () => {
+    const first = g('1.5');
+    for (let k = 0; k < 4100; k++) cgamma([F.fromRational(BigInt(k + 1), 4099n, 24), F.ZERO], 24);
+    expect(g('1.5')).toBe(first);
   });
 });

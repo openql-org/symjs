@@ -728,8 +728,7 @@ describe('the API beyond the SymPy test suite', () => {
   });
   it('from_hyper and from_meijerg options', () => {
     expect(fromHyper(hyper([P('1/3')], [P('1/5')], x)).toString()).toBe('HolonomicFunction((-1/3) + (1/5 - x)*Dx + (x)*Dx**2, x, 1, [hyper((1/3,), (1/5,), 1), 5*hyper((4/3,), (6/5,), 1)/3])');
-    // SymPy evaluates the values ([4.0262861201631, 4.95112526361392]); hyper at 1 has no numerical value here
-    expect(fromHyper(hyper([P('1/3')], [P('1/5')], x), 0, true).toString()).toContain('hyper((0.333333333333333,), (0.2,), 1.0)');
+    expect(fromHyper(hyper([P('1/3')], [P('1/5')], x), 0, true).toString()).toBe('HolonomicFunction((-1/3) + (1/5 - x)*Dx + (x)*Dx**2, x, 1, [4.0262861201631, 4.95112526361392])');
     expect(fromMeijerg(meijerg([], [], [0], [], x), { initcond: false }).toString()).toBe('HolonomicFunction((1) + (1)*Dx, x)');
     // SymPy accepts the value zoo*hyper((13/15,), (37/35,), 0) at 0
     expect(fromMeijerg(meijerg([P('1/3')], [], [P('1/5')], [P('1/7')], x), { evalf: true }).x0.toString()).toBe('1');

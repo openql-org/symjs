@@ -221,8 +221,13 @@ describe('sqrtdenest: the remaining SymPy 1.14 test_sqrtdenest cases', () => {
   });
   it('sqrt(u**2) with u < 0 and a coefficient with a negative factor', () => {
     expect(sd('sqrt(sqrt(cos(1) + 2) + 12 - 6*sqrt(sqrt(cos(1) + 2) + 3))')).toBe('3 - sqrt(sqrt(cos(1) + 2) + 3)');
-    // SymPy: (1 - sqrt(1 + sqrt(3))*cos(3))/sqrt(-cos(3)), the same number (1/sqrt(-c) = -sqrt(-c)/c)
-    expect(sd('sqrt(-cos(3)*(1 + sqrt(3)) - 1/cos(3) + 2*sqrt(1 + sqrt(3)))')).toBe('-sqrt(-cos(3))/cos(3) + sqrt(-cos(3))*sqrt(1 + sqrt(3))');
+    // SymPy 1.14 (cos(3) < 0 is known)
+    expect(sd('sqrt(-cos(3)*(1 + sqrt(3)) - 1/cos(3) + 2*sqrt(1 + sqrt(3)))')).toBe('(1 - sqrt(1 + sqrt(3))*cos(3))/sqrt(-cos(3))');
+    // SymPy 1.14: the negative factors cos(2) and cos(3) of the coefficient come out as sqrt(-cos(2)), sqrt(-cos(3))
+    expect(sd('sqrt(sqrt(cos(1) + 2)*cos(2)*cos(3) + 4*cos(2)*cos(3) + 2*sqrt(sqrt(cos(1) + 2) + 3)*cos(2)*cos(3))')).toBe(
+      'sqrt(-cos(2))*sqrt(-cos(3)) + sqrt(-cos(2))*sqrt(-cos(3))*sqrt(sqrt(cos(1) + 2) + 3)',
+    );
+    expect(sd('sqrt(-2*sqrt(2)*cos(3) - 8*cos(3) - 4*sqrt(sqrt(2) + 3)*cos(3))')).toBe('sqrt(2)*sqrt(-cos(3)) + sqrt(2)*sqrt(-cos(3))*sqrt(sqrt(2) + 3)');
   });
   it('radsimp: exponents and factors that are not radicals', () => {
     expect(sstr(radsimp(P('1/(x**(y/z) + 1)')))).toBe('1/(x**(y/z) + 1)');
@@ -301,5 +306,12 @@ describe('radsimp: SymPy 1.14 test_radsimp calls', () => {
     expect(sstr(radsimp(parse('1/(n + sqrt(3)/(sqrt(3) + 3*I) + 7*I/(sqrt(3) + 3*I))')))).toBe('(3*n + 6 - sqrt(3)*I)/(3*n**2 + 12*n + 13)');
     expect(sstr(radsimp(parse('1/(n + 1/(sqrt(3) + 3*I))')))).toBe('(144*n**3 - 12*sqrt(3)*n**2 + 36*I*n**2 + 6*n - 6*sqrt(3)*I*n + sqrt(3) + 3*I)/(144*n**4 + 12*n**2 + 1)');
     expect(sstr(radsimp(parse('(n + 1 + sqrt(3)/(sqrt(3) + 3*I))/(n + sqrt(3)/(sqrt(3) + 3*I))')))).toBe('(4*n**2 + 6*n + 2 + sqrt(3)*I)/(4*n**2 + 2*n + 1)');
+  });
+});
+
+describe('radsimp of a power of a sum with a half-integer exponent', () => {
+  it('rationalizes 1/(y - 1)**(3/2) (the multinomial expansion keeps the radical term)', () => {
+    // SymPy 1.14: sqrt(y - 1)/(y**2 - 2*y + 1)
+    expect(String(radsimp(parse('1/(y - 1)**(3/2)')))).toBe('sqrt(y - 1)/(y**2 - 2*y + 1)');
   });
 });

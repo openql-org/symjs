@@ -327,6 +327,9 @@ describe('powers with infinities and nan (SymPy Infinity/NegativeInfinity/Comple
     // SymPy: oo**sin(1) = oo, oo**sin(4) = 0
     expect(pow(oo, sj.sin(1))).toBe(oo);
     expect(pow(oo, sj.sin(4))).toBe(S.Zero);
+    // signs the assumptions leave open: SymPy oo**besselj(0, 1) = oo, oo**besselj(0, 3) = 0
+    expect(pow(oo, sj.besselj(0, 1))).toBe(oo);
+    expect(pow(oo, sj.besselj(0, 3))).toBe(S.Zero);
     // SymPy: oo**(-1 + sin(pi/7)**2 + cos(pi/7)**2) stays (the exponent is 0 numerically)
     const tiny = add(-1, pow(sj.sin(mul(pi, R2(1, 7))), 2), pow(sj.cos(mul(pi, R2(1, 7))), 2));
     expect(pow(oo, tiny)).toBeInstanceOf(Pow);
@@ -606,5 +609,20 @@ describe('powers and exp of numbers with an infinite part', () => {
     expect(['exp(oo*I)', 'exp(-oo*I)', 'exp(1 + oo*I)', 'exp(x + oo*I)', 'exp(oo*I*pi)', 'exp(oo + I)', 'exp(oo*I*x)', 'exp(-oo + oo*I)', 'exp(-oo - oo*I)', 'exp(oo + oo*I)'].map(P)).toEqual([
       'nan', 'nan', 'nan', 'nan', 'nan', 'oo*exp(I)', 'exp(oo*I*x)', '0', '0', 'zoo',
     ]);
+  });
+});
+
+describe('(x**a)**e for polar bases (SymPy Pow._eval_power: s = 1 when b.is_polar)', () => {
+  it('denests polar_lift, principal_branch and products of polar and positive factors', async () => {
+    const { parse: P, symbol: S } = await import('../../src');
+    const syms = [S('p', { polar: true }), S('w', { positive: true })];
+    expect(String(P('(polar_lift(x)**a)**e'))).toBe('polar_lift(x)**(a*e)');
+    expect(String(P('(principal_branch(x, 2*pi)**a)**e'))).toBe('principal_branch(x, 2*pi)**(a*e)');
+    expect(String(P('((p*w)**a)**e', { symbols: syms }))).toBe('(p*w)**(a*e)');
+    expect(String(P('((p*polar_lift(x))**a)**e', { symbols: syms }))).toBe('(p*polar_lift(x))**(a*e)');
+    // x is not polar, so the product is not
+    expect(String(P('((x*polar_lift(x))**a)**e'))).toBe('((x*polar_lift(x))**a)**e');
+    expect(String(P('((polar_lift(x)**b)**a)**e'))).toBe('polar_lift(x)**(a*b*e)');
+    expect(String(P('(sin(x)**a)**e'))).toBe('(sin(x)**a)**e');
   });
 });

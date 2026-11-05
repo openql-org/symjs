@@ -7,8 +7,8 @@
  * @file Trigonometric simplification (SymPy trigsimp.py): `trigsimp` with
  * the methods 'matching' (futrig, the default), 'groebner', 'combined',
  * 'fu' and 'old', and `exptrigsimp`. The exponential-form helpers at the
- * end (rewriteExp, rewriteTrig, expsimp, exptotrig, combineExp) are used
- * by simplify and integrate.
+ * end (rewriteExp, rewriteTrig, expsimp, exptotrig, combineExp) are public
+ * helpers; integrate uses expsimp.
  */
 
 import type { Expr, ExprLike, FnName } from '../core/nodes';
@@ -893,16 +893,13 @@ function unevaluatedE(e: Expr): Expr {
 }
 
 // ---------------------------------------------------------------------------
-// exponential-form helpers (used by simplify and integrate)
+// exponential-form helpers (expsimp is used by integrate)
 // ---------------------------------------------------------------------------
 
 const isTrigFn = (x: Expr) => x instanceof Fn && (x.name === 'sin' || x.name === 'cos' || x.name === 'tan');
 
 /** Contains sin/cos/tan. */
 export const hasTrigFunctions = (e: Expr): boolean => some(e, isTrigFn);
-
-/** Contains sin/cos/tan or exp. */
-export const hasTrig = (e: Expr): boolean => some(e, (x) => isTrigFn(x) || (x instanceof Pow && isE(x.base)));
 
 /** Combine all exp() factors of each product into a single exp (SymPy `powsimp` for exp). */
 export function combineExp(ex: ExprLike): Expr {

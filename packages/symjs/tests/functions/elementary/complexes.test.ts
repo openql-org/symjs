@@ -10,7 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../../src';
 import { add, diff, expint, expPolar, extractBranchFactor, mul, periodicArgument, polarify, polarLift, pow, principalBranch, S, sin, sqrt, Sym, unbranchedArgument } from '../../../src';
-import { isPolar } from '../../../src/functions/elementary/complexes';
+import { isPolar } from '../../../src/core/assumptions';
 
 // ---- table harness: each case is [kind, SymPy source, str() of the SymPy 1.14 result or [re, im]] ----
 type Case = [kind: string, src: string, expected: string | [number, number]];
@@ -231,6 +231,16 @@ const POLAR_CASES: Case[] = [
   ["s", "periodic_argument(exp_polar(I*atan(r)), 2*pi)", "periodic_argument(exp_polar(I*atan(r)), 2*pi)"],
   ["s", "lowergamma(2, exp_polar(2*I*pi)*x)", "-(x + 1)*exp(-x) + 1"],
   ["s", "lowergamma(2, x)", "-(x + 1)*exp(-x) + 1"],
+  // SymPy lowergamma.eval and uppergamma.eval on the other sheets
+  ["s", "lowergamma(x, exp_polar(2*I*pi)*y)", "exp(2*I*pi*x)*lowergamma(x, y)"],
+  ["s", "uppergamma(x, exp_polar(2*I*pi)*y)", "(1 - exp(2*I*pi*x))*gamma(x) + exp(2*I*pi*x)*uppergamma(x, y)"],
+  ["s", "lowergamma(-2, exp_polar(4*I*pi)*y)", "lowergamma(-2, y) + 2*I*pi"],
+  ["s", "uppergamma(-2, exp_polar(4*I*pi)*y)", "-2*I*pi + expint(3, y)/y**2"],
+  ["s", "lowergamma(0, exp_polar(2*I*pi)*y)", "lowergamma(0, y) + 2*I*pi"],
+  ["s", "lowergamma(3, exp_polar(4*I*pi)*y)", "-2*(y**2/2 + y + 1)*exp(-y) + 2"],
+  ["s", "uppergamma(1/2, exp_polar(-2*I*pi)*y)", "-sqrt(pi)*erfc(sqrt(y)) + 2*sqrt(pi)"],
+  ["s", "lowergamma(x, exp_polar(I*pi)*y)", "lowergamma(x, y*exp_polar(I*pi))"],
+  ["s", "lowergamma(x, 0)", "0"],
   ["EB", "exp_polar(5*I*pi)*x", "(x*exp_polar(I*pi), 2)"],
   ["EB", "exp_polar(-3*I*pi)*x", "(x*exp_polar(I*pi), -2)"],
   ["EB", "exp_polar(I*pi)*x", "(x*exp_polar(I*pi), 0)"],
@@ -322,17 +332,7 @@ describe('polar: cases outside the table', () => {
     // SymPy unpolarify(polar_lift(x)**2, {x: exp_polar(y)})
     expect(String(sj.unpolarify(pow(polarLift(x), 2), { subs: [[x, expPolar(y)]] }))).toBe('exp(2*y)');
   });
-  it('isPolar', () => {
-    expect(isPolar(polarLift(x))).toBe(true);
-    expect(isPolar(new Sym('w', { polar: true }))).toBe(true);
-    expect(isPolar(sj.mul(2, polarLift(x)))).toBe(true);
-    expect(isPolar(pow(polarLift(x), 2))).toBe(true);
-    // SymPy (polar_lift(x)**y).is_polar is True (Pow.is_polar = base.is_polar), and a product is
-    // polar when its other factors are positive: (q*polar_lift(x)).is_polar, but not x*polar_lift(x)
-    expect(isPolar(pow(polarLift(x), y))).toBe(true);
-    expect(isPolar(sj.mul(new Sym('q', { positive: true }), polarLift(x)))).toBe(true);
-    expect(isPolar(sj.mul(x, polarLift(x)))).toBe(false);
-    expect(isPolar(x)).toBe(false);
+  it('unbranchedArgument of exp_polar', () => {
     expect(String(unbranchedArgument(expPolar(sj.mul(3, sj.I))))).toBe('3');
   });
   it('polarify with lift and with the substitution of polar dummies', () => {
@@ -392,5 +392,35 @@ describe('polar numbers', () => {
     const z = mul(x, expPolar(mul(2, I, pi)));
     expect(String(expint(-1, z))).toBe('exp(-x)/x + exp(-x)/x**2');
     expect(String(expint(0, z))).toBe('exp(-x)/x');
+  });
+});
+
+describe('evalf of polar numbers (SymPy exp_polar._eval_evalf, Ei._eval_evalf)', () => {
+  const N = (src: string, n = 15) => String(sj.evalf(P(src), n));
+  it('evaluates exp_polar on the principal branch only', () => {
+    expect(N('0.3*exp_polar(I*pi)')).toBe('-0.300000000000000');
+    expect(N('exp_polar(I*pi/2)')).toBe('1.0*I');
+    expect(N('exp_polar(-I*pi + I/10**20)')).toBe('-1.0 - 1.0e-20*I');
+    // an imaginary part outside (-pi, pi]: no value
+    expect(N('exp_polar(2*I*pi)')).toBe('exp_polar(2*I*pi)');
+    expect(N('exp_polar(-I*pi)')).toBe('exp_polar(-I*pi)');
+    expect(N('3*exp_polar(3*I*pi)')).toBe('3.0*exp_polar(3*I*pi)');
+    expect(N('x*exp_polar(2*I*pi)')).toBe('x*exp_polar(2*I*pi)');
+    // an argument at pi whose exp is computed with an imaginary part of the wrong sign is made real
+    expect(N('exp_polar(1.0*I*pi)', 1)).toBe('-1.');
+  });
+  it('adds I*pi to Ei above the cut on the negative axis', () => {
+    expect(N('Ei(2*exp_polar(I*pi))')).toBe('-0.0489005107080611 + 3.14159265358979*I');
+    expect(N('Ei(2*exp_polar(I*pi))', 50)).toBe('-0.048900510708061119567239835228049522314492184963023 + 3.1415926535897932384626433832795028841971693993751*I');
+    expect(N('Ei(polar_lift(-2))')).toBe('-0.0489005107080611 + 3.14159265358979*I');
+    expect(N('Ei(2*exp_polar(3*I*pi))')).toBe('-0.0489005107080611 + 9.42477796076938*I');
+    expect(N('Ei(2*exp_polar(-I*pi))')).toBe('-0.0489005107080611 - 3.14159265358979*I');
+    expect(N('Ei(2*exp_polar(I*pi/2))')).toBe('0.422980828774865 + 3.17620930359759*I');
+    expect(N('Ei(-2)')).toBe('-0.0489005107080611');
+    // the values of evalf(subs=...) are substituted first: x = 2.0 is positive
+    const at = (src: string, v: number) => String(sj.evalf(P(src), 15, { subs: new Map([[x, sj.sympify(v)]]) }));
+    expect(at('Ei(x*exp_polar(I*pi))', 2)).toBe('-0.0489005107080611 + 3.14159265358979*I');
+    expect(at('Ei(x*exp_polar(I*pi))', -2)).toBe('4.95423435600189');
+    expect(at('Ei(I*x*exp_polar(I*pi))', 2)).toBe('0.422980828774865 - 3.17620930359759*I');
   });
 });

@@ -32,8 +32,8 @@ describe('gcd, lcm, degree, div', () => {
     expect(sj.degree(5, x)).toBe(0);
     expect(sj.degree(sj.Poly.from(E('x**2 + 1'), [x]))).toBe(2);
     expect(show(sj.div(E('x**3 + 2*x + 1'), E('x**2 + 1')))).toBe('[x, x + 1]');
-    // SymPy divides multivariate polynomials, (y, 1 - y**2); symjs supports univariate division only
-    expect(() => sj.div(E('x*y + 1'), E('x + y'))).toThrow(sj.PolynomialError);
+    // SymPy: (y, 1 - y**2)
+    expect(show(sj.div(E('x*y + 1'), E('x + y')))).toBe('[y, 1 - y**2]');
   });
 });
 
@@ -454,7 +454,10 @@ describe('further Poly cases', () => {
     expect(String(P('x + 1', x).mul(P('x', x)))).toBe("Poly(x**2 + x, x, domain='ZZ')");
     expect(String(P('x + 1', x).mul(2))).toBe("Poly(2*x + 2, x, domain='ZZ')");
     expect(String(P('x**2*y', x, y).diff(y))).toBe("Poly(x**2, x, y, domain='ZZ')");
-    expect(() => P('x*y', x, y).div(P('x', x, y))).toThrow(sj.PolynomialError);
+    // SymPy: (Poly(y, x, y, domain='ZZ'), Poly(0, x, y, domain='ZZ')) (over QQ without auto)
+    expect(String(P('x*y', x, y).div(P('x', x, y)))).toBe("Poly(y, x, y, domain='QQ'),Poly(0, x, y, domain='QQ')");
+    // SymPy raises ValueError: univariate polynomial expected
+    expect(() => P('x*y', x, y).sturm()).toThrow(sj.PolynomialError);
     expect(String(P('x + 1', x).replace(y, z))).toBe("Poly(x + 1, x, domain='ZZ')");
     expect(P('x**2 - 2', x).countRoots(new sj.Float(0.5), 2)).toBe(1);
   });
@@ -829,5 +832,29 @@ describe('factor on expressions (SymPy _symbolic_factor) and factor_list', () =>
     expect(Fn('(x**2 - 4)**n')).toBe('(x - 2)**n*(x + 2)**n');
     expect(Fn('(2*x + 2)**n')).toBe('2**n*(x + 1)**n');
     expect(Fn('(-2*x - 2)**n')).toBe('(-2)**n*(x + 1)**n');
+  });
+});
+
+describe('multivariate division (SymPy dmp_ff_div)', () => {
+  const P = (s: string) => sj.Poly.from(parse(s), [x, y]);
+  it('divides recursively in the first generator', () => {
+    const cases: [string, string, string][] = [
+      ['x**2*y + x + y', 'x*y + 1', "[Poly(x, x, y, domain='ZZ'), Poly(y, x, y, domain='ZZ')]"],
+      ['x**2 + y**2', 'x + y', "[Poly(x - y, x, y, domain='ZZ'), Poly(2*y**2, x, y, domain='ZZ')]"],
+      ['x**2*y + 1', '2*x + y', "[Poly(1/2*x*y - 1/4*y**2, x, y, domain='QQ'), Poly(1/4*y**3 + 1, x, y, domain='QQ')]"],
+      ['x*y**2 + 3', 'x*y', "[Poly(y, x, y, domain='ZZ'), Poly(3, x, y, domain='ZZ')]"],
+      // the leading coefficient 3 of the remainder is not divisible by 2*y: the division stops
+      ['2*x**2*y + 3*x', '2*x*y', "[Poly(x, x, y, domain='ZZ'), Poly(3*x, x, y, domain='ZZ')]"],
+      ['x**2*y/2 + 1', 'x + y', "[Poly(1/2*x*y - 1/2*y**2, x, y, domain='QQ'), Poly(1/2*y**3 + 1, x, y, domain='QQ')]"],
+    ];
+    for (const [f, g, want] of cases) expect(`[${P(f).divAuto(P(g)).map(String).join(', ')}]`).toBe(want);
+    expect(String(P('x**2*y/2 + 1').div(P('x/2 + y/3')))).toBe("Poly(x*y - 2/3*y**2, x, y, domain='QQ'),Poly(2/9*y**3 + 1, x, y, domain='QQ')");
+    expect(() => P('x*y').div(P('0'))).toThrow(RangeError);
+  });
+  it('div of expressions, with the generators given', () => {
+    // SymPy: div(x**2*y + 1, x*y + x, y, x) -> (x, 1 - x**2)
+    expect(String(sj.polyDiv(parse('x**2*y + 1'), parse('x*y + x'), [y, x]))).toBe('x,1 - x**2');
+    expect(String(sj.polyDiv(parse('x**2*y + x + y'), parse('x*y + 1')))).toBe('x,y');
+    expect(() => sj.polyDiv(parse('3'), parse('2'))).toThrow(sj.PolynomialError);
   });
 });

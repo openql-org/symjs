@@ -241,10 +241,43 @@ describe('hyper: cases outside the table', () => {
     expect(ev('-4', '2', '-3', '1/2')).toBe('oo');
     // 2F2 by the power series (SymPy hyper((1, 2), (3, 4), 1/2).evalf())
     expect(String(evalf(hyper([1, 2], [3, 4], sj.Rational.of(1, 2))))).toBe('1.09002619782383');
-    // outside the unit disk other functions are not evaluated (SymPy hyper((1, 2), (3, 4), 2).evalf() = 1.46803038322526)
-    expect(String(evalf(hyper([1, 2], [3, 4], 2)))).toBe('hyper((1.0, 2.0), (3.0, 4.0), 2.0)');
+    // outside the unit disk (SymPy hyper((1, 2), (3, 4), 2).evalf())
+    expect(String(evalf(hyper([1, 2], [3, 4], 2)))).toBe('1.46803038322526');
+    // a number without a numeric value is kept as it is (SymPy hyper((1, 2), (3,), riemann_xi(3)))
+    expect(String(hyper([1, 2], [3], sj.riemannXi(3)))).toBe('hyper((1, 2), (3,), riemann_xi(3))');
     // a symbol stays (SymPy hyper((1, 2), (3,), x).evalf())
     expect(ev('1', '2', '3', 'x')).toBe('hyper((1.0, 2.0), (3.0,), x)');
+  });
+  describe('pFq by mpmath hyper (SymPy evalf)', () => {
+    const N = (ap: string[], bq: string[], z: string, n?: number) => String(evalf(hyper(ap.map((t) => sj.parse(t)), bq.map((t) => sj.parse(t)), sj.parse(z)), n));
+    it('at z = 1 where the series diverges', () => {
+      // SymPy 1.14: oo, -oo + oo*I and -oo (the series diverges at 1: mpmath hyper(as, bs, 0.9)*inf)
+      expect(N(['1/2', '1/3', '1/4'], ['1/5', '1/6'], '1')).toBe('oo');
+      expect(N(['1/2 + I', '1/3', '1/4'], ['1/5', '1/6'], '1')).toBe('-oo + oo*I');
+      expect(N(['1/2', '1/3', '1/4'], ['1/5', '-1/6'], '1')).toBe('-oo');
+    });
+    it('near and outside the unit circle', () => {
+      // near the unit circle by nsum, at 1 by Buhring's expansion, outside by the 1/z transformation
+      expect(N(['1', '1', '1'], ['2', '2'], '-1')).toBe('0.822467033424113');
+      expect(N(['1', '2', '3'], ['5', '6'], '1')).toBe('1.29494373855393');
+      expect(N(['1/2', '1/3', '1/4'], ['7/3', '5/2'], '-21/20')).toBe('0.993193053612406');
+      expect(N(['1', '2', '3'], ['4', '5'], '2')).toBe('1.79339009754894 - 1.60747559899869*I');
+    });
+    it('the Borel sum', () => {
+      // the Borel sum of a divergent series (SymPy 0.98948 at 5 digits)
+      expect(N(['1/2', '1/3', '1/4'], ['5/3'], '-1/2', 5)).toBe('0.98948');
+    });
+    it('Euler-Maclaurin summation is not ported', () => {
+      // SymPy 1.08856221958527: mpmath sums by Euler-Maclaurin after nsum fails, not ported here
+      expect(N(['1/2', '1/2', '1/2'], ['3/2', '3/2'], '999/1000')).toBe('hyper((0.5, 0.5, 0.5), (1.5, 1.5), 0.999)');
+    });
+    it('with the values of symbols', () => {
+      // the values of symbols (SymPy hyper((1, 2), (3, 4), y).evalf(subs={y: 2}), hyper((1, y), (3,), 1/2))
+      const y = new Sym('y');
+      const at = (e: sj.Expr) => String(evalf(e, 15, { subs: new Map([[y, sj.sympify(2)]]) }));
+      expect(at(hyper([1, 2], [3, 4], y))).toBe('1.46803038322526');
+      expect(at(hyper([1, y], [3], sj.Rational.of(1, 2)))).toBe('1.54517744447956');
+    });
   });
   it('derivatives with respect to a parameter are not implemented', () => {
     // SymPy: Derivative(hyper((b, x), (c,), z), x)

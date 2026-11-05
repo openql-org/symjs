@@ -305,10 +305,9 @@ describe('hankel_transform', () => {
   ];
   for (const [label, f, want] of cases) it(label, () => expect(showT(f())).toBe(want));
 
-  it('forms that differ from SymPy only in how they are written', () => {
-    // SymPy: 2**(nu + 1)*a*k**(-nu - 3)*(a**2/k**2 + 1)**(-nu - 3/2)*gamma(nu + 3/2)/sqrt(pi);
-    // symjs's Mul keeps 2*2**nu apart
-    expect(showT(hankelTransform(Pf('r**nu*exp(-a*r)'), r, k, nu))).toBe('2*2**nu*a*k**(-nu - 3)*(a**2/k**2 + 1)**(-nu - 3/2)*gamma(nu + 3/2)/sqrt(pi)');
+  it('forms with powers of 2 (SymPy 1.14)', () => {
+    // SymPy 1.14
+    expect(showT(hankelTransform(Pf('r**nu*exp(-a*r)'), r, k, nu))).toBe('2**(nu + 1)*a*k**(-nu - 3)*(a**2/k**2 + 1)**(-nu - 3/2)*gamma(nu + 3/2)/sqrt(pi)');
     // (SymPy prints 2*2**m here too)
     expect(showT(hankelTransform(Pf('r**m'), r, k, nu))).toBe('2*2**m*k**(-m - 2)*gamma(m/2 + nu/2 + 1)/gamma(-m/2 + nu/2)');
     // SymPy: meijerg(((0,), ()), ((0, 0), (0,)), b**2*k**2/4)/2, which is besselk(0, b*k)
@@ -395,7 +394,7 @@ describe('Heaviside(x) factors over the half line', () => {
   });
 });
 
-describe('transforms by the Meijer G-function integrator in another form than SymPy', () => {
+describe('transforms by the Meijer G-function integrator (SymPy 1.14 forms)', () => {
   // F agrees with SymPy's result G at a = 3/2, b = 7/10 and k = 13/10 (mpmath values of G)
   const vals: [Expr, Expr][] = [
     [ap, S.Half.add(1)],
@@ -409,22 +408,22 @@ describe('transforms by the Meijer G-function integrator in another form than Sy
   };
   it('cosine 1/(x + 1)', () => {
     const F = cosineTransform(Pf('1/(x + 1)'), x, k);
-    expect(showT(F)).toBe('sqrt(2)*((-Si(k) + pi/2)*sin(k) - cos(k)*Ci(k))/sqrt(pi)');
+    expect(showT(F)).toBe('sqrt(2)*((pi - 2*Si(k))*sin(k)/2 - cos(k)*Ci(k))/sqrt(pi)');
     close(F, 'sqrt(2)*((pi - 2*Si(k))*sin(k)/2 - cos(k)*Ci(k))/sqrt(pi)');
   });
   it('cosine 1/(x**2 + b**2)**2', () => {
     const F = cosineTransform(Pf('1/(x**2 + b**2)**2'), x, k);
-    // simplify puts the inner fraction over the denominator (SymPy's form is given below)
-    expect(showT(F)).toBe('sqrt(2)*sqrt(pi)*(-b*k*sinh(b*k) + b*k*cosh(b*k) - sinh(b*k) + cosh(b*k))/(4*b**3)');
+    // SymPy 1.14
+    expect(showT(F)).toBe('-sqrt(2)*sqrt(pi)*(b*k*sinh(b*k) - b*k*cosh(b*k) + sinh(b*k) - cosh(b*k))/(4*b**3)');
     close(F, '-sqrt(2)*sqrt(pi)*(b*k*sinh(b*k) - b*k*cosh(b*k) + sinh(b*k) - cosh(b*k))/(4*b**3)');
   });
   it('Hankel transforms', () => {
     const F1 = hankelTransform(Pf('exp(-a*r**2)'), r, k, 1);
-    expect(showT(F1)).toBe('sqrt(pi)*k*(a*(16 - k**2/a)*besseli(1, k**2/(8*a))/k**2 + besseli(2, k**2/(8*a)))*exp(-k**2/(8*a))/(8*a**(3/2))');
+    expect(showT(F1)).toBe('sqrt(pi)*k*(besseli(0, k**2/(8*a)) - besseli(1, k**2/(8*a)))*exp(-k**2/(8*a))/(8*a**(3/2))');
     close(F1, 'sqrt(pi)*k*(besseli(0, k**2/(8*a)) - besseli(1, k**2/(8*a)))*exp(-k**2/(8*a))/(8*a**(3/2))');
     expect(showT(hankelTransform(Pf('1/(r**2 + b**2)'), r, k, 1))).toBe('-pi*besseli(1, b*k)/2 + hyper((1,), (1/2, 3/2), b**2*k**2/4)');
     const F3 = hankelTransform(Pf('r**2/(r**2 + b**2)**(3/2)'), r, k, 0);
-    expect(showT(F3)).toBe('(b*k*sinh(b*k) - b*k*cosh(b*k) - sinh(b*k) + cosh(b*k))/k');
+    expect(showT(F3)).toBe('b*sinh(b*k) - b*cosh(b*k) - sinh(b*k)/k + cosh(b*k)/k');
     close(F3, 'b*sinh(b*k) - b*cosh(b*k) - sinh(b*k)/k + cosh(b*k)/k');
   });
 });

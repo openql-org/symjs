@@ -4,7 +4,7 @@
 // Tests of src/simplify/simplify.ts.
 
 import { describe, expect, it } from 'vitest';
-import { I, add, cancel, cos, countOps, exp, exptotrig, mul, parse, pow, rational, simplify, sin, symbol, symbols, together, trigsimp } from '../../src';
+import { I, KroneckerDelta, add, cancel, cos, countOps, exp, exptotrig, hyper, mul, parse, pow, rational, simplify, sin, symbol, symbols, together, trigsimp } from '../../src';
 import type { Expr } from '../../src';
 
 const [x, y] = symbols('x y');
@@ -113,7 +113,7 @@ describe('simplify of holonomic to_expr results (SymPy holonomic tests)', () => 
 describe('fractions in sums, opposite bases of even powers and rationalized denominators (SymPy simplify)', () => {
   it('match SymPy', () => {
     // SymPy: (-x**2 - y**2)/y**3
-    expect(String(simplify(parse('-(x**2/y**2 + 1)/y')))).toBe('-(x**2 + y**2)/y**3');
+    expect(String(simplify(parse('-(x**2/y**2 + 1)/y')))).toBe('(-x**2 - y**2)/y**3');
     expect(String(simplify(parse('sqrt((-u + v)**2) - sqrt((u - v)**2)')))).toBe('0');
     expect(String(simplify(parse('sqrt((-2*u/3 + 2*v/3)**2 + (-2*w/3 + 2*z/3)**2) + sqrt((u/3 - v/3)**2 + (w/3 - z/3)**2) - sqrt((u - v)**2 + (w - z)**2)')))).toBe('0');
     expect(String(simplify(parse('1/(1 + sqrt(2))')))).toBe('-1 + sqrt(2)');
@@ -153,5 +153,37 @@ describe('logarithms expanded or combined, whichever is shorter by count_ops (Sy
       [parse('log(x)/2 + log(2)').subs(parse('x'), x), 'log(x)/2 + log(2)'],
     ];
     expect(cases.map(([e]) => String(simplify(e)))).toEqual(cases.map(([, r]) => r));
+  });
+});
+
+describe('the SymPy simplify pipeline (sympy/simplify/simplify.py)', () => {
+  it('_eval_simplify of hyper, Bessel and combinatorial functions at the top level', () => {
+    // SymPy 1.14
+    expect(String(simplify(hyper([], [], x)))).toBe('exp(x)');
+    expect(String(simplify(parse('besselj(1/2, x)')))).toBe('sqrt(2)*sin(x)/(sqrt(pi)*sqrt(x))');
+    expect(String(simplify(parse('binomial(x, 2)')))).toBe('binomial(x, 2)');
+    expect(String(simplify(parse('factorial(x + 1)/factorial(x)')))).toBe('x + 1');
+    // log(exp(x)) is not x for complex x (expand_log without force)
+    expect(String(simplify(parse('log(exp(x))')))).toBe('log(exp(x))');
+  });
+  it('ratio = oo', () => {
+    // SymPy: simplify(r, ratio=oo) keeps the together form even when it is longer
+    expect(String(simplify(parse('1/x + 1/y'), { ratio: Infinity }))).toBe('(x + y)/(x*y)');
+  });
+  it('kroneckersimp', () => {
+    const i = symbol('i');
+    // SymPy 1.14: x
+    expect(String(simplify(add(x, mul(KroneckerDelta(0, i), KroneckerDelta(1, i)))))).toBe('x');
+  });
+  it('collects Abs factors (SymPy collect_abs)', () => {
+    // SymPy 1.14
+    expect(String(simplify(parse('5*Abs((x**2 - 1)/(x - 1))')))).toBe('5*Abs(x + 1)');
+    expect(String(simplify(parse('Abs(x)/Abs(x**2)')))).toBe('1/Abs(x)');
+  });
+  it('simplifies the lie group coordinate of sqrt(y - 1)/sqrt(y + 1) quickly', () => {
+    const t = Date.now();
+    // SymPy 1.14: 0
+    expect(String(simplify(parse('sqrt(y + 1)/sqrt(y - 1) + (y**2 - 1)*(x/(2*sqrt(y - 1)*sqrt(y + 1)) - x*sqrt(y + 1)/(2*(y - 1)**(3/2)))/x')))).toBe('0');
+    expect(Date.now() - t).toBeLessThan(1000);
   });
 });

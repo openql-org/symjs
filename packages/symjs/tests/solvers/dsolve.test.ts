@@ -365,8 +365,8 @@ describe('dsolve', () => {
   it('nth_linear_euler_eq_nonhomogeneous_variation_of_parameters (SymPy)', () => {
     const h = (e: string) => show(dsolve(parse(e), fx, { hint: 'nth_linear_euler_eq_nonhomogeneous_variation_of_parameters' }));
     expect(h('x**2*Derivative(f(x), x, x) + x*Derivative(f(x), x) - f(x) - x**3')).toBe('Eq(f(x), C1/x + C2*x + x**3/8)');
-    // first order (an odd order); SymPy: Eq(f(x), (C1 + x**3/3)/x), the same expression
-    expect(h('x*Derivative(f(x), x) + f(x) - x**2')).toBe('Eq(f(x), C1/x + x**2/3)');
+    // first order (an odd order); SymPy 1.14
+    expect(h('x*Derivative(f(x), x) + f(x) - x**2')).toBe('Eq(f(x), (C1 + x**3/3)/x)');
     expect(ds('Derivative(f(x), x) + f(x) - x', 'nth_linear_constant_coeff_variation_of_parameters')).toBe('Eq(f(x), C1*exp(-x) + x - 1)');
     expect(ds('x**2*Derivative(f(x), x, x) - 2*x*Derivative(f(x), x) + 2*f(x) - x**3*exp(x)')).toBe('Eq(f(x), x*(C1 + C2*x + exp(x)))');
   });

@@ -96,6 +96,8 @@ const CASES: readonly Case[] = [
   ["ask", "Q.zero(x+1)", "Q.positive(x)", "false"],
   ["ask", "Q.zero(I*x)", "Q.real(x)", "unknown"],  // SymPy 1.14: false (wrong in SymPy: x = 0 is real and I*x = 0)
   ["ask", "Q.zero(x*y)", "Q.nonzero(x) & Q.nonzero(y)", "false"],
+  ["ask", "Q.zero(sin(1))", "True", "false"],
+  ["ask", "Q.zero(I*f(x))", "Q.positive(f(x))", "false"],
   ["ask", "Q.nonzero(I)", "True", "false"],
   ["ask", "Q.nonzero(x+1)", "Q.positive(x)", "true"],
   ["ask", "Q.nonzero(x*y)", "Q.nonzero(x) & Q.nonzero(y)", "true"],

@@ -22,8 +22,7 @@ const cases: [Expr, string, string][] = [
   [mul(2, x), '4*Variance(x)', '4*Variance(x)'],
   [mul(x, y), 'x**2*Variance(y) + y**2*Variance(x)', 'x**2*Variance(y) + y**2*Variance(x) + 2*Covariance(x, y)/(x*y)'],
   [pow(x, -1), 'Variance(x)/x**4', 'Variance(x)/x**4'],
-  // SymPy: (x**2*Variance(y) + y**2*Variance(x))/y**4 (simplify gives the sum of the two fractions here)
-  [mul(x, pow(y, -1)), 'x**2*Variance(y)/y**4 + Variance(x)/y**2', 'x**2*Variance(y)/y**4 + Variance(x)/y**2'],
+  [mul(x, pow(y, -1)), '(x**2*Variance(y) + y**2*Variance(x))/y**4', '(x**2*Variance(y) + y**2*Variance(x))/y**4'],
   [exp(x), 'exp(2*x)*Variance(x)', 'exp(2*x)*Variance(x)'],
   [exp(mul(2, x)), '4*exp(4*x)*Variance(x)', '4*exp(4*x)*Variance(x)'],
   [exp(mul(-1, x, t)), 't**2*exp(-2*t*x)*Variance(x)', 't**2*exp(-2*t*x)*Variance(x)'],

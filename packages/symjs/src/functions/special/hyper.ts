@@ -29,6 +29,7 @@ import * as F from '../../numeric/mpf';
 import * as M from '../../numeric/mpfun';
 import type { Mpc } from '../../numeric/mpfun';
 import { chyp2f1 } from '../../numeric/mporthopoly';
+import { HyperInfinity, hyper as mpHyper } from '../../numeric/mphyper';
 
 const gcdBig = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcdBig(b, a % b));
 
@@ -130,28 +131,23 @@ export class Hyper extends ExtensionExpr {
     return mul(c, hyper(this.ap.map((a) => add(a, 1)), this.bq.map((b) => add(b, 1)), this.argument), dz);
   }
   /**
-   * The value: 2F1 at dps digits (mpmath hyp2f1, with its analytic continuation), other
-   * functions by the power series (|z| < 1 or terminating).
+   * The value at dps digits (SymPy evalf with mpmath hyper): 2F1 with its analytic continuation,
+   * the other functions by mpmath's series, asymptotic expansions and 1/z transformation; undefined
+   * where mpmath raises or sums with methods not ported (nsum near the unit circle, Borel
+   * integrals), and for an argument that is not a number.
    */
   override numericValue(dps: number): Expr | undefined {
+    if (this.freeSymbols().size > 0) return undefined;
     if (this.p === 2 && this.args.length === 4) return this.value2f1(dps);
-    const z = this.argument.toComplex();
-    if (Math.hypot(z.re, z.im) >= 1) return undefined;
-    const as = this.ap.map((a) => a.toNumber());
-    const bs = this.bq.map((b) => b.toNumber());
-    let term = 1;
-    let zp = cx(1);
-    let acc = cx(1);
-    for (let k = 0; k < 2000; k++) {
-      const num = as.reduce((s, a) => s * (a + k), 1);
-      const den = bs.reduce((s, b) => s * (b + k), 1) * (k + 1);
-      term *= num / den;
-      zp = cmul(zp, z);
-      acc = { re: acc.re + term * zp.re, im: acc.im + term * zp.im };
-      if (Math.abs(term) * Math.hypot(zp.re, zp.im) < 1e-17 * Math.max(1, Math.hypot(acc.re, acc.im))) break;
+    const prec = F.dpsToPrec(dps);
+    const v = this.args.map((e) => evalMp(e, prec + 10));
+    try {
+      return fromMpc(mpHyper(v.slice(1, 1 + this.p), v.slice(1 + this.p), first(v), prec), prec);
+    } catch (err) {
+      // mpmath hyper(as, bs, 0.9)*inf at z = 1
+      if (err instanceof HyperInfinity) return infinityTimes(err.value);
+      return undefined;
     }
-    void dps;
-    return add(acc.re, mul(acc.im, S.I));
   }
   /**
    * 2F1(a, b; c; z) at dps digits (mpmath _hyp2f1): oo at a pole of the series (c a nonpositive
@@ -159,7 +155,6 @@ export class Hyper extends ExtensionExpr {
    * real limit from below.
    */
   private value2f1(dps: number): Expr | undefined {
-    if (this.freeSymbols().size > 0) return undefined;
     const prec = F.dpsToPrec(dps);
     const v = this.args.map((e) => evalMp(e, prec + 10));
     const [z, a, b, c] = [at(v, 0), at(v, 1), at(v, 2), at(v, 3)];
@@ -479,6 +474,11 @@ fnPartials.appellf1 = (args, i) => {
 };
 
 const mpAbs = (z: Mpc): number => F.toNumber(M.cabs(z, 53));
+/** mpmath inf times a value: oo or -oo for a real value (SymPy Float(inf)), with both parts for a complex one. */
+function infinityTimes(v: Mpc): Expr {
+  const part = (x: F.Mpf): Expr => (F.isZero(x) ? S.Zero : F.sign(x) > 0 ? S.Infinity : S.NegativeInfinity);
+  return add(part(v[0]), mul(part(v[1]), S.I));
+}
 const mpNpInt = (z: Mpc): boolean => F.isZero(z[1]) && z[0].man <= 0n && F.toRational(z[0])[1] === 1n;
 const mpInt = (k: number): Mpc => [F.fromInt(BigInt(k)), F.ZERO];
 

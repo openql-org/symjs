@@ -209,6 +209,9 @@ const ELEM_CASES: Case[] = [
   ["s", "abs(ng)", "-ng"],
   ["s", "abs(3*x)", "3*Abs(x)"],
   ["s", "abs(x*y)", "Abs(x*y)"],
+  // the sign of the value, which is_negative does not decide (SymPy -besselj(1, 5), besselj(1, 2))
+  ["s", "abs(besselj(1, 5))", "-besselj(1, 5)"],
+  ["s", "abs(besselj(1, 2))", "besselj(1, 2)"],
   ["s", "abs(r**2)", "r**2"],
   ["s", "abs(exp(x))", "exp(re(x))"],
   ["s", "abs(abs(x))", "Abs(x)"],

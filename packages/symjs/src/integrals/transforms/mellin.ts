@@ -230,15 +230,6 @@ function linearRe(e: Expr, s: Expr, t: Dummy): [Rational, Expr] | undefined {
   return c1 instanceof Rational ? [c1, c0] : undefined;
 }
 
-/** n**e with n = b**k written as b**(k*e) for the smallest base b. */
-function perfectPower(n: bigint, e: Expr): Expr {
-  for (let k = 64; k > 1; k--) {
-    const b = BigInt(Math.round(Number(n) ** (1 / k)));
-    if (b > 1n && b ** BigInt(k) === n) return pow(b, mul(k, e));
-  }
-  return pow(n, e);
-}
-
 /** The Mellin transform by SymPy's Meijer G-function integrator: [F, a, b, cond], or undefined. */
 function mellinMeijer(f: Expr, x: Sym, s: Expr): [Expr, Expr, Expr, Expr] | undefined {
   // (sums are transformed term by term, combining the strips)
@@ -250,9 +241,10 @@ function mellinMeijer(f: Expr, x: Sym, s: Expr): [Expr, Expr, Expr, Expr] | unde
     .filter((c) => !isFalseExpr(c[2]));
   if (!conds.length) return undefined;
   const [a, b, aux] = first(conds);
-  // SymPy _simplify, with the powers of rationals over the smallest bases and the arguments of gamma expanded
+  // SymPy _simplify (simplify writes powers of rationals over the smallest bases), with a power of a
+  // fraction split into powers of its numerator and denominator and the arguments of gamma expanded
   const F = mapBottomUp(simplifyExpr(powdenestPolar(m[0])), (t) => {
-    if (t instanceof Pow && t.base instanceof Rational && t.base.isPositive && !(t.exp instanceof Rational)) return mul(perfectPower(t.base.p, t.exp), perfectPower(t.base.q, neg(t.exp)));
+    if (t instanceof Pow && t.base instanceof Rational && t.base.isPositive && !(t.exp instanceof Rational)) return mul(pow(t.base.p, t.exp), pow(t.base.q, neg(t.exp)));
     return t instanceof Fn && t.name === 'gamma' ? gamma(expand(first(t.args))) : t;
   });
   return [F, a, b, aux];

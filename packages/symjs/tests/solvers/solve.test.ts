@@ -325,8 +325,8 @@ describe('solve', () => {
     expect(sol('3**x - 2*x - 1')).toBe('[-1/2 - LambertW(-sqrt(3)*log(3)/6)/log(3), -1/2 - LambertW(-sqrt(3)*log(3)/6, -1)/log(3)]');
     expect(sol('x**y*exp(x) - 2')).toBe('[y*LambertW(exp(log(2)/y)/y)]');
     expect(sol('sqrt(x)*exp(x) - 1')).toBe('[LambertW(2)/2]');
-    // SymPy: [(-log(8) - LambertW(-log(2**(3/8))))/log(2)], the same number; the k = -1 branch is the other real solution
-    expect(sol('3*2**x - x - 3')).toBe('[-3 - LambertW(-3*log(2)/8)/log(2), -3 - LambertW(-3*log(2)/8, -1)/log(2)]');
+    // SymPy: [(-log(8) - LambertW(-log(2**(3/8))))/log(2)]; the k = -1 branch is the other real solution
+    expect(sol('3*2**x - x - 3')).toBe('[(-log(8) - LambertW(-log(2**(3/8))))/log(2), (-log(8) - LambertW(-log(2**(3/8)), -1))/log(2)]');
     // SymPy: [1] for both; the LambertW forms equal 1 (W(z*exp(z)) = z for z = 1/(2*log(2)) and 1/log(2))
     expect(sol('2*log(2)*log(x) + x - 1')).toBe('[2*log(2)*LambertW(exp(1/(2*log(2)))/(2*log(2)))]');
     expect(sol('log(2)*log(x) + x - 1')).toBe('[log(2)*LambertW(exp(1/log(2))/log(2))]');

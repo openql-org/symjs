@@ -10,7 +10,7 @@
 import { PolynomialError } from '../core/errors';
 import { at, defined, expectType, getOrThrow } from '../core/guard';
 import type { Expr } from '../core/nodes';
-import { Add, Mul, Rational, S } from '../core/nodes';
+import { Add, Mul, Pow, Rational, S } from '../core/nodes';
 import { numMul } from '../core/num';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
 import { add, mul, pow } from '../core/ops';
@@ -19,6 +19,7 @@ import { UPoly, polyCoefficients } from './poly';
 import { xreplace } from '../core/traverse';
 import type { ZPoly } from './wang';
 import { wangFactor, zpoly } from './wang';
+import { heuGcd } from './euclidtools';
 
 const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
 
@@ -94,6 +95,34 @@ export function divExact(f0: Expr, g0: Expr, vars: readonly Expr[]): Expr | unde
   return expand(add(...q));
 }
 
+/**
+ * Division with remainder of multivariate polynomials over a field, recursively in the main
+ * variable (SymPy dmp_ff_div): the leading coefficient of the remainder is divided by that of g
+ * in the other variables, and the division stops when that has a remainder.
+ */
+export function ffDiv(f0: Expr, g0: Expr, vars: readonly Expr[]): [Expr, Expr] {
+  const f = expand(f0);
+  const g = expand(g0);
+  if (isZeroE(g)) throw new RangeError('division by zero polynomial');
+  const [x, ...rest] = vars;
+  if (x === undefined) return [expand(mul(f, pow(g, -1))), S.Zero];
+  const dg = degreeIn(g, x);
+  let dr = degreeIn(f, x);
+  const q: Expr[] = [];
+  let r = f;
+  const lg = lcIn(g, x);
+  while (dr >= dg) {
+    const [c, R] = ffDiv(lcIn(r, x), lg, rest);
+    if (!isZeroE(R)) break;
+    const t = mul(c, pow(x, dr - dg));
+    q.push(t);
+    // the leading term of r cancels, so the degree decreases
+    r = expand(add(r, mul(-1, t, g)));
+    dr = degreeIn(r, x);
+  }
+  return [expand(add(...q)), r];
+}
+
 /** Pseudo-remainder of a by b in x. */
 export function prem(a0: Expr, b: Expr, x: Expr): Expr {
   let r = expand(a0);
@@ -126,6 +155,54 @@ function normalizeSign(e: Expr, vars: readonly Expr[]): Expr {
   return k.isNegative ? expand(mul(-1, e)) : e;
 }
 
+/**
+ * An expanded polynomial with rational coefficients in vars as [F, d] with F an integer polynomial
+ * and d a positive integer, e = F/d; undefined when a term has another factor.
+ */
+function toZZ(e: Expr, vars: readonly Expr[]): [ZPoly, bigint] | undefined {
+  const index = new Map(vars.map((v, i) => [v.key, i]));
+  const ts: [number[], Rational][] = [];
+  let den = 1n;
+  for (const t of e instanceof Add ? e.args : [e]) {
+    const m = vars.map(() => 0);
+    let c: Rational = S.One;
+    for (const f of t instanceof Mul ? t.args : [t]) {
+      if (f instanceof Rational) {
+        c = f;
+        continue;
+      }
+      const [b, k] = f instanceof Pow && f.exp instanceof Rational && f.exp.isInteger && f.exp.p > 0n ? [f.base, Number(f.exp.p)] : [f, 1];
+      const i = index.get(b.key);
+      if (i === undefined) return undefined;
+      m[i] = at(m, i) + k;
+    }
+    den = ilcm(den, c.q);
+    ts.push([m, c]);
+  }
+  return [zpoly(ts.map(([m, c]) => [m, (c.p * den) / c.q] as const)), den];
+}
+
+/**
+ * gcd(f, g) of expanded nonzero polynomials with rational coefficients by the heuristic GCD, with
+ * the cofactors f/gcd and g/gcd; the gcd as mgcd normalizes it. Undefined when the coefficients
+ * are not rational or the heuristic fails (`start` is the first evaluation point of heuGcd, for tests).
+ */
+export function heuGcdCofactors(f: Expr, g: Expr, vars: readonly Expr[], start?: bigint): [Expr, Expr, Expr] | undefined {
+  const zf = toZZ(f, vars);
+  const zg = zf && toZZ(g, vars);
+  if (!zf || !zg) return undefined;
+  const r = heuGcd(zf[0], zg[0], vars.length, start);
+  if (!r) return undefined;
+  const [h, cff, cfg] = r;
+  let ch = 0n;
+  for (const t of h.values()) ch = igcd(ch, t.c);
+  const rg = rationalGcd(numericContent(f), numericContent(g));
+  // f = h*cff/df = ch*prim(h)*cff/df, and the gcd is rg*prim(h)
+  const prim = fromZPoly(new Map([...h].map(([k, t]) => [k, { e: t.e, c: t.c / ch }])), vars);
+  const scale = (d: bigint, p: ZPoly): Expr => expand(mul(Rational.of(ch, d), pow(rg, -1), fromZPoly(p, vars)));
+  return [expand(mul(rg, prim)), scale(zf[1], cff), scale(zg[1], cfg)];
+}
+
 /** GCD of two polynomials in Q[vars] (with integer content), normalized with a positive leading coefficient. */
 export function mgcd(f0: Expr, g0: Expr, vars: readonly Expr[]): Expr {
   const f = expand(f0);
@@ -138,6 +215,9 @@ export function mgcd(f0: Expr, g0: Expr, vars: readonly Expr[]): Expr {
     if (f instanceof Rational && g instanceof Rational) return rationalGcd(f, g);
     return rationalGcd(numericContent(f), numericContent(g));
   }
+  // SymPy dmp_gcd over ZZ and QQ: the heuristic GCD first, the remainder sequence when it fails
+  const heu = heuGcdCofactors(f, g, live);
+  if (heu) return heu[0];
   if (!f.has(x)) return mgcd(f, contentIn(g, x, rest), rest);
   if (!g.has(x)) return mgcd(contentIn(f, x, rest), g, rest);
   const cf = contentIn(f, x, rest);

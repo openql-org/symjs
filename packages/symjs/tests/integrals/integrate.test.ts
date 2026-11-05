@@ -422,8 +422,7 @@ describe('definite integrals of Piecewise conditions and delta functions (sympy.
     expect(sstr(integrate(sj.mul(sj.DiracDelta(sj.mul(c, x)), e), x, [noo, oo]))).toBe('1/Abs(c)');
     expect(sstr(integrate(sj.mul(sj.Heaviside(sj.sin(y)), sj.DiracDelta(x), e), x, [noo, oo]))).toBe('Heaviside(sin(y))');
     expect(sstr(integrate(sj.mul(sj.DiracDelta(x), sj.Heaviside(sj.sub(sj.pow(x, 2), 1)), e), x, [noo, oo]))).toBe('0');
-    // SymPy: 1 (sin(1) > 0)
-    expect(sstr(integrate(sj.mul(sj.Heaviside(sj.sin(x)), sj.DiracDelta(sj.sub(x, 1))), x, [noo, oo]))).toBe('Heaviside(sin(1))');
+    expect(sstr(integrate(sj.mul(sj.Heaviside(sj.sin(x)), sj.DiracDelta(sj.sub(x, 1))), x, [noo, oo]))).toBe('1');
   });
 });
 
@@ -501,8 +500,8 @@ describe('rational, trigonometric and Piecewise integrands as SymPy integrates t
     // which differs by a constant on each interval of continuity; no floor term for an argument not linear in tan
     expect(sstr(integrate(Q('sin(x)/(2 - sin(x)**2)'), x))).toBe('atan(tan(x/2)**2)');
     // an antiderivative with symbolic logarithms over an infinite interval: the Meijer G-function integrator
-    // (SymPy: sqrt(2)*pi*(y**2/2 + 1)/(2*polar_lift(y**2/2 + 1)**(5/2)), the same value)
-    expect(sstr(integrate(Q('1/(x**2/2 + y**2/2 + 1)**2'), x, [sj.S.NegativeInfinity, sj.S.Infinity]))).toBe('Piecewise((sqrt(2)*pi/(2*(y**2/2 + 1)*sqrt(polar_lift(y**2/2 + 1))), (Abs(arg(y**2/2 + 1)) < pi) | ((Abs(arg(y**2/2 + 1)) < pi) & Ne(1/(y**2/2 + 1), 0) & Ne(Abs(arg(y**2/2 + 1)), pi) & Ne(Abs(arg(y**2/2 + 1)), -pi))), (Integral((x**2/2 + y**2/2 + 1)**(-2), (x, -oo, oo)), True))');
+    // (SymPy 1.14)
+    expect(sstr(integrate(Q('1/(x**2/2 + y**2/2 + 1)**2'), x, [sj.S.NegativeInfinity, sj.S.Infinity]))).toBe('Piecewise((sqrt(2)*pi*(y**2/2 + 1)/(2*polar_lift(y**2/2 + 1)**(5/2)), (Abs(arg(y**2/2 + 1)) < pi) | ((Abs(arg(y**2/2 + 1)) < pi) & Ne(1/(y**2/2 + 1), 0) & Ne(Abs(arg(y**2/2 + 1)), pi) & Ne(Abs(arg(y**2/2 + 1)), -pi))), (Integral((x**2/2 + y**2/2 + 1)**(-2), (x, -oo, oo)), True))');
     expect(sstr(integrate(Q('1/(x**4-4)'), x))).toBe('-sqrt(2)*atan(sqrt(2)*x/2)/8 - sqrt(2)*atanh(sqrt(2)*x/2)/8');
   });
 

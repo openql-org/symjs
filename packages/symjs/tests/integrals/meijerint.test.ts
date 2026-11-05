@@ -78,8 +78,8 @@ describe('meijerint_definite: the same values in other forms than SymPy', () => 
     ["fresnelc(x)*exp(-x)", "0", "oo", ["sqrt(2)*(-sqrt(pi)*sin(1/(2*pi))*gamma(1/4)*gamma(3/4) + (-I*pi*(I*sin(1/(2*pi))*fresnels(1/pi) + I*cos(1/(2*pi))*fresnelc(1/pi))*(pi**2*(-3 + 3/pi**2) - 3 + 3*pi**2) + pi**2*(-3*cos(1/(2*pi))*fresnels(1/pi) + 3*sin(1/(2*pi))*fresnelc(1/pi)))*gamma(-3/4)*gamma(-1/4)/(8*pi**(3/2)) + sqrt(pi)*cos(1/(2*pi))*gamma(1/4)*gamma(3/4))/(4*pi**(3/2))", "True"], 0.448114895242443],
     // (SymPy's result)
     ["Shi(x)*exp(-2*x)", "0", "oo", ["acoth(2)/2", "True"], 0.274653072167027],
-    // SymPy: log(-exp_polar(I*pi)) - Ei(exp_polar(I*pi)) + I*pi
-    ["log(x)*Heaviside(x-1)*exp(-x)", "0", "oo", ["-Ei(-1)", "True"], 0.21938393439552],
+    // SymPy: log(-exp_polar(I*pi)) - Ei(exp_polar(I*pi)) + I*pi (symjs writes log(-exp_polar(I*pi)) = 0)
+    ["log(x)*Heaviside(x-1)*exp(-x)", "0", "oo", ["-Ei(exp_polar(I*pi)) + I*pi", "True"], 0.21938393439552],
     // SymPy: (2*sqrt(3)*sqrt(pi)*gamma(-1/3)*gamma(1/3)*hyper((1/2, 1), (2/3, 4/3), -4/27)/9 + 2**(1/3)*sqrt(3)*exp(-2/27 + I*pi/3)*besseli(-1/3, 2*exp_polar(I*pi)/27)*gamma(1/6)*gamma(1/3)*gamma(2/3)**3/9 + 2*2**(2/3)*sqrt(3)*exp(-2/27 - I*pi/3)*besseli(1/3, 2*exp_polar(I*pi)/27)*gamma(-2/3)*gamma(-1/3)*gamma(5/6)*gamma(4/3)**2/9)/(4*pi**(3/2))
     ["exp(-x**2)*exp(-x**3)", "0", "oo", ["(2*sqrt(3)*sqrt(pi)*gamma(-1/3)*gamma(1/3)*hyper((1/2, 1), (2/3, 4/3), -4/27)/9 + 2**(1/3)*sqrt(3)*exp(-2/27)*exp(I*pi/3)*besseli(-1/3, 2*exp_polar(I*pi)/27)*gamma(1/6)*gamma(1/3)*gamma(2/3)**3/9 + 2*2**(2/3)*sqrt(3)*exp(-2/27)*exp(-I*pi/3)*besseli(1/3, 2*exp_polar(I*pi)/27)*gamma(-2/3)*gamma(-1/3)*gamma(5/6)*gamma(4/3)**2/9)/(4*pi**(3/2))", "True"], 0.663710570501134],
     // SymPy: E*expint(1, 1)
@@ -135,9 +135,9 @@ describe('meijerint_definite: more cases of the lookup table and the intervals',
     ["exp(-1/x)*besselj(0,x)", "0", "oo", ["meijerg(((), ()), ((0, -1/2, 0), (0,)), 1/16)/(4*sqrt(pi))", "True"]],
     // SymPy: ERR TypeError (SymPy raises TypeError)
     ["exp(x)", "oo", "0", "None"],
-    // SymPy: E*(-log(2) + log(-2*exp_polar(I*pi)) - Ei(2*exp_polar(I*pi)) + I*pi) (the same value: Ei(2*exp_polar(I*pi)) = Ei(-2) + I*pi)
-    // SymPy: E*(-log(2) + log(-2*exp_polar(I*pi)) - Ei(2*exp_polar(I*pi)) + I*pi) (Ei on the other sheet is lifted)
-    ["exp(-x)/(x+1)", "1", "oo", ["E*(-log(2) - Ei(-2) - I*pi + log(2*exp_polar(I*pi)))", "True"]],
+    // SymPy: E*(-log(2) + log(-2*exp_polar(I*pi)) - Ei(2*exp_polar(I*pi)) + I*pi) (the same value:
+    // log(-2*exp_polar(I*pi)) + I*pi = log(2*exp_polar(I*pi)) = log(2) + I*pi)
+    ["exp(-x)/(x+1)", "1", "oo", ["E*(-log(2) - Ei(2*exp_polar(I*pi)) + log(2*exp_polar(I*pi)))", "True"]],
     // SymPy: 4*2**(y - 2)*gamma(y/4 + 7/4)*gamma(y/2 + 1)*gamma(y/2 + 3/2)/(gamma(3/4 - y/4)*gamma(y/2 + 5/2)) (the same function)
     ["exp(-x)*x**y*sin(x)", "0", "oo", ["2*(1/2)**(1 - y)*gamma(y/4 + 7/4)*gamma(y/2 + 1)*gamma(y/2 + 3/2)/(gamma(3/4 - y/4)*gamma(y/2 + 5/2))", "(re(y) > -3) & (re(y) > -2)"]],
   ];
@@ -175,6 +175,9 @@ describe('helpers', () => {
     // a numeric relation the assumptions do not decide: re(exp(I*pi/4)) = sqrt(2)/2
     expect(sstr(condsimp(Lt(parse('re(exp(I*pi/4))'), 0)))).toBe('False');
     expect(sstr(condsimp(Gt(parse('re(exp(I*pi/4))'), 0)))).toBe('True');
+    // besselj(1, 5) < 0 is not decided by is_negative (SymPy does not know it finite): its value is
+    expect(sstr(condsimp(Lt(parse('besselj(1, 5)'), 0)))).toBe('True');
+    expect(sstr(condsimp(Gt(parse('besselj(1, 5)'), 0)))).toBe('False');
     // complex and unevaluable numbers stay
     expect(sstr(condsimp(Lt(add(1, I), 2)))).toBe('I < 1');
     expect(sstr(condsimp(Gt(hyper([1, 2, 3], [4], 2), 0)))).toBe('hyper((1, 2, 3), (4,), 2) > 0');

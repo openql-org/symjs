@@ -10,12 +10,12 @@
 
 import type { Expr, ExprLike } from '../../core/nodes';
 import { Sym } from '../../core/nodes';
-import { Add, Constant, Derivative, Dummy, Fn, Integral, Mul, Pow, Rational, Rel, S, UndefFn } from '../../core/nodes';
+import { Add, Constant, Derivative, Dummy, Fn, Integral, Pow, Rational, Rel, S, UndefFn } from '../../core/nodes';
 import { and } from '../../core/boolalg';
-import { add, exp, mul, neg, pow, splitCoeff, sqrt, sub, sympify } from '../../core/ops';
+import { add, exp, mul, neg, pow, sqrt, sub, sympify } from '../../core/ops';
 import { isNegative, isPositive } from '../../core/assumptions';
 import { asIndependent, asNumerDenom, extractMultiplicatively, isRationalFunction } from '../../core/methods';
-import { mapBottomUp, rebuild, some, subs } from '../../core/traverse';
+import { rebuild, some, subs } from '../../core/traverse';
 import { cos, cosh, re, sin, sinh } from '../../functions/elementary/elementary';
 import { erf, erfc, gamma, lowergamma } from '../../functions/special/special';
 import { besseli, besselj } from '../../functions/special/bessel';
@@ -470,22 +470,6 @@ function inverseLaplaceExpand(fn: Expr, s: Sym, t: Expr, plane: Expr | undefined
   return undefined;
 }
 
-/**
- * Distribute a factor -1 over the only sum of a product, as SymPy's simplify
- * leaves sqrt((-d**2 + 4*k*m)/m**2) (symjs keeps sqrt(-(d**2 - 4*k*m)/m**2)).
- */
-function distributeMinusOne(e: Expr): Expr {
-  return mapBottomUp(e, (x) => {
-    if (!(x instanceof Mul)) return x;
-    const [c, rest] = splitCoeff(x);
-    if (!(c instanceof Rational) || c.p !== -1n || c.q !== 1n) return x;
-    const facs = mulArgs(rest);
-    const sums = facs.filter((f) => f instanceof Add);
-    if (sums.length !== 1) return x;
-    return mul(...facs.map((f) => (f instanceof Add ? add(...f.args.map(neg)) : f)));
-  });
-}
-
 /** The coefficients of a polynomial in s, highest first. */
 const allCoeffs = (e: Expr, s: Sym): Expr[] => Poly.from(e, [s]).allCoeffs();
 
@@ -586,7 +570,7 @@ function inverseLaplaceRational(fn: Expr, s: Sym, t: Expr, plane: Expr | undefin
           hyp = true;
         }
         const b2 = first([...rootsDict(sub(pow(xD, 2), b), xD).keys()]);
-        const bs = distributeMinusOne(simplifyExpr(sqrt(b)));
+        const bs = simplifyExpr(sqrt(b));
         r = hyp
           ? add(mul(l, exp(mul(-1, a, t)), cosh(mul(b2, t))), mul(sub(m, mul(a, l)), pow(bs, -1), exp(mul(-1, a, t)), sinh(mul(bs, t))))
           : add(mul(l, exp(mul(-1, a, t)), cos(mul(b2, t))), mul(sub(m, mul(a, l)), pow(bs, -1), exp(mul(-1, a, t)), sin(mul(bs, t))));

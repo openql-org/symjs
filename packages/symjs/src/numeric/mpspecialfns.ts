@@ -17,7 +17,7 @@ import { type Mpc } from './mpfun';
 import * as SP from './mpspecial';
 import * as EI from './mpexpint';
 import { clambertw } from './mplambertw';
-import { caltzeta, clerchphi, cpolylog } from './mppolylog';
+import { caltzeta, clerchphi, cpolylog, stieltjes } from './mppolylog';
 import * as OP from './mporthopoly';
 import { cellipe, cellipeInc, cellipf, cellipk, cellippi } from './mpelliptic';
 import { MpSpecialValue, mpFn1, mpFn2, mpFns } from './mpeval';
@@ -78,6 +78,15 @@ Object.assign(mpFns, {
     return caltzeta(at(args, 0), p);
   },
   polylog: mpFn2(cpolylog),
+  stieltjes: (args, p) => {
+    // mpmath's integral holds for a real a > 0 (SymPy does not return for other a)
+    const a = args[1] ?? one;
+    if (!M.isReal(a) || F.sign(a[0]) <= 0) throw new TypeError('stieltjes(n, a) for a real a > 0 only');
+    const n = toInt(at(args, 0));
+    // (mpmath's bad_domain for n < 0: SymPy leaves the call unevaluated)
+    if (n < 0) throw new TypeError('Stieltjes constants defined for n >= 0');
+    return [stieltjes(n, a[0], p), ZERO];
+  },
   lerchphi: (args, p) => clerchphi(at(args, 0), at(args, 1), at(args, 2), p),
   legendre: mpFn2(OP.clegendre),
   assoc_legendre: (args, p) => OP.clegenp(at(args, 0), at(args, 1), at(args, 2), p),

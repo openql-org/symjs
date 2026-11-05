@@ -328,3 +328,18 @@ describe('expand_mul leaves integer powers of sums (SymPy 1.14)', () => {
     expect(String(em(p('x*(x + (y + 1)**2*(x + 2))')))).toBe('x**2*(y + 1)**2 + x**2 + 2*x*(y + 1)**2');
   });
 });
+
+describe('multinomial expansion of rational powers of sums (SymPy Pow._eval_expand_multinomial)', () => {
+  it('splits off the integer part of the exponent', () => {
+    // SymPy 1.14
+    expect(String(expand(parse('(y - 1)**(3/2)')))).toBe('y*sqrt(y - 1) - sqrt(y - 1)');
+    expect(String(expand(parse('(x + y)**(5/2)')))).toBe('x**2*sqrt(x + y) + 2*x*y*sqrt(x + y) + y**2*sqrt(x + y)');
+    expect(String(expand(parse('(x + 1)**(-3/2)')))).toBe('1/(x*sqrt(x + 1) + sqrt(x + 1))');
+    expect(String(expand(parse('(x + 1)**(4/3)')))).toBe('x*(x + 1)**(1/3) + (x + 1)**(1/3)');
+    expect(String(expand(parse('sqrt(x + 1)')))).toBe('sqrt(x + 1)');
+    expect(String(expandMultinomial(parse('(x + 1)**(5/2)')))).toBe('x**2*sqrt(x + 1) + 2*x*sqrt(x + 1) + sqrt(x + 1)');
+    expect(String(expandMultinomial(parse('(x + 1)**(-5/2)')))).toBe('1/(x**2*sqrt(x + 1) + 2*x*sqrt(x + 1) + sqrt(x + 1))');
+    expect(String(expandMultinomial(parse('(x + 1)**(-2)')))).toBe('1/(x**2 + 2*x + 1)');
+    expect(String(expandMultinomial(parse('(x + 1)**(-1/2)')))).toBe('1/sqrt(x + 1)');
+  });
+});

@@ -11,6 +11,11 @@ import type { NoMatchResult } from '../core/truth';
 import { orNoMatch } from '../core/truth';
 import { hypersimp as hypersimpImpl } from './gammasimp';
 import { separatevars as separatevarsImpl } from './separatevars';
+import { hyperexpand } from './hyperexpand';
+import { simplifyHooks } from './simplify';
+
+// the hyperexpand step of simplify (a direct import would be an import cycle)
+simplifyHooks.hyperexpand = (e) => hyperexpand(e);
 
 /** SymPy hypersimp: f(k + 1)/f(k) simplified, or NoMatch when f is not hypergeometric in k. */
 export function hypersimp(f: ExprLike, k: Expr): Expr | NoMatchResult {

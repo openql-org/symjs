@@ -184,8 +184,8 @@ describe('the other distributions (SymPy test_discrete_rv)', () => {
     const mu2 = new Sym('mu2');
     const X = Skellam('x', mu1, mu2);
     expect(str(call(density(X), z))).toBe('(mu1/mu2)**(z/2)*exp(-mu1 - mu2)*besseli(z, 2*sqrt(mu1*mu2))');
-    // SymPy: mu1/(mu1*sqrt(mu1 + mu2) + mu2*sqrt(mu1 + mu2)) - mu2/(mu1*sqrt(mu1 + mu2) + mu2*sqrt(mu1 + mu2))
-    expect(str(expand(skewness(X)))).toBe('mu1/(mu1 + mu2)**(3/2) - mu2/(mu1 + mu2)**(3/2)');
+    // SymPy 1.14
+    expect(str(expand(skewness(X)))).toBe('mu1/(mu1*sqrt(mu1 + mu2) + mu2*sqrt(mu1 + mu2)) - mu2/(mu1*sqrt(mu1 + mu2) + mu2*sqrt(mu1 + mu2))');
     expect(str(expand(variance(X)))).toBe('mu1 + mu2');
     expect(str(expectation(X))).toBe('mu1 - mu2');
     // SymPy: Skellam has no closed form of the cdf
@@ -200,7 +200,7 @@ describe('the other distributions (SymPy test_discrete_rv)', () => {
   it('Zeta', () => {
     const X = Zeta('x', 5);
     expect(str(expectation(X))).toBe('pi**4/(90*zeta(5))');
-    expect(str(simplify(variance(X)))).toBe('-pi**8/(8100*zeta(5)**2) + zeta(3)/zeta(5)');
+    expect(str(simplify(variance(X)))).toBe('(-pi**8/8100 + zeta(3)*zeta(5))/zeta(5)**2');
     expect(str(new ZetaDistribution([R(5)]).pdf(2))).toBe('1/(32*zeta(5))');
   });
   it('the derivatives of the moment generating functions at 0 (SymPy test_moment_generating_functions)', () => {

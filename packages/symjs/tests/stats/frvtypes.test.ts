@@ -141,7 +141,8 @@ describe('Bernoulli and Coin (SymPy test_bernoulli, test_coins, test_density_cal
     const X = Bernoulli('B', p, 1, 0);
     const z = new Sym('z');
     expect(str(expectation(X))).toBe('p');
-    expect(str(simplify(variance(X)))).toBe('-p**2 + p');
+    // SymPy 1.14
+    expect(str(simplify(variance(X)))).toBe('p*(1 - p)');
     expect(str(simplify(variance(add(mul(a, X), b))))).toBe('a**2*p*(1 - p)');
     expect(str(call(quantile(X), z))).toBe('Piecewise((nan, (z > 1) | (z < 0)), (0, z <= 1 - p), (1, z <= 1))');
     expect(str(median(Bernoulli('Y', S.Half)))).toBe('{0, 1}');
@@ -203,8 +204,8 @@ describe('Binomial (SymPy test_binomial_*)', () => {
     const X = Binomial('X', 2, p);
     expect(str(simplify(expectation(X)))).toBe('2*p');
     expect(str(simplify(moment(X, 1)))).toBe('2*p');
-    // SymPy: 2*p*(1 - p)
-    expect(str(simplify(variance(X)))).toBe('-2*p**2 + 2*p');
+    // SymPy 1.14
+    expect(str(simplify(variance(X)))).toBe('2*p*(1 - p)');
     // SymPy: cancel(skewness(X) - (1 - 2*p)/sqrt(n*p*(1 - p))) == 0
     expect(sub(skewness(X), mul(sub(1, mul(2, p)), pow(sqrt(mul(2, p, sub(1, p))), -1))).subs(p, R(1, 3)).evalf().toNumber()).toBeCloseTo(0, 12);
     expect(str(call(characteristicFunction(X), t))).toBe('p**2*exp(2*I*t) + 2*p*(1 - p)*exp(I*t) + (1 - p)**2');

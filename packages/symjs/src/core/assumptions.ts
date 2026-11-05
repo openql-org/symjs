@@ -34,6 +34,10 @@ export function isZero(e: Expr): Tri {
     if (k === undefined) return z;
     return z === false || isZero(k) === false ? false : undefined;
   }
+  // SymPy Mul._eval_is_zero: a product of nonzero (finite) factors is not 0
+  if (e instanceof Mul && all(e.args, isNonZero) === true) return false;
+  // SymPy Pow._eval_is_zero: a nonzero finite base to a finite power is not 0
+  if (e instanceof Pow && e.exp instanceof Rational && isNonZero(e.base) === true) return false;
   // SymPy Add._eval_is_zero: a sum of symbols known to be positive, negative or not an integer
   if (e instanceof Add && impl.freeSymbols(e).size > 0) {
     if (isIntegerQ(e) === false || isPositive(e) === true || isNegative(e) === true) return false;
@@ -139,16 +143,62 @@ function fnSign(e: Fn, sign: 1 | -1): Tri {
     const v = impl.toComplex(e).re;
     return sign === 1 ? v > 0 : v < 0;
   }
-  return undefined;
+  const v = numericSign(e);
+  if (v === undefined) return undefined;
+  // SymPy is_positive = is_extended_positive and is_finite: an extended sign that holds is only
+  // decided for a function SymPy knows to be finite there (besselj(1, 5).is_negative is None)
+  return v === sign ? (FINITE_FNS.has(e.name) ? true : undefined) : false;
+}
+
+/** Functions whose real values SymPy knows to be finite (through _eval_is_finite or _eval_is_real). */
+const FINITE_FNS = new Set([
+  'sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'sinc',
+  'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch',
+  'exp', 'log', 'erf', 'erfc', 'gamma', 'loggamma', 'polygamma', 'zeta', 'elliptic_k', 'elliptic_e',
+  'fresnels', 'fresnelc', 'catalan', 'floor', 'ceiling', 'frac', 're', 'im',
+]);
+
+const numericSigns = new WeakMap<Expr, 1 | -1 | undefined>();
+
+/**
+ * SymPy Expr._eval_is_extended_positive_negative for a function of numbers: the sign of its real
+ * value (evalf); undefined when the value is not a real Float (SymPy: a complex value has no
+ * _prec and gives None) or cannot be computed.
+ */
+function numericSign(e: Fn): 1 | -1 | undefined {
+  if (impl.freeSymbols(e).size > 0) return undefined;
+  if (numericSigns.has(e)) return numericSigns.get(e);
+  // (undecided while the value is computed, in case evalf asks for the sign again)
+  numericSigns.set(e, undefined);
+  let r: 1 | -1 | undefined;
+  try {
+    const v = impl.evalf(e, 15);
+    if (v instanceof Float && !v.isZero) r = v.isPositive ? 1 : -1;
+  } catch {
+    r = undefined;
+  }
+  numericSigns.set(e, r);
+  return r;
 }
 
 export function isNonZero(e: Expr): Tri {
   const z = isZero(e);
   if (z !== undefined) return !z;
   if (isPositive(e) || isNegative(e)) return true;
-  if (e instanceof Mul) return all(e.args, isNonZero);
+  if (e instanceof Mul && e.args.some((a) => isZero(a) === true)) return false;
   if (e instanceof Pow) return isNonZero(e.base);
   return undefined;
+}
+
+/**
+ * SymPy is_polar: polar symbols, exp_polar, polar_lift and principal_branch, powers of a polar
+ * base and products of polar and positive factors with at least one polar factor.
+ */
+export function isPolar(e: Expr): boolean {
+  if (e instanceof Sym) return e.assumptions.polar === true;
+  if (e instanceof Fn) return e.name === 'polar_lift' || e.name === 'principal_branch' || e.name === 'exp_polar';
+  if (e instanceof Pow) return isPolar(e.base);
+  return e instanceof Mul && e.args.some(isPolar) && e.args.every((f) => isPolar(f) || isPositive(f) === true);
 }
 
 /**

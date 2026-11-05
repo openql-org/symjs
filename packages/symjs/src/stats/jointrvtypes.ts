@@ -31,6 +31,7 @@ import { Matrix } from '../matrices/matrix';
 import { ImmutableMatrixNode, MatrixExpr, MatrixElementNode, MatrixSymbolNode, det } from '../matrices/expressions/matexpr';
 import { isPositiveDefinite, isPositiveSemidefinite } from '../matrices/linalg';
 import { besselk } from '../functions/special/bessel';
+import { expand } from '../simplify/expand';
 import { factorial, gamma, rf } from '../functions/special/special';
 import { randomSymbols, statsClasses, valueCheck } from './rv';
 import type { MatrixParam, RandomSymbol } from './rv';
@@ -193,7 +194,8 @@ export class MultivariateNormalDistribution extends JointDistributionWithMargina
     const x = cast(vectorArg(args), MatrixExpr).sub(mu);
     const quad = matMulOf(cast(x, MatrixExpr).T, cast(sigma, MatrixExpr).pow(-1), x);
     const norm = pow(sqrt(mul(pow(mul(2, S.Pi), k), det(sigma))), -1);
-    if (quad instanceof ImmutableMatrixNode) return mul(norm, exp(mul(Rational.of(-1n, 2n), entry00(quad))));
+    // SymPy's exp of the 1 x 1 matrix goes through its eigenvalue, the expanded entry
+    if (quad instanceof ImmutableMatrixNode) return mul(norm, exp(mul(Rational.of(-1n, 2n), expand(entry00(quad)))));
     // a symbolic vector: SymPy's MatrixElement of the (1 x 1 matrix) density
     const xT = cast(cast(x, MatrixExpr).T, MatrixExpr);
     const quadS = matMulOf(xT.rmul(Rational.of(-1n, 2n)), cast(sigma, MatrixExpr).pow(-1), x);
@@ -207,7 +209,8 @@ export class MultivariateNormalDistribution extends JointDistributionWithMargina
     const sigma = explicit(this.sigma).slice(keep, keep);
     const v = Matrix.col(...indices.map((i) => new Indexed([sym, i])));
     const d = mu.sub(v);
-    const quad = d.transpose().mul(sigma.inv().mul(d)).get(0, 0);
+    // (expanded as by SymPy's exp of the 1 x 1 matrix)
+    const quad = expand(d.transpose().mul(sigma.inv().mul(d)).get(0, 0));
     return Lambda([...v.data], mul(pow(sqrt(mul(pow(mul(2, S.Pi), mu.rows), sigma.det())), -1), exp(mul(Rational.of(-1n, 2n), quad))));
   }
 }

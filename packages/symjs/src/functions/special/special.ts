@@ -422,6 +422,23 @@ function sumRange(lo: number, hi: number, f: (k: number) => Expr): Expr {
 const isHalfInt = (a: Expr): a is Rational => a instanceof Rational && a.q === 2n;
 
 /** SymPy uppergamma.eval (without the branch-factor extraction). */
+/**
+ * SymPy beta.eval (with beta.doit for two numbers): beta(x) = beta(x, x); zoo at a zero argument,
+ * 1/x for y = 1 (and 1/y for x = 1), 1/(x*y*catalan(x)) for y = x + 1, and 0 when x + y is a
+ * negative integer and neither argument is one.
+ */
+function evalBeta(x: Expr, y?: Expr): Expr | undefined {
+  if (y === undefined) return fnN('beta', x, x);
+  if (!isNum(x) || !isNum(y)) return undefined;
+  if (x.isZero || y.isZero) return S.ComplexInfinity;
+  if (y instanceof Rational && y.isOne) return pow(x, -1);
+  if (x instanceof Rational && x.isOne) return pow(y, -1);
+  if (y.key === add(x, 1).key) return pow(mul(x, y, fnN('catalan', x)), -1);
+  const s = add(x, y);
+  if (s instanceof Rational && s.isInteger && s.isNegative && isIntegerQ(x) === false && isIntegerQ(y) === false) return S.Zero;
+  return undefined;
+}
+
 function evalUppergamma(a: Expr, z: Expr): Expr | undefined {
   if (isOo(z)) return S.Zero;
   if (z instanceof Rational && z.isZero && isPositive(re(a)) === true) return fnN('gamma', a);
@@ -1305,6 +1322,7 @@ const SPECS: Partial<Record<FnName, Spec>> = {
     numeric: binary((s, x) => cadd(cgamma(s), cmul(cx(-1), lowergammaNum(s, x)))),
   },
   beta: {
+    eval: evalBeta,
     partials: binary((a, b, i) =>
       i === 0
         ? mul(fnN('beta', a, b), add(fnN('polygamma', 0, a), mul(-1, fnN('polygamma', 0, add(a, b)))))

@@ -67,6 +67,13 @@ export const mpFns: Record<string, (args: Mpc[], prec: number) => Mpc> = {
   atan2: mpFn2((y, x, p) => [M.atan2(y[0], x[0], p), ZERO]),
 };
 
+/**
+ * Evaluation rules of functions that look at the argument expressions (SymPy _eval_evalf methods
+ * that are not just mpmath on the argument values): x is the call, ev evaluates an expression at
+ * the working precision wp. undefined falls back to mpFns on the argument values.
+ */
+export const mpExprFns: Record<string, (x: Fn, ev: (e: Expr) => Mpc, wp: number) => Mpc | undefined> = {};
+
 /** A component of an mpmath number that may be one of mpmath's special values. */
 export type MpPart = Mpf | 'inf' | '-inf' | 'nan';
 const isSpecialPart = (p: MpPart): p is 'inf' | '-inf' | 'nan' => typeof p === 'string';
@@ -362,6 +369,8 @@ export function evalMp(e: Expr, wp: number, lookup: SymbolLookup = noValue): Mpc
         const g = M.mpGammaRational(a0.p, a0.q, wp);
         if (g !== undefined) return [g, ZERO];
       }
+      const hook = mpExprFns[x.name]?.(x, ev, wp);
+      if (hook !== undefined) return hook;
       const parts = x.args.map(evParts);
       if (!parts.every(isFiniteValue)) {
         const g = mpSpecialFns[x.name];

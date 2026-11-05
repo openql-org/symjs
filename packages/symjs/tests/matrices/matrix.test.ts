@@ -100,6 +100,17 @@ describe('arithmetic', () => {
     // non-integer powers are not supported (SymPy computes them from the Jordan form)
     expect(() => M.pow(0.5)).toThrow(RangeError);
   });
+
+  it('products keep their entries unexpanded, powers expand them (SymPy dotprodsimp)', () => {
+    const A = Matrix.of([[x.add(1), b], [2, x]]);
+    // SymPy: Matrix([[x + 1]])*Matrix([[x - 1]]) -> Matrix([[(x - 1)*(x + 1)]])
+    expect(s(Matrix.of([[x.add(1)]]).mul(Matrix.of([[x.sub(1)]])))).toBe('Matrix([[(x - 1)*(x + 1)]])');
+    expect(s(A.mul(A))).toBe('Matrix([[2*b + (x + 1)**2, b*x + b*(x + 1)], [4*x + 2, 2*b + x**2]])');
+    expect(s(A.pow(2))).toBe('Matrix([[2*b + x**2 + 2*x + 1, 2*b*x + b], [4*x + 2, 2*b + x**2]])');
+    // 1x1 and diagonal matrices are raised entrywise
+    expect(s(Matrix.of([[x.add(1)]]).pow(2))).toBe('Matrix([[(x + 1)**2]])');
+    expect(s(Matrix.of([[x.add(1), 0], [0, a]]).pow(3))).toBe('Matrix([[(x + 1)**3, 0], [0, a**3]])');
+  });
 });
 
 describe('linear algebra', () => {

@@ -16,14 +16,14 @@
  */
 
 import type { Expr, ExprLike, Substitution } from '../core/nodes';
-import { Add, Dummy, ExtensionExpr, Fn, Mul, Order, Pow, Rational, S, Special, asRational } from '../core/nodes';
+import { Add, Dummy, ExtensionExpr, Mul, Order, Pow, Rational, S, Special, asRational } from '../core/nodes';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { at, cast, defined, expectType, first, pair } from '../core/guard';
 import { Lt, Gt, piecewise } from '../core/logic';
 import { mapBottomUp, some, xreplace } from '../core/traverse';
 import { coeff, asNumerDenom } from '../core/methods';
 import { countOps } from '../core/match';
-import { isPositive } from '../core/assumptions';
+import { isPolar, isPositive } from '../core/assumptions';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { ExprMap } from '../core/exprmap';
 import { diff } from '../calculus/diff';
@@ -33,7 +33,7 @@ import { abs, asin, atan, cos, cosh, fn, log, re, sin, sinh } from '../functions
 import { Ci, Chi, Ei, Shi, Si, erf, expandFuncRules, expint, factorial, fresnelc, fresnels, gamma, lowergamma, rf, uppergamma } from '../functions/special/special';
 import { besseli, besselj } from '../functions/special/bessel';
 import { Hyper, MeijerG, gaussAtOne, hyper, meijerg } from '../functions/special/hyper';
-import { expPolar, extractBranchFactor, isPolar, polarify, polarLift, unpolarify } from '../functions/elementary/complexes';
+import { expPolar, extractBranchFactor, polarify, polarLift, unpolarify } from '../functions/elementary/complexes';
 import { expand } from './expand';
 import { cancel } from './rational';
 import { powdenest } from './powsimp';
@@ -1052,29 +1052,6 @@ function hyperexpandSpecial(ap: readonly Expr[], bq: readonly Expr[], z0: Expr):
 const replaceHyperSpecial = (e: Expr): Expr => mapBottomUp(e, (t) => (t instanceof Hyper ? hyperexpandSpecial(t.ap, t.bq, t.argument) : t));
 
 /**
- * The incomplete gamma functions on other sheets: lowergamma(a, z*exp_polar(2*pi*I*n))
- * = exp(2*pi*I*n*a)*lowergamma(a, z) (as SymPy's lowergamma evaluates them).
- */
-export function liftBranches(e: Expr): Expr {
-  const polar = (z: Expr | undefined): boolean => z !== undefined && some(z, (n) => n instanceof Fn && n.name === 'exp_polar');
-  return mapBottomUp(e, (t) => {
-    if (!(t instanceof Fn)) return t;
-    if (t.name === 'lowergamma' && polar(t.args[1])) {
-      const [a, z] = [first(t.args), at(t.args, 1)];
-      const [w, n] = extractBranchFactor(z);
-      return isRat(n) && !n.isZero && !polar(w) ? mul(exp(mul(2, pi, I, n, a)), fn('lowergamma', [a, w])) : t;
-    }
-    // Ei(w*exp_polar(I*pi*m)) = Ei((-1)**m*w) + I*pi*m, Ei being real on the negative axis
-    if (t.name === 'Ei' && polar(t.args[0])) {
-      const [w, n] = extractBranchFactor(first(t.args), true);
-      const m = mul(2, n);
-      return isInt(m) && !m.isZero && !polar(w) ? add(Ei(mul(pow(-1, m), w)), mul(I, pi, m)) : t;
-    }
-    return t;
-  });
-}
-
-/**
  * SymPy unpolarify: it rebuilds every node, so hyper.eval drops the polar factors of an argument
  * at which the function is not branched (Hyper nodes are rebuilt here for that).
  */
@@ -1092,7 +1069,8 @@ function denestPolarPow(t: Expr): Expr {
   const polars = factors.filter(isPolar);
   if (polars.length === 0) return t;
   const rest = mul(...factors.filter((f) => !isPolar(f)));
-  return mul(...polars.map((f) => (f instanceof Pow ? pow(f.base, mul(f.exp, t.exp)) : pow(f, t.exp))), pow(rest, t.exp));
+  // (a polar power f**e is folded by pow into a power of its base)
+  return mul(...polars.map((f) => pow(f, t.exp)), pow(rest, t.exp));
 }
 
 /**
@@ -1303,16 +1281,11 @@ export interface HyperexpandOptions {
 export function hyperexpand(fIn: ExprLike, opts: HyperexpandOptions = {}): Expr {
   const f = sympify(fIn);
   const r1 = mapBottomUp(f, (t) => (t instanceof Hyper ? hyperexpandFunc(hyperFunc(t.ap, t.bq), t.argument) : t));
-  // Deliberate difference: Ei on another sheet is written with Ei on the principal one
-  // (liftBranches), because the numeric evaluation of Ei(z*exp_polar(I*pi)) does not add the
-  // I*pi of SymPy's Ei._eval_evalf yet
-  return liftBranches(
-    mapBottomUp(r1, (t) => {
-      if (!(t instanceof MeijerG)) return t;
-      const r = meijergExpand(gFunc(t.an, t.aother, t.bm, t.bother), t.argument, opts.allowHyper ?? false, opts.place);
-      return isBad(r) ? t : r;
-    }),
-  );
+  return mapBottomUp(r1, (t) => {
+    if (!(t instanceof MeijerG)) return t;
+    const r = meijergExpand(gFunc(t.an, t.aother, t.bm, t.bother), t.argument, opts.allowHyper ?? false, opts.place);
+    return isBad(r) ? t : r;
+  });
 }
 
 

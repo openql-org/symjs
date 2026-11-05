@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
-import { isIntegerQ, isNegative, isNonNegative, isPositive, isReal, isZero } from '../../src/core/assumptions';
+import { isIntegerQ, isNegative, isNonNegative, isNonZero, isPolar, isPositive, isReal, isZero } from '../../src/core/assumptions';
 import { at } from '../../src/core/guard';
 import { Pow, S } from '../../src/core/nodes';
 import { add, mul } from '../../src/core/ops';
@@ -158,8 +158,8 @@ describe('LambertW and log (SymPy LambertW._eval_is_extended_real, log._eval_is_
     expect(q(sj.LambertW(xp, k))).toEqual([undefined, undefined, undefined, false]);
     // SymPy fuzzy_and([x.is_zero, k.is_zero]): False and None
     expect([isZero(sj.LambertW(r, 1)), isZero(sj.LambertW(r, k))]).toEqual([false, undefined]);
-    // SymPy False: is_zero of -x for a positive x (not decided here)
-    expect(isZero(sj.LambertW(mul(-1, xp)))).toBeUndefined();
+    // SymPy False: -x is not zero for a positive x (Mul._eval_is_zero)
+    expect(isZero(sj.LambertW(mul(-1, xp)))).toBe(false);
   });
   it('log', () => {
     // SymPy (is_real, is_positive, is_negative)
@@ -175,5 +175,53 @@ describe('LambertW and log (SymPy LambertW._eval_is_extended_real, log._eval_is_
     expect(isNegative(sj.log(add(sj.abs(x), 1)))).toBe(false);
     // an extension node that does not say whether it is real
     expect(isReal(sj.defineFunction('g', {})(1))).toBeUndefined();
+  });
+});
+
+describe('signs of functions of numbers (SymPy Expr._eval_is_extended_positive_negative)', () => {
+  const P = sj.parse;
+  // [expr, is_positive, is_negative] of SymPy 1.14; None is undefined
+  it.each<[string, boolean | undefined, boolean | undefined]>([
+    ['sin(1)', true, false],
+    ['cos(2)', false, true],
+    ['sin(4)', false, true],
+    ['sin(10**30)', false, true],
+    ['zeta(1/2)', false, true],
+    ['asin(-1/3)', false, true],
+    // a value that is not real gives None (no _prec on a complex evalf result)
+    ['sin(1 + I)', undefined, undefined],
+    // the extended sign without finiteness: besselj(1, 5) < 0 is not is_negative in SymPy
+    ['besselj(1, 5)', false, undefined],
+    ['Ei(-1)', false, undefined],
+    ['stieltjes(1)', false, undefined],
+    // no value: a function without a numeric implementation
+    ['riemann_xi(3)', undefined, undefined],
+    // evalf raises (mpmath's ValueError): SymPy None
+    ['erfinv(2)', undefined, undefined],
+  ])('%s', (t, pos, negv) => {
+    const e = P(t);
+    expect([isPositive(e), isNegative(e)]).toEqual([pos, negv]);
+    // the sign is computed once per expression
+    expect([isPositive(e), isNegative(e)]).toEqual([pos, negv]);
+  });
+  it('decides is_zero of products and powers of nonzero factors (SymPy Mul/Pow._eval_is_zero)', () => {
+    const p = new sj.Sym('p', { positive: true });
+    const z = new sj.Sym('z', { zero: true });
+    expect([isZero(mul(-1, p)), isZero(mul(p, x)), isZero(new Pow(p, sj.Rational.of(1n, 3n))), isZero(new Pow(x, S.Half))]).toEqual([false, undefined, false, undefined]);
+    expect([String(mul(z, x)), isNonZero(mul(z, x))]).toEqual(['x*z', false]);
+  });
+  it('isPolar (SymPy is_polar)', () => {
+    const x = sj.symbol('x');
+    const y = sj.symbol('y');
+    expect(isPolar(sj.polarLift(x))).toBe(true);
+    expect(isPolar(new sj.Sym('w', { polar: true }))).toBe(true);
+    expect(isPolar(sj.mul(2, sj.polarLift(x)))).toBe(true);
+    expect(isPolar(sj.pow(sj.polarLift(x), 2))).toBe(true);
+    // SymPy (polar_lift(x)**y).is_polar is True (Pow.is_polar = base.is_polar), and a product is
+    // polar when its other factors are positive: (q*polar_lift(x)).is_polar, but not x*polar_lift(x)
+    expect(isPolar(sj.pow(sj.polarLift(x), y))).toBe(true);
+    expect(isPolar(sj.mul(new sj.Sym('q', { positive: true }), sj.polarLift(x)))).toBe(true);
+    expect(isPolar(sj.mul(x, sj.polarLift(x)))).toBe(false);
+    expect(isPolar(x)).toBe(false);
   });
 });

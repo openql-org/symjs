@@ -11,7 +11,7 @@ import { fromRational } from '../numeric/mpf';
 import { add, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
 import { str } from '../printing/str';
-import { divExact, mgcd } from '../polys/mpoly';
+import { divExact, heuGcdCofactors, mgcd } from '../polys/mpoly';
 import { gcd as igcd, lcm as ilcm } from '../core/numbers';
 import { UPoly, polyHooks } from '../polys/poly';
 import { expandMul as expand } from './expand';
@@ -251,6 +251,11 @@ function gcdOf(n: Expr, d: Expr, vars: readonly Expr[]): Expr | undefined {
 
 /** n/g and d/g for the polynomial gcd g of the polynomials n and d in vars. */
 function gcdCancel(n: Expr, d: Expr, vars: readonly Expr[]): [Expr, Expr] {
+  // rational coefficients: the heuristic GCD gives the cofactors directly (SymPy dmp_zz_heu_gcd)
+  if (vars.length > 1) {
+    const heu = heuGcdCofactors(n, d, vars);
+    if (heu) return [heu[1], heu[2]];
+  }
   let g = gcdOf(n, d, vars);
   if (g === undefined) return [n, d];
   // a rational leading coefficient, so that the exact division stays in Q(i)[vars]

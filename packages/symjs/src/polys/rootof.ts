@@ -44,8 +44,21 @@ export class CRootOf extends ExtensionExpr {
   get gen(): Sym {
     return first([...freeSymbols(this.poly)]);
   }
+  /**
+   * The numerical roots of each polynomial, per precision: one nroots call serves all the indexed
+   * roots of a polynomial (SymPy caches the isolating intervals of a polynomial at class level).
+   */
+  private static readonly rootValues = new Map<string, readonly Expr[]>();
+  /** The number of root lists kept; the oldest is dropped beyond it. */
+  static readonly rootValuesLimit = 256;
   override numericValue(dps: number): Expr | undefined {
-    const rs = nroots(Poly.from(this.poly, [this.gen]), dps);
+    const key = `${dps}:${this.poly.key}`;
+    let rs = CRootOf.rootValues.get(key);
+    if (rs === undefined) {
+      rs = nroots(Poly.from(this.poly, [this.gen]), dps);
+      if (CRootOf.rootValues.size >= CRootOf.rootValuesLimit) CRootOf.rootValues.delete(first([...CRootOf.rootValues.keys()]));
+      CRootOf.rootValues.set(key, rs);
+    }
     return rs[this.index];
   }
   private realRoot?: boolean;

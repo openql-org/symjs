@@ -30,11 +30,10 @@ describe('infinitesimals (SymPy test_lie_group)', () => {
     expect(showInf(inf('Derivative(f(x), x) - 1/sqrt(a0 + a1*x + a2*x**2 + a3*x**3 + a4*x**4)', 'abaco1_simple'))).toBe(
       '[{xi(x, f(x)): 0, eta(x, f(x)): 1}, {xi(x, f(x)): sqrt(a0 + a1*x + a2*x**2 + a3*x**3 + a4*x**4), eta(x, f(x)): 0}]',
     );
-    // SymPy: [{xi: 2*x + 1, eta: 0}, {xi: 1/(exp(f(x)) - 2), eta: 0}]; SymPy's h_y/h is not simplified and keeps x,
-    // so it misses the (valid) symmetry eta = 2*exp(-f(x)) - 1 that is found first here
+    // SymPy 1.14
     const r3 = inf('(2*x + 1)*Derivative(f(x), x) + 2 - 4*exp(-f(x))', 'abaco1_simple');
-    expect(r3.length).toBe(3);
-    expect(checks('(2*x + 1)*Derivative(f(x), x) + 2 - 4*exp(-f(x))', r3)).toEqual([true, true, true]);
+    expect(showInf(r3)).toBe('[{xi(x, f(x)): 2*x + 1, eta(x, f(x)): 0}, {xi(x, f(x)): 1/(exp(f(x)) - 2), eta(x, f(x)): 0}]');
+    expect(checks('(2*x + 1)*Derivative(f(x), x) + 2 - 4*exp(-f(x))', r3)).toEqual([true, true]);
   });
   it('abaco1_product', () => {
     const eq = 'Derivative(f(x), x) - (x*log(x**2/f(x)) + 2)*f(x)/x';
@@ -95,9 +94,8 @@ describe('dsolve with the lie_group hint (SymPy)', () => {
     expect(lie('Derivative(f(x), x) - 1/(x - f(x))**2')).toBe('Eq(C1 + f(x) - log(x - f(x) - 1)/2 + log(x - f(x) + 1)/2, 0)');
     expect(lie('-tan(x + f(x)) + Derivative(f(x), x)')).toBe('Eq(C1 + x/2 - f(x)/2 - log(-tan(x + f(x)) - 1)/2 + log(tan(x + f(x))**2 + 1)/4, 0)');
     expect(lie('Derivative(f(x), x) - f(x)/(x + f(x)**2)')).toBe('[Eq(f(x), C1/2 - sqrt(C1**2 + 4*x)/2), Eq(f(x), C1/2 + sqrt(C1**2 + 4*x)/2)]');
-    // SymPy: Eq(f(x), log(C1/(2*x + 1) + 2)) from the next infinitesimals, as its solve does not invert
-    // C1 - 2*y - 2*log(exp(-y) - 1/2) - 2*log(2*x + 1) (multiple generators); this is that solution with C1 - 2 for C1
-    expect(lie('(2*x + 1)*Derivative(f(x), x) + 2 - 4*exp(-f(x))')).toBe('Eq(f(x), log((C1 + 4*x)/(2*x + 1)))');
+    // SymPy 1.14
+    expect(lie('(2*x + 1)*Derivative(f(x), x) + 2 - 4*exp(-f(x))')).toBe('Eq(f(x), log(C1/(2*x + 1) + 2))');
     expect(lie('2*x*f(x) - x*exp(-x**2) + Derivative(f(x), x)')).toBe('Eq(f(x), (C1 + x**2/2)*exp(-x**2))');
     expect(lie('x**2*exp(x - 1/x) + x**2*Derivative(f(x), x) - f(x)')).toBe('Eq(f(x), (C1 - exp(x))*exp(-1/x))');
     expect(lie('Derivative(f(x), x) - exp(x)*f(x)**2')).toBe('Eq(f(x), 1/(C1 - exp(x)))');
@@ -123,9 +121,11 @@ describe('dsolve with the lie_group hint (SymPy)', () => {
     expect(String(dsolve(parse('Derivative(f(x), x) - 1/(x + f(x))'), fx, { hint: 'lie_group', xi: 1, eta: -1 }))).toBe('Eq(f(x), -x - LambertW(C1*exp(-x - 1)) - 1)');
   });
   it('where SymPy fails', () => {
-    // SymPy raises a TypeError (in abaco2_similar); the solution is that of separable,
-    // Eq(f(x), log(-1/(C1 + exp(x)))), with -C1 for C1
-    expect(lie('-exp(x + f(x)) + Derivative(f(x), x)')).toBe('Eq(f(x), log(1/(C1 - exp(x))))');
+    // SymPy raises a TypeError (in abaco2_similar). The canonical coordinates give ds/dr = tanh(r/2)/2 (SymPy's
+    // simplify form), and the implicit solution is kept as solve does not invert log(cosh(u)); differentiating it
+    // gives f' = (1 + tanh(u))/(1 - tanh(u)) = exp(x + f(x)) with u = (x + f(x))/2. The separable solution is
+    // Eq(f(x), log(-1/(C1 + exp(x))))
+    expect(lie('-exp(x + f(x)) + Derivative(f(x), x)')).toBe('Eq(C1 - x/2 + f(x)/2 - log(cosh((x + f(x))/2)), 0)');
   });
 });
 
