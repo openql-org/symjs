@@ -168,7 +168,9 @@
                   "../vector/**",
                   "../../vector/**",
                   "../stats/**",
-                  "../../stats/**"
+                  "../../stats/**",
+                  "../categories/**",
+                  "../../categories/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -278,7 +280,9 @@
                   "../vector/**",
                   "../../vector/**",
                   "../stats/**",
-                  "../../stats/**"
+                  "../../stats/**",
+                  "../categories/**",
+                  "../../categories/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -360,7 +364,9 @@
                   "../vector/**",
                   "../../vector/**",
                   "../stats/**",
-                  "../../stats/**"
+                  "../../stats/**",
+                  "../categories/**",
+                  "../../categories/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -428,7 +434,9 @@
                   "../vector/**",
                   "../../vector/**",
                   "../stats/**",
-                  "../../stats/**"
+                  "../../stats/**",
+                  "../categories/**",
+                  "../../categories/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -538,7 +546,9 @@
                   "../vector/**",
                   "../../vector/**",
                   "../stats/**",
-                  "../../stats/**"
+                  "../../stats/**",
+                  "../categories/**",
+                  "../../categories/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -610,7 +620,9 @@
                   "../vector/**",
                   "../../vector/**",
                   "../stats/**",
-                  "../../stats/**"
+                  "../../stats/**",
+                  "../categories/**",
+                  "../../categories/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -682,7 +694,9 @@
                   "../vector/**",
                   "../../vector/**",
                   "../stats/**",
-                  "../../stats/**"
+                  "../../stats/**",
+                  "../categories/**",
+                  "../../categories/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -703,7 +717,8 @@
         "packages/symjs/src/concrete/summations.ts",
         "packages/symjs/src/combinatorics/**",
         "packages/symjs/src/algebras/**",
-        "packages/symjs/src/tensor/**"
+        "packages/symjs/src/tensor/**",
+        "packages/symjs/src/categories/**"
       ],
       "rules": {
         "no-restricted-imports": [
@@ -804,7 +819,9 @@
                   "../vector/**",
                   "../../vector/**",
                   "../stats/**",
-                  "../../stats/**"
+                  "../../stats/**",
+                  "../categories/**",
+                  "../../categories/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -876,7 +893,9 @@
                   "../vector/**",
                   "../../vector/**",
                   "../stats/**",
-                  "../../stats/**"
+                  "../../stats/**",
+                  "../categories/**",
+                  "../../categories/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"

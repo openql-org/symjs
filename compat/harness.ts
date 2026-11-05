@@ -372,6 +372,19 @@ export function deserialize(tree: Tree): unknown {
       }
       return new Sym(tree['name'] as string, a);
     }
+    case 'CategoryObject': return new sj.SymObject(String(tree['name']));
+    case 'CategoryClass': return new sj.CategoryClass(deserialize(tree['objects'] as Tree) as sj.SetExpr);
+    case 'Category': return sj.Category(String(tree['name']), deserialize(tree['objects'] as Tree) as sj.SetExpr, (tree['diagrams'] as Tree[]).map((d) => deserialize(d) as sj.Diagram));
+    case 'Morphism': {
+      const args = (tree['args'] as Tree[]).map(deserialize);
+      if (tree['cls'] === 'IdentityMorphism') return sj.IdentityMorphism(asExpr(args[0]));
+      if (tree['cls'] === 'NamedMorphism') return sj.NamedMorphism(asExpr(args[0]), asExpr(args[1]), String(args[2]));
+      return sj.CompositeMorphism((args[0] as JsTuple).items as sj.Morphism[]);
+    }
+    case 'Diagram': {
+      const input = (t: Tree): sj.Dict => sj.Dict((deserialize(t) as JsDict).entries.map(([k, v]) => [asExpr(k), asExpr(v)]));
+      return sj.Diagram(input(tree['premises'] as Tree), input(tree['conclusions'] as Tree));
+    }
     case 'Const': {
       const m: Record<string, Expr> = {
         pi: S.Pi,
@@ -580,6 +593,14 @@ export function deserialize(tree: Tree): unknown {
       return new sj.Sieve();
     case 'Permutation':
       return new sj.Permutation(tree['array'] as number[]);
+    case 'PermutationGroup':
+      return sj.PermutationGroup((tree['generators'] as Tree[]).map((g) => deserialize(g) as sj.Permutation));
+    case 'TensorIndexType': return sj.TensorIndexType(String(tree['name']), { dim: deserialize(tree['dim'] as Tree) as Expr, dummyName: String(tree['dummyName']) });
+    case 'TensorIndex': return sj.TensorIndex(String(tree['name']), deserialize(tree['type'] as Tree) as sj.TensorIndexType, Boolean(tree['up']));
+    case 'TensorSymmetry': return new sj.TensorSymmetry(Number(tree['rank']), Number(tree['sign']) as -1 | 0 | 1);
+    case 'TensorHead': return sj.TensorHead(String(tree['name']), (tree['types'] as Tree[]).map((t) => deserialize(t) as sj.TensorIndexType), deserialize(tree['symmetry'] as Tree) as sj.TensorSymmetry);
+    case 'Tensor': return new sj.Tensor(deserialize(tree['head'] as Tree) as sj.TensorHead, (tree['indices'] as Tree[]).map((t) => deserialize(t) as sj.TensorIndex));
+    case 'TensMul': return sj.mul(...(tree['args'] as Tree[]).map((t) => deserialize(t) as Expr));
     case 'Cycle': {
       let c = new sj.Cycle();
       for (const cyc of tree['cycles'] as number[][]) c = c.call(...cyc) as sj.Cycle;
@@ -828,53 +849,6 @@ function refineAdapter(p: sj.Poly, args: unknown[], kw: Record<string, unknown>)
   const [s, t] = p.refineRoot(asExpr(args[0]) as sj.Rational, asExpr(args[1]) as sj.Rational, epsArg(kw['eps']), kw['steps'] === undefined ? undefined : intArg(kw['steps']));
   return new JsTuple([s, t]);
 }
-/**
- * SymPy's substitution method for small systems: solve an equation in a
- * single unknown, substitute, and solve the rest over the complex numbers
- * (an exponential equation then gives an ImageSet component).
- */
-function substitutionSolve(eqs: Expr[], syms: Sym[]): Expr[][] {
-  try {
-    const one = eqs.findIndex((e) => syms.filter((v) => e.has(v)).length === 1);
-    if (one >= 0 && syms.length === 2 && eqs.length === 2) {
-      const v = syms.find((s) => eqs[one]!.has(s))!;
-      const w = syms.find((s) => s !== v)!;
-      const vs = sj.solveset(eqs[one]!, v);
-      if (vs instanceof sj.ImageSet) {
-        // complex family: the real solutions and the ImageSet, each substituted into the other equation (SymPy)
-        const other = eqs[1 - one]!;
-        const out: Expr[][] = [];
-        const real = sj.solveset(eqs[one]!, v, sj.Reals);
-        const reals = real instanceof sj.FiniteSet ? real.args : [];
-        const roots = (e: Expr): Expr[] => {
-          const r = sj.solveset(e, w);
-          return r instanceof sj.FiniteSet ? [...r.args] : sj.solve(e, w);
-        };
-        for (const val of reals) for (const c of roots(sj.subs(other, [[v, val]]))) out.push(syms.map((s) => (s === v ? val : c)));
-        for (const c of roots(sj.subs(other, [[v, vs.expr]]))) {
-          const img = sj.imageset(vs.variable, c, vs.base);
-          out.push(syms.map((s) => (s === v ? vs : img)));
-        }
-        return out;
-      }
-      if (vs instanceof sj.FiniteSet) {
-        const other = eqs[1 - one]!;
-        const out: Expr[][] = [];
-        for (const val of vs.args) {
-          const rest = sj.subs(other, [[v, val]]);
-          const ws = sj.solveset(rest, w);
-          const comps = ws instanceof sj.FiniteSet ? ws.args : ws instanceof sj.ImageSet ? [ws as Expr] : undefined;
-          if (!comps) throw new Error('substitution');
-          for (const c of comps) out.push(syms.map((s) => (s === v ? val : c)));
-        }
-        if (out.some((t) => t.some((c) => c instanceof sj.ImageSet))) return out;
-      }
-    }
-  } catch {
-    // fall back to nonlinsolve
-  }
-  return sj.nonlinsolve(eqs, syms);
-}
 const asSym = (v: unknown): Sym => {
   if (v instanceof Sym) return v;
   throw new Unsupported('expected a symbol');
@@ -968,16 +942,8 @@ function allSymbols(eqs: Expr[]): Sym[] {
 }
 
 function solveAug(aug: Matrix, syms: Sym[]): Expr[] | undefined {
-  const n = syms.length;
-  const [R, pivots] = sj.rref(aug);
-  if (pivots.includes(n)) return undefined;
-  const sol: Expr[] = syms.map((s) => s);
-  pivots.forEach((pc, i) => {
-    let v: Expr = R.get(i, n);
-    for (let j = 0; j < n; j++) if (j !== pc && !pivots.includes(j)) v = sj.add(v, sj.mul(-1, R.get(i, j), syms[j]!));
-    sol[pc] = sj.cancel(v);
-  });
-  return sol;
+  const result = sj.linsolveAugmented(aug, syms);
+  return Array.isArray(result) ? result : undefined;
 }
 
 function idxList(v: unknown): (number | boolean)[] {
@@ -2236,13 +2202,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     let reps: [Expr, Expr][];
     if (args[1] instanceof JsDict) reps = args[1].entries.map(([k, v]) => [asExpr(k), asExpr(v)]);
     else reps = [[asExpr(args[1]), asExpr(args[2])]];
-    const v = sj.simplify(sj.subs(e, new Map(reps)));
-    if (v instanceof sj.Rational) return v.isZero;
-    if (v.freeSymbols().size === 0) {
-      const c = v.toComplex();
-      return Math.abs(c.re) < 1e-12 && Math.abs(c.im) < 1e-12;
-    }
-    return null;
+    return none(sj.checksol(e, new Map(reps)));
   },
   linsolve: (args, kw) => {
     noKw(kw);
@@ -2294,32 +2254,21 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
   substitution: (args, kw) => {
     noKw(kw);
-    // SymPy solveset.substitution(system, symbols, result=[{}], known_symbols=[], exclude=[], all_symbols=None)
-    const eqs = (args[0] as JsTuple).items.map(asExpr);
+    const exprs = (value: unknown): Expr[] => (value as JsTuple).items.map(asExpr);
+    const eqs = exprs(args[0]);
     const syms = (args[1] as JsTuple).items.map(asSym);
-    const results = args[2] instanceof JsTuple ? args[2].items.map((d) => (d as JsDict).entries.map(([k, v]) => [asExpr(k), asExpr(v)] as [Expr, Expr])) : [[]];
-    const exclude = args[4] instanceof JsSet ? args[4].items.map(asExpr) : args[4] instanceof JsTuple ? args[4].items.map(asExpr) : [];
-    const all = args[5] instanceof JsTuple ? args[5].items.map(asSym) : syms;
-    const out: Expr[][] = [];
-    for (const known of results) {
-      const sub = eqs.map((e) => sj.expand(sj.subs(e, known))).filter((e) => !(e instanceof sj.Rational && e.isZero));
-      const free = syms.filter((v) => !known.some(([k]) => k.key === v.key));
-      const sols = free.length ? substitutionSolve(sub, free) : sub.length ? [] : [[]];
-      for (const sol of sols) {
-        const vals = new Map<string, Expr>(known.map(([k, v]) => [k.key, v]));
-        free.forEach((v, i) => vals.set(v.key, sol[i]!));
-        const rep = [...vals.entries()].map(([k, v]) => [[...syms, ...all].find((s) => s.key === k)!, v] as [Expr, Expr]);
-        if (exclude.some((ex) => sj.expand(sj.subs(ex, rep)).equals(S.Zero))) continue;
-        out.push(all.map((v) => vals.get(v.key) ?? v));
-      }
-    }
-    return out.length ? new JsSet(out.map((t) => new JsTuple(t))) : 'EmptySet';
+    const results = args[2] instanceof JsTuple ? args[2].items.map((d) => new Map((d as JsDict).entries.map(([k, v]) => [asSym(k), asExpr(v)]))) : undefined;
+    const known = args[3] instanceof JsTuple ? args[3].items.map(asSym) : undefined;
+    const exclude = args[4] instanceof JsSet || args[4] instanceof JsTuple ? args[4].items.map(asExpr) : undefined;
+    const all = args[5] instanceof JsTuple ? args[5].items.map(asSym) : undefined;
+    const solutions = sj.substitution(eqs, syms, results, known, exclude, all);
+    return solutions.length ? new JsSet(solutions.map((t) => new JsTuple(t))) : 'EmptySet';
   },
   nonlinsolve: (args, kw) => {
     noKw(kw);
     const eqs = (args[0] as JsTuple).items.map(asExpr);
     const syms = (args[1] as JsTuple).items.map(asSym);
-    const sols = substitutionSolve(eqs, syms);
+    const sols = sj.nonlinsolve(eqs, syms);
     return sols.length ? new JsSet(sols.map((t) => new JsTuple(t))) : 'EmptySet';
   },
   solve_linear: (args, kw) => {
@@ -3706,14 +3655,14 @@ for (const name of Object.keys(sj.Q)) {
 const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'discrete', 'geometry']);
 
 /** SymPy names that are JavaScript globals, and the symjs names that do not shadow them. */
-const JS_GLOBAL_RENAMES: Record<string, string> = { Symbol: 'Sym', Number: 'SymNumber', Function: 'SymFunction', Array: 'SymArray', Set: 'SetExpr' };
+const JS_GLOBAL_RENAMES: Record<string, string> = { Symbol: 'Sym', Number: 'SymNumber', Function: 'SymFunction', Array: 'SymArray', Set: 'SetExpr', Object: 'SymObject' };
 /** sympy.vector names that symjs exports under another name (SymPy's top-level Point is the geometric one). */
 const VECTOR_RENAMES: Record<string, string> = { Point: 'VectorPoint' };
 /** sympy.stats names that symjs exports under another name: E is Euler's number and Chi the hyperbolic cosine integral. */
 const STATS_RENAMES: Record<string, string> = { E: 'expectation', Chi: 'ChiRV' };
 const camelIn = (n: string, category: string | undefined): string =>
   (category === 'vector' ? VECTOR_RENAMES[n] : category === 'stats' ? STATS_RENAMES[n] : undefined) ?? camel(n);
-const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? (/^[A-Z]/.test(n) ? n : n.replace(/_([a-z0-9])/g, (_m, ch: string) => ch.toUpperCase()));
+const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? n.replace(/_([a-z0-9])/g, (_m, ch: string) => ch.toUpperCase());
 
 /** A deserialized argument as the JS value the API takes. */
 function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
@@ -3817,20 +3766,57 @@ function autoAdapter(c: Case): Adapter | undefined {
   };
 }
 
-/** The SymPy API name has a symjs counterpart: an adapter, a camelCase export, or a method or property of the owner class. */
+/** Explicit public aliases: an adapter by itself is never evidence of an API. */
+const PUBLIC_ALIASES: Readonly<Record<string, string>> = {
+  Catalan: 'S.Catalan', EulerGamma: 'S.EulerGamma', GoldenRatio: 'S.GoldenRatio', TribonacciConstant: 'S.TribonacciConstant',
+  Integer: 'Rational.of', Equality: 'Eq', Unequality: 'Ne', GreaterThan: 'Ge', LessThan: 'Le', StrictGreaterThan: 'Gt', StrictLessThan: 'Lt',
+  N: 'evalf', ln: 'log', minpoly: 'minimalPolynomial', poly: 'Poly.from',
+  zeros: 'Matrix.zeros', ones: 'Matrix.ones', eye: 'Matrix.eye', diag: 'Matrix.diag',
+  true: 'S.true', false: 'S.false', FallingFactorial: 'ff', RisingFactorial: 'rf',
+};
+function publicPathExists(path: string): boolean {
+  let value: unknown = sj;
+  for (const key of path.split('.')) {
+    if (value === null || (typeof value !== 'object' && typeof value !== 'function') || !(key in value)) return false;
+    value = (value as Record<string, unknown>)[key];
+  }
+  return value !== undefined;
+}
+/** The actual public export/member supporting a name, or undefined when absent. */
+export function counterpartFor(a: { name: string; owner?: string; category?: string }): string | undefined {
+  const camelMethod = (n: string): string => n.replace(/_([a-zA-Z0-9])/g, (_m, c: string) => c.toUpperCase());
+  if (!a.name.startsWith('.')) {
+    const alias = PUBLIC_ALIASES[a.name];
+    const candidates = [camelIn(a.name, a.category), ...(alias ? [alias] : [])];
+    if (!(a.name in JS_GLOBAL_RENAMES)) candidates.push(a.name);
+    if (a.category === 'polys') candidates.push('Poly.prototype.' + camelMethod(a.name));
+    return candidates.find(publicPathExists);
+  }
+  const m = camelMethod(a.name.slice(1));
+  const owners: Record<string, string> = { Expr: 'Expr', MutableDenseMatrix: 'Matrix', Matrix: 'Matrix', ImmutableDenseNDimArray: 'ImmutableDenseNDimArray', Permutation: 'Permutation', MatrixExpr: 'MatrixExpr' };
+  const owner = owners[a.owner ?? ''];
+  if (!owner) return undefined;
+  const candidates = [`${owner}.prototype.${m}`, `${owner}.${m}`, `${owner}.prototype.${a.name.slice(1)}`];
+  // Expression operations may be exposed as free functions. Their concrete path
+  // is reported, so a function counterpart is not confused with a fluent method.
+  const freeMethods: Readonly<Record<string, readonly string[]>> = {
+    Expr: ['diff', 'integrate', 'limit', 'series', 'expand', 'simplify', 'factor', 'collect', 'cancel', 'apart', 'ratsimp', 'together', 'trigsimp', 'powsimp', 'radsimp', 'nsimplify', 'logcombine', 'powdenest', 'rewrite', 'refine', 'evalf',
+      'adjoint', 'argsCnc', 'asBaseExp', 'asCoeffAdd', 'asCoeffMul', 'asCoeffExponent', 'asCoefficient', 'asCoefficientsDict', 'asContentPrimitive', 'asDummy', 'asIndependent', 'asLeadingTerm', 'asNumerDenom', 'asPoly', 'asPowersDict', 'asRealImag', 'asTerms', 'aseries', 'atoms', 'classKey', 'coeff', 'combsimp', 'compare', 'couldExtractMinusSign', 'count', 'countOps', 'dir', 'doit', 'dummyEq', 'extractAdditively', 'extractBranchFactor', 'extractMultiplicatively', 'find', 'fourierSeries', 'fps', 'gammasimp', 'getO', 'getn', 'hasFree', 'hasXfree', 'invert', 'isAlgebraicExpr', 'isConstant', 'isHypergeometric', 'isMeromorphic', 'isPolynomial', 'isRationalFunction', 'isSame', 'leadterm', 'lseries', 'match', 'matches', 'normal', 'primitive', 'rcall', 'removeO', 'replace', 'round', 'separate', 'sortKey', 'taylorTerm', 'transpose', 'xreplace'],
+    Matrix: ['analyticFunc', 'bidiagonalDecomposition', 'bidiagonalize', 'cholesky', 'choleskySolve', 'cofactor', 'colInsert', 'columnspace', 'conditionNumber', 'connectedComponentsDecomposition', 'cramerSolve', 'cross', 'diagonal', 'diagonalSolve', 'diagonalize', 'dot', 'dual', 'echelonForm', 'eigenvects', 'extract', 'gaussJordanSolve', 'getDiagBlocks', 'hat', 'invMod', 'isAntiSymmetric', 'isDiagonal', 'isDiagonalizable', 'isNilpotent', 'isSymmetric', 'jacobian', 'jordanCells', 'jordanForm', 'leftEigenvects', 'lll', 'lllTransform', 'lowerTriangular', 'lowerTriangularSolve', 'minorSubmatrix', 'multiplyElementwise', 'norm', 'normalized', 'nullspace', 'orthogonalize', 'permanent', 'permuteCols', 'permuteRows', 'pinv', 'pinvSolve', 'project', 'rank', 'rankDecomposition', 'rref', 'rrefRhs', 'rowInsert', 'rowspace', 'singularValues', 'solveLeastSquares', 'stronglyConnectedComponentsDecomposition', 'upperTriangular', 'upperTriangularSolve', 'vech', 'vec'],
+    MatrixExpr: ['fromIndexSummation'],
+  };
+  if (freeMethods[owner]?.includes(m)) candidates.push(m);
+  const matrixAliases: Readonly<Record<string, string>> = {
+    LUdecomposition: 'luDecomposition', LDLdecomposition: 'ldl', QRdecomposition: 'qrDecomposition', LUdecompositionFF: 'LUdecompositionFF', LUdecompositionSimple: 'LUdecompositionSimple',
+    LUsolve: 'matrixSolve', QRsolve: 'matrixSolve', LDLsolve: 'matrixSolve', solve: 'matrixSolve', exp: 'matrixExp', log: 'matrixLog',
+    applyfunc: 'Matrix.prototype.map', colJoin: 'Matrix.prototype.vstack', rowJoin: 'Matrix.prototype.hstack',
+    berkowitzCharpoly: 'Matrix.prototype.charpoly', berkowitzDet: 'Matrix.prototype.det', detLUDecomposition: 'Matrix.prototype.det', detBareis: 'Matrix.prototype.det',
+  };
+  if (owner === 'Matrix' && matrixAliases[m]) candidates.push(matrixAliases[m]!);
+  return candidates.find(publicPathExists);
+}
 export function hasCounterpart(a: { name: string; owner?: string; category?: string }): boolean {
-  if (ADAPTERS[a.name] && a.category !== 'vector' && a.category !== 'stats') return true;
-  const lib = sj as unknown as Record<string, unknown>;
-  if (a.category === 'vector' || a.category === 'stats') return lib[camelIn(a.name, a.category)] !== undefined;
-  // SymPy's true and false are S.true and S.false (reserved words in JavaScript)
-  if (a.name === 'true' || a.name === 'false') return true;
-  if (!a.name.startsWith('.')) return lib[camel(a.name)] !== undefined || (!(a.name in JS_GLOBAL_RENAMES) && lib[a.name] !== undefined);
-  const m = camel(a.name.slice(1));
-  // a classmethod ported as a function (MatrixExpr.from_index_summation -> fromIndexSummation)
-  if (lib[m] !== undefined && typeof lib[m] === 'function' && a.owner === 'MatrixExpr') return true;
-  const owners: Record<string, unknown> = { Expr, Matrix, ImmutableDenseNDimArray: lib['ImmutableDenseNDimArray'], Permutation: lib['Permutation'], MatrixExpr: lib['MatrixExpr'] };
-  const cls = owners[a.owner ?? ''] as { prototype?: object } | undefined;
-  return cls?.prototype !== undefined && (m in cls.prototype || a.name.slice(1) in cls.prototype || m in (cls as object));
+  return counterpartFor(a) !== undefined;
 }
 
 export type Outcome = { status: 'pass' } | { status: 'equivalent'; got: string } | { status: 'fail'; got: string } | { status: 'unsupported'; reason: string } | {

@@ -355,7 +355,7 @@ describe('solve', () => {
 describe('nonlinsolve', () => {
   it('an equation solved with LambertW', () => {
     // SymPy: {(x, 1)}, which leaves x free although x*exp(x) = 1 fixes it; exp(W(1))*W(1) = 1
-    expect(nonlinsolve([parse('x*exp(x) - y'), parse('y - 1')], [x, y]).map(show)).toEqual(['[LambertW(1), exp(LambertW(1))*LambertW(1)]']);
+    expect(nonlinsolve([parse('x*exp(x) - y'), parse('y - 1')], [x, y]).map(show)).toEqual(['[LambertW(1), 1]']);
   });
   it('a single radical that is the whole equation', () => {
     expect(nonlinsolve([parse('sqrt(x)'), parse('y - 1')], [x, y]).map(show)).toEqual(['[0, 1]']);
@@ -465,4 +465,23 @@ describe('solve: polynomials in a single generator (SymPy _solve)', () => {
     expect(sv('2*log(y) - 2')).toBe('[E]');
     expect(sv('2*log(y) - 2*log(x + 1) - 2')).toBe('[E*(x + 1)]');
   });
+});
+
+it('checks candidates exactly and does not accept a small nonzero residual', async () => {
+  const { checksol, S, SymFunction, Rational } = await import('../../src');
+  expect(checksol(parse('x**2 - 1'), x, 1)).toBe(true);
+  expect(checksol(parse('Eq(x, 1)'), new Map([[x, S.One]]))).toBe(true);
+  expect(checksol(parse('x**2 - 1'), x, 2)).toBe(false);
+  expect(checksol(parse('1/x'), x, 0)).toBe(false);
+  expect(checksol(x, x, Rational.of(1n, 10n ** 30n))).toBe(false);
+  expect(checksol(SymFunction('f')(x), x, 1)).toBe('unknown');
+  expect(checksol(parse('exp(x)'), x, 1)).toBe(false);
+});
+
+it('retains denominator and radical checks in larger elimination systems', () => {
+  const [z] = symbols('z');
+  expect(nonlinsolve([parse('(x**2 - 1)/x')], [x]).map(show)).toEqual(['[-1]', '[1]']);
+  expect(nonlinsolve([parse('sqrt(x)'), parse('y - 1'), parse('z - 1')], [x, y, z]).map(show)).toEqual(['[0, 1, 1]']);
+  expect(nonlinsolve([parse('y - sin(sqrt(x))'), parse('x - 4'), parse('z - 1')], [x, y, z]).map(show)).toEqual(['[4, sin(2), 1]']);
+  expect(nonlinsolve([parse('x**(1/7) - y'), parse('x - 1'), parse('z - 1')], [x, y, z]).map(show)).toEqual(['[1, 1, 1]']);
 });

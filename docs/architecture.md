@@ -15,7 +15,7 @@ without the higher ones.
 |---|---|---|
 | L0 kernel | expression tree, numbers (including the mpf arithmetic), symbols and assumptions, automatic evaluation, traversal and substitution, Sum/Product nodes, str/LaTeX printing | `core/`, `printing/`, `numeric/mpf.ts`, `numeric/mpfun.ts`, `numeric/mpconst.ts`, `numeric/complex.ts` |
 | L1 functions | elementary and special functions, numeric evaluation (evalf, lambdify), parsing, differentiation, expansion and rewriting, propositional logic, number theory, discrete transforms and convolutions, iterable utilities, rewrite strategies and unification | `functions/`, `logic/`, `ntheory/`, `discrete/`, `utilities/`, `strategies/`, `unify/`, `numeric/` (other files), `parsing/`, `concrete/node.ts`, `calculus/diff.ts`, `calculus/finitediff.ts`, `simplify/expand.ts`, `simplify/rewrite.ts` |
-| L2 algebra | polynomials, simplification, matrices (including linear systems), series and limits, sets, sums and products, permutations, N-dimensional arrays, quaternions | `polys/`, `combinatorics/`, `tensor/`, `algebras/`, `simplify/`, `matrices/`, `series/`, `sets/`, `calculus/` (other files), `concrete/summations.ts` |
+| L2 algebra | polynomials, simplification, matrices (including linear systems), series and limits, sets, sums and products, permutations and groups, abstract tensors and N-dimensional arrays, categories, quaternions | `polys/`, `combinatorics/`, `tensor/`, `categories/`, `algebras/`, `simplify/`, `matrices/`, `series/`, `sets/`, `calculus/` (other files), `concrete/summations.ts` |
 | L3 solvers and integration | equation solving, ODEs, recurrences, inequalities, integration, `doit`, Fourier and formal power series, holonomic functions | `solvers/`, `integrals/`, `holonomic/`, `calculus/doit.ts`, `series/formal.ts`, `series/fourier.ts` |
 | L4 geometry | points, lines, planes, polygons, ellipses, curves and parabolas, which intersect by solving equations | `geometry/` |
 | L5 vector | coordinate systems, vectors and dyadics, vector differential operators, integrals over parametric, implicit and geometric regions | `vector/` |
@@ -212,3 +212,18 @@ SymPy modules correspond to it as follows.
 | `stats/stochastic_process_types.py` | `stats/stochasticprocesstypes.ts` | X[n] of a discrete-time process is `X.at(n)` and X(t) of a continuous-time one `X.call(t)`; the Markov chains derive from `MarkovProcess` only (no multiple inheritance) |
 | `stats/symbolic_multivariate_probability.py` | `stats/symbolicmultivariateprobability.ts` | ExpectationMatrix, VarianceMatrix and CrossCovarianceMatrix are matrix expressions; `Expectation`, `Variance` and `Covariance` of a matrix give them through `statsClasses` |
 | `stats/sampling/sample_numpy.py`, `sample_scipy.py`, `sample_pymc.py` (and `sample`, `sample_iter`, `sampling_density`, `sample_stochastic_process`, `numsamples=` of `stats/rv.py` and the `sample` methods of the other stats modules) | not ported (out of scope) | they draw samples with the external Python libraries numpy, scipy and pymc, which have no JavaScript counterpart in symjs; their doctests are listed in `OUT_OF_SCOPE` of `compat/compat.test.ts` |
+
+### Additional mathematical foundations
+
+| SymPy module | symjs | Scope |
+|---|---|---|
+| `categories/baseclasses.py` | `categories/baseclasses.ts` | objects, morphisms, categories and diagrams; drawing is still unimplemented |
+| `combinatorics/perm_groups.py`, `named_groups.py` | `combinatorics/permgroups.ts`, `namedgroups.ts` | stabilizer chains, membership, order, orbits and named finite groups |
+| `polys/numberfields/subfield.py` | `polys/numberfields/subfield.ts` | exact radical power-basis embeddings and bounded primitive-element search |
+| `tensor/tensor.py` | `tensor/tensor.ts` | abstract indices, elementary slot symmetries and symmetric metric contraction |
+| `solvers/pde.py` | `solvers/pde.ts` | first-order constant-coefficient linear PDEs, explicit solution checking and variable separation |
+| `solvers/solveset.py` | `solvers/solveset.ts` | nonlinear-system substitution, including dependent exponential ImageSet components |
+
+The condition-level scope and remaining limitations are maintained in
+[`compat/capabilities.json`](../compat/capabilities.json). API existence and
+source-file size do not establish full SymPy compatibility.

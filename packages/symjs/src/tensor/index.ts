@@ -138,3 +138,4 @@ export const Idx = /* @__PURE__ */ callableClass(IdxNode, (label: string | Expr 
 export type Idx = IdxNode;
 export { IndexConformanceException, getContractionStructure, getIndices } from './indexmethods';
 export type { ContractionKey, ContractionStructure } from './indexmethods';
+export { TensorIndexType, TensorIndex, TensorSymmetry, TensorHead, Tensor, TensMul, tensorIndices, tensorHeads, canonBp, contractMetric } from './tensor';

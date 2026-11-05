@@ -61,16 +61,21 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 | `@symjs/symjs/core` | Expressions, numbers and assumptions, symbols and undefined functions, elementary functions, substitution and matching, `diff`, `expand`, `evalf`, parsing, `str` and `latex` |
 | `@symjs/symjs/special` | Special and combinatorial functions (Gamma, zeta, error functions, Bessel and Airy functions, ...) |
 | `@symjs/symjs/simplify` | `simplify`, `trigsimp`, `powsimp`, `radsimp`, `together`, `cancel`, `rewrite`, ... |
-| `@symjs/symjs/polys` | Polynomials: `factor`, `roots`, `CRootOf`, `groebner`, `apart`, ... |
+| `@symjs/symjs/polys` | Polynomials: `factor`, `roots`, `CRootOf`, `groebner`, `apart`, `primitiveElement`, `toNumberField`, ... |
 | `@symjs/symjs/calculus` | `integrate`, `limit`, `series`, `Sum`, `Product`, ... |
-| `@symjs/symjs/solvers` | `solve`, `solveset`, `nonlinsolve`, `rsolve`, `dsolve`, inequalities |
+| `@symjs/symjs/solvers` | `solve`, `solveset`, `nonlinsolve`, `rsolve`, `dsolve`, `pdsolve`, `checkpdesol`, inequalities |
+| `@symjs/symjs/combinatorics` | Permutations, permutation groups, stabilizer chains and named finite groups |
+| `@symjs/symjs/tensor` | N-dimensional arrays, abstract tensor indices, slot symmetries and metric contraction |
+| `@symjs/symjs/categories` | `SymObject`, morphisms, composition, categories and diagrams |
 | `@symjs/symjs/sets` | Intervals, finite sets, image and condition sets |
 | `@symjs/symjs/matrices` | `Matrix` and linear algebra |
 | `@symjs/symjs/geometry` | Points, lines, planes, polygons, ellipses, curves and parabolas, `intersection`, `convexHull`, ... |
 | `@symjs/symjs/vector` | `CoordSys3D`, vectors and dyadics, `Del`, `gradient`, `divergence`, `curl`, `express`, parametric and implicit regions, `vectorIntegrate`, ... |
 | `@symjs/symjs/stats` | Random symbols (`Normal`, `Exponential`, `Poisson`, `Die`, `Binomial`, ... and handmade distributions), `P`, `expectation` (SymPy `E`), `density`, `given`, `where`, `cdf`, `variance`, `moment`, `covariance`, `median`, the `Probability`/`Expectation`/`Variance`/`Covariance` nodes, joint distributions (`MultivariateNormal`, `Dirichlet`, `Multinomial`, `JointRV`, `marginalDistribution`, ...), matrix distributions (`Wishart`, `MatrixNormal`, ...), random matrices (`GaussianUnitaryEnsemble`, `CircularEnsemble`, ...), stochastic processes (`DiscreteMarkovChain`, `ContinuousMarkovChain`, `PoissonProcess`, `WienerProcess`, ...), `ExpectationMatrix`, `VarianceMatrix`, `CrossCovarianceMatrix`, ... |
 
-Every entry point includes the core. The core does not depend on the other areas: methods such as `expr.simplify()` or `expr.integrate(x)` work once the area that implements them has been imported (from its entry point or from the root), and otherwise throw an error naming the entry point to import. The modules that register implementations on load are listed in the `sideEffects` field of `package.json` (kept up to date by `node scripts/side-effects.mjs`, checked by the tests). `node scripts/size.mjs --check` (after `pnpm build`) measures the minified bundle of typical imports against size budgets; for example `import { parse, diff, str } from '@symjs/symjs/core'` is about 180 KiB minified (60 KiB gzip), and the whole base module about 1730 KiB (575 KiB gzip).
+Category objects use `SymObject` to avoid the JavaScript `Object` global. Apply an abstract tensor head with `head.at(...indices)` and reverse index variance with `index.neg()`. The supported mathematical conditions are listed in [compat/capabilities.json](compat/capabilities.json).
+
+Every entry point includes the core. The core does not depend on the other areas: methods such as `expr.simplify()` or `expr.integrate(x)` work once the area that implements them has been imported (from its entry point or from the root), and otherwise throw an error naming the entry point to import. The modules that register implementations on load are listed in the `sideEffects` field of `package.json` (kept up to date by `node scripts/side-effects.mjs`, checked by the tests). `node scripts/size.mjs --check` (after `pnpm build`) measures the minified bundle of typical imports against size budgets; the measured sizes and budgets are printed by `node packages/symjs/scripts/size.mjs`.
 
 ### Repository layout
 
@@ -91,12 +96,21 @@ To add an extend module, create `packages/<name>/` with its own `package.json` (
 
 ## SymPy compatibility
 
-Compatibility is measured against SymPy's own doctests (`compat/`):
+Compatibility has separate measurements; none is a whole-SymPy completion percentage:
 
-- **Behavior compatibility**: share of doctest examples of the in-scope public API (core, elementary and special functions, simplification, polynomials, solvers, ODEs, calculus, series, sets, matrices, number theory, logic, combinatorics, utilities, geometry, vector, stats) that symjs reproduces with the same `str()` output, or with a mathematically equal value in another form: 100% (4143 of 4143 examples; 4122 identical).
-- **API coverage**: share of in-scope public SymPy names (including `Expr` and `Matrix` methods) with a symjs counterpart: 100% (1420 of 1420).
-- The examples and names not supported yet are listed in `compat/known-gaps.json`. `pnpm compat` fails when a case outside that list stops passing, and when a listed case starts passing (so that the list only shrinks).
-- Test coverage of the source files is 100% (statements, branches, functions and lines; 16289 tests).
+- The pinned [scope inventory](compat/scope-inventory.json) lists **all 825 production modules of SymPy 1.14.0**, including partial, unimplemented, unassessed and explicitly excluded modules.
+- **Corpus result agreement** measures extracted examples. The [extraction audit](compat/REPORT.md#extraction-audit) records omitted examples and their reasons.
+- **Verified public-call results** count automatic public API calls and reviewed conversion adapters. Mathematical computations remaining in the harness and unreviewed translations are reported separately, even when their results match.
+- **API presence** requires an actual exported function or member, with its concrete path recorded. It does not establish behavior or completeness. An adapter alone no longer counts as an API.
+- [Capability conditions](compat/capabilities.json) link direct public-API tests to their mathematical conditions and remaining limitations.
+- Unit coverage must reach 100% of statements, branches, functions and lines. This is a code-test metric, not SymPy compatibility.
+
+The current counts are generated in [compat/REPORT.md](compat/REPORT.md).
+Unmatched examples and names without a verified public counterpart are tracked in `compat/known-gaps.json`.
+The regression baseline now includes previously unmeasured mathematics and
+APIs incorrectly counted solely from adapter presence; changes within this
+scope must shrink the gap list. Cases include an input/output digest so that
+repeated doctest source lines with different inputs remain distinct.
 
 ```sh
 pnpm compat           # run the tests with coverage and the corpus, write compat/REPORT.md
@@ -170,22 +184,27 @@ accepts `locals` with values and functions by name.
 See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable gaps:
 
 - `simplify` is a lighter heuristic than SymPy's; results can differ in form
-- `factor` over general algebraic extensions (only `gaussian=` and simple `extension=` cases); algebraic numbers in `minimal_polynomial` and norms are limited to square roots and I
+- `factor` over general algebraic extensions remains limited; number-field presentation constraints are recorded in `compat/capabilities.json`.
 - Definite integration splits at polynomial singularities using one-sided limits; when their locations cannot be resolved, the integral is left unevaluated.
 - Integration beyond the implemented heuristics (no Risch or Meijer G algorithms yet); `hyper` and `meijerg` are available as functions but are not used to integrate or to evaluate in closed form
-- ODE solving follows SymPy's single-equation hints (separable, exact, linear, Bernoulli, Riccati special, homogeneous coefficients, linear coefficients, constant and Euler linear equations, undetermined coefficients, variation of parameters, Liouville, reducible order, Airy, Bessel); systems are solved when linear and first order (constant coefficients in closed form, 2x2 variable coefficients in terms of a particular solution like SymPy) or triangular (solved one function at a time); `classify_ode` reports SymPy's hints, but power series and Lie group solvers, nonlinear systems, PDEs and Diophantine equations are not ported yet (see the ODE checks in the report)
+- ODE solving follows SymPy's single-equation hints (separable, exact, linear, Bernoulli, Riccati special, homogeneous coefficients, linear coefficients, constant and Euler linear equations, undetermined coefficients, variation of parameters, Liouville, reducible order, Airy, Bessel); systems are solved when linear and first order (constant coefficients in closed form, 2x2 variable coefficients in terms of a particular solution like SymPy) or triangular (solved one function at a time); individual supported hints are recorded in the ODE checks
+- JavaScript code printing (`jscode`) remains unimplemented, rather than excluded: exporting expressions to JavaScript is a separate capability from running the engine in JavaScript.
+- Number-field embeddings use exact rational power bases for supported radical presentations; general `RootOf` embeddings, maximal orders and Galois groups remain incomplete.
+- Permutation groups provide stabilizer-chain order/membership and basic subgroup operations; finitely presented groups and many advanced subgroup algorithms remain incomplete.
+- Abstract tensors support Einstein multiplication, free-index complete symmetries and symmetric metric contraction; tensor sums and general Butler–Portugal canonicalization are not implemented.
+- PDEs support first-order constant-coefficient linear equations and variable separation; higher-order solving, variable coefficients and boundary conditions remain incomplete.
+- Category theory supports objects, morphisms, composition and diagrams. Diagram layout and Xy-pic output are unimplemented. Functors and natural transformations are outside the SymPy 1.14 implementation itself.
 - `sympy.stats`: `JointDistribution.cdf` (which fails for every input in SymPy) is not ported
 - Symbolic `Mod` (only integers and binomial coefficients modulo prime powers) and asymptotic series of nested exponentials are not implemented
 - Intentional differences: where SymPy's result is mathematically wrong symjs returns the correct one, e.g. `dsolve([x' = x*y*sin(t), y' = y**2*sin(t)])` (SymPy's solution fails `checkodesol`); `rsolve` returns `Unsolved` instead of an incomplete solution when the hypergeometric solutions found do not span the solution space and no initial values fix it (SymPy returns e.g. `0` for `y(n+2) - n*y(n+1) - y(n)`)
 
 ## Not ported (out of scope)
 
-These parts of SymPy depend on external Python libraries or target other languages and are deliberately not ported:
+Runtime-specific backends are deliberately excluded; mathematical modules remain in the inventory even when not implemented:
 
 - Sampling of random variables in `sympy.stats` (`sample`, `sample_iter`, `sampling_density`, `sample_stochastic_process`, `numsamples=`, the `sample` methods of distributions, spaces and processes; `sympy/stats/sampling/`), which draws samples with numpy, scipy or pymc
 - Plotting (`sympy.plotting`, the `plot`/`show` methods)
-- `lambdify` for TensorFlow (the other numeric back ends are ported)
-- JavaScript code printing (`jscode`): symjs itself runs in JavaScript
+- The TensorFlow back end of `lambdify`
 
 ## License
 

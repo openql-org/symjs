@@ -33,3 +33,5 @@ export * from './geometry';
 export * from './vector';
 export * from './stats';
 export type { PermutationLike } from './tensor';
+
+export * from './categories';

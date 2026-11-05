@@ -1,0 +1,53 @@
+{
+ "schema": 1,
+ "reason": "Expand the mathematical benchmark scope and remove adapter-only API-presence claims. This is a measurement baseline migration, not permission to accept behavior regressions.",
+ "reference": "SymPy 1.14.0",
+ "previousRevision": "7e173814f4c7e12ed6bf2ceec344f5a91a025f93",
+ "previousCorpusSha256": "6e8b5b551b2eecee65e75096b5709286fd00b9e013b9b361b396de2ba7755c66",
+ "previousCorpusReplay": {
+  "cases": 4066,
+  "pass": 4066,
+  "failures": []
+ },
+ "newInScopeCases": 141,
+ "currentCorpus": {
+  "cases": 4207,
+  "pass": 4113,
+  "equivalent": 21,
+  "api": 1422,
+  "apiDone": 1158,
+  "ported": 94,
+  "verifiedPublicPass": 1169
+ },
+ "knownGaps": {
+  "cases": 73,
+  "api": 264
+ },
+ "apiPresenceNote": "A counterpart must be an actual public export or member with an explicit mapping. Unmapped names are unverified or absent; name presence does not prove completeness.",
+ "caseIdentity": "Module, source and a digest of arguments, keywords, receiver, expected output and assumptions; repeated source lines no longer share a regression key.",
+ "sourceSize": {
+  "scope": "Production TypeScript in packages/symjs/src, including entry points; generated compatibility fixtures excluded. Physical lines do not measure feature coverage.",
+  "previous": {
+   "files": 304,
+   "lines": 107331
+  },
+  "current": {
+   "files": 312,
+   "lines": 108214
+  }
+ },
+ "validation": {
+  "unitTests": 15810,
+  "coverage": {
+   "statements": 100,
+   "branches": 100,
+   "functions": 100,
+   "lines": 100
+  },
+  "typecheck": "passed",
+  "lint": "passed",
+  "build": "passed",
+  "packageConsumerChecks": "26 entries; ESM, CJS, bundled, minified, NodeNext and Bundler types",
+  "sizeBudgets": "passed"
+ }
+}

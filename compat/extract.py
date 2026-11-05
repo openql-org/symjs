@@ -22,6 +22,7 @@ import doctest
 import signal
 import importlib
 import json
+import random
 import sys
 import warnings
 
@@ -30,6 +31,15 @@ from sympy import Basic, MatrixBase
 
 # module -> category
 MODULES = {
+    # Category theory and previously unmeasured mathematical modules remain in
+    # the denominator even while their implementations are incomplete.
+    "sympy.categories.baseclasses": "categories",
+    "sympy.categories.diagram_drawing": "categories",
+    "sympy.polys.numberfields.subfield": "polys",
+    "sympy.combinatorics.perm_groups": "combinatorics",
+    "sympy.combinatorics.named_groups": "combinatorics",
+    "sympy.tensor.tensor": "tensor",
+    "sympy.solvers.pde": "pde",
     # core
     "sympy.core.add": "core",
     "sympy.core.mul": "core",
@@ -305,6 +315,9 @@ def stats_public():
 # sympy.strategies.rm_id, sympy.unify.unify, ...): calls of them count as public API calls in
 # the modules of that subpackage
 SUBPACKAGE_PUBLIC = {
+    "sympy.categories.": ("sympy.categories",),
+    "sympy.combinatorics.": ("sympy.combinatorics",),
+    "sympy.tensor.tensor": ("sympy.tensor.tensor",),
     "sympy.discrete.": ("sympy.discrete", "sympy.discrete.recurrences"),
     "sympy.strategies.branch.": ("sympy.strategies.branch",),
     "sympy.strategies.": ("sympy.strategies",),
@@ -363,12 +376,48 @@ def ser(o):
     if isinstance(o, _Sieve):
         return {"t": "Sieve"}
     from sympy.combinatorics import Permutation as _Perm
+    from sympy.combinatorics.perm_groups import PermutationGroup as _PermGroup
     from sympy.combinatorics.permutations import Cycle as _Cycle
+    from sympy.categories import Object as _CatObject, Category as _Category, Diagram as _Diagram, Morphism as _Morphism
+    from sympy.categories.baseclasses import Class as _Class
+    if isinstance(o, _CatObject):
+        return {"t": "CategoryObject", "name": o.name}
+    if isinstance(o, _Class):
+        return {"t": "CategoryClass", "objects": ser(o.args[0])}
+    if isinstance(o, _Category):
+        return {"t": "Category", "name": o.name, "objects": ser(o.objects.args[0]), "diagrams": [ser(d) for d in o.commutative_diagrams]}
+    if isinstance(o, _Diagram):
+        return {"t": "Diagram", "premises": ser(dict(o.premises)), "conclusions": ser(dict(o.conclusions))}
+    if isinstance(o, _Morphism):
+        from sympy.core.symbol import Str
+        return {"t": "Morphism", "cls": type(o).__name__, "args": [ser(a.name if isinstance(a, Str) else a) for a in o.args]}
     if isinstance(o, _Perm):
         return {"t": "Permutation", "array": [int(i) for i in o.array_form]}
+    if isinstance(o, _PermGroup):
+        return {"t": "PermutationGroup", "generators": [ser(g) for g in o.generators]}
     if isinstance(o, _Cycle):
         return {"t": "Cycle", "cycles": [[int(i) for i in c] for c in _Perm(o).cyclic_form], "size": int(o.size)}
     from sympy.tensor.array import NDimArray as _NDA
+    from sympy.tensor.tensor import TensorIndexType as _TIT, TensorIndex as _TI, TensorHead as _TH, TensorSymmetry as _TS, Tensor as _Tensor, TensMul as _TensMul
+    if isinstance(o, _TIT):
+        if o.args[4] != 1 or str(o.args[5]) != 'metric':
+            raise Unsupported('TensorIndexType with a non-default metric')
+        return {"t": "TensorIndexType", "name": o.name, "dim": ser(o.dim), "dummyName": o.dummy_name}
+    if isinstance(o, _TI):
+        return {"t": "TensorIndex", "name": o.name, "type": ser(o.tensor_index_type), "up": bool(o.is_up)}
+    if isinstance(o, _TS):
+        for sign, candidate in [(0, _TS.no_symmetry(o.rank)), (1, _TS.fully_symmetric(o.rank)), (-1, _TS.fully_symmetric(-o.rank))]:
+            if o == candidate:
+                return {"t": "TensorSymmetry", "rank": o.rank, "sign": sign}
+        raise Unsupported('General tensor slot symmetry')
+    if isinstance(o, _TH):
+        if o.comm != 0:
+            raise Unsupported('Noncommuting tensor heads')
+        return {"t": "TensorHead", "name": o.name, "types": [ser(t) for t in o.index_types], "symmetry": ser(o.symmetry)}
+    if isinstance(o, _Tensor):
+        return {"t": "Tensor", "head": ser(o.component), "indices": [ser(i) for i in o.get_indices()]}
+    if isinstance(o, _TensMul):
+        return {"t": "TensMul", "args": [ser(a) for a in o.args]}
     if isinstance(o, _NDA):
         return {"t": "NDimArray", "cls": type(o).__name__, "shape": [int(k) for k in o.shape], "flat": [ser(i) for i in o._array] if hasattr(o, "_array") else [ser(o[i]) for i in __import__("itertools").product(*[range(k) for k in o.shape])]}
     if isinstance(o, sympy.Idx):
@@ -623,6 +672,17 @@ def api_inventory():
     for name in sorted(_vector.__all__):
         # sympy.vector is a subpackage whose names are not top-level sympy names
         out.append({"name": name, "category": "vector"})
+    import sympy.categories as _categories
+    for name in _categories.__all__:
+        if name != 'preview_diagram':
+            out.append({"name": name, "category": "categories"})
+    for name in sorted(_combinatorics.__all__):
+        obj = getattr(_combinatorics, name)
+        if getattr(obj, "__module__", "") in MODULES and not any(a["name"] == name and a["category"] == "combinatorics" for a in out):
+            out.append({"name": name, "category": "combinatorics"})
+    from sympy.tensor.tensor import TensorIndexType, TensorIndex, TensorHead, TensorSymmetry, tensor_indices, tensor_heads, canon_bp, contract_metric
+    for obj in (TensorIndexType, TensorIndex, TensorHead, TensorSymmetry, tensor_indices, tensor_heads, canon_bp, contract_metric):
+        out.append({"name": obj.__name__, "category": "tensor"})
     for name in sorted(stats_public()):
         # sympy.stats is a subpackage too (only the names of the in-scope modules, see stats_public)
         out.append({"name": name, "category": "stats"})
@@ -681,6 +741,11 @@ def main(dst):
     finder = doctest.DocTestFinder(exclude_empty=True)
     cases = []
     skipped = {}
+    extraction = {"examined": 0, "reasons": {}, "omitted": []}
+    def omit(reason, modname, ex):
+        extraction["reasons"][reason] = extraction["reasons"].get(reason, 0) + 1
+        if ex.want.strip():
+            extraction["omitted"].append({"module": modname, "src": ex.source.strip(), "reason": reason})
     for modname, category in MODULES.items():
         try:
             mod = importlib.import_module(modname)
@@ -688,19 +753,26 @@ def main(dst):
             continue
         extra_public = subpackage_public(modname)
         for test in finder.find(mod):
+            # randomized algorithms (Schreier-Sims, random group elements) give reproducible receivers
+            random.seed(0)
+            sympy.core.random.seed(0)
             globs = {}
             exec("from sympy import *", globs)
             for ex in test.examples:
+                extraction["examined"] += 1
                 src = ex.source.strip()
                 if ex.options.get(doctest.SKIP):
+                    omit("upstream-skip", modname, ex)
                     # SymPy does not run these either (random or illustrative output)
                     continue
                 if re.fullmatch(r"[\w.]+\(\.\.\.\)", ex.want.strip()):
+                    omit("illustrative-output", modname, ex)
                     # only the class of the result is shown (random output elided with ELLIPSIS)
                     continue
                 try:
                     tree = ast.parse(src, mode="eval")
                 except SyntaxError:
+                    omit("statement-or-setup", modname, ex)
                     # statements (assignments, imports): just execute
                     try:
                         signal.alarm(ALARM_SECONDS)
@@ -722,18 +794,22 @@ def main(dst):
                 try:
                     signal.alarm(ALARM_SECONDS)
                     result = eval(compile(tree, "<doctest>", "eval"), globs)
-                except (Exception, Timeout):
+                except (Exception, Timeout) as err:
+                    omit("reference-timeout" if isinstance(err, Timeout) else "reference-exception", modname, ex)
                     continue
                 finally:
                     signal.alarm(0)
                 if record is None or "print" in record["fn"] or record["fn"] in ("str", "srepr", "latex", "repr"):
+                    omit("non-call-expression" if record is None else "printing-expression", modname, ex)
                     continue
                 fn = record["fn"]
                 # only the public API: top-level sympy names and public methods
                 if fn.startswith("."):
                     if fn[1:].startswith("_"):
+                        omit("private-api", modname, ex)
                         continue
                 elif (fn not in PUBLIC and fn not in extra_public) or fn in globs and getattr(globs[fn], "__module__", "").startswith("__"):
+                    omit("not-exported-api", modname, ex)
                     continue
                 DUMMY_IDS.clear()
                 try:
@@ -750,6 +826,7 @@ def main(dst):
                     record.pop("selfSrc", None)
                     record["unsupportedArg"] = str(e)
                 except Exception:
+                    omit("serialization-error", modname, ex)
                     continue
                 from sympy.polys.monomials import Monomial as _Monomial
                 if isinstance(result, (MatrixBase,)):
@@ -760,13 +837,15 @@ def main(dst):
                 elif isinstance(result, (Basic, list, tuple, dict, set, int, float, bool)) or result is None:
                     expected = str(result)
                 else:
+                    omit("unsupported-result-type", modname, ex)
                     continue
                 if "\n" in expected:
+                    omit("multiline-output", modname, ex)
                     continue
                 record.update({"category": category, "module": modname, "src": src, "expected": expected})
                 cases.append(record)
     with open(dst, "w", encoding="utf-8") as f:
-        json.dump({"sympy": sympy.__version__, "api": api_inventory(), "cases": cases}, f, indent=1, ensure_ascii=False)
+        json.dump({"sympy": sympy.__version__, "api": api_inventory(), "cases": cases, "extraction": extraction}, f, indent=1, ensure_ascii=False)
         f.write("\n")
     by_cat = {}
     for c in cases:

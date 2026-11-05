@@ -9,10 +9,11 @@
 import { NotImplementedError } from '../core/errors';
 import { solvePolySystem } from './polysys';
 import { ask, Q } from '../core/refine';
-import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
+import type { ExprLike } from '../core/nodes';
+import { Expr, Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
-import { freeSymbols, xreplace, xreplace as xreplaceS } from '../core/traverse';
+import { freeSymbols, subs, xreplace, xreplace as xreplaceS } from '../core/traverse';
+import type { Truth } from '../core/truth';
 import { at, cast, defined, first, getOrThrow } from '../core/guard';
 import { evalf } from '../numeric/evalf';
 import { evalMp, fromMpc } from '../numeric/mpeval';
@@ -39,6 +40,22 @@ export function asEquation(e: ExprLike): Expr {
   const x = sympify(e);
   if (x instanceof Rel && x.op === 'Eq') return add(x.lhs, mul(-1, x.rhs));
   return x;
+}
+
+/**
+ * Check a candidate by exact substitution and simplification. A tiny numeric
+ * residual is not accepted as zero. An undecidable symbolic residual is unknown.
+ */
+export function checksol(equation: ExprLike, assignments: ReadonlyMap<Expr, ExprLike>): Truth;
+export function checksol(equation: ExprLike, symbol: Expr, value: ExprLike): Truth;
+export function checksol(equation: ExprLike, assignments: ReadonlyMap<Expr, ExprLike> | Expr, value?: ExprLike): Truth {
+  const reps: [Expr, Expr][] = assignments instanceof Expr
+    ? [[assignments, sympify(defined(value, 'solution value'))]]
+    : [...assignments].map(([k, v]) => [k, sympify(v)]);
+  const residual = simplify(subs(asEquation(equation), reps));
+  if (residual instanceof Rational) return residual.isZero;
+  if (residual instanceof Special) return false;
+  return ask(Q.zero(residual));
 }
 
 const sortExprs = (xs: Expr[]): Expr[] =>
