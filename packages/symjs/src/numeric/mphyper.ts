@@ -12,18 +12,16 @@
  * 2F0 at large arguments and the 1/z transformation of q+1Fq, combined by hypercomb, which
  * perturbs the parameters at the poles of the gamma factors; q+1Fq near the unit circle with
  * convergence acceleration (nsum: Richardson and Shanks), divergent series by their Borel
- * integral (quad). mpmath's last resort on the unit circle, Euler-Maclaurin summation, is not
- * ported (NotImplementedError).
+ * integral (quad), with Euler-Maclaurin summation as the final convergent-series fallback.
  */
 
-import { NotImplementedError } from '../core/errors';
 import { at, defined } from '../core/guard';
 import * as F from './mpf';
 import type { Mpf } from './mpf';
 import { ONE, ZERO } from './mpf';
 import * as M from './mpfun';
 import { C0, C1, CI, type Mpc, cadd, cdiv, cexp, cmul, cneg, csub } from './mpfun';
-import { cgamma } from './mpspecial';
+import { bernoulli, cgamma, cloggamma, cpolygamma } from './mpspecial';
 import { chyp2f1 } from './mporthopoly';
 import { quad } from './mpquad';
 
@@ -56,6 +54,8 @@ export interface HyperOptions {
   forceSeries?: boolean;
   maxterms?: number;
   maxprec?: number;
+  /** Bound convergence-acceleration work before trying another method. @internal */
+  maxNsumTerms?: number;
 }
 
 const real = (x: Mpf): Mpc => [x, ZERO];
@@ -938,11 +938,11 @@ function hypq1fq(as: readonly Mpc[], bs: readonly Mpc[], z: Mpc, prec: number, o
       return at(cache, k);
     };
     try {
-      return nsum(term, prec);
+      return nsum(term, prec, opts.maxNsumTerms);
     } catch (err) {
       if (!(err instanceof NoConvergence)) throw err;
     }
-    throw new NotImplementedError('hypergeometric series near the unit circle (mpmath Euler-Maclaurin summation)');
+    if (absz <= 1) return hyperEulerMaclaurin(as, bs, z, prec);
   }
   const p = as.length;
   const h = (ps: Mpc[], wp: number): HyperTerm[] => {
@@ -961,6 +961,85 @@ function hypq1fq(as: readonly Mpc[], bs: readonly Mpc[], z: Mpc, prec: number, o
     ]);
   };
   return hypercomb(h, [...as, ...bs], prec, opts);
+}
+
+/**
+ * mpmath _hypq1fq's last resort: integrate the gamma-ratio tail and add
+ * Euler–Maclaurin corrections. Logarithmic derivatives are polygammas;
+ * exponential Bell polynomials recover the derivatives of the term itself.
+ * maxTruncations bounds work when the error estimate does not converge.
+ * @internal
+ */
+export function hyperEulerMaclaurin(as: readonly Mpc[], bs: readonly Mpc[], z: Mpc, prec: number, maxTruncations = 5, initialTruncation = Math.max(32, 2 * prec)): Mpc {
+  const lower = [...bs, C1];
+  const upperGamma = [...as];
+  const lowerGamma = [...lower];
+  const shifts: Mpc[] = [];
+  // Gamma(n+a)/Gamma(n+a+1) = 1/(n+a). This also avoids cancellation
+  // in logarithmic derivatives and repeated gamma evaluations at quadrature nodes.
+  for (let i = upperGamma.length - 1; i >= 0; i--) {
+    const a = at(upperGamma, i);
+    const j = lowerGamma.findIndex((b) => sameC(csub(b, a, prec + 20), C1));
+    if (j >= 0) {
+      shifts.push(a);
+      upperGamma.splice(i, 1);
+      lowerGamma.splice(j, 1);
+    }
+  }
+  const tolerance = F.ldexp(ONE, -prec - 10);
+  // The continuous tail must start to the right of all gamma poles.
+  let trunc = Math.max(initialTruncation, 1 + Math.ceil(Math.max(0, ...as.map((a) => -F.toNumber(a[0])))));
+  for (let attempt = 0; attempt < maxTruncations; attempt++, trunc *= 2) {
+    const wp = prec + 35 + attempt * Math.ceil(prec / 2);
+    const logz = M.clog(z, wp);
+    const scale = defined(gammaprod(bs, as, wp), 'finite hypergeometric prefactor');
+    let head: Mpc = C0;
+    let term: Mpc = C1;
+    for (let k = 0; k < trunc; k++) {
+      head = cadd(head, term, wp);
+      for (const a of as) term = cmul(term, cadd(a, int(k), wp), wp);
+      for (const b of lower) term = cdiv(term, cadd(b, int(k), wp), wp);
+      term = cmul(term, z, wp);
+    }
+    const continuousTerm = (n: Mpc, p: number): Mpc => {
+      // Large quadrature nodes need extra bits when log-gamma terms cancel.
+      const work = p + Math.max(0, cmag(n)) + 20;
+      const logs = csub(sumC(upperGamma.map((a) => cloggamma(cadd(a, n, work), work)), work), sumC(lowerGamma.map((b) => cloggamma(cadd(b, n, work), work)), work), work);
+      let value = cmul(scale, cexp(cadd(logs, cmul(n, logz, work), work), work), work);
+      for (const a of shifts) value = cdiv(value, cadd(n, a, work), work);
+      return rnd(value, p);
+    };
+    const [integral, error] = quad(continuousTerm, [int(trunc)], true, wp);
+    if (F.cmp(error, tolerance) > 0) continue;
+    let tail = cadd(integral, cmul(term, real(F.ldexp(ONE, -1)), wp), wp);
+    const derivatives: Mpc[] = [term];
+    const logs: Mpc[] = [];
+    let factorial = 1n;
+    let previous = Infinity;
+    for (let order = 1; order <= Math.max(12, prec); order++) {
+      let logarithmic = csub(sumC(upperGamma.map((a) => cpolygamma(order - 1, cadd(a, int(trunc), wp), wp)), wp), sumC(lowerGamma.map((b) => cpolygamma(order - 1, cadd(b, int(trunc), wp), wp)), wp), wp);
+      for (const a of shifts) logarithmic = cadd(logarithmic, cmul(int(order % 2 ? -factorial : factorial), M.cpowInt(cadd(a, int(trunc), wp), -BigInt(order), wp), wp), wp);
+      if (order === 1) logarithmic = cadd(logarithmic, logz, wp);
+      logs.push(logarithmic);
+      let derivative: Mpc = C0;
+      let binomial = 1n;
+      for (let j = 0; j < order; j++) {
+        derivative = cadd(derivative, cmul(int(binomial), cmul(at(derivatives, order - 1 - j), at(logs, j), wp), wp), wp);
+        binomial = binomial * BigInt(order - 1 - j) / BigInt(j + 1);
+      }
+      derivatives.push(derivative);
+      factorial *= BigInt(order);
+      if (order % 2 === 0) continue;
+      const [bp, bq] = bernoulli(order + 1);
+      const correction = cmul(derivative, real(F.fromRational(bp, bq * factorial * BigInt(order + 1), wp)), wp);
+      const magnitude = cmag(correction);
+      if (magnitude > previous) break;
+      tail = csub(tail, correction, wp);
+      if (magnitude < -prec - 12) return rnd(cadd(head, tail, wp), prec);
+      previous = magnitude;
+    }
+  }
+  throw new NoConvergence('Euler-Maclaurin summation did not converge');
 }
 
 /**

@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { DiracDelta, Eq, Gt, Heaviside, I, Lt, Rational, Sym, abs, add, and, arg, exp, expPolar, hyper, meijerg, mul, parse, pi, pow, sqrt, sstr, tan, type Expr } from '../../src';
-import { CoeffExpError, condsimp, findSplittingPoints, getCoeffExp, liftPolar, meijerintDefinite, meijerintInversion, rewriteSingle, splitMul, unpolarifyExponents } from '../../src/integrals/meijerint';
+import { CoeffExpError, condsimp, findSplittingPoints, getCoeffExp, liftPolar, laplaceBesselProduct, meijerintDefinite, meijerintInversion, rewriteSingle, splitMul, unpolarifyExponents } from '../../src/integrals/meijerint';
 
 const R = (p: number, q: number): Expr => Rational.of(BigInt(p), BigInt(q));
 
@@ -16,12 +16,32 @@ const [x, a, b, k, y] = [new Sym('x'), new Sym('a'), new Sym('b'), new Sym('k'),
 const P = (q: string): Expr => parse(q.replace(/S\((\d+)\)\/(\d+)/g, '($1/$2)'), { symbols: [x, a, b, k, y], locals: { Heaviside, DiracDelta, G0: (z: Expr) => meijerg([], [], [0], [], z) } });
 const run = (f: string, lo: string, hi: string): string[] | undefined => meijerintDefinite(P(f), x, P(lo), P(hi))?.map((e) => sstr(e));
 
+describe('Laplace integrals of Bessel products', () => {
+  it('handles unequal real frequencies and a constant multiplier', () => {
+    expect(laplaceBesselProduct(P('3*exp(-2*x)*besselj(0,x)*besselj(0,2*x)'), x)?.map((e) => sstr(e))).toEqual(['6*sqrt(5)*elliptic_k(-8/5)/(5*pi)', 'True']);
+    expect(String(laplaceBesselProduct(P('exp(-a*x)*besselj(0,x)**2'), x)?.[1])).toBe('re(a) > 0');
+  });
+  it.each([
+    'besselj(0,x)',
+    'exp(-x)*besselj(0,x**2)**2',
+    'exp(-x)*besselj(0,(1+I)*x)**2',
+    'exp(-3*x)*besseli(0,x)**2',
+    'exp(x)*besselj(0,x)**2',
+    'exp(-x/2)*besseli(0,x)',
+  ])('does not apply a formula outside its convergence domain: %s', (e) => {
+    expect(laplaceBesselProduct(P(e), x)).toBeUndefined();
+  });
+});
+
 describe('meijerint_definite: the results of SymPy', () => {
   const cases: [string, string, string, string[] | 'None'][] = [
     ["exp(-x**2)", "0", "oo", ["sqrt(pi)/2", "True"]],
     ["x**a*exp(-x)", "0", "oo", ["gamma(a + 1)", "re(a) > -1"]],
     ["sin(x)/x", "0", "oo", ["pi/2", "True"]],
     ["besselj(0,x)*exp(-x)", "0", "oo", ["sqrt(2)/2", "True"]],
+    // SymPy writes elliptic_k(4*exp_polar(I*pi)); the negative argument is on the same branch.
+    ["besselj(0,x)**2*exp(-x)", "0", "oo", ["2*elliptic_k(-4)/pi", "True"]],
+    ["besseli(0,x)*exp(-2*x)", "0", "oo", ["sqrt(3)/3", "True"]],
     ["exp(-x)*sin(x)", "0", "oo", ["1/2", "True"]],
     ["exp(-x**2)*cos(x)", "0", "oo", ["sqrt(pi)*exp(-1/4)/2", "True"]],
     ["exp(-x)", "-oo", "0", "None"],
@@ -149,10 +169,6 @@ describe('meijerint_definite: integrals symjs does not do', () => {
     // SymPy: None
     ['log(sin(x))**2', '0', 'oo'],
     ['log(sin(x))*Heaviside(1-x)', '0', 'oo'],
-    // SymPy: ['2*elliptic_k(4*exp_polar(I*pi))/pi', 'True']
-    ["besselj(0,x)**2*exp(-x)", "0", "oo"],
-    // SymPy: ['sqrt(3)/3', 'True']
-    ["besseli(0,x)*exp(-2*x)", "0", "oo"],
   ];
   it.each(cases)('%s over (%s, %s)', (f, lo, hi) => expect(run(f, lo, hi)).toBeUndefined());
 });

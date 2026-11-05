@@ -24,7 +24,7 @@ import { powdenest, powsimp } from '../simplify/powsimp';
 import { together } from '../simplify/rational';
 import { expand, expandMul } from '../simplify/expand';
 import { coeff } from '../core/methods';
-import { Expander, SCALED_BESSELI, SCALED_BESSELK, isZeroCoeff } from './puiseux';
+import { Expander, SCALED_BESSELI, SCALED_BESSELK, SCALED_EI, SCALED_ERFC, isZeroCoeff } from './puiseux';
 
 /** Functions whose expansion at an infinite argument is known (or that the expansion rejects). */
 const TAME = new Set(['sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch', 'asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'loggamma', 'polygamma', 'abs', 're', 'im', 'arg']);
@@ -201,6 +201,10 @@ export class Gruntz {
       // (the Bessel helpers of rewriteTractable: their order nu is free of x)
       const [s, expr] = this.mrv(last(e.args), x);
       return [s, new UndefFn(e.name, [first(e.args), expr])];
+    }
+    if (e instanceof UndefFn && (e.name === SCALED_EI || e.name === SCALED_ERFC)) {
+      const [s, expr] = this.mrv(first(e.args), x);
+      return [s, new UndefFn(e.name, [expr])];
     }
     throw new GruntzError(`cannot compute the mrv set of ${e.toString()}`);
   }
@@ -482,6 +486,12 @@ function rewriteTractable(e: Expr, x: Sym, limitinf: (g: Expr) => Expr | undefin
         const g = last(a.args);
         const i = a.name === 'besseli';
         return mul(exp(i ? g : mul(-1, g)), new UndefFn(i ? SCALED_BESSELI : SCALED_BESSELK, a.args));
+      }
+      if (['Ei', 'erf', 'erfc'].includes(a.name) && limitinf(first(a.args)) === S.Infinity) {
+        const g = first(a.args);
+        if (a.name === 'Ei') return mul(exp(g), new UndefFn(SCALED_EI, [g]));
+        const tail = mul(exp(mul(-1, pow(g, 2))), new UndefFn(SCALED_ERFC, [g]));
+        return a.name === 'erfc' ? tail : add(1, mul(-1, tail));
       }
       if (a.name === 'factorial') return exp(fn('loggamma', [add(first(a.args), 1)]));
       if (a.name === 'gamma') return exp(fn('loggamma', [first(a.args)]));

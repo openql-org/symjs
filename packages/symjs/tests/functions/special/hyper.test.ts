@@ -267,9 +267,12 @@ describe('hyper: cases outside the table', () => {
       // the Borel sum of a divergent series (SymPy 0.98948 at 5 digits)
       expect(N(['1/2', '1/3', '1/4'], ['5/3'], '-1/2', 5)).toBe('0.98948');
     });
-    it('Euler-Maclaurin summation is not ported', () => {
-      // SymPy 1.08856221958527: mpmath sums by Euler-Maclaurin after nsum fails, not ported here
-      expect(N(['1/2', '1/2', '1/2'], ['3/2', '3/2'], '999/1000')).toBe('hyper((0.5, 0.5, 0.5), (1.5, 1.5), 0.999)');
+    it('Euler-Maclaurin summation after convergence acceleration fails', () => {
+      // SymPy 1.08856221958527: mpmath sums by Euler-Maclaurin after nsum fails
+      expect(N(['1/2', '1/2', '1/2'], ['3/2', '3/2'], '999/1000')).toBe('1.08856221958527');
+    });
+    it('retains a divergent 4F0 without a supported summation method', () => {
+      expect(N(['1/2', '1/2', '1/2', '1/2'], [], '1')).toBe('hyper((0.5, 0.5, 0.5, 0.5), (), 1.0)');
     });
     it('with the values of symbols', () => {
       // the values of symbols (SymPy hyper((1, 2), (3, 4), y).evalf(subs={y: 2}), hyper((1, y), (3,), 1/2))

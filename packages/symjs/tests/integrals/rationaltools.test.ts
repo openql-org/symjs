@@ -4,8 +4,10 @@
 // Tests of src/integrals/rationaltools.ts (SymPy ratint). Expected values are those of SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { Sym, parse, sstr } from '../../src';
+import { Sym, parse, sstr, diff, nroots, doit } from '../../src';
 import { Poly } from '../../src/polys/sympoly';
+import { RootSumNode } from '../../src/polys/rootsum';
+import { cast, defined } from '../../src/core/guard';
 import { cancelFraction, isRationalIn, logToAtan, logToReal, ratint, ratintLogpart, ratintRatpart } from '../../src/integrals/rationaltools';
 
 const x = new Sym('x');
@@ -61,14 +63,37 @@ describe('ratint', () => {
     ['-(a1 + 2*a2*x + 3*a3*x**2 + 4*a4*x**3)/(2*(a0 + a1*x + a2*x**2 + a3*x**3 + a4*x**4))', '-log(a0 + a1*x + a2*x**2 + a3*x**3 + a4*x**4)/2'],
   ])('%s', (f, want) => expect(R(f)).toBe(want));
 
-  it('roots that are not found give a RootSum or nothing', () => {
-    // SymPy: (-1/(23*(1/46 + 3*sqrt(69)/1058)**(1/3)) + ...)*log(...) + ... (Cardano's formulas, not written here)
-    expect(R('1/(x**3-x+1)')).toBe('RootSum(23*_t**3 + 3*_t - 1, Lambda(_t, _t*log(46*_t**2/9 + 23*_t/9 + x + 4/9)))');
-    // SymPy: -sqrt(2)*log(x**2 - sqrt(2)*x + 1)/8 + sqrt(2)*log(x**2 + sqrt(2)*x + 1)/8 + sqrt(2)*atan(sqrt(2)*x - 1)/4
-    // + sqrt(2)*atan(sqrt(2)*x + 1)/4 (the roots of an irreducible quartic are not found here)
-    expect(R('1/(x**4+1)')).toBe('RootSum(256*_t**4 + 1, Lambda(_t, _t*log(4*_t + x)))');
-    // a logarithmic part of degree 5 or more: the resultant is too large here (SymPy: a RootSum)
-    expect(R('(x**4+1)/(x**5+2*x**4+3*x+1)')).toBe('None');
+  it('writes cubic and quartic roots in radicals', () => {
+    // SymPy uses Cardano radicals and logarithms for the cubic. Check its derivative independently,
+    // since ordering and factoring the complex conjugate logarithms changes the printed form.
+    const f = parse('1/(x**3-x+1)');
+    const antiderivative = defined(ratint(f, x), 'rational primitive');
+    expect(String(antiderivative)).not.toContain('RootSum');
+    for (const at of [-2, 0, 2]) {
+      const got = diff(antiderivative, x).subs([[x, at]]).evalf(25).toComplex();
+      expect(got.re).toBeCloseTo(f.subs([[x, at]]).toNumber(), 12);
+      expect(got.im).toBeCloseTo(0, 12);
+    }
+    expect(R('1/(x**4+1)')).toBe('-sqrt(2)*log(x**2 - sqrt(2)*x + 1)/8 + sqrt(2)*log(x**2 + sqrt(2)*x + 1)/8 + sqrt(2)*atan(sqrt(2)*x - 1)/4 + sqrt(2)*atan(sqrt(2)*x + 1)/4');
+  });
+
+  it.each([5, 7, 9])('uses a residue RootSum for a square-free denominator of degree %i', (degree) => {
+    const f = parse(`(x**${degree - 1}+1)/(x**${degree}+2*x**${degree - 1}+3*x+1)`);
+    const result = ratint(f, x);
+    expect(result).toBeInstanceOf(RootSumNode);
+    const r = cast(result, RootSumNode);
+    expect(doit(r).key).toBe(r.key);
+    expect(diff(r, x)).toBeInstanceOf(RootSumNode);
+    // Partial fractions: sum r(a)/(Q'(a)*(x-a)) equals the original rational function.
+    const values = nroots(r.poly, 25, cast(r.variable, Sym));
+    for (const at of [0, 1, 3]) {
+      const terms = values.map((root) => diff(r.fun.call(root), x).subs([[x, at]]).toComplex());
+      expect(terms.reduce((s, z) => s + z.re, 0)).toBeCloseTo(f.subs([[x, at]]).toNumber(), 10);
+      expect(terms.reduce((s, z) => s + z.im, 0)).toBeCloseTo(0, 10);
+    }
+  });
+
+  it('rejects non-rational integrands', () => {
     expect(R('sin(x)/(x + 1)')).toBe('None');
     expect(R('1/(x + sin(x))')).toBe('None');
   });

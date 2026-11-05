@@ -5,9 +5,10 @@
 
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
-import { add, checkodesol, diff, Dummy, dsolve, Eq, Integral, neg, NotImplementedError, parse, sstr, symbols, SymFunction as Fn } from '../../src';
+import { add, checkodesol, diff, Dummy, dsolve, Eq, Integral, neg, NotImplementedError, parse, sstr, symbols, SymFunction as Fn, cancel, Rel, UndefFn, xreplace, sub, Rational } from '../../src';
 import type { Expr } from '../../src/core/nodes';
 import { constantCount, solvesOdeSystem } from '../../../../compat/ode-checks';
+import { at, cast } from '../../src/core/guard';
 
 const [t] = symbols('t');
 const f = Fn('f');
@@ -23,6 +24,37 @@ const sys = (...eqs: string[]) => show(dsolve(eqs.map((e) => parse(e)), [f(t), g
 const h = Fn('h');
 const first2 = (r: unknown) => (Array.isArray(r) ? (r[0] as unknown) : r);
 const sys2 = (eqs: string[], fs = [f(t), g(t)]) => show(dsolve(eqs.map((e) => parse(e)), fs));
+
+/** Normalize the public union after checking every returned relation. */
+function systemFamilies(result: ReturnType<typeof dsolve>): Rel[][] {
+  if (!Array.isArray(result)) throw new TypeError('expected system solution relations');
+  if (result.some(Array.isArray)) return result.map((family) => {
+    if (!Array.isArray(family)) throw new TypeError('expected a complete solution family');
+    return family.map((relation) => cast(relation, Rel));
+  });
+  return [result.map((relation) => cast(relation, Rel))];
+}
+
+/** Differentiate every returned relation, then substitute the original vector field and algebraic relations. */
+function checkRelations(families: Expr[][], functions: Expr[], velocities: Expr[]): void {
+  expect(families.length).toBeGreaterThan(0);
+  for (const family of families) {
+    expect(family).toHaveLength(functions.length);
+    const equations = family.map((e) => cast(e, Rel));
+    const explicit = equations.filter((r) => r.lhs instanceof UndefFn).map((r): [Expr, Expr] => [r.lhs, r.rhs]);
+    for (const relation of equations) {
+      const derivative = diff(sub(relation.lhs, relation.rhs), t);
+      const r = cancel(xreplace(xreplace(derivative, functions.map((f, i): [Expr, Expr] => [diff(f, t), at(velocities, i)])), explicit));
+      for (const point of [0.23, 0.67, 1.13]) {
+        const hundredths = Math.round(point * 100);
+        const values: [Expr, Expr][] = [...r.freeSymbols()].map((s, i) => [s, Rational.of(s.key === t.key ? hundredths : 100 * (3 + i) + hundredths, 100)]);
+        values.push(...functions.map((f, i): [Expr, Expr] => [f, Rational.of(hundredths + 20 * i, 100)]));
+        const value = xreplace(r, values).evalf(40).toComplex();
+        expect(Math.hypot(value.re, value.im)).toBeLessThan(1e-10);
+      }
+    }
+  }
+}
 
 // expected values from SymPy 1.14 dsolve
 describe('dsolve systems', () => {
@@ -64,8 +96,9 @@ describe('dsolve systems', () => {
     // SymPy: [[Eq(f(t), C1 - sqrt(C2)*t), Eq(g(t), C2)], [Eq(f(t), C1 + sqrt(C2)*t), Eq(g(t), C2)]] (the constants named in another order)
     const three = dsolve(['Derivative(f(t), t)**2 - g(t)', 'Derivative(g(t), t)'].map((e) => parse(e)), [f(t), g(t)]) as Expr[][];
     expect(three.map(show)).toEqual(['[Eq(f(t), sqrt(C1)*t + C2), Eq(g(t), C1)]', '[Eq(f(t), -sqrt(C1)*t + C2), Eq(g(t), C1)]']);
-    // SymPy: NotImplementedError as well
-    expect(() => sys2(['Derivative(f(t), t) - g(t)**2', 'Derivative(g(t), t) - f(t)**2'])).toThrow(NotImplementedError);
+    // This autonomous system has an algebraic orbit and a valid time quadrature.
+    const eqs = ['Derivative(f(t), t) - g(t)**2', 'Derivative(g(t), t) - f(t)**2'].map((e) => parse(e));
+    checkRelations(systemFamilies(dsolve(eqs, [f(t), g(t)])), [f(t), g(t)], ['g(t)**2', 'f(t)**2'].map((e) => parse(e)));
   });
   it('A(t) = phi(t)*M with M constant', () => {
     // SymPy: [Eq(f(t), -(C1/2 - C2/2)*exp(-t**2/2) + (C1/2 + C2/2)*exp(t**2/2)),
@@ -198,12 +231,74 @@ describe('nonlinear systems of two first-order equations', () => {
   it('other systems', () => {
     // SymPy: NotImplementedError; x' + y' is not of the form x' = f(x, y, t)
     expect(nl('Derivative(x(t), t) + Derivative(y(t), t) - y(t)**2', 'Derivative(y(t), t) - y(t)**2')).toBe('[Eq(x(t), C2), Eq(y(t), -1/(C1 + t))]');
-    // SymPy: Eq(Integral(...), C3 + ...) for each function (type 1 of three equations); not supported here
+    // SymPy returns three quadratures. One quadrature plus two shared algebraic invariants
+    // keeps the phase constants consistent and represents all four square-root branches.
     const Z = Fn('z');
-    expect(() => dsolve(['4*Derivative(x(t), t) + 2*y(t)*z(t)', '3*Derivative(y(t), t) - z(t)*x(t)', '5*Derivative(z(t), t) - x(t)*y(t)'].map((e) => parse(e)), [X(t), Y(t), Z(t)])).toThrow(NotImplementedError);
+    for (const timeFactor of ['1', 'sin(t)']) {
+      const velocities = [`-y(t)*z(t)*${timeFactor}/2`, `x(t)*z(t)*${timeFactor}/3`, `x(t)*y(t)*${timeFactor}/5`].map((e) => parse(e));
+      const fs = [X(t), Y(t), Z(t)];
+      const solutions = systemFamilies(dsolve(fs.map((f, i) => sub(diff(f, t), at(velocities, i))), fs));
+      expect(solutions).toHaveLength(4);
+      expect(constantCount(String(solutions))).toBe(3);
+      checkRelations(solutions, fs, velocities);
+    }
   });
-  it('type 3 needs integrals that are not evaluated (SymPy NotImplementedError as well)', () => {
-    expect(() => nl('Derivative(x(t), t) - y(t)*x(t)', 'Derivative(y(t), t) - x(t)**3')).toThrow(NotImplementedError);
+  it('type 3: an autonomous power system, including its zero-invariant family', () => {
+    const eqs = ['Derivative(x(t), t) - y(t)*x(t)', 'Derivative(y(t), t) - x(t)**3'].map((e) => parse(e));
+    const families = systemFamilies(dsolve(eqs, [X(t), Y(t)]));
+    expect(families).toHaveLength(2);
+    expect(constantCount(String(families[0]))).toBe(2);
+    expect(constantCount(String(families[1]))).toBe(1);
+    checkRelations(families, [X(t), Y(t)], ['y(t)*x(t)', 'x(t)**3'].map((e) => parse(e)));
+  });
+  it('uses an orbit quadrature for a noninteger power without assuming a power identity', () => {
+    const fs = [X(t), Y(t)];
+    const rhs = ['x(t)*y(t)', 'sqrt(x(t))'].map((e) => parse(e));
+    const families = systemFamilies(dsolve(fs.map((f, i) => sub(diff(f, t), at(rhs, i))), fs));
+    checkRelations(families, fs, rhs);
+  });
+  it('keeps input parameters distinct from new integration constants', () => {
+    const two = [X(t), Y(t)];
+    const velocities = ['C1*x(t)*y(t)', 'x(t)**3'].map((e) => parse(e));
+    const result = systemFamilies(dsolve(two.map((f, i) => sub(diff(f, t), at(velocities, i))), two));
+    expect([...at(result, 0).flatMap((r) => [...r.freeSymbols()])].map(String)).toContain('C1');
+    expect(constantCount(String(at(result, 0)))).toBe(3); // one parameter and two integration constants
+    checkRelations(result, two, velocities);
+    const three = [...two, Fn('z')(t)];
+    const rhs = ['C1*y(t)*z(t)', '2*x(t)*z(t)', '3*x(t)*y(t)'].map((e) => parse(e));
+    const families = systemFamilies(dsolve(three.map((f, i) => sub(diff(f, t), at(rhs, i))), three));
+    expect(constantCount(String(at(families, 0)))).toBe(4);
+    checkRelations(families, three, rhs);
+  });
+  it('uses the second orbit coordinate when its time equation is invertible', () => {
+    const fs = [X(t), Y(t)];
+    const rhs = ['y(t)*(x(t)+y(t))', 'y(t)'].map((e) => parse(e));
+    const result = systemFamilies(dsolve(fs.map((f, i) => sub(diff(f, t), at(rhs, i))), fs));
+    // Integrating dx/dy=x+y gives x=C1*exp(y)-y-1 and y=C2*exp(t).
+    expect(constantCount(String(result))).toBe(2);
+    checkRelations(result, fs, rhs);
+  });
+  it('keeps the time quadrature when the orbit cannot be inverted in the first coordinate', () => {
+    const fs = [X(t), Y(t)];
+    const rhs = ['x(t)+y(t)', '(x(t)+y(t))*(y(t)+log(y(t)))'].map((e) => parse(e));
+    const result = systemFamilies(dsolve(fs.map((f, i) => sub(diff(f, t), at(rhs, i))), fs));
+    expect(constantCount(String(result))).toBe(2);
+    checkRelations(result, fs, rhs);
+  });
+  it.each([
+    ['Derivative(x(t),t)**2-y(t)*z(t)', 'Derivative(y(t),t)-x(t)*z(t)', 'Derivative(z(t),t)-x(t)*y(t)'],
+    ['Derivative(x(t),t)+Derivative(y(t),t)-y(t)*z(t)', '2*Derivative(x(t),t)+2*Derivative(y(t),t)-x(t)*z(t)', 'Derivative(z(t),t)-x(t)*y(t)'],
+    ['Derivative(x(t),t)-y(t)**2-z(t)', 'Derivative(y(t),t)-x(t)*z(t)', 'Derivative(z(t),t)-x(t)*y(t)'],
+    ['Derivative(x(t),t)-y(t)*z(t)', 'Derivative(y(t),t)-t*x(t)*z(t)', 'Derivative(z(t),t)-x(t)*y(t)'],
+  ])('does not apply the Euler formula to an unsupported system: %s', (...equations) => {
+    // These systems do not meet the Euler reduction's hypotheses. An unsupported
+    // valid system raises NotImplementedError, never a malformed solution.
+    expect(() => dsolve(equations.map((e) => parse(e)), [X(t), Y(t), Fn('z')(t)])).toThrow(NotImplementedError);
+  });
+  it('reports an unsupported coupled nonlinear system of four functions', () => {
+    const fs = [X(t), Y(t), Fn('z')(t), Fn('w')(t)];
+    const rhs = ['y(t)*z(t)', 'z(t)*w(t)', 'w(t)*x(t)', 'x(t)*y(t)'].map((e) => parse(e));
+    expect(() => dsolve(fs.map((f, i) => sub(diff(f, t), at(rhs, i))), fs)).toThrow(NotImplementedError);
   });
 });
 

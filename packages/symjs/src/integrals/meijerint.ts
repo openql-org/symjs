@@ -35,6 +35,8 @@ import { lcm } from '../core/numbers';
 import { mapBottomUp, some, xreplace } from '../core/traverse';
 import { asCoeffMul } from '../core/methods';
 import { isPositive, isNegative, isReal } from '../core/assumptions';
+import { ellipticK } from '../functions/special/ellipticintegrals';
+import { cancel } from '../simplify/rational';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { abs, arg, cos, im, log, re, sin } from '../functions/elementary/elementary';
 import { factorial, gamma, sign } from '../functions/special/special';
@@ -833,6 +835,8 @@ function meijerintDefinite4(f: Expr, x: Sym): [Expr, Expr] | undefined {
 
 /** The integral over (0, oo), also term by term (SymPy _meijerint_definite_3). */
 function meijerintDefinite3(f: Expr, x: Sym): [Expr, Expr] | undefined {
+  const laplace = laplaceBesselProduct(f, x);
+  if (laplace) return laplace;
   const res = meijerintDefinite4(f, x);
   if (res) return res;
   if (!(f instanceof Add)) return undefined;
@@ -840,6 +844,43 @@ function meijerintDefinite3(f: Expr, x: Sym): [Expr, Expr] | undefined {
   if (ress.some((r) => r === undefined)) return undefined;
   const parts = ress.filter((r): r is [Expr, Expr] => r !== undefined);
   return [add(...parts.map(([v]) => v)), and(...parts.map(([, cc]) => cc))];
+}
+
+/** Laplace transforms of J0(a*x)J0(b*x) and I0(a*x), reduced to K and radicals. @internal */
+export function laplaceBesselProduct(f: Expr, x: Sym): [Expr, Expr] | undefined {
+  const factors = f instanceof Mul ? f.args : [f];
+  const scales: Expr[] = [];
+  let damping: Expr | undefined;
+  let modified = false;
+  let coefficient: Expr = S.One;
+  for (const factor of factors) {
+    if (!factor.has(x)) { coefficient = mul(coefficient, factor); continue; }
+    if (factor instanceof Pow && factor.base === S.E && damping === undefined) {
+      const s = cancel(mul(-1, factor.exp, pow(x, -1)));
+      if (s.has(x)) return undefined;
+      damping = s;
+      continue;
+    }
+    const bessel = factor instanceof Pow && factor.exp.equals(S.Two) ? factor.base : factor;
+    if (!(bessel instanceof Fn) || !['besselj', 'besseli'].includes(bessel.name) || !at(bessel.args, 0).equals(S.Zero)) return undefined;
+    const scale = cancel(mul(at(bessel.args, 1), pow(x, -1)));
+    if (scale.has(x) || isReal(scale) !== true) return undefined;
+    modified ||= bessel.name === 'besseli';
+    scales.push(scale);
+    if (factor instanceof Pow) scales.push(scale);
+  }
+  if (damping === undefined) return undefined;
+  if (modified) {
+    if (scales.length !== 1) return undefined;
+    const a = first(scales);
+    const cond = Gt(re(damping), abs(a));
+    return isFalse(cond) ? undefined : [mul(coefficient, pow(sub(pow(damping, 2), pow(a, 2)), neg(S.Half))), cond];
+  }
+  if (scales.length !== 2) return undefined;
+  const [a, b] = pair(scales);
+  const d = add(pow(damping, 2), pow(sub(a, b), 2));
+  const cond = Gt(re(damping), 0);
+  return isFalse(cond) ? undefined : [mul(coefficient, 2, pow(mul(S.Pi, sqrt(d)), -1), ellipticK(mul(-4, a, b, pow(d, -1)))), cond];
 }
 
 /** The integral over (0, oo) of f and of its expansions (SymPy _meijerint_definite_2). */

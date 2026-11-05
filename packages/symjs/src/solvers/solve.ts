@@ -12,13 +12,13 @@ import { ask, Q } from '../core/refine';
 import type { ExprLike } from '../core/nodes';
 import { Expr, Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
-import { freeSymbols, subs, xreplace, xreplace as xreplaceS } from '../core/traverse';
+import { freeSymbols, mapBottomUp, subs, xreplace, xreplace as xreplaceS } from '../core/traverse';
 import type { Truth } from '../core/truth';
 import { at, cast, defined, first, getOrThrow } from '../core/guard';
 import { evalf } from '../numeric/evalf';
 import { evalMp, fromMpc } from '../numeric/mpeval';
 import { diff } from '../calculus/diff';
-import { acos, asin, atan, log } from '../functions/elementary/elementary';
+import { acos, asin, atan, cosh, sinh, tanh, log } from '../functions/elementary/elementary';
 import { polyCoefficients, roots } from '../polys/poly';
 import { Poly } from '../polys/sympoly';
 import { linearEqToMatrix, solveAugmented } from '../matrices/linsys';
@@ -27,7 +27,7 @@ import { Matrix } from '../matrices/matrix';
 import { ExprMap } from '../core/exprmap';
 import { generateBell } from '../utilities/iterables';
 import { compareKeys, sortKey } from '../printing/sortkey';
-import { expand, expandMul } from '../simplify/expand';
+import { expand, expandMul, expand_power_exp } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { radsimp } from '../simplify/radsimp';
 import { simplify } from '../simplify/simplify';
@@ -140,6 +140,17 @@ function invertFn(f: Fn | Pow, y: Expr, x: Sym): [Expr, Expr[]] | undefined {
       return [u, [acos(y), add(mul(2, S.Pi), mul(-1, acos(y)))]];
     case 'tan':
       return [u, [atan(y)]];
+    case 'cosh': {
+      const r = pow(add(pow(y, 2), -1), S.Half);
+      return [u, [log(add(y, mul(-1, r))), log(add(y, r))]];
+    }
+    case 'sinh': {
+      const r = pow(add(pow(y, 2), 1), S.Half);
+      return [u, [log(add(y, mul(-1, r))), log(add(y, r))]];
+    }
+    case 'asinh': return [u, [sinh(y)]];
+    case 'acosh': return [u, [cosh(y)]];
+    case 'atanh': return [u, [tanh(y)]];
     default:
       return undefined;
   }
@@ -179,7 +190,7 @@ const gcdBig = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcdBig(b, a % b
 
 function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
   if (depth > MAX_DEPTH) throw new NotImplementedError('solve: recursion too deep');
-  const f = f0;
+  const f = mapBottomUp(f0, (e) => e instanceof Pow && e.base === S.E && e.exp instanceof Add && e.exp.has(x) ? expand_power_exp(e) : e);
   if (!f.has(x)) return [];
   // a single exponential term or 1/x: isolate it before clearing denominators
   if (f instanceof Add) {
@@ -790,8 +801,8 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
           if (unknowns.some((w) => c1.has(w))) go([c1, c0, ...pending.filter((p) => p !== e)], assigned);
           const val = cancel(mul(-1, c0, pow(c1, -1)));
           const next = new Map(assigned);
-          next.set(u.key, val);
           for (const [k, w] of next) next.set(k, cancel(xreplace(w, [[u, val]])));
+          next.set(u.key, val);
           go(
             pending.filter((p) => p !== e).map((p) => xreplace(p, [[u, val]])),
             next,
@@ -815,8 +826,11 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
       }
       for (const s of sols) {
         const next = new Map(assigned);
-        next.set(u.key, s);
         for (const [k, w] of next) next.set(k, simplifyBack(xreplace(w, [[u, s]])));
+        // Substitute into previously assigned coordinates only. An indexed root
+        // binds the generator of its defining polynomial; substituting into the
+        // root itself would corrupt that polynomial.
+        next.set(u.key, s);
         go(
           pending.filter((p) => p !== e).map((p) => xreplace(p, [[u, s]])),
           next,
@@ -829,8 +843,8 @@ export function nonlinsolve(eqs: readonly ExprLike[], syms: readonly Sym[]): Exp
     if (numers.every((e) => unknowns.every((u) => polyCoefficients(e, u) !== undefined))) {
       for (const sol of solvePolySystem(numers, unknowns)) {
         const next = new Map(assigned);
-        unknowns.forEach((u, i) => next.set(u.key, at(sol, i)));
         for (const [k, w] of next) next.set(k, simplifyBack(xreplace(w, unknowns.map((u, i): [Expr, Expr] => [u, at(sol, i)]))));
+        unknowns.forEach((u, i) => next.set(u.key, at(sol, i)));
         // every unknown is assigned now
         results.push(syms.map((s) => getOrThrow(next, s.key)));
       }

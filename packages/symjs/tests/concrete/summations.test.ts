@@ -434,16 +434,12 @@ describe('results that differ from SymPy 1.14', () => {
     ["sj.summation(P('1/((k**2-1)*(k**2-9))'), [k, 5, sj.oo])", () => sj.summation(P('1/((k**2-1)*(k**2-9))'), [k, 5, sj.oo]), "Sum(1/((k**2 - 9)*(k**2 - 1)), (k, 5, oo))", "(90 - 118*exp_polar(0))/(288*(105 - 105*exp_polar(0))) + 7*(5*exp_polar(0) + 15)/(1440*(105 - 105*exp_polar(0)))"],
     // a pole inside the range (the term at k = 1 is zoo)
     ["sj.summation(P('1/(k**2-1)'), [k, 0, sj.oo])", () => sj.summation(P('1/(k**2-1)'), [k, 0, sj.oo]), "Sum(1/(k**2 - 1), (k, 0, oo))", "zoo"],
-    // the denominator has no roots in radicals here; SymPy's 1/4 is wrong (the terms for k = 0, 1 already give 3/4)
-    ["sj.summation(P('1/(k**4+k**2+2)'), [k, 0, sj.oo])", () => sj.summation(P('1/(k**4+k**2+2)'), [k, 0, sj.oo]), "Sum(1/(k**4 + k**2 + 2), (k, 0, oo))", "1/4"],
     // the term at k = 0 is zoo
     ["sj.summation(P('1/k**2'), [k, moo, sj.oo])", () => sj.summation(P('1/k**2'), [k, moo, sj.oo]), "Sum(k**(-2), (k, -oo, oo))", "zoo"],
     // no summation by residues from -oo (as SymPy)
     ["sj.summation(P('1/(k**2+1)'), [k, moo, 3])", () => sj.summation(P('1/(k**2+1)'), [k, moo, 3]), "Sum(1/(k**2 + 1), (k, -oo, 3))", "Sum(1/(k**2 + 1), (k, -oo, 3))"],
     // arithmetic-geometric sums are not implemented
     ["sj.summation(P('k*2**k'), [k, 0, n])", () => sj.summation(P('k*2**k'), [k, 0, n]), "Sum(2**k*k, (k, 0, n))", "2*(2**n*n - 2**n + 1)"],
-    // the roots are not computed for an irreducible quartic
-    ["sj.product(P('k**4+k**2+2'), [k, 1, n])", () => sj.product(P('k**4+k**2+2'), [k, 1, n]), "Product(k**4 + k**2 + 2, (k, 1, n))", "RisingFactorial(-2**(1/4)*sin(atan(sqrt(7))/2) + 1 - 2**(1/4)*I*cos(atan(sqrt(7))/2), n)*RisingFactorial(-2**(1/4)*sin(atan(sqrt(7))/2) + 1 + 2**(1/4)*I*cos(atan(sqrt(7))/2), n)*RisingFactorial(2**(1/4)*sin(atan(sqrt(7))/2) + 1 - 2**(1/4)*I*cos(atan(sqrt(7))/2), n)*RisingFactorial(2**(1/4)*sin(atan(sqrt(7))/2) + 1 + 2**(1/4)*I*cos(atan(sqrt(7))/2), n)"],
     // comparison with |sin(k)| <= 1 is not implemented
     ["conv(sj.Sum(P('sin(k)/k**3'), [k, moo, sj.oo]))", () => conv(sj.Sum(P('sin(k)/k**3'), [k, moo, sj.oo])), "unknown", "true"],
     // SymPy raises ValueError
@@ -558,4 +554,26 @@ describe('Kronecker deltas, Piecewise terms and hypergeometric series (SymPy del
     ['sqrt(k)*2**(-k), (k, 1, oo), (n, 1, 2)', () => summation(P('sqrt(k)*2**(-k)'), [k, 1, oo], [n, 1, 2]), 'Sum(sqrt(k)/2**k, (k, 1, oo), (n, 1, 2))'],
   ];
   for (const [name, f, expected] of cases) it(name, () => expect(run(f)).toBe(expected));
+});
+
+// Independently verified using mpmath 1.3.0 nsum at 40 decimal digits.
+it('uses quartic radicals in residue sums and polynomial products', () => {
+  const total = sj.summation(P('1/(k**4+k**2+2)'), [k, 0, sj.oo]);
+  const value = total.evalf(25).toComplex();
+  // SymPy 1.14 incorrectly gives 1/4; the first two positive terms already sum to 3/4.
+  expect(value.re).toBeCloseTo(0.813439805648928, 14);
+  expect(value.im).toBeCloseTo(0, 14);
+  const product = sj.product(P('k**4+k**2+2'), [k, 1, n]);
+  expect(String(product)).not.toContain('Product(');
+  for (const [index, expected] of [[1, 4], [3, 8096], [5, 1446334208]] as const) {
+    const r = product.subs([[n, index]]).evalf(25).toComplex();
+    expect(r.re / expected).toBeCloseTo(1, 13);
+    expect(r.im / expected).toBeCloseTo(0, 13);
+  }
+});
+
+it('keeps a residue sum whose denominator has no supported radical roots', () => {
+  // The sextic is irreducible over Q, unlike k**6+k**2+2 which has a quadratic factor.
+  const value = sj.summation(P('1/(k**6+k**2+3)'), [k, 0, sj.oo]);
+  expect(String(value)).toBe('Sum(1/(k**6 + k**2 + 3), (k, 0, oo))');
 });

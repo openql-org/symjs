@@ -8,6 +8,53 @@ import { I, KroneckerDelta, add, cancel, cos, countOps, exp, exptotrig, hyper, m
 import type { Expr } from '../../src';
 
 const [x, y] = symbols('x y');
+it('simplifies signs, unevaluated objects and rationalized Floats (SymPy 1.14)', () => {
+  for (const [src, expected] of [
+    ['sign(x)*Abs(x)', 'x'], ['sign(x)*Abs(x)*sin(y)', 'x*sin(y)'],
+    ['sign(x)*Abs(y)', 'Abs(y)*sign(x)'],
+    ['Integral(sin(x)**2 + cos(x)**2, x)', 'Integral(1, x)'],
+    ['Sum(k, (k, 1, n))', 'Sum(k, (k, 1, n))'],
+    ['Product(k, (k, 1, n))', 'factorial(n)'],
+    ['Derivative(sin(x), x)', 'cos(x)'],
+  ] as const) expect(String(simplify(parse(src)))).toBe(expected);
+  expect(String(simplify(parse('Derivative(sin(x), x)'), { doit: false }))).toBe('Derivative(sin(x), x)');
+  expect(String(simplify(parse('Product(k, (k, 1, n))'), { doit: false }))).toBe('Product(k, (k, 1, n))');
+  expect(String(simplify(parse('0.1*x + 0.2*y'), { rational: true }))).toBe('x/10 + y/5');
+  expect(String(simplify(parse('(0.1*x + 0.2)/(x + 2)'), { rational: true }))).toBe('1/10');
+  expect(String(simplify(parse('(0.1*x + 0.2)/(x + 2)'), { rational: null }))).toBe('0.100000000000000');
+  expect(String(simplify(parse('1.25'), { rational: true }))).toBe('5/4');
+});
+it('combines sums and products with equal or adjacent bounds (SymPy 1.14)', () => {
+  for (const [source, expected] of [
+    ['Sum(f(k), (k, 1, n)) + Sum(g(k), (k, 1, n))', 'Sum(f(k) + g(k), (k, 1, n))'],
+    ['Product(f(k), (k, 1, n))*Product(g(k), (k, 1, n))', 'Product(f(k)*g(k), (k, 1, n))'],
+    ['Sum(f(k), (k, 1, n)) + Sum(f(k), (k, n+1, m))', 'Sum(f(k), (k, 1, m))'],
+    ['Product(f(k), (k, 1, n))*Product(f(k), (k, n+1, m))', 'Product(f(k), (k, 1, m))'],
+    ['2*Sum(f(k), (k, 1, n)) + Sum(g(k), (k, 1, n))', 'Sum(2*f(k) + g(k), (k, 1, n))'],
+    ['Integral(a*sin(x)**2 + a*cos(x)**2, x)', 'a*x'],
+    ['Integral(a*f(x), x)', 'a*Integral(f(x), x)'],
+  ] as const) expect(String(simplify(parse(source)))).toBe(expected);
+  expect(String(simplify(parse('Integral(a*sin(x)**2 + a*cos(x)**2, x)'), { doit: false }))).toBe('a*Integral(1, x)');
+  // SymPy 1.14 incorrectly captures the free k inside the sum. For f=1, g=0,
+  // n=2, k=10 the original value is 20, whereas its simplified result is 3.
+  const e = parse('k*Sum(f(k), (k, 1, n)) + Sum(g(k), (k, 1, n))');
+  expect(String(simplify(e))).toBe(String(e));
+});
+it('keeps distinct summation domains and joins adjacent constant summands', () => {
+  const untouched = [
+    'Sum(f(k),(k,1,n))+g(x)',
+    'Sum(f(k),(k,1,n))+Sum(g(k),(k,2,n))',
+    'Sum(f(k),(k,1,n))+Sum(f(k),(k,n+2,m))',
+    'Sum(f(k,j),(k,1,n),(j,1,m))+Sum(g(k,j),(k,2,n),(j,1,m))',
+  ];
+  for (const source of untouched) {
+    const e = parse(source);
+    expect(String(simplify(e, { doit: false }))).toBe(String(e));
+  }
+  // SymPy factors out the summand independent of the bound indices.
+  expect(String(simplify(parse('Sum(f(x),(k,1,n))+Sum(f(x),(j,1,m))'), { doit: false }))).toBe('(Sum(1, (j, 1, m)) + Sum(1, (k, 1, n)))*f(x)');
+  expect(String(simplify(parse('Sum(f(x),(k,1,n))+Sum(f(x),(k,n+1,m))'), { doit: false }))).toBe('f(x)*Sum(1, (k, 1, m))');
+});
 const [a, b, theta] = symbols('a b theta', { real: true });
 type Assume = NonNullable<Parameters<typeof symbol>[1]>;
 const PA = (s: string, a: Record<string, Assume> = {}): Expr =>

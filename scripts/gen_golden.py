@@ -41,6 +41,10 @@ def main(src: str, dst: str) -> None:
             return str(conjugate(e))
         if op == "diff_x":
             return str(e.diff(x))
+        if op == "solve_x":
+            return [str(r) for r in sympy.solve(e, x)]
+        if op == "fps_x":
+            return str(sympy.fps(e, x))
         if op.startswith("integrate:"):
             spec_ = op.split(":", 1)[1].split(",")
             var = syms[spec_[0]] if spec_[0] in syms else Symbol(spec_[0])

@@ -7,16 +7,18 @@
  */
 
 import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Add, Rational, S } from '../core/nodes';
-import { add, mul, pow, sub, sympify } from '../core/ops';
-import { asIndependent } from '../core/methods';
+import { Add, Dummy, Fn, Pow, Rational, S, Special } from '../core/nodes';
+import { add, couldExtractMinusSign, exp, mul, pow, sub, sympify } from '../core/ops';
+import { asIndependent, isMeromorphic, isPolynomial } from '../core/methods';
 import { NotImplementedError } from '../core/errors';
 import { first } from '../core/guard';
-import { freeSymbols, subs } from '../core/traverse';
+import { freeSymbols, some, subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
+import { fn } from '../functions/elementary/elementary';
 import { expand } from '../simplify/expand';
 import { powsimp } from '../simplify/powsimp';
 import { integrate } from '../integrals/integrate';
+import { polyCoefficients } from '../polys/poly';
 import { str } from '../printing/str';
 import { O, series } from './series';
 import { lseries, seriesTerms } from './lseries';
@@ -106,7 +108,63 @@ export class FormalPowerSeries {
     return new FormalPowerSeries(integrate(this.fn, v), this.x, this.x0, this.direction);
   }
   toString(): string {
-    return `FormalPowerSeries(${str(this.fn)}, ${str(this.x)}, ${str(this.x0)})`;
+    const k = new Dummy('k');
+    const direction = this.direction === '+' ? 1 : -1;
+    const xk = pow(mul(direction, sub(this.x, this.x0)), k);
+    const description = this.coefficientDescription(k, direction);
+    if (description === undefined) return str(this.fn);
+    const seq = `SeqFormula(${description.formula}, (${str(k)}, ${description.start}, oo))`;
+    return `FormalPowerSeries(${str(this.fn)}, ${str(this.x)}, ${str(this.x0)}, ${direction}, (${seq}, SeqFormula(${str(xk)}, (${str(k)}, 0, oo)), ${str(description.independent)}))`;
+  }
+
+  /** A hypergeometric coefficient formula when available, otherwise the defining Taylor derivative. */
+  private coefficientDescription(k: Expr, direction: number): { formula: string; start: number; independent: Expr } | undefined {
+    const f = this.core;
+    if (isPolynomial(f, [this.x])) {
+      const local = subs(f, [[this.x, add(this.x0, mul(direction, this.x))]]);
+      return { formula: `Coeff(${str(this.withSymb(local))}, ${str(this.x)}, ${str(k)})`, start: 1, independent: this.withSymb(subs(f, [[this.x, this.x0]])) };
+    }
+    const arg = f instanceof Fn ? first(f.args) : f instanceof Pow ? (f.base.key === S.E.key ? f.exp : f.base) : f;
+    const a = diff(arg, this.x);
+    const b = subs(arg, [[this.x, this.x0]]);
+    const factorial = (n: Expr): Expr => fn('factorial', [n]);
+    const piece = (coefficient: Expr, step: number, residue: number): string =>
+      `Piecewise((${str(this.withSymb(coefficient))}, Eq(Mod(${str(k)}, ${step}), ${residue})), (0, True))`;
+    if (f instanceof Pow && f.base.key === S.E.key) {
+      const polynomial = polyCoefficients(subs(f.exp, [[this.x, add(this.x0, mul(direction, this.x))]]), this.x);
+      const terms = polynomial && [...polynomial].filter(([degree, coefficient]) => degree > 0 && !isZeroExpr(coefficient));
+      if (terms?.length === 1) {
+        const [degree, coefficient] = first(terms);
+        const j = mul(k, Rational.of(1, degree));
+        return { formula: piece(mul(exp(b), pow(coefficient, j), pow(factorial(j), -1)), degree, 0), start: 1, independent: this.withSymb(exp(b)) };
+      }
+    }
+    if (!a.has(this.x)) {
+      const slope = mul(direction, a);
+      if (f instanceof Fn && (f.name === 'sin' || f.name === 'cos') && isZeroExpr(b)) {
+        const odd = f.name === 'sin' ? 1 : 0;
+        const j = mul(S.Half, sub(k, odd));
+        const negative = couldExtractMinusSign(slope);
+        const c = mul(negative && odd ? -1 : 1, pow(negative ? mul(-1, slope) : slope, k), pow(Rational.of(-1, 4), j), pow(mul(fn('rf', [Rational.of(2 * odd + 1, 2), j]), factorial(j)), -1));
+        return { formula: piece(c, 2, odd), start: odd + 1, independent: this.withSymb(odd ? mul(a, sub(this.x, this.x0)) : S.One) };
+      }
+      if (f instanceof Fn && f.name === 'log' && !isZeroExpr(b)) {
+        const c = mul(-1, pow(mul(-1, slope, pow(b, -1)), k), pow(k, -1));
+        return { formula: str(this.withSymb(c)), start: 1, independent: this.withSymb(fn('log', [b])) };
+      }
+      if (f instanceof Pow && !f.exp.has(this.x) && !isZeroExpr(b)) {
+        const c = f.exp.key === S.NegOne.key ? mul(pow(b, -1), pow(mul(-1, slope, pow(b, -1)), k))
+          : mul(fn('binomial', [f.exp, k]), pow(slope, k), pow(b, sub(f.exp, k)));
+        return { formula: str(this.withSymb(c)), start: 0, independent: S.Zero };
+      }
+    }
+    // The unevaluated kth derivative is an exact coefficient definition; printing it must not
+    // trigger a fixed truncation or pretend that a general closed coefficient formula is known.
+    // At a singular or undecidable point there is no justified Taylor coefficient to print.
+    if (isMeromorphic(f, this.x, this.x0) !== true || some(subs(f, [[this.x, this.x0]]), (e) => e instanceof Special)) return undefined;
+    const derivative = `Subs(Derivative(${str(f)}, (${str(this.x)}, ${str(k)})), ${str(this.x)}, ${str(this.x0)})`;
+    const scale = mul(this.symb, pow(direction, k));
+    return { formula: `${scale.key === S.One.key ? '' : `${str(scale)}*`}${derivative}/factorial(${str(k)})`, start: 0, independent: S.Zero };
   }
 }
 

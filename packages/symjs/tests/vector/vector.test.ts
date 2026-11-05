@@ -373,8 +373,8 @@ describe('printing of vectors (SymPy test_printing)', () => {
     expect(str(cr.withArgs([C.j, E.j]))).toBe('Cross(C.j, E.j)');
     expect(() => cr.components).toThrow('Cross has no components');
     expect(() => diff(Cross(mul(a, C.i), E.i), a)).toThrow();
-    // SymPy raises AttributeError (a Cross has no components); symjs simplifies the operands
-    expect(str(simplify(Cross(mul(add(a, a), C.i), E.i)))).toBe('-Cross(E.i, 2*a*C.i)');
+    // SymPy raises AttributeError; symjs extracts the scalar by bilinearity during doit.
+    expect(str(simplify(Cross(mul(add(a, a), C.i), E.i)))).toBe('-2*a*Cross(E.i, C.i)');
     expect(str(Cross(mul(a, C.i), E.i).conjugate())).toBe('-conjugate(Cross(E.i, a*C.i))');
     expect(str(Cross(mul(new Float(0.5), C.i), E.i).evalf())).toBe('-Cross(E.i, 0.5*C.i)');
     expect(cr.simplifySelf()).toBeUndefined();

@@ -18,7 +18,7 @@ import { powsimp } from '../simplify/powsimp';
 import { isNegative, isPositive, isReal } from '../core/assumptions';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Float, Fn, Limit, Mul, Pow, Rational, S, Special, Sym, impl, isNum } from '../core/nodes';
-import { add, exp, mul, pow, sympify } from '../core/ops';
+import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
 import { mapBottomUp, rebuild, xreplace as subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { fn, log } from '../functions/elementary/elementary';
@@ -294,7 +294,23 @@ class Limiter {
         return isZeroE(p) ? S.Zero : BOUNDED;
       }
       // 0 times an infinite part is undetermined (mul would give 0 for a symbolic coefficient of oo)
-      if (vals.some(isZeroE) && vals.some((v) => isValue(v) && !isFinite_(v))) return undefined;
+      if (vals.some(isZeroE) && vals.some((v) => isValue(v) && !isFinite_(v))) {
+        const regular = vals.map((v, i) => isValue(v) && isFinite_(v) && !isZeroE(v) ? i : -1).filter((i) => i >= 0);
+        // Preserve a side value on a cut while resolving the other factors together.
+        // Ordinary analytic factors are already handled by the series/L'Hopital paths.
+        if (!regular.some((i) => {
+          const a = f.args[i];
+          return a instanceof Fn && ['asin', 'acos', 'atan', 'acot', 'asec', 'acsc', 'asinh', 'acosh', 'atanh', 'acoth'].includes(a.name);
+        })) return undefined;
+        const singular = this.lim(mul(...f.args.filter((_a, i) => !regular.includes(i))));
+        if (!isValue(singular)) return undefined;
+        const rest = mul(...regular.map((i) => vals[i]).filter(isValue));
+        if (singular === S.Infinity || singular === S.NegativeInfinity) {
+          const negative = couldExtractMinusSign(rest);
+          return mul(singular === S.Infinity ? 1 : -1, negative ? -1 : 1, this.infinity(negative ? mul(-1, rest) : rest));
+        }
+        return mul(singular, rest);
+      }
       // an infinite sum (oo + I) is its infinite term in a product
       const p = mul(...vals.filter(isValue).map((v) => (v instanceof Add && isInfiniteSum(v) ? infinitePart(v) : v)));
       // c*oo with a constant c (log(3)*oo, I*pi*oo, ...) is a signed or directed infinity; the factors
@@ -397,7 +413,13 @@ class Limiter {
       // acoth at 0, on its cut: -I*pi/2 from the right, I*pi/2 from the left (SymPy)
       if (f.name === 'acoth' && isZeroE(la)) {
         const side = this.sideOf(arg);
-        return side === undefined ? undefined : mul(-side, S.Half, S.I, S.Pi);
+        if (side !== undefined) return mul(-side, S.Half, S.I, S.Pi);
+        const c = this.lim(mul(arg, pow(add(z, mul(-1, this.z0)), -1)));
+        if (isValue(c) && isFinite_(c) && !isZeroE(c)) {
+          const r = pow(mul(this.dir === '+' ? 1 : -1, c), -1);
+          return mul(S.Half, add(log(r), mul(-1, log(mul(-1, r)))));
+        }
+        return undefined;
       }
       // sign(g) with g -> 0 and a real side was replaced by setSigns; its value here is that of the expansion
       // (sign(x**2 + I*x) -> I)
@@ -437,6 +459,8 @@ class Limiter {
     if (f instanceof Fn && OSCILLATING.has(f.name)) {
       const la = this.lim(first(f.args));
       if (la === S.Infinity || la === S.NegativeInfinity) return f.name === 'frac' ? accumBounds(0, 1) : fn(f.name, [la]);
+      const iv = this.interval(first(f.args));
+      if (iv instanceof AccumBoundsNode) return fn(f.name, [iv]);
     }
     const hasInterval = (x: Expr): boolean => x instanceof AccumBoundsNode || x.args.some(hasInterval);
     // parts without an interval have the ordinary limit
@@ -446,12 +470,59 @@ class Limiter {
     };
     if (f instanceof Add || f instanceof Mul) {
       const vs: Expr[] = [];
+      const intervalTerms: Expr[] = [];
+      const rest: Expr[] = [];
+      const ordinaryValues: LV[] = [];
       for (const a of f.args) {
         const v = this.interval(a);
-        if (v === undefined) return undefined;
-        vs.push(v);
+        if (v !== undefined && hasInterval(v)) {
+          vs.push(v);
+          intervalTerms.push(a);
+        }
+        else {
+          rest.push(a);
+          ordinaryValues.push(v);
+        }
       }
-      if (!vs.some(hasInterval)) return ordinary();
+      if (!vs.length) {
+        if (ordinaryValues.every(isValue)) {
+          const rv = f instanceof Add ? add(...ordinaryValues) : mul(...ordinaryValues);
+          if ((isFinite_(rv) || isInf(rv) || isDirectedInf(rv)) && !isNaN_(rv) && !(f instanceof Mul && ordinaryValues.some(isZeroE) && ordinaryValues.some(isInf))) return rv;
+          if (f instanceof Add) {
+            const finite = ordinaryValues.filter(isFinite_);
+            if (finite.length && finite.length < ordinaryValues.length) {
+              const singular = this.lim(add(...f.args.filter((_a, i) => !isFinite_(first(ordinaryValues.slice(i))))));
+              if (isValue(singular)) return add(singular, ...finite);
+            }
+          }
+        }
+        return ordinary();
+      }
+      if (rest.length) {
+        const rv = this.lim(f instanceof Add ? add(...rest) : mul(...rest));
+        if (!isValue(rv)) return undefined;
+        if (f instanceof Add && isInf(rv) && intervalTerms.length === 1 && vs.some(unsureFinite)) {
+          const term = first(intervalTerms);
+          if (term instanceof Mul) {
+            const bounded: Expr[] = [];
+            const scale: Expr[] = [];
+            for (const a of term.args) {
+              const iv = this.interval(a);
+              if (iv instanceof AccumBoundsNode && !unsureFinite(iv)) bounded.push(iv);
+              else scale.push(a);
+            }
+            const amplitude = mul(...scale);
+            const relative = mul(add(...rest), pow(amplitude, -1));
+            let small = this.lim(relative);
+            if (!isValue(small)) {
+              try { small = gruntz(relative, this.z, this.z0, this.dir, this.budget); } catch { /* unresolved scale comparison */ }
+            }
+            const growth = this.lim(amplitude);
+            if (bounded.length && isZeroE(small) && isValue(growth)) return mul(growth, ...bounded);
+          }
+        }
+        vs.push(rv);
+      }
       // 0 times an unbounded interval is undetermined
       if (f instanceof Mul && vs.some(isZeroE) && vs.some((v) => v instanceof AccumBoundsNode && unsureFinite(v))) return undefined;
       return f instanceof Add ? add(...vs) : mul(...vs);
@@ -691,6 +762,8 @@ export function limitWithin(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' 
     if (g !== undefined) {
       const w = new Limiter(z, z0, d, budget).lim(g);
       if (w !== undefined && w !== BOUNDED) return w;
+      const iv = intervalLimit(g, z, z0, d, budget);
+      if (iv !== undefined) return iv;
     }
     // a product of powers with a common exponent becomes one power (SymPy Limit.doit: powsimp when the
     // leading term fails; (1 + I)**n/2**n = (1/2 + I/2)**n, which tends to 0)
@@ -698,6 +771,16 @@ export function limitWithin(ex: ExprLike, z: Sym, z0x: ExprLike, dir: '+' | '-' 
     if (p instanceof Pow) {
       const w = new Limiter(z, z0, d, budget).lim(p);
       if (w !== undefined && w !== BOUNDED) return w;
+      if (!p.base.has(z) && p.base.key !== S.E.key) {
+        const power = limiter.lim(p.exp);
+        if (isValue(power) && (isInf(power) || isDirectedInf(power))) {
+          if (w === BOUNDED) return S.NaN;
+          const c = power instanceof Special ? (power === S.Infinity ? S.One : S.NegOne) : mul(...power.args.filter((a) => !isInf(a)));
+          const lb = log(p.base);
+          const sign = isPositive(lb) ? c : isNegative(lb) ? mul(-1, c) : fn('sign', [mul(c, lb)]);
+          return exp(mul(S.Infinity, sign));
+        }
+      }
     }
     // explicit infinities ((x + 1)**oo, x - oo) are left to the other methods (SymPy returns the Limit)
     if (hasSpecialInside(es)) return unevaluated();

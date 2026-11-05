@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { Rational, Sym, add, beta, hyper, mul, parse, pow, series, str } from '../../src';
 import type { Expr } from '../../src';
-import { Expander, SCALED_BESSELI, SeriesError } from '../../src/series/puiseux';
+import { Expander, SCALED_BESSELI, SCALED_EI, SCALED_ERFC, SeriesError } from '../../src/series/puiseux';
 import { UndefFn } from '../../src/core/nodes';
 
 // Remaining branches of the limit, series and summation code. Expected values are the str() forms printed by SymPy 1.14
@@ -44,6 +44,13 @@ describe('the expansion in t (series/puiseux.ts)', () => {
     const ps = E().ser(Q(s), Rational.of(order));
     return ps.terms.map((u) => `${u.c.toString()}*t**${u.e.toString()}`).join(' + ') + ` | order ${ps.order.toString()}`;
   };
+  it('expands the scaled Ei and erfc helpers only at positive infinity', () => {
+    for (const name of [SCALED_EI, SCALED_ERFC]) {
+      expect(() => E().ser(new UndefFn(name, [tt]), Rational.of(2))).toThrow(SeriesError);
+      const ps = E().ser(new UndefFn(name, [pow(tt, -1)]), Rational.of(4));
+      expect(ps.terms.map((t) => [String(t.e), String(t.c)])).toEqual(name === SCALED_EI ? [['1', '1'], ['2', '1'], ['3', '2']] : [['1', '1/sqrt(pi)'], ['3', '-1/(2*sqrt(pi))']]);
+    }
+  });
 
   it('to an order that is not positive gives the value at 0 (exact for the exponents below the order)', () => {
     expect(ser('sin(_t)', 0)).toBe(' | order 1000000');

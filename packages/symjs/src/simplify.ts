@@ -7,6 +7,8 @@
 
 // every entry point brings the core with its registrations
 import './core';
+// simplify's final doit stage also works when this entry is imported by itself.
+import './calculus/doit';
 
 export {
   simplify,

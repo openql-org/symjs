@@ -360,6 +360,7 @@ export function roots(ex: ExprLike, x: Sym, opts: { skipQuintic?: boolean } = {}
       if (f.degree === 1) rs = [qMul(qNeg(c0), qInv(c1))];
       else if (f.degree === 2) rs = quadraticRoots(c2, c1, c0);
       else if (f.degree === 3) rs = cubicRoots(c3, c2, c1, c0);
+      else if (f.degree === 4) rs = symbolicQuarticRoots(qMul(c3, qInv(f.lc)), qMul(c2, qInv(f.lc)), qMul(c1, qInv(f.lc)), qMul(c0, qInv(f.lc)), opts);
       else if (opts.skipQuintic && f.degree >= 5) continue; // SymPy roots() omits roots it cannot express in radicals
       else throw new NotImplementedError(`roots: cannot solve irreducible factor of degree ${f.degree}`);
       for (const r of rs) for (let i = 0; i < m; i++) out.push(r);

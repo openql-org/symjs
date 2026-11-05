@@ -192,7 +192,7 @@ describe('series helpers', () => {
     expect(s(sj.fps(sj.exp(x), x).polynomial(3))).toBe('x**2/2 + x + 1');
     expect(s(sj.fps(sj.exp(x), x).coeff(3))).toBe('1/6');
     expect(sj.fps(sj.cos(x), x).terms(3).map(s)).toEqual(['1', '-x**2/2', 'x**4/24']);
-    expect(String(sj.fps(sj.exp(x), x))).toBe('FormalPowerSeries(exp(x), x, 0)');
+    expect(String(sj.fps(sj.exp(x), x))).toBe('FormalPowerSeries(exp(x), x, 0, 1, (SeqFormula(Piecewise((1/factorial(_k), Eq(Mod(_k, 1), 0)), (0, True)), (_k, 1, oo)), SeqFormula(x**_k, (_k, 0, oo)), 1))');
     const it1 = sj.lseries(sj.exp(x), x);
     expect([0, 1, 2, 3].map(() => s(it1.next().value))).toEqual(['1', 'x', 'x**2/2', 'x**3/6']);
     const it2 = sj.lseries(sj.sin(x), x, sj.pi);

@@ -167,7 +167,7 @@ describe('results that differ from SymPy 1.14', () => {
     // the same value with the atan argument factored
     // not implemented in symjs (SymPy's result shown)
     // not implemented in symjs (SymPy's result shown)
-    ["sj.integrate(P('1/(x**4 + 1)'), x)", () => sj.integrate(P('1/(x**4 + 1)'), x), "Integral(1/(x**4 + 1), x)", "-sqrt(2)*log(x**2 - sqrt(2)*x + 1)/8 + sqrt(2)*log(x**2 + sqrt(2)*x + 1)/8 + sqrt(2)*atan(sqrt(2)*x - 1)/4 + sqrt(2)*atan(sqrt(2)*x + 1)/4"],
+    ["sj.integrate(P('1/(x**4 + 1)'), x)", () => sj.integrate(P('1/(x**4 + 1)'), x), "-sqrt(2)*log(x**2 - sqrt(2)*x + 1)/8 + sqrt(2)*log(x**2 + sqrt(2)*x + 1)/8 + sqrt(2)*atan(sqrt(2)*x - 1)/4 + sqrt(2)*atan(sqrt(2)*x + 1)/4", "-sqrt(2)*log(x**2 - sqrt(2)*x + 1)/8 + sqrt(2)*log(x**2 + sqrt(2)*x + 1)/8 + sqrt(2)*atan(sqrt(2)*x - 1)/4 + sqrt(2)*atan(sqrt(2)*x + 1)/4"],
     // not implemented in symjs (SymPy's result shown)
     // not implemented in symjs (SymPy's result shown)
     ["sj.integrate(P('Heaviside(x)'), x)", () => sj.integrate(P('Heaviside(x)'), x), "Integral(Heaviside(x), x)", "x*Heaviside(x)"],
@@ -299,11 +299,33 @@ describe('unresolved singularities stay unevaluated', () => {
     ['tan(x)', '0', 'pi'], // nan (the interior pole cannot be crossed)
     ['cos(x)/sin(x)', '1', '2'], // log(sin(2)) - log(sin(1))
     ['1/(x-y)**2', '0', '1'], // depends on whether y lies in the interval
-    ['(4*x**3+1)/(x**4+x+1)', '0', '1'], // log(3)
+    ['(5*x**4-1)/(x**5-x-1)', '0', '1'], // SymPy: 0; quintic root isolation is not used here
     ['1/x**2', '1', 'a'], // depends on a (a > 0 gives 1 - 1/a)
     ['1/x**2', 'a', '1'],
   ])('%s on [%s, %s]', (f, lo, hi) => {
     expect(integrate(P(f), x, [P(lo), P(hi)])).toBeInstanceOf(sj.Integral);
+  });
+  it('uses quartic roots to exclude interior singularities', () => {
+    expect(String(integrate(P('(4*x**3+1)/(x**4+x+1)'), x, [0, 1]))).toBe('log(3)');
+    // Degree alone is not a reason to leave an integral unevaluated: this
+    // quintic factors into a quadratic and a cubic, both supported.
+    expect(String(integrate(P('(5*x**4+1)/(x**5+x+1)'), x, [0, 1]))).toBe('log(3)');
+  });
+  it('retains the polynomial quotient when trying a real partial-fraction primitive', () => {
+    const f = P('x**6/(x**4+x+1)');
+    const result = integrate(f, x);
+    expect(result).not.toBeInstanceOf(sj.Integral);
+    const derivative = diff(result, x);
+    for (const value of [1, 2, 3]) {
+      const actual = derivative.subs([[x, value]]).evalf(25).toComplex();
+      const expected = f.subs([[x, value]]).toNumber();
+      expect(actual.re).toBeCloseTo(expected, 12);
+      expect(actual.im).toBeCloseTo(0, 12);
+    }
+    // At zero the derivative cancels exactly. Evaluate its residual directly,
+    // since arbitrary-precision relative accuracy cannot certify an exact zero.
+    const zero = derivative.subs([[x, 0]]).toComplex();
+    expect(Math.hypot(zero.re, zero.im)).toBeLessThan(1e-12);
   });
   it('keeps symbolic endpoints when the primitive extends continuously', () => {
     // SymPy: integrate(log(x), (x, 1, a))
@@ -502,7 +524,7 @@ describe('rational, trigonometric and Piecewise integrands as SymPy integrates t
     // an antiderivative with symbolic logarithms over an infinite interval: the Meijer G-function integrator
     // (SymPy 1.14)
     expect(sstr(integrate(Q('1/(x**2/2 + y**2/2 + 1)**2'), x, [sj.S.NegativeInfinity, sj.S.Infinity]))).toBe('Piecewise((sqrt(2)*pi*(y**2/2 + 1)/(2*polar_lift(y**2/2 + 1)**(5/2)), (Abs(arg(y**2/2 + 1)) < pi) | ((Abs(arg(y**2/2 + 1)) < pi) & Ne(1/(y**2/2 + 1), 0) & Ne(Abs(arg(y**2/2 + 1)), pi) & Ne(Abs(arg(y**2/2 + 1)), -pi))), (Integral((x**2/2 + y**2/2 + 1)**(-2), (x, -oo, oo)), True))');
-    expect(sstr(integrate(Q('1/(x**4-4)'), x))).toBe('-sqrt(2)*atan(sqrt(2)*x/2)/8 - sqrt(2)*atanh(sqrt(2)*x/2)/8');
+    expect(sstr(integrate(Q('1/(x**4-4)'), x))).toBe('sqrt(2)*log(x - sqrt(2))/16 - sqrt(2)*log(x + sqrt(2))/16 - sqrt(2)*atan(sqrt(2)*x/2)/8');
   });
 
   it('definite', () => {
@@ -512,7 +534,7 @@ describe('rational, trigonometric and Piecewise integrands as SymPy integrates t
     expect(sstr(integrate(Q('Piecewise((x, (y >= 0) & (y <= 1)), (0, True))'), x, [0, 1]))).toBe('Piecewise((1/2, (y >= 0) & (y <= 1)), (0, True))');
     // the entropy of an exponential distribution: exponential factors of a logarithm do not vanish
     expect(sstr(integrate(Q('-lambda*exp(-lambda*x)*log(lambda*exp(-lambda*x))'), x, [0, oo]))).toBe('1 - log(lambda)');
-    // SymPy: 2*sqrt(3)*pi/3 (the singularities of 1/(cos(x) + 2) are not located here)
-    expect(sstr(integrate(Q('1/(2+cos(x))'), x, [0, Q('2*pi')]))).toBe('Integral(1/(cos(x) + 2), (x, 0, 2*pi))');
+    // SymPy: 2*sqrt(3)*pi/3. The denominator is bounded below by 1.
+    expect(sstr(integrate(Q('1/(2+cos(x))'), x, [0, Q('2*pi')]))).toBe('2*sqrt(3)*pi/3');
   });
 });

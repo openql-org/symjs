@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { NotImplementedError, Sym, parse } from '../../src';
 import { isNonRealNumber, solveEquations } from '../../src/geometry/solvehelp';
+import { at } from '../../src/core/guard';
 
 const s = (e: unknown): string => (Array.isArray(e) ? `[${e.map(s).join(', ')}]` : String(e));
 
@@ -38,9 +39,24 @@ describe('solveEquations', () => {
     expect(s(solveEquations([p('x - y'), p('2*x - 2*y'), p('3*x - 3*y')], [x, y]))).toBe('[[y, y]]');
     // an irreducible quartic eliminant without a real solution (two ellipses that do not meet)
     expect(s(solveEquations([p('x**2/25 + y**2/289 - 1'), p('(x - 4)**2*1000000/998001 + 25*y**2 - 1')], [x, y]))).toBe('[]');
-    // an irreducible quartic eliminant with real roots: SymPy gives the four points in radicals, symjs's
-    // roots does not solve the quartic
-    expect(() => solveEquations([p('x**2/4 + y**2 - 1'), p('(x - 1/2)**2 + y**2/4 - 1')], [x, y])).toThrow(NotImplementedError);
+    // SymPy gives the four intersections in quartic radicals.
+    const equations = [p('x**2/4 + y**2 - 1'), p('(x - 1/2)**2 + y**2/4 - 1')];
+    const intersections = solveEquations(equations, [x, y]);
+    expect(intersections).toHaveLength(4);
+    for (const solution of intersections) for (const equation of equations) {
+      expect(equation.subs([[x, at(solution, 0)], [y, at(solution, 1)]]).evalf(25).toNumber()).toBeCloseTo(0, 12);
+    }
+  });
+
+  it('checks real feasibility when a higher-degree eliminant has no radical formula', () => {
+    expect(s(solveEquations([p('y**2 + x**2 + 1'), p('y**2 + x**5 + x + 2')], [x, y]))).toBe('[]');
+    // SymPy gives two real intersections, represented by roots of a sextic.
+    const equations = [p('y**2-x'), p('y+x**3+x**2+x-1/10')];
+    const solutions = solveEquations(equations, [x, y]);
+    expect(solutions).toHaveLength(2);
+    for (const solution of solutions) for (const equation of equations) {
+      expect(equation.subs([[x, at(solution, 0)], [y, at(solution, 1)]]).evalf(25).toNumber()).toBeCloseTo(0, 12);
+    }
   });
 
   it('non-real numbers', () => {
