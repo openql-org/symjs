@@ -38,7 +38,7 @@ export {
   solveLinearSystemLU,
 } from './solvers/solve';
 export { nonlinsolve, substitution } from './solvers/solveset';
-export { dsolveSystem, checkodesol } from './solvers/odesystem';
+export { dsolveSystem, checkodesol, checksysodesol, subFuncDoit } from './solvers/odesystem';
 export {
   diophantine,
   classifyDiop,
@@ -131,3 +131,5 @@ export const asEquation = _asEquation_;
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const invertEquation = _invertEquation_;
 export { pdsolve, classifyPde, checkpdesol, pdeSeparate, pdeSeparateAdd, pdeSeparateMul } from './solvers/pde';
+export { decompogen, compogen } from './solvers/decompogen';
+export { continuousDomain, functionRange, lcim } from './solvers/calculusutil';

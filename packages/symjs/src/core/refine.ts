@@ -125,7 +125,7 @@ export type PredicateHandler = (expr: Expr, assumptions: Expr, args: readonly Ex
 
 /** A predicate such as Q.positive; calling it applies it (SymPy Predicate). */
 export interface Predicate {
-  (...args: ExprLike[]): AppliedPredicate;
+  (...args: (ExprLike | boolean)[]): AppliedPredicate;
   /** The name (positive for Q.positive). */
   readonly predicateName: string;
 }
@@ -136,8 +136,17 @@ const handlers = new Map<string, PredicateHandler[]>();
  * A predicate with the given name (SymPy Predicate); handlers added with
  * registerHandler decide it in ask.
  */
+const REL_PREDICATES = { Gt: 'gt', Lt: 'lt', Ge: 'ge', Le: 'le', Eq: 'eq', Ne: 'ne' } as const;
+
 export function Predicate(name: string, handler?: PredicateHandler): Predicate {
-  const f = (...args: ExprLike[]): AppliedPredicate => new AppliedPredicate(name, args.map((a) => sympify(a)));
+  const f = (...argsIn: (ExprLike | boolean)[]): AppliedPredicate => {
+    const args = argsIn.map((a) => (typeof a === 'boolean' ? (a ? S.true : S.false) : sympify(a)));
+    // SymPy IsTruePredicate: Q.is_true of a predicate is the predicate, of a relation its predicate (Q.eq, Q.gt, ...)
+    const a0 = args[0];
+    if (name === 'is_true' && a0 instanceof AppliedPredicate) return a0;
+    if (name === 'is_true' && a0 instanceof Rel) return new AppliedPredicate(REL_PREDICATES[a0.op], [a0.lhs, a0.rhs]);
+    return new AppliedPredicate(name, args);
+  };
   Object.defineProperty(f, 'predicateName', { value: name });
   Object.defineProperty(f, 'toString', { value: () => `Q.${name}` });
   if (handler) registerHandler(name, handler);
@@ -547,9 +556,13 @@ class Decider {
         if (isConst(e, 'I')) return false;
         if (this.q('imaginary', e) === true) return false;
         return isReal(this.re(e)) ?? (this.q('rational', e) === true ? true : undefined);
-      case 'extended_real':
+      case 'extended_real': {
         if (e instanceof Special) return e.name === 'oo' || e.name === '-oo';
-        return this.q('real', e) === true ? true : undefined;
+        const r = this.q('real', e);
+        if (r === true) return true;
+        // a finite number that is not real (I) is not an extended real
+        return r === false && this.q('finite', e) === true ? false : undefined;
+      }
       case 'positive':
         if (e instanceof Special) return false;
         return this.ext(isPositive(this.re(e)), e) ?? (this.q('negative', e) === true ? false : this.trichotomy(e, 'negative'));
@@ -568,6 +581,8 @@ class Decider {
       }
       case 'zero':
         if (e instanceof Special) return false;
+        // a product with a zero factor (and no infinite one)
+        if (e instanceof Mul && e.args.some((a) => this.q('zero', a) === true) && e.args.every((a) => this.q('infinite', a) !== true)) return true;
         return isZero(this.re(e)) ?? (this.q('nonzero', e) === true || this.q('real', e) === false ? false : undefined);
       case 'nonzero': {
         if (e instanceof Special) return false;
@@ -576,15 +591,18 @@ class Decider {
         return z !== undefined ? z && this.q('real', e) === true ? true : z ? undefined : false : this.q('positive', e) === true || this.q('negative', e) === true || this.q('odd', e) === true ? true : undefined;
       }
       case 'extended_positive':
-        return !(e instanceof Special) ? this.q('positive', e) === true ? true : this.q('extended_real', e) === true && this.q('extended_nonpositive', e) === true ? false : undefined : e.name === 'oo';
+        if (e instanceof Special) return e.name === 'oo';
+        if (this.q('positive', e) === true) return true;
+        if (this.q('extended_real', e) === false) return false;
+        return this.q('extended_real', e) === true && this.q('extended_nonpositive', e) === true ? false : undefined;
       case 'extended_negative':
-        return e instanceof Special ? e.name === '-oo' : this.q('negative', e) === true ? true : undefined;
+        return e instanceof Special ? e.name === '-oo' : this.extended(e, 'negative', 'nonnegative');
       case 'extended_nonnegative':
-        return e instanceof Special ? e.name === 'oo' : this.q('nonnegative', e) === true ? true : undefined;
+        return e instanceof Special ? e.name === 'oo' : this.extended(e, 'nonnegative', 'negative');
       case 'extended_nonpositive':
-        return e instanceof Special ? e.name === '-oo' : this.q('nonpositive', e) === true ? true : undefined;
+        return e instanceof Special ? e.name === '-oo' : this.extended(e, 'nonpositive', 'positive');
       case 'extended_nonzero':
-        return e instanceof Special ? e.name === 'oo' || e.name === '-oo' : this.q('nonzero', e) === true ? true : undefined;
+        return e instanceof Special ? e.name === 'oo' || e.name === '-oo' : this.extended(e, 'nonzero', 'zero');
       case 'positive_infinite':
         return e instanceof Special ? e.name === 'oo' : this.q('finite', e) === true ? false : undefined;
       case 'negative_infinite':
@@ -814,6 +832,16 @@ class Decider {
     return undefined;
   }
 
+  /**
+   * An extended predicate of a finite expression: true when `finite` holds,
+   * false when the opposite holds or the expression is not an extended real.
+   */
+  private extended(e: Expr, finite: string, opposite: string): Tri {
+    if (this.q(finite, e) === true) return true;
+    if (this.q(opposite, e) === true || this.q('extended_real', e) === false) return false;
+    return undefined;
+  }
+
   private imaginary(e: Expr): Tri {
     if (isConst(e, 'I')) return true;
     if (e instanceof Rational || e instanceof Float || e instanceof Special) return false;
@@ -825,7 +853,13 @@ class Decider {
       if (im.length + re.length === e.args.length) return im.length % 2 === 1;
       return undefined;
     }
-    if (e instanceof Add) return allTri(e.args, (a) => this.q('imaginary', a)) === true && this.q('nonzero', mul(-1, S.I, e)) === true ? true : undefined;
+    if (e instanceof Add) {
+      if (allTri(e.args, (a) => this.q('imaginary', a)) === true && this.q('nonzero', mul(-1, S.I, e)) === true) return true;
+      // a nonzero real part and imaginary terms (2 + 3*I)
+      const reals = e.args.filter((a) => this.q('real', a) === true);
+      if (reals.length && e.args.every((a) => reals.includes(a) || this.q('imaginary', a) === true) && this.q('nonzero', add(...reals)) === true) return false;
+      return undefined;
+    }
     if (e instanceof Pow) {
       const [b, x] = e.args;
       if (isConst(b, 'E') && this.q('rational', mul(x, pow(mul(S.I, S.Pi), -1))) === true) return undefined;

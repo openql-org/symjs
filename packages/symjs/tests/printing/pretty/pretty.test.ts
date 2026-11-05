@@ -8,7 +8,7 @@ import * as sj from '../../../src';
 import { Add, ExtensionExpr, Fn, Integral, Mul, Pow, Rational, S } from '../../../src/core/nodes';
 import type { Expr } from '../../../src/core/nodes';
 import { Implies, ITE } from '../../../src/logic';
-import { pagerPrint, pprint, pretty, PrettyForm, prettyHooks, prettyPrint, PrettyPrinter, PrettyTuple, prettyUseUnicode } from '../../../src/printing/pretty';
+import { pagerPrint, pprint, pprintTryUseUnicode, pprintUseUnicode, pretty, PrettyForm, prettyHooks, prettyPrint, PrettyPrinter, PrettyTuple, prettyUseUnicode } from '../../../src/printing/pretty';
 import type { PrettyOptions, Printable } from '../../../src/printing/pretty';
 import { Contains, FiniteSet, Interval, Range, SetExpr, SetOp, UniversalSet } from '../../../src/sets/sets';
 
@@ -752,6 +752,21 @@ describe('pprint / prettyPrint / pagerPrint', () => {
     const long = sj.expand(sj.pow(sj.add(x, 1), 30));
     expect(pagerPrint(long).includes('\n\n')).toBe(false);
     expect(pretty(long).includes('\n\n')).toBe(true);
+  });
+  it('without useUnicode, the module-wide flag of pprintUseUnicode decides (SymPy use_unicode=None)', () => {
+    const prev = pprintUseUnicode(false);
+    try {
+      expect(pprintUseUnicode()).toBe(false);
+      // SymPy doctests print in ASCII: pprint(x**2) is ' 2\nx'
+      expect(pretty(sj.pow(x, 2))).toBe(' 2\nx ');
+      expect(pretty(sj.mul(2, x))).toBe('2*x');
+      expect(pretty(sj.mul(2, x), { useUnicode: true })).toBe('2⋅x');
+      pprintTryUseUnicode();
+      expect(pprintUseUnicode()).toBe(true);
+      expect(pretty(sj.mul(2, x))).toBe('2⋅x');
+    } finally {
+      pprintUseUnicode(prev);
+    }
   });
   it('restores the unicode flag', () => {
     const prev = prettyUseUnicode();

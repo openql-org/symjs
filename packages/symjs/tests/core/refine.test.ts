@@ -538,3 +538,35 @@ describe('predicates, handlers and assumption contexts', () => {
     expect(String(refine(sj.sqrt(sj.pow(x, 2)), assumptions))).toBe('Abs(x)');
   });
 });
+
+describe('extended predicates, imaginary sums, zero products and Q.is_true (SymPy 1.14)', () => {
+  const { Q, ask, I } = sj;
+  const [x, y] = sj.symbols('x y');
+  it('a number that is not an extended real', () => {
+    expect(ask(Q.extended_negative(sj.mul(-1, I)))).toBe(false);
+    expect(ask(Q.extended_nonnegative(-1))).toBe(false);
+    expect(ask(Q.extended_nonnegative(I))).toBe(false);
+    expect(ask(Q.extended_nonpositive(I))).toBe(false);
+    expect(ask(Q.extended_nonzero(I))).toBe(false);
+    expect(ask(Q.extended_positive(I))).toBe(false);
+    expect(ask(Q.extended_real(I))).toBe(false);
+    expect(ask(Q.extended_nonzero(0))).toBe(false);
+    expect(ask(Q.extended_nonpositive(2))).toBe(false);
+    expect(ask(Q.extended_negative(2))).toBe(false);
+    expect(ask(Q.extended_nonzero(x!))).toBe('unknown');
+  });
+  it('imaginary sums and zero products', () => {
+    expect(ask(Q.imaginary(sj.add(2, sj.mul(3, I))))).toBe(false);
+    expect(ask(Q.imaginary(sj.add(x!, I)))).toBe('unknown');
+    expect(ask(Q.zero(sj.mul(x!, y!)), sj.Or(Q.zero(x!), Q.zero(y!)))).toBe(true);
+    expect(ask(Q.zero(sj.mul(x!, y!)), Q.zero(x!))).toBe(true);
+  });
+  it('Q.is_true', () => {
+    expect(ask(Q.is_true(true))).toBe(true);
+    expect(ask(Q.is_true(false))).toBe(false);
+    expect(String(Q.is_true(Q.even(x!)))).toBe('Q.even(x)');
+    expect(String(Q.is_true(sj.Eq(x!, y!)))).toBe('Q.eq(x, y)');
+    expect(String(Q.is_true(sj.Gt(x!, y!)))).toBe('Q.gt(x, y)');
+    expect(String(Q.is_true(x!))).toBe('Q.is_true(x)');
+  });
+});

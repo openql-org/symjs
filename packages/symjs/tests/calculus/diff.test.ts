@@ -146,7 +146,8 @@ describe('diff (SymPy diff)', () => {
     expect(s(sj.diff(sj.Trace(sj.MatMul(X, X)), X.at(0, 1)))).toBe('2*X[1, 0]');
     expect(s(sj.diff(sj.pow(X.at(0, 0), 3), X.at(0, 0), 2))).toBe('6*X[0, 0]');
     // SymPy 1.14: Sum(KroneckerDelta(0, i, (0, n - 1)), (i, 0, n - 1)); symjs has no KroneckerDelta range and keeps delta**2
-    expect(s(sj.diff(sj.Trace(Z), Z.at(0, 0)))).toBe('Sum(KroneckerDelta(0, i)**2, (i, 0, n - 1))');
+    // (a positive power of KroneckerDelta is the delta: SymPy prints Sum(KroneckerDelta(0, i, (0, n - 1)), (i, 0, n - 1)))
+    expect(s(sj.diff(sj.Trace(Z), Z.at(0, 0)))).toBe('Sum(KroneckerDelta(0, i), (i, 0, n - 1))');
   });
 });
 

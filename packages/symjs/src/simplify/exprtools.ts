@@ -73,7 +73,8 @@ export function keepCoeff(coeffIn: Expr, factorsIn: Expr, clear = true, sign = f
 }
 
 /** SymPy decompose_power: expr = base**e with integer e. */
-export function decomposePower(e: Expr): [Expr, number] {
+export function decomposePower(eIn: ExprLike): [Expr, number] {
+  const e = sympify(eIn);
   const ex = expExponent(e);
   if (ex !== undefined) {
     // exp(-x**2/2) = exp(x**2/2)**-1 (SymPy: exp.as_base_exp() is (E, -x**2/2))
@@ -97,6 +98,19 @@ export function decomposePower(e: Expr): [Expr, number] {
     return [pow(b, keepCoeff(Rational.of(1n, c.q), tail)), Number(c.p)];
   }
   return [e, 1];
+}
+
+/**
+ * SymPy decompose_power_rat: expr = base**e with a rational e when the
+ * exponent of expr is rational, else with the integer coefficient of the
+ * exponent (decompose_power).
+ */
+export function decomposePowerRat(eIn: ExprLike): [Expr, Rational] {
+  const e = sympify(eIn);
+  // exp(x) is the power E**x
+  if (e instanceof Pow && e.exp instanceof Rational) return [e.base, e.exp];
+  const [base, n] = decomposePower(e);
+  return [base, Rational.of(BigInt(n))];
 }
 
 /** Factor -> exponent map. */

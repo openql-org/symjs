@@ -41,8 +41,48 @@ export { minimalPolynomial } from './polys/numberfields';
 export { fieldIsomorphism, primitiveElement, toNumberField } from './polys/numberfields/subfield';
 export type { PrimitiveElementOptions } from './polys/numberfields/subfield';
 export type { MinimalPolynomialOptions } from './polys/numberfields';
-export { Monomial } from './polys/monomial';
-export { ZZ, QQ, RR, EX, Domain, PolynomialRing, FractionField, GlobalPolynomialRing, OldFractionField, DMP, DMF, CoercionFailed } from './polys/domains';
+export {
+  Monomial,
+  monomialMul,
+  monomialDiv,
+  monomialLdiv,
+  monomialPow,
+  monomialGcd,
+  monomialLcm,
+  monomialDivides,
+  monomialMax,
+  monomialMin,
+  monomialDeg,
+  monomialCount,
+  itermonomials,
+} from './polys/monomial';
+export type { ExponentVector } from './polys/monomial';
+export { LexOrder, GradedLexOrder, ReversedGradedLexOrder, InverseOrder, lex, grlex, grevlex, ilex, igrlex, igrevlex, monomialKey, compareMonomialKeys } from './polys/orderings';
+export type { MonomialKey, MonomialOrdering } from './polys/orderings';
+export {
+  BasePolynomialError,
+  PolynomialDivisionFailed,
+  OperationNotSupported,
+  HeuristicGCDFailed,
+  ModularGCDFailed,
+  HomomorphismFailed,
+  IsomorphismFailed,
+  ExtraneousFactors,
+  EvaluationFailed,
+  RefinementFailed,
+  NotReversible,
+  NotAlgebraic,
+  UnificationFailed,
+  UnsolvableFactorError,
+  GeneratorsError,
+  GeneratorsNeeded,
+  ComputationFailed,
+  UnivariatePolynomialError,
+  MultivariatePolynomialError,
+  OptionError,
+  FlagError,
+} from './polys/polyerrors';
+export { ZZ, QQ, RR, EX, Domain, IntegerRing, RationalField, RealField, ExpressionDomain, PolynomialRing, FractionField, GlobalPolynomialRing, OldFractionField, DMP, DMF, CoercionFailed } from './polys/domains';
 export { polyFromExpr, parallelPolyFromExpr, gff, type PolyOptions } from './polys/fromexpr';
 export { RootSum, RootSumNode, apartList, assemblePartfracList } from './polys/rootsum';
 export type { PartfracTerm } from './polys/rootsum';
@@ -138,3 +178,12 @@ export const rootOf = _rootOf_;
 
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const symmetrizeExpr = _symmetrizeExpr_;
+export {
+  gfCrt, gfCrt1, gfCrt2, gfInt, gfDegree, gfLC, gfTC, gfStrip, gfTrunc, gfNormal, gfFromDict, gfToDict, gfFromIntPoly, gfToIntPoly, gfNeg,
+  gfAddGround, gfSubGround, gfMulGround, gfQuoGround, gfAdd, gfSub, gfMul, gfSqr, gfAddMul, gfSubMul, gfExpand, gfDiv, gfRem, gfQuo, gfExquo,
+  gfLshift, gfRshift, gfPow, gfFrobeniusMonomialBase, gfFrobeniusMap, gfPowMod, gfGcd, gfLcm, gfCofactors, gfGcdex, gfMonic, gfDiff, gfEval,
+  gfMultiEval, gfCompose, gfComposeMod, gfTraceMap, gfRandom, gfIrreducible, gfIrredPBenOr, gfIrredPRabin, gfIrreducibleP, gfSqfP, gfSqfPart,
+  gfSqfList, gfQmatrix, gfQbasis, gfBerlekamp, gfDdfZassenhaus, gfEdfZassenhaus, gfDdfShoup, gfEdfShoup, gfZassenhaus, gfShoup, gfFactorSqf,
+  gfFactor, gfValue,
+} from './polys/galoistools';
+export type { GFPoly, GFFactorization, GFFactorMethod } from './polys/galoistools';

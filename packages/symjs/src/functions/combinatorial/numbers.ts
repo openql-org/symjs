@@ -21,7 +21,8 @@ import { expandMul } from '../../simplify/expand';
 import { evaluators, fn, forEachEntry } from '../elementary/elementary';
 import { bernoulliNumber, floor as floorFn, gamma } from '../special/special';
 import { isprime as ntheoryIsprime } from '../../ntheory/primetest';
-import { invert } from '../../ntheory/intutil';
+import type { IntLike } from '../../ntheory/intutil';
+import { asInt as intOf, invert } from '../../ntheory/intutil';
 
 const R = (p: bigint | number, q: bigint | number = 1n) => Rational.of(BigInt(p), BigInt(q));
 const asInt = (e: Expr): bigint | undefined => (e instanceof Rational && e.isInteger ? e.p : undefined);
@@ -601,7 +602,8 @@ const digitSum = (n: bigint, p: bigint) => {
 };
 
 /** binomial(n, k) modulo m for nonnegative integers (prime-power moduli of moderate size). */
-export function binomialMod(n: bigint, k: bigint, m: bigint): bigint {
+export function binomialMod(nIn: IntLike, kIn: IntLike, mIn: IntLike): bigint {
+  const [n, k, m] = [intOf(nIn), intOf(kIn), intOf(mIn)];
   if (k < 0n || k > n) return 0n;
   if (m === 1n) return 0n;
   // prime-power parts of m, combined by the Chinese remainder theorem

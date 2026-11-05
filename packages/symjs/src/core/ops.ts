@@ -753,6 +753,11 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
   if (b instanceof Rational && b.isOne && !(e instanceof Special)) return S.One;
   if (isE(b) && e instanceof Float) return impl.evalf(new Pow(b, e), precToDps(e.prec));
   if (b instanceof Fn && b.name === 'exp_polar') return new Fn('exp_polar', [mul(at(b.args, 0), e)]);
+  // SymPy KroneckerDelta._eval_power: a positive power is the delta, a negative one (other than -1) its reciprocal
+  if (b instanceof Fn && b.name === 'KroneckerDelta') {
+    if (isPositive(e)) return b;
+    if (isNegative(e) && !(e instanceof Rational && e.p === -1n && e.q === 1n)) return new Pow(b, S.NegOne);
+  }
 
   if (b instanceof Special || e instanceof Special) {
     const r = powSpecial(b, e);

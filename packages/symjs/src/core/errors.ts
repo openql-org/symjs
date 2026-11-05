@@ -76,6 +76,14 @@ export class NotImplementedError extends Error {
   }
 }
 
+/** SymPy ReorderError: the limits of a Sum or Product cannot be interchanged. */
+export class ReorderError extends NotImplementedError {
+  constructor(expr: string, msg: string) {
+    super(`${expr} could not be reordered: ${msg}.`);
+    this.name = 'ReorderError';
+  }
+}
+
 /** A feature whose entry point has not been imported (e.g. simplify before importing '@symjs/symjs/simplify'). */
 export class NotLoadedError extends Error {
   constructor(message: string) {

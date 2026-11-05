@@ -4,7 +4,7 @@ Status: adopted (2026-11-02) and implemented; it may change by decision of the c
 
 ## Conventions
 
-1. **Names are camelCase.** SymPy functions keep their SymPy name converted mechanically from snake_case (`factor_list` -> `factorList`, `expand_log` -> `expandLog`).
+1. **Names are camelCase.** SymPy functions keep their SymPy name converted mechanically from snake_case (`factor_list` -> `factorList`, `expand_log` -> `expandLog`). A SymPy name that is a JavaScript reserved word keeps its name as the export name, which JavaScript allows (`public` of `sympy.utilities.decorator`: `import { public as markPublic }` or `sj.public`).
 2. **Classes use SymPy's names** (`Integer`, `Rational`, `Float`, `Add`, `Mul`, `Pow`, `Derivative`, `Integral`, `Piecewise`, `Interval`, `FiniteSet`, `And`, ...), **except names that are JavaScript globals**, which would shadow the global wherever they are imported: SymPy `Symbol` is `Sym`, `Number` is `SymNumber`, `Function` is `SymFunction`, `Array` is `SymArray` and `Set` is `SetExpr`. The SymPy spellings `Symbol`, `Number`, `Function` and `Array` remain as deprecated aliases during 0.x and are removed in 1.0.
 3. **Functions are primary; methods are thin aliases.** `subs(e, ...)`, `expand(e)`, ... are the API. `e.subs(...)`, `e.expand()` call the same functions, so unused features stay out of bundles.
 4. **Keyword arguments are a trailing options object** with camelCase keys (`factor(e, { deep: true })`, `solve(e, x, { cubics: false })`). Positional arguments follow SymPy's order.

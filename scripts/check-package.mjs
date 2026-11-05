@@ -48,15 +48,21 @@ try {
     const [y] = sj.symbols('y'), f = sj.SymFunction('f')(x, y);
     const pde = sj.add(sj.diff(f, x), sj.diff(f, y));
     assert.equal(sj.checkpdesol(pde, sj.pdsolve(pde), f)[0], true);
+    assert.equal(sj.encipherShift('ABC', 1), 'BCD');
+    assert.equal(String(sj.CartanMatrix('A2')), 'Matrix([[2, -1], [-1, 2]])');
   `;
   const esm = `import assert from 'node:assert/strict';
     import * as sj from '@symjs/symjs';
     import { Sym } from '@symjs/symjs/core';
     import { Diagram } from '@symjs/symjs/categories';
+    import { encipherShift } from '@symjs/symjs/crypto';
+    import { CartanType } from '@symjs/symjs/liealgebras';
     import { gates } from '@symjs/physics-quantum';
     import { fromMathjsValue } from '@symjs/mathjs';
     assert.equal(sj.Sym, Sym);
     assert.equal(sj.Diagram, Diagram);
+    assert.equal(sj.encipherShift, encipherShift);
+    assert.equal(CartanType('A3').dimension(), 4);
     ${assertions}
     ${entries.map((e) => `await import(${JSON.stringify(e)});`).join('\n')}
   `;
@@ -64,10 +70,14 @@ try {
     const sj = require('@symjs/symjs');
     const { Sym } = require('@symjs/symjs/core');
     const { Diagram } = require('@symjs/symjs/categories');
+    const { encipherShift } = require('@symjs/symjs/crypto');
+    const { CartanType } = require('@symjs/symjs/liealgebras');
     const { gates } = require('@symjs/physics-quantum');
     const { fromMathjsValue } = require('@symjs/mathjs');
     assert.equal(sj.Sym, Sym);
     assert.equal(sj.Diagram, Diagram);
+    assert.equal(sj.encipherShift, encipherShift);
+    assert.equal(CartanType('A3').dimension(), 4);
     ${assertions}
     ${entries.map((e) => `require(${JSON.stringify(e)});`).join('\n')}
   `;

@@ -43,6 +43,14 @@ export class JsSet {
 }
 
 export class Unsupported extends Error {}
+/** An element of GF(p) (SymPy ModularInteger, the terms of the LFSR sequences of sympy.crypto). */
+export class JsFFElement {
+  constructor(readonly v: bigint, readonly mod: bigint, readonly symmetric: boolean) {}
+  toString(): string {
+    const v = this.symmetric && this.v > this.mod / 2n ? this.v - this.mod : this.v;
+    return `${this.symmetric ? 'Symmetric' : ''}ModularIntegerMod${this.mod}(${v})`;
+  }
+}
 
 /** A Python float (printed as 2.0, 0.5, ...). */
 export class JsFloat {
@@ -50,9 +58,12 @@ export class JsFloat {
 }
 
 /** An undefined function class (SymPy `Function('f')` itself, not applied). */
-/** A polynomial ground domain (ZZ, QQ). */
+/** A polynomial domain by its SymPy name (ZZ, QQ, GF(5), QQ<sqrt(2)>, ZZ[x], ...) and its symjs domain when one exists. */
 export class JsDomain {
-  constructor(readonly name: string) {}
+  constructor(
+    readonly name: string,
+    readonly domain?: unknown,
+  ) {}
 }
 
 /** A predicate lambda testing a SymPy is_* attribute (lambda e: e.is_Mul). */
@@ -204,9 +215,11 @@ function normalizeSets(s: string): string {
 }
 
 /** Compare with Python's str(); dict and set item order is ignored. */
+/** SymPy results printed in a non-canonical form that symjs prints canonically (the same object). */
+const PRINT_ALIASES: Readonly<Record<string, string>> = { 'Interval(-oo, oo)': 'Reals' };
 export function matches(v: unknown, expected: string): boolean {
   const got = fmt(v);
-  if (got === expected) return true;
+  if (got === expected || PRINT_ALIASES[expected] === got) return true;
   if (got.includes('{') && normalizeSets(got) === normalizeSets(expected)) return true;
   const listPrefix = "defaultdict(<class 'list'>, ";
   if (expected.startsWith(listPrefix)) return matches(v, expected.slice(listPrefix.length, -1));
@@ -254,6 +267,7 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   Heaviside: ([x, h0]) => sj.Heaviside(x!, h0),
   SingularityFunction: ([x, a, n]) => sj.SingularityFunction(x!, a!, n!),
   Mod: ([a, b]) => sj.Mod(a!, b!),
+  SchurNumber: ([k]) => sj.SchurNumber(k!),
   ...Object.fromEntries(SPECIAL_NAMES.map((n) => [n, (args: Expr[]) => sj.fn(n, args)])),
   RisingFactorial: (args) => sj.fn('rf', args),
   Rem: ([p, q]) => sj.Rem(p!, q!),
@@ -350,6 +364,14 @@ function orderNode(e: unknown, rest: unknown[]): Expr {
 
 export function deserialize(tree: Tree): unknown {
   switch (tree.t) {
+    case 'CartanType':
+      return sj.CartanType(`${String(tree['series'])}${String(tree['n'])}`);
+    case 'RootSystem':
+      return new sj.RootSystem(deserialize(tree['cartanType'] as Tree) as sj.StandardCartan);
+    case 'WeylGroup':
+      return new sj.WeylGroup(deserialize(tree['cartanType'] as Tree) as sj.StandardCartan);
+    case 'FFElement':
+      return new JsFFElement(BigInt(tree['v'] as number), BigInt(tree['mod'] as number), tree['symmetric'] as boolean);
     case 'Js':
       return tree['v'];
     case 'Quaternion': {
@@ -468,8 +490,22 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'AlgebraicNumber':
       return new sj.AlgebraicNumber(deserialize(tree['root'] as Tree) as Expr, (tree['coeffs'] as Tree[]).map((t) => deserialize(t) as Expr));
-    case 'Domain':
-      return new JsDomain(tree['name'] as string);
+    case 'Domain': {
+      // the domain objects symjs has; ZZ/QQ also stay recognizable as JsDomain where an adapter compares the name
+      const name = tree['name'] as string;
+      const known: Record<string, unknown> = { ZZ: sj.ZZ, QQ: sj.QQ, RR: sj.RR, EX: sj.EX };
+      return known[name] !== undefined && tree['base'] === undefined ? new JsDomain(name, known[name]) : new JsDomain(name);
+    }
+    case 'MonomialOrder':
+      return (sj as Record<string, unknown>)[tree['name'] as string];
+    case 'PolyRing':
+    case 'FracField':
+    case 'PolyElement':
+    case 'FracElement':
+    case 'DomainMatrix':
+    case 'DomainScalar':
+      // no symjs counterparts of PolyRing/FracField/DomainMatrix values yet
+      throw new Unsupported(`argument type ${tree.t}`);
     case 'JsPred':
       return new JsPred(tree['attr'] as string);
     case 'RootSum': {
@@ -1233,10 +1269,17 @@ export const ADAPTERS: Record<string, Adapter> = {
   MutableMatrix: (args, kw) => ADAPTERS['Matrix']!(args, kw),
   parse_expr: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['transformations', 'evaluate', 'local_dict'].includes(k)) throw new Unsupported(`kwargs ${k}`);
-    const tr = kw['transformations'];
+    const tr0 = kw['transformations'];
+    // a tuple of SymPy transformations: the implicit ones (multiplication, application, splitting of symbols) and
+    // convert_equals_signs map to the parser options
+    const names = tr0 instanceof JsTuple ? tr0.items.map((f) => (f as JsFunc).name) : [];
+    const split = names.some((n) => n === 'split_symbols' || n === 'implicit_multiplication_application');
+    const implicit = names.some((n) => /^(implicit_|_split_symbols|function_exponentiation)/.test(n));
+    const equals = names.includes('convert_equals_signs');
+    const tr = tr0 instanceof JsTuple ? (split ? 'all' : implicit ? 'implicit' : undefined) : tr0;
     if (tr !== undefined && tr !== 'all' && tr !== 'implicit') throw new Unsupported('transformations');
     const locals = kw['local_dict'] instanceof JsDict ? Object.fromEntries(kw['local_dict'].entries.map(([k, v]) => [String(k), asExpr(v)])) : undefined;
-    return sj.parse(String(args[0]), { ...(tr ? { transformations: tr as 'all' } : {}), ...(kw['evaluate'] === false ? { evaluate: false } : {}), ...(locals ? { symbols: locals } : {}) });
+    return sj.parse(String(args[0]), { ...(tr ? { transformations: tr as 'all' } : {}), ...(equals ? { convertEqualsSigns: true } : {}), ...(kw['evaluate'] === false ? { evaluate: false } : {}), ...(locals ? { symbols: locals } : {}) });
   },
   sympify: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['rational', 'evaluate', 'convert_xor', 'locals'].includes(k)) throw new Unsupported(`kwargs ${k}`);
@@ -1710,6 +1753,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new JsTuple(sj.eulerMaclaurin(self as sj.Concrete, m, n));
   },
   igcd: (args, kw) => (noKw(kw), sj.Rational.of(sj.igcd(...args.map((a) => (a as sj.Rational).p)))),
+  igcdex: (args, kw) => (noKw(kw), sj.igcdex((args[0] as sj.Rational).p, (args[1] as sj.Rational).p)),
+  isqrt: (args, kw) => (noKw(kw), sj.isqrt((args[0] as sj.Rational).p)),
   ilcm: (args, kw) => (noKw(kw), sj.Rational.of(sj.ilcm(...args.map((a) => (a as sj.Rational).p)))),
   integer_nthroot: (args, kw) => {
     noKw(kw);
@@ -3632,8 +3677,88 @@ export interface Case {
   self?: Tree;
   unsupportedArg?: string;
   assume?: Tree[];
+  /** printed output (print(f(...)), pprint(...), a str result): compared as text */
+  text?: boolean;
+  /** the doctest compares with NORMALIZE_WHITESPACE */
+  ws?: boolean;
 }
 
+// sympy.crypto LFSRs: symjs takes the values of the GF(p) elements and the modulus
+const ffValues = (l: unknown): [bigint[], bigint] => {
+  const xs = (l as JsList).items as JsFFElement[];
+  return [xs.map((x) => x.v), xs[0]?.mod ?? 2n];
+};
+ADAPTERS['lfsr_sequence'] = (args, kw) => {
+  noKw(kw);
+  const [key, mod] = ffValues(args[0]);
+  const [fill] = ffValues(args[1]);
+  const sym = ((args[0] as JsList).items[0] as JsFFElement).symmetric;
+  return new JsList(sj.lfsrSequence(key, fill, Number((args[2] as sj.Rational).p), { modulus: mod }).map((v) => new JsFFElement(v, mod, sym)));
+};
+ADAPTERS['lfsr_autocorrelation'] = (args, kw) => (noKw(kw), sj.lfsrAutocorrelation(ffValues(args[0])[0], Number((args[1] as sj.Rational).p), Number((args[2] as sj.Rational).p)));
+ADAPTERS['lfsr_connection_polynomial'] = (args, kw) => {
+  noKw(kw);
+  const [s, mod] = ffValues(args[0]);
+  return sj.lfsrConnectionPolynomial(s, { modulus: mod });
+};
+
+/**
+ * A text case: a string result is compared with the printed text (trailing
+ * newlines are not significant, and runs of whitespace are one space when
+ * the doctest says NORMALIZE_WHITESPACE); other results are compared like
+ * any case (print(expand_func(...)) prints str() of the result).
+ */
+function textMatches(v: unknown, c: Case): boolean {
+  if (typeof v !== 'string') return matches(v, c.expected);
+  const norm = (t: string): string => (c.ws ? t.replace(/\s+/g, ' ').trim() : t.replace(/\n+$/, ''));
+  return norm(v) === norm(c.expected);
+}
+
+/** Text cases print like SymPy's doctest runner: pretty printing in ASCII. */
+function asDoctest<T>(c: Case, f: () => T): T {
+  if (!c.text) return f();
+  const prev = sj.pprintUseUnicode(false);
+  try {
+    return f();
+  } finally {
+    sj.pprintUseUnicode(prev);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Printing: SymPy's keyword settings as the options object of the printers
+// (integer settings such as long_frac_ratio and terms_per_line are JS numbers,
+// dicts such as symbol_names are Maps)
+// ---------------------------------------------------------------------------
+
+/** A printer setting: integers as numbers, dicts as Maps, the rest as deserialized. */
+function printSetting(v: unknown): unknown {
+  if (v instanceof sj.Rational && v.q === 1n) return Number(v.p);
+  if (v instanceof JsDict) return new Map(v.entries);
+  return v;
+}
+const printOptions = (kw: Record<string, unknown>): Record<string, unknown> => Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), printSetting(v)]));
+/** A printable argument: SymPy lists are arrays, dicts Maps, sets Sets. */
+function printable(v: unknown): unknown {
+  if (v instanceof JsList || v instanceof JsTuple) return v.items.map(printable);
+  if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [printable(k), printable(x)]));
+  if (v instanceof JsSet) return new Set(v.items.map(printable));
+  return v;
+}
+ADAPTERS['latex'] = (args, kw) => sj.latex(printable(args[0]) as sj.LatexPrintable, printOptions(kw));
+ADAPTERS['print_latex'] = (args, kw) => sj.printLatex(printable(args[0]) as sj.LatexPrintable, printOptions(kw));
+ADAPTERS['multiline_latex'] = (args, kw) => {
+  const [lhs, rhs, terms] = args;
+  return sj.multilineLatex(lhs as Expr, rhs as Expr, { ...(terms === undefined ? {} : { termsPerLine: printSetting(terms) as number }), ...printOptions(kw) });
+};
+ADAPTERS['srepr'] = (args, kw) => (noKw(kw), sj.srepr(printable(args[0]) as sj.ReprPrintable));
+ADAPTERS['mathml'] = (args, kw) => sj.mathml(printable(args[0]) as sj.MathMLPrintable, printOptions(kw));
+ADAPTERS['print_mathml'] = (args, kw) => sj.printMathml(printable(args[0]) as sj.MathMLPrintable, printOptions(kw));
+ADAPTERS['print_tree'] = (args, kw) => sj.printTree(args[0] as Expr, printOptions(kw));
+ADAPTERS['dotprint'] = (args, kw) => sj.dotprint(args[0] as Expr, printOptions(kw));
+
+// Matrix.print_nonzero prints the pattern; symjs printNonzero returns it
+ADAPTERS['.print_nonzero'] = (args, kw, self) => (noKw(kw), sj.printNonzero(self as Matrix, ...(args as [string?])));
 // SymPy minpoly is an alias of minimal_polynomial
 ADAPTERS['minpoly'] = ADAPTERS['minimal_polynomial']!;
 
@@ -3679,7 +3804,9 @@ for (const name of Object.keys(sj.Q)) {
 // ---------------------------------------------------------------------------
 
 /** Categories whose integer arguments are JS numbers (indices, sizes, sequences). */
-const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'discrete', 'geometry']);
+const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'discrete', 'geometry', 'crypto', 'liealgebras']);
+/** Functions of other categories whose integer arguments are JS numbers (variable numbers of the integer representation of clauses). */
+const NUMERIC_FUNCTIONS = new Set(['unit_propagate_int_repr', '.reorder_limit']);
 
 /** SymPy names that are JavaScript globals, and the symjs names that do not shadow them. */
 const JS_GLOBAL_RENAMES: Record<string, string> = { Symbol: 'Sym', Number: 'SymNumber', Function: 'SymFunction', Array: 'SymArray', Set: 'SetExpr', Object: 'SymObject' };
@@ -3704,6 +3831,9 @@ function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
   if (v instanceof JsLambda) return (...xs: unknown[]) => v.call(...xs.map((x) => (typeof x === 'number' ? sj.Rational.of(BigInt(x)) : x)) as Expr[]);
   if (v instanceof JsPred) return (e: Expr) => v.test(e);
   if (v instanceof UFnClass) return sj.SymFunction(v.name);
+  if (v instanceof JsDomain) return v.domain ?? v;
+  // a GF(p) element as its integer value (the GF(p) functions take integers and the modulus)
+  if (v instanceof JsFFElement) return toJs(sj.Rational.of(v.v), numbers, inArray);
   return v;
 }
 
@@ -3752,7 +3882,7 @@ function placeArgs(f: (...a: unknown[]) => unknown, args: unknown[], kw: Record<
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
-  const numbers = NUMERIC_CATEGORIES.has(c.category);
+  const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn);
   const conv = (x: unknown): unknown => toJs(x, numbers);
   if (c.fn.startsWith('.')) {
     const name = camel(c.fn.slice(1));
@@ -3870,13 +4000,17 @@ function occurrence(c: Case): number {
 let occurrenceCorpus: Case[] | undefined;
 
 export function runCase(c: Case): Outcome {
+  return asDoctest(c, () => runCase0(c));
+}
+
+function runCase0(c: Case): Outcome {
   const portEntry = PORTS[`${c.module}:${c.src}`];
   const port = Array.isArray(portEntry) ? (portEntry as readonly (() => unknown)[])[occurrence(c)] : (portEntry as (() => unknown) | undefined);
   if (port) {
     // a doctest that needs Python code (classes, lambdas) runs as its JavaScript translation
     try {
       const v = fromJs(port());
-      return matches(v, c.expected) ? { status: 'pass' } : { status: 'fail', got: fmt(v) };
+      return (c.text ? textMatches(v, c) : matches(v, c.expected)) ? { status: 'pass' } : { status: 'fail', got: typeof v === 'string' ? v : fmt(v) };
     } catch (e) {
       return { status: 'error', reason: e instanceof Error ? e.message : String(e) };
     }
@@ -3903,7 +4037,8 @@ export function runCase(c: Case): Outcome {
       if (!auto || !(e instanceof Unsupported || e instanceof TypeError)) throw e;
       v = call(auto);
     }
-    if (matches(v, c.expected)) return { status: 'pass' };
+    if (c.text ? textMatches(v, c) : matches(v, c.expected)) return { status: 'pass' };
+    if (c.text && typeof v === 'string') return { status: 'fail', got: v };
     const got = fmt(v);
     // the same capability with a different printed form counts as compatible
     const syms = new Map<string, Sym>();
@@ -3944,6 +4079,8 @@ const SYMPY_ERRATA: Readonly<Record<string, string>> = {
   'is_strictly_increasing(-x**2 + y, Interval(-oo, 0), x)': 'True',
   // n is a positive integer: mobius(1**2) = 1, so the value is not 0 for every n
   'mobius(n**2)': 'mobius(n**2)',
+  // a product of symmetric matrices is symmetric only when they commute: X*Z is not known to be symmetric
+  'ask(Q.symmetric(X*Z), Q.symmetric(X) & Q.symmetric(Z))': 'None',
 };
 
 /** The dsolve result v solves the equation (or system) eqArg. */

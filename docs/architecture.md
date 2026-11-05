@@ -15,13 +15,17 @@ without the higher ones.
 |---|---|---|
 | L0 kernel | expression tree, numbers (including the mpf arithmetic), symbols and assumptions, automatic evaluation, traversal and substitution, Sum/Product nodes, str/LaTeX printing | `core/`, `printing/`, `numeric/mpf.ts`, `numeric/mpfun.ts`, `numeric/mpconst.ts`, `numeric/complex.ts` |
 | L1 functions | elementary and special functions, numeric evaluation (evalf, lambdify), parsing, differentiation, expansion and rewriting, propositional logic, number theory, discrete transforms and convolutions, iterable utilities, rewrite strategies and unification | `functions/`, `logic/`, `ntheory/`, `discrete/`, `utilities/`, `strategies/`, `unify/`, `numeric/` (other files), `parsing/`, `concrete/node.ts`, `calculus/diff.ts`, `calculus/finitediff.ts`, `simplify/expand.ts`, `simplify/rewrite.ts` |
-| L2 algebra | polynomials, simplification, matrices (including linear systems), series and limits, sets, sums and products, permutations and groups, abstract tensors and N-dimensional arrays, categories, quaternions | `polys/`, `combinatorics/`, `tensor/`, `categories/`, `algebras/`, `simplify/`, `matrices/`, `series/`, `sets/`, `calculus/` (other files), `concrete/summations.ts` |
-| L3 solvers and integration | equation solving, ODEs, recurrences, inequalities, integration, `doit`, Fourier and formal power series, holonomic functions | `solvers/`, `integrals/`, `holonomic/`, `calculus/doit.ts`, `series/formal.ts`, `series/fourier.ts` |
+| L2 algebra | polynomials, simplification, matrices (including linear systems), series and limits, sets, sums and products, permutations and groups, abstract tensors and N-dimensional arrays, categories, quaternions, the assumption helpers and the matrix handlers of `ask`, ciphers and cryptosystems, simple Lie algebras | `polys/`, `combinatorics/`, `tensor/`, `categories/`, `algebras/`, `simplify/`, `matrices/`, `series/`, `sets/`, `calculus/` (other files), `concrete/summations.ts`, `assumptions/`, `crypto/`, `liealgebras/` |
+| L3 solvers and integration | equation solving, ODEs, recurrences, inequalities, integration, `doit`, Fourier and formal power series, holonomic functions, sums of Kronecker deltas and Gosper's summation (which solve equations) | `solvers/`, `integrals/`, `holonomic/`, `calculus/doit.ts`, `series/formal.ts`, `series/fourier.ts`, `concrete/delta.ts`, `concrete/gosper.ts` |
 | L4 geometry | points, lines, planes, polygons, ellipses, curves and parabolas, which intersect by solving equations | `geometry/` |
 | L5 vector | coordinate systems, vectors and dyadics, vector differential operators, integrals over parametric, implicit and geometric regions | `vector/` |
 | L6 stats | random symbols, probability spaces and distributions (continuous, discrete, finite, compound, joint, matrix, random-matrix ensembles, stochastic processes), probabilities, expectations, densities and moments, which are integrals, sums and solutions of equations | `stats/` |
 
-The entry points (`src/*.ts`) may import every layer.
+The entry points (`src/*.ts`) may import every layer. `@symjs/symjs/logic`
+exports the assumption helpers of `assumptions/` (they use only the core), and
+`@symjs/symjs/matrices` loads the matrix handlers of `ask`
+(`assumptions/handlers/matrices.ts`, registered on load), so the core entry
+stays free of the higher layers.
 
 Extend modules (`packages/*` other than `symjs`) import the base module only
 through its public entry points (`@symjs/symjs`, `@symjs/symjs/<entry>`),
@@ -80,7 +84,7 @@ SymPy modules correspond to it as follows.
 
 | SymPy module | symjs |
 |---|---|
-| `sympy/core/basic.py` | `core/nodes.ts` (`Expr` as the common base), `core/basic.ts` (the generic `Basic(*args)` node), `core/traverse.ts` (`subs`, `xreplace`, `atoms`, `free_symbols`), `core/match.ts` (`matches`, `replace`, `find`, `count_ops`), `simplify/rewrite.ts` (`rewrite`) |
+| `sympy/core/basic.py` | `core/nodes.ts` (`Expr` as the common base), `core/basic.ts` (the generic `Basic(*args)` node), `core/compare.ts` (`Basic.compare`, SymPy's class names and `args` order), `core/traverse.ts` (`subs`, `xreplace`, `atoms`, `free_symbols`), `core/match.ts` (`matches`, `replace`, `find`, `count_ops`), `simplify/rewrite.ts` (`rewrite`) |
 | `sympy/core/expr.py` | `core/nodes.ts` (`Expr`), `core/methods.ts` (`coeff`, `as_independent`, `as_coeff_add`/`as_coeff_mul`, `primitive`, `as_content_primitive`, `extract_*`, `is_polynomial`, ...), `series/lseries.ts` (`lseries`, `dir`), `simplify/expand.ts` (`expand`) |
 | `sympy/core/add.py`, `mul.py`, `power.py`, `operations.py` | `core/nodes.ts` (`Add`, `Mul`, `Pow`), `core/ops.ts` (their canonicalizing constructors `add`, `mul`, `pow`) |
 | `sympy/core/numbers.py` | `core/nodes.ts` (`Rational`, `Float`, `Constant`, `Special`), `core/num.ts` (arithmetic on numbers), `core/numbers.ts` (bigint helpers), `core/numberutils.ts` (exact rationals from floats and decimal strings, `integer_log`), `numeric/` (mpf arithmetic) |
@@ -88,8 +92,8 @@ SymPy modules correspond to it as follows.
 | `sympy/core/symbol.py` | `core/nodes.ts` (`Sym`, `Dummy`, `Wild`), `core.ts` (`symbols`), `core/numberutils.ts` (its range syntax) |
 | `sympy/core/function.py` | `core/nodes.ts` (`Fn`, `Derivative`), `functions/elementary/elementary.ts` (`fn`, the evaluation of applied functions), `core/undef.ts` (undefined functions, `Derivative` construction), `core/defun.ts` (user-defined functions), `core/lambda.ts` (`Lambda`), `core/subsnode.ts` (`Subs`), `calculus/diff.ts` (`diff`), `simplify/expand.ts` (`expand` and its hints) |
 | `sympy/core/relational.py`, `sympy/functions/elementary/piecewise.py` | `core/logic.ts` (relations, boolean constants, `Piecewise`) |
-| `sympy/core/assumptions.py`, `facts.py` | `core/assumptions.ts` (three-valued queries) |
-| `sympy/assumptions/` | `core/refine.ts` (`Q`, `ask`, `refine`, handlers) |
+| `sympy/core/assumptions.py`, `facts.py`, `assumptions_generated.py` | `core/assumptions.ts` (three-valued queries), `core/facts.ts` (the deduction of the facts, `FactRules`/`FactKB`, with SymPy's compiled rule tables) |
+| `sympy/assumptions/` | `core/refine.ts` (`Q`, `ask`, `refine`, handlers); `assumptions/sathandlers.ts`, `assumptions/wrapper.ts` and `assumptions/handlers/matrices.ts` port the modules of the same paths (L2) |
 | `sympy/core/containers.py` | `core/containers.ts` |
 | `sympy/core/exprtools.py` | `core/factors.ts` (`Factors`), `simplify/exprtools.ts` (`gcd_terms`, `factor_terms`, ...) |
 | `sympy/core/mod.py` | `functions/mod.ts` |
@@ -152,6 +156,21 @@ SymPy modules correspond to it as follows.
 | `series/fourier.py` | `series/fourier.ts` | |
 | `core/expr.py` (`Expr.lseries`, `Expr.dir`) | `series/lseries.ts` | no SymPy module of its own; built on `series` and `limit` |
 | (none: `Expr.nseries` and the `_eval_nseries` methods) | `series/puiseux.ts` | the truncated Puiseux series engine of `series` and `limit`; SymPy's `polys/puiseux.py` is the unrelated ring used by `ring_series` |
+
+### Other packages
+
+Modules not listed here follow the path rule (`sympy/crypto/crypto.py` ->
+`crypto/crypto.ts`, `sympy/liealgebras/type_a.py` -> `liealgebras/typea.ts`,
+`sympy/polys/galoistools.py` -> `polys/galoistools.ts`, ...).
+
+| SymPy module | symjs | Note |
+|---|---|---|
+| `calculus/util.py` (`continuous_domain`, `function_range`, `lcim`) | `solvers/calculusutil.ts` | an L3 module (it solves inequalities); the other functions of `calculus/util.py` are in `solvers/inequalities.ts` |
+| `concrete/delta.py`, `concrete/gosper.py` | `concrete/delta.ts`, `concrete/gosper.ts` | L3 modules (they solve equations), unlike `concrete/summations.ts` |
+| `liealgebras/cartan_type.py` | `liealgebras/cartantype.ts`, `liealgebras/standard.ts` | `standard.ts` holds `Standard_Cartan`, the base of the `type_*` modules, which `cartan_type.py` also defines |
+| `polys/galoistools.py` (`csolve_prime`) | `ntheory/residue.ts` | `gf_csolve` of the number theory (L1) is built on it |
+| `polys/polyerrors.py` | `core/errors.ts`, `polys/polyerrors.ts` | the exceptions the core raises are in `core/errors.ts` |
+| `printing/repr.py`, `tree.py`, `dot.py` | `printing/repr.ts`, `printing/tree.ts`, `printing/dot.ts` | they share SymPy's view of the tree (`core/compare.ts`) |
 
 ### `geometry/`
 
@@ -225,6 +244,26 @@ SymPy modules correspond to it as follows.
 | `combinatorics/tensor_can.py` | `tensor/tensorcan.ts` | the Butler-Portugal canonicalization of tensors under slot and dummy symmetries (`canonicalize`, `double_coset_can_rep`, `canonical_free`, `riemann_bsgs`) |
 | `solvers/pde.py` | `solvers/pde.ts` | first-order linear PDEs with constant and variable coefficients, explicit solution checking and variable separation |
 | `solvers/solveset.py` | `solvers/solveset.ts` | nonlinear-system substitution, including dependent exponential ImageSet components |
+
+## Scope decisions
+
+Every SymPy module has a status in `compat/scope-inventory.json`
+(generated by `compat/inventory.py`): partial (a symjs counterpart exists),
+unimplemented (with a note on where it is planned), excluded (with the
+reason) or unassessed. Mathematical content is never excluded.
+
+| SymPy modules | Decision |
+|---|---|
+| `printing/c.py`, `cxx.py`, `fortran.py`, `rust.py`, `octave.py`, `julia.py`, `maple.py`, `mathematica.py`, `glsl.py`, `rcode.py`, `smtlib.py`, `codeprinter.py`; the AST and node modules of `codegen/`; `utilities/codegen.py` | extend package `@symjs/codegen` (planned) |
+| `codegen/cfunctions.py`, `rewriting.py`, `approximations.py`, `algorithms.py` | base module (not ported yet) |
+| `printing/pycode.py`, `numpy.py`, `lambdarepr.py`, `python.py`, `codegen/pyutils.py`, `utilities/autowrap.py` | out of scope: they generate or compile Python code |
+| `printing/jscode.py` | not ported: JavaScript code output is not needed for now |
+| `parsing/latex/` | base module (not ported yet) |
+| `parsing/maxima.py`, `autolev/`, `c/`, `fortran/`, `sym_expr.py` | extend package (planned) |
+| `diffgeom/` | extend package (planned) |
+| `physics/` | extend packages per field, in an order decided later; `physics/quantum/` is `@symjs/physics-quantum` (partial) |
+| `plotting/`, `categories/diagram_drawing.py`, `printing/preview.py` | deferred (rendering and display) |
+| test runners and helpers, caching, dispatch decorators, compilation helpers, release metadata, the gmpy2/python-flint ground-type back ends, SAT-solver bindings, typing protocols, REPL and display helpers | out of scope: Python-runtime tooling |
 
 The condition-level scope and remaining limitations are maintained in
 [`compat/capabilities.json`](../compat/capabilities.json). API existence and

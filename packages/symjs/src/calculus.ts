@@ -59,6 +59,10 @@ export {
 export { eulerEquations } from './calculus/euler';
 export { residue } from './series/residues';
 export { differenceDelta, limitSeq } from './series/limitseq';
+export { finiteDiff, finiteDiffKauers } from './series/kauers';
+export { deltasummation, deltaproduct } from './concrete/delta';
+export { gosperNormal, gosperTerm, gosperSum } from './concrete/gosper';
+export type { DeltaLimit } from './concrete/delta';
 export {
   SeqBase,
   EmptySequenceNode,

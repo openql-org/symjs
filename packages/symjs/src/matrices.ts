@@ -7,12 +7,21 @@
 
 // every entry point brings the core with its registrations
 import './core';
+// the matrix handlers of ask (Q.invertible, Q.symmetric, ... of matrix expressions) register on load
+import './assumptions/handlers/matrices';
+import { Matrix as MatrixClass } from './matrices/matrix';
+import { registerTableFormMatrix } from './printing/tableform';
+
+// TableForm.asMatrix (printing, a lower layer) builds its matrix with the matrices
+registerTableFormMatrix((rows) => MatrixClass.of(rows));
 
 export {
   Matrix,
 } from './matrices/matrix';
 export { MutableDenseMatrix, MutableMatrix } from './matrices/mutable';
 export { ImmutableSparseMatrix, MutableSparseMatrix, SparseMatrix } from './matrices/sparse';
+export { banded } from './matrices/sparsetools';
+export type { BandedArgs, BandedDiagonals, BandedOptions, BandedValue } from './matrices/sparsetools';
 export type { MatrixPosition, SparseData, SparseMatrixArgs, SparseValue } from './matrices/sparse';
 // SymPy ImmutableDenseMatrix is ImmutableMatrix
 export { ImmutableMatrix as ImmutableDenseMatrix } from './matrices/expressions/matexpr';

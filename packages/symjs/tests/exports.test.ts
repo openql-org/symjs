@@ -7,7 +7,7 @@ import { Matrix } from '../src/matrices';
 import * as ntheory from '../src/ntheory';
 import * as utilities from '../src/utilities';
 
-const ENTRIES = ['index', 'core', 'special', 'simplify', 'polys', 'calculus', 'solvers', 'sets', 'matrices', 'logic', 'ntheory', 'combinatorics', 'utilities', 'tensor', 'printing', 'discrete', 'algebras', 'strategies', 'unify', 'holonomic', 'geometry', 'vector', 'stats', 'categories'];
+const ENTRIES = ['index', 'core', 'special', 'simplify', 'polys', 'calculus', 'solvers', 'sets', 'matrices', 'logic', 'ntheory', 'combinatorics', 'utilities', 'tensor', 'printing', 'discrete', 'algebras', 'strategies', 'unify', 'holonomic', 'geometry', 'vector', 'stats', 'categories', 'crypto', 'liealgebras'];
 
 describe('one definition per exported name', () => {
   it('a name exported by several entry points is the same value in each', async () => {

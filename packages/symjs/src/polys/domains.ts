@@ -135,8 +135,8 @@ export abstract class Domain {
   }
 }
 
-/** SymPy ZZ: the integers. */
-class IntegerRing extends Domain {
+/** SymPy ZZ: the integers (SymPy IntegerRing). */
+export class IntegerRing extends Domain {
   readonly ground = 'ZZ' as const;
   readonly isField = false;
   toString(): string {
@@ -160,7 +160,7 @@ class IntegerRing extends Domain {
 }
 
 /** SymPy QQ: the rationals. */
-class RationalField extends Domain {
+export class RationalField extends Domain {
   readonly ground = 'QQ' as const;
   readonly isField = true;
   toString(): string {
@@ -181,7 +181,7 @@ class RationalField extends Domain {
 }
 
 /** SymPy RR: floating-point numbers with 53 bits. */
-class RealField extends Domain {
+export class RealField extends Domain {
   readonly ground = 'RR' as const;
   readonly isField = true;
   toString(): string {
@@ -214,7 +214,7 @@ class RealField extends Domain {
  * such as sqrt(2)*I). Elements are canonicalized as SymPy does
  * (cancel, then expand), so a zero is recognized when it cancels.
  */
-class ExpressionDomain extends Domain {
+export class ExpressionDomain extends Domain {
   readonly ground = 'EX' as const;
   readonly isField = true;
   toString(): string {

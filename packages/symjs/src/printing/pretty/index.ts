@@ -7,12 +7,13 @@
  * the `stringPict` / `prettyForm` picture classes.
  */
 
-export { pretty, pprint, prettyPrint, pagerPrint, PrettyPrinter, PrettyTuple, prettyHooks } from './pretty';
+export { pretty, pprint, prettyPrint, pagerPrint, pprintUseUnicode, pprintTryUseUnicode, PrettyPrinter, PrettyTuple, prettyHooks } from './pretty';
 export type { PrettyOptions, Printable, MatrixLike } from './pretty';
 export { StringPict, PrettyForm, Binding, LINE } from './stringpict';
 export type { PictPair, PictLike, RenderOptions } from './stringpict';
 export {
   prettyUseUnicode,
+  prettyTryUseUnicode,
   prettySymbol,
   prettyAtom,
   greekUnicode,

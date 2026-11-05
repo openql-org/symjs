@@ -924,7 +924,7 @@ function raiseModPower(x: bigint, s: bigint, p: bigint, f: readonly bigint[]): b
   return linearCongruence(alpha, beta, p);
 }
 
-function csolvePrime(f: readonly bigint[], p: bigint, e: bigint): bigint[] {
+function csolvePrimeInt(f: readonly bigint[], p: bigint, e: bigint): bigint[] {
   const g0 = [...f];
   const pn = Number(p);
   for (let i = 0; i < g0.length - pn; i++) {
@@ -962,12 +962,21 @@ function csolvePrime(f: readonly bigint[], p: bigint, e: bigint): bigint[] {
   return sortBig(X);
 }
 
+/**
+ * The roots of the polynomial with integer coefficients f (leading first)
+ * modulo p**e for a prime p (SymPy csolve_prime of sympy.polys.galoistools;
+ * kept here because gf_csolve, which ntheory uses, is built on it).
+ */
+export function csolvePrime(f: readonly IntLike[], p: IntLike, e: IntLike = 1n): bigint[] {
+  return csolvePrimeInt(f.map((c) => asInt(c)), asInt(p), asInt(e));
+}
+
 /** The roots of the polynomial with coefficients f (leading first) modulo n (SymPy gf_csolve). */
 export function gfCsolve(f: readonly IntLike[], nIn: IntLike): bigint[] {
   const n = asInt(nIn);
   const fs = f.map((c) => asInt(c));
   const P = factorint(n);
-  const X = [...P].map(([p, e]) => csolvePrime(fs, p, e));
+  const X = [...P].map(([p, e]) => csolvePrimeInt(fs, p, e));
   const dist = [...P].map(([p, e]) => p ** e);
   return sortBig([...product(X)].map((per) => gfCrt(per, dist)));
 }

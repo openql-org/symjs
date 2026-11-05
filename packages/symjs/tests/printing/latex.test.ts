@@ -10,7 +10,8 @@ import { Add, Float, Fn, Integral, Limit, Mul, Order, Pow, Rational, S } from '.
 import type { FnName } from '../../src/core/nodes';
 import { CosineTransform, FourierTransform, InverseLaplaceTransform, InverseSineTransform, LaplaceTransform, MellinTransform } from '../../src/integrals/transforms';
 import { DotProduct, MatrixSymbol } from '../../src/matrices/expressions';
-import { latex, splitSuperSub } from '../../src/printing/latex';
+import { latex, latexEscape, splitSuperSub } from '../../src/printing/latex';
+import { multilineLatex, printLatex } from '../../src/printing/printers';
 import * as Sets from '../../src/sets/sets';
 
 const A = new Sym('A', { commutative: false });
@@ -553,5 +554,197 @@ describe('latex of sequences, Range, singularity and special functions (SymPy 1.
     // SymPy fails (SeqPer has no formula)
     const s = sj.SeqPer([1, 2], [v.n, v.a, S.Infinity]);
     expect(latex(s)).toBe(s.printLatex(latex));
+  });
+});
+
+describe('the settings of the LaTeX printer (SymPy latex(expr, **settings))', () => {
+  const P = (s: string): sj.Expr => sj.parseExpr(s);
+  // expected values from SymPy 1.14 latex(sympify(src), **settings)
+  const cases: [string, () => sj.Expr, sj.LatexOptions, string][] = [
+    ["3*x**2/y {}", () => P("3*x**2/y"), {}, "\\frac{3 x^{2}}{y}"],
+    ["3*x**2/y {\"fold_short_frac\": true}", () => P("3*x**2/y"), { foldShortFrac: true }, "3 x^{2} / y"],
+    ["3*x**2/y {\"mode\": \"inline\"}", () => P("3*x**2/y"), { mode: "inline" }, "$3 x^{2} / y$"],
+    ["(x + 1)/y {\"fold_short_frac\": true}", () => P("(x + 1)/y"), { foldShortFrac: true }, "\\left(x + 1\\right) / y"],
+    ["x/(y*z**2) {\"fold_short_frac\": true}", () => P("x/(y*z**2)"), { foldShortFrac: true }, "\\frac{x}{y z^{2}}"],
+    ["x/2 {\"mode\": \"inline\"}", () => P("x/2"), { mode: "inline" }, "$x / 2$"],
+    ["-x/2 {\"fold_short_frac\": true}", () => P("-x/2"), { foldShortFrac: true }, "- x / 2"],
+    ["x*y*z/(x + 1) {\"long_frac_ratio\": 1}", () => P("x*y*z/(x + 1)"), { longFracRatio: 1 }, "\\frac{x y z}{x + 1}"],
+    ["(x + 1)*sin(x)/y {\"long_frac_ratio\": 0}", () => P("(x + 1)*sin(x)/y"), { longFracRatio: 0 }, "\\frac{1}{y} \\left(x + 1\\right) \\sin{\\left(x \\right)}"],
+    ["sin(x)/y {\"long_frac_ratio\": 0}", () => P("sin(x)/y"), { longFracRatio: 0 }, "\\frac{1}{y} \\sin{\\left(x \\right)}"],
+    ["x*y*sin(z)*cos(x)/(x + 2) {\"long_frac_ratio\": 1}", () => P("x*y*sin(z)*cos(x)/(x + 2)"), { longFracRatio: 1 }, "\\frac{x y}{x + 2} \\sin{\\left(z \\right)} \\cos{\\left(x \\right)}"],
+    ["x*(y + 1)*z/x_1 {\"long_frac_ratio\": 0}", () => P("x*(y + 1)*z/x_1"), { longFracRatio: 0 }, "\\frac{1}{x_{1}} x z \\left(y + 1\\right)"],
+    ["2*x*y {\"mul_symbol\": \"dot\"}", () => P("2*x*y"), { mulSymbol: "dot" }, "2 \\cdot x \\cdot y"],
+    ["2*x*y {\"mul_symbol\": \"times\"}", () => P("2*x*y"), { mulSymbol: "times" }, "2 \\times x \\times y"],
+    ["2*x*y {\"mul_symbol\": \"ldot\"}", () => P("2*x*y"), { mulSymbol: "ldot" }, "2 \\,.\\, x \\,.\\, y"],
+    ["2*x*y {\"mul_symbol\": \"\\\\,\"}", () => P("2*x*y"), { mulSymbol: "\\," }, "2\\,x\\,y"],
+    ["2*x*y {\"mul_symbol\": \" * \"}", () => P("2*x*y"), { mulSymbol: " * " }, "2 * x * y"],
+    ["2*3**x {}", () => P("2*3**x"), {}, "2 \\cdot 3^{x}"],
+    ["2*3**x {\"mul_symbol\": \"times\"}", () => P("2*3**x"), { mulSymbol: "times" }, "2 \\times 3^{x}"],
+    ["2*3**x {\"mul_symbol\": \"\\\\,\"}", () => P("2*3**x"), { mulSymbol: "\\," }, "2 \\cdot 3^{x}"],
+    ["2*3**x {\"mul_symbol\": \" * \"}", () => P("2*3**x"), { mulSymbol: " * " }, "2 * 3^{x}"],
+    ["1.5e20*x {}", () => P("1.5e20*x"), {}, "1.5 \\cdot 10^{20} x"],
+    ["1.5e20*x {\"mul_symbol\": \"times\"}", () => P("1.5e20*x"), { mulSymbol: "times" }, "1.5 \\times 10^{20} \\times x"],
+    ["1.5*x {\"decimal_separator\": \"comma\"}", () => P("1.5*x"), { decimalSeparator: "comma" }, "1{,}5 x"],
+    ["1.5e-20 {\"decimal_separator\": \"comma\"}", () => P("1.5e-20"), { decimalSeparator: "comma" }, "1{,}5 \\cdot 10^{-20}"],
+    ["sqrt(x) {\"root_notation\": false}", () => P("sqrt(x)"), { rootNotation: false }, "x^{\\frac{1}{2}}"],
+    ["x**(S(1)/3) {}", () => pow(x, R(1, 3)), {}, "\\sqrt[3]{x}"],
+    ["x**(S(1)/3) {\"itex\": true}", () => pow(x, R(1, 3)), { itex: true }, "\\root{3}{x}"],
+    ["x**(S(-1)/3) {}", () => pow(x, R(-1, 3)), {}, "\\frac{1}{\\sqrt[3]{x}}"],
+    ["x**(S(2)/3) {\"fold_frac_powers\": true}", () => pow(x, R(2, 3)), { foldFracPowers: true }, "x^{2/3}"],
+    ["sin(x)**(S(2)/3) {\"fold_frac_powers\": true}", () => pow(sin(x), R(2, 3)), { foldFracPowers: true }, "\\sin^{2/3}{\\left(x \\right)}"],
+    ["f(x)**(S(2)/3) {\"fold_frac_powers\": true}", () => pow(f(x), R(2, 3)), { foldFracPowers: true }, "f^{2/3}{\\left(x \\right)}"],
+    ["(x + 1)**(S(2)/3) {\"fold_frac_powers\": true}", () => pow(sj.add(x, 1), R(2, 3)), { foldFracPowers: true }, "\\left(x + 1\\right)^{2/3}"],
+    ["x_1**(S(2)/3) {\"fold_frac_powers\": true}", () => pow(symbol('x_1'), R(2, 3)), { foldFracPowers: true }, "x_{1}^{2/3}"],
+    ["x_1**(S(2)/3) {\"fold_frac_powers\": true, \"parenthesize_super\": false}", () => pow(symbol('x_1'), R(2, 3)), { foldFracPowers: true, parenthesizeSuper: false }, "x_{1}^{2/3}"],
+    ["x_1**2 {\"parenthesize_super\": false}", () => P("x_1**2"), { parenthesizeSuper: false }, "x_{1}^{2}"],
+    ["sin(x) {\"fold_func_brackets\": true}", () => P("sin(x)"), { foldFuncBrackets: true }, "\\sin {x}"],
+    ["sin(2*x) {\"fold_func_brackets\": true}", () => P("sin(2*x)"), { foldFuncBrackets: true }, "\\sin {2 x}"],
+    ["sin(x + 1) {\"fold_func_brackets\": true}", () => P("sin(x + 1)"), { foldFuncBrackets: true }, "\\sin{\\left(x + 1 \\right)}"],
+    ["sin(x*cos(y)) {\"fold_func_brackets\": true}", () => P("sin(x*cos(y))"), { foldFuncBrackets: true }, "\\sin{\\left(x \\cos {y} \\right)}"],
+    ["sin(x**2) {\"fold_func_brackets\": true}", () => P("sin(x**2)"), { foldFuncBrackets: true }, "\\sin {x^{2}}"],
+    ["sin((x+1)**2) {\"fold_func_brackets\": true}", () => P("sin((x+1)**2)"), { foldFuncBrackets: true }, "\\sin{\\left(\\left(x + 1\\right)^{2} \\right)}"],
+    ["sin(exp(x)) {\"fold_func_brackets\": true}", () => P("sin(exp(x))"), { foldFuncBrackets: true }, "\\sin{\\left(e^{x} \\right)}"],
+    ["sin(-1) {\"fold_func_brackets\": true}", () => P("sin(-1)"), { foldFuncBrackets: true }, "- \\sin {1}"],
+    ["sin(S(1)/2) {\"fold_func_brackets\": true}", () => sin(R(1, 2)), { foldFuncBrackets: true }, "\\sin {\\frac{1}{2}}"],
+    ["sin(pi) {\"fold_func_brackets\": true}", () => P("sin(pi)"), { foldFuncBrackets: true }, "0"],
+    ["f(x) {\"fold_func_brackets\": true}", () => P("f(x)"), { foldFuncBrackets: true }, "fx"],
+    ["sinh(sin(x)) {\"fold_func_brackets\": true}", () => P("sinh(sin(x))"), { foldFuncBrackets: true }, "\\sinh{\\left(\\sin {x} \\right)}"],
+    ["asin(x) {\"inv_trig_style\": \"full\"}", () => P("asin(x)"), { invTrigStyle: "full" }, "\\arcsin{\\left(x \\right)}"],
+    ["asinh(x) {\"inv_trig_style\": \"full\"}", () => P("asinh(x)"), { invTrigStyle: "full" }, "\\operatorname{arsinh}{\\left(x \\right)}"],
+    ["asin(x) {\"inv_trig_style\": \"power\"}", () => P("asin(x)"), { invTrigStyle: "power" }, "\\sin^{-1}{\\left(x \\right)}"],
+    ["acsc(x) {\"inv_trig_style\": \"power\"}", () => P("acsc(x)"), { invTrigStyle: "power" }, "\\csc^{-1}{\\left(x \\right)}"],
+    ["asin(x)**2 {\"inv_trig_style\": \"power\"}", () => P("asin(x)**2"), { invTrigStyle: "power" }, "\\sin^{-1}{\\left(x \\right)}^{2}"],
+    ["asin(x)**2 {\"inv_trig_style\": \"full\"}", () => P("asin(x)**2"), { invTrigStyle: "full" }, "\\arcsin^{2}{\\left(x \\right)}"],
+    ["asin(x) {\"inv_trig_style\": \"power\", \"fold_func_brackets\": true}", () => P("asin(x)"), { invTrigStyle: "power", foldFuncBrackets: true }, "\\sin^{-1} {x}"],
+    ["asin(x)**2 {\"inv_trig_style\": \"power\", \"fold_func_brackets\": true}", () => P("asin(x)**2"), { invTrigStyle: "power", foldFuncBrackets: true }, "\\sin^{-1}{\\left(x \\right)}^{2}"],
+    ["log(x) {\"ln_notation\": true}", () => P("log(x)"), { lnNotation: true }, "\\ln{\\left(x \\right)}"],
+    ["log(x)**2 {\"ln_notation\": true}", () => P("log(x)**2"), { lnNotation: true }, "\\ln{\\left(x \\right)}^{2}"],
+    ["re(x) + im(y) {\"gothic_re_im\": true}", () => P("re(x) + im(y)"), { gothicReIm: true }, "\\Re{\\left(x\\right)} + \\Im{\\left(y\\right)}"],
+    ["2*I {\"imaginary_unit\": \"j\"}", () => P("2*I"), { imaginaryUnit: "j" }, "2 j"],
+    ["2*I {\"imaginary_unit\": \"ri\"}", () => P("2*I"), { imaginaryUnit: "ri" }, "2 \\mathrm{i}"],
+    ["2*I {\"imaginary_unit\": \"tj\"}", () => P("2*I"), { imaginaryUnit: "tj" }, "2 \\text{j}"],
+    ["2*I {\"imaginary_unit\": \"\\\\iota\"}", () => P("2*I"), { imaginaryUnit: "\\iota" }, "2 \\iota"],
+    ["Derivative(f(x), x) {\"diff_operator\": \"rd\"}", () => P("Derivative(f(x), x)"), { diffOperator: "rd" }, "\\frac{\\mathrm{d}}{\\mathrm{d} x} f{\\left(x \\right)}"],
+    ["Derivative(f(x), x) {\"diff_operator\": \"td\"}", () => P("Derivative(f(x), x)"), { diffOperator: "td" }, "\\frac{\\text{d}}{\\text{d} x} f{\\left(x \\right)}"],
+    ["Derivative(f(x), x) {\"diff_operator\": \"\\\\partial\"}", () => P("Derivative(f(x), x)"), { diffOperator: "\\partial" }, "\\frac{\\partial}{\\partial x} f{\\left(x \\right)}"],
+    ["x_1 + alpha {\"disable_split_super_sub\": true}", () => P("x_1 + alpha"), { disableSplitSuperSub: true }, "\\alpha + x\\_1"],
+    ["x < y {\"itex\": true}", () => P("x < y"), { itex: true }, "x \\lt y"],
+    ["x > y {\"itex\": true}", () => P("x > y"), { itex: true }, "x \\gt y"],
+    ["x + 1 {\"mode\": \"equation\"}", () => P("x + 1"), { mode: "equation" }, "\\begin{equation}x + 1\\end{equation}"],
+    ["x + 1 {\"mode\": \"equation*\"}", () => P("x + 1"), { mode: "equation*" }, "\\begin{equation*}x + 1\\end{equation*}"],
+    ["x + 1 {\"mode\": \"equation\", \"itex\": true}", () => P("x + 1"), { mode: "equation", itex: true }, "$$x + 1$$"],
+    ["x + 1 {\"mode\": \"inline\", \"itex\": true}", () => P("x + 1"), { mode: "inline", itex: true }, "$x + 1$"],
+    ["x*Integral(x, x) {}", () => P("x*Integral(x, x)"), {}, "x \\int x\\, dx"],
+    ["Integral(x, x)*y {}", () => P("Integral(x, x)*y"), {}, "y \\int x\\, dx"],
+    ["x*Mod(x, 2) {}", () => mul(x, sj.Mod(x, 2)), {}, "x \\left(x \\bmod 2\\right)"],
+    ["x*Piecewise((x, x > 0), (0, True)) {}", () => P("x*Piecewise((x, x > 0), (0, True))"), {}, "x \\left(\\begin{cases} x & \\text{for}\\: x > 0 \\\\0 & \\text{otherwise} \\end{cases}\\right)"],
+    ["Mod(x, 2)/y {\"long_frac_ratio\": 0}", () => mul(sj.Mod(x, 2), pow(y, -1)), { longFracRatio: 0 }, "\\frac{1}{y} \\left(x \\bmod 2\\right)"],
+  ];
+  it.each(cases)('%s', (_label, build, options, expected) => {
+    expect(latex(build(), options)).toBe(expected);
+  });
+  const [A, B] = [new Sym('A', { commutative: false }), new Sym('B', { commutative: false })];
+  it('long fractions split their numerator (SymPy long_frac_ratio)', () => {
+    expect(latex(P('(x + 1)*y/z'), { longFracRatio: 0 })).toBe('\\frac{1}{z} y \\left(x + 1\\right)');
+    expect(latex(P('(x + 1)/y'), { longFracRatio: 0 })).toBe('\\frac{1}{y} \\left(x + 1\\right)');
+    expect(latex(mul(A, B, pow(x, -1)), { longFracRatio: 0 })).toBe('\\frac{1}{x} A B');
+    expect(latex(mul(x, A, B, pow(y, -1)), { longFracRatio: 1 })).toBe('\\frac{x}{y} A B');
+    expect(latex(mul(x, y, A, B, pow(z, -1)), { longFracRatio: 0 })).toBe('\\frac{1}{z} x y A B');
+    expect(latex(P('-x*y/z'), { longFracRatio: 0 })).toBe('- \\frac{1}{z} x y');
+  });
+  it('short fractions (SymPy fold_short_frac)', () => {
+    expect(latex(mul(R(-1, 2), x), { foldShortFrac: true })).toBe('- x / 2');
+    expect(latex(R(1, 2), { foldShortFrac: true })).toBe('1 / 2');
+    expect(latex(R(-3, 4))).toBe('- \\frac{3}{4}');
+    expect(latex(pow(x, -1), { foldShortFrac: true })).toBe('1 / x');
+  });
+  it('folded function brackets (SymPy _needs_function_brackets)', () => {
+    expect(latex(sin(pow(x, 2)), { foldFuncBrackets: true, invTrigStyle: 'full' })).toBe('\\sin {x^{2}}');
+    expect(latex(pow(sj.asin(x), 2), { invTrigStyle: 'power', foldFuncBrackets: true })).toBe('\\sin^{-1}{\\left(x \\right)}^{2}');
+    expect(latex(sj.acoth(x), { invTrigStyle: 'power' })).toBe('\\coth^{-1}{\\left(x \\right)}');
+    expect(latex(sj.acoth(x), { invTrigStyle: 'full' })).toBe('\\operatorname{arcoth}{\\left(x \\right)}');
+    expect(latex(pow(f(x), 2))).toBe('f^{2}{\\left(x \\right)}');
+    expect(latex(sin(mul(x, y)), { foldFuncBrackets: true })).toBe('\\sin {x y}');
+    expect(latex(sin(mul(x, exp(y))), { foldFuncBrackets: true })).toBe('\\sin{\\left(x e^{y} \\right)}');
+    expect(latex(sin(sqrt(x)), { foldFuncBrackets: true })).toBe('\\sin {\\sqrt{x}}');
+    expect(latex(sin(mul(R(1, 2), x)), { foldFuncBrackets: true })).toBe('\\sin {\\frac{x}{2}}');
+    expect(latex(sin(mul(-1, x)), { foldFuncBrackets: true })).toBe('- \\sin {x}');
+    expect(latex(new Fn('sin', [new Float(-1.5)]), { foldFuncBrackets: true })).toBe('\\sin {-1.5}');
+    expect(latex(new Fn('sin', [I]), { foldFuncBrackets: true })).toBe('\\sin {i}');
+  });
+  it('more settings (SymPy parenthesize_super, inv_trig_style, long_frac_ratio)', () => {
+    expect(latex(pow(symbol('x^a'), 2), { parenthesizeSuper: false })).toBe('{x^{a}}^{2}');
+    expect(latex(sj.acsch(x), { invTrigStyle: 'power' })).toBe('\\operatorname{csch}^{-1}{\\left(x \\right)}');
+    const C = new Sym('C', { commutative: false });
+    expect(latex(mul(sj.add(A, B), C, pow(y, -1)), { longFracRatio: 2 })).toBe('\\frac{1}{y} \\left(A + B\\right) C');
+    expect(latex(P('x*(y + 1)/z'), { longFracRatio: 1 })).toBe('\\frac{x}{z} \\left(y + 1\\right)');
+    // Expr.toLatex is latex with the default settings
+    expect(R(1, 2).toLatex()).toBe('\\frac{1}{2}');
+  });
+  it('floats with all their digits (SymPy full_prec)', () => {
+    expect(latex(mul(new Float(1), x), { fullPrec: true })).toBe('1.00000000000000 x');
+    expect(latex(mul(new Float(1), x))).toBe('1.0 x');
+  });
+  it('a relation inside a product is parenthesized', () => {
+    expect(latex(new Mul([x, sj.Lt(y, 1)]))).toBe('x \\left(y < 1\\right)');
+  });
+  it('symbols named by symbolNames (SymPy symbol_names)', () => {
+    expect(latex(pow(x, 2), { symbolNames: new Map([[symbol('x'), 'x_i']]) })).toBe('x_i^{2}');
+    expect(latex(mul(x, y), { symbolNames: new Map([[x, '\\chi'], [y, 'Y']]) })).toBe('\\chi Y');
+  });
+  it('lists, dicts, sets, strings, booleans, null, numbers and matrices', () => {
+    expect(latex([mul(x, R(1, 2)), y], { decimalSeparator: 'comma' })).toBe('\\left[ \\frac{x}{2}; \\  y\\right]');
+    expect(latex([mul(x, R(1, 2)), y], { mode: 'inline' })).toBe('$\\left[ x / 2, \\  y\\right]$');
+    expect(latex(new Map<sj.LatexPrintable, sj.LatexPrintable>([[y, 2], [x, 1]]))).toBe('\\left\\{ x : 1, \\  y : 2\\right\\}');
+    expect(latex(new Map<sj.LatexPrintable, sj.LatexPrintable>([[y, 2], [x, 1]]), { decimalSeparator: 'comma' })).toBe('\\left\\{ x : 1, \\  y : 2\\right\\}');
+    expect(latex(new Map<sj.LatexPrintable, sj.LatexPrintable>([['k', null], [x, true]]))).toBe('\\left\\{ x : \\text{True}, \\  \\mathtt{\\text{k}} : \\text{None}\\right\\}');
+    expect(latex(new Set([y, x]))).toBe('\\left\\{x, y\\right\\}');
+    expect(latex(new Set([y, x]), { decimalSeparator: 'comma' })).toBe('\\left\\{x; y\\right\\}');
+    expect(latex('a_b & {c}~^\\')).toBe('\\mathtt{\\text{a\\_b \\& \\{c\\}\\textasciitilde\\textasciicircum\\textbackslash}}');
+    expect(latex('plain % text')).toBe('\\mathtt{\\text{plain \\% text}}');
+    expect(latex(true)).toBe('\\text{True}');
+    expect(latex(false)).toBe('\\text{False}');
+    expect(latex(null)).toBe('\\text{None}');
+    expect(latex(2)).toBe('2');
+    expect(latex(2n)).toBe('2');
+    const M = sj.Matrix.of([[1, 2], [3, 4]]);
+    expect(latex(M, { mode: 'inline' })).toBe('$\\left[\\begin{smallmatrix}1 & 2\\\\3 & 4\\end{smallmatrix}\\right]$');
+    expect(latex(sj.Matrix.of([[1, 2]]), { matDelim: '' })).toBe('\\begin{matrix}1 & 2\\end{matrix}');
+    expect(latex(sj.Matrix.of([[x]]), { matStr: 'pmatrix' })).toBe('\\left[\\begin{pmatrix}x\\end{pmatrix}\\right]');
+    expect(latex(sj.Matrix.of([[x]]), { matDelim: '(' })).toBe('\\left(\\begin{matrix}x\\end{matrix}\\right)');
+    expect(latex(sj.Matrix.of([Array.from({ length: 11 }, (_, i) => i)]))).toBe('\\left[\\begin{array}{ccccccccccc}0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10\\end{array}\\right]');
+    expect(sj.Matrix.of([[x]]).toLatex()).toBe('\\left[\\begin{matrix}x\\end{matrix}\\right]');
+  });
+  it('a print made while printing keeps the settings', () => {
+    // a node printing its arguments with the latex function given to it, or with latex itself
+    class Wrap extends sj.ExtensionExpr {
+      constructor(a: sj.Expr) {
+        super('Wrap', [a]);
+      }
+      withArgs(args: readonly sj.Expr[]): sj.Expr {
+        return new Wrap(args[0]!);
+      }
+      override printLatex(): string {
+        return `W(${latex(this.args[0]!)})`;
+      }
+    }
+    expect(latex(new Wrap(R(1, 2)), { foldShortFrac: true })).toBe('W(1 / 2)');
+    expect(latex(new Wrap(R(1, 2)))).toBe('W(\\frac{1}{2})');
+    // the settings of a print do not leak into the next one
+    expect(latex(R(1, 2))).toBe('\\frac{1}{2}');
+  });
+  it('invalid settings and values throw', () => {
+    expect(() => latex(x, { mode: 'display' as 'plain' })).toThrow(RangeError);
+    expect(() => latex(x, { decimalSeparator: 'dot' as 'period' })).toThrow(RangeError);
+    expect(() => latex({} as sj.LatexPrintable)).toThrow(TypeError);
+  });
+  it('latexEscape', () => {
+    expect(latexEscape('50% of $5 & #1_{x}')).toBe('50\\% of \\$5 \\& \\#1\\_\\{x\\}');
+  });
+  it('printLatex and multilineLatex take the settings', () => {
+    expect(printLatex(R(1, 2), { foldShortFrac: true })).toBe('1 / 2\n');
+    // SymPy 1.14 fails to pass the settings on (LatexPrinter(**settings) is a TypeError); here every term gets them
+    expect(multilineLatex(x, sj.add(mul(R(1, 2), y), z), { foldShortFrac: true })).toBe('\\begin{align*}\nx = & y / 2 \\\\\n& + z \n\\end{align*}');
+    expect(multilineLatex(x, sj.add(y, z), 2)).toBe('\\begin{align*}\nx = & y + z \n\\end{align*}');
   });
 });

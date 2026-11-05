@@ -642,3 +642,15 @@ describe('(x**a)**e for polar bases (SymPy Pow._eval_power: s = 1 when b.is_pola
     expect(String(P('(sin(x)**a)**e'))).toBe('(sin(x)**a)**e');
   });
 });
+
+describe('powers of KroneckerDelta (SymPy KroneckerDelta._eval_power)', () => {
+  it('a positive power is the delta, a negative one its reciprocal', () => {
+    const [i, j, n] = symbols('i j n');
+    const d = sj.KroneckerDelta(i!, j!);
+    expect(String(pow(d, 2))).toBe('KroneckerDelta(i, j)');
+    expect(String(pow(d, symbol('p', { positive: true })))).toBe('KroneckerDelta(i, j)');
+    expect(String(pow(d, -2))).toBe('1/KroneckerDelta(i, j)');
+    expect(String(pow(d, -1))).toBe('1/KroneckerDelta(i, j)');
+    expect(String(pow(d, n!))).toBe('KroneckerDelta(i, j)**n');
+  });
+});

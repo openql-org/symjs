@@ -139,6 +139,14 @@ describe('Integral over a matrix symbol', () => {
   });
 });
 
+describe('makeArgs (SymPy AssocOp.make_args)', () => {
+  it('splits an instance of the class into its arguments', () => {
+    expect(sj.Mul.makeArgs(sj.mul(x, y)).map(s)).toEqual(['x', 'y']);
+    expect(sj.Add.makeArgs(sj.mul(x, y)).map(s)).toEqual(['x*y']);
+    expect(sj.Add.makeArgs(3).map(s)).toEqual(['3']);
+  });
+});
+
 describe('fromiter and the Add/Mul kinds of extension nodes', () => {
   it('fromiter applies the evaluating constructor (SymPy Add.fromiter([x, y]) is x + y)', () => {
     expect(s(sj.Add.fromiter([x, y]))).toBe('x + y');

@@ -346,3 +346,9 @@ describe('combinatorial numbers and polynomials', () => {
     expect(binomialMod(100n, 50n, 1001n)).toBe(100891344545564193334812497256n % 1001n);
   });
 });
+
+describe('binomial_mod of SymPy Integers', () => {
+  it('accepts integers of any kind', () => {
+    expect(binomialMod(sj.Rational.of(10n), 2, 6)).toBe(3n);
+  });
+});

@@ -36,6 +36,8 @@ export {
   registerRewrite,
 } from './simplify/rewrite';
 export {
+  decomposePower,
+  decomposePowerRat,
   gcdTerms,
   factorTerms,
   collectConst,

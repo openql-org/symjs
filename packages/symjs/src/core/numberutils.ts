@@ -166,6 +166,31 @@ export function ilcm(...xs: bigint[]): bigint {
   return l;
 }
 
+/**
+ * SymPy igcdex: [x, y, g] with x*a + y*b = g = gcd(a, b), from the extended
+ * Euclidean algorithm (x and y are those SymPy gives).
+ */
+export function igcdex(aIn: bigint, bIn: bigint): [bigint, bigint, bigint] {
+  if (aIn === 0n && bIn === 0n) return [0n, 0n, 0n];
+  if (aIn === 0n) return [0n, bIn < 0n ? -1n : 1n, babs(bIn)];
+  if (bIn === 0n) return [aIn < 0n ? -1n : 1n, 0n, babs(aIn)];
+  const xSign = aIn < 0n ? -1n : 1n;
+  const ySign = bIn < 0n ? -1n : 1n;
+  let [a, b] = [babs(aIn), babs(bIn)];
+  let [x, y, r, s] = [1n, 0n, 0n, 1n];
+  while (b) {
+    const q = a / b;
+    [a, b, r, s, x, y] = [b, a % b, x - q * r, y - q * s, r, s];
+  }
+  return [x * xSign, y * ySign, a];
+}
+
+/** SymPy isqrt: floor(sqrt(n)) of a nonnegative integer. */
+export function isqrt(n: bigint): bigint {
+  if (n < 0n) throw new RangeError('n must be nonnegative');
+  return integerNthroot(n, 2)[0];
+}
+
 /** (floor(y**(1/n)), exact) for nonnegative integers (SymPy integer_nthroot). */
 export function integerNthroot(y: bigint, n: number): [bigint, boolean] {
   if (y < 0n) throw new RangeError('integer_nthroot: y must be nonnegative');

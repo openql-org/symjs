@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { Expr, Sym } from '../../src/core/nodes';
 import { NoMatch, Unsolved } from '../../src/core/truth';
 import { parseExpr } from '../../src/index';
-import { discreteLog, gfCsolve, isNthpowResidue, isPrimitiveRoot, isQuadResidue, linearCongruence, nOrder, nthrootMod, polynomialCongruence, primitiveRoot, quadraticCongruence, quadraticResidues, sqrtMod, sqrtModIter } from '../../src/ntheory/index';
+import { csolvePrime, discreteLog, gfCsolve, isNthpowResidue, isPrimitiveRoot, isQuadResidue, linearCongruence, nOrder, nthrootMod, polynomialCongruence, primitiveRoot, quadraticCongruence, quadraticResidues, sqrtMod, sqrtModIter } from '../../src/ntheory/index';
 import { seed } from '../../src/ntheory/random';
 import { dlogIndexCalculus, dlogPollardRho, sqrtModPrimePower } from '../../src/ntheory/residue';
 
@@ -251,6 +251,9 @@ describe("ntheory residue: results equal SymPy 1.14", () => {
     ["quadraticCongruence(3n, 3n, 6n, 9n)", () => quadraticCongruence(3n, 3n, 6n, 9n), "[]"],
     ["quadraticCongruence(2n, 2n, 0n, 6n)", () => quadraticCongruence(2n, 2n, 0n, 6n), "[0, 2, 3, 5]"],
     ["gfCsolve([1n, 1n, 7n], 189n)", () => gfCsolve([1n, 1n, 7n], 189n), "[13, 49, 76, 112, 139, 175]"],
+    ["csolvePrime([1, 1, 7], 3)", () => csolvePrime([1, 1, 7], 3), "[1]"],
+    ["csolvePrime([1, 1, 7], 3, 2)", () => csolvePrime([1, 1, 7], 3, 2), "[1, 4, 7]"],
+    ["csolvePrime([1, 3, 2, 17], 7, 3)", () => csolvePrime([1, 3, 2, 17], 7, 3), "[17]"],
     ["gfCsolve([1n, 0n, 0n, -8n], 27n)", () => gfCsolve([1n, 0n, 0n, -8n], 27n), "[2, 11, 20]"],
     ["gfCsolve([1n, 2n, 3n, 4n, 5n], 7n)", () => gfCsolve([1n, 2n, 3n, 4n, 5n], 7n), "[]"],
     ["gfCsolve([1n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, -1n], 3n)", () => gfCsolve([1n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, -1n], 3n), "[1, 2]"],

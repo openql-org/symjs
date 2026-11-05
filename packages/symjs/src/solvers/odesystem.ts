@@ -369,8 +369,9 @@ function subexprs(e: Expr, pred: (x: Expr) => boolean): Expr[] {
   return [...out.values()];
 }
 
-/** func replaced by new in eq, with the derivatives of func evaluated (SymPy sub_func_doit). */
-function subFuncDoit(eq: Expr, func: Expr, value: Expr): Expr {
+/** SymPy sub_func_doit: func replaced by value in eq, with the derivatives of func evaluated. */
+export function subFuncDoit(eqIn: ExprLike, funcIn: ExprLike, valueIn: ExprLike): Expr {
+  const [eq, func, value] = [sympify(eqIn), sympify(funcIn), sympify(valueIn)];
   const reps: [Expr, Expr][] = [[func, value]];
   for (const d of subexprs(eq, (x) => x instanceof Derivative)) {
     const dv = cast(d, Derivative, 'derivative');
@@ -437,4 +438,13 @@ export function checkodesol(ode: ExprLike | readonly ExprLike[], sol: ExprLike |
   const [f, rhs] = solvedFor(s0, func ?? (inEq.size === 1 ? first([...inEq.values()]) : undefined));
   const r = reduceResidual(subFuncDoit(eq, f, rhs));
   return [isZero(r), r];
+}
+
+/**
+ * SymPy checksysodesol: checkodesol of a system of ODEs (one equation and
+ * one solution per function): [true, [0, 0, ...]] when the solutions satisfy
+ * the equations, else [false, residuals].
+ */
+export function checksysodesol(eqs: readonly ExprLike[], sols: readonly ExprLike[]): [boolean, Expr[]] {
+  return checkodesol(eqs, sols);
 }

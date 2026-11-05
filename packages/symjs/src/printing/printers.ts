@@ -13,6 +13,7 @@ import { mul, sympify } from '../core/ops';
 import { first } from '../core/guard';
 import { str } from './str';
 import { latex } from './latex';
+import type { LatexOptions, LatexPrintable } from './latex';
 import { asOrderedFactors, asOrderedTerms } from './sortkey';
 
 /** A value the str printers accept: an expression, a number, a string, or a list, tuple, set or dict of them. */
@@ -62,12 +63,12 @@ export function sstrrepr(expr: StrPrintable): string {
  * output, so this returns the text that would be printed (followed by a
  * newline).
  */
-export function printLatex(expr: Expr): string {
-  return `${latex(expr)}\n`;
+export function printLatex(expr: LatexPrintable, options?: LatexOptions): string {
+  return `${latex(expr, options)}\n`;
 }
 
-/** The options of {@link multilineLatex}. */
-export interface MultilineLatexOptions {
+/** The options of {@link multilineLatex}: its own and the settings of the LaTeX printer. */
+export interface MultilineLatexOptions extends LatexOptions {
   /** Terms per line (default 1). */
   termsPerLine?: number;
   /** 'align*' (default), 'eqnarray' or 'IEEEeqnarray'. */
@@ -81,8 +82,11 @@ export interface MultilineLatexOptions {
  * use_dots=False): lhs = rhs with the terms of rhs over several lines of a
  * LaTeX align* (or eqnarray, IEEEeqnarray) environment.
  */
-export function multilineLatex(lhs: ExprLike, rhs: ExprLike, options: MultilineLatexOptions = {}): string {
-  const { termsPerLine = 1, environment = 'align*', useDots = false } = options;
+export function multilineLatex(lhs: ExprLike, rhs: ExprLike, termsOrOptions: number | MultilineLatexOptions = {}): string {
+  // SymPy's third positional parameter is terms_per_line
+  const options = typeof termsOrOptions === 'number' ? { termsPerLine: termsOrOptions } : termsOrOptions;
+  const { termsPerLine = 1, environment = 'align*', useDots = false, ...settings } = options;
+  const tex = (e: ExprLike): string => latex(sympify(e), settings);
   const env = {
     eqnarray: { begin: '\\begin{eqnarray}\n', first: '& = &', nonumber: '\\nonumber', end: '\n\\end{eqnarray}', doubleet: true },
     IEEEeqnarray: { begin: '\\begin{IEEEeqnarray}{rCl}\n', first: '& = &', nonumber: '\\nonumber', end: '\n\\end{IEEEeqnarray}', doubleet: true },
@@ -108,8 +112,8 @@ export function multilineLatex(lhs: ExprLike, rhs: ExprLike, options: MultilineL
       term = mul(-1, term);
       sign = '-';
     }
-    if (i === 0) result += `${latex(sympify(lhs))} ${env.first}${sign === '+' ? '' : sign} ${latex(term)} ${end}`;
-    else result += `${start}${sign} ${latex(term)} ${end}`;
+    if (i === 0) result += `${tex(lhs)} ${env.first}${sign === '+' ? '' : sign} ${tex(term)} ${end}`;
+    else result += `${start}${sign} ${tex(term)} ${end}`;
     count++;
   });
   return result + env.end;

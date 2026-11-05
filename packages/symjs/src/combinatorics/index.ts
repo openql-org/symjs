@@ -33,3 +33,5 @@ export type { OrbitAction, PermutationGroupOptions } from './permgroups';
 export { AbelianGroup, AlternatingGroup, CyclicGroup, DihedralGroup, RubikGroup, SymmetricGroup } from './namedgroups';
 export { DirectProduct } from './groupconstructs';
 export { Polyhedron } from './polyhedron';
+export { groupsCount, isAbelianNumber, isCyclicNumber, isNilpotentNumber } from './groupnumbers';
+export { SchurNumber, SchurNumberNode, schurPartition } from './schurnumber';

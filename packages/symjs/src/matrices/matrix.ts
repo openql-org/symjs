@@ -712,11 +712,7 @@ export class Matrix {
   }
   /** LaTeX as SymPy latex(Matrix): a bracketed matrix environment, an array beyond 10 columns. */
   toLatex(): string {
-    const [env, spec] = this.cols <= 10 ? ['matrix', ''] : ['array', `{${'c'.repeat(this.cols)}}`];
-    const body = this.toArray()
-      .map((r) => r.map(latex).join(' & '))
-      .join('\\\\');
-    return `\\left[\\begin{${env}}${spec}${body}\\end{${env}}\\right]`;
+    return latex(this);
   }
   [Symbol.for('nodejs.util.inspect.custom')](): string {
     return this.toString();

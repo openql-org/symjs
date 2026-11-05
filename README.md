@@ -68,10 +68,12 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 | `@symjs/symjs/tensor` | N-dimensional arrays, abstract tensors (indices, slot symmetries, sums and products, Butler–Portugal canonicalization, metric contraction, component arrays, wild tensors) |
 | `@symjs/symjs/categories` | `SymObject`, morphisms, composition, categories and diagrams |
 | `@symjs/symjs/sets` | Intervals, finite sets, image and condition sets |
-| `@symjs/symjs/matrices` | `Matrix` and linear algebra |
+| `@symjs/symjs/matrices` | `Matrix` and linear algebra; also loads the matrix handlers of `ask` |
 | `@symjs/symjs/geometry` | Points, lines, planes, polygons, ellipses, curves and parabolas, `intersection`, `convexHull`, ... |
 | `@symjs/symjs/vector` | `CoordSys3D`, vectors and dyadics, `Del`, `gradient`, `divergence`, `curl`, `express`, parametric and implicit regions, `vectorIntegrate`, ... |
 | `@symjs/symjs/stats` | Random symbols (`Normal`, `Exponential`, `Poisson`, `Die`, `Binomial`, ... and handmade distributions), `P`, `expectation` (SymPy `E`), `density`, `given`, `where`, `cdf`, `variance`, `moment`, `covariance`, `median`, the `Probability`/`Expectation`/`Variance`/`Covariance` nodes, joint distributions (`MultivariateNormal`, `Dirichlet`, `Multinomial`, `JointRV`, `marginalDistribution`, ...), matrix distributions (`Wishart`, `MatrixNormal`, ...), random matrices (`GaussianUnitaryEnsemble`, `CircularEnsemble`, ...), stochastic processes (`DiscreteMarkovChain`, `ContinuousMarkovChain`, `PoissonProcess`, `WienerProcess`, ...), `ExpectationMatrix`, `VarianceMatrix`, `CrossCovarianceMatrix`, ... |
+| `@symjs/symjs/crypto` | Classical ciphers (shift, affine, Vigenère, Hill, Bifid, rail fence, ...), Morse code, linear feedback shift registers, RSA, ElGamal, Diffie–Hellman, Goldwasser–Micali and Blum–Goldwasser |
+| `@symjs/symjs/liealgebras` | `CartanType`, `CartanMatrix`, `DynkinDiagram`, `RootSystem` and `WeylGroup` of the simple Lie algebras |
 
 Category objects use `SymObject` to avoid the JavaScript `Object` global. Apply an abstract tensor head with `head.at(...indices)` and reverse index variance with `index.neg()`. The supported mathematical conditions are listed in [compat/capabilities.json](compat/capabilities.json).
 
@@ -206,6 +208,19 @@ Runtime-specific backends are deliberately excluded; mathematical modules remain
 - Plotting (`sympy.plotting`, the `plot`/`show` methods)
 - Drawing of category diagrams (`sympy.categories.diagram_drawing`: `DiagramGrid`, `XypicDiagramDrawer`, `xypic_draw_diagram`): deferred, the policy is decided later
 - The TensorFlow back end of `lambdify`
+- Printers and wrappers that generate or compile Python code: `pycode`, the NumPy printer, `lambdarepr`, the `python` printer and `autowrap`
+- Python-runtime tooling without mathematical content: test runners and test helpers, caching and dispatch decorators, compilation helpers, package metadata, the gmpy2/python-flint ground-type back ends, bindings to external SAT solvers (MiniSat, pycosat, Z3), typing protocols, REPL and display helpers
+
+## Planned
+
+Modules that are not ported yet but stay in scope (decided 2026-11-06):
+
+- Code printers for other languages (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB), the code-generation AST and node modules of `sympy.codegen` and `sympy.utilities.codegen`: an extend package `@symjs/codegen`
+- The mathematical parts of `sympy.codegen` (`cfunctions`, `rewriting`, `approximations`, `algorithms`): the base module
+- The LaTeX parser (`parse_latex`): the base module
+- The Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: an extend package
+- Differential geometry (`sympy.diffgeom`): an extend package
+- `sympy.physics`: extend packages per field, in an order decided later; `sympy.physics.quantum` goes into the existing `@symjs/physics-quantum`, which is partial
 
 ## License
 

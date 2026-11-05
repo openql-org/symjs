@@ -137,3 +137,4 @@ export {
   laguerre,
   assocLaguerre,
 } from './functions/special/polynomials';
+export { migcdex, ipartfrac, fermatCoords } from './functions/elementary/trigonometricspecial';

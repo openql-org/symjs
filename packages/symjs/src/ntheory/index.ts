@@ -63,6 +63,7 @@ export {
   polynomialCongruence,
   linearCongruence,
   gfCsolve,
+  csolvePrime,
 } from './residue';
 export { binomialCoefficients, binomialCoefficientsList, multinomialCoefficients, multinomialCoefficientsIterator } from './multinomial';
 export { continuedFraction, continuedFractionPeriodic, continuedFractionIterator, continuedFractionConvergents, continuedFractionReduce } from './continued';

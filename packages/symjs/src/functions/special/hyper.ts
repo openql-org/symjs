@@ -9,7 +9,7 @@
 import { NotImplementedError } from '../../core/errors';
 import { at, cast, defined, first, pair } from '../../core/guard';
 import type { Expr, ExprLike } from '../../core/nodes';
-import { ExtensionExpr, Fn, Mul, Pow, Rational, Rel, S, Special, asRational } from '../../core/nodes';
+import { ExtensionExpr, Fn, Mul, Rational, Rel, S, Special, asRational } from '../../core/nodes';
 import { rebuild } from '../../core/traverse';
 import { isIntegerQ, isNonZero, isPositive, isZero } from '../../core/assumptions';
 import { compareKeys, sortKey } from '../../printing/sortkey';
@@ -408,8 +408,7 @@ export function kroneckersimp(eIn: ExprLike): Expr {
   const go = (x: Expr): Expr => {
     const args = x.args.map(go);
     const y = args.some((a, i) => a !== x.args[i]) ? rebuild(x, args) : x;
-    // KroneckerDelta(i, j)**n = KroneckerDelta(i, j) for a positive integer n
-    if (y instanceof Pow && y.base instanceof Fn && y.base.name === 'KroneckerDelta' && y.exp instanceof Rational && y.exp.isInteger && y.exp.isPositive) return y.base;
+    // (a positive power of a delta is the delta already: SymPy KroneckerDelta._eval_power in core/ops.ts)
     if (!(y instanceof Mul)) return y;
     const deltas = y.args.filter((f): f is Fn => f instanceof Fn && f.name === 'KroneckerDelta');
     for (const [a, da] of deltas.entries()) {

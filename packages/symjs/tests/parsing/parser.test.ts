@@ -332,3 +332,24 @@ describe('parse: relational, boolean and number constructors (SymPy parse_expr)'
     expect(s('frac(-5/2)')).toBe('1/2');
   });
 });
+
+describe('convert_equals_signs, function exponentiation and split_symbols (SymPy 1.14)', () => {
+  const p = (s: string, opts: sj.ParseOptions): string => sj.str(sj.parse(s, opts));
+  it('equations', () => {
+    expect(p('1*2=x', { convertEqualsSigns: true })).toBe('Eq(2, x)');
+    expect(p('(1*2=x)=False', { convertEqualsSigns: true })).toBe('Eq(Eq(2, x), False)');
+    expect(p('x=(y=z)', { convertEqualsSigns: true })).toBe('Eq(x, Eq(y, z))');
+    expect(() => sj.parse('x=1')).toThrow(SyntaxError);
+  });
+  it('function exponentiation', () => {
+    expect(p('sin**4(x)', { transformations: 'implicit' })).toBe('sin(x)**4');
+    expect(p('sin**2 x', { transformations: 'implicit' })).toBe('sin(x)**2');
+  });
+  it('split symbols', () => {
+    expect(p('10sin**2 x**2 + 3xyz + tan theta', { transformations: 'all' })).toBe('3*x*y*z + 10*sin(x**2)**2 + tan(theta)');
+    expect(p('x_y z', { transformations: 'all' })).toBe('x_y*z');
+    expect(p('xy', { transformations: 'implicit' })).toBe('xy');
+    expect(p('xy + 1', { transformations: 'all', symbols: [sj.symbol('xy')] })).toBe('xy + 1');
+    expect(p('Pi', { transformations: 'all' })).toBe('Pi');
+  });
+});

@@ -5,7 +5,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { Float, Rational, Sym, parseExpr as P, sstr } from '../../src/index';
 import { ExactQuotientFailed, NotImplementedError } from '../../src/core/errors';
-import { CoercionFailed, DMF, DMP, EX, FractionField, PolynomialRing, QQ, RR, ZZ, gcdSettings } from '../../src/polys/domains';
+import { CoercionFailed, DMF, DMP, EX, ExpressionDomain, FractionField, IntegerRing, PolynomialRing, QQ, RR, RationalField, RealField, ZZ, gcdSettings } from '../../src/polys/domains';
 
 const x = new Sym('x');
 const a = new Sym('a');
@@ -196,5 +196,14 @@ describe('old polynomial rings (DMP) and their fraction fields (DMF)', () => {
     expect(s(p.lcm(q).toSympy())).toBe('x**2 - 2');
     expect(s(p.exquo(RE.fromSympy(P('x - sqrt(2)'))).toSympy())).toBe('x + sqrt(2)');
     expect(() => p.exquo(RE.fromSympy(P('x - 1')))).toThrow(ExactQuotientFailed);
+  });
+});
+
+describe('domain classes', () => {
+  it('are exported with SymPy names', () => {
+    expect(ZZ).toBeInstanceOf(IntegerRing);
+    expect(QQ).toBeInstanceOf(RationalField);
+    expect(RR).toBeInstanceOf(RealField);
+    expect(EX).toBeInstanceOf(ExpressionDomain);
   });
 });

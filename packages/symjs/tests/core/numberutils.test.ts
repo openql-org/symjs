@@ -143,3 +143,25 @@ describe('number utilities', () => {
     expect(expandSymbolNames('a\\,b')).toEqual(['a,b']);
   });
 });
+
+describe('igcdex / isqrt', () => {
+  it('extended Euclidean algorithm with SymPy signs', () => {
+    expect(sj.igcdex(2n, 3n)).toEqual([-1n, 1n, 1n]);
+    expect(sj.igcdex(10n, 12n)).toEqual([-1n, 1n, 2n]);
+    expect(sj.igcdex(100n, 2004n)).toEqual([-20n, 1n, 4n]);
+    expect(sj.igcdex(0n, 0n)).toEqual([0n, 0n, 0n]);
+    expect(sj.igcdex(0n, -5n)).toEqual([0n, -1n, 5n]);
+    expect(sj.igcdex(0n, 5n)).toEqual([0n, 1n, 5n]);
+    expect(sj.igcdex(-4n, 0n)).toEqual([-1n, 0n, 4n]);
+    expect(sj.igcdex(4n, 0n)).toEqual([1n, 0n, 4n]);
+    expect(sj.igcdex(-12n, 8n)).toEqual([-1n, -1n, 4n]);
+    expect(sj.igcdex(7n, -3n)).toEqual([1n, 2n, 1n]);
+  });
+  it('integer square root', () => {
+    expect(sj.isqrt(0n)).toBe(0n);
+    expect(sj.isqrt(9n)).toBe(3n);
+    expect(sj.isqrt(10n)).toBe(3n);
+    expect(sj.isqrt(10n ** 30n + 5n)).toBe(10n ** 15n);
+    expect(() => sj.isqrt(-1n)).toThrow(RangeError);
+  });
+});

@@ -391,6 +391,15 @@ export abstract class Expr {
     if (build === undefined) throw new NotImplementedError(`${this.name}.fromiter is not supported`);
     return build([...args].map(fromiterItem));
   }
+  /**
+   * SymPy `AssocOp.make_args(expr)`: the arguments of expr when it is an
+   * instance of the class, else expr alone (`Mul.makeArgs(x*y)` is [x, y],
+   * `Add.makeArgs(x*y)` is [x*y]).
+   */
+  static makeArgs(this: abstract new (...args: never[]) => Expr, exprIn: ExprLike): Expr[] {
+    const expr = impl.sympify(exprIn);
+    return expr instanceof this ? [...expr.args] : [expr];
+  }
   abstract readonly kind: ExprKind;
   abstract readonly args: readonly Expr[];
   #key: string | undefined;

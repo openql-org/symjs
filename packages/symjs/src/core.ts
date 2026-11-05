@@ -93,6 +93,7 @@ export {
   EvalfValueError,
   NonlinearError,
   NotImplementedError,
+  ReorderError,
   NotLoadedError,
   PolynomialError,
   DomainError,
@@ -292,6 +293,7 @@ export {
 export {
   latex,
 } from './printing/latex';
+export type { LatexOptions, LatexPrintable, LatexMatrix } from './printing/latex';
 export { StrPrinter, sstrrepr, printLatex, multilineLatex } from './printing/printers';
 export type { StrPrintable, MultilineLatexOptions } from './printing/printers';
 export {
@@ -339,8 +341,10 @@ export { symbolsVar as var };
 export {
   integerLog,
   igcd,
+  igcdex,
   ilcm,
   integerNthroot,
+  isqrt,
   trailing,
   numDigits,
   modInverse,

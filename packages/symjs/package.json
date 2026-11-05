@@ -251,6 +251,26 @@
         "types": "./dist/categories.d.cts",
         "default": "./dist/categories.cjs"
       }
+    },
+    "./crypto": {
+      "import": {
+        "types": "./dist/crypto.d.ts",
+        "default": "./dist/crypto.js"
+      },
+      "require": {
+        "types": "./dist/crypto.d.cts",
+        "default": "./dist/crypto.cjs"
+      }
+    },
+    "./liealgebras": {
+      "import": {
+        "types": "./dist/liealgebras.d.ts",
+        "default": "./dist/liealgebras.js"
+      },
+      "require": {
+        "types": "./dist/liealgebras.d.cts",
+        "default": "./dist/liealgebras.cjs"
+      }
     }
   },
   "files": [
@@ -272,6 +292,9 @@
     "./src/algebras/quaternion.ts",
     "./dist/algebras/quaternion.js",
     "./dist/algebras/quaternion.cjs",
+    "./src/assumptions/handlers/matrices.ts",
+    "./dist/assumptions/handlers/matrices.js",
+    "./dist/assumptions/handlers/matrices.cjs",
     "./src/calculus.ts",
     "./dist/calculus.js",
     "./dist/calculus.cjs",
@@ -308,6 +331,9 @@
     "./src/core/traverse.ts",
     "./dist/core/traverse.js",
     "./dist/core/traverse.cjs",
+    "./src/crypto.ts",
+    "./dist/crypto.js",
+    "./dist/crypto.cjs",
     "./src/discrete.ts",
     "./dist/discrete.js",
     "./dist/discrete.cjs",
@@ -374,6 +400,9 @@
     "./src/integrals/prde.ts",
     "./dist/integrals/prde.js",
     "./dist/integrals/prde.cjs",
+    "./src/liealgebras.ts",
+    "./dist/liealgebras.js",
+    "./dist/liealgebras.cjs",
     "./src/logic.ts",
     "./dist/logic.js",
     "./dist/logic.cjs",

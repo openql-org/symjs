@@ -164,3 +164,5 @@ export {
   riemannCyclicReplace,
 } from './tensor';
 export type { ArrayReplacements, CommGroup, Commutation, TensorIndexTypeOptions, TensorManagerClass } from './tensor';
+export { shape, NoShapeError } from './functions';
+export type { Dimension } from './functions';

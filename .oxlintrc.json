@@ -170,7 +170,13 @@
                   "../stats/**",
                   "../../stats/**",
                   "../categories/**",
-                  "../../categories/**"
+                  "../../categories/**",
+                  "../assumptions/**",
+                  "../../assumptions/**",
+                  "../crypto/**",
+                  "../../crypto/**",
+                  "../liealgebras/**",
+                  "../../liealgebras/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -282,7 +288,13 @@
                   "../stats/**",
                   "../../stats/**",
                   "../categories/**",
-                  "../../categories/**"
+                  "../../categories/**",
+                  "../assumptions/**",
+                  "../../assumptions/**",
+                  "../crypto/**",
+                  "../../crypto/**",
+                  "../liealgebras/**",
+                  "../../liealgebras/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -366,7 +378,13 @@
                   "../stats/**",
                   "../../stats/**",
                   "../categories/**",
-                  "../../categories/**"
+                  "../../categories/**",
+                  "../assumptions/**",
+                  "../../assumptions/**",
+                  "../crypto/**",
+                  "../../crypto/**",
+                  "../liealgebras/**",
+                  "../../liealgebras/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -436,7 +454,13 @@
                   "../stats/**",
                   "../../stats/**",
                   "../categories/**",
-                  "../../categories/**"
+                  "../../categories/**",
+                  "../assumptions/**",
+                  "../../assumptions/**",
+                  "../crypto/**",
+                  "../../crypto/**",
+                  "../liealgebras/**",
+                  "../../liealgebras/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -548,7 +572,13 @@
                   "../stats/**",
                   "../../stats/**",
                   "../categories/**",
-                  "../../categories/**"
+                  "../../categories/**",
+                  "../assumptions/**",
+                  "../../assumptions/**",
+                  "../crypto/**",
+                  "../../crypto/**",
+                  "../liealgebras/**",
+                  "../../liealgebras/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -622,7 +652,13 @@
                   "../stats/**",
                   "../../stats/**",
                   "../categories/**",
-                  "../../categories/**"
+                  "../../categories/**",
+                  "../assumptions/**",
+                  "../../assumptions/**",
+                  "../crypto/**",
+                  "../../crypto/**",
+                  "../liealgebras/**",
+                  "../../liealgebras/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -696,7 +732,13 @@
                   "../stats/**",
                   "../../stats/**",
                   "../categories/**",
-                  "../../categories/**"
+                  "../../categories/**",
+                  "../assumptions/**",
+                  "../../assumptions/**",
+                  "../crypto/**",
+                  "../../crypto/**",
+                  "../liealgebras/**",
+                  "../../liealgebras/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -718,7 +760,10 @@
         "packages/symjs/src/combinatorics/**",
         "packages/symjs/src/algebras/**",
         "packages/symjs/src/tensor/**",
-        "packages/symjs/src/categories/**"
+        "packages/symjs/src/categories/**",
+        "packages/symjs/src/assumptions/**",
+        "packages/symjs/src/crypto/**",
+        "packages/symjs/src/liealgebras/**"
       ],
       "rules": {
         "no-restricted-imports": [
@@ -747,7 +792,13 @@
                   "../vector/**",
                   "../../vector/**",
                   "../stats/**",
-                  "../../stats/**"
+                  "../../stats/**",
+                  "./delta",
+                  "./gosper",
+                  "../concrete/delta",
+                  "../concrete/gosper",
+                  "../../concrete/delta",
+                  "../../concrete/gosper"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -821,7 +872,13 @@
                   "../stats/**",
                   "../../stats/**",
                   "../categories/**",
-                  "../../categories/**"
+                  "../../categories/**",
+                  "../assumptions/**",
+                  "../../assumptions/**",
+                  "../crypto/**",
+                  "../../crypto/**",
+                  "../liealgebras/**",
+                  "../../liealgebras/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -895,7 +952,13 @@
                   "../stats/**",
                   "../../stats/**",
                   "../categories/**",
-                  "../../categories/**"
+                  "../../categories/**",
+                  "../assumptions/**",
+                  "../../assumptions/**",
+                  "../crypto/**",
+                  "../../crypto/**",
+                  "../liealgebras/**",
+                  "../../liealgebras/**"
                 ],
                 "allowTypeImports": true,
                 "message": "layering: see docs/architecture.md (use impl in core/nodes.ts for higher layers)"
@@ -912,7 +975,9 @@
         "packages/symjs/src/series/fourier.ts",
         "packages/symjs/src/solvers/**",
         "packages/symjs/src/integrals/**",
-        "packages/symjs/src/holonomic/**"
+        "packages/symjs/src/holonomic/**",
+        "packages/symjs/src/concrete/delta.ts",
+        "packages/symjs/src/concrete/gosper.ts"
       ],
       "rules": {
         "no-restricted-imports": [

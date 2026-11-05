@@ -14,8 +14,12 @@
 
 import { at, defined } from '../../core/guard';
 
-/** The unicode flag (SymPy `_use_unicode`). Mutated only through {@link prettyUseUnicode}. */
-const state: { useUnicode: boolean; mulSymbol: string | undefined } = { useUnicode: false, mulSymbol: undefined };
+/**
+ * The unicode flag (SymPy `_use_unicode`). Mutated only through {@link prettyUseUnicode}.
+ * JavaScript strings are unicode, so it starts true (SymPy starts without unicode until a
+ * terminal that supports it is detected).
+ */
+const state: { useUnicode: boolean; mulSymbol: string | undefined } = { useUnicode: true, mulSymbol: undefined };
 
 /**
  * SymPy `pretty_use_unicode(flag=None)`: with no argument return whether
@@ -25,6 +29,14 @@ export function prettyUseUnicode(flag?: boolean): boolean {
   const prev = state.useUnicode;
   if (flag !== undefined) state.useUnicode = flag;
   return prev;
+}
+
+/**
+ * SymPy `pretty_try_use_unicode`: use unicode when the output supports it.
+ * JavaScript strings always do, so unicode is switched on.
+ */
+export function prettyTryUseUnicode(): void {
+  state.useUnicode = true;
 }
 
 // ---------------------------------------------------------------------------

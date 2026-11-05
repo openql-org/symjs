@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { Sum, add, collectConst, factorTerms, float, gcdTerms, keepCoeffSympy, mul, parse, pow, signsimp, symbol, symbols, unevaluatedAdd } from '../../src';
 import type { Expr } from '../../src';
-import { decomposePower, gcdTermsOf } from '../../src/simplify/exprtools';
+import { decomposePower, decomposePowerRat, gcdTermsOf } from '../../src/simplify/exprtools';
 
 const [x, y, n, k, z, a, b] = symbols('x y n k z a b');
 const r = symbol('r', { real: true });
@@ -232,5 +232,23 @@ describe('exp(-a) is 1/exp(a) in gcd_terms and factor_terms (SymPy Factors)', ()
   it('factor_terms takes the gcd of the terms before they are combined', () => {
     const e = parse('-x**2*(2/x**2 - 2*exp(-x**2/2)/x**2)/2 + 1 - sqrt(2)*I*sqrt(pi)*exp(-x**2/2)*erf(sqrt(2)*I*x/2)/2');
     expect(String(factorTerms(e))).toBe('-sqrt(2)*I*sqrt(pi)*exp(-x**2/2)*erf(sqrt(2)*I*x/2)/2 + exp(-x**2/2)');
+  });
+});
+
+describe('decompose_power / decompose_power_rat', () => {
+  it('splits the integer or rational part of the exponent', () => {
+    const s = (v: [Expr, unknown]) => `(${String(v[0])}, ${String(v[1])})`;
+    expect(s(decomposePower(x))).toBe('(x, 1)');
+    expect(s(decomposePower(pow(x, 2)))).toBe('(x, 2)');
+    expect(s(decomposePower(P('exp(2*y/3)')))).toBe('(exp(y/3), 2)');
+    expect(s(decomposePower(P('x**(2/3)')))).toBe('(x**(1/3), 2)');
+    expect(s(decomposePower(P('x**(-y)')))).toBe('(x**y, -1)');
+    expect(s(decomposePower(P('x**pi')))).toBe('(x**pi, 1)');
+    expect(s(decomposePowerRat(P('sqrt(x)')))).toBe('(x, 1/2)');
+    expect(s(decomposePowerRat(P('exp(-3*x/2)')))).toBe('(exp(x/2), -3)');
+    expect(s(decomposePowerRat(x))).toBe('(x, 1)');
+    expect(s(decomposePowerRat(P('exp(2/3)')))).toBe('(E, 2/3)');
+    expect(s(decomposePowerRat(P('x**(2*y)')))).toBe('(x**y, 2)');
+    expect(s(decomposePowerRat(4))).toBe('(4, 1)');
   });
 });

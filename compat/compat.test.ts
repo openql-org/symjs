@@ -35,7 +35,7 @@ function categoryOf(fullPath: string): string {
   if (/^src\/(calculus|series|integrals)\//.test(path)) return 'calculus';
   if (path.startsWith('src/matrices/')) return 'matrices';
   if (path.startsWith('src/quantum/')) return 'quantum';
-  const sub = /^src\/(discrete|algebras|strategies|unify|geometry|vector|stats|categories|tensor|combinatorics)[/.]/.exec(path);
+  const sub = /^src\/(discrete|algebras|strategies|unify|geometry|vector|stats|categories|tensor|combinatorics|crypto|liealgebras|parsing)[/.]/.exec(path);
   if (sub) return sub[1]!;
   return 'core';
 }
@@ -68,7 +68,7 @@ interface Corpus {
   extraction: { examined: number; reasons: Record<string, number>; omitted: { module: string; src: string; reason: string }[] };
 }
 
-const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'ode', 'pde', 'calculus', 'matrices', 'special', 'logic', 'tensor', 'ntheory', 'assumptions', 'utilities', 'combinatorics', 'sets', 'printing', 'discrete', 'algebras', 'strategies', 'unify', 'geometry', 'vector', 'stats', 'categories'];
+const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'ode', 'pde', 'calculus', 'matrices', 'special', 'logic', 'tensor', 'ntheory', 'assumptions', 'utilities', 'combinatorics', 'sets', 'printing', 'discrete', 'algebras', 'strategies', 'unify', 'geometry', 'vector', 'stats', 'categories', 'crypto', 'liealgebras', 'parsing'];
 
 // a rate below 100% never prints as 100.0%
 const pct = (a: number, b: number) => (b === 0 ? '-' : `${(a < b ? Math.min((100 * a) / b, 99.9) : 100).toFixed(1)}%`);
@@ -95,6 +95,11 @@ const OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   // extractor (compat/extract.py) keeps none of them and no entry is needed here
   // Python's in-place list.sort() from a docstring setup line, no SymPy call
   'sympy.utilities.iterables: a.sort()': 'Python list method',
+  // Python threads from the global_parameters docstring (SymPy's evaluate flag is thread-local); no SymPy call
+  'sympy.core.parameters: thread.start()': 'Python threading',
+  'sympy.core.parameters: thread.join()': 'Python threading',
+  // the LaTeX of the Python class int (a Python type object, not a SymPy expression)
+  'sympy.printing.latex: print(latex(int))': 'Python type object',
 };
 const apiKey = (a: { name: string; category: string; owner?: string }): string => `${a.category}: ${a.owner ? a.owner + ':' : ''}${a.name}`;
 /**

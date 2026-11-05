@@ -212,6 +212,62 @@
     "cases": 0,
     "api": 0
    }
+  },
+  {
+   "reason": "Expand the reference scope: 176 more SymPy modules are extracted (the polys and matrices modules including the low-level representation modules, domains, DomainMatrix, agca and numberfields; core, assumptions, sets, logic, concrete, crypto, liealgebras, parsing and other mathematical modules; the printing and utilities modules), module-local public functions count as public API in the modules that document them, printed output (print(f(...)), pprint, print_tree, srepr, latex and other text results) becomes text cases compared as text in every module, and polynomial-ring, domain and DomainMatrix values are serialized. Every (module, src) and every API name of the previous corpus is kept. New examples that do not pass yet are listed in known-gaps.json; no previous case is among them. This is a measurement baseline expansion, not permission to accept behavior regressions.",
+   "reference": "SymPy 1.14.0",
+   "previousRevision": "7efd817",
+   "previousCorpusSha256": "6beb42a3e81ba2497961d3c3df37fb3025ba0cbebc54387ce42e6815cb69e44c",
+   "previousCorpusReplay": {
+    "cases": 4284,
+    "pass": 4284,
+    "failures": [],
+    "note": "The previous corpus replayed with the current library and harness: every case passes (4267 exact, 17 equivalent), API presence 1461/1461, verified public-call results 1248."
+   },
+   "unchangedRecordsKept": "Records of the previous corpus are kept byte for byte, except the one changed record below (a fresh extraction also differs in nondeterministic receivers of sympy.core.symbol xreplace, sympy.functions.elementary.complexes arg and sympy.solvers.ode.systems checkodesol, which were not taken over).",
+   "apiNames": "Grown from 1464 to 1621 (the names of the newly selected modules and the sympy.crypto and sympy.liealgebras subpackages); none removed. The three sympy.categories.diagram_drawing names stay excluded by OUT_OF_SCOPE_API.",
+   "newCasesByCategory": {
+    "categories": 5,
+    "polys": 830,
+    "tensor": 63,
+    "pde": 6,
+    "core": 24,
+    "simplify": 3,
+    "solvers": 31,
+    "ode": 67,
+    "calculus": 99,
+    "matrices": 164,
+    "ntheory": 10,
+    "assumptions": 161,
+    "utilities": 4,
+    "combinatorics": 41,
+    "sets": 15,
+    "special": 12,
+    "printing": 56,
+    "logic": 21,
+    "vector": 2,
+    "stats": 47,
+    "crypto": 78,
+    "functions": 5,
+    "liealgebras": 41,
+    "parsing": 21
+   },
+   "changedRecords": [
+    {
+     "previousKey": "sympy.polys.numberfields.minpoly: minimal_polynomial(sqrt(2), x, domain=QQ.algebraic_field(sqrt(2))) #2f5f919da3c1f307",
+     "currentKey": "sympy.polys.numberfields.minpoly: minimal_polynomial(sqrt(2), x, domain=QQ.algebraic_field(sqrt(2))) #7cde98eb46ce8bc7",
+     "previous": "unsupported argument: AlgebraicField",
+     "current": "serialized with AlgebraicField (QQ<sqrt(2)>)"
+    }
+   ],
+   "currentCorpus": {
+    "cases": 6094,
+    "api": 1621
+   },
+   "knownGaps": {
+    "cases": 856,
+    "api": 32
+   }
   }
  ]
 }

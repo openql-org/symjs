@@ -45,3 +45,17 @@ export type { TermSpec, SimplifyLogicOptions, NormalFormOptions } from './minimi
 export { SOPform, POSform, ANFform, anfCoeffs, boolMinterm, boolMaxterm, boolMonomial, simplifyLogic, toCnf, toDnf, boolMap } from './minimize';
 export type { SatisfiableOptions } from './inference';
 export { satisfiable, valid, entails, plTrue, literalSymbol, PropKB, booleanEquals } from './inference';
+export type { IntModel } from './algorithms/dpll';
+export {
+  dpllSatisfiable,
+  dpll,
+  dpllIntRepr,
+  plTrueIntRepr,
+  unitPropagate,
+  unitPropagateIntRepr,
+  findPureSymbol,
+  findPureSymbolIntRepr,
+  findUnitClause,
+  findUnitClauseIntRepr,
+} from './algorithms/dpll';
+export { load } from './utilities/dimacs';

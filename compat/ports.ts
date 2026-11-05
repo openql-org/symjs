@@ -169,7 +169,62 @@ function commSetup() {
   return { i0, i1, A, G, GH };
 }
 
+// ---- sympy.printing.printer: ModOp and the three wrong ways of printing its arguments
+const [px, pm] = sym('x m') as [sj.Sym, sj.Sym];
+/** class ModOp(Mod): def _latex(self, printer): a, b = [<print>(i) for i in self.args]; ... */
+class ModOpNode extends sj.ExtensionExpr {
+  constructor(
+    readonly how: 'ok' | 'doprint' | 'str' | 'fresh',
+    args: readonly Expr[],
+  ) {
+    super({ ok: 'ModOp', doprint: 'ModOpModeWrong', str: 'ModOpNestedWrong', fresh: 'ModOpSettingsWrong' }[how], args);
+  }
+  withArgs(args: readonly Expr[]): Expr {
+    return new ModOpNode(this.how, args);
+  }
+  override printLatex(print: (e: Expr) => string): string {
+    // printer._print(i), printer.doprint(i) (the outer mode applied again), str(i), LatexPrinter()._print(i)
+    const each = { ok: print, doprint: (e: Expr) => sj.latex(e, { mode: 'inline' }), str: (e: Expr) => sj.str(e), fresh: (e: Expr) => sj.latex(e, {}) }[this.how];
+    const [a, b] = this.args.map(each);
+    return `\\operatorname{Mod}{\\left(${a}, ${b}\\right)}`;
+  }
+}
+const modOp = (how: ModOpNode['how'], a: sj.ExprLike, b: sj.ExprLike): Expr => new ModOpNode(how, [sj.sympify(a), sj.sympify(b)]);
+
+// ---- sympy.utilities.memoization: the doctest's memoized factorial after factorial(4) and factorial(3)
+function memoFactorial(): sj.RecurrenceMemo<number> {
+  const factorial = sj.recurrenceMemo([1])((n, prev) => n * prev[prev.length - 1]!);
+  factorial(4);
+  factorial(3);
+  return factorial;
+}
+
 export const PORTS: Record<string, (() => unknown) | readonly (() => unknown)[]> = {
+  // ---- sympy.matrices.sparsetools: s = lambda d: (1 + d)**2, a function of the position on the diagonal
+  'sympy.matrices.sparsetools:banded(5, {0: s, 2: s, -2: 2})': () => {
+    const s = (d: number) => sj.pow(sj.add(1, d), 2);
+    return sj.banded(5, new Map<number, sj.BandedValue>([[0, s], [2, s], [-2, 2]]));
+  },
+  // ---- sympy.printing.printer: custom LaTeX of a node (SymPy's _latex(self, printer)); the subcomponents printed with
+  // the printer (ok), anew with the settings (doprint: the mode applied again), as str, or with a fresh printer (settings lost)
+  'sympy.printing.printer:print_latex(ModOp(x, m))': () => sj.printLatex(modOp('ok', px, pm)),
+  "sympy.printing.printer:print_latex(ModOp(x, m), mode='inline')  # ok": () => sj.printLatex(modOp('ok', px, pm), { mode: 'inline' }),
+  "sympy.printing.printer:print_latex(ModOpModeWrong(x, m), mode='inline')  # bad": () => sj.printLatex(modOp('doprint', px, pm), { mode: 'inline' }),
+  'sympy.printing.printer:print_latex(ModOp(ModOp(x, m), Integer(7)))  # ok': () => sj.printLatex(modOp('ok', modOp('ok', px, pm), 7)),
+  'sympy.printing.printer:print_latex(ModOpNestedWrong(ModOpNestedWrong(x, m), Integer(7)))  # bad': () => sj.printLatex(modOp('str', modOp('str', px, pm), 7)),
+  'sympy.printing.printer:print_latex(ModOp(Float(1) * x, m), full_prec=True)  # ok': () => sj.printLatex(modOp('ok', sj.mul(new sj.Float(1), px), pm), { fullPrec: true }),
+  'sympy.printing.printer:print_latex(ModOpSettingsWrong(Float(1) * x, m), full_prec=True)  # bad': () => sj.printLatex(modOp('fresh', sj.mul(new sj.Float(1), px), pm), { fullPrec: true }),
+  // ---- sympy.printing.tableform: a TableForm object (t = TableForm([[5, 7], [4, 2], [10, 3]]), headings='automatic' for as_matrix)
+  'sympy.printing.tableform:print(t.as_latex())': () => new sj.TableForm([[5, 7], [4, 2], [10, 3]]).asLatex(),
+  'sympy.printing.tableform:t.as_matrix()': () => new sj.TableForm([[5, 7], [4, 2], [10, 3]], { headings: 'automatic' }).asMatrix(),
+  // Symbol('') has no counterpart (a symbol has a name); a blank prints the same
+  "sympy.printing.tableform:TableForm([[Symbol('.'*(j if not i%2 else 1)) for i in range(3)]\n           for j in range(4)], alignments='rcl')": () =>
+    new sj.TableForm([0, 1, 2, 3].map((j) => [0, 1, 2].map((i) => new sj.Sym('.'.repeat(i % 2 ? 1 : j) || ' '))), { alignments: 'rcl' }),
+  // ---- sympy.utilities.memoization: @recurrence_memo([1]) def factorial(n, prev): return n * prev[-1]; factorial(4); factorial(3)
+  'sympy.utilities.memoization:factorial.cache_length() # cache length can be obtained': () => memoFactorial().cacheLength(),
+  'sympy.utilities.memoization:factorial.fetch_item(slice(2, 4))': () => memoFactorial().fetchItem(2, 4),
+  // ---- sympy.utilities.iterables: capture(lambda: pprint(2/x)) prints through the print function capture hands over
+  'sympy.utilities.iterables:capture(lambda: pprint(2/x))': () => sj.capture((print) => print(sj.pretty(sj.mul(2, sj.pow(x, -1))))),
   // ---- sympy.tensor.tensor: Python dict updates (they return None) and the commutation groups of TensorManager
   // F = TensorHead('F', [Lorentz, Lorentz], TensorSymmetry.fully_symmetric(-2)) with the field-strength components
   'sympy.tensor.tensor:repl.update({F(-i0, -i1): [\n[0, Ex/c, Ey/c, Ez/c],\n[-Ex/c, 0, -Bz, By],\n[-Ey/c, Bz, 0, -Bx],\n[-Ez/c, -By, Bx, 0]]})': () => {
@@ -479,3 +534,6 @@ function diophantinePorts(): Record<string, () => unknown> {
     }).map(([k, f]) => [m + k, f]),
   );
 }
+
+// ---- sympy.crypto.crypto: round_trip is a Python lambda of the doctest (decipher_bifid5 of encipher_bifid5)
+PORTS['sympy.crypto.crypto:round_trip(msg.replace("J", j), key).replace(j, "J")'] = () => sj.decipherBifid5(sj.encipherBifid5('JOSIE'.replace('J', 'QIQ'), 'a'), 'a').replace('QIQ', 'J');

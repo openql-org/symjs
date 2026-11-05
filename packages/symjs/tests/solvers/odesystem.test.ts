@@ -4,6 +4,7 @@
 // Tests of src/solvers/odesystem.ts: systems of ODEs; expected values from SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
+import * as sj from '../../src';
 import { add, checkodesol, diff, Dummy, dsolve, Eq, Integral, neg, NotImplementedError, parse, sstr, symbols, SymFunction as Fn } from '../../src';
 import type { Expr } from '../../src/core/nodes';
 import { constantCount, solvesOdeSystem } from '../../../../compat/ode-checks';
@@ -206,3 +207,16 @@ describe('nonlinear systems of two first-order equations', () => {
   });
 });
 
+
+describe('sub_func_doit and checksysodesol (SymPy 1.14)', () => {
+  it('substitutes a function and its derivatives', () => {
+    const x = sj.symbol('x');
+    const y = sj.SymFunction('y');
+    expect(sj.str(sj.subFuncDoit(sj.sub(sj.mul(3, sj.Derivative(y(x), x)), 1), y(x), x))).toBe('2');
+    const t = sj.symbol('t');
+    const [f, g] = [sj.SymFunction('f'), sj.SymFunction('g')];
+    const eqs = [sj.Eq(sj.Derivative(f(t), t), g(t)), sj.Eq(sj.Derivative(g(t), t), sj.mul(-1, f(t)))];
+    const sols = [sj.Eq(f(t), sj.sin(t)), sj.Eq(g(t), sj.cos(t))];
+    expect(sj.checksysodesol(eqs, sols).map(String)).toEqual(['true', '0,0']);
+  });
+});

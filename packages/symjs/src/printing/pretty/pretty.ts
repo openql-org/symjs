@@ -65,6 +65,7 @@ import {
   prettyAtom,
   prettyMulSymbol,
   prettySymbol,
+  prettyTryUseUnicode,
   prettyUseUnicode,
   sub,
   vobj,
@@ -77,7 +78,7 @@ import {
 
 /** Settings of the pretty printer (SymPy's `PrettyPrinter` settings in camelCase). */
 export interface PrettyOptions {
-  /** Use unicode characters (default true; SymPy's default depends on the terminal). */
+  /** Use unicode characters (default: the module-wide flag of {@link pprintUseUnicode}, initially true). */
   readonly useUnicode?: boolean;
   /** Break lines longer than `numColumns` (default true). */
   readonly wrapLine?: boolean;
@@ -275,7 +276,8 @@ export class PrettyPrinter {
     const iu: string = options.imaginaryUnit ?? 'i';
     if (iu !== 'i' && iu !== 'j') throw new RangeError(`'imaginaryUnit' must be either 'i' or 'j', not '${String(iu)}'`);
     this.settings = {
-      useUnicode: options.useUnicode ?? true,
+      // SymPy use_unicode=None: the module-wide flag (pprint_use_unicode)
+      useUnicode: options.useUnicode ?? prettyUseUnicode(),
       wrapLine: options.wrapLine ?? true,
       numColumns: options.numColumns ?? 80,
       orderTerms: options.orderTerms ?? 'lex',
@@ -1391,6 +1393,16 @@ export function prettyPrint(expr: Printable, options: PrettyOptions = {}): strin
 
 /** SymPy `pprint`: alias of {@link prettyPrint} (returns the text that would be printed). */
 export const pprint: (expr: Printable, options?: PrettyOptions) => string = prettyPrint;
+
+/**
+ * SymPy `pprint_use_unicode(flag=None)`: with no argument return whether the
+ * pretty printer uses unicode by default; otherwise set it and return the
+ * previous value (alias of `prettyUseUnicode`).
+ */
+export const pprintUseUnicode: (flag?: boolean) => boolean = prettyUseUnicode;
+
+/** SymPy `pprint_try_use_unicode`: use unicode when available, which it always is in JavaScript (alias of `prettyTryUseUnicode`). */
+export const pprintTryUseUnicode: () => void = prettyTryUseUnicode;
 
 /**
  * SymPy `pager_print`: the pretty form meant for a pager. Lines are not

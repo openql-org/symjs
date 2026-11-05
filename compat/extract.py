@@ -17,6 +17,9 @@ import os
 os.environ.setdefault("MPLBACKEND", "Agg")  # doctests that plot must not open windows
 
 import ast
+import contextlib
+import io
+import types
 import re
 import doctest
 import signal
@@ -298,6 +301,188 @@ MODULES = {
     "sympy.stats.stochastic_process": "stats",
     "sympy.stats.stochastic_process_types": "stats",
     "sympy.stats.symbolic_multivariate_probability": "stats",
+    # printing: the symbolic printers and the printer framework
+    "sympy.printing.repr": "printing",
+    "sympy.printing.tree": "printing",
+    "sympy.printing.tableform": "printing",
+    "sympy.printing.dot": "printing",
+    "sympy.printing.mathml": "printing",
+    "sympy.printing.precedence": "printing",
+    "sympy.printing.printer": "printing",
+    "sympy.printing.conventions": "printing",
+    "sympy.printing.defaults": "printing",
+    "sympy.printing.pretty.pretty_symbology": "printing",
+    "sympy.printing.pretty.stringpict": "printing",
+    # utilities usable in JavaScript
+    "sympy.utilities.decorator": "utilities",
+    "sympy.utilities.memoization": "utilities",
+    # polys and matrices: the user-level modules, the low-level representation modules, domains,
+    # DomainMatrix, agca and numberfields (packages themselves are not selected: api_inventory() would
+    # re-attribute the names of their submodules)
+    "sympy.matrices.common": "matrices",
+    "sympy.matrices.matrices": "matrices",
+    "sympy.matrices.repmatrix": "matrices",
+    "sympy.matrices.graph": "matrices",
+    "sympy.matrices.kind": "matrices",
+    "sympy.matrices.exceptions": "matrices",
+    "sympy.matrices.utilities": "matrices",
+    "sympy.matrices.sparsetools": "matrices",
+    "sympy.matrices.expressions.applyfunc": "matrices",
+    "sympy.matrices.expressions.factorizations": "matrices",
+    "sympy.matrices.expressions.sets": "matrices",
+    "sympy.matrices.expressions._shape": "matrices",
+    "sympy.polys.appellseqs": "polys",
+    "sympy.polys.constructor": "polys",
+    "sympy.polys.dispersion": "polys",
+    "sympy.polys.fglmtools": "polys",
+    "sympy.polys.fields": "polys",
+    "sympy.polys.groebnertools": "polys",
+    "sympy.polys.heuristicgcd": "polys",
+    "sympy.polys.modulargcd": "polys",
+    "sympy.polys.monomials": "polys",
+    "sympy.polys.multivariate_resultants": "polys",
+    "sympy.polys.orderings": "polys",
+    "sympy.polys.polyclasses": "polys",
+    "sympy.polys.polyconfig": "polys",
+    "sympy.polys.polyerrors": "polys",
+    "sympy.polys.polymatrix": "polys",
+    "sympy.polys.polyoptions": "polys",
+    "sympy.polys.polyquinticconst": "polys",
+    "sympy.polys.puiseux": "polys",
+    "sympy.polys.ring_series": "polys",
+    "sympy.polys.rings": "polys",
+    "sympy.polys.rootoftools": "polys",
+    "sympy.polys.solvers": "polys",
+    "sympy.polys.subresultants_qq_zz": "polys",
+    "sympy.polys.compatibility": "polys",
+    "sympy.polys.domainmatrix": "polys",
+    "sympy.polys.densearith": "polys",
+    "sympy.polys.densebasic": "polys",
+    "sympy.polys.densetools": "polys",
+    "sympy.polys.galoistools": "polys",
+    "sympy.polys.sqfreetools": "polys",
+    "sympy.polys.factortools": "polys",
+    "sympy.polys.distributedmodules": "polys",
+    "sympy.polys.domains.domain": "polys",
+    "sympy.polys.domains.domainelement": "polys",
+    "sympy.polys.domains.ring": "polys",
+    "sympy.polys.domains.field": "polys",
+    "sympy.polys.domains.simpledomain": "polys",
+    "sympy.polys.domains.compositedomain": "polys",
+    "sympy.polys.domains.characteristiczero": "polys",
+    "sympy.polys.domains.integerring": "polys",
+    "sympy.polys.domains.rationalfield": "polys",
+    "sympy.polys.domains.realfield": "polys",
+    "sympy.polys.domains.complexfield": "polys",
+    "sympy.polys.domains.mpelements": "polys",
+    "sympy.polys.domains.algebraicfield": "polys",
+    "sympy.polys.domains.finitefield": "polys",
+    "sympy.polys.domains.modularinteger": "polys",
+    "sympy.polys.domains.gaussiandomains": "polys",
+    "sympy.polys.domains.expressiondomain": "polys",
+    "sympy.polys.domains.expressionrawdomain": "polys",
+    "sympy.polys.domains.polynomialring": "polys",
+    "sympy.polys.domains.fractionfield": "polys",
+    "sympy.polys.domains.old_polynomialring": "polys",
+    "sympy.polys.domains.old_fractionfield": "polys",
+    "sympy.polys.domains.quotientring": "polys",
+    "sympy.polys.matrices.domainmatrix": "polys",
+    "sympy.polys.matrices.domainscalar": "polys",
+    "sympy.polys.matrices.ddm": "polys",
+    "sympy.polys.matrices.sdm": "polys",
+    "sympy.polys.matrices.dense": "polys",
+    "sympy.polys.matrices.eigen": "polys",
+    "sympy.polys.matrices.exceptions": "polys",
+    "sympy.polys.matrices.linsolve": "polys",
+    "sympy.polys.matrices.lll": "polys",
+    "sympy.polys.matrices.normalforms": "polys",
+    "sympy.polys.matrices.rref": "polys",
+    "sympy.polys.agca.extensions": "polys",
+    "sympy.polys.agca.homomorphisms": "polys",
+    "sympy.polys.agca.ideals": "polys",
+    "sympy.polys.agca.modules": "polys",
+    "sympy.polys.numberfields.basis": "polys",
+    "sympy.polys.numberfields.exceptions": "polys",
+    "sympy.polys.numberfields.galois_resolvents": "polys",
+    "sympy.polys.numberfields.modules": "polys",
+    "sympy.polys.numberfields.primes": "polys",
+    "sympy.polys.numberfields.resolvent_lookup": "polys",
+    "sympy.polys.numberfields.utilities": "polys",
+    # core, assumptions, sets, logic, concrete, crypto, liealgebras, parsing and the other mathematical modules
+    "sympy.abc": "core",
+    "sympy.core.operations": "core",
+    "sympy.core.parameters": "core",
+    "sympy.core.random": "core",
+    "sympy.core.rules": "core",
+    "sympy.core.singleton": "core",
+    "sympy.core.facts": "core",
+    "sympy.assumptions.cnf": "assumptions",
+    "sympy.assumptions.facts": "assumptions",
+    "sympy.assumptions.lra_satask": "assumptions",
+    "sympy.assumptions.predicates.calculus": "assumptions",
+    "sympy.assumptions.predicates.common": "assumptions",
+    "sympy.assumptions.predicates.matrices": "assumptions",
+    "sympy.assumptions.predicates.ntheory": "assumptions",
+    "sympy.assumptions.predicates.order": "assumptions",
+    "sympy.assumptions.predicates.sets": "assumptions",
+    "sympy.assumptions.relation.binrel": "assumptions",
+    "sympy.assumptions.relation.equality": "assumptions",
+    "sympy.assumptions.satask": "assumptions",
+    "sympy.assumptions.sathandlers": "assumptions",
+    "sympy.assumptions.wrapper": "assumptions",
+    "sympy.combinatorics.coset_table": "combinatorics",
+    "sympy.combinatorics.group_numbers": "combinatorics",
+    "sympy.combinatorics.homomorphisms": "combinatorics",
+    "sympy.combinatorics.pc_groups": "combinatorics",
+    "sympy.combinatorics.schur_number": "combinatorics",
+    "sympy.combinatorics.galois": "combinatorics",
+    "sympy.concrete.expr_with_intlimits": "calculus",
+    "sympy.concrete.expr_with_limits": "calculus",
+    "sympy.concrete.guess": "calculus",
+    "sympy.crypto.crypto": "crypto",
+    "sympy.functions.elementary._trigonometric_special": "functions",
+    "sympy.integrals": "calculus",
+    "sympy.integrals.intpoly": "calculus",
+    "sympy.integrals.quadrature": "calculus",
+    "sympy.liealgebras.cartan_matrix": "liealgebras",
+    "sympy.liealgebras.cartan_type": "liealgebras",
+    "sympy.liealgebras.dynkin_diagram": "liealgebras",
+    "sympy.liealgebras.root_system": "liealgebras",
+    "sympy.liealgebras.type_a": "liealgebras",
+    "sympy.liealgebras.type_b": "liealgebras",
+    "sympy.liealgebras.type_c": "liealgebras",
+    "sympy.liealgebras.type_d": "liealgebras",
+    "sympy.liealgebras.type_e": "liealgebras",
+    "sympy.liealgebras.type_f": "liealgebras",
+    "sympy.liealgebras.type_g": "liealgebras",
+    "sympy.liealgebras.weyl_group": "liealgebras",
+    "sympy.logic.algorithms.dpll": "logic",
+    "sympy.logic.algorithms.lra_theory": "logic",
+    "sympy.logic.utilities.dimacs": "logic",
+    "sympy.ntheory.elliptic_curve": "ntheory",
+    "sympy.parsing.sympy_parser": "parsing",
+    "sympy.parsing.mathematica": "parsing",
+    "sympy.series.acceleration": "calculus",
+    "sympy.series.approximants": "calculus",
+    "sympy.series.kauers": "calculus",
+    "sympy.sets.ordinals": "sets",
+    "sympy.sets.powerset": "sets",
+    "sympy.sets.setexpr": "sets",
+    "sympy.solvers": "solvers",
+    "sympy.solvers.bivariate": "solvers",
+    "sympy.solvers.decompogen": "solvers",
+    "sympy.solvers.simplex": "solvers",
+    "sympy.solvers.ode.nonhomogeneous": "ode",
+    "sympy.solvers.ode.single": "ode",
+    "sympy.solvers.ode.subscheck": "ode",
+    "sympy.stats": "stats",
+    "sympy.tensor.array": "tensor",
+    "sympy.tensor.array.array_comprehension": "tensor",
+    "sympy.tensor.array.expressions": "tensor",
+    "sympy.tensor.array.expressions.array_expressions": "tensor",
+    "sympy.tensor.array.expressions.from_array_to_matrix": "tensor",
+    "sympy.tensor.array.expressions.from_indexed_to_array": "tensor",
+    "sympy.tensor.functions": "tensor",
 }
 
 # sympy.categories.diagram_drawing (DiagramGrid, XypicDiagramDrawer, xypic_draw_diagram): drawing category
@@ -317,7 +502,69 @@ def stats_public():
 # subpackages whose public names are not top-level sympy names (sympy.discrete.linrec,
 # sympy.strategies.rm_id, sympy.unify.unify, ...): calls of them count as public API calls in
 # the modules of that subpackage
+# modules whose own public definitions are API of that module (not top-level sympy names): the newly
+# selected core/assumptions/logic/... modules and modules whose documented functions live in the module only
+# (deltasummation, gosper_sum, dpll_satisfiable, finite_diff, compogen, groups_count, ...)
+LOCAL_PUBLIC = {
+    "sympy.abc", "sympy.assumptions.assume", "sympy.assumptions.cnf", "sympy.assumptions.facts",
+    "sympy.assumptions.lra_satask", "sympy.assumptions.predicates.calculus", "sympy.assumptions.predicates.common",
+    "sympy.assumptions.predicates.matrices", "sympy.assumptions.predicates.ntheory",
+    "sympy.assumptions.predicates.order", "sympy.assumptions.predicates.sets", "sympy.assumptions.relation.binrel",
+    "sympy.assumptions.relation.equality", "sympy.assumptions.satask", "sympy.assumptions.sathandlers",
+    "sympy.assumptions.wrapper", "sympy.calculus.accumulationbounds", "sympy.calculus.singularities",
+    "sympy.calculus.util", "sympy.combinatorics.coset_table", "sympy.combinatorics.galois",
+    "sympy.combinatorics.group_numbers", "sympy.combinatorics.homomorphisms", "sympy.combinatorics.pc_groups",
+    "sympy.combinatorics.schur_number", "sympy.concrete.delta", "sympy.concrete.expr_with_intlimits",
+    "sympy.concrete.expr_with_limits", "sympy.concrete.gosper", "sympy.concrete.guess", "sympy.concrete.products",
+    "sympy.core.exprtools", "sympy.core.facts", "sympy.core.intfunc", "sympy.core.mod",
+    "sympy.core.operations", "sympy.core.parameters", "sympy.core.random",
+    "sympy.core.rules", "sympy.core.singleton", "sympy.core.sorting", "sympy.crypto.crypto",
+    "sympy.functions.combinatorial.factorials", "sympy.functions.elementary._trigonometric_special",
+    "sympy.functions.elementary.integers", "sympy.functions.elementary.miscellaneous",
+    "sympy.functions.elementary.piecewise", "sympy.functions.special.beta_functions",
+    "sympy.functions.special.delta_functions", "sympy.functions.special.singularity_functions", "sympy.integrals",
+    "sympy.integrals.intpoly", "sympy.integrals.laplace", "sympy.integrals.quadrature",
+    "sympy.integrals.transforms", "sympy.liealgebras.cartan_matrix", "sympy.liealgebras.cartan_type",
+    "sympy.liealgebras.dynkin_diagram", "sympy.liealgebras.root_system", "sympy.liealgebras.type_a",
+    "sympy.liealgebras.type_b", "sympy.liealgebras.type_c", "sympy.liealgebras.type_d", "sympy.liealgebras.type_e",
+    "sympy.liealgebras.type_f", "sympy.liealgebras.type_g", "sympy.liealgebras.weyl_group",
+    "sympy.logic.algorithms.dpll", "sympy.logic.algorithms.dpll2", "sympy.logic.algorithms.lra_theory",
+    "sympy.logic.utilities.dimacs", "sympy.ntheory.bbp_pi", "sympy.ntheory.continued_fraction",
+    "sympy.ntheory.egyptian_fraction", "sympy.ntheory.elliptic_curve", "sympy.ntheory.residue_ntheory",
+    "sympy.parsing.mathematica", "sympy.parsing.sympy_parser", "sympy.series.acceleration",
+    "sympy.series.approximants", "sympy.series.kauers", "sympy.series.order", "sympy.sets.conditionset",
+    "sympy.sets.contains", "sympy.sets.fancysets", "sympy.sets.ordinals", "sympy.sets.powerset",
+    "sympy.sets.setexpr", "sympy.simplify.combsimp", "sympy.solvers", "sympy.solvers.bivariate",
+    "sympy.solvers.decompogen", "sympy.solvers.deutils", "sympy.solvers.ode.nonhomogeneous",
+    "sympy.solvers.ode.single", "sympy.solvers.ode.subscheck", "sympy.solvers.simplex", "sympy.stats",
+    "sympy.tensor.array", "sympy.tensor.array.array_comprehension", "sympy.tensor.array.array_derivatives",
+    "sympy.tensor.array.dense_ndim_array", "sympy.tensor.array.expressions",
+    "sympy.tensor.array.expressions.array_expressions", "sympy.tensor.array.expressions.from_array_to_matrix",
+    "sympy.tensor.array.expressions.from_indexed_to_array", "sympy.tensor.array.mutable_ndim_array",
+    "sympy.tensor.array.sparse_ndim_array", "sympy.tensor.functions", "sympy.tensor.indexed",
+}
+
+# the low-level polys modules: their module-level functions (gf_add, dup_strip, monomial_mul, dispersion,
+# sdm_add, rs_series, solve_lin_sys, smith_normal_form, round_two, ...) are their public API
+INTERNAL_PUBLIC = {
+    "sympy.matrices.expressions._shape", "sympy.matrices.expressions.companion",
+    "sympy.matrices.expressions.fourier", "sympy.matrices.kind", "sympy.matrices.normalforms",
+    "sympy.matrices.sparsetools", "sympy.polys.agca.extensions", "sympy.polys.agca.homomorphisms",
+    "sympy.polys.agca.ideals", "sympy.polys.appellseqs", "sympy.polys.constructor", "sympy.polys.densearith",
+    "sympy.polys.densebasic", "sympy.polys.densetools", "sympy.polys.dispersion", "sympy.polys.distributedmodules",
+    "sympy.polys.domains.domain", "sympy.polys.factortools", "sympy.polys.galoistools", "sympy.polys.groebnertools",
+    "sympy.polys.heuristicgcd", "sympy.polys.matrices.ddm", "sympy.polys.matrices.dense",
+    "sympy.polys.matrices.domainmatrix", "sympy.polys.matrices.linsolve", "sympy.polys.matrices.normalforms",
+    "sympy.polys.matrices.sdm", "sympy.polys.modulargcd", "sympy.polys.monomials", "sympy.polys.numberfields.basis",
+    "sympy.polys.numberfields.galois_resolvents", "sympy.polys.numberfields.modules",
+    "sympy.polys.numberfields.primes", "sympy.polys.numberfields.utilities", "sympy.polys.orderings",
+    "sympy.polys.polyoptions", "sympy.polys.puiseux", "sympy.polys.ring_series", "sympy.polys.solvers",
+    "sympy.polys.sqfreetools",
+}
+
 SUBPACKAGE_PUBLIC = {
+    "sympy.crypto.": ("sympy.crypto",),
+    "sympy.liealgebras.": ("sympy.liealgebras",),
     "sympy.categories.": ("sympy.categories",),
     "sympy.combinatorics.": ("sympy.combinatorics",),
     "sympy.tensor.tensor": ("sympy.tensor.tensor",),
@@ -331,18 +578,29 @@ SUBPACKAGE_PUBLIC = {
 
 
 def subpackage_public(modname):
-    """The public names of the subpackage of modname."""
+    """The public names of the subpackage of modname (and of modname itself for LOCAL_PUBLIC and
+    INTERNAL_PUBLIC modules)."""
     if modname.startswith("sympy.stats."):
         return stats_public()
+    names = set()
+    pkgs_all = []
+    if modname in LOCAL_PUBLIC:
+        # the module's own public definitions are API of that module (not top-level sympy names)
+        pkgs_all.append((modname,))
     for prefix, pkgs in SUBPACKAGE_PUBLIC.items():
         if modname.startswith(prefix):
-            names = set()
-            for pkg in pkgs:
-                m = importlib.import_module(pkg)
-                # a package's __all__, or the public functions a module defines
-                names |= set(getattr(m, "__all__", None) or [n for n in dir(m) if not n.startswith("_") and getattr(getattr(m, n), "__module__", None) == pkg])
-            return names
-    return set()
+            pkgs_all.append(pkgs)
+            break
+    for pkgs in pkgs_all:
+        for pkg in pkgs:
+            m = importlib.import_module(pkg)
+            # a package's __all__, or the public functions a module defines
+            names |= set(getattr(m, "__all__", None) or [n for n in dir(m) if not n.startswith("_") and getattr(getattr(m, n), "__module__", None) == pkg])
+    if modname in INTERNAL_PUBLIC:
+        # the module's own public functions are its API (SymPy does not re-export them at top level)
+        mod = importlib.import_module(modname)
+        names |= {n for n, v in vars(mod).items() if not n.startswith("_") and callable(v) and getattr(v, "__module__", None) == modname}
+    return names
 
 ASSUMPTION_KEYS = ["real", "positive", "negative", "nonnegative", "nonpositive", "integer", "commutative", "polar"]
 
@@ -351,6 +609,10 @@ DUMMY_IDS = {}
 
 
 class Unsupported(Exception):
+    pass
+
+
+class PythonRuntime(Exception):
     pass
 
 
@@ -452,6 +714,17 @@ def ser(o):
         return {"t": "PropKB", "clauses": [ser(c) for c in sorted(o.clauses, key=sympy.default_sort_key)]}
     if isinstance(o, (sympy.Not, sympy.Xor, sympy.Implies, sympy.Equivalent, sympy.Nand, sympy.Nor, sympy.logic.boolalg.Xnor, sympy.ITE)):
         return {"t": "Logic", "op": type(o).__name__, "args": [ser(i) for i in o.args]}
+    from sympy.liealgebras.cartan_type import Standard_Cartan as _SC
+    from sympy.liealgebras.root_system import RootSystem as _RS
+    from sympy.liealgebras.weyl_group import WeylGroup as _WG
+    if isinstance(o, _SC):
+        return {"t": "CartanType", "series": o.series, "n": int(o.n)}
+    if isinstance(o, (_RS, _WG)):
+        return {"t": type(o).__name__, "cartanType": ser(o.cartan_type)}
+    from sympy.polys.domains.modularinteger import ModularInteger as _ModInt
+    if isinstance(o, _ModInt):
+        # an element of GF(p) (the LFSR sequences of sympy.crypto, galoistools): its value and the modulus
+        return {"t": "FFElement", "v": int(o.val) % int(o.mod), "mod": int(o.mod), "symmetric": bool(o.sym)}
     if isinstance(o, int):
         return {"t": "Rational", "p": str(o), "q": "1"}
     if isinstance(o, float):
@@ -524,8 +797,44 @@ def ser(o):
     if isinstance(o, sympy.FunctionClass) and not isinstance(o, _UF):
         return {"t": "FnClass", "name": o.__name__}
     from sympy.polys.domains.domain import Domain as _Domain
-    if isinstance(o, _Domain) and str(o) in ("ZZ", "QQ"):
-        return {"t": "Domain", "name": str(o)}
+    from sympy.polys.rings import PolyRing as _PolyRing, PolyElement as _PolyElement
+    from sympy.polys.fields import FracField as _FracField, FracElement as _FracElement
+    from sympy.polys.matrices import DomainMatrix as _DM
+    from sympy.polys.matrices.ddm import DDM as _DDM
+    from sympy.polys.matrices.sdm import SDM as _SDM
+    from sympy.polys.matrices.domainscalar import DomainScalar as _DS
+    from sympy.polys.orderings import MonomialOrder as _MO
+    if type(o).__name__ in ("PythonMPQ", "mpq"):
+        # a QQ element (the ground type of QQ)
+        return {"t": "Rational", "p": str(o.numerator), "q": str(o.denominator)}
+    if isinstance(o, _Domain):
+        d = {"t": "Domain", "name": str(o)}
+        if o.is_FiniteField:
+            d.update(mod=int(o.mod), symmetric=bool(o.sym))
+        elif o.is_AlgebraicField:
+            d.update(base=ser(o.dom), ext=ser(o.ext.as_expr()), gens=[ser(e) for e in o.orig_ext])
+        elif o.is_PolynomialRing or o.is_FractionField:
+            d.update(base=ser(o.domain), symbols=[ser(s) for s in o.symbols], order=str(o.order))
+        elif o.is_RealField or o.is_ComplexField:
+            d.update(prec=int(o.precision))
+        return d
+    if isinstance(o, _MO):
+        if str(o) not in ("lex", "grlex", "grevlex", "ilex", "igrlex", "igrevlex"):
+            raise Unsupported("ProductOrder")
+        return {"t": "MonomialOrder", "name": str(o)}
+    if isinstance(o, (_PolyRing, _FracField)):
+        return {"t": type(o).__name__, "symbols": [ser(s) for s in o.symbols], "domain": ser(o.domain), "order": str(o.order)}
+    if isinstance(o, _PolyElement):
+        return {"t": "PolyElement", "ring": ser(o.ring), "expr": ser(o.as_expr())}
+    if isinstance(o, _FracElement):
+        return {"t": "FracElement", "field": ser(o.field), "numer": ser(o.numer.as_expr()), "denom": ser(o.denom.as_expr())}
+    if isinstance(o, (_DM, _DDM, _SDM)):
+        K = o.domain
+        return {"t": "DomainMatrix", "cls": type(o).__name__, "domain": ser(K), "shape": list(o.shape),
+                "rows": [[ser(K.to_sympy(e)) for e in r] for r in o.to_list()],
+                "fmt": o.rep.fmt if isinstance(o, _DM) else ("dense" if isinstance(o, _DDM) else "sparse")}
+    if isinstance(o, _DS):
+        return {"t": "DomainScalar", "domain": ser(o.domain), "element": ser(o.domain.to_sympy(o.element))}
     from sympy.utilities.enumerative import MultisetPartitionTraverser as _MPT
     if type(o) is _MPT:
         # a stateless helper object: constructed anew
@@ -708,6 +1017,11 @@ def api_inventory():
     from sympy.tensor.tensor import TensorIndexType, TensorIndex, TensorHead, TensorSymmetry, tensor_indices, tensor_heads, canon_bp, contract_metric
     for obj in (TensorIndexType, TensorIndex, TensorHead, TensorSymmetry, tensor_indices, tensor_heads, canon_bp, contract_metric):
         out.append({"name": obj.__name__, "category": "tensor"})
+    for pkg, cat in (("sympy.crypto", "crypto"), ("sympy.liealgebras", "liealgebras")):
+        # subpackages whose names are not top-level sympy names
+        m = importlib.import_module(pkg)
+        for name in sorted(m.__all__):
+            out.append({"name": name, "category": cat})
     for name in sorted(stats_public()):
         # sympy.stats is a subpackage too (only the names of the in-scope modules, see stats_public)
         out.append({"name": name, "category": "stats"})
@@ -758,8 +1072,17 @@ def _alarm(signum, frame):
     raise Timeout()
 
 
+# keep printed text output (print(f(...)), pprint(...), print_tree(...), srepr(...)) as text cases
+TEXT_OUTPUT = os.environ.get("TEXT_OUTPUT", "1") == "1"
+# measure only these modules (comma-separated prefixes) when set
+ONLY = [m for m in os.environ.get("ONLY_MODULES", "").split(",") if m]
+
+
 def main(dst):
     import random
+    # SymPy's doctest runner prints in ASCII (pprint_use_unicode(False)); so do the corpus cases
+    from sympy.printing.pretty.pretty_symbology import pretty_use_unicode
+    pretty_use_unicode(False)
     random.seed(0)  # randMatrix and friends: keep the corpus reproducible
     warnings.filterwarnings("ignore")
     signal.signal(signal.SIGALRM, _alarm)
@@ -772,6 +1095,8 @@ def main(dst):
         if ex.want.strip():
             extraction["omitted"].append({"module": modname, "src": ex.source.strip(), "reason": reason})
     for modname, category in MODULES.items():
+        if ONLY and not any(modname.startswith(m) for m in ONLY):
+            continue
         try:
             mod = importlib.import_module(modname)
         except Exception:
@@ -809,6 +1134,12 @@ def main(dst):
                     continue
                 call = tree.body
                 record = None
+                # print(f(...)): the printed text of the inner call is the expected output
+                printed = (TEXT_OUTPUT and isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id == "print"
+                           and len(call.args) == 1 and not call.keywords and isinstance(call.args[0], ast.Call))
+                if printed:
+                    call = call.args[0]
+                    tree = ast.Expression(call)
                 if isinstance(call, ast.Call) and not any(isinstance(a, ast.Starred) for a in call.args):
                     if isinstance(call.func, ast.Name):
                         record = {"fn": call.func.id}
@@ -818,13 +1149,27 @@ def main(dst):
                 assumed = list(_ga)
                 try:
                     signal.alarm(ALARM_SECONDS)
-                    result = eval(compile(tree, "<doctest>", "eval"), globs)
+                    _out = io.StringIO()
+                    with contextlib.redirect_stdout(_out):
+                        result = eval(compile(tree, "<doctest>", "eval"), globs)
                 except (Exception, Timeout) as err:
                     omit("reference-timeout" if isinstance(err, Timeout) else "reference-exception", modname, ex)
                     continue
                 finally:
                     signal.alarm(0)
-                if record is None or "print" in record["fn"] or record["fn"] in ("str", "srepr", "latex", "repr"):
+                # text output: a printed call, a printing function (pprint, print_tree, ...) or a call returning a str
+                text = None
+                if TEXT_OUTPUT and record is not None and record["fn"] not in ("str", "repr"):
+                    if printed:
+                        text = str(result)
+                    elif result is None and _out.getvalue() and "print" in record["fn"]:
+                        text = _out.getvalue()[:-1] if _out.getvalue().endswith("\n") else _out.getvalue()
+                    elif isinstance(result, str):
+                        text = result
+                    elif (type(result).__module__ or "").startswith("sympy.printing.") and not isinstance(result, Basic):
+                        # a printing object (TableForm): the doctest shows its str
+                        text = str(result)
+                if text is None and (record is None or printed or "print" in record["fn"] or record["fn"] in ("str", "srepr", "latex", "repr")):
                     omit("non-call-expression" if record is None else "printing-expression", modname, ex)
                     continue
                 fn = record["fn"]
@@ -833,18 +1178,25 @@ def main(dst):
                     if fn[1:].startswith("_"):
                         omit("private-api", modname, ex)
                         continue
-                elif (fn not in PUBLIC and fn not in extra_public) or fn in globs and getattr(globs[fn], "__module__", "").startswith("__"):
+                elif (fn not in PUBLIC and fn not in extra_public) or fn in globs and (getattr(globs[fn], "__module__", None) or "__").startswith("__"):
                     omit("not-exported-api", modname, ex)
                     continue
                 DUMMY_IDS.clear()
                 try:
                     if "selfSrc" in record:
-                        record["self"] = ser(eval(record.pop("selfSrc"), globs))
+                        _self = eval(record.pop("selfSrc"), globs)
+                        if printed and isinstance(_self, types.ModuleType):
+                            # the printed output of a function of a Python module (inspect.getsource): not SymPy API
+                            raise PythonRuntime()
+                        record["self"] = ser(_self)
                     record["args"] = [ser_arg(a, globs) for a in call.args]
                     record["kwargs"] = {k.arg: ser_arg(k.value, globs) for k in call.keywords}
                     if assumed:
                         # the global assumptions in force (SymPy global_assumptions)
                         record["assume"] = [ser(a) for a in assumed]
+                except PythonRuntime:
+                    omit("python-runtime-api", modname, ex)
+                    continue
                 except Unsupported as e:
                     # keep the case (it counts as a failure) so the rate is not inflated
                     skipped[str(e)] = skipped.get(str(e), 0) + 1
@@ -854,12 +1206,25 @@ def main(dst):
                     omit("serialization-error", modname, ex)
                     continue
                 from sympy.polys.monomials import Monomial as _Monomial
+                if text is not None:
+                    # compared as text (whitespace-normalized where the doctest says NORMALIZE_WHITESPACE)
+                    record["text"] = True
+                    if ex.options.get(doctest.NORMALIZE_WHITESPACE):
+                        record["ws"] = True
+                    record.update({"category": category, "module": modname, "src": src, "expected": text.rstrip("\n")})
+                    cases.append(record)
+                    continue
                 if isinstance(result, (MatrixBase,)):
                     expected = str(result)
                 elif isinstance(result, tuple) and any(isinstance(i, _Monomial) for i in result):
                     # a Monomial's repr is its address; its str is x**2*y**0
                     expected = "(" + ", ".join(str(i) for i in result) + ")"
                 elif isinstance(result, (Basic, list, tuple, dict, set, int, float, bool)) or result is None:
+                    expected = str(result)
+                elif ((type(result).__module__ or "").startswith(("sympy.polys", "sympy.matrices", "sympy.external"))
+                        or type(result).__name__ in ("mpq", "mpz")):
+                    # polynomial-ring elements (PolyElement prints as x**2 + 1/2*y), domains (QQ<sqrt(2)>, GF(5)),
+                    # DomainMatrix/DDM/SDM, DMP, ANP, ground elements (MPQ(1,2)): compared by str()
                     expected = str(result)
                 else:
                     omit("unsupported-result-type", modname, ex)

@@ -14,12 +14,12 @@
  */
 
 import type { Assumptions, Expr, ExprLike, FnName, RelOp, SpecialFnName } from '../core/nodes';
-import { Add, Float, Integral, Mul, Order, Pow, Rational, S, Sym, impl } from '../core/nodes';
+import { Add, BoolAtom, Float, Integral, Mul, Order, Pow, Rational, Rel, S, Sym, impl } from '../core/nodes';
 import { NotImplementedError } from '../core/errors';
 import { Product, Sum } from '../core/concrete';
 import { Subs } from '../core/subsnode';
 import { float } from '../numeric/floatctor';
-import { and, not, or, xor } from '../core/boolalg';
+import { BoolOp, and, not, or, xor } from '../core/boolalg';
 import { add, div, exp, mul, neg, pow, sqrt, sub, sympify } from '../core/ops';
 import { fn } from '../functions/elementary/elementary';
 import { at, defined } from '../core/guard';
@@ -37,10 +37,15 @@ export interface ParseOptions {
   convertXor?: boolean;
   /**
    * SymPy parse_expr transformations: 'implicit' allows implicit
-   * multiplication (2x, x y, x(y + 1)) and function application without
-   * parentheses (sin x); 'all' is the same here.
+   * multiplication (2x, x y, x(y + 1)), function application without
+   * parentheses (sin x) and function exponentiation (sin**2(x) is
+   * sin(x)**2); 'all' also splits unknown names into one-letter symbols
+   * (xyz is x*y*z; names of Greek letters and names with an underscore are
+   * kept, as SymPy's split_symbols does).
    */
   transformations?: 'standard' | 'implicit' | 'all';
+  /** true: '=' is an equation (SymPy's convert_equals_signs transformation): 1*2 = x is Eq(2, x). */
+  convertEqualsSigns?: boolean;
   /**
    * Names to use while parsing (SymPy locals / local_dict): an expression
    * replaces the name, a function is called with the parsed arguments.
@@ -67,7 +72,7 @@ function repeatingDecimal(s: string): Rational {
 }
 
 function tokenize(src: string, offset: number, out: Token[]): void {
-  const re = /\s*(?:(\d*\.\d*\[\d+\])|(\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)|([A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*)|(\*\*|<=|>=|[-+*/^(),&|~<>]))/y;
+  const re = /\s*(?:(\d*\.\d*\[\d+\])|(\d+(?:\.\d*)?(?:[eE][+-]?\d+)?|\.\d+(?:[eE][+-]?\d+)?)|([A-Za-z_Ͱ-Ͽ][A-Za-z0-9_Ͱ-Ͽ']*)|(\*\*|<=|>=|[-+*/^(),&|~<>=]))/y;
   let i = 0;
   while (i < src.length) {
     if (/^\s*$/.test(src.slice(i))) return;
@@ -401,6 +406,10 @@ const TUPLE_FUNCTIONS: Record<string, (args: readonly Arg[]) => Expr> = {
     ),
 };
 
+const GREEK = new Set(['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta', 'iota', 'kappa', 'lamda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega']);
+/** SymPy _token_splittable: a name of letters only, not the name of a Greek letter. */
+const splittable = (name: string): boolean => name.length > 1 && /^[A-Za-z]+$/.test(name) && !GREEK.has(name.toLowerCase());
+
 const CONSTANTS: Record<string, Expr> = {
   pi: S.Pi,
   E: S.E,
@@ -477,7 +486,7 @@ class Parser {
   }
 
   parse(): Expr {
-    const e = this.boolOr();
+    const e = this.equation();
     const t = this.peek();
     if (t.t !== 'end') {
       const hint = t.t === 'name' || t.t === 'num' || (t.t === 'op' && t.v === '(') || t.t === 'value' ? ' (implicit multiplication is not supported; use *)' : '';
@@ -486,7 +495,20 @@ class Parser {
     return e;
   }
 
-  // logical operators (lowest precedence): | then ^ (Xor, without convert_xor) then & then ~
+  /** a = b = ... as nested equations (convert_equals_signs), the lowest precedence. */
+  private equation(): Expr {
+    let e = this.boolOr();
+    while (this.opts.convertEqualsSigns === true && this.isOp('=')) {
+      this.next();
+      const r = this.boolOr();
+      // an equation of truth values (Eq(Eq(2, x), False)) stays as written
+      const bool = (x: Expr): boolean => x instanceof Rel || x instanceof BoolAtom || x instanceof BoolOp;
+      e = bool(e) || bool(r) ? new Rel('Eq', e, r) : rel('Eq', e, r);
+    }
+    return e;
+  }
+
+  // logical operators: | then ^ (Xor, without convert_xor) then & then ~
   private boolOr(): Expr {
     let e = this.boolXor();
     while (this.isOp('|')) {
@@ -614,6 +636,15 @@ class Parser {
     return this.sum();
   }
 
+  /** The symbol (or constant) of a name. */
+  private symbolOf(name: string): Expr {
+    const known = this.symbols.get(name) ?? CONSTANTS[name];
+    if (known) return known;
+    const s = new Sym(name, this.opts.assumptions ?? {});
+    this.symbols.set(name, s);
+    return s;
+  }
+
   private atom(): Expr {
     const t = this.next();
     switch (t.t) {
@@ -624,7 +655,18 @@ class Parser {
       case 'name': {
         // implicit application: sin x
         const knownFn = FUNCTIONS[t.v] ?? parserHooks.constructors.get(t.v);
+        // function exponentiation: sin**2(x) and sin**2 x are sin(x)**2
+        if (this.implicit && knownFn && this.isOp('**')) {
+          this.next();
+          const e = this.atom();
+          const arg = this.isOp('(') ? this.atom() : this.power();
+          return this.pow2(knownFn([arg]), e);
+        }
         if (this.implicit && knownFn && !this.isOp('(') && this.startsFactor()) return knownFn([this.power()]);
+        // split_symbols: an unknown name of several letters is a product of one-letter symbols
+        if (this.opts.transformations === 'all' && !knownFn && !this.isOp('(') && splittable(t.v) && !this.symbols.has(t.v) && CONSTANTS[t.v] === undefined) {
+          return t.v.split('').map((c) => this.symbolOf(c)).reduce((a, b) => this.mul2(a, b));
+        }
         // with implicit multiplication a known symbol before '(' multiplies (x(y + 1))
         const tupleFn = this.localFns.has(t.v) ? undefined : TUPLE_FUNCTIONS[t.v];
         const asSymbol = this.implicit && !knownFn && !tupleFn && !this.localFns.has(t.v) && this.isOp('(');
@@ -641,15 +683,11 @@ class Parser {
           this.expect(')');
           return tupleFn ? tupleFn(args) : f(plainArgs(args, t.v));
         }
-        const known = this.symbols.get(t.v) ?? CONSTANTS[t.v];
-        if (known) return known;
-        const s = new Sym(t.v, this.opts.assumptions ?? {});
-        this.symbols.set(t.v, s);
-        return s;
+        return this.symbolOf(t.v);
       }
       case 'op':
         if (t.v === '(') {
-          const e = this.boolOr();
+          const e = this.equation();
           this.expect(')');
           return e;
         }

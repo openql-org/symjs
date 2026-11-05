@@ -6,7 +6,7 @@
  * algebra system. Each feature area is also available as its own entry point
  * (`@symjs/symjs/core`, `/special`, `/simplify`, `/polys`, `/calculus`,
  * `/solvers`, `/sets`, `/matrices`, `/logic`, `/ntheory`, `/combinatorics`, `/utilities`,
- * `/tensor`, `/printing`, `/discrete`, `/algebras`, `/holonomic`, `/geometry`, `/vector`, `/stats`) for smaller bundles. Domain-specific
+ * `/tensor`, `/printing`, `/discrete`, `/algebras`, `/holonomic`, `/geometry`, `/vector`, `/stats`, `/categories`, `/crypto`, `/liealgebras`) for smaller bundles. Domain-specific
  * extend modules are separate packages (packages/* in the repository).
  */
 
@@ -32,6 +32,8 @@ export * from './algebras';
 export * from './geometry';
 export * from './vector';
 export * from './stats';
+export * from './crypto';
+export * from './liealgebras';
 export type { PermutationLike } from './tensor';
 
 export * from './categories';

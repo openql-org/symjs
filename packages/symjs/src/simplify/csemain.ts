@@ -9,8 +9,8 @@
  * postprocessors cse_separate and cse_release_variables.
  */
 
-import type { ExprLike, RelOp, SpecialName } from '../core/nodes';
-import { Add, Expr, Constant, Dummy, ExtensionExpr, Float, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild } from '../core/nodes';
+import type { ExprLike } from '../core/nodes';
+import { Add, Expr, Constant, Dummy, Float, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
 import { ordered } from '../core/match';
 import { argsCncSplit } from '../core/methods';
@@ -33,7 +33,7 @@ import {
 } from '../matrices/expressions/matexpr';
 import { CRootOf } from '../polys/rootof';
 import { Indexed } from '../core/indexed';
-import { className } from './rewrite';
+import { basicCompare, sympyArgs, sympyClassName } from '../core/compare';
 import { factorTerms, subPost, subPre } from './exprtools';
 import { at, cast, expectType, first, getOrThrow } from '../core/guard';
 
@@ -88,36 +88,7 @@ export interface CseOptions {
 
 const isExp = (e: Expr): boolean => e instanceof Pow && e.base instanceof Constant && e.base.name === 'E';
 
-const CONSTANT_CLASSES: Readonly<Record<string, string>> = { E: 'Exp1', pi: 'Pi', I: 'ImaginaryUnit' };
-const SPECIAL_CLASSES: Readonly<Record<SpecialName, string>> = { oo: 'Infinity', '-oo': 'NegativeInfinity', zoo: 'ComplexInfinity', nan: 'NaN' };
-const REL_CLASSES: Readonly<Record<RelOp, string>> = {
-  Eq: 'Equality',
-  Ne: 'Unequality',
-  Lt: 'StrictLessThan',
-  Gt: 'StrictGreaterThan',
-  Le: 'LessThan',
-  Ge: 'GreaterThan',
-};
-
-/** SymPy's class name of an expression (`type(e).__name__`). */
-export function sympyClassName(e: Expr): string {
-  if (e instanceof Rational) {
-    if (e.isZero) return 'Zero';
-    if (e.p === 1n && e.q === 1n) return 'One';
-    if (e.p === -1n && e.q === 1n) return 'NegativeOne';
-    if (e.p === 1n && e.q === 2n) return 'Half';
-    return e.isInteger ? 'Integer' : 'Rational';
-  }
-  if (e instanceof Float) return 'Float';
-  if (e instanceof Constant) return CONSTANT_CLASSES[e.name] ?? e.name;
-  if (e instanceof Special) return SPECIAL_CLASSES[e.name];
-  if (e instanceof Wild) return 'Wild';
-  if (e instanceof Dummy) return 'Dummy';
-  if (e instanceof Sym) return 'Symbol';
-  if (e instanceof BoolAtom) return e.value ? 'BooleanTrue' : 'BooleanFalse';
-  if (e instanceof Rel) return REL_CLASSES[e.op];
-  return className(e);
-}
+export { basicCompare, sympyArgs, sympyClassName };
 
 /** The superclasses of a SymPy class (its mro after the class itself), by the kind of node. */
 export function sympyClassBases(e: Expr): string[] {
@@ -144,87 +115,6 @@ export function sympyClassBases(e: Expr): string[] {
 }
 
 /** SymPy's basic.ordering_of_classes (the canonical order of Add and Mul arguments). */
-const ORDERING_OF_CLASSES = [
-  'Zero', 'One', 'Half', 'Infinity', 'NaN', 'NegativeOne', 'NegativeInfinity',
-  'Integer', 'Rational', 'Float',
-  'Exp1', 'Pi', 'ImaginaryUnit',
-  'Symbol', 'Wild',
-  'Pow', 'Mul', 'Add',
-  'Derivative', 'Integral',
-  'Abs', 'Sign', 'Sqrt',
-  'Floor', 'Ceiling',
-  'Re', 'Im', 'Arg',
-  'Conjugate',
-  'Exp', 'Log',
-  'Sin', 'Cos', 'Tan', 'Cot', 'ASin', 'ACos', 'ATan', 'ACot',
-  'Sinh', 'Cosh', 'Tanh', 'Coth', 'ASinh', 'ACosh', 'ATanh', 'ACoth',
-  'RisingFactorial', 'FallingFactorial',
-  'factorial', 'binomial',
-  'Gamma', 'LowerGamma', 'UpperGamma', 'PolyGamma',
-  'Erf',
-  'Chebyshev', 'Chebyshev2',
-  'Function', 'WildFunction',
-  'Lambda',
-  'Order',
-  'Equality', 'Unequality', 'StrictGreaterThan', 'StrictLessThan',
-  'GreaterThan', 'LessThan',
-];
-
-const cmp = <T extends string | number | bigint>(a: T, b: T): number => (a > b ? 1 : a < b ? -1 : 0);
-
-/** SymPy _cmp_name: by ordering_of_classes when either name is listed, else by name. */
-function cmpName(n1: string, n2: string): number {
-  if (n1 === n2) return 0;
-  const unknown = ORDERING_OF_CLASSES.length + 1;
-  const i = (n: string) => {
-    const k = ORDERING_OF_CLASSES.indexOf(n);
-    return k < 0 ? unknown : k;
-  };
-  const [i1, i2] = [i(n1), i(n2)];
-  if (i1 === unknown && i2 === unknown) return cmp(n1, n2);
-  return cmp(i1, i2);
-}
-
-type Content = Expr | string | number | bigint;
-
-/** SymPy _hashable_content (symbol names, number values, otherwise the arguments in SymPy's order). */
-function hashableContent(e: Expr): Content[] {
-  if (e instanceof Rational) return [e.p, e.q];
-  if (e instanceof Float) return [e.toNumber()];
-  if (e instanceof Sym) return [e.name];
-  // an atom of an extension (a matrix name Str, ...) by its printed form (SymPy Str._hashable_content is (name,))
-  if (e instanceof ExtensionExpr && e.args.length === 0) return [str(e)];
-  return [...sympyArgs(e)];
-}
-
-/** SymPy Basic.compare: class names, then the length and items of the hashable content. */
-export function basicCompare(a: Expr, b: Expr): number {
-  if (a === b) return 0;
-  const c = cmpName(sympyClassName(a), sympyClassName(b));
-  if (c) return c;
-  const st = hashableContent(a);
-  const ot = hashableContent(b);
-  if (st.length !== ot.length) return cmp(st.length, ot.length);
-  for (let i = 0; i < st.length; i++) {
-    const l = at(st, i);
-    const r = at(ot, i);
-    const d = typeof l === 'object' && typeof r === 'object' ? basicCompare(l, r) : cmp(String(l), String(r));
-    if (d) return d;
-  }
-  return 0;
-}
-
-/** SymPy's `expr.args`: exp(x) has the argument x; sums and products are in Basic.compare order. */
-export function sympyArgs(e: Expr): readonly Expr[] {
-  if (isExp(e)) return [at(e.args, 1)];
-  if (e instanceof Add) return [...e.args].sort(basicCompare);
-  if (e instanceof Mul) {
-    const c = e.args.filter((a) => a.isCommutative).sort(basicCompare);
-    return [...c, ...e.args.filter((a) => !a.isCommutative)];
-  }
-  return e.args;
-}
-
 /** SymPy `expr.func(*args)` for the arguments of {@link sympyArgs}. */
 export function sympyRebuild(e: Expr, args: readonly Expr[]): Expr {
   if (isExp(e)) return exp(first(args));
