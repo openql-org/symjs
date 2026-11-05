@@ -21,6 +21,7 @@ import { sympify as sympifyFn } from './core/ops';
 import { callableClass } from './core/callable';
 import { Subs as subsFn, SubsNode } from './core/subsnode';
 import { Lambda as lambdaFn, LambdaNode } from './core/lambda';
+export { Id } from './core/lambda';
 
 export {
   Expr,
@@ -76,6 +77,8 @@ export {
   extractAdditively,
   asCoefficient,
   isMeromorphic,
+  matches,
+  getO,
 } from './core/public';
 export { isTrue, isFalse, isUnknown, truthNot, truthAnd, truthOr, NoMatch, NoMatchResult, isNoMatch, Unsolved, UnsolvedResult, isUnsolved } from './core/truth';
 export type { Truth } from './core/truth';
@@ -105,7 +108,7 @@ export {
 export { Basic, BasicNode } from './core/basic';
 export { Kind, NumberKind, BooleanKind, UndefinedKind } from './core/kind';
 export { SymNumber, RealNumber, Atom, AtomicExpr, FunctionClass, UnevaluatedExpr, DeferredVector, genericExpr } from './core/classes';
-export { defineFunction, implementedFunction, DefinedFunctionCall } from './core/defun';
+export { defineFunction, implementedFunction, DefinedFunctionCall, arity } from './core/defun';
 export type { DefinedFunction, FunctionDefinition } from './core/defun';
 export type {
   ExprKind,
@@ -157,6 +160,14 @@ export {
   hasXfree,
   isAlgebraicExpr,
   dummyEq,
+  asDummy,
+  asExpr,
+  copy,
+  removeO,
+  normal,
+  nseries,
+  rcall,
+  prod,
 } from './core/methods';
 export {
   root,
@@ -172,6 +183,7 @@ export {
   use,
   preorderTraversal,
   PreorderTraversal,
+  piecewiseFold,
 } from './core/traverse';
 export { Tuple, TupleNode, Dict, DictNode } from './core/containers';
 export {
@@ -315,6 +327,15 @@ export function symbols<S extends string>(names: S, assumptions: Assumptions = {
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the tuple length is computed from the literal type S, which the type system cannot relate to the runtime split
   return expandNames(names).map((n) => new SymbolNode(n, assumptions)) as SymbolTuple<S>;
 }
+/**
+ * SymPy var(names, **assumptions): the symbols of `names`, as `symbols` creates
+ * them. SymPy also binds them in the caller's namespace; JavaScript has no
+ * such namespace, so var only returns them (`const [x, y] = sj.var('x y')`).
+ */
+function symbolsVar<S extends string>(names: S, assumptions: Assumptions = {}): SymbolTuple<S> {
+  return symbols(names, assumptions);
+}
+export { symbolsVar as var };
 export {
   integerLog,
   igcd,

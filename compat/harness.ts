@@ -121,6 +121,9 @@ export class TypeRef {
   constructor(readonly name: string) {}
 }
 
+/** An item of a Python list, tuple, set or dict prints as its repr: Permutation(0, 1, 2) for a Permutation. */
+const fmtItem = (v: unknown): string => (v instanceof sj.Permutation ? sj.permutationRepr(v) : fmt(v));
+
 export function fmt(v: unknown): string {
   if (v instanceof Expr) return sj.str(v);
   if (v instanceof Matrix) return v.toString();
@@ -138,11 +141,11 @@ export function fmt(v: unknown): string {
   if (typeof v === 'number' || typeof v === 'bigint') return String(v);
   if (v === 'EmptySet') return 'EmptySet';
   if (typeof v === 'string') return `'${v}'`;
-  if (v instanceof JsList) return `[${v.items.map(fmt).join(', ')}]`;
-  if (v instanceof JsTuple) return v.items.length === 1 ? `(${fmt(v.items[0])},)` : `(${v.items.map(fmt).join(', ')})`;
+  if (v instanceof JsList) return `[${v.items.map(fmtItem).join(', ')}]`;
+  if (v instanceof JsTuple) return v.items.length === 1 ? `(${fmtItem(v.items[0])},)` : `(${v.items.map(fmtItem).join(', ')})`;
   if (v instanceof JsDefaultDict) return `defaultdict(<class 'int'>, ${fmt(new JsDict(v.entries))})`;
-  if (v instanceof JsDict) return `{${v.entries.map(([k, x]) => `${fmt(k)}: ${fmt(x)}`).join(', ')}}`;
-  if (v instanceof JsSet) return v.items.length === 0 ? 'set()' : `{${v.items.map(fmt).join(', ')}}`;
+  if (v instanceof JsDict) return `{${v.entries.map(([k, x]) => `${fmtItem(k)}: ${fmtItem(x)}`).join(', ')}}`;
+  if (v instanceof JsSet) return v.items.length === 0 ? 'set()' : `{${v.items.map(fmtItem).join(', ')}}`;
   if (v instanceof UFnClass || v instanceof FnClass) return v.name;
   if (v instanceof TypeRef) return `<class 'sympy.${v.name}'>`;
   // library objects with their own SymPy-like str (Cycle, PropKB, ...)
@@ -597,7 +600,22 @@ export function deserialize(tree: Tree): unknown {
       return sj.PermutationGroup((tree['generators'] as Tree[]).map((g) => deserialize(g) as sj.Permutation));
     case 'TensorIndexType': return sj.TensorIndexType(String(tree['name']), { dim: deserialize(tree['dim'] as Tree) as Expr, dummyName: String(tree['dummyName']) });
     case 'TensorIndex': return sj.TensorIndex(String(tree['name']), deserialize(tree['type'] as Tree) as sj.TensorIndexType, Boolean(tree['up']));
-    case 'TensorSymmetry': return new sj.TensorSymmetry(Number(tree['rank']), Number(tree['sign']) as -1 | 0 | 1);
+    case 'TensorSymmetry':
+      // a general slot symmetry by its base and strong generating set
+      if (tree['base'] !== undefined) return new sj.TensorSymmetry(tree['base'] as number[], (tree['generators'] as Tree[]).map((g) => deserialize(g) as sj.Permutation));
+      return new sj.TensorSymmetry(Number(tree['rank']), Number(tree['sign']) as -1 | 0 | 1);
+    case 'WildTensorIndex': return sj.WildTensorIndex(String(tree['name']), deserialize(tree['type'] as Tree) as sj.TensorIndexType, Boolean(tree['up']), Boolean(tree['ignoreUpdown']));
+    case 'WildTensorHead': return sj.WildTensorHead(String(tree['name']), { indexTypes: (tree['types'] as Tree[]).map((t) => deserialize(t) as sj.TensorIndexType), unorderedIndices: Boolean(tree['unordered']) });
+    case 'WildTensor': return (deserialize(tree['head'] as Tree) as sj.WildTensorHead).at(...(tree['indices'] as Tree[]).map((t) => deserialize(t) as sj.TensorIndex));
+    case 'TensAdd': return sj.add(...(tree['args'] as Tree[]).map((t) => deserialize(t) as Expr));
+    case 'TensorElement': return sj.TensorElement(deserialize(tree['expr'] as Tree) as Expr, new Map((deserialize(tree['indexMap'] as Tree) as JsDict).entries as [Expr, Expr][]));
+    case 'SymmetricPermutationGroup': return sj.SymmetricPermutationGroup(Number(tree['deg']));
+    case 'Polyhedron':
+      return new sj.Polyhedron(
+        (tree['corners'] as Tree[]).map((c) => deserialize(c) as Expr),
+        tree['faces'] as number[][],
+        (tree['pgroup'] as Tree[]).map((g) => deserialize(g) as sj.Permutation),
+      );
     case 'TensorHead': return sj.TensorHead(String(tree['name']), (tree['types'] as Tree[]).map((t) => deserialize(t) as sj.TensorIndexType), deserialize(tree['symmetry'] as Tree) as sj.TensorSymmetry);
     case 'Tensor': return new sj.Tensor(deserialize(tree['head'] as Tree) as sj.TensorHead, (tree['indices'] as Tree[]).map((t) => deserialize(t) as sj.TensorIndex));
     case 'TensMul': return sj.mul(...(tree['args'] as Tree[]).map((t) => deserialize(t) as Expr));
@@ -1016,7 +1034,7 @@ function applyFn(name: string, args: Expr[]): Expr {
   return sj.SymFunction(name)(...args);
 }
 
-function matchDict(m: Map<Sym, Expr> | sj.NoMatchResult | undefined): unknown {
+function matchDict(m: ReadonlyMap<Expr, Expr> | sj.NoMatchResult | undefined): unknown {
   return m instanceof Map ? new JsDict([...m]) : null;
 }
 
@@ -1165,7 +1183,12 @@ export const ADAPTERS: Record<string, Adapter> = {
   hypersimilar: (args, kw) => (noKw(kw), sj.hypersimilar(asExpr(args[0]), asExpr(args[1]), asExpr(args[2]))),
   rcollect: (args, kw) => (noKw(kw), sj.rcollect(asExpr(args[0]), ...args.slice(1).map(asExpr))),
   Piecewise: (args, kw) => (noKw(kw), sj.Piecewise(...args.map((a) => (a as JsTuple).items.map((x) => (typeof x === 'boolean' ? x : asExpr(x))) as [Expr, Expr | boolean]))),
-  '.matches': (args, kw, self) => (noKw(kw), matchDict(sj.match(asExpr(args[0]), asExpr(self)))),
+  '.matches': (args, kw, self) => {
+    noKw(kw);
+    // SymPy TensExpr.matches / TensorIndex.matches: the tensor pattern's own matcher
+    if (self instanceof sj.TensExpr || self instanceof sj.TensorIndex) return matchDict(self.matches(asExpr(args[0])));
+    return matchDict(sj.match(asExpr(args[0]), asExpr(self)));
+  },
   legendre_symbol: (args, kw) => (noKw(kw), sj.Rational.of(sj.legendreSymbol((args[0] as sj.Rational).p, (args[1] as sj.Rational).p))),
   motzkin: (args, kw) => (noKw(kw), sj.Rational.of(sj.motzkin(Number((args[0] as sj.Rational).p)))),
   andre: (args, kw) => (noKw(kw), sj.Rational.of(sj.andre(Number((args[0] as sj.Rational).p)))),
@@ -2591,6 +2614,8 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.equals': (args, kw, self) => {
     noKw(kw);
     if (self instanceof Matrix) return (self as Matrix).equals(args[0] as Matrix);
+    // SymPy PermutationGroup.equals: the same group, whatever its generators
+    if (self instanceof sj.PermutationGroup) return self.equals(args[0] as sj.PermutationGroup);
     // SymPy GeometryEntity.equals: the same entity, whatever its representation
     if (self instanceof sj.GeometryEntity) return self.equals(args[0] as Expr);
     // SymPy Vector.equals: equal for all values of the symbols, in any coordinate system
@@ -2693,6 +2718,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     // the stats nodes evaluate with their own hints (SymPy Expectation.doit(deep=False)); a Density of a finite distribution is a dict
     if (self instanceof sj.Density) return fromJs(self.compute());
     if (self instanceof sj.ExpectationNode || self instanceof sj.ProbabilityNode) return self.doit({ deep: kw['deep'] === undefined ? true : Boolean(kw['deep']) });
+    // SymPy MatrixBase.doit: the entries evaluated
+    if (self instanceof Matrix && kw['deep'] === undefined) return sj.doit(self);
     const e = asExpr(self);
     // deep=False: only the top-level object is evaluated
     if (kw['deep'] === false && !(e instanceof sj.Integral || e instanceof sj.Derivative || e instanceof sj.Limit || e instanceof sj.Concrete || e instanceof sj.Subs)) return e;
@@ -3425,8 +3452,8 @@ Object.assign(ADAPTERS, {
   },
   '.fps': (args, kw, self) => {
     noKw(kw);
-    const x = args[0] === undefined ? ([...sj.freeSymbols(asExpr(self))][0] as Sym) : asSym(args[0]);
-    return sj.fps(asExpr(self), x, args[1] === undefined ? 0 : asExpr(args[1]));
+    if (args[0] === undefined) return sj.fps(asExpr(self));
+    return sj.fps(asExpr(self), asSym(args[0]), args[1] === undefined ? 0 : asExpr(args[1]));
   },
   // ---- sympy.series.sequences, limitseq, residues and sympy.calculus.finite_diff, euler
   sequence: (args, kw) => {
@@ -3662,7 +3689,8 @@ const VECTOR_RENAMES: Record<string, string> = { Point: 'VectorPoint' };
 const STATS_RENAMES: Record<string, string> = { E: 'expectation', Chi: 'ChiRV' };
 const camelIn = (n: string, category: string | undefined): string =>
   (category === 'vector' ? VECTOR_RENAMES[n] : category === 'stats' ? STATS_RENAMES[n] : undefined) ?? camel(n);
-const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? n.replace(/_([a-z0-9])/g, (_m, ch: string) => ch.toUpperCase());
+// (an underscore before a capital is dropped too: solve_linear_system_LU -> solveLinearSystemLU)
+const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? n.replace(/_([a-zA-Z0-9])/g, (_m, ch: string) => ch.toUpperCase());
 
 /** A deserialized argument as the JS value the API takes. */
 function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
@@ -3797,13 +3825,18 @@ export function counterpartFor(a: { name: string; owner?: string; category?: str
   const owner = owners[a.owner ?? ''];
   if (!owner) return undefined;
   const candidates = [`${owner}.prototype.${m}`, `${owner}.${m}`, `${owner}.prototype.${a.name.slice(1)}`];
+  // SymPy's mutable matrix methods (row_swap, fill, ...) are members of the mutable class
+  if (a.owner === 'MutableDenseMatrix') candidates.push(`MutableDenseMatrix.prototype.${m}`, `MutableDenseMatrix.prototype.${a.name.slice(1)}`);
   // Expression operations may be exposed as free functions. Their concrete path
   // is reported, so a function counterpart is not confused with a fluent method.
+  // SymPy's MatrixExpr derives from Expr: its Expr methods are the same functions
+  const exprMethods = ['diff', 'integrate', 'limit', 'series', 'expand', 'simplify', 'factor', 'collect', 'cancel', 'apart', 'ratsimp', 'together', 'trigsimp', 'powsimp', 'radsimp', 'nsimplify', 'logcombine', 'powdenest', 'rewrite', 'refine', 'evalf',
+      'adjoint', 'argsCnc', 'asBaseExp', 'asCoeffAdd', 'asCoeffMul', 'asCoeffExponent', 'asCoefficient', 'asCoefficientsDict', 'asContentPrimitive', 'asDummy', 'asIndependent', 'asLeadingTerm', 'asNumerDenom', 'asPoly', 'asPowersDict', 'asRealImag', 'asTerms', 'aseries', 'atoms', 'classKey', 'coeff', 'combsimp', 'compare', 'couldExtractMinusSign', 'count', 'countOps', 'dir', 'doit', 'dummyEq', 'extractAdditively', 'extractBranchFactor', 'extractMultiplicatively', 'find', 'fourierSeries', 'fps', 'gammasimp', 'getO', 'getn', 'hasFree', 'hasXfree', 'invert', 'isAlgebraicExpr', 'isConstant', 'isHypergeometric', 'isMeromorphic', 'isPolynomial', 'isRationalFunction', 'isSame', 'leadterm', 'lseries', 'match', 'matches', 'normal', 'primitive', 'rcall', 'removeO', 'replace', 'round', 'separate', 'sortKey', 'taylorTerm', 'transpose', 'xreplace',
+      'asExpr', 'asOrderedFactors', 'asOrderedTerms', 'copy', 'nseries'];
   const freeMethods: Readonly<Record<string, readonly string[]>> = {
-    Expr: ['diff', 'integrate', 'limit', 'series', 'expand', 'simplify', 'factor', 'collect', 'cancel', 'apart', 'ratsimp', 'together', 'trigsimp', 'powsimp', 'radsimp', 'nsimplify', 'logcombine', 'powdenest', 'rewrite', 'refine', 'evalf',
-      'adjoint', 'argsCnc', 'asBaseExp', 'asCoeffAdd', 'asCoeffMul', 'asCoeffExponent', 'asCoefficient', 'asCoefficientsDict', 'asContentPrimitive', 'asDummy', 'asIndependent', 'asLeadingTerm', 'asNumerDenom', 'asPoly', 'asPowersDict', 'asRealImag', 'asTerms', 'aseries', 'atoms', 'classKey', 'coeff', 'combsimp', 'compare', 'couldExtractMinusSign', 'count', 'countOps', 'dir', 'doit', 'dummyEq', 'extractAdditively', 'extractBranchFactor', 'extractMultiplicatively', 'find', 'fourierSeries', 'fps', 'gammasimp', 'getO', 'getn', 'hasFree', 'hasXfree', 'invert', 'isAlgebraicExpr', 'isConstant', 'isHypergeometric', 'isMeromorphic', 'isPolynomial', 'isRationalFunction', 'isSame', 'leadterm', 'lseries', 'match', 'matches', 'normal', 'primitive', 'rcall', 'removeO', 'replace', 'round', 'separate', 'sortKey', 'taylorTerm', 'transpose', 'xreplace'],
-    Matrix: ['analyticFunc', 'bidiagonalDecomposition', 'bidiagonalize', 'cholesky', 'choleskySolve', 'cofactor', 'colInsert', 'columnspace', 'conditionNumber', 'connectedComponentsDecomposition', 'cramerSolve', 'cross', 'diagonal', 'diagonalSolve', 'diagonalize', 'dot', 'dual', 'echelonForm', 'eigenvects', 'extract', 'gaussJordanSolve', 'getDiagBlocks', 'hat', 'invMod', 'isAntiSymmetric', 'isDiagonal', 'isDiagonalizable', 'isNilpotent', 'isSymmetric', 'jacobian', 'jordanCells', 'jordanForm', 'leftEigenvects', 'lll', 'lllTransform', 'lowerTriangular', 'lowerTriangularSolve', 'minorSubmatrix', 'multiplyElementwise', 'norm', 'normalized', 'nullspace', 'orthogonalize', 'permanent', 'permuteCols', 'permuteRows', 'pinv', 'pinvSolve', 'project', 'rank', 'rankDecomposition', 'rref', 'rrefRhs', 'rowInsert', 'rowspace', 'singularValues', 'solveLeastSquares', 'stronglyConnectedComponentsDecomposition', 'upperTriangular', 'upperTriangularSolve', 'vech', 'vec'],
-    MatrixExpr: ['fromIndexSummation'],
+    Expr: exprMethods,
+    Matrix: ['doit', 'berkowitz', 'berkowitzEigenvals', 'berkowitzMinors', 'companion', 'connectedComponents', 'elementaryColOp', 'elementaryRowOp', 'inverseADJ', 'inverseBLOCK', 'inverseCH', 'inverseGE', 'inverseLDL', 'inverseLU', 'inverseQR', 'irregular', 'iterItems', 'iterValues', 'jordanBlock', 'jordanCell', 'key2bounds', 'key2ij', 'per', 'permuteBkwd', 'permuteFwd', 'printNonzero', 'refine', 'singularValueDecomposition', 'stronglyConnectedComponents', 'table', 'toDM', 'upperHessenbergDecomposition', 'wilkinson', 'analyticFunc', 'bidiagonalDecomposition', 'bidiagonalize', 'cholesky', 'choleskySolve', 'cofactor', 'colInsert', 'columnspace', 'conditionNumber', 'connectedComponentsDecomposition', 'cramerSolve', 'cross', 'diagonal', 'diagonalSolve', 'diagonalize', 'dot', 'dual', 'echelonForm', 'eigenvects', 'extract', 'gaussJordanSolve', 'getDiagBlocks', 'hat', 'invMod', 'isAntiSymmetric', 'isDiagonal', 'isDiagonalizable', 'isNilpotent', 'isSymmetric', 'jacobian', 'jordanCells', 'jordanForm', 'leftEigenvects', 'lll', 'lllTransform', 'lowerTriangular', 'lowerTriangularSolve', 'minorSubmatrix', 'multiplyElementwise', 'norm', 'normalized', 'nullspace', 'orthogonalize', 'permanent', 'permuteCols', 'permuteRows', 'pinv', 'pinvSolve', 'project', 'rank', 'rankDecomposition', 'rref', 'rrefRhs', 'rowInsert', 'rowspace', 'singularValues', 'solveLeastSquares', 'stronglyConnectedComponentsDecomposition', 'upperTriangular', 'upperTriangularSolve', 'vech', 'vec'],
+    MatrixExpr: ['fromIndexSummation', ...exprMethods],
   };
   if (freeMethods[owner]?.includes(m)) candidates.push(m);
   const matrixAliases: Readonly<Record<string, string>> = {

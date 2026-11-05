@@ -5,6 +5,7 @@
 // N-dimensional arrays (dense and sparse, mutable and immutable). Expected values are those of SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
+import type { Expr } from '../../src';
 import {
   I,
   Integral,
@@ -772,5 +773,34 @@ describe('derivatives', () => {
     expect(s(deriveByArray([mul(x, y), y], x))).toBe('[y, 0]');
     expect(s(deriveByArray(MDA([mul(x, y), y]), x))).toBe('[y, 0]');
     expect(s(deriveByArray(mul(x, y), [x, y]))).toBe('[y, x]');
+  });
+});
+
+describe('SymPy Basic methods of arrays', async () => {
+  const sj = await import('../../src');
+  const [x, y] = sj.symbols('x y') as [Sym, Sym];
+  const b = sj.ImmutableDenseNDimArray([x, sj.add(sj.mul(2, x), 1)]);
+  it('delegates to the expression functions', () => {
+    expect(b.atoms().map(String).sort()).toEqual(['1', '2', 'x']);
+    expect([b.count(x), b.countOps(), b.compare(b), b.compare(sj.ImmutableDenseNDimArray([y])), b.couldExtractMinusSign(), b.hasFree(x), b.hasXfree([x]), b.isSame(b), b.dummyEq(b)]).toEqual([2, 2, 0, 1, false, true, true, true, true]);
+    expect([String(b.xreplace(new Map([[x, y]]))), String(b.copy()), String(b.find(x)), String(b.asDummy()), String(b.replace(x, y))]).toEqual(['[y, 2*y + 1]', '[x, 2*x + 1]', 'x', '[x, 2*x + 1]', '[y, 2*y + 1]']);
+    expect(b.copy()).not.toBe(b);
+    expect(b.asContentPrimitive().map(String)).toEqual(['1', '[x, 2*x + 1]']);
+    expect([b.classKey(), String(b.sortKey()).startsWith('5,0,ImmutableDenseNDimArray')]).toEqual([[5, 0, 'ImmutableDenseNDimArray'], true]);
+    expect(String(sj.ImmutableDenseNDimArray.fromiter([[1, 2, 3, 4], [2, 2]]))).toBe('[[1, 2], [3, 4]]');
+    expect(String(sj.ImmutableDenseNDimArray([sj.abs(x)]).refine(sj.Q.positive(x)))).toBe('[x]');
+    const w = new sj.Wild('w');
+    const pattern = sj.ImmutableDenseNDimArray([w, sj.add(sj.mul(2, w), 1)]);
+    const entries = (m: unknown): string[] => [...(m as Map<Expr, Expr>)].map(([k, v]) => `${k.toString()}: ${v.toString()}`);
+    expect([entries(b.match(pattern)), entries(pattern.matches(b))]).toEqual([['w_: x'], ['w_: x']]);
+    expect(b.match(sj.ImmutableDenseNDimArray([y]))).toBe(sj.NoMatch);
+    // an array is not a hypergeometric term (SymPy raises ValueError: scalar expected, dividing two arrays)
+    expect(b.isHypergeometric(x)).toBe(false);
+  });
+  it('evaluates and calls the elements', () => {
+    const a = sj.ImmutableDenseNDimArray([x, 1, new sj.Integral([x, x]), sj.Lambda(y, sj.mul(2, y))]);
+    expect(String(a.doit())).toBe('[x, 1, x**2/2, Lambda(y, 2*y)]');
+    expect(String(a.rcall(3))).toBe('[x, 1, Integral(x, x), 6]');
+    expect(String(sj.ImmutableDenseNDimArray([sj.add(x, sj.Lambda(y, y))]).rcall(3))).toBe('[x + 3]');
   });
 });

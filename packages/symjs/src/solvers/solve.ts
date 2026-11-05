@@ -6,11 +6,11 @@
  * linear and polynomial systems, undetermined coefficients and nsolve.
  */
 
-import { NotImplementedError } from '../core/errors';
+import { NonInvertibleMatrixError, NotImplementedError } from '../core/errors';
 import { solvePolySystem } from './polysys';
 import { ask, Q } from '../core/refine';
 import type { ExprLike } from '../core/nodes';
-import { Expr, Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl } from '../core/nodes';
+import { Expr, Add, Constant, Dummy, Float, Fn, Mul, Pow, Rational, Rel, S, Special, Sym, impl, isNum } from '../core/nodes';
 import { add, couldExtractMinusSign, exp, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, subs, xreplace, xreplace as xreplaceS } from '../core/traverse';
 import type { Truth } from '../core/truth';
@@ -22,6 +22,10 @@ import { acos, asin, atan, log } from '../functions/elementary/elementary';
 import { polyCoefficients, roots } from '../polys/poly';
 import { Poly } from '../polys/sympoly';
 import { linearEqToMatrix, solveAugmented } from '../matrices/linsys';
+import { luSolve } from '../matrices/linalg';
+import { Matrix } from '../matrices/matrix';
+import { ExprMap } from '../core/exprmap';
+import { generateBell } from '../utilities/iterables';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { expand, expandMul } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
@@ -1092,4 +1096,88 @@ export function invertEquation(eqIn: ExprLike, symbols: readonly Sym[] = [], opt
     if (lhs.key === was.key) break;
   }
   return [rhs, lhs];
+}
+
+// ---------------------------------------------------------------------------
+// Determinants, inverses and LU solutions of small symbolic matrices (SymPy solvers.py)
+// ---------------------------------------------------------------------------
+
+/**
+ * SymPy det_perm: the determinant as the sum over the permutations (in the
+ * adjacent-transposition order of generate_bell, so the signs alternate).
+ */
+function detPerm(M: Matrix): Expr {
+  const n = M.rows;
+  if (n === 0) return S.One;
+  const flat = M.flat();
+  const terms: Expr[] = [];
+  let s = true;
+  for (const perm of generateBell(n)) {
+    const term = mul(...perm.map((j, i) => at(flat, i * n + j)));
+    terms.push(s ? term : mul(-1, term));
+    s = !s;
+  }
+  return add(...terms);
+}
+
+/**
+ * SymPy det_minor: Laplace expansion along the first row, each product
+ * distributed over the terms of the minor's determinant. (SymPy's version
+ * gives 0 for a 1 x 1 matrix; here it is the entry.)
+ */
+function detMinor(M: Matrix): Expr {
+  const n = M.rows;
+  if (n === 1) return M.get(0, 0);
+  if (n === 2) return add(mul(M.get(0, 0), M.get(1, 1)), mul(-1, M.get(1, 0), M.get(0, 1)));
+  const terms: Expr[] = [];
+  for (let i = 0; i < n; i++) {
+    const m = M.get(0, i);
+    if (m instanceof Rational && m.isZero) continue;
+    const d = detMinor(M.minorSubmatrix(0, i));
+    terms.push(mul(i % 2 ? -1 : 1, add(...(d instanceof Add ? d.args : [d]).map((t) => mul(m, t)))));
+  }
+  return add(...terms);
+}
+
+const hasSymbol = (e: Expr): boolean => freeSymbols(e).size > 0;
+
+/**
+ * SymPy det_quick(M, method=None): the determinant of a matrix with
+ * symbolic entries by permutations (fewer than 8 rows, every entry symbolic)
+ * or by minors; a numeric matrix uses det.
+ */
+export function detQuick(M: Matrix): Expr {
+  const entries = M.flat();
+  if (entries.some(hasSymbol)) return M.rows < 8 && entries.every(hasSymbol) ? detPerm(M) : detMinor(M);
+  return M.det();
+}
+
+/**
+ * SymPy inv_quick(M): the inverse as cofactors over the determinant (by
+ * permutations when no entry is a number, else by minors); a numeric matrix
+ * uses inv. SymPy's minors of a 2 x 2 matrix are 0 (its det_minor of a 1 x 1
+ * matrix), so it returns the zero matrix for Matrix([[x, 1], [0, x]]); symjs
+ * returns the inverse.
+ */
+export function invQuick(M: Matrix): Matrix {
+  const entries = M.flat();
+  if (entries.every((e) => isNum(e))) return M.inv();
+  const det = entries.some((e) => isNum(e)) ? detMinor : detPerm;
+  const n = M.rows;
+  const d = det(M);
+  if (d instanceof Rational && d.isZero) throw new NonInvertibleMatrixError('Matrix det == 0; not invertible');
+  // entry (j, i) is the cofactor of (i, j) over the determinant
+  return Matrix.fromFunction(n, n, (j, i) => mul((i + j) % 2 ? -1 : 1, det(M.minorSubmatrix(i, j)), pow(d, -1)));
+}
+
+/**
+ * SymPy solve_linear_system_LU(matrix, syms): the solution of the system
+ * with augmented matrix `matrix` (n rows, n + 1 columns) by LU
+ * decomposition, as a map from the symbols to their values.
+ */
+export function solveLinearSystemLU(matrix: Matrix, syms: readonly Expr[]): ExprMap<Expr> {
+  if (matrix.rows !== matrix.cols - 1) throw new RangeError('Rows should be equal to columns - 1');
+  const idx = Array.from({ length: matrix.rows }, (_, i) => i);
+  const soln = luSolve(matrix.extract(idx, idx), matrix.extract(idx, [matrix.cols - 1]));
+  return new ExprMap(idx.map((i): [Expr, Expr] => [at(syms, i), soln.get(i, 0)]));
 }

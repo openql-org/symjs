@@ -22,6 +22,7 @@ import {
   compareExpr,
 } from '../../src/core/nodes';
 import { add, mul, pow } from '../../src/core/ops';
+import * as nodes from '../../src/core/nodes';
 
 const [x, y] = sj.symbols('x y');
 
@@ -135,5 +136,23 @@ describe('Integral over a matrix symbol', () => {
     const I = new sj.Integral([sj.exp(sj.mul(-1, sj.Trace(H.pow(2)))), H]);
     expect(I.isCommutative).toBe(true);
     expect(sj.str(sj.pow(I, -1))).toBe('1/Integral(exp(-Trace(_H**2)), _H)');
+  });
+});
+
+describe('fromiter and the Add/Mul kinds of extension nodes', () => {
+  it('fromiter applies the evaluating constructor (SymPy Add.fromiter([x, y]) is x + y)', () => {
+    expect(s(sj.Add.fromiter([x, y]))).toBe('x + y');
+    expect(s(sj.Mul.fromiter([x, 2]))).toBe('2*x');
+    expect(s(sj.Pow.fromiter([x, 2]))).toBe('x**2');
+    expect(() => sj.Sym.fromiter([x])).toThrow('Sym.fromiter is not supported');
+    expect(() => sj.Add.fromiter(['x'])).toThrow(TypeError);
+  });
+  it('isAddLike and isMulLike', () => {
+    const [isAddLike, isMulLike] = [nodes.isAddLike, nodes.isMulLike];
+    expect([isAddLike(add(x, y)), isAddLike(mul(x, y)), isMulLike(mul(x, y)), isMulLike(x)]).toEqual([true, false, true, false]);
+    const lam = sj.Lambda(x, x) as nodes.ExtensionExpr;
+    expect(lam.assocOp).toBe('none');
+    expect([isAddLike(lam), isMulLike(lam)]).toEqual([false, false]);
+    expect(lam.asRealImagSelf()).toBe(undefined);
   });
 });

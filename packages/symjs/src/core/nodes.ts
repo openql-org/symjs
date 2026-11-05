@@ -13,7 +13,7 @@
  * definitions free of circular imports.
  */
 
-import { InvariantError, NotLoadedError } from './errors';
+import { InvariantError, NotImplementedError, NotLoadedError } from './errors';
 import type { Kind } from './kind';
 import { at } from './guard';
 import { gcd } from './numbers';
@@ -364,7 +364,33 @@ export const impl: Impl = {
   series: () => notLoaded('series', 'calculus'),
 } as Partial<Impl> as Impl;
 
+/** The evaluating constructors used by Expr.fromiter, by class (registered by the modules defining them). */
+const fromiterBuilders = new Map<unknown, (args: readonly Expr[]) => Expr>();
+
+/** Registers the evaluating constructor of a class for SymPy fromiter (Add, Mul, Pow, MatAdd, ...). */
+export function registerFromiter(cls: abstract new (...args: never[]) => Expr, build: (args: readonly Expr[]) => Expr): void {
+  fromiterBuilders.set(cls, build);
+}
+
+/** An item of fromiter's argument: an expression, or a number sympified. */
+function fromiterItem(v: unknown): Expr {
+  if (v instanceof Expr) return v;
+  if (typeof v === 'number' || typeof v === 'bigint') return impl.sympify(v);
+  throw new TypeError(`fromiter: cannot sympify ${String(v)}`);
+}
+
 export abstract class Expr {
+  /**
+   * SymPy `fromiter(args)`: the class applied to the items of args
+   * (`Add.fromiter([x, y])` is x + y). Classes whose constructor SymPy calls
+   * this way (Add, Mul, Pow, MatAdd, MatMul, ...) register it; others throw
+   * NotImplementedError (SymPy's bare `Expr(x, y)` has no JavaScript counterpart).
+   */
+  static fromiter(this: abstract new (...args: never[]) => Expr, args: Iterable<unknown>): Expr {
+    const build = fromiterBuilders.get(this);
+    if (build === undefined) throw new NotImplementedError(`${this.name}.fromiter is not supported`);
+    return build([...args].map(fromiterItem));
+  }
   abstract readonly kind: ExprKind;
   abstract readonly args: readonly Expr[];
   #key: string | undefined;
@@ -1056,6 +1082,11 @@ export const isFn = (e: Expr, name?: FnName): e is Fn =>
   e instanceof Fn && (name === undefined || e.name === name);
 export const isInteger = (e: Expr): e is Rational => e instanceof Rational && e.q === 1n;
 
+/** SymPy is_Add: a sum, or a node whose SymPy class derives from Add (MatAdd). */
+export const isAddLike = (e: Expr): boolean => e instanceof Add || (e instanceof ExtensionExpr && e.assocOp === 'Add');
+/** SymPy is_Mul: a product, or a node whose SymPy class derives from Mul (MatMul). */
+export const isMulLike = (e: Expr): boolean => e instanceof Mul || (e instanceof ExtensionExpr && e.assocOp === 'Mul');
+
 /**
  * Base class for expression nodes defined outside the base module (extend
  * packages). Subclasses describe themselves through the methods below; the
@@ -1073,6 +1104,22 @@ export abstract class ExtensionExpr extends Expr {
   }
   /** A node of the same class with new arguments (required for traversals). */
   abstract withArgs(args: readonly Expr[]): Expr;
+  /**
+   * SymPy is_Add / is_Mul: 'Add' or 'Mul' for a node whose SymPy class derives from Add or Mul
+   * (MatAdd, MatMul), whose arguments the structural methods (as_coeff_add, as_coeff_mul,
+   * as_powers_dict, could_extract_minus_sign, count_ops, ...) then treat as terms or factors;
+   * 'none' for other nodes.
+   */
+  get assocOp(): 'Add' | 'Mul' | 'none' {
+    return 'none';
+  }
+  /**
+   * True for a node whose SymPy class derives from Atom (Str, Permutation): it sorts with the
+   * class key (2, 0, name) and by its printed form, like SymPy Atom.class_key and Atom.sort_key.
+   */
+  get atomClass(): boolean {
+    return false;
+  }
   /** str() form; defaults to Name(arg1, arg2, ...). */
   printStr(print: (e: Expr) => string): string {
     return `${this.name}(${this.args.map(print).join(', ')})`;
@@ -1106,6 +1153,10 @@ export abstract class ExtensionExpr extends Expr {
    * generic rule.
    */
   trigsimpSelf(_trigsimp: (e: Expr) => Expr): Expr | undefined {
+    return undefined;
+  }
+  /** SymPy as_real_imag of this node (MatrixExpr: (M + conj(M))/2, (M - conj(M))/(2*I)); undefined for the generic rule. */
+  asRealImagSelf(): [Expr, Expr] | undefined {
     return undefined;
   }
   /** SymPy kind of this node (VectorKind of a vector, ...); undefined for the generic rule. */

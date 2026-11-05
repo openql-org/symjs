@@ -795,9 +795,10 @@
   {
    "module": "sympy.categories.diagram_drawing",
    "sha256": "95f476f5fe905feacaf9c080a26fb6991278c4bca18b9e5c87dd42c843c25c04",
-   "status": "unimplemented",
+   "status": "excluded",
+   "reason": "diagram drawing (decided later)",
    "sources": [],
-   "selectedForExtraction": true,
+   "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 28,
    "declaredPublicNames": [
@@ -1385,8 +1386,10 @@
   {
    "module": "sympy.combinatorics.generators",
    "sha256": "50076fd1bbeab4dea2f5b7c5801f3bde0f80fb3b2c7346688877240ce108d0cd",
-   "status": "unassessed",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "combinatorics/generators.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 4,
@@ -1429,8 +1432,10 @@
   {
    "module": "sympy.combinatorics.group_constructs",
    "sha256": "20ac75dbfc9626a110ee0fa806e0167795512db08e5b22f42c6e0f42ee37052f",
-   "status": "unassessed",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "combinatorics/groupconstructs.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 1,
@@ -1730,8 +1735,10 @@
   {
    "module": "sympy.combinatorics.polyhedron",
    "sha256": "fb5cb91a1a2b50aeb6fe02699f8b574cbc9eec1706d2102ea7be3068343ccb62",
-   "status": "unassessed",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "combinatorics/polyhedron.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 33,
@@ -1862,8 +1869,10 @@
   {
    "module": "sympy.combinatorics.tensor_can",
    "sha256": "272c32b55ca990de9a59d0a97846257ad316e2fc7252f536f517caabdf8bbb47",
-   "status": "unassessed",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "tensor/tensorcan.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 20,
@@ -1898,8 +1907,10 @@
   {
    "module": "sympy.combinatorics.util",
    "sha256": "96439a2130489aa07dcb22ef37c0d4d06fafadac36edc4b1d9768f7403d50618",
-   "status": "unassessed",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "combinatorics/util.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 13,

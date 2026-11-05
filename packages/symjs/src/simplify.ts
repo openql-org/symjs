@@ -14,6 +14,7 @@ export {
 } from './simplify/simplify';
 export { hyperexpand, Hyper_Function, G_Function, Operator, type HyperexpandOptions } from './simplify/hyperexpand';
 export { ratsimpmodprime } from './simplify/ratsimp';
+export { basicCompare as compare } from './simplify/csemain';
 export { gammasimp, combsimp, hypersimilar, isHypergeometric } from './simplify/gammasimp';
 export {
   besselsimp,
@@ -50,6 +51,8 @@ export {
   together,
   cancel,
   fraction,
+  numer,
+  denom,
   ratsimp,
 } from './simplify/rational';
 export {

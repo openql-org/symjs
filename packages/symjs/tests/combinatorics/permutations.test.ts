@@ -795,3 +795,43 @@ describe('Permutation', () => {
     expect(() => xreplace(a, new Map([[p, y]]))).toThrow(TypeError);
   });
 });
+
+describe('Basic methods (SymPy Permutation is an Atom)', () => {
+  const p = new sj.Permutation([1, 0, 2]);
+  const q = new sj.Permutation([0, 2, 1]);
+  const r = new sj.Permutation([1, 0]);
+  const x = new Sym('x');
+  it('match SymPy for the structural methods', () => {
+    const [c, e] = p.asContentPrimitive({ radical: true });
+    expect([str(c), str(e)]).toEqual(['1', '(2)(0 1)']);
+    expect(p.asDummy()).toBe(p);
+    expect(sj.Permutation.classKey()).toEqual([2, 0, 'Permutation']);
+    expect(p.sortKey()).toEqual([[2, 0, 'Permutation'], [1, ['(2)(0 1)']], [[1, 0, 'Number'], [0, []], [], 1], 1]);
+    // SymPy: p.compare(q) = 1, q.compare(p) = -1, p.compare(Permutation([1, 0])) = 1, p.compare(x) = 1
+    expect([p.compare(q), q.compare(p), p.compare(p), p.compare(r), r.compare(p), p.compare(x), p.compare(sj.Tuple(1))]).toEqual([1, -1, 0, 1, -1, 1, -1]);
+    expect(p.couldExtractMinusSign()).toBe(false);
+    expect([p.count(p), p.count(q), p.countOps(), str(p.countOps({ visual: true }) as sj.Expr)]).toEqual([1, 0, 0, '0']);
+    expect(p.doit()).toBe(p);
+    expect([p.dummyEq(p), p.dummyEq(q)]).toEqual([true, false]);
+    expect(p.find(p).map(str)).toEqual(['(2)(0 1)']);
+    expect(p.find(() => true).map(str)).toEqual(['(2)(0 1)']);
+    // SymPy: Permutation.fromiter([1, 0, 2]) is Permutation(1, 0, 2), the cycle (0 2 1)
+    expect(str(sj.Permutation.fromiter([1, 0, 2]))).toBe('(0 2 1)');
+    expect([p.hasFree(x), p.hasFree(p), p.hasXfree([x]), p.hasXfree(new Set([p]))]).toEqual([false, true, false, true]);
+    // SymPy: TypeError unsupported operand type(s) for /: 'Permutation' and 'Permutation'
+    expect(() => p.isHypergeometric(x)).toThrow(TypeError);
+    expect([p.isSame(p), p.isSame(q)]).toEqual([true, false]);
+  });
+  it('match SymPy for matching, calling and replacing', () => {
+    expect(p.match(p)).toEqual(new Map());
+    expect(p.match(q)).toBe(NoMatch);
+    const a = new sj.Wild('a');
+    expect([...(p.match(a) as Map<Sym, sj.Expr>)].map(([k, v]) => [str(k), str(v)])).toEqual([['a_', '(2)(0 1)']]);
+    expect([p.matches(p), p.matches(q), p.matches(a)]).toEqual([new Map(), NoMatch, NoMatch]);
+    expect([p.rcall(1), str(p.rcall() as sj.Expr), str(p.rcall(1, 2) as sj.Expr)]).toEqual([0, '(2)(0 1)', '(0 2 1)']);
+    expect(str(p.refine())).toBe('(2)(0 1)');
+    // SymPy p.replace(p, q) raises TypeError (Permutation.atoms takes no query); the replacement is q
+    expect(str(p.replace(p, q))).toBe('(1 2)');
+    expect(str(p.xreplace(new Map([[p, q]])))).toBe('(1 2)');
+  });
+});

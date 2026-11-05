@@ -100,6 +100,28 @@ export class MutableDenseMatrix extends Matrix {
     const rows = items.map((v): readonly ExprLike[] => (isRow(v) ? v : [v]));
     this.copyinMatrix(i, j, Matrix.of(rows));
   }
+  /** Delete row i in place (SymPy row_del; a negative index counts from the end). */
+  rowDel(i: number): void {
+    const r = i < 0 ? i + this.rows : i;
+    if (r < 0 || r >= this.rows) throw new RangeError(`Row ${r} is out of range.`);
+    this.#cells.splice(r * this.cols, this.cols);
+    this.reshapeInPlace(this.rows - 1, this.cols);
+  }
+  /** Delete column j in place (SymPy col_del; a negative index counts from the end). */
+  colDel(j: number): void {
+    const c = j < 0 ? j + this.cols : j;
+    if (c < 0 || c >= this.cols) throw new RangeError(`Column ${c} is out of range.`);
+    for (let r = this.rows - 1; r >= 0; r--) this.#cells.splice(r * this.cols + c, 1);
+    this.reshapeInPlace(this.rows, this.cols - 1);
+  }
+  /** A mutable copy (SymPy copy). */
+  override copy(): MutableDenseMatrix {
+    return MutableDenseMatrix.from(this);
+  }
+  /** A mutable copy (SymPy as_mutable). */
+  asMutable(): MutableDenseMatrix {
+    return MutableDenseMatrix.from(this);
+  }
   /** An immutable copy (SymPy as_immutable). */
   asImmutable(): Matrix {
     return Matrix.of(this.toArray());

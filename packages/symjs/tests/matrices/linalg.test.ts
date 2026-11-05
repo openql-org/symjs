@@ -514,3 +514,123 @@ describe('definiteness (SymPy is_positive_definite, is_positive_semidefinite, is
     expect(L.isNegativeSemidefinite(m)).toBe(nsd);
   });
 });
+
+describe('solving by decompositions and the inverse methods (SymPy matrices/solvers.py, inverse.py)', () => {
+  const A = M([[2, 1], [1, 3]]);
+  const singular = M([[1, 2], [2, 4]]);
+  const nonsym = M([[1, 2], [3, 4]]);
+  it('diagonal_solve, lower_triangular_solve, upper_triangular_solve', () => {
+    expect(s(sj.diagonalSolve(M([[2, 0], [0, 3]]), M([[1], [2]])))).toBe('Matrix([[1/2], [2/3]])');
+    expect(s(sj.diagonalSolve(M([[2, 0], [0, 0]]), M([[1], [2]])))).toBe('Matrix([[1/2], [zoo]])');
+    expect(() => sj.diagonalSolve(M([[2, 1], [0, 3]]), M([[1], [2]]))).toThrow(new TypeError('Matrix should be diagonal'));
+    expect(() => sj.diagonalSolve(M([[2, 0], [0, 3]]), M([[1], [2], [3]]))).toThrow(new TypeError('Size mismatch'));
+    expect(s(sj.lowerTriangularSolve(M([[2, 0], [1, 3]]), M([[2], [7]])))).toBe('Matrix([[1], [2]])');
+    expect(() => sj.lowerTriangularSolve(M([[2, 1], [1, 3]]), M([[2], [7]]))).toThrow('Matrix must be lower triangular.');
+    expect(() => sj.lowerTriangularSolve(M([[2, 0, 0], [1, 3, 0]]), M([[2], [7]]))).toThrow(NonSquareMatrixError);
+    expect(() => sj.lowerTriangularSolve(M([[2, 0], [1, 3]]), M([[2], [7], [1]]))).toThrow(sj.ShapeError);
+    expect(() => sj.lowerTriangularSolve(M([[0, 0], [1, 3]]), M([[2], [7]]))).toThrow(new TypeError('Matrix must be non-singular.'));
+    expect(s(sj.upperTriangularSolve(M([[2, 1], [0, 3]]), M([[4], [6]])))).toBe('Matrix([[1], [2]])');
+    expect(s(sj.upperTriangularSolve(M([[2, 1], [0, 3]]), M([[4, 1], [6, 3]])))).toBe('Matrix([[1, 0], [2, 1]])');
+    expect(() => sj.upperTriangularSolve(M([[2, 1], [1, 3]]), M([[4], [6]]))).toThrow(new TypeError('Matrix is not upper triangular.'));
+    expect(() => sj.upperTriangularSolve(M([[2, 1], [0, 0]]), M([[4], [6]]))).toThrow('Matrix must be non-singular.');
+    expect(() => sj.upperTriangularSolve(M([[2, 1, 1]]), M([[4]]))).toThrow(NonSquareMatrixError);
+    expect(() => sj.upperTriangularSolve(M([[2, 1], [0, 3]]), M([[4]]))).toThrow(sj.ShapeError);
+  });
+  it('cholesky_solve', () => {
+    expect(s(sj.choleskySolve(M([[4, 2], [2, 3]]), M([[1], [2]])))).toBe('Matrix([[-1/8], [3/4]])');
+    // neither symmetric nor Hermitian: solved through A^H A
+    expect(s(sj.choleskySolve(M([[4, 1], [2, 3]]), M([[1], [2]])))).toBe('Matrix([[1/10], [3/5]])');
+    // Hermitian (SymPy: Matrix([[2/3], [I/3]]))
+    expect(s(sj.choleskySolve(M([[2, I], [mul(-1, I), 2]]), M([[1], [0]])))).toBe('Matrix([[2/3], [I/3]])');
+    // symmetric but not positive definite (SymPy: Matrix([[-1/3], [2/3]]))
+    expect(s(sj.choleskySolve(M([[1, 2], [2, 1]]), M([[1], [0]])))).toBe('Matrix([[-1/3], [2/3]])');
+    expect(() => sj.choleskySolve(M([[4, 2, 1], [2, 3, 1]]), M([[1], [2]]))).toThrow('Under-determined System. Try M.gauss_jordan_solve(rhs)');
+  });
+  it('cramer_solve', () => {
+    expect(s(sj.cramerSolve(nonsym, M([[5], [6]])))).toBe('Matrix([[-4], [9/2]])');
+    expect(s(sj.cramerSolve(M([[x, 1], [1, y]]), M([[1], [0]])))).toBe('Matrix([[y/(x*y - 1)], [-1/(x*y - 1)]])');
+    expect(s(sj.cramerSolve(singular, M([[5], [6]])))).toBe('Matrix([[zoo], [zoo]])');
+  });
+  it('inverse_ADJ, inverse_BLOCK, inverse_CH, inverse_GE, inverse_LDL, inverse_LU, inverse_QR', () => {
+    const methods = [sj.inverseADJ, sj.inverseBLOCK, sj.inverseCH, sj.inverseGE, sj.inverseLDL, sj.inverseLU, sj.inverseQR];
+    for (const inv of methods) {
+      expect(s(inv(A))).toBe('Matrix([[3/5, -1/5], [-1/5, 2/5]])');
+      expect(s(inv(nonsym))).toBe('Matrix([[-2, 1], [3/2, -1/2]])');
+      expect(() => inv(singular)).toThrow(new NonInvertibleMatrixError('Matrix det == 0; not invertible.'));
+      expect(() => inv(M([[1, 2, 3]]))).toThrow(new NonSquareMatrixError('A Matrix must be square to invert.'));
+    }
+    // symbolic entries: SymPy prints inverse_ADJ alike; the other methods give equivalent forms
+    // (SymPy inverse_GE: Matrix([[-y/(-x*y + 1), 1/(-x*y + 1)], [1/(-x*y + 1), -x/(-x*y + 1)]]))
+    const S2 = M([[x, 1], [1, y]]);
+    expect(s(sj.inverseADJ(S2))).toBe('Matrix([[y/(x*y - 1), -1/(x*y - 1)], [-1/(x*y - 1), x/(x*y - 1)]])');
+    for (const inv of [sj.inverseGE, sj.inverseLU, sj.inverseLDL]) expect(inv(S2).equalsSimplified(sj.inverseADJ(S2))).toBe(true);
+    // the block partition, reached with a small threshold (SymPy partitions above 20 rows)
+    expect(s(sj.inverseBLOCK(M([[1, 2, 0], [3, 4, 1], [0, 1, 5]]), 1))).toBe('Matrix([[-19/11, 10/11, -2/11], [15/11, -5/11, 1/11], [-3/11, 1/11, 2/11]])');
+    // a singular lower block: the LU inverse (SymPy: Matrix([[0, -1, 1], [-1, 0, 1], [1, 1, -1]]))
+    expect(s(sj.inverseBLOCK(M([[1, 0, 1], [0, 1, 1], [1, 1, 1]]), 1))).toBe('Matrix([[0, -1, 1], [-1, 0, 1], [1, 1, -1]])');
+    // an invertible lower block with a singular Schur complement: the matrix is singular
+    expect(() => sj.inverseBLOCK(M([[1, 1, 0], [1, 1, 0], [0, 0, 1]]), 1)).toThrow(NonInvertibleMatrixError);
+    expect(() => sj.inverseBLOCK(M([[1, 2, 3], [4, 5, 6]]), 1)).toThrow(NonSquareMatrixError);
+  });
+  it('condition_number, left_eigenvects', () => {
+    expect(s(sj.conditionNumber(M([[1, 0], [0, 2]])))).toBe('2');
+    expect(s(sj.conditionNumber(nonsym))).toBe('sqrt(sqrt(221) + 15)/sqrt(15 - sqrt(221))');
+    expect(s(sj.conditionNumber(Matrix.zeros(0, 0)))).toBe('0');
+    expect(tuple(sj.leftEigenvects(M([[2, 1], [0, 2]])).map(([v, k, vs]) => `${s(v)} ${k} ${vs.map(s).join()}`))).toBe('2 2 Matrix([[0, 1]])');
+    // SymPy: [(5/2 - sqrt(33)/2, 1, [Matrix([[-sqrt(33)/4 - 3/4, 1]])]), (5/2 + sqrt(33)/2, 1, [Matrix([[-3/4 + sqrt(33)/4, 1]])])]
+    const left = sj.leftEigenvects(nonsym);
+    expect(left.map(([v, k]) => `${s(v)} ${k}`)).toEqual(['5/2 - sqrt(33)/2 1', '5/2 + sqrt(33)/2 1']);
+    for (const [v, , [w]] of left) expect(w!.mul(nonsym).equalsSimplified(w!.scale(v))).toBe(true);
+    expect(s(simplify(left[0]![2][0]!.get(0, 0)))).toBe('-sqrt(33)/4 - 3/4');
+  });
+  it('companion of a monic Poly', () => {
+    expect(s(sj.companion(sj.Poly.from(parse('x**2 + 2*x + 3'), [x])))).toBe('Matrix([[0, -3], [1, -2]])');
+    expect(s(sj.companion(sj.Poly.from(parse('x + 5'), [x])))).toBe('Matrix([[-5]])');
+    expect(() => sj.companion(sj.Poly.from(parse('2*x**2 + 1'), [x]))).toThrow("Poly(2*x**2 + 1, x, domain='ZZ') must be a monic polynomial.");
+    expect(() => sj.companion(sj.Poly.from(parse('3'), [x]))).toThrow(RangeError);
+  });
+  it('matrix_multiply_elementwise and the structural functions', () => {
+    expect(s(sj.matrixMultiplyElementwise(M([[1, 2]]), M([[3, 4]])))).toBe('Matrix([[3, 8]])');
+    expect(() => sj.matrixMultiplyElementwise(M([[1, 2]]), M([[3, 4, 5]]))).toThrow('Matrix shapes must agree (1, 2) != (1, 3)');
+    expect(s(L.lowerTriangular(nonsym))).toBe('Matrix([[1, 0], [3, 4]])');
+    expect(s(L.diagonal(nonsym, 1))).toBe('Matrix([[2]])');
+    expect(s(L.extract(nonsym, [1], [0]))).toBe('Matrix([[3]])');
+    expect(s(L.reshape(nonsym, 1, 4))).toBe('Matrix([[1, 2, 3, 4]])');
+    expect(s(L.rot90(nonsym))).toBe('Matrix([[3, 1], [4, 2]])');
+    expect(s(L.vec(nonsym))).toBe('Matrix([[1], [3], [2], [4]])');
+    expect(s(L.vech(nonsym, true, false))).toBe('Matrix([[1], [3], [4]])');
+    expect(s(L.minorSubmatrix(nonsym, 0, 0))).toBe('Matrix([[4]])');
+    expect(s(L.minorDet(nonsym, 0, 1))).toBe('3');
+    expect(L.isSymmetric(M([[0, parse('x**2 + 2*x + 1')], [parse('(x + 1)**2'), 0]]), false)).toBe(false);
+    expect(L.isAntiSymmetric(M([[0, x], [parse('-x'), 0]]), false)).toBe(true);
+    expect(L.isDiagonal(nonsym)).toBe(false);
+    expect(L.isUpper(nonsym)).toBe(false);
+    expect(L.isLower(M([[1, 0], [3, 4]]))).toBe(true);
+    expect(L.isNilpotent(M([[0, 1], [0, 0]]))).toBe(true);
+    expect(s(L.multiplyElementwise(nonsym, nonsym))).toBe('Matrix([[1, 4], [9, 16]])');
+    expect(s(L.project(M([[1, 1]]), M([[1, 0]])))).toBe('Matrix([[1, 0]])');
+    expect(s(L.colInsert(nonsym, 1, M([[0], [0]])))).toBe('Matrix([[1, 0, 2], [3, 0, 4]])');
+  });
+});
+
+describe('LU pivoting', () => {
+  it('prefers an entry known to be nonzero, else the first undecided one (SymPy _find_reasonable_pivot_naive)', () => {
+    const [a, b, x] = symbols('a b x');
+    const show = ([l, u, p]: [Matrix, Matrix, [number, number][]]) => `${String(l)} ${String(u)} ${JSON.stringify(p)}`;
+    expect(show(L.luDecomposition(Matrix.of([[a, 1], [1, b]])))).toBe('Matrix([[1, 0], [a, 1]]) Matrix([[1, b], [0, -a*b + 1]]) [[0,1]]');
+    // SymPy writes the entry 2 - b/a
+    expect(show(L.luDecomposition(Matrix.of([[a, 1], [b, 2]])))).toBe('Matrix([[1, 0], [b/a, 1]]) Matrix([[a, 1], [0, (2*a - b)/a]]) []');
+    expect(show(L.luDecomposition(Matrix.of([[0, 1], [x, 2]])))).toBe('Matrix([[1, 0], [0, 1]]) Matrix([[x, 2], [0, 1]]) [[0,1]]');
+  });
+});
+
+describe('luSolve and the LDL solution of a Hermitian matrix', () => {
+  it('luSolve (SymPy LUsolve) rejects singular and mismatched systems', () => {
+    expect(() => L.luSolve(Matrix.of([[1, 2], [2, 4]]), Matrix.col(1, 2))).toThrow(NonInvertibleMatrixError);
+    expect(() => L.luSolve(Matrix.of([[1, 2], [3, 4]]), Matrix.col(1, 2, 3))).toThrow('``M`` and ``rhs`` must have the same number of rows.');
+    expect(() => L.luSolve(Matrix.of([[1, 2, 3], [4, 5, 6]]), Matrix.col(1, 2))).toThrow(sj.NotImplementedError);
+  });
+  it('inverseLDL of a Hermitian matrix (SymPy)', () => {
+    expect(String(L.inverseLDL(Matrix.of([[2, I], [mul(-1, I), 2]])))).toBe('Matrix([[2/3, -I/3], [I/3, 2/3]])');
+  });
+});

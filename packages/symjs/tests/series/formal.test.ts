@@ -17,6 +17,17 @@ const V = (s: string): Sym => {
 const [x, y] = [V('x'), V('y')];
 const show = (v: unknown): string => (Array.isArray(v) ? `[${v.map(show).join(', ')}]` : v instanceof Expr ? v.toString() : JSON.stringify(v));
 
+describe('fps without a variable', () => {
+  it('takes the only free symbol, like SymPy', () => {
+    // fps(exp(x)) -> FormalPowerSeries in x; fps(3) -> 3; fps(x*y) -> NotImplementedError
+    expect(String(sj.fps(P('exp(x)')))).toBe('FormalPowerSeries(exp(x), x, 0)');
+    expect(String(sj.fps(3))).toBe('3');
+    expect(() => sj.fps(P('x*y'))).toThrow('multivariate formal power series');
+    // a MatrixSymbol is constant (SymPy fps(A) builds FormalPowerSeries(A, A, 0, ...), whose terms cannot be computed)
+    expect(String(sj.fps(sj.MatrixSymbol('A', 2, 2)))).toBe('A');
+  });
+});
+
 describe('formal power series operations', () => {
   const f = (e: string, x0: unknown = 0) => sj.fps(P(e), x, x0 as number);
   it('multiplies, composes and inverts series like SymPy', () => {

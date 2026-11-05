@@ -15,6 +15,7 @@ import { Concrete, doitConcrete } from '../concrete/summations';
 import { integrate } from '../integrals/integrate';
 import { limit } from '../series/limits';
 import { diff } from './diff';
+import { Matrix } from '../matrices/matrix';
 
 /**
  * The antiderivative F of an integral with only an upper limit, (x, b), at b
@@ -29,8 +30,14 @@ export function antiderivativeAt(F: Expr, v: Sym, b: Expr): Expr {
   return F instanceof Add ? add(...F.args.map(termAt)) : termAt(F);
 }
 
-/** Evaluate all unevaluated Integral, Limit, Sum, Product and Derivative objects. */
-export function doit(ex: ExprLike): Expr {
+/**
+ * Evaluate all unevaluated Integral, Limit, Sum, Product and Derivative objects.
+ * A matrix is evaluated entry by entry (SymPy MatrixBase.doit).
+ */
+export function doit(ex: Matrix): Matrix;
+export function doit(ex: ExprLike): Expr;
+export function doit(ex: ExprLike | Matrix): Expr | Matrix {
+  if (ex instanceof Matrix) return ex.map((e) => doit(e));
   const go = (x: Expr): Expr => {
     const y = x.args.length && !(x instanceof ExtensionExpr && !x.doitDeep) ? rebuild(x, x.args.map(go)) : x;
     if (y instanceof Integral) {

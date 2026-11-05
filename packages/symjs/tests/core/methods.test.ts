@@ -587,3 +587,54 @@ describe('coeff and as_independent with non-commutative symbols (SymPy)', () => 
     expect(asIndependent(mul(n1, n2, n3), [n2]).map(String)).toEqual(['n1', 'n2*n3']);
   });
 });
+
+describe('Basic and Expr methods without structure of their own (SymPy)', () => {
+  const R = (n: number) => sj.Rational.of(n);
+  it('as_dummy', () => {
+    // SymPy Integral(x, (x, 1, 2)).as_dummy() is Integral(_0, (_0, 1, 2))
+    expect(s(sj.asDummy(new sj.Integral([x, x, R(1), R(2)])))).toBe('Integral(_0, (_0, 1, 2))');
+    expect(s(sj.asDummy(sj.Lambda(x, Ad(x, y))))).toBe('Lambda(_0, _0 + y)');
+    expect(s(sj.asDummy(Ad(x, y)))).toBe('x + y');
+    expect(s(sj.asDummy(R(3)))).toBe('3');
+    expect(s(sj.asDummy(new sj.Integral([x, x])))).toBe('Integral(x, x)');
+    // a bound symbol that is also free in the limits is masked: Integral(_0*y, (_0, 0, x))
+    expect(s(sj.asDummy(new sj.Integral([M(x, y), x, R(0), x])))).toBe('Integral(_0*y, (_0, 0, x))');
+    // nested objects get distinct canonical symbols (SymPy Integral(_0*_1, (_0, 1, _1), (_1, 0, 1)))
+    expect(s(sj.asDummy(new sj.Integral([new sj.Integral([M(x, y), x, R(1), y]), y, R(0), R(1)])))).toBe('Integral(_0*_1, (_0, 1, _1), (_1, 0, 1))');
+    // the canonical names avoid the free symbols: SymPy Lambda(x, x + _0).as_dummy() is Lambda(_1, _0 + _1)
+    expect(s(sj.asDummy(sj.Lambda(x, Ad(x, new sj.Sym('_0')))))).toBe('Lambda(_1, _0 + _1)');
+    const r = sj.asDummy(new sj.Sym('r', { real: true }));
+    expect(r).toBeInstanceOf(sj.Dummy);
+    expect(s(r)).toBe('_r');
+    expect(sj.isReal(r)).toBe('unknown');
+    expect(sj.asDummy(A).isCommutative).toBe(false);
+  });
+  it('as_expr, copy, removeO, normal, prod', () => {
+    expect(s(sj.asExpr(Ad(x, y), x))).toBe('x + y');
+    expect(s(sj.copy(Ad(x, y)))).toBe('x + y');
+    const o = sj.O(x.pow(2));
+    expect(s(sj.removeO(Ad(1, x, o)))).toBe('x + 1');
+    expect(s(sj.removeO(o))).toBe('0');
+    expect(s(sj.removeO(x))).toBe('x');
+    expect(s(sj.normal(Ad(x.div(y), 1)))).toBe('(x + y)/y');
+    expect(s(sj.normal(Ad(sj.pow(Ad(x, 1), -1), 2)))).toBe('(2*x + 3)/(x + 1)');
+    expect(s(sj.normal(Ad(x.div(2), y.div(2))))).toBe('(x + y)/2');
+    expect(s(sj.normal(x))).toBe('x');
+    expect([sj.prod([1, 2, 3]), sj.prod([x, y]), sj.prod([]), sj.prod([2, 3], x)].map(s)).toEqual(['6', 'x*y', '1', '6*x']);
+  });
+  it('nseries', () => {
+    expect(s(sj.nseries(sj.sin(x), x, 0, 6))).toBe('x - x**3/6 + x**5/120 + O(x**6)');
+    expect(s(sj.nseries(sj.cos(x)))).toBe('1 - x**2/2 + x**4/24 + O(x**6)');
+    expect(s(sj.nseries(sj.exp(x), y))).toBe('exp(x)');
+    expect(s(sj.nseries(R(2)))).toBe('2');
+    expect(() => sj.nseries(Ad(x, y))).toThrow('x must be given for multivariate functions.');
+  });
+  it('rcall', () => {
+    const z2 = new sj.Sym('z');
+    expect(s(sj.rcall(sj.Lambda(y, y.pow(2)), 2))).toBe('4');
+    expect(s(sj.rcall(Ad(x, y), 2))).toBe('x + y');
+    // SymPy (x + Lambda(y, 2*y)).rcall(z) is x + 2*z
+    expect(s(sj.rcall(Ad(x, sj.Lambda(y, M(2, y))), z2))).toBe('x + 2*z');
+    expect(s(sj.rcall(f(x), y))).toBe('f(x)');
+  });
+});

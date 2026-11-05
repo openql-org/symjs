@@ -64,8 +64,8 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 | `@symjs/symjs/polys` | Polynomials: `factor`, `roots`, `CRootOf`, `groebner`, `apart`, `primitiveElement`, `toNumberField`, ... |
 | `@symjs/symjs/calculus` | `integrate`, `limit`, `series`, `Sum`, `Product`, ... |
 | `@symjs/symjs/solvers` | `solve`, `solveset`, `nonlinsolve`, `rsolve`, `dsolve`, `pdsolve`, `checkpdesol`, inequalities |
-| `@symjs/symjs/combinatorics` | Permutations, permutation groups, stabilizer chains and named finite groups |
-| `@symjs/symjs/tensor` | N-dimensional arrays, abstract tensor indices, slot symmetries and metric contraction |
+| `@symjs/symjs/combinatorics` | Permutations, permutation groups, stabilizer chains, named finite groups, polyhedra and group constructions |
+| `@symjs/symjs/tensor` | N-dimensional arrays, abstract tensors (indices, slot symmetries, sums and products, Butler–Portugal canonicalization, metric contraction, component arrays, wild tensors) |
 | `@symjs/symjs/categories` | `SymObject`, morphisms, composition, categories and diagrams |
 | `@symjs/symjs/sets` | Intervals, finite sets, image and condition sets |
 | `@symjs/symjs/matrices` | `Matrix` and linear algebra |
@@ -190,10 +190,10 @@ See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable
 - ODE solving follows SymPy's single-equation hints (separable, exact, linear, Bernoulli, Riccati special, homogeneous coefficients, linear coefficients, constant and Euler linear equations, undetermined coefficients, variation of parameters, Liouville, reducible order, Airy, Bessel); systems are solved when linear and first order (constant coefficients in closed form, 2x2 variable coefficients in terms of a particular solution like SymPy) or triangular (solved one function at a time); individual supported hints are recorded in the ODE checks
 - JavaScript code printing (`jscode`) remains unimplemented, rather than excluded: exporting expressions to JavaScript is a separate capability from running the engine in JavaScript.
 - Number-field embeddings use exact rational power bases for supported radical presentations; general `RootOf` embeddings, maximal orders and Galois groups remain incomplete.
-- Permutation groups provide stabilizer-chain order/membership and basic subgroup operations; finitely presented groups and many advanced subgroup algorithms remain incomplete.
-- Abstract tensors support Einstein multiplication, free-index complete symmetries and symmetric metric contraction; tensor sums and general Butler–Portugal canonicalization are not implemented.
-- PDEs support first-order constant-coefficient linear equations and variable separation; higher-order solving, variable coefficients and boundary conditions remain incomplete.
-- Category theory supports objects, morphisms, composition and diagrams. Diagram layout and Xy-pic output are unimplemented. Functors and natural transformations are outside the SymPy 1.14 implementation itself.
+- Permutation groups provide Schreier–Sims stabilizer chains, orbits, blocks, series, centralizers, subgroup search and cosets; finitely presented groups, Sylow subgroups and presentations remain incomplete.
+- Abstract tensors (`sympy.tensor.tensor`) are fully ported, including tensor sums, Butler–Portugal canonicalization under general slot symmetries, component arrays and wild tensors; the tensor differential operators (`sympy.tensor.toperators`) are not implemented.
+- PDEs support first-order linear equations with constant and variable coefficients and variable separation; higher-order solving and boundary conditions remain incomplete.
+- Category theory supports objects, morphisms, composition and diagrams. Diagram layout and Xy-pic output are deferred (see "Not ported"). Functors and natural transformations are outside the SymPy 1.14 implementation itself.
 - `sympy.stats`: `JointDistribution.cdf` (which fails for every input in SymPy) is not ported
 - Symbolic `Mod` (only integers and binomial coefficients modulo prime powers) and asymptotic series of nested exponentials are not implemented
 - Intentional differences: where SymPy's result is mathematically wrong symjs returns the correct one, e.g. `dsolve([x' = x*y*sin(t), y' = y**2*sin(t)])` (SymPy's solution fails `checkodesol`); `rsolve` returns `Unsolved` instead of an incomplete solution when the hypergeometric solutions found do not span the solution space and no initial values fix it (SymPy returns e.g. `0` for `y(n+2) - n*y(n+1) - y(n)`)
@@ -204,6 +204,7 @@ Runtime-specific backends are deliberately excluded; mathematical modules remain
 
 - Sampling of random variables in `sympy.stats` (`sample`, `sample_iter`, `sampling_density`, `sample_stochastic_process`, `numsamples=`, the `sample` methods of distributions, spaces and processes; `sympy/stats/sampling/`), which draws samples with numpy, scipy or pymc
 - Plotting (`sympy.plotting`, the `plot`/`show` methods)
+- Drawing of category diagrams (`sympy.categories.diagram_drawing`: `DiagramGrid`, `XypicDiagramDrawer`, `xypic_draw_diagram`): deferred, the policy is decided later
 - The TensorFlow back end of `lambdify`
 
 ## License

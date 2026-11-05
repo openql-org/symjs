@@ -34,7 +34,6 @@ MODULES = {
     # Category theory and previously unmeasured mathematical modules remain in
     # the denominator even while their implementations are incomplete.
     "sympy.categories.baseclasses": "categories",
-    "sympy.categories.diagram_drawing": "categories",
     "sympy.polys.numberfields.subfield": "polys",
     "sympy.combinatorics.perm_groups": "combinatorics",
     "sympy.combinatorics.named_groups": "combinatorics",
@@ -301,6 +300,10 @@ MODULES = {
     "sympy.stats.symbolic_multivariate_probability": "stats",
 }
 
+# sympy.categories.diagram_drawing (DiagramGrid, XypicDiagramDrawer, xypic_draw_diagram): drawing category
+# diagrams is deferred like plotting, by user decision; the policy is decided later
+CATEGORIES_DRAWING = {"DiagramGrid", "XypicDiagramDrawer", "xypic_draw_diagram"}
+
 # names of sympy.stats that need an external sampling library (numpy, scipy, pymc): out of scope
 STATS_SAMPLING = {"sample", "sample_iter", "sampling_density", "sample_stochastic_process"}
 
@@ -399,6 +402,27 @@ def ser(o):
         return {"t": "Cycle", "cycles": [[int(i) for i in c] for c in _Perm(o).cyclic_form], "size": int(o.size)}
     from sympy.tensor.array import NDimArray as _NDA
     from sympy.tensor.tensor import TensorIndexType as _TIT, TensorIndex as _TI, TensorHead as _TH, TensorSymmetry as _TS, Tensor as _Tensor, TensMul as _TensMul
+    from sympy.tensor.tensor import TensAdd as _TensAdd, TensorElement as _TE, WildTensorHead as _WTH, WildTensor as _WT, WildTensorIndex as _WTI
+    from sympy.combinatorics.polyhedron import Polyhedron as _Polyhedron
+    from sympy.combinatorics.perm_groups import SymmetricPermutationGroup as _SymPermGroup
+    if isinstance(o, _SymPermGroup):
+        return {"t": "SymmetricPermutationGroup", "deg": int(o.degree)}
+    if isinstance(o, _Polyhedron):
+        # rebuilt by the constructor from its corners, faces and the permutations of its group
+        return {"t": "Polyhedron", "corners": [ser(c) for c in o.args[0]], "faces": [[int(i) for i in f] for f in o.args[1]],
+                "pgroup": [ser(g) for g in o.args[2]]}
+    if isinstance(o, _WTI):
+        return {"t": "WildTensorIndex", "name": o.name, "type": ser(o.tensor_index_type), "up": bool(o.is_up), "ignoreUpdown": bool(o.ignore_updown)}
+    if isinstance(o, _WTH):
+        if o.comm != 0 or o.symmetry != _TS.no_symmetry(len(o.index_types)):
+            raise Unsupported('WildTensorHead with a symmetry or commutation group')
+        return {"t": "WildTensorHead", "name": o.name, "types": [ser(t) for t in o.index_types], "unordered": bool(o.unordered_indices)}
+    if isinstance(o, _WT):
+        return {"t": "WildTensor", "head": ser(o.component), "indices": [ser(i) for i in o.get_indices()]}
+    if isinstance(o, _TensAdd):
+        return {"t": "TensAdd", "args": [ser(a) for a in o.args]}
+    if isinstance(o, _TE):
+        return {"t": "TensorElement", "expr": ser(o.expr), "indexMap": ser(dict(o.index_map))}
     if isinstance(o, _TIT):
         if o.args[4] != 1 or str(o.args[5]) != 'metric':
             raise Unsupported('TensorIndexType with a non-default metric')
@@ -409,7 +433,8 @@ def ser(o):
         for sign, candidate in [(0, _TS.no_symmetry(o.rank)), (1, _TS.fully_symmetric(o.rank)), (-1, _TS.fully_symmetric(-o.rank))]:
             if o == candidate:
                 return {"t": "TensorSymmetry", "rank": o.rank, "sign": sign}
-        raise Unsupported('General tensor slot symmetry')
+        # a general slot symmetry by its base and strong generating set
+        return {"t": "TensorSymmetry", "base": [int(b) for b in o.base], "generators": [ser(g) for g in o.generators]}
     if isinstance(o, _TH):
         if o.comm != 0:
             raise Unsupported('Noncommuting tensor heads')
@@ -674,7 +699,7 @@ def api_inventory():
         out.append({"name": name, "category": "vector"})
     import sympy.categories as _categories
     for name in _categories.__all__:
-        if name != 'preview_diagram':
+        if name != 'preview_diagram' and name not in CATEGORIES_DRAWING:
             out.append({"name": name, "category": "categories"})
     for name in sorted(_combinatorics.__all__):
         obj = getattr(_combinatorics, name)

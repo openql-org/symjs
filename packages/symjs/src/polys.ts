@@ -26,6 +26,12 @@ export {
   interpolate,
   resultant,
   discriminant,
+  PurePoly,
+  asPoly,
+  invert,
+  gcdList,
+  lcmList,
+  sqf,
 } from './polys/sympoly';
 
 export { rootsDict as roots } from './polys/poly';
@@ -56,11 +62,13 @@ export {
 export {
   symmetrize,
   rationalInterpolate,
+  viete,
 } from './polys/polyfuncs';
 export {
   groebner,
   GroebnerBasis,
   reduced,
+  isZeroDimensional,
 } from './polys/groebner';
 export type { MonomialOrder } from './polys/groebner';
 export {

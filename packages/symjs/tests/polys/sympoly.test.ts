@@ -858,3 +858,56 @@ describe('multivariate division (SymPy dmp_ff_div)', () => {
     expect(() => sj.polyDiv(parse('3'), parse('2'))).toThrow(sj.PolynomialError);
   });
 });
+
+describe('PurePoly, asPoly, invert, gcdList, lcmList and sqf (SymPy polytools)', () => {
+  it('PurePoly compares equal over other generators', () => {
+    const p = sj.PurePoly(E('x**2 + 1'));
+    expect(String(p)).toBe("PurePoly(x**2 + 1, x, domain='ZZ')");
+    expect(p.equals(sj.PurePoly(E('y**2 + 1')))).toBe(true);
+    expect(Poly.from(E('x**2 + 1')).equals(Poly.from(E('y**2 + 1')))).toBe(false);
+    expect(Poly.from(E('x**2 + 1')).equals(Poly.from(E('x**2 + 1')))).toBe(true);
+    expect(Poly.from(E('x**2 + 1')).equals(E('x**2 + 1'))).toBe(true);
+    expect(Poly.from(E('x**2 + 1')).equals(E('x**2 + 2'))).toBe(false);
+    expect(Poly.from(E('x**2 + 1')).equals(Poly.from(E('x**2 + y'), [x, y]))).toBe(false);
+    expect(Poly.from(E('x**2 + 1')).equals(Poly.from(E('x**3 + 1')))).toBe(false);
+    expect(Poly.from(E('x**2 + 1')).equals(Poly.from(E('x**2 + x + 1')))).toBe(false);
+    expect(sj.PurePoly(E('x**2 + 1')).equals(Poly.from(E('x**2 + y'), [x, y]))).toBe(false);
+    expect(Poly.from(E('x**2 + 1'), [x]).equals(sj.sin(x))).toBe(false);
+    expect(String(sj.PurePoly(E('x**2 + y'), x))).toBe("PurePoly(x**2 + y, x, domain='ZZ[y]')");
+    expect(String(sj.PurePoly(Poly.from(E('x**2*y + 1'), [x, y])))).toBe("PurePoly(x**2*y + 1, x, y, domain='ZZ')");
+  });
+  it('asPoly', () => {
+    expect(String(sj.asPoly(E('x**2 + x*y')))).toBe("Poly(x**2 + x*y, x, y, domain='ZZ')");
+    expect(String(sj.asPoly(E('x**2 + x*y'), x))).toBe("Poly(x**2 + y*x, x, domain='ZZ[y]')");
+    // SymPy (x**2 + sin(y)).as_poly(x, y) is None
+    expect(sj.asPoly(E('x**2 + sin(y)'), x, y)).toBe(sj.NoMatch);
+    expect(sj.asPoly(mul(A, B))).toBe(sj.NoMatch);
+  });
+  it('invert', () => {
+    expect(String(sj.invert(E('x**2 - 1'), E('2*x - 1')))).toBe('-4/3');
+    expect(String(sj.invert(3, 7))).toBe('5');
+    expect(String(sj.invert(E('x**2'), E('x + 1')))).toBe('1');
+    expect(String(sj.invert(Poly.from(E('x**2 + 1')), E('x**3 + 2'), x))).toBe('-x**2/5 - 2*x/5 + 1/5');
+    expect(() => sj.invert(E('x**2 - 1'), E('x - 1'))).toThrow(sj.NotInvertible);
+    expect(() => sj.invert(E('x*y'), E('x + y'))).toThrow(sj.PolynomialError);
+    expect(() => sj.invert(A, B)).toThrow('non-commutative expressions are not supported');
+  });
+  it('gcdList and lcmList', () => {
+    const fs = [E('x**3 - 1'), E('x**2 - 1'), E('x**2 - 3*x + 2')];
+    expect(String(sj.gcdList(fs))).toBe('x - 1');
+    expect(String(sj.lcmList(fs))).toBe('x**5 - x**4 - 2*x**3 - x**2 + x + 2');
+    expect([sj.gcdList([12, 18, 30]), sj.gcdList([]), sj.gcdList([R(1, 2), R(3, 4)]), sj.gcdList([E('x*y**2'), E('x**2*y')])].map(String)).toEqual(['6', '0', '1/4', 'x*y']);
+    expect([sj.lcmList([4, 6, 10]), sj.lcmList([])].map(String)).toEqual(['60', '1']);
+  });
+  it('sqf', () => {
+    expect(String(sj.sqf(E('2*x**5 + 16*x**4 + 50*x**3 + 76*x**2 + 56*x + 16')))).toBe('2*(x + 1)**2*(x + 2)**3');
+    expect(String(sj.sqf(E('x**2 - 2*x + 1')))).toBe('(x - 1)**2');
+    // the factors of one multiplicity are multiplied out: SymPy sqf(x**2 - 1) is x**2 - 1
+    expect(String(sj.sqf(E('(x**2 - 1)/(x + 1)**2')))).toBe('(x**2 - 1)/(x + 1)**2');
+    expect(String(sj.sqf(E('x**2*y**2 + 2*x*y + 1')))).toBe('(x*y + 1)**2');
+    expect(String(sj.sqf(12))).toBe('12');
+    expect(String(sj.sqf(E('x**3 - x**2')))).toBe('x**2*(x - 1)');
+    // a polynomial gives a polynomial (SymPy sqf(Poly(x**3 - x**2)))
+    expect(String(sj.sqf(Poly.from(E('x**3 - x**2'))))).toBe("Poly(x**3 - x**2, x, domain='ZZ')");
+  });
+});

@@ -38,3 +38,19 @@ describe('rationalInterpolate', () => {
     expect(() => sj.rationalInterpolate([[1, 2]], 2)).toThrow(RangeError);
   });
 });
+
+describe('viete', () => {
+  const E = sj.parse;
+  const [r1, r2] = [new sj.Sym('r1'), new sj.Sym('r2')];
+  it("gives Viete's formulas (SymPy)", () => {
+    expect(s(sj.viete(E('a*x**2 + b*x + c'), [r1, r2], x))).toBe('((r1 + r2, -b/a), (r1*r2, c/a))');
+    expect(s(sj.viete(E('x**3 + 2*x - 1'), undefined, x))).toBe('((r1 + r2 + r3, 0), (r1*r2 + r1*r3 + r2*r3, 2), (r1*r2*r3, 1))');
+    expect(s(sj.viete(E('x**2 + 2*x - 1')))).toBe('((r1 + r2, -2), (r1*r2, -1))');
+    expect(s(sj.viete(sj.Poly.from(E('x**2 - 1'))))).toBe('((r1 + r2, 0), (r1*r2, -1))');
+  });
+  it('rejects constant and multivariate polynomials and a wrong number of roots', () => {
+    expect(() => sj.viete(3, [], x)).toThrow("Cannot derive Viete's formulas for a constant polynomial");
+    expect(() => sj.viete(E('x*y + 1'))).toThrow('multivariate polynomials are not allowed');
+    expect(() => sj.viete(E('x**2 + 1'), [r1], x)).toThrow('required 2 roots, got 1');
+  });
+});

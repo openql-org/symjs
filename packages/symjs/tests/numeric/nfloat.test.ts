@@ -4,7 +4,7 @@
 // Tests of src/numeric/nfloat.ts.
 
 import { describe, expect, it } from 'vitest';
-import { comp, evalf, float, mul, nfloat, nsimplify, parse, sstr, SymFunction } from '../../src';
+import { comp, evalf, float, MatrixSymbol, mul, nfloat, nsimplify, parse, sstr, SymFunction } from '../../src';
 import type { Expr } from '../../src';
 
 const p = (s: string) => parse(s);
@@ -63,6 +63,13 @@ describe('comp', () => {
 
 // SymPy 1.14 nsimplify(sympify(s), **opts) (test_nsimplify, test_issue_9448, the docstring and more).
 type NsOpts = { constants?: string[]; tolerance?: number; full?: boolean; rational?: boolean; rationalConversion?: 'base10' | 'exact' };
+
+describe('nsimplify of a matrix expression', () => {
+  it('replaces the Floats by Rationals (a MatrixSymbol is a free symbol in SymPy)', () => {
+    // nsimplify(0.5*A) -> (1/2)*A
+    expect(sstr(nsimplify(mul(0.5, MatrixSymbol('A', 2, 2))))).toBe('(1/2)*A');
+  });
+});
 
 describe('nsimplify', () => {
   const cases: [string, NsOpts, string][] = [

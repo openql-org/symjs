@@ -33,6 +33,9 @@ export {
   solveLinear,
   solveUndeterminedCoeffs,
   nsolve,
+  detQuick,
+  invQuick,
+  solveLinearSystemLU,
 } from './solvers/solve';
 export { nonlinsolve, substitution } from './solvers/solveset';
 export { dsolveSystem, checkodesol } from './solvers/odesystem';
@@ -97,6 +100,8 @@ export {
   solvePolyInequality,
   solveRationalInequalities,
   reduceInequalities,
+  reduceAbsInequality,
+  reduceAbsInequalities,
   singularities,
   stationaryPoints,
   isConvex,
@@ -110,6 +115,7 @@ export {
   factorSystem,
   factorSystemCond,
   solvePolySystem,
+  solveTriangulated,
 } from './solvers/polysys';
 export {
 } from './solvers/recurr';

@@ -15,11 +15,10 @@ import { Float, Rational } from '../core/nodes';
 import { sympify } from '../core/ops';
 import { at } from '../core/guard';
 import { ImmutableMatrixNode } from './expressions/matexpr';
-import { Matrix } from './matrix';
+import { Matrix, type MatrixPosition } from './matrix';
 import { MutableDenseMatrix } from './mutable';
 
-/** A position (row, column) of a matrix. */
-export type MatrixPosition = readonly [number, number];
+export type { MatrixPosition } from './matrix';
 /** A value of the dictionary form: an entry, a matrix (expanded as a block) or a list of entries or rows (likewise). */
 export type SparseValue = ExprLike | Matrix | readonly (ExprLike | readonly ExprLike[])[];
 /** The entries of a sparse matrix: a generator f(i, j), a map position -> value, a flat list or a list of rows. */
@@ -138,13 +137,6 @@ function denseEntries(args: SparseMatrixArgs): { rows: number; cols: number; cel
   return { rows, cols, cells };
 }
 
-/** The nonzero entries of a matrix by position (SymPy todok). */
-function toDok(m: Matrix): Map<MatrixPosition, Expr> {
-  const out = new Map<MatrixPosition, Expr>();
-  for (let i = 0; i < m.rows; i++) for (let j = 0; j < m.cols; j++) if (!isZeroEntry(m.get(i, j))) out.set([i, j], m.get(i, j));
-  return out;
-}
-
 /**
  * SymPy MutableSparseMatrix (SparseMatrix): a mutable matrix built from its
  * nonzero entries, e.g. `new SparseMatrix(2, 2, new Map([[[1, 1], 2]]))`,
@@ -156,11 +148,6 @@ export class MutableSparseMatrix extends MutableDenseMatrix {
   constructor(...args: SparseMatrixArgs) {
     const { rows, cols, cells } = denseEntries(args);
     super(rows, cols, cells);
-  }
-
-  /** SymPy todok(): the nonzero entries by position. */
-  todok(): Map<MatrixPosition, Expr> {
-    return toDok(this);
   }
 }
 
@@ -181,6 +168,6 @@ export class ImmutableSparseMatrix extends ImmutableMatrixNode {
 
   /** SymPy todok(): the nonzero entries by position. */
   todok(): Map<MatrixPosition, Expr> {
-    return toDok(this.matrix);
+    return this.matrix.todok();
   }
 }

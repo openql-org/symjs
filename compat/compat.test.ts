@@ -97,11 +97,23 @@ const OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   'sympy.utilities.iterables: a.sort()': 'Python list method',
 };
 const apiKey = (a: { name: string; category: string; owner?: string }): string => `${a.category}: ${a.owner ? a.owner + ':' : ''}${a.name}`;
+/**
+ * SymPy public names outside the scope of symjs by user decision, by API key, with the reason. They are
+ * not counted in the API presence (compat/extract.py no longer lists them; this keeps an older corpus
+ * consistent). Their modules are 'excluded' in scope-inventory.json with the same reason.
+ */
+const OUT_OF_SCOPE_API: Readonly<Record<string, string>> = {
+  // sympy.categories.diagram_drawing: drawing category diagrams is deferred like plotting
+  'categories: DiagramGrid': 'diagram drawing (decided later)',
+  'categories: XypicDiagramDrawer': 'diagram drawing (decided later)',
+  'categories: xypic_draw_diagram': 'diagram drawing (decided later)',
+};
 
 it('computes SymPy compatibility metrics', () => {
   const corpus: Corpus = JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url), 'utf8'));
   const extractedCalls = corpus.cases.length;
   corpus.cases = corpus.cases.filter((c) => OUT_OF_SCOPE[caseLabel(c)] === undefined);
+  corpus.api = corpus.api.filter((a) => OUT_OF_SCOPE_API[apiKey(a)] === undefined);
   const results = corpus.cases.map((c) => ({ c, o: runCase(c) as Outcome, evidence: evidenceFor(c) }));
   const verifiedPass = results.filter(({ o, evidence }) => (o.status === 'pass' || o.status === 'equivalent') && (evidence === 'public-call' || evidence === 'reviewed-conversion')).length;
   const inventory = JSON.parse(readFileSync(new URL('./scope-inventory.json', import.meta.url), 'utf8')) as { reference: { sympy: string }; modules: { module: string; status: string; selectedForExtraction: boolean; hasCorpusCases: boolean; documentedExamples: number; reason?: string }[] };
@@ -179,7 +191,7 @@ it('computes SymPy compatibility metrics', () => {
     ...Object.entries(scopeCounts).map(([status, n]) => `| ${status} | ${n} |`), '',
     'Partial means a source correspondence exists, not that the module is complete. Unassessed modules remain visible. Exclusions and source hashes are recorded in `scope-inventory.json`; symbolic mathematical features are not excluded merely because they are difficult.', '',
     '## Extraction audit', '',
-    `Examined ${corpus.extraction.examined} doctest statements including setup. Kept ${corpus.cases.length} in-scope calls; ${extractedCalls - corpus.cases.length} calls excluded by ${Object.keys(OUT_OF_SCOPE).length} explicit case labels are listed in the runner. The detailed omitted list records ${corpus.extraction.omitted.length} examples with expected output.`, '',
+    `Examined ${corpus.extraction.examined} doctest statements including setup. Kept ${corpus.cases.length} in-scope calls; ${extractedCalls - corpus.cases.length} calls excluded by ${Object.keys(OUT_OF_SCOPE).length} explicit case labels are listed in the runner, as are ${Object.keys(OUT_OF_SCOPE_API).length} public names excluded from the API presence by user decision (${[...new Set(Object.values(OUT_OF_SCOPE_API))].join('; ')}). The detailed omitted list records ${corpus.extraction.omitted.length} examples with expected output.`, '',
     '| Reason | Statements |', '|---|---:|',
     ...Object.entries(corpus.extraction.reasons).map(([reason, n]) => `| ${reason} | ${n} |`), '',
     '## Public API evidence', '',
@@ -190,7 +202,7 @@ it('computes SymPy compatibility metrics', () => {
     '## Capability conditions', '',
     '| Area | Status | Tested conditions | Remaining scope |', '|---|---|---|---|',
     ...capabilities.areas.map((a) => `| ${a.area} | ${a.status} | ${a.tested.join('; ')} | ${a.remaining.join('; ')} |`), '',
-    'Direct regression-test paths are maintained in `capabilities.json`. General tensor canonicalization, category diagram drawing and unsupported PDE classes remain explicit gaps.', '',
+    'Direct regression-test paths are maintained in `capabilities.json`. Tensor differential operators, category diagram drawing (deferred by decision, like plotting) and unsupported PDE classes remain explicit gaps.', '',
   );
   const base = runBaseChecks();
   const basePass = base.filter((b) => b.pass).length;

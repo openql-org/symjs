@@ -15,6 +15,11 @@ describe('doit and finite differences', () => {
   it('evaluates limits', () => {
     expect(s(sj.doit(new sj.Limit([sj.mul(sj.sin(x), sj.pow(x, -1)), x, sj.S.Zero])))).toBe('1');
   });
+  it('evaluates the entries of a matrix (SymPy MatrixBase.doit)', () => {
+    // Matrix([[Integral(x, x), Derivative(x**2, x)]]).doit() -> Matrix([[x**2/2, 2*x]])
+    const m = sj.Matrix.of([[new sj.Integral([x!, x!]), new sj.Derivative([sj.pow(x!, 2), x!, sj.S.One])]]);
+    expect(s(sj.doit(m))).toBe('Matrix([[x**2/2, 2*x]])');
+  });
 });
 
 describe('Integral(f, (x, b)): the antiderivative at b', () => {

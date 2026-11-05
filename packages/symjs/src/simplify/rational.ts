@@ -6,7 +6,7 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Constant, Dummy, Float, Fn, impl, Mul, Pow, Rational, S, Sym, isNum } from '../core/nodes';
+import { Add, Constant, Dummy, Float, Fn, impl, isMulLike, Mul, Pow, Rational, S, Sym, isNum } from '../core/nodes';
 import { fromRational } from '../numeric/mpf';
 import { add, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
@@ -31,7 +31,8 @@ const negExponent = (x: Expr): boolean => {
 /** Split e into [numerator, denominator]. */
 export function fraction(ex: ExprLike, opts: { exact?: boolean } = {}): [Expr, Expr] {
   const e = sympify(ex);
-  const factors = e instanceof Mul ? e.args : [e];
+  // SymPy Mul.make_args: the factors of a product, a MatMul included
+  const factors = isMulLike(e) ? e.args : [e];
   const num: Expr[] = [];
   const den: Expr[] = [];
   for (const f of factors) {
@@ -60,6 +61,16 @@ export function fraction(ex: ExprLike, opts: { exact?: boolean } = {}): [Expr, E
     return [raw(num), raw(den)];
   }
   return [mul(...num), mul(...den)];
+}
+
+/** SymPy numer(expr, exact=False): the numerator of fraction(expr). */
+export function numer(ex: ExprLike, opts: { exact?: boolean } = {}): Expr {
+  return fraction(ex, opts)[0];
+}
+
+/** SymPy denom(expr, exact=False): the denominator of fraction(expr). */
+export function denom(ex: ExprLike, opts: { exact?: boolean } = {}): Expr {
+  return fraction(ex, opts)[1];
 }
 
 /** Combine a sum of fractions over a common denominator (recursively). */

@@ -13,8 +13,18 @@ import { isIntegerQ, isNegative, isNonNegative } from '../core/assumptions';
 import { NotImplementedError } from '../core/errors';
 import { at, cast, defined, expectType, last } from '../core/guard';
 import type { ExprLike } from '../core/nodes';
+import type { Substitution, Sym } from '../core/nodes';
 import { Expr, ExtensionExpr, Rational } from '../core/nodes';
-import { add, sympify } from '../core/ops';
+import { asContentPrimitive, dummyEq, hasFree, hasXfree, isSame } from '../core/methods';
+import type { Query, Replacement } from '../core/match';
+import { count, countOps, find, replace } from '../core/match';
+import { match } from '../core/public';
+import type { Assumption } from '../core/refine';
+import { refine } from '../core/refine';
+import { xreplace } from '../core/traverse';
+import type { Key } from '../printing/sortkey';
+import { sortKey } from '../printing/sortkey';
+import { add, couldExtractMinusSign, sympify } from '../core/ops';
 import type { NoMatchResult } from '../core/truth';
 import { NoMatch } from '../core/truth';
 import { Matrix } from '../matrices/matrix';
@@ -23,6 +33,8 @@ import { Matrix } from '../matrices/matrix';
 // Helpers
 // ---------------------------------------------------------------------------
 
+const isExpr = (x: unknown): x is Expr => x instanceof Expr;
+const isKeyList = (x: unknown): x is Key[] => Array.isArray(x);
 const isUnknownArray = (x: unknown): x is readonly unknown[] => Array.isArray(x);
 
 /** A Python int: a safe JavaScript integer (bigints are converted). */
@@ -384,8 +396,8 @@ function cycleLatex(p: Permutation): string {
   return cycles.map((c) => `\\left( ${c.join('\\; ')}\\right)`).join('');
 }
 
-/** Wrap an array form without validation (SymPy _af_new). */
-function afNew(perm: number[]): Permutation {
+/** @internal Wrap an array form without validation (SymPy _af_new). */
+export function afNew(perm: number[]): Permutation {
   pendingAf = perm;
   return new Permutation();
 }
@@ -420,6 +432,11 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
   /** The node itself (a Permutation has no expression arguments). */
   withArgs(_args: readonly Expr[]): Expr {
     return this;
+  }
+
+  /** SymPy Permutation is an Atom: class_key (2, 0, 'Permutation'). */
+  override get atomClass(): boolean {
+    return true;
   }
 
   protected override computeKey(): string {
@@ -673,6 +690,130 @@ export class Permutation extends ExtensionExpr implements Iterable<number> {
     }
     if (x instanceof Rational) return Rational.of(at(this.#af, Number(x.p)));
     return new AppliedPermutation(this, x);
+  }
+
+  // ---- Basic methods ---------------------------------------------------------------
+  // SymPy's Permutation is an Atom: these are the shared Basic implementations of the core.
+
+  /** SymPy as_content_primitive(radical, clear): (1, p). */
+  asContentPrimitive(opts: { radical?: boolean; clear?: boolean } = {}): [Rational, Expr] {
+    return asContentPrimitive(this, opts);
+  }
+
+  /** SymPy as_dummy(): the permutation itself (it binds no symbols). */
+  asDummy(): Permutation {
+    return this;
+  }
+
+  /** SymPy class_key(): (2, 0, 'Permutation'), the key of an Atom class. */
+  static classKey(): [number, number, string] {
+    return [2, 0, 'Permutation'];
+  }
+
+  /** SymPy sort_key(order): the canonical sort key, with the class key of an Atom. */
+  sortKey(): Key[] {
+    return [Permutation.classKey(), ...expectType(sortKey(this), isKeyList).slice(1)];
+  }
+
+  /**
+   * SymPy compare(other): -1, 0 or 1 by the canonical order of Basic.compare
+   * (the class first, then the array forms lexicographically).
+   */
+  compare(other: Expr): number {
+    // SymPy _cmp_name: a class missing from ordering_of_classes (Permutation, and the extension classes
+    // here) sorts after the listed core classes and by name among the unlisted ones
+    if (!(other instanceof Permutation)) return other instanceof ExtensionExpr ? Math.sign(pyCompare('Permutation', other.name)) : 1;
+    const a = this.#af;
+    const b = other.#af;
+    // SymPy compares the hashable contents (the array forms) by length, then item by item
+    if (a.length !== b.length) return a.length > b.length ? 1 : -1;
+    const i = a.findIndex((x, k) => x !== b[k]);
+    return i < 0 ? 0 : at(a, i) > at(b, i) ? 1 : -1;
+  }
+
+  /** SymPy could_extract_minus_sign(): false. */
+  couldExtractMinusSign(): boolean {
+    return couldExtractMinusSign(this);
+  }
+
+  /** SymPy count(query): the number of subexpressions matching the query (the permutation itself or nothing). */
+  count(query: Query): number {
+    return count(this, query);
+  }
+
+  /** SymPy count_ops(visual): 0 operations. */
+  countOps(opts: { visual?: boolean } = {}): number | Expr {
+    return opts.visual ? countOps(this, { visual: true }) : countOps(this);
+  }
+
+  /** SymPy doit(): the permutation itself (SymPy Atom.doit). */
+  doit(): Permutation {
+    return this;
+  }
+
+  /** SymPy dummy_eq(other, symbol): structural equality up to dummy symbols. */
+  dummyEq(other: ExprLike, symbol?: Expr): boolean {
+    return dummyEq(this, other, symbol);
+  }
+
+  /** SymPy find(query): the matching subexpressions. */
+  find(query: Query): Expr[] {
+    return find(this, query);
+  }
+
+  /** SymPy Basic.fromiter(args): Permutation(*args). */
+  static fromiter(args: Iterable<number | bigint | Expr>): Permutation {
+    return new Permutation(...args);
+  }
+
+  /** SymPy has_free(*patterns): whether a pattern is the permutation or one of its free symbols (it has none). */
+  hasFree(...patterns: ExprLike[]): boolean {
+    return hasFree(this, ...patterns);
+  }
+
+  /** SymPy has_xfree(s): whether an item of s is the permutation or one of its free symbols. */
+  hasXfree(items: Iterable<Expr>): boolean {
+    return hasXfree(this, [...items]);
+  }
+
+  /** SymPy is_hypergeometric(k): the term ratio p/p is not defined, so this throws TypeError as in SymPy. */
+  isHypergeometric(_k: Expr): boolean {
+    throw new TypeError("unsupported operand type(s) for /: 'Permutation' and 'Permutation'");
+  }
+
+  /** SymPy is_same(b, approx): structural equality. */
+  isSame(b: unknown, approx?: (x: Expr, y: Expr) => boolean): boolean {
+    return isSame(this, b, approx);
+  }
+
+  /** SymPy match(pattern): the Wild assignments making pattern equal to the permutation, NoMatch when none. */
+  match(pattern: ExprLike, opts: { old?: boolean } = {}): Map<Sym, Expr> | NoMatchResult {
+    return match(this, pattern, opts);
+  }
+
+  /** SymPy matches(expr): the assignments making the permutation (a pattern without Wilds) equal to expr ({} or NoMatch). */
+  matches(expr: ExprLike, opts: { old?: boolean } = {}): Map<Sym, Expr> | NoMatchResult {
+    return match(expr, this, opts);
+  }
+
+  /** SymPy rcall(*args): the permutation called on the arguments (p(i), or p itself without arguments). */
+  rcall(...args: (number | bigint)[]): number | Permutation {
+    return args.length === 1 ? this.call(at(args, 0)) : this.call(...args);
+  }
+
+  /** SymPy refine(assumption): the permutation itself. */
+  refine(assumptions: Assumption = true): Expr {
+    return refine(this, assumptions);
+  }
+
+  /** SymPy replace(query, value): the permutation with matching subexpressions replaced. */
+  replace(query: Query, value: Replacement): Expr {
+    return expectType(replace(this, query, value), isExpr);
+  }
+
+  /** SymPy xreplace(rule): exact structural replacement. */
+  xreplace(rule: Substitution): Expr {
+    return xreplace(this, rule);
   }
 
   // ---- properties ----------------------------------------------------------------

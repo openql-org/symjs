@@ -25,6 +25,8 @@ EXCLUSIONS = {
     'sympy.parsing.autolev._antlr': 'Generated Python parser runtime; an equivalent parser may be supplied separately.',
     'sympy.parsing.latex._antlr': 'Generated Python parser runtime; this does not exclude the LaTeX parsing feature.',
     'sympy.stats.sampling': 'External sampling-library adapters; symbolic probability remains in scope.',
+    # user decision: drawing category diagrams is deferred like plotting; the policy is decided later
+    'sympy.categories.diagram_drawing': 'diagram drawing (decided later)',
 }
 
 # Explicit correspondences for the different kernel layout and combined modules.
@@ -50,6 +52,8 @@ CORRESPONDENCES = {
     'sympy.solvers.diophantine.diophantine': ['solvers/diophantine.ts'],
     'sympy.tensor.array.ndim_array': ['tensor/ndimarray.ts'],
     'sympy.tensor.array.arrayop': ['tensor/arrayop.ts'],
+    # the Butler-Portugal canonicalization is used only by the tensors
+    'sympy.combinatorics.tensor_can': ['tensor/tensorcan.ts'],
     'sympy.functions.elementary.trigonometric': ['functions/elementary/elementary.ts', 'functions/elementary/trigext.ts'],
     'sympy.functions.elementary.hyperbolic': ['functions/elementary/elementary.ts', 'functions/elementary/trigext.ts'],
     'sympy.functions.elementary.exponential': ['functions/elementary/elementary.ts'],
@@ -59,7 +63,7 @@ CORRESPONDENCES = {
 # These independently scoped mathematical modules were inspected and have no
 # implementation yet. Everything else without a correspondence stays unassessed.
 NOT_IMPLEMENTED = {
-    'sympy.categories.diagram_drawing', 'sympy.diffgeom.diffgeom',
+    'sympy.diffgeom.diffgeom',
     'sympy.polys.numberfields.galoisgroups', 'sympy.functions.special.bsplines',
     'sympy.combinatorics.fp_groups', 'sympy.combinatorics.free_groups',
     'sympy.tensor.toperators', 'sympy.printing.jscode',

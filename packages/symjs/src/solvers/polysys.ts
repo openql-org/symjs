@@ -11,8 +11,9 @@ import type { ExprLike, Sym } from '../core/nodes';
 import { Dummy, Expr, Pow, Rational, S } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
-import { at, cast, defined, expectType, first, getOrThrow } from '../core/guard';
+import { at, cast, defined, expectType, first, getOrThrow, last } from '../core/guard';
 import { groebner } from '../polys/groebner';
+import { Tuple } from '../core/containers';
 import { roots } from '../polys/poly';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { Poly, factorListExpr, sortGens } from '../polys/sympoly';
@@ -304,4 +305,41 @@ function backSubstitute(system: Expr[], gens: readonly Sym[], rationalOnly: bool
     for (const s of backSubstitute(sub, otherGens, rationalOnly)) out.push([...s.slice(0, idx), z, ...s.slice(idx)]);
   }
   return out;
+}
+
+/**
+ * SymPy solve_triangulated(polys, *gens): the solutions of a zero-dimensional
+ * polynomial system with coefficients in the rationals, from its
+ * lexicographic Groebner basis (Gianni-Kalkbrenner): the rational roots of
+ * the univariate polynomial in the last generator, extended one generator at
+ * a time. Solutions are tuples in the order of gens, sorted like SymPy's
+ * default_sort_key.
+ */
+export function solveTriangulated(polys: readonly ExprLike[], gens: readonly Sym[]): Expr[][] {
+  const G = [...groebner(polys, gens).exprs].reverse();
+  const rationalRoots = (f: Expr, x: Sym): Expr[] => Poly.from(f, [x]).groundRoots().map(([r]) => r);
+  const degreeIn = (f: Expr, x: Sym): number => Poly.from(f, [x]).degree();
+  const lastGen = last(gens);
+  let solutions: Expr[][] = rationalRoots(first(G), lastGen).map((z) => [z]);
+  // SymPy zip(reversed(gens[:-1]), postfixes(gens[1:])): each generator with the ones after it
+  for (let k = gens.length - 2; k >= 0; k--) {
+    const v = at(gens, k);
+    const vars = gens.slice(k + 1);
+    const allowed = new Set([v, ...vars].map((s) => s.key));
+    const next: Expr[][] = [];
+    for (const values of solutions) {
+      const mapping = vars.map((s, i): [Expr, Expr] => [s, at(values, i)]);
+      const H: Expr[] = [];
+      for (const g of G.slice(1)) {
+        if (![...freeSymbols(g)].every((s) => allowed.has(s.key)) || degreeIn(g, v) === 0) continue;
+        const h = expand(xreplace(g, mapping));
+        if (degreeIn(g, v) === degreeIn(h, v)) H.push(h);
+      }
+      // SymPy min(H, key=degree): the first of least degree (the sort is stable)
+      const p = first([...H].sort((a, b) => degreeIn(a, v) - degreeIn(b, v)));
+      for (const z of rationalRoots(p, v)) next.push([z, ...values]);
+    }
+    solutions = next;
+  }
+  return solutions.sort((a, b) => compareKeys(sortKey(Tuple(...a)), sortKey(Tuple(...b))));
 }

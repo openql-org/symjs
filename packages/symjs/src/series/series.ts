@@ -9,7 +9,7 @@ import { NotImplementedError } from '../core/errors';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Add, Fn, Order, Pow, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { add, exp, mul, neg, pow, sympify } from '../core/ops';
-import { Mul } from '../core/nodes';
+import { Mul, isMulLike } from '../core/nodes';
 import { expandMul } from '../simplify/expand';
 import { mapBottomUp, xreplace as subs } from '../core/traverse';
 import { log, sin } from '../functions/elementary/elementary';
@@ -236,6 +236,15 @@ impl.leadterm = (e, x) => leadterm(e, x);
 /** Leading term c*x**e of e as x -> 0 (SymPy leadterm): [c, e]. */
 export function leadterm(ex: ExprLike, x: Sym): [Expr, Expr] {
   const e = sympify(ex);
+  if (isMulLike(e) && !(e instanceof Mul)) {
+    // a matrix product x*A with constant matrix factors: the leading term of the scalar coefficient
+    // times the matrices (SymPy (x*A).as_leading_term(x) = x*A; its leadterm fails with a TypeError)
+    const scalars = e.args.filter((f) => f.isCommutative);
+    const matrices = e.args.filter((f) => !f.isCommutative);
+    if (matrices.some((f) => f.has(x))) throw new NotImplementedError(`leading term of ${e.toString()}, whose matrix factors depend on ${x.name}`);
+    const [c, p] = leadterm(mul(...scalars), x);
+    return [mul(c, ...matrices), p];
+  }
   // powers of x to constant exponents that are not rational (x**(-sqrt(2))) are factored out: the
   // expansion of the rest is a Puiseux series (SymPy: leadterm(x**(1 - sqrt(2))) = (1, 1 - sqrt(2)))
   const factors = e instanceof Mul ? e.args : [e];

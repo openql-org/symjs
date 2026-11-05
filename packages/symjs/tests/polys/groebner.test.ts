@@ -69,3 +69,16 @@ describe('Groebner bases', () => {
     expect(G.contains(parse('y**3 + x*y'))).toBe(true);
   });
 });
+
+describe('isZeroDimensional', () => {
+  it('decides whether a system has finitely many solutions (SymPy)', () => {
+    expect(sj.isZeroDimensional([parse('x**2 + y**2 - 1'), parse('x - y')], [x, y])).toBe(true);
+    expect(sj.isZeroDimensional([parse('x*y - 1')], [x, y])).toBe(false);
+    expect(sj.isZeroDimensional([parse('x**2'), parse('y**3'), z], [x, y, z])).toBe(true);
+    expect(sj.isZeroDimensional([parse('x**2 + y')], [x, y, z])).toBe(false);
+    expect(sj.groebner([parse('x**2 - y'), parse('y**2 - 1')], [x, y], 'grlex').isZeroDimensional).toBe(true);
+    // the leading monomial in the basis order (y**2 for x + y**2 in grlex)
+    expect(sj.isZeroDimensional([parse('x + y**2'), parse('y**3')], [x, y], 'grlex')).toBe(true);
+    expect(sj.isZeroDimensional([parse('x + y**2')], [x, y], 'grlex')).toBe(false);
+  });
+});

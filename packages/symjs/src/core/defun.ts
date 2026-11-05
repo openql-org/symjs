@@ -13,6 +13,8 @@ import { add, mul, sympify } from './ops';
 import { derivative } from './undef';
 import { SubsNode } from './subsnode';
 import { at } from './guard';
+import type { NoMatchResult } from './truth';
+import { NoMatch } from './truth';
 
 /** The behaviour of a function defined with defineFunction. *
  * @experimental May change in a minor release.
@@ -128,6 +130,8 @@ export function defineFunction(name: string, def: FunctionDefinition = {}): Defi
     if (counts && !counts.includes(args.length)) throw new TypeError(`${name} takes ${counts.join(' or ')} argument(s) (${args.length} given)`);
     return applyDefined(name, def, args.map(sympify));
   };
+  if (counts) definedCounts.set(f, counts);
+  else if (def.eval) definedCounts.set(f, [def.eval.length]);
   Object.defineProperty(f, 'functionName', { value: name });
   Object.defineProperty(f, 'name', { value: name });
   Object.defineProperty(f, 'isApplied', { value: (e: Expr) => e instanceof DefinedFunctionCall && e.name === name && e.definition === def });
@@ -143,4 +147,62 @@ export function defineFunction(name: string, def: FunctionDefinition = {}): Defi
  */
 export function implementedFunction(name: string, impl: (...args: number[]) => number): DefinedFunction {
   return defineFunction(name, { evalf: impl });
+}
+
+/** The argument counts of the functions made by defineFunction (from nargs, else from eval). */
+const definedCounts = new WeakMap<object, readonly number[]>();
+
+/**
+ * The parameters of a JavaScript function from its source: their number
+ * and how many have a default value, or undefined with a rest parameter.
+ */
+function parameters(f: (...args: never[]) => unknown): [number, number] | undefined {
+  const src = Function.prototype.toString.call(f);
+  const open = src.indexOf('(');
+  const arrow = src.indexOf('=>');
+  // a single parameter without parentheses: x => ...
+  if (arrow >= 0 && (open < 0 || arrow < open)) return [1, 0];
+  const params: string[] = [];
+  let depth = 0;
+  let quote = '';
+  let cur = '';
+  for (const ch of src.slice(open + 1)) {
+    if (quote) {
+      if (ch === quote) quote = '';
+    } else if (ch === '"' || ch === "'" || ch === '`') quote = ch;
+    else if ('([{'.includes(ch)) depth++;
+    else if (')]}'.includes(ch)) {
+      if (depth === 0) break;
+      depth--;
+    } else if (ch === ',' && depth === 0) {
+      params.push(cur);
+      cur = '';
+      continue;
+    }
+    cur += ch;
+  }
+  params.push(cur);
+  const ps = params.map((p) => p.trim()).filter((p) => p !== '');
+  if (ps.some((p) => p.startsWith('...'))) return undefined;
+  const withDefault = ps.filter((p) => /^[^=({[]*=(?!>)/.test(p)).length;
+  return [ps.length, withDefault];
+}
+
+/**
+ * SymPy arity(f): the number of arguments f takes, the possible numbers
+ * [n, n + 1, ...] when some have default values, or NoMatch when it takes
+ * any number (a rest parameter; SymPy None). A function of defineFunction
+ * has the counts of its `nargs` (else of its `eval`). TypeScript optional
+ * parameters leave no trace at run time and count as required (symjs `log`
+ * has arity 2, SymPy's (1, 2)).
+ */
+export function arity(f: (...args: never[]) => unknown): number | number[] | NoMatchResult {
+  const counts = definedCounts.get(f);
+  if (counts) return counts.length === 1 ? at(counts, 0) : [...counts].sort((a, b) => a - b);
+  if (Object.prototype.hasOwnProperty.call(f, 'functionName')) return NoMatch;
+  const p = parameters(f);
+  if (p === undefined) return NoMatch;
+  const [n, optional] = p;
+  const required = n - optional;
+  return optional === 0 ? required : Array.from({ length: optional + 1 }, (_, i) => required + i);
 }

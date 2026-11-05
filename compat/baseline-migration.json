@@ -49,5 +49,169 @@
   "build": "passed",
   "packageConsumerChecks": "26 entries; ESM, CJS, bundled, minified, NodeNext and Bundler types",
   "sizeBudgets": "passed"
- }
+ },
+ "followUps": [
+  {
+   "reason": "Serialize receivers and arguments the extractor could not represent (Polyhedron, SymmetricPermutationGroup, TensAdd, TensorElement, general TensorSymmetry) and serialize wild tensors (WildTensorHead, WildTensor, WildTensorIndex) as themselves instead of as plain tensor heads and indices, so that these cases are measured on the objects of the doctest. Every (module, src) is kept; only the digests of the changed records change. This is a correction of measurements, not permission to accept behavior regressions.",
+   "reference": "SymPy 1.14.0",
+   "previousRevision": "77d5b1d3ecfde7bf43ebbc5fda16d86c7d602b72",
+   "previousCorpusSha256": "e13dbefc30e437d77161d9f086d2d006a896706a513cdaab5f53779811c7e24b",
+   "previousCorpusReplay": {
+    "cases": 4284,
+    "pass": 4265,
+    "failures": [],
+    "note": "The previous corpus replayed with the current library and harness: every case that passed still passes; the remaining failures are previous known gaps whose records changed below."
+   },
+   "unchangedRecordsKept": "Records outside the changed modules are kept byte for byte from the previous corpus (a fresh extraction differs only in two nondeterministic sympy.solvers.ode.systems receivers, which were not taken over).",
+   "apiNames": "Unchanged (1464). The three sympy.categories.diagram_drawing names stay in the corpus and are excluded from API presence by OUT_OF_SCOPE_API in compat/compat.test.ts (user decision: deferred like plotting).",
+   "changedRecords": [
+    {
+     "previousKey": "sympy.combinatorics.perm_groups: P.rotate(0) # apply permutation 0 #ff947a040108c220",
+     "currentKey": "sympy.combinatorics.perm_groups: P.rotate(0) # apply permutation 0 #e9d28009ee54742a",
+     "previous": "unsupported argument: Polyhedron",
+     "current": "serialized with Permutation, Polyhedron, Rational, Symbol"
+    },
+    {
+     "previousKey": "sympy.combinatorics.perm_groups: P.reset() #ff947a040108c220",
+     "currentKey": "sympy.combinatorics.perm_groups: P.reset() #e9b8b729f7074d99",
+     "previous": "unsupported argument: Polyhedron",
+     "current": "serialized with Permutation, Polyhedron, Symbol"
+    },
+    {
+     "previousKey": "sympy.combinatorics.perm_groups: G.identity() #8bee65390ebe8a53",
+     "currentKey": "sympy.combinatorics.perm_groups: G.identity() #031e21f01305a3c9",
+     "previous": "unsupported argument: SymmetricPermutationGroup",
+     "current": "serialized with SymmetricPermutationGroup"
+    },
+    {
+     "previousKey": "sympy.combinatorics.perm_groups: G.order() #00b3ab74e65f9d0d",
+     "currentKey": "sympy.combinatorics.perm_groups: G.order() #f79b295b512600e0",
+     "previous": "unsupported argument: SymmetricPermutationGroup",
+     "current": "serialized with SymmetricPermutationGroup"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: expr.replace_with_arrays(repl, [a]) #cd06f0080095fd37",
+     "currentKey": "sympy.tensor.tensor: expr.replace_with_arrays(repl, [a]) #2667df72d0e563f6",
+     "previous": "unsupported argument: TensAdd",
+     "current": "serialized with Dict, Matrix, Rational, Symbol, TensAdd, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, Tuple"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: expr.replace_with_arrays({H(i, j): [[a, b], [c, d]]}) #7d858b75bbe8d70f",
+     "currentKey": "sympy.tensor.tensor: expr.replace_with_arrays({H(i, j): [[a, b], [c, d]]}) #2d92d4f3a7822a3e",
+     "previous": "unsupported argument: TensAdd",
+     "current": "serialized with Dict, Rational, Symbol, TensAdd, TensMul, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, Tuple"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: expr.replace_with_arrays(repl) #7b4314c29bc44f52",
+     "currentKey": "sympy.tensor.tensor: expr.replace_with_arrays(repl) #54f68dda9512d647",
+     "previous": "unsupported argument: TensAdd",
+     "current": "serialized with Dict, Rational, Symbol, TensAdd, TensMul, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, Tuple"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: expr.replace_with_arrays(repl, [j, i]) #69fe8bcca65994e2",
+     "currentKey": "sympy.tensor.tensor: expr.replace_with_arrays(repl, [j, i]) #aceefa5694295a8b",
+     "previous": "unsupported argument: TensAdd",
+     "current": "serialized with Dict, Rational, Symbol, TensAdd, TensMul, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, Tuple"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: te.get_free_indices() #5915f5c6d483c26f",
+     "currentKey": "sympy.tensor.tensor: te.get_free_indices() #0fd8679ee8d3c6f1",
+     "previous": "unsupported argument: TensorElement",
+     "current": "serialized with Dict, Rational, Symbol, Tensor, TensorElement, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: W(p).matches(K(p)) #4a33585896e873c6",
+     "currentKey": "sympy.tensor.tensor: W(p).matches(K(p)) #235e3754d526f0eb",
+     "previous": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry",
+     "current": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, WildTensor, WildTensorHead"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: W(p).matches(K(q)) #eb74ce6fd8ad329c",
+     "currentKey": "sympy.tensor.tensor: W(p).matches(K(q)) #0399c974667eef51",
+     "previous": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry",
+     "current": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, WildTensor, WildTensorHead"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: W(p).matches(K(-p)) #7d8010961a77590b",
+     "currentKey": "sympy.tensor.tensor: W(p).matches(K(-p)) #134e4f9abb1efbd5",
+     "previous": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry",
+     "current": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, WildTensor, WildTensorHead"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: W().matches(K(p)) #1c74190d52d91a3a",
+     "currentKey": "sympy.tensor.tensor: W().matches(K(p)) #a5d088a614419614",
+     "previous": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry",
+     "current": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, WildTensor, WildTensorHead"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: W().matches(Q(p,q)) #1ae0cc1403f30329",
+     "currentKey": "sympy.tensor.tensor: W().matches(Q(p,q)) #d3679297a78e58ae",
+     "previous": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry",
+     "current": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, WildTensor, WildTensorHead"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: W().matches(K(p)) #1c74190d52d91a3a",
+     "currentKey": "sympy.tensor.tensor: W().matches(K(p)) #a5d088a614419614",
+     "previous": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry",
+     "current": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, WildTensor, WildTensorHead"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: W().matches(Q(p,q)) #1ae0cc1403f30329",
+     "currentKey": "sympy.tensor.tensor: W().matches(Q(p,q)) #d3679297a78e58ae",
+     "previous": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry",
+     "current": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, WildTensor, WildTensorHead"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: W(p,q).matches(Q(q,p)) #c22092ced93825aa",
+     "currentKey": "sympy.tensor.tensor: W(p,q).matches(Q(q,p)) #0894a7173196b20e",
+     "previous": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry",
+     "current": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, WildTensor, WildTensorHead"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: U(p,q).matches(Q(q,p)) #592e0b97c819f255",
+     "currentKey": "sympy.tensor.tensor: U(p,q).matches(Q(q,p)) #04880a9fc55c8bc7",
+     "previous": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry",
+     "current": "serialized with Rational, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry, WildTensor, WildTensorHead"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: (q).matches(p) #ebba5e3051da6103",
+     "currentKey": "sympy.tensor.tensor: (q).matches(p) #4e2127ff69199797",
+     "previous": "serialized with Rational, TensorIndex, TensorIndexType",
+     "current": "serialized with Rational, TensorIndex, TensorIndexType, WildTensorIndex"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: (q).matches(-p) #e3ccaade00e0f1d8",
+     "currentKey": "sympy.tensor.tensor: (q).matches(-p) #967b9c5b636d8ac8",
+     "previous": "serialized with Rational, TensorIndex, TensorIndexType",
+     "current": "serialized with Rational, TensorIndex, TensorIndexType, WildTensorIndex"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: (r).matches(-p) #c36018f58d064fc8",
+     "currentKey": "sympy.tensor.tensor: (r).matches(-p) #a8d4f5dcafbe4b4b",
+     "previous": "serialized with Rational, TensorIndex, TensorIndexType",
+     "current": "serialized with Rational, TensorIndex, TensorIndexType, WildTensorIndex"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: (r).matches(p) #578252b4e6276717",
+     "currentKey": "sympy.tensor.tensor: (r).matches(p) #c8a19c46d488cad3",
+     "previous": "serialized with Rational, TensorIndex, TensorIndexType",
+     "current": "serialized with Rational, TensorIndex, TensorIndexType, WildTensorIndex"
+    },
+    {
+     "previousKey": "sympy.tensor.tensor: riemann_cyclic(t) #d71eb72a99ee9752",
+     "currentKey": "sympy.tensor.tensor: riemann_cyclic(t) #c40668b185012e8c",
+     "previous": "unsupported argument: General tensor slot symmetry",
+     "current": "serialized with Permutation, Rational, Symbol, TensAdd, TensMul, Tensor, TensorHead, TensorIndex, TensorIndexType, TensorSymmetry"
+    }
+   ],
+   "currentCorpus": {
+    "cases": 4288,
+    "api": 1464
+   },
+   "knownGaps": {
+    "cases": 0,
+    "api": 0
+   }
+  }
+ ]
 }

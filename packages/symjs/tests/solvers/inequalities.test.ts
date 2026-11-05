@@ -509,3 +509,22 @@ describe('solveset over the reals with a parameter (SymPy _invert_real)', () => 
     expect(R('x**3 - 8')).toBe('{2}');
   });
 });
+
+describe('reduceAbsInequality and reduceAbsInequalities (SymPy)', () => {
+  const E = parse;
+  it('reduceAbsInequality', () => {
+    expect(String(Q.reduceAbsInequality(E('Abs(x - 5) - 3'), '<', x))).toBe('(2 < x) & (x < 8)');
+    expect(String(Q.reduceAbsInequality(E('Abs(x - 5) - 3'), '>=', x))).toBe('((8 <= x) & (x < oo)) | ((-oo < x) & (x <= 2))');
+    expect(String(Q.reduceAbsInequality(E('Abs(Abs(x - 1) - 2) - 1'), '<', x))).toBe('((-2 < x) & (x < 0)) | ((2 < x) & (x < 4))');
+    expect(String(Q.reduceAbsInequality(E('Abs(x)**2 - 4'), '<=', x))).toBe('(-2 <= x) & (x <= 2)');
+    expect(String(Q.reduceAbsInequality(E('Abs(x)*Abs(x - 2) - 1'), '==', x))).toBe('Eq(x, 1) | Eq(x, 1 + sqrt(2)) | Eq(x, 1 - sqrt(2))');
+  });
+  it('reduceAbsInequalities', () => {
+    expect(String(Q.reduceAbsInequalities([[E('Abs(3*x - 5) - 7'), '<'], [E('Abs(x + 25) - 13'), '>']], x))).toBe('(-2/3 < x) & (x < 4) & (((-oo < x) & (x < -38)) | ((-12 < x) & (x < oo)))');
+    expect(String(Q.reduceAbsInequalities([[E('Abs(x - 4) + Abs(3*x - 5) - 7'), '<']], x))).toBe('(1/2 < x) & (x < 4)');
+  });
+  it('rejects other relations and non-integer powers', () => {
+    expect(() => Q.reduceAbsInequality(E('Abs(x)'), '<>', x)).toThrow("Invalid relational operator symbol: '<>'");
+    expect(() => Q.reduceAbsInequality(E('sqrt(Abs(x)) - 1'), '<', x)).toThrow('Only Integer Powers are allowed on Abs.');
+  });
+});

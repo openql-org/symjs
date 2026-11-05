@@ -6,7 +6,7 @@
 // Expected values are the str() forms printed by SymPy 1.14 unless a comment says otherwise.
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Dummy, Float, Heaviside, Sym, add, cancel, fraction, mul, parse, pow, ratsimp, symbol, together } from '../../src';
+import { DiracDelta, Dummy, Float, Heaviside, Rational, Sym, add, cancel, denom, fraction, mul, numer, parse, pow, ratsimp, symbol, together } from '../../src';
 import type { Expr } from '../../src';
 
 const P = (s: string) => parse(s, { locals: { Heaviside, DiracDelta } });
@@ -251,5 +251,13 @@ describe('cancel with many generators (the heuristic GCD)', () => {
       '(2*x**4*y - 6*x**3*y**2 + 4*x**2*y**3 + x**2*y**2*cos(x - y) + 4*x**2*y*sin(x - y) - 2*x*y**3*cos(x - y) - 6*x*y**2*sin(x - y) + y**2*sin(x - y)*cos(x - y) + 2*y*sin(x - y)**2)/(2*x**4 + x**2*y**2*sin(x - y) + 4*x**2*y*cos(x - y) + 4*x**2*sin(x - y) - 2*x*y**3*sin(x - y) + y**2*sin(x - y)**2 + 2*y**2*cos(x - y)**2 + 4*y*sin(x - y)*cos(x - y) + 2*sin(x - y)**2)',
     );
     expect(Date.now() - t).toBeLessThan(1000);
+  });
+});
+
+describe('numer and denom', () => {
+  it('are the parts of fraction (SymPy)', () => {
+    const [x, y] = [symbol('x'), symbol('y')];
+    expect([numer(x.div(y)), denom(x.div(y)), numer(2), denom(Rational.of(3, 4)), numer(x), denom(add(x.pow(-1), y))].map(String)).toEqual(['x', 'y', '2', '4', 'x', '1']);
+    expect(String(denom(P('x*y**(-n)'), { exact: true }))).toBe(String(fraction(P('x*y**(-n)'), { exact: true })[1]));
   });
 });

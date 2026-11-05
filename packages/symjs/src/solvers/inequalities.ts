@@ -1034,3 +1034,48 @@ export function asSet(eIn: ExprLike | boolean): SetExpr {
   };
   return go(e);
 }
+
+const REL_OPS: Readonly<Record<string, RelOp>> = { '<': 'Lt', '<=': 'Le', '>': 'Gt', '>=': 'Ge', '==': 'Eq', '!=': 'Ne' };
+
+/**
+ * SymPy reduce_abs_inequality(expr, rel, gen): the solution of
+ * `expr rel 0` (rel one of '<', '<=', '>', '>=', '==', '!=') where expr
+ * contains absolute values, by cases on the signs of their arguments.
+ */
+export function reduceAbsInequality(exprIn: ExprLike, rel: string, gen: Sym): Expr {
+  const op = REL_OPS[rel];
+  if (op === undefined) throw new RangeError(`Invalid relational operator symbol: '${rel}'`);
+  // (SymPy raises TypeError for a gen whose is_extended_real is False; a symjs symbol cannot be declared so)
+  // SymPy _bottom_up_scan: the expression without absolute values, with the conditions of each case
+  const scan = (e: Expr): [Expr, Expr[]][] => {
+    if (e instanceof Add || e instanceof Mul) {
+      const build = e instanceof Add ? add : mul;
+      return e.args.map(scan).reduce((acc, cur) => acc.flatMap(([a, ca]) => cur.map(([b, cb]): [Expr, Expr[]] => [build(a, b), [...ca, ...cb]])));
+    }
+    if (e instanceof Pow) {
+      const n = e.exp;
+      if (!(n instanceof Rational && n.isInteger)) throw new RangeError('Only Integer Powers are allowed on Abs.');
+      return scan(e.base).map(([b, c]) => [pow(b, n), c]);
+    }
+    if (e instanceof Fn && e.name === 'abs') {
+      return scan(first(e.args)).flatMap(([a, c]): [Expr, Expr[]][] => [[a, [...c, Ge(a, 0)]], [mul(-1, a), [...c, Lt(a, 0)]]]);
+    }
+    return [[e, []]];
+  };
+  // SymPy reduce_rational_inequalities: the union over the cases of the intersections of their conditions
+  let set: SetExpr = EmptySet;
+  for (const [e, conds] of scan(sympify(exprIn))) {
+    let s: SetExpr = solveSign(e, op, gen, Reals);
+    for (const c of conds) {
+      const r = cast(c, Rel);
+      s = intersection(s, solveSign(add(r.lhs, mul(-1, r.rhs)), r.op, gen, Reals));
+    }
+    set = union(set, s);
+  }
+  return asRelational(set, gen);
+}
+
+/** SymPy reduce_abs_inequalities(exprs, gen): the conjunction of reduce_abs_inequality over [expr, rel] pairs. */
+export function reduceAbsInequalities(exprs: readonly (readonly [ExprLike, string])[], gen: Sym): Expr {
+  return and(...exprs.map(([e, rel]) => reduceAbsInequality(e, rel, gen)));
+}

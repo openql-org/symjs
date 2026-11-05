@@ -143,3 +143,11 @@ it('randMatrix with zeros, not symmetric', () => {
   const R = more.randMatrix(3, 3, { seed: 7, percent: 50 });
   expect(R.data.filter((e) => s(e) === '0').length).toBeGreaterThanOrEqual(5);
 });
+
+describe('berkowitz_eigenvals', () => {
+  it('the eigenvalues with their multiplicities', () => {
+    // SymPy: {5/2 - sqrt(33)/2: 1, 5/2 + sqrt(33)/2: 1}
+    expect([...more.berkowitzEigenvals(M([[1, 2], [3, 4]]))].map(([k, v]) => `${s(k)}: ${v}`)).toEqual(['5/2 - sqrt(33)/2: 1', '5/2 + sqrt(33)/2: 1']);
+    expect([...more.berkowitzEigenvals(M([[2, 1], [0, 2]]))].map(([k, v]) => `${s(k)}: ${v}`)).toEqual(['2: 2']);
+  });
+});

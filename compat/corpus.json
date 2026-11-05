@@ -7176,7 +7176,53 @@
   },
   {
    "fn": ".rotate",
-   "unsupportedArg": "Polyhedron",
+   "self": {
+    "t": "Polyhedron",
+    "corners": [
+     {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "B",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "C",
+      "assume": {}
+     }
+    ],
+    "faces": [],
+    "pgroup": [
+     {
+      "t": "Permutation",
+      "array": [
+       0,
+       2,
+       1
+      ]
+     },
+     {
+      "t": "Permutation",
+      "array": [
+       1,
+       0,
+       2
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.perm_groups",
    "src": "P.rotate(0) # apply permutation 0",
@@ -7184,7 +7230,47 @@
   },
   {
    "fn": ".reset",
-   "unsupportedArg": "Polyhedron",
+   "self": {
+    "t": "Polyhedron",
+    "corners": [
+     {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "B",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "C",
+      "assume": {}
+     }
+    ],
+    "faces": [],
+    "pgroup": [
+     {
+      "t": "Permutation",
+      "array": [
+       0,
+       2,
+       1
+      ]
+     },
+     {
+      "t": "Permutation",
+      "array": [
+       1,
+       0,
+       2
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.perm_groups",
    "src": "P.reset()",
@@ -10209,7 +10295,12 @@
   },
   {
    "fn": ".identity",
-   "unsupportedArg": "SymmetricPermutationGroup",
+   "self": {
+    "t": "SymmetricPermutationGroup",
+    "deg": 4
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.perm_groups",
    "src": "G.identity()",
@@ -10217,7 +10308,12 @@
   },
   {
    "fn": ".order",
-   "unsupportedArg": "SymmetricPermutationGroup",
+   "self": {
+    "t": "SymmetricPermutationGroup",
+    "deg": 4
+   },
+   "args": [],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.perm_groups",
    "src": "G.order()",
@@ -10282,7 +10378,369 @@
   },
   {
    "fn": ".replace_with_arrays",
-   "unsupportedArg": "TensAdd",
+   "self": {
+    "t": "TensAdd",
+    "args": [
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "p",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "Lorentz",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "a",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "Lorentz",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     },
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "q",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "Lorentz",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "a",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "Lorentz",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "TensorIndexType",
+        "name": "Lorentz",
+        "dim": {
+         "t": "Symbol",
+         "name": "dim_L",
+         "assume": {}
+        },
+        "dummyName": "L"
+       },
+       {
+        "t": "Matrix",
+        "rows": [
+         [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ],
+         [
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ],
+         [
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ],
+         [
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          }
+         ]
+        ],
+        "shape": [
+         4,
+         4
+        ]
+       }
+      ],
+      [
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "p",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "Lorentz",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 1,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "a",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "Lorentz",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         }
+        ],
+        "list": true
+       }
+      ],
+      [
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "q",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "Lorentz",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 1,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "a",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "Lorentz",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "z",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "t",
+          "assume": {}
+         }
+        ],
+        "list": true
+       }
+      ]
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "TensorIndex",
+       "name": "a",
+       "type": {
+        "t": "TensorIndexType",
+        "name": "Lorentz",
+        "dim": {
+         "t": "Symbol",
+         "name": "dim_L",
+         "assume": {}
+        },
+        "dummyName": "L"
+       },
+       "up": true
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.tensor",
    "src": "expr.replace_with_arrays(repl, [a])",
@@ -10908,7 +11366,277 @@
   },
   {
    "fn": ".replace_with_arrays",
-   "unsupportedArg": "TensAdd",
+   "self": {
+    "t": "TensAdd",
+    "args": [
+     {
+      "t": "TensMul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "2"
+       },
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "H",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 2,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         },
+         {
+          "t": "TensorIndex",
+          "name": "j",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "TensMul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "2"
+       },
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "H",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 2,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "j",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         },
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "H",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 2,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         },
+         {
+          "t": "TensorIndex",
+          "name": "j",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Tuple",
+          "items": [
+           {
+            "t": "Symbol",
+            "name": "a",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "b",
+            "assume": {}
+           }
+          ],
+          "list": true
+         },
+         {
+          "t": "Tuple",
+          "items": [
+           {
+            "t": "Symbol",
+            "name": "c",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "d",
+            "assume": {}
+           }
+          ],
+          "list": true
+         }
+        ],
+        "list": true
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.tensor",
    "src": "expr.replace_with_arrays({H(i, j): [[a, b], [c, d]]})",
@@ -10916,7 +11644,277 @@
   },
   {
    "fn": ".replace_with_arrays",
-   "unsupportedArg": "TensAdd",
+   "self": {
+    "t": "TensAdd",
+    "args": [
+     {
+      "t": "TensMul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "2"
+       },
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "H",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 2,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "j",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         },
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "TensMul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "2"
+       },
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "H",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 2,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         },
+         {
+          "t": "TensorIndex",
+          "name": "j",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "H",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 2,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         },
+         {
+          "t": "TensorIndex",
+          "name": "j",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Tuple",
+          "items": [
+           {
+            "t": "Symbol",
+            "name": "a",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "b",
+            "assume": {}
+           }
+          ],
+          "list": true
+         },
+         {
+          "t": "Tuple",
+          "items": [
+           {
+            "t": "Symbol",
+            "name": "c",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "d",
+            "assume": {}
+           }
+          ],
+          "list": true
+         }
+        ],
+        "list": true
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.tensor",
    "src": "expr.replace_with_arrays(repl)",
@@ -10924,7 +11922,313 @@
   },
   {
    "fn": ".replace_with_arrays",
-   "unsupportedArg": "TensAdd",
+   "self": {
+    "t": "TensAdd",
+    "args": [
+     {
+      "t": "TensMul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "2"
+       },
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "H",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 2,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "j",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         },
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "TensMul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "2"
+       },
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "H",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 2,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         },
+         {
+          "t": "TensorIndex",
+          "name": "j",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "H",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 2,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         },
+         {
+          "t": "TensorIndex",
+          "name": "j",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Tuple",
+          "items": [
+           {
+            "t": "Symbol",
+            "name": "a",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "b",
+            "assume": {}
+           }
+          ],
+          "list": true
+         },
+         {
+          "t": "Tuple",
+          "items": [
+           {
+            "t": "Symbol",
+            "name": "c",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "d",
+            "assume": {}
+           }
+          ],
+          "list": true
+         }
+        ],
+        "list": true
+       }
+      ]
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "TensorIndex",
+       "name": "j",
+       "type": {
+        "t": "TensorIndexType",
+        "name": "L",
+        "dim": {
+         "t": "Symbol",
+         "name": "dim_L",
+         "assume": {}
+        },
+        "dummyName": "L"
+       },
+       "up": true
+      },
+      {
+       "t": "TensorIndex",
+       "name": "i",
+       "type": {
+        "t": "TensorIndexType",
+        "name": "L",
+        "dim": {
+         "t": "Symbol",
+         "name": "dim_L",
+         "assume": {}
+        },
+        "dummyName": "L"
+       },
+       "up": true
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.tensor",
    "src": "expr.replace_with_arrays(repl, [j, i])",
@@ -12470,7 +13774,104 @@
   },
   {
    "fn": ".get_free_indices",
-   "unsupportedArg": "TensorElement",
+   "self": {
+    "t": "TensorElement",
+    "expr": {
+     "t": "Tensor",
+     "head": {
+      "t": "TensorHead",
+      "name": "A",
+      "types": [
+       {
+        "t": "TensorIndexType",
+        "name": "L",
+        "dim": {
+         "t": "Symbol",
+         "name": "dim_L",
+         "assume": {}
+        },
+        "dummyName": "L"
+       },
+       {
+        "t": "TensorIndexType",
+        "name": "L",
+        "dim": {
+         "t": "Symbol",
+         "name": "dim_L",
+         "assume": {}
+        },
+        "dummyName": "L"
+       }
+      ],
+      "symmetry": {
+       "t": "TensorSymmetry",
+       "rank": 2,
+       "sign": 1
+      }
+     },
+     "indices": [
+      {
+       "t": "TensorIndex",
+       "name": "i",
+       "type": {
+        "t": "TensorIndexType",
+        "name": "L",
+        "dim": {
+         "t": "Symbol",
+         "name": "dim_L",
+         "assume": {}
+        },
+        "dummyName": "L"
+       },
+       "up": true
+      },
+      {
+       "t": "TensorIndex",
+       "name": "j",
+       "type": {
+        "t": "TensorIndexType",
+        "name": "L",
+        "dim": {
+         "t": "Symbol",
+         "name": "dim_L",
+         "assume": {}
+        },
+        "dummyName": "L"
+       },
+       "up": true
+      }
+     ]
+    },
+    "indexMap": {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "TensorIndex",
+        "name": "i",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     ]
+    }
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.tensor",
    "src": "te.get_free_indices()",
@@ -17002,9 +18403,9 @@
   {
    "fn": ".matches",
    "self": {
-    "t": "Tensor",
+    "t": "WildTensor",
     "head": {
-     "t": "TensorHead",
+     "t": "WildTensorHead",
      "name": "W",
      "types": [
       {
@@ -17018,11 +18419,7 @@
        "dummyName": "R"
       }
      ],
-     "symmetry": {
-      "t": "TensorSymmetry",
-      "rank": 1,
-      "sign": 0
-     }
+     "unordered": false
     },
     "indices": [
      {
@@ -17094,9 +18491,9 @@
   {
    "fn": ".matches",
    "self": {
-    "t": "Tensor",
+    "t": "WildTensor",
     "head": {
-     "t": "TensorHead",
+     "t": "WildTensorHead",
      "name": "W",
      "types": [
       {
@@ -17110,11 +18507,7 @@
        "dummyName": "R"
       }
      ],
-     "symmetry": {
-      "t": "TensorSymmetry",
-      "rank": 1,
-      "sign": 0
-     }
+     "unordered": false
     },
     "indices": [
      {
@@ -17186,9 +18579,9 @@
   {
    "fn": ".matches",
    "self": {
-    "t": "Tensor",
+    "t": "WildTensor",
     "head": {
-     "t": "TensorHead",
+     "t": "WildTensorHead",
      "name": "W",
      "types": [
       {
@@ -17202,11 +18595,7 @@
        "dummyName": "R"
       }
      ],
-     "symmetry": {
-      "t": "TensorSymmetry",
-      "rank": 1,
-      "sign": 0
-     }
+     "unordered": false
     },
     "indices": [
      {
@@ -17278,16 +18667,12 @@
   {
    "fn": ".matches",
    "self": {
-    "t": "Tensor",
+    "t": "WildTensor",
     "head": {
-     "t": "TensorHead",
+     "t": "WildTensorHead",
      "name": "W",
      "types": [],
-     "symmetry": {
-      "t": "TensorSymmetry",
-      "rank": 0,
-      "sign": 0
-     }
+     "unordered": false
     },
     "indices": []
    },
@@ -17343,16 +18728,12 @@
   {
    "fn": ".matches",
    "self": {
-    "t": "Tensor",
+    "t": "WildTensor",
     "head": {
-     "t": "TensorHead",
+     "t": "WildTensorHead",
      "name": "W",
      "types": [],
-     "symmetry": {
-      "t": "TensorSymmetry",
-      "rank": 0,
-      "sign": 0
-     }
+     "unordered": false
     },
     "indices": []
    },
@@ -17433,16 +18814,12 @@
   {
    "fn": ".matches",
    "self": {
-    "t": "Tensor",
+    "t": "WildTensor",
     "head": {
-     "t": "TensorHead",
+     "t": "WildTensorHead",
      "name": "W",
      "types": [],
-     "symmetry": {
-      "t": "TensorSymmetry",
-      "rank": 0,
-      "sign": 0
-     }
+     "unordered": false
     },
     "indices": []
    },
@@ -17498,16 +18875,12 @@
   {
    "fn": ".matches",
    "self": {
-    "t": "Tensor",
+    "t": "WildTensor",
     "head": {
-     "t": "TensorHead",
+     "t": "WildTensorHead",
      "name": "W",
      "types": [],
-     "symmetry": {
-      "t": "TensorSymmetry",
-      "rank": 0,
-      "sign": 0
-     }
+     "unordered": false
     },
     "indices": []
    },
@@ -17588,9 +18961,9 @@
   {
    "fn": ".matches",
    "self": {
-    "t": "Tensor",
+    "t": "WildTensor",
     "head": {
-     "t": "TensorHead",
+     "t": "WildTensorHead",
      "name": "W",
      "types": [
       {
@@ -17614,11 +18987,7 @@
        "dummyName": "R"
       }
      ],
-     "symmetry": {
-      "t": "TensorSymmetry",
-      "rank": 2,
-      "sign": 0
-     }
+     "unordered": false
     },
     "indices": [
      {
@@ -17730,9 +19099,9 @@
   {
    "fn": ".matches",
    "self": {
-    "t": "Tensor",
+    "t": "WildTensor",
     "head": {
-     "t": "TensorHead",
+     "t": "WildTensorHead",
      "name": "U",
      "types": [
       {
@@ -17756,11 +19125,7 @@
        "dummyName": "R"
       }
      ],
-     "symmetry": {
-      "t": "TensorSymmetry",
-      "rank": 2,
-      "sign": 0
-     }
+     "unordered": true
     },
     "indices": [
      {
@@ -17872,7 +19237,7 @@
   {
    "fn": ".matches",
    "self": {
-    "t": "TensorIndex",
+    "t": "WildTensorIndex",
     "name": "q",
     "type": {
      "t": "TensorIndexType",
@@ -17884,7 +19249,8 @@
      },
      "dummyName": "R"
     },
-    "up": true
+    "up": true,
+    "ignoreUpdown": false
    },
    "args": [
     {
@@ -17912,7 +19278,7 @@
   {
    "fn": ".matches",
    "self": {
-    "t": "TensorIndex",
+    "t": "WildTensorIndex",
     "name": "q",
     "type": {
      "t": "TensorIndexType",
@@ -17924,7 +19290,8 @@
      },
      "dummyName": "R"
     },
-    "up": true
+    "up": true,
+    "ignoreUpdown": false
    },
    "args": [
     {
@@ -17952,7 +19319,7 @@
   {
    "fn": ".matches",
    "self": {
-    "t": "TensorIndex",
+    "t": "WildTensorIndex",
     "name": "r",
     "type": {
      "t": "TensorIndexType",
@@ -17964,7 +19331,8 @@
      },
      "dummyName": "R"
     },
-    "up": true
+    "up": true,
+    "ignoreUpdown": true
    },
    "args": [
     {
@@ -17992,7 +19360,7 @@
   {
    "fn": ".matches",
    "self": {
-    "t": "TensorIndex",
+    "t": "WildTensorIndex",
     "name": "r",
     "type": {
      "t": "TensorIndexType",
@@ -18004,7 +19372,8 @@
      },
      "dummyName": "R"
     },
-    "up": true
+    "up": true,
+    "ignoreUpdown": true
    },
    "args": [
     {
@@ -18063,7 +19432,488 @@
   },
   {
    "fn": "riemann_cyclic",
-   "unsupportedArg": "General tensor slot symmetry",
+   "args": [
+    {
+     "t": "TensMul",
+     "args": [
+      {
+       "t": "Tensor",
+       "head": {
+        "t": "TensorHead",
+        "name": "R",
+        "types": [
+         {
+          "t": "TensorIndexType",
+          "name": "Lorentz",
+          "dim": {
+           "t": "Symbol",
+           "name": "dim_L",
+           "assume": {}
+          },
+          "dummyName": "L"
+         },
+         {
+          "t": "TensorIndexType",
+          "name": "Lorentz",
+          "dim": {
+           "t": "Symbol",
+           "name": "dim_L",
+           "assume": {}
+          },
+          "dummyName": "L"
+         },
+         {
+          "t": "TensorIndexType",
+          "name": "Lorentz",
+          "dim": {
+           "t": "Symbol",
+           "name": "dim_L",
+           "assume": {}
+          },
+          "dummyName": "L"
+         },
+         {
+          "t": "TensorIndexType",
+          "name": "Lorentz",
+          "dim": {
+           "t": "Symbol",
+           "name": "dim_L",
+           "assume": {}
+          },
+          "dummyName": "L"
+         }
+        ],
+        "symmetry": {
+         "t": "TensorSymmetry",
+         "base": [
+          0,
+          2
+         ],
+         "generators": [
+          {
+           "t": "Permutation",
+           "array": [
+            1,
+            0,
+            2,
+            3,
+            5,
+            4
+           ]
+          },
+          {
+           "t": "Permutation",
+           "array": [
+            0,
+            1,
+            3,
+            2,
+            5,
+            4
+           ]
+          },
+          {
+           "t": "Permutation",
+           "array": [
+            2,
+            3,
+            0,
+            1,
+            4,
+            5
+           ]
+          }
+         ]
+        }
+       },
+       "indices": [
+        {
+         "t": "TensorIndex",
+         "name": "L_0",
+         "type": {
+          "t": "TensorIndexType",
+          "name": "Lorentz",
+          "dim": {
+           "t": "Symbol",
+           "name": "dim_L",
+           "assume": {}
+          },
+          "dummyName": "L"
+         },
+         "up": true
+        },
+        {
+         "t": "TensorIndex",
+         "name": "L_1",
+         "type": {
+          "t": "TensorIndexType",
+          "name": "Lorentz",
+          "dim": {
+           "t": "Symbol",
+           "name": "dim_L",
+           "assume": {}
+          },
+          "dummyName": "L"
+         },
+         "up": true
+        },
+        {
+         "t": "TensorIndex",
+         "name": "L_2",
+         "type": {
+          "t": "TensorIndexType",
+          "name": "Lorentz",
+          "dim": {
+           "t": "Symbol",
+           "name": "dim_L",
+           "assume": {}
+          },
+          "dummyName": "L"
+         },
+         "up": true
+        },
+        {
+         "t": "TensorIndex",
+         "name": "L_3",
+         "type": {
+          "t": "TensorIndexType",
+          "name": "Lorentz",
+          "dim": {
+           "t": "Symbol",
+           "name": "dim_L",
+           "assume": {}
+          },
+          "dummyName": "L"
+         },
+         "up": true
+        }
+       ]
+      },
+      {
+       "t": "TensAdd",
+       "args": [
+        {
+         "t": "TensMul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-2",
+           "q": "1"
+          },
+          {
+           "t": "Tensor",
+           "head": {
+            "t": "TensorHead",
+            "name": "R",
+            "types": [
+             {
+              "t": "TensorIndexType",
+              "name": "Lorentz",
+              "dim": {
+               "t": "Symbol",
+               "name": "dim_L",
+               "assume": {}
+              },
+              "dummyName": "L"
+             },
+             {
+              "t": "TensorIndexType",
+              "name": "Lorentz",
+              "dim": {
+               "t": "Symbol",
+               "name": "dim_L",
+               "assume": {}
+              },
+              "dummyName": "L"
+             },
+             {
+              "t": "TensorIndexType",
+              "name": "Lorentz",
+              "dim": {
+               "t": "Symbol",
+               "name": "dim_L",
+               "assume": {}
+              },
+              "dummyName": "L"
+             },
+             {
+              "t": "TensorIndexType",
+              "name": "Lorentz",
+              "dim": {
+               "t": "Symbol",
+               "name": "dim_L",
+               "assume": {}
+              },
+              "dummyName": "L"
+             }
+            ],
+            "symmetry": {
+             "t": "TensorSymmetry",
+             "base": [
+              0,
+              2
+             ],
+             "generators": [
+              {
+               "t": "Permutation",
+               "array": [
+                1,
+                0,
+                2,
+                3,
+                5,
+                4
+               ]
+              },
+              {
+               "t": "Permutation",
+               "array": [
+                0,
+                1,
+                3,
+                2,
+                5,
+                4
+               ]
+              },
+              {
+               "t": "Permutation",
+               "array": [
+                2,
+                3,
+                0,
+                1,
+                4,
+                5
+               ]
+              }
+             ]
+            }
+           },
+           "indices": [
+            {
+             "t": "TensorIndex",
+             "name": "L_0",
+             "type": {
+              "t": "TensorIndexType",
+              "name": "Lorentz",
+              "dim": {
+               "t": "Symbol",
+               "name": "dim_L",
+               "assume": {}
+              },
+              "dummyName": "L"
+             },
+             "up": false
+            },
+            {
+             "t": "TensorIndex",
+             "name": "L_2",
+             "type": {
+              "t": "TensorIndexType",
+              "name": "Lorentz",
+              "dim": {
+               "t": "Symbol",
+               "name": "dim_L",
+               "assume": {}
+              },
+              "dummyName": "L"
+             },
+             "up": false
+            },
+            {
+             "t": "TensorIndex",
+             "name": "L_1",
+             "type": {
+              "t": "TensorIndexType",
+              "name": "Lorentz",
+              "dim": {
+               "t": "Symbol",
+               "name": "dim_L",
+               "assume": {}
+              },
+              "dummyName": "L"
+             },
+             "up": false
+            },
+            {
+             "t": "TensorIndex",
+             "name": "L_3",
+             "type": {
+              "t": "TensorIndexType",
+              "name": "Lorentz",
+              "dim": {
+               "t": "Symbol",
+               "name": "dim_L",
+               "assume": {}
+              },
+              "dummyName": "L"
+             },
+             "up": false
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Tensor",
+         "head": {
+          "t": "TensorHead",
+          "name": "R",
+          "types": [
+           {
+            "t": "TensorIndexType",
+            "name": "Lorentz",
+            "dim": {
+             "t": "Symbol",
+             "name": "dim_L",
+             "assume": {}
+            },
+            "dummyName": "L"
+           },
+           {
+            "t": "TensorIndexType",
+            "name": "Lorentz",
+            "dim": {
+             "t": "Symbol",
+             "name": "dim_L",
+             "assume": {}
+            },
+            "dummyName": "L"
+           },
+           {
+            "t": "TensorIndexType",
+            "name": "Lorentz",
+            "dim": {
+             "t": "Symbol",
+             "name": "dim_L",
+             "assume": {}
+            },
+            "dummyName": "L"
+           },
+           {
+            "t": "TensorIndexType",
+            "name": "Lorentz",
+            "dim": {
+             "t": "Symbol",
+             "name": "dim_L",
+             "assume": {}
+            },
+            "dummyName": "L"
+           }
+          ],
+          "symmetry": {
+           "t": "TensorSymmetry",
+           "base": [
+            0,
+            2
+           ],
+           "generators": [
+            {
+             "t": "Permutation",
+             "array": [
+              1,
+              0,
+              2,
+              3,
+              5,
+              4
+             ]
+            },
+            {
+             "t": "Permutation",
+             "array": [
+              0,
+              1,
+              3,
+              2,
+              5,
+              4
+             ]
+            },
+            {
+             "t": "Permutation",
+             "array": [
+              2,
+              3,
+              0,
+              1,
+              4,
+              5
+             ]
+            }
+           ]
+          }
+         },
+         "indices": [
+          {
+           "t": "TensorIndex",
+           "name": "L_0",
+           "type": {
+            "t": "TensorIndexType",
+            "name": "Lorentz",
+            "dim": {
+             "t": "Symbol",
+             "name": "dim_L",
+             "assume": {}
+            },
+            "dummyName": "L"
+           },
+           "up": false
+          },
+          {
+           "t": "TensorIndex",
+           "name": "L_1",
+           "type": {
+            "t": "TensorIndexType",
+            "name": "Lorentz",
+            "dim": {
+             "t": "Symbol",
+             "name": "dim_L",
+             "assume": {}
+            },
+            "dummyName": "L"
+           },
+           "up": false
+          },
+          {
+           "t": "TensorIndex",
+           "name": "L_2",
+           "type": {
+            "t": "TensorIndexType",
+            "name": "Lorentz",
+            "dim": {
+             "t": "Symbol",
+             "name": "dim_L",
+             "assume": {}
+            },
+            "dummyName": "L"
+           },
+           "up": false
+          },
+          {
+           "t": "TensorIndex",
+           "name": "L_3",
+           "type": {
+            "t": "TensorIndexType",
+            "name": "Lorentz",
+            "dim": {
+             "t": "Symbol",
+             "name": "dim_L",
+             "assume": {}
+            },
+            "dummyName": "L"
+           },
+           "up": false
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.tensor",
    "src": "riemann_cyclic(t)",

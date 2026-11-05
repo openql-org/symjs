@@ -6,7 +6,7 @@
  * (SymPy polys.polyfuncs.symmetrize).
  */
 
-import { at, first } from '../core/guard';
+import { at, defined, first } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
 import { Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
@@ -93,4 +93,29 @@ export function rationalInterpolate(data: readonly (readonly [ExprLike, ExprLike
   const num = add(...Array.from({ length: degnum + 1 }, (_, i) => mul(r.get(i, 0), pow(X, i))));
   const den = add(...Array.from({ length: k + 1 }, (_, i) => mul(r.get(i + degnum + 1, 0), pow(X, i))));
   return mul(num, pow(den, -1));
+}
+
+/**
+ * SymPy viete(f, roots=None, *gens): Viete's formulas for the roots of the
+ * univariate polynomial f, as [elementary symmetric polynomial of the roots,
+ * its value] pairs. Without roots the symbols r1, r2, ... are used.
+ */
+export function viete(fIn: Poly | ExprLike, roots?: readonly Expr[], ...gens: Expr[]): [Expr, Expr][] {
+  const f = fIn instanceof Poly ? fIn : Poly.from(sympify(fIn), gens.length ? gens : undefined);
+  if (f.gens.length > 1) throw new RangeError("multivariate polynomials are not allowed");
+  const n = f.degree();
+  if (n < 1) throw new RangeError("Cannot derive Viete's formulas for a constant polynomial");
+  const rs = roots ?? Array.from({ length: n }, (_, i) => new Sym(`r${i + 1}`));
+  if (rs.length !== n) throw new RangeError(`required ${n} roots, got ${rs.length}`);
+  const [lc, ...coeffs] = f.allCoeffs();
+  return coeffs.map((c, i): [Expr, Expr] => {
+    const sigma = add(...combinations(rs, i + 1).map((ps) => mul(...ps)));
+    return [sigma, mul(i % 2 === 0 ? -1 : 1, c, pow(defined(lc, 'leading coefficient'), -1))];
+  });
+}
+
+/** The k-element combinations of xs in lexicographic order. */
+function combinations<T>(xs: readonly T[], k: number): T[][] {
+  if (k === 0) return [[]];
+  return xs.flatMap((x, i) => combinations(xs.slice(i + 1), k - 1).map((c) => [x, ...c]));
 }

@@ -8,7 +8,7 @@
  */
 
 import type { ExprLike } from './nodes';
-import { Add, Constant, Dummy, Derivative, Expr, ExtensionExpr, Float, Fn, Integral, Mul, Pow, Rational, S, Special, Sym, UndefFn, Wild, WildFunction, impl } from './nodes';
+import { Add, Constant, Dummy, Derivative, Expr, ExtensionExpr, Float, Fn, Integral, isAddLike, isMulLike, Mul, Pow, Rational, S, Special, Sym, UndefFn, Wild, WildFunction, impl } from './nodes';
 import { Concrete } from './concrete';
 import { add, mul, pow, splitCoeff, sympify } from './ops';
 import { rebuild, xreplace } from './traverse';
@@ -146,7 +146,7 @@ const newRaw = (isAdd: boolean, xs: Expr[]): Expr =>
 
 function coeffIsNeg(e: Expr): boolean {
   if (e instanceof Rational || e instanceof Float) return e.isNegative;
-  if (e instanceof Mul) {
+  if (isMulLike(e)) {
     const c = first(e.args);
     return (c instanceof Rational || c instanceof Float) && c.isNegative;
   }
@@ -487,10 +487,13 @@ export function countOpsMap(exprIn: ExprLike): Map<string, number> {
       }
       continue;
     }
-    if (a instanceof Mul) {
+    // SymPy a.is_Mul or a.is_MatMul, a.is_Add or a.is_MatAdd
+    if (isMulLike(a)) {
       if (coeffIsNeg(a)) {
         bump('NEG');
-        a = a.args[0] instanceof Rational && a.args[0].p === -1n && a.args[0].q === 1n ? newRaw(false, a.args.slice(1)) : mul(-1, a);
+        const rest = a.args.slice(1);
+        const negOne = a.args[0] instanceof Rational && a.args[0].p === -1n && a.args[0].q === 1n;
+        a = !negOne ? mul(-1, a) : a instanceof ExtensionExpr ? (rest.length === 1 ? first(rest) : a.withArgs(rest)) : newRaw(false, rest);
       }
       const [n, dd] = defined(impl.fraction?.(a), 'fraction');
       // a negative numerator was made positive above (the coefficient of a product carries the sign)
@@ -504,7 +507,7 @@ export function countOpsMap(exprIn: ExprLike): Map<string, number> {
         args.push(n);
         continue;
       }
-    } else if (a instanceof Add) {
+    } else if (isAddLike(a)) {
       let negs = 0;
       a.args.forEach((ai, i) => {
         if (coeffIsNeg(ai)) {
@@ -538,7 +541,7 @@ export function countOpsMap(exprIn: ExprLike): Map<string, number> {
       continue;
     }
     // SymPy counts a Mul or a LatticeOp (Max, Min) once per argument after the first
-    if (a instanceof Mul) bump('MUL', a.args.length - 1);
+    if (isMulLike(a)) bump(a instanceof ExtensionExpr ? a.name.toUpperCase() : 'MUL', a.args.length - 1);
     else if (a instanceof Fn && (a.name === 'Max' || a.name === 'Min')) bump(a.name.toUpperCase(), a.args.length - 1);
     // and a Pow, a function, a Derivative, an Integral or a Sum (not a Product) once
     else if (a.args.length && (a instanceof Pow || a instanceof Fn || a instanceof UndefFn || a instanceof Derivative || a instanceof Integral || (a instanceof Concrete && a.kind2 === 'Sum'))) {

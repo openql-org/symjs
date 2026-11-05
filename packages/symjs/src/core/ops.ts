@@ -21,7 +21,10 @@ import {
   ExtensionExpr,
   Float,
   Fn,
+  isAddLike,
+  isMulLike,
   Mul,
+  registerFromiter,
   Pow,
   Rational,
   Rel,
@@ -610,11 +613,17 @@ export function mul(...xs: ExprLike[]): Expr {
     else factors.push(r);
   };
 
+  // SymPy _gather rebuilds each exponent as the product c*t of its as_coeff_Mul parts, which
+  // distributes a number over a sum left unevaluated by factor_terms (_keep_coeff):
+  // z*exp(-2*(3*x + 4*y)/25) -> z*exp(-6*x/25 - 8*y/25). A Mul of one factor is that factor.
+  const several = args.filter((a) => !(a instanceof Rational && a.isOne)).length > 1;
   for (const { base, terms } of general.values()) {
     for (const { term, coeffs, orig } of terms.values()) {
       if (coeffs.length === 1) {
-        // a single occurrence is already canonical
-        factors.push(orig);
+        const c = at(coeffs, 0);
+        // otherwise a single occurrence is already canonical
+        if (several && term instanceof Add && c instanceof Rational && !c.isOne) absorb(pow(base, mul(c, term)));
+        else factors.push(orig);
         continue;
       }
       const c = coeffs.reduce((acc, k) => numAdd(acc, k));
@@ -1145,11 +1154,11 @@ export function rational(p: bigint | number, q: bigint | number = 1): Rational {
  */
 export function couldExtractMinusSign(e: Expr): boolean {
   if (isNum(e)) return e.isNegative;
-  if (e instanceof Mul) {
+  if (isMulLike(e)) {
     const c = at(e.args, 0);
     return isNum(c) && c.isNegative;
   }
-  if (e instanceof Add) {
+  if (isAddLike(e)) {
     let negCount = 0;
     let posCount = 0;
     for (const t of e.args) {
@@ -1165,6 +1174,9 @@ export function couldExtractMinusSign(e: Expr): boolean {
 }
 
 impl.sympify = sympify;
+registerFromiter(Add, (args) => add(...args));
+registerFromiter(Mul, (args) => mul(...args));
+registerFromiter(Pow, (args) => pow(at(args, 0), at(args, 1)));
 impl.add = add;
 impl.mul = mul;
 impl.pow = pow;

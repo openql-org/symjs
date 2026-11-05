@@ -190,6 +190,18 @@ export class GroebnerBasis {
     return [qs.map((q) => toExpr(q, this.gens)), toExpr(r, this.gens)];
   }
   /**
+   * SymPy is_zero_dimensional: does the ideal have finitely many zeros (every
+   * generator has a pure power among the leading monomials of the basis)?
+   */
+  get isZeroDimensional(): boolean {
+    const exponents = this.gens.map(() => 0);
+    for (const e of this.exprs) {
+      const lm = [...fromExpr(e, this.gens).values()].map(([m]) => m).reduce((a, b) => (cmpMonom(a, b, this.order) >= 0 ? a : b));
+      if (lm.filter((k) => k !== 0).length === 1) lm.forEach((k, i) => (exponents[i] = at(exponents, i) + k));
+    }
+    return exponents.every((k) => k !== 0);
+  }
+  /**
    * SymPy str: each polynomial printed with its terms in the monomial order
    * of the basis, over the generators in their default (sorted) order.
    */
@@ -310,4 +322,9 @@ export function leadingMonomial(f: ExprLike, gens: readonly Sym[], order: Monomi
   const l = leadOrUndefined(fromExpr(sympify(f), gens), order);
   if (!l) throw new PolynomialError('leading monomial of zero');
   return l[0];
+}
+
+/** SymPy is_zero_dimensional(F, *gens): does the system F have finitely many solutions? */
+export function isZeroDimensional(F: readonly ExprLike[], gens: readonly Sym[], order: MonomialOrder = 'lex'): boolean {
+  return groebner(F, gens, order).isZeroDimensional;
 }

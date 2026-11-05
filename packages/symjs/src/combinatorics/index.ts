@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 
 /**
- * @file SymPy sympy.combinatorics: permutations (Permutation, Cycle), partitions, Prufer sequences, subsets and Gray codes.
+ * @file SymPy sympy.combinatorics: permutations (Permutation, Cycle), permutation groups (PermutationGroup, named groups, cosets), partitions, Prufer sequences, subsets and Gray codes.
  */
 
 export {
@@ -28,5 +28,8 @@ export type { IntegerPartitionInput, PartitionBlock, PartitionElement } from './
 export { Prufer } from './prufer';
 export type { PruferEdge } from './prufer';
 export { Subset, ksubsets } from './subsets';
-export { PermutationGroup } from './permgroups';
-export { SymmetricGroup, AlternatingGroup, CyclicGroup, DihedralGroup } from './namedgroups';
+export { Coset, PermutationGroup, SymmetricPermutationGroup } from './permgroups';
+export type { OrbitAction, PermutationGroupOptions } from './permgroups';
+export { AbelianGroup, AlternatingGroup, CyclicGroup, DihedralGroup, RubikGroup, SymmetricGroup } from './namedgroups';
+export { DirectProduct } from './groupconstructs';
+export { Polyhedron } from './polyhedron';

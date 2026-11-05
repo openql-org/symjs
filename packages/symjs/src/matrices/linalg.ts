@@ -13,7 +13,7 @@ import { UPoly } from '../polys/poly';
 import { isNegative, isPositive, isReal, isZero } from '../core/assumptions';
 import { toTruth } from '../core/truth';
 import type { Truth } from '../core/truth';
-import { MatrixError, NonInvertibleMatrixError, NonPositiveDefiniteMatrixError, NonSquareMatrixError, NotLoadedError } from '../core/errors';
+import { MatrixError, NonInvertibleMatrixError, NonPositiveDefiniteMatrixError, NonSquareMatrixError, NotImplementedError, NotLoadedError, ShapeError } from '../core/errors';
 import type { ExprLike } from '../core/nodes';
 import { Dummy, Expr, Float, Rational, S, Special, Sym, impl } from '../core/nodes';
 import { nsimplify } from '../numeric/nfloat';
@@ -58,6 +58,7 @@ const rowsOf = (m: Matrix): Rows => m.toArray();
 const ent = (A: readonly (readonly Expr[])[], i: number, j: number): Expr => at(at(A, i), j);
 /** The zero test used for structural (exact zero) checks. */
 const isExactZero = (e: Expr): boolean => e instanceof Rational && e.isZero;
+const range = (a: number, b: number): number[] => Array.from({ length: Math.max(0, b - a) }, (_, i) => a + i);
 const fromRows = (r: Rows, cols: number): Matrix => (r.length === 0 ? Matrix.zeros(0, cols) : Matrix.of(r));
 
 // ---------------------------------------------------------------------------
@@ -564,7 +565,15 @@ export function luDecomposition(m: Matrix): [Matrix, Matrix, [number, number][]]
   for (let pr = 0; pr < n - 1 && pc < m.cols; pr++, pc++) {
     let p = -1;
     while (pc < m.cols) {
-      for (let i = pr; i < n && p < 0; i++) if (!isZeroE(ent(lu, i, pc))) p = i;
+      // SymPy _find_reasonable_pivot_naive: the first entry known to be nonzero, else the first undecided one
+      let undecided = -1;
+      for (let i = pr; i < n && p < 0; i++) {
+        const v = ent(lu, i, pc);
+        if (isZeroE(v)) continue;
+        if (isZero(v) === false) p = i;
+        else if (undecided < 0) undecided = i;
+      }
+      if (p < 0) p = undecided;
       if (p >= 0) break;
       pc++;
     }
@@ -730,84 +739,30 @@ export function jacobian(X: Matrix, Y: Matrix | readonly Expr[]): Matrix {
 // structural helpers
 // ---------------------------------------------------------------------------
 
-export const upperTriangular = (m: Matrix, k = 0): Matrix => m.map((e, i, j) => (j - i >= k ? e : 0));
-export const lowerTriangular = (m: Matrix, k = 0): Matrix => m.map((e, i, j) => (j - i <= k ? e : 0));
-
-export function diagonal(m: Matrix, k = 0): Matrix {
-  const out: Expr[] = [];
-  for (let i = 0; i < m.rows; i++) {
-    const j = i + k;
-    if (j >= 0 && j < m.cols) out.push(m.get(i, j));
-  }
-  return Matrix.row(...out);
-}
-
-export function extract(m: Matrix, rows: readonly (number | boolean)[], cols: readonly (number | boolean)[]): Matrix {
-  const norm_ = (idx: readonly (number | boolean)[], n: number) =>
-    idx.every((v) => typeof v === 'boolean')
-      ? idx.flatMap((v, i) => (v ? [i] : []))
-      : idx.map((v) => (typeof v === 'boolean' ? Number(v) : v < 0 ? v + n : v));
-  return m.slice(norm_(rows, m.rows), norm_(cols, m.cols));
-}
-
-export function reshape(m: Matrix, r: number, c: number): Matrix {
-  if (r * c !== m.data.length) throw new RangeError('reshape: invalid size');
-  return Matrix.fromFunction(r, c, (i, j) => at(m.data, i * c + j));
-}
-
-export function rot90(m: Matrix, k = 1): Matrix {
-  const t = ((k % 4) + 4) % 4;
-  let r = m;
-  for (let i = 0; i < t; i++) {
-    const R = r;
-    r = Matrix.fromFunction(R.cols, R.rows, (a, b) => R.get(R.rows - 1 - b, a));
-  }
-  return r;
-}
-
-export function vech(m: Matrix, includeDiagonal = true): Matrix {
-  const out: Expr[] = [];
-  for (let j = 0; j < m.cols; j++) for (let i = includeDiagonal ? j : j + 1; i < m.rows; i++) out.push(m.get(i, j));
-  return Matrix.col(...out);
-}
-
-export const vec = (m: Matrix): Matrix => Matrix.col(...Array.from({ length: m.cols }, (_, j) => m.col(j).data).flat());
-
-export const minorSubmatrix = (m: Matrix, i: number, j: number): Matrix => m.minor(i, j);
-export const minorDet = (m: Matrix, i: number, j: number): Expr => m.minor(i, j).det();
-export const cofactor = (m: Matrix, i: number, j: number): Expr => mul((i + j) % 2 === 0 ? 1 : -1, minorDet(m, i, j));
-
-export function isSymmetric(m: Matrix): boolean {
-  return m.isSquare && m.sub(m.transpose()).data.every(isZeroE);
-}
-export function isAntiSymmetric(m: Matrix): boolean {
-  return m.isSquare && m.add(m.transpose()).data.every(isZeroE);
-}
-export function isDiagonal(m: Matrix): boolean {
-  return m.data.every((e, k) => Math.floor(k / m.cols) === k % m.cols || isZeroE(e));
-}
-export function isUpper(m: Matrix): boolean {
-  return m.data.every((e, k) => Math.floor(k / m.cols) <= k % m.cols || isZeroE(e));
-}
-export function isLower(m: Matrix): boolean {
-  return m.data.every((e, k) => Math.floor(k / m.cols) >= k % m.cols || isZeroE(e));
-}
-export function isNilpotent(m: Matrix): boolean {
-  if (!m.isSquare) throw new NonSquareMatrixError('Nilpotency is valid only for square matrices');
-  return m.pow(m.rows).data.every(isZeroE);
-}
-
-export function multiplyElementwise(a: Matrix, b: Matrix): Matrix {
-  return a.map((e, i, j) => mul(e, b.get(i, j)));
-}
-
-export function project(a: Matrix, b: Matrix): Matrix {
-  return b.scale(mul(dot(a, b), pow(dot(b, b), -1)));
-}
-
-export const rowInsert = (m: Matrix, pos: number, o: Matrix): Matrix =>
-  Matrix.of([...m.toArray().slice(0, pos), ...o.toArray(), ...m.toArray().slice(pos)]);
-export const colInsert = (m: Matrix, pos: number, o: Matrix): Matrix => rowInsert(m.transpose(), pos, o.transpose()).transpose();
+// SymPy Matrix methods, also as functions (the implementations are the Matrix methods)
+export const upperTriangular = (m: Matrix, k = 0): Matrix => m.upperTriangular(k);
+export const lowerTriangular = (m: Matrix, k = 0): Matrix => m.lowerTriangular(k);
+export const diagonal = (m: Matrix, k = 0): Matrix => m.diagonal(k);
+export const extract = (m: Matrix, rows: readonly (number | boolean)[], cols: readonly (number | boolean)[]): Matrix => m.extract(rows, cols);
+export const reshape = (m: Matrix, r: number, c: number): Matrix => m.reshape(r, c);
+export const rot90 = (m: Matrix, k = 1): Matrix => m.rot90(k);
+export const vech = (m: Matrix, includeDiagonal = true, checkSymmetry = true): Matrix => m.vech({ diagonal: includeDiagonal, checkSymmetry });
+export const vec = (m: Matrix): Matrix => m.vec();
+export const minorSubmatrix = (m: Matrix, i: number, j: number): Matrix => m.minorSubmatrix(i, j);
+export const minorDet = (m: Matrix, i: number, j: number): Expr => m.minorEntry(i, j);
+export const cofactor = (m: Matrix, i: number, j: number): Expr => m.cofactor(i, j);
+export const isSymmetric = (m: Matrix, simplifyEntries = true): boolean => m.isSymmetric(simplifyEntries);
+export const isAntiSymmetric = (m: Matrix, simplifyEntries = true): Truth => m.isAntiSymmetric(simplifyEntries);
+export const isDiagonal = (m: Matrix): boolean => m.isDiagonal();
+export const isUpper = (m: Matrix): boolean => m.isUpper();
+export const isLower = (m: Matrix): boolean => m.isLower();
+export const isNilpotent = (m: Matrix): boolean => m.isNilpotent();
+export const multiplyElementwise = (a: Matrix, b: Matrix): Matrix => a.multiplyElementwise(b);
+/** SymPy matrix_multiply_elementwise(A, B): the Hadamard product. */
+export const matrixMultiplyElementwise = (a: Matrix, b: Matrix): Matrix => a.multiplyElementwise(b);
+export const project = (a: Matrix, b: Matrix): Matrix => a.project(b);
+export const rowInsert = (m: Matrix, pos: number, o: Matrix): Matrix => m.rowInsert(pos, o);
+export const colInsert = (m: Matrix, pos: number, o: Matrix): Matrix => m.colInsert(pos, o);
 
 /** Block-diagonal matrix from scalars and matrices (SymPy diag). */
 export function blockDiag(...blocks: (Matrix | ExprLike)[]): Matrix {
@@ -856,8 +811,13 @@ export function jordanBlock(size: number, eigenvalue: ExprLike, band: 'upper' | 
   return Matrix.fromFunction(size, size, (i, j) => (i === j ? eigenvalue : band === 'upper' ? (j === i + 1 ? 1 : 0) : i === j + 1 ? 1 : 0));
 }
 
-/** Companion matrix of a monic polynomial given by its coefficients (highest first). */
-export function companion(coeffs: readonly Expr[]): Matrix {
+/**
+ * Companion matrix of a monic polynomial (SymPy Matrix.companion(poly)),
+ * given as a Poly or by its coefficients (highest first).
+ */
+export function companion(p: readonly Expr[] | { allCoeffs(): Expr[]; toString(): string }): Matrix {
+  const coeffs = 'allCoeffs' in p ? p.allCoeffs() : p;
+  if (coeffs.length < 2 || !(first(coeffs) instanceof Rational && first(coeffs).equals(1))) throw new RangeError(`${String(p)} must be a monic polynomial.`);
   const n = coeffs.length - 1;
   return Matrix.fromFunction(n, n, (i, j) => (j === n - 1 ? mul(-1, at(coeffs, n - i)) : i === j + 1 ? 1 : 0));
 }
@@ -974,7 +934,6 @@ export function casoratian(seqs: readonly ExprLike[], n: Expr, zero = true): Exp
 /** SymPy Matrix.rref_rhs(rhs): [rref of A, the right-hand side transformed alike]. */
 export function rrefRhs(A: Matrix, rhs: Matrix): [Matrix, Matrix] {
   const [R] = rref(A.hstack(rhs));
-  const range = (a: number, b: number) => Array.from({ length: b - a }, (_, i) => a + i);
   return [R.slice(range(0, A.rows), range(0, A.cols)), R.slice(range(0, A.rows), range(A.cols, A.cols + rhs.cols))];
 }
 
@@ -1153,4 +1112,205 @@ export function irregular(ntop: number, ...blocks: Matrix[]): Matrix {
     rows.push(r);
   }
   return Matrix.of(rows);
+}
+
+// ---------------------------------------------------------------------------
+// Solving by decompositions and the inverse methods (SymPy matrices/solvers.py and inverse.py)
+// ---------------------------------------------------------------------------
+
+/** SymPy Matrix.diagonal_solve(rhs): the solution of a diagonal system. */
+export function diagonalSolve(M: Matrix, rhs: Matrix): Matrix {
+  if (!M.isDiagonal()) throw new TypeError('Matrix should be diagonal');
+  if (rhs.rows !== M.rows) throw new TypeError('Size mismatch');
+  return Matrix.fromFunction(rhs.rows, rhs.cols, (i, j) => mul(rhs.get(i, j), pow(M.get(i, i), -1)));
+}
+
+/** SymPy Matrix.lower_triangular_solve(rhs): forward substitution. */
+export function lowerTriangularSolve(M: Matrix, rhs: Matrix): Matrix {
+  if (!M.isSquare) throw new NonSquareMatrixError('Matrix must be square.');
+  if (rhs.rows !== M.rows) throw new ShapeError('Matrices size mismatch.');
+  if (!M.isLower()) throw new RangeError('Matrix must be lower triangular.');
+  const X: Expr[][] = Array.from({ length: M.rows }, () => Array.from({ length: rhs.cols }, (): Expr => S.Zero));
+  for (let j = 0; j < rhs.cols; j++) {
+    for (let i = 0; i < M.rows; i++) {
+      if (isExactZero(M.get(i, i))) throw new TypeError('Matrix must be non-singular.');
+      const s = add(rhs.get(i, j), ...range(0, i).map((k) => mul(-1, M.get(i, k), ent(X, k, j))));
+      at(X, i)[j] = mul(s, pow(M.get(i, i), -1));
+    }
+  }
+  return fromRows(X, rhs.cols);
+}
+
+/** SymPy Matrix.upper_triangular_solve(rhs): back substitution. */
+export function upperTriangularSolve(M: Matrix, rhs: Matrix): Matrix {
+  if (!M.isSquare) throw new NonSquareMatrixError('Matrix must be square.');
+  if (rhs.rows !== M.rows) throw new ShapeError('Matrix size mismatch.');
+  if (!M.isUpper()) throw new TypeError('Matrix is not upper triangular.');
+  const n = M.rows;
+  const X: Expr[][] = Array.from({ length: n }, () => Array.from({ length: rhs.cols }, (): Expr => S.Zero));
+  for (let j = 0; j < rhs.cols; j++) {
+    for (let i = n - 1; i >= 0; i--) {
+      if (isExactZero(M.get(i, i))) throw new RangeError('Matrix must be non-singular.');
+      const s = add(rhs.get(i, j), ...range(i + 1, n).map((k) => mul(-1, M.get(i, k), ent(X, k, j))));
+      at(X, i)[j] = mul(s, pow(M.get(i, i), -1));
+    }
+  }
+  return fromRows(X, rhs.cols);
+}
+
+/**
+ * SymPy's reformulation of A x = b for the Cholesky and LDL solvers: a
+ * matrix that is neither symmetric nor Hermitian (or not positive definite)
+ * is replaced by A^H A, b by A^H b. Returns [A, b, hermitian].
+ */
+function normalSystem(M: Matrix, rhs: Matrix): [Matrix, Matrix, boolean] {
+  if (M.rows < M.cols) throw new NotImplementedError('Under-determined System. Try M.gauss_jordan_solve(rhs)');
+  let hermitian = true;
+  let reform = false;
+  if (M.isSymmetric()) hermitian = false;
+  else if (!M.isHermitian()) reform = true;
+  if (reform || isPositiveDefinite(M) === false) {
+    const H = M.adjoint();
+    const A = H.mul(M);
+    return [A, H.mul(rhs), !A.isSymmetric()];
+  }
+  return [M, rhs, hermitian];
+}
+
+/** SymPy Matrix.cholesky_solve(rhs): A x = b by the Cholesky decomposition. */
+export function choleskySolve(M: Matrix, rhsIn: Matrix): Matrix {
+  const [A, rhs, hermitian] = normalSystem(M, rhsIn);
+  const L = cholesky(A, hermitian);
+  const Y = lowerTriangularSolve(L, rhs);
+  return upperTriangularSolve(hermitian ? L.adjoint() : L.transpose(), Y);
+}
+
+/** SymPy Matrix.LDLsolve(rhs): A x = b by the LDL decomposition. */
+function ldlSolve(M: Matrix, rhsIn: Matrix): Matrix {
+  const [A, rhs, hermitian] = normalSystem(M, rhsIn);
+  const [L, D] = ldl(A, hermitian);
+  const Z = diagonalSolve(D, lowerTriangularSolve(L, rhs));
+  return upperTriangularSolve(hermitian ? L.adjoint() : L.transpose(), Z);
+}
+
+/** SymPy Matrix.QRsolve(b): A x = b by the QR decomposition (back substitution in R). */
+function qrSolve(M: Matrix, b: Matrix): Matrix {
+  const [Q, R] = qrDecomposition(M);
+  const y = Q.transpose().mul(b);
+  const n = R.rows;
+  const x: Matrix[] = [];
+  for (let j = n - 1; j >= 0; j--) {
+    let tmp = y.row(j);
+    for (let k = j + 1; k < n; k++) tmp = tmp.sub(at(x, n - 1 - k).scale(R.get(j, k)));
+    x.push(tmp.map((e) => expandMul(e)).scale(pow(R.get(j, j), -1)));
+  }
+  x.reverse();
+  return first(x).vstack(...x.slice(1));
+}
+
+/** SymPy Matrix.LUsolve(rhs) for a square matrix: forward and back substitution with the LU factors. */
+export function luSolve(M: Matrix, rhs: Matrix): Matrix {
+  if (rhs.rows !== M.rows) throw new ShapeError('``M`` and ``rhs`` must have the same number of rows.');
+  if (!M.isSquare) throw new NotImplementedError('LUsolve: only square systems are supported');
+  const [L, U, perm] = luDecomposition(M);
+  if (range(0, U.rows).some((i) => isExactZero(U.get(i, i)))) throw new NonInvertibleMatrixError('Matrix det == 0; not invertible.');
+  let b = rhs;
+  for (const [i, j] of perm) b = b.permute([[i, j]]);
+  return upperTriangularSolve(U, lowerTriangularSolve(L, b));
+}
+
+/** SymPy Matrix.cramer_solve(rhs): each unknown as a ratio of determinants. */
+export function cramerSolve(M: Matrix, rhs: Matrix): Matrix {
+  const d = M.det();
+  return Matrix.fromFunction(rhs.rows, rhs.cols, (col, sol) => {
+    const Mi = M.map((e, i, j) => (j === col ? rhs.get(i, sol) : e));
+    return mul(Mi.det(), pow(d, -1));
+  });
+}
+
+/** SymPy _verify_invertible: the determinant, or NonInvertibleMatrixError when it is zero. */
+function verifyInvertible(M: Matrix): Expr {
+  if (!M.isSquare) throw new NonSquareMatrixError('A Matrix must be square to invert.');
+  const d = M.det();
+  if (isZeroE(d)) throw new NonInvertibleMatrixError('Matrix det == 0; not invertible.');
+  return d;
+}
+
+/** SymPy Matrix.inverse_ADJ(): the adjugate divided by the determinant. */
+export function inverseADJ(M: Matrix): Matrix {
+  const d = verifyInvertible(M);
+  return M.adjugate().map((e) => mul(e, pow(d, -1)));
+}
+
+/** SymPy Matrix.inverse_GE(): Gauss-Jordan elimination of [M | I]. */
+export function inverseGE(M: Matrix): Matrix {
+  if (!M.isSquare) throw new NonSquareMatrixError('A Matrix must be square to invert.');
+  const n = M.rows;
+  const [red] = rref(M.hstack(Matrix.eye(n)));
+  if (range(0, n).some((j) => isZeroE(red.get(j, j)))) throw new NonInvertibleMatrixError('Matrix det == 0; not invertible.');
+  return red.slice(range(0, n), range(n, 2 * n));
+}
+
+/** SymPy Matrix.inverse_LU(): LUsolve with the identity. */
+export function inverseLU(M: Matrix): Matrix {
+  verifyInvertible(M);
+  return luSolve(M, Matrix.eye(M.rows));
+}
+
+/** SymPy Matrix.inverse_CH(): cholesky_solve with the identity. */
+export function inverseCH(M: Matrix): Matrix {
+  verifyInvertible(M);
+  return choleskySolve(M, Matrix.eye(M.rows));
+}
+
+/** SymPy Matrix.inverse_LDL(): LDLsolve with the identity. */
+export function inverseLDL(M: Matrix): Matrix {
+  verifyInvertible(M);
+  return ldlSolve(M, Matrix.eye(M.rows));
+}
+
+/** SymPy Matrix.inverse_QR(): QRsolve with the identity. */
+export function inverseQR(M: Matrix): Matrix {
+  verifyInvertible(M);
+  return qrSolve(M, Matrix.eye(M.rows));
+}
+
+/**
+ * SymPy Matrix.inverse_BLOCK(): up to `threshold` rows (20 in SymPy) the LU
+ * inverse; a larger matrix by the inverses of its 2x2 block partition (the
+ * Schur complement), falling back to LU when a block is singular.
+ */
+export function inverseBLOCK(M: Matrix, threshold = 20): Matrix {
+  const i = M.rows;
+  if (i <= threshold || !M.isSquare) return inverseLU(M);
+  const h = Math.floor(i / 2);
+  const [lo, hi] = [range(0, h), range(h, i)];
+  const [A, B, C, D] = [M.slice(lo, lo), M.slice(lo, hi), M.slice(hi, lo), M.slice(hi, hi)];
+  // SymPy falls back to LU when the inverse of D or of the Schur complement raises NonInvertibleMatrixError
+  if (isZeroE(D.det())) return inverseLU(M);
+  const Dinv = inverseBLOCK(D, threshold);
+  const BDi = B.mul(Dinv);
+  const schur = A.sub(BDi.mul(C));
+  if (isZeroE(schur.det())) return inverseLU(M);
+  const An = inverseBLOCK(schur, threshold);
+  const Bn = An.mul(BDi).neg();
+  const dc = Dinv.mul(C);
+  const Cn = dc.mul(An).neg();
+  const Dn = Dinv.add(dc.mul(Bn.neg()));
+  return Matrix.of([
+    [An, Bn],
+    [Cn, Dn],
+  ]);
+}
+
+/** SymPy Matrix.condition_number(): the ratio of the largest to the smallest singular value. */
+export function conditionNumber(M: Matrix): Expr {
+  if (M.rows === 0 || M.cols === 0) return S.Zero;
+  const sv = singularValues(M);
+  return mul(Max(...sv), pow(Min(...sv), -1));
+}
+
+/** SymPy Matrix.left_eigenvects(): the eigenvectors of the transpose, as rows. */
+export function leftEigenvects(M: Matrix): [Expr, number, Matrix[]][] {
+  return eigenvects(M.transpose()).map(([v, k, vs]) => [v, k, vs.map((w) => w.transpose())]);
 }

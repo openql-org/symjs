@@ -5,7 +5,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { Assumptions } from '../../src/core/nodes';
-import { diff, type Expr, nonlinsolve, NotImplementedError, nsolve, parse, solve, solveLinear, solveUndeterminedCoeffs, sstr, Sym, symbols, SymFunction } from '../../src';
+import { detQuick, diff, type Expr, invQuick, Matrix, nonlinsolve, solveLinearSystemLU, NotImplementedError, nsolve, parse, solve, solveLinear, solveUndeterminedCoeffs, sstr, Sym, symbols, SymFunction } from '../../src';
 import { xreplace } from '../../src/core/traverse';
 import { invertEquation } from '../../src/solvers/solve';
 
@@ -484,4 +484,32 @@ it('retains denominator and radical checks in larger elimination systems', () =>
   expect(nonlinsolve([parse('sqrt(x)'), parse('y - 1'), parse('z - 1')], [x, y, z]).map(show)).toEqual(['[0, 1, 1]']);
   expect(nonlinsolve([parse('y - sin(sqrt(x))'), parse('x - 4'), parse('z - 1')], [x, y, z]).map(show)).toEqual(['[4, sin(2), 1]']);
   expect(nonlinsolve([parse('x**(1/7) - y'), parse('x - 1'), parse('z - 1')], [x, y, z]).map(show)).toEqual(['[1, 1, 1]']);
+});
+
+describe('detQuick, invQuick and solveLinearSystemLU (SymPy solvers.py)', () => {
+  const [z, a, b] = symbols('z a b');
+  const M = (rows: (number | Expr)[][]) => Matrix.of(rows);
+  it('detQuick', () => {
+    expect(String(detQuick(M([[1, 2], [3, 4]])))).toBe('-2');
+    expect(String(detQuick(M([[x, y], [z, a]])))).toBe('a*x - y*z');
+    expect(String(detQuick(M([[x, 1, 0], [1, x, 1], [0, 1, x]])))).toBe('x**3 - 2*x');
+    expect(String(detQuick(Matrix.fromFunction(4, 4, (i, j) => (i === j ? x : 0))))).toBe('x**4');
+    expect(String(detQuick(Matrix.fromFunction(5, 5, (i, j) => ((i + j) % 2 ? i + j + 1 : x))))).toBe('0');
+    expect(String(detQuick(M([[x]])))).toBe('x');
+  });
+  it('invQuick', () => {
+    expect(String(invQuick(M([[1, 2], [3, 4]])))).toBe('Matrix([[-2, 1], [3/2, -1/2]])');
+    expect(String(invQuick(M([[x, 1, 0], [1, x, 1], [0, 1, x]])))).toBe('Matrix([[(x**2 - 1)/(x**3 - 2*x), -x/(x**3 - 2*x), 1/(x**3 - 2*x)], [-x/(x**3 - 2*x), x**2/(x**3 - 2*x), -x/(x**3 - 2*x)], [1/(x**3 - 2*x), -x/(x**3 - 2*x), (x**2 - 1)/(x**3 - 2*x)]])');
+    // SymPy returns Matrix([[0, 0], [0, 0]]): its det_minor of a 1 x 1 minor is 0
+    expect(String(invQuick(M([[x, 1], [0, x]])))).toBe('Matrix([[1/x, -1/x**2], [0, 1/x]])');
+    expect(String(invQuick(M([[x, y], [z, a]])))).toBe('Matrix([[a/(a*x - y*z), -y/(a*x - y*z)], [-z/(a*x - y*z), x/(a*x - y*z)]])');
+    expect(String(invQuick(M([[x]])))).toBe('Matrix([[1/x]])');
+    expect(() => invQuick(M([[x, 2 as number], [x, 2]]))).toThrow('Matrix det == 0; not invertible');
+  });
+  it('solveLinearSystemLU', () => {
+    const show = (m: Map<Expr, Expr>) => [...m].map(([k, v]) => `${String(k)}: ${String(v)}`).join(', ');
+    expect(show(solveLinearSystemLU(M([[1, 2, 0, 1], [3, 2, 2, 1], [2, 0, 0, 1]]), [x, y, z]))).toBe('x: 1/2, y: 1/4, z: -1/2');
+    expect(show(solveLinearSystemLU(M([[a, 1, 2], [1, b, 3]]), [x, y]))).toBe('x: -b*(2 - 3*a)/(-a*b + 1) + 3, y: (2 - 3*a)/(-a*b + 1)');
+    expect(() => solveLinearSystemLU(M([[1, 2, 3]]), [x, y])).toThrow('Rows should be equal to columns - 1');
+  });
 });

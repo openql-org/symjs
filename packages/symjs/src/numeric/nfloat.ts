@@ -6,7 +6,7 @@
  */
 
 import type { Expr, ExprLike } from '../core/nodes';
-import { Add, Dummy, Float, Mul, Pow, Rational, S, Special } from '../core/nodes';
+import { Add, Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Special } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { rebuild, xreplace } from '../core/traverse';
 import { evalf } from './evalf';
@@ -118,7 +118,8 @@ export function nsimplify(
   if (e instanceof Rational && e.isInteger) return e;
   const conversion = opts.rationalConversion ?? 'base10';
   const { rational, full = false } = opts;
-  if (rational === true || e.freeSymbols().size > 0) return realToRational(e, opts.tolerance, conversion);
+  // (a matrix expression such as 0.5*A is symbolic too: SymPy counts a MatrixSymbol as a free symbol)
+  if (rational === true || e.freeSymbols().size > 0 || matrixValued(e)) return realToRational(e, opts.tolerance, conversion);
   // the least precision of the Floats sets the tolerance (Floats of 15 digits: 10**-15)
   const tolerance = opts.tolerance ?? Number(`1e-${Math.min(15, ...floats(e).map((f) => F.precToDps(f.prec)))}`);
   const prec = 30;
@@ -156,6 +157,9 @@ export function nsimplify(
   if (rv.key !== e.key || rational === false) return rv;
   return realToRational(e, undefined, conversion);
 }
+
+/** The expression contains a matrix-valued node (a MatrixSymbol, MatMul, ...). */
+const matrixValued = (x: Expr): boolean => (x instanceof ExtensionExpr && !x.isScalar) || x.args.some(matrixValued);
 
 /** [re, im] of an evaluated number as Floats or zeros, or undefined when it is not a finite number. */
 function realImag(v: Expr): [Float | Rational, Float | Rational] | undefined {

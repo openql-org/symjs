@@ -16,10 +16,23 @@
  * their structural key follows their current contents.
  */
 
-import { at, cast, expectType } from '../core/guard';
+import { at, cast, defined, expectType } from '../core/guard';
+import type { Key } from '../printing/sortkey';
+import { classKey as classKeyExpr, sortKey as sortKeyExpr } from '../printing/sortkey';
+import type { Query, Replacement } from '../core/match';
+import { count as countExpr, countOps as countOpsExpr, find as findExpr, replace as replaceExpr } from '../core/match';
+import { asContentPrimitive as asContentPrimitiveExpr, atoms as atomsExpr, dummyEq as dummyEqExpr, hasFree as hasFreeExpr, hasXfree as hasXfreeExpr, isSame as isSameExpr } from '../core/methods';
+import { match as matchExpr } from '../core/public';
+import type { NoMatchResult } from '../core/truth';
+import type { Assumption } from '../core/refine';
+import { refine as refineExpr } from '../core/refine';
+import { LambdaNode } from '../core/lambda';
+import { rebuild, xreplace as xreplaceExpr } from '../core/traverse';
+import { isHypergeometric as isHypergeometricExpr } from '../simplify/gammasimp';
 import type { EvalfOptions, ExprLike, NumericValues, Substitution } from '../core/nodes';
-import { BoolAtom, Derivative, Expr, ExtensionExpr, Integral, Rational, Rel, S, UndefFn } from '../core/nodes';
-import { add, mul, pow, sympify } from '../core/ops';
+import { BoolAtom, Derivative, Expr, ExtensionExpr, Integral, Rational, Rel, S, UndefFn, compareExpr } from '../core/nodes';
+import type { Sym } from '../core/nodes';
+import { add, couldExtractMinusSign as couldExtractMinusSignExpr, mul, pow, sympify } from '../core/ops';
 import { isNegative, isNonNegative } from '../core/assumptions';
 import { BoolOp } from '../core/boolalg';
 import { Indexed } from '../core/indexed';
@@ -520,6 +533,102 @@ export abstract class NDimArray extends ExtensionExpr {
     return this.evalf(n, opts);
   }
 
+  // ---- SymPy Basic methods (aliases of the functions) ------------------------------
+
+  /** SymPy as_content_primitive: (1, self) for an array. */
+  asContentPrimitive(opts: { clear?: boolean; radical?: boolean } = {}): [Rational, Expr] {
+    return asContentPrimitiveExpr(this, opts);
+  }
+  /** SymPy as_dummy: an array binds no variables, so it is returned unchanged. */
+  asDummy(): this {
+    return this;
+  }
+  /** SymPy atoms: the atoms of the elements (those satisfying `pred`). */
+  atoms(pred?: (a: Expr) => boolean): Expr[] {
+    return atomsExpr(this, pred);
+  }
+  /** SymPy class_key. */
+  classKey(): Key {
+    return classKeyExpr(this);
+  }
+  /** SymPy sort_key. */
+  sortKey(): Key {
+    return sortKeyExpr(this);
+  }
+  /** SymPy compare: -1, 0 or 1 in the canonical order of expressions. */
+  compare(other: ExprLike): number {
+    return Math.sign(compareExpr(this, sympify(other)));
+  }
+  /** SymPy copy: an array of the same class with the same elements. */
+  copy(): this {
+    return this.newLike(this.flatElements(), this.shape);
+  }
+  /** SymPy could_extract_minus_sign: false for an array. */
+  couldExtractMinusSign(): boolean {
+    return couldExtractMinusSignExpr(this);
+  }
+  /** SymPy count: the number of matching subexpressions. */
+  count(query: Query): number {
+    return countExpr(this, query);
+  }
+  /** SymPy count_ops. */
+  countOps(): number {
+    return countOpsExpr(this);
+  }
+  /** SymPy doit: doit of every element. */
+  doit(): this {
+    return this.applyfunc(defined(arrayHooks.doit, 'doit is registered by the tensor entry point'));
+  }
+  /** SymPy dummy_eq. */
+  dummyEq(other: ExprLike, symbol?: Expr): boolean {
+    return dummyEqExpr(this, other, symbol);
+  }
+  /** SymPy find: the matching subexpressions. */
+  find(query: Query): Expr[] {
+    return findExpr(this, query);
+  }
+  /** SymPy has_free. */
+  hasFree(...patterns: (ExprLike | { fn: string })[]): boolean {
+    return hasFreeExpr(this, ...patterns);
+  }
+  /** SymPy has_xfree. */
+  hasXfree(items: readonly Expr[]): boolean {
+    return hasXfreeExpr(this, items);
+  }
+  /** SymPy is_hypergeometric(k). */
+  isHypergeometric(k: Expr): boolean {
+    return isHypergeometricExpr(this, k);
+  }
+  /** SymPy is_same. */
+  isSame(other: unknown, approx?: (x: Expr, y: Expr) => boolean): boolean {
+    return isSameExpr(this, other, approx);
+  }
+  /** SymPy match: this array matched against a pattern. */
+  match(pattern: ExprLike, opts: { old?: boolean } = {}): Map<Sym, Expr> | NoMatchResult {
+    return matchExpr(this, pattern, opts);
+  }
+  /** SymPy matches: `expr` matched against this array as the pattern. */
+  matches(expr: ExprLike, opts: { old?: boolean } = {}): Map<Sym, Expr> | NoMatchResult {
+    return matchExpr(expr, this, opts);
+  }
+  /** SymPy rcall: the Lambda elements (and Lambdas inside elements) applied to the arguments. */
+  rcall(...args: ExprLike[]): this {
+    const call = (e: Expr): Expr => (e instanceof LambdaNode ? e.call(...args) : e.args.length ? rebuild(e, e.args.map(call)) : e);
+    return this.applyfunc(call);
+  }
+  /** SymPy refine: every element refined under the assumptions. */
+  refine(assumptions?: Assumption): this {
+    return this.applyfunc((e) => refineExpr(e, assumptions));
+  }
+  /** SymPy replace: replace in every element. */
+  replace(query: Query, value: Replacement): this {
+    return this.applyfunc((e) => cast(replaceExpr(e, query, value), Expr));
+  }
+  /** SymPy xreplace: exact replacement in every element. */
+  xreplace(s: Substitution): this {
+    return this.applyfunc((e) => xreplaceExpr(e, s));
+  }
+
   // ---- printing -------------------------------------------------------------------
 
   /** SymPy str: nested lists, `Class([], shape)` when empty, the element for rank 0. */
@@ -563,6 +672,9 @@ export abstract class NDimArray extends ExtensionExpr {
     return rank % 2 === 1 ? block(out) : out;
   }
 }
+
+/** @internal Late-bound functions of higher layers, installed by the tensor entry point. */
+export const arrayHooks: { doit?: (e: Expr) => Expr } = {};
 
 /** Nested lists of elements (SymPy tolist). */
 export type NestedList = (Expr | NestedList)[];
@@ -639,6 +751,10 @@ export class ImmutableDenseNDimArray extends DenseNDimArray {
     super('ImmutableDenseNDimArray', iterable, shape);
   }
   /** An array of zeros of the given shape. */
+  /** SymPy fromiter(args): the array of the constructor arguments (iterable, shape). */
+  static fromiter(args: readonly [ArrayInput, ShapeInput?]): ImmutableDenseNDimArray {
+    return new ImmutableDenseNDimArray(...args);
+  }
   static zeros(...shape: number[]): ImmutableDenseNDimArray {
     return new ImmutableDenseNDimArray(Array.from({ length: product(shape) }, () => 0), shape);
   }

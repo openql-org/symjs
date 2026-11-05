@@ -149,7 +149,65 @@ function simplifyWithMeasure(): unknown {
   return sj.simplify(g, { measure: myMeasure });
 }
 
+// ---- sympy.tensor.tensor: dict updates and commutation groups ------------------------
+
+/** Lorentz, i0, i1 and repl = {Lorentz: diag(1, -1, -1, -1)} of the TensorHead docstring. */
+function lorentzRepl() {
+  const Lorentz = sj.TensorIndexType('Lorentz', { dummyName: 'L' });
+  const [i0, i1] = sj.tensorIndices('i0:2', Lorentz) as [sj.TensorIndex, sj.TensorIndex];
+  const repl = new Map<Expr, sj.ArrayInput>([[Lorentz, sj.Matrix.diag(1, -1, -1, -1)]]);
+  return { Lorentz, i0, i1, repl };
+}
+/** G and GH do not commute with themselves and commute with each other (the TensorManager.set_comm docstring). */
+function commSetup() {
+  const Lorentz = sj.TensorIndexType('Lorentz');
+  const [i0, i1] = sj.tensorIndices('i0:5', Lorentz) as [sj.TensorIndex, sj.TensorIndex];
+  const A = sj.TensorHead('A', [Lorentz]);
+  const G = sj.TensorHead('G', [Lorentz], sj.TensorSymmetry.noSymmetry(1), 'Gcomm');
+  const GH = sj.TensorHead('GH', [Lorentz], sj.TensorSymmetry.noSymmetry(1), 'GHcomm');
+  sj.TensorManager.setComm('Gcomm', 'GHcomm', 0);
+  return { i0, i1, A, G, GH };
+}
+
 export const PORTS: Record<string, (() => unknown) | readonly (() => unknown)[]> = {
+  // ---- sympy.tensor.tensor: Python dict updates (they return None) and the commutation groups of TensorManager
+  // F = TensorHead('F', [Lorentz, Lorentz], TensorSymmetry.fully_symmetric(-2)) with the field-strength components
+  'sympy.tensor.tensor:repl.update({F(-i0, -i1): [\n[0, Ex/c, Ey/c, Ez/c],\n[-Ex/c, 0, -Bz, By],\n[-Ey/c, Bz, 0, -Bx],\n[-Ez/c, -By, Bx, 0]]})': () => {
+    const { Lorentz, i0, i1, repl } = lorentzRepl();
+    const [Ex, Ey, Ez, Bx, By, Bz] = sym('E_x E_y E_z B_x B_y B_z') as [sj.Sym, sj.Sym, sj.Sym, sj.Sym, sj.Sym, sj.Sym];
+    const [c] = sym('c', { positive: true }) as [sj.Sym];
+    const F = sj.TensorHead('F', [Lorentz, Lorentz], sj.TensorSymmetry.fullySymmetric(-2));
+    const e = (v: Expr) => sj.mul(v, sj.pow(c, -1));
+    const neg = (v: Expr) => sj.neg(v);
+    repl.set(F.at(i0.neg(), i1.neg()), [
+      [0, e(Ex), e(Ey), e(Ez)],
+      [neg(e(Ex)), 0, neg(Bz), By],
+      [neg(e(Ey)), Bz, 0, neg(Bx)],
+      [neg(e(Ez)), neg(By), Bx, 0],
+    ]);
+    return null;
+  },
+  // P = TensorHead('P', [Lorentz], TensorSymmetry.no_symmetry(1)); E, px, py, pz positive
+  'sympy.tensor.tensor:repl.update({P(i0): [E, px, py, pz]})': () => {
+    const { Lorentz, i0, repl } = lorentzRepl();
+    const P = sj.TensorHead('P', [Lorentz], sj.TensorSymmetry.noSymmetry(1));
+    const [E, px, py, pz] = sym('E p_x p_y p_z', { positive: true }) as [sj.Sym, sj.Sym, sj.Sym, sj.Sym];
+    repl.set(P.at(i0), [E, px, py, pz]);
+    return null;
+  },
+  "sympy.tensor.tensor:TensorManager.set_comm('Gcomm', 'GHcomm', 0)": () => (sj.TensorManager.setComm('Gcomm', 'GHcomm', 0), null),
+  'sympy.tensor.tensor:(GH(i1)*G(i0)).canon_bp()': () => {
+    const { i0, i1, G, GH } = commSetup();
+    return sj.canonBp(sj.mul(GH.at(i1), G.at(i0)));
+  },
+  'sympy.tensor.tensor:(G(i1)*G(i0)).canon_bp()': () => {
+    const { i0, i1, G } = commSetup();
+    return sj.canonBp(sj.mul(G.at(i1), G.at(i0)));
+  },
+  'sympy.tensor.tensor:(G(i1)*A(i0)).canon_bp()': () => {
+    const { i0, i1, A, G } = commSetup();
+    return sj.canonBp(sj.mul(G.at(i1), A.at(i0)));
+  },
   'sympy.core.expr:MyScalar().diff(MyScalar())': () => sj.diff(new MyScalar(), new MyScalar()),
 
   // DE = DifferentialExtension(log(x) + exp(x), x, handle_first='exp')

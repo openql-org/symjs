@@ -192,7 +192,8 @@ function hashableContent(e: Expr): Content[] {
   if (e instanceof Rational) return [e.p, e.q];
   if (e instanceof Float) return [e.toNumber()];
   if (e instanceof Sym) return [e.name];
-  if (e instanceof UndefFn || e instanceof ExtensionExpr) return [...sympyArgs(e)];
+  // an atom of an extension (a matrix name Str, ...) by its printed form (SymPy Str._hashable_content is (name,))
+  if (e instanceof ExtensionExpr && e.args.length === 0) return [str(e)];
   return [...sympyArgs(e)];
 }
 
@@ -302,21 +303,12 @@ class NodeMap<V> {
 const isMatrixExpr = (e: Expr): boolean => e instanceof MatrixExpr;
 const negate = (e: Expr): Expr => mul(-1, e);
 
-/** The shape of a matrix-valued expression (a matrix expression, or a sum, product or power of them). */
+/**
+ * The shape of a matrix-valued expression (sums, products and powers of
+ * matrices are MatAdd, MatMul and MatPow, which the arithmetic builds as in SymPy).
+ */
 function matrixShape(e: Expr): [Expr, Expr] | undefined {
-  if (e instanceof MatrixExpr) return e.shape;
-  if (e instanceof Add) {
-    for (const a of e.args) {
-      const s = matrixShape(a);
-      if (s) return s;
-    }
-    return undefined;
-  }
-  if (e instanceof Mul) {
-    const ms = e.args.map(matrixShape).filter((s) => s !== undefined);
-    return ms.length ? [first(ms)[0], at(ms, -1)[1]] : undefined;
-  }
-  return e instanceof Pow && !isExp(e) ? matrixShape(e.base) : undefined;
+  return e instanceof MatrixExpr ? e.shape : undefined;
 }
 
 // ---------------------------------------------------------------------------

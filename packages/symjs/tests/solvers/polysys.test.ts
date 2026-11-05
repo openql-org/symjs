@@ -4,7 +4,7 @@
 // Tests of src/solvers/polysys.ts: polynomial systems (solve_poly_system, factor_system); expected values from SymPy 1.14.
 
 import { describe, expect, it } from 'vitest';
-import { factorSystem, factorSystemCond, NotImplementedError, parse, solvePolySystem, symbols } from '../../src';
+import { factorSystem, factorSystemCond, NotImplementedError, parse, solvePolySystem, solveTriangulated, symbols } from '../../src';
 
 const [x, y, z] = symbols('x y z');
 const P = (ss: string[]) => ss.map((s) => parse(s));
@@ -165,5 +165,18 @@ describe('factor_system ordering', () => {
     // SymPy factor_system
     expect(show(factorSystem(P(['x**2 + y', 'x**2 - y'])))).toBe('[[x**2 + y, x**2 - y]]');
     expect(show(factorSystem(P(['x**2 - y', 'x**2 + y'])))).toBe('[[x**2 + y, x**2 - y]]');
+  });
+});
+
+describe('solveTriangulated', () => {
+  it('solves zero-dimensional systems from the Groebner basis (SymPy)', () => {
+    expect(show(solveTriangulated(P(['x**2 + y + z - 1', 'x + y**2 + z - 1', 'x + y + z**2 - 1']), [x, y, z]))).toBe('[[0, 0, 1], [0, 1, 0], [1, 0, 0]]');
+    expect(show(solveTriangulated(P(['x**2 - 1', 'y - x']), [x, y]))).toBe('[[-1, -1], [1, 1]]');
+    // a leading coefficient vanishing at a root drops the polynomial (SymPy)
+    expect(show(solveTriangulated(P(['x*y - y', 'y**2 - y', 'x**2 - x']), [x, y]))).toBe('[[0, 0], [1, 0], [1, 1]]');
+    expect(show(solveTriangulated(P(['x**2*y - y', 'y**2 - y', 'x**3 - x']), [x, y]))).toBe('[[-1, 0], [-1, 1], [0, 0], [1, 0], [1, 1]]');
+    // only rational roots (SymPy without extension)
+    expect(show(solveTriangulated(P(['x**2 - 2', 'y - 1']), [x, y]))).toBe('[]');
+    expect(show(solveTriangulated(P(['x - y', 'y**2 - 4', 'z*y - 2']), [x, y, z]))).toBe('[[-2, -2, -1], [2, 2, 1]]');
   });
 });

@@ -8,12 +8,12 @@
 
 import { isIntegerQ, isNegative as isNegativeQ, isPositive, isReal, isZero as isZeroQ } from './assumptions';
 import type { ExprLike, FnName } from './nodes';
-import { Add, Constant, Dummy, Expr, Float, Fn, Mul, Pow, Rational, S, Special, Sym, UndefFn, asRational, impl, isNum } from './nodes';
+import { Add, Constant, Dummy, Expr, ExtensionExpr, Float, Fn, Mul, Order, Pow, Rational, S, Special, Sym, UndefFn, asRational, impl, isAddLike, isMulLike, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
 import { numAdd, numNeg } from './num';
 import { add, asBaseExp, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
 import { ExprMap } from './exprmap';
-import { freeSymbols, xreplace as xreplaceM } from './traverse';
+import { boundSymbols, freeSymbols, mapBottomUp as mapBottomUpM, rebuild as rebuildM, subs as subsM, xreplace as xreplaceM } from './traverse';
 import { at, getOrThrow } from './guard';
 import { ordered } from './match';
 import { InvariantError } from './errors';
@@ -40,8 +40,9 @@ const asRealImagExpand = (e: Expr): [Expr, Expr] => {
 
 const isOne = (e: Expr) => e instanceof Rational && e.isOne;
 const isZeroE = (e: Expr) => e instanceof Rational && e.isZero;
-const addArgs = (e: Expr): readonly Expr[] => (e instanceof Add ? e.args : [e]);
-const mulArgs = (e: Expr): readonly Expr[] => (e instanceof Mul ? e.args : [e]);
+// SymPy Add.make_args / Mul.make_args: the terms of a sum and the factors of a product (MatAdd, MatMul included)
+const addArgs = (e: Expr): readonly Expr[] => (isAddLike(e) ? e.args : [e]);
+const mulArgs = (e: Expr): readonly Expr[] => (isMulLike(e) ? e.args : [e]);
 
 /** SymPy `_keep_coeff`: coeff*factors without distributing a Rational over a sum. */
 export function keepCoeff(coeffIn: Expr, factorsIn: Expr): Expr {
@@ -211,7 +212,8 @@ export function coeff(eIn: ExprLike, xIn: ExprLike, n = 1, right = false, first 
 export function asIndependent(eIn: ExprLike, deps: readonly Expr[], opts: { asAdd?: boolean } = {}): [Expr, Expr] {
   const e = sympify(eIn);
   if (isZeroE(e)) return [e, e];
-  const wantAdd = opts.asAdd ?? e instanceof Add;
+  // SymPy isinstance(self, Add); a MatAdd or MatMul is then not split (SymPy compares func with Add and Mul)
+  const wantAdd = opts.asAdd ?? isAddLike(e);
   const syms = deps.filter((d): d is Sym => d instanceof Sym);
   const other = deps.filter((d) => !(d instanceof Sym));
   const has = (x: Expr): boolean => {
@@ -246,28 +248,28 @@ export function asIndependent(eIn: ExprLike, deps: readonly Expr[], opts: { asAd
 export function asCoeffAdd(eIn: ExprLike, deps: readonly Expr[] = []): [Expr, Expr[]] {
   const e = sympify(eIn);
   if (deps.length) {
-    if (!(e instanceof Add)) return deps.some((d) => e.has(d)) ? [S.Zero, [e]] : [e, []];
+    if (!isAddLike(e)) return deps.some((d) => e.has(d)) ? [S.Zero, [e]] : [e, []];
     const dep = e.args.filter((a) => deps.some((d) => a.has(d)));
     const ind = e.args.filter((a) => !deps.some((d) => a.has(d)));
     return [add(...ind), dep];
   }
   if (isNum(e)) return [e, []];
-  if (e instanceof Add && at(e.args, 0).isNumber) return [at(e.args, 0), [...e.args.slice(1)]];
-  return [S.Zero, e instanceof Add ? [...e.args] : [e]];
+  if (isAddLike(e) && at(e.args, 0).isNumber) return [at(e.args, 0), [...e.args.slice(1)]];
+  return [S.Zero, [...addArgs(e)]];
 }
 
 /** SymPy `as_coeff_mul(*deps)`. */
 export function asCoeffMul(eIn: ExprLike, deps: readonly Expr[] = []): [Expr, Expr[]] {
   const e = sympify(eIn);
   if (deps.length) {
-    if (!(e instanceof Mul)) return deps.some((d) => e.has(d)) ? [S.One, [e]] : [e, []];
+    if (!isMulLike(e)) return deps.some((d) => e.has(d)) ? [S.One, [e]] : [e, []];
     const dep = e.args.filter((a) => deps.some((d) => a.has(d)));
     const ind = e.args.filter((a) => !deps.some((d) => a.has(d)));
     return [mul(...ind), dep];
   }
   if (isNum(e)) return [e, []];
-  if (e instanceof Mul && at(e.args, 0).isNumber) return [at(e.args, 0), [...e.args.slice(1)]];
-  return [S.One, e instanceof Mul ? [...e.args] : [e]];
+  if (isMulLike(e) && at(e.args, 0).isNumber) return [at(e.args, 0), [...e.args.slice(1)]];
+  return [S.One, [...mulArgs(e)]];
 }
 
 /** SymPy `primitive()`: [content, primitive] with rational content. */
@@ -320,7 +322,7 @@ export function asContentPrimitive(eIn: ExprLike, opts: { clear?: boolean; radic
     if (opts.radical && prim instanceof Add) prim = extractCommonRadical(prim);
     return [con, prim];
   }
-  if (e instanceof Mul) {
+  if (isMulLike(e)) {
     let coef: Rational = S.One;
     const args: Expr[] = [];
     for (const a of e.args) {
@@ -436,7 +438,7 @@ export function extractMultiplicatively(eIn: ExprLike, cIn: ExprLike): Expr | un
     if (!cs.isOne) return new Add(newargs.map((t) => mul(cs, t)));
     return add(...newargs);
   }
-  if (e instanceof Mul) {
+  if (isMulLike(e)) {
     const args = [...e.args];
     for (let i = 0; i < args.length; i++) {
       const n = extractMultiplicatively(at(args, i), c);
@@ -550,7 +552,7 @@ export function isPolynomial(eIn: ExprLike, syms: readonly Expr[] = []): boolean
   const go = (x: Expr): boolean => {
     if (inSyms(x)) return true;
     if (!hasAny(x)) return true;
-    if (x instanceof Add || x instanceof Mul) return x.args.every(go);
+    if (isAddLike(x) || isMulLike(x)) return x.args.every(go);
     if (x instanceof Pow) {
       if (hasAny(x.exp)) return false;
       return go(x.base) && x.exp instanceof Rational && x.exp.isInteger && !x.exp.isNegative;
@@ -570,7 +572,7 @@ export function isRationalFunction(eIn: ExprLike, syms: readonly Expr[] = []): b
   const hasAny = (x: Expr) => s.some((y) => x.has(y));
   const go = (x: Expr): boolean => {
     if (inSyms(x) || !hasAny(x)) return true;
-    if (x instanceof Add || x instanceof Mul) return x.args.every(go);
+    if (isAddLike(x) || isMulLike(x)) return x.args.every(go);
     if (x instanceof Pow) {
       if (hasAny(x.exp)) return false;
       return go(x.base) && x.exp instanceof Rational && x.exp.isInteger;
@@ -608,6 +610,8 @@ export function isConstant(eIn: ExprLike, wrt: readonly Sym[] = []): boolean {
 /** SymPy `as_real_imag()`. */
 export function asRealImag(eIn: ExprLike): [Expr, Expr] {
   const e0 = sympify(eIn);
+  const own = e0 instanceof ExtensionExpr ? e0.asRealImagSelf() : undefined;
+  if (own) return own;
   if (e0 instanceof Fn && e0.name === 'log') {
     const a = at(e0.args, 0);
     return [log(abs(a)), arg(a)];
@@ -622,9 +626,10 @@ export function asRealImag(eIn: ExprLike): [Expr, Expr] {
 /** SymPy `as_numer_denom()` (port of the Add, Mul and Pow methods). */
 export function asNumerDenom(eIn: ExprLike): [Expr, Expr] {
   const e = sympify(eIn);
-  if (!e.isCommutative) return [e, S.One];
+  // SymPy Mul.as_numer_denom of a MatMul: the products of the numerators and of the denominators
+  if (!e.isCommutative && !(isMulLike(e) && !(e instanceof Mul))) return [e, S.One];
   if (e instanceof Rational) return [Rational.of(e.p), Rational.of(e.q)];
-  if (e instanceof Mul) {
+  if (isMulLike(e)) {
     const ns: Expr[] = [];
     const ds: Expr[] = [];
     for (const f of e.args) {
@@ -789,7 +794,7 @@ export function asCoefficientsDict(eIn: ExprLike, syms: readonly Expr[] = []): E
   };
   if (!syms.length) {
     // the terms of a sum have distinct non-numeric parts
-    return new ExprMap((e instanceof Add ? e.args : [e]).map((a) => {
+    return new ExprMap(addArgs(e).map((a) => {
       const [c, m] = splitCoeff(a);
       return [m, c];
     }));
@@ -832,7 +837,7 @@ export function isAlgebraicExpr(eIn: ExprLike, syms: readonly Expr[] = []): bool
   const go = (x: Expr): boolean => {
     if (!s.some((y) => x.has(y))) return true;
     if (s.some((y) => y.key === x.key)) return true;
-    if (x instanceof Add || x instanceof Mul) return x.args.every(go);
+    if (isAddLike(x) || isMulLike(x)) return x.args.every(go);
     if (x instanceof Pow) return x.exp instanceof Rational && go(x.base);
     return false;
   };
@@ -895,7 +900,7 @@ export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | un
   const go = (t: Expr): boolean | undefined => {
     if (!t.has(x)) return true;
     if (t.key === x.key) return true;
-    if (t instanceof Add || t instanceof Mul) {
+    if (isAddLike(t) || isMulLike(t)) {
       const rs = t.args.map(go);
       if (rs.some((r) => r === false)) return false;
       return rs.every((r) => r === true) ? true : undefined;
@@ -994,13 +999,13 @@ export function asTerms(eIn: ExprLike): [[Expr, [[number, number], number[], Exp
   const e = sympify(eIn);
   const gens: Expr[] = [];
   const terms: [Expr, [number, number], Map<string, [Expr, number]>, Expr[]][] = [];
-  for (const term of e instanceof Add ? e.args : [e]) {
+  for (const term of addArgs(e)) {
     const [c0, rest] = splitCoeff(term);
     let coeff = { re: c0.toNumber(), im: 0 };
     const cpart = new Map<string, [Expr, number]>();
     const nc: Expr[] = [];
     if (!(rest instanceof Rational && rest.p === 1n && rest.q === 1n)) {
-      for (const f of rest instanceof Mul ? rest.args : [rest]) {
+      for (const f of mulArgs(rest)) {
         if (impl.freeSymbols(f).size === 0) {
           try {
             const v = f.toComplex();
@@ -1027,4 +1032,112 @@ export function asTerms(eIn: ExprLike): [[Expr, [[number, number], number[], Exp
     return [term, [coeff, monom, nc]] as [Expr, [[number, number], number[], Expr[]]];
   });
   return [out, sorted];
+}
+
+// ---------------------------------------------------------------------------
+// Basic and Expr methods without structure of their own
+// ---------------------------------------------------------------------------
+
+/**
+ * SymPy `as_dummy()`: the expression with the variables bound by each object
+ * (integrals, sums, lambdas, ...) replaced by the canonical symbols `_0`,
+ * `_1`, ... within that object; a symbol gives a new Dummy of the same name
+ * (keeping only its commutativity).
+ */
+export function asDummy(eIn: ExprLike): Expr {
+  const e = sympify(eIn);
+  if (e instanceof Sym) return new Dummy(e.name, e.isCommutative ? {} : { commutative: false });
+  if (atoms(e, (a) => a instanceof Sym).length === 0) return e;
+  return mapBottomUpM(e, (x) => (boundSymbols(x).length ? canonicalBound(x) : x));
+}
+
+/** SymPy as_dummy `can`: the bound symbols of x replaced by its canonical variables. */
+function canonicalBound(xIn: Expr): Expr {
+  const bound = boundSymbols(xIn);
+  const isBound = (s: Expr) => bound.some((b) => b.key === s.key);
+  // mask the free occurrences of bound symbols
+  const masks: [Expr, Expr][] = [...freeSymbols(xIn)].filter(isBound).map((s) => [s, new Dummy()]);
+  let x = masks.length ? subsM(xIn, masks) : xIn;
+  // SymPy canonical_variables: _0, _1, ... avoiding the names of the other symbols (here also those
+  // of nested objects, whose canonical symbols are ordinary symbols)
+  const names = new Set(atoms(x, (a) => !isBound(a)).filter((a): a is Sym => a instanceof Sym).map((a) => a.name));
+  let i = 0;
+  const reps: [Expr, Expr][] = bound.map((b) => {
+    let name = `_${i++}`;
+    while (names.has(name)) name = `_${i++}`;
+    return [b, new Sym(name)];
+  });
+  x = xreplaceM(x, reps);
+  return xreplaceM(x, masks.map(([s, d]) => [d, s]));
+}
+
+/** SymPy `Expr.as_expr(*gens)`: the expression itself (Poly.asExpr converts a polynomial). */
+export function asExpr(e: ExprLike, ..._gens: readonly Expr[]): Expr {
+  return sympify(e);
+}
+
+/** SymPy `copy()`: expressions are immutable, so the expression itself. */
+export function copy(e: ExprLike): Expr {
+  return sympify(e);
+}
+
+/** SymPy `getO()`: the additive order term O(...) of e, or undefined when there is none. */
+export function getO(eIn: ExprLike): Expr | undefined {
+  const e = sympify(eIn);
+  if (e instanceof Order) return e;
+  return e instanceof Add ? e.args.find((a) => a instanceof Order) : undefined;
+}
+
+/** SymPy `removeO()`: e without its additive order term. */
+export function removeO(eIn: ExprLike): Expr {
+  const e = sympify(eIn);
+  if (e instanceof Order) return S.Zero;
+  return e instanceof Add ? add(...e.args.filter((a) => !(a instanceof Order))) : e;
+}
+
+/** SymPy `normal()`: n/d of as_numer_denom, with a numeric denominator kept as a coefficient. */
+export function normal(eIn: ExprLike): Expr {
+  const [n, d] = asNumerDenom(sympify(eIn));
+  if (isOne(d)) return n;
+  // SymPy _unevaluated_Mul(n, 1/d): the coefficient is not distributed over a sum
+  return d.isNumber ? keepCoeff(pow(d, -1), n) : mul(n, pow(d, -1));
+}
+
+/**
+ * SymPy `nseries(x, x0, n)`: the series expansion about x0 up to O((x - x0)**n).
+ * Without x the expansion is in the only free symbol (an expression without
+ * free symbols, or not containing x, is returned unchanged). symjs computes it
+ * with `series`, which gives exactly the terms below the order (SymPy's
+ * _eval_nseries may give fewer).
+ */
+export function nseries(eIn: ExprLike, x?: Sym, x0: ExprLike = 0, n = 6): Expr {
+  const e = sympify(eIn);
+  const fs = [...freeSymbols(e)];
+  if (x === undefined) {
+    if (fs.length > 1) throw new RangeError('x must be given for multivariate functions.');
+    if (fs.length === 0) return e;
+    return impl.series(e, at(fs, 0), x0, n);
+  }
+  if (!fs.some((s) => s.key === x.key)) return e;
+  return impl.series(e, x, x0, n);
+}
+
+/** An expression that can be applied to arguments (a Lambda, a random process, ...: SymPy callable()). */
+const isCallableExpr = (e: Expr): e is Expr & { call(...args: ExprLike[]): Expr } => 'call' in e && typeof e.call === 'function';
+
+/**
+ * SymPy `rcall(*args)`: applies the callable parts of the expression to args
+ * (`rcall(x + Lambda(y, 2*y), z)` is `x + 2*z`), the abuse of notation for
+ * operators.
+ */
+export function rcall(eIn: ExprLike, ...args: ExprLike[]): Expr {
+  const e = sympify(eIn);
+  if (isCallableExpr(e)) return e.call(...args);
+  if (e.args.length === 0) return e;
+  return rebuildM(e, e.args.map((a) => rcall(a, ...args)));
+}
+
+/** SymPy `prod(a, start=1)`: start times the product of the items of a. */
+export function prod(a: Iterable<ExprLike>, start: ExprLike = 1): Expr {
+  return mul(start, ...a);
 }

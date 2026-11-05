@@ -952,3 +952,80 @@ describe('evalf of a matrix element', () => {
     expect(String(sj.evalf(MatrixElement(M, i as sj.Expr, 0)))).toBe('Matrix([[1.0, 2.0], [3.0, 4.0]])[i, 0]');
   });
 });
+
+describe('Expr methods of matrix expressions (SymPy MatrixExpr derives from Expr)', () => {
+  const A = MatrixSymbol('A', 2, 2);
+  const B = MatrixSymbol('B', 2, 2);
+  const C = MatrixSymbol('C', 2, 2);
+  const [x, n] = symbols('x n');
+  const show = (r: unknown): string => (Array.isArray(r) ? `[${r.map(show).join(', ')}]` : r instanceof Map ? `{${[...r].map(([k, v]) => `${show(k)}: ${show(v)}`).join(', ')}}` : String(r));
+  it('core arithmetic builds MatAdd, MatMul and MatPow (SymPy constructor postprocessors)', () => {
+    expect(sj.add(A, B)).toBeInstanceOf(MatrixExpr);
+    expect(s(sj.add(A, B))).toBe('A + B');
+    expect(s(sj.mul(2, x, A, B))).toBe('(2*x)*A*B');
+    expect(sj.mul(2, x, A, B)).toBeInstanceOf(MatMulNode);
+    expect(s(sj.sub(A, B))).toBe('A - B');
+    expect(s(sj.pow(A, 2))).toBe('A**2');
+    // a sum of a scalar and a matrix stays an Add (SymPy Add(x, A) is x + A)
+    expect(s(sj.add(x, A))).toBe('x + A');
+    expect(sj.add(x, A)).not.toBeInstanceOf(MatrixExpr);
+    expect(s(sj.sub(x, A))).toBe('x - A');
+    expect(s(sj.pow(2, A))).toBe('2**A');
+  });
+  it('fromiter', () => {
+    // SymPy MatAdd.fromiter([A, B]) and MatMul.fromiter([2, A])
+    expect(s(sj.Expr.fromiter.call(cast(MatAdd(A, B), MatrixExpr).constructor as typeof MatrixExpr, [A, B]))).toBe('A + B');
+    expect(s(MatMulNode.fromiter([2, A]))).toBe('2*A');
+    expect(() => MatrixExpr.fromiter([A])).toThrow(sj.NotImplementedError);
+  });
+  it('structural methods treat MatAdd as a sum and MatMul as a product', () => {
+    // SymPy 1.14 values
+    expect(show(sj.argsCnc(sj.mul(2, x, A, B)))).toBe('[2*x]');
+    expect(show(sj.asCoeffAdd(A.add(B)))).toBe('[0, [A, B]]');
+    expect(show(sj.asCoeffMul(A.mul(2)))).toBe('[2, [A]]');
+    expect(show(sj.asCoeffMul(sj.mul(2, x, A, B)))).toBe('[1, [2*x, A, B]]');
+    expect(s(sj.asCoefficient(sj.mul(2, x, A), x))).toBe('2*A');
+    // SymPy (2*x*A).as_coefficient(A) raises NotImplementedError; 2*x is the coefficient
+    expect(s(sj.asCoefficient(sj.mul(2, x, A), A))).toBe('2*x');
+    expect(show(sj.asCoefficientsDict(sj.add(sj.mul(2, A), sj.mul(3, B))))).toBe('{2*A: 1, 3*B: 1}');
+    expect(show(sj.asContentPrimitive(sj.mul(2, A)))).toBe('[2, A]');
+    expect(show(sj.primitive(sj.mul(2, A)))).toBe('[1, 2*A]');
+    expect(show(sj.asIndependent(sj.mul(x, A, B), [x]))).toBe('[1, x*A*B]');
+    expect(show(sj.asIndependent(sj.add(A, sj.mul(x, B)), [x]))).toBe('[0, x*B + A]');
+    expect(show(sj.asNumerDenom(A.mul(B)))).toBe('[A*B, 1]');
+    // SymPy (1*A, x): MatMul(1, A) is A
+    expect(show(sj.asNumerDenom(A.div(x)))).toBe('[A, x]');
+    expect(show(sj.asPowersDict(A.mul(B)))).toBe('{A: 1, B: 1}');
+    expect(show(sj.asPowersDict(A.pow(2)))).toBe('{A**2: 1}');
+    expect(show(sj.asTerms(A.add(B)))).toBe('[[[A, [[1, 0], [], [A]]], [B, [[1, 0], [], [B]]]], []]');
+    expect(s(sj.coeff(sj.add(sj.mul(2, A), sj.mul(3, B)), A))).toBe('2');
+    expect([sj.couldExtractMinusSign(A.neg()), sj.couldExtractMinusSign(A), sj.couldExtractMinusSign(A.neg().mul(B))]).toEqual([true, false, true]);
+    expect(s(sj.extractMultiplicatively(A.mul(2), 2))).toBe('A');
+    // SymPy (A + B).extract_additively(A) exceeds the recursion depth
+    expect(s(sj.extractAdditively(A.add(B), A))).toBe('B');
+    expect([sj.isPolynomial(A.mul(B)), sj.isPolynomial(x.mul(A), [x]), sj.isRationalFunction(A.div(x), [x]), sj.isAlgebraicExpr(A.mul(B))]).toEqual([true, true, true, true]);
+    expect(sj.isMeromorphic(x.mul(A), x, 0)).toBe(true);
+  });
+  it('count_ops', () => {
+    expect([A.add(B), A.mul(B), sj.add(sj.mul(2, A, B), C), A.pow(2), A.T, Inverse(A), A.neg(), A.sub(B)].map((e) => sj.countOps(e))).toEqual([1, 1, 3, 0, 0, 1, 1, 1]);
+    expect(s(sj.countOps(sj.add(sj.mul(2, A, B), C), { visual: true }))).toBe('ADD + 2*MATMUL');
+    expect(s(sj.countOps(A.neg().mul(B), { visual: true }))).toBe('MATMUL + NEG');
+    expect(s(sj.countOps(A.div(x), { visual: true }))).toBe('DIV');
+  });
+  it('as_real_imag, evalf and the methods without structure', () => {
+    expect(show(sj.asRealImag(A))).toBe('[(1/2)*Adjoint(A.T) + (1/2)*A, -(I/2)*(-Adjoint(A.T) + A)]');
+    expect(s(A.evalf())).toBe('A');
+    expect(s(sj.asDummy(A.mul(B)))).toBe('A*B');
+    expect(s(sj.asExpr(A.mul(B)))).toBe('A*B');
+    expect(s(sj.copy(A.mul(B)))).toBe('A*B');
+    expect(s(sj.normal(A.mul(B)))).toBe('A*B');
+    expect(s(sj.removeO(A.mul(B)))).toBe('A*B');
+    expect(sj.getO(A.mul(B))).toBe(sj.NoMatch);
+    expect(s(sj.rcall(A.mul(B), x))).toBe('A*B');
+    expect([sj.compare(A, B), sj.compare(B, A), sj.compare(A.mul(B), A)]).toEqual([-1, 1, -1]);
+    expect(sj.asPoly(A.add(B))).toBe(sj.NoMatch);
+    // SymPy A.invert(B) raises PolynomialError (non-commutative expressions)
+    expect(() => sj.invert(A, B)).toThrow(sj.PolynomialError);
+    expect(sj.isHypergeometric(A, n)).toBe(true);
+  });
+});

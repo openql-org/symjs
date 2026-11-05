@@ -118,6 +118,21 @@ describe('class keys of the functions whose nargs is Naturals0 in SymPy', () => 
   });
 });
 
+describe('ordered factors and terms of matrix products and sums, class keys of atoms', () => {
+  it('as in SymPy', () => {
+    const [A, B, C] = ['A', 'B', 'C'].map((n) => sj.MatrixSymbol(n, 2, 2));
+    // (2*x*A*B).as_ordered_factors() -> [2*x, A, B]; (B*A*x).as_ordered_factors() -> [x, B, A]
+    expect(sj.asOrderedFactors(sj.mul(2, x!, A!, B!)).map(String)).toEqual(['2*x', 'A', 'B']);
+    expect(sj.asOrderedFactors(sj.mul(B!, A!, x!)).map(String)).toEqual(['x', 'B', 'A']);
+    // (C + A + B).as_ordered_terms() -> [A, B, C]
+    expect(asOrderedTerms(sj.add(C!, A!, B!)).map(String)).toEqual(['A', 'B', 'C']);
+    expect(asOrderedTerms(sj.add(C!, A!, B!), 'lex').map(String)).toEqual(['A', 'B', 'C']);
+    // Str('a').class_key() -> (2, 0, 'Str'); Permutation(1, 2).sort_key() -> ((2, 0, 'Permutation'), (1, ('(1 2)',)), ...)
+    expect(sj.classKey(new sj.Str('a'))).toEqual([2, 0, 'Str']);
+    expect(JSON.stringify(sortKey(new sj.Permutation(1, 2)))).toBe('[[2,0,"Permutation"],[1,["(1 2)"]],[[1,0,"Number"],[0,[]],[],1],1]');
+    expect(sj.classKey(A!)).toEqual([5, 0, 'MatrixSymbol']);
+  });
+});
 describe('class keys of matrix sums and products, sums and products', () => {
   it('as in SymPy', () => {
     const d = new sj.Sym('d');

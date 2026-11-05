@@ -10,6 +10,12 @@ import './core';
 
 export * from './tensor/index';
 
+import { arrayHooks } from './tensor/ndimarray';
+import { doit as _doit_ } from './calculus/doit';
+
+// array.doit() evaluates the elements with doit, which is a higher layer than the arrays
+arrayHooks.doit = _doit_;
+
 import { ImmutableDenseNDimArray as _ImmutableDenseNDimArray_ } from './tensor/index';
 
 /** @deprecated Use `SymArray` (`Array` shadows the JavaScript global); removed in 1.0. */

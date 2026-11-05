@@ -40,3 +40,11 @@ describe('Lambda, hypersimp and taylor terms', () => {
     expect(sstr(taylorTerm(parse('sin(x)'), 3, x))).toBe('-x**3/6');
   });
 });
+
+describe('Id', () => {
+  it('is the identity Lambda (SymPy S.IdentityFunction)', () => {
+    expect(sstr(sj.Id)).toBe('Lambda(_x, _x)');
+    expect(sstr(sj.Id.call(x))).toBe('x');
+    expect(sstr(sj.rcall(sj.Id, y))).toBe('y');
+  });
+});

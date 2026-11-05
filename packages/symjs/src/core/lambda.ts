@@ -7,7 +7,7 @@
  */
 
 import type { ExprLike } from './nodes';
-import { Expr, ExtensionExpr } from './nodes';
+import { Dummy, Expr, ExtensionExpr } from './nodes';
 import { sympify } from './ops';
 import { at } from './guard';
 
@@ -49,4 +49,12 @@ export class LambdaNode extends ExtensionExpr {
 export function Lambda(variables: Expr | readonly Expr[], expr: ExprLike): LambdaNode {
   const vs = variables instanceof Expr ? [variables] : variables;
   return new LambdaNode([...vs, sympify(expr)]);
+}
+
+/** SymPy Id (S.IdentityFunction): the identity function Lambda(_x, _x); Id.call(x) is x. */
+export const Id: LambdaNode = /* @__PURE__ */ identity();
+
+function identity(): LambdaNode {
+  const x = new Dummy('x');
+  return new LambdaNode([x, x]);
 }

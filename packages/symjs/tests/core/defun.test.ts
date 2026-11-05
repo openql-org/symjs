@@ -5,10 +5,15 @@
 // User-defined functions (defineFunction). Expected values are SymPy 1.14's.
 
 import { describe, expect, it } from 'vitest';
+import { runInNewContext } from 'node:vm';
 import {
   type Expr,
+  NoMatch,
   SymFunction,
+  arity,
   defineFunction,
+  log,
+  sin,
   diff,
   evalf,
   expand,
@@ -52,5 +57,28 @@ describe('defineFunction', () => {
     expect(s(evalf(inv(x)))).toBe('inv(x)');
     // a non-finite value is not a Float: the call stays
     expect(s(evalf(inv(0)))).toBe('inv(0)');
+  });
+});
+
+describe('arity', () => {
+  it('counts the parameters of a function (SymPy arity)', () => {
+    expect(arity((a: number) => a)).toBe(1);
+    expect(arity((a: number, b = 1) => a + b)).toEqual([1, 2]);
+    expect(arity((...a: number[]) => a.length)).toBe(NoMatch);
+    expect(arity(function named(a: number, b = [1, 2], c = 'x,y)', d = { e: 1 }) { return [a, b, c, d]; })).toEqual([1, 2, 3, 4]);
+    expect(arity(async (a: number, b: number) => a + b)).toBe(2);
+    expect(arity(sin)).toBe(1);
+    // a single parameter without parentheses, from source text
+    // (written as source text: the test transform adds the parentheses)
+    expect(arity(runInNewContext('x => Math.abs(x)') as (x: number) => number)).toBe(1);
+    // TypeScript optional parameters leave no trace at run time (SymPy arity(log) is (1, 2))
+    expect(arity(log)).toBe(2);
+  });
+  it('uses nargs or eval of defined functions', () => {
+    expect(arity(defineFunction('g2', { nargs: [2, 1] }))).toEqual([1, 2]);
+    expect(arity(defineFunction('g3', { nargs: 3 }))).toBe(3);
+    expect(arity(defineFunction('g4', { eval: (a) => a }))).toBe(1);
+    // SymPy Function.eval(*args): no fixed count
+    expect(arity(defineFunction('g5'))).toBe(NoMatch);
   });
 });

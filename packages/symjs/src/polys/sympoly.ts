@@ -10,7 +10,8 @@
 import { DomainError, ExactQuotientFailed, NotImplementedError, NotInvertible, PolynomialError, SympifyError } from '../core/errors';
 import { parse } from '../parsing/parser';
 import type { NoMatchResult } from '../core/truth';
-import { NoMatch } from '../core/truth';
+import { NoMatch, isNoMatch } from '../core/truth';
+import { isPolynomial } from '../core/methods';
 import { at, defined, expectType, first, getOrThrow } from '../core/guard';
 import { isIntegerQ, isPositive } from '../core/assumptions';
 import { factorModP } from './zassenhaus';
@@ -25,7 +26,7 @@ import { expand as expandFull, expandMul as expand } from '../simplify/expand';
 import { sqrtdenest } from '../simplify/sqrtdenest';
 import { cancel, fraction, together } from '../simplify/rational';
 import { decomposePower, keepCoeff } from '../simplify/exprtools';
-import { rationalFromFloat } from '../core/numberutils';
+import { modInverse, rationalFromFloat } from '../core/numberutils';
 import { lcm as ilcm } from '../core/numbers';
 import { divExact, ffDiv, mfactorList, mgcd, mlcm } from './mpoly';
 import { isolateRealRoots, refineRealRoot } from './rootisolation';
@@ -259,6 +260,22 @@ export class Poly {
 
   asExpr(): Expr {
     return add(...this.termList.map((t) => this.termExpr(t)));
+  }
+
+  /**
+   * SymPy ==: the same terms over the same generators (an expression is
+   * converted to a polynomial in them first). The generators of a PurePoly
+   * are placeholders: only their number has to agree.
+   */
+  equals(other: Poly | ExprLike): boolean {
+    const g = other instanceof Poly ? other : asPoly(other, ...this.gens);
+    if (isNoMatch(g)) return false;
+    if (this.pure ? this.gens.length !== g.gens.length : this.gens.length !== g.gens.length || this.gens.some((x, i) => x.key !== at(g.gens, i).key)) return false;
+    if (this.termList.length !== g.termList.length) return false;
+    return this.termList.every((t, i) => {
+      const u = at(g.termList, i);
+      return monomCmp(t.monom, u.monom) === 0 && t.coeff.key === u.coeff.key;
+    });
   }
 
   get isZero(): boolean {
@@ -1992,3 +2009,79 @@ export function sqfNorm(fIn: ExprLike, x: Sym, extension: readonly Expr[]): [num
 
 impl.factor = (e) => factor(e);
 polyHooks.factorList = (e) => factorListInt(e);
+
+/**
+ * SymPy PurePoly(expr, *gens): a polynomial whose generators are only
+ * placeholders, so that polynomials over different generators compare equal
+ * (PurePoly(x**2 + 1).equals(PurePoly(y**2 + 1))).
+ */
+export function PurePoly(ex: Poly | ExprLike, ...gens: Expr[]): Poly {
+  return Poly.from(toExpr(ex), gens.length ? gens : ex instanceof Poly ? ex.gens : undefined, { pure: true });
+}
+
+/** e, or the PolynomialError of SymPy's Poly for a non-commutative expression. */
+function commutativeOnly(e: Expr): Expr {
+  if (!e.isCommutative) throw new PolynomialError('non-commutative expressions are not supported');
+  return e;
+}
+
+/**
+ * SymPy Expr.as_poly(*gens): e as a polynomial in gens (detected when not
+ * given), or NoMatch when it is not one.
+ */
+export function asPoly(ex: ExprLike, ...gens: Expr[]): Poly | NoMatchResult {
+  const e = sympify(ex);
+  // SymPy's Poly raises PolynomialError for these (a non-commutative expression, or not a polynomial in gens)
+  if (!e.isCommutative || (gens.length > 0 && !isPolynomial(e, gens))) return NoMatch;
+  return Poly.from(e, gens.length ? gens : undefined);
+}
+
+/**
+ * SymPy invert(f, g, *gens): the inverse of f modulo g (an integer modulo an
+ * integer, or a polynomial modulo a polynomial); NotInvertible when f and g
+ * have a common factor.
+ */
+export function invert(fIn: Poly | ExprLike, gIn: Poly | ExprLike, ...gens: Expr[]): Expr {
+  const f = commutativeOnly(toExpr(fIn));
+  const g = commutativeOnly(toExpr(gIn));
+  if (f instanceof Rational && g instanceof Rational && f.isInteger && g.isInteger) return modInverse(f, g);
+  const vars = gens.length ? gens : varsFor(f, g);
+  if (vars.length !== 1) throw new PolynomialError(`invert: univariate polynomials expected, got ${str(f)} and ${str(g)}`);
+  const gp = Poly.from(g, vars, { domain: 'QQ' });
+  return Poly.from(f, vars, { domain: 'QQ' }).invert(gp).rem(gp).asExpr();
+}
+
+/** SymPy gcd_list(seq, *gens): the greatest common divisor of the items of seq (0 for none). */
+export function gcdList(seq: readonly (Poly | ExprLike)[]): Expr {
+  return seq.map(toExpr).reduce<Expr>((acc, f) => polyGcd(acc, f), S.Zero);
+}
+
+/** SymPy lcm_list(seq, *gens): the least common multiple of the items of seq (1 for none). */
+export function lcmList(seq: readonly (Poly | ExprLike)[]): Expr {
+  return seq.map(toExpr).reduce<Expr>((acc, f) => polyLcm(acc, f), S.One);
+}
+
+/**
+ * SymPy sqf(f, *gens): the square-free factorization of f, the numerator and
+ * the denominator of a rational function separately
+ * (2*x**5 + 16*x**4 + ... -> 2*(x + 1)**2*(x + 2)**3).
+ */
+export function sqf(ex: Poly, ...gens: Expr[]): Poly;
+export function sqf(ex: ExprLike, ...gens: Expr[]): Expr;
+export function sqf(ex: Poly | ExprLike, ...gens: Expr[]): Expr | Poly {
+  const [content, numer, denom] = factorListExpr(toExpr(ex), gens, { frac: true });
+  const r = mul(content, sqfProduct(numer), pow(sqfProduct(denom), -1));
+  // a polynomial gives a polynomial, as in SymPy
+  return ex instanceof Poly ? Poly.from(r, ex.gens) : r;
+}
+
+/** The product of the square-free factors: the irreducible factors of each multiplicity multiplied out. */
+function sqfProduct(factors: readonly [Expr, Expr][]): Expr {
+  const groups = new Map<string, [Expr, Expr[]]>();
+  for (const [f, k] of factors) {
+    const g = groups.get(k.key);
+    if (g) g[1].push(f);
+    else groups.set(k.key, [k, [f]]);
+  }
+  return mul(...[...groups.values()].map(([k, fs]) => pow(fs.length === 1 ? first(fs) : expand(mul(...fs)), k)));
+}

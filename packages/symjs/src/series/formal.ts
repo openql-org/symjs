@@ -10,6 +10,8 @@ import type { Expr, ExprLike, Sym } from '../core/nodes';
 import { Add, Rational, S } from '../core/nodes';
 import { add, mul, pow, sub, sympify } from '../core/ops';
 import { asIndependent } from '../core/methods';
+import { NotImplementedError } from '../core/errors';
+import { first } from '../core/guard';
 import { freeSymbols, subs } from '../core/traverse';
 import { diff } from '../calculus/diff';
 import { expand } from '../simplify/expand';
@@ -108,8 +110,20 @@ export class FormalPowerSeries {
   }
 }
 
-/** SymPy fps(f, x, x0, dir): the formal power series of f about x0. */
-export function fps(ex: ExprLike, x: Sym, x0: ExprLike = 0, direction: '+' | '-' = '+'): FormalPowerSeries {
-  return new FormalPowerSeries(sympify(ex), x, sympify(x0), direction);
+/**
+ * SymPy fps(f, x, x0, dir): the formal power series of f about x0. Without x, the
+ * only free symbol of f is the variable, and f without free symbols is returned as it is.
+ */
+export function fps(ex: ExprLike, x: Sym, x0?: ExprLike, direction?: '+' | '-'): FormalPowerSeries;
+export function fps(ex: ExprLike): FormalPowerSeries | Expr;
+export function fps(ex: ExprLike, x?: Sym, x0: ExprLike = 0, direction: '+' | '-' = '+'): FormalPowerSeries | Expr {
+  const f = sympify(ex);
+  if (x !== undefined) return new FormalPowerSeries(f, x, sympify(x0), direction);
+  // (a MatrixSymbol is not a free symbol here: SymPy fps(A) builds FormalPowerSeries(A, A, 0, ...),
+  // whose terms cannot be computed, while A is constant)
+  const free = [...freeSymbols(f)];
+  if (free.length === 0) return f;
+  if (free.length > 1) throw new NotImplementedError('multivariate formal power series');
+  return new FormalPowerSeries(f, first(free), sympify(x0), direction);
 }
 

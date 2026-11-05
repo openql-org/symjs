@@ -9,7 +9,7 @@
  */
 
 import type { ComplexValue, ConstantName, Expr, RelOp, SpecialName } from '../core/nodes';
-import { Add, BoolAtom, Constant, Derivative, Dummy, ExtensionExpr, Float, Fn, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, impl, isNum } from '../core/nodes';
+import { Add, BoolAtom, Constant, Derivative, Dummy, ExtensionExpr, Float, Fn, Mul, Order, Pow, Rational, Rel, S, Special, Sym, UndefFn, Wild, WildFunction, impl, isAddLike, isMulLike, isNum } from '../core/nodes';
 import { pow, splitCoeff } from '../core/ops';
 import { Concrete } from '../core/concrete';
 import { at, pair } from '../core/guard';
@@ -100,7 +100,8 @@ export function classKey(e: Expr): Key {
   if (e instanceof Derivative) return [5, 0, 'Derivative'];
   if (e instanceof Rel) return [5, 0, REL_CLASS[e.op]];
   // SymPy MatAdd and MatMul sort like Add and Mul
-  if (e instanceof ExtensionExpr) return e.name === 'MatAdd' ? [3, 1, 'MatAdd'] : e.name === 'MatMul' ? [3, 0, 'MatMul'] : [5, 0, e.name];
+  // (SymPy Atom subclasses such as Str and Permutation have the class key (2, 0, name))
+  if (e instanceof ExtensionExpr) return e.name === 'MatAdd' ? [3, 1, 'MatAdd'] : e.name === 'MatMul' ? [3, 0, 'MatMul'] : [e.atomClass ? 2 : 5, 0, e.name];
   // a Sum or Product sorts by its class name
   if (e instanceof Concrete) return [5, 0, e.kind2];
   if ('className' in e && typeof e.className === 'string' && e.className) return [5, 0, e.className];
@@ -150,7 +151,7 @@ export function sortKey(e: Expr): Key {
     }
     ck = classKey(expr);
     // an Indexed is an Atom in SymPy (is_Atom = True): it sorts by its printed form
-    if (expr.isAtom || (expr instanceof ExtensionExpr && expr.name === 'Indexed')) args = [impl.str(expr)];
+    if (expr.isAtom || (expr instanceof ExtensionExpr && (expr.name === 'Indexed' || expr.atomClass))) args = [impl.str(expr)];
     else if (expr instanceof Add) args = asOrderedTerms(expr).map(sortKey);
     else if (expr instanceof Mul) args = asOrderedFactors(expr).map(sortKey);
     else args = expr.args.map(sortKey);
@@ -160,7 +161,8 @@ export function sortKey(e: Expr): Key {
 
 /** SymPy `Mul.as_ordered_factors()` (all factors are commutative here). */
 export function asOrderedFactors(e: Expr): Expr[] {
-  const fs = e instanceof Mul ? [...e.args] : [e];
+  // a MatMul splits into its factors like a Mul (SymPy MatMul derives from Mul)
+  const fs = isMulLike(e) ? [...e.args] : [e];
   // commutative factors are sorted; non-commutative ones keep their order
   const c = fs.filter((f) => f.isCommutative);
   const nc = fs.filter((f) => !f.isCommutative);
@@ -227,10 +229,11 @@ function monomialKey(order: string, m: number[]): NumKey {
 export function asOrderedTerms(e: Expr, order?: TermOrder): Expr[] {
   if (order !== undefined) {
     const reverse = order.startsWith('rev-');
-    const sorted = lexOrder(e instanceof Add ? e.args : [e], reverse ? order.slice(4) : order);
+    const sorted = lexOrder(isAddLike(e) ? e.args : [e], reverse ? order.slice(4) : order);
     return reverse ? sorted.reverse() : sorted;
   }
-  const all = e instanceof Add ? e.args : [e];
+  // a MatAdd splits into its terms like an Add (SymPy MatAdd derives from Add)
+  const all = isAddLike(e) ? e.args : [e];
   const orders = all.filter((t) => t instanceof Order);
   if (orders.length > 0) {
     // SymPy: with Order terms, the other terms are sorted in reverse (ascending degree) and O comes last

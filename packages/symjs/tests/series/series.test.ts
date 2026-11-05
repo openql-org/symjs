@@ -130,6 +130,18 @@ describe('results equal SymPy 1.14', () => {
   });
 });
 
+describe('leading terms of matrix products', () => {
+  it('take the leading term of the scalar coefficient', () => {
+    const A = sj.MatrixSymbol('A', 2, 2);
+    // SymPy: (x*A).as_leading_term(x) and (sin(x)*A).as_leading_term(x) -> x*(A), the nested MatMul(x, MatMul(A)) equal to x*A
+    expect(String(sj.asLeadingTerm(sj.mul(x, A), x))).toBe('x*A');
+    expect(String(sj.asLeadingTerm(sj.mul(sj.sin(x), A), x))).toBe('x*A');
+    // SymPy (x*A).leadterm(x) fails with TypeError: Mix of Matrix and Scalar symbols; the leading term is A*x**1
+    expect(sj.leadterm(sj.mul(x, A), x).map(String)).toEqual(['A', '1']);
+    expect(() => sj.leadterm(sj.mul(x, sj.MatrixSymbol('B', x, x)), x)).toThrow('whose matrix factors depend on x');
+  });
+});
+
 describe('results that differ from SymPy 1.14', () => {
   // [call, symjs result, SymPy 1.14 result]
   const cases: [string, () => unknown, string, string][] = [

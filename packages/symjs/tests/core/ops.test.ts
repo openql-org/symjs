@@ -107,6 +107,22 @@ describe('canonicalization', () => {
   });
 });
 
+describe('exponents rebuilt as c*t in a product (SymPy Mul.flatten _gather)', () => {
+  it('distributes the number of an exponent left unevaluated by factor_terms', () => {
+    const [x, y, z] = symbols('x y z');
+    // t = Mul(Rational(-2, 25), 3*x + 4*y, evaluate=False), as factor_terms leaves it
+    const t = new sj.Mul([rational(-2, 25), add(mul(3, x!), mul(4, y!))]);
+    const e = exp(t);
+    // Mul(e) -> exp(-2*(3*x + 4*y)/25); Mul(e, 1) -> the same; e*z -> z*exp(-6*x/25 - 8*y/25); e*2 -> 2*exp(-6*x/25 - 8*y/25)
+    expect(String(mul(e))).toBe('exp(-2*(3*x + 4*y)/25)');
+    expect(String(mul(e, 1))).toBe('exp(-2*(3*x + 4*y)/25)');
+    expect(String(mul(e, z!))).toBe('z*exp(-6*x/25 - 8*y/25)');
+    expect(String(mul(e, 2))).toBe('2*exp(-6*x/25 - 8*y/25)');
+    // z**t*y -> y*z**(-6*x/25 - 8*y/25)
+    expect(String(mul(pow(z!, t), y!))).toBe('y*z**(-6*x/25 - 8*y/25)');
+  });
+});
+
 describe('numeric radicals in a product', () => {
   it('an unevaluated integer power is multiplied out: Mul(Pow(2, 3, evaluate=False), x)', () => {
     expect(String(sj.mul(new sj.Pow(R(2n), R(3n)), x))).toBe('8*x');

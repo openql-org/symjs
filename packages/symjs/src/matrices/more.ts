@@ -17,6 +17,7 @@ import { add, mul, pow, sqrt, sub, sympify } from '../core/ops';
 import { abs } from '../functions/elementary/elementary';
 import { sign } from '../functions/special/special';
 import { str } from '../printing/str';
+import { ExprMap } from '../core/exprmap';
 import { Matrix } from './matrix';
 import { connectedComponents, diagonalize, jordanBlock, jordanForm, norm, qrDecomposition, stronglyConnectedComponents } from './linalg';
 
@@ -64,6 +65,13 @@ export function berkowitz(M: Matrix): Expr[][] {
     polys.push(poly);
   }
   return [...berk, ...polys.map((p) => p.data.map((e) => e))];
+}
+
+/** SymPy Matrix.berkowitz_eigenvals: the eigenvalues with their multiplicities. */
+export function berkowitzEigenvals(M: Matrix): ExprMap<number> {
+  const out = new ExprMap<number>();
+  for (const v of M.eigenvals()) out.set(v, (out.get(v) ?? 0) + 1);
+  return out;
 }
 
 /** SymPy Matrix.berkowitz_minors: the leading principal minors by Berkowitz. */
@@ -441,24 +449,13 @@ export function elementaryColOp(M: Matrix, o: ElementaryOp): Matrix {
   return elementary(M, o, true);
 }
 
-/** Rows permuted by a list of swaps (in order, or reversed backward) or by an index list (row i <- perm[i]). */
-type SwapsOrIndices = readonly (readonly [number, number])[] | readonly number[];
-const isIndexList = (perm: SwapsOrIndices): perm is readonly number[] => perm.length > 0 && typeof perm[0] === 'number';
-function permuteBySwaps(M: Matrix, perm: SwapsOrIndices, backward: boolean): Matrix {
-  if (isIndexList(perm)) return Matrix.fromFunction(M.rows, M.cols, (i, j) => M.get(perm[i] ?? i, j));
-  const order = range(0, M.rows);
-  const swaps = [...perm];
-  if (backward) swaps.reverse();
-  for (const [a, b] of swaps) [order[a], order[b]] = [at(order, b), at(order, a)];
-  return Matrix.fromFunction(M.rows, M.cols, (i, j) => M.get(at(order, i), j));
-}
 /** SymPy Matrix.permuteFwd(perm): rows permuted by the swaps in order. */
 export function permuteFwd(M: Matrix, perm: readonly (readonly [number, number])[] | readonly number[]): Matrix {
-  return permuteBySwaps(M, perm, false);
+  return M.permute(perm);
 }
 /** SymPy Matrix.permuteBkwd(perm): rows permuted by the swaps in reverse order. */
 export function permuteBkwd(M: Matrix, perm: readonly (readonly [number, number])[] | readonly number[]): Matrix {
-  return permuteBySwaps(M, perm, true);
+  return M.permute(perm, { direction: 'backward' });
 }
 
 /** SymPy Matrix.row_del(i) (as a new matrix). */

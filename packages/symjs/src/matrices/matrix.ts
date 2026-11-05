@@ -5,12 +5,15 @@
  * @file Immutable matrices with symbolic entries.
  */
 
-import { at, defined, first } from '../core/guard';
-import { NonInvertibleMatrixError, NonSquareMatrixError } from '../core/errors';
+import { at, cast, defined, first } from '../core/guard';
+import { NonInvertibleMatrixError, NonSquareMatrixError, ShapeError } from '../core/errors';
 import type { ComplexValue, EvalfOptions, ExprLike, NumericValues, Substitution } from '../core/nodes';
-import { Expr, Rational, S, Sym } from '../core/nodes';
+import { Expr, Float, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
-import { subs } from '../core/traverse';
+import { freeSymbols, subs, xreplace } from '../core/traverse';
+import { asRealImag, atoms } from '../core/methods';
+import { replace, type Query, type Replacement } from '../core/match';
+import type { Truth } from '../core/truth';
 import { sympifyMethod } from '../core/sympify';
 import { conjugate } from '../functions/elementary/elementary';
 import { evalf, lambdify, toComplex } from '../numeric/evalf';
@@ -20,16 +23,37 @@ import { str } from '../printing/str';
 import { expandMul as expand } from '../simplify/expand';
 import { simplify } from '../simplify/simplify';
 
+/** A position (row, column) of a matrix. */
+export type MatrixPosition = readonly [number, number];
+
+/** SymPy `value == 0` for an entry (structural: an exact or floating zero). */
+const isZeroEntry = (v: Expr): boolean => (v instanceof Rational || v instanceof Float) && v.isZero;
+const isZeroE = (e: Expr): boolean => e instanceof Rational && e.isZero;
+const isIndexList = (perm: readonly (readonly [number, number])[] | readonly number[]): perm is readonly number[] => typeof perm[0] === 'number';
+const range = (a: number, b: number): number[] => Array.from({ length: Math.max(0, b - a) }, (_, i) => a + i);
+
 export class Matrix {
-  readonly rows: number;
-  readonly cols: number;
+  #rows: number;
+  #cols: number;
   /** Row-major entries. */
   readonly data: readonly Expr[];
 
   protected constructor(rows: number, cols: number, data: readonly Expr[]) {
-    this.rows = rows;
-    this.cols = cols;
+    this.#rows = rows;
+    this.#cols = cols;
     this.data = data;
+  }
+
+  get rows(): number {
+    return this.#rows;
+  }
+  get cols(): number {
+    return this.#cols;
+  }
+  /** A new shape for the entries (the in-place operations of the mutable matrix). */
+  protected reshapeInPlace(rows: number, cols: number): void {
+    this.#rows = rows;
+    this.#cols = cols;
   }
 
   // ---- construction --------------------------------------------------------
@@ -69,6 +93,18 @@ export class Matrix {
 
   static zeros(rows: number, cols = rows): Matrix {
     return new Matrix(rows, cols, Array.from({ length: rows * cols }, () => S.Zero));
+  }
+
+  /** A matrix of ones (SymPy Matrix.ones(rows, cols)). */
+  static ones(rows: number, cols = rows): Matrix {
+    return new Matrix(rows, cols, Array.from({ length: rows * cols }, () => S.One));
+  }
+
+  /** A matrix from its entries by position (SymPy Matrix.from_dok); the other entries are zero. */
+  static fromDok(rows: number, cols: number, dok: Iterable<readonly [MatrixPosition, ExprLike]>): Matrix {
+    const data: Expr[] = Array.from({ length: rows * cols }, () => S.Zero);
+    for (const [[i, j], v] of dok) data[i * cols + j] = sympify(v);
+    return new Matrix(rows, cols, data);
   }
 
   static eye(n: number): Matrix {
@@ -149,7 +185,7 @@ export class Matrix {
 
   private zip(o: Matrix, f: (a: Expr, b: Expr) => Expr, op: string): Matrix {
     if (this.rows !== o.rows || this.cols !== o.cols) {
-      throw new RangeError(`Matrix ${op}: shape mismatch ${this.rows}x${this.cols} vs ${o.rows}x${o.cols}`);
+      throw new ShapeError(`Matrix ${op}: shape mismatch ${this.rows}x${this.cols} vs ${o.rows}x${o.cols}`);
     }
     return new Matrix(this.rows, this.cols, this.data.map((a, k) => f(a, at(o.data, k))));
   }
@@ -180,7 +216,7 @@ export class Matrix {
   /** The product with each entry passed through `simp`. */
   private product(o: Matrix | ExprLike, simp: (e: Expr) => Expr): Matrix {
     if (!(o instanceof Matrix)) return this.scale(o);
-    if (this.cols !== o.rows) throw new RangeError(`Matrix mul: shape mismatch ${this.rows}x${this.cols} * ${o.rows}x${o.cols}`);
+    if (this.cols !== o.rows) throw new ShapeError(`Matrix size mismatch: (${this.rows}, ${this.cols}) * (${o.rows}, ${o.cols}).`);
     return Matrix.fromFunction(this.rows, o.cols, (i, j) => {
       const terms: Expr[] = [];
       for (let k = 0; k < this.cols; k++) {
@@ -394,6 +430,276 @@ export class Matrix {
   }
   isUnitary(): boolean {
     return this.isSquare && this.mul(this.adjoint()).equalsSimplified(Matrix.eye(this.rows));
+  }
+
+  // ---- structure (SymPy MatrixBase methods) ----------------------------------------
+
+  /** A copy (SymPy copy; the mutable matrix gives a mutable copy). */
+  copy(): Matrix {
+    return new Matrix(this.rows, this.cols, [...this.data]);
+  }
+  /** The entries as nested arrays (SymPy tolist). */
+  tolist(): Expr[][] {
+    return this.toArray();
+  }
+  /** The entries in row-major order (SymPy flat). */
+  flat(): Expr[] {
+    return [...this.data];
+  }
+  /** The nonzero entries in row-major order (SymPy values). */
+  values(): Expr[] {
+    return this.data.filter((e) => !isZeroEntry(e));
+  }
+  /** The nonzero entries by position (SymPy todok). */
+  todok(): Map<MatrixPosition, Expr> {
+    const out = new Map<MatrixPosition, Expr>();
+    this.data.forEach((v, k) => {
+      if (!isZeroEntry(v)) out.set([Math.floor(k / this.cols), k % this.cols], v);
+    });
+    return out;
+  }
+  /** The nonzero entries as row -> column -> value (SymPy todod). */
+  todod(): Map<number, Map<number, Expr>> {
+    const out = new Map<number, Map<number, Expr>>();
+    for (const [[i, j], v] of this.todok()) {
+      const row = out.get(i) ?? new Map<number, Expr>();
+      row.set(j, v);
+      out.set(i, row);
+    }
+    return out;
+  }
+
+  /** SymPy minor_submatrix(i, j): the matrix without row i and column j (negative indices count from the end). */
+  minorSubmatrix(i: number, j: number): Matrix {
+    return this.minor(i < 0 ? i + this.rows : i, j < 0 ? j + this.cols : j);
+  }
+  /** SymPy minorMatrix (deprecated name of minor_submatrix). */
+  minorMatrix(i: number, j: number): Matrix {
+    return this.minorSubmatrix(i, j);
+  }
+  /** SymPy minor(i, j) (minorEntry): the determinant of the minor submatrix. */
+  minorEntry(i: number, j: number): Expr {
+    if (!this.isSquare) throw new NonSquareMatrixError('minor: matrix must be square');
+    return this.minorSubmatrix(i, j).det();
+  }
+  /** SymPy cofactor(i, j): (-1)**(i + j) times the minor. */
+  cofactor(i: number, j: number): Expr {
+    const m = this.minorEntry(i, j);
+    return (i + j) % 2 === 0 ? m : mul(-1, m);
+  }
+
+  /** SymPy upper_triangular(k): the entries on and above the k-th diagonal. */
+  upperTriangular(k = 0): Matrix {
+    return this.map((e, i, j) => (j - i >= k ? e : 0));
+  }
+  /** SymPy lower_triangular(k): the entries on and below the k-th diagonal. */
+  lowerTriangular(k = 0): Matrix {
+    return this.map((e, i, j) => (j - i <= k ? e : 0));
+  }
+  /** SymPy diagonal(k): the k-th diagonal as a row (k > 0 above the main diagonal). */
+  diagonal(k = 0): Matrix {
+    if (k <= -this.rows || k >= this.cols) throw new RangeError(`The ${k} diagonal is out of range [${1 - this.rows}, ${this.cols - 1}]`);
+    const out: Expr[] = [];
+    for (let i = Math.max(0, -k); i < this.rows && i + k < this.cols; i++) out.push(this.get(i, i + k));
+    return Matrix.row(...out);
+  }
+  /**
+   * SymPy extract(rowsList, colsList): the submatrix of the given rows and
+   * columns (negative indices count from the end; a list of booleans selects).
+   */
+  extract(rows: readonly (number | boolean)[], cols: readonly (number | boolean)[]): Matrix {
+    const norm = (idx: readonly (number | boolean)[], n: number): number[] =>
+      idx.every((v) => typeof v === 'boolean')
+        ? idx.flatMap((v, i) => (v ? [i] : []))
+        : idx.map((v) => (typeof v === 'boolean' ? Number(v) : v < 0 ? v + n : v));
+    return this.slice(norm(rows, this.rows), norm(cols, this.cols));
+  }
+  /** SymPy reshape(rows, cols): the entries in row-major order in a new shape. */
+  reshape(r: number, c: number): Matrix {
+    if (r * c !== this.data.length) throw new RangeError(`Invalid reshape parameters ${r} ${c}`);
+    return new Matrix(r, c, [...this.data]);
+  }
+  /** SymPy rot90(k): rotated by k quarter turns clockwise. */
+  rot90(k = 1): Matrix {
+    const t = ((k % 4) + 4) % 4;
+    let r: Matrix = this;
+    for (let i = 0; i < t; i++) {
+      const R = r;
+      r = Matrix.fromFunction(R.cols, R.rows, (a, b) => R.get(R.rows - 1 - b, a));
+    }
+    return r;
+  }
+  /** SymPy vec(): the columns stacked into one column. */
+  vec(): Matrix {
+    return this.transpose().reshape(this.data.length, 1);
+  }
+  /**
+   * SymPy vech(diagonal=True, check_symmetry=True): the entries on and below
+   * the diagonal (strictly below without the diagonal), column by column.
+   */
+  vech(opts: { diagonal?: boolean; checkSymmetry?: boolean } = {}): Matrix {
+    if (!this.isSquare) throw new NonSquareMatrixError('vech: matrix must be square');
+    if ((opts.checkSymmetry ?? true) && !this.isSymmetric()) throw new RangeError('The matrix is not symmetric.');
+    const out: Expr[] = [];
+    for (let j = 0; j < this.cols; j++) for (let i = (opts.diagonal ?? true) ? j : j + 1; i < this.rows; i++) out.push(this.get(i, j));
+    return Matrix.col(...out);
+  }
+  /** SymPy row_insert(pos, other): other's rows inserted before row pos (a new matrix). */
+  rowInsert(pos: number, o: Matrix): Matrix {
+    if (this.rows === 0 && this.cols === 0) return o;
+    if (o.cols !== this.cols) throw new ShapeError('The matrices have incompatible number of columns.');
+    let p = pos < 0 ? pos + this.rows : pos;
+    p = Math.min(Math.max(p, 0), this.rows);
+    const rows = this.toArray();
+    return Matrix.of([...rows.slice(0, p), ...o.toArray(), ...rows.slice(p)]);
+  }
+  /** SymPy col_insert(pos, other): other's columns inserted before column pos (a new matrix). */
+  colInsert(pos: number, o: Matrix): Matrix {
+    if (this.rows === 0 && this.cols === 0) return o;
+    if (o.rows !== this.rows) throw new ShapeError('The matrices have incompatible number of rows.');
+    return this.transpose().rowInsert(pos, o.transpose()).transpose();
+  }
+  /**
+   * SymPy permute(perm, orientation='rows', direction='forward'): rows (or
+   * columns) permuted by a list of swaps, applied in order ('forward') or in
+   * reverse ('backward'), or by an index list (row i <- row perm[i]; as in
+   * SymPy, the direction does not apply to an index list).
+   */
+  permute(perm: readonly (readonly [number, number])[] | readonly number[], opts: { orientation?: 'rows' | 'cols'; direction?: 'forward' | 'backward' } = {}): Matrix {
+    const cols = opts.orientation === 'cols';
+    const backward = opts.direction === 'backward';
+    const n = cols ? this.cols : this.rows;
+    const order = range(0, n);
+    if (isIndexList(perm)) {
+      perm.forEach((v, i) => (order[i] = v));
+    } else {
+      const swaps = [...perm];
+      if (backward) swaps.reverse();
+      for (const [a, b] of swaps) [order[a], order[b]] = [at(order, b), at(order, a)];
+    }
+    return cols ? this.slice(range(0, this.rows), order) : this.slice(order, range(0, this.cols));
+  }
+
+  // ---- products ---------------------------------------------------------------------
+
+  /** SymPy multiply(other): the matrix product (a scalar scales). */
+  multiply(o: Matrix | ExprLike): Matrix {
+    return this.mul(o);
+  }
+  /** SymPy rmultiply(other): other * this. */
+  rmultiply(o: Matrix | ExprLike): Matrix {
+    return o instanceof Matrix ? o.mul(this) : this.scale(o);
+  }
+  /** SymPy multiply_elementwise(other): the Hadamard product. */
+  multiplyElementwise(o: Matrix): Matrix {
+    if (this.rows !== o.rows || this.cols !== o.cols) throw new ShapeError(`Matrix shapes must agree (${this.rows}, ${this.cols}) != (${o.rows}, ${o.cols})`);
+    return this.map((e, i, j) => mul(e, o.get(i, j)));
+  }
+  /** SymPy project(v): the projection of this vector onto v. */
+  project(v: Matrix): Matrix {
+    const dot = (a: Matrix, b: Matrix): Expr => add(...a.data.map((e, k) => mul(e, at(b.data, k))));
+    return v.scale(mul(dot(this, v), pow(dot(v, v), -1)));
+  }
+  /** SymPy hat(): the skew-symmetric matrix of the cross product with this 3-vector. */
+  hat(): Matrix {
+    if (this.rows !== 3 || this.cols !== 1) throw new ShapeError(`Dimensions incorrect, expected (3, 1), got (${this.rows}, ${this.cols})`);
+    const [x, y, z] = [this.get(0, 0), this.get(1, 0), this.get(2, 0)];
+    return Matrix.of([
+      [0, mul(-1, z), y],
+      [z, 0, mul(-1, x)],
+      [mul(-1, y), x, 0],
+    ]);
+  }
+  /** SymPy vee(): the 3-vector of a skew-symmetric 3x3 matrix (the inverse of hat). */
+  vee(): Matrix {
+    if (this.rows !== 3 || this.cols !== 3) throw new ShapeError(`Dimensions incorrect, expected (3, 3), got (${this.rows}, ${this.cols})`);
+    if (this.isAntiSymmetric() !== true) throw new RangeError('Matrix is not skew-symmetric');
+    return Matrix.col(this.get(2, 1), this.get(0, 2), this.get(1, 0));
+  }
+
+  // ---- predicates on the entries --------------------------------------------------
+
+  /** SymPy is_symmetric(simplify=True): equal to its transpose (the differences simplified unless `simplify` is false). */
+  isSymmetric(simplifyEntries = true): boolean {
+    if (!this.isSquare) return false;
+    const d = this.sub(this.transpose());
+    return d.data.every((e) => isZeroE(simplifyEntries ? simplify(e) : e));
+  }
+  /**
+   * SymPy is_anti_symmetric(simplify=True): equal to minus its transpose;
+   * 'unknown' when an unsimplified entry sum is not structurally zero.
+   */
+  isAntiSymmetric(simplifyEntries = true): Truth {
+    if (!this.isSquare) return false;
+    const sums = this.add(this.transpose()).data;
+    if (simplifyEntries) return sums.every((e) => isZeroE(simplify(e)));
+    if (sums.every(isZeroE)) return true;
+    return sums.some((e) => e.isNumber && !isZeroE(e)) ? false : 'unknown';
+  }
+  /** SymPy is_diagonal(): the entries off the main diagonal are zero (rectangular matrices too). */
+  isDiagonal(): boolean {
+    return this.data.every((e, k) => Math.floor(k / this.cols) === k % this.cols || isZeroE(e));
+  }
+  /** SymPy is_upper: the entries below the main diagonal are zero. */
+  isUpper(): boolean {
+    return this.data.every((e, k) => Math.floor(k / this.cols) <= k % this.cols || isZeroE(e));
+  }
+  /** SymPy is_lower: the entries above the main diagonal are zero. */
+  isLower(): boolean {
+    return this.data.every((e, k) => Math.floor(k / this.cols) >= k % this.cols || isZeroE(e));
+  }
+  /** SymPy is_nilpotent(): some power of the matrix is zero. */
+  isNilpotent(): boolean {
+    if (!this.isSquare) throw new NonSquareMatrixError('Nilpotency is valid only for square matrices');
+    return this.pow(this.rows).data.every(isZeroE);
+  }
+  /** SymPy is_symbolic(): some entry contains a symbol. */
+  isSymbolic(): boolean {
+    return this.data.some((e) => freeSymbols(e).size > 0);
+  }
+  /** SymPy has(*patterns): some entry contains one of the patterns. */
+  has(...patterns: ExprLike[]): boolean {
+    const ps = patterns.map((p) => sympify(p));
+    return this.data.some((e) => ps.some((p) => e.has(p)));
+  }
+  /** SymPy atoms(): the atoms of the entries, optionally filtered by a predicate. */
+  atoms(pred?: (a: Expr) => boolean): Expr[] {
+    const out = new Map<string, Expr>();
+    for (const e of this.data) for (const a of atoms(e, pred)) out.set(a.key, a);
+    return [...out.values()];
+  }
+
+  // ---- entrywise operations (SymPy applies them to each entry) ---------------------
+
+  /** SymPy n(): alias of evalf. */
+  n(n?: number | NumericValues, opts?: EvalfOptions): Matrix {
+    return this.evalf(n, opts);
+  }
+  /** SymPy as_real_imag(): the matrices of the real and imaginary parts. */
+  asRealImag(): [Matrix, Matrix] {
+    const parts = this.data.map((e) => asRealImag(e));
+    return [new Matrix(this.rows, this.cols, parts.map(([r]) => r)), new Matrix(this.rows, this.cols, parts.map(([, i]) => i))];
+  }
+  /** SymPy diff(x, n): the entries differentiated. */
+  diff(x: Expr, n = 1): Matrix {
+    return this.map((e) => e.diff(x, n));
+  }
+  /** SymPy integrate(x) or integrate((x, a, b)): the entries integrated. */
+  integrate(x: Sym, limits?: [ExprLike, ExprLike]): Matrix {
+    return this.map((e) => e.integrate(x, limits));
+  }
+  /** SymPy limit(z, z0, dir): the limits of the entries. */
+  limit(z: Sym, z0: ExprLike, dir: '+' | '-' | '+-' = '+'): Matrix {
+    return this.map((e) => e.limit(z, z0, dir));
+  }
+  /** SymPy xreplace(rule): the entries with exact subtrees replaced. */
+  xreplace(rule: Substitution): Matrix {
+    return this.map((e) => xreplace(e, rule));
+  }
+  /** SymPy replace(query, value): the entries with matching subexpressions replaced. */
+  replace(query: Query, value: Replacement, opts: Omit<NonNullable<Parameters<typeof replace>[3]>, 'map'> = {}): Matrix {
+    // (without the map option replace gives the expression only)
+    return this.map((e) => cast(replace(e, query, value, opts), Expr));
   }
 
   // ---- printing ------------------------------------------------------------------

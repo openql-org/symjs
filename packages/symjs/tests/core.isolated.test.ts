@@ -27,3 +27,12 @@ describe('core entry without the other feature areas', () => {
     expect(() => a.intersection(x)).toThrow("import '@symjs/symjs/sets'");
   });
 });
+
+describe('var', () => {
+  it('returns the symbols (SymPy var also binds them in the namespace)', () => {
+    const [p, q] = core.var('p q', { positive: true });
+    expect([String(p), String(q)]).toEqual(['p', 'q']);
+    expect(core.isPositive(p)).toBe(true);
+    expect(String(core.var('r')[0])).toBe('r');
+  });
+});

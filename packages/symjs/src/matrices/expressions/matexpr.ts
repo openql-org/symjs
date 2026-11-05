@@ -19,7 +19,7 @@ export { ShapeError } from '../../core/errors';
 import { at, cast, last } from '../../core/guard';
 import { LambdaNode } from '../../core/lambda';
 import type { ExprLike , Expr} from '../../core/nodes';
-import { Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Sym } from '../../core/nodes';
+import { Dummy, ExtensionExpr, Float, Mul, Pow, Rational, S, Sym, registerArithmetic, registerFromiter } from '../../core/nodes';
 import { isIntegerQ, isNegative, isZero } from '../../core/assumptions';
 import { and } from '../../core/boolalg';
 import { Eq } from '../../core/logic';
@@ -238,6 +238,10 @@ export class Str extends ExtensionExpr {
   withArgs(): Expr {
     return this;
   }
+  /** SymPy Str is an Atom. */
+  override get atomClass(): boolean {
+    return true;
+  }
   override printStr(): string {
     return this.value;
   }
@@ -403,6 +407,11 @@ export abstract class MatrixExpr extends ExtensionExpr {
   /** SymPy _entry(i, j): the entry without index validation. @internal */
   entry(_i: Expr, _j: Expr, _ctx?: EntryContext): Expr {
     throw new NotImplementedError(`Indexing not implemented for ${this.name}`);
+  }
+  /** SymPy MatrixExpr._eval_as_real_imag: ((M + conjugate(M))/2, (M - conjugate(M))/(2*I)). */
+  override asRealImagSelf(): [Expr, Expr] {
+    const c = this.evalConjugate();
+    return [mul(S.Half, add(this, c)), mul(add(this, mul(-1, c)), pow(mul(2, S.I), -1))];
   }
   /** SymPy as_coeff_mmul. */
   asCoeffMmul(): [Expr, MatMulNode] {
@@ -633,6 +642,10 @@ export class MatrixSymbolNode extends MatrixExpr {
   }
   override diffSelf(): Expr {
     return new ZeroMatrixNode(this.rows, this.cols);
+  }
+  /** SymPy evalf of a MatrixSymbol: the symbol itself (its dimensions stay integers). */
+  override evalfSelf(): Expr {
+    return this;
   }
 }
 
@@ -1095,6 +1108,10 @@ export class MatAddNode extends MatrixExpr {
   constructor(args: readonly Expr[]) {
     super('MatAdd', args);
   }
+  /** SymPy MatAdd derives from Add. */
+  override get assocOp(): 'Add' {
+    return 'Add';
+  }
   /** SymPy MatAdd(*args): validated, unevaluated (the empty sum is GenericZeroMatrix). */
   static create(argsIn: readonly MatArg[]): MatrixExpr {
     const args = argsIn.map(toExpr).filter((a) => !(a instanceof GenericZeroMatrixNode));
@@ -1265,6 +1282,10 @@ export class MatMulNode extends MatrixExpr {
   constructor(args: readonly Expr[]) {
     super('MatMul', args);
   }
+  /** SymPy MatMul derives from Mul. */
+  override get assocOp(): 'Mul' {
+    return 'Mul';
+  }
   /** SymPy MatMul(*args): validated, unevaluated; a product without matrices is its scalar factor. */
   static create(argsIn: readonly MatArg[]): Expr {
     const args = argsIn.map(toExpr).filter((a) => !(a instanceof GenericIdentityNode));
@@ -1398,6 +1419,30 @@ function matMul(...args: MatArg[]): Expr {
   // every caller passes at least one matrix, so the product is a matrix
   return asMat(MatMulNode.create(args)).doit();
 }
+
+// SymPy's constructor postprocessors of MatrixExpr: Add(...) and Mul(...) with matrix arguments
+// build MatAdd and MatMul (a sum of scalars and matrices stays an Add, as in SymPy), Pow(M, e) is MatPow
+registerArithmetic((op, args) => {
+  if (!args.some((a) => a instanceof MatrixExpr)) return undefined;
+  switch (op) {
+    case 'add':
+      return args.every((a) => a instanceof MatrixExpr) ? MatAddNode.create(args).doit() : undefined;
+    case 'sub': {
+      const [a, b] = [at(args, 0), at(args, 1)];
+      return a instanceof MatrixExpr && b instanceof MatrixExpr ? a.sub(b) : undefined;
+    }
+    case 'mul':
+      return matMul(...args);
+    case 'pow': {
+      const b = at(args, 0);
+      return b instanceof MatrixExpr ? b.pow(at(args, 1)) : undefined;
+    }
+  }
+});
+
+// SymPy MatAdd.fromiter(args) and MatMul.fromiter(args): the unevaluated constructors
+registerFromiter(MatAddNode, (args) => MatAddNode.create(args));
+registerFromiter(MatMulNode, (args) => MatMulNode.create(args));
 
 /** SymPy MatMul(*args): an unevaluated product of scalars and matrices. */
 export const MatMul = /* @__PURE__ */ callableClass(MatMulNode, (...args: MatArg[]): Expr => MatMulNode.create(args));

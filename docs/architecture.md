@@ -217,11 +217,13 @@ SymPy modules correspond to it as follows.
 
 | SymPy module | symjs | Scope |
 |---|---|---|
-| `categories/baseclasses.py` | `categories/baseclasses.ts` | objects, morphisms, categories and diagrams; drawing is still unimplemented |
-| `combinatorics/perm_groups.py`, `named_groups.py` | `combinatorics/permgroups.ts`, `namedgroups.ts` | stabilizer chains, membership, order, orbits and named finite groups |
+| `categories/baseclasses.py` | `categories/baseclasses.ts` | objects, morphisms, categories and diagrams; drawing diagrams (`categories/diagram_drawing.py`) is deferred like plotting |
+| `combinatorics/perm_groups.py`, `named_groups.py` | `combinatorics/permgroups.ts`, `namedgroups.ts` | Schreier-Sims bases, membership, orbits, blocks, series, centralizers, cosets, SymmetricPermutationGroup, Coset and the named groups (AbelianGroup, RubikGroup, ...) |
+| `combinatorics/util.py`, `generators.py`, `group_constructs.py`, `polyhedron.py` | `combinatorics/util.ts`, `generators.ts`, `groupconstructs.ts`, `polyhedron.ts` | base and strong generating set helpers, the Rubik's cube generators, DirectProduct, Polyhedron |
 | `polys/numberfields/subfield.py` | `polys/numberfields/subfield.ts` | exact radical power-basis embeddings and bounded primitive-element search |
-| `tensor/tensor.py` | `tensor/tensor.ts` | abstract indices, elementary slot symmetries and symmetric metric contraction |
-| `solvers/pde.py` | `solvers/pde.ts` | first-order constant-coefficient linear PDEs, explicit solution checking and variable separation |
+| `tensor/tensor.py` | `tensor/tensor.ts` | full port: index types, indices, slot symmetries, tensor heads, products and sums, Butler-Portugal canonicalization (`canon_bp`), metric contraction, component arrays (`replace_with_arrays`), TensorElement, wild tensors and the commutation groups of TensorManager |
+| `combinatorics/tensor_can.py` | `tensor/tensorcan.ts` | the Butler-Portugal canonicalization of tensors under slot and dummy symmetries (`canonicalize`, `double_coset_can_rep`, `canonical_free`, `riemann_bsgs`) |
+| `solvers/pde.py` | `solvers/pde.ts` | first-order linear PDEs with constant and variable coefficients, explicit solution checking and variable separation |
 | `solvers/solveset.py` | `solvers/solveset.ts` | nonlinear-system substitution, including dependent exponential ImageSet components |
 
 The condition-level scope and remaining limitations are maintained in

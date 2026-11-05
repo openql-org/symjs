@@ -23,12 +23,13 @@ it('pins the entire module universe without converting missing evidence into exc
 it('requires actual exported counterparts, including the concrete method owner', () => {
   expect(counterpartFor({ name: 'substitution' })).toBe('substitution');
   expect(counterpartFor({ name: 'Integer' })).toBe('Rational.of');
-  expect(hasCounterpart({ name: 'solve_triangulated' })).toBe(false);
+  expect(hasCounterpart({ name: 'solve_triangulated' })).toBe(true);
+  expect(hasCounterpart({ name: 'xypic_draw_diagram' })).toBe(false);
   expect(hasCounterpart({ name: '.det', owner: 'MutableDenseMatrix' })).toBe(true);
   expect(hasCounterpart({ name: '.det', owner: 'Expr' })).toBe(false);
   expect(hasCounterpart({ name: '.det', owner: 'UnknownClass' })).toBe(false);
   expect(hasCounterpart({ name: 'missing' })).toBe(false);
-  for (const name of Object.keys(REVIEWED_ADAPTERS).filter((n) => n !== 'solve_linear_system_LU')) expect(hasCounterpart({ name })).toBe(true);
+  for (const name of Object.keys(REVIEWED_ADAPTERS)) expect(hasCounterpart({ name })).toBe(true);
 });
 it('lists every adapter and counts unaudited computations separately', () => {
   const inventory = adapterInventory();

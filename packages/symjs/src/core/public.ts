@@ -37,6 +37,19 @@ export function match(expr: ExprLike, pattern: ExprLike, opts: { old?: boolean }
   return orNoMatch(matchImpl(expr, pattern, opts));
 }
 
+/**
+ * SymPy Basic.matches: the values of the Wilds making pattern equal to expr
+ * (pattern.matches(expr) is expr.match(pattern)), or NoMatch.
+ */
+export function matches(pattern: ExprLike, expr: ExprLike, opts: { old?: boolean } = {}): Map<Sym, Expr> | NoMatchResult {
+  return match(expr, pattern, opts);
+}
+
+/** SymPy getO: the additive order term O(...) of e, or NoMatch when there is none. */
+export function getO(e: ExprLike): Expr | NoMatchResult {
+  return orNoMatch(M.getO(e));
+}
+
 /** SymPy extract_multiplicatively: e/c when it is "simpler", else NoMatch. */
 export function extractMultiplicatively(e: ExprLike, c: ExprLike): Expr | NoMatchResult {
   return orNoMatch(M.extractMultiplicatively(e, c));
