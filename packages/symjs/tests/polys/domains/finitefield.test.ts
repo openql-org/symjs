@@ -7,10 +7,16 @@ import { Rational } from '../../../src/index';
 import { NotInvertible } from '../../../src/core/errors';
 import { CoercionFailed, QQ, ZZ } from '../../../src/polys/domains';
 import { FF, FiniteField, GF, ModularInteger } from '../../../src/polys/domains/finitefield';
+import refs from '../fields.references.json';
+import { str } from '../../../src/printing/str';
 
 const F = GF(7);
 
 describe('GF(p)', () => {
+  it('divides expression coefficients by the modular inverse', () => {
+    expect(str(GF(5).quo(Rational.of(2), Rational.of(3)))).toBe(refs.modular_quotient);
+    expect(() => GF(5).quo(Rational.of(1), Rational.of(0))).toThrow(NotInvertible);
+  });
   it('elements print like SymPy', () => {
     expect([String(GF(5).new(3)), GF(5).new(3).repr(), String(GF(5).new(4)), GF(5, false).new(4).repr(), String(GF(5, false).new(4))]).toEqual(['3 mod 5', 'SymmetricModularIntegerMod5(3)', '4 mod 5', 'ModularIntegerMod5(4)', '4 mod 5']);
     expect([String(F), String(FF(5)), F.characteristic(), F.new(3).mod, F.new(3).sym]).toEqual(['GF(7)', 'GF(5)', 7n, 7n, true]);

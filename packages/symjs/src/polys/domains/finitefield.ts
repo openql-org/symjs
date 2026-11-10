@@ -167,6 +167,10 @@ export class FiniteField extends Domain {
   override exquo(a: unknown, b: unknown): ModularInteger {
     return this.convert(a).div(this.convert(b));
   }
+  /** Division in GF(p) uses the modular inverse, including expression-backed coefficients. */
+  override quo(a: Expr, b: Expr): Expr {
+    return this.toSympy(this.exquo(a, b));
+  }
   override rem(_a: unknown, _b: unknown): ModularInteger {
     return this.convert(0);
   }

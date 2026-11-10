@@ -190,6 +190,8 @@ export type { GFPoly, GFFactorization, GFFactorMethod } from './polys/galoistool
 
 // sparse polynomial rings (SymPy sympy.polys.rings) and the IPolys methods (sympy.polys.compatibility)
 export { PolyRing, PolyElement, ring, xring, vring, sring } from './polys/rings';
+export { FracField, FracElement, field, xfield, vfield, sfield } from './polys/fields';
+export type { FracInput, FracSubstitutions } from './polys/fields';
 export { PuiseuxRing, PuiseuxPoly, puiseuxRing } from './polys/puiseux';
 export { PolynomialRingBase } from './polys/domains/oldpolynomialring';
 export { QuotientRing } from './polys/domains/quotientring';

@@ -11,9 +11,10 @@
  */
 
 import { ExactQuotientFailed, NotImplementedError, PolynomialError } from '../core/errors';
-import { at, first } from '../core/guard';
+import { at, defined, first } from '../core/guard';
+import type { FracField } from './fields';
 import type { ExprLike } from '../core/nodes';
-import { Add, Expr, Mul, Pow, Rational, Sym } from '../core/nodes';
+import { Add, Constant, Expr, Mul, Pow, Rational, Sym } from '../core/nodes';
 import { expandSymbolNames } from '../core/numberutils';
 import { add, mul, pow, sympify } from '../core/ops';
 import { gcd as igcd } from '../core/numbers';
@@ -50,6 +51,9 @@ import { GeneratorsError, MultivariatePolynomialError } from './polyerrors';
 import { Poly, inferDomain, sortGens } from './sympoly';
 
 export type { Monom } from './compatibility';
+
+/** The fraction-field constructor is registered by polys/fields to avoid an import cycle. @internal */
+export const ringHooks: { toField?: (ring: PolyRing) => FracField } = {};
 
 /** The generators of a ring: a string of names ('x,y' or 'x y'), a symbol or a sequence of them. */
 export type RingSymbols = string | Expr | readonly (string | Expr)[];
@@ -133,6 +137,11 @@ export class PolyRing extends IPolys<PolyElement> {
   /** The ring with other generators, domain or order (SymPy clone). */
   clone(opts: { symbols?: RingSymbols; domain?: DomainLike; order?: OrderLike } = {}): PolyRing {
     return new PolyRing(opts.symbols ?? this.symbols, opts.domain ?? this.domain, opts.order ?? this.order);
+  }
+
+  /** The rational function field with these generators, coefficients and order (SymPy to_field). */
+  toField(): FracField {
+    return defined(ringHooks.toField, 'fraction field module')(this);
   }
 
   /** The exponent vector of the i-th generator (SymPy monomial_basis). */
@@ -553,7 +562,7 @@ export class PolyElement {
       expv.forEach((e, i) => {
         if (!e) return;
         const s0 = at(this.ring.symbols, i);
-        const sym = s0 instanceof Sym ? str(s0) : `(${str(s0)})`;
+        const sym = s0 instanceof Sym || s0 instanceof Constant ? str(s0) : `(${str(s0)})`;
         sexpv.push(e === 1 ? sym : e < 0 ? `${sym}**(${e})` : `${sym}**${e}`);
       });
       if (scoeff) sexpv.unshift(scoeff);

@@ -30,7 +30,8 @@ import { PREC, floatString, precedence, str } from '../printing/str';
 import { expand } from '../simplify/expand';
 import { cancel, fraction } from '../simplify/rational';
 import type { Domain } from './domains';
-import { EX, FractionField, IntegerRing, PolynomialRing, QQ, RationalField, RealField, ZZ } from './domains';
+import { EX, FractionField, groundRational, IntegerRing, PolynomialRing, QQ, RationalField, RealField, ZZ } from './domains';
+import { FiniteField } from './domains/finitefield';
 import { mgcd } from './mpoly';
 import { MultivariatePolynomialError } from './polyerrors';
 import { Poly, discriminant, polyGcd, resultant } from './sympoly';
@@ -67,8 +68,12 @@ export function groundConvert(K: Domain, a: ExprLike): Expr {
 /** a == 0 in K. */
 export const groundIsZero = (K: Domain, a: Expr): boolean => K.isZero(a) || (a instanceof Rational && a.isZero);
 
-/** a == b for elements of K. */
-export const groundEq = (a: Expr, b: Expr): boolean => a.key === b.key;
+/** Exact coefficient equality, including numeric units stored as either rationals or floats. */
+export function groundEq(a: Expr, b: Expr): boolean {
+  if (a.key === b.key) return true;
+  const x = groundRational(a), y = groundRational(b);
+  return x !== undefined && y !== undefined && x[0]*y[1] === y[0]*x[1];
+}
 
 /** SymPy K.is_negative(a). */
 export function groundIsNegative(K: Domain, a: Expr): boolean {
@@ -173,6 +178,7 @@ export function groundIsUnit(K: Domain, a: Expr): boolean {
 
 /** The printed form of an element of K (SymPy printer._print of a domain element). */
 export function groundStr(K: Domain, a: Expr): string {
+  if (K instanceof FiniteField) return String(K.convert(a));
   if (K instanceof RealField && a instanceof Float) return floatString(a, true);
   if (K === EX) return `EX(${str(a)})`;
   return str(a);
@@ -180,7 +186,7 @@ export function groundStr(K: Domain, a: Expr): string {
 
 /** The printing precedence of an element of K (SymPy precedence of a domain element). */
 export function groundPrecedence(K: Domain, a: Expr): number {
-  if (K === EX) return PREC.ATOM;
+  if (K === EX || K instanceof FiniteField) return PREC.ATOM;
   if (K instanceof PolynomialRing || K instanceof FractionField) {
     const e = expand(a);
     return precedence(e);

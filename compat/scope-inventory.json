@@ -14481,9 +14481,11 @@
   {
    "module": "sympy.polys.fields",
    "sha256": "45d48390e96cea7f3bcaf1c6d4a5c59c69e0d094b7480714025cf8b536f54591",
-   "status": "unimplemented",
-   "note": "FracField/FracElement (field, xfield, vfield, sfield)",
-   "sources": [],
+   "status": "partial",
+   "note": "Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration and composition remain partial.",
+   "sources": [
+    "polys/fields.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 3,

@@ -99,7 +99,6 @@
   "sympy.polys.domains.gaussiandomains: apart(1/(1 + x**2), domain=QQ_I) #d766aac1bf4df036",
   "sympy.polys.domains.gaussiandomains: factor(x**2 + 1, domain='ZZ_I') #81aeeccedf00b4bc",
   "sympy.polys.factortools: factor(x**2*y**2 - 2, extension=sqrt(2)) #eea7c1c20c6f0295",
-  "sympy.polys.fields: ((x**2 + y)/(z + 1)).diff(x) #babca751d3b0d957",
   "sympy.polys.groebnertools: f5_reduce(f, [g]) #c28411be57d99d0f",
   "sympy.polys.matrices.dense: ddm_iinv(ainv, a, QQ) #aa2b38b680f5cf6d",
   "sympy.polys.matrices.dense: ddm_ilu_solve(x, L, U, swaps, b) #1631e7d12aface44",
@@ -158,13 +157,9 @@
   "combinatorics: PolycyclicGroup",
   "polys: ComplexRootOf",
   "polys: RootOf",
-  "polys: field",
   "polys: isolate",
   "polys: prime_decomp",
   "polys: prime_valuation",
-  "polys: round_two",
-  "polys: sfield",
-  "polys: vfield",
-  "polys: xfield"
+  "polys: round_two"
  ]
 }

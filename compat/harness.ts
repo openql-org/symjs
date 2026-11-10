@@ -600,9 +600,10 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'PuiseuxPoly':
       return (deserialize(tree['ring'] as Tree) as sj.PuiseuxRing).fromDict((tree['terms'] as [Tree[], Tree][]).map(([m, c]) => [m.map((e) => deserialize(e) as Expr), deserialize(c) as Expr]));
-    case 'FracElement':
-      // Fraction-field elements are not ported yet.
-      throw new Unsupported(`argument type ${tree.t}`);
+    case 'FracElement': {
+      const field = deserialize(tree['field'] as Tree) as sj.FracField;
+      return field.new(field.ring.fromExpr(deserialize(tree['numer'] as Tree) as Expr), field.ring.fromExpr(deserialize(tree['denom'] as Tree) as Expr));
+    }
     case 'DomainMatrix': {
       // DomainMatrix, DDM or SDM of rows of elements (as expressions) over a domain
       const K = definedOr(deserializeDomain(tree['domain'] as Tree), 'domain');

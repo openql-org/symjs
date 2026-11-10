@@ -1,0 +1,650 @@
+{
+  "field": "Rational function field in x, y, z over ZZ with lex order",
+  "zero": "0",
+  "one": "1",
+  "fraction": "(x**2 + 3*y)/z",
+  "derivative": "2*x/(z + 1)",
+  "quotient_derivative": "(-x**2 - 2*x + 1)/(x**4 + 2*x**2 + 1)",
+  "evaluate": "3*y/z",
+  "evaluate_reordered": "(3*y + 1)/2",
+  "subs": "3*y/z",
+  "subs_list": "7/z",
+  "ground_rational": "2/3",
+  "cancel_sign": "(-x - 1)/2",
+  "raw": "(x**2 - 1)/(x - 1)",
+  "raw_zero": "0/x",
+  "negative_power": "1/(x**2)",
+  "negative_odd_power": "1/(-x)",
+  "compound_denominator": "x/(2*y)",
+  "power_denominator": "x/(y**2)",
+  "negative_denominator": "x/-1",
+  "reordered": "(3*y + x**2)/z",
+  "domain": "ZZ(x,y,z)",
+  "evaluate_all": "2",
+  "non_symbol_expression": "y*(x**(3/2)/y + 1)",
+  "modular_quotient": "-1",
+  "real_arithmetic": "(1.5*t + 0.5)/(t - 1.0)",
+  "expression_arithmetic": "(EX(3/2)*t + EX(1/2))/(t - EX(-1))",
+  "positive_characteristic_derivative": "0 mod 5",
+  "ground_equalities": [
+    true,
+    true,
+    false,
+    true,
+    false,
+    false,
+    false
+  ],
+  "operations": [
+    {
+      "domain": "ZZ",
+      "lhs": "(x+1)/(x-1)",
+      "rhs": "(x-1)/(x+1)",
+      "op": "add",
+      "result": "(2*x**2 + 2)/(x**2 - 1)",
+      "numer": "2*x**2 + 2",
+      "denom": "x**2 - 1"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "(x+1)/(x-1)",
+      "rhs": "(x-1)/(x+1)",
+      "op": "sub",
+      "result": "4*x/(x**2 - 1)",
+      "numer": "4*x",
+      "denom": "x**2 - 1"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "(x+1)/(x-1)",
+      "rhs": "(x-1)/(x+1)",
+      "op": "mul",
+      "result": "1",
+      "numer": "1",
+      "denom": "1"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "(x+1)/(x-1)",
+      "rhs": "(x-1)/(x+1)",
+      "op": "div",
+      "result": "(x**2 + 2*x + 1)/(x**2 - 2*x + 1)",
+      "numer": "x**2 + 2*x + 1",
+      "denom": "x**2 - 2*x + 1"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "(x+y)/(x*y)",
+      "rhs": "(x-y)/(x*y)",
+      "op": "add",
+      "result": "2/y",
+      "numer": "2",
+      "denom": "y"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "(x+y)/(x*y)",
+      "rhs": "(x-y)/(x*y)",
+      "op": "sub",
+      "result": "2/x",
+      "numer": "2",
+      "denom": "x"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "(x+y)/(x*y)",
+      "rhs": "(x-y)/(x*y)",
+      "op": "mul",
+      "result": "(x**2 - y**2)/(x**2*y**2)",
+      "numer": "x**2 - y**2",
+      "denom": "x**2*y**2"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "(x+y)/(x*y)",
+      "rhs": "(x-y)/(x*y)",
+      "op": "div",
+      "result": "(x + y)/(x - y)",
+      "numer": "x + y",
+      "denom": "x - y"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "0",
+      "rhs": "(x+1)/(y+1)",
+      "op": "add",
+      "result": "(x + 1)/(y + 1)",
+      "numer": "x + 1",
+      "denom": "y + 1"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "0",
+      "rhs": "(x+1)/(y+1)",
+      "op": "sub",
+      "result": "(-x - 1)/(y + 1)",
+      "numer": "-x - 1",
+      "denom": "y + 1"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "0",
+      "rhs": "(x+1)/(y+1)",
+      "op": "mul",
+      "result": "0",
+      "numer": "0",
+      "denom": "1"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "0",
+      "rhs": "(x+1)/(y+1)",
+      "op": "div",
+      "result": "0",
+      "numer": "0",
+      "denom": "1"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "x/y",
+      "rhs": "2/3",
+      "op": "add",
+      "result": "(3*x + 2*y)/(3*y)",
+      "numer": "3*x + 2*y",
+      "denom": "3*y"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "x/y",
+      "rhs": "2/3",
+      "op": "sub",
+      "result": "(3*x - 2*y)/(3*y)",
+      "numer": "3*x - 2*y",
+      "denom": "3*y"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "x/y",
+      "rhs": "2/3",
+      "op": "mul",
+      "result": "2*x/(3*y)",
+      "numer": "2*x",
+      "denom": "3*y"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "x/y",
+      "rhs": "2/3",
+      "op": "div",
+      "result": "3*x/(2*y)",
+      "numer": "3*x",
+      "denom": "2*y"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "(x*y+1)/(x+y)",
+      "rhs": "(x+y)/(x*y+1)",
+      "op": "add",
+      "result": "(x**2*y**2 + x**2 + 4*x*y + y**2 + 1)/(x**2*y + x*y**2 + x + y)",
+      "numer": "x**2*y**2 + x**2 + 4*x*y + y**2 + 1",
+      "denom": "x**2*y + x*y**2 + x + y"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "(x*y+1)/(x+y)",
+      "rhs": "(x+y)/(x*y+1)",
+      "op": "sub",
+      "result": "(x**2*y**2 - x**2 - y**2 + 1)/(x**2*y + x*y**2 + x + y)",
+      "numer": "x**2*y**2 - x**2 - y**2 + 1",
+      "denom": "x**2*y + x*y**2 + x + y"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "(x*y+1)/(x+y)",
+      "rhs": "(x+y)/(x*y+1)",
+      "op": "mul",
+      "result": "1",
+      "numer": "1",
+      "denom": "1"
+    },
+    {
+      "domain": "ZZ",
+      "lhs": "(x*y+1)/(x+y)",
+      "rhs": "(x+y)/(x*y+1)",
+      "op": "div",
+      "result": "(x**2*y**2 + 2*x*y + 1)/(x**2 + 2*x*y + y**2)",
+      "numer": "x**2*y**2 + 2*x*y + 1",
+      "denom": "x**2 + 2*x*y + y**2"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "(x+1)/(x-1)",
+      "rhs": "(x-1)/(x+1)",
+      "op": "add",
+      "result": "(2*x**2 + 2)/(x**2 - 1)",
+      "numer": "2*x**2 + 2",
+      "denom": "x**2 - 1"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "(x+1)/(x-1)",
+      "rhs": "(x-1)/(x+1)",
+      "op": "sub",
+      "result": "4*x/(x**2 - 1)",
+      "numer": "4*x",
+      "denom": "x**2 - 1"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "(x+1)/(x-1)",
+      "rhs": "(x-1)/(x+1)",
+      "op": "mul",
+      "result": "1",
+      "numer": "1",
+      "denom": "1"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "(x+1)/(x-1)",
+      "rhs": "(x-1)/(x+1)",
+      "op": "div",
+      "result": "(x**2 + 2*x + 1)/(x**2 - 2*x + 1)",
+      "numer": "x**2 + 2*x + 1",
+      "denom": "x**2 - 2*x + 1"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "(x+y)/(x*y)",
+      "rhs": "(x-y)/(x*y)",
+      "op": "add",
+      "result": "2/y",
+      "numer": "2",
+      "denom": "y"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "(x+y)/(x*y)",
+      "rhs": "(x-y)/(x*y)",
+      "op": "sub",
+      "result": "2/x",
+      "numer": "2",
+      "denom": "x"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "(x+y)/(x*y)",
+      "rhs": "(x-y)/(x*y)",
+      "op": "mul",
+      "result": "(x**2 - y**2)/(x**2*y**2)",
+      "numer": "x**2 - y**2",
+      "denom": "x**2*y**2"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "(x+y)/(x*y)",
+      "rhs": "(x-y)/(x*y)",
+      "op": "div",
+      "result": "(x + y)/(x - y)",
+      "numer": "x + y",
+      "denom": "x - y"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "0",
+      "rhs": "(x+1)/(y+1)",
+      "op": "add",
+      "result": "(x + 1)/(y + 1)",
+      "numer": "x + 1",
+      "denom": "y + 1"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "0",
+      "rhs": "(x+1)/(y+1)",
+      "op": "sub",
+      "result": "(-x - 1)/(y + 1)",
+      "numer": "-x - 1",
+      "denom": "y + 1"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "0",
+      "rhs": "(x+1)/(y+1)",
+      "op": "mul",
+      "result": "0",
+      "numer": "0",
+      "denom": "1"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "0",
+      "rhs": "(x+1)/(y+1)",
+      "op": "div",
+      "result": "0",
+      "numer": "0",
+      "denom": "1"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "x/y",
+      "rhs": "2/3",
+      "op": "add",
+      "result": "(3*x + 2*y)/(3*y)",
+      "numer": "3*x + 2*y",
+      "denom": "3*y"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "x/y",
+      "rhs": "2/3",
+      "op": "sub",
+      "result": "(3*x - 2*y)/(3*y)",
+      "numer": "3*x - 2*y",
+      "denom": "3*y"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "x/y",
+      "rhs": "2/3",
+      "op": "mul",
+      "result": "2*x/(3*y)",
+      "numer": "2*x",
+      "denom": "3*y"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "x/y",
+      "rhs": "2/3",
+      "op": "div",
+      "result": "3*x/(2*y)",
+      "numer": "3*x",
+      "denom": "2*y"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "(x*y+1)/(x+y)",
+      "rhs": "(x+y)/(x*y+1)",
+      "op": "add",
+      "result": "(x**2*y**2 + x**2 + 4*x*y + y**2 + 1)/(x**2*y + x*y**2 + x + y)",
+      "numer": "x**2*y**2 + x**2 + 4*x*y + y**2 + 1",
+      "denom": "x**2*y + x*y**2 + x + y"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "(x*y+1)/(x+y)",
+      "rhs": "(x+y)/(x*y+1)",
+      "op": "sub",
+      "result": "(x**2*y**2 - x**2 - y**2 + 1)/(x**2*y + x*y**2 + x + y)",
+      "numer": "x**2*y**2 - x**2 - y**2 + 1",
+      "denom": "x**2*y + x*y**2 + x + y"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "(x*y+1)/(x+y)",
+      "rhs": "(x+y)/(x*y+1)",
+      "op": "mul",
+      "result": "1",
+      "numer": "1",
+      "denom": "1"
+    },
+    {
+      "domain": "QQ",
+      "lhs": "(x*y+1)/(x+y)",
+      "rhs": "(x+y)/(x*y+1)",
+      "op": "div",
+      "result": "(x**2*y**2 + 2*x*y + 1)/(x**2 + 2*x*y + y**2)",
+      "numer": "x**2*y**2 + 2*x*y + 1",
+      "denom": "x**2 + 2*x*y + y**2"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "(x+1)/(x-1)",
+      "rhs": "(x-1)/(x+1)",
+      "op": "add",
+      "result": "(2 mod 5*x**2 + 2 mod 5)/(x**2 + 4 mod 5)",
+      "numer": "2 mod 5*x**2 + 2 mod 5",
+      "denom": "x**2 + 4 mod 5"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "(x+1)/(x-1)",
+      "rhs": "(x-1)/(x+1)",
+      "op": "sub",
+      "result": "4 mod 5*x/(x**2 + 4 mod 5)",
+      "numer": "4 mod 5*x",
+      "denom": "x**2 + 4 mod 5"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "(x+1)/(x-1)",
+      "rhs": "(x-1)/(x+1)",
+      "op": "mul",
+      "result": "1 mod 5",
+      "numer": "1 mod 5",
+      "denom": "1 mod 5"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "(x+1)/(x-1)",
+      "rhs": "(x-1)/(x+1)",
+      "op": "div",
+      "result": "(x**2 + 2 mod 5*x + 1 mod 5)/(x**2 + 3 mod 5*x + 1 mod 5)",
+      "numer": "x**2 + 2 mod 5*x + 1 mod 5",
+      "denom": "x**2 + 3 mod 5*x + 1 mod 5"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "(x+y)/(x*y)",
+      "rhs": "(x-y)/(x*y)",
+      "op": "add",
+      "result": "2 mod 5/y",
+      "numer": "2 mod 5",
+      "denom": "y"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "(x+y)/(x*y)",
+      "rhs": "(x-y)/(x*y)",
+      "op": "sub",
+      "result": "2 mod 5/x",
+      "numer": "2 mod 5",
+      "denom": "x"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "(x+y)/(x*y)",
+      "rhs": "(x-y)/(x*y)",
+      "op": "mul",
+      "result": "(x**2 + 4 mod 5*y**2)/(x**2*y**2)",
+      "numer": "x**2 + 4 mod 5*y**2",
+      "denom": "x**2*y**2"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "(x+y)/(x*y)",
+      "rhs": "(x-y)/(x*y)",
+      "op": "div",
+      "result": "(x + y)/(x + 4 mod 5*y)",
+      "numer": "x + y",
+      "denom": "x + 4 mod 5*y"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "0",
+      "rhs": "(x+1)/(y+1)",
+      "op": "add",
+      "result": "(x + 1 mod 5)/(y + 1 mod 5)",
+      "numer": "x + 1 mod 5",
+      "denom": "y + 1 mod 5"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "0",
+      "rhs": "(x+1)/(y+1)",
+      "op": "sub",
+      "result": "(4 mod 5*x + 4 mod 5)/(y + 1 mod 5)",
+      "numer": "4 mod 5*x + 4 mod 5",
+      "denom": "y + 1 mod 5"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "0",
+      "rhs": "(x+1)/(y+1)",
+      "op": "mul",
+      "result": "0 mod 5",
+      "numer": "0 mod 5",
+      "denom": "1 mod 5"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "0",
+      "rhs": "(x+1)/(y+1)",
+      "op": "div",
+      "result": "0 mod 5",
+      "numer": "0 mod 5",
+      "denom": "1 mod 5"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "x/y",
+      "rhs": "2",
+      "op": "add",
+      "result": "(x + 2 mod 5*y)/y",
+      "numer": "x + 2 mod 5*y",
+      "denom": "y"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "x/y",
+      "rhs": "2",
+      "op": "sub",
+      "result": "(x + 3 mod 5*y)/y",
+      "numer": "x + 3 mod 5*y",
+      "denom": "y"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "x/y",
+      "rhs": "2",
+      "op": "mul",
+      "result": "2 mod 5*x/y",
+      "numer": "2 mod 5*x",
+      "denom": "y"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "x/y",
+      "rhs": "2",
+      "op": "div",
+      "result": "x/(2 mod 5*y)",
+      "numer": "x",
+      "denom": "2 mod 5*y"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "(x*y+1)/(x+y)",
+      "rhs": "(x+y)/(x*y+1)",
+      "op": "add",
+      "result": "(x**2*y**2 + x**2 + 4 mod 5*x*y + y**2 + 1 mod 5)/(x**2*y + x*y**2 + x + y)",
+      "numer": "x**2*y**2 + x**2 + 4 mod 5*x*y + y**2 + 1 mod 5",
+      "denom": "x**2*y + x*y**2 + x + y"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "(x*y+1)/(x+y)",
+      "rhs": "(x+y)/(x*y+1)",
+      "op": "sub",
+      "result": "(x**2*y**2 + 4 mod 5*x**2 + 4 mod 5*y**2 + 1 mod 5)/(x**2*y + x*y**2 + x + y)",
+      "numer": "x**2*y**2 + 4 mod 5*x**2 + 4 mod 5*y**2 + 1 mod 5",
+      "denom": "x**2*y + x*y**2 + x + y"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "(x*y+1)/(x+y)",
+      "rhs": "(x+y)/(x*y+1)",
+      "op": "mul",
+      "result": "1 mod 5",
+      "numer": "1 mod 5",
+      "denom": "1 mod 5"
+    },
+    {
+      "domain": "GF(5)",
+      "lhs": "(x*y+1)/(x+y)",
+      "rhs": "(x+y)/(x*y+1)",
+      "op": "div",
+      "result": "(x**2*y**2 + 2 mod 5*x*y + 1 mod 5)/(x**2 + 2 mod 5*x*y + y**2)",
+      "numer": "x**2*y**2 + 2 mod 5*x*y + 1 mod 5",
+      "denom": "x**2 + 2 mod 5*x*y + y**2"
+    }
+  ],
+  "inferred": [
+    {
+      "input": "(x**2 - 1)/(x - 1)",
+      "gens": [],
+      "options": {},
+      "field": "Rational function field in x over ZZ with lex order",
+      "result": "x + 1"
+    },
+    {
+      "input": "(x + 1)/(y + 1)",
+      "gens": [],
+      "options": {},
+      "field": "Rational function field in x, y over ZZ with lex order",
+      "result": "(x + 1)/(y + 1)"
+    },
+    {
+      "input": "x/2",
+      "gens": [],
+      "options": {},
+      "field": "Rational function field in x over ZZ with lex order",
+      "result": "x/2"
+    },
+    {
+      "input": "(x + 1)/(y + 1)",
+      "gens": [
+        "y",
+        "x"
+      ],
+      "options": {
+        "domain": "QQ",
+        "order": "grlex"
+      },
+      "field": "Rational function field in y, x over QQ with grlex order",
+      "result": "(x + 1)/(y + 1)"
+    },
+    {
+      "input": "(x + log(x))/x**2",
+      "gens": [],
+      "options": {},
+      "field": "Rational function field in x, log(x) over ZZ with lex order",
+      "result": "(x + (log(x)))/(x**2)"
+    },
+    {
+      "input": "(4*x**2 + x*log(x))*exp(1/x)/x**(5/3)",
+      "gens": [],
+      "options": {},
+      "field": "Rational function field in x, exp(1/x), log(x), x**(1/3) over ZZ with lex order",
+      "result": "(4*x**2*(exp(1/x)) + x*(exp(1/x))*(log(x)))/((x**(1/3))**5)"
+    },
+    {
+      "input": "exp(x)*exp(2*exp(x) + 2)",
+      "gens": [],
+      "options": {},
+      "field": "Rational function field in E, exp(exp(x)), exp(x) over ZZ with lex order",
+      "result": "E**2*(exp(exp(x)))**2*(exp(x))"
+    },
+    {
+      "input": "(x + 1)/(x*(x + log(x))**(3/2)) - 1/(x*log(x)**2)",
+      "gens": [],
+      "options": {},
+      "field": "Rational function field in x, log(x), sqrt(x + log(x)) over ZZ with lex order",
+      "result": "(x*(log(x))**2 - x*(sqrt(x + log(x))) + (log(x))**2 - (log(x))*(sqrt(x + log(x))))/(x**2*(log(x))**2*(sqrt(x + log(x))) + x*(log(x))**3*(sqrt(x + log(x))))"
+    }
+  ],
+  "inferred_list_field": "Rational function field in x, y over ZZ with lex order",
+  "inferred_list": "[x/2, (x + 1)/(y - 1)]",
+  "inferred_constant_field": "Rational function field in  over ZZ with lex order",
+  "inferred_constant": "1/2",
+  "inferred_empty_field": "Rational function field in  over ZZ with lex order",
+  "inferred_empty": "[]"
+}
