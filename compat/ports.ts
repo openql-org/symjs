@@ -594,3 +594,18 @@ PORTS['sympy.polys.orderings:O((1, 2, 3, 4))'] = () => {
   PORTS['sympy.polys.densebasic:dup_apply_pairs([1, 2, 3], [3, 2, 1], h, (1,), ZZ)'] = () => sj.dupApplyPairs([n(1), n(2), n(3)], [n(3), n(2), n(1)], h, [n(1)], sj.ZZ);
   PORTS['sympy.polys.densebasic:dmp_apply_pairs([[1], [2, 3]], [[3], [2, 1]], h, (1,), 1, ZZ)'] = () => sj.dmpApplyPairs([[n(1)], [n(2), n(3)]], [[n(3)], [n(2), n(1)]], h, [n(1)], 1, sj.ZZ);
 }
+
+// ---- sympy.polys.polyclasses: the multivariate DMP methods, through the dense functions they call
+{
+  const n = (k: number): Expr => sj.Rational.of(k);
+  const show = (v: unknown): string => (Array.isArray(v) ? `[${v.map(show).join(', ')}]` : String(v));
+  const dmp = (rep: unknown): { toString(): string } => ({ toString: () => `DMP_Python(${show(rep)}, ZZ)` });
+  const m = 'sympy.polys.polyclasses:';
+  PORTS[`${m}DMP([[[ZZ(1)]], [[ZZ(1)], [ZZ(2)]]], ZZ).exclude()`] = () => {
+    const [J, f] = sj.dmpExclude([[[n(1)]], [[n(1)], [n(2)]]], 2, sj.ZZ);
+    return [J, dmp(f)];
+  };
+  const f = [[[n(2)], [n(1), n(0)]], [[]]];
+  PORTS[`${m}DMP([[[ZZ(2)], [ZZ(1), ZZ(0)]], [[]]], ZZ).permute([1, 0, 2])`] = () => dmp(sj.dmpPermute(f, [1, 0, 2], 2, sj.ZZ));
+  PORTS[`${m}DMP([[[ZZ(2)], [ZZ(1), ZZ(0)]], [[]]], ZZ).permute([1, 2, 0])`] = () => dmp(sj.dmpPermute(f, [1, 2, 0], 2, sj.ZZ));
+}

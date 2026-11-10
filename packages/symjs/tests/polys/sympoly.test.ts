@@ -949,7 +949,7 @@ it('preserves PurePoly construction and cancellation before monomial reduction',
 
 describe('the field option (SymPy field=True)', () => {
   it('prefers QQ, QQ_I and fraction fields', () => {
-    const [x, t, y] = sj.symbols('x t y');
+    const [x, t] = sj.symbols('x t y');
     const dom = (e: string, gens: sj.Sym[], opts: sj.PolyConstructionOptions = {}): string => String(sj.Poly.from(sj.parse(e), gens, { field: true, ...opts }).domain);
     expect(dom('t**2 - x**3 - x + 1', [t])).toBe('ZZ(x)');
     expect(dom('t**2 - x/2', [t])).toBe('ZZ(x)');
