@@ -12,6 +12,22 @@ const { parse } = sj;
 const show = (r: unknown): string => (Array.isArray(r) ? `[${r.map(show).join(', ')}]` : String(r));
 
 describe('AlgebraicNumber', () => {
+  it('minimal polynomials, aliases and field elements (SymPy minpoly, minpoly_of_element, field_element)', () => {
+    const a = new sj.AlgebraicNumber(parse('sqrt(2)'), [1, 3]);
+    expect([String(a.minpoly().asExpr().subs(a.minpoly().gens[0]!, parse('x'))), a.minpoly().pure, a.isAliased, a.alias]).toEqual(['x**2 - 2', true, false, undefined]);
+    expect(String(a.minpolyOfElement().asExpr().subs(a.minpolyOfElement().gens[0]!, parse('x')))).toBe('x**2 - 6*x + 7');
+    expect(a.minpolyOfElement()).toBe(a.minpolyOfElement());
+    const t = new sj.Sym('t'), theta = new sj.Sym('theta');
+    const T = sj.Poly.from(parse('t**3 - 2'), [t]);
+    const b = new sj.AlgebraicNumber(theta, [1, 0, 0, 0], { minpoly: T, alias: 'beta' });
+    expect([show(b.coeffs()), b.minpoly(), b.minpolyOfElement().degree(), b.isAliased, String(b.alias), String(b.asExpr())]).toEqual(['[2]', T, 1, true, 'beta', '2']);
+    expect(new sj.AlgebraicNumber(theta, [1, 0], { minpoly: T }).minpolyOfElement()).toBe(T);
+    const c = b.fieldElement([1, 1]);
+    expect([show(c.coeffs()), c.minpoly(), String(c.alias), String(c.asExpr())]).toEqual(['[1, 1]', T, 'beta', 'theta + 1']);
+    expect(new sj.AlgebraicNumber(theta, [1, 0], { minpoly: T, alias: theta }).alias).toBe(theta);
+    expect(new sj.AlgebraicNumber(c, [1, 0]).minpoly()).toBe(T);
+    expect(show(a.fieldElement([2, 0]).coeffs())).toBe('[2, 0]');
+  });
   it('values, coefficients and elements of elements', () => {
     const a = new sj.AlgebraicNumber(parse('sqrt(2)'), [1, 3]);
     expect(show(a.coeffs())).toBe('[1, 3]');

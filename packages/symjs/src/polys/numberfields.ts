@@ -435,6 +435,17 @@ export function minimalPolynomial(exIn: ExprLike, xIn?: Sym, opts: MinimalPolyno
 /** c[0]*t**(n-1) + ... + c[n-1] (Horner). */
 const horner = (cs: readonly Expr[], t: Expr): Expr => cs.reduce<Expr>((acc, c) => add(mul(acc, t), c), S.Zero);
 
+/** Options of AlgebraicNumber. */
+export interface AlgebraicNumberOptions {
+  /**
+   * The minimal polynomial of the root (SymPy AlgebraicNumber((minpoly, root))):
+   * it is not computed, so the root may be a symbol standing for a root of it.
+   */
+  minpoly?: Poly;
+  /** The symbol the primitive element is written with (SymPy alias). */
+  alias?: Sym | string;
+}
+
 /**
  * An element of Q(theta) written as c[0]*theta**(n-1) + ... + c[n-1] for a
  * primitive element theta (SymPy AlgebraicNumber(theta, coeffs)). The
@@ -443,15 +454,45 @@ const horner = (cs: readonly Expr[], t: Expr): Expr => cs.reduce<Expr>((acc, c) 
 export class AlgebraicNumber {
   readonly root: Expr;
   readonly coeffList: readonly Expr[];
-  constructor(root: ExprLike | AlgebraicNumber, coeffs: readonly ExprLike[] = [1, 0]) {
+  /** The symbol of the primitive element, when one was given (SymPy alias). */
+  readonly alias: Sym | undefined;
+  private readonly rootMinpoly: Poly;
+  private ownMinpoly: Poly | undefined;
+  constructor(root: ExprLike | AlgebraicNumber, coeffs: readonly ExprLike[] = [1, 0], opts: AlgebraicNumberOptions = {}) {
     const t = new Dummy('t');
     const cs = coeffs.map((c) => sympify(c));
     // an element of an element: the polynomials composed in the inner primitive element
     const inner = root instanceof AlgebraicNumber ? horner(root.coeffList, t) : t;
     this.root = root instanceof AlgebraicNumber ? root.root : sympify(root);
-    const p = Poly.from(expandMul(horner(cs, inner)), [t]);
+    this.alias = typeof opts.alias === 'string' ? new Sym(opts.alias) : opts.alias;
     // SymPy raises when the minimal polynomial cannot be found (NotAlgebraic for a transcendental element)
-    this.coeffList = p.rem(Poly.from(minimalPolynomial(this.root, t), [t])).allCoeffs();
+    this.rootMinpoly = opts.minpoly ?? (root instanceof AlgebraicNumber ? root.rootMinpoly : minimalPolynomial(this.root, undefined, { polys: true }));
+    const p = Poly.from(expandMul(horner(cs, inner)), [t]);
+    this.coeffList = p.rem(Poly.from(horner(this.rootMinpoly.allCoeffs(), t), [t])).allCoeffs();
+  }
+
+  /** The element was given an alias (SymPy is_aliased). */
+  get isAliased(): boolean {
+    return this.alias !== undefined;
+  }
+
+  /** The minimal polynomial of the primitive element (SymPy minpoly). */
+  minpoly(): Poly {
+    return this.rootMinpoly;
+  }
+
+  /** The minimal polynomial of this element (SymPy minpoly_of_element); the same polynomial object on every call. */
+  minpolyOfElement(): Poly {
+    if (this.ownMinpoly === undefined) {
+      const primitive = this.coeffList.length === 2 && at(this.coeffList, 0).equals(1) && at(this.coeffList, 1).equals(0);
+      this.ownMinpoly = primitive ? this.rootMinpoly : minimalPolynomial(this.asExpr(), undefined, { polys: true });
+    }
+    return this.ownMinpoly;
+  }
+
+  /** The element of the same field with these coefficients (SymPy field_element). */
+  fieldElement(coeffs: readonly ExprLike[]): AlgebraicNumber {
+    return new AlgebraicNumber(this.root, coeffs, { minpoly: this.rootMinpoly, ...(this.alias ? { alias: this.alias } : {}) });
   }
 
   /** c[0]*theta**(n-1) + ... + c[n-1] with theta kept symbolic. */

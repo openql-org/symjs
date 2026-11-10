@@ -1,26 +1,11 @@
 {
  "cases": [
   "sympy.core.sympify: print(sympify(None)) #500c44443b232886",
-  "sympy.polys.domains.algebraicfield: K.discriminant() #10a193ba71f692d9",
-  "sympy.polys.domains.algebraicfield: K.integral_basis(fmt='sympy') #5a2d3812a8a6a094",
-  "sympy.polys.domains.algebraicfield: K.maximal_order() #2528ea19b018faa4",
-  "sympy.polys.domains.algebraicfield: K.primes_above(11) #27ae05d05c4f22bb",
   "sympy.polys.domains.algebraicfield: cancel((x**2 - 2)/(x - sqrt(2)), extension=sqrt(2)) #628163da1af180c0",
   "sympy.polys.domains.algebraicfield: gcd(x**2 - 2, x - sqrt(2)) #5d2800f60b616c89",
   "sympy.polys.domains.domain: K.to_sympy(K([-1, 1])) #3657c49112807574",
   "sympy.polys.domains.domain: L.to_sympy(L([1, 1, 1])) #d8a0ea4eb9432809",
   "sympy.polys.domains.domain: print(latex(a)) #ba4f16b413ae5396",
-  "sympy.polys.numberfields.basis: print(K.discriminant()) #b78f748a9438d9bc",
-  "sympy.polys.numberfields.basis: print(K.integral_basis(fmt='sympy')) #6a12215c52c60707",
-  "sympy.polys.numberfields.basis: print(K.maximal_order()) #80b002255001a0fa",
-  "sympy.polys.numberfields.basis: print(round_two(T)) #f09c25eb91dd225e",
-  "sympy.polys.numberfields.exceptions: print(B.represent(a1)) #2415558cc0bbf1c5",
-  "sympy.polys.numberfields.modules: B.reduce_element(A(2)) #25e646a8c55bc16e",
-  "sympy.polys.numberfields.primes: print(K.primes_above(2)) #5ab2bb8bd1a137ab",
-  "sympy.polys.numberfields.primes: print(P[0].repr()) #03176dc1995372dd",
-  "sympy.polys.numberfields.primes: print(P[0].repr(field_gen=zeta)) #406fcaa51dd8dea5",
-  "sympy.polys.numberfields.primes: print(P[0].repr(field_gen=zeta, just_gens=True)) #ca3c4df4811ec378",
-  "sympy.polys.numberfields.primes: print(prime_valuation(25*ZK, P[0])) #9f409ace1241e20c",
   "sympy.polys.rootoftools: t.eval_rational(1e-1) #17a8583daddc3554",
   "sympy.polys.rootoftools: t.eval_rational(1e-1, 1e-4) #3c7b7a97dc1ee6af",
   "sympy.polys.rootoftools: t.eval_rational(1e-4, 1e-4) #e0bc814d721a66da",
@@ -37,9 +22,5 @@
   "sympy.stats: dist.pmf(x) #c0a65a0de04978fe",
   "sympy.tensor.indexed: ccode(A[i, j, k]) #a523bba6ec6ae0bc"
  ],
- "api": [
-  "polys: prime_decomp",
-  "polys: prime_valuation",
-  "polys: round_two"
- ]
+ "api": []
 }
