@@ -969,6 +969,11 @@ const asExpr = (v: unknown): Expr => {
   throw new Unsupported(`expected an expression, got ${fmt(v)}`);
 };
 const asExprOrPoly = (v: unknown): Expr => (v instanceof sj.Poly ? v.asExpr() : asExpr(v));
+/** Translate Python coefficient-domain options; all arithmetic stays in the public API. */
+const polynomialOptions = (kw: Record<string, unknown>): sj.PolynomialDomainOptions => ({
+  ...(kw['domain'] === undefined ? {} : { domain: kw['domain'] instanceof JsDomain ? kw['domain'].name : String(kw['domain']) }),
+  ...(kw['modulus'] === undefined ? {} : { modulus: (kw['modulus'] as sj.Rational).p }),
+});
 const asPoly = (v: unknown): sj.Poly => {
   if (v instanceof sj.Poly) return v;
   throw new Unsupported('expected a Poly');
@@ -2039,18 +2044,21 @@ export const ADAPTERS: Record<string, Adapter> = {
   expand_complex: exprFn(sj.expand_complex),
   simplify: exprFn(sj.simplify),
   factor: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['deep', 'gaussian', 'extension', 'modulus', 'fraction'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['deep', 'gaussian', 'extension', 'modulus', 'domain', 'fraction'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 1) throw new Unsupported('arity');
-    if (kw['modulus'] !== undefined) return sj.factor(asExpr(args[0]), { modulus: (kw['modulus'] as sj.Rational).p });
     const ext = kw['extension'];
     const extension = ext === undefined ? undefined : ext instanceof JsTuple || ext instanceof JsList ? ext.items.map(asExpr) : [asExpr(ext)];
-    return sj.factor(asExpr(args[0]), { deep: Boolean(kw['deep']), gaussian: Boolean(kw['gaussian']), extension, ...(kw['fraction'] === false ? { fraction: false } : {}) });
+    return sj.factor(asExpr(args[0]), { ...polynomialOptions(kw), deep: Boolean(kw['deep']), gaussian: Boolean(kw['gaussian']), extension, ...(kw['fraction'] === false ? { fraction: false } : {}) });
   },
   together: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
     return sj.together(asExpr(args[0]), { deep: Boolean(kw['deep']) });
   },
-  cancel: exprFn(sj.cancel),
+  cancel: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['domain','modulus'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    if (args.length !== 1) throw new Unsupported('arity');
+    return sj.cancel(asExpr(args[0]), polynomialOptions(kw));
+  },
   trigsimp: (args, kw) => {
     for (const k of Object.keys(kw)) if (!["old", "deep", "method", "compare"].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const opts = { old: Boolean(kw["old"]), deep: Boolean(kw["deep"]), method: kw["method"] as sj.TrigsimpOptions["method"] };
@@ -3160,11 +3168,11 @@ export const ADAPTERS: Record<string, Adapter> = {
 
   // ---- polynomials
   Poly: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['domain','modulus'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const [e, ...gens] = args;
-    const dom = kw['domain'];
-    if (dom !== undefined && dom !== 'R' && dom !== 'RR' && dom !== 'ZZ' && dom !== 'QQ') throw new Unsupported('explicit domain');
-    return sj.Poly.from(asExprOrPoly(e), gens.map(asExpr), dom === undefined ? {} : { domain: String(dom) });
+    const opts = polynomialOptions(kw), dom = opts.domain;
+    if (dom !== undefined && !['R','RR','ZZ','QQ'].includes(String(dom)) && !/^GF\(\d+\)$/.test(String(dom))) throw new Unsupported('explicit domain');
+    return sj.Poly.from(asExprOrPoly(e), gens.map(asExpr), opts);
   },
   degree: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'gen') throw new Unsupported(`kwargs ${k}`);
@@ -3186,16 +3194,22 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.mul(p.LC(), p.LM());
   },
   gcd: (args, kw) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (!['domain','modulus'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 2) throw new Unsupported('gcd arity');
-    const r = sj.gcd(asExprOrPoly(args[0]), asExprOrPoly(args[1]));
-    return args[0] instanceof sj.Poly ? sj.Poly.from(r, (args[0] as sj.Poly).gens) : r;
+    const a = args[0] instanceof sj.Poly ? args[0] : asExpr(args[0]), b = args[1] instanceof sj.Poly ? args[1] : asExpr(args[1]);
+    const opts = polynomialOptions(kw), r = sj.gcd(a, b, opts);
+    if (!(a instanceof sj.Poly)) return r;
+    const outputOpts = Object.keys(opts).length ? opts : b instanceof sj.Poly && a.domain === b.domain ? { domain: a.domain } : {};
+    return sj.Poly.from(r, a.gens, outputOpts);
   },
   lcm: (args, kw) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (!['domain','modulus'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 2) throw new Unsupported('lcm arity');
-    const r = sj.lcm(asExprOrPoly(args[0]), asExprOrPoly(args[1]));
-    return args[0] instanceof sj.Poly ? sj.Poly.from(r, (args[0] as sj.Poly).gens) : r;
+    const a = args[0] instanceof sj.Poly ? args[0] : asExpr(args[0]), b = args[1] instanceof sj.Poly ? args[1] : asExpr(args[1]);
+    const opts = polynomialOptions(kw), r = sj.lcm(a, b, opts);
+    if (!(a instanceof sj.Poly)) return r;
+    const outputOpts = Object.keys(opts).length ? opts : b instanceof sj.Poly && a.domain === b.domain ? { domain: a.domain } : {};
+    return sj.Poly.from(r, a.gens, outputOpts);
   },
   div: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);

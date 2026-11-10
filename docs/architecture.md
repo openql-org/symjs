@@ -143,6 +143,7 @@ SymPy modules correspond to it as follows.
 | `simplify/epathtools.py` | `simplify/epathtools.ts` | |
 | `simplify/hyperexpand.py` | `simplify/hyperexpand.ts` | also the `HyperRep` functions of `functions/special/hyper.py` |
 | `polys/rationaltools.py` (`together`), `polys/polytools.py` (`cancel`) | `simplify/rational.ts` | kept in `simplify/`: `polys/poly.ts` reaches it through `polyHooks` |
+| `polys/polytools.py`, `polys/densearith.py` (recursive polynomial division) | `polys/sympoly.ts` | polynomial objects and expression-level polynomial operations; finite coefficient domains reuse `galoistools.ts`; domain-aware cancellation registers through `polyHooks` |
 | `core/exprtools.py` | `simplify/exprtools.ts` | an L2 module (it uses the polynomials) |
 | `core/function.py` (`expand`), `core/basic.py` (`rewrite`) | `simplify/expand.ts`, `simplify/rewrite.ts` | L1 modules |
 | (none) | `simplify/public.ts` | the public `NoMatch` forms of the simplification functions |

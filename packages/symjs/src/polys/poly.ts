@@ -21,9 +21,10 @@ import { add, mul, pow, sqrt, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import { expand as expandHints, expandMul as expand } from '../simplify/expand';
 import { decomposePower, factorTerms } from '../simplify/exprtools';
+import type { PolynomialDomainOptions } from './sympoly';
 
 /** cancel, registered by simplify/rational (which imports this module). @internal */
-export const polyHooks: { cancel?: (e: Expr) => Expr; factorList?: (e: Expr) => [Expr, [Expr, number][]] } = {};
+export const polyHooks: { cancel?: (e: Expr) => Expr; cancelDomain?: (e: Expr, opts: PolynomialDomainOptions) => Expr; factorList?: (e: Expr) => [Expr, [Expr, number][]] } = {};
 const cancel = (e: Expr): Expr => defined(polyHooks.cancel, 'cancel hook')(e);
 /** factor, registered by polys/sympoly (loaded with this module by every entry point). */
 const factorE = (e: Expr): Expr => defined(impl.factor?.(e), 'factor hook');

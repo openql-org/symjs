@@ -36,7 +36,7 @@ export {
 
 export { rootsDict as roots } from './polys/poly';
 export { sqfNorm } from './polys/sympoly';
-export type { FactorList, FactorListFrac, FactorListOptions } from './polys/sympoly';
+export type { FactorList, FactorListFrac, FactorListOptions, PolynomialDomainOptions } from './polys/sympoly';
 export { minimalPolynomial } from './polys/numberfields';
 export { fieldIsomorphism, primitiveElement, toNumberField } from './polys/numberfields/subfield';
 export type { PrimitiveElementOptions } from './polys/numberfields/subfield';
