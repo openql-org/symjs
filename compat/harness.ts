@@ -795,6 +795,26 @@ export function deserialize(tree: Tree): unknown {
     case 'TensAdd': return sj.add(...(tree['args'] as Tree[]).map((t) => deserialize(t) as Expr));
     case 'TensorElement': return sj.TensorElement(deserialize(tree['expr'] as Tree) as Expr, new Map((deserialize(tree['indexMap'] as Tree) as JsDict).entries as [Expr, Expr][]));
     case 'SymmetricPermutationGroup': return sj.SymmetricPermutationGroup(Number(tree['deg']));
+    case 'FreeGroup': return new sj.FreeGroup((tree['symbols'] as Tree[]).map((t) => deserialize(t) as Expr));
+    case 'FreeGroupElement': return (deserialize(tree['group'] as Tree) as sj.FreeGroup).dtype((tree['array'] as [Tree, number][]).map(([s, e]) => [deserialize(s) as Expr, e]));
+    case 'FpGroup': return new sj.FpGroup(deserialize(tree['free'] as Tree) as sj.FreeGroup, (tree['relators'] as Tree[]).map((t) => deserialize(t) as sj.FreeGroupElement));
+    case 'FpSubgroup': return new sj.FpSubgroup(deserialize(tree['parent'] as Tree) as sj.FpGroup, (tree['generators'] as Tree[]).map((t) => deserialize(t) as sj.FreeGroupElement), Boolean(tree['normal']));
+    case 'CosetTable': {
+      // the state of a coset table, set through its public fields
+      const C = new sj.CosetTable(deserialize(tree['group'] as Tree) as sj.FpGroup, (tree['subgroup'] as Tree[]).map((t) => deserialize(t) as sj.FreeGroupElement), Number(tree['maxCosets']));
+      C.table = (tree['table'] as (number | null)[][]).map((r) => [...r]);
+      C.p = [...(tree['p'] as number[])];
+      C.deductionStack = (tree['deductions'] as [number, Tree][]).map(([a, x]) => [a, C.A.findIndex((l) => l.equals(deserialize(x)))]);
+      const sch = tree['schreier'] as { free: Tree; generators: Tree[]; relators: Tree[]; hasRelators: boolean; P: (Tree | null)[][] } | undefined;
+      if (sch) {
+        C.schreier = { freeGroup: deserialize(sch.free) as sj.FreeGroup, generators: sch.generators.map((t) => deserialize(t) as sj.FreeGroupElement), ...(sch.hasRelators ? { relators: sch.relators.map((t) => deserialize(t) as sj.FreeGroupElement) } : {}) };
+        C.P = sch.P.map((row) => row.map((t) => (t === null ? null : (deserialize(t) as sj.FreeGroupElement))));
+      }
+      return C;
+    }
+    case 'Collector': return new sj.Collector((tree['pcgs'] as Tree[]).map((t) => deserialize(t) as sj.Permutation), (tree['series'] as Tree[]).map((t) => deserialize(t) as sj.PermutationGroup), tree['relativeOrder'] as number[]);
+    case 'PolycyclicGroup': return new sj.PolycyclicGroup((tree['pcgs'] as Tree[]).map((t) => deserialize(t) as sj.Permutation), (tree['series'] as Tree[]).map((t) => deserialize(t) as sj.PermutationGroup), tree['relativeOrder'] as number[]);
+    case 'GroupHomomorphism': return new sj.GroupHomomorphism(deserialize(tree['domain'] as Tree) as sj.HomomorphismGroup, deserialize(tree['codomain'] as Tree) as sj.HomomorphismGroup, (tree['images'] as [Tree, Tree][]).map(([k, v]) => [deserialize(k) as sj.GroupElement, deserialize(v) as sj.GroupElement] as const));
     case 'Polyhedron':
       return new sj.Polyhedron(
         (tree['corners'] as Tree[]).map((c) => deserialize(c) as Expr),
@@ -4020,8 +4040,10 @@ const JS_GLOBAL_RENAMES: Record<string, string> = { Symbol: 'Sym', Number: 'SymN
 const VECTOR_RENAMES: Record<string, string> = { Point: 'VectorPoint' };
 /** sympy.stats names that symjs exports under another name: E is Euler's number and Chi the hyperbolic cosine integral. */
 const STATS_RENAMES: Record<string, string> = { E: 'expectation', Chi: 'ChiRV' };
+/** sympy.combinatorics names that symjs exports under another name (homomorphism and rewrite are taken by agca and simplify). */
+const GROUP_RENAMES: Record<string, string> = { homomorphism: 'groupHomomorphism', rewrite: 'reidemeisterRewrite' };
 const camelIn = (n: string, category: string | undefined): string =>
-  (category === 'vector' ? VECTOR_RENAMES[n] : category === 'stats' ? STATS_RENAMES[n] : undefined) ?? camel(n);
+  (category === 'vector' ? VECTOR_RENAMES[n] : category === 'stats' ? STATS_RENAMES[n] : category === 'combinatorics' ? GROUP_RENAMES[n] : undefined) ?? camel(n);
 // (an underscore before a capital is dropped too: solve_linear_system_LU -> solveLinearSystemLU)
 const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? n.replace(/_([a-zA-Z0-9])/g, (_m, ch: string) => ch.toUpperCase());
 

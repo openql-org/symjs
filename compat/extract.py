@@ -431,6 +431,9 @@ MODULES = {
     "sympy.assumptions.sathandlers": "assumptions",
     "sympy.assumptions.wrapper": "assumptions",
     "sympy.combinatorics.coset_table": "combinatorics",
+    "sympy.combinatorics.free_groups": "combinatorics",
+    "sympy.combinatorics.fp_groups": "combinatorics",
+    "sympy.combinatorics.rewritingsystem": "combinatorics",
     "sympy.combinatorics.group_numbers": "combinatorics",
     "sympy.combinatorics.homomorphisms": "combinatorics",
     "sympy.combinatorics.pc_groups": "combinatorics",
@@ -512,7 +515,8 @@ LOCAL_PUBLIC = {
     "sympy.assumptions.predicates.order", "sympy.assumptions.predicates.sets", "sympy.assumptions.relation.binrel",
     "sympy.assumptions.relation.equality", "sympy.assumptions.satask", "sympy.assumptions.sathandlers",
     "sympy.assumptions.wrapper", "sympy.calculus.accumulationbounds", "sympy.calculus.singularities",
-    "sympy.calculus.util", "sympy.combinatorics.coset_table", "sympy.combinatorics.galois",
+    "sympy.calculus.util", "sympy.combinatorics.coset_table", "sympy.combinatorics.fp_groups",
+    "sympy.combinatorics.free_groups", "sympy.combinatorics.galois",
     "sympy.combinatorics.group_numbers", "sympy.combinatorics.homomorphisms", "sympy.combinatorics.pc_groups",
     "sympy.combinatorics.schur_number", "sympy.concrete.delta", "sympy.concrete.expr_with_intlimits",
     "sympy.concrete.expr_with_limits", "sympy.concrete.gosper", "sympy.concrete.guess", "sympy.concrete.products",
@@ -547,6 +551,8 @@ LOCAL_PUBLIC = {
 # the low-level polys modules: their module-level functions (gf_add, dup_strip, monomial_mul, dispersion,
 # sdm_add, rs_series, solve_lin_sys, smith_normal_form, round_two, ...) are their public API
 INTERNAL_PUBLIC = {
+    "sympy.combinatorics.coset_table", "sympy.combinatorics.fp_groups", "sympy.combinatorics.free_groups",
+    "sympy.combinatorics.homomorphisms", "sympy.combinatorics.pc_groups",
     "sympy.matrices.expressions._shape", "sympy.matrices.expressions.companion",
     "sympy.matrices.expressions.fourier", "sympy.matrices.kind", "sympy.matrices.normalforms",
     "sympy.matrices.sparsetools", "sympy.polys.agca.extensions", "sympy.polys.agca.homomorphisms",
@@ -700,6 +706,39 @@ def ser(o):
         return {"t": "Morphism", "cls": type(o).__name__, "args": [ser(a.name if isinstance(a, Str) else a) for a in o.args]}
     if isinstance(o, _Perm):
         return {"t": "Permutation", "array": [int(i) for i in o.array_form]}
+    from sympy.combinatorics.free_groups import FreeGroup as _FreeGroup, FreeGroupElement as _FGE
+    from sympy.combinatorics.fp_groups import FpGroup as _FpGroup, FpSubgroup as _FpSubgroup
+    from sympy.combinatorics.coset_table import CosetTable as _CosetTable
+    from sympy.combinatorics.pc_groups import Collector as _Collector, PolycyclicGroup as _PcGroup
+    from sympy.combinatorics.homomorphisms import GroupHomomorphism as _GroupHom
+    if isinstance(o, _FreeGroup):
+        return {"t": "FreeGroup", "symbols": [ser(sym) for sym in o.symbols]}
+    if isinstance(o, _FGE):
+        return {"t": "FreeGroupElement", "group": ser(o.group), "array": [[ser(sym), int(e)] for sym, e in o.array_form]}
+    if isinstance(o, _FpGroup):
+        return {"t": "FpGroup", "free": ser(o.free_group), "relators": [ser(r) for r in o.relators]}
+    if isinstance(o, _FpSubgroup):
+        return {"t": "FpSubgroup", "parent": ser(o.parent), "generators": [ser(g) for g in o.generators], "normal": bool(o.normal)}
+    if isinstance(o, _CosetTable):
+        # the state of a coset table: the table, the coset classes p and the deduction stack
+        return {"t": "CosetTable", "group": ser(o.fp_group), "subgroup": [ser(h) for h in o.subgroup],
+                "maxCosets": int(o.coset_table_limit), "table": [[None if v is None else int(v) for v in row] for row in o.table],
+                "p": [int(v) for v in o.p], "deductions": [[int(a), ser(x)] for a, x in o.deduction_stack],
+                # the Reidemeister-Schreier state left by define_schreier_generators and reidemeister_relators
+                **({"schreier": {"free": ser(o._schreier_free_group), "generators": [ser(g) for g in o._schreier_generators],
+                                 "relators": [ser(r) for r in getattr(o, "_reidemeister_relators", [])],
+                                 "hasRelators": hasattr(o, "_reidemeister_relators"),
+                                 "P": [[None if v is None else ser(v) for v in row] for row in o.P]}}
+                   if hasattr(o, "_schreier_free_group") else {})}
+    if isinstance(o, _Collector):
+        return {"t": "Collector", "pcgs": [ser(g) for g in o.pcgs], "series": [ser(g) for g in o.pc_series],
+                "relativeOrder": [int(r) for r in o.relative_order]}
+    if isinstance(o, _PcGroup):
+        return {"t": "PolycyclicGroup", "pcgs": [ser(g) for g in o.pcgs], "series": [ser(g) for g in o.pc_series],
+                "relativeOrder": [int(r) for r in o.relative_order]}
+    if isinstance(o, _GroupHom):
+        return {"t": "GroupHomomorphism", "domain": ser(o.domain), "codomain": ser(o.codomain),
+                "images": [[ser(k), ser(v)] for k, v in o.images.items()]}
     if isinstance(o, _PermGroup):
         return {"t": "PermutationGroup", "generators": [ser(g) for g in o.generators]}
     if isinstance(o, _Cycle):
@@ -1188,6 +1227,10 @@ def ser_arg(node, globs):
     return ser(eval(compile(ast.Expression(node), "<a>", "eval"), globs))
 
 
+# functions that mutate their arguments (besides the ddm_i* ones): their arguments are serialized before the call
+MUTATING_FUNCTIONS = {"define_schreier_generators", "reidemeister_relators", "elimination_technique_2"}
+
+
 # per-example limit, generous so that the corpus does not depend on the machine load
 ALARM_SECONDS = 30
 
@@ -1274,7 +1317,7 @@ def main(dst):
                 # the in-place functions of sympy.polys.matrices.dense (ddm_iadd, ddm_idet, ...) mutate their
                 # arguments: these are serialized as they are before the call
                 pre_args = None
-                if record is not None and record["fn"].startswith("ddm_i"):
+                if record is not None and (record["fn"].startswith("ddm_i") or record["fn"] in MUTATING_FUNCTIONS):
                     try:
                         pre_args = [ser_arg(a, globs) for a in call.args]
                     except Exception:
@@ -1352,6 +1395,9 @@ def main(dst):
                     # a Monomial's repr is its address; its str is x**2*y**0
                     expected = "(" + ", ".join(str(i) for i in result) + ")"
                 elif isinstance(result, (Basic, list, tuple, dict, set, int, float, bool)) or result is None:
+                    expected = str(result)
+                elif (type(result).__module__ or "").startswith("sympy.combinatorics.") and " object at 0x" not in str(result):
+                    # free and finitely presented group objects (words, groups, coset tables): compared by str()
                     expected = str(result)
                 elif ((type(result).__module__ or "").startswith(("sympy.polys", "sympy.matrices", "sympy.external"))
                         or type(result).__name__ in ("mpq", "mpz")):

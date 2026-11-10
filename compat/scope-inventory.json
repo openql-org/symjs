@@ -1295,9 +1295,10 @@
   {
    "module": "sympy.combinatorics.coset_table",
    "sha256": "b28a6905df22e9457eb29a5d3b3ca47cd13c7af31e7255389754f07cbe549572",
-   "status": "unimplemented",
-   "note": "needs finitely presented groups (fp_groups, free_groups)",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "combinatorics/cosettable.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 19,
@@ -1340,10 +1341,12 @@
   {
    "module": "sympy.combinatorics.fp_groups",
    "sha256": "d222f1ee6b70c67d648d8172b2003320b01db654bd7b55563ed5a7b33b9b85df",
-   "status": "unimplemented",
-   "sources": [],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "status": "partial",
+   "sources": [
+    "combinatorics/fpgroups.ts"
+   ],
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 18,
    "declaredPublicNames": [
     "fp_group",
@@ -1394,10 +1397,12 @@
   {
    "module": "sympy.combinatorics.free_groups",
    "sha256": "82ddf7468201c8a0d935a7faeb56b2e2940c8a53cf30f63884534620a8b6868d",
-   "status": "unimplemented",
-   "sources": [],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "status": "partial",
+   "sources": [
+    "combinatorics/freegroups.ts"
+   ],
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 77,
    "declaredPublicNames": [
     "free_group",
@@ -1569,9 +1574,10 @@
   {
    "module": "sympy.combinatorics.homomorphisms",
    "sha256": "742a663ccdd5d91791b980dd5c37dd313537a6def3923281918485e97d8c7c4f",
-   "status": "unimplemented",
-   "note": "group homomorphisms, need fp_groups",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "combinatorics/homomorphisms.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 3,
@@ -1648,9 +1654,10 @@
   {
    "module": "sympy.combinatorics.pc_groups",
    "sha256": "e40c0479840231d61cc9b86513292f259a8462d2502e061b47102735079a8df1",
-   "status": "unimplemented",
-   "note": "polycyclic groups and collectors",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "combinatorics/pcgroups.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 15,
@@ -1677,7 +1684,8 @@
    "sha256": "b1fd057f1989e6e582c25bf3443e66e471ddb86e6aa87ce1dd8d27d436b1e58a",
    "status": "partial",
    "sources": [
-    "combinatorics/permgroups.ts"
+    "combinatorics/permgroups.ts",
+    "combinatorics/permpresentation.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
@@ -1894,10 +1902,11 @@
   {
    "module": "sympy.combinatorics.rewritingsystem",
    "sha256": "713d49ac0b8a8fdad62372216877a4618b74add1b9ea9c052e0df6a5c182f5a2",
-   "status": "unimplemented",
-   "note": "rewriting systems of fp_groups",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "combinatorics/rewritingsystem.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -1914,9 +1923,10 @@
   {
    "module": "sympy.combinatorics.rewritingsystem_fsm",
    "sha256": "08a1a12eacafc58d26966cbcfc76f85b391275660f51a536c99621cfed22679c",
-   "status": "unimplemented",
-   "note": "automata of rewriting systems",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "combinatorics/rewritingsystem.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,

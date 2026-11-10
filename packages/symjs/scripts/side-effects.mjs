@@ -23,7 +23,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const src = join(root, 'src');
-const DECL = /^(import |export |const |let |var |function |async function |class |abstract class |type |interface |enum |declare |[\s/*})\]@]|$)/;
+const DECL = /^(import |export |const |let |var |function\*? |async function |class |abstract class |type |interface |enum |declare |[\s/*})\]@]|$)/;
 
 function* walk(dir) {
   for (const d of readdirSync(dir, { withFileTypes: true })) {

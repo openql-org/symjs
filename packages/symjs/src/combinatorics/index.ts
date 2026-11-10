@@ -35,3 +35,33 @@ export { DirectProduct } from './groupconstructs';
 export { Polyhedron } from './polyhedron';
 export { groupsCount, isAbelianNumber, isCyclicNumber, isNilpotentNumber } from './groupnumbers';
 export { SchurNumber, SchurNumberNode, schurPartition } from './schurnumber';
+export { FreeGroup, FreeGroupElement, freeGroup, vfreeGroup, xfreeGroup } from './freegroups';
+export type { FreeGroupSymbols } from './freegroups';
+export { CosetLimitExceeded, CosetTable, cosetEnumerationC, cosetEnumerationR, modifiedCosetEnumerationR } from './cosettable';
+export type { CosetEnumerationOptions, CosetGroup, CosetRow } from './cosettable';
+export { RewritingRulesExceeded, RewritingSystem, State, StateMachine } from './rewritingsystem';
+export type { RewritingGroup, StateName } from './rewritingsystem';
+export {
+  FpGroup,
+  FpSubgroup,
+  GroupHomomorphism,
+  defineSchreierGenerators,
+  descendantSubgroups,
+  eliminationTechnique1,
+  eliminationTechnique2,
+  firstInClass,
+  fpGroup,
+  lowIndexSubgroups,
+  reidemeisterPresentation,
+  reidemeisterRelators,
+  reidemeisterRewrite,
+  simplifyPresentation,
+  tryDescendant,
+  vfpGroup,
+  xfpGroup,
+} from './fpgroups';
+export type { CosetStrategy, FpCosetOptions, GroupElement, HomomorphismGroup } from './fpgroups';
+export { blockHomomorphism, groupHomomorphism, groupIsomorphism, isIsomorphic, orbitHomomorphism } from './homomorphisms';
+export type { IsomorphismResult } from './homomorphisms';
+export { Collector, PolycyclicGroup } from './pcgroups';
+export type { PcRelatorValue, PcSyllable } from './pcgroups';

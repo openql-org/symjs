@@ -1,24 +1,5 @@
 {
  "cases": [
-  "sympy.combinatorics.coset_table: C.compress() #ff947a040108c220",
-  "sympy.combinatorics.coset_table: C.compress() #ff947a040108c220",
-  "sympy.combinatorics.coset_table: C.compress() #ff947a040108c220",
-  "sympy.combinatorics.coset_table: C.compress() #ff947a040108c220",
-  "sympy.combinatorics.coset_table: C.coset_representative(0) #bea29d5072507c64",
-  "sympy.combinatorics.coset_table: C.coset_representative(1) #32f9fb22b416a374",
-  "sympy.combinatorics.coset_table: C.coset_representative(2) #449e64e611d1884e",
-  "sympy.combinatorics.coset_table: C.standardize() #ff947a040108c220",
-  "sympy.combinatorics.coset_table: C.standardize() #ff947a040108c220",
-  "sympy.combinatorics.homomorphisms: group_isomorphism(D, P) #b759868495ef3a41",
-  "sympy.combinatorics.pc_groups: collector.depth(G[0]) #bf88688801be32f4",
-  "sympy.combinatorics.pc_groups: collector.depth(G[1]) #8f5a06dca748e40f",
-  "sympy.combinatorics.pc_groups: collector.exponent_vector(G[0]) #2707a8138ee286c2",
-  "sympy.combinatorics.pc_groups: collector.leading_exponent(G[1]) #8f5a06dca748e40f",
-  "sympy.combinatorics.pc_groups: collector.map_relation(w) #43d16109f8a2184d",
-  "sympy.combinatorics.pc_groups: collector.minimal_uncollected_subword(word) #6487c20e8cdc2b4f",
-  "sympy.combinatorics.pc_groups: collector.subword_index(word, w) #804af0b19c6cadc0",
-  "sympy.combinatorics.pc_groups: collector.subword_index(word, w) #d9528eade4e6b762",
-  "sympy.combinatorics.pc_groups: collector.subword_index(word, w) #f6fcd1fa07252335",
   "sympy.combinatorics.permutations: print(''.join(str(c) for c in t)) #d17a62e4f7e7aa09",
   "sympy.combinatorics.subsets: Subset.bitlist_from_subset(['c', 'd'], ['a', 'b', 'c', 'd']) #d523ae2634982fad",
   "sympy.core.sympify: print(sympify(None)) #500c44443b232886",
@@ -74,8 +55,6 @@
   "sympy.tensor.tensor: print( ( K(p) ).replace( W(p), W(q)*W(-q)*W(p) ) ) #35d1bd803b2caa6a"
  ],
  "api": [
-  "combinatorics: Collector",
-  "combinatorics: PolycyclicGroup",
   "polys: prime_decomp",
   "polys: prime_valuation",
   "polys: round_two"
