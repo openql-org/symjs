@@ -25,9 +25,11 @@ import { Max, Min } from '../functions/special/special';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { expandMul } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
-import { simplify } from '../simplify/simplify';
 import { exp } from '../core/ops';
 import { Matrix } from './matrix';
+
+/** SymPy simplify, late-bound as in matrix.ts (the matrices entry loads it). */
+const simplify = (e: Expr): Expr => impl.simplify(e);
 
 const isZeroE = (e: Expr): boolean => {
   if (e instanceof Rational) return e.isZero;

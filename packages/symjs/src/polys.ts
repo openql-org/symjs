@@ -229,7 +229,7 @@ export { DM } from './polys/matrices/domainmatrix';
 export type { DomainMatrixRows, DomainFactor } from './polys/matrices/domainmatrix';
 export { DDM } from './polys/matrices/ddm';
 export type { Shape } from './polys/matrices/ddm';
-export { SDM, sdmBerk, sdmIrref, sdmRrefDen, sdmMatmul, sdmTranspose, sdmDotvec, sdmMatvecmul, sdmNullspaceFromRref, sdmParticularFromRref, binopDict, unopDict } from './polys/matrices/sdm';
+export { SDM, sdmBerk, sdmIrref, sdmRrefDen, sdmMatmul, sdmTranspose, sdmDotvec, sdmMatvecmul, sdmNullspaceFromRref, sdmParticularFromRref, binopDict, unopDict } from './polys/matrices/index';
 export { DomainScalar } from './polys/matrices/domainscalar';
 export { ddmTranspose, ddmIadd, ddmIsub, ddmIneg, ddmImul, ddmIrmul, ddmImatmul, ddmIrref, ddmIrrefDen, ddmIdet, ddmIinv, ddmIluSplit, ddmIlu, ddmIluSolve, ddmBerk } from './polys/matrices/dense';
 export { DMError, DMBadInputError, DMDomainError, DMNotAField, DMFormatError, DMNonInvertibleMatrixError, DMRankError, DMShapeError, DMNonSquareMatrixError, DMValueError } from './polys/matrices/exceptions';

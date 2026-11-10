@@ -7,6 +7,8 @@
 
 // every entry point brings the core with its registrations
 import './core';
+// the methods that simplify (inv, eigenvals, simplify, rref of symbolic entries, ...) call it late-bound
+import './simplify/simplify';
 // the matrix handlers of ask (Q.invertible, Q.symmetric, ... of matrix expressions) register on load
 import './assumptions/handlers/matrices';
 import { Matrix as MatrixClass } from './matrices/matrix';
