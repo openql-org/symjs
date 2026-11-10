@@ -4064,6 +4064,91 @@ const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'dis
 /** Functions of other categories whose integer arguments are JS numbers (variable numbers of the integer representation of clauses). */
 const NUMERIC_FUNCTIONS = new Set(['unit_propagate_int_repr', '.reorder_limit', '.__pow__']);
 /** Python operators recorded as their special methods (the number-field doctests), and the methods that implement them. */
+/** A value that symjs arithmetic accepts directly (an expression or a JS number). */
+const isScalar = (v: unknown): v is ExprLike => v instanceof Expr || typeof v === 'number' || typeof v === 'bigint';
+/** The first of the named methods that the receiver has, called with the arguments. */
+function callMethod(self: unknown, names: readonly string[], args: readonly unknown[]): { value: unknown } | undefined {
+  if (self === null || (typeof self !== 'object' && typeof self !== 'function')) return undefined;
+  for (const n of names) {
+    const m = (self as Record<string, unknown>)[n];
+    if (typeof m === 'function') return { value: (m as (...a: unknown[]) => unknown).apply(self, [...args]) };
+  }
+  return undefined;
+}
+/** A deserialized Python container as the JS value: tuples and lists as arrays, dicts as Maps, sets as Sets. */
+function plain(v: unknown): unknown {
+  if (v instanceof JsTuple || v instanceof JsList) return v.items.map(plain);
+  if (v instanceof JsDict || v instanceof JsDefaultDict) return new Map(v.entries.map(([k, x]) => [plain(k), plain(x)]));
+  if (v instanceof JsSet) return new Set(v.items.map(plain));
+  return v;
+}
+/** Python == of two values: SymPy structural equality, or the JS equality of plain values and their lists. */
+function pyEquals(a0: unknown, b0: unknown): boolean {
+  const a = plain(a0);
+  const b = plain(b0);
+  if (a instanceof Set && b instanceof Set) return a.size === b.size && [...a].every((x) => [...b].some((y) => pyEquals(x, y)));
+  if (a instanceof Map && b instanceof Map) return a.size === b.size && [...a].every(([k, x]) => [...b].some(([l, y]) => pyEquals(k, l) && pyEquals(x, y)));
+  if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((v, i) => pyEquals(v, b[i]));
+  const r = callMethod(a, ['equals', 'eq'], [b]);
+  if (r !== undefined) return r.value === true || (r.value instanceof Expr && String(r.value) === 'True');
+  if (isScalar(a) && isScalar(b)) return sj.sympify(a).equals(b);
+  return a === b;
+}
+/**
+ * Python operators, comparisons, subscripts and calls of SymPy objects (the special methods that the
+ * extractor records for g * f, a == b, a[0, 0], Cycle(1, 2)(2, 3)): the receiver's method of that name
+ * when it has one, otherwise the symjs function of the operation.
+ */
+const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknown>> = {
+  '.__add__': (a, [b]) => (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
+  '.__sub__': (a, [b]) => callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
+  '.__mul__': (a, [b]) => (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
+  '.__truediv__': (a, [b]) => callMethod(a, ['div', 'truediv'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
+  '.__pow__': (a, [b]) => callMethod(a, ['pow'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.pow(a, b) : unsupportedOp('**')),
+  '.__floordiv__': (a, [b]) => callMethod(a, ['floordiv'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.floor(sj.mul(a, sj.pow(b, -1))) : unsupportedOp('//')),
+  '.__mod__': (a, [b]) => callMethod(a, ['mod'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Mod(a, b) : unsupportedOp('%')),
+  '.__matmul__': (a, [b]) => callMethod(a, ['matmul', 'mul'], [b])?.value ?? unsupportedOp('@'),
+  '.__neg__': (a) => callMethod(a, ['neg'], [])?.value ?? (isScalar(a) ? sj.neg(a) : unsupportedOp('-')),
+  '.__invert__': (a) => callMethod(a, ['invert', 'inv'], [])?.value ?? (a instanceof Expr ? sj.Not(a) : unsupportedOp('~')),
+  '.__and__': (a, [b]) => callMethod(a, ['and', 'intersect'], [b])?.value ?? (a instanceof Expr && b instanceof Expr ? sj.And(a, b) : unsupportedOp('&')),
+  '.__or__': (a, [b]) => callMethod(a, ['or', 'union'], [b])?.value ?? (a instanceof Expr && b instanceof Expr ? sj.Or(a, b) : unsupportedOp('|')),
+  '.__xor__': (a, [b]) => callMethod(a, ['xor', 'cross', 'symmetricDifference'], [b])?.value ?? (a instanceof Expr && b instanceof Expr ? sj.Xor(a, b) : unsupportedOp('^')),
+  '.__rshift__': (a, [b]) => callMethod(a, ['rshift'], [b])?.value ?? (a instanceof Expr && b instanceof Expr ? sj.Implies(a, b) : unsupportedOp('>>')),
+  '.__lshift__': (a, [b]) => callMethod(a, ['lshift'], [b])?.value ?? (a instanceof Expr && b instanceof Expr ? sj.Implies(b, a) : unsupportedOp('<<')),
+  '.__eq__': (a, [b]) => pyEquals(a, b),
+  '.__ne__': (a, [b]) => !pyEquals(a, b),
+  '.__lt__': (a, [b]) => callMethod(a, ['lt'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Lt(a, b) : unsupportedOp('<')),
+  '.__le__': (a, [b]) => callMethod(a, ['le'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Le(a, b) : unsupportedOp('<=')),
+  '.__gt__': (a, [b]) => callMethod(a, ['gt'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Gt(a, b) : unsupportedOp('>')),
+  '.__ge__': (a, [b]) => callMethod(a, ['ge'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Ge(a, b) : unsupportedOp('>=')),
+  '.__contains__': (a, [b]) => {
+    if (Array.isArray(a)) return a.some((v) => pyEquals(v, b));
+    if (a instanceof Map) return [...a.keys()].some((k) => pyEquals(k, b));
+    if (a instanceof Set) return [...a].some((k) => pyEquals(k, b));
+    const r = callMethod(a, ['has', 'contains', 'includes'], [b]);
+    if (r === undefined) return unsupportedOp('in');
+    return r.value instanceof Expr ? String(r.value) === 'True' : r.value === true;
+  },
+  '.__getitem__': (a, [i]) => {
+    const index = i instanceof JsTuple ? i.items : [i];
+    if (Array.isArray(a) && index.length === 1) {
+      const k = Number(index[0]);
+      return a[k < 0 ? a.length + k : k];
+    }
+    if (a instanceof Map) {
+      const key = [...a.keys()].find((k) => pyEquals(k, index.length === 1 ? index[0] : i));
+      return key === undefined ? unsupportedOp('[]') : a.get(key);
+    }
+    return callMethod(a, ['getitem', 'get', 'at'], index)?.value ?? unsupportedOp('[]');
+  },
+  '.__call__': (a, args) => (typeof a === 'function' ? (a as (...x: unknown[]) => unknown)(...args) : (callMethod(a, ['call', 'apply'], args)?.value ?? unsupportedOp('()'))),
+};
+function unsupportedOp(op: string): never {
+  throw new Unsupported(`no adapter for the operator ${op}`);
+}
+
+/** SymPy attributes whose symjs function has another name (docs/api-policy.md). */
+const ATTRIBUTE_FUNCTIONS: Readonly<Record<string, string>> = { is_integer: 'isIntegerQ', is_Function: 'isFn', is_Number: 'isNum' };
 const OPERATOR_METHODS: Readonly<Record<string, string>> = { '.__str__': 'toString', '.__add__': 'add', '.__sub__': 'sub', '.__mul__': 'mul', '.__pow__': 'pow', '.__floordiv__': 'floordiv', '.__mod__': 'mod' };
 /** DomainMatrix functions whose integer arguments are sizes, exponents or indices. */
 const DOMAIN_MATRIX_INT_FUNCTIONS = new Set(['.eye', '.zeros', '.ones', '.pow', '.getitem', 'sdm_berk']);
@@ -4178,6 +4263,8 @@ function autoAdapter(c: Case): Adapter | undefined {
     const normalized = c.module === 'sympy.polys.densebasic' ? polynomialInputs(converted) : converted;
     return expressionCoefficients.includes(c.module) ? rationalInputs(normalized) : normalized;
   };
+  const dunder = c.fn === '.__str__' ? undefined : DUNDER[c.fn];
+  if (dunder !== undefined) return (args, _kw, self0) => fromJs(dunder(plain(self0 instanceof JsDomain ? (self0.domain ?? self0) : self0), args.map((a) => plain(conv(a)))));
   if (c.fn.startsWith('.')) {
     const name = OPERATOR_METHODS[c.fn] ?? camel(c.fn.slice(1));
     return (args, kw, self0) => {
@@ -4217,6 +4304,14 @@ function autoAdapter(c: Case): Adapter | undefined {
           return new JsTuple([result[0], ...result.slice(1).map((rows: Expr[][]) => new JsList(rows.map((row) => name === 'intersect' ? new JsTuple(row.map(coefficient)) : new JsList(row.map(coefficient)))))]);
         }
         return fromJs(result);
+      }
+      // a SymPy method or attribute that symjs exports as a function of the object (x.is_real -> isReal(x),
+      // M.is_positive_definite -> isPositiveDefinite(M); docs/api-policy.md)
+      const asFunction = (sj as unknown as Record<string, unknown>)[ATTRIBUTE_FUNCTIONS[c.fn.slice(1)] ?? name];
+      if (m === undefined && typeof asFunction === 'function' && typeof self === 'object') {
+        const g = asFunction as (...a: unknown[]) => unknown;
+        if (Object.keys(kw).length) throw new Unsupported(`no adapter for ${c.fn} with keywords`);
+        return fromJs(g(self, ...args.map(conv)));
       }
       if (m === undefined || args.length) throw new Unsupported(`no adapter for ${c.fn}`);
       return fromJs(m);

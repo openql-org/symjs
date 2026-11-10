@@ -641,6 +641,26 @@ class PythonRuntime(Exception):
     pass
 
 
+class NotSympy(Exception):
+    pass
+
+
+def is_sympy_operand(receiver, args):
+    """Whether an operator, attribute or subscript expression involves a SymPy object (not a module,
+    the S registry or plain Python values)."""
+    from sympy.core.singleton import SingletonRegistry
+    if isinstance(receiver, (types.ModuleType, SingletonRegistry)):
+        return False
+    def sympy_value(v):
+        if isinstance(v, (list, tuple, set, frozenset)):
+            return any(sympy_value(i) for i in v)
+        if isinstance(v, dict):
+            return any(sympy_value(k) or sympy_value(i) for k, i in v.items())
+        mod = type(v).__module__ or ""
+        return mod.startswith(("sympy.", "mpmath.")) or (isinstance(v, type) and (v.__module__ or "").startswith("sympy."))
+    return sympy_value(receiver) or any(sympy_value(a) for a in args)
+
+
 def _same_series(diff):
     """The series rebuilt from its function has the same leading terms."""
     try:
@@ -939,7 +959,7 @@ def ser(o):
         return {"t": "JsSet", "items": [ser(i) for i in o]}
     if isinstance(o, list):
         return {"t": "Tuple", "items": [ser(i) for i in o], "list": True}
-    if isinstance(o, range):
+    if isinstance(o, range) or type(o).__name__ in ("dict_keys", "dict_values"):
         return {"t": "Tuple", "items": [ser(i) for i in o], "list": True}
     if isinstance(o, (tuple, Tuple)):
         return {"t": "Tuple", "items": [ser(i) for i in o]}
@@ -1312,6 +1332,46 @@ def value_example(node, globs):
     return None
 
 
+# Python operators, comparisons, attribute reads and subscripts of SymPy objects in a doctest
+# (g * f, a == b, D.diagonal_length, a[0, 0], Cycle(1, 2)(2, 3)): recorded as calls of the special methods
+# (__mul__, __eq__, __getitem__, __call__) or of the attribute (".diagonal_length" with no arguments)
+OPERATOR_FNS = {".__add__", ".__sub__", ".__mul__", ".__truediv__", ".__pow__", ".__floordiv__", ".__mod__",
+                ".__matmul__", ".__and__", ".__or__", ".__xor__", ".__rshift__", ".__lshift__", ".__eq__", ".__ne__",
+                ".__lt__", ".__le__", ".__gt__", ".__ge__", ".__contains__", ".__neg__", ".__invert__", ".__getitem__",
+                ".__call__"}
+_SYN_BINOPS = {ast.Add: "__add__", ast.Sub: "__sub__", ast.Mult: "__mul__", ast.Div: "__truediv__", ast.Pow: "__pow__",
+               ast.FloorDiv: "__floordiv__", ast.Mod: "__mod__", ast.MatMult: "__matmul__", ast.BitAnd: "__and__",
+               ast.BitOr: "__or__", ast.BitXor: "__xor__", ast.RShift: "__rshift__", ast.LShift: "__lshift__"}
+_SYN_CMPOPS = {ast.Eq: "__eq__", ast.NotEq: "__ne__", ast.Lt: "__lt__", ast.LtE: "__le__", ast.Gt: "__gt__", ast.GtE: "__ge__"}
+_SYN_UNOPS = {ast.USub: "__neg__", ast.Invert: "__invert__"}
+
+
+def synthetic_call(node):
+    """An equivalent call (method name, receiver node, argument nodes) of an operator, comparison,
+    attribute read or subscript expression, or None."""
+    if isinstance(node, ast.Attribute) and not node.attr.startswith("_"):
+        return node.attr, node.value, []
+    if isinstance(node, ast.Subscript) and not isinstance(node.slice, ast.Slice):
+        return "__getitem__", node.value, [node.slice]
+    if isinstance(node, ast.BinOp) and type(node.op) in _SYN_BINOPS:
+        if isinstance(node.left, ast.Constant) and isinstance(node.left.value, str):
+            # Python string formatting ('%s' % x)
+            return None
+        return _SYN_BINOPS[type(node.op)], node.left, [node.right]
+    if isinstance(node, ast.UnaryOp) and type(node.op) in _SYN_UNOPS:
+        return _SYN_UNOPS[type(node.op)], node.operand, []
+    if isinstance(node, ast.Compare) and len(node.ops) == 1:
+        op = node.ops[0]
+        if type(op) in _SYN_CMPOPS:
+            return _SYN_CMPOPS[type(op)], node.left, [node.comparators[0]]
+        if isinstance(op, ast.In):
+            return "__contains__", node.comparators[0], [node.left]
+    if (isinstance(node, ast.Call) and not isinstance(node.func, (ast.Name, ast.Attribute))
+            and not any(isinstance(a, ast.Starred) for a in node.args) and not node.keywords):
+        return "__call__", node.func, list(node.args)
+    return None
+
+
 # per-example limit, generous so that the corpus does not depend on the machine load
 ALARM_SECONDS = 30
 
@@ -1399,6 +1459,12 @@ def main(dst):
                         record = {"fn": call.func.id}
                     elif isinstance(call.func, ast.Attribute):
                         record = {"fn": "." + call.func.attr, "selfSrc": ast.unparse(call.func.value)}
+                if record is None and not printed:
+                    syn = synthetic_call(call)
+                    if syn is not None:
+                        name, receiver, arg_nodes = syn
+                        record = {"fn": "." + name, "selfSrc": ast.unparse(receiver), "synthetic": True}
+                        call = ast.Call(func=ast.Attribute(value=receiver, attr=name, ctx=ast.Load()), args=arg_nodes, keywords=[])
                 from sympy.assumptions import global_assumptions as _ga
                 assumed = list(_ga)
                 # the in-place functions of sympy.polys.matrices.dense (ddm_iadd, ddm_idet, ...) mutate their
@@ -1437,7 +1503,7 @@ def main(dst):
                 fn = record["fn"]
                 # only the public API: top-level sympy names and public methods
                 if fn.startswith("."):
-                    if fn[1:].startswith("_"):
+                    if fn[1:].startswith("_") and fn not in OPERATOR_FNS:
                         omit("private-api", modname, ex)
                         continue
                 elif (fn not in PUBLIC and fn not in extra_public) or fn in globs and (getattr(globs[fn], "__module__", None) or "__").startswith("__"):
@@ -1447,6 +1513,9 @@ def main(dst):
                 try:
                     if "selfSrc" in record:
                         _self = eval(record.pop("selfSrc"), globs)
+                        if record.pop("synthetic", False) and not is_sympy_operand(_self, [eval(compile(ast.Expression(a), "<a>", "eval"), globs) for a in call.args]):
+                            # Python values only (2*3, a list subscript, the S registry): no SymPy operation
+                            raise NotSympy()
                         if printed and isinstance(_self, types.ModuleType):
                             # the printed output of a function of a Python module (inspect.getsource): not SymPy API
                             raise PythonRuntime()
@@ -1458,6 +1527,9 @@ def main(dst):
                         record["assume"] = [ser(a) for a in assumed]
                 except PythonRuntime:
                     omit("python-runtime-api", modname, ex)
+                    continue
+                except NotSympy:
+                    omit("non-call-expression", modname, ex)
                     continue
                 except Unsupported as e:
                     # keep the case (it counts as a failure) so the rate is not inflated

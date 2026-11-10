@@ -248,7 +248,7 @@
     "logic/inference.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 7,
    "declaredPublicNames": [
     "Literal",
@@ -3191,7 +3191,7 @@
     "core/nodes.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 6,
    "declaredPublicNames": [
     "SingletonRegistry",
@@ -6701,7 +6701,7 @@
     "matrices/expressions/diagonal.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 13,
    "declaredPublicNames": [
     "DiagonalMatrix",
@@ -7011,7 +7011,7 @@
     "matrices/expressions/misc.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 2,
    "declaredPublicNames": [
     "MatrixSet",
@@ -7046,7 +7046,7 @@
     "matrices/expressions/matexpr.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 3,
    "declaredPublicNames": [
     "ZeroMatrix",
@@ -7166,7 +7166,7 @@
    "note": "MatrixKind (kindOf of a matrix is not a MatrixKind yet)",
    "sources": [],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 5,
    "declaredPublicNames": [
     "MatrixKind",
@@ -15196,7 +15196,7 @@
    "note": "modular GCD algorithms (modgcd_*, func_field_modgcd)",
    "sources": [],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 46,
    "declaredPublicNames": [
     "modgcd_univariate",
@@ -15998,7 +15998,7 @@
    "note": "PolyMatrix",
    "sources": [],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 5,
    "declaredPublicNames": [
     "MutablePolyDenseMatrix",
@@ -18243,7 +18243,7 @@
     "sets/sets.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 2,
    "declaredPublicNames": [
     "SetExpr"
@@ -20611,7 +20611,7 @@
     "strategies/tools.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 1,
    "declaredPublicNames": [
     "subs",
@@ -20764,7 +20764,7 @@
     "tensor/ndimarray.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 13,
    "declaredPublicNames": [
     "DenseNDimArray",
@@ -21037,7 +21037,7 @@
     "tensor/ndimarray.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 9,
    "declaredPublicNames": [
     "SparseNDimArray",
