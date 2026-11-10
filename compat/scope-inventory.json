@@ -409,7 +409,6 @@
    "module": "sympy.assumptions.lra_satask",
    "sha256": "1659a22c446c8fa27dc3abf2830104127ee9c863e70f42643c414476813b6df3",
    "status": "partial",
-   "note": "LRA-based ask",
    "sources": [
     "assumptions/lrasatask.ts"
    ],
@@ -660,7 +659,6 @@
    "module": "sympy.assumptions.satask",
    "sha256": "3f78a9acf8ee3b2853e45c2bd215fad714ce703f7c33f6f35d2015fa95d884de",
    "status": "partial",
-   "note": "SAT-based ask",
    "sources": [
     "assumptions/satask.ts"
    ],
@@ -925,7 +923,7 @@
    "module": "sympy.codegen.algorithms",
    "sha256": "184be769d39367769f56b6cde56139d8e8423fc83330823f00de281d0c6f129a",
    "status": "unimplemented",
-   "note": "base module (not ported yet)",
+   "note": "extend package @symjs/codegen (planned)",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -939,7 +937,7 @@
    "module": "sympy.codegen.approximations",
    "sha256": "afbcf24a1216a78d109e0b21150c2a295296700e4a9879907096ab5d5b4e0134",
    "status": "unimplemented",
-   "note": "base module (not ported yet)",
+   "note": "extend package @symjs/codegen (planned)",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -1042,7 +1040,7 @@
    "module": "sympy.codegen.cfunctions",
    "sha256": "8eb1566918eb427a47ceeebe9b016d77a711b292bc268ec1dd10e8d403a84cba",
    "status": "unimplemented",
-   "note": "base module (not ported yet)",
+   "note": "extend package @symjs/codegen (planned)",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -1248,7 +1246,7 @@
    "module": "sympy.codegen.rewriting",
    "sha256": "f09b6230582fd2c03bb86bb631453b2f7bb395d1b0e711b592cba4e338766431",
    "status": "unimplemented",
-   "note": "base module (not ported yet)",
+   "note": "extend package @symjs/codegen (planned)",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -3070,7 +3068,6 @@
    "module": "sympy.core.parameters",
    "sha256": "1284f64b75b5752dbe1e857a58deeccc17b15ef9f9ff0e377b6245a2e2aebe45",
    "status": "partial",
-   "note": "global evaluate/distribute flags (symjs takes evaluate options per call)",
    "sources": [
     "core/parameters.ts"
    ],
@@ -3174,7 +3171,6 @@
    "module": "sympy.core.rules",
    "sha256": "009b99ced998299ff25084cb641eab8598c3cba44e042b5a8dc62a3dae74b237",
    "status": "partial",
-   "note": "Transform (doctests need Python lambdas -> ports)",
    "sources": [
     "core/rules.ts"
    ],
@@ -5234,7 +5230,6 @@
    "module": "sympy.integrals.intpoly",
    "sha256": "4978ddfdfdbde58ad8b2fa10a73136110339c5a4279e3d33bc77585b9284767d",
    "status": "partial",
-   "note": "polytope_integrate",
    "sources": [
     "integrals/intpoly.ts"
    ],
@@ -6124,7 +6119,6 @@
    "module": "sympy.logic.algorithms.lra_theory",
    "sha256": "e8964064c26184749b51766e73475d630a7fc7b79f56eb6121857b0dcf5e5327",
    "status": "partial",
-   "note": "linear real arithmetic theory solver of satask",
    "sources": [
     "logic/algorithms/lratheory.ts"
    ],
@@ -7458,7 +7452,6 @@
    "module": "sympy.matrices.normalforms",
    "sha256": "997d7dc2f26a4008ab4623d8f967527c47658c53a1b2dd7c2dc0d7e0cbcf33c0",
    "status": "partial",
-   "note": "smith_normal_form, hermite_normal_form, invariant_factors (already selected)",
    "sources": [
     "matrices/normalforms.ts"
    ],
@@ -7717,7 +7710,6 @@
    "module": "sympy.ntheory.bbp_pi",
    "sha256": "20bbabd5cf496bed45fdb9609c89d4c7e5a8a50fd64af2bed8ebcd2c47b6671f",
    "status": "partial",
-   "note": "pi_hex_digits",
    "sources": [
     "ntheory/bbppi.ts"
    ],
@@ -7803,7 +7795,6 @@
    "module": "sympy.ntheory.elliptic_curve",
    "sha256": "653ebbec41e2dba06465d4532ecd537f8552c8cc43cc9af0935c440a8313ed08",
    "status": "partial",
-   "note": "EllipticCurve, EllipticCurvePoint",
    "sources": [
     "ntheory/ellipticcurve.ts"
    ],
@@ -8531,7 +8522,7 @@
    "module": "sympy.parsing.latex",
    "sha256": "09f451c19668daa305d8792cca319eafca92c21c744f8c275ec6b61cac42bd41",
    "status": "unimplemented",
-   "note": "base module (not ported yet): LaTeX parser",
+   "note": "extend package (planned): LaTeX parser",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -8646,7 +8637,7 @@
    "module": "sympy.parsing.latex._parse_latex_antlr",
    "sha256": "b1568ed38a127877bf4da31e33eeada2178247cf06fd1989629508c7e49e7f58",
    "status": "unimplemented",
-   "note": "base module (not ported yet): LaTeX parser",
+   "note": "extend package (planned): LaTeX parser",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -8682,7 +8673,7 @@
    "module": "sympy.parsing.latex.errors",
    "sha256": "69d4a9bd0c968d32ec6cdff62872781ee5e963bfd4f67a1e5a21b496c9182e01",
    "status": "unimplemented",
-   "note": "base module (not ported yet): LaTeX parser",
+   "note": "extend package (planned): LaTeX parser",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -8695,7 +8686,7 @@
    "module": "sympy.parsing.latex.lark",
    "sha256": "86186f7ca4463f738ddfac1127055fc4c5b0fc603aae5d092ac2338ee6945f7f",
    "status": "unimplemented",
-   "note": "base module (not ported yet): LaTeX parser",
+   "note": "extend package (planned): LaTeX parser",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -8706,7 +8697,7 @@
    "module": "sympy.parsing.latex.lark.latex_parser",
    "sha256": "946144a3f47148a5d89a35446ff1370e267e697979b406727c7925cc4b89f550",
    "status": "unimplemented",
-   "note": "base module (not ported yet): LaTeX parser",
+   "note": "extend package (planned): LaTeX parser",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -8721,7 +8712,7 @@
    "module": "sympy.parsing.latex.lark.transformer",
    "sha256": "46e5def1e9d49cbaf35050bd65f290c90d7f225800faa3c834d9e0e949d8d71e",
    "status": "unimplemented",
-   "note": "base module (not ported yet): LaTeX parser",
+   "note": "extend package (planned): LaTeX parser",
    "sources": [],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
@@ -8817,7 +8808,6 @@
    "module": "sympy.parsing.mathematica",
    "sha256": "3f6bd6120c7f1d7bf823f0beeaf3c4dd15ed6e95cd4f688825006b03a41faa45",
    "status": "partial",
-   "note": "parse_mathematica",
    "sources": [
     "parsing/mathematica.ts"
    ],
@@ -12596,8 +12586,13 @@
   {
    "module": "sympy.polys.agca",
    "sha256": "7da8695a81bfd0b828a8e5c19c30494b5e898f57c4d7f54a1bb79d337a99d871",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/agca/extensions.ts",
+    "polys/agca/homomorphisms.ts",
+    "polys/agca/ideals.ts",
+    "polys/agca/modules.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -12606,8 +12601,10 @@
   {
    "module": "sympy.polys.agca.extensions",
    "sha256": "626b45b3d0b4b3ee0334c5c5b5d5f585854d95bcb5f26009ce127902a89c92bc",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/agca/extensions.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 7,
@@ -12806,7 +12803,6 @@
    "module": "sympy.polys.compatibility",
    "sha256": "b62fe0252cfccc1d6c7fea08c9f5c0c38c640c6910699b3fdf84520bee8795d6",
    "status": "partial",
-   "note": "IPolys: the R.dup_*/R.dmp_* methods of PolyRing",
    "sources": [
     "polys/compatibility.ts"
    ],
@@ -13117,7 +13113,6 @@
    "module": "sympy.polys.constructor",
    "sha256": "aeff2142013cf8ff505d4b4e4269448b20385c3f9f6f543377c6ef1f7507425b",
    "status": "partial",
-   "note": "construct_domain",
    "sources": [
     "polys/constructor.ts"
    ],
@@ -13208,7 +13203,6 @@
    "module": "sympy.polys.densebasic",
    "sha256": "29a83a72a9711e11d4318517a6bf461cb5a1e04d4c9f0d84b2887acf1f6bd781",
    "status": "partial",
-   "note": "dense recursive list representation",
    "sources": [
     "polys/densebasic.ts"
    ],
@@ -13353,7 +13347,6 @@
    "module": "sympy.polys.distributedmodules",
    "sha256": "b7ca4b2200d0b3f74c79c197c326d56282dabe87c4cb60d78454bc379823e525",
    "status": "partial",
-   "note": "sdm_* (distributed module representation, Groebner bases of modules)",
    "sources": [
     "polys/distributedmodules.ts"
    ],
@@ -13983,8 +13976,10 @@
   {
    "module": "sympy.polys.domains.modularinteger",
    "sha256": "93a82c91bd1eca95ddaca251c51de5ffbe665639880869da3b2ec57513301bc1",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/domains/finitefield.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -14621,7 +14616,8 @@
    "sha256": "3612be5dc151f5ee1c8430c927e7625dbed762ec3dcdc8b1140feb8a899384f3",
    "status": "partial",
    "sources": [
-    "polys/groebner.ts"
+    "polys/groebner.ts",
+    "polys/groebnertools.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
@@ -16512,7 +16508,6 @@
    "module": "sympy.polys.rings",
    "sha256": "295740dc2d381b61f760df35accfbc391b141ea9a4b48af3d12d2d7f02f03788",
    "status": "partial",
-   "note": "PolyRing/PolyElement (ring, xring, vring, sring)",
    "sources": [
     "polys/rings.ts"
    ],
@@ -18767,7 +18762,6 @@
    "module": "sympy.solvers.bivariate",
    "sha256": "2aee13b62777c94dc221ce083df27b6de74bb5755a18abc53a89c422566b5d7c",
    "status": "partial",
-   "note": "bivariate_type (private _solve_lambert, _filtered_gens are in solvers/solve.ts)",
    "sources": [
     "solvers/bivariate.ts"
    ],
@@ -19239,7 +19233,6 @@
    "module": "sympy.solvers.simplex",
    "sha256": "a5e46fe38683337d14ff4c24f3166fdede8cfdca66fdaf610402e2cabef39dd6",
    "status": "partial",
-   "note": "lpmin, lpmax, linprog",
    "sources": [
     "solvers/simplex.ts"
    ],
@@ -20789,9 +20782,14 @@
   {
    "module": "sympy.tensor.array.expressions",
    "sha256": "3943098d963b1ed5892f4ca0aa47560bc2dd0aa89b25984709f61e5eef9e0781",
-   "status": "unimplemented",
-   "note": "array expressions",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "tensor/array/expressions/arrayexprderivatives.ts",
+    "tensor/array/expressions/arrayexpressions.ts",
+    "tensor/array/expressions/fromarraytomatrix.ts",
+    "tensor/array/expressions/fromindexedtoarray.ts",
+    "tensor/array/expressions/frommatrixtoarray.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 22,
@@ -20801,7 +20799,6 @@
    "module": "sympy.tensor.array.expressions.array_expressions",
    "sha256": "dbc4c8f1cc3043843e40223d5ff8fa5fe946d2447a6a68c07bdfa1f4929be445",
    "status": "partial",
-   "note": "array expressions",
    "sources": [
     "tensor/array/expressions/arrayexpressions.ts"
    ],
@@ -20863,7 +20860,6 @@
    "module": "sympy.tensor.array.expressions.arrayexpr_derivatives",
    "sha256": "5bdf9b6362cbf3794b48d1d722dcea8ce82f7fe1c80db5173e8570f2e3b299c8",
    "status": "partial",
-   "note": "array expressions",
    "sources": [
     "tensor/array/expressions/arrayexprderivatives.ts"
    ],
@@ -20889,9 +20885,10 @@
   {
    "module": "sympy.tensor.array.expressions.conv_array_to_matrix",
    "sha256": "f39619053648e28f5d26d2832575ee83f94954b1bc753ff6d804fb97b0caa321",
-   "status": "unimplemented",
-   "note": "array expressions",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "tensor/array/expressions/fromarraytomatrix.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -20900,9 +20897,10 @@
   {
    "module": "sympy.tensor.array.expressions.conv_indexed_to_array",
    "sha256": "1325b9d93a65071231db99940ef23fe53cdcf0b0fa327a7a5cd5bdc08c3da47e",
-   "status": "unimplemented",
-   "note": "array expressions",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "tensor/array/expressions/fromindexedtoarray.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -20911,9 +20909,10 @@
   {
    "module": "sympy.tensor.array.expressions.conv_matrix_to_array",
    "sha256": "5d8caab7436c412ae0369124afcc5319e52147b65878d9635457d5105d4aeef0",
-   "status": "unimplemented",
-   "note": "array expressions",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "tensor/array/expressions/frommatrixtoarray.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -20936,7 +20935,6 @@
    "module": "sympy.tensor.array.expressions.from_array_to_matrix",
    "sha256": "e0751b09f476047779e088f0b3d0c2712b3a68027e93c4704f5f793534089a2b",
    "status": "partial",
-   "note": "array expressions",
    "sources": [
     "tensor/array/expressions/fromarraytomatrix.ts"
    ],
@@ -20954,7 +20952,6 @@
    "module": "sympy.tensor.array.expressions.from_indexed_to_array",
    "sha256": "45470a7a69abc2e2b944546bd7d6123d53023a465f2c05a56db079eaef168b48",
    "status": "partial",
-   "note": "array expressions",
    "sources": [
     "tensor/array/expressions/fromindexedtoarray.ts"
    ],
@@ -20969,7 +20966,6 @@
    "module": "sympy.tensor.array.expressions.from_matrix_to_array",
    "sha256": "c8863546ea45f7e1555778d92eca96c59d5c928135f87910c8cf1c4089b8fc6b",
    "status": "partial",
-   "note": "array expressions",
    "sources": [
     "tensor/array/expressions/frommatrixtoarray.ts"
    ],

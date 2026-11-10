@@ -303,12 +303,10 @@ reason) or unassessed. Mathematical content is never excluded.
 
 | SymPy modules | Decision |
 |---|---|
-| `printing/c.py`, `cxx.py`, `fortran.py`, `rust.py`, `octave.py`, `julia.py`, `maple.py`, `mathematica.py`, `glsl.py`, `rcode.py`, `smtlib.py`, `codeprinter.py`; the AST and node modules of `codegen/`; `utilities/codegen.py` | extend package `@symjs/codegen` (planned) |
-| `codegen/cfunctions.py`, `rewriting.py`, `approximations.py`, `algorithms.py` | base module (not ported yet) |
+| `printing/c.py`, `cxx.py`, `fortran.py`, `rust.py`, `octave.py`, `julia.py`, `maple.py`, `mathematica.py`, `glsl.py`, `rcode.py`, `smtlib.py`, `codeprinter.py`; all of `codegen/` (including `cfunctions.py`, `rewriting.py`, `approximations.py`, `algorithms.py`); `utilities/codegen.py` | extend package `@symjs/codegen` (planned) |
 | `printing/pycode.py`, `numpy.py`, `lambdarepr.py`, `python.py`, `codegen/pyutils.py`, `utilities/autowrap.py` | out of scope: they generate or compile Python code |
 | `printing/jscode.py` | not ported: JavaScript code output is not needed for now |
-| `parsing/latex/` | base module (not ported yet) |
-| `parsing/maxima.py`, `autolev/`, `c/`, `fortran/`, `sym_expr.py` | extend package (planned) |
+| `parsing/latex/`, `maxima.py`, `autolev/`, `c/`, `fortran/`, `sym_expr.py` | extend package (planned) |
 | `diffgeom/` | extend package (planned) |
 | `physics/` | extend packages per field, in an order decided later; `physics/quantum/` is `@symjs/physics-quantum` (partial) |
 | `plotting/`, `categories/diagram_drawing.py`, `printing/preview.py` | deferred (rendering and display) |

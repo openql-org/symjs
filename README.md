@@ -215,10 +215,8 @@ Runtime-specific backends are deliberately excluded; mathematical modules remain
 
 Modules that are not ported yet but stay in scope (decided 2026-11-06):
 
-- Code printers for other languages (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB), the code-generation AST and node modules of `sympy.codegen` and `sympy.utilities.codegen`: an extend package `@symjs/codegen`
-- The mathematical parts of `sympy.codegen` (`cfunctions`, `rewriting`, `approximations`, `algorithms`): the base module
-- The LaTeX parser (`parse_latex`): the base module
-- The Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: an extend package
+- Code printers for other languages (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB), all of `sympy.codegen` (including `cfunctions`, `rewriting`, `approximations` and `algorithms`) and `sympy.utilities.codegen`: an extend package `@symjs/codegen`
+- The LaTeX parser (`parse_latex`) and the Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: an extend package
 - Differential geometry (`sympy.diffgeom`): an extend package
 - `sympy.physics`: extend packages per field, in an order decided later; `sympy.physics.quantum` goes into the existing `@symjs/physics-quantum`, which is partial
 

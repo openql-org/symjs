@@ -19,8 +19,8 @@ Pinned inventory: **825 production modules** in SymPy 1.14.0. 416 selected for e
 
 | Inventory status | Modules |
 |---|---:|
-| partial | 488 |
-| unimplemented | 192 |
+| partial | 495 |
+| unimplemented | 185 |
 | unassessed | 0 |
 | excluded | 145 |
 
