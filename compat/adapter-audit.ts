@@ -9,6 +9,7 @@ export const REVIEWED_ADAPTERS: Readonly<Record<string, string>> = {
   substitution: 'substitution',
   checksol: 'checksol',
   linsolve: 'linsolve / linsolveAugmented / gaussJordanSolve',
+  solve_lin_sys: 'solveLinSys; reconstruct PolyRing inputs and convert expression coefficients to the Python domain representation',
   solve_linear_system: 'linsolveAugmented',
   solve_linear_system_LU: 'linsolveAugmented',
   solve_poly_system: 'solvePolySystem',

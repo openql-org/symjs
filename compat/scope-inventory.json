@@ -12773,7 +12773,7 @@
    "sha256": "8567832ac2a726e02e3cdff9214ea6d6892eac0abdc4cb772d080c7a172f04a4",
    "status": "partial",
    "sources": [
-    "functions/combinatorial/numbers.ts"
+    "polys/appellseqs.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
@@ -12789,7 +12789,8 @@
     "euler_poly",
     "dup_andre",
     "andre_poly"
-   ]
+   ],
+   "note": "Appell recurrence for Bernoulli, central Bernoulli, Genocchi, Euler and Andre polynomials, including Poly/PurePoly outputs; low-level dup_* exports remain unported."
   },
   {
    "module": "sympy.polys.compatibility",
@@ -13325,9 +13326,11 @@
   {
    "module": "sympy.polys.dispersion",
    "sha256": "b3a188627180e94f638463fb6174104bc1b76f21b8fa43dbaf9e4147aa7e8b3e",
-   "status": "unimplemented",
-   "note": "dispersion, dispersionset",
-   "sources": [],
+   "status": "partial",
+   "note": "Univariate dispersion sets via factor pairs and exact shifts; inherits the supported coefficient domains of Poly.factorList.",
+   "sources": [
+    "polys/dispersion.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 18,
@@ -16733,9 +16736,11 @@
   {
    "module": "sympy.polys.solvers",
    "sha256": "15aade2aa0d5542e8fd88e328ee762ff7092de4c7449b980cf793bcc79044e01",
-   "status": "unimplemented",
-   "note": "solve_lin_sys over PolyRing domains",
-   "sources": [],
+   "status": "partial",
+   "note": "eqsToMatrix and solveLinSys over field coefficient domains; solved generators and values are expressions, inconsistent systems return NoMatch.",
+   "sources": [
+    "polys/solvers.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 9,

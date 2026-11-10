@@ -1313,6 +1313,33 @@ export class PrettyPrinter {
     // SymPy _print_Dict: a SymPy Dict prints like a dict
     if (e instanceof DictNode) return this.print(new Map(e.items()));
     switch (e.name) {
+      case 'ImmutableDenseMatrix':
+        if ('matrix' in e && isMatrixLike(e.matrix)) return this.printMatrix(e.matrix);
+        return this.printFunction(e.name,e.args);
+      case 'BlockMatrix':
+      case 'BlockDiagMatrix':
+        if ('blocks' in e && isMatrixLike(e.blocks)) return this.printMatrix(e.blocks);
+        return this.printFunction(e.name,e.args);
+      case 'MatMul': {
+        // Preserve matrix order and keep rational scalar factors inline.
+        const forms = e.args.map((a) => {
+          const p = this.print(a);
+          const sum = a instanceof Add || (a instanceof ExtensionExpr && ['MatAdd', 'HadamardProduct', 'KroneckerProduct'].includes(a.name));
+          return sum && e.args.length > 1 ? PrettyForm.of(p.parens()) : p;
+        });
+        return PrettyForm.mul(at(forms, 0), ...forms.slice(1));
+      }
+      case 'MatAdd':
+        // SymPy _print_MatAdd preserves argument order and uses a space
+        // before a negative coefficient (the minus belongs to the term).
+        return e.args.slice(1).reduce((out, term) => {
+          const negative = term instanceof ExtensionExpr && term.name === 'MatMul' && couldExtractMinusSign(impl.mul(...term.args.filter((a) => a.isCommutative)));
+          return PrettyForm.of(StringPict.next(out, negative ? ' ' : ' + ', this.print(term)));
+        }, this.print(at(e.args, 0)));
+      case 'ZeroMatrix':
+        return new PrettyForm(u ? '𝟘' : '0');
+      case 'PermutationMatrix':
+        return new PrettyForm(str(e));
       // SymPy Partition is a FiniteSet of its blocks (stored in SymPy's order): _print_FiniteSet
       case 'Partition':
         return this.printSeq(e.args, '{', '}', ', ');

@@ -676,6 +676,12 @@ def ser(o):
         return {"t": "SingleODEProblem", "eq": ser(o.eq), "func": ser(o.func), "sym": ser(o.sym)}
     if isinstance(o, _SODES):
         return {"t": "SingleODESolver", "cls": type(o).__name__, "problem": ser(o.ode_problem)}
+    from sympy.combinatorics.partitions import IntegerPartition as _IntegerPartition
+    from sympy.printing.str import StrPrinter as _StrPrinter
+    if isinstance(o, _IntegerPartition):
+        return {"t": "IntegerPartition", "parts": list(o.partition)}
+    if isinstance(o, _StrPrinter):
+        return {"t": "StrPrinter", "settings": ser(o._settings)}
     from sympy.combinatorics import Permutation as _Perm
     from sympy.combinatorics.perm_groups import PermutationGroup as _PermGroup
     from sympy.combinatorics.permutations import Cycle as _Cycle
@@ -1080,7 +1086,7 @@ def ser(o):
         return {"t": "Fn", "name": "exp", "args": [ser(a) for a in o.args]}
     if isinstance(o, (sympy.Sum, sympy.Product)):
         return {"t": "Fn", "name": name, "args": [ser(o.function)] + [ser(tuple(l)) for l in o.limits]}
-    if o.is_Function or name in ("Piecewise", "Integral", "Derivative", "Limit", "Order", "Sum", "Product"):
+    if o.is_Function or name in ("Piecewise", "Integral", "NonElementaryIntegral", "Derivative", "Limit", "Order", "Sum", "Product"):
         return {"t": "Fn", "name": name, "args": [ser(a) for a in o.args]}
     raise Unsupported(name)
 

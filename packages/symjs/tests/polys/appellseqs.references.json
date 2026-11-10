@@ -1,0 +1,457 @@
+[
+  {
+    "kind": "bernoulli",
+    "n": 0,
+    "expr": "1",
+    "poly": "Poly(1, x, domain='QQ')",
+    "value": "1"
+  },
+  {
+    "kind": "bernoulli",
+    "n": 1,
+    "expr": "x - 1/2",
+    "poly": "Poly(x - 1/2, x, domain='QQ')",
+    "value": "1/6"
+  },
+  {
+    "kind": "bernoulli",
+    "n": 2,
+    "expr": "x**2 - x + 1/6",
+    "poly": "Poly(x**2 - x + 1/6, x, domain='QQ')",
+    "value": "-1/18"
+  },
+  {
+    "kind": "bernoulli",
+    "n": 3,
+    "expr": "x**3 - 3*x**2/2 + x/2",
+    "poly": "Poly(x**3 - 3/2*x**2 + 1/2*x, x, domain='QQ')",
+    "value": "-1/27"
+  },
+  {
+    "kind": "bernoulli",
+    "n": 4,
+    "expr": "x**4 - 2*x**3 + x**2 - 1/30",
+    "poly": "Poly(x**4 - 2*x**3 + x**2 - 1/30, x, domain='QQ')",
+    "value": "13/810"
+  },
+  {
+    "kind": "bernoulli",
+    "n": 5,
+    "expr": "x**5 - 5*x**4/2 + 5*x**3/3 - x/6",
+    "poly": "Poly(x**5 - 5/2*x**4 + 5/3*x**3 - 1/6*x, x, domain='QQ')",
+    "value": "5/243"
+  },
+  {
+    "kind": "bernoulli",
+    "n": 6,
+    "expr": "x**6 - 3*x**5 + 5*x**4/2 - x**2/2 + 1/42",
+    "poly": "Poly(x**6 - 3*x**5 + 5/2*x**4 - 1/2*x**2 + 1/42, x, domain='QQ')",
+    "value": "-121/10206"
+  },
+  {
+    "kind": "bernoulli",
+    "n": 7,
+    "expr": "x**7 - 7*x**6/2 + 7*x**5/2 - 7*x**3/6 + x/6",
+    "poly": "Poly(x**7 - 7/2*x**6 + 7/2*x**5 - 7/6*x**3 + 1/6*x, x, domain='QQ')",
+    "value": "-49/2187"
+  },
+  {
+    "kind": "bernoulli",
+    "n": 8,
+    "expr": "x**8 - 4*x**7 + 14*x**6/3 - 7*x**4/3 + 2*x**2/3 - 1/30",
+    "poly": "Poly(x**8 - 4*x**7 + 14/3*x**6 - 7/3*x**4 + 2/3*x**2 - 1/30, x, domain='QQ')",
+    "value": "1093/65610"
+  },
+  {
+    "kind": "bernoulli",
+    "n": 9,
+    "expr": "x**9 - 9*x**8/2 + 6*x**7 - 21*x**5/5 + 2*x**3 - 3*x/10",
+    "poly": "Poly(x**9 - 9/2*x**8 + 6*x**7 - 21/5*x**5 + 2*x**3 - 3/10*x, x, domain='QQ')",
+    "value": "809/19683"
+  },
+  {
+    "kind": "bernoulli",
+    "n": 10,
+    "expr": "x**10 - 5*x**9 + 15*x**8/2 - 7*x**6 + 5*x**4 - 3*x**2/2 + 5/66",
+    "poly": "Poly(x**10 - 5*x**9 + 15/2*x**8 - 7*x**6 + 5*x**4 - 3/2*x**2 + 5/66, x, domain='QQ')",
+    "value": "-49205/1299078"
+  },
+  {
+    "kind": "bernoulli",
+    "n": 11,
+    "expr": "x**11 - 11*x**10/2 + 55*x**9/6 - 11*x**7 + 11*x**5 - 11*x**3/2 + 5*x/6",
+    "poly": "Poly(x**11 - 11/2*x**10 + 55/6*x**9 - 11*x**7 + 11*x**5 - 11/2*x**3 + 5/6*x, x, domain='QQ')",
+    "value": "-20317/177147"
+  },
+  {
+    "kind": "bernoulli",
+    "n": 12,
+    "expr": "x**12 - 6*x**11 + 11*x**10 - 33*x**8/2 + 22*x**6 - 33*x**4/2 + 5*x**2 - 691/2730",
+    "poly": "Poly(x**12 - 6*x**11 + 11*x**10 - 33/2*x**8 + 22*x**6 - 33/2*x**4 + 5*x**2 - 691/2730, x, domain='QQ')",
+    "value": "61203943/483611310"
+  },
+  {
+    "kind": "central",
+    "n": 0,
+    "expr": "1",
+    "poly": "Poly(1, x, domain='QQ')",
+    "value": "1"
+  },
+  {
+    "kind": "central",
+    "n": 1,
+    "expr": "x",
+    "poly": "Poly(x, x, domain='QQ')",
+    "value": "2/3"
+  },
+  {
+    "kind": "central",
+    "n": 2,
+    "expr": "x**2 - 1/3",
+    "poly": "Poly(x**2 - 1/3, x, domain='QQ')",
+    "value": "1/9"
+  },
+  {
+    "kind": "central",
+    "n": 3,
+    "expr": "x**3 - x",
+    "poly": "Poly(x**3 - x, x, domain='QQ')",
+    "value": "-10/27"
+  },
+  {
+    "kind": "central",
+    "n": 4,
+    "expr": "x**4 - 2*x**2 + 7/15",
+    "poly": "Poly(x**4 - 2*x**2 + 7/15, x, domain='QQ')",
+    "value": "-91/405"
+  },
+  {
+    "kind": "central",
+    "n": 5,
+    "expr": "x**5 - 10*x**3/3 + 7*x/3",
+    "poly": "Poly(x**5 - 10/3*x**3 + 7/3*x, x, domain='QQ')",
+    "value": "170/243"
+  },
+  {
+    "kind": "central",
+    "n": 6,
+    "expr": "x**6 - 5*x**4 + 7*x**2 - 31/21",
+    "poly": "Poly(x**6 - 5*x**4 + 7*x**2 - 31/21, x, domain='QQ')",
+    "value": "3751/5103"
+  },
+  {
+    "kind": "central",
+    "n": 7,
+    "expr": "x**7 - 7*x**5 + 49*x**3/3 - 31*x/3",
+    "poly": "Poly(x**7 - 7*x**5 + 49/3*x**3 - 31/3*x, x, domain='QQ')",
+    "value": "-6370/2187"
+  },
+  {
+    "kind": "central",
+    "n": 8,
+    "expr": "x**8 - 28*x**6/3 + 98*x**4/3 - 124*x**2/3 + 127/15",
+    "poly": "Poly(x**8 - 28/3*x**6 + 98/3*x**4 - 124/3*x**2 + 127/15, x, domain='QQ')",
+    "value": "-138811/32805"
+  },
+  {
+    "kind": "central",
+    "n": 9,
+    "expr": "x**9 - 12*x**7 + 294*x**5/5 - 124*x**3 + 381*x/5",
+    "poly": "Poly(x**9 - 12*x**7 + 294/5*x**5 - 124*x**3 + 381/5*x, x, domain='QQ')",
+    "value": "415826/19683"
+  },
+  {
+    "kind": "central",
+    "n": 10,
+    "expr": "x**10 - 15*x**8 + 98*x**6 - 310*x**4 + 381*x**2 - 2555/33",
+    "poly": "Poly(x**10 - 15*x**8 + 98*x**6 - 310*x**4 + 381*x**2 - 2555/33, x, domain='QQ')",
+    "value": "25143755/649539"
+  },
+  {
+    "kind": "central",
+    "n": 11,
+    "expr": "x**11 - 55*x**9/3 + 154*x**7 - 682*x**5 + 1397*x**3 - 2555*x/3",
+    "poly": "Poly(x**11 - 55/3*x**9 + 154*x**7 - 682*x**5 + 1397*x**3 - 2555/3*x, x, domain='QQ')",
+    "value": "-41649850/177147"
+  },
+  {
+    "kind": "central",
+    "n": 12,
+    "expr": "x**12 - 22*x**10 + 231*x**8 - 1364*x**6 + 4191*x**4 - 5110*x**2 + 1414477/1365",
+    "poly": "Poly(x**12 - 22*x**10 + 231*x**8 - 1364*x**6 + 4191*x**4 - 5110*x**2 + 1414477/1365, x, domain='QQ')",
+    "value": "-125284471321/241805655"
+  },
+  {
+    "kind": "genocchi",
+    "n": 0,
+    "expr": "0",
+    "poly": "Poly(0, x, domain='ZZ')",
+    "value": "0"
+  },
+  {
+    "kind": "genocchi",
+    "n": 1,
+    "expr": "-1",
+    "poly": "Poly(-1, x, domain='ZZ')",
+    "value": "-1"
+  },
+  {
+    "kind": "genocchi",
+    "n": 2,
+    "expr": "1 - 2*x",
+    "poly": "Poly(-2*x + 1, x, domain='ZZ')",
+    "value": "-1/3"
+  },
+  {
+    "kind": "genocchi",
+    "n": 3,
+    "expr": "-3*x**2 + 3*x",
+    "poly": "Poly(-3*x**2 + 3*x, x, domain='ZZ')",
+    "value": "2/3"
+  },
+  {
+    "kind": "genocchi",
+    "n": 4,
+    "expr": "-4*x**3 + 6*x**2 - 1",
+    "poly": "Poly(-4*x**3 + 6*x**2 - 1, x, domain='ZZ')",
+    "value": "13/27"
+  },
+  {
+    "kind": "genocchi",
+    "n": 5,
+    "expr": "-5*x**4 + 10*x**3 - 5*x",
+    "poly": "Poly(-5*x**4 + 10*x**3 - 5*x, x, domain='ZZ')",
+    "value": "-110/81"
+  },
+  {
+    "kind": "genocchi",
+    "n": 6,
+    "expr": "-6*x**5 + 15*x**4 - 15*x**2 + 3",
+    "poly": "Poly(-6*x**5 + 15*x**4 - 15*x**2 + 3, x, domain='ZZ')",
+    "value": "-121/81"
+  },
+  {
+    "kind": "genocchi",
+    "n": 7,
+    "expr": "-7*x**6 + 21*x**5 - 35*x**3 + 21*x",
+    "poly": "Poly(-7*x**6 + 21*x**5 - 35*x**3 + 21*x, x, domain='ZZ')",
+    "value": "4214/729"
+  },
+  {
+    "kind": "genocchi",
+    "n": 8,
+    "expr": "-8*x**7 + 28*x**6 - 70*x**4 + 84*x**2 - 17",
+    "poly": "Poly(-8*x**7 + 28*x**6 - 70*x**4 + 84*x**2 - 17, x, domain='ZZ')",
+    "value": "18581/2187"
+  },
+  {
+    "kind": "genocchi",
+    "n": 9,
+    "expr": "-9*x**8 + 36*x**7 - 126*x**5 + 252*x**3 - 153*x",
+    "poly": "Poly(-9*x**8 + 36*x**7 - 126*x**5 + 252*x**3 - 153*x, x, domain='ZZ')",
+    "value": "-30742/729"
+  },
+  {
+    "kind": "genocchi",
+    "n": 10,
+    "expr": "-10*x**9 + 45*x**8 - 210*x**6 + 630*x**4 - 765*x**2 + 155",
+    "poly": "Poly(-10*x**9 + 45*x**8 - 210*x**6 + 630*x**4 - 765*x**2 + 155, x, domain='ZZ')",
+    "value": "-1525355/19683"
+  },
+  {
+    "kind": "genocchi",
+    "n": 11,
+    "expr": "-11*x**10 + 55*x**9 - 330*x**7 + 1386*x**5 - 2805*x**3 + 1705*x",
+    "poly": "Poly(-11*x**10 + 55*x**9 - 330*x**7 + 1386*x**5 - 2805*x**3 + 1705*x, x, domain='ZZ')",
+    "value": "27753022/59049"
+  },
+  {
+    "kind": "genocchi",
+    "n": 12,
+    "expr": "-12*x**11 + 66*x**10 - 495*x**8 + 2772*x**6 - 8415*x**4 + 10230*x**2 - 2073",
+    "poly": "Poly(-12*x**11 + 66*x**10 - 495*x**8 + 2772*x**6 - 8415*x**4 + 10230*x**2 - 2073, x, domain='ZZ')",
+    "value": "61203943/59049"
+  },
+  {
+    "kind": "euler",
+    "n": 0,
+    "expr": "1",
+    "poly": "Poly(1, x, domain='QQ')",
+    "value": "1"
+  },
+  {
+    "kind": "euler",
+    "n": 1,
+    "expr": "x - 1/2",
+    "poly": "Poly(x - 1/2, x, domain='QQ')",
+    "value": "1/6"
+  },
+  {
+    "kind": "euler",
+    "n": 2,
+    "expr": "x**2 - x",
+    "poly": "Poly(x**2 - x, x, domain='QQ')",
+    "value": "-2/9"
+  },
+  {
+    "kind": "euler",
+    "n": 3,
+    "expr": "x**3 - 3*x**2/2 + 1/4",
+    "poly": "Poly(x**3 - 3/2*x**2 + 1/4, x, domain='QQ')",
+    "value": "-13/108"
+  },
+  {
+    "kind": "euler",
+    "n": 4,
+    "expr": "x**4 - 2*x**3 + x",
+    "poly": "Poly(x**4 - 2*x**3 + x, x, domain='QQ')",
+    "value": "22/81"
+  },
+  {
+    "kind": "euler",
+    "n": 5,
+    "expr": "x**5 - 5*x**4/2 + 5*x**2/2 - 1/2",
+    "poly": "Poly(x**5 - 5/2*x**4 + 5/2*x**2 - 1/2, x, domain='QQ')",
+    "value": "121/486"
+  },
+  {
+    "kind": "euler",
+    "n": 6,
+    "expr": "x**6 - 3*x**5 + 5*x**3 - 3*x",
+    "poly": "Poly(x**6 - 3*x**5 + 5*x**3 - 3*x, x, domain='QQ')",
+    "value": "-602/729"
+  },
+  {
+    "kind": "euler",
+    "n": 7,
+    "expr": "x**7 - 7*x**6/2 + 35*x**4/4 - 21*x**2/2 + 17/8",
+    "poly": "Poly(x**7 - 7/2*x**6 + 35/4*x**4 - 21/2*x**2 + 17/8, x, domain='QQ')",
+    "value": "-18581/17496"
+  },
+  {
+    "kind": "euler",
+    "n": 8,
+    "expr": "x**8 - 4*x**7 + 14*x**5 - 28*x**3 + 17*x",
+    "poly": "Poly(x**8 - 4*x**7 + 14*x**5 - 28*x**3 + 17*x, x, domain='QQ')",
+    "value": "30742/6561"
+  },
+  {
+    "kind": "euler",
+    "n": 9,
+    "expr": "x**9 - 9*x**8/2 + 21*x**6 - 63*x**4 + 153*x**2/2 - 31/2",
+    "poly": "Poly(x**9 - 9/2*x**8 + 21*x**6 - 63*x**4 + 153/2*x**2 - 31/2, x, domain='QQ')",
+    "value": "305071/39366"
+  },
+  {
+    "kind": "euler",
+    "n": 10,
+    "expr": "x**10 - 5*x**9 + 30*x**7 - 126*x**5 + 255*x**3 - 155*x",
+    "poly": "Poly(x**10 - 5*x**9 + 30*x**7 - 126*x**5 + 255*x**3 - 155*x, x, domain='QQ')",
+    "value": "-2523002/59049"
+  },
+  {
+    "kind": "euler",
+    "n": 11,
+    "expr": "x**11 - 11*x**10/2 + 165*x**8/4 - 231*x**6 + 2805*x**4/4 - 1705*x**2/2 + 691/4",
+    "poly": "Poly(x**11 - 11/2*x**10 + 165/4*x**8 - 231*x**6 + 2805/4*x**4 - 1705/2*x**2 + 691/4, x, domain='QQ')",
+    "value": "-61203943/708588"
+  },
+  {
+    "kind": "euler",
+    "n": 12,
+    "expr": "x**12 - 6*x**11 + 55*x**9 - 396*x**7 + 1683*x**5 - 3410*x**3 + 2073*x",
+    "poly": "Poly(x**12 - 6*x**11 + 55*x**9 - 396*x**7 + 1683*x**5 - 3410*x**3 + 2073*x, x, domain='QQ')",
+    "value": "303692662/531441"
+  },
+  {
+    "kind": "andre",
+    "n": 0,
+    "expr": "1",
+    "poly": "Poly(1, x, domain='ZZ')",
+    "value": "1"
+  },
+  {
+    "kind": "andre",
+    "n": 1,
+    "expr": "x",
+    "poly": "Poly(x, x, domain='ZZ')",
+    "value": "2/3"
+  },
+  {
+    "kind": "andre",
+    "n": 2,
+    "expr": "x**2 - 1",
+    "poly": "Poly(x**2 - 1, x, domain='ZZ')",
+    "value": "-5/9"
+  },
+  {
+    "kind": "andre",
+    "n": 3,
+    "expr": "x**3 - 3*x",
+    "poly": "Poly(x**3 - 3*x, x, domain='ZZ')",
+    "value": "-46/27"
+  },
+  {
+    "kind": "andre",
+    "n": 4,
+    "expr": "x**4 - 6*x**2 + 5",
+    "poly": "Poly(x**4 - 6*x**2 + 5, x, domain='ZZ')",
+    "value": "205/81"
+  },
+  {
+    "kind": "andre",
+    "n": 5,
+    "expr": "x**5 - 10*x**3 + 25*x",
+    "poly": "Poly(x**5 - 10*x**3 + 25*x, x, domain='ZZ')",
+    "value": "3362/243"
+  },
+  {
+    "kind": "andre",
+    "n": 6,
+    "expr": "x**6 - 15*x**4 + 75*x**2 - 61",
+    "poly": "Poly(x**6 - 15*x**4 + 75*x**2 - 61, x, domain='ZZ')",
+    "value": "-22265/729"
+  },
+  {
+    "kind": "andre",
+    "n": 7,
+    "expr": "x**7 - 21*x**5 + 175*x**3 - 427*x",
+    "poly": "Poly(x**7 - 21*x**5 + 175*x**3 - 427*x, x, domain='ZZ')",
+    "value": "-515086/2187"
+  },
+  {
+    "kind": "andre",
+    "n": 8,
+    "expr": "x**8 - 28*x**6 + 350*x**4 - 1708*x**2 + 1385",
+    "poly": "Poly(x**8 - 28*x**6 + 350*x**4 - 1708*x**2 + 1385, x, domain='ZZ')",
+    "value": "4544185/6561"
+  },
+  {
+    "kind": "andre",
+    "n": 9,
+    "expr": "x**9 - 36*x**7 + 630*x**5 - 5124*x**3 + 12465*x",
+    "poly": "Poly(x**9 - 36*x**7 + 630*x**5 - 5124*x**3 + 12465*x, x, domain='ZZ')",
+    "value": "135274562/19683"
+  },
+  {
+    "kind": "andre",
+    "n": 10,
+    "expr": "x**10 - 45*x**8 + 1050*x**6 - 12810*x**4 + 62325*x**2 - 50521",
+    "poly": "Poly(x**10 - 45*x**8 + 1050*x**6 - 12810*x**4 + 62325*x**2 - 50521, x, domain='ZZ')",
+    "value": "-1491632525/59049"
+  },
+  {
+    "kind": "andre",
+    "n": 11,
+    "expr": "x**11 - 55*x**9 + 1650*x**7 - 28182*x**5 + 228525*x**3 - 555731*x",
+    "poly": "Poly(x**11 - 55*x**9 + 1650*x**7 - 28182*x**5 + 228525*x**3 - 555731*x, x, domain='ZZ')",
+    "value": "-54276473326/177147"
+  },
+  {
+    "kind": "andre",
+    "n": 12,
+    "expr": "x**12 - 66*x**10 + 2475*x**8 - 56364*x**6 + 685575*x**4 - 3334386*x**2 + 2702765",
+    "poly": "Poly(x**12 - 66*x**10 + 2475*x**8 - 56364*x**6 + 685575*x**4 - 3334386*x**2 + 2702765, x, domain='ZZ')",
+    "value": "718181418565/531441"
+  }
+]

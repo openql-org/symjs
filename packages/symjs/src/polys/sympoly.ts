@@ -868,6 +868,11 @@ export class Poly {
   EC(): Expr {
     return this.termList[this.termList.length - 1]?.coeff ?? S.Zero;
   }
+  /** Last monomial in lexicographic term order (SymPy Poly.EM). */
+  EM(): Expr {
+    const terms = this.monoms();
+    return mul(...at(terms,terms.length-1).map((n,i) => pow(at(this.gens,i),n)));
+  }
   /** Constant term. */
   TC(): Expr {
     return this.coeffMonomial(this.gens.map(() => 0));

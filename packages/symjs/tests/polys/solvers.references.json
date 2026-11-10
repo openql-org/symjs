@@ -1,0 +1,101 @@
+[
+  {
+    "domain": "QQ",
+    "inputs": [
+      "x-y",
+      "x+y-2"
+    ],
+    "result": {
+      "x": "1",
+      "y": "1"
+    }
+  },
+  {
+    "domain": "QQ",
+    "inputs": [
+      "x-y"
+    ],
+    "result": {
+      "x": "y"
+    }
+  },
+  {
+    "domain": "QQ",
+    "inputs": [],
+    "result": {}
+  },
+  {
+    "domain": "QQ",
+    "inputs": [
+      "0"
+    ],
+    "result": {}
+  },
+  {
+    "domain": "QQ",
+    "inputs": [
+      "1"
+    ],
+    "result": null
+  },
+  {
+    "domain": "QQ",
+    "inputs": [
+      "x",
+      "x-1"
+    ],
+    "result": null
+  },
+  {
+    "domain": "QQ",
+    "inputs": [
+      "2*x+3*y+z-5",
+      "y-z+1"
+    ],
+    "result": {
+      "x": "4 - 2*z",
+      "y": "z - 1"
+    }
+  },
+  {
+    "domain": "GF(5)",
+    "inputs": [
+      "2*x+y-1",
+      "x+3*y-2"
+    ],
+    "result": null
+  },
+  {
+    "domain": "ZZ(a)",
+    "inputs": [
+      "x-y",
+      "x+a*y"
+    ],
+    "result": {
+      "x": "0",
+      "y": "0"
+    }
+  },
+  {
+    "domain": "GF(5)",
+    "inputs": [
+      "3*x-y-1",
+      "x+y-1"
+    ],
+    "result": {
+      "x": "-2",
+      "y": "-2"
+    }
+  },
+  {
+    "domain": "ZZ(a)",
+    "inputs": [
+      "a*x-y",
+      "x+y-1"
+    ],
+    "result": {
+      "x": "1/(a + 1)",
+      "y": "a/(a + 1)"
+    }
+  }
+]

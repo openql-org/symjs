@@ -11,10 +11,22 @@ import { Implies, ITE } from '../../../src/logic';
 import { pagerPrint, pprint, pprintTryUseUnicode, pprintUseUnicode, pretty, PrettyForm, prettyHooks, prettyPrint, PrettyPrinter, PrettyTuple, prettyUseUnicode } from '../../../src/printing/pretty';
 import type { PrettyOptions, Printable } from '../../../src/printing/pretty';
 import { Contains, FiniteSet, Interval, Range, SetExpr, SetOp, UniversalSet } from '../../../src/sets/sets';
+import matrixExprRefs from './pretty.matrixexpr.references.json';
 
 const sym = (name: string, assumptions: sj.Assumptions = {}): sj.Sym => sj.symbol(name, assumptions);
 const def = (name: string): sj.DefinedFunction => sj.defineFunction(name, {});
 const R = (p: bigint, q = 1n): sj.Rational => sj.Rational.of(p, q);
+
+it('prints explicit matrices inside symbolic products, sums and blocks (SymPy 1.14)',()=>{
+  const A=sj.MatrixSymbol('A',2,2),B=sj.MatrixSymbol('B',2,2),m=sj.ImmutableMatrix([[1,2],[3,4]]),u=sj.ImmutableMatrix([[1,1],[1,1]]);
+  const cases={negative:sj.MatAdd(A,sj.MatMul(-1,B)),negMul:sj.MatMul(-1,A),fraction:sj.MatMul(sj.Rational.of(-1,2),A),sumProduct:sj.MatMul(sym('x'),sj.MatAdd(A,B)),reversed:sj.MatMul(B,A),negativeScaled:sj.MatAdd(A,sj.MatMul(-2,B)),scalarSum:sj.MatMul(sj.add(sym('x'),1),A),singleSum:sj.MatMul(sj.MatAdd(A,B)),matrix:m,mul:sj.MatMul(A,u,m),add:sj.MatAdd(sj.ImmutableMatrix([[1,0],[0,1]]),m,A),block:sj.BlockMatrix([[m,u],[u,m]]),diag:sj.BlockDiagMatrix(m,u),zero:sj.ZeroMatrix(2,2),perm:sj.PermutationMatrix(new sj.Permutation([0,2,1,3]))};
+  for(const key of Object.keys(cases) as (keyof typeof cases)[]) {
+    expect(pretty(cases[key],{useUnicode:false})).toBe(matrixExprRefs[key][0]);
+    expect(pretty(cases[key],{useUnicode:true})).toBe(matrixExprRefs[key][1]);
+  }
+  // User extension nodes can share a printer name without exposing matrix data.
+  for(const name of ['ImmutableDenseMatrix','BlockMatrix','BlockDiagMatrix'])expect(pretty(new Ext(name,[],0))).toBe(`${name}()`);
+});
 
 /** [SymPy source, symjs builder, ASCII output, unicode output, options]. */
 type Case = readonly [string, () => Printable, string, string, PrettyOptions];

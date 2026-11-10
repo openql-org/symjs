@@ -137623,7 +137623,97 @@
      2
     ]
    },
-   "unsupportedArg": "StrPrinter",
+   "args": [
+    {
+     "t": "StrPrinter",
+     "settings": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Str",
+         "v": "order"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "full_prec"
+        },
+        {
+         "t": "Str",
+         "v": "auto"
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "sympy_integers"
+        },
+        {
+         "t": "Js",
+         "v": false
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "abbrev"
+        },
+        {
+         "t": "Js",
+         "v": false
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "perm_cyclic"
+        },
+        {
+         "t": "Js",
+         "v": true
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "min"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "max"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "dps"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ]
+      ]
+     }
+    }
+   ],
+   "kwargs": {},
    "text": true,
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
@@ -137665,7 +137755,97 @@
      2
     ]
    },
-   "unsupportedArg": "StrPrinter",
+   "args": [
+    {
+     "t": "StrPrinter",
+     "settings": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Str",
+         "v": "order"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "full_prec"
+        },
+        {
+         "t": "Str",
+         "v": "auto"
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "sympy_integers"
+        },
+        {
+         "t": "Js",
+         "v": false
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "abbrev"
+        },
+        {
+         "t": "Js",
+         "v": false
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "perm_cyclic"
+        },
+        {
+         "t": "Js",
+         "v": true
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "min"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "max"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "dps"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ]
+      ]
+     }
+    }
+   ],
+   "kwargs": {},
    "text": true,
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
@@ -137707,7 +137887,102 @@
      2
     ]
    },
-   "unsupportedArg": "StrPrinter",
+   "args": [
+    {
+     "t": "StrPrinter",
+     "settings": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Str",
+         "v": "order"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "full_prec"
+        },
+        {
+         "t": "Str",
+         "v": "auto"
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "sympy_integers"
+        },
+        {
+         "t": "Js",
+         "v": false
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "abbrev"
+        },
+        {
+         "t": "Js",
+         "v": false
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "perm_cyclic"
+        },
+        {
+         "t": "Js",
+         "v": true
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "min"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "max"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "dps"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ]
+      ]
+     }
+    }
+   ],
+   "kwargs": {
+    "rowsep": {
+     "t": "Str",
+     "v": ",\n"
+    }
+   },
    "text": true,
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
@@ -137749,7 +138024,102 @@
      2
     ]
    },
-   "unsupportedArg": "StrPrinter",
+   "args": [
+    {
+     "t": "StrPrinter",
+     "settings": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Str",
+         "v": "order"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "full_prec"
+        },
+        {
+         "t": "Str",
+         "v": "auto"
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "sympy_integers"
+        },
+        {
+         "t": "Js",
+         "v": false
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "abbrev"
+        },
+        {
+         "t": "Js",
+         "v": false
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "perm_cyclic"
+        },
+        {
+         "t": "Js",
+         "v": true
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "min"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "max"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "dps"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ]
+      ]
+     }
+    }
+   ],
+   "kwargs": {
+    "colsep": {
+     "t": "Str",
+     "v": " "
+    }
+   },
    "text": true,
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
@@ -137791,7 +138161,102 @@
      2
     ]
    },
-   "unsupportedArg": "StrPrinter",
+   "args": [
+    {
+     "t": "StrPrinter",
+     "settings": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Str",
+         "v": "order"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "full_prec"
+        },
+        {
+         "t": "Str",
+         "v": "auto"
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "sympy_integers"
+        },
+        {
+         "t": "Js",
+         "v": false
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "abbrev"
+        },
+        {
+         "t": "Js",
+         "v": false
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "perm_cyclic"
+        },
+        {
+         "t": "Js",
+         "v": true
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "min"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "max"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "dps"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ]
+      ]
+     }
+    }
+   ],
+   "kwargs": {
+    "align": {
+     "t": "Str",
+     "v": "center"
+    }
+   },
    "text": true,
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
@@ -137833,7 +138298,106 @@
      2
     ]
    },
-   "unsupportedArg": "StrPrinter",
+   "args": [
+    {
+     "t": "StrPrinter",
+     "settings": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Str",
+         "v": "order"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "full_prec"
+        },
+        {
+         "t": "Str",
+         "v": "auto"
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "sympy_integers"
+        },
+        {
+         "t": "Js",
+         "v": false
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "abbrev"
+        },
+        {
+         "t": "Js",
+         "v": false
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "perm_cyclic"
+        },
+        {
+         "t": "Js",
+         "v": true
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "min"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "max"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ],
+       [
+        {
+         "t": "Str",
+         "v": "dps"
+        },
+        {
+         "t": "Js",
+         "v": null
+        }
+       ]
+      ]
+     }
+    }
+   ],
+   "kwargs": {
+    "rowstart": {
+     "t": "Str",
+     "v": "{"
+    },
+    "rowend": {
+     "t": "Str",
+     "v": "}"
+    }
+   },
    "text": true,
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
@@ -205288,7 +205852,56 @@
   },
   {
    "fn": "pprint",
-   "unsupportedArg": "NonElementaryIntegral",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "NonElementaryIntegral",
+     "args": [
+      {
+       "t": "Fn",
+       "name": "exp",
+       "args": [
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "text": true,
    "category": "calculus",
    "module": "sympy.integrals.risch",
@@ -205297,7 +205910,135 @@
   },
   {
    "fn": "pprint",
-   "unsupportedArg": "NonElementaryIntegral",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "2"
+        },
+        {
+         "t": "Fn",
+         "name": "log",
+         "args": [
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Fn",
+             "name": "log",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "2"
+        },
+        {
+         "t": "Fn",
+         "name": "log",
+         "args": [
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-1",
+               "q": "1"
+              },
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            },
+            {
+             "t": "Fn",
+             "name": "log",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Fn",
+       "name": "NonElementaryIntegral",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Fn",
+           "name": "log",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Tuple",
+         "items": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "text": true,
    "category": "calculus",
    "module": "sympy.integrals.risch",
@@ -205334,7 +206075,42 @@
   },
   {
    "fn": "pprint",
-   "unsupportedArg": "NonElementaryIntegral",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "NonElementaryIntegral",
+     "args": [
+      {
+       "t": "Fn",
+       "name": "exp",
+       "args": [
+        {
+         "t": "Fn",
+         "name": "exp",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "text": true,
    "category": "calculus",
    "module": "sympy.integrals.risch",
@@ -205379,7 +206155,40 @@
   },
   {
    "fn": "pprint",
-   "unsupportedArg": "NonElementaryIntegral",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "NonElementaryIntegral",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "text": true,
    "category": "calculus",
    "module": "sympy.integrals.risch",
@@ -208836,7 +209645,16 @@
   },
   {
    "fn": ".as_ferrers",
-   "unsupportedArg": "IntegerPartition",
+   "self": {
+    "t": "IntegerPartition",
+    "parts": [
+     5,
+     1,
+     1
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "text": true,
    "category": "combinatorics",
    "module": "sympy.combinatorics.partitions",
@@ -208845,7 +209663,15 @@
   },
   {
    "fn": ".next_lex",
-   "unsupportedArg": "IntegerPartition",
+   "self": {
+    "t": "IntegerPartition",
+    "parts": [
+     3,
+     1
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "text": true,
    "category": "combinatorics",
    "module": "sympy.combinatorics.partitions",
@@ -208854,7 +209680,14 @@
   },
   {
    "fn": ".prev_lex",
-   "unsupportedArg": "IntegerPartition",
+   "self": {
+    "t": "IntegerPartition",
+    "parts": [
+     4
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "text": true,
    "category": "combinatorics",
    "module": "sympy.combinatorics.partitions",

@@ -17,6 +17,10 @@ import refs from './sympoly.finite.references.json';
 
 const x=new Sym('x'), y=new Sym('y');
 const P=(e:string,p:number,gens:readonly Expr[]=[x])=>Poly.from(parse(e),gens,{modulus:p});
+it('returns the last lexicographic monomial (SymPy Poly.EM)',()=>{
+  expect(str(Poly.from(parse('4*x**2+2*x*y**2+x*y+3*y'),[x,y]).EM())).toBe('y');
+  expect(str(Poly.from(0,[x,y]).EM())).toBe('1');
+});
 function show(value: unknown, tuple=true): string {
   if (Array.isArray(value)) return tuple ? `(${value.map((v)=>show(v,false)).join(', ')})` : `[${value.map((v)=>show(v,true)).join(', ')}]`;
   return value instanceof Expr ? str(value) : String(value);

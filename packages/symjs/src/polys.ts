@@ -35,6 +35,9 @@ export {
 } from './polys/sympoly';
 
 export { rootsDict as roots } from './polys/poly';
+export { bernoulliPoly, bernoulliCPoly, genocchiPoly, eulerPoly, andrePoly } from './polys/appellseqs';
+export { dispersion, dispersionset } from './polys/dispersion';
+export { eqsToMatrix, solveLinSys } from './polys/solvers';
 export { sqfNorm } from './polys/sympoly';
 export type { FactorList, FactorListFrac, FactorListOptions, PolynomialDomainOptions } from './polys/sympoly';
 export { minimalPolynomial } from './polys/numberfields';

@@ -4185,6 +4185,11 @@
   "note": "Implicit and special-form solving branches are implemented in the adapter."
  },
  {
+  "name": "solve_lin_sys",
+  "status": "reviewed-conversion",
+  "note": "solveLinSys; reconstruct PolyRing inputs and convert expression coefficients to the Python domain representation"
+ },
+ {
   "name": "solve_linear",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
