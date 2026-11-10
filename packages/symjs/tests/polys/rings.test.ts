@@ -29,6 +29,12 @@ const w = sj.symbols('w')[0];
 void [Q, U, G, P, py, xring, sring, vring, lex];
 
 describe('SymPy doctest and suite values', () => {
+  it('converts a polynomial ring to its rational function field', () => {
+    const F = R.toField();
+    expect(F.toRing().equals(R)).toBe(true);
+    expect(String(F)).toBe('Rational function field in x, y over ZZ with lex order');
+    expect(String(F.fieldNew(x).div(F.fieldNew(y)))).toBe('x/y');
+  });
   it("R", () => {
     expect(show(R)).toBe("Polynomial ring in x, y over ZZ with lex order");
   });

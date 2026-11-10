@@ -1184,6 +1184,10 @@ export abstract class ExtensionExpr extends Expr {
   transposeSelf(): Expr | undefined {
     return undefined;
   }
+  /** Explicit free symbols for nodes with an opaque bound representation (for example CRootOf). */
+  freeSymbolsSelf(): ReadonlySet<Sym> | undefined {
+    return undefined;
+  }
   /**
    * Bound variables (SymPy bound_symbols): the argument positions holding
    * the variables and the positions of the arguments in which they are

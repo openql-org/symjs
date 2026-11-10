@@ -1,0 +1,21 @@
+{
+  "free": "QQ[x,y]**2",
+  "basis": "([1, 0], [0, 1])",
+  "module": "<[x, x + y]>",
+  "zero": "[0, 0]",
+  "quotient": "QQ[x,y]**2/<[x, x]>",
+  "coset": "[1, 0] + <[x, x]>",
+  "subquotient": "<[x, 1] + <[x**2, x]>>",
+  "syzygy": "<[x, -1]>",
+  "injective_syzygy": "<>",
+  "intersection": "<[x*y, x*y]>",
+  "coefficients": "[-x**2 + x, x**2]",
+  "quotient_ideal": "<y>",
+  "ideal_intersection": "<x*y>",
+  "ideal_quotient": "<x*y>",
+  "kernel": "<[x, -1]>",
+  "image": "<[1, 0], [x, 0]>",
+  "apply": "[x + 1, 0]",
+  "quotient_ring": "QQ[x,y]/<x**2 - y**2>",
+  "quotient_ring_free": "(QQ[x,y]/<x**2 - y**2>)**2"
+}

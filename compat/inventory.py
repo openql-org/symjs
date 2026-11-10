@@ -182,7 +182,7 @@ CORRESPONDENCES = {
     'sympy.polys.polyutils': ['polys/fromexpr.ts'],
     'sympy.polys.rationaltools': ['simplify/rational.ts'],
     'sympy.polys.rootoftools': ['polys/rootof.ts', 'polys/rootsum.ts'],
-    'sympy.polys.appellseqs': ['functions/combinatorial/numbers.ts'],
+    'sympy.polys.appellseqs': ['polys/appellseqs.ts'],
     'sympy.polys.groebnertools': ['polys/groebner.ts'],
     'sympy.polys.heuristicgcd': ['polys/mpoly.ts'],
     'sympy.polys.factortools': ['polys/wang.ts', 'polys/zassenhaus.ts'],
@@ -497,6 +497,14 @@ NOT_IMPLEMENTED_PACKAGES = {'sympy.physics.quantum': 'extend package @symjs/phys
  'sympy.physics': 'per-field extend package (planned; the order is decided later)'}
 # Notes on partially implemented modules (what is ported and what is not).
 NOTES = {
+    'sympy.polys.fields': 'Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration and composition remain partial.',
+    'sympy.polys.numberfields.utilities': 'Fundamental discriminant factorization and real algebraic root isolation with rational tolerances; other module utilities and complex isolation remain unported.',
+    'sympy.polys.rootoftools': 'Evaluated indexed-root constructors, radical options, bound generators and real rational refinement; complex rational refinement and full root preprocessing remain incomplete.',
+    'sympy.polys.appellseqs': 'Appell recurrence for Bernoulli, central Bernoulli, Genocchi, Euler and Andre polynomials, including Poly/PurePoly outputs; low-level dup_* exports remain unported.',
+    'sympy.polys.dispersion': 'Univariate dispersion sets via factor pairs and exact shifts; inherits the supported coefficient domains of Poly.factorList.',
+    'sympy.polys.solvers': 'eqsToMatrix and solveLinSys over field coefficient domains; solved generators and values are expressions, inconsistent systems return NoMatch.',
+    'sympy.polys.puiseux': 'PuiseuxRing/PuiseuxPoly with exact rational exponents, arithmetic, conversion and differentiation; coefficient-domain restrictions remain',
+    'sympy.polys.ring_series': 'truncated arithmetic, elementary functions, substitution/reversion and Newton sums; general multivariate leading-coefficient inverses are not implemented',
     'sympy.abc': 'symbols(); JavaScript has no module-level symbol namespace',
     'sympy.assumptions.cnf': 'CNF/EncodedCNF encoding used by satisfiable',
     'sympy.assumptions.sathandlers': 'allargs/anyarg/exactlyonearg; ClassFactRegistry of satask not ported',

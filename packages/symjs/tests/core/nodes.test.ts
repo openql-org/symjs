@@ -164,3 +164,17 @@ describe('fromiter and the Add/Mul kinds of extension nodes', () => {
     expect(lam.asRealImagSelf()).toBe(undefined);
   });
 });
+
+
+it('lets an extension specify free symbols independently of its displayed arguments', () => {
+  class BoundBox extends Box {
+    override freeSymbolsSelf(): ReadonlySet<sj.Sym> {
+      return new Set([y]);
+    }
+  }
+  // The extension contract permits opaque bound arguments, as in CRootOf.
+  // An ordinary extension continues to traverse all its arguments.
+  expect([...sj.freeSymbols(new Box([x, y]))]).toEqual([x, y]);
+  expect([...sj.freeSymbols(new BoundBox([x]))]).toEqual([y]);
+  expect([...sj.freeSymbols(sj.add(new BoundBox([x]), y))]).toEqual([y]);
+});

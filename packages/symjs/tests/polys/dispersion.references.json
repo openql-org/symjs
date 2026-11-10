@@ -1,0 +1,85 @@
+[
+  {
+    "a": "(x-3)*(x+3)",
+    "b": null,
+    "shifts": [
+      "0",
+      "6"
+    ],
+    "dispersion": "6"
+  },
+  {
+    "a": "x**4-3*x**2+1",
+    "b": "(x-3)**4-3*(x-3)**2+1",
+    "shifts": [
+      "2",
+      "3",
+      "4"
+    ],
+    "dispersion": "4"
+  },
+  {
+    "a": "(x-3)**4-3*(x-3)**2+1",
+    "b": "x**4-3*x**2+1",
+    "shifts": [],
+    "dispersion": "-oo"
+  },
+  {
+    "a": "3*x+1",
+    "b": "2*x+1",
+    "shifts": [],
+    "dispersion": "-oo"
+  },
+  {
+    "a": "3*x+2",
+    "b": "3*x+1",
+    "shifts": [],
+    "dispersion": "-oo"
+  },
+  {
+    "a": "x",
+    "b": "x**2+1",
+    "shifts": [],
+    "dispersion": "-oo"
+  },
+  {
+    "a": "x**2+x+1",
+    "b": "x**2-x+2",
+    "shifts": [],
+    "dispersion": "-oo"
+  },
+  {
+    "a": "(x+1)**2*x**3",
+    "b": null,
+    "shifts": [
+      "0",
+      "1"
+    ],
+    "dispersion": "1"
+  },
+  {
+    "a": "1",
+    "b": "x",
+    "shifts": [
+      "0"
+    ],
+    "dispersion": "0"
+  },
+  {
+    "a": "0",
+    "b": "0",
+    "shifts": [
+      "0"
+    ],
+    "dispersion": "0"
+  },
+  {
+    "a": "4*x**4+(4*a+8)*x**3+(a**2+6*a+4)*x**2+(a**2+2*a)*x",
+    "b": null,
+    "shifts": [
+      "0",
+      "1"
+    ],
+    "dispersion": "1"
+  }
+]

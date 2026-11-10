@@ -2452,6 +2452,99 @@
     "cases": 318,
     "api": 12
    }
+  },
+  {
+   "reason": "Serialize IntegerPartition, StrPrinter and NonElementaryIntegral inputs that were previously unsupported. No expected output, source call, case count or equivalence criterion changes. All other corpus records are unchanged. This corrects input representation; it is not permission to accept behavior regressions.",
+   "reference": "SymPy 1.14.0",
+   "previousRevision": "cc477c3f56e30928ad05b0a325da3f25983c2303",
+   "previousCorpusSha256": "de97661cae77522f7c62f8a87d6d10b5bffab3482c5b20d94705d568480c8d78",
+   "previousCorpusReplay": {
+    "cases": 6087,
+    "pass": 5950,
+    "equivalent": 34,
+    "failures": [],
+    "note": "All previously passing cases remain passing. The 103 failures before serialization are existing known gaps."
+   },
+   "changedRecords": [
+    {
+     "previousKey": "sympy.matrices.matrixbase: M.table(printer) #8fd1a43deec8dc8b",
+     "currentKey": "sympy.matrices.matrixbase: M.table(printer) #37346b93f74e06fc",
+     "previous": "unsupported argument: StrPrinter",
+     "current": "Input reconstructed through the public API; expected output unchanged."
+    },
+    {
+     "previousKey": "sympy.matrices.matrixbase: print(M.table(printer)) #8fd1a43deec8dc8b",
+     "currentKey": "sympy.matrices.matrixbase: print(M.table(printer)) #37346b93f74e06fc",
+     "previous": "unsupported argument: StrPrinter",
+     "current": "Input reconstructed through the public API; expected output unchanged."
+    },
+    {
+     "previousKey": "sympy.matrices.matrixbase: print(M.table(printer, rowsep=',\\n')) #c0613f35f1e57ca5",
+     "currentKey": "sympy.matrices.matrixbase: print(M.table(printer, rowsep=',\\n')) #076d476709e98129",
+     "previous": "unsupported argument: StrPrinter",
+     "current": "Input reconstructed through the public API; expected output unchanged."
+    },
+    {
+     "previousKey": "sympy.matrices.matrixbase: print(M.table(printer, colsep=' ')) #e68f3037c2dd6997",
+     "currentKey": "sympy.matrices.matrixbase: print(M.table(printer, colsep=' ')) #b3131ffe5fea8809",
+     "previous": "unsupported argument: StrPrinter",
+     "current": "Input reconstructed through the public API; expected output unchanged."
+    },
+    {
+     "previousKey": "sympy.matrices.matrixbase: print(M.table(printer, align='center')) #ab624ce39e41ebbf",
+     "currentKey": "sympy.matrices.matrixbase: print(M.table(printer, align='center')) #2f05e5e56a2c2343",
+     "previous": "unsupported argument: StrPrinter",
+     "current": "Input reconstructed through the public API; expected output unchanged."
+    },
+    {
+     "previousKey": "sympy.matrices.matrixbase: print(M.table(printer, rowstart='{', rowend='}')) #dd77bc32343251ab",
+     "currentKey": "sympy.matrices.matrixbase: print(M.table(printer, rowstart='{', rowend='}')) #977f0fd1f8ffc52a",
+     "previous": "unsupported argument: StrPrinter",
+     "current": "Input reconstructed through the public API; expected output unchanged."
+    },
+    {
+     "previousKey": "sympy.integrals.risch: pprint(risch_integrate(exp(-x**2), x)) #a6f47340c7eadbfb",
+     "currentKey": "sympy.integrals.risch: pprint(risch_integrate(exp(-x**2), x)) #7ee4cf311fdfe079",
+     "previous": "unsupported argument: NonElementaryIntegral",
+     "current": "Input reconstructed through the public API; expected output unchanged."
+    },
+    {
+     "previousKey": "sympy.integrals.risch: pprint(risch_integrate((2*log(x)**2 - log(x) - x**2)/(log(x)**3 -\nx**2*log(x)), x)) #ddee170788e7a27b",
+     "currentKey": "sympy.integrals.risch: pprint(risch_integrate((2*log(x)**2 - log(x) - x**2)/(log(x)**3 -\nx**2*log(x)), x)) #df762df5c8ab8d1b",
+     "previous": "unsupported argument: NonElementaryIntegral",
+     "current": "Input reconstructed through the public API; expected output unchanged."
+    },
+    {
+     "previousKey": "sympy.integrals.risch: pprint(risch_integrate(exp(exp(x)), x)) #aef3cb7567f2b50c",
+     "currentKey": "sympy.integrals.risch: pprint(risch_integrate(exp(exp(x)), x)) #43c59b2893dc22e8",
+     "previous": "unsupported argument: NonElementaryIntegral",
+     "current": "Input reconstructed through the public API; expected output unchanged."
+    },
+    {
+     "previousKey": "sympy.integrals.risch: pprint(risch_integrate(x**x, x)) #031afbf6e2939e81",
+     "currentKey": "sympy.integrals.risch: pprint(risch_integrate(x**x, x)) #b575d224d68b21fa",
+     "previous": "unsupported argument: NonElementaryIntegral",
+     "current": "Input reconstructed through the public API; expected output unchanged."
+    },
+    {
+     "previousKey": "sympy.combinatorics.partitions: print(IntegerPartition([1, 1, 5]).as_ferrers()) #d3ba6f54a7986d4d",
+     "currentKey": "sympy.combinatorics.partitions: print(IntegerPartition([1, 1, 5]).as_ferrers()) #006f94b1e1d79189",
+     "previous": "unsupported argument: IntegerPartition",
+     "current": "Input reconstructed through the public API; expected output unchanged."
+    },
+    {
+     "previousKey": "sympy.combinatorics.partitions: print(p.next_lex()) #0e53f2e686cc2249",
+     "currentKey": "sympy.combinatorics.partitions: print(p.next_lex()) #fde7399a50b6279c",
+     "previous": "unsupported argument: IntegerPartition",
+     "current": "Input reconstructed through the public API; expected output unchanged."
+    },
+    {
+     "previousKey": "sympy.combinatorics.partitions: print(p.prev_lex()) #0a96e9d8bb03d812",
+     "currentKey": "sympy.combinatorics.partitions: print(p.prev_lex()) #be1012421496f34b",
+     "previous": "unsupported argument: IntegerPartition",
+     "current": "Input reconstructed through the public API; expected output unchanged."
+    }
+   ]
   }
  ]
 }

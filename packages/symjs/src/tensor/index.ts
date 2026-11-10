@@ -166,3 +166,9 @@ export {
 export type { ArrayReplacements, CommGroup, Commutation, TensorIndexTypeOptions, TensorManagerClass } from './tensor';
 export { shape, NoShapeError } from './functions';
 export type { Dimension } from './functions';
+export { ArrayExpr, ArraySymbol, ArrayElement, ArrayTensorProduct, ArrayContraction, ArrayDiagonal, ArrayAdd, PermuteDims, Reshape, ZeroArray, getShape, getRank } from './array/expressions/arrayexpressions';
+export type { ArrayShape, ArrayAxes } from './array/expressions/arrayexpressions';
+export { convertMatrixToArray } from './array/expressions/frommatrixtoarray';
+export { convertArrayToMatrix } from './array/expressions/fromarraytomatrix';
+export { convertIndexedToArray } from './array/expressions/fromindexedtoarray';
+export { arrayDerive } from './array/expressions/arrayexprderivatives';

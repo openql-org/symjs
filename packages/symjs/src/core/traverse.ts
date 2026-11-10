@@ -411,6 +411,11 @@ export function subs(e: Expr, s: Substitution, opts: { simultaneous?: boolean } 
 export function freeSymbols(e: Expr): Set<Sym> {
   const out = new Map<string, Sym>();
   const go = (x: Expr) => {
+    const explicit = x instanceof ExtensionExpr ? x.freeSymbolsSelf() : undefined;
+    if (explicit !== undefined) {
+      for (const s of explicit) out.set(s.key, s);
+      return;
+    }
     const b = x instanceof ExtensionExpr ? x.bindings() : undefined;
     if (x instanceof Sym) {
       out.set(x.key, x);

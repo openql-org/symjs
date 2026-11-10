@@ -9,6 +9,7 @@ import * as sj from '../../src';
 import { EX, QQ, RR, ZZ } from '../../src/polys/domains';
 import * as C from '../../src/polys/compatibility';
 import { PolyElement, PolyRing, ring } from '../../src/polys/rings';
+import fieldRefs from './fields.references.json';
 
 /** Python's str of a value (lists for tuples). */
 function show(v: unknown): string {
@@ -27,6 +28,15 @@ const Y = sj.symbols('y')[0];
 void [EX, RR, C, T, p, q, r, Y];
 
 describe('SymPy doctest and suite values', () => {
+  it('compares ground numbers exactly across rational and floating representations', () => {
+    const X = new sj.Sym('x'), Y = new sj.Sym('y'), one = sj.Rational.of(1);
+    expect([
+      C.groundEq(RR.fromSympy(1), one),
+      C.groundEq(sj.Rational.of(1,2), RR.fromSympy(0.5)),
+      C.groundEq(RR.fromSympy(0.1), sj.Rational.of(1,10)),
+      C.groundEq(X, X), C.groundEq(X, Y), C.groundEq(X, one), C.groundEq(one, X),
+    ]).toEqual(fieldRefs.ground_equalities);
+  });
   it("U.dupAddTerm(t.pow(2).sub(1), 2, 4)", () => {
     expect(show(U.dupAddTerm(t.pow(2).sub(1), 2, 4))).toBe("2*t**4 + t**2 - 1");
   });

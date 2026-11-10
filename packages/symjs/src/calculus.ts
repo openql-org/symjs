@@ -25,6 +25,7 @@ export {
 export type { ParametricCurve } from './integrals/transform';
 // integral transforms (SymPy sympy.integrals.transforms and laplace)
 export * from './integrals/transforms/index';
+export { NonElementaryIntegral } from './integrals/risch';
 export { singularityintegrate } from './integrals/singularityfunctions';
 export {
   limit,

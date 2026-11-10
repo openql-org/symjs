@@ -1,0 +1,162 @@
+{
+  "construction": [
+    {
+      "expr": "x**2+sqrt(2)",
+      "gens": [],
+      "options": {
+        "extension": true
+      },
+      "expected": "Poly(x**2 + sqrt(2), x, domain='QQ<sqrt(2)>')",
+      "norm": null
+    },
+    {
+      "expr": "x**2+1",
+      "gens": [
+        "x"
+      ],
+      "options": {
+        "extension": "sqrt(2)"
+      },
+      "expected": "Poly(x**2 + 1, x, domain='QQ<sqrt(2)>')",
+      "norm": null
+    },
+    {
+      "expr": "x**2",
+      "gens": [],
+      "options": {
+        "gaussian": true
+      },
+      "expected": "Poly(x**2, x, domain='QQ_I')",
+      "norm": null
+    },
+    {
+      "expr": "x**2+I",
+      "gens": [],
+      "options": {
+        "gaussian": true
+      },
+      "expected": "Poly(x**2 + I, x, domain='QQ_I')",
+      "norm": null
+    },
+    {
+      "expr": "x**2/2",
+      "gens": [],
+      "options": {
+        "gaussian": true
+      },
+      "expected": "Poly(1/2*x**2, x, domain='QQ_I')",
+      "norm": null
+    },
+    {
+      "expr": "x**2+sqrt(2)+sqrt(3)",
+      "gens": [
+        "x"
+      ],
+      "options": {
+        "extension": true
+      },
+      "expected": "Poly(x**2 + sqrt(2) + sqrt(3), x, domain='QQ<sqrt(2) + sqrt(3)>')",
+      "norm": null
+    },
+    {
+      "expr": "x+y+sqrt(2)",
+      "gens": [
+        "x",
+        "y"
+      ],
+      "options": {
+        "extension": "sqrt(2)"
+      },
+      "expected": "Poly(x + y + sqrt(2), x, y, domain='QQ<sqrt(2)>')",
+      "norm": "Poly(x**2 + 2*x*y + y**2 - 2, x, y, domain='QQ')"
+    },
+    {
+      "expr": "x**2+I",
+      "gens": [],
+      "options": {
+        "gaussian": false
+      },
+      "expected": "Poly(x**2 + I, x, domain='ZZ_I')",
+      "norm": null
+    },
+    {
+      "expr": "x+sqrt(2)",
+      "gens": [],
+      "options": {
+        "domain": "QQ<sqrt(2)>"
+      },
+      "expected": "Poly(x + sqrt(2), x, domain='QQ<sqrt(2)>')",
+      "norm": null
+    },
+    {
+      "expr": "x/2+I",
+      "gens": [],
+      "options": {
+        "domain": "QQ_I"
+      },
+      "expected": "Poly(1/2*x + I, x, domain='QQ_I')",
+      "norm": null
+    },
+    {
+      "expr": "x+I",
+      "gens": [],
+      "options": {
+        "domain": "ZZ_I"
+      },
+      "expected": "Poly(x + I, x, domain='ZZ_I')",
+      "norm": null
+    }
+  ],
+  "factors": [
+    {
+      "expr": "x**2*y**2-2",
+      "ext": "sqrt(2)",
+      "expected": "(x*y - sqrt(2))*(x*y + sqrt(2))"
+    },
+    {
+      "expr": "x**2*y**4-2",
+      "ext": "sqrt(2)",
+      "expected": "(x*y**2 - sqrt(2))*(x*y**2 + sqrt(2))"
+    },
+    {
+      "expr": "x**2*y**2+1",
+      "ext": "I",
+      "expected": "(x*y - I)*(x*y + I)"
+    },
+    {
+      "expr": "x**2+y**2-2",
+      "ext": "sqrt(2)",
+      "expected": "x**2 + y**2 - 2"
+    },
+    {
+      "expr": "x**3*y**3-2",
+      "ext": "sqrt(2)",
+      "expected": "x**3*y**3 - 2"
+    },
+    {
+      "expr": "x**2*y**2-2+x*y",
+      "ext": "sqrt(2)",
+      "expected": "(x*y - 1)*(x*y + 2)"
+    },
+    {
+      "expr": "x**3*y**2+x*y",
+      "ext": "sqrt(2)",
+      "expected": "x*y*(x**2*y + 1)"
+    },
+    {
+      "expr": "x**2*y**2+sqrt(2)",
+      "ext": "sqrt(2)",
+      "expected": "x**2*y**2 + sqrt(2)"
+    },
+    {
+      "expr": "sin(x)+y",
+      "ext": "sqrt(2)",
+      "expected": "y + sin(x)"
+    },
+    {
+      "expr": "x/y+1",
+      "ext": "sqrt(2)",
+      "expected": "(x + y)/y"
+    }
+  ]
+}

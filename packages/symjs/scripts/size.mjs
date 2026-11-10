@@ -34,25 +34,28 @@ const CASES = [
   ['special', '*', 370],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
   ['simplify', 'simplify', 890],
-  ['polys', 'factor', 616],
-  ['calculus', 'integrate', 820],
+  // Polynomial-domain factories now register the AGCA module/ideal engines.
+  ['polys', 'factor', 725],
+  // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
+  // to consumers of the polynomial engine (measured 843/690/586/916/1005 KiB).
+  ['calculus', 'integrate', 930],
   ['solvers', 'solve', 975],
   ['solvers', 'dsolve', 990],
   ['sets', '*', 353],
-  ['matrices', 'Matrix', 677],
+  ['matrices', 'Matrix', 760],
   ['printing', 'pretty', 225],
   ['discrete', '*', 285],
   ['strategies', '*', 198],
   ['unify', '*', 225],
-  ['algebras', 'Quaternion', 585],
+  ['algebras', 'Quaternion', 645],
   ['holonomic', 'exprToHolonomic', 1025],
-  ['geometry', '*', 910],
-  ['vector', '*', 1005],
+  ['geometry', '*', 1010],
+  ['vector', '*', 1110],
   ['stats', '*', 1130],
   ['categories', '*', 363],
   ['crypto', '*', 600],
   ['liealgebras', '*', 596],
-  ['index', 'Rational', 1214],
+  ['index', 'Rational', 1347],
   ['index', '*', 2270],
 ];
 

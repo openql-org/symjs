@@ -631,6 +631,29 @@ def ser(o):
 
     if o is None or isinstance(o, bool):
         return {"t": "Js", "v": o}
+    from sympy.polys.agca.modules import FreeModule, SubModule, QuotientModule, FreeModuleElement, QuotientModuleElement
+    from sympy.polys.agca.ideals import ModuleImplementedIdeal
+    from sympy.polys.agca.homomorphisms import ModuleHomomorphism
+    from sympy.polys.domains.quotientring import QuotientRing
+    from sympy.polys.domains.old_polynomialring import PolynomialRingBase
+    if isinstance(o, PolynomialRingBase):
+        return {"t": "Domain", "name": str(o), "base": ser(o.dom), "symbols": [ser(s) for s in o.gens], "order": str(o.order), "oldPolyRing": True}
+    if isinstance(o, QuotientRing):
+        return {"t": "AGCAQuotientRing", "ring": ser(o.ring), "ideal": ser(o.base_ideal)}
+    if isinstance(o, ModuleImplementedIdeal):
+        return {"t": "AGCAIdeal", "ring": ser(o.ring), "gens": [ser(o.ring.to_sympy(g)) for g in o.gens]}
+    if isinstance(o, ModuleHomomorphism):
+        return {"t": "AGCAHomomorphism", "domain": ser(o.domain), "codomain": ser(o.codomain), "matrix": [ser(g) for g in o.matrix]}
+    if isinstance(o, (FreeModuleElement, QuotientModuleElement)):
+        data = o.data.data if isinstance(o, QuotientModuleElement) else o.data
+        return {"t": "AGCAElement", "module": ser(o.module), "data": [ser(o.module.ring.to_sympy(g)) for g in data]}
+    if isinstance(o, FreeModule):
+        return {"t": "AGCAFreeModule", "ring": ser(o.ring), "rank": o.rank}
+    if isinstance(o, QuotientModule):
+        return {"t": "AGCAQuotientModule", "base": ser(o.base), "killed": ser(o.killed_module)}
+    if isinstance(o, SubModule):
+        # Store generator coordinates, not elements carrying the same module.
+        return {"t": "AGCASubModule", "container": ser(o.container), "gens": [ser(g) for g in o.gens]}
     from sympy.polys.matrices.ddm import DDM as _DDM0
     from sympy.polys.matrices.sdm import SDM as _SDM0
     if isinstance(o, (_DDM0, _SDM0)):
@@ -653,6 +676,12 @@ def ser(o):
         return {"t": "SingleODEProblem", "eq": ser(o.eq), "func": ser(o.func), "sym": ser(o.sym)}
     if isinstance(o, _SODES):
         return {"t": "SingleODESolver", "cls": type(o).__name__, "problem": ser(o.ode_problem)}
+    from sympy.combinatorics.partitions import IntegerPartition as _IntegerPartition
+    from sympy.printing.str import StrPrinter as _StrPrinter
+    if isinstance(o, _IntegerPartition):
+        return {"t": "IntegerPartition", "parts": list(o.partition)}
+    if isinstance(o, _StrPrinter):
+        return {"t": "StrPrinter", "settings": ser(o._settings)}
     from sympy.combinatorics import Permutation as _Perm
     from sympy.combinatorics.perm_groups import PermutationGroup as _PermGroup
     from sympy.combinatorics.permutations import Cycle as _Cycle
@@ -676,6 +705,19 @@ def ser(o):
     if isinstance(o, _Cycle):
         return {"t": "Cycle", "cycles": [[int(i) for i in c] for c in _Perm(o).cyclic_form], "size": int(o.size)}
     from sympy.tensor.array import NDimArray as _NDA
+    from sympy.tensor.array.expressions import array_expressions as _AE
+    if isinstance(o, _AE.ArraySymbol):
+        return {"t": "ArraySymbol", "name": str(o.name), "shape": [ser(d) for d in o.shape]}
+    if isinstance(o, _AE.ArrayElement):
+        return {"t": "ArrayElement", "parent": ser(o.name), "indices": [ser(i) for i in o.indices]}
+    if isinstance(o, (_AE.ArrayTensorProduct, _AE.ArrayAdd, _AE.ZeroArray)):
+        return {"t": "ArrayExpression", "cls": type(o).__name__, "args": [ser(a) for a in o.args]}
+    if isinstance(o, (_AE.ArrayContraction, _AE.ArrayDiagonal)):
+        return {"t": "ArrayAxes", "cls": type(o).__name__, "expr": ser(o.expr), "axes": [list(map(int, g)) for g in o.args[1:]]}
+    if isinstance(o, _AE.PermuteDims):
+        return {"t": "PermuteDims", "expr": ser(o.expr), "permutation": list(o.permutation.array_form)}
+    if isinstance(o, _AE.Reshape):
+        return {"t": "Reshape", "expr": ser(o.expr), "shape": [ser(d) for d in o.shape]}
     from sympy.tensor.tensor import TensorIndexType as _TIT, TensorIndex as _TI, TensorHead as _TH, TensorSymmetry as _TS, Tensor as _Tensor, TensMul as _TensMul
     from sympy.tensor.tensor import TensAdd as _TensAdd, TensorElement as _TE, WildTensorHead as _WTH, WildTensor as _WT, WildTensorIndex as _WTI
     from sympy.combinatorics.polyhedron import Polyhedron as _Polyhedron
@@ -1044,7 +1086,7 @@ def ser(o):
         return {"t": "Fn", "name": "exp", "args": [ser(a) for a in o.args]}
     if isinstance(o, (sympy.Sum, sympy.Product)):
         return {"t": "Fn", "name": name, "args": [ser(o.function)] + [ser(tuple(l)) for l in o.limits]}
-    if o.is_Function or name in ("Piecewise", "Integral", "Derivative", "Limit", "Order", "Sum", "Product"):
+    if o.is_Function or name in ("Piecewise", "Integral", "NonElementaryIntegral", "Derivative", "Limit", "Order", "Sum", "Product"):
         return {"t": "Fn", "name": name, "args": [ser(a) for a in o.args]}
     raise Unsupported(name)
 

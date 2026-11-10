@@ -193,6 +193,7 @@
    "sha256": "c21348539b63d949041873c07e4fbff3d6a1bd5111b389e9381d096156c84097",
    "status": "partial",
    "sources": [
+    "assumptions/askgenerated.ts",
     "core/refine.ts"
    ],
    "selectedForExtraction": false,
@@ -243,6 +244,7 @@
    "status": "partial",
    "note": "CNF/EncodedCNF encoding used by satisfiable",
    "sources": [
+    "assumptions/cnf.ts",
     "logic/inference.ts"
    ],
    "selectedForExtraction": true,
@@ -288,6 +290,7 @@
    "sha256": "7e298fa07132bac494af4b88e248836f89b3c478c406096f2d05b40c674d140b",
    "status": "partial",
    "sources": [
+    "assumptions/facts.ts",
     "core/refine.ts"
    ],
    "selectedForExtraction": true,
@@ -405,9 +408,11 @@
   {
    "module": "sympy.assumptions.lra_satask",
    "sha256": "1659a22c446c8fa27dc3abf2830104127ee9c863e70f42643c414476813b6df3",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "LRA-based ask",
-   "sources": [],
+   "sources": [
+    "assumptions/lrasatask.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 1,
@@ -597,6 +602,7 @@
    "sha256": "de2c27484139dfebd1b0fbfe6ce9e3c9d80e902a5b075d854c547fb10dc2c2f1",
    "status": "partial",
    "sources": [
+    "assumptions/relation/binrel.ts",
     "core/refine.ts"
    ],
    "selectedForExtraction": true,
@@ -653,9 +659,11 @@
   {
    "module": "sympy.assumptions.satask",
    "sha256": "3f78a9acf8ee3b2853e45c2bd215fad714ce703f7c33f6f35d2015fa95d884de",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "SAT-based ask",
-   "sources": [],
+   "sources": [
+    "assumptions/satask.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 7,
@@ -2115,8 +2123,10 @@
   {
    "module": "sympy.concrete.guess",
    "sha256": "e847a3761360aa330aee55535e6b3cfbfc469a6a48defb6588b5bbf8bd9e6833",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "concrete/guess.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 15,
@@ -3049,9 +3059,11 @@
   {
    "module": "sympy.core.parameters",
    "sha256": "1284f64b75b5752dbe1e857a58deeccc17b15ef9f9ff0e377b6245a2e2aebe45",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "global evaluate/distribute flags (symjs takes evaluate options per call)",
-   "sources": [],
+   "sources": [
+    "core/parameters.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 11,
@@ -3151,9 +3163,11 @@
   {
    "module": "sympy.core.rules",
    "sha256": "009b99ced998299ff25084cb641eab8598c3cba44e042b5a8dc62a3dae74b237",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "Transform (doctests need Python lambdas -> ports)",
-   "sources": [],
+   "sources": [
+    "core/rules.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 7,
@@ -5209,9 +5223,11 @@
   {
    "module": "sympy.integrals.intpoly",
    "sha256": "4978ddfdfdbde58ad8b2fa10a73136110339c5a4279e3d33bc77585b9284767d",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "polytope_integrate",
-   "sources": [],
+   "sources": [
+    "integrals/intpoly.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 25,
@@ -6097,9 +6113,11 @@
   {
    "module": "sympy.logic.algorithms.lra_theory",
    "sha256": "e8964064c26184749b51766e73475d630a7fc7b79f56eb6121857b0dcf5e5327",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "linear real arithmetic theory solver of satask",
-   "sources": [],
+   "sources": [
+    "logic/algorithms/lratheory.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 7,
@@ -7429,9 +7447,11 @@
   {
    "module": "sympy.matrices.normalforms",
    "sha256": "997d7dc2f26a4008ab4623d8f967527c47658c53a1b2dd7c2dc0d7e0cbcf33c0",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "smith_normal_form, hermite_normal_form, invariant_factors (already selected)",
-   "sources": [],
+   "sources": [
+    "matrices/normalforms.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 2,
@@ -7686,9 +7706,11 @@
   {
    "module": "sympy.ntheory.bbp_pi",
    "sha256": "20bbabd5cf496bed45fdb9609c89d4c7e5a8a50fd64af2bed8ebcd2c47b6671f",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "pi_hex_digits",
-   "sources": [],
+   "sources": [
+    "ntheory/bbppi.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 4,
@@ -7770,9 +7792,11 @@
   {
    "module": "sympy.ntheory.elliptic_curve",
    "sha256": "653ebbec41e2dba06465d4532ecd537f8552c8cc43cc9af0935c440a8313ed08",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "EllipticCurve, EllipticCurvePoint",
-   "sources": [],
+   "sources": [
+    "ntheory/ellipticcurve.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 13,
@@ -8782,9 +8806,11 @@
   {
    "module": "sympy.parsing.mathematica",
    "sha256": "3f6bd6120c7f1d7bf823f0beeaf3c4dd15ed6e95cd4f688825006b03a41faa45",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "parse_mathematica",
-   "sources": [],
+   "sources": [
+    "parsing/mathematica.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 10,
@@ -12601,8 +12627,10 @@
   {
    "module": "sympy.polys.agca.homomorphisms",
    "sha256": "81a30d57dea9294b981d9f0177b40eb36ec9d486db2609048f259c4cb7bc1852",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/agca/homomorphisms.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 31,
@@ -12627,8 +12655,10 @@
   {
    "module": "sympy.polys.agca.ideals",
    "sha256": "4baac19771fe85d788e3865b10bc238edd6b2a5ae12b5d4029bf006acf8eb421",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/agca/ideals.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 17,
@@ -12663,8 +12693,10 @@
   {
    "module": "sympy.polys.agca.modules",
    "sha256": "3de035dfc147b027d49fcbe476b8cf6bddb19b3abb42a9343eb758c15a0da9fd",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/agca/modules.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 67,
@@ -12740,8 +12772,9 @@
    "module": "sympy.polys.appellseqs",
    "sha256": "8567832ac2a726e02e3cdff9214ea6d6892eac0abdc4cb772d080c7a172f04a4",
    "status": "partial",
+   "note": "Appell recurrence for Bernoulli, central Bernoulli, Genocchi, Euler and Andre polynomials, including Poly/PurePoly outputs; low-level dup_* exports remain unported.",
    "sources": [
-    "functions/combinatorial/numbers.ts"
+    "polys/appellseqs.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
@@ -12762,9 +12795,11 @@
   {
    "module": "sympy.polys.compatibility",
    "sha256": "b62fe0252cfccc1d6c7fea08c9f5c0c38c640c6910699b3fdf84520bee8795d6",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "IPolys: the R.dup_*/R.dmp_* methods of PolyRing",
-   "sources": [],
+   "sources": [
+    "polys/compatibility.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -13071,9 +13106,11 @@
   {
    "module": "sympy.polys.constructor",
    "sha256": "aeff2142013cf8ff505d4b4e4269448b20385c3f9f6f543377c6ef1f7507425b",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "construct_domain",
-   "sources": [],
+   "sources": [
+    "polys/constructor.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 10,
@@ -13160,9 +13197,11 @@
   {
    "module": "sympy.polys.densebasic",
    "sha256": "29a83a72a9711e11d4318517a6bf461cb5a1e04d4c9f0d84b2887acf1f6bd781",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "dense recursive list representation",
-   "sources": [],
+   "sources": [
+    "polys/densebasic.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 87,
@@ -13287,9 +13326,11 @@
   {
    "module": "sympy.polys.dispersion",
    "sha256": "b3a188627180e94f638463fb6174104bc1b76f21b8fa43dbaf9e4147aa7e8b3e",
-   "status": "unimplemented",
-   "note": "dispersion, dispersionset",
-   "sources": [],
+   "status": "partial",
+   "note": "Univariate dispersion sets via factor pairs and exact shifts; inherits the supported coefficient domains of Poly.factorList.",
+   "sources": [
+    "polys/dispersion.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 18,
@@ -13301,9 +13342,11 @@
   {
    "module": "sympy.polys.distributedmodules",
    "sha256": "b7ca4b2200d0b3f74c79c197c326d56282dabe87c4cb60d78454bc379823e525",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "sdm_* (distributed module representation, Groebner bases of modules)",
-   "sources": [],
+   "sources": [
+    "polys/distributedmodules.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 27,
@@ -13360,8 +13403,10 @@
   {
    "module": "sympy.polys.domains.algebraicfield",
    "sha256": "2572bfa3a05d41b613ff480e2c02cd38bb26aa07d5e3a0d11496fb7003498003",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/domains/algebraicfield.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 52,
@@ -13414,8 +13459,10 @@
   {
    "module": "sympy.polys.domains.complexfield",
    "sha256": "55b857eb28a0994d8e2e1a1ff2a1293e9d57661cf391f5df72e65ebf1d4b66c9",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/domains/complexfield.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -13624,8 +13671,10 @@
   {
    "module": "sympy.polys.domains.expressionrawdomain",
    "sha256": "7176ab0f68d78bdec518d8aa3620ea4255f483beb8116d8cd4f11baef7889a76",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/domains/expressionrawdomain.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -13667,8 +13716,10 @@
   {
    "module": "sympy.polys.domains.finitefield",
    "sha256": "d431e47eb0b3d3c2972c4cfb8a7e082bbd41f2e7473d96405afe74fa3579fef4",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/domains/finitefield.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 19,
@@ -13744,8 +13795,10 @@
   {
    "module": "sympy.polys.domains.gaussiandomains",
    "sha256": "62b7078384123e02115be16df09f38ab5cf0994f83549b80b1c5979d5090f422",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/domains/gaussiandomains.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 56,
@@ -13994,7 +14047,8 @@
    "sha256": "290707e7ca079c7ccea43756a236622e51c3aab02251de0e01a04866282aa727",
    "status": "partial",
    "sources": [
-    "polys/domains.ts"
+    "polys/domains.ts",
+    "polys/domains/oldpolynomialring.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
@@ -14132,7 +14186,9 @@
    "sha256": "33755418e0e1dcc2c495e3e362d8edf5bd3645e313870f975e9b904e4a2180db",
    "status": "excluded",
    "reason": "Pure-Python mpq replacement used when gmpy2 is absent; symjs rationals are Rational.",
-   "sources": [],
+   "sources": [
+    "polys/domains/pythonrational.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -14166,8 +14222,10 @@
   {
    "module": "sympy.polys.domains.quotientring",
    "sha256": "d8d3949246c58f8e75e2a90352cce5ea1975110b8f8a49f7404a10d6c0e86c62",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/domains/quotientring.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 4,
@@ -14426,9 +14484,11 @@
   {
    "module": "sympy.polys.fields",
    "sha256": "45d48390e96cea7f3bcaf1c6d4a5c59c69e0d094b7480714025cf8b536f54591",
-   "status": "unimplemented",
-   "note": "FracField/FracElement (field, xfield, vfield, sfield)",
-   "sources": [],
+   "status": "partial",
+   "note": "Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration and composition remain partial.",
+   "sources": [
+    "polys/fields.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 3,
@@ -14697,8 +14757,10 @@
   {
    "module": "sympy.polys.matrices.ddm",
    "sha256": "78c294cbc5f59104c41b597b171fcbe0b1bd26ab3d974284c25610c25725e83a",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/matrices/ddm.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 37,
@@ -14770,8 +14832,10 @@
   {
    "module": "sympy.polys.matrices.dense",
    "sha256": "4587688151de599a1e3bde0e6a5d667f5b09be3f899b24bf6da462f3e77d466b",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/matrices/dense.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 27,
@@ -14809,7 +14873,8 @@
    "sha256": "32f8d647343894acd7dab0a5f2646da6221749eeb8d7fc7a38cad3afc8ac70f0",
    "status": "partial",
    "sources": [
-    "matrices/domainmatrix.ts"
+    "matrices/domainmatrix.ts",
+    "polys/matrices/domainmatrix.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
@@ -14918,8 +14983,10 @@
   {
    "module": "sympy.polys.matrices.domainscalar",
    "sha256": "b0f5c2fa2b78eb2ba7dabfed264ba7e0c22e55043240c41356c4de74877c463e",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/matrices/domainscalar.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -14951,8 +15018,10 @@
   {
    "module": "sympy.polys.matrices.exceptions",
    "sha256": "6b2dcbbf6d57dd0aaccf2b0137bd7176bf4a190b82e640c197dd1ad928f1ea93",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/matrices/exceptions.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -14999,8 +15068,10 @@
   {
    "module": "sympy.polys.matrices.normalforms",
    "sha256": "e8c25f55b8b0959b8293ed1f622c8e32eaa43dd569cb34cd7433f6b3a8e4470d",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/matrices/normalforms.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 2,
@@ -15018,7 +15089,8 @@
    "sha256": "e582bfa61077f362bd245548c9d947d88629ce28ab1035272b3ca5e417d2dbfa",
    "status": "partial",
    "sources": [
-    "matrices/linsys.ts"
+    "matrices/linsys.ts",
+    "polys/matrices/rref.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
@@ -15028,8 +15100,10 @@
   {
    "module": "sympy.polys.matrices.sdm",
    "sha256": "6dbd9f20ee362a3c89b84b8c064883167fea2c95630f882c460599e863a64c7c",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/matrices/sdm.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 64,
@@ -15440,8 +15514,11 @@
   {
    "module": "sympy.polys.numberfields.utilities",
    "sha256": "2072a67da7c4f6d3066a699f76d932478fc81dbd2638df8e0708ad1344acd51d",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "note": "Fundamental discriminant factorization and real algebraic root isolation with rational tolerances; other module utilities and complex isolation remain unported.",
+   "sources": [
+    "polys/numberfields/utilities.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 12,
@@ -15934,7 +16011,8 @@
    "sha256": "c86d64e193cddae7f0a59e252384a7f034881ef77b1300d41d46b3eb81f19543",
    "status": "partial",
    "sources": [
-    "polys/fromexpr.ts"
+    "polys/fromexpr.ts",
+    "polys/polyoptions.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
@@ -16316,9 +16394,11 @@
   {
    "module": "sympy.polys.puiseux",
    "sha256": "c1cff9c394725c77c0c02f4375efba79c3e6f72d73e430267ed86d499e770aa0",
-   "status": "unimplemented",
-   "note": "PuiseuxRing/PuiseuxPoly",
-   "sources": [],
+   "status": "partial",
+   "note": "PuiseuxRing/PuiseuxPoly with exact rational exponents, arithmetic, conversion and differentiation; coefficient-domain restrictions remain",
+   "sources": [
+    "polys/puiseux.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 34,
@@ -16360,9 +16440,11 @@
   {
    "module": "sympy.polys.ring_series",
    "sha256": "ec38a39a58f201a42bba9581d0999a3701a6df0353b2d9c4b01967fa8d6e5f53",
-   "status": "unimplemented",
-   "note": "rs_* truncated power series in PolyRing",
-   "sources": [],
+   "status": "partial",
+   "note": "truncated arithmetic, elementary functions, substitution/reversion and Newton sums; general multivariate leading-coefficient inverses are not implemented",
+   "sources": [
+    "polys/ringseries.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 55,
@@ -16410,9 +16492,11 @@
   {
    "module": "sympy.polys.rings",
    "sha256": "295740dc2d381b61f760df35accfbc391b141ea9a4b48af3d12d2d7f02f03788",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "PolyRing/PolyElement (ring, xring, vring, sring)",
-   "sources": [],
+   "sources": [
+    "polys/rings.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 77,
@@ -16624,6 +16708,7 @@
    "module": "sympy.polys.rootoftools",
    "sha256": "6cc71551c230a9a33ae37514d564c23663e60c545ea5912af577ddafd9a6eb74",
    "status": "partial",
+   "note": "Evaluated indexed-root constructors, radical options, bound generators and real rational refinement; complex rational refinement and full root preprocessing remain incomplete.",
    "sources": [
     "polys/rootof.ts",
     "polys/rootsum.ts"
@@ -16655,9 +16740,11 @@
   {
    "module": "sympy.polys.solvers",
    "sha256": "15aade2aa0d5542e8fd88e328ee762ff7092de4c7449b980cf793bcc79044e01",
-   "status": "unimplemented",
-   "note": "solve_lin_sys over PolyRing domains",
-   "sources": [],
+   "status": "partial",
+   "note": "eqsToMatrix and solveLinSys over field coefficient domains; solved generators and values are expressions, inconsistent systems return NoMatch.",
+   "sources": [
+    "polys/solvers.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 9,
@@ -17543,8 +17630,10 @@
   {
    "module": "sympy.series.approximants",
    "sha256": "b44fa11eea16eb64091c30375a14655da4e4a24080383b35bd78238ab84e6224",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "series/approximants.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 4,
@@ -18092,8 +18181,10 @@
   {
    "module": "sympy.sets.ordinals",
    "sha256": "192c9a06aec11c90b7a6f828083a14299434204d955f21edc7afe0e4e4bae16e",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "sets/ordinals.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 5,
@@ -18656,9 +18747,11 @@
   {
    "module": "sympy.solvers.bivariate",
    "sha256": "2aee13b62777c94dc221ce083df27b6de74bb5755a18abc53a89c422566b5d7c",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "bivariate_type (private _solve_lambert, _filtered_gens are in solvers/solve.ts)",
-   "sources": [],
+   "sources": [
+    "solvers/bivariate.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 14,
@@ -18971,7 +19064,8 @@
    "status": "partial",
    "sources": [
     "solvers/dsolve.ts",
-    "solvers/ode.ts"
+    "solvers/ode.ts",
+    "solvers/ode/single.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
@@ -19125,9 +19219,11 @@
   {
    "module": "sympy.solvers.simplex",
    "sha256": "a5e46fe38683337d14ff4c24f3166fdede8cfdca66fdaf610402e2cabef39dd6",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "lpmin, lpmax, linprog",
-   "sources": [],
+   "sources": [
+    "solvers/simplex.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 46,
@@ -20685,9 +20781,11 @@
   {
    "module": "sympy.tensor.array.expressions.array_expressions",
    "sha256": "dbc4c8f1cc3043843e40223d5ff8fa5fe946d2447a6a68c07bdfa1f4929be445",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "array expressions",
-   "sources": [],
+   "sources": [
+    "tensor/array/expressions/arrayexpressions.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 23,
@@ -20745,9 +20843,11 @@
   {
    "module": "sympy.tensor.array.expressions.arrayexpr_derivatives",
    "sha256": "5bdf9b6362cbf3794b48d1d722dcea8ce82f7fe1c80db5173e8570f2e3b299c8",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "array expressions",
-   "sources": [],
+   "sources": [
+    "tensor/array/expressions/arrayexprderivatives.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -20816,9 +20916,11 @@
   {
    "module": "sympy.tensor.array.expressions.from_array_to_matrix",
    "sha256": "e0751b09f476047779e088f0b3d0c2712b3a68027e93c4704f5f793534089a2b",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "array expressions",
-   "sources": [],
+   "sources": [
+    "tensor/array/expressions/fromarraytomatrix.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 9,
@@ -20832,9 +20934,11 @@
   {
    "module": "sympy.tensor.array.expressions.from_indexed_to_array",
    "sha256": "45470a7a69abc2e2b944546bd7d6123d53023a465f2c05a56db079eaef168b48",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "array expressions",
-   "sources": [],
+   "sources": [
+    "tensor/array/expressions/fromindexedtoarray.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 4,
@@ -20845,9 +20949,11 @@
   {
    "module": "sympy.tensor.array.expressions.from_matrix_to_array",
    "sha256": "c8863546ea45f7e1555778d92eca96c59d5c928135f87910c8cf1c4089b8fc6b",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "array expressions",
-   "sources": [],
+   "sources": [
+    "tensor/array/expressions/frommatrixtoarray.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,

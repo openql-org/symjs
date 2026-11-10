@@ -47,6 +47,22 @@ small hook object that the other fills in when it is loaded (for example
 `polyHooks` in `polys/poly.ts`, set by `simplify/rational.ts`), or the shared
 code moves to its own module (`solvers/homogeneous.ts`).
 
+`polyConstructionHooks` lets `polys/constructor.ts` provide coefficient-domain
+validation to `Poly.from` without creating a cycle. The polynomial entry loads
+that registration, including algebraic and Gaussian domain construction.
+
+`ExtensionExpr.freeSymbolsSelf` can supply an explicit symbol set when the
+displayed arguments contain an opaque bound representation. `CRootOf` uses
+an empty set: its polynomial generator is bound. `undefined` delegates to
+the existing binding-aware traversal, following the other extension hooks.
+
+Calling `CRootOf(...)` or `ComplexRootOf(...)` evaluates indexed roots, with
+radicals disabled by default; `RootOf(...)` and `rootof(...)` enable trivial
+radicals. `new CRootOf(...)` retains the raw node constructor for AST work.
+`evalRational` refines real isolating intervals; complex rational refinement
+raises `NotImplementedError`. This does not claim complete root preprocessing.
+
+
 `pnpm lint` (Oxlint, type-aware) also enforces, for `packages/*/src`:
 
 | Rule | Purpose |
@@ -143,6 +159,8 @@ SymPy modules correspond to it as follows.
 | `simplify/epathtools.py` | `simplify/epathtools.ts` | |
 | `simplify/hyperexpand.py` | `simplify/hyperexpand.ts` | also the `HyperRep` functions of `functions/special/hyper.py` |
 | `polys/rationaltools.py` (`together`), `polys/polytools.py` (`cancel`) | `simplify/rational.ts` | kept in `simplify/`: `polys/poly.ts` reaches it through `polyHooks` |
+| `polys/polytools.py`, `polys/densearith.py` (recursive polynomial division) | `polys/sympoly.ts` | polynomial objects and expression-level polynomial operations; finite coefficient domains reuse `galoistools.ts`; domain-aware cancellation registers through `polyHooks` |
+| `polys/appellseqs.py`, `polys/dispersion.py`, `polys/solvers.py` | `polys/appellseqs.ts`, `polys/dispersion.ts`, `polys/solvers.ts` | Appell sequences, exact dispersion shifts and linear equations over polynomial-ring fields |
 | `core/exprtools.py` | `simplify/exprtools.ts` | an L2 module (it uses the polynomials) |
 | `core/function.py` (`expand`), `core/basic.py` (`rewrite`) | `simplify/expand.ts`, `simplify/rewrite.ts` | L1 modules |
 | (none) | `simplify/public.ts` | the public `NoMatch` forms of the simplification functions |
@@ -239,14 +257,18 @@ Modules not listed here follow the path rule (`sympy/crypto/crypto.py` ->
 | `categories/baseclasses.py` | `categories/baseclasses.ts` | objects, morphisms, categories and diagrams; drawing diagrams (`categories/diagram_drawing.py`) is deferred like plotting |
 | `combinatorics/perm_groups.py`, `named_groups.py` | `combinatorics/permgroups.ts`, `namedgroups.ts` | Schreier-Sims bases, membership, orbits, blocks, series, centralizers, cosets, SymmetricPermutationGroup, Coset and the named groups (AbelianGroup, RubikGroup, ...) |
 | `combinatorics/util.py`, `generators.py`, `group_constructs.py`, `polyhedron.py` | `combinatorics/util.ts`, `generators.ts`, `groupconstructs.ts`, `polyhedron.ts` | base and strong generating set helpers, the Rubik's cube generators, DirectProduct, Polyhedron |
+| `polys/numberfields/utilities.py` | `polys/numberfields/utilities.ts` | fundamental discriminant factorization and real algebraic root isolation; interval selection uses increasing numerical precision, with optional exact rational refinement |
 | `polys/numberfields/subfield.py` | `polys/numberfields/subfield.ts` | exact radical power-basis embeddings and bounded primitive-element search |
 | `tensor/tensor.py` | `tensor/tensor.ts` | full port: index types, indices, slot symmetries, tensor heads, products and sums, Butler-Portugal canonicalization (`canon_bp`), metric contraction, component arrays (`replace_with_arrays`), TensorElement, wild tensors and the commutation groups of TensorManager |
 | `combinatorics/tensor_can.py` | `tensor/tensorcan.ts` | the Butler-Portugal canonicalization of tensors under slot and dummy symmetries (`canonicalize`, `double_coset_can_rep`, `canonical_free`, `riemann_bsgs`) |
 | `solvers/pde.py` | `solvers/pde.ts` | first-order linear PDEs with constant and variable coefficients, explicit solution checking and variable separation |
 | `solvers/solveset.py` | `solvers/solveset.ts` | nonlinear-system substitution, including dependent exponential ImageSet components |
-| `polys/rings.py`, `polys/compatibility.py` | `polys/rings.ts`, `polys/compatibility.ts` | sparse polynomial rings (`PolyRing`, `PolyElement`, `ring`, `xring`, `vring`, `sring`) and the `IPolys` methods; `fields.py` (`FracField`) is not ported yet |
+| `polys/rings.py`, `polys/compatibility.py` | `polys/rings.ts`, `polys/compatibility.ts` | sparse polynomial rings (`PolyRing`, `PolyElement`, `ring`, `xring`, `vring`, `sring`) and the `IPolys` methods |
+| `polys/fields.py` | `polys/fields.ts` | sparse rational function fields (`FracField`, `FracElement`, `field`, `xfield`, `vfield`, `sfield`), reduced arithmetic, differentiation, substitution and evaluation; `PolyRing.toField()` is registered by the field module to avoid an import cycle |
+| `polys/puiseux.py`, `polys/ring_series.py` | `polys/puiseux.ts`, `polys/ringseries.ts` | sparse rational-exponent polynomials and truncated arithmetic, elementary functions, composition and reversion; `rsSeries` also reuses the expression-series engine |
 | `polys/densebasic.py`, `polys/distributedmodules.py`, `polys/polyoptions.py`, `polys/constructor.py` | `polys/densebasic.ts`, `polys/distributedmodules.ts`, `polys/polyoptions.ts`, `polys/constructor.ts` | |
-| `polys/domains/*.py` | `polys/domains.ts` (ZZ, QQ, RR, EX and the polynomial rings and fraction fields), `polys/domains/*.ts` (finite fields, Gaussian domains, algebraic fields, CC, EXRAW) | `ANP` of `polys/polyclasses.py` is in `polys/domains/algebraicfield.ts`; `PythonMPQ` of `sympy/external/pythonmpq.py` in `polys/domains/pythonrational.ts` |
+| `polys/domains/*.py` | `polys/domains.ts` (ZZ, QQ, RR, EX and the polynomial rings and fraction fields), `polys/domains/*.ts` (finite fields, Gaussian domains, algebraic fields, CC, EXRAW, polynomial presentations and quotient rings) | `ANP` of `polys/polyclasses.py` is in `polys/domains/algebraicfield.ts`; `PythonMPQ` of `sympy/external/pythonmpq.py` in `polys/domains/pythonrational.ts`; AGCA factories register through `domainHooks` to keep the low-level domains independent of module algorithms |
+| `polys/agca/modules.py`, `ideals.py`, `homomorphisms.py` | `polys/agca/modules.ts`, `ideals.ts`, `homomorphisms.ts` | finite polynomial presentations use the existing sparse module standard bases; public vector and relation coefficients are expressions, and quotient representatives are compared modulo their defining submodule |
 | `polys/matrices/ddm.py`, `sdm.py`, `dense.py`, `domainmatrix.py`, `domainscalar.py`, `exceptions.py`, `rref.py`, `normalforms.py` | `polys/matrices/<same name>.ts` | `polys/matrices/domainops.ts` holds the ring operations of the domains on the expression form of the matrix elements; `lll.py`, `linsolve.py`, `eigen.py` and the `dfm` modules are not ported |
 | `matrices/normalforms.py` | `matrices/normalforms.ts` | also SymPy's `polys/matrices/normalforms.py` for DomainMatrix input (one function per SymPy name); `matrices/domainmatrix.ts` holds `to_DM` of `repmatrix.py` |
 | `sets/ordinals.py` | `sets/ordinals.ts` | |
@@ -262,6 +284,14 @@ Modules not listed here follow the path rule (`sympy/crypto/crypto.py` ->
 | `solvers/ode/single.py` | `solvers/ode/single.ts` (`SingleODEProblem`, `SingleODESolver`, `NthAlgebraic`), `solvers/dsolve.ts` (the hint solvers) | |
 
 ## Scope decisions
+
+The symbolic array-expression modules follow
+`sympy/tensor/array/expressions/` under `tensor/array/expressions/`.
+They retain shapes and axis groups until explicit expansion is requested.
+The tensor entry registers symbolic dispatch through `arrayOperationHooks`;
+the concrete array operations remain independent of the symbolic nodes.
+Indexed and matrix conversions execute in the public library. Compatibility
+adapters only reconstruct their serialized inputs.
 
 Every SymPy module has a status in `compat/scope-inventory.json`
 (generated by `compat/inventory.py`): partial (a symjs counterpart exists),

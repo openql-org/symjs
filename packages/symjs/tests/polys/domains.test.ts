@@ -33,7 +33,8 @@ describe('ground domains', () => {
     expect(String(QQ.fracField(a).unify(RR))).toBe('RR(a)');
     expect(String(QQ.polyRing(a).unify(ZZ.polyRing(a, b)))).toBe('QQ[a,b]');
     expect(String(QQ.polyRing(a).unify(QQ.fracField(b)))).toBe('QQ(a,b)');
-    expect(() => QQ.oldPolyRing(x, a)).toThrow(NotImplementedError);
+    expect(String(QQ.oldPolyRing(x, a))).toBe('QQ[x,a]'); // SymPy 1.14.0
+    expect(() => QQ.oldPolyRing()).toThrow(NotImplementedError);
   });
   it('conversions (from_sympy)', () => {
     expect(s(ZZ.fromSympy(3))).toBe('3');

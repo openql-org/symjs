@@ -63,6 +63,7 @@ export class JsDomain {
   constructor(
     readonly name: string,
     readonly domain?: unknown,
+    readonly definition?: Tree,
   ) {}
 }
 
@@ -289,6 +290,7 @@ function deserializeDomain(tree: Tree): sj.Domain | undefined {
   if (base === undefined) return undefined;
   if (tree['ext'] !== undefined) return base.algebraicField(...(tree['gens'] as Tree[]).map((t) => deserialize(t) as Expr));
   const symbols = (tree['symbols'] as Tree[]).map((t) => deserialize(t) as Sym);
+  if (tree['oldPolyRing'] === true) return new sj.PolynomialRingBase(base, symbols, tree['order'] as string);
   return name.endsWith(']') ? base.polyRing(...symbols) : base.fracField(...symbols);
 }
 
@@ -339,6 +341,7 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
       }),
     ),
   Integral: (args) => integralNode(args),
+  NonElementaryIntegral: (args) => new sj.NonElementaryIntegral(integralNode(args).args),
   Sum: (args) => concreteNode('Sum', args),
   Product: (args) => concreteNode('Product', args),
   Limit: (args) => new sj.Limit(args as Expr[]),
@@ -540,7 +543,37 @@ export function deserialize(tree: Tree): unknown {
       return new sj.AlgebraicNumber(deserialize(tree['root'] as Tree) as Expr, (tree['coeffs'] as Tree[]).map((t) => deserialize(t) as Expr));
     case 'Domain':
       // the domain object rebuilt from its parameters; ZZ/QQ also stay recognizable as JsDomain where an adapter compares the name
-      return new JsDomain(tree['name'] as string, deserializeDomain(tree));
+      return new JsDomain(tree['name'] as string, deserializeDomain(tree), tree);
+    case 'ArraySymbol':
+      return new sj.ArraySymbol(tree['name'] as string, (tree['shape'] as Tree[]).map((d) => deserialize(d) as Expr));
+    case 'ArrayElement':
+      return new sj.ArrayElement(deserialize(tree['parent'] as Tree) as Expr, (tree['indices'] as Tree[]).map((d) => deserialize(d) as Expr));
+    case 'ArrayExpression': {
+      const cls = ({ ArrayTensorProduct: sj.ArrayTensorProduct, ArrayAdd: sj.ArrayAdd, ZeroArray: sj.ZeroArray })[tree['cls'] as 'ArrayTensorProduct' | 'ArrayAdd' | 'ZeroArray'];
+      return new cls(...(tree['args'] as Tree[]).map((d) => deserialize(d) as Expr));
+    }
+    case 'ArrayAxes': {
+      const cls = tree['cls'] === 'ArrayContraction' ? sj.ArrayContraction : sj.ArrayDiagonal;
+      return new cls(deserialize(tree['expr'] as Tree) as Expr, ...(tree['axes'] as number[][]));
+    }
+    case 'PermuteDims':
+      return new sj.PermuteDims(deserialize(tree['expr'] as Tree) as Expr, tree['permutation'] as number[]);
+    case 'Reshape':
+      return new sj.Reshape(deserialize(tree['expr'] as Tree) as Expr, (tree['shape'] as Tree[]).map((d) => deserialize(d) as Expr));
+    case 'AGCAQuotientRing':
+      return new sj.QuotientRing(toJs(deserialize(tree['ring'] as Tree), false) as sj.Domain, deserialize(tree['ideal'] as Tree) as sj.ModuleImplementedIdeal);
+    case 'AGCAIdeal':
+      return (toJs(deserialize(tree['ring'] as Tree), false) as sj.Domain).ideal(...(tree['gens'] as Tree[]).map((g) => deserialize(g) as Expr));
+    case 'AGCAFreeModule':
+      return (toJs(deserialize(tree['ring'] as Tree), false) as sj.Domain).freeModule(tree['rank'] as number);
+    case 'AGCAQuotientModule':
+      return new sj.QuotientModule(deserialize(tree['base'] as Tree) as sj.FreeModule, deserialize(tree['killed'] as Tree) as sj.SubModule);
+    case 'AGCASubModule':
+      return (deserialize(tree['container'] as Tree) as sj.Module).submodule(...(tree['gens'] as Tree[]).map((g) => deserialize(g) as sj.ModuleElement));
+    case 'AGCAElement':
+      return (deserialize(tree['module'] as Tree) as sj.Module).convert((tree['data'] as Tree[]).map((g) => deserialize(g) as Expr));
+    case 'AGCAHomomorphism':
+      return sj.homomorphism(deserialize(tree['domain'] as Tree) as sj.Module, deserialize(tree['codomain'] as Tree) as sj.Module, (tree['matrix'] as Tree[]).map((g) => deserialize(g) as sj.ModuleElement));
     case 'MonomialOrder':
       return (sj as Record<string, unknown>)[tree['name'] as string];
     case 'PolyRing':
@@ -552,14 +585,27 @@ export function deserialize(tree: Tree): unknown {
       if (typeof cls !== 'function') throw new Unsupported(`argument type ${tree.t}`);
       return new (cls as new (...a: unknown[]) => unknown)((tree['symbols'] as Tree[]).map((s) => deserialize(s)), K, tree['order'] as string);
     }
-    case 'PolyElement':
-      // an element of a ring, rebuilt from its expression
-      return (deserialize(tree['ring'] as Tree) as { fromExpr(e: Expr): unknown }).fromExpr(deserialize(tree['expr'] as Tree) as Expr);
-    case 'FracElement':
-    case 'PuiseuxRing':
+    case 'PolyElement': {
+      // SymPy 1.14 rs_series can still store fractional exponents in its
+      // legacy PolyElement. Preserve them in the explicit Puiseux type.
+      const ring = deserialize(tree['ring'] as Tree) as sj.PolyRing;
+      const expression = deserialize(tree['expr'] as Tree) as Expr;
+      try { return ring.fromExpr(expression); }
+      catch (error) {
+        if (!(error instanceof RangeError)) throw error;
+        return new sj.PuiseuxRing(ring.symbols, ring.domain).fromExpr(expression);
+      }
+    }
+    case 'PuiseuxRing': {
+      const d = deserialize(tree['domain'] as Tree);
+      return new sj.PuiseuxRing((tree['symbols'] as Tree[]).map((s) => deserialize(s) as Expr), (d instanceof JsDomain ? (d.domain ?? d.name) : d) as sj.Domain | string);
+    }
     case 'PuiseuxPoly':
-      // FracField and PuiseuxRing are not ported yet
-      throw new Unsupported(`argument type ${tree.t}`);
+      return (deserialize(tree['ring'] as Tree) as sj.PuiseuxRing).fromDict((tree['terms'] as [Tree[], Tree][]).map(([m, c]) => [m.map((e) => deserialize(e) as Expr), deserialize(c) as Expr]));
+    case 'FracElement': {
+      const field = deserialize(tree['field'] as Tree) as sj.FracField;
+      return field.new(field.ring.fromExpr(deserialize(tree['numer'] as Tree) as Expr), field.ring.fromExpr(deserialize(tree['denom'] as Tree) as Expr));
+    }
     case 'DomainMatrix': {
       // DomainMatrix, DDM or SDM of rows of elements (as expressions) over a domain
       const K = definedOr(deserializeDomain(tree['domain'] as Tree), 'domain');
@@ -731,6 +777,8 @@ export function deserialize(tree: Tree): unknown {
       const lam = deserialize(tree['function'] as Tree) as JsLambda;
       return sj.ArrayComprehensionMap(lam.vars.length === 0 ? () => lam.body : (x: number) => lam.call(sj.sympify(x)), ...limits);
     }
+    case 'IntegerPartition': return new sj.IntegerPartition(tree['parts'] as number[]);
+    case 'StrPrinter': return new sj.StrPrinter(Object.fromEntries((deserialize(tree['settings'] as Tree) as JsDict).entries as [string,unknown][]));
     case 'Permutation':
       return new sj.Permutation(tree['array'] as number[]);
     case 'PermutationGroup':
@@ -834,7 +882,10 @@ export function deserialize(tree: Tree): unknown {
     case 'Matrix':
       // empty matrices keep their shape (e.g. 0x2)
       if (!(tree['rows'] as Tree[][]).length && tree['shape']) return Matrix.zeros(...(tree['shape'] as [number, number]));
-      return Matrix.of((tree['rows'] as Tree[][]).map((r) => r.map((x) => deserialize(x) as Expr)));
+      return Matrix.of((tree['rows'] as Tree[][]).map((r) => r.map((x) => {
+        const v = deserialize(x);
+        return v instanceof Matrix ? sj.sympifyMatrix(v) : asExpr(v);
+      })));
     default:
       throw new Unsupported(`type ${tree.t}`);
   }
@@ -925,6 +976,11 @@ const asExpr = (v: unknown): Expr => {
   throw new Unsupported(`expected an expression, got ${fmt(v)}`);
 };
 const asExprOrPoly = (v: unknown): Expr => (v instanceof sj.Poly ? v.asExpr() : asExpr(v));
+/** Translate Python coefficient-domain options; all arithmetic stays in the public API. */
+const polynomialOptions = (kw: Record<string, unknown>): sj.PolynomialDomainOptions => ({
+  ...(kw['domain'] === undefined ? {} : { domain: kw['domain'] instanceof JsDomain ? kw['domain'].name : String(kw['domain']) }),
+  ...(kw['modulus'] === undefined ? {} : { modulus: (kw['modulus'] as sj.Rational).p }),
+});
 const asPoly = (v: unknown): sj.Poly => {
   if (v instanceof sj.Poly) return v;
   throw new Unsupported('expected a Poly');
@@ -1944,7 +2000,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   FallingFactorial: (args, kw) => (noKw(kw), sj.ff(asExpr(args[0]), asExpr(args[1]))),
   expand_func: exprFn(sj.expandFunc),
   conjugate: exprFn(sj.conjugate),
-  exp: exprFn(sj.exp),
+  exp: (args,kw) => (noKw(kw), args[0] instanceof Matrix ? sj.matrixExp(args[0]) : sj.exp(asExpr(args[0]))),
   Abs: exprFn(sj.abs),
   ...Object.fromEntries(FN_NAMES.map((n) => [n, exprFn((e) => sj.fn(n, [e]))])),
   log: (args, kw) => {
@@ -1995,18 +2051,21 @@ export const ADAPTERS: Record<string, Adapter> = {
   expand_complex: exprFn(sj.expand_complex),
   simplify: exprFn(sj.simplify),
   factor: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['deep', 'gaussian', 'extension', 'modulus', 'fraction'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['deep', 'gaussian', 'extension', 'modulus', 'domain', 'fraction'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 1) throw new Unsupported('arity');
-    if (kw['modulus'] !== undefined) return sj.factor(asExpr(args[0]), { modulus: (kw['modulus'] as sj.Rational).p });
     const ext = kw['extension'];
     const extension = ext === undefined ? undefined : ext instanceof JsTuple || ext instanceof JsList ? ext.items.map(asExpr) : [asExpr(ext)];
-    return sj.factor(asExpr(args[0]), { deep: Boolean(kw['deep']), gaussian: Boolean(kw['gaussian']), extension, ...(kw['fraction'] === false ? { fraction: false } : {}) });
+    return sj.factor(asExpr(args[0]), { ...polynomialOptions(kw), deep: Boolean(kw['deep']), gaussian: Boolean(kw['gaussian']), extension, ...(kw['fraction'] === false ? { fraction: false } : {}) });
   },
   together: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'deep') throw new Unsupported(`kwargs ${k}`);
     return sj.together(asExpr(args[0]), { deep: Boolean(kw['deep']) });
   },
-  cancel: exprFn(sj.cancel),
+  cancel: (args, kw) => {
+    for (const k of Object.keys(kw)) if (!['domain','modulus'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    if (args.length !== 1) throw new Unsupported('arity');
+    return sj.cancel(asExpr(args[0]), polynomialOptions(kw));
+  },
   trigsimp: (args, kw) => {
     for (const k of Object.keys(kw)) if (!["old", "deep", "method", "compare"].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const opts = { old: Boolean(kw["old"]), deep: Boolean(kw["deep"]), method: kw["method"] as sj.TrigsimpOptions["method"] };
@@ -2091,6 +2150,8 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.applyfunc': (args, kw, self) => {
     noKw(kw);
     const f = args[0];
+    const callback = f instanceof JsLambda ? (e: Expr) => asExpr(f.call(e)) : (f instanceof JsFunc || f instanceof FnClass) && typeof (sj as unknown as Record<string,unknown>)[f.name] === 'function' ? (sj as unknown as Record<string,(e:Expr)=>Expr>)[f.name] : undefined;
+    if (self instanceof sj.MatrixExpr && callback) return self.applyfunc(callback);
     if (!(self instanceof Matrix) || !(f instanceof JsLambda)) throw new Unsupported('applyfunc');
     return self.map((e) => f.call(e));
   },
@@ -3115,12 +3176,31 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
 
   // ---- polynomials
+  solve_lin_sys: (args, kw) => {
+    for (const k of Object.keys(kw)) if (k !== '_raw') throw new Unsupported(`kwargs ${k}`);
+    const K = args[1] as JsDomain;
+    const eqs = toJs(args[0], false) as sj.PolyElement[];
+    // PolyRing retains nested coefficient fields; the older PolynomialRing
+    // domain wrapper flattens them, so reconstruct from the serialized domain.
+    const tree = K.definition;
+    if (!tree?.['base'] || !tree['symbols']) throw new Unsupported('polynomial ring domain');
+    const domain = deserializeDomain(tree['base'] as Tree);
+    if (!domain) throw new Unsupported('polynomial coefficient domain');
+    const ring = new sj.PolyRing((tree['symbols'] as Tree[]).map((g) => asExpr(deserialize(g))), domain, String(tree['order'] ?? 'lex'));
+    const result = sj.solveLinSys(eqs,ring);
+    if (sj.isNoMatch(result)) return null;
+    // Convert only the low-level coefficient representation expected by Python.
+    return new JsDict([...result].map(([k,v]) => [k,kw['_raw'] === false || [...v.freeSymbols()].some((s) => ring.symbols.some((g) => g.key === s.key)) ? v : ring.domain.convert(v)]));
+  },
   Poly: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['domain','modulus','extension','gaussian'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const [e, ...gens] = args;
-    const dom = kw['domain'];
-    if (dom !== undefined && dom !== 'R' && dom !== 'RR' && dom !== 'ZZ' && dom !== 'QQ') throw new Unsupported('explicit domain');
-    return sj.Poly.from(asExprOrPoly(e), gens.map(asExpr), dom === undefined ? {} : { domain: String(dom) });
+    const extension = kw['extension'];
+    return sj.Poly.from(asExprOrPoly(e), gens.map(asExpr), {
+      ...polynomialOptions(kw),
+      ...(extension === undefined ? {} : { extension: typeof extension === 'boolean' ? extension : extension instanceof JsTuple ? extension.items.map(asExpr) : asExpr(extension) }),
+      ...(kw['gaussian'] === undefined ? {} : { gaussian: Boolean(kw['gaussian']) }),
+    });
   },
   degree: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'gen') throw new Unsupported(`kwargs ${k}`);
@@ -3142,16 +3222,22 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.mul(p.LC(), p.LM());
   },
   gcd: (args, kw) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (!['domain','modulus'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 2) throw new Unsupported('gcd arity');
-    const r = sj.gcd(asExprOrPoly(args[0]), asExprOrPoly(args[1]));
-    return args[0] instanceof sj.Poly ? sj.Poly.from(r, (args[0] as sj.Poly).gens) : r;
+    const a = args[0] instanceof sj.Poly ? args[0] : asExpr(args[0]), b = args[1] instanceof sj.Poly ? args[1] : asExpr(args[1]);
+    const opts = polynomialOptions(kw), r = sj.gcd(a, b, opts);
+    if (!(a instanceof sj.Poly)) return r;
+    const outputOpts = Object.keys(opts).length ? opts : b instanceof sj.Poly && a.domain === b.domain ? { domain: a.domain } : {};
+    return sj.Poly.from(r, a.gens, outputOpts);
   },
   lcm: (args, kw) => {
-    noKw(kw);
+    for (const k of Object.keys(kw)) if (!['domain','modulus'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 2) throw new Unsupported('lcm arity');
-    const r = sj.lcm(asExprOrPoly(args[0]), asExprOrPoly(args[1]));
-    return args[0] instanceof sj.Poly ? sj.Poly.from(r, (args[0] as sj.Poly).gens) : r;
+    const a = args[0] instanceof sj.Poly ? args[0] : asExpr(args[0]), b = args[1] instanceof sj.Poly ? args[1] : asExpr(args[1]);
+    const opts = polynomialOptions(kw), r = sj.lcm(a, b, opts);
+    if (!(a instanceof sj.Poly)) return r;
+    const outputOpts = Object.keys(opts).length ? opts : b instanceof sj.Poly && a.domain === b.domain ? { domain: a.domain } : {};
+    return sj.Poly.from(r, a.gens, outputOpts);
   },
   div: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'domain') throw new Unsupported(`kwargs ${k}`);
@@ -3388,8 +3474,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new JsDict(polyOf(args).groundRoots({ extension: Boolean(kw['extension']) }));
   },
   real_roots: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'multiple' && k !== 'extension') throw new Unsupported(`kwargs ${k}`);
-    const rs = polyOf(args).realRoots({ extension: Boolean(kw['extension']) });
+    for (const k of Object.keys(kw)) if (k !== 'multiple' && k !== 'extension' && k !== 'radicals') throw new Unsupported(`kwargs ${k}`);
+    const rs = polyOf(args).realRoots({ extension: Boolean(kw['extension']), radicals: kw['radicals'] === undefined ? true : Boolean(kw['radicals']) });
     if (kw['multiple'] !== false) return new JsList(rs);
     // multiple=False: [(root, multiplicity)] in order
     const out: [Expr, number][] = [];
@@ -3490,7 +3576,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   '.minor_submatrix': matrixMethod((m, [i, j]) => m.minor(Number((i as sj.Rational).p), Number((j as sj.Rational).p))),
   '.cofactor': matrixMethod((m, [i, j]) => sj.linalg.cofactor(m, Number((i as sj.Rational).p), Number((j as sj.Rational).p))),
   '.cofactor_matrix': matrixMethod((m) => m.cofactorMatrix()),
-  '.is_anti_symmetric': (_args, _kw, self) => sj.linalg.isAntiSymmetric(self as Matrix),
+  '.is_anti_symmetric': (_args, kw, self) => fromJs(sj.linalg.isAntiSymmetric(self as Matrix, kw['simplify'] === undefined ? true : Boolean(kw['simplify']))),
   '.is_diagonal': matrixMethod((m) => sj.linalg.isDiagonal(m)),
   '.is_upper': matrixMethod((m) => sj.linalg.isUpper(m)),
   '.is_lower': matrixMethod((m) => sj.linalg.isLower(m)),
@@ -3723,9 +3809,11 @@ Object.assign(ADAPTERS, {
     sj.printNonzero(self as Matrix, args[0] === undefined ? 'X' : String(args[0]));
     return null;
   },
-  '.table': (_args, kw, self) => {
+  '.table': (args, kw, self) => {
     for (const k of Object.keys(kw)) if (!['rowstart', 'rowend', 'rowsep', 'colsep', 'align'].includes(k)) throw new Unsupported(`kwargs ${k}`);
-    return sj.table(self as Matrix, kw as sj.TableOptions);
+    const printer = args[0];
+    if (!(printer instanceof sj.StrPrinter)) throw new Unsupported('table printer');
+    return sj.table(self as Matrix, { ...kw, printer: (e) => printer.doprint(e) } as sj.TableOptions);
   },
   '.to_DM': (_args, kw, self) => sj.toDM(self as Matrix, { field: Boolean(kw['field']) }),
   '.wilkinson': (args, kw) => (noKw(kw), new JsTuple(sj.wilkinson(intArg(args[0])))),
@@ -3939,6 +4027,8 @@ const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? n.replace(/_([a-zA-
 
 /** A deserialized argument as the JS value the API takes. */
 function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
+  // Named series callbacks are callable public algorithms, not harness implementations.
+  if (v instanceof JsFunc && (v.name === 'rs_exp' || v.name === '_tan1')) return v.name === 'rs_exp' ? sj.rsExp : sj.rsTan;
   if ((numbers || inArray) && v instanceof sj.Rational && v.q === 1n) {
     const n = Number(v.p);
     return Number.isSafeInteger(n) ? n : v.p;
@@ -4013,7 +4103,25 @@ function intpolyAdapter(c: Case): Adapter | undefined {
 
 function autoAdapter(c: Case): Adapter | undefined {
   const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn) || (c.module.startsWith('sympy.polys.matrices.') && DOMAIN_MATRIX_INT_FUNCTIONS.has(c.fn));
-  const conv = (x: unknown): unknown => toJs(x, numbers);
+  const conv = (x: unknown): unknown => {
+    const converted = toJs(x, numbers);
+    // The public sparse-ring APIs use Expr coefficients/exponents. Python's
+    // ground-domain MPQ wrapper is only a serialized input representation.
+    const rationalInputs = (v: unknown): unknown => {
+      if (v instanceof sj.PythonMPQ) return sj.Rational.of(v.numerator, v.denominator);
+      if (Array.isArray(v)) return v.map(rationalInputs);
+      if (v instanceof Map) return new Map([...v].map(([k, a]) => [rationalInputs(k), rationalInputs(a)]));
+      return v;
+    };
+    const expressionCoefficients = ['sympy.polys.puiseux', 'sympy.polys.ring_series', 'sympy.polys.densearith', 'sympy.polys.matrices.dense', 'sympy.polys.densebasic'];
+    const polynomialInputs = (v: unknown): unknown => {
+      if (v instanceof sj.PolyElement) return v.asExpr();
+      if (Array.isArray(v)) return v.map(polynomialInputs);
+      return v;
+    };
+    const normalized = c.module === 'sympy.polys.densebasic' ? polynomialInputs(converted) : converted;
+    return expressionCoefficients.includes(c.module) ? rationalInputs(normalized) : normalized;
+  };
   if (c.fn.startsWith('.')) {
     const name = camel(c.fn.slice(1));
     return (args, kw, self0) => {
@@ -4040,7 +4148,20 @@ function autoAdapter(c: Case): Adapter | undefined {
         const g = (sj as unknown as Record<string, (...a: unknown[]) => unknown>)[name]!;
         return fromJs(g(...placeArgs(g, args, kw, conv)));
       }
-      if (typeof m === 'function') return fromJs((m as (...a: unknown[]) => unknown).call(thisArg, ...placeArgs(m as (...a: unknown[]) => unknown, args, kw, conv)));
+      if (typeof m === 'function') {
+        const result = (m as (...a: unknown[]) => unknown).call(thisArg, ...placeArgs(m as (...a: unknown[]) => unknown, args, kw, conv));
+        // AGCA uses expression coefficients publicly. SymPy prints these as
+        // dense DMP objects inside its relation containers; only convert the
+        // representation here, using the public sparse-to-dense conversion.
+        if (self instanceof sj.SubModule && Array.isArray(result) && (name === 'intersect' || name === 'moduleQuotient')) {
+          const K = self.context.domain;
+          const R = new sj.PolyRing(self.context.symbols, K);
+          const dense = (value: unknown): unknown => Array.isArray(value) ? new JsList(value.map(dense)) : K.convert(value);
+          const coefficient = (e: Expr): unknown => ({ toString: () => `DMP_Python(${fmt(dense(R.fromExpr(e).toDense()))}, ${String(K)})` });
+          return new JsTuple([result[0], ...result.slice(1).map((rows: Expr[][]) => new JsList(rows.map((row) => name === 'intersect' ? new JsTuple(row.map(coefficient)) : new JsList(row.map(coefficient)))))]);
+        }
+        return fromJs(result);
+      }
       if (m === undefined || args.length) throw new Unsupported(`no adapter for ${c.fn}`);
       return fromJs(m);
     };

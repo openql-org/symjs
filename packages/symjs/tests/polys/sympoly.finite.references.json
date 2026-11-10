@@ -1,0 +1,2737 @@
+{
+  "unary": [
+    {
+      "p": 2,
+      "input": "0",
+      "op": "construct",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "0",
+      "op": "neg",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "0",
+      "op": "diff",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "0",
+      "op": "monic",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "0",
+      "op": "primitive",
+      "result": "(0, Poly(0, x, modulus=2))"
+    },
+    {
+      "p": 2,
+      "input": "0",
+      "op": "content",
+      "result": "0"
+    },
+    {
+      "p": 2,
+      "input": "0",
+      "op": "factorList",
+      "result": "(0, [])"
+    },
+    {
+      "p": 2,
+      "input": "0",
+      "op": "sqfList",
+      "error": "AssertionError"
+    },
+    {
+      "p": 2,
+      "input": "0",
+      "op": "integrate",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "0",
+      "op": "eval",
+      "result": "0"
+    },
+    {
+      "p": 2,
+      "input": "0",
+      "op": "pow",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "1",
+      "op": "construct",
+      "result": "Poly(1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "1",
+      "op": "neg",
+      "result": "Poly(1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "1",
+      "op": "diff",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "1",
+      "op": "monic",
+      "result": "Poly(1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "1",
+      "op": "primitive",
+      "result": "(1, Poly(1, x, modulus=2))"
+    },
+    {
+      "p": 2,
+      "input": "1",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 2,
+      "input": "1",
+      "op": "factorList",
+      "result": "(1, [])"
+    },
+    {
+      "p": 2,
+      "input": "1",
+      "op": "sqfList",
+      "result": "(1, [])"
+    },
+    {
+      "p": 2,
+      "input": "1",
+      "op": "integrate",
+      "result": "Poly(x, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "1",
+      "op": "eval",
+      "result": "1"
+    },
+    {
+      "p": 2,
+      "input": "1",
+      "op": "pow",
+      "result": "Poly(1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "2*x+2",
+      "op": "construct",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "2*x+2",
+      "op": "neg",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "2*x+2",
+      "op": "diff",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "2*x+2",
+      "op": "monic",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "2*x+2",
+      "op": "primitive",
+      "result": "(0, Poly(0, x, modulus=2))"
+    },
+    {
+      "p": 2,
+      "input": "2*x+2",
+      "op": "content",
+      "result": "0"
+    },
+    {
+      "p": 2,
+      "input": "2*x+2",
+      "op": "factorList",
+      "result": "(0, [])"
+    },
+    {
+      "p": 2,
+      "input": "2*x+2",
+      "op": "sqfList",
+      "error": "AssertionError"
+    },
+    {
+      "p": 2,
+      "input": "2*x+2",
+      "op": "integrate",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "2*x+2",
+      "op": "eval",
+      "result": "0"
+    },
+    {
+      "p": 2,
+      "input": "2*x+2",
+      "op": "pow",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "construct",
+      "result": "Poly(x**5 + x + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "neg",
+      "result": "Poly(x**5 + x + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "diff",
+      "result": "Poly(x**4 + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "monic",
+      "result": "Poly(x**5 + x + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "primitive",
+      "result": "(1, Poly(x**5 + x + 1, x, modulus=2))"
+    },
+    {
+      "p": 2,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 2,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "factorList",
+      "result": "(1, [(Poly(x**2 + x + 1, x, modulus=2), 1), (Poly(x**3 + x**2 + 1, x, modulus=2), 1)])"
+    },
+    {
+      "p": 2,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "sqfList",
+      "result": "(1, [(Poly(x**5 + x + 1, x, modulus=2), 1)])"
+    },
+    {
+      "p": 2,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "integrate",
+      "error": "NotInvertible"
+    },
+    {
+      "p": 2,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "eval",
+      "result": "1"
+    },
+    {
+      "p": 2,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "pow",
+      "result": "Poly(x**15 + x**11 + x**10 + x**7 + x**5 + x**3 + x**2 + x + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "construct",
+      "result": "Poly(x**9 + x**7 + x**5 + x**3, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "neg",
+      "result": "Poly(x**9 + x**7 + x**5 + x**3, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "diff",
+      "result": "Poly(x**8 + x**6 + x**4 + x**2, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "monic",
+      "result": "Poly(x**9 + x**7 + x**5 + x**3, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "primitive",
+      "result": "(1, Poly(x**9 + x**7 + x**5 + x**3, x, modulus=2))"
+    },
+    {
+      "p": 2,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 2,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "factorList",
+      "result": "(1, [(Poly(x, x, modulus=2), 3), (Poly(x + 1, x, modulus=2), 6)])"
+    },
+    {
+      "p": 2,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "sqfList",
+      "result": "(1, [(Poly(x, x, modulus=2), 3), (Poly(x + 1, x, modulus=2), 6)])"
+    },
+    {
+      "p": 2,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "integrate",
+      "error": "NotInvertible"
+    },
+    {
+      "p": 2,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "eval",
+      "result": "0"
+    },
+    {
+      "p": 2,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "pow",
+      "result": "Poly(x**27 + x**25 + x**11 + x**9, x, modulus=2)"
+    },
+    {
+      "p": 3,
+      "input": "0",
+      "op": "construct",
+      "result": "Poly(0, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "0",
+      "op": "neg",
+      "result": "Poly(0, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "0",
+      "op": "diff",
+      "result": "Poly(0, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "0",
+      "op": "monic",
+      "result": "Poly(0, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "0",
+      "op": "primitive",
+      "result": "(0, Poly(0, x, modulus=3))"
+    },
+    {
+      "p": 3,
+      "input": "0",
+      "op": "content",
+      "result": "0"
+    },
+    {
+      "p": 3,
+      "input": "0",
+      "op": "factorList",
+      "result": "(0, [])"
+    },
+    {
+      "p": 3,
+      "input": "0",
+      "op": "sqfList",
+      "error": "AssertionError"
+    },
+    {
+      "p": 3,
+      "input": "0",
+      "op": "integrate",
+      "result": "Poly(0, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "0",
+      "op": "eval",
+      "result": "0"
+    },
+    {
+      "p": 3,
+      "input": "0",
+      "op": "pow",
+      "result": "Poly(0, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "1",
+      "op": "construct",
+      "result": "Poly(1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "1",
+      "op": "neg",
+      "result": "Poly(-1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "1",
+      "op": "diff",
+      "result": "Poly(0, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "1",
+      "op": "monic",
+      "result": "Poly(1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "1",
+      "op": "primitive",
+      "result": "(1, Poly(1, x, modulus=3))"
+    },
+    {
+      "p": 3,
+      "input": "1",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 3,
+      "input": "1",
+      "op": "factorList",
+      "result": "(1, [])"
+    },
+    {
+      "p": 3,
+      "input": "1",
+      "op": "sqfList",
+      "result": "(1, [])"
+    },
+    {
+      "p": 3,
+      "input": "1",
+      "op": "integrate",
+      "result": "Poly(x, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "1",
+      "op": "eval",
+      "result": "1"
+    },
+    {
+      "p": 3,
+      "input": "1",
+      "op": "pow",
+      "result": "Poly(1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "2*x+2",
+      "op": "construct",
+      "result": "Poly(-x - 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "2*x+2",
+      "op": "neg",
+      "result": "Poly(x + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "2*x+2",
+      "op": "diff",
+      "result": "Poly(-1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "2*x+2",
+      "op": "monic",
+      "result": "Poly(x + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "2*x+2",
+      "op": "primitive",
+      "result": "(1, Poly(-x - 1, x, modulus=3))"
+    },
+    {
+      "p": 3,
+      "input": "2*x+2",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 3,
+      "input": "2*x+2",
+      "op": "factorList",
+      "result": "(-1, [(Poly(x + 1, x, modulus=3), 1)])"
+    },
+    {
+      "p": 3,
+      "input": "2*x+2",
+      "op": "sqfList",
+      "result": "(-1, [(Poly(x + 1, x, modulus=3), 1)])"
+    },
+    {
+      "p": 3,
+      "input": "2*x+2",
+      "op": "integrate",
+      "result": "Poly(x**2 - x, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "2*x+2",
+      "op": "eval",
+      "result": "-1"
+    },
+    {
+      "p": 3,
+      "input": "2*x+2",
+      "op": "pow",
+      "result": "Poly(-x**3 - 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "construct",
+      "result": "Poly(x**5 - x**3 + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "neg",
+      "result": "Poly(-x**5 + x**3 - 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "diff",
+      "result": "Poly(-x**4, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "monic",
+      "result": "Poly(x**5 - x**3 + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "primitive",
+      "result": "(1, Poly(x**5 - x**3 + 1, x, modulus=3))"
+    },
+    {
+      "p": 3,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 3,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "factorList",
+      "result": "(1, [(Poly(x**2 - x - 1, x, modulus=3), 1), (Poly(x**3 + x**2 + x - 1, x, modulus=3), 1)])"
+    },
+    {
+      "p": 3,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "sqfList",
+      "result": "(1, [(Poly(x**5 - x**3 + 1, x, modulus=3), 1)])"
+    },
+    {
+      "p": 3,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "integrate",
+      "error": "NotInvertible"
+    },
+    {
+      "p": 3,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "eval",
+      "result": "1"
+    },
+    {
+      "p": 3,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "pow",
+      "result": "Poly(x**15 - x**9 + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "construct",
+      "result": "Poly(x**9 + x**6 - x**3 - 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "neg",
+      "result": "Poly(-x**9 - x**6 + x**3 + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "diff",
+      "result": "Poly(0, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "monic",
+      "result": "Poly(x**9 + x**6 - x**3 - 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "primitive",
+      "result": "(1, Poly(x**9 + x**6 - x**3 - 1, x, modulus=3))"
+    },
+    {
+      "p": 3,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 3,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "factorList",
+      "result": "(1, [(Poly(x - 1, x, modulus=3), 3), (Poly(x + 1, x, modulus=3), 6)])"
+    },
+    {
+      "p": 3,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "sqfList",
+      "result": "(1, [(Poly(x - 1, x, modulus=3), 3), (Poly(x + 1, x, modulus=3), 6)])"
+    },
+    {
+      "p": 3,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "integrate",
+      "error": "NotInvertible"
+    },
+    {
+      "p": 3,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "eval",
+      "result": "-1"
+    },
+    {
+      "p": 3,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "pow",
+      "result": "Poly(x**27 + x**18 - x**9 - 1, x, modulus=3)"
+    },
+    {
+      "p": 5,
+      "input": "0",
+      "op": "construct",
+      "result": "Poly(0, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "0",
+      "op": "neg",
+      "result": "Poly(0, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "0",
+      "op": "diff",
+      "result": "Poly(0, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "0",
+      "op": "monic",
+      "result": "Poly(0, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "0",
+      "op": "primitive",
+      "result": "(0, Poly(0, x, modulus=5))"
+    },
+    {
+      "p": 5,
+      "input": "0",
+      "op": "content",
+      "result": "0"
+    },
+    {
+      "p": 5,
+      "input": "0",
+      "op": "factorList",
+      "result": "(0, [])"
+    },
+    {
+      "p": 5,
+      "input": "0",
+      "op": "sqfList",
+      "error": "AssertionError"
+    },
+    {
+      "p": 5,
+      "input": "0",
+      "op": "integrate",
+      "result": "Poly(0, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "0",
+      "op": "eval",
+      "result": "0"
+    },
+    {
+      "p": 5,
+      "input": "0",
+      "op": "pow",
+      "result": "Poly(0, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "1",
+      "op": "construct",
+      "result": "Poly(1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "1",
+      "op": "neg",
+      "result": "Poly(-1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "1",
+      "op": "diff",
+      "result": "Poly(0, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "1",
+      "op": "monic",
+      "result": "Poly(1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "1",
+      "op": "primitive",
+      "result": "(1, Poly(1, x, modulus=5))"
+    },
+    {
+      "p": 5,
+      "input": "1",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 5,
+      "input": "1",
+      "op": "factorList",
+      "result": "(1, [])"
+    },
+    {
+      "p": 5,
+      "input": "1",
+      "op": "sqfList",
+      "result": "(1, [])"
+    },
+    {
+      "p": 5,
+      "input": "1",
+      "op": "integrate",
+      "result": "Poly(x, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "1",
+      "op": "eval",
+      "result": "1"
+    },
+    {
+      "p": 5,
+      "input": "1",
+      "op": "pow",
+      "result": "Poly(1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "2*x+2",
+      "op": "construct",
+      "result": "Poly(2*x + 2, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "2*x+2",
+      "op": "neg",
+      "result": "Poly(-2*x - 2, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "2*x+2",
+      "op": "diff",
+      "result": "Poly(2, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "2*x+2",
+      "op": "monic",
+      "result": "Poly(x + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "2*x+2",
+      "op": "primitive",
+      "result": "(1, Poly(2*x + 2, x, modulus=5))"
+    },
+    {
+      "p": 5,
+      "input": "2*x+2",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 5,
+      "input": "2*x+2",
+      "op": "factorList",
+      "result": "(2, [(Poly(x + 1, x, modulus=5), 1)])"
+    },
+    {
+      "p": 5,
+      "input": "2*x+2",
+      "op": "sqfList",
+      "result": "(2, [(Poly(x + 1, x, modulus=5), 1)])"
+    },
+    {
+      "p": 5,
+      "input": "2*x+2",
+      "op": "integrate",
+      "result": "Poly(x**2 + 2*x, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "2*x+2",
+      "op": "eval",
+      "result": "-2"
+    },
+    {
+      "p": 5,
+      "input": "2*x+2",
+      "op": "pow",
+      "result": "Poly(-2*x**3 - x**2 - x - 2, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "construct",
+      "result": "Poly(x**5 + 2*x**3 - 2*x + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "neg",
+      "result": "Poly(-x**5 - 2*x**3 + 2*x - 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "diff",
+      "result": "Poly(x**2 - 2, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "monic",
+      "result": "Poly(x**5 + 2*x**3 - 2*x + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "primitive",
+      "result": "(1, Poly(x**5 + 2*x**3 - 2*x + 1, x, modulus=5))"
+    },
+    {
+      "p": 5,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 5,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "factorList",
+      "result": "(1, [(Poly(x + 1, x, modulus=5), 1), (Poly(x - 2, x, modulus=5), 1), (Poly(x**3 + x**2 + 2, x, modulus=5), 1)])"
+    },
+    {
+      "p": 5,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "sqfList",
+      "result": "(1, [(Poly(x**5 + 2*x**3 - 2*x + 1, x, modulus=5), 1)])"
+    },
+    {
+      "p": 5,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "integrate",
+      "error": "NotInvertible"
+    },
+    {
+      "p": 5,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "eval",
+      "result": "2"
+    },
+    {
+      "p": 5,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "pow",
+      "result": "Poly(x**15 + x**13 + x**11 - 2*x**10 - x**9 + 2*x**8 - 2*x**7 + 2*x**5 + x**4 - 2*x**3 + 2*x**2 - x + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "construct",
+      "result": "Poly(x**9 + 2*x**8 - 2*x**7 - 2*x**5 + x**4 + 2*x**3 - 2*x**2 - 2, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "neg",
+      "result": "Poly(-x**9 - 2*x**8 + 2*x**7 + 2*x**5 - x**4 - 2*x**3 + 2*x**2 + 2, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "diff",
+      "result": "Poly(-x**8 + x**7 + x**6 - x**3 + x**2 + x, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "monic",
+      "result": "Poly(x**9 + 2*x**8 - 2*x**7 - 2*x**5 + x**4 + 2*x**3 - 2*x**2 - 2, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "primitive",
+      "result": "(1, Poly(x**9 + 2*x**8 - 2*x**7 - 2*x**5 + x**4 + 2*x**3 - 2*x**2 - 2, x, modulus=5))"
+    },
+    {
+      "p": 5,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 5,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "factorList",
+      "result": "(1, [(Poly(x + 2, x, modulus=5), 3), (Poly(x + 1, x, modulus=5), 6)])"
+    },
+    {
+      "p": 5,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "sqfList",
+      "result": "(1, [(Poly(x + 2, x, modulus=5), 3), (Poly(x + 1, x, modulus=5), 6)])"
+    },
+    {
+      "p": 5,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "integrate",
+      "error": "NotInvertible"
+    },
+    {
+      "p": 5,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "eval",
+      "result": "0"
+    },
+    {
+      "p": 5,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "pow",
+      "result": "Poly(x**27 + x**26 + x**25 - x**24 + 2*x**23 - 2*x**22 + x**20 - x**17 - x**16 - x**15 + x**14 - 2*x**13 - x**12 + 2*x**11 + x**10 - 2*x**9 - x**8 - 2*x**7 + 2*x**6 - x**5 - 2*x**4 - x**3 + x**2 + 2, x, modulus=5)"
+    },
+    {
+      "p": 7,
+      "input": "0",
+      "op": "construct",
+      "result": "Poly(0, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "0",
+      "op": "neg",
+      "result": "Poly(0, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "0",
+      "op": "diff",
+      "result": "Poly(0, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "0",
+      "op": "monic",
+      "result": "Poly(0, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "0",
+      "op": "primitive",
+      "result": "(0, Poly(0, x, modulus=7))"
+    },
+    {
+      "p": 7,
+      "input": "0",
+      "op": "content",
+      "result": "0"
+    },
+    {
+      "p": 7,
+      "input": "0",
+      "op": "factorList",
+      "result": "(0, [])"
+    },
+    {
+      "p": 7,
+      "input": "0",
+      "op": "sqfList",
+      "error": "AssertionError"
+    },
+    {
+      "p": 7,
+      "input": "0",
+      "op": "integrate",
+      "result": "Poly(0, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "0",
+      "op": "eval",
+      "result": "0"
+    },
+    {
+      "p": 7,
+      "input": "0",
+      "op": "pow",
+      "result": "Poly(0, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "1",
+      "op": "construct",
+      "result": "Poly(1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "1",
+      "op": "neg",
+      "result": "Poly(-1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "1",
+      "op": "diff",
+      "result": "Poly(0, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "1",
+      "op": "monic",
+      "result": "Poly(1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "1",
+      "op": "primitive",
+      "result": "(1, Poly(1, x, modulus=7))"
+    },
+    {
+      "p": 7,
+      "input": "1",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 7,
+      "input": "1",
+      "op": "factorList",
+      "result": "(1, [])"
+    },
+    {
+      "p": 7,
+      "input": "1",
+      "op": "sqfList",
+      "result": "(1, [])"
+    },
+    {
+      "p": 7,
+      "input": "1",
+      "op": "integrate",
+      "result": "Poly(x, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "1",
+      "op": "eval",
+      "result": "1"
+    },
+    {
+      "p": 7,
+      "input": "1",
+      "op": "pow",
+      "result": "Poly(1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "2*x+2",
+      "op": "construct",
+      "result": "Poly(2*x + 2, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "2*x+2",
+      "op": "neg",
+      "result": "Poly(-2*x - 2, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "2*x+2",
+      "op": "diff",
+      "result": "Poly(2, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "2*x+2",
+      "op": "monic",
+      "result": "Poly(x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "2*x+2",
+      "op": "primitive",
+      "result": "(1, Poly(2*x + 2, x, modulus=7))"
+    },
+    {
+      "p": 7,
+      "input": "2*x+2",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 7,
+      "input": "2*x+2",
+      "op": "factorList",
+      "result": "(2, [(Poly(x + 1, x, modulus=7), 1)])"
+    },
+    {
+      "p": 7,
+      "input": "2*x+2",
+      "op": "sqfList",
+      "result": "(2, [(Poly(x + 1, x, modulus=7), 1)])"
+    },
+    {
+      "p": 7,
+      "input": "2*x+2",
+      "op": "integrate",
+      "result": "Poly(x**2 + 2*x, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "2*x+2",
+      "op": "eval",
+      "result": "1"
+    },
+    {
+      "p": 7,
+      "input": "2*x+2",
+      "op": "pow",
+      "result": "Poly(x**3 + 3*x**2 + 3*x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "construct",
+      "result": "Poly(x**5 + 2*x**3 + 3*x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "neg",
+      "result": "Poly(-x**5 - 2*x**3 - 3*x - 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "diff",
+      "result": "Poly(-2*x**4 - x**2 + 3, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "monic",
+      "result": "Poly(x**5 + 2*x**3 + 3*x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "primitive",
+      "result": "(1, Poly(x**5 + 2*x**3 + 3*x + 1, x, modulus=7))"
+    },
+    {
+      "p": 7,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 7,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "factorList",
+      "result": "(1, [(Poly(x - 1, x, modulus=7), 2), (Poly(x**3 + 2*x**2 - 2*x + 1, x, modulus=7), 1)])"
+    },
+    {
+      "p": 7,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "sqfList",
+      "result": "(1, [(Poly(x**3 + 2*x**2 - 2*x + 1, x, modulus=7), 1), (Poly(x - 1, x, modulus=7), 2)])"
+    },
+    {
+      "p": 7,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "integrate",
+      "result": "Poly(-x**6 - 3*x**4 - 2*x**2 + x, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "eval",
+      "result": "-1"
+    },
+    {
+      "p": 7,
+      "input": "x**5+2*x**3+3*x+1",
+      "op": "pow",
+      "result": "Poly(x**15 - x**13 + 3*x**10 + 2*x**9 - 2*x**8 + 2*x**6 + x**5 + x**4 - 2*x**3 - x**2 + 2*x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "construct",
+      "result": "Poly(x**9 - 2*x**8 + x**6 - x**5 + x**4 - x**3 + 2*x**2 - 3*x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "neg",
+      "result": "Poly(-x**9 + 2*x**8 - x**6 + x**5 - x**4 + x**3 - 2*x**2 + 3*x - 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "diff",
+      "result": "Poly(2*x**8 - 2*x**7 - x**5 + 2*x**4 - 3*x**3 - 3*x**2 - 3*x - 3, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "monic",
+      "result": "Poly(x**9 - 2*x**8 + x**6 - x**5 + x**4 - x**3 + 2*x**2 - 3*x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "primitive",
+      "result": "(1, Poly(x**9 - 2*x**8 + x**6 - x**5 + x**4 - x**3 + 2*x**2 - 3*x + 1, x, modulus=7))"
+    },
+    {
+      "p": 7,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "content",
+      "result": "1"
+    },
+    {
+      "p": 7,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "factorList",
+      "result": "(1, [(Poly(x + 2, x, modulus=7), 3), (Poly(x + 1, x, modulus=7), 6)])"
+    },
+    {
+      "p": 7,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "sqfList",
+      "result": "(1, [(Poly(x + 2, x, modulus=7), 3), (Poly(x + 1, x, modulus=7), 6)])"
+    },
+    {
+      "p": 7,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "integrate",
+      "error": "NotInvertible"
+    },
+    {
+      "p": 7,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "eval",
+      "result": "-1"
+    },
+    {
+      "p": 7,
+      "input": "(x+1)**6*(x+2)**3",
+      "op": "pow",
+      "result": "Poly(x**27 + x**26 - 2*x**25 + 2*x**24 - x**23 - x**22 - 3*x**21 - 3*x**20 - 3*x**19 - x**18 + x**17 + 3*x**16 + 3*x**15 + 2*x**14 - 2*x**13 - 2*x**12 - 3*x**11 + 3*x**10 + 2*x**9 + 2*x**8 - x**7 + 2*x**6 + 2*x**5 + 3*x**4 - 3*x**3 - 2*x**2 - 2*x + 1, x, modulus=7)"
+    }
+  ],
+  "binary": [
+    {
+      "p": 2,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "add",
+      "result": "Poly(x**3, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "sub",
+      "result": "Poly(x**3, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "mul",
+      "result": "Poly(x**3 + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "div",
+      "result": "(Poly(x**3 + 1, x, modulus=2), Poly(0, x, modulus=2))"
+    },
+    {
+      "p": 2,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "gcd",
+      "result": "Poly(1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "lcm",
+      "result": "Poly(x**3 + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "exquo",
+      "result": "Poly(x**3 + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "gcdex",
+      "result": "(Poly(0, x, modulus=2), Poly(1, x, modulus=2), Poly(1, x, modulus=2))"
+    },
+    {
+      "p": 2,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "add",
+      "result": "Poly(x**4 + x**2, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "sub",
+      "result": "Poly(x**4 + x**2, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "mul",
+      "result": "Poly(x**6 + x**4 + x**2 + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "div",
+      "result": "(Poly(x**2 + 1, x, modulus=2), Poly(0, x, modulus=2))"
+    },
+    {
+      "p": 2,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "gcd",
+      "result": "Poly(x**2 + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "lcm",
+      "result": "Poly(x**4 + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "exquo",
+      "result": "Poly(x**2 + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "gcdex",
+      "result": "(Poly(0, x, modulus=2), Poly(1, x, modulus=2), Poly(x**2 + 1, x, modulus=2))"
+    },
+    {
+      "p": 2,
+      "a": "0",
+      "b": "x+1",
+      "op": "add",
+      "result": "Poly(x + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "0",
+      "b": "x+1",
+      "op": "sub",
+      "result": "Poly(x + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "0",
+      "b": "x+1",
+      "op": "mul",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "0",
+      "b": "x+1",
+      "op": "div",
+      "result": "(Poly(0, x, modulus=2), Poly(0, x, modulus=2))"
+    },
+    {
+      "p": 2,
+      "a": "0",
+      "b": "x+1",
+      "op": "gcd",
+      "result": "Poly(x + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "0",
+      "b": "x+1",
+      "op": "lcm",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "0",
+      "b": "x+1",
+      "op": "exquo",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "0",
+      "b": "x+1",
+      "op": "gcdex",
+      "result": "(Poly(0, x, modulus=2), Poly(1, x, modulus=2), Poly(x + 1, x, modulus=2))"
+    },
+    {
+      "p": 2,
+      "a": "x+1",
+      "b": "0",
+      "op": "add",
+      "result": "Poly(x + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x+1",
+      "b": "0",
+      "op": "sub",
+      "result": "Poly(x + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x+1",
+      "b": "0",
+      "op": "mul",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x+1",
+      "b": "0",
+      "op": "div",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 2,
+      "a": "x+1",
+      "b": "0",
+      "op": "gcd",
+      "result": "Poly(x + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x+1",
+      "b": "0",
+      "op": "lcm",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "a": "x+1",
+      "b": "0",
+      "op": "exquo",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 2,
+      "a": "x+1",
+      "b": "0",
+      "op": "gcdex",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 3,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "add",
+      "result": "Poly(x**3 + x - 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "sub",
+      "result": "Poly(x**3, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "mul",
+      "result": "Poly(-x**4 + x**3 + x**2 + x + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "div",
+      "result": "(Poly(-x**2 - x, x, modulus=3), Poly(1, x, modulus=3))"
+    },
+    {
+      "p": 3,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "gcd",
+      "result": "Poly(1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "lcm",
+      "result": "Poly(x**4 - x**3 - x**2 - x - 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "exquo",
+      "error": "ExactQuotientFailed"
+    },
+    {
+      "p": 3,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "gcdex",
+      "result": "(Poly(1, x, modulus=3), Poly(x**2 + x, x, modulus=3), Poly(1, x, modulus=3))"
+    },
+    {
+      "p": 3,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "add",
+      "result": "Poly(x**4 + x**2 + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "sub",
+      "result": "Poly(x**4 - x**2, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "mul",
+      "result": "Poly(x**6 - x**4 - x**2 + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "div",
+      "result": "(Poly(x**2 + 1, x, modulus=3), Poly(0, x, modulus=3))"
+    },
+    {
+      "p": 3,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "gcd",
+      "result": "Poly(x**2 - 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "lcm",
+      "result": "Poly(x**4 - 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "exquo",
+      "result": "Poly(x**2 + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "gcdex",
+      "result": "(Poly(0, x, modulus=3), Poly(1, x, modulus=3), Poly(x**2 - 1, x, modulus=3))"
+    },
+    {
+      "p": 3,
+      "a": "0",
+      "b": "x+1",
+      "op": "add",
+      "result": "Poly(x + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "0",
+      "b": "x+1",
+      "op": "sub",
+      "result": "Poly(-x - 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "0",
+      "b": "x+1",
+      "op": "mul",
+      "result": "Poly(0, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "0",
+      "b": "x+1",
+      "op": "div",
+      "result": "(Poly(0, x, modulus=3), Poly(0, x, modulus=3))"
+    },
+    {
+      "p": 3,
+      "a": "0",
+      "b": "x+1",
+      "op": "gcd",
+      "result": "Poly(x + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "0",
+      "b": "x+1",
+      "op": "lcm",
+      "result": "Poly(0, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "0",
+      "b": "x+1",
+      "op": "exquo",
+      "result": "Poly(0, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "0",
+      "b": "x+1",
+      "op": "gcdex",
+      "result": "(Poly(0, x, modulus=3), Poly(1, x, modulus=3), Poly(x + 1, x, modulus=3))"
+    },
+    {
+      "p": 3,
+      "a": "x+1",
+      "b": "0",
+      "op": "add",
+      "result": "Poly(x + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x+1",
+      "b": "0",
+      "op": "sub",
+      "result": "Poly(x + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x+1",
+      "b": "0",
+      "op": "mul",
+      "result": "Poly(0, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x+1",
+      "b": "0",
+      "op": "div",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 3,
+      "a": "x+1",
+      "b": "0",
+      "op": "gcd",
+      "result": "Poly(x + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x+1",
+      "b": "0",
+      "op": "lcm",
+      "result": "Poly(0, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "a": "x+1",
+      "b": "0",
+      "op": "exquo",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 3,
+      "a": "x+1",
+      "b": "0",
+      "op": "gcdex",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 5,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "add",
+      "result": "Poly(x**3 - x + 2, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "sub",
+      "result": "Poly(x**3, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "mul",
+      "result": "Poly(2*x**4 + x**3 - x**2 - x + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "div",
+      "result": "(Poly(-2*x**2 + x - 2, x, modulus=5), Poly(-2, x, modulus=5))"
+    },
+    {
+      "p": 5,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "gcd",
+      "result": "Poly(1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "lcm",
+      "result": "Poly(x**4 - 2*x**3 + 2*x**2 + 2*x - 2, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "exquo",
+      "error": "ExactQuotientFailed"
+    },
+    {
+      "p": 5,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "gcdex",
+      "result": "(Poly(2, x, modulus=5), Poly(-x**2 - 2*x - 1, x, modulus=5), Poly(1, x, modulus=5))"
+    },
+    {
+      "p": 5,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "add",
+      "result": "Poly(x**4 + x**2 - 2, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "sub",
+      "result": "Poly(x**4 - x**2, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "mul",
+      "result": "Poly(x**6 - x**4 - x**2 + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "div",
+      "result": "(Poly(x**2 + 1, x, modulus=5), Poly(0, x, modulus=5))"
+    },
+    {
+      "p": 5,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "gcd",
+      "result": "Poly(x**2 - 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "lcm",
+      "result": "Poly(x**4 - 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "exquo",
+      "result": "Poly(x**2 + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "gcdex",
+      "result": "(Poly(0, x, modulus=5), Poly(1, x, modulus=5), Poly(x**2 - 1, x, modulus=5))"
+    },
+    {
+      "p": 5,
+      "a": "0",
+      "b": "x+1",
+      "op": "add",
+      "result": "Poly(x + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "0",
+      "b": "x+1",
+      "op": "sub",
+      "result": "Poly(-x - 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "0",
+      "b": "x+1",
+      "op": "mul",
+      "result": "Poly(0, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "0",
+      "b": "x+1",
+      "op": "div",
+      "result": "(Poly(0, x, modulus=5), Poly(0, x, modulus=5))"
+    },
+    {
+      "p": 5,
+      "a": "0",
+      "b": "x+1",
+      "op": "gcd",
+      "result": "Poly(x + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "0",
+      "b": "x+1",
+      "op": "lcm",
+      "result": "Poly(0, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "0",
+      "b": "x+1",
+      "op": "exquo",
+      "result": "Poly(0, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "0",
+      "b": "x+1",
+      "op": "gcdex",
+      "result": "(Poly(0, x, modulus=5), Poly(1, x, modulus=5), Poly(x + 1, x, modulus=5))"
+    },
+    {
+      "p": 5,
+      "a": "x+1",
+      "b": "0",
+      "op": "add",
+      "result": "Poly(x + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x+1",
+      "b": "0",
+      "op": "sub",
+      "result": "Poly(x + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x+1",
+      "b": "0",
+      "op": "mul",
+      "result": "Poly(0, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x+1",
+      "b": "0",
+      "op": "div",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 5,
+      "a": "x+1",
+      "b": "0",
+      "op": "gcd",
+      "result": "Poly(x + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x+1",
+      "b": "0",
+      "op": "lcm",
+      "result": "Poly(0, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "a": "x+1",
+      "b": "0",
+      "op": "exquo",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 5,
+      "a": "x+1",
+      "b": "0",
+      "op": "gcdex",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 7,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "add",
+      "result": "Poly(x**3 - 3*x + 2, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "sub",
+      "result": "Poly(x**3, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "mul",
+      "result": "Poly(2*x**4 + x**3 - 3*x**2 - 3*x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "div",
+      "result": "(Poly(-3*x**2 - 2*x + 2, x, modulus=7), Poly(-1, x, modulus=7))"
+    },
+    {
+      "p": 7,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "gcd",
+      "result": "Poly(1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "lcm",
+      "result": "Poly(x**4 - 3*x**3 + 2*x**2 + 2*x - 3, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "exquo",
+      "error": "ExactQuotientFailed"
+    },
+    {
+      "p": 7,
+      "a": "x**3+2*x+1",
+      "b": "2*x+1",
+      "op": "gcdex",
+      "result": "(Poly(-1, x, modulus=7), Poly(-3*x**2 - 2*x + 2, x, modulus=7), Poly(1, x, modulus=7))"
+    },
+    {
+      "p": 7,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "add",
+      "result": "Poly(x**4 + x**2 - 2, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "sub",
+      "result": "Poly(x**4 - x**2, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "mul",
+      "result": "Poly(x**6 - x**4 - x**2 + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "div",
+      "result": "(Poly(x**2 + 1, x, modulus=7), Poly(0, x, modulus=7))"
+    },
+    {
+      "p": 7,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "gcd",
+      "result": "Poly(x**2 - 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "lcm",
+      "result": "Poly(x**4 - 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "exquo",
+      "result": "Poly(x**2 + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x**4-1",
+      "b": "x**2-1",
+      "op": "gcdex",
+      "result": "(Poly(0, x, modulus=7), Poly(1, x, modulus=7), Poly(x**2 - 1, x, modulus=7))"
+    },
+    {
+      "p": 7,
+      "a": "0",
+      "b": "x+1",
+      "op": "add",
+      "result": "Poly(x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "0",
+      "b": "x+1",
+      "op": "sub",
+      "result": "Poly(-x - 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "0",
+      "b": "x+1",
+      "op": "mul",
+      "result": "Poly(0, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "0",
+      "b": "x+1",
+      "op": "div",
+      "result": "(Poly(0, x, modulus=7), Poly(0, x, modulus=7))"
+    },
+    {
+      "p": 7,
+      "a": "0",
+      "b": "x+1",
+      "op": "gcd",
+      "result": "Poly(x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "0",
+      "b": "x+1",
+      "op": "lcm",
+      "result": "Poly(0, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "0",
+      "b": "x+1",
+      "op": "exquo",
+      "result": "Poly(0, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "0",
+      "b": "x+1",
+      "op": "gcdex",
+      "result": "(Poly(0, x, modulus=7), Poly(1, x, modulus=7), Poly(x + 1, x, modulus=7))"
+    },
+    {
+      "p": 7,
+      "a": "x+1",
+      "b": "0",
+      "op": "add",
+      "result": "Poly(x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x+1",
+      "b": "0",
+      "op": "sub",
+      "result": "Poly(x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x+1",
+      "b": "0",
+      "op": "mul",
+      "result": "Poly(0, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x+1",
+      "b": "0",
+      "op": "div",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 7,
+      "a": "x+1",
+      "b": "0",
+      "op": "gcd",
+      "result": "Poly(x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x+1",
+      "b": "0",
+      "op": "lcm",
+      "result": "Poly(0, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "a": "x+1",
+      "b": "0",
+      "op": "exquo",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 7,
+      "a": "x+1",
+      "b": "0",
+      "op": "gcdex",
+      "error": "ZeroDivisionError"
+    }
+  ],
+  "ground": [
+    {
+      "p": 2,
+      "c": 0,
+      "op": "addGround",
+      "result": "Poly(x**2, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "c": 0,
+      "op": "subGround",
+      "error": "TypeError"
+    },
+    {
+      "p": 2,
+      "c": 0,
+      "op": "mulGround",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "c": 0,
+      "op": "quoGround",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 2,
+      "c": 0,
+      "op": "exquoGround",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 2,
+      "c": 2,
+      "op": "addGround",
+      "result": "Poly(x**2, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "c": 2,
+      "op": "subGround",
+      "error": "TypeError"
+    },
+    {
+      "p": 2,
+      "c": 2,
+      "op": "mulGround",
+      "result": "Poly(0, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "c": 2,
+      "op": "quoGround",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 2,
+      "c": 2,
+      "op": "exquoGround",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 2,
+      "c": 7,
+      "op": "addGround",
+      "result": "Poly(x**2 + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "c": 7,
+      "op": "subGround",
+      "result": "Poly(x**2 + 1, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "c": 7,
+      "op": "mulGround",
+      "result": "Poly(x**2, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "c": 7,
+      "op": "quoGround",
+      "result": "Poly(x**2, x, modulus=2)"
+    },
+    {
+      "p": 2,
+      "c": 7,
+      "op": "exquoGround",
+      "result": "Poly(x**2, x, modulus=2)"
+    },
+    {
+      "p": 3,
+      "c": 0,
+      "op": "addGround",
+      "result": "Poly(x - 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "c": 0,
+      "op": "subGround",
+      "error": "TypeError"
+    },
+    {
+      "p": 3,
+      "c": 0,
+      "op": "mulGround",
+      "result": "Poly(0, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "c": 0,
+      "op": "quoGround",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 3,
+      "c": 0,
+      "op": "exquoGround",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 3,
+      "c": 2,
+      "op": "addGround",
+      "result": "Poly(x + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "c": 2,
+      "op": "subGround",
+      "result": "Poly(x, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "c": 2,
+      "op": "mulGround",
+      "result": "Poly(-x + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "c": 2,
+      "op": "quoGround",
+      "result": "Poly(-x + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "c": 2,
+      "op": "exquoGround",
+      "result": "Poly(-x + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "c": 7,
+      "op": "addGround",
+      "result": "Poly(x, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "c": 7,
+      "op": "subGround",
+      "result": "Poly(x + 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "c": 7,
+      "op": "mulGround",
+      "result": "Poly(x - 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "c": 7,
+      "op": "quoGround",
+      "result": "Poly(x - 1, x, modulus=3)"
+    },
+    {
+      "p": 3,
+      "c": 7,
+      "op": "exquoGround",
+      "result": "Poly(x - 1, x, modulus=3)"
+    },
+    {
+      "p": 5,
+      "c": 0,
+      "op": "addGround",
+      "result": "Poly(-2*x**2 - x + 2, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "c": 0,
+      "op": "subGround",
+      "error": "TypeError"
+    },
+    {
+      "p": 5,
+      "c": 0,
+      "op": "mulGround",
+      "result": "Poly(0, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "c": 0,
+      "op": "quoGround",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 5,
+      "c": 0,
+      "op": "exquoGround",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 5,
+      "c": 2,
+      "op": "addGround",
+      "result": "Poly(-2*x**2 - x - 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "c": 2,
+      "op": "subGround",
+      "result": "Poly(-2*x**2 - x, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "c": 2,
+      "op": "mulGround",
+      "result": "Poly(x**2 - 2*x - 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "c": 2,
+      "op": "quoGround",
+      "result": "Poly(-x**2 + 2*x + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "c": 2,
+      "op": "exquoGround",
+      "result": "Poly(-x**2 + 2*x + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "c": 7,
+      "op": "addGround",
+      "result": "Poly(-2*x**2 - x - 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "c": 7,
+      "op": "subGround",
+      "result": "Poly(-2*x**2 - x, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "c": 7,
+      "op": "mulGround",
+      "result": "Poly(x**2 - 2*x - 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "c": 7,
+      "op": "quoGround",
+      "result": "Poly(-x**2 + 2*x + 1, x, modulus=5)"
+    },
+    {
+      "p": 5,
+      "c": 7,
+      "op": "exquoGround",
+      "result": "Poly(-x**2 + 2*x + 1, x, modulus=5)"
+    },
+    {
+      "p": 7,
+      "c": 0,
+      "op": "addGround",
+      "result": "Poly(3*x**2 - 3*x + 2, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "c": 0,
+      "op": "subGround",
+      "error": "TypeError"
+    },
+    {
+      "p": 7,
+      "c": 0,
+      "op": "mulGround",
+      "result": "Poly(0, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "c": 0,
+      "op": "quoGround",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 7,
+      "c": 0,
+      "op": "exquoGround",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 7,
+      "c": 2,
+      "op": "addGround",
+      "result": "Poly(3*x**2 - 3*x - 3, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "c": 2,
+      "op": "subGround",
+      "result": "Poly(3*x**2 - 3*x, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "c": 2,
+      "op": "mulGround",
+      "result": "Poly(-x**2 + x - 3, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "c": 2,
+      "op": "quoGround",
+      "result": "Poly(-2*x**2 + 2*x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "c": 2,
+      "op": "exquoGround",
+      "result": "Poly(-2*x**2 + 2*x + 1, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "c": 7,
+      "op": "addGround",
+      "result": "Poly(3*x**2 - 3*x + 2, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "c": 7,
+      "op": "subGround",
+      "error": "TypeError"
+    },
+    {
+      "p": 7,
+      "c": 7,
+      "op": "mulGround",
+      "result": "Poly(0, x, modulus=7)"
+    },
+    {
+      "p": 7,
+      "c": 7,
+      "op": "quoGround",
+      "error": "ZeroDivisionError"
+    },
+    {
+      "p": 7,
+      "c": 7,
+      "op": "exquoGround",
+      "error": "ZeroDivisionError"
+    }
+  ],
+  "cancel": [
+    {
+      "p": 2,
+      "input": "(x**2+1)/(x+1)",
+      "result": "x + 1"
+    },
+    {
+      "p": 2,
+      "input": "(x**2+2*x+1)/(2*x+2)",
+      "result": "zoo"
+    },
+    {
+      "p": 2,
+      "input": "1/(2*x+1)",
+      "result": "1"
+    },
+    {
+      "p": 2,
+      "input": "2/x",
+      "result": "0"
+    },
+    {
+      "p": 2,
+      "input": "2/3",
+      "result": "2/3"
+    },
+    {
+      "p": 3,
+      "input": "(x**2+1)/(x+1)",
+      "result": "(x**2 + 1)/(x + 1)"
+    },
+    {
+      "p": 3,
+      "input": "(x**2+2*x+1)/(2*x+2)",
+      "result": "-x - 1"
+    },
+    {
+      "p": 3,
+      "input": "1/(2*x+1)",
+      "result": "1/(1 - x)"
+    },
+    {
+      "p": 3,
+      "input": "2/x",
+      "result": "-1/x"
+    },
+    {
+      "p": 3,
+      "input": "2/3",
+      "result": "2/3"
+    },
+    {
+      "p": 5,
+      "input": "(x**2+1)/(x+1)",
+      "result": "(x**2 + 1)/(x + 1)"
+    },
+    {
+      "p": 5,
+      "input": "(x**2+2*x+1)/(2*x+2)",
+      "result": "x/2 + 1/2"
+    },
+    {
+      "p": 5,
+      "input": "1/(2*x+1)",
+      "result": "1/(2*x + 1)"
+    },
+    {
+      "p": 5,
+      "input": "2/x",
+      "result": "2/x"
+    },
+    {
+      "p": 5,
+      "input": "2/3",
+      "result": "2/3"
+    },
+    {
+      "p": 7,
+      "input": "(x**2+1)/(x+1)",
+      "result": "(x**2 + 1)/(x + 1)"
+    },
+    {
+      "p": 7,
+      "input": "(x**2+2*x+1)/(2*x+2)",
+      "result": "x/2 + 1/2"
+    },
+    {
+      "p": 7,
+      "input": "1/(2*x+1)",
+      "result": "1/(2*x + 1)"
+    },
+    {
+      "p": 7,
+      "input": "2/x",
+      "result": "2/x"
+    },
+    {
+      "p": 7,
+      "input": "2/3",
+      "result": "2/3"
+    }
+  ],
+  "construct": [
+    {
+      "input": "7*x**2+10*x-8",
+      "gens": [
+        "x"
+      ],
+      "p": 5,
+      "result": "Poly(2*x**2 + 2, x, modulus=5)"
+    },
+    {
+      "input": "x*y+7*x+5*y+10",
+      "gens": [
+        "x",
+        "y"
+      ],
+      "p": 5,
+      "result": "Poly(x*y + 2*x, x, y, modulus=5)"
+    },
+    {
+      "input": "x+1",
+      "gens": [
+        "x"
+      ],
+      "p": 1,
+      "result": "Poly(0, x, modulus=1)"
+    },
+    {
+      "input": "x/2",
+      "gens": [
+        "x"
+      ],
+      "p": 5,
+      "error": "CoercionFailed"
+    },
+    {
+      "input": "2.0*x+1",
+      "gens": [
+        "x"
+      ],
+      "p": 5,
+      "result": "Poly(2*x + 1, x, modulus=5)"
+    }
+  ],
+  "multi_div": "(Poly(-2*x, x, y, modulus=5), Poly(x*y**2 + 2*x + y + 1, x, y, modulus=5))",
+  "multi_add": "Poly(x + y + 1, x, y, modulus=5)",
+  "multi_eval": "Poly(2*y**2 + 1, y, modulus=5)",
+  "multi_diff": "Poly(x**2 + 2*x*y + 1, x, y, modulus=5)",
+  "multi_integrate": "Poly(-2*x**2*y**2 + 2*x*y**3 - 2*y**2 + y, x, y, modulus=5)",
+  "factor_domain": "(x + 1)**2",
+  "gcd_domain": "x + 1",
+  "lcm_domain": "x**2 + 1"
+}
