@@ -24,7 +24,7 @@ import { QQ_I, ZZ_I } from './domains/gaussiandomains';
 import { AlgebraicField } from './domains/algebraicfield';
 import { type Domain, EX, QQ, RR, ZZ } from './domains';
 import { buildOptions, type Options } from './polyoptions';
-import { sortGens } from './sympoly';
+import { sortGens, polyConstructionHooks } from './sympoly';
 
 const isI = (e: Expr): boolean => e instanceof Constant && e.name === 'I';
 const isInt = (e: Expr): boolean => e instanceof Rational && e.isInteger;
@@ -170,3 +170,11 @@ export function constructDomain(obj: ExprLike | readonly ExprLike[], options: Co
   const [domain, elements] = result === null || result === false ? [EX, coeffs.map((c) => EX.convert(c))] : result;
   return [domain, isList(obj) ? elements : first(elements)];
 }
+
+// Poly.from uses the same option validation and coefficient domains as
+// construct_domain, without introducing an import cycle through Poly.
+polyConstructionHooks.domain = (coeffs, options) => {
+  const entries = Object.entries(options).filter(([name]) => name !== 'pure');
+  const opt = buildOptions([], new Map(entries));
+  return opt.domain ?? constructDomain(coeffs, opt.extension === true ? { extension: true } : {})[0];
+};

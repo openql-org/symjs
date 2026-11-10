@@ -13,7 +13,7 @@ import { Add, Derivative, Dummy, Expr, Fn, Integral, Mul, Order, Pow, Rational, 
 import { Eq } from '../core/logic';
 import { at, cast, defined, expectType, first, getOrThrow } from '../core/guard';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
-import { freeSymbols, mapBottomUp, some, subs, xreplace } from '../core/traverse';
+import { freeSymbols, some, subs, xreplace } from '../core/traverse';
 import { derivative } from '../core/undef';
 import { diff } from '../calculus/diff';
 import { evalf } from '../numeric/evalf';
@@ -653,15 +653,9 @@ const eulerUndetermined: Solver = (p) => {
   // the transformed equation has constant coefficients and the right-hand side passed the trial test
   const sols = defined(undeterminedCoefficients(sub), 'undetermined coefficients solution');
   const s0 = cast(first(sols), Rel, 'solution');
-  // exp(r*log(x)) -> x**r for a real indexed root r or its real part (SymPy's exp.eval: r is comparable)
-  const lx = log(x);
-  const realRootPow = (e: Expr): Expr => {
-    if (!(e instanceof Pow) || e.base.key !== S.E.key || !(e.exp instanceof Mul) || e.exp.args.length !== 2 || !e.exp.args.some((u) => u.key === lx.key)) return e;
-    // a CRootOf in an exponential is a real root (complex ones come as re(...) and im(...))
-    const r0 = at(e.exp.args.filter((u) => u.key !== lx.key), 0);
-    return r0 instanceof CRootOf || (r0 instanceof Fn && r0.name === 're') ? pow(x, r0) : e;
-  };
-  return [Eq(p.fx, expand(mapBottomUp(xreplace(s0.rhs, [[x, lx]]), realRootPow)))];
+  // CRootOf has no free symbols, so the ordinary exp constructor also
+  // rewrites exp(re(root)*log(x)) to x**re(root) during substitution.
+  return [Eq(p.fx, expand(xreplace(s0.rhs, [[x, log(x)]])))];
 };
 
 /**

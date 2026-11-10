@@ -1,0 +1,118 @@
+[
+  {
+    "poly": "x-1",
+    "radicals": false,
+    "roots": [
+      "1"
+    ]
+  },
+  {
+    "poly": "x-1",
+    "radicals": true,
+    "roots": [
+      "1"
+    ]
+  },
+  {
+    "poly": "x**2-4",
+    "radicals": false,
+    "roots": [
+      "-2",
+      "2"
+    ]
+  },
+  {
+    "poly": "x**2-4",
+    "radicals": true,
+    "roots": [
+      "-2",
+      "2"
+    ]
+  },
+  {
+    "poly": "x**2-3",
+    "radicals": false,
+    "roots": [
+      "CRootOf(x**2 - 3, 0)",
+      "CRootOf(x**2 - 3, 1)"
+    ]
+  },
+  {
+    "poly": "x**2-3",
+    "radicals": true,
+    "roots": [
+      "-sqrt(3)",
+      "sqrt(3)"
+    ]
+  },
+  {
+    "poly": "x**2+1",
+    "radicals": false,
+    "roots": [
+      "CRootOf(x**2 + 1, 0)",
+      "CRootOf(x**2 + 1, 1)"
+    ]
+  },
+  {
+    "poly": "x**2+1",
+    "radicals": true,
+    "roots": [
+      "-I",
+      "I"
+    ]
+  },
+  {
+    "poly": "(x+1)**2*(x**2-2)",
+    "radicals": false,
+    "roots": [
+      "CRootOf(x**2 - 2, 0)",
+      "-1",
+      "-1",
+      "CRootOf(x**2 - 2, 1)"
+    ]
+  },
+  {
+    "poly": "(x+1)**2*(x**2-2)",
+    "radicals": true,
+    "roots": [
+      "-sqrt(2)",
+      "-1",
+      "-1",
+      "sqrt(2)"
+    ]
+  },
+  {
+    "poly": "2*x**2-6",
+    "radicals": false,
+    "roots": [
+      "CRootOf(x**2 - 3, 0)",
+      "CRootOf(x**2 - 3, 1)"
+    ]
+  },
+  {
+    "poly": "2*x**2-6",
+    "radicals": true,
+    "roots": [
+      "-sqrt(3)",
+      "sqrt(3)"
+    ]
+  },
+  {
+    "poly": "x**3-x-1",
+    "radicals": false,
+    "roots": [
+      "CRootOf(x**3 - x - 1, 0)",
+      "CRootOf(x**3 - x - 1, 1)",
+      "CRootOf(x**3 - x - 1, 2)"
+    ]
+  },
+  {
+    "poly": "x**3-x-1",
+    "radicals": true,
+    "roots": [
+      "CRootOf(x**3 - x - 1, 0)",
+      "CRootOf(x**3 - x - 1, 1)",
+      "CRootOf(x**3 - x - 1, 2)"
+    ]
+  }
+]

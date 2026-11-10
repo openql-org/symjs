@@ -46,6 +46,15 @@ export interface PolynomialDomainOptions {
   modulus?: number | bigint;
 }
 
+/** Construction options for algebraic and Gaussian coefficient domains. */
+export interface PolyConstructionOptions extends PolynomialDomainOptions {
+  extension?: boolean | ExprLike | readonly ExprLike[];
+  gaussian?: boolean;
+  pure?: boolean;
+}
+/** Domain construction is registered by polys/constructor, which depends on Poly. @internal */
+export const polyConstructionHooks: { domain?: (coeffs: readonly Expr[], opts: PolyConstructionOptions) => Domain } = {};
+
 /** Resolve a positive modulus while preserving SymPy's mutually exclusive options. */
 function modulusOption(opts: PolynomialDomainOptions): bigint | undefined {
   if (opts.modulus !== undefined && opts.domain !== undefined) throw new OptionError("'modulus' option is not allowed together with 'domain'");
@@ -248,13 +257,15 @@ export class Poly {
   }
 
   /** Build a polynomial; generators are detected unless given. */
-  static from(ex: ExprLike, gens?: readonly Expr[], opts: PolynomialDomainOptions & { pure?: boolean } = {}): Poly {
+  static from(ex: ExprLike, gens?: readonly Expr[], opts: PolyConstructionOptions = {}): Poly {
     const modulus = modulusOption(opts);
     const requestedDomain = opts.domain === undefined ? undefined : String(opts.domain);
     const e = expand(sympify(ex));
     // over RR the generators are the symbols (numbers such as sqrt(3) become coefficients)
     const real = requestedDomain === 'R' || requestedDomain === 'RR';
-    const gs = gens?.length ? [...gens] : real ? (sortGens([...freeSymbols(e)])) : detectGens(e);
+    const algebraicDomain = /^(?:ZZ|QQ)(?:_I|<)/.test(requestedDomain ?? '');
+    const algebraic = opts.extension !== undefined || opts.gaussian === true || algebraicDomain;
+    const gs = gens?.length ? [...gens] : real ? sortGens([...freeSymbols(e)]) : detectGens(e).filter((g) => !algebraic || freeSymbols(g).size > 0);
     const terms = new Map<string, Term>();
     for (const t of e instanceof Add ? e.args : [e]) {
       const monom = gs.map(() => 0);
@@ -284,6 +295,11 @@ export class Poly {
     const list = [...terms.values()]
       .map((t) => ({ monom: t.monom, coeff: gs.length && !t.coeff.isNumber ? expand(t.coeff) : t.coeff }))
       .filter((t) => !(t.coeff instanceof Rational && t.coeff.isZero));
+    if (opts.extension !== undefined || opts.gaussian !== undefined || algebraicDomain) {
+      const K = defined(polyConstructionHooks.domain, 'polynomial domain construction')(list.map((t) => t.coeff), opts);
+      const converted = list.map((t) => ({ monom: t.monom, coeff: K.fromSympy(t.coeff) }));
+      return new Poly(gs, converted, String(K), opts.pure ?? false);
+    }
     if (modulus !== undefined) {
       const finite = list.map((t) => ({ monom: t.monom, coeff: finiteCoefficient(t.coeff, modulus) })).filter((t) => !t.coeff.isZero);
       return new Poly(gs, finite, `GF(${modulus})`, opts.pure ?? false);
@@ -1204,7 +1220,7 @@ export class Poly {
   }
   /** The product of the conjugates over I and square roots of integers; undefined when they do not give a rational polynomial. */
   private algebraicNorm(): Poly | undefined {
-    const cs = this.allCoeffs();
+    const cs = this.termList.map((t) => t.coeff);
     const gens = new Map<string, Expr>();
     const findGens = (e: Expr) => {
       if (e instanceof Constant && e.name === 'I') gens.set(e.key, e);
@@ -1228,8 +1244,8 @@ export class Poly {
     for (let mask = 0; mask < 1 << gl.length; mask++) {
       norm = mul(norm, xreplace(f, gl.map((g, i) => [g, mask & (1 << i) ? mul(-1, g) : g] as [Expr, Expr])));
     }
-    const N = Poly.from(expand(norm), [this.univariate()], { domain: 'QQ' });
-    return N.allCoeffs().every((c) => c instanceof Rational) ? N : undefined;
+    const N = Poly.from(expand(norm), this.gens, { domain: 'QQ' });
+    return N.termList.every((t) => t.coeff instanceof Rational) ? N : undefined;
   }
   /** SymPy Poly.make_monic_over_integers_by_scaling_roots: [monic integer polynomial g, s] with g(x) = f(x/s)*s**n/LC(f). */
   makeMonicOverIntegersByScalingRoots(): [Poly, Expr] {
@@ -1291,11 +1307,11 @@ export class Poly {
     return Poly.from(N.asExpr(), this.gens, { domain: this.domain.startsWith('ZZ') ? 'ZZ' : 'QQ' });
   }
   /** Real roots (rational and quadratic surds), sorted, with multiplicity. */
-  realRoots(opts: { extension?: boolean } = {}): Expr[] {
-    return opts.extension ? this.radicalRoots(true) : this.rootsWhere(true);
+  realRoots(opts: { extension?: boolean; radicals?: boolean } = {}): Expr[] {
+    return opts.extension ? this.radicalRoots(true) : this.rootsWhere(true, opts.radicals);
   }
-  allRoots(opts: { extension?: boolean } = {}): Expr[] {
-    return opts.extension ? this.radicalRoots(false) : this.rootsWhere(false);
+  allRoots(opts: { extension?: boolean; radicals?: boolean } = {}): Expr[] {
+    return opts.extension ? this.radicalRoots(false) : this.rootsWhere(false, opts.radicals);
   }
   /** Roots in radicals (SymPy extension=True for algebraic coefficients), real ones first, sorted. */
   private radicalRoots(realOnly: boolean): Expr[] {
@@ -1317,7 +1333,7 @@ export class Poly {
     const cplx = rs.filter(([, v]) => !isReal(v)).sort((a, b) => a[1].re - b[1].re || a[1].im - b[1].im);
     return (realOnly ? real : [...real, ...cplx]).map(([r]) => r);
   }
-  private rootsWhere(realOnly: boolean): Expr[] {
+  private rootsWhere(realOnly: boolean, radicals = true): Expr[] {
     const lifted = this.liftedRoots(realOnly);
     if (lifted) return lifted;
     const x = this.univariate();
@@ -1326,7 +1342,7 @@ export class Poly {
     const real: R[] = [];
     const cplx: R[] = [];
     for (const [f, k] of fs) {
-      if (f.degree() > 2) {
+      if (f.degree() > 2 || (!radicals && f.degree() > 1)) {
         // irreducible factors of degree >= 3: CRootOf(f, i) like SymPy
         const vals = nroots(f, 15).map((v) => v.toComplex());
         const crootof = defined(rootHooks.crootof, 'crootof hook');
@@ -2106,12 +2122,27 @@ export function factor(ex: ExprLike, opts: PolynomialDomainOptions & { deep?: bo
 function factorOverExtension(e: Expr, ext: readonly Expr[]): Expr | undefined {
   const vars = [...freeSymbols(e)];
   const [x] = vars;
-  if (x === undefined || vars.length !== 1) return undefined;
+  if (x === undefined) return undefined;
   let p: Poly;
   try {
-    p = Poly.from(expand(e), [x]);
+    p = Poly.from(expand(e), vars);
   } catch {
     return undefined;
+  }
+  if (vars.length > 1) {
+    // Reduce a polynomial in one monomial (x*y, x*y**2, ...) to a
+    // univariate polynomial, factor there and substitute the monomial back.
+    const term = p.termList.find((t) => t.monom.some((n) => n > 0));
+    if (!term) return undefined;
+    const gcd = (a: number, b: number): number => b ? gcd(b, a % b) : a;
+    const d = term.monom.reduce(gcd, 0), base = term.monom.map((n) => n / d);
+    const pivot = base.findIndex((n) => n > 0);
+    const powers = p.termList.map((t) => at(t.monom, pivot) / at(base, pivot));
+    if (p.termList.some((t, i) => !Number.isInteger(at(powers, i)) || t.monom.some((n, j) => n !== at(base, j) * at(powers, i)))) return undefined;
+    const z = new Dummy('t');
+    const reduced = add(...p.termList.map((t, i) => mul(t.coeff, pow(z, at(powers, i)))));
+    const result = factorOverExtension(reduced, ext);
+    return result === undefined ? undefined : xreplace(result, [[z, mul(...vars.map((v, i) => pow(v, at(base, i))))]]);
   }
   if (p.domain !== 'ZZ' && p.domain !== 'QQ') return undefined;
   const gens = new Set(ext.map((g) => g.key));

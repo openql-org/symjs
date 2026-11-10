@@ -3193,11 +3193,14 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new JsDict([...result].map(([k,v]) => [k,kw['_raw'] === false || [...v.freeSymbols()].some((s) => ring.symbols.some((g) => g.key === s.key)) ? v : ring.domain.convert(v)]));
   },
   Poly: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['domain','modulus'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['domain','modulus','extension','gaussian'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const [e, ...gens] = args;
-    const opts = polynomialOptions(kw), dom = opts.domain;
-    if (dom !== undefined && !['R','RR','ZZ','QQ'].includes(String(dom)) && !/^GF\(\d+\)$/.test(String(dom))) throw new Unsupported('explicit domain');
-    return sj.Poly.from(asExprOrPoly(e), gens.map(asExpr), opts);
+    const extension = kw['extension'];
+    return sj.Poly.from(asExprOrPoly(e), gens.map(asExpr), {
+      ...polynomialOptions(kw),
+      ...(extension === undefined ? {} : { extension: typeof extension === 'boolean' ? extension : extension instanceof JsTuple ? extension.items.map(asExpr) : asExpr(extension) }),
+      ...(kw['gaussian'] === undefined ? {} : { gaussian: Boolean(kw['gaussian']) }),
+    });
   },
   degree: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'gen') throw new Unsupported(`kwargs ${k}`);
@@ -3471,8 +3474,8 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new JsDict(polyOf(args).groundRoots({ extension: Boolean(kw['extension']) }));
   },
   real_roots: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'multiple' && k !== 'extension') throw new Unsupported(`kwargs ${k}`);
-    const rs = polyOf(args).realRoots({ extension: Boolean(kw['extension']) });
+    for (const k of Object.keys(kw)) if (k !== 'multiple' && k !== 'extension' && k !== 'radicals') throw new Unsupported(`kwargs ${k}`);
+    const rs = polyOf(args).realRoots({ extension: Boolean(kw['extension']), radicals: kw['radicals'] === undefined ? true : Boolean(kw['radicals']) });
     if (kw['multiple'] !== false) return new JsList(rs);
     // multiple=False: [(root, multiplicity)] in order
     const out: [Expr, number][] = [];

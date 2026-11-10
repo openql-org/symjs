@@ -8,6 +8,8 @@ import * as sj from '../../src';
 import { add, expand, factorNc, mul, parse, pow, sstr, str, Sym, symbols } from '../../src';
 import { factorListInt } from '../../src/polys/sympoly';
 
+import algebraicRefs from './sympoly.algebraic.references.json';
+
 const { Poly } = sj;
 const [x, y, z] = symbols('x y z');
 const E = sj.parse;
@@ -910,4 +912,37 @@ describe('PurePoly, asPoly, invert, gcdList, lcmList and sqf (SymPy polytools)',
     // a polynomial gives a polynomial (SymPy sqf(Poly(x**3 - x**2)))
     expect(String(sj.sqf(Poly.from(E('x**3 - x**2'))))).toBe("Poly(x**3 - x**2, x, domain='ZZ')");
   });
+});
+
+
+describe('algebraic and Gaussian polynomial domains (SymPy 1.14)', () => {
+  for (const row of algebraicRefs.construction) it(`Poly(${row.expr}, ${JSON.stringify(row.options)})`, () => {
+    const options = row.options;
+    const p = Poly.from(parse(row.expr), row.gens.map((g) => new Sym(g)), {
+      ...('gaussian' in options ? { gaussian: options.gaussian } : {}),
+      ...('domain' in options ? { domain: options.domain } : {}),
+      ...('extension' in options ? { extension: typeof options.extension === 'string' ? parse(options.extension) : options.extension } : {}),
+    });
+    expect(String(p)).toBe(row.expected);
+    if (row.norm !== null) expect(String(p.norm())).toBe(row.norm);
+  });
+  for (const row of algebraicRefs.factors) it(`factors ${row.expr} over QQ<${row.ext}>`, () => {
+    const result=sj.factor(parse(row.expr),{extension:[parse(row.ext)]});
+    expect(String(result)).toBe(row.expected);
+    expect(sj.expand(sj.add(result,sj.mul(-1,parse(row.expr)))).equals(0)).toBe(true);
+  });
+  it('validates the coefficient domain and mutually exclusive options', () => {
+    expect(() => Poly.from(parse('x**2+sqrt(3)'),[x],{extension:parse('sqrt(2)')})).toThrow(sj.CoercionFailed);
+    expect(() => Poly.from(parse('x+sqrt(2)'),[x],{domain:'QQ_I'})).toThrow(sj.CoercionFailed);
+    expect(() => Poly.from(parse('x**2'),[x],{extension:false})).toThrow(sj.OptionError);
+    expect(() => Poly.from(parse('x**2'),[x],{gaussian:true,domain:'QQ'})).toThrow(sj.OptionError);
+  });
+});
+
+
+it('preserves PurePoly construction and cancellation before monomial reduction', () => {
+  expect(sj.factor(2, { extension: [sj.sqrt(2)] }).equals(2)).toBe(true);
+  expect(String(Poly.from(parse('x+sqrt(2)'), [x], { extension: true, pure: true }))).toBe("PurePoly(x + sqrt(2), x, domain='QQ<sqrt(2)>')");
+  const zero = new sj.Add([x, y, sj.mul(-1, x), sj.mul(-1, y)]);
+  expect(sj.factor(zero, { extension: [sj.sqrt(2)] }).equals(0)).toBe(true);
 });

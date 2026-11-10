@@ -47,6 +47,22 @@ small hook object that the other fills in when it is loaded (for example
 `polyHooks` in `polys/poly.ts`, set by `simplify/rational.ts`), or the shared
 code moves to its own module (`solvers/homogeneous.ts`).
 
+`polyConstructionHooks` lets `polys/constructor.ts` provide coefficient-domain
+validation to `Poly.from` without creating a cycle. The polynomial entry loads
+that registration, including algebraic and Gaussian domain construction.
+
+`ExtensionExpr.freeSymbolsSelf` can supply an explicit symbol set when the
+displayed arguments contain an opaque bound representation. `CRootOf` uses
+an empty set: its polynomial generator is bound. `undefined` delegates to
+the existing binding-aware traversal, following the other extension hooks.
+
+Calling `CRootOf(...)` or `ComplexRootOf(...)` evaluates indexed roots, with
+radicals disabled by default; `RootOf(...)` and `rootof(...)` enable trivial
+radicals. `new CRootOf(...)` retains the raw node constructor for AST work.
+`evalRational` refines real isolating intervals; complex rational refinement
+raises `NotImplementedError`. This does not claim complete root preprocessing.
+
+
 `pnpm lint` (Oxlint, type-aware) also enforces, for `packages/*/src`:
 
 | Rule | Purpose |
@@ -241,6 +257,7 @@ Modules not listed here follow the path rule (`sympy/crypto/crypto.py` ->
 | `categories/baseclasses.py` | `categories/baseclasses.ts` | objects, morphisms, categories and diagrams; drawing diagrams (`categories/diagram_drawing.py`) is deferred like plotting |
 | `combinatorics/perm_groups.py`, `named_groups.py` | `combinatorics/permgroups.ts`, `namedgroups.ts` | Schreier-Sims bases, membership, orbits, blocks, series, centralizers, cosets, SymmetricPermutationGroup, Coset and the named groups (AbelianGroup, RubikGroup, ...) |
 | `combinatorics/util.py`, `generators.py`, `group_constructs.py`, `polyhedron.py` | `combinatorics/util.ts`, `generators.ts`, `groupconstructs.ts`, `polyhedron.ts` | base and strong generating set helpers, the Rubik's cube generators, DirectProduct, Polyhedron |
+| `polys/numberfields/utilities.py` | `polys/numberfields/utilities.ts` | fundamental discriminant factorization and real algebraic root isolation; interval selection uses increasing numerical precision, with optional exact rational refinement |
 | `polys/numberfields/subfield.py` | `polys/numberfields/subfield.ts` | exact radical power-basis embeddings and bounded primitive-element search |
 | `tensor/tensor.py` | `tensor/tensor.ts` | full port: index types, indices, slot symmetries, tensor heads, products and sums, Butler-Portugal canonicalization (`canon_bp`), metric contraction, component arrays (`replace_with_arrays`), TensorElement, wild tensors and the commutation groups of TensorManager |
 | `combinatorics/tensor_can.py` | `tensor/tensorcan.ts` | the Butler-Portugal canonicalization of tensors under slot and dummy symmetries (`canonicalize`, `double_coset_can_rep`, `canonical_free`, `riemann_bsgs`) |

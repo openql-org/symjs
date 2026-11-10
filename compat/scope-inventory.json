@@ -12772,6 +12772,7 @@
    "module": "sympy.polys.appellseqs",
    "sha256": "8567832ac2a726e02e3cdff9214ea6d6892eac0abdc4cb772d080c7a172f04a4",
    "status": "partial",
+   "note": "Appell recurrence for Bernoulli, central Bernoulli, Genocchi, Euler and Andre polynomials, including Poly/PurePoly outputs; low-level dup_* exports remain unported.",
    "sources": [
     "polys/appellseqs.ts"
    ],
@@ -12789,8 +12790,7 @@
     "euler_poly",
     "dup_andre",
     "andre_poly"
-   ],
-   "note": "Appell recurrence for Bernoulli, central Bernoulli, Genocchi, Euler and Andre polynomials, including Poly/PurePoly outputs; low-level dup_* exports remain unported."
+   ]
   },
   {
    "module": "sympy.polys.compatibility",
@@ -15514,8 +15514,11 @@
   {
    "module": "sympy.polys.numberfields.utilities",
    "sha256": "2072a67da7c4f6d3066a699f76d932478fc81dbd2638df8e0708ad1344acd51d",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "note": "Fundamental discriminant factorization and real algebraic root isolation with rational tolerances; other module utilities and complex isolation remain unported.",
+   "sources": [
+    "polys/numberfields/utilities.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 12,
@@ -16705,6 +16708,7 @@
    "module": "sympy.polys.rootoftools",
    "sha256": "6cc71551c230a9a33ae37514d564c23663e60c545ea5912af577ddafd9a6eb74",
    "status": "partial",
+   "note": "Evaluated indexed-root constructors, radical options, bound generators and real rational refinement; complex rational refinement and full root preprocessing remain incomplete.",
    "sources": [
     "polys/rootof.ts",
     "polys/rootsum.ts"

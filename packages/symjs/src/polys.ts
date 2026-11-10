@@ -39,7 +39,7 @@ export { bernoulliPoly, bernoulliCPoly, genocchiPoly, eulerPoly, andrePoly } fro
 export { dispersion, dispersionset } from './polys/dispersion';
 export { eqsToMatrix, solveLinSys } from './polys/solvers';
 export { sqfNorm } from './polys/sympoly';
-export type { FactorList, FactorListFrac, FactorListOptions, PolynomialDomainOptions } from './polys/sympoly';
+export type { FactorList, FactorListFrac, FactorListOptions, PolyConstructionOptions, PolynomialDomainOptions } from './polys/sympoly';
 export { minimalPolynomial } from './polys/numberfields';
 export { fieldIsomorphism, primitiveElement, toNumberField } from './polys/numberfields/subfield';
 export type { PrimitiveElementOptions } from './polys/numberfields/subfield';
@@ -94,8 +94,11 @@ export {
 } from './polys/numberfields';
 export {
   CRootOf,
+  ComplexRootOf,
+  RootOf,
   rootOf as rootof,
 } from './polys/rootof';
+export type { RootOfOptions } from './polys/rootof';
 export {
   apart,
 } from './polys/partfrac';
@@ -230,3 +233,5 @@ export { SDM, sdmBerk, sdmIrref, sdmRrefDen, sdmMatmul, sdmTranspose, sdmDotvec,
 export { DomainScalar } from './polys/matrices/domainscalar';
 export { ddmTranspose, ddmIadd, ddmIsub, ddmIneg, ddmImul, ddmIrmul, ddmImatmul, ddmIrref, ddmIrrefDen, ddmIdet, ddmIinv, ddmIluSplit, ddmIlu, ddmIluSolve, ddmBerk } from './polys/matrices/dense';
 export { DMError, DMBadInputError, DMDomainError, DMNotAField, DMFormatError, DMNonInvertibleMatrixError, DMRankError, DMShapeError, DMNonSquareMatrixError, DMValueError } from './polys/matrices/exceptions';
+
+export { extractFundamentalDiscriminant, isolate } from './polys/numberfields/utilities';
