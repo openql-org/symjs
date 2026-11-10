@@ -34,29 +34,36 @@ const CASES = [
   ['special', '*', 370],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
   ['simplify', 'simplify', 890],
-  // Polynomial-domain factories now register the AGCA module/ideal engines.
-  ['polys', 'factor', 725],
+  // The polys entry re-exports the sparse domain matrices through a
+  // side-effect-free module, and the matrices that number fields use call
+  // simplify late-bound, so factor loads neither (measured 542 KiB, was 701).
+  ['polys', 'factor', 596],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
-  // to consumers of the polynomial engine (measured 843/690/586/916/1005 KiB).
-  ['calculus', 'integrate', 930],
+  // to consumers of the polynomial engine.
+  ['calculus', 'integrate', 917],
   ['solvers', 'solve', 975],
   ['solvers', 'dsolve', 990],
   ['sets', '*', 353],
-  ['matrices', 'Matrix', 760],
+  ['matrices', 'Matrix', 749],
   ['printing', 'pretty', 225],
   ['discrete', '*', 285],
   ['strategies', '*', 198],
   ['unify', '*', 225],
-  ['algebras', 'Quaternion', 645],
+  // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
+  // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
+  ['algebras', 'Quaternion', 547],
   ['holonomic', 'exprToHolonomic', 1025],
-  ['geometry', '*', 1010],
-  ['vector', '*', 1110],
+  ['geometry', '*', 998],
+  ['vector', '*', 1096],
   ['stats', '*', 1130],
   ['categories', '*', 363],
-  ['crypto', '*', 600],
-  ['liealgebras', '*', 596],
-  ['index', 'Rational', 1347],
-  ['index', '*', 2270],
+  ['crypto', '*', 367],
+  ['liealgebras', '*', 345],
+  // The root is side-effect free: a named import brings only the entry points
+  // of the names used (measured 177 KiB, the core entry; was 1312).
+  ['index', 'Rational', 195],
+  // The finitely presented groups, coset enumeration and homomorphisms of combinatorics (measured 2292 KiB).
+  ['index', '*', 2520],
 ];
 
 async function measure(entry, names) {

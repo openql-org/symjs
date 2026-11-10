@@ -84,20 +84,20 @@ Direct regression-test paths are maintained in `capabilities.json`. Tensor diffe
 
 **ODE checks: 100.0% (41/41; exact 40, equivalent 1)**
 
-**Fully covered (100% test coverage): 100.0% of source files (418/418), 100.0% of statements (94475/94475)**
+**Fully covered (100% test coverage): 100.0% of source files (420/420), 100.0% of statements (94479/94479)**
 
 | Category | Behavior | Exact | Exact rate | Equivalent | Fail | Unsupported | Error | Cases | API coverage | Fully covered files |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | core | 99.9% | 738 | 99.9% | 0 | 0 | 0 | 1 | 739 | 100.0% (186/186) | 100.0% (128/128) |
 | functions | 100.0% | 242 | 100.0% | 0 | 0 | 0 | 0 | 242 | 100.0% (59/59) | 100.0% (7/7) |
 | simplify | 100.0% | 175 | 100.0% | 0 | 0 | 0 | 0 | 175 | 100.0% (35/35) | 100.0% (18/18) |
-| polys | 96.9% | 1099 | 96.2% | 8 | 6 | 23 | 7 | 1143 | 98.1% (151/154) | 100.0% (56/56) |
+| polys | 96.9% | 1099 | 96.2% | 8 | 6 | 23 | 7 | 1143 | 98.1% (151/154) | 100.0% (57/57) |
 | solvers | 98.1% | 205 | 97.6% | 1 | 1 | 0 | 3 | 210 | 100.0% (29/29) | 100.0% (17/17) |
 | ode | 95.1% | 75 | 91.5% | 3 | 1 | 0 | 3 | 82 | 100.0% (5/5) | 100.0% (1/1) |
 | pde | 100.0% | 15 | 93.8% | 1 | 0 | 0 | 0 | 16 | 100.0% (6/6) | 100.0% (1/1) |
 | calculus | 99.7% | 371 | 98.7% | 4 | 1 | 0 | 0 | 376 | 100.0% (68/68) | 100.0% (38/38) |
 | matrices | 100.0% | 463 | 100.0% | 0 | 0 | 0 | 0 | 463 | 100.0% (353/353) | 100.0% (22/22) |
-| special | 100.0% | 689 | 99.3% | 5 | 0 | 0 | 0 | 694 | 100.0% (115/115) | 100.0% (10/10) |
+| special | 100.0% | 689 | 99.3% | 5 | 0 | 0 | 0 | 694 | 100.0% (115/115) | 100.0% (11/11) |
 | logic | 100.0% | 98 | 100.0% | 0 | 0 | 0 | 0 | 98 | 100.0% (19/19) | - |
 | tensor | 97.8% | 135 | 97.8% | 0 | 1 | 2 | 0 | 138 | 100.0% (67/67) | 100.0% (14/14) |
 | ntheory | 100.0% | 155 | 100.0% | 0 | 0 | 0 | 0 | 155 | 100.0% (53/53) | - |
@@ -408,6 +408,7 @@ A source file counts as **fully covered** when the unit tests (`pnpm coverage`, 
 | `packages/symjs/src/polys/matrices/domainops.ts` | polys | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/polys/matrices/domainscalar.ts` | polys | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/polys/matrices/exceptions.ts` | polys | 100% | 100% | 100% | 100% | yes |
+| `packages/symjs/src/polys/matrices/index.ts` | polys | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/polys/matrices/normalforms.ts` | polys | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/polys/matrices/rref.ts` | polys | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/polys/matrices/sdm.ts` | polys | 100% | 100% | 100% | 100% | yes |
@@ -474,6 +475,7 @@ A source file counts as **fully covered** when the unit tests (`pnpm coverage`, 
 | `packages/symjs/src/functions/special/ellipticintegrals.ts` | special | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/functions/special/hyper.ts` | special | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/functions/special/mathieufunctions.ts` | special | 100% | 100% | 100% | 100% | yes |
+| `packages/symjs/src/functions/special/orthocoeffs.ts` | special | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/functions/special/polynomials.ts` | special | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/functions/special/special.ts` | special | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/functions/special/sphericalbessel.ts` | special | 100% | 100% | 100% | 100% | yes |

@@ -8,7 +8,7 @@
 import { at, cast, defined, first } from '../core/guard';
 import { NonInvertibleMatrixError, NonSquareMatrixError, ShapeError } from '../core/errors';
 import type { ComplexValue, EvalfOptions, ExprLike, NumericValues, Substitution } from '../core/nodes';
-import { Expr, Float, Rational, S, Sym } from '../core/nodes';
+import { Expr, Float, Rational, S, Sym, impl } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, subs, xreplace } from '../core/traverse';
 import { asRealImag, atoms } from '../core/methods';
@@ -21,7 +21,13 @@ import { roots } from '../polys/poly';
 import { latex } from '../printing/latex';
 import { str } from '../printing/str';
 import { expandMul as expand } from '../simplify/expand';
-import { simplify } from '../simplify/simplify';
+
+/**
+ * SymPy simplify, late-bound: the matrices entry loads it, and modules that
+ * only use matrices of numbers (number fields, Lie algebras, ciphers) do not
+ * bring the simplification engine with them.
+ */
+const simplify = (e: Expr): Expr => impl.simplify(e);
 
 /** A position (row, column) of a matrix. */
 export type MatrixPosition = readonly [number, number];

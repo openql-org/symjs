@@ -4,11 +4,17 @@
 /**
  * Lists the modules with top-level side effects (registrations into the core
  * registries) and writes them to the `sideEffects` field of package.json.
- * The entry points (src/*.ts) are listed too: importing an entry point makes
- * every feature it contains available, including the late-bound ones reached
- * only through re-exports (e.g. `.integrate()` after importing the root).
+ * The feature entry points (src/*.ts) are listed too: importing an entry point
+ * makes every feature it contains available, including the late-bound ones
+ * reached only through re-exports (e.g. `.integrate()` after importing the
+ * calculus entry). The root (src/index.ts) only re-exports the feature entry
+ * points and is side-effect free: a bundler keeps the feature entry points
+ * whose exports are used (and all of them for a namespace import), so that
+ * `import { Rational } from '@symjs/symjs'` costs what the core entry costs.
  * Every other module is side-effect free, so bundlers may drop it when none
- * of its exports is used.
+ * of its exports is used; this includes the side-effect-free re-exporting
+ * modules (`index.ts` of a directory) through which an entry point reaches
+ * optional engines that register themselves on load.
  *
  *   node scripts/side-effects.mjs          update package.json
  *   node scripts/side-effects.mjs --check  fail when package.json is stale
@@ -37,7 +43,8 @@ export function sideEffectModules() {
   const out = [];
   for (const f of walk(src)) {
     const lines = readFileSync(f, 'utf8').split('\n');
-    const entry = !relative(src, f).includes('/') && !relative(src, f).includes('\\');
+    const rel = relative(src, f);
+    const entry = !rel.includes('/') && !rel.includes('\\') && rel !== 'index.ts';
     if (entry || lines.some((l) => !DECL.test(l))) out.push(relative(src, f).replace(/\\/g, '/').replace(/\.ts$/, ''));
   }
   return out.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));

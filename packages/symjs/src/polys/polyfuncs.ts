@@ -15,6 +15,8 @@ import { expandMul } from '../simplify/expand';
 import { Poly, sortGens } from './sympoly';
 import { Matrix } from '../matrices/matrix';
 import { nullspace } from '../matrices/linalg';
+// the nullspace of symbolic interpolation data tests its pivots with simplify (late-bound in linalg)
+import '../simplify/simplify';
 
 /** Elementary symmetric polynomial e_k of the generators. */
 function elementary(gens: readonly Expr[], k: number): Expr {
