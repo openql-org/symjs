@@ -5,21 +5,25 @@
  * @file Indexed roots of polynomials (SymPy ComplexRootOf / CRootOf).
  */
 
-import { InvariantError, PolynomialError, NotImplementedError } from '../core/errors';
-import { at, first, pair, defined } from '../core/guard';
+import { InvariantError, PolynomialError } from '../core/errors';
+import { at, defined, expectType, first, getOrThrow, pair } from '../core/guard';
+import { ordered } from '../core/match';
+import { gcd as igcd, lcm as ilcm } from '../core/numbers';
 import type { Expr, ExprLike } from '../core/nodes';
 import { ExtensionExpr, Float, Rational, S, Sym } from '../core/nodes';
-import { sympify } from '../core/ops';
+import { add, mul, pow, sympify } from '../core/ops';
 import { freeSymbols } from '../core/traverse';
 import { callableClass } from '../core/callable';
-import { toRational } from '../numeric/mpf';
 import { nroots } from './nroots';
+import type { ComplexInterval } from './rootisolation';
+import { isolateComplexRootsSqf, isolateRealRoots } from './rootisolation';
 import { Poly, rootHooks } from './sympoly';
 
 /**
  * The index-th root of a polynomial with rational coefficients (SymPy
- * CRootOf): real roots come first in increasing order, then the complex
- * roots by increasing real part, the one with negative imaginary part first.
+ * CRootOf): real roots come first in increasing order, then the non-real
+ * roots in the order of their isolating rectangles (by lower-left corner),
+ * each conjugate pair with the negative imaginary part first.
  */
 class CRootOfNode extends ExtensionExpr {
   readonly index: number;
@@ -68,55 +72,203 @@ class CRootOfNode extends ExtensionExpr {
       if (CRootOfNode.rootValues.size >= CRootOfNode.rootValuesLimit) CRootOfNode.rootValues.delete(first([...CRootOfNode.rootValues.keys()]));
       CRootOfNode.rootValues.set(key, rs);
     }
-    return rs[this.index];
+    if (this.isRealRoot) return rs[this.index];
+    // nroots orders the non-real roots by real part, then by the modulus of the imaginary part: the
+    // value of this index is the one in its isolating rectangle (the nearest one, against rounding)
+    const iv = this.getInterval();
+    const [ax, bx, ay, by] = [iv.ax.value, iv.bx.value, iv.ay.value, iv.by.value];
+    const away = (v: Expr): number => {
+      const { re, im } = v.toComplex();
+      return Math.max(ax - re, 0, re - bx) + Math.max(ay - im, 0, im - by);
+    };
+    return rs.slice(this.realCount).reduce((m, v) => (away(v) < away(m) ? v : m));
   }
-  /** Clear cached numerical root lists (SymPy CRootOf.clear_cache). */
+  /** Clear the cached root values and isolating intervals (SymPy CRootOf.clear_cache). */
   static clearCache(): void {
     CRootOfNode.rootValues.clear();
     CRootOfNode.realIntervals.clear();
+    complexesCache.clear();
   }
   /** Numerical approximation at n decimal digits. */
   evalApprox(n: number | Rational): Expr {
     return defined(this.numericValue(n instanceof Rational ? n.toNumber() : n));
   }
+  /** The polynomial of the root, primitive over ZZ (SymPy's PurePoly). */
+  private get factor(): Factor {
+    return factorOf(this.poly, this.gen);
+  }
+  /** The number of real roots of the polynomial (SymPy len(_reals_cache[poly])). */
+  private get realCount(): number {
+    return realCountOf(this.factor);
+  }
+  /** The isolating rectangle of a non-real root (SymPy _get_interval). */
+  private getInterval(): ComplexInterval {
+    const f = this.factor;
+    const ivs = complexesCache.get(f.key) ?? getComplexes([f]).map(([u]) => u);
+    return at(ivs, this.index - this.realCount);
+  }
+  /** Store a refined rectangle (SymPy _set_interval). */
+  private setInterval(iv: ComplexInterval): void {
+    getOrThrow(complexesCache, this.factor.key)[this.index - this.realCount] = iv;
+  }
   private static readonly realIntervals = new Map<string, [Rational, Rational]>();
-  /** Certified rational approximation of a real root, by interval refinement. */
-  evalRational(dx?: ExprLike, _dy?: ExprLike, opts: { n?: number | Rational } = {}): Expr {
-    const p = Poly.from(this.poly, [this.gen]);
-    const intervals = p.intervals();
-    if (this.index >= intervals.length) throw new NotImplementedError('evalRational: complex root isolation is not implemented');
-    let [a, b] = CRootOfNode.realIntervals.get(this.key) ?? at(intervals, this.index)[0];
-    const midpoint = (): Rational => Rational.of(a.p * b.q + b.p * a.q, 2n * a.q * b.q);
-    const abs = (r: Rational): Rational => Rational.of(r.p < 0n ? -r.p : r.p, r.q);
+  /**
+   * Rational approximation within dx of the real part and dy (default dx) of the imaginary part,
+   * or else to n digits (SymPy eval_rational); the refined isolating interval is kept for later calls.
+   */
+  evalRational(dx?: ExprLike, dy?: ExprLike, opts: { n?: number | Rational } = {}): Expr {
     const n = opts.n instanceof Rational ? opts.n.toNumber() : opts.n ?? 15;
     if (!Number.isInteger(n) || n < 0) throw new RangeError('precision must be a nonnegative integer');
-    const value = dx === undefined ? undefined : sympify(dx);
-    const tolerance = value instanceof Float ? Rational.of(...toRational(value.mpf)) : value;
-    if (tolerance !== undefined && (!(tolerance instanceof Rational) || !tolerance.isPositive)) throw new RangeError('tolerance must be positive and rational');
+    const tx = tolerance(dx);
+    const ty = dy === undefined ? tx : tolerance(dy);
+    if (!this.isRealRoot) return this.evalRationalComplex(tx, ty, n);
+    const p = Poly.from(this.poly, [this.gen]);
+    let [a, b] = CRootOfNode.realIntervals.get(this.key) ?? at(p.intervals(), this.index)[0];
+    const midpoint = (): Rational => Rational.of(a.p * b.q + b.p * a.q, 2n * a.q * b.q);
     while (a.key !== b.key) {
       const c = midpoint();
-      const eps = tolerance ?? Rational.of(abs(c).p, abs(c).q * 10n ** BigInt(n + 2));
+      const eps = tx ?? Rational.of(qabs(c).p, qabs(c).q * 10n ** BigInt(n + 2));
       [a, b] = p.refineRoot(a, b, eps);
-      const center = abs(midpoint());
+      const center = qabs(midpoint());
       const width = Rational.of(b.p * a.q - a.p * b.q, a.q * b.q);
-      if (tolerance !== undefined || width.p * center.q * 10n ** BigInt(n + 2) < center.p * width.q) break;
+      if (tx !== undefined || width.p * center.q * 10n ** BigInt(n + 2) < center.p * width.q) break;
     }
     CRootOfNode.realIntervals.set(this.key, [a, b]);
     return midpoint();
   }
-  private realRoot?: boolean;
-  /** Is this root real? (nroots gives a Float, or 0, for each real root) */
-  get isRealRoot(): boolean {
-    if (this.realRoot === undefined) {
-      const v = this.numericValue(15);
-      this.realRoot = v instanceof Float || v === S.Zero;
+  /** SymPy eval_rational for a non-real root: bisection of its isolating rectangle. */
+  private evalRationalComplex(tx: Rational | undefined, ty: Rational | undefined, n: number): Expr {
+    // the relative tolerance 10**-(n + 2) when no tolerance is given
+    const rtol = (c: Rational): Rational => qabs(Rational.of(c.p, c.q * 10n ** BigInt(n + 2)));
+    let interval = this.getInterval();
+    const imaginary = interval.ax.p * interval.bx.p <= 0n;
+    let re: Rational;
+    let im: Rational;
+    for (;;) {
+      const [dx, dy] = tx === undefined ? [imaginary ? S.One : rtol(interval.center[0]), rtol(interval.center[1])] : [tx, defined(ty)];
+      interval = interval.refineSize(dx, dy);
+      [re, im] = interval.center;
+      if (imaginary) re = S.Zero;
+      if (tx !== undefined || ((imaginary || qlt(interval.dx, rtol(re))) && qlt(interval.dy, rtol(im)))) break;
     }
-    return this.realRoot;
+    this.setInterval(interval);
+    return add(re, mul(S.I, im));
+  }
+  /** Is this root real? (the real roots come first) */
+  get isRealRoot(): boolean {
+    return this.index < this.realCount;
   }
   /** SymPy CRootOf.is_real: the real roots come first. */
   override isRealSelf(): boolean {
     return this.isRealRoot;
   }
+}
+
+/** An irreducible polynomial over ZZ, primitive with a positive leading coefficient (SymPy's PurePoly of a factor). */
+interface Factor {
+  dense: bigint[];
+  key: string;
+  expr: Expr;
+}
+
+const qabs = (r: Rational): Rational => (r.p < 0n ? Rational.of(-r.p, r.q) : r);
+const qlt = (a: Rational, b: Rational): boolean => a.p * b.q < b.p * a.q;
+
+/** A tolerance of eval_rational: a Rational, or a Float by its decimal digits (SymPy Rational(str(dx))). */
+function tolerance(v: ExprLike | undefined): Rational | undefined {
+  if (v === undefined) return undefined;
+  const e = sympify(v);
+  const t = e instanceof Float ? decimalRational(e.toString()) : e;
+  if (!(t instanceof Rational) || !t.isPositive) throw new RangeError('tolerance must be positive and rational');
+  return t;
+}
+
+/** The value of a decimal numeral such as 0.100000000000000 or 1.00000000000000e-8. */
+function decimalRational(s: string): Rational {
+  const [mantissa = '', exp = '0'] = s.split('e');
+  const [int = '', frac = ''] = mantissa.split('.');
+  const e = Number(exp) - frac.length;
+  const digits = BigInt(`${int}${frac}`);
+  return Rational.of(digits * 10n ** BigInt(Math.max(e, 0)), 10n ** BigInt(Math.max(-e, 0)));
+}
+
+function factorOf(poly: Expr, gen: Sym): Factor {
+  const cs = Poly.from(poly, [gen]).allCoeffs().map((c) => expectType(c, (v): v is Rational => v instanceof Rational, 'coefficient'));
+  const den = cs.reduce((l, c) => ilcm(l, c.q), 1n);
+  const ints = cs.map((c) => (c.p * den) / c.q);
+  const g = ints.reduce((a, c) => igcd(a, c), 0n) * (first(ints) < 0n ? -1n : 1n);
+  const dense = ints.map((c) => c / g);
+  const d = dense.length - 1;
+  return { dense, key: dense.join(','), expr: add(...dense.map((c, i) => mul(Rational.of(c), pow(gen, d - i)))) };
+}
+
+/** SymPy _complexes_cache: the isolating rectangles of the non-real roots of irreducible polynomials. */
+const complexesCache = new Map<string, ComplexInterval[]>();
+
+const realCountOf = (f: Factor): number => isolateRealRoots([[f.dense, 1]]).length;
+
+/** The number of imaginary roots of an irreducible polynomial (SymPy _imag_count_of_factor). */
+function imagCount({ dense }: Factor): number {
+  const d = dense.length - 1;
+  if (dense.some((c, i) => c !== 0n && (d - i) % 2 === 1)) return 0;
+  // the real roots of f(I*y)
+  return isolateRealRoots([[dense.map((c, i) => ((d - i) % 4 === 2 ? -c : c)), 1]]).length;
+}
+
+/**
+ * The isolating rectangles of the non-real roots of irreducible polynomials,
+ * pairwise disjoint, off the imaginary axis unless the root is imaginary and
+ * off the real axis, grouped by polynomial in SymPy's ordered() order (SymPy
+ * _get_complexes, _complexes_sorted, _refine_complexes, _refine_imaginary);
+ * updates the cache.
+ */
+function getComplexes(factors: Factor[]): [ComplexInterval, Factor][] {
+  const byExpr = new Map(factors.map((f) => [f.expr.key, f]));
+  const fs = ordered(factors.map((f) => f.expr)).map((e) => getOrThrow(byExpr, e.key));
+  const complexes = fs.flatMap((f) => (complexesCache.get(f.key) ?? isolateComplexRootsSqf(f.dense)).map((u): [ComplexInterval, Factor] => [u, f]));
+  for (let i = 0; i < complexes.length; i++) {
+    let [u, f] = at(complexes, i);
+    for (let j = i + 1; j < complexes.length; j++) {
+      let [v, g] = at(complexes, j);
+      [u, v] = u.refineDisjoint(v);
+      complexes[j] = [v, g];
+    }
+    complexes[i] = [u, f];
+  }
+  // refine until the real parts are unambiguously positive or negative, except for imaginary roots
+  const offImaginaryAxis = (u: ComplexInterval) => u.ax.p * u.bx.p > 0n;
+  const out: [ComplexInterval, Factor][] = [];
+  for (const f of fs) {
+    const group = complexes.filter(([, g]) => g === f).map(([u]) => u);
+    const nimag = imagCount(f);
+    if (nimag === 0) {
+      for (const [i, u] of group.entries()) {
+        let v = u;
+        while (!offImaginaryAxis(v)) v = v.refine();
+        group[i] = v;
+      }
+    } else {
+      // all but nimag rectangles leave the imaginary axis (at least one pass, as in SymPy)
+      let potential = group.map((_, i) => i);
+      do {
+        potential = potential.filter((i) => {
+          if (offImaginaryAxis(at(group, i))) return false;
+          // SymPy also skips rectangles of zero width, which the bisection never makes
+          group[i] = at(group, i).refine();
+          return true;
+        });
+      } while (potential.length !== nimag);
+    }
+    for (const u of group) out.push([u, f]);
+  }
+  // the imaginary parts off the real axis
+  for (const [i, [u0, f]] of out.entries()) {
+    let u = u0;
+    while (u.ay.p * u.by.p <= 0n) u = u.refine();
+    out[i] = [u, f];
+  }
+  for (const f of fs) complexesCache.set(f.key, out.filter(([, g]) => g === f).map(([u]) => u));
+  return out;
 }
 
 /** Options of indexed roots (rootof uses radicals by default, CRootOf does not). */
