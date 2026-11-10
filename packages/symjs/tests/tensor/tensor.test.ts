@@ -25,6 +25,11 @@ import {
   WildTensorIndex,
   add,
   canonBp,
+  count,
+  find,
+  replace,
+  subs,
+  symbol,
   contractMetric,
   doit,
   mul,
@@ -472,6 +477,15 @@ describe('matching', () => {
   const u = WildTensorIndex('u', R3, true, true);
   const W = WildTensorHead('W');
   const U = WildTensorHead('U', { unorderedIndices: true });
+  it('replace, find and count with tensor patterns (the _WildTensExpr doctest)', () => {
+    expect(str(replace(K.at(p), W.at(p), mul(W.at(q), W.at(q.neg()), W.at(p))) as Expr)).toBe('K(R_0)*K(-R_0)*K(p)');
+    // a pattern that does not match leaves the expression
+    expect(str(replace(K.at(p), K.at(q), K.at(s)) as Expr)).toBe('K(p)');
+    expect(count(mul(K.at(p), Q.at(q, s)), W.at(q, s))).toBe(1);
+    expect(find(K.at(p), K.at(q)).length).toBe(0);
+    // substituting something else in a wild tensor keeps it
+    expect(str(subs(W.at(p), [[symbol('a'), 1]]))).toBe('W(p)');
+  });
   it('matches tensors, wild indices and wild tensors (the doctests)', () => {
     const got = [
       W.at(p).matches(K.at(p)),

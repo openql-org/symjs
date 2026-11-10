@@ -561,3 +561,22 @@ function diophantinePorts(): Record<string, () => unknown> {
 
 // ---- sympy.crypto.crypto: round_trip is a Python lambda of the doctest (decipher_bifid5 of encipher_bifid5)
 PORTS['sympy.crypto.crypto:round_trip(msg.replace("J", j), key).replace(j, "J")'] = () => sj.decipherBifid5(sj.encipherBifid5('JOSIE'.replace('J', 'QIQ'), 'a'), 'a').replace('QIQ', 'J');
+
+// ---- sympy.combinatorics.permutations: the transpositions printed by a Python generator expression
+PORTS["sympy.combinatorics.permutations:print(''.join(str(c) for c in t))"] = () =>
+  new sj.Permutation([[1, 2, 3], [0, 4, 5, 6, 7]]).transpositions().map((c) => `(${c.join(', ')})`).join('');
+
+// ---- sympy.tensor.functions: class NewExpr(Expr) with shape registered as the shape of its first argument
+class NewExpr extends sj.ExtensionExpr {
+  constructor(arg: Expr) {
+    super('NewExpr', [arg]);
+  }
+  withArgs(args: readonly Expr[]): Expr {
+    return new NewExpr(args[0]!);
+  }
+  /** @shape.register(NewExpr): the shape of expr.args[0] */
+  get shape(): sj.Dimension[] {
+    return sj.shape(this.args[0]);
+  }
+}
+PORTS['sympy.tensor.functions:shape(NewExpr(M))'] = () => sj.shape(new NewExpr(sj.ImmutableMatrix(sj.Matrix.of([[1], [2]]))));

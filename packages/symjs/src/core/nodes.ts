@@ -1217,6 +1217,14 @@ export abstract class ExtensionExpr extends Expr {
     return undefined;
   }
   /**
+   * SymPy matches(expr) of this node as a pattern (used by replace, find and
+   * count): the replacements making it equal to expr, false when it does not
+   * match, undefined for the generic matching of Wilds.
+   */
+  matchesSelf(_expr: Expr): ReadonlyMap<Expr, Expr> | false | undefined {
+    return undefined;
+  }
+  /**
    * SymPy _eval_Integral: the integral of this node over x (between the
    * limits when given), given `integrate` for a subexpression; undefined for
    * the generic integrator.

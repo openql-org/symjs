@@ -921,6 +921,9 @@ def ser(o):
     if isinstance(o, type) and o.__module__ in ("sympy.polys.matrices.domainmatrix", "sympy.polys.matrices.ddm", "sympy.polys.matrices.sdm") and o.__name__ in ("DomainMatrix", "DDM", "SDM"):
         # the DomainMatrix classes, whose classmethods (eye, diag, zeros, ...) the doctests call
         return {"t": "Type", "name": o.__name__}
+    if isinstance(o, type) and o.__module__.startswith("sympy.combinatorics."):
+        # combinatorics classes whose classmethods the doctests call (Subset.bitlist_from_subset, ...)
+        return {"t": "Type", "name": o.__name__}
     from sympy.core.function import WildFunction as _WF
     if isinstance(o, sympy.FunctionClass) and not isinstance(o, _UF):
         return {"t": "FnClass", "name": o.__name__}

@@ -23,7 +23,7 @@ import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { ExprMap } from '../core/exprmap';
 import { NotImplementedError } from '../core/errors';
 import { expandSymbolNames } from '../core/numberutils';
-import { NoMatch } from '../core/truth';
+import { NoMatch, isNoMatch } from '../core/truth';
 import type { NoMatchResult } from '../core/truth';
 import { expand as expandExpr } from '../simplify/expand';
 import { PREC, precedence } from '../printing/str';
@@ -630,6 +630,11 @@ export abstract class TensExpr extends ExtensionExpr {
     }
     const [retIndices, array] = this.extractData(repl);
     return matchIndicesWithOtherTensor(array, idx, retIndices, repl)[1];
+  }
+  /** The matching of a tensor pattern in replace, find and count. */
+  override matchesSelf(expr: Expr): ReadonlyMap<Expr, Expr> | false {
+    const m = this.matches(expr);
+    return isNoMatch(m) ? false : m;
   }
   /** SymPy matches(expr): the replacements making this pattern equal to expr, or NoMatch. */
   matches(expr: ExprLike, replDict?: ReadonlyMap<Expr, Expr>): ExprMap<Expr> | NoMatchResult {
@@ -1598,6 +1603,11 @@ export class WildTensor extends Tensor {
       cast(first(args), WildTensorHeadNode),
       at(args, 1).args.map((i) => cast(i, TensorIndexNode)),
     );
+  }
+  /** SymPy: a wild head bound by a match (a _WildTensExpr) is that expression called with this tensor's indices. */
+  override subsSelf(old: Expr, nw: Expr): Expr | undefined {
+    if (nw instanceof WildTensExpr && old.key === this.head.key) return nw.call(...this.indices);
+    return undefined;
   }
   override replaceIndices(repl: IndexRepl): Expr {
     return new WildTensor(

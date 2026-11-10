@@ -287,6 +287,13 @@ export function match(exprIn: ExprLike, patternIn: ExprLike, opts: { old?: boole
 // replace / find
 // ---------------------------------------------------------------------------
 
+/** The match of a pattern query: the node's own matching (matchesSelf) or the matching of Wilds. */
+function patternMatch(e: Expr, pattern: Expr): ReadonlyMap<Expr, Expr> | undefined {
+  const own = pattern instanceof ExtensionExpr ? pattern.matchesSelf(e) : undefined;
+  if (own === false) return undefined;
+  return own ?? match(e, pattern);
+}
+
 /** A query for replace/find/atoms: a function name, a node class name, a pattern or a predicate. */
 export type Query = { fn: string } | { type: string } | Expr | ((e: Expr) => boolean);
 /** The replacement: a function name, a node class name, an expression or a callback. */
@@ -385,8 +392,8 @@ export function replace(
   if (query instanceof Expr) {
     // pattern query: the replacement sees the values of the Wilds
     const exact = opts.exact ?? wilds(query).size > 1;
-    const allNonZero = (r: Map<Sym, Expr>) => [...r.values()].every((x) => !(x instanceof Rational && x.isZero));
-    let v: (m: Map<Sym, Expr>) => Expr;
+    const allNonZero = (r: ReadonlyMap<Expr, Expr>) => [...r.values()].every((x) => !(x instanceof Rational && x.isZero));
+    let v: (m: ReadonlyMap<Expr, Expr>) => Expr;
     if (value instanceof Expr) v = (m) => impl.subs(value, new Map([...m]));
     else if (typeof value === 'function') {
       // keyword call: values ordered like the Wilds in the pattern (a Wild the match leaves unassigned gets 0)
@@ -394,7 +401,7 @@ export function replace(
       v = (m) => value(...order.map((w) => [...m].find(([k]) => k.key === w.key)?.[1] ?? S.Zero));
     } else throw new TypeError('replace: unsupported replacement');
     rule = (e) => {
-      const m = match(e, query);
+      const m = patternMatch(e, query);
       if (!m) return undefined;
       return exact && !allNonZero(m) ? e : v(m);
     };
@@ -437,7 +444,7 @@ export function count(exprIn: ExprLike, query: Query): number {
     typeof query === 'function'
       ? query
       : query instanceof Expr
-        ? (e) => match(e, query) !== undefined
+        ? (e) => patternMatch(e, query) !== undefined
         : 'fn' in query
           ? (e) => isFunctionOf(e, query.fn)
           : (e) => isInstance(e, query.type);
@@ -456,7 +463,7 @@ export function find(exprIn: ExprLike, query: Query): Expr[] {
     typeof query === 'function'
       ? query
       : query instanceof Expr
-        ? (e) => match(e, query) !== undefined
+        ? (e) => patternMatch(e, query) !== undefined
         : 'fn' in query
           ? (e) => isFunctionOf(e, query.fn)
           : (e) => isInstance(e, query.type);

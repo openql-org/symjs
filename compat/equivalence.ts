@@ -168,6 +168,8 @@ function valueEquivalent(a: V, b: V, unorderedLists = false): boolean {
     return a.rows.length === b.rows.length && a.rows.every((r, i) => r.length === b.rows[i]!.length && r.every((v, j) => valueEquivalent(v, b.rows[i]![j]!)));
   }
   if (a.t === 'tuple' && b.t === 'tuple') return a.items.length === b.items.length && a.items.every((v, i) => valueEquivalent(v, b.items[i]!));
+  // JavaScript has only arrays: a list and a tuple of the same items agree (as in the exact comparison)
+  if ((a.t === 'tuple' && b.t === 'list') || (a.t === 'list' && b.t === 'tuple')) return a.items.length === b.items.length && a.items.every((v, i) => valueEquivalent(v, b.items[i]!));
   if (a.t === 'list' && b.t === 'list') {
     return unorderedLists ? unorderedEquivalent(a.items, b.items) : a.items.length === b.items.length && a.items.every((v, i) => valueEquivalent(v, b.items[i]!));
   }

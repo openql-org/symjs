@@ -210183,7 +210183,49 @@
   },
   {
    "fn": ".bitlist_from_subset",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Subset"
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Str",
+       "v": "c"
+      },
+      {
+       "t": "Str",
+       "v": "d"
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Str",
+       "v": "a"
+      },
+      {
+       "t": "Str",
+       "v": "b"
+      },
+      {
+       "t": "Str",
+       "v": "c"
+      },
+      {
+       "t": "Str",
+       "v": "d"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "text": true,
    "category": "combinatorics",
    "module": "sympy.combinatorics.subsets",
@@ -210192,7 +210234,65 @@
   },
   {
    "fn": ".subset_indices",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Subset"
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.subsets",
    "src": "Subset.subset_indices([3, 2, 1], superset)",
@@ -210200,7 +210300,60 @@
   },
   {
    "fn": ".subset_indices",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Subset"
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "6",
+       "q": "1"
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.subsets",
    "src": "Subset.subset_indices([1, 6], superset)",
@@ -210208,7 +210361,49 @@
   },
   {
    "fn": ".subset_indices",
-   "unsupportedArg": "type",
+   "self": {
+    "t": "Type",
+    "name": "Subset"
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "combinatorics",
    "module": "sympy.combinatorics.subsets",
    "src": "Subset.subset_indices([], superset)",
@@ -464565,186 +464760,6 @@
     "reason": "not-exported-api"
    },
    {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.next_binary().subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.prev_binary().subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.superset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.size",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.cardinality",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.iterate_binary(-2).subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.iterate_binary(2).subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.iterate_graycode(3).subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.iterate_graycode(-2).subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.next_binary().subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.next_binary().subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.next_gray().subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.next_lexicographic().subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.next_lexicographic().subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.prev_binary().subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.prev_binary().subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.prev_gray().subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.prev_lexicographic().subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.prev_lexicographic().subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.rank_binary",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.rank_binary",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.rank_gray",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.rank_gray",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.rank_lexicographic",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.rank_lexicographic",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.size",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "Subset.subset_from_bitlist(['a', 'b', 'c', 'd'], '0011').subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.superset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "a.superset_size",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "Subset.unrank_binary(4, ['a', 'b', 'c', 'd']).subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "Subset.unrank_gray(4, ['a', 'b', 'c']).subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "Subset.unrank_gray(0, ['a', 'b', 'c']).subset",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "list(ksubsets([1, 2, 3], 2))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.combinatorics.subsets",
-    "src": "list(ksubsets([1, 2, 3, 4, 5], 2))",
-    "reason": "not-exported-api"
-   },
-   {
     "module": "sympy.combinatorics.graycode",
     "src": "list(a.generate_gray())",
     "reason": "not-exported-api"
@@ -475083,6 +475098,186 @@
     "module": "sympy.combinatorics.pc_groups",
     "src": "conj_rel",
     "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.next_binary().subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.prev_binary().subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.superset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.size",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.cardinality",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.iterate_binary(-2).subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.iterate_binary(2).subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.iterate_graycode(3).subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.iterate_graycode(-2).subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.next_binary().subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.next_binary().subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.next_gray().subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.next_lexicographic().subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.next_lexicographic().subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.prev_binary().subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.prev_binary().subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.prev_gray().subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.prev_lexicographic().subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.prev_lexicographic().subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.rank_binary",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.rank_binary",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.rank_gray",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.rank_gray",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.rank_lexicographic",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.rank_lexicographic",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.size",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "Subset.subset_from_bitlist(['a', 'b', 'c', 'd'], '0011').subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.superset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "a.superset_size",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "Subset.unrank_binary(4, ['a', 'b', 'c', 'd']).subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "Subset.unrank_gray(4, ['a', 'b', 'c']).subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "Subset.unrank_gray(0, ['a', 'b', 'c']).subset",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "list(ksubsets([1, 2, 3], 2))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.combinatorics.subsets",
+    "src": "list(ksubsets([1, 2, 3, 4, 5], 2))",
+    "reason": "not-exported-api"
    }
   ]
  }
