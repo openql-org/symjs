@@ -9,10 +9,6 @@
   "sympy.polys.densebasic: dmp_degree([[[]]], 2) #67c0a0eae25beeeb",
   "sympy.polys.densebasic: dup_apply_pairs([1, 2, 3], [3, 2, 1], h, (1,), ZZ) #a89c9387dab57ed8",
   "sympy.polys.densetools: R.dmp_lift(f) #f124004205963ea6",
-  "sympy.polys.domains.algebraicfield: K.discriminant() #10a193ba71f692d9",
-  "sympy.polys.domains.algebraicfield: K.integral_basis(fmt='sympy') #5a2d3812a8a6a094",
-  "sympy.polys.domains.algebraicfield: K.maximal_order() #2528ea19b018faa4",
-  "sympy.polys.domains.algebraicfield: K.primes_above(11) #27ae05d05c4f22bb",
   "sympy.polys.domains.algebraicfield: cancel((x**2 - 2)/(x - sqrt(2)), extension=sqrt(2)) #628163da1af180c0",
   "sympy.polys.domains.algebraicfield: gcd(x**2 - 2, x - sqrt(2)) #5d2800f60b616c89",
   "sympy.polys.domains.domain: K.to_sympy(K([-1, 1])) #3657c49112807574",
@@ -21,17 +17,6 @@
   "sympy.polys.domains.domainelement: p.parent() #2db21a5084c72f7b",
   "sympy.polys.domains.gaussiandomains: apart(1/(1 + x**2), domain=QQ_I) #d766aac1bf4df036",
   "sympy.polys.groebnertools: f5_reduce(f, [g]) #c28411be57d99d0f",
-  "sympy.polys.numberfields.basis: print(K.discriminant()) #b78f748a9438d9bc",
-  "sympy.polys.numberfields.basis: print(K.integral_basis(fmt='sympy')) #6a12215c52c60707",
-  "sympy.polys.numberfields.basis: print(K.maximal_order()) #80b002255001a0fa",
-  "sympy.polys.numberfields.basis: print(round_two(T)) #f09c25eb91dd225e",
-  "sympy.polys.numberfields.exceptions: print(B.represent(a1)) #2415558cc0bbf1c5",
-  "sympy.polys.numberfields.modules: B.reduce_element(A(2)) #25e646a8c55bc16e",
-  "sympy.polys.numberfields.primes: print(K.primes_above(2)) #5ab2bb8bd1a137ab",
-  "sympy.polys.numberfields.primes: print(P[0].repr()) #03176dc1995372dd",
-  "sympy.polys.numberfields.primes: print(P[0].repr(field_gen=zeta)) #406fcaa51dd8dea5",
-  "sympy.polys.numberfields.primes: print(P[0].repr(field_gen=zeta, just_gens=True)) #ca3c4df4811ec378",
-  "sympy.polys.numberfields.primes: print(prime_valuation(25*ZK, P[0])) #9f409ace1241e20c",
   "sympy.polys.orderings: O((1, 2, 3, 4)) #4dceb2f14a5df9ef",
   "sympy.polys.polyclasses: DMP([[[ZZ(1)]], [[ZZ(1)], [ZZ(2)]]], ZZ).exclude() #e1f6f54a05a324f0",
   "sympy.polys.polyclasses: DMP([[[ZZ(2)], [ZZ(1), ZZ(0)]], [[]]], ZZ).permute([1, 0, 2]) #f99cc682270513f5",
@@ -54,9 +39,5 @@
   "sympy.tensor.indexed: ccode(A[i, j, k]) #a523bba6ec6ae0bc",
   "sympy.tensor.tensor: print( ( K(p) ).replace( W(p), W(q)*W(-q)*W(p) ) ) #35d1bd803b2caa6a"
  ],
- "api": [
-  "polys: prime_decomp",
-  "polys: prime_valuation",
-  "polys: round_two"
- ]
+ "api": []
 }

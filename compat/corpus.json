@@ -397701,7 +397701,79 @@
        }
       ]
      }
-    ]
+    ],
+    "minpoly": {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "8",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-2",
+          "q": "1"
+         },
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Dummy",
+       "name": "x",
+       "index": 0,
+       "assume": {}
+      }
+     ],
+     "domain": "QQ",
+     "pure": true
+    },
+    "alias": "theta"
    },
    "args": [],
    "kwargs": {},
@@ -397869,7 +397941,79 @@
        }
       ]
      }
-    ]
+    ],
+    "minpoly": {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "8",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-2",
+          "q": "1"
+         },
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Dummy",
+       "name": "x",
+       "index": 0,
+       "assume": {}
+      }
+     ],
+     "domain": "QQ",
+     "pure": true
+    },
+    "alias": "theta"
    },
    "args": [],
    "kwargs": {},
@@ -398037,7 +398181,79 @@
        }
       ]
      }
-    ]
+    ],
+    "minpoly": {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "8",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-2",
+          "q": "1"
+         },
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Dummy",
+       "name": "x",
+       "index": 0,
+       "assume": {}
+      }
+     ],
+     "domain": "QQ",
+     "pure": true
+    },
+    "alias": "theta"
    },
    "args": [],
    "kwargs": {
@@ -398132,12 +398348,2262 @@
   },
   {
    "fn": ".represent",
-   "unsupportedArg": "Submodule",
+   "self": {
+    "t": "Submodule",
+    "parent": {
+     "t": "PowerBasis",
+     "T": {
+      "t": "Poly",
+      "expr": {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "4",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ]
+      },
+      "gens": [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 0,
+        "assume": {}
+       }
+      ],
+      "domain": "ZZ",
+      "pure": false
+     },
+     "field": null
+    },
+    "matrix": {
+     "t": "DomainMatrix",
+     "cls": "DomainMatrix",
+     "domain": {
+      "t": "Domain",
+      "name": "ZZ"
+     },
+     "shape": [
+      4,
+      4
+     ],
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     ],
+     "fmt": "sparse"
+    },
+    "denom": "1"
+   },
+   "args": [
+    {
+     "t": "ModuleElement",
+     "module": {
+      "t": "PowerBasis",
+      "T": {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": false
+      },
+      "field": null
+     },
+     "col": [
+      "2",
+      "4",
+      "6",
+      "8"
+     ],
+     "denom": "1"
+    }
+   ],
+   "kwargs": {},
    "text": true,
    "category": "polys",
    "module": "sympy.polys.numberfields.exceptions",
    "src": "print(B.represent(a1))",
    "expected": "DomainMatrix([[1], [2], [3], [4]], (4, 1), ZZ)"
+  },
+  {
+   "fn": ".__str__",
+   "self": {
+    "t": "PowerBasis",
+    "T": {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "domain": "ZZ",
+     "pure": false
+    },
+    "field": null
+   },
+   "args": [],
+   "kwargs": {},
+   "text": true,
+   "expected": "PowerBasis(x**4 + x**3 + x**2 + x + 1)",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(A)"
+  },
+  {
+   "fn": ".__str__",
+   "self": {
+    "t": "Submodule",
+    "parent": {
+     "t": "PowerBasis",
+     "T": {
+      "t": "Poly",
+      "expr": {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "4",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      "gens": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "domain": "ZZ",
+      "pure": false
+     },
+     "field": null
+    },
+    "matrix": {
+     "t": "DomainMatrix",
+     "cls": "DomainMatrix",
+     "domain": {
+      "t": "Domain",
+      "name": "ZZ"
+     },
+     "shape": [
+      4,
+      4
+     ],
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     ],
+     "fmt": "sparse"
+    },
+    "denom": "3"
+   },
+   "args": [],
+   "kwargs": {},
+   "text": true,
+   "expected": "Submodule[[2, 0, 0, 0], [0, 2, 0, 0], [0, 0, 2, 0], [0, 0, 0, 2]]/3",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(B)"
+  },
+  {
+   "fn": ".__str__",
+   "self": {
+    "t": "PowerBasis",
+    "T": {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "domain": "ZZ",
+     "pure": false
+    },
+    "field": null
+   },
+   "args": [],
+   "kwargs": {},
+   "text": true,
+   "expected": "PowerBasis(x**4 + x**3 + x**2 + x + 1)",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(B.parent)"
+  },
+  {
+   "fn": ".__str__",
+   "self": {
+    "t": "ModuleElement",
+    "module": {
+     "t": "PowerBasis",
+     "T": {
+      "t": "Poly",
+      "expr": {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-5",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      "gens": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "domain": "ZZ",
+      "pure": false
+     },
+     "field": null
+    },
+    "col": [
+     "1",
+     "1"
+    ],
+    "denom": "2"
+   },
+   "args": [],
+   "kwargs": {},
+   "text": true,
+   "expected": "[1, 1]/2",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(e)"
+  },
+  {
+   "fn": ".__str__",
+   "self": {
+    "t": "PowerBasis",
+    "T": {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-5",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "domain": "ZZ",
+     "pure": false
+    },
+    "field": null
+   },
+   "args": [],
+   "kwargs": {},
+   "text": true,
+   "expected": "PowerBasis(x**2 - 5)",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.modules",
+   "src": "print(e.module)"
+  },
+  {
+   "fn": ".__add__",
+   "self": {
+    "t": "ModuleElement",
+    "module": {
+     "t": "PowerBasis",
+     "T": {
+      "t": "Poly",
+      "expr": {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "4",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ]
+      },
+      "gens": [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 0,
+        "assume": {}
+       }
+      ],
+      "domain": "ZZ",
+      "pure": false
+     },
+     "field": null
+    },
+    "col": [
+     "0",
+     "2",
+     "0",
+     "0"
+    ],
+    "denom": "3"
+   },
+   "args": [
+    {
+     "t": "ModuleElement",
+     "module": {
+      "t": "PowerBasis",
+      "T": {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": false
+      },
+      "field": null
+     },
+     "col": [
+      "0",
+      "0",
+      "0",
+      "7"
+     ],
+     "denom": "5"
+    }
+   ],
+   "kwargs": {},
+   "expected": "[0, 10, 0, 21]/15",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.modules",
+   "src": "e + f"
+  },
+  {
+   "fn": ".__sub__",
+   "self": {
+    "t": "ModuleElement",
+    "module": {
+     "t": "PowerBasis",
+     "T": {
+      "t": "Poly",
+      "expr": {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "4",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ]
+      },
+      "gens": [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 0,
+        "assume": {}
+       }
+      ],
+      "domain": "ZZ",
+      "pure": false
+     },
+     "field": null
+    },
+    "col": [
+     "0",
+     "2",
+     "0",
+     "0"
+    ],
+    "denom": "3"
+   },
+   "args": [
+    {
+     "t": "ModuleElement",
+     "module": {
+      "t": "PowerBasis",
+      "T": {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": false
+      },
+      "field": null
+     },
+     "col": [
+      "0",
+      "0",
+      "0",
+      "7"
+     ],
+     "denom": "5"
+    }
+   ],
+   "kwargs": {},
+   "expected": "[0, 10, 0, -21]/15",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.modules",
+   "src": "e - f"
+  },
+  {
+   "fn": ".__sub__",
+   "self": {
+    "t": "ModuleElement",
+    "module": {
+     "t": "PowerBasis",
+     "T": {
+      "t": "Poly",
+      "expr": {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "4",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ]
+      },
+      "gens": [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 0,
+        "assume": {}
+       }
+      ],
+      "domain": "ZZ",
+      "pure": false
+     },
+     "field": null
+    },
+    "col": [
+     "0",
+     "2",
+     "0",
+     "0"
+    ],
+    "denom": "3"
+   },
+   "args": [
+    {
+     "t": "ModuleElement",
+     "module": {
+      "t": "Submodule",
+      "parent": {
+       "t": "PowerBasis",
+       "T": {
+        "t": "Poly",
+        "expr": {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          }
+         ]
+        },
+        "gens": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         }
+        ],
+        "domain": "ZZ",
+        "pure": false
+       },
+       "field": null
+      },
+      "matrix": {
+       "t": "DomainMatrix",
+       "cls": "DomainMatrix",
+       "domain": {
+        "t": "Domain",
+        "name": "ZZ"
+       },
+       "shape": [
+        4,
+        4
+       ],
+       "rows": [
+        [
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       ],
+       "fmt": "sparse"
+      },
+      "denom": "1"
+     },
+     "col": [
+      "1",
+      "1",
+      "1",
+      "1"
+     ],
+     "denom": "1"
+    }
+   ],
+   "kwargs": {},
+   "expected": "[-9, -7, -9, -9]/3",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.modules",
+   "src": "e - g"
+  },
+  {
+   "fn": ".__add__",
+   "self": {
+    "t": "ModuleElement",
+    "module": {
+     "t": "PowerBasis",
+     "T": {
+      "t": "Poly",
+      "expr": {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "4",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ]
+      },
+      "gens": [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 0,
+        "assume": {}
+       }
+      ],
+      "domain": "ZZ",
+      "pure": false
+     },
+     "field": null
+    },
+    "col": [
+     "0",
+     "2",
+     "0",
+     "0"
+    ],
+    "denom": "3"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "7",
+     "q": "10",
+     "mpq": true
+    }
+   ],
+   "kwargs": {},
+   "expected": "[21, 20, 0, 0]/30",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.modules",
+   "src": "e + QQ(7, 10)"
+  },
+  {
+   "fn": ".__mul__",
+   "self": {
+    "t": "ModuleElement",
+    "module": {
+     "t": "PowerBasis",
+     "T": {
+      "t": "Poly",
+      "expr": {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "4",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ]
+      },
+      "gens": [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 0,
+        "assume": {}
+       }
+      ],
+      "domain": "ZZ",
+      "pure": false
+     },
+     "field": null
+    },
+    "col": [
+     "0",
+     "2",
+     "0",
+     "0"
+    ],
+    "denom": "3"
+   },
+   "args": [
+    {
+     "t": "ModuleElement",
+     "module": {
+      "t": "PowerBasis",
+      "T": {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": false
+      },
+      "field": null
+     },
+     "col": [
+      "0",
+      "0",
+      "0",
+      "7"
+     ],
+     "denom": "5"
+    }
+   ],
+   "kwargs": {},
+   "expected": "[-14, -14, -14, -14]/15",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.modules",
+   "src": "e * f"
+  },
+  {
+   "fn": ".__pow__",
+   "self": {
+    "t": "ModuleElement",
+    "module": {
+     "t": "PowerBasis",
+     "T": {
+      "t": "Poly",
+      "expr": {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "4",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ]
+      },
+      "gens": [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 0,
+        "assume": {}
+       }
+      ],
+      "domain": "ZZ",
+      "pure": false
+     },
+     "field": null
+    },
+    "col": [
+     "0",
+     "2",
+     "0",
+     "0"
+    ],
+    "denom": "3"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "expected": "[0, 0, 4, 0]/9",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.modules",
+   "src": "e ** 2"
+  },
+  {
+   "fn": ".__floordiv__",
+   "self": {
+    "t": "ModuleElement",
+    "module": {
+     "t": "PowerBasis",
+     "T": {
+      "t": "Poly",
+      "expr": {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "4",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ]
+      },
+      "gens": [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 0,
+        "assume": {}
+       }
+      ],
+      "domain": "ZZ",
+      "pure": false
+     },
+     "field": null
+    },
+    "col": [
+     "0",
+     "0",
+     "0",
+     "7"
+    ],
+    "denom": "5"
+   },
+   "args": [
+    {
+     "t": "ModuleElement",
+     "module": {
+      "t": "Submodule",
+      "parent": {
+       "t": "PowerBasis",
+       "T": {
+        "t": "Poly",
+        "expr": {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          }
+         ]
+        },
+        "gens": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         }
+        ],
+        "domain": "ZZ",
+        "pure": false
+       },
+       "field": null
+      },
+      "matrix": {
+       "t": "DomainMatrix",
+       "cls": "DomainMatrix",
+       "domain": {
+        "t": "Domain",
+        "name": "ZZ"
+       },
+       "shape": [
+        4,
+        4
+       ],
+       "rows": [
+        [
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       ],
+       "fmt": "sparse"
+      },
+      "denom": "1"
+     },
+     "col": [
+      "1",
+      "1",
+      "1",
+      "1"
+     ],
+     "denom": "1"
+    }
+   ],
+   "kwargs": {},
+   "expected": "[7, 7, 7, 7]/15",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.modules",
+   "src": "f // g"
+  },
+  {
+   "fn": ".__mul__",
+   "self": {
+    "t": "ModuleElement",
+    "module": {
+     "t": "PowerBasis",
+     "T": {
+      "t": "Poly",
+      "expr": {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "4",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ]
+      },
+      "gens": [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 0,
+        "assume": {}
+       }
+      ],
+      "domain": "ZZ",
+      "pure": false
+     },
+     "field": null
+    },
+    "col": [
+     "0",
+     "0",
+     "0",
+     "7"
+    ],
+    "denom": "5"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "3",
+     "mpq": true
+    }
+   ],
+   "kwargs": {},
+   "expected": "[0, 0, 0, 14]/15",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.modules",
+   "src": "f * QQ(2, 3)"
   },
   {
    "fn": ".as_expr",
@@ -398335,7 +400801,552 @@
   },
   {
    "fn": ".reduce_element",
-   "unsupportedArg": "Submodule",
+   "self": {
+    "t": "Submodule",
+    "parent": {
+     "t": "PowerBasis",
+     "T": {
+      "t": "Poly",
+      "expr": {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "8",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-2",
+           "q": "1"
+          },
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      "gens": [
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 0,
+        "assume": {}
+       }
+      ],
+      "domain": "ZZ",
+      "pure": true
+     },
+     "field": {
+      "t": "Domain",
+      "name": "QQ<CRootOf(x**3 + x**2 - 2*x + 8, 2)>",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "ext": {
+       "t": "AlgebraicNumber",
+       "root": {
+        "t": "CRootOf",
+        "poly": {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "8",
+           "q": "1"
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Mul",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "-2",
+             "q": "1"
+            },
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            }
+           ]
+          }
+         ]
+        },
+        "index": 2
+       },
+       "coeffs": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ]
+      },
+      "gens": [
+       {
+        "t": "AlgebraicNumber",
+        "root": {
+         "t": "CRootOf",
+         "poly": {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "8",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-2",
+              "q": "1"
+             },
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         },
+         "index": 2
+        },
+        "coeffs": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "matrix": {
+     "t": "DomainMatrix",
+     "cls": "DomainMatrix",
+     "domain": {
+      "t": "Domain",
+      "name": "ZZ"
+     },
+     "shape": [
+      3,
+      3
+     ],
+     "rows": [
+      [
+       {
+        "t": "Rational",
+        "p": "236",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "22",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "126",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     ],
+     "fmt": "dense"
+    },
+    "denom": "2"
+   },
+   "args": [
+    {
+     "t": "ModuleElement",
+     "module": {
+      "t": "PowerBasis",
+      "T": {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "8",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-2",
+            "q": "1"
+           },
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           }
+          ]
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": true
+      },
+      "field": {
+       "t": "Domain",
+       "name": "QQ<CRootOf(x**3 + x**2 - 2*x + 8, 2)>",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "ext": {
+        "t": "AlgebraicNumber",
+        "root": {
+         "t": "CRootOf",
+         "poly": {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "8",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-2",
+              "q": "1"
+             },
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         },
+         "index": 2
+        },
+        "coeffs": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "AlgebraicNumber",
+         "root": {
+          "t": "CRootOf",
+          "poly": {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "8",
+             "q": "1"
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "3",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-2",
+               "q": "1"
+              },
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ]
+            }
+           ]
+          },
+          "index": 2
+         },
+         "coeffs": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "col": [
+      "0",
+      "0",
+      "1"
+     ],
+     "denom": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.numberfields.modules",
    "src": "B.reduce_element(A(2))",
@@ -398447,7 +401458,693 @@
   },
   {
    "fn": ".repr",
-   "unsupportedArg": "PrimeIdeal",
+   "self": {
+    "t": "PrimeIdeal",
+    "ZK": {
+     "t": "Submodule",
+     "parent": {
+      "t": "PowerBasis",
+      "T": {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "5",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "6",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": false
+      },
+      "field": {
+       "t": "Domain",
+       "name": "QQ<zeta>",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "ext": {
+        "t": "Symbol",
+        "name": "zeta",
+        "assume": {}
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "zeta",
+         "assume": {}
+        }
+       ],
+       "minpoly": {
+        "t": "Poly",
+        "expr": {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "5",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "6",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        },
+        "gens": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "domain": "ZZ",
+        "pure": false
+       },
+       "alias": null
+      }
+     },
+     "matrix": {
+      "t": "DomainMatrix",
+      "cls": "DomainMatrix",
+      "domain": {
+       "t": "Domain",
+       "name": "ZZ"
+      },
+      "shape": [
+       6,
+       6
+      ],
+      "rows": [
+       [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ]
+      ],
+      "fmt": "sparse"
+     },
+     "denom": "1"
+    },
+    "p": "11",
+    "alpha": {
+     "t": "ModuleElement",
+     "module": {
+      "t": "PowerBasis",
+      "T": {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "5",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "6",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": false
+      },
+      "field": {
+       "t": "Domain",
+       "name": "QQ<zeta>",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "ext": {
+        "t": "Symbol",
+        "name": "zeta",
+        "assume": {}
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "zeta",
+         "assume": {}
+        }
+       ],
+       "minpoly": {
+        "t": "Poly",
+        "expr": {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "5",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "6",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        },
+        "gens": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "domain": "ZZ",
+        "pure": false
+       },
+       "alias": null
+      }
+     },
+     "col": [
+      "-1",
+      "4",
+      "5",
+      "1",
+      "0",
+      "0"
+     ],
+     "denom": "1"
+    },
+    "f": 3,
+    "e": 1
+   },
+   "args": [],
+   "kwargs": {},
    "text": true,
    "category": "polys",
    "module": "sympy.polys.numberfields.primes",
@@ -398456,7 +402153,699 @@
   },
   {
    "fn": ".repr",
-   "unsupportedArg": "PrimeIdeal",
+   "self": {
+    "t": "PrimeIdeal",
+    "ZK": {
+     "t": "Submodule",
+     "parent": {
+      "t": "PowerBasis",
+      "T": {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "5",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "6",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": false
+      },
+      "field": {
+       "t": "Domain",
+       "name": "QQ<zeta>",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "ext": {
+        "t": "Symbol",
+        "name": "zeta",
+        "assume": {}
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "zeta",
+         "assume": {}
+        }
+       ],
+       "minpoly": {
+        "t": "Poly",
+        "expr": {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "5",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "6",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        },
+        "gens": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "domain": "ZZ",
+        "pure": false
+       },
+       "alias": null
+      }
+     },
+     "matrix": {
+      "t": "DomainMatrix",
+      "cls": "DomainMatrix",
+      "domain": {
+       "t": "Domain",
+       "name": "ZZ"
+      },
+      "shape": [
+       6,
+       6
+      ],
+      "rows": [
+       [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ]
+      ],
+      "fmt": "sparse"
+     },
+     "denom": "1"
+    },
+    "p": "11",
+    "alpha": {
+     "t": "ModuleElement",
+     "module": {
+      "t": "PowerBasis",
+      "T": {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "5",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "6",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": false
+      },
+      "field": {
+       "t": "Domain",
+       "name": "QQ<zeta>",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "ext": {
+        "t": "Symbol",
+        "name": "zeta",
+        "assume": {}
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "zeta",
+         "assume": {}
+        }
+       ],
+       "minpoly": {
+        "t": "Poly",
+        "expr": {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "5",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "6",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        },
+        "gens": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "domain": "ZZ",
+        "pure": false
+       },
+       "alias": null
+      }
+     },
+     "col": [
+      "-1",
+      "4",
+      "5",
+      "1",
+      "0",
+      "0"
+     ],
+     "denom": "1"
+    },
+    "f": 3,
+    "e": 1
+   },
+   "args": [],
+   "kwargs": {
+    "field_gen": {
+     "t": "Symbol",
+     "name": "zeta",
+     "assume": {}
+    }
+   },
    "text": true,
    "category": "polys",
    "module": "sympy.polys.numberfields.primes",
@@ -398465,7 +402854,703 @@
   },
   {
    "fn": ".repr",
-   "unsupportedArg": "PrimeIdeal",
+   "self": {
+    "t": "PrimeIdeal",
+    "ZK": {
+     "t": "Submodule",
+     "parent": {
+      "t": "PowerBasis",
+      "T": {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "5",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "6",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": false
+      },
+      "field": {
+       "t": "Domain",
+       "name": "QQ<zeta>",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "ext": {
+        "t": "Symbol",
+        "name": "zeta",
+        "assume": {}
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "zeta",
+         "assume": {}
+        }
+       ],
+       "minpoly": {
+        "t": "Poly",
+        "expr": {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "5",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "6",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        },
+        "gens": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "domain": "ZZ",
+        "pure": false
+       },
+       "alias": null
+      }
+     },
+     "matrix": {
+      "t": "DomainMatrix",
+      "cls": "DomainMatrix",
+      "domain": {
+       "t": "Domain",
+       "name": "ZZ"
+      },
+      "shape": [
+       6,
+       6
+      ],
+      "rows": [
+       [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ]
+      ],
+      "fmt": "sparse"
+     },
+     "denom": "1"
+    },
+    "p": "11",
+    "alpha": {
+     "t": "ModuleElement",
+     "module": {
+      "t": "PowerBasis",
+      "T": {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "5",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "6",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": false
+      },
+      "field": {
+       "t": "Domain",
+       "name": "QQ<zeta>",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "ext": {
+        "t": "Symbol",
+        "name": "zeta",
+        "assume": {}
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "zeta",
+         "assume": {}
+        }
+       ],
+       "minpoly": {
+        "t": "Poly",
+        "expr": {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "5",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "6",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        },
+        "gens": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "domain": "ZZ",
+        "pure": false
+       },
+       "alias": null
+      }
+     },
+     "col": [
+      "-1",
+      "4",
+      "5",
+      "1",
+      "0",
+      "0"
+     ],
+     "denom": "1"
+    },
+    "f": 3,
+    "e": 1
+   },
+   "args": [],
+   "kwargs": {
+    "field_gen": {
+     "t": "Symbol",
+     "name": "zeta",
+     "assume": {}
+    },
+    "just_gens": {
+     "t": "Js",
+     "v": true
+    }
+   },
    "text": true,
    "category": "polys",
    "module": "sympy.polys.numberfields.primes",
@@ -398492,7 +403577,75 @@
       "name": "theta",
       "assume": {}
      }
-    ]
+    ],
+    "minpoly": {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "8",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-2",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "domain": "ZZ",
+     "pure": false
+    },
+    "alias": null
    },
    "args": [
     {
@@ -398510,7 +403663,1241 @@
   },
   {
    "fn": "prime_valuation",
-   "unsupportedArg": "Submodule",
+   "args": [
+    {
+     "t": "Submodule",
+     "parent": {
+      "t": "PowerBasis",
+      "T": {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "4",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Dummy",
+         "name": "x",
+         "index": 0,
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": true
+      },
+      "field": {
+       "t": "Domain",
+       "name": "QQ<zeta>",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "ext": {
+        "t": "AlgebraicNumber",
+        "root": {
+         "t": "CRootOf",
+         "poly": {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Dummy",
+              "name": "x",
+              "index": 1,
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Dummy",
+              "name": "x",
+              "index": 1,
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Dummy",
+              "name": "x",
+              "index": 1,
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "4",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 1,
+            "assume": {}
+           }
+          ]
+         },
+         "index": 3
+        },
+        "coeffs": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "AlgebraicNumber",
+         "root": {
+          "t": "CRootOf",
+          "poly": {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Dummy",
+               "name": "x",
+               "index": 1,
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Dummy",
+               "name": "x",
+               "index": 1,
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "3",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Dummy",
+               "name": "x",
+               "index": 1,
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "4",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 1,
+             "assume": {}
+            }
+           ]
+          },
+          "index": 3
+         },
+         "coeffs": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ]
+        }
+       ],
+       "minpoly": {
+        "t": "Poly",
+        "expr": {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          }
+         ]
+        },
+        "gens": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         }
+        ],
+        "domain": "QQ",
+        "pure": true
+       },
+       "alias": "zeta"
+      }
+     },
+     "matrix": {
+      "t": "DomainMatrix",
+      "cls": "DomainMatrix",
+      "domain": {
+       "t": "Domain",
+       "name": "ZZ"
+      },
+      "shape": [
+       4,
+       4
+      ],
+      "rows": [
+       [
+        {
+         "t": "Rational",
+         "p": "25",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "25",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "25",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "25",
+         "q": "1"
+        }
+       ]
+      ],
+      "fmt": "sparse"
+     },
+     "denom": "1"
+    },
+    {
+     "t": "PrimeIdeal",
+     "ZK": {
+      "t": "Submodule",
+      "parent": {
+       "t": "PowerBasis",
+       "T": {
+        "t": "Poly",
+        "expr": {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          }
+         ]
+        },
+        "gens": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         }
+        ],
+        "domain": "ZZ",
+        "pure": true
+       },
+       "field": {
+        "t": "Domain",
+        "name": "QQ<zeta>",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "ext": {
+         "t": "AlgebraicNumber",
+         "root": {
+          "t": "CRootOf",
+          "poly": {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Dummy",
+               "name": "x",
+               "index": 1,
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Dummy",
+               "name": "x",
+               "index": 1,
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "3",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Dummy",
+               "name": "x",
+               "index": 1,
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "4",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 1,
+             "assume": {}
+            }
+           ]
+          },
+          "index": 3
+         },
+         "coeffs": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ]
+        },
+        "gens": [
+         {
+          "t": "AlgebraicNumber",
+          "root": {
+           "t": "CRootOf",
+           "poly": {
+            "t": "Add",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "1"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Dummy",
+                "name": "x",
+                "index": 1,
+                "assume": {}
+               },
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               }
+              ]
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Dummy",
+                "name": "x",
+                "index": 1,
+                "assume": {}
+               },
+               {
+                "t": "Rational",
+                "p": "3",
+                "q": "1"
+               }
+              ]
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Dummy",
+                "name": "x",
+                "index": 1,
+                "assume": {}
+               },
+               {
+                "t": "Rational",
+                "p": "4",
+                "q": "1"
+               }
+              ]
+             },
+             {
+              "t": "Dummy",
+              "name": "x",
+              "index": 1,
+              "assume": {}
+             }
+            ]
+           },
+           "index": 3
+          },
+          "coeffs": [
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           }
+          ]
+         }
+        ],
+        "minpoly": {
+         "t": "Poly",
+         "expr": {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Dummy",
+              "name": "x",
+              "index": 0,
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Dummy",
+              "name": "x",
+              "index": 0,
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Dummy",
+              "name": "x",
+              "index": 0,
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "4",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           }
+          ]
+         },
+         "gens": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          }
+         ],
+         "domain": "QQ",
+         "pure": true
+        },
+        "alias": "zeta"
+       }
+      },
+      "matrix": {
+       "t": "DomainMatrix",
+       "cls": "DomainMatrix",
+       "domain": {
+        "t": "Domain",
+        "name": "ZZ"
+       },
+       "shape": [
+        4,
+        4
+       ],
+       "rows": [
+        [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         }
+        ]
+       ],
+       "fmt": "sparse"
+      },
+      "denom": "1"
+     },
+     "p": "5",
+     "alpha": {
+      "t": "ModuleElement",
+      "module": {
+       "t": "PowerBasis",
+       "T": {
+        "t": "Poly",
+        "expr": {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 0,
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "4",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          }
+         ]
+        },
+        "gens": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         }
+        ],
+        "domain": "ZZ",
+        "pure": true
+       },
+       "field": {
+        "t": "Domain",
+        "name": "QQ<zeta>",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "ext": {
+         "t": "AlgebraicNumber",
+         "root": {
+          "t": "CRootOf",
+          "poly": {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Dummy",
+               "name": "x",
+               "index": 1,
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Dummy",
+               "name": "x",
+               "index": 1,
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "3",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Dummy",
+               "name": "x",
+               "index": 1,
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "4",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Dummy",
+             "name": "x",
+             "index": 1,
+             "assume": {}
+            }
+           ]
+          },
+          "index": 3
+         },
+         "coeffs": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ]
+        },
+        "gens": [
+         {
+          "t": "AlgebraicNumber",
+          "root": {
+           "t": "CRootOf",
+           "poly": {
+            "t": "Add",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "1"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Dummy",
+                "name": "x",
+                "index": 1,
+                "assume": {}
+               },
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               }
+              ]
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Dummy",
+                "name": "x",
+                "index": 1,
+                "assume": {}
+               },
+               {
+                "t": "Rational",
+                "p": "3",
+                "q": "1"
+               }
+              ]
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Dummy",
+                "name": "x",
+                "index": 1,
+                "assume": {}
+               },
+               {
+                "t": "Rational",
+                "p": "4",
+                "q": "1"
+               }
+              ]
+             },
+             {
+              "t": "Dummy",
+              "name": "x",
+              "index": 1,
+              "assume": {}
+             }
+            ]
+           },
+           "index": 3
+          },
+          "coeffs": [
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           }
+          ]
+         }
+        ],
+        "minpoly": {
+         "t": "Poly",
+         "expr": {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Dummy",
+              "name": "x",
+              "index": 0,
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Dummy",
+              "name": "x",
+              "index": 0,
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Dummy",
+              "name": "x",
+              "index": 0,
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "4",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           }
+          ]
+         },
+         "gens": [
+          {
+           "t": "Dummy",
+           "name": "x",
+           "index": 0,
+           "assume": {}
+          }
+         ],
+         "domain": "QQ",
+         "pure": true
+        },
+        "alias": "zeta"
+       }
+      },
+      "col": [
+       "-1",
+       "1",
+       "0",
+       "0"
+      ],
+      "denom": "1"
+     },
+     "f": 1,
+     "e": 4
+    }
+   ],
+   "kwargs": {},
    "text": true,
    "category": "polys",
    "module": "sympy.polys.numberfields.primes",
@@ -448741,9 +455128,9 @@
   "examined": 24966,
   "reasons": {
    "statement-or-setup": 13641,
-   "non-call-expression": 3056,
+   "non-call-expression": 3048,
    "upstream-skip": 103,
-   "not-exported-api": 1525,
+   "not-exported-api": 1520,
    "reference-exception": 316,
    "multiline-output": 50,
    "private-api": 63,
@@ -472867,71 +479254,6 @@
    {
     "module": "sympy.polys.numberfields.galois_resolvents",
     "src": "R.root_lambdas[2](*X)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.modules",
-    "src": "print(A)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.numberfields.modules",
-    "src": "print(B)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.numberfields.modules",
-    "src": "print(B.parent)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.numberfields.modules",
-    "src": "print(e)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.numberfields.modules",
-    "src": "print(e.module)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.numberfields.modules",
-    "src": "e + f",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.modules",
-    "src": "e - f",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.modules",
-    "src": "e - g",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.modules",
-    "src": "e + QQ(7, 10)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.modules",
-    "src": "e * f",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.modules",
-    "src": "e ** 2",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.modules",
-    "src": "f // g",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.modules",
-    "src": "f * QQ(2, 3)",
     "reason": "non-call-expression"
    },
    {

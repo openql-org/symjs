@@ -3,7 +3,11 @@
 // Expected values from SymPy 1.14.0 (sympy.polys.domains.algebraicfield, polyclasses.ANP).
 
 import { describe, expect, it } from 'vitest';
-import { Rational, parseExpr as P, sqrt } from '../../../src/index';
+import { readFileSync } from 'node:fs';
+import { Dummy, Rational, Sym, parseExpr as P, sqrt } from '../../../src/index';
+import type { Expr } from '../../../src/index';
+import { Poly } from '../../../src/polys/sympoly';
+import '../../../src/polys/numberfields/primes';
 import { DomainError, NotInvertible } from '../../../src/core/errors';
 import { CoercionFailed, QQ, ZZ } from '../../../src/polys/domains';
 import { ANP, AlgebraicField } from '../../../src/polys/domains/algebraicfield';
@@ -51,5 +55,52 @@ describe('AlgebraicField', () => {
     expect(K.div(a, 2).map((e) => String(K.toSympy(e)))).toEqual(['sqrt(2)/2 + 1', '0']);
     expect([K.equals(QQ.algebraicField(sqrt(2))), K.equals(QQ)]).toEqual([true, false]);
     expect(String(K.toAlgNum(a).asExpr())).toBe('sqrt(2) + 2');
+  });
+});
+
+// maximal orders, integral bases, discriminants and prime ideals (references from scripts/gen_numberfields.py)
+describe('AlgebraicField number-field methods', () => {
+  const nf = JSON.parse(readFileSync(new URL('../numberfields/numberfields.references.json', import.meta.url), 'utf8')).algebraic;
+  const x = new Sym('x'), theta = new Sym('theta'), zeta = new Sym('zeta');
+  const poly = (s: string, g: Expr = x): Poly => Poly.from(P(s).subs(x, g), [g]);
+  const fields: Record<string, () => AlgebraicField> = {
+    sqrt5: () => new AlgebraicField(QQ, sqrt(5)),
+    sqrt2_sqrt3: () => new AlgebraicField(QQ, sqrt(2), sqrt(3)),
+    alpha: () => new AlgebraicField(QQ, new AlgebraicNumber(sqrt(5), [1, 0], { alias: 'alpha' })),
+    theta: () => new AlgebraicField(QQ, new AlgebraicNumber(theta, [1, 0], { minpoly: poly('x**3 + x**2 - 2*x + 8') })),
+    zeta7: () => new AlgebraicField(QQ, new AlgebraicNumber(zeta, [1, 0], { minpoly: poly('x**6 + x**5 + x**4 + x**3 + x**2 + x + 1') })),
+    cyc5: () => {
+      const d = new Dummy('x');
+      return new AlgebraicField(QQ, new AlgebraicNumber(zeta, [1, 0], { minpoly: Poly.from(P('x**4 + x**3 + x**2 + x + 1').subs(x, d), [d], { pure: true }), alias: zeta }));
+    },
+  };
+  const unMPQ = (s: string): string => s.replace(/MPQ\((-?\d+),1\)/g, '$1');
+  for (const r of nf) {
+    it(`computes the maximal order of ${r.name}`, () => {
+      const K = fields[r.name]!();
+      expect([String(K), String(K.maximalOrder()), String(K.discriminant())]).toEqual([r.K, r.ZK, r.dK]);
+      expect(K.integralBasis().map((b) => unMPQ(String(b)))).toEqual(r.basis.map(unMPQ));
+      // compared after parsing: SymPy orders the terms of an alias (an AlgebraicNumber) otherwise (1/2 + alpha/2)
+      const sympy = r.sympy.map((e: string) => String(P(e)));
+      expect(K.integralBasis('sympy').map(String)).toEqual(sympy);
+      expect(K.integralBasis('alg').map((a) => String(K.toSympy(K.new(a.coeffs()))))).toEqual(sympy);
+      for (const [p, reprs] of Object.entries(r.primes)) expect(K.primesAbove(Number(p)).map((Q) => Q.repr()), `p = ${p}`).toEqual(reprs);
+    });
+  }
+  it('converts polynomials in the symbol of the primitive element', () => {
+    const K = fields.theta!();
+    expect([String(K.convert(P('theta**3 + 1/2'))), String(K.toSympy(K.convert(P('theta**4'))))]).toEqual([
+      'ANP([MPQ(-1,1), MPQ(2,1), MPQ(-15,2)], [MPQ(1,1), MPQ(1,1), MPQ(-2,1), MPQ(8,1)], QQ)',
+      '3*theta**2 - 10*theta + 8',
+    ]);
+    expect(() => K.convert(P('sqrt(2)*theta'))).toThrow(CoercionFailed);
+    expect(() => K.convert(P('1/theta'))).toThrow(CoercionFailed);
+    expect(() => K.convert(P('sqrt(2)'))).toThrow(CoercionFailed);
+    const Ka = fields.alpha!();
+    expect([String(Ka), Ka.origExt.map(String), String(Ka.toSympy(Ka.convert(P('alpha**2 + alpha')))), String(Ka.toSympy(Ka.convert(P('sqrt(5) + 1'))))]).toEqual(['QQ<alpha>', ['alpha'], 'alpha + 5', 'alpha + 1']);
+    // an alias given to a non-primitive algebraic number names the field's primitive element
+    const Kb = new AlgebraicField(QQ, new AlgebraicNumber(sqrt(2), [1, 1], { alias: 'beta' }));
+    expect([String(Kb), String(Kb.toSympy(Kb.new([1, 0]))), String(Kb.ext.root)]).toEqual(['QQ<beta>', 'beta', '1 + sqrt(2)']);
+    expect(String(new AlgebraicField(QQ, new AlgebraicNumber(sqrt(2), [2, 0])).ext.root)).toBe('2*sqrt(2)');
   });
 });

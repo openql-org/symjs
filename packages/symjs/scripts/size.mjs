@@ -37,7 +37,10 @@ const CASES = [
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither (measured 542 KiB, was 701).
-  ['polys', 'factor', 596],
+  // The maximal orders and prime ideals of AlgebraicField register from
+  // numberfields/basis.ts and primes.ts, which the entry keeps with the
+  // domain matrices and Hermite normal forms they use (measured 621 KiB, was 544).
+  ['polys', 'factor', 683],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
   ['calculus', 'integrate', 917],

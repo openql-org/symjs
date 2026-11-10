@@ -92,6 +92,7 @@ export type { PartfracTerm } from './polys/rootsum';
 export {
   AlgebraicNumber,
 } from './polys/numberfields';
+export type { AlgebraicNumberOptions } from './polys/numberfields';
 export {
   CRootOf,
   ComplexRootOf,
@@ -234,4 +235,28 @@ export { DomainScalar } from './polys/matrices/domainscalar';
 export { ddmTranspose, ddmIadd, ddmIsub, ddmIneg, ddmImul, ddmIrmul, ddmImatmul, ddmIrref, ddmIrrefDen, ddmIdet, ddmIinv, ddmIluSplit, ddmIlu, ddmIluSolve, ddmBerk } from './polys/matrices/dense';
 export { DMError, DMBadInputError, DMDomainError, DMNotAField, DMFormatError, DMNonInvertibleMatrixError, DMRankError, DMShapeError, DMNonSquareMatrixError, DMValueError } from './polys/matrices/exceptions';
 
-export { extractFundamentalDiscriminant, isolate } from './polys/numberfields/utilities';
+export { extractFundamentalDiscriminant, isolate, AlgIntPowers, coeffSearch, supplementASubspace, isRat, isInt, getNumDenom } from './polys/numberfields/utilities';
+export type { RationalLike } from './polys/numberfields/utilities';
+// modules, orders and prime ideals of number fields (SymPy sympy.polys.numberfields.modules, basis, primes);
+// Module, ModuleElement and ModuleHomomorphism are exported with a NumberField prefix (the names are those of agca)
+export {
+  Module as NumberFieldModule,
+  ModuleElement as NumberFieldModuleElement,
+  ModuleHomomorphism as NumberFieldModuleHomomorphism,
+  PowerBasis,
+  PowerBasisElement,
+  Submodule,
+  ModuleEndomorphism,
+  InnerEndomorphism,
+  EndomorphismRing,
+  findMinPoly,
+  toCol,
+  makeModElt,
+  isSqMaxrankHNF,
+} from './polys/numberfields/modules';
+export type { MultTab, HnfOptions, HomomorphismCodomain } from './polys/numberfields/modules';
+export { roundTwo, nilradicalModP } from './polys/numberfields/basis';
+export type { RoundTwoOptions } from './polys/numberfields/basis';
+export { PrimeIdeal, primeDecomp, primeValuation } from './polys/numberfields/primes';
+export type { PrimeDecompOptions } from './polys/numberfields/primes';
+export { ClosureFailure, StructureError, MissingUnityError } from './polys/numberfields/exceptions';

@@ -736,6 +736,18 @@ def ser(o):
     if isinstance(o, _PcGroup):
         return {"t": "PolycyclicGroup", "pcgs": [ser(g) for g in o.pcgs], "series": [ser(g) for g in o.pc_series],
                 "relativeOrder": [int(r) for r in o.relative_order]}
+    from sympy.polys.numberfields.modules import PowerBasis as _PB, Submodule as _Sub, ModuleElement as _ME
+    from sympy.polys.numberfields.primes import PrimeIdeal as _PI
+    if isinstance(o, _PB):
+        # the power basis of a polynomial, or of the primitive element of a number field
+        return {"t": "PowerBasis", "T": ser(o.T), "field": None if o.K is None else ser(o.K)}
+    if isinstance(o, _Sub):
+        return {"t": "Submodule", "parent": ser(o.parent), "matrix": ser(o.matrix), "denom": str(o.denom)}
+    if isinstance(o, _ME):
+        # integers as strings (they may exceed the double range)
+        return {"t": "ModuleElement", "module": ser(o.module), "col": [str(c) for c in o.coeffs], "denom": str(o.denom)}
+    if isinstance(o, _PI):
+        return {"t": "PrimeIdeal", "ZK": ser(o.ZK), "p": str(o.p), "alpha": ser(o.alpha), "f": int(o.f), "e": int(o.e)}
     if isinstance(o, _GroupHom):
         return {"t": "GroupHomomorphism", "domain": ser(o.domain), "codomain": ser(o.codomain),
                 "images": [[ser(k), ser(v)] for k, v in o.images.items()]}
@@ -949,6 +961,10 @@ def ser(o):
             d.update(mod=int(o.mod), symmetric=bool(o.sym))
         elif o.is_AlgebraicField:
             d.update(base=ser(o.dom), ext=ser(o.ext.as_expr()), gens=[ser(e) for e in o.orig_ext])
+            if o.ext.is_aliased or o.ext.root.is_Symbol:
+                # a primitive element given by its minimal polynomial (a symbol root, or an alias such as
+                # zeta or theta): the field is rebuilt from the polynomial
+                d.update(minpoly=ser(o.ext.minpoly_of_element()), alias=str(o.ext.alias) if o.ext.is_aliased else None)
         elif o.is_PolynomialRing or o.is_FractionField:
             d.update(base=ser(o.domain), symbols=[ser(s) for s in o.symbols], order=str(o.order))
         elif o.is_RealField or o.is_ComplexField:
@@ -1231,6 +1247,36 @@ def ser_arg(node, globs):
 MUTATING_FUNCTIONS = {"define_schreier_generators", "reidemeister_relators", "elimination_technique_2"}
 
 
+# the number-field doctests print their modules, elements and ideals (print(A)) and combine them with
+# operators (e + f, e ** 2, f // g): these are recorded as the special methods __str__, __add__, ...
+VALUE_EXAMPLE_MODULES = {"sympy.polys.numberfields.modules", "sympy.polys.numberfields.primes"}
+_VALUE_OPS = {ast.Add: "__add__", ast.Sub: "__sub__", ast.Mult: "__mul__", ast.Pow: "__pow__",
+              ast.FloorDiv: "__floordiv__", ast.Mod: "__mod__"}
+
+
+def value_example(node, globs):
+    """The record of print(<name or attribute>) or of <a> <op> <b> for a number-field object a, or None."""
+    from sympy.polys.numberfields.modules import Module, ModuleElement
+    from sympy.polys.numberfields.primes import PrimeIdeal
+    objects = (Module, ModuleElement, PrimeIdeal)
+    ev = lambda n: eval(compile(ast.Expression(n), "<a>", "eval"), globs)
+    DUMMY_IDS.clear()
+    try:
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "print" and len(node.args) == 1
+                and not node.keywords and isinstance(node.args[0], (ast.Name, ast.Attribute))):
+            v = ev(node.args[0])
+            if isinstance(v, objects):
+                return {"fn": ".__str__", "self": ser(v), "args": [], "kwargs": {}, "text": True, "expected": str(v)}
+        if isinstance(node, ast.BinOp) and type(node.op) in _VALUE_OPS:
+            a = ev(node.left)
+            if isinstance(a, objects):
+                return {"fn": "." + _VALUE_OPS[type(node.op)], "self": ser(a), "args": [ser(ev(node.right))], "kwargs": {},
+                        "expected": str(ev(node))}
+    except Exception:
+        return None
+    return None
+
+
 # per-example limit, generous so that the corpus does not depend on the machine load
 ALARM_SECONDS = 30
 
@@ -1300,6 +1346,12 @@ def main(dst):
                         signal.alarm(0)
                     continue
                 call = tree.body
+                if modname in VALUE_EXAMPLE_MODULES:
+                    record = value_example(call, globs)
+                    if record is not None:
+                        record.update({"category": category, "module": modname, "src": src})
+                        cases.append(record)
+                        continue
                 record = None
                 # print(f(...)): the printed text of the inner call is the expected output
                 printed = (TEXT_OUTPUT and isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id == "print"

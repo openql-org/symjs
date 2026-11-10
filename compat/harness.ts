@@ -136,6 +136,8 @@ export class TypeRef {
 /** An item of a Python list, tuple, set or dict prints as its repr: Permutation(0, 1, 2) for a Permutation. */
 const fmtItem = (v: unknown): string => {
   if (v instanceof sj.Permutation) return sj.permutationRepr(v);
+  // a prime ideal of a number field prints its repr inside containers
+  if (v instanceof sj.PrimeIdeal) return v.repr();
   // domain elements (PythonMPQ, Gaussian elements, ModularInteger, ANP) print their repr inside containers
   if (v instanceof sj.PythonMPQ || v instanceof sj.GaussianElement || v instanceof sj.ModularInteger || v instanceof sj.ANP) return v.repr();
   // DDM and SDM print their repr inside containers
@@ -288,6 +290,12 @@ function deserializeDomain(tree: Tree): sj.Domain | undefined {
   if (tree['base'] === undefined) return known[name];
   const base = deserializeDomain(tree['base'] as Tree);
   if (base === undefined) return undefined;
+  if (tree['minpoly'] !== undefined) {
+    // a primitive element given by its minimal polynomial: a symbol root, or an alias (zeta, theta)
+    const alias = tree['alias'] as string | null;
+    const root = alias === null ? (deserialize(tree['ext'] as Tree) as Expr) : new Sym(alias);
+    return new sj.AlgebraicField(base, new sj.AlgebraicNumber(root, [1, 0], { minpoly: deserialize(tree['minpoly'] as Tree) as sj.Poly, ...(alias === null ? {} : { alias }) }));
+  }
   if (tree['ext'] !== undefined) return base.algebraicField(...(tree['gens'] as Tree[]).map((t) => deserialize(t) as Expr));
   const symbols = (tree['symbols'] as Tree[]).map((t) => deserialize(t) as Sym);
   if (tree['oldPolyRing'] === true) return new sj.PolynomialRingBase(base, symbols, tree['order'] as string);
@@ -812,6 +820,14 @@ export function deserialize(tree: Tree): unknown {
       }
       return C;
     }
+    case 'PowerBasis': {
+      const K = tree['field'] === null ? undefined : (deserialize(tree['field'] as Tree) as JsDomain).domain;
+      return new sj.PowerBasis(K instanceof sj.AlgebraicField ? K : (deserialize(tree['T'] as Tree) as sj.Poly));
+    }
+    case 'Submodule': return new sj.Submodule(deserialize(tree['parent'] as Tree) as sj.NumberFieldModule, deserialize(tree['matrix'] as Tree) as sj.DomainMatrix, BigInt(tree['denom'] as string));
+    case 'ModuleElement': return sj.makeModElt(deserialize(tree['module'] as Tree) as sj.NumberFieldModule, sj.toCol((tree['col'] as string[]).map(BigInt)), BigInt(tree['denom'] as string));
+    case 'PrimeIdeal':
+      return new sj.PrimeIdeal(deserialize(tree['ZK'] as Tree) as sj.Submodule, BigInt(tree['p'] as string), deserialize(tree['alpha'] as Tree) as sj.PowerBasisElement, Number(tree['f']), Number(tree['e']));
     case 'Collector': return new sj.Collector((tree['pcgs'] as Tree[]).map((t) => deserialize(t) as sj.Permutation), (tree['series'] as Tree[]).map((t) => deserialize(t) as sj.PermutationGroup), tree['relativeOrder'] as number[]);
     case 'PolycyclicGroup': return new sj.PolycyclicGroup((tree['pcgs'] as Tree[]).map((t) => deserialize(t) as sj.Permutation), (tree['series'] as Tree[]).map((t) => deserialize(t) as sj.PermutationGroup), tree['relativeOrder'] as number[]);
     case 'GroupHomomorphism': return new sj.GroupHomomorphism(deserialize(tree['domain'] as Tree) as sj.HomomorphismGroup, deserialize(tree['codomain'] as Tree) as sj.HomomorphismGroup, (tree['images'] as [Tree, Tree][]).map(([k, v]) => [deserialize(k) as sj.GroupElement, deserialize(v) as sj.GroupElement] as const));
@@ -4030,7 +4046,9 @@ for (const name of Object.keys(sj.Q)) {
 /** Categories whose integer arguments are JS numbers (indices, sizes, sequences). */
 const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'discrete', 'geometry', 'crypto', 'liealgebras']);
 /** Functions of other categories whose integer arguments are JS numbers (variable numbers of the integer representation of clauses). */
-const NUMERIC_FUNCTIONS = new Set(['unit_propagate_int_repr', '.reorder_limit']);
+const NUMERIC_FUNCTIONS = new Set(['unit_propagate_int_repr', '.reorder_limit', '.__pow__']);
+/** Python operators recorded as their special methods (the number-field doctests), and the methods that implement them. */
+const OPERATOR_METHODS: Readonly<Record<string, string>> = { '.__str__': 'toString', '.__add__': 'add', '.__sub__': 'sub', '.__mul__': 'mul', '.__pow__': 'pow', '.__floordiv__': 'floordiv', '.__mod__': 'mod' };
 /** DomainMatrix functions whose integer arguments are sizes, exponents or indices. */
 const DOMAIN_MATRIX_INT_FUNCTIONS = new Set(['.eye', '.zeros', '.ones', '.pow', '.getitem', 'sdm_berk']);
 
@@ -4145,7 +4163,7 @@ function autoAdapter(c: Case): Adapter | undefined {
     return expressionCoefficients.includes(c.module) ? rationalInputs(normalized) : normalized;
   };
   if (c.fn.startsWith('.')) {
-    const name = camel(c.fn.slice(1));
+    const name = OPERATOR_METHODS[c.fn] ?? camel(c.fn.slice(1));
     return (args, kw, self0) => {
       // a static method called on the class (Permutation.unrank_lex, ...)
       const self = self0 instanceof TypeRef ? (sj as unknown as Record<string, unknown>)[self0.name] : self0 instanceof JsDomain ? (self0.domain ?? self0) : self0;

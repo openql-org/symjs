@@ -4,144 +4,43 @@
 // Copyright (c) 2006-2023 SymPy Development Team, BSD 3-Clause License (see LICENSE).
 
 /**
- * @file Algebraic number fields QQ<a> (SymPy AlgebraicField) and their
- * elements (SymPy ANP): a polynomial in the primitive element theta with
- * rational coefficients, reduced modulo the minimal polynomial of theta.
- * An element prints as `ANP([MPQ(1,1), MPQ(2,1)], [MPQ(1,1), MPQ(0,1), MPQ(-2,1)], QQ)`.
+ * @file Algebraic number fields QQ<a> (SymPy AlgebraicField), whose
+ * elements are ANP objects (polys/polyclasses.ts), with their maximal
+ * orders, integral bases, discriminants and prime ideals
+ * (polys/numberfields/basis.ts, primes.ts).
  */
 
-import { DomainError, NotInvertible } from '../../core/errors';
-import { at, first } from '../../core/guard';
+import { DomainError } from '../../core/errors';
+import { at, defined, expectType, first } from '../../core/guard';
 import type { ExprLike } from '../../core/nodes';
-import { Dummy, Expr, Rational } from '../../core/nodes';
+import { Expr, Rational, Sym } from '../../core/nodes';
 import { add, mul, pow, sympify } from '../../core/ops';
 import { str } from '../../printing/str';
 import { expand } from '../../simplify/expand';
 import { CoercionFailed, Domain, QQ, domainHooks, groundRational } from '../domains';
-import { AlgebraicNumber, minimalPolynomial } from '../numberfields';
+import { AlgebraicNumber } from '../numberfields';
+import type { Submodule } from '../numberfields/modules';
+import type { PrimeIdeal } from '../numberfields/primes';
 import { toNumberField } from '../numberfields/subfield';
-import { PythonMPQ } from './pythonrational';
+import { ANP } from '../polyclasses';
+import { Poly } from '../sympoly';
+import { asInt, type IntLike } from '../../ntheory/intutil';
+import type { PythonMPQ } from './pythonrational';
+
+export { ANP } from '../polyclasses';
 
 type QP = PythonMPQ[];
-const ZERO = new PythonMPQ(0n);
-const ONE = new PythonMPQ(1n);
 
-const strip = (f: readonly PythonMPQ[]): QP => {
-  let i = 0;
-  while (i < f.length && at(f, i).isZero) i++;
-  return f.slice(i);
-};
-function polyAdd(f: QP, g: QP): QP {
-  const n = Math.max(f.length, g.length);
-  const pad = (h: QP): QP => [...Array.from({ length: n - h.length }, () => ZERO), ...h];
-  const [F, G] = [pad(f), pad(g)];
-  return strip(F.map((c, i) => c.add(at(G, i))));
-}
-function polyMul(f: QP, g: QP): QP {
-  if (!f.length || !g.length) return [];
-  const out: QP = Array.from({ length: f.length + g.length - 1 }, () => ZERO);
-  f.forEach((a, i) => g.forEach((b, j) => (out[i + j] = at(out, i + j).add(a.mul(b)))));
-  return strip(out);
-}
-/** [quotient, remainder] of f by a nonzero g. */
-function polyDivmod(f: QP, g: QP): [QP, QP] {
-  const r = [...f];
-  const dg = g.length - 1;
-  if (r.length - 1 < dg) return [[], strip(r)];
-  const qq: QP = [];
-  const lc = first(g);
-  for (let i = 0; i <= f.length - 1 - dg; i++) {
-    const c = at(r, i).div(lc);
-    qq.push(c);
-    for (let j = 0; j <= dg; j++) r[i + j] = at(r, i + j).sub(c.mul(at(g, j)));
-  }
-  return [strip(qq), strip(r.slice(f.length - dg))];
-}
-/** The inverse of f modulo m (SymPy dup_invert); throws NotInvertible. */
-function polyInvert(f: QP, m: QP): QP {
-  let [r0, r1, s0, s1]: [QP, QP, QP, QP] = [m, polyDivmod(f, m)[1], [], [ONE]];
-  while (r1.length) {
-    const [qq, r] = polyDivmod(r0, r1);
-    [r0, r1] = [r1, r];
-    [s0, s1] = [s1, polyAdd(s0, polyMul(qq, s1).map((c) => c.neg()))];
-  }
-  if (r0.length !== 1) throw new NotInvertible('zero divisor');
-  const c = first(r0);
-  return s0.map((a) => a.div(c));
-}
-
-/** An element of an algebraic number field: a polynomial in the primitive element modulo its minimal polynomial (SymPy ANP). */
-export class ANP {
-  readonly rep: QP;
-  readonly mod: QP;
-  constructor(
-    rep: unknown,
-    mod: readonly unknown[],
-    readonly dom: Domain = QQ,
-  ) {
-    const conv = (a: unknown): PythonMPQ => QQ.convert(a);
-    this.rep = strip(Array.isArray(rep) ? (rep as unknown[]).map(conv) : [conv(rep)]);
-    this.mod = strip(mod.map(conv));
-  }
-  private per(rep: QP): ANP {
-    return new ANP(polyDivmod(rep, this.mod)[1], this.mod, this.dom);
-  }
-  private repOf(o: unknown): QP {
-    if (o instanceof ANP) {
-      if (o.mod.length !== this.mod.length || o.mod.some((c, i) => !c.equals(this.mod[i]))) throw new CoercionFailed('cannot unify algebraic numbers of different fields');
-      return o.rep;
-    }
-    return strip([QQ.convert(o)]);
-  }
-  get isZero(): boolean {
-    return this.rep.length === 0;
-  }
-  /** The coefficients, highest first (SymPy to_list). */
-  toList(): PythonMPQ[] {
-    return [...this.rep];
-  }
-  /** The leading coefficient (SymPy LC). */
-  LC(): PythonMPQ {
-    return this.rep[0] ?? ZERO;
-  }
-  add(o: unknown): ANP {
-    return this.per(polyAdd(this.rep, this.repOf(o)));
-  }
-  sub(o: unknown): ANP {
-    return this.per(polyAdd(this.rep, this.repOf(o).map((c) => c.neg())));
-  }
-  mul(o: unknown): ANP {
-    return this.per(polyMul(this.rep, this.repOf(o)));
-  }
-  neg(): ANP {
-    return this.per(this.rep.map((c) => c.neg()));
-  }
-  /** this/o; throws NotInvertible for o = 0. */
-  div(o: unknown): ANP {
-    return this.per(polyMul(this.rep, polyInvert(this.repOf(o), this.mod)));
-  }
-  /** this**n (a negative n inverts). */
-  pow(n: number): ANP {
-    let [r, b] = [this.per([ONE]), n < 0 ? this.per(polyInvert(this.rep, this.mod)) : this];
-    for (let k = Math.abs(n); k; k >>= 1) {
-      if (k & 1) r = r.mul(b);
-      b = b.mul(b);
-    }
-    return r;
-  }
-  equals(o: unknown): boolean {
-    if (!(o instanceof ANP)) return this.rep.length <= 1 && groundRational(o) !== undefined && this.LC().equals(QQ.convert(o));
-    return o.rep.length === this.rep.length && o.rep.every((c, i) => c.equals(this.rep[i])) && o.mod.length === this.mod.length;
-  }
-  /** SymPy repr(a), which is also its str. */
-  toString(): string {
-    const list = (f: QP): string => `[${f.map((c) => c.repr()).join(', ')}]`;
-    return `ANP(${list(this.rep)}, ${list(this.mod)}, ${this.dom.toString()})`;
-  }
-  repr(): string {
-    return this.toString();
-  }
-}
+/**
+ * The number-field algorithms of the maximal order and the prime ideals,
+ * registered by polys/numberfields/basis.ts and primes.ts (which build on
+ * the domain matrices, themselves built on the domains).
+ * @internal
+ */
+export const numberFieldHooks: {
+  roundTwo?: (K: AlgebraicField, radicals: Map<bigint, Submodule>) => [Submodule, Rational];
+  primeDecomp?: (p: bigint, ZK: Submodule, dK: Rational, radical: Submodule | undefined) => PrimeIdeal[];
+} = {};
 
 /** An algebraic number field QQ<a, ...> (SymPy AlgebraicField). */
 export class AlgebraicField extends Domain {
@@ -154,16 +53,35 @@ export class AlgebraicField extends Domain {
   /** The minimal polynomial of theta, highest coefficient first (SymPy mod). */
   readonly mod: QP;
   private readonly baseDomain: Domain;
+  private maximalOrderCache: [Submodule, Rational] | undefined;
+  private readonly nilradicalsModP = new Map<bigint, Submodule>();
+  /**
+   * The field generated by the extensions over QQ. A single AlgebraicNumber
+   * given with its minimal polynomial (e.g. a symbol standing for a root of
+   * it) or with an alias is the primitive element itself, and its alias
+   * names the field's generator (SymPy AlgebraicField(QQ, alg)).
+   */
   constructor(dom: Domain, ...ext: (ExprLike | AlgebraicNumber)[]) {
     super();
     if (!dom.equals(QQ)) throw new DomainError('ground domain must be a rational field');
     this.baseDomain = dom;
-    this.origExt = ext.map((e) => (e instanceof AlgebraicNumber ? e.asExpr() : sympify(e)));
-    this.ext = toNumberField(ext.length === 1 ? first(ext) : ext);
-    const t = new Dummy('t');
-    this.mod = minimalPolynomial(this.ext.asExpr(), t, { polys: true })
+    this.origExt = ext.map((e) => (e instanceof AlgebraicNumber ? (e.alias ?? e.asExpr()) : sympify(e)));
+    const single = ext.length === 1 ? first(ext) : undefined;
+    if (single instanceof AlgebraicNumber && isPrimitive(single)) this.ext = single;
+    else {
+      // a single generator is its own primitive element (toNumberField would search for one)
+      const e = single === undefined ? toNumberField(ext) : new AlgebraicNumber(single instanceof AlgebraicNumber ? single.asExpr() : single);
+      const alias = single instanceof AlgebraicNumber ? single.alias : undefined;
+      this.ext = alias === undefined ? e : new AlgebraicNumber(e.root, [1, 0], { minpoly: e.minpoly(), alias });
+    }
+    this.mod = this.ext
+      .minpoly()
       .allCoeffs()
       .map((c) => QQ.convert(c));
+  }
+  /** The expression of the primitive element: its alias, or its value. */
+  private get generator(): Expr {
+    return this.ext.alias ?? this.ext.asExpr();
   }
   override get dom(): Domain {
     return this.baseDomain;
@@ -173,7 +91,7 @@ export class AlgebraicField extends Domain {
     return this.baseDomain;
   }
   toString(): string {
-    return `${this.baseDomain.toString()}<${str(this.ext.asExpr())}>`;
+    return `${this.baseDomain.toString()}<${str(this.generator)}>`;
   }
   override equals(o: Domain): boolean {
     return o instanceof AlgebraicField && o.toString() === this.toString();
@@ -188,11 +106,27 @@ export class AlgebraicField extends Domain {
     const v = base !== undefined && !base.equals(this) ? base.toSympy(a) : a;
     if (groundRational(v) !== undefined) return this.new([v]);
     if (!(v instanceof Expr)) throw new CoercionFailed(`cannot convert ${String(a)} to ${this.toString()}`);
+    const theta = this.generator;
+    if (theta instanceof Sym && v.has(theta)) return this.fromGeneratorPolynomial(v, theta);
     try {
       return this.new(toNumberField(v, this.ext).coeffs());
     } catch {
       throw new CoercionFailed(`${str(v)} is not a valid algebraic number in ${this.toString()}`);
     }
+  }
+  /** A polynomial with rational coefficients in the symbol of the primitive element. */
+  private fromGeneratorPolynomial(v: Expr, theta: Sym): ANP {
+    const fail = (): CoercionFailed => new CoercionFailed(`${str(v)} is not a valid algebraic number in ${this.toString()}`);
+    let f: Poly;
+    try {
+      f = Poly.from(v, [theta]);
+    } catch {
+      throw fail();
+    }
+    if (f.coeffs().some((c) => !(c instanceof Rational))) throw fail();
+    // Horner's rule with the field operations, which reduce modulo the minimal polynomial
+    const t = this.new([1, 0]);
+    return f.allCoeffs().reduce((acc, c) => acc.mul(t).add(c), this.new([]));
   }
   override ofType(a: unknown): boolean {
     return a instanceof ANP;
@@ -200,7 +134,7 @@ export class AlgebraicField extends Domain {
   /** The element as an expression in the extension (SymPy to_sympy). */
   override toSympy(a: unknown): Expr {
     if (!(a instanceof ANP)) return super.toSympy(a);
-    const theta = this.ext.asExpr();
+    const theta = this.generator;
     const n = a.rep.length - 1;
     return expand(add(...a.rep.map((c, i) => mul(Rational.of(c.numerator, c.denominator), pow(theta, n - i)))));
   }
@@ -247,12 +181,58 @@ export class AlgebraicField extends Domain {
   }
   /** The element as an algebraic number (SymPy to_alg_num). */
   toAlgNum(a: ANP): AlgebraicNumber {
-    return new AlgebraicNumber(this.ext.asExpr(), a.rep.map((c) => Rational.of(c.numerator, c.denominator)));
+    return this.ext.fieldElement(a.rep.map((c) => Rational.of(c.numerator, c.denominator)));
+  }
+  private roundTwo(): [Submodule, Rational] {
+    this.maximalOrderCache ??= defined(numberFieldHooks.roundTwo, 'number field module')(this, this.nilradicalsModP);
+    return this.maximalOrderCache;
+  }
+  /** The maximal order (ring of integers) as a submodule of the power basis of the primitive element (SymPy maximal_order). */
+  maximalOrder(): Submodule {
+    return this.roundTwo()[0];
+  }
+  /**
+   * An integral basis: the basis of the maximal order as elements of the
+   * field (ANP), as expressions with fmt 'sympy', or as algebraic numbers
+   * with fmt 'alg' (SymPy integral_basis).
+   */
+  integralBasis(fmt?: undefined): ANP[];
+  integralBasis(fmt: 'sympy'): Expr[];
+  integralBasis(fmt: 'alg'): AlgebraicNumber[];
+  integralBasis(fmt?: 'sympy' | 'alg'): ANP[] | Expr[] | AlgebraicNumber[];
+  integralBasis(fmt?: 'sympy' | 'alg'): ANP[] | Expr[] | AlgebraicNumber[] {
+    const ZK = this.maximalOrder();
+    const pb = ZK.powerBasisAncestor();
+    const M = ZK.QQMatrix;
+    const [m, n] = M.shape;
+    const B = Array.from({ length: n }, (_, j) => this.new(pb.toFieldCoeffs(M.extractSlice([0, m], [j, j + 1]).flat().map(asRational)).reverse()));
+    if (fmt === 'sympy') return B.map((b) => this.toSympy(b));
+    if (fmt === 'alg') return B.map((b) => this.toAlgNum(b));
+    return B;
+  }
+  /** The discriminant of the field (SymPy discriminant). */
+  discriminant(): Rational {
+    return this.roundTwo()[1];
+  }
+  /** The prime ideals of the maximal order lying above the rational prime p (SymPy primes_above). */
+  primesAbove(p: IntLike): PrimeIdeal[] {
+    const [ZK, dK] = this.roundTwo();
+    const q = asInt(p, 'p');
+    return defined(numberFieldHooks.primeDecomp, 'number field module')(q, ZK, dK, this.nilradicalsModP.get(q));
   }
   /** The characteristic 0. */
   characteristic(): bigint {
     return 0n;
   }
 }
+
+/** The algebraic number has the coefficients [1, 0]: it is its primitive element. */
+function isPrimitive(a: AlgebraicNumber): boolean {
+  const cs = a.coeffs();
+  return cs.length === 2 && first(cs).equals(1) && at(cs, 1).equals(0);
+}
+
+/** A QQ element (a Rational) of a domain matrix. */
+const asRational = (e: Expr): Rational => expectType(e, (x): x is Rational => x instanceof Rational, 'rational');
 
 domainHooks.algebraicField = (K, exts) => new AlgebraicField(K.getField(), ...exts);
