@@ -497,6 +497,8 @@ NOT_IMPLEMENTED_PACKAGES = {'sympy.physics.quantum': 'extend package @symjs/phys
  'sympy.physics': 'per-field extend package (planned; the order is decided later)'}
 # Notes on partially implemented modules (what is ported and what is not).
 NOTES = {
+    'sympy.polys.puiseux': 'PuiseuxRing/PuiseuxPoly with exact rational exponents, arithmetic, conversion and differentiation; coefficient-domain restrictions remain',
+    'sympy.polys.ring_series': 'truncated arithmetic, elementary functions, substitution/reversion and Newton sums; general multivariate leading-coefficient inverses are not implemented',
     'sympy.abc': 'symbols(); JavaScript has no module-level symbol namespace',
     'sympy.assumptions.cnf': 'CNF/EncodedCNF encoding used by satisfiable',
     'sympy.assumptions.sathandlers': 'allargs/anyarg/exactlyonearg; ClassFactRegistry of satask not ported',

@@ -552,13 +552,25 @@ export function deserialize(tree: Tree): unknown {
       if (typeof cls !== 'function') throw new Unsupported(`argument type ${tree.t}`);
       return new (cls as new (...a: unknown[]) => unknown)((tree['symbols'] as Tree[]).map((s) => deserialize(s)), K, tree['order'] as string);
     }
-    case 'PolyElement':
-      // an element of a ring, rebuilt from its expression
-      return (deserialize(tree['ring'] as Tree) as { fromExpr(e: Expr): unknown }).fromExpr(deserialize(tree['expr'] as Tree) as Expr);
-    case 'FracElement':
-    case 'PuiseuxRing':
+    case 'PolyElement': {
+      // SymPy 1.14 rs_series can still store fractional exponents in its
+      // legacy PolyElement. Preserve them in the explicit Puiseux type.
+      const ring = deserialize(tree['ring'] as Tree) as sj.PolyRing;
+      const expression = deserialize(tree['expr'] as Tree) as Expr;
+      try { return ring.fromExpr(expression); }
+      catch (error) {
+        if (!(error instanceof RangeError)) throw error;
+        return new sj.PuiseuxRing(ring.symbols, ring.domain).fromExpr(expression);
+      }
+    }
+    case 'PuiseuxRing': {
+      const d = deserialize(tree['domain'] as Tree);
+      return new sj.PuiseuxRing((tree['symbols'] as Tree[]).map((s) => deserialize(s) as Expr), (d instanceof JsDomain ? (d.domain ?? d.name) : d) as sj.Domain | string);
+    }
     case 'PuiseuxPoly':
-      // FracField and PuiseuxRing are not ported yet
+      return (deserialize(tree['ring'] as Tree) as sj.PuiseuxRing).fromDict((tree['terms'] as [Tree[], Tree][]).map(([m, c]) => [m.map((e) => deserialize(e) as Expr), deserialize(c) as Expr]));
+    case 'FracElement':
+      // Fraction-field elements are not ported yet.
       throw new Unsupported(`argument type ${tree.t}`);
     case 'DomainMatrix': {
       // DomainMatrix, DDM or SDM of rows of elements (as expressions) over a domain
@@ -3939,6 +3951,8 @@ const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? n.replace(/_([a-zA-
 
 /** A deserialized argument as the JS value the API takes. */
 function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
+  // Named series callbacks are callable public algorithms, not harness implementations.
+  if (v instanceof JsFunc && (v.name === 'rs_exp' || v.name === '_tan1')) return v.name === 'rs_exp' ? sj.rsExp : sj.rsTan;
   if ((numbers || inArray) && v instanceof sj.Rational && v.q === 1n) {
     const n = Number(v.p);
     return Number.isSafeInteger(n) ? n : v.p;
@@ -4013,7 +4027,18 @@ function intpolyAdapter(c: Case): Adapter | undefined {
 
 function autoAdapter(c: Case): Adapter | undefined {
   const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn) || (c.module.startsWith('sympy.polys.matrices.') && DOMAIN_MATRIX_INT_FUNCTIONS.has(c.fn));
-  const conv = (x: unknown): unknown => toJs(x, numbers);
+  const conv = (x: unknown): unknown => {
+    const converted = toJs(x, numbers);
+    // The public sparse-ring APIs use Expr coefficients/exponents. Python's
+    // ground-domain MPQ wrapper is only a serialized input representation.
+    const rationalInputs = (v: unknown): unknown => {
+      if (v instanceof sj.PythonMPQ) return sj.Rational.of(v.numerator, v.denominator);
+      if (Array.isArray(v)) return v.map(rationalInputs);
+      if (v instanceof Map) return new Map([...v].map(([k, a]) => [rationalInputs(k), rationalInputs(a)]));
+      return v;
+    };
+    return c.module === 'sympy.polys.puiseux' || c.module === 'sympy.polys.ring_series' ? rationalInputs(converted) : converted;
+  };
   if (c.fn.startsWith('.')) {
     const name = camel(c.fn.slice(1));
     return (args, kw, self0) => {

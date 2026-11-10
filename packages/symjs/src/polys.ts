@@ -190,6 +190,10 @@ export type { GFPoly, GFFactorization, GFFactorMethod } from './polys/galoistool
 
 // sparse polynomial rings (SymPy sympy.polys.rings) and the IPolys methods (sympy.polys.compatibility)
 export { PolyRing, PolyElement, ring, xring, vring, sring } from './polys/rings';
+export { PuiseuxRing, PuiseuxPoly, puiseuxRing } from './polys/puiseux';
+export type { PuiseuxMonom, PuiseuxTerm } from './polys/puiseux';
+export { powXin, rsTrunc, rsMul, rsSquare, rsDiff, rsIntegrate, rsIsPuiseux, rsPow, rsSeriesInversion, rsNthRoot, rsExp, rsSin, rsCos, rsSinh, rsCosh, rsAsin, rsAsinh, rsAtan, rsAtanh, rsLambertW, rsTan, rsTanh, rsCot, rsLog, rsSeriesFromList, rsSubs, rsSeriesReversion, rsPuiseux, rsFun, rsHadamardExp, rsNewton, rsComposeAdd, rsSeries } from './polys/ringseries';
+export type { SeriesPoly, SeriesFunction } from './polys/ringseries';
 export type { RingSymbols, DomainLike, OrderLike, GenLike, SringOptions, Monom } from './polys/rings';
 export { IPolys } from './polys/compatibility';
 // dense polynomial representation and distributed modules (SymPy densebasic, distributedmodules)
