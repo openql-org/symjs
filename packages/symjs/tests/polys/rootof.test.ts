@@ -8,6 +8,7 @@ import * as sj from '../../src';
 import { evalf, parse, Poly, rootOf, solve, symbols } from '../../src';
 
 import rootRefs from './rootof.references.json';
+import ciRefs from './rootisolation.references.json';
 
 const [x] = symbols('x');
 const P = (s: string) => Poly.from(parse(s), [x]);
@@ -118,9 +119,9 @@ describe('evaluated indexed-root constructors', () => {
     expect(() => r.evalRational(-1)).toThrow(RangeError);
     expect(() => r.evalRational(x)).toThrow(RangeError);
     expect(() => r.evalRational(undefined,undefined,{n:-1})).toThrow(RangeError);
-    // SymPy also refines complex roots; the present implementation explicitly
-    // requires a real isolating interval rather than claiming an error bound.
-    expect(() => new sj.CRootOf(parse('x**2+1'),0).evalRational()).toThrow(sj.NotImplementedError);
+    // imaginary roots: SymPy refines the imaginary part only (CRootOf(x**2 + 1, i).eval_rational)
+    expect(String(new sj.CRootOf(parse('x**2+1'),0).evalRational())).toBe('-288230376151711743*I/288230376151711744');
+    expect(String(new sj.CRootOf(parse('x**2+1'),1).evalRational(new sj.Float(1e-3)))).toBe('2047*I/2048');
   });
 });
 
@@ -134,4 +135,42 @@ it('handles signed roots, decimal tolerances, default precision and exact interv
   expect(String(new sj.CRootOf(parse('x**3-x-1'), 0).evalRational())).toBe('795896198939712001/600804265230223300');
   // Evaluating CRootOf(x, 0) gives 0 in SymPy; the raw AST node can refine its exact interval too.
   expect(new sj.CRootOf(x, 0).evalRational().equals(0)).toBe(true);
+});
+
+// Non-real roots: references from SymPy 1.14.0 (scripts/gen_rootisolation.py).
+describe('CRootOf of non-real roots (SymPy references)', () => {
+  const tol = (v: string | null) => (v === null ? undefined : v.includes('.') || v.includes('e') ? new sj.Float(Number(v)) : parse(v));
+  it.each(ciRefs.eval_rational.map((c) => [c.f, c.i, c.calls, c.results] as const))('eval_rational of CRootOf(%s, %i)', (f, i, calls, results) => {
+    sj.CRootOf.clearCache();
+    const r = new sj.CRootOf(parse(f), i);
+    const got = calls.map((c) => {
+      const [dx, dy, n] = [c[0] ?? null, c[1] ?? null, c[2] ?? 15] as [string | null, string | null, number];
+      return String(r.evalRational(tol(dx), tol(dy), { n }));
+    });
+    expect(got).toEqual(results);
+  });
+  it.each(ciRefs.evalf.map((c) => [c.f, c.values] as const))('evalf of the roots of %s', (f, values) => {
+    sj.CRootOf.clearCache();
+    expect(values.map((_, i) => String(evalf(new sj.CRootOf(parse(f), i), 15)))).toEqual(values);
+  });
+  it.each(ciRefs.all_roots.map((c) => [c.f, c.radicals, c.crootof, c.real] as const))('all_roots of %s', (f, radicals, crootof, real) => {
+    sj.CRootOf.clearCache();
+    expect(P(f).allRoots().map(String)).toEqual(radicals);
+    expect(P(f).allRoots({ radicals: false }).map(String)).toEqual(crootof);
+    expect(P(f).realRoots({ radicals: false }).map(String)).toEqual(real);
+  });
+  it('a negative leading coefficient', () => {
+    sj.CRootOf.clearCache();
+    // SymPy normalizes the polynomial (CRootOf(-x**3 - 10*x - 1, 1) is CRootOf(x**3 + 10*x + 1, 1)); the raw node shares its rectangles
+    expect(String(new sj.CRootOf(parse('-x**3 - 10*x - 1'), 1).evalRational(parse('1/10')))).toBe('15/256 - 805*I/256');
+  });
+  it('the cached rectangle is reused and cleared', () => {
+    sj.CRootOf.clearCache();
+    const t = new sj.CRootOf(parse('x**3 + 10*x + 1'), 1);
+    expect(String(t.evalRational(parse('1/10000')))).toBe('6545/131072 - 414645*I/131072');
+    // a coarser tolerance keeps the finer rectangle
+    expect(String(t.evalRational(parse('1/10')))).toBe('6545/131072 - 414645*I/131072');
+    sj.CRootOf.clearCache();
+    expect(String(t.evalRational(parse('1/10')))).toBe('15/256 - 805*I/256');
+  });
 });

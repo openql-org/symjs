@@ -14,8 +14,8 @@ import { DomainError, ExactQuotientFailed, InvariantError, NotImplementedError, 
 import { parse } from '../parsing/parser';
 import type { NoMatchResult } from '../core/truth';
 import { NoMatch, isNoMatch } from '../core/truth';
-import { isPolynomial } from '../core/methods';
-import { at, defined, expectType, first, getOrThrow } from '../core/guard';
+import { asRealImag, isPolynomial } from '../core/methods';
+import { at, defined, expectType, first, getOrThrow, pair } from '../core/guard';
 import { isIntegerQ, isPositive } from '../core/assumptions';
 import { factorModP } from './zassenhaus';
 import type { ExprLike } from '../core/nodes';
@@ -30,9 +30,10 @@ import { sqrtdenest } from '../simplify/sqrtdenest';
 import { cancel, fraction, together } from '../simplify/rational';
 import { decomposePower, keepCoeff } from '../simplify/exprtools';
 import { modInverse, rationalFromFloat } from '../core/numberutils';
-import { lcm as ilcm } from '../core/numbers';
+import { gcd as igcd, lcm as ilcm } from '../core/numbers';
+import { ordered as orderedExprs } from '../core/match';
 import { divExact, ffDiv, mfactorList, mgcd, mlcm } from './mpoly';
-import { isolateRealRoots, refineRealRoot } from './rootisolation';
+import { countComplexRoots, isolateComplexRootsSqf, isolateRealRoots, isolateRealRootsSqf, refineRealRoot } from './rootisolation';
 import { UPoly, polyCoefficients, polyHooks, roots as rootsOf } from './poly';
 import { CoercionFailed, groundRational } from './domains';
 import type { Domain } from './domains';
@@ -55,6 +56,12 @@ export interface PolyConstructionOptions extends PolynomialDomainOptions {
   extension?: boolean | ExprLike | readonly ExprLike[];
   gaussian?: boolean;
   pure?: boolean;
+}
+/** Options of Poly.intervals: the real bounds of the roots and the fast refinement of SymPy. */
+export interface IntervalsOptions {
+  inf?: Rational;
+  sup?: Rational;
+  fast?: boolean;
 }
 /** Domain construction is registered by polys/constructor, which depends on Poly. @internal */
 export const polyConstructionHooks: { domain?: (coeffs: readonly Expr[], opts: PolyConstructionOptions) => Domain } = {};
@@ -796,16 +803,39 @@ export class Poly {
     const den = cs.reduce((l, c) => ilcm(l, c.q), 1n);
     return cs.map((c) => (c.p * den) / c.q);
   }
-  /** Isolating intervals of the real roots with multiplicities (SymPy Poly.intervals). */
-  intervals(eps?: Rational): [[Rational, Rational], number][] {
+  /** The polynomial over ZZ, primitive with a positive leading coefficient, as an expression (SymPy's PurePoly of a factor). */
+  private primitiveExpr(): Expr {
+    const cs = this.denseInts();
+    // the irreducible factors have positive leading coefficients
+    const g = cs.reduce((a, c) => igcd(a, c), 0n);
+    const n = cs.length - 1;
+    return add(...cs.map((c, i) => mul(Rational.of(c / g), pow(first(this.gens), n - i))));
+  }
+  /**
+   * Isolating intervals of the real roots with multiplicities in [inf, sup], each narrower than eps
+   * (SymPy Poly.intervals); with all, also the isolating rectangles [lower-left, upper-right corner]
+   * of the non-real roots of a polynomial with one square-free factor.
+   */
+  intervals(eps?: Rational, opts?: IntervalsOptions & { all?: false }): [[Rational, Rational], number][];
+  intervals(eps: Rational | undefined, opts: IntervalsOptions & { all: true }): [[[Rational, Rational], number][], [[Expr, Expr], number][]];
+  intervals(eps?: Rational, opts: IntervalsOptions & { all?: boolean } = {}): [[Rational, Rational], number][] | [[[Rational, Rational], number][], [[Expr, Expr], number][]] {
+    if (eps !== undefined && !eps.isPositive) throw new RangeError("'eps' must be a positive rational");
     const [, fs] = this.sqfList();
-    return isolateRealRoots(fs.map(([f, k]) => [f.denseInts(), k] as [bigint[], number]), eps);
+    const iso = { eps, inf: opts.inf, sup: opts.sup, fast: opts.fast };
+    if (!opts.all) return isolateRealRoots(fs.map(([f, k]) => [f.denseInts(), k] as [bigint[], number]), eps, iso);
+    // SymPy dup_isolate_all_roots
+    if (fs.length !== 1) throw new NotImplementedError('only trivial square-free polynomials are supported');
+    const [f, k] = first(fs);
+    const real = isolateRealRootsSqf(f.denseInts(), iso).map((iv): [[Rational, Rational], number] => [iv, k]);
+    const point = ([re, im]: [Rational, Rational]): Expr => add(re, mul(S.I, im));
+    const complex = isolateComplexRootsSqf(f.denseInts(), iso).map((r): [[Expr, Expr], number] => [[point([r.ax, r.ay]), point([r.bx, r.by])], k]);
+    return [real, complex];
   }
   /** Refine the isolating interval (s, t) of a real root (SymPy Poly.refine_root). */
   refineRoot(s: Rational, t: Rational, eps?: Rational, steps?: number): [Rational, Rational] {
     if (eps !== undefined && !eps.isPositive) throw new RangeError("'eps' must be a positive rational");
     // SymPy refines the polynomial itself (check_sqf=False), one step when neither eps nor steps is given
-    return refineRealRoot(this.denseInts(), s, t, eps, steps ?? (eps === undefined ? 1 : undefined));
+    return refineRealRoot(this.denseInts(), s, t, { eps, steps: steps ?? (eps === undefined ? 1 : undefined) });
   }
 
   roots(): Expr[] {
@@ -1133,6 +1163,10 @@ export class Poly {
       if (e instanceof Rational) return e;
       throw new DomainError(`expected a Rational, got ${str(e)}`);
     };
+    // a bound with an imaginary part: the roots in the rectangle of the two corners (SymPy dup_count_complex_roots)
+    const corner = (v: ExprLike | undefined): [Rational, Rational] | undefined => (v === undefined ? undefined : pair(asRealImag(sympify(v)).map(bound)));
+    const [ca, cb] = [corner(a), corner(b)];
+    if ([ca, cb].some((c) => c !== undefined && !c[1].isZero)) return countComplexRoots(this.denseInts(), ca, cb);
     const lo = a === undefined ? '-inf' : bound(a);
     const hi = b === undefined ? 'inf' : bound(b);
     let n = signChanges(lo) - signChanges(hi);
@@ -1353,26 +1387,43 @@ export class Poly {
     const [, fs] = this.factorList();
     type R = [Expr, { re: number; im: number }];
     const real: R[] = [];
-    const cplx: R[] = [];
+    // SymPy _all_roots: the non-real roots grouped by irreducible factor (as PurePoly in ordered() order),
+    // each factor's in its CRootOf index order (by isolating rectangle, the conjugate first)
+    const cplx = new Map<string, Expr[]>();
+    const factorExprs: Expr[] = [];
     for (const [f, k] of fs) {
-      if (f.degree() > 2 || (!radicals && f.degree() > 1)) {
-        // irreducible factors of degree >= 3: CRootOf(f, i) like SymPy
-        const vals = nroots(f, 15).map((v) => v.toComplex());
+      const roots: Expr[] = [];
+      const group = (r: Expr) => {
+        for (let j = 0; j < k; j++) roots.push(r);
+      };
+      // SymPy _roots_trivial: radicals for linear factors, and with radicals for quadratic and binomial ones
+      const trivial = f.degree() === 1 || (radicals && (f.degree() === 2 || (f.termList.length === 2 && !f.TC().equals(0))));
+      if (!trivial) {
+        // irreducible factors of degree >= 3: CRootOf(f, i) like SymPy, the real roots first
+        const nreal = isolateRealRoots([[f.denseInts(), 1]]).length;
+        const vals = nreal ? nroots(f, 15).map((v) => v.toComplex()) : [];
         const crootof = defined(rootHooks.crootof, 'crootof hook');
-        vals.forEach((v, i) => {
+        for (let i = 0; i < f.degree(); i++) {
           const r = crootof(f.asExpr(), i);
-          for (let j = 0; j < k; j++) (v.im === 0 ? real : cplx).push([r, v]);
-        });
-        continue;
+          if (i < nreal) for (let j = 0; j < k; j++) real.push([r, at(vals, i)]);
+          else group(r);
+        }
+      } else {
+        // in the CRootOf index order: by real part, a conjugate pair with the negative imaginary part first
+        const rs = rootsOf(f.asExpr(), x).map((r) => [r, impl.toComplex(r)] as const);
+        for (const [r, v] of rs) if (isRealConst(r)) for (let j = 0; j < k; j++) real.push([r, v]);
+        const byRe = ([, a]: readonly [Expr, { re: number; im: number }], [, b]: readonly [Expr, { re: number; im: number }]) =>
+          (Math.abs(a.re - b.re) > 1e-12 * (1 + Math.abs(a.re)) ? a.re - b.re : 0) || a.im - b.im;
+        for (const [r] of rs.filter(([r]) => !isRealConst(r)).sort(byRe)) group(r);
       }
-      for (const r of rootsOf(f.asExpr(), x)) {
-        const v = impl.toComplex(r);
-        for (let i = 0; i < k; i++) (isRealConst(r) ? real : cplx).push([r, v]);
-      }
+      if (!roots.length) continue;
+      const e = f.primitiveExpr();
+      factorExprs.push(e);
+      cplx.set(e.key, roots);
     }
     real.sort((a, b) => a[1].re - b[1].re);
-    cplx.sort((a, b) => a[1].re - b[1].re || a[1].im - b[1].im);
-    return realOnly ? real.map(([r]) => r) : [...real, ...cplx].map(([r]) => r);
+    if (realOnly) return real.map(([r]) => r);
+    return [...real.map(([r]) => r), ...orderedExprs(factorExprs).flatMap((e) => getOrThrow(cplx, e.key))];
   }
   root(i: number): Expr {
     return at(this.allRoots(), i);

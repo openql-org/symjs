@@ -6,6 +6,10 @@
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { parse, Rational, symbols } from '../../src';
+import { at } from '../../src/core/guard';
+import type { ComplexInterval } from '../../src/polys/rootisolation';
+import { countComplexRoots, isolateComplexRootsSqf } from '../../src/polys/rootisolation';
+import ciRefs from './rootisolation.references.json';
 
 const [x] = symbols('x');
 const E = sj.parse;
@@ -442,5 +446,66 @@ describe('real root isolation (SymPy intervals / refine_root)', () => {
     expect(show(P('x**2 - 3').intervals(Rational.of(1, 100)))).toBe('((-26/15, -19/11), 1), ((19/11, 26/15), 1)');
     expect(P('x**2 - 3').refineRoot(Rational.of(1), Rational.of(2), Rational.of(1, 100)).map(String)).toEqual(['19/11', '26/15']);
     expect(show(P('(x - 1)**2*(x + 2)*x').intervals())).toBe('((-2, -2), 1), ((0, 0), 1), ((1, 1), 2)');
+  });
+});
+
+// Complex root isolation: references from SymPy 1.14.0 (scripts/gen_rootisolation.py).
+describe('complex root isolation (SymPy references)', () => {
+  const coeffs = (f: string): bigint[] => P(f).allCoeffs().map((c) => (c as sj.Rational).p);
+  const rect = (r: ComplexInterval): string[] => r.asTuple().flat().map(String);
+  const opt = (o: Record<string, string | undefined>) => Object.fromEntries(Object.entries(o).flatMap(([k, v]) => (v === undefined ? [] : [[k, Q(v)]])));
+  const err = (s: string) => s.split(':').slice(2).join(':');
+  it.each(ciRefs.isolate.map((c) => [c.f, c.opts, c.rects] as const))('isolates %s %o', (f, opts, rects) => {
+    const run = () => isolateComplexRootsSqf(coeffs(f), opt(opts)).map(rect);
+    if (typeof rects === 'string') expect(run).toThrow(err(rects));
+    else expect(run()).toEqual(rects);
+  });
+  it('isolates over QQ and nothing for constants', () => {
+    expect(isolateComplexRootsSqf([Q('1/2'), Q('0'), Q('1/2')]).map(String)).toEqual(['(0, 2) x (-2, 0)', '(0, 2) x (0, 2)']);
+    expect(isolateComplexRootsSqf([3n])).toEqual([]);
+    expect(countComplexRoots([Q('1/2'), Q('0'), Q('1/2')])).toBe(2);
+  });
+  it.each(ciRefs.counts.map((c) => [String(c[0]), c] as const))('counts the roots of %s in a rectangle', (_, c) => {
+    {
+      if (c.length === 6) {
+        const [f, u, v, s, t, n] = c as [string, string, string, string, string, number];
+        expect([f, u, v, s, t, P(f).countRoots(E(`${u} + ${v}*I`), E(`${s} + ${t}*I`))]).toEqual(c);
+        expect(countComplexRoots(coeffs(f), [Q(u), Q(v)], [Q(s), Q(t)])).toBe(n);
+      } else {
+        const [f, a, b] = c as [string, string | null, string | null, number];
+        expect([f, a, b, P(f).countRoots(a === null ? undefined : E(a), b === null ? undefined : E(b))]).toEqual(c);
+      }
+    }
+  });
+  it('Poly.intervals with bounds, fast refinement and all', () => {
+    const py = (v: unknown): string => (Array.isArray(v) ? `(${v.map(py).join(', ')})` : String(v));
+    const list = (xs: unknown[]) => `[${xs.map(py).join(', ')}]`;
+    for (const { f, opts, result } of ciRefs.intervals) {
+      const { all, fast, eps, ...bounds } = opts as unknown as Record<string, string | boolean>;
+      const o = { ...opt(bounds as Record<string, string>), ...(fast === undefined ? {} : { fast: fast as boolean }) };
+      const e = eps === undefined ? undefined : Q(eps as string);
+      const run = () => (all === true ? `(${P(f).intervals(e, { ...o, all: true }).map(list).join(', ')})` : list(P(f).intervals(e, o)));
+      if (result.startsWith('ERR:')) expect(run).toThrow(err(result));
+      else expect(run()).toBe(result);
+    }
+  });
+  it('ComplexInterval refinement', () => {
+    for (const c of ciRefs.complex_intervals) {
+      const rs = isolateComplexRootsSqf(coeffs(c.f));
+      const r = at(rs, -1);
+      expect(rs.map(String)).toEqual(c.all);
+      expect(String(r.refineStep(3))).toBe(c.step3);
+      expect(String(r.refineStep())).toBe(c.refine);
+      expect(String(r.refineStep(0))).toBe(c.step0);
+      expect(String(r.refine())).toBe(c.refine);
+      expect(String(r.refineSize(Q('1/10')))).toBe(c.size);
+      expect(String(r.refineSize(Q('1/10'), Q('1/1000')))).toBe(c.size2);
+      expect(r.center.map(String)).toEqual(c.center);
+      expect([String(r.dx), String(r.dy)]).toEqual([c.dx, c.dy]);
+      expect(rs.map((z) => z.conj)).toEqual(c.conj);
+      expect(rs.flatMap((z) => rs.map((w) => z.isDisjoint(w)))).toEqual(c.disjoint);
+      expect(r.refineDisjoint(rs.length > 2 ? at(rs, -3) : at(rs, 0)).map(String)).toEqual(c.refine_disjoint);
+      expect(String(r.conjugate())).toBe(c.conjugate);
+    }
   });
 });

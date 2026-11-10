@@ -1,10 +1,6 @@
 {
  "cases": [
   "sympy.core.sympify: print(sympify(None)) #500c44443b232886",
-  "sympy.polys.rootoftools: t.eval_rational(1e-1) #17a8583daddc3554",
-  "sympy.polys.rootoftools: t.eval_rational(1e-1, 1e-4) #3c7b7a97dc1ee6af",
-  "sympy.polys.rootoftools: t.eval_rational(1e-4, 1e-4) #e0bc814d721a66da",
-  "sympy.polys.rootoftools: t.eval_rational(n=2) #9fc13c57889c7efb",
   "sympy.printing.tree: print_tree(y**x) #6c326131341fa2f4",
   "sympy.solvers.ode.single: dsolve(eq, hint='linear_coefficients') #d6dcf75ac8bdbb48",
   "sympy.solvers.ode.single: dsolve(eq, hint='separable_reduced') #331d559e4d977b20",
