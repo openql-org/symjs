@@ -486,6 +486,20 @@ MODULES = {
     "sympy.tensor.array.expressions.from_array_to_matrix": "tensor",
     "sympy.tensor.array.expressions.from_indexed_to_array": "tensor",
     "sympy.tensor.functions": "tensor",
+    # previously unselected modules with a source counterpart (2026-11-11)
+    "sympy.polys.euclidtools": "polys",
+    "sympy.polys.rootisolation": "polys",
+    "sympy.holonomic.holonomic": "holonomic",
+    "sympy.holonomic.recurrence": "holonomic",
+    "sympy.combinatorics.polyhedron": "combinatorics",
+    "sympy.combinatorics.tensor_can": "combinatorics",
+    "sympy.combinatorics.util": "combinatorics",
+    "sympy.combinatorics.generators": "combinatorics",
+    "sympy.combinatorics.group_constructs": "combinatorics",
+    "sympy.core.assumptions": "core",
+    "sympy.core.kind": "core",
+    "sympy.core.logic": "core",
+    "sympy.solvers.ode.lie_group": "ode",
 }
 
 # sympy.categories.diagram_drawing (DiagramGrid, XypicDiagramDrawer, xypic_draw_diagram): drawing category
@@ -546,6 +560,7 @@ LOCAL_PUBLIC = {
     "sympy.tensor.array.expressions.array_expressions", "sympy.tensor.array.expressions.from_array_to_matrix",
     "sympy.tensor.array.expressions.from_indexed_to_array", "sympy.tensor.array.mutable_ndim_array",
     "sympy.tensor.array.sparse_ndim_array", "sympy.tensor.functions", "sympy.tensor.indexed",
+    "sympy.combinatorics.tensor_can", "sympy.combinatorics.util", "sympy.core.assumptions", "sympy.core.kind", "sympy.core.logic", "sympy.holonomic.holonomic", "sympy.holonomic.recurrence", "sympy.solvers.ode.lie_group", "sympy.integrals.deltafunctions", "sympy.integrals.heurisch", "sympy.integrals.meijerint", "sympy.integrals.rationaltools", "sympy.integrals.trigonometry", "sympy.ntheory.digits", "sympy.ntheory.ecm", "sympy.ntheory.modular", "sympy.ntheory.qs", "sympy.polys.orthopolys", "sympy.printing.conventions", "sympy.printing.pretty.pretty_symbology", "sympy.printing.pretty.stringpict", "sympy.stats.error_prop", "sympy.strategies.tree", "sympy.unify.rewrite", "sympy.unify.usympy", "sympy.utilities.decorator", "sympy.utilities.misc", "sympy.matrices.kind",
 }
 
 # the low-level polys modules: their module-level functions (gf_add, dup_strip, monomial_mul, dispersion,
@@ -566,6 +581,8 @@ INTERNAL_PUBLIC = {
     "sympy.polys.numberfields.primes", "sympy.polys.numberfields.utilities", "sympy.polys.orderings",
     "sympy.polys.polyoptions", "sympy.polys.puiseux", "sympy.polys.ring_series", "sympy.polys.solvers",
     "sympy.polys.sqfreetools",
+    "sympy.polys.euclidtools",
+    "sympy.polys.rootisolation",
 }
 
 SUBPACKAGE_PUBLIC = {
@@ -586,9 +603,11 @@ SUBPACKAGE_PUBLIC = {
 def subpackage_public(modname):
     """The public names of the subpackage of modname (and of modname itself for LOCAL_PUBLIC and
     INTERNAL_PUBLIC modules)."""
-    if modname.startswith("sympy.stats."):
-        return stats_public()
     names = set()
+    if modname.startswith("sympy.stats."):
+        names = set(stats_public())
+        if modname not in LOCAL_PUBLIC:
+            return names
     pkgs_all = []
     if modname in LOCAL_PUBLIC:
         # the module's own public definitions are API of that module (not top-level sympy names)
@@ -642,6 +661,18 @@ def ser(o):
     from sympy.polys.agca.homomorphisms import ModuleHomomorphism
     from sympy.polys.domains.quotientring import QuotientRing
     from sympy.polys.domains.old_polynomialring import PolynomialRingBase
+    from sympy.holonomic.holonomic import HolonomicFunction as _HF, DifferentialOperator as _DO, DifferentialOperatorAlgebra as _DOA
+    from sympy.holonomic.recurrence import HolonomicSequence as _HS, RecurrenceOperator as _RO, RecurrenceOperatorAlgebra as _ROA
+    if isinstance(o, (_DOA, _ROA)):
+        return {"t": "DifferentialOperatorAlgebra" if isinstance(o, _DOA) else "RecurrenceOperatorAlgebra",
+                "base": ser(o.base.dom), "x": ser(o.base.gens[0]), "gen": str(o.gen_symbol)}
+    if isinstance(o, (_DO, _RO)):
+        return {"t": "DifferentialOperator" if isinstance(o, _DO) else "RecurrenceOperator", "parent": ser(o.parent),
+                "coeffs": [ser(o.parent.base.to_sympy(p)) for p in o.listofpoly]}
+    if isinstance(o, _HF):
+        return {"t": "HolonomicFunction", "op": ser(o.annihilator), "x": ser(o.x), "x0": ser(o.x0), "y0": ser(o.y0)}
+    if isinstance(o, _HS):
+        return {"t": "HolonomicSequence", "op": ser(o.recurrence), "u0": ser(o.u0)}
     if isinstance(o, PolynomialRingBase):
         return {"t": "Domain", "name": str(o), "base": ser(o.dom), "symbols": [ser(s) for s in o.gens], "order": str(o.order), "oldPolyRing": True}
     if isinstance(o, QuotientRing):
@@ -1455,10 +1486,11 @@ def main(dst):
                 elif (type(result).__module__ or "").startswith("sympy.combinatorics.") and " object at 0x" not in str(result):
                     # free and finitely presented group objects (words, groups, coset tables): compared by str()
                     expected = str(result)
-                elif ((type(result).__module__ or "").startswith(("sympy.polys", "sympy.matrices", "sympy.external"))
+                elif ((type(result).__module__ or "").startswith(("sympy.polys", "sympy.matrices", "sympy.external", "sympy.holonomic"))
                         or type(result).__name__ in ("mpq", "mpz")):
                     # polynomial-ring elements (PolyElement prints as x**2 + 1/2*y), domains (QQ<sqrt(2)>, GF(5)),
-                    # DomainMatrix/DDM/SDM, DMP, ANP, ground elements (MPQ(1,2)): compared by str()
+                    # DomainMatrix/DDM/SDM, DMP, ANP, ground elements (MPQ(1,2)), holonomic functions and
+                    # operators: compared by str()
                     expected = str(result)
                 else:
                     omit("unsupported-result-type", modname, ex)

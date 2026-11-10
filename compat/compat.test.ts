@@ -68,7 +68,7 @@ interface Corpus {
   extraction: { examined: number; reasons: Record<string, number>; omitted: { module: string; src: string; reason: string }[] };
 }
 
-const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'ode', 'pde', 'calculus', 'matrices', 'special', 'logic', 'tensor', 'ntheory', 'assumptions', 'utilities', 'combinatorics', 'sets', 'printing', 'discrete', 'algebras', 'strategies', 'unify', 'geometry', 'vector', 'stats', 'categories', 'crypto', 'liealgebras', 'parsing'];
+const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'ode', 'pde', 'calculus', 'matrices', 'special', 'logic', 'tensor', 'ntheory', 'assumptions', 'utilities', 'combinatorics', 'sets', 'printing', 'discrete', 'algebras', 'holonomic', 'strategies', 'unify', 'geometry', 'vector', 'stats', 'categories', 'crypto', 'liealgebras', 'parsing'];
 
 // a rate below 100% never prints as 100.0%
 const pct = (a: number, b: number) => (b === 0 ? '-' : `${(a < b ? Math.min((100 * a) / b, 99.9) : 100).toFixed(1)}%`);
@@ -95,6 +95,9 @@ const OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   // extractor (compat/extract.py) keeps none of them and no entry is needed here
   // Python's in-place list.sort() from a docstring setup line, no SymPy call
   'sympy.utilities.iterables: a.sort()': 'Python list method',
+  // Python's list.append() building a permutation list in the polyhedron docstring; no SymPy call
+  'sympy.combinatorics.polyhedron: pgroup.append(Permutation((0, 2, 1, 3)))': 'Python list method',
+  'sympy.combinatorics.polyhedron: pgroup.append(Permutation((2, 0, 3, 1)))': 'Python list method',
   // Python threads from the global_parameters docstring (SymPy's evaluate flag is thread-local); no SymPy call
   'sympy.core.parameters: thread.start()': 'Python threading',
   'sympy.core.parameters: thread.join()': 'Python threading',

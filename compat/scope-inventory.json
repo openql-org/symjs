@@ -1499,7 +1499,7 @@
    "sources": [
     "combinatorics/generators.ts"
    ],
-   "selectedForExtraction": false,
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 4,
    "declaredPublicNames": [
@@ -1545,8 +1545,8 @@
    "sources": [
     "combinatorics/groupconstructs.ts"
    ],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 1,
    "declaredPublicNames": [
     "DirectProduct"
@@ -1855,8 +1855,8 @@
    "sources": [
     "combinatorics/polyhedron.ts"
    ],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 33,
    "declaredPublicNames": [
     "Polyhedron",
@@ -1995,8 +1995,8 @@
    "sources": [
     "tensor/tensorcan.ts"
    ],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 20,
    "declaredPublicNames": [
     "dummy_sgs",
@@ -2034,8 +2034,8 @@
    "sources": [
     "combinatorics/util.ts"
    ],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 13,
    "declaredPublicNames": []
   },
@@ -2288,8 +2288,8 @@
    "sources": [
     "core/assumptions.ts"
    ],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 24,
    "declaredPublicNames": [
     "assumptions",
@@ -2822,7 +2822,7 @@
    "sources": [
     "core/kind.ts"
    ],
-   "selectedForExtraction": false,
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 15,
    "declaredPublicNames": [
@@ -2840,8 +2840,8 @@
    "sources": [
     "core/logic.ts"
    ],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 14,
    "declaredPublicNames": [
     "fuzzy_bool",
@@ -5078,8 +5078,8 @@
    "sources": [
     "holonomic/holonomic.ts"
    ],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 34,
    "declaredPublicNames": [
     "DifferentialOperators",
@@ -5147,8 +5147,8 @@
    "sources": [
     "holonomic/recurrence.ts"
    ],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 4,
    "declaredPublicNames": [
     "RecurrenceOperators",
@@ -5177,7 +5177,7 @@
     "integrals/deltafunctions.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 5,
    "declaredPublicNames": [
     "change_mul",
@@ -5192,7 +5192,7 @@
     "integrals/heurisch.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 4,
    "declaredPublicNames": [
     "components",
@@ -5479,7 +5479,7 @@
     "integrals/meijerint.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 24,
    "declaredPublicNames": [
     "meijerint_indefinite",
@@ -5558,7 +5558,7 @@
     "integrals/rationaltools.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 10,
    "declaredPublicNames": [
     "ratint",
@@ -5730,7 +5730,7 @@
     "integrals/trigonometry.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 4,
    "declaredPublicNames": [
     "trigintegrate"
@@ -7746,7 +7746,7 @@
     "ntheory/digits.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 13,
    "declaredPublicNames": [
     "digits",
@@ -7762,7 +7762,7 @@
     "ntheory/ecm.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 8,
    "declaredPublicNames": [
     "Point",
@@ -7912,7 +7912,7 @@
     "ntheory/modular.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 18,
    "declaredPublicNames": [
     "symmetric_residue",
@@ -7986,7 +7986,7 @@
     "ntheory/qs.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 3,
    "declaredPublicNames": [
     "SievePolynomial",
@@ -14373,8 +14373,8 @@
    "sources": [
     "polys/euclidtools.ts"
    ],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 53,
    "declaredPublicNames": [
     "dup_half_gcdex",
@@ -16659,8 +16659,8 @@
    "sources": [
     "polys/rootisolation.ts"
    ],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 22,
    "declaredPublicNames": [
     "dup_sturm",
@@ -16956,7 +16956,7 @@
     "printing/pretty/symbology.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 2,
    "declaredPublicNames": [
     "split_super_sub",
@@ -18969,8 +18969,8 @@
    "sources": [
     "solvers/liegroup.ts"
    ],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 6,
    "declaredPublicNames": [
     "infinitesimals",
@@ -19757,7 +19757,7 @@
     "stats/errorprop.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 3,
    "declaredPublicNames": [
     "variance_prop"
@@ -20645,7 +20645,7 @@
     "strategies/tree.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 6,
    "declaredPublicNames": [
     "treeapply",
@@ -21996,7 +21996,7 @@
     "utilities/misc.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 27,
    "declaredPublicNames": [
     "Undecidable",

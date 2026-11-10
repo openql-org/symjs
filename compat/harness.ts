@@ -807,6 +807,26 @@ export function deserialize(tree: Tree): unknown {
     case 'TensAdd': return sj.add(...(tree['args'] as Tree[]).map((t) => deserialize(t) as Expr));
     case 'TensorElement': return sj.TensorElement(deserialize(tree['expr'] as Tree) as Expr, new Map((deserialize(tree['indexMap'] as Tree) as JsDict).entries as [Expr, Expr][]));
     case 'SymmetricPermutationGroup': return sj.SymmetricPermutationGroup(Number(tree['deg']));
+    case 'DifferentialOperatorAlgebra':
+    case 'RecurrenceOperatorAlgebra': {
+      // the operator algebra over the univariate polynomial ring of its base domain
+      const base = (deserialize(tree['base'] as Tree) as JsDomain).domain as sj.Domain;
+      const R = base.oldPolyRing(deserialize(tree['x'] as Tree) as Sym);
+      return tree['t'] === 'DifferentialOperatorAlgebra' ? new sj.DifferentialOperatorAlgebra(R, String(tree['gen'])) : new sj.RecurrenceOperatorAlgebra(R, String(tree['gen']));
+    }
+    case 'DifferentialOperator':
+    case 'RecurrenceOperator': {
+      const parent = deserialize(tree['parent'] as Tree);
+      const coeffs = (tree['coeffs'] as Tree[]).map((t) => deserialize(t) as Expr);
+      return parent instanceof sj.DifferentialOperatorAlgebra ? new sj.DifferentialOperator(coeffs, parent) : new sj.RecurrenceOperator(coeffs, parent as sj.RecurrenceOperatorAlgebra);
+    }
+    case 'HolonomicFunction': {
+      const y0 = deserialize(tree['y0'] as Tree);
+      const ics = y0 === null ? undefined : y0 instanceof JsDict ? new Map(y0.entries.map(([k, v]) => [k as Expr, v as Expr[]])) : (y0 as Expr[]);
+      return new sj.HolonomicFunction(deserialize(tree['op'] as Tree) as sj.DifferentialOperator, deserialize(tree['x'] as Tree) as Sym, deserialize(tree['x0'] as Tree) as Expr, ics);
+    }
+    case 'HolonomicSequence':
+      return new sj.HolonomicSequence(deserialize(tree['op'] as Tree) as sj.RecurrenceOperator, deserialize(tree['u0'] as Tree) as Expr[]);
     case 'FreeGroup': return new sj.FreeGroup((tree['symbols'] as Tree[]).map((t) => deserialize(t) as Expr));
     case 'FreeGroupElement': return (deserialize(tree['group'] as Tree) as sj.FreeGroup).dtype((tree['array'] as [Tree, number][]).map(([s, e]) => [deserialize(s) as Expr, e]));
     case 'FpGroup': return new sj.FpGroup(deserialize(tree['free'] as Tree) as sj.FreeGroup, (tree['relators'] as Tree[]).map((t) => deserialize(t) as sj.FreeGroupElement));
