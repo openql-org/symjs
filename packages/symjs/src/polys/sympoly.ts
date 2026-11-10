@@ -44,6 +44,8 @@ import { isprime } from '../ntheory/primetest';
 export interface PolynomialDomainOptions {
   domain?: string | Domain;
   modulus?: number | bigint;
+  /** An algebraic extension of QQ to compute over (SymPy extension=...). */
+  extension?: boolean | ExprLike | readonly ExprLike[];
 }
 
 /** Construction options for algebraic and Gaussian coefficient domains. */
@@ -1876,8 +1878,19 @@ const varsFor = (...fs: Expr[]): Sym[] => {
   return sortGens([...m.values()]);
 };
 
+/** The generators of several expressions as Poly detects them (symbols and non-rational atoms such as sqrt(2)). */
+const gensFor = (...fs: Expr[]): Expr[] => {
+  const m = new Map<string, Expr>();
+  for (const f of fs) for (const g of detectGens(expand(f))) m.set(g.key, g);
+  return sortGens([...m.values()]);
+};
+
 /** gcd of polynomials (expressions). */
 export function polyGcd(f: Poly | ExprLike, g: Poly | ExprLike, opts: PolynomialDomainOptions = {}): Expr {
+  if (opts.extension !== undefined) {
+    const vars = varsFor(toExpr(f), toExpr(g));
+    return Poly.from(toExpr(f), vars, { extension: opts.extension }).gcd(Poly.from(toExpr(g), vars, { extension: opts.extension })).asExpr();
+  }
   if (opts.domain !== undefined || opts.modulus !== undefined) {
     const vars = varsFor(toExpr(f), toExpr(g));
     return Poly.from(toExpr(f), vars, opts).gcd(Poly.from(toExpr(g), vars, opts)).asExpr();
@@ -1885,9 +1898,14 @@ export function polyGcd(f: Poly | ExprLike, g: Poly | ExprLike, opts: Polynomial
   if (f instanceof Poly && g instanceof Poly) return f.gcd(g).asExpr();
   const a = toExpr(f);
   const b = toExpr(g);
-  return mgcd(a, b, varsFor(a, b));
+  // SymPy parallel_poly_from_expr: algebraic numbers (sqrt(2), pi) are generators unless an extension is given
+  return mgcd(a, b, gensFor(a, b));
 }
 export function polyLcm(f: Poly | ExprLike, g: Poly | ExprLike, opts: PolynomialDomainOptions = {}): Expr {
+  if (opts.extension !== undefined) {
+    const vars = varsFor(toExpr(f), toExpr(g));
+    return Poly.from(toExpr(f), vars, { extension: opts.extension }).lcm(Poly.from(toExpr(g), vars, { extension: opts.extension })).asExpr();
+  }
   if (opts.domain !== undefined || opts.modulus !== undefined) {
     const vars = varsFor(toExpr(f), toExpr(g));
     return Poly.from(toExpr(f), vars, opts).lcm(Poly.from(toExpr(g), vars, opts)).asExpr();
@@ -2234,6 +2252,14 @@ export function sqfNorm(fIn: ExprLike, x: Sym, extension: readonly Expr[]): [num
 impl.factor = (e) => factor(e);
 polyHooks.factorList = (e) => factorListInt(e);
 polyHooks.cancelDomain = (e, opts) => {
+  if (opts.extension !== undefined) {
+    // the numerator and denominator over the algebraic field, divided by their gcd
+    const gens = varsFor(e);
+    const [numer, denom] = fraction(together(e));
+    const n = Poly.from(numer, gens, { extension: opts.extension }), d = Poly.from(denom, gens, { extension: opts.extension });
+    const g = n.gcd(d);
+    return mul(n.exquo(g).asExpr(), pow(d.exquo(g).asExpr(), -1));
+  }
   const p = modulusOption(opts);
   if (p === undefined) {
     if (!['ZZ','QQ'].includes(String(opts.domain))) throw new NotImplementedError(`cancel over ${String(opts.domain)}`);

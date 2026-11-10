@@ -1060,7 +1060,8 @@ def ser(o):
     if isinstance(o, sympy.ConditionSet):
         return {"t": "ConditionSet", "sym": ser(o.sym), "condition": ser(o.condition), "base": ser(o.base_set)}
     if isinstance(o, sympy.AlgebraicNumber):
-        return {"t": "AlgebraicNumber", "root": ser(o.root), "coeffs": [ser(c) for c in o.coeffs()]}
+        return {"t": "AlgebraicNumber", "root": ser(o.root), "coeffs": [ser(c) for c in o.coeffs()],
+                **({"alias": ser(o.alias)} if o.is_aliased else {})}
     if isinstance(o, sympy.Interval):
         return {"t": "Interval", "a": ser(o.start), "b": ser(o.end), "lo": bool(o.left_open), "ro": bool(o.right_open)}
     if isinstance(o, sympy.FiniteSet):

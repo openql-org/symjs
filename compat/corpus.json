@@ -376002,7 +376002,12 @@
        "p": "0",
        "q": "1"
       }
-     ]
+     ],
+     "alias": {
+      "t": "Symbol",
+      "name": "alpha",
+      "assume": {}
+     }
     },
     "gens": [
      {
@@ -376072,9 +376077,80 @@
         "p": "0",
         "q": "1"
        }
-      ]
+      ],
+      "alias": {
+       "t": "Symbol",
+       "name": "alpha",
+       "assume": {}
+      }
      }
-    ]
+    ],
+    "minpoly": {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-6",
+          "q": "1"
+         },
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 0,
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "8",
+          "q": "1"
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Dummy",
+            "name": "x",
+            "index": 0,
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Dummy",
+       "name": "x",
+       "index": 0,
+       "assume": {}
+      }
+     ],
+     "domain": "QQ",
+     "pure": true
+    },
+    "alias": "alpha"
    },
    "args": [
     {
@@ -376227,7 +376303,12 @@
        "p": "0",
        "q": "1"
       }
-     ]
+     ],
+     "alias": {
+      "t": "Symbol",
+      "name": "zeta",
+      "assume": {}
+     }
     },
     "gens": [
      {
@@ -376311,9 +376392,92 @@
         "p": "0",
         "q": "1"
        }
-      ]
+      ],
+      "alias": {
+       "t": "Symbol",
+       "name": "zeta",
+       "assume": {}
+      }
      }
-    ]
+    ],
+    "minpoly": {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 1,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 1,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Dummy",
+          "name": "x",
+          "index": 1,
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "4",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Dummy",
+        "name": "x",
+        "index": 1,
+        "assume": {}
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Dummy",
+       "name": "x",
+       "index": 1,
+       "assume": {}
+      }
+     ],
+     "domain": "QQ",
+     "pure": true
+    },
+    "alias": "zeta"
    },
    "args": [
     {
@@ -376508,7 +376672,12 @@
            "p": "0",
            "q": "1"
           }
-         ]
+         ],
+         "alias": {
+          "t": "Symbol",
+          "name": "zeta7",
+          "assume": {}
+         }
         }
        ]
       }
@@ -376682,505 +376851,6 @@
    "module": "sympy.polys.domains.domain",
    "src": "K.from_sympy(x**2/3 + 1)",
    "expected": "1/3*x**2 + 1"
-  },
-  {
-   "fn": ".parent",
-   "self": {
-    "t": "PolyElement",
-    "ring": {
-     "t": "PolyRing",
-     "symbols": [
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      },
-      {
-       "t": "Symbol",
-       "name": "y",
-       "assume": {}
-      }
-     ],
-     "domain": {
-      "t": "Domain",
-      "name": "ZZ"
-     },
-     "order": "lex"
-    },
-    "expr": {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Pow",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        },
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "Pow",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "y",
-         "assume": {}
-        },
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        }
-       ]
-      }
-     ]
-    }
-   },
-   "args": [],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.domainelement",
-   "src": "p.parent()",
-   "expected": "ZZ[x,y]"
-  },
-  {
-   "fn": ".free_module",
-   "self": {
-    "t": "Domain",
-    "name": "QQ[x]",
-    "base": {
-     "t": "Domain",
-     "name": "QQ"
-    },
-    "symbols": [
-     {
-      "t": "Symbol",
-      "name": "x",
-      "assume": {}
-     }
-    ],
-    "order": "grevlex",
-    "oldPolyRing": true
-   },
-   "args": [
-    {
-     "t": "Rational",
-     "p": "2",
-     "q": "1"
-    }
-   ],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.ring",
-   "src": "QQ.old_poly_ring(x).free_module(2)",
-   "expected": "QQ[x]**2"
-  },
-  {
-   "fn": ".ideal",
-   "self": {
-    "t": "Domain",
-    "name": "QQ[x]",
-    "base": {
-     "t": "Domain",
-     "name": "QQ"
-    },
-    "symbols": [
-     {
-      "t": "Symbol",
-      "name": "x",
-      "assume": {}
-     }
-    ],
-    "order": "grevlex",
-    "oldPolyRing": true
-   },
-   "args": [
-    {
-     "t": "Pow",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      },
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      }
-     ]
-    }
-   ],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.ring",
-   "src": "QQ.old_poly_ring(x).ideal(x**2)",
-   "expected": "<x**2>"
-  },
-  {
-   "fn": ".quotient_ring",
-   "self": {
-    "t": "Domain",
-    "name": "QQ[x]",
-    "base": {
-     "t": "Domain",
-     "name": "QQ"
-    },
-    "symbols": [
-     {
-      "t": "Symbol",
-      "name": "x",
-      "assume": {}
-     }
-    ],
-    "order": "grevlex",
-    "oldPolyRing": true
-   },
-   "args": [
-    {
-     "t": "AGCAIdeal",
-     "ring": {
-      "t": "Domain",
-      "name": "QQ[x]",
-      "base": {
-       "t": "Domain",
-       "name": "QQ"
-      },
-      "symbols": [
-       {
-        "t": "Symbol",
-        "name": "x",
-        "assume": {}
-       }
-      ],
-      "order": "grevlex",
-      "oldPolyRing": true
-     },
-     "gens": [
-      {
-       "t": "Pow",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        },
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        }
-       ]
-      }
-     ]
-    }
-   ],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.ring",
-   "src": "QQ.old_poly_ring(x).quotient_ring(QQ.old_poly_ring(x).ideal(x**2))",
-   "expected": "QQ[x]/<x**2>"
-  },
-  {
-   "fn": ".quotient_ring",
-   "self": {
-    "t": "Domain",
-    "name": "QQ[x]",
-    "base": {
-     "t": "Domain",
-     "name": "QQ"
-    },
-    "symbols": [
-     {
-      "t": "Symbol",
-      "name": "x",
-      "assume": {}
-     }
-    ],
-    "order": "grevlex",
-    "oldPolyRing": true
-   },
-   "args": [
-    {
-     "t": "Tuple",
-     "items": [
-      {
-       "t": "Pow",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        },
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        }
-       ]
-      }
-     ],
-     "list": true
-    }
-   ],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.ring",
-   "src": "QQ.old_poly_ring(x).quotient_ring([x**2])",
-   "expected": "QQ[x]/<x**2>"
-  },
-  {
-   "fn": ".gcd",
-   "self": {
-    "t": "Domain",
-    "name": "QQ"
-   },
-   "args": [
-    {
-     "t": "Rational",
-     "p": "2",
-     "q": "3",
-     "mpq": true
-    },
-    {
-     "t": "Rational",
-     "p": "4",
-     "q": "9",
-     "mpq": true
-    }
-   ],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.field",
-   "src": "QQ.gcd(QQ(2, 3), QQ(4, 9))",
-   "expected": "2/9"
-  },
-  {
-   "fn": "gcd",
-   "args": [
-    {
-     "t": "Rational",
-     "p": "2",
-     "q": "3"
-    },
-    {
-     "t": "Rational",
-     "p": "4",
-     "q": "9"
-    }
-   ],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.field",
-   "src": "gcd(S(2)/3, S(4)/9)",
-   "expected": "2/9"
-  },
-  {
-   "fn": "primitive",
-   "args": [
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "4",
-       "q": "9"
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "3"
-        },
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ]
-      }
-     ]
-    }
-   ],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.field",
-   "src": "primitive(2*x/3 + S(4)/9)",
-   "expected": "(2/9, 3*x + 2)"
-  },
-  {
-   "fn": ".lcm",
-   "self": {
-    "t": "Domain",
-    "name": "QQ"
-   },
-   "args": [
-    {
-     "t": "Rational",
-     "p": "2",
-     "q": "3",
-     "mpq": true
-    },
-    {
-     "t": "Rational",
-     "p": "4",
-     "q": "9",
-     "mpq": true
-    }
-   ],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.field",
-   "src": "QQ.lcm(QQ(2, 3), QQ(4, 9))",
-   "expected": "4/3"
-  },
-  {
-   "fn": "lcm",
-   "args": [
-    {
-     "t": "Rational",
-     "p": "2",
-     "q": "3"
-    },
-    {
-     "t": "Rational",
-     "p": "4",
-     "q": "9"
-    }
-   ],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.field",
-   "src": "lcm(S(2)/3, S(4)/9)",
-   "expected": "4/3"
-  },
-  {
-   "fn": ".algebraic_field",
-   "self": {
-    "t": "Domain",
-    "name": "ZZ"
-   },
-   "args": [
-    {
-     "t": "Pow",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "2"
-      }
-     ]
-    }
-   ],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.integerring",
-   "src": "ZZ.algebraic_field(sqrt(2))",
-   "expected": "QQ<sqrt(2)>"
-  },
-  {
-   "fn": ".get_field",
-   "self": {
-    "t": "Domain",
-    "name": "ZZ"
-   },
-   "args": [],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.integerring",
-   "src": "ZZ.get_field()",
-   "expected": "QQ"
-  },
-  {
-   "fn": ".log",
-   "self": {
-    "t": "Domain",
-    "name": "ZZ"
-   },
-   "args": [
-    {
-     "t": "Rational",
-     "p": "8",
-     "q": "1"
-    },
-    {
-     "t": "Rational",
-     "p": "2",
-     "q": "1"
-    }
-   ],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.integerring",
-   "src": "ZZ.log(ZZ(8), ZZ(2))",
-   "expected": "3"
-  },
-  {
-   "fn": ".log",
-   "self": {
-    "t": "Domain",
-    "name": "ZZ"
-   },
-   "args": [
-    {
-     "t": "Rational",
-     "p": "9",
-     "q": "1"
-    },
-    {
-     "t": "Rational",
-     "p": "2",
-     "q": "1"
-    }
-   ],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.integerring",
-   "src": "ZZ.log(ZZ(9), ZZ(2))",
-   "expected": "3"
-  },
-  {
-   "fn": ".algebraic_field",
-   "self": {
-    "t": "Domain",
-    "name": "QQ"
-   },
-   "args": [
-    {
-     "t": "Pow",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "2"
-      }
-     ]
-    }
-   ],
-   "kwargs": {},
-   "category": "polys",
-   "module": "sympy.polys.domains.rationalfield",
-   "src": "QQ.algebraic_field(sqrt(2))",
-   "expected": "QQ<sqrt(2)>"
   },
   {
    "fn": "Poly",
@@ -379380,6 +379050,505 @@
    "module": "sympy.polys.domains.algebraicfield",
    "src": "G.order()",
    "expected": "8"
+  },
+  {
+   "fn": ".parent",
+   "self": {
+    "t": "PolyElement",
+    "ring": {
+     "t": "PolyRing",
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "domain": {
+      "t": "Domain",
+      "name": "ZZ"
+     },
+     "order": "lex"
+    },
+    "expr": {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.domainelement",
+   "src": "p.parent()",
+   "expected": "ZZ[x,y]"
+  },
+  {
+   "fn": ".free_module",
+   "self": {
+    "t": "Domain",
+    "name": "QQ[x]",
+    "base": {
+     "t": "Domain",
+     "name": "QQ"
+    },
+    "symbols": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ],
+    "order": "grevlex",
+    "oldPolyRing": true
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.ring",
+   "src": "QQ.old_poly_ring(x).free_module(2)",
+   "expected": "QQ[x]**2"
+  },
+  {
+   "fn": ".ideal",
+   "self": {
+    "t": "Domain",
+    "name": "QQ[x]",
+    "base": {
+     "t": "Domain",
+     "name": "QQ"
+    },
+    "symbols": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ],
+    "order": "grevlex",
+    "oldPolyRing": true
+   },
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.ring",
+   "src": "QQ.old_poly_ring(x).ideal(x**2)",
+   "expected": "<x**2>"
+  },
+  {
+   "fn": ".quotient_ring",
+   "self": {
+    "t": "Domain",
+    "name": "QQ[x]",
+    "base": {
+     "t": "Domain",
+     "name": "QQ"
+    },
+    "symbols": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ],
+    "order": "grevlex",
+    "oldPolyRing": true
+   },
+   "args": [
+    {
+     "t": "AGCAIdeal",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "gens": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.ring",
+   "src": "QQ.old_poly_ring(x).quotient_ring(QQ.old_poly_ring(x).ideal(x**2))",
+   "expected": "QQ[x]/<x**2>"
+  },
+  {
+   "fn": ".quotient_ring",
+   "self": {
+    "t": "Domain",
+    "name": "QQ[x]",
+    "base": {
+     "t": "Domain",
+     "name": "QQ"
+    },
+    "symbols": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ],
+    "order": "grevlex",
+    "oldPolyRing": true
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.ring",
+   "src": "QQ.old_poly_ring(x).quotient_ring([x**2])",
+   "expected": "QQ[x]/<x**2>"
+  },
+  {
+   "fn": ".gcd",
+   "self": {
+    "t": "Domain",
+    "name": "QQ"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "3",
+     "mpq": true
+    },
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "9",
+     "mpq": true
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.field",
+   "src": "QQ.gcd(QQ(2, 3), QQ(4, 9))",
+   "expected": "2/9"
+  },
+  {
+   "fn": "gcd",
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "3"
+    },
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "9"
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.field",
+   "src": "gcd(S(2)/3, S(4)/9)",
+   "expected": "2/9"
+  },
+  {
+   "fn": "primitive",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "9"
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "3"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.field",
+   "src": "primitive(2*x/3 + S(4)/9)",
+   "expected": "(2/9, 3*x + 2)"
+  },
+  {
+   "fn": ".lcm",
+   "self": {
+    "t": "Domain",
+    "name": "QQ"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "3",
+     "mpq": true
+    },
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "9",
+     "mpq": true
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.field",
+   "src": "QQ.lcm(QQ(2, 3), QQ(4, 9))",
+   "expected": "4/3"
+  },
+  {
+   "fn": "lcm",
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "3"
+    },
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "9"
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.field",
+   "src": "lcm(S(2)/3, S(4)/9)",
+   "expected": "4/3"
+  },
+  {
+   "fn": ".algebraic_field",
+   "self": {
+    "t": "Domain",
+    "name": "ZZ"
+   },
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "2"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.integerring",
+   "src": "ZZ.algebraic_field(sqrt(2))",
+   "expected": "QQ<sqrt(2)>"
+  },
+  {
+   "fn": ".get_field",
+   "self": {
+    "t": "Domain",
+    "name": "ZZ"
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.integerring",
+   "src": "ZZ.get_field()",
+   "expected": "QQ"
+  },
+  {
+   "fn": ".log",
+   "self": {
+    "t": "Domain",
+    "name": "ZZ"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "8",
+     "q": "1"
+    },
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.integerring",
+   "src": "ZZ.log(ZZ(8), ZZ(2))",
+   "expected": "3"
+  },
+  {
+   "fn": ".log",
+   "self": {
+    "t": "Domain",
+    "name": "ZZ"
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "9",
+     "q": "1"
+    },
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.integerring",
+   "src": "ZZ.log(ZZ(9), ZZ(2))",
+   "expected": "3"
+  },
+  {
+   "fn": ".algebraic_field",
+   "self": {
+    "t": "Domain",
+    "name": "QQ"
+   },
+   "args": [
+    {
+     "t": "Pow",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "2"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.domains.rationalfield",
+   "src": "QQ.algebraic_field(sqrt(2))",
+   "expected": "QQ<sqrt(2)>"
   },
   {
    "fn": "factor",
@@ -477317,251 +477486,6 @@
     "reason": "non-call-expression"
    },
    {
-    "module": "sympy.polys.domains.domain",
-    "src": "p",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "p.domain",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "isinstance(p.domain, Domain)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "ZZ.dtype  # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "type(ZZ(2))  # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "type(QQ(1, 2))  # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "ZZ(2) + ZZ(3)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "ZZ(5) // ZZ(2)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "ZZ(5) % ZZ(2)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "QQ(1, 2) / QQ(2, 3)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "ZZ.is_Field",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "QQ.is_Field",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "K",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "type(K)             # class of the domain",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "K.dtype             # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "p_expr",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "type(p_expr)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "isinstance(p_expr, Expr)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "p_domain            # domain element",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "type(p_domain)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "K.to_sympy(p_domain) == p_expr",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "type(ez)  # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "type(eq)  # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "ZZ.has_assoc_Field",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "QQ.has_assoc_Ring",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "K",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "K.ext.minpoly == f",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "L.ext.minpoly == g",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "print(a)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "a               # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "b               # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "divmod(a, b)    # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "QQ.div(a, b)    # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "ZZ.exquo(ZZ(5), ZZ(2))",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "QQ(5) / QQ(2)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "ZZ(4) / ZZ(2) # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "ZZ(5) / ZZ(2) # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "ZZ(4) / ZZ(2) # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "q_domain",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "q_expr",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "isinstance(q_domain, Expr)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "isinstance(q_expr, Expr)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "p_domain",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "p_expr",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "p_domain == p_expr",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "K.from_sympy(p_expr) == p_domain",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "K.to_sympy(p_domain) == p_expr",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "K.from_sympy(K.to_sympy(p_domain)) == p_domain",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "K.to_sympy(K.from_sympy(p_expr)) == p_expr",
-    "reason": "non-call-expression"
-   },
-   {
     "module": "sympy.polys.domains.domainelement",
     "src": "p",
     "reason": "non-call-expression"
@@ -477570,101 +477494,6 @@
     "module": "sympy.polys.domains.ring",
     "src": "QQ.old_poly_ring(x)/[x**2]",
     "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "K",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "xk  # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "xk * yk  # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "g",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "g.is_algebraic",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "K",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "K",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "K.ext",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "K.orig_ext",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "K.mod  # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "K",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "K",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "K",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "K.galois_group(by_name=True)[0]",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "print(B0[1])  # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "print(B1[1])",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "print(B2[1])",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "print(type(B1[1]))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "print(type(B2[1]))",
-    "reason": "not-exported-api"
    },
    {
     "module": "sympy.polys.domains.finitefield",
@@ -481600,6 +481429,346 @@
     "module": "sympy.combinatorics.subsets",
     "src": "list(ksubsets([1, 2, 3, 4, 5], 2))",
     "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "K",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "xk  # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "xk * yk  # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "g",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "g.is_algebraic",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "K",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "K",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "K.ext",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "K.orig_ext",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "K.mod  # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "K",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "K",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "K",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "K.galois_group(by_name=True)[0]",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "print(B0[1])  # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "print(B1[1])",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "print(B2[1])",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "print(type(B1[1]))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "print(type(B2[1]))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "p",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "p.domain",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "isinstance(p.domain, Domain)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "ZZ.dtype  # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "type(ZZ(2))  # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "type(QQ(1, 2))  # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "ZZ(2) + ZZ(3)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "ZZ(5) // ZZ(2)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "ZZ(5) % ZZ(2)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "QQ(1, 2) / QQ(2, 3)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "ZZ.is_Field",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "QQ.is_Field",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "K",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "type(K)             # class of the domain",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "K.dtype             # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "p_expr",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "type(p_expr)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "isinstance(p_expr, Expr)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "p_domain            # domain element",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "type(p_domain)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "K.to_sympy(p_domain) == p_expr",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "type(ez)  # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "type(eq)  # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "ZZ.has_assoc_Field",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "QQ.has_assoc_Ring",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "K",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "K.ext.minpoly == f",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "L.ext.minpoly == g",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "print(a)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "a               # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "b               # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "divmod(a, b)    # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "QQ.div(a, b)    # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "ZZ.exquo(ZZ(5), ZZ(2))",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "QQ(5) / QQ(2)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "ZZ(4) / ZZ(2) # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "ZZ(5) / ZZ(2) # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "ZZ(4) / ZZ(2) # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "q_domain",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "q_expr",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "isinstance(q_domain, Expr)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "isinstance(q_expr, Expr)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "p_domain",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "p_expr",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "p_domain == p_expr",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "K.from_sympy(p_expr) == p_domain",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "K.to_sympy(p_domain) == p_expr",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "K.from_sympy(K.to_sympy(p_domain)) == p_domain",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
+    "src": "K.to_sympy(K.from_sympy(p_expr)) == p_expr",
+    "reason": "non-call-expression"
    }
   ]
  }

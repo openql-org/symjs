@@ -131,7 +131,7 @@ function radicalContentRatio(n: Expr, d: Expr): Expr | undefined {
  * the leading coefficient of q (lex order of the generators) canonical.
  */
 export function cancel(ex: ExprLike, opts: PolynomialDomainOptions = {}): Expr {
-  if (opts.domain !== undefined || opts.modulus !== undefined) return defined(polyHooks.cancelDomain, 'polynomial domain cancellation')(sympify(ex), opts);
+  if (opts.domain !== undefined || opts.modulus !== undefined || opts.extension !== undefined) return defined(polyHooks.cancelDomain, 'polynomial domain cancellation')(sympify(ex), opts);
   const e = together(sympify(ex));
   let [n, d] = fraction(e);
   // SymPy as_numer_denom of sums (also inside products): the terms' denominators, also those of exp(-x) = 1/exp(x)

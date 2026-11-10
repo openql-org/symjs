@@ -960,3 +960,20 @@ describe('the field option (SymPy field=True)', () => {
     expect(dom('x + 1', [x], { domain: 'ZZ' })).toBe('ZZ');
   });
 });
+
+describe('gcd, lcm and cancel over an algebraic extension (SymPy 1.14 values)', () => {
+  it('treats algebraic numbers as generators unless an extension is given', () => {
+    const p = sj.parse;
+    const got = [
+      sj.gcd(p('x**2-2'), p('x-sqrt(2)')),
+      sj.gcd(p('x**2-2'), p('x-sqrt(2)'), { extension: sj.sqrt(2) }),
+      sj.lcm(p('x**2-2'), p('x-sqrt(2)'), { extension: sj.sqrt(2) }),
+      sj.lcm(p('x**2-2'), p('x+sqrt(2)'), { extension: true }),
+      sj.cancel(p('(x**2-2)/(x-sqrt(2))'), { extension: sj.sqrt(2) }),
+      sj.cancel(p('(x**2-2)/(x-sqrt(2))'), { extension: true }),
+      sj.gcd(p('x*pi'), p('pi')),
+      sj.gcd(p('sqrt(2)*x'), p('2*x')),
+    ].map(String);
+    expect(got).toEqual(['1', 'x - sqrt(2)', 'x**2 - 2', 'x**2 - 2', 'x + sqrt(2)', 'x + sqrt(2)', 'pi', 'x']);
+  });
+});

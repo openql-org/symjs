@@ -550,6 +550,8 @@ export function deserialize(tree: Tree): unknown {
       return f((tree['args'] as Tree[]).map((a) => deserialize(a)) as Expr[]);
     }
     case 'AlgebraicNumber':
+      // an aliased primitive element is its alias symbol in symjs expressions (AlgebraicField.toSympy)
+      if (tree['alias'] !== undefined && (tree['coeffs'] as Tree[]).length === 2) return deserialize(tree['alias'] as Tree);
       return new sj.AlgebraicNumber(deserialize(tree['root'] as Tree) as Expr, (tree['coeffs'] as Tree[]).map((t) => deserialize(t) as Expr));
     case 'Domain':
       // the domain object rebuilt from its parameters; ZZ/QQ also stay recognizable as JsDomain where an adapter compares the name
@@ -1016,6 +1018,7 @@ const asExpr = (v: unknown): Expr => {
 const asExprOrPoly = (v: unknown): Expr => (v instanceof sj.Poly ? v.asExpr() : asExpr(v));
 /** Translate Python coefficient-domain options; all arithmetic stays in the public API. */
 const polynomialOptions = (kw: Record<string, unknown>): sj.PolynomialDomainOptions => ({
+  ...(kw['extension'] === undefined ? {} : { extension: typeof kw['extension'] === 'boolean' ? kw['extension'] : kw['extension'] instanceof JsTuple ? kw['extension'].items.map(asExpr) : asExpr(kw['extension']) }),
   ...(kw['domain'] === undefined ? {} : { domain: kw['domain'] instanceof JsDomain ? kw['domain'].name : String(kw['domain']) }),
   ...(kw['modulus'] === undefined ? {} : { modulus: (kw['modulus'] as sj.Rational).p }),
 });
@@ -2100,7 +2103,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.together(asExpr(args[0]), { deep: Boolean(kw['deep']) });
   },
   cancel: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['domain','modulus'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['domain','modulus','extension'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 1) throw new Unsupported('arity');
     return sj.cancel(asExpr(args[0]), polynomialOptions(kw));
   },
@@ -3261,7 +3264,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.mul(p.LC(), p.LM());
   },
   gcd: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['domain','modulus'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['domain','modulus','extension'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 2) throw new Unsupported('gcd arity');
     const a = args[0] instanceof sj.Poly ? args[0] : asExpr(args[0]), b = args[1] instanceof sj.Poly ? args[1] : asExpr(args[1]);
     const opts = polynomialOptions(kw), r = sj.gcd(a, b, opts);
@@ -3270,7 +3273,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     return sj.Poly.from(r, a.gens, outputOpts);
   },
   lcm: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['domain','modulus'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['domain','modulus','extension'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args.length !== 2) throw new Unsupported('lcm arity');
     const a = args[0] instanceof sj.Poly ? args[0] : asExpr(args[0]), b = args[1] instanceof sj.Poly ? args[1] : asExpr(args[1]);
     const opts = polynomialOptions(kw), r = sj.lcm(a, b, opts);
