@@ -60,7 +60,9 @@ export {
   itermonomials,
 } from './polys/monomial';
 export type { ExponentVector } from './polys/monomial';
-export { LexOrder, GradedLexOrder, ReversedGradedLexOrder, InverseOrder, lex, grlex, grevlex, ilex, igrlex, igrevlex, monomialKey, compareMonomialKeys } from './polys/orderings';
+export { lbpNum, lbpPolyn, lbpSign, cpCmp, cpKey, criticalPair, f5Reduce, f5b, groebnerGcd, groebnerLcm, isGroebner, isMinimal, isReduced, isRewritableOrComparable, lbp, lbpCmp, lbpKey, lbpMulTerm, lbpSub, redGroebner, sPoly, sig, sigCmp, sigKey, sigMult, spoly } from './polys/groebnertools';
+export type { CriticalPair, LabeledPolynomial, Signature } from './polys/groebnertools';
+export { LexOrder, GradedLexOrder, ReversedGradedLexOrder, InverseOrder, lex, grlex, grevlex, ilex, igrlex, igrevlex, monomialKey, compareMonomialKeys, ProductOrder, buildProductOrder } from './polys/orderings';
 export type { MonomialKey, MonomialOrdering } from './polys/orderings';
 export {
   BasePolynomialError,
@@ -102,6 +104,7 @@ export type { RootOfOptions } from './polys/rootof';
 export {
   apart,
 } from './polys/partfrac';
+export type { ApartOptions } from './polys/partfrac';
 export {
   nroots,
 } from './polys/nroots';
@@ -205,6 +208,7 @@ export { Module, FreeModule, SubModule, QuotientModule, ModuleElement } from './
 export type { ModuleInput } from './polys/agca/modules';
 export { ModuleImplementedIdeal } from './polys/agca/ideals';
 export { ModuleHomomorphism, homomorphism } from './polys/agca/homomorphisms';
+export { ExtensionElement, FiniteExtension } from './polys/agca/extensions';
 export type { PuiseuxMonom, PuiseuxTerm } from './polys/puiseux';
 export { powXin, rsTrunc, rsMul, rsSquare, rsDiff, rsIntegrate, rsIsPuiseux, rsPow, rsSeriesInversion, rsNthRoot, rsExp, rsSin, rsCos, rsSinh, rsCosh, rsAsin, rsAsinh, rsAtan, rsAtanh, rsLambertW, rsTan, rsTanh, rsCot, rsLog, rsSeriesFromList, rsSubs, rsSeriesReversion, rsPuiseux, rsFun, rsHadamardExp, rsNewton, rsComposeAdd, rsSeries } from './polys/ringseries';
 export type { SeriesPoly, SeriesFunction } from './polys/ringseries';

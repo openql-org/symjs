@@ -11,7 +11,7 @@
  */
 
 import { ExactQuotientFailed, NotImplementedError, PolynomialError } from '../core/errors';
-import { at, defined, first } from '../core/guard';
+import { at, cast, defined, first } from '../core/guard';
 import type { FracField } from './fields';
 import type { ExprLike } from '../core/nodes';
 import { Add, Constant, Expr, Mul, Pow, Rational, Sym } from '../core/nodes';
@@ -435,6 +435,11 @@ export class PolyElement {
 
   private get K(): Domain {
     return this.ring.domain;
+  }
+
+  /** SymPy parent(): the ring of the element as a domain (ZZ[x,y]). */
+  parent(): Domain {
+    return this.ring.domain.polyRing(...this.ring.symbols.map((s) => cast(s, Sym)));
   }
 
   private make(terms: Iterable<readonly [Monom, Expr]>): PolyElement {

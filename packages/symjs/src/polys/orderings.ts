@@ -104,6 +104,56 @@ export const igrevlex: InverseOrder = new InverseOrder(grevlex);
 const ORDERS: Readonly<Record<string, MonomialOrdering>> = { lex, grlex, grevlex, ilex, igrlex, igrevlex };
 
 /**
+ * SymPy ProductOrder(*args): the order of the keys of several orderings,
+ * each applied to a selection of the exponents (a product order, compared
+ * lexicographically).
+ */
+export class ProductOrder {
+  readonly alias = 'ProductOrder';
+  readonly args: readonly (readonly [MonomialOrdering, readonly number[]])[];
+  constructor(...args: (readonly [MonomialOrdering, readonly number[]])[]) {
+    this.args = args;
+  }
+  /** SymPy O(monomial): the tuple of the keys of the selected exponents. */
+  key(monomial: readonly number[]): MonomialKey[] {
+    return this.args.map(([O, idx]) => O.key(idx.map((i) => at(monomial, i))));
+  }
+  /** Negative, zero or positive as a is smaller than, equal to or greater than b. */
+  compare(a: readonly number[], b: readonly number[]): number {
+    return compareMonomialKeys(this.key(a), this.key(b));
+  }
+  /** SymPy is_global: true when every ordering is global, false when none is, else 'unknown'. */
+  get isGlobal(): boolean | 'unknown' {
+    if (this.args.every(([O]) => O.isGlobal)) return true;
+    if (this.args.every(([O]) => !O.isGlobal)) return false;
+    return 'unknown';
+  }
+  toString(): string {
+    return `ProductOrder(${this.args.map(([O]) => O.alias).join(', ')})`;
+  }
+}
+
+/**
+ * SymPy build_product_order(arg, gens): the product order of orderings
+ * given by name, each on its own generators, e.g.
+ * buildProductOrder([['grlex', x, y], ['grlex', z, t]], [x, y, z, t]).
+ */
+export function buildProductOrder(arg: readonly (readonly [string, ...Expr[]])[], gens: readonly Expr[]): ProductOrder {
+  const index = (g: Expr): number => {
+    const i = gens.findIndex((h) => h.key === g.key);
+    if (i < 0) throw new RangeError(`${String(g)} is not a generator`);
+    return i;
+  };
+  return new ProductOrder(
+    ...arg.map(([name, ...vars]): readonly [MonomialOrdering, readonly number[]] => {
+      const O = ORDERS[name];
+      if (O === undefined) throw new RangeError(`supported monomial orderings are 'lex', 'grlex' and 'grevlex', got '${name}'`);
+      return [O, vars.map(index)];
+    }),
+  );
+}
+
+/**
  * The key function of an ordering given by name or object (SymPy
  * monomial_key): on exponent tuples, or, given generators, on expressions
  * (by the degrees of their polynomial in the generators).

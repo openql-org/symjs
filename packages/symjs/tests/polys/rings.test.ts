@@ -647,3 +647,11 @@ describe('ring elements', () => {
     expect(show(sring([X], { domain: 'QQ' }))).toBe('[Polynomial ring in x over QQ with lex order, [x]]');
   });
 });
+
+describe('parent', () => {
+  it('is the ring as a domain (SymPy PolyElement.parent)', () => {
+    const [R, x, y] = ring('x,y', ZZ, lex) as [PolyRing, PolyElement, PolyElement];
+    expect(String(x.mul(x).add(y.mul(y)).parent())).toBe('ZZ[x,y]');
+    expect(String(R.zero.parent())).toBe('ZZ[x,y]');
+  });
+});

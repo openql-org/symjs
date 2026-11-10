@@ -18,12 +18,12 @@
  * `polys/domains.ts` do not provide and the rings need.
  */
 
-import { ExactQuotientFailed, PolynomialError } from '../core/errors';
+import { DomainError, ExactQuotientFailed, PolynomialError } from '../core/errors';
 import { at, first } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
-import { Float, Rational, S, Sym } from '../core/nodes';
+import { Dummy, Float, Rational, S, Sym } from '../core/nodes';
 import { gcd as igcd, iroot, lcm as ilcm } from '../core/numbers';
-import { pow, splitCoeff, sympify } from '../core/ops';
+import { add, mul, pow, splitCoeff, sympify } from '../core/ops';
 import { asInt } from '../ntheory/intutil';
 import type { IntLike } from '../ntheory/intutil';
 import { PREC, floatString, precedence, str } from '../printing/str';
@@ -31,7 +31,9 @@ import { expand } from '../simplify/expand';
 import { cancel, fraction } from '../simplify/rational';
 import type { Domain } from './domains';
 import { EX, FractionField, groundRational, IntegerRing, PolynomialRing, QQ, RationalField, RealField, ZZ } from './domains';
+import { AlgebraicField } from './domains/algebraicfield';
 import { FiniteField } from './domains/finitefield';
+import { GaussianIntegerRing, GaussianRationalField } from './domains/gaussiandomains';
 import { mgcd } from './mpoly';
 import { MultivariatePolynomialError } from './polyerrors';
 import { Poly, discriminant, polyGcd, resultant } from './sympoly';
@@ -441,6 +443,21 @@ export abstract class IPolys<P extends CompatElement<P>> {
   /** The product of the polynomials (SymPy dmp_expand). */
   dmpExpand(polys: readonly P[]): P {
     return this.dupExpand(polys);
+  }
+  /**
+   * SymPy dmp_lift: the norm of f over an algebraic (or Gaussian) domain,
+   * the resultant in the generator a of the field of f(x, a) and the
+   * minimal polynomial of a; its coefficients are rational.
+   */
+  dmpLift(f: P): P {
+    const K0 = this.domain;
+    const K = K0 instanceof AlgebraicField ? K0 : K0 instanceof GaussianRationalField || K0 instanceof GaussianIntegerRing ? new AlgebraicField(QQ, S.I) : undefined;
+    if (K === undefined) throw new DomainError('computation can be done only in an algebraic domain');
+    const a = new Dummy('a');
+    const inA = (rep: readonly { numerator: bigint; denominator: bigint }[]): Expr => add(...rep.map((c, i) => mul(Rational.of(c.numerator, c.denominator), pow(a, rep.length - 1 - i))));
+    const F = add(...f.listterms().map(([m, c]) => mul(inA(K.convert(K0.toSympy(c)).rep), ...m.map((e, j) => pow(at(this.symbols, j), e)))));
+    const r = resultant(F, inA(K.mod), a);
+    return this.fromTerms(Poly.from(r, [...this.symbols]).terms());
   }
 
   /** Pseudo-division in x_0 (SymPy dup_pdiv/dmp_pdiv). */

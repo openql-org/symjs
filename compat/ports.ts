@@ -580,3 +580,17 @@ class NewExpr extends sj.ExtensionExpr {
   }
 }
 PORTS['sympy.tensor.functions:shape(NewExpr(M))'] = () => sj.shape(new NewExpr(sj.ImmutableMatrix(sj.Matrix.of([[1], [2]]))));
+
+// ---- sympy.polys.orderings: O = build_product_order(...) is called as a function
+PORTS['sympy.polys.orderings:O((1, 2, 3, 4))'] = () => {
+  const [a, b, c, d] = sym('x y z t') as [sj.Sym, sj.Sym, sj.Sym, sj.Sym];
+  return sj.buildProductOrder([['grlex', a, b], ['grlex', c, d]], [a, b, c, d]).key([1, 2, 3, 4]);
+};
+
+// ---- sympy.polys.densebasic: h = lambda x, y, z: 2*x + y - z
+{
+  const h = (u: unknown, v: unknown, w: unknown): unknown => sj.add(sj.mul(2, u as Expr), v as Expr, sj.mul(-1, w as Expr));
+  const n = (k: number): Expr => sj.Rational.of(k);
+  PORTS['sympy.polys.densebasic:dup_apply_pairs([1, 2, 3], [3, 2, 1], h, (1,), ZZ)'] = () => sj.dupApplyPairs([n(1), n(2), n(3)], [n(3), n(2), n(1)], h, [n(1)], sj.ZZ);
+  PORTS['sympy.polys.densebasic:dmp_apply_pairs([[1], [2, 3]], [[3], [2, 1]], h, (1,), 1, ZZ)'] = () => sj.dmpApplyPairs([[n(1)], [n(2), n(3)]], [[n(3)], [n(2), n(1)]], h, [n(1)], 1, sj.ZZ);
+}

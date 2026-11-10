@@ -237,6 +237,8 @@ export function matches(v: unknown, expectedIn: string): boolean {
 }
 function matches0(v: unknown, expected: string, got: string): boolean {
   if (got === expected || PRINT_ALIASES[expected] === got) return true;
+  // JavaScript has one -Infinity for SymPy's -oo and Python's float -inf (dmp_degree of the zero polynomial)
+  if (v === -Infinity && expected === '-inf') return true;
   if (got.includes('{') && normalizeSets(got) === normalizeSets(expected)) return true;
   const listPrefix = "defaultdict(<class 'list'>, ";
   if (expected.startsWith(listPrefix)) return matches(v, expected.slice(listPrefix.length, -1));
@@ -1734,8 +1736,8 @@ export const ADAPTERS: Record<string, Adapter> = {
   },
 
   apart: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'full') throw new Unsupported(`kwargs ${k}`);
-    return sj.apart(asExpr(args[0]), args[1] === undefined ? undefined : asSym(args[1]), { full: Boolean(kw['full']) });
+    for (const k of Object.keys(kw)) if (!['full', 'domain'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    return sj.apart(asExpr(args[0]), args[1] === undefined ? undefined : asSym(args[1]), { full: Boolean(kw['full']), ...(kw['domain'] === undefined ? {} : { domain: kw['domain'] instanceof JsDomain ? kw['domain'].name : String(kw['domain']) }) });
   },
   apart_list: (args, kw) => {
     noKw(kw);
@@ -3213,13 +3215,14 @@ export const ADAPTERS: Record<string, Adapter> = {
     return new JsDict([...result].map(([k,v]) => [k,kw['_raw'] === false || [...v.freeSymbols()].some((s) => ring.symbols.some((g) => g.key === s.key)) ? v : ring.domain.convert(v)]));
   },
   Poly: (args, kw) => {
-    for (const k of Object.keys(kw)) if (!['domain','modulus','extension','gaussian'].includes(k)) throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['domain','modulus','extension','gaussian','field'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const [e, ...gens] = args;
     const extension = kw['extension'];
     return sj.Poly.from(asExprOrPoly(e), gens.map(asExpr), {
       ...polynomialOptions(kw),
       ...(extension === undefined ? {} : { extension: typeof extension === 'boolean' ? extension : extension instanceof JsTuple ? extension.items.map(asExpr) : asExpr(extension) }),
       ...(kw['gaussian'] === undefined ? {} : { gaussian: Boolean(kw['gaussian']) }),
+      ...(kw['field'] === undefined ? {} : { field: Boolean(kw['field']) }),
     });
   },
   degree: (args, kw) => {

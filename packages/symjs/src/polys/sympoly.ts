@@ -48,12 +48,22 @@ export interface PolynomialDomainOptions {
 
 /** Construction options for algebraic and Gaussian coefficient domains. */
 export interface PolyConstructionOptions extends PolynomialDomainOptions {
+  /** Prefer a field: QQ over ZZ, QQ_I over ZZ_I, ZZ(x) over ZZ[x] or QQ[x] (SymPy field=True). */
+  field?: boolean;
   extension?: boolean | ExprLike | readonly ExprLike[];
   gaussian?: boolean;
   pure?: boolean;
 }
 /** Domain construction is registered by polys/constructor, which depends on Poly. @internal */
 export const polyConstructionHooks: { domain?: (coeffs: readonly Expr[], opts: PolyConstructionOptions) => Domain } = {};
+
+/** The field a constructed domain prefers with field=True (SymPy: QQ, QQ_I, the fraction field ZZ(x) of ZZ[x] or QQ[x]). */
+function fieldDomainName(name: string): string {
+  if (name === 'ZZ') return 'QQ';
+  if (name === 'ZZ_I') return 'QQ_I';
+  const m = /^(?:ZZ|QQ)\[(.*)\]$/.exec(name);
+  return m ? `ZZ(${at(m, 1)})` : name;
+}
 
 /** Resolve a positive modulus while preserving SymPy's mutually exclusive options. */
 function modulusOption(opts: PolynomialDomainOptions): bigint | undefined {
@@ -309,7 +319,8 @@ export class Poly {
       const real = list.map((t) => ({ monom: t.monom, coeff: impl.evalf(t.coeff, 15) }));
       return new Poly(gs, real, 'RR', opts.pure ?? false);
     }
-    const domain = requestedDomain ?? inferDomain(list.length ? list.map((t) => t.coeff) : [S.Zero]);
+    const inferred = requestedDomain ?? inferDomain(list.length ? list.map((t) => t.coeff) : [S.Zero]);
+    const domain = opts.field === true && requestedDomain === undefined ? fieldDomainName(inferred) : inferred;
     return new Poly(gs, list, domain, opts.pure ?? false);
   }
 

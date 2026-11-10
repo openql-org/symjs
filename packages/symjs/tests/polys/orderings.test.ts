@@ -43,3 +43,20 @@ describe('monomial orderings', () => {
     expect(() => sj.monomialKey('foo')).toThrow(RangeError);
   });
 });
+
+describe('product orders', () => {
+  it('build_product_order and ProductOrder (SymPy doctest values)', () => {
+    const [x, y, z, t] = sj.symbols('x y z t');
+    const O = sj.buildProductOrder([['grlex', x, y], ['grlex', z, t]], [x, y, z, t]);
+    expect(O.key([1, 2, 3, 4])).toEqual([[3, [1, 2]], [7, [3, 4]]]);
+    const P = sj.buildProductOrder([['lex', x, y], ['grlex', z, t]], [x, y, z, t]);
+    expect(String(P)).toBe('ProductOrder(lex, grlex)');
+    expect(P.key([1, 2, 3, 4])).toEqual([[1, 2], [7, [3, 4]]]);
+    expect(P.isGlobal).toBe(true);
+    expect(P.compare([0, 1, 0, 0], [1, 0, 0, 0])).toBeLessThan(0);
+    expect(new sj.ProductOrder([sj.ilex, [0, 1]], [sj.ilex, [2, 3]]).isGlobal).toBe(false);
+    expect(new sj.ProductOrder([sj.ilex, [0, 1]], [sj.lex, [2, 3]]).isGlobal).toBe('unknown');
+    expect(() => sj.buildProductOrder([['foo', x]], [x])).toThrow(RangeError);
+    expect(() => sj.buildProductOrder([['lex', z]], [x])).toThrow(RangeError);
+  });
+});

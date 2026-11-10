@@ -10,7 +10,7 @@ import { NotImplementedError } from '../core/errors';
 import { at, defined, first } from '../core/guard';
 import { apartFull } from './rootsum';
 import type { Expr, ExprLike } from '../core/nodes';
-import { S, Sym } from '../core/nodes';
+import { Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { linsolve } from '../matrices/linsys';
 import { rebuild as impl_rebuild } from '../core/traverse';
@@ -18,8 +18,33 @@ import { expandMul } from '../simplify/expand';
 import { cancel, fraction, together } from '../simplify/rational';
 import { Poly, factor, factorListInt, sortGens } from './sympoly';
 
+/** Options of apart: Bronstein's full decomposition, or the coefficient domain of the factorization. */
+export interface ApartOptions {
+  /** Bronstein's full decomposition over the algebraic closure (RootSum). */
+  full?: boolean;
+  /** The domain the denominator is factored over (QQ_I, QQ<sqrt(2)>, ...). */
+  domain?: string;
+  /** An algebraic extension to factor the denominator over. */
+  extension?: readonly Expr[];
+  /** Factor over the Gaussian rationals. */
+  gaussian?: boolean;
+}
+
+/** The factors of the denominator over the requested domain, [content, [factor, multiplicity][]]. */
+function domainFactors(Q: Expr, opts: ApartOptions): [Expr, [Expr, number][]] {
+  const factored = factor(Q, { ...(opts.domain === undefined ? {} : { domain: opts.domain }), ...(opts.extension === undefined ? {} : { extension: opts.extension }), ...(opts.gaussian === undefined ? {} : { gaussian: opts.gaussian }) });
+  let content: Expr = S.One;
+  const factors: [Expr, number][] = [];
+  for (const f of factored instanceof Mul ? factored.args : [factored]) {
+    const [base, k] = f instanceof Pow && f.exp instanceof Rational && f.exp.isInteger ? [f.base, Number(f.exp.p)] : [f, 1];
+    if (base.isNumber) content = mul(content, f);
+    else factors.push([base, k]);
+  }
+  return [content, factors];
+}
+
 /** Partial fraction decomposition of a rational function in x. */
-export function apart(fIn: ExprLike, xIn?: Sym, opts: { full?: boolean } = {}): Expr {
+export function apart(fIn: ExprLike, xIn?: Sym, opts: ApartOptions = {}): Expr {
   const f = cancel(together(sympify(fIn)));
   let x = xIn;
   if (x === undefined) {
@@ -40,7 +65,8 @@ export function apart(fIn: ExprLike, xIn?: Sym, opts: { full?: boolean } = {}): 
   const quotient = qPoly.asExpr();
   const r = rPoly.asExpr();
   const gens = sortGens([...Q.freeSymbols()]);
-  const [content, factors0] = factorListInt(expandMul(Q), gens);
+  const overDomain = opts.domain !== undefined || opts.extension !== undefined || opts.gaussian !== undefined;
+  const [content, factors0] = overDomain ? domainFactors(expandMul(Q), opts) : factorListInt(expandMul(Q), gens);
   let c: Expr = content;
   const factors: [Expr, number][] = [];
   for (const [g, k] of factors0) {
