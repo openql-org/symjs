@@ -34,7 +34,8 @@ const CASES = [
   ['special', '*', 370],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
   ['simplify', 'simplify', 890],
-  ['polys', 'factor', 616],
+  // Polynomial-domain factories now register the AGCA module/ideal engines.
+  ['polys', 'factor', 725],
   ['calculus', 'integrate', 820],
   ['solvers', 'solve', 975],
   ['solvers', 'dsolve', 990],
@@ -52,7 +53,7 @@ const CASES = [
   ['categories', '*', 363],
   ['crypto', '*', 600],
   ['liealgebras', '*', 596],
-  ['index', 'Rational', 1214],
+  ['index', 'Rational', 1347],
   ['index', '*', 2270],
 ];
 

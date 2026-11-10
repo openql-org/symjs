@@ -12627,8 +12627,10 @@
   {
    "module": "sympy.polys.agca.homomorphisms",
    "sha256": "81a30d57dea9294b981d9f0177b40eb36ec9d486db2609048f259c4cb7bc1852",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/agca/homomorphisms.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 31,
@@ -12653,8 +12655,10 @@
   {
    "module": "sympy.polys.agca.ideals",
    "sha256": "4baac19771fe85d788e3865b10bc238edd6b2a5ae12b5d4029bf006acf8eb421",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/agca/ideals.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 17,
@@ -12689,8 +12693,10 @@
   {
    "module": "sympy.polys.agca.modules",
    "sha256": "3de035dfc147b027d49fcbe476b8cf6bddb19b3abb42a9343eb758c15a0da9fd",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/agca/modules.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 67,
@@ -14038,7 +14044,8 @@
    "sha256": "290707e7ca079c7ccea43756a236622e51c3aab02251de0e01a04866282aa727",
    "status": "partial",
    "sources": [
-    "polys/domains.ts"
+    "polys/domains.ts",
+    "polys/domains/oldpolynomialring.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
@@ -14212,8 +14219,10 @@
   {
    "module": "sympy.polys.domains.quotientring",
    "sha256": "d8d3949246c58f8e75e2a90352cce5ea1975110b8f8a49f7404a10d6c0e86c62",
-   "status": "unimplemented",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/domains/quotientring.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 4,

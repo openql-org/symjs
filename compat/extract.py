@@ -631,6 +631,29 @@ def ser(o):
 
     if o is None or isinstance(o, bool):
         return {"t": "Js", "v": o}
+    from sympy.polys.agca.modules import FreeModule, SubModule, QuotientModule, FreeModuleElement, QuotientModuleElement
+    from sympy.polys.agca.ideals import ModuleImplementedIdeal
+    from sympy.polys.agca.homomorphisms import ModuleHomomorphism
+    from sympy.polys.domains.quotientring import QuotientRing
+    from sympy.polys.domains.old_polynomialring import PolynomialRingBase
+    if isinstance(o, PolynomialRingBase):
+        return {"t": "Domain", "name": str(o), "base": ser(o.dom), "symbols": [ser(s) for s in o.gens], "order": str(o.order), "oldPolyRing": True}
+    if isinstance(o, QuotientRing):
+        return {"t": "AGCAQuotientRing", "ring": ser(o.ring), "ideal": ser(o.base_ideal)}
+    if isinstance(o, ModuleImplementedIdeal):
+        return {"t": "AGCAIdeal", "ring": ser(o.ring), "gens": [ser(o.ring.to_sympy(g)) for g in o.gens]}
+    if isinstance(o, ModuleHomomorphism):
+        return {"t": "AGCAHomomorphism", "domain": ser(o.domain), "codomain": ser(o.codomain), "matrix": [ser(g) for g in o.matrix]}
+    if isinstance(o, (FreeModuleElement, QuotientModuleElement)):
+        data = o.data.data if isinstance(o, QuotientModuleElement) else o.data
+        return {"t": "AGCAElement", "module": ser(o.module), "data": [ser(o.module.ring.to_sympy(g)) for g in data]}
+    if isinstance(o, FreeModule):
+        return {"t": "AGCAFreeModule", "ring": ser(o.ring), "rank": o.rank}
+    if isinstance(o, QuotientModule):
+        return {"t": "AGCAQuotientModule", "base": ser(o.base), "killed": ser(o.killed_module)}
+    if isinstance(o, SubModule):
+        # Store generator coordinates, not elements carrying the same module.
+        return {"t": "AGCASubModule", "container": ser(o.container), "gens": [ser(g) for g in o.gens]}
     from sympy.polys.matrices.ddm import DDM as _DDM0
     from sympy.polys.matrices.sdm import SDM as _SDM0
     if isinstance(o, (_DDM0, _SDM0)):

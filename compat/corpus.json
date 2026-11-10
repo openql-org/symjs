@@ -375734,7 +375734,8 @@
       "assume": {}
      }
     ],
-    "order": "grevlex"
+    "order": "grevlex",
+    "oldPolyRing": true
    },
    "args": [
     {
@@ -375765,7 +375766,8 @@
       "assume": {}
      }
     ],
-    "order": "grevlex"
+    "order": "grevlex",
+    "oldPolyRing": true
    },
    "args": [
     {
@@ -375806,9 +375808,49 @@
       "assume": {}
      }
     ],
-    "order": "grevlex"
+    "order": "grevlex",
+    "oldPolyRing": true
    },
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "args": [
+    {
+     "t": "AGCAIdeal",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "gens": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.domains.ring",
    "src": "QQ.old_poly_ring(x).quotient_ring(QQ.old_poly_ring(x).ideal(x**2))",
@@ -375830,7 +375872,8 @@
       "assume": {}
      }
     ],
-    "order": "grevlex"
+    "order": "grevlex",
+    "oldPolyRing": true
    },
    "args": [
     {
@@ -379604,7 +379647,8 @@
       "assume": {}
      }
     ],
-    "order": "grevlex"
+    "order": "grevlex",
+    "oldPolyRing": true
    },
    "args": [
     {
@@ -379635,9 +379679,59 @@
       "assume": {}
      }
     ],
-    "order": "grevlex"
+    "order": "grevlex",
+    "oldPolyRing": true
    },
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "args": [
+    {
+     "t": "AGCAIdeal",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "gens": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.domains.quotientring",
    "src": "QQ.old_poly_ring(x).quotient_ring(I)",
@@ -379646,8 +379740,71 @@
   {
    "fn": ".free_module",
    "self": {
-    "t": "Domain",
-    "name": "QQ[x]/<x**2 + 1>"
+    "t": "AGCAQuotientRing",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "ideal": {
+     "t": "AGCAIdeal",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "gens": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
    },
    "args": [
     {
@@ -388027,7 +388184,127 @@
   },
   {
    "fn": ".is_injective",
-   "unsupportedArg": "FreeModuleHomomorphism",
+   "self": {
+    "t": "AGCAHomomorphism",
+    "domain": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "codomain": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "matrix": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.homomorphisms",
    "src": "h.is_injective()",
@@ -388035,7 +388312,192 @@
   },
   {
    "fn": ".is_injective",
-   "unsupportedArg": "FreeModuleHomomorphism",
+   "self": {
+    "t": "AGCAHomomorphism",
+    "domain": {
+     "t": "AGCAQuotientModule",
+     "base": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "killed": {
+      "t": "AGCASubModule",
+      "container": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "gens": [
+       {
+        "t": "AGCAElement",
+        "module": {
+         "t": "AGCAFreeModule",
+         "ring": {
+          "t": "Domain",
+          "name": "QQ[x]",
+          "base": {
+           "t": "Domain",
+           "name": "QQ"
+          },
+          "symbols": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ],
+          "order": "grevlex",
+          "oldPolyRing": true
+         },
+         "rank": 2
+        },
+        "data": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "codomain": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "matrix": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.homomorphisms",
    "src": "h.quotient_domain(h.kernel()).is_injective()",
@@ -388043,7 +388505,204 @@
   },
   {
    "fn": ".is_isomorphism",
-   "unsupportedArg": "FreeModuleHomomorphism",
+   "self": {
+    "t": "AGCAHomomorphism",
+    "domain": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "codomain": {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    "matrix": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.homomorphisms",
    "src": "h.is_isomorphism()",
@@ -388051,7 +388710,269 @@
   },
   {
    "fn": ".is_isomorphism",
-   "unsupportedArg": "FreeModuleHomomorphism",
+   "self": {
+    "t": "AGCAHomomorphism",
+    "domain": {
+     "t": "AGCAQuotientModule",
+     "base": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "killed": {
+      "t": "AGCASubModule",
+      "container": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "gens": [
+       {
+        "t": "AGCAElement",
+        "module": {
+         "t": "AGCAFreeModule",
+         "ring": {
+          "t": "Domain",
+          "name": "QQ[x]",
+          "base": {
+           "t": "Domain",
+           "name": "QQ"
+          },
+          "symbols": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ],
+          "order": "grevlex",
+          "oldPolyRing": true
+         },
+         "rank": 2
+        },
+        "data": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "codomain": {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    "matrix": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.homomorphisms",
    "src": "h.quotient_domain(h.kernel()).is_isomorphism()",
@@ -388059,7 +388980,127 @@
   },
   {
    "fn": ".is_surjective",
-   "unsupportedArg": "FreeModuleHomomorphism",
+   "self": {
+    "t": "AGCAHomomorphism",
+    "domain": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "codomain": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "matrix": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.homomorphisms",
    "src": "h.is_surjective()",
@@ -388067,7 +389108,204 @@
   },
   {
    "fn": ".is_surjective",
-   "unsupportedArg": "FreeModuleHomomorphism",
+   "self": {
+    "t": "AGCAHomomorphism",
+    "domain": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "codomain": {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    "matrix": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.homomorphisms",
    "src": "h.restrict_codomain(h.image()).is_surjective()",
@@ -388075,7 +389313,127 @@
   },
   {
    "fn": ".is_zero",
-   "unsupportedArg": "FreeModuleHomomorphism",
+   "self": {
+    "t": "AGCAHomomorphism",
+    "domain": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "codomain": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "matrix": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.homomorphisms",
    "src": "h.is_zero()",
@@ -388083,7 +389441,131 @@
   },
   {
    "fn": ".is_zero",
-   "unsupportedArg": "SubModuleHomomorphism",
+   "self": {
+    "t": "AGCAHomomorphism",
+    "domain": {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": []
+    },
+    "codomain": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "matrix": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.homomorphisms",
    "src": "h.restrict_domain(F.submodule()).is_zero()",
@@ -388091,7 +389573,430 @@
   },
   {
    "fn": ".is_zero",
-   "unsupportedArg": "FreeModuleHomomorphism",
+   "self": {
+    "t": "AGCAHomomorphism",
+    "domain": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "codomain": {
+     "t": "AGCAQuotientModule",
+     "base": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "killed": {
+      "t": "AGCASubModule",
+      "container": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "gens": [
+       {
+        "t": "AGCAElement",
+        "module": {
+         "t": "AGCAFreeModule",
+         "ring": {
+          "t": "Domain",
+          "name": "QQ[x]",
+          "base": {
+           "t": "Domain",
+           "name": "QQ"
+          },
+          "symbols": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ],
+          "order": "grevlex",
+          "oldPolyRing": true
+         },
+         "rank": 2
+        },
+        "data": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "AGCAElement",
+        "module": {
+         "t": "AGCAFreeModule",
+         "ring": {
+          "t": "Domain",
+          "name": "QQ[x]",
+          "base": {
+           "t": "Domain",
+           "name": "QQ"
+          },
+          "symbols": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ],
+          "order": "grevlex",
+          "oldPolyRing": true
+         },
+         "rank": 2
+        },
+        "data": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "matrix": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAQuotientModule",
+       "base": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "killed": {
+        "t": "AGCASubModule",
+        "container": {
+         "t": "AGCAFreeModule",
+         "ring": {
+          "t": "Domain",
+          "name": "QQ[x]",
+          "base": {
+           "t": "Domain",
+           "name": "QQ"
+          },
+          "symbols": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ],
+          "order": "grevlex",
+          "oldPolyRing": true
+         },
+         "rank": 2
+        },
+        "gens": [
+         {
+          "t": "AGCAElement",
+          "module": {
+           "t": "AGCAFreeModule",
+           "ring": {
+            "t": "Domain",
+            "name": "QQ[x]",
+            "base": {
+             "t": "Domain",
+             "name": "QQ"
+            },
+            "symbols": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ],
+            "order": "grevlex",
+            "oldPolyRing": true
+           },
+           "rank": 2
+          },
+          "data": [
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "AGCAElement",
+          "module": {
+           "t": "AGCAFreeModule",
+           "ring": {
+            "t": "Domain",
+            "name": "QQ[x]",
+            "base": {
+             "t": "Domain",
+             "name": "QQ"
+            },
+            "symbols": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ],
+            "order": "grevlex",
+            "oldPolyRing": true
+           },
+           "rank": 2
+          },
+          "data": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       }
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAQuotientModule",
+       "base": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "killed": {
+        "t": "AGCASubModule",
+        "container": {
+         "t": "AGCAFreeModule",
+         "ring": {
+          "t": "Domain",
+          "name": "QQ[x]",
+          "base": {
+           "t": "Domain",
+           "name": "QQ"
+          },
+          "symbols": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ],
+          "order": "grevlex",
+          "oldPolyRing": true
+         },
+         "rank": 2
+        },
+        "gens": [
+         {
+          "t": "AGCAElement",
+          "module": {
+           "t": "AGCAFreeModule",
+           "ring": {
+            "t": "Domain",
+            "name": "QQ[x]",
+            "base": {
+             "t": "Domain",
+             "name": "QQ"
+            },
+            "symbols": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ],
+            "order": "grevlex",
+            "oldPolyRing": true
+           },
+           "rank": 2
+          },
+          "data": [
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           },
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "AGCAElement",
+          "module": {
+           "t": "AGCAFreeModule",
+           "ring": {
+            "t": "Domain",
+            "name": "QQ[x]",
+            "base": {
+             "t": "Domain",
+             "name": "QQ"
+            },
+            "symbols": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ],
+            "order": "grevlex",
+            "oldPolyRing": true
+           },
+           "rank": 2
+          },
+          "data": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       }
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.homomorphisms",
    "src": "h.quotient_codomain(h.image()).is_zero()",
@@ -388099,7 +390004,127 @@
   },
   {
    "fn": ".kernel",
-   "unsupportedArg": "FreeModuleHomomorphism",
+   "self": {
+    "t": "AGCAHomomorphism",
+    "domain": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "codomain": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "matrix": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.homomorphisms",
    "src": "homomorphism(F, F, [[1, 0], [x, 0]]).kernel()",
@@ -388121,7 +390146,8 @@
       "assume": {}
      }
     ],
-    "order": "grevlex"
+    "order": "grevlex",
+    "oldPolyRing": true
    },
    "args": [
     {
@@ -388148,7 +390174,66 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "self": {
+    "t": "AGCAIdeal",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "gens": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     },
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "3",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.ideals",
    "src": "QQ.old_poly_ring(x).ideal(x+1, x-1).contains(3)",
@@ -388156,7 +390241,66 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "self": {
+    "t": "AGCAIdeal",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "gens": [
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.ideals",
    "src": "QQ.old_poly_ring(x).ideal(x**2, x**3).contains(x)",
@@ -388164,7 +390308,73 @@
   },
   {
    "fn": ".intersect",
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "self": {
+    "t": "AGCAIdeal",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x,y]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "gens": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "AGCAIdeal",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x,y]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "gens": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.ideals",
    "src": "R.ideal(x).intersect(R.ideal(y))",
@@ -388172,7 +390382,73 @@
   },
   {
    "fn": ".product",
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "self": {
+    "t": "AGCAIdeal",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x,y]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "gens": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "AGCAIdeal",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x,y]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "gens": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.ideals",
    "src": "QQ.old_poly_ring(x, y).ideal(x).product(QQ.old_poly_ring(x, y).ideal(y))",
@@ -388180,7 +390456,83 @@
   },
   {
    "fn": ".quotient",
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "self": {
+    "t": "AGCAIdeal",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x,y]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "gens": [
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "AGCAIdeal",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x,y]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "gens": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.ideals",
    "src": "R.ideal(x*y).quotient(R.ideal(x))",
@@ -388188,7 +390540,117 @@
   },
   {
    "fn": ".subset",
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "self": {
+    "t": "AGCAIdeal",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "gens": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.ideals",
    "src": "I.subset([x**2 - 1, x**2 + 2*x + 1])",
@@ -388196,7 +390658,92 @@
   },
   {
    "fn": ".subset",
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "self": {
+    "t": "AGCAIdeal",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "gens": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.ideals",
    "src": "I.subset([x**2 + 1, x + 1])",
@@ -388204,7 +390751,93 @@
   },
   {
    "fn": ".subset",
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "self": {
+    "t": "AGCAIdeal",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "gens": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "AGCAIdeal",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "gens": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.ideals",
    "src": "I.subset(QQ.old_poly_ring(x).ideal(x**2 - 1))",
@@ -388212,7 +390845,35 @@
   },
   {
    "fn": ".is_whole_ring",
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "self": {
+    "t": "AGCAIdeal",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "gens": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.ideals",
    "src": "QQ.old_poly_ring(x).ideal(x).is_whole_ring()",
@@ -388220,7 +390881,35 @@
   },
   {
    "fn": ".is_whole_ring",
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "self": {
+    "t": "AGCAIdeal",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "gens": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.ideals",
    "src": "QQ.old_poly_ring(x).ideal(3).is_whole_ring()",
@@ -388228,7 +390917,45 @@
   },
   {
    "fn": ".is_whole_ring",
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "self": {
+    "t": "AGCAIdeal",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x order=ilex]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "ilex",
+     "oldPolyRing": true
+    },
+    "gens": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.ideals",
    "src": "QQ.old_poly_ring(x, order=ilex).ideal(2 + x).is_whole_ring()",
@@ -388236,7 +390963,35 @@
   },
   {
    "fn": ".is_zero",
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "self": {
+    "t": "AGCAIdeal",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "gens": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.ideals",
    "src": "QQ.old_poly_ring(x).ideal(x).is_zero()",
@@ -388244,7 +390999,29 @@
   },
   {
    "fn": ".is_zero",
-   "unsupportedArg": "ModuleImplementedIdeal",
+   "self": {
+    "t": "AGCAIdeal",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "gens": []
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.ideals",
    "src": "QQ.old_poly_ring(x).ideal().is_zero()",
@@ -388252,7 +391029,29 @@
   },
   {
    "fn": ".basis",
-   "unsupportedArg": "FreeModulePolyRing",
+   "self": {
+    "t": "AGCAFreeModule",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "rank": 3
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "QQ.old_poly_ring(x).free_module(3).basis()",
@@ -388260,7 +391059,46 @@
   },
   {
    "fn": ".convert",
-   "unsupportedArg": "FreeModulePolyRing",
+   "self": {
+    "t": "AGCAFreeModule",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "rank": 2
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.convert([1, 0])",
@@ -388268,7 +391106,51 @@
   },
   {
    "fn": ".is_submodule",
-   "unsupportedArg": "FreeModulePolyRing",
+   "self": {
+    "t": "AGCAFreeModule",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "rank": 2
+   },
+   "args": [
+    {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.is_submodule(F)",
@@ -388276,7 +391158,92 @@
   },
   {
    "fn": ".is_submodule",
-   "unsupportedArg": "FreeModulePolyRing",
+   "self": {
+    "t": "AGCAFreeModule",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "rank": 2
+   },
+   "args": [
+    {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.is_submodule(M)",
@@ -388284,7 +391251,92 @@
   },
   {
    "fn": ".is_submodule",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "M.is_submodule(F)",
@@ -388292,7 +391344,29 @@
   },
   {
    "fn": ".is_zero",
-   "unsupportedArg": "FreeModulePolyRing",
+   "self": {
+    "t": "AGCAFreeModule",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "rank": 0
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "QQ.old_poly_ring(x).free_module(0).is_zero()",
@@ -388300,7 +391374,29 @@
   },
   {
    "fn": ".is_zero",
-   "unsupportedArg": "FreeModulePolyRing",
+   "self": {
+    "t": "AGCAFreeModule",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "rank": 1
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "QQ.old_poly_ring(x).free_module(1).is_zero()",
@@ -388308,7 +391404,57 @@
   },
   {
    "fn": ".multiply_ideal",
-   "unsupportedArg": "FreeModulePolyRing",
+   "self": {
+    "t": "AGCAFreeModule",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "rank": 2
+   },
+   "args": [
+    {
+     "t": "AGCAIdeal",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "gens": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.multiply_ideal(I)",
@@ -388316,7 +391462,128 @@
   },
   {
    "fn": ".quotient_module",
-   "unsupportedArg": "FreeModulePolyRing",
+   "self": {
+    "t": "AGCAFreeModule",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "rank": 2
+   },
+   "args": [
+    {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "M.quotient_module(M.submodule([1, x], [x, 2]))",
@@ -388324,7 +391591,51 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "FreeModulePolyRing",
+   "self": {
+    "t": "AGCAFreeModule",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "rank": 3
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.contains([x, 1, 0])",
@@ -388332,7 +391643,61 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "FreeModulePolyRing",
+   "self": {
+    "t": "AGCAFreeModule",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "rank": 3
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.contains([1/x, 0, 1])",
@@ -388340,7 +391705,147 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x,y]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x,y]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "M.contains([2*x, 2*x + 2*y])",
@@ -388348,7 +391853,107 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x,y]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x,y]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "M.contains([x, y])",
@@ -388356,7 +391961,348 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "QuotientModule",
+   "self": {
+    "t": "AGCAQuotientModule",
+    "base": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "killed": {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "1",
+           "q": "1"
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "args": [
+    {
+     "t": "AGCAElement",
+     "module": {
+      "t": "AGCAQuotientModule",
+      "base": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "killed": {
+       "t": "AGCASubModule",
+       "container": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "gens": [
+        {
+         "t": "AGCAElement",
+         "module": {
+          "t": "AGCAFreeModule",
+          "ring": {
+           "t": "Domain",
+           "name": "QQ[x]",
+           "base": {
+            "t": "Domain",
+            "name": "QQ"
+           },
+           "symbols": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            }
+           ],
+           "order": "grevlex",
+           "oldPolyRing": true
+          },
+          "rank": 2
+         },
+         "data": [
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            }
+           ]
+          },
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "AGCAElement",
+         "module": {
+          "t": "AGCAFreeModule",
+          "ring": {
+           "t": "Domain",
+           "name": "QQ[x]",
+           "base": {
+            "t": "Domain",
+            "name": "QQ"
+           },
+           "symbols": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            }
+           ],
+           "order": "grevlex",
+           "oldPolyRing": true
+          },
+          "rank": 2
+         },
+         "data": [
+          {
+           "t": "Rational",
+           "p": "0",
+           "q": "1"
+          },
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "data": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "L.contains(l)",
@@ -388364,7 +392310,297 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "SubModuleQuotientRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "AGCAQuotientRing",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x,y]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "ideal": {
+       "t": "AGCAIdeal",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x,y]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "gens": [
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Mul",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "1"
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "y",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "AGCAQuotientRing",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x,y]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "ideal": {
+         "t": "AGCAIdeal",
+         "ring": {
+          "t": "Domain",
+          "name": "QQ[x,y]",
+          "base": {
+           "t": "Domain",
+           "name": "QQ"
+          },
+          "symbols": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "y",
+            "assume": {}
+           }
+          ],
+          "order": "grevlex",
+          "oldPolyRing": true
+         },
+         "gens": [
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-1",
+               "q": "1"
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Symbol",
+                 "name": "y",
+                 "assume": {}
+                },
+                {
+                 "t": "Rational",
+                 "p": "2",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "M.contains([y**2, x**2 + x*y])",
@@ -388372,7 +392608,257 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "SubModuleQuotientRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "AGCAQuotientRing",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x,y]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "ideal": {
+       "t": "AGCAIdeal",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x,y]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "gens": [
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Mul",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "1"
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "y",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "AGCAQuotientRing",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x,y]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "ideal": {
+         "t": "AGCAIdeal",
+         "ring": {
+          "t": "Domain",
+          "name": "QQ[x,y]",
+          "base": {
+           "t": "Domain",
+           "name": "QQ"
+          },
+          "symbols": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "y",
+            "assume": {}
+           }
+          ],
+          "order": "grevlex",
+          "oldPolyRing": true
+         },
+         "gens": [
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-1",
+               "q": "1"
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Symbol",
+                 "name": "y",
+                 "assume": {}
+                },
+                {
+                 "t": "Rational",
+                 "p": "2",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "M.contains([x, y])",
@@ -388394,7 +392880,8 @@
       "assume": {}
      }
     ],
-    "order": "grevlex"
+    "order": "grevlex",
+    "oldPolyRing": true
    },
    "args": [
     {
@@ -388411,7 +392898,66 @@
   },
   {
    "fn": ".subset",
-   "unsupportedArg": "FreeModulePolyRing",
+   "self": {
+    "t": "AGCAFreeModule",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "rank": 2
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.subset([(1, x), (x, 2)])",
@@ -388419,7 +392965,76 @@
   },
   {
    "fn": ".subset",
-   "unsupportedArg": "FreeModulePolyRing",
+   "self": {
+    "t": "AGCAFreeModule",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "rank": 2
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.subset([(1/x, x), (x, 2)])",
@@ -388427,7 +393042,147 @@
   },
   {
    "fn": ".convert",
-   "unsupportedArg": "QuotientModule",
+   "self": {
+    "t": "AGCAQuotientModule",
+    "base": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "killed": {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.convert([1, 0])",
@@ -388435,7 +393190,287 @@
   },
   {
    "fn": ".is_submodule",
-   "unsupportedArg": "QuotientModule",
+   "self": {
+    "t": "AGCAQuotientModule",
+    "base": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "killed": {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "args": [
+    {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAQuotientModule",
+      "base": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "killed": {
+       "t": "AGCASubModule",
+       "container": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "gens": [
+        {
+         "t": "AGCAElement",
+         "module": {
+          "t": "AGCAFreeModule",
+          "ring": {
+           "t": "Domain",
+           "name": "QQ[x]",
+           "base": {
+            "t": "Domain",
+            "name": "QQ"
+           },
+           "symbols": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            }
+           ],
+           "order": "grevlex",
+           "oldPolyRing": true
+          },
+          "rank": 2
+         },
+         "data": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAQuotientModule",
+        "base": {
+         "t": "AGCAFreeModule",
+         "ring": {
+          "t": "Domain",
+          "name": "QQ[x]",
+          "base": {
+           "t": "Domain",
+           "name": "QQ"
+          },
+          "symbols": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ],
+          "order": "grevlex",
+          "oldPolyRing": true
+         },
+         "rank": 2
+        },
+        "killed": {
+         "t": "AGCASubModule",
+         "container": {
+          "t": "AGCAFreeModule",
+          "ring": {
+           "t": "Domain",
+           "name": "QQ[x]",
+           "base": {
+            "t": "Domain",
+            "name": "QQ"
+           },
+           "symbols": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            }
+           ],
+           "order": "grevlex",
+           "oldPolyRing": true
+          },
+          "rank": 2
+         },
+         "gens": [
+          {
+           "t": "AGCAElement",
+           "module": {
+            "t": "AGCAFreeModule",
+            "ring": {
+             "t": "Domain",
+             "name": "QQ[x]",
+             "base": {
+              "t": "Domain",
+              "name": "QQ"
+             },
+             "symbols": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              }
+             ],
+             "order": "grevlex",
+             "oldPolyRing": true
+            },
+            "rank": 2
+           },
+           "data": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            }
+           ]
+          }
+         ]
+        }
+       },
+       "data": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "Q.is_submodule(S)",
@@ -388443,7 +393478,287 @@
   },
   {
    "fn": ".is_submodule",
-   "unsupportedArg": "SubQuotientModule",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAQuotientModule",
+     "base": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "killed": {
+      "t": "AGCASubModule",
+      "container": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "gens": [
+       {
+        "t": "AGCAElement",
+        "module": {
+         "t": "AGCAFreeModule",
+         "ring": {
+          "t": "Domain",
+          "name": "QQ[x]",
+          "base": {
+           "t": "Domain",
+           "name": "QQ"
+          },
+          "symbols": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ],
+          "order": "grevlex",
+          "oldPolyRing": true
+         },
+         "rank": 2
+        },
+        "data": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     }
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAQuotientModule",
+       "base": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "killed": {
+        "t": "AGCASubModule",
+        "container": {
+         "t": "AGCAFreeModule",
+         "ring": {
+          "t": "Domain",
+          "name": "QQ[x]",
+          "base": {
+           "t": "Domain",
+           "name": "QQ"
+          },
+          "symbols": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ],
+          "order": "grevlex",
+          "oldPolyRing": true
+         },
+         "rank": 2
+        },
+        "gens": [
+         {
+          "t": "AGCAElement",
+          "module": {
+           "t": "AGCAFreeModule",
+           "ring": {
+            "t": "Domain",
+            "name": "QQ[x]",
+            "base": {
+             "t": "Domain",
+             "name": "QQ"
+            },
+            "symbols": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ],
+            "order": "grevlex",
+            "oldPolyRing": true
+           },
+           "rank": 2
+          },
+          "data": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         }
+        ]
+       }
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "AGCAQuotientModule",
+     "base": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "killed": {
+      "t": "AGCASubModule",
+      "container": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "gens": [
+       {
+        "t": "AGCAElement",
+        "module": {
+         "t": "AGCAFreeModule",
+         "ring": {
+          "t": "Domain",
+          "name": "QQ[x]",
+          "base": {
+           "t": "Domain",
+           "name": "QQ"
+          },
+          "symbols": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ],
+          "order": "grevlex",
+          "oldPolyRing": true
+         },
+         "rank": 2
+        },
+        "data": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "S.is_submodule(Q)",
@@ -388451,7 +393766,94 @@
   },
   {
    "fn": ".is_zero",
-   "unsupportedArg": "QuotientModule",
+   "self": {
+    "t": "AGCAQuotientModule",
+    "base": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "killed": {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "(F/[(1, 0)]).is_zero()",
@@ -388459,7 +393861,130 @@
   },
   {
    "fn": ".is_zero",
-   "unsupportedArg": "QuotientModule",
+   "self": {
+    "t": "AGCAQuotientModule",
+    "base": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "killed": {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "(F/[(1, 0), (0, 1)]).is_zero()",
@@ -388467,7 +393992,111 @@
   },
   {
    "fn": ".submodule",
-   "unsupportedArg": "QuotientModule",
+   "self": {
+    "t": "AGCAQuotientModule",
+    "base": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "killed": {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "Q.submodule([x, 0])",
@@ -388475,7 +394104,97 @@
   },
   {
    "fn": ".convert",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "M.convert([2, 2*x])",
@@ -388483,7 +394202,153 @@
   },
   {
    "fn": ".intersect",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x,y]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x,y]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x,y]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x,y]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.submodule([x, x]).intersect(F.submodule([y, y]))",
@@ -388491,7 +394356,158 @@
   },
   {
    "fn": ".intersect",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x,y]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x,y]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x,y]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x,y]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {
+    "relations": {
+     "t": "Js",
+     "v": true
+    }
+   },
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.submodule([x, x]).intersect(F.submodule([y, y]), relations=True)",
@@ -388499,7 +394515,70 @@
   },
   {
    "fn": ".is_full_module",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.submodule([x, 1]).is_full_module()",
@@ -388507,7 +394586,106 @@
   },
   {
    "fn": ".is_full_module",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.submodule([1, 1], [1, 2]).is_full_module()",
@@ -388515,7 +394693,133 @@
   },
   {
    "fn": ".is_submodule",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "M.is_submodule(M)",
@@ -388523,7 +394827,153 @@
   },
   {
    "fn": ".is_submodule",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "M.is_submodule(N)",
@@ -388531,7 +394981,153 @@
   },
   {
    "fn": ".is_submodule",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "N.is_submodule(M)",
@@ -388539,7 +395135,70 @@
   },
   {
    "fn": ".is_zero",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.submodule([x, 1]).is_zero()",
@@ -388547,7 +395206,70 @@
   },
   {
    "fn": ".is_zero",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.submodule([0, 0]).is_zero()",
@@ -388555,7 +395277,173 @@
   },
   {
    "fn": ".module_quotient",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x,y]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x,y]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x,y]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x,y]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "S.module_quotient(T)",
@@ -388563,7 +395451,178 @@
   },
   {
    "fn": ".module_quotient",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x,y]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x,y]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x,y]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x,y]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {
+    "relations": {
+     "t": "Js",
+     "v": true
+    }
+   },
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "S.module_quotient(T, relations=True)",
@@ -388571,7 +395630,143 @@
   },
   {
    "fn": ".quotient_module",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "AGCASubModule",
+     "container": {
+      "t": "AGCAFreeModule",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "rank": 2
+     },
+     "gens": [
+      {
+       "t": "AGCAElement",
+       "module": {
+        "t": "AGCAFreeModule",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "rank": 2
+       },
+       "data": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "S1.quotient_module(S2)",
@@ -388579,7 +395774,97 @@
   },
   {
    "fn": ".submodule",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "M.submodule([x**2, x])",
@@ -388587,7 +395872,33 @@
   },
   {
    "fn": ".is_zero",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": []
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "QQ.old_poly_ring(x).free_module(2).submodule([1, 0], [1, 1]).syzygy_module().is_zero()",
@@ -388595,7 +395906,67 @@
   },
   {
    "fn": ".submodule",
-   "unsupportedArg": "FreeModulePolyRing",
+   "self": {
+    "t": "AGCAFreeModule",
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x,y]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "order": "grevlex",
+     "oldPolyRing": true
+    },
+    "rank": 2
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.submodule([x, y], [1, 0])",
@@ -388603,7 +395974,297 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "SubModuleQuotientRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "AGCAQuotientRing",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x,y]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "ideal": {
+       "t": "AGCAIdeal",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x,y]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "gens": [
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Mul",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "1"
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "y",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "AGCAQuotientRing",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x,y]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "ideal": {
+         "t": "AGCAIdeal",
+         "ring": {
+          "t": "Domain",
+          "name": "QQ[x,y]",
+          "base": {
+           "t": "Domain",
+           "name": "QQ"
+          },
+          "symbols": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "y",
+            "assume": {}
+           }
+          ],
+          "order": "grevlex",
+          "oldPolyRing": true
+         },
+         "gens": [
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-1",
+               "q": "1"
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Symbol",
+                 "name": "y",
+                 "assume": {}
+                },
+                {
+                 "t": "Rational",
+                 "p": "2",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "M.contains([y**2, x**2 + x*y])",
@@ -388611,7 +396272,257 @@
   },
   {
    "fn": ".contains",
-   "unsupportedArg": "SubModuleQuotientRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "AGCAQuotientRing",
+      "ring": {
+       "t": "Domain",
+       "name": "QQ[x,y]",
+       "base": {
+        "t": "Domain",
+        "name": "QQ"
+       },
+       "symbols": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ],
+       "order": "grevlex",
+       "oldPolyRing": true
+      },
+      "ideal": {
+       "t": "AGCAIdeal",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x,y]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "gens": [
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "2",
+             "q": "1"
+            }
+           ]
+          },
+          {
+           "t": "Mul",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "1"
+            },
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "y",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "AGCAQuotientRing",
+        "ring": {
+         "t": "Domain",
+         "name": "QQ[x,y]",
+         "base": {
+          "t": "Domain",
+          "name": "QQ"
+         },
+         "symbols": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ],
+         "order": "grevlex",
+         "oldPolyRing": true
+        },
+        "ideal": {
+         "t": "AGCAIdeal",
+         "ring": {
+          "t": "Domain",
+          "name": "QQ[x,y]",
+          "base": {
+           "t": "Domain",
+           "name": "QQ"
+          },
+          "symbols": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "y",
+            "assume": {}
+           }
+          ],
+          "order": "grevlex",
+          "oldPolyRing": true
+         },
+         "gens": [
+          {
+           "t": "Add",
+           "args": [
+            {
+             "t": "Pow",
+             "args": [
+              {
+               "t": "Symbol",
+               "name": "x",
+               "assume": {}
+              },
+              {
+               "t": "Rational",
+               "p": "2",
+               "q": "1"
+              }
+             ]
+            },
+            {
+             "t": "Mul",
+             "args": [
+              {
+               "t": "Rational",
+               "p": "-1",
+               "q": "1"
+              },
+              {
+               "t": "Pow",
+               "args": [
+                {
+                 "t": "Symbol",
+                 "name": "y",
+                 "assume": {}
+                },
+                {
+                 "t": "Rational",
+                 "p": "2",
+                 "q": "1"
+                }
+               ]
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        }
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "M.contains([x, y])",
@@ -388619,7 +396530,70 @@
   },
   {
    "fn": ".is_full_module",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.submodule([x, 1]).is_full_module()",
@@ -388627,7 +396601,106 @@
   },
   {
    "fn": ".is_full_module",
-   "unsupportedArg": "SubModulePolyRing",
+   "self": {
+    "t": "AGCASubModule",
+    "container": {
+     "t": "AGCAFreeModule",
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "grevlex",
+      "oldPolyRing": true
+     },
+     "rank": 2
+    },
+    "gens": [
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "AGCAElement",
+      "module": {
+       "t": "AGCAFreeModule",
+       "ring": {
+        "t": "Domain",
+        "name": "QQ[x]",
+        "base": {
+         "t": "Domain",
+         "name": "QQ"
+        },
+        "symbols": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ],
+        "order": "grevlex",
+        "oldPolyRing": true
+       },
+       "rank": 2
+      },
+      "data": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.agca.modules",
    "src": "F.submodule([1, 1], [1, 2]).is_full_module()",

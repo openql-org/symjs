@@ -289,6 +289,7 @@ function deserializeDomain(tree: Tree): sj.Domain | undefined {
   if (base === undefined) return undefined;
   if (tree['ext'] !== undefined) return base.algebraicField(...(tree['gens'] as Tree[]).map((t) => deserialize(t) as Expr));
   const symbols = (tree['symbols'] as Tree[]).map((t) => deserialize(t) as Sym);
+  if (tree['oldPolyRing'] === true) return new sj.PolynomialRingBase(base, symbols, tree['order'] as string);
   return name.endsWith(']') ? base.polyRing(...symbols) : base.fracField(...symbols);
 }
 
@@ -541,6 +542,20 @@ export function deserialize(tree: Tree): unknown {
     case 'Domain':
       // the domain object rebuilt from its parameters; ZZ/QQ also stay recognizable as JsDomain where an adapter compares the name
       return new JsDomain(tree['name'] as string, deserializeDomain(tree));
+    case 'AGCAQuotientRing':
+      return new sj.QuotientRing(toJs(deserialize(tree['ring'] as Tree), false) as sj.Domain, deserialize(tree['ideal'] as Tree) as sj.ModuleImplementedIdeal);
+    case 'AGCAIdeal':
+      return (toJs(deserialize(tree['ring'] as Tree), false) as sj.Domain).ideal(...(tree['gens'] as Tree[]).map((g) => deserialize(g) as Expr));
+    case 'AGCAFreeModule':
+      return (toJs(deserialize(tree['ring'] as Tree), false) as sj.Domain).freeModule(tree['rank'] as number);
+    case 'AGCAQuotientModule':
+      return new sj.QuotientModule(deserialize(tree['base'] as Tree) as sj.FreeModule, deserialize(tree['killed'] as Tree) as sj.SubModule);
+    case 'AGCASubModule':
+      return (deserialize(tree['container'] as Tree) as sj.Module).submodule(...(tree['gens'] as Tree[]).map((g) => deserialize(g) as sj.ModuleElement));
+    case 'AGCAElement':
+      return (deserialize(tree['module'] as Tree) as sj.Module).convert((tree['data'] as Tree[]).map((g) => deserialize(g) as Expr));
+    case 'AGCAHomomorphism':
+      return sj.homomorphism(deserialize(tree['domain'] as Tree) as sj.Module, deserialize(tree['codomain'] as Tree) as sj.Module, (tree['matrix'] as Tree[]).map((g) => deserialize(g) as sj.ModuleElement));
     case 'MonomialOrder':
       return (sj as Record<string, unknown>)[tree['name'] as string];
     case 'PolyRing':
@@ -4065,7 +4080,20 @@ function autoAdapter(c: Case): Adapter | undefined {
         const g = (sj as unknown as Record<string, (...a: unknown[]) => unknown>)[name]!;
         return fromJs(g(...placeArgs(g, args, kw, conv)));
       }
-      if (typeof m === 'function') return fromJs((m as (...a: unknown[]) => unknown).call(thisArg, ...placeArgs(m as (...a: unknown[]) => unknown, args, kw, conv)));
+      if (typeof m === 'function') {
+        const result = (m as (...a: unknown[]) => unknown).call(thisArg, ...placeArgs(m as (...a: unknown[]) => unknown, args, kw, conv));
+        // AGCA uses expression coefficients publicly. SymPy prints these as
+        // dense DMP objects inside its relation containers; only convert the
+        // representation here, using the public sparse-to-dense conversion.
+        if (self instanceof sj.SubModule && Array.isArray(result) && (name === 'intersect' || name === 'moduleQuotient')) {
+          const K = self.context.domain;
+          const R = new sj.PolyRing(self.context.symbols, K);
+          const dense = (value: unknown): unknown => Array.isArray(value) ? new JsList(value.map(dense)) : K.convert(value);
+          const coefficient = (e: Expr): unknown => ({ toString: () => `DMP_Python(${fmt(dense(R.fromExpr(e).toDense()))}, ${String(K)})` });
+          return new JsTuple([result[0], ...result.slice(1).map((rows: Expr[][]) => new JsList(rows.map((row) => name === 'intersect' ? new JsTuple(row.map(coefficient)) : new JsList(row.map(coefficient)))))]);
+        }
+        return fromJs(result);
+      }
       if (m === undefined || args.length) throw new Unsupported(`no adapter for ${c.fn}`);
       return fromJs(m);
     };

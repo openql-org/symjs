@@ -191,6 +191,12 @@ export type { GFPoly, GFFactorization, GFFactorMethod } from './polys/galoistool
 // sparse polynomial rings (SymPy sympy.polys.rings) and the IPolys methods (sympy.polys.compatibility)
 export { PolyRing, PolyElement, ring, xring, vring, sring } from './polys/rings';
 export { PuiseuxRing, PuiseuxPoly, puiseuxRing } from './polys/puiseux';
+export { PolynomialRingBase } from './polys/domains/oldpolynomialring';
+export { QuotientRing } from './polys/domains/quotientring';
+export { Module, FreeModule, SubModule, QuotientModule, ModuleElement } from './polys/agca/modules';
+export type { ModuleInput } from './polys/agca/modules';
+export { ModuleImplementedIdeal } from './polys/agca/ideals';
+export { ModuleHomomorphism, homomorphism } from './polys/agca/homomorphisms';
 export type { PuiseuxMonom, PuiseuxTerm } from './polys/puiseux';
 export { powXin, rsTrunc, rsMul, rsSquare, rsDiff, rsIntegrate, rsIsPuiseux, rsPow, rsSeriesInversion, rsNthRoot, rsExp, rsSin, rsCos, rsSinh, rsCosh, rsAsin, rsAsinh, rsAtan, rsAtanh, rsLambertW, rsTan, rsTanh, rsCot, rsLog, rsSeriesFromList, rsSubs, rsSeriesReversion, rsPuiseux, rsFun, rsHadamardExp, rsNewton, rsComposeAdd, rsSeries } from './polys/ringseries';
 export type { SeriesPoly, SeriesFunction } from './polys/ringseries';
