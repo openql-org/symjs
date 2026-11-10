@@ -542,6 +542,22 @@ export function deserialize(tree: Tree): unknown {
     case 'Domain':
       // the domain object rebuilt from its parameters; ZZ/QQ also stay recognizable as JsDomain where an adapter compares the name
       return new JsDomain(tree['name'] as string, deserializeDomain(tree));
+    case 'ArraySymbol':
+      return new sj.ArraySymbol(tree['name'] as string, (tree['shape'] as Tree[]).map((d) => deserialize(d) as Expr));
+    case 'ArrayElement':
+      return new sj.ArrayElement(deserialize(tree['parent'] as Tree) as Expr, (tree['indices'] as Tree[]).map((d) => deserialize(d) as Expr));
+    case 'ArrayExpression': {
+      const cls = ({ ArrayTensorProduct: sj.ArrayTensorProduct, ArrayAdd: sj.ArrayAdd, ZeroArray: sj.ZeroArray })[tree['cls'] as 'ArrayTensorProduct' | 'ArrayAdd' | 'ZeroArray'];
+      return new cls(...(tree['args'] as Tree[]).map((d) => deserialize(d) as Expr));
+    }
+    case 'ArrayAxes': {
+      const cls = tree['cls'] === 'ArrayContraction' ? sj.ArrayContraction : sj.ArrayDiagonal;
+      return new cls(deserialize(tree['expr'] as Tree) as Expr, ...(tree['axes'] as number[][]));
+    }
+    case 'PermuteDims':
+      return new sj.PermuteDims(deserialize(tree['expr'] as Tree) as Expr, tree['permutation'] as number[]);
+    case 'Reshape':
+      return new sj.Reshape(deserialize(tree['expr'] as Tree) as Expr, (tree['shape'] as Tree[]).map((d) => deserialize(d) as Expr));
     case 'AGCAQuotientRing':
       return new sj.QuotientRing(toJs(deserialize(tree['ring'] as Tree), false) as sj.Domain, deserialize(tree['ideal'] as Tree) as sj.ModuleImplementedIdeal);
     case 'AGCAIdeal':

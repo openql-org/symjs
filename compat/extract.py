@@ -699,6 +699,19 @@ def ser(o):
     if isinstance(o, _Cycle):
         return {"t": "Cycle", "cycles": [[int(i) for i in c] for c in _Perm(o).cyclic_form], "size": int(o.size)}
     from sympy.tensor.array import NDimArray as _NDA
+    from sympy.tensor.array.expressions import array_expressions as _AE
+    if isinstance(o, _AE.ArraySymbol):
+        return {"t": "ArraySymbol", "name": str(o.name), "shape": [ser(d) for d in o.shape]}
+    if isinstance(o, _AE.ArrayElement):
+        return {"t": "ArrayElement", "parent": ser(o.name), "indices": [ser(i) for i in o.indices]}
+    if isinstance(o, (_AE.ArrayTensorProduct, _AE.ArrayAdd, _AE.ZeroArray)):
+        return {"t": "ArrayExpression", "cls": type(o).__name__, "args": [ser(a) for a in o.args]}
+    if isinstance(o, (_AE.ArrayContraction, _AE.ArrayDiagonal)):
+        return {"t": "ArrayAxes", "cls": type(o).__name__, "expr": ser(o.expr), "axes": [list(map(int, g)) for g in o.args[1:]]}
+    if isinstance(o, _AE.PermuteDims):
+        return {"t": "PermuteDims", "expr": ser(o.expr), "permutation": list(o.permutation.array_form)}
+    if isinstance(o, _AE.Reshape):
+        return {"t": "Reshape", "expr": ser(o.expr), "shape": [ser(d) for d in o.shape]}
     from sympy.tensor.tensor import TensorIndexType as _TIT, TensorIndex as _TI, TensorHead as _TH, TensorSymmetry as _TS, Tensor as _Tensor, TensMul as _TensMul
     from sympy.tensor.tensor import TensAdd as _TensAdd, TensorElement as _TE, WildTensorHead as _WTH, WildTensor as _WT, WildTensorIndex as _WTI
     from sympy.combinatorics.polyhedron import Polyhedron as _Polyhedron

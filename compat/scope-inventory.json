@@ -20770,9 +20770,11 @@
   {
    "module": "sympy.tensor.array.expressions.array_expressions",
    "sha256": "dbc4c8f1cc3043843e40223d5ff8fa5fe946d2447a6a68c07bdfa1f4929be445",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "array expressions",
-   "sources": [],
+   "sources": [
+    "tensor/array/expressions/arrayexpressions.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 23,
@@ -20830,9 +20832,11 @@
   {
    "module": "sympy.tensor.array.expressions.arrayexpr_derivatives",
    "sha256": "5bdf9b6362cbf3794b48d1d722dcea8ce82f7fe1c80db5173e8570f2e3b299c8",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "array expressions",
-   "sources": [],
+   "sources": [
+    "tensor/array/expressions/arrayexprderivatives.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -20901,9 +20905,11 @@
   {
    "module": "sympy.tensor.array.expressions.from_array_to_matrix",
    "sha256": "e0751b09f476047779e088f0b3d0c2712b3a68027e93c4704f5f793534089a2b",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "array expressions",
-   "sources": [],
+   "sources": [
+    "tensor/array/expressions/fromarraytomatrix.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 9,
@@ -20917,9 +20923,11 @@
   {
    "module": "sympy.tensor.array.expressions.from_indexed_to_array",
    "sha256": "45470a7a69abc2e2b944546bd7d6123d53023a465f2c05a56db079eaef168b48",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "array expressions",
-   "sources": [],
+   "sources": [
+    "tensor/array/expressions/fromindexedtoarray.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 4,
@@ -20930,9 +20938,11 @@
   {
    "module": "sympy.tensor.array.expressions.from_matrix_to_array",
    "sha256": "c8863546ea45f7e1555778d92eca96c59d5c928135f87910c8cf1c4089b8fc6b",
-   "status": "unimplemented",
+   "status": "partial",
    "note": "array expressions",
-   "sources": [],
+   "sources": [
+    "tensor/array/expressions/frommatrixtoarray.ts"
+   ],
    "selectedForExtraction": false,
    "hasCorpusCases": false,
    "documentedExamples": 0,

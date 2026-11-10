@@ -430011,7 +430011,72 @@
   },
   {
    "fn": ".as_explicit",
-   "unsupportedArg": "ArrayTensorProduct",
+   "self": {
+    "t": "ArrayExpression",
+    "cls": "ArrayTensorProduct",
+    "args": [
+     {
+      "t": "NDimArray",
+      "cls": "ImmutableDenseNDimArray",
+      "shape": [
+       4
+      ],
+      "flat": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "z",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "t",
+        "assume": {}
+       }
+      ]
+     },
+     {
+      "t": "NDimArray",
+      "cls": "ImmutableDenseNDimArray",
+      "shape": [
+       4
+      ],
+      "flat": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "4",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array",
    "src": "ArrayTensorProduct(A, B).as_explicit()",
@@ -430074,7 +430139,48 @@
   },
   {
    "fn": ".as_explicit",
-   "unsupportedArg": "ArrayContraction",
+   "self": {
+    "t": "ArrayAxes",
+    "cls": "ArrayContraction",
+    "expr": {
+     "t": "NDimArray",
+     "cls": "ImmutableDenseNDimArray",
+     "shape": [
+      2,
+      2
+     ],
+     "flat": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "z",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "t",
+       "assume": {}
+      }
+     ]
+    },
+    "axes": [
+     [
+      0,
+      1
+     ]
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array",
    "src": "ArrayContraction(C, (0, 1)).as_explicit()",
@@ -431122,7 +431228,29 @@
   },
   {
    "fn": ".as_explicit",
-   "unsupportedArg": "ArraySymbol",
+   "self": {
+    "t": "ArraySymbol",
+    "name": "A",
+    "shape": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "4",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions",
    "src": "A.as_explicit()",
@@ -431130,7 +431258,56 @@
   },
   {
    "fn": "convert_indexed_to_array",
-   "unsupportedArg": "ArrayElement",
+   "args": [
+    {
+     "t": "ArrayElement",
+     "parent": {
+      "t": "ArraySymbol",
+      "name": "A",
+      "shape": [
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      ]
+     },
+     "indices": [
+      {
+       "t": "Symbol",
+       "name": "i",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "j",
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "i",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "j",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions",
    "src": "convert_indexed_to_array(A[i, j], [i, j])",
@@ -431138,7 +431315,56 @@
   },
   {
    "fn": "convert_indexed_to_array",
-   "unsupportedArg": "ArrayElement",
+   "args": [
+    {
+     "t": "ArrayElement",
+     "parent": {
+      "t": "ArraySymbol",
+      "name": "A",
+      "shape": [
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      ]
+     },
+     "indices": [
+      {
+       "t": "Symbol",
+       "name": "i",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "j",
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "j",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "i",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions",
    "src": "convert_indexed_to_array(A[i, j], [j, i])",
@@ -431146,7 +431372,92 @@
   },
   {
    "fn": "convert_indexed_to_array",
-   "unsupportedArg": "ArrayElement",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "ArrayElement",
+       "parent": {
+        "t": "ArraySymbol",
+        "name": "A",
+        "shape": [
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       "indices": [
+        {
+         "t": "Symbol",
+         "name": "i",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "j",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "ArrayElement",
+       "parent": {
+        "t": "ArraySymbol",
+        "name": "B",
+        "shape": [
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       "indices": [
+        {
+         "t": "Symbol",
+         "name": "j",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "i",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "i",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "j",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions",
    "src": "convert_indexed_to_array(A[i, j] + B[j, i], [i, j])",
@@ -431154,7 +431465,118 @@
   },
   {
    "fn": "convert_indexed_to_array",
-   "unsupportedArg": "ArrayElement",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "Sum",
+     "args": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "ArrayElement",
+         "parent": {
+          "t": "ArraySymbol",
+          "name": "A",
+          "shape": [
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         "indices": [
+          {
+           "t": "Symbol",
+           "name": "i",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "j",
+           "assume": {}
+          }
+         ]
+        },
+        {
+         "t": "ArrayElement",
+         "parent": {
+          "t": "ArraySymbol",
+          "name": "B",
+          "shape": [
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         "indices": [
+          {
+           "t": "Symbol",
+           "name": "j",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "k",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Symbol",
+         "name": "j",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "i",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "k",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions",
    "src": "convert_indexed_to_array(Sum(A[i, j]*B[j, k], (j, 0, 2)), [i, k])",
@@ -431162,7 +431584,51 @@
   },
   {
    "fn": "convert_indexed_to_array",
-   "unsupportedArg": "ArrayElement",
+   "args": [
+    {
+     "t": "ArrayElement",
+     "parent": {
+      "t": "ArraySymbol",
+      "name": "A",
+      "shape": [
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      ]
+     },
+     "indices": [
+      {
+       "t": "Symbol",
+       "name": "i",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "i",
+       "assume": {}
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "i",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions",
    "src": "convert_indexed_to_array(A[i, i], [i])",
@@ -431170,7 +431636,77 @@
   },
   {
    "fn": "convert_indexed_to_array",
-   "unsupportedArg": "ArrayElement",
+   "args": [
+    {
+     "t": "Fn",
+     "name": "Sum",
+     "args": [
+      {
+       "t": "ArrayElement",
+       "parent": {
+        "t": "ArraySymbol",
+        "name": "A",
+        "shape": [
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       },
+       "indices": [
+        {
+         "t": "Symbol",
+         "name": "i",
+         "assume": {}
+        },
+        {
+         "t": "Symbol",
+         "name": "i",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Symbol",
+         "name": "i",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "i",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions",
    "src": "convert_indexed_to_array(Sum(A[i, i], (i, 0, 2)), [i])",
@@ -431178,7 +431714,53 @@
   },
   {
    "fn": "convert_array_to_matrix",
-   "unsupportedArg": "ArrayContraction",
+   "args": [
+    {
+     "t": "ArrayAxes",
+     "cls": "ArrayContraction",
+     "expr": {
+      "t": "ArrayExpression",
+      "cls": "ArrayTensorProduct",
+      "args": [
+       {
+        "t": "MatrixSymbol",
+        "name": "M",
+        "rows": {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        "cols": {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       },
+       {
+        "t": "MatrixSymbol",
+        "name": "N",
+        "rows": {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        "cols": {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       }
+      ]
+     },
+     "axes": [
+      [
+       1,
+       2
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions",
    "src": "convert_array_to_matrix(expr)",
@@ -431186,7 +431768,62 @@
   },
   {
    "fn": ".doit",
-   "unsupportedArg": "ArrayContraction",
+   "self": {
+    "t": "ArrayAxes",
+    "cls": "ArrayContraction",
+    "expr": {
+     "t": "ArrayAxes",
+     "cls": "ArrayContraction",
+     "expr": {
+      "t": "ArrayExpression",
+      "cls": "ArrayTensorProduct",
+      "args": [
+       {
+        "t": "MatrixSymbol",
+        "name": "M",
+        "rows": {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        "cols": {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       },
+       {
+        "t": "MatrixSymbol",
+        "name": "N",
+        "rows": {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        "cols": {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       }
+      ]
+     },
+     "axes": [
+      [
+       1,
+       2
+      ]
+     ]
+    },
+    "axes": [
+     [
+      0,
+      1
+     ]
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions",
    "src": "expr_tr.doit()",
@@ -431194,7 +431831,52 @@
   },
   {
    "fn": ".as_explicit",
-   "unsupportedArg": "ArrayContraction",
+   "self": {
+    "t": "ArrayAxes",
+    "cls": "ArrayContraction",
+    "expr": {
+     "t": "ArrayExpression",
+     "cls": "ArrayTensorProduct",
+     "args": [
+      {
+       "t": "MatrixSymbol",
+       "name": "M",
+       "rows": {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       },
+       "cols": {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      },
+      {
+       "t": "MatrixSymbol",
+       "name": "N",
+       "rows": {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       },
+       "cols": {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       }
+      }
+     ]
+    },
+    "axes": [
+     [
+      1,
+      2
+     ]
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions",
    "src": "expr.as_explicit()",
@@ -431312,7 +431994,45 @@
   },
   {
    "fn": ".as_explicit",
-   "unsupportedArg": "PermuteDims",
+   "self": {
+    "t": "PermuteDims",
+    "expr": {
+     "t": "ArrayExpression",
+     "cls": "ArrayTensorProduct",
+     "args": [
+      {
+       "t": "MatExpr",
+       "cls": "Identity",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "MatExpr",
+       "cls": "Identity",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    },
+    "permutation": [
+     0,
+     2,
+     1,
+     3
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions",
    "src": "d.as_explicit()",
@@ -431900,7 +432620,88 @@
   },
   {
    "fn": ".sort_args_by_name",
-   "unsupportedArg": "ArrayContraction",
+   "self": {
+    "t": "ArrayAxes",
+    "cls": "ArrayContraction",
+    "expr": {
+     "t": "ArrayExpression",
+     "cls": "ArrayTensorProduct",
+     "args": [
+      {
+       "t": "MatrixSymbol",
+       "name": "A",
+       "rows": {
+        "t": "Symbol",
+        "name": "N",
+        "assume": {}
+       },
+       "cols": {
+        "t": "Symbol",
+        "name": "N",
+        "assume": {}
+       }
+      },
+      {
+       "t": "MatrixSymbol",
+       "name": "D",
+       "rows": {
+        "t": "Symbol",
+        "name": "N",
+        "assume": {}
+       },
+       "cols": {
+        "t": "Symbol",
+        "name": "N",
+        "assume": {}
+       }
+      },
+      {
+       "t": "MatrixSymbol",
+       "name": "C",
+       "rows": {
+        "t": "Symbol",
+        "name": "N",
+        "assume": {}
+       },
+       "cols": {
+        "t": "Symbol",
+        "name": "N",
+        "assume": {}
+       }
+      },
+      {
+       "t": "MatrixSymbol",
+       "name": "B",
+       "rows": {
+        "t": "Symbol",
+        "name": "N",
+        "assume": {}
+       },
+       "cols": {
+        "t": "Symbol",
+        "name": "N",
+        "assume": {}
+       }
+      }
+     ]
+    },
+    "axes": [
+     [
+      0,
+      3
+     ],
+     [
+      1,
+      6
+     ],
+     [
+      2,
+      5
+     ]
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions.array_expressions",
    "src": "cg.sort_args_by_name()",
@@ -431908,7 +432709,19 @@
   },
   {
    "fn": ".as_explicit",
-   "unsupportedArg": "ArraySymbol",
+   "self": {
+    "t": "ArraySymbol",
+    "name": "A",
+    "shape": [
+     {
+      "t": "Rational",
+      "p": "6",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions.array_expressions",
    "src": "A.as_explicit()",
@@ -431916,7 +432729,34 @@
   },
   {
    "fn": ".as_explicit",
-   "unsupportedArg": "Reshape",
+   "self": {
+    "t": "Reshape",
+    "expr": {
+     "t": "ArraySymbol",
+     "name": "A",
+     "shape": [
+      {
+       "t": "Rational",
+       "p": "6",
+       "q": "1"
+      }
+     ]
+    },
+    "shape": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "2",
+      "q": "1"
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions.array_expressions",
    "src": "Reshape(A, (3, 2)).as_explicit()",
@@ -431924,7 +432764,53 @@
   },
   {
    "fn": "convert_array_to_matrix",
-   "unsupportedArg": "ArrayContraction",
+   "args": [
+    {
+     "t": "ArrayAxes",
+     "cls": "ArrayContraction",
+     "expr": {
+      "t": "ArrayExpression",
+      "cls": "ArrayTensorProduct",
+      "args": [
+       {
+        "t": "MatrixSymbol",
+        "name": "A",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       },
+       {
+        "t": "MatrixSymbol",
+        "name": "B",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       }
+      ]
+     },
+     "axes": [
+      [
+       1,
+       2
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions.from_array_to_matrix",
    "src": "convert_array_to_matrix(cg)",
@@ -431932,7 +432818,53 @@
   },
   {
    "fn": "convert_array_to_matrix",
-   "unsupportedArg": "ArrayContraction",
+   "args": [
+    {
+     "t": "ArrayAxes",
+     "cls": "ArrayContraction",
+     "expr": {
+      "t": "ArrayExpression",
+      "cls": "ArrayTensorProduct",
+      "args": [
+       {
+        "t": "MatrixSymbol",
+        "name": "B",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       },
+       {
+        "t": "MatrixSymbol",
+        "name": "A",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       }
+      ]
+     },
+     "axes": [
+      [
+       0,
+       3
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions.from_array_to_matrix",
    "src": "convert_array_to_matrix(cg)",
@@ -431940,7 +432872,53 @@
   },
   {
    "fn": "convert_array_to_matrix",
-   "unsupportedArg": "ArrayContraction",
+   "args": [
+    {
+     "t": "ArrayAxes",
+     "cls": "ArrayContraction",
+     "expr": {
+      "t": "ArrayExpression",
+      "cls": "ArrayTensorProduct",
+      "args": [
+       {
+        "t": "MatrixSymbol",
+        "name": "A",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       },
+       {
+        "t": "MatrixSymbol",
+        "name": "B",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       }
+      ]
+     },
+     "axes": [
+      [
+       0,
+       2
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions.from_array_to_matrix",
    "src": "convert_array_to_matrix(cg)",
@@ -431948,7 +432926,53 @@
   },
   {
    "fn": "convert_array_to_matrix",
-   "unsupportedArg": "ArrayContraction",
+   "args": [
+    {
+     "t": "ArrayAxes",
+     "cls": "ArrayContraction",
+     "expr": {
+      "t": "ArrayExpression",
+      "cls": "ArrayTensorProduct",
+      "args": [
+       {
+        "t": "MatrixSymbol",
+        "name": "B",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       },
+       {
+        "t": "MatrixSymbol",
+        "name": "A",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       }
+      ]
+     },
+     "axes": [
+      [
+       0,
+       2
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions.from_array_to_matrix",
    "src": "convert_array_to_matrix(cg)",
@@ -431956,7 +432980,33 @@
   },
   {
    "fn": "convert_array_to_matrix",
-   "unsupportedArg": "ArrayContraction",
+   "args": [
+    {
+     "t": "ArrayAxes",
+     "cls": "ArrayContraction",
+     "expr": {
+      "t": "MatrixSymbol",
+      "name": "A",
+      "rows": {
+       "t": "Symbol",
+       "name": "N",
+       "assume": {}
+      },
+      "cols": {
+       "t": "Symbol",
+       "name": "N",
+       "assume": {}
+      }
+     },
+     "axes": [
+      [
+       0,
+       1
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions.from_array_to_matrix",
    "src": "convert_array_to_matrix(cg)",
@@ -431964,7 +433014,57 @@
   },
   {
    "fn": "convert_array_to_matrix",
-   "unsupportedArg": "ArrayContraction",
+   "args": [
+    {
+     "t": "ArrayAxes",
+     "cls": "ArrayContraction",
+     "expr": {
+      "t": "ArrayExpression",
+      "cls": "ArrayTensorProduct",
+      "args": [
+       {
+        "t": "MatrixSymbol",
+        "name": "A",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       },
+       {
+        "t": "MatrixSymbol",
+        "name": "B",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       }
+      ]
+     },
+     "axes": [
+      [
+       0,
+       3
+      ],
+      [
+       1,
+       2
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions.from_array_to_matrix",
    "src": "convert_array_to_matrix(cg)",
@@ -431972,7 +433072,71 @@
   },
   {
    "fn": "convert_array_to_matrix",
-   "unsupportedArg": "ArrayContraction",
+   "args": [
+    {
+     "t": "ArrayAxes",
+     "cls": "ArrayContraction",
+     "expr": {
+      "t": "ArrayExpression",
+      "cls": "ArrayTensorProduct",
+      "args": [
+       {
+        "t": "MatrixSymbol",
+        "name": "B",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       },
+       {
+        "t": "MatrixSymbol",
+        "name": "A",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       },
+       {
+        "t": "MatrixSymbol",
+        "name": "A",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       }
+      ]
+     },
+     "axes": [
+      [
+       0,
+       5
+      ],
+      [
+       1,
+       3
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions.from_array_to_matrix",
    "src": "convert_array_to_matrix(cg)",
@@ -431980,7 +433144,53 @@
   },
   {
    "fn": "convert_array_to_matrix",
-   "unsupportedArg": "ArrayContraction",
+   "args": [
+    {
+     "t": "ArrayAxes",
+     "cls": "ArrayContraction",
+     "expr": {
+      "t": "ArrayExpression",
+      "cls": "ArrayTensorProduct",
+      "args": [
+       {
+        "t": "MatrixSymbol",
+        "name": "A",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       },
+       {
+        "t": "MatrixSymbol",
+        "name": "B",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       }
+      ]
+     },
+     "axes": [
+      [
+       1,
+       2
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions.from_array_to_matrix",
    "src": "convert_array_to_matrix(cg)",
@@ -431988,7 +433198,85 @@
   },
   {
    "fn": "convert_array_to_matrix",
-   "unsupportedArg": "ArrayContraction",
+   "args": [
+    {
+     "t": "ArrayAxes",
+     "cls": "ArrayContraction",
+     "expr": {
+      "t": "ArrayExpression",
+      "cls": "ArrayTensorProduct",
+      "args": [
+       {
+        "t": "MatrixSymbol",
+        "name": "A",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       },
+       {
+        "t": "MatrixSymbol",
+        "name": "B",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       },
+       {
+        "t": "MatrixSymbol",
+        "name": "C",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       },
+       {
+        "t": "MatrixSymbol",
+        "name": "D",
+        "rows": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        },
+        "cols": {
+         "t": "Symbol",
+         "name": "N",
+         "assume": {}
+        }
+       }
+      ]
+     },
+     "axes": [
+      [
+       1,
+       2
+      ],
+      [
+       5,
+       6
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.array.expressions.from_array_to_matrix",
    "src": "convert_array_to_matrix(cg)",

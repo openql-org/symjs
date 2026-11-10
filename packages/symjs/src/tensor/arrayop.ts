@@ -6,7 +6,7 @@
  * tensorproduct, tensorcontraction, tensordiagonal and permutedims.
  */
 
-import { at } from '../core/guard';
+import { at, cast } from '../core/guard';
 import type { Expr, ExprLike } from '../core/nodes';
 import { S } from '../core/nodes';
 import { add, mul, sympify } from '../core/ops';
@@ -16,6 +16,18 @@ import { ImmutableDenseNDimArray, ImmutableSparseNDimArray, NDimArray, SparseNDi
 
 /** An argument of the array operations: an array, a Matrix, nested lists or (for tensorproduct) a scalar. */
 export type TensorArg = NDimArray | Matrix | readonly NestedArrayInput[] | ExprLike;
+
+/** Lazy array-expression dispatch, registered by the tensor entry. @internal */
+export const arrayOperationHooks: {
+  symbolic?: {
+    accepts: (e: unknown) => boolean;
+    rank: (e: Expr) => number;
+    product: (args: Expr[]) => Expr;
+    contraction: (e: Expr, axes: (readonly number[])[]) => Expr;
+    diagonal: (e: Expr, axes: (readonly number[])[]) => Expr;
+    permutation: (e: Expr, p: readonly number[]) => Expr;
+  };
+} = {};
 
 /** SymPy _arrayfy: arrays stay, matrices and lists become ImmutableDenseNDimArray, scalars are sympified. */
 const isNestedList = (a: TensorArg): a is readonly NestedArrayInput[] => Array.isArray(a);
@@ -45,6 +57,8 @@ const newOfClass = (a: NDimArray, it: ArrayInput, shape: readonly number[]): NDi
  * // [[[x, y], [2*x, 2*y]], [[3*x, 3*y], [4*x, 4*y]]]
  */
 export function tensorproduct(...args: TensorArg[]): Expr {
+  const hook = arrayOperationHooks.symbolic;
+  if (hook && args.some(hook.accepts)) return hook.product(args.map(arrayfy));
   if (args.length === 0) return S.One;
   if (args.length === 1) return arrayfy(at(args, 0));
   if (args.length > 2) return tensorproduct(tensorproduct(at(args, 0), at(args, 1)), ...args.slice(2));
@@ -111,6 +125,8 @@ function productSums(lists: readonly (readonly number[])[]): number[] {
  * tensorcontraction(Array([[x, y], [z, t]]), [0, 1]) // t + x
  */
 export function tensorcontraction(arrayIn: TensorArg, ...axes: (readonly number[])[]): Expr {
+  const hook = arrayOperationHooks.symbolic;
+  if (hook?.accepts(arrayIn)) return hook.contraction(arrayfy(arrayIn), axes);
   const array = toArray(arrayIn);
   const { remaining, remainingShape, deltas } = contractionData(array, axes);
   const flat = array.flatElements();
@@ -128,6 +144,8 @@ export function tensorcontraction(arrayIn: TensorArg, ...axes: (readonly number[
  * tensordiagonal(Matrix.of([[a, b], [c, d]]), [0, 1]) // [a, d]
  */
 export function tensordiagonal(arrayIn: TensorArg, ...axes: (readonly number[])[]): Expr {
+  const hook = arrayOperationHooks.symbolic;
+  if (hook?.accepts(arrayIn)) return hook.diagonal(arrayfy(arrayIn), axes);
   if (axes.some((g) => g.length <= 1)) throw new RangeError('need at least two axes to diagonalize');
   if (axes.length === 0) throw new TypeError('tensordiagonal: no axes to diagonalize');
   const array = toArray(arrayIn);
@@ -161,16 +179,19 @@ export interface PermutedimsOptions {
  * permutation can also be given by naming the axes,
  * `permutedims(b, { indexOrderOld: 'cba', indexOrderNew: 'abc' })`.
  */
-export function permutedims(expr: TensorArg, perm?: PermutationLike | PermutedimsOptions, opts: PermutedimsOptions = {}): NDimArray {
-  const array = toArray(expr);
+export function permutedims(expr: NDimArray | Matrix | readonly NestedArrayInput[], perm?: PermutationLike | PermutedimsOptions, opts?: PermutedimsOptions): NDimArray;
+export function permutedims(expr: TensorArg, perm?: PermutationLike | PermutedimsOptions, opts?: PermutedimsOptions): Expr;
+export function permutedims(expr: TensorArg, perm?: PermutationLike | PermutedimsOptions, opts: PermutedimsOptions = {}): Expr {
+  const array = arrayfy(expr), hook = arrayOperationHooks.symbolic;
+  const rank = hook?.accepts(array) ? hook.rank(array) : toArray(expr).rank();
   let p: readonly number[];
-  if (perm === undefined) p = permutationFromIndexOrders(opts, array.rank());
+  if (perm === undefined) p = permutationFromIndexOrders(opts, rank);
   else if (isPermutationLike(perm)) {
     if (opts.indexOrderNew !== undefined) throw new RangeError('index_order_new cannot be defined with permutation');
     if (opts.indexOrderOld !== undefined) throw new RangeError('index_order_old cannot be defined with permutation');
     p = isIndexArray(perm) ? perm : perm.arrayForm;
-  } else p = permutationFromIndexOrders(perm, array.rank());
-  return permuteArray(array, p);
+  } else p = permutationFromIndexOrders(perm, rank);
+  return hook?.accepts(array) ? hook.permutation(array, p) : permuteArray(cast(array, NDimArray), p);
 }
 
 const isIndexArray = (p: PermutationLike | PermutedimsOptions): p is readonly number[] => Array.isArray(p);
