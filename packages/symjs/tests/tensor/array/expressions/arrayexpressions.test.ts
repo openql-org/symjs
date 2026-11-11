@@ -135,3 +135,25 @@ it('permutations can be specified by old and new index order strings', async () 
   expect(() => new P(m,undefined,{indexOrderOld:'iiklm',indexOrderNew:'ijklm'})).toThrow(RangeError);
   expect(() => new P(m,undefined,{indexOrderOld:'ijklm',indexOrderNew:'ijklz'})).toThrow(RangeError);
 });
+
+it('constructs constant-one and elementwise arrays, including scalar shapes', async () => {
+  const { OneArray, ArrayElementwiseApplyFunc, Lambda, sin, cos, rebuild } = await import('../../../../src');
+  const one = new OneArray(2, 3);
+  expect(str(one.asExplicit())).toBe('[[1, 1, 1], [1, 1, 1]]');
+  expect(rebuild(one).key).toBe(one.key);
+  expect(str(new OneArray().asExplicit())).toBe('1');
+  expect(() => new OneArray(Number.MAX_SAFE_INTEGER, 2).asExplicit()).toThrow(NotImplementedError);
+  const x = new Sym('x'), y = new Sym('y');
+  const e = new ArrayElementwiseApplyFunc(sin, SymArray([x, y]));
+  expect(str(e.asExplicit())).toBe('[sin(x), sin(y)]');
+  expect(rebuild(e).key).toBe(e.key);
+  expect(str(new ArrayElementwiseApplyFunc(Lambda(x, cos(x)), y).asExplicit())).toBe('cos(y)');
+  expect(() => new ArrayElementwiseApplyFunc(Lambda([x, y], x), A)).toThrow(RangeError);
+});
+
+it('recognizes shapes on derivatives and IndexedBase objects', async () => {
+  const { ArrayDerivative, IndexedBase } = await import('../../../../src');
+  expect(getShape(ArrayDerivative(M, N)).map(String)).toEqual(['2', '2', '2', '2']);
+  expect(getShape(new IndexedBase('X', { shape: [2, 3] })).map(String)).toEqual(['2', '3']);
+  expect(getShape(new IndexedBase('X'))).toEqual([]);
+});

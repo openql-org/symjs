@@ -853,21 +853,21 @@ export function isAlgebraicExpr(eIn: ExprLike, syms: readonly Expr[] = []): bool
   return go(e);
 }
 
-/** SymPy dummy_eq: equality up to renaming the single dummy symbol. */
+/** SymPy dummy_eq: normalize bound indices, then rename a single free dummy. */
 export function dummyEq(aIn: ExprLike, bIn: ExprLike, symbol?: Expr): boolean {
-  const a = sympify(aIn);
-  const b = sympify(bIn);
+  const a = asDummy(aIn);
+  const b = asDummy(bIn);
   const dummies = [...freeSymbols(a)].filter((s) => s instanceof Dummy);
-  if (dummies.length === 0) return a.key === b.key;
-  if (dummies.length > 1) return false;
+  if (dummies.length !== 1) return a.key === b.key;
   const d = at(dummies, 0);
   let target = symbol;
   if (!target) {
-    const cand = [...freeSymbols(b)].filter((s) => ![...freeSymbols(a)].some((t) => t.key === s.key));
-    if (cand.length !== 1) return false;
+    const cand = [...freeSymbols(b)];
+    if (cand.length !== 1) return a.key === b.key;
     target = at(cand, 0);
   }
-  return xreplaceM(a, [[d, target]]).key === b.key;
+  const fresh = new Dummy();
+  return xreplaceM(a, [[d, fresh]]).key === xreplaceM(b, [[target, fresh]]).key;
 }
 
 /**

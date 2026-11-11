@@ -35,6 +35,14 @@ export function failureKind(o: TestOutcome): string {
 
 export interface TestGaps { cases: string[]; timeouts?: string[] }
 
+/** Allow slower machines to complete replay without changing the corpus or ratchet. */
+export function replayDeadlineMs(category: string, override = process.env['COMPAT_TESTS_TIMEOUT_MS']): number {
+  if (!override) return category === 'core' || category === 'polys' ? 30_000 : 5000;
+  const milliseconds = Number(override);
+  if (!Number.isSafeInteger(milliseconds) || milliseconds <= 0) throw new RangeError('COMPAT_TESTS_TIMEOUT_MS must be a positive integer');
+  return milliseconds;
+}
+
 /** A deadline gives no completed assertion to compare with a correctness baseline. */
 export function ratchetDifferences(known: TestGaps, failing: string[], timeouts: string[]): { regressions: string[]; fixed: string[] } {
   const baseline = new Set(known.cases);
@@ -65,7 +73,7 @@ export function writeTestsReport(directory: string, suiteSeconds: number): void 
     `Measured **${total.cases}** cases: **${total.exact} exact**, **${total.equivalent} equivalent**, **${failing.length} failing**. Agreement: **${ratio(total.exact + total.equivalent, total.cases)}**.`, '',
     `Compatibility suite wall time: **${suiteSeconds.toFixed(2)} s**. Sum of category replay times: **${seconds.toFixed(2)} s** (projects run in parallel).`, '',
     `Extraction wall time: **${index.lastRunSeconds.toFixed(2)} s**, ${index.jobs} processes, ${index.timeoutSeconds} s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.`, '',
-    'Synchronous replay has a 30 s deadline per core/polys case and 5 s elsewhere. Deadlines remain visible as failing/inconclusive observations and are never accepted as expected exceptions. Their IDs are stored separately in the ratchet: an unfinished assertion cannot establish or resolve a correctness regression.', '',
+    `Synchronous replay has a ${replayDeadlineMs('core') / 1000} s deadline per core/polys case and ${replayDeadlineMs('tensor') / 1000} s elsewhere. Deadlines remain visible as failing/inconclusive observations and are never accepted as expected exceptions. Their IDs are stored separately in the ratchet: an unfinished assertion cannot establish or resolve a correctness regression.`, '',
     'Exact includes successful inequality, identity, boolean and exception assertions. Equality uses the shared doctest deserializer, adapters and equivalence rules. Exception class mismatches are accepted and counted separately; missing adapters and deserialization errors never prove an expected exception.', '',
     '## Agreement by category', '', '| Category | Measured | Exact | Equivalent | Failing | Agreement | Replay s |', '|---|---:|---:|---:|---:|---:|---:|',
   ];

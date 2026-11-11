@@ -3,7 +3,8 @@
 // Ported from SymPy 1.14.0 (tensor/array/expressions/array_expressions.py),
 // Copyright (c) 2006-2023 SymPy Development Team, BSD 3-Clause (see LICENSE).
 
-import { ExtensionExpr, Rational, S, Sym, type Expr, type ExprLike } from '../../../core/nodes';
+import { Dummy, Expr, ExtensionExpr, Rational, S, Sym, type ExprLike } from '../../../core/nodes';
+import { Lambda, LambdaNode } from '../../../core/lambda';
 import { TupleNode } from '../../../core/containers';
 import { at, cast, first } from '../../../core/guard';
 import { add, mul, sub, sympify } from '../../../core/ops';
@@ -15,6 +16,7 @@ import { tensorproduct, tensorcontraction, tensordiagonal, permutedims, type Per
 import { Permutation } from '../../../combinatorics/permutations';
 import { KroneckerDelta } from '../../../functions/special/hyper';
 import { compareKeys, sortKey } from '../../../printing/sortkey';
+import { sortContractionIndices } from './utils';
 
 export type ArrayShape = readonly ExprLike[];
 export type ArrayAxes = readonly (readonly number[])[];
@@ -26,12 +28,13 @@ const integer = (e: Expr): number => {
 };
 const indices = (n: number): number[] => Array.from({ length: n }, (_, i) => i);
 const sameShape = (a: readonly Expr[], b: readonly Expr[]): boolean => a.length === b.length && a.every((s, i) => s.key === at(b, i).key);
-const sortGroups = (groups: ArrayAxes): number[][] => groups.map((g) => [...g].sort((a, b) => a - b)).sort((a, b) => first(a) - first(b));
+const isExpressionShape = (value: unknown): value is readonly Expr[] => Array.isArray(value) && value.every((d: unknown) => d instanceof Expr);
 
 /** The shape of an array expression, explicit array, matrix or scalar. */
 export function getShape(expr: Expr): readonly Expr[] {
   if (expr instanceof ArrayExpr || expr instanceof MatrixExpr) return expr.shape;
   if (expr instanceof NDimArray) return expr.shape.map((n) => Rational.of(n));
+  if ('shape' in expr && isExpressionShape(expr.shape)) return expr.shape;
   return [];
 }
 /** Number of axes (scalars have rank zero). */
@@ -82,7 +85,7 @@ export class ArrayElement extends ExtensionExpr {
   readonly indices: readonly Expr[];
   constructor(readonly parent: Expr, index: ArrayShape) {
     const ind = index.map(sympify), shape = getShape(parent);
-    const shaped = parent instanceof ArrayExpr || parent instanceof MatrixExpr || parent instanceof NDimArray;
+    const shaped = parent instanceof ArrayExpr || parent instanceof MatrixExpr || parent instanceof NDimArray || shape.length > 0;
     if (shaped && ind.length !== shape.length) throw new RangeError('array index rank does not match the shape');
     ind.forEach((i, k) => {
       if (isNegative(i) === true || (shaped && isNonNegative(sub(i, at(shape, k))) === true)) throw new RangeError('array index out of bounds');
@@ -133,7 +136,7 @@ function validateGroups(expr: Expr, groups: ArrayAxes, diagonal: boolean): numbe
       used.add(i);
     }
   }
-  return sortGroups(groups);
+  return sortContractionIndices(groups);
 }
 /** Surviving axes in the original coordinate order. @internal */
 export function remainingAxes(rank: number, groups: ArrayAxes): number[] {
@@ -298,5 +301,36 @@ export class ZeroArray extends ArrayExpr {
     const shape = this.shape.map(integer), size = shape.reduce((a, b) => a * b, 1);
     if (!Number.isSafeInteger(size)) throw new NotImplementedError('array is too large to materialize');
     return new ImmutableDenseNDimArray(Array.from({ length: size }, () => S.Zero), shape);
+  }
+}
+
+/** Constant array whose entries are one. */
+export class OneArray extends ArrayExpr {
+  readonly shape: readonly Expr[];
+  constructor(...shape: ExprLike[]) { const dims = shape.map((s) => checkDim(sympify(s))); super('OneArray', dims); this.shape = dims; }
+  withArgs(args: readonly Expr[]): Expr { return new OneArray(...args); }
+  asExplicit(): Expr {
+    const shape = this.shape.map(integer), size = shape.reduce((a, b) => a * b, 1);
+    if (!Number.isSafeInteger(size)) throw new NotImplementedError('array is too large to materialize');
+    return new ImmutableDenseNDimArray(Array.from({ length: size }, () => S.One), shape);
+  }
+}
+
+/** Apply a scalar function independently to each array entry. */
+export class ArrayElementwiseApplyFunc extends ArrayExpr {
+  readonly function: LambdaNode;
+  readonly shape: readonly Expr[];
+  constructor(func: LambdaNode | ((value: Expr) => Expr), readonly expr: Expr) {
+    const variable = new Dummy('d');
+    const lambda = func instanceof LambdaNode ? func : Lambda(variable, func(variable));
+    if (lambda.variables.length !== 1) throw new RangeError('an elementwise function requires one argument');
+    super('ArrayElementwiseApplyFunc', [lambda, expr]);
+    this.function = lambda;
+    this.shape = getShape(expr);
+  }
+  withArgs(args: readonly Expr[]): Expr { return new ArrayElementwiseApplyFunc(cast(first(args), LambdaNode), at(args, 1)); }
+  asExplicit(): Expr {
+    const expr = explicitArray(this.expr);
+    return expr instanceof NDimArray ? expr.applyfunc((e) => this.function.call(e)) : this.function.call(expr);
   }
 }

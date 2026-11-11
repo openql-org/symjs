@@ -394,6 +394,21 @@ describe('equal_valued, is_same, dummy_eq, as_terms', () => {
     expect(sj.dummyEq(Ad(d, y), Ad(x, z))).toBe(false);
     expect(sj.dummyEq(Ad(d, e), Ad(x, y))).toBe(false);
     expect(sj.dummyEq(Ad(x, 1), Ad(x, 1))).toBe(true);
+    expect(sj.dummyEq(Ad(d, e), Ad(d, e))).toBe(true);
+    expect(sj.dummyEq(Ad(d, y), Ad(d, y))).toBe(true);
+    expect(sj.dummyEq(Ad(d, x), M(2, x), x)).toBe(false);
+  });
+  it('dummy_eq normalizes bound indices without inferring ambiguous free replacements', () => {
+    const d = new sj.Dummy('d');
+    const a = new sj.Sym('a');
+    const left = sj.Sum(x, [x, a, d]);
+    const sameIndex = sj.Sum(x, [x, a, z]);
+    const renamedIndex = sj.Sum(y, [y, a, z]);
+    expect(sj.dummyEq(left, sameIndex)).toBe(false);
+    expect(sj.dummyEq(left, renamedIndex)).toBe(false);
+    expect(sj.dummyEq(left, sameIndex, z)).toBe(true);
+    expect(sj.dummyEq(left, renamedIndex, z)).toBe(true);
+    expect(sj.dummyEq(sameIndex, renamedIndex)).toBe(true);
   });
   it('as_terms', () => {
     const at = (e: sj.Expr) => JSON.stringify(sj.asTerms(e), (_k, v: unknown) => (v instanceof sj.Expr ? String(v) : v));

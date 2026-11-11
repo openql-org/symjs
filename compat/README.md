@@ -42,7 +42,9 @@ all previously observed modules and extracting only unmeasured modules.
 Replay runs one named Vitest project/test per category, with four workers. It
 reuses the doctest serializer format, deserializer and public API adapters.
 Synchronous calls have a 30-second deadline for core/polys and 5 seconds for
-other categories. Timeouts are failures. Missing adapters and input conversion
+other categories. Set `COMPAT_TESTS_TIMEOUT_MS` to a positive integer to override
+the per-case deadline on slower machines; the generated report records it.
+Timeouts are failures. Missing adapters and input conversion
 failures cannot satisfy exception assertions; invoked exceptions with different
 classes are accepted but counted separately. Reports distinguish wrong results,
 missing APIs/adapters, unsupported values, conversion errors, API exceptions,
