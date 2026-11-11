@@ -54,11 +54,12 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 
 ### Entry points and bundle size
 
-`@symjs/symjs` imports the whole base module. Each feature area is also an entry point of its own, so that a bundler includes only what an application uses:
+`@symjs/symjs` imports the base module except the separate LaTeX parsing subpath. Each feature area is also an entry point of its own, so that a bundler includes only what an application uses:
 
 | Entry point | Contents |
 |---|---|
 | `@symjs/symjs/core` | Expressions, numbers and assumptions, symbols and undefined functions, elementary functions, substitution and matching, `diff`, `expand`, `evalf`, parsing, `str` and `latex` |
+| `@symjs/symjs/parsing` | `parseLatex`, `parseLatexLark`, `LarkLaTeXParser`, `TransformToSymPyExpr`, `LaTeXParsingError`; hand-written ANTLR and Lark LaTeX grammars |
 | `@symjs/symjs/special` | Special and combinatorial functions (Gamma, zeta, error functions, Bessel and Airy functions, ...) |
 | `@symjs/symjs/simplify` | `simplify`, `trigsimp`, `powsimp`, `radsimp`, `together`, `cancel`, `rewrite`, ... |
 | `@symjs/symjs/polys` | Polynomials: `factor`, `roots`, `CRootOf`, `groebner`, `apart`, `primitiveElement`, `toNumberField`, ... |
@@ -74,6 +75,24 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 | `@symjs/symjs/stats` | Random symbols (`Normal`, `Exponential`, `Poisson`, `Die`, `Binomial`, ... and handmade distributions), `P`, `expectation` (SymPy `E`), `density`, `given`, `where`, `cdf`, `variance`, `moment`, `covariance`, `median`, the `Probability`/`Expectation`/`Variance`/`Covariance` nodes, joint distributions (`MultivariateNormal`, `Dirichlet`, `Multinomial`, `JointRV`, `marginalDistribution`, ...), matrix distributions (`Wishart`, `MatrixNormal`, ...), random matrices (`GaussianUnitaryEnsemble`, `CircularEnsemble`, ...), stochastic processes (`DiscreteMarkovChain`, `ContinuousMarkovChain`, `PoissonProcess`, `WienerProcess`, ...), `ExpectationMatrix`, `VarianceMatrix`, `CrossCovarianceMatrix`, ... |
 | `@symjs/symjs/crypto` | Classical ciphers (shift, affine, Vigenère, Hill, Bifid, rail fence, ...), Morse code, linear feedback shift registers, RSA, ElGamal, Diffie–Hellman, Goldwasser–Micali and Blum–Goldwasser |
 | `@symjs/symjs/liealgebras` | `CartanType`, `CartanMatrix`, `DynkinDiagram`, `RootSystem` and `WeylGroup` of the simple Lie algebras |
+
+LaTeX parsing is imported separately:
+
+```ts
+import { parseLatex, parseLatexLark, LarkLaTeXParser } from '@symjs/symjs/parsing';
+
+parseLatex(String.raw`\frac{1}{2}x`); // ANTLR semantics: preserves unevaluated arithmetic
+parseLatexLark(String.raw`\frac{1}{2}x`); // Lark semantics: evaluates arithmetic
+parseLatex('x +', { strict: true }); // throws LaTeXParsingError
+const parser = new LarkLaTeXParser({ transform: false });
+parser.doparse('f(x)'); // explicit ambiguity tree: function application or multiplication
+```
+
+`LarkLaTeXParser` accepts a `transformer` subclass and a `grammar` object with
+`decimalSeparator`, `multiplicationSymbols`, and `divisionSymbols` terminal overrides.
+These options implement the custom grammar examples without loading grammar files or
+using a parser-generator runtime. `debug` receives the syntax tree as a callback.
+`parseExpr` remains in `core`; `parseMathematica` remains in `simplify`.
 
 Category objects use `SymObject` to avoid the JavaScript `Object` global. Apply an abstract tensor head with `head.at(...indices)` and reverse index variance with `index.neg()`. The supported mathematical conditions are listed in [compat/capabilities.json](compat/capabilities.json).
 
@@ -215,7 +234,7 @@ Runtime-specific backends are deliberately excluded; mathematical modules remain
 Modules that are not ported yet but stay in scope:
 
 - Code printers for other languages (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB), all of `sympy.codegen` (including `cfunctions`, `rewriting`, `approximations` and `algorithms`) and `sympy.utilities.codegen`: an extend package `@symjs/codegen`
-- The LaTeX parser (`parse_latex`) and the Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: an extend package
+- The Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: an extend package
 - Differential geometry (`sympy.diffgeom`): an extend package
 - `sympy.physics`: extend packages per field; `sympy.physics.quantum` goes into the existing `@symjs/physics-quantum`, which is partial
 

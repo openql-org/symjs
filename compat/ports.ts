@@ -12,6 +12,7 @@
  */
 
 import * as sj from '../packages/symjs/src';
+import { parseLatex } from '../packages/symjs/src/parsing';
 import { Expr } from '../packages/symjs/src';
 import { JsDict, JsList, JsSet, JsTuple } from './harness';
 import { DifferentialExtension } from '../packages/symjs/src/integrals/risch';
@@ -205,6 +206,14 @@ const myRel = (): sj.Predicate =>
   sj.Q['R'] ?? sj.BinaryRelation('R', (n1, n2, assumptions) => (sj.isNum(n1) && sj.isNum(n2) ? sj.ask(sj.Q.zero(sj.sub(sj.sub(n1, n2), 1)), assumptions) : 'unknown'), { isReflexive: false });
 
 export const PORTS: Record<string, (() => unknown) | readonly (() => unknown)[]> = {
+  'sympy.parsing.latex:expr.evalf(4, subs=dict(a=5, b=2))': () =>
+    parseLatex(String.raw`\frac {1 + \sqrt {\a}} {\b}`).evalf(4, { subs: new Map([['a', 5], ['b', 2]]) }),
+  'sympy.parsing.latex:func.evalf(subs={"alpha": 2})': () => {
+    const integral = parseLatex(String.raw`\int_1^\alpha \dfrac{\mathrm{d}t}{t}`, { backend: 'lark' });
+    if (!(integral instanceof Expr)) throw new TypeError('Expected an unambiguous integral');
+    // SymPy Integral.evalf evaluates the integral; symjs exposes that step as doit.
+    return sj.doit(sj.subs(integral, [[sj.symbol('alpha'), 2]])).evalf(15);
+  },
   'sympy.assumptions.relation.binrel:Q.R(2, 1)': () => myRel()(2, 1),
   'sympy.assumptions.relation.binrel:ask(Q.R(2, 1))': () => sj.ask(myRel()(2, 1)),
   'sympy.assumptions.relation.binrel:ask(Q.R(1, 2))': () => sj.ask(myRel()(1, 2)),

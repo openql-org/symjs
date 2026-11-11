@@ -4,7 +4,7 @@ Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
 Measured **97320** cases: **80316 exact**, **2463 equivalent**, **14541 failing**. Agreement: **85.06%**.
 
-Compatibility suite wall time: **273.36 s**. Sum of category replay times: **629.70 s** (projects run in parallel).
+Compatibility suite wall time: **274.98 s**. Sum of category replay times: **629.72 s** (projects run in parallel).
 
 Extraction wall time: **438.50 s**, 4 processes, 30 s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.
 
@@ -16,36 +16,36 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Measured | Exact | Equivalent | Failing | Agreement | Replay s |
 |---|---:|---:|---:|---:|---:|---:|
-| algebras | 128 | 123 | 0 | 5 | 96.09% | 0.47 |
-| assumptions | 2220 | 1753 | 5 | 462 | 79.19% | 2.16 |
-| calculus | 518 | 415 | 0 | 103 | 80.12% | 2.14 |
-| categories | 57 | 57 | 0 | 0 | 100.00% | 0.06 |
-| combinatorics | 1655 | 1616 | 0 | 39 | 97.64% | 1.09 |
-| concrete | 856 | 596 | 68 | 192 | 77.57% | 7.73 |
-| core | 7858 | 5507 | 187 | 2164 | 72.46% | 81.46 |
-| crypto | 155 | 153 | 0 | 2 | 98.71% | 0.26 |
-| discrete | 185 | 184 | 1 | 0 | 100.00% | 0.71 |
-| functions | 9853 | 5785 | 1849 | 2219 | 77.48% | 40.45 |
-| geometry | 1046 | 1011 | 6 | 29 | 97.23% | 12.41 |
-| holonomic | 102 | 98 | 0 | 4 | 96.08% | 0.70 |
-| integrals | 1197 | 719 | 44 | 434 | 63.74% | 17.27 |
-| liealgebras | 87 | 81 | 1 | 5 | 94.25% | 0.06 |
-| logic | 662 | 486 | 1 | 175 | 73.56% | 0.76 |
-| matrices | 3930 | 3168 | 37 | 725 | 81.55% | 57.50 |
-| ntheory | 44169 | 44134 | 0 | 35 | 99.92% | 9.79 |
-| parsing | 170 | 116 | 3 | 51 | 70.00% | 0.15 |
-| polys | 9338 | 4501 | 53 | 4784 | 48.77% | 95.21 |
-| printing | 1767 | 1246 | 0 | 521 | 70.51% | 0.70 |
-| series | 1626 | 1147 | 29 | 450 | 72.32% | 13.00 |
-| sets | 1494 | 874 | 12 | 608 | 59.30% | 1.54 |
-| simplify | 1402 | 1221 | 39 | 142 | 89.87% | 7.37 |
-| solvers | 2381 | 1458 | 73 | 850 | 64.30% | 64.98 |
-| stats | 1865 | 1741 | 41 | 83 | 95.55% | 183.77 |
+| algebras | 128 | 123 | 0 | 5 | 96.09% | 0.52 |
+| assumptions | 2220 | 1753 | 5 | 462 | 79.19% | 2.36 |
+| calculus | 518 | 415 | 0 | 103 | 80.12% | 2.35 |
+| categories | 57 | 57 | 0 | 0 | 100.00% | 0.05 |
+| combinatorics | 1655 | 1616 | 0 | 39 | 97.64% | 1.04 |
+| concrete | 856 | 596 | 68 | 192 | 77.57% | 7.87 |
+| core | 7858 | 5507 | 187 | 2164 | 72.46% | 83.85 |
+| crypto | 155 | 153 | 0 | 2 | 98.71% | 0.27 |
+| discrete | 185 | 184 | 1 | 0 | 100.00% | 0.74 |
+| functions | 9853 | 5785 | 1849 | 2219 | 77.48% | 41.33 |
+| geometry | 1046 | 1011 | 6 | 29 | 97.23% | 12.78 |
+| holonomic | 102 | 98 | 0 | 4 | 96.08% | 0.81 |
+| integrals | 1197 | 719 | 44 | 434 | 63.74% | 17.64 |
+| liealgebras | 87 | 81 | 1 | 5 | 94.25% | 0.07 |
+| logic | 662 | 486 | 1 | 175 | 73.56% | 0.73 |
+| matrices | 3930 | 3168 | 37 | 725 | 81.55% | 57.39 |
+| ntheory | 44169 | 44134 | 0 | 35 | 99.92% | 9.50 |
+| parsing | 170 | 116 | 3 | 51 | 70.00% | 0.14 |
+| polys | 9338 | 4501 | 53 | 4784 | 48.77% | 93.80 |
+| printing | 1767 | 1246 | 0 | 521 | 70.51% | 0.68 |
+| series | 1626 | 1147 | 29 | 450 | 72.32% | 13.12 |
+| sets | 1494 | 874 | 12 | 608 | 59.30% | 1.51 |
+| simplify | 1402 | 1221 | 39 | 142 | 89.87% | 7.25 |
+| solvers | 2381 | 1458 | 73 | 850 | 64.30% | 64.01 |
+| stats | 1865 | 1741 | 41 | 83 | 95.55% | 181.88 |
 | strategies | 6 | 5 | 0 | 1 | 83.33% | 0.01 |
-| tensor | 1590 | 1216 | 1 | 373 | 76.54% | 4.58 |
+| tensor | 1590 | 1216 | 1 | 373 | 76.54% | 4.67 |
 | unify | 8 | 1 | 0 | 7 | 12.50% | 0.01 |
-| utilities | 375 | 311 | 9 | 55 | 85.33% | 19.19 |
-| vector | 620 | 593 | 4 | 23 | 96.29% | 4.17 |
+| utilities | 375 | 311 | 9 | 55 | 85.33% | 19.20 |
+| vector | 620 | 593 | 4 | 23 | 96.29% | 4.14 |
 
 ## Extraction audit
 

@@ -82,7 +82,7 @@ Notes on the implementation:
 
 ## Entry points and tree-shaking
 
-- The package has one entry point per feature area: `core`, `special`, `simplify`, `polys`, `calculus`, `solvers`, `sets`, `matrices`; the root `@symjs/symjs` re-exports all of them. Every export belongs to exactly one entry point.
+- The package has one entry point per feature area: `core`, `special`, `simplify`, `polys`, `calculus`, `solvers`, `sets`, `matrices`; the root `@symjs/symjs` re-exports these areas. LaTeX parsing is available only from `@symjs/symjs/parsing`. Every export belongs to exactly one entry point.
 - **The core does not import the other areas** (checked by `tests/entries.test.ts`). Where the core needs a feature of another area (`expr.simplify()`, `expr.integrate()`, `expr.series()`, `expr.rewrite()`), it calls a late-bound implementation that the area registers when loaded; without it the call throws an error naming the entry point to import. Core functions that merely use another area when available (for example `isConstant` simplifying a derivative) fall back to working without it.
 - **Importing an entry point makes everything it contains available**, including late-bound implementations: entry points are listed as having side effects, and every entry point imports the core.
 - The root only re-exports the entry points and is side-effect free: a bundle of named imports from the root includes the entry points those names belong to (all of them for `import * as`), so `import { Rational } from '@symjs/symjs'` costs what the core entry costs, and `import { integrate } from '@symjs/symjs'` brings the calculus entry. Without a bundler, importing the root loads every entry point.

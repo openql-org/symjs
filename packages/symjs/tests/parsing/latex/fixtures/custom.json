@@ -1,0 +1,54 @@
+[
+  {
+    "mode": "operators",
+    "src": "a \\cdot b",
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "mode": "operators",
+    "src": "x \\div y",
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "mode": "default",
+    "src": "100,1",
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "mode": "default",
+    "src": "0,009",
+    "error": "UnexpectedCharacters"
+  },
+  {
+    "mode": "decimal",
+    "src": "100,1",
+    "expected": [
+      "Float",
+      100.1
+    ]
+  },
+  {
+    "mode": "decimal",
+    "src": "0,009",
+    "expected": [
+      "Float",
+      0.009
+    ]
+  },
+  {
+    "mode": "decimal",
+    "src": "2,71828",
+    "expected": [
+      "Float",
+      2.71828
+    ]
+  },
+  {
+    "mode": "decimal",
+    "src": "3,14159",
+    "expected": [
+      "Float",
+      3.14159
+    ]
+  }
+]
