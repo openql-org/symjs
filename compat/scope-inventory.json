@@ -86583,9 +86583,11 @@
   {
    "module": "sympy.polys.domains.mpelements",
    "sha256": "3d11035aafd60397abdb3cdfb6de4b834a299d6cf2141b0890b29cc865d4573d",
-   "status": "unimplemented",
-   "note": "RealField/ComplexField elements; to be ported to ./polys on numeric/ (the mpmath _mpf/_mpc subclassing and context plumbing are Python-specific and excluded)",
-   "sources": [],
+   "status": "partial",
+   "note": "RealElement, ComplexElement and MPContext use numeric/ arbitrary precision, explicit context ownership and domain parents; mpmath _mpf/_mpc subclassing and Python context plumbing are excluded.",
+   "sources": [
+    "polys/domains/mpelements.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,

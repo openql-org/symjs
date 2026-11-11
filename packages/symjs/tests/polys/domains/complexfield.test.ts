@@ -24,3 +24,13 @@ describe('CC', () => {
     expect([CC.gcd(2, 3), CC.lcm(2, 3)].map(String)).toEqual(['1.00000000000000', '6.00000000000000']);
   });
 });
+
+it('ComplexField elements keep their domain and precision', () => {
+  const field = new ComplexField(100);
+  const element = field.dtype('1.000000000000000001', 2);
+  expect(element.parent()).toBe(field);
+  expect(element.real.context.prec).toBe(100);
+  expect(field.dtype().isZero).toBe(true);
+  expect(field.dtype(1).imag.isZero).toBe(true);
+  expect(field.toSympy(element)).toEqual(element.toSympy());
+});
