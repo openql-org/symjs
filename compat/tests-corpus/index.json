@@ -352,6 +352,38 @@
         "sympy.crypto.tests.test_crypto"
       ]
     },
+    "diffgeom": {
+      "examined": 205,
+      "cases": 177,
+      "reasons": {
+        "non-call-expression": 13,
+        "not-executed": 1,
+        "not-exported-api": 4,
+        "stateful-iterator-input": 2,
+        "unsupported-assertion": 8
+      },
+      "sourceSites": 205,
+      "testStatuses": {
+        "completed": 24
+      },
+      "seconds": 11.223,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "diffgeom.json",
+          "cases": 177,
+          "bytes": 216838
+        }
+      ],
+      "auditFile": "diffgeom.audit.json",
+      "auditBytes": 9347,
+      "modules": [
+        "sympy.diffgeom.tests.test_class_structure",
+        "sympy.diffgeom.tests.test_diffgeom",
+        "sympy.diffgeom.tests.test_function_diffgeom_book",
+        "sympy.diffgeom.tests.test_hyperbolic_space"
+      ]
+    },
     "discrete": {
       "examined": 198,
       "cases": 185,
@@ -1532,22 +1564,6 @@
       "reason": "Source-code generation and compiler integration are outside this corpus."
     },
     {
-      "file": "diffgeom/tests/test_class_structure.py",
-      "reason": "Differential geometry is outside the base doctest scope."
-    },
-    {
-      "file": "diffgeom/tests/test_diffgeom.py",
-      "reason": "Differential geometry is outside the base doctest scope."
-    },
-    {
-      "file": "diffgeom/tests/test_function_diffgeom_book.py",
-      "reason": "Differential geometry is outside the base doctest scope."
-    },
-    {
-      "file": "diffgeom/tests/test_hyperbolic_space.py",
-      "reason": "Differential geometry is outside the base doctest scope."
-    },
-    {
       "file": "external/tests/test_autowrap.py",
       "reason": "Python bindings to optional external libraries are runtime-specific."
     },
@@ -2278,5 +2294,5 @@
   ],
   "timeoutSeconds": 30,
   "jobs": 4,
-  "lastRunSeconds": 438.496
+  "lastRunSeconds": 12.307
 }

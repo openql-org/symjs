@@ -1153,14 +1153,15 @@ export function nseries(eIn: ExprLike, x?: Sym, x0: ExprLike = 0, n = 6): Expr {
 }
 
 /** An expression that can be applied to arguments (a Lambda, a random process, ...: SymPy callable()). */
-const isCallableExpr = (e: Expr): e is Expr & { call(...args: ExprLike[]): Expr } => 'call' in e && typeof e.call === 'function';
+const isCallableExpr = (e: Expr): e is Expr & { call(...args: (ExprLike | null)[]): Expr } => 'call' in e && typeof e.call === 'function';
 
 /**
  * SymPy `rcall(*args)`: applies the callable parts of the expression to args
  * (`rcall(x + Lambda(y, 2*y), z)` is `x + 2*z`), the abuse of notation for
- * operators.
+ * operators. A null argument leaves that tensor slot uncontracted when the
+ * callable supports partial contractions (sympy.diffgeom).
  */
-export function rcall(eIn: ExprLike, ...args: ExprLike[]): Expr {
+export function rcall(eIn: ExprLike, ...args: (ExprLike | null)[]): Expr {
   const e = sympify(eIn);
   if (isCallableExpr(e)) return e.call(...args);
   if (e.args.length === 0) return e;

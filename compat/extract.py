@@ -36,6 +36,9 @@ from sympy import Basic, MatrixBase
 
 # module -> category
 MODULES = {
+    "sympy.diffgeom": "diffgeom",
+    "sympy.diffgeom.diffgeom": "diffgeom",
+    "sympy.diffgeom.rn": "diffgeom",
     # Category theory and previously unmeasured mathematical modules remain in
     # the denominator even while their implementations are incomplete.
     "sympy.categories.baseclasses": "categories",
@@ -605,6 +608,7 @@ INTERNAL_PUBLIC = {
 }
 
 SUBPACKAGE_PUBLIC = {
+    "sympy.diffgeom": ("sympy.diffgeom",),
     "sympy.crypto.": ("sympy.crypto",),
     "sympy.liealgebras.": ("sympy.liealgebras",),
     "sympy.categories.": ("sympy.categories",),
@@ -741,6 +745,27 @@ def ser(o):
     """Serialize a SymPy object (or Python value) into a JSON tree."""
     from sympy import Float, Integer, Rational, Symbol, Tuple
     from sympy.core.relational import Relational
+
+    # Charts carry identity and relation data beyond their ordinary Expr args.
+    from sympy.diffgeom import diffgeom, rn
+    if type(o).__module__ == diffgeom.__name__:
+        for name in rn.__all__:
+            if o is getattr(rn, name):
+                return {"t": "Diffgeom", "ref": name}
+        if isinstance(o, diffgeom.CoordinateSymbol):
+            args = [o.coord_sys, o.index]
+        elif isinstance(o, diffgeom.CoordSystem):
+            args = [str(o.name), o.patch, o.args[2], o.relations]
+        elif isinstance(o, diffgeom.Manifold):
+            args = [str(o.name), int(o.dim)]
+        elif isinstance(o, diffgeom.Patch):
+            args = [str(o.name), o.manifold]
+        else:
+            args = o.args
+        return {"t": "Diffgeom", "cls": type(o).__name__, "args": [ser(a) for a in args]}
+    from sympy.core.symbol import Str
+    if isinstance(o, Str):
+        return ser(str(o))
 
     if o is None or isinstance(o, bool):
         return {"t": "Js", "v": o}
@@ -1447,7 +1472,8 @@ def api_inventory():
     from sympy.tensor.tensor import TensorIndexType, TensorIndex, TensorHead, TensorSymmetry, tensor_indices, tensor_heads, canon_bp, contract_metric
     for obj in (TensorIndexType, TensorIndex, TensorHead, TensorSymmetry, tensor_indices, tensor_heads, canon_bp, contract_metric):
         out.append({"name": obj.__name__, "category": "tensor"})
-    for pkg, cat in (("sympy.crypto", "crypto"), ("sympy.liealgebras", "liealgebras")):
+    for pkg, cat in (("sympy.crypto", "crypto"), ("sympy.liealgebras", "liealgebras"),
+                     ("sympy.diffgeom", "diffgeom")):
         # subpackages whose names are not top-level sympy names
         m = importlib.import_module(pkg)
         for name in sorted(m.__all__):
@@ -1593,6 +1619,9 @@ ONLY = [m for m in os.environ.get("ONLY_MODULES", "").split(",") if m]
 
 def public_api_reason(fn, globs, extra_public):
     """The ordinary-call public API filter, also used for saved assignments."""
+    value = globs.get(fn)
+    if isinstance(value, sympy.Expr) and type(value).__module__ == "sympy.diffgeom.diffgeom" and callable(value):
+        return None
     if fn.startswith("."):
         if fn[1:].startswith("_") and fn not in OPERATOR_FNS:
             return "private-api"
@@ -1605,6 +1634,11 @@ def public_api_reason(fn, globs, extra_public):
 def serialize_call(record, call, globs, assumed, pre_args=None, printed=False):
     """Freeze a call's receiver, arguments and assumptions at the current state."""
     DUMMY_IDS.clear()
+    name = record['fn']
+    value = globs.get(name)
+    if isinstance(value, sympy.Expr) and type(value).__module__ == "sympy.diffgeom.diffgeom" and callable(value):
+        record['fn'] = '.__call__'
+        record['selfSrc'] = name
     if "selfSrc" in record:
         receiver_src = record.pop("selfSrc")
         receiver = eval(receiver_src, globs)

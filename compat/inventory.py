@@ -379,6 +379,9 @@ CORRESPONDENCES = {
     'sympy.categories': ['categories.ts'],
     'sympy.parsing': ['parsing/parser.ts'],
     'sympy.physics.quantum.gate': ['../../physics-quantum/src/gates.ts'],
+    'sympy.diffgeom': ['diffgeom.ts'],
+    'sympy.diffgeom.diffgeom': ['diffgeom/diffgeom.ts'],
+    'sympy.diffgeom.rn': ['diffgeom/rn.ts'],
 }
 # Inspected modules without an implementation yet, with a note on the plan (base module, or the extend
 # package that will hold them). Everything else without a correspondence stays unassessed.
@@ -401,9 +404,6 @@ NOT_IMPLEMENTED = {
     'sympy.codegen.scipy_nodes': 'extend package @symjs/codegen (planned)',
     'sympy.combinatorics.galois': 'transitive subgroups of S1..S6 for Galois groups (polys.numberfields.galoisgroups)',
     'sympy.core.trace': 'deprecated alias of sympy.physics.quantum.trace (extend package @symjs/physics-quantum)',
-    'sympy.diffgeom': 'extend package (planned): differential geometry',
-    'sympy.diffgeom.diffgeom': 'extend package (planned): differential geometry',
-    'sympy.diffgeom.rn': 'extend package (planned): differential geometry',
     'sympy.integrals.quadrature': 'Gauss quadrature nodes and weights',
     'sympy.parsing.autolev': 'other input-language parsers (Autolev, C, Fortran, Maxima): not ported',
     'sympy.parsing.autolev._listener_autolev_antlr': 'other input-language parsers (Autolev, C, Fortran, Maxima): not ported',
@@ -442,6 +442,9 @@ NOT_IMPLEMENTED_PACKAGES = {'sympy.physics.quantum': 'extend package @symjs/phys
 # Notes on partially implemented modules (what is ported and what is not).
 NOTES = {
     'sympy.polys.domains.mpelements': 'RealElement, ComplexElement and MPContext use numeric/ arbitrary precision, explicit context ownership and domain parents; mpmath _mpf/_mpc subclassing and Python context plumbing are excluded.',
+    'sympy.diffgeom': 'base subpath @symjs/symjs/diffgeom',
+    'sympy.diffgeom.diffgeom': 'base subpath @symjs/symjs/diffgeom: coordinate charts, fields, tensors, connections, curvature and integral curves',
+    'sympy.diffgeom.rn': 'base subpath @symjs/symjs/diffgeom: predefined Cartesian, polar, cylindrical and spherical coordinate systems',
     'sympy.functions.special.bsplines': 'Cox-de Boor B-spline bases and exact collocation interpolation on strictly increasing real coordinates.',
     'sympy.matrices.kind': 'Cached MatrixKind and propagation through matrix expressions and integrals; heterogeneous explicit matrix kinds remain partial.',
     'sympy.polys.fields': 'Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration and composition remain partial.',
@@ -806,6 +809,7 @@ def build_inventory(root):
     measured = {c['module'] for c in corpus['cases']}
     selected_ast = ast.parse((root / 'compat/extract.py').read_text())
     selected = next(ast.literal_eval(n.value) for n in selected_ast.body if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'MODULES' for t in n.targets))
+    selected = set(selected)
     api = json.loads((root / 'compat/api-members.json').read_text())
     evidence = load_evidence(root, corpus)
     trees = {}

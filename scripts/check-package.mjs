@@ -38,6 +38,12 @@ try {
     assert.deepEqual(sj.solve(n.pow(2).sub(2), n), []);
     assert.equal(gates.H().mul(gates.H()).equals(sj.Matrix.eye(2)), true);
     assert.equal(String(fromMathjsValue(3)), '3');
+    assert.equal('Manifold' in sj, false);
+    assert.equal('parseLatex' in sj, false);
+    assert.equal(String(parsing.parseLatexLark('x^2')), 'x**2');
+    assert.notEqual(sj.Point, dg.Point);
+    assert.equal(String(sj.rcall(dg.Differential(dg.R2.x), dg.R2.eX)), '1');
+    assert.equal(dg.metricToRicciComponents(dg.TensorProduct(dg.R2.dx, dg.R2.dx).add(dg.TensorProduct(dg.R2.dy, dg.R2.dy))).flatElements().every(e => e.equals(0)), true);
     const object = new sj.SymObject('A');
     assert.equal(sj.IdentityMorphism(object).compose(sj.IdentityMorphism(object)).domain.equals(object), true);
     assert.equal(sj.SymmetricGroup(8).order(), 40320n);
@@ -53,6 +59,8 @@ try {
   `;
   const esm = `import assert from 'node:assert/strict';
     import * as sj from '@symjs/symjs';
+    import * as dg from '@symjs/symjs/diffgeom';
+    import * as parsing from '@symjs/symjs/parsing';
     import { Sym } from '@symjs/symjs/core';
     import { Diagram } from '@symjs/symjs/categories';
     import { encipherShift } from '@symjs/symjs/crypto';
@@ -68,6 +76,8 @@ try {
   `;
   const cjs = `const assert = require('node:assert/strict');
     const sj = require('@symjs/symjs');
+    const dg = require('@symjs/symjs/diffgeom');
+    const parsing = require('@symjs/symjs/parsing');
     const { Sym } = require('@symjs/symjs/core');
     const { Diagram } = require('@symjs/symjs/categories');
     const { encipherShift } = require('@symjs/symjs/crypto');
@@ -85,11 +95,34 @@ try {
     writeFileSync(join(dir, file), text);
     execFileSync(process.execPath, [file], { cwd: dir, stdio: 'pipe' });
   }
+  // The subpath must initialize its engines without importing the root entry.
+  const standaloneChecks = `
+    const { R2, R2R, R2P, R2Origin, CoordSystem, TensorProduct, metricToRicciComponents } = dg;
+    assert.equal(R2R.point([3, 4]).coords(R2P).get(0, 0).equals(5), true);
+    const x = R2R.coordinateNames[0];
+    const y = R2R.coordinateNames[1];
+    const relations = new Map([[['A', 'B'], [[x, y], [x.mul(2), y.add(1)]]]]);
+    const a = new CoordSystem('A', R2Origin, [x, y], relations);
+    const b = new CoordSystem('B', R2Origin, [x, y], relations);
+    assert.deepEqual(b.transform(a, [4, 3]).data.map(String), ['2', '2']);
+    const metric = TensorProduct(R2.dx, R2.dx).add(TensorProduct(R2.dy, R2.dy));
+    assert.equal(metricToRicciComponents(metric).flatElements().every(e => e.equals(0)), true);
+  `;
+  for (const [file, imports] of [
+    ['diffgeom.mjs', "import assert from 'node:assert/strict'; import * as dg from '@symjs/symjs/diffgeom';"],
+    ['diffgeom.cjs', "const assert = require('node:assert/strict'); const dg = require('@symjs/symjs/diffgeom');"],
+  ]) {
+    writeFileSync(join(dir, file), imports + standaloneChecks);
+    execFileSync(process.execPath, [file], { cwd: dir, stdio: 'pipe' });
+  }
   // Bundlers are free to rename classes: test both ordinary and minified output.
   for (const minify of [false, true]) {
     const outfile = join(dir, `bundle-${minify}.mjs`);
     await esbuild.build({ entryPoints: [join(dir, 'consumer.mjs')], outfile, bundle: true, minify, platform: 'node', format: 'esm', logLevel: 'silent' });
     execFileSync(process.execPath, [outfile], { cwd: dir, stdio: 'pipe' });
+    const standalone = join(dir, `diffgeom-bundle-${minify}.mjs`);
+    await esbuild.build({ entryPoints: [join(dir, 'diffgeom.mjs')], outfile: standalone, bundle: true, minify, platform: 'node', format: 'esm', logLevel: 'silent' });
+    execFileSync(process.execPath, [standalone], { cwd: dir, stdio: 'pipe' });
   }
   const types = `import { symbols, diff, Dummy, dummyEq } from '@symjs/symjs';
     import { gates } from '@symjs/physics-quantum';

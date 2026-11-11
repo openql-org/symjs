@@ -27,6 +27,7 @@ const MODULES: [string, () => Promise<Record<string, unknown>>][] = [
   ['../../src/index', () => import('../src/index')],
   ['../../src/parsing', () => import('../src/parsing')],
   ['../../../physics-quantum/src/index', () => import('../../physics-quantum/src/index')],
+  ['../../src/diffgeom', () => import('../src/diffgeom')],
   ['../../../mathjs/src/index', () => import('../../mathjs/src/index')],
 ];
 

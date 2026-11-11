@@ -313,6 +313,25 @@ class CategoryShardTests(unittest.TestCase):
             self.assertEqual(path.read_bytes(), before)
             self.assertEqual((directory / 'ntheory.json').read_bytes(), cases)
 
+    def test_diffgeom_is_a_regular_base_category(self):
+        self.assertIn('diffgeom', unit.CATEGORIES)
+        self.assertNotIn('diffgeom', unit.EXCLUDED_AREAS)
+        self.assertTrue(unit.file_scope(Path('diffgeom/tests/test_diffgeom.py'))[0])
+        source = """
+from sympy.diffgeom import Differential
+from sympy.diffgeom.rn import R2
+
+def test_field():
+    assert R2.e_x(R2.x) == 1
+    assert Differential(R2.x).rcall(R2.e_x) == 1
+"""
+        events, tests, sites = unit.execute_source(
+            source, 'sympy.diffgeom.tests.test_fixture', 'diffgeom', 'test_fixture.py')
+        corpus = unit.corpus_from_events(events, tests, sites, ['diffgeom'])
+        self.assertEqual(len(corpus['cases']), 2)
+        self.assertTrue(all(c['category'] == 'diffgeom' for c in corpus['cases']))
+        self.assertTrue(all(c['self']['t'] == 'Diffgeom' for c in corpus['cases']))
+
     def test_unknown_categories_are_rejected(self):
         with patch.dict(os.environ, {'PYTHONHASHSEED': '0'}):
             with self.assertRaisesRegex(ValueError, 'Unknown categories'):

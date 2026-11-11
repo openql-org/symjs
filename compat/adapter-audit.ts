@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
-import { ADAPTERS, type Case } from './harness';
+import { ADAPTERS, diffgeomAdapter, type Case } from './harness';
 import { PORTS } from './ports';
 
 /** A passing adapter is not automatically evidence of a public implementation. */
@@ -48,6 +48,7 @@ export const COMPUTATIONAL_ADAPTERS: Readonly<Record<string, string>> = {
 };
 export type Evidence = 'public-call' | 'reviewed-conversion' | 'harness-computation' | 'unreviewed-adapter' | 'unreviewed-translation';
 export function evidenceFor(c: Case): Evidence {
+  if (diffgeomAdapter(c)) return 'reviewed-conversion';
   if (PORTS[`${c.module}:${c.src}`]) return 'unreviewed-translation';
   if (COMPUTATIONAL_ADAPTERS[c.fn]) return 'harness-computation';
   if (REVIEWED_ADAPTERS[c.fn]) return 'reviewed-conversion';

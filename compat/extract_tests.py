@@ -55,12 +55,11 @@ OPS = {"__add__": operator.add, "__sub__": operator.sub, "__mul__": operator.mul
 
 
 # Top-level package names, not the doctest report's combined calculus/special labels.
-CATEGORIES = tuple("core polys assumptions sets logic concrete calculus series simplify solvers integrals functions matrices tensor ntheory combinatorics geometry vector stats discrete holonomic crypto liealgebras algebras categories strategies unify utilities printing parsing".split())
+CATEGORIES = tuple("core polys assumptions sets logic concrete calculus series simplify solvers integrals functions matrices tensor ntheory combinatorics geometry vector stats discrete holonomic crypto liealgebras algebras categories strategies unify utilities printing parsing diffgeom".split())
 EXCLUDED_AREAS = {
     "physics": "Physics belongs to extension packages, not the base symbolic engine.",
     "plotting": "Rendering backends and interactive plotting are outside base scope.",
     "codegen": "Source-code generation and compiler integration are outside this corpus.",
-    "diffgeom": "Differential geometry is outside the base doctest scope.",
     "external": "Python bindings to optional external libraries are runtime-specific.",
     "interactive": "Python REPL/session integration is runtime-specific.",
     "testing": "Upstream test runners are infrastructure, not mathematical APIs.",

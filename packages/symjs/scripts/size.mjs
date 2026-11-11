@@ -77,6 +77,8 @@ const CASES = [
   ['index', 'Rational', 195],
   // The finitely presented groups, coset enumeration and homomorphisms of combinatorics (measured 2292 KiB).
   ['index', '*', 2600],
+  // Differential geometry includes symbolic inversion and curvature calculations.
+  ['diffgeom', '*', 1200],
 ];
 
 async function measure(entry, names) {

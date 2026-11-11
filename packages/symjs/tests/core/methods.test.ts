@@ -661,6 +661,7 @@ describe('Basic and Expr methods without structure of their own (SymPy)', () => 
     expect(() => sj.nseries(Ad(x, y))).toThrow('x must be given for multivariate functions.');
   });
   it('rcall', () => {
+    expect(sj.rcall(sj.S.One, null)).toBe(sj.S.One);
     const z2 = new sj.Sym('z');
     expect(s(sj.rcall(sj.Lambda(y, y.pow(2)), 2))).toBe('4');
     expect(s(sj.rcall(Ad(x, y), 2))).toBe('x + y');

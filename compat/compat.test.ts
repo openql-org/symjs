@@ -35,7 +35,7 @@ function categoryOf(fullPath: string): string {
   if (/^src\/(calculus|series|integrals)\//.test(path)) return 'calculus';
   if (path.startsWith('src/matrices/')) return 'matrices';
   if (path.startsWith('src/quantum/')) return 'quantum';
-  const sub = /^src\/(discrete|algebras|strategies|unify|geometry|vector|stats|categories|tensor|combinatorics|crypto|liealgebras|parsing)[/.]/.exec(path);
+  const sub = /^src\/(discrete|algebras|strategies|unify|geometry|vector|stats|categories|tensor|combinatorics|crypto|liealgebras|diffgeom|parsing)[/.]/.exec(path);
   if (sub) return sub[1]!;
   return 'core';
 }
@@ -69,7 +69,7 @@ interface Corpus {
   extraction: { examined: number; reasons: Record<string, number>; omitted: { module: string; src: string; reason: string }[] };
 }
 
-const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'ode', 'pde', 'calculus', 'matrices', 'special', 'logic', 'tensor', 'ntheory', 'assumptions', 'utilities', 'combinatorics', 'sets', 'printing', 'discrete', 'algebras', 'holonomic', 'strategies', 'unify', 'geometry', 'vector', 'stats', 'categories', 'crypto', 'liealgebras', 'parsing'];
+const CATEGORY_ORDER = ['core', 'functions', 'simplify', 'polys', 'solvers', 'ode', 'pde', 'calculus', 'matrices', 'special', 'logic', 'tensor', 'ntheory', 'assumptions', 'utilities', 'combinatorics', 'sets', 'printing', 'discrete', 'algebras', 'holonomic', 'strategies', 'unify', 'geometry', 'vector', 'stats', 'categories', 'crypto', 'liealgebras', 'diffgeom', 'parsing'];
 
 // a rate below 100% never prints as 100.0%
 const pct = (a: number, b: number) => (b === 0 ? '-' : `${(a < b ? Math.min((100 * a) / b, 99.9) : 100).toFixed(1)}%`);

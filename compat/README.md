@@ -19,11 +19,12 @@ For unit-test extraction and selective replay:
 
 ```sh
 pnpm compat:extract-tests --only geometry,vector
+pnpm compat:extract-tests --only diffgeom
 pnpm compat:test-extract
 npx vitest run --config compat/vitest.config.ts --project unit-geometry
 ```
 
-The unit-test extractor scans nested test directories in 30 base areas. Its
+The unit-test extractor scans nested test directories in 31 base areas. Its
 `FILE_SCOPE`, `EXCLUDED_AREAS` and `MIXED_DEFAULTS` tables define inclusion and
 technical exclusions; the report lists every excluded file. Categories are
 actual top-level packages: `integrals`, `series`, `concrete`, and `calculus`
