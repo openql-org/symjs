@@ -12,6 +12,16 @@ const [a, b, c, d, e, f, x, y, z, u, v, n] = sj.symbols('a b c d e f x y z u v n
 const s = (q: sj.Expr): string => sj.str(q);
 const sum = (fn: sj.ExprLike, ...l: [sj.Sym, sj.ExprLike, sj.ExprLike][]): Concrete => sj.Sum(fn, ...l) as Concrete;
 
+it('decides empty sequences using assumptions on both bounds', () => {
+  const m = sj.symbol('m');
+  const positive = sj.symbol('M', { positive: true, integer: true });
+  const negative = sj.symbol('N', { negative: true, integer: true });
+  expect(sum(m, [m, 1, positive]).hasEmptySequence).toBe(false);
+  expect(sum(m, [m, negative, positive]).hasEmptySequence).toBe(false);
+  expect(sum(m, [m, sj.symbol('N', { positive: true, integer: true }), positive]).hasEmptySequence).toBe('unknown');
+  expect(sum(m, [m, positive.add(1), positive]).hasEmptySequence).toBe(true);
+});
+
 describe('ExprWithIntLimits methods', () => {
   it('index', () => {
     const q = sum(sj.mul(x!, y!), [x!, a!, b!], [y!, c!, d!]);

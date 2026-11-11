@@ -12,6 +12,10 @@ import { isNegative, isReal } from '../core/assumptions';
 import { mapBottomUp, rebuild } from '../core/traverse';
 import { at, defined, first } from '../core/guard';
 import { abs } from '../functions/elementary/elementary';
+import { asContentPrimitive } from '../core/methods';
+import { ordered } from '../core/match';
+import { collectConst } from './exprtools';
+import { globalParameters } from '../core/parameters';
 
 // radsimp is the port of SymPy's algorithm in sqrtdenest.ts (they call each other)
 export { radsimp } from './sqrtdenest';
@@ -43,6 +47,24 @@ export function collectAbs(e: Expr): Expr {
     m instanceof Mul ? collect1(m, m.args.filter((f) => f.isCommutative), m.args.filter((f) => !f.isCommutative)) : m,
   );
   return mapBottomUp(muls, (m) => (m instanceof Pow ? collect1(m, [m]) : m));
+}
+
+/** Collect numeric square-root factors, including I; optionally return the terms and radical count. */
+export function collectSqrt(expr: ExprLike, opts: { evaluate: false }): [Expr[], number];
+export function collectSqrt(expr: ExprLike, opts?: { evaluate?: true }): Expr;
+export function collectSqrt(expr: ExprLike, opts: { evaluate?: boolean } = {}): Expr | [Expr[], number] {
+  const [coefficient, e] = asContentPrimitive(sympify(expr));
+  const terms = (x: Expr): readonly Expr[] => x instanceof Add ? x.args : [x];
+  const factors = (x: Expr): readonly Expr[] => x instanceof Mul ? x.args : [x];
+  const radical = (x: Expr): boolean => x.key === S.I.key || (x instanceof Pow && x.exp instanceof Rational && x.exp.q === 2n);
+  const radicals = new Map<string, Expr>();
+  for (const t of terms(e)) for (const f of factors(t)) if (radical(f) && f.freeSymbols().size === 0) radicals.set(f.key, f);
+  const result = collectConst(e, [...radicals.values()], { numbers: false });
+  if (opts.evaluate ?? globalParameters.evaluate) return mul(coefficient, result);
+  const args = ordered(terms(result));
+  const count = args.filter((t) => factors(t).some(radical)).length;
+  const scaled = args.map((t) => mul(coefficient, t));
+  return [count === 0 && result.key === e.key ? [add(...scaled)] : scaled, count];
 }
 
 /** Power of pattern p in term factor f: f = p**k with rational k, or undefined. */

@@ -6,6 +6,59 @@
 import { describe, expect, it } from 'vitest';
 import { I, KroneckerDelta, add, cancel, cos, countOps, exp, exptotrig, hyper, mul, parse, pow, rational, simplify, sin, symbol, symbols, together, trigsimp } from '../../src';
 import type { Expr } from '../../src';
+import { clearCoefficients, factorSum, inversecombine, ncSimplify, nthroot, fn, S, Sum, Mul, Pow } from '../../src';
+
+it('strips coefficients while preserving the transformed equation', () => {
+  expect(clearCoefficients(parse('4*y*(6*x + 3) - 2'))).toEqual([parse('y*(2*x + 1)'), parse('1/6')]);
+  expect(clearCoefficients(parse('4*y*(6*x + 3)'), parse('rhs'))).toEqual([parse('y*(2*x + 1)'), parse('rhs/12')]);
+  expect(clearCoefficients(3, 5)).toEqual([S.Zero, parse('2')]);
+  expect(clearCoefficients(parse('-2*x + 4'), 6).map(String)).toEqual(['x', '-1']);
+  expect(String(factorSum(Sum(parse('x*y'), [symbol('x'), 1, 3])))).toBe('y*Sum(x, (x, 1, 3))');
+  expect(String(factorSum(parse('x*y'), [[symbol('x'), 1, 3]]))).toBe('y*Sum(x, (x, 1, 3))');
+});
+
+it('formally combines inverse functions under their documented branch assumption', () => {
+  for (const source of ['asin(sin(x))', 'acosh(cosh(x))', 'log(exp(x))', 'exp(log(x))']) expect(String(inversecombine(parse(source)))).toBe('x');
+  expect(String(inversecombine(parse('2*log(exp(3*x))')))).toBe('6*x');
+  expect(String(inversecombine(fn('sin', [fn('asin', [symbol('x')], { evaluate: false })], { evaluate: false })))).toBe('x');
+  expect(String(inversecombine(parse('sin(cos(x)) + atan2(x, y)')))).toBe('sin(cos(x)) + atan2(x, y)');
+  expect(String(inversecombine(new Pow(S.E, fn('log', [symbol('x')]))))).toBe('x');
+  expect(String(inversecombine(parse('exp(sin(x)) + 2**x')))).toBe('2**x + exp(sin(x))');
+});
+
+it('verifies proposed real surd roots exactly', () => {
+  expect(String(nthroot(parse('90 + 34*sqrt(7)'), 3))).toBe('sqrt(7) + 3');
+  expect(String(nthroot(parse('-90 - 34*sqrt(7)'), 3))).toBe('-3 - sqrt(7)');
+  expect(String(nthroot(parse('3 + 2*sqrt(2)'), 2, { maxLen: 2 }))).toBe('1 + sqrt(2)');
+  expect(String(nthroot(symbol('x'), 3))).toBe('x**(1/3)');
+  expect(String(nthroot(2, S.Half))).toBe('4');
+  expect(String(nthroot(2, 0))).toBe('nan');
+  expect(String(nthroot(parse('1 + sqrt(2)'), 3, { maxLen: 0 }))).toBe('(1 + sqrt(2))**(1/3)');
+});
+
+it('compresses noncommutative words without changing factor order', () => {
+  const syms = ['a', 'b', 'c'].map((n) => symbol(n, { commutative: false }));
+  const P = (s: string): Expr => parse(s, { symbols: syms });
+  for (const [source, expected] of [
+    ['a*b*a*b*c*a*b*c', 'a*b*(a*b*c)**2'],
+    ['a**2*b*a**4*b*a**4', 'a**2*(b*a**4)**2'],
+    ['a*b*a*b*c**2*(a*b)**2*c**2', '((a*b)**2*c**2)**2'],
+    ['a*b*a*b + 2*a*c*a**2*c*a**2*c*a', '(a*b)**2 + 2*(a*c*a)**3'],
+    ['b**-1*a**-1*(a*b)**2', 'a*b'],
+    ['a**-1*b**-1*c*a', '(b*a)**(-1)*c*a'],
+    ['(a*b*a*b)**2*a*c*a*c', '(a*b)**4*(a*c)**2'],
+    ['a*b*c', 'a*b*c'],
+    ['a**(-1/2)*b**(-1/2)', '(sqrt(b)*sqrt(a))**(-1)'],
+  ]) expect(String(ncSimplify(P(source!)))).toBe(expected);
+  expect(String(ncSimplify(P('(a*b*a*b)**2*a*c*a*c'), { deep: false }))).toBe('(a*b*a*b)**2*(a*c)**2');
+  expect(String(ncSimplify(P('(a*b*a*b)**2')))).toBe('(a*b)**4');
+  expect(String(ncSimplify(P('(a*b*a*b)**2'), { deep: false }))).toBe('(a*b*a*b)**2');
+  expect(String(ncSimplify(P('a')))).toBe('a');
+  expect(String(ncSimplify(P('x*y')))).toBe('x*y');
+  expect(String(ncSimplify(new Mul([P('a'), P('a**-1')])))).toBe('1');
+  const large = P('(a*b)**64*c*(a*b)**64');
+  expect(ncSimplify(large)).toBe(large);
+});
 
 const [x, y] = symbols('x y');
 it('simplifies signs, unevaluated objects and rationalized Floats (SymPy 1.14)', () => {

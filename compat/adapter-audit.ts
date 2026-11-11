@@ -14,6 +14,7 @@ export const REVIEWED_ADAPTERS: Readonly<Record<string, string>> = {
   solve_linear_system_LU: 'linsolveAugmented',
   solve_poly_system: 'solvePolySystem',
   solve_undetermined_coeffs: 'solveUndeterminedCoeffs',
+  trigsimp_groebner: 'trigsimpGroebner; convert Python function hints and containers to public options',
 };
 /** Known mathematical implementations still in the harness, pending migration. */
 export const COMPUTATIONAL_ADAPTERS: Readonly<Record<string, string>> = {

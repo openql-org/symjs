@@ -2249,6 +2249,16 @@ export const ADAPTERS: Record<string, Adapter> = {
       v instanceof JsTuple ? new JsTuple(v.items.map(go)) : v instanceof Matrix ? v.map((e) => sj.trigsimp(e, opts)) : sj.trigsimp(asExpr(v), opts);
     return go(args[0]);
   },
+  trigsimp_groebner: (args, kw) => {
+    const hint = (v: unknown): unknown => v instanceof FnClass ? v.name : v instanceof JsTuple || v instanceof JsList ? v.items.map(hint) : toJs(v, true);
+    return sj.trigsimpGroebner(asExpr(args[0]), Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), hint(v)])));
+  },
+  '.limits': (_args, kw, self) => {
+    noKw(kw);
+    const limits = (e: unknown): readonly (readonly Expr[])[] => e instanceof sj.Concrete ? e.limits : e instanceof Integral ? [...(e.integrand instanceof Integral ? limits(e.integrand) : []), e.args.slice(1)] : [];
+    if (!(self instanceof Integral || self instanceof sj.Concrete)) throw new Unsupported('limits receiver');
+    return new JsTuple(limits(self).map((l) => new JsTuple([...l])));
+  },
   // SymPy set_norm(None) removes the norm
   '.set_norm': (args, kw, self) => (noKw(kw), (self as sj.Quaternion).setNorm(args[0] === null ? undefined : asExpr(args[0])), null),
   exptrigsimp: exprFn(sj.exptrigsimp),
@@ -4673,6 +4683,9 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string>> = {
+  // The documented TR12i result changes tan(a)*tan(b) to tan(a)+tan(b) in
+  // the residual denominator. The product is required by the tangent sum identity.
+  'sympy.simplify.fu:TR12i(eq.expand())': '-3*tan(a + b)*tan(a + c)/(2*(tan(a)*tan(b) - 1))',
   // The polar Jacobian r gives pi*(5**2 - 2**2), not (5 - 2)*2*pi.
   'sympy.sets.fancysets:c2.measure': '21*pi',
   // SymPy's pdiv with a non-first generator starts the quotient at the generator index (rings.py: `q, r, dr = x, f, df`),

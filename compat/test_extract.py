@@ -18,6 +18,22 @@ import extract
 
 
 class ExtractTests(unittest.TestCase):
+    def test_serializes_hypergeometric_bases_and_differential_operators(self):
+        from sympy.simplify.hyperexpand import FormulaCollection, Hyper_Function, G_Function, reduce_order_meijer
+        from sympy.functions.special.hyper import HyperRep_power1
+        formula = FormulaCollection().lookup_origin(Hyper_Function([1], []))
+        data = extract.ser(formula)
+        self.assertEqual(data["cls"], "Formula")
+        self.assertEqual(data["args"][0]["cls"], "Hyper_Function")
+        self.assertEqual(data["args"][2], extract.ser(list(formula.B)))
+        self.assertEqual(data["args"][3], extract.ser(list(formula.C)))
+        self.assertEqual(data["args"][4], extract.ser(formula.M.tolist()))
+        self.assertEqual(extract.ser(HyperRep_power1(-1, sympy.Symbol("z")))["cls"], "HyperRep")
+        reduced, operators = reduce_order_meijer(G_Function([3, 4], [5, 6], [3, 4], [1, 8]))
+        self.assertEqual(extract.ser(reduced)["cls"], "G_Function")
+        self.assertTrue(operators)
+        self.assertEqual(extract.ser(operators[0])["cls"], "Operator")
+
     def extract_examples(self, source, module="sympy.core.expr"):
         parser = doctest.DocTestParser()
         sources = [source] if isinstance(source, str) else source

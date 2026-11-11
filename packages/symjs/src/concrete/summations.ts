@@ -7,7 +7,8 @@
 
 import type { Expr, ExprLike } from '../core/nodes';
 import { NotImplementedError } from '../core/errors';
-import { Add, Dummy, Fn, Limit, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, asRational, impl, isNum } from '../core/nodes';
+import { Add, Dummy, Fn, Integral, Limit, Mul, Piecewise, Pow, Rational, Rel, S, Special, Sym, asRational, impl, isNum } from '../core/nodes';
+import { asNumerDenom } from '../core/methods';
 import { apart } from '../polys/partfrac';
 import { cancel, fraction } from '../simplify/rational';
 import { factor } from '../polys/sympoly';
@@ -353,12 +354,21 @@ function telescopic(f: Expr, k: Sym, a: Expr, b: Expr): Expr | undefined {
       if (!isZeroExpanded(add(xreplace(L, [[k, add(k, sh)]]), R))) continue;
       // telescopic_direct(L, R, s) for s > 0, telescopic_direct(R, L, |s|) for s < 0
       const [P, Q] = sh > 0 ? [L, R] : [R, L];
-      const terms: Expr[] = [];
-      for (let m = 0; m < s; m++) terms.push(xreplace(P, [[k, add(a, m)]]), xreplace(Q, [[k, add(b, -m)]]));
-      return add(...terms);
+      return telescopicDirect(P, Q, s, [k, a, b]);
     }
   }
   return undefined;
+}
+
+/** Boundary terms left after cancelling a telescoping sum with a positive integer shift. */
+export function telescopicDirect(L: ExprLike, R: ExprLike, nIn: ExprLike, limits: readonly [Sym, ExprLike, ExprLike]): Expr {
+  const shift = sympify(nIn);
+  if (!(shift instanceof Rational && shift.isInteger) || shift.isNegative || shift.p > BigInt(Number.MAX_SAFE_INTEGER)) throw new RangeError('telescopicDirect requires a nonnegative integer shift');
+  const n = shift.toNumber();
+  const [k, a, b] = limits;
+  const terms: Expr[] = [];
+  for (let m = 0; m < n; m++) terms.push(xreplace(sympify(L), [[k, add(a, m)]]), xreplace(sympify(R), [[k, add(b, -m)]]));
+  return add(...terms);
 }
 
 const isZeroExpanded = (e: Expr): boolean => {
@@ -537,6 +547,14 @@ function evalProduct(term: Expr, k: Sym, a: Expr, n: Expr): Expr | undefined {
     }
     if (M < deg) return undefined;
     return mul(pow(getOrThrow(pc, deg), count), A);
+  }
+  if (term instanceof Add) {
+    const [num, den] = asNumerDenom(term);
+    if (den.has(k)) {
+      const numerator = evalProduct(num, k, a, n);
+      const denominator = evalProduct(den, k, a, n);
+      if (numerator !== undefined && denominator !== undefined) return mul(numerator, pow(denominator, -1));
+    }
   }
   if (term instanceof Mul) {
     // the factors with a product, times the Product of the others (SymPy: of several factors with k
@@ -781,7 +799,15 @@ export function eulerMaclaurin(sum: Concrete, mIn = 0, n = 0): [Expr, Expr] {
     if (add(b, mul(-1, a), 1).key === Rational.of(m).key) return [s, S.Zero];
     a = add(a, m);
   }
-  s = add(s, impl.integrate(f, i, [a, b]));
+  let integral = impl.integrate(f, i, [a, b]);
+  if (integral instanceof Integral) {
+    // Euler-Maclaurin assumes a smooth summand on the interval. Its formal
+    // endpoint expression remains useful when symbolic bounds prevent the
+    // definite integrator from deciding whether the interval crosses a pole.
+    const primitive = impl.integrate(f, i);
+    if (!(primitive instanceof Integral)) integral = add(at(primitive, b), mul(-1, at(primitive, a)));
+  }
+  s = add(s, integral);
   const fpoint = (e: Expr): [Expr, Expr] => (b instanceof Special && b.name === 'oo' ? [at(e, a), S.Zero] : [at(e, a), at(e, b)]);
   const [fa, fb] = fpoint(f);
   const iterm = mul(add(fa, fb), S.Half);

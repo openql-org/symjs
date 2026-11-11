@@ -1340,6 +1340,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": ".limits",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
   "name": ".liupc",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -4393,6 +4398,11 @@
   "name": "trigsimp",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": "trigsimp_groebner",
+  "status": "reviewed-conversion",
+  "note": "trigsimpGroebner; convert Python function hints and containers to public options"
  },
  {
   "name": "trunc",

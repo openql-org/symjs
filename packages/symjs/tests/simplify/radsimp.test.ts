@@ -6,10 +6,24 @@
 // Expected values are the str() forms printed by SymPy 1.14 unless a comment says otherwise.
 
 import { describe, expect, it } from 'vitest';
-import { Wild, add, collect, dsolve, factor, mul, parse, pow, rcollect, sstr, symbol, symbols } from '../../src';
+import { Wild, add, collect, collectSqrt, dsolve, factor, mul, parse, pow, rcollect, sstr, symbol, symbols } from '../../src';
 import type { Expr } from '../../src';
 
 const Pplain = parse;
+it('collects square roots and counts radical terms', () => {
+  for (const [input, expected] of [
+    ['a*sqrt(2) + b*sqrt(2)', 'sqrt(2)*(a + b)'],
+    ['a*sqrt(2) + b*sqrt(2) + a*sqrt(3) + b*sqrt(3)', 'sqrt(2)*(a + b) + sqrt(3)*(a + b)'],
+    ['a*sqrt(2) + b*sqrt(2) + a*sqrt(3) + b*sqrt(5)', 'sqrt(3)*a + sqrt(5)*b + sqrt(2)*(a + b)'],
+    ['I*a + I*b', 'I*(a + b)'],
+    ['2*a*sqrt(2) + 2*b*sqrt(2)', '2*sqrt(2)*(a + b)'],
+  ]) expect(String(collectSqrt(parse(input!)))).toBe(expected);
+  expect(collectSqrt(parse('a*sqrt(2) + b*sqrt(2) + a*sqrt(3) + b*sqrt(5)'), { evaluate: false }).map(String)).toEqual(['sqrt(3)*a,sqrt(5)*b,sqrt(2)*(a + b)', '3']);
+  expect(collectSqrt(parse('a*sqrt(2) + b'), { evaluate: false }).map(String)).toEqual(['b,sqrt(2)*a', '1']);
+  expect(collectSqrt(parse('a + b'), { evaluate: false }).map(String)).toEqual(['a + b', '0']);
+  expect(collectSqrt(parse('sqrt(x) + I*y'), { evaluate: false })[1]).toBe(2);
+  expect(collectSqrt(parse('sqrt(2)*a'), { evaluate: false }).map(String)).toEqual(['sqrt(2)*a', '1']);
+});
 const show = (v: unknown): string => (Array.isArray(v) ? `[${v.map(String).join(', ')}]` : String(v));
 const [x, y, n, k, z, a, b] = symbols('x y n k z a b');
 const r = symbol('r', { real: true });

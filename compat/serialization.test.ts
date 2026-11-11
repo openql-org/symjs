@@ -9,6 +9,21 @@ import * as sj from '../packages/symjs/src';
 
 const corpus = JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url), 'utf8')) as { cases: Case[] };
 
+it('replays hypergeometric formula bases and parameter objects', () => {
+  const cases = corpus.cases.filter((c) => c.module === 'sympy.simplify.hyperexpand');
+  expect(cases.some((c) => c.self?.t === 'PublicObject')).toBe(true);
+  for (const c of cases) expect(['pass', 'equivalent'], c.src).toContain(runCase(c).status);
+});
+
+it('converts trigonometric function hints and nested integral limits', () => {
+  const cases = corpus.cases.filter((c) => c.fn === 'trigsimp_groebner' || (c.module === 'sympy.concrete.expr_with_limits' && c.fn === '.limits'));
+  expect(cases.length).toBeGreaterThan(8);
+  for (const c of cases) expect(['pass', 'equivalent'], c.src).toContain(runCase(c).status);
+  const x = sj.symbol('x'), y = sj.symbol('y');
+  const nested = new sj.Integral([new sj.Integral([x.mul(y), x, sj.S.Zero, sj.S.One]), y]);
+  expect(matches(ADAPTERS['.limits']!([], {}, nested), '((x, 0, 1), (y,))')).toBe(true);
+});
+
 it('replays the supported receiver families through the public API', () => {
   const modules = [
     'sympy.combinatorics.subsets', 'sympy.combinatorics.graycode', 'sympy.combinatorics.prufer',
