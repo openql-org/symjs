@@ -102,6 +102,12 @@ const OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   'sympy.tensor.indexed: ccode(A[i, j, k])': 'C code printer',
   // SymPy returns Lambda(x, ...) and ignores the argument x; symjs returns the probability mass function at x
   'sympy.stats: dist.pmf(x)': 'pmf evaluated at its argument',
+  // these doctests define Python classes (MyBasic, MyExpr) and register comparison handlers for them through
+  // multiple dispatch; the examples depend on Python class definitions, not on a SymPy function
+  'sympy.core.relational: is_eq(a, b)': 'Python class definition',
+  'sympy.core.relational: is_neq(a, b)': 'Python class definition',
+  'sympy.core.relational: is_ge(b, a)': 'Python class definition',
+  'sympy.core.relational: is_le(a, b)': 'Python class definition',
   // SymPy's numerical test helper all_close (approximate structural comparison) is a test utility, not ported
   'sympy.core.numbers: all_close(expr1, expr2)': 'test utility',
   'sympy.core.numbers: all_close(x, x + 1e-10)': 'test utility',

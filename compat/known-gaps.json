@@ -1,9 +1,4 @@
 {
- "cases": [
-  "sympy.core.relational: is_eq(a, b) #98b96f4ae04cd3e8",
-  "sympy.core.relational: is_ge(b, a) #98b96f4ae04cd3e8",
-  "sympy.core.relational: is_le(a, b) #98b96f4ae04cd3e8",
-  "sympy.core.relational: is_neq(a, b) #2a51f440ad304e91"
- ],
+ "cases": [],
  "api": []
 }
