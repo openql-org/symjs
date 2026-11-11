@@ -6,6 +6,11 @@
  */
 
 import { Expr, Integral, impl } from '../core/nodes';
+import { cast } from '../core/guard';
+import { Indexed } from '../core/indexed';
+import { IdxNode } from './idx';
+import { add, mul } from '../core/ops';
+import { isNoMatch } from '../core/truth';
 import { Matrix } from '../matrices/matrix';
 
 /** SymPy NoShapeError: shape() of an object that is not array-like. */
@@ -27,6 +32,10 @@ const hasShape = (x: unknown): x is { readonly shape: readonly Dimension[] } => 
  */
 export function shape(expr: unknown): Dimension[] {
   if (expr instanceof Matrix) return [expr.rows, expr.cols];
+  if (expr instanceof Indexed) return expr.indices.map((i) => {
+    if (!(i instanceof IdxNode) || isNoMatch(i.lower)) throw new NoShapeError('index ranges do not define a shape');
+    return add(cast(i.upper, Expr), mul(-1, i.lower), 1);
+  });
   if (hasShape(expr)) return [...expr.shape];
   if (expr instanceof Integral) return shape(expr.integrand);
   const s = expr instanceof Expr ? impl.str(expr) : String(expr);

@@ -73,7 +73,7 @@ function parseValue(s0: string): V {
   }
   if (enclosed(s, '(', ')')) {
     const parts = splitTop(s.slice(1, -1));
-    if (parts.length > 1 || s.slice(1, -1).trim().endsWith(',')) return { t: 'tuple', items: parts.map(parseValue) };
+    if (parts.length === 0 || parts.length > 1 || s.slice(1, -1).trim().endsWith(',')) return { t: 'tuple', items: parts.map(parseValue) };
   }
   if (s.startsWith('Matrix(') && enclosed(s.slice(6), '(', ')')) {
     const inner = parseValue(s.slice(7, -1));

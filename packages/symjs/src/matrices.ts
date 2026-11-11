@@ -167,3 +167,4 @@ export const luDecomposition = _luDecomposition_;
 
 /** @deprecated Use `QRdecomposition`. */
 export const qrDecomposition = _qrDecomposition_;
+export { MatrixKind, MatrixKindNode } from './matrices/kind';

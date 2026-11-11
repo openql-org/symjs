@@ -357,3 +357,14 @@ it('exposes matrix predicates and conjugates', () => {
   expect(Matrix.col(I).C.toString()).toBe('Matrix([[-I]])');
   expect(() => Matrix.eye(2).D).toThrow(ShapeError);
 });
+
+it('free symbols and undecidable Hermitian matrices', async () => {
+  const { Matrix, symbol, I } = await import('../../src');
+  const x = symbol('x');
+  expect(Matrix.of([[x],[1]]).freeSymbols()).toEqual(new Set([x]));
+  expect(Matrix.of([[symbol('x'), symbol('x')]]).freeSymbols().size).toBe(1);
+  expect(Matrix.of([[x,I],[I.neg(),1]]).isHermitian()).toBe('unknown');
+  expect(Matrix.of([[1,I],[I.neg(),1]]).isHermitian()).toBe(true);
+  expect(Matrix.of([[1,I],[I,1]]).isHermitian()).toBe(false);
+  expect(Matrix.of([[I.mul(2),I],[I.neg(),1]]).isHermitian()).toBe(false);
+});

@@ -343,3 +343,12 @@ export function rsSeries(expr: ExprLike, x: Sym, prec: IntLike): SeriesPoly {
   const symbols = [...generators.values()], p = new PuiseuxRing(symbols, QQ).fromExpr(expanded);
   return restore(new PolyRing(symbols, QQ).zero, p);
 }
+
+/** Cosine and sine series to the same precision (SymPy rs_cos_sin). */
+export function rsCosSin(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): [SeriesPoly, SeriesPoly] {
+  return [rsCos(p, x, prec), rsSin(p, x, prec)];
+}
+/** Hyperbolic cosine and sine series (SymPy rs_cosh_sinh). */
+export function rsCoshSinh(p: SeriesPoly, x: SeriesPoly, prec: ExprLike): [SeriesPoly, SeriesPoly] {
+  return [rsCosh(p, x, prec), rsSinh(p, x, prec)];
+}

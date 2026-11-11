@@ -2,9 +2,9 @@
 
 Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
-Measured **12933** cases: **7828 exact**, **227 equivalent**, **4878 failing**. Agreement: **62.28%**.
+Measured **12933** cases: **7851 exact**, **227 equivalent**, **4855 failing**. Agreement: **62.46%**.
 
-Replay runtime: **394.10 s**. Known gaps: **4878**. Exception class mismatches accepted in the pilot: **159**.
+Replay runtime: **200.45 s**. Known gaps: **4855**. Exception class mismatches accepted in the pilot: **160**.
 
 Exact includes successful inequality, identity, boolean and exception assertions. Equality uses the existing doctest matching and equivalence rules.
 
@@ -13,7 +13,7 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | Category | Cases | Exact | Equivalent | Fail | Unsupported | Error | Agreement |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | core | 7858 | 5239 | 179 | 1245 | 918 | 277 | 68.95% |
-| polys | 5075 | 2589 | 48 | 290 | 1689 | 459 | 51.96% |
+| polys | 5075 | 2612 | 48 | 297 | 1679 | 439 | 52.41% |
 
 ## Agreement by test module
 
@@ -84,8 +84,8 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | sympy.polys.tests.test_polyfuncs | 46 | 39 | 0 | 4 | 0 | 3 | 84.78% |
 | sympy.polys.tests.test_polymatrix | 15 | 0 | 0 | 0 | 15 | 0 | 0.00% |
 | sympy.polys.tests.test_polyoptions | 9 | 3 | 0 | 0 | 6 | 0 | 33.33% |
-| sympy.polys.tests.test_polyroots | 108 | 46 | 7 | 10 | 39 | 6 | 49.07% |
-| sympy.polys.tests.test_polytools | 1584 | 893 | 26 | 208 | 305 | 152 | 58.02% |
+| sympy.polys.tests.test_polyroots | 108 | 51 | 7 | 13 | 32 | 5 | 53.70% |
+| sympy.polys.tests.test_polytools | 1584 | 911 | 26 | 212 | 302 | 133 | 59.15% |
 | sympy.polys.tests.test_polyutils | 43 | 0 | 0 | 0 | 43 | 0 | 0.00% |
 | sympy.polys.tests.test_puiseux | 69 | 50 | 0 | 3 | 9 | 7 | 72.46% |
 | sympy.polys.tests.test_pythonrational | 78 | 68 | 0 | 0 | 8 | 2 | 87.18% |
@@ -277,6 +277,7 @@ Any exception from an invoked adapter counts as agreement in this pilot. Missing
 | sympy.polys.tests.test_fields:test_FracElement___truediv__:275 #746d24248ab58efaad9e | ZeroDivisionError | SympifyError |
 | sympy.polys.tests.test_polyroots:test_roots_strict:651 #370153f3c12af7961726 | UnsolvableFactorError | TypeError |
 | sympy.polys.tests.test_polyroots:test_issue_19113:740 #61ff0d4f40f2718bdd1e | PolynomialError | TypeError |
+| sympy.polys.tests.test_polytools:test_Poly_from_list:179 #5083923ce56d26fdb5cd | MultivariatePolynomialError | PolynomialError |
 | sympy.polys.tests.test_polytools:test_Poly__new__:373 #19eb6b65fafa33e8cefb | OptionError | TypeError |
 | sympy.polys.tests.test_polytools:test_Poly__new__:374 #cbeaf93d5e394e772c42 | OptionError | TypeError |
 | sympy.polys.tests.test_polytools:test_Poly__new__:376 #4dde3660eeafb313e1ac | OptionError | TypeError |

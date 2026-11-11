@@ -268,6 +268,11 @@ export class Poly {
   readonly domain: string;
   readonly pure: boolean;
 
+  /** Free symbols of a polynomial; PurePoly binds its generators. */
+  freeSymbols(): Set<Sym> {
+    return this.pure ? this.freeSymbolsInDomain : freeSymbols(this.asExpr());
+  }
+
   get gen(): Expr { return first(this.gens); }
   get freeSymbolsInDomain(): Set<Sym> {
     const symbols = new Map<string, Sym>();
@@ -325,6 +330,12 @@ export class Poly {
     this.termList = terms.sort((a, b) => monomCmp(b.monom, a.monom));
     this.domain = domain;
     this.pure = pure;
+  }
+
+  /** Build a univariate polynomial from descending coefficients (SymPy from_list). */
+  static fromList(coeffs: readonly ExprLike[], gens: readonly Expr[], opts: PolyConstructionOptions = {}): Poly {
+    if (gens.length !== 1) throw new PolynomialError('from_list requires exactly one generator');
+    return Poly.from(add(...coeffs.map((c, i) => mul(c, pow(first(gens), coeffs.length - i - 1)))), gens, opts);
   }
 
   /** Build a polynomial; generators are detected unless given. */
@@ -1134,13 +1145,48 @@ export class Poly {
       return Rational.of(v);
     });
   }
+  /** Polynomials with common generators and coefficient domain. */
+  unify(other: Poly): [Poly, Poly] {
+    const finite = this.finitePair(other);
+    if (finite !== undefined) return [finite[0], finite[1]];
+    const gens = [...this.gens];
+    for (const g of other.gens) if (!gens.some((h) => h.key === g.key)) gens.push(g);
+    let domain = this.domain;
+    if (domain !== other.domain) {
+      const construct = defined(polyConstructionHooks.domain, 'polynomial domain construction');
+      domain = String(construct([], { domain }).unify(construct([], { domain: other.domain })));
+    }
+    return [Poly.from(this.asExpr(), gens, { domain, pure: this.pure }), Poly.from(other.asExpr(), gens, { domain, pure: other.pure })];
+  }
+  /** Clear coefficient denominators while preserving the quotient f/g. */
+  ratClearDenoms(other: Poly): [Poly, Poly] {
+    const [f, g] = this.unify(other);
+    const [a, F] = f.clearDenoms(true), [b, G] = g.clearDenoms(true);
+    return [F.mulGround(b), G.mulGround(a)];
+  }
+  /** A translated polynomial and its square-free norm over the ground field. */
+  sqfNorm(): [number[], Poly, Poly] {
+    const m = /^(?:ZZ|QQ)<(.*)>$/.exec(this.domain);
+    const extension = this.domain.endsWith('_I') ? S.I : m === null ? undefined : parse(at(m, 1));
+    if (extension === undefined) throw new DomainError('sqf_norm requires an algebraic coefficient domain');
+    const [s, g, r] = sqfNorm(this.asExpr(), this.univariate(), [extension]);
+    return [s, Poly.from(g, this.gens, { domain: this.domain, pure: this.pure }), Poly.from(r, this.gens, { domain: 'QQ' })];
+  }
   /** (lcm of denominators, polynomial times it). */
   clearDenoms(convert = false): [Expr, Poly] {
+    const fractionDomain = /^(ZZ|QQ)\((.*)\)$/.exec(this.domain);
+    if (fractionDomain !== null) {
+      let common: Expr = S.One;
+      for (const t of this.termList) common = polyLcm(common, fraction(together(t.coeff))[1]);
+      const expr = add(...this.termList.map((t) => this.termExpr({ ...t, coeff: cancel(mul(common, t.coeff)) })));
+      const domain = convert ? `${at(fractionDomain, 1)}[${at(fractionDomain, 2)}]` : this.domain;
+      return [common, Poly.from(expr, this.gens, { domain })];
+    }
     let l = 1n;
     const gcdB = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcdB(b, a % b));
     for (const t of this.termList) if (t.coeff instanceof Rational) l = (l / gcdB(l, t.coeff.q)) * t.coeff.q;
     const e = expand(mul(Rational.of(l), this.asExpr()));
-    return [Rational.of(l), Poly.from(e, this.gens, { domain: convert ? 'ZZ' : this.domain })];
+    return [Rational.of(l), Poly.from(e, this.gens, { domain: convert && this.domain === 'QQ' ? 'ZZ' : this.domain })];
   }
   /** Extended Euclid: (s, t, h) with s*f + t*g = h = gcd(f, g) (monic, over QQ). */
   gcdex(o: Poly): [Poly, Poly, Poly] {

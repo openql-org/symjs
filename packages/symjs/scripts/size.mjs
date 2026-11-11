@@ -33,7 +33,8 @@ const CASES = [
   ['core', 'parse, str', 202],
   ['core', 'parse, diff, expand, str, latex', 202],
   ['core', '*', 277],
-  ['special', '*', 372],
+  // B-spline interpolation and multiset counting add approximately 5 KiB.
+  ['special', '*', 380],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
   ['simplify', 'simplify', 890],
   // The polys entry re-exports the sparse domain matrices through a

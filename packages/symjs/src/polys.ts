@@ -37,7 +37,7 @@ export {
 export { rootsDict as roots } from './polys/poly';
 export { bernoulliPoly, bernoulliCPoly, genocchiPoly, eulerPoly, andrePoly } from './polys/appellseqs';
 export { dispersion, dispersionset } from './polys/dispersion';
-export { eqsToMatrix, solveLinSys } from './polys/solvers';
+export { eqsToMatrix, solveLinSys, sympyEqsToRing } from './polys/solvers';
 export { sqfNorm } from './polys/sympoly';
 export type { FactorList, FactorListFrac, FactorListOptions, PolyConstructionOptions, PolynomialDomainOptions } from './polys/sympoly';
 export { minimalPolynomial } from './polys/numberfields';
@@ -213,7 +213,7 @@ export { ModuleHomomorphism, homomorphism } from './polys/agca/homomorphisms';
 export { identityHom, inclusionHom, quotientHom } from './polys/agca/homomorphisms';
 export { ExtensionElement, FiniteExtension } from './polys/agca/extensions';
 export type { PuiseuxMonom, PuiseuxTerm } from './polys/puiseux';
-export { powXin, rsTrunc, rsMul, rsSquare, rsDiff, rsIntegrate, rsIsPuiseux, rsPow, rsSeriesInversion, rsNthRoot, rsExp, rsSin, rsCos, rsSinh, rsCosh, rsAsin, rsAsinh, rsAtan, rsAtanh, rsLambertW, rsTan, rsTanh, rsCot, rsLog, rsSeriesFromList, rsSubs, rsSeriesReversion, rsPuiseux, rsFun, rsHadamardExp, rsNewton, rsComposeAdd, rsSeries } from './polys/ringseries';
+export { powXin, rsTrunc, rsMul, rsSquare, rsDiff, rsIntegrate, rsIsPuiseux, rsPow, rsSeriesInversion, rsNthRoot, rsExp, rsSin, rsCos, rsCosSin, rsCoshSinh, rsSinh, rsCosh, rsAsin, rsAsinh, rsAtan, rsAtanh, rsLambertW, rsTan, rsTanh, rsCot, rsLog, rsSeriesFromList, rsSubs, rsSeriesReversion, rsPuiseux, rsFun, rsHadamardExp, rsNewton, rsComposeAdd, rsSeries } from './polys/ringseries';
 export type { SeriesPoly, SeriesFunction } from './polys/ringseries';
 export type { RingSymbols, DomainLike, OrderLike, GenLike, SringOptions, Monom } from './polys/rings';
 export { IPolys, hasAssocRing } from './polys/compatibility';
@@ -264,3 +264,4 @@ export type { MultTab, HnfOptions, HomomorphismCodomain } from './polys/numberfi
 export { roundTwo, nilradicalModP, PrimeIdeal, primeDecomp, primeValuation } from './polys/numberfields/index';
 export type { RoundTwoOptions, PrimeDecompOptions } from './polys/numberfields/index';
 export { ClosureFailure, StructureError, MissingUnityError } from './polys/numberfields/exceptions';
+export { rootFactors } from './polys/polyroots';

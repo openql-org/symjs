@@ -158,3 +158,10 @@ describe('finite and truncated algebra', () => {
     expect(str(rs.rsExp(e.add(1), e, 2).asExpr())).toBe('E*x + E');
   });
 });
+
+it('returns paired trigonometric and hyperbolic series', () => {
+  const R = new PolyRing([new Sym('x'),new Sym('y')],QQ);
+  const x = R.gens[0]!, p = R.fromExpr(parse('x+x*y'));
+  expect(rs.rsCosSin(p,x,4).map(String)).toEqual([String(rs.rsCos(p,x,4)), String(rs.rsSin(p,x,4))]);
+  expect(rs.rsCoshSinh(p,x,4).map(String)).toEqual([String(rs.rsCosh(p,x,4)), String(rs.rsSinh(p,x,4))]);
+});

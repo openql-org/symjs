@@ -9,10 +9,10 @@
  * and Kronecker symbols, and the multivariate gamma function.
  */
 
-import { at, first, last } from '../../core/guard';
+import { at, defined, first, last } from '../../core/guard';
 import { isIntegerQ, isNegative, isPositive, isReal as isRealQ } from '../../core/assumptions';
-import type { Expr, ExprLike, FnName } from '../../core/nodes';
-import { Dummy, Fn, Pow, Rational, S, Special } from '../../core/nodes';
+import type { ExprLike, FnName } from '../../core/nodes';
+import { Dummy, Expr, Fn, Pow, Rational, S, Special } from '../../core/nodes';
 import { AccumBounds } from '../../core/accumbounds';
 import { Product } from '../../core/concrete';
 import { add, mul, pow, sympify } from '../../core/ops';
@@ -23,6 +23,8 @@ import { bernoulliNumber, floor as floorFn, gamma } from '../special/special';
 import { isprime as ntheoryIsprime } from '../../ntheory/primetest';
 import type { IntLike } from '../../ntheory/intutil';
 import { asInt as intOf, invert } from '../../ntheory/intutil';
+import { multisetPartitionsTaocp } from '../../utilities/enumerative';
+import { valueKey } from '../../utilities/values';
 
 const R = (p: bigint | number, q: bigint | number = 1n) => Rational.of(BigInt(p), BigInt(q));
 const asInt = (e: Expr): bigint | undefined => (e instanceof Rational && e.isInteger ? e.p : undefined);
@@ -361,6 +363,14 @@ const EVAL: Partial<Record<FnName, (...a: Expr[]) => Expr | undefined>> = {
     }
     return R(r);
   },
+  udivisor_sigma: (n, kIn?: Expr) => {
+    const k = kIn ?? S.One;
+    if (isIntegerQ(n) === false || isIntegerQ(k) === false) throw new TypeError('udivisor_sigma requires integer arguments');
+    if (isPositive(n) === false || isNegative(k) === true) throw new RangeError('udivisor_sigma requires n > 0 and k >= 0');
+    const m = asInt(n);
+    if (m === undefined) return undefined;
+    return mul(...[...factorInt(m)].map(([p, e]) => add(1, pow(R(p), mul(k, R(e))))));
+  },
   primenu: (n) => {
     const k = asInt(n);
     return k !== undefined && k > 0n ? R(k === 1n ? 0 : factorInt(k).size) : undefined;
@@ -433,6 +443,8 @@ export const totientFn = (n: ExprLike): Expr => fn('totient', [n]);
 export const reducedTotient = (n: ExprLike): Expr => fn('reduced_totient', [n]);
 export const mobius = (n: ExprLike): Expr => fn('mobius', [n]);
 export const divisorSigma = (n: ExprLike, k?: ExprLike): Expr => fn('divisor_sigma', k === undefined ? [n] : [n, k]);
+/** Sum of k-th powers of the unitary divisors of n. */
+export const udivisorSigma = (n: ExprLike, k?: ExprLike): Expr => fn('udivisor_sigma', k === undefined ? [n] : [n, k]);
 export const primenu = (n: ExprLike): Expr => fn('primenu', [n]);
 export const primeomega = (n: ExprLike): Expr => fn('primeomega', [n]);
 export const primepiFn = (n: ExprLike): Expr => fn('primepi', [n]);
@@ -674,3 +686,121 @@ export function findFirstNCarmichaels(n: number): bigint[] {
 
 /** SymPy carmichael (the deprecated class): its static methods. */
 export const carmichael = { isCarmichael, findCarmichaelNumbersInRange, findFirstNCarmichaels } as const;
+
+/** Input to the multiset counting functions: a size, a sequence, or item multiplicities. */
+export type CountingInput = IntLike | Iterable<unknown> | Map<unknown, IntLike>;
+
+function countSize(n: IntLike): number {
+  const size = Number(intOf(n));
+  if (!Number.isSafeInteger(size) || size < 0) throw new RangeError('count must be a nonnegative safe integer');
+  return size;
+}
+
+function histogram(n: CountingInput, identical = false): number[] {
+  if (typeof n === 'number' || typeof n === 'bigint' || n instanceof Expr) {
+    const size = countSize(n);
+    return identical ? [size] : Array<number>(size).fill(1);
+  }
+  if (n instanceof Map) return [...n.values()].map((v: IntLike) => countSize(v)).filter((v) => v > 0);
+  const counts = new Map<string, number>();
+  for (const item of n) {
+    const key = valueKey(item);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return [...counts.values()];
+}
+
+function selections(n: CountingInput, k: IntLike | undefined, replacement: boolean, ordered: boolean): bigint {
+  const counts = histogram(n), total = counts.reduce((a, b) => a + b, 0);
+  const degree = k === undefined ? total : countSize(k);
+  let row = Array<bigint>(degree + 1).fill(0n);
+  row[0] = 1n;
+  for (const count of counts) {
+    const next = Array<bigint>(degree + 1).fill(0n);
+    for (let i = 0; i <= degree; i++) {
+      for (let j = 0; j <= Math.min(replacement ? degree : count, degree - i); j++) {
+        next[i + j] = at(next, i + j) + at(row, i) * (ordered ? binom(i + j, j) : 1n);
+      }
+    }
+    row = next;
+  }
+  return k === undefined ? row.reduce((a, b) => a + b, 0n) : at(row, degree);
+}
+
+/** Number of combinations of a multiset, optionally allowing replacement. */
+export function nC(n: CountingInput, k?: IntLike, opts: { replacement?: boolean } = {}): bigint {
+  return selections(n, k, opts.replacement ?? false, false);
+}
+
+/** Number of distinct ordered selections of a multiset. */
+export function nP(n: CountingInput, k?: IntLike, opts: { replacement?: boolean } = {}): bigint {
+  return selections(n, k, opts.replacement ?? false, true);
+}
+
+/** Number of derangements; brute is accepted as an algorithm hint. */
+export function nD(i?: CountingInput, opts: { brute?: boolean; n?: IntLike; m?: Iterable<IntLike> | Map<IntLike, IntLike> } = {}): bigint {
+  if ([i, opts.n, opts.m].filter((v) => v !== undefined).length !== 1) throw new TypeError('supply exactly one of i, n, or m');
+  if (i !== undefined && (typeof i === 'number' || typeof i === 'bigint' || i instanceof Expr)) throw new TypeError('items must be a sequence or multiset');
+  let counts: number[];
+  if (opts.m !== undefined) {
+    counts = opts.m instanceof Map
+      ? [...opts.m].flatMap(([m, repeat]: [IntLike, IntLike]) => Array<number>(countSize(repeat)).fill(countSize(m)))
+      : Array.from(opts.m, (v) => countSize(v));
+  } else counts = histogram(defined(i ?? opts.n));
+  if (counts.length > 0 && counts.every((c) => c === 1)) {
+    let a = 1n, b = 0n;
+    for (let j = 2; j <= counts.length; j++) [a, b] = [b, BigInt(j - 1) * (a + b)];
+    return b;
+  }
+  const original = counts.flatMap((count, index) => Array<number>(count).fill(index));
+  if (original.length === 0) return 0n;
+  const memo = new Map<string, bigint>();
+  function count(position: number): bigint {
+    if (position === original.length) return 1n;
+    const key = counts.join(',');
+    const cached = memo.get(key);
+    if (cached !== undefined) return cached;
+    let result = 0n;
+    for (let j = 0; j < counts.length; j++) {
+      const available = at(counts, j);
+      if (available === 0 || j === at(original, position)) continue;
+      counts[j] = available - 1;
+      result += count(position + 1);
+      counts[j] = available;
+    }
+    memo.set(key, result);
+    return result;
+  }
+  return count(0);
+}
+
+/** Number of partitions of a multiset; an integer denotes identical items. */
+export function nT(n: CountingInput, k?: IntLike): bigint {
+  const counts = histogram(n, true).filter((v) => v > 0);
+  const parts = k === undefined ? undefined : countSize(k);
+  if (counts.length === 0) return parts === undefined || parts === 0 ? 1n : 0n;
+  let result = 0n;
+  for (const [, lastPart] of multisetPartitionsTaocp(counts)) if (parts === undefined || lastPart + 1 === parts) result++;
+  return result;
+}
+
+/** Stirling numbers of either kind, including signed and reduced variants. */
+export function stirling(nIn: IntLike, kIn: IntLike, d?: IntLike, opts: { kind?: number; signed?: boolean } = {}): bigint {
+  const n = countSize(nIn), k = countSize(kIn);
+  if (k > n) return 0n;
+  if (d !== undefined && intOf(d) !== 0n) {
+    const shift = countSize(d) - 1;
+    // Singleton blocks satisfy every separation, including the empty partition.
+    return k === n ? 1n : k <= shift ? 0n : stirling2(n - shift, k - shift);
+  }
+  if (opts.signed !== true && opts.kind !== undefined && opts.kind !== 1 && opts.kind !== 2) throw new RangeError('kind must be 1 or 2');
+  if (opts.signed !== true && opts.kind !== 1) return stirling2(n, k);
+  let row = Array<bigint>(k + 1).fill(0n);
+  row[0] = 1n;
+  for (let i = 1; i <= n; i++) {
+    const next = Array<bigint>(k + 1).fill(0n);
+    for (let j = 1; j <= k; j++) next[j] = at(row, j - 1) + BigInt(i - 1) * at(row, j);
+    row = next;
+  }
+  return at(row, k) * (opts.signed === true && (n - k) % 2 === 1 ? -1n : 1n);
+}

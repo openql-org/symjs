@@ -121,3 +121,17 @@ it('retains the ranks of tensor factors under contractions', async () => {
   expect(new a.ArrayContraction(tp,[1,2]).subranks).toEqual([2,2,2]);
   expect(new a.ArrayContraction(x,[0,1]).subranks).toEqual([2]);
 });
+
+it('permutations can be specified by old and new index order strings', async () => {
+  const { Permutation } = await import('../../../../src');
+  const m = new ArraySymbol('M',[1,2,3,4,5]);
+  const p = new P(m,undefined,{indexOrderOld:'ijklm',indexOrderNew:'kijml'});
+  expect(p.permutation.arrayForm).toEqual([2,0,1,4,3]);
+  expect(p.shape.map(String)).toEqual(['3','1','2','5','4']);
+  expect(new P(m, new Permutation([2,0,1,4,3])).key).toBe(p.key);
+  expect(() => new P(m)).toThrow(RangeError);
+  expect(() => new P(m,undefined,{indexOrderOld:'ijklm'})).toThrow(RangeError);
+  expect(() => new P(m,undefined,{indexOrderOld:'ijklm',indexOrderNew:'ij'})).toThrow(RangeError);
+  expect(() => new P(m,undefined,{indexOrderOld:'iiklm',indexOrderNew:'ijklm'})).toThrow(RangeError);
+  expect(() => new P(m,undefined,{indexOrderOld:'ijklm',indexOrderNew:'ijklz'})).toThrow(RangeError);
+});

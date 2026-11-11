@@ -16,6 +16,7 @@ export class Indexed extends ExtensionExpr {
   constructor(args: readonly Expr[]) {
     super('Indexed', args);
   }
+  get rank(): number { return this.args.length - 1; }
   get base(): Expr {
     return at(this.args, 0);
   }
@@ -45,6 +46,13 @@ export class IndexedBase {
   readonly label: Sym;
   constructor(name: string | Sym) {
     this.label = typeof name === 'string' ? new Sym(name) : name;
+  }
+  equals(other: unknown): boolean {
+    return other instanceof IndexedBase && this.label.equals(other.label);
+  }
+  /** The real assumption inherited from the base label. */
+  get isReal(): boolean | 'unknown' {
+    return this.label.assumptions.real ?? 'unknown';
   }
   /** A[i, j] */
   at(...indices: ExprLike[]): Indexed {

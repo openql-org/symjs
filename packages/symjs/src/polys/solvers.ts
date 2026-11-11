@@ -3,14 +3,18 @@
 // Ported from SymPy 1.14.0, polys/solvers.py, Copyright (c) 2006-2023
 // SymPy Development Team, BSD 3-Clause License (see LICENSE).
 
+import { Sym } from '../core/nodes';
 import type { Expr } from '../core/nodes';
 import { add, mul } from '../core/ops';
-import { at } from '../core/guard';
+import { at, cast } from '../core/guard';
 import { InvariantError, NonlinearError } from '../core/errors';
 import { NoMatch, type NoMatchResult } from '../core/truth';
 import type { Domain } from './domains';
 import { DomainMatrix } from './matrices/domainmatrix';
-import type { PolyElement, PolyRing } from './rings';
+import { PolyRing, type PolyElement } from './rings';
+import { Poly } from './sympoly';
+import { PolynomialRingBase } from './domains/oldpolynomialring';
+import { constructDomain } from './constructor';
 
 /** Augmented matrix of equations sum(coeff[g]*g)+rhs=0, over the given domain. */
 export function eqsToMatrix(coeffs: readonly ReadonlyMap<Expr, unknown>[], rhs: readonly unknown[], gens: readonly Expr[], domain: Domain): DomainMatrix {
@@ -57,4 +61,12 @@ export function solveLinSys(eqs: readonly PolyElement[], ring: PolyRing): Map<Ex
     result.set(at(ring.symbols,p),ring.fromExpr(add(at(row,n),...terms)).asExpr());
   });
   return result;
+}
+
+/** Convert expression equations to a polynomial ring over a coefficient field. */
+export function sympyEqsToRing(eqs: readonly Expr[], symbols: readonly Expr[]): [PolyElement[], Domain] {
+  const polys = eqs.map((e) => Poly.from(e, symbols));
+  const [domain] = constructDomain(polys.flatMap((p) => p.coeffs()), { field: true, extension: true });
+  const ring = new PolyRing(symbols, domain);
+  return [eqs.map((e) => ring.fromExpr(e)), new PolynomialRingBase(domain, symbols.map((s) => cast(s, Sym)), 'lex')];
 }

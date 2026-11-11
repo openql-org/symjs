@@ -1052,6 +1052,61 @@ export function properDivisorCount(n: IntLike, modulus: IntLike = 1): bigint {
   return divisorCount(n, modulus, { proper: true });
 }
 
+/** The t-th-power-free part of a positive integer (SymPy core). */
+export function core(nIn: IntLike, tIn: IntLike = 2): bigint {
+  const n = asInt(nIn), t = asInt(tIn);
+  if (n <= 0n || t < 2n) throw new RangeError('core requires n > 0 and t >= 2');
+  let result = 1n;
+  for (const [p, e] of factorintInt(n, {})) result *= p ** (e % t);
+  return result;
+}
+
+function* unitaryDivisors(n: bigint): Generator<bigint, void, undefined> {
+  if (n === 0n) return;
+  let values = [1n];
+  for (const [p, e] of factorintInt(n, {})) values = [...values, ...values.map((d) => d * p ** e)];
+  yield* values;
+}
+
+/** Divisors d with gcd(d, n/d) = 1 (SymPy udivisors). */
+export function udivisors(n: IntLike, opts: { generator: true }): Generator<bigint, void, undefined>;
+export function udivisors(n: IntLike, opts?: { generator?: false }): bigint[];
+export function udivisors(n: IntLike, opts: { generator?: boolean } = {}): bigint[] | Generator<bigint, void, undefined> {
+  const result = unitaryDivisors(babs(asInt(n)));
+  return opts.generator === true ? result : [...result].sort(cmpBig);
+}
+
+/** Number of unitary divisors (SymPy udivisor_count). */
+export function udivisorCount(nIn: IntLike): bigint {
+  const n = babs(asInt(nIn));
+  return n === 0n ? 0n : 2n ** BigInt(factorintInt(n, {}).size);
+}
+
+function* antidivisorsGen(n: bigint): Generator<bigint, void, undefined> {
+  if (n <= 2n) return;
+  for (const d of divisorsGen(n, false)) {
+    const y = 2n * d;
+    if (y < n && n % y !== 0n) yield y;
+  }
+  for (const m of [2n * n - 1n, 2n * n + 1n]) {
+    for (const d of divisorsGen(m, false)) if (d >= 2n && d < n) yield d;
+  }
+}
+
+/** Integers that fail to divide n by the largest possible margin. */
+export function antidivisors(n: IntLike, opts: { generator: true }): Generator<bigint, void, undefined>;
+export function antidivisors(n: IntLike, opts?: { generator?: false }): bigint[];
+export function antidivisors(n: IntLike, opts: { generator?: boolean } = {}): bigint[] | Generator<bigint, void, undefined> {
+  const result = antidivisorsGen(babs(asInt(n)));
+  return opts.generator === true ? result : [...result].sort(cmpBig);
+}
+
+/** Number of antidivisors (SymPy antidivisor_count). */
+export function antidivisorCount(nIn: IntLike): bigint {
+  const n = babs(asInt(nIn));
+  return n <= 2n ? 0n : divisorCount(2n * n - 1n) + divisorCount(2n * n + 1n) + divisorCount(n) - divisorCount(n, 2) - 5n;
+}
+
 /** @internal sigma(n), the sum of the divisors of an integer (SymPy _divisor_sigma with k = 1). */
 export function divisorSigmaInt(n: bigint): bigint {
   let r = 1n;

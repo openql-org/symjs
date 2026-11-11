@@ -20,3 +20,11 @@ describe('shape', () => {
     expect(() => sj.shape(3)).toThrow('3 does not have shape');
   });
 });
+
+it('infers indexed shapes from complete index ranges', () => {
+  const m = sj.symbol('m', {integer:true});
+  const A = new sj.IndexedBase('A');
+  expect(sj.shape(A.at(sj.Idx('i',m),sj.Idx('j',[2,4]))).map(String)).toEqual(['m','3']);
+  expect(() => sj.shape(A.at(1))).toThrow(sj.NoShapeError);
+  expect(() => sj.shape(A.at(sj.Idx('i')))).toThrow(sj.NoShapeError);
+});

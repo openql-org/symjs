@@ -651,3 +651,26 @@ it('classifies indefinite and diagonally dominant matrices', () => {
   expect(L.isStronglyDiagonallyDominant(Matrix.zeros(1, 2))).toBe(false);
   expect(L.isWeaklyDiagonallyDominant(Matrix.zeros(1, 2))).toBe(false);
 });
+
+it('zero QR and Gauss-Jordan solutions with multiple right hand sides', async () => {
+  const { Matrix, qrDecomposition, gaussJordanSolve, rref, Float } = await import('../../src');
+  const zero = Matrix.zeros(3,4);
+  const [q,r] = qrDecomposition(zero);
+  expect([q.rows,q.cols,r.rows,r.cols]).toEqual([3,0,0,4]);
+  expect(q.mul(r).equals(zero)).toBe(true);
+  const A = Matrix.of([[2,-7],[-1,4]]), b = Matrix.of([[-21,3],[12,-2]]);
+  const [sol, params] = gaussJordanSolve(A,b);
+  expect(A.mul(sol).equals(b)).toBe(true);
+  expect([params.rows,params.cols]).toEqual([0,2]);
+  const C = Matrix.of([[1,2,0],[0,0,1]]), rhs = Matrix.of([[3,4],[5,6]]);
+  const [solution, parameters, free] = gaussJordanSolve(C,rhs,{freevar:true});
+  expect(free).toEqual([1]);
+  expect(parameters.toString()).toBe('Matrix([[tau0, tau1]])');
+  expect(C.mul(solution).equalsSimplified(rhs)).toBe(true);
+  expect(() => gaussJordanSolve(Matrix.zeros(1,1),Matrix.of([[0,1]]))).toThrow(/no solution/);
+  const M = Matrix.of([[new Float(.9),new Float(-.1),new Float(-.2),0], [new Float(-.8),new Float(.9),new Float(-.4),0], [new Float(-.1),new Float(-.8),new Float(.6),0]]);
+  const [reduced,pivots] = rref(M,{iszerofunc:(e) => Math.abs(e.toComplex().re) < 1e-9});
+  expect(pivots).toEqual([0,1]);
+  expect(reduced.get(0,2).toComplex().re).toBeCloseTo(-.301369863013699);
+  expect(reduced.get(1,2).toComplex().re).toBeCloseTo(-.712328767123288);
+});

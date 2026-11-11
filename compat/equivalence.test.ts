@@ -7,11 +7,13 @@ describe('mathematical equivalence checks', () => {
     ['x', 'y'], ['x-y', '0'], ['ab', 'cd'], ['x**2', 'y**2'],
     ['x+y', '2*x'], ['x*y', 'x**2'], ['[1,2]', '[2,1]'],
     ['(1,2)', '(2,1)'], ['Integral(x, x)', 'x**2/2'],
+    ['()', '[1]'], ['{x: ()}', '{x: [1]}'],
   ])('rejects %s == %s', (a, b) => expect(equivalent(a, b)).toBe(false));
   it.each([
     ['x+x', '2*x'], ['(x+1)**2', 'x**2+2*x+1'],
     ['sin(x)**2+cos(x)**2', '1'], ['{1,2}', '{2,1}'],
-    ['[x+x, 1]', '[2*x, 1]'],
+    ['[x+x, 1]', '[2*x, 1]'], ['()', '[]'],
+    ['{x: (), y: (1,)}', '{y: [1], x: []}'],
   ])('accepts %s == %s', (a, b) => expect(equivalent(a, b)).toBe(true));
   it('preserves independence with symbol assumptions', () => {
     for (const assumptions of [{ real: true }, { positive: true }, { negative: true }, { integer: true }, { integer: true, nonpositive: true }]) {

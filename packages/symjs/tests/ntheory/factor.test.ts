@@ -947,3 +947,23 @@ it('exposes the Montgomery point used by ECM with SymPy coordinate names', async
   expect(() => point.montLadder(0n)).toThrow(RangeError);
   expect(() => point.montLadder(-1n)).toThrow(RangeError);
 });
+
+it('unitary divisors, antidivisors and power-free cores', async () => {
+  const { antidivisors, antidivisorCount, udivisors, udivisorCount, core } = await import('../../src/ntheory');
+  expect(udivisors(120)).toEqual([1n, 3n, 5n, 8n, 15n, 24n, 40n, 120n]);
+  expect([...udivisors(-15, { generator: true })].sort((a,b) => Number(a-b))).toEqual([1n, 3n, 5n, 15n]);
+  expect(udivisors(0)).toEqual([]);
+  expect(udivisors(1)).toEqual([1n]);
+  expect(udivisorCount(0)).toBe(0n);
+  expect(udivisorCount(-120)).toBe(8n);
+  expect(antidivisors(24)).toEqual([7n, 16n]);
+  expect([...antidivisors(128, { generator: true })].sort((a,b) => Number(a-b))).toEqual([3n, 5n, 15n, 17n, 51n, 85n]);
+  for (let n = 0; n <= 100; n++) {
+    const expected = Array.from({ length: n }, (_, k) => k).filter((k) => k > 1 && Math.abs(n % k - k/2) <= 0.5).map(BigInt);
+    expect(antidivisors(-n)).toEqual(expected);
+    expect(antidivisorCount(n)).toBe(BigInt(expected.length));
+  }
+  expect([core(24, 2), core(9424, 3), core(379238), core(15n ** 11n, 10)]).toEqual([6n, 1178n, 379238n, 15n]);
+  expect(() => core(0)).toThrow(RangeError);
+  expect(() => core(4, 1)).toThrow(RangeError);
+});
