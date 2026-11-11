@@ -267,7 +267,8 @@ export type { MultTab, HnfOptions, HomomorphismCodomain } from './polys/numberfi
 export { roundTwo, nilradicalModP, PrimeIdeal, primeDecomp, primeValuation } from './polys/numberfields/index';
 export type { RoundTwoOptions, PrimeDecompOptions } from './polys/numberfields/index';
 export { ClosureFailure, StructureError, MissingUnityError } from './polys/numberfields/exceptions';
-export { rootFactors } from './polys/polyroots';
+export { rootFactors, rootsQuintic } from './polys/polyroots';
+export { PolyQuintic } from './polys/polyquinticconst';
 export { PolyMatrix, MutablePolyDenseMatrix, MutablePolyMatrix } from './polys/polymatrix';
 export type { PolyMatrixOptions, PolyMatrixEntry } from './polys/polymatrix';
 export { DixonResultant, MacaulayResultant } from './polys/multivariateresultants';

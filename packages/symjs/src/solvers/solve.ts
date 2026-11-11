@@ -21,6 +21,7 @@ import { evalMp, fromMpc } from '../numeric/mpeval';
 import { diff } from '../calculus/diff';
 import { acos, asin, atan, cosh, sinh, tanh, log } from '../functions/elementary/elementary';
 import { polyCoefficients, roots } from '../polys/poly';
+import '../polys/polyroots';
 import { Poly } from '../polys/sympoly';
 import { linearEqToMatrix, solveAugmented } from '../matrices/linsys';
 import { luSolve } from '../matrices/linalg';
@@ -283,7 +284,7 @@ function solveRaw(f0: Expr, x: Sym, depth = 0): Expr[] {
     }
     let rs: Expr[];
     try {
-      rs = roots(n, x);
+      rs = roots(n, x, { quintics: true });
     } catch (err) {
       if (!rational) throw err;
       rs = [];
