@@ -27,6 +27,7 @@ import {
   impl,
   isNum,
   ExtensionExpr,
+  Sym,
 } from '../../core/nodes';
 import { numAbs, numNeg, ratMod } from '../../core/num';
 import { add, couldExtractMinusSign, exp, mul, neg, pow, splitCoeff, sqrt, sympify } from '../../core/ops';
@@ -362,6 +363,8 @@ const evalAbs: Evaluator = (x) => {
     if (isReal(e) === true) return pow(abs(b), e);
   }
   if (x instanceof Fn && (x.name === 'abs' || x.name === 'conjugate')) return abs(first(x.args));
+  // SymPy Abs.eval keeps Abs of an imaginary symbol (its assumptions never fix the sign of -I*x)
+  if (x instanceof Sym && x.assumptions.imaginary === true) return undefined;
   // a + b*I with real a, b
   const [a, b] = reIm(x);
   if (!(b instanceof Rational && b.isZero) && !hasReIm(a) && !hasReIm(b)) {
@@ -392,6 +395,9 @@ function unitRoot(x: Expr): [Expr, Expr] | undefined {
   return [mul(scale, cos(ang)), mul(scale, sin(ang))];
 }
 
+/** SymPy re/im: an imaginary argument (or one whose product with I is real) is I times a real. */
+const isImaginaryArg = (x: Expr): boolean => (x instanceof Sym && x.assumptions.imaginary === true) || isReal(mul(S.I, x)) === true;
+
 const evalRe: Evaluator = (x) => {
   if (isReal(x)) return x;
   if (isI(x)) return S.Zero;
@@ -416,6 +422,7 @@ const evalRe: Evaluator = (x) => {
     }
   }
   if (x instanceof Fn && x.name === 'conjugate') return re(first(x.args));
+  if (isImaginaryArg(x)) return S.Zero;
   return undefined;
 };
 
@@ -443,6 +450,7 @@ const evalIm: Evaluator = (x) => {
     }
   }
   if (x instanceof Fn && x.name === 'conjugate') return neg(im(first(x.args)));
+  if (isImaginaryArg(x)) return mul(-1, S.I, x);
   return undefined;
 };
 

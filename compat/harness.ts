@@ -814,7 +814,9 @@ export function deserialize(tree: Tree): unknown {
     case 'Indexed': {
       const base = deserialize(tree['base'] as Tree);
       const indices = (tree['indices'] as Tree[]).map((t) => asExpr(deserialize(t)));
-      return base instanceof sj.IndexedBase ? base.at(...indices) : new sj.Indexed([asExpr(base), ...indices]);
+      if (base instanceof sj.IndexedBase) return base.at(...indices);
+      // an array indexed by symbols (a[i, j]) is SymPy's Indexed with the array as its base
+      return base instanceof sj.NDimArray ? base.get(...indices) : new sj.Indexed([asExpr(base), ...indices]);
     }
     case 'IndexedBase':
       return new sj.IndexedBase(deserialize(tree['label'] as Tree) as Sym, tree['shape'] === undefined ? {} : { shape: (tree['shape'] as Tree[]).map((t) => asExpr(deserialize(t))) });
@@ -1551,8 +1553,8 @@ function subsArgs(e: Expr, args: unknown[]): Expr {
   if (args.length === 2) return e.subs(asExpr(args[0]), asExpr(args[1]));
   const a = args[0];
   if (a instanceof JsDict) return sj.subs(e, new Map(a.entries.map(([k, v]) => [asExpr(k), asExpr(v)] as const)));
-  if (a instanceof JsTuple) {
-    // sequential substitution like SymPy
+  if (a instanceof JsTuple || a instanceof JsIterator) {
+    // sequential substitution like SymPy (an iterator of pairs too)
     let out = e;
     for (const p of a.items) {
       if (!(p instanceof JsTuple)) throw new Unsupported('subs pair');
@@ -2448,7 +2450,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   mod_inverse: (args, kw) => (noKw(kw), sj.modInverse(args[0] as sj.Rational, args[1] as sj.Rational)),
   prod: (args, kw) => {
     noKw(kw);
-    const xs = args[0] instanceof JsList || args[0] instanceof JsTuple ? args[0].items.map(asExpr) : [];
+    const xs = args[0] instanceof JsList || args[0] instanceof JsTuple || args[0] instanceof JsIterator ? args[0].items.map(asExpr) : [];
     return sj.mul(args[1] === undefined ? 1 : asExpr(args[1]), ...xs);
   },
   nfloat: (args, kw) => {
@@ -4439,6 +4441,17 @@ const polyMatrixClassmethod = (method: (args: unknown[]) => unknown, previous: A
 };
 ADAPTERS['.from_Matrix'] = polyMatrixClassmethod((a) => sj.PolyMatrix.fromMatrix(...(a as Parameters<typeof sj.PolyMatrix.fromMatrix>)), ADAPTERS['.from_Matrix']);
 ADAPTERS['.eye'] = polyMatrixClassmethod((a) => sj.PolyMatrix.eye(...(a as Parameters<typeof sj.PolyMatrix.eye>)), ADAPTERS['.eye']);
+{
+  const zeros = definedOr(ADAPTERS['.zeros'], '.zeros adapter');
+  const arrays = { ImmutableDenseNDimArray: sj.ImmutableDenseNDimArray, MutableDenseNDimArray: sj.MutableDenseNDimArray, ImmutableSparseNDimArray: sj.ImmutableSparseNDimArray, MutableSparseNDimArray: sj.MutableSparseNDimArray };
+  ADAPTERS['.zeros'] = (args, kw, self) => {
+    if (self instanceof TypeRef && Object.hasOwn(arrays, self.name)) {
+      noKw(kw);
+      return arrays[self.name as keyof typeof arrays].zeros(...args.map((a) => intArg(a)));
+    }
+    return zeros(args, kw, self);
+  };
+}
 ADAPTERS['.zeros'] = polyMatrixClassmethod((a) => sj.PolyMatrix.zeros(...(a as Parameters<typeof sj.PolyMatrix.zeros>)), ADAPTERS['.zeros']);
 
 // sympy.crypto LFSRs: symjs takes the values of the GF(p) elements and the modulus
@@ -4518,6 +4531,7 @@ ADAPTERS['TableForm'] = (args, kw) => {
   const options = Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), printable(v)]));
   return new sj.TableForm(data, options);
 };
+ADAPTERS['DiagramGrid'] = (args, kw) => (noKw(kw), new categories.DiagramGrid(args[0] as sj.Diagram));
 ADAPTERS['.draw'] = (args, kw, self) => {
   if (!(self instanceof categories.XypicDiagramDrawer)) return unsupportedOp('draw');
   const masked = kw['masked'] instanceof JsTuple ? kw['masked'].items : Array.isArray(kw['masked']) ? kw['masked'] : [];

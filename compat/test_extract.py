@@ -520,6 +520,50 @@ class ExtractTests(unittest.TestCase):
             with self.subTest(changed=changed), self.assertRaises(ValueError):
                 extract.preserve_references([changed], [old])
 
+    def test_expansion_preserves_legacy_number_index_iterator_and_callable_inputs(self):
+        n = sympy.Symbol("n")
+        base = {"module": "sympy.example", "src": "f(...)", "fn": "f", "kwargs": {}, "expected": "1"}
+        old = {**base, "args": [{"t": "Rational", "p": "3", "q": "1"},
+                                {"t": "Indexed", "base": extract.ser(n), "indices": []},
+                                {"t": "Tuple", "items": [extract.ser(n)], "list": True}]}
+        fresh = {**base, "args": [{"t": "Rational", "p": "3", "q": "1", "py": True},
+                                  {"t": "Indexed", "base": {"t": "IndexedBase", "label": extract.ser(n)}, "indices": []},
+                                  {"t": "Iterator", "items": [extract.ser(n)]}]}
+        actual, preserved = extract.preserve_references([fresh], [old])
+        self.assertIs(actual[0], old)
+        self.assertEqual(len(preserved), 1)
+        with self.assertRaises(ValueError):
+            extract.preserve_references([{**fresh, "args": [{"t": "Rational", "p": "4", "q": "1", "py": True}]}], [old])
+        legacy = {"module": base["module"], "src": base["src"], "fn": "f", "expected": "1", "args": [], "unsupportedArg": "type"}
+        for kwargs in ({"key": {"t": "Type", "name": "int"}}, {"key": {"t": "Type", "name": "int"}, "f": {"t": "JsLambda", "params": [], "body": extract.ser(n)}}):
+            actual, _ = extract.preserve_references([{**base, "args": [], "kwargs": kwargs}], [legacy])
+            self.assertIs(actual[0], legacy)
+        with self.assertRaises(ValueError):
+            extract.preserve_references([{**base, "args": [], "kwargs": {"f": {"t": "JsLambda", "params": [], "body": extract.ser(n)}}}], [legacy])
+        self.assertIsNone(extract.public_api_reason("prod", {"prod": __import__("math").prod}, set()))
+        self.assertEqual(extract.public_api_reason("sqrt", {"sqrt": __import__("math").sqrt}, set()), "python-runtime-api")
+
+    def test_refresh_replaces_reserialized_occurrences_in_place(self):
+        base = {"module": "sympy.example", "fn": "f", "kwargs": {}}
+        first = {**base, "src": "f(1)", "args": [{"t": "Rational", "p": "1", "q": "1"}], "expected": "1"}
+        second = {**base, "src": "f(2)", "args": [extract.ser(sympy.Symbol("x"))], "expected": "x"}
+        fresh = {**second, "args": [extract.ser(sympy.Symbol("x", real=True))]}
+        extra = {**base, "src": "f(3)", "args": [], "expected": "3"}
+        with self.assertRaises(ValueError):
+            extract.preserve_references([first, fresh], [first, second])
+        actual, preserved = extract.preserve_references([extra, fresh, first], [first, second], refresh=True)
+        self.assertEqual(actual, [first, fresh, extra])
+        self.assertEqual(preserved, [])
+        with self.assertRaises(ValueError):
+            extract.preserve_references([first], [first, second], refresh=True)
+        omitted = [{"module": "sympy.example", "src": "f(2)", "reason": "private-api"}]
+        self.assertEqual(extract.preserve_references([first], [first, second], refresh=True, omitted=omitted)[0], [first])
+        # Legacy representations are replaced too.
+        legacy = {**base, "src": "f(4)", "args": [{"t": "Rational", "p": "4", "q": "1"}], "expected": "4"}
+        current = {**legacy, "args": [{"t": "Rational", "p": "4", "q": "1", "py": True}]}
+        self.assertEqual(extract.preserve_references([current], [legacy], refresh=True)[0], [current])
+        self.assertEqual(extract.preserve_references([current], [legacy])[0], [legacy])
+
     def test_expansion_preserves_simultaneous_replacement_map_order_only(self):
         x, y = sympy.symbols("x y")
         old = {"module": "sympy.core.symbol", "src": "eqs.xreplace(mapping)", "fn": ".xreplace",

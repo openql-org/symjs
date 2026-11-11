@@ -349,6 +349,12 @@ describe('convert_equals_signs, function exponentiation and split_symbols (SymPy
     expect(p('10sin**2 x**2 + 3xyz + tan theta', { transformations: 'all' })).toBe('3*x*y*z + 10*sin(x**2)**2 + tan(theta)');
     expect(p('x_y z', { transformations: 'all' })).toBe('x_y*z');
     expect(p('xy', { transformations: 'implicit' })).toBe('xy');
+    // split_symbols_custom: the predicate selects the names to split
+    const canSplit = (name: string) => !['list', 'of', 'unsplittable', 'names'].includes(name) && sj.tokenSplittable(name);
+    expect(p('unsplittable', { transformations: 'implicit', splitSymbols: canSplit })).toBe('unsplittable');
+    expect(p('xyz + of', { transformations: 'implicit', splitSymbols: canSplit })).toBe('of + x*y*z');
+    expect(p('xy', { splitSymbols: () => true })).toBe('x*y');
+    expect([sj.tokenSplittable('xy'), sj.tokenSplittable('x'), sj.tokenSplittable('x_y'), sj.tokenSplittable('alpha')]).toEqual([true, false, false, false]);
     expect(p('xy + 1', { transformations: 'all', symbols: [sj.symbol('xy')] })).toBe('xy + 1');
     expect(p('Pi', { transformations: 'all' })).toBe('Pi');
   });

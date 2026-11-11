@@ -39250,12 +39250,13 @@
     },
     "doctests": {
      "pass": false,
-     "caseCount": 7,
+     "caseCount": 5,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
-      "not-exported-api": 2
+      "not-exported-api": 2,
+      "private-api": 2
      },
      "unaccountedExamples": 0,
      "notSelected": false
@@ -41267,13 +41268,12 @@
     },
     "doctests": {
      "pass": false,
-     "caseCount": 19,
+     "caseCount": 20,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "non-call-expression": 3,
-      "not-exported-api": 1,
       "printing-expression": 5
      },
      "unaccountedExamples": 0,
@@ -43743,13 +43743,13 @@
     },
     "doctests": {
      "pass": false,
-     "caseCount": 44,
+     "caseCount": 45,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "non-call-expression": 4,
-      "not-exported-api": 2,
+      "not-exported-api": 1,
       "reference-exception": 2,
       "statement-or-setup": 1
      },
@@ -57790,13 +57790,14 @@
     },
     "doctests": {
      "pass": false,
-     "caseCount": 55,
+     "caseCount": 51,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "non-call-expression": 7,
       "not-exported-api": 3,
+      "private-api": 4,
       "reference-exception": 3
      },
      "unaccountedExamples": 0,
@@ -77744,7 +77745,7 @@
      "testFile": "sympy/functions/elementary/tests/test_complexes.py",
      "inCorpus": true,
      "caseCount": 449,
-     "gapCount": 112,
+     "gapCount": 106,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-boolean-assertion": 2,
@@ -100250,12 +100251,12 @@
     },
     "doctests": {
      "pass": false,
-     "caseCount": 11,
+     "caseCount": 13,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
-      "not-exported-api": 4
+      "not-exported-api": 2
      },
      "unaccountedExamples": 0,
      "notSelected": false
@@ -112364,13 +112365,12 @@
     },
     "doctests": {
      "pass": false,
-     "caseCount": 16,
+     "caseCount": 20,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "non-call-expression": 1,
-      "not-exported-api": 4,
       "reference-exception": 2
      },
      "unaccountedExamples": 0,
@@ -137241,13 +137241,13 @@
     },
     "doctests": {
      "pass": false,
-     "caseCount": 39,
+     "caseCount": 40,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "non-call-expression": 7,
-      "not-exported-api": 8,
+      "not-exported-api": 7,
       "reference-exception": 1
      },
      "unaccountedExamples": 0,
@@ -143137,8 +143137,8 @@
      "testFile": "sympy/polys/numberfields/tests/test_minpoly.py",
      "inCorpus": true,
      "caseCount": 126,
-     "gapCount": 29,
-     "timeoutCount": 2,
+     "gapCount": 28,
+     "timeoutCount": 1,
      "disallowedOmissions": {
       "marked-slow": 1,
       "non-call-expression": 25,
@@ -143492,12 +143492,12 @@
     },
     "doctests": {
      "pass": false,
-     "caseCount": 5,
+     "caseCount": 7,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
-      "not-exported-api": 6
+      "not-exported-api": 4
      },
      "unaccountedExamples": 0,
      "notSelected": false
@@ -145483,12 +145483,13 @@
     },
     "doctests": {
      "pass": false,
-     "caseCount": 11,
+     "caseCount": 10,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
-      "not-exported-api": 4
+      "not-exported-api": 4,
+      "private-api": 1
      },
      "unaccountedExamples": 0,
      "notSelected": false
@@ -146063,13 +146064,13 @@
     },
     "doctests": {
      "pass": false,
-     "caseCount": 358,
+     "caseCount": 361,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "non-call-expression": 10,
-      "not-exported-api": 28,
+      "not-exported-api": 25,
       "reference-exception": 16,
       "statement-or-setup": 3
      },
@@ -149457,14 +149458,12 @@
      "unresolvedBases": []
     },
     "doctests": {
-     "pass": false,
-     "caseCount": 6,
+     "pass": true,
+     "caseCount": 7,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
-     "disallowedOmissions": {
-      "not-exported-api": 1
-     },
+     "disallowedOmissions": {},
      "unaccountedExamples": 0,
      "notSelected": false
     },
@@ -182582,14 +182581,12 @@
     },
     "doctests": {
      "pass": false,
-     "caseCount": 6,
+     "caseCount": 10,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
-      "non-call-expression": 3,
-      "serialization-error": 1,
-      "unsupported-result-type": 3
+      "non-call-expression": 3
      },
      "unaccountedExamples": 0,
      "notSelected": false
@@ -185384,14 +185381,14 @@
     },
     "doctests": {
      "pass": false,
-     "caseCount": 10,
+     "caseCount": 18,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
       "non-call-expression": 2,
       "not-exported-api": 3,
-      "unsupported-result-type": 10
+      "unsupported-result-type": 2
      },
      "unaccountedExamples": 0,
      "notSelected": false
@@ -185525,14 +185522,12 @@
     },
     "doctests": {
      "pass": false,
-     "caseCount": 4,
+     "caseCount": 8,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
      "disallowedOmissions": {
-      "non-call-expression": 1,
-      "serialization-error": 1,
-      "unsupported-result-type": 3
+      "non-call-expression": 1
      },
      "unaccountedExamples": 0,
      "notSelected": false
@@ -187102,9 +187097,8 @@
      "disallowedOmissions": {
       "non-call-expression": 2,
       "not-exported-api": 8,
-      "private-api": 1,
-      "statement-or-setup": 2,
-      "unsupported-result-type": 3
+      "private-api": 4,
+      "statement-or-setup": 2
      },
      "unaccountedExamples": 0,
      "notSelected": false

@@ -313,6 +313,7 @@ export {
   parse,
   parse as parseExpr,
   ex,
+  tokenSplittable,
 } from './parsing/parser';
 export { kernS } from './parsing/sympify';
 export type { ParseOptions } from './parsing/parser';

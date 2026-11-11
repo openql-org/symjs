@@ -44,6 +44,11 @@ export interface ParseOptions {
    * kept, as SymPy's split_symbols does).
    */
   transformations?: 'standard' | 'implicit' | 'all';
+  /**
+   * The names split into one-letter symbols (SymPy split_symbols_custom):
+   * a predicate replacing tokenSplittable, which also enables splitting.
+   */
+  splitSymbols?: (name: string) => boolean;
   /** true: '=' is an equation (SymPy's convert_equals_signs transformation): 1*2 = x is Eq(2, x). */
   convertEqualsSigns?: boolean;
   /**
@@ -408,7 +413,7 @@ const TUPLE_FUNCTIONS: Record<string, (args: readonly Arg[]) => Expr> = {
 
 const GREEK = new Set(['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 'theta', 'iota', 'kappa', 'lamda', 'mu', 'nu', 'xi', 'omicron', 'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi', 'omega']);
 /** SymPy _token_splittable: a name of letters only, not the name of a Greek letter. */
-const splittable = (name: string): boolean => name.length > 1 && /^[A-Za-z]+$/.test(name) && !GREEK.has(name.toLowerCase());
+export const tokenSplittable = (name: string): boolean => name.length > 1 && /^[A-Za-z]+$/.test(name) && !GREEK.has(name.toLowerCase());
 
 const CONSTANTS: Record<string, Expr> = {
   pi: S.Pi,
@@ -664,7 +669,7 @@ class Parser {
         }
         if (this.implicit && knownFn && !this.isOp('(') && this.startsFactor()) return knownFn([this.power()]);
         // split_symbols: an unknown name of several letters is a product of one-letter symbols
-        if (this.opts.transformations === 'all' && !knownFn && !this.isOp('(') && splittable(t.v) && !this.symbols.has(t.v) && CONSTANTS[t.v] === undefined) {
+        if ((this.opts.transformations === 'all' || this.opts.splitSymbols !== undefined) && !knownFn && !this.isOp('(') && (this.opts.splitSymbols ?? tokenSplittable)(t.v) && !this.symbols.has(t.v) && CONSTANTS[t.v] === undefined) {
           return t.v.split('').map((c) => this.symbolOf(c)).reduce((a, b) => this.mul2(a, b));
         }
         // with implicit multiplication a known symbol before '(' multiplies (x(y + 1))

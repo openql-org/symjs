@@ -104,6 +104,11 @@ and fails if another existing input or result changes or disappears. Public
 functions defined in a selected module are measured even if they are not
 re-exported at the top level. Multiline results remain measurable; outputs
 containing process-local object addresses are recorded as extraction omissions.
+When the extractor itself improves (a new serialization or a new omission
+rule), `pnpm compat:refresh` re-extracts every existing example in place: each
+occurrence keeps its position and takes the current serialization, an example
+the extractor now omits is dropped only with its recorded omission reason, and
+any other disappearance still fails.
 Run `pnpm compat:test-extract` when changing the extractor. Newly revealed
 failures go to `compat/known-gaps.json`; a lower agreement percentage after
 adding previously unmeasured behavior is not itself an implementation

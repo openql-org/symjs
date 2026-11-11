@@ -701,3 +701,15 @@ describe('Abs of a sum', () => {
     expect(String(abs(add(x, mul(-1, y))))).toBe('Abs(x - y)');
   });
 });
+
+describe('re and im of an imaginary argument', () => {
+  it('re is 0 and im is -I*arg (SymPy re.eval, im.eval)', () => {
+    const y = new Sym('y', { imaginary: true });
+    expect(String(re(y))).toBe('0');
+    expect(String(sj.im(y))).toBe('-I*y');
+    expect(String(sj.im(mul(2, y)))).toBe('-2*I*y');
+    expect(String(re(mul(-1, I, r)))).toBe('0');
+    expect(String(sj.im(x))).toBe('im(x)');
+    expect(String(abs(y))).toBe('Abs(y)');
+  });
+});
