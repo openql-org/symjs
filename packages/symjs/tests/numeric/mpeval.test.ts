@@ -8,8 +8,33 @@ import { add, evalf, fn, I, Mul, mul, parse, pow, Rational, sstr } from '../../s
 import type { Expr } from '../../src';
 import { at } from '../../src/core/guard';
 import * as F from '../../src/numeric/mpf';
-import { MpSpecialValue, evalMp, mpFns, mpSpecialFns, type MpPart } from '../../src/numeric/mpeval';
+import { MpSpecialValue, evalAdaptive, evalMp, mpFns, mpSpecialFns, type MpPart } from '../../src/numeric/mpeval';
 import { S } from '../../src/core/nodes';
+
+it('reports cancellation as a loss of precision, including unresolved adaptive evaluations', () => {
+  for (const source of ['sin(2) - 2*sin(1)*cos(1)', 'log(2) + log(3) - log(6)', 'cos(1)**2 + sin(1)**2 - 1']) {
+    const accuracy = { re: 0, im: 0 };
+    evalAdaptive(parse(source), F.dpsToPrec(2), undefined, accuracy);
+    expect(accuracy.re).toBe(1);
+  }
+  // Algebraic cancellation also leaves no significant bits.
+  const accuracy = { re: 53, im: 53 };
+  evalAdaptive(parse('2**pi*(1 + 2**pi) - 2**pi - 2**(2*pi)'), 53, undefined, accuracy);
+  expect(accuracy.re).toBe(1);
+});
+
+it('does not certify an unstable numerical kernel', () => {
+  const saved = mpFns.sin;
+  mpFns.sin = (_args, prec) => [F.fromInt(BigInt(prec)), F.ZERO];
+  try {
+    const accuracy = { re: 53, im: 53 };
+    evalAdaptive(fn('sin', [1], { evaluate: false }), 53, undefined, accuracy);
+    expect(accuracy).toEqual({ re: 1, im: 1 });
+  } finally {
+    if (saved === undefined) delete mpFns.sin;
+    else mpFns.sin = saved;
+  }
+});
 
 /**
  * Coverage of numeric/nfloat.ts (nsimplify), mpeval.ts and round.ts.

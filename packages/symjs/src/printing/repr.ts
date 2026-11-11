@@ -116,7 +116,7 @@ function numberRepr(e: Rational): string {
 const SYMBOL_PLUS = (dir: string): BasicView => ({ cls: 'Symbol', args: [], isExpr: true, str: dir, repr: `Symbol(${pyRepr(dir)})` });
 
 /** The free symbols of an expression in SymPy's order (sorted by name). */
-const sortedFreeSymbols = (e: Expr): Sym[] => [...impl.freeSymbols(e)].sort((u, v) => Number(u.name > v.name) - Number(u.name < v.name));
+const sortedFreeSymbols = (e: Expr): Sym[] => [...impl.freeSymbols(e)].filter((s) => s instanceof Sym).sort((u, v) => Number(u.name > v.name) - Number(u.name < v.name));
 
 /** The integrand and the limits of nested integrals (SymPy keeps them in one Integral, innermost first). */
 function integralLimits(e: Integral): [Expr, Expr[][]] {

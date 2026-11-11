@@ -8,7 +8,7 @@
 import { at, cast, defined, first } from '../core/guard';
 import { NonInvertibleMatrixError, NonSquareMatrixError, ShapeError } from '../core/errors';
 import type { ComplexValue, EvalfOptions, ExprLike, NumericValues, Substitution } from '../core/nodes';
-import { Expr, Float, Rational, S, Sym, impl } from '../core/nodes';
+import { Expr, Float, Rational, S, Sym, impl, isNum } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, subs, xreplace } from '../core/traverse';
 import { asRealImag, atoms } from '../core/methods';
@@ -53,7 +53,7 @@ export class Matrix {
   }
 
   /** Union of the free symbols of all entries. */
-  freeSymbols(): Set<Sym> {
+  freeSymbols(): Set<Expr> {
     return new Set(new Map(this.data.flatMap((e) => [...freeSymbols(e)].map((s) => [s.key, s] as const))).values());
   }
 
@@ -677,7 +677,7 @@ export class Matrix {
     const sums = this.add(this.transpose()).data;
     if (simplifyEntries) return sums.every((e) => isZeroE(simplify(e)));
     if (sums.every(isZeroE)) return true;
-    return sums.some((e) => e.isNumber && !isZeroE(e)) ? false : 'unknown';
+    return sums.some((e) => isNum(e) && !isZeroE(e)) ? false : 'unknown';
   }
   /** SymPy is_diagonal(): the entries off the main diagonal are zero (rectangular matrices too). */
   isDiagonal(): boolean {

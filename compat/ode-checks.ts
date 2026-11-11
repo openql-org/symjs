@@ -37,7 +37,7 @@ export function solvesOdeSystem(eqs: readonly Expr[], x: sj.Sym, sols: readonly 
       for (let k = order; k >= 1; k--) r = sj.xreplace(r, [[sj.derivative(fx, [[x, k]]), sj.diff(rhs, x, k)]]);
     }
     r = sj.xreplace(r, pairs);
-    const syms = [...sj.freeSymbols(r)];
+    const syms = [...sj.freeSymbols(r)].filter((s) => s instanceof sj.Sym);
     let ok = 0;
     for (const t of [0.37, 0.83, 1.41]) {
       const rep = syms.map((v, i) => [v, sj.float(v.name === x.name ? t : 0.5 + 0.3 * i + t / 7)] as [Expr, Expr]);

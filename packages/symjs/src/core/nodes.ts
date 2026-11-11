@@ -256,10 +256,12 @@ export interface Impl {
   str(e: Expr): string;
   latex(e: Expr): string;
   subs(e: Expr, s: Substitution): Expr;
+  xreplace(e: Expr, s: Substitution): Expr;
   diff(e: Expr, x: Expr, n: number): Expr;
   expand(e: Expr): Expr;
   simplify(e: Expr): Expr;
   evalf(e: Expr, n?: number | NumericValues, opts?: EvalfOptions): Expr;
+  isComparable(e: Expr): boolean;
   toComplex(e: Expr, values?: NumericValues): ComplexValue;
   rewrite?(e: Expr, target: string, opts?: { pattern?: readonly string[]; deep?: boolean }): Expr;
   ordered?(xs: readonly Expr[]): Expr[];
@@ -331,7 +333,7 @@ export interface Impl {
   fraction?(e: Expr): [Expr, Expr];
   conjugate(e: Expr): Expr;
   abs(e: Expr): Expr;
-  freeSymbols(e: Expr): Set<Sym>;
+  freeSymbols(e: Expr): Set<Expr>;
   div(a: ExprLike, b: ExprLike): Expr;
   integrate(e: Expr, x: Sym, limits?: [ExprLike, ExprLike]): Expr;
   /** Evaluate unevaluated objects when the calculus entry point is loaded. */
@@ -427,7 +429,14 @@ export abstract class Expr {
   }
 
   get isNumber(): boolean {
+    if (this instanceof Constant || this instanceof Special) return true;
+    if (this instanceof Add || this instanceof Mul || this instanceof Pow || this instanceof Fn) return this.args.every((a) => a.isNumber);
     return false;
+  }
+
+  /** Whether numerical evaluation gives a real number with nonzero precision. */
+  get isComparable(): boolean {
+    return impl.isComparable(this);
   }
 
   get isAtom(): boolean {
@@ -527,7 +536,7 @@ export abstract class Expr {
     }
     return c.re;
   }
-  freeSymbols(): Set<Sym> {
+  freeSymbols(): Set<Expr> {
     return impl.freeSymbols(this);
   }
   has(sub: Expr): boolean {
@@ -967,6 +976,9 @@ export class Integral extends Expr {
   get integrand(): Expr {
     return at(this.args, 0);
   }
+  override get isNumber(): boolean {
+    return this.freeSymbols().size === 0;
+  }
   get function(): Expr { return this.integrand instanceof Integral ? this.integrand.function : this.integrand; }
   /** Variables bound by definite limits, including nested integral limits. */
   get boundSymbols(): Expr[] {
@@ -1108,8 +1120,8 @@ export const nan = S.NaN;
 
 /** Canonical ordering of arguments: numbers first, then by structural key. */
 export function compareExpr(a: Expr, b: Expr): number {
-  const an = a.isNumber ? 0 : 1;
-  const bn = b.isNumber ? 0 : 1;
+  const an = isNum(a) ? 0 : 1;
+  const bn = isNum(b) ? 0 : 1;
   if (an !== bn) return an - bn;
   return a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
 }
@@ -1220,7 +1232,7 @@ export abstract class ExtensionExpr extends Expr {
     return undefined;
   }
   /** Explicit free symbols for nodes with an opaque bound representation (for example CRootOf). */
-  freeSymbolsSelf(): ReadonlySet<Sym> | undefined {
+  freeSymbolsSelf(): ReadonlySet<Expr> | undefined {
     return undefined;
   }
   /**

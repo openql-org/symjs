@@ -32,8 +32,10 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // to consumers of core; pretty also gains symbolic-tuple layout.
 // Public comparison, symbol-naming and numeric helpers add about 5 KiB to the
 // core namespace; shared arithmetic and symbol introspection add <1 KiB to strategies.
+// Precision-aware comparability, bound-variable hashing and full free-symbol
+// sets add up to 2 KiB to core consumers. Reduced ODE solvers also reach stats.
 const CASES = [
-  ['core', 'Rational', 188],
+  ['core', 'Rational', 190],
   ['core', 'parse, str', 204],
   ['core', 'parse, diff, expand, str, latex', 204],
   ['core', '*', 288],
@@ -52,17 +54,17 @@ const CASES = [
   ['solvers', 'dsolve', 990],
   ['sets', '*', 353],
   ['matrices', 'Matrix', 749],
-  ['printing', 'pretty', 227],
+  ['printing', 'pretty', 230],
   ['discrete', '*', 285],
-  ['strategies', '*', 200],
-  ['unify', '*', 225],
+  ['strategies', '*', 203],
+  ['unify', '*', 228],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
   ['algebras', 'Quaternion', 547],
   ['holonomic', 'exprToHolonomic', 1025],
   ['geometry', '*', 998],
   ['vector', '*', 1096],
-  ['stats', '*', 1135],
+  ['stats', '*', 1140],
   ['categories', '*', 363],
   ['crypto', '*', 367],
   ['liealgebras', '*', 345],

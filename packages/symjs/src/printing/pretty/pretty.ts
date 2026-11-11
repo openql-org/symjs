@@ -218,7 +218,7 @@ function isMatrixLike(x: unknown): x is MatrixLike {
 /** SymPy `requires_partial`: more than one non-integer free symbol. */
 function requiresPartial(e: Expr): boolean {
   let n = 0;
-  for (const s of impl.freeSymbols(e)) if (s.assumptions.integer !== true) n++;
+  for (const s of [...impl.freeSymbols(e)].filter((s) => s instanceof Sym)) if (s.assumptions.integer !== true) n++;
   return n > 1;
 }
 

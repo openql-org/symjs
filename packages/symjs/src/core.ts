@@ -274,6 +274,7 @@ export {
 export type { ExpandHints } from './simplify/expand';
 export {
   evalf,
+  isComparable,
   pureComplex,
   scaledZero,
   toComplex,

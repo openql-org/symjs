@@ -10,7 +10,7 @@ import { Circle, Curve, Ellipse, Line, Point, Polygon, Ray, RegularPolygon, Segm
 import type { GeometryEntity } from '../../src/geometry';
 
 const s = (e: unknown): string => (Array.isArray(e) ? `[${e.map(s).join(', ')}]` : e instanceof Map ? `{${[...e].map(([k, v]) => `${s(k)}: ${s(v)}`).join(', ')}}` : String(e));
-const fs = (e: GeometryEntity): string => [...e.freeSymbols()].map((x) => x.name).sort().join(',');
+const fs = (e: GeometryEntity): string => [...e.freeSymbols()].map(String).sort().join(',');
 
 describe('Curve (SymPy test_curve)', () => {
   const x = new Sym('x', { real: true });

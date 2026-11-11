@@ -9,7 +9,8 @@
  */
 
 import { NotImplementedError } from '../core/errors';
-import type { Expr, ExprLike, FnName, RelOp, Sym } from '../core/nodes';
+import type { Expr, ExprLike, FnName, RelOp } from '../core/nodes';
+import { Sym } from '../core/nodes';
 import { Add, BoolAtom, Constant, Dummy, Fn, Mul, Piecewise, Pow, Rational, Rel, S, Special, impl } from '../core/nodes';
 import { at, cast, defined, expectType, first } from '../core/guard';
 import { isNegative, isNonNegative, isReal } from '../core/assumptions';
@@ -283,7 +284,7 @@ function denominatorZeros(e: Expr, x: Sym, domain: SetExpr): SetExpr {
 
 function solveSign(f0: Expr, op: RelOp, x: Sym, domain: SetExpr): SetExpr {
   // SymPy: solving an inequality with parameters is not implemented
-  if ([...f0.freeSymbols()].some((t) => t.key !== x.key)) throw new NotImplementedError('inequalities: the expression has parameters');
+  if ([...f0.freeSymbols()].filter((s) => s instanceof Sym).some((t) => t.key !== x.key)) throw new NotImplementedError('inequalities: the expression has parameters');
   // a finite real expression plus oo or -oo has the sign of the infinity (SymPy: x < oo is True for a real x)
   if (f0 instanceof Add) {
     const inf = f0.args.find((a) => a instanceof Special);
@@ -446,7 +447,7 @@ export function reduceRationalInequalities(exprs: readonly (readonly (ExprLike |
 export function reduceInequalities(ineqsIn: readonly ExprLike[] | ExprLike, symbols: readonly Sym[] = []): Expr {
   const ineqs = (isExprList(ineqsIn) ? ineqsIn : [ineqsIn]).map((e) => sympify(e));
   const rels: Expr[] = ineqs.map((e) => (e instanceof Rel || e instanceof BoolAtom || e instanceof BoolOp ? e : Eq(e, 0)));
-  const gens = symbols.length ? symbols : ([...new Map(rels.flatMap((r) => [...r.freeSymbols()]).map((s) => [s.key, s])).values()] as Sym[]);
+  const gens = symbols.length ? symbols : ([...new Map(rels.flatMap((r) => [...r.freeSymbols()].filter((s) => s instanceof Sym)).map((s) => [s.key, s])).values()] as Sym[]);
   const parts: Expr[] = [];
   const byGen = new Map<string, Rel[]>();
   for (const r of rels) {
@@ -454,7 +455,7 @@ export function reduceInequalities(ineqsIn: readonly ExprLike[] | ExprLike, symb
       parts.push(r);
       continue;
     }
-    const fs = [...r.freeSymbols()].filter((s) => gens.some((g) => g.key === s.key));
+    const fs = [...r.freeSymbols()].filter((s) => s instanceof Sym).filter((s) => gens.some((g) => g.key === s.key));
     if (fs.length !== 1) throw new NotImplementedError('reduce_inequalities: multivariate inequality');
     const g = first(fs);
     const list = byGen.get(g.key);
@@ -463,7 +464,7 @@ export function reduceInequalities(ineqsIn: readonly ExprLike[] | ExprLike, symb
   }
   for (const [k, rs] of byGen) {
     const g = defined(gens.find((s) => s.key === k), 'generator');
-    const others = [...new Map(rs.flatMap((r) => [...r.freeSymbols()]).map((s) => [s.key, s])).values()].filter((s) => s.key !== g.key);
+    const others = [...new Map(rs.flatMap((r) => [...r.freeSymbols()].filter((s) => s instanceof Sym)).map((s) => [s.key, s])).values()].filter((s) => s.key !== g.key);
     if (others.length) {
       for (const r of rs) parts.push(linearInequality(r, g));
       continue;
@@ -506,7 +507,7 @@ export function solveset(fIn: ExprLike, x: Sym, domain: SetExpr = Complexes): Se
   if (f instanceof Rel && f.op !== 'Eq') {
     // SymPy keeps an inequality or x != a over the complex numbers as a ConditionSet
     // and so does an inequality with parameters
-    if (domain === Complexes || [...f.freeSymbols()].some((t) => t.key !== x.key)) return new ConditionSet(x, f, domain);
+    if (domain === Complexes || [...f.freeSymbols()].filter((s) => s instanceof Sym).some((t) => t.key !== x.key)) return new ConditionSet(x, f, domain);
     return solveSign(add(f.lhs, mul(-1, f.rhs)), f.op, x, domain);
   }
   const g = f instanceof Rel ? add(f.lhs, mul(-1, f.rhs)) : f;
@@ -608,7 +609,7 @@ function invertRealPower(g: Expr, x: Sym): SetExpr | undefined {
   const sols = invertTo(B, realRoot(c, e.p), x);
   // real_root of a real c is real
   const realC = isReal(c) === true;
-  const known = sols.filter((r) => isReal(r) === true || (realC && !r.has(S.I) && [...r.freeSymbols()].every((u) => isReal(u) === true)));
+  const known = sols.filter((r) => isReal(r) === true || (realC && !r.has(S.I) && [...r.freeSymbols()].filter((s) => s instanceof Sym).every((u) => isReal(u) === true)));
   const unknown = sols.filter((r) => !known.includes(r));
   return union(finiteSet(...known), unknown.length ? new SetOp('Intersection', [finiteSet(...unknown), Reals]) : EmptySet);
 }
@@ -684,7 +685,7 @@ function periodicSolutions(g: Expr, x: Sym, domain: SetExpr): SetExpr | undefine
   if (pv === undefined) throw new NotImplementedError('solveset: period with parameters');
   const base = new Map<string, [Expr, number]>();
   const principal = solve(g, x);
-  if (principal.some((s0) => [...s0.freeSymbols()].some((t) => t.key !== x.key))) throw new NotImplementedError('solveset: parametric solutions');
+  if (principal.some((s0) => [...s0.freeSymbols()].filter((s) => s instanceof Sym).some((t) => t.key !== x.key))) throw new NotImplementedError('solveset: parametric solutions');
   // shifts by fractions of the period may also solve the equation (e.g. tan-type solutions)
   const cands: Expr[] = [];
   for (const s0 of principal) for (const q of [0, 1, 2, 3]) cands.push(q === 0 ? s0 : add(s0, mul(q, P, Rational.of(1, 4))));
@@ -787,7 +788,7 @@ export function stationaryPoints(fIn: ExprLike, x: Sym, domain: SetExpr = Reals)
 }
 
 function monotonic(f: Expr, op: RelOp, iv: SetExpr, x?: Sym): boolean | undefined {
-  const free = [...f.freeSymbols()];
+  const free = [...f.freeSymbols()].filter((s) => s instanceof Sym);
   // SymPy: a constant has a dummy variable; several symbols need the symbol to be given
   if (x === undefined && free.length > 1) throw new NotImplementedError('The function has not yet been implemented for all multivariate expressions.');
   const v = x ?? free[0] ?? new Dummy('x');
@@ -801,7 +802,7 @@ function monotonic(f: Expr, op: RelOp, iv: SetExpr, x?: Sym): boolean | undefine
     if (P && !(P instanceof Rational && P.isZero)) ref = interval(0, P, false, true);
   }
   // a derivative with parameters has an unknown sign
-  if ([...d.freeSymbols()].some((t) => t.key !== v.key)) return undefined;
+  if ([...d.freeSymbols()].filter((s) => s instanceof Sym).some((t) => t.key !== v.key)) return undefined;
   const strict = op === 'Gt' || op === 'Lt';
   // strictly monotonic: monotonic with a derivative that vanishes only at isolated points
   // isolated points where f' is undefined but f is not (x + Abs(x) at 0) do not break monotonicity
@@ -829,7 +830,7 @@ export function isMonotonic(f: ExprLike, iv: SetExpr = Reals, x?: Sym): boolean 
   if (inc === false && dec === false) return false;
   // a derivative free of the variable (f linear in it, with parameters) keeps its sign
   const fe = sympify(f);
-  const v = x ?? first([...fe.freeSymbols()]);
+  const v = x ?? first([...fe.freeSymbols()].filter((s) => s instanceof Sym));
   return diff(fe, v).has(v) ? undefined : true;
 }
 
@@ -908,7 +909,7 @@ function minus(a: SetExpr, b: SetExpr): SetExpr {
 export function asExprSetPairs(p: Expr, domain: SetExpr = Reals): [Expr, SetExpr][] {
   const pairs = cast(p, Piecewise, 'Piecewise').pairs;
   const syms = new Map<string, Sym>();
-  for (const [, c] of pairs) for (const s of c.freeSymbols()) syms.set(s.key, s);
+  for (const [, c] of pairs) for (const s of [...c.freeSymbols()].filter((s) => s instanceof Sym)) syms.set(s.key, s);
   if (syms.size !== 1) throw new NotImplementedError('as_expr_set_pairs: univariate conditions expected');
   const x = first([...syms.values()]);
   let remaining: SetExpr = domain;
@@ -954,7 +955,7 @@ function setToCondition(st: SetExpr, x: Sym): Expr {
 export function piecewiseExclusive(p: Expr, opts: { skipNan?: boolean } = {}): Expr {
   const pairs = cast(p, Piecewise, 'Piecewise').pairs;
   const syms = new Map<string, Sym>();
-  for (const [, c] of pairs) for (const t of c.freeSymbols()) syms.set(t.key, t);
+  for (const [, c] of pairs) for (const t of [...c.freeSymbols()].filter((s) => s instanceof Sym)) syms.set(t.key, t);
   if (syms.size !== 1) return piecewiseExclusiveLogic(pairs, opts.skipNan ?? false);
   const x = first([...syms.values()]);
   const condSet = (c: Expr): SetExpr => {
@@ -1037,7 +1038,7 @@ export function notEmptyIn(setIn: SetExpr, x: Sym): SetExpr {
 export function asSet(eIn: ExprLike | boolean): SetExpr {
   const e = typeof eIn === 'boolean' ? (eIn ? S.true : S.false) : sympify(eIn);
   if (e instanceof BoolAtom) return e.value ? UniversalSet : EmptySet;
-  const syms = [...e.freeSymbols()];
+  const syms = [...e.freeSymbols()].filter((s) => s instanceof Sym);
   if (syms.length !== 1) throw new NotImplementedError('as_set: only expressions with one free symbol are supported');
   const x = first(syms);
   const go = (b: Expr): SetExpr => {

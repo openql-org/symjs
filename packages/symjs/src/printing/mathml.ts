@@ -140,7 +140,7 @@ function className(e: Expr): string {
 
 /** SymPy `requires_partial`: more than one free symbol that is not an integer. */
 function requiresPartial(e: Expr): boolean {
-  return [...impl.freeSymbols(e)].filter((s) => s.assumptions.integer !== true).length > 1;
+  return [...impl.freeSymbols(e)].filter((s) => s instanceof Sym).filter((s) => s.assumptions.integer !== true).length > 1;
 }
 
 /** SymPy `fraction(expr)` (not exact): the numerator and the denominator of a product. */

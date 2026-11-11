@@ -6,8 +6,8 @@
  * each depend on fewer symbols (SymPy simplify.separatevars).
  */
 
-import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Constant, Mul, Pow } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Constant, Mul, Pow, Sym } from '../core/nodes';
 import { mul, pow, sympify } from '../core/ops';
 import { xreplace } from '../core/traverse';
 import { factor } from '../polys/sympoly';
@@ -42,7 +42,7 @@ export function separatevars(
 ): Expr | Map<Sym | 'coeff', Expr> | undefined {
   const e = sep(sympify(exIn), opts.force ?? false);
   if (!opts.dict) return e;
-  const symbols = opts.symbols?.length ? [...opts.symbols] : ([...e.freeSymbols()] as Sym[]);
+  const symbols = opts.symbols?.length ? [...opts.symbols] : [...e.freeSymbols()].filter((s) => s instanceof Sym);
   const ret = new Map<Sym | 'coeff', Expr[]>([...symbols.map((s) => [s, []] as [Sym, Expr[]]), ['coeff', []]]);
   for (const f of e instanceof Mul ? e.args : [e]) {
     const inter = symbols.filter((s) => f.has(s));

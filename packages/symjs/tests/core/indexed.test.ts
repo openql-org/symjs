@@ -13,6 +13,14 @@ const [x, i, j] = symbols('x i j');
 const s = (e: unknown): string => str(e as Expr);
 
 describe('small core nodes', () => {
+  it('includes indexed entries themselves in free_symbols', () => {
+    const F = new IndexedBase('F'), entry = F.at(0);
+    expect(entry.freeSymbols()).toEqual(new Set([entry, F.label]));
+    const indexed = F.at(i);
+    expect(sj.freeSymbols(sj.add(indexed, x))).toEqual(new Set([indexed, F.label, i, x]));
+    expect(sj.freeSymbols(new sj.Integral([indexed, i, sj.S.Zero, sj.S.One]))).toEqual(new Set([indexed, F.label]));
+    expect(entry.isNumber).toBe(false);
+  });
   it('prints and differentiates indexed objects', () => {
     const A = new sj.IndexedBase('A');
     const i = sj.symbol('i');

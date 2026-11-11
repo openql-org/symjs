@@ -546,7 +546,7 @@ export function posify(eIn: ExprLike): [Expr, Map<Expr, Expr>] {
   const e = sympify(eIn);
   const reps: [Expr, Expr][] = [];
   const back = new Map<Expr, Expr>();
-  for (const s of e.freeSymbols()) {
+  for (const s of [...e.freeSymbols()].filter((s) => s instanceof Sym)) {
     if (isPositive(s) === undefined) {
       const d = new Dummy(s.name, { ...s.assumptions, positive: true });
       reps.push([s, d]);

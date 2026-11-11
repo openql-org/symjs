@@ -7,6 +7,8 @@
 import { describe, expect, it } from 'vitest';
 import { inspect } from 'node:util';
 import * as sj from '../../src';
+
+
 import { Rational } from '../../src';
 import { InvariantError } from '../../src/core/errors';
 import {
@@ -211,3 +213,11 @@ it('Order.contains reports a missing calculus registration', () => {
   } finally { sjImpl.orderContains = previous; }
 });
 import { impl as sjImpl } from '../../src/core/nodes';
+
+it('recognizes numerical expressions, including definite integrals', () => {
+  const x = sj.symbol('x');
+  for (const e of [sj.S.Pi, sj.S.I, sj.S.Infinity, sj.parse('sin(1)**2 + cos(1)**2 - 1'), sj.add(2, new sj.Integral([sj.sympify(2), x, sj.S.One, sj.sympify(2)]))]) {
+    expect(e.isNumber).toBe(true);
+  }
+  for (const e of [x, sj.SymFunction('f')(1), sj.add(2, new sj.Integral([sj.sympify(2), x])), sj.parse('sin(x)'), sj.parse('x**2')]) expect(e.isNumber).toBe(false);
+});

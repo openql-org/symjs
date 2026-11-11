@@ -74,9 +74,7 @@ describe('MultivariateNormal (SymPy test_Normal)', () => {
     const Sg = MatrixSymbol('Sg', n, n);
     const obs = MatrixSymbol('obs', n, 1);
     const X2 = MultivariateNormal('X', mu, Sg);
-    // SymPy: (exp(((1/2)*mu.T - (1/2)*obs.T)*Sg**(-1)*(-mu + obs))/sqrt((2*pi)**n*Determinant(Sg)))[0, 0]
-    // (symjs takes the positive factor (2*pi)**n out of the square root)
-    expect(s(dens(X2, obs))).toBe('(exp(((1/2)*mu.T - (1/2)*obs.T)*Sg**(-1)*(-mu + obs))/((2*pi)**(n/2)*sqrt(Determinant(Sg))))[0, 0]');
+    expect(s(dens(X2, obs))).toBe('(exp(((1/2)*mu.T - (1/2)*obs.T)*Sg**(-1)*(-mu + obs))/sqrt((2*pi)**n*Determinant(Sg)))[0, 0]');
     const Sg3 = MatrixSymbol('Sg', 3, 3);
     const mu3 = MatrixSymbol('mu', 3, 1);
     const X3 = MultivariateNormal('X', mu3, Sg3);

@@ -203,7 +203,7 @@ function relAsNonpos(constr: readonly Expr[], syms: readonly Sym[]): Nonpos | un
     }
     const i = c.op === 'Le' ? add(c.lhs, mul(-1, c.rhs)) : add(c.rhs, mul(-1, c.lhs));
     all.push(i);
-    const freei = [...i.freeSymbols()];
+    const freei = [...i.freeSymbols()].filter((s) => s instanceof Sym);
     if (freei.length > 1) {
       np.push(i);
       continue;
@@ -253,7 +253,7 @@ function lpMatrices(objective: ExprLike, constraints: readonly ExprLike[]): [Mat
   let F = sympify(objective);
   const np = constraints.map((c) => sympify(c));
   const symSet = new Map<string, Sym>();
-  for (const e of [F, ...np]) for (const s of e.freeSymbols()) symSet.set(s.key, s);
+  for (const e of [F, ...np]) for (const s of [...e.freeSymbols()].filter((s) => s instanceof Sym)) symSet.set(s.key, s);
   // (ordered gives the symbols back)
   const syms = ordered([...symSet.values()]).filter((s): s is Sym => s instanceof Sym);
   // Eq(x, y) is x - y <= 0 and y - x <= 0

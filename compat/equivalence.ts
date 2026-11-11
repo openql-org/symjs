@@ -132,7 +132,7 @@ function numericValue(e: Expr, replacements: [Expr, Expr][]): sj.ComplexValue | 
 
 function exprEquivalent(a: Expr, b: Expr): boolean {
   if (a.key === b.key) return true;
-  const symbols = new Map([...sj.freeSymbols(a), ...sj.freeSymbols(b)].map((s) => [s.key, s]));
+  const symbols = new Map([...sj.freeSymbols(a), ...sj.freeSymbols(b)].filter((s) => s instanceof sj.Sym).map((s) => [s.key, s]));
   let agree = 0;
   for (let k = 0; k < 4; k++) {
     const replacements: [Expr, Expr][] = [...symbols.values()].map((s) => [s, trialValue(s, k)]);

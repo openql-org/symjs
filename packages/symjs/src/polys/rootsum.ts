@@ -129,7 +129,12 @@ export type PartfracTerm = [Expr | Expr[], LambdaNode, LambdaNode, number];
 export function apartList(fIn: ExprLike, x: Sym): [Expr, Poly, PartfracTerm[], Sym] {
   const f = cancel(together(sympify(fIn)));
   const [num, den] = fraction(f);
-  const P0 = Poly.from(num, [x]);
+  const numerator = Poly.from(num, [x]);
+  // Poly.cancel extracts the sign of the numerator's leading coefficient
+  // into the ground-field coefficient of the structured decomposition.
+  const lc = numerator.LC();
+  const common = lc instanceof Rational && lc.isNegative ? S.NegOne : S.One;
+  const P0 = Poly.from(mul(common, num), [x]);
   const Q = Poly.from(den, [x]);
   const [polyPart, P] = P0.divAuto(Q);
   const w = new Dummy('w');
@@ -161,7 +166,7 @@ export function apartList(fIn: ExprLike, x: Sym): [Expr, Poly, PartfracTerm[], S
       out.push([Dw, Lambda(a, numer), Lambda(a, add(x, mul(-1, a))), n - j]);
     }
   }
-  return [S.One, polyPart, out, w];
+  return [common, polyPart, out, w];
 }
 
 /** SymPy assemble_partfrac_list: the expression from an apart_list result. */

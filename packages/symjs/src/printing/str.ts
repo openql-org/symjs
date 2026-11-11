@@ -8,7 +8,7 @@
 
 import type { Expr } from '../core/nodes';
 import { Add, ExtensionExpr, BoolAtom, Constant, Derivative, Float, Fn, Integral, Limit, Mul, Order, Piecewise, Pow, Rational, Rel, Special, Sym, UndefFn, impl, isNum } from '../core/nodes';
-import { mul, pow, splitCoeff } from '../core/ops';
+import { mul, splitCoeff } from '../core/ops';
 import { numNeg } from '../core/num';
 import { floatToString } from '../numeric/mpf';
 import { asOrderedFactors, asOrderedTerms, compareKeys, sortKey, sympyFunctionName } from './sortkey';
@@ -98,7 +98,7 @@ function printMul(e: Mul): string {
   for (const item of expr instanceof Mul ? asOrderedFactors(expr) : [expr]) {
     if (item instanceof Pow && item.isCommutative && !isExp(item) && splitCoeff(item.exp)[0].isNegative) {
       const x = item.exp;
-      b.push(x instanceof Rational && x.p === -1n && x.q === 1n ? item.base : pow(item.base, mul(-1, x)));
+      b.push(x instanceof Rational && x.p === -1n && x.q === 1n ? item.base : new Pow(item.base, mul(-1, x)));
     } else if (item instanceof Rational) {
       if (item.p !== 1n) a.push(Rational.of(item.p));
       if (item.q !== 1n) b.push(Rational.of(item.q));

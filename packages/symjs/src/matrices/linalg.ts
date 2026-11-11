@@ -27,6 +27,7 @@ import { expandMul } from '../simplify/expand';
 import { cancel } from '../simplify/rational';
 import { exp } from '../core/ops';
 import { Matrix } from './matrix';
+import { lcm } from '../core/numbers';
 
 /** SymPy simplify, late-bound as in matrix.ts (the matrices entry loads it). */
 const simplify = (e: Expr): Expr => impl.simplify(e);
@@ -293,7 +294,9 @@ export function diagonalize(m: Matrix): [Matrix, Matrix] {
   const vals: Expr[] = [];
   for (const [v, , vecs] of eigenvects(m)) {
     for (const vec of vecs) {
-      cols.push(vec);
+      // diagonalize uses simplified primitive columns; eigenvects retains
+      // the nullspace convention with a free entry of 1.
+      cols.push(vec.data.every(isRat) ? vec.scale(Rational.of(vec.data.reduce((d, e) => lcm(d, e.q), 1n))) : vec);
       vals.push(v);
     }
   }

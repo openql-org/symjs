@@ -7,7 +7,8 @@
  * terms where a delta does not vanish.
  */
 
-import type { Expr, ExprLike, Sym } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Sym } from '../core/nodes';
 import { Add, Dummy, Fn, Mul, Rational, S } from '../core/nodes';
 import { add, mul, sub, sympify } from '../core/ops';
 import { at, getOrThrow } from '../core/guard';
@@ -28,7 +29,7 @@ export type DeltaLimit = readonly [Sym, ExprLike, ExprLike];
 
 const isDelta = (e: Expr): e is Fn => e instanceof Fn && e.name === 'KroneckerDelta';
 const hasDelta = (e: Expr): boolean => isDelta(e) || e.args.some(hasDelta);
-const hasSym = (e: Expr, k: Sym): boolean => [...freeSymbols(e)].some((s) => s.key === k.key);
+const hasSym = (e: Expr, k: Sym): boolean => [...freeSymbols(e)].filter((s) => s instanceof Sym).some((s) => s.key === k.key);
 
 /** The root in index of a KroneckerDelta whose difference of arguments is linear in index (SymPy _is_simple_delta), or undefined. */
 function simpleDeltaRoot(e: Expr, index: Sym): Expr | undefined {
@@ -77,7 +78,7 @@ function expandDelta(expr: Expr, index: Sym): Expr {
 
 /** The solution of linear equations for their free symbols (SymPy solve(eqs, dict=True)), or undefined. */
 function solveLinear(eqs: readonly Expr[]): Map<Sym, Expr>[] | undefined {
-  const free = new Map(eqs.flatMap((e) => [...freeSymbols(e)]).map((s) => [s.key, s] as const));
+  const free = new Map(eqs.flatMap((e) => [...freeSymbols(e)].filter((s) => s instanceof Sym)).map((s) => [s.key, s] as const));
   // (ordered keeps the symbols, in SymPy's order)
   const syms = ordered([...free.values()]).map((e) => getOrThrow(free, e.key));
   try {
@@ -108,7 +109,7 @@ function removeMultipleDelta(expr: Expr): Expr {
 function simplifyDelta(expr: Expr): Expr {
   if (!isDelta(expr)) return expr;
   const eq = sub(at(expr.args, 0), at(expr.args, 1));
-  const syms = [...freeSymbols(eq)];
+  const syms = [...freeSymbols(eq)].filter((s) => s instanceof Sym);
   const s0 = syms[0];
   // one unknown: its solutions (a single one gives a delta)
   if (syms.length === 1 && s0 !== undefined) {

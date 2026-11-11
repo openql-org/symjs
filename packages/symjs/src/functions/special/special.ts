@@ -32,6 +32,7 @@ import {
 import { numAdd, numMul } from '../../core/num';
 import { derivative } from '../../core/undef';
 import { SubsNode } from '../../core/subsnode';
+import { Concrete } from '../../core/concrete';
 import { evalMp, MpSpecialValue, mpFns } from '../../numeric/mpeval';
 import * as F from '../../numeric/mpf';
 import * as M from '../../numeric/mpfun';
@@ -1580,6 +1581,14 @@ export function expandFunc(e: Expr): Expr {
         }
       }
       if (y.name === 'harmonic' && y.args.length === 1) {
+        const n = first(y.args);
+        if (n instanceof Rational && n.p > 0n && n.q > 1n) {
+          // Gauss's digamma theorem and H(z + 1) = H(z) + 1/(z + 1).
+          const u = n.p / n.q, p = R(n.p % n.q), q = R(n.q), k = new Dummy('k');
+          const t1 = mul(q, new Concrete('Sum', [pow(add(mul(q, k), p), -1), k, S.Zero, R(u)]));
+          const t2 = mul(2, new Concrete('Sum', [mul(cos(mul(2, S.Pi, p, k, pow(q, -1))), log(sin(mul(S.Pi, k, pow(q, -1))))), k, S.One, R((n.q - 1n) / 2n)]));
+          return add(t1, t2, neg(mul(S.Half, S.Pi, fn('cot', [mul(S.Pi, p, pow(q, -1))]))), neg(log(mul(2, q))));
+        }
         const [c, rest] = splitAddInt(first(y.args));
         if (c !== 0n) {
           const base = fn('harmonic', [rest]);

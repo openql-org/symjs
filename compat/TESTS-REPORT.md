@@ -2,9 +2,9 @@
 
 Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
-Measured **12933** cases: **8059 exact**, **228 equivalent**, **4646 failing**. Agreement: **64.08%**.
+Measured **12933** cases: **8111 exact**, **235 equivalent**, **4587 failing**. Agreement: **64.53%**.
 
-Replay runtime: **71.65 s**. Known gaps: **4646**. Exception class mismatches accepted in the pilot: **177**.
+Replay runtime: **318.95 s**. Known gaps: **4587**. Exception class mismatches accepted in the pilot: **177**.
 
 Exact includes successful inequality, identity, boolean and exception assertions. Equality uses the existing doctest matching and equivalence rules.
 
@@ -12,7 +12,7 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Cases | Exact | Equivalent | Fail | Unsupported | Error | Agreement |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| core | 7858 | 5447 | 180 | 1276 | 661 | 294 | 71.61% |
+| core | 7858 | 5499 | 187 | 1252 | 626 | 294 | 72.36% |
 | polys | 5075 | 2612 | 48 | 297 | 1676 | 442 | 52.41% |
 
 ## Agreement by test module
@@ -20,9 +20,9 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | Module | Cases | Exact | Equivalent | Fail | Unsupported | Error | Agreement |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | sympy.core.tests.test_args | 0 | 0 | 0 | 0 | 0 | 0 | - |
-| sympy.core.tests.test_arit | 1235 | 715 | 27 | 255 | 220 | 18 | 60.08% |
-| sympy.core.tests.test_assumptions | 699 | 344 | 0 | 171 | 181 | 3 | 49.21% |
-| sympy.core.tests.test_basic | 198 | 175 | 0 | 10 | 11 | 2 | 88.38% |
+| sympy.core.tests.test_arit | 1235 | 724 | 27 | 255 | 211 | 18 | 60.81% |
+| sympy.core.tests.test_assumptions | 699 | 357 | 0 | 168 | 171 | 3 | 51.07% |
+| sympy.core.tests.test_basic | 198 | 178 | 0 | 10 | 8 | 2 | 89.90% |
 | sympy.core.tests.test_cache | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_compatibility | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_complex | 74 | 45 | 12 | 17 | 0 | 0 | 77.03% |
@@ -34,22 +34,22 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | sympy.core.tests.test_eval | 33 | 33 | 0 | 0 | 0 | 0 | 100.00% |
 | sympy.core.tests.test_evalf | 133 | 65 | 18 | 25 | 21 | 4 | 62.41% |
 | sympy.core.tests.test_expand | 145 | 111 | 2 | 16 | 3 | 13 | 77.93% |
-| sympy.core.tests.test_expr | 846 | 679 | 14 | 96 | 17 | 40 | 81.91% |
+| sympy.core.tests.test_expr | 846 | 688 | 14 | 87 | 17 | 40 | 82.98% |
 | sympy.core.tests.test_exprtools | 183 | 129 | 6 | 12 | 9 | 27 | 73.77% |
 | sympy.core.tests.test_facts | 1 | 0 | 0 | 0 | 1 | 0 | 0.00% |
-| sympy.core.tests.test_function | 389 | 205 | 10 | 128 | 17 | 29 | 55.27% |
+| sympy.core.tests.test_function | 389 | 218 | 17 | 120 | 5 | 29 | 60.41% |
 | sympy.core.tests.test_kind | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_logic | 61 | 47 | 0 | 1 | 0 | 13 | 77.05% |
 | sympy.core.tests.test_match | 236 | 171 | 0 | 53 | 0 | 12 | 72.46% |
 | sympy.core.tests.test_multidimensional | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_noncommutative | 44 | 31 | 1 | 11 | 1 | 0 | 72.73% |
-| sympy.core.tests.test_numbers | 1616 | 1392 | 15 | 118 | 30 | 61 | 87.07% |
+| sympy.core.tests.test_numbers | 1616 | 1396 | 15 | 114 | 30 | 61 | 87.31% |
 | sympy.core.tests.test_operations | 4 | 1 | 0 | 2 | 1 | 0 | 25.00% |
 | sympy.core.tests.test_parameters | 47 | 22 | 25 | 0 | 0 | 0 | 100.00% |
 | sympy.core.tests.test_power | 184 | 103 | 29 | 42 | 7 | 3 | 71.74% |
 | sympy.core.tests.test_priority | 4 | 4 | 0 | 0 | 0 | 0 | 100.00% |
 | sympy.core.tests.test_random | 0 | 0 | 0 | 0 | 0 | 0 | - |
-| sympy.core.tests.test_relational | 1008 | 664 | 0 | 209 | 115 | 20 | 65.87% |
+| sympy.core.tests.test_relational | 1008 | 665 | 0 | 209 | 114 | 20 | 65.97% |
 | sympy.core.tests.test_rules | 6 | 5 | 0 | 1 | 0 | 0 | 83.33% |
 | sympy.core.tests.test_singleton | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_sorting | 0 | 0 | 0 | 0 | 0 | 0 | - |
@@ -145,11 +145,11 @@ Exact includes successful inequality, identity, boolean and exception assertions
 |---|---:|
 | core: .is_nonpositive (unsupported) | 117 |
 | polys: .dup_count_complex_roots (unsupported) | 105 |
-| core: .subs (fail) | 87 |
+| core: .subs (fail) | 86 |
 | polys: .dup_isolate_real_roots_sqf (unsupported) | 76 |
 | polys: .rep (unsupported) | 68 |
-| core: .diff (fail) | 65 |
 | core: .is_even (unsupported) | 59 |
+| core: .diff (fail) | 59 |
 | polys: groebner (error) | 56 |
 | core: .is_odd (unsupported) | 55 |
 | core: .reversedsign (unsupported) | 51 |
@@ -163,7 +163,6 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | polys: dict_from_expr (unsupported) | 37 |
 | core: .is_zero (fail) | 35 |
 | core: .is_real (fail) | 35 |
-| core: .is_comparable (unsupported) | 35 |
 | polys: .dup_refine_real_root (unsupported) | 35 |
 | core: unchanged (error) | 34 |
 | polys: .dup_isolate_real_roots (unsupported) | 32 |
@@ -183,6 +182,7 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | polys: intervals (unsupported) | 22 |
 | core: .__rshift__ (fail) | 21 |
 | polys: .dup_isolate_real_roots_list (unsupported) | 21 |
+| polys: dup_pow (unsupported) | 20 |
 
 ## Exception class mismatches
 

@@ -165,7 +165,7 @@ export class ConditionalContinuousDomain extends ConditionalDomain {
           integrand = mul(integrand, DiracDelta(add(cond.lhs, mul(-1, cond.rhs))));
         } else {
           const keys = new Set(this.symbols.map((s) => s.key));
-          const symbols = [...cond.freeSymbols()].filter((s) => keys.has(s.key));
+          const symbols = [...cond.freeSymbols()].filter((s) => s instanceof Sym).filter((s) => keys.has(s.key));
           if (symbols.length !== 1) throw new NotImplementedError('Multivariate Inequalities not yet implemented');
           const symbol = first(symbols);
           limits = limits.map((limit) => {

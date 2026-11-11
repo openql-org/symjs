@@ -297,7 +297,7 @@ export class SeqFormulaNode extends SeqExprBase {
 export function SeqFormula(formulaIn: ExprLike, limits?: SeqLimits): SeqBase {
   const formula = sympify(formulaIn);
   const [x, start, stop] = parseLimits(limits, () => {
-    const free = [...freeSymbols(formula)];
+    const free = [...freeSymbols(formula)].filter((s) => s instanceof Sym);
     if (free.length === 1) return at(free, 0);
     if (free.length === 0) return new Dummy('k');
     throw new RangeError(
@@ -354,7 +354,7 @@ export function SeqPer(periodical: readonly ExprLike[], limits?: SeqLimits): Seq
   const per = periodical.map(sympify);
   const [x, start, stop] = parseLimits(limits, () => {
     const free = new Map<string, Sym>();
-    for (const t of per) for (const s of freeSymbols(t)) free.set(s.key, s);
+    for (const t of per) for (const s of [...freeSymbols(t)].filter((s) => s instanceof Sym)) free.set(s.key, s);
     return free.size === 1 ? at([...free.values()], 0) : new Dummy('k');
   });
   if (interval(start, stop) === EmptySet) return EmptySequence;

@@ -48,7 +48,7 @@ export function apart(fIn: ExprLike, xIn?: Sym, opts: ApartOptions = {}): Expr {
   const f = cancel(together(sympify(fIn)));
   let x = xIn;
   if (x === undefined) {
-    const syms = [...f.freeSymbols()];
+    const syms = [...f.freeSymbols()].filter((s) => s instanceof Sym);
     if (syms.length > 1) throw new NotImplementedError('multivariate partial fraction decomposition');
     // a constant is its own decomposition
     if (!syms.length) return f;
@@ -64,7 +64,7 @@ export function apart(fIn: ExprLike, xIn?: Sym, opts: ApartOptions = {}): Expr {
   const [qPoly, rPoly] = Pp.div(Qp);
   const quotient = qPoly.asExpr();
   const r = rPoly.asExpr();
-  const gens = sortGens([...Q.freeSymbols()]);
+  const gens = sortGens([...Q.freeSymbols()].filter((s) => s instanceof Sym));
   const overDomain = opts.domain !== undefined || opts.extension !== undefined || opts.gaussian !== undefined;
   const [content, factors0] = overDomain ? domainFactors(expandMul(Q), opts) : factorListInt(expandMul(Q), gens);
   let c: Expr = content;

@@ -61,7 +61,7 @@ function linear(arg: Expr, x: Expr): [Expr, Expr] | undefined {
 
 /** The only free symbol of e (SymPy free_symbols.pop()); a TypeError like SymPy's otherwise. */
 function onlySymbol(e: Expr, what: string): Sym {
-  const free = [...freeSymbols(e)];
+  const free = [...freeSymbols(e)].filter((s) => s instanceof Sym);
   if (free.length !== 1) throw new TypeError(`rewrite(SingularityFunction) does not support ${what} arguments with more than one variable`);
   return first(free);
 }
@@ -168,7 +168,7 @@ const diracDef: DefinedFunction = defineFunction('DiracDelta', {
 function expandDiracDelta(self: Expr, wrt0: unknown): Expr {
   let wrt = wrt0;
   if (wrt === undefined) {
-    const free = [...freeSymbols(self)];
+    const free = [...freeSymbols(self)].filter((s) => s instanceof Sym);
     if (free.length !== 1) throw new TypeError("when there is more than 1 free symbol or variable in the expression, the 'wrt' keyword is required as a hint to expand when using the DiracDelta hint");
     wrt = first(free);
   }
@@ -240,7 +240,7 @@ const singularityDef: DefinedFunction = defineFunction('SingularityFunction', {
 /** SymPy SingularityFunction._eval_rewrite_as_Heaviside (also as DiracDelta). */
 function singularityAsHeaviside(x: Expr, a: Expr, n: Expr): Expr | undefined {
   if (isNegativeOrder(n)) {
-    const v = [...freeSymbols(x)][0];
+    const v = [...freeSymbols(x)].filter((s) => s instanceof Sym)[0];
     // SymPy raises KeyError for a variable without free symbols
     return v === undefined ? undefined : diff(Heaviside(sub(x, a)), v, -Number(n.p));
   }

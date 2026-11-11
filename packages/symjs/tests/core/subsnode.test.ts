@@ -12,6 +12,17 @@ const [x, y, z] = symbols('x y z');
 const f = SymFunction('f');
 
 describe('Subs (SymPy Subs)', () => {
+  it('compares evaluated derivatives up to bound-variable renaming', () => {
+    const point = parse('2*x + 3');
+    expect(diff(f(point), x).equals(Subs(diff(f(y), y), y, point).mul(2))).toBe(true);
+    expect(Subs(diff(f(x), x), x, z).equals(Subs(diff(f(y), y), y, z))).toBe(true);
+    expect(Subs(f(x, y), [x, y], [1, 2]).equals(Subs(f(y, x), [y, x], [1, 2]))).toBe(true);
+    expect(Subs(f(x, y), [x, y], [1, 2]).equals(Subs(f(y, x), [x, y], [1, 2]))).toBe(false);
+    expect(Subs(f(x, z), x, y).equals(Subs(f(z, y), z, y))).toBe(false);
+    expect(Subs(f(x), y, 0).equals(Subs(f(x), z, 0))).toBe(false);
+    expect(Subs(Subs(f(x), x, y), y, z).equals(Subs(Subs(f(y), y, x), x, z))).toBe(true);
+    expect(Subs(f(x), x, y).add(Subs(f(z), z, y)).equals(Subs(f(x), x, y).mul(2))).toBe(true);
+  });
   it('derivative at a point', () => {
     const s = diff(f(x), x).subs(x, 0 as never);
     expect(s).toBeInstanceOf(Subs);

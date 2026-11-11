@@ -12,6 +12,38 @@ const [x] = symbols('x');
 const f = Fn('f');
 const fx = f(x) as UndefFn;
 const show = (r: unknown) => (Array.isArray(r) ? `[${r.map(String).join(', ')}]` : String(r));
+
+it('solves equations reducible by u = x**n*f(x)', () => {
+  for (const [input, hint] of [
+    ['(x - x**2*f(x))*Derivative(f(x),x) - f(x)', 'separable_reduced'],
+    ['x**3*Derivative(f(x),x) + x**2*f(x) - x**4*f(x)**2 + 20', '1st_rational_riccati'],
+    ['x*Derivative(f(x),x) - f(x)**2*x**2', '1st_rational_riccati'],
+  ] as const) {
+    const eq = parse(input), result = dsolve(eq, fx, { hint });
+    const solutions = Array.isArray(result) ? result : [result];
+    expect(solutions.length).toBeGreaterThan(0);
+    for (const solution of solutions) {
+      expect(solution).toBeInstanceOf(sj.Rel);
+      if (!(solution instanceof sj.Rel)) throw new TypeError('Expected an equation');
+      expect(solution.lhs.equals(fx)).toBe(true);
+      const residual = sj.doit(eq.subs([[fx, solution.rhs]]));
+      expect(sj.simplify(residual).equals(0), String(residual)).toBe(true);
+    }
+    expect(classifyOde(eq, fx)).toContain(hint);
+  }
+});
+
+it('rejects unmatched reduced and rational Riccati equations', () => {
+  for (const [eq, hint] of [
+    ['Derivative(f(x),x)**2 + f(x)', 'separable_reduced'],
+    ['Derivative(f(x),x) + x + f(x) + x*f(x)**2', 'separable_reduced'],
+    ['Derivative(f(x),x) + f(x)/x', 'separable_reduced'],
+    ['Derivative(f(x),x) + f(x)**2 + f(x)**3', 'separable_reduced'],
+    ['Derivative(f(x),x) + x*f(x)**3', '1st_rational_riccati'],
+    ['Derivative(f(x),x) + (x*f(x) + 1/(x*f(x)) + 1)*f(x)/x', '1st_rational_riccati'],
+    ['Derivative(f(x),x) + f(x)**3', '1st_rational_riccati'],
+  ] as const) expect(() => dsolve(parse(eq), fx, { hint })).toThrow(NotImplementedError);
+});
 /** SymPy hints that classifyOde does not report (no matcher here). */
 const UNMATCHED = new Set(['1st_rational_riccati', 'separable_reduced', 'separable_reduced_Integral', '2nd_nonlinear_autonomous_conserved', '2nd_nonlinear_autonomous_conserved_Integral']);
 // expected values from SymPy 1.14 classify_ode, without the hints in UNMATCHED

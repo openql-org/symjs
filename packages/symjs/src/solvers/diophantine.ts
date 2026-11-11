@@ -67,7 +67,7 @@ function asBig(e: ExprLike | bigint): bigint {
 }
 
 /** Symbols sorted like SymPy default_sort_key. */
-const sortedSymbols = (e: Expr): Sym[] => [...freeSymbols(e)].sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
+const sortedSymbols = (e: Expr): Sym[] => [...freeSymbols(e)].filter((s) => s instanceof Sym).sort((a, b) => compareKeys(sortKey(a), sortKey(b)));
 
 /** Order of solution tuples of the same size: element by element (SymPy ordered). */
 const compareTuples = (a: readonly Expr[], b: readonly Expr[]): number => compareKeys(a.map(sortKey), b.map(sortKey));

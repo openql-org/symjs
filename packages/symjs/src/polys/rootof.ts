@@ -51,7 +51,7 @@ class CRootOfNode extends ExtensionExpr {
   }
   /** The generator of the polynomial. */
   get gen(): Sym {
-    return first([...freeSymbols(this.poly)]);
+    return first([...freeSymbols(this.poly)].filter((s) => s instanceof Sym));
   }
   override subsSelf(old: Expr): Expr | undefined {
     // The polynomial generator is bound, not an unknown in the root's value.

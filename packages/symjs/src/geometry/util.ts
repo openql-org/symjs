@@ -77,7 +77,7 @@ export const rationalOf = (v: number): Expr => nsimplify(new Float(v), { rationa
  * RangeError when there is none or several.
  */
 export function find(x: string | Sym, equation: Expr): Sym {
-  const xs = [...equation.freeSymbols()].filter((i) => (typeof x === 'string' ? i.name === x : i.key === x.key));
+  const xs = [...equation.freeSymbols()].filter((s) => s instanceof Sym).filter((i) => (typeof x === 'string' ? i.name === x : i.key === x.key));
   if (xs.length === 0) throw new RangeError(`could not find ${String(x)}`);
   if (xs.length !== 1) throw new RangeError(`ambiguous ${String(x)}`);
   return at(xs, 0);
@@ -366,7 +366,7 @@ export function idiff(eq: ExprLike, yIn: Sym | readonly Sym[] | UndefFn, x: Sym,
     y = yIn;
   } else throw new RangeError(`expecting x-dependent symbol(s) or function(s) but got: ${String(yIn)}`);
   const f = new ExprMap<Expr>();
-  for (const s of e0.freeSymbols()) if (s.key !== x.key && dep.some((d) => d.key === s.key)) f.set(s, SymFunction(s.name)(x));
+  for (const s of [...e0.freeSymbols()].filter((s) => s instanceof Sym)) if (s.key !== x.key && dep.some((d) => d.key === s.key)) f.set(s, SymFunction(s.name)(x));
   let dydx: Expr = y instanceof Sym ? diff(SymFunction(y.name)(x), x) : diff(y, x);
   let e = subs(e0, [...f]);
   const derivs: [Expr, Expr][] = [];

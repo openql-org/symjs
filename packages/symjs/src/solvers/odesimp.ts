@@ -76,7 +76,7 @@ function count(e: Expr, c: Expr): number {
 const byName = (a: Sym, b: Sym): number => (a.name < b.name ? -1 : 1);
 
 const isZero = (e: Expr) => e instanceof Rational && e.isZero;
-const subset = (e: Expr, Cs: readonly Sym[]) => [...freeSymbols(e)].every((s) => Cs.some((c) => c.key === s.key));
+const subset = (e: Expr, Cs: readonly Sym[]) => [...freeSymbols(e)].filter((s) => s instanceof Sym).every((s) => Cs.some((c) => c.key === s.key));
 
 /** SymPy _get_constant_subexpressions. */
 function constantSubexpressions(expr: Expr, Cs: readonly Sym[]): Expr[] {
@@ -185,9 +185,9 @@ function constantCse(expr: Expr, Cs: readonly Sym[]): Expr {
   const rev = [...commons].reverse();
   for (const s of rev) {
     const [sym, value] = s;
-    const cs = [...freeSymbols(value)];
+    const cs = [...freeSymbols(value)].filter((s) => s instanceof Sym);
     const [c] = cs;
-    const single = c !== undefined && cs.length === 1 && Cs.some((k) => k.key === c.key) && ![...freeSymbols(rexpr)].some((k) => k.key === c.key);
+    const single = c !== undefined && cs.length === 1 && Cs.some((k) => k.key === c.key) && ![...freeSymbols(rexpr)].filter((s) => s instanceof Sym).some((k) => k.key === c.key);
     // SymPy tests `c in (symbol, value)` for the other replacements: equality with either
     const elsewhere = single && rev.some((o) => o !== s && (o[0].key === c.key || o[1].key === c.key));
     rexpr = subs(rexpr, [[sym, single && !elsewhere ? c : value]]);
@@ -201,7 +201,7 @@ export function constantsimp(exprIn: Expr, Cs: readonly Sym[]): Expr {
   for (let round = 0; round < 10; round++) {
     const orig = expr;
     for (const xe of constantSubexpressions(expr, Cs)) {
-      const xes = [...freeSymbols(xe)].sort(byName);
+      const xes = [...freeSymbols(xe)].filter((s) => s instanceof Sym).sort(byName);
       if (!xes.length) continue;
       if (xes.every((c) => count(expr, c) === count(xe, c))) expr = subs(expr, [[xe, first(xes)]]);
     }
@@ -216,7 +216,7 @@ export function constantsimp(exprIn: Expr, Cs: readonly Sym[]): Expr {
 /** Renumber the constants C1, C2, ... in order of appearance (SymPy constant_renumber). */
 export function constantRenumber(expr: Expr, variables?: readonly Expr[], newconstants?: readonly Sym[]): Expr {
   const vars = new Set(variables?.map((v) => v.key));
-  const consts = [...freeSymbols(expr)].filter((s) => !vars.has(s.key) && (variables !== undefined || /^C\d+$/.test(s.name)));
+  const consts = [...freeSymbols(expr)].filter((s) => s instanceof Sym).filter((s) => !vars.has(s.key) && (variables !== undefined || /^C\d+$/.test(s.name)));
   const isConst = (e: Expr) => consts.some((c) => c.key === e.key);
   const found: Sym[] = [];
   const one = consts.map((c) => [c, Rational.of(1)] as [Expr, Expr]);
@@ -253,11 +253,11 @@ export function constantRenumber(expr: Expr, variables?: readonly Expr[], newcon
  */
 export function odesimp(ode: Expr, solIn: Expr, fx: UndefFn, hint: string): Expr[] {
   const x = cast(first(fx.args), Sym);
-  const odeSyms = [...freeSymbols(ode)];
+  const odeSyms = [...freeSymbols(ode)].filter((s) => s instanceof Sym);
   let sol = hint === 'nth_linear_constant_coeff_homogeneous' ? solIn : doit(solIn);
   if (hint.startsWith('nth_linear_euler_eq_nonhomogeneous') && sol instanceof Rel) sol = Eq(simplify(sol.lhs), simplify(sol.rhs));
   // the bound variable of a CRootOf (a Dummy) is not a constant (SymPy CRootOf has no free symbols)
-  const constants = [...freeSymbols(sol)].filter((s) => !odeSyms.some((o) => o.key === s.key) && !(s instanceof Dummy));
+  const constants = [...freeSymbols(sol)].filter((s) => s instanceof Sym).filter((s) => !odeSyms.some((o) => o.key === s.key) && !(s instanceof Dummy));
   // the hint solvers return equations, which constantsimp keeps
   const s = cast(constantsimp(cast(sol, Rel, 'solution'), constants), Rel, 'solution');
   let eqs: Expr[];

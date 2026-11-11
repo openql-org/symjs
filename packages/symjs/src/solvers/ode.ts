@@ -126,7 +126,7 @@ function dsolveSingle(eqIn: ExprLike, fx: Expr, opts: DsolveOptions): Expr | Exp
  * a linear solve.
  */
 function applyIcs(sol: Expr, fx: UndefFn, x: Sym, ics: [Expr, ExprLike][]): Expr {
-  const cs = [...sol.freeSymbols()].filter((s) => /^C\d+$/.test(s.name));
+  const cs = [...sol.freeSymbols()].filter((s) => s instanceof Sym).filter((s) => /^C\d+$/.test(s.name));
   const eqs: Expr[] = [];
   for (const [cond, v] of ics) {
     const val = sympify(v);

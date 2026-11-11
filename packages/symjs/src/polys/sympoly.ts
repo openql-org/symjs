@@ -195,7 +195,7 @@ export function inferDomain(cs: Expr[]): string {
   const nd = numberDomain(cs);
   if (nd) return nd;
   const syms = new Map<string, Sym>();
-  for (const c of cs) for (const s of freeSymbols(c)) syms.set(s.key, s);
+  for (const c of cs) for (const s of [...freeSymbols(c)].filter((s) => s instanceof Sym)) syms.set(s.key, s);
   if (syms.size === 0) return 'EX';
   const gens = sortGens([...syms.values()]);
   // polynomial ring?
@@ -269,14 +269,14 @@ export class Poly {
   readonly pure: boolean;
 
   /** Free symbols of a polynomial; PurePoly binds its generators. */
-  freeSymbols(): Set<Sym> {
+  freeSymbols(): Set<Expr> {
     return this.pure ? this.freeSymbolsInDomain : freeSymbols(this.asExpr());
   }
 
   get gen(): Expr { return first(this.gens); }
   get freeSymbolsInDomain(): Set<Sym> {
     const symbols = new Map<string, Sym>();
-    for (const { coeff } of this.termList) for (const s of freeSymbols(coeff)) symbols.set(s.key, s);
+    for (const { coeff } of this.termList) for (const s of [...freeSymbols(coeff)].filter((s) => s instanceof Sym)) symbols.set(s.key, s);
     return new Set(symbols.values());
   }
   get isGround(): boolean { return this.totalDegree() <= 0; }
@@ -347,7 +347,7 @@ export class Poly {
     const real = requestedDomain === 'R' || requestedDomain === 'RR';
     const algebraicDomain = /^(?:ZZ|QQ)(?:_I|<)/.test(requestedDomain ?? '');
     const algebraic = opts.extension !== undefined || opts.gaussian === true || algebraicDomain;
-    const gs = gens?.length ? [...gens] : real ? sortGens([...freeSymbols(e)]) : detectGens(e).filter((g) => !algebraic || freeSymbols(g).size > 0);
+    const gs = gens?.length ? [...gens] : real ? sortGens([...freeSymbols(e)].filter((s) => s instanceof Sym)) : detectGens(e).filter((g) => !algebraic || freeSymbols(g).size > 0);
     const terms = new Map<string, Term>();
     for (const t of e instanceof Add ? e.args : [e]) {
       const monom = gs.map(() => 0);
@@ -375,7 +375,7 @@ export class Poly {
       else terms.set(k, { monom, coeff: c });
     }
     const list = [...terms.values()]
-      .map((t) => ({ monom: t.monom, coeff: gs.length && !t.coeff.isNumber ? expand(t.coeff) : t.coeff }))
+      .map((t) => ({ monom: t.monom, coeff: gs.length && !isNum(t.coeff) ? expand(t.coeff) : t.coeff }))
       .filter((t) => !(t.coeff instanceof Rational && t.coeff.isZero));
     if (opts.extension !== undefined || opts.gaussian !== undefined || algebraicDomain) {
       const K = defined(polyConstructionHooks.domain, 'polynomial domain construction')(list.map((t) => t.coeff), opts);
@@ -833,7 +833,7 @@ export class Poly {
    */
   private sqfListSymbolic(x: Expr): [Rational, [Poly, number][]] {
     const e = this.asExpr();
-    const vars = [x, ...sortGens([...freeSymbols(e)].filter((s) => s.key !== x.key))];
+    const vars = [x, ...sortGens([...freeSymbols(e)].filter((s) => s instanceof Sym).filter((s) => s.key !== x.key))];
     const dx = (p: Expr) => expand(diff(p, x));
     const quo = (p: Expr, q: Expr) => defined(divExact(p, q, vars), 'exact quotient');
     const sub = (p: Expr, q: Expr) => expand(add(p, mul(-1, q)));
@@ -2023,7 +2023,7 @@ export function polyStr(p: Poly): string {
 const toExpr = (f: Poly | ExprLike): Expr => (f instanceof Poly ? f.asExpr() : sympify(f));
 const varsFor = (...fs: Expr[]): Sym[] => {
   const m = new Map<string, Sym>();
-  for (const f of fs) for (const s of freeSymbols(f)) m.set(s.key, s);
+  for (const f of fs) for (const s of [...freeSymbols(f)].filter((s) => s instanceof Sym)) m.set(s.key, s);
   return sortGens([...m.values()]);
 };
 
@@ -2093,7 +2093,7 @@ export function termsGcd(f: ExprLike, ...rest: (Sym | TermsGcdOptions)[]): Expr 
   const opts: TermsGcdOptions = lastArg !== undefined && !(lastArg instanceof Expr) ? lastArg : {};
   const gens = rest.filter((g): g is Sym => g instanceof Expr);
   const orig = sympify(f);
-  if (orig.args.length === 0 || orig.isNumber) return orig;
+  if (orig.args.length === 0 || isNum(orig)) return orig;
   if (opts.deep) {
     const inner = rebuild(orig, orig.args.map((a) => termsGcd(a, ...gens, { ...opts })));
     return termsGcd(inner, ...gens, { ...opts, deep: false, expand: false });
@@ -2110,7 +2110,7 @@ export function termsGcd(f: ExprLike, ...rest: (Sym | TermsGcdOptions)[]): Expr 
         c = asRational(mul(c, g), 'product of rational coefficients');
         continue;
       }
-      if (g.isNumber && !(g instanceof Pow) && !(g instanceof Constant)) return orig;
+      if (isNum(g) && !(g instanceof Pow) && !(g instanceof Constant)) return orig;
       let [b, k] = decomposePower(g);
       if (k < 0) {
         b = pow(b, -1);
@@ -2170,7 +2170,7 @@ const isOneExpr = (e: Expr) => e instanceof Rational && e.isOne;
 /** Horner form (SymPy horner): multivariate polynomials recurse on the coefficients. */
 export function horner(f: ExprLike, x?: Sym): Expr {
   const e = sympify(f);
-  if (e.isNumber) return e;
+  if (isNum(e)) return e;
   let gens = Poly.from(e).gens;
   if (x) gens = [x, ...gens.filter((g) => g.key !== x.key)];
   const v = first(gens);
@@ -2245,7 +2245,7 @@ export function discriminant(f: ExprLike, x: Sym): Expr {
  * factor(f, modulus=p)), with coefficients in the symmetric range.
  */
 function factorModulus(e: Expr, p: bigint): Expr {
-  const vars = [...freeSymbols(e)];
+  const vars = [...freeSymbols(e)].filter((s) => s instanceof Sym);
   const [x] = vars;
   if (x === undefined || vars.length !== 1) throw new PolynomialError('factor: modulus requires a univariate polynomial');
   const cs = polyCoefficients(e, x);
@@ -2298,7 +2298,7 @@ export function factor(ex: ExprLike, opts: PolynomialDomainOptions & { deep?: bo
  * as a factor over QQ.
  */
 function factorOverExtension(e: Expr, ext: readonly Expr[]): Expr | undefined {
-  const vars = [...freeSymbols(e)];
+  const vars = [...freeSymbols(e)].filter((s) => s instanceof Sym);
   const [x] = vars;
   if (x === undefined) return undefined;
   let p: Poly;
@@ -2372,7 +2372,7 @@ function factorOverExtension(e: Expr, ext: readonly Expr[]): Expr | undefined {
 export function factorNc(ex: ExprLike): Expr {
   const e = sympify(ex);
   if (e.isCommutative) return factor(e);
-  const nc = [...freeSymbols(e)].filter((s) => !s.isCommutative);
+  const nc = [...freeSymbols(e)].filter((s) => s instanceof Sym).filter((s) => !s.isCommutative);
   // a non-commutative node without non-commutative symbols (a Quaternion): its arguments are factored (SymPy factor_nc)
   if (!nc.length) return rebuild(e, e.args.map(factorNc));
   const reps = nc.map((s) => [s, new Sym(`_nc_${s.name}`)] as [Expr, Expr]);

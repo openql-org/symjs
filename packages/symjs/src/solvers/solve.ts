@@ -100,7 +100,7 @@ export function denoms(expr: ExprLike, ...symbols: Sym[]): Set<Expr> {
  */
 export function unrad(expr: ExprLike, ...symbols: Sym[]): [Expr, Expr[]] | NoMatchResult {
   const e = expandMul(asNumerDenom(asEquation(expr))[0]);
-  const syms = symbols.length ? symbols : [...e.freeSymbols()];
+  const syms = symbols.length ? symbols : [...e.freeSymbols()].filter((s) => s instanceof Sym);
   const radicals = new Map<string, [Pow, Rational]>();
   const visit = (a: Expr): void => {
     if (a instanceof Pow && a.exp instanceof Rational && !a.exp.isInteger && syms.some((s) => a.base.has(s))) radicals.set(a.key, [a, a.exp]);
@@ -775,7 +775,7 @@ export function solve(e: ExprLike, x?: Sym | Expr, opts: { check?: boolean; cubi
     return solve(g, t, opts).map((r) => xreplaceS(r, [[t, target]]));
   }
   const f = asEquation(e);
-  const syms = [...freeSymbols(f)];
+  const syms = [...freeSymbols(f)].filter((s) => s instanceof Sym);
   const v = x ?? (syms.length === 1 ? syms[0] : undefined);
   if (v === undefined) {
     if (syms.length === 0) return [];
@@ -986,7 +986,7 @@ export function solveLinear(e: ExprLike, opts: { symbols?: Sym[]; exclude?: Sym[
   const eq = asEquation(e);
   const [n, d] = asNumerDenom(eq);
   if (isZeroE(n)) return [S.Zero, S.One];
-  let symbols = [...freeSymbols(n)];
+  let symbols = [...freeSymbols(n)].filter((s) => s instanceof Sym);
   const { symbols: only, exclude } = opts;
   if (only) symbols = symbols.filter((s) => only.some((t) => t.key === s.key));
   if (exclude) symbols = symbols.filter((s) => !exclude.some((t) => t.key === s.key));
@@ -1004,7 +1004,7 @@ export function solveLinear(e: ExprLike, opts: { symbols?: Sym[]; exclude?: Sym[
   for (const xi of symbols) {
     const dn = diff(n, xi);
     if (isZeroE(dn)) continue;
-    const free = [...freeSymbols(dn)];
+    const free = [...freeSymbols(dn)].filter((s) => s instanceof Sym);
     const ok = !free.length || free.some((s) => !isZeroE(diff(dn, s))) || (free.length === symKeys.size && free.every((s) => symKeys.has(s.key)));
     if (!ok) continue;
     allZero = false;
@@ -1146,7 +1146,7 @@ const cplx = (z: { re: number; im: number }): Expr =>
  */
 export function invertEquation(eqIn: ExprLike, symbols: readonly Sym[] = [], opts: { integerPower?: boolean } = {}): [Expr, Expr] {
   const eq = sympify(eqIn);
-  const syms = symbols.length ? [...symbols] : [...freeSymbols(eq)];
+  const syms = symbols.length ? [...symbols] : [...freeSymbols(eq)].filter((s) => s instanceof Sym);
   if (!syms.some((s) => eq.has(s))) return [eq, S.Zero];
   const dep = (e: Expr) => syms.some((s) => e.has(s));
   let lhs = eq;

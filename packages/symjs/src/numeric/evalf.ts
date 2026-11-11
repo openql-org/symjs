@@ -6,6 +6,7 @@
  */
 
 import { DeferredVector } from '../core/classes';
+import { isReal } from '../core/assumptions';
 import type {
   ComplexValue as C,
   ConstantName,
@@ -20,6 +21,7 @@ import {
   ExtensionExpr,
   Float,
   Fn,
+  Integral,
   Mul,
   Piecewise,
   Pow,
@@ -62,6 +64,25 @@ import {
 import * as F from './mpf';
 import { dpsToPrec } from './mpf';
 import { type Mpc, type MpPart, MpSpecialValue, evalAdaptive, fromMpc } from './mpeval';
+
+/** SymPy is_comparable: a real numerical value whose evalf(2) has precision. */
+export function isComparable(ex: ExprLike): boolean {
+  const e = sympify(ex);
+  if (!e.isNumber) return false;
+  // SymPy uses precision 1 for a Float with no significant bits; evaluating
+  // that stored approximation at more digits cannot restore its accuracy.
+  if (e instanceof Float) return e.prec > 1;
+  if (e instanceof Special) return e.name === 'oo' || e.name === '-oo';
+  const accuracy = { re: 1, im: 1 };
+  try {
+    const hasLimits = (x: Expr): boolean => x instanceof Integral || x instanceof Concrete || x.args.some(hasLimits);
+    const numerical = hasLimits(e) ? impl.doit?.(e) ?? e : e;
+    const [, im] = evalAdaptive(numerical, dpsToPrec(2), undefined, accuracy);
+    return F.isZero(im) && accuracy.re > 1 && (isReal(e) === true || accuracy.im > 1);
+  } catch {
+    return false;
+  }
+}
 
 /** SymPy pure_complex: a + I*b with numeric atoms a and b, or NoMatch. */
 export function pureComplex(v: ExprLike, orReal = false): [Expr, Expr] | NoMatchResult {
@@ -410,5 +431,6 @@ export function lambdify(ex: ExprLike, params: readonly Sym[]): (...args: (numbe
 }
 
 impl.evalf = evalf;
+impl.isComparable = isComparable;
 
 impl.toComplex = toComplex;

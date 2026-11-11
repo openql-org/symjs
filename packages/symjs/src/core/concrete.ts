@@ -26,6 +26,9 @@ export class Concrete extends Expr {
   get function(): Expr {
     return at(this.args, 0);
   }
+  override get isNumber(): boolean {
+    return this.freeSymbols().size === 0;
+  }
   get limits(): [Expr, Expr, Expr][] {
     const out: [Expr, Expr, Expr][] = [];
     for (let i = 1; i < this.args.length; i += 3) out.push([at(this.args, i), at(this.args, i + 1), at(this.args, i + 2)]);
