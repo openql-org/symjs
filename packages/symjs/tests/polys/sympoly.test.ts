@@ -1058,3 +1058,34 @@ it('constructs polynomials from descending coefficient lists', () => {
   expect(() => sj.Poly.fromList([1],[])).toThrow(sj.PolynomialError);
   expect(() => sj.Poly.fromList([1],[x,y])).toThrow(sj.PolynomialError);
 });
+
+it('preserves coefficient fields under multiplication and prints large float coefficients', () => {
+  const symbolic = Poly.from(sj.sin(y).mul(x), [x], { domain: 'EX' });
+  expect(symbolic.mul(2).domain).toBe('EX');
+  expect(symbolic.mul(2).asExpr().equals(E('2*x*sin(y)'))).toBe(true);
+  expect(Poly.from(x, [x]).unify(Poly.from(add(x, y), [x, y])).map((p) => p.gens)).toEqual([[x, y], [x, y]]);
+  for (const domain of ['QQ', 'CC']) {
+    const f = Poly.from(E('x + 1'), [x], { domain });
+    expect(f.mul(x).domain).toBe(domain);
+    expect(f.mul(Poly.from(E('x/2'), [x])).domain).toBe(domain);
+    expect(Poly.from(x, [x]).mul(f).domain).toBe(domain);
+  }
+  expect(Poly.from(E('93174668405225495165618337349632.0*x'), [x], { domain: 'RR' }).toString())
+    .toBe("Poly(9.31746684052255e+31*x, x, domain='RR')");
+});
+
+it('unifies Gaussian and floating coefficient domains for multiplication', () => {
+  const domains = ['ZZ', 'QQ', 'RR', 'CC', 'ZZ_I', 'QQ_I'];
+  const expected = [
+    ['ZZ', 'QQ', 'RR', 'CC', 'ZZ_I', 'QQ_I'],
+    ['QQ', 'QQ', 'RR', 'CC', 'QQ_I', 'QQ_I'],
+    ['RR', 'RR', 'RR', 'CC', 'CC', 'CC'],
+    ['CC', 'CC', 'CC', 'CC', 'CC', 'CC'],
+    ['ZZ_I', 'QQ_I', 'CC', 'CC', 'ZZ_I', 'QQ_I'],
+    ['QQ_I', 'QQ_I', 'CC', 'CC', 'QQ_I', 'QQ_I'],
+  ];
+  domains.forEach((a, i) => domains.forEach((b, j) => {
+    expect(Poly.from(x, [x], { domain: a }).mul(Poly.from(x, [x], { domain: b })).domain).toBe(expected[i]![j]);
+  }));
+  expect(Poly.from(x, [x]).mul(sj.I).domain).toBe('ZZ_I');
+});

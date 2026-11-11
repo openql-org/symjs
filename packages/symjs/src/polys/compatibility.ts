@@ -460,7 +460,7 @@ export abstract class IPolys<P extends CompatElement<P>> {
     const inA = (rep: readonly { numerator: bigint; denominator: bigint }[]): Expr => add(...rep.map((c, i) => mul(Rational.of(c.numerator, c.denominator), pow(a, rep.length - 1 - i))));
     const F = add(...f.listterms().map(([m, c]) => mul(inA(K.convert(K0.toSympy(c)).rep), ...m.map((e, j) => pow(at(this.symbols, j), e)))));
     const r = resultant(F, inA(K.mod), a);
-    return this.fromTerms(Poly.from(r, [...this.symbols]).terms());
+    return this.withDomain(K0.dom).fromTerms(Poly.from(r, [...this.symbols]).terms());
   }
 
   /** Pseudo-division in x_0 (SymPy dup_pdiv/dmp_pdiv). */

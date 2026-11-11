@@ -82526,9 +82526,10 @@
   {
    "module": "sympy.polys.densearith",
    "sha256": "eb007a0c958a341d1103b4dd83b8cc81120446365db40a77d8e421210eb0995e",
-   "status": "unimplemented",
-   "note": "dense recursive list arithmetic (dup_*/dmp_*); to be ported to ./polys",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/densearith.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 79,
@@ -90042,9 +90043,10 @@
   {
    "module": "sympy.polys.modulargcd",
    "sha256": "80ec288c84a257c22771a10764964c1ce0b5a1d37bc5128de4bd4bb38b3344e2",
-   "status": "unimplemented",
-   "note": "modular GCD algorithms (modgcd_*, func_field_modgcd); to be ported to ./polys",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/modulargcd.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
    "documentedExamples": 46,
