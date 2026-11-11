@@ -7,7 +7,7 @@
 
 import { Expr, Integral, impl } from '../core/nodes';
 import { cast } from '../core/guard';
-import { Indexed } from '../core/indexed';
+import { Indexed, IndexedBase } from '../core/indexed';
 import { IdxNode } from './idx';
 import { add, mul } from '../core/ops';
 import { isNoMatch } from '../core/truth';
@@ -32,6 +32,7 @@ const hasShape = (x: unknown): x is { readonly shape: readonly Dimension[] } => 
  */
 export function shape(expr: unknown): Dimension[] {
   if (expr instanceof Matrix) return [expr.rows, expr.cols];
+  if (expr instanceof Indexed && expr.base instanceof IndexedBase && !isNoMatch(expr.base.shape)) return [...expr.base.shape];
   if (expr instanceof Indexed) return expr.indices.map((i) => {
     if (!(i instanceof IdxNode) || isNoMatch(i.lower)) throw new NoShapeError('index ranges do not define a shape');
     return add(cast(i.upper, Expr), mul(-1, i.lower), 1);

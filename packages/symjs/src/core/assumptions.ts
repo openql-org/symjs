@@ -50,7 +50,7 @@ export function isReal(e: Expr): Tri {
   // extended reals: oo and -oo behave as real for simplification purposes
   if (e instanceof Special) return e.name === 'oo' || e.name === '-oo' ? true : undefined;
   if (e instanceof Constant) return e.name !== 'I';
-  if (e instanceof Sym) return e.assumptions.real ? true : undefined;
+  if (e instanceof Sym) return e.assumptions.real;
   if (e instanceof Add) return all(e.args, isReal) ? true : undefined;
   if (e instanceof Mul) {
     // a product of reals is real; exactly one imaginary-unit factor makes it non-real

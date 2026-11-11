@@ -11523,6 +11523,11 @@
        2
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2
     ]
    },
    "args": [],
@@ -11571,13 +11576,19 @@
        2
       ]
      }
+    ],
+    "rotation": [
+     0,
+     2,
+     1
     ]
    },
    "args": [
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -11625,6 +11636,11 @@
        2
       ]
      }
+    ],
+    "rotation": [
+     0,
+     2,
+     1
     ]
    },
    "args": [],
@@ -11673,6 +11689,11 @@
        2
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2
     ]
    },
    "args": [],
@@ -11721,6 +11742,11 @@
        2
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2
     ]
    },
    "args": [],
@@ -11818,7 +11844,8 @@
     {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -12875,7 +12902,8 @@
     {
      "t": "Rational",
      "p": "16",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -13719,7 +13747,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -13757,7 +13786,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -13795,7 +13825,8 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -14508,7 +14539,8 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -14802,7 +14834,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -14810,7 +14843,8 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -14851,7 +14885,8 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -14859,17 +14894,20 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -14913,17 +14951,20 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -15002,12 +15043,14 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -15063,12 +15106,14 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -15258,7 +15303,8 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -15293,12 +15339,14 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -15345,12 +15393,14 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -15392,7 +15442,8 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -15736,7 +15787,8 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -15814,7 +15866,8 @@
    "self": {
     "t": "Rational",
     "p": "8",
-    "q": "1"
+    "q": "1",
+    "py": true
    },
    "args": [
     {
@@ -59119,7 +59172,9 @@
     {
      "t": "Symbol",
      "name": "x",
-     "assume": {}
+     "assume": {
+      "real": false
+     }
     }
    ],
    "kwargs": {},
@@ -59852,7 +59907,9 @@
    "self": {
     "t": "Symbol",
     "name": "x",
-    "assume": {}
+    "assume": {
+     "real": false
+    }
    },
    "args": [],
    "kwargs": {},
@@ -60484,12 +60541,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "5",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -60504,12 +60563,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "5",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {
@@ -60623,7 +60684,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -60643,7 +60705,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Str",
@@ -60667,7 +60730,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -60687,7 +60751,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -60707,7 +60772,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -60727,7 +60793,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -60741,7 +60808,8 @@
    "self": {
     "t": "Rational",
     "p": "1",
-    "q": "1"
+    "q": "1",
+    "py": true
    },
    "args": [
     {
@@ -60782,7 +60850,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Symbol",
@@ -61017,7 +61086,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -61037,7 +61107,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Str",
@@ -61061,7 +61132,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -61081,7 +61153,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -61101,7 +61174,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -61121,7 +61195,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -61135,7 +61210,8 @@
    "self": {
     "t": "Rational",
     "p": "1",
-    "q": "1"
+    "q": "1",
+    "py": true
    },
    "args": [
     {
@@ -61176,7 +61252,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Symbol",
@@ -61719,7 +61796,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -61901,7 +61979,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -61921,7 +62000,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -61941,7 +62021,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -61961,7 +62042,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -61981,7 +62063,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -62001,7 +62084,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -62071,7 +62155,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -62091,7 +62176,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Str",
@@ -62115,7 +62201,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -62135,7 +62222,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -62155,7 +62243,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -62175,7 +62264,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -62189,7 +62279,8 @@
    "self": {
     "t": "Rational",
     "p": "1",
-    "q": "1"
+    "q": "1",
+    "py": true
    },
    "args": [
     {
@@ -62230,7 +62321,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Symbol",
@@ -62465,7 +62557,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -62485,7 +62578,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Str",
@@ -62509,7 +62603,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -62529,7 +62624,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -62549,7 +62645,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -62569,7 +62666,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -62583,7 +62681,8 @@
    "self": {
     "t": "Rational",
     "p": "1",
-    "q": "1"
+    "q": "1",
+    "py": true
    },
    "args": [
     {
@@ -62624,7 +62723,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Symbol",
@@ -74334,8 +74434,7 @@
         "name": "x",
         "index": 0,
         "assume": {
-         "positive": true,
-         "commutative": true
+         "positive": true
         }
        },
        {
@@ -74373,8 +74472,7 @@
         "name": "x",
         "index": 0,
         "assume": {
-         "positive": true,
-         "commutative": true
+         "positive": true
         }
        }
       ]
@@ -74391,8 +74489,7 @@
         "name": "x",
         "index": 0,
         "assume": {
-         "positive": true,
-         "commutative": true
+         "positive": true
         }
        },
        {
@@ -75231,13 +75328,16 @@
    "self": {
     "t": "Rational",
     "p": "-2",
-    "q": "1"
+    "q": "1",
+    "py": true
    },
    "args": [
     {
      "t": "Symbol",
      "name": "i",
-     "assume": {}
+     "assume": {
+      "odd": true
+     }
     }
    ],
    "kwargs": {},
@@ -75277,7 +75377,9 @@
     {
      "t": "Symbol",
      "name": "i",
-     "assume": {}
+     "assume": {
+      "odd": true
+     }
     }
    ],
    "kwargs": {},
@@ -147051,7 +147153,8 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Add",
@@ -147075,12 +147178,14 @@
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ]
       }
@@ -147102,12 +147207,14 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -147125,12 +147232,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -147138,12 +147247,14 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -147170,12 +147281,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "JsLambda",
@@ -148435,12 +148548,14 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -148530,7 +148645,8 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -148605,7 +148721,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Matrix",
@@ -150796,17 +150913,20 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -150958,17 +151078,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -150982,12 +151105,14 @@
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "5",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -151018,17 +151143,20 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -151039,12 +151167,14 @@
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "5",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -151055,7 +151185,8 @@
         {
          "t": "Rational",
          "p": "6",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -151093,12 +151224,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -151173,7 +151306,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -151248,7 +151382,8 @@
     {
      "t": "Rational",
      "p": "-2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -151289,7 +151424,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -151723,17 +151859,20 @@
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -152202,12 +152341,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -152333,17 +152474,20 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -152354,12 +152498,14 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -152457,17 +152603,20 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -152478,7 +152627,8 @@
       {
        "t": "Rational",
        "p": "-1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -152576,12 +152726,14 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -152592,7 +152744,8 @@
       {
        "t": "Rational",
        "p": "-1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -152690,22 +152843,26 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -152819,12 +152976,14 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Dict",
@@ -152836,19 +152995,22 @@
          {
           "t": "Rational",
           "p": "0",
-          "q": "1"
+          "q": "1",
+          "py": true
          },
          {
           "t": "Rational",
           "p": "0",
-          "q": "1"
+          "q": "1",
+          "py": true
          }
         ]
        },
        {
         "t": "Rational",
         "p": "1",
-        "q": "1"
+        "q": "1",
+        "py": true
        }
       ],
       [
@@ -152858,19 +153020,22 @@
          {
           "t": "Rational",
           "p": "1",
-          "q": "1"
+          "q": "1",
+          "py": true
          },
          {
           "t": "Rational",
           "p": "2",
-          "q": "1"
+          "q": "1",
+          "py": true
          }
         ]
        },
        {
         "t": "Rational",
         "p": "3",
-        "q": "1"
+        "q": "1",
+        "py": true
        }
       ],
       [
@@ -152880,19 +153045,22 @@
          {
           "t": "Rational",
           "p": "2",
-          "q": "1"
+          "q": "1",
+          "py": true
          },
          {
           "t": "Rational",
           "p": "1",
-          "q": "1"
+          "q": "1",
+          "py": true
          }
         ]
        },
        {
         "t": "Rational",
         "p": "4",
-        "q": "1"
+        "q": "1",
+        "py": true
        }
       ]
      ]
@@ -153591,12 +153759,14 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     }
@@ -153839,7 +154009,8 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Matrix",
@@ -159613,7 +159784,8 @@
     {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Symbol",
@@ -159637,7 +159809,8 @@
     {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Symbol",
@@ -159667,7 +159840,8 @@
     "size": {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     "eigenvalue": {
      "t": "Symbol",
@@ -159793,7 +159967,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -160243,7 +160418,8 @@
     {
      "t": "Rational",
      "p": "-2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -160355,7 +160531,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -160430,12 +160607,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -160510,12 +160689,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -160736,7 +160917,8 @@
     {
      "t": "Rational",
      "p": "10",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -160784,7 +160966,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -160832,7 +161015,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -160880,7 +161064,8 @@
     {
      "t": "Rational",
      "p": "-2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -161232,12 +161417,14 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -161248,12 +161435,14 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -161349,12 +161538,14 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -161365,12 +161556,14 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -162510,12 +162703,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "6",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -162573,12 +162768,14 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -162626,7 +162823,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -162674,7 +162872,8 @@
     {
      "t": "Rational",
      "p": "-2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -162722,7 +162921,8 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -162797,7 +162997,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Matrix",
@@ -163163,12 +163364,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -166558,7 +166761,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -169968,12 +170172,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -171595,7 +171801,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -171707,7 +171914,8 @@
     {
      "t": "Rational",
      "p": "-1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -172262,12 +172470,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -205981,9 +206191,12 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "M",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "M",
+      "assume": {}
+     }
     },
     "indices": [
      {
@@ -206016,9 +206229,12 @@
     {
      "t": "Indexed",
      "base": {
-      "t": "Symbol",
-      "name": "x",
-      "assume": {}
+      "t": "IndexedBase",
+      "label": {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
      },
      "indices": [
       {
@@ -206050,7 +206266,40 @@
      "t": "Symbol",
      "name": "A",
      "assume": {}
-    }
+    },
+    "shape": [
+     {
+      "t": "Symbol",
+      "name": "dim1",
+      "assume": {
+       "integer": true
+      }
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "dim1",
+        "assume": {
+         "integer": true
+        }
+       }
+      ]
+     },
+     {
+      "t": "Symbol",
+      "name": "dim2",
+      "assume": {
+       "integer": true
+      }
+     }
+    ]
    },
    "args": [],
    "kwargs": {},
@@ -206064,9 +206313,45 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "A",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     },
+     "shape": [
+      {
+       "t": "Symbol",
+       "name": "dim1",
+       "assume": {
+        "integer": true
+       }
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "dim1",
+         "assume": {
+          "integer": true
+         }
+        }
+       ]
+      },
+      {
+       "t": "Symbol",
+       "name": "dim2",
+       "assume": {
+        "integer": true
+       }
+      }
+     ]
     },
     "indices": [
      {
@@ -206112,9 +206397,12 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "M",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "M",
+      "assume": {}
+     }
     },
     "indices": [
      {
@@ -206195,9 +206483,12 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "M",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "M",
+      "assume": {}
+     }
     },
     "indices": [
      {
@@ -206278,9 +206569,45 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "A",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     },
+     "shape": [
+      {
+       "t": "Symbol",
+       "name": "dim1",
+       "assume": {
+        "integer": true
+       }
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "dim1",
+         "assume": {
+          "integer": true
+         }
+        }
+       ]
+      },
+      {
+       "t": "Symbol",
+       "name": "dim2",
+       "assume": {
+        "integer": true
+       }
+      }
+     ]
     },
     "indices": [
      {
@@ -206366,9 +206693,45 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "A",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     },
+     "shape": [
+      {
+       "t": "Symbol",
+       "name": "dim1",
+       "assume": {
+        "integer": true
+       }
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "dim1",
+         "assume": {
+          "integer": true
+         }
+        }
+       ]
+      },
+      {
+       "t": "Symbol",
+       "name": "dim2",
+       "assume": {
+        "integer": true
+       }
+      }
+     ]
     },
     "indices": [
      {
@@ -206455,9 +206818,45 @@
     {
      "t": "Indexed",
      "base": {
-      "t": "Symbol",
-      "name": "A",
-      "assume": {}
+      "t": "IndexedBase",
+      "label": {
+       "t": "Symbol",
+       "name": "A",
+       "assume": {}
+      },
+      "shape": [
+       {
+        "t": "Symbol",
+        "name": "dim1",
+        "assume": {
+         "integer": true
+        }
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "dim1",
+          "assume": {
+           "integer": true
+          }
+         }
+        ]
+       },
+       {
+        "t": "Symbol",
+        "name": "dim2",
+        "assume": {
+         "integer": true
+        }
+       }
+      ]
      },
      "indices": [
       {
@@ -206571,9 +206970,45 @@
     {
      "t": "Indexed",
      "base": {
-      "t": "Symbol",
-      "name": "A",
-      "assume": {}
+      "t": "IndexedBase",
+      "label": {
+       "t": "Symbol",
+       "name": "A",
+       "assume": {}
+      },
+      "shape": [
+       {
+        "t": "Symbol",
+        "name": "dim1",
+        "assume": {
+         "integer": true
+        }
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "dim1",
+          "assume": {
+           "integer": true
+          }
+         }
+        ]
+       },
+       {
+        "t": "Symbol",
+        "name": "dim2",
+        "assume": {
+         "integer": true
+        }
+       }
+      ]
      },
      "indices": [
       {
@@ -206913,9 +207348,12 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "A",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     }
     },
     "indices": [
      {
@@ -206948,9 +207386,12 @@
     {
      "t": "Indexed",
      "base": {
-      "t": "Symbol",
-      "name": "A",
-      "assume": {}
+      "t": "IndexedBase",
+      "label": {
+       "t": "Symbol",
+       "name": "A",
+       "assume": {}
+      }
      },
      "indices": [
       {
@@ -206991,9 +207432,12 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "A",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     }
     },
     "indices": [
      {
@@ -207060,9 +207504,12 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "A",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     }
     },
     "indices": [
      {
@@ -207103,9 +207550,12 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "A",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     }
     },
     "indices": [
      {
@@ -207182,9 +207632,12 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "A",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     }
     },
     "indices": [
      {
@@ -207261,9 +207714,12 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "A",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     }
     },
     "indices": [
      {
@@ -207301,9 +207757,12 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "A",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     }
     },
     "indices": [
      {
@@ -207344,9 +207803,12 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "A",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     }
     },
     "indices": [
      {
@@ -207423,9 +207885,28 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "A",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     },
+     "shape": [
+      {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {
+        "integer": true
+       }
+      },
+      {
+       "t": "Symbol",
+       "name": "n",
+       "assume": {
+        "integer": true
+       }
+      }
+     ]
     },
     "indices": [
      {
@@ -207506,9 +207987,12 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "B",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "B",
+      "assume": {}
+     }
     },
     "indices": [
      {
@@ -207615,7 +208099,8 @@
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     }
@@ -207631,9 +208116,12 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "A",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     }
     },
     "indices": [
      {
@@ -207714,9 +208202,28 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "B",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "B",
+      "assume": {}
+     },
+     "shape": [
+      {
+       "t": "Symbol",
+       "name": "o",
+       "assume": {
+        "integer": true
+       }
+      },
+      {
+       "t": "Symbol",
+       "name": "p",
+       "assume": {
+        "integer": true
+       }
+      }
+     ]
     },
     "indices": [
      {
@@ -207877,7 +208384,19 @@
      "t": "Symbol",
      "name": "A",
      "assume": {}
-    }
+    },
+    "shape": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     }
+    ]
    },
    "args": [],
    "kwargs": {},
@@ -207892,9 +208411,12 @@
     {
      "t": "Indexed",
      "base": {
-      "t": "Symbol",
-      "name": "A",
-      "assume": {}
+      "t": "IndexedBase",
+      "label": {
+       "t": "Symbol",
+       "name": "A",
+       "assume": {}
+      }
      },
      "indices": [
       {
@@ -207951,7 +208473,19 @@
      "t": "Symbol",
      "name": "A",
      "assume": {}
-    }
+    },
+    "shape": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     }
+    ]
    },
    "args": [],
    "kwargs": {},
@@ -207965,9 +208499,24 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "A",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "A",
+      "assume": {}
+     },
+     "shape": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ]
     },
     "indices": [
      {
@@ -208024,9 +208573,12 @@
    "self": {
     "t": "Indexed",
     "base": {
-     "t": "Symbol",
-     "name": "B",
-     "assume": {}
+     "t": "IndexedBase",
+     "label": {
+      "t": "Symbol",
+      "name": "B",
+      "assume": {}
+     }
     },
     "indices": [
      {
@@ -212929,17 +213481,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -212960,12 +213515,14 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Tuple",
@@ -212973,7 +213530,8 @@
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -212997,7 +213555,8 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Tuple",
@@ -213005,12 +213564,14 @@
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -213021,12 +213582,14 @@
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "5",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -213055,7 +213618,8 @@
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Tuple",
@@ -213063,7 +213627,8 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Js",
@@ -213096,12 +213661,14 @@
           {
            "t": "Rational",
            "p": "-2",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "-1",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -213111,12 +213678,14 @@
           {
            "t": "Rational",
            "p": "1",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "2",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         }
@@ -213132,12 +213701,14 @@
           {
            "t": "Rational",
            "p": "0",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "0",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         }
@@ -213152,7 +213723,8 @@
     "levels": {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    },
    "category": "utilities",
@@ -213689,32 +214261,38 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -213735,32 +214313,38 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -213786,32 +214370,38 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -213837,17 +214427,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     }
@@ -213867,17 +214460,20 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -213898,17 +214494,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     }
@@ -213928,17 +214527,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     }
@@ -213957,22 +214559,26 @@
      {
       "t": "Rational",
       "p": "1",
-      "q": "1"
+      "q": "1",
+      "py": true
      },
      {
       "t": "Rational",
       "p": "1",
-      "q": "1"
+      "q": "1",
+      "py": true
      },
      {
       "t": "Rational",
       "p": "2",
-      "q": "1"
+      "q": "1",
+      "py": true
      },
      {
       "t": "Rational",
       "p": "2",
-      "q": "1"
+      "q": "1",
+      "py": true
      }
     ],
     "list": true
@@ -213990,7 +214596,8 @@
     {
      "t": "Rational",
      "p": "6",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -214008,42 +214615,50 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "7",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "8",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -214054,7 +214669,8 @@
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -214075,42 +214691,50 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "7",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "8",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -214121,7 +214745,8 @@
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     }
@@ -214141,42 +214766,50 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "7",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "8",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -214187,12 +214820,14 @@
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     }
@@ -214212,42 +214847,50 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "7",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "8",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -214258,7 +214901,8 @@
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Tuple",
@@ -214266,7 +214910,8 @@
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -214289,42 +214934,50 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "7",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "8",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -214338,7 +214991,8 @@
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ]
       },
@@ -214348,7 +215002,8 @@
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -214371,42 +215026,50 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "7",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "8",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -214417,7 +215080,8 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Tuple",
@@ -214425,7 +215089,8 @@
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -214433,7 +215098,8 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     }
@@ -214453,42 +215119,50 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "7",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "8",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     },
@@ -214504,7 +215178,8 @@
           {
            "t": "Rational",
            "p": "1",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ],
          "list": true
@@ -214512,7 +215187,8 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Tuple",
@@ -214520,7 +215196,8 @@
           {
            "t": "Rational",
            "p": "2",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         }
@@ -214545,42 +215222,50 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "7",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "8",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     },
@@ -214593,7 +215278,8 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -214601,7 +215287,8 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Tuple",
@@ -214609,7 +215296,8 @@
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ]
       }
@@ -214631,62 +215319,74 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "7",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "8",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "9",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "10",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "11",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -214697,7 +215397,8 @@
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Tuple",
@@ -214705,7 +215406,8 @@
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -214716,7 +215418,8 @@
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ]
       },
@@ -214726,7 +215429,8 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Tuple",
@@ -214734,14 +215438,16 @@
           {
            "t": "Rational",
            "p": "3",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ]
       }
@@ -214764,27 +215470,32 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -214942,22 +215653,26 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -215047,42 +215762,50 @@
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "5",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "7",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "8",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "9",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "10",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "11",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -215096,12 +215819,14 @@
           {
            "t": "Rational",
            "p": "7",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "11",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215111,12 +215836,14 @@
           {
            "t": "Rational",
            "p": "7",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "8",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215126,12 +215853,14 @@
           {
            "t": "Rational",
            "p": "5",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "11",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215141,12 +215870,14 @@
           {
            "t": "Rational",
            "p": "3",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "8",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215156,12 +215887,14 @@
           {
            "t": "Rational",
            "p": "3",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "10",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215171,12 +215904,14 @@
           {
            "t": "Rational",
            "p": "11",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "2",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215186,12 +215921,14 @@
           {
            "t": "Rational",
            "p": "11",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "9",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215201,12 +215938,14 @@
           {
            "t": "Rational",
            "p": "11",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "10",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215216,12 +215955,14 @@
           {
            "t": "Rational",
            "p": "8",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "9",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         }
@@ -215249,42 +215990,50 @@
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "5",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "7",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "8",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "9",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "10",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "11",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -215298,12 +216047,14 @@
           {
            "t": "Rational",
            "p": "7",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "11",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215313,12 +216064,14 @@
           {
            "t": "Rational",
            "p": "7",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "8",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215328,12 +216081,14 @@
           {
            "t": "Rational",
            "p": "5",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "11",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215343,12 +216098,14 @@
           {
            "t": "Rational",
            "p": "3",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "8",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215358,12 +216115,14 @@
           {
            "t": "Rational",
            "p": "3",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "10",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215373,12 +216132,14 @@
           {
            "t": "Rational",
            "p": "11",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "2",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215388,12 +216149,14 @@
           {
            "t": "Rational",
            "p": "11",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "9",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215403,12 +216166,14 @@
           {
            "t": "Rational",
            "p": "11",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "10",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         },
@@ -215418,12 +216183,14 @@
           {
            "t": "Rational",
            "p": "8",
-           "q": "1"
+           "q": "1",
+           "py": true
           },
           {
            "t": "Rational",
            "p": "9",
-           "q": "1"
+           "q": "1",
+           "py": true
           }
          ]
         }
@@ -293344,8 +294111,63 @@
   {
    "fn": ".__call__",
    "self": {
-    "t": "JsFunc",
-    "name": "chain_rl"
+    "t": "StrategySubs",
+    "mapping": {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "4",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "4",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Basic",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "5",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Basic",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "6",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "7",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     ]
+    }
    },
    "args": [
     {
@@ -368829,8 +369651,104 @@
   {
    "fn": ".__call__",
    "self": {
-    "t": "JsFunc",
-    "name": "directional_derivative"
+    "t": "DirectionalDerivative",
+    "vector": {
+     "t": "Vec",
+     "cls": "BaseVector",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Vec",
+       "cls": "CoordSys3D",
+       "name": "C",
+       "transformation": {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Matrix",
+          "rows": [
+           [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            }
+           ],
+           [
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            }
+           ],
+           [
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            }
+           ]
+          ],
+          "shape": [
+           3,
+           3
+          ]
+         },
+         {
+          "t": "Vec",
+          "cls": "VectorZero",
+          "args": []
+         }
+        ]
+       },
+       "parent": null,
+       "vectorNames": [
+        "i",
+        "j",
+        "k"
+       ],
+       "variableNames": [
+        "x",
+        "y",
+        "z"
+       ]
+      }
+     ]
+    }
    },
    "args": [
     {
@@ -373138,8 +374056,104 @@
   {
    "fn": ".__call__",
    "self": {
-    "t": "JsFunc",
-    "name": "directional_derivative"
+    "t": "DirectionalDerivative",
+    "vector": {
+     "t": "Vec",
+     "cls": "BaseVector",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Vec",
+       "cls": "CoordSys3D",
+       "name": "C",
+       "transformation": {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Matrix",
+          "rows": [
+           [
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            }
+           ],
+           [
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            }
+           ],
+           [
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "0",
+             "q": "1"
+            },
+            {
+             "t": "Rational",
+             "p": "1",
+             "q": "1"
+            }
+           ]
+          ],
+          "shape": [
+           3,
+           3
+          ]
+         },
+         {
+          "t": "Vec",
+          "cls": "VectorZero",
+          "args": []
+         }
+        ]
+       },
+       "parent": null,
+       "vectorNames": [
+        "i",
+        "j",
+        "k"
+       ],
+       "variableNames": [
+        "x",
+        "y",
+        "z"
+       ]
+      }
+     ]
+    }
    },
    "args": [
     {
@@ -424059,12 +425073,16 @@
       {
        "t": "Symbol",
        "name": "y",
-       "assume": {}
+       "assume": {
+        "even": true
+       }
       },
       {
        "t": "Symbol",
        "name": "x",
-       "assume": {}
+       "assume": {
+        "odd": true
+       }
       }
      ]
     }
@@ -424085,12 +425103,16 @@
       {
        "t": "Symbol",
        "name": "y",
-       "assume": {}
+       "assume": {
+        "even": true
+       }
       },
       {
        "t": "Symbol",
        "name": "x",
-       "assume": {}
+       "assume": {
+        "odd": true
+       }
       }
      ]
     }
@@ -425239,12 +426261,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -425493,7 +426517,8 @@
     {
      "t": "Rational",
      "p": "-2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -425605,7 +426630,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -425686,12 +426712,14 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -425702,12 +426730,14 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -425803,12 +426833,14 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -425819,12 +426851,14 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -426007,7 +427041,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -426055,7 +427090,8 @@
     {
      "t": "Rational",
      "p": "-2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -426070,12 +427106,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -426163,12 +427201,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -426626,7 +427666,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -426738,7 +427779,8 @@
     {
      "t": "Rational",
      "p": "-1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -426753,12 +427795,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -430134,7 +431178,8 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -430209,7 +431254,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Matrix",
@@ -430410,7 +431456,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -430485,7 +431532,8 @@
     {
      "t": "Rational",
      "p": "-2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -430526,7 +431574,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -430621,17 +431670,20 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -430642,12 +431694,14 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -430745,17 +431799,20 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -430766,7 +431823,8 @@
       {
        "t": "Rational",
        "p": "-1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -430864,12 +431922,14 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -430880,7 +431940,8 @@
       {
        "t": "Rational",
        "p": "-1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -430978,22 +432039,26 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -431152,12 +432217,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "6",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -431215,12 +432282,14 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -431268,7 +432337,8 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -431343,7 +432413,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Matrix",
@@ -432214,17 +433285,20 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -432376,17 +433450,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -432400,12 +433477,14 @@
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "5",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -432436,17 +433515,20 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -432457,12 +433539,14 @@
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "5",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -432473,7 +433557,8 @@
         {
          "t": "Rational",
          "p": "6",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -432511,12 +433596,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -432535,7 +433622,8 @@
     {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Symbol",
@@ -432559,7 +433647,8 @@
     {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Symbol",
@@ -432589,7 +433678,8 @@
     "size": {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     "eigenvalue": {
      "t": "Symbol",
@@ -461355,7 +462445,8 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -461395,7 +462486,8 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -461435,7 +462527,8 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {
@@ -461480,7 +462573,8 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -461584,7 +462678,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -461688,7 +462783,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -461793,7 +462889,8 @@
     "n": {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    },
    "category": "polys",
@@ -462039,7 +463136,8 @@
     "n": {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    },
    "category": "polys",
@@ -462124,7 +463222,8 @@
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -462144,7 +463243,8 @@
     {
      "t": "Rational",
      "p": "6",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -462223,7 +463323,8 @@
     {
      "t": "Rational",
      "p": "17",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -462234,19 +463335,193 @@
   },
   {
    "fn": ".__getitem__",
-   "unsupportedArg": "_pure_key_dict",
    "category": "polys",
    "module": "sympy.polys.rootoftools",
    "src": "P[y]",
-   "expected": "1"
+   "expected": "1",
+   "self": {
+    "t": "PureKeyDict",
+    "items": [
+     [
+      {
+       "t": "Poly",
+       "expr": {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": true
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1",
+       "py": true
+      }
+     ],
+     [
+      {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "y",
+            "assume": {}
+           }
+          ]
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ[y]",
+       "pure": true
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1",
+       "py": true
+      }
+     ]
+    ]
+   },
+   "kwargs": {},
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "y",
+     "assume": {}
+    }
+   ]
   },
   {
    "fn": ".__contains__",
-   "unsupportedArg": "_pure_key_dict",
    "category": "polys",
    "module": "sympy.polys.rootoftools",
    "src": "x + 1 in P",
-   "expected": "False"
+   "expected": "False",
+   "self": {
+    "t": "PureKeyDict",
+    "items": [
+     [
+      {
+       "t": "Poly",
+       "expr": {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ",
+       "pure": true
+      },
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1",
+       "py": true
+      }
+     ],
+     [
+      {
+       "t": "Poly",
+       "expr": {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "y",
+            "assume": {}
+           }
+          ]
+         }
+        ]
+       },
+       "gens": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ],
+       "domain": "ZZ[y]",
+       "pure": true
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1",
+       "py": true
+      }
+     ]
+    ]
+   },
+   "kwargs": {},
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ]
   },
   {
    "fn": "eqs_to_matrix",
@@ -542055,7 +543330,9 @@
    "self": {
     "t": "Symbol",
     "name": "x",
-    "assume": {}
+    "assume": {
+     "even": true
+    }
    },
    "args": [],
    "kwargs": {},
@@ -542104,7 +543381,9 @@
      {
       "t": "Symbol",
       "name": "x",
-      "assume": {}
+      "assume": {
+       "even": true
+      }
      }
     ]
    },
@@ -542116,7 +543395,9 @@
       {
        "t": "Symbol",
        "name": "x",
-       "assume": {}
+       "assume": {
+        "even": true
+       }
       }
      ]
     }
@@ -607083,7 +608364,12 @@
       2
      ]
     ],
-    "pgroup": []
+    "pgroup": [],
+    "rotation": [
+     0,
+     1,
+     2
+    ]
    },
    "args": [],
    "kwargs": {},
@@ -607120,7 +608406,12 @@
       2
      ]
     ],
-    "pgroup": []
+    "pgroup": [],
+    "rotation": [
+     0,
+     1,
+     2
+    ]
    },
    "args": [],
    "kwargs": {},
@@ -607241,6 +608532,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2,
+     3
     ]
    },
    "args": [],
@@ -607362,6 +608659,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2,
+     3
     ]
    },
    "args": [],
@@ -607483,6 +608786,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2,
+     3
     ]
    },
    "args": [],
@@ -607604,6 +608913,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     3,
+     2
     ]
    },
    "args": [
@@ -607735,6 +609050,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     3,
+     2
     ]
    },
    "args": [],
@@ -608476,6 +609797,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2,
+     3
     ]
    },
    "args": [],
@@ -608597,6 +609924,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     1,
+     0,
+     3,
+     2
     ]
    },
    "args": [],
@@ -608718,6 +610051,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2,
+     3
     ]
    },
    "args": [],
@@ -608839,6 +610178,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     1,
+     0,
+     3,
+     2
     ]
    },
    "args": [
@@ -608970,6 +610315,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     1,
+     0,
+     3,
+     2
     ]
    },
    "args": [],
@@ -609109,6 +610460,12 @@
        1
       ]
      }
+    ],
+    "rotation": [
+     0,
+     2,
+     1,
+     3
     ]
    },
    "args": [
@@ -609181,6 +610538,12 @@
        1
       ]
      }
+    ],
+    "rotation": [
+     0,
+     2,
+     1,
+     3
     ]
    },
    "args": [],
@@ -609243,6 +610606,12 @@
        1
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2,
+     3
     ]
    },
    "args": [],
@@ -609305,6 +610674,12 @@
        1
       ]
      }
+    ],
+    "rotation": [
+     3,
+     1,
+     2,
+     0
     ]
    },
    "args": [
@@ -609377,6 +610752,12 @@
        1
       ]
      }
+    ],
+    "rotation": [
+     3,
+     1,
+     2,
+     0
     ]
    },
    "args": [],
@@ -609601,13 +610982,40 @@
        21
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     19,
+     17,
+     6,
+     4,
+     7,
+     5,
+     2,
+     9,
+     3,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     20,
+     18,
+     21,
+     10,
+     8,
+     22,
+     23
     ]
    },
    "args": [
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -609870,6 +611278,16 @@
        2
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
     ]
    },
    "args": [],
@@ -609963,7 +611381,17 @@
       7
      ]
     ],
-    "pgroup": []
+    "pgroup": [],
+    "rotation": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
+    ]
    },
    "args": [],
    "kwargs": {},
@@ -610084,6 +611512,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2,
+     3
     ]
    },
    "args": [],
@@ -610205,13 +611639,20 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     2,
+     3,
+     1
     ]
    },
    "args": [
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -610332,6 +611773,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     2,
+     3,
+     1
     ]
    },
    "args": [],
@@ -610387,7 +611834,12 @@
       2
      ]
     ],
-    "pgroup": []
+    "pgroup": [],
+    "rotation": [
+     0,
+     1,
+     2
+    ]
    },
    "args": [],
    "kwargs": {},
@@ -610508,6 +611960,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2,
+     3
     ]
    },
    "args": [],
@@ -610629,13 +612087,20 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     2,
+     3,
+     1
     ]
    },
    "args": [
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -610756,6 +612221,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     2,
+     3,
+     1
     ]
    },
    "args": [],
@@ -610877,6 +612348,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2,
+     3
     ]
    },
    "args": [],
@@ -610998,6 +612475,12 @@
        0
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2,
+     3
     ]
    },
    "args": [],
@@ -611261,6 +612744,16 @@
        2
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
     ]
    },
    "args": [],
@@ -611524,13 +613017,24 @@
        2
       ]
      }
+    ],
+    "rotation": [
+     1,
+     2,
+     3,
+     0,
+     5,
+     6,
+     7,
+     4
     ]
    },
    "args": [
     {
      "t": "Rational",
      "p": "0",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -611793,6 +613297,16 @@
        2
       ]
      }
+    ],
+    "rotation": [
+     1,
+     2,
+     3,
+     0,
+     5,
+     6,
+     7,
+     4
     ]
    },
    "args": [],
@@ -612056,6 +613570,16 @@
        2
       ]
      }
+    ],
+    "rotation": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7
     ]
    },
    "args": [],
@@ -612319,6 +613843,16 @@
        2
       ]
      }
+    ],
+    "rotation": [
+     0,
+     2,
+     1,
+     3,
+     4,
+     5,
+     6,
+     7
     ]
    },
    "args": [
@@ -612596,6 +614130,16 @@
        2
       ]
      }
+    ],
+    "rotation": [
+     0,
+     2,
+     1,
+     3,
+     4,
+     5,
+     6,
+     7
     ]
    },
    "args": [],
@@ -612637,7 +614181,14 @@
      }
     ],
     "faces": [],
-    "pgroup": []
+    "pgroup": [],
+    "rotation": [
+     3,
+     0,
+     1,
+     2,
+     4
+    ]
    },
    "args": [
     {
@@ -612689,7 +614240,14 @@
      }
     ],
     "faces": [],
-    "pgroup": []
+    "pgroup": [],
+    "rotation": [
+     3,
+     0,
+     1,
+     2,
+     4
+    ]
    },
    "args": [],
    "kwargs": {},
@@ -612730,7 +614288,14 @@
      }
     ],
     "faces": [],
-    "pgroup": []
+    "pgroup": [],
+    "rotation": [
+     2,
+     3,
+     0,
+     1,
+     4
+    ]
    },
    "args": [
     {
@@ -616578,7 +618143,8 @@
     {
      "t": "Rational",
      "p": "5",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -617146,7 +618712,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Str",
@@ -617165,7 +618732,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Symbol",
@@ -617194,7 +618762,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Str",
@@ -617213,7 +618782,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Symbol",
@@ -617242,7 +618812,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Str",
@@ -617261,7 +618832,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Symbol",
@@ -617290,7 +618862,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Str",
@@ -617309,7 +618882,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Symbol",
@@ -618829,7 +620403,8 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -630987,17 +632562,20 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631018,17 +632596,20 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631039,22 +632620,26 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631075,17 +632660,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631096,17 +632684,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631127,17 +632718,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631148,17 +632742,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631179,17 +632776,20 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631210,17 +632810,20 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631231,22 +632834,26 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631267,17 +632874,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631288,17 +632898,20 @@
       {
        "t": "Rational",
        "p": "9",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631319,17 +632932,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631340,17 +632956,20 @@
       {
        "t": "Rational",
        "p": "9",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "7",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631463,7 +633082,8 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -631478,12 +633098,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -631498,12 +633120,14 @@
     {
      "t": "Rational",
      "p": "123",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "10",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {
@@ -631527,17 +633151,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631573,7 +633200,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -631592,12 +633220,14 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "-1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -631616,12 +633246,14 @@
     {
      "t": "Rational",
      "p": "-4",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "-1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -631696,7 +633328,7 @@
    "fn": "is_sequence",
    "args": [
     {
-     "t": "Tuple",
+     "t": "Iterator",
      "items": [
       {
        "t": "Str",
@@ -631710,8 +633342,7 @@
        "t": "Str",
        "v": "c"
       }
-     ],
-     "list": true
+     ]
     }
    ],
    "kwargs": {},
@@ -631814,27 +633445,32 @@
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -631855,17 +633491,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     }
@@ -631885,17 +633524,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     }
@@ -631915,17 +633557,20 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     }
@@ -632071,17 +633716,20 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -632089,7 +633737,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -632107,17 +633756,20 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -632125,7 +633777,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -632143,47 +633796,56 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -632204,47 +633866,56 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -652415,7 +654086,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -652435,7 +654107,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -652455,7 +654128,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -652475,7 +654149,8 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -657072,7 +658747,8 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Add",
@@ -657091,12 +658767,14 @@
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     }
@@ -657996,7 +659674,8 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Add",
@@ -658020,12 +659699,14 @@
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ]
       }
@@ -658044,12 +659725,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "JsLambda",
@@ -658155,12 +659838,14 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -658168,47 +659853,56 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "-2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "-6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "9",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -658232,7 +659926,8 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Add",
@@ -658256,12 +659951,14 @@
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ]
       },
@@ -658418,12 +660115,14 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -658431,47 +660130,56 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "-4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -658629,12 +660337,14 @@
     {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -658642,62 +660352,74 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "7",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "8",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "9",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "10",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "11",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -659048,7 +660770,8 @@
        {
         "t": "Rational",
         "p": "0",
-        "q": "1"
+        "q": "1",
+        "py": true
        }
       ],
       [
@@ -659060,7 +660783,8 @@
        {
         "t": "Rational",
         "p": "0",
-        "q": "1"
+        "q": "1",
+        "py": true
        }
       ]
      ]
@@ -660148,12 +661872,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -660161,22 +661887,26 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "-1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -660194,12 +661924,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -660207,12 +661939,14 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Symbol",
@@ -660237,12 +661971,14 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -660260,12 +661996,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -660273,22 +662011,26 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -660306,12 +662048,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -660319,22 +662063,26 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -660352,17 +662100,20 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -660383,7 +662134,8 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Const",
@@ -660412,7 +662164,8 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -660433,12 +662186,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -660446,22 +662201,26 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -660479,12 +662238,14 @@
     {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -660492,62 +662253,74 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -660565,12 +662338,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -660628,7 +662403,8 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Add",
@@ -660667,22 +662443,26 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -660693,22 +662473,26 @@
         {
          "t": "Rational",
          "p": "5",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -660719,22 +662503,26 @@
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "7",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -660745,22 +662533,26 @@
         {
          "t": "Rational",
          "p": "5",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "6",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -660781,12 +662573,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -660794,22 +662588,26 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -660827,12 +662625,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -660840,22 +662640,26 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -660873,12 +662677,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -660886,32 +662692,38 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -660929,12 +662741,14 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -660942,7 +662756,8 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Add",
@@ -661017,12 +662832,14 @@
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Symbol",
@@ -661032,12 +662849,14 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -661055,12 +662874,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -661068,22 +662889,26 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -661101,12 +662926,14 @@
     {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -661114,62 +662941,74 @@
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "9",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -661187,12 +663026,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -661200,32 +663041,38 @@
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -661249,22 +663096,26 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -661275,22 +663126,26 @@
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "7",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -661301,22 +663156,26 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -661327,22 +663186,26 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -661470,12 +663333,14 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -661483,47 +663348,56 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "-2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "-6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "9",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -661541,12 +663415,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "JsLambda",
@@ -661890,11 +663766,47 @@
   },
   {
    "fn": "Matrix",
-   "unsupportedArg": "function",
    "category": "matrices",
    "module": "sympy.matrices.matrixbase",
    "src": "m",
-   "expected": "Matrix([[1, 1, 1], [1, 1, 1]])"
+   "expected": "Matrix([[1, 1, 1], [1, 1, 1]])",
+   "kwargs": {},
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1",
+     "py": true
+    },
+    {
+     "t": "Rational",
+     "p": "3",
+     "q": "1",
+     "py": true
+    },
+    {
+     "t": "JsLambda",
+     "params": [
+      {
+       "t": "Dummy",
+       "name": "i",
+       "index": 0,
+       "assume": {}
+      },
+      {
+       "t": "Dummy",
+       "name": "j",
+       "index": 1,
+       "assume": {}
+      }
+     ],
+     "body": {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     }
+    }
+   ]
   },
   {
    "fn": "Matrix",
@@ -661902,12 +663814,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -661947,12 +663861,14 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -661960,47 +663876,56 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "-2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "-6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "9",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -662508,12 +664433,14 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -662524,12 +664451,14 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -662550,12 +664479,14 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -662563,47 +664494,56 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "7",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "8",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -662627,7 +664567,8 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Add",
@@ -662651,12 +664592,14 @@
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ]
       }
@@ -662821,12 +664764,14 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -662837,12 +664782,14 @@
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -662869,12 +664816,14 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -662885,12 +664834,14 @@
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -663005,7 +664956,8 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -663025,7 +664977,8 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -675143,7 +677096,8 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Add",
@@ -675162,12 +677116,14 @@
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ]
     }
@@ -675184,12 +677140,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "JsLambda",
@@ -675254,7 +677212,8 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Add",
@@ -675278,12 +677237,14 @@
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ]
       },
@@ -675400,12 +677361,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -675451,7 +677414,8 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Add",
@@ -675475,12 +677439,14 @@
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ]
       }
@@ -675499,12 +677465,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -675512,22 +677480,26 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "-1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -675545,12 +677517,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -675558,12 +677532,14 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Symbol",
@@ -675588,12 +677564,14 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -675611,12 +677589,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -675624,22 +677604,26 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -675657,12 +677641,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -675670,22 +677656,26 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -675703,17 +677693,20 @@
     {
      "t": "Rational",
      "p": "1",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -675734,7 +677727,8 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Const",
@@ -675763,7 +677757,8 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -675784,12 +677779,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -675797,22 +677794,26 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -675830,12 +677831,14 @@
     {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -675843,62 +677846,74 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -675916,12 +677931,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -675979,7 +677996,8 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Add",
@@ -676018,22 +678036,26 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -676044,22 +678066,26 @@
         {
          "t": "Rational",
          "p": "5",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -676070,22 +678096,26 @@
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "7",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -676096,22 +678126,26 @@
         {
          "t": "Rational",
          "p": "5",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "6",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -676132,12 +678166,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -676145,22 +678181,26 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -676178,12 +678218,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -676191,22 +678233,26 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -676224,12 +678270,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -676237,32 +678285,38 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -676280,12 +678334,14 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -676293,7 +678349,8 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Add",
@@ -676368,12 +678425,14 @@
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Symbol",
@@ -676383,12 +678442,14 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -676406,12 +678467,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -676419,22 +678482,26 @@
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -676452,12 +678519,14 @@
     {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -676465,62 +678534,74 @@
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "9",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -676538,12 +678619,14 @@
     {
      "t": "Rational",
      "p": "2",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -676551,32 +678634,38 @@
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -676600,22 +678689,26 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -676626,22 +678719,26 @@
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "7",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -676652,22 +678749,26 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -676678,22 +678779,26 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -676714,12 +678819,14 @@
     {
      "t": "Rational",
      "p": "4",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -676727,62 +678834,74 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "7",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "8",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "9",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "10",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "11",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -677147,11 +679266,47 @@
   },
   {
    "fn": "Matrix",
-   "unsupportedArg": "function",
    "category": "matrices",
    "module": "sympy.matrices.common",
    "src": "m",
-   "expected": "Matrix([[1, 1, 1], [1, 1, 1]])"
+   "expected": "Matrix([[1, 1, 1], [1, 1, 1]])",
+   "kwargs": {},
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1",
+     "py": true
+    },
+    {
+     "t": "Rational",
+     "p": "3",
+     "q": "1",
+     "py": true
+    },
+    {
+     "t": "JsLambda",
+     "params": [
+      {
+       "t": "Dummy",
+       "name": "i",
+       "index": 0,
+       "assume": {}
+      },
+      {
+       "t": "Dummy",
+       "name": "j",
+       "index": 1,
+       "assume": {}
+      }
+     ],
+     "body": {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     }
+    }
+   ]
   },
   {
    "fn": "Matrix",
@@ -677165,12 +679320,14 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -677181,12 +679338,14 @@
         {
          "t": "Rational",
          "p": "0",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -677207,12 +679366,14 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -677220,47 +679381,56 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "1",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "3",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "4",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "5",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "6",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "7",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "8",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true
@@ -677284,12 +679454,14 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -677300,12 +679472,14 @@
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "4",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -677332,12 +679506,14 @@
         {
          "t": "Rational",
          "p": "1",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -677348,12 +679524,14 @@
         {
          "t": "Rational",
          "p": "2",
-         "q": "1"
+         "q": "1",
+         "py": true
         },
         {
          "t": "Rational",
          "p": "3",
-         "q": "1"
+         "q": "1",
+         "py": true
         }
        ],
        "list": true
@@ -677378,7 +679556,8 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -677398,7 +679577,8 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     }
    ],
    "kwargs": {},
@@ -699358,7 +701538,8 @@
     {
      "t": "Rational",
      "p": "3",
-     "q": "1"
+     "q": "1",
+     "py": true
     },
     {
      "t": "Tuple",
@@ -699366,17 +701547,20 @@
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "0",
-       "q": "1"
+       "q": "1",
+       "py": true
       },
       {
        "t": "Rational",
        "p": "2",
-       "q": "1"
+       "q": "1",
+       "py": true
       }
      ],
      "list": true

@@ -159,3 +159,51 @@ it('checks every nested ODE family and rejects an invalid alternative', () => {
   expect(solvesDsolveCase(equations, [[positive], [sj.Eq(f, sj.add(C1, sj.mul(3, x)))]] )).toBe(false);
   expect(solvesDsolveCase(equations, [])).toBe(false);
 });
+
+it('replays serialized assumptions, Python comparisons, rotated solids, shapes and closures', () => {
+  const sources: Record<string, string[]> = {
+    'sympy.combinatorics.perm_groups': ['P.corners'],
+    'sympy.core.symbol': ["_symbol('x', sym, real=False).is_real"],
+    'sympy.core.relational': ['1 < x'],
+    'sympy.simplify.simplify': ['(-2)**i'],
+    'sympy.tensor.indexed': ['A.shape', 'A[i, j, 3].shape', 'A[i, 2, j].shape', 'A[i, j].shape', 'B[i, j].shape', "IndexedBase('A', shape=(x, y)).shape"],
+    'sympy.strategies.tools': ['subs(mapping)(expr)'],
+    'sympy.vector.vector': ['(C.i & delop)(C.x*C.y*C.z)'],
+    'sympy.printing.tree': ['print_tree(y**x)'],
+    'sympy.polys.rootoftools': ['P[y]', 'x + 1 in P'],
+    'sympy.assumptions.wrapper': ['AssumptionsWrapper(x).is_integer'],
+    'sympy.combinatorics.polyhedron': ['tetra.corners', 'tetra.vertices', 'square.corners', 'tetrahedron.array_form', 'T.corners', 'cube.corners', 'h5.corners'],
+    'sympy.utilities.iterables': ['is_sequence(generator)'],
+  };
+  const cases = corpus.cases.filter((c) => sources[c.module]?.includes(c.src) ||
+    (['sympy.matrices.matrixbase', 'sympy.matrices.common'].includes(c.module) && c.src === 'm' && c.expected === 'Matrix([[1, 1, 1], [1, 1, 1]])'));
+  expect(cases.length).toBeGreaterThanOrEqual(34);
+  for (const c of cases) expect(runCase(c), `${c.module}: ${c.src}`).toEqual({ status: 'pass' });
+});
+
+it('reflects Python integer comparisons without reflecting SymPy Integer comparisons', () => {
+  const x = { t: 'Symbol', name: 'x', assume: {} };
+  const one = { t: 'Rational', p: '1', q: '1' };
+  for (const [fn, python, symbolic] of [['.__lt__', 'x > 1', '1 < x'], ['.__le__', 'x >= 1', '1 <= x'], ['.__gt__', 'x < 1', '1 > x'], ['.__ge__', 'x <= 1', '1 >= x']]) {
+    const c: Case = { module: 'sympy.core.relational', category: 'core', src: 'comparison', fn: fn!, self: one, args: [x], expected: symbolic! };
+    expect(runCase(c)).toEqual({ status: 'pass' });
+    expect(runCase({ ...c, self: { ...one, py: true }, expected: python! })).toEqual({ status: 'pass' });
+  }
+});
+
+it('restores rotation through the public Polyhedron API including reset', () => {
+  const c = corpus.cases.find((c) => c.module === 'sympy.combinatorics.polyhedron' && c.src === 'tetrahedron.array_form' && c.expected === '[0, 2, 3, 1]')!;
+  const p = deserialize(c.self!) as sj.Polyhedron;
+  expect(p.arrayForm).toEqual([0, 2, 3, 1]);
+  p.reset();
+  expect(p.arrayForm).toEqual([0, 1, 2, 3]);
+});
+
+it('preserves snake case assumptions on Dummy and Wild symbols', () => {
+  for (const t of ['Dummy', 'Wild']) {
+    const value = deserialize({ t, name: 'x', index: 0, exclude: [], assume: { extended_real: false, finite: true } });
+    expect(value).toBeInstanceOf(sj.Sym);
+    expect((value as sj.Sym).assumptions0.get('extended_real')).toBe(false);
+    expect((value as sj.Sym).assumptions0.get('finite')).toBe(true);
+  }
+});

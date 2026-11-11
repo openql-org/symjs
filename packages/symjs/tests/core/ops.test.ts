@@ -654,3 +654,13 @@ describe('powers of KroneckerDelta (SymPy KroneckerDelta._eval_power)', () => {
     expect(String(pow(d, n!))).toBe('KroneckerDelta(i, j)**n');
   });
 });
+
+it('uses symbolic parity when raising negative numbers to integer powers', () => {
+  const odd = sj.symbol('n', { odd: true });
+  const even = sj.symbol('m', { even: true });
+  expect(String(sj.pow(-2, odd))).toBe('-2**n');
+  expect(String(sj.pow(-2, even))).toBe('2**m');
+  expect(String(sj.pow(-2, sj.symbol('k', { integer: true })))).toBe('(-2)**k');
+  expect(sj.pow(new sj.Float(-2.5), odd).equals(sj.mul(-1, sj.pow(new sj.Float(2.5), odd)))).toBe(true);
+  expect(String(sj.pow(2, odd))).toBe('2**n');
+});

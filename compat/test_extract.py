@@ -52,7 +52,53 @@ class ExtractTests(unittest.TestCase):
         self.assertEqual(extract.ser(types.GeneratorType), {"t": "Type", "name": "generator"})
         self.assertEqual(extract.ser(len), {"t": "JsFunc", "name": "builtins.len"})
         self.assertEqual(extract.ser(operator.ge), {"t": "JsFunc", "name": "_operator.ge"})
-        self.assertEqual(extract.ser(iter([1])), {"t": "Iterator", "items": [{"t": "Rational", "p": "1", "q": "1"}]})
+        self.assertEqual(extract.ser(iter([1])), {"t": "Iterator", "items": [extract.ser(1)]})
+
+    def test_complete_symbol_facts_and_python_integer_identity(self):
+        for cls in (sympy.Symbol, sympy.Dummy, sympy.Wild):
+            for facts in ({"odd": True}, {"even": True}, {"finite": False}, {"real": False},
+                          {"prime": True}, {"rational": True}, {"zero": True}):
+                with self.subTest(cls=cls, facts=facts):
+                    self.assertEqual(extract.ser(cls("x", **facts))["assume"], facts)
+        self.assertEqual(extract.ser(1), {"t": "Rational", "p": "1", "q": "1", "py": True})
+        self.assertNotIn("py", extract.ser(sympy.Integer(1)))
+
+    def test_rotated_polyhedron_and_indexed_shape_snapshots(self):
+        from sympy.combinatorics.polyhedron import Polyhedron
+        from sympy.combinatorics import Permutation
+        p = Polyhedron(list("ABC"), [], [Permutation([1, 2, 0])])
+        p.rotate(0)
+        tree = extract.ser(p)
+        self.assertEqual(tree["rotation"], [1, 2, 0])
+        self.assertEqual([c["name"] for c in tree["corners"]], list("ABC"))
+        n = sympy.Symbol("n", integer=True)
+        a = sympy.IndexedBase("A", shape=(n, 3))
+        i = sympy.Idx("i", n)
+        self.assertEqual(extract.ser(a)["shape"], [extract.ser(n), extract.ser(sympy.S(3))])
+        self.assertEqual(extract.ser(a[i, 2])["base"], extract.ser(a))
+        self.assertNotIn("shape", extract.ser(sympy.IndexedBase("B")))
+
+    def test_callable_effects_and_polynomial_key_dictionary(self):
+        import ast
+        from sympy.vector import CoordSys3D, Del
+        from sympy.strategies.tools import subs
+        from sympy.polys.rootoftools import _pure_key_dict
+        x, y = sympy.symbols("x y")
+        env = {"subs": subs, "mapping": {x: y}}
+        data = extract.ser_arg(ast.parse("subs(mapping)", mode="eval").body, env)
+        self.assertEqual(data, {"t": "StrategySubs", "mapping": extract.ser({x: y})})
+        c = CoordSys3D("C")
+        self.assertEqual(extract.ser(c.i & Del()), {"t": "DirectionalDerivative", "vector": extract.ser(c.i)})
+        const = extract.ser_arg(ast.parse("lambda i, j: 1", mode="eval").body, {})
+        self.assertEqual(const["t"], "JsLambda")
+        self.assertEqual(const["body"], extract.ser(sympy.S.One))
+        with self.assertRaises(extract.Unsupported):
+            extract.ser_arg(ast.parse("lambda i: True", mode="eval").body, {})
+        with self.assertRaises(extract.Unsupported):
+            extract.ser(lambda i: i)
+        p = _pure_key_dict()
+        p[x] = 1
+        self.assertEqual(extract.ser(p), {"t": "PureKeyDict", "items": [[extract.ser(sympy.PurePoly(x)), extract.ser(1)]]})
 
     def extract_examples(self, source, module="sympy.core.expr"):
         parser = doctest.DocTestParser()
@@ -227,7 +273,7 @@ class ExtractTests(unittest.TestCase):
         self.assertEqual(extract.ser(Subset([2], [1, 2]))["cls"], "Subset")
         self.assertEqual(extract.ser(GrayCode(4, rank=4)), {"t": "GrayCode", "n": 4, "current": "0110"})
         tree = [[0, 2], [0, 1], [1, 3]]
-        self.assertEqual(extract.ser(Prufer(tree))["args"], [extract.ser(tree)])
+        self.assertEqual(extract.ser(Prufer(tree))["args"], [extract.ser([[sympy.Integer(i) for i in edge] for edge in tree])])
         self.assertEqual(extract.ser(sympy.ProductSet(sympy.S.Integers, sympy.S.Rationals))["cls"], "ProductSet")
         self.assertEqual(extract.ser(sympy.S.Rationals), {"t": "NamedSet", "name": "Rationals"})
         self.assertEqual(extract.ser(slice(None, 5, 2))["start"], {"t": "Js", "v": None})

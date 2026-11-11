@@ -225,3 +225,8 @@ describe('signs of functions of numbers (SymPy Expr._eval_is_extended_positive_n
     expect(isPolar(x)).toBe(false);
   });
 });
+
+it('keeps a symbol explicitly known to be nonreal distinct from an unknown realness', () => {
+  expect(isReal(sj.symbol('z', { real: false }))).toBe(false);
+  expect(isReal(sj.symbol('z'))).toBeUndefined();
+});

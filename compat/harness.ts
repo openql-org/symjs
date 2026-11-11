@@ -554,9 +554,6 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'Symbol': {
       const a = tree['assume'] as Record<string, boolean>;
-      for (const k of Object.keys(a)) {
-        if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive', 'commutative', 'polar', 'zero', 'above_fermi', 'below_fermi'].includes(k)) throw new Unsupported(`assumption ${k}`);
-      }
       return new Sym(tree['name'] as string, Object.fromEntries(Object.entries(a).map(([k,v]) => [camel(k),v])));
     }
     case 'CategoryObject': return new sj.SymObject(String(tree['name']));
@@ -633,10 +630,37 @@ export function deserialize(tree: Tree): unknown {
       return deserializeVector(tree);
     case 'Stats':
       return deserializeStats(tree);
-    case 'Indexed':
-      return new sj.Indexed([deserialize(tree['base'] as Tree) as Expr, ...(tree['indices'] as Tree[]).map((t) => deserialize(t) as Expr)]);
+    case 'Indexed': {
+      const base = deserialize(tree['base'] as Tree);
+      const indices = (tree['indices'] as Tree[]).map((t) => asExpr(deserialize(t)));
+      return base instanceof sj.IndexedBase ? base.at(...indices) : new sj.Indexed([asExpr(base), ...indices]);
+    }
     case 'IndexedBase':
-      return new sj.IndexedBase(deserialize(tree['label'] as Tree) as Sym);
+      return new sj.IndexedBase(deserialize(tree['label'] as Tree) as Sym, tree['shape'] === undefined ? {} : { shape: (tree['shape'] as Tree[]).map((t) => asExpr(deserialize(t))) });
+    case 'StrategySubs': {
+      const mapping = deserialize(tree['mapping'] as Tree) as JsDict;
+      return sj.tools.subs(new Map(mapping.entries.map(([k, v]) => [asExpr(k), asExpr(v)])));
+    }
+    case 'DirectionalDerivative': {
+      const vector = asExpr(deserialize(tree['vector'] as Tree));
+      return (field: Expr) => sj.directionalDerivative(field, vector);
+    }
+    case 'PureKeyDict': {
+      const entries = new Map((tree['items'] as [Tree, Tree][]).map(([k, v]) => [deserialize(k) as sj.Poly, deserialize(v)]));
+      const key = (value: Expr | sj.Poly): sj.Poly | undefined => {
+        if (!(value instanceof sj.Poly) && value.freeSymbols().size !== 1) return undefined;
+        const poly = value instanceof sj.Poly ? value : sj.PurePoly(value);
+        return [...entries.keys()].find((p) => p.equals(poly));
+      };
+      return {
+        contains: (value: Expr | sj.Poly) => key(value) !== undefined,
+        getitem: (value: Expr | sj.Poly) => {
+          const k = key(value);
+          if (k === undefined) throw new RangeError('KeyError: the key is not in the dict');
+          return entries.get(k);
+        },
+      };
+    }
     case 'CRootOf':
       return new sj.CRootOf(deserialize(tree['poly'] as Tree) as Expr, tree['index'] as number);
     case 'Pow': {
@@ -991,12 +1015,15 @@ export function deserialize(tree: Tree): unknown {
     case 'Collector': return new sj.Collector((tree['pcgs'] as Tree[]).map((t) => deserialize(t) as sj.Permutation), (tree['series'] as Tree[]).map((t) => deserialize(t) as sj.PermutationGroup), tree['relativeOrder'] as number[]);
     case 'PolycyclicGroup': return new sj.PolycyclicGroup((tree['pcgs'] as Tree[]).map((t) => deserialize(t) as sj.Permutation), (tree['series'] as Tree[]).map((t) => deserialize(t) as sj.PermutationGroup), tree['relativeOrder'] as number[]);
     case 'GroupHomomorphism': return new sj.GroupHomomorphism(deserialize(tree['domain'] as Tree) as sj.HomomorphismGroup, deserialize(tree['codomain'] as Tree) as sj.HomomorphismGroup, (tree['images'] as [Tree, Tree][]).map(([k, v]) => [deserialize(k) as sj.GroupElement, deserialize(v) as sj.GroupElement] as const));
-    case 'Polyhedron':
-      return new sj.Polyhedron(
+    case 'Polyhedron': {
+      const polyhedron = new sj.Polyhedron(
         (tree['corners'] as Tree[]).map((c) => deserialize(c) as Expr),
         tree['faces'] as number[][],
         (tree['pgroup'] as Tree[]).map((g) => deserialize(g) as sj.Permutation),
       );
+      if (tree['rotation'] !== undefined) polyhedron.rotate(new sj.Permutation(tree['rotation'] as number[]));
+      return polyhedron;
+    }
     case 'TensorHead': return sj.TensorHead(String(tree['name']), (tree['types'] as Tree[]).map((t) => deserialize(t) as sj.TensorIndexType), deserialize(tree['symmetry'] as Tree) as sj.TensorSymmetry);
     case 'Tensor': return new sj.Tensor(deserialize(tree['head'] as Tree) as sj.TensorHead, (tree['indices'] as Tree[]).map((t) => deserialize(t) as sj.TensorIndex));
     case 'TensMul': return sj.mul(...(tree['args'] as Tree[]).map((t) => deserialize(t) as Expr));
@@ -1056,14 +1083,14 @@ export function deserialize(tree: Tree): unknown {
     case 'Type':
       return new TypeRef(tree['name'] as string);
     case 'Wild': {
-      const a = tree['assume'] as Record<string, boolean>;
+      const a = Object.fromEntries(Object.entries(tree['assume'] as Record<string, boolean>).map(([k, v]) => [camel(k), v]));
       const props = ((tree['props'] as string[] | undefined) ?? []).map((attr) => (e: Expr) => new JsPred(attr).test(e));
       return new sj.Wild(tree['name'] as string, { exclude: (tree['exclude'] as Tree[]).map((x) => deserialize(x) as Expr), ...a, ...(props.length ? { properties: props } : {}) });
     }
     case 'WildFunction':
       return new sj.WildFunction(tree['name'] as string, (tree['nargs'] as number[] | null) ?? undefined);
     case 'Dummy': {
-      const a = tree['assume'] as Record<string, boolean>;
+      const a = Object.fromEntries(Object.entries(tree['assume'] as Record<string, boolean>).map(([k, v]) => [camel(k), v]));
       return new sj.Dummy(tree['name'] as string, a, 1_000_000 + (tree['index'] as number));
     }
     case 'UFn':
@@ -4245,7 +4272,8 @@ ADAPTERS['diophantine'] = (args, kw) => new JsSet(sj.diophantine(asExpr(args[0])
 ADAPTERS['Indexed'] = (args, kw) => {
   noKw(kw);
   const [b, ...ix] = args;
-  const label = typeof b === 'string' ? sj.symbol(b) : b instanceof sj.IndexedBase ? b.label : asExpr(b);
+  if (b instanceof sj.IndexedBase) return b.at(...ix.map(asExpr));
+  const label = typeof b === 'string' ? sj.symbol(b) : asExpr(b);
   return new sj.Indexed([label, ...ix.map(asExpr)]);
 };
 
@@ -4552,6 +4580,11 @@ function autoAdapter(c: Case): Adapter | undefined {
     return expressionCoefficients.includes(c.module) || c.module.startsWith('sympy.polys.matrices.') ? rationalInputs(normalized) : normalized;
   };
   const dunder = c.fn === '.__str__' ? undefined : DUNDER[c.fn];
+  // Python int comparisons defer to a symbolic right operand's reflected method.
+  const reflectedNames: Readonly<Record<string, string>> = { '.__lt__': '.__gt__', '.__le__': '.__ge__', '.__gt__': '.__lt__', '.__ge__': '.__le__' };
+  const reflectedName = reflectedNames[c.fn];
+  const reflected = reflectedName === undefined ? undefined : DUNDER[reflectedName];
+  if (reflected !== undefined && c.self?.t === 'Rational' && c.self['py'] === true) return (args, _kw, self) => fromJs(reflected(plain(conv(args[0])), [self]));
   if (dunder !== undefined) return (args, _kw, self0) => fromJs(dunder(plain(self0 instanceof JsDomain ? (self0.domain ?? self0) : self0), args.map((a) => a instanceof JsFFElement ? plain(a) : plain(conv(a)))));
   if (c.fn.startsWith('.')) {
     const name = OPERATOR_METHODS[c.fn] ?? camel(c.fn.slice(1));
