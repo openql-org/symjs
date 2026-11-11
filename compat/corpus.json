@@ -730015,12 +730015,465 @@
    "module": "sympy.polys.matrices.linsolve",
    "src": "_linsolve([Eq(x + y, 0)], [x, y])",
    "expected": "{y: y, x: -y}"
+  },
+  {
+   "fn": "Cbrt",
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "Cbrt(x)",
+   "expected": "Cbrt(x)"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "Cbrt",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "Cbrt(x).diff(x)",
+   "expected": "1/(3*x**(2/3))"
+  },
+  {
+   "fn": "Sqrt",
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "Sqrt(x)",
+   "expected": "Sqrt(x)"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "Sqrt",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "Sqrt(x).diff(x)",
+   "expected": "1/(2*sqrt(x))"
+  },
+  {
+   "fn": ".__eq__",
+   "self": {
+    "t": "Float",
+    "v": 4.0,
+    "man": "1",
+    "exp": 2,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Float",
+     "v": 4.0,
+     "py": true
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "exp2(2).evalf() == 4.0",
+   "expected": "True"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "exp2",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "exp2(x).diff(x)",
+   "expected": "log(2)*exp2(x)"
+  },
+  {
+   "fn": ".evalf",
+   "pyFormat": "%.0e",
+   "self": {
+    "t": "Float",
+    "v": 1e-99,
+    "man": "2462625387274655",
+    "exp": -380,
+    "prec": 53
+   },
+   "args": [],
+   "kwargs": {},
+   "text": true,
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "'%.0e' % expm1(1e-99).evalf()",
+   "expected": "1e-99"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "expm1",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "expm1(x).diff(x)",
+   "expected": "exp(x)"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "fma",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "z",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "fma(x, y, z).diff(x)",
+   "expected": "y"
+  },
+  {
+   "fn": ".__eq__",
+   "self": {
+    "t": "Float",
+    "v": 5.0,
+    "man": "5",
+    "exp": 0,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Float",
+     "v": 5.0,
+     "py": true
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "hypot(3, 4).evalf() == 5.0",
+   "expected": "True"
+  },
+  {
+   "fn": "hypot",
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    },
+    {
+     "t": "Symbol",
+     "name": "y",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "hypot(x, y)",
+   "expected": "hypot(x, y)"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "hypot",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "hypot(x, y).diff(x)",
+   "expected": "x/hypot(x, y)"
+  },
+  {
+   "fn": ".__eq__",
+   "self": {
+    "t": "Float",
+    "v": 2.0,
+    "man": "1",
+    "exp": 1,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Float",
+     "v": 2.0,
+     "py": true
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "log10(100).evalf() == 2.0",
+   "expected": "True"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "log10",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "log10(x).diff(x)",
+   "expected": "1/(x*log(10))"
+  },
+  {
+   "fn": ".evalf",
+   "pyFormat": "%.0e",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-380",
+        "q": "1"
+       },
+       {
+        "t": "Fn",
+        "name": "log",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "log",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "2462625387274654950767440006258975862817483704404090416746768337765357610718575663213391640930307230013039636668831",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "text": true,
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "'%.0e' % expand_log(log1p(1e-99)).evalf()",
+   "expected": "1e-99"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "log1p",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "log1p(x).diff(x)",
+   "expected": "1/(x + 1)"
+  },
+  {
+   "fn": ".__eq__",
+   "self": {
+    "t": "Float",
+    "v": 2.0,
+    "man": "1",
+    "exp": 1,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Float",
+     "v": 2.0,
+     "py": true
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "log2(4).evalf() == 2.0",
+   "expected": "True"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "log2",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "log2(x).diff(x)",
+   "expected": "1/(x*log(2))"
   }
  ],
  "extraction": {
-  "examined": 26245,
+  "examined": 26286,
   "reasons": {
-   "statement-or-setup": 14438,
+   "statement-or-setup": 14459,
    "upstream-skip": 113,
    "not-exported-api": 892,
    "non-call-expression": 614,
@@ -730028,7 +730481,7 @@
    "private-api": 61,
    "unsupported-result-type": 91,
    "serialization-error": 4,
-   "python-runtime-api": 2,
+   "python-runtime-api": 4,
    "printing-expression": 31,
    "unstable-result-representation": 13,
    "illustrative-output": 1,
@@ -741396,6 +741849,16 @@
     "module": "sympy.plotting.utils",
     "src": "_unpack_args(*args)",
     "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.codegen.cfunctions",
+    "src": "exp(1e-99) - 1",
+    "reason": "python-runtime-api"
+   },
+   {
+    "module": "sympy.codegen.cfunctions",
+    "src": "log(1 + 1e-99)",
+    "reason": "python-runtime-api"
    }
   ],
   "preservedReferences": [

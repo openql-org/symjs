@@ -423,11 +423,12 @@ CORRESPONDENCES = {
     'sympy.diffgeom': ['diffgeom.ts'],
     'sympy.diffgeom.diffgeom': ['diffgeom/diffgeom.ts'],
     'sympy.diffgeom.rn': ['diffgeom/rn.ts'],
+    # the C99 math functions are base symbolic functions; the rest of sympy.codegen stays excluded
+    'sympy.codegen.cfunctions': ['codegen/cfunctions.ts'],
 }
 # Inspected modules without an implementation yet, with a note on the plan (base module, or the extend
 # package that will hold them). Everything else without a correspondence stays unassessed.
 NOT_IMPLEMENTED = {
-    'sympy.codegen.cfunctions': 'base module (planned): expm1, log1p, exp2, log2, fma, log10, Sqrt, Cbrt, hypot, isnan, isinf',
     'sympy.combinatorics.galois': 'transitive subgroups of S1..S6 for Galois groups (polys.numberfields.galoisgroups)',
     'sympy.core.trace': 'deprecated alias of sympy.physics.quantum.trace (extend package @symjs/physics-quantum)',
     'sympy.integrals.quadrature': 'Gauss quadrature nodes and weights',

@@ -57,7 +57,7 @@ OPS = {"__add__": operator.add, "__sub__": operator.sub, "__mul__": operator.mul
 
 
 # Top-level package names, not the doctest report's combined calculus/special labels.
-CATEGORIES = tuple("core polys assumptions sets logic concrete calculus series simplify solvers integrals functions matrices tensor ntheory combinatorics geometry vector stats discrete holonomic crypto liealgebras algebras categories strategies unify utilities printing parsing diffgeom plotting".split())
+CATEGORIES = tuple("core polys assumptions sets logic concrete calculus series simplify solvers integrals functions matrices tensor ntheory combinatorics geometry vector stats discrete holonomic crypto liealgebras algebras categories strategies unify utilities printing parsing diffgeom plotting codegen".split())
 EXCLUDED_AREAS = {
     "physics": "Physics belongs to extension packages, not the base symbolic engine.",
     "plotting/backends": "Rendering backends are provided by connector packages.",
@@ -89,6 +89,7 @@ FILE_SCOPE = {
     **{f"parsing/tests/test_{name}.py": (True, "LaTeX parser (ANTLR and Lark grammars) ported as the parsing subpath.")
        for name in ("latex", "latex_lark", "custom_latex")},
     "plotting/tests/test_experimental_lambdify.py": (False, "Python source generation is replaced by symjs numeric evaluation."),
+    "codegen/tests/test_cfunctions.py": (True, "The C99 math functions of codegen.cfunctions are base symbolic functions; the rest of codegen generates source code."),
         **{f"utilities/tests/test_{name}.py": (False, reason) for name, reason in {
         "autowrap": "Compiles generated code with external toolchains.",
         "codegen": "Source-code generation is outside this corpus.",
@@ -209,6 +210,16 @@ class Instrument(ast.NodeTransformer):
                   and isinstance(lhs.comparators[0], ast.Constant)
                   and any(lhs.comparators[0].value is v for v in (True, False, None))):
                 lhs, rhs, op = lhs.left, lhs.comparators[0], "is"
+            elif len(lhs.ops) == 1 and isinstance(lhs.ops[0], ast.Is):
+                # identity with an object (x.func is cls): compared like ==
+                lhs, rhs, op = lhs.left, lhs.comparators[0], "is"
+            elif len(lhs.ops) == 1 and isinstance(lhs.ops[0], (ast.Lt, ast.LtE, ast.Gt, ast.GtE)):
+                # an order comparison: the relation itself is measured and must be true
+                rhs, op = ast.Constant(True), "truthy"
+            elif len(lhs.ops) == 1 and isinstance(lhs.ops[0], ast.NotIn):
+                # x not in items: the membership is measured and must be false
+                lhs = ast.copy_location(ast.Compare(lhs.left, [ast.In()], lhs.comparators), lhs)
+                rhs, op = ast.Constant(False), "falsy"
             else:
                 return [ast.copy_location(ast.Expr(call_hook("omit", site, ast.Constant("unsupported-assertion"))), node), node]
         measured = self.measured(lhs, site)
@@ -393,12 +404,13 @@ class Capture:
         record = self.pending.pop(site)
         result = {"==": operator.eq, "!=": operator.ne, "is": operator.is_,
                   "truthy": lambda a, b: bool(a), "falsy": lambda a, b: not a}[op](lhs, rhs)
-        if op in ("truthy", "falsy") and not isinstance(lhs, (bool, sympy.logic.boolalg.BooleanAtom)):
+        if op in ("truthy", "falsy") and not (lhs is None or isinstance(lhs, (bool, sympy.logic.boolalg.BooleanAtom))):
             self.omit(site, "non-boolean-assertion")
         elif not result:
             self.omit(site, "reference-assertion-failed")
         else:
-            self.finish(site, record, op, rhs)
+            # an undecided query (None) asserted false is recorded as None
+            self.finish(site, record, op, None if lhs is None else rhs)
         return result
 
     @contextlib.contextmanager

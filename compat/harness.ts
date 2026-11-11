@@ -213,6 +213,8 @@ export function fmt(v: unknown): string {
   if (v instanceof JsFrozenSet) return `frozenset(${fmt(new JsSet(v.items))})`;
   if (v instanceof JsSet) return v.items.length === 0 ? 'set()' : `{${v.items.map(fmtItem).join(', ')}}`;
   if (v instanceof UFnClass || v instanceof FnClass) return v.name;
+  // a function class (expm1, isnan): its name
+  if (typeof v === 'function' && 'functionName' in v && typeof v.functionName === 'string') return v.functionName;
   // an unapplied predicate (Q.even)
   if (typeof v === 'function' && typeof (v as { predicateName?: unknown }).predicateName === 'string') return String(v);
   if (v instanceof TypeRef) return `<class 'sympy.${v.name}'>`;
@@ -443,6 +445,8 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   Heaviside: ([x, h0]) => sj.Heaviside(x!, h0),
   SingularityFunction: ([x, a, n]) => sj.SingularityFunction(x!, a!, n!),
   Mod: ([a, b]) => sj.Mod(a!, b!),
+  // the C99 math functions of sympy.codegen.cfunctions
+  ...Object.fromEntries(([sj.expm1, sj.log1p, sj.exp2, sj.log2, sj.fma, sj.log10, sj.Sqrt, sj.Cbrt, sj.hypot, sj.isnan, sj.isinf] as const).map((f) => [f.functionName, (args: Expr[]) => f(...args)])),
   SchurNumber: ([k]) => sj.SchurNumber(k!),
   ...Object.fromEntries(SPECIAL_NAMES.map((n) => [n, (args: Expr[]) => sj.fn(n, args)])),
   RisingFactorial: (args) => sj.fn('rf', args),
@@ -4368,6 +4372,19 @@ export interface Case {
   text?: boolean;
   /** the doctest compares with NORMALIZE_WHITESPACE */
   ws?: boolean;
+  /** the result formatted by Python's %-operator ('%.0e' % value) */
+  pyFormat?: string;
+}
+
+/** Python's '%.Ne' and '%.Nf' formats of a number (the exponent has at least two digits). */
+export function pyNumberFormat(format: string, v: unknown): string {
+  const m = /^%(?:\.(\d+))?([eEf])$/.exec(format);
+  if (!m || !(v instanceof Expr) || !v.isNumber) throw new Unsupported(`Python format ${format} of ${fmt(v)}`);
+  const digits = Number(m[1] ?? '6');
+  const x = v.toNumber();
+  if (m[2] === 'f') return x.toFixed(digits);
+  const s = x.toExponential(digits).replace(/e([+-])(\d)$/, (_m, sign: string, d: string) => `e${sign}0${d}`);
+  return m[2] === 'E' ? s.toUpperCase() : s;
 }
 
 // sympy.crypto LFSRs: symjs takes the values of the GF(p) elements and the modulus
@@ -4854,6 +4871,8 @@ function autoAdapter(c: Case): Adapter | undefined {
       }
       if (typeof m === 'function') {
         if (self instanceof sj.AppliedPredicate && name === 'function') return m;
+        // a getter returning a function class (SymPy expr.func): the attribute value, not a call
+        if (args.length === 0 && typeof (m as { functionName?: unknown }).functionName === 'string') return m;
         const result = (m as (...a: unknown[]) => unknown).call(thisArg, ...placeArgs(m as (...a: unknown[]) => unknown, args, kw, conv));
         // AGCA uses expression coefficients publicly. SymPy prints these as
         // dense DMP objects inside its relation containers; only convert the
@@ -5050,6 +5069,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       }
     }
     if (c.pick !== undefined) v = pickResult(v, c.pick);
+    if (c.pyFormat !== undefined) v = pyNumberFormat(c.pyFormat, v);
     observe?.({ value: v });
     if (c.text ? textMatches(v, c) : matches(v, c.expected)) return { status: 'pass' };
     if (c.text && typeof v === 'string') return { status: 'fail', got: v };

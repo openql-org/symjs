@@ -142,6 +142,29 @@
         "sympy.categories.tests.test_drawing"
       ]
     },
+    "codegen": {
+      "examined": 71,
+      "cases": 71,
+      "reasons": {},
+      "sourceSites": 71,
+      "testStatuses": {
+        "completed": 10
+      },
+      "seconds": 0.205,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "codegen.json",
+          "cases": 71,
+          "bytes": 40819
+        }
+      ],
+      "auditFile": "codegen.audit.json",
+      "auditBytes": 1078,
+      "modules": [
+        "sympy.codegen.tests.test_cfunctions"
+      ]
+    },
     "combinatorics": {
       "examined": 3530,
       "cases": 1655,
@@ -1573,10 +1596,6 @@
       "reason": "Source-code generation and compiler integration are outside this corpus."
     },
     {
-      "file": "codegen/tests/test_cfunctions.py",
-      "reason": "Source-code generation and compiler integration are outside this corpus."
-    },
-    {
       "file": "codegen/tests/test_cnodes.py",
       "reason": "Source-code generation and compiler integration are outside this corpus."
     },
@@ -2299,5 +2318,5 @@
   ],
   "timeoutSeconds": 30,
   "jobs": 4,
-  "lastRunSeconds": 25.048
+  "lastRunSeconds": 0.506
 }

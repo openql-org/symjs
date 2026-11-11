@@ -75,8 +75,7 @@ function partitionBlocks(partition: readonly PartitionBlock[]): FiniteSet[] {
  * set of its blocks.
  */
 export class Partition extends ExtensionExpr {
-  /** The blocks as sets. */
-  declare readonly args: readonly FiniteSet[];
+  readonly #blocks: readonly FiniteSet[];
   /** SymPy members: the elements of all blocks, in the order of their union. */
   readonly members: readonly Expr[];
   /** SymPy size: the number of elements. */
@@ -86,10 +85,16 @@ export class Partition extends ExtensionExpr {
 
   constructor(...partition: PartitionBlock[]) {
     super('Partition', partitionBlocks(partition));
+    this.#blocks = super.args.map((b) => cast(b, FiniteSet));
     const all = new Map<string, Expr>();
     for (const b of this.args) for (const e of b.args) all.set(e.key, e);
     this.members = sortExprs([...all.values()]);
     this.size = all.size;
+  }
+
+  /** The blocks as sets. */
+  override get args(): readonly FiniteSet[] {
+    return this.#blocks;
   }
 
   /** A partition of the new blocks (SymPy Partition(*args)). */
