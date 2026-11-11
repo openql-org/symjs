@@ -81,9 +81,9 @@ const CASES = [
   // The root is side-effect free: a named import brings only the entry points
   // of the names used (measured 177 KiB, the core entry; was 1312).
   ['index', 'Rational', 195],
-  // The finitely presented groups, coset enumeration and homomorphisms of combinatorics (measured 2292 KiB).
-  // Galois resolvents, Tschirnhausen transformations and the S6 subgroup search add about 10 KiB.
-  ['index', '*', 2650],
+  // The whole root namespace, including the codegen C math functions, densetools, Galois groups and
+  // resolvents, PolyMatrix, multivariate resultants, tensor operators and quadrature (measured 2648 KiB).
+  ['index', '*', 2660],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],
 ];
