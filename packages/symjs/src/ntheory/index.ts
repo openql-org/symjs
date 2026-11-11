@@ -75,3 +75,5 @@ export { npartitions } from './partitions';
 export { EllipticCurve, EllipticCurvePoint } from './ellipticcurve';
 export type { ElementLike as EllipticCurveElement } from './ellipticcurve';
 export { piHexDigits } from './bbppi';
+
+export { ECMPoint } from './factor';

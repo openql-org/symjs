@@ -38,6 +38,9 @@ export class JsDict {
 export class JsDefaultDict {
   constructor(readonly entries: readonly (readonly [unknown, unknown])[]) {}
 }
+export class JsFrozenSet {
+  constructor(readonly items: readonly unknown[]) {}
+}
 export class JsSet {
   constructor(readonly items: readonly unknown[]) {}
 }
@@ -166,6 +169,7 @@ export function fmt(v: unknown): string {
   if (v instanceof JsTuple) return v.items.length === 1 ? `(${fmtItem(v.items[0])},)` : `(${v.items.map(fmtItem).join(', ')})`;
   if (v instanceof JsDefaultDict) return `defaultdict(<class 'int'>, ${fmt(new JsDict(v.entries))})`;
   if (v instanceof JsDict) return `{${v.entries.map(([k, x]) => `${fmtItem(k)}: ${fmtItem(x)}`).join(', ')}}`;
+  if (v instanceof JsFrozenSet) return `frozenset(${fmt(new JsSet(v.items))})`;
   if (v instanceof JsSet) return v.items.length === 0 ? 'set()' : `{${v.items.map(fmtItem).join(', ')}}`;
   if (v instanceof UFnClass || v instanceof FnClass) return v.name;
   // an unapplied predicate (Q.even)
@@ -244,6 +248,8 @@ function matches0(v: unknown, expected: string, got: string): boolean {
   if (got.includes('{') && normalizeSets(got) === normalizeSets(expected)) return true;
   const listPrefix = "defaultdict(<class 'list'>, ";
   if (expected.startsWith(listPrefix)) return matches(v, expected.slice(listPrefix.length, -1));
+  const setPrefix = "defaultdict(<class 'set'>, ";
+  if (expected.startsWith(setPrefix) && v instanceof JsDict) return matches(v, expected.slice(setPrefix.length, -1));
   const ddPrefix = "defaultdict(<class 'int'>, ";
   // a dict result is a Map, which prints as a dict (count_digits returns a defaultdict(int))
   if (expected.startsWith(ddPrefix) && (v instanceof JsDefaultDict || v instanceof JsDict)) return matches(new JsDict(v.entries), expected.slice(ddPrefix.length, -1));
@@ -413,6 +419,70 @@ function orderNode(e: unknown, rest: unknown[]): Expr {
 
 export function deserialize(tree: Tree): unknown {
   switch (tree.t) {
+    case 'PublicObject': {
+      const name = String(tree['cls']);
+      const cls = (sj as unknown as Record<string, unknown>)[name];
+      if (typeof cls !== 'function') throw new Unsupported(`class ${name}`);
+      // Container conversion only: the public constructor owns all computation.
+      const args = (tree['args'] as Tree[]).map((a) => name === 'Factors' ? plain(deserialize(a)) : toJs(deserialize(a), true));
+      return /^class[\s{]/.test(Function.prototype.toString.call(cls))
+        ? Reflect.construct(cls, args) : cls(...args);
+    }
+    case 'SATSolver': return sj.SATSolver.fromState({
+      clauses: tree['clauses'] as number[][], variables: Number(tree['variables']),
+      settings: tree['settings'] as number[], variableSet: tree['variableSet'] as boolean[],
+      sentinels: tree['sentinels'] as [number, number[]][], scores: tree['scores'] as [number, number][],
+      heap: tree['heap'] as [number, number][], learned: Number(tree['learned']),
+      levels: (tree['levels'] as Tree[]).map((entry) => ({ decision: Number(entry['decision']), flipped: Boolean(entry['flipped']), settings: entry['settings'] as number[] })),
+      queue: tree['queue'] as number[], unsatisfied: Boolean(tree['unsatisfied']),
+    });
+    case 'SATLevel': {
+      const level = new sj.Level(Number(tree['decision']), Boolean(tree['flipped']));
+      for (const lit of tree['settings'] as number[]) level.varSettings.add(lit);
+      return level;
+    }
+    case 'GrayCode': return new sj.GrayCode(Number(tree['n']), { start: String(tree['current']) });
+    case 'PartComponent': {
+      const part = new sj.PartComponent();
+      part.c = Number(tree['c']); part.u = Number(tree['u']); part.v = Number(tree['v']);
+      return part;
+    }
+    case 'Predicate': return sj.Q[String(tree['name'])] ?? sj.Predicate(String(tree['name']));
+    case 'Kind': {
+      const kind = (sj as unknown as Record<string, unknown>)[String(tree['name'])];
+      if (!(kind instanceof sj.Kind)) throw new Unsupported(`kind ${String(tree['name'])}`);
+      return kind;
+    }
+    case 'GlobalParameters':
+      if (tree['evaluate'] !== sj.globalParameters.evaluate) throw new Unsupported('non-default global parameters');
+      return sj.globalParameters;
+    case 'Slice': {
+      const part = (name: string): number | undefined => {
+        const value = deserialize(tree[name] as Tree);
+        return value === null ? undefined : Number(value);
+      };
+      return sj.slice(part('start'), part('stop'), part('step'));
+    }
+    case 'Transform': {
+      const variable = deserialize(tree['var'] as Tree) as Expr;
+      const body = asExpr(deserialize(tree['body'] as Tree));
+      const condition = asExpr(deserialize(tree['condition'] as Tree));
+      return new sj.Transform((key: sj.ExprLike) => sj.subs(body, [[variable, key]]),
+        (key: sj.ExprLike) => sj.subs(condition, [[variable, key]]).equals(S.true));
+    }
+    case 'ECMPoint': {
+      const [x, z, a24, mod] = (tree['coords'] as string[]).map(BigInt);
+      return new sj.ECMPoint(x!, z!, a24!, mod!);
+    }
+    case 'ExtensionElement':
+      return new sj.FiniteExtension(deserialize(tree['modulus'] as Tree) as sj.Poly).convert(deserialize(tree['expr'] as Tree) as Expr);
+    case 'DMP': {
+      if (tree['level'] !== 0) throw new Unsupported('multivariate DMP');
+      const domain = deserializeDomain(tree['domain'] as Tree);
+      if (!domain) throw new Unsupported('DMP domain');
+      const ring = domain.oldPolyRing(new Sym('_x'));
+      return new sj.DMP((deserialize(tree['coeffs'] as Tree) as JsTuple).items.map(asExpr), ring);
+    }
     case 'CartanType':
       return sj.CartanType(`${String(tree['series'])}${String(tree['n'])}`);
     case 'RootSystem':
@@ -4134,21 +4204,37 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     if (Array.isArray(a)) return a.some((v) => pyEquals(v, b));
     if (a instanceof Map) return [...a.keys()].some((k) => pyEquals(k, b));
     if (a instanceof Set) return [...a].some((k) => pyEquals(k, b));
+    if (a instanceof sj.MatrixSet) return a.contains(b as Matrix) === true;
+    if (a instanceof sj.SetExpr) return sj.containsQ(a, Array.isArray(b) ? sj.Tuple(...b.map(asExpr)) : asExpr(b)) === true;
     const r = callMethod(a, ['has', 'contains', 'includes'], [b]);
     if (r === undefined) return unsupportedOp('in');
     return r.value instanceof Expr ? String(r.value) === 'True' : r.value === true;
   },
   '.__getitem__': (a, [i]) => {
-    const index = i instanceof JsTuple ? i.items : [i];
+    const index = i instanceof JsTuple ? i.items : Array.isArray(i) && (a instanceof Matrix || a instanceof sj.MatrixExpr || a instanceof sj.NDimArray) ? i : [i];
+    if (index.some((j) => j instanceof sj.Slice)) {
+      if (a instanceof sj.MatrixExpr) {
+        const spec = (v: unknown): sj.SliceSpec => v instanceof sj.Slice ? v.toString().split(':').map((p) => p === '' ? null : Number(p)) as [number | null, number | null, number | null] : asExpr(v);
+        return sj.MatrixSlice(a, spec(index[0]), spec(index[1]));
+      }
+      if (a instanceof Matrix) {
+        const indices = (v: unknown, n: number): number[] => {
+          if (!(v instanceof sj.Slice)) return [Number(v)];
+          const [start, stop, step] = v.indices(n);
+          return Array.from({ length: Math.max(0, Math.ceil((stop - start) / step)) }, (_, k) => start + k * step);
+        };
+        return a.slice(indices(index[0], a.rows), indices(index[1], a.cols));
+      }
+    }
     if (Array.isArray(a) && index.length === 1) {
       const k = Number(index[0]);
       return a[k < 0 ? a.length + k : k];
     }
     if (a instanceof Map) {
-      const key = [...a.keys()].find((k) => pyEquals(k, index.length === 1 ? index[0] : i));
+      const key = [...a.keys()].find((k) => pyEquals(k, i));
       return key === undefined ? unsupportedOp('[]') : a.get(key);
     }
-    return callMethod(a, ['getitem', 'get', 'at'], index)?.value ?? unsupportedOp('[]');
+    return callMethod(a, a instanceof sj.Transform ? ['at'] : ['getitem', 'get', 'at'], index)?.value ?? unsupportedOp('[]');
   },
   '.__call__': (a, args) => (typeof a === 'function' ? (a as (...x: unknown[]) => unknown)(...args) : (callMethod(a, ['call', 'apply'], args)?.value ?? unsupportedOp('()'))),
 };
@@ -4283,8 +4369,12 @@ function autoAdapter(c: Case): Adapter | undefined {
       const self = self0 instanceof TypeRef ? (sj as unknown as Record<string, unknown>)[self0.name] : self0 instanceof JsDomain ? (self0.domain ?? self0) : self0;
       if (self === null || (typeof self !== 'object' && typeof self !== 'function')) throw new Unsupported(`no adapter for ${c.fn}`);
       // SymPy names with an uppercase word (to_Matrix -> toMatrix)
+      if (name === 'name' && typeof self === 'function' && 'predicateName' in self) return new Sym(String(self.predicateName));
       const upper = name.replace(/_([A-Z])/g, (_m, ch: string) => ch);
       let m = (self as Record<string, unknown>)[name] ?? (self as Record<string, unknown>)[upper];
+      if (self instanceof sj.SATSolver && name === 'litHeap') return new JsList(self.litHeap.map(([score, lit]) => new JsTuple([new JsFloat(score), lit])));
+      if (self instanceof sj.SATSolver && name === 'litScores') return new JsDict([...self.litScores].map(([lit, score]) => [lit, new JsFloat(score)]));
+      if (self instanceof sj.CNF && name === 'clauses') return new JsSet(self.clauses.map((clause) => new JsFrozenSet(clause)));
       let thisArg: unknown = self;
       // an instance method called on the class with the instance first (Quaternion.arc_coplanar(q1, q2))
       const proto = typeof self === 'function' ? (self as { prototype?: Record<string, unknown> }).prototype : undefined;
@@ -4479,7 +4569,7 @@ function runCase0(c: Case): Outcome {
     // this also accepts a correct solution where SymPy's printed one is wrong
     if (c.fn === 'dsolve' && solvesDsolveCase(args[0], v) && constantCount(got) === constantCount(c.expected)) return { status: 'equivalent', got };
     // a doctest whose printed output is mathematically wrong: the correct value counts as compatible
-    if (SYMPY_ERRATA[c.src] === got) return { status: 'equivalent', got };
+    if ((SYMPY_ERRATA[`${c.module}:${c.src}`] ?? SYMPY_ERRATA[c.src]) === got) return { status: 'equivalent', got };
     return { status: 'fail', got };
   } catch (e) {
     if (e instanceof Unsupported) return { status: 'unsupported', reason: e.message };
@@ -4492,6 +4582,8 @@ function runCase0(c: Case): Outcome {
  * printed value symjs gives (keyed by the doctest source).
  */
 const SYMPY_ERRATA: Readonly<Record<string, string>> = {
+  // The polar Jacobian r gives pi*(5**2 - 2**2), not (5 - 2)*2*pi.
+  'sympy.sets.fancysets:c2.measure': '21*pi',
   // SymPy's pdiv with a non-first generator starts the quotient at the generator index (rings.py: `q, r, dr = x, f, df`),
   // so its printed quotient is wrong: m*f != g*q + r for f = x**2 + x*y, g = 2*x + 2, m = (2*x + 2)**2
   'f.pdiv(g, y) # generator is given': '[2*x**3 + 2*x**2*y + 2*x**2 + 2*x*y, 0]',

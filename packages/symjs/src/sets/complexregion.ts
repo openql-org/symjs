@@ -58,6 +58,23 @@ export abstract class ComplexRegionNode extends SetExpr {
   get bInterval(): SetExpr {
     return union(...this.psets.map((p) => at(p.args, 1)));
   }
+  /** Area of a rectangular product, or of an annular sector in polar coordinates. */
+  get measure(): Expr {
+    if (!(this.sets instanceof ProductSetNode)) throw new NotImplementedError('Measure of a union of complex regions');
+    const [a, b] = this.sets.args;
+    if (a instanceof FiniteSet || b instanceof FiniteSet) return S.Zero;
+    if (!(a instanceof Interval && b instanceof Interval)) throw new NotImplementedError('Complex region measure needs interval factors');
+    const width = add(b.end, mul(-1, b.start));
+    if (!this.polar) return mul(add(a.end, mul(-1, a.start)), width);
+    if (cmpReal(a.start, S.Zero) !== 0 && cmpReal(a.start, S.Zero) !== 1) throw new NotImplementedError('Polar area needs a nonnegative radius');
+    // A wider angular interval traces the same points again, so its area
+    // saturates at one full turn, even for a directly constructed region.
+    const angularSpan = cmpReal(width, TWO_PI());
+    if (angularSpan === undefined) throw new NotImplementedError('Polar area needs a decidable angular span');
+    // SymPy 1.14 multiplies the coordinate lengths and omits the polar
+    // Jacobian r. An annulus 2 <= r <= 5 has area 21*pi, not 6*pi.
+    return mul(Rational.of(1n, 2n), add(pow(a.end, 2), mul(-1, pow(a.start, 2))), angularSpan === 1 ? TWO_PI() : width);
+  }
   protected computeKey(): string {
     return `${this.className}(${this.sets.key})`;
   }

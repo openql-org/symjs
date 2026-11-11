@@ -444,7 +444,8 @@ export function pollardPm1(nIn: IntLike, opts: PollardPm1Options = {}): bigint |
 // elliptic curve method (SymPy sympy.ntheory.ecm._ecm_one_factor)
 // ---------------------------------------------------------------------------
 
-class Point {
+/** A projective Montgomery-curve point (SymPy ntheory.ecm.ECMPoint). */
+export class ECMPoint {
   constructor(
     readonly x: bigint,
     readonly z: bigint,
@@ -452,23 +453,33 @@ class Point {
     readonly mod: bigint,
   ) {}
 
-  add(Q: Point, diff: Point): Point {
+  /** SymPy x_cord: the projective X coordinate. */
+  get xCord(): bigint {
+    return this.x;
+  }
+  /** SymPy z_cord: the projective Z coordinate. */
+  get zCord(): bigint {
+    return this.z;
+  }
+
+  add(Q: ECMPoint, diff: ECMPoint): ECMPoint {
     const u = (this.x - this.z) * (Q.x + Q.z);
     const v = (this.x + this.z) * (Q.x - Q.z);
     const ad = u + v;
     const sb = u - v;
-    return new Point(pmod(diff.z * ad * ad, this.mod), pmod(diff.x * sb * sb, this.mod), this.a24, this.mod);
+    return new ECMPoint(pmod(diff.z * ad * ad, this.mod), pmod(diff.x * sb * sb, this.mod), this.a24, this.mod);
   }
 
-  double(): Point {
+  double(): ECMPoint {
     const u = powmod(this.x + this.z, 2n, this.mod);
     const v = powmod(this.x - this.z, 2n, this.mod);
     const diff = u - v;
-    return new Point(pmod(u * v, this.mod), pmod(diff * (v + this.a24 * diff), this.mod), this.a24, this.mod);
+    return new ECMPoint(pmod(u * v, this.mod), pmod(diff * (v + this.a24 * diff), this.mod), this.a24, this.mod);
   }
 
-  montLadder(k: bigint): Point {
-    let Q: Point = this;
+  montLadder(k: bigint): ECMPoint {
+    if (k < 1n) throw new RangeError('Multiplier must be a positive integer');
+    let Q: ECMPoint = this;
     let R = this.double();
     for (const bit of k.toString(2).slice(1)) {
       if (bit === '1') {
@@ -491,7 +502,7 @@ export function ecmOneFactor(n: bigint, B1 = 10000n, B2 = 100000n, maxCurve = 20
   sieve.extend(D);
   const Dn = Number(D);
   const beta: bigint[] = new Array<bigint>(Dn).fill(0n);
-  const Sx: Point[] = new Array<Point>(Dn);
+  const Sx: ECMPoint[] = new Array<ECMPoint>(Dn);
   let k = 1n;
   for (const p of primerange(2n, B1 + 1n)) k *= p ** BigInt(Math.floor(pyLogBase(B1, p)));
   const deltasList: bigint[][] = [];
@@ -514,7 +525,7 @@ export function ecmOneFactor(n: bigint, B1 = 10000n, B2 = 100000n, maxCurve = 20
       return g;
     }
     const a24 = pmod(powmod(v - u, 3n, n) * (3n * u + v) * inv, n);
-    let Q = new Point(u3, powmod(v, 3n, n), a24, n);
+    let Q = new ECMPoint(u3, powmod(v, 3n, n), a24, n);
     Q = Q.montLadder(k);
     let g = gcd(Q.z, n);
     if (g !== 1n && g !== n) return g;

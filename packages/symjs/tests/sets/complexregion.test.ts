@@ -95,3 +95,21 @@ describe('ComplexRegion (SymPy sympy.sets.fancysets)', () => {
     expect(() => n(I(0, x))).toThrow(sj.NotImplementedError);
   });
 });
+
+it('measures rectangles and annular sectors with the polar Jacobian', () => {
+  const cartesian = (u: sj.SetExpr, v: sj.SetExpr) => new sj.CartesianComplexRegion(sj.ProductSet(u, v));
+  const polar = (u: sj.SetExpr, v: sj.SetExpr) => new sj.PolarComplexRegion(sj.ProductSet(u, v));
+  expect(String(cartesian(I(2, 5), I(4, 8)).measure)).toBe('12');
+  // SymPy 1.14 returns 6*pi by omitting the Jacobian r. The annulus has
+  // area pi*(5**2 - 2**2) = 21*pi, independent of its parametrization.
+  expect(String(polar(I(2, 5), th).measure)).toBe('21*pi');
+  expect(String(polar(I(0, 1), I(0, sj.pi)).measure)).toBe('pi/2');
+  expect(String(polar(I(0, 1), I(0, sj.mul(4, sj.pi))).measure)).toBe('pi');
+  expect(() => polar(I(0, 1), I(0, x)).measure).toThrow(sj.NotImplementedError);
+  expect(String(cartesian(sj.FiniteSet.of(2), I(1, 4)).measure)).toBe('0');
+  expect(String(cartesian(I(1, 4), sj.FiniteSet.of(2)).measure)).toBe('0');
+  expect(() => cartesian(sj.Integers, I(1, 4)).measure).toThrow(sj.NotImplementedError);
+  expect(() => cartesian(I(1, 4), sj.Integers).measure).toThrow(sj.NotImplementedError);
+  expect(() => polar(I(-1, 1), th).measure).toThrow(sj.NotImplementedError);
+  expect(() => new sj.CartesianComplexRegion(sj.Union(sj.ProductSet(a, b), sj.ProductSet(b, c))).measure).toThrow(sj.NotImplementedError);
+});

@@ -109,7 +109,7 @@ export {
   seterr,
 } from './core/errors';
 export { Basic, BasicNode } from './core/basic';
-export { Kind, NumberKind, BooleanKind, UndefinedKind } from './core/kind';
+export { Kind, NumberKind, BooleanKind, UndefinedKind, TupleKind } from './core/kind';
 export { SymNumber, RealNumber, Atom, AtomicExpr, FunctionClass, UnevaluatedExpr, DeferredVector, genericExpr } from './core/classes';
 export { evaluate, globalParameters } from './core/parameters';
 export { Transform } from './core/rules';

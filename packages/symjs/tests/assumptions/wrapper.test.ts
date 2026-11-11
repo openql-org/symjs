@@ -19,3 +19,13 @@ describe('assumption wrappers', () => {
     expect(isExtendedNonnegative(x!, Q.positive(x!))).toBe(true);
   });
 });
+
+it('uses local assumptions for integer and parity queries without mutating symbols', () => {
+  const symbol = new sj.Sym('wrapped');
+  const even = new sj.AssumptionsWrapper(symbol, Q.even(symbol));
+  expect(even.isInteger).toBe(true);
+  expect(even.isOdd).toBe(false);
+  expect(new sj.AssumptionsWrapper(symbol).isInteger).toBe('unknown');
+  expect(new sj.AssumptionsWrapper(3).isOdd).toBe(true);
+  expect(sj.ask(Q.integer(symbol))).toBe('unknown');
+});

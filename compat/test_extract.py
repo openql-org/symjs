@@ -17,6 +17,42 @@ import extract
 
 
 class ExtractTests(unittest.TestCase):
+    def test_serializes_combinatorial_receivers_and_structured_sets(self):
+        from sympy.combinatorics import Subset, GrayCode, Prufer
+        self.assertEqual(extract.ser(Subset([2], [1, 2]))["cls"], "Subset")
+        self.assertEqual(extract.ser(GrayCode(4, rank=4)), {"t": "GrayCode", "n": 4, "current": "0110"})
+        tree = [[0, 2], [0, 1], [1, 3]]
+        self.assertEqual(extract.ser(Prufer(tree))["args"], [extract.ser(tree)])
+        self.assertEqual(extract.ser(sympy.ProductSet(sympy.S.Integers, sympy.S.Rationals))["cls"], "ProductSet")
+        self.assertEqual(extract.ser(sympy.S.Rationals), {"t": "NamedSet", "name": "Rationals"})
+        self.assertEqual(extract.ser(slice(None, 5, 2))["start"], {"t": "Js", "v": None})
+
+    def test_sat_serialization_freezes_mutable_search_state(self):
+        from sympy.logic.algorithms.dpll2 import SATSolver
+        solver = SATSolver([{1}, {-1, 2}], {1, 2}, set())
+        before = extract.ser(solver)
+        frozen = copy.deepcopy(before)
+        solver.clauses[0].append(2)
+        solver.variable_set[1] = True
+        solver.lit_heap[0] = (17.0, 2)
+        solver.var_settings.add(2)
+        solver.sentinels[2].add(99)
+        solver.lit_scores[2] = 5.0
+        self.assertEqual(before, frozen)
+        self.assertNotEqual(extract.ser(solver), frozen)
+
+    def test_transform_preserves_symbolic_comparisons_and_rejects_opaque_code(self):
+        from sympy.core.rules import Transform
+        x = sympy.Symbol("x")
+        self.assertEqual(extract.callback_expr(lambda x: x % 2 == 1, x), sympy.Eq(sympy.Mod(x, 2), 1))
+        self.assertEqual(extract.callback_expr(lambda x: -x + 1, x), 1 - x)
+        transform = extract.ser(Transform(lambda x: x + 1, lambda x: x % 2 == 1))
+        self.assertEqual(transform["condition"]["t"], "Rel")
+        with self.assertRaises(extract.Unsupported):
+            extract.ser(Transform(lambda x: str(x)))
+        with self.assertRaises(extract.Unsupported):
+            extract.ser(Transform(lambda x: x, lambda x: bool(x)))
+
     def test_public_definitions_need_not_be_top_level_exports(self):
         for module, name in [
             ("sympy.simplify.fu", "TR10"),

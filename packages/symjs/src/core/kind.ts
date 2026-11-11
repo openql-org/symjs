@@ -64,3 +64,15 @@ export class ArrayKindNode extends Kind {
     return `ArrayKind(${this.elementKind.toString()})`;
   }
 }
+
+/** The kinds of the ordered elements of a SymPy Tuple. */
+export class TupleKind extends Kind {
+  readonly elementKind: readonly Kind[];
+  constructor(...elementKind: Kind[]) {
+    super();
+    this.elementKind = elementKind;
+  }
+  toString(): string {
+    return `TupleKind(${this.elementKind.map((kind) => kind.toString()).join(', ')})`;
+  }
+}

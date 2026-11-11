@@ -26,3 +26,16 @@ export function isExtendedReal(obj: ExprLike, assumptions: Assumption = true): T
 export function isExtendedNonnegative(obj: ExprLike, assumptions: Assumption = true): Truth {
   return ask(Q.extended_nonnegative(obj), assumptions);
 }
+
+/** An expression with local assumptions for integer and parity queries. */
+export class AssumptionsWrapper {
+  constructor(readonly expr: ExprLike, readonly assumptions: Assumption = true) {}
+
+  get isInteger(): Truth {
+    return ask(Q.integer(this.expr), this.assumptions);
+  }
+
+  get isOdd(): Truth {
+    return ask(Q.odd(this.expr), this.assumptions);
+  }
+}
