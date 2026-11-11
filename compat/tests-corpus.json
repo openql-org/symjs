@@ -1934,102 +1934,6 @@
   {
    "module": "sympy.core.tests.test_arit",
    "category": "core",
-   "test": "test_pow_E",
-   "line": 239,
-   "src": "assert verify_numerically(b**(1/(log(-b) + sign(i)*I*pi).n()), S.Exp1)",
-   "fn": "verify_numerically",
-   "args": [
-    {
-     "t": "Pow",
-     "args": [
-      {
-       "t": "Add",
-       "args": [
-        {
-         "t": "Float",
-         "v": 0.688843703050096,
-         "man": "3102276244372925",
-         "exp": -52,
-         "prec": 53
-        },
-        {
-         "t": "Mul",
-         "args": [
-          {
-           "t": "Float",
-           "v": 0.515908805880605,
-           "man": "1161723352960525",
-           "exp": -51,
-           "prec": 53
-          },
-          {
-           "t": "Const",
-           "name": "I"
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 2.2948489366076164,
-         "man": "1291885101972205",
-         "exp": -49,
-         "prec": 53
-        },
-        {
-         "t": "Add",
-         "args": [
-          {
-           "t": "Float",
-           "v": -0.15010170699509143,
-           "man": "-5407983933526153",
-           "exp": -55,
-           "prec": 53
-          },
-          {
-           "t": "Mul",
-           "args": [
-            {
-             "t": "Float",
-             "v": -0.6428281324824773,
-             "man": "-5790081075822713",
-             "exp": -53,
-             "prec": 53
-            },
-            {
-             "t": "Const",
-             "name": "I"
-            }
-           ],
-           "evaluate": false
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Const",
-     "name": "E"
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
-  },
-  {
-   "module": "sympy.core.tests.test_arit",
-   "category": "core",
    "test": "test_pow_issue_3516",
    "line": 243,
    "src": "assert 4**Rational(1, 4) == sqrt(2)",
@@ -43490,401 +43394,6 @@
    "kwargs": {},
    "expected": "0.700000000000000",
    "op": "=="
-  },
-  {
-   "module": "sympy.core.tests.test_arit",
-   "category": "core",
-   "test": "test_Mod",
-   "line": 1878,
-   "src": "assert verify_numerically(i % j, i.n() % j.n())",
-   "fn": "verify_numerically",
-   "args": [
-    {
-     "t": "Rational",
-     "p": "0",
-     "q": "1"
-    },
-    {
-     "t": "Float",
-     "v": 0.0,
-     "man": "0",
-     "exp": 0,
-     "prec": 53
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
-  },
-  {
-   "module": "sympy.core.tests.test_arit",
-   "category": "core",
-   "test": "test_Mod",
-   "line": 1878,
-   "src": "assert verify_numerically(i % j, i.n() % j.n())",
-   "fn": "verify_numerically",
-   "args": [
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Pow",
-       "args": [
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        },
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "2"
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Rational",
-         "p": "-1",
-         "q": "1"
-        },
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Rational",
-           "p": "3",
-           "q": "1"
-          },
-          {
-           "t": "Rational",
-           "p": "1",
-           "q": "2"
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Float",
-     "v": -0.31783724519578205,
-     "man": "-1431411699028189",
-     "exp": -52,
-     "prec": 53
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
-  },
-  {
-   "module": "sympy.core.tests.test_arit",
-   "category": "core",
-   "test": "test_Mod",
-   "line": 1878,
-   "src": "assert verify_numerically(i % j, i.n() % j.n())",
-   "fn": "verify_numerically",
-   "args": [
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Rational",
-         "p": "-1",
-         "q": "1"
-        },
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Rational",
-           "p": "3",
-           "q": "1"
-          },
-          {
-           "t": "Rational",
-           "p": "1",
-           "q": "2"
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        },
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Rational",
-           "p": "2",
-           "q": "1"
-          },
-          {
-           "t": "Rational",
-           "p": "1",
-           "q": "2"
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Float",
-     "v": 1.096376317177313,
-     "man": "308602498343599",
-     "exp": -48,
-     "prec": 53
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
-  },
-  {
-   "module": "sympy.core.tests.test_arit",
-   "category": "core",
-   "test": "test_Mod",
-   "line": 1878,
-   "src": "assert verify_numerically(i % j, i.n() % j.n())",
-   "fn": "verify_numerically",
-   "args": [
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "-1",
-       "q": "1"
-      },
-      {
-       "t": "Pow",
-       "args": [
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        },
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "2"
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Float",
-     "v": -1.4142135623730951,
-     "man": "-6369051672525773",
-     "exp": -52,
-     "prec": 53
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
-  },
-  {
-   "module": "sympy.core.tests.test_arit",
-   "category": "core",
-   "test": "test_Mod",
-   "line": 1878,
-   "src": "assert verify_numerically(i % j, i.n() % j.n())",
-   "fn": "verify_numerically",
-   "args": [
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Pow",
-       "args": [
-        {
-         "t": "Rational",
-         "p": "3",
-         "q": "1"
-        },
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "2"
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Rational",
-         "p": "-1",
-         "q": "1"
-        },
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Rational",
-           "p": "2",
-           "q": "1"
-          },
-          {
-           "t": "Rational",
-           "p": "1",
-           "q": "2"
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Float",
-     "v": 0.31783724519578205,
-     "man": "1431411699028189",
-     "exp": -52,
-     "prec": 53
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
-  },
-  {
-   "module": "sympy.core.tests.test_arit",
-   "category": "core",
-   "test": "test_Mod",
-   "line": 1878,
-   "src": "assert verify_numerically(i % j, i.n() % j.n())",
-   "fn": "verify_numerically",
-   "args": [
-    {
-     "t": "Pow",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "2"
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Float",
-     "v": 1.4142135623730951,
-     "man": "6369051672525773",
-     "exp": -52,
-     "prec": 53
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
-  },
-  {
-   "module": "sympy.core.tests.test_arit",
-   "category": "core",
-   "test": "test_Mod",
-   "line": 1878,
-   "src": "assert verify_numerically(i % j, i.n() % j.n())",
-   "fn": "verify_numerically",
-   "args": [
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Pow",
-       "args": [
-        {
-         "t": "Rational",
-         "p": "3",
-         "q": "1"
-        },
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "2"
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Rational",
-         "p": "-2",
-         "q": "1"
-        },
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Rational",
-           "p": "2",
-           "q": "1"
-          },
-          {
-           "t": "Rational",
-           "p": "1",
-           "q": "2"
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Float",
-     "v": -1.096376317177313,
-     "man": "-308602498343599",
-     "exp": -48,
-     "prec": 53
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
   },
   {
    "module": "sympy.core.tests.test_arit",
@@ -270340,1321 +269849,6 @@
    "op": "is"
   },
   {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2310,
-   "src": "assert all_close(2, 2) is True",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Rational",
-     "p": "2",
-     "q": "1"
-    },
-    {
-     "t": "Rational",
-     "p": "2",
-     "q": "1"
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "is"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2311,
-   "src": "assert all_close(2, 2.0000) is True",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Rational",
-     "p": "2",
-     "q": "1"
-    },
-    {
-     "t": "Float",
-     "v": 2.0,
-     "py": true
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "is"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2312,
-   "src": "assert all_close(2, 2.0001) is False",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Rational",
-     "p": "2",
-     "q": "1"
-    },
-    {
-     "t": "Float",
-     "v": 2.0001,
-     "py": true
-    }
-   ],
-   "kwargs": {},
-   "expected": "False",
-   "op": "is"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2313,
-   "src": "assert all_close(1/3, 1/3.0001) is False",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Float",
-     "v": 0.3333333333333333,
-     "py": true
-    },
-    {
-     "t": "Float",
-     "v": 0.3333222225925802,
-     "py": true
-    }
-   ],
-   "kwargs": {},
-   "expected": "False",
-   "op": "is"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2314,
-   "src": "assert all_close(1/3, 1/3.0001, 1e-3, 1e-3) is True",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Float",
-     "v": 0.3333333333333333,
-     "py": true
-    },
-    {
-     "t": "Float",
-     "v": 0.3333222225925802,
-     "py": true
-    },
-    {
-     "t": "Float",
-     "v": 0.001,
-     "py": true
-    },
-    {
-     "t": "Float",
-     "v": 0.001,
-     "py": true
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "is"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2315,
-   "src": "assert all_close(1/3, Rational(1, 3)) is True",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Float",
-     "v": 0.3333333333333333,
-     "py": true
-    },
-    {
-     "t": "Rational",
-     "p": "1",
-     "q": "3"
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "is"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2316,
-   "src": "assert all_close(0.1*exp(0.2*x), exp(x/5)/10) is True",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Float",
-       "v": 0.1,
-       "man": "3602879701896397",
-       "exp": -55,
-       "prec": 53
-      },
-      {
-       "t": "Fn",
-       "name": "exp",
-       "args": [
-        {
-         "t": "Mul",
-         "args": [
-          {
-           "t": "Float",
-           "v": 0.2,
-           "man": "3602879701896397",
-           "exp": -54,
-           "prec": 53
-          },
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          }
-         ],
-         "evaluate": false
-        }
-       ]
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "10"
-      },
-      {
-       "t": "Fn",
-       "name": "exp",
-       "args": [
-        {
-         "t": "Mul",
-         "args": [
-          {
-           "t": "Rational",
-           "p": "1",
-           "q": "5"
-          },
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          }
-         ],
-         "evaluate": false
-        }
-       ]
-      }
-     ],
-     "evaluate": false
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "is"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2318,
-   "src": "assert all_close(1.4142135623730951, sqrt(2)) is False",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Float",
-     "v": 1.4142135623730951,
-     "py": true
-    },
-    {
-     "t": "Pow",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "2"
-      }
-     ],
-     "evaluate": false
-    }
-   ],
-   "kwargs": {},
-   "expected": "False",
-   "op": "is"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2319,
-   "src": "assert all_close(1.4142135623730951, sqrt(2).evalf()) is True",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Float",
-     "v": 1.4142135623730951,
-     "py": true
-    },
-    {
-     "t": "Float",
-     "v": 1.4142135623730951,
-     "man": "6369051672525773",
-     "exp": -52,
-     "prec": 53
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "is"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2320,
-   "src": "assert all_close(x + 1e-20, x) is True",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Float",
-       "v": 1e-20,
-       "man": "6646139978924579",
-       "exp": -119,
-       "prec": 53
-      },
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Symbol",
-     "name": "x",
-     "assume": {}
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "is"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2322,
-   "src": "assert all_close(Add(1, 2, evaluate=False), Add(2, 1, evaluate=False))",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Rational",
-       "p": "1",
-       "q": "1"
-      }
-     ],
-     "evaluate": false
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2324,
-   "src": "assert not all_close(2*x, 3*x)",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "3",
-       "q": "1"
-      },
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      }
-     ],
-     "evaluate": false
-    }
-   ],
-   "kwargs": {},
-   "expected": "False",
-   "op": "falsy"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2325,
-   "src": "assert all_close(2*x, 3*x, 1)",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "3",
-       "q": "1"
-      },
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Rational",
-     "p": "1",
-     "q": "1"
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2326,
-   "src": "assert not all_close(2*x, 3*x, 0, 0.5)",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "3",
-       "q": "1"
-      },
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Rational",
-     "p": "0",
-     "q": "1"
-    },
-    {
-     "t": "Float",
-     "v": 0.5,
-     "py": true
-    }
-   ],
-   "kwargs": {},
-   "expected": "False",
-   "op": "falsy"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2327,
-   "src": "assert all_close(2*x, 3*x, 0, 1)",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "3",
-       "q": "1"
-      },
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Rational",
-     "p": "0",
-     "q": "1"
-    },
-    {
-     "t": "Rational",
-     "p": "1",
-     "q": "1"
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2328,
-   "src": "assert not all_close(y*x, z*x)",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      },
-      {
-       "t": "Symbol",
-       "name": "y",
-       "assume": {}
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      },
-      {
-       "t": "Symbol",
-       "name": "z",
-       "assume": {}
-      }
-     ],
-     "evaluate": false
-    }
-   ],
-   "kwargs": {},
-   "expected": "False",
-   "op": "falsy"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2329,
-   "src": "assert all_close(2*x*exp(1.0*x), 2.0*x*exp(x))",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      },
-      {
-       "t": "Fn",
-       "name": "exp",
-       "args": [
-        {
-         "t": "Mul",
-         "args": [
-          {
-           "t": "Float",
-           "v": 1.0,
-           "man": "1",
-           "exp": 0,
-           "prec": 53
-          },
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          }
-         ],
-         "evaluate": false
-        }
-       ]
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Float",
-       "v": 2.0,
-       "man": "1",
-       "exp": 1,
-       "prec": 53
-      },
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      },
-      {
-       "t": "Fn",
-       "name": "exp",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ]
-      }
-     ],
-     "evaluate": false
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2330,
-   "src": "assert not all_close(2*x*exp(1.0*x), 2.0*x*exp(2.*x))",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Rational",
-       "p": "2",
-       "q": "1"
-      },
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      },
-      {
-       "t": "Fn",
-       "name": "exp",
-       "args": [
-        {
-         "t": "Mul",
-         "args": [
-          {
-           "t": "Float",
-           "v": 1.0,
-           "man": "1",
-           "exp": 0,
-           "prec": 53
-          },
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          }
-         ],
-         "evaluate": false
-        }
-       ]
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Mul",
-     "args": [
-      {
-       "t": "Float",
-       "v": 2.0,
-       "man": "1",
-       "exp": 1,
-       "prec": 53
-      },
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      },
-      {
-       "t": "Fn",
-       "name": "exp",
-       "args": [
-        {
-         "t": "Mul",
-         "args": [
-          {
-           "t": "Float",
-           "v": 2.0,
-           "man": "1",
-           "exp": 1,
-           "prec": 53
-          },
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          }
-         ],
-         "evaluate": false
-        }
-       ]
-      }
-     ],
-     "evaluate": false
-    }
-   ],
-   "kwargs": {},
-   "expected": "False",
-   "op": "falsy"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2331,
-   "src": "assert all_close(x + 2.*y, 1.*x + 2*y)",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 2.0,
-         "man": "1",
-         "exp": 1,
-         "prec": 53
-        },
-        {
-         "t": "Symbol",
-         "name": "y",
-         "assume": {}
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        },
-        {
-         "t": "Symbol",
-         "name": "y",
-         "assume": {}
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 1.0,
-         "man": "1",
-         "exp": 0,
-         "prec": 53
-        },
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2332,
-   "src": "assert all_close(x + exp(2.*x)*y, 1.*x + exp(2*x)*y)",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "y",
-         "assume": {}
-        },
-        {
-         "t": "Fn",
-         "name": "exp",
-         "args": [
-          {
-           "t": "Mul",
-           "args": [
-            {
-             "t": "Float",
-             "v": 2.0,
-             "man": "1",
-             "exp": 1,
-             "prec": 53
-            },
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ],
-           "evaluate": false
-          }
-         ]
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 1.0,
-         "man": "1",
-         "exp": 0,
-         "prec": 53
-        },
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "y",
-         "assume": {}
-        },
-        {
-         "t": "Fn",
-         "name": "exp",
-         "args": [
-          {
-           "t": "Mul",
-           "args": [
-            {
-             "t": "Rational",
-             "p": "2",
-             "q": "1"
-            },
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ],
-           "evaluate": false
-          }
-         ]
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2333,
-   "src": "assert not all_close(x + exp(2.*x)*y, 1.*x + 2*exp(2*x)*y)",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "y",
-         "assume": {}
-        },
-        {
-         "t": "Fn",
-         "name": "exp",
-         "args": [
-          {
-           "t": "Mul",
-           "args": [
-            {
-             "t": "Float",
-             "v": 2.0,
-             "man": "1",
-             "exp": 1,
-             "prec": 53
-            },
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ],
-           "evaluate": false
-          }
-         ]
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 1.0,
-         "man": "1",
-         "exp": 0,
-         "prec": 53
-        },
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        },
-        {
-         "t": "Symbol",
-         "name": "y",
-         "assume": {}
-        },
-        {
-         "t": "Fn",
-         "name": "exp",
-         "args": [
-          {
-           "t": "Mul",
-           "args": [
-            {
-             "t": "Rational",
-             "p": "2",
-             "q": "1"
-            },
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ],
-           "evaluate": false
-          }
-         ]
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    }
-   ],
-   "kwargs": {},
-   "expected": "False",
-   "op": "falsy"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2334,
-   "src": "assert not all_close(x + exp(2.*x)*y, 1.*x + exp(3*x)*y)",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "y",
-         "assume": {}
-        },
-        {
-         "t": "Fn",
-         "name": "exp",
-         "args": [
-          {
-           "t": "Mul",
-           "args": [
-            {
-             "t": "Float",
-             "v": 2.0,
-             "man": "1",
-             "exp": 1,
-             "prec": 53
-            },
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ],
-           "evaluate": false
-          }
-         ]
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 1.0,
-         "man": "1",
-         "exp": 0,
-         "prec": 53
-        },
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Symbol",
-         "name": "y",
-         "assume": {}
-        },
-        {
-         "t": "Fn",
-         "name": "exp",
-         "args": [
-          {
-           "t": "Mul",
-           "args": [
-            {
-             "t": "Rational",
-             "p": "3",
-             "q": "1"
-            },
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ],
-           "evaluate": false
-          }
-         ]
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    }
-   ],
-   "kwargs": {},
-   "expected": "False",
-   "op": "falsy"
-  },
-  {
-   "module": "sympy.core.tests.test_numbers",
-   "category": "core",
-   "test": "test_all_close",
-   "line": 2335,
-   "src": "assert not all_close(x + 2.*y, 1.*x + 3*y)",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Symbol",
-       "name": "x",
-       "assume": {}
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 2.0,
-         "man": "1",
-         "exp": 1,
-         "prec": 53
-        },
-        {
-         "t": "Symbol",
-         "name": "y",
-         "assume": {}
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Rational",
-         "p": "3",
-         "q": "1"
-        },
-        {
-         "t": "Symbol",
-         "name": "y",
-         "assume": {}
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 1.0,
-         "man": "1",
-         "exp": 0,
-         "prec": 53
-        },
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    }
-   ],
-   "kwargs": {},
-   "expected": "False",
-   "op": "falsy"
-  },
-  {
    "module": "sympy.core.tests.test_operations",
    "category": "core",
    "test": "test_lattice_make_args",
@@ -282149,155 +280343,6 @@
    },
    "expected": "None",
    "op": "is"
-  },
-  {
-   "module": "sympy.core.tests.test_power",
-   "category": "core",
-   "test": "test_issue_25165",
-   "line": 670,
-   "src": "assert all_close(e1, e2)",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Float",
-       "v": 0.9986037248303546,
-       "man": "8994622726073549",
-       "exp": -53,
-       "prec": 53
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 1.020049231899337,
-         "man": "4593893340681415",
-         "exp": -52,
-         "prec": 53
-        },
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Fn",
-       "name": "Order",
-       "args": [
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          },
-          {
-           "t": "Rational",
-           "p": "2",
-           "q": "1"
-          }
-         ],
-         "evaluate": false
-        },
-        {
-         "t": "Tuple",
-         "items": [
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          },
-          {
-           "t": "Rational",
-           "p": "0",
-           "q": "1"
-          }
-         ]
-        }
-       ]
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Float",
-       "v": 0.998603724830355,
-       "man": "562163920379597",
-       "exp": -49,
-       "prec": 53
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 1.02004923189934,
-         "man": "1148473335170357",
-         "exp": -50,
-         "prec": 53
-        },
-        {
-         "t": "Symbol",
-         "name": "x",
-         "assume": {}
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Fn",
-       "name": "Order",
-       "args": [
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          },
-          {
-           "t": "Rational",
-           "p": "2",
-           "q": "1"
-          }
-         ],
-         "evaluate": false
-        },
-        {
-         "t": "Tuple",
-         "items": [
-          {
-           "t": "Symbol",
-           "name": "x",
-           "assume": {}
-          },
-          {
-           "t": "Rational",
-           "p": "0",
-           "q": "1"
-          }
-         ]
-        }
-       ]
-      }
-     ],
-     "evaluate": false
-    }
-   ],
-   "kwargs": {},
-   "expected": "True",
-   "op": "truthy"
   },
   {
    "module": "sympy.core.tests.test_priority",
@@ -564628,378 +562673,6 @@
      }
     ],
     "evaluate": false
-   },
-   "expected": "True",
-   "op": "truthy"
-  },
-  {
-   "module": "sympy.polys.tests.test_partfrac",
-   "category": "polys",
-   "test": "test_apart_full_floats",
-   "line": 171,
-   "src": "assert all_close(f_apart, expected, rtol=1e-3, atol=1e-5)",
-   "fn": "all_close",
-   "args": [
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 133.59411347275488,
-         "man": "1175106249325763",
-         "exp": -43,
-         "prec": 53
-        },
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Add",
-           "args": [
-            {
-             "t": "Float",
-             "v": 85524.00548844636,
-             "man": "2938582452766413",
-             "exp": -35,
-             "prec": 53
-            },
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ],
-           "evaluate": false
-          },
-          {
-           "t": "Rational",
-           "p": "-1",
-           "q": "1"
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 1.0775792843177348,
-         "man": "1213246415828879",
-         "exp": -50,
-         "prec": 53
-        },
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Add",
-           "args": [
-            {
-             "t": "Float",
-             "v": 774.8857667794904,
-             "man": "6815967286177371",
-             "exp": -43,
-             "prec": 53
-            },
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ],
-           "evaluate": false
-          },
-          {
-           "t": "Rational",
-           "p": "-1",
-           "q": "1"
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 0.39500695551886333,
-         "man": "1778953177683507",
-         "exp": -52,
-         "prec": 53
-        },
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Add",
-           "args": [
-            {
-             "t": "Float",
-             "v": 40.79770161331258,
-             "man": "2870883027863863",
-             "exp": -46,
-             "prec": 53
-            },
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ],
-           "evaluate": false
-          },
-          {
-           "t": "Rational",
-           "p": "-1",
-           "q": "1"
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 0.5642648541372693,
-         "man": "5082445973661747",
-         "exp": -53,
-         "prec": 53
-        },
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Add",
-           "args": [
-            {
-             "t": "Float",
-             "v": 7.797466092046611,
-             "man": "8779166346643799",
-             "exp": -50,
-             "prec": 53
-            },
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ],
-           "evaluate": false
-          },
-          {
-           "t": "Rational",
-           "p": "-1",
-           "q": "1"
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    },
-    {
-     "t": "Add",
-     "args": [
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 0.395006955518971,
-         "man": "222369147210499",
-         "exp": -49,
-         "prec": 53
-        },
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Add",
-           "args": [
-            {
-             "t": "Float",
-             "v": 40.7977016133126,
-             "man": "358860378482983",
-             "exp": -43,
-             "prec": 53
-            },
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ],
-           "evaluate": false
-          },
-          {
-           "t": "Rational",
-           "p": "-1",
-           "q": "1"
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 1.07757928431867,
-         "man": "303311603957483",
-         "exp": -48,
-         "prec": 53
-        },
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Add",
-           "args": [
-            {
-             "t": "Float",
-             "v": 774.88576677949,
-             "man": "851995910772171",
-             "exp": -40,
-             "prec": 53
-            },
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ],
-           "evaluate": false
-          },
-          {
-           "t": "Rational",
-           "p": "-1",
-           "q": "1"
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 0.564264854137341,
-         "man": "635305746707799",
-         "exp": -50,
-         "prec": 53
-        },
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Add",
-           "args": [
-            {
-             "t": "Float",
-             "v": 7.79746609204661,
-             "man": "4389583173321899",
-             "exp": -49,
-             "prec": 53
-            },
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ],
-           "evaluate": false
-          },
-          {
-           "t": "Rational",
-           "p": "-1",
-           "q": "1"
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      },
-      {
-       "t": "Mul",
-       "args": [
-        {
-         "t": "Float",
-         "v": 133.599202650992,
-         "man": "4700604056843773",
-         "exp": -45,
-         "prec": 53
-        },
-        {
-         "t": "Pow",
-         "args": [
-          {
-           "t": "Add",
-           "args": [
-            {
-             "t": "Float",
-             "v": 85524.0054884464,
-             "man": "5877164905532829",
-             "exp": -36,
-             "prec": 53
-            },
-            {
-             "t": "Symbol",
-             "name": "x",
-             "assume": {}
-            }
-           ],
-           "evaluate": false
-          },
-          {
-           "t": "Rational",
-           "p": "-1",
-           "q": "1"
-          }
-         ],
-         "evaluate": false
-        }
-       ],
-       "evaluate": false
-      }
-     ],
-     "evaluate": false
-    }
-   ],
-   "kwargs": {
-    "rtol": {
-     "t": "Float",
-     "v": 0.001,
-     "py": true
-    },
-    "atol": {
-     "t": "Float",
-     "v": 1e-05,
-     "py": true
-    }
    },
    "expected": "True",
    "op": "truthy"
@@ -871911,7 +869584,7 @@
  ],
  "extraction": {
   "examined": 32778,
-  "cases": 12966,
+  "cases": 12933,
   "reasons": {
    "duplicate": 598,
    "marked-skip": 11,
@@ -871927,6 +869600,7 @@
    "python-runtime-api": 526,
    "serialization-error": 17,
    "stateful-iterator-input": 201,
+   "test-utility": 33,
    "unserializable-input": 1226,
    "unsupported-assertion": 2110,
    "unsupported-raises": 6
@@ -871935,7 +869609,7 @@
   "categories": {
    "core": {
     "examined": 25605,
-    "cases": 7890,
+    "cases": 7858,
     "reasons": {
      "duplicate": 579,
      "marked-skip": 11,
@@ -871949,6 +869623,7 @@
      "python-runtime-api": 260,
      "serialization-error": 17,
      "stateful-iterator-input": 76,
+     "test-utility": 32,
      "unserializable-input": 867,
      "unsupported-assertion": 1704,
      "unsupported-raises": 6
@@ -871956,7 +869631,7 @@
    },
    "polys": {
     "examined": 7173,
-    "cases": 5076,
+    "cases": 5075,
     "reasons": {
      "duplicate": 19,
      "marked-slow": 73,
@@ -871970,6 +869645,7 @@
      "private-api": 18,
      "python-runtime-api": 266,
      "stateful-iterator-input": 125,
+     "test-utility": 1,
      "unserializable-input": 359,
      "unsupported-assertion": 406
     }
@@ -1030471,6 +1028147,270 @@
     "line": 83,
     "src": "assert res(3, 5, x) == res_q(3, 5, x) == res_z(3, 5, x)",
     "reason": "unsupported-assertion"
+   },
+   {
+    "module": "sympy.core.tests.test_arit",
+    "category": "core",
+    "test": "test_pow_E",
+    "line": 239,
+    "src": "assert verify_numerically(b**(1/(log(-b) + sign(i)*I*pi).n()), S.Exp1)",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_arit",
+    "category": "core",
+    "test": "test_Mod",
+    "line": 1878,
+    "src": "assert verify_numerically(i % j, i.n() % j.n())",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_arit",
+    "category": "core",
+    "test": "test_Mod",
+    "line": 1878,
+    "src": "assert verify_numerically(i % j, i.n() % j.n())",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_arit",
+    "category": "core",
+    "test": "test_Mod",
+    "line": 1878,
+    "src": "assert verify_numerically(i % j, i.n() % j.n())",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_arit",
+    "category": "core",
+    "test": "test_Mod",
+    "line": 1878,
+    "src": "assert verify_numerically(i % j, i.n() % j.n())",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_arit",
+    "category": "core",
+    "test": "test_Mod",
+    "line": 1878,
+    "src": "assert verify_numerically(i % j, i.n() % j.n())",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_arit",
+    "category": "core",
+    "test": "test_Mod",
+    "line": 1878,
+    "src": "assert verify_numerically(i % j, i.n() % j.n())",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_arit",
+    "category": "core",
+    "test": "test_Mod",
+    "line": 1878,
+    "src": "assert verify_numerically(i % j, i.n() % j.n())",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2310,
+    "src": "assert all_close(2, 2) is True",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2311,
+    "src": "assert all_close(2, 2.0000) is True",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2312,
+    "src": "assert all_close(2, 2.0001) is False",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2313,
+    "src": "assert all_close(1/3, 1/3.0001) is False",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2314,
+    "src": "assert all_close(1/3, 1/3.0001, 1e-3, 1e-3) is True",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2315,
+    "src": "assert all_close(1/3, Rational(1, 3)) is True",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2316,
+    "src": "assert all_close(0.1*exp(0.2*x), exp(x/5)/10) is True",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2318,
+    "src": "assert all_close(1.4142135623730951, sqrt(2)) is False",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2319,
+    "src": "assert all_close(1.4142135623730951, sqrt(2).evalf()) is True",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2320,
+    "src": "assert all_close(x + 1e-20, x) is True",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2322,
+    "src": "assert all_close(Add(1, 2, evaluate=False), Add(2, 1, evaluate=False))",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2324,
+    "src": "assert not all_close(2*x, 3*x)",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2325,
+    "src": "assert all_close(2*x, 3*x, 1)",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2326,
+    "src": "assert not all_close(2*x, 3*x, 0, 0.5)",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2327,
+    "src": "assert all_close(2*x, 3*x, 0, 1)",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2328,
+    "src": "assert not all_close(y*x, z*x)",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2329,
+    "src": "assert all_close(2*x*exp(1.0*x), 2.0*x*exp(x))",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2330,
+    "src": "assert not all_close(2*x*exp(1.0*x), 2.0*x*exp(2.*x))",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2331,
+    "src": "assert all_close(x + 2.*y, 1.*x + 2*y)",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2332,
+    "src": "assert all_close(x + exp(2.*x)*y, 1.*x + exp(2*x)*y)",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2333,
+    "src": "assert not all_close(x + exp(2.*x)*y, 1.*x + 2*exp(2*x)*y)",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2334,
+    "src": "assert not all_close(x + exp(2.*x)*y, 1.*x + exp(3*x)*y)",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_numbers",
+    "category": "core",
+    "test": "test_all_close",
+    "line": 2335,
+    "src": "assert not all_close(x + 2.*y, 1.*x + 3*y)",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.core.tests.test_power",
+    "category": "core",
+    "test": "test_issue_25165",
+    "line": 670,
+    "src": "assert all_close(e1, e2)",
+    "reason": "test-utility"
+   },
+   {
+    "module": "sympy.polys.tests.test_partfrac",
+    "category": "polys",
+    "test": "test_apart_full_floats",
+    "line": 171,
+    "src": "assert all_close(f_apart, expected, rtol=1e-3, atol=1e-5)",
+    "reason": "test-utility"
    }
   ],
   "tests": [

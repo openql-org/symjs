@@ -25,7 +25,7 @@ EXCLUSIONS = {
     'sympy.parsing.autolev._antlr': 'Generated Python parser runtime; an equivalent parser may be supplied separately.',
     'sympy.parsing.latex._antlr': 'Generated Python parser runtime; this does not exclude the LaTeX parsing feature.',
     'sympy.stats.sampling': 'External sampling-library adapters; symbolic probability remains in scope.',
-    'sympy.categories.diagram_drawing': 'diagram drawing (decided later)',
+    'sympy.categories.diagram_drawing': 'diagram drawing',
     'sympy.polys.domains.gmpyintegerring': 'Ground-type backend binding gmpy2/python-flint; ZZ itself is in scope (domains.integerring).',
     'sympy.polys.domains.gmpyrationalfield': 'Ground-type backend binding gmpy2/python-flint; QQ itself is in scope (domains.rationalfield).',
     'sympy.polys.domains.gmpyfinitefield': 'Ground-type backend binding gmpy2/python-flint; GF(p) itself is in scope (domains.finitefield).',
@@ -66,7 +66,7 @@ EXCLUSIONS = {
     'sympy.utilities._compilation': 'Compiler and Python-extension build helpers (used by autowrap).',
     'sympy.printing.preview': 'Renders LaTeX to an image with an external TeX installation and viewer (display, like plotting).',
     'sympy.printing.gtk': 'Opens a MathML viewer through GTK (display).',
-    'sympy.printing.tensorflow': 'TensorFlow code for lambdify (user decision: lambdify for TensorFlow is not ported).',
+    'sympy.printing.tensorflow': 'TensorFlow code for lambdify (not ported).',
     'sympy.printing.pytorch': 'PyTorch code for lambdify (Python numeric framework binding, like TensorFlow).',
     'sympy.printing.aesaracode': 'Aesara graph construction (Python numeric framework binding).',
     'sympy.printing.theanocode': 'Theano graph construction (Python numeric framework binding).',
@@ -76,12 +76,12 @@ EXCLUSIONS = {
     'sympy.parsing.autolev._build_autolev_antlr': 'Build script regenerating the ANTLR parser.',
     'sympy.parsing.autolev.test-examples': 'Example Autolev inputs and their generated Python (test data).',
     'sympy.galgebra': 'Removed from SymPy: the module only raises ImportError pointing to the external galgebra package.',
-    'sympy.printing.pycode': 'Generates or compiles Python code (user decision: out of scope).',
-    'sympy.printing.numpy': 'Generates or compiles Python code (user decision: out of scope).',
-    'sympy.printing.lambdarepr': 'Generates or compiles Python code (user decision: out of scope).',
-    'sympy.printing.python': 'Generates or compiles Python code (user decision: out of scope).',
-    'sympy.utilities.autowrap': 'Generates or compiles Python code (user decision: out of scope).',
-    'sympy.codegen.pyutils': 'Generates or compiles Python code (user decision: out of scope).',
+    'sympy.printing.pycode': 'Generates or compiles Python code.',
+    'sympy.printing.numpy': 'Generates or compiles Python code.',
+    'sympy.printing.lambdarepr': 'Generates or compiles Python code.',
+    'sympy.printing.python': 'Generates or compiles Python code.',
+    'sympy.utilities.autowrap': 'Generates or compiles Python code.',
+    'sympy.codegen.pyutils': 'Generates or compiles Python code.',
 }
 
 # Explicit correspondences for the different kernel layout and combined modules.
@@ -417,7 +417,7 @@ NOT_IMPLEMENTED = {
     'sympy.printing.cxx': 'extend package @symjs/codegen (planned)',
     'sympy.printing.fortran': 'extend package @symjs/codegen (planned)',
     'sympy.printing.glsl': 'extend package @symjs/codegen (planned)',
-    'sympy.printing.jscode': 'JavaScript code output (not needed for now, see README)',
+    'sympy.printing.jscode': 'JavaScript code output (not ported)',
     'sympy.printing.julia': 'extend package @symjs/codegen (planned)',
     'sympy.printing.maple': 'extend package @symjs/codegen (planned)',
     'sympy.printing.mathematica': 'extend package @symjs/codegen (planned)',
@@ -435,10 +435,10 @@ NOT_IMPLEMENTED = {
     'sympy.tensor.toperators': '',
     'sympy.utilities.codegen': 'extend package @symjs/codegen (planned)',
 }
-# Packages whose modules are not implemented as a whole, with the plan (user decision of 2026-11-06); the
+# Packages whose modules are not implemented as a whole, with the plan; the
 # most specific prefix wins and a module with a counterpart stays partial.
 NOT_IMPLEMENTED_PACKAGES = {'sympy.physics.quantum': 'extend package @symjs/physics-quantum (not ported yet)',
- 'sympy.physics': 'per-field extend package (planned; the order is decided later)'}
+ 'sympy.physics': 'per-field extend package (planned)'}
 # Notes on partially implemented modules (what is ported and what is not).
 NOTES = {
     'sympy.polys.fields': 'Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration and composition remain partial.',

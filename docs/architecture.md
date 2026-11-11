@@ -254,7 +254,7 @@ Modules not listed here follow the path rule (`sympy/crypto/crypto.py` ->
 
 | SymPy module | symjs | Scope |
 |---|---|---|
-| `categories/baseclasses.py` | `categories/baseclasses.ts` | objects, morphisms, categories and diagrams; drawing diagrams (`categories/diagram_drawing.py`) is deferred like plotting |
+| `categories/baseclasses.py` | `categories/baseclasses.ts` | objects, morphisms, categories and diagrams; drawing diagrams (`categories/diagram_drawing.py`) is not ported, like plotting |
 | `combinatorics/perm_groups.py`, `named_groups.py` | `combinatorics/permgroups.ts`, `namedgroups.ts` | Schreier-Sims bases, membership, orbits, blocks, series, centralizers, cosets, SymmetricPermutationGroup, Coset and the named groups (AbelianGroup, RubikGroup, ...) |
 | `combinatorics/free_groups.py`, `fp_groups.py`, `coset_table.py`, `rewritingsystem.py`, `rewritingsystem_fsm.py` | `combinatorics/freegroups.ts`, `fpgroups.ts`, `cosettable.ts`, `rewritingsystem.ts` | free groups and words, finitely presented groups and subgroups, Todd-Coxeter coset enumeration (HLT, Felsch, modified), low index subgroups, Reidemeister-Schreier presentations, Knuth-Bendix rewriting systems with their reduction automata; subgroups of free groups use Stallings foldings (SymPy's membership test can fail to terminate) |
 | `combinatorics/homomorphisms.py`, `pc_groups.py`; `PermutationGroup.presentation`, `strong_presentation`, `polycyclic_group` | `combinatorics/fpgroups.ts` (GroupHomomorphism, shared with the finitely presented groups), `homomorphisms.ts`, `pcgroups.ts`, `permpresentation.ts` | group homomorphisms and isomorphisms, polycyclic groups and collectors, presentations of permutation groups (registered on PermutationGroup by the combinatorics entry) |
@@ -287,7 +287,7 @@ Modules not listed here follow the path rule (`sympy/crypto/crypto.py` ->
 | `solvers/simplex.py`, `solvers/bivariate.py` | `solvers/simplex.ts`, `solvers/bivariate.ts` | `lpmin`, `lpmax`, `linprog`, `show_linprog`; `bivariate_type` (the Lambert W helpers stay in `solvers/solve.ts`) |
 | `solvers/ode/single.py` | `solvers/ode/single.ts` (`SingleODEProblem`, `SingleODESolver`, `NthAlgebraic`), `solvers/dsolve.ts` (the hint solvers) | |
 
-## Scope decisions
+## Scope
 
 The symbolic array-expression modules follow
 `sympy/tensor/array/expressions/` under `tensor/array/expressions/`.
@@ -302,15 +302,15 @@ Every SymPy module has a status in `compat/scope-inventory.json`
 unimplemented (with a note on where it is planned), excluded (with the
 reason) or unassessed. Mathematical content is never excluded.
 
-| SymPy modules | Decision |
+| SymPy modules | Status |
 |---|---|
 | `printing/c.py`, `cxx.py`, `fortran.py`, `rust.py`, `octave.py`, `julia.py`, `maple.py`, `mathematica.py`, `glsl.py`, `rcode.py`, `smtlib.py`, `codeprinter.py`; all of `codegen/` (including `cfunctions.py`, `rewriting.py`, `approximations.py`, `algorithms.py`); `utilities/codegen.py` | extend package `@symjs/codegen` (planned) |
 | `printing/pycode.py`, `numpy.py`, `lambdarepr.py`, `python.py`, `codegen/pyutils.py`, `utilities/autowrap.py` | out of scope: they generate or compile Python code |
-| `printing/jscode.py` | not ported: JavaScript code output is not needed for now |
+| `printing/jscode.py` | not ported: JavaScript code output |
 | `parsing/latex/`, `maxima.py`, `autolev/`, `c/`, `fortran/`, `sym_expr.py` | extend package (planned) |
 | `diffgeom/` | extend package (planned) |
-| `physics/` | extend packages per field, in an order decided later; `physics/quantum/` is `@symjs/physics-quantum` (partial) |
-| `plotting/`, `categories/diagram_drawing.py`, `printing/preview.py` | deferred (rendering and display) |
+| `physics/` | extend packages per field; `physics/quantum/` is `@symjs/physics-quantum` (partial) |
+| `plotting/`, `categories/diagram_drawing.py`, `printing/preview.py` | not ported (rendering and display) |
 | test runners and helpers, caching, dispatch decorators, compilation helpers, release metadata, the gmpy2/python-flint ground-type back ends, SAT-solver bindings, typing protocols, REPL and display helpers | out of scope: Python-runtime tooling |
 
 The condition-level scope and remaining limitations are maintained in

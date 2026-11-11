@@ -1,6 +1,6 @@
 # Public API policy of `@symjs/symjs`
 
-Status: adopted (2026-11-02) and implemented; it may change by decision of the community.
+Status: implemented.
 
 ## Conventions
 

@@ -96,6 +96,11 @@ const OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   // extractor (compat/extract.py) keeps none of them and no entry is needed here
   // Python's in-place list.sort() from a docstring setup line, no SymPy call
   'sympy.utilities.iterables: a.sort()': 'Python list method',
+  // SymPy's numerical test helper all_close (approximate structural comparison) is a test utility, not ported
+  'sympy.core.numbers: all_close(expr1, expr2)': 'test utility',
+  'sympy.core.numbers: all_close(x, x + 1e-10)': 'test utility',
+  'sympy.core.numbers: all_close(x, 1.0*x)': 'test utility',
+  'sympy.core.numbers: all_close(x, 1.0*x + 1e-10)': 'test utility',
   // Python's list.append() building a permutation list in the polyhedron docstring; no SymPy call
   'sympy.combinatorics.polyhedron: pgroup.append(Permutation((0, 2, 1, 3)))': 'Python list method',
   'sympy.combinatorics.polyhedron: pgroup.append(Permutation((2, 0, 3, 1)))': 'Python list method',
@@ -107,15 +112,15 @@ const OUT_OF_SCOPE: Readonly<Record<string, string>> = {
 };
 const apiKey = (a: { name: string; category: string; owner?: string }): string => `${a.category}: ${a.owner ? a.owner + ':' : ''}${a.name}`;
 /**
- * SymPy public names outside the scope of symjs by user decision, by API key, with the reason. They are
+ * SymPy public names outside the scope of symjs, by API key, with the reason. They are
  * not counted in the API presence (compat/extract.py no longer lists them; this keeps an older corpus
  * consistent). Their modules are 'excluded' in scope-inventory.json with the same reason.
  */
 const OUT_OF_SCOPE_API: Readonly<Record<string, string>> = {
-  // sympy.categories.diagram_drawing: drawing category diagrams is deferred like plotting
-  'categories: DiagramGrid': 'diagram drawing (decided later)',
-  'categories: XypicDiagramDrawer': 'diagram drawing (decided later)',
-  'categories: xypic_draw_diagram': 'diagram drawing (decided later)',
+  // sympy.categories.diagram_drawing: drawing category diagrams is not ported, like plotting
+  'categories: DiagramGrid': 'diagram drawing',
+  'categories: XypicDiagramDrawer': 'diagram drawing',
+  'categories: xypic_draw_diagram': 'diagram drawing',
 };
 
 it('computes SymPy compatibility metrics', () => {
@@ -200,7 +205,7 @@ it('computes SymPy compatibility metrics', () => {
     ...Object.entries(scopeCounts).map(([status, n]) => `| ${status} | ${n} |`), '',
     'Partial means a source correspondence exists, not that the module is complete. Unassessed modules remain visible. Exclusions and source hashes are recorded in `scope-inventory.json`; symbolic mathematical features are not excluded merely because they are difficult.', '',
     '## Extraction audit', '',
-    `Examined ${corpus.extraction.examined} doctest statements including setup. Kept ${corpus.cases.length} in-scope calls; ${extractedCalls - corpus.cases.length} calls excluded by ${Object.keys(OUT_OF_SCOPE).length} explicit case labels are listed in the runner, as are ${Object.keys(OUT_OF_SCOPE_API).length} public names excluded from the API presence by user decision (${[...new Set(Object.values(OUT_OF_SCOPE_API))].join('; ')}). The detailed omitted list records ${corpus.extraction.omitted.length} examples with expected output.`, '',
+    `Examined ${corpus.extraction.examined} doctest statements including setup. Kept ${corpus.cases.length} in-scope calls; ${extractedCalls - corpus.cases.length} calls excluded by ${Object.keys(OUT_OF_SCOPE).length} explicit case labels are listed in the runner, as are ${Object.keys(OUT_OF_SCOPE_API).length} public names excluded from the API presence (${[...new Set(Object.values(OUT_OF_SCOPE_API))].join('; ')}). The detailed omitted list records ${corpus.extraction.omitted.length} examples with expected output.`, '',
     '| Reason | Statements |', '|---|---:|',
     ...Object.entries(corpus.extraction.reasons).map(([reason, n]) => `| ${reason} | ${n} |`), '',
     '## Public API evidence', '',
@@ -211,7 +216,7 @@ it('computes SymPy compatibility metrics', () => {
     '## Capability conditions', '',
     '| Area | Status | Tested conditions | Remaining scope |', '|---|---|---|---|',
     ...capabilities.areas.map((a) => `| ${a.area} | ${a.status} | ${a.tested.join('; ')} | ${a.remaining.join('; ')} |`), '',
-    'Direct regression-test paths are maintained in `capabilities.json`. Tensor differential operators, category diagram drawing (deferred by decision, like plotting) and unsupported PDE classes remain explicit gaps.', '',
+    'Direct regression-test paths are maintained in `capabilities.json`. Tensor differential operators, category diagram drawing (not ported, like plotting) and unsupported PDE classes remain explicit gaps.', '',
   );
   const base = runBaseChecks();
   const basePass = base.filter((b) => b.pass).length;

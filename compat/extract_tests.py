@@ -163,6 +163,14 @@ def public_names(module):
     return extract.PUBLIC | extract.subpackage_public(module)
 
 
+# Numerical test helpers of SymPy's own test suite, not mathematical API: they are not ported and
+# their assertions are omitted with the reason "test-utility".
+TEST_UTILITIES = {
+    "all_close": "approximate structural comparison used by SymPy's tests (sympy.core.numbers.all_close)",
+    "verify_numerically": "random numerical spot check used by SymPy's tests (sympy.core.random.verify_numerically)",
+}
+
+
 def contains_iterator(value):
     if isinstance(value, Iterator):
         return True
@@ -215,6 +223,8 @@ class Capture:
                     return {"reason": "private-api"}
                 if not extract.is_sympy_operand(receiver, args):
                     return {"reason": "python-runtime-api"}
+            elif name in TEST_UTILITIES:
+                return {"reason": "test-utility"}
             else:
                 module = getattr(function, "__module__", "") or ""
                 if (not module.startswith("sympy.") or ".tests." in module

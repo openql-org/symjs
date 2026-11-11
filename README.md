@@ -41,7 +41,7 @@ symjs is a pnpm monorepo. The general-purpose CAS is the **base module**; functi
 | [`@symjs/physics-quantum`](packages/physics-quantum) | `packages/physics-quantum/` | Extend module for quantum physics (SymPy `sympy.physics.quantum`) |
 | [`@symjs/mathjs`](packages/mathjs) | `packages/mathjs/` | Extend module: conversion to and from math.js (math.js is not a dependency) |
 
-Extend modules depend only on the public API of the base module, which they declare as a peer dependency (`@symjs/symjs`), so every extend module installed in an application shares one copy of the base module. Which sub-packages belong to the base module and which become extend modules is to be decided by the community; `physics-quantum` is the first example.
+Extend modules depend only on the public API of the base module, which they declare as a peer dependency (`@symjs/symjs`), so every extend module installed in an application shares one copy of the base module. `physics-quantum` is the first extend module.
 
 ```ts
 import { Matrix } from '@symjs/symjs';
@@ -195,7 +195,7 @@ See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable
 - Permutation groups provide Schreier–Sims stabilizer chains, orbits, blocks, series, centralizers, subgroup search and cosets; finitely presented groups, Sylow subgroups and presentations remain incomplete.
 - Abstract tensors (`sympy.tensor.tensor`) are fully ported, including tensor sums, Butler–Portugal canonicalization under general slot symmetries, component arrays and wild tensors; the tensor differential operators (`sympy.tensor.toperators`) are not implemented.
 - PDEs support first-order linear equations with constant and variable coefficients and variable separation; higher-order solving and boundary conditions remain incomplete.
-- Category theory supports objects, morphisms, composition and diagrams. Diagram layout and Xy-pic output are deferred (see "Not ported"). Functors and natural transformations are outside the SymPy 1.14 implementation itself.
+- Category theory supports objects, morphisms, composition and diagrams. Diagram layout and Xy-pic output are not ported (see "Not ported"). Functors and natural transformations are outside the SymPy 1.14 implementation itself.
 - `sympy.stats`: `JointDistribution.cdf` (which fails for every input in SymPy) is not ported
 - Symbolic `Mod` (only integers and binomial coefficients modulo prime powers) and asymptotic series of nested exponentials are not implemented
 - Intentional differences: where SymPy's result is mathematically wrong symjs returns the correct one, e.g. `dsolve([x' = x*y*sin(t), y' = y**2*sin(t)])` (SymPy's solution fails `checkodesol`); `rsolve` returns `Unsolved` instead of an incomplete solution when the hypergeometric solutions found do not span the solution space and no initial values fix it (SymPy returns e.g. `0` for `y(n+2) - n*y(n+1) - y(n)`)
@@ -206,19 +206,19 @@ Runtime-specific backends are deliberately excluded; mathematical modules remain
 
 - Sampling of random variables in `sympy.stats` (`sample`, `sample_iter`, `sampling_density`, `sample_stochastic_process`, `numsamples=`, the `sample` methods of distributions, spaces and processes; `sympy/stats/sampling/`), which draws samples with numpy, scipy or pymc
 - Plotting (`sympy.plotting`, the `plot`/`show` methods)
-- Drawing of category diagrams (`sympy.categories.diagram_drawing`: `DiagramGrid`, `XypicDiagramDrawer`, `xypic_draw_diagram`): deferred, the policy is decided later
+- Drawing of category diagrams (`sympy.categories.diagram_drawing`: `DiagramGrid`, `XypicDiagramDrawer`, `xypic_draw_diagram`)
 - The TensorFlow back end of `lambdify`
 - Printers and wrappers that generate or compile Python code: `pycode`, the NumPy printer, `lambdarepr`, the `python` printer and `autowrap`
 - Python-runtime tooling without mathematical content: test runners and test helpers, caching and dispatch decorators, compilation helpers, package metadata, the gmpy2/python-flint ground-type back ends, bindings to external SAT solvers (MiniSat, pycosat, Z3), typing protocols, REPL and display helpers
 
 ## Planned
 
-Modules that are not ported yet but stay in scope (decided 2026-11-06):
+Modules that are not ported yet but stay in scope:
 
 - Code printers for other languages (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB), all of `sympy.codegen` (including `cfunctions`, `rewriting`, `approximations` and `algorithms`) and `sympy.utilities.codegen`: an extend package `@symjs/codegen`
 - The LaTeX parser (`parse_latex`) and the Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: an extend package
 - Differential geometry (`sympy.diffgeom`): an extend package
-- `sympy.physics`: extend packages per field, in an order decided later; `sympy.physics.quantum` goes into the existing `@symjs/physics-quantum`, which is partial
+- `sympy.physics`: extend packages per field; `sympy.physics.quantum` goes into the existing `@symjs/physics-quantum`, which is partial
 
 ## License
 

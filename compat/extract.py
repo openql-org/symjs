@@ -508,7 +508,7 @@ MODULES = {
 }
 
 # sympy.categories.diagram_drawing (DiagramGrid, XypicDiagramDrawer, xypic_draw_diagram): drawing category
-# diagrams is deferred like plotting, by user decision; the policy is decided later
+# diagrams is not ported, like plotting
 CATEGORIES_DRAWING = {"DiagramGrid", "XypicDiagramDrawer", "xypic_draw_diagram"}
 
 # names of sympy.stats that need an external sampling library (numpy, scipy, pymc): out of scope

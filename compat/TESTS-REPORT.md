@@ -2,9 +2,9 @@
 
 Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
-Measured **12966** cases: **7828 exact**, **227 equivalent**, **4911 failing**. Agreement: **62.12%**.
+Measured **12933** cases: **7828 exact**, **227 equivalent**, **4878 failing**. Agreement: **62.28%**.
 
-Replay runtime: **78.53 s**. Known gaps: **4911**. Exception class mismatches accepted in the pilot: **159**.
+Replay runtime: **107.39 s**. Known gaps: **4878**. Exception class mismatches accepted in the pilot: **159**.
 
 Exact includes successful inequality, identity, boolean and exception assertions. Equality uses the existing doctest matching and equivalence rules.
 
@@ -12,15 +12,15 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Cases | Exact | Equivalent | Fail | Unsupported | Error | Agreement |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| core | 7890 | 5239 | 179 | 1245 | 950 | 277 | 68.67% |
-| polys | 5076 | 2589 | 48 | 290 | 1690 | 459 | 51.95% |
+| core | 7858 | 5239 | 179 | 1245 | 918 | 277 | 68.95% |
+| polys | 5075 | 2589 | 48 | 290 | 1689 | 459 | 51.96% |
 
 ## Agreement by test module
 
 | Module | Cases | Exact | Equivalent | Fail | Unsupported | Error | Agreement |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | sympy.core.tests.test_args | 0 | 0 | 0 | 0 | 0 | 0 | - |
-| sympy.core.tests.test_arit | 1243 | 712 | 27 | 255 | 243 | 6 | 59.45% |
+| sympy.core.tests.test_arit | 1235 | 712 | 27 | 255 | 235 | 6 | 59.84% |
 | sympy.core.tests.test_assumptions | 699 | 344 | 0 | 171 | 181 | 3 | 49.21% |
 | sympy.core.tests.test_basic | 198 | 164 | 0 | 10 | 11 | 13 | 82.83% |
 | sympy.core.tests.test_cache | 0 | 0 | 0 | 0 | 0 | 0 | - |
@@ -43,10 +43,10 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | sympy.core.tests.test_match | 236 | 171 | 0 | 53 | 0 | 12 | 72.46% |
 | sympy.core.tests.test_multidimensional | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_noncommutative | 44 | 31 | 1 | 11 | 1 | 0 | 72.73% |
-| sympy.core.tests.test_numbers | 1639 | 1383 | 15 | 118 | 54 | 69 | 85.30% |
+| sympy.core.tests.test_numbers | 1616 | 1383 | 15 | 118 | 31 | 69 | 86.51% |
 | sympy.core.tests.test_operations | 4 | 1 | 0 | 2 | 1 | 0 | 25.00% |
 | sympy.core.tests.test_parameters | 47 | 22 | 25 | 0 | 0 | 0 | 100.00% |
-| sympy.core.tests.test_power | 185 | 103 | 29 | 42 | 8 | 3 | 71.35% |
+| sympy.core.tests.test_power | 184 | 103 | 29 | 42 | 7 | 3 | 71.74% |
 | sympy.core.tests.test_priority | 4 | 4 | 0 | 0 | 0 | 0 | 100.00% |
 | sympy.core.tests.test_random | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_relational | 1008 | 522 | 0 | 186 | 283 | 17 | 51.79% |
@@ -79,7 +79,7 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | sympy.polys.tests.test_multivariate_resultants | 5 | 5 | 0 | 0 | 0 | 0 | 100.00% |
 | sympy.polys.tests.test_orderings | 18 | 7 | 0 | 0 | 11 | 0 | 38.89% |
 | sympy.polys.tests.test_orthopolys | 90 | 19 | 0 | 0 | 0 | 71 | 21.11% |
-| sympy.polys.tests.test_partfrac | 36 | 25 | 2 | 4 | 3 | 2 | 75.00% |
+| sympy.polys.tests.test_partfrac | 35 | 25 | 2 | 4 | 2 | 2 | 77.14% |
 | sympy.polys.tests.test_polyclasses | 142 | 16 | 0 | 2 | 115 | 9 | 11.27% |
 | sympy.polys.tests.test_polyfuncs | 46 | 39 | 0 | 4 | 0 | 3 | 84.78% |
 | sympy.polys.tests.test_polymatrix | 15 | 0 | 0 | 0 | 15 | 0 | 0.00% |
@@ -105,8 +105,8 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Examined | Cases | Omitted |
 |---|---:|---:|---:|
-| core | 25605 | 7890 | 17715 |
-| polys | 7173 | 5076 | 2097 |
+| core | 25605 | 7858 | 17747 |
+| polys | 7173 | 5075 | 2098 |
 
 | Omission reason | core | polys | Total |
 |---|---:|---:|---:|
@@ -124,6 +124,7 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | python-runtime-api | 260 | 266 | 526 |
 | serialization-error | 17 | 0 | 17 |
 | stateful-iterator-input | 76 | 125 | 201 |
+| test-utility | 32 | 1 | 33 |
 | unserializable-input | 867 | 359 | 1226 |
 | unsupported-assertion | 1704 | 406 | 2110 |
 | unsupported-raises | 6 | 0 | 6 |
@@ -177,11 +178,11 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | core: .__le__ (fail) | 25 |
 | core: .__gt__ (fail) | 25 |
 | core: .rewrite (fail) | 24 |
-| core: all_close (unsupported) | 24 |
 | polys: dmp_ground_content (unsupported) | 24 |
 | polys: dup_sign_variations (unsupported) | 24 |
 | core: .evalf (fail) | 22 |
 | polys: intervals (unsupported) | 22 |
+| core: .__rshift__ (fail) | 21 |
 
 ## Exception class mismatches
 
