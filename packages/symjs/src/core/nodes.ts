@@ -332,6 +332,7 @@ export interface Impl {
   conjugate(e: Expr): Expr;
   abs(e: Expr): Expr;
   freeSymbols(e: Expr): Set<Sym>;
+  div(a: ExprLike, b: ExprLike): Expr;
   integrate(e: Expr, x: Sym, limits?: [ExprLike, ExprLike]): Expr;
   /** Evaluate unevaluated objects when the calculus entry point is loaded. */
   doit?(e: Expr): Expr;
@@ -454,7 +455,7 @@ export abstract class Expr {
     return impl.mul(this, o);
   }
   div(o: ExprLike): Expr {
-    return impl.mul(this, impl.pow(o, -1));
+    return impl.div(this, o);
   }
   pow(o: ExprLike): Expr {
     return impl.pow(this, o);

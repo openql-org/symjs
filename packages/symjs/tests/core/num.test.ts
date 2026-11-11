@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import '../../src';
 import { Expr, Float, Rational, S } from '../../src/core/nodes';
-import { numAdd, numCmp, numInv, numMul, numPowInt } from '../../src/core/num';
+import { numAdd, numCmp, numDiv, numInv, numMul, numPowInt } from '../../src/core/num';
 
 const s = (e: Expr): string => e.toString();
 const R = (p: number, q = 1) => Rational.of(p, q);
@@ -23,4 +23,11 @@ describe('numeric helpers', () => {
     expect(() => numInv(S.Zero)).toThrow(RangeError);
     expect(() => numPowInt(S.Zero, -1n)).toThrow(RangeError);
   });
+});
+
+it('divides numeric values at a common precision without rounding the inverse first', () => {
+  expect(numDiv(R(3), R(2))).toEqual(R(3, 2));
+  expect(s(numDiv(new Float(0.0016015624999998757), new Float(3.1416015625, 17)))).toBe('0.000509791731426756');
+  expect(s(numDiv(R(3), new Float(2)))).toBe('1.50000000000000');
+  expect(() => numDiv(R(1), R(0))).toThrow(RangeError);
 });

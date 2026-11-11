@@ -292,3 +292,10 @@ describe('symbol-like nodes with arguments (Sym.substituteInner)', () => {
     expect(xreplace(x, [[y, 1]])).toBe(x);
   });
 });
+
+it('excludes differentiation variables and composite bound integration variables', () => {
+  const a = new sj.Sym('a'), b = new sj.Sym('b');
+  expect([...sj.freeSymbols(new sj.Derivative([a, b]))]).toEqual([a]);
+  const f = sj.SymFunction('f')(a), g = sj.SymFunction('g')(b);
+  expect([...sj.freeSymbols(new sj.Integral([f, f, sj.S.One, g]))]).toEqual([b]);
+});

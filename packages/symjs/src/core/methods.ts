@@ -8,7 +8,7 @@
 
 import { isIntegerQ, isNegative as isNegativeQ, isPositive, isReal, isZero as isZeroQ } from './assumptions';
 import type { ExprLike, FnName } from './nodes';
-import { Add, Constant, Dummy, Expr, ExtensionExpr, Float, Fn, Mul, Order, Pow, Rational, S, Special, Sym, UndefFn, asRational, impl, isAddLike, isMulLike, isNum } from './nodes';
+import { Add, Constant, Derivative, Dummy, Expr, ExtensionExpr, Float, Fn, Mul, Order, Pow, Rational, S, Special, Sym, UndefFn, asRational, impl, isAddLike, isMulLike, isNum } from './nodes';
 import { gcd, lcm } from './numbers';
 import { numAdd, numNeg } from './num';
 import { add, asBaseExp, couldExtractMinusSign, mul, pow, splitCoeff, sympify } from './ops';
@@ -726,7 +726,16 @@ export function hasFree(eIn: ExprLike, ...patterns: (ExprLike | { fn: string })[
       return go(e);
     }
     const q = sympify(p);
-    if (q.kind === 'Symbol') return [...free].some((s) => s.key === q.key);
+    if (q.kind === 'Symbol') {
+      // has_free is a structural query: differentiation variables occur freely,
+      // although they are not members of Derivative.free_symbols.
+      const differentiationVariable = (node: Expr): boolean => {
+        if (boundSymbols(node).some((v) => v.has(q))) return false;
+        if (node instanceof Derivative && node.args.slice(1).some((v) => v.has(q))) return true;
+        return node.args.some(differentiationVariable);
+      };
+      return [...free].some((s) => s.key === q.key) || differentiationVariable(e);
+    }
     if (e.has(q)) return true;
     // a sub-sum or sub-product of an Add/Mul also counts (x + y + 1 has y + 1)
     const qs = q instanceof Add ? q.args : q instanceof Mul ? q.args : undefined;

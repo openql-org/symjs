@@ -960,3 +960,24 @@ it('keeps membership symbolic for a set subclass without a membership implementa
   expect(sj.containsQ(s, x)).toBe('unknown');
   expect(sj.contains(s, x)).toBeInstanceOf(sj.Contains);
 });
+
+it('uses union, difference and Cartesian product for fluent set arithmetic', () => {
+  const a = sj.FiniteSet.of(1, 2), b = sj.FiniteSet.of(2, 3);
+  expect(String(a.add(b))).toBe('{1, 2, 3}');
+  expect(String(a.sub(b))).toBe('{1}');
+  expect(a.mul(b).equals(sj.ProductSet(a, b))).toBe(true);
+  expect(() => a.add(1)).toThrow();
+});
+
+it('intersects nested complex regions using containment of their parameter sets', () => {
+  const radius = sj.Interval.of(0, 1);
+  const full = new sj.PolarComplexRegion(sj.ProductSet(radius, sj.Interval.Ropen(0, sj.mul(2, sj.pi))));
+  const half = new sj.PolarComplexRegion(sj.ProductSet(radius, sj.Interval.of(0, sj.pi)));
+  expect(sj.Intersection(full, half)).toBe(half);
+  expect(sj.Intersection(half, full)).toBe(half);
+  const c = new sj.CartesianComplexRegion(sj.ProductSet(radius, radius));
+  expect(sj.Intersection(c, c)).toBe(c);
+  expect(String(sj.Intersection(full, c))).toContain('Intersection');
+  const far = new sj.PolarComplexRegion(sj.ProductSet(sj.Interval.of(2, 3), sj.Interval.of(0, sj.pi)));
+  expect(String(sj.Intersection(half, far))).toContain('Intersection');
+});

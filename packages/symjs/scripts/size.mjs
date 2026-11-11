@@ -30,11 +30,13 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // Assumption-aware solve loads the predicate engine; keep its cost explicit.
 // Order containment and AccumBounds interval comparisons add at most 1 KiB
 // to consumers of core; pretty also gains symbolic-tuple layout.
+// Public comparison, symbol-naming and numeric helpers add about 5 KiB to the
+// core namespace; shared arithmetic and symbol introspection add <1 KiB to strategies.
 const CASES = [
   ['core', 'Rational', 188],
-  ['core', 'parse, str', 202],
-  ['core', 'parse, diff, expand, str, latex', 202],
-  ['core', '*', 279],
+  ['core', 'parse, str', 204],
+  ['core', 'parse, diff, expand, str, latex', 204],
+  ['core', '*', 288],
   // B-spline interpolation and multiset counting add approximately 5 KiB.
   ['special', '*', 380],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
@@ -52,7 +54,7 @@ const CASES = [
   ['matrices', 'Matrix', 749],
   ['printing', 'pretty', 227],
   ['discrete', '*', 285],
-  ['strategies', '*', 199],
+  ['strategies', '*', 200],
   ['unify', '*', 225],
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).

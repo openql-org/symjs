@@ -2,9 +2,9 @@
 
 Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
-Measured **12933** cases: **7852 exact**, **227 equivalent**, **4854 failing**. Agreement: **62.47%**.
+Measured **12933** cases: **8059 exact**, **228 equivalent**, **4646 failing**. Agreement: **64.08%**.
 
-Replay runtime: **69.86 s**. Known gaps: **4854**. Exception class mismatches accepted in the pilot: **160**.
+Replay runtime: **76.76 s**. Known gaps: **4646**. Exception class mismatches accepted in the pilot: **177**.
 
 Exact includes successful inequality, identity, boolean and exception assertions. Equality uses the existing doctest matching and equivalence rules.
 
@@ -12,50 +12,50 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Cases | Exact | Equivalent | Fail | Unsupported | Error | Agreement |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| core | 7858 | 5240 | 179 | 1244 | 918 | 277 | 68.96% |
-| polys | 5075 | 2612 | 48 | 297 | 1679 | 439 | 52.41% |
+| core | 7858 | 5447 | 180 | 1276 | 661 | 294 | 71.61% |
+| polys | 5075 | 2612 | 48 | 297 | 1676 | 442 | 52.41% |
 
 ## Agreement by test module
 
 | Module | Cases | Exact | Equivalent | Fail | Unsupported | Error | Agreement |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | sympy.core.tests.test_args | 0 | 0 | 0 | 0 | 0 | 0 | - |
-| sympy.core.tests.test_arit | 1235 | 712 | 27 | 255 | 235 | 6 | 59.84% |
+| sympy.core.tests.test_arit | 1235 | 715 | 27 | 255 | 220 | 18 | 60.08% |
 | sympy.core.tests.test_assumptions | 699 | 344 | 0 | 171 | 181 | 3 | 49.21% |
-| sympy.core.tests.test_basic | 198 | 164 | 0 | 10 | 11 | 13 | 82.83% |
+| sympy.core.tests.test_basic | 198 | 175 | 0 | 10 | 11 | 2 | 88.38% |
 | sympy.core.tests.test_cache | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_compatibility | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_complex | 74 | 45 | 12 | 17 | 0 | 0 | 77.03% |
 | sympy.core.tests.test_constructor_postprocessor | 0 | 0 | 0 | 0 | 0 | 0 | - |
-| sympy.core.tests.test_containers | 57 | 19 | 0 | 1 | 31 | 6 | 33.33% |
+| sympy.core.tests.test_containers | 57 | 26 | 0 | 4 | 17 | 10 | 45.61% |
 | sympy.core.tests.test_count_ops | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_diff | 46 | 36 | 0 | 2 | 0 | 8 | 78.26% |
 | sympy.core.tests.test_equal | 12 | 12 | 0 | 0 | 0 | 0 | 100.00% |
 | sympy.core.tests.test_eval | 33 | 33 | 0 | 0 | 0 | 0 | 100.00% |
-| sympy.core.tests.test_evalf | 133 | 61 | 18 | 23 | 30 | 1 | 59.40% |
-| sympy.core.tests.test_expand | 145 | 111 | 2 | 16 | 16 | 0 | 77.93% |
-| sympy.core.tests.test_expr | 846 | 666 | 14 | 94 | 30 | 42 | 80.38% |
+| sympy.core.tests.test_evalf | 133 | 65 | 18 | 25 | 21 | 4 | 62.41% |
+| sympy.core.tests.test_expand | 145 | 111 | 2 | 16 | 3 | 13 | 77.93% |
+| sympy.core.tests.test_expr | 846 | 679 | 14 | 96 | 17 | 40 | 81.91% |
 | sympy.core.tests.test_exprtools | 183 | 129 | 6 | 12 | 9 | 27 | 73.77% |
 | sympy.core.tests.test_facts | 1 | 0 | 0 | 0 | 1 | 0 | 0.00% |
-| sympy.core.tests.test_function | 389 | 205 | 10 | 126 | 19 | 29 | 55.27% |
+| sympy.core.tests.test_function | 389 | 205 | 10 | 128 | 17 | 29 | 55.27% |
 | sympy.core.tests.test_kind | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_logic | 61 | 47 | 0 | 1 | 0 | 13 | 77.05% |
 | sympy.core.tests.test_match | 236 | 171 | 0 | 53 | 0 | 12 | 72.46% |
 | sympy.core.tests.test_multidimensional | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_noncommutative | 44 | 31 | 1 | 11 | 1 | 0 | 72.73% |
-| sympy.core.tests.test_numbers | 1616 | 1383 | 15 | 118 | 31 | 69 | 86.51% |
+| sympy.core.tests.test_numbers | 1616 | 1392 | 15 | 118 | 30 | 61 | 87.07% |
 | sympy.core.tests.test_operations | 4 | 1 | 0 | 2 | 1 | 0 | 25.00% |
 | sympy.core.tests.test_parameters | 47 | 22 | 25 | 0 | 0 | 0 | 100.00% |
 | sympy.core.tests.test_power | 184 | 103 | 29 | 42 | 7 | 3 | 71.74% |
 | sympy.core.tests.test_priority | 4 | 4 | 0 | 0 | 0 | 0 | 100.00% |
 | sympy.core.tests.test_random | 0 | 0 | 0 | 0 | 0 | 0 | - |
-| sympy.core.tests.test_relational | 1008 | 522 | 0 | 186 | 283 | 17 | 51.79% |
+| sympy.core.tests.test_relational | 1008 | 664 | 0 | 209 | 115 | 20 | 65.87% |
 | sympy.core.tests.test_rules | 6 | 5 | 0 | 1 | 0 | 0 | 83.33% |
 | sympy.core.tests.test_singleton | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_sorting | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_subs | 353 | 262 | 9 | 72 | 1 | 9 | 76.77% |
-| sympy.core.tests.test_symbol | 114 | 80 | 0 | 17 | 17 | 0 | 70.18% |
-| sympy.core.tests.test_sympify | 120 | 66 | 10 | 14 | 14 | 16 | 63.33% |
+| sympy.core.tests.test_symbol | 114 | 90 | 0 | 17 | 5 | 2 | 78.95% |
+| sympy.core.tests.test_sympify | 120 | 74 | 11 | 14 | 4 | 17 | 70.83% |
 | sympy.core.tests.test_traversal | 9 | 5 | 1 | 0 | 0 | 3 | 66.67% |
 | sympy.core.tests.test_truediv | 1 | 1 | 0 | 0 | 0 | 0 | 100.00% |
 | sympy.core.tests.test_var | 0 | 0 | 0 | 0 | 0 | 0 | - |
@@ -93,7 +93,7 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | sympy.polys.tests.test_ring_series | 113 | 92 | 0 | 8 | 0 | 13 | 81.42% |
 | sympy.polys.tests.test_rings | 166 | 147 | 1 | 9 | 6 | 3 | 89.16% |
 | sympy.polys.tests.test_rootisolation | 306 | 2 | 0 | 0 | 303 | 1 | 0.65% |
-| sympy.polys.tests.test_rootoftools | 131 | 86 | 0 | 10 | 8 | 27 | 65.65% |
+| sympy.polys.tests.test_rootoftools | 131 | 86 | 0 | 10 | 5 | 30 | 65.65% |
 | sympy.polys.tests.test_solvers | 9 | 5 | 4 | 0 | 0 | 0 | 100.00% |
 | sympy.polys.tests.test_specialpolys | 36 | 16 | 0 | 3 | 0 | 17 | 44.44% |
 | sympy.polys.tests.test_sqfreetools | 66 | 53 | 0 | 5 | 0 | 8 | 80.30% |
@@ -143,7 +143,6 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | API and result | Cases |
 |---|---:|
-| core: Relational (unsupported) | 148 |
 | core: .is_nonpositive (unsupported) | 117 |
 | polys: .dup_count_complex_roots (unsupported) | 105 |
 | core: .subs (fail) | 87 |
@@ -159,7 +158,6 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | core: .is_imaginary (unsupported) | 47 |
 | core: .is_integer (fail) | 42 |
 | core: .is_nonnegative (fail) | 42 |
-| core: unchanged (unsupported) | 39 |
 | core: .is_negative (fail) | 37 |
 | core: .simplify (fail) | 37 |
 | polys: dict_from_expr (unsupported) | 37 |
@@ -167,6 +165,7 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | core: .is_real (fail) | 35 |
 | core: .is_comparable (unsupported) | 35 |
 | polys: .dup_refine_real_root (unsupported) | 35 |
+| core: unchanged (error) | 34 |
 | polys: .dup_isolate_real_roots (unsupported) | 32 |
 | core: Mod (fail) | 31 |
 | core: .__lt__ (fail) | 31 |
@@ -183,6 +182,7 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | core: .evalf (fail) | 22 |
 | polys: intervals (unsupported) | 22 |
 | core: .__rshift__ (fail) | 21 |
+| polys: .dup_isolate_real_roots_list (unsupported) | 21 |
 
 ## Exception class mismatches
 
@@ -200,7 +200,8 @@ Any exception from an invoked adapter counts as agreement in this pilot. Missing
 | sympy.core.tests.test_basic:test_subs:140 #6cf8ca1feb637ed1d3bd | TypeError | SympifyError |
 | sympy.core.tests.test_containers:test_Tuple_concatenation:59 #eef7e1a0340099e725b1 | TypeError | SympifyError |
 | sympy.core.tests.test_containers:test_Tuple_mul:129 #ac78bd6b788ed0595937 | TypeError | SympifyError |
-| sympy.core.tests.test_containers:test_Dict:168 #2a7daa27219c4e5c8e8a | KeyError | SympifyError |
+| sympy.core.tests.test_evalf:test_scaled_zero:487 #b676d8619f8b62956c84 | ValueError | TypeError |
+| sympy.core.tests.test_evalf:test_scaled_zero:488 #4265f7895593aad5e5ab | ValueError | TypeError |
 | sympy.core.tests.test_expr:test_basic_nostr:435 #a52c25d9a70f58b2bdc6 | TypeError | SympifyError |
 | sympy.core.tests.test_expr:test_basic_nostr:436 #8186f47faa74097d20c9 | TypeError | SympifyError |
 | sympy.core.tests.test_expr:test_basic_nostr:441 #0b224cdd80e17ca43388 | TypeError | SympifyError |
@@ -258,6 +259,22 @@ Any exception from an invoked adapter counts as agreement in this pilot. Missing
 | sympy.core.tests.test_numbers:test_integer_log:1077 #c45a928f064612246c0b | ValueError | TypeError |
 | sympy.core.tests.test_numbers:test_comp1:2008 #163a45ea9eba88aec6ee | ValueError | SympifyError |
 | sympy.core.tests.test_numbers:test_mod_inverse:2065 #9d9714355712220d1d28 | TypeError | RangeError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #6feb95972729575c407f | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #820c59845519acb3a055 | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #c6f6885bdeb0dc5d8da9 | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #7fbf2e40f39ad1f1f0fd | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #7e85c42a57e322bed608 | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #3c74927efea471a1d4d7 | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #a9b0f79b01d8a822eee8 | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #ed884ff52701267d573d | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #566351b6c5ebdab8a421 | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #610978b079c0c12eaa22 | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #247222f1f4fa22bec364 | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #27b4a681a1578d3d5ab1 | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #d2604c82570ceaef929b | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #f1a886143ddd008d5800 | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #9bfc405eab5162c43a66 | TypeError | SympifyError |
+| sympy.core.tests.test_relational:test_rel_args:1028 #245a3dec40903a8e1bd6 | TypeError | SympifyError |
 | sympy.core.tests.test_symbol:test_Dummy_force_dummy_index:50 #316e1776eeb1f0d87450 | AssertionError | TypeError |
 | sympy.core.tests.test_symbol:test_symbols:328 #1a8515b7b305a9c8eb6f | ValueError | SyntaxError |
 | sympy.core.tests.test_symbol:test_symbols:329 #826c114cbd1efba38726 | ValueError | SyntaxError |

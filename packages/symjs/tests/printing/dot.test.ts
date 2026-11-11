@@ -72,10 +72,17 @@ describe('the helpers', () => {
     );
   });
   it('styleof and attrprint', () => {
-    expect(styleof(sj.add(x, 1))).toEqual({ color: 'black', shape: 'ellipse' });
-    expect(styleof(sj.Eq(x, 1), defaultStyles)).toEqual({ color: 'blue', shape: 'ellipse' });
-    expect(styleof(sj.Tuple(x))).toEqual({ color: 'blue', shape: 'ellipse' });
+    expect(styleof(sj.add(x, 1))).toEqual(new Map([['color', 'black'], ['shape', 'ellipse']]));
+    expect(styleof(sj.Eq(x, 1), defaultStyles)).toEqual(new Map([['color', 'blue'], ['shape', 'ellipse']]));
+    expect(styleof(sj.Tuple(x))).toEqual(new Map([['color', 'blue'], ['shape', 'ellipse']]));
     expect(attrprint({ shape: 'ellipse', color: 'blue' })).toBe('"color"="blue", "shape"="ellipse"');
     expect(attrprint({ b: '2', a: '1' }, '\n')).toBe('"a"="1"\n"b"="2"');
   });
+});
+
+it('accepts map attributes and the withArgs keyword option', () => {
+  expect(purestr(x, { withArgs: true })).toEqual(purestrWithArgs(x));
+  expect(purestr(x, { withArgs: false })).toBe(purestr(x));
+  expect(styleof(sj.Basic(1), [['Basic', new Map([['color', 'blue']])], ['Expr', new Map([['color', 'black']])]])).toEqual(new Map([['color', 'blue']]));
+  expect(attrprint(new Map([['b', '2'], ['a', '1']]))).toBe('"a"="1", "b"="2"');
 });

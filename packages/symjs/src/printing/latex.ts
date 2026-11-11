@@ -190,13 +190,14 @@ const MODIFIERS: [string, (s: string) => string][] = (
   ] as [string, (s: string) => string][]
 ).sort((a, b) => b[0].length - a[0].length);
 
-function translate(s: string): string {
+/** @internal The symbol-name translation shared by the LaTeX printer and utilities.translate. */
+export function translateSymbol(s: string): string {
   const g = TEX_GREEK[s];
   if (g) return g;
   if (GREEK.has(s.toLowerCase())) return `\\${s.toLowerCase()}`;
   if (OTHER_SYMBOLS.has(s)) return `\\${s}`;
   for (const [key, f] of MODIFIERS) {
-    if (s.toLowerCase().endsWith(key) && s.length > key.length) return f(translate(s.slice(0, -key.length)));
+    if (s.toLowerCase().endsWith(key) && s.length > key.length) return f(translateSymbol(s.slice(0, -key.length)));
   }
   return s;
 }
@@ -205,9 +206,9 @@ function symbolLatex(text: string): string {
   if (text.includes('{')) return text;
   // SymPy disable_split_super_sub: the name as it is, its _ and ^ escaped
   const [name, supers, subs] = settings.disableSplitSuperSub ? [text.replace(/_/g, '\\_').replace(/\^/g, '\\^'), [], []] : splitSuperSub(text);
-  let out = translate(name);
-  if (supers.length) out += `^{${supers.map(translate).join(' ')}}`;
-  if (subs.length) out += `_{${subs.map(translate).join(' ')}}`;
+  let out = translateSymbol(name);
+  if (supers.length) out += `^{${supers.map(translateSymbol).join(' ')}}`;
+  if (subs.length) out += `_{${subs.map(translateSymbol).join(' ')}}`;
   return out;
 }
 
