@@ -4409,8 +4409,10 @@ export interface Case {
   self?: Tree;
   /** Component displayed after unpacking the call's result into named targets. */
   pick?: number;
-  /** Python builtin applied to the result before comparison: len(...), list(...), tuple(...), [str(r) for r in ...]. */
-  post?: 'len' | 'list' | 'tuple' | 'str-items';
+  /** Python builtin applied to the result before comparison: len(...), list(...), tuple(...), [str(r) for r in ...], str(...), repr(...). */
+  post?: 'len' | 'list' | 'tuple' | 'str-items' | 'str' | 'repr';
+  /** For str()/repr(): the Python lists ('l') and tuples ('t') of the result in preorder (JS arrays are either). */
+  brackets?: string;
   unsupportedArg?: string;
   assume?: Tree[];
   /** printed output (print(f(...)), pprint(...), a str result): compared as text */
@@ -5119,7 +5121,35 @@ function resultItems(value: unknown, post: string): readonly unknown[] {
 }
 
 /** Apply the Python builtin of an assertion (len, list, tuple, element-wise str) to a call result. */
-function projectResult(value: unknown, post: NonNullable<Case['post']>): unknown {
+/**
+ * The result with its JS arrays (and the JsLists converted from them) as the Python lists and tuples
+ * they stand for: the containers take the recorded kinds in preorder (an array beyond them prints as
+ * a tuple, like any result). A JsTuple built by an adapter keeps its own kind.
+ */
+function withBrackets(value: unknown, kinds: string): unknown {
+  let next = 0;
+  const kind = (): string | undefined => kinds[next++];
+  const walk = (v: unknown): unknown => {
+    if (Array.isArray(v) || v instanceof JsList) {
+      const isList = kind() === 'l';
+      return new JsTuple((Array.isArray(v) ? v : v.items).map(walk), isList);
+    }
+    if (v instanceof JsTuple) {
+      kind();
+      return new JsTuple(v.items.map(walk), v.isList);
+    }
+    if (v instanceof Map || v instanceof JsDict) return new JsDict([...(v instanceof Map ? v : v.entries)].map(([k, x]) => [walk(k), walk(x)]));
+    if (v instanceof Set || v instanceof JsSet) return new JsSet([...(v instanceof Set ? v : v.items)].map(walk));
+    return v;
+  };
+  return walk(value);
+}
+
+function projectResult(value: unknown, post: NonNullable<Case['post']>, brackets = ''): unknown {
+  // Python's str() and repr() of a SymPy object are its sstr form, printed by symjs's str printer;
+  // inside containers (and for repr) items print by repr: quoted strings, Permutation(1, 2), ...
+  if (post === 'str') return typeof value === 'string' ? value : fmt(withBrackets(value, brackets));
+  if (post === 'repr') return fmtItem(withBrackets(value, brackets));
   if (post === 'len') {
     if (typeof value === 'string') return value.length;
     if (value instanceof Map || value instanceof Set) return value.size;
@@ -5142,7 +5172,8 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
     try {
       const result = port();
       const picked = c.pick === undefined ? result : pickResult(result, c.pick);
-      const v = fromJs(c.post === undefined ? picked : projectResult(picked, c.post));
+      const v = fromJs(c.post === undefined ? picked : projectResult(picked, c.post, c.brackets));
+      if (c.post === 'str' || c.post === 'repr') return v === c.expected ? { status: 'pass' } : { status: 'fail', got: String(v) };
       return (c.text ? textMatches(v, c) : matches(v, c.expected)) ? { status: 'pass' } : { status: 'fail', got: typeof v === 'string' ? v : fmt(v) };
     } catch (e) {
       return { status: 'error', reason: e instanceof Error ? e.message : String(e) };
@@ -5181,9 +5212,11 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       }
     }
     if (c.pick !== undefined) v = pickResult(v, c.pick);
-    if (c.post !== undefined) v = projectResult(v, c.post);
+    if (c.post !== undefined) v = projectResult(v, c.post, c.brackets);
     if (c.pyFormat !== undefined) v = pyNumberFormat(c.pyFormat, v);
     observe?.({ value: v });
+    // a printed str()/repr() is compared exactly with Python's text
+    if (c.post === 'str' || c.post === 'repr') return v === c.expected ? { status: 'pass' } : { status: 'fail', got: String(v) };
     if (c.text ? textMatches(v, c) : matches(v, c.expected)) return { status: 'pass' };
     if (c.text && typeof v === 'string') return { status: 'fail', got: v };
     const got = fmt(v);

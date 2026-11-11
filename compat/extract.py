@@ -1123,6 +1123,11 @@ def ser(o):
     if isinstance(o, _ModInt):
         # an element of GF(p) (the LFSR sequences of sympy.crypto, galoistools): its value and the modulus
         return {"t": "FFElement", "v": int(o.val) % int(o.mod), "mod": int(o.mod), "symmetric": bool(o.sym)}
+    from sympy.core.sympify import CantSympify as _CantSympify
+    if (isinstance(o, _CantSympify) and isinstance(o, (int, float, complex, str))
+            and (".tests." in (type(o).__module__ or "") or not (type(o).__module__ or "").startswith("sympy."))):
+        # a test's own subclass of a Python number or string that sympify must reject
+        raise Unsupported(f"CantSympify value of type {type(o).__name__}")
     if isinstance(o, int):
         return {"t": "Rational", "p": str(o), "q": "1", "py": True}
     if isinstance(o, float):
