@@ -11,5 +11,5 @@
 export { unify } from './usympy';
 export { rewriterule } from './rewrite';
 export type { RewriteRule } from './rewrite';
-export { Compound, CondVariable, Variable } from './core';
+export { Compound, CondVariable, Variable, index } from './core';
 export * as usympy from './usympy';

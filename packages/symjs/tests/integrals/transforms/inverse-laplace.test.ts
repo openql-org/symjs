@@ -186,10 +186,9 @@ describe('derivatives and the time differentiation rule', () => {
     expect(String(inverseLaplaceTransform(Derivative(Ps('1/s'), s), s, t))).toBe('-t*Heaviside(t)');
     // SymPy: -t*(exp(-t)*Heaviside(t) - exp(-2*t)*Heaviside(t)) (partial fractions)
     eq(inverseLaplaceTransform(Derivative(Ps('1/((s + 1)*(s + 2))'), s), s, t), '-t*(exp(-t)*Heaviside(t) - exp(-2*t)*Heaviside(t))');
-    // SymPy: DiracDelta(t)*Derivative(1, s), reading Derivative(1, s) (which has no
-    // free symbols) as a constant; symjs inverts the derivative of 1, the transform
-    // of DiracDelta(t). Both are 0, as Derivative(1, s) and t*DiracDelta(t) are
-    expect(String(inverseLaplaceTransform(Derivative(1, s), s, t))).toBe('-t*DiracDelta(t)');
+    // Derivative(1, s) has no free symbols, so it is a constant coefficient,
+    // as in SymPy. The result is zero once the derivative is evaluated.
+    expect(String(inverseLaplaceTransform(Derivative(1, s), s, t))).toBe('Derivative(1, s)*DiracDelta(t)');
   });
 });
 

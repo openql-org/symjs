@@ -58,6 +58,14 @@ export function numInv(a: Num): Num {
   return a instanceof Rational ? Rational.of(a.q, a.p) : new Float(F.div(F.ONE, a.mpf, a.prec), a.prec);
 }
 
+/** Divide once at the larger operand precision, avoiding a rounded reciprocal. */
+export function numDiv(a: Num, b: Num): Num {
+  if (b.isZero) throw new RangeError('Division by zero');
+  if (a instanceof Rational && b instanceof Rational) return Rational.of(a.p * b.q, a.q * b.p);
+  const prec = opPrec(a, b);
+  return mkFloat(F.div(toMpf(a, prec), toMpf(b, prec), prec), prec);
+}
+
 /** a^n for integer n. */
 export function numPowInt(a: Rational, n: bigint): Rational;
 export function numPowInt(a: Num, n: bigint): Num;

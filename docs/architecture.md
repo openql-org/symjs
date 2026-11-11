@@ -101,19 +101,19 @@ SymPy modules correspond to it as follows.
 | SymPy module | symjs |
 |---|---|
 | `sympy/core/basic.py` | `core/nodes.ts` (`Expr` as the common base), `core/basic.ts` (the generic `Basic(*args)` node), `core/compare.ts` (`Basic.compare`, SymPy's class names and `args` order), `core/traverse.ts` (`subs`, `xreplace`, `atoms`, `free_symbols`), `core/match.ts` (`matches`, `replace`, `find`, `count_ops`), `simplify/rewrite.ts` (`rewrite`) |
-| `sympy/core/expr.py` | `core/nodes.ts` (`Expr`), `core/methods.ts` (`coeff`, `as_independent`, `as_coeff_add`/`as_coeff_mul`, `primitive`, `as_content_primitive`, `extract_*`, `is_polynomial`, ...), `series/lseries.ts` (`lseries`, `dir`), `simplify/expand.ts` (`expand`) |
+| `sympy/core/expr.py` | `core/nodes.ts` (`Expr`), `core/expr.ts` (`unchanged`), `core/methods.ts` (`coeff`, `as_independent`, `as_coeff_add`/`as_coeff_mul`, `primitive`, `as_content_primitive`, `extract_*`, `is_polynomial`, ...), `series/lseries.ts` (`lseries`, `dir`), `simplify/expand.ts` (`expand`) |
 | `sympy/core/add.py`, `mul.py`, `power.py`, `operations.py` | `core/nodes.ts` (`Add`, `Mul`, `Pow`), `core/ops.ts` (their canonicalizing constructors `add`, `mul`, `pow`) |
 | `sympy/core/numbers.py` | `core/nodes.ts` (`Rational`, `Float`, `Constant`, `Special`), `core/num.ts` (arithmetic on numbers), `core/numbers.ts` (bigint helpers), `core/numberutils.ts` (exact rationals from floats and decimal strings, `integer_log`), `numeric/` (mpf arithmetic) |
 | `sympy/core/singleton.py` | `core/nodes.ts` (`S`) |
-| `sympy/core/symbol.py` | `core/nodes.ts` (`Sym`, `Dummy`, `Wild`), `core.ts` (`symbols`), `core/numberutils.ts` (its range syntax) |
+| `sympy/core/symbol.py` | `core/nodes.ts` (`Sym`, `Dummy`, `Wild`), `core.ts` (`symbols`), `core/numberutils.ts` (its range syntax), `core/symbol.ts` (`disambiguate`, `uniquely_named_symbol`) |
 | `sympy/core/function.py` | `core/nodes.ts` (`Fn`, `Derivative`), `functions/elementary/elementary.ts` (`fn`, the evaluation of applied functions), `core/undef.ts` (undefined functions, `Derivative` construction), `core/defun.ts` (user-defined functions), `core/lambda.ts` (`Lambda`), `core/subsnode.ts` (`Subs`), `calculus/diff.ts` (`diff`), `simplify/expand.ts` (`expand` and its hints) |
-| `sympy/core/relational.py`, `sympy/functions/elementary/piecewise.py` | `core/logic.ts` (relations, boolean constants, `Piecewise`) |
+| `sympy/core/relational.py`, `sympy/functions/elementary/piecewise.py` | `core/logic.ts` (relations, boolean constants, `Piecewise`), `core/relational.ts` (relational construction and three-valued comparison helpers) |
 | `sympy/core/assumptions.py`, `facts.py`, `assumptions_generated.py` | `core/assumptions.ts` (three-valued queries), `core/facts.ts` (the deduction of the facts, `FactRules`/`FactKB`, with SymPy's compiled rule tables) |
-| `sympy/assumptions/` | `core/refine.ts` (`Q`, `ask`, `refine`, handlers); `assumptions/sathandlers.ts`, `assumptions/wrapper.ts` and `assumptions/handlers/matrices.ts` port the modules of the same paths (L2) |
+| `sympy/assumptions/` | `core/refine.ts` (`Q`, `ask`, `refine`, handlers); `assumptions/refine.ts` (individual refinement handlers), `assumptions/sathandlers.ts`, `assumptions/wrapper.ts` and `assumptions/handlers/matrices.ts` port the modules of the same paths (L2) |
 | `sympy/core/containers.py` | `core/containers.ts` |
 | `sympy/core/exprtools.py` | `core/factors.ts` (`Factors`), `simplify/exprtools.ts` (`gcd_terms`, `factor_terms`, ...) |
 | `sympy/core/mod.py` | `functions/mod.ts` |
-| `sympy/core/sympify.py` | `core/sympify.ts`, `core/ops.ts` (`sympify` of numbers) |
+| `sympy/core/sympify.py` | `core/sympify.ts`, `core/ops.ts` (`sympify` of numbers), `parsing/sympify.ts` (`kernS`, in L1 to keep the parser out of kernel consumers) |
 | `sympy/core/kind.py` | `core/kind.ts` |
 | `sympy/core/traversal.py` | `core/traverse.ts` |
 | `sympy/core/sorting.py` | `printing/sortkey.ts` (`default_sort_key`), `core/match.ts` (`ordered`) |

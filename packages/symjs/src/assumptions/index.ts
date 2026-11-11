@@ -30,4 +30,5 @@ export type { SataskOptions } from './satask';
 export { extractPredFromOldAssum } from './lrasatask';
 export { isInfinite, isExtendedReal, isExtendedNonnegative, AssumptionsWrapper } from './wrapper';
 export { BinaryRelation } from './relation/binrel';
+export { refinePow, refineAbs, refineArg, refineAtan2, refineRe, refineIm, refineSign, refineMatrixelement } from './refine';
 export type { BinaryRelationHandler, BinaryRelationOptions } from './relation/binrel';

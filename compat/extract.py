@@ -1026,14 +1026,18 @@ def ser(o):
     if isinstance(o, str):
         return {"t": "Str", "v": o}
     import types as _types
+    if isinstance(o, type) and o in (str, int, float, bool, list, tuple, dict, _types.GeneratorType):
+        return {"t": "Type", "name": o.__name__}
     if isinstance(o, (_types.GeneratorType, zip, map, filter)) or type(o).__name__.endswith("iterator"):
-        # iterators are materialized (their values are what the call sees)
-        return {"t": "Tuple", "items": [ser(i) for i in list(o)], "list": True}
+        # Snapshot the values while preserving that this is an iterator, not a sequence.
+        return {"t": "Iterator", "items": [ser(i) for i in list(o)]}
     if isinstance(o, (_types.FunctionType, _types.BuiltinFunctionType)):
         # a library function passed as an argument (equal_valued, factor, math.isclose, ...)
         mod = getattr(o, "__module__", "") or ""
         if mod.startswith("sympy") or mod == "math":
             return {"t": "JsFunc", "name": ("math." if mod == "math" else "") + o.__name__}
+        if (mod, o.__name__) in (("builtins", "len"), ("_operator", "ge")):
+            return {"t": "JsFunc", "name": mod + "." + o.__name__}
         raise Unsupported("function")
     from sympy.calculus.accumulationbounds import AccumulationBounds as _AB
     if isinstance(o, _AB):

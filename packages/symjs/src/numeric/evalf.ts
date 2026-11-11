@@ -36,6 +36,9 @@ import { Concrete } from '../core/concrete';
 import { EvalfValueError } from '../core/errors';
 import { add, mul, sympify } from '../core/ops';
 import { rebuild } from '../core/traverse';
+import type { NoMatchResult } from '../core/truth';
+import { NoMatch } from '../core/truth';
+
 import {
   c,
   cabs,
@@ -59,6 +62,38 @@ import {
 import * as F from './mpf';
 import { dpsToPrec } from './mpf';
 import { type Mpc, type MpPart, MpSpecialValue, evalAdaptive, fromMpc } from './mpeval';
+
+/** SymPy pure_complex: a + I*b with numeric atoms a and b, or NoMatch. */
+export function pureComplex(v: ExprLike, orReal = false): [Expr, Expr] | NoMatchResult {
+  const e = sympify(v);
+  const terms = e instanceof Add ? e.args : [e];
+  let real: Expr = S.Zero, imaginary: Expr = S.Zero;
+  for (const term of terms) {
+    if (term instanceof Rational || term instanceof Float) real = add(real, term);
+    else if (term.equals(S.I)) imaginary = add(imaginary, S.One);
+    else if (term instanceof Mul && term.args.length === 2) {
+      const coefficient = at(term.args, 0);
+      if (!(coefficient instanceof Rational || coefficient instanceof Float) || !at(term.args, 1).equals(S.I)) return NoMatch;
+      imaginary = add(imaginary, coefficient);
+    } else return NoMatch;
+  }
+  return !imaginary.equals(S.Zero) || orReal ? [real, imaginary] : NoMatch;
+}
+
+/** SymPy's raw mpf representation: sign, mantissa, exponent, bit count. */
+export type RawMpfTuple = readonly [number, number, number, number];
+/** A scaled zero wraps the sign to distinguish it from an ordinary mpf value. */
+export type ScaledZero = readonly [readonly [number], number, number, number];
+
+/** SymPy scaled_zero: encode a magnitude with unknown precision, or unwrap its sign. */
+export function scaledZero(mag: number, sign?: number): [ScaledZero, -1];
+export function scaledZero(mag: ScaledZero): RawMpfTuple;
+export function scaledZero(mag: number | ScaledZero, sign = 1): RawMpfTuple | [ScaledZero, -1] {
+  if (typeof mag !== 'number') return [mag[0][0], mag[1], mag[2], mag[3]];
+  if (!Number.isSafeInteger(mag)) throw new RangeError('scaledZero expects an integer magnitude');
+  if (sign !== 1 && sign !== -1) throw new RangeError('scaledZero sign must be +/-1');
+  return [[[sign === 1 ? 0 : 1], 1, mag, 1], -1];
+}
 
 type Compiled = (env: readonly C[]) => C;
 

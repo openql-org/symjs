@@ -638,3 +638,11 @@ describe('Basic and Expr methods without structure of their own (SymPy)', () => 
     expect(s(sj.rcall(f(x), y))).toBe('f(x)');
   });
 });
+
+it('has_free sees differentiation variables but respects an outer binding', () => {
+  const a = new sj.Sym('a'), b = new sj.Sym('b');
+  const d = new sj.Derivative([a, b]);
+  expect(sj.hasFree(d, b)).toBe(true);
+  expect(sj.hasFree(d.add(1), b)).toBe(true);
+  expect(sj.hasFree(new sj.Integral([d, b, sj.S.Zero, sj.S.One]), b)).toBe(false);
+});

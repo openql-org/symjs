@@ -630076,7 +630076,12 @@
      "v": "abc"
     }
    ],
-   "unsupportedArg": "type",
+   "kwargs": {
+    "include": {
+     "t": "Type",
+     "name": "str"
+    }
+   },
    "category": "utilities",
    "module": "sympy.utilities.iterables",
    "src": "is_sequence('abc', include=str)",
@@ -630114,12 +630119,25 @@
    "fn": "is_sequence",
    "args": [
     {
-     "t": "Tuple",
-     "items": [],
-     "list": true
+     "t": "Iterator",
+     "items": []
     }
    ],
-   "unsupportedArg": "type",
+   "kwargs": {
+    "include": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Type",
+       "name": "str"
+      },
+      {
+       "t": "Type",
+       "name": "generator"
+      }
+     ]
+    }
+   },
    "category": "utilities",
    "module": "sympy.utilities.iterables",
    "src": "is_sequence(generator, include=(str, GeneratorType))",
@@ -630152,7 +630170,12 @@
      "items": []
     }
    ],
-   "unsupportedArg": "type",
+   "kwargs": {
+    "exclude": {
+     "t": "Type",
+     "name": "str"
+    }
+   },
    "category": "utilities",
    "module": "sympy.utilities.iterables",
    "src": "iterable({}, exclude=str)",
@@ -630166,7 +630189,12 @@
      "v": "no"
     }
    ],
-   "unsupportedArg": "type",
+   "kwargs": {
+    "exclude": {
+     "t": "Type",
+     "name": "str"
+    }
+   },
    "category": "utilities",
    "module": "sympy.utilities.iterables",
    "src": "iterable(\"no\", exclude=str)",
@@ -630404,7 +630432,12 @@
      ]
     }
    ],
-   "unsupportedArg": "function",
+   "kwargs": {
+    "key": {
+     "t": "JsFunc",
+     "name": "builtins.len"
+    }
+   },
    "category": "utilities",
    "module": "sympy.utilities.iterables",
    "src": "minlex(('bb', 'aaa', 'c', 'a'), key=len)",
@@ -630612,7 +630645,12 @@
      "list": true
     }
    ],
-   "unsupportedArg": "function",
+   "kwargs": {
+    "op": {
+     "t": "JsFunc",
+     "name": "_operator.ge"
+    }
+   },
    "category": "utilities",
    "module": "sympy.utilities.iterables",
    "src": "runs([0, 1, 2, 2, 1, 4, 3, 2, 2], op=ge)",

@@ -235,3 +235,24 @@ describe('evalf of sums and products with finite limits (SymPy Sum._eval_evalf)'
     expect(String(sj.evalf(sj.Sum(sj.pow(k, -2), [k, 1, n])))).toContain('Sum(');
   });
 });
+
+it('extracts a pure complex pair only from numeric coefficients', () => {
+  expect(sj.pureComplex(2)).toBe(sj.NoMatch);
+  expect(sj.pureComplex(2, true)).toEqual([sj.Rational.of(2), sj.S.Zero]);
+  expect(sj.pureComplex(sj.sqrt(2))).toBe(sj.NoMatch);
+  expect(sj.pureComplex(sj.add(2, sj.mul(3, sj.I)))).toEqual([sj.Rational.of(2), sj.Rational.of(3)]);
+  expect(sj.pureComplex(sj.I)).toEqual([sj.S.Zero, sj.S.One]);
+  expect(sj.pureComplex(sj.mul(new sj.Float(0.5), sj.I))).toEqual([sj.S.Zero, new sj.Float(0.5)]);
+  expect(sj.pureComplex(sj.mul(new sj.Sym('u'), sj.I))).toBe(sj.NoMatch);
+  expect(sj.pureComplex(sj.mul(3, new sj.Sym('u')))).toBe(sj.NoMatch);
+  expect(sj.pureComplex(sj.mul(3, new sj.Sym('u'), sj.I))).toBe(sj.NoMatch);
+});
+
+it('encodes and decodes scaled zeros with their sign and magnitude', () => {
+  const [z, precision] = sj.scaledZero(100);
+  expect(z).toEqual([[0], 1, 100, 1]); expect(precision).toBe(-1);
+  expect(sj.scaledZero(z)).toEqual([0, 1, 100, 1]);
+  expect(sj.scaledZero(-20, -1)).toEqual([[[1], 1, -20, 1], -1]);
+  expect(() => sj.scaledZero(1.5)).toThrow(RangeError);
+  expect(() => sj.scaledZero(1, 0)).toThrow(RangeError);
+});

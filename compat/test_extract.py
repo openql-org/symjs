@@ -18,6 +18,15 @@ import extract
 
 
 class ExtractTests(unittest.TestCase):
+    def test_runtime_type_filters_and_callbacks(self):
+        import operator
+        import types
+        self.assertEqual(extract.ser(str), {"t": "Type", "name": "str"})
+        self.assertEqual(extract.ser(types.GeneratorType), {"t": "Type", "name": "generator"})
+        self.assertEqual(extract.ser(len), {"t": "JsFunc", "name": "builtins.len"})
+        self.assertEqual(extract.ser(operator.ge), {"t": "JsFunc", "name": "_operator.ge"})
+        self.assertEqual(extract.ser(iter([1])), {"t": "Iterator", "items": [{"t": "Rational", "p": "1", "q": "1"}]})
+
     def extract_examples(self, source, module="sympy.core.expr"):
         parser = doctest.DocTestParser()
         sources = [source] if isinstance(source, str) else source

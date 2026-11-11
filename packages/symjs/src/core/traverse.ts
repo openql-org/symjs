@@ -428,10 +428,15 @@ export function freeSymbols(e: Expr): Set<Sym> {
           for (const s of freeSymbols(a)) if (!bound.has(s.key)) out.set(s.key, s);
         } else go(a);
       });
+    } else if (x instanceof Derivative) {
+      // Differentiation variables are not free unless present in the expression.
+      go(at(x.args, 0));
     } else if (x instanceof Integral && x.args.length >= 3) {
       // the integration variable of a definite integral (or one with an upper limit) is bound
       const v = x.variable;
-      for (const s of freeSymbols(x.integrand)) if (s.key !== v.key) out.set(s.key, s);
+      // A function can itself be the bound variable, e.g. Integral(f(x), (f(x), 1, g(y))).
+      const integrand = v instanceof Sym ? x.integrand : xreplace(x.integrand, [[v, Rational.of(0)]]);
+      for (const s of freeSymbols(integrand)) if (s.key !== v.key) out.set(s.key, s);
       x.args.slice(2).forEach(go);
     } else if (x instanceof Concrete) {
       // bound summation variables are not free

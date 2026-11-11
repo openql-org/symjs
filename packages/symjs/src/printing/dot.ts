@@ -18,7 +18,7 @@ import { str } from './str';
 /** The classes a style applies to: every node ('Basic'), the expressions ('Expr'), or the nodes a predicate selects. */
 export type DotClass = 'Basic' | 'Expr' | ((e: Expr) => boolean);
 /** Graphviz attributes of the nodes of the classes (SymPy `styles`: (class, attributes) pairs, later ones override). */
-export type DotStyles = readonly (readonly [DotClass, Readonly<Record<string, string>>])[];
+export type DotStyles = readonly (readonly [DotClass, Readonly<Record<string, string>> | ReadonlyMap<string, string>])[];
 
 /** SymPy `default_styles`: blue ellipses, black for expressions. */
 export const defaultStyles: DotStyles = [
@@ -39,8 +39,11 @@ function viewPurestr(v: BasicView): string {
  * SymPy `purestr(x)`: a string that rebuilds the expression like srepr,
  * with the arguments in SymPy's order (`Add(Integer(2), Symbol('x'))`).
  */
-export function purestr(x: Expr): string {
-  return viewPurestr(basicView(x));
+export function purestr(x: Expr): string;
+export function purestr(x: Expr, options: { readonly withArgs: true }): [string, string[]];
+export function purestr(x: Expr, options: { readonly withArgs?: boolean }): string | [string, string[]];
+export function purestr(x: Expr, options: { readonly withArgs?: boolean } = {}): string | [string, string[]] {
+  return options.withArgs ? purestrWithArgs(x) : viewPurestr(basicView(x));
 }
 
 /** SymPy `purestr(x, with_args=True)`: the purestr of the expression and those of its arguments. */
@@ -57,18 +60,18 @@ const matches = (v: BasicView, cls: DotClass): boolean => {
 
 function viewStyle(v: BasicView, styles: DotStyles): Record<string, string> {
   const style: Record<string, string> = {};
-  for (const [cls, sty] of styles) if (matches(v, cls)) Object.assign(style, sty);
+  for (const [cls, sty] of styles) if (matches(v, cls)) Object.assign(style, sty instanceof Map ? Object.fromEntries(sty) : sty);
   return style;
 }
 
 /** SymPy `styleof(expr, styles)`: the merged attributes of the styles whose class the expression has. */
-export function styleof(expr: Expr, styles: DotStyles = defaultStyles): Record<string, string> {
-  return viewStyle(basicView(expr), styles);
+export function styleof(expr: Expr, styles: DotStyles = defaultStyles): Map<string, string> {
+  return new Map(Object.entries(viewStyle(basicView(expr), styles)));
 }
 
 /** SymPy `attrprint(d, delimiter=', ')`: `"key"="value"` pairs sorted by key. */
-export function attrprint(d: Readonly<Record<string, string>>, delimiter = ', '): string {
-  return Object.entries(d)
+export function attrprint(d: Readonly<Record<string, string>> | ReadonlyMap<string, string>, delimiter = ', '): string {
+  return (d instanceof Map ? [...d] : Object.entries(d))
     .sort(([a], [b]) => Number(a > b) - Number(a < b))
     .map(([k, v]) => `"${k}"="${v}"`)
     .join(delimiter);

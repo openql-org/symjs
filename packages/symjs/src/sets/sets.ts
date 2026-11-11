@@ -41,6 +41,10 @@ import { registerRewrite } from '../simplify/rewrite';
 /** Base class of all sets. */
 export abstract class SetExpr extends Expr {
   readonly kind = 'Set' as const;
+  /** SymPy's +, - and * on sets denote union, difference and Cartesian product. */
+  override add(other: ExprLike): SetExpr { return union(this, cast(sympify(other), SetExpr)); }
+  override sub(other: ExprLike): SetExpr { return complement(this, cast(sympify(other), SetExpr)); }
+  override mul(other: ExprLike): SetExpr { return productSet(this, cast(sympify(other), SetExpr)); }
   abstract get className(): string;
   get isEmpty(): boolean {
     return false;
@@ -1347,6 +1351,14 @@ function intersectTwo(a: SetExpr, b: SetExpr): SetExpr {
 
 /** The SymPy intersection_sets handlers for Rationals, Range, ImageSet and ProductSet (undefined when none applies). */
 function intersectSpecial(a: SetExpr, b: SetExpr): SetExpr | undefined {
+  // Both coordinate maps are monotone in their parameter sets, including the
+  // non-injective polar map at radius zero. Containment is safe without needing
+  // a coordinate inverse or discarding points represented at several angles.
+  if ((a.className === 'PolarComplexRegion' || a.className === 'CartesianComplexRegion') && a.className === b.className) {
+    const left = cast(at(a.args, 0), SetExpr), right = cast(at(b.args, 0), SetExpr);
+    if (isSubset(left, right) === true) return a;
+    if (isSubset(right, left) === true) return b;
+  }
   const integral = (s: SetExpr): boolean => s === Integers || s === Naturals || s === Naturals0 || s instanceof Range;
   if (a === Rationals && (integral(b) || b === Rationals)) return b;
   if (a === Rationals && b === Reals) return a;

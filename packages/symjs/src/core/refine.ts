@@ -86,6 +86,8 @@ export type PredicateName =
 
 /** A predicate applied to arguments, such as Q.positive(x) (SymPy AppliedPredicate). */
 export class AppliedPredicate extends ExtensionExpr {
+  /** The arguments of this applied predicate (SymPy AppliedPredicate.arguments). */
+  get arguments(): readonly Expr[] { return this.args; }
   /** The predicate applied by this expression (SymPy AppliedPredicate.function). */
   get function(): Predicate { return Q[this.predicate] ?? Predicate(this.predicate); }
   constructor(

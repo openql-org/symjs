@@ -236,7 +236,7 @@ export function basicView(e: Expr, printOrder = false): BasicView {
   const set = setClass(e);
   // SymPy keeps the sets of a union or an intersection sorted (by their infimum)
   if (set !== undefined) return e.args.length === 0 ? atom(set, set, false) : node(set, (set === 'Union' || set === 'Intersection' ? setArgsOrdered(e.args) : e.args).map(v), false);
-  if (e instanceof ExtensionExpr) return node(e.name, e.args.map(v), e.name !== 'Tuple' && e.name !== 'Dict');
+  if (e instanceof ExtensionExpr) return node(e.name, e.args.map(v), !['Tuple', 'Dict', 'Basic', 'Atom'].includes(e.name));
   // Add, Mul, Pow, exp and the functions
   return node(sympyClassName(e), sympyArgs(e).map(v));
 }

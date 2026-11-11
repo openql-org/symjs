@@ -567,6 +567,7 @@
    "sha256": "14dbf99de018261f8c82f9c70d9f3eb630bd44829c2316ab563e56884e049d88",
    "status": "partial",
    "sources": [
+    "assumptions/refine.ts",
     "core/refine.ts"
    ],
    "selectedForExtraction": true,
@@ -2558,6 +2559,7 @@
    "sha256": "1d1ff1ce1eb6ef714199d7cd6e8806ce45a8a9a23f93f09e20e9e99b2cf00ab4",
    "status": "partial",
    "sources": [
+    "core/expr.ts",
     "core/methods.ts",
     "core/nodes.ts"
    ],
@@ -2930,7 +2932,8 @@
    "status": "partial",
    "sources": [
     "core/num.ts",
-    "core/numbers.ts"
+    "core/numbers.ts",
+    "core/numericcompare.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
@@ -3128,7 +3131,8 @@
    "sha256": "86d6c64f4bafce8603d3b43afe1753d220c3b27b343432366a69745bc9ad0203",
    "status": "partial",
    "sources": [
-    "core/logic.ts"
+    "core/logic.ts",
+    "core/relational.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
@@ -3221,7 +3225,8 @@
    "sha256": "d31c20c53ed97e13e3abcee0970d8242ae4cb4810ef833ab0285eeedb1f0585a",
    "status": "partial",
    "sources": [
-    "core/nodes.ts"
+    "core/nodes.ts",
+    "core/symbol.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
@@ -3252,7 +3257,9 @@
    "sha256": "d6f5a1787e3af47a88087ac00cc63f9384f878342518e44d8c487b45ee166e61",
    "status": "partial",
    "sources": [
-    "core/sympify.ts"
+    "core/ops.ts",
+    "core/sympify.ts",
+    "parsing/sympify.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,
@@ -21906,7 +21913,8 @@
    "sha256": "95ea62784c48d7d42f6583eb1a5fd665a170b5af18641a3a020c439f0ab4d68c",
    "status": "partial",
    "sources": [
-    "numeric/evalf.ts"
+    "numeric/evalf.ts",
+    "utilities/lambdify.ts"
    ],
    "selectedForExtraction": true,
    "hasCorpusCases": true,

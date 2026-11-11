@@ -70,6 +70,7 @@ describe('translate and replaceString', () => {
     expect(sj.translate('abc', new Map([['abc', 'x'], ['a', 'y']]))).toBe('x');
     expect(sj.translate('abcd', 'ac', 'AC', 'd')).toBe('AbC');
     expect(sj.translate('abc')).toBe('abc');
+    expect(sj.translate('alphahatdotprime', null)).toBe('alphahatdotprime');
     expect(sj.translate('abc', new Map(), 'b')).toBe('ac');
     expect(sj.translate('abc', 'ab', 'xy')).toBe('xyc');
     expect(sj.translate('abc', '')).toBe('abc');
@@ -107,4 +108,8 @@ describe('asInt and funcName', () => {
     const anonymous = [(): number => 1][0];
     expect([sj.funcName(1n), sj.funcName(sj.Matrix.eye(3)), sj.funcName(g), sj.funcName(anonymous), sj.funcName(undefined), sj.funcName({})]).toEqual(['int', 'MutableDenseMatrix', 'g', 'function', 'NoneType', 'object']);
   });
+});
+
+it('translates a lone LaTeX symbol name using the printing convention', () => {
+  expect(sj.translate('alphahatdotprime')).toBe("{\\dot{\\hat{\\alpha}}}'");
 });

@@ -23,5 +23,6 @@ export type { DotClass, DotStyles, DotNodeOptions, DotEdgesOptions, DotprintOpti
 export { mathml, printMathml, MathMLContentPrinter, MathMLPresentationPrinter, MathMLElement } from './printing/mathml';
 export type { MathMLOptions, MathMLPrintOptions, MathMLPrintable, MathMLMatrix } from './printing/mathml';
 export { splitSuperSub } from './printing/conventions';
+export { isSubscriptableInUnicode } from './printing/pretty/symbology';
 export { TableForm } from './printing/tableform';
 export type { TableFormOptions, TableData, TableEntry, TableHeading, TableColumnFormat } from './printing/tableform';

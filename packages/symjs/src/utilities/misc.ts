@@ -11,6 +11,7 @@
  */
 
 import { at, getOrThrow, last } from '../core/guard';
+import { translateSymbol } from '../printing/latex';
 import { Expr, Float, Rational } from '../core/nodes';
 import { funcName as nodeClassName } from '../strategies/util';
 
@@ -167,7 +168,8 @@ const isCharPair = ([k, v]: readonly [string, string]): boolean => codePoints(k)
  * keys are replaced as substrings (in the map's order), and `b` is then the
  * characters to delete.
  */
-export function translate(s: string, a: string | ReadonlyMap<string, string> | null = null, b: string | null = null, c: string | null = null): string {
+export function translate(s: string, a?: string | ReadonlyMap<string, string> | null, b: string | null = null, c: string | null = null): string {
+  if (a === undefined) return translateSymbol(s);
   let mr = new Map<string, string>();
   let from = '';
   let to = '';

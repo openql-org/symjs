@@ -22,6 +22,9 @@ import { Fn } from '../packages/symjs/src/core/nodes';
 // Python-like containers for formatting results
 // ---------------------------------------------------------------------------
 
+export class JsIterator {
+  constructor(readonly items: readonly unknown[]) {}
+}
 export class JsList {
   constructor(readonly items: readonly unknown[]) {}
 }
@@ -112,10 +115,28 @@ export class JsLambda {
   call(...xs: Expr[]): Expr {
     return sj.xreplace(this.body, this.vars.map((v, i) => [v, xs[i]!] as [Expr, Expr]));
   }
+  /** Python arithmetic on primitive callback arguments (not symbolic sympification). */
+  callStrings(...xs: unknown[]): unknown {
+    const env = new Map(this.vars.map((v, i) => [v.key, xs[i]]));
+    const visit = (e: Expr): unknown => {
+      if (env.has(e.key)) return env.get(e.key);
+      if (e instanceof sj.Rational || e instanceof sj.Float) return e.value;
+      const values = e.args.map(visit);
+      if (e instanceof sj.Add && values.every((v) => typeof v === 'string')) return values.join('');
+      if (e instanceof sj.Mul) {
+        const strings = values.filter((v): v is string => typeof v === 'string');
+        const numbers = values.filter((v): v is number => typeof v === 'number');
+        const count = numbers.reduce((a, b) => a * b, 1);
+        if (strings.length === 1 && numbers.length + 1 === values.length && Number.isSafeInteger(count)) return strings[0]!.repeat(Math.max(0, count));
+      }
+      throw new Unsupported('Python callback arithmetic on these primitive values');
+    };
+    return visit(this.body);
+  }
 }
 
 /** A Lambda inside an expression is a Lambda node (a JsLambda is the form passed as an argument). */
-const lambdaAsNode = (v: unknown): unknown => (v instanceof JsLambda ? sj.Lambda(v.vars, v.body) : v);
+const lambdaAsNode = (v: unknown): unknown => v instanceof sj.AlgebraicNumber ? (v.alias ?? v.asExpr()) : v instanceof JsLambda ? sj.Lambda(v.vars, v.body) : v;
 
 /** A library function passed as an argument (equal_valued, factor, math.isclose, ...). */
 export class JsFunc {
@@ -164,7 +185,7 @@ export function fmt(v: unknown): string {
   if (v === null || v === undefined) return 'None';
   if (typeof v === 'number' || typeof v === 'bigint') return String(v);
   if (v === 'EmptySet') return 'EmptySet';
-  if (typeof v === 'string') return `'${v}'`;
+  if (typeof v === 'string') return v.includes("'") && !v.includes('"') ? `"${v}"` : `'${v}'`;
   if (v instanceof JsList) return `[${v.items.map(fmtItem).join(', ')}]`;
   if (v instanceof JsTuple) return v.items.length === 1 ? `(${fmtItem(v.items[0])},)` : `(${v.items.map(fmtItem).join(', ')})`;
   if (v instanceof JsDefaultDict) return `defaultdict(<class 'int'>, ${fmt(new JsDict(v.entries))})`;
@@ -559,8 +580,12 @@ export function deserialize(tree: Tree): unknown {
       };
       return m[tree['name'] as string];
     }
-    case 'Add':
-      return sj.add(...(tree['args'] as Tree[]).map((a) => lambdaAsNode(deserialize(a)) as Expr));
+    case 'Add': {
+      const args = (tree['args'] as Tree[]).map((a) => lambdaAsNode(deserialize(a)) as Expr);
+      // A numeric term after a symbolic one records an unevaluated argument order.
+      if (args.slice(1).some((a) => a instanceof sj.Rational || a instanceof sj.Float)) return new sj.Add(args);
+      return sj.add(...args);
+    }
     case 'Mul':
     case 'MatMul': {
       const args = (tree['args'] as Tree[]).map((a) => lambdaAsNode(deserialize(a)) as Expr);
@@ -570,7 +595,12 @@ export function deserialize(tree: Tree): unknown {
       // (factorint(n, visual=True))
       const numeric = (a: Expr): boolean => a instanceof sj.Rational || (a instanceof sj.Pow && a.base instanceof sj.Rational && a.exp instanceof sj.Rational && a.exp.isInteger);
       if (tree['t'] === 'Mul' && args.length > 1 && args.every(numeric) && args.some((a) => a instanceof sj.Pow)) return new sj.Mul(args);
-      return sj.mul(...args);
+      if (tree['t'] === 'Mul' && args.length > 1 && args.some((a) => a.equals(S.One))) return new sj.Mul(args);
+      const result = sj.mul(...args);
+      // A retained product of numeric roots can have been built unevaluated;
+      // retain it only when canonicalization would remove the Mul itself.
+      if (tree['t'] === 'Mul' && !(result instanceof sj.Mul) && args.every((a) => a instanceof sj.Rational || (a instanceof sj.Pow && a.base instanceof sj.Rational && a.exp instanceof sj.Rational))) return new sj.Mul(args);
+      return result;
     }
     case 'AccumBounds':
       return sj.AccumBounds(deserialize(tree['min'] as Tree) as Expr, deserialize(tree['max'] as Tree) as Expr);
@@ -626,9 +656,7 @@ export function deserialize(tree: Tree): unknown {
       return f((tree['args'] as Tree[]).map((a) => deserialize(a)) as Expr[]);
     }
     case 'AlgebraicNumber':
-      // an aliased primitive element is its alias symbol in symjs expressions (AlgebraicField.toSympy)
-      if (tree['alias'] !== undefined && (tree['coeffs'] as Tree[]).length === 2) return deserialize(tree['alias'] as Tree);
-      return new sj.AlgebraicNumber(deserialize(tree['root'] as Tree) as Expr, (tree['coeffs'] as Tree[]).map((t) => deserialize(t) as Expr));
+      return new sj.AlgebraicNumber(deserialize(tree['root'] as Tree) as Expr, (tree['coeffs'] as Tree[]).map((t) => deserialize(t) as Expr), tree['alias'] === undefined ? {} : { alias: deserialize(tree['alias'] as Tree) as Sym });
     case 'Domain':
       // the domain object rebuilt from its parameters; ZZ/QQ also stay recognizable as JsDomain where an adapter compares the name
       return new JsDomain(tree['name'] as string, deserializeDomain(tree), tree);
@@ -1002,6 +1030,8 @@ export function deserialize(tree: Tree): unknown {
       if (!p) throw new Unsupported(`predicate ${tree['name']}`);
       return p(...(tree['args'] as Tree[]).map((x) => deserialize(x) as Expr));
     }
+    case 'Iterator':
+      return new JsIterator((tree['items'] as Tree[]).map(deserialize));
     case 'Type':
       return new TypeRef(tree['name'] as string);
     case 'Wild': {
@@ -4167,7 +4197,7 @@ for (const name of Object.keys(sj.Q)) {
 /** Categories whose integer arguments are JS numbers (indices, sizes, sequences). */
 const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'discrete', 'geometry', 'crypto', 'liealgebras']);
 /** Functions of other categories whose integer arguments are JS numbers (variable numbers of the integer representation of clauses). */
-const NUMERIC_FUNCTIONS = new Set(['unit_propagate_int_repr', '.reorder_limit', '.__pow__', 'ImmutableMatrix', 'ImmutableDenseMatrix']);
+const NUMERIC_FUNCTIONS = new Set(['bool_maxterm', 'bool_minterm', 'bool_monomial', 'unit_propagate_int_repr', '.reorder_limit', '.__pow__', 'ImmutableMatrix', 'ImmutableDenseMatrix']);
 /** Python operators recorded as their special methods (the number-field doctests), and the methods that implement them. */
 /** A value that symjs arithmetic accepts directly (an expression or a JS number). */
 const isScalar = (v: unknown): v is ExprLike => v instanceof Expr || typeof v === 'number' || typeof v === 'bigint';
@@ -4195,6 +4225,7 @@ function pyEquals(a0: unknown, b0: unknown): boolean {
   if (a instanceof Set && b instanceof Set) return a.size === b.size && [...a].every((x) => [...b].some((y) => pyEquals(x, y)));
   if (a instanceof Map && b instanceof Map) return a.size === b.size && [...a].every(([k, x]) => [...b].some(([l, y]) => pyEquals(k, l) && pyEquals(x, y)));
   if (Array.isArray(a) && Array.isArray(b)) return a.length === b.length && a.every((v, i) => pyEquals(v, b[i]));
+  if (a instanceof Expr && !isScalar(b)) return false;
   const r = callMethod(a, ['equals', 'eq'], [b]);
   if (r !== undefined) return r.value === true || (r.value instanceof Expr && String(r.value) === 'True');
   if (isScalar(a) && isScalar(b)) return sj.sympify(a).equals(b);
@@ -4206,7 +4237,7 @@ function pyEquals(a0: unknown, b0: unknown): boolean {
  * when it has one, otherwise the symjs function of the operation.
  */
 const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknown>> = {
-  '.__add__': (a, [b]) => (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
+  '.__add__': (a, [b]) => (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).add(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
   '.__sub__': (a, [b]) => callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
   '.__mul__': (a, [b]) => (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
   '.__truediv__': (a, [b]) => callMethod(a, ['div', 'truediv', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
@@ -4229,7 +4260,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   '.__ge__': (a, [b]) => callMethod(a, ['ge'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Ge(a, b) : unsupportedOp('>=')),
   '.__contains__': (a, [b]) => {
     if (a instanceof sj.SetExpr && !(a instanceof sj.MatrixSet)) {
-      const result = sj.contains(a, asExpr(b));
+      const result = sj.contains(a, Array.isArray(b) ? sj.Tuple(...b.map(asExpr)) : asExpr(b));
       if (result === S.true) return true;
       if (result === S.false) return false;
       throw new TypeError('cannot determine symbolic set membership');
@@ -4305,16 +4336,29 @@ const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? n.replace(/_([a-zA-
 
 /** A deserialized argument as the JS value the API takes. */
 function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
+  // Python runtime objects used as type filters and sequence callbacks.
+  if (v instanceof TypeRef) {
+    const builtin = ({ str: String, int: Number, float: Number, bool: Boolean, list: Array, tuple: Array, dict: Map, generator: sj.GeneratorType } as Record<string, unknown>)[v.name];
+    if (builtin !== undefined) return builtin;
+  }
+  if (v instanceof JsFunc && v.name === 'builtins.len') return (x: unknown) => {
+    if (typeof x === 'string' || Array.isArray(x)) return x.length;
+    if (x instanceof Map || x instanceof Set) return x.size;
+    throw new TypeError('len requires a sized value');
+  };
+  if (v instanceof JsFunc && v.name === '_operator.ge') return (a: number | string, b: number | string) => a >= b;
   // Named series callbacks are callable public algorithms, not harness implementations.
+  if (v instanceof TypeRef && (v.name === 'Basic' || v.name === 'Expr')) return v.name;
   if (v instanceof JsFunc && (v.name === 'rs_exp' || v.name === '_tan1')) return v.name === 'rs_exp' ? sj.rsExp : sj.rsTan;
   if ((numbers || inArray) && v instanceof sj.Rational && v.q === 1n) {
     const n = Number(v.p);
     return Number.isSafeInteger(n) ? n : v.p;
   }
+  if (v instanceof JsIterator) return (function* () { yield* v.items.map((x) => toJs(x, numbers, true)); })();
   if (v instanceof JsList || v instanceof JsTuple) return v.items.map((x) => toJs(x, numbers, true));
   if (v instanceof JsSet) return new Set(v.items.map((x) => toJs(x, numbers, true)));
   if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [toJs(k, numbers, true), toJs(x, numbers, true)]));
-  if (v instanceof JsLambda) return (...xs: unknown[]) => v.call(...xs.map((x) => (typeof x === 'number' ? sj.Rational.of(BigInt(x)) : x)) as Expr[]);
+  if (v instanceof JsLambda) return (...xs: unknown[]) => xs.some((x) => typeof x === 'string') ? v.callStrings(...xs) : v.call(...xs.map((x) => (typeof x === 'number' ? sj.Rational.of(BigInt(x)) : x)) as Expr[]);
   if (v instanceof JsPred) return (e: Expr) => v.test(e);
   if (v instanceof UFnClass) return sj.SymFunction(v.name, { nargs: v.nargs });
   if (v instanceof JsDomain) return v.domain ?? v;
@@ -4341,10 +4385,19 @@ const keyFromJs = (k: unknown): unknown => (Array.isArray(k) ? new JsTuple(k.map
 /** The parameter names of a JS function (from its source). */
 function paramNames(f: (...a: unknown[]) => unknown): string[] {
   const src = Function.prototype.toString.call(f);
-  const m = /^[^(]*\(([^)]*)\)/.exec(src);
-  if (!m) return [];
-  // parameters copied to locals are named xIn (no-param-reassign)
-  return m[1]!.split(',').map((p) => p.trim().replace(/^\.\.\./, '').split(/[=\s:]/)[0]!.replace(/In$/, '')).filter(Boolean);
+  const start = src.indexOf('(');
+  if (start < 0) return [];
+  let depth = 0, token = '';
+  const parts: string[] = [];
+  for (const ch of src.slice(start + 1)) {
+    if (ch === ')' && depth === 0) { parts.push(token); break; }
+    if (ch === ',' && depth === 0) { parts.push(token); token = ''; continue; }
+    token += ch;
+    if ('([{'.includes(ch)) depth++;
+    if (')]}'.includes(ch)) depth--;
+  }
+  // Parameters copied to locals are named xIn (no-param-reassign).
+  return parts.map((p) => p.trim().replace(/^\.\.\./, '').split(/[=\s:]/)[0]!.replace(/In$/, '')).filter(Boolean);
 }
 
 /** Positional arguments and keywords: a keyword naming a parameter goes to its position, the rest form an options object. */
@@ -4383,6 +4436,7 @@ function autoAdapter(c: Case): Adapter | undefined {
   if (c.fn === '.nargs') return (_args, kw, self) => (noKw(kw), sj.nargs(self instanceof UFnClass ? sj.SymFunction(self.name, { nargs: self.nargs }) : self as sj.WildFunction));
   const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn) || (c.module.startsWith('sympy.polys.matrices.') && DOMAIN_MATRIX_INT_FUNCTIONS.has(c.fn));
   const conv = (x: unknown): unknown => {
+    if (c.fn === 'unchanged' && (x instanceof FnClass || x instanceof TypeRef)) return (sj as unknown as Record<string, unknown>)[camel(x.name)];
     if (c.fn === 'ElementwiseApplyFunction' && x instanceof FnClass) return (e: Expr) => applyFn(x.name, [e]);
     const converted = toJs(x, numbers);
     // The public sparse-ring APIs use Expr coefficients/exponents. Python's
@@ -4408,8 +4462,9 @@ function autoAdapter(c: Case): Adapter | undefined {
     const name = OPERATOR_METHODS[c.fn] ?? camel(c.fn.slice(1));
     return (args, kw, self0) => {
       // a static method called on the class (Permutation.unrank_lex, ...)
-      const self = self0 instanceof TypeRef ? (sj as unknown as Record<string, unknown>)[self0.name] : self0 instanceof JsDomain ? (self0.domain ?? self0) : lambdaAsNode(self0);
+      const self = self0 instanceof JsTuple ? sj.Tuple(...self0.items.map(asExpr)) : self0 instanceof TypeRef ? (sj as unknown as Record<string, unknown>)[self0.name] : self0 instanceof JsDomain ? (self0.domain ?? self0) : self0 instanceof JsLambda ? sj.Lambda(self0.vars, self0.body) : self0;
       if (self === null || (typeof self !== 'object' && typeof self !== 'function')) throw new Unsupported(`no adapter for ${c.fn}`);
+      if (name === 'arguments' && self instanceof sj.AppliedPredicate) return new JsTuple(self.arguments);
       // SymPy names with an uppercase word (to_Matrix -> toMatrix)
       if (name === 'name' && typeof self === 'function' && 'predicateName' in self) return new Sym(String(self.predicateName));
       const upper = name.replace(/_([A-Z])/g, (_m, ch: string) => ch);
@@ -4458,6 +4513,7 @@ function autoAdapter(c: Case): Adapter | undefined {
         const opts = Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), conv(v)]));
         return fromJs(g(self, ...args.map(conv), ...(Object.keys(opts).length ? [opts] : [])));
       }
+      if (name === 'args' && Array.isArray(m)) return new JsTuple(m);
       if (m === undefined || args.length) throw new Unsupported(`no adapter for ${c.fn}`);
       return fromJs(m);
     };

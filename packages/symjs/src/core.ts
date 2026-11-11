@@ -82,6 +82,10 @@ export {
 } from './core/public';
 export { isIrrational, isAlgebraic, isComplex, isFinite, isPrime } from './core/public';
 export { canonicalRelation } from './core/logic';
+export { Relational, isEq, isNeq, isGe, isLe, isGt, isLt } from './core/relational';
+export { disambiguate, uniquelyNamedSymbol } from './core/symbol';
+export type { UniqueSymbolOptions } from './core/symbol';
+export { unchanged } from './core/expr';
 export { isTrue, isFalse, isUnknown, truthNot, truthAnd, truthOr, fuzzyBool, fuzzyAnd, fuzzyOr, fuzzyNot, fuzzyXor, fuzzyNand, NoMatch, NoMatchResult, isNoMatch, Unsolved, UnsolvedResult, isUnsolved } from './core/truth';
 export type { Truth, FuzzyLike } from './core/truth';
 export { classKey } from './printing/sortkey';
@@ -270,9 +274,12 @@ export {
 export type { ExpandHints } from './simplify/expand';
 export {
   evalf,
+  pureComplex,
+  scaledZero,
   toComplex,
   lambdify,
 } from './numeric/evalf';
+export type { ScaledZero, RawMpfTuple } from './numeric/evalf';
 export {
   float,
 } from './numeric/floatctor';
@@ -306,6 +313,7 @@ export {
   parse as parseExpr,
   ex,
 } from './parsing/parser';
+export { kernS } from './parsing/sympify';
 export type { ParseOptions } from './parsing/parser';
 /** Create a symbol. */
 export function symbol(name: string, assumptions: Assumptions = {}): SymbolNode {

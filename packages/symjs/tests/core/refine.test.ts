@@ -591,3 +591,7 @@ it('recognizes rational roots of unity as algebraic', async () => {
   const exponent = a.mul(a.Rational.of(2,3),a.pi,a.I);
   expect(a.isAlgebraic(a.exp(exponent))).toBe(true);
 });
+
+it('exposes the arguments of an applied predicate', () => {
+  expect(sj.Q.integer(1).arguments).toEqual([sj.S.One]);
+});

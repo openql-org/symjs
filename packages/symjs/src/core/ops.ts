@@ -36,7 +36,7 @@ import {
   impl,
   isNum,
 } from './nodes';
-import { mkFloat, numAdd, numInv, numMul, numNeg, numPowInt, ratFloor, toMpf } from './num';
+import { mkFloat, numAdd, numDiv, numInv, numMul, numNeg, numPowInt, ratFloor, toMpf } from './num';
 import { ZERO as MPF_ZERO, precToDps } from '../numeric/mpf';
 import { cpow as mpCpow, powReal as mpPowReal } from '../numeric/mpfun';
 import { factorInt, gcd, iroot, ipow } from './numbers';
@@ -1142,7 +1142,9 @@ export function sub(a: ExprLike, b: ExprLike): Expr {
 }
 
 export function div(a: ExprLike, b: ExprLike): Expr {
-  return mul(a, pow(b, S.NegOne));
+  const x = sympify(a), y = sympify(b);
+  if (isNum(x) && isNum(y) && !y.isZero) return numDiv(x, y);
+  return mul(x, pow(y, S.NegOne));
 }
 
 /** Square root: x^(1/2). */
@@ -1191,6 +1193,7 @@ registerFromiter(Mul, (args) => mul(...args));
 registerFromiter(Pow, (args) => pow(at(args, 0), at(args, 1)));
 impl.add = add;
 impl.mul = mul;
+impl.div = div;
 impl.pow = pow;
 impl.couldExtractMinusSign = couldExtractMinusSign;
 
