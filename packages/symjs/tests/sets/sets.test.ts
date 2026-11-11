@@ -243,8 +243,8 @@ describe('Range, Integers in an interval and ImageSet membership', () => {
     expect(String(C(Sets.range(n('-oo'), 4), -10))).toBe('True');
     expect(String(C(Sets.range(1, 1), 0))).toBe('False');
     expect(Sets.range(0, 3).equals(Sets.Range.of(0, 3, 1))).toBe(true);
-    // a set without a membership test here (SymPy: True)
-    expect(String(C(new Sets.ConditionSet(x, sj.parse('x > 1'), Sets.Reals), 2))).toBe('Contains(2, ConditionSet(x, x > 1, Reals))');
+    // Substitute the candidate into the condition (SymPy: True).
+    expect(String(C(new Sets.ConditionSet(x, sj.parse('x > 1'), Sets.Reals), 2))).toBe('True');
     expect([Sets.inf(r3), Sets.sup(r3), Sets.inf(Sets.range(5, -1, -2)), Sets.sup(Sets.range(5, -1, -2))].map(String)).toEqual(['0', '4', '1', '5']);
   });
   it('Integers contains', () => {
@@ -865,4 +865,29 @@ describe('rewrite of sets', () => {
     expect(String(sj.rewrite(sj.DisjointUnion(F(1), F(2)), 'Union'))).toBe('Union(ProductSet({1}, {0}), ProductSet({2}, {1}))');
     expect(String(sj.rewrite(F(1), 'Union'))).toBe('{1}');
   });
+});
+
+it('classifies the standard sets by openness in the usual topology', () => {
+  expect([sj.Rationals, sj.Integers, sj.Naturals, sj.Naturals0].map((s) => s.isOpen)).toEqual([false, false, false, false]);
+  expect([sj.Reals, sj.Complexes, sj.EmptySet, sj.UniversalSet].map((s) => s.isOpen)).toEqual([true, true, true, true]);
+});
+
+it('tests ConditionSet membership against its base and substituted predicate', () => {
+  const roots = new sj.ConditionSet(x, sj.Eq(sj.sin(x), 0), sj.Interval.of(0, sj.mul(2, sj.pi)));
+  expect(roots.elementOf(sj.mul(2, sj.pi))).toBe(true);
+  expect(roots.elementOf(sj.mul(3, sj.pi))).toBe(false);
+  expect(roots.elementOf(sj.mul(sj.pi, sj.Rational.of(1n, 2n)))).toBe(false);
+  expect(roots.elementOf(y)).toBe('unknown');
+  expect(new sj.ConditionSet(x, sj.S.true, sj.Reals).elementOf(y)).toBe('unknown');
+  expect(new sj.ConditionSet(x, sj.Gt(x, y), sj.Reals).elementOf(sj.S.One)).toBe('unknown');
+});
+
+it('keeps membership of a set with no decision procedure unevaluated', () => {
+  class UnknownSet extends sj.SetExpr {
+    readonly args: readonly sj.Expr[] = [];
+    get className(): string { return 'UnknownSet'; }
+    protected computeKey(): string { return 'UnknownSet'; }
+    printStr(): string { return 'UnknownSet'; }
+  }
+  expect(String(sj.contains(new UnknownSet(), x))).toBe('Contains(x, UnknownSet)');
 });

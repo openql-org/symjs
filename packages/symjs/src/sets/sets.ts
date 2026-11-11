@@ -108,6 +108,10 @@ class NamedSet extends SetExpr {
   get isEmpty(): boolean {
     return this.name === 'EmptySet';
   }
+  /** Openness in the usual real or complex topology. */
+  get isOpen(): boolean {
+    return ['Reals', 'Complexes', 'EmptySet', 'UniversalSet'].includes(this.name);
+  }
   protected computeKey(): string {
     return `%${this.name}`;
   }
@@ -592,6 +596,15 @@ export class ConditionSet extends SetExpr {
   /** SymPy ConditionSet(sym, condition, base) with the evaluation of its constructor. */
   static of(sym: Expr, condition: ExprLike | boolean, base: SetExpr = UniversalSet): SetExpr {
     return conditionSet(sym, condition, base);
+  }
+  /** Membership requires both the base set and the substituted condition. */
+  override elementOf(x: Expr): Truth {
+    const inBase = containsQ(this.base, x);
+    if (inBase === false) return false;
+    const condition = this.condition.subs([[this.variable, x]]);
+    if (condition === S.false) return false;
+    if (inBase === true && condition === S.true) return true;
+    return 'unknown';
   }
   protected computeKey(): string {
     return `ConditionSet(${this.variable.key},${this.condition.key},${this.base.key})`;

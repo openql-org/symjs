@@ -12,6 +12,12 @@ import { at, getOrThrow, last } from '../core/guard';
 /** Min-heap of [score, literal] pairs ordered like Python tuples. */
 class LitHeap {
   private readonly items: [number, number][] = [];
+  restore(items: readonly (readonly [number, number])[]): void {
+    this.items.splice(0, this.items.length, ...items.map(([score, lit]): [number, number] => [score, lit]));
+  }
+  snapshot(): [number, number][] {
+    return this.items.map(([score, lit]) => [score, lit]);
+  }
   get size(): number {
     return this.items.length;
   }
@@ -59,29 +65,88 @@ class LitHeap {
   }
 }
 
-interface Level {
-  decision: number;
-  varSettings: Set<number>;
-  flipped: boolean;
+/** One decision level of the SAT search (SymPy Level). */
+export class Level {
+  readonly varSettings = new Set<number>();
+  constructor(readonly decision: number, readonly flipped = false) {}
 }
 
-const level = (decision: number, flipped = false): Level => ({ decision, varSettings: new Set(), flipped });
+/** A complete DPLL search checkpoint; containers are copied when restored. */
+export interface SATSolverState {
+  clauses: readonly (readonly number[])[];
+  variables: number;
+  settings: readonly number[];
+  variableSet: readonly boolean[];
+  sentinels: readonly (readonly [number, readonly number[]])[];
+  scores: readonly (readonly [number, number])[];
+  heap: readonly (readonly [number, number])[];
+  learned: number;
+  levels: readonly { decision: number; flipped: boolean; settings: readonly number[] }[];
+  queue: readonly number[];
+  unsatisfied: boolean;
+}
 
 /**
  * SymPy SATSolver (dpll2) without clause learning: `findModels` yields
  * every model as the set of true/false literals of variables 1..n.
  */
 export class SATSolver {
-  private readonly clauses: number[][];
-  private readonly sentinels = new Map<number, Set<number>>();
+  readonly clauses: number[][];
+  readonly sentinels = new Map<number, Set<number>>();
   private readonly occurrence = new Map<number, number>();
-  private readonly variableSet: boolean[];
-  private readonly varSettings = new Set<number>();
+  readonly variableSet: boolean[];
+  readonly varSettings = new Set<number>();
   private unitQueue: number[] = [];
   private isUnsatisfied = false;
-  private readonly levels: Level[] = [level(0)];
+  private readonly levels: Level[] = [new Level(0)];
   private readonly heap = new LitHeap();
   private readonly scores = new Map<number, number>();
+  /** The number of clauses learned before the checkpoint (this solver does not learn new clauses). */
+  numLearnedClauses = 0;
+
+  /** The current VSIDS heap, including stale entries, in heap order. */
+  get litHeap(): [number, number][] {
+    return this.heap.snapshot();
+  }
+
+  /** The current VSIDS scores by signed literal. */
+  get litScores(): Map<number, number> {
+    return new Map(this.scores);
+  }
+
+  /** Restore a checkpoint, including pending propagation and decision levels. */
+  static fromState(state: SATSolverState): SATSolver {
+    if (state.levels.length === 0 || state.variableSet.length !== state.variables + 1) throw new RangeError('Invalid SAT checkpoint dimensions');
+    const solver = new SATSolver(state.clauses, state.variables);
+    for (const lit of state.settings) solver.varSettings.add(lit);
+    solver.variableSet.splice(0, solver.variableSet.length, ...state.variableSet);
+    solver.sentinels.clear();
+    for (const [lit, clauses] of state.sentinels) solver.sentinels.set(lit, new Set(clauses));
+    solver.scores.clear();
+    for (const [lit, score] of state.scores) solver.scores.set(lit, score);
+    solver.heap.restore(state.heap);
+    solver.numLearnedClauses = state.learned;
+    solver.levels.splice(0, solver.levels.length, ...state.levels.map((entry) => {
+      const restored = new Level(entry.decision, entry.flipped);
+      for (const lit of entry.settings) restored.varSettings.add(lit);
+      return restored;
+    }));
+    solver.unitQueue = [...state.queue];
+    solver.isUnsatisfied = state.unsatisfied;
+    return solver;
+  }
+
+  /** Save the search state without sharing mutable containers with the solver. */
+  toState(): SATSolverState {
+    return {
+      clauses: this.clauses.map((clause) => [...clause]), variables: this.variableSet.length - 1,
+      settings: [...this.varSettings], variableSet: [...this.variableSet],
+      sentinels: [...this.sentinels].map(([lit, clauses]) => [lit, [...clauses]]),
+      scores: [...this.scores], heap: this.heap.snapshot(), learned: this.numLearnedClauses,
+      levels: this.levels.map((entry) => ({ decision: entry.decision, flipped: entry.flipped, settings: [...entry.varSettings] })),
+      queue: [...this.unitQueue], unsatisfied: this.isUnsatisfied,
+    };
+  }
 
   constructor(clauses: readonly (readonly number[])[], nvars: number) {
     this.variableSet = new Array<boolean>(nvars + 1).fill(false);
@@ -139,11 +204,11 @@ export class SATSolver {
           if (this.levels.length === 1) return;
           const flip = -this.current.decision;
           this.undo();
-          this.levels.push(level(flip, true));
+          this.levels.push(new Level(flip, true));
           flipVar = true;
           continue;
         }
-        this.levels.push(level(lit));
+        this.levels.push(new Level(lit));
       }
       this.assign(lit);
       this.simplify();
@@ -155,7 +220,7 @@ export class SATSolver {
         }
         const flip = -this.current.decision;
         this.undo();
-        this.levels.push(level(flip, true));
+        this.levels.push(new Level(flip, true));
         flipVar = true;
       }
     }

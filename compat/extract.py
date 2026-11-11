@@ -680,6 +680,44 @@ def _same_series(diff):
         return False
 
 
+def callback_expr(callback, variable):
+    """Translate a unary arithmetic Python callback without evaluating its comparisons."""
+    import dis
+    import operator
+    arithmetic = {"+": operator.add, "-": operator.sub, "*": operator.mul,
+                  "/": operator.truediv, "**": operator.pow, "%": sympy.Mod}
+    comparisons = {"==": sympy.Eq, "!=": sympy.Ne, "<": sympy.Lt,
+                   "<=": sympy.Le, ">": sympy.Gt, ">=": sympy.Ge}
+    stack = []
+    for instruction in dis.get_instructions(callback):
+        op = instruction.opname
+        if op in ("RESUME", "CACHE", "NOP"):
+            continue
+        if op == "LOAD_FAST" and instruction.arg == 0:
+            stack.append(variable)
+        elif op in ("LOAD_CONST", "RETURN_CONST"):
+            if not isinstance(instruction.argval, (int, float, bool)):
+                raise Unsupported("Transform callback")
+            value = sympy.sympify(instruction.argval)
+            if op == "RETURN_CONST":
+                return value
+            stack.append(value)
+        elif op in ("BINARY_OP", "COMPARE_OP") and len(stack) >= 2:
+            operators = arithmetic if op == "BINARY_OP" else comparisons
+            f = operators.get(instruction.argrepr)
+            if f is None:
+                raise Unsupported("Transform callback")
+            right, left = stack.pop(), stack.pop()
+            stack.append(f(left, right))
+        elif op == "UNARY_NEGATIVE" and stack:
+            stack[-1] = -stack[-1]
+        elif op == "RETURN_VALUE" and len(stack) == 1:
+            return stack[0]
+        else:
+            raise Unsupported("Transform callback")
+    raise Unsupported("Transform callback")
+
+
 def ser(o):
     """Serialize a SymPy object (or Python value) into a JSON tree."""
     from sympy import Float, Integer, Rational, Symbol, Tuple
@@ -687,6 +725,75 @@ def ser(o):
 
     if o is None or isinstance(o, bool):
         return {"t": "Js", "v": o}
+    # Constructor data for objects outside the usual Basic expression tree. Keep
+    # stateful objects explicit: their args alone do not describe the receiver.
+    def public_object(name, *args):
+        return {"t": "PublicObject", "cls": name, "args": [ser(a) for a in args]}
+
+    from sympy.combinatorics.subsets import Subset
+    from sympy.combinatorics.graycode import GrayCode
+    from sympy.combinatorics.prufer import Prufer
+    from sympy.combinatorics.perm_groups import Coset
+    from sympy.core.exprtools import Factors
+    from sympy.core.rules import Transform
+    from sympy.core.parameters import _global_parameters
+    from sympy.core.containers import TupleKind
+    from sympy.core.kind import Kind
+    from sympy.assumptions.assume import Predicate
+    from sympy.assumptions.wrapper import AssumptionsWrapper
+    from sympy.utilities.enumerative import PartComponent
+    if isinstance(o, Subset):
+        return public_object("Subset", o.subset, o.superset)
+    if isinstance(o, GrayCode):
+        return {"t": "GrayCode", "n": int(o.n), "current": o.current}
+    if isinstance(o, Prufer):
+        # Preserve the original edge order, as well as sequence-based inputs.
+        return public_object("Prufer", o.args[0].tolist() if hasattr(o.args[0], "tolist") else list(o.args[0]))
+    if isinstance(o, (Coset, sympy.UnevaluatedExpr, AssumptionsWrapper)):
+        return public_object(type(o).__name__, *o.args)
+    if isinstance(o, Factors):
+        return public_object("Factors", o.factors)
+    if isinstance(o, (sympy.ProductSet, sympy.DisjointUnion)):
+        return public_object(type(o).__name__, *o.args)
+    if isinstance(o, sympy.ComplexRegion) and o is not sympy.S.Complexes:
+        return public_object(type(o).__name__, o.sets)
+    if isinstance(o, Predicate):
+        return {"t": "Predicate", "name": str(o.name)}
+    if isinstance(o, TupleKind):
+        return public_object("TupleKind", *o.element_kind)
+    if isinstance(o, Kind):
+        return {"t": "Kind", "name": str(o)}
+    if isinstance(o, _global_parameters):
+        return {"t": "GlobalParameters", "evaluate": o.evaluate, "distribute": o.distribute, "expIsPow": o.exp_is_pow}
+    if isinstance(o, slice):
+        return {"t": "Slice", "start": ser(o.start), "stop": ser(o.stop), "step": ser(o.step)}
+    if isinstance(o, Transform):
+        # Python == tests structural equality on a dummy. Interpret only a
+        # straight-line arithmetic callback so x % 2 == 1 stays a predicate.
+        x = sympy.Dummy("transform_arg")
+        return {"t": "Transform", "var": ser(x), "body": ser(callback_expr(o._transform, x)),
+                "condition": ser(callback_expr(o._filter, x))}
+    if isinstance(o, PartComponent):
+        return {"t": "PartComponent", "c": int(o.c), "u": int(o.u), "v": int(o.v)}
+    from sympy.logic.algorithms.dpll2 import SATSolver, Level
+    if isinstance(o, Level):
+        return {"t": "SATLevel", "decision": int(o.decision), "flipped": bool(o.flipped), "settings": sorted(o.var_settings)}
+    if isinstance(o, SATSolver):
+        return {"t": "SATSolver", "clauses": [list(c) for c in o.clauses], "variables": len(o.variable_set) - 1,
+                "settings": sorted(o.var_settings), "variableSet": list(o.variable_set),
+                "sentinels": [[int(k), sorted(v)] for k, v in sorted(o.sentinels.items())],
+                "scores": [[int(k), v] for k, v in sorted(o.lit_scores.items())], "heap": [list(pair) for pair in o.lit_heap],
+                "learned": o.num_learned_clauses, "levels": [ser(l) for l in o.levels],
+                "queue": list(o._unit_prop_queue), "unsatisfied": bool(o.is_unsatisfied)}
+    from sympy.ntheory.ecm import Point as ECMPoint
+    if isinstance(o, ECMPoint):
+        return {"t": "ECMPoint", "coords": [str(v) for v in (o.x_cord, o.z_cord, o.a_24, o.mod)]}
+    from sympy.polys.agca.extensions import ExtensionElement
+    from sympy.polys.polyclasses import DMP
+    if isinstance(o, ExtensionElement):
+        return {"t": "ExtensionElement", "modulus": ser(o.ext.modulus), "expr": ser(o.as_expr())}
+    if isinstance(o, DMP):
+        return {"t": "DMP", "coeffs": ser(o.to_list()), "level": o.lev, "domain": ser(o.dom)}
     from sympy.polys.agca.modules import FreeModule, SubModule, QuotientModule, FreeModuleElement, QuotientModuleElement
     from sympy.polys.agca.ideals import ModuleImplementedIdeal
     from sympy.polys.agca.homomorphisms import ModuleHomomorphism
@@ -1145,7 +1252,7 @@ def ser(o):
         return {"t": "SetOp", "op": type(o).__name__, "args": [ser(i) for i in o.args]}
     named_sets = {sympy.S.Reals: "Reals", sympy.S.Integers: "Integers", sympy.S.Naturals: "Naturals",
                   sympy.S.Naturals0: "Naturals0", sympy.S.Complexes: "Complexes", sympy.S.EmptySet: "EmptySet",
-                  sympy.S.UniversalSet: "UniversalSet"}
+                  sympy.S.UniversalSet: "UniversalSet", sympy.S.Rationals: "Rationals"}
     for k, v in named_sets.items():
         if o is k:
             return {"t": "NamedSet", "name": v}

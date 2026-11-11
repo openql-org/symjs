@@ -934,3 +934,16 @@ describe('factorint: ECM bounds', () => {
     ]);
   });
 });
+
+it('exposes the Montgomery point used by ECM with SymPy coordinate names', async () => {
+  const { ECMPoint } = await import('../../src/ntheory/index');
+  const point = new ECMPoint(11n, 16n, 7n, 29n);
+  const doubled = point.double();
+  expect([doubled.xCord, doubled.zCord]).toEqual([13n, 10n]);
+  const tripled = doubled.add(point, point);
+  expect([tripled.xCord, tripled.zCord]).toEqual([23n, 17n]);
+  expect(point.montLadder(3n)).toEqual(tripled);
+  expect(point.montLadder(2n)).toEqual(doubled);
+  expect(() => point.montLadder(0n)).toThrow(RangeError);
+  expect(() => point.montLadder(-1n)).toThrow(RangeError);
+});

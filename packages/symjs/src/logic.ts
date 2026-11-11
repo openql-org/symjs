@@ -14,3 +14,5 @@ import './core';
 
 export * from './logic/index';
 export * from './assumptions/index';
+
+export type { SATSolverState } from './logic/dpll';
