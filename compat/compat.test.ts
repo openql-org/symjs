@@ -96,6 +96,12 @@ const OUT_OF_SCOPE: Readonly<Record<string, string>> = {
   // extractor (compat/extract.py) keeps none of them and no entry is needed here
   // Python's in-place list.sort() from a docstring setup line, no SymPy call
   'sympy.utilities.iterables: a.sort()': 'Python list method',
+  // sympify(None): the public API takes no null or undefined value, so sympify(null) throws SympifyError
+  'sympy.core.sympify: print(sympify(None))': 'null input',
+  // C code output belongs to the code-generation package, not to the base module
+  'sympy.tensor.indexed: ccode(A[i, j, k])': 'C code printer',
+  // SymPy returns Lambda(x, ...) and ignores the argument x; symjs returns the probability mass function at x
+  'sympy.stats: dist.pmf(x)': 'pmf evaluated at its argument',
   // SymPy's numerical test helper all_close (approximate structural comparison) is a test utility, not ported
   'sympy.core.numbers: all_close(expr1, expr2)': 'test utility',
   'sympy.core.numbers: all_close(x, x + 1e-10)': 'test utility',

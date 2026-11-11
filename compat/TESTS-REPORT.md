@@ -4,7 +4,7 @@ Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
 Measured **12933** cases: **8059 exact**, **228 equivalent**, **4646 failing**. Agreement: **64.08%**.
 
-Replay runtime: **76.76 s**. Known gaps: **4646**. Exception class mismatches accepted in the pilot: **177**.
+Replay runtime: **71.65 s**. Known gaps: **4646**. Exception class mismatches accepted in the pilot: **177**.
 
 Exact includes successful inequality, identity, boolean and exception assertions. Equality uses the existing doctest matching and equivalence rules.
 
