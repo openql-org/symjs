@@ -4321,8 +4321,9 @@ function autoAdapter(c: Case): Adapter | undefined {
       const asFunction = (sj as unknown as Record<string, unknown>)[ATTRIBUTE_FUNCTIONS[c.fn.slice(1)] ?? name];
       if (m === undefined && typeof asFunction === 'function' && typeof self === 'object') {
         const g = asFunction as (...a: unknown[]) => unknown;
-        if (Object.keys(kw).length) throw new Unsupported(`no adapter for ${c.fn} with keywords`);
-        return fromJs(g(self, ...args.map(conv)));
+        // keyword arguments go to the trailing options object, as in the other function adapters
+        const opts = Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), conv(v)]));
+        return fromJs(g(self, ...args.map(conv), ...(Object.keys(opts).length ? [opts] : [])));
       }
       if (m === undefined || args.length) throw new Unsupported(`no adapter for ${c.fn}`);
       return fromJs(m);

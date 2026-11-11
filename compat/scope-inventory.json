@@ -4233,8 +4233,8 @@
    "sha256": "abb89949e10c951af1e60a573b3964e2e4933c8a2595db8d66e1b030707a7d13",
    "status": "unimplemented",
    "sources": [],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 6,
    "declaredPublicNames": [
     "bspline_basis",
@@ -15346,8 +15346,8 @@
    "sha256": "738b3acff984524a1629ecc5adf8ca894dad667127c51e26d4b61a6a089c567a",
    "status": "unimplemented",
    "sources": [],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 5,
    "declaredPublicNames": [
     "MaxTriesException",
@@ -17290,7 +17290,7 @@
     "printing/pretty/symbology.ts"
    ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 2,
    "declaredPublicNames": [
     "U",
@@ -21303,8 +21303,8 @@
    "sha256": "7e7893529758cf43afb4d9c582b1c835e757f3a17155cc5f2a3f65fe5d69f51c",
    "status": "unimplemented",
    "sources": [],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 12,
    "declaredPublicNames": [
     "PartialDerivative",

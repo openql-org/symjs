@@ -84,7 +84,7 @@ pnpm test:package                              # built ESM/CJS, minification and
   `UPDATE_KNOWN_GAPS=1 npx vitest run --config compat/vitest.config.ts`
   and check that it only lost entries.
   Expanding the pinned reference scope or correcting an invalid measurement
-  can establish a new baseline, as recorded in `compat/baseline-migration.json`.
+  can establish a new baseline; the commit message records the old and new counts.
   Such a migration must distinguish new examples and corrected API-presence
   checks from behavior regressions, and replay the previous corpus without
   losing previously passing results. Ordinary implementation changes still
@@ -96,6 +96,18 @@ pnpm test:package                              # built ESM/CJS, minification and
   a reference file in the repository). No file in the repository refers to
   local paths such as a home directory or a temporary directory, which can
   contain personal information.
+
+For corpus expansion, use `pnpm compat:expand` with SymPy 1.14.0 installed.
+It retains every existing case (including duplicate documented occurrences),
+preserves anonymous Dummy names and the established external-sampler fixture,
+and fails if another existing input or result changes or disappears. Public
+functions defined in a selected module are measured even if they are not
+re-exported at the top level. Multiline results remain measurable; outputs
+containing process-local object addresses are recorded as extraction omissions.
+Run `pnpm compat:test-extract` when changing the extractor. Newly revealed
+failures go to `compat/known-gaps.json`; a lower agreement percentage after
+adding previously unmeasured behavior is not itself an implementation
+regression.
 
 The compatibility command fails on behavior, API, base-scope or ODE regressions.
 Its numerical equivalence checks use independent deterministic samples for each
