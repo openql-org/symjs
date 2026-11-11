@@ -457,7 +457,15 @@ export function count(exprIn: ExprLike, query: Query): number {
   return n;
 }
 
-export function find(exprIn: ExprLike, query: Query): Expr[] {
+export function find(name: string, equation: Expr): Sym;
+export function find(exprIn: ExprLike, query: Query): Expr[];
+export function find(exprIn: ExprLike | string, query: Query): Expr[] | Sym {
+  if (typeof exprIn === 'string') {
+    if (!(query instanceof Expr)) throw new TypeError('an equation is required for symbol-name lookup');
+    const matches = [...query.freeSymbols()].filter((s) => s.name === exprIn);
+    if (matches.length !== 1) throw new RangeError(matches.length ? `ambiguous ${exprIn}` : `could not find ${exprIn}`);
+    return first(matches);
+  }
   const expr = sympify(exprIn);
   const q: (e: Expr) => boolean =
     typeof query === 'function'

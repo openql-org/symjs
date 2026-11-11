@@ -455,6 +455,18 @@ export function deserialize(tree: Tree): unknown {
       return /^class[\s{]/.test(Function.prototype.toString.call(cls))
         ? Reflect.construct(cls, args) : cls(...args);
     }
+    case 'PolyMatrix': {
+      const ring = deserializeDomain(tree['ring'] as Tree);
+      if (ring === undefined) throw new Unsupported('polynomial matrix ring');
+      return new sj.PolyMatrix(toJs(deserialize(tree['entries'] as Tree), true) as sj.PolyMatrixEntry[][], { ring });
+    }
+    case 'TransitiveSubgroup': {
+      const groups = [sj.S1TransitiveSubgroups, sj.S2TransitiveSubgroups, sj.S3TransitiveSubgroups, sj.S4TransitiveSubgroups, sj.S5TransitiveSubgroups, sj.S6TransitiveSubgroups];
+      const group = groups[Number(tree['degree']) - 1];
+      const name = group && Object.values(group).find((g) => g.name === String(tree['name']));
+      if (name === undefined) throw new Unsupported('transitive subgroup name');
+      return name;
+    }
     case 'SATSolver': return sj.SATSolver.fromState({
       clauses: tree['clauses'] as number[][], variables: Number(tree['variables']),
       settings: tree['settings'] as number[], variableSet: tree['variableSet'] as boolean[],
@@ -4283,7 +4295,7 @@ for (const name of Object.keys(sj.Q)) {
 /** Categories whose integer arguments are JS numbers (indices, sizes, sequences). */
 const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'discrete', 'geometry', 'crypto', 'liealgebras']);
 /** Functions of other categories whose integer arguments are JS numbers (variable numbers of the integer representation of clauses). */
-const NUMERIC_FUNCTIONS = new Set(['bool_maxterm', 'bool_minterm', 'bool_monomial', 'unit_propagate_int_repr', '.reorder_limit', '.__pow__', 'ImmutableMatrix', 'ImmutableDenseMatrix', 'gauss_legendre', 'gauss_laguerre', 'gauss_hermite', 'gauss_gen_laguerre', 'gauss_jacobi', 'gauss_chebyshev_t', 'gauss_chebyshev_u', 'gauss_lobatto']);
+const NUMERIC_FUNCTIONS = new Set(['dmp_alg_inject', 'solve_de', 'hyper_algorithm', 'bool_maxterm', 'bool_minterm', 'bool_monomial', 'unit_propagate_int_repr', '.reorder_limit', '.__pow__', 'ImmutableMatrix', 'ImmutableDenseMatrix', 'gauss_legendre', 'gauss_laguerre', 'gauss_hermite', 'gauss_gen_laguerre', 'gauss_jacobi', 'gauss_chebyshev_t', 'gauss_chebyshev_u', 'gauss_lobatto']);
 /** Python operators recorded as their special methods (the number-field doctests), and the methods that implement them. */
 /** A value that symjs arithmetic accepts directly (an expression or a JS number). */
 const isScalar = (v: unknown): v is ExprLike => v instanceof Expr || typeof v === 'number' || typeof v === 'bigint';
@@ -4418,7 +4430,7 @@ const STATS_RENAMES: Record<string, string> = { E: 'expectation', Chi: 'ChiRV' }
 const GROUP_RENAMES: Record<string, string> = { homomorphism: 'groupHomomorphism', rewrite: 'reidemeisterRewrite' };
 /** sympy.utilities names that symjs exports under another name (replace is the expression operation). */
 const UTILITIES_RENAMES: Record<string, string> = { replace: 'replaceString' };
-const CATEGORY_RENAMES: Readonly<Record<string, Record<string, string>>> = { vector: VECTOR_RENAMES, stats: STATS_RENAMES, combinatorics: GROUP_RENAMES, utilities: UTILITIES_RENAMES };
+const CATEGORY_RENAMES: Readonly<Record<string, Record<string, string>>> = { vector: VECTOR_RENAMES, stats: STATS_RENAMES, combinatorics: GROUP_RENAMES, utilities: UTILITIES_RENAMES, sets: { SetExpr: 'SetExpression' } };
 const camelIn = (n: string, category: string | undefined): string => CATEGORY_RENAMES[category ?? '']?.[n] ?? camel(n);
 // (an underscore before a capital is dropped too: solve_linear_system_LU -> solveLinearSystemLU)
 const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? n.replace(/_([a-zA-Z0-9])/g, (_m, ch: string) => ch.toUpperCase());

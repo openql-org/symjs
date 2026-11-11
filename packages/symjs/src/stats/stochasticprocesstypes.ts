@@ -1068,11 +1068,11 @@ export type BernoulliProcess = BernoulliProcessNode;
  * replacement of each such symbol by the symbol at the length of its
  * interval.
  */
-export function getTimervSwaps(expr: Expr, condition: Expr): [SetExpr[], [RandomIndexedSymbol, Expr][]] {
+export function getTimervSwaps(expr: Expr, condition: Expr): [SetExpr[], Map<RandomIndexedSymbol, Expr>] {
   if (!isBooleanLike(condition)) throw new RangeError(`${condition.toString()} is not a relational or combination of relationals`);
   const exprSyms = indexedSymbolsOf(expr);
   const givenArgs = isOp(condition, 'And') || isOp(condition, 'Or') ? condition.args : [condition];
-  const swap: [RandomIndexedSymbol, Expr][] = [];
+  const swap = new Map<RandomIndexedSymbol, Expr>();
   const intervals: SetExpr[] = [];
   for (const s of exprSyms) {
     for (const arg of givenArgs) {
@@ -1081,7 +1081,7 @@ export function getTimervSwaps(expr: Expr, condition: Expr): [SetExpr[], [Random
       let diff = sub(sup(intv), inf(intv));
       if (diff === S.Infinity) throw new RangeError(`${s.name} should have finite bounds`);
       if (diff.key === S.Zero.key) diff = sup(intv);
-      swap.push([s, s.subs(s.indexKey, diff)]);
+      swap.set(s, s.subs(s.indexKey, diff));
       intervals.push(intv);
     }
   }

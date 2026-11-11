@@ -38,6 +38,9 @@ import { mgcd } from './mpoly';
 import { MultivariatePolynomialError } from './polyerrors';
 import { Poly, discriminant, polyGcd, resultant } from './sympoly';
 
+import { dmpSqfNorm } from './sqfreetools';
+import { dmpFromDict, dmpToDict } from './densebasic';
+
 /** An exponent vector. */
 export type Monom = readonly number[];
 
@@ -1046,6 +1049,15 @@ export abstract class IPolys<P extends CompatElement<P>> {
     return this.dmpSqfP(f);
   }
   /** f is square-free (SymPy dmp_sqf_p). */
+  /** A shift with square-free norm, using the dense algebraic-field algorithm. */
+  dmpSqfNorm(f: P): [number[], P, P] {
+    const K = this.domain;
+    const dense = dmpFromDict(new Map(f.listterms().map(([m, c]) => [m, K.convert(c)])), this.ngens - 1, K);
+    const [shift, g, r] = dmpSqfNorm(dense, this.ngens - 1, K);
+    const ground = this.withDomain(K.dom);
+    return [shift, this.fromTerms([...dmpToDict(g, this.ngens - 1)].map(([m, c]) => [m, K.toSympy(c)])), ground.fromTerms([...dmpToDict(r, this.ngens - 1)].map(([m, c]) => [m, K.dom.toSympy(c)]))];
+  }
+
   dmpSqfP(f: P): boolean {
     if (f.isZero) return true;
     for (let i = 0; i < this.ngens; i++) {

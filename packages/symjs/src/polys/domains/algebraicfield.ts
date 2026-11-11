@@ -29,6 +29,8 @@ import type { PythonMPQ } from './pythonrational';
 
 export { ANP } from '../polyclasses';
 
+import type { GaloisGroupOptions, GaloisGroupResult } from '../numberfields/galoisgroups';
+
 type QP = PythonMPQ[];
 
 /**
@@ -38,6 +40,7 @@ type QP = PythonMPQ[];
  * @internal
  */
 export const numberFieldHooks: {
+  galoisGroup?: (K: AlgebraicField, options: GaloisGroupOptions) => GaloisGroupResult;
   roundTwo?: (K: AlgebraicField, radicals: Map<bigint, Submodule>) => [Submodule, Rational];
   primeDecomp?: (p: bigint, ZK: Submodule, dK: Rational, radical: Submodule | undefined) => PrimeIdeal[];
 } = {};
@@ -219,6 +222,10 @@ export class AlgebraicField extends Domain {
     const [ZK, dK] = this.roundTwo();
     const q = asInt(p, 'p');
     return defined(numberFieldHooks.primeDecomp, 'number field module (import primeDecomp from the polys entry)')(q, ZK, dK, this.nilradicalsModP.get(q));
+  }
+  /** The Galois group of the defining minimal polynomial. */
+  galoisGroup(options: GaloisGroupOptions = {}): GaloisGroupResult {
+    return defined(numberFieldHooks.galoisGroup, 'import galoisGroup from the polys entry')(this, options);
   }
   /** The characteristic 0. */
   characteristic(): bigint {

@@ -448658,7 +448658,336 @@
   },
   {
    "fn": ".monomial_set",
-   "unsupportedArg": "MacaulayResultant",
+   "self": {
+    "t": "PublicObject",
+    "cls": "MacaulayResultant",
+    "args": [
+     {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "a_0",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "y",
+            "assume": {}
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "a_2",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "z",
+            "assume": {}
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "a_1",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "b_0",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "y",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "b_1",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "b_2",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "z",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "c_4",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "z",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "c_1",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "c_0",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "y",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "z",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "c_2",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "z",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "c_3",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "z",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ],
+      "list": true
+     },
+     {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "z",
+        "assume": {}
+       }
+      ],
+      "list": true
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.multivariate_resultants",
    "src": "mac.monomial_set",
@@ -448725,7 +449054,105 @@
   },
   {
    "fn": ".ring",
-   "unsupportedArg": "MutablePolyDenseMatrix",
+   "self": {
+    "t": "PolyMatrix",
+    "entries": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ],
+       "list": true
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ],
+       "list": true
+      }
+     ],
+     "list": true
+    },
+    "ring": {
+     "t": "Domain",
+     "name": "ZZ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "ZZ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "lex"
+    }
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.polymatrix",
    "src": "pm1.ring",
@@ -448733,7 +449160,99 @@
   },
   {
    "fn": ".ring",
-   "unsupportedArg": "MutablePolyDenseMatrix",
+   "self": {
+    "t": "PolyMatrix",
+    "entries": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ],
+       "list": true
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       "list": true
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       "list": true
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       "list": true
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       "list": true
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       "list": true
+      }
+     ],
+     "list": true
+    },
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "lex"
+    }
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.polymatrix",
    "src": "v2.ring",
@@ -448741,7 +449260,201 @@
   },
   {
    "fn": ".__mul__",
-   "unsupportedArg": "MutablePolyDenseMatrix",
+   "self": {
+    "t": "PolyMatrix",
+    "entries": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Pow",
+           "args": [
+            {
+             "t": "Symbol",
+             "name": "x",
+             "assume": {}
+            },
+            {
+             "t": "Rational",
+             "p": "3",
+             "q": "1"
+            }
+           ]
+          }
+         ]
+        }
+       ],
+       "list": true
+      }
+     ],
+     "list": true
+    },
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "lex"
+    }
+   },
+   "args": [
+    {
+     "t": "PolyMatrix",
+     "entries": {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         }
+        ],
+        "list": true
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        "list": true
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        "list": true
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        "list": true
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        "list": true
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        "list": true
+       }
+      ],
+      "list": true
+     },
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "lex"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.polymatrix",
    "src": "pm2*v2",
@@ -500332,7 +501045,28 @@
   },
   {
    "fn": ".__getitem__",
-   "unsupportedArg": "S6TransitiveSubgroups",
+   "self": {
+    "t": "Tuple",
+    "items": [
+     {
+      "t": "TransitiveSubgroup",
+      "degree": 6,
+      "name": "C6"
+     },
+     {
+      "t": "Js",
+      "v": false
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "0",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.domains.algebraicfield",
    "src": "K.galois_group(by_name=True)[0]",
@@ -575498,7 +576232,50 @@
   },
   {
    "fn": ".set",
-   "unsupportedArg": "SetExpr",
+   "self": {
+    "t": "PublicObject",
+    "cls": "SetExpression",
+    "args": [
+     {
+      "t": "SetOp",
+      "op": "Union",
+      "args": [
+       {
+        "t": "Interval",
+        "a": {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        "b": {
+         "t": "Rational",
+         "p": "6",
+         "q": "1"
+        },
+        "lo": false,
+        "ro": false
+       },
+       {
+        "t": "Interval",
+        "a": {
+         "t": "Rational",
+         "p": "10",
+         "q": "1"
+        },
+        "b": {
+         "t": "Rational",
+         "p": "15",
+         "q": "1"
+        },
+        "lo": false,
+        "ro": false
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "sets",
    "module": "sympy.sets.setexpr",
    "src": "(a + b).set",
@@ -575506,7 +576283,29 @@
   },
   {
    "fn": ".set",
-   "unsupportedArg": "SetExpr",
+   "self": {
+    "t": "PublicObject",
+    "cls": "SetExpression",
+    "args": [
+     {
+      "t": "Interval",
+      "a": {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      "b": {
+       "t": "Rational",
+       "p": "20",
+       "q": "1"
+      },
+      "lo": false,
+      "ro": false
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "sets",
    "module": "sympy.sets.setexpr",
    "src": "(2*a + b).set",
@@ -648643,7 +649442,163 @@
   },
   {
    "fn": ".__mul__",
-   "unsupportedArg": "MutablePolyDenseMatrix",
+   "self": {
+    "t": "PolyMatrix",
+    "entries": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ],
+       "list": true
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Pow",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Rational",
+           "p": "3",
+           "q": "1"
+          }
+         ]
+        },
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "-1",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ],
+       "list": true
+      }
+     ],
+     "list": true
+    },
+    "ring": {
+     "t": "Domain",
+     "name": "ZZ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "ZZ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "lex"
+    }
+   },
+   "args": [
+    {
+     "t": "PolyMatrix",
+     "entries": {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        "list": true
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Rational",
+          "p": "0",
+          "q": "1"
+         }
+        ],
+        "list": true
+       }
+      ],
+      "list": true
+     },
+     "ring": {
+      "t": "Domain",
+      "name": "QQ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "QQ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "lex"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.polymatrix",
    "src": "pm1*v1",
@@ -648651,7 +649606,163 @@
   },
   {
    "fn": ".__mul__",
-   "unsupportedArg": "MutablePolyDenseMatrix",
+   "self": {
+    "t": "PolyMatrix",
+    "entries": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       "list": true
+      },
+      {
+       "t": "Tuple",
+       "items": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ],
+       "list": true
+      }
+     ],
+     "list": true
+    },
+    "ring": {
+     "t": "Domain",
+     "name": "QQ[x]",
+     "base": {
+      "t": "Domain",
+      "name": "QQ"
+     },
+     "symbols": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "order": "lex"
+    }
+   },
+   "args": [
+    {
+     "t": "PolyMatrix",
+     "entries": {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         }
+        ],
+        "list": true
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         }
+        ],
+        "list": true
+       }
+      ],
+      "list": true
+     },
+     "ring": {
+      "t": "Domain",
+      "name": "ZZ[x]",
+      "base": {
+       "t": "Domain",
+       "name": "ZZ"
+      },
+      "symbols": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ],
+      "order": "lex"
+     }
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.polymatrix",
    "src": "v1*pm1",
@@ -652113,7 +653224,13 @@
   },
   {
    "fn": ".get_perm_group",
-   "unsupportedArg": "S4TransitiveSubgroups",
+   "self": {
+    "t": "TransitiveSubgroup",
+    "degree": 4,
+    "name": "V"
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.numberfields.galoisgroups",
    "src": "G_name.get_perm_group()",
@@ -652121,7 +653238,96 @@
   },
   {
    "fn": ".get_indices",
-   "unsupportedArg": "PartialDerivative",
+   "self": {
+    "t": "PublicObject",
+    "cls": "PartialDerivative",
+    "args": [
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "A",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "i",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     },
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "A",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "j",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.toperators",
    "src": "expr.get_indices()",
@@ -652129,7 +653335,96 @@
   },
   {
    "fn": ".get_indices",
-   "unsupportedArg": "PartialDerivative",
+   "self": {
+    "t": "PublicObject",
+    "cls": "PartialDerivative",
+    "args": [
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "A",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "L_0",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     },
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "A",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "L_0",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.toperators",
    "src": "expr.get_indices()",
@@ -652137,7 +653432,96 @@
   },
   {
    "fn": ".get_free_indices",
-   "unsupportedArg": "PartialDerivative",
+   "self": {
+    "t": "PublicObject",
+    "cls": "PartialDerivative",
+    "args": [
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "A",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "L_0",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     },
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "A",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "L_0",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.toperators",
    "src": "expr.get_free_indices()",
@@ -652145,7 +653529,137 @@
   },
   {
    "fn": ".get_indices",
-   "unsupportedArg": "PartialDerivative",
+   "self": {
+    "t": "PublicObject",
+    "cls": "PartialDerivative",
+    "args": [
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "A",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "i",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     },
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "A",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "j",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     },
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "A",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "k",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.toperators",
    "src": "expr.get_indices()",
@@ -652153,7 +653667,96 @@
   },
   {
    "fn": ".get_free_indices",
-   "unsupportedArg": "PartialDerivative",
+   "self": {
+    "t": "PublicObject",
+    "cls": "PartialDerivative",
+    "args": [
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "A",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "i",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     },
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "B",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "j",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.toperators",
    "src": "expr.get_free_indices()",
@@ -678928,7 +680531,509 @@
   },
   {
    "fn": ".get_dixon_matrix",
-   "unsupportedArg": "DixonResultant",
+   "self": {
+    "t": "PublicObject",
+    "cls": "DixonResultant",
+    "args": [
+     {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "y",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "3",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       }
+      ],
+      "list": true
+     },
+     {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       }
+      ],
+      "list": true
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {
+    "polynomial": {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Indexed",
+            "base": {
+             "t": "Symbol",
+             "name": "alpha",
+             "assume": {}
+            },
+            "indices": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "y",
+            "assume": {}
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             },
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Symbol",
+              "name": "y",
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             },
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "y",
+                "assume": {}
+               },
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Indexed",
+          "base": {
+           "t": "Symbol",
+           "name": "alpha",
+           "assume": {}
+          },
+          "indices": [
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "y",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             },
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "y",
+                "assume": {}
+               },
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               }
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Indexed",
+          "base": {
+           "t": "Symbol",
+           "name": "alpha",
+           "assume": {}
+          },
+          "indices": [
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Pow",
+          "args": [
+           {
+            "t": "Indexed",
+            "base": {
+             "t": "Symbol",
+             "name": "alpha",
+             "assume": {}
+            },
+            "indices": [
+             {
+              "t": "Rational",
+              "p": "1",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Rational",
+            "p": "2",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             },
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ]
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             },
+             {
+              "t": "Symbol",
+              "name": "y",
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Indexed",
+          "base": {
+           "t": "Symbol",
+           "name": "alpha",
+           "assume": {}
+          },
+          "indices": [
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Add",
+          "args": [
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             },
+             {
+              "t": "Pow",
+              "args": [
+               {
+                "t": "Symbol",
+                "name": "y",
+                "assume": {}
+               },
+               {
+                "t": "Rational",
+                "p": "2",
+                "q": "1"
+               }
+              ]
+             }
+            ]
+           },
+           {
+            "t": "Mul",
+            "args": [
+             {
+              "t": "Rational",
+              "p": "-1",
+              "q": "1"
+             },
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Symbol",
+              "name": "y",
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Indexed",
+          "base": {
+           "t": "Symbol",
+           "name": "alpha",
+           "assume": {}
+          },
+          "indices": [
+           {
+            "t": "Rational",
+            "p": "0",
+            "q": "1"
+           }
+          ]
+         },
+         {
+          "t": "Indexed",
+          "base": {
+           "t": "Symbol",
+           "name": "alpha",
+           "assume": {}
+          },
+          "indices": [
+           {
+            "t": "Rational",
+            "p": "1",
+            "q": "1"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Indexed",
+       "base": {
+        "t": "Symbol",
+        "name": "alpha",
+        "assume": {}
+       },
+       "indices": [
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Indexed",
+       "base": {
+        "t": "Symbol",
+        "name": "alpha",
+        "assume": {}
+       },
+       "indices": [
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ]
+      }
+     ],
+     "domain": "ZZ[x,y]",
+     "pure": false
+    }
+   },
    "category": "polys",
    "module": "sympy.polys.multivariate_resultants",
    "src": "matrix",
@@ -678936,7 +681041,1671 @@
   },
   {
    "fn": ".get_submatrix",
-   "unsupportedArg": "MacaulayResultant",
+   "self": {
+    "t": "PublicObject",
+    "cls": "MacaulayResultant",
+    "args": [
+     {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "a_0",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "y",
+            "assume": {}
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "a_2",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "z",
+            "assume": {}
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "a_1",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "b_0",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "y",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "b_1",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "b_2",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "z",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "t": "Add",
+        "args": [
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "c_4",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "z",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "c_1",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "c_0",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "y",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "z",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "c_2",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "z",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Rational",
+            "p": "-1",
+            "q": "1"
+           },
+           {
+            "t": "Symbol",
+            "name": "c_3",
+            "assume": {}
+           },
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           },
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "z",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "2",
+              "q": "1"
+             }
+            ]
+           }
+          ]
+         }
+        ]
+       }
+      ],
+      "list": true
+     },
+     {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "y",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "z",
+        "assume": {}
+       }
+      ],
+      "list": true
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Matrix",
+     "rows": [
+      [
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "a_1",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Symbol",
+        "name": "a_0",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "a_2",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "a_1",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "a_0",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "a_2",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "a_1",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "a_0",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "a_2",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "a_1",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "a_0",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "a_2",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "a_1",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "a_0",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "a_2",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "a_1",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "a_0",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "a_2",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "a_1",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "a_0",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "a_2",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "a_1",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "a_0",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "a_2",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "a_1",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "a_0",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "a_2",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "a_1",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "a_0",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "a_2",
+        "assume": {}
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "b_1",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "b_0",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "b_2",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "b_1",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "b_0",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "b_2",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "b_1",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "b_0",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "b_2",
+          "assume": {}
+         }
+        ]
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "c_1",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "c_2",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "c_3",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "c_0",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "c_4",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       }
+      ],
+      [
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "c_1",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "c_2",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Mul",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         },
+         {
+          "t": "Symbol",
+          "name": "c_3",
+          "assume": {}
+         }
+        ]
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Rational",
+        "p": "0",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "c_0",
+        "assume": {}
+       },
+       {
+        "t": "Symbol",
+        "name": "c_4",
+        "assume": {}
+       }
+      ]
+     ],
+     "shape": [
+      15,
+      15
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.multivariate_resultants",
    "src": "submatrix",
@@ -699625,7 +703394,138 @@
   },
   {
    "fn": "PartialDerivative",
-   "unsupportedArg": "PartialDerivative",
+   "args": [
+    {
+     "t": "PublicObject",
+     "cls": "PartialDerivative",
+     "args": [
+      {
+       "t": "Tensor",
+       "head": {
+        "t": "TensorHead",
+        "name": "A",
+        "types": [
+         {
+          "t": "TensorIndexType",
+          "name": "L",
+          "dim": {
+           "t": "Symbol",
+           "name": "dim_L",
+           "assume": {}
+          },
+          "dummyName": "L"
+         }
+        ],
+        "symmetry": {
+         "t": "TensorSymmetry",
+         "rank": 1,
+         "sign": 0
+        }
+       },
+       "indices": [
+        {
+         "t": "TensorIndex",
+         "name": "i",
+         "type": {
+          "t": "TensorIndexType",
+          "name": "L",
+          "dim": {
+           "t": "Symbol",
+           "name": "dim_L",
+           "assume": {}
+          },
+          "dummyName": "L"
+         },
+         "up": true
+        }
+       ]
+      },
+      {
+       "t": "Tensor",
+       "head": {
+        "t": "TensorHead",
+        "name": "A",
+        "types": [
+         {
+          "t": "TensorIndexType",
+          "name": "L",
+          "dim": {
+           "t": "Symbol",
+           "name": "dim_L",
+           "assume": {}
+          },
+          "dummyName": "L"
+         }
+        ],
+        "symmetry": {
+         "t": "TensorSymmetry",
+         "rank": 1,
+         "sign": 0
+        }
+       },
+       "indices": [
+        {
+         "t": "TensorIndex",
+         "name": "j",
+         "type": {
+          "t": "TensorIndexType",
+          "name": "L",
+          "dim": {
+           "t": "Symbol",
+           "name": "dim_L",
+           "assume": {}
+          },
+          "dummyName": "L"
+         },
+         "up": true
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Tensor",
+     "head": {
+      "t": "TensorHead",
+      "name": "A",
+      "types": [
+       {
+        "t": "TensorIndexType",
+        "name": "L",
+        "dim": {
+         "t": "Symbol",
+         "name": "dim_L",
+         "assume": {}
+        },
+        "dummyName": "L"
+       }
+      ],
+      "symmetry": {
+       "t": "TensorSymmetry",
+       "rank": 1,
+       "sign": 0
+      }
+     },
+     "indices": [
+      {
+       "t": "TensorIndex",
+       "name": "k",
+       "type": {
+        "t": "TensorIndexType",
+        "name": "L",
+        "dim": {
+         "t": "Symbol",
+         "name": "dim_L",
+         "assume": {}
+        },
+        "dummyName": "L"
+       },
+       "up": true
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
    "category": "tensor",
    "module": "sympy.tensor.toperators",
    "src": "expr",
@@ -708700,46 +712600,6 @@
     "reason": "non-call-expression"
    },
    {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "xk  # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "xk * yk  # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "K.mod  # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "print(B0[1])  # doctest: +SKIP",
-    "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "print(B1[1])",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "print(B2[1])",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "print(type(B1[1]))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "print(type(B2[1]))",
-    "reason": "not-exported-api"
-   },
-   {
     "module": "sympy.polys.domains.finitefield",
     "src": "x",
     "reason": "non-call-expression"
@@ -710775,36 +714635,6 @@
     "reason": "not-exported-api"
    },
    {
-    "module": "sympy.polys.numberfields.galoisgroups",
-    "src": "print(G)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.numberfields.galoisgroups",
-    "src": "alt",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.galoisgroups",
-    "src": "print(G_name)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.tensor.toperators",
-    "src": "expr.replace_with_arrays({A(i): compA, B(i): compB})",
-    "reason": "unsupported-result-type"
-   },
-   {
-    "module": "sympy.tensor.toperators",
-    "src": "Matrix(compA).diff(Matrix(compB)).reshape(2, 2)",
-    "reason": "unsupported-result-type"
-   },
-   {
-    "module": "sympy.tensor.toperators",
-    "src": "expr.replace_with_arrays({A(i): compA, B(i): compB}, [-j, i])",
-    "reason": "unsupported-result-type"
-   },
-   {
     "module": "sympy.simplify.hyperexpand",
     "src": "devise_plan(Hyper_Function((2,), ()), Hyper_Function((1,), ()), z)",
     "reason": "unstable-result-representation"
@@ -710868,6 +714698,76 @@
     "module": "sympy.simplify.hyperexpand",
     "src": "reduce_order(Hyper_Function((2, 4), (3, 3)))",
     "reason": "unstable-result-representation"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "xk  # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "xk * yk  # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "K.mod  # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "print(B0[1])  # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "print(B1[1])",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "print(B2[1])",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "print(type(B1[1]))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "print(type(B2[1]))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.numberfields.galoisgroups",
+    "src": "print(G)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.numberfields.galoisgroups",
+    "src": "alt",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.numberfields.galoisgroups",
+    "src": "print(G_name)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.tensor.toperators",
+    "src": "expr.replace_with_arrays({A(i): compA, B(i): compB})",
+    "reason": "unsupported-result-type"
+   },
+   {
+    "module": "sympy.tensor.toperators",
+    "src": "Matrix(compA).diff(Matrix(compB)).reshape(2, 2)",
+    "reason": "unsupported-result-type"
+   },
+   {
+    "module": "sympy.tensor.toperators",
+    "src": "expr.replace_with_arrays({A(i): compA, B(i): compB}, [-j, i])",
+    "reason": "unsupported-result-type"
    }
   ],
   "preservedReferences": [

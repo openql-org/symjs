@@ -25,7 +25,9 @@ export class ModuleElement {
   readonly data: readonly Expr[];
   constructor(readonly module: Module, data: readonly Expr[]) { this.data = Object.freeze([...data]); }
   toString(): string {
-    const vector = `[${this.data.map(str).join(', ')}]`;
+    const relations = this.module.context.relations;
+    const suffix = relations.length ? ` + <${relations.map(str).join(', ')}>` : '';
+    const vector = `[${this.data.map((e) => str(e) + suffix).join(', ')}]`;
     const ambient = this.module.ambient;
     return ambient instanceof QuotientModule ? `${vector} + ${ambient.killedModule.toString()}` : vector;
   }
@@ -115,6 +117,13 @@ export class FreeModule extends Module {
     return this.context.relations.flatMap((c) => units(this.rank).map((v) => v.map((e) => mul(c, e))));
   }
   zeroContains(data: readonly Expr[]): boolean { return data.every((e) => isZero(this.ring.canon(e))); }
+  /** The same module as a quotient over the polynomial coefficient ring. */
+  get quot(): QuotientModule {
+    const base = this.context.polynomialRing.freeModule(this.rank);
+    return new QuotientModule(base, base.submodule(...this.relations()));
+  }
+  /** Lift a vector over R/I to its coset in R**n / I*R**n. */
+  lift(element: ModuleInput): ModuleElement { return this.quot.convert(this.convert(element).data); }
 }
 
 /** A quotient F/N, represented by vectors of F. */

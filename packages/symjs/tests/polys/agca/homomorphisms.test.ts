@@ -62,3 +62,9 @@ it('constructs canonical identity, inclusion and quotient maps', async () => {
   expect(String(a.identityHom(R.freeModule(1)))).toBe('Matrix([[1]]) : QQ[x]**1 -> QQ[x]**1');
   expect(String(a.identityHom(R.freeModule(0)))).toBe('Matrix(0, 0, []) : QQ[x]**0 -> QQ[x]**0');
 });
+it('retains the relation generators in a subquotient presentation', () => {
+  const Q = F.submodule([1,0], [0,x]).quotientModule([[1,0]]);
+  const h = homomorphism(Q, F, [0,[x.pow(2),0]]);
+  expect(String(h.domain)).toBe('<[1, 0] + <[1, 0]>, [0, x] + <[1, 0]>, [1, 0] + <[1, 0]>>');
+  expect(h.apply([0,x]).equals(F.convert([x.pow(3),0]))).toBe(true);
+});

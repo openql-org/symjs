@@ -265,3 +265,10 @@ export { roundTwo, nilradicalModP, PrimeIdeal, primeDecomp, primeValuation } fro
 export type { RoundTwoOptions, PrimeDecompOptions } from './polys/numberfields/index';
 export { ClosureFailure, StructureError, MissingUnityError } from './polys/numberfields/exceptions';
 export { rootFactors } from './polys/polyroots';
+export { PolyMatrix, MutablePolyDenseMatrix, MutablePolyMatrix } from './polys/polymatrix';
+export type { PolyMatrixOptions, PolyMatrixEntry } from './polys/polymatrix';
+export { DixonResultant, MacaulayResultant } from './polys/multivariateresultants';
+export { dmpAlgInject } from './polys/densetools';
+export { dmpSqfNorm } from './polys/sqfreetools';
+export { galoisGroup, hasSquareDisc, MaxTriesException, getResolventByLookup } from './polys/numberfields/index';
+export type { GaloisGroupOptions, GaloisGroupResult } from './polys/numberfields/index';

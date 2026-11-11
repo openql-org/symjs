@@ -149,7 +149,7 @@ export function getn(e: _ExprLike_): _Expr_ | NoMatchResult {
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const extractLeadingOrder = _extractLeadingOrder_;
 export { lseries, dir } from './series/lseries';
-export { fps, FormalPowerSeries, expRe, hyperRe, rationalIndependent } from './series/formal';
+export { fps, FormalPowerSeries, expRe, hyperRe, rationalIndependent, simpleDE, solveDe, hyperAlgorithm } from './series/formal';
 export { fourierSeries, FourierSeries } from './series/fourier';
 // integration of polynomials over polytopes (SymPy sympy.integrals.intpoly); the helpers, whose names collide with
 // other SymPy functions (decompose, intersection, norm), are members of the namespace intpoly
@@ -164,3 +164,4 @@ export type { ApproximantsOptions } from './series/approximants';
 export { variables, hasFiniteLimits, hasReversedLimits } from './concrete/exprwithlimits';
 export { gaussLegendre, gaussLaguerre, gaussHermite, gaussGenLaguerre, gaussJacobi, gaussChebyshevT, gaussChebyshevU, gaussLobatto } from './integrals/quadrature';
 export type { QuadratureRule } from './integrals/quadrature';
+export type { HyperSeriesResult } from './series/formal';

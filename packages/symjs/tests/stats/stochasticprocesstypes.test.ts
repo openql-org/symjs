@@ -259,7 +259,9 @@ describe('the remaining paths of the processes', () => {
     // SymPy: -sqrt(2)*(-sqrt(2)*pi*exp(2) - sqrt(2)*pi*exp(2)*erf(sqrt(2)))*exp(-2)/(4*pi)
     expect(s(simplify(P(Lt(W.call(2), 3), Gt(W.call(1), 1))))).toBe('erf(sqrt(2))/2 + 1/2');
     const [x, t] = sym('x t', { positive: true });
-    expect(s(getTimervSwaps(x.mul(X.call(t)), new Contains(t, Lopen(0, 1))))).toBe('[[Interval.Lopen(0, 1)], [[X(t), X(1)]]]');
+    const [intervals, swaps] = getTimervSwaps(x.mul(X.call(t)), new Contains(t, Lopen(0, 1)));
+    expect(s(intervals)).toBe('[Interval.Lopen(0, 1)]');
+    expect([...swaps].map(([a, b]) => [String(a), String(b)])).toEqual([['X(t)', 'X(1)']]);
     expect(() => getTimervSwaps(X.call(t), sympify(3))).toThrow('not a relational');
   });
 });
