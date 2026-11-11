@@ -3,3 +3,4 @@ dist
 coverage
 *.tsbuildinfo
 compat/report.json
+compat/tests-report.json

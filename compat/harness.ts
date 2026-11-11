@@ -518,11 +518,18 @@ export function deserialize(tree: Tree): unknown {
     case 'ANP':
       // an element of an algebraic number field (coefficients in the primitive element, its minimal polynomial)
       return new sj.ANP((tree['rep'] as Tree[]).map(deserialize), (tree['mod'] as Tree[]).map(deserialize), deserializeDomain(tree['dom'] as Tree));
-    case 'Float':
+    case 'Float': {
       if (tree['man'] !== undefined) {
         return new sj.Float({ man: BigInt(tree['man'] as string), exp: BigInt(tree['exp'] as number) }, tree['prec'] as number);
       }
-      return new sj.Float(tree['v'] as number);
+      const value = tree['v'];
+      // JSON cannot encode IEEE non-finite numbers as numeric literals.
+      if (value === 'Infinity') return sj.S.Infinity;
+      if (value === '-Infinity') return sj.S.NegativeInfinity;
+      if (value === 'NaN') return sj.S.NaN;
+      if (typeof value !== 'number') throw new Unsupported('Float value');
+      return new sj.Float(value);
+    }
     case 'Symbol': {
       const a = tree['assume'] as Record<string, boolean>;
       for (const k of Object.keys(a)) {
@@ -559,11 +566,14 @@ export function deserialize(tree: Tree): unknown {
       };
       return m[tree['name'] as string];
     }
-    case 'Add':
-      return sj.add(...(tree['args'] as Tree[]).map((a) => lambdaAsNode(deserialize(a)) as Expr));
+    case 'Add': {
+      const args = (tree['args'] as Tree[]).map((a) => lambdaAsNode(deserialize(a)) as Expr);
+      return tree['evaluate'] === false ? new sj.Add(args) : sj.add(...args);
+    }
     case 'Mul':
     case 'MatMul': {
       const args = (tree['args'] as Tree[]).map((a) => lambdaAsNode(deserialize(a)) as Expr);
+      if (tree['t'] === 'Mul' && tree['evaluate'] === false) return new sj.Mul(args);
       // SymPy distributes a number over a sum (2*(x + 1) -> 2*x + 2): a Mul(number, Add) was built with evaluate=False
       if (tree['t'] === 'Mul' && args.length === 2 && args[0] instanceof sj.Rational && args[1] instanceof sj.Add) return new sj.Mul(args);
       // a product of numbers and powers of numbers that SymPy kept as a Mul was built with evaluate=False
@@ -598,6 +608,7 @@ export function deserialize(tree: Tree): unknown {
       return new sj.CRootOf(deserialize(tree['poly'] as Tree) as Expr, tree['index'] as number);
     case 'Pow': {
       const [b, e] = (tree['args'] as Tree[]).map((a) => deserialize(a) as Expr);
+      if (tree['evaluate'] === false && b !== undefined && e !== undefined) return new sj.Pow(b, e);
       // a power of rationals that SymPy kept as a Pow was built with evaluate=False
       // (an integer power too large to compute, Pow(2, 10**16, evaluate=False), is kept as it is)
       if (b instanceof sj.Rational && e instanceof sj.Rational && e.isInteger && e.p > 100000n) return new sj.Pow(b, e);
@@ -4547,8 +4558,11 @@ function occurrence(c: Case): number {
 }
 let occurrenceCorpus: Case[] | undefined;
 
-export function runCase(c: Case): Outcome {
-  return asDoctest(c, () => runCase0(c));
+/** Optional observation for assertion corpora; deserialization failures are not API exceptions. */
+export type CaseObservation = { value: unknown } | { error: unknown };
+
+export function runCase(c: Case, observe?: (event: CaseObservation) => void): Outcome {
+  return asDoctest(c, () => runCase0(c, observe));
 }
 
 function isIterableResult(value: unknown): value is Iterable<unknown> {
@@ -4574,7 +4588,7 @@ function pickResult(value: unknown, index: number): unknown {
   throw new TypeError(`pick ${index}: call result is not indexable (expected an array, tuple or iterable)`);
 }
 
-function runCase0(c: Case): Outcome {
+function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome {
   const portEntry = PORTS[`${c.module}:${c.src}`];
   const port = Array.isArray(portEntry) ? (portEntry as readonly (() => unknown)[])[occurrence(c)] : (portEntry as (() => unknown) | undefined);
   if (port) {
@@ -4608,10 +4622,19 @@ function runCase0(c: Case): Outcome {
       // an adapter written for another owner of the same method name (Poly.add, ...): try the generic one
       // (or the adapter, when the generic one was tried first for a matrix expression)
       const auto = auto0 ? adapter : adapter === ADAPTERS[c.fn] ? autoAdapter(c) : undefined;
-      if (!auto || !(e instanceof Unsupported || e instanceof TypeError)) throw e;
-      v = call(auto);
+      if (!auto || !(e instanceof Unsupported || e instanceof TypeError)) {
+        if (!(e instanceof Unsupported)) observe?.({ error: e });
+        throw e;
+      }
+      try {
+        v = call(auto);
+      } catch (fallbackError) {
+        if (!(fallbackError instanceof Unsupported)) observe?.({ error: fallbackError });
+        throw fallbackError;
+      }
     }
     if (c.pick !== undefined) v = pickResult(v, c.pick);
+    observe?.({ value: v });
     if (c.text ? textMatches(v, c) : matches(v, c.expected)) return { status: 'pass' };
     if (c.text && typeof v === 'string') return { status: 'fail', got: v };
     const got = fmt(v);
