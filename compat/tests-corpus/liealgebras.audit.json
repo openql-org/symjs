@@ -1,0 +1,23 @@
+{"omitted":[
+{"module":"sympy.liealgebras.tests.test_cartan_matrix","category":"liealgebras","test":"test_CartanMatrix","line":7,"src":"assert c == m","reason":"non-call-expression","count":1},
+{"module":"sympy.liealgebras.tests.test_cartan_matrix","category":"liealgebras","test":"test_CartanMatrix","line":10,"src":"assert a == mt","reason":"non-call-expression","count":1},
+{"module":"sympy.liealgebras.tests.test_dynkin_diagram","category":"liealgebras","test":"test_DynkinDiagram","line":6,"src":"assert c == diag","reason":"non-call-expression","count":1},
+{"module":"sympy.liealgebras.tests.test_dynkin_diagram","category":"liealgebras","test":"test_DynkinDiagram","line":9,"src":"assert ct == diag2","reason":"non-call-expression","count":1},
+{"module":"sympy.liealgebras.tests.test_type_A","category":"liealgebras","test":"test_type_A","line":7,"src":"assert m == c.cartan_matrix()","reason":"non-call-expression","count":1},
+{"module":"sympy.liealgebras.tests.test_type_B","category":"liealgebras","test":"test_type_B","line":7,"src":"assert m == c.cartan_matrix()","reason":"non-call-expression","count":1},
+{"module":"sympy.liealgebras.tests.test_type_D","category":"liealgebras","test":"test_type_D","line":15,"src":"assert diag == c.dynkin_diagram()","reason":"non-call-expression","count":1},
+{"module":"sympy.liealgebras.tests.test_type_G","category":"liealgebras","test":"test_type_G","line":14,"src":"assert diag == c.dynkin_diagram()","reason":"non-call-expression","count":1}
+],"tests":[
+{"module":"sympy.liealgebras.tests.test_cartan_matrix","test":"test_CartanMatrix","parameter":0,"status":"completed"},
+{"module":"sympy.liealgebras.tests.test_cartan_type","test":"test_Standard_Cartan","parameter":0,"status":"completed"},
+{"module":"sympy.liealgebras.tests.test_dynkin_diagram","test":"test_DynkinDiagram","parameter":0,"status":"completed"},
+{"module":"sympy.liealgebras.tests.test_root_system","test":"test_root_system","parameter":0,"status":"completed"},
+{"module":"sympy.liealgebras.tests.test_type_A","test":"test_type_A","parameter":0,"status":"completed"},
+{"module":"sympy.liealgebras.tests.test_type_B","test":"test_type_B","parameter":0,"status":"completed"},
+{"module":"sympy.liealgebras.tests.test_type_C","test":"test_type_C","parameter":0,"status":"completed"},
+{"module":"sympy.liealgebras.tests.test_type_D","test":"test_type_D","parameter":0,"status":"completed"},
+{"module":"sympy.liealgebras.tests.test_type_E","test":"test_type_E","parameter":0,"status":"completed"},
+{"module":"sympy.liealgebras.tests.test_type_F","test":"test_type_F","parameter":0,"status":"completed"},
+{"module":"sympy.liealgebras.tests.test_type_G","test":"test_type_G","parameter":0,"status":"completed"},
+{"module":"sympy.liealgebras.tests.test_weyl_group","test":"test_weyl_group","parameter":0,"status":"completed"}
+]}

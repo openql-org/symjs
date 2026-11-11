@@ -145,3 +145,56 @@ benchmark. Every method is tested against mpmath at the table boundaries.
   `develop/*` or `main`.
 - Commit messages are in English and state what changed, and for
   compatibility work, the compatibility and coverage numbers.
+
+## SymPy unit-test corpus
+
+The independent unit-test corpus covers the base package's 30 top-level SymPy
+areas, including their nested test directories. `compat/extract_tests.py`
+contains file-level scope rules for printing, parsing, categories and utilities;
+`compat/TESTS-REPORT.md` lists excluded files and technical reasons. Optional
+dependencies and unsupported test constructs appear in the extraction audit.
+
+```sh
+pnpm compat:extract-tests                      # SymPy 1.14.0, four isolated processes
+pnpm compat:extract-tests --only sets,geometry  # replace only these categories
+pnpm compat:extract-tests --only polys --jobs 2 # includes agca/domains/matrices/numberfields
+pnpm compat:test-extract
+npx vitest run --config compat/vitest.config.ts --project unit-geometry
+UPDATE_KNOWN_GAPS=1 npx vitest run --config compat/vitest.config.ts
+```
+
+`compat/tests-corpus/index.json` is the manifest. Each category has one or more
+case arrays (one case per line, ASCII JSON escapes, no nonfinite JSON numbers,
+at most 25 MB per shard) and an audit file containing omitted source locations
+and test execution statuses. `--only` accepts comma-separated or repeated
+category names, retains the other shards and updates the manifest. `--timeout`
+sets the upstream per-test deadline (30 seconds by default). Tests that exceed
+it contribute no partial observations. `--baseline <legacy-corpus.json>`
+retains existing modules' cases exactly and preserves their audit counts while
+extracting new modules, so migration does not discard machine-dependent observations.
+
+Vitest runs one project/test per category with at most four workers. The
+runner shares the doctest deserializer and adapters and limits synchronous
+replay to 30 seconds per core/polys case and 5 seconds elsewhere. A replay
+timeout is a measured failure. Exception class mismatches are counted
+separately under the established exception assertion convention.
+
+`compat/tests-known-gaps.json` is the independent unit-test ratchet. Existing
+case IDs include the complete record, with its field order, and remain stable
+when records move to shards. A full run writes `compat/TESTS-REPORT.md`, the
+summary `compat/tests-report.json`, and per-category failure details in
+`compat/tests-results/*.jsonl`. A single coordinator updates the ratchet after
+all categories finish; partial project runs cannot replace the full report or
+ratchet. When expanding scope, distinguish newly measured gaps from regressions
+in existing cases. The doctest corpus and its ratchet remain independent.
+
+Repeated omission records share a `count` in category audit files. Counts retain
+every examined loop observation without repeating identical source metadata.
+`pnpm compat:extract-tests --compact-audits` losslessly repacks these audits
+without changing case records or re-executing upstream tests.
+
+Replay deadlines remain in the measured totals and failure groups. The ratchet
+stores their IDs in `timeouts` as inconclusive observations. A deadline cannot
+establish a correctness regression, and a completed result cannot resolve a
+previously unfinished assertion as a confirmed fix. Completed assertions still
+use the strict existing regression/fixed-case checks.
