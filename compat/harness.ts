@@ -1132,11 +1132,14 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'UFn':
       return sj.SymFunction(tree['name'] as string)(...(tree['args'] as Tree[]).map((a) => deserialize(a) as Expr));
-    case 'Derivative':
-      return sj.derivative(
-        deserialize(tree['expr'] as Tree) as Expr,
-        (tree['vc'] as [Tree, number][]).map(([v, n]) => [deserialize(v) as Expr, n] as [Expr, number]),
-      );
+    case 'Derivative': {
+      const expr = deserialize(tree['expr'] as Tree) as Expr | Matrix;
+      const variables = (tree['vc'] as [Tree, number][]).map(([v, n]): [Expr | Matrix, number] => [deserialize(v) as Expr | Matrix, n]);
+      const shaped = (value: Expr | Matrix) => value instanceof Matrix || value instanceof sj.MatrixExpr || value instanceof sj.NDimArray || value instanceof sj.ArrayExpr;
+      // The original corpus serialized ArrayDerivative using its Derivative base tag.
+      if (shaped(expr) || variables.some(([v]) => shaped(v))) return sj.ArrayDerivative(expr, ...variables);
+      return sj.derivative(expr as Expr, variables as [Expr, number][]);
+    }
     case 'Dict':
       return new JsDict((tree['items'] as [Tree, Tree][]).map(([k, v]) => [deserialize(k), deserialize(v)] as const));
     case 'MatrixSymbol':

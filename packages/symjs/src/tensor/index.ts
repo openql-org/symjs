@@ -168,9 +168,12 @@ export { bsgsDirectProduct, canonicalFree, doubleCosetCanRep, dummySgs, gensProd
 export type { CanonComponent, PermLike } from './tensorcan';
 export { shape, NoShapeError } from './functions';
 export type { Dimension } from './functions';
-export { ArrayExpr, ArraySymbol, ArrayElement, ArrayTensorProduct, ArrayContraction, ArrayDiagonal, ArrayAdd, PermuteDims, Reshape, ZeroArray, getShape, getRank } from './array/expressions/arrayexpressions';
+export { ArrayExpr, ArraySymbol, ArrayElement, ArrayTensorProduct, ArrayContraction, ArrayDiagonal, ArrayAdd, ArrayElementwiseApplyFunc, PermuteDims, Reshape, OneArray, ZeroArray, getShape, getRank } from './array/expressions/arrayexpressions';
 export type { ArrayShape, ArrayAxes } from './array/expressions/arrayexpressions';
 export { convertMatrixToArray } from './array/expressions/frommatrixtoarray';
 export { convertArrayToMatrix } from './array/expressions/fromarraytomatrix';
 export { convertIndexedToArray } from './array/expressions/fromindexedtoarray';
+export { convertArrayToIndexed } from './array/expressions/fromarraytoindexed';
 export { arrayDerive } from './array/expressions/arrayexprderivatives';
+export { ArrayDerivative, ArrayDerivativeNode } from './array/arrayderivatives';
+export type { ArrayDerivativeOptions, ArrayDerivativeVariable } from './array/arrayderivatives';

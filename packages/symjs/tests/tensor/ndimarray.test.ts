@@ -804,3 +804,11 @@ describe('SymPy Basic methods of arrays', async () => {
     expect(String(sj.ImmutableDenseNDimArray([sj.add(x, sj.Lambda(y, y))]).rcall(3))).toBe('[x + 3]');
   });
 });
+
+it('differentiates explicit arrays by symbolic array entries', async () => {
+  const { ArraySymbol } = await import('../../src/tensor');
+  const array = new ArraySymbol('a', [2]);
+  const entries = [array.at(0), array.at(1)];
+  expect(s(deriveByArray(entries, entries))).toBe('[[1, 0], [0, 1]]');
+  expect(() => deriveByArray(x, [array])).toThrow('cannot derive by this array');
+});

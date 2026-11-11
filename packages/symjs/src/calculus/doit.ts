@@ -14,7 +14,7 @@ import { rebuild, xreplace } from '../core/traverse';
 import { Concrete, doitConcrete } from '../concrete/summations';
 import { integrate } from '../integrals/integrate';
 import { limit } from '../series/limits';
-import { diff } from './diff';
+import './diff';
 import { Matrix } from '../matrices/matrix';
 
 /**
@@ -50,11 +50,7 @@ export function doit(ex: ExprLike | Matrix): Expr | Matrix {
     if (y instanceof Limit) return limit(at(y.args, 0), cast(y.args[1], Sym, 'limit variable'), at(y.args, 2), y.dir);
     if (y instanceof Concrete) return doitConcrete(y);
     if (y instanceof ExtensionExpr) return y.doitSelf() ?? y;
-    if (y instanceof Derivative) {
-      let r = y.expr;
-      for (const [v, n] of y.variableCount) r = diff(r, v, n);
-      return r;
-    }
+    if (y instanceof Derivative) return y.doit();
     return y;
   };
   return go(sympify(ex));

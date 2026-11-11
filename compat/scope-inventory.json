@@ -127547,9 +127547,10 @@
   {
    "module": "sympy.tensor.array.array_derivatives",
    "sha256": "73e818780feaa57398dda7b1cb3ee9b12aa64d5206541adc183bd2916e5d655d",
-   "status": "unimplemented",
-   "note": "ArrayDerivative; to be ported to ./tensor",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "tensor/array/arrayderivatives.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -129831,10 +129832,11 @@
   {
    "module": "sympy.tensor.array.expressions.conv_array_to_indexed",
    "sha256": "048c2542bed1282f1b64dde647c2020b94d8382f6e6ac61c57465cd5534a9a21",
-   "status": "unimplemented",
-   "note": "array expressions to Indexed; to be ported to ./tensor",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "tensor/array/expressions/fromarraytoindexed.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": []
@@ -130016,10 +130018,11 @@
   {
    "module": "sympy.tensor.array.expressions.from_array_to_indexed",
    "sha256": "dd821cb00cd6556411258412f74b8fbd297674ced9a8b57faadec4f7eb98536f",
-   "status": "unimplemented",
-   "note": "array expressions to Indexed; to be ported to ./tensor",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "tensor/array/expressions/fromarraytoindexed.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -130216,10 +130219,11 @@
   {
    "module": "sympy.tensor.array.expressions.utils",
    "sha256": "467e7c6e81c7504a01645b629c3a6bb8b585064341c2091543873d9bb3729b5a",
-   "status": "unimplemented",
-   "note": "array expression helpers; to be ported to ./tensor",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "tensor/array/expressions/utils.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": []

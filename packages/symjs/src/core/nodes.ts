@@ -1040,6 +1040,14 @@ export class Derivative extends Expr {
     }
     return out;
   }
+  /** Reconstruct a derivative while preserving subclass behavior. */
+  withArgs(args: readonly Expr[]): Derivative { return new Derivative(args); }
+  /** Evaluate the derivative in variable order. */
+  doit(): Expr {
+    let result = this.expr;
+    for (const [variable, count] of this.variableCount) result = impl.diff(result, variable, count);
+    return result;
+  }
   protected computeKey(): string {
     return `D(${this.args.map((a) => a.key).join(',')})`;
   }
