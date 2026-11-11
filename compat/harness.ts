@@ -12,7 +12,10 @@
 
 import { readFileSync } from 'node:fs';
 import * as sj from '../packages/symjs/src';
+import * as categories from '../packages/symjs/src/categories';
+import * as plotting from '../packages/symjs/src/plotting';
 import { equivalent } from './equivalence';
+import { GrowableGrid } from '../packages/symjs/src/categories/diagram_drawing';
 import { PORTS } from './ports';
 import { constantCount, solvesOdeSystem } from './ode-checks';
 import { Expr, ExprLike, Integral, Matrix, S, Sym } from '../packages/symjs/src';
@@ -576,6 +579,26 @@ export function deserialize(tree: Tree): unknown {
     case 'Symbol': {
       const a = tree['assume'] as Record<string, boolean>;
       return new Sym(tree['name'] as string, Object.fromEntries(Object.entries(a).map(([k,v]) => [camel(k),v])));
+    }
+    case 'DiagramGrid': {
+      const entries = (deserialize(tree['morphisms'] as Tree) as JsDict).entries;
+      const d = sj.Diagram(new Map(entries.map(([m, p]) => [m as sj.Morphism, p as sj.SetExpr])));
+      const grid = new categories.DiagramGrid(d);
+      const cells = (tree['cells'] as Tree[][]).map((row) => row.map(deserialize));
+      const storage = new GrowableGrid<Expr>(cells[0]?.length ?? 0, cells.length);
+      cells.forEach((row, i) => row.forEach((cell, j) => storage.set(i, j, cell instanceof Expr ? cell : sj.NoMatch)));
+      Object.defineProperty(grid, 'grid', { value: storage });
+      return grid;
+    }
+    case 'XypicDiagramDrawer': {
+      const drawer = new categories.XypicDiagramDrawer();
+      drawer.unit = String(tree['unit']); drawer.defaultCurvingAmount = Number(tree['amount']); drawer.defaultCurvingStep = Number(tree['step']);
+      const formatter = (state: Record<string, unknown>) => (arrow: categories.ArrowStringDescription) => {
+        for (const [key, v] of Object.entries(state)) Reflect.set(arrow, camel(key), typeof v === 'string' ? v.replace(/@([a-z_]+)@/g, (_, name: string) => String(Reflect.get(arrow, camel(name)))) : v);
+      };
+      if (tree['defaultFormatter']) drawer.defaultArrowFormatter = formatter(tree['defaultFormatter'] as Record<string, unknown>);
+      for (const [name, f] of Object.entries(tree['formatters'] as Record<string, Record<string, unknown>>)) drawer.arrowFormatters.set(name, formatter(f));
+      return drawer;
     }
     case 'CategoryObject': return new sj.SymObject(String(tree['name']));
     case 'CategoryClass': return new sj.CategoryClass(deserialize(tree['objects'] as Tree) as sj.SetExpr);
@@ -4271,7 +4294,7 @@ ADAPTERS['TableForm'] = (args, kw) => {
   const options = Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), printable(v)]));
   return new sj.TableForm(data, options);
 };
-for (const name of ['pretty', 'pprint'] as const) ADAPTERS[name] = (args, kw) => sj[name](prettyArg(args[0]) as sj.Printable, printOptions(kw));
+for (const name of ['pretty', 'pprint'] as const) ADAPTERS[name] = (args, kw) => args[0] instanceof categories.DiagramGrid ? args[0].toPretty() + (name === 'pprint' ? '\n' : '') : sj[name](prettyArg(args[0]) as sj.Printable, printOptions(kw));
 ADAPTERS['latex'] = (args, kw) => sj.latex(printable(args[0]) as sj.LatexPrintable, printOptions(kw));
 ADAPTERS['print_latex'] = (args, kw) => sj.printLatex(printable(args[0]) as sj.LatexPrintable, printOptions(kw));
 ADAPTERS['multiline_latex'] = (args, kw) => {
@@ -4573,6 +4596,15 @@ function intpolyAdapter(c: Case): Adapter | undefined {
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
+  if (c.fn === 'xypic_draw_diagram') return (args, kw) => categories.xypicDrawDiagram(args[0] as sj.Diagram, Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), toJs(v, true)])));
+  if (c.category === 'plotting') {
+    const f = (plotting as unknown as Record<string, (...args: unknown[]) => unknown>)[camel(c.fn)];
+    if (f) return (args, kw) => {
+      const value = f(...placeArgs(f, args, kw, (x) => toJs(x, true)));
+      if (c.fn === 'check_arguments') return new JsList((value as unknown[][]).map((row) => new JsTuple(row.map((v) => Array.isArray(v) ? new JsTuple(v) : v))));
+      return fromJs(value);
+    };
+  }
   if (c.fn === 'smoothness_p') return (args, kw) => {
     const flag = (v: unknown): boolean => v === true || (v instanceof sj.Rational && !v.isZero);
     const opts = { ...(kw['m'] === undefined ? {} : { m: intArg(kw['m']) }), power: flag(kw['power']) };
@@ -4698,6 +4730,8 @@ function publicPathExists(path: string): boolean {
 }
 /** The actual public export/member supporting a name, or undefined when absent. */
 export function counterpartFor(a: { name: string; owner?: string; category?: string }): string | undefined {
+  if (camel(a.name) in categories && ['DiagramGrid', 'XypicDiagramDrawer', 'xypicDrawDiagram', 'ArrowStringDescription'].includes(camel(a.name))) return 'categories.' + camel(a.name);
+  if (a.category === 'plotting' && camel(a.name) in plotting) return 'plotting.' + camel(a.name);
   const camelMethod = (n: string): string => n.replace(/_([a-zA-Z0-9])/g, (_m, c: string) => c.toUpperCase());
   if (!a.name.startsWith('.')) {
     const alias = PUBLIC_ALIASES[a.name];

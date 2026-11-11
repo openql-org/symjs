@@ -1,0 +1,3894 @@
+{
+ "sympy": "1.14.0",
+ "fixtures": [
+  {
+   "test": "test_str",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "cartesian line: cos(x) for x over (-4.0, 3.0)"
+  },
+  {
+   "test": "test_str",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ]
+   ],
+   "options": {
+    "return": "real"
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "cartesian line: re(cos(x)) for x over (-4.0, 3.0)"
+  },
+  {
+   "test": "test_str",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ]
+   ],
+   "options": {
+    "return": "imag"
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "cartesian line: im(cos(x)) for x over (-4.0, 3.0)"
+  },
+  {
+   "test": "test_str",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ]
+   ],
+   "options": {
+    "return": "abs"
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "cartesian line: abs(cos(x)) for x over (-4.0, 3.0)"
+  },
+  {
+   "test": "test_str",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ]
+   ],
+   "options": {
+    "return": "arg"
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "cartesian line: arg(cos(x)) for x over (-4.0, 3.0)"
+  },
+  {
+   "test": "test_str",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(u*x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "interactive cartesian line: cos(u*x) for x over (-4.0, 3.0) and parameters (u,)"
+  },
+  {
+   "test": "test_str",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(u*x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     {
+      "expr": "-u"
+     },
+     {
+      "expr": "3*y"
+     }
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "interactive cartesian line: cos(u*x) for x over (-u, 3*y) and parameters (u, y)"
+  },
+  {
+   "test": "test_str",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "parametric cartesian line: (cos(x), sin(x)) for x over (-4.0, 3.0)"
+  },
+  {
+   "test": "test_str",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "cos(u*x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "interactive parametric cartesian line: (cos(u*x), sin(x)) for x over (-4.0, 3.0) and parameters (u,)"
+  },
+  {
+   "test": "test_str",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "cos(u*x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     {
+      "expr": "-u"
+     },
+     {
+      "expr": "3*y"
+     }
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "interactive parametric cartesian line: (cos(u*x), sin(x)) for x over (-u, 3*y) and parameters (u, y)"
+  },
+  {
+   "test": "test_str",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "3D parametric cartesian line: (cos(x), sin(x), x) for x over (-4.0, 3.0)"
+  },
+  {
+   "test": "test_str",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(u*x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "interactive 3D parametric cartesian line: (cos(u*x), sin(x), x) for x over (-4.0, 3.0) and parameters (u,)"
+  },
+  {
+   "test": "test_str",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(u*x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     {
+      "expr": "-u"
+     },
+     {
+      "expr": "3*y"
+     }
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ],
+      [
+       {
+        "expr": "y"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "interactive 3D parametric cartesian line: (cos(u*x), sin(x), x) for x over (-u, 3*y) and parameters (u, y)"
+  },
+  {
+   "test": "test_str",
+   "class": "SurfaceOver2DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x*y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     5
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "cartesian surface: cos(x*y) for x over (-4.0, 3.0) and y over (-2.0, 5.0)"
+  },
+  {
+   "test": "test_str",
+   "class": "SurfaceOver2DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(u*x*y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     5
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "interactive cartesian surface: cos(u*x*y) for x over (-4.0, 3.0) and y over (-2.0, 5.0) and parameters (u,)"
+  },
+  {
+   "test": "test_str",
+   "class": "SurfaceOver2DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(u*x*y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     {
+      "expr": "-4*u"
+     },
+     3
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     {
+      "expr": "5*u"
+     }
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "interactive cartesian surface: cos(u*x*y) for x over (-4*u, 3.0) and y over (-2.0, 5*u) and parameters (u,)"
+  },
+  {
+   "test": "test_str",
+   "class": "ContourSeries",
+   "args": [
+    {
+     "expr": "cos(x*y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     5
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "contour: cos(x*y) for x over (-4.0, 3.0) and y over (-2.0, 5.0)"
+  },
+  {
+   "test": "test_str",
+   "class": "ContourSeries",
+   "args": [
+    {
+     "expr": "cos(u*x*y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     5
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "interactive contour: cos(u*x*y) for x over (-4.0, 3.0) and y over (-2.0, 5.0) and parameters (u,)"
+  },
+  {
+   "test": "test_str",
+   "class": "ParametricSurfaceSeries",
+   "args": [
+    {
+     "expr": "cos(x*y)"
+    },
+    {
+     "expr": "sin(x*y)"
+    },
+    {
+     "expr": "x*y"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     5
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "parametric cartesian surface: (cos(x*y), sin(x*y), x*y) for x over (-4.0, 3.0) and y over (-2.0, 5.0)"
+  },
+  {
+   "test": "test_str",
+   "class": "ParametricSurfaceSeries",
+   "args": [
+    {
+     "expr": "cos(u*x*y)"
+    },
+    {
+     "expr": "sin(x*y)"
+    },
+    {
+     "expr": "x*y"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     5
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "interactive parametric cartesian surface: (cos(u*x*y), sin(x*y), x*y) for x over (-4.0, 3.0) and y over (-2.0, 5.0) and parameters (u,)"
+  },
+  {
+   "test": "test_str",
+   "class": "ImplicitSeries",
+   "args": [
+    {
+     "expr": "x < y"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     4
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -3,
+     2
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": "Implicit expression: x < y for x over (-5.0, 4.0) and y over (-3.0, 2.0)"
+  },
+  {
+   "test": "test_series_labels",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    {
+     "automaticLabel": true
+    }
+   ],
+   "options": {},
+   "expected": {
+    "label": "cos(x)",
+    "latexLabel": "$\\cos{\\left(x \\right)}$",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    "test"
+   ],
+   "options": {},
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "List2DSeries",
+   "args": [
+    [
+     0,
+     1,
+     2,
+     3
+    ],
+    [
+     0,
+     1,
+     2,
+     3
+    ],
+    "test"
+   ],
+   "options": {},
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    {
+     "automaticLabel": true
+    }
+   ],
+   "options": {
+    "use_cm": true
+   },
+   "expected": {
+    "label": "x",
+    "latexLabel": "$x$",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    "test"
+   ],
+   "options": {
+    "use_cm": true
+   },
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    {
+     "automaticLabel": true
+    }
+   ],
+   "options": {
+    "use_cm": false
+   },
+   "expected": {
+    "label": "(cos(x), sin(x))",
+    "latexLabel": "$\\left( \\cos{\\left(x \\right)}, \\  \\sin{\\left(x \\right)}\\right)$",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    "test"
+   ],
+   "options": {
+    "use_cm": false
+   },
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    {
+     "automaticLabel": true
+    }
+   ],
+   "options": {
+    "use_cm": true
+   },
+   "expected": {
+    "label": "x",
+    "latexLabel": "$x$",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    "test"
+   ],
+   "options": {
+    "use_cm": true
+   },
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    {
+     "automaticLabel": true
+    }
+   ],
+   "options": {
+    "use_cm": false
+   },
+   "expected": {
+    "label": "(cos(x), sin(x), x)",
+    "latexLabel": "$\\left( \\cos{\\left(x \\right)}, \\  \\sin{\\left(x \\right)}, \\  x\\right)$",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    "test"
+   ],
+   "options": {
+    "use_cm": false
+   },
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "SurfaceOver2DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x**2 + y**2)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     2
+    ],
+    {
+     "automaticLabel": true
+    }
+   ],
+   "options": {},
+   "expected": {
+    "label": "cos(x**2 + y**2)",
+    "latexLabel": "$\\cos{\\left(x^{2} + y^{2} \\right)}$",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "SurfaceOver2DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x**2 + y**2)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     2
+    ],
+    "test"
+   ],
+   "options": {},
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "ParametricSurfaceSeries",
+   "args": [
+    {
+     "expr": "cos(x - y)"
+    },
+    {
+     "expr": "sin(x + y)"
+    },
+    {
+     "expr": "x - y"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     2
+    ],
+    {
+     "automaticLabel": true
+    }
+   ],
+   "options": {},
+   "expected": {
+    "label": "(cos(x - y), sin(x + y), x - y)",
+    "latexLabel": "$\\left( \\cos{\\left(x - y \\right)}, \\  \\sin{\\left(x + y \\right)}, \\  x - y\\right)$",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "ParametricSurfaceSeries",
+   "args": [
+    {
+     "expr": "cos(x - y)"
+    },
+    {
+     "expr": "sin(x + y)"
+    },
+    {
+     "expr": "x - y"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     2
+    ],
+    "test"
+   ],
+   "options": {},
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "ImplicitSeries",
+   "args": [
+    {
+     "expr": "Eq(cos(x - y), 0)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -10,
+     10
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -10,
+     10
+    ],
+    {
+     "automaticLabel": true
+    }
+   ],
+   "options": {},
+   "expected": {
+    "label": "Eq(cos(x - y), 0)",
+    "latexLabel": "$\\cos{\\left(x - y \\right)} = 0$",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_series_labels",
+   "class": "ImplicitSeries",
+   "args": [
+    {
+     "expr": "Eq(cos(x - y), 0)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -10,
+     10
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -10,
+     10
+    ],
+    "test"
+   ],
+   "options": {},
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_rendering_kw",
+   "class": "List2DSeries",
+   "args": [
+    [
+     1,
+     2,
+     3
+    ],
+    [
+     4,
+     5,
+     6
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_rendering_kw",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    1,
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_rendering_kw",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "cos(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     0,
+     {
+      "expr": "pi"
+     }
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_rendering_kw",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     0,
+     {
+      "expr": "2*pi"
+     }
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_rendering_kw",
+   "class": "SurfaceOver2DRangeSeries",
+   "args": [
+    {
+     "expr": "x + y"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -3,
+     3
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_rendering_kw",
+   "class": "ContourSeries",
+   "args": [
+    {
+     "expr": "x + y"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -3,
+     3
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_rendering_kw",
+   "class": "ParametricSurfaceSeries",
+   "args": [
+    1,
+    {
+     "expr": "x"
+    },
+    {
+     "expr": "y"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     0,
+     1
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     0,
+     1
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_is_point_is_filled",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ],
+    ""
+   ],
+   "options": {
+    "is_point": false,
+    "is_filled": true
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_is_point_is_filled",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ],
+    ""
+   ],
+   "options": {
+    "is_point": true,
+    "is_filled": false
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": true,
+    "isFilled": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_is_point_is_filled",
+   "class": "List2DSeries",
+   "args": [
+    [
+     0,
+     1,
+     2
+    ],
+    [
+     3,
+     4,
+     5
+    ]
+   ],
+   "options": {
+    "is_point": false,
+    "is_filled": true
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_is_point_is_filled",
+   "class": "List2DSeries",
+   "args": [
+    [
+     0,
+     1,
+     2
+    ],
+    [
+     3,
+     4,
+     5
+    ]
+   ],
+   "options": {
+    "is_point": true,
+    "is_filled": false
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": true,
+    "isFilled": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_is_point_is_filled",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {
+    "is_point": false,
+    "is_filled": true
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_is_point_is_filled",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {
+    "is_point": true,
+    "is_filled": false
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": true,
+    "isFilled": false,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_is_point_is_filled",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {
+    "is_point": false,
+    "is_filled": true
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_is_point_is_filled",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {
+    "is_point": true,
+    "is_filled": false
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": true,
+    "isFilled": false,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_is_filled_2d",
+   "class": "ContourSeries",
+   "args": [
+    {
+     "expr": "cos(x**2 + y**2)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     2
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_is_filled_2d",
+   "class": "ContourSeries",
+   "args": [
+    {
+     "expr": "cos(x**2 + y**2)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     2
+    ]
+   ],
+   "options": {
+    "is_filled": true
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_is_filled_2d",
+   "class": "ContourSeries",
+   "args": [
+    {
+     "expr": "cos(x**2 + y**2)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     2
+    ]
+   ],
+   "options": {
+    "is_filled": false
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_use_cm",
+   "class": "List2DSeries",
+   "args": [
+    [
+     1,
+     2,
+     3,
+     4
+    ],
+    [
+     5,
+     6,
+     7,
+     8
+    ]
+   ],
+   "options": {
+    "use_cm": true
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_use_cm",
+   "class": "List2DSeries",
+   "args": [
+    [
+     1,
+     2,
+     3,
+     4
+    ],
+    [
+     5,
+     6,
+     7,
+     8
+    ]
+   ],
+   "options": {
+    "use_cm": false
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_use_cm",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ]
+   ],
+   "options": {
+    "use_cm": true
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_use_cm",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ]
+   ],
+   "options": {
+    "use_cm": false
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_use_cm",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ]
+   ],
+   "options": {
+    "use_cm": true
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_use_cm",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ]
+   ],
+   "options": {
+    "use_cm": false
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_use_cm",
+   "class": "SurfaceOver2DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x*y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     5
+    ]
+   ],
+   "options": {
+    "use_cm": true
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_use_cm",
+   "class": "SurfaceOver2DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x*y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     5
+    ]
+   ],
+   "options": {
+    "use_cm": false
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_use_cm",
+   "class": "ParametricSurfaceSeries",
+   "args": [
+    {
+     "expr": "cos(x*y)"
+    },
+    {
+     "expr": "sin(x*y)"
+    },
+    {
+     "expr": "x*y"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     5
+    ]
+   ],
+   "options": {
+    "use_cm": true
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_use_cm",
+   "class": "ParametricSurfaceSeries",
+   "args": [
+    {
+     "expr": "cos(x*y)"
+    },
+    {
+     "expr": "sin(x*y)"
+    },
+    {
+     "expr": "x*y"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -4,
+     3
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     5
+    ]
+   ],
+   "options": {
+    "use_cm": false
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_surface_use_cm",
+   "class": "SurfaceOver2DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x**2 + y**2)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     2
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_surface_use_cm",
+   "class": "ParametricSurfaceSeries",
+   "args": [
+    {
+     "expr": "u*cos(v)"
+    },
+    {
+     "expr": "u*sin(v)"
+    },
+    {
+     "expr": "u"
+    },
+    [
+     {
+      "expr": "u"
+     },
+     0,
+     1
+    ],
+    [
+     {
+      "expr": "v"
+     },
+     0,
+     {
+      "expr": "2*pi"
+     }
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_surface_use_cm",
+   "class": "SurfaceOver2DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x**2 + y**2)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     2
+    ]
+   ],
+   "options": {
+    "use_cm": false
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_surface_use_cm",
+   "class": "ParametricSurfaceSeries",
+   "args": [
+    {
+     "expr": "u*cos(v)"
+    },
+    {
+     "expr": "u*sin(v)"
+    },
+    {
+     "expr": "u"
+    },
+    [
+     {
+      "expr": "u"
+     },
+     0,
+     1
+    ],
+    [
+     {
+      "expr": "v"
+     },
+     0,
+     {
+      "expr": "2*pi"
+     }
+    ]
+   ],
+   "options": {
+    "use_cm": false
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_surface_use_cm",
+   "class": "SurfaceOver2DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x**2 + y**2)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     2
+    ]
+   ],
+   "options": {
+    "use_cm": true
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_surface_use_cm",
+   "class": "ParametricSurfaceSeries",
+   "args": [
+    {
+     "expr": "u*cos(v)"
+    },
+    {
+     "expr": "u*sin(v)"
+    },
+    {
+     "expr": "u"
+    },
+    [
+     {
+      "expr": "u"
+     },
+     0,
+     1
+    ],
+    [
+     {
+      "expr": "v"
+     },
+     0,
+     {
+      "expr": "2*pi"
+     }
+    ]
+   ],
+   "options": {
+    "use_cm": true
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_contour_series_show_clabels",
+   "class": "ContourSeries",
+   "args": [
+    {
+     "expr": "cos(x*y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     2
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_contour_series_show_clabels",
+   "class": "ContourSeries",
+   "args": [
+    {
+     "expr": "cos(x*y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     2
+    ]
+   ],
+   "options": {
+    "clabels": true
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_contour_series_show_clabels",
+   "class": "ContourSeries",
+   "args": [
+    {
+     "expr": "cos(x*y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -2,
+     2
+    ]
+   ],
+   "options": {
+    "clabels": false
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_show_in_legend_lines",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    "test"
+   ],
+   "options": {
+    "show_in_legend": true
+   },
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_show_in_legend_lines",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -2,
+     2
+    ],
+    "test"
+   ],
+   "options": {
+    "show_in_legend": false
+   },
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": false,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_show_in_legend_lines",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     0,
+     1
+    ],
+    "test"
+   ],
+   "options": {
+    "show_in_legend": true
+   },
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_show_in_legend_lines",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     0,
+     1
+    ],
+    "test"
+   ],
+   "options": {
+    "show_in_legend": false
+   },
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": false,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_show_in_legend_lines",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     0,
+     1
+    ],
+    "test"
+   ],
+   "options": {
+    "show_in_legend": true
+   },
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_show_in_legend_lines",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     0,
+     1
+    ],
+    "test"
+   ],
+   "options": {
+    "show_in_legend": false
+   },
+   "expected": {
+    "label": "test",
+    "latexLabel": "test",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": false,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_interactive_vs_noninteractive",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_interactive_vs_noninteractive",
+   "class": "LineOver1DRangeSeries",
+   "args": [
+    {
+     "expr": "u*cos(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_interactive_vs_noninteractive",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_interactive_vs_noninteractive",
+   "class": "Parametric2DLineSeries",
+   "args": [
+    {
+     "expr": "u*cos(x)"
+    },
+    {
+     "expr": "u*sin(x)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_interactive_vs_noninteractive",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "cos(x)"
+    },
+    {
+     "expr": "sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_interactive_vs_noninteractive",
+   "class": "Parametric3DLineSeries",
+   "args": [
+    {
+     "expr": "u*cos(x)"
+    },
+    {
+     "expr": "u*sin(x)"
+    },
+    {
+     "expr": "x"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     1000,
+     1000,
+     1000
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": true,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_interactive_vs_noninteractive",
+   "class": "SurfaceOver2DRangeSeries",
+   "args": [
+    {
+     "expr": "cos(x*y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_interactive_vs_noninteractive",
+   "class": "SurfaceOver2DRangeSeries",
+   "args": [
+    {
+     "expr": "u*cos(x*y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_interactive_vs_noninteractive",
+   "class": "ContourSeries",
+   "args": [
+    {
+     "expr": "cos(x*y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_interactive_vs_noninteractive",
+   "class": "ContourSeries",
+   "args": [
+    {
+     "expr": "u*cos(x*y)"
+    },
+    [
+     {
+      "expr": "x"
+     },
+     -5,
+     5
+    ],
+    [
+     {
+      "expr": "y"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "u"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "isFilled": true,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_interactive_vs_noninteractive",
+   "class": "ParametricSurfaceSeries",
+   "args": [
+    {
+     "expr": "u*cos(v)"
+    },
+    {
+     "expr": "v*sin(u)"
+    },
+    {
+     "expr": "u + v"
+    },
+    [
+     {
+      "expr": "u"
+     },
+     -5,
+     5
+    ],
+    [
+     {
+      "expr": "v"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {},
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": false,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  },
+  {
+   "test": "test_interactive_vs_noninteractive",
+   "class": "ParametricSurfaceSeries",
+   "args": [
+    {
+     "expr": "u*cos(v*x)"
+    },
+    {
+     "expr": "v*sin(u)"
+    },
+    {
+     "expr": "u + v"
+    },
+    [
+     {
+      "expr": "u"
+     },
+     -5,
+     5
+    ],
+    [
+     {
+      "expr": "v"
+     },
+     -5,
+     5
+    ]
+   ],
+   "options": {
+    "params": {
+     "map": [
+      [
+       {
+        "expr": "x"
+       },
+       1
+      ]
+     ]
+    }
+   },
+   "expected": {
+    "label": "",
+    "latexLabel": "",
+    "n": [
+     100,
+     100,
+     100
+    ],
+    "isInteractive": true,
+    "isPoint": false,
+    "useCm": false,
+    "showInLegend": true,
+    "renderingKw": {}
+   },
+   "str": ""
+  }
+ ]
+}

@@ -323,3 +323,7 @@ The generated `combinatorics/galoisdata.ts` and
 and exact resolvent coefficient tables of SymPy 1.14. Regenerate them with
 `python3 packages/symjs/scripts/generate-galois.py`; the algorithms live in
 `combinatorics/galois.ts` and `polys/numberfields/galoisgroups.ts`.
+
+## Plotting data for connector packages
+
+The `@symjs/symjs/plotting` subpath computes numeric series without rendering dependencies and is isolated from the root entry. `Plot.toData()` returns a version 1 JSON description with plot options and series containing a kind, named coordinate arrays, label and style hints. Surfaces use row-major matrices; implicit plots supply contour meshes or interval boxes. Non-finite samples encode as the strings `NaN`, `Infinity`, and `-Infinity`; `getData()` retains numeric IEEE values. Color values, point/fill flags and plain `renderingKw` objects travel with each series. `PlotGrid.toData()` nests descriptions in row-major order. Connector packages interpret this data and own display, saving and backend dependencies.

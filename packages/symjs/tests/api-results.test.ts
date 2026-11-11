@@ -25,6 +25,9 @@ const dir = join(repo, 'packages/symjs/tests/.api-results');
 /** The modules checked, as [import path from the generated file, runtime module]. */
 const MODULES: [string, () => Promise<Record<string, unknown>>][] = [
   ['../../src/index', () => import('../src/index')],
+  ['../../src/categories', () => import('../src/categories')],
+  ['../../src/plotting', () => import('../src/plotting')],
+  ['../../src/plotting/intervalmath/index', () => import('../src/plotting/intervalmath/index')],
   ['../../../physics-quantum/src/index', () => import('../../physics-quantum/src/index')],
   ['../../../mathjs/src/index', () => import('../../mathjs/src/index')],
 ];

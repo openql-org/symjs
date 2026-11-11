@@ -7030,6 +7030,34 @@
    "name": ".xreplace",
    "category": "matrices",
    "owner": "MatrixExpr"
+  },
+  {
+   "name": "plot",
+   "category": "plotting"
+  },
+  {
+   "name": "plot_implicit",
+   "category": "plotting"
+  },
+  {
+   "name": "plot_parametric",
+   "category": "plotting"
+  },
+  {
+   "name": "textplot",
+   "category": "plotting"
+  },
+  {
+   "name": "DiagramGrid",
+   "category": "categories"
+  },
+  {
+   "name": "XypicDiagramDrawer",
+   "category": "categories"
+  },
+  {
+   "name": "xypic_draw_diagram",
+   "category": "categories"
   }
  ],
  "cases": [
@@ -705714,23 +705742,5921 @@
    "module": "sympy.tensor.toperators",
    "src": "expr",
    "expected": "PartialDerivative(A(i), A(j), A(k))"
+  },
+  {
+   "fn": "pprint",
+   "args": [
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       }
+      ],
+      [
+       {
+        "t": "Js",
+        "v": null
+       },
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "pprint(grid)",
+   "expected": "A  B\n    \n   C"
+  },
+  {
+   "fn": "pprint",
+   "args": [
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "Str",
+           "v": "h"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "k"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "D"
+       }
+      ],
+      [
+       {
+        "t": "Js",
+        "v": null
+       },
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       },
+       {
+        "t": "Js",
+        "v": null
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "pprint(grid)",
+   "expected": "A  B  D\n       \n   C   "
+  },
+  {
+   "fn": "pprint",
+   "args": [
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "Str",
+           "v": "h"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "k"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       },
+       {
+        "t": "Js",
+        "v": null
+       },
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       }
+      ],
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "D"
+       },
+       {
+        "t": "Js",
+        "v": null
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "pprint(grid)",
+   "expected": "B     C\n       \nA  D   "
+  },
+  {
+   "fn": "pprint",
+   "args": [
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "Str",
+           "v": "h"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "E"
+          },
+          {
+           "t": "Str",
+           "v": "i"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       },
+       {
+        "t": "Js",
+        "v": null
+       }
+      ],
+      [
+       {
+        "t": "Js",
+        "v": null
+       },
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "D"
+       }
+      ],
+      [
+       {
+        "t": "Js",
+        "v": null
+       },
+       {
+        "t": "Js",
+        "v": null
+       },
+       {
+        "t": "CategoryObject",
+        "name": "E"
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "pprint(grid)",
+   "expected": "A  B   \n       \n   C  D\n       \n      E"
+  },
+  {
+   "fn": "pprint",
+   "args": [
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "Str",
+           "v": "h"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "E"
+          },
+          {
+           "t": "Str",
+           "v": "i"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "D"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "E"
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "pprint(grid)",
+   "expected": "A  B  C  D  E"
+  },
+  {
+   "fn": "pprint",
+   "args": [
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "Str",
+           "v": "h"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "E"
+          },
+          {
+           "t": "Str",
+           "v": "i"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       }
+      ],
+      [
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       }
+      ],
+      [
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       }
+      ],
+      [
+       {
+        "t": "CategoryObject",
+        "name": "D"
+       }
+      ],
+      [
+       {
+        "t": "CategoryObject",
+        "name": "E"
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "pprint(grid)",
+   "expected": "A\n \nB\n \nC\n \nD\n \nE"
+  },
+  {
+   "fn": ".height",
+   "self": {
+    "t": "DiagramGrid",
+    "morphisms": {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Morphism",
+        "cls": "NamedMorphism",
+        "args": [
+         {
+          "t": "CategoryObject",
+          "name": "A"
+         },
+         {
+          "t": "CategoryObject",
+          "name": "B"
+         },
+         {
+          "t": "Str",
+          "v": "f"
+         }
+        ]
+       },
+       {
+        "t": "NamedSet",
+        "name": "EmptySet"
+       }
+      ],
+      [
+       {
+        "t": "Morphism",
+        "cls": "NamedMorphism",
+        "args": [
+         {
+          "t": "CategoryObject",
+          "name": "B"
+         },
+         {
+          "t": "CategoryObject",
+          "name": "C"
+         },
+         {
+          "t": "Str",
+          "v": "g"
+         }
+        ]
+       },
+       {
+        "t": "NamedSet",
+        "name": "EmptySet"
+       }
+      ]
+     ]
+    },
+    "cells": [
+     [
+      {
+       "t": "CategoryObject",
+       "name": "A"
+      },
+      {
+       "t": "CategoryObject",
+       "name": "B"
+      }
+     ],
+     [
+      {
+       "t": "Js",
+       "v": null
+      },
+      {
+       "t": "CategoryObject",
+       "name": "C"
+      }
+     ]
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "grid.height",
+   "expected": "2"
+  },
+  {
+   "fn": ".morphisms",
+   "self": {
+    "t": "DiagramGrid",
+    "morphisms": {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Morphism",
+        "cls": "NamedMorphism",
+        "args": [
+         {
+          "t": "CategoryObject",
+          "name": "A"
+         },
+         {
+          "t": "CategoryObject",
+          "name": "B"
+         },
+         {
+          "t": "Str",
+          "v": "f"
+         }
+        ]
+       },
+       {
+        "t": "NamedSet",
+        "name": "EmptySet"
+       }
+      ],
+      [
+       {
+        "t": "Morphism",
+        "cls": "NamedMorphism",
+        "args": [
+         {
+          "t": "CategoryObject",
+          "name": "B"
+         },
+         {
+          "t": "CategoryObject",
+          "name": "C"
+         },
+         {
+          "t": "Str",
+          "v": "g"
+         }
+        ]
+       },
+       {
+        "t": "NamedSet",
+        "name": "EmptySet"
+       }
+      ]
+     ]
+    },
+    "cells": [
+     [
+      {
+       "t": "CategoryObject",
+       "name": "A"
+      },
+      {
+       "t": "CategoryObject",
+       "name": "B"
+      }
+     ],
+     [
+      {
+       "t": "Js",
+       "v": null
+      },
+      {
+       "t": "CategoryObject",
+       "name": "C"
+      }
+     ]
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "grid.morphisms",
+   "expected": "{NamedMorphism(Object(\"A\"), Object(\"B\"), \"f\"): EmptySet, NamedMorphism(Object(\"B\"), Object(\"C\"), \"g\"): EmptySet}"
+  },
+  {
+   "fn": ".width",
+   "self": {
+    "t": "DiagramGrid",
+    "morphisms": {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Morphism",
+        "cls": "NamedMorphism",
+        "args": [
+         {
+          "t": "CategoryObject",
+          "name": "A"
+         },
+         {
+          "t": "CategoryObject",
+          "name": "B"
+         },
+         {
+          "t": "Str",
+          "v": "f"
+         }
+        ]
+       },
+       {
+        "t": "NamedSet",
+        "name": "EmptySet"
+       }
+      ],
+      [
+       {
+        "t": "Morphism",
+        "cls": "NamedMorphism",
+        "args": [
+         {
+          "t": "CategoryObject",
+          "name": "B"
+         },
+         {
+          "t": "CategoryObject",
+          "name": "C"
+         },
+         {
+          "t": "Str",
+          "v": "g"
+         }
+        ]
+       },
+       {
+        "t": "NamedSet",
+        "name": "EmptySet"
+       }
+      ]
+     ]
+    },
+    "cells": [
+     [
+      {
+       "t": "CategoryObject",
+       "name": "A"
+      },
+      {
+       "t": "CategoryObject",
+       "name": "B"
+      }
+     ],
+     [
+      {
+       "t": "Js",
+       "v": null
+      },
+      {
+       "t": "CategoryObject",
+       "name": "C"
+      }
+     ]
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "grid.width",
+   "expected": "2"
+  },
+  {
+   "fn": ".draw",
+   "self": {
+    "t": "XypicDiagramDrawer",
+    "unit": "mm",
+    "amount": 3,
+    "step": 4,
+    "defaultFormatter": null,
+    "formatters": {}
+   },
+   "args": [
+    {
+     "t": "Diagram",
+     "premises": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "conclusions": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "FiniteSet",
+         "items": [
+          {
+           "t": "Symbol",
+           "name": "unique",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      ]
+     }
+    },
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "FiniteSet",
+         "items": [
+          {
+           "t": "Symbol",
+           "name": "unique",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       }
+      ],
+      [
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       },
+       {
+        "t": "Js",
+        "v": null
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(drawer.draw(diagram, grid))",
+   "expected": "\\xymatrix{\nA \\ar[d]_{g\\circ f} \\ar[r]^{f} & B \\ar[ld]^{g} \\\\\nC & \n}"
+  },
+  {
+   "fn": ".draw",
+   "self": {
+    "t": "XypicDiagramDrawer",
+    "unit": "mm",
+    "amount": 3,
+    "step": 4,
+    "defaultFormatter": null,
+    "formatters": {
+     "unique": {
+      "label": "\\exists !@label@",
+      "arrow_style": "{-->}"
+     }
+    }
+   },
+   "args": [
+    {
+     "t": "Diagram",
+     "premises": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "conclusions": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "FiniteSet",
+         "items": [
+          {
+           "t": "Symbol",
+           "name": "unique",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      ]
+     }
+    },
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "FiniteSet",
+         "items": [
+          {
+           "t": "Symbol",
+           "name": "unique",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       }
+      ],
+      [
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       },
+       {
+        "t": "Js",
+        "v": null
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(drawer.draw(diagram, grid))",
+   "expected": "\\xymatrix{\nA \\ar@{-->}[d]_{\\exists !g\\circ f} \\ar[r]^{f} & B \\ar[ld]^{g} \\\\\nC & \n}"
+  },
+  {
+   "fn": ".draw",
+   "self": {
+    "t": "XypicDiagramDrawer",
+    "unit": "mm",
+    "amount": 3,
+    "step": 4,
+    "defaultFormatter": {
+     "label_displacement": "(0.45)"
+    },
+    "formatters": {
+     "unique": {
+      "label": "\\exists !@label@",
+      "arrow_style": "{-->}"
+     }
+    }
+   },
+   "args": [
+    {
+     "t": "Diagram",
+     "premises": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "conclusions": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "FiniteSet",
+         "items": [
+          {
+           "t": "Symbol",
+           "name": "unique",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      ]
+     }
+    },
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "FiniteSet",
+         "items": [
+          {
+           "t": "Symbol",
+           "name": "unique",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       }
+      ],
+      [
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       },
+       {
+        "t": "Js",
+        "v": null
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(drawer.draw(diagram, grid))",
+   "expected": "\\xymatrix{\nA \\ar@{-->}[d]_(0.45){\\exists !g\\circ f} \\ar[r]^(0.45){f} & B \\ar[ld]^(0.45){g} \\\\\nC & \n}"
+  },
+  {
+   "fn": ".draw",
+   "self": {
+    "t": "XypicDiagramDrawer",
+    "unit": "mm",
+    "amount": 3,
+    "step": 4,
+    "defaultFormatter": null,
+    "formatters": {}
+   },
+   "args": [
+    {
+     "t": "Diagram",
+     "premises": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "Str",
+           "v": "h"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "Str",
+               "v": "h"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "Str",
+               "v": "h"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "k"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "k"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "conclusions": {
+      "t": "Dict",
+      "items": []
+     }
+    },
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "Str",
+           "v": "h"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "k"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "D"
+       }
+      ],
+      [
+       {
+        "t": "Js",
+        "v": null
+       },
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       },
+       {
+        "t": "Js",
+        "v": null
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(drawer.draw(diagram, grid))",
+   "expected": "\\xymatrix{\nA \\ar[r]_{f} & B \\ar[d]^{g} & D \\ar[l]^{k} \\ar@/_3mm/[ll]_{h} \\\\\n& C & \n}"
+  },
+  {
+   "fn": ".draw",
+   "self": {
+    "t": "XypicDiagramDrawer",
+    "unit": "cm",
+    "amount": 1,
+    "step": 4,
+    "defaultFormatter": null,
+    "formatters": {}
+   },
+   "args": [
+    {
+     "t": "Diagram",
+     "premises": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "Str",
+           "v": "h"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "Str",
+               "v": "h"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "Str",
+               "v": "h"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "k"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "k"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "conclusions": {
+      "t": "Dict",
+      "items": []
+     }
+    },
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "Str",
+           "v": "h"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "k"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "D"
+       }
+      ],
+      [
+       {
+        "t": "Js",
+        "v": null
+       },
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       },
+       {
+        "t": "Js",
+        "v": null
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(drawer.draw(diagram, grid))",
+   "expected": "\\xymatrix{\nA \\ar[r]_{f} & B \\ar[d]^{g} & D \\ar[l]^{k} \\ar@/_1cm/[ll]_{h} \\\\\n& C & \n}"
+  },
+  {
+   "fn": ".draw",
+   "self": {
+    "t": "XypicDiagramDrawer",
+    "unit": "cm",
+    "amount": 1,
+    "step": 1,
+    "defaultFormatter": null,
+    "formatters": {}
+   },
+   "args": [
+    {
+     "t": "Diagram",
+     "premises": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "Str",
+           "v": "h"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "Str",
+               "v": "h"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "Str",
+               "v": "h"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "k"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "k"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "Str",
+           "v": "h1"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "Str",
+               "v": "h"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "Str",
+               "v": "h1"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "Str",
+               "v": "h1"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "Str",
+               "v": "h"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "Str",
+               "v": "h1"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "Str",
+               "v": "h"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "Str",
+               "v": "h1"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "Str",
+               "v": "h"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "Str",
+               "v": "h1"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "k"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "Str",
+               "v": "h1"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "D"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "k"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "conclusions": {
+      "t": "Dict",
+      "items": []
+     }
+    },
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "Str",
+           "v": "h"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "k"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "D"
+          },
+          {
+           "t": "Str",
+           "v": "h1"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "D"
+       }
+      ],
+      [
+       {
+        "t": "Js",
+        "v": null
+       },
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       },
+       {
+        "t": "Js",
+        "v": null
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(drawer.draw(diagram, grid))",
+   "expected": "\\xymatrix{\nA \\ar[r]_{f} \\ar@/^1cm/[rr]^{h_{1}} & B \\ar[d]^{g} & D \\ar[l]^{k} \\ar@/_2cm/[ll]_{h} \\\\\n& C & \n}"
+  },
+  {
+   "fn": ".draw",
+   "self": {
+    "t": "XypicDiagramDrawer",
+    "unit": "mm",
+    "amount": 3,
+    "step": 4,
+    "defaultFormatter": null,
+    "formatters": {}
+   },
+   "args": [
+    {
+     "t": "Diagram",
+     "premises": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "conclusions": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "FiniteSet",
+         "items": [
+          {
+           "t": "Symbol",
+           "name": "unique",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      ]
+     }
+    },
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "FiniteSet",
+         "items": [
+          {
+           "t": "Symbol",
+           "name": "unique",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       }
+      ],
+      [
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       },
+       {
+        "t": "Js",
+        "v": null
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(drawer.draw(diagram, grid))",
+   "expected": "\\xymatrix{\nA \\ar[d]_{g\\circ f} \\ar[r]^{f} & B \\ar[ld]^{g} \\\\\nC & \n}"
+  },
+  {
+   "fn": ".draw",
+   "self": {
+    "t": "XypicDiagramDrawer",
+    "unit": "mm",
+    "amount": 3,
+    "step": 4,
+    "defaultFormatter": null,
+    "formatters": {}
+   },
+   "args": [
+    {
+     "t": "Diagram",
+     "premises": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "conclusions": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "FiniteSet",
+         "items": [
+          {
+           "t": "Symbol",
+           "name": "unique",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      ]
+     }
+    },
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "FiniteSet",
+         "items": [
+          {
+           "t": "Symbol",
+           "name": "unique",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       }
+      ],
+      [
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       },
+       {
+        "t": "Js",
+        "v": null
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {
+    "masked": {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Morphism",
+       "cls": "CompositeMorphism",
+       "args": [
+        {
+         "t": "Tuple",
+         "items": [
+          {
+           "t": "Morphism",
+           "cls": "NamedMorphism",
+           "args": [
+            {
+             "t": "CategoryObject",
+             "name": "A"
+            },
+            {
+             "t": "CategoryObject",
+             "name": "B"
+            },
+            {
+             "t": "Str",
+             "v": "f"
+            }
+           ]
+          },
+          {
+           "t": "Morphism",
+           "cls": "NamedMorphism",
+           "args": [
+            {
+             "t": "CategoryObject",
+             "name": "B"
+            },
+            {
+             "t": "CategoryObject",
+             "name": "C"
+            },
+            {
+             "t": "Str",
+             "v": "g"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ],
+     "list": true
+    }
+   },
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(drawer.draw(diagram, grid, masked=[g * f]))",
+   "expected": "\\xymatrix{\nA \\ar[r]^{f} & B \\ar[ld]^{g} \\\\\nC & \n}"
+  },
+  {
+   "fn": ".draw",
+   "self": {
+    "t": "XypicDiagramDrawer",
+    "unit": "mm",
+    "amount": 3,
+    "step": 4,
+    "defaultFormatter": null,
+    "formatters": {}
+   },
+   "args": [
+    {
+     "t": "Diagram",
+     "premises": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "conclusions": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "FiniteSet",
+         "items": [
+          {
+           "t": "Symbol",
+           "name": "unique",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      ]
+     }
+    },
+    {
+     "t": "DiagramGrid",
+     "morphisms": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "FiniteSet",
+         "items": [
+          {
+           "t": "Symbol",
+           "name": "unique",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      ]
+     },
+     "cells": [
+      [
+       {
+        "t": "CategoryObject",
+        "name": "A"
+       },
+       {
+        "t": "CategoryObject",
+        "name": "B"
+       }
+      ],
+      [
+       {
+        "t": "CategoryObject",
+        "name": "C"
+       },
+       {
+        "t": "Js",
+        "v": null
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {
+    "diagram_format": {
+     "t": "Str",
+     "v": "@+1cm"
+    }
+   },
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(drawer.draw(diagram, grid, diagram_format=\"@+1cm\"))",
+   "expected": "\\xymatrix@+1cm{\nA \\ar[d]_{g\\circ f} \\ar[r]^{f} & B \\ar[ld]^{g} \\\\\nC & \n}"
+  },
+  {
+   "fn": "xypic_draw_diagram",
+   "args": [
+    {
+     "t": "Diagram",
+     "premises": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "Str",
+           "v": "f"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "A"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "NamedMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "B"
+          },
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          },
+          {
+           "t": "Str",
+           "v": "g"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "IdentityMorphism",
+         "args": [
+          {
+           "t": "CategoryObject",
+           "name": "C"
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ],
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "NamedSet",
+         "name": "EmptySet"
+        }
+       ]
+      ]
+     },
+     "conclusions": {
+      "t": "Dict",
+      "items": [
+       [
+        {
+         "t": "Morphism",
+         "cls": "CompositeMorphism",
+         "args": [
+          {
+           "t": "Tuple",
+           "items": [
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "A"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "Str",
+               "v": "f"
+              }
+             ]
+            },
+            {
+             "t": "Morphism",
+             "cls": "NamedMorphism",
+             "args": [
+              {
+               "t": "CategoryObject",
+               "name": "B"
+              },
+              {
+               "t": "CategoryObject",
+               "name": "C"
+              },
+              {
+               "t": "Str",
+               "v": "g"
+              }
+             ]
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "FiniteSet",
+         "items": [
+          {
+           "t": "Symbol",
+           "name": "unique",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      ]
+     }
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "categories",
+   "module": "sympy.categories.diagram_drawing",
+   "src": "print(xypic_draw_diagram(diagram))",
+   "expected": "\\xymatrix{\nA \\ar[d]_{g\\circ f} \\ar[r]^{f} & B \\ar[ld]^{g} \\\\\nC & \n}"
+  },
+  {
+   "fn": "check_arguments",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Fn",
+       "name": "cos",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Fn",
+       "name": "sin",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        }
+       ]
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1",
+     "py": true
+    },
+    {
+     "t": "Rational",
+     "p": "1",
+     "q": "1",
+     "py": true
+    }
+   ],
+   "kwargs": {},
+   "category": "plotting",
+   "module": "sympy.plotting.plot",
+   "src": "check_arguments([cos(x), sin(x)], 2, 1)",
+   "expected": "[(cos(x), sin(x), (x, -10, 10))]"
+  },
+  {
+   "fn": "check_arguments",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Rational",
+     "p": "1",
+     "q": "1",
+     "py": true
+    },
+    {
+     "t": "Rational",
+     "p": "1",
+     "q": "1",
+     "py": true
+    }
+   ],
+   "kwargs": {},
+   "category": "plotting",
+   "module": "sympy.plotting.plot",
+   "src": "check_arguments([x, x**2], 1, 1)",
+   "expected": "[(x, (x, -10, 10)), (x**2, (x, -10, 10))]"
+  },
+  {
+   "fn": "textplot",
+   "args": [
+    {
+     "t": "Mul",
+     "args": [
+      {
+       "t": "Symbol",
+       "name": "t",
+       "assume": {}
+      },
+      {
+       "t": "Fn",
+       "name": "sin",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "t",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "Rational",
+     "p": "0",
+     "q": "1",
+     "py": true
+    },
+    {
+     "t": "Rational",
+     "p": "15",
+     "q": "1",
+     "py": true
+    }
+   ],
+   "kwargs": {},
+   "text": true,
+   "category": "plotting",
+   "module": "sympy.plotting.textplot",
+   "src": "textplot(sin(t)*t, 0, 15)",
+   "expected": "     14 |                                                  ...  \n        |                                                     . \n        |                                                 .     \n        |                                                      .\n        |                                                .      \n        |                            ...                        \n        |                           /   .               .       \n        |                          /                            \n        |                         /      .                      \n        |                        .        .            .        \n    1.5 |----.......--------------------------------------------\n        |....       \\           .          .                    \n        |            \\         /                      .         \n        |             ..      /             .                   \n        |               \\    /                       .          \n        |                ....                                   \n        |                                    .                  \n        |                                     .     .           \n        |                                                       \n        |                                      .   .            \n    -11 |_______________________________________________________\n         0                          7.5                        15"
   }
  ],
  "extraction": {
-  "examined": 25739,
+  "examined": 25983,
   "reasons": {
-   "statement-or-setup": 14117,
+   "statement-or-setup": 14283,
    "upstream-skip": 113,
-   "not-exported-api": 891,
-   "non-call-expression": 609,
+   "not-exported-api": 896,
+   "non-call-expression": 615,
    "reference-exception": 318,
    "private-api": 61,
    "unsupported-result-type": 91,
    "serialization-error": 4,
    "python-runtime-api": 2,
-   "printing-expression": 26,
+   "printing-expression": 31,
    "unstable-result-representation": 13,
-   "illustrative-output": 1
+   "illustrative-output": 1,
+   "external-TeX-rendering": 9,
+   "rendering-backend-construction: rendering is done by connector packages": 30,
+   "rendering-backend-object: rendering is done by connector packages": 1
   },
   "omitted": [
    {
@@ -716952,6 +722878,166 @@
     "module": "sympy.tensor.toperators",
     "src": "expr.replace_with_arrays({A(i): compA, B(i): compB}, [-j, i])",
     "reason": "unsupported-result-type"
+   },
+   {
+    "module": "sympy.categories.diagram_drawing",
+    "src": "print(str(astr))",
+    "reason": "printing-expression"
+   },
+   {
+    "module": "sympy.categories.diagram_drawing",
+    "src": "print(str(astr))",
+    "reason": "printing-expression"
+   },
+   {
+    "module": "sympy.categories.diagram_drawing",
+    "src": "print(str(astr))",
+    "reason": "printing-expression"
+   },
+   {
+    "module": "sympy.categories.diagram_drawing",
+    "src": "print(str(astr))",
+    "reason": "printing-expression"
+   },
+   {
+    "module": "sympy.categories.diagram_drawing",
+    "src": "print(str(astr))",
+    "reason": "printing-expression"
+   },
+   {
+    "module": "sympy.categories.diagram_drawing",
+    "src": "(grid.width, grid.height)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.categories.diagram_drawing",
+    "src": "(grid[0, 0], grid[0, 1])",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.categories.diagram_drawing",
+    "src": "(grid[1, 0], grid[1, 1])",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.categories.diagram_drawing",
+    "src": "print(grid)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.plotting.plot",
+    "src": "plot(x**2, (x, -5, 5))",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plot",
+    "src": "plot(x, x**2, x**3, (x, -5, 5))",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plot",
+    "src": "plot((x**2, (x, -6, 6)), (x, (x, -5, 5)))",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plot",
+    "src": "plot(x**2, adaptive=True, n=400)",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plot",
+    "src": "plot3d(x*y, (x, -5, 5), (y, -5, 5))",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plot",
+    "src": "plot3d(x*y, -x*y, (x, -5, 5), (y, -5, 5))",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plot",
+    "src": "plot3d((x**2 + y**2, (x, -5, 5), (y, -5, 5)),\n    (x*y, (x, -3, 3), (y, -3, 3)))",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plot",
+    "src": "plot3d_parametric_line(cos(u), sin(u), u, (u, -5, 5))",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plot",
+    "src": "plot3d_parametric_line((cos(u), sin(u), u, (u, -5, 5)),\n    (sin(u), u**2, u, (u, -5, 5)))",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plot",
+    "src": "plot3d_parametric_surface(cos(u + v), sin(u - v), u - v,\n    (u, -5, 5), (v, -5, 5))",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plot",
+    "src": "plot_parametric((cos(u), sin(u)), (u, -5, 5))",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plot",
+    "src": "plot_parametric((cos(u), sin(u)), (u, cos(u)), (u, -10, 10))",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plot",
+    "src": "plot_parametric((cos(u), sin(u), (u, -5, 5)),\n    (cos(u), u, (u, -5, 5)))",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plotgrid",
+    "src": "PlotGrid(2, 1, p1, p2)",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plotgrid",
+    "src": "PlotGrid(1, 3, p2, p3, p4)",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.plotgrid",
+    "src": "PlotGrid(2, 2, p1, p2, p3, p4)",
+    "reason": "rendering-backend-construction: rendering is done by connector packages"
+   },
+   {
+    "module": "sympy.plotting.utils",
+    "src": "_check_arguments([cos(x), sin(x)], 2, 1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.plotting.utils",
+    "src": "_check_arguments([cos(x), sin(x), \"test\"], 2, 1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.plotting.utils",
+    "src": "_check_arguments([cos(x), sin(x), \"test\", {\"a\": 0, \"b\": 1}], 2, 1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.plotting.utils",
+    "src": "_check_arguments([x, x**2], 1, 1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.plotting.utils",
+    "src": "_unpack_args(*args)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.plotting.utils",
+    "src": "_unpack_args(*args)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.plotting.utils",
+    "src": "_unpack_args(*args)",
+    "reason": "non-call-expression"
    }
   ],
   "preservedReferences": [
