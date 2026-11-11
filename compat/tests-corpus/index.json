@@ -928,7 +928,7 @@
     },
     "polys": {
       "examined": 29642,
-      "cases": 9338,
+      "cases": 9346,
       "reasons": {
         "duplicate": 125,
         "marked-slow": 74,
@@ -945,7 +945,7 @@
         "stateful-iterator-input": 137,
         "test-exception:TypeError": 2,
         "test-utility": 50,
-        "unserializable-input": 456,
+        "unserializable-input": 448,
         "unsupported-assertion": 1015,
         "unsupported-raises": 1
       },
@@ -959,17 +959,17 @@
         "test-exception:TypeError": 1,
         "upstream-skip": 62
       },
-      "seconds": 41.527,
-      "retainedModules": 39,
+      "seconds": 6.136,
+      "retainedModules": 67,
       "shards": [
         {
           "file": "polys.json",
-          "cases": 9338,
-          "bytes": 7734704
+          "cases": 9346,
+          "bytes": 7768893
         }
       ],
       "auditFile": "polys.audit.json",
-      "auditBytes": 986108,
+      "auditBytes": 984236,
       "modules": [
         "sympy.polys.agca.tests.test_extensions",
         "sympy.polys.agca.tests.test_homomorphisms",

@@ -36,6 +36,7 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 // sets add up to 2 KiB to core consumers. Reduced ODE solvers also reach stats.
 // Dummit's quintic coefficient tables and branch selection add at most 80 KiB
 // to consumers that load radical polynomial solving.
+// The dense recursive polynomial tools (densetools) are part of the root namespace.
 const CASES = [
   ['core', 'Rational', 190],
   ['core', 'parse, str', 204],
@@ -80,8 +81,7 @@ const CASES = [
   // The root is side-effect free: a named import brings only the entry points
   // of the names used (measured 177 KiB, the core entry; was 1312).
   ['index', 'Rational', 195],
-  // The finitely presented groups, coset enumeration and homomorphisms of combinatorics (measured 2292 KiB);
-  // the codegen entry adds about 3 KiB (measured 2622 KiB).
+  // The finitely presented groups, coset enumeration and homomorphisms of combinatorics (measured 2292 KiB).
   ['index', '*', 2650],
   // Differential geometry includes symbolic inversion and curvature calculations.
   ['diffgeom', '*', 1200],

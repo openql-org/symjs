@@ -272,7 +272,7 @@ export { PolyQuintic } from './polys/polyquinticconst';
 export { PolyMatrix, MutablePolyDenseMatrix, MutablePolyMatrix } from './polys/polymatrix';
 export type { PolyMatrixOptions, PolyMatrixEntry } from './polys/polymatrix';
 export { DixonResultant, MacaulayResultant } from './polys/multivariateresultants';
-export { dmpAlgInject } from './polys/densetools';
+export * from './polys/densetools';
 export { dmpSqfNorm } from './polys/sqfreetools';
 export { matrixFglm } from './polys/fglmtools';
 export { domEigenvects, domEigenvectsToSympy } from './polys/matrices/eigen';
