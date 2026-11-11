@@ -236,6 +236,10 @@ const PRINT_ALIASES: Readonly<Record<string, string>> = { 'Interval(-oo, oo)': '
 /** QQ elements of SymPy's pure Python ground types print as MPQ(p,q): the rational p/q. */
 const MPQ_RE = /MPQ\((-?\d+),(\d+)\)/g;
 const unMPQ = (s: string): string => s.replace(MPQ_RE, (_m, p: string, q: string) => (q === '1' ? p : `${p}/${q}`));
+// Matrix reprs nested inside other objects use multiline layout in SymPy.
+// Ignore spacing at delimiters, preserving quoted strings and symbol names.
+const normalizeLayout = (s: string): string => s.replace(/'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|[^'"]+/g,
+  (part) => /^["']/.test(part) ? part : part.replace(/\s*([()[\]{},])\s*/g, '$1'));
 export function matches(v: unknown, expectedIn: string): boolean {
   const got = fmt(v);
   if (expectedIn.includes('MPQ(') && got !== expectedIn) return matches0(v, unMPQ(expectedIn), unMPQ(got));
@@ -243,6 +247,7 @@ export function matches(v: unknown, expectedIn: string): boolean {
 }
 function matches0(v: unknown, expected: string, got: string): boolean {
   if (got === expected || PRINT_ALIASES[expected] === got) return true;
+  if (normalizeLayout(got) === normalizeLayout(expected)) return true;
   // JavaScript has one -Infinity for SymPy's -oo and Python's float -inf (dmp_degree of the zero polynomial)
   if (v === -Infinity && expected === '-inf') return true;
   if (got.includes('{') && normalizeSets(got) === normalizeSets(expected)) return true;
@@ -1393,6 +1398,21 @@ const none = (v: unknown): unknown => (v === undefined || v === null || v === 'u
 const FN_NAMES = ['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'sinh', 'cosh', 'tanh', 'log', 're', 'im', 'arg', 'conjugate', 'cot', 'sec', 'csc', 'acot', 'asec', 'acsc', 'coth', 'sech', 'csch', 'asinh', 'acosh', 'atanh', 'acoth', 'asech', 'acsch', 'sinc'] as const;
 
 export const ADAPTERS: Record<string, Adapter> = {
+  sdm_irref: (args, kw) => {
+    noKw(kw);
+    const input = args[0];
+    if (!(input instanceof JsDict)) throw new Unsupported('sdm_irref rows');
+    // SymPy infers the field from its ground elements; symjs takes it explicitly.
+    const rows = new Map(input.entries.map(([i, row]) => {
+      if (!(row instanceof JsDict)) throw new Unsupported('sdm_irref row');
+      return [intArg(i), new Map(row.entries.map(([j, value]) => {
+        const coefficient = value instanceof sj.PythonMPQ ? sj.Rational.of(value.numerator, value.denominator) : value;
+        if (!(coefficient instanceof sj.Rational)) throw new Unsupported('sdm_irref coefficient field');
+        return [intArg(j), coefficient] as const;
+      }))] as const;
+    }));
+    return fromJs(sj.sdmIrref(rows, sj.QQ));
+  },
   N: (args, kw) => evalfAdapter(args[0], args.slice(1), kw),
   // SymPy Ynm_c (camelCase YnmC)
   Ynm_c: (args) => sj.YnmC(args[0] as Expr, args[1] as Expr, args[2] as Expr, args[3] as Expr),
@@ -4004,6 +4024,8 @@ export interface Case {
   args?: Tree[];
   kwargs?: Record<string, Tree>;
   self?: Tree;
+  /** Component displayed after unpacking the call's result into named targets. */
+  pick?: number;
   unsupportedArg?: string;
   assume?: Tree[];
   /** printed output (print(f(...)), pprint(...), a str result): compared as text */
@@ -4145,7 +4167,7 @@ for (const name of Object.keys(sj.Q)) {
 /** Categories whose integer arguments are JS numbers (indices, sizes, sequences). */
 const NUMERIC_CATEGORIES = new Set(['combinatorics', 'utilities', 'tensor', 'discrete', 'geometry', 'crypto', 'liealgebras']);
 /** Functions of other categories whose integer arguments are JS numbers (variable numbers of the integer representation of clauses). */
-const NUMERIC_FUNCTIONS = new Set(['unit_propagate_int_repr', '.reorder_limit', '.__pow__']);
+const NUMERIC_FUNCTIONS = new Set(['unit_propagate_int_repr', '.reorder_limit', '.__pow__', 'ImmutableMatrix', 'ImmutableDenseMatrix']);
 /** Python operators recorded as their special methods (the number-field doctests), and the methods that implement them. */
 /** A value that symjs arithmetic accepts directly (an expression or a JS number). */
 const isScalar = (v: unknown): v is ExprLike => v instanceof Expr || typeof v === 'number' || typeof v === 'bigint';
@@ -4264,7 +4286,7 @@ function unsupportedOp(op: string): never {
 const ATTRIBUTE_FUNCTIONS: Readonly<Record<string, string>> = { is_integer: 'isIntegerQ', is_Function: 'isFn', is_Number: 'isNum', canonical: 'canonicalRelation' };
 const OPERATOR_METHODS: Readonly<Record<string, string>> = { '.__str__': 'toString', '.__add__': 'add', '.__sub__': 'sub', '.__mul__': 'mul', '.__pow__': 'pow', '.__floordiv__': 'floordiv', '.__mod__': 'mod' };
 /** DomainMatrix functions whose integer arguments are sizes, exponents or indices. */
-const DOMAIN_MATRIX_INT_FUNCTIONS = new Set(['.eye', '.zeros', '.ones', '.pow', '.getitem', 'sdm_berk']);
+const DOMAIN_MATRIX_INT_FUNCTIONS = new Set(['.eye', '.zeros', '.ones', '.pow', '.getitem', '.from_list_sympy', '.from_dict_sympy', 'sdm_berk']);
 
 /** SymPy names that are JavaScript globals, and the symjs names that do not shadow them. */
 const JS_GLOBAL_RENAMES: Record<string, string> = { Symbol: 'Sym', Number: 'SymNumber', Function: 'SymFunction', Array: 'SymArray', Set: 'SetExpr', Object: 'SymObject' };
@@ -4361,6 +4383,7 @@ function autoAdapter(c: Case): Adapter | undefined {
   if (c.fn === '.nargs') return (_args, kw, self) => (noKw(kw), sj.nargs(self instanceof UFnClass ? sj.SymFunction(self.name, { nargs: self.nargs }) : self as sj.WildFunction));
   const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn) || (c.module.startsWith('sympy.polys.matrices.') && DOMAIN_MATRIX_INT_FUNCTIONS.has(c.fn));
   const conv = (x: unknown): unknown => {
+    if (c.fn === 'ElementwiseApplyFunction' && x instanceof FnClass) return (e: Expr) => applyFn(x.name, [e]);
     const converted = toJs(x, numbers);
     // The public sparse-ring APIs use Expr coefficients/exponents. Python's
     // ground-domain MPQ wrapper is only a serialized input representation.
@@ -4377,7 +4400,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       return v;
     };
     const normalized = c.module === 'sympy.polys.densebasic' ? polynomialInputs(converted) : converted;
-    return expressionCoefficients.includes(c.module) ? rationalInputs(normalized) : normalized;
+    return expressionCoefficients.includes(c.module) || c.module.startsWith('sympy.polys.matrices.') ? rationalInputs(normalized) : normalized;
   };
   const dunder = c.fn === '.__str__' ? undefined : DUNDER[c.fn];
   if (dunder !== undefined) return (args, _kw, self0) => fromJs(dunder(plain(self0 instanceof JsDomain ? (self0.domain ?? self0) : self0), args.map((a) => a instanceof JsFFElement ? plain(a) : plain(conv(a)))));
@@ -4528,13 +4551,37 @@ export function runCase(c: Case): Outcome {
   return asDoctest(c, () => runCase0(c));
 }
 
+function isIterableResult(value: unknown): value is Iterable<unknown> {
+  return typeof value === 'string' || (value !== null && typeof value === 'object'
+    && Symbol.iterator in value && typeof value[Symbol.iterator] === 'function');
+}
+
+/** Replay Python's flat unpacking without indexing formatted output. */
+function pickResult(value: unknown, index: number): unknown {
+  if (!Number.isSafeInteger(index) || index < 0) throw new RangeError(`pick ${index}: expected a nonnegative integer index`);
+  if (value instanceof JsTuple || value instanceof JsList || Array.isArray(value)) {
+    const items = Array.isArray(value) ? value : value.items;
+    if (index >= items.length) throw new RangeError(`pick ${index}: result has only ${items.length} items`);
+    return fromJs(items[index]);
+  }
+  if (isIterableResult(value)) {
+    let position = 0;
+    for (const item of value) {
+      if (position++ === index) return fromJs(item);
+    }
+    throw new RangeError(`pick ${index}: result has only ${position} items`);
+  }
+  throw new TypeError(`pick ${index}: call result is not indexable (expected an array, tuple or iterable)`);
+}
+
 function runCase0(c: Case): Outcome {
   const portEntry = PORTS[`${c.module}:${c.src}`];
   const port = Array.isArray(portEntry) ? (portEntry as readonly (() => unknown)[])[occurrence(c)] : (portEntry as (() => unknown) | undefined);
   if (port) {
     // a doctest that needs Python code (classes, lambdas) runs as its JavaScript translation
     try {
-      const v = fromJs(port());
+      const result = port();
+      const v = fromJs(c.pick === undefined ? result : pickResult(result, c.pick));
       return (c.text ? textMatches(v, c) : matches(v, c.expected)) ? { status: 'pass' } : { status: 'fail', got: typeof v === 'string' ? v : fmt(v) };
     } catch (e) {
       return { status: 'error', reason: e instanceof Error ? e.message : String(e) };
@@ -4564,6 +4611,7 @@ function runCase0(c: Case): Outcome {
       if (!auto || !(e instanceof Unsupported || e instanceof TypeError)) throw e;
       v = call(auto);
     }
+    if (c.pick !== undefined) v = pickResult(v, c.pick);
     if (c.text ? textMatches(v, c) : matches(v, c.expected)) return { status: 'pass' };
     if (c.text && typeof v === 'string') return { status: 'fail', got: v };
     const got = fmt(v);
