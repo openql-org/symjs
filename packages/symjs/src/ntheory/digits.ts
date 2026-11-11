@@ -13,7 +13,8 @@ import { asInt, babs } from './intutil';
  * The digits of n in base b, preceded by b (or -b for negative n) (SymPy
  * digits); `digits` pads with leading zeros to that many digits.
  */
-export function digits(nIn: IntLike, bIn: IntLike = 10, ndigits?: number): bigint[] {
+export function digits(nIn: IntLike, bIn: IntLike = 10, digitsIn?: IntLike): bigint[] {
+  const ndigits = digitsIn === undefined ? undefined : Number(asInt(digitsIn));
   const b = asInt(bIn);
   const n = asInt(nIn);
   if (b < 2n) throw new RangeError('b must be greater than 1');

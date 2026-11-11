@@ -3,11 +3,16 @@
 // Ported from SymPy (sympy/utilities/misc.py) and Python's textwrap, BSD-3-Clause / PSF.
 
 /**
- * @file Text helpers of SymPy's `sympy.utilities.misc`: `filldedent` and the
- * `textwrap` functions it uses (`dedent`, `fill`).
+ * @file The helpers of SymPy's `sympy.utilities.misc`: `filldedent` and the
+ * `textwrap` functions it uses (`dedent`, `fill`), the source-text helpers
+ * `rawlines` and `strlines`, the string substitutions `translate` and
+ * `replace` (exported as `replaceString`, `replace` being the expression
+ * operation), `asInt` and `funcName`.
  */
 
-import { at, last } from '../core/guard';
+import { at, getOrThrow, last } from '../core/guard';
+import { Expr, Float, Rational } from '../core/nodes';
+import { funcName as nodeClassName } from '../strategies/util';
 
 /** Python textwrap.dedent: the common leading whitespace removed from every line (blank lines become empty). */
 export function dedent(text: string): string {
@@ -69,4 +74,182 @@ export function fill(text: string, width = 70): string {
  */
 export function filldedent(s: string, w = 70): string {
   return `\n${fill(dedent(s).replace(/^\n+|\n+$/g, ''), w)}`;
+}
+
+/** The characters of a string as Python counts them: code points. */
+const codePoints = (s: string): string[] => Array.from(s);
+
+/** Python repr() of a string: in single quotes unless it has one and no double quote, with escapes. */
+function pyStrRepr(s: string): string {
+  const q = s.includes("'") && !s.includes('"') ? '"' : "'";
+  const esc: Readonly<Record<string, string>> = { '\\': '\\\\', '\n': '\\n', '\r': '\\r', '\t': '\\t', [q]: `\\${q}` };
+  let out = '';
+  for (const ch of s) {
+    const code = ch.charCodeAt(0);
+    out += esc[ch] ?? (code < 0x20 || code === 0x7f ? `\\x${code.toString(16).padStart(2, '0')}` : ch);
+  }
+  return `${q}${out}${q}`;
+}
+
+/**
+ * SymPy `rawlines(s)`: source text that, when printed, gives the string `s`
+ * of several lines: a call of `dedent` on a triple-quoted string, or a
+ * parenthesized concatenation of string literals when a line ends with a
+ * space, the text has a backslash, or has both kinds of triple quotes. A
+ * single line is its repr.
+ */
+export function rawlines(s: string): string {
+  const lines = s.split('\n');
+  if (lines.length === 1) return pyStrRepr(s);
+  const single = s.includes("'''");
+  if (lines.some((li) => li.endsWith(' ')) || s.includes('\\') || (single && s.includes('"""'))) {
+    const trailing = s.endsWith('\n');
+    const lastIndex = lines.length - 1;
+    const rv = lines.map((li, i) => pyStrRepr(i !== lastIndex || trailing ? `${li}\n` : li));
+    return `(\n    ${rv.join('\n    ')}\n)`;
+  }
+  const rv = lines.join('\n    ');
+  const q = single ? '"""' : "'''";
+  return `dedent(${q}\\\n    ${rv}${q})`;
+}
+
+/**
+ * SymPy `strlines(s, c=64, short=False)`: source text of a long string as
+ * a parenthesized concatenation of literals of at most `c` characters
+ * (raw literals when it has a backslash); with `short`, a string that fits
+ * on one line is a single literal. A string of several lines is
+ * {@link rawlines}.
+ */
+export function strlines(s: string, c = 64, short = false): string {
+  if (s.includes('\n')) return rawlines(s);
+  const q = pyStrRepr(s).startsWith('"') ? '"' : "'";
+  const raw = s.includes('\\');
+  const r = raw ? 'r' : '';
+  const width = c - (raw ? 3 : 2);
+  if (width < 1) throw new RangeError(`strlines: the width ${c} is too small`);
+  const chars = codePoints(s);
+  const out: string[] = [];
+  for (let i = 0; i < chars.length; i += width) out.push(chars.slice(i, i + width).join(''));
+  if (short && out.length === 1) return `${r}${q}${at(out, 0)}${q}`;
+  return `(\n${r}${q}${out.join(`${q}\n${r}${q}`)}${q}\n)`;
+}
+
+/** The replacements of a map made in one pass, the keys tried in their order at each position (SymPy `_replace`). */
+function replaceAll(s: string, reps: ReadonlyMap<string, string>): string {
+  if (reps.size === 0) return s;
+  const pattern = new RegExp([...reps.keys()].map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'g');
+  return s.replace(pattern, (m) => getOrThrow(reps, m));
+}
+
+/** A replacement given as an `[old, new]` pair. */
+const isPair = (r: ReadonlyMap<string, string> | readonly [string, string]): r is readonly [string, string] => Array.isArray(r);
+
+/**
+ * SymPy `replace(string, *reps)` of `sympy.utilities.misc`: the string
+ * with every key of the replacements replaced by its value in one pass
+ * (earlier keys win at the same position). The replacements are a map,
+ * or `[old, new]` pairs.
+ *
+ * `replaceString('foo', new Map([['oo', 'ar'], ['f', 'b']]))` is `'bar'`.
+ */
+export function replaceString(s: string, ...reps: readonly (ReadonlyMap<string, string> | readonly [string, string])[]): string {
+  return replaceAll(s, new Map(reps.flatMap((r): (readonly [string, string])[] => (isPair(r) ? [r] : [...r]))));
+}
+
+/** A one-character key with a one-character value (a translation rather than a replacement). */
+const isCharPair = ([k, v]: readonly [string, string]): boolean => codePoints(k).length === 1 && codePoints(v).length === 1;
+
+/**
+ * SymPy `translate(s, a, b=None, c=None)`: the characters of `a` replaced
+ * by those of `b` and the characters of `c` deleted (deletion first). With
+ * `a` null, the characters of `b` are deleted. `a` may be a map: its
+ * one-character keys with one-character values are translated, the other
+ * keys are replaced as substrings (in the map's order), and `b` is then the
+ * characters to delete.
+ */
+export function translate(s: string, a: string | ReadonlyMap<string, string> | null = null, b: string | null = null, c: string | null = null): string {
+  let mr = new Map<string, string>();
+  let from = '';
+  let to = '';
+  let del = c;
+  if (a === null) {
+    if (c !== null) throw new TypeError(`c should be None when a=None is passed, instead got ${c}`);
+    if (b === null) return s;
+    del = b;
+  } else if (typeof a !== 'string') {
+    const pairs = [...a];
+    const short = pairs.filter(isCharPair);
+    mr = new Map(pairs.filter((p) => !isCharPair(p)));
+    del = b;
+    from = short.map(([k]) => k).join('');
+    to = short.map(([, v]) => v).join('');
+  } else {
+    from = a;
+    to = b ?? '';
+    if (codePoints(from).length !== codePoints(to).length) throw new RangeError('oldchars and newchars have different lengths');
+  }
+  const gone = new Set(codePoints(del ?? ''));
+  const kept = codePoints(s).filter((ch) => !gone.has(ch)).join('');
+  const toChars = codePoints(to);
+  const tr = new Map(codePoints(from).map((ch, i) => [ch, at(toChars, i)]));
+  return codePoints(replaceAll(kept, mr)).map((ch) => tr.get(ch) ?? ch).join('');
+}
+
+/** The exact integer value of a float, undefined when it has a fractional part (a normalized mantissa is odd). */
+function floatInteger(f: Float): bigint | undefined {
+  const { man, exp } = f.mpf;
+  return exp >= 0n ? man << exp : undefined;
+}
+
+/**
+ * SymPy `as_int(n, strict=True)`: the integer value of `n` as a bigint.
+ * Strictly, only integers are accepted (a bigint, an integer number or an
+ * Integer); with `strict` false, also a value equal to an integer (a Float
+ * such as 2.0, a boolean). Throws a TypeError otherwise (SymPy raises a
+ * ValueError).
+ */
+export function asInt(n: unknown, strict = true): bigint {
+  if (typeof n === 'bigint') return n;
+  if (typeof n === 'number' && Number.isInteger(n)) return BigInt(n);
+  if (n instanceof Rational && n.q === 1n) return n.p;
+  if (!strict && typeof n === 'boolean') return n ? 1n : 0n;
+  const v = !strict && n instanceof Float ? floatInteger(n) : undefined;
+  if (v !== undefined) return v;
+  throw new TypeError(`${String(n)} is not an integer`);
+}
+
+/** The short names of the relations (`funcName` with `short`). */
+const SHORT_NAMES: Readonly<Record<string, string>> = {
+  GreaterThan: 'Ge',
+  StrictGreaterThan: 'Gt',
+  LessThan: 'Le',
+  StrictLessThan: 'Lt',
+  Equality: 'Eq',
+  Unequality: 'Ne',
+};
+
+/** The Python type name of a value that is not an expression. */
+function typeName(x: unknown): string {
+  if (typeof x === 'bigint' || (typeof x === 'number' && Number.isInteger(x))) return 'int';
+  if (typeof x === 'number') return 'float';
+  if (typeof x === 'string') return 'str';
+  if (typeof x === 'boolean') return 'bool';
+  if (typeof x === 'function') return x.name || 'function';
+  if (x === null || x === undefined) return 'NoneType';
+  if (Array.isArray(x)) return 'list';
+  if (x instanceof Map) return 'dict';
+  if (x instanceof Set) return 'set';
+  // a matrix (rows, cols and get) is SymPy's Matrix, a MutableDenseMatrix
+  if (typeof x === 'object' && 'rows' in x && 'cols' in x && 'get' in x) return 'MutableDenseMatrix';
+  return 'object';
+}
+
+/**
+ * SymPy `func_name(x, short=False)`: the name of the class (or function)
+ * of `x`: `Add`, `sin`, `StrictLessThan`, `Integer`, `MutableDenseMatrix`,
+ * `int`, ...; with `short`, a relation by its short name (`Lt`).
+ */
+export function funcName(x: unknown, short = false): string {
+  const rv = x instanceof Expr ? nodeClassName(x) : typeName(x);
+  return short ? (SHORT_NAMES[rv] ?? rv) : rv;
 }

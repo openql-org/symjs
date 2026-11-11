@@ -4,7 +4,7 @@
 // Tests of src/printing/pretty/symbology.ts.
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { centerPad, isSubscriptableInUnicode, prettySymbol, prettyUseUnicode, splitSuperSub, xobj, xsym } from '../../../src/printing/pretty';
+import { centerPad, isSubscriptableInUnicode, prettySymbol, prettyUseUnicode, xobj, xsym } from '../../../src/printing/pretty';
 import { isCombining } from '../../../src/printing/pretty/symbology';
 
 let prev = false;
@@ -63,8 +63,7 @@ describe('pretty_symbology', () => {
     expect(() => xsym('@')).toThrow(RangeError);
     expect(() => centerPad(5, 3)).toThrow('not enough space for string');
   });
-  it('split_super_sub and is_combining', () => {
-    expect(splitSuperSub('')).toEqual(['', [], []]);
+  it('is_combining', () => {
     expect(isCombining('́')).toBe(true);
     expect(isCombining('a')).toBe(false);
     expect(isCombining('⃗')).toBe(true);

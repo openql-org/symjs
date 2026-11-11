@@ -16952,6 +16952,7 @@
    "sha256": "86f37554c644e64acc8fc14be0002ec403b4c42c2102e801156ac5434df9e406",
    "status": "partial",
    "sources": [
+    "printing/conventions.ts",
     "printing/latex.ts",
     "printing/pretty/symbology.ts"
    ],

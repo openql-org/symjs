@@ -313,6 +313,18 @@ export const PORTS: Record<string, (() => unknown) | readonly (() => unknown)[]>
     () => sj.minimize((v: Expr) => sj.add(v, 1), (v: Expr) => sj.sub(v, 1))(sj.Rational.of(4)),
     () => sj.minimize((v: Expr) => sj.add(v, 1), (v: Expr) => sj.sub(v, 1), { objective: (v: Expr) => sj.mul(-1, v) })(sj.Rational.of(4)),
   ],
+  // tree = [(3, 2), (4, 1)]: a Python list is an array, a tuple a TreeTuple, and the types are the join keys
+  'sympy.strategies.tree:treeapply(tree, {list: max, tuple: min})': () =>
+    sj.tree.treeapply([new sj.tree.TreeTuple(3, 2), new sj.tree.TreeTuple(4, 1)], new Map<sj.tree.TreeContainer, sj.tree.TreeFunction>([[Array, Math.max], [sj.tree.TreeTuple, Math.min]])),
+  // add = lambda *args: sum(args); def mul(*args): (the product of args)
+  'sympy.strategies.tree:treeapply(tree, {list: mul, tuple: add})': () =>
+    sj.tree.treeapply(
+      [new sj.tree.TreeTuple(3, 2), new sj.tree.TreeTuple(4, 1)],
+      new Map<sj.tree.TreeContainer, sj.tree.TreeFunction>([
+        [Array, (...a: number[]) => a.reduce((p, q) => p * q, 1)],
+        [sj.tree.TreeTuple, (...a: number[]) => a.reduce((p, q) => p + q, 0)],
+      ]),
+    ),
   // key = lambda x: x.as_coeff_Mul()[1]; count = lambda x: x.as_coeff_Mul()[0]
   // combine = lambda cnt, arg: cnt * arg; rl = glom(key, count, combine)
   'sympy.strategies.rl:rl(Add(x, -x, 3*x, 2, 3, evaluate=False))': () =>

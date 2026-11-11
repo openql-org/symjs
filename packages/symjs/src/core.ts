@@ -80,12 +80,14 @@ export {
   matches,
   getO,
 } from './core/public';
-export { isTrue, isFalse, isUnknown, truthNot, truthAnd, truthOr, NoMatch, NoMatchResult, isNoMatch, Unsolved, UnsolvedResult, isUnsolved } from './core/truth';
-export type { Truth } from './core/truth';
+export { isTrue, isFalse, isUnknown, truthNot, truthAnd, truthOr, fuzzyBool, fuzzyAnd, fuzzyOr, fuzzyNot, fuzzyXor, fuzzyNand, NoMatch, NoMatchResult, isNoMatch, Unsolved, UnsolvedResult, isUnsolved } from './core/truth';
+export type { Truth, FuzzyLike } from './core/truth';
 export { classKey } from './printing/sortkey';
 export { expand_power_base as separate } from './simplify/expand';
 export { Q, ask, refine, AppliedPredicate, Predicate, registerHandler, removeHandler, AssumptionsContext, globalAssumptions, assuming } from './core/refine';
 export type { Assumption, PredicateName, PredicateHandler } from './core/refine';
+export { assumptions, checkAssumptions, commonAssumptions, failingAssumptions } from './core/checkassumptions';
+export type { AssumptionName, AssumptionValues } from './core/checkassumptions';
 export {
   SympifyError,
   PoleError,
