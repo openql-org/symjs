@@ -40,7 +40,9 @@ import extract
 
 
 OPTIONAL = {"numpy", "scipy", "gmpy", "gmpy2", "flint", "matplotlib", "hypothesis",
-            "numexpr", "cupy", "jax", "tensorflow", "torch", "sage", "antlr4"}
+            "numexpr", "cupy", "jax", "tensorflow", "torch", "sage"}
+# Plotting computes its sample meshes with numpy; the reference values are plain numbers.
+ALLOWED_OPTIONAL = {"plotting": {"numpy"}}
 SKIP_MARKS = {"XFAIL", "xfail", "slow", "tooslow", "skip", "SKIP"}
 OPS = {"__add__": operator.add, "__sub__": operator.sub, "__mul__": operator.mul,
        "__truediv__": operator.truediv, "__pow__": operator.pow,
@@ -55,10 +57,11 @@ OPS = {"__add__": operator.add, "__sub__": operator.sub, "__mul__": operator.mul
 
 
 # Top-level package names, not the doctest report's combined calculus/special labels.
-CATEGORIES = tuple("core polys assumptions sets logic concrete calculus series simplify solvers integrals functions matrices tensor ntheory combinatorics geometry vector stats discrete holonomic crypto liealgebras algebras categories strategies unify utilities printing parsing".split())
+CATEGORIES = tuple("core polys assumptions sets logic concrete calculus series simplify solvers integrals functions matrices tensor ntheory combinatorics geometry vector stats discrete holonomic crypto liealgebras algebras categories strategies unify utilities printing parsing plotting".split())
 EXCLUDED_AREAS = {
     "physics": "Physics belongs to extension packages, not the base symbolic engine.",
-    "plotting": "Rendering backends and interactive plotting are outside base scope.",
+    "plotting/backends": "Rendering backends are provided by connector packages.",
+    "plotting/pygletplot": "Interactive OpenGL rendering is provided by connector packages.",
     "codegen": "Source-code generation and compiler integration are outside this corpus.",
     "diffgeom": "Differential geometry is outside the base doctest scope.",
     "external": "Python bindings to optional external libraries are runtime-specific.",
@@ -77,15 +80,17 @@ FILE_SCOPE = {
                     "julia", "lambdarepr", "llvmjit", "maple", "mathematica", "numpy", "octave", "preview",
                     "pycode", "python", "rcode", "rust", "smtlib", "tensorflow", "theanocode", "torch")},
     **{f"parsing/tests/test_{name}.py": (False, "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers).")
-       for name in ("ast_parser", "autolev", "c_parser", "custom_latex", "fortran_parser", "latex", "latex_deps",
-                    "latex_lark", "maxima", "sym_expr")},
+       for name in ("ast_parser", "autolev", "c_parser", "fortran_parser", "maxima", "sym_expr")},
+    "parsing/tests/test_latex_deps.py": (False, "Checks the import failure without the ANTLR runtime; the port has no runtime dependency."),
     **{f"printing/tests/test_{name}.py": (True, "Base symbolic display printer or shared display support covered by extract.MODULES.")
        for name in ("str", "repr", "latex", "mathml", "tree", "dot", "tableform", "precedence", "conventions")},
     "printing/pretty/tests/test_pretty.py": (True, "Base ASCII/Unicode pretty printer covered by extract.MODULES."),
     **{f"parsing/tests/test_{name}.py": (True, "Public sympy_parser or Mathematica parser behavior.")
        for name in ("sympy_parser", "implicit_multiplication_application", "mathematica")},
-    "categories/tests/test_drawing.py": (False, "Diagram layout and drawing are outside the symbolic category API."),
-    **{f"utilities/tests/test_{name}.py": (False, reason) for name, reason in {
+    **{f"parsing/tests/test_{name}.py": (True, "LaTeX parser (ANTLR and Lark grammars) ported as the parsing subpath.")
+       for name in ("latex", "latex_lark", "custom_latex")},
+    "plotting/tests/test_experimental_lambdify.py": (False, "Python source generation is replaced by symjs numeric evaluation."),
+        **{f"utilities/tests/test_{name}.py": (False, reason) for name, reason in {
         "autowrap": "Compiles generated code with external toolchains.",
         "codegen": "Source-code generation is outside this corpus.",
         "codegen_julia": "Julia source-code generation is outside this corpus.",
@@ -430,23 +435,23 @@ def mark_name(node):
     return node.id if isinstance(node, ast.Name) else node.attr if isinstance(node, ast.Attribute) else ""
 
 
-def optional_aliases(tree):
-    aliases = set(OPTIONAL)
+def optional_aliases(tree, optional=OPTIONAL):
+    aliases = set(optional)
     for node in ast.walk(tree):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
             for name in node.names:
-                if ((getattr(node, "module", "") or "").split(".")[0] in OPTIONAL
-                        or name.name.split(".")[0] in OPTIONAL):
+                if ((getattr(node, "module", "") or "").split(".")[0] in optional
+                        or name.name.split(".")[0] in optional):
                     aliases.add(name.asname or name.name.split(".")[0])
         if isinstance(node, ast.Assign) and isinstance(node.value, ast.Call):
             if mark_name(node.value.func) in ("import_module", "importorskip") and node.value.args:
                 value = node.value.args[0]
-                if isinstance(value, ast.Constant) and str(value.value).split(".")[0] in OPTIONAL:
+                if isinstance(value, ast.Constant) and str(value.value).split(".")[0] in optional:
                     aliases.update(t.id for t in node.targets if isinstance(t, ast.Name))
     return aliases
 
 
-def skip_reason(node, aliases, functions, visited=None):
+def skip_reason(node, aliases, functions, visited=None, optional=OPTIONAL):
     visited = set() if visited is None else visited
     if node.name in visited:
         return None
@@ -455,16 +460,16 @@ def skip_reason(node, aliases, functions, visited=None):
         if mark_name(decorator) in SKIP_MARKS:
             return "marked-" + mark_name(decorator).lower()
     for child in ast.walk(node):
-        if isinstance(child, ast.Import) and any(n.name.split(".")[0] in OPTIONAL for n in child.names):
+        if isinstance(child, ast.Import) and any(n.name.split(".")[0] in optional for n in child.names):
             return "optional-dependency"
-        if isinstance(child, ast.ImportFrom) and (child.module or "").split(".")[0] in OPTIONAL:
+        if isinstance(child, ast.ImportFrom) and (child.module or "").split(".")[0] in optional:
             return "optional-dependency"
         if isinstance(child, ast.Name) and child.id in aliases:
             return "optional-dependency"
-        if isinstance(child, ast.Constant) and isinstance(child.value, str) and child.value in OPTIONAL:
+        if isinstance(child, ast.Constant) and isinstance(child.value, str) and child.value in optional:
             return "optional-dependency"
         if isinstance(child, ast.Call) and isinstance(child.func, ast.Name) and child.func.id in functions:
-            reason = skip_reason(functions[child.func.id], aliases, functions, visited)
+            reason = skip_reason(functions[child.func.id], aliases, functions, visited, optional)
             if reason == "optional-dependency":
                 return reason
     return None
@@ -491,8 +496,9 @@ def parameters(function):
 def execute_source(source, module, category, filename, timeout=extract.ALARM_SECONDS):
     original = ast.parse(source, filename)
     functions = {n.name: n for n in original.body if isinstance(n, ast.FunctionDef)}
-    aliases = optional_aliases(original)
-    skipped = {name: skip_reason(n, aliases, functions) for name, n in functions.items() if name.startswith("test")}
+    optional = OPTIONAL - ALLOWED_OPTIONAL.get(category, set())
+    aliases = optional_aliases(original, optional)
+    skipped = {name: skip_reason(n, aliases, functions, optional=optional) for name, n in functions.items() if name.startswith("test")}
     transform = Instrument(source)
     tree = ast.fix_missing_locations(transform.visit(copy.deepcopy(original)))
     capture = Capture(module, category, transform.sites)
@@ -509,7 +515,7 @@ def execute_source(source, module, category, filename, timeout=extract.ALARM_SEC
     original_warn = warnings.warn
 
     def without_optional(name, *args, **kwargs):
-        if name.split(".")[0] in OPTIONAL:
+        if name.split(".")[0] in optional:
             raise ImportError(f"Optional dependency excluded from the pilot: {name}")
         return original_import(name, *args, **kwargs)
 

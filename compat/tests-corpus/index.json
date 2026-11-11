@@ -114,30 +114,32 @@
       ]
     },
     "categories": {
-      "examined": 76,
-      "cases": 57,
+      "examined": 372,
+      "cases": 312,
       "reasons": {
         "non-call-expression": 14,
-        "not-exported-api": 2,
+        "not-exported-api": 11,
+        "unserializable-input": 32,
         "unsupported-assertion": 3
       },
-      "sourceSites": 76,
+      "sourceSites": 372,
       "testStatuses": {
-        "completed": 3
+        "completed": 12
       },
-      "seconds": 0.545,
+      "seconds": 4.69,
       "retainedModules": 0,
       "shards": [
         {
           "file": "categories.json",
-          "cases": 57,
-          "bytes": 55009
+          "cases": 312,
+          "bytes": 1123226
         }
       ],
       "auditFile": "categories.audit.json",
-      "auditBytes": 3963,
+      "auditBytes": 12987,
       "modules": [
-        "sympy.categories.tests.test_baseclasses"
+        "sympy.categories.tests.test_baseclasses",
+        "sympy.categories.tests.test_drawing"
       ]
     },
     "combinatorics": {
@@ -786,36 +788,87 @@
       ]
     },
     "parsing": {
-      "examined": 1454,
-      "cases": 170,
+      "examined": 2072,
+      "cases": 772,
       "reasons": {
+        "duplicate": 10,
+        "marked-xfail": 3,
         "non-call-expression": 1026,
         "not-executed": 1,
         "not-exported-api": 136,
         "private-api": 4,
         "python-runtime-api": 12,
+        "test-exception:RecursionError": 1,
         "unserializable-input": 65,
-        "unsupported-assertion": 40
+        "unsupported-assertion": 40,
+        "unsupported-raises": 2
       },
-      "sourceSites": 249,
+      "sourceSites": 286,
       "testStatuses": {
-        "completed": 38
+        "completed": 60,
+        "marked-xfail": 3,
+        "test-exception:RecursionError": 2
       },
-      "seconds": 0.889,
+      "seconds": 24.57,
       "retainedModules": 0,
       "shards": [
         {
           "file": "parsing.json",
-          "cases": 170,
-          "bytes": 58174
+          "cases": 772,
+          "bytes": 235432
         }
       ],
       "auditFile": "parsing.audit.json",
-      "auditBytes": 49613,
+      "auditBytes": 54771,
       "modules": [
+        "sympy.parsing.tests.test_custom_latex",
         "sympy.parsing.tests.test_implicit_multiplication_application",
+        "sympy.parsing.tests.test_latex",
+        "sympy.parsing.tests.test_latex_lark",
         "sympy.parsing.tests.test_mathematica",
         "sympy.parsing.tests.test_sympy_parser"
+      ]
+    },
+    "plotting": {
+      "examined": 1139,
+      "cases": 20,
+      "reasons": {
+        "marked-xfail": 2,
+        "non-boolean-assertion": 52,
+        "non-call-expression": 103,
+        "not-executed": 1,
+        "not-exported-api": 220,
+        "optional-dependency": 327,
+        "stateful-iterator-input": 10,
+        "unserializable-input": 366,
+        "unsupported-assertion": 38
+      },
+      "sourceSites": 1033,
+      "testStatuses": {
+        "completed": 87,
+        "marked-xfail": 3,
+        "optional-dependency": 32
+      },
+      "seconds": 5.972,
+      "retainedModules": 0,
+      "shards": [
+        {
+          "file": "plotting.json",
+          "cases": 20,
+          "bytes": 14901
+        }
+      ],
+      "auditFile": "plotting.audit.json",
+      "auditBytes": 222147,
+      "modules": [
+        "sympy.plotting.intervalmath.tests.test_interval_functions",
+        "sympy.plotting.intervalmath.tests.test_interval_membership",
+        "sympy.plotting.intervalmath.tests.test_intervalmath",
+        "sympy.plotting.tests.test_plot",
+        "sympy.plotting.tests.test_plot_implicit",
+        "sympy.plotting.tests.test_series",
+        "sympy.plotting.tests.test_textplot",
+        "sympy.plotting.tests.test_utils"
       ]
     },
     "polys": {
@@ -1468,10 +1521,6 @@
   },
   "excludedFiles": [
     {
-      "file": "categories/tests/test_drawing.py",
-      "reason": "Diagram layout and drawing are outside the symbolic category API."
-    },
-    {
       "file": "codegen/tests/test_abstract_nodes.py",
       "reason": "Source-code generation and compiler integration are outside this corpus."
     },
@@ -1612,24 +1661,12 @@
       "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
     },
     {
-      "file": "parsing/tests/test_custom_latex.py",
-      "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
-    },
-    {
       "file": "parsing/tests/test_fortran_parser.py",
       "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
     },
     {
-      "file": "parsing/tests/test_latex.py",
-      "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
-    },
-    {
       "file": "parsing/tests/test_latex_deps.py",
-      "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
-    },
-    {
-      "file": "parsing/tests/test_latex_lark.py",
-      "reason": "Parser other than sympy_parser or Mathematica (including LaTeX, Autolev and compiler parsers)."
+      "reason": "Checks the import failure without the ANTLR runtime; the port has no runtime dependency."
     },
     {
       "file": "parsing/tests/test_maxima.py",
@@ -2040,44 +2077,12 @@
       "reason": "Physics belongs to extension packages, not the base symbolic engine."
     },
     {
-      "file": "plotting/intervalmath/tests/test_interval_functions.py",
-      "reason": "Rendering backends and interactive plotting are outside base scope."
-    },
-    {
-      "file": "plotting/intervalmath/tests/test_interval_membership.py",
-      "reason": "Rendering backends and interactive plotting are outside base scope."
-    },
-    {
-      "file": "plotting/intervalmath/tests/test_intervalmath.py",
-      "reason": "Rendering backends and interactive plotting are outside base scope."
-    },
-    {
       "file": "plotting/pygletplot/tests/test_plotting.py",
-      "reason": "Rendering backends and interactive plotting are outside base scope."
+      "reason": "Interactive OpenGL rendering is provided by connector packages."
     },
     {
       "file": "plotting/tests/test_experimental_lambdify.py",
-      "reason": "Rendering backends and interactive plotting are outside base scope."
-    },
-    {
-      "file": "plotting/tests/test_plot.py",
-      "reason": "Rendering backends and interactive plotting are outside base scope."
-    },
-    {
-      "file": "plotting/tests/test_plot_implicit.py",
-      "reason": "Rendering backends and interactive plotting are outside base scope."
-    },
-    {
-      "file": "plotting/tests/test_series.py",
-      "reason": "Rendering backends and interactive plotting are outside base scope."
-    },
-    {
-      "file": "plotting/tests/test_textplot.py",
-      "reason": "Rendering backends and interactive plotting are outside base scope."
-    },
-    {
-      "file": "plotting/tests/test_utils.py",
-      "reason": "Rendering backends and interactive plotting are outside base scope."
+      "reason": "Python source generation is replaced by symjs numeric evaluation."
     },
     {
       "file": "printing/tests/test_aesaracode.py",
@@ -2278,5 +2283,5 @@
   ],
   "timeoutSeconds": 30,
   "jobs": 4,
-  "lastRunSeconds": 438.496
+  "lastRunSeconds": 25.048
 }

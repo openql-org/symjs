@@ -14,6 +14,8 @@ export class interval {
     const a = start instanceof interval ? start.start : start;
     const b = start instanceof interval ? start.end : end ?? start;
     if (typeof a !== 'number' || typeof b !== 'number' || Number.isNaN(a) || Number.isNaN(b)) throw new TypeError('Interval endpoints must be numbers, not NaN.');
+    // an interval has at most two endpoints; a third positional number is not an options object
+    if (typeof options !== 'object' || options === null) throw new TypeError('Interval options must be an object.');
     this.start = Math.min(a, b); this.end = Math.max(a, b); this.isValid = options.isValid ?? true;
   }
   get mid(): number { return (this.start + this.end) / 2; }

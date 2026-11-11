@@ -586,6 +586,9 @@ export function deserialize(tree: Tree): unknown {
       const entries = (deserialize(tree['morphisms'] as Tree) as JsDict).entries;
       const d = sj.Diagram(new Map(entries.map(([m, p]) => [m as sj.Morphism, p as sj.SetExpr])));
       const grid = new categories.DiagramGrid(d);
+      // the serialized grid lists its morphisms; rebuilding the diagram from them would compose them again
+      grid.morphisms.clear();
+      for (const [m, p] of entries) grid.morphisms.set(m as sj.Morphism, p as sj.SetExpr);
       const cells = (tree['cells'] as Tree[][]).map((row) => row.map(deserialize));
       const storage = new GrowableGrid<Expr>(cells[0]?.length ?? 0, cells.length);
       cells.forEach((row, i) => row.forEach((cell, j) => storage.set(i, j, cell instanceof Expr ? cell : sj.NoMatch)));
@@ -4298,6 +4301,13 @@ ADAPTERS['TableForm'] = (args, kw) => {
   const options = Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), printable(v)]));
   return new sj.TableForm(data, options);
 };
+ADAPTERS['.draw'] = (args, kw, self) => {
+  if (!(self instanceof categories.XypicDiagramDrawer)) return unsupportedOp('draw');
+  const masked = kw['masked'] instanceof JsTuple ? kw['masked'].items : Array.isArray(kw['masked']) ? kw['masked'] : [];
+  const options: categories.XypicDrawOptions = { masked: masked as sj.Morphism[] };
+  if (typeof kw['diagram_format'] === 'string') options.diagramFormat = kw['diagram_format'];
+  return self.draw(args[0] as sj.Diagram, args[1] as categories.DiagramGrid, options);
+};
 for (const name of ['pretty', 'pprint'] as const) ADAPTERS[name] = (args, kw) => args[0] instanceof categories.DiagramGrid ? args[0].toPretty() + (name === 'pprint' ? '\n' : '') : sj[name](prettyArg(args[0]) as sj.Printable, printOptions(kw));
 ADAPTERS['latex'] = (args, kw) => sj.latex(printable(args[0]) as sj.LatexPrintable, printOptions(kw));
 ADAPTERS['print_latex'] = (args, kw) => sj.printLatex(printable(args[0]) as sj.LatexPrintable, printOptions(kw));
@@ -4440,7 +4450,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     return r.value instanceof Expr ? String(r.value) === 'True' : r.value === true;
   },
   '.__getitem__': (a, [i]) => {
-    const index = i instanceof JsTuple ? i.items : Array.isArray(i) && (a instanceof Matrix || a instanceof sj.MatrixExpr || a instanceof sj.NDimArray || a instanceof sj.IndexedBase || a instanceof sj.ArraySymbol) ? i : [i];
+    const index = i instanceof JsTuple ? i.items : Array.isArray(i) && (a instanceof Matrix || a instanceof sj.MatrixExpr || a instanceof sj.NDimArray || a instanceof sj.IndexedBase || a instanceof sj.ArraySymbol || a instanceof categories.DiagramGrid) ? i : [i];
     if (index.some((j) => j instanceof sj.Slice)) {
       if (a instanceof sj.MatrixExpr) {
         const spec = (v: unknown): sj.SliceSpec => v instanceof sj.Slice ? v.toString().split(':').map((p) => p === '' ? null : Number(p)) as [number | null, number | null, number | null] : asExpr(v);
@@ -4455,6 +4465,7 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
         return a.slice(indices(index[0], a.rows), indices(index[1], a.cols));
       }
     }
+    if (a instanceof categories.DiagramGrid) return a.get(Number(index[0]), Number(index[1]));
     if (a instanceof Matrix) {
       const indices = index;
       const n = (v: unknown): number => Number(v);
@@ -4601,6 +4612,16 @@ function intpolyAdapter(c: Case): Adapter | undefined {
 
 function autoAdapter(c: Case): Adapter | undefined {
   if (c.fn === 'xypic_draw_diagram') return (args, kw) => categories.xypicDrawDiagram(args[0] as sj.Diagram, Object.fromEntries(Object.entries(kw).map(([k, v]) => [camel(k), toJs(v, true)])));
+  if (c.module.startsWith('sympy.plotting.intervalmath.') && ['And', 'Or', 'intervalMembership'].includes(c.fn)) {
+    // Python's None is the third truth value of interval membership
+    const truth = (v: unknown): sj.Truth => v === null || v === undefined ? 'unknown' : v === true;
+    const membership = (v: unknown): plotting.intervalmath.intervalMembership =>
+      v instanceof plotting.intervalmath.intervalMembership ? v : new plotting.intervalmath.intervalMembership(truth((v as JsTuple).items[0]), truth((v as JsTuple).items[1]));
+    const tuple = (m: plotting.intervalmath.intervalMembership): JsTuple => new JsTuple([m.value, m.isValid].map((v) => v === 'unknown' ? null : v));
+    if (c.fn === 'intervalMembership') return (args) => new plotting.intervalmath.intervalMembership(...(args.map(truth) as [sj.Truth, sj.Truth]));
+    const f = c.fn === 'And' ? plotting.intervalmath.And : plotting.intervalmath.Or;
+    return (args) => tuple(f(...args.map(membership)));
+  }
   if (c.category === 'plotting') {
     const f = (plotting as unknown as Record<string, (...args: unknown[]) => unknown>)[camel(c.fn)];
     if (f) return (args, kw) => {

@@ -41,6 +41,10 @@ expect(bool(op("eq", op("eq", unary("USub", iv(unary("USub", 1), unary("USub", 2
 expect(() => iv(1, 2, 3)).toThrow();
 });
 
+it("rejects a third endpoint", () => {
+  expect(() => new li.interval(1, 2, 3 as unknown as { isValid?: boolean })).toThrow(TypeError);
+});
+
 it("test_interval_add", () => {
 expect(bool(op("eq", op("eq", op("add", iv(1, 2), iv(2, 3)), iv(3, 5)), [true, true])), "test_intervalmath.py:44").toBe(true);
 expect(bool(op("eq", op("eq", op("add", 1, iv(1, 2)), iv(2, 3)), [true, true])), "test_intervalmath.py:45").toBe(true);
