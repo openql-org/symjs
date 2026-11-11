@@ -119,8 +119,8 @@ describe('symbol assumptions zero and integer', () => {
     expect(w.assumptions).toEqual({ integer: false, zero: false });
     // the assumptions are part of the identity of a symbol
     expect(new Set([z.key, w.key, new sj.Sym('z').key, new sj.Sym('w').key]).size).toBe(4);
-    // zero together with a sign is ignored (SymPy raises InconsistentAssumptions)
-    expect(new sj.Sym('p', { zero: true, positive: true }).assumptions.zero).toBe(false);
+    // Zero cannot also be strictly positive.
+    expect(() => new sj.Sym('p', { zero: true, positive: true })).toThrow(RangeError);
   });
 });
 
@@ -211,3 +211,23 @@ it('Order.contains reports a missing calculus registration', () => {
   } finally { sjImpl.orderContains = previous; }
 });
 import { impl as sjImpl } from '../../src/core/nodes';
+
+it('retains constructor facts, explicit false values and their consequences in symbol identities', () => {
+  const odd = new sj.Sym('n', { odd: true });
+  expect(odd.assumptions.integer).toBe(true);
+  expect(odd.assumptions0.get('even')).toBe(false);
+  expect(odd.equals(new sj.Sym('n', { integer: true, even: false }))).toBe(true);
+  expect(odd.equals(new sj.Sym('n', { even: true }))).toBe(false);
+  expect(new sj.Sym('x', { real: false }).equals(new sj.Sym('x'))).toBe(false);
+  expect(new sj.Sym('x', { positive: false }).assumptions0.get('positive')).toBe(false);
+  expect(new sj.Sym('x', { rational: true }).assumptions.real).toBe(true);
+  expect(new sj.Sym('p', { prime: true }).assumptions.positive).toBe(true);
+  expect(new sj.Sym('n', { finite: false }).assumptions0.get('infinite')).toBe(true);
+  expect(new sj.Sym('x', { commutative: true }).key).toBe(new sj.Sym('x').key);
+  const extended = new sj.Sym('x', { extendedPositive: true, aboveFermi: false, belowFermi: false });
+  expect(extended.assumptions0.get('extended_positive')).toBe(true);
+  expect(extended.assumptions0.get('above_fermi')).toBe(false);
+  expect(extended.assumptions0.get('below_fermi')).toBe(false);
+  expect(extended.equals(new sj.Sym('x', { extendedPositive: true }))).toBe(false);
+  expect(() => new sj.Sym('n', { odd: true, even: true })).toThrow(RangeError);
+});

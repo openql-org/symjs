@@ -2,9 +2,9 @@
 
 Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
-Measured **12933** cases: **8070 exact**, **228 equivalent**, **4635 failing**. Agreement: **64.16%**.
+Measured **12933** cases: **8078 exact**, **228 equivalent**, **4627 failing**. Agreement: **64.22%**.
 
-Replay runtime: **324.54 s**. Known gaps: **4635**. Exception class mismatches accepted in the pilot: **177**.
+Replay runtime: **69.42 s**. Known gaps: **4627**. Exception class mismatches accepted in the pilot: **178**.
 
 Exact includes successful inequality, identity, boolean and exception assertions. Equality uses the existing doctest matching and equivalence rules.
 
@@ -12,7 +12,7 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Cases | Exact | Equivalent | Fail | Unsupported | Error | Agreement |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| core | 7858 | 5447 | 180 | 1276 | 661 | 294 | 71.61% |
+| core | 7858 | 5455 | 180 | 1268 | 661 | 294 | 71.71% |
 | polys | 5075 | 2623 | 48 | 298 | 1661 | 445 | 52.63% |
 
 ## Agreement by test module
@@ -20,8 +20,8 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | Module | Cases | Exact | Equivalent | Fail | Unsupported | Error | Agreement |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | sympy.core.tests.test_args | 0 | 0 | 0 | 0 | 0 | 0 | - |
-| sympy.core.tests.test_arit | 1235 | 715 | 27 | 255 | 220 | 18 | 60.08% |
-| sympy.core.tests.test_assumptions | 699 | 344 | 0 | 171 | 181 | 3 | 49.21% |
+| sympy.core.tests.test_arit | 1235 | 716 | 27 | 254 | 220 | 18 | 60.16% |
+| sympy.core.tests.test_assumptions | 699 | 350 | 0 | 165 | 181 | 3 | 50.07% |
 | sympy.core.tests.test_basic | 198 | 175 | 0 | 10 | 11 | 2 | 88.38% |
 | sympy.core.tests.test_cache | 0 | 0 | 0 | 0 | 0 | 0 | - |
 | sympy.core.tests.test_compatibility | 0 | 0 | 0 | 0 | 0 | 0 | - |
@@ -33,7 +33,7 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | sympy.core.tests.test_equal | 12 | 12 | 0 | 0 | 0 | 0 | 100.00% |
 | sympy.core.tests.test_eval | 33 | 33 | 0 | 0 | 0 | 0 | 100.00% |
 | sympy.core.tests.test_evalf | 133 | 65 | 18 | 25 | 21 | 4 | 62.41% |
-| sympy.core.tests.test_expand | 145 | 111 | 2 | 16 | 3 | 13 | 77.93% |
+| sympy.core.tests.test_expand | 145 | 112 | 2 | 15 | 3 | 13 | 78.62% |
 | sympy.core.tests.test_expr | 846 | 679 | 14 | 96 | 17 | 40 | 81.91% |
 | sympy.core.tests.test_exprtools | 183 | 129 | 6 | 12 | 9 | 27 | 73.77% |
 | sympy.core.tests.test_facts | 1 | 0 | 0 | 0 | 1 | 0 | 0.00% |
@@ -156,21 +156,21 @@ Exact includes successful inequality, identity, boolean and exception assertions
 | core: .matches (fail) | 50 |
 | core: .is_positive (fail) | 49 |
 | core: .is_imaginary (unsupported) | 47 |
-| core: .is_integer (fail) | 42 |
 | core: .is_nonnegative (fail) | 42 |
+| core: .is_integer (fail) | 41 |
 | core: .is_negative (fail) | 37 |
 | core: .simplify (fail) | 37 |
 | polys: dict_from_expr (unsupported) | 37 |
 | core: .is_zero (fail) | 35 |
-| core: .is_real (fail) | 35 |
 | core: .is_comparable (unsupported) | 35 |
 | polys: .dup_refine_real_root (unsupported) | 35 |
 | core: unchanged (error) | 34 |
+| core: .is_real (fail) | 34 |
 | polys: .dup_isolate_real_roots (unsupported) | 32 |
 | core: Mod (fail) | 31 |
 | core: .__lt__ (fail) | 31 |
-| core: .is_finite (fail) | 28 |
 | polys: .from_poly (unsupported) | 28 |
+| core: .is_finite (fail) | 27 |
 | core: .__ge__ (fail) | 26 |
 | core: .is_rational (fail) | 25 |
 | core: .is_composite (unsupported) | 25 |
@@ -193,6 +193,7 @@ Any exception from an invoked adapter counts as agreement in this pilot. Missing
 | sympy.core.tests.test_assumptions:test_sanitize_assumptions:1043 #975e81bb6e5e9d0b3fd5 | ValueError | SyntaxError |
 | sympy.core.tests.test_assumptions:test_sanitize_assumptions:1043 #1f9a7c6550525f71fe24 | ValueError | SyntaxError |
 | sympy.core.tests.test_assumptions:test_sanitize_assumptions:1043 #8cb6ec9789d404150163 | ValueError | SyntaxError |
+| sympy.core.tests.test_assumptions:test_inconsistent:1057 #821a5bde701f4315dd13 | InconsistentAssumptions | RangeError |
 | sympy.core.tests.test_assumptions:test_issue_8075:1115 #1488a5b1b86786f5c97c | InconsistentAssumptions | SyntaxError |
 | sympy.core.tests.test_assumptions:test_issue_8075:1116 #e5ad4be60544e7980d41 | InconsistentAssumptions | SyntaxError |
 | sympy.core.tests.test_assumptions:test_issue_16579:1211 #1e1ddce5c866304d64e0 | InconsistentAssumptions | SyntaxError |

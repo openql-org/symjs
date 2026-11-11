@@ -27,7 +27,7 @@ class SubsystemSerialization(unittest.TestCase):
         tree = extract.ser(matrix)
         self.assertEqual(tree['t'], 'PolyMatrix')
         self.assertEqual(tree['ring'], extract.ser(s.ZZ.poly_ring(x)))
-        self.assertEqual(tree['entries'], extract.ser([[x, 0]]))
+        self.assertEqual(tree['entries'], extract.ser([[x, s.Integer(0)]]))
 
     def test_resultants_preserve_polynomial_order(self):
         x, y = s.symbols('x y')

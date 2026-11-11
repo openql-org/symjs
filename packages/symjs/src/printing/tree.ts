@@ -10,9 +10,9 @@
  */
 
 import type { Expr } from '../core/nodes';
-import { deduceAllFacts } from '../core/facts';
+import { Sym, WildFunction } from '../core/nodes';
 import type { BasicView } from './repr';
-import { basicView, symbolAssumptionFacts } from './repr';
+import { basicView } from './repr';
 
 /** The options of {@link tree}, {@link printTree} and {@link printNode}. */
 export interface TreeOptions {
@@ -42,9 +42,8 @@ export function pprintNodes(subtrees: readonly string[]): string {
  * asked before.
  */
 function nodeFacts(view: BasicView): [string, boolean][] {
-  const given = view.expr ? symbolAssumptionFacts(view.expr) : undefined;
-  if (given === undefined) return [];
-  return [...deduceAllFacts(given)].sort(([a], [b]) => (a < b ? -1 : 1));
+  if (!(view.expr instanceof Sym) || view.expr instanceof WildFunction) return [];
+  return [...view.expr.assumptions0].sort(([a], [b]) => (a < b ? -1 : 1));
 }
 
 function viewNode(view: BasicView, assumptions: boolean): string {

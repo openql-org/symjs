@@ -24,6 +24,7 @@ import re
 import doctest
 import signal
 import importlib
+import inspect
 import json
 import random
 import sys
@@ -638,7 +639,10 @@ def subpackage_public(modname):
         names |= {n for n, v in vars(mod).items() if not n.startswith("_") and callable(v) and getattr(v, "__module__", None) == modname}
     return names
 
-ASSUMPTION_KEYS = ["real", "positive", "negative", "nonnegative", "nonpositive", "integer", "commutative", "polar", "above_fermi", "below_fermi"]
+def symbol_assumptions(symbol):
+    """Constructor facts, including False; inferred facts are rebuilt by the API."""
+    return {k: v for k, v in symbol._assumptions_orig.items()
+            if isinstance(v, bool) and not (k == "commutative" and v)}
 
 
 DUMMY_IDS = {}
@@ -987,7 +991,7 @@ def ser(o):
     if isinstance(o, _Polyhedron):
         # rebuilt by the constructor from its corners, faces and the permutations of its group
         return {"t": "Polyhedron", "corners": [ser(c) for c in o.args[0]], "faces": [[int(i) for i in f] for f in o.args[1]],
-                "pgroup": [ser(g) for g in o.args[2]]}
+                "pgroup": [ser(g) for g in o.args[2]], "rotation": list(o.array_form)}
     if isinstance(o, _WTI):
         return {"t": "WildTensorIndex", "name": o.name, "type": ser(o.tensor_index_type), "up": bool(o.is_up), "ignoreUpdown": bool(o.ignore_updown)}
     if isinstance(o, _WTH):
@@ -1050,7 +1054,7 @@ def ser(o):
         # an element of GF(p) (the LFSR sequences of sympy.crypto, galoistools): its value and the modulus
         return {"t": "FFElement", "v": int(o.val) % int(o.mod), "mod": int(o.mod), "symmetric": bool(o.sym)}
     if isinstance(o, int):
-        return {"t": "Rational", "p": str(o), "q": "1"}
+        return {"t": "Rational", "p": str(o), "q": "1", "py": True}
     if isinstance(o, float):
         return {"t": "Float", "v": o, "py": True}
     if isinstance(o, str):
@@ -1064,6 +1068,11 @@ def ser(o):
     if isinstance(o, (_types.FunctionType, _types.BuiltinFunctionType)):
         # a library function passed as an argument (equal_valued, factor, math.isclose, ...)
         mod = getattr(o, "__module__", "") or ""
+        if mod == "sympy.vector.vector" and o.__qualname__ == "Vector.dot.<locals>.directional_derivative":
+            return {"t": "DirectionalDerivative", "vector": ser(inspect.getclosurevars(o).nonlocals["self"])}
+        # A closure is not a module-level function bearing its local name.
+        if "<locals>" in getattr(o, "__qualname__", ""):
+            raise Unsupported("function closure")
         if mod.startswith("sympy") or mod == "math":
             return {"t": "JsFunc", "name": ("math." if mod == "math" else "") + o.__name__}
         if (mod, o.__name__) in (("builtins", "len"), ("_operator", "ge")):
@@ -1083,9 +1092,13 @@ def ser(o):
         # rebuilt by the class constructor from its arguments
         return {"t": "Geom", "cls": type(o).__name__, "args": [ser(a) for a in o.args]}
     if isinstance(o, sympy.Indexed):
-        return {"t": "Indexed", "base": ser(o.base.label), "indices": [ser(i) for i in o.indices]}
+        return {"t": "Indexed", "base": ser(o.base), "indices": [ser(i) for i in o.indices]}
     if isinstance(o, sympy.IndexedBase):
-        return {"t": "IndexedBase", "label": ser(o.label)}
+        return {"t": "IndexedBase", "label": ser(o.label),
+                **({"shape": [ser(d) for d in o.shape]} if o.shape is not None else {})}
+    from sympy.polys.rootoftools import _pure_key_dict
+    if isinstance(o, _pure_key_dict):
+        return {"t": "PureKeyDict", "items": [[ser(k), ser(v)] for k, v in o._dict.items()]}
     if isinstance(o, sympy.CRootOf):
         return {"t": "CRootOf", "poly": ser(o.expr), "index": int(o.index)}
     if isinstance(o, sympy.RootSum):
@@ -1317,26 +1330,21 @@ def ser(o):
             if len(names) != 1 or not names[0].startswith("is_"):
                 raise Unsupported("Wild properties")
             props.append(names[0])
-        a = {k: True for k in ASSUMPTION_KEYS if o._assumptions_orig.get(k) is True}
+        a = symbol_assumptions(o)
         return {"t": "Wild", "name": o.name, "exclude": [ser(e) for e in o.exclude], "assume": a, "props": props}
     if isinstance(o, _WF):
         nargs = o.nargs
         lst = None if nargs == sympy.S.Naturals0 else sorted(int(n) for n in nargs)
         return {"t": "WildFunction", "name": o.name, "nargs": lst}
     if isinstance(o, sympy.Dummy):
-        a = {k: True for k in ASSUMPTION_KEYS if o._assumptions_orig.get(k) is True}
+        a = symbol_assumptions(o)
         # indices are renumbered per case so that the corpus is reproducible
         idx = DUMMY_IDS.setdefault(o.dummy_index, len(DUMMY_IDS))
         # a default name carries the global index, which depends on what ran before
         name = f"Dummy_{idx}" if o.name == f"Dummy_{o.dummy_index}" else o.name
         return {"t": "Dummy", "name": name, "index": idx, "assume": a}
     if o.is_Symbol and type(o) is Symbol:
-        a = {k: True for k in ASSUMPTION_KEYS if o._assumptions_orig.get(k) is True}
-        if o._assumptions_orig.get("zero") is False:
-            a["zero"] = False
-        if o._assumptions_orig.get("commutative") is False:
-            a["commutative"] = False
-        a.pop("commutative", None) if a.get("commutative") is True else None
+        a = symbol_assumptions(o)
         return {"t": "Symbol", "name": o.name, "assume": a}
     if isinstance(o, (Integer, Rational)) and o.is_Rational:
         return {"t": "Rational", "p": str(o.p), "q": str(o.q)}
@@ -1451,6 +1459,11 @@ class Timeout(Exception):
 def ser_arg(node, globs):
     """Serialize a call argument; a lambda whose body evaluates to an expression
     when applied to dummies becomes {"t": "JsLambda", params, body}."""
+    if isinstance(node, ast.Call):
+        factory = eval(compile(ast.Expression(node.func), "<factory>", "eval"), globs)
+        from sympy.strategies.tools import subs as strategy_subs
+        if factory is strategy_subs and len(node.args) == 1 and not node.keywords:
+            return {"t": "StrategySubs", "mapping": ser_arg(node.args[0], globs)}
     if isinstance(node, ast.Lambda) and not node.args.vararg and not node.args.kwonlyargs and not node.args.kwarg:
         names = [a.arg for a in node.args.args]
         b = node.body
@@ -1465,6 +1478,8 @@ def ser_arg(node, globs):
             body = eval(compile(ast.Expression(node.body), "<lambda>", "eval"), loc)
         except Exception:
             raise Unsupported("function")
+        if isinstance(body, (int, float)) and not isinstance(body, bool):
+            body = sympy.sympify(body)
         if not isinstance(body, Basic) or isinstance(body, sympy.logic.boolalg.BooleanAtom):
             raise Unsupported("function")
         return {"t": "JsLambda", "params": [ser(d) for d in ds], "body": ser(body)}
@@ -1574,13 +1589,14 @@ def serialize_call(record, call, globs, assumed, pre_args=None, printed=False):
     """Freeze a call's receiver, arguments and assumptions at the current state."""
     DUMMY_IDS.clear()
     if "selfSrc" in record:
-        receiver = eval(record.pop("selfSrc"), globs)
+        receiver_src = record.pop("selfSrc")
+        receiver = eval(receiver_src, globs)
         if record.pop("synthetic", False) and not is_sympy_operand(
                 receiver, [eval(compile(ast.Expression(a), "<a>", "eval"), globs) for a in call.args]):
             raise NotSympy()
         if printed and isinstance(receiver, types.ModuleType):
             raise PythonRuntime()
-        record["self"] = ser(receiver)
+        record["self"] = ser_arg(ast.parse(receiver_src, mode="eval").body, globs) if callable(receiver) else ser(receiver)
     record["args"] = pre_args if pre_args is not None else [ser_arg(a, globs) for a in call.args]
     record["kwargs"] = {k.arg: ser_arg(k.value, globs) for k in call.keywords}
     if assumed:

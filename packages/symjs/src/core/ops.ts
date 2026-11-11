@@ -783,6 +783,8 @@ export function pow(bx: ExprLike, ex: ExprLike): Expr {
 
   // SymPy Rational._eval_power: (-2)**(2*n) = 2**(2*n) for an even exponent
   if ((b instanceof Rational || b instanceof Float) && b.isNegative && isEvenQ(e)) return pow(numNeg(b), e);
+  // An odd integer exponent retains exactly one negative factor.
+  if ((b instanceof Rational || b instanceof Float) && b.isNegative && e instanceof Sym && e.assumptions0.get('odd') === true) return mul(-1, pow(numNeg(b), e));
 
   if (b instanceof Rational && b.isZero) {
     if (isPositive(e)) return S.Zero;
@@ -1049,6 +1051,7 @@ function powOfPow(b: Pow, e: Expr): Expr | undefined {
 
 /** Is e known to be an even integer (an even integer times an integer)? */
 function isEvenQ(e: Expr): boolean {
+  if (e instanceof Sym && e.assumptions0.get('even') === true) return true;
   const [c, r] = splitCoeff(e);
   return c instanceof Rational && c.isInteger && c.p % 2n === 0n && isIntegerQ(r) === true;
 }

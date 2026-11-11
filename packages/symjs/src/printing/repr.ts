@@ -80,7 +80,7 @@ function givenAssumptions(e: Sym): [string, boolean][] {
     if (a.nonpositive === true) out.push(['nonpositive', true]);
     if (a.real === true && a.integer !== true && a.nonnegative !== true && a.nonpositive !== true) out.push(['real', true]);
   }
-  if (a.integer === false) out.push(['integer', false]);
+  if (a.integer === false && a.commutative !== false) out.push(['integer', false]);
   if (a.zero === false && a.positive !== true && a.negative !== true && a.integer !== false) out.push(['zero', false]);
   if (a.commutative === false) out.push(['commutative', false]);
   if (a.polar === true) out.push(['polar', true]);

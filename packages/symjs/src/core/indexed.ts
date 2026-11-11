@@ -10,6 +10,10 @@ import type { Expr, ExprLike } from './nodes';
 import { ExtensionExpr, S, Sym } from './nodes';
 import { sympify } from './ops';
 import { at } from './guard';
+import { cast } from './guard';
+import { TupleNode } from './containers';
+import { NoMatch, isNoMatch } from './truth';
+import type { NoMatchResult } from './truth';
 
 /** SymPy Indexed(base, *indices): args are [base symbol, ...indices]; printed base[i, j]. */
 export class Indexed extends ExtensionExpr {
@@ -42,13 +46,21 @@ export class Indexed extends ExtensionExpr {
 }
 
 /** SymPy IndexedBase(name): base.at(i, ...) builds A[i, ...]. */
-export class IndexedBase {
+export class IndexedBase extends ExtensionExpr {
   readonly label: Sym;
-  constructor(name: string | Sym) {
-    this.label = typeof name === 'string' ? new Sym(name) : name;
+  constructor(name: string | Sym, options: { readonly shape?: readonly ExprLike[] } = {}) {
+    const label = typeof name === 'string' ? new Sym(name) : name;
+    super('IndexedBase', [label, ...(options.shape === undefined ? [] : [new TupleNode(options.shape.map(sympify))])]);
+    this.label = label;
+  }
+  get shape(): readonly Expr[] | NoMatchResult {
+    return this.args.length === 1 ? NoMatch : cast(at(this.args, 1), TupleNode).args;
+  }
+  withArgs(args: readonly Expr[]): Expr {
+    return new IndexedBase(cast(at(args, 0), Sym), args.length === 1 ? {} : { shape: cast(at(args, 1), TupleNode).args });
   }
   equals(other: unknown): boolean {
-    return other instanceof IndexedBase && this.label.equals(other.label);
+    return other instanceof IndexedBase && this.key === other.key;
   }
   /** The real assumption inherited from the base label. */
   get isReal(): boolean | 'unknown' {
@@ -56,9 +68,14 @@ export class IndexedBase {
   }
   /** A[i, j] */
   at(...indices: ExprLike[]): Indexed {
-    return new Indexed([this.label, ...indices.map(sympify)]);
+    const shape = this.shape;
+    if (!isNoMatch(shape) && shape.length !== indices.length) throw new RangeError('Rank mismatch.');
+    return new Indexed([isNoMatch(shape) ? this.label : this, ...indices.map(sympify)]);
   }
-  toString(): string {
-    return this.label.name;
+  override printStr(print: (e: Expr) => string): string {
+    return print(this.label);
+  }
+  override printLatex(print: (e: Expr) => string): string {
+    return print(this.label);
   }
 }

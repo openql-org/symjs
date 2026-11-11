@@ -72,6 +72,28 @@ export type Substitution =
   | Readonly<Record<string, ExprLike>>;
 
 export interface Assumptions {
+  readonly algebraic?: boolean;
+  readonly antihermitian?: boolean;
+  readonly complex?: boolean;
+  readonly composite?: boolean;
+  readonly even?: boolean;
+  readonly extendedNegative?: boolean;
+  readonly extendedNonnegative?: boolean;
+  readonly extendedNonpositive?: boolean;
+  readonly extendedNonzero?: boolean;
+  readonly extendedPositive?: boolean;
+  readonly extendedReal?: boolean;
+  readonly finite?: boolean;
+  readonly hermitian?: boolean;
+  readonly imaginary?: boolean;
+  readonly infinite?: boolean;
+  readonly irrational?: boolean;
+  readonly noninteger?: boolean;
+  readonly nonzero?: boolean;
+  readonly odd?: boolean;
+  readonly prime?: boolean;
+  readonly rational?: boolean;
+  readonly transcendental?: boolean;
   /** Fermionic index restrictions (SymPy above_fermi / below_fermi). */
   readonly aboveFermi?: boolean;
   readonly belowFermi?: boolean;
@@ -671,8 +693,7 @@ export class Sym extends Expr {
   readonly assumptions: Assumptions;
   /** All consequences of the assumptions used to construct this symbol. */
   get assumptions0(): Map<string, boolean> {
-    const { aboveFermi, belowFermi, ...facts } = this.assumptions;
-    return deduceAllFacts({ commutative: true, ...facts, ...(aboveFermi === true ? { above_fermi: true } : {}), ...(belowFermi === true ? { below_fermi: true } : {}) });
+    return deduceAllFacts({ commutative: true, ...Object.fromEntries(Object.entries(this.assumptions).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v])) });
   }
 
   constructor(readonly name: string, assumptions: Assumptions = {}) {
@@ -681,29 +702,14 @@ export class Sym extends Expr {
     if (typeof name !== 'string' || name.length === 0) {
       throw new SyntaxError(`Invalid symbol name: ${JSON.stringify(name)}`);
     }
-    const positive = assumptions.positive === true;
-    const negative = assumptions.negative === true;
-    // SymPy: zero implies integer, real, nonnegative and nonpositive
-    const zero = assumptions.zero === true && !positive && !negative;
-    const integer = zero || assumptions.integer === true;
-    const nonnegative = zero || positive || assumptions.nonnegative === true;
-    const nonpositive = zero || negative || assumptions.nonpositive === true;
-    const real = positive || negative || nonnegative || nonpositive || integer || assumptions.real === true;
-    const a: { -readonly [K in keyof Assumptions]: Assumptions[K] } = {};
-    if (real) a.real = true;
-    if (positive) a.positive = true;
-    if (nonnegative) a.nonnegative = true;
-    if (negative) a.negative = true;
-    if (nonpositive) a.nonpositive = true;
-    if (integer) a.integer = true;
-    // SymPy integer=False: is_integer is False, and so is is_zero (zero implies integer)
-    else if (assumptions.integer === false) a.integer = false;
-    if (assumptions.commutative === false) a.commutative = false;
-    if (assumptions.polar === true) a.polar = true;
-    if (assumptions.aboveFermi === true) a.aboveFermi = true;
-    if (assumptions.belowFermi === true) a.belowFermi = true;
-    if (zero) a.zero = true;
-    else if (positive || negative || a.integer === false || assumptions.zero === false) a.zero = false;
+    const facts = deduceAllFacts(Object.fromEntries(Object.entries(assumptions).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v])));
+    const a: { -readonly [K in keyof Assumptions]: Assumptions[K] } = { ...assumptions };
+    if (a.commutative === true) delete a.commutative;
+    // Keep the core sign/number flags available to the arithmetic hot paths.
+    for (const k of ['real', 'positive', 'nonnegative', 'negative', 'nonpositive', 'integer', 'zero'] as const) {
+      const v = facts.get(k);
+      if (v === true || (v === false && ['real', 'integer', 'zero'].includes(k))) a[k] = v;
+    }
     this.assumptions = Object.freeze(a);
   }
 
@@ -758,7 +764,12 @@ export class Sym extends Expr {
     const a = this.assumptions;
     const flags = `${a.real ? 'r' : ''}${a.nonnegative ? 'n' : ''}${a.positive ? 'p' : ''}${a.integer ? 'i' : ''}${a.negative ? 'N' : ''}${a.nonpositive ? 'P' : ''}${a.commutative === false ? 'c' : ''}${a.polar ? 'o' : ''}${a.zero === false && !a.positive && !a.negative && a.integer !== false ? 'z' : ''}${a.zero === true ? 'Z' : ''}${a.integer === false ? 'I' : ''}`;
     const allFlags = flags + (a.aboveFermi === true ? 'A' : '') + (a.belowFermi === true ? 'B' : '');
-    return allFlags ? `$${this.name}[${allFlags}]` : `$${this.name}`;
+    const legacy = deduceAllFacts(Object.fromEntries(Object.entries(a).filter(([k, v]) =>
+      ['real', 'nonnegative', 'positive', 'integer', 'negative', 'nonpositive', 'commutative', 'polar', 'zero', 'aboveFermi', 'belowFermi'].includes(k) &&
+      (v || ['integer', 'commutative', 'zero'].includes(k))).map(([k, v]) => [k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`), v])));
+    const extra = [...this.assumptions0].filter(([k, v]) => k !== 'commutative' && legacy.get(k) !== v).sort(([k], [l]) => k.localeCompare(l));
+    const suffix = extra.length ? JSON.stringify(extra) : '';
+    return allFlags || suffix ? `$${this.name}[${allFlags}${suffix}]` : `$${this.name}`;
   }
 }
 

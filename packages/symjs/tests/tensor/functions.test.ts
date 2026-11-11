@@ -28,3 +28,13 @@ it('infers indexed shapes from complete index ranges', () => {
   expect(() => sj.shape(A.at(1))).toThrow(sj.NoShapeError);
   expect(() => sj.shape(A.at(sj.Idx('i')))).toThrow(sj.NoShapeError);
 });
+
+it('uses explicit indexed shapes before index ranges', () => {
+  const n = sj.symbol('n', { integer: true });
+  const base = new sj.IndexedBase('A', { shape: [n, 5] });
+  expect(sj.shape(base)).toEqual([n, sj.Rational.of(5)]);
+  expect(sj.shape(base.at(sj.Idx('i', 3), 2))).toEqual([n, sj.Rational.of(5)]);
+  const unshaped = new sj.IndexedBase('A');
+  expect(() => sj.shape(unshaped)).toThrow(sj.NoShapeError);
+  expect(sj.shape(new sj.Indexed([unshaped, sj.Idx('i', 3)]))).toEqual([sj.Rational.of(3)]);
+});

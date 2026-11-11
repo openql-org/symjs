@@ -50,3 +50,16 @@ describe('tree, print_tree and print_node', () => {
     expect(tree(sj.add(x, 2))).toBe('Add: x + 2\n+-Integer: 2\n+-Symbol: x\n  commutative: True\n');
   });
 });
+
+it('preserves parity, extended facts and explicit false values for tree printing', () => {
+  const odd = sj.symbol('x', { odd: true });
+  expect(sj.printNode(odd)).toContain('odd: True\n');
+  expect(sj.printNode(odd)).toContain('even: False\n');
+  expect(sj.printNode(sj.symbol('x', { extendedReal: false }))).toContain('extended_real: False\n');
+  expect(sj.printNode(sj.symbol('x', { real: false }))).toContain('real: False\n');
+});
+
+it('does not attach symbol facts to a wildcard function', () => {
+  const f = new sj.WildFunction('F');
+  expect(tree(f)).toBe(tree(f, { assumptions: false }));
+});

@@ -595,3 +595,26 @@ it('recognizes rational roots of unity as algebraic', async () => {
 it('exposes the arguments of an applied predicate', () => {
   expect(sj.Q.integer(1).arguments).toEqual([sj.S.One]);
 });
+
+it('queries complete symbol facts including explicit false and parity', () => {
+  const odd = sj.symbol('n', { odd: true });
+  expect(sj.ask(sj.Q.odd(odd))).toBe(true);
+  expect(sj.ask(sj.Q.even(odd))).toBe(false);
+  expect(sj.ask(sj.Q.rational(sj.symbol('q', { rational: true })))).toBe(true);
+  expect(sj.ask(sj.Q.finite(sj.symbol('z', { finite: false })))).toBe(false);
+  expect(sj.ask(sj.Q.real(sj.symbol('z', { real: false })))).toBe(false);
+});
+
+it('derives number-domain consequences from registered symbol predicate handlers', () => {
+  const value = sj.symbol('custom');
+  const handler: sj.PredicateHandler = (e) => e.equals(value) ? true : 'unknown';
+  for (const [predicate, consequence] of [[Q.integer, Q.rational], [Q.rational, Q.algebraic], [Q.complex, Q.finite]] as const) {
+    sj.registerHandler(predicate, handler);
+    try {
+      expect(ask(consequence(value))).toBe(true);
+    } finally {
+      sj.removeHandler(predicate, handler);
+    }
+    expect(ask(consequence(value))).toBe('unknown');
+  }
+});

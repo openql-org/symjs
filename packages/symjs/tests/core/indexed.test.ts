@@ -64,3 +64,20 @@ it('compares base labels and retains rank and inherited real assumptions', () =>
   expect(a.isReal).toBe('unknown');
   expect(new sj.IndexedBase(sj.symbol('A', {real:true})).isReal).toBe(true);
 });
+
+it('preserves explicit base shapes through indexing and substitution', () => {
+  const A = new sj.IndexedBase('A', { shape: [x, 2] });
+  expect(A.shape).toEqual([x, sj.Rational.of(2)]);
+  expect(sj.shape(A.at(i, j))).toEqual([x, sj.Rational.of(2)]);
+  expect(sj.shape(sj.xreplace(A.at(i, j), new Map([[x, sj.Rational.of(3)]])))).toEqual([sj.Rational.of(3), sj.Rational.of(2)]);
+  expect(A.equals(new sj.IndexedBase('A', { shape: [x, 3] }))).toBe(false);
+  expect(A.equals(new sj.IndexedBase('A', { shape: [x, 2] }))).toBe(true);
+  expect(A.equals(new sj.IndexedBase('A'))).toBe(false);
+  expect(String(A)).toBe('A');
+  expect(sj.latex(A)).toBe('A');
+  expect(sj.latex(A.at(i, j))).toBe('{A}_{i,j}');
+  expect(() => A.at(i)).toThrow('Rank mismatch');
+  const B = new sj.IndexedBase('B');
+  expect(B.shape).toBe(sj.NoMatch);
+  expect(B.withArgs(B.args).equals(B)).toBe(true);
+});
