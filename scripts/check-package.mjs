@@ -16,7 +16,7 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
 const dir = mkdtempSync(join(tmpdir(), 'symjs-package-'));
 const entries = [];
 try {
-  for (const name of ['symjs', 'mathjs', 'physics-quantum']) {
+  for (const name of ['symjs', 'mathjs', 'physics-quantum', 'diffgeom']) {
     const source = join(root, 'packages', name);
     const pkg = JSON.parse(readFileSync(join(source, 'package.json'), 'utf8'));
     const dest = join(dir, 'node_modules', pkg.name);
@@ -38,6 +38,8 @@ try {
     assert.deepEqual(sj.solve(n.pow(2).sub(2), n), []);
     assert.equal(gates.H().mul(gates.H()).equals(sj.Matrix.eye(2)), true);
     assert.equal(String(fromMathjsValue(3)), '3');
+    assert.equal(String(sj.rcall(dg.Differential(dg.R2.x), dg.R2.eX)), '1');
+    assert.equal(dg.metricToRicciComponents(dg.TensorProduct(dg.R2.dx, dg.R2.dx).add(dg.TensorProduct(dg.R2.dy, dg.R2.dy))).flatElements().every(e => e.equals(0)), true);
     const object = new sj.SymObject('A');
     assert.equal(sj.IdentityMorphism(object).compose(sj.IdentityMorphism(object)).domain.equals(object), true);
     assert.equal(sj.SymmetricGroup(8).order(), 40320n);
@@ -53,6 +55,7 @@ try {
   `;
   const esm = `import assert from 'node:assert/strict';
     import * as sj from '@symjs/symjs';
+    import * as dg from '@symjs/diffgeom';
     import { Sym } from '@symjs/symjs/core';
     import { Diagram } from '@symjs/symjs/categories';
     import { encipherShift } from '@symjs/symjs/crypto';
@@ -68,6 +71,7 @@ try {
   `;
   const cjs = `const assert = require('node:assert/strict');
     const sj = require('@symjs/symjs');
+    const dg = require('@symjs/diffgeom');
     const { Sym } = require('@symjs/symjs/core');
     const { Diagram } = require('@symjs/symjs/categories');
     const { encipherShift } = require('@symjs/symjs/crypto');

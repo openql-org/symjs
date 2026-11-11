@@ -307,7 +307,19 @@ function matches0(v: unknown, expected: string, got: string): boolean {
 // Deserialization of SymPy objects
 // ---------------------------------------------------------------------------
 
-type Tree = { t: string; [k: string]: unknown };
+export type Tree = { t: string; [k: string]: unknown };
+
+/** Scoped dispatch for an extend package's independent compatibility corpus. */
+export interface HarnessExtension {
+  deserialize(tree: Tree): unknown;
+  adapter(c: Case): Adapter | undefined;
+}
+let extension: HarnessExtension | undefined;
+export function withExtension<T>(value: HarnessExtension, run: () => T): T {
+  const previous = extension;
+  extension = value;
+  try { return run(); } finally { extension = previous; }
+}
 
 const REL_OPS: Record<string, sj.RelOp> = {
   Equality: 'Eq',
@@ -455,6 +467,10 @@ function orderNode(e: unknown, rest: unknown[]): Expr {
 
 export function deserialize(tree: Tree): unknown {
   switch (tree.t) {
+    case 'Extension': {
+      if (!extension) throw new Unsupported('extend package is not registered');
+      return extension.deserialize(tree);
+    }
     case 'PublicObject': {
       const name = String(tree['cls']);
       const cls = (sj as unknown as Record<string, unknown>)[name];
@@ -4800,7 +4816,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
   }
   if (c.unsupportedArg) return { status: 'unsupported', reason: `argument type ${c.unsupportedArg}` };
   // a sympy.stats name that symjs exports under another name (stats E is the expectation, not the constant)
-  const adapter = (c.module === 'sympy.integrals.intpoly' ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
+  const adapter = extension?.adapter(c) ?? (c.module === 'sympy.integrals.intpoly' ? intpolyAdapter(c) : undefined) ?? (c.category === 'stats' && STATS_RENAMES[c.fn] !== undefined ? undefined : ADAPTERS[c.fn]) ?? autoAdapter(c);
   if (!adapter) return { status: 'unsupported', reason: `no adapter for ${c.fn}` };
   try {
     const args = (c.args ?? []).map(deserialize);

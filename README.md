@@ -39,9 +39,10 @@ symjs is a pnpm monorepo. The general-purpose CAS is the **base module**; functi
 |---|---|---|
 | [`@symjs/symjs`](packages/symjs) | `packages/symjs/` | Base module: expressions, numbers, printing and parsing, functions, simplification, polynomials, calculus, equation solving, matrices, sets |
 | [`@symjs/physics-quantum`](packages/physics-quantum) | `packages/physics-quantum/` | Extend module for quantum physics (SymPy `sympy.physics.quantum`) |
+| [`@symjs/diffgeom`](packages/diffgeom) | `packages/diffgeom/` | Differential geometry: coordinate systems, fields, tensors, connections and curvature |
 | [`@symjs/mathjs`](packages/mathjs) | `packages/mathjs/` | Extend module: conversion to and from math.js (math.js is not a dependency) |
 
-Extend modules depend only on the public API of the base module, which they declare as a peer dependency (`@symjs/symjs`), so every extend module installed in an application shares one copy of the base module. `physics-quantum` is the first extend module.
+Extend modules depend only on the public API of the base module, which they declare as a peer dependency (`@symjs/symjs`), so every extend module installed in an application shares one copy of the base module. Differential geometry has its own [compatibility corpus](compat/extend/diffgeom/REPORT.md).
 
 ```ts
 import { Matrix } from '@symjs/symjs';
@@ -88,6 +89,7 @@ packages/
                         calculus/ series/ integrals/ solvers/ matrices/ concrete/ sets/
                         (outside core/, the paths follow SymPy's module tree, see docs/architecture.md)
     tests/              unit tests mirroring src/ (tests/<path>/<name>.test.ts for src/<path>/<name>.ts), cross-cutting tests and SymPy golden tests at the top
+  diffgeom/            @symjs/diffgeom (extend module)
   physics-quantum/      @symjs/physics-quantum (extend module)
     src/  tests/
 compat/                 SymPy doctest compatibility measurement of the base module
@@ -217,9 +219,9 @@ Modules that are not ported yet but stay in scope:
 
 - Code printers for other languages (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB), all of `sympy.codegen` (including `cfunctions`, `rewriting`, `approximations` and `algorithms`) and `sympy.utilities.codegen`: an extend package `@symjs/codegen`
 - The LaTeX parser (`parse_latex`) and the Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: an extend package
-- Differential geometry (`sympy.diffgeom`): an extend package
+- Differential geometry (`sympy.diffgeom`) is available as [`@symjs/diffgeom`](packages/diffgeom), with [separate compatibility results](compat/extend/diffgeom/REPORT.md)
 - `sympy.physics`: extend packages per field; `sympy.physics.quantum` goes into the existing `@symjs/physics-quantum`, which is partial
 
 ## License
 
-MIT (see [LICENSE](LICENSE)). symjs is a port of [SymPy](https://www.sympy.org) and, for arbitrary-precision numerics, of [mpmath](https://mpmath.org); the ported code is also subject to their BSD 3-Clause licenses, whose notices are reproduced in the LICENSE file of each package that contains such code (`@symjs/symjs`: SymPy and mpmath; `@symjs/physics-quantum`: SymPy). symjs is an independent project and is not affiliated with or endorsed by the SymPy or mpmath developers.
+MIT (see [LICENSE](LICENSE)). symjs is a port of [SymPy](https://www.sympy.org) and, for arbitrary-precision numerics, of [mpmath](https://mpmath.org); the ported code is also subject to their BSD 3-Clause licenses, whose notices are reproduced in the LICENSE file of each package that contains such code (`@symjs/symjs`: SymPy and mpmath; `@symjs/physics-quantum` and `@symjs/diffgeom`: SymPy). symjs is an independent project and is not affiliated with or endorsed by the SymPy or mpmath developers.

@@ -1,0 +1,290 @@
+[
+  {
+    "kind": "doctest",
+    "module": "sympy.diffgeom.diffgeom",
+    "src": "c_xy",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "doctest",
+    "module": "sympy.diffgeom.diffgeom",
+    "src": "c_xr",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "doctest",
+    "module": "sympy.diffgeom.diffgeom",
+    "src": "Car2D",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "doctest",
+    "module": "sympy.diffgeom.diffgeom",
+    "src": "_[0].func",
+    "reason": "reference-exception"
+  },
+  {
+    "kind": "doctest",
+    "module": "sympy.diffgeom.diffgeom",
+    "src": "non_trivial_metric",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "doctest",
+    "module": "sympy.diffgeom.diffgeom",
+    "src": "non_trivial_metric",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_class_structure",
+    "category": "diffgeom",
+    "test": "test_point",
+    "line": 18,
+    "src": "assert point != Point(cs, [2, y])",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_class_structure",
+    "category": "diffgeom",
+    "test": "test_deprecated",
+    "line": 33,
+    "src": "assert cs_wname == cs_wname.func(*cs_wname.args)",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_R2",
+    "line": 104,
+    "src": "assert m == R2_p.transform(R2_r, R2_r.transform(R2_p, m)).applyfunc(simplify)",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_R2",
+    "line": 108,
+    "src": "assert m == R2_p.coord_tuple_transform_to(\n            R2_r, R2_r.coord_tuple_transform_to(R2_p, m)).applyfunc(simplify)",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_R3",
+    "line": 116,
+    "src": "assert m == R3_c.transform(R3_r, R3_r.transform(R3_c, m)).applyfunc(simplify)",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_R3",
+    "line": 118,
+    "src": "assert m == R3_s.transform(\n        R3_r, R3_r.transform(R3_s, m)).applyfunc(simplify)",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_R3",
+    "line": 121,
+    "src": "assert m == R3_s.transform(\n        R3_c, R3_c.transform(R3_s, m)).applyfunc(simplify)",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_R3",
+    "line": 126,
+    "src": "assert m == R3_c.coord_tuple_transform_to(\n            R3_r, R3_r.coord_tuple_transform_to(R3_c, m)).applyfunc(simplify)",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_R3",
+    "line": 129,
+    "src": "assert m == R3_s.coord_tuple_transform_to(\n            R3_r, R3_r.coord_tuple_transform_to(R3_s, m)).applyfunc(simplify)",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_R3",
+    "line": 132,
+    "src": "assert m == R3_s.coord_tuple_transform_to(\n            R3_c, R3_c.coord_tuple_transform_to(R3_s, m)).applyfunc(simplify)",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_point",
+    "line": 147,
+    "src": "assert p.coords(R2_r) == p.coords() == Matrix([x, y])",
+    "reason": "unsupported-assertion"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_products",
+    "line": 169,
+    "src": "assert TensorProduct(\n        R2.dx, R2.dy)(R2.e_x, R2.e_y) == R2.dx(R2.e_x)*R2.dy(R2.e_y) == 1",
+    "reason": "unsupported-assertion"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_products",
+    "line": 175,
+    "src": "assert TensorProduct(\n        R2.e_x, R2.e_y)(R2.x, R2.y) == R2.e_x(R2.x) * R2.e_y(R2.y) == 1",
+    "reason": "unsupported-assertion"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_products",
+    "line": 181,
+    "src": "assert TensorProduct(\n        R2.dx, R2.e_y)(R2.e_x, R2.y) == R2.dx(R2.e_x) * R2.e_y(R2.y) == 1",
+    "reason": "unsupported-assertion"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_products",
+    "line": 187,
+    "src": "assert TensorProduct(\n        R2.e_x, R2.dy)(R2.x, R2.e_y) == R2.e_x(R2.x) * R2.dy(R2.e_y) == 1",
+    "reason": "unsupported-assertion"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_lie_derivative",
+    "line": 199,
+    "src": "assert LieDerivative(R2.e_x, R2.y) == R2.e_x(R2.y) == 0",
+    "reason": "unsupported-assertion"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_lie_derivative",
+    "line": 200,
+    "src": "assert LieDerivative(R2.e_x, R2.x) == R2.e_x(R2.x) == 1",
+    "reason": "unsupported-assertion"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_lie_derivative",
+    "line": 201,
+    "src": "assert LieDerivative(R2.e_x, R2.e_x) == Commutator(R2.e_x, R2.e_x) == 0",
+    "reason": "unsupported-assertion"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_intcurve_diffequ",
+    "line": 225,
+    "src": "assert str(equations) == '[f_1(t) + Derivative(f_0(t), t), -f_0(t) + Derivative(f_1(t), t)]'",
+    "reason": "not-exported-api"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_intcurve_diffequ",
+    "line": 226,
+    "src": "assert str(init_cond) == '[f_0(0) - 1, f_1(0)]'",
+    "reason": "not-exported-api"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_intcurve_diffequ",
+    "line": 228,
+    "src": "assert str(\n        equations) == '[Derivative(f_0(t), t), Derivative(f_1(t), t) - 1]'",
+    "reason": "not-exported-api"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_intcurve_diffequ",
+    "line": 230,
+    "src": "assert str(init_cond) == '[f_0(0) - 1, f_1(0)]'",
+    "reason": "not-exported-api"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_diffgeom",
+    "category": "diffgeom",
+    "test": "test_correct_arguments",
+    "line": 289,
+    "src": "raises(ValueError, lambda: Differential(Differential(R2.e_x)))",
+    "reason": "not-executed"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
+    "category": "diffgeom",
+    "test": "test_functional_diffgeom_ch3",
+    "line": 71,
+    "src": "assert all(\n        term == cos(t).taylor_term(i, t) for i, term in enumerate(series_x))",
+    "reason": "stateful-iterator-input"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_function_diffgeom_book",
+    "category": "diffgeom",
+    "test": "test_functional_diffgeom_ch3",
+    "line": 73,
+    "src": "assert all(\n        term == sin(t).taylor_term(i, t) for i, term in enumerate(series_y))",
+    "reason": "stateful-iterator-input"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_hyperbolic_space",
+    "category": "diffgeom",
+    "test": "test_H2",
+    "line": 32,
+    "src": "assert mat == automat",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_hyperbolic_space",
+    "category": "diffgeom",
+    "test": "test_H2",
+    "line": 83,
+    "src": "assert Ric == ImmutableDenseNDimArray([-y**(-2), 0, 0, -y**(-2)], (2, 2))",
+    "reason": "non-call-expression"
+  },
+  {
+    "kind": "unit",
+    "module": "sympy.diffgeom.tests.test_hyperbolic_space",
+    "category": "diffgeom",
+    "test": "test_H2",
+    "line": 88,
+    "src": "assert R == -2",
+    "reason": "non-call-expression"
+  }
+]

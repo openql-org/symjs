@@ -309,7 +309,7 @@ reason) or unassessed. Mathematical content is never excluded.
 | `printing/pycode.py`, `numpy.py`, `lambdarepr.py`, `python.py`, `codegen/pyutils.py`, `utilities/autowrap.py` | out of scope: they generate or compile Python code |
 | `printing/jscode.py` | not ported: JavaScript code output |
 | `parsing/latex/`, `maxima.py`, `autolev/`, `c/`, `fortran/`, `sym_expr.py` | extend package (planned) |
-| `diffgeom/` | extend package (planned) |
+| `diffgeom/` | extend package `@symjs/diffgeom`; independent corpus in `compat/extend/diffgeom/` |
 | `physics/` | extend packages per field; `physics/quantum/` is `@symjs/physics-quantum` (partial) |
 | `plotting/`, `categories/diagram_drawing.py`, `printing/preview.py` | not ported (rendering and display) |
 | test runners and helpers, caching, dispatch decorators, compilation helpers, release metadata, the gmpy2/python-flint ground-type back ends, SAT-solver bindings, typing protocols, REPL and display helpers | out of scope: Python-runtime tooling |
@@ -323,3 +323,9 @@ The generated `combinatorics/galoisdata.ts` and
 and exact resolvent coefficient tables of SymPy 1.14. Regenerate them with
 `python3 packages/symjs/scripts/generate-galois.py`; the algorithms live in
 `combinatorics/galois.ts` and `polys/numberfields/galoisgroups.ts`.
+
+`@symjs/diffgeom` imports only the public base API. Its expression nodes use
+`ExtensionExpr`; coordinate symbols subclass `Sym` with chart-dependent identity.
+Coordinate relations are Maps. The scoped compatibility dispatch in
+`compat/harness.ts` resolves the extension before base functions and restores the
+base dispatch after each case. Base corpora and known-gap files are independent.
