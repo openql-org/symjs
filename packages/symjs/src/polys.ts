@@ -219,6 +219,8 @@ export type { RingSymbols, DomainLike, OrderLike, GenLike, SringOptions, Monom }
 export { IPolys, hasAssocRing } from './polys/compatibility';
 // dense polynomial representation and distributed modules (SymPy densebasic, distributedmodules)
 export * from './polys/densebasic';
+export * from './polys/densearith';
+export * from './polys/modulargcd';
 export * from './polys/distributedmodules';
 export { Options, buildOptions, allowedFlags, preprocessDomain } from './polys/polyoptions';
 export type { OptionArgs } from './polys/polyoptions';

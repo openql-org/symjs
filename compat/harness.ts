@@ -170,6 +170,18 @@ const fmtItem = (v: unknown): string => {
 };
 
 export function fmt(v: unknown): string {
+  if (v instanceof sj.PolyElement && v.ring.domain instanceof sj.AlgebraicField) {
+    // SymPy prints sparse algebraic coefficients in their ANP representation.
+    const K = v.ring.domain;
+    const terms = v.terms().map(([m, c], i) => {
+      const negative = K.isNegative(K.convert(c));
+      const monomial = m.flatMap((n, j) => n === 0 ? [] : [sj.str(v.ring.symbols[j]!) + (n === 1 ? '' : `**${n}`)]).join('*');
+      const coeff = K.convert(negative && monomial ? sj.neg(c) : c);
+      const factor = monomial && coeff.equals(K.one) ? '' : coeff.repr();
+      return (i === 0 ? negative ? '-' : '' : negative ? ' - ' : ' + ') + factor + (factor && monomial ? '*' : '') + monomial;
+    });
+    return terms.join('') || K.convert(0).repr();
+  }
   if (v instanceof Expr) return sj.str(v);
   if (v instanceof Matrix) return v.toString();
   if (v instanceof sj.Poly) return v.toString();

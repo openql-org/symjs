@@ -160,6 +160,20 @@ class ExtractTests(unittest.TestCase):
         self.assertEqual(corpus["cases"][0]["expected"], str(sympy.Matrix([[1, 2], [3, 4]]).columnspace()))
         self.assertIn("\n", corpus["cases"][0]["expected"])
 
+    def test_modular_gcd_tuple_display_replays_the_saved_call(self):
+        corpus = self.extract_examples('''
+            >>> from sympy.polys.modulargcd import modgcd_univariate
+            >>> from sympy.polys import ring, ZZ
+            >>> R, x = ring("x", ZZ)
+            >>> h, a, b = modgcd_univariate(x**2 - 1, x - 1)
+            >>> h, a, b
+            (x - 1, x + 1, 1)
+        ''', 'sympy.polys.modulargcd')
+        case, = corpus['cases']
+        self.assertEqual(case['fn'], 'modgcd_univariate')
+        self.assertEqual(case['expected'], '(x - 1, x + 1, 1)')
+        self.assertNotIn('pick', case)
+
     def test_assignment_snapshots_arguments_keywords_and_receiver_before_mutation(self):
         calls = []
 

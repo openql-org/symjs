@@ -1493,6 +1493,8 @@ MUTATING_FUNCTIONS = {"define_schreier_generators", "reidemeister_relators", "el
 # the number-field doctests print their modules, elements and ideals (print(A)) and combine them with
 # operators (e + f, e ** 2, f // g): these are recorded as the special methods __str__, __add__, ...
 VALUE_EXAMPLE_MODULES = {"sympy.polys.numberfields.modules", "sympy.polys.numberfields.primes"}
+# These examples display the complete tuple produced by a saved public call.
+TUPLE_ASSIGNMENT_MODULES = {"sympy.polys.modulargcd"}
 _VALUE_OPS = {ast.Add: "__add__", ast.Sub: "__sub__", ast.Mult: "__mul__", ast.Pow: "__pow__",
               ast.FloorDiv: "__floordiv__", ast.Mod: "__mod__"}
 
@@ -1796,6 +1798,12 @@ def main(dst, baseline_path=None):
                     continue
                 call = tree.body
                 bound = bindings.get(call.id) if isinstance(call, ast.Name) and ex.want.strip() else None
+                if modname in TUPLE_ASSIGNMENT_MODULES and isinstance(call, ast.Tuple) and ex.want.strip():
+                    saved = [bindings.get(n.id) if isinstance(n, ast.Name) else None for n in call.elts]
+                    if saved and all(r is not None and r.get("pick") == i for i, r in enumerate(saved)):
+                        records = [{k: v for k, v in r.items() if k != "pick"} for r in saved]
+                        if all(r == records[0] for r in records) and len(saved) == len(bindings):
+                            bound = records[0]
                 if bound is None:
                     bindings = {}
                 if modname in VALUE_EXAMPLE_MODULES:

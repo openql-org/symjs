@@ -535,7 +535,8 @@ export class Poly {
   mul(o: Poly | ExprLike): Poly {
     const finite = this.finitePair(o);
     if (finite) return finite[0].like(mul(finite[0].asExpr(), finite[1].asExpr()));
-    return Poly.from(mul(this.asExpr(), o instanceof Poly ? o.asExpr() : o), this.gens);
+    const [f, g] = this.unify(o instanceof Poly ? o : Poly.from(o, this.gens));
+    return Poly.from(mul(f.asExpr(), g.asExpr()), f.gens, { domain: f.domain });
   }
   pow(n: number): Poly {
     if (this.finiteModulus !== undefined) return this.like(pow(this.asExpr(), n));
@@ -1149,12 +1150,23 @@ export class Poly {
   unify(other: Poly): [Poly, Poly] {
     const finite = this.finitePair(other);
     if (finite !== undefined) return [finite[0], finite[1]];
+    if (this.domain === other.domain && this.gens.length === other.gens.length && this.gens.every((g, i) => g.key === at(other.gens, i).key)) return [this, other];
     const gens = [...this.gens];
     for (const g of other.gens) if (!gens.some((h) => h.key === g.key)) gens.push(g);
     let domain = this.domain;
     if (domain !== other.domain) {
       const construct = defined(polyConstructionHooks.domain, 'polynomial domain construction');
-      domain = String(construct([], { domain }).unify(construct([], { domain: other.domain })));
+      // CC contains the real and rational coefficient fields, even for
+      // polynomials whose complex coefficients happen to be real.
+      const numeric = ['ZZ', 'QQ', 'RR', 'CC', 'ZZ_I', 'QQ_I'];
+      const domains = [domain, other.domain];
+      if (domains.includes('EX')) domain = 'EX';
+      else if (domains.every((d) => numeric.includes(d))) {
+        const complex = domains.some((d) => ['CC', 'ZZ_I', 'QQ_I'].includes(d));
+        const floating = domains.some((d) => ['RR', 'CC'].includes(d));
+        const rational = domains.some((d) => ['QQ', 'QQ_I'].includes(d));
+        domain = floating ? complex ? 'CC' : 'RR' : complex ? rational ? 'QQ_I' : 'ZZ_I' : 'QQ';
+      } else domain = String(construct([], { domain }).unify(construct([], { domain: other.domain })));
     }
     return [Poly.from(this.asExpr(), gens, { domain, pure: this.pure }), Poly.from(other.asExpr(), gens, { domain, pure: other.pure })];
   }
@@ -1971,7 +1983,7 @@ const powR = (a: Rational, k: number): Rational => asRational(pow(a, k), 'power 
 function coeffStr(c: Expr): string {
   if (c instanceof Float) {
     const v = c.value;
-    return Number.isInteger(v) ? `${v}.0` : `${Number(v.toPrecision(15))}`;
+    return Number.isInteger(v) && Math.abs(v) < 1e21 ? `${v}.0` : `${Number(v.toPrecision(15))}`;
   }
   return str(c);
 }
