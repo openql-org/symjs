@@ -92,6 +92,9 @@ EXCLUSIONS = {
 # Explicit correspondences for the different kernel layout and combined modules.
 CORRESPONDENCES = {
     'sympy.polys.domains.mpelements': ['polys/domains/mpelements.ts'],
+    'sympy.polys.matrices.linsolve': ['polys/matrices/linsolve.ts'],
+    'sympy.polys.matrices.eigen': ['polys/matrices/eigen.ts'],
+    'sympy.polys.fglmtools': ['polys/fglmtools.ts'],
     'sympy.core.basic': ['core/basic.ts', 'core/compare.ts', 'core/nodes.ts'],
     'sympy.core.expr': ['core/nodes.ts', 'core/methods.ts', 'core/expr.ts'],
     'sympy.core.add': ['core/ops.ts'],
@@ -412,9 +415,6 @@ NOT_IMPLEMENTED = {
     'sympy.parsing.maxima': 'other input-language parsers (Autolev, C, Fortran, Maxima): not ported',
     'sympy.parsing.sym_expr': 'other input-language parsers (Autolev, C, Fortran, Maxima): not ported',
     'sympy.polys.densetools': 'dense recursive list representation',
-    'sympy.polys.fglmtools': 'FGLM change of monomial order; to be ported to ./polys',
-    'sympy.polys.matrices.eigen': 'DomainMatrix eigenvalues and eigenvectors; to be ported to ./polys',
-    'sympy.polys.matrices.linsolve': 'DomainMatrix linear system solving; to be ported to ./polys',
     'sympy.polys.multivariate_resultants': 'DixonResultant, MacaulayResultant',
     'sympy.polys.numberfields.galois_resolvents': '',
     'sympy.polys.numberfields.galoisgroups': '',

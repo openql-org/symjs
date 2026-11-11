@@ -88646,9 +88646,10 @@
   {
    "module": "sympy.polys.fglmtools",
    "sha256": "677552fc82ac66ed68de0db628f4c81f57de34bf1c4e989e68d5af2ee20b98ae",
-   "status": "unimplemented",
-   "note": "FGLM change of monomial order; to be ported to ./polys",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/fglmtools.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -89652,9 +89653,10 @@
   {
    "module": "sympy.polys.matrices.eigen",
    "sha256": "82502bc6cf7fad3ac4fecb33d9f77680a093b20b92c841f0a1e40ff36b6621c3",
-   "status": "unimplemented",
-   "note": "DomainMatrix eigenvalues and eigenvectors; to be ported to ./polys",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/matrices/eigen.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
@@ -89723,11 +89725,12 @@
   {
    "module": "sympy.polys.matrices.linsolve",
    "sha256": "a7cea39493fd8770b1657f76c64dac875580bca064079fd80f9e64d686299862",
-   "status": "unimplemented",
-   "note": "DomainMatrix linear system solving; to be ported to ./polys",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/matrices/linsolve.ts"
+   ],
    "selectedForExtraction": true,
-   "hasCorpusCases": false,
+   "hasCorpusCases": true,
    "documentedExamples": 4,
    "declaredPublicNames": [
     "sympy_dict_to_dm"

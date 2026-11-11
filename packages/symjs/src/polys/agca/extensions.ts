@@ -14,8 +14,8 @@ import type { Expr, ExprLike } from '../../core/nodes';
 import { Rational, Sym } from '../../core/nodes';
 import { sympify } from '../../core/ops';
 import { str } from '../../printing/str';
-import type { Domain, GlobalPolynomialRing } from '../domains';
-import { CoercionFailed } from '../domains';
+import type { GlobalPolynomialRing } from '../domains';
+import { CoercionFailed, Domain } from '../domains';
 import { GeneratorsError } from '../polyerrors';
 import { freeSymbols } from '../../core/traverse';
 import { preprocessDomain } from '../polyoptions';
@@ -252,6 +252,11 @@ export class FiniteExtension {
     return this.toSympy(this.convert(f));
   }
 
+  /** The same extension with canonical expression elements for DomainMatrix arithmetic. */
+  toDomain(): Domain {
+    return new ExtensionDomain(this);
+  }
+
   /** SymPy set_domain(K): the extension by the modulus over another domain. */
   setDomain(K: Domain | string): FiniteExtension {
     return new FiniteExtension(Poly.from(this.modulus.asExpr(), [this.symbol], { domain: String(K) }));
@@ -286,5 +291,25 @@ export class FiniteExtension {
     if (this.isField) return !a.isZero;
     // SymPy returns None for a non-constant element (x + 1 is a unit of ZZ[x]/(x**2 - 2))
     return a.isGround ? isGroundUnit(this.domain, a.toGround()) : 'unknown';
+  }
+}
+
+/** Expression representation of K[x]/(f), with division computed modulo f. */
+class ExtensionDomain extends Domain {
+  readonly ground = 'EX' as const;
+  readonly isField: boolean;
+  constructor(readonly extension: FiniteExtension) {
+    super();
+    this.isField = extension.isField;
+  }
+  toString(): string { return this.extension.toString(); }
+  canon(e: Expr): Expr { return this.extension.fromSympy(e); }
+  fromSympy(e: ExprLike): Expr { return this.extension.fromSympy(e); }
+  override quo(a: Expr, b: Expr): Expr {
+    return this.extension.convert(a).div(this.extension.convert(b)).asExpr();
+  }
+  getField(): Domain {
+    if (!this.isField) throw new NotImplementedError('The finite extension is not a field');
+    return this;
   }
 }

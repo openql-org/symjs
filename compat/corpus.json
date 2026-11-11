@@ -706723,6 +706723,264 @@
    "module": "sympy.parsing.latex",
    "src": "func.evalf(subs={\"alpha\": 2})",
    "expected": "0.693147180559945"
+  },
+  {
+   "fn": "_lin_eq2dict",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "y",
+         "assume": {}
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "t": "JsSet",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.matrices.linsolve",
+   "src": "_lin_eq2dict(x + 2*y + 3, {x, y})",
+   "expected": "(3, {x: 1, y: 2})"
+  },
+  {
+   "fn": "_linear_eq_to_dict",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Add",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "3",
+         "q": "1"
+        },
+        {
+         "t": "Mul",
+         "args": [
+          {
+           "t": "Rational",
+           "p": "2",
+           "q": "1"
+          },
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          }
+         ]
+        }
+       ]
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "JsSet",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.matrices.linsolve",
+   "src": "_linear_eq_to_dict([2*x + 3], {x})",
+   "expected": "([{x: 2}], [3])"
+  },
+  {
+   "fn": "_linsolve",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rel",
+       "op": "Equality",
+       "args": [
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ]
+        },
+        {
+         "t": "Rational",
+         "p": "1",
+         "q": "1"
+        }
+       ]
+      },
+      {
+       "t": "Rel",
+       "op": "Equality",
+       "args": [
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Mul",
+           "args": [
+            {
+             "t": "Rational",
+             "p": "-1",
+             "q": "1"
+            },
+            {
+             "t": "Symbol",
+             "name": "y",
+             "assume": {}
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "t": "Rational",
+         "p": "2",
+         "q": "1"
+        }
+       ]
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.matrices.linsolve",
+   "src": "_linsolve(eqs, [x, y])",
+   "expected": "{x: 3/2, y: -1/2}"
+  },
+  {
+   "fn": "_linsolve",
+   "args": [
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Rel",
+       "op": "Equality",
+       "args": [
+        {
+         "t": "Add",
+         "args": [
+          {
+           "t": "Symbol",
+           "name": "x",
+           "assume": {}
+          },
+          {
+           "t": "Symbol",
+           "name": "y",
+           "assume": {}
+          }
+         ]
+        },
+        {
+         "t": "Rational",
+         "p": "0",
+         "q": "1"
+        }
+       ]
+      }
+     ],
+     "list": true
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      },
+      {
+       "t": "Symbol",
+       "name": "y",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "polys",
+   "module": "sympy.polys.matrices.linsolve",
+   "src": "_linsolve([Eq(x + y, 0)], [x, y])",
+   "expected": "{y: y, x: -y}"
   }
  ],
  "extraction": {
@@ -706730,7 +706988,7 @@
   "reasons": {
    "statement-or-setup": 14120,
    "upstream-skip": 113,
-   "not-exported-api": 891,
+   "not-exported-api": 887,
    "non-call-expression": 603,
    "reference-exception": 318,
    "private-api": 61,
@@ -716151,26 +716409,6 @@
     "module": "sympy.polys.matrices.dense",
     "src": "pivots",
     "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.linsolve",
-    "src": "_lin_eq2dict(x + 2*y + 3, {x, y})",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.matrices.linsolve",
-    "src": "_linear_eq_to_dict([2*x + 3], {x})",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.matrices.linsolve",
-    "src": "_linsolve(eqs, [x, y])",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.matrices.linsolve",
-    "src": "_linsolve([Eq(x + y, 0)], [x, y])",
-    "reason": "not-exported-api"
    },
    {
     "module": "sympy.polys.agca.extensions",

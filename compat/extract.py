@@ -628,6 +628,8 @@ def subpackage_public(modname):
     names = {n for n, v in vars(mod).items()
              if not n.startswith("_") and callable(v)
              and getattr(v, "__module__", None) == modname}
+    if modname == "sympy.polys.matrices.linsolve":
+        names |= {"_linsolve", "_linear_eq_to_dict", "_lin_eq2dict"}
     if modname.startswith("sympy.stats."):
         names -= STATS_SAMPLING
         names |= set(stats_public())
