@@ -10,6 +10,7 @@ import { EX, QQ, RR, ZZ } from '../../src/polys/domains';
 import * as C from '../../src/polys/compatibility';
 import { PolyElement, PolyRing, ring } from '../../src/polys/rings';
 import fieldRefs from './fields.references.json';
+import euclidRefs from './compatibility.references.json';
 
 /** Python's str of a value (lists for tuples). */
 function show(v: unknown): string {
@@ -675,5 +676,41 @@ describe('dmp_lift (SymPy 1.14: the norm, a resultant with the minimal polynomia
     expect(String(Z.dmpLift(Z.fromExpr(sj.parse('x**2 + I'))))).toBe('x**4 + 1');
     const Q = new PolyRing([sj.symbol('x')], QQ);
     expect(() => Q.dmpLift(Q.fromExpr(sj.symbol('x')))).toThrow(sj.DomainError);
+  });
+});
+
+describe('euclidtools methods (SymPy 1.14 values)', () => {
+  type Ref = { symbols: string; domain: string; method: string; args: string[]; kwargs: Record<string, boolean>; modulus?: number; expected: string };
+  const camel = (n: string): string => n.replace(/_([a-z])/g, (_m, c: string) => c.toUpperCase());
+  for (const c of euclidRefs as Ref[]) {
+    it(`${c.domain}[${c.symbols}] ${c.method}(${c.args.join(', ')})`, () => {
+      const [S] = ring(c.symbols, c.domain === 'QQ' ? QQ : ZZ) as [PolyRing];
+      const args: unknown[] = c.args.map((e) => S.fromExpr(sj.parse(e)));
+      if ('include' in c.kwargs) args.push(c.kwargs['include']);
+      if (c.modulus !== undefined) args.push(c.modulus);
+      const fn: unknown = Reflect.get(S, camel(c.method));
+      if (typeof fn !== 'function') throw new TypeError(`no method ${c.method}`);
+      expect(show(Reflect.apply(fn, S, args))).toBe(c.expected.replace(/\(/g, '[').replace(/\)/g, ']'));
+    });
+  }
+  it('gives the scalar subresultants of a multivariate ring as elements of R[1:]', () => {
+    // SymPy returns them as raw dense lists ([[1], [1, 0], [1, 0, 0, 1]])
+    expect(show(R.dmpInnerSubresultants(x.pow(2).add(y), x.mul(y).sub(1)))).toBe('[[x**2 + y, x*y - 1, y**3 + 1], [1, y, y**3 + 1]]');
+    expect(show(T.dmpInnerSubresultants(p.pow(2).add(q.mul(r)), p.mul(q).sub(r)))).toBe('[[p**2 + q*r, p*q - r, q**3*r + r**2], [1, q, q**3*r + r**2]]');
+    expect(show(U.dmpInnerSubresultants(t.pow(2).add(1), t.pow(2).sub(1)))).toBe('[[t**2 + 1, t**2 - 1, -2], [1, 1, 4]]');
+  });
+  it('reads the content of a univariate ring as the ground content (SymPy raises a TypeError)', () => {
+    expect(show(U.dmpContent(t.mulGround(-6).add(4)))).toBe('2');
+    expect(show(U.dmpPrimitive(t.mulGround(-6).add(4)))).toBe('[2, -3*t + 2]');
+  });
+  it('gives univariate collins and modular resultants (SymPy fails for a univariate ring)', () => {
+    expect(show(U.dmpZzCollinsResultant(t.pow(2).add(3), t.mulGround(2).sub(7)))).toBe('61');
+    expect(show(U.dmpZzModularResultant(t.pow(2).add(3), t.mulGround(2).sub(7), 5))).toBe('1');
+    expect(show(V.dmpQqCollinsResultant(V.zero, s))).toBe('0');
+    expect(() => V.dmpZzModularResultant(s, s, 5)).toThrow(sj.DomainError);
+  });
+  it('gives lcm(0, 0) = 0 where SymPy divides by zero', () => {
+    expect(show(V.dupFfLcm(V.zero, V.zero))).toBe('0');
+    expect(show(Q.dmpFfLcm(Q.zero, Q.zero))).toBe('0');
   });
 });

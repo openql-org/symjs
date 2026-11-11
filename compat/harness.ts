@@ -827,6 +827,12 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'HolonomicSequence':
       return new sj.HolonomicSequence(deserialize(tree['op'] as Tree) as sj.RecurrenceOperator, deserialize(tree['u0'] as Tree) as Expr[]);
+    case 'ComplexInterval': {
+      const q = (ts: Tree[]): sj.Rational[] => ts.map((t) => deserialize(t) as sj.Rational);
+      const [ax, ay] = q(tree['a'] as Tree[]);
+      const [bx, by] = q(tree['b'] as Tree[]);
+      return sj.ComplexInterval.fromRectangle(q(tree['coeffs'] as Tree[]), [ax!, ay!], [bx!, by!], Boolean(tree['conj']));
+    }
     case 'FreeGroup': return new sj.FreeGroup((tree['symbols'] as Tree[]).map((t) => deserialize(t) as Expr));
     case 'FreeGroupElement': return (deserialize(tree['group'] as Tree) as sj.FreeGroup).dtype((tree['array'] as [Tree, number][]).map(([s, e]) => [deserialize(s) as Expr, e]));
     case 'FpGroup': return new sj.FpGroup(deserialize(tree['free'] as Tree) as sj.FreeGroup, (tree['relators'] as Tree[]).map((t) => deserialize(t) as sj.FreeGroupElement));
@@ -4169,7 +4175,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       if (v instanceof Map) return new Map([...v].map(([k, a]) => [rationalInputs(k), rationalInputs(a)]));
       return v;
     };
-    const expressionCoefficients = ['sympy.polys.puiseux', 'sympy.polys.ring_series', 'sympy.polys.densearith', 'sympy.polys.matrices.dense', 'sympy.polys.densebasic'];
+    const expressionCoefficients = ['sympy.polys.puiseux', 'sympy.polys.ring_series', 'sympy.polys.densearith', 'sympy.polys.matrices.dense', 'sympy.polys.densebasic', 'sympy.polys.rootisolation'];
     const polynomialInputs = (v: unknown): unknown => {
       if (v instanceof sj.PolyElement) return v.asExpr();
       if (Array.isArray(v)) return v.map(polynomialInputs);

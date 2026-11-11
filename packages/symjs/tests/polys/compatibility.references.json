@@ -1,0 +1,932 @@
+[
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_inner_subresultants",
+  "args": [
+   "x**2 + 1",
+   "x**2 - 1"
+  ],
+  "kwargs": {},
+  "expected": "([x**2 + 1, x**2 - 1, -2], [1, 1, 4])"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_inner_subresultants",
+  "args": [
+   "x**8 + x**6 - 3*x**4 - 3*x**3 + 8*x**2 + 2*x - 5",
+   "3*x**6 + 5*x**4 - 4*x**2 - 9*x + 21"
+  ],
+  "kwargs": {},
+  "expected": "([x**8 + x**6 - 3*x**4 - 3*x**3 + 8*x**2 + 2*x - 5, 3*x**6 + 5*x**4 - 4*x**2 - 9*x + 21, 15*x**4 - 3*x**2 + 9, 65*x**2 + 125*x - 245, 9326*x - 12300, 260708], [1, 9, 25, 169, 9326, 260708])"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_inner_subresultants",
+  "args": [
+   "x**5 + 1",
+   "x**2"
+  ],
+  "kwargs": {},
+  "expected": "([x**5 + 1, x**2, 1], [1, 1, 1])"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_inner_subresultants",
+  "args": [
+   "0",
+   "x"
+  ],
+  "kwargs": {},
+  "expected": "([x], [1])"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_inner_subresultants",
+  "args": [
+   "x",
+   "0"
+  ],
+  "kwargs": {},
+  "expected": "([x], [1])"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_inner_subresultants",
+  "args": [
+   "0",
+   "0"
+  ],
+  "kwargs": {},
+  "expected": "([], [])"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_inner_subresultants",
+  "args": [
+   "x**3 - 1",
+   "4"
+  ],
+  "kwargs": {},
+  "expected": "([x**3 - 1, 4], [1, 64])"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_prs_resultant",
+  "args": [
+   "x**2 + 1",
+   "x**2 - 1"
+  ],
+  "kwargs": {},
+  "expected": "(4, [x**2 + 1, x**2 - 1, -2])"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_prs_resultant",
+  "args": [
+   "x**2 - 1",
+   "x - 1"
+  ],
+  "kwargs": {},
+  "expected": "(0, [x**2 - 1, x - 1])"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_prs_resultant",
+  "args": [
+   "0",
+   "x - 1"
+  ],
+  "kwargs": {},
+  "expected": "(0, [])"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_prs_resultant",
+  "args": [
+   "x**3 - 2*x",
+   "x**4 + 3"
+  ],
+  "kwargs": {},
+  "expected": "(147, [x**4 + 3, x**3 - 2*x, 2*x**2 + 3, -14*x, 147])"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_rr_prs_gcd",
+  "args": [
+   "x**2 - 1",
+   "x**2 - 3*x + 2"
+  ],
+  "kwargs": {},
+  "expected": "(x - 1, x + 1, x - 2)"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_rr_prs_gcd",
+  "args": [
+   "-2*x**2 + 2",
+   "4*x**2 - 12*x + 8"
+  ],
+  "kwargs": {},
+  "expected": "(2*x - 2, -x - 1, 2*x - 4)"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_rr_prs_gcd",
+  "args": [
+   "0",
+   "-2*x"
+  ],
+  "kwargs": {},
+  "expected": "(2*x, 0, -1)"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_rr_prs_gcd",
+  "args": [
+   "6*x",
+   "4"
+  ],
+  "kwargs": {},
+  "expected": "(2, 3*x, 2)"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_zz_heu_gcd",
+  "args": [
+   "x**2 - 1",
+   "x**2 - 3*x + 2"
+  ],
+  "kwargs": {},
+  "expected": "(x - 1, x + 1, x - 2)"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_rr_lcm",
+  "args": [
+   "x**2 - 1",
+   "x**2 - 3*x + 2"
+  ],
+  "kwargs": {},
+  "expected": "x**3 - 2*x**2 - x + 2"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_rr_lcm",
+  "args": [
+   "-2*x**2 + 2",
+   "4*x**2 - 12*x + 8"
+  ],
+  "kwargs": {},
+  "expected": "4*x**3 - 8*x**2 - 4*x + 8"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_rr_lcm",
+  "args": [
+   "0",
+   "x"
+  ],
+  "kwargs": {},
+  "expected": "0"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_lcm",
+  "args": [
+   "-x",
+   "x + 1"
+  ],
+  "kwargs": {},
+  "expected": "x**2 + x"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dmp_lcm",
+  "args": [
+   "-x",
+   "x + 1"
+  ],
+  "kwargs": {},
+  "expected": "x**2 + x"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dmp_rr_lcm",
+  "args": [
+   "-x",
+   "x + 1"
+  ],
+  "kwargs": {},
+  "expected": "-x**2 - x"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_cancel",
+  "args": [
+   "2*x**2 - 2",
+   "x**2 - 2*x + 1"
+  ],
+  "kwargs": {},
+  "expected": "(2*x + 2, x - 1)"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_cancel",
+  "args": [
+   "2*x - 2",
+   "-x**2 + 1"
+  ],
+  "kwargs": {
+   "include": false
+  },
+  "expected": "(-1, 1, 2, x + 1)"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_cancel",
+  "args": [
+   "-2*x + 2",
+   "-x**2 + 1"
+  ],
+  "kwargs": {},
+  "expected": "(2, x + 1)"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_cancel",
+  "args": [
+   "-2*x + 2",
+   "x**2 - 1"
+  ],
+  "kwargs": {},
+  "expected": "(-2, x + 1)"
+ },
+ {
+  "symbols": "x",
+  "domain": "ZZ",
+  "method": "dup_cancel",
+  "args": [
+   "0",
+   "x"
+  ],
+  "kwargs": {},
+  "expected": "(0, 1)"
+ },
+ {
+  "symbols": "x",
+  "domain": "QQ",
+  "method": "dup_ff_prs_gcd",
+  "args": [
+   "x**2 - 1",
+   "x**2 - 3*x + 2"
+  ],
+  "kwargs": {},
+  "expected": "(x - 1, x + 1, x - 2)"
+ },
+ {
+  "symbols": "x",
+  "domain": "QQ",
+  "method": "dup_ff_prs_gcd",
+  "args": [
+   "0",
+   "2*x + 1"
+  ],
+  "kwargs": {},
+  "expected": "(x + 1/2, 0, 2)"
+ },
+ {
+  "symbols": "x",
+  "domain": "QQ",
+  "method": "dup_ff_prs_gcd",
+  "args": [
+   "2*x + 1",
+   "0"
+  ],
+  "kwargs": {},
+  "expected": "(x + 1/2, 2, 0)"
+ },
+ {
+  "symbols": "x",
+  "domain": "QQ",
+  "method": "dup_ff_prs_gcd",
+  "args": [
+   "1/2*x**2 + 7/4*x + 3/2",
+   "1/2*x**2 + x"
+  ],
+  "kwargs": {},
+  "expected": "(x + 2, 1/2*x + 3/4, 1/2*x)"
+ },
+ {
+  "symbols": "x",
+  "domain": "QQ",
+  "method": "dup_qq_heu_gcd",
+  "args": [
+   "1/2*x**2 + 7/4*x + 3/2",
+   "1/2*x**2 + x"
+  ],
+  "kwargs": {},
+  "expected": "(x + 2, 1/2*x + 3/4, 1/2*x)"
+ },
+ {
+  "symbols": "x",
+  "domain": "QQ",
+  "method": "dup_ff_lcm",
+  "args": [
+   "1/2*x**2 + 7/4*x + 3/2",
+   "1/2*x**2 + x"
+  ],
+  "kwargs": {},
+  "expected": "x**3 + 7/2*x**2 + 3*x"
+ },
+ {
+  "symbols": "x",
+  "domain": "QQ",
+  "method": "dup_lcm",
+  "args": [
+   "1/2*x**2 + 7/4*x + 3/2",
+   "1/2*x**2 + x"
+  ],
+  "kwargs": {},
+  "expected": "x**3 + 7/2*x**2 + 3*x"
+ },
+ {
+  "symbols": "x",
+  "domain": "QQ",
+  "method": "dup_ff_lcm",
+  "args": [
+   "0",
+   "x"
+  ],
+  "kwargs": {},
+  "expected": "0"
+ },
+ {
+  "symbols": "x",
+  "domain": "QQ",
+  "method": "dup_cancel",
+  "args": [
+   "1/2*x**2 - 1/2",
+   "2/3*x - 2/3"
+  ],
+  "kwargs": {},
+  "expected": "(3*x + 3, 4)"
+ },
+ {
+  "symbols": "x",
+  "domain": "QQ",
+  "method": "dup_cancel",
+  "args": [
+   "1/2*x - 1/2",
+   "-2/3*x**2 + 2/3"
+  ],
+  "kwargs": {
+   "include": false
+  },
+  "expected": "(-3, 2, 1, 2*x + 2)"
+ },
+ {
+  "symbols": "x",
+  "domain": "QQ",
+  "method": "dup_rr_prs_gcd",
+  "args": [
+   "1/2*x**2 - 1/2",
+   "x**2 - 3*x + 2"
+  ],
+  "kwargs": {},
+  "expected": "(1/2*x - 1/2, x + 1, 2*x - 4)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_rr_prs_gcd",
+  "args": [
+   "x**2 + 2*x*y + y**2",
+   "x**2 + x*y"
+  ],
+  "kwargs": {},
+  "expected": "(x + y, x + y, x)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_rr_prs_gcd",
+  "args": [
+   "-2*x**2*y - 2*x*y**2",
+   "4*x*y**2 + 4*y**3"
+  ],
+  "kwargs": {},
+  "expected": "(2*x*y + 2*y**2, -x, 2*y)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_rr_prs_gcd",
+  "args": [
+   "0",
+   "-x*y"
+  ],
+  "kwargs": {},
+  "expected": "(x*y, 0, -1)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_rr_prs_gcd",
+  "args": [
+   "2*y + 2",
+   "x*y + x"
+  ],
+  "kwargs": {},
+  "expected": "(y + 1, 2, x)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_rr_prs_gcd",
+  "args": [
+   "6*y**2 - 6",
+   "4*x*y - 4*x"
+  ],
+  "kwargs": {},
+  "expected": "(2*y - 2, 3*y + 3, 2*x)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_zz_heu_gcd",
+  "args": [
+   "x**2 + 2*x*y + y**2",
+   "x**2 + x*y"
+  ],
+  "kwargs": {},
+  "expected": "(x + y, x + y, x)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_rr_lcm",
+  "args": [
+   "x**2 + 2*x*y + y**2",
+   "x**2 + x*y"
+  ],
+  "kwargs": {},
+  "expected": "x**3 + 2*x**2*y + x*y**2"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_lcm",
+  "args": [
+   "x**2 + 2*x*y + y**2",
+   "x**2 + x*y"
+  ],
+  "kwargs": {},
+  "expected": "x**3 + 2*x**2*y + x*y**2"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_content",
+  "args": [
+   "2*x*y + 6*x + 4*y + 12"
+  ],
+  "kwargs": {},
+  "expected": "2*y + 6"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_content",
+  "args": [
+   "-2*x*y - 6*x - 4*y - 12"
+  ],
+  "kwargs": {},
+  "expected": "2*y + 6"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_content",
+  "args": [
+   "-2*x*y"
+  ],
+  "kwargs": {},
+  "expected": "2*y"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_content",
+  "args": [
+   "-4*y - 2"
+  ],
+  "kwargs": {},
+  "expected": "4*y + 2"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_content",
+  "args": [
+   "0"
+  ],
+  "kwargs": {},
+  "expected": "0"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_primitive",
+  "args": [
+   "2*x*y + 6*x + 4*y + 12"
+  ],
+  "kwargs": {},
+  "expected": "(2*y + 6, x + 2)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_primitive",
+  "args": [
+   "x + y"
+  ],
+  "kwargs": {},
+  "expected": "(1, x + y)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_primitive",
+  "args": [
+   "0"
+  ],
+  "kwargs": {},
+  "expected": "(0, 0)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_primitive",
+  "args": [
+   "-2*x**2*y + 4*y"
+  ],
+  "kwargs": {},
+  "expected": "(2*y, -x**2 + 2)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_cancel",
+  "args": [
+   "2*x**2 - 2",
+   "x**2 - 2*x + 1"
+  ],
+  "kwargs": {},
+  "expected": "(2*x + 2, x - 1)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_cancel",
+  "args": [
+   "x*y - y",
+   "-x**2*y + y"
+  ],
+  "kwargs": {
+   "include": false
+  },
+  "expected": "(-1, 1, 1, x + 1)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_subresultants",
+  "args": [
+   "x**2 + y",
+   "x*y - 1"
+  ],
+  "kwargs": {},
+  "expected": "[x**2 + y, x*y - 1, y**3 + 1]"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_prs_resultant",
+  "args": [
+   "x**2 + y",
+   "x*y - 1"
+  ],
+  "kwargs": {},
+  "expected": "(y**3 + 1, [x**2 + y, x*y - 1, y**3 + 1])"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_prs_resultant",
+  "args": [
+   "x**2 - y**2",
+   "x - y"
+  ],
+  "kwargs": {},
+  "expected": "(0, [x**2 - y**2, x - y])"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_prs_resultant",
+  "args": [
+   "0",
+   "x - y"
+  ],
+  "kwargs": {},
+  "expected": "(0, [])"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_zz_collins_resultant",
+  "args": [
+   "x + y + 2",
+   "2*x*y + x + 3"
+  ],
+  "kwargs": {},
+  "expected": "-2*y**2 - 5*y + 1"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_zz_collins_resultant",
+  "args": [
+   "0",
+   "2*x*y + x + 3"
+  ],
+  "kwargs": {},
+  "expected": "0"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_zz_modular_resultant",
+  "args": [
+   "x + y + 2",
+   "2*x*y + x + 3"
+  ],
+  "kwargs": {},
+  "expected": "-2*y**2 + 1",
+  "modulus": 5
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_zz_modular_resultant",
+  "args": [
+   "x**2*y + y**3 - 7",
+   "3*x*y + x + 3*y**2"
+  ],
+  "kwargs": {},
+  "expected": "-4*y**5 - 5*y**4 + y**3 + 3*y**2 + 2*y + 4",
+  "modulus": 11
+ },
+ {
+  "symbols": "x,y",
+  "domain": "ZZ",
+  "method": "dmp_zz_collins_resultant",
+  "args": [
+   "x**2*y + y**3 - 7",
+   "3*x*y + x + 3*y**2"
+  ],
+  "kwargs": {},
+  "expected": "18*y**5 + 6*y**4 + y**3 - 63*y**2 - 42*y - 7"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "QQ",
+  "method": "dmp_ff_prs_gcd",
+  "args": [
+   "1/2*x**2 + x*y + 1/2*y**2",
+   "x**2 + x*y"
+  ],
+  "kwargs": {},
+  "expected": "(x + y, 1/2*x + 1/2*y, x)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "QQ",
+  "method": "dmp_ff_prs_gcd",
+  "args": [
+   "0",
+   "2*x*y"
+  ],
+  "kwargs": {},
+  "expected": "(x*y, 0, 2)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "QQ",
+  "method": "dmp_ff_prs_gcd",
+  "args": [
+   "1/4*x**2 + x*y + y**2",
+   "1/2*x**2 + x*y"
+  ],
+  "kwargs": {},
+  "expected": "(x + 2*y, 1/4*x + 1/2*y, 1/2*x)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "QQ",
+  "method": "dmp_ff_prs_gcd",
+  "args": [
+   "2*y + 2",
+   "3*x*y + 3*x"
+  ],
+  "kwargs": {},
+  "expected": "(y + 1, 2, 3*x)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "QQ",
+  "method": "dmp_qq_heu_gcd",
+  "args": [
+   "1/4*x**2 + x*y + y**2",
+   "1/2*x**2 + x*y"
+  ],
+  "kwargs": {},
+  "expected": "(x + 2*y, 1/4*x + 1/2*y, 1/2*x)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "QQ",
+  "method": "dmp_ff_lcm",
+  "args": [
+   "1/4*x**2 + x*y + y**2",
+   "1/2*x**2 + x*y"
+  ],
+  "kwargs": {},
+  "expected": "x**3 + 4*x**2*y + 4*x*y**2"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "QQ",
+  "method": "dmp_lcm",
+  "args": [
+   "1/4*x**2 + x*y + y**2",
+   "1/2*x**2 + x*y"
+  ],
+  "kwargs": {},
+  "expected": "x**3 + 4*x**2*y + 4*x*y**2"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "QQ",
+  "method": "dmp_qq_collins_resultant",
+  "args": [
+   "1/2*x + y + 2/3",
+   "x - 2*y**2 + 3*y"
+  ],
+  "kwargs": {},
+  "expected": "-y**2 + 1/2*y - 2/3"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "QQ",
+  "method": "dmp_content",
+  "args": [
+   "2*x*y + 6*x + 4*y + 12"
+  ],
+  "kwargs": {},
+  "expected": "y + 3"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "QQ",
+  "method": "dmp_content",
+  "args": [
+   "-2*x*y"
+  ],
+  "kwargs": {},
+  "expected": "y"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "QQ",
+  "method": "dmp_content",
+  "args": [
+   "-2*y"
+  ],
+  "kwargs": {},
+  "expected": "2*y"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "QQ",
+  "method": "dmp_primitive",
+  "args": [
+   "2*x*y + 6*x + 4*y + 12"
+  ],
+  "kwargs": {},
+  "expected": "(y + 3, 2*x + 4)"
+ },
+ {
+  "symbols": "x,y",
+  "domain": "QQ",
+  "method": "dmp_cancel",
+  "args": [
+   "1/2*x*y - 1/2*y",
+   "2/3*x**2*y - 2/3*y"
+  ],
+  "kwargs": {},
+  "expected": "(3, 4*x + 4)"
+ },
+ {
+  "symbols": "x,y,z",
+  "domain": "ZZ",
+  "method": "dmp_rr_prs_gcd",
+  "args": [
+   "x*y*z + x*z**2 + y**2*z + y*z**2",
+   "x**2*z + x*y*z"
+  ],
+  "kwargs": {},
+  "expected": "(x*z + y*z, y + z, x)"
+ },
+ {
+  "symbols": "x,y,z",
+  "domain": "ZZ",
+  "method": "dmp_rr_prs_gcd",
+  "args": [
+   "2*x*y*z + 4*x*z",
+   "6*y*z**2 + 12*z**2"
+  ],
+  "kwargs": {},
+  "expected": "(2*y*z + 4*z, x, 3*z)"
+ },
+ {
+  "symbols": "x,y,z",
+  "domain": "ZZ",
+  "method": "dmp_prs_resultant",
+  "args": [
+   "x**2 + y*z",
+   "x*y - z"
+  ],
+  "kwargs": {},
+  "expected": "(y**3*z + z**2, [x**2 + y*z, x*y - z, y**3*z + z**2])"
+ },
+ {
+  "symbols": "x,y,z",
+  "domain": "ZZ",
+  "method": "dmp_zz_modular_resultant",
+  "args": [
+   "x**2 + y*z + 1",
+   "x*y - z"
+  ],
+  "kwargs": {},
+  "expected": "y**3*z + y**2 + z**2",
+  "modulus": 7
+ },
+ {
+  "symbols": "x,y,z",
+  "domain": "ZZ",
+  "method": "dmp_content",
+  "args": [
+   "x*y*z + x*z**2 + 2*y*z + 2*z**2"
+  ],
+  "kwargs": {},
+  "expected": "y*z + z**2"
+ },
+ {
+  "symbols": "x,y,z",
+  "domain": "QQ",
+  "method": "dmp_ff_prs_gcd",
+  "args": [
+   "x*y*z + x*z**2 + y**2*z + y*z**2",
+   "1/2*x**2*z + 1/2*x*y*z"
+  ],
+  "kwargs": {},
+  "expected": "(x*z + y*z, y + z, 1/2*x)"
+ }
+]

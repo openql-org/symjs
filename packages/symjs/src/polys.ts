@@ -102,6 +102,7 @@ export {
   rootOf as rootof,
 } from './polys/rootof';
 export type { RootOfOptions } from './polys/rootof';
+export { ComplexInterval } from './polys/rootisolation';
 export {
   apart,
 } from './polys/partfrac';

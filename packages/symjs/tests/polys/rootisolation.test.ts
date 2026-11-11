@@ -7,8 +7,7 @@ import { describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { parse, Rational, symbols } from '../../src';
 import { at } from '../../src/core/guard';
-import type { ComplexInterval } from '../../src/polys/rootisolation';
-import { countComplexRoots, isolateComplexRootsSqf } from '../../src/polys/rootisolation';
+import { ComplexInterval, countComplexRoots, isolateComplexRootsSqf } from '../../src/polys/rootisolation';
 import ciRefs from './rootisolation.references.json';
 
 const [x] = symbols('x');
@@ -507,5 +506,19 @@ describe('complex root isolation (SymPy references)', () => {
       expect(r.refineDisjoint(rs.length > 2 ? at(rs, -3) : at(rs, 0)).map(String)).toEqual(c.refine_disjoint);
       expect(String(r.conjugate())).toBe(c.conjugate);
     }
+  });
+  it('ComplexInterval.fromRectangle (the SymPy ComplexInterval doctest)', () => {
+    const f = [1n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, -2n, 3n];
+    const i = ComplexInterval.fromRectangle(f, [Q('3/64'), Q('9/8')], [Q('3/32'), Q('75/64')]);
+    expect(String(i)).toBe('(3/64, 3/32) x (9/8, 75/64)');
+    expect(String(i.refine())).toBe('(3/64, 3/32) x (9/8, 147/128)');
+    expect(String(i.refineStep(2))).toBe('(9/128, 3/32) x (9/8, 147/128)');
+    expect(String(i.refineSize(Q('3/128')))).toBe('(9/128, 21/256) x (9/8, 291/256)');
+    const close = [101n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, 0n, -202n, 300n];
+    const j = ComplexInterval.fromRectangle(close, [Q('75/1616'), Q('225/202')], [Q('75/808'), Q('1875/1616')]);
+    expect([i.isDisjoint(i), i.isDisjoint(i.conjugate()), i.isDisjoint(j)]).toEqual([false, true, false]);
+    expect(i.refineDisjoint(j).map(String)).toEqual(['(39/512, 159/2048) x (2325/2048, 4653/4096)', '(3975/51712, 2025/25856) x (29325/25856, 117375/103424)']);
+    expect(String(ComplexInterval.fromRectangle(f, [Q('3/64'), Q('9/8')], [Q('3/32'), Q('75/64')], true))).toBe('(3/64, 3/32) x (-75/64, -9/8)');
+    expect(() => ComplexInterval.fromRectangle(f, [Q('-2'), Q('0')], [Q('2'), Q('2')])).toThrow(RangeError);
   });
 });

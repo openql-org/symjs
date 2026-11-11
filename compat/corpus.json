@@ -463704,7 +463704,93 @@
   },
   {
    "fn": ".refine",
-   "unsupportedArg": "ComplexInterval",
+   "self": {
+    "t": "ComplexInterval",
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "-2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     }
+    ],
+    "a": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "64"
+     },
+     {
+      "t": "Rational",
+      "p": "9",
+      "q": "8"
+     }
+    ],
+    "b": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "32"
+     },
+     {
+      "t": "Rational",
+      "p": "75",
+      "q": "64"
+     }
+    ],
+    "conj": false
+   },
+   "args": [],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.rootisolation",
    "src": "i.refine()",
@@ -463712,7 +463798,99 @@
   },
   {
    "fn": ".refine_step",
-   "unsupportedArg": "ComplexInterval",
+   "self": {
+    "t": "ComplexInterval",
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "-2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     }
+    ],
+    "a": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "64"
+     },
+     {
+      "t": "Rational",
+      "p": "9",
+      "q": "8"
+     }
+    ],
+    "b": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "32"
+     },
+     {
+      "t": "Rational",
+      "p": "75",
+      "q": "64"
+     }
+    ],
+    "conj": false
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1"
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.rootisolation",
    "src": "i.refine_step(2)  # 2 steps",
@@ -463720,7 +463898,100 @@
   },
   {
    "fn": ".refine_size",
-   "unsupportedArg": "ComplexInterval",
+   "self": {
+    "t": "ComplexInterval",
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "-2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     }
+    ],
+    "a": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "64"
+     },
+     {
+      "t": "Rational",
+      "p": "9",
+      "q": "8"
+     }
+    ],
+    "b": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "32"
+     },
+     {
+      "t": "Rational",
+      "p": "75",
+      "q": "64"
+     }
+    ],
+    "conj": false
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "3",
+     "q": "128",
+     "mpq": true
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.rootisolation",
    "src": "i.refine_size(tol)",
@@ -463728,7 +463999,179 @@
   },
   {
    "fn": ".is_disjoint",
-   "unsupportedArg": "ComplexInterval",
+   "self": {
+    "t": "ComplexInterval",
+    "coeffs": [
+     {
+      "t": "Rational",
+      "p": "1",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "-2",
+      "q": "1"
+     },
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "1"
+     }
+    ],
+    "a": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "64"
+     },
+     {
+      "t": "Rational",
+      "p": "9",
+      "q": "8"
+     }
+    ],
+    "b": [
+     {
+      "t": "Rational",
+      "p": "3",
+      "q": "32"
+     },
+     {
+      "t": "Rational",
+      "p": "75",
+      "q": "64"
+     }
+    ],
+    "conj": false
+   },
+   "args": [
+    {
+     "t": "ComplexInterval",
+     "coeffs": [
+      {
+       "t": "Rational",
+       "p": "101",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "0",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "-202",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "300",
+       "q": "1"
+      }
+     ],
+     "a": [
+      {
+       "t": "Rational",
+       "p": "75",
+       "q": "1616"
+      },
+      {
+       "t": "Rational",
+       "p": "225",
+       "q": "202"
+      }
+     ],
+     "b": [
+      {
+       "t": "Rational",
+       "p": "75",
+       "q": "808"
+      },
+      {
+       "t": "Rational",
+       "p": "1875",
+       "q": "1616"
+      }
+     ],
+     "conj": false
+    }
+   ],
+   "kwargs": {},
    "category": "polys",
    "module": "sympy.polys.rootisolation",
    "src": "i.is_disjoint(j)",
@@ -498131,76 +498574,6 @@
     "reason": "non-call-expression"
    },
    {
-    "module": "sympy.polys.rootisolation",
-    "src": "i = root._get_interval(); i",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.polys.rootisolation",
-    "src": "i.dx, i.dy",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rootisolation",
-    "src": "i.center",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rootisolation",
-    "src": "i.b, i.bx, i.by",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rootisolation",
-    "src": "i.a, i.ax, i.ay",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rootisolation",
-    "src": "i.conj",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rootisolation",
-    "src": "ic = i.conjugate(); ic",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.polys.rootisolation",
-    "src": "(i.ax, i.ay), (i.bx, i.by)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rootisolation",
-    "src": "(ic.ax, ic.ay), (ic.bx, ic.by)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rootisolation",
-    "src": "i  # for reference, this is the current interval",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rootisolation",
-    "src": "i.is_disjoint(i), i.is_disjoint(i.conjugate())",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rootisolation",
-    "src": "j = close._get_interval(); j",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.polys.rootisolation",
-    "src": "newi",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rootisolation",
-    "src": "newj",
-    "reason": "non-call-expression"
-   },
-   {
     "module": "sympy.holonomic.holonomic",
     "src": "(x*Dx*x + 1 - Dx**2)**2",
     "reason": "non-call-expression"
@@ -498659,6 +499032,76 @@
     "module": "sympy.solvers.ode.lie_group",
     "src": "_lie_group_remove(eq)",
     "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.rootisolation",
+    "src": "i = root._get_interval(); i",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.polys.rootisolation",
+    "src": "i.dx, i.dy",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rootisolation",
+    "src": "i.center",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rootisolation",
+    "src": "i.b, i.bx, i.by",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rootisolation",
+    "src": "i.a, i.ax, i.ay",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rootisolation",
+    "src": "i.conj",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rootisolation",
+    "src": "ic = i.conjugate(); ic",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.polys.rootisolation",
+    "src": "(i.ax, i.ay), (i.bx, i.by)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rootisolation",
+    "src": "(ic.ax, ic.ay), (ic.bx, ic.by)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rootisolation",
+    "src": "i  # for reference, this is the current interval",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rootisolation",
+    "src": "i.is_disjoint(i), i.is_disjoint(i.conjugate())",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rootisolation",
+    "src": "j = close._get_interval(); j",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.polys.rootisolation",
+    "src": "newi",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rootisolation",
+    "src": "newj",
+    "reason": "non-call-expression"
    }
   ]
  }
