@@ -705714,12 +705714,185 @@
    "module": "sympy.tensor.toperators",
    "src": "expr",
    "expected": "PartialDerivative(A(i), A(j), A(k))"
+  },
+  {
+   "fn": "parse_latex",
+   "args": [
+    {
+     "t": "Str",
+     "v": "\\frac {1 + \\sqrt {\\a}} {\\b}"
+    }
+   ],
+   "kwargs": {},
+   "category": "parsing",
+   "module": "sympy.parsing.latex",
+   "src": "expr",
+   "expected": "(sqrt(a) + 1)/b"
+  },
+  {
+   "fn": ".evalf",
+   "self": {
+    "t": "Mul",
+    "args": [
+     {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "a",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "1",
+          "q": "2"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "b",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "4",
+     "q": "1",
+     "py": true
+    }
+   ],
+   "kwargs": {
+    "subs": {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Str",
+        "v": "a"
+       },
+       {
+        "t": "Rational",
+        "p": "5",
+        "q": "1",
+        "py": true
+       }
+      ],
+      [
+       {
+        "t": "Str",
+        "v": "b"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1",
+        "py": true
+       }
+      ]
+     ]
+    }
+   },
+   "category": "parsing",
+   "module": "sympy.parsing.latex",
+   "src": "expr.evalf(4, subs=dict(a=5, b=2))",
+   "expected": "1.618"
+  },
+  {
+   "fn": ".evalf",
+   "self": {
+    "t": "Fn",
+    "name": "Integral",
+    "args": [
+     {
+      "t": "Pow",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "t",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "-1",
+        "q": "1"
+       }
+      ]
+     },
+     {
+      "t": "Tuple",
+      "items": [
+       {
+        "t": "Symbol",
+        "name": "t",
+        "assume": {}
+       },
+       {
+        "t": "Rational",
+        "p": "1",
+        "q": "1"
+       },
+       {
+        "t": "Symbol",
+        "name": "alpha",
+        "assume": {}
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {
+    "subs": {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Str",
+        "v": "alpha"
+       },
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1",
+        "py": true
+       }
+      ]
+     ]
+    }
+   },
+   "category": "parsing",
+   "module": "sympy.parsing.latex",
+   "src": "func.evalf(subs={\"alpha\": 2})",
+   "expected": "0.693147180559945"
   }
  ],
  "extraction": {
-  "examined": 25739,
+  "examined": 25745,
   "reasons": {
-   "statement-or-setup": 14117,
+   "statement-or-setup": 14120,
    "upstream-skip": 113,
    "not-exported-api": 891,
    "non-call-expression": 609,

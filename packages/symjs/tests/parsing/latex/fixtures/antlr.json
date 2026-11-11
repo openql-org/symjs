@@ -1,0 +1,4519 @@
+[
+  {
+    "group": "GOOD_PAIRS",
+    "index": 0,
+    "evaluate": true,
+    "src": "0",
+    "expected": [
+      "Rational",
+      "0",
+      "1"
+    ],
+    "latex": "0"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 1,
+    "evaluate": true,
+    "src": "1",
+    "expected": [
+      "Rational",
+      "1",
+      "1"
+    ],
+    "latex": "1"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 2,
+    "evaluate": true,
+    "src": "-3.14",
+    "expected": [
+      "Float",
+      -3.14
+    ],
+    "latex": "-3.14"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 3,
+    "evaluate": true,
+    "src": "(-7.13)(1.5)",
+    "expected": [
+      "Mul",
+      [
+        "Float",
+        -7.13
+      ],
+      [
+        "Float",
+        1.5
+      ]
+    ],
+    "latex": "\\left(-7.13\\right) 1.5"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 4,
+    "evaluate": true,
+    "src": "x",
+    "expected": [
+      "Symbol",
+      "x"
+    ],
+    "latex": "x"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 5,
+    "evaluate": true,
+    "src": "2x",
+    "expected": [
+      "Mul",
+      [
+        "Rational",
+        "2",
+        "1"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "2 x"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 6,
+    "evaluate": true,
+    "src": "x^2",
+    "expected": [
+      "Pow",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ],
+    "latex": "x^{2}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 7,
+    "evaluate": true,
+    "src": "x^\\frac{1}{2}",
+    "expected": [
+      "Pow",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Pow",
+        [
+          "Rational",
+          "2",
+          "1"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "x^{\\frac{1}{2}}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 8,
+    "evaluate": true,
+    "src": "x^{3 + 1}",
+    "expected": [
+      "Pow",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Add",
+        [
+          "Rational",
+          "3",
+          "1"
+        ],
+        [
+          "Rational",
+          "1",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "x^{1 + 3}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 9,
+    "evaluate": true,
+    "src": "-c",
+    "expected": [
+      "Mul",
+      [
+        "Rational",
+        "-1",
+        "1"
+      ],
+      [
+        "Symbol",
+        "c"
+      ]
+    ],
+    "latex": "- c"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 10,
+    "evaluate": true,
+    "src": "a \\cdot b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 11,
+    "evaluate": true,
+    "src": "a / b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "b"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "\\frac{a}{b}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 12,
+    "evaluate": true,
+    "src": "a \\div b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "b"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "\\frac{a}{b}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 13,
+    "evaluate": true,
+    "src": "a + b",
+    "expected": [
+      "Add",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a + b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 14,
+    "evaluate": true,
+    "src": "a + b - a",
+    "expected": [
+      "Add",
+      [
+        "Add",
+        [
+          "Symbol",
+          "a"
+        ],
+        [
+          "Symbol",
+          "b"
+        ]
+      ],
+      [
+        "Mul",
+        [
+          "Rational",
+          "-1",
+          "1"
+        ],
+        [
+          "Symbol",
+          "a"
+        ]
+      ]
+    ],
+    "latex": "- a + \\left(a + b\\right)"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 15,
+    "evaluate": true,
+    "src": "a^2 + b^2 = c^2",
+    "expected": [
+      "Equality",
+      [
+        "Add",
+        [
+          "Pow",
+          [
+            "Symbol",
+            "a"
+          ],
+          [
+            "Rational",
+            "2",
+            "1"
+          ]
+        ],
+        [
+          "Pow",
+          [
+            "Symbol",
+            "b"
+          ],
+          [
+            "Rational",
+            "2",
+            "1"
+          ]
+        ]
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "c"
+        ],
+        [
+          "Rational",
+          "2",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "a^{2} + b^{2} = c^{2}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 16,
+    "evaluate": true,
+    "src": "(x + y) z",
+    "expected": [
+      "Mul",
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ],
+      [
+        "Symbol",
+        "z"
+      ]
+    ],
+    "latex": "z \\left(x + y\\right)"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 17,
+    "evaluate": true,
+    "src": "a'b+ab'",
+    "expected": [
+      "Add",
+      [
+        "Mul",
+        [
+          "Symbol",
+          "a'"
+        ],
+        [
+          "Symbol",
+          "b"
+        ]
+      ],
+      [
+        "Mul",
+        [
+          "Symbol",
+          "a"
+        ],
+        [
+          "Symbol",
+          "b'"
+        ]
+      ]
+    ],
+    "latex": "a b' + a' b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 18,
+    "evaluate": true,
+    "src": "y''_1",
+    "expected": [
+      "Symbol",
+      "y_{1}''"
+    ],
+    "latex": "y_{1}''"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 19,
+    "evaluate": true,
+    "src": "y_1''",
+    "expected": [
+      "Symbol",
+      "y_{1}''"
+    ],
+    "latex": "y_{1}''"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 20,
+    "evaluate": true,
+    "src": "\\left(x + y\\right) z",
+    "expected": [
+      "Mul",
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ],
+      [
+        "Symbol",
+        "z"
+      ]
+    ],
+    "latex": "z \\left(x + y\\right)"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 21,
+    "evaluate": true,
+    "src": "\\left( x + y\\right ) z",
+    "expected": [
+      "Mul",
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ],
+      [
+        "Symbol",
+        "z"
+      ]
+    ],
+    "latex": "z \\left(x + y\\right)"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 22,
+    "evaluate": true,
+    "src": "\\left(  x + y\\right ) z",
+    "expected": [
+      "Mul",
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ],
+      [
+        "Symbol",
+        "z"
+      ]
+    ],
+    "latex": "z \\left(x + y\\right)"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 23,
+    "evaluate": true,
+    "src": "\\left[x + y\\right] z",
+    "expected": [
+      "Mul",
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ],
+      [
+        "Symbol",
+        "z"
+      ]
+    ],
+    "latex": "z \\left(x + y\\right)"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 24,
+    "evaluate": true,
+    "src": "\\left\\{x + y\\right\\} z",
+    "expected": [
+      "Mul",
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ],
+      [
+        "Symbol",
+        "z"
+      ]
+    ],
+    "latex": "z \\left(x + y\\right)"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 25,
+    "evaluate": true,
+    "src": "1+1",
+    "expected": [
+      "Add",
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ],
+    "latex": "1 + 1"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 26,
+    "evaluate": true,
+    "src": "0+1",
+    "expected": [
+      "Add",
+      [
+        "Rational",
+        "0",
+        "1"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ],
+    "latex": "0 + 1"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 27,
+    "evaluate": true,
+    "src": "1*2",
+    "expected": [
+      "Mul",
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ],
+    "latex": "1 \\cdot 2"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 28,
+    "evaluate": true,
+    "src": "0*1",
+    "expected": [
+      "Mul",
+      [
+        "Rational",
+        "0",
+        "1"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ],
+    "latex": "0 \\cdot 1"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 29,
+    "evaluate": true,
+    "src": "1 \\times 2 ",
+    "expected": [
+      "Mul",
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ],
+    "latex": "1 \\cdot 2"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 30,
+    "evaluate": true,
+    "src": "x = y",
+    "expected": [
+      "Equality",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "x = y"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 31,
+    "evaluate": true,
+    "src": "x \\neq y",
+    "expected": [
+      "Unequality",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "x \\neq y"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 32,
+    "evaluate": true,
+    "src": "x < y",
+    "expected": [
+      "StrictLessThan",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "x < y"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 33,
+    "evaluate": true,
+    "src": "x > y",
+    "expected": [
+      "StrictGreaterThan",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "x > y"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 34,
+    "evaluate": true,
+    "src": "x \\leq y",
+    "expected": [
+      "LessThan",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "x \\leq y"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 35,
+    "evaluate": true,
+    "src": "x \\geq y",
+    "expected": [
+      "GreaterThan",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "x \\geq y"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 36,
+    "evaluate": true,
+    "src": "x \\le y",
+    "expected": [
+      "LessThan",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "x \\leq y"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 37,
+    "evaluate": true,
+    "src": "x \\ge y",
+    "expected": [
+      "GreaterThan",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "x \\geq y"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 38,
+    "evaluate": true,
+    "src": "\\lfloor x \\rfloor",
+    "expected": [
+      "floor",
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "\\left\\lfloor{x}\\right\\rfloor"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 39,
+    "evaluate": true,
+    "src": "\\lceil x \\rceil",
+    "expected": [
+      "ceiling",
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "\\left\\lceil{x}\\right\\rceil"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 40,
+    "evaluate": true,
+    "src": "\\langle x |",
+    "expected": [
+      "Bra",
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "{\\left\\langle x\\right|}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 41,
+    "evaluate": true,
+    "src": "| x \\rangle",
+    "expected": [
+      "Ket",
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "{\\left|x\\right\\rangle }"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 42,
+    "evaluate": true,
+    "src": "\\sin \\theta",
+    "expected": [
+      "sin",
+      [
+        "Symbol",
+        "theta"
+      ]
+    ],
+    "latex": "\\sin{\\left(\\theta \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 43,
+    "evaluate": true,
+    "src": "\\sin(\\theta)",
+    "expected": [
+      "sin",
+      [
+        "Symbol",
+        "theta"
+      ]
+    ],
+    "latex": "\\sin{\\left(\\theta \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 44,
+    "evaluate": true,
+    "src": "\\sin^{-1} a",
+    "expected": [
+      "asin",
+      [
+        "Symbol",
+        "a"
+      ]
+    ],
+    "latex": "\\operatorname{asin}{\\left(a \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 45,
+    "evaluate": true,
+    "src": "\\sin a \\cos b",
+    "expected": [
+      "Mul",
+      [
+        "sin",
+        [
+          "Symbol",
+          "a"
+        ]
+      ],
+      [
+        "cos",
+        [
+          "Symbol",
+          "b"
+        ]
+      ]
+    ],
+    "latex": "\\sin{\\left(a \\right)} \\cos{\\left(b \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 46,
+    "evaluate": true,
+    "src": "\\sin \\cos \\theta",
+    "expected": [
+      "sin",
+      [
+        "cos",
+        [
+          "Symbol",
+          "theta"
+        ]
+      ]
+    ],
+    "latex": "\\sin{\\left(\\cos{\\left(\\theta \\right)} \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 47,
+    "evaluate": true,
+    "src": "\\sin(\\cos \\theta)",
+    "expected": [
+      "sin",
+      [
+        "cos",
+        [
+          "Symbol",
+          "theta"
+        ]
+      ]
+    ],
+    "latex": "\\sin{\\left(\\cos{\\left(\\theta \\right)} \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 48,
+    "evaluate": true,
+    "src": "\\frac{a}{b}",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "b"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "\\frac{a}{b}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 49,
+    "evaluate": true,
+    "src": "\\dfrac{a}{b}",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "b"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "\\frac{a}{b}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 50,
+    "evaluate": true,
+    "src": "\\tfrac{a}{b}",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "b"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "\\frac{a}{b}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 51,
+    "evaluate": true,
+    "src": "\\frac12",
+    "expected": [
+      "Pow",
+      [
+        "Rational",
+        "2",
+        "1"
+      ],
+      [
+        "Rational",
+        "-1",
+        "1"
+      ]
+    ],
+    "latex": "\\frac{1}{2}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 52,
+    "evaluate": true,
+    "src": "\\frac12y",
+    "expected": [
+      "Mul",
+      [
+        "Pow",
+        [
+          "Rational",
+          "2",
+          "1"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "\\frac{y}{2}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 53,
+    "evaluate": true,
+    "src": "\\frac1234",
+    "expected": [
+      "Mul",
+      [
+        "Pow",
+        [
+          "Rational",
+          "2",
+          "1"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ],
+      [
+        "Rational",
+        "34",
+        "1"
+      ]
+    ],
+    "latex": "\\frac{1}{2} \\cdot 34"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 54,
+    "evaluate": true,
+    "src": "\\frac2{3}",
+    "expected": [
+      "Mul",
+      [
+        "Rational",
+        "2",
+        "1"
+      ],
+      [
+        "Pow",
+        [
+          "Rational",
+          "3",
+          "1"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "\\frac{2}{3}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 55,
+    "evaluate": true,
+    "src": "\\frac{\\sin{x}}2",
+    "expected": [
+      "Mul",
+      [
+        "sin",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Pow",
+        [
+          "Rational",
+          "2",
+          "1"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "\\frac{\\sin{\\left(x \\right)}}{2}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 56,
+    "evaluate": true,
+    "src": "\\frac{a + b}{c}",
+    "expected": [
+      "Mul",
+      [
+        "Add",
+        [
+          "Symbol",
+          "a"
+        ],
+        [
+          "Symbol",
+          "b"
+        ]
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "c"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "\\frac{a + b}{c}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 57,
+    "evaluate": true,
+    "src": "\\frac{7}{3}",
+    "expected": [
+      "Mul",
+      [
+        "Rational",
+        "7",
+        "1"
+      ],
+      [
+        "Pow",
+        [
+          "Rational",
+          "3",
+          "1"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "\\frac{7}{3}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 58,
+    "evaluate": true,
+    "src": "(\\csc x)(\\sec y)",
+    "expected": [
+      "Mul",
+      [
+        "csc",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "sec",
+        [
+          "Symbol",
+          "y"
+        ]
+      ]
+    ],
+    "latex": "\\csc{\\left(x \\right)} \\sec{\\left(y \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 59,
+    "evaluate": true,
+    "src": "\\lim_{x \\to 3} a",
+    "expected": [
+      "Limit",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ],
+      "+-"
+    ],
+    "latex": "\\lim_{x \\to 3} a"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 60,
+    "evaluate": true,
+    "src": "\\lim_{x \\rightarrow 3} a",
+    "expected": [
+      "Limit",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ],
+      "+-"
+    ],
+    "latex": "\\lim_{x \\to 3} a"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 61,
+    "evaluate": true,
+    "src": "\\lim_{x \\Rightarrow 3} a",
+    "expected": [
+      "Limit",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ],
+      "+-"
+    ],
+    "latex": "\\lim_{x \\to 3} a"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 62,
+    "evaluate": true,
+    "src": "\\lim_{x \\longrightarrow 3} a",
+    "expected": [
+      "Limit",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ],
+      "+-"
+    ],
+    "latex": "\\lim_{x \\to 3} a"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 63,
+    "evaluate": true,
+    "src": "\\lim_{x \\Longrightarrow 3} a",
+    "expected": [
+      "Limit",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ],
+      "+-"
+    ],
+    "latex": "\\lim_{x \\to 3} a"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 64,
+    "evaluate": true,
+    "src": "\\lim_{x \\to 3^{+}} a",
+    "expected": [
+      "Limit",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ],
+      "+"
+    ],
+    "latex": "\\lim_{x \\to 3^+} a"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 65,
+    "evaluate": true,
+    "src": "\\lim_{x \\to 3^{-}} a",
+    "expected": [
+      "Limit",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ],
+      "-"
+    ],
+    "latex": "\\lim_{x \\to 3^-} a"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 66,
+    "evaluate": true,
+    "src": "\\lim_{x \\to 3^+} a",
+    "expected": [
+      "Limit",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ],
+      "+"
+    ],
+    "latex": "\\lim_{x \\to 3^+} a"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 67,
+    "evaluate": true,
+    "src": "\\lim_{x \\to 3^-} a",
+    "expected": [
+      "Limit",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ],
+      "-"
+    ],
+    "latex": "\\lim_{x \\to 3^-} a"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 68,
+    "evaluate": true,
+    "src": "\\infty",
+    "expected": [
+      "oo"
+    ],
+    "latex": "\\infty"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 69,
+    "evaluate": true,
+    "src": "\\lim_{x \\to \\infty} \\frac{1}{x}",
+    "expected": [
+      "Limit",
+      [
+        "Pow",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "oo"
+      ],
+      "-"
+    ],
+    "latex": "\\lim_{x \\to \\infty} \\frac{1}{x}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 70,
+    "evaluate": true,
+    "src": "\\frac{d}{dx} x",
+    "expected": [
+      "Derivative",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ],
+    "latex": "\\frac{d}{d x} x"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 71,
+    "evaluate": true,
+    "src": "\\frac{d}{dt} x",
+    "expected": [
+      "Derivative",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "t"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ],
+    "latex": "\\frac{d}{d t} x"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 72,
+    "evaluate": true,
+    "src": "f(x)",
+    "expected": [
+      "f",
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "f{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 73,
+    "evaluate": true,
+    "src": "f(x, y)",
+    "expected": [
+      "f",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "f{\\left(x,y \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 74,
+    "evaluate": true,
+    "src": "f(x, y, z)",
+    "expected": [
+      "f",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ],
+      [
+        "Symbol",
+        "z"
+      ]
+    ],
+    "latex": "f{\\left(x,y,z \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 75,
+    "evaluate": true,
+    "src": "f'_1(x)",
+    "expected": [
+      "f_{1}'",
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "f_{1}'{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 76,
+    "evaluate": true,
+    "src": "f_{1}''(x+y)",
+    "expected": [
+      "f_{1}''",
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ]
+    ],
+    "latex": "f_{1}''{\\left(x + y \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 77,
+    "evaluate": true,
+    "src": "\\frac{d f(x)}{dx}",
+    "expected": [
+      "Derivative",
+      [
+        "f",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ],
+    "latex": "\\frac{d}{d x} f{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 78,
+    "evaluate": true,
+    "src": "\\frac{d\\theta(x)}{dx}",
+    "expected": [
+      "Derivative",
+      [
+        "theta",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ],
+    "latex": "\\frac{d}{d x} \\theta{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 79,
+    "evaluate": true,
+    "src": "x \\neq y",
+    "expected": [
+      "Unequality",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "x \\neq y"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 80,
+    "evaluate": true,
+    "src": "|x|",
+    "expected": [
+      "Abs",
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "\\left|{x}\\right|"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 81,
+    "evaluate": true,
+    "src": "||x||",
+    "expected": [
+      "Abs",
+      [
+        "Abs",
+        [
+          "Symbol",
+          "x"
+        ]
+      ]
+    ],
+    "latex": "\\left|{\\left|{x}\\right|}\\right|"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 82,
+    "evaluate": true,
+    "src": "|x||y|",
+    "expected": [
+      "Mul",
+      [
+        "Abs",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Abs",
+        [
+          "Symbol",
+          "y"
+        ]
+      ]
+    ],
+    "latex": "\\left|{x}\\right| \\left|{y}\\right|"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 83,
+    "evaluate": true,
+    "src": "||x||y||",
+    "expected": [
+      "Abs",
+      [
+        "Mul",
+        [
+          "Abs",
+          [
+            "Symbol",
+            "x"
+          ]
+        ],
+        [
+          "Abs",
+          [
+            "Symbol",
+            "y"
+          ]
+        ]
+      ]
+    ],
+    "latex": "\\left|{\\left|{x}\\right| \\left|{y}\\right|}\\right|"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 84,
+    "evaluate": true,
+    "src": "\\pi^{|xy|}",
+    "expected": [
+      "Pow",
+      [
+        "Symbol",
+        "pi"
+      ],
+      [
+        "Abs",
+        [
+          "Mul",
+          [
+            "Symbol",
+            "x"
+          ],
+          [
+            "Symbol",
+            "y"
+          ]
+        ]
+      ]
+    ],
+    "latex": "\\pi^{\\left|{x y}\\right|}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 85,
+    "evaluate": true,
+    "src": "\\int x dx",
+    "expected": [
+      "Integral",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "\\int x\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 86,
+    "evaluate": true,
+    "src": "\\int x d\\theta",
+    "expected": [
+      "Integral",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "theta"
+      ]
+    ],
+    "latex": "\\int x\\, d\\theta"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 87,
+    "evaluate": true,
+    "src": "\\int (x^2 - y)dx",
+    "expected": [
+      "Integral",
+      [
+        "Add",
+        [
+          "Pow",
+          [
+            "Symbol",
+            "x"
+          ],
+          [
+            "Rational",
+            "2",
+            "1"
+          ]
+        ],
+        [
+          "Mul",
+          [
+            "Rational",
+            "-1",
+            "1"
+          ],
+          [
+            "Symbol",
+            "y"
+          ]
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "\\int \\left(x^{2} - y\\right)\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 88,
+    "evaluate": true,
+    "src": "\\int x + a dx",
+    "expected": [
+      "Integral",
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "a"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "\\int \\left(a + x\\right)\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 89,
+    "evaluate": true,
+    "src": "\\int da",
+    "expected": [
+      "Integral",
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Symbol",
+        "a"
+      ]
+    ],
+    "latex": "\\int 1\\, da"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 90,
+    "evaluate": true,
+    "src": "\\int_0^7 dx",
+    "expected": [
+      "Integral",
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ],
+      [
+        "Rational",
+        "7",
+        "1"
+      ]
+    ],
+    "latex": "\\int\\limits_{0}^{7} 1\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 91,
+    "evaluate": true,
+    "src": "\\int\\limits_{0}^{1} x dx",
+    "expected": [
+      "Integral",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ],
+    "latex": "\\int\\limits_{0}^{1} x\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 92,
+    "evaluate": true,
+    "src": "\\int_a^b x dx",
+    "expected": [
+      "Integral",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "\\int\\limits_{a}^{b} x\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 93,
+    "evaluate": true,
+    "src": "\\int^b_a x dx",
+    "expected": [
+      "Integral",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "\\int\\limits_{a}^{b} x\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 94,
+    "evaluate": true,
+    "src": "\\int_{a}^b x dx",
+    "expected": [
+      "Integral",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "\\int\\limits_{a}^{b} x\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 95,
+    "evaluate": true,
+    "src": "\\int^{b}_a x dx",
+    "expected": [
+      "Integral",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "\\int\\limits_{a}^{b} x\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 96,
+    "evaluate": true,
+    "src": "\\int_{a}^{b} x dx",
+    "expected": [
+      "Integral",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "\\int\\limits_{a}^{b} x\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 97,
+    "evaluate": true,
+    "src": "\\int^{b}_{a} x dx",
+    "expected": [
+      "Integral",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "\\int\\limits_{a}^{b} x\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 98,
+    "evaluate": true,
+    "src": "\\int_{f(a)}^{f(b)} f(z) dz",
+    "expected": [
+      "Integral",
+      [
+        "f",
+        [
+          "Symbol",
+          "z"
+        ]
+      ],
+      [
+        "Symbol",
+        "z"
+      ],
+      [
+        "f",
+        [
+          "Symbol",
+          "a"
+        ]
+      ],
+      [
+        "f",
+        [
+          "Symbol",
+          "b"
+        ]
+      ]
+    ],
+    "latex": "\\int\\limits_{f{\\left(a \\right)}}^{f{\\left(b \\right)}} f{\\left(z \\right)}\\, dz"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 99,
+    "evaluate": true,
+    "src": "\\int (x+a)",
+    "expected": [
+      "Integral",
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "a"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "\\int \\left(a + x\\right)\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 100,
+    "evaluate": true,
+    "src": "\\int a + b + c dx",
+    "expected": [
+      "Integral",
+      [
+        "Add",
+        [
+          "Add",
+          [
+            "Symbol",
+            "a"
+          ],
+          [
+            "Symbol",
+            "b"
+          ]
+        ],
+        [
+          "Symbol",
+          "c"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "\\int \\left(c + \\left(a + b\\right)\\right)\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 101,
+    "evaluate": true,
+    "src": "\\int \\frac{dz}{z}",
+    "expected": [
+      "Integral",
+      [
+        "Pow",
+        [
+          "Symbol",
+          "z"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ],
+      [
+        "Symbol",
+        "z"
+      ]
+    ],
+    "latex": "\\int \\frac{1}{z}\\, dz"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 102,
+    "evaluate": true,
+    "src": "\\int \\frac{3 dz}{z}",
+    "expected": [
+      "Integral",
+      [
+        "Mul",
+        [
+          "Rational",
+          "3",
+          "1"
+        ],
+        [
+          "Pow",
+          [
+            "Symbol",
+            "z"
+          ],
+          [
+            "Rational",
+            "-1",
+            "1"
+          ]
+        ]
+      ],
+      [
+        "Symbol",
+        "z"
+      ]
+    ],
+    "latex": "\\int \\frac{3}{z}\\, dz"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 103,
+    "evaluate": true,
+    "src": "\\int \\frac{1}{x} dx",
+    "expected": [
+      "Integral",
+      [
+        "Pow",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "\\int \\frac{1}{x}\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 104,
+    "evaluate": true,
+    "src": "\\int \\frac{1}{a} + \\frac{1}{b} dx",
+    "expected": [
+      "Integral",
+      [
+        "Add",
+        [
+          "Pow",
+          [
+            "Symbol",
+            "a"
+          ],
+          [
+            "Rational",
+            "-1",
+            "1"
+          ]
+        ],
+        [
+          "Pow",
+          [
+            "Symbol",
+            "b"
+          ],
+          [
+            "Rational",
+            "-1",
+            "1"
+          ]
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "\\int \\left(\\frac{1}{b} + \\frac{1}{a}\\right)\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 105,
+    "evaluate": true,
+    "src": "\\int \\frac{3 \\cdot d\\theta}{\\theta}",
+    "expected": [
+      "Integral",
+      [
+        "Mul",
+        [
+          "Rational",
+          "3",
+          "1"
+        ],
+        [
+          "Pow",
+          [
+            "Symbol",
+            "theta"
+          ],
+          [
+            "Rational",
+            "-1",
+            "1"
+          ]
+        ]
+      ],
+      [
+        "Symbol",
+        "theta"
+      ]
+    ],
+    "latex": "\\int \\frac{3}{\\theta}\\, d\\theta"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 106,
+    "evaluate": true,
+    "src": "\\int \\frac{1}{x} + 1 dx",
+    "expected": [
+      "Integral",
+      [
+        "Add",
+        [
+          "Pow",
+          [
+            "Symbol",
+            "x"
+          ],
+          [
+            "Rational",
+            "-1",
+            "1"
+          ]
+        ],
+        [
+          "Rational",
+          "1",
+          "1"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "\\int \\left(1 + \\frac{1}{x}\\right)\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 107,
+    "evaluate": true,
+    "src": "x_0",
+    "expected": [
+      "Symbol",
+      "x_{0}"
+    ],
+    "latex": "x_{0}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 108,
+    "evaluate": true,
+    "src": "x_{1}",
+    "expected": [
+      "Symbol",
+      "x_{1}"
+    ],
+    "latex": "x_{1}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 109,
+    "evaluate": true,
+    "src": "x_a",
+    "expected": [
+      "Symbol",
+      "x_{a}"
+    ],
+    "latex": "x_{a}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 110,
+    "evaluate": true,
+    "src": "x_{b}",
+    "expected": [
+      "Symbol",
+      "x_{b}"
+    ],
+    "latex": "x_{b}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 111,
+    "evaluate": true,
+    "src": "h_\\theta",
+    "expected": [
+      "Symbol",
+      "h_{theta}"
+    ],
+    "latex": "h_{theta}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 112,
+    "evaluate": true,
+    "src": "h_{\\theta}",
+    "expected": [
+      "Symbol",
+      "h_{theta}"
+    ],
+    "latex": "h_{theta}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 113,
+    "evaluate": true,
+    "src": "h_{\\theta}(x_0, x_1)",
+    "expected": [
+      "h_{theta}",
+      [
+        "Symbol",
+        "x_{0}"
+      ],
+      [
+        "Symbol",
+        "x_{1}"
+      ]
+    ],
+    "latex": "h_{theta}{\\left(x_{0},x_{1} \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 114,
+    "evaluate": true,
+    "src": "x!",
+    "expected": [
+      "factorial",
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "x!"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 115,
+    "evaluate": true,
+    "src": "100!",
+    "expected": [
+      "factorial",
+      [
+        "Rational",
+        "100",
+        "1"
+      ]
+    ],
+    "latex": "100!"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 116,
+    "evaluate": true,
+    "src": "\\theta!",
+    "expected": [
+      "factorial",
+      [
+        "Symbol",
+        "theta"
+      ]
+    ],
+    "latex": "\\theta!"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 117,
+    "evaluate": true,
+    "src": "(x + 1)!",
+    "expected": [
+      "factorial",
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Rational",
+          "1",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "\\left(x + 1\\right)!"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 118,
+    "evaluate": true,
+    "src": "(x!)!",
+    "expected": [
+      "factorial",
+      [
+        "factorial",
+        [
+          "Symbol",
+          "x"
+        ]
+      ]
+    ],
+    "latex": "\\left(x!\\right)!"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 119,
+    "evaluate": true,
+    "src": "x!!!",
+    "expected": [
+      "factorial",
+      [
+        "factorial",
+        [
+          "factorial",
+          [
+            "Symbol",
+            "x"
+          ]
+        ]
+      ]
+    ],
+    "latex": "\\left(\\left(x!\\right)!\\right)!"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 120,
+    "evaluate": true,
+    "src": "5!7!",
+    "expected": [
+      "Mul",
+      [
+        "factorial",
+        [
+          "Rational",
+          "5",
+          "1"
+        ]
+      ],
+      [
+        "factorial",
+        [
+          "Rational",
+          "7",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "5! 7!"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 121,
+    "evaluate": true,
+    "src": "\\sqrt{x}",
+    "expected": [
+      "Pow",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "1",
+        "2"
+      ]
+    ],
+    "latex": "\\sqrt{x}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 122,
+    "evaluate": true,
+    "src": "\\sqrt{x + b}",
+    "expected": [
+      "Pow",
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "b"
+        ]
+      ],
+      [
+        "Rational",
+        "1",
+        "2"
+      ]
+    ],
+    "latex": "\\sqrt{b + x}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 123,
+    "evaluate": true,
+    "src": "\\sqrt[3]{\\sin x}",
+    "expected": [
+      "Pow",
+      [
+        "sin",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Rational",
+        "1",
+        "3"
+      ]
+    ],
+    "latex": "\\sqrt[3]{\\sin{\\left(x \\right)}}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 124,
+    "evaluate": true,
+    "src": "\\sqrt[y]{\\sin x}",
+    "expected": [
+      "Pow",
+      [
+        "sin",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "y"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "\\sin^{\\frac{1}{y}}{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 125,
+    "evaluate": true,
+    "src": "\\sqrt[\\theta]{\\sin x}",
+    "expected": [
+      "Pow",
+      [
+        "sin",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "theta"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "\\sin^{\\frac{1}{\\theta}}{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 126,
+    "evaluate": true,
+    "src": "\\sqrt{\\frac{12}{6}}",
+    "expected": [
+      "Pow",
+      [
+        "Mul",
+        [
+          "Rational",
+          "12",
+          "1"
+        ],
+        [
+          "Pow",
+          [
+            "Rational",
+            "6",
+            "1"
+          ],
+          [
+            "Rational",
+            "-1",
+            "1"
+          ]
+        ]
+      ],
+      [
+        "Rational",
+        "1",
+        "2"
+      ]
+    ],
+    "latex": "\\sqrt{\\frac{12}{6}}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 127,
+    "evaluate": true,
+    "src": "\\overline{z}",
+    "expected": [
+      "conjugate",
+      [
+        "Symbol",
+        "z"
+      ]
+    ],
+    "latex": "\\overline{z}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 128,
+    "evaluate": true,
+    "src": "\\overline{\\overline{z}}",
+    "expected": [
+      "conjugate",
+      [
+        "conjugate",
+        [
+          "Symbol",
+          "z"
+        ]
+      ]
+    ],
+    "latex": "\\overline{\\overline{z}}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 129,
+    "evaluate": true,
+    "src": "\\overline{x + y}",
+    "expected": [
+      "conjugate",
+      [
+        "Add",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ]
+    ],
+    "latex": "\\overline{x + y}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 130,
+    "evaluate": true,
+    "src": "\\overline{x} + \\overline{y}",
+    "expected": [
+      "Add",
+      [
+        "conjugate",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "conjugate",
+        [
+          "Symbol",
+          "y"
+        ]
+      ]
+    ],
+    "latex": "\\overline{x} + \\overline{y}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 131,
+    "evaluate": true,
+    "src": "x < y",
+    "expected": [
+      "StrictLessThan",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "x < y"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 132,
+    "evaluate": true,
+    "src": "x \\leq y",
+    "expected": [
+      "LessThan",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "x \\leq y"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 133,
+    "evaluate": true,
+    "src": "x > y",
+    "expected": [
+      "StrictGreaterThan",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "x > y"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 134,
+    "evaluate": true,
+    "src": "x \\geq y",
+    "expected": [
+      "GreaterThan",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "y"
+      ]
+    ],
+    "latex": "x \\geq y"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 135,
+    "evaluate": true,
+    "src": "\\mathit{x}",
+    "expected": [
+      "Symbol",
+      "x"
+    ],
+    "latex": "x"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 136,
+    "evaluate": true,
+    "src": "\\mathit{test}",
+    "expected": [
+      "Symbol",
+      "test"
+    ],
+    "latex": "test"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 137,
+    "evaluate": true,
+    "src": "\\mathit{TEST}",
+    "expected": [
+      "Symbol",
+      "TEST"
+    ],
+    "latex": "TEST"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 138,
+    "evaluate": true,
+    "src": "\\mathit{HELLO world}",
+    "expected": [
+      "Symbol",
+      "HELLO world"
+    ],
+    "latex": "HELLO world"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 139,
+    "evaluate": true,
+    "src": "\\sum_{k = 1}^{3} c",
+    "expected": [
+      "Sum",
+      [
+        "Symbol",
+        "c"
+      ],
+      [
+        "Symbol",
+        "k"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ]
+    ],
+    "latex": "\\sum_{k=1}^{3} c"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 140,
+    "evaluate": true,
+    "src": "\\sum_{k = 1}^3 c",
+    "expected": [
+      "Sum",
+      [
+        "Symbol",
+        "c"
+      ],
+      [
+        "Symbol",
+        "k"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ]
+    ],
+    "latex": "\\sum_{k=1}^{3} c"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 141,
+    "evaluate": true,
+    "src": "\\sum^{3}_{k = 1} c",
+    "expected": [
+      "Sum",
+      [
+        "Symbol",
+        "c"
+      ],
+      [
+        "Symbol",
+        "k"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ]
+    ],
+    "latex": "\\sum_{k=1}^{3} c"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 142,
+    "evaluate": true,
+    "src": "\\sum^3_{k = 1} c",
+    "expected": [
+      "Sum",
+      [
+        "Symbol",
+        "c"
+      ],
+      [
+        "Symbol",
+        "k"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Rational",
+        "3",
+        "1"
+      ]
+    ],
+    "latex": "\\sum_{k=1}^{3} c"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 143,
+    "evaluate": true,
+    "src": "\\sum_{k = 1}^{10} k^2",
+    "expected": [
+      "Sum",
+      [
+        "Pow",
+        [
+          "Symbol",
+          "k"
+        ],
+        [
+          "Rational",
+          "2",
+          "1"
+        ]
+      ],
+      [
+        "Symbol",
+        "k"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ],
+      [
+        "Rational",
+        "10",
+        "1"
+      ]
+    ],
+    "latex": "\\sum_{k=1}^{10} k^{2}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 144,
+    "evaluate": true,
+    "src": "\\sum_{n = 0}^{\\infty} \\frac{1}{n!}",
+    "expected": [
+      "Sum",
+      [
+        "Pow",
+        [
+          "factorial",
+          [
+            "Symbol",
+            "n"
+          ]
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ],
+      [
+        "Symbol",
+        "n"
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ],
+      [
+        "oo"
+      ]
+    ],
+    "latex": "\\sum_{n=0}^{\\infty} \\frac{1}{n!}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 145,
+    "evaluate": true,
+    "src": "\\prod_{a = b}^{c} x",
+    "expected": [
+      "Product",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ],
+      [
+        "Symbol",
+        "c"
+      ]
+    ],
+    "latex": "\\prod_{a=b}^{c} x"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 146,
+    "evaluate": true,
+    "src": "\\prod_{a = b}^c x",
+    "expected": [
+      "Product",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ],
+      [
+        "Symbol",
+        "c"
+      ]
+    ],
+    "latex": "\\prod_{a=b}^{c} x"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 147,
+    "evaluate": true,
+    "src": "\\prod^{c}_{a = b} x",
+    "expected": [
+      "Product",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ],
+      [
+        "Symbol",
+        "c"
+      ]
+    ],
+    "latex": "\\prod_{a=b}^{c} x"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 148,
+    "evaluate": true,
+    "src": "\\prod^c_{a = b} x",
+    "expected": [
+      "Product",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ],
+      [
+        "Symbol",
+        "c"
+      ]
+    ],
+    "latex": "\\prod_{a=b}^{c} x"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 149,
+    "evaluate": true,
+    "src": "\\exp x",
+    "expected": [
+      "Pow",
+      [
+        "E"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "e^{x}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 150,
+    "evaluate": true,
+    "src": "\\exp(x)",
+    "expected": [
+      "Pow",
+      [
+        "E"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "e^{x}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 151,
+    "evaluate": true,
+    "src": "\\lg x",
+    "expected": [
+      "log",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "10",
+        "1"
+      ]
+    ],
+    "latex": "\\log{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 152,
+    "evaluate": true,
+    "src": "\\ln x",
+    "expected": [
+      "log",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "E"
+      ]
+    ],
+    "latex": "\\log{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 153,
+    "evaluate": true,
+    "src": "\\ln xy",
+    "expected": [
+      "log",
+      [
+        "Mul",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ],
+      [
+        "E"
+      ]
+    ],
+    "latex": "\\log{\\left(x y \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 154,
+    "evaluate": true,
+    "src": "\\log x",
+    "expected": [
+      "log",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "E"
+      ]
+    ],
+    "latex": "\\log{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 155,
+    "evaluate": true,
+    "src": "\\log xy",
+    "expected": [
+      "log",
+      [
+        "Mul",
+        [
+          "Symbol",
+          "x"
+        ],
+        [
+          "Symbol",
+          "y"
+        ]
+      ],
+      [
+        "E"
+      ]
+    ],
+    "latex": "\\log{\\left(x y \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 156,
+    "evaluate": true,
+    "src": "\\log_{2} x",
+    "expected": [
+      "log",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ],
+    "latex": "\\log{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 157,
+    "evaluate": true,
+    "src": "\\log_{a} x",
+    "expected": [
+      "log",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "a"
+      ]
+    ],
+    "latex": "\\log{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 158,
+    "evaluate": true,
+    "src": "\\log_{11} x",
+    "expected": [
+      "log",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "11",
+        "1"
+      ]
+    ],
+    "latex": "\\log{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 159,
+    "evaluate": true,
+    "src": "\\log_{a^2} x",
+    "expected": [
+      "log",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "a"
+        ],
+        [
+          "Rational",
+          "2",
+          "1"
+        ]
+      ]
+    ],
+    "latex": "\\log{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 160,
+    "evaluate": true,
+    "src": "[x]",
+    "expected": [
+      "Symbol",
+      "x"
+    ],
+    "latex": "x"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 161,
+    "evaluate": true,
+    "src": "[a + b]",
+    "expected": [
+      "Add",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a + b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 162,
+    "evaluate": true,
+    "src": "\\frac{d}{dx} [ \\tan x ]",
+    "expected": [
+      "Derivative",
+      [
+        "tan",
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ],
+    "latex": "\\frac{d}{d x} \\tan{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 163,
+    "evaluate": true,
+    "src": "\\binom{n}{k}",
+    "expected": [
+      "binomial",
+      [
+        "Symbol",
+        "n"
+      ],
+      [
+        "Symbol",
+        "k"
+      ]
+    ],
+    "latex": "{\\binom{n}{k}}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 164,
+    "evaluate": true,
+    "src": "\\tbinom{n}{k}",
+    "expected": [
+      "binomial",
+      [
+        "Symbol",
+        "n"
+      ],
+      [
+        "Symbol",
+        "k"
+      ]
+    ],
+    "latex": "{\\binom{n}{k}}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 165,
+    "evaluate": true,
+    "src": "\\dbinom{n}{k}",
+    "expected": [
+      "binomial",
+      [
+        "Symbol",
+        "n"
+      ],
+      [
+        "Symbol",
+        "k"
+      ]
+    ],
+    "latex": "{\\binom{n}{k}}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 166,
+    "evaluate": true,
+    "src": "\\binom{n}{0}",
+    "expected": [
+      "binomial",
+      [
+        "Symbol",
+        "n"
+      ],
+      [
+        "Rational",
+        "0",
+        "1"
+      ]
+    ],
+    "latex": "{\\binom{n}{0}}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 167,
+    "evaluate": true,
+    "src": "x^\\binom{n}{k}",
+    "expected": [
+      "Pow",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "binomial",
+        [
+          "Symbol",
+          "n"
+        ],
+        [
+          "Symbol",
+          "k"
+        ]
+      ]
+    ],
+    "latex": "x^{{\\binom{n}{k}}}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 168,
+    "evaluate": true,
+    "src": "a \\, b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 169,
+    "evaluate": true,
+    "src": "a \\thinspace b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 170,
+    "evaluate": true,
+    "src": "a \\: b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 171,
+    "evaluate": true,
+    "src": "a \\medspace b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 172,
+    "evaluate": true,
+    "src": "a \\; b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 173,
+    "evaluate": true,
+    "src": "a \\thickspace b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 174,
+    "evaluate": true,
+    "src": "a \\quad b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 175,
+    "evaluate": true,
+    "src": "a \\qquad b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 176,
+    "evaluate": true,
+    "src": "a \\! b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 177,
+    "evaluate": true,
+    "src": "a \\negthinspace b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 178,
+    "evaluate": true,
+    "src": "a \\negmedspace b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 179,
+    "evaluate": true,
+    "src": "a \\negthickspace b",
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Symbol",
+        "b"
+      ]
+    ],
+    "latex": "a b"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 180,
+    "evaluate": true,
+    "src": "\\int x \\, dx",
+    "expected": [
+      "Integral",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "x"
+      ]
+    ],
+    "latex": "\\int x\\, dx"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 181,
+    "evaluate": true,
+    "src": "\\log_2 x",
+    "expected": [
+      "log",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Rational",
+        "2",
+        "1"
+      ]
+    ],
+    "latex": "\\log{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 182,
+    "evaluate": true,
+    "src": "\\log_a x",
+    "expected": [
+      "log",
+      [
+        "Symbol",
+        "x"
+      ],
+      [
+        "Symbol",
+        "a"
+      ]
+    ],
+    "latex": "\\log{\\left(x \\right)}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 183,
+    "evaluate": true,
+    "src": "5^0 - 4^0",
+    "expected": [
+      "Add",
+      [
+        "Pow",
+        [
+          "Rational",
+          "5",
+          "1"
+        ],
+        [
+          "Rational",
+          "0",
+          "1"
+        ]
+      ],
+      [
+        "Mul",
+        [
+          "Rational",
+          "-1",
+          "1"
+        ],
+        [
+          "Pow",
+          [
+            "Rational",
+            "4",
+            "1"
+          ],
+          [
+            "Rational",
+            "0",
+            "1"
+          ]
+        ]
+      ]
+    ],
+    "latex": "- 4^{0} + 5^{0}"
+  },
+  {
+    "group": "GOOD_PAIRS",
+    "index": 184,
+    "evaluate": true,
+    "src": "3x - 1",
+    "expected": [
+      "Add",
+      [
+        "Mul",
+        [
+          "Rational",
+          "3",
+          "1"
+        ],
+        [
+          "Symbol",
+          "x"
+        ]
+      ],
+      [
+        "Rational",
+        "-1",
+        "1"
+      ]
+    ],
+    "latex": "3 x - 1"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 0,
+    "evaluate": true,
+    "src": "(",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 1,
+    "evaluate": true,
+    "src": ")",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 2,
+    "evaluate": true,
+    "src": "\\frac{d}{dx}",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 3,
+    "evaluate": true,
+    "src": "(\\frac{d}{dx})",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 4,
+    "evaluate": true,
+    "src": "\\sqrt{}",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 5,
+    "evaluate": true,
+    "src": "\\sqrt",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 6,
+    "evaluate": true,
+    "src": "\\overline{}",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 7,
+    "evaluate": true,
+    "src": "\\overline",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 8,
+    "evaluate": true,
+    "src": "{",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 9,
+    "evaluate": true,
+    "src": "}",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 10,
+    "evaluate": true,
+    "src": "\\mathit{x + y}",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 11,
+    "evaluate": true,
+    "src": "\\mathit{21}",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 12,
+    "evaluate": true,
+    "src": "\\frac{2}{}",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 13,
+    "evaluate": true,
+    "src": "\\frac{}{2}",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 14,
+    "evaluate": true,
+    "src": "\\int",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 15,
+    "evaluate": true,
+    "src": "!",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 16,
+    "evaluate": true,
+    "src": "!0",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 17,
+    "evaluate": true,
+    "src": "_",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 18,
+    "evaluate": true,
+    "src": "^",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 19,
+    "evaluate": true,
+    "src": "|",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 20,
+    "evaluate": true,
+    "src": "||x|",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 21,
+    "evaluate": true,
+    "src": "()",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 22,
+    "evaluate": true,
+    "src": "((((((((((((((((()))))))))))))))))",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 23,
+    "evaluate": true,
+    "src": "-",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 24,
+    "evaluate": true,
+    "src": "\\frac{d}{dx} + \\frac{d}{dt}",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 25,
+    "evaluate": true,
+    "src": "f(x,,y)",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 26,
+    "evaluate": true,
+    "src": "f(x,y,",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 27,
+    "evaluate": true,
+    "src": "\\sin^x",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 28,
+    "evaluate": true,
+    "src": "\\cos^2",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 29,
+    "evaluate": true,
+    "src": "@",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 30,
+    "evaluate": true,
+    "src": "#",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 31,
+    "evaluate": true,
+    "src": "$",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 32,
+    "evaluate": true,
+    "src": "%",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 33,
+    "evaluate": true,
+    "src": "&",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 34,
+    "evaluate": true,
+    "src": "*",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 35,
+    "evaluate": true,
+    "src": "\\",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 36,
+    "evaluate": true,
+    "src": "~",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "BAD_STRINGS",
+    "index": 37,
+    "evaluate": true,
+    "src": "\\frac{(2 + x}{1 - x)}",
+    "strict": false,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 0,
+    "evaluate": true,
+    "src": "\\cos 1 \\cos",
+    "strict": false,
+    "expected": [
+      "cos",
+      [
+        "Rational",
+        "1",
+        "1"
+      ]
+    ]
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 1,
+    "evaluate": true,
+    "src": "f(,",
+    "strict": false,
+    "expected": [
+      "Symbol",
+      "f"
+    ]
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 2,
+    "evaluate": true,
+    "src": "f()",
+    "strict": false,
+    "expected": [
+      "Symbol",
+      "f"
+    ]
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 3,
+    "evaluate": true,
+    "src": "a \\div \\div b",
+    "strict": false,
+    "expected": [
+      "Symbol",
+      "a"
+    ]
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 4,
+    "evaluate": true,
+    "src": "a \\cdot \\cdot b",
+    "strict": false,
+    "expected": [
+      "Symbol",
+      "a"
+    ]
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 5,
+    "evaluate": true,
+    "src": "a // b",
+    "strict": false,
+    "expected": [
+      "Symbol",
+      "a"
+    ]
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 6,
+    "evaluate": true,
+    "src": "a +",
+    "strict": false,
+    "expected": [
+      "Symbol",
+      "a"
+    ]
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 7,
+    "evaluate": true,
+    "src": "1.1.1",
+    "strict": false,
+    "expected": [
+      "Float",
+      1.1
+    ]
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 8,
+    "evaluate": true,
+    "src": "1 +",
+    "strict": false,
+    "expected": [
+      "Rational",
+      "1",
+      "1"
+    ]
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 9,
+    "evaluate": true,
+    "src": "a / b /",
+    "strict": false,
+    "expected": [
+      "Mul",
+      [
+        "Symbol",
+        "a"
+      ],
+      [
+        "Pow",
+        [
+          "Symbol",
+          "b"
+        ],
+        [
+          "Rational",
+          "-1",
+          "1"
+        ]
+      ]
+    ]
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 0,
+    "evaluate": true,
+    "src": "\\cos 1 \\cos",
+    "strict": true,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 1,
+    "evaluate": true,
+    "src": "f(,",
+    "strict": true,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 2,
+    "evaluate": true,
+    "src": "f()",
+    "strict": true,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 3,
+    "evaluate": true,
+    "src": "a \\div \\div b",
+    "strict": true,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 4,
+    "evaluate": true,
+    "src": "a \\cdot \\cdot b",
+    "strict": true,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 5,
+    "evaluate": true,
+    "src": "a // b",
+    "strict": true,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 6,
+    "evaluate": true,
+    "src": "a +",
+    "strict": true,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 7,
+    "evaluate": true,
+    "src": "1.1.1",
+    "strict": true,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 8,
+    "evaluate": true,
+    "src": "1 +",
+    "strict": true,
+    "error": "LaTeXParsingError"
+  },
+  {
+    "group": "FAILING_BAD_STRINGS",
+    "index": 9,
+    "evaluate": true,
+    "src": "a / b /",
+    "strict": true,
+    "error": "LaTeXParsingError"
+  }
+]

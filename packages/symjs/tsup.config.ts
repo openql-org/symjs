@@ -35,6 +35,7 @@ const cjsReservedExports = {
 };
 
 export default defineConfig({
+  // Includes every subpath entry, including src/parsing.ts.
   entry: ['src/**/*.ts'],
   format: ['esm', 'cjs'],
   bundle: true,

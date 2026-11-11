@@ -12,6 +12,8 @@
 
 import { readFileSync } from 'node:fs';
 import * as sj from '../packages/symjs/src';
+import * as parsing from '../packages/symjs/src/parsing';
+const publicApi = { ...sj, ...parsing };
 import { equivalent } from './equivalence';
 import { PORTS } from './ports';
 import { constantCount, solvesOdeSystem } from './ode-checks';
@@ -4670,7 +4672,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       return fromJs(m);
     };
   }
-  const f = (sj as unknown as Record<string, unknown>)[camelIn(c.fn, c.category)] ?? (sj as unknown as Record<string, unknown>)[c.fn];
+  const f = (publicApi as unknown as Record<string, unknown>)[camelIn(c.fn, c.category)] ?? (publicApi as unknown as Record<string, unknown>)[c.fn];
   if (f instanceof sj.Domain) return (args) => fromJs(f.new(...args.map(conv)));
   if (typeof f !== 'function') return undefined;
   const isClass = /^class[\s{]/.test(Function.prototype.toString.call(f));
@@ -4689,7 +4691,7 @@ const PUBLIC_ALIASES: Readonly<Record<string, string>> = {
   true: 'S.true', false: 'S.false', FallingFactorial: 'ff', RisingFactorial: 'rf',
 };
 function publicPathExists(path: string): boolean {
-  let value: unknown = sj;
+  let value: unknown = publicApi;
   for (const key of path.split('.')) {
     if (value === null || (typeof value !== 'object' && typeof value !== 'function') || !(key in value)) return false;
     value = (value as Record<string, unknown>)[key];

@@ -8537,11 +8537,12 @@
   {
    "module": "sympy.parsing.latex",
    "sha256": "09f451c19668daa305d8792cca319eafca92c21c744f8c275ec6b61cac42bd41",
-   "status": "unimplemented",
-   "note": "extend package (planned): LaTeX parser",
-   "sources": [],
-   "selectedForExtraction": false,
-   "hasCorpusCases": false,
+   "status": "partial",
+   "sources": [
+    "parsing/latex/index.ts"
+   ],
+   "selectedForExtraction": true,
+   "hasCorpusCases": true,
    "documentedExamples": 3,
    "declaredPublicNames": [
     "check_matrix_delimiters",
@@ -8652,10 +8653,11 @@
   {
    "module": "sympy.parsing.latex._parse_latex_antlr",
    "sha256": "b1568ed38a127877bf4da31e33eeada2178247cf06fd1989629508c7e49e7f58",
-   "status": "unimplemented",
-   "note": "extend package (planned): LaTeX parser",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "parsing/latex/_parse_latex_antlr.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -8688,10 +8690,11 @@
   {
    "module": "sympy.parsing.latex.errors",
    "sha256": "69d4a9bd0c968d32ec6cdff62872781ee5e963bfd4f67a1e5a21b496c9182e01",
-   "status": "unimplemented",
-   "note": "extend package (planned): LaTeX parser",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "parsing/latex/errors.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -8701,10 +8704,11 @@
   {
    "module": "sympy.parsing.latex.lark",
    "sha256": "86186f7ca4463f738ddfac1127055fc4c5b0fc603aae5d092ac2338ee6945f7f",
-   "status": "unimplemented",
-   "note": "extend package (planned): LaTeX parser",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "parsing/latex/lark/latex_parser.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": []
@@ -8712,10 +8716,15 @@
   {
    "module": "sympy.parsing.latex.lark.latex_parser",
    "sha256": "946144a3f47148a5d89a35446ff1370e267e697979b406727c7925cc4b89f550",
-   "status": "unimplemented",
-   "note": "extend package (planned): LaTeX parser",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "parsing/latex/lark/grammar/greek_symbols.ts",
+    "parsing/latex/lark/grammar/latex.ts",
+    "parsing/latex/lark/latex_parser.ts",
+    "parsing/latex/lexer.ts",
+    "parsing/latex/tree.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
@@ -8727,10 +8736,11 @@
   {
    "module": "sympy.parsing.latex.lark.transformer",
    "sha256": "46e5def1e9d49cbaf35050bd65f290c90d7f225800faa3c834d9e0e949d8d71e",
-   "status": "unimplemented",
-   "note": "extend package (planned): LaTeX parser",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "parsing/latex/lark/transformer.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [
