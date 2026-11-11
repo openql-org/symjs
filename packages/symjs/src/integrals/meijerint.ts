@@ -26,21 +26,22 @@
  */
 
 import type { Expr, ExprLike, Sym } from '../core/nodes';
-import { Add, Dummy, Fn, Mul, Pow, Rational, Rel, S, Special, asRational } from '../core/nodes';
+import { Add, Dummy, Fn, Integral, Mul, Piecewise, Pow, Rational, Rel, S, Special, asRational } from '../core/nodes';
 import { add, exp, mul, pow, sqrt, sympify } from '../core/ops';
 import { BoolOp, and, or } from '../core/boolalg';
 import { Eq, Ge, Gt, Le, Lt, Ne, piecewise } from '../core/logic';
 import { at, cast, expectType, first, pair } from '../core/guard';
 import { lcm } from '../core/numbers';
-import { mapBottomUp, some, xreplace } from '../core/traverse';
+import { mapBottomUp, piecewiseFold, some, xreplace } from '../core/traverse';
 import { asCoeffMul } from '../core/methods';
-import { isPositive, isNegative, isReal } from '../core/assumptions';
+import { ordered } from '../core/match';
+import { isIntegerQ, isNonNegative, isPositive, isNegative, isReal } from '../core/assumptions';
 import { ellipticK } from '../functions/special/ellipticintegrals';
 import { cancel } from '../simplify/rational';
 import { compareKeys, sortKey } from '../printing/sortkey';
 import { abs, arg, cos, im, log, re, sin } from '../functions/elementary/elementary';
 import { factorial, gamma, sign } from '../functions/special/special';
-import { MeijerG, meijerg } from '../functions/special/hyper';
+import { Hyper, MeijerG, meijerg } from '../functions/special/hyper';
 import { expPolar, polarify, polarLift, principalBranch, unbranchedArgument, unpolarify } from '../functions/elementary/complexes';
 import { expand, expandMul } from '../simplify/expand';
 import { gammasimp } from '../simplify/gammasimp';
@@ -955,6 +956,70 @@ export function meijerintDefinite(fIn: ExprLike, x0: Sym, aIn: ExprLike, bIn: Ex
     result = meijerintDefinite(g, x0, a, b);
   }
   return result;
+}
+
+// ---- indefinite integrals -----------------------------------------------------------------
+
+/**
+ * The terms of an antiderivative that depend on x, with the superfluous
+ * powers of x multiplied out (SymPy _clean in _meijerint_indefinite_1).
+ */
+function cleanAntiderivative(res: Expr, x: Sym): Expr {
+  const e = expandMul(cancel(res));
+  return add(...addArgs(e).filter((t) => t.has(x)));
+}
+
+/** The antiderivative of f by one G-function, as Piecewise((F, cond), (Integral(f, x), True)) (SymPy _meijerint_indefinite_1). */
+function meijerintIndefinite1(f: Expr, x: Sym): Expr | undefined {
+  const gs = rewrite1(f, x);
+  if (!gs) return undefined;
+  const [fac, po, gl, cond] = gs;
+  let res: Expr = S.Zero;
+  for (const [C, s, g] of gl) {
+    const [a, b] = getCoeffExp(g.argument, x);
+    const c = add(getCoeffExp(po, x)[1], s);
+    // the substitution t = a*x**b gives fac*t**rho*G(t), and t**rho*G(params, t) = G(params + rho, t)
+    const facT = div(mul(fac, C), mul(b, pow(a, div(add(1, c), b))));
+    const rho = sub(div(add(c, 1), b), 1);
+    const t = new Dummy('t');
+    const tr = (p: readonly Expr[]): Expr[] => p.map((q) => add(q, rho, 1));
+    // the integral of G(params, t) is G(1, params + 1, 0, t), or the form with 1 and 0 exchanged that is defined
+    const r = tr(g.bm).some((q) => isIntegerQ(q) === true && isPositive(q) === false)
+      ? neg(meijerg(tr(g.an), [...tr(g.aother), S.One], [...tr(g.bm), S.Zero], tr(g.bother), t))
+      : meijerg([...tr(g.an), S.One], tr(g.aother), tr(g.bm), [...tr(g.bother), S.Zero], t);
+    // the antiderivative is expected to be defined near x = 0
+    const at0 = xreplace(f, [[x, S.Zero]]);
+    const place = isNonNegative(b) === true && !some(at0, (n) => n instanceof Special && ['nan', 'zoo'].includes(n.name)) ? 'zero' : undefined;
+    const expanded = hyperexpand(xreplace(r, [[t, mul(a, pow(x, b))]]), place === undefined ? {} : { place });
+    res = add(res, powdenestPolar(mul(facT, expanded)));
+  }
+  const folded = piecewiseFold(res);
+  const value = folded instanceof Piecewise ? piecewise(...folded.pairs.map(([e, c]): [Expr, Expr] => [myUnpolarify(cleanAntiderivative(e, x)), myUnpolarify(c)])) : myUnpolarify(cleanAntiderivative(folded, x));
+  return piecewise([value, myUnpolarify(cond)], [new Integral([f, x]), S.true]);
+}
+
+/**
+ * The antiderivative of f by rewriting it as Meijer G-functions, or
+ * undefined (SymPy meijerint_indefinite). A result without G-functions or
+ * hypergeometric functions is preferred.
+ *
+ * Difference from SymPy: SymPy tries again with the hyperbolic functions
+ * written as exponentials; that retry is not done here (the G-function table
+ * has sinh and cosh, and the integrands it would add are not rewritten here).
+ */
+export function meijerintIndefinite(fIn: ExprLike, x: Sym): Expr | undefined {
+  const f = sympify(fIn);
+  const results: Expr[] = [];
+  const points = [...findSplittingPoints(f, x), S.Zero].filter((p, i, l) => l.findIndex((q) => q.key === p.key) === i).sort((u, v) => compareKeys(sortKey(u), sortKey(v)));
+  for (const a of points) {
+    const r = meijerintIndefinite1(xreplace(f, [[x, add(x, a)]]), x);
+    if (r === undefined) continue;
+    const res = xreplace(r, [[x, sub(x, a)]]);
+    if (!some(res, (n) => n instanceof Hyper || n instanceof MeijerG)) return res;
+    results.push(res);
+  }
+  // (SymPy next(ordered(results)))
+  return ordered(results)[0];
 }
 
 // ---- inverse Laplace transforms -----------------------------------------------------------

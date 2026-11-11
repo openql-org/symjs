@@ -3,12 +3,82 @@
 // Ported from SymPy 1.14 combinatorics/generators.py, BSD-3-Clause; see LICENSE.
 
 /**
- * @file SymPy sympy.combinatorics.generators: the generators of the Rubik's
- * cube groups (rubik, rubik_cube_generators).
+ * @file SymPy sympy.combinatorics.generators: the elements of the symmetric,
+ * cyclic, alternating and dihedral groups (generators of permutations, like
+ * SymPy's Python generators) and the generators of the Rubik's cube groups
+ * (rubik, rubik_cube_generators).
  */
 
 import { at } from '../core/guard';
+import { permutations } from '../utilities/itertools';
 import { Permutation } from './permutations';
+
+const range = (n: number): number[] => Array.from({ length: n }, (_, i) => i);
+const rotateLeft = (a: readonly number[], k: number): number[] => [...a.slice(k), ...a.slice(0, k)];
+
+/**
+ * SymPy symmetric(n): the permutations of the symmetric group of order n!,
+ * in lexicographic order of their array forms.
+ *
+ * @example
+ * [...symmetric(3)].map(String) // ['(2)', '(1 2)', '(2)(0 1)', '(0 1 2)', '(0 2 1)', '(0 2)']
+ */
+export function* symmetric(n: number): Generator<Permutation, void, undefined> {
+  for (const perm of permutations(range(n))) yield new Permutation(perm);
+}
+
+/**
+ * SymPy cyclic(n): the n permutations of the cyclic group of order n, the
+ * powers of the left rotation of [0, 1, ..., n - 1].
+ *
+ * @example
+ * [...cyclic(3)].map(String) // ['(2)', '(0 1 2)', '(0 2 1)']
+ */
+export function* cyclic(n: number): Generator<Permutation, void, undefined> {
+  let gen = range(n);
+  for (let i = 0; i < n; i++) {
+    yield new Permutation(gen);
+    gen = rotateLeft(gen, 1);
+  }
+}
+
+/**
+ * SymPy alternating(n): the even permutations of the symmetric group, the
+ * alternating group of order n!/2.
+ *
+ * @example
+ * [...alternating(3)].map(String) // ['(2)', '(0 1 2)', '(0 2 1)']
+ */
+export function* alternating(n: number): Generator<Permutation, void, undefined> {
+  for (const perm of permutations(range(n))) {
+    const p = new Permutation(perm);
+    if (p.isEven) yield p;
+  }
+}
+
+/**
+ * SymPy dihedral(n): the 2n permutations of the dihedral group of order 2n,
+ * the rotations of an n-gon each followed by its reflection; for n = 1 and
+ * n = 2 the groups of order 2 and 4 on 2 and 4 points (as in SymPy).
+ *
+ * @example
+ * [...dihedral(3)].map(String) // ['(2)', '(0 2)', '(0 1 2)', '(1 2)', '(0 2 1)', '(2)(0 1)']
+ */
+export function* dihedral(n: number): Generator<Permutation, void, undefined> {
+  if (n === 1) {
+    yield new Permutation([0, 1]);
+    yield new Permutation([1, 0]);
+  } else if (n === 2) {
+    for (const a of [[0, 1, 2, 3], [1, 0, 3, 2], [2, 3, 0, 1], [3, 2, 1, 0]]) yield new Permutation(a);
+  } else {
+    let gen = range(n);
+    for (let i = 0; i < n; i++) {
+      yield new Permutation(gen);
+      yield new Permutation([...gen].reverse());
+      gen = rotateLeft(gen, 1);
+    }
+  }
+}
 
 /** SymPy rubik_cube_generators(): the six face turns of the 3x3x3 cube on its 48 movable facets. */
 export function rubikCubeGenerators(): Permutation[] {

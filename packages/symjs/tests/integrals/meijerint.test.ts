@@ -7,8 +7,8 @@
 // quoted and the value is checked against the integral computed numerically (mpmath).
 
 import { describe, expect, it } from 'vitest';
-import { DiracDelta, Eq, Gt, Heaviside, I, Lt, Rational, Sym, abs, add, and, arg, exp, expPolar, hyper, meijerg, mul, parse, pi, pow, sqrt, sstr, tan, type Expr } from '../../src';
-import { CoeffExpError, condsimp, findSplittingPoints, getCoeffExp, liftPolar, laplaceBesselProduct, meijerintDefinite, meijerintInversion, rewriteSingle, splitMul, unpolarifyExponents } from '../../src/integrals/meijerint';
+import { DiracDelta, Eq, Gt, Heaviside, I, Lt, Piecewise, Rational, Sym, abs, add, and, arg, exp, expPolar, hyper, meijerg, mul, parse, pi, pow, sqrt, sstr, tan, type Expr } from '../../src';
+import { CoeffExpError, condsimp, findSplittingPoints, getCoeffExp, liftPolar, laplaceBesselProduct, meijerintDefinite, meijerintIndefinite, meijerintInversion, rewriteSingle, splitMul, unpolarifyExponents } from '../../src/integrals/meijerint';
 
 const R = (p: number, q: number): Expr => Rational.of(BigInt(p), BigInt(q));
 
@@ -242,5 +242,34 @@ describe('meijerint_inversion', () => {
   it('a delay', () => {
     const r = meijerintInversion(mul(exp(mul(-2, s)), pow(s, R(-3, 2))), s, t);
     expect(r?.map((e) => sstr(e))).toEqual(['2*sqrt(t - 2)*Heaviside(t - 2)/sqrt(pi)', 'True']);
+  });
+});
+
+describe('meijerint_indefinite', () => {
+  const ind = (f: string): string => {
+    const r = meijerintIndefinite(P(f), x);
+    return r === undefined ? 'None' : sstr(r);
+  };
+  it('antiderivatives as in SymPy 1.14', () => {
+    expect(ind('sin(x)')).toBe('-cos(x)');
+    // the integrand is not defined at 0 (no expansion at 0)
+    expect(ind('sin(x)/x')).toBe('Si(x)');
+    // a splitting point
+    expect(ind('sin(x - 1)')).toBe('-cos(x - 1)');
+    // a result with hypergeometric functions is kept only when there is no other
+    expect(ind('besselj(0, x)')).toBe('x*hyper((1/2,), (1, 3/2), -x**2/4)');
+    expect(ind('exp(x)*Heaviside(x - 1)')).toBe('None');
+  });
+  it('a Piecewise antiderivative', () => {
+    // SymPy: Piecewise((x**(y + 1)*gamma(y + 1)/gamma(y + 2), Abs(x) < 1), (x**(y + 1)*meijerg(...) + ..., True))
+    // (the G-functions of the second piece are written with the power of x moved into their parameters)
+    const r = meijerintIndefinite(P('x**y'), x);
+    expect(r instanceof Piecewise ? r.pairs.map(([e, c]) => [sstr(e), sstr(c)])[0] : []).toEqual(['x**(y + 1)*gamma(y + 1)/gamma(y + 2)', 'Abs(x) < 1']);
+  });
+  it('the other form of the integral of a G-function, and no expansion for a negative power', () => {
+    // SymPy: Ei(x*exp_polar(I*pi)); symjs adds the constant log(x) - log(x*exp_polar(I*pi)) = -I*pi
+    expect(ind('exp(-x)/x')).toContain('Ei(x*exp_polar(I*pi))');
+    // SymPy: x*exp(-1/x) + Ei(exp_polar(I*pi)/x), here with a constant added as above
+    expect(ind('exp(-1/x)')).toContain('x*exp(-1/x)');
   });
 });

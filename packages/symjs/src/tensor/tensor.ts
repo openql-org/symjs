@@ -34,7 +34,7 @@ import { ImmutableDenseNDimArray, NDimArray, Slice } from './ndimarray';
 import type { ArrayInput } from './ndimarray';
 import { permutedims, tensorcontraction, tensorproduct } from './arrayop';
 import type { Af } from './tensorcan';
-import { bsgsDirectProduct, canonicalize, getSymmetricGroupSgs, riemannBsgs } from './tensorcan';
+import { bsgsDirectProductAf, canonicalize, getSymmetricGroupSgsAf, riemannBsgs } from './tensorcan';
 
 const asRational = (x: unknown): Rational => expectType(x, (v): v is Rational => v instanceof Rational, 'an integer');
 const range = (n: number): number[] => Array.from({ length: n }, (_, i) => i);
@@ -301,8 +301,8 @@ export class TensorSymmetry extends ExtensionExpr {
     let gens: Af[] = [[0, 1]];
     for (const r of ranks) {
       if (r === 0) continue;
-      const [b2, g2] = getSymmetricGroupSgs(Math.abs(r), r < 0);
-      [base, gens] = bsgsDirectProduct(base, gens, b2, g2);
+      const [b2, g2] = getSymmetricGroupSgsAf(Math.abs(r), r < 0);
+      [base, gens] = bsgsDirectProductAf(base, gens, b2, g2);
     }
     return new TensorSymmetry(base, gens.map(toPermutation));
   }
@@ -325,7 +325,7 @@ export class TensorSymmetry extends ExtensionExpr {
 const symmetryBsgs = {
   full(rank: number): [number[], Permutation[]] {
     if (rank === 0) return [[], [toPermutation([0, 1])]];
-    const [base, gens] = getSymmetricGroupSgs(Math.abs(rank), rank < 0);
+    const [base, gens] = getSymmetricGroupSgsAf(Math.abs(rank), rank < 0);
     return [base, gens.map(toPermutation)];
   },
   none: (rank: number): [number[], Permutation[]] => [[], [toPermutation(range(rank + 2))]],

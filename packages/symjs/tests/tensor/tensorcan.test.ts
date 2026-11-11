@@ -4,7 +4,27 @@
 // (dummies and msym in list form; generators in array form).
 import { expect, it } from 'vitest';
 import type { Af } from '../../src/tensor/tensorcan';
-import { afInvert, bsgsDirectProduct, canonicalFree, canonicalize, compareLists, doubleCosetCanRep, dummySgs, getSymmetricGroupSgs, getTransversals, riemannBsgs, schreierSimsIncremental } from '../../src/tensor/tensorcan';
+import {
+  afInvert,
+  bsgsDirectProduct,
+  bsgsDirectProductAf,
+  canonicalFree,
+  canonicalize,
+  canonicalizeTensor,
+  compareLists,
+  doubleCosetCanRep,
+  dummySgs,
+  gensProducts,
+  getSymmetricGroupSgs,
+  getSymmetricGroupSgsAf,
+  getTransversals,
+  permAfDirectProduct,
+  riemannBsgs,
+  schreierSimsIncremental,
+  tensorGens,
+} from '../../src/tensor/tensorcan';
+import { Permutation, permutationRepr } from '../../src/combinatorics/permutations';
+import { Sym } from '../../src/core/nodes';
 
 type Component = [number[], Af[], number, 0 | 1 | null];
 const CASES: [Af, number[][], (0 | 1 | null)[], Component[], Af | 0][] = [
@@ -94,11 +114,11 @@ it('builds strong generating sets with Schreier-Sims', () => {
 });
 
 it('gives the BSGS of the symmetric groups and of direct products', () => {
-  expect(getSymmetricGroupSgs(1)).toEqual([[], [[0, 1, 2]]]);
-  expect(getSymmetricGroupSgs(3)).toEqual([[0, 1], [[1, 0, 2, 3, 4], [0, 2, 1, 3, 4]]]);
-  expect(getSymmetricGroupSgs(2, true)).toEqual([[0], [[1, 0, 3, 2]]]);
-  expect(bsgsDirectProduct([0], [[1, 0, 2, 3]], [0], [[1, 0, 3, 2]])).toEqual([[0, 2], [[1, 0, 2, 3, 4, 5], [0, 1, 3, 2, 5, 4]]]);
-  expect(bsgsDirectProduct([], [[0, 1, 2]], [], [[0, 1, 2]])).toEqual([[], [[0, 1, 2, 3]]]);
+  expect(getSymmetricGroupSgsAf(1)).toEqual([[], [[0, 1, 2]]]);
+  expect(getSymmetricGroupSgsAf(3)).toEqual([[0, 1], [[1, 0, 2, 3, 4], [0, 2, 1, 3, 4]]]);
+  expect(getSymmetricGroupSgsAf(2, true)).toEqual([[0], [[1, 0, 3, 2]]]);
+  expect(bsgsDirectProductAf([0], [[1, 0, 2, 3]], [0], [[1, 0, 3, 2]])).toEqual([[0, 2], [[1, 0, 2, 3, 4, 5], [0, 1, 3, 2, 5, 4]]]);
+  expect(bsgsDirectProductAf([], [[0, 1, 2]], [], [[0, 1, 2]])).toEqual([[], [[0, 1, 2, 3]]]);
   expect(riemannBsgs()[0]).toEqual([0, 2]);
   expect(dummySgs([1, 2], 0, 4)).toEqual([[0, 2, 1, 3, 4, 5]]);
   expect(dummySgs([2, 3, 4, 5], 1, 8)).toEqual([
@@ -114,7 +134,7 @@ it('gives the BSGS of the symmetric groups and of direct products', () => {
 });
 
 it('rejects inconsistent arguments', () => {
-  const [b, gs] = getSymmetricGroupSgs(1);
+  const [b, gs] = getSymmetricGroupSgsAf(1);
   expect(() => canonicalize([1, 0, 2, 3], [[0, 1]], [], [b, gs, 2, 0])).toThrow('same number');
   expect(() => canonicalize([1, 0, 2, 3, 4, 5], [[0, 2]], [0], [b, gs, 4, 0])).toThrow('dummies is not valid');
   expect(() => canonicalize([1, 0, 2, 3], [], [], [b, gs, 3, 0])).toThrow('g has size 4, generators have size 5');
@@ -134,4 +154,42 @@ it('uses the naive algorithm when Schreier-Sims gives no minimal base', () => {
   expect(canonicalize([2, 1, 0, 3, 4], [], [], [[], asym, 1, 0])).toEqual([0, 1, 2, 4, 3]);
   expect(canonicalize([1, 0, 2, 3, 4], [[1, 2]], [0], [[], asym, 1, 0])).toBe(0);
   expect(canonicalize([1, 0, 2, 3, 4], [[1, 2]], [null], [[], sym, 1, 0])).toEqual([0, 1, 2, 3, 4]);
+});
+
+// the public functions with SymPy's argument and result forms (Permutations), from SymPy 1.14
+const reprs = (ps: readonly Permutation[]): string[] => ps.map((p) => permutationRepr(p));
+const P = (a: number[]): Permutation => new Permutation(a);
+
+it('gives Permutations like SymPy tensor_can', () => {
+  const [b, gs] = bsgsDirectProduct([], [P([0, 1, 2])], [0], [P([1, 0, 2, 3])]);
+  expect([b, reprs(gs)]).toEqual([[1], ['Permutation(4)(1, 2)']]);
+  const [b2, gs2] = bsgsDirectProduct([0], [[1, 0]], [0], [[1, 0]], false);
+  expect([b2, reprs(gs2)]).toEqual([[0, 2], ['Permutation(3)(0, 1)', 'Permutation(2, 3)']]);
+  expect(reprs(bsgsDirectProduct([], [[0, 1]], [], [[0, 1]], false)[1])).toEqual(['Permutation(3)']);
+  expect(permAfDirectProduct([[1, 0, 2, 3], [0, 1, 3, 2]], [[1, 0]], false)).toEqual([[1, 0, 2, 3, 4, 5], [0, 1, 3, 2, 4, 5], [0, 1, 2, 3, 5, 4]]);
+  const [base, gens] = getSymmetricGroupSgs(3);
+  expect([base, reprs(gens)]).toEqual([[0, 1], ['Permutation(4)(0, 1)', 'Permutation(4)(1, 2)']]);
+  const [n, tb, tg] = tensorGens(base, gens, [[1], [0]]);
+  expect([n, tb, reprs(tg)]).toEqual([8, [0, 4], ['Permutation(7)(0, 2)', 'Permutation(7)(4, 5)']]);
+  const [n2, pb, pg] = gensProducts([[0], [P([1, 0, 2, 3])], [[1], []], 0], [...getSymmetricGroupSgs(2), [[]], 0]);
+  expect([n2, pb, reprs(pg)]).toEqual([8, [2, 4], ['Permutation(7)(2, 3)', 'Permutation(7)(4, 5)']]);
+  const g = P([2, 1, 0, 3, 4, 5]);
+  expect(canonicalFree([0, 2, 1, 3], [P([1, 0, 2, 3, 5, 4]), P([2, 3, 0, 1, 4, 5]), P([0, 1, 3, 2, 5, 4])], g, 4)).toEqual([0, 3, 1, 2, 5, 4]);
+  expect(doubleCosetCanRep([[0, 1]], [0], [], [P([0, 1, 2, 3])], [], P([1, 0, 2, 3]))).toEqual([0, 1, 2, 3]);
+});
+
+it('canonicalizes with SymPy argument forms', () => {
+  const g = P([1, 3, 0, 5, 4, 2, 6, 7]);
+  const t0: [number[], Permutation[], number, 0] = [[0], [P([1, 0, 3, 2])], 1, 0];
+  const t1: [number[], Permutation[], number, 1] = [[0], [P([1, 0, 3, 2])], 2, 1];
+  const expected = [0, 2, 1, 4, 3, 5, 7, 6];
+  // one index type: a flat list of dummies and a scalar metric symmetry
+  expect(canonicalizeTensor(g, [0, 1, 2, 3, 4, 5], 0, t0, t1)).toEqual(expected);
+  expect(canonicalizeTensor(g, [[0, 1, 2, 3, 4, 5]], 0, t0, t1)).toEqual(expected);
+  expect(canonicalizeTensor(g.arrayForm, [[0, 1, 2, 3, 4, 5]], [0], t0, t1)).toEqual(expected);
+  expect(canonicalizeTensor(g, [0, 1, 2, 3, 4, 5], [0], t0, t1)).toEqual(expected);
+  expect(canonicalizeTensor([1, 0, 2, 3], [], [], [[], [P([0, 1, 2])], 2, 0])).toEqual([0, 1, 2, 3]);
+  expect(() => canonicalizeTensor(g, [0, 1], 2 as unknown as 0)).toThrow('msym must be 0, 1 or None');
+  expect(() => canonicalizeTensor(g, [[0, 1]], [2 as unknown as 0])).toThrow('msym entries');
+  expect(() => canonicalizeTensor(new Sym('x'), [[0, 1]], [0])).toThrow('g must be a Permutation');
 });

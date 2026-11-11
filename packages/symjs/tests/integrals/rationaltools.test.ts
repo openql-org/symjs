@@ -106,8 +106,8 @@ describe('the parts of ratint', () => {
   });
   it('ratint_logpart', () => {
     const show = (L: [Poly, Poly][]) => L.map(([h, q]) => [sstr(h.asExpr()), sstr(q.asExpr())]);
-    // SymPy: [(-4*t + x, 1 - 8*t**2)] (the same root t up to the sign of q)
-    expect(show(ratintLogpart(P('1'), P('x**2-2'), x, t))).toEqual([['-4*t + x', '8*t**2 - 1']]);
+    // as SymPy: a negative content of the resultant goes into its first square-free factor (_include_sign)
+    expect(show(ratintLogpart(P('1'), P('x**2-2'), x, t))).toEqual([['-4*t + x', '1 - 8*t**2']]);
     // f = c*g': the single factor t - c
     expect(show(ratintLogpart(P('2*x'), P('x**2+a'), x, t))).toEqual([['a + x**2', 't - 1']]);
     expect(show(ratintLogpart(P('-3*x**2-a'), P('2*x**3+2*a*x+4'), x, t))).toEqual([['2*a*x + 2*x**3 + 4', 't + 1/2']]);

@@ -37,7 +37,7 @@ function linearRoot(arg: Expr, x: Sym): [Expr, Expr] {
  * SymPy change_mul: splits a product into a simple DiracDelta factor and the
  * rest, or (without one) expands its DiracDelta factors.
  */
-function changeMul(node: Expr, x: Sym): [Expr | undefined, Expr | undefined] {
+export function changeMul(node: Expr, x: Sym): [Expr | undefined, Expr | undefined] {
   const sorted = ordered(node instanceof Mul ? node.args : [node]);
   let dirac: Expr | undefined;
   const rest: Expr[] = [];
