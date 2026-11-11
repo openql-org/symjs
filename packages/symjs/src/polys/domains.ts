@@ -191,6 +191,11 @@ export abstract class Domain {
   getRing(): Domain {
     return this;
   }
+  /** Whether this domain provides an associated field (SymPy has_assoc_Field). */
+  get hasAssocField(): boolean {
+    try { this.getField(); return true; }
+    catch (error) { if (error instanceof NotImplementedError) return false; throw error; }
+  }
   /** a > 0 (SymPy is_positive of a ground element). */
   isPositive(a: unknown): boolean {
     return (groundSign(a) ?? 0) > 0;

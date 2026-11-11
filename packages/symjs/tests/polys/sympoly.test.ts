@@ -977,3 +977,50 @@ describe('gcd, lcm and cancel over an algebraic extension (SymPy 1.14 values)', 
     expect(got).toEqual(['1', 'x - sqrt(2)', 'x**2 - 2', 'x**2 - 2', 'x + sqrt(2)', 'x + sqrt(2)', 'pi', 'x']);
   });
 });
+
+it('exposes polynomial structural and factorization predicates', () => {
+  expect(P('x**2+y', x).freeSymbolsInDomain).toEqual(new Set([y]));
+  expect(P('x**2+y', x,y).freeSymbolsInDomain.size).toBe(0);
+  expect(P('x',x).gen).toBe(x);
+  expect(P('0',x).isGround).toBe(true);
+  expect(P('y',x).isGround).toBe(true);
+  expect(P('x',x).isGround).toBe(false);
+  expect(P('x**2+x*y',x,y).isHomogeneous).toBe(true);
+  expect(P('x**3+x*y',x,y).isHomogeneous).toBe(false);
+  expect(P('x+y+1',x,y).isLinear).toBe(true);
+  expect(P('x*y+1',x,y).isLinear).toBe(false);
+  expect(P('x*y+1',x,y).isQuadratic).toBe(true);
+  expect(P('x*y**2+1',x,y).isQuadratic).toBe(false);
+  expect(P('x+1',x).isMonic).toBe(true);
+  expect(P('2*x+1',x).isMonic).toBe(false);
+  expect(P('2*x**2',x).isMonomial).toBe(true);
+  expect(P('2*x**2+1',x).isMonomial).toBe(false);
+  expect(P('x',x,y).isMultivariate).toBe(true);
+  expect(P('x',x).isMultivariate).toBe(false);
+  expect(P('x',x,y).isUnivariate).toBe(false);
+  expect(P('x',x).isUnivariate).toBe(true);
+  for (const [p, want] of [['0',false],['1',true],['x',false]] as const) expect(P(p,x).isOne).toBe(want);
+  expect(P('2*x+2',x).isPrimitive).toBe(false);
+  expect(P('x+2',x).isPrimitive).toBe(true);
+  expect(P('x**2-1',x).isIrreducible).toBe(false);
+  expect(P('(x+1)**2',x).isIrreducible).toBe(false);
+  expect(P('x**2+1',x).isIrreducible).toBe(true);
+  expect(Poly.from(E('x**2+x+1'),[x],{modulus:2}).isIrreducible).toBe(true);
+  expect(Poly.from(E('x**2+1'),[x],{modulus:2}).isIrreducible).toBe(false);
+  expect(P('0',x).isSqf).toBe(false);
+  expect(P('(x-1)**2',x).isSqf).toBe(false);
+  expect(P('x**2-1',x).isSqf).toBe(true);
+  expect(P('x*y',x,y).isSqf).toBe(true);
+  for (const [p, want] of [['x-1',true],['x+1',true],['x**2+1',true],['x**2+x+1',true],['x**4+1',true],['x**2-x+1',true],['x**2+2',false],['x**2-1',false],['2*x+2',false],['x+1/2',false],['x**2-3*x+1',false]] as const) expect(P(p,x).isCyclotomic, p).toBe(want);
+  expect(P('x+y',x,y).isCyclotomic).toBe(false);
+  expect(Poly.from(E('x+1'),[x],{modulus:2}).isCyclotomic).toBe(false);
+});
+
+it('excludes zero from square-free and irreducible polynomials', () => {
+  // SymPy 1.14 returns true for both properties of zero. This is incorrect:
+  // x**2 divides zero, and zero is neither a unit nor an irreducible element.
+  expect(P('0',x).isSqf).toBe(false);
+  expect(P('0',x).isIrreducible).toBe(false);
+  expect(P('2',x).isIrreducible).toBe(true); // the predicate ignores scalar content
+  expect(P('1',x).isCyclotomic).toBe(false);
+});

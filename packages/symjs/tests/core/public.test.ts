@@ -25,3 +25,16 @@ describe('matches and getO', () => {
     expect(getO(add(1, x))).toBe(NoMatch);
   });
 });
+
+it('queries irrationality, algebraicity, complexity, finiteness and primality', async () => {
+  const a = await import('../../src');
+  expect(a.isIrrational(a.pi)).toBe(true);
+  expect(a.isIrrational(a.S.Catalan)).toBe('unknown');
+  expect(a.isIrrational(2)).toBe(false);
+  expect(a.isAlgebraic(a.I)).toBe(true);
+  expect(a.isAlgebraic(a.pi)).toBe(false);
+  expect(a.isComplex(new a.Sym('r',{real:true}))).toBe(true);
+  expect(a.isFinite(a.add(a.I,a.pow(new a.Sym('p',{positive:true}),2)))).toBe(true);
+  expect(a.isPrime(a.I)).toBe(false);
+  expect(a.isPrime(7)).toBe(true);
+});

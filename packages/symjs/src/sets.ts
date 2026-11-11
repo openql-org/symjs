@@ -100,3 +100,4 @@ export const containsQ = (s: _SetExpr_, x: _Expr_): Truth => _toTruth_(_contains
 export function isSubset(a: _SetExpr_, b: _SetExpr_): Truth {
   return _toTruth_(_isSubset_(a, b));
 }
+export { nargs } from './sets/sets';

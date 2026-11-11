@@ -101,6 +101,7 @@ export class ArrayElement extends ExtensionExpr {
 
 /** Unevaluated outer product; axis blocks follow argument order. */
 export class ArrayTensorProduct extends ArrayExpr {
+  get subranks(): number[] { return this.args.map(getRank); }
   readonly shape: readonly Expr[];
   constructor(...args: Expr[]) { super('ArrayTensorProduct', args); this.shape = Object.freeze(args.flatMap((a) => [...getShape(a)])); }
   withArgs(args: readonly Expr[]): Expr { return new ArrayTensorProduct(...args); }
@@ -142,6 +143,7 @@ export function remainingAxes(rank: number, groups: ArrayAxes): number[] {
 
 /** Sum over coincident indices; each group removes its axes. */
 export class ArrayContraction extends ArrayExpr {
+  get subranks(): number[] { return this.expr instanceof ArrayTensorProduct ? this.expr.subranks : [getRank(this.expr)]; }
   readonly shape: readonly Expr[];
   readonly contractionIndices: readonly (readonly number[])[];
   constructor(readonly expr: Expr, ...groups: (readonly number[])[]) {

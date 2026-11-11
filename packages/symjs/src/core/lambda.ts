@@ -7,7 +7,7 @@
  */
 
 import type { ExprLike } from './nodes';
-import { Dummy, Expr, ExtensionExpr } from './nodes';
+import { Dummy, Expr, ExtensionExpr, Sym } from './nodes';
 import { sympify } from './ops';
 import { at } from './guard';
 
@@ -21,6 +21,15 @@ export class LambdaNode extends ExtensionExpr {
   }
   get expr(): Expr {
     return at(this.args, this.args.length - 1);
+  }
+  /** Bound variables renamed without colliding with free symbol names. */
+  get canonicalVariables(): Map<Expr, Sym> {
+    const names = new Set([...this.freeSymbols()].map((s) => s.name));
+    let i = 0;
+    return new Map(this.variables.map((v) => {
+      while (names.has(`_${i}`)) i++;
+      return [v, new Sym(`_${i++}`)];
+    }));
   }
   withArgs(args: readonly Expr[]): Expr {
     return new LambdaNode(args);

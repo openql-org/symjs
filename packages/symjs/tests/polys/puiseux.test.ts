@@ -109,3 +109,21 @@ describe('SymPy 1.14 Puiseux polynomials', () => {
     expect(() => z.truediv(z.mul(2))).toThrow(RangeError);
   });
 });
+
+it('exposes the normalized polynomial representation without nulls', async () => {
+  const { isNoMatch } = await import('../../src');
+  expect(P('1/x+1/y**2').monom).toEqual([1n,2n]);
+  expect(String(P('1/x+1/y**2').poly)).toBe('x + y**2');
+  expect(P('sqrt(x)+y**(2/3)').ns).toEqual([2n,3n]);
+  expect(String(P('sqrt(x)+y**(2/3)').poly)).toBe('x + y**2');
+  expect(P('y/x+y**2/x**2').monom).toEqual([2n,-1n]);
+  expect(String(P('y/x+y**2/x**2').poly)).toBe('x + y');
+  expect(String(P('x**(-1/2)*y**(2/3)').poly)).toBe('1');
+  expect(P('x**(-1/2)*y**(2/3)').monom).toEqual([1n,-2n]);
+  expect(String(R.zero.poly)).toBe('0');
+  expect(isNoMatch(R.zero.monom)).toBe(true);
+  expect(isNoMatch(R.zero.ns)).toBe(true);
+  expect(isNoMatch(x.ns)).toBe(true);
+  expect(isNoMatch(x.monom)).toBe(true);
+  expect(String(x.poly)).toBe('x');
+});

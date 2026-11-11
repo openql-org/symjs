@@ -236,3 +236,8 @@ describe('SymmetricPermutationGroup and Coset', () => {
     expect(new Coset(P(1, 2), pg(P(0, 2)), undefined, '-').asList().map(af)).toEqual([[0, 2, 1], [2, 0, 1]]);
   });
 });
+
+it('recognizes the trivial permutation group as a group', async () => {
+  const a = await import('../../src');
+  expect(a.PermutationGroup(new a.Permutation([0])).isGroup).toBe(true);
+});

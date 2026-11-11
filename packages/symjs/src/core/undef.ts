@@ -9,20 +9,28 @@ import type { Expr, ExprLike } from './nodes';
 import { Derivative, Rational, Sym, UndefFn } from './nodes';
 import { sympify } from './ops';
 import { cast } from './guard';
+import { NoMatch, isNoMatch, type NoMatchResult } from './truth';
 
 /** A callable undefined function: f(x, y) builds the application. */
 export interface UndefinedFunction {
   (...args: ExprLike[]): Expr;
   readonly functionName: string;
+  readonly arity: readonly number[] | NoMatchResult;
 }
 
 /** Create an undefined function, like SymPy `Function('f')`. */
-export function SymFunction(name: string): UndefinedFunction {
+export function SymFunction(name: string, options: { nargs?: number | readonly number[] } = {}): UndefinedFunction {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) throw new SyntaxError(`Invalid function name: ${name}`);
-  const f = (...args: ExprLike[]) => new UndefFn(name, args.map(sympify));
+  const arity = options.nargs === undefined ? NoMatch : Object.freeze([...new Set(typeof options.nargs === 'number' ? [options.nargs] : options.nargs)].sort((a,b) => a-b));
+  if (!isNoMatch(arity) && arity.some((n) => !Number.isSafeInteger(n) || n < 0)) throw new RangeError('function arities must be nonnegative integers');
+  const f = (...args: ExprLike[]): Expr => {
+    if (!isNoMatch(arity) && !arity.includes(args.length)) throw new TypeError(`${name} does not accept ${args.length} arguments`);
+    return new UndefFn(name, args.map(sympify));
+  };
   Object.defineProperty(f, 'functionName', { value: name });
+  Object.defineProperty(f, 'arity', { value: arity });
   Object.defineProperty(f, 'name', { value: name });
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- functionName was added above with Object.defineProperty (non-enumerable, read-only)
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- functionName and arity were added above with Object.defineProperty (non-enumerable, read-only)
   return f as unknown as UndefinedFunction;
 }
 

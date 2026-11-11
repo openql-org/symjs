@@ -25,13 +25,15 @@ const esbuild = createRequire(require.resolve('tsup'))('esbuild');
  * The budgets are the sizes measured when they were set plus about 10%:
  * raise one only together with the change that needs it.
  */
+// Symbol metadata, relation accessors, function arities and special-function
+// queries add at most 2 KiB to the affected core/special/printing consumers.
 // Assumption-aware solve loads the predicate engine; keep its cost explicit.
 const CASES = [
-  ['core', 'Rational', 186],
-  ['core', 'parse, str', 201],
-  ['core', 'parse, diff, expand, str, latex', 201],
-  ['core', '*', 276],
-  ['special', '*', 370],
+  ['core', 'Rational', 187],
+  ['core', 'parse, str', 202],
+  ['core', 'parse, diff, expand, str, latex', 202],
+  ['core', '*', 277],
+  ['special', '*', 372],
   // The standalone simplify entry now loads doit, including integral/sum evaluation.
   ['simplify', 'simplify', 890],
   // The polys entry re-exports the sparse domain matrices through a
@@ -45,7 +47,7 @@ const CASES = [
   ['solvers', 'dsolve', 990],
   ['sets', '*', 353],
   ['matrices', 'Matrix', 749],
-  ['printing', 'pretty', 225],
+  ['printing', 'pretty', 226],
   ['discrete', '*', 285],
   ['strategies', '*', 198],
   ['unify', '*', 225],

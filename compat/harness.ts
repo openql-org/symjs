@@ -120,7 +120,7 @@ export class JsFunc {
 }
 
 export class UFnClass {
-  constructor(readonly name: string) {}
+  constructor(readonly name: string, readonly nargs?: number[]) {}
 }
 
 /** A built-in SymPy function class such as `sin`. */
@@ -451,9 +451,9 @@ export function deserialize(tree: Tree): unknown {
     case 'Symbol': {
       const a = tree['assume'] as Record<string, boolean>;
       for (const k of Object.keys(a)) {
-        if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive', 'commutative', 'polar', 'zero'].includes(k)) throw new Unsupported(`assumption ${k}`);
+        if (!['real', 'positive', 'nonnegative', 'integer', 'negative', 'nonpositive', 'commutative', 'polar', 'zero', 'above_fermi', 'below_fermi'].includes(k)) throw new Unsupported(`assumption ${k}`);
       }
-      return new Sym(tree['name'] as string, a);
+      return new Sym(tree['name'] as string, Object.fromEntries(Object.entries(a).map(([k,v]) => [camel(k),v])));
     }
     case 'CategoryObject': return new sj.SymObject(String(tree['name']));
     case 'CategoryClass': return new sj.CategoryClass(deserialize(tree['objects'] as Tree) as sj.SetExpr);
@@ -652,7 +652,7 @@ export function deserialize(tree: Tree): unknown {
         { domain: tree['domain'] as string, pure: Boolean(tree['pure']) },
       );
     case 'UFnClass':
-      return new UFnClass(tree['name'] as string);
+      return new UFnClass(tree['name'] as string, tree['nargs'] as number[] | undefined);
     case 'FnClass':
       return new FnClass(tree['name'] as string);
     case 'Interval':
@@ -791,6 +791,9 @@ export function deserialize(tree: Tree): unknown {
       return sj.ArrayComprehensionMap(lam.vars.length === 0 ? () => lam.body : (x: number) => lam.call(sj.sympify(x)), ...limits);
     }
     case 'IntegerPartition': return new sj.IntegerPartition(tree['parts'] as number[]);
+    case 'Partition': return new sj.Partition(...(tree['blocks'] as Tree[][]).map((b) => b.map((e) => deserialize(e) as Expr)));
+    case 'FiniteExtension': return new sj.FiniteExtension(deserialize(tree['modulus'] as Tree) as sj.Poly);
+    case 'FiniteDensity': return new sj.FiniteDensity((tree['items'] as [Tree, Tree][]).map(([k, v]) => [deserialize(k) as Expr, deserialize(v) as Expr]));
     case 'StrPrinter': return new sj.StrPrinter(Object.fromEntries((deserialize(tree['settings'] as Tree) as JsDict).entries as [string,unknown][]));
     case 'Permutation':
       return new sj.Permutation(tree['array'] as number[]);
@@ -949,6 +952,7 @@ export function deserialize(tree: Tree): unknown {
     case 'MatrixSymbol':
       return new sj.MatrixSymbol(tree['name'] as string, deserialize(tree['rows'] as Tree) as Expr, deserialize(tree['cols'] as Tree) as Expr);
     case 'Matrix':
+      if (tree['sparse'] === true) return new sj.SparseMatrix(...(tree['shape'] as [number, number]), (tree['rows'] as Tree[][]).map((r) => r.map((e) => asExpr(deserialize(e)))));
       // empty matrices keep their shape (e.g. 0x2)
       if (!(tree['rows'] as Tree[][]).length && tree['shape']) return Matrix.zeros(...(tree['shape'] as [number, number]));
       return Matrix.of((tree['rows'] as Tree[][]).map((r) => r.map((x) => {
@@ -4086,6 +4090,7 @@ function callMethod(self: unknown, names: readonly string[], args: readonly unkn
 }
 /** A deserialized Python container as the JS value: tuples and lists as arrays, dicts as Maps, sets as Sets. */
 function plain(v: unknown): unknown {
+  if (v instanceof JsFFElement) return sj.GF(v.mod, v.symmetric).new(v.v);
   if (v instanceof JsTuple || v instanceof JsList) return v.items.map(plain);
   if (v instanceof JsDict || v instanceof JsDefaultDict) return new Map(v.entries.map(([k, x]) => [plain(k), plain(x)]));
   if (v instanceof JsSet) return new Set(v.items.map(plain));
@@ -4111,18 +4116,18 @@ function pyEquals(a0: unknown, b0: unknown): boolean {
 const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknown>> = {
   '.__add__': (a, [b]) => (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
   '.__sub__': (a, [b]) => callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
-  '.__mul__': (a, [b]) => (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
-  '.__truediv__': (a, [b]) => callMethod(a, ['div', 'truediv'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
+  '.__mul__': (a, [b]) => (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
+  '.__truediv__': (a, [b]) => callMethod(a, ['div', 'truediv', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
   '.__pow__': (a, [b]) => callMethod(a, ['pow'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.pow(a, b) : unsupportedOp('**')),
   '.__floordiv__': (a, [b]) => callMethod(a, ['floordiv'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.floor(sj.mul(a, sj.pow(b, -1))) : unsupportedOp('//')),
   '.__mod__': (a, [b]) => callMethod(a, ['mod'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Mod(a, b) : unsupportedOp('%')),
   '.__matmul__': (a, [b]) => callMethod(a, ['matmul', 'mul'], [b])?.value ?? unsupportedOp('@'),
   '.__neg__': (a) => callMethod(a, ['neg'], [])?.value ?? (isScalar(a) ? sj.neg(a) : unsupportedOp('-')),
-  '.__invert__': (a) => callMethod(a, ['invert', 'inv'], [])?.value ?? (a instanceof Expr ? sj.Not(a) : unsupportedOp('~')),
+  '.__invert__': (a) => callMethod(a, ['invert', 'inv'], [])?.value ?? (a instanceof Expr || typeof a === 'boolean' ? sj.Not(a) : unsupportedOp('~')),
   '.__and__': (a, [b]) => callMethod(a, ['and', 'intersect'], [b])?.value ?? (a instanceof Expr && b instanceof Expr ? sj.And(a, b) : unsupportedOp('&')),
   '.__or__': (a, [b]) => callMethod(a, ['or', 'union'], [b])?.value ?? (a instanceof Expr && b instanceof Expr ? sj.Or(a, b) : unsupportedOp('|')),
   '.__xor__': (a, [b]) => callMethod(a, ['xor', 'cross', 'symmetricDifference'], [b])?.value ?? (a instanceof Expr && b instanceof Expr ? sj.Xor(a, b) : unsupportedOp('^')),
-  '.__rshift__': (a, [b]) => callMethod(a, ['rshift'], [b])?.value ?? (a instanceof Expr && b instanceof Expr ? sj.Implies(a, b) : unsupportedOp('>>')),
+  '.__rshift__': (a, [b]) => callMethod(a, ['rshift'], [b])?.value ?? ((a instanceof Expr || typeof a === 'boolean') && (b instanceof Expr || typeof b === 'boolean') ? sj.Implies(a, b) : unsupportedOp('>>')),
   '.__lshift__': (a, [b]) => callMethod(a, ['lshift'], [b])?.value ?? (a instanceof Expr && b instanceof Expr ? sj.Implies(b, a) : unsupportedOp('<<')),
   '.__eq__': (a, [b]) => pyEquals(a, b),
   '.__ne__': (a, [b]) => !pyEquals(a, b),
@@ -4131,15 +4136,28 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
   '.__gt__': (a, [b]) => callMethod(a, ['gt'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Gt(a, b) : unsupportedOp('>')),
   '.__ge__': (a, [b]) => callMethod(a, ['ge'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.Ge(a, b) : unsupportedOp('>=')),
   '.__contains__': (a, [b]) => {
+    if (a instanceof sj.SetExpr && !(a instanceof sj.MatrixSet)) {
+      const result = sj.contains(a, asExpr(b));
+      if (result === S.true) return true;
+      if (result === S.false) return false;
+      throw new TypeError('cannot determine symbolic set membership');
+    }
     if (Array.isArray(a)) return a.some((v) => pyEquals(v, b));
     if (a instanceof Map) return [...a.keys()].some((k) => pyEquals(k, b));
     if (a instanceof Set) return [...a].some((k) => pyEquals(k, b));
-    const r = callMethod(a, ['has', 'contains', 'includes'], [b]);
+    const r = callMethod(a, ['contains', 'has', 'includes'], [b]);
     if (r === undefined) return unsupportedOp('in');
     return r.value instanceof Expr ? String(r.value) === 'True' : r.value === true;
   },
   '.__getitem__': (a, [i]) => {
     const index = i instanceof JsTuple ? i.items : [i];
+    if (a instanceof Matrix) {
+      const indices = Array.isArray(i) ? i : index;
+      const n = (v: unknown): number => Number(v);
+      if (indices.length === 1) { const k = n(indices[0]); const j = k < 0 ? k + a.rows * a.cols : k; return a.get(Math.floor(j / a.cols), j % a.cols); }
+      if (Array.isArray(indices[0]) && Array.isArray(indices[1])) return a.slice(indices[0].map(n), indices[1].map(n));
+      return a.get(n(indices[0]), n(indices[1]));
+    }
     if (Array.isArray(a) && index.length === 1) {
       const k = Number(index[0]);
       return a[k < 0 ? a.length + k : k];
@@ -4157,7 +4175,7 @@ function unsupportedOp(op: string): never {
 }
 
 /** SymPy attributes whose symjs function has another name (docs/api-policy.md). */
-const ATTRIBUTE_FUNCTIONS: Readonly<Record<string, string>> = { is_integer: 'isIntegerQ', is_Function: 'isFn', is_Number: 'isNum' };
+const ATTRIBUTE_FUNCTIONS: Readonly<Record<string, string>> = { is_integer: 'isIntegerQ', is_Function: 'isFn', is_Number: 'isNum', canonical: 'canonicalRelation' };
 const OPERATOR_METHODS: Readonly<Record<string, string>> = { '.__str__': 'toString', '.__add__': 'add', '.__sub__': 'sub', '.__mul__': 'mul', '.__pow__': 'pow', '.__floordiv__': 'floordiv', '.__mod__': 'mod' };
 /** DomainMatrix functions whose integer arguments are sizes, exponents or indices. */
 const DOMAIN_MATRIX_INT_FUNCTIONS = new Set(['.eye', '.zeros', '.ones', '.pow', '.getitem', 'sdm_berk']);
@@ -4190,7 +4208,7 @@ function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
   if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [toJs(k, numbers, true), toJs(x, numbers, true)]));
   if (v instanceof JsLambda) return (...xs: unknown[]) => v.call(...xs.map((x) => (typeof x === 'number' ? sj.Rational.of(BigInt(x)) : x)) as Expr[]);
   if (v instanceof JsPred) return (e: Expr) => v.test(e);
-  if (v instanceof UFnClass) return sj.SymFunction(v.name);
+  if (v instanceof UFnClass) return sj.SymFunction(v.name, { nargs: v.nargs });
   if (v instanceof JsDomain) return v.domain ?? v;
   // a GF(p) element as its integer value (the GF(p) functions take integers and the modulus)
   if (v instanceof JsFFElement) return toJs(sj.Rational.of(v.v), numbers, inArray);
@@ -4254,6 +4272,7 @@ function intpolyAdapter(c: Case): Adapter | undefined {
 }
 
 function autoAdapter(c: Case): Adapter | undefined {
+  if (c.fn === '.nargs') return (_args, kw, self) => (noKw(kw), sj.nargs(self instanceof UFnClass ? sj.SymFunction(self.name, { nargs: self.nargs }) : self as sj.WildFunction));
   const numbers = NUMERIC_CATEGORIES.has(c.category) || NUMERIC_FUNCTIONS.has(c.fn) || (c.module.startsWith('sympy.polys.matrices.') && DOMAIN_MATRIX_INT_FUNCTIONS.has(c.fn));
   const conv = (x: unknown): unknown => {
     const converted = toJs(x, numbers);
@@ -4275,12 +4294,12 @@ function autoAdapter(c: Case): Adapter | undefined {
     return expressionCoefficients.includes(c.module) ? rationalInputs(normalized) : normalized;
   };
   const dunder = c.fn === '.__str__' ? undefined : DUNDER[c.fn];
-  if (dunder !== undefined) return (args, _kw, self0) => fromJs(dunder(plain(self0 instanceof JsDomain ? (self0.domain ?? self0) : self0), args.map((a) => plain(conv(a)))));
+  if (dunder !== undefined) return (args, _kw, self0) => fromJs(dunder(plain(self0 instanceof JsDomain ? (self0.domain ?? self0) : self0), args.map((a) => a instanceof JsFFElement ? plain(a) : plain(conv(a)))));
   if (c.fn.startsWith('.')) {
     const name = OPERATOR_METHODS[c.fn] ?? camel(c.fn.slice(1));
     return (args, kw, self0) => {
       // a static method called on the class (Permutation.unrank_lex, ...)
-      const self = self0 instanceof TypeRef ? (sj as unknown as Record<string, unknown>)[self0.name] : self0 instanceof JsDomain ? (self0.domain ?? self0) : self0;
+      const self = self0 instanceof TypeRef ? (sj as unknown as Record<string, unknown>)[self0.name] : self0 instanceof JsDomain ? (self0.domain ?? self0) : lambdaAsNode(self0);
       if (self === null || (typeof self !== 'object' && typeof self !== 'function')) throw new Unsupported(`no adapter for ${c.fn}`);
       // SymPy names with an uppercase word (to_Matrix -> toMatrix)
       const upper = name.replace(/_([A-Z])/g, (_m, ch: string) => ch);
@@ -4303,6 +4322,7 @@ function autoAdapter(c: Case): Adapter | undefined {
         return fromJs(g(...placeArgs(g, args, kw, conv)));
       }
       if (typeof m === 'function') {
+        if (self instanceof sj.AppliedPredicate && name === 'function') return m;
         const result = (m as (...a: unknown[]) => unknown).call(thisArg, ...placeArgs(m as (...a: unknown[]) => unknown, args, kw, conv));
         // AGCA uses expression coefficients publicly. SymPy prints these as
         // dense DMP objects inside its relation containers; only convert the
@@ -4318,7 +4338,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       }
       // a SymPy method or attribute that symjs exports as a function of the object (x.is_real -> isReal(x),
       // M.is_positive_definite -> isPositiveDefinite(M); docs/api-policy.md)
-      const asFunction = (sj as unknown as Record<string, unknown>)[ATTRIBUTE_FUNCTIONS[c.fn.slice(1)] ?? name];
+      const asFunction = (sj as unknown as Record<string, unknown>)[ATTRIBUTE_FUNCTIONS[c.fn.slice(1)] ?? name] ?? (sj as unknown as Record<string, unknown>)[upper];
       if (m === undefined && typeof asFunction === 'function' && typeof self === 'object') {
         const g = asFunction as (...a: unknown[]) => unknown;
         // keyword arguments go to the trailing options object, as in the other function adapters

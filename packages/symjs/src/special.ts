@@ -122,6 +122,7 @@ export { Hyper, MeijerG, hyper, meijerg, appellf1, jn, yn, expandJn, KroneckerDe
 export { lerchphi, polylog, dirichletEta, riemannXi, stieltjes } from './functions/special/zetafunctions';
 export { ellipticK, ellipticF, ellipticE, ellipticPi } from './functions/special/ellipticintegrals';
 export { LeviCivita, Eijk } from './functions/special/tensorfunctions';
+export { isAboveFermi, isBelowFermi, isOnlyAboveFermi, isOnlyBelowFermi, indicesContainEqualInformation, preferredIndex, killableIndex } from './functions/special/tensorfunctions';
 export {
   jacobi,
   jacobiNormalized,
@@ -138,3 +139,4 @@ export {
   assocLaguerre,
 } from './functions/special/polynomials';
 export { migcdex, ipartfrac, fermatCoords } from './functions/elementary/trigonometricspecial';
+export { order, argument } from './functions/special/bessel';

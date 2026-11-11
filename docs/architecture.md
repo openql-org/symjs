@@ -119,7 +119,7 @@ SymPy modules correspond to it as follows.
 | `sympy/core/sorting.py` | `printing/sortkey.ts` (`default_sort_key`), `core/match.ts` (`ordered`) |
 | `sympy/core/evalf.py` | `numeric/evalf.ts` |
 | the base classes of `sympy/core/numbers.py`, `basic.py`, `expr.py`, `function.py` as constructors (`Number`, `RealNumber`, `Atom`, `AtomicExpr`, `FunctionClass`), `UnevaluatedExpr` | `core/classes.ts` |
-| `sympy/concrete/` (the `Sum`/`Product` nodes) | `core/concrete.ts` |
+| `sympy/concrete/` (the `Sum`/`Product` nodes) | `core/concrete.ts`; `concrete/exprwithlimits.ts` provides shared limit introspection for sums, products and integrals |
 | `sympy/logic/boolalg.py` (the connectives used by relations) | `core/boolalg.ts` |
 | `sympy/calculus/accumulationbounds.py` | `core/accumbounds.ts`, `functions/elementary/accumbounds.ts` (functions of an interval) |
 | `sympy/tensor/indexed.py` | `core/indexed.ts` |

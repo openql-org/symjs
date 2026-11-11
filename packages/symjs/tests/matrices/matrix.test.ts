@@ -340,3 +340,20 @@ describe('Matrix methods of SymPy MatrixBase', () => {
     expect(s(Matrix.of([[parse('sin(x)'), y]]).replace({ fn: 'sin' }, { fn: 'cos' }, { apply: (name, args) => fn(name as FnName, args) }))).toBe('Matrix([[cos(x), y]])');
   });
 });
+
+it('exposes matrix predicates and conjugates', () => {
+  expect(Matrix.zeros(0, 0).isZeroMatrix).toBe(true);
+  expect(Matrix.zeros(2, 3).isZeroMatrix).toBe(true);
+  expect(Matrix.of([[x, 0]]).isZeroMatrix).toBe('unknown');
+  expect(Matrix.of([[x, 1]]).isZeroMatrix).toBe(false);
+  const h = Matrix.of([[1, 2, 0], [3, 4, 5], [6, 7, 8]]);
+  expect(h.isLowerHessenberg).toBe(true);
+  expect(h.isUpperHessenberg).toBe(false);
+  expect(h.T.isLowerHessenberg).toBe(false);
+  expect(h.T.isUpperHessenberg).toBe(true);
+  expect(Matrix.eye(3).isUpperHessenberg).toBe(true);
+  expect(Matrix.eye(3).isLowerHessenberg).toBe(true);
+  expect(Matrix.col(0, parse('1 + I'), 2, 3).D.toString()).toBe('Matrix([[0, 1 - I, -2, -3]])');
+  expect(Matrix.col(I).C.toString()).toBe('Matrix([[-I]])');
+  expect(() => Matrix.eye(2).D).toThrow(ShapeError);
+});

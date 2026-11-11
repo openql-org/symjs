@@ -81,6 +81,9 @@ export abstract class GaussianElement {
   }
   /** [quotient, remainder] (SymPy divmod). */
   abstract divmod(o: unknown): [GaussianElement, GaussianElement];
+  /** Quotient and remainder of Gaussian Euclidean division. */
+  floordiv(o: unknown): GaussianElement { return this.divmod(o)[0]; }
+  mod(o: unknown): GaussianElement { return this.divmod(o)[1]; }
   /** The quadrant 0..3 of the element (SymPy quadrant). */
   quadrant(): number {
     if (this.im.sign > 0) return this.re.sign > 0 ? 0 : 1;

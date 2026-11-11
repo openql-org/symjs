@@ -111,7 +111,7 @@ const REVERSED: Record<RelOp, RelOp> = { Lt: 'Gt', Le: 'Ge', Gt: 'Lt', Ge: 'Le',
  * left (-x < y is y > -x).
  */
 export function canonicalRelation(r: Rel): Expr {
-  let [op, lhs, rhs] = [r.op, r.lhs, r.rhs];
+  let [op, lhs, rhs] = [r.op, r.lhs instanceof Rel ? canonicalRelation(r.lhs) : r.lhs, r.rhs instanceof Rel ? canonicalRelation(r.rhs) : r.rhs];
   const reversed = (): void => {
     [op, lhs, rhs] = [REVERSED[op], rhs, lhs];
   };

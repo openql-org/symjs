@@ -9,7 +9,7 @@
 import { NotImplementedError } from '../../core/errors';
 import { at, cast, defined, first, pair } from '../../core/guard';
 import type { Expr, ExprLike } from '../../core/nodes';
-import { ExtensionExpr, Fn, Mul, Rational, Rel, S, Special, asRational } from '../../core/nodes';
+import { ExtensionExpr, Fn, Mul, Rational, Rel, S, Special, Sym, asRational } from '../../core/nodes';
 import { rebuild } from '../../core/traverse';
 import { isIntegerQ, isNonZero, isPositive, isZero } from '../../core/assumptions';
 import { compareKeys, sortKey } from '../../printing/sortkey';
@@ -391,6 +391,7 @@ function numericallyNonZero(d: Expr): boolean {
 
 /** SymPy KroneckerDelta.eval: 1 or 0 when i - j is known to be zero or not, else the arguments in canonical order. */
 evaluators.KroneckerDelta = (i, j) => {
+  if (i instanceof Sym && j instanceof Sym && ((i.assumptions.aboveFermi === true && j.assumptions.belowFermi === true) || (i.assumptions.belowFermi === true && j.assumptions.aboveFermi === true))) return S.Zero;
   if (i.key === j.key) return S.One;
   const d = add(i, mul(-1, j));
   if (isZero(d) === true) return S.One;

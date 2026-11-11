@@ -51595,7 +51595,10 @@
    "fn": ".nargs",
    "self": {
     "t": "UFnClass",
-    "name": "f"
+    "name": "f",
+    "nargs": [
+     1
+    ]
    },
    "args": [],
    "kwargs": {},
@@ -51608,7 +51611,11 @@
    "fn": ".nargs",
    "self": {
     "t": "UFnClass",
-    "name": "f"
+    "name": "f",
+    "nargs": [
+     1,
+     2
+    ]
    },
    "args": [],
    "kwargs": {},
@@ -243428,7 +243435,9 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -243453,7 +243462,9 @@
      {
       "t": "Symbol",
       "name": "a",
-      "assume": {}
+      "assume": {
+       "above_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -243478,7 +243489,9 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -243528,7 +243541,9 @@
      {
       "t": "Symbol",
       "name": "a",
-      "assume": {}
+      "assume": {
+       "above_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -243553,7 +243568,9 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -243603,7 +243620,9 @@
      {
       "t": "Symbol",
       "name": "a",
-      "assume": {}
+      "assume": {
+       "above_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -243653,7 +243672,9 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -243678,7 +243699,9 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -243728,7 +243751,9 @@
      {
       "t": "Symbol",
       "name": "a",
-      "assume": {}
+      "assume": {
+       "above_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -243753,7 +243778,9 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -243778,7 +243805,9 @@
      {
       "t": "Symbol",
       "name": "a",
-      "assume": {}
+      "assume": {
+       "above_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -243803,12 +243832,16 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
       "name": "j",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      }
     ]
    },
@@ -243828,7 +243861,9 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -243853,7 +243888,9 @@
      {
       "t": "Symbol",
       "name": "a",
-      "assume": {}
+      "assume": {
+       "above_fermi": true
+      }
      },
      {
       "t": "Symbol",
@@ -243878,12 +243915,16 @@
      {
       "t": "Symbol",
       "name": "i",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      },
      {
       "t": "Symbol",
       "name": "j",
-      "assume": {}
+      "assume": {
+       "below_fermi": true
+      }
      }
     ]
    },
@@ -269790,7 +269831,8 @@
     "shape": [
      3,
      3
-    ]
+    ],
+    "sparse": true
    },
    "args": [
     {
@@ -269851,7 +269893,8 @@
      "shape": [
       3,
       3
-     ]
+     ],
+     "sparse": true
     }
    ],
    "kwargs": {},
@@ -269893,7 +269936,8 @@
     "shape": [
      2,
      2
-    ]
+    ],
+    "sparse": true
    },
    "args": [
     {
@@ -269990,7 +270034,8 @@
     "shape": [
      3,
      3
-    ]
+    ],
+    "sparse": true
    },
    "args": [],
    "kwargs": {},
@@ -270059,7 +270104,8 @@
     "shape": [
      3,
      3
-    ]
+    ],
+    "sparse": true
    },
    "args": [
     {
@@ -270120,7 +270166,8 @@
      "shape": [
       3,
       3
-     ]
+     ],
+     "sparse": true
     }
    ],
    "kwargs": {},
@@ -270180,7 +270227,8 @@
     "shape": [
      2,
      2
-    ]
+    ],
+    "sparse": true
    },
    "args": [],
    "kwargs": {},
@@ -270231,7 +270279,8 @@
     "shape": [
      2,
      2
-    ]
+    ],
+    "sparse": true
    },
    "args": [
     {
@@ -270264,7 +270313,8 @@
      "shape": [
       2,
       2
-     ]
+     ],
+     "sparse": true
     }
    ],
    "kwargs": {},
@@ -270306,7 +270356,8 @@
     "shape": [
      2,
      2
-    ]
+    ],
+    "sparse": true
    },
    "args": [
     {
@@ -270340,7 +270391,8 @@
      "shape": [
       2,
       2
-     ]
+     ],
+     "sparse": true
     }
    ],
    "kwargs": {},
@@ -270382,7 +270434,8 @@
     "shape": [
      2,
      2
-    ]
+    ],
+    "sparse": true
    },
    "args": [],
    "kwargs": {},
@@ -270488,7 +270541,8 @@
     "shape": [
      4,
      4
-    ]
+    ],
+    "sparse": true
    },
    "args": [],
    "kwargs": {},
@@ -270530,7 +270584,8 @@
     "shape": [
      2,
      2
-    ]
+    ],
+    "sparse": true
    },
    "args": [],
    "kwargs": {},
@@ -270636,7 +270691,8 @@
     "shape": [
      4,
      4
-    ]
+    ],
+    "sparse": true
    },
    "args": [],
    "kwargs": {},
@@ -271753,48 +271809,39 @@
   {
    "fn": ".members",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "4",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "5",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -271807,48 +271854,39 @@
   {
    "fn": ".RGS",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "4",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "5",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -271861,48 +271899,39 @@
   {
    "fn": ".__add__",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "4",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "5",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [
@@ -271921,33 +271950,27 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -271960,33 +271983,27 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -271999,33 +272016,27 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -272038,11 +272049,44 @@
   {
    "fn": ".__le__",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
+    ]
+   },
+   "args": [
+    {
+     "t": "Partition",
+     "blocks": [
+      [
        {
         "t": "Rational",
         "p": "1",
@@ -272053,11 +272097,8 @@
         "p": "2",
         "q": "1"
        }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
+      ],
+      [
        {
         "t": "Rational",
         "p": "3",
@@ -272074,48 +272115,6 @@
         "q": "1"
        }
       ]
-     }
-    ]
-   },
-   "args": [
-    {
-     "t": "FiniteSet",
-     "items": [
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "1"
-        },
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "3",
-         "q": "1"
-        },
-        {
-         "t": "Rational",
-         "p": "4",
-         "q": "1"
-        },
-        {
-         "t": "Rational",
-         "p": "5",
-         "q": "1"
-        }
-       ]
-      }
      ]
     }
    ],
@@ -272128,94 +272127,76 @@
   {
    "fn": ".__le__",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
+    ]
+   },
+   "args": [
+    {
+     "t": "Partition",
+     "blocks": [
+      [
        {
         "t": "Rational",
         "p": "1",
         "q": "1"
-       },
+       }
+      ],
+      [
        {
         "t": "Rational",
         "p": "2",
         "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
+       },
        {
         "t": "Rational",
         "p": "3",
         "q": "1"
-       },
+       }
+      ],
+      [
        {
         "t": "Rational",
         "p": "4",
         "q": "1"
-       },
+       }
+      ],
+      [
        {
         "t": "Rational",
         "p": "5",
         "q": "1"
        }
       ]
-     }
-    ]
-   },
-   "args": [
-    {
-     "t": "FiniteSet",
-     "items": [
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        },
-        {
-         "t": "Rational",
-         "p": "3",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "4",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "5",
-         "q": "1"
-        }
-       ]
-      }
      ]
     }
    ],
@@ -272228,94 +272209,76 @@
   {
    "fn": ".__lt__",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
+    ]
+   },
+   "args": [
+    {
+     "t": "Partition",
+     "blocks": [
+      [
        {
         "t": "Rational",
         "p": "1",
         "q": "1"
-       },
+       }
+      ],
+      [
        {
         "t": "Rational",
         "p": "2",
         "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
+       },
        {
         "t": "Rational",
         "p": "3",
         "q": "1"
-       },
+       }
+      ],
+      [
        {
         "t": "Rational",
         "p": "4",
         "q": "1"
-       },
+       }
+      ],
+      [
        {
         "t": "Rational",
         "p": "5",
         "q": "1"
        }
       ]
-     }
-    ]
-   },
-   "args": [
-    {
-     "t": "FiniteSet",
-     "items": [
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "1",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "2",
-         "q": "1"
-        },
-        {
-         "t": "Rational",
-         "p": "3",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "4",
-         "q": "1"
-        }
-       ]
-      },
-      {
-       "t": "FiniteSet",
-       "items": [
-        {
-         "t": "Rational",
-         "p": "5",
-         "q": "1"
-        }
-       ]
-      }
      ]
     }
    ],
@@ -272328,33 +272291,27 @@
   {
    "fn": ".partition",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -272367,33 +272324,27 @@
   {
    "fn": ".members",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -272496,33 +272447,27 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -272535,28 +272480,25 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -272569,33 +272511,27 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -272824,33 +272760,27 @@
   {
    "fn": ".partition",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -272863,48 +272793,39 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "FiniteSet",
-    "items": [
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "1",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "2",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "3",
-        "q": "1"
-       }
-      ]
-     },
-     {
-      "t": "FiniteSet",
-      "items": [
-       {
-        "t": "Rational",
-        "p": "4",
-        "q": "1"
-       },
-       {
-        "t": "Rational",
-        "p": "5",
-        "q": "1"
-       }
-      ]
-     }
+    "t": "Partition",
+    "blocks": [
+     [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "2",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "3",
+       "q": "1"
+      }
+     ],
+     [
+      {
+       "t": "Rational",
+       "p": "4",
+       "q": "1"
+      },
+      {
+       "t": "Rational",
+       "p": "5",
+       "q": "1"
+      }
+     ]
     ]
    },
    "args": [],
@@ -371018,7 +370939,7 @@
   {
    "fn": ".dict",
    "self": {
-    "t": "Dict",
+    "t": "FiniteDensity",
     "items": [
      [
       {
@@ -372333,7 +372254,7 @@
   {
    "fn": ".dict",
    "self": {
-    "t": "Dict",
+    "t": "FiniteDensity",
     "items": [
      [
       {
@@ -507701,8 +507622,44 @@
   {
    "fn": ".rank",
    "self": {
-    "t": "Domain",
-    "name": "ZZ[x]/(x**2 - 2)"
+    "t": "FiniteExtension",
+    "modulus": {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-2",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "domain": "ZZ",
+     "pure": false
+    }
    },
    "args": [],
    "kwargs": {},
@@ -507722,8 +507679,59 @@
   {
    "fn": ".basis",
    "self": {
-    "t": "Domain",
-    "name": "GF(5)[x]/(x**3 + x**2 + 2)"
+    "t": "FiniteExtension",
+    "modulus": {
+     "t": "Poly",
+     "expr": {
+      "t": "Add",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "2",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     "gens": [
+      {
+       "t": "Symbol",
+       "name": "x",
+       "assume": {}
+      }
+     ],
+     "domain": "GF(5)",
+     "pure": false
+    }
    },
    "args": [],
    "kwargs": {},
@@ -641448,16 +641456,6 @@
    },
    {
     "module": "sympy.combinatorics.perm_groups",
-    "src": "len(G)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.combinatorics.perm_groups",
-    "src": "list(G.generate())",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.combinatorics.perm_groups",
     "src": "len(A.derived_series())",
     "reason": "not-exported-api"
    },
@@ -641504,6 +641502,16 @@
    {
     "module": "sympy.combinatorics.perm_groups",
     "src": "len(G)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.combinatorics.perm_groups",
+    "src": "len(G)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.combinatorics.perm_groups",
+    "src": "list(G.generate())",
     "reason": "not-exported-api"
    },
    {
@@ -641583,13 +641591,13 @@
    },
    {
     "module": "sympy.combinatorics.named_groups",
-    "src": "list(G.generate_schreier_sims(af=True))",
-    "reason": "not-exported-api"
+    "src": "[perm.cyclic_form for perm in a]",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.combinatorics.named_groups",
-    "src": "[perm.cyclic_form for perm in a]",
-    "reason": "non-call-expression"
+    "src": "list(G.generate_schreier_sims(af=True))",
+    "reason": "not-exported-api"
    },
    {
     "module": "sympy.combinatorics.named_groups",
@@ -641603,17 +641611,7 @@
    },
    {
     "module": "sympy.tensor.tensor",
-    "src": "t",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.tensor.tensor",
     "src": "A(mu, -nu)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.tensor.tensor",
-    "src": "A(mu, -mu)",
     "reason": "not-exported-api"
    },
    {
@@ -641638,12 +641636,22 @@
    },
    {
     "module": "sympy.tensor.tensor",
+    "src": "t",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.tensor.tensor",
     "src": "A(mu, nu)",
     "reason": "not-exported-api"
    },
    {
     "module": "sympy.tensor.tensor",
     "src": "A(-mu, -rho)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.tensor.tensor",
+    "src": "A(mu, -mu)",
     "reason": "not-exported-api"
    },
    {
@@ -642023,11 +642031,6 @@
    },
    {
     "module": "sympy.core.function",
-    "src": "f(x)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.core.function",
     "src": "print(sympy.srepr(f(x).func))",
     "reason": "python-runtime-api"
    },
@@ -642044,11 +642047,6 @@
    {
     "module": "sympy.core.function",
     "src": "(x*y*z).diff(x*y)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.core.function",
-    "src": "_.doit()",
     "reason": "reference-exception"
    },
    {
@@ -642095,6 +642093,11 @@
     "module": "sympy.core.function",
     "src": "f",
     "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.function",
+    "src": "f(x)",
+    "reason": "not-exported-api"
    },
    {
     "module": "sympy.core.function",
@@ -642154,6 +642157,11 @@
    {
     "module": "sympy.core.function",
     "src": "_.subs(f, sin).doit() == sin(x).diff(x).subs(x, 0) == cos(0)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.core.function",
+    "src": "_.doit()",
     "reason": "reference-exception"
    },
    {
@@ -642508,126 +642516,6 @@
    },
    {
     "module": "sympy.core.relational",
-    "src": "e",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "'%s >= %s is the same as %s <= %s' % (e.gts, e.lts, e.lts, e.gts)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "for f in [Ge, Gt, Le, Lt]:  # convenience wrappers\n    print(f(x, 2))",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "_ == Ge(x, 2)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e = x < 1; e",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e == x < 1  # expecting True, too",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e != x < 1  # expecting False",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "x < 1 != x < 1  # expecting False or the same thing as before",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e = x < y < z",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "type( e )",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "(x < y) and (y < z)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "'%s >= %s is the same as %s <= %s' % (e.gts, e.lts, e.lts, e.gts)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "for f in [Ge, Gt, Le, Lt]:  # convenience wrappers\n    print(f(x, 2))",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "_ == Ge(x, 2)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e = x < 1; e",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e == x < 1  # expecting True, too",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e != x < 1  # expecting False",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "x < 1 != x < 1  # expecting False or the same thing as before",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e = x < y < z",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "type( e )",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "(x < y) and (y < z)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.core.relational",
     "src": "_.reversed.canonical",
     "reason": "reference-exception"
    },
@@ -642673,7 +642561,17 @@
    },
    {
     "module": "sympy.core.relational",
-    "src": "e",
+    "src": "'%s >= %s is the same as %s <= %s' % (e.gts, e.lts, e.lts, e.gts)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "'%s >= %s is the same as %s <= %s' % (e.gts, e.lts, e.lts, e.gts)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "'%s >= %s is the same as %s <= %s' % (e.gts, e.lts, e.lts, e.gts)",
     "reason": "non-call-expression"
    },
    {
@@ -642688,6 +642586,36 @@
    },
    {
     "module": "sympy.core.relational",
+    "src": "for f in [Ge, Gt, Le, Lt]:  # convenience wrappers\n    print(f(x, 2))",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "for f in [Ge, Gt, Le, Lt]:  # convenience wrappers\n    print(f(x, 2))",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "for f in [Ge, Gt, Le, Lt]:  # convenience wrappers\n    print(f(x, 2))",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "_ == Ge(x, 2)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "_ == Ge(x, 2)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "_ == Ge(x, 2)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.core.relational",
     "src": "_ == Ge(x, 2)",
     "reason": "reference-exception"
    },
@@ -642698,7 +642626,52 @@
    },
    {
     "module": "sympy.core.relational",
+    "src": "e = x < 1; e",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e = x < 1; e",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e = x < 1; e",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.core.relational",
     "src": "e == x < 1  # expecting True, too",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e == x < 1  # expecting True, too",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e == x < 1  # expecting True, too",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e == x < 1  # expecting True, too",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e != x < 1  # expecting False",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e != x < 1  # expecting False",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e != x < 1  # expecting False",
     "reason": "non-call-expression"
    },
    {
@@ -642713,6 +642686,36 @@
    },
    {
     "module": "sympy.core.relational",
+    "src": "x < 1 != x < 1  # expecting False or the same thing as before",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "x < 1 != x < 1  # expecting False or the same thing as before",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "x < 1 != x < 1  # expecting False or the same thing as before",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e = x < y < z",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e = x < y < z",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e = x < y < z",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.core.relational",
     "src": "e = x < y < z",
     "reason": "statement-or-setup"
    },
@@ -642720,6 +642723,56 @@
     "module": "sympy.core.relational",
     "src": "type( e )",
     "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "type( e )",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "type( e )",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "type( e )",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.core.relational",
+    "src": "e",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.core.relational",
@@ -642733,58 +642786,13 @@
    },
    {
     "module": "sympy.core.relational",
-    "src": "e",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "'%s >= %s is the same as %s <= %s' % (e.gts, e.lts, e.lts, e.gts)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "for f in [Ge, Gt, Le, Lt]:  # convenience wrappers\n    print(f(x, 2))",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "_ == Ge(x, 2)",
+    "src": "(x < y) and (y < z)",
     "reason": "reference-exception"
    },
    {
     "module": "sympy.core.relational",
-    "src": "e = x < 1; e",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e == x < 1  # expecting True, too",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e != x < 1  # expecting False",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "x < 1 != x < 1  # expecting False or the same thing as before",
+    "src": "(x < y) and (y < z)",
     "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e = x < y < z",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "type( e )",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.core.relational",
-    "src": "e",
-    "reason": "non-call-expression"
    },
    {
     "module": "sympy.core.relational",
@@ -643103,16 +643111,6 @@
    },
    {
     "module": "sympy.functions.elementary.miscellaneous",
-    "src": "real_root(_)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.functions.elementary.miscellaneous",
-    "src": "real_root(_)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.functions.elementary.miscellaneous",
     "src": "[rootof(x**2 - 1, i) for i in range(2)]",
     "reason": "non-call-expression"
    },
@@ -643125,6 +643123,16 @@
     "module": "sympy.functions.elementary.miscellaneous",
     "src": "[rootof(x**4 - 1,i) for i in range(4)]",
     "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.functions.elementary.miscellaneous",
+    "src": "real_root(_)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.functions.elementary.miscellaneous",
+    "src": "real_root(_)",
+    "reason": "reference-exception"
    },
    {
     "module": "sympy.functions.elementary.miscellaneous",
@@ -643373,17 +643381,12 @@
    },
    {
     "module": "sympy.polys.polytools",
-    "src": "f(2, 5)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.polytools",
     "src": "f(2, 5, 7)",
     "reason": "not-exported-api"
    },
    {
     "module": "sympy.polys.polytools",
-    "src": "sorted(dispersionset(fp))",
+    "src": "dispersion(fp)",
     "reason": "not-exported-api"
    },
    {
@@ -643393,7 +643396,7 @@
    },
    {
     "module": "sympy.polys.polytools",
-    "src": "sorted(dispersionset(fp, gp))",
+    "src": "dispersion(fp, gp)",
     "reason": "not-exported-api"
    },
    {
@@ -643403,7 +643406,7 @@
    },
    {
     "module": "sympy.polys.polytools",
-    "src": "sorted(dispersionset(gp, fp))",
+    "src": "dispersion(gp, fp)",
     "reason": "not-exported-api"
    },
    {
@@ -643418,42 +643421,12 @@
    },
    {
     "module": "sympy.polys.polytools",
-    "src": "sorted(dispersionset(gp, fp))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.polytools",
-    "src": "sorted(dispersionset(fp))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.polytools",
-    "src": "sorted(dispersionset(fp))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.polytools",
-    "src": "dispersion(fp)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.polytools",
     "src": "sorted(dispersionset(fp, gp))",
     "reason": "not-exported-api"
    },
    {
     "module": "sympy.polys.polytools",
-    "src": "dispersion(fp, gp)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.polytools",
-    "src": "sorted(dispersionset(gp, fp))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.polytools",
-    "src": "dispersion(gp, fp)",
+    "src": "sorted(dispersionset(fp, gp))",
     "reason": "not-exported-api"
    },
    {
@@ -643468,13 +643441,43 @@
    },
    {
     "module": "sympy.polys.polytools",
+    "src": "sorted(dispersionset(gp, fp))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.polytools",
+    "src": "sorted(dispersionset(gp, fp))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.polytools",
+    "src": "sorted(dispersionset(gp, fp))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.polytools",
     "src": "sorted(dispersionset(fp))",
     "reason": "not-exported-api"
    },
    {
     "module": "sympy.polys.polytools",
-    "src": "p",
-    "reason": "non-call-expression"
+    "src": "sorted(dispersionset(fp))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.polytools",
+    "src": "sorted(dispersionset(fp))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.polytools",
+    "src": "sorted(dispersionset(fp))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.polytools",
+    "src": "f(2, 5)",
+    "reason": "not-exported-api"
    },
    {
     "module": "sympy.polys.polytools",
@@ -643518,12 +643521,12 @@
    },
    {
     "module": "sympy.polys.polytools",
-    "src": "q",
+    "src": "p",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.polytools",
-    "src": "f",
+    "src": "q",
     "reason": "non-call-expression"
    },
    {
@@ -643548,17 +643551,7 @@
    },
    {
     "module": "sympy.polys.polytools",
-    "src": "f",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.polytools",
     "src": "s",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.polytools",
-    "src": "f",
     "reason": "non-call-expression"
    },
    {
@@ -643573,7 +643566,17 @@
    },
    {
     "module": "sympy.polys.polytools",
-    "src": "g",
+    "src": "f",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.polytools",
+    "src": "f",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.polytools",
+    "src": "f",
     "reason": "non-call-expression"
    },
    {
@@ -643608,11 +643611,6 @@
    },
    {
     "module": "sympy.polys.polytools",
-    "src": "print(p)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.polytools",
     "src": "all_roots(p)",
     "reason": "reference-exception"
    },
@@ -643630,11 +643628,6 @@
     "module": "sympy.polys.polytools",
     "src": "invert(x**2 - 1, x - 1)",
     "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.polys.polytools",
-    "src": "g",
-    "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.polytools",
@@ -643673,12 +643666,27 @@
    },
    {
     "module": "sympy.polys.polytools",
+    "src": "print(p)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.polytools",
     "src": "real_roots(p)",
     "reason": "reference-exception"
    },
    {
     "module": "sympy.polys.polytools",
     "src": "lc, r",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.polytools",
+    "src": "g",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.polytools",
+    "src": "g",
     "reason": "non-call-expression"
    },
    {
@@ -643933,12 +643941,12 @@
    },
    {
     "module": "sympy.solvers.solveset",
-    "src": "f",
+    "src": "reps",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.solvers.solveset",
-    "src": "reps",
+    "src": "f",
     "reason": "non-call-expression"
    },
    {
@@ -644028,16 +644036,6 @@
    },
    {
     "module": "sympy.solvers.solveset",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.solvers.solveset",
-    "src": "b",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.solvers.solveset",
     "src": "linear_eq_to_matrix(eqns, [x, y])",
     "reason": "reference-exception"
    },
@@ -644049,6 +644047,16 @@
    {
     "module": "sympy.solvers.solveset",
     "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.solvers.solveset",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.solvers.solveset",
+    "src": "b",
     "reason": "non-call-expression"
    },
    {
@@ -644228,16 +644236,6 @@
    },
    {
     "module": "sympy.concrete.summations",
-    "src": "S",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.concrete.summations",
-    "src": "S1",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.concrete.summations",
     "src": "S2",
     "reason": "non-call-expression"
    },
@@ -644268,7 +644266,17 @@
    },
    {
     "module": "sympy.concrete.summations",
+    "src": "S",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.concrete.summations",
     "src": "S0",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.concrete.summations",
+    "src": "S1",
     "reason": "non-call-expression"
    },
    {
@@ -644293,47 +644301,47 @@
    },
    {
     "module": "sympy.concrete.products",
-    "src": "P",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.concrete.products",
     "src": "Pe",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.concrete.products",
+    "src": "P1",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.concrete.products",
+    "src": "P1",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.concrete.products",
+    "src": "P2",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.concrete.products",
+    "src": "P2",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.concrete.products",
+    "src": "Pr",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.concrete.products",
+    "src": "Pr",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.concrete.products",
     "src": "P",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.concrete.products",
-    "src": "P1",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.concrete.products",
-    "src": "P2",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.concrete.products",
-    "src": "P1",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.concrete.products",
-    "src": "P2",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.concrete.products",
-    "src": "Pr",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.concrete.products",
-    "src": "Pr",
+    "src": "P",
     "reason": "non-call-expression"
    },
    {
@@ -644373,67 +644381,12 @@
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "L",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "D",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "L",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "D",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "L",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "U",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "Q",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "R",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "Q",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "R",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
     "src": "Q_aug",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "R_aug",
+    "src": "Q",
     "reason": "non-call-expression"
    },
    {
@@ -644443,7 +644396,12 @@
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "R",
+    "src": "Q",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "R_aug",
     "reason": "non-call-expression"
    },
    {
@@ -644483,16 +644441,6 @@
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
     "src": "M[3*m] = ones(1, m)*2; M",
     "reason": "statement-or-setup"
    },
@@ -644500,11 +644448,6 @@
     "module": "sympy.matrices.matrixbase",
     "src": "M[2] = ones(m, 1)*4; M",
     "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
    },
    {
     "module": "sympy.matrices.matrixbase",
@@ -644523,12 +644466,17 @@
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "M",
+    "src": "L",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "a",
+    "src": "L",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "L",
     "reason": "non-call-expression"
    },
    {
@@ -644553,7 +644501,7 @@
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "M",
+    "src": "D",
     "reason": "non-call-expression"
    },
    {
@@ -644563,28 +644511,13 @@
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "P",
+    "src": "D",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.matrices.matrixbase",
     "src": "_.expand()",
     "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "sol",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "params",
-    "reason": "non-call-expression"
    },
    {
     "module": "sympy.matrices.matrixbase",
@@ -644598,7 +644531,12 @@
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "params",
+    "src": "sol",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "sol",
     "reason": "non-call-expression"
    },
    {
@@ -644613,7 +644551,12 @@
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "sol",
+    "src": "params",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "params",
     "reason": "non-call-expression"
    },
    {
@@ -644653,98 +644596,8 @@
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "a",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "a",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
     "src": "bool(m.is_symmetric(simplify=False))",
     "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "a",
-    "reason": "non-call-expression"
    },
    {
     "module": "sympy.matrices.matrixbase",
@@ -644763,22 +644616,12 @@
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "M",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
     "src": "Matrix.orthogonalize(*v)",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.matrices.matrixbase",
     "src": "B",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
     "reason": "non-call-expression"
    },
    {
@@ -644808,12 +644651,17 @@
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "m",
+    "src": "M",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "A",
+    "src": "M",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "M",
     "reason": "non-call-expression"
    },
    {
@@ -644843,7 +644691,7 @@
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "S",
+    "src": "U",
     "reason": "non-call-expression"
    },
    {
@@ -644864,6 +644712,11 @@
    {
     "module": "sympy.matrices.matrixbase",
     "src": "S_aug",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "S",
     "reason": "non-call-expression"
    },
    {
@@ -644908,17 +644761,17 @@
    },
    {
     "module": "sympy.matrices.matrixbase",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrixbase",
-    "src": "m",
+    "src": "A",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.matrices.matrixbase",
     "src": "H",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "P",
     "reason": "non-call-expression"
    },
    {
@@ -644938,7 +644791,162 @@
    },
    {
     "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
     "src": "a",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "a",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "a",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "a",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "a",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "R",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "R",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrixbase",
+    "src": "R",
     "reason": "non-call-expression"
    },
    {
@@ -644973,17 +644981,7 @@
    },
    {
     "module": "sympy.matrices.dense",
-    "src": "L",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.dense",
     "src": "D",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.dense",
-    "src": "L",
     "reason": "non-call-expression"
    },
    {
@@ -644994,6 +644992,16 @@
    {
     "module": "sympy.matrices.dense",
     "src": "Y",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.dense",
+    "src": "L",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.dense",
+    "src": "L",
     "reason": "non-call-expression"
    },
    {
@@ -645073,7 +645081,7 @@
    },
    {
     "module": "sympy.matrices.decompositions",
-    "src": "L",
+    "src": "D",
     "reason": "non-call-expression"
    },
    {
@@ -645083,52 +645091,7 @@
    },
    {
     "module": "sympy.matrices.decompositions",
-    "src": "L",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.decompositions",
     "src": "D",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.decompositions",
-    "src": "L",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.decompositions",
-    "src": "D",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.decompositions",
-    "src": "L",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.decompositions",
-    "src": "U",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.decompositions",
-    "src": "Q",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.decompositions",
-    "src": "R",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.decompositions",
-    "src": "Q",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.decompositions",
-    "src": "R",
     "reason": "non-call-expression"
    },
    {
@@ -645138,7 +645101,12 @@
    },
    {
     "module": "sympy.matrices.decompositions",
-    "src": "R_aug",
+    "src": "Q",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.decompositions",
+    "src": "Q",
     "reason": "non-call-expression"
    },
    {
@@ -645153,7 +645121,42 @@
    },
    {
     "module": "sympy.matrices.decompositions",
+    "src": "R",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.decompositions",
+    "src": "R",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.decompositions",
     "src": "R_aug",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.decompositions",
+    "src": "R_aug",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.decompositions",
+    "src": "L",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.decompositions",
+    "src": "L",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.decompositions",
+    "src": "L",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.decompositions",
+    "src": "L",
     "reason": "non-call-expression"
    },
    {
@@ -645174,6 +645177,11 @@
    {
     "module": "sympy.matrices.decompositions",
     "src": "F",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.decompositions",
+    "src": "U",
     "reason": "non-call-expression"
    },
    {
@@ -645223,16 +645231,6 @@
    },
    {
     "module": "sympy.matrices.solvers",
-    "src": "sol",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.solvers",
-    "src": "params",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.solvers",
     "src": "sol_unique",
     "reason": "non-call-expression"
    },
@@ -645243,7 +645241,12 @@
    },
    {
     "module": "sympy.matrices.solvers",
-    "src": "params",
+    "src": "sol",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.solvers",
+    "src": "sol",
     "reason": "non-call-expression"
    },
    {
@@ -645258,7 +645261,12 @@
    },
    {
     "module": "sympy.matrices.solvers",
-    "src": "sol",
+    "src": "params",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.solvers",
+    "src": "params",
     "reason": "non-call-expression"
    },
    {
@@ -645303,17 +645311,17 @@
    },
    {
     "module": "sympy.matrices.subspaces",
-    "src": "M",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.subspaces",
-    "src": "M",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.subspaces",
     "src": "Matrix.orthogonalize(*v)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.subspaces",
+    "src": "M",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.subspaces",
+    "src": "M",
     "reason": "non-call-expression"
    },
    {
@@ -645493,11 +645501,6 @@
    },
    {
     "module": "sympy.functions.combinatorial.numbers",
-    "src": "sum(_)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.functions.combinatorial.numbers",
     "src": "sum(nC(4, i) for i in range(5))",
     "reason": "not-exported-api"
    },
@@ -645525,6 +645528,11 @@
     "module": "sympy.functions.combinatorial.numbers",
     "src": "[len(list(multiset_permutations('aaaabbbbcccc', i))) for i in range(5)]",
     "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.functions.combinatorial.numbers",
+    "src": "sum(_)",
+    "reason": "reference-exception"
    },
    {
     "module": "sympy.functions.combinatorial.numbers",
@@ -645628,11 +645636,6 @@
    },
    {
     "module": "sympy.logic.boolalg",
-    "src": "_ is true",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.logic.boolalg",
     "src": "~false, ~False  # doctest: +SKIP",
     "reason": "upstream-skip"
    },
@@ -645644,6 +645647,11 @@
    {
     "module": "sympy.logic.boolalg",
     "src": "_ is True, _ is true",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.logic.boolalg",
+    "src": "_ is true",
     "reason": "reference-exception"
    },
    {
@@ -645803,11 +645811,6 @@
    },
    {
     "module": "sympy.tensor.array.dense_ndim_array",
-    "src": "a",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.tensor.array.dense_ndim_array",
     "src": "a[0]",
     "reason": "unsupported-result-type"
    },
@@ -645823,17 +645826,22 @@
    },
    {
     "module": "sympy.tensor.array.dense_ndim_array",
+    "src": "b",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.tensor.array.dense_ndim_array",
+    "src": "b",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.tensor.array.dense_ndim_array",
     "src": "a",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.tensor.array.dense_ndim_array",
-    "src": "b",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.tensor.array.dense_ndim_array",
-    "src": "b",
+    "src": "a",
     "reason": "non-call-expression"
    },
    {
@@ -645868,36 +645876,6 @@
    },
    {
     "module": "sympy.tensor.array.ndim_array",
-    "src": "a",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.tensor.array.ndim_array",
-    "src": "a",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.tensor.array.ndim_array",
-    "src": "b",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.tensor.array.ndim_array",
-    "src": "a",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.tensor.array.ndim_array",
-    "src": "a",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.tensor.array.ndim_array",
-    "src": "b",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.tensor.array.ndim_array",
     "src": "c",
     "reason": "non-call-expression"
    },
@@ -645905,11 +645883,6 @@
     "module": "sympy.tensor.array.ndim_array",
     "src": "a - b",
     "reason": "unsupported-result-type"
-   },
-   {
-    "module": "sympy.tensor.array.ndim_array",
-    "src": "a",
-    "reason": "non-call-expression"
    },
    {
     "module": "sympy.tensor.array.ndim_array",
@@ -645924,6 +645897,41 @@
    {
     "module": "sympy.tensor.array.ndim_array",
     "src": "a",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.tensor.array.ndim_array",
+    "src": "a",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.tensor.array.ndim_array",
+    "src": "a",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.tensor.array.ndim_array",
+    "src": "a",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.tensor.array.ndim_array",
+    "src": "a",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.tensor.array.ndim_array",
+    "src": "a",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.tensor.array.ndim_array",
+    "src": "b",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.tensor.array.ndim_array",
+    "src": "b",
     "reason": "non-call-expression"
    },
    {
@@ -645953,12 +645961,12 @@
    },
    {
     "module": "sympy.tensor.array.arrayop",
-    "src": "p",
+    "src": "A",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.tensor.array.arrayop",
-    "src": "A",
+    "src": "p",
     "reason": "non-call-expression"
    },
    {
@@ -645973,13 +645981,13 @@
    },
    {
     "module": "sympy.tensor.indexed",
-    "src": "idx.lower, idx.upper",
-    "reason": "non-call-expression"
+    "src": "idx = Idx(i, (L, U)); idx",
+    "reason": "statement-or-setup"
    },
    {
     "module": "sympy.tensor.indexed",
-    "src": "idx = Idx(i, (L, U)); idx",
-    "reason": "statement-or-setup"
+    "src": "idx.lower, idx.upper",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.tensor.indexed",
@@ -646218,11 +646226,6 @@
    },
    {
     "module": "sympy.ntheory.generate",
-    "src": "sieve._list",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.ntheory.generate",
     "src": "s._list[-1]",
     "reason": "non-call-expression"
    },
@@ -646234,6 +646237,11 @@
    {
     "module": "sympy.ntheory.generate",
     "src": "sieve[10] == 29",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.ntheory.generate",
+    "src": "sieve._list",
     "reason": "non-call-expression"
    },
    {
@@ -646403,11 +646411,6 @@
    },
    {
     "module": "sympy.ntheory.residue_ntheory",
-    "src": "sorted(set([i**2 % 7 for i in range(7)]))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.ntheory.residue_ntheory",
     "src": "[j for j in range(7) if is_quad_residue(j, 7)]",
     "reason": "non-call-expression"
    },
@@ -646415,6 +646418,11 @@
     "module": "sympy.ntheory.residue_ntheory",
     "src": "[legendre_symbol(i, 7) for i in range(7)]",
     "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.ntheory.residue_ntheory",
+    "src": "sorted(set([i**2 % 7 for i in range(7)]))",
+    "reason": "not-exported-api"
    },
    {
     "module": "sympy.ntheory.residue_ntheory",
@@ -647013,11 +647021,6 @@
    },
    {
     "module": "sympy.combinatorics.permutations",
-    "src": "Cycle(1, 2)(2, 3)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
     "src": "Cycle()(1, 2)(2, 3)",
     "reason": "non-call-expression"
    },
@@ -647038,16 +647041,6 @@
    },
    {
     "module": "sympy.combinatorics.permutations",
-    "src": "list(Cycle(1, 2).items())",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
-    "src": "Cycle(1, 2)(2, 3)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
     "src": "a(2, 3)",
     "reason": "not-exported-api"
    },
@@ -647060,6 +647053,11 @@
     "module": "sympy.combinatorics.permutations",
     "src": "print(_)",
     "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
+    "src": "list(Cycle(1, 2).items())",
+    "reason": "not-exported-api"
    },
    {
     "module": "sympy.combinatorics.permutations",
@@ -647098,11 +647096,6 @@
    },
    {
     "module": "sympy.combinatorics.permutations",
-    "src": "[q(p(i)) for i in range(p.size)]",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
     "src": "[p(q(i)) for i in range(p.size)]",
     "reason": "non-call-expression"
    },
@@ -647128,23 +647121,8 @@
    },
    {
     "module": "sympy.combinatorics.permutations",
-    "src": "p",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
-    "src": "p",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
     "src": "Permutation(_) == p",
     "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
-    "src": "p",
-    "reason": "non-call-expression"
    },
    {
     "module": "sympy.combinatorics.permutations",
@@ -647180,6 +647158,11 @@
     "module": "sympy.combinatorics.permutations",
     "src": "list(p*q)",
     "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
+    "src": "[q(p(i)) for i in range(p.size)]",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.combinatorics.permutations",
@@ -647228,22 +647211,22 @@
    },
    {
     "module": "sympy.combinatorics.permutations",
-    "src": "list(a*b)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
-    "src": "[b(a(i)) for i in range(3)]",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
     "src": "_af_rmul(al, bl)",
     "reason": "not-exported-api"
    },
    {
     "module": "sympy.combinatorics.permutations",
     "src": "[al[bl[i]] for i in range(3)]",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
+    "src": "Cycle(1, 2)(2, 3)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
+    "src": "Cycle(1, 2)(2, 3)",
     "reason": "non-call-expression"
    },
    {
@@ -647283,11 +647266,6 @@
    },
    {
     "module": "sympy.combinatorics.permutations",
-    "src": "p",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
     "src": "c = p.commutator(x); c",
     "reason": "statement-or-setup"
    },
@@ -647295,11 +647273,6 @@
     "module": "sympy.combinatorics.permutations",
     "src": "_(sorted(\"SymPy\"))",
     "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
-    "src": "p",
-    "reason": "non-call-expression"
    },
    {
     "module": "sympy.combinatorics.permutations",
@@ -647333,16 +647306,6 @@
    },
    {
     "module": "sympy.combinatorics.permutations",
-    "src": "p",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
-    "src": "p",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
     "src": "p.resize(2)",
     "reason": "reference-exception"
    },
@@ -647354,16 +647317,6 @@
    {
     "module": "sympy.combinatorics.permutations",
     "src": "[a(b(i)) for i in range(3)]",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
-    "src": "list(a*b)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
-    "src": "[b(a(i)) for i in range(3)]",
     "reason": "non-call-expression"
    },
    {
@@ -647398,6 +647351,41 @@
    },
    {
     "module": "sympy.combinatorics.permutations",
+    "src": "p",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
+    "src": "p",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
+    "src": "p",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
+    "src": "p",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
+    "src": "p",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
+    "src": "p",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
+    "src": "p",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
     "src": "_af_parity([0, 1, 2, 3])",
     "reason": "not-exported-api"
    },
@@ -647418,8 +647406,33 @@
    },
    {
     "module": "sympy.combinatorics.permutations",
+    "src": "_af_rmul(a, b)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
     "src": "[a[b[i]] for i in range(3)]",
     "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
+    "src": "[a[b[i]] for i in range(3)]",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
+    "src": "list(a*b)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
+    "src": "list(a*b)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.combinatorics.permutations",
+    "src": "list(a*b)",
+    "reason": "not-exported-api"
    },
    {
     "module": "sympy.combinatorics.permutations",
@@ -647433,18 +647446,13 @@
    },
    {
     "module": "sympy.combinatorics.permutations",
-    "src": "_af_rmul(a, b)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.combinatorics.permutations",
-    "src": "[a[b[i]] for i in range(3)]",
+    "src": "[b(a(i)) for i in range(3)]",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.combinatorics.permutations",
-    "src": "list(a*b)",
-    "reason": "not-exported-api"
+    "src": "[b(a(i)) for i in range(3)]",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.combinatorics.permutations",
@@ -647643,16 +647651,6 @@
    },
    {
     "module": "sympy.matrices.expressions.blockmatrix",
-    "src": "print(B)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.matrices.expressions.blockmatrix",
-    "src": "print(C)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.matrices.expressions.blockmatrix",
     "src": "BlockMatrix(dat)",
     "reason": "reference-exception"
    },
@@ -647664,6 +647662,16 @@
    {
     "module": "sympy.matrices.expressions.blockmatrix",
     "src": "print(B)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.matrices.expressions.blockmatrix",
+    "src": "print(B)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.matrices.expressions.blockmatrix",
+    "src": "print(C)",
     "reason": "not-exported-api"
    },
    {
@@ -647733,11 +647741,6 @@
    },
    {
     "module": "sympy.sets.sets",
-    "src": "Interval(1, 2).kind",
-    "reason": "unsupported-result-type"
-   },
-   {
-    "module": "sympy.sets.sets",
     "src": "EmptySet.kind",
     "reason": "unsupported-result-type"
    },
@@ -647764,6 +647767,11 @@
    {
     "module": "sympy.sets.sets",
     "src": "Interval(1, 2).kind.element_kind",
+    "reason": "unsupported-result-type"
+   },
+   {
+    "module": "sympy.sets.sets",
+    "src": "Interval(1, 2).kind",
     "reason": "unsupported-result-type"
    },
    {
@@ -647958,12 +647966,12 @@
    },
    {
     "module": "sympy.core.containers",
-    "src": "Tuple(1, 2).kind",
+    "src": "Tuple(Matrix([1, 2]), 1).kind",
     "reason": "unsupported-result-type"
    },
    {
     "module": "sympy.core.containers",
-    "src": "Tuple(Matrix([1, 2]), 1).kind",
+    "src": "Tuple(1, 2).kind",
     "reason": "unsupported-result-type"
    },
    {
@@ -648088,12 +648096,12 @@
    },
    {
     "module": "sympy.simplify.fu",
-    "src": "TR8(_)",
+    "src": "TRmorrie(_)",
     "reason": "reference-exception"
    },
    {
     "module": "sympy.simplify.fu",
-    "src": "TRmorrie(_)",
+    "src": "TR8(_)",
     "reason": "reference-exception"
    },
    {
@@ -648443,27 +648451,27 @@
    },
    {
     "module": "sympy.solvers.diophantine.diophantine",
+    "src": "next(g)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.solvers.diophantine.diophantine",
+    "src": "next(g)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.solvers.diophantine.diophantine",
+    "src": "next(g)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.solvers.diophantine.diophantine",
     "src": "next(f)",
     "reason": "not-exported-api"
    },
    {
     "module": "sympy.solvers.diophantine.diophantine",
     "src": "next(f)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.solvers.diophantine.diophantine",
-    "src": "next(g)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.solvers.diophantine.diophantine",
-    "src": "next(g)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.solvers.diophantine.diophantine",
-    "src": "next(g)",
     "reason": "not-exported-api"
    },
    {
@@ -648743,16 +648751,6 @@
    },
    {
     "module": "sympy.series.sequences",
-    "src": "s[:]",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.series.sequences",
-    "src": "list(s)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.series.sequences",
     "src": "SeqFormula(n**2, (-oo, 0))[0:6]",
     "reason": "non-call-expression"
    },
@@ -648760,6 +648758,16 @@
     "module": "sympy.series.sequences",
     "src": "s[:]",
     "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "s[:]",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.series.sequences",
+    "src": "list(s)",
+    "reason": "not-exported-api"
    },
    {
     "module": "sympy.series.sequences",
@@ -648978,17 +648986,17 @@
    },
    {
     "module": "sympy.matrices.expressions.hadamard",
-    "src": "X",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.expressions.hadamard",
-    "src": "X",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.expressions.hadamard",
     "src": "Y",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.expressions.hadamard",
+    "src": "X",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.expressions.hadamard",
+    "src": "X",
     "reason": "non-call-expression"
    },
    {
@@ -649058,11 +649066,6 @@
    },
    {
     "module": "sympy.matrices.sparse",
-    "src": "L",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.sparse",
     "src": "D",
     "reason": "non-call-expression"
    },
@@ -649074,6 +649077,11 @@
    {
     "module": "sympy.matrices.sparse",
     "src": "Y",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.sparse",
+    "src": "L",
     "reason": "non-call-expression"
    },
    {
@@ -649128,11 +649136,6 @@
    },
    {
     "module": "sympy.logic.algorithms.dpll2",
-    "src": "next(l._find_model())",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.logic.algorithms.dpll2",
     "src": "l._clause_sat(0)",
     "reason": "private-api"
    },
@@ -649143,22 +649146,12 @@
    },
    {
     "module": "sympy.logic.algorithms.dpll2",
-    "src": "next(l._find_model())",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.logic.algorithms.dpll2",
     "src": "list(l._find_model())",
     "reason": "not-exported-api"
    },
    {
     "module": "sympy.logic.algorithms.dpll2",
     "src": "list(l._find_model())",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.logic.algorithms.dpll2",
-    "src": "next(l._find_model())",
     "reason": "not-exported-api"
    },
    {
@@ -649173,13 +649166,28 @@
    },
    {
     "module": "sympy.logic.algorithms.dpll2",
+    "src": "l._simple_compute_conflict()",
+    "reason": "private-api"
+   },
+   {
+    "module": "sympy.logic.algorithms.dpll2",
     "src": "next(l._find_model())",
     "reason": "not-exported-api"
    },
    {
     "module": "sympy.logic.algorithms.dpll2",
-    "src": "l._simple_compute_conflict()",
-    "reason": "private-api"
+    "src": "next(l._find_model())",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.logic.algorithms.dpll2",
+    "src": "next(l._find_model())",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.logic.algorithms.dpll2",
+    "src": "next(l._find_model())",
+    "reason": "not-exported-api"
    },
    {
     "module": "sympy.logic.algorithms.dpll2",
@@ -649200,11 +649208,6 @@
     "module": "sympy.logic.algorithms.dpll2",
     "src": "l._vsids_calculate()",
     "reason": "private-api"
-   },
-   {
-    "module": "sympy.combinatorics.partitions",
-    "src": "a",
-    "reason": "non-call-expression"
    },
    {
     "module": "sympy.combinatorics.partitions",
@@ -649248,6 +649251,11 @@
    },
    {
     "module": "sympy.combinatorics.partitions",
+    "src": "a",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.partitions",
     "src": "len(a)",
     "reason": "not-exported-api"
    },
@@ -649268,23 +649276,8 @@
    },
    {
     "module": "sympy.combinatorics.graycode",
-    "src": "list(a.generate_gray())",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.combinatorics.graycode",
-    "src": "list(a.generate_gray())",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.combinatorics.graycode",
     "src": "a",
     "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.combinatorics.graycode",
-    "src": "list(a.generate_gray())",
-    "reason": "not-exported-api"
    },
    {
     "module": "sympy.combinatorics.graycode",
@@ -649294,6 +649287,21 @@
    {
     "module": "sympy.combinatorics.graycode",
     "src": "list(a.generate_gray(rank=4))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.combinatorics.graycode",
+    "src": "list(a.generate_gray())",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.combinatorics.graycode",
+    "src": "list(a.generate_gray())",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.combinatorics.graycode",
+    "src": "list(a.generate_gray())",
     "reason": "not-exported-api"
    },
    {
@@ -649353,22 +649361,7 @@
    },
    {
     "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, 100)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, 1)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, 0)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, -1)",
+    "src": "_too_large_for_docstring(expr, None)",
     "reason": "not-exported-api"
    },
    {
@@ -649378,72 +649371,7 @@
    },
    {
     "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, 100)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, 1)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, 0)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, -1)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
     "src": "_too_large_for_docstring(expr, None)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, 100)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, 1)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, 0)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, -1)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, None)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, 100)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, 1)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, 0)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "_too_large_for_docstring(expr, -1)",
     "reason": "not-exported-api"
    },
    {
@@ -649463,12 +649391,92 @@
    },
    {
     "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, 100)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, 100)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, 100)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, 100)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, 1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, 1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, 1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, 1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
     "src": "_too_large_for_docstring(expr, 1)",
     "reason": "not-exported-api"
    },
    {
     "module": "sympy.utilities.lambdify",
     "src": "_too_large_for_docstring(expr, 0)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, 0)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, 0)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, 0)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, 0)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, -1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, -1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, -1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "_too_large_for_docstring(expr, -1)",
     "reason": "not-exported-api"
    },
    {
@@ -649488,21 +649496,6 @@
    },
    {
     "module": "sympy.utilities.lambdify",
-    "src": "f(a)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "f(1)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "f(1)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
     "src": "f(1, 1)",
     "reason": "not-exported-api"
    },
@@ -649514,16 +649507,6 @@
    {
     "module": "sympy.utilities.lambdify",
     "src": "f(1, (2, 3))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "f(1)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "f(1)",
     "reason": "not-exported-api"
    },
    {
@@ -649549,11 +649532,6 @@
    {
     "module": "sympy.utilities.lambdify",
     "src": "row(1, 2)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.utilities.lambdify",
-    "src": "f(1)",
     "reason": "not-exported-api"
    },
    {
@@ -649659,6 +649637,36 @@
    {
     "module": "sympy.utilities.lambdify",
     "src": "f(1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "f(1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "f(1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "f(1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "f(1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "f(1)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.utilities.lambdify",
+    "src": "f(a)",
     "reason": "not-exported-api"
    },
    {
@@ -649843,12 +649851,12 @@
    },
    {
     "module": "sympy.tensor.index_methods",
-    "src": "sorted(d.keys(), key=default_sort_key)",
+    "src": "sorted(d[x[i, i]*y[j, j]], key=default_sort_key)",
     "reason": "not-exported-api"
    },
    {
     "module": "sympy.tensor.index_methods",
-    "src": "sorted(d[x[i, i]*y[j, j]], key=default_sort_key)",
+    "src": "sorted(d.keys(), key=default_sort_key)",
     "reason": "not-exported-api"
    },
    {
@@ -649868,26 +649876,6 @@
    },
    {
     "module": "sympy.discrete.transforms",
-    "src": "fft(_)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.discrete.transforms",
-    "src": "fft(_)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.discrete.transforms",
-    "src": "ifwht(_)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.discrete.transforms",
-    "src": "fwht(_)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.discrete.transforms",
     "src": "ifft(_)",
     "reason": "reference-exception"
    },
@@ -649903,6 +649891,21 @@
    },
    {
     "module": "sympy.discrete.transforms",
+    "src": "fft(_)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.discrete.transforms",
+    "src": "fft(_)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.discrete.transforms",
+    "src": "ifwht(_)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.discrete.transforms",
     "src": "ifwht(_)",
     "reason": "reference-exception"
    },
@@ -649913,6 +649916,56 @@
    },
    {
     "module": "sympy.discrete.transforms",
+    "src": "fwht(_)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.discrete.transforms",
+    "src": "inverse_mobius_transform(_)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.discrete.transforms",
+    "src": "inverse_mobius_transform(_)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.discrete.transforms",
+    "src": "inverse_mobius_transform(_)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.discrete.transforms",
+    "src": "inverse_mobius_transform(_)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.discrete.transforms",
+    "src": "inverse_mobius_transform(_, subset=False)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.discrete.transforms",
+    "src": "inverse_mobius_transform(_, subset=False)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.discrete.transforms",
+    "src": "inverse_mobius_transform(_, subset=False)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.discrete.transforms",
+    "src": "inverse_mobius_transform(_, subset=False)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.discrete.transforms",
+    "src": "intt(_, 3*2**8 + 1)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.discrete.transforms",
     "src": "intt(_, 3*2**8 + 1)",
     "reason": "reference-exception"
    },
@@ -649923,58 +649976,8 @@
    },
    {
     "module": "sympy.discrete.transforms",
-    "src": "inverse_mobius_transform(_)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.discrete.transforms",
-    "src": "inverse_mobius_transform(_, subset=False)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.discrete.transforms",
-    "src": "inverse_mobius_transform(_)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.discrete.transforms",
-    "src": "inverse_mobius_transform(_, subset=False)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.discrete.transforms",
-    "src": "inverse_mobius_transform(_)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.discrete.transforms",
-    "src": "inverse_mobius_transform(_, subset=False)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.discrete.transforms",
-    "src": "inverse_mobius_transform(_)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.discrete.transforms",
-    "src": "inverse_mobius_transform(_, subset=False)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.discrete.transforms",
-    "src": "intt(_, 3*2**8 + 1)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.discrete.transforms",
     "src": "ntt(_, prime=3*2**8 + 1)",
     "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.algebras.quaternion",
-    "src": "q",
-    "reason": "non-call-expression"
    },
    {
     "module": "sympy.algebras.quaternion",
@@ -649984,11 +649987,6 @@
    {
     "module": "sympy.algebras.quaternion",
     "src": "q2",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.algebras.quaternion",
-    "src": "q",
     "reason": "non-call-expression"
    },
    {
@@ -650010,6 +650008,16 @@
     "module": "sympy.algebras.quaternion",
     "src": "Quaternion._generic_mul(q3, 2 + 3*I)",
     "reason": "private-api"
+   },
+   {
+    "module": "sympy.algebras.quaternion",
+    "src": "q",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.algebras.quaternion",
+    "src": "q",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.algebras.quaternion",
@@ -650268,23 +650276,23 @@
    },
    {
     "module": "sympy.geometry.line",
-    "src": "r",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.geometry.line",
     "src": "s",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.geometry.line",
-    "src": "r",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.geometry.line",
     "src": "angle = r1.closing_angle(r2); angle",
     "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.geometry.line",
+    "src": "r",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.geometry.line",
+    "src": "r",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.geometry.line",
@@ -650628,13 +650636,13 @@
    },
    {
     "module": "sympy.stats.rv",
-    "src": "samp_list # doctest: +SKIP",
-    "reason": "upstream-skip"
+    "src": "[sam in G.pspace.domain.set for sam in samp_list]",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.stats.rv",
-    "src": "[sam in G.pspace.domain.set for sam in samp_list]",
-    "reason": "non-call-expression"
+    "src": "samp_list # doctest: +SKIP",
+    "reason": "upstream-skip"
    },
    {
     "module": "sympy.stats.rv",
@@ -650673,27 +650681,12 @@
    },
    {
     "module": "sympy.stats.stochastic_process_types",
-    "src": "states",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.stats.stochastic_process_types",
     "src": "new_matrix",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.stats.stochastic_process_types",
-    "src": "states",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.stats.stochastic_process_types",
     "src": "new_matrix",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.stats.stochastic_process_types",
-    "src": "states",
     "reason": "non-call-expression"
    },
    {
@@ -650705,6 +650698,21 @@
     "module": "sympy.stats.stochastic_process_types",
     "src": "for states, is_recurrent, period in classes:\n    states, is_recurrent, period",
     "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.stats.stochastic_process_types",
+    "src": "states",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.stats.stochastic_process_types",
+    "src": "states",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.stats.stochastic_process_types",
+    "src": "states",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.stats.stochastic_process_types",
@@ -650818,21 +650826,6 @@
    },
    {
     "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "a",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
     "src": "_.expand()",
     "reason": "reference-exception"
    },
@@ -650853,11 +650846,6 @@
    },
    {
     "module": "sympy.matrices.common",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
     "src": "_.simplify()",
     "reason": "reference-exception"
    },
@@ -650870,11 +650858,6 @@
     "module": "sympy.matrices.common",
     "src": "Matrix(_).subs(y, x)",
     "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
    },
    {
     "module": "sympy.matrices.common",
@@ -650898,92 +650881,22 @@
    },
    {
     "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "a",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "a",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
     "src": "bool(m.is_symmetric(simplify=False))",
     "reason": "not-exported-api"
    },
    {
     "module": "sympy.matrices.common",
-    "src": "m",
+    "src": "a",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.matrices.common",
-    "src": "m",
+    "src": "a",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.matrices.common",
-    "src": "m",
+    "src": "a",
     "reason": "non-call-expression"
    },
    {
@@ -651003,11 +650916,6 @@
    },
    {
     "module": "sympy.matrices.common",
-    "src": "m",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.common",
     "src": "a1",
     "reason": "non-call-expression"
    },
@@ -651023,12 +650931,112 @@
    },
    {
     "module": "sympy.matrices.common",
-    "src": "m",
+    "src": "A",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.matrices.common",
     "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.common",
+    "src": "m",
     "reason": "non-call-expression"
    },
    {
@@ -651068,11 +651076,6 @@
    },
    {
     "module": "sympy.matrices.matrices",
-    "src": "M",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrices",
     "src": "D",
     "reason": "non-call-expression"
    },
@@ -651098,17 +651101,22 @@
    },
    {
     "module": "sympy.matrices.matrices",
-    "src": "M",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrices",
-    "src": "M",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.matrices",
     "src": "Matrix.orthogonalize(*v)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrices",
+    "src": "M",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrices",
+    "src": "M",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.matrices",
+    "src": "M",
     "reason": "non-call-expression"
    },
    {
@@ -651140,16 +651148,6 @@
     "module": "sympy.matrices.repmatrix",
     "src": "M.col_op(1, lambda v, i: v + 2*M[i, 0]); M",
     "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.matrices.repmatrix",
-    "src": "M",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.repmatrix",
-    "src": "M",
-    "reason": "non-call-expression"
    },
    {
     "module": "sympy.matrices.repmatrix",
@@ -651198,16 +651196,6 @@
    },
    {
     "module": "sympy.matrices.repmatrix",
-    "src": "M",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.repmatrix",
-    "src": "M",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.matrices.repmatrix",
     "src": "M.zip_row_op(1, 0, lambda v, u: v + 2*u); M",
     "reason": "statement-or-setup"
    },
@@ -651229,6 +651217,26 @@
    {
     "module": "sympy.matrices.repmatrix",
     "src": "T",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.repmatrix",
+    "src": "M",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.repmatrix",
+    "src": "M",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.repmatrix",
+    "src": "M",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.matrices.repmatrix",
+    "src": "M",
     "reason": "non-call-expression"
    },
    {
@@ -651353,57 +651361,57 @@
    },
    {
     "module": "sympy.polys.dispersion",
+    "src": "sorted(dispersionset(fp, gp))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.dispersion",
+    "src": "sorted(dispersionset(fp, gp))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.dispersion",
+    "src": "sorted(dispersionset(fp, gp))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.dispersion",
+    "src": "sorted(dispersionset(fp, gp))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.dispersion",
+    "src": "sorted(dispersionset(gp, fp))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.dispersion",
+    "src": "sorted(dispersionset(gp, fp))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.dispersion",
+    "src": "sorted(dispersionset(gp, fp))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.dispersion",
+    "src": "sorted(dispersionset(gp, fp))",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.dispersion",
     "src": "sorted(dispersionset(fp))",
     "reason": "not-exported-api"
    },
    {
     "module": "sympy.polys.dispersion",
-    "src": "sorted(dispersionset(fp, gp))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.dispersion",
-    "src": "sorted(dispersionset(gp, fp))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.dispersion",
-    "src": "sorted(dispersionset(fp, gp))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.dispersion",
-    "src": "sorted(dispersionset(gp, fp))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.dispersion",
     "src": "sorted(dispersionset(fp))",
     "reason": "not-exported-api"
    },
    {
     "module": "sympy.polys.dispersion",
     "src": "sorted(dispersionset(fp))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.dispersion",
-    "src": "sorted(dispersionset(fp, gp))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.dispersion",
-    "src": "sorted(dispersionset(gp, fp))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.dispersion",
-    "src": "sorted(dispersionset(fp, gp))",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.dispersion",
-    "src": "sorted(dispersionset(gp, fp))",
     "reason": "not-exported-api"
    },
    {
@@ -651458,12 +651466,7 @@
    },
    {
     "module": "sympy.polys.modulargcd",
-    "src": "hpq.trunc_ground(p) == hp",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.modulargcd",
-    "src": "hpq.trunc_ground(q) == hq",
+    "src": "hpq",
     "reason": "non-call-expression"
    },
    {
@@ -651478,17 +651481,22 @@
    },
    {
     "module": "sympy.polys.modulargcd",
-    "src": "hpq.trunc_ground(q) == hq",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.modulargcd",
-    "src": "hpq",
+    "src": "hpq.trunc_ground(p) == hp",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.modulargcd",
     "src": "hpq.trunc_ground(p) == hp",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.modulargcd",
+    "src": "hpq.trunc_ground(q) == hq",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.modulargcd",
+    "src": "hpq.trunc_ground(q) == hq",
     "reason": "non-call-expression"
    },
    {
@@ -651538,12 +651546,22 @@
    },
    {
     "module": "sympy.polys.modulargcd",
-    "src": "cff * h == f",
+    "src": "h, cff, cfg",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.modulargcd",
-    "src": "cfg * h == g",
+    "src": "h, cff, cfg",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.modulargcd",
+    "src": "h, cff, cfg",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.modulargcd",
+    "src": "h, cff, cfg",
     "reason": "non-call-expression"
    },
    {
@@ -651558,12 +651576,22 @@
    },
    {
     "module": "sympy.polys.modulargcd",
-    "src": "cfg * h == g",
+    "src": "cff * h == f",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.modulargcd",
-    "src": "h, cff, cfg",
+    "src": "cff * h == f",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.modulargcd",
+    "src": "cff * h == f",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.modulargcd",
+    "src": "cff * h == f",
     "reason": "non-call-expression"
    },
    {
@@ -651578,12 +651606,7 @@
    },
    {
     "module": "sympy.polys.modulargcd",
-    "src": "h, cff, cfg",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.modulargcd",
-    "src": "cff * h == f",
+    "src": "cfg * h == g",
     "reason": "non-call-expression"
    },
    {
@@ -651593,27 +651616,12 @@
    },
    {
     "module": "sympy.polys.modulargcd",
-    "src": "h, cff, cfg",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.modulargcd",
-    "src": "cff * h == f",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.modulargcd",
     "src": "cfg * h == g",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.modulargcd",
-    "src": "h, cff, cfg",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.modulargcd",
-    "src": "cff * h == f",
+    "src": "cfg * h == g",
     "reason": "non-call-expression"
    },
    {
@@ -651693,11 +651701,6 @@
    },
    {
     "module": "sympy.polys.puiseux",
-    "src": "p",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.puiseux",
     "src": "isinstance(_, Expr)",
     "reason": "reference-exception"
    },
@@ -651713,13 +651716,13 @@
    },
    {
     "module": "sympy.polys.puiseux",
-    "src": "f",
-    "reason": "non-call-expression"
+    "src": "rs_exp(x, x, 5)",
+    "reason": "not-exported-api"
    },
    {
     "module": "sympy.polys.puiseux",
-    "src": "rs_exp(x, x, 5)",
-    "reason": "not-exported-api"
+    "src": "f",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.puiseux",
@@ -651762,6 +651765,11 @@
     "reason": "non-call-expression"
    },
    {
+    "module": "sympy.polys.puiseux",
+    "src": "p",
+    "reason": "non-call-expression"
+   },
+   {
     "module": "sympy.polys.ring_series",
     "src": "_has_constant_term(p, x)",
     "reason": "not-exported-api"
@@ -651783,12 +651791,12 @@
    },
    {
     "module": "sympy.polys.ring_series",
-    "src": "s",
+    "src": "c",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.ring_series",
-    "src": "c",
+    "src": "s",
     "reason": "non-call-expression"
    },
    {
@@ -651838,37 +651846,7 @@
    },
    {
     "module": "sympy.polys.rings",
-    "src": "p1",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rings",
-    "src": "p1 is p",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rings",
-    "src": "p1",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rings",
-    "src": "p1 is p",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rings",
-    "src": "p1",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rings",
     "src": "p",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rings",
-    "src": "p1",
     "reason": "non-call-expression"
    },
    {
@@ -651898,12 +651876,42 @@
    },
    {
     "module": "sympy.polys.rings",
-    "src": "p1 is p",
+    "src": "p1",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.rings",
     "src": "p1",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rings",
+    "src": "p1",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rings",
+    "src": "p1",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rings",
+    "src": "p1",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rings",
+    "src": "p1 is p",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rings",
+    "src": "p1 is p",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rings",
+    "src": "p1 is p",
     "reason": "non-call-expression"
    },
    {
@@ -651933,33 +651941,8 @@
    },
    {
     "module": "sympy.polys.rings",
-    "src": "R",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rings",
-    "src": "x + y + z",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rings",
-    "src": "type(_)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.polys.rings",
-    "src": "R",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rings",
     "src": "f",
     "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.rings",
-    "src": "type(_)",
-    "reason": "reference-exception"
    },
    {
     "module": "sympy.polys.rings",
@@ -651968,8 +651951,13 @@
    },
    {
     "module": "sympy.polys.rings",
-    "src": "type(_)",
-    "reason": "reference-exception"
+    "src": "R",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rings",
+    "src": "R",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.rings",
@@ -651980,6 +651968,26 @@
     "module": "sympy.polys.rings",
     "src": "x + y + z",
     "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rings",
+    "src": "x + y + z",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.rings",
+    "src": "type(_)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.polys.rings",
+    "src": "type(_)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.polys.rings",
+    "src": "type(_)",
+    "reason": "reference-exception"
    },
    {
     "module": "sympy.polys.rings",
@@ -652238,11 +652246,6 @@
    },
    {
     "module": "sympy.polys.domains.domain",
-    "src": "K",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
     "src": "type(K)             # class of the domain",
     "reason": "not-exported-api"
    },
@@ -652250,11 +652253,6 @@
     "module": "sympy.polys.domains.domain",
     "src": "K.dtype             # doctest: +SKIP",
     "reason": "upstream-skip"
-   },
-   {
-    "module": "sympy.polys.domains.domain",
-    "src": "p_expr",
-    "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.domains.domain",
@@ -652293,6 +652291,11 @@
    },
    {
     "module": "sympy.polys.domains.domain",
+    "src": "K",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.domain",
     "src": "print(a)",
     "reason": "not-exported-api"
    },
@@ -652323,12 +652326,12 @@
    },
    {
     "module": "sympy.polys.domains.domain",
-    "src": "ZZ(4) / ZZ(2) # doctest: +SKIP",
+    "src": "ZZ(5) / ZZ(2) # doctest: +SKIP",
     "reason": "upstream-skip"
    },
    {
     "module": "sympy.polys.domains.domain",
-    "src": "ZZ(5) / ZZ(2) # doctest: +SKIP",
+    "src": "ZZ(4) / ZZ(2) # doctest: +SKIP",
     "reason": "upstream-skip"
    },
    {
@@ -652367,13 +652370,13 @@
     "reason": "non-call-expression"
    },
    {
-    "module": "sympy.polys.domains.domainelement",
-    "src": "p",
+    "module": "sympy.polys.domains.domain",
+    "src": "p_expr",
     "reason": "non-call-expression"
    },
    {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "K",
+    "module": "sympy.polys.domains.domainelement",
+    "src": "p",
     "reason": "non-call-expression"
    },
    {
@@ -652393,18 +652396,23 @@
    },
    {
     "module": "sympy.polys.domains.algebraicfield",
-    "src": "K",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
-    "src": "K",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.algebraicfield",
     "src": "K.mod  # doctest: +SKIP",
     "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "K",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "K",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.algebraicfield",
+    "src": "K",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.domains.algebraicfield",
@@ -652478,31 +652486,6 @@
    },
    {
     "module": "sympy.polys.domains.gaussiandomains",
-    "src": "z",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.gaussiandomains",
-    "src": "type(z)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.domains.gaussiandomains",
-    "src": "p",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.gaussiandomains",
-    "src": "z1",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.gaussiandomains",
-    "src": "z2",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.domains.gaussiandomains",
     "src": "ZZ_I.exquo(z3, z4)",
     "reason": "reference-exception"
    },
@@ -652513,6 +652496,16 @@
    },
    {
     "module": "sympy.polys.domains.gaussiandomains",
+    "src": "z",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.gaussiandomains",
+    "src": "type(z)",
+    "reason": "not-exported-api"
+   },
+   {
+    "module": "sympy.polys.domains.gaussiandomains",
     "src": "type(z)",
     "reason": "not-exported-api"
    },
@@ -652523,7 +652516,22 @@
    },
    {
     "module": "sympy.polys.domains.gaussiandomains",
+    "src": "p",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.gaussiandomains",
     "src": "z1",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.gaussiandomains",
+    "src": "z1",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.domains.gaussiandomains",
+    "src": "z2",
     "reason": "non-call-expression"
    },
    {
@@ -652578,37 +652586,12 @@
    },
    {
     "module": "sympy.polys.matrices.domainmatrix",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.domainmatrix",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.domainmatrix",
     "src": "adjA",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.matrices.domainmatrix",
-    "src": "detA",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.domainmatrix",
     "src": "p",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.domainmatrix",
-    "src": "p_A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.domainmatrix",
-    "src": "den",
     "reason": "non-call-expression"
    },
    {
@@ -652643,6 +652626,11 @@
    },
    {
     "module": "sympy.polys.matrices.domainmatrix",
+    "src": "p_A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.domainmatrix",
     "src": "p_A_b",
     "reason": "non-call-expression"
    },
@@ -652653,37 +652641,12 @@
    },
    {
     "module": "sympy.polys.matrices.domainmatrix",
-    "src": "L",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.domainmatrix",
     "src": "D",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.matrices.domainmatrix",
-    "src": "U",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.domainmatrix",
     "src": "L.is_lower and U.is_upper and D.is_diagonal",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.domainmatrix",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.domainmatrix",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.domainmatrix",
-    "src": "A",
     "reason": "non-call-expression"
    },
    {
@@ -652694,6 +652657,31 @@
    {
     "module": "sympy.polys.matrices.domainmatrix",
     "src": "C",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.domainmatrix",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.domainmatrix",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.domainmatrix",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.domainmatrix",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.domainmatrix",
+    "src": "A",
     "reason": "non-call-expression"
    },
    {
@@ -652723,6 +652711,11 @@
    },
    {
     "module": "sympy.polys.matrices.domainmatrix",
+    "src": "den",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.domainmatrix",
     "src": "Ainv",
     "reason": "non-call-expression"
    },
@@ -652739,6 +652732,16 @@
    {
     "module": "sympy.polys.matrices.domainmatrix",
     "src": "L",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.domainmatrix",
+    "src": "L",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.domainmatrix",
+    "src": "U",
     "reason": "non-call-expression"
    },
    {
@@ -652818,21 +652821,6 @@
    },
    {
     "module": "sympy.polys.matrices.domainmatrix",
-    "src": "xden",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.domainmatrix",
-    "src": "xnum",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.domainmatrix",
-    "src": "xden",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.domainmatrix",
     "src": "xsol_uncancelled",
     "reason": "non-call-expression"
    },
@@ -652843,12 +652831,32 @@
    },
    {
     "module": "sympy.polys.matrices.domainmatrix",
-    "src": "xnum",
+    "src": "detA",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.matrices.domainmatrix",
     "src": "xden",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.domainmatrix",
+    "src": "xden",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.domainmatrix",
+    "src": "xden",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.domainmatrix",
+    "src": "xnum",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.domainmatrix",
+    "src": "xnum",
     "reason": "non-call-expression"
    },
    {
@@ -652923,11 +652931,6 @@
    },
    {
     "module": "sympy.polys.matrices.ddm",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.ddm",
     "src": "type(A)",
     "reason": "not-exported-api"
    },
@@ -652948,36 +652951,6 @@
    },
    {
     "module": "sympy.polys.matrices.ddm",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.ddm",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.ddm",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.ddm",
-    "src": "elements",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.ddm",
-    "src": "A == DDM.from_flat_nz(elements, data, A.domain)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.ddm",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.ddm",
     "src": "A == DDM([[ZZ(0), ZZ(1)], [ZZ(-1), ZZ(0)]], (2, 2), ZZ)",
     "reason": "non-call-expression"
    },
@@ -652988,7 +652961,27 @@
    },
    {
     "module": "sympy.polys.matrices.ddm",
-    "src": "A == DDM.from_list_flat(A.to_list_flat(), A.shape, A.domain)",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.ddm",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.ddm",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.ddm",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.ddm",
+    "src": "A",
     "reason": "non-call-expression"
    },
    {
@@ -653023,7 +653016,22 @@
    },
    {
     "module": "sympy.polys.matrices.ddm",
+    "src": "elements",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.ddm",
     "src": "A == DDM.from_flat_nz(elements, data, A.domain)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.ddm",
+    "src": "A == DDM.from_flat_nz(elements, data, A.domain)",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.ddm",
+    "src": "A == DDM.from_list_flat(A.to_list_flat(), A.shape, A.domain)",
     "reason": "non-call-expression"
    },
    {
@@ -653035,11 +653043,6 @@
     "module": "sympy.polys.matrices.ddm",
     "src": "type(A.to_sdm())",
     "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.matrices.sdm",
-    "src": "A",
-    "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.matrices.sdm",
@@ -653073,31 +653076,6 @@
    },
    {
     "module": "sympy.polys.matrices.sdm",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.sdm",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.sdm",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.sdm",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.sdm",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.sdm",
     "src": "list(A.iter_items())",
     "reason": "not-exported-api"
    },
@@ -653108,17 +653086,7 @@
    },
    {
     "module": "sympy.polys.matrices.sdm",
-    "src": "A",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.sdm",
     "src": "A_null",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.sdm",
-    "src": "pivots",
     "reason": "non-call-expression"
    },
    {
@@ -653148,22 +653116,47 @@
    },
    {
     "module": "sympy.polys.matrices.sdm",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.sdm",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.sdm",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.sdm",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.sdm",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.sdm",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.sdm",
+    "src": "A",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.sdm",
     "src": "Arref",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.matrices.sdm",
-    "src": "pivots",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.sdm",
     "src": "Mrref",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.sdm",
-    "src": "pivots",
     "reason": "non-call-expression"
    },
    {
@@ -653182,28 +653175,23 @@
     "reason": "non-call-expression"
    },
    {
-    "module": "sympy.polys.matrices.dense",
-    "src": "M",
+    "module": "sympy.polys.matrices.sdm",
+    "src": "pivots",
     "reason": "non-call-expression"
    },
    {
-    "module": "sympy.polys.matrices.dense",
-    "src": "M",
+    "module": "sympy.polys.matrices.sdm",
+    "src": "pivots",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.sdm",
+    "src": "pivots",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.matrices.dense",
     "src": "Mrref",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.dense",
-    "src": "a",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.dense",
-    "src": "a",
     "reason": "non-call-expression"
    },
    {
@@ -653223,7 +653211,7 @@
    },
    {
     "module": "sympy.polys.matrices.dense",
-    "src": "swaps",
+    "src": "a",
     "reason": "non-call-expression"
    },
    {
@@ -653233,17 +653221,7 @@
    },
    {
     "module": "sympy.polys.matrices.dense",
-    "src": "L",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.dense",
-    "src": "U",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.matrices.dense",
-    "src": "swaps",
+    "src": "a",
     "reason": "non-call-expression"
    },
    {
@@ -653263,7 +653241,27 @@
    },
    {
     "module": "sympy.polys.matrices.dense",
+    "src": "swaps",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.dense",
+    "src": "swaps",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.dense",
     "src": "L",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.dense",
+    "src": "L",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.dense",
+    "src": "U",
     "reason": "non-call-expression"
    },
    {
@@ -653278,7 +653276,12 @@
    },
    {
     "module": "sympy.polys.matrices.dense",
-    "src": "pivots",
+    "src": "M",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.dense",
+    "src": "M",
     "reason": "non-call-expression"
    },
    {
@@ -653289,6 +653292,11 @@
    {
     "module": "sympy.polys.matrices.dense",
     "src": "den",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.polys.matrices.dense",
+    "src": "pivots",
     "reason": "non-call-expression"
    },
    {
@@ -653388,11 +653396,6 @@
    },
    {
     "module": "sympy.polys.agca.modules",
-    "src": "M",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.agca.modules",
     "src": "F",
     "reason": "non-call-expression"
    },
@@ -653408,13 +653411,18 @@
    },
    {
     "module": "sympy.polys.agca.modules",
+    "src": "M.in_terms_of_generators([x, x**2])  # doctest: +SKIP",
+    "reason": "upstream-skip"
+   },
+   {
+    "module": "sympy.polys.agca.modules",
     "src": "M",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.agca.modules",
-    "src": "M.in_terms_of_generators([x, x**2])  # doctest: +SKIP",
-    "reason": "upstream-skip"
+    "src": "M",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.polys.agca.modules",
@@ -653783,13 +653791,13 @@
    },
    {
     "module": "sympy.assumptions.satask",
-    "src": "exprs",
-    "reason": "non-call-expression"
+    "src": "facts.clauses #doctest: +SKIP",
+    "reason": "upstream-skip"
    },
    {
     "module": "sympy.assumptions.satask",
-    "src": "facts.clauses #doctest: +SKIP",
-    "reason": "upstream-skip"
+    "src": "exprs",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.assumptions.satask",
@@ -653893,18 +653901,18 @@
    },
    {
     "module": "sympy.combinatorics.free_groups",
-    "src": "type(_)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.combinatorics.free_groups",
-    "src": "type(_)",
-    "reason": "reference-exception"
-   },
-   {
-    "module": "sympy.combinatorics.free_groups",
     "src": "F",
     "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.combinatorics.free_groups",
+    "src": "type(_)",
+    "reason": "reference-exception"
+   },
+   {
+    "module": "sympy.combinatorics.free_groups",
+    "src": "type(_)",
+    "reason": "reference-exception"
    },
    {
     "module": "sympy.combinatorics.free_groups",
@@ -653993,26 +654001,6 @@
    },
    {
     "module": "sympy.concrete.expr_with_intlimits",
-    "src": "Sn",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.concrete.expr_with_intlimits",
-    "src": "Sn",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.concrete.expr_with_intlimits",
-    "src": "Sn",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.concrete.expr_with_intlimits",
-    "src": "Sn",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.concrete.expr_with_intlimits",
     "src": "P",
     "reason": "non-call-expression"
    },
@@ -654024,6 +654012,26 @@
    {
     "module": "sympy.concrete.expr_with_intlimits",
     "src": "P3",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.concrete.expr_with_intlimits",
+    "src": "Sn",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.concrete.expr_with_intlimits",
+    "src": "Sn",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.concrete.expr_with_intlimits",
+    "src": "Sn",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.concrete.expr_with_intlimits",
+    "src": "Sn",
     "reason": "non-call-expression"
    },
    {
@@ -654108,11 +654116,6 @@
    },
    {
     "module": "sympy.crypto.crypto",
-    "src": "pub = elgamal_public_key(pri); pub",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.crypto.crypto",
     "src": "decipher_elgamal(encipher_elgamal(msg, pub), pri) == msg",
     "reason": "non-call-expression"
    },
@@ -654158,11 +654161,6 @@
    },
    {
     "module": "sympy.crypto.crypto",
-    "src": "ct = encipher_shift(msg, 1); ct",
-    "reason": "statement-or-setup"
-   },
-   {
-    "module": "sympy.crypto.crypto",
     "src": "p == _p and g == _g",
     "reason": "non-call-expression"
    },
@@ -654194,6 +654192,16 @@
    {
     "module": "sympy.crypto.crypto",
     "src": "pub = elgamal_public_key(pri); pub",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.crypto.crypto",
+    "src": "pub = elgamal_public_key(pri); pub",
+    "reason": "statement-or-setup"
+   },
+   {
+    "module": "sympy.crypto.crypto",
+    "src": "ct = encipher_shift(msg, 1); ct",
     "reason": "statement-or-setup"
    },
    {
@@ -654268,7 +654276,72 @@
    },
    {
     "module": "sympy.integrals.quadrature",
-    "src": "w",
+    "src": "x",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.integrals.quadrature",
+    "src": "x",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.integrals.quadrature",
+    "src": "x",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.integrals.quadrature",
+    "src": "x",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.integrals.quadrature",
+    "src": "x",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.integrals.quadrature",
+    "src": "x",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.integrals.quadrature",
+    "src": "x",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.integrals.quadrature",
+    "src": "x",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.integrals.quadrature",
+    "src": "x",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.integrals.quadrature",
+    "src": "x",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.integrals.quadrature",
+    "src": "x",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.integrals.quadrature",
+    "src": "x",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.integrals.quadrature",
+    "src": "x",
+    "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.integrals.quadrature",
+    "src": "x",
     "reason": "non-call-expression"
    },
    {
@@ -654283,7 +654356,7 @@
    },
    {
     "module": "sympy.integrals.quadrature",
-    "src": "x",
+    "src": "w",
     "reason": "non-call-expression"
    },
    {
@@ -654293,7 +654366,7 @@
    },
    {
     "module": "sympy.integrals.quadrature",
-    "src": "x",
+    "src": "w",
     "reason": "non-call-expression"
    },
    {
@@ -654303,7 +654376,7 @@
    },
    {
     "module": "sympy.integrals.quadrature",
-    "src": "x",
+    "src": "w",
     "reason": "non-call-expression"
    },
    {
@@ -654313,7 +654386,7 @@
    },
    {
     "module": "sympy.integrals.quadrature",
-    "src": "x",
+    "src": "w",
     "reason": "non-call-expression"
    },
    {
@@ -654323,7 +654396,7 @@
    },
    {
     "module": "sympy.integrals.quadrature",
-    "src": "x",
+    "src": "w",
     "reason": "non-call-expression"
    },
    {
@@ -654333,7 +654406,7 @@
    },
    {
     "module": "sympy.integrals.quadrature",
-    "src": "x",
+    "src": "w",
     "reason": "non-call-expression"
    },
    {
@@ -654343,77 +654416,12 @@
    },
    {
     "module": "sympy.integrals.quadrature",
-    "src": "x",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.integrals.quadrature",
     "src": "w",
     "reason": "non-call-expression"
    },
    {
     "module": "sympy.integrals.quadrature",
-    "src": "x",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.integrals.quadrature",
     "src": "w",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.integrals.quadrature",
-    "src": "x",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.integrals.quadrature",
-    "src": "w",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.integrals.quadrature",
-    "src": "x",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.integrals.quadrature",
-    "src": "w",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.integrals.quadrature",
-    "src": "x",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.integrals.quadrature",
-    "src": "w",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.integrals.quadrature",
-    "src": "x",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.integrals.quadrature",
-    "src": "w",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.integrals.quadrature",
-    "src": "x",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.integrals.quadrature",
-    "src": "w",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.integrals.quadrature",
-    "src": "x",
     "reason": "non-call-expression"
    },
    {
@@ -654953,11 +654961,6 @@
    },
    {
     "module": "sympy.tensor.array.expressions.array_expressions",
-    "src": "cg",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.tensor.array.expressions.array_expressions",
     "src": "cg._get_contraction_links()",
     "reason": "private-api"
    },
@@ -654970,6 +654973,11 @@
     "module": "sympy.tensor.array.expressions.array_expressions",
     "src": "cg._get_index_shifts(cg)",
     "reason": "private-api"
+   },
+   {
+    "module": "sympy.tensor.array.expressions.array_expressions",
+    "src": "cg",
+    "reason": "non-call-expression"
    },
    {
     "module": "sympy.tensor.array.expressions.array_expressions",

@@ -145,6 +145,9 @@ function denseEntries(args: SparseMatrixArgs): { rows: number; cols: number; cel
  * entries). A matrix value of the map is a block placed at its position.
  */
 export class MutableSparseMatrix extends MutableDenseMatrix {
+  /** Nonzero entries (row, column, value), sorted by row / column. */
+  get RL(): [number, number, Expr][] { return [...this.todok()].map(([[i,j],e]) => [i,j,e]); }
+  get CL(): [number, number, Expr][] { return this.RL.sort((a,b) => a[1]-b[1] || a[0]-b[0]); }
   constructor(...args: SparseMatrixArgs) {
     const { rows, cols, cells } = denseEntries(args);
     super(rows, cols, cells);
@@ -161,6 +164,8 @@ export type SparseMatrix = MutableSparseMatrix;
  * constructor forms of {@link MutableSparseMatrix}.
  */
 export class ImmutableSparseMatrix extends ImmutableMatrixNode {
+  get RL(): [number, number, Expr][] { return [...this.todok()].map(([[i,j],e]) => [i,j,e]); }
+  get CL(): [number, number, Expr][] { return this.RL.sort((a,b) => a[1]-b[1] || a[0]-b[0]); }
   constructor(...args: SparseMatrixArgs) {
     const m = new MutableSparseMatrix(...args);
     super(Matrix.fromFunction(m.rows, m.cols, (i, j) => m.get(i, j)));

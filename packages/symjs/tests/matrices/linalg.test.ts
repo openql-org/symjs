@@ -634,3 +634,20 @@ describe('luSolve and the LDL solution of a Hermitian matrix', () => {
     expect(String(L.inverseLDL(Matrix.of([[2, I], [mul(-1, I), 2]])))).toBe('Matrix([[2/3, -I/3], [I/3, 2/3]])');
   });
 });
+
+it('classifies indefinite and diagonally dominant matrices', () => {
+  expect(L.isIndefinite(M([[1, 2], [2, -1]]))).toBe(true);
+  expect(L.isIndefinite(Matrix.eye(2))).toBe(false);
+  expect(L.isIndefinite(Matrix.zeros(2))).toBe(false);
+  expect(L.isIndefinite(M([[x, 0], [0, -1]]))).toBe('unknown');
+  expect(L.isIndefinite(Matrix.zeros(1, 2))).toBe(false);
+  expect(L.isStronglyDiagonallyDominant(M([[-4, 2, 1], [1, 6, 2], [1, -2, 5]]))).toBe(true);
+  const boundary = M([[3, -2, 1], [1, -3, 2], [-1, 2, 4]]);
+  expect(L.isStronglyDiagonallyDominant(boundary)).toBe(false);
+  expect(L.isWeaklyDiagonallyDominant(boundary)).toBe(true);
+  expect(L.isWeaklyDiagonallyDominant(M([[1, 2], [2, 1]]))).toBe(false);
+  expect(L.isStronglyDiagonallyDominant(M([[x]]))).toBe('unknown');
+  expect(L.isWeaklyDiagonallyDominant(M([[x]]))).toBe('unknown');
+  expect(L.isStronglyDiagonallyDominant(Matrix.zeros(1, 2))).toBe(false);
+  expect(L.isWeaklyDiagonallyDominant(Matrix.zeros(1, 2))).toBe(false);
+});

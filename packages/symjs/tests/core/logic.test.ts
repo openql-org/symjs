@@ -203,3 +203,9 @@ describe('a relation as a side of an equality (SymPy)', () => {
     expect(String(Eq(z, Eq(x, y)))).toBe('Eq(z, Eq(x, y))');
   });
 });
+
+it('canonicalizes nested relations before comparing them', async () => {
+  const a = await import('../../src');
+  const [x,y] = a.symbols('x y');
+  expect(a.canonicalRelation(new a.Rel('Eq',new a.Rel('Lt',x!,y!),new a.Rel('Gt',y!,x!)))).toBe(a.S.true);
+});

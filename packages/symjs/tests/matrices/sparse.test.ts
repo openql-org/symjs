@@ -121,3 +121,11 @@ describe('ImmutableSparseMatrix', () => {
     expect(ImmutableDenseMatrix).toBe(ImmutableMatrix);
   });
 });
+
+it('lists sparse entries in row and column order', () => {
+  for (const m of [new SparseMatrix([[1,2],[3,4]]),new ImmutableSparseMatrix([[1,2],[3,4]])]) {
+    expect(m.RL.map(([i,j,e]) => [i,j,String(e)])).toEqual([[0,0,'1'],[0,1,'2'],[1,0,'3'],[1,1,'4']]);
+    expect(m.CL.map(([i,j,e]) => [i,j,String(e)])).toEqual([[0,0,'1'],[1,0,'3'],[0,1,'2'],[1,1,'4']]);
+  }
+  expect(new SparseMatrix([[0]]).CL).toEqual([]);
+});

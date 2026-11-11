@@ -48,3 +48,10 @@ describe('Id', () => {
     expect(sstr(sj.rcall(sj.Id, y))).toBe('y');
   });
 });
+
+it('renames bound variables without capturing free names', async () => {
+  const a = await import('../../src');
+  const x = new a.Sym('x'), collision = new a.Sym('_0');
+  expect(String(a.Lambda(x,a.mul(2,x)).canonicalVariables.get(x))).toBe('_0');
+  expect(String(a.Lambda(x,a.add(x,collision)).canonicalVariables.get(x))).toBe('_1');
+});

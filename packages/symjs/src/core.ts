@@ -80,6 +80,8 @@ export {
   matches,
   getO,
 } from './core/public';
+export { isIrrational, isAlgebraic, isComplex, isFinite, isPrime } from './core/public';
+export { canonicalRelation } from './core/logic';
 export { isTrue, isFalse, isUnknown, truthNot, truthAnd, truthOr, fuzzyBool, fuzzyAnd, fuzzyOr, fuzzyNot, fuzzyXor, fuzzyNand, NoMatch, NoMatchResult, isNoMatch, Unsolved, UnsolvedResult, isUnsolved } from './core/truth';
 export type { Truth, FuzzyLike } from './core/truth';
 export { classKey } from './printing/sortkey';

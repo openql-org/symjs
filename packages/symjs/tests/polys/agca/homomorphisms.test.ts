@@ -40,3 +40,25 @@ it('rejects invalid dimensions, restrictions and maps that do not descend', () =
   const Q = F.quotientModule([[x, 0]]);
   expect(homomorphism(Q, Q, id.matrix).isIsomorphism()).toBe(true);
 });
+
+it('constructs canonical identity, inclusion and quotient maps', async () => {
+  const a = await import('../../../src');
+  const x = new a.Sym('x'), R = a.QQ.oldPolyRing(x), F = R.freeModule(2);
+  const sub = F.submodule([x,x]);
+  const id = a.identityHom(sub), inc = a.inclusionHom(sub);
+  expect(id.apply([x,x]).equals(sub.convert([x,x]))).toBe(true);
+  expect(inc.codomain).toBe(F);
+  const quotient = F.quotientModule([[1,1]]);
+  expect(quotient).toBeInstanceOf(a.QuotientModule);
+  const projection = a.quotientHom(quotient);
+  expect(projection.apply([1,1]).isZero()).toBe(true);
+  expect(a.identityHom(quotient).apply([1,0]).equals(quotient.convert([1,0]))).toBe(true);
+  const image = quotient.submodule([x,0]);
+  const restricted = a.quotientHom(image);
+  expect(restricted.codomain.equals(image)).toBe(true);
+  expect(restricted.apply([1,1]).isZero()).toBe(true);
+  expect(() => a.quotientHom(sub)).toThrow(TypeError);
+  expect(String(a.identityHom(F))).toContain('[1, 0], : QQ[x]**2 -> QQ[x]**2');
+  expect(String(a.identityHom(R.freeModule(1)))).toBe('Matrix([[1]]) : QQ[x]**1 -> QQ[x]**1');
+  expect(String(a.identityHom(R.freeModule(0)))).toBe('Matrix(0, 0, []) : QQ[x]**0 -> QQ[x]**0');
+});

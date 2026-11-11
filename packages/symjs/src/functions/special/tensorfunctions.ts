@@ -9,9 +9,38 @@
  */
 
 import type { Expr, ExprLike } from '../../core/nodes';
-import { Rational, S } from '../../core/nodes';
+import { Fn, Rational, S, Sym } from '../../core/nodes';
 import { defineFunction } from '../../core/defun';
-import { at } from '../../core/guard';
+import { at, pair } from '../../core/guard';
+
+function deltaIndices(e: Expr): readonly [Expr, Expr] {
+  if (!(e instanceof Fn) || e.name !== 'KroneckerDelta') throw new TypeError('expected KroneckerDelta');
+  return pair(e.args);
+}
+const above = (i: Expr): boolean => i instanceof Sym && i.assumptions.aboveFermi === true;
+const below = (i: Expr): boolean => i instanceof Sym && i.assumptions.belowFermi === true;
+
+/** The delta can be nonzero above / below the Fermi level. */
+export function isAboveFermi(e: Expr): boolean { return !deltaIndices(e).some(below); }
+export function isBelowFermi(e: Expr): boolean { return !deltaIndices(e).some(above); }
+/** At least one index is restricted to the indicated Fermi sector. */
+export function isOnlyAboveFermi(e: Expr): boolean { return deltaIndices(e).some(above); }
+export function isOnlyBelowFermi(e: Expr): boolean { return deltaIndices(e).some(below); }
+/** Whether either index can be eliminated without losing a Fermi restriction. */
+export function indicesContainEqualInformation(e: Expr): boolean {
+  const indices = deltaIndices(e);
+  return indices.every(below) || indices.every(above) || (isAboveFermi(e) && isBelowFermi(e));
+}
+function preferredPosition(e: Expr): number {
+  const [i] = deltaIndices(e);
+  if (!isAboveFermi(e)) return below(i) ? 0 : 1;
+  if (!isBelowFermi(e)) return above(i) ? 0 : 1;
+  return 0;
+}
+/** The index carrying the most information, with ties resolved by argument order. */
+export function preferredIndex(e: Expr): Expr { return at(deltaIndices(e), preferredPosition(e)); }
+/** The index eliminated when the delta is applied. */
+export function killableIndex(e: Expr): Expr { return at(deltaIndices(e), 1 - preferredPosition(e)); }
 
 /** SymPy eval_levicivita: prod_{i<j} (a_j - a_i) / prod_i i!, for integer arguments. */
 function evalLeviCivita(args: readonly bigint[]): Expr {
