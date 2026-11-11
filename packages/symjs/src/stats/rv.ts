@@ -50,7 +50,7 @@ const xGlobal = new Sym('x');
 export function isRandom(x: unknown): boolean {
   if (x instanceof RandomSymbol || x instanceof RandomMatrixSymbol) return true;
   if (!(x instanceof Expr)) return false;
-  return [...x.freeSymbols()].some((s) => s instanceof RandomSymbol) || hasNode(x, (e) => e instanceof RandomMatrixSymbol);
+  return [...x.freeSymbols()].filter((s) => s instanceof Sym).some((s) => s instanceof RandomSymbol) || hasNode(x, (e) => e instanceof RandomMatrixSymbol);
 }
 
 /** A dict of the probability spaces of a probability computation (SymPy FiniteDensity and the dicts of finite spaces). */
@@ -547,7 +547,7 @@ export class RandomIndexedSymbol extends RandomSymbol {
   }
   /** SymPy free_symbols: the free symbols of the index too. */
   override innerFreeSymbols(): readonly Sym[] {
-    return [...this.indexKey.freeSymbols()];
+    return [...this.indexKey.freeSymbols()].filter((s) => s instanceof Sym);
   }
   override substituteInner(f: (e: Expr) => Expr): Expr | undefined {
     const [i, ps] = [f(this.indexedSymbol), f(this.pspace)];

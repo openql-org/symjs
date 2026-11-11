@@ -1443,7 +1443,7 @@ function isRealNumber(e: Expr): boolean {
 
 /** The (single) symbol of the argument of a hypergeometric or Meijer G-function. */
 function argSymbol(z: Expr): Sym {
-  const syms = [...freeSymbols(z)];
+  const syms = [...freeSymbols(z)].filter((s) => s instanceof Sym);
   return first(syms);
 }
 
@@ -1588,7 +1588,7 @@ export interface ExprToHolonomicOptions {
  */
 export function exprToHolonomic(funcIn: ExprLike, opts: ExprToHolonomicOptions = {}): HolonomicFunction {
   const func = sympify(funcIn);
-  const syms = ordered([...freeSymbols(func)]).filter((s): s is Sym => s instanceof Sym);
+  const syms = ordered([...freeSymbols(func)].filter((s) => s instanceof Sym)).filter((s): s is Sym => s instanceof Sym);
   let x = opts.x;
   if (!x) {
     if (syms.length === 1) x = first(syms);

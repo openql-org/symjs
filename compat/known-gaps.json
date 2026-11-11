@@ -1,27 +1,9 @@
 {
  "cases": [
-  "sympy.core.basic: (I*exp_polar(I*pi*2)).is_comparable #4cc31a742a168774",
-  "sympy.core.basic: (I*exp_polar(I*pi/2)).is_comparable #f7b695e287aed15a",
-  "sympy.core.basic: IndexedBase('F')[0].free_symbols #60bbca319af176d6",
-  "sympy.core.basic: dif.is_comparable #037ab0334c777393",
-  "sympy.core.expr: (2 + Integral(2, (x, 1, 2))).is_number #41670424f29973a3",
-  "sympy.core.expr: z.is_comparable #0f6fff0f2925dd06",
-  "sympy.core.expr: z.is_number #a7f7e46876fea995",
-  "sympy.core.function: f(2*x + 3).diff(x) == 2*Subs(f(y).diff(y), y, 2*x + 3) #8011baa1b44ecbdf",
   "sympy.core.relational: is_eq(a, b) #98b96f4ae04cd3e8",
   "sympy.core.relational: is_ge(b, a) #98b96f4ae04cd3e8",
   "sympy.core.relational: is_le(a, b) #98b96f4ae04cd3e8",
-  "sympy.core.relational: is_neq(a, b) #2a51f440ad304e91",
-  "sympy.functions.combinatorial.numbers: He #7ec1a578c532f407",
-  "sympy.matrices.eigen: P #89e02a534ea2fecc",
-  "sympy.matrices.matrices: P #89e02a534ea2fecc",
-  "sympy.matrices.matrixbase: P #89e02a534ea2fecc",
-  "sympy.polys.matrices.sdm: B #9d7a05baa59e5d2b",
-  "sympy.polys.partfrac: pfd #e45571d44bcf6216",
-  "sympy.solvers.ode.single: dsolve(eq, hint='separable_reduced') #331d559e4d977b20",
-  "sympy.solvers.ode.single: sol #da7ea3f2cf3aae17",
-  "sympy.solvers.solveset: pprint(sd(f3, x, S.Reals), use_unicode=False) #fef8e7830ba8cac3",
-  "sympy.stats.joint_rv_types: density(X)(obs) #92b244a729f8692f"
+  "sympy.core.relational: is_neq(a, b) #2a51f440ad304e91"
  ],
  "api": []
 }

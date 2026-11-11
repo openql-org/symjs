@@ -121,8 +121,8 @@ function odeSolution(eq: Expr, fx: UndefFn, hint?: string): Rel {
 }
 /** Symbols of a that are not symbols of any of the others. */
 function newSymbols(a: Expr, ...others: Expr[]): Sym[] {
-  const old = new Set(others.flatMap((e) => [...freeSymbols(e)]));
-  return [...freeSymbols(a)].filter((s) => !old.has(s));
+  const old = new Set(others.flatMap((e) => [...freeSymbols(e)].filter((s) => s instanceof Sym)));
+  return [...freeSymbols(a)].filter((s) => s instanceof Sym).filter((s) => !old.has(s));
 }
 /** SymPy _simplify_variable_coeff: the integration constant becomes F(funcarg). */
 function simplifyVariableCoeff(sol: Expr, constants: readonly Sym[], funcarg: Expr, eta: Sym): Expr {

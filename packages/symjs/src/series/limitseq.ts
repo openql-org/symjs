@@ -7,7 +7,8 @@
  * Limits of Sequences") and the difference operator difference_delta.
  */
 
-import type { Expr, ExprLike, Sym } from '../core/nodes';
+import type { Expr, ExprLike } from '../core/nodes';
+import { Sym } from '../core/nodes';
 import { Add, Dummy, Fn, Limit, Mul, Pow, Rational, S, Special } from '../core/nodes';
 import { Concrete } from '../core/concrete';
 import { at, last } from '../core/guard';
@@ -40,7 +41,7 @@ export function differenceDelta(ex: ExprLike, n?: Sym, step: ExprLike = 1): Expr
   const e = sympify(ex);
   let v = n;
   if (v === undefined) {
-    const f = [...freeSymbols(e)];
+    const f = [...freeSymbols(e)].filter((s) => s instanceof Sym);
     if (f.length === 0) return S.Zero;
     if (f.length > 1) throw new RangeError(`Since there is more than one variable in the expression, a variable must be supplied to take the difference of ${e.toString()}`);
     v = at(f, 0);
@@ -247,7 +248,7 @@ export function limitSeq(ex: ExprLike, n?: Sym, trials = 5): Expr | UnsolvedResu
   const e = sympify(ex);
   let v = n;
   if (v === undefined) {
-    const free = [...freeSymbols(e)];
+    const free = [...freeSymbols(e)].filter((s) => s instanceof Sym);
     if (free.length === 0) return e;
     if (free.length > 1) throw new RangeError('Expression has more than one variable. Please specify a variable.');
     v = at(free, 0);

@@ -2081,7 +2081,7 @@ export class TraceNode extends MatScalar {
 
 /** A symbol name not used in the expression (SymPy uniquely_named_symbol). */
 function uniqueName(base: string, e: Expr): string {
-  const used = new Set([...freeSymbols(e)].map((s) => s.name));
+  const used = new Set([...freeSymbols(e)].filter((s) => s instanceof Sym).map((s) => s.name));
   if (!used.has(base)) return base;
   for (let k = 0; ; k++) if (!used.has(`${base}${k}`)) return `${base}${k}`;
 }

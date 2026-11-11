@@ -16,6 +16,13 @@ const s = (v: unknown): string => String(v);
 const M = Matrix.of([[1, 2], [3, 4]]);
 
 describe('Matrix', () => {
+  it('does not treat an unsimplified numerical zero as provably nonzero', () => {
+    const zero = parse('sin(1)**2 + cos(1)**2 - 1');
+    expect(zero.isNumber).toBe(true);
+    const m = Matrix.of([[zero]]);
+    expect(m.isAntiSymmetric(false)).toBe('unknown');
+    expect(m.isAntiSymmetric()).toBe(true);
+  });
   it('basic algebra', () => {
     const m = Matrix.of([[a, b], [c, d]]);
     expect(m.det().toString()).toBe('a*d - b*c');

@@ -65,8 +65,8 @@ export class CurveNode extends GeometrySet {
   }
 
   /** The free symbols other than the parameter (SymPy free_symbols). */
-  override freeSymbols(): Set<Sym> {
-    const free = new Set<Sym>();
+  override freeSymbols(): Set<Expr> {
+    const free = new Set<Expr>();
     for (const a of [...this.functions.args, ...this.limits.args.slice(1)]) for (const s of freeSymbols(a)) free.add(s);
     for (const s of free) if (s.key === this.parameter.key) free.delete(s);
     return free;
@@ -97,7 +97,7 @@ export class CurveNode extends GeometrySet {
     if (parameter === null) return toPoint(this.functions.args);
     const tnew = symbolLike(parameter, this.parameter);
     const t = this.parameter;
-    if (tnew.name !== t.name && [...this.freeSymbols()].some((f) => f.name === tnew.name)) {
+    if (tnew.name !== t.name && [...this.freeSymbols()].filter((s) => s instanceof Sym).some((f) => f.name === tnew.name)) {
       throw new RangeError(`Symbol ${tnew.name} already appears in object and cannot be used as a parameter.`);
     }
     return toPoint(this.functions.args.map((w) => subs(w, [[t, tnew]])));

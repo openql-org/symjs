@@ -58,7 +58,7 @@ export function dsolveSystem(eqsIn: readonly ExprLike[], funcsIn?: readonly Unde
   if (ics === undefined) return sols;
   const parameters = new Set(eqsIn.flatMap((e) => [...sympify(e).freeSymbols()].map((s) => s.key)));
   return sols.map((family) => {
-    const constants = [...new Map(family.flatMap((e) => [...e.freeSymbols()]).filter((s) => !parameters.has(s.key)).map((s) => [s.key, s])).values()];
+    const constants = [...new Map(family.flatMap((e) => [...e.freeSymbols()].filter((s) => s instanceof Sym)).filter((s) => !parameters.has(s.key)).map((s) => [s.key, s])).values()];
     const values = solveIcs(family, funcs, constants, ics);
     return family.map((e) => xreplace(e, [...values]));
   });
@@ -114,13 +114,13 @@ function dsolveSystemAll(eqsIn: readonly ExprLike[], funcsIn?: readonly UndefFn[
   const lin = linearEqToMatrix(sub, [...ds, ...us]);
   if (!lin) {
     // Protect parameters named C1, C2, ... while a nonlinear solver allocates integration constants.
-    const parameters = [...new Map(eqs.flatMap((e) => [...e.freeSymbols()]).filter((s) => s.key !== t.key && /^C\d+$/.test(s.name)).map((s) => [s.key, s])).values()];
+    const parameters = [...new Map(eqs.flatMap((e) => [...e.freeSymbols()].filter((s) => s instanceof Sym)).filter((s) => s.key !== t.key && /^C\d+$/.test(s.name)).map((s) => [s.key, s])).values()];
     const protect = parameters.map((s): [Expr, Expr] => [s, new Dummy(s.name)]);
     const protectedEqs = eqs.map((e) => xreplace(e, protect));
     let nl = n === 2 ? nonlinear2(protectedEqs, [first(funcs), at(funcs, 1)], t) : n === 3 ? nonlinear3(protectedEqs, funcs, t) : undefined;
     if (nl !== undefined && parameters.length) {
       const used = new Set(parameters.map((s) => s.name));
-      const constants = [...new Map(nl.flat().flatMap((e) => [...e.freeSymbols()]).filter((s) => !(s instanceof Dummy) && /^C\d+$/.test(s.name)).map((s) => [s.key, s])).values()].sort((a, b) => a.name.localeCompare(b.name));
+      const constants = [...new Map(nl.flat().flatMap((e) => [...e.freeSymbols()].filter((s) => s instanceof Sym)).filter((s) => !(s instanceof Dummy) && /^C\d+$/.test(s.name)).map((s) => [s.key, s])).values()].sort((a, b) => a.name.localeCompare(b.name));
       let next = 1;
       const rename = constants.map((s): [Expr, Expr] => {
         while (used.has(`C${next}`)) next++;
@@ -440,7 +440,7 @@ function nonlinear3(eqs: readonly Expr[], funcs: readonly UndefFn[], t: Sym): Ex
   const b = cancel(mul(at(coefficients, 1), pow(first(coefficients), -1)));
   const c = cancel(mul(at(coefficients, 2), pow(first(coefficients), -1)));
   if ([b, c].some((g) => g.has(t))) return undefined;
-  const used = new Set(eqs.flatMap((e) => [...e.freeSymbols()].map((s) => s.name)));
+  const used = new Set(eqs.flatMap((e) => [...e.freeSymbols()].filter((s) => s instanceof Sym).map((s) => s.name)));
   const constants: Sym[] = [];
   for (let i = 1; constants.length < 3; i++) if (!used.has(`C${i}`)) constants.push(C(i));
   const [C1, C2, C3] = [at(constants, 0), at(constants, 1), at(constants, 2)];
@@ -477,14 +477,14 @@ function triangularSystem(eqs: readonly Expr[], funcs: readonly UndefFn[]): Expr
     const rest = remaining.filter((_, i) => i !== idx);
     const f = defined(funcs.find((g) => !solved.has(g.key) && e.has(g)), 'unknown function');
     // constants of the solutions already substituted are protected while solving
-    const known = [...solved.values()].flatMap((v) => [...v.freeSymbols()].filter((c) => /^C\d+$/.test(c.name)));
+    const known = [...solved.values()].flatMap((v) => [...v.freeSymbols()].filter((s) => s instanceof Sym).filter((c) => /^C\d+$/.test(c.name)));
     const protect = [...new Map(known.map((c) => [c.key, c])).values()].map((c) => [c, new Dummy(c.name)] as [Expr, Expr]);
     const sub = xreplace(xreplace(e, [...solved.entries()].map(([k, v]) => [defined(funcs.find((g) => g.key === k), 'solved function'), v] as [Expr, Expr])), protect);
     const r = dsolveOne(sub, f);
     for (const sol of Array.isArray(r) ? r : [r]) {
       let rhs = cast(sol, Rel, 'solution').rhs;
       // the new constants continue the numbering
-      const cs = [...rhs.freeSymbols()].filter((c) => /^C\d+$/.test(c.name) && !(c instanceof Dummy)).sort((a, b) => Number(a.name.slice(1)) - Number(b.name.slice(1)));
+      const cs = [...rhs.freeSymbols()].filter((s) => s instanceof Sym).filter((c) => /^C\d+$/.test(c.name) && !(c instanceof Dummy)).sort((a, b) => Number(a.name.slice(1)) - Number(b.name.slice(1)));
       rhs = xreplace(rhs, cs.map((c, i) => [c, new Sym(`C${nextC + i}`)] as [Expr, Expr]));
       rhs = xreplace(rhs, protect.map(([c, d]) => [d, c] as [Expr, Expr]));
       step(rest, new Map([...solved, [f.key, rhs]]), nextC + cs.length);

@@ -12,6 +12,13 @@ const [a, b, c, d, e, f, x, y, z, u, v, n] = sj.symbols('a b c d e f x y z u v n
 const s = (q: sj.Expr): string => sj.str(q);
 const sum = (fn: sj.ExprLike, ...l: [sj.Sym, sj.ExprLike, sj.ExprLike][]): Concrete => sj.Sum(fn, ...l) as Concrete;
 
+it('recognizes numerical sums and products by their free symbols', () => {
+  const k = sj.symbol('k'), n = sj.symbol('n');
+  expect(sj.Sum(k, [k, 1, 3]).isNumber).toBe(true);
+  expect(sj.Product(k, [k, 1, 3]).isNumber).toBe(true);
+  expect(sj.Sum(k, [k, 1, n]).isNumber).toBe(false);
+});
+
 it('decides empty sequences using assumptions on both bounds', () => {
   const m = sj.symbol('m');
   const positive = sj.symbol('M', { positive: true, integer: true });

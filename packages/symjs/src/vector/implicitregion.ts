@@ -37,7 +37,7 @@ import { realSymbol } from '../geometry/entity';
 
 /** SymPy total_degree(expr): the total degree in the free symbols (0 for a constant). */
 export function totalDegree(e: Expr): number {
-  const gens = ordered([...freeSymbols(e)]);
+  const gens = ordered([...freeSymbols(e)].filter((s) => s instanceof Sym));
   return gens.length === 0 ? 0 : Poly.from(e, gens).totalDegree();
 }
 
@@ -127,7 +127,7 @@ export class ImplicitRegionNode extends ExtensionExpr {
             [defined(y, 'y'), yr],
           ]);
           if (solveset(e, defined(z, 'z'), Reals) !== EmptySet) {
-            const [only] = [...freeSymbols(e)];
+            const [only] = [...freeSymbols(e)].filter((s) => s instanceof Sym);
             return [sympify(xr), sympify(yr), defined(elements(solveset(e, defined(only, 'variable')))[0], 'point')];
           }
         }
@@ -185,7 +185,7 @@ export class ImplicitRegionNode extends ExtensionExpr {
     }
     if (hasSingular) {
       for (const sp of singular.args) {
-        const syms = [...freeSymbols(sp)];
+        const syms = [...freeSymbols(sp)].filter((s) => s instanceof Sym);
         const spoint = syms.length ? sp.args.map((s) => subs(s, syms.map((x): [Expr, Expr] => [x, S.Two]))) : sp.args;
         if (this.multiplicity(spoint) === degree - 1) {
           point = spoint;
@@ -316,10 +316,10 @@ function regularPointEllipse(a: Expr, b: Expr, c: Expr, d: Expr, e: Expr, f: Exp
     const solZ = at(sol, 2);
     if (isZero(solZ)) continue;
     const rep = new Map<string, [Sym, Expr]>();
-    for (const s of freeSymbols(new TupleNode(sol))) rep.set(s.key, [s, sympify(3)]);
+    for (const s of [...freeSymbols(new TupleNode(sol))].filter((s) => s instanceof Sym)) rep.set(s.key, [s, sympify(3)]);
     // the parametric solution of a ternary quadratic form has two parameters p, q: the first integers (in the
     // order of S.Integers) at which z does not vanish
-    const [p, q] = ordered([...freeSymbols(solZ)]).map((x) => cast(x, Sym, 'parameter'));
+    const [p, q] = ordered([...freeSymbols(solZ)].filter((s) => s instanceof Sym)).map((x) => cast(x, Sym, 'parameter'));
     const [pp, qq] = [defined(p, 'parameter'), defined(q, 'parameter')];
     for (let n = 0; ; n++) {
       const i = integerAt(n);

@@ -96,6 +96,20 @@ describe('row reduction and spaces', () => {
 });
 
 describe('eigen decomposition', () => {
+  it('uses primitive diagonalization columns and preserves eigenvects scaling', () => {
+    const A = M([[1, 2, 0], [0, 3, 0], [2, -4, 2]]);
+    const [P, D] = L.diagonalize(A);
+    expect(s(P)).toBe('Matrix([[-1, 0, -1], [0, 0, -1], [2, 1, 2]])');
+    expect(P.mul(D).equals(A.mul(P))).toBe(true);
+    for (const [value, , basis] of L.eigenvects(A)) for (const v of basis) expect(A.mul(v).equals(v.scale(value))).toBe(true);
+    const B = M([[0, 1, 1], [1, 0, 0], [1, 1, 1]]);
+    expect(L.eigenvects(B).filter(([v]) => v.equals(2)).flatMap(([, , vs]) => vs.map(s))).toEqual(['Matrix([[2/3], [1/3], [1]])']);
+  });
+  it('keeps nonrational diagonalization columns', () => {
+    const A = M([[0, -1], [1, 0]]), [P, D] = L.diagonalize(A);
+    expect(A.mul(P).equals(P.mul(D))).toBe(true);
+    expect(s(P)).toBe('Matrix([[-I, I], [1, 1]])');
+  });
   it('is_diagonalizable', () => {
     expect(L.isDiagonalizable(M([[1, 1], [0, 1]]))).toBe(false);
     expect(L.isDiagonalizable(M([[0, -1], [1, 0]]), true)).toBe(false);

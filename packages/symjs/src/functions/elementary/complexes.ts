@@ -443,7 +443,7 @@ export function polarify(ex: ExprLike, opts: { subs?: boolean; lift?: boolean } 
   const subs = lift ? false : (opts.subs ?? true);
   const eq = polarifyInner(sympify(ex), lift);
   if (!subs) return eq;
-  const syms = [...eq.freeSymbols()].sort((a, b) => (a.name < b.name ? -1 : 1));
+  const syms = [...eq.freeSymbols()].filter((s) => s instanceof Sym).sort((a, b) => (a.name < b.name ? -1 : 1));
   const reps = syms.map((s) => [s, new Dummy(s.name, { ...s.assumptions, polar: true })] as [Expr, Expr]);
   return [xreplace(eq, reps), reps.map(([s, d]) => [d, s] as [Expr, Expr])];
 }

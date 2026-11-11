@@ -157,7 +157,7 @@ let matching = false;
  * e with f(x) for y; an integral in y left unevaluated gets f(x) as its upper
  * limit (SymPy's Integral(g(_y), (_y, f(x)))).
  */
-const atFunction = (e: Expr, y: Sym, fx: UndefFn): Expr => (some(e, (u) => u instanceof Integral && u.variable.key === y.key) ? subs(e, [[y, fx]]) : xreplace(e, [[y, fx]]));
+const atFunction = (e: Expr, y: Sym, fx: Expr): Expr => (some(e, (u) => u instanceof Integral && u.variable.key === y.key) ? subs(e, [[y, fx]]) : xreplace(e, [[y, fx]]));
 
 const separable: Solver = (p) => {
   if (p.order !== 1) return undefined;
@@ -174,6 +174,58 @@ const separable: Solver = (p) => {
   const lhs = atFunction(ly, y, p.fx);
   const rhs = add(integrate(mul(-1, g(m1, 'coeff'), g(m1, p.x), pow(g(m2, p.x), -1)), p.x), C(1));
   return [Eq(lhs, rhs)];
+};
+
+/** y' + (y/x) H(x^n y) = 0, reduced by u = x^n y. */
+function reducedSeparableMatch(p: OdeProblem): { n: Rational; h: Expr; y: Sym } | undefined {
+  if (p.order !== 1) return undefined;
+  const parts = firstOrderParts(expand(p.eq), p);
+  if (!parts) return undefined;
+  const [a, b] = parts, x = p.x, y = new Dummy('y');
+  const h = cancel(xreplace(mul(x, a, pow(mul(p.fx, b), -1)), [[p.fx, y]]));
+  const [num, den] = fraction(h);
+  const terms = [Poly.from(num, [x, y]), Poly.from(den, [x, y])].flatMap((poly) => poly.monoms());
+  const reference = first(terms);
+  let n: Rational | undefined;
+  for (const term of terms) {
+    const dx = at(term, 0) - at(reference, 0), dy = at(term, 1) - at(reference, 1);
+    if (dy === 0) { if (dx !== 0) return undefined; }
+    else {
+      const power = Rational.of(dx, dy);
+      if (n !== undefined && !n.equals(power)) return undefined;
+      n = power;
+    }
+  }
+  if (n === undefined || n.isZero) return undefined;
+  // All monomials have the same weight, so H(x, u*x^-n) = H(1, u).
+  return { n, h: cancel(xreplace(h, [[x, S.One]])), y };
+}
+
+const separableReduced: Solver = (p) => {
+  const m = reducedSeparableMatch(p);
+  if (!m) return undefined;
+  const { n, h, y } = m;
+  const primitive = integrate(cancel(pow(mul(y, add(n, mul(-1, h))), -1)), y);
+  return [Eq(atFunction(primitive, y, mul(pow(p.x, n), p.fx)), add(log(p.x), C(1)))];
+};
+
+/** Rational Riccati equations with a rational power-law particular solution. */
+const rationalRiccati: Solver = (p) => {
+  const m = reducedSeparableMatch(p);
+  if (!m || !m.n.isInteger) return undefined;
+  const { n, h, y } = m;
+  const flow = cancel(mul(y, add(n, mul(-1, h))));
+  const polynomial = Poly.from(flow, [y]);
+  if (polynomial.degree() !== 2) return undefined;
+  const stationary = solve(flow, y).filter((r) => r instanceof Rational);
+  if (!stationary.length) return undefined;
+  // u = c + 1/v makes du/d(log x) = a*u^2 + b*u + d linear in v.
+  const root = first(stationary), a = polynomial.nth(2), b = polynomial.nth(1);
+  const rate = add(mul(2, a, root), b);
+  const factor = pow(p.x, rate);
+  const integral = integrate(mul(-1, a, factor, pow(p.x, -1)), p.x);
+  const u = add(root, mul(factor, pow(add(C(1), integral), -1)));
+  return [Eq(p.fx, factorTerms(cancel(mul(u, pow(p.x, mul(-1, n))))))];
 };
 
 const firstExact: Solver = (p) => {
@@ -921,7 +973,7 @@ const nthOrderReducible: Solver = (p) => {
     if (gr.lhs.key !== g.key) return undefined;
     let f = gr.rhs;
     // integrate n times with new constants
-    const used = [...freeSymbols(f)].filter((s) => /^C\d+$/.test(s.name)).length;
+    const used = [...freeSymbols(f)].filter((s) => s instanceof Sym).filter((s) => /^C\d+$/.test(s.name)).length;
     for (let i = 0; i < n; i++) f = add(integrate(f, p.x), C(used + i + 1));
     out.push(Eq(p.fx, f));
   }
@@ -1209,6 +1261,8 @@ const HINTS: [string, Solver][] = [
   ['1st_homogeneous_coeff_best', homogeneousCoeffBest],
   ['almost_linear', almostLinear],
   ['linear_coefficients', linearCoefficientsSolver],
+  ['1st_rational_riccati', rationalRiccati],
+  ['separable_reduced', separableReduced],
   ['nth_linear_constant_coeff_variation_of_parameters', variationOfParameters],
   ['nth_linear_euler_eq_nonhomogeneous_variation_of_parameters', eulerVariation],
   // SymPy reaches f'' + f'**2 = 0 through factorable/nth_order_reducible before Liouville

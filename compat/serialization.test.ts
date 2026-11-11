@@ -9,6 +9,14 @@ import * as sj from '../packages/symjs/src';
 
 const corpus = JSON.parse(readFileSync(new URL('./corpus.json', import.meta.url), 'utf8')) as { cases: Case[] };
 
+it('preserves ImageSet representatives and compares sparse rows independently of empty storage', () => {
+  for (const c of corpus.cases.filter((c) => (c.module === 'sympy.solvers.solveset' && c.src === 'pprint(sd(f3, x, S.Reals), use_unicode=False)') || (c.module === 'sympy.polys.matrices.sdm' && c.src === 'B'))) expect(runCase(c).status).toBe('pass');
+  const m = sj.SDM.fromList([[sj.S.Zero, sj.sympify(2)], [sj.S.Zero, sj.S.Zero]], [2, 2], sj.QQ);
+  expect(matches(m.copy(), '{0: {1: 2}, 1: {}}')).toBe(true);
+  expect(matches(m.copy(), '{0: {1: 3}, 1: {}}')).toBe(false);
+  expect(matches(m.copy(), '{0: {1: 2}, 2: {}}')).toBe(false);
+});
+
 it('replays hypergeometric formula bases and parameter objects', () => {
   const cases = corpus.cases.filter((c) => c.module === 'sympy.simplify.hyperexpand');
   expect(cases.some((c) => c.self?.t === 'PublicObject')).toBe(true);

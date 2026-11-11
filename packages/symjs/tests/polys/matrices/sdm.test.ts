@@ -170,3 +170,13 @@ describe('SDM', () => {
     expect([RR0.nnz(), (d0 as Float).value]).toEqual([2, 4]);
   });
 });
+
+
+it('copy preserves explicit empty rows and does not alias the original', () => {
+  const a = S({ 0: { 1: 2 }, 1: {} }, [2, 2]);
+  const b = a.copy();
+  expect(b.toString()).toBe('{0: {1: 2}, 1: {}}');
+  b.data.get(1)?.set(0, q(3));
+  expect(a.toString()).toBe('{0: {1: 2}, 1: {}}');
+  expect(b.getitem(1, 0).equals(q(3))).toBe(true);
+});

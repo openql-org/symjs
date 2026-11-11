@@ -116,7 +116,7 @@ export class EllipseNode extends GeometrySet {
   /** The point (cx + hradius*cos(t), cy + vradius*sin(t)) with a real parameter t (SymPy arbitrary_point). */
   override arbitraryPoint(parameter: string | Sym | null = 't'): Point2DNode {
     const t = realSymbol(parameter ?? 't');
-    if ([...this.freeSymbols()].some((f) => f.name === t.name)) {
+    if ([...this.freeSymbols()].filter((s) => s instanceof Sym).some((f) => f.name === t.name)) {
       throw new RangeError(`Symbol ${t.name} already appears in object and cannot be used as a parameter.`);
     }
     return as2D(newPoint([add(this.center.x, mul(this.hradius, cos(t))), add(this.center.y, mul(this.vradius, sin(t)))]));

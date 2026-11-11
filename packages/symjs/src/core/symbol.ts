@@ -33,7 +33,7 @@ export function disambiguate(...exprs: ExprLike[]): TupleNode {
   const tuple = new TupleNode(exprs.map(sympify));
   const groups = new Map<string, Sym[]>();
   const facts = (s: Sym): string => JSON.stringify([...s.assumptions0].sort(([a], [b]) => a.localeCompare(b)));
-  for (const s of [...tuple.freeSymbols()].sort((a, b) => facts(a).localeCompare(facts(b)) || compareKeys(sortKey(a), sortKey(b)))) {
+  for (const s of [...tuple.freeSymbols()].filter((s) => s instanceof Sym).sort((a, b) => facts(a).localeCompare(facts(b)) || compareKeys(sortKey(a), sortKey(b)))) {
     const name = s.name.replace(/^_+/, '');
     groups.set(name, [...(groups.get(name) ?? []), s]);
   }

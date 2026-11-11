@@ -7,7 +7,8 @@
  */
 
 import { NotImplementedError } from '../core/errors';
-import type { ExprLike, Sym } from '../core/nodes';
+import type { ExprLike } from '../core/nodes';
+import { Sym } from '../core/nodes';
 import { Dummy, Expr, Pow, Rational, S } from '../core/nodes';
 import { add, mul, pow, sympify } from '../core/ops';
 import { freeSymbols, xreplace } from '../core/traverse';
@@ -73,14 +74,14 @@ export function solveBiquadratic(f: Poly, g: Poly, gens: readonly Sym[]): Expr[]
 function factorSystemRaw(eqsIn: readonly ExprLike[], gensIn: readonly Expr[]): Factor[][] {
   const eqs = eqsIn.map((e) => expand(sympify(e)));
   const all = new Map<string, Sym>();
-  for (const e of eqs) for (const s of freeSymbols(e)) all.set(s.key, s);
+  for (const e of eqs) for (const s of [...freeSymbols(e)].filter((s) => s instanceof Sym)) all.set(s.key, s);
   // sortGens returns the same Sym instances, looked up again by key to keep their type
   const sortSyms = (xs: Sym[]): Sym[] => sortGens(xs).map((g) => getOrThrow(all, g.key));
   const gens: readonly Expr[] = gensIn.length ? gensIn : sortSyms([...all.values()]);
   const genKeys = new Set(gens.map((g) => g.key));
   if (!gens.length) return eqs.every((e) => e instanceof Rational && e.isZero) ? [[]] : [];
   const vars = [...gens, ...sortSyms([...all.values()].filter((s) => !genKeys.has(s.key)))];
-  const hasGen = (e: Expr) => [...freeSymbols(e)].some((s) => genKeys.has(s.key));
+  const hasGen = (e: Expr) => [...freeSymbols(e)].filter((s) => s instanceof Sym).some((s) => genKeys.has(s.key));
 
   const factorSets: Factor[][] = [];
   for (const e of eqs) {
@@ -244,7 +245,7 @@ function solveReduced(system: Expr[], gens: readonly Sym[], rationalOnly: boolea
   const basis = [...groebner(system, [...gens], 'lex').exprs];
   if (basis.length === 1 && basis[0] instanceof Rational) return [];
   const others = new Set(gens.slice(0, -1).map((g) => g.key));
-  const univariate = basis.filter((b) => ![...freeSymbols(b)].some((s) => others.has(s.key)) && b.has(gen));
+  const univariate = basis.filter((b) => ![...freeSymbols(b)].filter((s) => s instanceof Sym).some((s) => others.has(s.key)) && b.has(gen));
   if (univariate.length !== 1) throw new NotImplementedError('solve_poly_system: only zero-dimensional systems are supported');
   const f = at(univariate, 0);
   // a single polynomial in the last generator leaves the others free
@@ -307,7 +308,7 @@ function backSubstitute(system: Expr[], gens: readonly Sym[], rationalOnly: bool
   if (!gens.length) return system.every((b) => Math.abs(b.toComplex().re) + Math.abs(b.toComplex().im) < 1e-9) ? [[]] : [];
   const alone = (i: number) => {
     const others = new Set(gens.filter((_, j) => j !== i).map((g) => g.key));
-    return system.filter((b) => b.has(at(gens, i)) && ![...freeSymbols(b)].some((s) => others.has(s.key)));
+    return system.filter((b) => b.has(at(gens, i)) && ![...freeSymbols(b)].filter((s) => s instanceof Sym).some((s) => others.has(s.key)));
   };
   let idx = gens.length - 1;
   while (idx >= 0 && !alone(idx).length) idx--;
@@ -359,7 +360,7 @@ export function solveTriangulated(polys: readonly ExprLike[], gens: readonly Sym
       const mapping = vars.map((s, i): [Expr, Expr] => [s, at(values, i)]);
       const H: Expr[] = [];
       for (const g of G.slice(1)) {
-        if (![...freeSymbols(g)].every((s) => allowed.has(s.key)) || degreeIn(g, v) === 0) continue;
+        if (![...freeSymbols(g)].filter((s) => s instanceof Sym).every((s) => allowed.has(s.key)) || degreeIn(g, v) === 0) continue;
         const h = expand(xreplace(g, mapping));
         if (degreeIn(g, v) === degreeIn(h, v)) H.push(h);
       }

@@ -30,6 +30,11 @@ export class Indexed extends ExtensionExpr {
   withArgs(args: readonly Expr[]): Expr {
     return new Indexed(args);
   }
+  override freeSymbolsSelf(): ReadonlySet<Expr> {
+    // An indexed entry is an independent scalar as well as containing the
+    // symbols in its label and indices (SymPy Indexed.free_symbols).
+    return new Set([this, ...this.args.flatMap((a) => [...a.freeSymbols()])]);
+  }
   override printStr(print: (e: Expr) => string): string {
     return `${print(this.base)}[${this.indices.map(print).join(', ')}]`;
   }

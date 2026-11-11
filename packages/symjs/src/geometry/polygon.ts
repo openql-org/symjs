@@ -335,7 +335,7 @@ export class PolygonNode extends GeometrySet {
    */
   override arbitraryPoint(parameter: string | Sym | null = 't'): Expr {
     const t = realSymbol(parameter ?? 't');
-    if ([...this.freeSymbols()].some((f) => f.name === t.name)) {
+    if ([...this.freeSymbols()].filter((s) => s instanceof Sym).some((f) => f.name === t.name)) {
       throw new RangeError(`Symbol ${t.name} already appears in object and cannot be used as a parameter.`);
     }
     const sides: [Expr, Expr][] = [];

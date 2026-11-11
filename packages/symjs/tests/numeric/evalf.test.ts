@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import * as sj from '../../src';
 import { add, exp, I, mul, sqrt, symbol, symbols } from '../../src';
 import type { Expr } from '../../src';
+import { impl } from '../../src/core/nodes';
 import * as C from '../../src/numeric/mpconst';
 import { sha256, SYMPY_1000 } from './mpconst.ref';
 
@@ -18,6 +19,30 @@ const f = sj.SymFunction('f');
 const P = (s: string): sj.Expr => sj.parse(s, { symbols: { x, y }, functions: { f } } as never);
 
 afterEach(() => C.clearConstantCache());
+
+it('is_comparable requires a real value with significant bits', () => {
+  expect(sj.isComparable(new sj.Float(1, 1))).toBe(false);
+  expect(sj.isComparable(new sj.Float(0, 1))).toBe(false);
+  expect(sj.isComparable(new sj.Float(1, 2))).toBe(true);
+  const cancellation = parse('cos(1)**2 + sin(1)**2 - 1');
+  const e = parse('2**pi*(1 + 2**pi)');
+  for (const v of [sj.S.Zero, sj.S.One, sj.S.Pi, sj.S.Infinity, sj.S.NegativeInfinity, parse('cos(1)'), parse('exp(-1000)'), parse('I*exp_polar(I*pi/2)'), sj.add(1, cancellation), parse('sqrt(2) + 1e-30 - sqrt(2)')]) {
+    expect(sj.isComparable(v), String(v)).toBe(true);
+    expect(v.isComparable).toBe(true);
+  }
+  for (const v of [x, f(1), sj.S.NaN, sj.S.ComplexInfinity, sj.S.I, parse('1 + I*exp(-1000)'), cancellation, e.sub(sj.expand(e)), parse('I*exp_polar(2*I*pi)')]) {
+    expect(sj.isComparable(v), String(v)).toBe(false);
+    expect(v.isComparable).toBe(false);
+  }
+  expect(sj.isComparable(new sj.Integral([sj.sympify(2), x, sj.S.One, sj.sympify(2)]))).toBe(true);
+  expect(sj.isComparable(sj.Sum(x, [x, 1, 3]))).toBe(true);
+  expect(sj.isComparable(new sj.Integral([f(x), x, sj.S.One, sj.sympify(2)]))).toBe(false);
+  const registry = { ...impl };
+  delete impl.doit;
+  try {
+    expect(sj.isComparable(new sj.Integral([sj.sympify(2), x, sj.S.One, sj.sympify(2)]))).toBe(false);
+  } finally { Object.assign(impl, registry); }
+});
 
 // The constants through the default method tables and the cache (mpfun mp*
 // functions, evalf) against mpmath 1.3.0 / SymPy 1.14.0 (see mpconst.ref.ts).

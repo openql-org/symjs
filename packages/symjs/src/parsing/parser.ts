@@ -283,7 +283,7 @@ function asSym(e: Expr, name: string): Sym {
 
 /** The variable of a function of one free symbol (SymPy diff(x**2) is 2*x). */
 function onlySymbol(e: Expr, name: string): Sym {
-  const syms = [...e.freeSymbols()];
+  const syms = [...e.freeSymbols()].filter((s) => s instanceof Sym);
   const [v] = syms;
   if (v === undefined || syms.length > 1) throw new SyntaxError(`${name}() takes at least 2 arguments when the expression has not exactly one free symbol`);
   return v;

@@ -14,7 +14,7 @@
  * where lists become ImmutableMatrix arguments.
  */
 
-import { Rational, S, Sym } from '../core/nodes';
+import { Mul, Pow, Rational, S, Sym } from '../core/nodes';
 import type { Expr } from '../core/nodes';
 import type { ExprLike } from '../core/nodes';
 import { add, exp, mul, pow, sqrt, sub, sympify } from '../core/ops';
@@ -199,7 +199,11 @@ export class MultivariateNormalDistribution extends JointDistributionWithMargina
     // a symbolic vector: SymPy's MatrixElement of the (1 x 1 matrix) density
     const xT = cast(cast(x, MatrixExpr).T, MatrixExpr);
     const quadS = matMulOf(xT.rmul(Rational.of(-1n, 2n)), cast(sigma, MatrixExpr).pow(-1), x);
-    return new MatrixElementNode(mul(norm, exp(quadS)), S.Zero, S.Zero);
+    if (k instanceof Rational) return new MatrixElementNode(mul(norm, exp(quadS)), S.Zero, S.Zero);
+    // Keep the multivariate normal's normalization under one square root,
+    // when the dimension is symbolic and the covariance is a matrix symbol.
+    const symbolicNorm = new Pow(mul(pow(mul(2, S.Pi), k), det(sigma)), Rational.of(-1, 2));
+    return new MatrixElementNode(new Mul([symbolicNorm, exp(quadS)]), S.Zero, S.Zero);
   }
   marginalDistributionOf(indices: readonly Expr[], sym: Sym): Expr {
     const kept = new Set(indices.map((i) => i.key));

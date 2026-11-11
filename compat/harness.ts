@@ -270,6 +270,15 @@ export function matches(v: unknown, expectedIn: string): boolean {
 function matches0(v: unknown, expected: string, got: string): boolean {
   if (got === expected || PRINT_ALIASES[expected] === got) return true;
   if (normalizeLayout(got) === normalizeLayout(expected)) return true;
+  if (v instanceof sj.SDM && expected.startsWith('{')) {
+    // The corpus stores dense rows, which cannot preserve explicitly empty
+    // sparse rows. Their presence does not change any matrix entry.
+    const rows = (s: string) => topLevelItems(s).filter((row) => {
+      const empty = /^(\d+):\s*\{\}$/.exec(row);
+      return !empty || Number(empty[1]) >= v.rows;
+    }).sort().join(',');
+    if (rows(got) === rows(expected)) return true;
+  }
   // JavaScript has one -Infinity for SymPy's -oo and Python's float -inf (dmp_degree of the zero polynomial)
   if (v === -Infinity && expected === '-inf') return true;
   if (got.includes('{') && normalizeSets(got) === normalizeSets(expected)) return true;
@@ -825,7 +834,9 @@ export function deserialize(tree: Tree): unknown {
       const lam = deserialize(tree['lamda'] as Tree);
       const sets = (tree['sets'] as Tree[]).map((x) => deserialize(x) as sj.SetExpr);
       if (!(lam instanceof JsLambda) || lam.vars.length !== 1 || sets.length !== 1) throw new Unsupported('ImageSet over several sets');
-      return sj.imageset(lam.vars[0]!, lam.body, sets[0]!);
+      // A serialized ImageSet already has its chosen representatives. The
+      // evaluating imageset factory can shift them modulo the integer period.
+      return new sj.ImageSet(lam.vars[0]!, lam.body, sets[0]!);
     }
     case 'ConditionSet':
       return new sj.ConditionSet(deserialize(tree['sym'] as Tree) as Expr, asExpr(deserialize(tree['condition'] as Tree)), deserialize(tree['base'] as Tree) as sj.SetExpr);
@@ -1348,7 +1359,7 @@ function rootsDict(rs: Expr[]): JsDict {
 
 function diffArgs(e: Expr, rest: unknown[]): Expr {
   if (!rest.length) {
-    const fs = [...sj.freeSymbols(e)];
+    const fs = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
     if (fs.length !== 1) throw new Unsupported('diff variable');
     return sj.diff(e, fs[0]!);
   }
@@ -1393,7 +1404,7 @@ function asOrdered(e: Expr): Expr[] {
 
 function allSymbols(eqs: Expr[]): Sym[] {
   const m = new Map<string, Sym>();
-  for (const e of eqs) for (const s of sj.freeSymbols(e)) m.set(s.key, s);
+  for (const e of eqs) for (const s of [...sj.freeSymbols(e)].filter((s) => s instanceof Sym)) m.set(s.key, s);
   return [...m.values()].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
 }
 
@@ -2015,7 +2026,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   apart_list: (args, kw) => {
     noKw(kw);
     const e = asExpr(args[0]);
-    const x = args[1] === undefined ? ([...sj.freeSymbols(e)][0] as Sym) : asSym(args[1]);
+    const x = args[1] === undefined ? ([...sj.freeSymbols(e)].filter((s) => s instanceof Sym)[0] as Sym) : asSym(args[1]);
     const [common, poly, terms, w] = sj.apartList(e, x);
     return new JsTuple([common, poly, new JsList(terms.map(([r, nf, df, ex]) => new JsTuple([Array.isArray(r) ? new JsList(r) : sj.Poly.from(r, [w]), nf, df, sj.Rational.of(ex)])))]);
   },
@@ -2619,7 +2630,7 @@ export const ADAPTERS: Record<string, Adapter> = {
       return rootsDict(sj.roots(sj.add(...cs.map((c, i) => sj.mul(c, sj.pow(t, cs.length - 1 - i)))), t, { multiple: true, skipQuintic: true }));
     }
     const e = asExprOrPoly(args[0]);
-    const syms = [...sj.freeSymbols(e)];
+    const syms = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
     const x = args[1] ? asSym(args[1]) : args[0] instanceof sj.Poly ? (args[0].gens[0] as Sym) : syms.length === 1 ? syms[0]! : undefined;
     if (!x) throw new Unsupported('roots generator');
     const roots = sj.roots(e, x, { multiple: true, skipQuintic: true });
@@ -2709,13 +2720,13 @@ export const ADAPTERS: Record<string, Adapter> = {
     if (args[1] instanceof JsTuple) {
       // a single equation in several unknowns with other free symbols: undetermined coefficients
       const coeffs = args[1].items.map(asSym);
-      const others = [...sj.freeSymbols(e)].filter((s) => !coeffs.some((c) => c.key === s.key));
+      const others = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym).filter((s) => !coeffs.some((c) => c.key === s.key));
       if (!others.length) throw new Unsupported('solve for several symbols');
       const sols = sj.solveUndeterminedCoeffs(e, coeffs, others as Sym[]);
       if (sols.length !== 1) throw new Unsupported('solve for several symbols');
       return new JsDict(coeffs.map((c, i) => [c, sols[0]![i]!] as const));
     }
-    const syms = [...sj.freeSymbols(e)];
+    const syms = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
     if (args[1] instanceof sj.Rational) {
       // solving for a number: its occurrences (and those of its negative) become the unknown
       const n = args[1];
@@ -2856,11 +2867,11 @@ export const ADAPTERS: Record<string, Adapter> = {
     const last = args[args.length - 1];
     if (last instanceof JsTuple && last.items.length === 2) {
       // an interval: bisection (solver='bisect')
-      const xs = args.length === 3 ? asSym(args[1]) : ([...sj.freeSymbols(e)][0] as Sym);
+      const xs = args.length === 3 ? asSym(args[1]) : ([...sj.freeSymbols(e)].filter((s) => s instanceof Sym)[0] as Sym);
       return sj.nsolve(e, xs, [asExpr(last.items[0]), asExpr(last.items[1])], { solver: 'bisect' });
     }
     if (args.length === 3) return sj.nsolve(e, asSym(args[1]), asExpr(args[2]), opts);
-    const syms = [...sj.freeSymbols(e)];
+    const syms = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
     if (syms.length !== 1) throw new Unsupported('nsolve form');
     return sj.nsolve(e, syms[0]!, asExpr(args[1]), opts);
   },
@@ -3052,7 +3063,7 @@ export const ADAPTERS: Record<string, Adapter> = {
     const dir = (kw['dir'] ?? args[4] ?? '+') as '+' | '-';
     for (const k of Object.keys(kw)) if (!['x0', 'n', 'dir'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     const e = asExpr(args[0]);
-    const syms = [...sj.freeSymbols(e)];
+    const syms = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
     const x = args[1] ? asSym(args[1]) : syms.length === 1 ? syms[0]! : undefined;
     if (!x) throw new Unsupported('series variable');
     return sj.series(e, x, asExpr(x0), Number((asExpr(n) as sj.Rational).p), dir);
@@ -3704,7 +3715,7 @@ export const ADAPTERS: Record<string, Adapter> = {
   sqf_norm: (args, kw) => {
     for (const k of Object.keys(kw)) if (k !== 'extension') throw new Unsupported(`kwargs ${k}`);
     const e = asExpr(args[0]);
-    const x = args[1] instanceof Sym ? args[1] : ([...sj.freeSymbols(e)][0] as Sym);
+    const x = args[1] instanceof Sym ? args[1] : ([...sj.freeSymbols(e)].filter((s) => s instanceof Sym)[0] as Sym);
     const ext = kw['extension'] instanceof JsList || kw['extension'] instanceof JsTuple ? (kw['extension'] as JsList).items.map(asExpr) : [asExpr(kw['extension'])];
     const [s, g, r] = sj.sqfNorm(e, x, ext);
     return new JsTuple([new JsList(s.map((k) => sj.Rational.of(k))), g, r]);
@@ -4827,7 +4838,7 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
     // the same capability with a different printed form counts as compatible
     const syms = new Map<string, Sym>();
     const collect = (x: unknown): void => {
-      if (x instanceof Expr) for (const s of sj.freeSymbols(x)) syms.set(s.name, s);
+      if (x instanceof Expr) for (const s of [...sj.freeSymbols(x)].filter((s) => s instanceof Sym)) syms.set(s.name, s);
       else if (x instanceof JsTuple || x instanceof JsList || x instanceof JsSet) x.items.forEach(collect);
       else if (x instanceof JsDict) x.entries.forEach(([k, w]) => (collect(k), collect(w)));
       else if (x instanceof Matrix) x.data.forEach(collect);

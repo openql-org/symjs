@@ -7,9 +7,16 @@
  */
 
 import type { ExprLike } from './nodes';
-import { Expr, ExtensionExpr } from './nodes';
+import { Expr, ExtensionExpr, Sym, impl } from './nodes';
 import { add, mul, sympify } from './ops';
 import { at } from './guard';
+
+/** A bound slot keyed by its evaluation point; it cannot collide with a free symbol. */
+class SubsPoint extends Sym {
+  protected override computeKey(): string {
+    return `SubsPoint(${this.name})`;
+  }
+}
 
 /** Subs(expr, variables, points): args are [expr, ...variables, ...points]. */
 export class SubsNode extends ExtensionExpr {
@@ -29,6 +36,14 @@ export class SubsNode extends ExtensionExpr {
   }
   withArgs(args: readonly Expr[]): Expr {
     return new SubsNode(args);
+  }
+  protected override computeKey(): string {
+    // The bound variable's name does not affect a derivative evaluated at a
+    // point. Normalize before hashing so equality also works inside Add/Mul.
+    const replacements = this.variables.map((v, i): [Expr, Expr] => [v, new SubsPoint(at(this.point, i).key)]);
+    const body = impl.xreplace(this.expr, replacements);
+    const unused = this.variables.flatMap((v, i) => this.expr.has(v) ? [] : [`${v.key}:${at(this.point, i).key}`]).sort();
+    return `Subs(${body.key};${unused.join(',')})`;
   }
   override bindings(): { variables: readonly number[]; scope: readonly number[] } {
     const n = (this.args.length - 1) / 2;

@@ -100,7 +100,7 @@ export class FormalPowerSeries {
     readonly direction: '+' | '-',
   ) {
     // SymPy _compute_fps: (f, symb) = expand(f).as_independent(*syms) for the symbols other than x
-    const others = [...freeSymbols(fn)].filter((s) => s.key !== x.key);
+    const others = [...freeSymbols(fn)].filter((s) => s instanceof Sym).filter((s) => s.key !== x.key);
     const [core, symb] = others.length && !(fn instanceof Add) ? asIndependent(expand(fn), others) : [fn, S.One];
     this.core = core;
     this.symb = symb;
@@ -241,7 +241,7 @@ export function fps(ex: ExprLike, x?: Sym, x0: ExprLike = 0, direction: '+' | '-
   if (x !== undefined) return new FormalPowerSeries(f, x, sympify(x0), direction);
   // (a MatrixSymbol is not a free symbol here: SymPy fps(A) builds FormalPowerSeries(A, A, 0, ...),
   // whose terms cannot be computed, while A is constant)
-  const free = [...freeSymbols(f)];
+  const free = [...freeSymbols(f)].filter((s) => s instanceof Sym);
   if (free.length === 0) return f;
   if (free.length > 1) throw new NotImplementedError('multivariate formal power series');
   return new FormalPowerSeries(f, first(free), sympify(x0), direction);

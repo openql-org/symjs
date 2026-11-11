@@ -122,7 +122,7 @@ export abstract class LinearEntity extends GeometrySet {
   /** The point p1 + t*(p2 - p1) with the real parameter t (SymPy arbitrary_point). */
   override arbitraryPoint(parameter: string | Sym | null = 't'): PointNode {
     const t = realSymbol(parameter ?? 't');
-    if ([...this.freeSymbols()].some((f) => f.name === t.name)) {
+    if ([...this.freeSymbols()].filter((s) => s instanceof Sym).some((f) => f.name === t.name)) {
       throw new RangeError(`Symbol ${t.name} already appears in object and cannot be used as a parameter.`);
     }
     return this.p1.add(this.direction.mul(t));

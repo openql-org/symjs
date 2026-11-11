@@ -17,6 +17,14 @@ const z = new Sym('z');
 const A = new Sym('A', { commutative: false });
 const B = new Sym('B', { commutative: false });
 
+it('prints unevaluated inverse square roots without splitting their radicand', () => {
+  const n = new Sym('n', { integer: true, positive: true });
+  const radicand = mul(pow(mul(2, S.Pi), n), x);
+  const e = new Mul([y, new Pow(radicand, Rational.of(-1, 2))]);
+  expect(str(e)).toBe('y/sqrt(x*(2*pi)**n)');
+  expect(str(new Mul([y, new Pow(Rational.of(4), Rational.of(-1, 2))]))).toBe('y/sqrt(4)');
+});
+
 // expected values generated with SymPy 1.14 (str, latex)
 const CASES: [unknown, string, string][] = [
     [pow(A, -1), 'A**(-1)', 'A^{-1}'],

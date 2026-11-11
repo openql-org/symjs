@@ -462,7 +462,7 @@ export function find(exprIn: ExprLike, query: Query): Expr[];
 export function find(exprIn: ExprLike | string, query: Query): Expr[] | Sym {
   if (typeof exprIn === 'string') {
     if (!(query instanceof Expr)) throw new TypeError('an equation is required for symbol-name lookup');
-    const matches = [...query.freeSymbols()].filter((s) => s.name === exprIn);
+    const matches = [...query.freeSymbols()].filter((s): s is Sym => s instanceof Sym && s.name === exprIn);
     if (matches.length !== 1) throw new RangeError(matches.length ? `ambiguous ${exprIn}` : `could not find ${exprIn}`);
     return first(matches);
   }

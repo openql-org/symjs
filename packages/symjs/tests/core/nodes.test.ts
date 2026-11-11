@@ -7,6 +7,8 @@
 import { describe, expect, it } from 'vitest';
 import { inspect } from 'node:util';
 import * as sj from '../../src';
+
+
 import { Rational } from '../../src';
 import { InvariantError } from '../../src/core/errors';
 import {
@@ -230,4 +232,12 @@ it('retains constructor facts, explicit false values and their consequences in s
   expect(extended.assumptions0.get('below_fermi')).toBe(false);
   expect(extended.equals(new sj.Sym('x', { extendedPositive: true }))).toBe(false);
   expect(() => new sj.Sym('n', { odd: true, even: true })).toThrow(RangeError);
+});
+
+it('recognizes numerical expressions, including definite integrals', () => {
+  const x = sj.symbol('x');
+  for (const e of [sj.S.Pi, sj.S.I, sj.S.Infinity, sj.parse('sin(1)**2 + cos(1)**2 - 1'), sj.add(2, new sj.Integral([sj.sympify(2), x, sj.S.One, sj.sympify(2)]))]) {
+    expect(e.isNumber).toBe(true);
+  }
+  for (const e of [x, sj.SymFunction('f')(1), sj.add(2, new sj.Integral([sj.sympify(2), x])), sj.parse('sin(x)'), sj.parse('x**2')]) expect(e.isNumber).toBe(false);
 });

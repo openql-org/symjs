@@ -53,7 +53,7 @@ const fmt = (r: unknown): string => {
 /** Mathematically equal expressions (the forms differ from SymPy's): equal values at sample points. */
 function expectSame(a: unknown, b: Expr): void {
   const ea = a as Expr;
-  const syms = [...new Set([...freeSymbols(ea), ...freeSymbols(b)].map((s) => s.name))];
+  const syms = [...new Set([...freeSymbols(ea), ...freeSymbols(b)].map(String))];
   for (const t of [0.3, 0.7]) {
     const values = Object.fromEntries(syms.map((s, i) => [s, s === 'x' ? t : 0.5 + 0.25 * i]));
     const u = toComplex(ea, values);

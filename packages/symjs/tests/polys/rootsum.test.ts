@@ -11,6 +11,15 @@ const { parse } = sj;
 const [x, y, t, b] = sj.symbols('x y t b') as [sj.Sym, sj.Sym, sj.Sym, sj.Sym];
 const lam = (v: sj.Sym, e: string) => sj.Lambda(v, parse(e));
 
+it('extracts a negative common coefficient in apart_list', () => {
+  const f = parse('(-2*x - 2*x**2)/(3*x**2 - 6*x)');
+  const parts = sj.apartList(f, x);
+  expect(String(parts[0])).toBe('-1');
+  expect(String(parts[1].asExpr())).toBe('2/3');
+  expect(parts[2].map((t) => String(t[1].expr))).toEqual(['2']);
+  expect(sj.cancel(sj.assemblePartfracList(parts).sub(f)).equals(0)).toBe(true);
+});
+
 describe('RootSum', () => {
   it('distinguishes an invalid polynomial from an unsupported parameter derivative', () => {
     const invalid = new RootSumNode([parse('sin(x)'), lam(b, 'exp(b)'), x]);

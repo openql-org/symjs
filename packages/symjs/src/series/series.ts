@@ -30,7 +30,7 @@ export function O(ex: ExprLike, xIn?: Sym | readonly Sym[], x0: ExprLike = 0): E
   const e = sympify(ex);
   if (e.equals(S.Zero)) return S.Zero;
   const p = sympify(x0);
-  const syms = [...e.freeSymbols()];
+  const syms = [...e.freeSymbols()].filter((s) => s instanceof Sym);
   const vars = isSymList(xIn) ? xIn : xIn === undefined && syms.length > 1 ? (sortSyms(syms)) : undefined;
   if (vars && vars.length > 1) return orderMulti(e, vars, p);
   const x: Sym | undefined = isSymList(xIn) ? xIn[0] : xIn;
@@ -84,7 +84,7 @@ function orderMulti(e: Expr, vars: readonly Sym[], p: Expr): Expr {
         const [base, k] = f instanceof Pow && f.exp instanceof Rational ? [f.base, f.exp.value] : [f, 1];
         const i = vars.findIndex((v) => v.key === base.key);
         if (i >= 0) d[i] = at(d, i) + k;
-        else if ([...f.freeSymbols()].some((s) => vars.some((v) => v.key === s.key))) return undefined;
+        else if ([...f.freeSymbols()].filter((s) => s instanceof Sym).some((s) => vars.some((v) => v.key === s.key))) return undefined;
       }
       return d;
     };
@@ -373,14 +373,14 @@ diffHooks.order = parserHooks.order;
 
 /** Expansion variables, including those absent from a constant leading term. */
 function orderVariables(o: Order): Sym[] {
-  return o.args.length > 1 ? o.args.slice(1, -1).filter((v): v is Sym => v instanceof Sym) : [...o.expr.freeSymbols()];
+  return o.args.length > 1 ? o.args.slice(1, -1).filter((v): v is Sym => v instanceof Sym) : [...o.expr.freeSymbols()].filter((s) => s instanceof Sym);
 }
 
 impl.orderContains = (o, e) => {
   const variables = orderVariables(o);
   const point = o.args.length > 1 ? at(o.args, -1) : S.Zero;
   const other = e instanceof Order ? e.expr : e;
-  const otherVariables = e instanceof Order ? orderVariables(e) : [...e.freeSymbols()];
+  const otherVariables = e instanceof Order ? orderVariables(e) : [...e.freeSymbols()].filter((s) => s instanceof Sym);
   if (otherVariables.some((v) => !variables.some((w) => w.equals(v)))) return false;
   if (e instanceof Order && e.args.length > 1 && !at(e.args, -1).equals(point)) return 'unknown';
   if (other.equals(S.Zero)) return true;

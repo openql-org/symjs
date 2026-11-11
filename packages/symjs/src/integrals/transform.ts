@@ -48,7 +48,7 @@ export function transformIntegral(integral: Integral, x: Expr, gIn: ExprLike, uI
     const limits = integral.limits;
     return new Integral(limits === undefined ? [transformed, g] : [transformed, g, ...limits.map((p) => subs(x, [[variable, p]]))]);
   }
-  const free = [...freeSymbols(g)];
+  const free = [...freeSymbols(g)].filter((s) => s instanceof Sym);
   if (!uIn && free.length !== 1) throw new TypeError('transform: the new variable must be given');
   const u = uIn ?? first(free);
   if (integral.variable.key !== x.key) throw new TypeError('transform: x is not the integration variable');

@@ -9,6 +9,8 @@
 
 import { describe, expect, it } from 'vitest';
 import * as sj from '../../../src';
+
+
 import { acosh, asec, asech, atan, atan2, beta, binomial, catalan, ceiling, diff, digamma, E, E1, erf, erf2, erf2inv, erfc, erfcinv, erfi, erfinv, evalf, expandFunc, factorial, factorial2, ff, Float, float, fresnelc, fresnels, harmonic, LambertW, Li, li, lowergamma, Max, Min, NotImplementedError, parse, polygamma, pow, Rational, Rem, rf, S, subfactorial, Sym, symbols, toComplex, trigamma, uppergamma, zeta } from '../../../src';
 import { impl } from '../../../src/core/nodes';
 
@@ -894,4 +896,14 @@ describe('the Hurwitz zeta function in double precision', () => {
     // mpmath zeta(2, 1/3) = 10.095597125427096
     expect(toComplex(new sj.Fn('zeta', [sj.sympify(2), Rational.of(1n, 3n)])).re).toBeCloseTo(10.095597125427096, 12);
   });
+});
+
+it('expands rational harmonic numbers by Gauss\'s digamma theorem', () => {
+  for (const [p, q] of [[1, 3], [8, 7], [1, 2], [13, 6]] as const) {
+    const h = sj.harmonic(sj.Rational.of(p, q));
+    const expanded = sj.expandFunc(h);
+    expect(String(expanded)).not.toContain('harmonic');
+    expect(sj.doit(expanded).toNumber()).toBeCloseTo(h.toNumber(), 12);
+  }
+  expect(String(sj.expandFunc(sj.harmonic(sj.Rational.of(-1, 3))))).toBe('harmonic(-1/3)');
 });

@@ -295,7 +295,7 @@ const CONSTANTS: Record<ConstantName, (prec: number) => Mpc> = {
 export type SymbolLookup = (s: Sym, wp: number) => Mpc | undefined;
 
 /** Evaluate at working precision wp (each operation rounded to wp bits). */
-export function evalMp(e: Expr, wp: number, lookup: SymbolLookup = noValue): Mpc {
+export function evalMp(e: Expr, wp: number, lookup: SymbolLookup = noValue, cancellation?: { value: boolean }): Mpc {
   /** The value of x as parts, special values included. */
   const evParts = (x: Expr): Parts => {
     try {
@@ -327,6 +327,12 @@ export function evalMp(e: Expr, wp: number, lookup: SymbolLookup = noValue): Mpc
       if (!vals.every(isFiniteValue)) throw new MpSpecialValue(addParts(vals.map((v) => v[0]), wp), addParts(vals.map((v) => v[1]), wp));
       let acc: Mpc = M.C0;
       for (const v of vals) acc = M.cadd(acc, v, wp);
+      if (cancellation && !x.args.every((a) => a instanceof Rational)) {
+        for (const k of [0, 1] as const) {
+          const scale = Math.max(...vals.map((v) => F.mag(v[k])));
+          if (Number.isFinite(scale) && negligible(acc[k], scale, wp)) cancellation.value = true;
+        }
+      }
       return acc;
     }
     if (x instanceof Mul) {
@@ -418,12 +424,14 @@ function negligible(x: Mpf, ref: number, wp: number): boolean {
  * and returned as an exact zero when it is rounding noise that shrinks with
  * the working precision (cancellation to zero).
  */
-export function evalAdaptive(e: Expr, prec: number, lookup: SymbolLookup = noValue): Mpc {
+export function evalAdaptive(e: Expr, prec: number, lookup: SymbolLookup = noValue, accuracy?: { re: number; im: number }): Mpc {
+  const cancellation = { value: false };
+  const evaluate = (p: number): Mpc => evalMp(e, p, lookup, accuracy ? cancellation : undefined);
   let wp = prec + 20;
-  let prev = evalMp(e, wp, lookup);
+  let prev = evaluate(wp);
   for (let i = 0; i < 8; i++) {
     const wp2 = prec + 20 + 40 * 2 ** (i + 1);
-    const cur = evalMp(e, wp2, lookup);
+    const cur = evaluate(wp2);
     const ref = Math.max(F.mag(cur[0]), F.mag(cur[1]));
     const refPrev = Math.max(F.mag(prev[0]), F.mag(prev[1]));
     // The stable value of one component, or undefined when it has not settled.
@@ -442,10 +450,19 @@ export function evalAdaptive(e: Expr, prec: number, lookup: SymbolLookup = noVal
     };
     const re = settled(0);
     const im = settled(1);
-    if (re !== undefined && im !== undefined) return [re, im];
+    if (re !== undefined && im !== undefined) {
+      if (accuracy) {
+        // An apparent zero after cancellation has no significant bits. Keep
+        // that fact even though evalf's expression representation uses 0.
+        accuracy.re = F.isZero(re) && (cancellation.value || !F.isZero(cur[0])) ? 1 : prec;
+        accuracy.im = F.isZero(im) && (cancellation.value || !F.isZero(cur[1])) ? 1 : prec;
+      }
+      return [re, im];
+    }
     prev = cur;
     wp = wp2;
   }
+  if (accuracy) { accuracy.re = 1; accuracy.im = 1; }
   return [F.round(prev[0], prec), F.round(prev[1], prec)];
 }
 

@@ -48,8 +48,8 @@ const mulArgs = (e: Expr): readonly Expr[] => (isMulLike(e) ? e.args : [e]);
 export function keepCoeff(coeffIn: Expr, factorsIn: Expr): Expr {
   let coeff = coeffIn;
   let factors = factorsIn;
-  if (!coeff.isNumber) {
-    if (factors.isNumber) [coeff, factors] = [factors, coeff];
+  if (!isNum(coeff)) {
+    if (isNum(factors)) [coeff, factors] = [factors, coeff];
     else return mul(coeff, factors);
   }
   if (isOne(factors)) return coeff;
@@ -58,14 +58,14 @@ export function keepCoeff(coeffIn: Expr, factorsIn: Expr): Expr {
   if (factors instanceof Add) return new Mul([coeff, factors]);
   if (factors instanceof Mul) {
     const margs = [...factors.args];
-    if (at(margs, 0).isNumber) {
+    if (isNum(at(margs, 0))) {
       margs[0] = mul(at(margs, 0), coeff);
       if (isOne(margs[0])) margs.shift();
     } else margs.unshift(coeff);
     return margs.length === 1 ? at(margs, 0) : new Mul(margs);
   }
   const m = mul(coeff, factors);
-  if (m.isNumber && !factors.isNumber) return new Mul([coeff, factors]);
+  if (isNum(m) && !isNum(factors)) return new Mul([coeff, factors]);
   return m;
 }
 
@@ -254,7 +254,7 @@ export function asCoeffAdd(eIn: ExprLike, deps: readonly Expr[] = []): [Expr, Ex
     return [add(...ind), dep];
   }
   if (isNum(e)) return [e, []];
-  if (isAddLike(e) && at(e.args, 0).isNumber) return [at(e.args, 0), [...e.args.slice(1)]];
+  if (isAddLike(e) && isNum(at(e.args, 0))) return [at(e.args, 0), [...e.args.slice(1)]];
   return [S.Zero, [...addArgs(e)]];
 }
 
@@ -268,7 +268,7 @@ export function asCoeffMul(eIn: ExprLike, deps: readonly Expr[] = []): [Expr, Ex
     return [mul(...ind), dep];
   }
   if (isNum(e)) return [e, []];
-  if (isMulLike(e) && at(e.args, 0).isNumber) return [at(e.args, 0), [...e.args.slice(1)]];
+  if (isMulLike(e) && isNum(at(e.args, 0))) return [at(e.args, 0), [...e.args.slice(1)]];
   return [S.One, [...mulArgs(e)]];
 }
 
@@ -486,7 +486,7 @@ export function extractAdditively(eIn: ExprLike, cIn: ExprLike): Expr | undefine
     const xa = extractAdditively(co, c);
     return xa === undefined ? undefined : add(xa, t);
   }
-  if (c instanceof Add && at(c.args, 0).isNumber) {
+  if (c instanceof Add && isNum(at(c.args, 0))) {
     const co = coeff(e, c);
     const xa0 = mul(extractAdditively(co, 1) ?? S.Zero, c);
     if (!isZeroE(xa0)) {
@@ -958,7 +958,7 @@ export function isMeromorphic(eIn: ExprLike, x: Expr, a: ExprLike): boolean | un
 export function isSame(a: unknown, b: unknown, approx?: (x: Expr, y: Expr) => boolean): boolean {
   if (a instanceof Expr && b instanceof Expr) {
     const same = (x: Expr, y: Expr): boolean =>
-      x.isNumber && y.isNumber && x.args.length === 0 && y.args.length === 0 && approx
+      isNum(x) && isNum(y) && x.args.length === 0 && y.args.length === 0 && approx
         ? approx(x, y)
         : x.kind === y.kind && x.args.length === y.args.length && (x.args.length ? x.args.every((u, i) => same(u, at(y.args, i))) : x.key === y.key);
     return same(a, b);
@@ -1109,7 +1109,7 @@ export function normal(eIn: ExprLike): Expr {
   const [n, d] = asNumerDenom(sympify(eIn));
   if (isOne(d)) return n;
   // SymPy _unevaluated_Mul(n, 1/d): the coefficient is not distributed over a sum
-  return d.isNumber ? keepCoeff(pow(d, -1), n) : mul(n, pow(d, -1));
+  return isNum(d) ? keepCoeff(pow(d, -1), n) : mul(n, pow(d, -1));
 }
 
 /**
@@ -1121,7 +1121,7 @@ export function normal(eIn: ExprLike): Expr {
  */
 export function nseries(eIn: ExprLike, x?: Sym, x0: ExprLike = 0, n = 6): Expr {
   const e = sympify(eIn);
-  const fs = [...freeSymbols(e)];
+  const fs = [...freeSymbols(e)].filter((s) => s instanceof Sym);
   if (x === undefined) {
     if (fs.length > 1) throw new RangeError('x must be given for multivariate functions.');
     if (fs.length === 0) return e;

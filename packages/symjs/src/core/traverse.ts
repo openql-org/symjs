@@ -408,8 +408,8 @@ export function subs(e: Expr, s: Substitution, opts: { simultaneous?: boolean } 
   return r;
 }
 
-export function freeSymbols(e: Expr): Set<Sym> {
-  const out = new Map<string, Sym>();
+export function freeSymbols(e: Expr): Set<Expr> {
+  const out = new Map<string, Expr>();
   const go = (x: Expr) => {
     const explicit = x instanceof ExtensionExpr ? x.freeSymbolsSelf() : undefined;
     if (explicit !== undefined) {
@@ -466,6 +466,7 @@ export function some(e: Expr, pred: (e: Expr) => boolean): boolean {
 }
 
 impl.subs = (e, s) => subs(e, s);
+impl.xreplace = xreplace;
 impl.freeSymbols = freeSymbols;
 
 /**
