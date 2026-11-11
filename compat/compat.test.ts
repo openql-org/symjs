@@ -60,6 +60,7 @@ function readCoverage(): { files: FileCoverage[] } | undefined {
 import { expect, it } from 'vitest';
 import { Case, Outcome, counterpartFor, hasCounterpart, runCase } from './harness';
 import { PORTS } from './ports';
+import { scopeLines, scopeSummary, type ScopeInventory } from './scope-report';
 
 interface Corpus {
   sympy: string;
@@ -83,45 +84,15 @@ const caseLabel = (c: Case): string => `${c.module}: ${c.src}`;
 const caseKey = (c: Case): string => `${caseLabel(c)} #${createHash('sha256').update(JSON.stringify([c.args, c.kwargs, c.self, c.expected, c.assume, ...(c.pick === undefined ? [] : [c.pick])])).digest('hex').slice(0, 16)}`;
 
 /**
- * Doctests outside the scope of symjs, by case key, with the reason. They are not run or counted:
- * they exercise no symjs functionality, so a "pass" would say nothing.
+ * Explicit doctest exclusions, by case label and reason. Excluded cases do not
+ * establish passing behavior; the inventory rejects non-Python exclusions.
+ * The null-input entry covers sympify(null), which throws SympifyError.
+ * For dist.pmf(x), SymPy returns a Lambda and ignores x; symjs evaluates the
+ * probability mass function at x. Sampling examples require external libraries
+ * and are omitted by the extractor as random output or explicit +SKIP examples.
  */
-const OUT_OF_SCOPE: Readonly<Record<string, string>> = {
-  // plotting is not ported (FourierSeries plot objects)
-  'sympy.series.fourier: p.show()': 'plotting',
-  // a TensorFlow setting from the lambdify docstring; lambdify for TensorFlow is not ported
-  'sympy.utilities.lambdify: tf.compat.v1.enable_eager_execution()': 'TensorFlow',
-  // sympy.stats sampling (sample, sample_iter, sampling_density, numsamples=) needs an external sampling library
-  // (numpy/scipy/pymc) and is out of scope; its doctests print random values or are marked +SKIP, so the
-  // extractor (compat/extract.py) keeps none of them and no entry is needed here
-  // Python's in-place list.sort() from a docstring setup line, no SymPy call
-  'sympy.utilities.iterables: a.sort()': 'Python list method',
-  // sympify(None): the public API takes no null or undefined value, so sympify(null) throws SympifyError
-  'sympy.core.sympify: print(sympify(None))': 'null input',
-  // C code output belongs to the code-generation package, not to the base module
-  'sympy.tensor.indexed: ccode(A[i, j, k])': 'C code printer',
-  // SymPy returns Lambda(x, ...) and ignores the argument x; symjs returns the probability mass function at x
-  'sympy.stats: dist.pmf(x)': 'pmf evaluated at its argument',
-  // these doctests define Python classes (MyBasic, MyExpr) and register comparison handlers for them through
-  // multiple dispatch; the examples depend on Python class definitions, not on a SymPy function
-  'sympy.core.relational: is_eq(a, b)': 'Python class definition',
-  'sympy.core.relational: is_neq(a, b)': 'Python class definition',
-  'sympy.core.relational: is_ge(b, a)': 'Python class definition',
-  'sympy.core.relational: is_le(a, b)': 'Python class definition',
-  // SymPy's numerical test helper all_close (approximate structural comparison) is a test utility, not ported
-  'sympy.core.numbers: all_close(expr1, expr2)': 'test utility',
-  'sympy.core.numbers: all_close(x, x + 1e-10)': 'test utility',
-  'sympy.core.numbers: all_close(x, 1.0*x)': 'test utility',
-  'sympy.core.numbers: all_close(x, 1.0*x + 1e-10)': 'test utility',
-  // Python's list.append() building a permutation list in the polyhedron docstring; no SymPy call
-  'sympy.combinatorics.polyhedron: pgroup.append(Permutation((0, 2, 1, 3)))': 'Python list method',
-  'sympy.combinatorics.polyhedron: pgroup.append(Permutation((2, 0, 3, 1)))': 'Python list method',
-  // Python threads from the global_parameters docstring (SymPy's evaluate flag is thread-local); no SymPy call
-  'sympy.core.parameters: thread.start()': 'Python threading',
-  'sympy.core.parameters: thread.join()': 'Python threading',
-  // the LaTeX of the Python class int (a Python type object, not a SymPy expression)
-  'sympy.printing.latex: print(latex(int))': 'Python type object',
-};
+const OUT_OF_SCOPE: Readonly<Record<string, string>> = JSON.parse(readFileSync(new URL('./doctest-exclusions.json', import.meta.url), 'utf8'));
+
 const apiKey = (a: { name: string; category: string; owner?: string }): string => `${a.category}: ${a.owner ? a.owner + ':' : ''}${a.name}`;
 /**
  * SymPy public names outside the scope of symjs, by API key, with the reason. They are
@@ -142,8 +113,7 @@ it('computes SymPy compatibility metrics', () => {
   corpus.api = corpus.api.filter((a) => OUT_OF_SCOPE_API[apiKey(a)] === undefined);
   const results = corpus.cases.map((c) => ({ c, o: runCase(c) as Outcome, evidence: evidenceFor(c) }));
   const verifiedPass = results.filter(({ o, evidence }) => (o.status === 'pass' || o.status === 'equivalent') && (evidence === 'public-call' || evidence === 'reviewed-conversion')).length;
-  const inventory = JSON.parse(readFileSync(new URL('./scope-inventory.json', import.meta.url), 'utf8')) as { reference: { sympy: string }; modules: { module: string; status: string; selectedForExtraction: boolean; hasCorpusCases: boolean; documentedExamples: number; reason?: string }[] };
-  const scopeCounts = Object.fromEntries(['partial', 'unimplemented', 'unassessed', 'excluded'].map((status) => [status, inventory.modules.filter((m) => m.status === status).length]));
+  const inventory: ScopeInventory = JSON.parse(readFileSync(new URL('./scope-inventory.json', import.meta.url), 'utf8'));
   const capabilities = JSON.parse(readFileSync(new URL('./capabilities.json', import.meta.url), 'utf8')) as { areas: { area: string; status: string; tested: string[]; remaining: string[]; tests: string[] }[] };
   const evidenceCounts = Object.fromEntries(['public-call', 'reviewed-conversion', 'harness-computation', 'unreviewed-adapter', 'unreviewed-translation'].map((evidence) => [evidence, results.filter((r) => r.evidence === evidence).length]));
   const apiEvidence = corpus.api.map((a) => ({ ...a, counterpart: counterpartFor(a) ?? null, status: counterpartFor(a) ? 'present' : 'unverified-or-absent', directCases: corpus.cases.filter((c) => c.category === a.category && c.fn === a.name).length }));
@@ -211,11 +181,7 @@ it('computes SymPy compatibility metrics', () => {
   lines.push(
     `**Verified public-call results: ${verifiedPass}/${total.cases} (${pct(verifiedPass, total.cases)})**. This conservative count includes automatic public calls and reviewed conversion adapters. Results depending on harness computations, unaudited adapters or translations are unverified. It is not the coverage of all SymPy functionality.`,
     '',
-    '## Whole-reference scope', '',
-    `Pinned inventory: **${inventory.modules.length} production modules** in SymPy ${inventory.reference.sympy}. ${inventory.modules.filter((m) => m.selectedForExtraction).length} selected for extraction; ${inventory.modules.filter((m) => m.hasCorpusCases).length} have recorded calls. No whole-SymPy behavioral percentage is established.`, '',
-    '| Inventory status | Modules |', '|---|---:|',
-    ...Object.entries(scopeCounts).map(([status, n]) => `| ${status} | ${n} |`), '',
-    'Partial means a source correspondence exists, not that the module is complete. Unassessed modules remain visible. Exclusions and source hashes are recorded in `scope-inventory.json`; symbolic mathematical features are not excluded merely because they are difficult.', '',
+    ...scopeLines(inventory),
     '## Extraction audit', '',
     `Examined ${corpus.extraction.examined} doctest statements including setup. Kept ${corpus.cases.length} in-scope calls; ${extractedCalls - corpus.cases.length} calls excluded by ${Object.keys(OUT_OF_SCOPE).length} explicit case labels are listed in the runner, as are ${Object.keys(OUT_OF_SCOPE_API).length} public names excluded from the API presence (${[...new Set(Object.values(OUT_OF_SCOPE_API))].join('; ')}). The detailed omitted list records ${corpus.extraction.omitted.length} examples with expected output.`, '',
     '| Reason | Statements |', '|---|---:|',
@@ -304,7 +270,7 @@ it('computes SymPy compatibility metrics', () => {
       {
         sympy: corpus.sympy,
         overall: { ...total, ported, verifiedPublicPass: verifiedPass },
-        scope: { modules: inventory.modules.length, statuses: scopeCounts },
+        scope: scopeSummary(inventory),
         extraction: corpus.extraction,
         apiEvidence,
         adapterEvidence: { counts: evidenceCounts, adapters: adapterInventory() },

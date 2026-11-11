@@ -3,6 +3,7 @@
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { refreshScopeReport } from './scope-report';
 import type { TestOutcome } from './tests-harness.js';
 
 export interface Counts { cases: number; exact: number; equivalent: number; fail: number; unsupported: number; error: number }
@@ -98,4 +99,5 @@ export function writeTestsReport(directory: string, suiteSeconds: number): void 
     extraction: index,
   }, null, 1) + '\n');
   if (process.env['UPDATE_KNOWN_GAPS']) writeFileSync(new URL('./tests-known-gaps.json', import.meta.url), JSON.stringify({ cases: failing, timeouts }, null, 1) + '\n');
+  refreshScopeReport();
 }

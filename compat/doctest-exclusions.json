@@ -1,0 +1,21 @@
+{
+ "sympy.series.fourier: p.show()": "plotting",
+ "sympy.utilities.lambdify: tf.compat.v1.enable_eager_execution()": "TensorFlow",
+ "sympy.utilities.iterables: a.sort()": "Python list method",
+ "sympy.core.sympify: print(sympify(None))": "null input",
+ "sympy.tensor.indexed: ccode(A[i, j, k])": "C code printer",
+ "sympy.stats: dist.pmf(x)": "pmf evaluated at its argument",
+ "sympy.core.relational: is_eq(a, b)": "Python class definition",
+ "sympy.core.relational: is_neq(a, b)": "Python class definition",
+ "sympy.core.relational: is_ge(b, a)": "Python class definition",
+ "sympy.core.relational: is_le(a, b)": "Python class definition",
+ "sympy.core.numbers: all_close(expr1, expr2)": "test utility",
+ "sympy.core.numbers: all_close(x, x + 1e-10)": "test utility",
+ "sympy.core.numbers: all_close(x, 1.0*x)": "test utility",
+ "sympy.core.numbers: all_close(x, 1.0*x + 1e-10)": "test utility",
+ "sympy.combinatorics.polyhedron: pgroup.append(Permutation((0, 2, 1, 3)))": "Python list method",
+ "sympy.combinatorics.polyhedron: pgroup.append(Permutation((2, 0, 3, 1)))": "Python list method",
+ "sympy.core.parameters: thread.start()": "Python threading",
+ "sympy.core.parameters: thread.join()": "Python threading",
+ "sympy.printing.latex: print(latex(int))": "Python type object"
+}

@@ -19,12 +19,69 @@ Pinned inventory: **825 production modules** in SymPy 1.14.0. 438 selected for e
 
 | Inventory status | Modules |
 |---|---:|
-| partial | 512 |
+| complete | 5 |
+| partial | 507 |
 | unimplemented | 164 |
 | unassessed | 0 |
 | excluded | 149 |
 
-Partial means a source correspondence exists, not that the module is complete. Unassessed modules remain visible. Exclusions and source hashes are recorded in `scope-inventory.json`; symbolic mathematical features are not excluded merely because they are difficult.
+Complete means public exports and class members are present, doctest and unit-test evidence passes strict omission and gap checks, and no limitation is recorded. Partial means a source correspondence exists but one or more criteria fail. Per-module reasons are recorded in the inventory. Unassessed modules remain visible. Exclusions and source hashes are recorded in `scope-inventory.json`; symbolic mathematical features are not excluded merely because they are difficult.
+
+| Package | Complete | Partial | Unimplemented | Unassessed | Excluded |
+|---|---:|---:|---:|---:|---:|
+| abc | 0 | 1 | 0 | 0 | 0 |
+| algebras | 0 | 2 | 0 | 0 | 0 |
+| assumptions | 0 | 28 | 0 | 0 | 0 |
+| calculus | 0 | 6 | 0 | 0 | 0 |
+| categories | 0 | 2 | 0 | 0 | 1 |
+| codegen | 0 | 0 | 16 | 0 | 1 |
+| combinatorics | 0 | 23 | 0 | 0 | 1 |
+| concrete | 0 | 8 | 0 | 0 | 0 |
+| conftest | 0 | 0 | 0 | 0 | 1 |
+| core | 0 | 30 | 1 | 0 | 7 |
+| crypto | 0 | 2 | 0 | 0 | 0 |
+| diffgeom | 0 | 0 | 3 | 0 | 0 |
+| discrete | 0 | 4 | 0 | 0 | 0 |
+| external | 0 | 0 | 0 | 0 | 5 |
+| functions | 0 | 28 | 0 | 0 | 0 |
+| galgebra | 0 | 0 | 0 | 0 | 1 |
+| geometry | 0 | 11 | 0 | 0 | 0 |
+| holonomic | 0 | 5 | 0 | 0 | 0 |
+| integrals | 1 | 15 | 0 | 0 | 1 |
+| interactive | 0 | 0 | 0 | 0 | 4 |
+| liealgebras | 0 | 13 | 0 | 0 | 0 |
+| logic | 0 | 9 | 0 | 0 | 3 |
+| matrices | 0 | 46 | 0 | 0 | 0 |
+| multipledispatch | 0 | 0 | 0 | 0 | 5 |
+| ntheory | 0 | 15 | 0 | 0 | 0 |
+| parsing | 0 | 9 | 9 | 0 | 26 |
+| physics | 0 | 1 | 110 | 0 | 0 |
+| plotting | 0 | 0 | 0 | 0 | 35 |
+| polys | 1 | 87 | 7 | 0 | 11 |
+| printing | 0 | 16 | 12 | 0 | 12 |
+| release | 0 | 0 | 0 | 0 | 1 |
+| sandbox | 0 | 0 | 0 | 0 | 2 |
+| series | 1 | 13 | 1 | 0 | 0 |
+| sets | 0 | 17 | 0 | 0 | 0 |
+| simplify | 1 | 15 | 0 | 0 | 1 |
+| solvers | 1 | 21 | 0 | 0 | 0 |
+| stats | 0 | 20 | 0 | 0 | 4 |
+| strategies | 0 | 11 | 0 | 0 | 0 |
+| sympy | 0 | 1 | 0 | 0 | 0 |
+| tensor | 0 | 22 | 4 | 0 | 0 |
+| testing | 0 | 0 | 0 | 0 | 8 |
+| this | 0 | 0 | 0 | 0 | 1 |
+| unify | 0 | 4 | 0 | 0 | 0 |
+| utilities | 0 | 7 | 1 | 0 | 18 |
+| vector | 0 | 15 | 0 | 0 | 0 |
+
+### Complete modules
+
+- `sympy.integrals.singularityfunctions`
+- `sympy.polys.rationaltools`
+- `sympy.series.kauers`
+- `sympy.simplify.combsimp`
+- `sympy.solvers.decompogen`
 
 ## Extraction audit
 

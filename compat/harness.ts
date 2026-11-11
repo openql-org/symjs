@@ -4458,13 +4458,13 @@ function unsupportedOp(op: string): never {
 }
 
 /** SymPy attributes whose symjs function has another name (docs/api-policy.md). */
-const ATTRIBUTE_FUNCTIONS: Readonly<Record<string, string>> = { is_integer: 'isIntegerQ', is_Function: 'isFn', is_Number: 'isNum', canonical: 'canonicalRelation' };
+export const ATTRIBUTE_FUNCTIONS: Readonly<Record<string, string>> = { is_integer: 'isIntegerQ', is_Function: 'isFn', is_Number: 'isNum', canonical: 'canonicalRelation' };
 const OPERATOR_METHODS: Readonly<Record<string, string>> = { '.__str__': 'toString', '.__add__': 'add', '.__sub__': 'sub', '.__mul__': 'mul', '.__pow__': 'pow', '.__floordiv__': 'floordiv', '.__mod__': 'mod' };
 /** DomainMatrix functions whose integer arguments are sizes, exponents or indices. */
 const DOMAIN_MATRIX_INT_FUNCTIONS = new Set(['.eye', '.zeros', '.ones', '.pow', '.getitem', '.from_list_sympy', '.from_dict_sympy', 'sdm_berk']);
 
 /** SymPy names that are JavaScript globals, and the symjs names that do not shadow them. */
-const JS_GLOBAL_RENAMES: Record<string, string> = { Symbol: 'Sym', Number: 'SymNumber', Function: 'SymFunction', Array: 'SymArray', Set: 'SetExpr', Object: 'SymObject' };
+export const JS_GLOBAL_RENAMES: Record<string, string> = { Symbol: 'Sym', Number: 'SymNumber', Function: 'SymFunction', Array: 'SymArray', Set: 'SetExpr', Object: 'SymObject' };
 /** sympy.vector names that symjs exports under another name (SymPy's top-level Point is the geometric one). */
 const VECTOR_RENAMES: Record<string, string> = { Point: 'VectorPoint' };
 /** sympy.stats names that symjs exports under another name: E is Euler's number and Chi the hyperbolic cosine integral. */
@@ -4685,7 +4685,7 @@ function autoAdapter(c: Case): Adapter | undefined {
 }
 
 /** Explicit public aliases: an adapter by itself is never evidence of an API. */
-const PUBLIC_ALIASES: Readonly<Record<string, string>> = {
+export const PUBLIC_ALIASES: Readonly<Record<string, string>> = {
   Catalan: 'S.Catalan', EulerGamma: 'S.EulerGamma', GoldenRatio: 'S.GoldenRatio', TribonacciConstant: 'S.TribonacciConstant',
   Integer: 'Rational.of', Equality: 'Eq', Unequality: 'Ne', GreaterThan: 'Ge', LessThan: 'Le', StrictGreaterThan: 'Gt', StrictLessThan: 'Lt',
   N: 'evalf', ln: 'log', minpoly: 'minimalPolynomial', poly: 'Poly.from',
@@ -4700,6 +4700,21 @@ function publicPathExists(path: string): boolean {
   }
   return value !== undefined;
 }
+const exprMethods = ['diff', 'integrate', 'limit', 'series', 'expand', 'simplify', 'factor', 'collect', 'cancel', 'apart', 'ratsimp', 'together', 'trigsimp', 'powsimp', 'radsimp', 'nsimplify', 'logcombine', 'powdenest', 'rewrite', 'refine', 'evalf',
+      'adjoint', 'argsCnc', 'asBaseExp', 'asCoeffAdd', 'asCoeffMul', 'asCoeffExponent', 'asCoefficient', 'asCoefficientsDict', 'asContentPrimitive', 'asDummy', 'asIndependent', 'asLeadingTerm', 'asNumerDenom', 'asPoly', 'asPowersDict', 'asRealImag', 'asTerms', 'aseries', 'atoms', 'classKey', 'coeff', 'combsimp', 'compare', 'couldExtractMinusSign', 'count', 'countOps', 'dir', 'doit', 'dummyEq', 'extractAdditively', 'extractBranchFactor', 'extractMultiplicatively', 'find', 'fourierSeries', 'fps', 'gammasimp', 'getO', 'getn', 'hasFree', 'hasXfree', 'invert', 'isAlgebraicExpr', 'isConstant', 'isHypergeometric', 'isMeromorphic', 'isPolynomial', 'isRationalFunction', 'isSame', 'leadterm', 'lseries', 'match', 'matches', 'normal', 'primitive', 'rcall', 'removeO', 'replace', 'round', 'separate', 'sortKey', 'taylorTerm', 'transpose', 'xreplace',
+      'asExpr', 'asOrderedFactors', 'asOrderedTerms', 'copy', 'nseries'];
+export const MEMBER_FUNCTIONS: Readonly<Record<string, readonly string[]>> = {
+    Expr: exprMethods,
+    Matrix: ['doit', 'berkowitz', 'berkowitzEigenvals', 'berkowitzMinors', 'companion', 'connectedComponents', 'elementaryColOp', 'elementaryRowOp', 'inverseADJ', 'inverseBLOCK', 'inverseCH', 'inverseGE', 'inverseLDL', 'inverseLU', 'inverseQR', 'irregular', 'iterItems', 'iterValues', 'jordanBlock', 'jordanCell', 'key2bounds', 'key2ij', 'per', 'permuteBkwd', 'permuteFwd', 'printNonzero', 'refine', 'singularValueDecomposition', 'stronglyConnectedComponents', 'table', 'toDM', 'upperHessenbergDecomposition', 'wilkinson', 'analyticFunc', 'bidiagonalDecomposition', 'bidiagonalize', 'cholesky', 'choleskySolve', 'cofactor', 'colInsert', 'columnspace', 'conditionNumber', 'connectedComponentsDecomposition', 'cramerSolve', 'cross', 'diagonal', 'diagonalSolve', 'diagonalize', 'dot', 'dual', 'echelonForm', 'eigenvects', 'extract', 'gaussJordanSolve', 'getDiagBlocks', 'hat', 'invMod', 'isAntiSymmetric', 'isDiagonal', 'isDiagonalizable', 'isNilpotent', 'isSymmetric', 'jacobian', 'jordanCells', 'jordanForm', 'leftEigenvects', 'lll', 'lllTransform', 'lowerTriangular', 'lowerTriangularSolve', 'minorSubmatrix', 'multiplyElementwise', 'norm', 'normalized', 'nullspace', 'orthogonalize', 'permanent', 'permuteCols', 'permuteRows', 'pinv', 'pinvSolve', 'project', 'rank', 'rankDecomposition', 'rref', 'rrefRhs', 'rowInsert', 'rowspace', 'singularValues', 'solveLeastSquares', 'stronglyConnectedComponentsDecomposition', 'upperTriangular', 'upperTriangularSolve', 'vech', 'vec'],
+    MatrixExpr: ['fromIndexSummation', ...exprMethods],
+  };
+export const MATRIX_MEMBER_ALIASES: Readonly<Record<string, string>> = {
+    LUdecomposition: 'luDecomposition', LDLdecomposition: 'ldl', QRdecomposition: 'qrDecomposition', LUdecompositionFF: 'LUdecompositionFF', LUdecompositionSimple: 'LUdecompositionSimple',
+    LUsolve: 'matrixSolve', QRsolve: 'matrixSolve', LDLsolve: 'matrixSolve', solve: 'matrixSolve', exp: 'matrixExp', log: 'matrixLog',
+    applyfunc: 'Matrix.prototype.map', colJoin: 'Matrix.prototype.vstack', rowJoin: 'Matrix.prototype.hstack',
+    berkowitzCharpoly: 'Matrix.prototype.charpoly', berkowitzDet: 'Matrix.prototype.det', detLUDecomposition: 'Matrix.prototype.det', detBareis: 'Matrix.prototype.det',
+  };
+
 /** The actual public export/member supporting a name, or undefined when absent. */
 export function counterpartFor(a: { name: string; owner?: string; category?: string }): string | undefined {
   const camelMethod = (n: string): string => n.replace(/_([a-zA-Z0-9])/g, (_m, c: string) => c.toUpperCase());
@@ -4720,22 +4735,8 @@ export function counterpartFor(a: { name: string; owner?: string; category?: str
   // Expression operations may be exposed as free functions. Their concrete path
   // is reported, so a function counterpart is not confused with a fluent method.
   // SymPy's MatrixExpr derives from Expr: its Expr methods are the same functions
-  const exprMethods = ['diff', 'integrate', 'limit', 'series', 'expand', 'simplify', 'factor', 'collect', 'cancel', 'apart', 'ratsimp', 'together', 'trigsimp', 'powsimp', 'radsimp', 'nsimplify', 'logcombine', 'powdenest', 'rewrite', 'refine', 'evalf',
-      'adjoint', 'argsCnc', 'asBaseExp', 'asCoeffAdd', 'asCoeffMul', 'asCoeffExponent', 'asCoefficient', 'asCoefficientsDict', 'asContentPrimitive', 'asDummy', 'asIndependent', 'asLeadingTerm', 'asNumerDenom', 'asPoly', 'asPowersDict', 'asRealImag', 'asTerms', 'aseries', 'atoms', 'classKey', 'coeff', 'combsimp', 'compare', 'couldExtractMinusSign', 'count', 'countOps', 'dir', 'doit', 'dummyEq', 'extractAdditively', 'extractBranchFactor', 'extractMultiplicatively', 'find', 'fourierSeries', 'fps', 'gammasimp', 'getO', 'getn', 'hasFree', 'hasXfree', 'invert', 'isAlgebraicExpr', 'isConstant', 'isHypergeometric', 'isMeromorphic', 'isPolynomial', 'isRationalFunction', 'isSame', 'leadterm', 'lseries', 'match', 'matches', 'normal', 'primitive', 'rcall', 'removeO', 'replace', 'round', 'separate', 'sortKey', 'taylorTerm', 'transpose', 'xreplace',
-      'asExpr', 'asOrderedFactors', 'asOrderedTerms', 'copy', 'nseries'];
-  const freeMethods: Readonly<Record<string, readonly string[]>> = {
-    Expr: exprMethods,
-    Matrix: ['doit', 'berkowitz', 'berkowitzEigenvals', 'berkowitzMinors', 'companion', 'connectedComponents', 'elementaryColOp', 'elementaryRowOp', 'inverseADJ', 'inverseBLOCK', 'inverseCH', 'inverseGE', 'inverseLDL', 'inverseLU', 'inverseQR', 'irregular', 'iterItems', 'iterValues', 'jordanBlock', 'jordanCell', 'key2bounds', 'key2ij', 'per', 'permuteBkwd', 'permuteFwd', 'printNonzero', 'refine', 'singularValueDecomposition', 'stronglyConnectedComponents', 'table', 'toDM', 'upperHessenbergDecomposition', 'wilkinson', 'analyticFunc', 'bidiagonalDecomposition', 'bidiagonalize', 'cholesky', 'choleskySolve', 'cofactor', 'colInsert', 'columnspace', 'conditionNumber', 'connectedComponentsDecomposition', 'cramerSolve', 'cross', 'diagonal', 'diagonalSolve', 'diagonalize', 'dot', 'dual', 'echelonForm', 'eigenvects', 'extract', 'gaussJordanSolve', 'getDiagBlocks', 'hat', 'invMod', 'isAntiSymmetric', 'isDiagonal', 'isDiagonalizable', 'isNilpotent', 'isSymmetric', 'jacobian', 'jordanCells', 'jordanForm', 'leftEigenvects', 'lll', 'lllTransform', 'lowerTriangular', 'lowerTriangularSolve', 'minorSubmatrix', 'multiplyElementwise', 'norm', 'normalized', 'nullspace', 'orthogonalize', 'permanent', 'permuteCols', 'permuteRows', 'pinv', 'pinvSolve', 'project', 'rank', 'rankDecomposition', 'rref', 'rrefRhs', 'rowInsert', 'rowspace', 'singularValues', 'solveLeastSquares', 'stronglyConnectedComponentsDecomposition', 'upperTriangular', 'upperTriangularSolve', 'vech', 'vec'],
-    MatrixExpr: ['fromIndexSummation', ...exprMethods],
-  };
-  if (freeMethods[owner]?.includes(m)) candidates.push(m);
-  const matrixAliases: Readonly<Record<string, string>> = {
-    LUdecomposition: 'luDecomposition', LDLdecomposition: 'ldl', QRdecomposition: 'qrDecomposition', LUdecompositionFF: 'LUdecompositionFF', LUdecompositionSimple: 'LUdecompositionSimple',
-    LUsolve: 'matrixSolve', QRsolve: 'matrixSolve', LDLsolve: 'matrixSolve', solve: 'matrixSolve', exp: 'matrixExp', log: 'matrixLog',
-    applyfunc: 'Matrix.prototype.map', colJoin: 'Matrix.prototype.vstack', rowJoin: 'Matrix.prototype.hstack',
-    berkowitzCharpoly: 'Matrix.prototype.charpoly', berkowitzDet: 'Matrix.prototype.det', detLUDecomposition: 'Matrix.prototype.det', detBareis: 'Matrix.prototype.det',
-  };
-  if (owner === 'Matrix' && matrixAliases[m]) candidates.push(matrixAliases[m]!);
+  if (MEMBER_FUNCTIONS[owner]?.includes(m)) candidates.push(m);
+  if (owner === 'Matrix' && MATRIX_MEMBER_ALIASES[m]) candidates.push(MATRIX_MEMBER_ALIASES[m]!);
   return candidates.find(publicPathExists);
 }
 export function hasCounterpart(a: { name: string; owner?: string; category?: string }): boolean {

@@ -3,15 +3,17 @@
 # SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 """Pin the entire SymPy module universe, including unmeasured modules.
 
-This static scan never imports optional backends or executes doctests. A
-module with a symjs source counterpart is only partially implemented until
-its complete public contract has been assessed. Source size is not a measure
-of behavioral compatibility.
+This static scan never imports optional backends or executes doctests. Complete
+modules satisfy public API, doctest, unit-test and limitation criteria from the
+committed measurements. Source size is not a measure of compatibility.
 """
 import ast
+from collections import Counter, defaultdict
+from functools import cache
 import doctest
 import hashlib
 import json
+import re
 from pathlib import Path
 import sys
 import sympy
@@ -469,6 +471,333 @@ NOTES = {
 }
 
 
+# Completeness is a conjunction of measured criteria, never a source-size score.
+# Python protocol names are outside the contract: __repr__, __str__, __hash__,
+# __slots__, construction, iteration, calls/subscripts, pickling and all other
+# dunders, plus private names (including _sympystr/_latex-style printer hooks).
+# Only the arithmetic/comparison dunders mapped by the harness below are kept.
+OPERATOR_MEMBERS = {
+    '__add__': ['add'], '__sub__': ['sub'], '__mul__': ['mul', 'compose'],
+    '__truediv__': ['div', 'truediv', 'quotientModule', 'quotientRing'],
+    '__pow__': ['pow'], '__floordiv__': ['floordiv'], '__mod__': ['mod'],
+    '__matmul__': ['matmul', 'mul'], '__neg__': ['neg'],
+    '__invert__': ['invert', 'inv', 'inverse'], '__and__': ['and', 'intersect', 'dot'],
+    '__or__': ['or', 'union'], '__xor__': ['xor', 'cross', 'symmetricDifference'],
+    '__rshift__': ['rshift'], '__lshift__': ['lshift'],
+    '__eq__': ['equals', 'eq'], '__ne__': ['equals', 'ne'],
+    '__lt__': ['lt'], '__le__': ['le'], '__gt__': ['gt'], '__ge__': ['ge'],
+}
+# Reflected arithmetic uses the same operation with the operands reversed.
+for _operator in ('add', 'sub', 'mul', 'truediv', 'pow', 'floordiv', 'mod', 'matmul', 'and', 'or', 'xor', 'rshift', 'lshift'):
+    OPERATOR_MEMBERS['__r' + _operator + '__'] = OPERATOR_MEMBERS['__' + _operator + '__']
+
+# Exact allowlists: a new/unknown omission reason fails closed. Printing a
+# mathematical expression is measurable, so printing-expression is NOT allowed.
+DOCTEST_OMISSIONS = frozenset({
+    'python-runtime-api', 'unstable-result-representation',  # Python object addresses
+    'upstream-skip',  # explicit doctest +SKIP
+    'illustrative-output',  # randomized output elided as Class(...)
+    'random-output', 'sampling-output', 'python-object-printing',
+})
+DOCTEST_EXCLUSIONS = frozenset({
+    'Python list method', 'Python class definition', 'Python threading', 'Python type object',
+})
+UNIT_OMISSIONS = frozenset({
+    'duplicate', 'marked-xfail', 'test-utility', 'python-runtime-api', 'private-api', 'optional-dependency',
+})
+
+# Qualified names disambiguate exports with different meanings in different
+# SymPy modules. These names and function-first forms are in docs/api-policy.md.
+QUALIFIED_RENAMES = {
+    'sympy.sets.setexpr.SetExpr': 'SetExpression',
+    'sympy.ntheory.ecm.Point': 'ECMPoint',
+    'sympy.vector.point.Point': 'VectorPoint',
+    'sympy.vector.Point': 'VectorPoint',
+    'sympy.stats.E': 'expectation', 'sympy.stats.rvinterface.E': 'expectation',
+    'sympy.stats.Chi': 'ChiRV', 'sympy.stats.crv_types.Chi': 'ChiRV',
+}
+ATTRIBUTE_OWNERS = {
+    'is_integer': {'Basic', 'Expr'}, 'is_Function': {'Basic', 'Expr'},
+    'is_Number': {'Basic', 'Expr'}, 'canonical': {'Relational'},
+}
+FUNCTION_MEMBERS = {
+    'Basic': {'free_symbols': 'freeSymbols', 'args': 'args', 'kind': 'kindOf'},
+    'Function': {'nargs': 'nargs'}, 'Indexed': {'ranges': 'ranges'},
+    'ExprWithLimits': {'variables': 'variables'},
+    'AddWithLimits': {'has_finite_limits': 'hasFiniteLimits', 'has_reversed_limits': 'hasReversedLimits'},
+    'BesselBase': {'order': 'order', 'argument': 'argument'},
+}
+
+
+@cache
+def camel(name):
+    return re.sub(r'_([a-zA-Z0-9])', lambda m: m[1].upper(), name)
+
+
+def definitions(tree):
+    """Module/class declarations, including conditional declarations, not locals."""
+    for node in tree.body:
+        yield node
+        if isinstance(node, (ast.If, ast.Try)):
+            for body in ([node.body, node.orelse] + ([node.finalbody] + [h.body for h in node.handlers] if isinstance(node, ast.Try) else [])):
+                yield from definitions(ast.Module(body=body, type_ignores=[]))
+
+
+def public_outline(tree, class_body=False):
+    """Retain declaration structure, not the bodies of 825 modules' functions."""
+    body = []
+    for node in definitions(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            node.body = []
+            body.append(node)
+        elif isinstance(node, ast.ClassDef):
+            public_outline(node, class_body=True)
+            body.append(node)
+        elif isinstance(node, (ast.Import, ast.ImportFrom)):
+            body.append(node)
+        elif isinstance(node, (ast.Assign, ast.AnnAssign)):
+            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+            is_exports = any(isinstance(t, ast.Name) and t.id == '__all__' for t in targets)
+            if class_body or is_exports:
+                if not is_exports:
+                    node.value = ast.Constant(value=None)
+                body.append(node)
+    tree.body = body
+    return tree
+
+
+class PublicContracts:
+    """Resolve declared classes and their inherited members without importing backends."""
+    def __init__(self, trees):
+        self.trees = trees
+        self.classes = {}
+        self.imports = {}
+        for module, tree in trees.items():
+            imports = self.imports[module] = {}
+            for node in definitions(tree):
+                if isinstance(node, ast.ClassDef):
+                    self.classes[module + '.' + node.name] = node
+                elif isinstance(node, ast.ImportFrom) and node.module != '__future__':
+                    # Package __init__ imports are resolved against the package itself.
+                    package = module if getattr(tree, 'is_package', False) else module.rpartition('.')[0]
+                    prefix = '.'.join(package.split('.')[:len(package.split('.')) - node.level + 1]) if node.level else ''
+                    origin = '.'.join(p for p in (prefix, node.module) if p)
+                    for alias in node.names:
+                        imports[alias.asname or alias.name] = origin + '.' + alias.name
+                elif isinstance(node, ast.Import):
+                    for alias in node.names:
+                        imports[alias.asname or alias.name.split('.')[0]] = alias.name if alias.asname else alias.name.split('.')[0]
+        self.cache = {}
+
+    def resolve(self, module, name, seen=frozenset()):
+        full = module + '.' + name
+        if full in seen:
+            return full
+        head, dot, tail = name.partition('.')
+        target = self.imports.get(module, {}).get(head)
+        if target:
+            full = target + (dot + tail if dot else '')
+        if full in self.classes:
+            return full
+        owner, _, local = full.rpartition('.')
+        if owner in self.imports and local in self.imports[owner]:
+            return self.resolve(owner, local, seen | {full})
+        return full
+
+    def members(self, full, seen=frozenset()):
+        if full in self.cache:
+            return self.cache[full]
+        if full in seen or full not in self.classes:
+            return set(), set(), set()
+        node = self.classes[full]
+        module = full.rpartition('.')[0]
+        names, families, unresolved = set(), {node.name}, set()
+        for item in definitions(node):
+            if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                if not item.name.startswith('_') or item.name in OPERATOR_MEMBERS:
+                    names.add(item.name)
+            elif isinstance(item, (ast.Assign, ast.AnnAssign)):
+                targets = item.targets if isinstance(item, ast.Assign) else [item.target]
+                for target in targets:
+                    if isinstance(target, ast.Name) and not target.id.startswith('_'):
+                        names.add(target.id)
+        for base in node.bases:
+            name = ast.unparse(base)
+            if name in {'object', 'Exception', 'BaseException', 'ValueError', 'TypeError', 'IndexError', 'KeyError', 'RuntimeError', 'ArithmeticError', 'ZeroDivisionError', 'NotImplementedError', 'tuple', 'dict', 'list', 'set', 'frozenset', 'int', 'str', 'type'}:
+                continue
+            parent = self.resolve(module, name)
+            if parent not in self.classes:
+                unresolved.add(parent)
+                continue
+            inherited, ancestors, unknown = self.members(parent, seen | {full})
+            names.update(inherited)
+            families.update(ancestors)
+            unresolved.update(unknown)
+        result = names, families, unresolved
+        self.cache[full] = result
+        return result
+
+    def contract(self, module):
+        names, classes, unresolved = set(), {}, set()
+        for node in definitions(self.trees[module]):
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) and not node.name.startswith('_'):
+                names.add(node.name)
+                if isinstance(node, ast.ClassDef):
+                    members, families, unknown = self.members(module + '.' + node.name)
+                    classes[node.name] = {'members': sorted(members), 'families': sorted(families)}
+                    unresolved.update(unknown)
+            elif isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == '__all__' for t in node.targets):
+                try:
+                    exports = ast.literal_eval(node.value)
+                except (ValueError, TypeError):
+                    unresolved.add(module + '.__all__')
+                    continue
+                for name in exports:
+                    names.add(name)
+                    full = self.resolve(module, name)
+                    if full in self.classes:
+                        members, families, unknown = self.members(full)
+                        classes[name] = {'members': sorted(members), 'families': sorted(families)}
+                        unresolved.update(unknown)
+        return {'names': sorted(names), 'classes': classes, 'unresolvedBases': sorted(unresolved)}
+
+
+def export_exists(api, path):
+    name, dot, member = path.partition('.')
+    row = api['exports'].get(name)
+    if row is None:
+        return False
+    if not dot:
+        return True
+    if member.startswith('prototype.'):
+        return member[10:] in row['prototype']
+    return member in row['static']
+
+
+def api_criterion(module, contract, api):
+    policy = api.get('policy', {})
+    missing = []
+    for name in contract['names']:
+        qualified = QUALIFIED_RENAMES.get(module + '.' + name)
+        if module == 'sympy.integrals.intpoly' and name != 'polytope_integrate':
+            qualified = 'intpoly.' + camel(name)
+        canonical = qualified or policy.get('renames', {}).get(name) or (name if name in contract['classes'] else camel(name))
+        candidates = [canonical] if qualified else [canonical, policy.get('aliases', {}).get(name, canonical)]
+        counterpart = next((path for path in candidates if export_exists(api, path)), None)
+        if counterpart is None:
+            missing.append(name)
+        info = contract['classes'].get(name)
+        if info is None:
+            continue
+        row = api['exports'].get((counterpart or canonical).split('.')[0], {})
+        present = set(row.get('prototype', [])) | set(row.get('static', []))
+        families = set(info['families'])
+        if 'MatrixBase' in families:
+            families.add('Matrix')
+        free_members = {member for family in families for member in policy.get('memberFunctions', {}).get(family, [])}
+        explicit_members = defaultdict(set)
+        for family in families:
+            for member, function in FUNCTION_MEMBERS.get(family, {}).items():
+                explicit_members[member].add(function)
+        for member in info['members']:
+            spellings = OPERATOR_MEMBERS.get(member, [camel(member)])
+            if present.intersection(spellings):
+                continue
+            functions = sorted(explicit_members[member])
+            if camel(member) in free_members:
+                functions.append(camel(member))
+            if 'Matrix' in families:
+                alias = policy.get('matrixMemberAliases', {}).get(camel(member))
+                if alias:
+                    functions.append(alias)
+            if families.intersection(ATTRIBUTE_OWNERS.get(member, set())):
+                functions.append(policy.get('attributeFunctions', {}).get(member, camel(member)))
+            # Expression arithmetic is implemented by these public functions.
+            if families.intersection({'Expr', 'Boolean'}):
+                operator = {'__eq__': 'Eq', '__ne__': 'Ne', '__lt__': 'Lt', '__le__': 'Le', '__gt__': 'Gt', '__ge__': 'Ge', '__mod__': 'Mod', '__invert__': 'Not', '__and__': 'And', '__or__': 'Or', '__xor__': 'Xor'}
+                if member in operator:
+                    functions.append(operator[member])
+                elif member in OPERATOR_MEMBERS and member not in {'__truediv__', '__floordiv__', '__matmul__'}:
+                    functions.extend(OPERATOR_MEMBERS[member])
+            if not any(export_exists(api, path) and api['exports'].get(path.split('.')[0], {}).get('kind') == 'function' for path in functions):
+                missing.append(name + '.' + member)
+    unresolved = contract.get('unresolvedBases', [])
+    return {'pass': not missing and not unresolved, 'missingNames': sorted(missing), 'unresolvedBases': unresolved}
+
+
+def disallowed_omissions(rows, allowed):
+    counts = Counter()
+    for row in rows:
+        if row['reason'] not in allowed:
+            counts[row['reason']] += row.get('count', 1)
+    return dict(sorted(counts.items()))
+
+
+def test_module_for(module):
+    package, _, name = module.rpartition('.')
+    return (package or module) + '.tests.test_' + name
+
+
+def evaluate_completeness(module, contract, api, evidence, documented_examples=0, selected=True, note=None):
+    """Pure criteria logic; unknown omissions and absent measurements fail closed."""
+    docs = evidence['doctests'].get(module, [])
+    omissions = evidence['doctestOmissions'].get(module, [])
+    failures = sorted(gap for gap in evidence['doctestGaps'] if gap.startswith(module + ':'))
+    excluded = {label: reason for label, reason in evidence['doctestExclusions'].items() if label.startswith(module + ':') and reason not in DOCTEST_EXCLUSIONS}
+    bad_docs = disallowed_omissions(omissions, DOCTEST_OMISSIONS)
+    missing_examples = max(0, documented_examples - len(docs) - sum(o.get('count', 1) for o in omissions))
+    unmeasured = documented_examples > 0 and not selected
+    test_module = test_module_for(module)
+    unit = evidence['units'].get(test_module, {})
+    gaps = sorted(set(unit.get('gaps', [])) | set(unit.get('timeouts', [])))
+    bad_units = disallowed_omissions(unit.get('omitted', []), UNIT_OMISSIONS)
+    statuses = Counter(t['status'] for t in unit.get('tests', []) if t['status'] != 'completed' and t['status'] not in UNIT_OMISSIONS)
+    limits = [area for area in evidence['limitations'] if any(module == prefix or module.startswith(prefix + '.') for prefix in area['modules']) and area['remaining']]
+    return {
+        'publicApi': api_criterion(module, contract, api),
+        'doctests': {'pass': not (failures or excluded or bad_docs or missing_examples or unmeasured),
+                     'caseCount': len(docs), 'gapCount': len(failures), 'failingIds': failures,
+                     'disallowedExclusions': excluded, 'disallowedOmissions': bad_docs,
+                     'unaccountedExamples': missing_examples, 'notSelected': unmeasured},
+        'unitTests': {'pass': bool(unit.get('exists') and unit.get('caseCount', 0)) and not (gaps or bad_units or statuses),
+                      'testModule': test_module, 'testFile': test_module.replace('.', '/') + '.py',
+                      'inCorpus': unit.get('exists', False), 'caseCount': unit.get('caseCount', 0),
+                      'gapCount': len(gaps), 'timeoutCount': len(unit.get('timeouts', [])),
+                      'disallowedOmissions': bad_units, 'incompleteTests': dict(sorted(statuses.items()))},
+        'limitations': {'pass': note is None and not limits, 'hasNote': note is not None, 'note': note or '',
+                       'capabilities': [{'area': a['area'], 'remaining': a['remaining']} for a in limits]},
+    }
+
+
+def load_evidence(root, corpus):
+    compat = root / 'compat'
+    read = lambda path: json.loads(path.read_text())
+    def by_module(rows):
+        result = defaultdict(list)
+        for row in rows:
+            result[row['module']].append(row)
+        return result
+    units = {}
+    index = read(compat / 'tests-corpus/index.json')
+    for category in index['categories'].values():
+        audit = read(compat / 'tests-corpus' / category['auditFile'])
+        omitted, tests = by_module(audit['omitted']), by_module(audit['tests'])
+        counts = Counter()
+        for shard in category['shards']:
+            counts.update(c['module'] for c in read(compat / 'tests-corpus' / shard['file']))
+        for module in category['modules']:
+            units[module] = {'exists': True, 'caseCount': counts[module], 'omitted': omitted[module], 'tests': tests[module], 'gaps': [], 'timeouts': []}
+    for kind, ids in read(compat / 'tests-known-gaps.json').items():
+        for case_id in ids:
+            module = case_id.split(':', 1)[0]
+            if module in units:
+                units[module]['timeouts' if kind == 'timeouts' else 'gaps'].append(case_id)
+    return {'doctests': by_module(corpus['cases']), 'doctestOmissions': by_module(corpus['extraction']['omitted']),
+            'doctestGaps': read(compat / 'known-gaps.json')['cases'],
+            'doctestExclusions': read(compat / 'doctest-exclusions.json'),
+            'units': units, 'limitations': read(compat / 'capabilities.json')['areas']}
+
+
 def build_inventory(root):
     reference = Path(sympy.__file__).parent
     source = root / 'packages/symjs/src'
@@ -476,29 +805,44 @@ def build_inventory(root):
     measured = {c['module'] for c in corpus['cases']}
     selected_ast = ast.parse((root / 'compat/extract.py').read_text())
     selected = next(ast.literal_eval(n.value) for n in selected_ast.body if isinstance(n, ast.Assign) and any(isinstance(t, ast.Name) and t.id == 'MODULES' for t in n.targets))
-    rows = []
+    api = json.loads((root / 'compat/api-members.json').read_text())
+    evidence = load_evidence(root, corpus)
+    trees = {}
+    paths = {}
+    source_info = {}
     parser = doctest.DocTestParser()
     for path in sorted(reference.rglob('*.py')):
         rel = path.relative_to(reference)
         if {'tests', 'benchmarks', '__pycache__'} & set(rel.parts) or path.name.startswith('test_'):
             continue
         module = 'sympy.' + '.'.join(rel.with_suffix('').parts)
-        if module.endswith('.__init__'):
-            module = module[:-9]
+        module = module.removesuffix('.__init__')
         text = path.read_text()
         tree = ast.parse(text)
-        names = []
         examples = 0
         for node in ast.walk(tree):
             if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
                 doc = ast.get_docstring(node)
                 if doc:
                     examples += sum(bool(ex.want.strip()) for ex in parser.get_examples(doc))
-        for node in tree.body:
-            if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)) and not node.name.startswith('_'):
-                names.append(node.name)
-                if isinstance(node, ast.ClassDef):
-                    names.extend(node.name + '.' + m.name for m in node.body if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef)) and not m.name.startswith('_'))
+        source_info[module] = (hashlib.sha256(text.encode()).hexdigest(), examples)
+        public_outline(tree)
+        tree.is_package = path.name == '__init__.py'
+        trees[module] = tree
+        paths[module] = path
+    contracts = PublicContracts(trees)
+    rows = []
+    for module, path in paths.items():
+        rel = path.relative_to(reference)
+        source_hash, examples = source_info[module]
+        contract = contracts.contract(module)
+        names = list(contract['names'])
+        for node in definitions(trees[module]):
+            if isinstance(node, ast.ClassDef) and not node.name.startswith('_'):
+                for member in definitions(node):
+                    if isinstance(member, (ast.FunctionDef, ast.AsyncFunctionDef)) and (not member.name.startswith('_') or member.name in OPERATOR_MEMBERS):
+                        names.append(node.name + '.' + member.name)
+        names = sorted(set(names))
         counterpart = list(CORRESPONDENCES.get(module, []))
         candidate = '/'.join(p.replace('_', '') for p in rel.with_suffix('').parts) + '.ts'
         if (source / candidate).is_file():
@@ -508,17 +852,22 @@ def build_inventory(root):
         package = next((p for p in sorted(NOT_IMPLEMENTED_PACKAGES, key=len, reverse=True) if module == p or module.startswith(p + '.')), None)
         status = 'excluded' if reason else 'partial' if counterpart else 'unimplemented' if module in NOT_IMPLEMENTED or package else 'unassessed'
         note = NOTES.get(module) or NOT_IMPLEMENTED.get(module) or (NOT_IMPLEMENTED_PACKAGES[package] if package and status == 'unimplemented' else '')
-        rows.append({'module': module, 'sha256': hashlib.sha256(text.encode()).hexdigest(), 'status': status,
+        completeness = evaluate_completeness(module, contract, api, evidence, examples, module in selected, NOTES.get(module)) if status == 'partial' else None
+        if completeness and all(c['pass'] for c in completeness.values()):
+            status = 'complete'
+        rows.append({'module': module, 'sha256': source_hash, 'status': status,
                      **({'reason': reason} if reason else {}), **({'note': note} if note and not reason else {}), 'sources': counterpart,
+                     **({'completeness': completeness} if completeness is not None else {}),
                      'selectedForExtraction': module in selected, 'hasCorpusCases': module in measured,
                      'documentedExamples': examples, 'declaredPublicNames': names})
-    return {'schema': 1, 'reference': {'sympy': sympy.__version__},
-            'definitions': {'partial': 'A source counterpart exists; full behavioral compatibility is not established.',
+    return {'schema': 2, 'reference': {'sympy': sympy.__version__},
+            'definitions': {'complete': 'All public exports and class members are present; doctest and unit-test evidence passes strict omission/gap checks; no recorded limitation.',
+                            'partial': 'A source counterpart exists, but at least one measured completeness criterion fails (see completeness).',
                             'unimplemented': 'Inspected mathematical module without an implementation.',
                             'unassessed': 'Not assessed; never treated as implemented or deliberately excluded.',
                             'excluded': 'An explicit runtime/infrastructure exclusion, with its reason.',
                             'note': 'For partial and unimplemented modules: what is ported, or where the module is planned (base module or an extend package).',
-                            'declaredPublicNames': 'Non-private definitions and class members in source; not an API-completeness denominator.'},
+                            'declaredPublicNames': 'Public source definitions, explicit __all__ exports and declared class methods/properties. The API criterion also checks inherited members and class attributes. Python protocols are excluded except mapped arithmetic/comparison operators.'},
             'modules': rows}
 
 

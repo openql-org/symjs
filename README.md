@@ -119,7 +119,7 @@ To add an extend module, create `packages/<name>/` with its own `package.json` (
 
 Compatibility has separate measurements; none is a whole-SymPy completion percentage:
 
-- The pinned [scope inventory](compat/scope-inventory.json) lists **all 825 production modules of SymPy 1.14.0**, including partial, unimplemented, unassessed and explicitly excluded modules.
+- The pinned [scope inventory](compat/scope-inventory.json) lists **all 825 production modules of SymPy 1.14.0**, including complete, partial, unimplemented, unassessed and explicitly excluded modules. Complete modules have every public export and class member, passing doctest and unit-test evidence with only explicitly allowed omissions, and no recorded limitation; partial modules list the criteria that fail.
 - **Corpus result agreement** measures extracted examples. The [extraction audit](compat/REPORT.md#extraction-audit) records omitted examples and their reasons.
 - **Verified public-call results** count automatic public API calls and reviewed conversion adapters. Mathematical computations remaining in the harness and unreviewed translations are reported separately, even when their results match.
 - **API presence** requires an actual exported function or member, with its concrete path recorded. It does not establish behavior or completeness. An adapter alone no longer counts as an API.
