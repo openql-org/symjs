@@ -2,9 +2,9 @@
 
 Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
-Measured **97320** cases: **61604 exact**, **2463 equivalent**, **33253 failing**. Agreement: **65.83%**.
+Measured **97320** cases: **80316 exact**, **2463 equivalent**, **14541 failing**. Agreement: **85.06%**.
 
-Compatibility suite wall time: **283.69 s**. Sum of category replay times: **655.60 s** (projects run in parallel).
+Compatibility suite wall time: **273.36 s**. Sum of category replay times: **629.70 s** (projects run in parallel).
 
 Extraction wall time: **438.50 s**, 4 processes, 30 s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.
 
@@ -16,36 +16,36 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Measured | Exact | Equivalent | Failing | Agreement | Replay s |
 |---|---:|---:|---:|---:|---:|---:|
-| algebras | 128 | 123 | 0 | 5 | 96.09% | 0.45 |
-| assumptions | 2220 | 1753 | 5 | 462 | 79.19% | 2.14 |
-| calculus | 518 | 415 | 0 | 103 | 80.12% | 2.11 |
-| categories | 57 | 57 | 0 | 0 | 100.00% | 0.08 |
-| combinatorics | 1655 | 1616 | 0 | 39 | 97.64% | 1.18 |
-| concrete | 856 | 596 | 68 | 192 | 77.57% | 7.79 |
-| core | 7858 | 5507 | 187 | 2164 | 72.46% | 82.00 |
-| crypto | 155 | 153 | 0 | 2 | 98.71% | 0.28 |
-| discrete | 185 | 184 | 1 | 0 | 100.00% | 0.72 |
-| functions | 9853 | 5785 | 1849 | 2219 | 77.48% | 41.33 |
-| geometry | 1046 | 1011 | 6 | 29 | 97.23% | 12.09 |
-| holonomic | 102 | 98 | 0 | 4 | 96.08% | 0.69 |
-| integrals | 1197 | 719 | 44 | 434 | 63.74% | 17.80 |
+| algebras | 128 | 123 | 0 | 5 | 96.09% | 0.47 |
+| assumptions | 2220 | 1753 | 5 | 462 | 79.19% | 2.16 |
+| calculus | 518 | 415 | 0 | 103 | 80.12% | 2.14 |
+| categories | 57 | 57 | 0 | 0 | 100.00% | 0.06 |
+| combinatorics | 1655 | 1616 | 0 | 39 | 97.64% | 1.09 |
+| concrete | 856 | 596 | 68 | 192 | 77.57% | 7.73 |
+| core | 7858 | 5507 | 187 | 2164 | 72.46% | 81.46 |
+| crypto | 155 | 153 | 0 | 2 | 98.71% | 0.26 |
+| discrete | 185 | 184 | 1 | 0 | 100.00% | 0.71 |
+| functions | 9853 | 5785 | 1849 | 2219 | 77.48% | 40.45 |
+| geometry | 1046 | 1011 | 6 | 29 | 97.23% | 12.41 |
+| holonomic | 102 | 98 | 0 | 4 | 96.08% | 0.70 |
+| integrals | 1197 | 719 | 44 | 434 | 63.74% | 17.27 |
 | liealgebras | 87 | 81 | 1 | 5 | 94.25% | 0.06 |
-| logic | 662 | 486 | 1 | 175 | 73.56% | 0.63 |
-| matrices | 3930 | 3168 | 37 | 725 | 81.55% | 59.18 |
-| ntheory | 44169 | 25423 | 0 | 18746 | 57.56% | 10.56 |
-| parsing | 170 | 116 | 3 | 51 | 70.00% | 0.17 |
-| polys | 9338 | 4500 | 53 | 4785 | 48.76% | 101.15 |
-| printing | 1767 | 1246 | 0 | 521 | 70.51% | 1.02 |
-| series | 1626 | 1147 | 29 | 450 | 72.32% | 14.25 |
-| sets | 1494 | 874 | 12 | 608 | 59.30% | 1.57 |
-| simplify | 1402 | 1221 | 39 | 142 | 89.87% | 6.92 |
-| solvers | 2381 | 1458 | 73 | 850 | 64.30% | 70.29 |
-| stats | 1865 | 1741 | 41 | 83 | 95.55% | 190.41 |
+| logic | 662 | 486 | 1 | 175 | 73.56% | 0.76 |
+| matrices | 3930 | 3168 | 37 | 725 | 81.55% | 57.50 |
+| ntheory | 44169 | 44134 | 0 | 35 | 99.92% | 9.79 |
+| parsing | 170 | 116 | 3 | 51 | 70.00% | 0.15 |
+| polys | 9338 | 4501 | 53 | 4784 | 48.77% | 95.21 |
+| printing | 1767 | 1246 | 0 | 521 | 70.51% | 0.70 |
+| series | 1626 | 1147 | 29 | 450 | 72.32% | 13.00 |
+| sets | 1494 | 874 | 12 | 608 | 59.30% | 1.54 |
+| simplify | 1402 | 1221 | 39 | 142 | 89.87% | 7.37 |
+| solvers | 2381 | 1458 | 73 | 850 | 64.30% | 64.98 |
+| stats | 1865 | 1741 | 41 | 83 | 95.55% | 183.77 |
 | strategies | 6 | 5 | 0 | 1 | 83.33% | 0.01 |
-| tensor | 1590 | 1216 | 1 | 373 | 76.54% | 6.19 |
+| tensor | 1590 | 1216 | 1 | 373 | 76.54% | 4.58 |
 | unify | 8 | 1 | 0 | 7 | 12.50% | 0.01 |
-| utilities | 375 | 311 | 9 | 55 | 85.33% | 19.93 |
-| vector | 620 | 593 | 4 | 23 | 96.29% | 4.61 |
+| utilities | 375 | 311 | 9 | 55 | 85.33% | 19.19 |
+| vector | 620 | 593 | 4 | 23 | 96.29% | 4.17 |
 
 ## Extraction audit
 
@@ -577,7 +577,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | matrices | exception class mismatch (accepted) | 118 |
 | ntheory | exception not raised | 2 |
 | ntheory | missing API/adapter | 10 |
-| ntheory | unexpected exception | 18717 |
+| ntheory | unexpected exception | 6 |
 | ntheory | unsupported value/input type | 10 |
 | ntheory | wrong result | 7 |
 | ntheory | exception class mismatch (accepted) | 8 |
@@ -588,7 +588,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | polys | exception not raised | 89 |
 | polys | input conversion exception | 22 |
 | polys | missing API/adapter | 2780 |
-| polys | replay timeout | 2 |
+| polys | replay timeout | 1 |
 | polys | result comparison exception | 8 |
 | polys | unexpected exception | 1180 |
 | polys | unsupported value/input type | 327 |
@@ -772,7 +772,6 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | matrices | .is_Identity (unsupported) | 18 |
 | matrices | .diff (error) | 17 |
 | matrices | .dummy_eq (fail) | 16 |
-| ntheory | num_digits (error) | 18711 |
 | ntheory | smoothness_p (unsupported) | 10 |
 | ntheory | is_extra_strong_lucas_prp (unsupported) | 6 |
 | ntheory | factorint (fail) | 4 |
@@ -782,6 +781,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | ntheory | is_euler_jacobi_pseudoprime (unsupported) | 2 |
 | ntheory | totient (fail) | 1 |
 | ntheory | is_nthpow_residue (error) | 1 |
+| ntheory | nthroot_mod (error) | 1 |
 | parsing | parse_expr (fail) | 31 |
 | parsing | parse_expr (error) | 18 |
 | parsing | .dummy_eq (fail) | 2 |

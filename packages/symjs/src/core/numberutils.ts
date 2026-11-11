@@ -221,7 +221,12 @@ export function trailing(nIn: bigint): number {
 
 /** Number of digits of |n| in the given base (SymPy num_digits). */
 export function numDigits(n: bigint, base = 10): number {
-  return babs(n).toString(base).length;
+  if (base < 0) throw new RangeError('num_digits: base must be int greater than 1');
+  if (n === 0n) return 1;
+  if (base <= 1) throw new RangeError('num_digits: base must be 2 or more');
+  // Number#toString covers radices 2..36; larger bases count by integer logarithm
+  if (base <= 36) return babs(n).toString(base).length;
+  return 1 + Number(integerLog(babs(n), BigInt(base))[0]);
 }
 
 /** Inverse of a modulo m (SymPy mod_inverse); for non-integers 1/a when m > 1. */

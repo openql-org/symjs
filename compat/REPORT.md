@@ -20,9 +20,9 @@ Pinned inventory: **825 production modules** in SymPy 1.14.0. 432 selected for e
 | Inventory status | Modules |
 |---|---:|
 | partial | 506 |
-| unimplemented | 171 |
+| unimplemented | 170 |
 | unassessed | 0 |
-| excluded | 148 |
+| excluded | 149 |
 
 Partial means a source correspondence exists, not that the module is complete. Unassessed modules remain visible. Exclusions and source hashes are recorded in `scope-inventory.json`; symbolic mathematical features are not excluded merely because they are difficult.
 
@@ -84,7 +84,7 @@ Direct regression-test paths are maintained in `capabilities.json`. Tensor diffe
 
 **ODE checks: 100.0% (41/41; exact 40, equivalent 1)**
 
-**Fully covered (100% test coverage): 100.0% of source files (454/454), 100.0% of statements (99645/99645)**
+**Fully covered (100% test coverage): 100.0% of source files (454/454), 100.0% of statements (99653/99653)**
 
 | Category | Behavior | Exact | Exact rate | Equivalent | Fail | Unsupported | Error | Cases | API coverage | Fully covered files |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
