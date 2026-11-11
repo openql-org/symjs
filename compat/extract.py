@@ -192,6 +192,7 @@ MODULES = {
     "sympy.series.fourier": "calculus",
     "sympy.series.limitseq": "calculus",
     "sympy.series.sequences": "calculus",
+    "sympy.series.series_class": "calculus",
     "sympy.series.residues": "calculus",
     "sympy.concrete.gosper": "calculus",
     "sympy.concrete.delta": "calculus",

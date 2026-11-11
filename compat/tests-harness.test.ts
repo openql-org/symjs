@@ -11,6 +11,17 @@ const base: TestCase = { module: 'sympy.core.tests.test_fixture', category: 'cor
   test: 'test_fixture', line: 1, src: 'assert Integer(1) == 1', fn: 'Integer',
   args: [{ t: 'Rational', p: '1', q: '1' }], kwargs: {}, expected: '1', op: '==' };
 
+it('replays series indices and slices with the SeriesBase offset semantics', () => {
+  const integer = (n: number) => ({ t: 'Rational', p: String(n), q: '1', py: true });
+  const x = { t: 'Symbol', name: 'x', assume: {} };
+  const self = { t: 'FormalPowerSeries', f: { t: 'Fn', name: 'sin', args: [x] }, x, x0: integer(0), dir: '+' };
+  const c = { ...base, module: 'sympy.series.tests.test_formal', category: 'series', fn: '.__getitem__', self };
+  expect(runTestCase({ ...c, args: [integer(1)], expected: 'x' })).toEqual({ status: 'pass' });
+  const absent = { t: 'Js', v: null };
+  expect(runTestCase({ ...c, args: [{ t: 'Slice', start: absent, stop: integer(4), step: absent }], expected: '[0, x, 0, -x**3/6]' })).toEqual({ status: 'pass' });
+  expect(runTestCase({ ...c, args: [{ t: 'Slice', start: integer(3), stop: integer(-1), step: integer(-1) }], expected: '[-x**3/6, 0, x, 0]' })).toEqual({ status: 'pass' });
+});
+
 it('reuses ordinary exact/equivalent matching and inverts only comparable inequality results', () => {
   expect(runTestCase(base)).toEqual({ status: 'pass' });
   expect(runTestCase({ ...base, op: '!=', expected: '2' })).toEqual({ status: 'pass' });

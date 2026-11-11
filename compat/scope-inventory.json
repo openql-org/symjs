@@ -18017,10 +18017,11 @@
   {
    "module": "sympy.series.series_class",
    "sha256": "d37dcd27945ef004b87aaf9c8667dcb77f8bcf6bc1a9d16a5ed9eb6f1b304f1d",
-   "status": "unimplemented",
-   "note": "SeriesBase, abstract base class of sequences/fourier/formal series; to be ported to ./calculus",
-   "sources": [],
-   "selectedForExtraction": false,
+   "status": "partial",
+   "sources": [
+    "series/series_class.ts"
+   ],
+   "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,
    "declaredPublicNames": [

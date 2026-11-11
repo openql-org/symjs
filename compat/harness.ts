@@ -4012,6 +4012,16 @@ Object.assign(ADAPTERS, {
     return sj.fps(asExpr(self), asSym(args[0]), args[1] === undefined ? 0 : asExpr(args[1]));
   },
   // ---- sympy.series.sequences, limitseq, residues and sympy.calculus.finite_diff, euler
+  '.find_linear_recurrence': (args, kw, self) => {
+    if (!(self instanceof sj.SeqBase)) throw new Unsupported('sequence receiver');
+    for (const key of Object.keys(kw)) if (!['n', 'd', 'gfvar'].includes(key)) throw new Unsupported(`kwargs ${key}`);
+    const n = intArg(args[0] ?? kw['n']);
+    const d = args[1] ?? kw['d'] ?? undefined;
+    const gfvar = args[2] ?? kw['gfvar'] ?? undefined;
+    if (gfvar === undefined) return new JsList(self.findLinearRecurrence(n, d === undefined ? undefined : intArg(d)));
+    const [coefficients, generatingFunction] = self.findLinearRecurrence(n, d === undefined ? undefined : intArg(d), asSym(gfvar));
+    return new JsTuple([new JsList(coefficients), generatingFunction]);
+  },
   sequence: (args, kw) => {
     noKw(kw);
     const seq = args[0] instanceof JsTuple || args[0] instanceof JsList ? args[0].items.map(asExpr) : asExpr(args[0]);
@@ -4417,6 +4427,13 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
     return r.value instanceof Expr ? String(r.value) === 'True' : r.value === true;
   },
   '.__getitem__': (a, [i]) => {
+    if (a instanceof sj.SeriesBase) {
+      if (i instanceof sj.Slice) {
+        const [start, stop, step] = i.toString().split(':').map((part) => part === '' ? undefined : Number(part));
+        return a.slice(start, stop, step);
+      }
+      return a.getItem(Number(i));
+    }
     const index = i instanceof JsTuple ? i.items : Array.isArray(i) && (a instanceof Matrix || a instanceof sj.MatrixExpr || a instanceof sj.NDimArray || a instanceof sj.IndexedBase || a instanceof sj.ArraySymbol) ? i : [i];
     if (index.some((j) => j instanceof sj.Slice)) {
       if (a instanceof sj.MatrixExpr) {

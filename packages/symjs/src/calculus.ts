@@ -165,3 +165,5 @@ export { variables, hasFiniteLimits, hasReversedLimits } from './concrete/exprwi
 export { gaussLegendre, gaussLaguerre, gaussHermite, gaussGenLaguerre, gaussJacobi, gaussChebyshevT, gaussChebyshevU, gaussLobatto } from './integrals/quadrature';
 export type { QuadratureRule } from './integrals/quadrature';
 export type { HyperSeriesResult } from './series/formal';
+
+export { SeriesBase } from './series/series_class';
