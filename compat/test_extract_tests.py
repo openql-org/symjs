@@ -42,6 +42,20 @@ class UnitTestExtractorTests(unittest.TestCase):
         self.assertEqual(corpus["cases"][-2]["fn"], '.__getitem__')
         self.assertTrue(all(c['line'] > 2 and c['test'] == 'test_forms' for c in corpus['cases']))
 
+    def test_order_identity_membership_and_undecided_forms(self):
+        corpus = self.extract('''
+            def test_forms():
+                x = Symbol('x')
+                assert abs(Float(2) - 2) < 1e-10
+                assert sin(x).func is sin
+                assert sin(x) not in (False, True)
+                assert not x.is_positive
+                assert Integer(2) >= 3
+        ''')
+        self.assertEqual([(c["fn"], c["op"], c["expected"]) for c in corpus["cases"]],
+                         [(".__lt__", "truthy", "True"), (".func", "is", "sin"), (".__contains__", "falsy", "False"), (".is_positive", "falsy", "None")])
+        self.assertEqual(corpus["extraction"]["reasons"], {"reference-assertion-failed": 1})
+
     def test_each_operand_is_evaluated_once_before_mutation(self):
         corpus = self.extract('''
             def test_mutation():
@@ -335,6 +349,14 @@ def test_matplotlib():
             unit.compact_audits(directory, ['ntheory'])
             self.assertEqual(path.read_bytes(), before)
             self.assertEqual((directory / 'ntheory.json').read_bytes(), cases)
+
+    def test_codegen_measures_only_the_c_math_functions(self):
+        self.assertIn('codegen', unit.CATEGORIES)
+        self.assertTrue(unit.file_scope(Path('codegen/tests/test_cfunctions.py'))[0])
+        for name in ('codegen/tests/test_ast.py', 'codegen/tests/test_rewriting.py', 'codegen/tests/test_approximations.py'):
+            keep, reason = unit.file_scope(Path(name))
+            self.assertFalse(keep)
+            self.assertEqual(reason, unit.EXCLUDED_AREAS['codegen'])
 
     def test_diffgeom_is_a_regular_base_category(self):
         self.assertIn('diffgeom', unit.CATEGORIES)

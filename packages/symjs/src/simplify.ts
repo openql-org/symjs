@@ -7,6 +7,8 @@
 
 // every entry point brings the core with its registrations
 import './core';
+import { impl } from './core/nodes';
+import { isHypergeometric as isHypergeometricOf } from './simplify/gammasimp';
 // simplify's final doit stage also works when this entry is imported by itself.
 import './calculus/doit';
 
@@ -143,3 +145,5 @@ export const exptotrig = _exptotrig_;
 
 /** @deprecated Internal; removed from the public API in 1.0. */
 export const combineExp = _combineExp_;
+
+impl.isHypergeometric = isHypergeometricOf;

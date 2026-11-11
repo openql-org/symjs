@@ -41,7 +41,8 @@ export function assertionOutcome(c: TestCase, outcome: Outcome, observation?: Ca
     if (outcome.status === 'unsupported' || outcome.status === 'error') return outcome;
     return { status: 'fail', got: 'did not raise' };
   }
-  if (c.op === '==') return outcome;
+  // identity with an object (x.func is cls) is compared like ==
+  if (c.op === '==' || (c.op === 'is' && !['True', 'False', 'None'].includes(c.expected))) return outcome;
   if (c.op === '!=') {
     if (outcome.status === 'pass' || outcome.status === 'equivalent') return { status: 'fail', got: c.expected };
     if (outcome.status === 'fail') return { status: 'pass' };

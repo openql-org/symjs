@@ -65,12 +65,15 @@ try {
     import { Diagram } from '@symjs/symjs/categories';
     import { encipherShift } from '@symjs/symjs/crypto';
     import { CartanType } from '@symjs/symjs/liealgebras';
+    import { expm1 } from '@symjs/symjs/codegen';
     import { gates } from '@symjs/physics-quantum';
     import { fromMathjsValue } from '@symjs/mathjs';
     assert.equal(sj.Sym, Sym);
     assert.equal(sj.Diagram, Diagram);
     assert.equal(sj.encipherShift, encipherShift);
     assert.equal(CartanType('A3').dimension(), 4);
+    assert.equal(sj.expm1, expm1);
+    assert.equal(String(expm1(0)), '0');
     ${assertions}
     ${entries.map((e) => `await import(${JSON.stringify(e)});`).join('\n')}
   `;
@@ -82,12 +85,15 @@ try {
     const { Diagram } = require('@symjs/symjs/categories');
     const { encipherShift } = require('@symjs/symjs/crypto');
     const { CartanType } = require('@symjs/symjs/liealgebras');
+    const { expm1 } = require('@symjs/symjs/codegen');
     const { gates } = require('@symjs/physics-quantum');
     const { fromMathjsValue } = require('@symjs/mathjs');
     assert.equal(sj.Sym, Sym);
     assert.equal(sj.Diagram, Diagram);
     assert.equal(sj.encipherShift, encipherShift);
     assert.equal(CartanType('A3').dimension(), 4);
+    assert.equal(sj.expm1, expm1);
+    assert.equal(String(expm1(0)), '0');
     ${assertions}
     ${entries.map((e) => `require(${JSON.stringify(e)});`).join('\n')}
   `;

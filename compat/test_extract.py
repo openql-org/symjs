@@ -120,6 +120,23 @@ class ExtractTests(unittest.TestCase):
                          len(corpus["cases"]) + sum(corpus["extraction"]["reasons"].values()))
         return corpus
 
+    def test_number_formats_of_calls_and_python_math_calls(self):
+        corpus = self.extract_examples("""
+            >>> from sympy import exp, Rational
+            >>> '%.0e' % exp(Rational(1, 10)).evalf()
+            '1e+00'
+            >>> '%.0e' % exp(Rational(1, 10))
+            '1e+00'
+            >>> from math import log, exp
+            >>> log(1 + 1e-99)
+            0.0
+            >>> exp(1e-99) - 1
+            0.0
+        """, module="sympy.codegen.cfunctions")
+        self.assertEqual([(c["fn"], c.get("pyFormat"), c["expected"], c.get("text")) for c in corpus["cases"]],
+                         [(".evalf", "%.0e", "1e+00", True), ("exp", "%.0e", "1e+00", True)])
+        self.assertEqual([o["reason"] for o in corpus["extraction"]["omitted"]], ["python-runtime-api", "python-runtime-api"])
+
     def test_assignment_displays_preserve_function_method_and_unpacking(self):
         corpus = self.extract_examples("""
             >>> from sympy.integrals.quadrature import gauss_chebyshev_t

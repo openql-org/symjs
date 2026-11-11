@@ -76,6 +76,7 @@ The quantum package will be ported from `sympy.physics.quantum`; the current `ga
 | `@symjs/symjs/stats` | Random symbols (`Normal`, `Exponential`, `Poisson`, `Die`, `Binomial`, ... and handmade distributions), `P`, `expectation` (SymPy `E`), `density`, `given`, `where`, `cdf`, `variance`, `moment`, `covariance`, `median`, the `Probability`/`Expectation`/`Variance`/`Covariance` nodes, joint distributions (`MultivariateNormal`, `Dirichlet`, `Multinomial`, `JointRV`, `marginalDistribution`, ...), matrix distributions (`Wishart`, `MatrixNormal`, ...), random matrices (`GaussianUnitaryEnsemble`, `CircularEnsemble`, ...), stochastic processes (`DiscreteMarkovChain`, `ContinuousMarkovChain`, `PoissonProcess`, `WienerProcess`, ...), `ExpectationMatrix`, `VarianceMatrix`, `CrossCovarianceMatrix`, ... |
 | `@symjs/symjs/crypto` | Classical ciphers (shift, affine, Vigenère, Hill, Bifid, rail fence, ...), Morse code, linear feedback shift registers, RSA, ElGamal, Diffie–Hellman, Goldwasser–Micali and Blum–Goldwasser |
 | `@symjs/symjs/liealgebras` | `CartanType`, `CartanMatrix`, `DynkinDiagram`, `RootSystem` and `WeylGroup` of the simple Lie algebras |
+| `@symjs/symjs/codegen` | The C99 math functions of `sympy.codegen.cfunctions`: `expm1`, `log1p`, `exp2`, `log2`, `fma`, `log10`, `Sqrt`, `Cbrt`, `hypot`, `isnan`, `isinf` |
 
 Differential geometry mirrors `sympy.diffgeom`: import its names from `@symjs/symjs/diffgeom`. Its doctests and unit assertions are included in the [base compatibility reports](compat/README.md).
 
@@ -229,7 +230,7 @@ Runtime-specific backends, source-code generation for other languages and parser
 - Rendering of plots and diagrams: the plotting backends (Matplotlib, pyglet), `show`/`save`, and `preview_diagram`; `@symjs/symjs/plotting` computes the plot data and `categories` produces the Xy-pic text for connector packages
 - The TensorFlow back end of `lambdify`
 - Printers and wrappers that generate or compile Python code: `pycode`, the NumPy printer, `lambdarepr`, the `python` printer and `autowrap`
-- Source-code generation for other languages: the code printers (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB and their `codeprinter` base), `sympy.codegen` (including `rewriting`, `approximations` and `algorithms`; the math functions of `sympy.codegen.cfunctions` stay in scope) and `sympy.utilities.codegen`
+- Source-code generation for other languages: the code printers (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB and their `codeprinter` base), `sympy.codegen` (including `rewriting`, `approximations` and `algorithms`; the math functions of `sympy.codegen.cfunctions` are ported as `@symjs/symjs/codegen`) and `sympy.utilities.codegen`
 - Parsers for other input languages: Maxima, Autolev, C and Fortran, and `sympy.parsing.sym_expr`
 - Python-runtime tooling without mathematical content: test runners and test helpers, caching and dispatch decorators, compilation helpers, package metadata, the gmpy2/python-flint ground-type back ends, bindings to external SAT solvers (MiniSat, pycosat, Z3), typing protocols, REPL and display helpers
 
@@ -237,7 +238,6 @@ Runtime-specific backends, source-code generation for other languages and parser
 
 Modules that are not ported yet but stay in scope:
 
-- `sympy.codegen.cfunctions` (`expm1`, `log1p`, `exp2`, `log2`, `fma`, `log10`, `Sqrt`, `Cbrt`, `hypot`, `isnan`, `isinf`): base
 - `sympy.physics`: extend packages per field; `sympy.physics.quantum` goes into the existing `@symjs/physics-quantum`, which is partial
 
 ## License

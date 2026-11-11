@@ -80,6 +80,8 @@ MODULES = {
     "sympy.functions.elementary.miscellaneous": "functions",
     "sympy.functions.elementary.integers": "functions",
     "sympy.functions.elementary.piecewise": "functions",
+    # C99 math functions of codegen (symbolic functions, not code generation)
+    "sympy.codegen.cfunctions": "functions",
     # simplification
     "sympy.simplify.simplify": "simplify",
     "sympy.simplify.radsimp": "simplify",
@@ -550,6 +552,7 @@ def stats_public():
 # selected core/assumptions/logic/... modules and modules whose documented functions live in the module only
 # (deltasummation, gosper_sum, dpll_satisfiable, finite_diff, compogen, groups_count, ...)
 LOCAL_PUBLIC = {
+    "sympy.codegen.cfunctions",
     "sympy.categories.diagram_drawing", "sympy.plotting.textplot", "sympy.plotting.plot",
     "sympy.abc", "sympy.assumptions.assume", "sympy.assumptions.cnf", "sympy.assumptions.facts",
     "sympy.assumptions.lra_satask", "sympy.assumptions.predicates.calculus", "sympy.assumptions.predicates.common",
@@ -1643,9 +1646,26 @@ TEXT_OUTPUT = os.environ.get("TEXT_OUTPUT", "1") == "1"
 ONLY = [m for m in os.environ.get("ONLY_MODULES", "").split(",") if m]
 
 
+# Python's numeric modules: a doctest comparing with them (from math import log) calls Python, not SymPy
+PYTHON_NUMERIC_MODULES = {"math", "cmath"}
+
+
+def is_python_numeric(node, globs):
+    """Whether an expression calls a function of Python's math or cmath module."""
+    return any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+               and getattr(globs.get(n.func.id), "__module__", None) in PYTHON_NUMERIC_MODULES
+               for n in ast.walk(node))
+
+
+# a %-format of a number ('%.0e' % expm1(1e-99).evalf()): the call's value as Python formats it
+PY_NUMBER_FORMAT = re.compile(r"%(\.\d+)?[eEf]")
+
+
 def public_api_reason(fn, globs, extra_public):
     """The ordinary-call public API filter, also used for saved assignments."""
     value = globs.get(fn)
+    if not fn.startswith(".") and getattr(value, "__module__", None) in PYTHON_NUMERIC_MODULES:
+        return "python-runtime-api"
     if isinstance(value, sympy.Expr) and type(value).__module__ == "sympy.diffgeom.diffgeom" and callable(value):
         return None
     if fn.startswith("."):
@@ -1670,7 +1690,7 @@ def serialize_call(record, call, globs, assumed, pre_args=None, printed=False):
         receiver = eval(receiver_src, globs)
         if record.pop("synthetic", False) and not is_sympy_operand(
                 receiver, [eval(compile(ast.Expression(a), "<a>", "eval"), globs) for a in call.args]):
-            raise NotSympy()
+            raise PythonRuntime() if is_python_numeric(call, globs) else NotSympy()
         if printed and isinstance(receiver, types.ModuleType):
             raise PythonRuntime()
         record["self"] = ser_arg(ast.parse(receiver_src, mode="eval").body, globs) if callable(receiver) else ser(receiver)
@@ -1907,6 +1927,13 @@ def main(dst, baseline_path=None):
                 if printed:
                     call = call.args[0]
                     tree = ast.Expression(call)
+                # '%.0e' % f(...): the call, its value formatted like Python (the whole expression is evaluated)
+                py_format = None
+                if (TEXT_OUTPUT and isinstance(call, ast.BinOp) and isinstance(call.op, ast.Mod)
+                        and isinstance(call.left, ast.Constant) and isinstance(call.left.value, str)
+                        and PY_NUMBER_FORMAT.fullmatch(call.left.value) and isinstance(call.right, ast.Call)):
+                    py_format = call.left.value
+                    call = call.right
                 if isinstance(call, ast.Call) and not any(isinstance(a, ast.Starred) for a in call.args):
                     if isinstance(call.func, ast.Name):
                         record = {"fn": call.func.id}
@@ -1942,7 +1969,10 @@ def main(dst, baseline_path=None):
                 # text output: a printed call, a printing function (pprint, print_tree, ...) or a call returning a str
                 text = None
                 if TEXT_OUTPUT and record is not None and record["fn"] not in ("str", "repr"):
-                    if printed:
+                    if py_format is not None:
+                        text = result
+                        record["pyFormat"] = py_format
+                    elif printed:
                         text = str(result)
                     elif result is None and _out.getvalue() and ("print" in record["fn"] or record["fn"] == "textplot"):
                         text = _out.getvalue()[:-1] if _out.getvalue().endswith("\n") else _out.getvalue()

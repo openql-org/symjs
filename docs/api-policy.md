@@ -140,6 +140,7 @@ Notes on the implementation:
 | `isInteger` | stable |  | SymPy is_Integer (type guard) |
 | `isNum` | stable | `isNumber` | SymPy is_Number |
 | `ExtensionExpr` | stable |  | base class for extend modules |
+| `CFunction`, `CBooleanFunction` | experimental |  | base classes of the applications of the C99 math function classes (`expm1`, ..., `isnan`, `isinf`; SymPy `Function` and `BooleanFunction`) |
 | `mul` | stable |  | arithmetic helper (SymPy Mul) |
 | `sub` | stable |  | arithmetic helper |
 | `neg` | stable |  | arithmetic helper |

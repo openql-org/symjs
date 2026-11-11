@@ -8,6 +8,8 @@
 
 // every entry point brings the core with its registrations
 import './core';
+import { impl } from './core/nodes';
+import { asSet as asSetOf } from './solvers/inequalities';
 
 export {
   linsolve,
@@ -149,3 +151,5 @@ export { lpmin, lpmax, linprog, showLinprog, UnboundedLPError, InfeasibleLPError
 export type { LPMatrixLike, LPBound, LPBounds } from './solvers/simplex';
 export { bivariateType } from './solvers/bivariate';
 export { SingleODEProblem, SingleODESolver, NthAlgebraic, ODEMatchError } from './solvers/ode/single';
+
+impl.asSet = asSetOf;

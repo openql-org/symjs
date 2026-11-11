@@ -2,11 +2,11 @@
 
 Reference: SymPy 1.14.0. Independent of the doctest corpus and its ratchet.
 
-Measured **98374** cases: **81846 exact**, **2543 equivalent**, **13985 failing**. Agreement: **85.78%**.
+Measured **98445** cases: **81913 exact**, **2547 equivalent**, **13985 failing**. Agreement: **85.79%**.
 
-Compatibility suite wall time: **311.09 s**. Sum of category replay times: **695.69 s** (projects run in parallel).
+Compatibility suite wall time: **295.04 s**. Sum of category replay times: **647.87 s** (projects run in parallel).
 
-Extraction wall time: **25.05 s**, 4 processes, 30 s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.
+Extraction wall time: **0.51 s**, 4 processes, 30 s per upstream test. Retained modules reuse established observations; their time covers loading and auditing, not re-execution.
 
 Synchronous replay has a 30 s deadline per core/polys case and 5 s elsewhere. Deadlines remain visible as failing/inconclusive observations and are never accepted as expected exceptions. Their IDs are stored separately in the ratchet: an unfinished assertion cannot establish or resolve a correctness regression.
 
@@ -16,38 +16,39 @@ Exact includes successful inequality, identity, boolean and exception assertions
 
 | Category | Measured | Exact | Equivalent | Failing | Agreement | Replay s |
 |---|---:|---:|---:|---:|---:|---:|
-| algebras | 128 | 123 | 0 | 5 | 96.09% | 0.65 |
-| assumptions | 2220 | 1753 | 5 | 462 | 79.19% | 2.14 |
-| calculus | 518 | 417 | 1 | 100 | 80.69% | 2.93 |
-| categories | 312 | 312 | 0 | 0 | 100.00% | 1.60 |
-| combinatorics | 1655 | 1616 | 0 | 39 | 97.64% | 1.29 |
-| concrete | 856 | 602 | 68 | 186 | 78.27% | 8.34 |
-| core | 7858 | 5509 | 187 | 2162 | 72.49% | 99.24 |
-| crypto | 155 | 153 | 0 | 2 | 98.71% | 0.35 |
-| diffgeom | 177 | 171 | 6 | 0 | 100.00% | 0.79 |
-| discrete | 185 | 184 | 1 | 0 | 100.00% | 0.78 |
-| functions | 9853 | 5832 | 1849 | 2172 | 77.96% | 44.36 |
-| geometry | 1046 | 1011 | 6 | 29 | 97.23% | 14.81 |
-| holonomic | 102 | 98 | 0 | 4 | 96.08% | 1.17 |
-| integrals | 1197 | 719 | 44 | 434 | 63.74% | 20.10 |
-| liealgebras | 87 | 81 | 1 | 5 | 94.25% | 0.07 |
-| logic | 662 | 486 | 1 | 175 | 73.56% | 1.02 |
-| matrices | 3930 | 3184 | 37 | 709 | 81.96% | 61.19 |
-| ntheory | 44169 | 44134 | 0 | 35 | 99.92% | 12.90 |
-| parsing | 772 | 653 | 68 | 51 | 93.39% | 0.58 |
-| plotting | 20 | 17 | 0 | 3 | 85.00% | 0.03 |
-| polys | 9338 | 4881 | 57 | 4400 | 52.88% | 104.53 |
-| printing | 1767 | 1246 | 0 | 521 | 70.51% | 0.91 |
-| series | 1626 | 1157 | 29 | 440 | 72.94% | 15.68 |
-| sets | 1494 | 873 | 12 | 609 | 59.24% | 2.12 |
-| simplify | 1402 | 1221 | 39 | 142 | 89.87% | 8.55 |
-| solvers | 2381 | 1496 | 77 | 808 | 66.06% | 60.93 |
-| stats | 1865 | 1771 | 41 | 53 | 97.16% | 195.39 |
+| algebras | 128 | 123 | 0 | 5 | 96.09% | 0.78 |
+| assumptions | 2220 | 1753 | 5 | 462 | 79.19% | 2.58 |
+| calculus | 518 | 417 | 1 | 100 | 80.69% | 3.00 |
+| categories | 312 | 312 | 0 | 0 | 100.00% | 1.82 |
+| codegen | 71 | 67 | 4 | 0 | 100.00% | 0.68 |
+| combinatorics | 1655 | 1616 | 0 | 39 | 97.64% | 1.14 |
+| concrete | 856 | 602 | 68 | 186 | 78.27% | 8.60 |
+| core | 7858 | 5509 | 187 | 2162 | 72.49% | 90.01 |
+| crypto | 155 | 153 | 0 | 2 | 98.71% | 0.39 |
+| diffgeom | 177 | 171 | 6 | 0 | 100.00% | 0.81 |
+| discrete | 185 | 184 | 1 | 0 | 100.00% | 0.98 |
+| functions | 9853 | 5832 | 1849 | 2172 | 77.96% | 41.53 |
+| geometry | 1046 | 1011 | 6 | 29 | 97.23% | 14.60 |
+| holonomic | 102 | 98 | 0 | 4 | 96.08% | 0.86 |
+| integrals | 1197 | 719 | 44 | 434 | 63.74% | 18.00 |
+| liealgebras | 87 | 81 | 1 | 5 | 94.25% | 0.04 |
+| logic | 662 | 486 | 1 | 175 | 73.56% | 0.70 |
+| matrices | 3930 | 3184 | 37 | 709 | 81.96% | 58.59 |
+| ntheory | 44169 | 44134 | 0 | 35 | 99.92% | 9.98 |
+| parsing | 772 | 653 | 68 | 51 | 93.39% | 0.59 |
+| plotting | 20 | 17 | 0 | 3 | 85.00% | 0.02 |
+| polys | 9338 | 4881 | 57 | 4400 | 52.88% | 98.01 |
+| printing | 1767 | 1246 | 0 | 521 | 70.51% | 0.87 |
+| series | 1626 | 1157 | 29 | 440 | 72.94% | 13.31 |
+| sets | 1494 | 873 | 12 | 609 | 59.24% | 1.72 |
+| simplify | 1402 | 1221 | 39 | 142 | 89.87% | 7.13 |
+| solvers | 2381 | 1496 | 77 | 808 | 66.06% | 55.79 |
+| stats | 1865 | 1771 | 41 | 53 | 97.16% | 185.70 |
 | strategies | 6 | 5 | 0 | 1 | 83.33% | 0.01 |
-| tensor | 1590 | 1236 | 1 | 353 | 77.80% | 6.39 |
+| tensor | 1590 | 1236 | 1 | 353 | 77.80% | 5.29 |
 | unify | 8 | 1 | 0 | 7 | 12.50% | 0.01 |
-| utilities | 375 | 311 | 9 | 55 | 85.33% | 21.09 |
-| vector | 620 | 593 | 4 | 23 | 96.29% | 5.73 |
+| utilities | 375 | 311 | 9 | 55 | 85.33% | 19.74 |
+| vector | 620 | 593 | 4 | 23 | 96.29% | 4.59 |
 
 ## Extraction audit
 
@@ -59,6 +60,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | assumptions | 2186 | 2636 | 2220 | 416 | 26.26 | 0 |
 | calculus | 541 | 617 | 518 | 99 | 9.97 | 0 |
 | categories | 372 | 372 | 312 | 60 | 4.69 | 0 |
+| codegen | 71 | 71 | 71 | 0 | 0.20 | 0 |
 | combinatorics | 1265 | 3530 | 1655 | 1875 | 73.36 | 0 |
 | concrete | 1001 | 1095 | 856 | 239 | 29.71 | 0 |
 | core | 9329 | 25605 | 7858 | 17747 | 6.50 | 40 |
@@ -421,6 +423,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | calculus | marked-slow | 1 |
 | calculus | marked-xfail | 4 |
 | categories | completed | 12 |
+| codegen | completed | 10 |
 | combinatorics | completed | 168 |
 | combinatorics | marked-slow | 3 |
 | combinatorics | marked-xfail | 3 |
@@ -533,6 +536,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | calculus | wrong result | 56 |
 | calculus | exception class mismatch (accepted) | 15 |
 | categories | exception class mismatch (accepted) | 5 |
+| codegen | exception class mismatch (accepted) | 0 |
 | combinatorics | exception not raised | 1 |
 | combinatorics | missing API/adapter | 5 |
 | combinatorics | result comparison exception | 1 |
@@ -548,12 +552,12 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | concrete | unexpected exception | 21 |
 | concrete | wrong result | 104 |
 | concrete | exception class mismatch (accepted) | 12 |
-| core | exception not raised | 294 |
+| core | exception not raised | 295 |
 | core | input conversion exception | 24 |
 | core | missing API/adapter | 560 |
 | core | result comparison exception | 14 |
 | core | unexpected exception | 256 |
-| core | unsupported value/input type | 66 |
+| core | unsupported value/input type | 65 |
 | core | wrong result | 948 |
 | core | exception class mismatch (accepted) | 102 |
 | crypto | wrong result | 2 |
@@ -932,6 +936,7 @@ Executed loop instances count individually. Duplicates count as omissions; never
 | assumptions | 1068001 | 85105 | 1 |
 | calculus | 384185 | 24750 | 1 |
 | categories | 1123226 | 12987 | 1 |
+| codegen | 40819 | 1078 | 1 |
 | combinatorics | 903932 | 123856 | 1 |
 | concrete | 684557 | 71311 | 1 |
 | core | 3534962 | 986914 | 1 |
@@ -972,7 +977,6 @@ Case shards contain one JSON case per line, with ASCII escapes and finite JSON n
 | codegen/tests/test_applications.py | Source-code generation and compiler integration are outside this corpus. |
 | codegen/tests/test_approximations.py | Source-code generation and compiler integration are outside this corpus. |
 | codegen/tests/test_ast.py | Source-code generation and compiler integration are outside this corpus. |
-| codegen/tests/test_cfunctions.py | Source-code generation and compiler integration are outside this corpus. |
 | codegen/tests/test_cnodes.py | Source-code generation and compiler integration are outside this corpus. |
 | codegen/tests/test_cxxnodes.py | Source-code generation and compiler integration are outside this corpus. |
 | codegen/tests/test_fnodes.py | Source-code generation and compiler integration are outside this corpus. |
