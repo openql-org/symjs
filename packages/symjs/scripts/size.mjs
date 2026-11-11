@@ -63,10 +63,12 @@ const CASES = [
   // Matrices of numbers (quaternions, ciphers, Lie algebras) no longer bring
   // the simplification engine (measured 497/334/314 KiB, was 577/581/577).
   ['algebras', 'Quaternion', 547],
-  ['holonomic', 'exprToHolonomic', 1025],
+  // Sparse linsolve includes coefficient-domain inference and SDM (measured 1054 KiB).
+  ['holonomic', 'exprToHolonomic', 1060],
   ['geometry', '*', 998],
   ['vector', '*', 1096],
-  ['stats', '*', 1140],
+  // Stochastic-process linear systems use the sparse domain solver (measured 1200 KiB).
+  ['stats', '*', 1205],
   ['categories', '*', 363],
   ['crypto', '*', 367],
   ['liealgebras', '*', 345],

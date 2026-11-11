@@ -83,3 +83,16 @@ describe('FiniteExtension', () => {
     expect(new ExtensionElement(P('x'), new FiniteExtension(P('x**2 - 2'))).isZero).toBe(false);
   });
 });
+
+it('provides expression arithmetic modulo the defining polynomial to DomainMatrix', () => {
+  const x = new sj.Sym('x');
+  const extension = new sj.FiniteExtension(sj.Poly.from(x.pow(2).sub(2), [x], { domain: 'QQ' }));
+  const K = extension.toDomain();
+  expect(K.toString()).toBe(String(extension));
+  expect(K.getField()).toBe(K);
+  expect(String(K.fromSympy(x.pow(3)))).toBe('2*x');
+  expect(String(K.mul(x, x))).toBe('2');
+  expect(String(K.quo(K.one, x))).toBe('x/2');
+  expect(() => K.quo(K.one, K.zero)).toThrow();
+  expect(() => new sj.FiniteExtension(sj.Poly.from(x.pow(2).sub(2), [x], { domain: 'ZZ' })).toDomain().getField()).toThrow('not a field');
+});

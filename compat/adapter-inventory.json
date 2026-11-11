@@ -835,6 +835,11 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": ".fglm",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
   "name": ".fill",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -1286,6 +1291,11 @@
  },
  {
   "name": ".key2ij",
+  "status": "unreviewed-adapter",
+  "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": ".keys",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
@@ -2730,6 +2740,21 @@
   "note": "Review required; a passing result is not counted as verified public-API behavior."
  },
  {
+  "name": "_lin_eq2dict",
+  "status": "reviewed-conversion",
+  "note": "_linEq2dict; convert the symbol set and preserve the result tuple"
+ },
+ {
+  "name": "_linear_eq_to_dict",
+  "status": "reviewed-conversion",
+  "note": "_linearEqToDict; preserve the result tuple and coefficient maps"
+ },
+ {
+  "name": "_linsolve",
+  "status": "reviewed-conversion",
+  "note": "_linsolve; map EmptySet to the internal Python None result"
+ },
+ {
   "name": "acos",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
@@ -3123,6 +3148,16 @@
   "name": "divisor_sigma",
   "status": "unreviewed-adapter",
   "note": "Review required; a passing result is not counted as verified public-API behavior."
+ },
+ {
+  "name": "dom_eigenvects",
+  "status": "reviewed-conversion",
+  "note": "domEigenvects; preserve nested tuples and lists"
+ },
+ {
+  "name": "dom_eigenvects_to_sympy",
+  "status": "reviewed-conversion",
+  "note": "domEigenvectsToSympy; convert domain tuples and the column-matrix factory"
  },
  {
   "name": "dotprint",

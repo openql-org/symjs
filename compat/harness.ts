@@ -272,6 +272,7 @@ export function matches(v: unknown, expectedIn: string): boolean {
 function matches0(v: unknown, expected: string, got: string): boolean {
   if (got === expected || PRINT_ALIASES[expected] === got) return true;
   if (normalizeLayout(got) === normalizeLayout(expected)) return true;
+  if (v instanceof sj.GroebnerBasis && expected.startsWith('[')) return matches(new JsList(v.exprs), expected);
   if (v instanceof sj.SDM && expected.startsWith('{')) {
     // The corpus stores dense rows, which cannot preserve explicitly empty
     // sparse rows. Their presence does not change any matrix entry.
@@ -330,6 +331,7 @@ const definedOr = <T>(v: T | undefined, what: string): T => {
 
 /** A serialized SymPy domain as the symjs domain (undefined when symjs has no counterpart). */
 function deserializeDomain(tree: Tree): sj.Domain | undefined {
+  if (tree['t'] === 'FiniteExtension') return new sj.FiniteExtension(deserialize(tree['modulus'] as Tree) as sj.Poly).toDomain();
   const name = tree['name'] as string;
   const known: Record<string, sj.Domain> = { ZZ: sj.ZZ, QQ: sj.QQ, RR: sj.RR, CC: sj.CC, EX: sj.EX, EXRAW: sj.EXRAW, ZZ_I: sj.ZZ_I, QQ_I: sj.QQ_I };
   if (tree['mod'] !== undefined) return sj.GF(tree['mod'] as number, tree['symmetric'] as boolean);
@@ -1234,6 +1236,11 @@ function expressionContainer(v: unknown): Expr {
   if (v instanceof JsDict) return sj.Dict(v.entries.map(([k, x]) => [expressionContainer(k), expressionContainer(x)]));
   return asExpr(v);
 }
+const asExprList = (value: unknown): Expr[] => {
+  if (value instanceof JsList || value instanceof JsTuple || value instanceof JsSet) return value.items.map(asExpr);
+  throw new Unsupported('expression sequence');
+};
+
 const asExprOrPoly = (v: unknown): Expr => (v instanceof sj.Poly ? v.asExpr() : asExpr(v));
 /** Translate Python coefficient-domain options; all arithmetic stays in the public API. */
 const polynomialOptions = (kw: Record<string, unknown>): sj.PolynomialDomainOptions => ({
@@ -1989,6 +1996,41 @@ export const ADAPTERS: Record<string, Adapter> = {
     const G = sj.groebner(F, vars, 'grevlex');
     const lms = G.exprs.map((g) => sj.Poly.from(g, vars).monoms()[0]!);
     return vars.every((_, i) => lms.some((m) => m.every((k, j) => (j === i ? k > 0 : k === 0))));
+  },
+  '.keys': (_args, kw, self) => {
+    noKw(kw);
+    if (!(self instanceof JsDict)) throw new Unsupported('dictionary keys');
+    return { toString: () => `dict_keys(${fmt(new JsList(self.entries.map(([key]) => key)))})` };
+  },
+  _linsolve: (args, kw) => {
+    noKw(kw);
+    const result = sj._linsolve(asExprList(args[0]), asExprList(args[1]));
+    return result === sj.EmptySet ? null : fromJs(result);
+  },
+  _lin_eq2dict: (args, kw) => {
+    noKw(kw);
+    const result = sj._linEq2dict(asExpr(args[0]), new Set(asExprList(args[1])));
+    return new JsTuple(result.map(fromJs));
+  },
+  _linear_eq_to_dict: (args, kw) => {
+    noKw(kw);
+    return new JsTuple(sj._linearEqToDict(asExprList(args[0]), asExprList(args[1])).map(fromJs));
+  },
+  dom_eigenvects: (args, kw) => {
+    noKw(kw);
+    const [rational, algebraic] = sj.domEigenvects(args[0] as sj.DomainMatrix, args[1] as Sym | undefined);
+    const pack = (rows: unknown[][]) => new JsList(rows.map((row) => new JsTuple(row.map(fromJs))));
+    return new JsTuple([pack(rational), pack(algebraic)]);
+  },
+  dom_eigenvects_to_sympy: (args, kw) => {
+    for (const name of Object.keys(kw)) if (!['cubics', 'quartics', 'quintics'].includes(name)) throw new Unsupported(`kwargs ${name}`);
+    const convert = (v: unknown) => (v as JsList).items.map((row) => (row as JsTuple).items.map((x, i) => i === 2 ? Number(x) : x instanceof JsDomain ? x.domain : x));
+    const result = sj.domEigenvectsToSympy(convert(args[0]) as sj.RationalEigenvectors[], convert(args[1]) as sj.AlgebraicEigenvectors[], Matrix, kw);
+    return new JsList(result.map(([value, mult, vectors]) => new JsTuple([value, mult, new JsList(vectors)])));
+  },
+  '.fglm': (args, kw, self) => {
+    noKw(kw);
+    return (self as sj.GroebnerBasis).fglm(String(args[0]) as sj.MonomialOrder);
   },
   groebner: (args, kw) => {
     for (const k of Object.keys(kw)) if (!['order', 'method'].includes(k)) throw new Unsupported(`kwargs ${k}`);
@@ -4686,6 +4728,7 @@ function autoAdapter(c: Case): Adapter | undefined {
 
 /** Explicit public aliases: an adapter by itself is never evidence of an API. */
 const PUBLIC_ALIASES: Readonly<Record<string, string>> = {
+  _linear_eq_to_dict: '_linearEqToDict', _lin_eq2dict: '_linEq2dict',
   Catalan: 'S.Catalan', EulerGamma: 'S.EulerGamma', GoldenRatio: 'S.GoldenRatio', TribonacciConstant: 'S.TribonacciConstant',
   Integer: 'Rational.of', Equality: 'Eq', Unequality: 'Ne', GreaterThan: 'Ge', LessThan: 'Le', StrictGreaterThan: 'Gt', StrictLessThan: 'Lt',
   N: 'evalf', ln: 'log', minpoly: 'minimalPolynomial', poly: 'Poly.from',

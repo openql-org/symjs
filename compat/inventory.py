@@ -89,6 +89,9 @@ EXCLUSIONS = {
 
 # Explicit correspondences for the different kernel layout and combined modules.
 CORRESPONDENCES = {
+    'sympy.polys.matrices.linsolve': ['polys/matrices/linsolve.ts'],
+    'sympy.polys.matrices.eigen': ['polys/matrices/eigen.ts'],
+    'sympy.polys.fglmtools': ['polys/fglmtools.ts'],
     'sympy.core.basic': ['core/basic.ts', 'core/compare.ts', 'core/nodes.ts'],
     'sympy.core.expr': ['core/nodes.ts', 'core/methods.ts', 'core/expr.ts'],
     'sympy.core.add': ['core/ops.ts'],
@@ -403,9 +406,6 @@ NOT_IMPLEMENTED = {
     'sympy.polys.densearith': 'dense recursive list arithmetic (dup_*/dmp_*); to be ported to ./polys',
     'sympy.polys.densetools': 'dense recursive list representation',
     'sympy.polys.domains.mpelements': 'RealField/ComplexField elements; to be ported to ./polys on numeric/ (the mpmath _mpf/_mpc subclassing and context plumbing are Python-specific and excluded)',
-    'sympy.polys.fglmtools': 'FGLM change of monomial order; to be ported to ./polys',
-    'sympy.polys.matrices.eigen': 'DomainMatrix eigenvalues and eigenvectors; to be ported to ./polys',
-    'sympy.polys.matrices.linsolve': 'DomainMatrix linear system solving; to be ported to ./polys',
     'sympy.polys.modulargcd': 'modular GCD algorithms (modgcd_*, func_field_modgcd); to be ported to ./polys',
     'sympy.polys.multivariate_resultants': 'DixonResultant, MacaulayResultant',
     'sympy.polys.numberfields.galois_resolvents': '',

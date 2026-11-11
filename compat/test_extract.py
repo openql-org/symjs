@@ -486,6 +486,13 @@ class ExtractTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             extract.preserve_references([{**fresh, "fn": ".subs"}], [{**old, "fn": ".subs"}])
 
+    def test_documented_domain_linsolve_helpers_are_measured(self):
+        names = extract.subpackage_public("sympy.polys.matrices.linsolve")
+        for name in ("_linsolve", "_linear_eq_to_dict", "_lin_eq2dict", "sympy_dict_to_dm"):
+            self.assertIn(name, names)
+            self.assertIsNone(extract.public_api_reason(name, {}, names))
+        self.assertNotIn("_linsolve", extract.subpackage_public("sympy.polys.matrices.sdm"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -18,6 +18,10 @@ declare module 'vitest' {
 const category = inject('testsCategory');
 const directory = inject('testsResults');
 const audit = corpusIndex().categories[category];
+// Slow or shared machines can extend replay deadlines without changing result assertions.
+const timeoutScale = Number(process.env['COMPAT_TESTS_TIMEOUT_SCALE'] ?? 1);
+if (!Number.isFinite(timeoutScale) || timeoutScale < 1) throw new RangeError('COMPAT_TESTS_TIMEOUT_SCALE must be at least 1');
+const timeoutMs = Math.ceil((category === 'core' || category === 'polys' ? 30_000 : 5000) * timeoutScale);
 
 it(`measures SymPy ${category} unit tests and enforces their ratchet`, () => {
   if (audit === undefined) throw new TypeError(`Unknown unit-test category ${category}`);
@@ -41,10 +45,10 @@ it(`measures SymPy ${category} unit tests and enforces their ratchet`, () => {
       let o: TestOutcome;
       try {
         context['current'] = c;
-        o = script.runInContext(context, { timeout: category === 'core' || category === 'polys' ? 30_000 : 5000 });
+        o = script.runInContext(context, { timeout: timeoutMs });
       } catch (error) {
         if (typeof error !== 'object' || error === null || !('code' in error) || error.code !== 'ERR_SCRIPT_EXECUTION_TIMEOUT') throw error;
-        o = { status: 'error', reason: `Replay deadline exceeded (${category === 'core' || category === 'polys' ? 30 : 5} s)` };
+        o = { status: 'error', reason: `Replay deadline exceeded (${timeoutMs / 1000} s)` };
       }
       const status = o.status === 'pass' ? 'exact' : o.status;
       for (const counts of [result.total, result.modules[c.module] ??= emptyCounts()]) { counts.cases++; counts[status]++; }
