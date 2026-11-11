@@ -84,11 +84,11 @@ Direct regression-test paths are maintained in `capabilities.json`. Tensor diffe
 
 **ODE checks: 100.0% (41/41; exact 40, equivalent 1)**
 
-**Fully covered (100% test coverage): 100.0% of source files (431/431), 100.0% of statements (97175/97175)**
+**Fully covered (100% test coverage): 100.0% of source files (432/432), 100.0% of statements (97501/97501)**
 
 | Category | Behavior | Exact | Exact rate | Equivalent | Fail | Unsupported | Error | Cases | API coverage | Fully covered files |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| core | 93.1% | 939 | 92.9% | 2 | 17 | 49 | 4 | 1011 | 100.0% (188/188) | 100.0% (130/130) |
+| core | 93.1% | 939 | 92.9% | 2 | 17 | 49 | 4 | 1011 | 100.0% (188/188) | 100.0% (131/131) |
 | functions | 100.0% | 248 | 100.0% | 0 | 0 | 0 | 0 | 248 | 100.0% (59/59) | 100.0% (7/7) |
 | simplify | 59.4% | 192 | 59.1% | 1 | 1 | 131 | 0 | 325 | 100.0% (35/35) | 100.0% (18/18) |
 | polys | 97.9% | 1416 | 97.3% | 9 | 7 | 12 | 11 | 1455 | 99.4% (154/155) | 100.0% (65/65) |
@@ -199,6 +199,7 @@ A source file counts as **fully covered** when the unit tests (`pnpm coverage`, 
 | `packages/symjs/src/assumptions/sathandlers.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/assumptions/wrapper.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/concrete/delta.ts` | core | 100% | 100% | 100% | 100% | yes |
+| `packages/symjs/src/concrete/exprwithlimits.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/concrete/gosper.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/concrete/guess.ts` | core | 100% | 100% | 100% | 100% | yes |
 | `packages/symjs/src/concrete/node.ts` | core | 100% | 100% | 100% | 100% | yes |
