@@ -13,6 +13,25 @@ import { Expr } from '../../src/core/nodes';
 import { NoMatchResult } from '../../src/core/truth';
 
 const Pplain = parse;
+it('retains telescoping boundaries and formal Euler-Maclaurin endpoints', () => {
+  const [k, a, b] = sj.symbols('k a b');
+  expect(String(sj.telescopicDirect(k!.pow(-1), k!.add(2).pow(-1).neg(), 2, [k!, a!, b!]))).toBe('-1/(b + 2) - 1/(b + 1) + 1/(a + 1) + 1/a');
+  expect(String(sj.telescopicDirect(k!, k!, 0, [k!, 1, 2]))).toBe('0');
+  for (const shift of [-1, 1.5, a!, Number.MAX_SAFE_INTEGER + 1]) expect(() => sj.telescopicDirect(k!, k!, shift, [k!, 1, 2])).toThrow(RangeError);
+  const [approximation] = eulerMaclaurin(concExpr(Sum(k!.pow(-1), [k!, a!, b!])));
+  expect(String(approximation)).toBe('-log(a) + log(b) + 1/(2*b) + 1/(2*a)');
+  const [unevaluated] = eulerMaclaurin(concExpr(Sum(parse('f(k)'), [k!, a!, b!])));
+  expect(String(unevaluated)).toContain('Integral(f(k), (k, a, b))');
+});
+
+it('evaluates products of rational polynomial summands', () => {
+  const k = sj.symbol('k'), n = sj.symbol('n');
+  expect(String(doit(parse('pi**2*Product(1 - pi**2/(4*k**2), (k, 1, n))/2')))).toBe('pi**2*RisingFactorial(1 - pi/2, n)*RisingFactorial(1 + pi/2, n)/(2*factorial(n)**2)');
+  expect(String(product(parse('1 + 1/k'), [k, 1, n]))).toBe('RisingFactorial(2, n)/factorial(n)');
+  expect(String(product(parse('sin(k) + 1'), [k, 1, n]))).toBe('Product(sin(k) + 1, (k, 1, n))');
+  expect(String(product(parse('sin(k) + 1/k'), [k, 1, n]))).toBe('Product(sin(k) + 1/k, (k, 1, n))');
+  expect(String(product(parse('1 + 1/(sin(k) + 2)'), [k, 1, n]))).toBe('Product(1 + 1/(sin(k) + 2), (k, 1, n))');
+});
 /** Sum / Product as Concrete nodes (the convergence tests and reverseOrder take a Concrete). */
 const concExpr = (e: Expr): Concrete => {
   if (!(e instanceof Concrete)) throw new TypeError('a Sum or Product expected');

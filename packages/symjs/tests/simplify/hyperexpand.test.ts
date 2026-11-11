@@ -11,6 +11,42 @@ import { I, Rational, Sym, expPolar, hyper, meijerg, mul, parse, pi, sstr, type 
 import { HyperRep, hyperexpand, type HyperRepName } from '../../src/simplify/hyperexpand';
 import * as sj from '../../src';
 
+it('exposes differential parameter reductions and shift plans', () => {
+  const z = new Sym('z');
+  const empty = new sj.Hyper_Function([], []);
+  const unchanged = new sj.Hyper_Function([1, 2], [3, 4]);
+  const [f, ops] = sj.reduceOrder(unchanged);
+  expect(String(f)).toBe('Hyper_Function((1, 2), (3, 4))');
+  expect(ops).toEqual([]);
+  expect(sj.devisePlan(unchanged, unchanged, z)).toEqual([]);
+  expect(sj.devisePlan(new sj.Hyper_Function([], [1, 2]), new sj.Hyper_Function([], [1, 2]), z)).toEqual([]);
+  const g = new sj.G_Function([1], [2], [3], [4]);
+  expect(sj.devisePlanMeijer(g, g, z)).toEqual([]);
+  for (const [params, expected] of [
+    [[[3, 4], [5, 6], [3, 4], [1, 2]], 'G_Function((4, 3), (5, 6), (3, 4), (2, 1))'],
+    [[[3, 4], [5, 6], [3, 4], [1, 8]], 'G_Function((3,), (5, 6), (3, 4), (1,))'],
+    [[[3, 4], [5, 6], [7, 5], [1, 5]], 'G_Function((3,), (), (), (1,))'],
+    [[[3, 4], [5, 6], [7, 5], [5, 3]], 'G_Function((), (), (), ())'],
+  ] as const) expect(String(sj.reduceOrderMeijer(new sj.G_Function(params[0], params[1], params[2], params[3]))[0])).toBe(expected);
+  const [reduced, operators] = sj.reduceOrder(new sj.Hyper_Function([3], [1]));
+  expect(String(reduced)).toBe(String(empty));
+  expect(String(operators[0]!.apply(z, (e) => e.diff(z).mul(z)))).toBe('3*z');
+  const shifted = sj.devisePlan(new sj.Hyper_Function([2], []), new sj.Hyper_Function([1], []), z);
+  expect(shifted.length).toBe(1);
+  expect(String(shifted[0]!.apply(z, (e) => e.diff(z).mul(z)))).toBe('2*z');
+});
+
+it('computes a formula from its coefficient row and differential basis', () => {
+  const z = new Sym('z');
+  const f = new sj.Formula(new sj.Hyper_Function([], []), z, [sj.exp(z)], [1], [[z]]);
+  expect(String(f.closedForm)).toBe('exp(z)');
+  const rep = new sj.HyperRep('power1', [-1, z]);
+  expect(String(new sj.Formula(new sj.Hyper_Function([1], []), z, [rep, sj.exp(z)], [2, 0], [[0, 1], [1, 0]]).closedForm)).toBe('2*HyperRep_power1(-1, z)');
+  expect(() => new sj.Formula(f.func, z, [1], [], [[1]])).toThrow(RangeError);
+  expect(() => new sj.Formula(f.func, z, [1], [1], [])).toThrow(RangeError);
+  expect(() => new sj.Formula(f.func, z, [1], [1], [[]])).toThrow(RangeError);
+});
+
 const [z, a, b] = [new Sym('z'), new Sym('a'), new Sym('b')];
 const half = Rational.of(1n, 2n);
 const P = (q: string): Expr => parse(q, { symbols: [z, a, b] });

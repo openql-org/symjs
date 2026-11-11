@@ -54,6 +54,7 @@ export {
   product,
   reverseOrder,
   eulerMaclaurin,
+  telescopicDirect,
 } from './concrete/summations';
 export {
   series,

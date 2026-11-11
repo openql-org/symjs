@@ -204,7 +204,7 @@ function reduceOrderOp(ai: Expr, bj: Expr): OpPoly | undefined {
   return { poly: pprod(ps) };
 }
 /** Cancel b + sign*s and a + sign*s of a G-function (SymPy ReduceOrder._meijer). */
-function reduceOrderMeijer(b: Expr, a: Expr, sign: 1 | -1): OpPoly | undefined {
+function reduceOrderMeijerOp(b: Expr, a: Expr, sign: 1 | -1): OpPoly | undefined {
   const n = expand(sub(b, a));
   if (!isInt(n) || n.isNegative) return undefined;
   return { poly: pprod(Array.from({ length: Number(n.p) }, (_, k) => lin(add(a, k), sign))) };
@@ -405,10 +405,10 @@ const REPS: Record<HyperRepName, RepForms> = {
 export class HyperRep extends ExtensionExpr {
   constructor(
     readonly rep: HyperRepName,
-    args: readonly Expr[],
+    args: readonly ExprLike[],
   ) {
     // the parameters are not polar (SymPy HyperRep.eval)
-    super(`HyperRep_${rep}`, [...args.slice(0, -1).map((a) => unpolarify(a)), at(args, -1)]);
+    super(`HyperRep_${rep}`, [...args.slice(0, -1).map((a) => unpolarify(sympify(a))), sympify(at(args, -1))]);
   }
   withArgs(args: readonly Expr[]): Expr {
     return new HyperRep(this.rep, args);
@@ -432,7 +432,7 @@ const rewriteReps = (e: Expr, target: 'nonrep' | 'nonrepsmall'): Expr => mapBott
 // ---- formulas ---------------------------------------------------------------------------
 
 /** A formula: closed form C*B with z*d/dz B = M B (SymPy Formula). */
-interface Formula {
+interface FormulaData {
   func: HyperFunc;
   z: Expr;
   symbols: Expr[];
@@ -446,7 +446,7 @@ const mapMat = (M: readonly (readonly Expr[])[], f: (e: Expr) => Expr): Expr[][]
 const charPoly = (func: HyperFunc, z: Expr): XPoly => padd(pprod([lin(0, 1), ...func.bq.map((b) => lin(sub(b, 1), 1))]), pscale(pprod(func.ap.map((a) => lin(a, 1))), neg(z)));
 
 /** A formula from a closed form, with the basis of its z*d/dz derivatives (SymPy Formula._compute_basis). */
-function formulaFromClosedForm(func: HyperFunc, z: Expr, res: Expr, symbols: readonly Expr[]): Formula {
+function formulaFromClosedForm(func: HyperFunc, z: Expr, res: Expr, symbols: readonly Expr[]): FormulaData {
   const poly = charPoly(func, z);
   const n = poly.length - 2;
   const B = [res];
@@ -463,13 +463,13 @@ function formulaFromClosedForm(func: HyperFunc, z: Expr, res: Expr, symbols: rea
 }
 
 /** The table of hypergeometric formulas (SymPy add_formulae). */
-function addFormulae(): Formula[] {
+function addFormulae(): FormulaData[] {
   const a = new Dummy('a');
   const b = new Dummy('b');
   const c = new Dummy('c');
   const z = new Dummy('z');
   const syms = [a, b, c];
-  const out: Formula[] = [];
+  const out: FormulaData[] = [];
   const add0 = (ap: ExprLike[], bq: ExprLike[], res: Expr) => out.push(formulaFromClosedForm(hyperFunc(ap, bq), z, res, syms));
   const addb = (ap: ExprLike[], bq: ExprLike[], B: Expr[], C: ExprLike[], M: ExprLike[][]) => {
     const func = hyperFunc(ap, bq);
@@ -668,11 +668,11 @@ function addFormulae(): Formula[] {
   return out;
 }
 
-let collection: { concrete: Map<string, Formula>; symbolic: Map<string, Formula[]> } | undefined;
-function formulaCollection(): { concrete: Map<string, Formula>; symbolic: Map<string, Formula[]> } {
+let collection: { concrete: Map<string, FormulaData>; symbolic: Map<string, FormulaData[]> } | undefined;
+function formulaCollection(): { concrete: Map<string, FormulaData>; symbolic: Map<string, FormulaData[]> } {
   if (collection) return collection;
-  const concrete = new Map<string, Formula>();
-  const symbolic = new Map<string, Formula[]>();
+  const concrete = new Map<string, FormulaData>();
+  const symbolic = new Map<string, FormulaData[]>();
   for (const f of addFormulae()) {
     const sizes = `${f.func.ap.length},${f.func.bq.length}`;
     if (f.symbols.length) symbolic.set(sizes, [...(symbolic.get(sizes) ?? []), f]);
@@ -689,7 +689,7 @@ function cartesian<T>(lists: readonly (readonly T[])[]): T[][] {
 }
 
 /** Substitutions of the formula's symbols that may match func (SymPy Formula.find_instantiations). */
-function findInstantiations(f: Formula, func: HyperFunc): Map<Expr, Expr>[] {
+function findInstantiations(f: FormulaData, func: HyperFunc): Map<Expr, Expr>[] {
   const symbolValues = f.symbols.map((s) => (f.func.ap.some((p) => p.key === s.key) ? func.ap : func.bq));
   const baseRepl = cartesian(symbolValues).map((vals) => new Map(f.symbols.map((s, i) => [s, at(vals, i)] as const)));
   const [abuckets, bbuckets] = [buckets(func.ap), buckets(func.bq)];
@@ -737,12 +737,12 @@ function findInstantiations(f: Formula, func: HyperFunc): Map<Expr, Expr>[] {
 }
 
 /** A formula reaching func, or undefined (SymPy FormulaCollection.lookup_origin). */
-function lookupOrigin(func: HyperFunc): Formula | undefined {
+function lookupOrigin(func: HyperFunc): FormulaData | undefined {
   const { concrete, symbolic } = formulaCollection();
   const sizes = `${func.ap.length},${func.bq.length}`;
   const c = concrete.get(`${sizes}|${invariants(func)}`);
   if (c) return c;
-  const possible: [number, Map<Expr, Expr>, Formula, HyperFunc][] = [];
+  const possible: [number, Map<Expr, Expr>, FormulaData, HyperFunc][] = [];
   for (const f of symbolic.get(sizes) ?? []) {
     for (const repl of findInstantiations(f, func)) {
       const r = [...repl];
@@ -760,7 +760,7 @@ function lookupOrigin(func: HyperFunc): Formula | undefined {
   for (const [, repl, f, func2] of possible) {
     const r = [...repl];
     const s = (e: Expr) => xreplace(e, r);
-    const f2: Formula = { func: func2, z: f.z, symbols: [], B: f.B.map(s), C: f.C.map(s), M: mapMat(f.M, s) };
+    const f2: FormulaData = { func: func2, z: f.z, symbols: [], B: f.B.map(s), C: f.C.map(s), M: mapMat(f.M, s) };
     if (![...f2.B, ...f2.C, ...f2.M.flat()].some(isBad)) return f2;
   }
   return undefined;
@@ -858,7 +858,7 @@ function lookupMeijer(func: GFunc): MeijerFormula | undefined {
 // ---- plans -------------------------------------------------------------------------------
 
 /** Shift and un-shift operators taking origin to target (SymPy devise_plan). */
-function devisePlan(target: HyperFunc, origin: HyperFunc, z: Expr): OpPoly[] {
+function devisePlanInternal(target: HyperFunc, origin: HyperFunc, z: Expr): OpPoly[] {
   const ab = buckets(target.ap);
   const bb = buckets(target.bq);
   const A = defined2(ab);
@@ -921,7 +921,7 @@ const defined2 = (b: Map<string, { mod: Expr; items: Expr[] }>): Map<string, Exp
  * Meijer G formulas of the table differ from the functions they match only in
  * the parameters bm, so only those are shifted.
  */
-function devisePlanMeijer(fro: GFunc, to: GFunc, z: Expr): OpPoly[] {
+function devisePlanMeijerInternal(fro: GFunc, to: GFunc, z: Expr): OpPoly[] {
   const f: GParams = [[...fro.an], [...fro.ap], [...fro.bm], [...fro.bq]];
   const fbm = f[2];
   const ops: OpPoly[] = [];
@@ -989,7 +989,7 @@ function tryPolynomial(func: HyperFunc, z: Expr): Expr | undefined {
 }
 
 /** A formula in terms of hypergeometric functions with shifted parameters (SymPy build_hypergeometric_formula). */
-function buildHypergeometricFormula(func: HyperFunc): Formula {
+function buildHypergeometricFormula(func: HyperFunc): FormulaData {
   const z = new Dummy('z');
   if (func.ap.length) {
     const poly = charPoly(func, z);
@@ -1093,7 +1093,7 @@ const polarifyNoSubs = (e: Expr): Expr => expectType(polarify(e, { subs: false }
 function hyperexpandFunc(func0: HyperFunc, zIn: Expr, ops0: readonly OpPoly[] = [], z0: Expr = z0Default, premult: Expr = S.One, prem: Expr = S.Zero, rewrite: 'nonrepsmall' | 'none' = 'nonrepsmall'): Expr {
   if (zIn instanceof Rational && zIn.isZero) return S.One;
   const z = polarifyNoSubs(zIn);
-  const carryout = (f: Formula, ops: readonly OpPoly[]): Expr => {
+  const carryout = (f: FormulaData, ops: readonly OpPoly[]): Expr => {
     const s0 = (e: Expr) => xreplace(e, [[f.z, z0]]);
     const M = mapMat(f.M, s0);
     let C = applyOperators(f.C.map(s0), ops, derivativeOperator(M, z0));
@@ -1129,7 +1129,7 @@ function hyperexpandFunc(func0: HyperFunc, zIn: Expr, ops0: readonly OpPoly[] = 
     if (!some(r, (n) => n instanceof Hyper)) return add(r, p);
   }
   const formula = lookupOrigin(func) ?? buildHypergeometricFormula(func);
-  ops.push(...devisePlan(func, formula.func, z0));
+  ops.push(...devisePlanInternal(func, formula.func, z0));
   const r = add(carryout(formula, ops), p);
   return replaceHyperSpecial(powdenestPolar(r));
 }
@@ -1139,8 +1139,8 @@ function reduceOrderHyper(func: HyperFunc): [HyperFunc, OpPoly[]] {
   return [hyperFunc(nap, nbq), ops];
 }
 function reduceOrderG(func: GFunc): [GFunc, OpPoly[]] {
-  const [nan, nbq, ops1] = reduceOrderLists(func.an, func.bq, (a, b) => reduceOrderMeijer(sub(1, a), sub(1, b), 1), true);
-  const [nbm, nap, ops2] = reduceOrderLists(func.bm, func.ap, (b, a) => reduceOrderMeijer(b, a, -1), false);
+  const [nan, nbq, ops1] = reduceOrderLists(func.an, func.bq, (a, b) => reduceOrderMeijerOp(sub(1, a), sub(1, b), 1), true);
+  const [nbm, nap, ops2] = reduceOrderLists(func.bm, func.ap, (b, a) => reduceOrderMeijerOp(b, a, -1), false);
   return [gFunc(nan, nap, nbm, nbq), [...ops1, ...ops2]];
 }
 
@@ -1217,7 +1217,7 @@ function meijergExpand(func0: GFunc, z0: Expr, allowHyper: boolean, place: 'zero
   const [func, ops] = reduceOrderG(func0);
   const f = lookupMeijer(func);
   if (f) {
-    const allOps = [...ops, ...devisePlanMeijer(f.func, func, z)];
+    const allOps = [...ops, ...devisePlanMeijerInternal(f.func, func, z)];
     const s = (e: Expr) => xreplace(e, [[f.z, z]]);
     const C = applyOperators(f.C.map(s), allOps, derivativeOperator(mapMat(f.M, s), z)).map(simp);
     const r = sum(C.map((c, i) => mul(c, s(at(f.B, i)))));
@@ -1343,6 +1343,9 @@ export class Hyper_Function {
     this.ap = f.ap;
     this.bq = f.bq;
   }
+  toString(): string {
+    return `Hyper_Function(${parameterTuple(this.ap)}, ${parameterTuple(this.bq)})`;
+  }
   /** The number of negative integer numerator parameters. */
   get gamma(): number {
     return hfGamma({ ap: [...this.ap], bq: [...this.bq] });
@@ -1375,6 +1378,9 @@ export class G_Function {
     this.bm = g.bm;
     this.bq = g.bq;
   }
+  toString(): string {
+    return `G_Function(${[this.an, this.ap, this.bm, this.bq].map(parameterTuple).join(', ')})`;
+  }
   /**
    * SymPy compute_buckets: the parameters of an, ap, bm and bq grouped by their
    * residue mod 1, each group sorted by real part (an and bq descending, ap and bm ascending).
@@ -1383,5 +1389,54 @@ export class G_Function {
     const toMap = (b: Buckets): ExprMap<Expr[]> => new ExprMap([...b.values()].map((v) => [v.mod, v.items] as const));
     const [an, ap, bm, bq] = computeBuckets({ an: [...this.an], ap: [...this.ap], bm: [...this.bm], bq: [...this.bq] });
     return [toMap(an), toMap(ap), toMap(bm), toMap(bq)];
+  }
+}
+
+const parameterTuple = (xs: readonly Expr[]): string => `(${xs.map(String).join(', ')}${xs.length === 1 ? ',' : ''})`;
+const hyperParameters = (f: Hyper_Function): HyperFunc => ({ ap: [...f.ap], bq: [...f.bq] });
+const gParameters = (f: G_Function): GFunc => ({ an: [...f.an], ap: [...f.ap], bm: [...f.bm], bq: [...f.bq] });
+const publicOperator = (op: OpPoly): Operator => {
+  const D = new Dummy('D');
+  return new Operator(add(...op.poly.map((c, i) => mul(c, pow(D, i)))), D);
+};
+
+/** Differential operators shifting an origin hypergeometric function to the target. */
+export function devisePlan(target: Hyper_Function, origin: Hyper_Function, z: Expr): Operator[] {
+  return devisePlanInternal(hyperParameters(target), hyperParameters(origin), z).map(publicOperator);
+}
+
+/** Differential operators shifting the parameters of a Meijer G-function. */
+export function devisePlanMeijer(fro: G_Function, to: G_Function, z: Expr): Operator[] {
+  return devisePlanMeijerInternal(gParameters(fro), gParameters(to), z).map(publicOperator);
+}
+
+/** Cancel hypergeometric parameters, retaining the operators that restore the original function. */
+export function reduceOrder(func: Hyper_Function): [Hyper_Function, Operator[]] {
+  const [f, ops] = reduceOrderHyper(hyperParameters(func));
+  return [new Hyper_Function(f.ap, f.bq), ops.map(publicOperator)];
+}
+
+/** Cancel Meijer G parameters, retaining the corresponding differential operators. */
+export function reduceOrderMeijer(func: G_Function): [G_Function, Operator[]] {
+  const [f, ops] = reduceOrderG(gParameters(func));
+  return [new G_Function(f.an, f.ap, f.bm, f.bq), ops.map(publicOperator)];
+}
+
+/**
+ * A hypergeometric formula specified by its differential basis B, coefficient row C,
+ * and connection matrix M: the closed form is C*B and z*dB/dz = M*B.
+ */
+export class Formula {
+  readonly B: readonly Expr[];
+  readonly C: readonly Expr[];
+  readonly M: readonly (readonly Expr[])[];
+  constructor(readonly func: Hyper_Function, readonly z: Expr, B: readonly ExprLike[], C: readonly ExprLike[], M: readonly (readonly ExprLike[])[]) {
+    if (B.length !== C.length || M.length !== B.length || M.some((row) => row.length !== B.length)) throw new RangeError('Inconsistent formula basis dimensions');
+    this.B = B.map(sympify);
+    this.C = C.map(sympify);
+    this.M = M.map((row) => row.map(sympify));
+  }
+  get closedForm(): Expr {
+    return add(...this.B.map((b, i) => mul(b, at(this.C, i))));
   }
 }

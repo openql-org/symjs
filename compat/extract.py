@@ -788,6 +788,18 @@ def ser(o):
     from sympy.ntheory.ecm import Point as ECMPoint
     if isinstance(o, ECMPoint):
         return {"t": "ECMPoint", "coords": [str(v) for v in (o.x_cord, o.z_cord, o.a_24, o.mod)]}
+    from sympy.simplify.hyperexpand import Hyper_Function, G_Function, Formula, Operator
+    from sympy.functions.special.hyper import HyperRep
+    if isinstance(o, Hyper_Function):
+        return {"t": "PublicObject", "cls": "Hyper_Function", "args": [ser(o.ap), ser(o.bq)]}
+    if isinstance(o, G_Function):
+        return {"t": "PublicObject", "cls": "G_Function", "args": [ser(v) for v in (o.an, o.ap, o.bm, o.bq)]}
+    if isinstance(o, Formula):
+        return {"t": "PublicObject", "cls": "Formula", "args": [ser(v) for v in (o.func, o.z, list(o.B), list(o.C), o.M.tolist())]}
+    if isinstance(o, Operator):
+        return {"t": "PublicObject", "cls": "Operator", "args": [ser(o._poly.as_expr()), ser(o._poly.gen)]}
+    if isinstance(o, HyperRep):
+        return {"t": "PublicObject", "cls": "HyperRep", "args": [ser(type(o).__name__.removeprefix("HyperRep_")), ser(o.args)]}
     from sympy.polys.agca.extensions import ExtensionElement
     from sympy.polys.polyclasses import DMP
     if isinstance(o, ExtensionElement):

@@ -6,11 +6,12 @@
  */
 
 import type { ExprLike, Sym } from './nodes';
-import { Expr, Rational, impl } from './nodes';
+import { Expr, impl } from './nodes';
 import { add, mul, pow, sub, sympify } from './ops';
 import { at } from './guard';
 import { ReorderError } from './errors';
 import type { Truth } from './truth';
+import { isZero } from './assumptions';
 
 /**
  * Sum or Product: args [f, k1, a1, b1, k2, a2, b2, ...]. @internal ctor
@@ -102,10 +103,10 @@ export class Concrete extends Expr {
   get hasEmptySequence(): Truth {
     let unknown = false;
     for (const [, a, b] of this.limits) {
-      // Eq(a - b, 1) decides only when a - b - 1 is a number
       const d = sub(sub(a, b), 1);
-      if (!(d instanceof Rational)) unknown = true;
-      else if (d.isZero) return true;
+      const zero = isZero(d);
+      if (zero === undefined) unknown = true;
+      else if (zero) return true;
     }
     return unknown ? 'unknown' : false;
   }

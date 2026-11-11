@@ -5,9 +5,9 @@
  * @file simplify(): a port of SymPy's simplify pipeline (sympy/simplify/simplify.py).
  */
 
-import type { Expr, ExprLike } from '../core/nodes';
+import type { Expr, ExprLike, FnName, Sym } from '../core/nodes';
 import { Add, Dummy, ExtensionExpr, Float, Fn, Integral, Mul, Pow, Rational, S, impl, isNum } from '../core/nodes';
-import { Concrete } from '../core/concrete';
+import { Concrete, Sum } from '../core/concrete';
 import { minimalPolynomial } from '../polys/numberfields';
 import { add, couldExtractMinusSign, mul, pow, sympify } from '../core/ops';
 import { asContentPrimitive, asIndependent, asNumerDenom } from '../core/methods';
@@ -24,6 +24,142 @@ import { cancel, fraction, together } from './rational';
 import { exptrigsimp, trigsimp } from './trigsimp';
 import { at, first } from '../core/guard';
 import { nsimplify, nfloat } from '../numeric/nfloat';
+import { isNegative } from '../core/assumptions';
+
+/** Strip rational coefficients from an equation, applying the same operations to its right side. */
+export function clearCoefficients(exprIn: ExprLike, rhsIn: ExprLike = 0): [Expr, Expr] {
+  let expr = sympify(exprIn);
+  let rhs = sympify(rhsIn);
+  if (expr instanceof Rational) return [S.Zero, add(rhs, mul(-1, expr))];
+  for (;;) {
+    const previous = expr.key;
+    const [content, primitive] = asContentPrimitive(expr);
+    rhs = mul(rhs, pow(content, -1));
+    expr = primitive;
+    if (expr instanceof Add && first(expr.args) instanceof Rational) {
+      rhs = add(rhs, mul(-1, first(expr.args)));
+      expr = add(...expr.args.slice(1));
+    }
+    if (expr.key === previous) break;
+  }
+  expr = signsimp(expr, false);
+  return couldExtractMinusSign(expr) ? [mul(-1, expr), mul(-1, rhs)] : [expr, rhs];
+}
+
+/** Extract constant factors from a Sum, or from a summand and its limits. */
+export function factorSum(expr: ExprLike, limits?: readonly [Sym, ExprLike, ExprLike][], opts: { radical?: boolean; clear?: boolean; fraction?: boolean; sign?: boolean } = {}): Expr {
+  return factorTerms(limits === undefined ? expr : Sum(expr, ...limits), opts);
+}
+
+/**
+ * Formally cancel functions with their inverses (SymPy inversecombine).
+ * As in SymPy, this explicitly assumes the relevant principal branch:
+ * asin(sin(x)) = x and log(exp(x)) = x are not global complex identities.
+ */
+export function inversecombine(expr: ExprLike): Expr {
+  const inverse: Partial<Record<FnName, FnName>> = {
+    asin: 'sin', acos: 'cos', atan: 'tan', acot: 'cot', asec: 'sec', acsc: 'csc',
+    asinh: 'sinh', acosh: 'cosh', atanh: 'tanh', acoth: 'coth', asech: 'sech', acsch: 'csch',
+    sin: 'asin', cos: 'acos', tan: 'atan', cot: 'acot', sec: 'asec', csc: 'acsc',
+    sinh: 'asinh', cosh: 'acosh', tanh: 'atanh', coth: 'acoth', sech: 'asech', csch: 'acsch',
+  };
+  return mapBottomUp(sympify(expr), (e) => {
+    if (e instanceof Fn && e.args.length === 1) {
+      const inner = first(e.args);
+      if (e.name === 'log' && inner instanceof Pow && inner.base.key === S.E.key) return inner.exp;
+      if (inner instanceof Fn && inner.args.length === 1 && inverse[e.name] === inner.name) return first(inner.args);
+    }
+    if (e instanceof Pow && e.base.key === S.E.key && e.exp instanceof Fn && e.exp.name === 'log') return first(e.exp.args);
+    return e;
+  });
+}
+
+/** Find a real root of a sum of surds; every numerically proposed denesting is verified exactly. */
+export function nthroot(exprIn: ExprLike, nIn: ExprLike, opts: { maxLen?: number } = {}): Expr {
+  const expr = sympify(exprIn);
+  const n = sympify(nIn);
+  const principal = pow(expr, pow(n, -1));
+  if (!(n instanceof Rational && n.isInteger) || n.isZero) return principal;
+  const negative = n.p % 2n !== 0n && isNegative(expr) === true;
+  const radicand = negative ? mul(-1, expr) : expr;
+  const root = pow(radicand, pow(n, -1));
+  const radicals = new Map<string, Expr>();
+  some(radicand, (e) => {
+    if (e instanceof Pow && e.exp.key === S.Half.key && e.base instanceof Rational && e.base.isInteger && e.base.isPositive) radicals.set(e.key, e);
+    return false;
+  });
+  const candidate = nsimplify(root, { constants: [...radicals.values()].slice(0, opts.maxLen ?? 4) });
+  const verified = expandAll(add(pow(candidate, n), mul(-1, radicand))).key === S.Zero.key;
+  const result = verified ? candidate : root;
+  return negative ? mul(-1, result) : result;
+}
+
+/**
+ * Compress repeated words in noncommutative products. Dynamic programming minimizes
+ * the number of factors, including factors inside powers, while preserving order.
+ */
+export function ncSimplify(exprIn: ExprLike, opts: { deep?: boolean } = {}): Expr {
+  const expr = sympify(exprIn);
+  if (expr.isCommutative) return expr;
+  if (expr instanceof Add) return add(...expr.args.map((e) => ncSimplify(e, opts)));
+  if (expr instanceof Pow) return opts.deep === false ? expr : pow(ncSimplify(expr.base), expr.exp);
+  if (!(expr instanceof Mul)) return expr;
+  const commuting = expr.args.filter((e) => e.isCommutative);
+  const word: Expr[] = [];
+  const append = (e: Expr): void => {
+    if (word.length > 128) return;
+    if (e instanceof Mul && opts.deep !== false) {
+      e.args.forEach(append);
+    } else if (e instanceof Pow && e.exp instanceof Rational && e.exp.isInteger && e.exp.p > 0n && e.exp.p <= 64n && (opts.deep !== false || !(e.base instanceof Mul))) {
+      for (let i = 0n; i < e.exp.p; i++) append(e.base);
+    } else word.push(e);
+  };
+  expr.args.filter((e) => !e.isCommutative).forEach(append);
+  if (word.length > 128) return expr;
+  // Cancel adjacent inverses before looking for repeated words.
+  const reduced: Expr[] = [];
+  for (const e of word) {
+    const previous = reduced.at(-1);
+    if (previous !== undefined && mul(previous, e).key === S.One.key) reduced.pop();
+    else reduced.push(e);
+  }
+  // The word bound above keeps the dynamic program finite without approximations.
+  type Candidate = { expr: Expr; score: number };
+  const score = (e: Expr): number => e instanceof Pow ? score(e.base) : e instanceof Mul ? e.args.reduce((s, a) => s + score(a), 0) : 1;
+  const memo = new Map<string, Candidate>();
+  const best = (start: number, end: number): Candidate => {
+    const key = `${start}:${end}`;
+    const cached = memo.get(key);
+    if (cached !== undefined) return cached;
+    const original = mul(...reduced.slice(start, end));
+    let result = { expr: original, score: score(original) };
+    const take = (e: Expr): void => {
+      const s = score(e);
+      if (s < result.score) result = { expr: e, score: s };
+    };
+    for (let size = 1; size <= (end - start) / 2; size++) {
+      if ((end - start) % size !== 0) continue;
+      if (reduced.slice(start, end).every((e, i) => e.key === at(reduced, start + i % size).key)) take(pow(best(start, start + size).expr, (end - start) / size));
+    }
+    for (let split = start + 1; split < end; split++) take(mul(best(start, split).expr, best(split, end).expr));
+    memo.set(key, result);
+    return result;
+  };
+  const result = best(0, reduced.length).expr;
+  const factors = result instanceof Mul ? result.args : [result];
+  const grouped: Expr[] = [];
+  let inverses: Expr[] = [];
+  const flush = (): void => {
+    if (inverses.length) grouped.push(pow(mul(...inverses.reverse()), -1));
+    inverses = [];
+  };
+  for (const e of factors) {
+    if (e instanceof Pow && isNegative(e.exp) === true) inverses.push(pow(e, -1));
+    else { flush(); grouped.push(e); }
+  }
+  flush();
+  return mul(...commuting, ...grouped);
+}
 
 /** The names of SymPy's TrigonometricFunction and HyperbolicFunction classes. */
 const TRIG_HYP = new Set(['sin', 'cos', 'tan', 'cot', 'sec', 'csc', 'sinc', 'sinh', 'cosh', 'tanh', 'coth', 'sech', 'csch']);

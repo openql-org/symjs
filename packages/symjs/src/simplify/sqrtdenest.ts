@@ -560,7 +560,7 @@ function sqrtNumericDenest(a: Expr, b: Expr, r: Expr, d2: Expr): Expr | undefine
   return undefined;
 }
 
-function sqrtBiquadraticDenest(expr: Pow, a: Expr, b: Expr, r: Expr, d2: Expr): Expr | undefined {
+export function sqrtBiquadraticDenest(expr: Pow, a: Expr, b: Expr, r: Expr, d2: Expr): Expr | undefined {
   if (num(r) <= 0 || num(d2) < 0 || isZero(b) || sqrtDepth(expr.base) < 2) return undefined;
   for (const x of [a, b, r]) {
     for (const y of x.args) {

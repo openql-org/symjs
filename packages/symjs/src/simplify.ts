@@ -12,9 +12,14 @@ import './calculus/doit';
 
 export {
   simplify,
+  clearCoefficients,
+  factorSum,
+  inversecombine,
+  nthroot,
+  ncSimplify,
   type SimplifyOptions,
 } from './simplify/simplify';
-export { hyperexpand, Hyper_Function, G_Function, Operator, type HyperexpandOptions } from './simplify/hyperexpand';
+export { hyperexpand, Hyper_Function, G_Function, Operator, Formula, HyperRep, devisePlan, devisePlanMeijer, reduceOrder, reduceOrderMeijer, type HyperexpandOptions } from './simplify/hyperexpand';
 export { ratsimpmodprime } from './simplify/ratsimp';
 export { basicCompare as compare } from './simplify/csemain';
 export { gammasimp, combsimp, hypersimilar, isHypergeometric } from './simplify/gammasimp';
@@ -32,6 +37,8 @@ export {
   radsimp,
   collect,
   rcollect,
+  collectAbs,
+  collectSqrt,
 } from './simplify/radsimp';
 export {
   rewrite,
@@ -48,9 +55,15 @@ export {
 export {
   trigsimp,
   exptrigsimp,
+  futrig,
+  trigsimpGroebner,
   type TrigsimpOptions,
 } from './simplify/trigsimp';
-export { fu, FU } from './simplify/fu';
+export {
+  fu, FU, L, TR0, TR1, TR2, TR2i, TR3, TR4, TR5, TR6, TR7, TR8, TR9,
+  TR10, TR10i, TR11, TR12, TR12i, TR13, TR14, TR15, TR16, TR22, TR111,
+  TRmorrie, TRpower, sincosToSum,
+} from './simplify/fu';
 export {
   together,
   cancel,
@@ -61,9 +74,12 @@ export {
 } from './simplify/rational';
 export {
 } from './simplify/separatevars';
-export { hypersimp, separatevars } from './simplify/public';
+export { hypersimp, separatevars, trigSplit, asFSign1, sqrtBiquadraticDenest } from './simplify/public';
 export {
   sqrtdenest,
+  sqrtDepth,
+  splitSurds,
+  radRationalize,
 } from './simplify/sqrtdenest';
 export { cse } from './simplify/csemain';
 export type {
