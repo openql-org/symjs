@@ -27,6 +27,23 @@ export type { ParametricCurve } from './integrals/transform';
 export * from './integrals/transforms/index';
 export { NonElementaryIntegral } from './integrals/risch';
 export { singularityintegrate } from './integrals/singularityfunctions';
+// the helpers of SymPy's integrators (rationaltools, trigonometry, deltafunctions, meijerint, heurisch)
+export { ratintRatpart, logToAtan } from './integrals/rationaltools';
+export {
+  ratint,
+  ratintLogpart,
+  logToReal,
+  trigintegrate,
+  deltaintegrate,
+  changeMul,
+  meijerintDefinite,
+  meijerintIndefinite,
+  meijerintInversion,
+  components,
+  heurisch,
+  heurischWrapper,
+} from './integrals/public';
+export type { HeurischOptions } from './integrals/heurisch';
 export {
   limit,
 } from './series/limits';

@@ -32,6 +32,10 @@ describe('hadamard', () => {
     expect(s(M(hadamardProduct(A2, B2)).at(0, 1))).toBe('A[0, 1]*B[0, 1]');
     expect(() => hadamardProduct()).toThrow('Empty Hadamard product is undefined');
   });
+  it('canonicalize of a tensor (SymPy tensor_can.canonicalize, the same name)', () => {
+    expect(canonicalize([1, 0, 2, 3], [[0, 1]], [0], [[], [[0, 1, 2]], 2, 0])).toEqual([0, 1, 2, 3]);
+    expect(() => canonicalize([1, 0, 2, 3] as unknown as MatrixExpr)).toThrow('needs dummies and msym');
+  });
   it('canonicalize', () => {
     const [A, B, C] = mats3(2, 2);
     let X = HadamardProduct(A, HadamardProduct(B, C));

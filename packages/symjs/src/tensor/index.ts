@@ -164,6 +164,8 @@ export {
   riemannCyclicReplace,
 } from './tensor';
 export type { ArrayReplacements, CommGroup, Commutation, TensorIndexTypeOptions, TensorManagerClass } from './tensor';
+export { bsgsDirectProduct, canonicalFree, doubleCosetCanRep, dummySgs, gensProducts, getSymmetricGroupSgs, permAfDirectProduct, tensorGens } from './tensorcan';
+export type { CanonComponent, PermLike } from './tensorcan';
 export { shape, NoShapeError } from './functions';
 export type { Dimension } from './functions';
 export { ArrayExpr, ArraySymbol, ArrayElement, ArrayTensorProduct, ArrayContraction, ArrayDiagonal, ArrayAdd, PermuteDims, Reshape, ZeroArray, getShape, getRank } from './array/expressions/arrayexpressions';

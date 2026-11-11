@@ -32,7 +32,8 @@ export { Coset, PermutationGroup, SymmetricPermutationGroup } from './permgroups
 export type { OrbitAction, PermutationGroupOptions } from './permgroups';
 export { AbelianGroup, AlternatingGroup, CyclicGroup, DihedralGroup, RubikGroup, SymmetricGroup } from './namedgroups';
 export { DirectProduct } from './groupconstructs';
-export { Polyhedron } from './polyhedron';
+export { Polyhedron, cube, dodecahedron, icosahedron, octahedron, tetrahedron } from './polyhedron';
+export { alternating, cyclic, dihedral, symmetric } from './generators';
 export { groupsCount, isAbelianNumber, isCyclicNumber, isNilpotentNumber } from './groupnumbers';
 export { SchurNumber, SchurNumberNode, schurPartition } from './schurnumber';
 export { FreeGroup, FreeGroupElement, freeGroup, vfreeGroup, xfreeGroup } from './freegroups';

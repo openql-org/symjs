@@ -11,7 +11,7 @@
  */
 
 import { isReal } from '../core/assumptions';
-import { defined } from '../core/guard';
+import { at, defined } from '../core/guard';
 import { Lambda } from '../core/lambda';
 import { asNumerDenom, atoms, primitive } from '../core/methods';
 import type { Expr } from '../core/nodes';
@@ -149,7 +149,13 @@ export function ratintLogpart(f: Poly, g: Poly, x: Sym, t: Sym): [Poly, Poly][] 
   // (the coefficients of the sequence are polynomials in t: their quotients are cancelled)
   for (const r of a.subresultants(b)) Rmap.set(r.degree(), P(add(...r.terms().map(([[e = 0], c]) => mul(cancel(c), pow(x, e)))), x));
   const H: [Poly, Poly][] = [];
-  for (const [q0, i] of res.sqfList()[1]) {
+  const [C, resSqf] = res.sqfList();
+  // a negative content goes into the first factor (SymPy _include_sign)
+  if (C.isNegative && resSqf.length) {
+    const [h0, k0] = at(resSqf, 0);
+    resSqf[0] = [P(mul(h0.asExpr(), C), t), k0];
+  }
+  for (const [q0, i] of resSqf) {
     const q = q0.primitive()[1];
     // (i = deg(g) means a single root c of multiplicity deg(g), so that f - c*g' vanishes at every root of g
     // and f = c*g', which was handled above)

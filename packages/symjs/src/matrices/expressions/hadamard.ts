@@ -28,6 +28,8 @@ import { compareKeys } from '../../printing/sortkey';
 import { PRECEDENCE, same } from './util';
 import { latexPrecedence } from './matexpr';
 import { at, cast, first, pair } from '../../core/guard';
+import type { CanonComponent, PermLike } from '../../tensor/tensorcan';
+import { canonicalizeTensor } from '../../tensor/tensorcan';
 
 /** SymPy HadamardProduct(*args): the elementwise product of matrices of the same shape. */
 export class HadamardProductNode extends MatrixExpr {
@@ -91,8 +93,27 @@ export function hadamardProduct(...matrices: MatArg[]): Expr {
  * SymPy hadamard.canonicalize: associativity, OneMatrix as identity,
  * ZeroMatrix absorbing, repeated factors as HadamardPower, commutativity
  * (sorted factors) and unpacking.
+ *
+ * Called with the arguments of SymPy's tensor_can.canonicalize(g, dummies,
+ * msym, *v) it is that function (one name for both SymPy functions): the
+ * array form of the canonical tensor, or 0 when it vanishes.
  */
-export function canonicalize(x0: Expr): Expr {
+export function canonicalize(x0: Expr): Expr;
+export function canonicalize(g: PermLike, dummies: readonly number[] | readonly (readonly number[])[], msym: 0 | 1 | null | readonly (0 | 1 | null)[], ...v: CanonComponent[]): number[] | 0;
+export function canonicalize(
+  x0: Expr | PermLike,
+  ...rest: [] | TensorCanonArgs
+): Expr | number[] | 0 {
+  if (isTensorArgs(rest)) return canonicalizeTensor(x0, ...rest);
+  if (isArrayForm(x0)) throw new TypeError('canonicalize of a tensor needs dummies and msym');
+  return canonicalizeHadamard(x0);
+}
+
+const isArrayForm = (x: Expr | PermLike): x is readonly number[] => Array.isArray(x);
+type TensorCanonArgs = [readonly number[] | readonly (readonly number[])[], 0 | 1 | null | readonly (0 | 1 | null)[], ...CanonComponent[]];
+const isTensorArgs = (r: [] | TensorCanonArgs): r is TensorCanonArgs => r.length > 0;
+
+function canonicalizeHadamard(x0: Expr): Expr {
   let x = x0;
   // associativity
   for (;;) {
