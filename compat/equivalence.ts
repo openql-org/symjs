@@ -60,6 +60,12 @@ const enclosed = (s: string, open: string, close: string) => {
 /** Symbols of the case (with their assumptions), used when reading the printed values. */
 let symbolTable: Record<string, Expr> = {};
 
+/** Indexed roots in reference output are algebraic numbers, not undefined functions. */
+function indexedRoot(poly: Expr, index: Expr): Expr {
+  if (!(index instanceof sj.Rational && index.isInteger)) throw new TypeError('Root index must be an integer');
+  return sj.CRootOf(poly, index);
+}
+
 function parseValue(s0: string): V {
   const s = s0.trim();
   if (s === 'True' || s === 'False' || s === 'None' || s === 'set()' || s === 'EmptySet') return { t: 'raw', s };
@@ -82,7 +88,7 @@ function parseValue(s0: string): V {
     }
   }
   try {
-    return { t: 'expr', e: sj.parse(s, { symbols: symbolTable }) };
+    return { t: 'expr', e: sj.parse(s, { symbols: symbolTable, locals: { CRootOf: indexedRoot, ComplexRootOf: indexedRoot } }) };
   } catch {
     return { t: 'raw', s };
   }
@@ -133,8 +139,11 @@ function numericValue(e: Expr, replacements: [Expr, Expr][]): sj.ComplexValue | 
 function exprEquivalent(a: Expr, b: Expr): boolean {
   if (a.key === b.key) return true;
   const symbols = new Map([...sj.freeSymbols(a), ...sj.freeSymbols(b)].filter((s) => s instanceof sj.Sym).map((s) => [s.key, s]));
+  // Closed algebraic numbers have no independent substitution points. Repeating
+  // the same high-precision root evaluation provides no additional evidence.
+  const trials = symbols.size === 0 ? 1 : 4;
   let agree = 0;
-  for (let k = 0; k < 4; k++) {
+  for (let k = 0; k < trials; k++) {
     const replacements: [Expr, Expr][] = [...symbols.values()].map((s) => [s, trialValue(s, k)]);
     const x = numericValue(a, replacements);
     const y = numericValue(b, replacements);
@@ -143,7 +152,7 @@ function exprEquivalent(a: Expr, b: Expr): boolean {
     if (Math.hypot(x.re - y.re, x.im - y.im) > 1e-9 * scale) return false;
     agree++;
   }
-  if (agree >= 2) return true;
+  if (agree >= Math.min(2, trials)) return true;
   try {
     const d = sj.simplify(sj.add(a, sj.mul(-1, b)));
     return d instanceof sj.Rational && d.isZero;

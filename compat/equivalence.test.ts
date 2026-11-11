@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { symbols } from '../packages/symjs/src';
+import { symbols, rootsQuintic, Poly, parseExpr, symbol } from '../packages/symjs/src';
 import { equivalent } from './equivalence';
 
 describe('mathematical equivalence checks', () => {
@@ -25,5 +25,15 @@ describe('mathematical equivalence checks', () => {
   it('allows unordered solution lists explicitly', () => {
     expect(equivalent('[1,2]', '[2,1]', [], { fn: 'solve' })).toBe(true);
     expect(equivalent('[1,1]', '[1,2]', [], { fn: 'solve' })).toBe(false);
+  });
+  it('compares algebraic roots with radical solutions and rejects different roots', () => {
+    expect(equivalent('-sqrt(2)', 'CRootOf(x**2-2, 0)')).toBe(true);
+    expect(equivalent('sqrt(2)', 'ComplexRootOf(x**2-2, 0)')).toBe(false);
+    expect(equivalent('sqrt(2)', 'CRootOf(x**2-2, x)')).toBe(false);
+    const polynomial = 'x**5-6*x**3-6*x**2+x-6';
+    const roots = rootsQuintic(Poly.from(parseExpr(polynomial), [symbol('x')]));
+    const expected = `[${Array.from({ length: 5 }, (_, i) => `CRootOf(${polynomial}, ${i})`).join(', ')}]`;
+    expect(equivalent(`[${roots.join(', ')}]`, expected, [], { fn: 'solve' })).toBe(true);
+    expect(equivalent(`[${Array.from({ length: 5 }, () => roots[0]).join(', ')}]`, expected, [], { fn: 'solve' })).toBe(false);
   });
 });

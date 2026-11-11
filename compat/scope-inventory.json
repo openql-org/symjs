@@ -16150,9 +16150,10 @@
   {
    "module": "sympy.polys.polyquinticconst",
    "sha256": "9982c559206adc7dd8d08f1cc7be99ff16ae2f1d58795882e3117ac96b124cf4",
-   "status": "unimplemented",
-   "note": "constants of the quintic solver; to be ported to ./polys with roots_quintic",
-   "sources": [],
+   "status": "partial",
+   "sources": [
+    "polys/polyquinticconst.ts"
+   ],
    "selectedForExtraction": true,
    "hasCorpusCases": false,
    "documentedExamples": 0,

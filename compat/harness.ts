@@ -2626,18 +2626,19 @@ export const ADAPTERS: Record<string, Adapter> = {
     return f;
   },
   roots: (args, kw) => {
-    for (const k of Object.keys(kw)) if (k !== 'multiple') throw new Unsupported(`kwargs ${k}`);
+    for (const k of Object.keys(kw)) if (!['multiple', 'quintics'].includes(k)) throw new Unsupported(`kwargs ${k}`);
     if (args[0] instanceof JsTuple) {
       // a list of coefficients
       const cs = args[0].items.map(asExpr);
       const t = new Sym('x');
-      return rootsDict(sj.roots(sj.add(...cs.map((c, i) => sj.mul(c, sj.pow(t, cs.length - 1 - i)))), t, { multiple: true, skipQuintic: true }));
+      const result = sj.roots(sj.add(...cs.map((c, i) => sj.mul(c, sj.pow(t, cs.length - 1 - i)))), t, { multiple: true, skipQuintic: true, quintics: kw['quintics'] === true });
+      return kw['multiple'] === true ? new JsList(result) : rootsDict(result);
     }
     const e = asExprOrPoly(args[0]);
     const syms = [...sj.freeSymbols(e)].filter((s) => s instanceof Sym);
     const x = args[1] ? asSym(args[1]) : args[0] instanceof sj.Poly ? (args[0].gens[0] as Sym) : syms.length === 1 ? syms[0]! : undefined;
     if (!x) throw new Unsupported('roots generator');
-    const roots = sj.roots(e, x, { multiple: true, skipQuintic: true });
+    const roots = sj.roots(e, x, { multiple: true, skipQuintic: true, quintics: kw['quintics'] === true });
     return kw['multiple'] === true ? new JsList(roots) : rootsDict(roots);
   },
   solve: (args, kw) => {
@@ -4620,6 +4621,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       const self = self0 instanceof JsTuple ? sj.Tuple(...self0.items.map(asExpr)) : self0 instanceof TypeRef ? (sj as unknown as Record<string, unknown>)[self0.name] : self0 instanceof JsDomain ? (self0.domain ?? self0) : self0 instanceof JsLambda ? sj.Lambda(self0.vars, self0.body) : self0;
       if (self === null || (typeof self !== 'object' && typeof self !== 'function')) throw new Unsupported(`no adapter for ${c.fn}`);
       if (name === 'arguments' && self instanceof sj.AppliedPredicate) return new JsTuple(self.arguments);
+      if (name === 'func' && self instanceof sj.CRootOf) return new TypeRef('polys.rootoftools.ComplexRootOf');
       // SymPy names with an uppercase word (to_Matrix -> toMatrix)
       if (name === 'name' && typeof self === 'function' && 'predicateName' in self) return new Sym(String(self.predicateName));
       const upper = name.replace(/_([A-Z])/g, (_m, ch: string) => ch);
