@@ -28,6 +28,7 @@ import json
 import random
 import sys
 import warnings
+from collections import Counter, defaultdict
 
 import sympy
 from sympy import Basic, MatrixBase
@@ -500,6 +501,10 @@ MODULES = {
     "sympy.core.kind": "core",
     "sympy.core.logic": "core",
     "sympy.solvers.ode.lie_group": "ode",
+    # Mathematical base modules are measured even before their implementation.
+    "sympy.functions.special.bsplines": "special",
+    "sympy.polys.numberfields.galoisgroups": "polys",
+    "sympy.tensor.toperators": "tensor",
 }
 
 # sympy.categories.diagram_drawing (DiagramGrid, XypicDiagramDrawer, xypic_draw_diagram): drawing category
@@ -601,11 +606,17 @@ SUBPACKAGE_PUBLIC = {
 
 
 def subpackage_public(modname):
-    """The public names of the subpackage of modname (and of modname itself for LOCAL_PUBLIC and
-    INTERNAL_PUBLIC modules)."""
-    names = set()
+    """Public definitions of a selected module and its subpackage exports."""
+    # A documented public function/class belongs to the selected module's API
+    # even when it is not re-exported by sympy.__init__. Imported helpers and
+    # private definitions do not become public merely by appearing in dir().
+    mod = importlib.import_module(modname)
+    names = {n for n, v in vars(mod).items()
+             if not n.startswith("_") and callable(v)
+             and getattr(v, "__module__", None) == modname}
     if modname.startswith("sympy.stats."):
-        names = set(stats_public())
+        names -= STATS_SAMPLING
+        names |= set(stats_public())
         if modname not in LOCAL_PUBLIC:
             return names
     pkgs_all = []
@@ -1394,7 +1405,59 @@ TEXT_OUTPUT = os.environ.get("TEXT_OUTPUT", "1") == "1"
 ONLY = [m for m in os.environ.get("ONLY_MODULES", "").split(",") if m]
 
 
-def main(dst):
+def preserve_references(cases, baseline):
+    """Keep established inputs when an expansion changes incidental reference state.
+
+    Anonymous Dummy names contain a process-global counter, while their serialized
+    index is the actual identity. One existing membership example uses an external
+    random sampler. Neither is a reason to replace an established reference input.
+    All other changes or missing baseline occurrences are errors, not new cases.
+    """
+    def canonical(value):
+        if isinstance(value, list):
+            return [canonical(v) for v in value]
+        if isinstance(value, dict):
+            result = {k: canonical(v) for k, v in value.items()}
+            if result.get("t") == "Dummy" and re.fullmatch(r"Dummy_\d+", str(result.get("name", ""))):
+                result["name"] = "anonymous:" + str(result["index"])
+            # Preserve this fixture's original sampled real value. The operation,
+            # set, result and all other input properties must still match.
+            if (result.get("module"), result.get("src")) == ("sympy.stats.rv", "samp in N.pspace.domain.set"):
+                args = result.get("args", [])
+                if len(args) == 1 and args[0].get("t") == "Float":
+                    args[0]["v"] = "recorded real sample"
+            return result
+        return value
+
+    key = lambda c: json.dumps(c, sort_keys=True, ensure_ascii=False)
+    available = defaultdict(list)
+    for case in baseline:
+        available[key(canonical(case))].append(case)
+    result, preserved, added = [], [], []
+    for case in cases:
+        matches = available.get(key(canonical(case)), [])
+        if matches:
+            original = matches.pop(0)
+            if case != original:
+                preserved.append({"module": case["module"], "src": case["src"],
+                                  "reason": "Preserve established anonymous Dummy names or the recorded external real sample."})
+            # Keep key order too: compatibility case hashes use JSON.stringify.
+            result.append(original)
+        else:
+            result.append(case)
+            added.append(case)
+    missing = Counter(key(c) for c in baseline) - Counter(key(c) for c in result)
+    if missing:
+        labels = sorted({f"{json.loads(k)['module']}: {json.loads(k)['src']}" for k in missing})
+        raise ValueError(f"Expansion lost or changed {sum(missing.values())} baseline cases: " + "; ".join(labels))
+    # Append new examples after the unchanged baseline. This keeps old corpus
+    # diffs small and avoids interleaving additions from concurrent worktrees.
+    return list(baseline) + added, preserved
+
+
+def main(dst, baseline_path=None):
+    if sympy.__version__ != "1.14.0":
+        raise RuntimeError("The compatibility reference is pinned to SymPy 1.14.0")
     import random
     # SymPy's doctest runner prints in ASCII (pprint_use_unicode(False)); so do the corpus cases
     from sympy.printing.pretty.pretty_symbology import pretty_use_unicode
@@ -1575,11 +1638,21 @@ def main(dst):
                 else:
                     omit("unsupported-result-type", modname, ex)
                     continue
-                if "\n" in expected:
-                    omit("multiline-output", modname, ex)
+                if re.search(r"<[^<>\n]*\bat 0x[0-9a-fA-F]+>", expected):
+                    # Object identities are process-local, not mathematical
+                    # reference values (for example hypergeometric operators).
+                    omit("unstable-result-representation", modname, ex)
                     continue
+                # Multiline str() output is still a result: matrices nested in
+                # lists/tuples and module homomorphisms must remain measurable.
                 record.update({"category": category, "module": modname, "src": src, "expected": expected})
                 cases.append(record)
+    if baseline_path is not None:
+        with open(baseline_path, encoding="utf-8") as f:
+            baseline = json.load(f)
+        if baseline["sympy"] != sympy.__version__:
+            raise ValueError("Baseline SymPy version differs from the pinned reference")
+        cases, extraction["preservedReferences"] = preserve_references(cases, baseline["cases"])
     with open(dst, "w", encoding="utf-8") as f:
         json.dump({"sympy": sympy.__version__, "api": api_inventory(), "cases": cases, "extraction": extraction}, f, indent=1, ensure_ascii=False)
         f.write("\n")
@@ -1591,4 +1664,9 @@ def main(dst):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("destination")
+    parser.add_argument("--baseline", help="Preserve every existing case while expanding this corpus")
+    args = parser.parse_args()
+    main(args.destination, args.baseline)

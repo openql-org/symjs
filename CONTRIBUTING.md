@@ -97,6 +97,18 @@ pnpm test:package                              # built ESM/CJS, minification and
   local paths such as a home directory or a temporary directory, which can
   contain personal information.
 
+For corpus expansion, use `pnpm compat:expand` with SymPy 1.14.0 installed.
+It retains every existing case (including duplicate documented occurrences),
+preserves anonymous Dummy names and the established external-sampler fixture,
+and fails if another existing input or result changes or disappears. Public
+functions defined in a selected module are measured even if they are not
+re-exported at the top level. Multiline results remain measurable; outputs
+containing process-local object addresses are recorded as extraction omissions.
+Run `pnpm compat:test-extract` when changing the extractor. Record the old/new
+counts, new failures and the replay of the old corpus in
+`compat/baseline-migration.json`; a lower agreement percentage after adding
+previously unmeasured behavior is not itself an implementation regression.
+
 The compatibility command fails on behavior, API, base-scope or ODE regressions.
 Its numerical equivalence checks use independent deterministic samples for each
 symbol; ordered lists retain their order except for solution-list APIs.
