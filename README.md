@@ -223,20 +223,20 @@ See [compat/REPORT.md](compat/REPORT.md) for the measured compatibility. Notable
 
 ## Not ported (out of scope)
 
-Runtime-specific backends are deliberately excluded; mathematical modules remain in the inventory even when not implemented:
+Runtime-specific backends, source-code generation for other languages and parsers for other input languages are excluded; other mathematical modules remain in the inventory even when not implemented:
 
 - Sampling of random variables in `sympy.stats` (`sample`, `sample_iter`, `sampling_density`, `sample_stochastic_process`, `numsamples=`, the `sample` methods of distributions, spaces and processes; `sympy/stats/sampling/`), which draws samples with numpy, scipy or pymc
 - Rendering of plots and diagrams: the plotting backends (Matplotlib, pyglet), `show`/`save`, and `preview_diagram`; `@symjs/symjs/plotting` computes the plot data and `categories` produces the Xy-pic text for connector packages
 - The TensorFlow back end of `lambdify`
 - Printers and wrappers that generate or compile Python code: `pycode`, the NumPy printer, `lambdarepr`, the `python` printer and `autowrap`
+- Source-code generation for other languages: the code printers (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB and their `codeprinter` base), all of `sympy.codegen` (including `cfunctions`, `rewriting`, `approximations` and `algorithms`) and `sympy.utilities.codegen`
+- Parsers for other input languages: Maxima, Autolev, C and Fortran, and `sympy.parsing.sym_expr`
 - Python-runtime tooling without mathematical content: test runners and test helpers, caching and dispatch decorators, compilation helpers, package metadata, the gmpy2/python-flint ground-type back ends, bindings to external SAT solvers (MiniSat, pycosat, Z3), typing protocols, REPL and display helpers
 
 ## Planned
 
 Modules that are not ported yet but stay in scope:
 
-- Code printers for other languages (C, C++, Fortran, Rust, Octave, Julia, Maple, Mathematica, GLSL, R, SMT-LIB), all of `sympy.codegen` (including `cfunctions`, `rewriting`, `approximations` and `algorithms`) and `sympy.utilities.codegen`: an extend package `@symjs/codegen`
-- The Maxima, Autolev, C and Fortran parsers and `sympy.parsing.sym_expr`: not ported
 - `sympy.physics`: extend packages per field; `sympy.physics.quantum` goes into the existing `@symjs/physics-quantum`, which is partial
 
 ## License

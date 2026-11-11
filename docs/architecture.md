@@ -306,15 +306,15 @@ members are present, doctest and unit-test evidence passes strict gap and
 omission checks, and no limitation is recorded), partial (a symjs counterpart
 exists but one or more completeness criteria fail, with reasons in the inventory),
 unimplemented (with a note on where it is planned), excluded (with the
-reason) or unassessed. Mathematical content is never excluded.
+reason) or unassessed. Mathematical content is excluded only as part of source-code generation or parsing for other languages.
 
 | SymPy modules | Status |
 |---|---|
-| `printing/c.py`, `cxx.py`, `fortran.py`, `rust.py`, `octave.py`, `julia.py`, `maple.py`, `mathematica.py`, `glsl.py`, `rcode.py`, `smtlib.py`, `codeprinter.py`; all of `codegen/` (including `cfunctions.py`, `rewriting.py`, `approximations.py`, `algorithms.py`); `utilities/codegen.py` | extend package `@symjs/codegen` (planned) |
+| `printing/c.py`, `cxx.py`, `fortran.py`, `rust.py`, `octave.py`, `julia.py`, `maple.py`, `mathematica.py`, `glsl.py`, `rcode.py`, `smtlib.py`, `codeprinter.py`; all of `codegen/` (including `cfunctions.py`, `rewriting.py`, `approximations.py`, `algorithms.py`); `utilities/codegen.py` | out of scope: source-code generation for other languages |
 | `printing/pycode.py`, `numpy.py`, `lambdarepr.py`, `python.py`, `codegen/pyutils.py`, `utilities/autowrap.py` | out of scope: they generate or compile Python code |
 | `printing/jscode.py` | out of scope: JavaScript source output (expressions are evaluated in JavaScript directly) |
 | `sandbox/` | out of scope: experimental modules outside the public SymPy API |
-| `parsing/maxima.py`, `autolev/`, `c/`, `fortran/`, `sym_expr.py` | not ported: other input-language parsers |
+| `parsing/maxima.py`, `autolev/`, `c/`, `fortran/`, `sym_expr.py` | out of scope: parsers for other input languages |
 | `diffgeom/` | base subpath `@symjs/symjs/diffgeom`; `diffgeom.ts` and `rn.ts` mirror SymPy |
 | `physics/` | extend packages per field; `physics/quantum/` is `@symjs/physics-quantum` (partial) |
 | `plotting/`, `categories/diagram_drawing.py`, `printing/preview.py` | not ported (rendering and display) |
