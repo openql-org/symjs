@@ -229,6 +229,7 @@ export { PythonMPQ, PythonMPQ as MPQ } from './polys/domains/pythonrational';
 export { FiniteField, ModularInteger, GF, FF } from './polys/domains/finitefield';
 export { GaussianIntegerRing, GaussianRationalField, GaussianElement, GaussianInteger, GaussianRational, ZZ_I, QQ_I } from './polys/domains/gaussiandomains';
 export { AlgebraicField, ANP } from './polys/domains/algebraicfield';
+export { RealElement, ComplexElement, MPContext, type MPContextOptions } from './polys/domains/mpelements';
 export { ComplexField, CC } from './polys/domains/complexfield';
 export { ExpressionRawDomain, EXRAW } from './polys/domains/expressionrawdomain';
 // matrices over domains (SymPy sympy.polys.matrices)

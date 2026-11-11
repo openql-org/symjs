@@ -89,6 +89,7 @@ EXCLUSIONS = {
 
 # Explicit correspondences for the different kernel layout and combined modules.
 CORRESPONDENCES = {
+    'sympy.polys.domains.mpelements': ['polys/domains/mpelements.ts'],
     'sympy.core.basic': ['core/basic.ts', 'core/compare.ts', 'core/nodes.ts'],
     'sympy.core.expr': ['core/nodes.ts', 'core/methods.ts', 'core/expr.ts'],
     'sympy.core.add': ['core/ops.ts'],
@@ -402,7 +403,6 @@ NOT_IMPLEMENTED = {
     'sympy.parsing.sym_expr': 'other input-language parsers (Autolev, C, Fortran, Maxima): not ported',
     'sympy.polys.densearith': 'dense recursive list arithmetic (dup_*/dmp_*); to be ported to ./polys',
     'sympy.polys.densetools': 'dense recursive list representation',
-    'sympy.polys.domains.mpelements': 'RealField/ComplexField elements; to be ported to ./polys on numeric/ (the mpmath _mpf/_mpc subclassing and context plumbing are Python-specific and excluded)',
     'sympy.polys.fglmtools': 'FGLM change of monomial order; to be ported to ./polys',
     'sympy.polys.matrices.eigen': 'DomainMatrix eigenvalues and eigenvectors; to be ported to ./polys',
     'sympy.polys.matrices.linsolve': 'DomainMatrix linear system solving; to be ported to ./polys',
@@ -439,6 +439,7 @@ NOT_IMPLEMENTED_PACKAGES = {'sympy.physics.quantum': 'extend package @symjs/phys
  'sympy.physics': 'per-field extend package (planned)'}
 # Notes on partially implemented modules (what is ported and what is not).
 NOTES = {
+    'sympy.polys.domains.mpelements': 'RealElement, ComplexElement and MPContext use numeric/ arbitrary precision, explicit context ownership and domain parents; mpmath _mpf/_mpc subclassing and Python context plumbing are excluded.',
     'sympy.functions.special.bsplines': 'Cox-de Boor B-spline bases and exact collocation interpolation on strictly increasing real coordinates.',
     'sympy.matrices.kind': 'Cached MatrixKind and propagation through matrix expressions and integrals; heterogeneous explicit matrix kinds remain partial.',
     'sympy.polys.fields': 'Sparse rational function fields, exact fraction arithmetic, differentiation, evaluation, substitution and generator inference; general domain integration and composition remain partial.',

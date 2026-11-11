@@ -16,6 +16,7 @@ import { asRealImag } from '../../core/methods';
 import { evalf } from '../../numeric/evalf';
 import { str } from '../../printing/str';
 import { CoercionFailed, Domain } from '../domains';
+import { MPContext, type ComplexElement } from './mpelements';
 import { QQ_I } from './gaussiandomains';
 
 /** The field of complex floats (SymPy ComplexField); CC has 53 bits. */
@@ -24,9 +25,12 @@ export class ComplexField extends Domain {
   readonly isField = true;
   /** The precision in bits (SymPy precision). */
   readonly precision: number;
+  readonly context: MPContext;
+  dtype(real: unknown = 0, imag: unknown = 0): ComplexElement { return this.context.mpc(real, imag); }
   constructor(prec = 53) {
     super();
-    this.precision = prec;
+    this.context = new MPContext(prec, { parent: this });
+    this.precision = this.context.prec;
   }
   /** The precision in decimal digits (SymPy dps). */
   get dps(): number {

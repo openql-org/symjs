@@ -46,7 +46,8 @@ const CASES = [
   // The polys entry re-exports the sparse domain matrices through a
   // side-effect-free module, and the matrices that number fields use call
   // simplify late-bound, so factor loads neither (measured 542 KiB, was 701).
-  ['polys', 'factor', 596],
+  // Arbitrary-precision domain contexts bring this consumer to just over 596 KiB.
+  ['polys', 'factor', 597],
   // Finite-domain Poly arithmetic/cancellation adds the shared GF algorithms
   // to consumers of the polynomial engine.
   ['calculus', 'integrate', 917],
@@ -66,7 +67,8 @@ const CASES = [
   ['holonomic', 'exprToHolonomic', 1025],
   ['geometry', '*', 998],
   ['vector', '*', 1096],
-  ['stats', '*', 1140],
+  // Real/complex domain elements and their contexts add about 10 KiB.
+  ['stats', '*', 1152],
   ['categories', '*', 363],
   ['crypto', '*', 367],
   ['liealgebras', '*', 345],
