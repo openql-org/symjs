@@ -56369,7 +56369,6 @@
       "uncurry"
      ],
      "unresolvedBases": [
-      "abc.ABC",
       "typing.NamedTuple"
      ]
     },
@@ -56701,7 +56700,7 @@
      "testFile": "sympy/integrals/tests/test_prde.py",
      "inCorpus": true,
      "caseCount": 13,
-     "gapCount": 9,
+     "gapCount": 2,
      "timeoutCount": 0,
      "disallowedOmissions": {
       "non-call-expression": 1,
@@ -56745,8 +56744,7 @@
   {
    "module": "sympy.integrals.quadrature",
    "sha256": "e818372669488c876e21f6867cd55cc0d7d2ae01222ceb3370df163f3b1736a1",
-   "status": "partial",
-   "note": "Gauss quadrature nodes and weights",
+   "status": "complete",
    "sources": [
     "integrals/quadrature.ts"
    ],
@@ -56767,16 +56765,14 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "testModule": "sympy.integrals.tests.test_quadrature",
      "testFile": "sympy/integrals/tests/test_quadrature.py",
      "inCorpus": true,
-     "caseCount": 0,
+     "caseCount": 116,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 116
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -91189,22 +91185,14 @@
   {
    "module": "sympy.polys.multivariate_resultants",
    "sha256": "e9bc1d17e95c52ab4aa150eb9ce2a19bf3f23dfa3cc34632cbf1ad1126ad405c",
-   "status": "partial",
-   "note": "DixonResultant, MacaulayResultant",
+   "status": "complete",
    "sources": [
     "polys/multivariateresultants.ts"
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "DixonResultant.KSY_precondition",
-      "DixonResultant.delete_zero_rows_and_columns",
-      "DixonResultant.get_KSY_Dixon_resultant",
-      "DixonResultant.get_upper_degree",
-      "DixonResultant.max_degrees",
-      "DixonResultant.product_leading_entries"
-     ],
+     "pass": true,
+     "missingNames": [],
      "unresolvedBases": []
     },
     "doctests": {
@@ -91218,18 +91206,14 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "testModule": "sympy.polys.tests.test_multivariate_resultants",
      "testFile": "sympy/polys/tests/test_multivariate_resultants.py",
      "inCorpus": true,
-     "caseCount": 5,
+     "caseCount": 46,
      "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 2,
-      "not-exported-api": 1,
-      "unserializable-input": 38
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -93350,27 +93334,14 @@
   {
    "module": "sympy.polys.polymatrix",
    "sha256": "88d6be13222bcefed979731a3ff3e3a2380d776f409c8a2d644dcd785dad7b8e",
-   "status": "partial",
-   "note": "PolyMatrix",
+   "status": "complete",
    "sources": [
     "polys/polymatrix.ts"
    ],
    "completeness": {
     "publicApi": {
-     "pass": false,
-     "missingNames": [
-      "MutablePolyDenseMatrix.applyfunc",
-      "MutablePolyDenseMatrix.col_join",
-      "MutablePolyDenseMatrix.eye",
-      "MutablePolyDenseMatrix.from_dm",
-      "MutablePolyDenseMatrix.from_list",
-      "MutablePolyDenseMatrix.nullspace",
-      "MutablePolyDenseMatrix.rank",
-      "MutablePolyDenseMatrix.row_join",
-      "MutablePolyDenseMatrix.rref",
-      "MutablePolyDenseMatrix.set_gens",
-      "MutablePolyDenseMatrix.zeros"
-     ],
+     "pass": true,
+     "missingNames": [],
      "unresolvedBases": []
     },
     "doctests": {
@@ -93384,20 +93355,14 @@
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
+     "pass": true,
      "testModule": "sympy.polys.tests.test_polymatrix",
      "testFile": "sympy/polys/tests/test_polymatrix.py",
      "inCorpus": true,
-     "caseCount": 15,
-     "gapCount": 4,
+     "caseCount": 100,
+     "gapCount": 0,
      "timeoutCount": 0,
-     "disallowedOmissions": {
-      "non-call-expression": 2,
-      "not-executed": 14,
-      "not-exported-api": 6,
-      "unserializable-input": 60,
-      "unsupported-assertion": 2
-     },
+     "disallowedOmissions": {},
      "incompleteTests": {}
     },
     "limitations": {
@@ -132020,9 +131985,7 @@
       "TensAdd.flatten",
       "TensAdd.free_args",
       "TensAdd.free_indices",
-      "TensAdd.fun_eval",
       "TensAdd.func",
-      "TensAdd.get_matrix",
       "TensAdd.has_free",
       "TensAdd.has_xfree",
       "TensAdd.is_Add",
@@ -132089,10 +132052,8 @@
       "TensAdd.sort_key",
       "TensAdd.xreplace",
       "TensExpr.coeff",
-      "TensExpr.fun_eval",
       "TensExpr.get_free_indices",
       "TensExpr.get_indices",
-      "TensExpr.get_matrix",
       "TensExpr.nocoeff",
       "TensMul.as_content_primitive",
       "TensMul.as_dummy",
@@ -132116,9 +132077,7 @@
       "TensMul.free_in_args",
       "TensMul.free_indices",
       "TensMul.from_data",
-      "TensMul.fun_eval",
       "TensMul.func",
-      "TensMul.get_matrix",
       "TensMul.has_free",
       "TensMul.has_xfree",
       "TensMul.identity",
@@ -132193,14 +132152,10 @@
       "Tensor.dum_in_args",
       "Tensor.free_in_args",
       "Tensor.free_indices",
-      "Tensor.fun_eval",
-      "Tensor.get_matrix",
       "Tensor.index_types",
       "Tensor.perm2tensor",
       "TensorElement.dum",
       "TensorElement.free",
-      "TensorElement.fun_eval",
-      "TensorElement.get_matrix",
       "TensorHead.__lt__",
       "TensorHead.data",
       "TensorHead.name",
@@ -132223,8 +132178,6 @@
       "WildTensor.dum_in_args",
       "WildTensor.free_in_args",
       "WildTensor.free_indices",
-      "WildTensor.fun_eval",
-      "WildTensor.get_matrix",
       "WildTensor.index_types",
       "WildTensor.perm2tensor",
       "WildTensorHead.__lt__",
@@ -132246,7 +132199,6 @@
       "tensorsymmetry"
      ],
      "unresolvedBases": [
-      "abc.ABC",
       "sympy.core.Basic",
       "sympy.core.Expr"
      ]
@@ -132286,10 +132238,17 @@
      "incompleteTests": {}
     },
     "limitations": {
-     "pass": true,
+     "pass": false,
      "hasNote": false,
      "note": "",
-     "capabilities": []
+     "capabilities": [
+      {
+       "area": "Abstract tensors",
+       "remaining": [
+        "Deprecated component data registry (data, set_metric) and the deprecated helpers tensorhead, tensorsymmetry and TensorType"
+       ]
+      }
+     ]
     }
    },
    "selectedForExtraction": true,
@@ -132470,40 +132429,34 @@
    "module": "sympy.tensor.toperators",
    "sha256": "7e7893529758cf43afb4d9c582b1c835e757f3a17155cc5f2a3f65fe5d69f51c",
    "status": "partial",
+   "note": "PartialDerivative with doit, fun_eval, get_matrix and component arrays; the inventory does not resolve its base sympy.core.Expr (imported through the sympy.core package), and the Basic/Expr members inherited by Expr subclasses are not mapped to symjs members.",
    "sources": [
     "tensor/toperators.ts"
    ],
    "completeness": {
     "publicApi": {
      "pass": false,
-     "missingNames": [
-      "PartialDerivative.doit",
-      "PartialDerivative.fun_eval",
-      "PartialDerivative.get_matrix"
-     ],
+     "missingNames": [],
      "unresolvedBases": [
-      "abc.ABC",
       "sympy.core.Expr"
      ]
     },
     "doctests": {
-     "pass": false,
-     "caseCount": 9,
+     "pass": true,
+     "caseCount": 12,
      "gapCount": 0,
      "failingIds": [],
      "disallowedExclusions": {},
-     "disallowedOmissions": {
-      "unsupported-result-type": 3
-     },
+     "disallowedOmissions": {},
      "unaccountedExamples": 0,
      "notSelected": false
     },
     "unitTests": {
-     "pass": false,
-     "testModule": "sympy.tensor.tests.test_toperators",
-     "testFile": "sympy/tensor/tests/test_toperators.py",
-     "inCorpus": false,
-     "caseCount": 0,
+     "pass": true,
+     "testModule": "sympy.tensor.tests.test_tensor_operators",
+     "testFile": "sympy/tensor/tests/test_tensor_operators.py",
+     "inCorpus": true,
+     "caseCount": 78,
      "gapCount": 0,
      "timeoutCount": 0,
      "disallowedOmissions": {},
@@ -132511,16 +132464,9 @@
     },
     "limitations": {
      "pass": false,
-     "hasNote": false,
-     "note": "",
-     "capabilities": [
-      {
-       "area": "Abstract tensors",
-       "remaining": [
-        "Tensor differential operators (sympy.tensor.toperators)"
-       ]
-      }
-     ]
+     "hasNote": true,
+     "note": "PartialDerivative with doit, fun_eval, get_matrix and component arrays; the inventory does not resolve its base sympy.core.Expr (imported through the sympy.core package), and the Basic/Expr members inherited by Expr subclasses are not mapped to symjs members.",
+     "capabilities": []
     }
    },
    "selectedForExtraction": true,

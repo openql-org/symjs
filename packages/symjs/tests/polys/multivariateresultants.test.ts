@@ -25,7 +25,6 @@ it('constructs Macaulay numerator and denominator matrices in lexicographic orde
   expect(() => mac.getSubmatrix(Matrix.eye(2))).toThrow(RangeError);
   expect(() => new MacaulayResultant([], [])).toThrow(RangeError);
   expect(() => new MacaulayResultant([x], [x,y])).toThrow(RangeError);
-  expect(() => new MacaulayResultant([x.add(1)], [x])).toThrow(RangeError);
   expect(() => new MacaulayResultant([0], [x])).toThrow(RangeError);
 });
 it('uses two pure-power divisors for nonreduced monomials in every dimension', () => {
@@ -37,4 +36,26 @@ it('uses two pure-power divisors for nonreduced monomials in every dimension', (
   // Equal numerical coefficients must not affect row selection.
   const ternary = new MacaulayResultant([x, y.pow(2), z.pow(3)], [x,y,z]);
   expect(ternary.getSubmatrix(ternary.getMatrix()).det().equals(1)).toBe(true);
+});
+it('accepts inhomogeneous input like SymPy, using only the terms of the top degree', () => {
+  const mac = new MacaulayResultant([p('a_0*y-a_1*x+a_2*z'), p('b_1*x**2+b_0*y**2-b_2*z**2'), p('c_0*y-c_1*x**3+c_2*x**2*z-c_3*x*z**2+c_4*z**3')], [x,y,z]);
+  expect([...mac.degrees, mac.degreeM, mac.monomialsSize]).toEqual([1, 2, 3, 4, 15]);
+  expect(String(mac.getSubmatrix(mac.getMatrix()))).toBe('Matrix([[-a_1, a_0, a_2, 0], [0, -a_1, 0, 0], [0, 0, -a_1, 0], [0, 0, 0, -a_1]])');
+});
+it('implements the Kapur-Saxena-Yang Dixon resultant', () => {
+  const [A, B, C] = [new Sym('A'), new Sym('B'), new Sym('C')];
+  const d = new DixonResultant([p('x+y'), p('x**2+y**3')], [x, y]);
+  expect(d.maxDegrees).toEqual([2, 3]);
+  expect(d.getUpperDegree()).toBe(5);
+  expect(d.KSYPrecondition(Matrix.zeros(2))).toBe(false);
+  expect(d.KSYPrecondition(Matrix.of([[1, 2, 3], [0, 0, 1]]))).toBe(true);
+  expect(d.KSYPrecondition(Matrix.of([[1, 0], [0, 1]]))).toBe(true);
+  expect(d.KSYPrecondition(Matrix.of([[1, 2], [2, 4]]))).toBe(false);
+  expect(d.KSYPrecondition(Matrix.of([[A.pow(2), 0, 1], [A, 1, A.pow(-1)]]))).toBe(false);
+  expect(String(d.deleteZeroRowsAndColumns(Matrix.of([[0, 0, 0, 0], [0, 1, 2, 0], [0, 3, 4, 0], [0, 0, 0, 0]])))).toBe('Matrix([[1, 2], [3, 4]])');
+  expect(String(d.deleteZeroRowsAndColumns(Matrix.of([[0, 0, A], [B, 0, 0], [0, 0, C]])))).toBe('Matrix([[0, A], [B, 0], [0, C]])');
+  expect(String(d.productLeadingEntries(Matrix.of([[0, 0, A], [1, 2, 3], [B, 0, 0]])))).toBe('A*B');
+  expect(String(d.productLeadingEntries(Matrix.of([[0, 0, 0], [1, 2, 3], [0, 0, 0]])))).toBe('1');
+  const ksy = new DixonResultant([p('x*y*z'), p('x**2-z**2'), p('x+y+z')], [x, y]);
+  expect(String(ksy.getKSYDixonResultant(ksy.getDixonMatrix(ksy.getDixonPolynomial())))).toBe('-z**3');
 });

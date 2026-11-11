@@ -102,8 +102,17 @@ class ExtractTests(unittest.TestCase):
         self.assertEqual(const["body"], extract.ser(sympy.S.One))
         with self.assertRaises(extract.Unsupported):
             extract.ser_arg(ast.parse("lambda i: True", mode="eval").body, {})
+        # A runtime lambda is an expression of its parameters, applied to dummies without advancing the Dummy counter.
+        count = sympy.Dummy._count
+        self.assertEqual(extract.ser(lambda i: 2*i)["t"], "JsLambda")
+        self.assertEqual(sympy.Dummy._count, count)
+        for function in (lambda i: True, lambda *i: 1, lambda: 1, lambda i: [1][i]):
+            with self.assertRaises(extract.Unsupported):
+                extract.ser(function)
+        def local(i):
+            return i
         with self.assertRaises(extract.Unsupported):
-            extract.ser(lambda i: i)
+            extract.ser(local)
         p = _pure_key_dict()
         p[x] = 1
         self.assertEqual(extract.ser(p), {"t": "PureKeyDict", "items": [[extract.ser(sympy.PurePoly(x)), extract.ser(1)]]})

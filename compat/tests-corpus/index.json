@@ -574,14 +574,14 @@
     },
     "integrals": {
       "examined": 2444,
-      "cases": 1197,
+      "cases": 1313,
       "reasons": {
         "duplicate": 63,
         "marked-slow": 607,
         "marked-tooslow": 1,
         "marked-xfail": 38,
         "non-boolean-assertion": 2,
-        "non-call-expression": 202,
+        "non-call-expression": 86,
         "not-executed": 1,
         "not-exported-api": 70,
         "private-api": 1,
@@ -589,24 +589,24 @@
         "unserializable-input": 188,
         "unsupported-assertion": 64
       },
-      "sourceSites": 2228,
+      "sourceSites": 2261,
       "testStatuses": {
         "completed": 413,
         "marked-slow": 36,
         "marked-tooslow": 1,
         "marked-xfail": 36
       },
-      "seconds": 179.184,
-      "retainedModules": 0,
+      "seconds": 3.962,
+      "retainedModules": 16,
       "shards": [
         {
           "file": "integrals.json",
-          "cases": 1197,
-          "bytes": 1097285
+          "cases": 1313,
+          "bytes": 1160482
         }
       ],
       "auditFile": "integrals.audit.json",
-      "auditBytes": 370371,
+      "auditBytes": 335101,
       "modules": [
         "sympy.integrals.tests.test_deltafunctions",
         "sympy.integrals.tests.test_failing_integrals",
@@ -927,31 +927,31 @@
       ]
     },
     "polys": {
-      "examined": 29642,
-      "cases": 9358,
+      "examined": 29644,
+      "cases": 9484,
       "reasons": {
         "duplicate": 125,
         "marked-slow": 74,
         "marked-tooslow": 2,
         "marked-xfail": 10,
         "non-boolean-assertion": 52,
-        "non-call-expression": 15895,
-        "not-executed": 31,
-        "not-exported-api": 1112,
+        "non-call-expression": 15891,
+        "not-executed": 17,
+        "not-exported-api": 1105,
         "optional-dependency": 291,
         "private-api": 33,
-        "python-runtime-api": 691,
+        "python-runtime-api": 692,
         "serialization-error": 319,
         "stateful-iterator-input": 137,
         "test-exception:TypeError": 2,
         "test-utility": 50,
-        "unserializable-input": 448,
-        "unsupported-assertion": 1011,
+        "unserializable-input": 350,
+        "unsupported-assertion": 1009,
         "unsupported-raises": 1
       },
-      "sourceSites": 10205,
+      "sourceSites": 10731,
       "testStatuses": {
-        "completed": 2207,
+        "completed": 2208,
         "marked-slow": 6,
         "marked-tooslow": 2,
         "marked-xfail": 4,
@@ -959,17 +959,17 @@
         "test-exception:TypeError": 1,
         "upstream-skip": 62
       },
-      "seconds": 19.636,
+      "seconds": 17.549,
       "retainedModules": 67,
       "shards": [
         {
           "file": "polys.json",
-          "cases": 9358,
-          "bytes": 7781372
+          "cases": 9484,
+          "bytes": 7928355
         }
       ],
       "auditFile": "polys.audit.json",
-      "auditBytes": 983331,
+      "auditBytes": 956239,
       "modules": [
         "sympy.polys.agca.tests.test_extensions",
         "sympy.polys.agca.tests.test_homomorphisms",
@@ -1396,38 +1396,38 @@
       ]
     },
     "tensor": {
-      "examined": 2763,
-      "cases": 1590,
+      "examined": 2764,
+      "cases": 1593,
       "reasons": {
         "marked-xfail": 4,
         "non-boolean-assertion": 2,
-        "non-call-expression": 416,
+        "non-call-expression": 411,
         "not-executed": 1,
         "not-exported-api": 370,
-        "private-api": 77,
-        "python-runtime-api": 1,
+        "private-api": 79,
+        "python-runtime-api": 2,
         "stateful-iterator-input": 22,
         "test-timeout": 97,
         "unserializable-input": 147,
         "unsupported-assertion": 36
       },
-      "sourceSites": 2032,
+      "sourceSites": 2070,
       "testStatuses": {
         "completed": 233,
         "marked-xfail": 1,
         "test-timeout": 5
       },
-      "seconds": 169.643,
-      "retainedModules": 0,
+      "seconds": 4.382,
+      "retainedModules": 21,
       "shards": [
         {
           "file": "tensor.json",
-          "cases": 1590,
-          "bytes": 1866545
+          "cases": 1593,
+          "bytes": 1873362
         }
       ],
       "auditFile": "tensor.audit.json",
-      "auditBytes": 268437,
+      "auditBytes": 267912,
       "modules": [
         "sympy.tensor.array.expressions.tests.test_array_expressions",
         "sympy.tensor.array.expressions.tests.test_arrayexpr_derivatives",

@@ -162,19 +162,61 @@ def call_hook(name, *args):
     return ast.Call(ast.Attribute(ast.Name("_compat_capture", ast.Load()), name, ast.Load()), list(args), [])
 
 
-def asserted_name(test):
-    """The name an assertion tests directly: G in `assert G == H`, `assert not G`, `assert G is None`."""
-    if isinstance(test, ast.UnaryOp) and isinstance(test.op, ast.Not):
-        test = test.operand
-    elif isinstance(test, ast.Compare) and len(test.ops) == 1:
-        test = test.left
-    return test.id if isinstance(test, ast.Name) else None
+def asserted_names(test):
+    """The names an assertion reads: G and H in `assert G == H`, `assert len(G) == 2` or `assert not G`."""
+    return {n.id for n in ast.walk(test) if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)}
 
 
 def raises_call(node):
     return isinstance(node, ast.Call) and (
         isinstance(node.func, ast.Name) and node.func.id == "raises"
         or isinstance(node.func, ast.Attribute) and node.func.attr == "raises")
+
+
+# Python builtins applied to a measured value in an assertion (len(f(x)) == 2, str(f(x)) == '...'):
+# the case measures the inner call and the replay applies the same projection to its result.
+PROJECTIONS = {"len", "list", "tuple", "str", "repr"}
+
+
+def comprehension_projection(node):
+    """The iterated node of [str(r) for r in <node>], or None."""
+    if not (isinstance(node, ast.ListComp) and len(node.generators) == 1):
+        return None
+    generator = node.generators[0]
+    element = node.elt
+    if (generator.ifs or generator.is_async or not isinstance(generator.target, ast.Name)
+            or not (isinstance(element, ast.Call) and isinstance(element.func, ast.Name) and element.func.id == "str"
+                    and len(element.args) == 1 and not element.keywords
+                    and isinstance(element.args[0], ast.Name) and element.args[0].id == generator.target.id)):
+        return None
+    return generator.iter
+
+
+def projection(node):
+    """(builtin name, projected node) of an assertion side that applies a projection, or None."""
+    if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in PROJECTIONS
+            and len(node.args) == 1 and not node.keywords and not isinstance(node.args[0], ast.Starred)):
+        return node.func.id, node.args[0]
+    inner = comprehension_projection(node)
+    return ("str-items", inner) if inner is not None else None
+
+
+def assignment_targets(node):
+    """Names bound by `name = <call>` or `a, b = <call>`, or None."""
+    if len(node.targets) != 1:
+        return None
+    target = node.targets[0]
+    if isinstance(target, ast.Name):
+        return target.id
+    if isinstance(target, (ast.Tuple, ast.List)) and target.elts and all(isinstance(t, ast.Name) for t in target.elts):
+        return tuple(t.id for t in target.elts)
+    return None
+
+
+def slice_call(node):
+    """slice(lower, upper, step) for the ast.Slice of a subscript."""
+    parts = [part if part is not None else ast.Constant(None) for part in (node.lower, node.upper, node.step)]
+    return ast.Call(ast.Name("slice", ast.Load()), parts, [])
 
 
 class Instrument(ast.NodeTransformer):
@@ -184,7 +226,7 @@ class Instrument(ast.NodeTransformer):
         self.source = source
         self.sites = []
         self.owner = "<module>"
-        # Names that assertions of the current function test directly (assert G == ...).
+        # Names that assertions of the current function read: only their assignments are bound.
         self.asserted = set()
 
     def site(self, node):
@@ -197,7 +239,7 @@ class Instrument(ast.NodeTransformer):
         before, asserted = self.owner, self.asserted
         self.owner = node.name
         self.asserted = {name for child in ast.walk(node) if isinstance(child, ast.Assert)
-                         for name in [asserted_name(child.test)] if name}
+                         for name in asserted_names(child.test)}
         self.generic_visit(node)
         self.owner, self.asserted = before, asserted
         return node
@@ -209,34 +251,72 @@ class Instrument(ast.NodeTransformer):
             else:
                 prepared = call_hook("function", site, node.func)
             return ast.copy_location(ast.Call(prepared, node.args, node.keywords), node)
-        syn = extract.synthetic_call(node)
+        syn = self.synthetic(node)
         if syn is not None:
             name, receiver, args = syn
             return ast.copy_location(call_hook("synthetic", site, ast.Constant(name), receiver, *args), node)
         return None
 
+    @staticmethod
+    def synthetic(node):
+        if isinstance(node, ast.Subscript) and isinstance(node.slice, ast.Slice):
+            return "__getitem__", node.value, [slice_call(node.slice)]
+        return extract.synthetic_call(node)
+
     def visit_Assign(self, node):
-        # A call assigned to names, e.g. `G, alt = galois_group(f)`: its measured
-        # record is kept so that a later assertion about these names can replay it.
-        self.generic_visit(node)
-        target = node.targets[0] if len(node.targets) == 1 else None
-        names = ([target.id] if isinstance(target, ast.Name) else
-                 [t.id for t in target.elts] if isinstance(target, (ast.Tuple, ast.List))
-                 and all(isinstance(t, ast.Name) for t in target.elts) else None)
-        call = node.value
-        if (names is None or not self.asserted.intersection(names) or len(set(names)) != len(names)
-                or not isinstance(call, ast.Call) or raises_call(call)
-                or any(isinstance(a, ast.Starred) for a in call.args) or any(k.arg is None for k in call.keywords)):
+        names = None if raises_call(node.value) else assignment_targets(node)
+        node = self.generic_visit(node)
+        value = node.value
+        if names is None or not self.asserted.intersection([names] if isinstance(names, str) else names):
             return node
-        unpacked = ast.Constant((tuple(names), not isinstance(target, ast.Name)))
-        if isinstance(call.func, ast.Attribute):
-            prepared = call_hook("bind_method", unpacked, call.func.value, ast.Constant(call.func.attr))
-        else:
-            prepared = call_hook("bind_function", unpacked, call.func)
-        node.value = ast.copy_location(ast.Call(prepared, call.args, call.keywords), call)
+        label = ast.Constant(names)
+        if isinstance(value, ast.Call):
+            if isinstance(value.func, ast.Attribute):
+                prepared = call_hook("bind_method", label, value.func.value, ast.Constant(value.func.attr))
+            else:
+                prepared = call_hook("bind_function", label, value.func)
+            node.value = ast.copy_location(ast.Call(prepared, value.args, value.keywords), value)
+            return node
+        syn = self.synthetic(value)
+        if syn is not None:
+            name, receiver, args = syn
+            node.value = ast.copy_location(call_hook("bind_synthetic", label, ast.Constant(name), receiver, *args), value)
         return node
 
+    def derived(self, lhs, site, op, rhs):
+        """A check of a projected call or of a name bound to a measured call, or None."""
+        projected = projection(lhs)
+        builtin, inner = (None, lhs) if projected is None else projected
+        builtin_node = ast.Constant(None) if builtin is None else ast.Name("str" if builtin == "str-items" else builtin, ast.Load())
+        if isinstance(inner, ast.Name):
+            return call_hook("check_bound", site, ast.Constant(op), ast.Constant(builtin), builtin_node,
+                             ast.Constant(inner.id), inner, rhs)
+        if builtin is None:
+            return None
+        measured = self.measured(inner, site)
+        if measured is None:
+            return None
+        return call_hook("check_projection", site, ast.Constant(op), ast.Constant(builtin), builtin_node, measured, rhs)
+
+    def split(self, node, tests):
+        """Separate assertions, in order, for the given tests of one assert statement."""
+        statements = []
+        for test in tests:
+            result = self.visit_Assert(ast.copy_location(ast.Assert(ast.copy_location(test, node.test), node.msg), node))
+            statements.extend(result if isinstance(result, list) else [result])
+        return statements
+
     def visit_Assert(self, node):
+        test = node.test
+        # assert a and b: separate assertions with Python's short-circuit order.
+        if isinstance(test, ast.BoolOp) and isinstance(test.op, ast.And):
+            return self.split(node, test.values)
+        # assert a == b == c: one assertion per comparison of adjacent operands.
+        if (isinstance(test, ast.Compare) and len(test.ops) > 1
+                and all(isinstance(o, (ast.Eq, ast.NotEq)) for o in test.ops)):
+            operands = [test.left, *test.comparators]
+            return self.split(node, [ast.Compare(copy.deepcopy(operands[i]), [o], [copy.deepcopy(operands[i + 1])])
+                                     for i, o in enumerate(test.ops)])
         site = self.site(node)
         lhs, rhs, op = node.test, ast.Constant(True), "truthy"
         if isinstance(lhs, ast.UnaryOp) and isinstance(lhs.op, ast.Not):
@@ -261,10 +341,11 @@ class Instrument(ast.NodeTransformer):
                 rhs, op = ast.Constant(False), "falsy"
             else:
                 return [ast.copy_location(ast.Expr(call_hook("omit", site, ast.Constant("unsupported-assertion"))), node), node]
-        measured = self.measured(lhs, site)
-        if measured is None and isinstance(lhs, ast.Name):
-            node.test = ast.copy_location(call_hook("check_bound", site, ast.Constant(op), ast.Constant(lhs.id), lhs, rhs), node.test)
+        derived = self.derived(lhs, site, op, rhs)
+        if derived is not None:
+            node.test = ast.copy_location(derived, node.test)
             return node
+        measured = self.measured(lhs, site)
         if measured is None:
             return [ast.copy_location(ast.Expr(call_hook("omit", site, ast.Constant("non-call-expression"))), node), node]
         node.test = ast.copy_location(call_hook("check", site, ast.Constant(op), measured, rhs), node.test)
@@ -338,6 +419,66 @@ def json_numbers(value):
     return value
 
 
+REPLAY_PROJECTIONS = {"len", "list", "tuple", "str-items"}
+
+
+def tabulated(args):
+    """Wrap each lambda argument that is not an expression of its parameters so that its calls are recorded.
+
+    The wrapper is a plain function, like the lambda, and returns the lambda's values unchanged.
+    """
+    tables, wrapped = {}, list(args)
+    for index, value in enumerate(args):
+        if not (isinstance(value, types.FunctionType) and value.__name__ == "<lambda>"):
+            continue
+        try:
+            extract.ser_lambda(value)
+            continue
+        except extract.Unsupported:
+            pass
+        calls = tables[index] = []
+
+        def recorded(*xs, _f=value, _calls=calls):
+            result = _f(*xs)
+            _calls.append((xs, result))
+            return result
+        wrapped[index] = recorded
+    return tuple(wrapped), tables
+
+
+def fill_tables(record, tables):
+    """The record with each tabulated lambda as the table of its recorded calls {"t": "JsTable", "entries": [[args, value], ...]}."""
+    try:
+        extract.DUMMY_IDS.clear()
+        entries = {i: [[[extract.ser(x) for x in xs], extract.ser(v)] for xs, v in calls] for i, calls in tables.items()}
+    except extract.Unsupported:
+        return {"reason": "unserializable-input"}
+    args = list(record["args"])
+    for i, rows in entries.items():
+        args[i] = {"t": "JsTable", "entries": json_numbers(rows)}
+    return {**record, "args": args}
+
+
+def project(projection, value):
+    if projection is None:
+        return value
+    if projection == "str-items":
+        return [str(item) for item in value]
+    return getattr(builtins, projection)(value)
+
+
+def safe_str(value):
+    try:
+        return str(value)
+    except Exception:
+        return None
+
+
+def default_truth(value):
+    """Python truthiness of an object without __bool__/__len__: always true, not a mathematical result."""
+    return not hasattr(type(value), "__bool__") and not hasattr(type(value), "__len__")
+
+
 class Capture:
     def __init__(self, module, category, sites):
         self.module, self.category, self.sites = module, category, sites
@@ -345,8 +486,7 @@ class Capture:
         self.events = []
         self.pending = {}
         self.exceptions = {}
-        # name -> (test, record, result object, its str when assigned)
-        self.bound = {}
+        self.bindings = {}
 
     def metadata(self, site):
         return {"module": self.module, "category": self.category, "test": self.test,
@@ -368,6 +508,9 @@ class Capture:
                     return {"reason": "python-runtime-api"}
             elif name in TEST_UTILITIES:
                 return {"reason": "test-utility"}
+            elif function is isinstance:
+                # Python type introspection of a result, not a mathematical API.
+                return {"reason": "python-runtime-api"}
             else:
                 module = getattr(function, "__module__", "") or ""
                 if (name.startswith("_") and module.startswith("sympy.") and ".tests." not in module
@@ -396,10 +539,14 @@ class Capture:
             return {"reason": "serialization-error"}
 
     def invoke(self, site, name, receiver, function, args, kwargs):
-        record = self.snapshot(site, name, receiver, args, kwargs, function=function)
+        args, tables = tabulated(args)
+        record = self.snapshot(site, name, receiver, [None if i in tables else a for i, a in enumerate(args)], kwargs, function=function)
         self.pending[site] = record
         try:
-            return function(*args, **kwargs)
+            result = function(*args, **kwargs)
+            if tables and "reason" not in record:
+                self.pending[site] = fill_tables(record, tables)
+            return result
         except (extract.Timeout, TestDeadline):
             raise
         except BaseException as error:
@@ -447,64 +594,8 @@ class Capture:
             case["text"] = True
         self.events.append((site, case))
 
-    def bind(self, targets, receiver, name, function, args, kwargs):
-        record = self.snapshot(None, name, receiver, args, kwargs, function=function)
-        value = function(*args, **kwargs)
-        names, unpacked = targets
-        if not unpacked:
-            values = [(None, value)]
-        elif isinstance(value, (tuple, list)) and len(value) == len(names):
-            values = list(enumerate(value))
-        else:
-            return value
-        for (pick, item), target in zip(values, names):
-            try:
-                text = str(item)
-            except Exception:
-                continue
-            entry = record if pick is None or "reason" in record else {**record, "pick": pick}
-            self.bound[target] = (self.test, entry, item, text)
-        return value
-
-    def bind_function(self, names, function):
-        name = getattr(function, "__name__", "")
-        if not name:
-            return function
-        return lambda *args, **kw: self.bind(names, None, name, function, args, kw)
-
-    def bind_method(self, names, receiver, name):
-        function = getattr(receiver, name)
-        if isinstance(receiver, types.ModuleType):
-            return self.bind_function(names, function)
-        return lambda *args, **kw: self.bind(names, receiver, "." + name, function, args, kw)
-
-    def check_bound(self, site, op, name, value, rhs):
-        """An assertion about a name assigned from a call: the call is replayed only if the name
-        still refers to the unchanged object that the call returned."""
-        test, record, item, text = self.bound.get(name, (None, None, None, None))
-        try:
-            unchanged = test == self.test and item is value and str(value) == text
-        except Exception:
-            unchanged = False
-        if not unchanged:
-            self.omit(site, "non-call-expression")
-            return OPERATORS[op](value, rhs)
-        self.pending[site] = copy.deepcopy(record)
-        return self.check(site, op, value, rhs)
-
     def check(self, site, op, lhs, rhs):
-        record = self.pending.pop(site)
-        result = OPERATORS[op](lhs, rhs)
-        if op in ("truthy", "falsy") and not (lhs is None or isinstance(lhs, (bool, sympy.logic.boolalg.BooleanAtom))):
-            self.omit(site, "non-boolean-assertion")
-        elif op == "is" and not (isinstance(rhs, type) or any(rhs is v for v in (True, False, None))):
-            self.omit(site, "unsupported-assertion")
-        elif not result:
-            self.omit(site, "reference-assertion-failed")
-        else:
-            # an undecided query (None) asserted false is recorded as None
-            self.finish(site, record, op, None if lhs is None else rhs)
-        return result
+        return self.compare(site, op, self.pending.pop(site), None, None, lhs, rhs)
 
     @contextlib.contextmanager
     def raises_context(self, site, raises, exception):
@@ -527,6 +618,78 @@ class Capture:
             if site in self.pending:
                 self.pending.pop(site)
                 self.omit(site, "reference-did-not-raise")
+
+    def bind(self, names, record, value):
+        """Remember which measured call produced the value of each assigned name."""
+        if isinstance(names, str):
+            self.bindings[names] = (record, None, value, safe_str(value))
+            return value
+        items = tuple(value) if isinstance(value, Iterator) else value
+        try:
+            values = list(items)
+        except TypeError:
+            return items
+        if len(values) == len(names):
+            for index, (name, item) in enumerate(zip(names, values)):
+                self.bindings[name] = (record, index, item, safe_str(item))
+        return items
+
+    def bound_call(self, names, name, receiver, function, args, kwargs):
+        record = self.snapshot(None, name, receiver, args, kwargs, function=function)
+        return self.bind(names, record, function(*args, **kwargs))
+
+    def bind_function(self, names, function):
+        name = getattr(function, "__name__", "")
+        if not name and extract.is_sympy_operand(function, []):
+            return lambda *args, **kw: self.bound_call(names, ".__call__", function, function, args, kw)
+        return lambda *args, **kw: self.bound_call(names, name, None, function, args, kw)
+
+    def bind_method(self, names, receiver, name):
+        function = getattr(receiver, name)
+        if isinstance(receiver, types.ModuleType):
+            return self.bind_function(names, function)
+        return lambda *args, **kw: self.bound_call(names, "." + name, receiver, function, args, kw)
+
+    def bind_synthetic(self, names, name, receiver, *args):
+        function = (lambda *a: OPS[name](receiver, *a)) if name in OPS else (lambda: getattr(receiver, name))
+        return self.bound_call(names, "." + name, receiver, function, args, {})
+
+    def compare(self, site, op, record, builtin, projection, value, rhs):
+        """Evaluate the (projected) assertion like Python and record it as a case of the measured call."""
+        projected = project(projection, value)
+        result = OPERATORS[op](projected, rhs)
+        if builtin is not None and builtin is not getattr(builtins, "str" if projection == "str-items" else projection):
+            self.omit(site, "non-call-expression")
+        elif projection == "repr" and repr(value) != str(value):
+            self.omit(site, "non-call-expression")
+        elif not result:
+            self.omit(site, "reference-assertion-failed")
+        elif "reason" in record:
+            self.omit(site, record["reason"])
+        elif op in ("truthy", "falsy") and not (projected is None or isinstance(projected, (bool, sympy.logic.boolalg.BooleanAtom))):
+            self.omit(site, "python-runtime-api" if default_truth(projected) else "non-boolean-assertion")
+        elif op == "is" and not (isinstance(rhs, type) or any(rhs is v for v in (True, False, None))):
+            self.omit(site, "unsupported-assertion")
+        else:
+            # an undecided query (None) asserted false is recorded as None
+            self.finish(site, {**record, "post": projection} if projection in REPLAY_PROJECTIONS else record,
+                        op, None if op == "falsy" and projected is None else rhs)
+        return result
+
+    def check_projection(self, site, op, projection, builtin, value, rhs):
+        return self.compare(site, op, self.pending.pop(site), builtin, projection, value, rhs)
+
+    def check_bound(self, site, op, projection, builtin, name, value, rhs):
+        binding = self.bindings.get(name)
+        if binding is None or binding[2] is not value or binding[3] is None or safe_str(value) != binding[3]:
+            # Not produced by a measured call (or changed since): only Python evaluates it.
+            result = OPERATORS[op](project(projection, value), rhs)
+            self.omit(site, "non-call-expression")
+            return result
+        record, index, _, _ = binding
+        if index is not None and "reason" not in record:
+            record = {**record, "pick": index}
+        return self.compare(site, op, record, builtin, projection, value, rhs)
 
     def unmeasured_raises(self, site, raises, *args):
         self.omit(site, "unsupported-raises")
@@ -579,6 +742,13 @@ def skip_reason(node, aliases, functions, visited=None, optional=OPTIONAL):
     return None
 
 
+def disabled_test(node, tree):
+    """A test renamed to _test_* so that pytest does not collect it: it takes no arguments and nothing calls it."""
+    if not node.name.startswith("_test") or node.args.args or node.args.vararg or node.args.kwonlyargs or node.args.kwarg:
+        return False
+    return not any(isinstance(n, ast.Name) and n.id == node.name for n in ast.walk(tree))
+
+
 def parameters(function):
     """Expand ordinary pytest parametrization without using pytest's runner."""
     rows = [{}]
@@ -602,7 +772,8 @@ def execute_source(source, module, category, filename, timeout=extract.ALARM_SEC
     functions = {n.name: n for n in original.body if isinstance(n, ast.FunctionDef)}
     optional = OPTIONAL - ALLOWED_OPTIONAL.get(category, set())
     aliases = optional_aliases(original, optional)
-    skipped = {name: skip_reason(n, aliases, functions, optional=optional) for name, n in functions.items() if name.startswith("test")}
+    skipped = {name: skip_reason(n, aliases, functions, optional=optional) for name, n in functions.items()
+               if name.startswith("test") or disabled_test(n, original)}
     transform = Instrument(source)
     tree = ast.fix_missing_locations(transform.visit(copy.deepcopy(original)))
     capture = Capture(module, category, transform.sites)
@@ -665,7 +836,7 @@ def execute_source(source, module, category, filename, timeout=extract.ALARM_SEC
                 continue
             for index, kwargs in enumerate(parameters(function)):
                 capture.test = name
-                capture.bound.clear()
+                capture.bindings.clear()
                 reason = kwargs.pop("_compat_skip", None)
                 start = len(capture.events)
                 sympy.Dummy._count = int.from_bytes(hashlib.sha256(f"{module}:{name}:{index}".encode()).digest()[:6], "big")
@@ -732,7 +903,11 @@ def corpus_from_events(events, tests, source_sites, categories=None):
     def audit(category=None):
         cs = [c for c in cases if category is None or c["category"] == category]
         os_ = [c for c in omitted if category is None or c["category"] == category]
-        return {"examined": len(cs) + len(os_), "cases": len(cs), "reasons": dict(sorted(Counter(c["reason"] for c in os_).items()))}
+        # Records retained from an audit file carry the multiplicity of identical omissions.
+        reasons = Counter()
+        for c in os_:
+            reasons[c["reason"]] += c.get("count", 1)
+        return {"examined": len(cs) + sum(reasons.values()), "cases": len(cs), "reasons": dict(sorted(reasons.items()))}
     return {"sympy": sympy.__version__, "cases": cases,
             "extraction": {**audit(), "sourceSites": source_sites,
                            "categories": {c: audit(c) for c in (categories if categories is not None else sorted({e["category"] for e in events}))},

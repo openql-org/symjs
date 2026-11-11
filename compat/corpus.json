@@ -706083,6 +706083,659 @@
    "expected": "PartialDerivative(A(i), A(j), A(k))"
   },
   {
+   "fn": ".replace_with_arrays",
+   "self": {
+    "t": "PublicObject",
+    "cls": "PartialDerivative",
+    "args": [
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "A",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "i",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     },
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "B",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "j",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "A",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 1,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Fn",
+          "name": "sin",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "y",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Fn",
+            "name": "log",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         }
+        ],
+        "list": true
+       }
+      ],
+      [
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "B",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 1,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ],
+        "list": true
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "tensor",
+   "module": "sympy.tensor.toperators",
+   "src": "expr.replace_with_arrays({A(i): compA, B(i): compB})",
+   "expected": "[[cos(x), 0], [y**3/x, 3*y**2*log(x)]]"
+  },
+  {
+   "fn": ".reshape",
+   "self": {
+    "t": "NDimArray",
+    "cls": "MutableDenseNDimArray",
+    "shape": [
+     2,
+     1,
+     2,
+     1
+    ],
+    "flat": [
+     {
+      "t": "Fn",
+      "name": "cos",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Fn",
+        "name": "log",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1",
+     "py": true
+    },
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1",
+     "py": true
+    }
+   ],
+   "kwargs": {},
+   "category": "tensor",
+   "module": "sympy.tensor.toperators",
+   "src": "Matrix(compA).diff(Matrix(compB)).reshape(2, 2)",
+   "expected": "[[cos(x), y**3/x], [0, 3*y**2*log(x)]]"
+  },
+  {
+   "fn": ".replace_with_arrays",
+   "self": {
+    "t": "PublicObject",
+    "cls": "PartialDerivative",
+    "args": [
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "A",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "i",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     },
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "B",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "j",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "A",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 1,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Fn",
+          "name": "sin",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "y",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Fn",
+            "name": "log",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         }
+        ],
+        "list": true
+       }
+      ],
+      [
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "B",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 1,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ],
+        "list": true
+       }
+      ]
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "j",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Symbol",
+       "name": "i",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "tensor",
+   "module": "sympy.tensor.toperators",
+   "src": "expr.replace_with_arrays({A(i): compA, B(i): compB}, [-j, i])",
+   "expected": "[[cos(x), y**3/x], [0, 3*y**2*log(x)]]"
+  },
+  {
    "fn": "gauss_chebyshev_t",
    "args": [
     {
@@ -730618,7 +731271,7 @@
    "non-call-expression": 610,
    "reference-exception": 319,
    "private-api": 61,
-   "unsupported-result-type": 91,
+   "unsupported-result-type": 88,
    "serialization-error": 4,
    "python-runtime-api": 4,
    "printing-expression": 31,
@@ -741753,21 +742406,6 @@
     "module": "sympy.polys.domains.algebraicfield",
     "src": "print(type(B2[1]))",
     "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.tensor.toperators",
-    "src": "expr.replace_with_arrays({A(i): compA, B(i): compB})",
-    "reason": "unsupported-result-type"
-   },
-   {
-    "module": "sympy.tensor.toperators",
-    "src": "Matrix(compA).diff(Matrix(compB)).reshape(2, 2)",
-    "reason": "unsupported-result-type"
-   },
-   {
-    "module": "sympy.tensor.toperators",
-    "src": "expr.replace_with_arrays({A(i): compA, B(i): compB}, [-j, i])",
-    "reason": "unsupported-result-type"
    },
    {
     "module": "sympy.diffgeom.diffgeom",

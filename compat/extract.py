@@ -32,7 +32,7 @@ import warnings
 from collections import Counter, defaultdict
 
 import sympy
-from sympy import Basic, MatrixBase
+from sympy import Basic, MatrixBase, NDimArray
 
 # module -> category
 MODULES = {
@@ -795,7 +795,7 @@ def ser(o):
     if isinstance(o, PartialDerivative):
         return public_object("PartialDerivative", *o.args)
     if isinstance(o, MutablePolyDenseMatrix):
-        return {"t": "PolyMatrix", "entries": ser(o.to_Matrix().tolist()), "ring": ser(o.ring)}
+        return {"t": "PolyMatrix", "rows": o.rows, "cols": o.cols, "entries": ser(o.to_Matrix().tolist()), "ring": ser(o.ring)}
     if isinstance(o, (DixonResultant, MacaulayResultant)):
         return public_object(type(o).__name__, o.polynomials, o.variables)
     if isinstance(o, ArithmeticSetExpr):
@@ -1139,6 +1139,8 @@ def ser(o):
         mod = getattr(o, "__module__", "") or ""
         if mod == "sympy.vector.vector" and o.__qualname__ == "Vector.dot.<locals>.directional_derivative":
             return {"t": "DirectionalDerivative", "vector": ser(inspect.getclosurevars(o).nonlocals["self"])}
+        if o.__name__ == "<lambda>":
+            return ser_lambda(o)
         # A closure is not a module-level function bearing its local name.
         if "<locals>" in getattr(o, "__qualname__", ""):
             raise Unsupported("function closure")
@@ -1232,6 +1234,9 @@ def ser(o):
     if isinstance(o, type) and o.__module__ in ("sympy.polys.matrices.domainmatrix", "sympy.polys.matrices.ddm", "sympy.polys.matrices.sdm") and o.__name__ in ("DomainMatrix", "DDM", "SDM"):
         # the DomainMatrix classes, whose classmethods (eye, diag, zeros, ...) the doctests call
         return {"t": "Type", "name": o.__name__}
+    if isinstance(o, type) and o.__module__ == "sympy.polys.polymatrix":
+        # PolyMatrix, whose classmethods (eye, zeros, from_Matrix) the tests call
+        return {"t": "Type", "name": "PolyMatrix"}
     if isinstance(o, type) and o.__module__.startswith("sympy.combinatorics."):
         # combinatorics classes whose classmethods the doctests call (Subset.bitlist_from_subset, ...)
         return {"t": "Type", "name": o.__name__}
@@ -1528,6 +1533,28 @@ def api_inventory():
 
 class Timeout(Exception):
     pass
+
+
+def ser_lambda(function):
+    """A Python lambda as {"t": "JsLambda", params, body}: its body applied to dummies must be an expression."""
+    code = function.__code__
+    if code.co_flags & (inspect.CO_VARARGS | inspect.CO_VARKEYWORDS) or code.co_kwonlyargcount or not code.co_argcount:
+        raise Unsupported("function")
+    # Probing must not advance the Dummy counter that the measured computation continues to use.
+    count = sympy.Dummy._count
+    try:
+        ds = [sympy.Dummy(n) for n in code.co_varnames[:code.co_argcount]]
+        try:
+            body = function(*ds)
+        except Exception:
+            raise Unsupported("function") from None
+    finally:
+        sympy.Dummy._count = count
+    if isinstance(body, (int, float)) and not isinstance(body, bool):
+        body = sympy.sympify(body)
+    if not isinstance(body, Basic) or isinstance(body, sympy.logic.boolalg.BooleanAtom):
+        raise Unsupported("function")
+    return {"t": "JsLambda", "params": [ser(d) for d in ds], "body": ser(body)}
 
 
 def ser_arg(node, globs):
@@ -2051,7 +2078,8 @@ def main(dst, baseline_path=None):
                     record.update({"category": category, "module": modname, "src": src, "expected": text.rstrip("\n")})
                     cases.append(record)
                     continue
-                if isinstance(result, (MatrixBase,)):
+                if isinstance(result, (MatrixBase, NDimArray)):
+                    # matrices and (mutable) N-dimensional arrays print their entries
                     expected = str(result)
                 elif isinstance(result, tuple) and any(isinstance(i, _Monomial) for i in result):
                     # a Monomial's repr is its address; its str is x**2*y**0

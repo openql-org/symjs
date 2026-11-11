@@ -34,6 +34,7 @@ class CompletenessTests(unittest.TestCase):
         self.assertTrue(all(c['pass'] for c in self.evaluate(documented_examples=1).values()))
         self.assertEqual(self.test_module, 'sympy.example.tests.test_widget')
         self.assertEqual(test_module_for('sympy'), 'sympy.tests.test_sympy')
+        self.assertEqual(test_module_for('sympy.tensor.toperators'), 'sympy.tensor.tests.test_tensor_operators')
 
     def test_missing_export_and_members_are_concrete(self):
         del self.api['exports']['getWidget']
@@ -137,9 +138,10 @@ class CompletenessTests(unittest.TestCase):
 
     def test_static_contract_keeps_methods_properties_and_operators(self):
         tree = ast.parse('''
+from abc import ABC
 class Base:
     def inherited(self): pass
-class Widget(Base):
+class Widget(Base, ABC):
     __slots__ = ()
     @property
     def size(self): pass
