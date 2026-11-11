@@ -1,0 +1,14 @@
+{"omitted":[
+
+],"tests":[
+{"module":"sympy.codegen.tests.test_cfunctions","test":"test_expm1","parameter":0,"status":"completed"},
+{"module":"sympy.codegen.tests.test_cfunctions","test":"test_log1p","parameter":0,"status":"completed"},
+{"module":"sympy.codegen.tests.test_cfunctions","test":"test_exp2","parameter":0,"status":"completed"},
+{"module":"sympy.codegen.tests.test_cfunctions","test":"test_log2","parameter":0,"status":"completed"},
+{"module":"sympy.codegen.tests.test_cfunctions","test":"test_fma","parameter":0,"status":"completed"},
+{"module":"sympy.codegen.tests.test_cfunctions","test":"test_log10","parameter":0,"status":"completed"},
+{"module":"sympy.codegen.tests.test_cfunctions","test":"test_Cbrt","parameter":0,"status":"completed"},
+{"module":"sympy.codegen.tests.test_cfunctions","test":"test_Sqrt","parameter":0,"status":"completed"},
+{"module":"sympy.codegen.tests.test_cfunctions","test":"test_hypot","parameter":0,"status":"completed"},
+{"module":"sympy.codegen.tests.test_cfunctions","test":"test_isnan_isinf","parameter":0,"status":"completed"}
+]}

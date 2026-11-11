@@ -41,6 +41,8 @@ export class PartialDerivativeNode extends TensExpr {
   getFreeIndices(): TensorIndexNode[] { return [...this.freeIndices]; }
   withArgs(args: readonly Expr[]): PartialDerivativeNode { return new PartialDerivativeNode(first(args), ...args.slice(1)); }
   doitShallow(): PartialDerivativeNode { return this.withArgs(this.args); }
+  /** SymPy doit: the derivative rebuilt with its indices contracted (the derivative itself is not performed). */
+  doit(): PartialDerivativeNode { return this.doitShallow(); }
   canonBp(): PartialDerivativeNode { return this.doitShallow(); }
   contractMetric(_g: TensorHeadNode): Expr { throw new NotImplementedError('metric contraction through a partial derivative'); }
   replaceIndices(repl: ReadonlyMap<string, TensorIndexNode>): PartialDerivativeNode {

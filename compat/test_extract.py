@@ -35,6 +35,13 @@ class ExtractTests(unittest.TestCase):
         self.assertTrue(operators)
         self.assertEqual(extract.ser(operators[0])["cls"], "Operator")
 
+    def test_serializes_expression_domain_elements(self):
+        from sympy import EX, sin
+        x = sympy.Symbol("x")
+        tree = extract.ser(EX(sin(x) / x))
+        self.assertEqual(tree["t"], "EXElement")
+        self.assertEqual(tree["ex"], extract.ser(sin(x) / x))
+
     def test_sequence_base_serialization(self):
         from sympy.series.sequences import SeqExpr, SeqExprOp, sequence
         n = sympy.Symbol("n")
@@ -95,8 +102,17 @@ class ExtractTests(unittest.TestCase):
         self.assertEqual(const["body"], extract.ser(sympy.S.One))
         with self.assertRaises(extract.Unsupported):
             extract.ser_arg(ast.parse("lambda i: True", mode="eval").body, {})
+        # A runtime lambda is an expression of its parameters, applied to dummies without advancing the Dummy counter.
+        count = sympy.Dummy._count
+        self.assertEqual(extract.ser(lambda i: 2*i)["t"], "JsLambda")
+        self.assertEqual(sympy.Dummy._count, count)
+        for function in (lambda i: True, lambda *i: 1, lambda: 1, lambda i: [1][i]):
+            with self.assertRaises(extract.Unsupported):
+                extract.ser(function)
+        def local(i):
+            return i
         with self.assertRaises(extract.Unsupported):
-            extract.ser(lambda i: i)
+            extract.ser(local)
         p = _pure_key_dict()
         p[x] = 1
         self.assertEqual(extract.ser(p), {"t": "PureKeyDict", "items": [[extract.ser(sympy.PurePoly(x)), extract.ser(1)]]})
@@ -119,6 +135,23 @@ class ExtractTests(unittest.TestCase):
         self.assertEqual(corpus["extraction"]["examined"],
                          len(corpus["cases"]) + sum(corpus["extraction"]["reasons"].values()))
         return corpus
+
+    def test_number_formats_of_calls_and_python_math_calls(self):
+        corpus = self.extract_examples("""
+            >>> from sympy import exp, Rational
+            >>> '%.0e' % exp(Rational(1, 10)).evalf()
+            '1e+00'
+            >>> '%.0e' % exp(Rational(1, 10))
+            '1e+00'
+            >>> from math import log, exp
+            >>> log(1 + 1e-99)
+            0.0
+            >>> exp(1e-99) - 1
+            0.0
+        """, module="sympy.codegen.cfunctions")
+        self.assertEqual([(c["fn"], c.get("pyFormat"), c["expected"], c.get("text")) for c in corpus["cases"]],
+                         [(".evalf", "%.0e", "1e+00", True), ("exp", "%.0e", "1e+00", True)])
+        self.assertEqual([o["reason"] for o in corpus["extraction"]["omitted"]], ["python-runtime-api", "python-runtime-api"])
 
     def test_assignment_displays_preserve_function_method_and_unpacking(self):
         corpus = self.extract_examples("""

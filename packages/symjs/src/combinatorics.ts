@@ -18,4 +18,5 @@ export * from './combinatorics/index';
 permutationGroupHooks.presentation = presentationOf;
 permutationGroupHooks.strongPresentation = strongPresentationOf;
 permutationGroupHooks.polycyclicGroup = polycyclicGroupOf;
-export { TransitiveSubgroup, S1TransitiveSubgroups, S2TransitiveSubgroups, S3TransitiveSubgroups, S4TransitiveSubgroups, S5TransitiveSubgroups, S6TransitiveSubgroups } from './combinatorics/galois';
+export { TransitiveSubgroup, S1TransitiveSubgroups, S2TransitiveSubgroups, S3TransitiveSubgroups, S4TransitiveSubgroups, S5TransitiveSubgroups, S6TransitiveSubgroups, fourGroup, M20, S3InS6, A4InS6, S4m, S4p, A4xC2, S4xC2, G18, G36m, G36p, G72, PSL2F5, PGL2F5, findTransitiveSubgroupsOfS6 } from './combinatorics/galois';
+export type { FindTransitiveSubgroupsOptions } from './combinatorics/galois';

@@ -282,6 +282,16 @@
         "default": "./dist/liealgebras.cjs"
       }
     },
+    "./codegen": {
+      "import": {
+        "types": "./dist/codegen.d.ts",
+        "default": "./dist/codegen.js"
+      },
+      "require": {
+        "types": "./dist/codegen.d.cts",
+        "default": "./dist/codegen.cjs"
+      }
+    },
     "./diffgeom": {
       "import": {
         "types": "./dist/diffgeom.d.ts",
@@ -340,6 +350,9 @@
     "./src/categories.ts",
     "./dist/categories.js",
     "./dist/categories.cjs",
+    "./src/codegen.ts",
+    "./dist/codegen.js",
+    "./dist/codegen.cjs",
     "./src/combinatorics.ts",
     "./dist/combinatorics.js",
     "./dist/combinatorics.cjs",

@@ -32,7 +32,7 @@ import warnings
 from collections import Counter, defaultdict
 
 import sympy
-from sympy import Basic, MatrixBase
+from sympy import Basic, MatrixBase, NDimArray
 
 # module -> category
 MODULES = {
@@ -80,6 +80,8 @@ MODULES = {
     "sympy.functions.elementary.miscellaneous": "functions",
     "sympy.functions.elementary.integers": "functions",
     "sympy.functions.elementary.piecewise": "functions",
+    # C99 math functions of codegen (symbolic functions, not code generation)
+    "sympy.codegen.cfunctions": "functions",
     # simplification
     "sympy.simplify.simplify": "simplify",
     "sympy.simplify.radsimp": "simplify",
@@ -550,6 +552,7 @@ def stats_public():
 # selected core/assumptions/logic/... modules and modules whose documented functions live in the module only
 # (deltasummation, gosper_sum, dpll_satisfiable, finite_diff, compogen, groups_count, ...)
 LOCAL_PUBLIC = {
+    "sympy.codegen.cfunctions",
     "sympy.categories.diagram_drawing", "sympy.plotting.textplot", "sympy.plotting.plot",
     "sympy.abc", "sympy.assumptions.assume", "sympy.assumptions.cnf", "sympy.assumptions.facts",
     "sympy.assumptions.lra_satask", "sympy.assumptions.predicates.calculus", "sympy.assumptions.predicates.common",
@@ -792,7 +795,7 @@ def ser(o):
     if isinstance(o, PartialDerivative):
         return public_object("PartialDerivative", *o.args)
     if isinstance(o, MutablePolyDenseMatrix):
-        return {"t": "PolyMatrix", "entries": ser(o.to_Matrix().tolist()), "ring": ser(o.ring)}
+        return {"t": "PolyMatrix", "rows": o.rows, "cols": o.cols, "entries": ser(o.to_Matrix().tolist()), "ring": ser(o.ring)}
     if isinstance(o, (DixonResultant, MacaulayResultant)):
         return public_object(type(o).__name__, o.polynomials, o.variables)
     if isinstance(o, ArithmeticSetExpr):
@@ -1136,6 +1139,8 @@ def ser(o):
         mod = getattr(o, "__module__", "") or ""
         if mod == "sympy.vector.vector" and o.__qualname__ == "Vector.dot.<locals>.directional_derivative":
             return {"t": "DirectionalDerivative", "vector": ser(inspect.getclosurevars(o).nonlocals["self"])}
+        if o.__name__ == "<lambda>":
+            return ser_lambda(o)
         # A closure is not a module-level function bearing its local name.
         if "<locals>" in getattr(o, "__qualname__", ""):
             raise Unsupported("function closure")
@@ -1229,6 +1234,9 @@ def ser(o):
     if isinstance(o, type) and o.__module__ in ("sympy.polys.matrices.domainmatrix", "sympy.polys.matrices.ddm", "sympy.polys.matrices.sdm") and o.__name__ in ("DomainMatrix", "DDM", "SDM"):
         # the DomainMatrix classes, whose classmethods (eye, diag, zeros, ...) the doctests call
         return {"t": "Type", "name": o.__name__}
+    if isinstance(o, type) and o.__module__ == "sympy.polys.polymatrix":
+        # PolyMatrix, whose classmethods (eye, zeros, from_Matrix) the tests call
+        return {"t": "Type", "name": "PolyMatrix"}
     if isinstance(o, type) and o.__module__.startswith("sympy.combinatorics."):
         # combinatorics classes whose classmethods the doctests call (Subset.bitlist_from_subset, ...)
         return {"t": "Type", "name": o.__name__}
@@ -1254,6 +1262,10 @@ def ser(o):
     if isinstance(o, _GE):
         # an element x + y*I of ZZ_I or QQ_I
         return {"t": "GaussianElement", "domain": str(o.parent()), "x": ser(o.x), "y": ser(o.y)}
+    from sympy.polys.domains.expressiondomain import ExpressionDomain as _ExpressionDomain
+    if isinstance(o, _ExpressionDomain.Expression):
+        # an element of EX: the wrapped expression
+        return {"t": "EXElement", "ex": ser(o.ex)}
     if isinstance(o, _ANP):
         # an element of an algebraic number field: coefficients in the primitive element, its minimal polynomial
         return {"t": "ANP", "rep": [ser(c) for c in o.to_list()], "mod": [ser(c) for c in o.mod_to_list()], "dom": ser(o.dom)}
@@ -1523,6 +1535,28 @@ class Timeout(Exception):
     pass
 
 
+def ser_lambda(function):
+    """A Python lambda as {"t": "JsLambda", params, body}: its body applied to dummies must be an expression."""
+    code = function.__code__
+    if code.co_flags & (inspect.CO_VARARGS | inspect.CO_VARKEYWORDS) or code.co_kwonlyargcount or not code.co_argcount:
+        raise Unsupported("function")
+    # Probing must not advance the Dummy counter that the measured computation continues to use.
+    count = sympy.Dummy._count
+    try:
+        ds = [sympy.Dummy(n) for n in code.co_varnames[:code.co_argcount]]
+        try:
+            body = function(*ds)
+        except Exception:
+            raise Unsupported("function") from None
+    finally:
+        sympy.Dummy._count = count
+    if isinstance(body, (int, float)) and not isinstance(body, bool):
+        body = sympy.sympify(body)
+    if not isinstance(body, Basic) or isinstance(body, sympy.logic.boolalg.BooleanAtom):
+        raise Unsupported("function")
+    return {"t": "JsLambda", "params": [ser(d) for d in ds], "body": ser(body)}
+
+
 def ser_arg(node, globs):
     """Serialize a call argument; a lambda whose body evaluates to an expression
     when applied to dummies becomes {"t": "JsLambda", params, body}."""
@@ -1643,9 +1677,26 @@ TEXT_OUTPUT = os.environ.get("TEXT_OUTPUT", "1") == "1"
 ONLY = [m for m in os.environ.get("ONLY_MODULES", "").split(",") if m]
 
 
+# Python's numeric modules: a doctest comparing with them (from math import log) calls Python, not SymPy
+PYTHON_NUMERIC_MODULES = {"math", "cmath"}
+
+
+def is_python_numeric(node, globs):
+    """Whether an expression calls a function of Python's math or cmath module."""
+    return any(isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+               and getattr(globs.get(n.func.id), "__module__", None) in PYTHON_NUMERIC_MODULES
+               for n in ast.walk(node))
+
+
+# a %-format of a number ('%.0e' % expm1(1e-99).evalf()): the call's value as Python formats it
+PY_NUMBER_FORMAT = re.compile(r"%(\.\d+)?[eEf]")
+
+
 def public_api_reason(fn, globs, extra_public):
     """The ordinary-call public API filter, also used for saved assignments."""
     value = globs.get(fn)
+    if not fn.startswith(".") and getattr(value, "__module__", None) in PYTHON_NUMERIC_MODULES:
+        return "python-runtime-api"
     if isinstance(value, sympy.Expr) and type(value).__module__ == "sympy.diffgeom.diffgeom" and callable(value):
         return None
     if fn.startswith("."):
@@ -1655,6 +1706,23 @@ def public_api_reason(fn, globs, extra_public):
           or fn in globs and (getattr(globs[fn], "__module__", None) or "__").startswith("__")):
         return "not-exported-api"
     return None
+
+
+def expand_starred(call, globs):
+    """The call with each *argument that is a tuple or list replaced by its items (X[0], X[1], ...)."""
+    args = []
+    for a in call.args:
+        if not isinstance(a, ast.Starred):
+            args.append(a)
+            continue
+        try:
+            value = eval(compile(ast.Expression(a.value), "<starred>", "eval"), globs)
+        except Exception:
+            return call
+        if not isinstance(value, (tuple, list)):
+            return call
+        args.extend(ast.Subscript(value=a.value, slice=ast.Constant(i), ctx=ast.Load()) for i in range(len(value)))
+    return ast.fix_missing_locations(ast.Call(func=call.func, args=args, keywords=call.keywords))
 
 
 def serialize_call(record, call, globs, assumed, pre_args=None, printed=False):
@@ -1670,7 +1738,7 @@ def serialize_call(record, call, globs, assumed, pre_args=None, printed=False):
         receiver = eval(receiver_src, globs)
         if record.pop("synthetic", False) and not is_sympy_operand(
                 receiver, [eval(compile(ast.Expression(a), "<a>", "eval"), globs) for a in call.args]):
-            raise NotSympy()
+            raise PythonRuntime() if is_python_numeric(call, globs) else NotSympy()
         if printed and isinstance(receiver, types.ModuleType):
             raise PythonRuntime()
         record["self"] = ser_arg(ast.parse(receiver_src, mode="eval").body, globs) if callable(receiver) else ser(receiver)
@@ -1885,6 +1953,13 @@ def main(dst, baseline_path=None):
                         signal.alarm(0)
                     continue
                 call = tree.body
+                # print(G) of a name saved from a call: the printed text of the saved result
+                printed_name = (TEXT_OUTPUT and modname not in VALUE_EXAMPLE_MODULES and isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id == "print"
+                                and len(call.args) == 1 and not call.keywords and isinstance(call.args[0], ast.Name)
+                                and call.args[0].id in bindings and ex.want.strip())
+                if printed_name:
+                    call = call.args[0]
+                    tree = ast.Expression(call)
                 bound = bindings.get(call.id) if isinstance(call, ast.Name) and ex.want.strip() else None
                 if modname in TUPLE_ASSIGNMENT_MODULES and isinstance(call, ast.Tuple) and ex.want.strip():
                     saved = [bindings.get(n.id) if isinstance(n, ast.Name) else None for n in call.elts]
@@ -1906,6 +1981,18 @@ def main(dst, baseline_path=None):
                            and len(call.args) == 1 and not call.keywords and isinstance(call.args[0], ast.Call))
                 if printed:
                     call = call.args[0]
+                    tree = ast.Expression(call)
+                # '%.0e' % f(...): the call, its value formatted like Python (the whole expression is evaluated)
+                py_format = None
+                if (TEXT_OUTPUT and isinstance(call, ast.BinOp) and isinstance(call.op, ast.Mod)
+                        and isinstance(call.left, ast.Constant) and isinstance(call.left.value, str)
+                        and PY_NUMBER_FORMAT.fullmatch(call.left.value) and isinstance(call.right, ast.Call)):
+                    py_format = call.left.value
+                    call = call.right
+                printed = printed or bool(printed_name)
+                # a computed callable applied to unpacked arguments (R.root_lambdas[0](*X)): the arguments one by one
+                if bound is None and isinstance(call, ast.Call) and not isinstance(call.func, (ast.Name, ast.Attribute)):
+                    call = expand_starred(call, globs)
                     tree = ast.Expression(call)
                 if isinstance(call, ast.Call) and not any(isinstance(a, ast.Starred) for a in call.args):
                     if isinstance(call.func, ast.Name):
@@ -1942,7 +2029,10 @@ def main(dst, baseline_path=None):
                 # text output: a printed call, a printing function (pprint, print_tree, ...) or a call returning a str
                 text = None
                 if TEXT_OUTPUT and record is not None and record["fn"] not in ("str", "repr"):
-                    if printed:
+                    if py_format is not None:
+                        text = result
+                        record["pyFormat"] = py_format
+                    elif printed:
                         text = str(result)
                     elif result is None and _out.getvalue() and ("print" in record["fn"] or record["fn"] == "textplot"):
                         text = _out.getvalue()[:-1] if _out.getvalue().endswith("\n") else _out.getvalue()
@@ -1988,7 +2078,8 @@ def main(dst, baseline_path=None):
                     record.update({"category": category, "module": modname, "src": src, "expected": text.rstrip("\n")})
                     cases.append(record)
                     continue
-                if isinstance(result, (MatrixBase,)):
+                if isinstance(result, (MatrixBase, NDimArray)):
+                    # matrices and (mutable) N-dimensional arrays print their entries
                     expected = str(result)
                 elif isinstance(result, tuple) and any(isinstance(i, _Monomial) for i in result):
                     # a Monomial's repr is its address; its str is x**2*y**0

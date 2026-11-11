@@ -80,6 +80,20 @@ export class JsDomain {
   ) {}
 }
 
+/**
+ * A Python callback that is not an expression of its parameters (lambda i, j: [x, y][j]),
+ * recorded as the table of the calls the reference computation made.
+ */
+export class JsTable {
+  constructor(readonly entries: readonly (readonly [readonly unknown[], unknown])[]) {}
+  call(...xs: unknown[]): unknown {
+    const key = xs.map((x) => fmt(typeof x === 'number' ? sj.Rational.of(BigInt(x)) : x)).join(', ');
+    const entry = this.entries.find(([args]) => args.map((a) => fmt(a)).join(', ') === key);
+    if (entry === undefined) throw new Unsupported(`callback called with (${key}), outside the recorded calls`);
+    return entry[1];
+  }
+}
+
 /** A predicate lambda testing a SymPy is_* attribute (lambda e: e.is_Mul). */
 export class JsPred {
   constructor(readonly attr: string) {}
@@ -167,6 +181,8 @@ export class TypeRef {
 /** An item of a Python list, tuple, set or dict prints as its repr: Permutation(0, 1, 2) for a Permutation. */
 const fmtItem = (v: unknown): string => {
   if (v instanceof sj.Permutation) return sj.permutationRepr(v);
+  // members of the S<n>TransitiveSubgroups enumerations print their Enum repr inside containers
+  if (v instanceof sj.TransitiveSubgroup) return v.repr();
   // a prime ideal of a number field prints its repr inside containers
   if (v instanceof sj.PrimeIdeal) return v.repr();
   // domain elements (PythonMPQ, Gaussian elements, ModularInteger, ANP) print their repr inside containers
@@ -213,6 +229,8 @@ export function fmt(v: unknown): string {
   if (v instanceof JsFrozenSet) return `frozenset(${fmt(new JsSet(v.items))})`;
   if (v instanceof JsSet) return v.items.length === 0 ? 'set()' : `{${v.items.map(fmtItem).join(', ')}}`;
   if (v instanceof UFnClass || v instanceof FnClass) return v.name;
+  // a function class (expm1, isnan): its name
+  if (typeof v === 'function' && 'functionName' in v && typeof v.functionName === 'string') return v.functionName;
   // an unapplied predicate (Q.even)
   if (typeof v === 'function' && typeof (v as { predicateName?: unknown }).predicateName === 'string') return String(v);
   if (v instanceof TypeRef) return `<class 'sympy.${v.name}'>`;
@@ -433,6 +451,26 @@ function deserializeDomain(tree: Tree): sj.Domain | undefined {
   return name.endsWith(']') ? base.polyRing(...symbols) : base.fracField(...symbols);
 }
 
+/**
+ * The ring of a polynomial matrix: SymPy's PolynomialRing domain K[gens] is a
+ * coefficient domain K (itself possibly a polynomial ring, as in QQ[x][y])
+ * and generators; a string names the ring.
+ */
+function polyMatrixRing(v: unknown): sj.PolyMatrixRing | string {
+  if (typeof v === 'string') return v;
+  const tree = v instanceof JsDomain ? v.definition : undefined;
+  if (tree === undefined || tree['base'] === undefined || tree['symbols'] === undefined || !(tree['name'] as string).endsWith(']')) throw new Unsupported('polynomial matrix ring');
+  const base = deserializeDomain(tree['base'] as Tree);
+  if (base === undefined) throw new Unsupported('polynomial matrix coefficient domain');
+  return new sj.PolyMatrixRing(base, (tree['symbols'] as Tree[]).map((t) => deserialize(t) as Expr));
+}
+
+/** SymPy PolyMatrix arguments: lists as arrays, a generator tuple as an array, an entry lambda as a function of (i, j). */
+function polyMatrixArgs(args: unknown[], kw: Record<string, unknown>): unknown[] {
+  const converted = args.map((a) => a instanceof JsLambda ? (i: number, j: number) => a.call(sj.Rational.of(BigInt(i)), sj.Rational.of(BigInt(j))) : toJs(a, true));
+  return kw['ring'] === undefined ? converted : [...converted, { ring: polyMatrixRing(kw['ring']) }];
+}
+
 /** The parameter tuples of a serialized hyper or meijerg. */
 const tupleItems = (t: unknown): Expr[] => (t as JsTuple).items.map((x) => x as Expr);
 
@@ -443,6 +481,8 @@ const FUNCTIONS: Record<string, (args: Expr[]) => Expr> = {
   Heaviside: ([x, h0]) => sj.Heaviside(x!, h0),
   SingularityFunction: ([x, a, n]) => sj.SingularityFunction(x!, a!, n!),
   Mod: ([a, b]) => sj.Mod(a!, b!),
+  // the C99 math functions of sympy.codegen.cfunctions
+  ...Object.fromEntries(([sj.expm1, sj.log1p, sj.exp2, sj.log2, sj.fma, sj.log10, sj.Sqrt, sj.Cbrt, sj.hypot, sj.isnan, sj.isinf] as const).map((f) => [f.functionName, (args: Expr[]) => f(...args)])),
   SchurNumber: ([k]) => sj.SchurNumber(k!),
   ...Object.fromEntries(SPECIAL_NAMES.map((n) => [n, (args: Expr[]) => sj.fn(n, args)])),
   RisingFactorial: (args) => sj.fn('rf', args),
@@ -559,14 +599,15 @@ export function deserialize(tree: Tree): unknown {
         ? Reflect.construct(cls, args) : cls(...args);
     }
     case 'PolyMatrix': {
-      const ring = deserializeDomain(tree['ring'] as Tree);
-      if (ring === undefined) throw new Unsupported('polynomial matrix ring');
-      return new sj.PolyMatrix(toJs(deserialize(tree['entries'] as Tree), true) as sj.PolyMatrixEntry[][], { ring });
+      const ring = polyMatrixRing(deserialize(tree['ring'] as Tree));
+      const rows = toJs(deserialize(tree['entries'] as Tree), true) as sj.PolyMatrixEntry[][];
+      const shape = tree['rows'] === undefined ? [rows.length, rows[0]?.length ?? 0] : [tree['rows'] as number, tree['cols'] as number];
+      return sj.PolyMatrix.fromList(shape[0]!, shape[1]!, rows.flat(), [], ring);
     }
     case 'TransitiveSubgroup': {
       const groups = [sj.S1TransitiveSubgroups, sj.S2TransitiveSubgroups, sj.S3TransitiveSubgroups, sj.S4TransitiveSubgroups, sj.S5TransitiveSubgroups, sj.S6TransitiveSubgroups];
       const group = groups[Number(tree['degree']) - 1];
-      const name = group && Object.values(group).find((g) => g.name === String(tree['name']));
+      const name = group && [...group].find((g) => g.name === String(tree['name']));
       if (name === undefined) throw new Unsupported('transitive subgroup name');
       return name;
     }
@@ -652,6 +693,8 @@ export function deserialize(tree: Tree): unknown {
       const dom = tree['domain'] === 'ZZ_I' ? sj.ZZ_I : sj.QQ_I;
       return dom.new(deserialize(tree['x'] as Tree), deserialize(tree['y'] as Tree));
     }
+    case 'EXElement':
+      return new sj.Expression(deserialize(tree['ex'] as Tree) as Expr);
     case 'ANP':
       // an element of an algebraic number field (coefficients in the primitive element, its minimal polynomial)
       return new sj.ANP((tree['rep'] as Tree[]).map(deserialize), (tree['mod'] as Tree[]).map(deserialize), deserializeDomain(tree['dom'] as Tree));
@@ -920,6 +963,8 @@ export function deserialize(tree: Tree): unknown {
     }
     case 'JsFunc':
       return new JsFunc(tree['name'] as string);
+    case 'JsTable':
+      return new JsTable((tree['entries'] as [Tree[], Tree][]).map(([args, value]) => [args.map(deserialize), deserialize(value)] as const));
     case 'JsLambda':
       return new JsLambda((tree['params'] as Tree[]).map((t) => deserialize(t) as Expr), deserialize(tree['body'] as Tree) as Expr);
     case 'Tuple':
@@ -4362,13 +4407,39 @@ export interface Case {
   self?: Tree;
   /** Component displayed after unpacking the call's result into named targets. */
   pick?: number;
+  /** Python builtin applied to the result before comparison: len(...), list(...), tuple(...), [str(r) for r in ...]. */
+  post?: 'len' | 'list' | 'tuple' | 'str-items';
   unsupportedArg?: string;
   assume?: Tree[];
   /** printed output (print(f(...)), pprint(...), a str result): compared as text */
   text?: boolean;
   /** the doctest compares with NORMALIZE_WHITESPACE */
   ws?: boolean;
+  /** the result formatted by Python's %-operator ('%.0e' % value) */
+  pyFormat?: string;
 }
+
+/** Python's '%.Ne' and '%.Nf' formats of a number (the exponent has at least two digits). */
+export function pyNumberFormat(format: string, v: unknown): string {
+  const m = /^%(?:\.(\d+))?([eEf])$/.exec(format);
+  if (!m || !(v instanceof Expr) || !v.isNumber) throw new Unsupported(`Python format ${format} of ${fmt(v)}`);
+  const digits = Number(m[1] ?? '6');
+  const x = v.toNumber();
+  if (m[2] === 'f') return x.toFixed(digits);
+  const s = x.toExponential(digits).replace(/e([+-])(\d)$/, (_m, sign: string, d: string) => `e${sign}0${d}`);
+  return m[2] === 'E' ? s.toUpperCase() : s;
+}
+
+ADAPTERS['MutablePolyDenseMatrix'] = (args, kw) => new sj.PolyMatrix(...(polyMatrixArgs(args, kw) as sj.PolyMatrixArgument[]));
+// The classmethods of PolyMatrix: from_Matrix(M, *gens, ring=...), eye(n, gens), zeros(m, n, gens)
+const polyMatrixClassmethod = (method: (args: unknown[]) => unknown, previous: Adapter | undefined): Adapter => (args, kw, self) => {
+  if (self instanceof TypeRef && self.name === 'PolyMatrix') return method(polyMatrixArgs(args, kw));
+  if (previous === undefined) throw new Unsupported(`classmethod on ${String(self)}`);
+  return previous(args, kw, self);
+};
+ADAPTERS['.from_Matrix'] = polyMatrixClassmethod((a) => sj.PolyMatrix.fromMatrix(...(a as Parameters<typeof sj.PolyMatrix.fromMatrix>)), ADAPTERS['.from_Matrix']);
+ADAPTERS['.eye'] = polyMatrixClassmethod((a) => sj.PolyMatrix.eye(...(a as Parameters<typeof sj.PolyMatrix.eye>)), ADAPTERS['.eye']);
+ADAPTERS['.zeros'] = polyMatrixClassmethod((a) => sj.PolyMatrix.zeros(...(a as Parameters<typeof sj.PolyMatrix.zeros>)), ADAPTERS['.zeros']);
 
 // sympy.crypto LFSRs: symjs takes the values of the GF(p) elements and the modulus
 const ffValues = (l: unknown): [bigint[], bigint] => {
@@ -4557,10 +4628,14 @@ function pyEquals(a0: unknown, b0: unknown): boolean {
  * extractor records for g * f, a == b, a[0, 0], Cycle(1, 2)(2, 3)): the receiver's method of that name
  * when it has one, otherwise the symjs function of the operation.
  */
+/** Python raises TypeError for an operation its operand types do not define. */
+const pythonTypeError = (message: string): never => { throw new TypeError(message); };
+
 const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknown>> = {
   '.__add__': (a, [b]) => (b instanceof sj.OrdinalNode && a instanceof sj.Rational && a.q === 1n ? sj.convertOrdinal(a.p).add(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['add'], [a])?.value : undefined) ?? callMethod(a, ['add'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.add(a, b) : unsupportedOp('+')),
-  '.__sub__': (a, [b]) => callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
-  '.__mul__': (a, [b]) => (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
+  // PolyMatrix has no reflected subtraction: a scalar minus a PolyMatrix is a Python TypeError
+  '.__sub__': (a, [b]) => (isScalar(a) && b instanceof sj.PolyMatrix ? pythonTypeError("unsupported operand type(s) for -: 'int' and 'PolyMatrix'") : undefined) ?? callMethod(a, ['sub'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.sub(a, b) : unsupportedOp('-')),
+  '.__mul__': (a, [b]) => (Array.isArray(a) && b instanceof sj.PolyMatrix ? pythonTypeError("can't multiply sequence by non-int of type 'PolyMatrix'") : undefined) ?? (b instanceof sj.NDimArray && isScalar(a) ? b.rmul(a) : undefined) ?? (a instanceof sj.ModuleImplementedIdeal && b instanceof sj.Module ? b.multiplyIdeal(a) : undefined) ?? (Array.isArray(a) && b instanceof sj.Permutation ? new sj.Permutation(a).mul(b) : undefined) ?? (isScalar(a) && !isScalar(b) ? callMethod(b, ['mul'], [a])?.value : undefined) ?? callMethod(a, ['mul', 'compose'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, b) : unsupportedOp('*')),
   '.__truediv__': (a, [b]) => (a instanceof sj.Domain ? a.quotientRing(b as sj.ModuleImplementedIdeal | Expr[]) : undefined) ?? callMethod(a, ['div', 'truediv', 'quotientModule'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.mul(a, sj.pow(b, -1)) : unsupportedOp('/')),
   '.__pow__': (a, [b]) => callMethod(a, ['pow'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.pow(a, b) : unsupportedOp('**')),
   '.__floordiv__': (a, [b]) => callMethod(a, ['floordiv'], [b])?.value ?? (isScalar(a) && isScalar(b) ? sj.floor(sj.mul(a, sj.pow(b, -1))) : unsupportedOp('//')),
@@ -4602,6 +4677,19 @@ const DUNDER: Readonly<Record<string, (self: unknown, args: unknown[]) => unknow
         return a.slice(start, stop, step);
       }
       return a.getItem(Number(i));
+    }
+    if (a instanceof sj.PolyMatrix) {
+      // M[k], M[i, j], M[start:stop] (a list of the entries) and M[rows, cols] with slices (a submatrix)
+      const positions = (v: unknown, n: number): number[] => {
+        if (!(v instanceof sj.Slice)) return [Number(v)];
+        const [start, stop, step] = v.indices(n);
+        return Array.from({ length: Math.max(0, Math.ceil((stop - start) / step)) }, (_, k) => start + k * step);
+      };
+      if (i instanceof sj.Slice) return new JsList(positions(i, a.length).map((k) => a.get(k)));
+      const key = i instanceof JsTuple ? i.items : Array.isArray(i) ? i : undefined;
+      if (key === undefined) return a.get(Number(i));
+      const [r, c] = key;
+      return r instanceof sj.Slice || c instanceof sj.Slice ? a.extract(positions(r, a.rows), positions(c, a.cols)) : a.get(Number(r), Number(c));
     }
     const index = i instanceof JsTuple ? i.items : Array.isArray(i) && (a instanceof Matrix || a instanceof sj.MatrixExpr || a instanceof sj.NDimArray || a instanceof sj.IndexedBase || a instanceof sj.ArraySymbol || a instanceof categories.DiagramGrid) ? i : [i];
     if (index.some((j) => j instanceof sj.Slice)) {
@@ -4691,6 +4779,7 @@ function toJs(v: unknown, numbers: boolean, inArray = false): unknown {
   if (v instanceof JsDict) return new Map(v.entries.map(([k, x]) => [toJs(k, numbers, true), toJs(x, numbers, true)]));
   if (v instanceof JsLambda) return (...xs: unknown[]) => xs.some((x) => typeof x === 'string') ? v.callStrings(...xs) : v.call(...xs.map((x) => (typeof x === 'number' ? sj.Rational.of(BigInt(x)) : x)) as Expr[]);
   if (v instanceof JsPred) return (e: Expr) => v.test(e);
+  if (v instanceof JsTable) return (...xs: unknown[]) => v.call(...xs);
   if (v instanceof UFnClass) return sj.SymFunction(v.name, { nargs: v.nargs });
   if (v instanceof JsDomain) return v.domain ?? v;
   // a GF(p) element as its integer value (the GF(p) functions take integers and the modulus)
@@ -4794,7 +4883,9 @@ function autoAdapter(c: Case): Adapter | undefined {
   const conv = (x: unknown): unknown => {
     if (c.fn === 'unchanged' && (x instanceof FnClass || x instanceof TypeRef)) return (sj as unknown as Record<string, unknown>)[camel(x.name)];
     if (c.fn === 'ElementwiseApplyFunction' && x instanceof FnClass) return (e: Expr) => applyFn(x.name, [e]);
-    const converted = toJs(x, numbers);
+    // The dense tools keep GF(p) coefficients as field elements: a zero-order derivative returns them unchanged.
+    const fieldElements = (v: unknown): unknown => v instanceof JsFFElement ? plain(v) : v instanceof JsList ? new JsList(v.items.map(fieldElements)) : v instanceof JsTuple ? new JsTuple(v.items.map(fieldElements)) : v;
+    const converted = toJs(c.module === 'sympy.polys.tests.test_densetools' ? fieldElements(x) : x, numbers);
     // The public sparse-ring APIs use Expr coefficients/exponents. Python's
     // ground-domain MPQ wrapper is only a serialized input representation.
     const rationalInputs = (v: unknown): unknown => {
@@ -4809,7 +4900,7 @@ function autoAdapter(c: Case): Adapter | undefined {
       if (Array.isArray(v)) return v.map(polynomialInputs);
       return v;
     };
-    const normalized = c.module === 'sympy.polys.densebasic' || c.fn === '.to_sympy' ? polynomialInputs(converted) : converted;
+    const normalized = c.module === 'sympy.polys.densebasic' || c.module === 'sympy.polys.tests.test_densetools' || c.fn === '.to_sympy' ? polynomialInputs(converted) : converted;
     return expressionCoefficients.includes(c.module) || c.module.startsWith('sympy.polys.matrices.') ? rationalInputs(normalized) : normalized;
   };
   const dunder = c.fn === '.__str__' ? undefined : DUNDER[c.fn];
@@ -4854,6 +4945,8 @@ function autoAdapter(c: Case): Adapter | undefined {
       }
       if (typeof m === 'function') {
         if (self instanceof sj.AppliedPredicate && name === 'function') return m;
+        // a getter returning a function class (SymPy expr.func): the attribute value, not a call
+        if (args.length === 0 && typeof (m as { functionName?: unknown }).functionName === 'string') return m;
         const result = (m as (...a: unknown[]) => unknown).call(thisArg, ...placeArgs(m as (...a: unknown[]) => unknown, args, kw, conv));
         // AGCA uses expression coefficients publicly. SymPy prints these as
         // dense DMP objects inside its relation containers; only convert the
@@ -5004,6 +5097,29 @@ function pickResult(value: unknown, index: number): unknown {
   throw new TypeError(`pick ${index}: call result is not indexable (expected an array, tuple or iterable)`);
 }
 
+/** The items of a result that Python iterates (a list, tuple, matrix or other iterable). */
+function resultItems(value: unknown, post: string): readonly unknown[] {
+  if (value instanceof JsTuple || value instanceof JsList) return value.items;
+  if (isIterableResult(value) && typeof value !== 'string') return [...value];
+  throw new TypeError(`${post}: call result is not iterable`);
+}
+
+/** Apply the Python builtin of an assertion (len, list, tuple, element-wise str) to a call result. */
+function projectResult(value: unknown, post: NonNullable<Case['post']>): unknown {
+  if (post === 'len') {
+    if (typeof value === 'string') return value.length;
+    if (value instanceof Map || value instanceof Set) return value.size;
+    if (value instanceof JsDict) return value.entries.length;
+    if (value instanceof JsSet) return value.items.length;
+    if (value !== null && typeof value === 'object' && 'length' in value && typeof value.length === 'number' && !(Symbol.iterator in value)) return value.length;
+    return resultItems(value, post).length;
+  }
+  const items = resultItems(value, post);
+  if (post === 'list') return new JsList(items.map(fromJs));
+  if (post === 'tuple') return new JsTuple(items.map(fromJs));
+  return new JsList(items.map((item) => { const v = fromJs(item); return typeof v === 'string' ? v : fmt(v); }));
+}
+
 function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome {
   const portEntry = PORTS[`${c.module}:${c.src}`];
   const port = Array.isArray(portEntry) ? (portEntry as readonly (() => unknown)[])[occurrence(c)] : (portEntry as (() => unknown) | undefined);
@@ -5011,7 +5127,8 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
     // a doctest that needs Python code (classes, lambdas) runs as its JavaScript translation
     try {
       const result = port();
-      const v = fromJs(c.pick === undefined ? result : pickResult(result, c.pick));
+      const picked = c.pick === undefined ? result : pickResult(result, c.pick);
+      const v = fromJs(c.post === undefined ? picked : projectResult(picked, c.post));
       return (c.text ? textMatches(v, c) : matches(v, c.expected)) ? { status: 'pass' } : { status: 'fail', got: typeof v === 'string' ? v : fmt(v) };
     } catch (e) {
       return { status: 'error', reason: e instanceof Error ? e.message : String(e) };
@@ -5050,6 +5167,8 @@ function runCase0(c: Case, observe?: (event: CaseObservation) => void): Outcome 
       }
     }
     if (c.pick !== undefined) v = pickResult(v, c.pick);
+    if (c.post !== undefined) v = projectResult(v, c.post);
+    if (c.pyFormat !== undefined) v = pyNumberFormat(c.pyFormat, v);
     observe?.({ value: v });
     if (c.text ? textMatches(v, c) : matches(v, c.expected)) return { status: 'pass' };
     if (c.text && typeof v === 'string') return { status: 'fail', got: v };
@@ -5111,6 +5230,13 @@ const SYMPY_ERRATA: Readonly<Record<string, string | readonly string[]>> = {
   'mobius(n**2)': 'mobius(n**2)',
   // a product of symmetric matrices is symmetric only when they commute: X*Z is not known to be symmetric
   'ask(Q.symmetric(X*Z), Q.symmetric(X) & Q.symmetric(Z))': 'None',
+  // SymPy evaluates the weight at a rational approximation of the root, which moves the last
+  // digit: the exact weight is 1.70630566574432743792195751524918602024548..., so the
+  // correctly rounded 40-digit value ends in ...245.
+  [`sympy.integrals.tests.test_quadrature:assert [str(r) for r in w] == [
+            '0.3379547635663543330553835737094171534907',
+            '1.097332224279111467485302294320899710461',
+            '1.706305665744327437921957515249186020246']`]: "['0.3379547635663543330553835737094171534907', '1.097332224279111467485302294320899710461', '1.706305665744327437921957515249186020245']",
 };
 
 /** The dsolve result v solves the equation (or system) eqArg. */

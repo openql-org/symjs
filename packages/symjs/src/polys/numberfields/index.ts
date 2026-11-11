@@ -14,6 +14,10 @@ export { roundTwo, nilradicalModP } from './basis';
 export type { RoundTwoOptions } from './basis';
 export { PrimeIdeal, primeDecomp, primeValuation } from './primes';
 export type { PrimeDecompOptions } from './primes';
-export { galoisGroup, hasSquareDisc, MaxTriesException } from './galoisgroups';
-export type { GaloisGroupOptions, GaloisGroupResult } from './galoisgroups';
-export { getResolventByLookup } from './galoisresolvents';
+export { galoisGroup, hasSquareDisc, MaxTriesException, tschirnhausenTransformation } from './galoisgroups';
+export type { GaloisGroupOptions, GaloisGroupResult, TschirnhausenOptions } from './galoisgroups';
+export {
+  GaloisGroupException, Resolvent, ResolventException, defineResolvents, generateLambdaLookup, getResolventByLookup, sVars,
+  sparseSymmetrizeResolventCoeffs, wrap,
+} from './galoisresolvents';
+export type { ResolventDefinition, ResolventRootLambda, ResolventTarget } from './galoisresolvents';

@@ -269,14 +269,17 @@ export type { RoundTwoOptions, PrimeDecompOptions } from './polys/numberfields/i
 export { ClosureFailure, StructureError, MissingUnityError } from './polys/numberfields/exceptions';
 export { rootFactors, rootsQuintic } from './polys/polyroots';
 export { PolyQuintic } from './polys/polyquinticconst';
-export { PolyMatrix, MutablePolyDenseMatrix, MutablePolyMatrix } from './polys/polymatrix';
-export type { PolyMatrixOptions, PolyMatrixEntry } from './polys/polymatrix';
+export { PolyMatrix, MutablePolyDenseMatrix, MutablePolyMatrix, PolyMatrixRing } from './polys/polymatrix';
+export type { PolyMatrixOptions, PolyMatrixEntry, PolyMatrixGens, PolyMatrixEntryFunction, PolyMatrixArgument } from './polys/polymatrix';
 export { DixonResultant, MacaulayResultant } from './polys/multivariateresultants';
-export { dmpAlgInject } from './polys/densetools';
+export * from './polys/densetools';
 export { dmpSqfNorm } from './polys/sqfreetools';
 export { matrixFglm } from './polys/fglmtools';
 export { domEigenvects, domEigenvectsToSympy } from './polys/matrices/eigen';
 export type { RationalEigenvectors, AlgebraicEigenvectors } from './polys/matrices/eigen';
 export { _linsolve, _linEq2dict, _linearEqToDict, sympyDictToDm } from './polys/matrices/linsolve';
-export { galoisGroup, hasSquareDisc, MaxTriesException, getResolventByLookup } from './polys/numberfields/index';
-export type { GaloisGroupOptions, GaloisGroupResult } from './polys/numberfields/index';
+export {
+  galoisGroup, hasSquareDisc, MaxTriesException, tschirnhausenTransformation, GaloisGroupException, Resolvent, ResolventException, defineResolvents,
+  generateLambdaLookup, getResolventByLookup, sVars, sparseSymmetrizeResolventCoeffs, wrap,
+} from './polys/numberfields/index';
+export type { GaloisGroupOptions, GaloisGroupResult, TschirnhausenOptions, ResolventDefinition, ResolventRootLambda, ResolventTarget } from './polys/numberfields/index';

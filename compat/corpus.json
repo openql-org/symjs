@@ -704969,6 +704969,103 @@
    "expected": "[Piecewise((x**2/2, (x >= 0) & (x <= 1)), (-x**2 + 3*x - 3/2, (x >= 1) & (x <= 2)), (x**2/2 - 3*x + 9/2, (x >= 2) & (x <= 3)), (0, True)), Piecewise((x**2/2 - x + 1/2, (x >= 1) & (x <= 2)), (-x**2 + 5*x - 11/2, (x >= 2) & (x <= 3)), (x**2/2 - 4*x + 8, (x >= 3) & (x <= 4)), (0, True))]"
   },
   {
+   "fn": ".__call__",
+   "unsupportedArg": "function",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.galois_resolvents",
+   "src": "R.root_lambdas[0](*X)",
+   "expected": "X0*X2 + X1*X3"
+  },
+  {
+   "fn": ".__call__",
+   "unsupportedArg": "function",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.galois_resolvents",
+   "src": "R.root_lambdas[1](*X)",
+   "expected": "X0*X3 + X1*X2"
+  },
+  {
+   "fn": ".__call__",
+   "unsupportedArg": "function",
+   "category": "polys",
+   "module": "sympy.polys.numberfields.galois_resolvents",
+   "src": "R.root_lambdas[2](*X)",
+   "expected": "X0*X1 + X2*X3"
+  },
+  {
+   "fn": "galois_group",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "pick": 0,
+   "text": true,
+   "category": "polys",
+   "module": "sympy.polys.numberfields.galoisgroups",
+   "src": "print(G)",
+   "expected": "PermutationGroup([\n    (0 1)(2 3),\n    (0 2)(1 3)])"
+  },
+  {
+   "fn": "galois_group",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {},
+   "pick": 1,
+   "category": "polys",
+   "module": "sympy.polys.numberfields.galoisgroups",
+   "src": "alt",
+   "expected": "True"
+  },
+  {
    "fn": ".order",
    "self": {
     "t": "PermutationGroup",
@@ -704999,6 +705096,48 @@
    "module": "sympy.polys.numberfields.galoisgroups",
    "src": "G.order()",
    "expected": "4"
+  },
+  {
+   "fn": "galois_group",
+   "args": [
+    {
+     "t": "Add",
+     "args": [
+      {
+       "t": "Rational",
+       "p": "1",
+       "q": "1"
+      },
+      {
+       "t": "Pow",
+       "args": [
+        {
+         "t": "Symbol",
+         "name": "x",
+         "assume": {}
+        },
+        {
+         "t": "Rational",
+         "p": "4",
+         "q": "1"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "kwargs": {
+    "by_name": {
+     "t": "Js",
+     "v": true
+    }
+   },
+   "pick": 0,
+   "text": true,
+   "category": "polys",
+   "module": "sympy.polys.numberfields.galoisgroups",
+   "src": "print(G_name)",
+   "expected": "S4TransitiveSubgroups.V"
   },
   {
    "fn": ".get_perm_group",
@@ -705942,6 +706081,659 @@
    "module": "sympy.tensor.toperators",
    "src": "expr",
    "expected": "PartialDerivative(A(i), A(j), A(k))"
+  },
+  {
+   "fn": ".replace_with_arrays",
+   "self": {
+    "t": "PublicObject",
+    "cls": "PartialDerivative",
+    "args": [
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "A",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "i",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     },
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "B",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "j",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "A",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 1,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Fn",
+          "name": "sin",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "y",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Fn",
+            "name": "log",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         }
+        ],
+        "list": true
+       }
+      ],
+      [
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "B",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 1,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ],
+        "list": true
+       }
+      ]
+     ]
+    }
+   ],
+   "kwargs": {},
+   "category": "tensor",
+   "module": "sympy.tensor.toperators",
+   "src": "expr.replace_with_arrays({A(i): compA, B(i): compB})",
+   "expected": "[[cos(x), 0], [y**3/x, 3*y**2*log(x)]]"
+  },
+  {
+   "fn": ".reshape",
+   "self": {
+    "t": "NDimArray",
+    "cls": "MutableDenseNDimArray",
+    "shape": [
+     2,
+     1,
+     2,
+     1
+    ],
+    "flat": [
+     {
+      "t": "Fn",
+      "name": "cos",
+      "args": [
+       {
+        "t": "Symbol",
+        "name": "x",
+        "assume": {}
+       }
+      ]
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "-1",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "3",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Rational",
+      "p": "0",
+      "q": "1"
+     },
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "3",
+        "q": "1"
+       },
+       {
+        "t": "Pow",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         },
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       },
+       {
+        "t": "Fn",
+        "name": "log",
+        "args": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1",
+     "py": true
+    },
+    {
+     "t": "Rational",
+     "p": "2",
+     "q": "1",
+     "py": true
+    }
+   ],
+   "kwargs": {},
+   "category": "tensor",
+   "module": "sympy.tensor.toperators",
+   "src": "Matrix(compA).diff(Matrix(compB)).reshape(2, 2)",
+   "expected": "[[cos(x), y**3/x], [0, 3*y**2*log(x)]]"
+  },
+  {
+   "fn": ".replace_with_arrays",
+   "self": {
+    "t": "PublicObject",
+    "cls": "PartialDerivative",
+    "args": [
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "A",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "i",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     },
+     {
+      "t": "Tensor",
+      "head": {
+       "t": "TensorHead",
+       "name": "B",
+       "types": [
+        {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        }
+       ],
+       "symmetry": {
+        "t": "TensorSymmetry",
+        "rank": 1,
+        "sign": 0
+       }
+      },
+      "indices": [
+       {
+        "t": "TensorIndex",
+        "name": "j",
+        "type": {
+         "t": "TensorIndexType",
+         "name": "L",
+         "dim": {
+          "t": "Symbol",
+          "name": "dim_L",
+          "assume": {}
+         },
+         "dummyName": "L"
+        },
+        "up": true
+       }
+      ]
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Dict",
+     "items": [
+      [
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "A",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 1,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Fn",
+          "name": "sin",
+          "args": [
+           {
+            "t": "Symbol",
+            "name": "x",
+            "assume": {}
+           }
+          ]
+         },
+         {
+          "t": "Mul",
+          "args": [
+           {
+            "t": "Pow",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "y",
+              "assume": {}
+             },
+             {
+              "t": "Rational",
+              "p": "3",
+              "q": "1"
+             }
+            ]
+           },
+           {
+            "t": "Fn",
+            "name": "log",
+            "args": [
+             {
+              "t": "Symbol",
+              "name": "x",
+              "assume": {}
+             }
+            ]
+           }
+          ]
+         }
+        ],
+        "list": true
+       }
+      ],
+      [
+       {
+        "t": "Tensor",
+        "head": {
+         "t": "TensorHead",
+         "name": "B",
+         "types": [
+          {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          }
+         ],
+         "symmetry": {
+          "t": "TensorSymmetry",
+          "rank": 1,
+          "sign": 0
+         }
+        },
+        "indices": [
+         {
+          "t": "TensorIndex",
+          "name": "i",
+          "type": {
+           "t": "TensorIndexType",
+           "name": "L",
+           "dim": {
+            "t": "Symbol",
+            "name": "dim_L",
+            "assume": {}
+           },
+           "dummyName": "L"
+          },
+          "up": true
+         }
+        ]
+       },
+       {
+        "t": "Tuple",
+        "items": [
+         {
+          "t": "Symbol",
+          "name": "x",
+          "assume": {}
+         },
+         {
+          "t": "Symbol",
+          "name": "y",
+          "assume": {}
+         }
+        ],
+        "list": true
+       }
+      ]
+     ]
+    },
+    {
+     "t": "Tuple",
+     "items": [
+      {
+       "t": "Mul",
+       "args": [
+        {
+         "t": "Rational",
+         "p": "-1",
+         "q": "1"
+        },
+        {
+         "t": "Symbol",
+         "name": "j",
+         "assume": {}
+        }
+       ]
+      },
+      {
+       "t": "Symbol",
+       "name": "i",
+       "assume": {}
+      }
+     ],
+     "list": true
+    }
+   ],
+   "kwargs": {},
+   "category": "tensor",
+   "module": "sympy.tensor.toperators",
+   "src": "expr.replace_with_arrays({A(i): compA, B(i): compB}, [-j, i])",
+   "expected": "[[cos(x), y**3/x], [0, 3*y**2*log(x)]]"
   },
   {
    "fn": "gauss_chebyshev_t",
@@ -730015,20 +730807,473 @@
    "module": "sympy.polys.matrices.linsolve",
    "src": "_linsolve([Eq(x + y, 0)], [x, y])",
    "expected": "{y: y, x: -y}"
+  },
+  {
+   "fn": "Cbrt",
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "Cbrt(x)",
+   "expected": "Cbrt(x)"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "Cbrt",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "Cbrt(x).diff(x)",
+   "expected": "1/(3*x**(2/3))"
+  },
+  {
+   "fn": "Sqrt",
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "Sqrt(x)",
+   "expected": "Sqrt(x)"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "Sqrt",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "Sqrt(x).diff(x)",
+   "expected": "1/(2*sqrt(x))"
+  },
+  {
+   "fn": ".__eq__",
+   "self": {
+    "t": "Float",
+    "v": 4.0,
+    "man": "1",
+    "exp": 2,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Float",
+     "v": 4.0,
+     "py": true
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "exp2(2).evalf() == 4.0",
+   "expected": "True"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "exp2",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "exp2(x).diff(x)",
+   "expected": "log(2)*exp2(x)"
+  },
+  {
+   "fn": ".evalf",
+   "pyFormat": "%.0e",
+   "self": {
+    "t": "Float",
+    "v": 1e-99,
+    "man": "2462625387274655",
+    "exp": -380,
+    "prec": 53
+   },
+   "args": [],
+   "kwargs": {},
+   "text": true,
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "'%.0e' % expm1(1e-99).evalf()",
+   "expected": "1e-99"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "expm1",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "expm1(x).diff(x)",
+   "expected": "exp(x)"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "fma",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "z",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "fma(x, y, z).diff(x)",
+   "expected": "y"
+  },
+  {
+   "fn": ".__eq__",
+   "self": {
+    "t": "Float",
+    "v": 5.0,
+    "man": "5",
+    "exp": 0,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Float",
+     "v": 5.0,
+     "py": true
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "hypot(3, 4).evalf() == 5.0",
+   "expected": "True"
+  },
+  {
+   "fn": "hypot",
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    },
+    {
+     "t": "Symbol",
+     "name": "y",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "hypot(x, y)",
+   "expected": "hypot(x, y)"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "hypot",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     },
+     {
+      "t": "Symbol",
+      "name": "y",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "hypot(x, y).diff(x)",
+   "expected": "x/hypot(x, y)"
+  },
+  {
+   "fn": ".__eq__",
+   "self": {
+    "t": "Float",
+    "v": 2.0,
+    "man": "1",
+    "exp": 1,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Float",
+     "v": 2.0,
+     "py": true
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "log10(100).evalf() == 2.0",
+   "expected": "True"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "log10",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "log10(x).diff(x)",
+   "expected": "1/(x*log(10))"
+  },
+  {
+   "fn": ".evalf",
+   "pyFormat": "%.0e",
+   "self": {
+    "t": "Add",
+    "args": [
+     {
+      "t": "Mul",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "-380",
+        "q": "1"
+       },
+       {
+        "t": "Fn",
+        "name": "log",
+        "args": [
+         {
+          "t": "Rational",
+          "p": "2",
+          "q": "1"
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "t": "Fn",
+      "name": "log",
+      "args": [
+       {
+        "t": "Rational",
+        "p": "2462625387274654950767440006258975862817483704404090416746768337765357610718575663213391640930307230013039636668831",
+        "q": "1"
+       }
+      ]
+     }
+    ]
+   },
+   "args": [],
+   "kwargs": {},
+   "text": true,
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "'%.0e' % expand_log(log1p(1e-99)).evalf()",
+   "expected": "1e-99"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "log1p",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "log1p(x).diff(x)",
+   "expected": "1/(x + 1)"
+  },
+  {
+   "fn": ".__eq__",
+   "self": {
+    "t": "Float",
+    "v": 2.0,
+    "man": "1",
+    "exp": 1,
+    "prec": 53
+   },
+   "args": [
+    {
+     "t": "Float",
+     "v": 2.0,
+     "py": true
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "log2(4).evalf() == 2.0",
+   "expected": "True"
+  },
+  {
+   "fn": ".diff",
+   "self": {
+    "t": "Fn",
+    "name": "log2",
+    "args": [
+     {
+      "t": "Symbol",
+      "name": "x",
+      "assume": {}
+     }
+    ]
+   },
+   "args": [
+    {
+     "t": "Symbol",
+     "name": "x",
+     "assume": {}
+    }
+   ],
+   "kwargs": {},
+   "category": "functions",
+   "module": "sympy.codegen.cfunctions",
+   "src": "log2(x).diff(x)",
+   "expected": "1/(x*log(2))"
   }
  ],
  "extraction": {
-  "examined": 26245,
+  "examined": 26286,
   "reasons": {
-   "statement-or-setup": 14438,
+   "statement-or-setup": 14459,
    "upstream-skip": 113,
-   "not-exported-api": 892,
-   "non-call-expression": 614,
+   "not-exported-api": 890,
+   "non-call-expression": 610,
    "reference-exception": 319,
    "private-api": 61,
-   "unsupported-result-type": 91,
+   "unsupported-result-type": 88,
    "serialization-error": 4,
-   "python-runtime-api": 2,
+   "python-runtime-api": 4,
    "printing-expression": 31,
    "unstable-result-representation": 13,
    "illustrative-output": 1,
@@ -739503,21 +740748,6 @@
     "reason": "reference-exception"
    },
    {
-    "module": "sympy.polys.numberfields.galois_resolvents",
-    "src": "R.root_lambdas[0](*X)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.galois_resolvents",
-    "src": "R.root_lambdas[1](*X)",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.galois_resolvents",
-    "src": "R.root_lambdas[2](*X)",
-    "reason": "non-call-expression"
-   },
-   {
     "module": "sympy.polys.numberfields.modules",
     "src": "print((B(0) * C(0)).module == A)",
     "reason": "not-exported-api"
@@ -741178,36 +742408,6 @@
     "reason": "not-exported-api"
    },
    {
-    "module": "sympy.polys.numberfields.galoisgroups",
-    "src": "print(G)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.polys.numberfields.galoisgroups",
-    "src": "alt",
-    "reason": "non-call-expression"
-   },
-   {
-    "module": "sympy.polys.numberfields.galoisgroups",
-    "src": "print(G_name)",
-    "reason": "not-exported-api"
-   },
-   {
-    "module": "sympy.tensor.toperators",
-    "src": "expr.replace_with_arrays({A(i): compA, B(i): compB})",
-    "reason": "unsupported-result-type"
-   },
-   {
-    "module": "sympy.tensor.toperators",
-    "src": "Matrix(compA).diff(Matrix(compB)).reshape(2, 2)",
-    "reason": "unsupported-result-type"
-   },
-   {
-    "module": "sympy.tensor.toperators",
-    "src": "expr.replace_with_arrays({A(i): compA, B(i): compB}, [-j, i])",
-    "reason": "unsupported-result-type"
-   },
-   {
     "module": "sympy.diffgeom.diffgeom",
     "src": "c_xy",
     "reason": "non-call-expression"
@@ -741396,6 +742596,16 @@
     "module": "sympy.plotting.utils",
     "src": "_unpack_args(*args)",
     "reason": "non-call-expression"
+   },
+   {
+    "module": "sympy.codegen.cfunctions",
+    "src": "exp(1e-99) - 1",
+    "reason": "python-runtime-api"
+   },
+   {
+    "module": "sympy.codegen.cfunctions",
+    "src": "log(1 + 1e-99)",
+    "reason": "python-runtime-api"
    }
   ],
   "preservedReferences": [

@@ -360,6 +360,10 @@ export interface Impl {
   integrate(e: Expr, x: Sym, limits?: [ExprLike, ExprLike]): Expr;
   /** Evaluate unevaluated objects when the calculus entry point is loaded. */
   doit?(e: Expr): Expr;
+  /** SymPy as_set of a boolean expression (registered by the solvers entry point). */
+  asSet?(e: Expr): Expr;
+  /** SymPy is_hypergeometric (registered by the simplify entry point). */
+  isHypergeometric?(e: Expr, k: Expr): boolean;
   limit(e: Expr, z: Sym, z0: ExprLike, dir?: '+' | '-' | '+-'): Expr;
   series(e: Expr, x: Sym, x0?: ExprLike, n?: number): Expr;
 }
@@ -1172,12 +1176,18 @@ export const isMulLike = (e: Expr): boolean => e instanceof Mul || (e instanceof
  */
 export abstract class ExtensionExpr extends Expr {
   readonly kind = 'Extension' as const;
+  readonly #args: readonly Expr[];
   constructor(
     /** Class name used in the structural key and the default printers. */
     readonly name: string,
-    readonly args: readonly Expr[],
+    args: readonly Expr[],
   ) {
     super();
+    this.#args = args;
+  }
+  /** The arguments (SymPy Basic.args, a property of the class). */
+  get args(): readonly Expr[] {
+    return this.#args;
   }
   /** A node of the same class with new arguments (required for traversals). */
   abstract withArgs(args: readonly Expr[]): Expr;

@@ -169,6 +169,9 @@ export const numericFns: Partial<Record<Fn['name'], (args: C[]) => C>> = Object.
   Object.entries(FN_NUMERIC1).map(([k, f]) => [k, (args: C[]) => f(at(args, 0))]),
 );
 
+/** Numeric implementations of extension nodes by node name (the C functions of codegen/cfunctions.ts register theirs). */
+export const numericExtensions: Partial<Record<string, (args: C[]) => C>> = {};
+
 const CONSTANT_VALUES: Record<ConstantName, C> = {
   pi: c(Math.PI),
   E: c(Math.E),
@@ -215,6 +218,12 @@ function compile(e: Expr, resolve: (s: Sym) => Compiled): Compiled {
     const fas = e.args.map((a) => compile(a, resolve));
     const op = numericFns[e.name];
     if (!op) throw new TypeError(`Cannot evaluate ${e.name} numerically`);
+    return (env) => op(fas.map((f) => f(env)));
+  }
+  const extension = e instanceof ExtensionExpr ? numericExtensions[e.name] : undefined;
+  if (extension) {
+    const op = extension;
+    const fas = e.args.map((a) => compile(a, resolve));
     return (env) => op(fas.map((f) => f(env)));
   }
   if (e instanceof Piecewise) {

@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: Copyright 2026 OpenQL Project
 // Reference values from SymPy 1.14 polys.numberfields.subfield.
 import { expect, it } from 'vitest';
-import { symbols, sqrt, add, mul, S, AlgebraicNumber, fieldIsomorphism, primitiveElement, toNumberField, isNoMatch, expand } from '../../../src';
+import { symbols, sqrt, add, mul, S, AlgebraicNumber, fieldIsomorphism, primitiveElement, toNumberField, isNoMatch, expand, CRootOf, Dummy, parseExpr } from '../../../src';
 const [x] = symbols('x'), a = sqrt(2), b = sqrt(3), theta = add(a, b);
 it('finds and exactly reconstructs embeddings into a radical power basis', () => {
   expect(String(fieldIsomorphism(a, theta))).toBe('1/2,0,-9/2,0');
@@ -39,4 +39,16 @@ it('bounds primitive-element search and retries a nonprimitive first candidate',
   const [, coefficients] = primitiveElement([first, second], x, { maxCandidates: 2 });
   expect(coefficients).toEqual([1, 2]);
   expect(() => primitiveElement([a], x, { maxCandidates: 0 })).toThrow('positive integer');
+});
+
+it('maps a into Q(b) through a root of its minimal polynomial when expansions do not determine it', () => {
+  const X = new Dummy('X');
+  const root = (f: string, i: number): AlgebraicNumber => new AlgebraicNumber(CRootOf(parseExpr(f).subs(parseExpr('x'), X), i));
+  expect(String(fieldIsomorphism(root('x**2 - 2', 1), root('x**2 - 6*x + 7', 1)))).toBe('1,-3');
+  expect(String(fieldIsomorphism(root('x**3 - 2', 0), root('x**3 - 6*x**2 + 12*x - 10', 1)))).toBe('1,-2');
+  expect(String(fieldIsomorphism(parseExpr('2**(1/3)'), parseExpr('2**(1/3)*(-1 + sqrt(3)*I)/2')))).toBe('1,0');
+  expect(String(fieldIsomorphism(root('x**2 - 2', 1), root('x**4 - 10*x**2 + 1', 3)))).toMatch(/^-?1\/2,0,-?9\/2,0$/);
+  expect(isNoMatch(fieldIsomorphism(root('x**4 + 1', 3), root('x**4 + 4*x**2 + 2', 1)))).toBe(true);
+  expect(isNoMatch(fieldIsomorphism(root('x**3 - 2', 0), root('x**2 - 2', 1)))).toBe(true);
+  expect(String(fieldIsomorphism(root('x**2 - 2', 1), root('x**2 - 8', 1)))).toMatch(/^-?1\/2,0$/);
 });

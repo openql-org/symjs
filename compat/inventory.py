@@ -423,21 +423,13 @@ CORRESPONDENCES = {
     'sympy.diffgeom': ['diffgeom.ts'],
     'sympy.diffgeom.diffgeom': ['diffgeom/diffgeom.ts'],
     'sympy.diffgeom.rn': ['diffgeom/rn.ts'],
+    # the C99 math functions are base symbolic functions; the rest of sympy.codegen stays excluded
+    'sympy.codegen.cfunctions': ['codegen/cfunctions.ts'],
 }
 # Inspected modules without an implementation yet, with a note on the plan (base module, or the extend
 # package that will hold them). Everything else without a correspondence stays unassessed.
 NOT_IMPLEMENTED = {
-    'sympy.codegen.cfunctions': 'base module (planned): expm1, log1p, exp2, log2, fma, log10, Sqrt, Cbrt, hypot, isnan, isinf',
-    'sympy.combinatorics.galois': 'transitive subgroups of S1..S6 for Galois groups (polys.numberfields.galoisgroups)',
     'sympy.core.trace': 'deprecated alias of sympy.physics.quantum.trace (extend package @symjs/physics-quantum)',
-    'sympy.integrals.quadrature': 'Gauss quadrature nodes and weights',
-    'sympy.polys.densetools': 'dense recursive list representation',
-    'sympy.polys.multivariate_resultants': 'DixonResultant, MacaulayResultant',
-    'sympy.polys.numberfields.galois_resolvents': '',
-    'sympy.polys.numberfields.galoisgroups': '',
-    'sympy.polys.numberfields.resolvent_lookup': '',
-    'sympy.polys.polymatrix': 'PolyMatrix',
-    'sympy.tensor.toperators': '',
 }
 # Packages whose modules are not implemented as a whole, with the plan; the
 # most specific prefix wins and a module with a counterpart stays partial.
@@ -445,6 +437,8 @@ NOT_IMPLEMENTED_PACKAGES = {'sympy.physics.quantum': 'extend package @symjs/phys
  'sympy.physics': 'per-field extend package (planned)'}
 # Notes on partially implemented modules (what is ported and what is not).
 NOTES = {
+    'sympy.polys.numberfields.galois_resolvents': 'SymPy 1.14 has no unit-test module for it (no sympy/polys/numberfields/tests/test_galois_resolvents.py); Resolvent and the lookup resolvents are exercised through test_galoisgroups and the doctests.',
+    'sympy.polys.numberfields.resolvent_lookup': 'SymPy 1.14 has no unit-test module for it (no sympy/polys/numberfields/tests/test_resolvent_lookup.py); the table is exercised through test_galoisgroups.',
     'sympy.polys.domains.mpelements': 'RealElement, ComplexElement and MPContext use numeric/ arbitrary precision, explicit context ownership and domain parents; mpmath _mpf/_mpc subclassing and Python context plumbing are excluded.',
     'sympy.diffgeom': 'base subpath @symjs/symjs/diffgeom',
     'sympy.diffgeom.diffgeom': 'base subpath @symjs/symjs/diffgeom: coordinate charts, fields, tensors, connections, curvature and integral curves',
@@ -455,6 +449,7 @@ NOTES = {
     'sympy.polys.numberfields.utilities': 'Fundamental discriminant factorization and real algebraic root isolation with rational tolerances; other module utilities and complex isolation remain unported.',
     'sympy.polys.rootoftools': 'Evaluated indexed-root constructors, radical options, bound generators and real rational refinement; complex rational refinement and full root preprocessing remain incomplete.',
     'sympy.polys.appellseqs': 'Appell recurrence for Bernoulli, central Bernoulli, Genocchi, Euler and Andre polynomials, including Poly/PurePoly outputs; low-level dup_* exports remain unported.',
+    'sympy.polys.densetools': 'All dup_*/dmp_* tools are ported; the unit-test assertion str(dup_clear_denoms(...)) over RR.frac_field(x) is omitted by the extractor (builtin str of a saved result), and RR fraction-field elements keep the denominator as given instead of making it monic.',
     'sympy.polys.dispersion': 'Univariate dispersion sets via factor pairs and exact shifts; inherits the supported coefficient domains of Poly.factorList.',
     'sympy.polys.solvers': 'sympyEqsToRing, eqsToMatrix and solveLinSys over field coefficient domains; solved generators and values are expressions, inconsistent systems return NoMatch.',
     'sympy.polys.puiseux': 'PuiseuxRing/PuiseuxPoly with exact rational exponents, arithmetic, conversion and differentiation; coefficient-domain restrictions remain',
@@ -476,6 +471,7 @@ NOTES = {
     'sympy.simplify._cse_diff': 'private CSE of Jacobians (forward differentiation)',
     'sympy.simplify.traversaltools': 'deprecated alias of use',
     'sympy.tensor.functions': 'shape, NoShapeError; TensorProduct not ported',
+    'sympy.tensor.toperators': 'PartialDerivative with doit, fun_eval, get_matrix and component arrays; the inventory does not resolve its base sympy.core.Expr (imported through the sympy.core package), and the Basic/Expr members inherited by Expr subclasses are not mapped to symjs members.',
 }
 
 
@@ -631,9 +627,12 @@ class PublicContracts:
                         names.add(target.id)
         for base in node.bases:
             name = ast.unparse(base)
-            if name in {'object', 'Exception', 'BaseException', 'ValueError', 'TypeError', 'IndexError', 'KeyError', 'RuntimeError', 'ArithmeticError', 'ZeroDivisionError', 'NotImplementedError', 'tuple', 'dict', 'list', 'set', 'frozenset', 'int', 'str', 'type'}:
+            if name in {'object', 'Enum', 'Exception', 'BaseException', 'ValueError', 'TypeError', 'IndexError', 'KeyError', 'RuntimeError', 'ArithmeticError', 'ZeroDivisionError', 'NotImplementedError', 'tuple', 'dict', 'list', 'set', 'frozenset', 'int', 'str', 'type'}:
                 continue
             parent = self.resolve(module, name)
+            if parent == 'abc.ABC':
+                # The abstract-base-class marker declares no members.
+                continue
             if parent not in self.classes:
                 unresolved.add(parent)
                 continue
@@ -741,7 +740,13 @@ def disallowed_omissions(rows, allowed):
     return dict(sorted(counts.items()))
 
 
+# SymPy test files named differently from the module they test.
+TEST_MODULES = {'sympy.tensor.toperators': 'sympy.tensor.tests.test_tensor_operators'}
+
+
 def test_module_for(module):
+    if module in TEST_MODULES:
+        return TEST_MODULES[module]
     package, _, name = module.rpartition('.')
     return (package or module) + '.tests.test_' + name
 

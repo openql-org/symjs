@@ -7,6 +7,8 @@ import { IndexedBase } from '../core/indexed';
 import type { Expr, ExprLike } from '../core/nodes';
 import { mul, pow, sub, sympify } from '../core/ops';
 import { subs } from '../core/traverse';
+import { isTrue } from '../core/truth';
+import { luDecomposition, rref } from '../matrices/linalg';
 import { Matrix } from '../matrices/matrix';
 import { cancel } from '../simplify/rational';
 import { Poly } from './sympoly';
@@ -29,6 +31,13 @@ export class DixonResultant {
   }
   get n(): number { return this.variables.length; }
   get m(): number { return this.polynomials.length; }
+  /** The maximal degree of each variable over the input polynomials. */
+  get maxDegrees(): number[] {
+    const degrees = this.polynomials.map((p) => Poly.from(p, this.variables).degreeList());
+    return this.variables.map((_, i) => Math.max(...degrees.map((d) => at(d, i))));
+  }
+  /** The total degree of the product of the variables raised to their maximal degrees. */
+  getUpperDegree(): number { return this.maxDegrees.reduce((a, d) => a + d, 0); }
   getDixonPolynomial(): Poly {
     if (this.m !== this.n + 1) throw new RangeError('Dixon requires n+1 polynomials in n variables');
     const matrix = Matrix.of(Array.from({ length: this.n + 1 }, (_, i) => this.polynomials.map((p) => subs(p, this.variables.slice(0, i).map((v, j) => [v, at(this.dummyVariables, j)])))));
@@ -50,6 +59,33 @@ export class DixonResultant {
     const keep = powers.map((_, i) => i).filter((i) => rows.length === powers.length || rows.some((r) => !at(r, i).equals(0)));
     return Matrix.of(rows.map((r) => keep.map((i) => at(r, i))));
   }
+  /**
+   * The Kapur-Saxena-Yang precondition: the column of the monomial 1 (the last
+   * one) is not a linear combination of the others, so the last nonzero row of
+   * the reduced row echelon form is [0, ..., 0, 1].
+   */
+  KSYPrecondition(matrix: Matrix): boolean {
+    if (isTrue(matrix.isZeroMatrix)) return false;
+    const reduced = rref(matrix)[0].simplify();
+    const rows = reduced.toArray().filter((row) => row.some((e) => !e.equals(0)));
+    const last = at(rows, rows.length - 1);
+    return last.every((e, j) => j === last.length - 1 ? e.equals(1) : e.equals(0));
+  }
+  /** The matrix without its zero rows and zero columns. */
+  deleteZeroRowsAndColumns(matrix: Matrix): Matrix {
+    const rows = Array.from({ length: matrix.rows }, (_, i) => i).filter((i) => !isTrue(matrix.row(i).isZeroMatrix));
+    const cols = Array.from({ length: matrix.cols }, (_, j) => j).filter((j) => !isTrue(matrix.col(j).isZeroMatrix));
+    return matrix.slice(rows, cols);
+  }
+  /** The product of the first nonzero entry of every row. */
+  productLeadingEntries(matrix: Matrix): Expr {
+    return mul(1, ...matrix.toArray().flatMap((row) => row.filter((e) => !e.equals(0)).slice(0, 1)));
+  }
+  /** The Kapur-Saxena-Yang Dixon resultant: the product of the leading entries of the reduced upper factor. */
+  getKSYDixonResultant(matrix: Matrix): Expr {
+    const [, U] = luDecomposition(this.deleteZeroRowsAndColumns(matrix));
+    return this.productLeadingEntries(this.deleteZeroRowsAndColumns(U.simplify()));
+  }
 }
 
 /** Macaulay's homogeneous resultant numerator and denominator matrices. */
@@ -63,7 +99,7 @@ export class MacaulayResultant {
     if (!variables.length || polynomials.length !== variables.length) throw new RangeError('Macaulay requires n homogeneous polynomials in n variables');
     this.polynomials = polynomials.map(sympify);
     const polys = this.polynomials.map((p) => Poly.from(p, variables));
-    if (polys.some((p) => !p.isHomogeneous || p.totalDegree() < 1)) throw new RangeError('positive-degree homogeneous polynomials required');
+    if (polys.some((p) => p.totalDegree() < 1)) throw new RangeError('positive-degree polynomials required');
     this.degrees = polys.map((p) => p.totalDegree());
     this.degreeM = 1 + this.degrees.reduce((a, d) => a + d - 1, 0);
     this.powers = monomials(this.degreeM, variables.length);

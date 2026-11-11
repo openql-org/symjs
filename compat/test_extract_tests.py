@@ -42,6 +42,20 @@ class UnitTestExtractorTests(unittest.TestCase):
         self.assertEqual(corpus["cases"][-2]["fn"], '.__getitem__')
         self.assertTrue(all(c['line'] > 2 and c['test'] == 'test_forms' for c in corpus['cases']))
 
+    def test_order_identity_membership_and_undecided_forms(self):
+        corpus = self.extract('''
+            def test_forms():
+                x = Symbol('x')
+                assert abs(Float(2) - 2) < 1e-10
+                assert sin(x).func is sin
+                assert sin(x) not in (False, True)
+                assert not x.is_positive
+                assert Integer(2) >= 3
+        ''')
+        self.assertEqual([(c["fn"], c["op"], c["expected"]) for c in corpus["cases"]],
+                         [(".__lt__", "truthy", "True"), (".func", "is", "sin"), (".__contains__", "falsy", "False"), (".is_positive", "falsy", "None")])
+        self.assertEqual(corpus["extraction"]["reasons"], {"reference-assertion-failed": 1})
+
     def test_each_operand_is_evaluated_once_before_mutation(self):
         corpus = self.extract('''
             def test_mutation():
@@ -58,6 +72,33 @@ class UnitTestExtractorTests(unittest.TestCase):
         self.assertEqual(case['fn'], '.row_del')
         self.assertIn('2', str(case['self']))
         self.assertEqual(corpus['extraction']['testStatuses'], {'completed': 1})
+
+    def test_assertions_about_names_assigned_from_calls(self):
+        corpus = self.extract('''
+            from sympy.polys.numberfields.galoisgroups import _galois_group_degree_3
+            def test_bound():
+                x = Symbol('x')
+                q, r = div(x**2 + 1, x)
+                assert q == x
+                assert r == 1
+                e = expand((x + 1)**2)
+                assert e == x**2 + 2*x + 1
+                e = 5
+                assert e == 5
+                m = Matrix([[1, 2]])
+                m[0, 0] = 3
+                assert m == Matrix([[3, 2]])
+                assert _galois_group_degree_3(Poly(x**3 - 2)) is not None
+                assert Integer(2).is_even is (1 == 1)
+                assert Integer(2).is_even is not False
+                assert Integer(2) is Integer(2)
+        ''')
+        cases = corpus['cases']
+        self.assertEqual([(c['fn'], c.get('pick'), c['op'], c['expected']) for c in cases], [
+            ('div', 0, '==', 'x'), ('div', 1, '==', '1'), ('expand', None, '==', 'x**2 + 2*x + 1'),
+            ('.is_even', None, 'is', 'True'), ('.is_even', None, 'is not', 'False')])
+        self.assertEqual(corpus['extraction']['reasons'], {
+            'non-call-expression': 2, 'private-api': 1, 'unsupported-assertion': 1})
 
     def test_loops_helpers_and_full_record_deduplication(self):
         corpus = self.extract('''
@@ -94,12 +135,71 @@ class UnitTestExtractorTests(unittest.TestCase):
                 assert 1 < 2 < 3
                 assert [1][0] == 1
                 assert Symbol('x')
+                assert Tuple(1)
                 if False:
                     assert Integer(3) == 3
         ''')
         self.assertEqual(corpus['extraction']['reasons'], {
             'non-call-expression': 1, 'unsupported-assertion': 1,
-            'python-runtime-api': 1, 'non-boolean-assertion': 1, 'not-executed': 1})
+            'python-runtime-api': 2, 'non-boolean-assertion': 1, 'not-executed': 1})
+
+    def test_bound_names_projections_and_split_assertions(self):
+        corpus = self.extract('''
+            def _test_disabled():
+                assert Integer(4) == 4
+            def test_bound():
+                x = Symbol('x')
+                q, r = div(Poly(x**2 + 1, x), Poly(x, x))
+                assert q == Poly(x, x)
+                assert [str(c) for c in r.all_coeffs()] == ['1']
+                assert len(Tuple(1, 2)) == 2
+                assert list(Tuple(1, 2)) == [1, 2]
+                assert str(Integer(5)) == '5'
+                assert repr(Integer(5)) == '5'
+                e = expand((x + 1)**2)
+                e2 = e
+                assert e2 == x**2 + 2*x + 1
+                assert e and Integer(1) == 1
+                assert Integer(1) == 1 and [1][0] == 1 and e
+                assert Integer(1) == Integer(1) != Integer(2)
+                assert Tuple(1, 2, 3)[:2] == Tuple(1, 2)
+                m = Matrix([[1]])
+                m[0, 0] = 2
+                assert m == Matrix([[2]])
+                n = Integer(2)
+                n = 3
+                assert n == 3
+                s = Symbol('s')
+                assert s
+                f = lambda t: 2*t
+                assert Lambda(x, f(x))(1) == 2
+        ''')
+        cases = corpus['cases']
+        self.assertEqual(cases[0]['test'], '_test_disabled')
+        self.assertEqual([(c['fn'], c.get('pick'), c.get('post')) for c in cases[1:]], [
+            ('div', 0, None), ('.all_coeffs', None, 'str-items'), ('Tuple', None, 'len'), ('Tuple', None, 'list'),
+            ('Integer', None, None), ('Integer', None, None), ('Integer', None, None), ('Integer', None, None),
+            ('Integer', None, None), ('Integer', None, None), ('.__getitem__', None, None), ('.__call__', None, None)])
+        self.assertEqual(cases[2]['expected'], "['1']")
+        self.assertTrue(cases[5]['text'])
+        self.assertEqual(cases[-2]['args'][0]['t'], 'Slice')
+        self.assertEqual(corpus['extraction']['reasons'], {'non-call-expression': 3, 'python-runtime-api': 4})
+
+    def test_lambda_arguments_are_expressions_or_recorded_tables(self):
+        corpus = self.extract('''
+            def test_callbacks():
+                x, y = symbols('x y')
+                assert Matrix([[1, 2]]).applyfunc(lambda e: 2*e) == Matrix([[2, 4]])
+                assert Matrix(1, 2, lambda i, j: [x, y][j]) == Matrix([[x, y]])
+        ''')
+        cases = corpus['cases']
+        self.assertEqual(cases[0]['args'][0]['t'], 'JsLambda')
+        table = cases[1]['args'][2]
+        self.assertEqual(table['t'], 'JsTable')
+        self.assertEqual([[a['p'] for a in args] for args, _ in table['entries']], [['0', '0'], ['0', '1']])
+        self.assertEqual([value['name'] for _, value in table['entries']], ['x', 'y'])
+        self.assertEqual(corpus['extraction']['reasons'], {})
+        self.assertEqual(unit.fill_tables({'args': [None]}, {0: [((object(),), 1)]}), {'reason': 'unserializable-input'})
 
     def test_decorators_dependencies_and_timeouts(self):
         corpus = self.extract('''
@@ -335,6 +435,14 @@ def test_matplotlib():
             unit.compact_audits(directory, ['ntheory'])
             self.assertEqual(path.read_bytes(), before)
             self.assertEqual((directory / 'ntheory.json').read_bytes(), cases)
+
+    def test_codegen_measures_only_the_c_math_functions(self):
+        self.assertIn('codegen', unit.CATEGORIES)
+        self.assertTrue(unit.file_scope(Path('codegen/tests/test_cfunctions.py'))[0])
+        for name in ('codegen/tests/test_ast.py', 'codegen/tests/test_rewriting.py', 'codegen/tests/test_approximations.py'):
+            keep, reason = unit.file_scope(Path(name))
+            self.assertFalse(keep)
+            self.assertEqual(reason, unit.EXCLUDED_AREAS['codegen'])
 
     def test_diffgeom_is_a_regular_base_category(self):
         self.assertIn('diffgeom', unit.CATEGORIES)

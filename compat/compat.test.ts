@@ -35,7 +35,7 @@ function categoryOf(fullPath: string): string {
   if (/^src\/(calculus|series|integrals)\//.test(path)) return 'calculus';
   if (path.startsWith('src/matrices/')) return 'matrices';
   if (path.startsWith('src/quantum/')) return 'quantum';
-  const sub = /^src\/(discrete|algebras|strategies|unify|geometry|vector|stats|categories|tensor|combinatorics|crypto|liealgebras|diffgeom|parsing|plotting)[/.]/.exec(path);
+  const sub = /^src\/(discrete|algebras|strategies|unify|geometry|vector|stats|categories|tensor|combinatorics|crypto|liealgebras|codegen|diffgeom|parsing|plotting)[/.]/.exec(path);
   if (sub) return sub[1]!;
   return 'core';
 }
