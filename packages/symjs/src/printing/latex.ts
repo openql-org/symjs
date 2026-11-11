@@ -17,6 +17,7 @@ import { Concrete } from '../core/concrete';
 import { DOTS, rangePrintForm, setArgsOrdered, setClass } from './sets';
 import { hasSymbolicBounds, isSequence, sequencePrintset } from './sequences';
 import { at } from '../core/guard';
+import { splitSuperSub } from './conventions';
 
 // ---------------------------------------------------------------------------
 // Settings
@@ -198,37 +199,6 @@ function translate(s: string): string {
     if (s.toLowerCase().endsWith(key) && s.length > key.length) return f(translate(s.slice(0, -key.length)));
   }
   return s;
-}
-
-/** SymPy `split_super_sub`. */
-export function splitSuperSub(text: string): [string, string[], string[]] {
-  let pos = 0;
-  let name: string | undefined;
-  const supers: string[] = [];
-  const subs: string[] = [];
-  while (pos < text.length) {
-    let start = pos + 1;
-    if (text.slice(pos, pos + 2) === '__') start += 1;
-    let posHat = text.indexOf('^', start);
-    if (posHat < 0) posHat = text.length;
-    let posUsc = text.indexOf('_', start);
-    if (posUsc < 0) posUsc = text.length;
-    const next = Math.min(posHat, posUsc);
-    const part = text.slice(pos, next);
-    pos = next;
-    if (name === undefined) name = part;
-    else if (part.startsWith('^')) supers.push(part.slice(1));
-    else if (part.startsWith('__')) supers.push(part.slice(2));
-    // every later part starts at a '^' or '_'
-    else subs.push(part.slice(1));
-  }
-  name ??= '';
-  const m = /^([^\W\d_]+)(\d+)$/u.exec(name);
-  if (m) {
-    name = at(m, 1);
-    subs.unshift(at(m, 2));
-  }
-  return [name, supers, subs];
 }
 
 function symbolLatex(text: string): string {

@@ -13,6 +13,7 @@
  */
 
 import { at, defined } from '../../core/guard';
+import { splitSuperSub } from '../conventions';
 
 /**
  * The unicode flag (SymPy `_use_unicode`). Mutated only through {@link prettyUseUnicode}.
@@ -361,40 +362,8 @@ export function prettyAtom(name: string, fallback?: string, imaginaryUnit: 'i' |
 // Symbol names
 // ---------------------------------------------------------------------------
 
-/** SymPy `split_super_sub`: name, superscripts and subscripts of a symbol name. */
-export function splitSuperSub(text: string): [string, string[], string[]] {
-  if (text.length === 0) return [text, [], []];
-  const supers: string[] = [];
-  const subs: string[] = [];
-  // the end of the part starting at pos: the next ^ or _ after its first character (or a leading __)
-  const partEnd = (pos: number): number => {
-    let start = pos + 1;
-    if (text.slice(pos, pos + 2) === '__') start += 1;
-    let posHat = text.indexOf('^', start);
-    if (posHat < 0) posHat = text.length;
-    let posUsc = text.indexOf('_', start);
-    if (posUsc < 0) posUsc = text.length;
-    return Math.min(posHat, posUsc);
-  };
-  let pos = partEnd(0);
-  let base = text.slice(0, pos);
-  while (pos < text.length) {
-    const next = partEnd(pos);
-    const part = text.slice(pos, next);
-    pos = next;
-    // every part after the name starts with ^, __ or _
-    if (part.startsWith('^')) supers.push(part.slice(1));
-    else if (part.startsWith('__')) supers.push(part.slice(2));
-    else subs.push(part.slice(1));
-  }
-  // a name ending with digits: the digits are a subscript (Python's [^\W\d_]+ then \d+)
-  const m = /^([\p{L}\p{M}\p{Nl}\p{No}]+)(\p{Nd}+)$/u.exec(base);
-  if (m) {
-    base = defined(m[1]);
-    subs.unshift(defined(m[2]));
-  }
-  return [base, supers, subs];
-}
+/** SymPy `split_super_sub` (sympy.printing.conventions). */
+export { splitSuperSub } from '../conventions';
 
 function translateName(s: string, bold: boolean): string {
   const g = bold ? (greekUnicode.get(s) ?? BOLD_GREEK_EXTRA[s]) : greekUnicode.get(s);

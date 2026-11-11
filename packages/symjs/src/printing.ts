@@ -22,5 +22,6 @@ export { dotprint, dotnode, dotedges, purestr, purestrWithArgs, styleof, attrpri
 export type { DotClass, DotStyles, DotNodeOptions, DotEdgesOptions, DotprintOptions } from './printing/dot';
 export { mathml, printMathml, MathMLContentPrinter, MathMLPresentationPrinter, MathMLElement } from './printing/mathml';
 export type { MathMLOptions, MathMLPrintOptions, MathMLPrintable, MathMLMatrix } from './printing/mathml';
+export { splitSuperSub } from './printing/conventions';
 export { TableForm } from './printing/tableform';
 export type { TableFormOptions, TableData, TableEntry, TableHeading, TableColumnFormat } from './printing/tableform';

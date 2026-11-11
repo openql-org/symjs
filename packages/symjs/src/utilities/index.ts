@@ -11,7 +11,7 @@ export { ValueMap, compareValues, defaultSortKeyOf, defaultSortKeyOf as defaultS
 export type { KeyFunction } from './values';
 export { MultisetPartitionTraverser, PartComponent, listVisitor, multisetPartitionsTaocp } from './enumerative';
 export type { PartitionState } from './enumerative';
-export { filldedent } from './misc';
+export { filldedent, rawlines, strlines, translate, replaceString, asInt, funcName } from './misc';
 export { threaded, xthreaded, memoizeProperty } from './decorator';
 // SymPy public (a reserved word in JavaScript, valid as an export name)
 export { markPublic as public } from './decorator';

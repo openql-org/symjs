@@ -48,6 +48,7 @@ export { qs, qsFactor } from './qs';
 export type { QsOptions } from './qs';
 export { digits, countDigits, isPalindromic } from './digits';
 export { crt, crt1, crt2, solveCongruence, symmetricResidue } from './modular';
+export type { Congruence, SolveCongruenceOptions } from './modular';
 export {
   nOrder,
   primitiveRoot,

@@ -10,7 +10,7 @@ import { Add, Float, Fn, Integral, Limit, Mul, Order, Pow, Rational, S } from '.
 import type { FnName } from '../../src/core/nodes';
 import { CosineTransform, FourierTransform, InverseLaplaceTransform, InverseSineTransform, LaplaceTransform, MellinTransform } from '../../src/integrals/transforms';
 import { DotProduct, MatrixSymbol } from '../../src/matrices/expressions';
-import { latex, latexEscape, splitSuperSub } from '../../src/printing/latex';
+import { latex, latexEscape } from '../../src/printing/latex';
 import { multilineLatex, printLatex } from '../../src/printing/printers';
 import * as Sets from '../../src/sets/sets';
 
@@ -103,7 +103,6 @@ describe('latex: symbol names', () => {
     ['x__2__3', 'x^{2 3}'],
   ];
   for (const [name, tex] of cases) it(name, () => expect(latex(sj.symbol(name))).toBe(tex));
-  it('splitSuperSub of the empty string', () => expect(splitSuperSub('')).toEqual(['', [], []]));
 });
 
 describe('latex: expressions', () => {

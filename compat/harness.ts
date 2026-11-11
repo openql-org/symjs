@@ -245,7 +245,8 @@ function matches0(v: unknown, expected: string, got: string): boolean {
   const listPrefix = "defaultdict(<class 'list'>, ";
   if (expected.startsWith(listPrefix)) return matches(v, expected.slice(listPrefix.length, -1));
   const ddPrefix = "defaultdict(<class 'int'>, ";
-  if (v instanceof JsDefaultDict && expected.startsWith(ddPrefix)) return matches(new JsDict(v.entries), expected.slice(ddPrefix.length, -1));
+  // a dict result is a Map, which prints as a dict (count_digits returns a defaultdict(int))
+  if (expected.startsWith(ddPrefix) && (v instanceof JsDefaultDict || v instanceof JsDict)) return matches(new JsDict(v.entries), expected.slice(ddPrefix.length, -1));
   if ((v instanceof JsDict || v instanceof JsSet) && expected.startsWith('{')) {
     const a = topLevelItems(got).sort();
     const b = topLevelItems(expected).sort();
@@ -4076,8 +4077,10 @@ const VECTOR_RENAMES: Record<string, string> = { Point: 'VectorPoint' };
 const STATS_RENAMES: Record<string, string> = { E: 'expectation', Chi: 'ChiRV' };
 /** sympy.combinatorics names that symjs exports under another name (homomorphism and rewrite are taken by agca and simplify). */
 const GROUP_RENAMES: Record<string, string> = { homomorphism: 'groupHomomorphism', rewrite: 'reidemeisterRewrite' };
-const camelIn = (n: string, category: string | undefined): string =>
-  (category === 'vector' ? VECTOR_RENAMES[n] : category === 'stats' ? STATS_RENAMES[n] : category === 'combinatorics' ? GROUP_RENAMES[n] : undefined) ?? camel(n);
+/** sympy.utilities names that symjs exports under another name (replace is the expression operation). */
+const UTILITIES_RENAMES: Record<string, string> = { replace: 'replaceString' };
+const CATEGORY_RENAMES: Readonly<Record<string, Record<string, string>>> = { vector: VECTOR_RENAMES, stats: STATS_RENAMES, combinatorics: GROUP_RENAMES, utilities: UTILITIES_RENAMES };
+const camelIn = (n: string, category: string | undefined): string => CATEGORY_RENAMES[category ?? '']?.[n] ?? camel(n);
 // (an underscore before a capital is dropped too: solve_linear_system_LU -> solveLinearSystemLU)
 const camel = (n: string): string => JS_GLOBAL_RENAMES[n] ?? n.replace(/_([a-zA-Z0-9])/g, (_m, ch: string) => ch.toUpperCase());
 

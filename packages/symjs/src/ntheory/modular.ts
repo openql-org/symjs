@@ -13,8 +13,10 @@ import type { IntLike } from './intutil';
 import { asInt, fdiv, gcdN, gcdext, pmod, prod } from './intutil';
 import { isprime } from './primetest';
 
-/** The residue of a modulo m in (-m/2, m/2] (SymPy symmetric_residue). */
-export function symmetricResidue(a: bigint, m: bigint): bigint {
+/** The residue of a modulo m in (-m/2, m/2] (SymPy symmetric_residue); a is a residue in [0, m). */
+export function symmetricResidue(aIn: IntLike, mIn: IntLike): bigint {
+  const a = asInt(aIn);
+  const m = asInt(mIn);
   return a <= fdiv(m, 2n) ? a : a - m;
 }
 
@@ -66,10 +68,7 @@ export function crt(m: readonly IntLike[], v: readonly IntLike[], opts: { symmet
   let mm = prod(ms);
   if (check) {
     if (!vs.every((vi, i) => pmod(vi, at(ms, i)) === pmod(result, at(ms, i)))) {
-      const r = solveCongruence(
-        vs.map((vi, i): [bigint, bigint] => [vi, at(ms, i)]),
-        { check: false, symmetric },
-      );
+      const r = solveCongruence(...vs.map((vi, i): [bigint, bigint] => [vi, at(ms, i)]), { check: false, symmetric });
       if (isNoMatch(r)) return NoMatch;
       [result, mm] = r;
     }
@@ -78,28 +77,44 @@ export function crt(m: readonly IntLike[], v: readonly IntLike[], opts: { symmet
   return [result, mm];
 }
 
+/** An [r, m] pair (not the options object). */
+const isCongruence = (a: Congruence | SolveCongruenceOptions): a is Congruence => Array.isArray(a);
+
 /** The tuple [prod(m), E, S] for repeated use in crt2 (SymPy crt1). */
 export function crt1(m: readonly IntLike[]): [bigint, bigint[], bigint[]] {
   return gfCrt1(m.map((x) => asInt(x)));
 }
 
 /** crt with the precomputed values of crt1 (SymPy crt2). */
-export function crt2(m: readonly IntLike[], v: readonly IntLike[], mm: bigint, e: readonly bigint[], s: readonly bigint[], symmetric = false): [bigint, bigint] {
-  const result = gfCrt2(
-    v.map((x) => asInt(x)),
-    m.map((x) => asInt(x)),
-    mm,
-    e,
-    s,
-  );
+export function crt2(m: readonly IntLike[], v: readonly IntLike[], mmIn: IntLike, e: readonly IntLike[], s: readonly IntLike[], symmetric = false): [bigint, bigint] {
+  const ints = (xs: readonly IntLike[]): bigint[] => xs.map((x) => asInt(x));
+  const mm = asInt(mmIn);
+  const result = gfCrt2(ints(v), ints(m), mm, ints(e), ints(s));
   return symmetric ? [symmetricResidue(result, mm), mm] : [result, mm];
 }
 
+/** A congruence n = r (mod m) as the pair [r, m]. */
+export type Congruence = readonly [IntLike, IntLike];
+
+/** The options of {@link solveCongruence}. */
+export interface SolveCongruenceOptions {
+  /** The solution as a symmetric residue (in (-m/2, m/2]). */
+  readonly symmetric?: boolean;
+  /** Reduce repeated moduli and use crt when all moduli are prime (default true). */
+  readonly check?: boolean;
+}
+
 /**
- * The solution [n, m] of the congruences n = r (mod m) given as [r, m]
- * pairs (SymPy solve_congruence), NoMatch when there is none.
+ * The solution [n, m] of the congruences n = r (mod m), each given as an
+ * [r, m] pair, followed by the options (SymPy
+ * `solve_congruence(*remainder_modulus_pairs, **hint)`); NoMatch when there
+ * is none.
+ *
+ * `solveCongruence([2, 3], [3, 5], [2, 7])` is `[23n, 105n]`.
  */
-export function solveCongruence(pairs: readonly (readonly [IntLike, IntLike])[], opts: { symmetric?: boolean; check?: boolean } = {}): [bigint, bigint] | NoMatchResult {
+export function solveCongruence(...args: readonly (Congruence | SolveCongruenceOptions)[]): [bigint, bigint] | NoMatchResult {
+  const pairs = args.filter(isCongruence);
+  const opts = args.find((a): a is SolveCongruenceOptions => !isCongruence(a)) ?? {};
   const symmetric = opts.symmetric ?? false;
   const combine = (c1: [bigint, bigint], c2: [bigint, bigint]): [bigint, bigint] | undefined => {
     const [a1, m1] = c1;
